@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { setupDefaultView } from '../public/js/campaign-home.js';
 import { workspaceHeaderScope } from '../public/js/workspace-header.js';
+import { WORKSPACE_STATE_KEY, seedReservedWorkspaceTab } from '../public/js/workspace.js';
 
 const source = async (path) => readFile(new URL(`../public/${path}`, import.meta.url), 'utf8');
 
@@ -63,6 +64,23 @@ test('launch actions reuse the nin mark, never the Team Roster torii, and open t
   assert.match(add, /launch: true/);
   assert.match(add, /if \(!deskNote && !leadNote\) connect\?\.\(born\);/);
   assert.doesNotMatch(add, /openWorkspaceTab|reserveWorkspaceTab/);
+});
+
+test('a newly raised Team tab drops the opener tab name before navigation', async () => {
+  const stored = new Map([[WORKSPACE_STATE_KEY, JSON.stringify({
+    version: 3,
+    views: { team: { tabName: 'dynamic island provider', count: 2 } },
+  })]]);
+  const tab = { sessionStorage: {
+    getItem: (key) => stored.get(key) ?? null,
+    setItem: (key, value) => stored.set(key, value),
+  } };
+
+  assert.equal(seedReservedWorkspaceTab(tab, 'team', { tabName: '' }), true);
+  assert.deepEqual(JSON.parse(stored.get(WORKSPACE_STATE_KEY)).views.team, { tabName: '', count: 2 });
+
+  const form = await source('js/new-team-form.js');
+  assert.match(form, /seedReservedWorkspaceTab\(launchTab, 'team', \{ tabName: '' \}\);\s*openWorkspaceTab\('team', name, launchTab\);/);
 });
 
 test('edited Cowork and Team workbench labels become the exact tab title', async () => {

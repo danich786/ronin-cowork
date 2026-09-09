@@ -9,7 +9,7 @@ import { launchTeamAgents } from './team-loader.js';
 import {
   createStep, dialRowMulti, el, kindTiles, mandateSelect, providerModelPair, readingRows, tagRow, templateTray, wayTiles, bookShelves,
 } from './form-steps.js';
-import { closeWorkspaceTab, openWorkspaceTab, reserveWorkspaceTab } from './workspace.js';
+import { closeWorkspaceTab, openWorkspaceTab, reserveWorkspaceTab, seedReservedWorkspaceTab } from './workspace.js';
 
 const REACH = ['open', 'discuss', 'plan', 'execute'];
 const RECRUIT = ['open', 'nobody', 'propose agents', 'staff agents'];
@@ -490,6 +490,10 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
     notice.set('', '');
     reset();
     await created?.(name);
+    // The reserved tab cloned the opener's sessionStorage when it was opened. A Team tab
+    // name belongs to that older tab, not to the Team born here; clear it so the new page
+    // falls back to the roster title (and ultimately the Team name).
+    seedReservedWorkspaceTab(launchTab, 'team', { tabName: '' });
     openWorkspaceTab('team', name, launchTab);
   }
 
