@@ -1,4 +1,4 @@
-# tmux: reliable sessions and usable recorded work
+# Ronin Mux and Rireki: reliable sessions and usable recorded work
 
 Discussion plan · 2026-09-09 · Team tmux · Reach: plan
 
@@ -17,36 +17,61 @@ The owner has separated the general tmux problem into two equally explicit track
 
 Track A can advance while the recorder remains parked. Track B can investigate frozen recordings and its content contract without waiting for a replacement terminal transport. Implementation proposals and progress should remain separate; shared changes require agreement on the interface between them.
 
+**Settled direction and open choices**
+
+The settled direction is cheap capture, bounded incremental mechanical processing, positive extraction of desired content, one shared recorded conversation, independent Unlocked presentation, and fresh Koe output. Quality and responsiveness must both pass. No viewer owns tmux lifetime or starts its own reconstruction pipeline.
+
+Still open are the source strategy per provider, exact streaming schema, storage engine, checkpoint implementation, process/connection topology, retention defaults, and measured operating budgets. Existing protocols and implementations should be reused where they fit. Model-assisted rule discovery is one optional technique, not a required service. The architecture comparison selects among these choices before rollout commits us to them.
+
+**One end-to-end model**
+
+“Ronin Mux” (R Mux, referred to conversationally as armox) is the working name for the shared reading/distribution layer, not a second tmux server or a decided deployment unit. Rireki names capture and the processing/storage of recorded content. Their boundary is logical: the process and database topology must follow the measured design, not the names.
+
+| Responsibility | Owns | Does not own |
+|---|---|---|
+| tmux session engine | Agent processes, terminal state, live input/output | Browser document layout or a durable semantic conversation |
+| Capture/source adapter | Retained terminal evidence and/or verified structured source events, with identity and ordering | Choosing a prettier version of the agent's words |
+| Rireki processing and storage | Incremental interpretation where needed, mechanical positive extraction, normalized records, checkpoints and provenance | An independent reconstruction for each reader |
+| Ronin Mux shared reading layer | Named readings, history ranges, snapshots/updates, independent reader positions, freshness and availability | Running another agent, owning tmux lifetime, or taking over its copy mode |
+| Native chat/reading tile | Typography, wrapping, selection, navigation, expandable detail | Re-scraping terminal output or changing terminal geometry when the browser resizes |
+| Koe | Consuming the selected reading, pronunciation, voice playback and cancellation | A private transcript decoder or unannounced paraphrasing |
+| Existing input-delivery path | Sending a reply to the current session and reporting delivery | Replaying uncertain input just because a viewer reconnects |
+
+“Scroll” and “transcript” refer to readable views of the same normalized recorded content; they are not two required serial copies. The old implementation stored mostly line-oriented JSON records. The new schema and storage remain open: an event journal, database records, and assembled documents can represent the same conversation at different boundaries. A long text file is not required. Raw terminal tape remains separate evidence with a stated retention policy, not the source of browser layout. The shared durable content artifact is the normalized conversation record set, derived from the retained sources; the scroll, native chat, and Koe script are readings of it. In the proposed pipeline, a “scroll generation” means a published generation of that record set, not an independently maintained transcript. Existing `r_scroll` paths and API spellings remain compatibility details until migration is designed.
+
 **The picture from above**
 
 ```mermaid
 flowchart LR
-  I[Owner's intention: typed or dictated] --> A[Agent working in tmux]
-  A --> L[Live terminal tile]
-  A --> R[Cheap durable capture]
-  R --> P[Bounded background processing]
-  P --> S[Readable scroll with source references]
-  S --> T[Reading tile]
-  S --> C[Agent catch-up]
-  S --> D[Documents and decisions]
-  S --> V[Spoken updates]
-  V --> I
+  I[Owner input] --> D[Existing input delivery]
+  D --> A[Agent in tmux]
+  A --> L[Locked terminal view]
+  A --> R[Capture / verified source adapter]
+  R --> P[Bounded incremental processing and positive extraction]
+  P --> S[Structured recorded content]
+  S --> M[Ronin Mux shared readings and updates]
+  M --> T[Native chat / Unlocked views]
+  M --> C[Agent catch-up]
+  M --> V[Koe direct reading]
+  S --> E[Later document export / authored summaries]
+  T --> D
 ```
 
-The loop matters more than any individual view. For example: dictate a task, leave the page, return to a short account of what changed, inspect the exact supporting output, hear the unresolved choice, and send the next instruction. A second agent can use the same account without asking the first to retell its entire history.
+The loop matters more than any individual view. For example: type or dictate a task, leave the page, return to the latest agent response, inspect its supporting output, hear the unresolved choice, and send the next instruction. A second agent can use the same account without asking the first to retell its entire history.
 
-**Four things we should keep distinct**
+**Source, reading, and presentation**
 
 | Thing | What it answers | What it cannot establish by itself |
 |---|---|---|
 | Live terminal | What is happening and what can I interact with now? | A durable, complete history after the session dies |
 | Recording | What output did we actually retain? | Who meant what, whether a claim was true, or whether every byte was captured |
 | Readable scroll | What can a person or agent read coherently? | Perfect semantic reconstruction from arbitrary terminal redraws |
-| Authored document or spoken briefing | What matters for this audience and purpose? | The original evidence; it should retain references to it |
+| Koe direct reading | What did the agent say, in a listenable form? | A new authored summary or independent interpretation |
+| Later authored document or summary | What matters for a specified purpose? | The original evidence; retain references to it and identify authorship |
 
 A terminal is a changing display. Cursor movements can replace earlier words; a spinner can emit thousands of bytes without producing new information. Stripping escape codes does not reliably recover the conversation. Conversely, replaying every redraw is unnecessary for someone who wants the decisions and final answer. We need explicit fidelity requirements for each consumer.
 
-“Playback” also needs two meanings: replaying the screen over time, and reading or hearing a sequence of settled messages. I recommend making readable, attributable catch-up the first product goal; timed terminal replay can remain a separate capability.
+“Playback” also needs two meanings: replaying the screen over time, and reading or hearing a sequence of settled messages. The first product goal is faithful native chat and Koe catch-up from the same source; timed terminal replay can remain a separate capability.
 
 **What we already know**
 
@@ -93,7 +118,9 @@ One public tmux API does not require one congested transport for every kind of w
 
 This track owns transforming terminal output into material people and agents can use. Its challenges are fidelity, freshness, navigation, response context, processing latency, and voice delivery. Solving service startup or replacing browser attachments does not by itself solve those challenges.
 
-The governing direction is **capture cheaply → reconstruct incrementally in bounded background workers → share one readable result across tiles, agents, and Koe**. Opening another tile must not trigger another reconstruction. Restarting must not rebuild everyone's history. The latest answer may still be on screen rather than in settled history: retain it, identify unfinished work, and never narrate an older turn as current. The opportunity remains the full value of agent work: something the owner can read, revisit, hand to another agent, and hear through Koe.
+The governing direction is **capture cheaply → interpret and normalize incrementally in bounded background work → share one readable result across tiles, agents, and Koe**. Opening another tile must not trigger another reconstruction. Restarting must not rebuild everyone's history. The latest answer may still be on screen rather than in settled history: retain it, identify unfinished work, and never narrate an older turn as current. The opportunity remains the full value of agent work: something the owner can read, revisit, hand to another agent, and hear through Koe.
+
+Terminal reconstruction remains part of that processing when the selected source needs it. A verified structured channel may already supply message boundaries; do not introduce terminal emulation merely to satisfy the diagram. Positive extraction preserves the source and selects recognized desired content for each named reading, rather than repeatedly stripping suspected noise from a flattened text dump.
 
 - **Capture independently of viewers.** For sessions selected for recording, leaving the browser must not erase future catch-up. Keep capture cheap; defer expensive interpretation and summaries. Recording scope and retention remain owner decisions.
 - **Put reconstruction outside the web process.** Use bounded workers with CPU, memory, I/O, concurrency, and backlog limits. Process separation protects the event loop, but shared machine resources can still slow the application; limits and measurements remain necessary.
@@ -122,15 +149,21 @@ Wispr's separate history-mirror proposal is outside the first delivery. It can l
 
 These are proposed workstreams for later assignment, not newly launched sessions. Track A and Track B proceed in parallel, with separate findings, decisions, and test verdicts. The technical author maintains this map; tmux_assistant owns team coordination, hand-in review, verification follow-up, and promotion. Track A is primarily cowork work; Track B spans Services, cowork's readable surfaces, and Koe.
 
-| Track / stage | Workstream | Concrete output | Decision it enables |
-|---|---|---|---|
-| A1 | Hosting and lifecycle contract | VM, local server, and local Mac matrix; continuity, resumption, and recovery promises; current-versus-unproven behavior | What each supported deployment must guarantee |
-| A2 | tmux foundation audit and experiments | Topology and ownership map; supported-version matrix; connection, interaction, lifecycle, and recovery evidence | Whether existing PTY tiles need replacement or targeted work |
-| B1 | Product and content contract | Start with Koe push-to-hear; compare the same source in a phone tile and an agent catch-up read; specify freshness and missing-history behavior | The shared record's first acceptance contract |
-| B2 | Recording bench — Services, with cowork latency observer | Frozen, permission-appropriate corpus and repeatable baseline; CPU/MB, memory, backlog, restart cost, missing/duplicate text | Which reconstruction approach is affordable and faithful |
-| B3 | Architecture comparison | Costed comparison of isolated incremental reconstruction, cheaper limited decoding, and possible structured adapters | One selected design with explicit compromises |
-| Shared integration | One vertical slice across cowork, Services, and Koe | One recorded session → shared reading → Koe push-to-hear, checked against the tile and catch-up API through connection and host interruptions | Whether the two tracks work together without coupling their lifetimes |
-| B4 | Expansion | More providers, retention, timed playback, documents, authored briefings, optional Wispr association | What should become a default |
+The single execution numbering below is used throughout this document; B0–B6 are defined in detail in the execution plan. R0–R6 are exposure stages, not additional implementation packages.
+
+| Track / package | Workstream | Result |
+|---|---|---|
+| A1 | Hosting and lifecycle contract | VM, local server, and local Mac continuity/resumption/recovery promises |
+| A2 | tmux foundation audit and experiments | Ownership, interaction, reconnect, geometry, and recovery evidence |
+| B0 | Content, streaming, and presentation contract | Candidate format/storage choice, acceptance examples, native chat prototype |
+| B1 | Evidence and architecture comparison | Source strategy chosen against quality and cost evidence |
+| B2 | Capture and ownership | Bounded, independently owned capture and source context |
+| B3 | Incremental processing | Deterministic interpretation/extraction with bounded restart recovery |
+| B4 | Ronin Mux and native chat | Shared published content, reading APIs, history and revisions |
+| B5 | Koe end to end | Fresh direct reading from that same source |
+| B6 | Rollout and retirement | R0–R6 exposure, compatibility, migration and rollback |
+
+Track A and Track B meet at identity, geometry/lifecycle events, input delivery, capture ownership, and shared failure tests. Neither requires the other to replace its transport before experiments begin.
 
 The foundation audit should include reconnect and fallback behavior, uncertain command completion and duplicate mutation risk, viewer ownership, geometry authority, browser protocol versions, lifecycle receipts, and whether disabled capture leaves writers running. It should also correct old open threads that are already solved, rather than promoting their historical descriptions into new bug reports.
 
@@ -138,19 +171,13 @@ The shared interface should carry stable session identity, output position, geom
 
 Track A's acceptance evidence covers the hosting/lifecycle matrix and correct terminal interaction under several viewers. Track B's evidence covers content fidelity, freshness, usable reading and response behavior, resource bounds, and Koe delivery. Their shared integration gate checks that recording or voice failures do not stop live work, and that live-session failures leave durable history honestly readable once its serving host is available again.
 
-**Evidence required before restoring the recording**
-
-Use only `ronin-testserver` or the test helper for tmux experiments. No benchmark should perturb the live server. Compare recorder off, capture only, capture plus settlement, and full consumer workloads on the same harness.
-
-The matrix should cover idle and output-heavy sessions, no viewers and many viewers, long tapes, changing geometry, watched and unwatched providers, worker crashes, app restarts, decoder upgrades, missing tape segments, and disk pressure. Check transcript quality against known expected utterances as well as terminal rendering. Include input correctness and session survival in the integration verdict.
-
-The old refactor proposed 15 sessions, 50 MB of tape, and health latency under 25 ms. Preserve that as a candidate baseline, then define the latency percentile, machine specification, load distribution, and acceptable degradation. Add typing latency, event-loop delay, worker resource use, transcript lag, and restart recovery. Idle settled sessions should do no reconstruction; active unwatched sessions may legitimately require bounded work. No threshold here has been measured or accepted for the new design.
+The benchmark/failure matrix and rollout ladder below are the single acceptance reference for Track B. Historical figures are evidence for the problem, not proof the proposed system passes.
 
 <a id="recording-execution-plan"></a>
 
 **Track B execution and rollout plan**
 
-This is the proposed execution plan for the recording redesign (the “Redux” side of the discussion). It authorizes no runtime changes. Keep the beta recorder parked during design and offline experiments; enabling any live cohort is a later rollout decision. Build the smallest complete path to Koe while preserving the shared readable record for tiles and agents. Timed terminal playback, conversational voice control, automatic summaries, and Wispr import follow separately.
+This is the proposed execution plan for the recording redesign. It authorizes no runtime changes. Keep the beta recorder parked during design and offline experiments; enabling any live cohort is a later rollout decision. Build the smallest complete path to native chat and Koe from the shared readable record. Timed terminal playback, conversational voice control, automatic summaries, and Wispr import follow separately.
 
 **Root causes and the quality bar — clarified after the Orca comparison**
 
@@ -184,44 +211,29 @@ B1 ends with a decision record: candidate selected for each supported provider, 
 
 The product output is Ronin's own structured conversation, not a terminal-shaped text dump. Once trustworthy content and boundaries are recovered, the browser should render native document/chat components independently of terminal rows, colours, cursor positions, or widths. The difficult recovery stage should produce a reusable content model rather than force every renderer to interpret line kinds again.
 
-The message/block example is illustrative, not an adopted schema. Define records with stable identity, source references, ordering, author/role when known, text, supported formatting, and provisional/settled status. Represent positively recognized tool activity, code, links/references, and questions explicitly; retain unknown material without inventing a role or a relationship. A paragraph may span several terminal rows, while a code block must preserve meaningful whitespace. Preserve original evidence separately so normalization can be inspected and corrected. Do not infer rich Markdown or citations merely from coloured terminal cells when the source does not establish them.
+No final record schema has been selected. Define records with stable identity, source references, ordering, author/role when known, text, supported formatting, and provisional/settled status. Represent positively recognized tool activity, code, links/references, and questions explicitly; retain unknown material without inventing a role or a relationship. A paragraph may span several terminal rows, while a code block must preserve meaningful whitespace. Preserve original evidence separately so normalization can be inspected and corrected. Do not infer rich Markdown or citations merely from coloured terminal cells when the source does not establish them.
 
 From the same records, Ronin can offer a detailed developer reading with inspectable tools and code, a conversational reading emphasizing messages and questions with expandable activity, and Koe's positively selected spoken reading. References can become usable links where recognized. The interface can look entirely different from the CLI. The UI owns typography, wrapping, spacing, selection, expansion, and scroll position; the shared projection owns which content belongs in a named reading. No UI consumer should re-scrape the terminal or maintain a private vendor decoder.
 
-This adds a concrete B0/B4 deliverable: the normalized message/block schema and a native chat prototype using approved fixtures, which can be designed before the live extractor is finished. The fixture prototype proves presentation quality only; B1/B3 must separately prove that real agent output produces those records faithfully. Keep source positions available through normalization and migration so a polished interface cannot conceal missing or altered content.
+This adds a concrete B0/B4 deliverable: the normalized streaming event/record contract and a native chat prototype using approved fixtures, which can be designed before the live extractor is finished. The fixture prototype proves presentation quality only; B1/B3 must separately prove that real agent output produces those records faithfully. Keep source positions available through normalization and migration so a polished interface cannot conceal missing or altered content.
 
 **Reuse an established streaming format before inventing one**
 
-Network chunks, semantic messages, and visual paragraphs are different boundaries. A live stream does not need to arrive as finished paragraph objects. Existing formats provide useful precedents: AG-UI defines message-start, content-delta, and message-end events, plus snapshot/delta synchronization; ACP defines agent message chunks and tool-call updates. Evaluate adopting or adapting an established format in B0, including its implementation and license, rather than treating the earlier example JSON as a specification. These protocols describe structured communication; they do not recover structure automatically from an arbitrary terminal stream. [AG-UI events](https://docs.ag-ui.com/concepts/events), [ACP prompt turns](https://agentclientprotocol.com/protocol/v1/prompt-turn)
+Network chunks, semantic messages, and visual paragraphs are different boundaries. A live stream does not need to arrive as finished paragraph objects. Existing formats provide useful precedents: AG-UI defines message-start, content-delta, and message-end events, plus snapshot/delta synchronization; ACP defines agent message chunks and tool-call updates. Evaluate adopting or adapting an established format in B0, including its implementation and license, before choosing a custom event schema. These protocols describe structured communication; they do not recover structure automatically from an arbitrary terminal stream. [AG-UI events](https://docs.ag-ui.com/concepts/events), [ACP prompt turns](https://agentclientprotocol.com/protocol/v1/prompt-turn)
 
-The chosen format must handle initial load, reconnect, ordered updates, source provenance, incomplete turns, corrections to provisional extraction, and versioned rebuilds. Append-only message deltas are insufficient for text that the terminal later overwrites; publish a revision/replacement of provisional content or wait for a justified settlement boundary. A transport disconnect does not establish that the agent finished. Paragraphs and code can be assembled mechanically from supported syntax and context as content arrives; unknown language or structure should remain unknown.
+The chosen format must handle initial load, reconnect, ordered updates, source provenance, incomplete turns, corrections to provisional extraction, and versioned rebuilds. Stable IDs and sequence positions establish identity and order; timestamps describe when output was observed or produced without becoming the sole ordering mechanism. Append-only message deltas are insufficient for text that the terminal later overwrites; publish a revision/replacement of provisional content or wait for a justified settlement boundary. A transport disconnect does not establish that the agent finished. Paragraphs and code can be assembled mechanically from supported syntax and context as content arrives; unknown language or structure should remain unknown.
 
 Wire format and storage are separate choices. A stream can update JSON records in a database, a journal, or indexed files; none requires the UI to read a monolithic text document. Compare the storage options on range reads, atomic publication, corrections, restart recovery, retention, and concurrent readers. Prefer reusing known streaming semantics and storage mechanisms while keeping the underlying terminal evidence available for debugging and replay.
 
-**The language model trains the mechanical extractor**
+**Optional model-assisted rule discovery**
 
-The owner's proposal is a teaching process: a language model studies representative output, discovers the markers and contextual boundaries, and produces or improves deterministic extraction rules. The running extractor applies those rules to transcript streams. The teacher is not an LLM that classifies every live passage for every reader, and model-authored classifications must not silently become the stored conversation itself.
+A model may inspect ordinary output, recognize what it is seeing, and identify the mechanical markers, relationships, and boundaries that would let an extractor select the same content. It can start with unlabeled output. We do not assume an existing collection of labeled examples or known mistakes, and the owner has not selected a dedicated teacher architecture.
 
-```text
-representative recordings + reported failures + provider/version context
-  → classifier/teacher agent identifies signatures and boundaries
-  → proposed deterministic parser rules + positive/negative fixtures
-  → replay and held-out quality/cost tests → versioned rule release
-  → mechanical extraction of live output → shared conversation stream
-                                      ↘ bounded drift samples → next teaching cycle
-```
+If useful, the model's contribution is a proposed deterministic rule or parser change. The live path applies mechanical rules; it does not require a model to classify every passage. Provider-specific recognition can vary while emitting the same common events. Use existing structured signals or syntax parsers where they already solve the problem.
 
-The teacher should see sequences with enough surrounding context, original styling/control information where useful, and geometry. A marker on one row may mean something different inside a tool result or a quoted example. Ask it for a stateful recognition rule when required, not an ever-growing list of single-line removal expressions. The output is a rule proposal, explanation, supporting examples, counterexamples, and expected extracted records. It should preserve the positive-extraction principle: establish what begins, continues, and ends desired content.
+Validate any resulting rule against the source and additional cases before release, just as for a manually written rule. Keep versions, regression checks, bounded processing, and rollback. Examples collected while investigating can become tests; building a separate training dataset or recurring teaching service is not a prerequisite. Unknown boundaries stay explicit. Rule-discovery automation remains optional research, with no required B-package or rollout gate.
 
-Keep provider/CLI-version recognition separate from the shared conversation schema. One provider's marker may differ from another's while both produce the same assistant-message event. Prefer an available structured signal or a parser for known syntax over teaching an LLM to guess what a stable grammar already establishes. If the source lacks sufficient evidence, retain it as unknown; a teacher's confidence cannot manufacture an unobservable boundary.
-
-Trigger teaching cycles on a new CLI version, changed formatting, rising unclassified output, extraction disagreement, or a user-reported defect. Use representative bounded samples with a model-cost budget and the appropriate data permissions; continuous monitoring does not require continuously sending every transcript to the teacher. Sample recognized output as well as unknown output so confidently wrong rules can be detected. The live reader must remain usable if the teacher is unavailable or no new rule passes.
-
-Every proposed rule release must pass the old corpus and held-out new examples, including false positives, lost speech, tool text resembling agent speech, repeated legitimate content, wrapped markers, redraws, and incomplete turns. Measure runtime cost too: a rule that recognizes correctly but causes expensive scanning or pathological regular-expression behavior is not acceptable. Teacher-supplied labels are candidate expectations, not independent proof; review key examples against the source and preserve an independently checked acceptance set.
-
-Stage rules as versioned code or validated configuration through the normal review and promotion path. Pin a rule version to each published scroll generation, support rollback, and build any revised history in bounded background work. Do not let the teacher hot-edit production rules, mix rule versions in a published generation, or reinstate a whole-estate foreground rebuild on every improvement. Controlled rule updates allow the system to learn changing CLI conventions without putting model inference or unstable behavior in the serving path.
-
-B1 must deliver a first teacher-produced rule proposal and demonstrate the complete evaluate/reject-or-release cycle against known failures. B3 supplies the deterministic rule runner and version boundary; B6 includes drift monitoring and the recurring maintenance procedure. Training and maintaining the mechanical extractor is a first-class workstream, not an assumption that the initial vendor rules remain correct forever.
+**Tape-based implementation candidate**
 
 For the tape-based candidate, use the existing capture concept and vendor decoders as starting material, with a dedicated reconstruction process launched through the spawn broker. Keep tmux commands behind the control-client abstraction. Reuse verified decoding behavior, but do not transplant the old janitor, warmer, and request-driven settlement together into another process. The objective is to eliminate duplicate and unbounded work as well as isolate it. B1 may select another source strategy; revise B2–B5 accordingly while retaining the shared read contract, positive extraction, bounded work, and freshness guarantees.
 
@@ -229,7 +241,7 @@ For the tape-based candidate, use the existing capture concept and vendor decode
 agent output in tmux
   → small recorder → segmented durable output + ordered context events
   → bounded scheduler → one reconstruction owner per recorded pane
-  → normalized messages/blocks + published scroll ranges + checkpoint + provisional content
+  → normalized conversation records + published scroll ranges + checkpoint + provisional content
   → shared read API → readable tile / agent catch-up / Koe read_output
 ```
 
@@ -242,23 +254,23 @@ Code seams already identified in Services are `rireki-api.ts` (currently calls `
 | Package | Work and deliverable | Exit evidence | Depends on |
 |---|---|---|---|
 | B0 — agree the contract | Compare existing streaming formats and storage options; define normalized events/records and a fixture-backed native chat prototype; write acceptance examples for Koe, the tile, and agent catch-up; define identity, freshness, retention, and overload states | Reviewable examples include latest answer still on screen, unfinished turn, missing owner boundary, unavailable history, revisions, reconnect, and resumed session; prototype shows independent presentation | Nothing; runs alongside Track A |
-| B1 — evidence and architecture comparison | Build the corpus and benchmark harness; compare terminal reconstruction, shared terminal-state publication, and available structured sources; demonstrate a teacher-produced mechanical rule and its evaluation; review actual scroll and Koe samples | Repeatable baseline, held-out quality cases, owner-reviewed target examples, rule-release evidence, and a source-strategy decision with measured costs | B0 informs assertions |
+| B1 — evidence and architecture comparison | Build the corpus and benchmark harness; compare terminal reconstruction, shared terminal-state publication, and available structured sources; review actual scroll and Koe samples | Repeatable baseline, held-out quality cases, owner-reviewed target examples and a source-strategy decision with measured costs | B0 informs assertions |
 | B2 — capture and ownership | Establish one owned recorder per selected pane, rotation, geometry/lifecycle context, capture health, and explicit stop cleanup | Recording survives app/viewer disconnection; duplicate start is harmless; stop closes only the recorder Ronin owns; gaps and disk limits are visible | B0; uses Track A identity and lifecycle interfaces |
-| B3 — isolated incremental worker | Extract one reconstruction engine; add bounded fair scheduling and durable resumable checkpoints; retire duplicate replay from the selected path | Continuous run equals interrupted-and-resumed run; adding readers does not add parsing; worker failure does not block HTTP or input | B1; B2 event contract, initially fed by frozen files |
-| B4 — shared readable service and chat | Publish normalized messages/blocks, ranges, and provisional revisions; serve bounded reads, cursor-based continuation, and explicit freshness metadata; connect the native chat prototype and catch-up reader | Neither GET nor viewer open invokes historical reconstruction; pagination and reconnect do not repeat or omit published ranges; real content matches the reviewed presentation examples | B3; B0 presentation contract |
+| B3 — isolated incremental worker | Implement the selected deterministic interpretation/extraction path; add bounded fair scheduling and durable resumable checkpoints; retire duplicate replay from the selected path | Continuous run equals interrupted-and-resumed run; adding readers does not add parsing; worker failure does not block HTTP or input | B1; B2 event contract, initially fed by frozen files |
+| B4 — Ronin Mux shared reading and chat | Publish normalized conversation records, ranges, and provisional revisions; serve bounded reads, cursor-based continuation, and explicit freshness metadata; connect the native chat prototype and catch-up reader | Neither GET nor viewer open invokes historical reconstruction; pagination and reconnect do not repeat or omit published ranges; real content matches the reviewed presentation examples | B3; B0 presentation contract |
 | B5 — Koe end to end | Make `read_output` consume the shared contract; preserve direct reading, script preview, stance, narration cap, stop, and voice/pace behavior | Words and source range match the tile; latest on-screen reply is available; stale or unknown boundaries are not announced as current; audio cancellation releases work | B4 |
 | B6 — rollout and retirement | Run the staged rollout below; make rebuilds explicit background migrations; remove obsolete runtime paths after stability evidence | Rollback drill, restart drill, measured cohort expansion, and no remaining imports of the retired reconstruction path | B2–B5 and shared integration gates |
 
-B1 and B2 can proceed independently once the capture contract is agreed. B3 can start against frozen recordings before live capture is available. B4 and B5 should agree the response contract early, but integrate against B3's published artifacts. Keep each package independently reviewable with its tests, measurements, operational behavior, and remaining uncertainties.
+B1 experiments and B2 capture-lifecycle work can proceed in parallel after B0; production source-format decisions follow B1. B3 can start against frozen recordings before live capture is available. B4 and B5 should agree the response contract early, but integrate against B3's published artifacts. Keep each package independently reviewable with its tests, measurements, operational behavior, and remaining uncertainties.
 
-Do not estimate the whole build from line counts. B1 should establish the cost baseline; a short B3 feasibility experiment should establish whether the interpreter can be checkpointed correctly. Those are the two facts needed before committing to effort and rollout dates. If exact interpreter state cannot be restored, choose validated checkpoints with bounded replay and measure that bound; do not silently substitute a byte offset or a full rebuild.
+Do not estimate the whole build from line counts. B1 should establish the cost baseline; a short B3 feasibility experiment should establish whether the selected processor can resume correctly (including terminal interpreter state if that candidate is chosen). Those are the two facts needed before committing to effort and rollout dates. For a terminal-interpreter candidate, if exact interpreter state cannot be restored, choose validated checkpoints with bounded replay and measure that bound; do not silently substitute a byte offset or a full rebuild.
 
 **Capture, checkpoints, and publication contracts**
 
 - Identify a recording by durable session identity, pane identity within its tmux-server lifetime, and recording generation. Names and pane IDs can be reused. Readers must not attach old content to a new agent with the same name.
 - Track output sequence/offset, initial geometry, geometry changes, capture start/end, and known interruptions. Document whether resize ordering is exact or approximate. Mark legacy tapes with missing context as such; inference can aid recovery but cannot certify their original geometry.
 - Give one worker ownership of each recording at a time. Use a generation or fencing token so a replaced worker cannot publish late results over its successor. Crash recovery must not permit two writers.
-- A checkpoint needs enough state for correct continuation: source position, parser state, terminal modes and buffers, geometry, settlement/deduplication state, decoder version, and published position. Crash tests must split multibyte characters and escape sequences, not merely stop between complete lines.
+- A checkpoint needs source position, processor/rule version, normalization/deduplication state, and published position. A terminal interpreter additionally needs parser state, terminal modes and buffers, and geometry; a structured-source adapter needs its resumable event position and pending message/tool state. Crash tests must split multibyte characters and escape sequences, not merely stop between complete lines.
 - Publish a coherent checkpoint and scroll generation through an atomic manifest or equivalent recoverable commit protocol. On crash, select the last valid publication and truncate or ignore an uncommitted tail. Readers should see a consistent generation, never half of a rebuild.
 - Keep old published generations readable during decoder migration. Build the replacement in bounded background work, validate it, then change the active manifest. Preserve enough source and checkpoints for the stated retention promise before pruning.
 - Separate observed capture progress, committed scroll progress, and provisional frame revision. A current-frame update replaces the provisional view; it is not repeatedly appended to durable history. Dedupe by source identity/position where possible, not a blanket rule that deletes legitimately repeated words.
@@ -269,7 +281,7 @@ The current `since=mark` contract should remain available during migration throu
 
 **Freshness and reader behavior**
 
-The worker should publish the current readable frame alongside settled history. If a tmux viewport capture is still needed, coalesce it per session through the existing client and process it outside the request's expensive path; do not issue one capture per tile or voice listener. Benchmark whether the live frame meets freshness targets under output bursts and reconstruction backlog.
+The worker should publish provisional current content alongside settled history. For the terminal-interpreter path this includes a readable current frame; structured sources can supply message revisions directly. If a tmux viewport capture is still needed, coalesce it per session through the existing client and process it outside the request's expensive path; do not issue one capture per tile or voice listener. Benchmark whether the live frame meets freshness targets under output bursts and reconstruction backlog.
 
 A direct Koe read should bind to one script revision and its source references before playback. New output can become the next read; it must not silently rewrite already queued narration. Keep the existing page-sized direct reading first. Signal truncation, especially if it would omit a blocking question or make a fragment misleading. Code and tool output remain available in the detailed record even when excluded from the speech view.
 
@@ -278,6 +290,8 @@ Readable tiles need native text selection, stable scroll position while new cont
 **Benchmark and failure matrix**
 
 Use frozen synthetic fixtures plus permission-appropriate samples with expected content. Cover both currently recognized vendors, ordinary shell output, and unknown-provider degradation. Do not copy private recordings into public test fixtures. Include full redraws, incremental redraws, geometry bursts, alternate-screen behavior, Unicode, repeated identical text, wrapped owner messages, unsent drafts, tool-heavy turns, prompts awaiting answers, and replies that never scroll off screen.
+
+These are acceptance fixtures to create during B1, not a claim that labeled recordings already exist or a prerequisite for optional model inspection. Start with ordinary captured output and review what should be retained; synthetic examples make edge cases repeatable. The quality check applies whether recognition rules were written by a developer, suggested by a model, or avoided through a structured source.
 
 Run four configurations on the same workload: recorder off, capture only, capture plus reconstruction, and reconstruction plus readers/Koe. Compare cold initialization, steady incremental work, idle settled sessions, a long backlog, process restart, and decoder migration. Vary recorded-session count independently from viewer count. Instrument the web process, workers, recorder, tmux command queue, disk, and delivery separately so moving cost cannot masquerade as removing it.
 
@@ -300,7 +314,7 @@ Inject recorder death, worker death, application restart, truncated writes, miss
 
 | Stage | Exposure | Advance only when |
 |---|---|---|
-| R0 — offline | Frozen corpus; no live recording changes | B1 source-strategy decision and B3 quality, checkpoint, and resource tests pass; supported decoder coverage is explicit |
+| R0 — offline | Frozen corpus; no live recording changes | B1 source-strategy decision and B3 quality, bounded-resume, and resource tests pass; source-adapter coverage is explicit, including interpreter checkpoints and decoder coverage where applicable |
 | R1 — isolated integration | Disposable sessions on a managed test server; no paid voice calls unless separately authorized | Capture, settlement, shared reading, restart, and rollback drills pass; observer count does not multiply work |
 | R2 — capture-only canary | One explicitly selected live session; existing terminal behavior remains the working path | Capture ownership, low overhead, rotation, limits, and stop cleanup are measured; product policy permits this canary despite beta parking |
 | R3 — shadow reconstruction | Same canary; output built for comparison but not yet presented as the user's answer | Worker budget, lag, checkpoint recovery, and source-to-scroll quality meet the declared thresholds across busy and idle periods |
@@ -339,8 +353,10 @@ Track A's priority is a professional session lifecycle across all three hosting 
 
 **Reading map**
 
-- Current core: [tmux connection](tmux-connection.md), [tile](tile.md), [archive behavior](archived-sessions.md).
-- Current Services: `/home/glen3/ronin/worktrees/ronin_services/team/tmux/tmux-lead/docs/rireki.md`, `rireki/PARKED.md`, `rireki/rireki.ts`, `rireki/scroll.ts`, `rireki/tape-tile.ts`, `rireki/lens.ts`.
+This document is the consolidated design and rollout proposal. The connection page describes the implemented core connection; Services/Koe documents describe existing or historical contracts. Lab investigations and the competitor comparison are dated evidence, not instructions to re-enable old code or blanket statements of current product capability. This sweep updates the plan and its entry point; it does not rewrite historical measurements or claim the proposed service already exists.
+
+- Core implementation context: [tmux connection](tmux-connection.md), [tile](tile.md), [archive behavior](archived-sessions.md).
+- Parked Services implementation and contract: `/home/glen3/ronin/worktrees/ronin_services/team/tmux/tmux-lead/docs/rireki.md`, `rireki/PARKED.md`, `rireki/rireki.ts`, `rireki/scroll.ts`, `rireki/tape-tile.ts`, `rireki/lens.ts`.
 - Historical diagnosis: `/home/glen3/dohyo/ronin-lab/wip/buildouts/RIREKI_REFACTOR.md` (August 28; distinguishes its decisive test from the earlier misleading diagnosis).
 - Connection work: `/home/glen3/dohyo/ronin-lab/wip/buildouts/TMUX_CONNECTION_AND_POLLING.md` and `TMUX_CLIENT_CONTRACT.md` (September 4; proposals and subsequent contract findings).
 - Browser interaction: `/home/glen3/dohyo/ronin-lab/wip/buildouts/BROWSER_TERMINAL_ARCHITECTURE_PRIMER.md` and `TMUX_BROWSER_CONTROL_RESEARCH.md` (September 8; source evidence, reproductions, and explicitly labeled hypotheses).
