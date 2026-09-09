@@ -104,7 +104,7 @@ The governing direction is **capture cheaply → reconstruct incrementally in bo
 - **Make gaps and limits honest.** A bounded ring cannot support “rebuild forever.” Define what survives pruning, which checkpoints preserve reconstruction, and what happens on disk full, a stopped recorder, or missing segments. Keep agent work responsive and report incomplete capture rather than silently claiming completeness.
 - **Keep stop and recovery real.** Parking must account for owned recorders that outlive the app. Durable birth and provider-resume metadata should survive loss of tmux; a terminal recording alone cannot restart an agent.
 
-There is another option worth investigating: provider-supported structured output or documented session records could supply message and tool boundaries more directly. Treat this as a later adapter study, not an assumed capability or a replacement for terminal evidence. Compare coverage, stability, resumability, and cost; preserve source labels when records disagree. Do not turn ordinary ANSI stripping into an alleged lossless transcript.
+Provider-supported structured output or documented session records could supply message and tool boundaries more directly. Evaluate this in the initial architecture comparison, before committing to terminal reconstruction as the only source of readable content. Availability, fidelity, and compatibility with the existing CLI workflow must be demonstrated per provider; terminal evidence and structured records answer different questions. Preserve source labels when they disagree. Do not turn ordinary ANSI stripping into an alleged lossless transcript.
 
 **Ronin-Koe: the first consumer to design around**
 
@@ -152,15 +152,51 @@ The old refactor proposed 15 sessions, 50 MB of tape, and health latency under 2
 
 This is the proposed execution plan for the recording redesign (the “Redux” side of the discussion). It authorizes no runtime changes. Keep the beta recorder parked during design and offline experiments; enabling any live cohort is a later rollout decision. Build the smallest complete path to Koe while preserving the shared readable record for tiles and agents. Timed terminal playback, conversational voice control, automatic summaries, and Wispr import follow separately.
 
-**Architecture to prove first**
+**Root causes and the quality bar — clarified after the Orca comparison**
 
-Use the existing capture concept and vendor decoders as starting material, with a dedicated reconstruction process launched through the spawn broker. Keep tmux commands behind the control-client abstraction. Reuse verified decoding behavior, but do not transplant the old janitor, warmer, and request-driven settlement together into another process. The objective is to eliminate duplicate and unbounded work as well as isolate it.
+The owner's assessment of the old working output was B-grade at best. A faster version of that output is not an acceptable completion criterion. Readable content quality and operational cost are separate gates, and both must pass before rollout. The first architecture decision must be earned by comparing ways to obtain the desired content.
+
+The latest parked Unlocked implementation already used browser-local scrolling and wrapping, ignored resize/copy-mode messages, and read older history from files. Preserve those properties; removing tmux scrolling from that path is not a new fix. Remaining per-viewer work is concrete: each WebSocket connection creates a one-second loop that invokes settlement, reads up to 4,000 records, and captures/classifies the live screen before checking whether the projected text changed. The settler has shared per-pane state and a busy guard, so this does not prove a complete duplicate reconstruction on every tick. It does prove multiple viewer-driven refresh loops and repeated live captures. Measure command, file-read, classification, and reconstruction counts separately.
+
+Other roots remain independent: historically incorrect replay from arbitrary tape slices, geometry/context mismatches, expensive reflow, loss of interpreter state on restart, broad decoder invalidation, imperfect speech-block recognition, and current-frame/settled-history boundaries. Capture is not presentation; capture-pane reads do not themselves force the agent to redraw. Browser detachment alone cannot remove redraw instructions emitted by the CLI.
+
+The existing private comparison, `/home/glen3/dohyo/ronin-lab/COMPS.md` (August 27), describes Orca's host-held terminal buffer and snapshots plus live output. A September 9 recheck found that the current product also documents an experimental Chat UI with structured transcripts over supported terminal sessions. The earlier statement that Orca does not have a separate transcript surface is therefore not a sufficient current comparison. Orca explicitly says fidelity and streaming are still being tuned; its documentation is not proof that it has met Ronin's quality bar. [Orca terminal](https://www.onorca.dev/docs/terminal), [Orca Chat UI](https://www.onorca.dev/docs/agents/native-chat)
+
+Current Orca source provides useful mechanisms to study: per-PTY reusable terminal state with ordered output/resize processing, and snapshot publication carrying sequence boundaries, byte budgets, and truncation information. These are architectural precedents, not evidence of measured performance or complete elimination of per-reader cost. Pin the source revision for any implementation comparison. [Runtime terminal state](https://github.com/stablyai/orca/blob/main/src/main/runtime/orca-runtime-create-pty-headless-terminal-state.ts), [Snapshot publication](https://github.com/stablyai/orca/blob/main/src/main/runtime/rpc/methods/terminal/terminal-snapshot-publication.ts)
+
+**B1 architecture comparison — before choosing the reconstruction engine**
+
+| Candidate | Potential advantage to test | What must not be assumed |
+|---|---|---|
+| Ordered terminal tape → persistent interpreter → positive extraction | Broad CLI coverage with retained terminal evidence; builds on existing measured decoders | Correct extraction, affordable replay, or resumable emulator state |
+| Shared authoritative terminal state → snapshots and ordered changes → positive extraction | A reusable model can decouple readers and make reconnect predictable; Orca is a relevant precedent | Periodic viewport captures recover overwritten content; a replicated terminal buffer is already a semantic transcript |
+| Provider-supported structured events/session records → normalized readable records | Explicit message and tool boundaries may avoid inferring meaning from terminal paint | Every provider offers this, the channel is complete/fresh, or using it preserves the existing native CLI session workflow |
+
+The snapshot candidate must identify how state changes are obtained without missing intervening output; repeatedly polling a screen is not a lossless substitute for the tape. The structured candidate must be tested against the same live conversation and retained terminal evidence, with source provenance. If an integration requires launching the agent differently or taking over its session protocol, record that product tradeoff explicitly. A hybrid is plausible, but it needs one rule for choosing the source for each record and must not duplicate or silently splice unrelated turns.
+
+Use the same scripted conversations and known-bad samples for all viable candidates. Compare complete answers, streaming updates, blocking questions, tools/code, paragraph order, interrupted turns, reconnect, size changes, and several readers. Add held-out cases so the result is not just tuned to the examples used to write decoder rules. Preserve legitimate repeated text and test both omission and unwanted inclusion; positive extraction can fail by losing real speech as well as leaking noise.
+
+Present the owner a small side-by-side acceptance set: the source conversation, proposed readable scroll on desktop and phone, and the exact Koe script. The owner should be able to follow the answer, identify what needs a response, copy a passage, scroll without jumping, and hear a coherent current reading. Missing paragraphs, shredded text, duplicate answers, stale speech, misplaced questions, and tool chrome presented as agent speech are release failures. This product-quality review is a named rollout gate; unit tests or faster CPU measurements do not substitute for it.
+
+B1 ends with a decision record: candidate selected for each supported provider, fidelity failures remaining, operating cost, restart strategy, compatibility constraints, fallback behavior, and evidence that the selected output reaches the agreed standard. If no candidate passes, revise the approach or narrow supported coverage before building the rollout pipeline. Do not certify a B-grade generic fallback as a premium readable view.
+
+**Candidate architecture to prove**
+
+The product output is Ronin's own structured conversation, not a terminal-shaped text dump. Once trustworthy content and boundaries are recovered, the browser should render native document/chat components independently of terminal rows, colours, cursor positions, or widths. The difficult recovery stage should produce a reusable content model rather than force every renderer to interpret line kinds again.
+
+Define message and block records with stable identity, source references, ordering, author/role when known, text, supported formatting, and provisional/settled status. Represent positively recognized tool activity, code, links/references, and questions as distinct blocks; retain unknown material without inventing a role or a relationship. A paragraph may span several terminal rows, while a code block must preserve meaningful whitespace. Preserve original evidence separately so normalization can be inspected and corrected. Do not infer rich Markdown or citations merely from coloured terminal cells when the source does not establish them.
+
+From the same records, Ronin can offer a detailed developer reading with inspectable tools and code, a conversational reading emphasizing messages and questions with expandable activity, and Koe's positively selected spoken reading. References can become usable links where recognized. The interface can look entirely different from the CLI. The UI owns typography, wrapping, spacing, selection, expansion, and scroll position; the shared projection owns which content belongs in a named reading. No UI consumer should re-scrape the terminal or maintain a private vendor decoder.
+
+This adds a concrete B0/B4 deliverable: the normalized message/block schema and a native chat prototype using approved fixtures, which can be designed before the live extractor is finished. The fixture prototype proves presentation quality only; B1/B3 must separately prove that real agent output produces those records faithfully. Keep source positions available through normalization and migration so a polished interface cannot conceal missing or altered content.
+
+For the tape-based candidate, use the existing capture concept and vendor decoders as starting material, with a dedicated reconstruction process launched through the spawn broker. Keep tmux commands behind the control-client abstraction. Reuse verified decoding behavior, but do not transplant the old janitor, warmer, and request-driven settlement together into another process. The objective is to eliminate duplicate and unbounded work as well as isolate it. B1 may select another source strategy; revise B2–B5 accordingly while retaining the shared read contract, positive extraction, bounded work, and freshness guarantees.
 
 ```text
 agent output in tmux
   → small recorder → segmented durable output + ordered context events
   → bounded scheduler → one reconstruction owner per recorded pane
-  → published scroll ranges + checkpoint + provisional current frame
+  → normalized messages/blocks + published scroll ranges + checkpoint + provisional content
   → shared read API → readable tile / agent catch-up / Koe read_output
 ```
 
@@ -172,11 +208,11 @@ Code seams already identified in Services are `rireki-api.ts` (currently calls `
 
 | Package | Work and deliverable | Exit evidence | Depends on |
 |---|---|---|---|
-| B0 — agree the contract | Write acceptance examples for direct Koe reading, the matching tile, and agent catch-up; define recording identity, freshness, retention, and overload states | Reviewable examples include latest answer still on screen, unfinished turn, missing owner boundary, unavailable history, and resumed session | Nothing; runs alongside Track A |
-| B1 — freeze the evidence | Build a replay corpus and benchmark harness; record old-path quality and cost without enabling it in the live application | Repeatable baseline with expected utterances and known defects; full logs and fixed machine/workload description | B0 informs assertions |
+| B0 — agree the contract | Define the normalized message/block schema and fixture-backed native chat prototype; write acceptance examples for direct Koe reading, the matching tile, and agent catch-up; define recording identity, freshness, retention, and overload states | Reviewable examples include latest answer still on screen, unfinished turn, missing owner boundary, unavailable history, and resumed session; prototype shows independent presentation | Nothing; runs alongside Track A |
+| B1 — evidence and architecture comparison | Build the corpus and benchmark harness; compare terminal reconstruction, shared terminal-state publication, and available structured sources; review actual scroll and Koe samples | Repeatable baseline, held-out quality cases, owner-reviewed target examples, and a source-strategy decision with measured costs | B0 informs assertions |
 | B2 — capture and ownership | Establish one owned recorder per selected pane, rotation, geometry/lifecycle context, capture health, and explicit stop cleanup | Recording survives app/viewer disconnection; duplicate start is harmless; stop closes only the recorder Ronin owns; gaps and disk limits are visible | B0; uses Track A identity and lifecycle interfaces |
 | B3 — isolated incremental worker | Extract one reconstruction engine; add bounded fair scheduling and durable resumable checkpoints; retire duplicate replay from the selected path | Continuous run equals interrupted-and-resumed run; adding readers does not add parsing; worker failure does not block HTTP or input | B1; B2 event contract, initially fed by frozen files |
-| B4 — shared readable service | Publish ranges and a current-frame revision; serve bounded reads, cursor-based continuation, and explicit freshness metadata; adapt a reading tile and catch-up reader | Neither GET nor viewer open invokes historical reconstruction; pagination and reconnect do not repeat or omit published ranges | B3 |
+| B4 — shared readable service and chat | Publish normalized messages/blocks, ranges, and provisional revisions; serve bounded reads, cursor-based continuation, and explicit freshness metadata; connect the native chat prototype and catch-up reader | Neither GET nor viewer open invokes historical reconstruction; pagination and reconnect do not repeat or omit published ranges; real content matches the reviewed presentation examples | B3; B0 presentation contract |
 | B5 — Koe end to end | Make `read_output` consume the shared contract; preserve direct reading, script preview, stance, narration cap, stop, and voice/pace behavior | Words and source range match the tile; latest on-screen reply is available; stale or unknown boundaries are not announced as current; audio cancellation releases work | B4 |
 | B6 — rollout and retirement | Run the staged rollout below; make rebuilds explicit background migrations; remove obsolete runtime paths after stability evidence | Rollback drill, restart drill, measured cohort expansion, and no remaining imports of the retired reconstruction path | B2–B5 and shared integration gates |
 
@@ -231,11 +267,11 @@ Inject recorder death, worker death, application restart, truncated writes, miss
 
 | Stage | Exposure | Advance only when |
 |---|---|---|
-| R0 — offline | Frozen corpus; no live recording changes | B1/B3 quality, checkpoint, and resource tests pass; supported decoder coverage is explicit |
+| R0 — offline | Frozen corpus; no live recording changes | B1 source-strategy decision and B3 quality, checkpoint, and resource tests pass; supported decoder coverage is explicit |
 | R1 — isolated integration | Disposable sessions on a managed test server; no paid voice calls unless separately authorized | Capture, settlement, shared reading, restart, and rollback drills pass; observer count does not multiply work |
 | R2 — capture-only canary | One explicitly selected live session; existing terminal behavior remains the working path | Capture ownership, low overhead, rotation, limits, and stop cleanup are measured; product policy permits this canary despite beta parking |
 | R3 — shadow reconstruction | Same canary; output built for comparison but not yet presented as the user's answer | Worker budget, lag, checkpoint recovery, and source-to-scroll quality meet the declared thresholds across busy and idle periods |
-| R4 — opt-in reading and Koe | One selected session exposes the shared reading to a tile, catch-up reader, and push-to-hear | Script review, freshness cases, audio latency, cancellation, reconnect, and rollback pass on the target phone/network; no transcript-driven app slowdown |
+| R4 — opt-in reading and Koe | One selected session exposes the shared reading to a tile, catch-up reader, and push-to-hear | Owner reviews actual scroll and script against the agreed quality examples; freshness, audio latency, cancellation, reconnect, and rollback pass on the target phone/network; no transcript-driven app slowdown |
 | R5 — small cohort | A few explicit sessions across supported providers and hosting arrangements | The declared soak workload passes with bounded backlog, clean restarts, and no growth from additional viewers; each hosting class earns its own verdict |
 | R6 — default availability | Expand only to configurations that passed; keep unsupported paths explicit | Lead reviews evidence, retention policy, compatibility, operator visibility, and rollback; the owner chooses whether recording becomes default |
 
