@@ -27,7 +27,7 @@ in `src/tmux-client.ts` is the server's single door to tmux:
   place. It resolves with stdout, rejects with the `%error` text. One command is in flight
   at a time; replies are matched by their frame number.
 - A timed-out command tears the connection down and the client reconnects with backoff.
-  While it is down, `run` falls back to `execFile('tmux', …)` so nothing stops, and
+  While it is down, `run` falls back to `execFile('tmux', …)` to keep commands available, and
   `state()` says `fallback`.
 - The connection is to the tmux server the environment names **at the time of the call**
   (`TMUX`, `TMUX_TMPDIR`), as `execFile` was; a change reopens the connection.
@@ -45,8 +45,9 @@ in `src/tmux-client.ts` is the server's single door to tmux:
 
 **The rule:** no `execFile('tmux', …)` or `spawn('tmux', …)` in `src/` outside the client
 and the pty attach paths (`src/ws/pty.ts`, `src/viewer.ts`). `tests/tmux.test.ts` refuses
-it. A tile's Locked view is still a real `tmux attach` through a pty; that is Faucet A and
-is not on the connection yet.
+it. A tile's Locked view is still a real `tmux attach` through a pty; that is Faucet A,
+a separate transport. Whether to replace it is an open Track A comparison, not a
+prerequisite for the proposed Unlocked recording path.
 
 ## The spawn broker: `src/spawn-broker.ts`
 
@@ -92,10 +93,12 @@ per endpoint), `refresh-probe.mjs` and `team-probe.mjs` (repeated browser reload
 surface states, long tasks and errors). Open the inspector on the live server with
 `kill -USR1 <pid>`; the port is localhost-only and closes with the process.
 
-## What is not done
+## Remaining work recorded on September 4
 
 The tiles still refetch control, ctx and work record on every pushed session list; the
 `/api/session-max` and `/api/messages` endpoints still work per call; the roster's
 git-derived desk fields are not yet cached by record time; the services repo's own tmux
 calls are not on the connection (its parts are parked); and the tiles themselves do not
-ride the connection. The build-out and its measurements live in the lab.
+ride the connection. These are the dated implementation gaps from this report; reconcile
+them against current code before assigning fixes. The consolidated plan carries the
+forward workstreams. The build-out and its measurements live in the lab.
