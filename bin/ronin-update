@@ -269,7 +269,7 @@ restart_and_gate() {
   local port bind url
   port="$(sed -n 's/^PORT=//p' "$HOME_DIR/.env" 2>/dev/null | head -1)"
   bind="$(sed -n 's/^BIND=//p' "$HOME_DIR/.env" 2>/dev/null | head -1)"
-  url="http://${bind:-127.0.0.1}:${port:-3006}/"
+  url="http://${bind:-127.0.0.1}:${port:-4810}/"
   for _ in $(seq 1 30); do
     curl -fsS -m 2 -o /dev/null "${url}api/health" 2>/dev/null && break
     sleep 1

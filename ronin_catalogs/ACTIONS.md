@@ -58,7 +58,7 @@ role for its entire life and no tool can repair it. That was measured: forks mad
 way carried no role at all and could only ever self-set a task.
 
 ```bash
-curl -sS -X POST http://127.0.0.1:${PORT:-3006}/api/launch \
+curl -sS -X POST http://127.0.0.1:${PORT:-4810}/api/launch \
   -H 'content-type: application/json' \
   -d '{"role_family":"<role>","session_role":"<task>","name":"<name>",
        "project_root":"<root>","tags":["<team>"],"prompt":"<what it is told>"}'

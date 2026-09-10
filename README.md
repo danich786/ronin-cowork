@@ -159,8 +159,9 @@ provider is authenticated.
 If the box is remote, reach the URL over the private route you already use — an SSH
 tunnel is enough. The box-side end of the forward is the address Ronin bound, which
 `setup.sh` printed: the tailnet IP unless `.env` sets `BIND`. With that address,
-`ssh -L 3006:<it>:3006 you@yourbox` puts Ronin on `http://127.0.0.1:3006` on your own
-machine. Never expose the port publicly.
+read the selected port from `.env`. Normally,
+`ssh -L 4810:<it>:4810 you@yourbox` puts Ronin on `http://127.0.0.1:4810` on your own
+machine; a fresh install uses `3776` instead if `4810` was occupied. Never expose the port publicly.
 
 Already have an Agent on that machine (Claude Code or Codex)? Hand it `docs/install.md`;
 the Agent stays through first-use proof. Using an Agent is optional, not a requirement.

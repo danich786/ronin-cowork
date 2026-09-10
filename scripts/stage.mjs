@@ -43,7 +43,7 @@ try {
 if (!lookAt) {
   try {
     const ip = execFileSync('tailscale', ['ip', '-4'], { encoding: 'utf8' }).trim().split('\n')[0];
-    if (ip) lookAt = `http://${ip}:${process.env.PORT || 3006}/staging/`;
+    if (ip) lookAt = `http://${ip}:${process.env.PORT || 4810}/staging/`;
   } catch { /* still nothing — the placeholder stands */ }
 }
 lookAt ||= '<your Ronin URL>/staging/';
