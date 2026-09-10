@@ -16,7 +16,7 @@
 # Everything writes to stdout; a caller that wants another stream redirects.
 
 # The port is the operator's to change (.env says so in as many words), so no
-# address may be built from a constant. .env wins, then the example, then 4810.
+# address may be built from a constant. .env wins, then the example, then 3006.
 ronin_port() {
   local root="$1" port=""
   local f
@@ -25,7 +25,7 @@ ronin_port() {
     port="$(sed -n 's/^[[:space:]]*PORT=\([0-9][0-9]*\).*/\1/p' "$f" 2>/dev/null | head -1)"
     [ -n "$port" ] && break
   done
-  printf '%s' "${port:-4810}"
+  printf '%s' "${port:-3006}"
 }
 
 # The bind address, resolved once and the same way for everyone who asks. .env wins,
@@ -92,7 +92,7 @@ ronin_record_bind() {
 # status` prints the public URL and then its target beneath it:
 #
 #   https://box.tailnet.ts.net:8443/
-#   |-- proxy http://100.72.224.3:4810
+#   |-- proxy http://100.72.224.3:3006
 #
 # so the URL is remembered and only emitted once a target naming our port
 # follows it. Matching any https:// line instead would hand a stranger whatever

@@ -2,7 +2,7 @@
 import WebSocket from 'ws';
 
 const HOST = process.env.HOST || '127.0.0.1';
-const PORT = process.env.PORT || '4810';
+const PORT = process.env.PORT || '3006';
 const BASE = `http://${HOST}:${PORT}`;
 const NAME = `grtest_${Math.floor(Math.random() * 1e6)}`;
 const MARKER = `GRID_OK_${Math.floor(Math.random() * 1e9)}`;

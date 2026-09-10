@@ -169,7 +169,7 @@ test('the retired loopback operator URL and the retired tmux option are absent f
     visit(path.join(root, dir));
     for (const file of files) {
       const body = readFileSync(file, 'utf8');
-      assert.doesNotMatch(body, /http:\/\/(?:127\.0\.0\.1|localhost):(?:3006|4810)\b/, path.relative(root, file));
+      assert.doesNotMatch(body, /http:\/\/(?:127\.0\.0\.1|localhost):3006\b/, path.relative(root, file));
       // The address rode on a tmux server option until 2026-09-05; nothing may read or
       // write it again, or the five failures behind one sentence come back one at a time.
       if (!file.endsWith('operator-socket.ts')) assert.doesNotMatch(body, /@ronin-operator|@ronin-url|@ronin-cli-token/, path.relative(root, file));

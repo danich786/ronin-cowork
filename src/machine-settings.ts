@@ -234,7 +234,7 @@ const resolvedBind = resolveBind();
 export const bindSource: BindSource = resolvedBind.source;
 
 export const config = {
-  port: Number(process.env.PORT ?? 4810),
+  port: Number(process.env.PORT ?? 3006),
   bind: resolvedBind.bind,
   user: process.env.GRID_USER ?? '',
   pass: process.env.GRID_PASS ?? '',

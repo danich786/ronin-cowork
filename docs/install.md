@@ -175,9 +175,6 @@ It installs the units and starts the operator, and prints the URL it is serving 
 measures whether a tmux server is already on the default socket and never asks: one that
 exists is joined, and when there is none `tmux-server.service` starts Ronin's own, so
 there is no "start tmux first" step and adding one only hands setup a server to adopt.
-On a fresh install it selects port `4810`; if another process already owns that address,
-it selects and records `3776` instead. An existing `.env` is the owner's configuration:
-setup never changes its `PORT`, and refuses a collision with instructions to edit it.
 Record the complete result; do not turn a warning or SKIP into a pass, and do not turn a
 SKIP into a failure. A SKIP names what could not run, why, and what evidence stands in.
 
@@ -190,9 +187,7 @@ Never expose Ronin's port publicly. Loopback is enough on a laptop; on a remote 
 the private route the owner already reaches it by, or Tailscale if the owner wants HTTPS
 and reach from their other devices. An SSH tunnel is enough, and the box-side end of the
 forward is the address Ronin bound — the tailnet IP that `setup.sh` printed, unless
-`.env` sets `BIND`. Read the selected port from `.env`, then use it on both sides:
-`ssh -L <port>:<that address>:<port> <account>@<box>` (normally `4810`; a fresh
-collision fallback is `3776`).
+`.env` sets `BIND`: `ssh -L 3006:<that address>:3006 <account>@<box>`.
 
 ## 5. Verify the running install
 
@@ -222,13 +217,13 @@ Before opening the URL, preserve evidence that the installed copy is the one ans
 ```bash
 bin/ronin-doctor
 systemctl --user --no-pager status tmux-server ronin
-port=$(sed -n 's/^PORT=//p' .env | tail -1); port=${port:-4810}
+port=$(sed -n 's/^PORT=//p' .env | tail -1); port=${port:-3006}
 listener_pid=$(ss -ltnp | sed -n "s/.*:$port .*pid=\([0-9]*\),.*/\1/p" | head -1)
 cat "/proc/$listener_pid/cgroup"
 ```
 
 `MainPID` is the npm wrapper, not the listener. The socket holder's cgroup must end in
-`ronin.service`; that proves the process answering on the selected port belongs to the unit without
+`ronin.service`; that proves the process answering on port 3006 belongs to the unit without
 depending on its process-tree shape. If process details are hidden, no PID is found, the
 cgroup is unreadable, or more than one interpretation remains, report the listener as
 **unknown** rather than assigning another Node process to Ronin. Record warnings and skips

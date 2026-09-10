@@ -16,7 +16,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 say() { :; } # render_check requires a progress reporter; this gate grades by return code below.
 # shellcheck source=ronin-render-check.sh
 . "$ROOT/libexec/ronin-render-check.sh"
-PORT="${PORT:-4810}"
+PORT="${PORT:-3006}"
 if [ -n "${BIND:-}" ]; then
   HOSTIP="$BIND"
 elif command -v tailscale >/dev/null 2>&1 && tailscale ip -4 >/dev/null 2>&1; then

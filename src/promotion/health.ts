@@ -36,7 +36,7 @@ export interface HealthOptions {
 }
 
 export function defaultUrl(): string {
-  const port = process.env.PORT ?? '4810';
+  const port = process.env.PORT ?? '3006';
   const host = process.env.BIND?.trim() || tailnetIp();
   return process.env.RONIN_GATE_URL ?? `http://${host}:${port}/`;
 }

@@ -237,7 +237,7 @@ fi
 # The bind ladder is the server's own (src/config.ts) and ronin-gate's: BIND from the
 # environment, else .env, else the tailnet IP, else loopback. Never a hardcoded host.
 sect "operator"
-PORT="${PORT:-$(env_get PORT)}"; PORT="${PORT:-4810}"
+PORT="${PORT:-$(env_get PORT)}"; PORT="${PORT:-3006}"
 HOSTIP="${BIND:-$(env_get BIND)}"
 if [ -z "$HOSTIP" ] && command -v tailscale >/dev/null 2>&1; then
   HOSTIP="$(tailscale ip -4 2>/dev/null | head -1)"

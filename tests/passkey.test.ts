@@ -80,10 +80,10 @@ const oneShot = (want: string) => {
 test('an RP ID comes off a domain Host and never off an IP', () => {
   assert.deepEqual(rpIdFromHost('box.example.ts.net:8443'), { rpId: 'box.example.ts.net' });
   assert.deepEqual(rpIdFromHost('BOX.example.TS.net'), { rpId: 'box.example.ts.net' });
-  assert.deepEqual(rpIdFromHost('localhost:4810'), { rpId: 'localhost' });
+  assert.deepEqual(rpIdFromHost('localhost:3006'), { rpId: 'localhost' });
   // The shape the owner actually types, and the one that must fail with a sentence.
-  assert.ok('why' in rpIdFromHost('100.101.235.17:4810'));
-  assert.ok('why' in rpIdFromHost('[fd7a:115c::1]:4810'));
+  assert.ok('why' in rpIdFromHost('100.101.235.17:3006'));
+  assert.ok('why' in rpIdFromHost('[fd7a:115c::1]:3006'));
   assert.ok('why' in rpIdFromHost(undefined));
 });
 
@@ -138,7 +138,7 @@ test('an assertion whose origin is not the RP does not verify', () => {
 
 test('a plain-http origin does not verify', () => {
   const c = 'chal-http';
-  const a = assertion({ challenge: c, origin: `http://${RP}:4810` });
+  const a = assertion({ challenge: c, origin: `http://${RP}:3006` });
   const r = verifyAssertion(CRED, a, { rpId: RP, challengeSpent: oneShot(c) });
   assert.equal(r.ok, false);
 });
