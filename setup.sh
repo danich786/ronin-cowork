@@ -85,6 +85,7 @@ fi
 # --- .env ---
 if [ ! -f .env ]; then
   cp .env.example .env
+  ronin_record_install_port "$REPO_DIR" "${RONIN_PREFLIGHT_PORT:-4810}"
   echo "==> created .env from .env.example (edit if you want auth / a different port)"
 fi
 # 600 OUTSIDE the create block, so a re-run repairs a box that installed before this line

@@ -163,7 +163,54 @@ test('setup port preflight rejects an unrelated listener with exit 78', async ()
     exec('bash', ['-c', `. "${helper}"; ronin_preflight_port "$1" "$2"`, 'test', root, process.execPath], { env: { ...process.env, PATH: `${bin}:${process.env.PATH}` } }),
     (error: any) => error?.code === 78 && /already in use/.test(error.stderr),
   );
+  assert.equal(await fs.readFile(path.join(root, '.env'), 'utf8'), `PORT=${address.port}\nBIND=127.0.0.1\n`, 'an explicit existing PORT is never rewritten');
   await new Promise<void>((resolve) => server.close(() => resolve()));
+  await fs.rm(root, { recursive: true, force: true });
+});
+
+test('a fresh install selects 4810 and keeps it in the new configuration', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ronin-port-default-'));
+  const bin = path.join(root, 'bin'); await fs.mkdir(bin);
+  await fs.writeFile(path.join(bin, 'systemctl'), '#!/bin/sh\nexit 1\n'); await fs.chmod(path.join(bin, 'systemctl'), 0o755);
+  const result = await exec('bash', ['-c', `. "${helper}"; export RONIN_PREFLIGHT_BIND=127.0.0.2; ronin_preflight_port "$1" "$2"; printf 'selected=%s\\n' "$RONIN_PREFLIGHT_PORT"; printf 'PORT=4810\\n' > "$1/.env"; ronin_record_install_port "$1" "$RONIN_PREFLIGHT_PORT"`, 'test', root, process.execPath], { env: { ...process.env, PATH: `${bin}:${process.env.PATH}` } });
+  assert.match(result.stdout, /^selected=4810$/m);
+  assert.equal(await fs.readFile(path.join(root, '.env'), 'utf8'), 'PORT=4810\n');
+  await fs.rm(root, { recursive: true, force: true });
+});
+
+test('a fresh install selects and records 3776 when 4810 is occupied', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ronin-port-fallback-'));
+  const bin = path.join(root, 'bin'); await fs.mkdir(bin);
+  await fs.writeFile(path.join(bin, 'systemctl'), '#!/bin/sh\nexit 1\n'); await fs.chmod(path.join(bin, 'systemctl'), 0o755);
+  const occupied = net.createServer();
+  await new Promise<void>((resolve) => occupied.listen(4810, '127.0.0.2', resolve));
+  try {
+    const result = await exec('bash', ['-c', `. "${helper}"; ronin_say(){ printf '%s\\n' "$*"; }; export RONIN_PREFLIGHT_BIND=127.0.0.2; ronin_preflight_port "$1" "$2"; printf 'PORT=4810\\n' > "$1/.env"; ronin_record_install_port "$1" "$RONIN_PREFLIGHT_PORT"; printf 'selected=%s\\n' "$RONIN_PREFLIGHT_PORT"`, 'test', root, process.execPath], { env: { ...process.env, PATH: `${bin}:${process.env.PATH}` } });
+    assert.match(result.stdout, /4810 is already in use; selected fallback 3776/);
+    assert.match(result.stdout, /^selected=3776$/m);
+    assert.equal(await fs.readFile(path.join(root, '.env'), 'utf8'), 'PORT=3776\n');
+  } finally {
+    await new Promise<void>((resolve) => occupied.close(() => resolve()));
+  }
+  await fs.rm(root, { recursive: true, force: true });
+});
+
+test('a fresh install clearly refuses when both 4810 and 3776 are occupied', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ronin-port-full-'));
+  const bin = path.join(root, 'bin'); await fs.mkdir(bin);
+  await fs.writeFile(path.join(bin, 'systemctl'), '#!/bin/sh\nexit 1\n'); await fs.chmod(path.join(bin, 'systemctl'), 0o755);
+  const primary = net.createServer(); const fallback = net.createServer();
+  await new Promise<void>((resolve) => primary.listen(4810, '127.0.0.2', resolve));
+  await new Promise<void>((resolve) => fallback.listen(3776, '127.0.0.2', resolve));
+  try {
+    await assert.rejects(
+      exec('bash', ['-c', `. "${helper}"; export RONIN_PREFLIGHT_BIND=127.0.0.2; ronin_preflight_port "$1" "$2"`, 'test', root, process.execPath], { env: { ...process.env, PATH: `${bin}:${process.env.PATH}` } }),
+      (error: any) => error?.code === 78 && /127\.0\.0\.2:4810 and fallback 127\.0\.0\.2:3776 are already in use/.test(error.stderr),
+    );
+  } finally {
+    await new Promise<void>((resolve) => primary.close(() => resolve()));
+    await new Promise<void>((resolve) => fallback.close(() => resolve()));
+  }
   await fs.rm(root, { recursive: true, force: true });
 });
 

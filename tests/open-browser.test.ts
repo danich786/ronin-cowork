@@ -24,7 +24,7 @@ function fixture(osName: 'Linux' | 'Darwin') {
 }
 
 function run(dir: string, extra: NodeJS.ProcessEnv = {}) {
-  execFileSync('bash', [helper, 'http://127.0.0.1:3006'], {
+  execFileSync('bash', [helper, 'http://127.0.0.1:4810'], {
     env: { PATH: `${dir}:/usr/bin:/bin`, ...extra },
   });
 }
@@ -32,7 +32,7 @@ function run(dir: string, extra: NodeJS.ProcessEnv = {}) {
 test('Linux opens on a graphical local session', () => {
   const f = fixture('Linux');
   run(f.dir, { DISPLAY: ':0' });
-  assert.equal(fs.readFileSync(f.calls, 'utf8'), 'xdg:http://127.0.0.1:3006\n');
+  assert.equal(fs.readFileSync(f.calls, 'utf8'), 'xdg:http://127.0.0.1:4810\n');
 });
 
 test('Linux skips headless and SSH sessions', () => {
@@ -46,5 +46,5 @@ test('Linux skips headless and SSH sessions', () => {
 test('macOS opens only with a local GUI session', () => {
   const f = fixture('Darwin');
   run(f.dir);
-  assert.equal(fs.readFileSync(f.calls, 'utf8'), 'open:http://127.0.0.1:3006\n');
+  assert.equal(fs.readFileSync(f.calls, 'utf8'), 'open:http://127.0.0.1:4810\n');
 });

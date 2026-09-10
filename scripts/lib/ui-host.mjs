@@ -11,7 +11,7 @@ export function defaultUrl(staging = false) {
       host = execFileSync('tailscale', ['ip', '-4'], { encoding: 'utf8' }).trim().split('\n')[0];
     } catch { /* tailscale not installed / not up */ }
   }
-  return `http://${host || '127.0.0.1'}:${process.env.PORT || 3006}/${staging ? 'staging/' : ''}`;
+  return `http://${host || '127.0.0.1'}:${process.env.PORT || 4810}/${staging ? 'staging/' : ''}`;
 }
 
 export const HOST_TOOLS = `${homedir()}/.cache/ronin-host-tools`;
