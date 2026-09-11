@@ -4,7 +4,6 @@ import { WorkspaceKit } from './workspace-kit.js';
 import { deleteTeamRoster, membersOfTeam, refreshTeams, subscribe, teamByName, teamsFromState, unassignedSessions, UNASSIGNED } from './team-controller.js';
 import { createNewTeamFormView } from './new-team-form.js';
 import { createNewAgentView } from './new-agent.js';
-import { createAddAgentView } from './add-agent.js';
 import { createTeamRosterSurface } from './team-roster-surface.js';
 import { createWarmTerminalPool } from './team-terminal-pool.js';
 import { createTeamWipeboard } from './team-wipeboard.js';
@@ -246,12 +245,9 @@ export function createCoworkView(options = {}) {
   // One instance per seat, like every other surface: a birth returns to the workspace
   // whose form made it, which is the property this door exists for.
   const addAgentBySeat = Object.fromEntries(Object.keys(seats).map((id) => {
-    const view = createAddAgentView(WorkspaceKit, {
+    const view = createNewAgentView(WorkspaceKit, {
       team: () => (campaign || team === UNASSIGNED ? '' : team),
-      roster: () => teamByName(team) || null,
-      members: () => membersOfTeam(team),
       connect: (name) => connectSession(name, id),
-      fullLaunch: () => ctx?.navigate('launch'),
     });
     return [id, { el: view.el, enter: () => view.enter() }];
   }));

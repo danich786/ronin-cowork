@@ -171,7 +171,7 @@ test('no client module keeps its own provider or model list, join, or vendor nam
   const read = (file) => readFile(new URL(`../public/js/${file}`, import.meta.url), 'utf8');
   for (const file of ['add-agent.js', 'campaign-defaults.js', 'team-configuration.js', 'machine-settings.js', 'presets.js', 'new-agent.js', 'new-team-form.js']) {
     const source = await read(file);
-    assert.match(source, /providerModelPair/, `${file} calls the one picker`);
+    assert.match(source, /providerModel(?:Pair|Stones)/, `${file} calls the one catalog-backed picker`);
     assert.doesNotMatch(source, /session-launch-specs|launchSpecData|launchTable|new Option\([^)]*\b(?:provider|model)\b|Claude Code|Codex|anthropic|openai/, `${file} keeps no copy`);
   }
   const home = await read('home.js');
