@@ -302,9 +302,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
   // is this launch's own; the ticks are the Team's desks until the person changes them,
   // and then the launch carries its own `repos`. Branches are the Team's and read-only here.
   const where = createWhereItWorks({ stones: true, branchesEditable: false, onChange: () => { if (where.root !== draft.root) { draft.root = where.root; touched.root = true; } draft.repos = where.repos().filter((name) => name !== draft.root); touched.repos = true; paintFoot(); } });
-  const wherePair = el('div', 'fs-pair');
-  wherePair.append(createField({ label: t('where.label', 'Where it works'), control: where.el }).el);
-  stepWhere.body.append(pair.el, wherePair);
+  stepWhere.body.append(pair.el, where.el);
   function paintBranch() {
     const team = draft.teamMode === 'existing' ? teams.find((row) => row.name === draft.team) : null;
     if (!touched.repos) { draft.repos = null; where.setRepos(team?.repos || [], team?.branches || {}); }

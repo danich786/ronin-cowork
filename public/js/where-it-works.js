@@ -8,7 +8,7 @@ const el = (tag, cls, text) => { const node = document.createElement(tag); if (c
  *           worktreesOn?: boolean, branchesEditable?: boolean, rootDefaultLabel?: string, onChange?: () => void }} o
  */
 export function createWhereItWorks(o = {}) {
-  const details = el('details', 'tw-where'); const summary = el('summary', 'wk-field-control'); const body = el('div', 'tw-where-body'); details.append(summary, body);
+  const details = el(o.stones ? 'div' : 'details', o.stones ? 'na-where-workspaces' : 'tw-where'); const summary = el('summary', 'wk-field-control'); const body = el('div', 'tw-where-body'); details.append(summary, body);
   const rootRow = el('label', 'tw-config-field'); rootRow.append(el('span', null, t('where.born_in', 'Born in')));
   const rootSelect = el('select', 'wk-field-control'); rootRow.append(rootSelect); body.append(rootRow);
   const line = el('p', 'tw-config-note'); body.append(line);
@@ -54,32 +54,46 @@ export function createWhereItWorks(o = {}) {
   buildRoots(); buildRows(); paint();
 
   if (o.stones) {
-    details.open = true;
-    summary.hidden = true;
-    rootSelect.hidden = true;
-    line.hidden = true;
-    const born = el('div', 'na-stone-group'); born.append(el('p', 'fs-head', t('where.born_in', 'Where it’s born')));
-    const bornTray = el('div', 'na-stones'); born.append(bornTray); rootRow.replaceChildren(born);
-    const additional = el('section', 'na-additional');
-    additional.append(el('p', 'fs-head', t('where.additional', 'Additional workspaces')));
-    const extraTray = el('div', 'na-stones'); additional.append(extraTray);
-    list.replaceWith(additional);
+    details.replaceChildren(el('p', 'fs-head', t('where.label', 'Where it works')));
+    const picker = el('div', 'na-where-picker'); details.append(picker);
+    let open = '';
     const stonePaint = () => {
-      bornTray.replaceChildren(); extraTray.replaceChildren();
-      for (const root of state.roots) {
-        const workspaceStone = () => {
-          const stone = el('button', 'sws-stone na-workspace-stone'); stone.type = 'button';
-          stone.append(
-            el('span', 'sws-label', root.name),
-            el('span', 'sws-secondary', root.repo_profile?.worktrees === 'enabled' ? t('where.worktree', 'worktree') : t('where.checkout', 'checkout')),
-          );
-          return stone;
-        };
-        const one = workspaceStone(); one.setAttribute('aria-pressed', String(root.name === state.root));
-        one.addEventListener('click', () => { state.root = root.name; state.repos = state.repos.filter((name) => name !== root.name); buildRoots(); buildRows(); stonePaint(); o.onChange?.(); }); bornTray.append(one);
-        if (root.name === state.root) continue;
-        const extra = workspaceStone(); const on = state.repos.includes(root.name); extra.setAttribute('aria-pressed', String(on));
-        extra.addEventListener('click', () => { state.repos = on ? state.repos.filter((name) => name !== root.name) : [...state.repos, root.name]; buildRows(); stonePaint(); o.onChange?.(); }); extraTray.append(extra);
+      picker.replaceChildren();
+      const disclosure = (key, label, reading) => {
+        const button = el('button', 'na-choice-stone'); button.type = 'button';
+        button.setAttribute('aria-expanded', String(open === key));
+        button.append(el('b', null, label), el('small', null, reading || t('forms.default', 'Default')));
+        button.addEventListener('click', () => { open = open === key ? '' : key; stonePaint(); });
+        return button;
+      };
+      picker.append(
+        disclosure('born', t('where.born_in', 'Where it’s born'), state.root),
+        disclosure('additional', t('where.additional', 'Additional workspaces'), state.repos.length ? state.repos.join(', ') : t('where.none_selected', 'None')),
+      );
+      if (!open) return;
+      const options = el('div', 'na-choice-options na-where-options');
+      const tray = el('div', 'na-stones'); options.append(tray); picker.append(options);
+      const workspaceStone = (root) => {
+        const stone = el('button', 'sws-stone na-workspace-stone'); stone.type = 'button';
+        stone.append(
+          el('span', 'sws-label', root.name),
+          el('span', 'sws-secondary', root.repo_profile?.worktrees === 'enabled' ? t('where.worktree', 'worktree') : t('where.checkout', 'checkout')),
+        );
+        return stone;
+      };
+      for (const root of state.roots.filter((root) => open === 'born' || root.name !== state.root)) {
+        const stone = workspaceStone(root);
+        const on = open === 'born' ? root.name === state.root : state.repos.includes(root.name);
+        stone.setAttribute('aria-pressed', String(on));
+        stone.addEventListener('click', () => {
+          if (open === 'born') {
+            state.root = root.name; state.repos = state.repos.filter((name) => name !== root.name); open = '';
+          } else {
+            state.repos = on ? state.repos.filter((name) => name !== root.name) : [...state.repos, root.name];
+          }
+          buildRoots(); buildRows(); stonePaint(); o.onChange?.();
+        });
+        tray.append(stone);
       }
     };
     stonePaint();
