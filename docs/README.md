@@ -1,7 +1,6 @@
 # Ronin documentation — start with the question
 
-These are operational routes for a user or an Agent working on the user's behalf. Builder
-contracts remain available, but they are not prerequisites for installing or using Ronin.
+These are operational routes for a user or an Agent working on the user's behalf. Builder contracts remain available, but they are not prerequisites for installing or using Ronin.
 
 ## Before Ronin is running
 

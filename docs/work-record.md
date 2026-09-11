@@ -34,14 +34,31 @@ an outcome that can become true over a restatement of the activity:
 
 > Add an indexed work-record guide, verify the documentation change, and hand it in.
 
+Think of one Agent's work record as one card moving across a small Kanban board:
+
+| Work-record part | Kanban meaning |
+|---|---|
+| The whole record | One card: the deliverable owned by this Agent |
+| Objective | The card's outcome |
+| Phase rung | A workflow state or list |
+| Legs under a phase | Exit criteria or checklist items for leaving that state |
+| Active position | The list and checklist item where the card currently sits |
+| Tracked materials and reported receipts | Evidence attached to the card |
+| Gate | A required outside act before the card may transition |
+
+Labels such as team, type, priority, risk, or blocked describe the card; they are not
+workflow states. The work record does not have to reproduce a board's labels or custom
+fields to preserve that distinction.
+
 Derive the ladder in three passes:
 
-1. Name the few **phases** that take the objective from its current state to done. A phase
-   is an outcome-sized section such as “Reconcile the contracts” or “Verify and deliver,”
-   not a vague time period such as “Later.”
-2. Under the phase you can see, add **legs** that produce observable progress. “Draft the
-   guide” is useful; “Work on docs” is not. A phase with no legs is honest when its work is
-   not knowable yet.
+1. Name the few **phases** that form the workflow from the objective's current state to
+   done. Treat them like the lists on a small Trello board: each phase answers one question
+   about the state of the work, such as “Shaping,” “Building,” “Review,” or “Delivering.”
+   Do not use phases for teams, priorities, risk labels, or vague periods such as “Later.”
+2. Under the phase you can see, add **legs** for its observable exit criteria or checklist
+   outcomes. “Guide covers gates and revision” is useful; “Work on docs” is not. A phase
+   with no legs is honest when its exit criteria are not knowable yet.
 3. Stop planning where knowledge stops. Add later legs when investigation makes them real.
    An undetermined future rung is omitted rather than guessed.
 
@@ -49,6 +66,76 @@ A leg should normally fit one meaningful work interval and end in a result anoth
 can recognize. Split it when it hides distinct outcomes, decisions, owners, or verification.
 Combine it when separate entries would merely narrate keystrokes. The right granularity is
 the smallest set of steps that helps the owner understand and steer the work.
+
+A reusable product workflow might be:
+
+```text
+Inbox → Shaping → Ready → Building → Code review → Show / preview
+      → Product approval → Mainlining → Finished
+```
+
+Use only the states the objective will actually cross. “Ready” means the acceptance criteria
+are clear; “Building” means active work exists; “Code review” requires a commit and test evidence;
+“Show / preview” requires the exact preview under consideration; “Mainlining” covers integration
+and its verification; and “Finished” means the result has landed and cleanup is complete.
+These facts are exit criteria and evidence, not more workflow states. For smaller work, three
+phases may communicate the same flow better than nine.
+
+The work record is not a formal state machine. Ronin does not enforce entry and exit rules for
+these phases; the Agent's judgment and the applicable work contract do. When reality sends work
+backward—for example, review rejects a change—revise or reactivate the Building work instead of
+pretending the review passed. Keep work in progress narrow: finish or revise the active item
+before accumulating partially active legs across the ladder.
+
+## Future Team coordination, not current capability
+
+The intended architecture adds a **Team work record**, keyed by Team, beside each Team roster.
+The roster remains the Team's identity, configuration, membership, and launch defaults. It must
+not be overloaded with mutable workflow. The Team work record is the shared source of truth for
+deliverables: the Team's Kanban board. A card is one meaningful outcome and may exist before an
+Agent is assigned to it.
+
+When assigned, an Agent work record links to that Team card and carries the detailed execution
+account. Team membership subscribes Agents to the Team work record. Concise Agent progress rolls
+up to the linked card, while authorized Team-board transitions can eventually send defined
+control events back down. This is intended future coordination, not something the current
+work-record tools do. Do not tell an owner that a Team work record exists today or that moving an
+external card currently updates an Agent.
+
+The synchronization boundary is deliberately coarse:
+
+- One Team card represents one deliverable. Its assigned Agent work record and any external
+  Trello card share that stable identity; neither routine legs nor sessions become extra cards.
+- The Team work record aggregates the cards. Agent work records are linked execution records,
+  not ladders mechanically merged into one giant Team ladder.
+- The detailed phase ladder and its routine legs remain Agent-local execution state. They do
+  not create external cards or make a board churn on every internal transition.
+- The projection carries only useful summary facts: stable record/card identity, owner,
+  outcome, current high-level state, current meaningful gate, and durable evidence such as an
+  accepted commit, test receipt, preview, or approval.
+- Each Agent's work record remains the source for its detailed execution; Team aggregation must
+  not erase it or replace it with the card summary.
+
+Bidirectional synchronization requires defined transitions, not arbitrary card editing. An
+inbound Team or external card move may become a high-level Agent work-record event only when that
+transition has an explicit mapping and entry/exit rules. For example, moving a gated card into a
+defined approved state could record who approved the exact candidate and release the Agent to
+continue; moving a rejected card back to Building could reopen the defined build work. Gates stay
+within their card. Routine leg changes and unrecognized list moves must remain external noise.
+
+Before such synchronization is safe, it needs all of these boundaries:
+
+- a stable identity binding the Team card, assigned Agent record, and any external card;
+- explicit transition mappings and entry/exit rules;
+- authority rules defining who may approve or return work;
+- durable evidence of the actor, action, candidate, and time;
+- version and conflict handling when the Agent and board change concurrently;
+- field-level limits that prevent a card edit from arbitrarily rewriting the objective,
+  evidence, repositories, or detailed ladder; and
+- Team aggregation that preserves every linked Agent source record.
+
+Until those boundaries exist in implementation and an operating contract, external boards are
+presentations and coordination aids only. Update the work record through its supported tools.
 
 Useful editing forms are:
 
@@ -108,12 +195,25 @@ a recoverable tool error, or a blocker with another safe route is not a gate whi
 in-scope work can continue. Report material problems in the normal conversation and revise
 the ladder if they change the plan.
 
+Likewise, **blocked** is normally a condition on the current work, not a workflow phase or a
+gate of its own. Keep the affected work in its truthful phase, report the blocker with evidence,
+and pursue another safe route when one exists. Create a gate only when resolving the condition
+requires the named outside act and there is no safe in-scope progress left.
+
 An approval is a gate only when policy, authority, risk, or the owner's explicit instruction
 requires the Agent to stop for it. A notification is not an approval: tell the owner and keep
 working when no decision is required. Do not invent review gates, “check-in” gates, or owner
 decisions merely to make a plan look controlled. Conversely, do not hide a real owner choice
 inside a work leg and continue by guessing. The question is whether safe progress must stop,
 not whether the owner would appreciate visibility.
+
+Review, preview, and mainlining are ordinary workflow phases. “Product approval” is also an
+ordinary phase while the Agent is preparing evidence or a preview; it becomes a gate only when
+the exact candidate is ready and work is now waiting for the owner's experiential or visual
+decision. The repository and tracked-document fields identify working materials. Commit SHAs,
+test receipts, preview URLs, reviews, and approvals are supporting evidence: report or keep them
+in the relevant tracked document or conversation. The ladder should summarize the state and its
+exit criteria rather than duplicate an evidence log.
 
 Add a genuine stop with:
 
@@ -166,20 +266,21 @@ hand-in, or verification contract.
 
 ## Good and bad ladders
 
-A useful ladder is brief, outcome-oriented, and honest about what is knowable:
+A useful ladder treats the record as one deliverable moving through the smallest useful workflow.
+Its legs say what must become true before the deliverable leaves each state:
 
 ```text
 Objective: Publish an indexed guide that reconciles the existing work-record contracts.
 
-Reconcile the contracts
-  DONE    Read the required source and presentation contracts
-  DONE    Post the outline and contradictions to the team
-Write the guide
-  ACTIVE  Draft the canonical agent-facing guidance
-  PLANNED Add it to the documentation index
-Verify and deliver
-  PLANNED Run documentation checks and repository verification
-  PLANNED Commit and hand in the documentation-only change
+Shaping
+  DONE    Required contracts reconciled
+  DONE    Outline and contradictions accepted
+Building
+  ACTIVE  Canonical guidance covers every acceptance criterion
+  PLANNED Guide is linked from the documentation index
+Review
+  PLANNED Documentation checks and repository verification pass
+  PLANNED Exact commit and hand-in receipt are reported
 ```
 
 This ladder is poor:
@@ -187,19 +288,20 @@ This ladder is poor:
 ```text
 Objective: Work on docs.
 
-Planning
+Team A
   DONE    Think about it
-Implementation
+High priority
   ACTIVE  Do the work
-[GATE] Get owner approval
-Later
+[GATE] Owner approval
+Blocked
   PLANNED Fix anything
   PLANNED Finish everything
 ```
 
 Its objective has no deliverable, its legs reveal no result, its gate invents an approval
-without a stopping reason, and its future claims pretend to know work that has not been
-discovered. “Do the work” is also too large to show useful movement.
+without a stopping reason, and its rungs mix owner, priority, and blocked labels into workflow
+states. Its future claims also pretend to know work that has not been discovered. “Do the work”
+is too large to show useful movement.
 
 ## Maintenance rhythm
 
