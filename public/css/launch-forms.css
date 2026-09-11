@@ -300,9 +300,9 @@
   .na-choice-stone small { color: var(--accent); font-size: var(--form-note); }
   .na-choice-stone[aria-expanded='true'] { border-color: var(--kaki); border-left-color: var(--kaki); background: var(--raise); box-shadow: inset var(--edge-2) 0 var(--kaki); }
   .na-choice-options { grid-column: 1 / -1; }
-  .na-stone { flex: 0 1 var(--na-stone-size); width: min(100%, var(--na-stone-size)); }
+  .na-stone { flex: 0 1 var(--na-stone-size); width: min(100%, var(--na-stone-size)); border-left: var(--edge-2) solid var(--accent); }
   .na-stone:hover { border-color: var(--kaki); }
-  .na-stone[aria-pressed='true'] { border-color: var(--kaki); background: var(--raise); color: var(--kaki-lift); }
+  .na-stone[aria-pressed='true'] { border-color: var(--kaki); border-left-color: var(--kaki); background: var(--raise); color: var(--kaki-lift); box-shadow: inset var(--edge-2) 0 var(--kaki); }
   .na-stone:disabled { opacity: .45; cursor: default; }
   .na-team-lead { display: flex; gap: var(--space-4); align-items: center; margin-top: var(--space-4); color: var(--fg-strong); }
   .na-team-lead-label { display: flex; gap: var(--space-2); align-items: center; font-size: var(--form-input); font-weight: 600; }
@@ -321,6 +321,9 @@
   .na-mandate-toggle { gap: var(--space-4); }
   .na-mandate-toggle span { color: var(--accent); }
   .na-mandate-part > .fs-dial { display: block; margin-top: var(--space-2); }
+  .na-surface .fs-dial-row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .na-surface .fs-dial-opt { flex: 0 1 var(--na-stone-size); width: min(100%, var(--na-stone-size)); aspect-ratio: 1; border-left: var(--edge-2) solid var(--accent); border-radius: var(--radius-hair); background: var(--panel); padding: var(--space-4); }
+  .na-surface .fs-dial-opt[aria-pressed='true'] { border-left-color: var(--kaki); box-shadow: inset var(--edge-2) 0 var(--kaki); }
   .na-surface textarea { min-height: calc(var(--space-12) * 3); resize: vertical; }
   .na-note { margin: var(--space-4) 0 0; color: var(--dim); font-size: var(--form-note); }
   .na-sopgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(var(--space-12) * 4), 1fr)); gap: var(--space-1); }
