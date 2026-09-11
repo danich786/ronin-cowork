@@ -6,6 +6,7 @@ import { finalizeTeamName, sanitizeTeamName } from './new-team-draft.js';
 const REACH = ['open', 'discuss', 'plan', 'execute'];
 const RECRUIT = ['open', 'nobody', 'propose agents', 'staff agents'];
 const OUTPUT = ['open', 'a plan', 'ideas', 'code', 'an artifact', 'the team', 'no code'];
+let rowId = 0;
 
 /** A fresh row. `open` is the screen's business; everything else is the Agent's. */
 export const agentRow = ({ lead = false, assignment = '' } = {}) => ({
@@ -49,6 +50,7 @@ export function createAgentRows({ n, key, rows, changed, onToggle, leadAssignmen
     buttons.append(addLead, add);
     host.append(buttons);
     rows().forEach((row, index) => {
+      const id = `new-team-agent-${++rowId}`;
       const box = el('div', 'ntf-agent');
       box.dataset.open = String(row.open);
       const head = el('div', 'ntf-agent-head');
@@ -62,6 +64,7 @@ export function createAgentRows({ n, key, rows, changed, onToggle, leadAssignmen
       name.autocapitalize = 'off';
       name.value = row.name;
       name.placeholder = t('new_team.agent_name', 'name');
+      name.id = `${id}-name`;
       name.addEventListener('input', () => {
         // Sanitised as you type, like the Team's own name: a session name IS a tag.
         const at = name.selectionStart;
@@ -76,23 +79,37 @@ export function createAgentRows({ n, key, rows, changed, onToggle, leadAssignmen
       else assignment.type = 'text';
       assignment.value = row.assignment;
       assignment.placeholder = t('new_team.agent_assignment', 'what this Agent does');
+      assignment.id = `${id}-assignment`;
       assignment.addEventListener('input', () => { row.assignment = assignment.value; changed(); });
+
+      const nameField = el('label', 'ntf-agent-field ntf-agent-name-field');
+      nameField.htmlFor = name.id;
+      nameField.append(el('span', 'ntf-agent-label', t('new_team.agent_name', 'Name')), name);
+      const assignmentField = el('label', 'ntf-agent-field ntf-agent-what-field');
+      assignmentField.htmlFor = assignment.id;
+      assignmentField.append(el('span', 'ntf-agent-label', t('new_team.agent_assignment_label', 'Assignment')), assignment);
 
       const more = el('button', 'ntf-agent-more', row.open ? '▾' : '▸');
       more.type = 'button';
       more.title = t('new_team.agent_more', 'Its mandate');
+      more.setAttribute('aria-label', t('new_team.agent_more_named', 'Show mandate for {name}', { name: row.name || t('new_team.unnamed_agent', 'unnamed Agent') }));
+      more.setAttribute('aria-expanded', String(row.open));
+      more.setAttribute('aria-controls', `${id}-detail`);
       more.addEventListener('click', () => { row.open = !row.open; paint(); });
 
       const drop = el('button', 'ntf-agent-drop', '✕');
       drop.type = 'button';
       drop.title = t('new_team.agent_drop', 'Remove this Agent');
+      drop.setAttribute('aria-label', t('new_team.agent_drop_named', 'Remove {name}', { name: row.name || t('new_team.unnamed_agent', 'unnamed Agent') }));
       drop.addEventListener('click', () => { rows().splice(index, 1); paint(); changed(); });
 
-      head.append(role, name, assignment, more, drop);
+      head.append(role, nameField, assignmentField, more, drop);
       box.append(head);
 
+      const detail = el('div', 'ntf-agent-detail');
+      detail.id = `${id}-detail`;
+      detail.hidden = !row.open;
       if (row.open) {
-        const detail = el('div', 'ntf-agent-detail');
         const pair = el('div', 'fs-pair');
         for (const [label, values, field] of [[t('reach', 'Reach'), REACH, 'reach'], [t('recruit', 'Recruit'), RECRUIT, 'recruit']]) {
           const wrap = el('label', 'tw-config-field');
@@ -104,8 +121,8 @@ export function createAgentRows({ n, key, rows, changed, onToggle, leadAssignmen
           paint();
           changed();
         }));
-        box.append(detail);
       }
+      box.append(detail);
       host.append(box);
     });
   }
