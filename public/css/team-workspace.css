@@ -88,14 +88,20 @@
   .league-team-member-words strong { overflow: hidden; color: var(--fg-strong); font-weight: inherit; text-overflow: ellipsis; white-space: nowrap; }
   .league-team-member-words span, .league-team-empty { color: var(--muted); }
   .league-team-member-actions { flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); }
-  .league-team-member-live { display: block; }
+  .league-team-member-live { display: block; padding: 0; }
   .league-team-member-main { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); }
-  .league-team-member-toggle { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: var(--space-5); min-width: 0; border: 0; background: transparent; color: inherit; padding: var(--space-2) 0; text-align: left; cursor: pointer; font: inherit; }
-  .league-team-member-reading { display: flex; flex-direction: column; min-width: 0; gap: var(--space-1); }
-  .league-team-member-reading strong, .league-team-member-reading span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .league-team-member-reading strong { color: var(--fg-strong); font-size: var(--form-input); font-weight: inherit; }
-  .league-team-member-reading span { color: var(--muted); font-size: var(--form-note); }
+  .league-team-member-toggle { display: grid; grid-template-columns: minmax(10rem, 1fr) minmax(0, 2.4fr); align-items: center; gap: var(--space-4); min-width: 0; border: 0; background: transparent; color: inherit; padding: var(--space-3) 0; text-align: left; cursor: pointer; font: inherit; }
+  .league-team-member-toggle .league-team-member-words { display: block; }
+  .league-team-member-toggle .league-team-member-words span { display: none; }
+  .league-team-member-reading { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(5rem, .8fr) minmax(5rem, .8fr) minmax(4rem, .65fr); align-items: center; gap: var(--space-4); min-width: 0; }
+  .league-team-member-reading span { overflow: hidden; color: var(--muted); font-size: var(--form-note); text-overflow: ellipsis; white-space: nowrap; }
+  .league-team-member-step { grid-column: 1; }
+  .league-team-member-state { grid-column: 2; }
+  .league-team-member-model { grid-column: 3; }
+  .league-team-member-provider { grid-column: 4; }
+  .league-team-member-state { color: var(--ok) !important; }
   .league-team-member-detail { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--space-5); border-top: var(--edge) solid var(--line); padding: var(--space-3) 0 var(--space-2); }
+  .league-team-member-detail[hidden] { display: none; }
   .league-team-member-description { margin: 0; color: var(--fg); font-size: var(--form-note); line-height: 1.4; }
   .league-team-empty { margin: 0; border-bottom: var(--edge) solid var(--line); padding: var(--space-5) 0; }
   .league-team-add { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-3); margin-top: var(--space-5); }

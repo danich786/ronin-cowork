@@ -57,9 +57,12 @@ export const buildTeamMembers = (name, options = {}) => {
     row.classList.add('league-team-member-live');
     const toggle = el('button', 'league-team-member-toggle'); toggle.type = 'button'; toggle.setAttribute('aria-expanded', 'false');
     const status = el('div', 'league-team-member-reading');
-    status.append(el('strong', null, reading.step || t('league.no_current_step', 'No current step')));
-    const live = [reading.model, reading.state].filter(Boolean).join(' · ');
-    if (live) status.append(el('span', null, live));
+    for (const [className, value] of [
+      ['league-team-member-step', reading.step],
+      ['league-team-member-state', reading.state],
+      ['league-team-member-model', reading.model],
+      ['league-team-member-provider', reading.provider],
+    ]) if (value) status.append(el('span', className, value));
     toggle.append(identity, status);
     const detail = el('div', 'league-team-member-detail'); detail.hidden = true;
     detail.id = `team-member-${options.idPrefix || name}-${member.name}-actions`;

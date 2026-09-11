@@ -22,9 +22,11 @@ test('Roster Open uses the paired workspace and Close reuses the tile retirement
   assert.match(view, /workspace1: 'workspace2', workspace2: 'workspace1', workspace3: 'workspace4', workspace4: 'workspace3'/);
   assert.match(view, /onOpen: \(member\) => putSession\(member\.name, oppositeSeat\(id\)\)/);
   assert.match(view, /reading: readingsOf/);
+  assert.match(view, /provider: \(row\.provider \|\| ''\)\.toLowerCase\(\)/);
   assert.match(view, /onClose: \(member\) => retireSession\(member\.name/);
   assert.match(members, /actions: \[open, rename, lead, eject, close\]/);
   assert.match(members, /classList\.add\('league-team-member-live'\)/);
+  assert.match(css, /\.league-team-member-detail\[hidden\] \{ display: none; \}/);
   assert.match(members, /toggle\.setAttribute\('aria-expanded', 'false'\)/);
   assert.match(members, /toggle\.setAttribute\('aria-controls', detail\.id\)/);
   assert.match(members, /reading\.description/);
