@@ -6,9 +6,9 @@
   .tw-cards [data-inert='true'] { cursor: default; }
   .tw-cards > [draggable='true'] { cursor: grab; }
   .selector-card-thin { padding: var(--space-3) var(--space-4); }
-  .wk-workbench-layout[data-selector-density='thin'] .wk-workbench-selector-cards > .wk-card { padding: var(--space-3) var(--space-4); }
-  .wk-workbench-layout[data-selector-density='thin'] .wk-workbench-selector-cards > .wk-card .wk-card-summary,
-  .wk-workbench-layout[data-selector-density='thin'] .wk-workbench-selector-cards > .wk-card .wk-card-meta { display: none; }
+  .wk-workbench-host[data-selector-density='thin'] .wk-workbench-selector-cards > .wk-card { padding: var(--space-3) var(--space-4); }
+  .wk-workbench-host[data-selector-density='thin'] .wk-workbench-selector-cards > .wk-card .wk-card-summary,
+  .wk-workbench-host[data-selector-density='thin'] .wk-workbench-selector-cards > .wk-card .wk-card-meta { display: none; }
   .tw-agent-density-lines { display: grid; width: var(--space-6); gap: var(--space-1); }
   .tw-agent-density-lines i { display: block; height: var(--edge-2); border-radius: var(--edge); background: currentColor; }
   .tw-agent-density[data-lines='one'] .tw-agent-density-lines i:last-child { display: none; }
