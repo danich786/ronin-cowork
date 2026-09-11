@@ -287,11 +287,15 @@
   .na-name-required > .wk-field-label { color: var(--accent); }
   .na-team-choices { margin-bottom: var(--space-4); }
   .na-model-picker { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
+  .na-model-picker > .na-stone-group[data-open='true'] { grid-column: 1 / -1; }
   .na-stone-group { display: flex; flex-direction: column; gap: var(--space-2); }
   .na-stones { display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(var(--space-12) * 2.2), 1fr)); gap: var(--space-2); }
   .na-choice-stone, .na-stone { aspect-ratio: 1; border: var(--edge) solid var(--line-2); border-radius: var(--radius-hair); background: var(--panel); color: var(--fg-strong); padding: var(--space-4); cursor: pointer; text-align: left; font: inherit; }
   .na-choice-stone { display: flex; flex-direction: column; justify-content: space-between; width: min(100%, calc(var(--space-12) * 2.4)); border-left: var(--edge-2) solid var(--accent); }
   .na-choice-stone small { color: var(--accent); font-size: var(--form-note); }
+  .na-choice-stone[aria-expanded='true'] { border-color: var(--kaki); border-left-color: var(--kaki); background: var(--raise); box-shadow: inset var(--edge-2) 0 var(--kaki); }
+  .na-choice-options { display: grid; grid-template-columns: calc(var(--space-12) * 2) minmax(0, 1fr); gap: var(--space-4); align-items: start; grid-column: 1 / -1; }
+  .na-choice-label { margin: var(--space-3) 0 0; color: var(--muted); font-size: var(--form-key); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
   .na-stone:hover { border-color: var(--kaki); }
   .na-stone[aria-pressed='true'] { border-color: var(--kaki); background: var(--raise); color: var(--kaki-lift); }
   .na-stone:disabled { opacity: .45; cursor: default; }
@@ -303,10 +307,9 @@
   .na-mandate-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
   .na-mandate-grid > .fs-head { grid-column: 1 / -1; }
   .na-mandate-part[open], .na-mandate-part:has(.fs-dial) { grid-column: 1 / -1; }
-  .na-mandate-toggle { display: flex; flex-direction: column; justify-content: space-between; gap: var(--space-4); width: min(100%, calc(var(--space-12) * 2.4)); aspect-ratio: 1; border: var(--edge) solid var(--line-2); border-left: var(--edge-2) solid var(--accent); border-radius: var(--radius-hair); background: var(--panel); color: var(--fg-strong); padding: var(--space-4); cursor: pointer; text-align: left; font: inherit; }
+  .na-mandate-toggle { gap: var(--space-4); }
   .na-mandate-toggle span { color: var(--accent); }
   .na-mandate-part > .fs-dial { display: block; margin-top: var(--space-2); }
-  .na-mandate-part > .fs-dial > h4 { display: none; }
   .na-surface textarea { min-height: calc(var(--space-12) * 3); resize: vertical; }
   .na-note { margin: var(--space-4) 0 0; color: var(--dim); font-size: var(--form-note); }
   .na-sopgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(var(--space-12) * 4), 1fr)); gap: var(--space-1); }

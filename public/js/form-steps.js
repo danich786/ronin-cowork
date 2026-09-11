@@ -347,10 +347,13 @@ export function providerModelStones(read, write) {
     const providers = rows.filter((row, index) => rows.findIndex((other) => other.provider === row.provider) === index);
     const group = (key, label, choices, selected, choose) => {
       const wrap = el('div', 'na-stone-group'); wrap.setAttribute('role', 'group'); wrap.setAttribute('aria-label', label);
+      wrap.dataset.open = String(open === key);
       const disclosure = el('button', 'na-choice-stone'); disclosure.type = 'button'; disclosure.setAttribute('aria-expanded', String(open === key));
       disclosure.append(el('b', null, label), el('small', null, selected || t('forms.default', 'Default')));
       disclosure.addEventListener('click', () => { open = open === key ? '' : key; paint(); }); wrap.append(disclosure);
       if (open !== key) return wrap;
+      const options = el('div', 'na-choice-options');
+      options.append(el('p', 'na-choice-label', label));
       const tray = el('div', 'na-stones');
       const defaultStone = el('button', 'na-stone'); defaultStone.type = 'button'; defaultStone.setAttribute('aria-pressed', String(!selected)); defaultStone.append(el('b', null, t('forms.default', 'Default')));
       defaultStone.addEventListener('click', () => { choose(''); open = ''; paint(); }); tray.append(defaultStone);
@@ -360,7 +363,7 @@ export function providerModelStones(read, write) {
         button.append(el('b', null, choice.label)); button.disabled = choice.off === true;
         button.addEventListener('click', () => { choose(choice.key); open = ''; paint(); }); tray.append(button);
       }
-      wrap.append(tray); return wrap;
+      options.append(tray); wrap.append(options); return wrap;
     };
     const providerRows = providers.map((row) => ({ key: row.provider, label: row.provider_label || row.provider, off: row.off }));
     const modelRows = rows.filter((row) => row.provider === current.provider).map((row) => ({ key: row.model, label: modelWord(row), off: row.off }));

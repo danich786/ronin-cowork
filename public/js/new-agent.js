@@ -307,16 +307,16 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
   let mandateOpen = '';
   function paintMandate() {
     const part = (key, label, content, summary) => {
-      const box = el('div', 'na-mandate-part'); const head = el('button', 'na-mandate-toggle'); head.type = 'button';
+      const box = el('div', 'na-mandate-part'); const head = el('button', 'na-choice-stone na-mandate-toggle'); head.type = 'button';
       head.setAttribute('aria-expanded', String(mandateOpen === key)); head.append(el('b', null, label), el('span', null, summary));
       head.addEventListener('click', () => { mandateOpen = mandateOpen === key ? '' : key; paintMandate(); }); box.append(head);
       if (mandateOpen === key) box.append(content); return box;
     };
     mandateHost.className = 'na-mandate-grid';
     mandateHost.replaceChildren(el('p', 'fs-head', t('mandate', 'Mandate')),
-      part('reach', t('reach', 'Reach'), dialRow('', REACH, draft.reach, (value) => { draft.reach = value; touched.mandate = true; paintMandate(); paintFoot(); }), touched.mandate ? mandateWord(draft.reach) : t('forms.default', 'Default')),
-      part('recruit', t('recruit', 'Recruit'), dialRow('', RECRUIT, draft.recruit, (value) => { draft.recruit = value; touched.mandate = true; paintMandate(); paintFoot(); }), touched.mandate ? mandateWord(draft.recruit) : t('forms.default', 'Default')),
-      part('output', t('output', 'Output'), dialRowMulti('', OUTPUT, draft.output, (value, on) => {
+      part('reach', t('reach', 'Reach'), dialRow(t('reach', 'Reach'), REACH, draft.reach, (value) => { draft.reach = value; touched.mandate = true; paintMandate(); paintFoot(); }), touched.mandate ? mandateWord(draft.reach) : t('forms.default', 'Default')),
+      part('recruit', t('recruit', 'Recruit'), dialRow(t('recruit', 'Recruit'), RECRUIT, draft.recruit, (value) => { draft.recruit = value; touched.mandate = true; paintMandate(); paintFoot(); }), touched.mandate ? mandateWord(draft.recruit) : t('forms.default', 'Default')),
+      part('output', t('output', 'Output'), dialRowMulti(t('output', 'Output'), OUTPUT, draft.output, (value, on) => {
         draft.output = on ? [...draft.output, value] : draft.output.filter((entry) => entry !== value);
         touched.mandate = true;
         paintMandate();
