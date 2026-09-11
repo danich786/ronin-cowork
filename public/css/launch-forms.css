@@ -299,8 +299,7 @@
   .na-choice-stone { display: flex; flex-direction: column; justify-content: space-between; width: 100%; border-left: var(--edge-2) solid var(--accent); }
   .na-choice-stone small { color: var(--accent); font-size: var(--form-note); }
   .na-choice-stone[aria-expanded='true'] { border-color: var(--kaki); border-left-color: var(--kaki); background: var(--raise); box-shadow: inset var(--edge-2) 0 var(--kaki); }
-  .na-choice-options { display: grid; grid-template-columns: calc(var(--space-12) * 2) minmax(0, 1fr); gap: var(--space-4); align-items: start; grid-column: 1 / -1; }
-  .na-choice-label { margin: var(--space-3) 0 0; color: var(--muted); font-size: var(--form-key); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+  .na-choice-options { grid-column: 1 / -1; }
   .na-stone:hover { border-color: var(--kaki); }
   .na-stone[aria-pressed='true'] { border-color: var(--kaki); background: var(--raise); color: var(--kaki-lift); }
   .na-stone:disabled { opacity: .45; cursor: default; }

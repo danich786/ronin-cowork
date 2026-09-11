@@ -353,7 +353,6 @@ export function providerModelStones(read, write) {
       disclosure.addEventListener('click', () => { open = open === key ? '' : key; paint(); }); wrap.append(disclosure);
       if (open !== key) return wrap;
       const options = el('div', 'na-choice-options');
-      options.append(el('p', 'na-choice-label', label));
       const tray = el('div', 'na-stones');
       const defaultStone = el('button', 'na-stone'); defaultStone.type = 'button'; defaultStone.setAttribute('aria-pressed', String(!selected)); defaultStone.append(el('b', null, t('forms.default', 'Default')));
       defaultStone.addEventListener('click', () => { choose(''); open = ''; paint(); }); tray.append(defaultStone);
