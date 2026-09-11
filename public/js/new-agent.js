@@ -323,7 +323,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
       if (mandateOpen === key) box.append(content); return box;
     };
     mandateHost.className = 'na-mandate-grid';
-    mandateHost.replaceChildren(el('p', 'fs-head', t('mandate', 'Mandate')),
+    mandateHost.replaceChildren(
       part('reach', t('reach', 'Reach'), dialRow(t('reach', 'Reach'), REACH, draft.reach, (value) => { draft.reach = value; touched.mandate = true; paintMandate(); paintFoot(); }), touched.mandate ? mandateWord(draft.reach) : t('forms.default', 'Default')),
       part('recruit', t('recruit', 'Recruit'), dialRow(t('recruit', 'Recruit'), RECRUIT, draft.recruit, (value) => { draft.recruit = value; touched.mandate = true; paintMandate(); paintFoot(); }), touched.mandate ? mandateWord(draft.recruit) : t('forms.default', 'Default')),
       part('output', t('output', 'Output'), dialRowMulti(t('output', 'Output'), OUTPUT, draft.output, (value, on) => {
@@ -664,7 +664,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
   modelPackage.append(el('p', 'fs-head', t('new_agent.model_package', 'Model')), pair.el);
   const mandatePackage = el('section', 'na-choice-package na-mandate-package');
   mandatePackage.setAttribute('aria-label', t('mandate', 'Mandate'));
-  mandatePackage.append(mandateHost);
+  mandatePackage.append(el('p', 'fs-head', t('mandate', 'Mandate')), mandateHost);
   agentChoices.append(modelPackage, mandatePackage);
   stepTop.body.replaceChildren(nameField, agentChoices, instructionsField);
   const form = el('div', 'ntf-form');
