@@ -102,8 +102,10 @@ test('Cowork Team and Team Agent cards toggle between names-only and the full re
   assert.match(view, /thinSelectorCards \? \{\} : \{ summary: reading\.step, metadata: reading\.lines, mark:/);
   assert.match(view, /thinSelectorCards \? \{\} : \{ summary: item\.objective \|\| '' \}/);
   assert.match(view, /dataset\.lines = thinSelectorCards \? 'two' : 'one'/);
+  assert.match(view, /host\.dataset\.selectorDensity = thinSelectorCards \? 'thin' : 'thick'/);
   assert.match(view, /actions: \[densityToggle\.el, rosterNote, mikaHelp\]/);
   assert.match(css, /\.selector-card-thin\s*\{[^}]*padding:/s);
+  assert.match(css, /\.wk-workbench-host\[data-selector-density='thin'\] \.wk-workbench-selector-cards > \.wk-card \.wk-card-summary/);
 });
 
 test('the existing workbench can pin a Setup workspace and aim selector cards at the selected work surface', async () => {
