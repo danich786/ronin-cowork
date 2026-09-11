@@ -61,7 +61,10 @@ test('Add Agent confirms a draft into a compact row with New Agent-style stones'
   assert.match(agents, /agent_add_confirm', 'Add'/);
   assert.match(agents, /ntf-agent-row/);
   assert.match(agents, /for \(const other of rows\(\)\) other\.lead = false/);
-  assert.match(agents, /ntf-agent-stone/);
+  assert.match(agents, /providerModelStones/);
+  assert.match(agents, /\{ prefix: 'ntf-agent' \}/);
+  assert.match(agents, /box\.append\(actions\.el, lead,/);
+  assert.doesNotMatch(agents, /wk-button/);
   assert.match(agents, /dialRowMulti/);
   assert.match(agents, /provider: row\.provider/);
   assert.match(agents, /model: row\.model/);

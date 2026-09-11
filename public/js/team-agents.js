@@ -1,6 +1,6 @@
 /* part of the ronin-cowork client — see js/README.md */
 import { t } from './lexicon.js';
-import { createStep, dialRow, dialRowMulti, el, loadProviderCatalog, mandateWord, modelWord, providerCatalog } from './form-steps.js';
+import { createStep, dialRow, dialRowMulti, el, mandateWord, providerModelStones } from './form-steps.js';
 import { finalizeTeamName, sanitizeTeamName } from './new-team-draft.js';
 
 const REACH = ['open', 'discuss', 'plan', 'execute'];
@@ -26,33 +26,7 @@ export function agentPicks(rows) {
   }));
 }
 
-/** The New Agent picker shape, with ntf-only selectors. */
-function providerStones(row) {
-  const host = el('div', 'ntf-agent-model-picker');
-  const paint = () => {
-    const catalog = providerCatalog().rows;
-    const providers = catalog.filter((item, index) => catalog.findIndex((other) => other.provider === item.provider) === index);
-    const group = (label, choices, selected, choose) => {
-      const wrap = el('div', 'ntf-agent-stone-group'); wrap.setAttribute('role', 'group'); wrap.setAttribute('aria-label', label);
-      wrap.append(el('p', 'fs-head', label)); const tray = el('div', 'ntf-agent-stones');
-      for (const choice of choices) {
-        const button = el('button', 'ntf-agent-stone'); button.type = 'button';
-        button.setAttribute('aria-pressed', String(choice.key === selected));
-        button.append(el('b', null, choice.label)); button.disabled = choice.off === true;
-        button.addEventListener('click', () => { choose(choice.key); paint(); }); tray.append(button);
-      }
-      wrap.append(tray); return wrap;
-    };
-    const providerRows = providers.map((item) => ({ key: item.provider, label: item.provider_label || item.provider, off: item.off }));
-    const modelRows = catalog.filter((item) => item.provider === row.provider).map((item) => ({ key: item.model, label: modelWord(item), off: item.off }));
-    host.replaceChildren(group(t('forms.provider', 'Model provider'), providerRows, row.provider, (provider) => { row.provider = provider; row.model = ''; }));
-    if (row.provider) host.append(group(t('forms.model', 'Model'), modelRows, row.model, (model) => { row.model = model; }));
-  };
-  if (!providerCatalog().loaded) void loadProviderCatalog().then(paint);
-  paint(); return host;
-}
-
-export function createAgentRows({ n, key, rows, changed, onToggle }) {
+export function createAgentRows({ n, key, rows, changed, onToggle, createAction, createActionBar }) {
   const step = createStep({ n, key, title: t('new_team.agents', 'Agents'), onToggle });
   const host = el('div'); let editor = null;
   const field = (label, control) => {
@@ -71,11 +45,13 @@ export function createAgentRows({ n, key, rows, changed, onToggle }) {
     lead.append(leadInput, el('span', null, t('add_agent.make_team_lead', 'Make Team Lead')));
     const name = el('input', 'ntf-agent-name'); name.type = 'text'; name.spellcheck = false; name.autocapitalize = 'off'; name.value = row.name; name.id = `${id}-name`;
     const assignment = el('textarea', 'ntf-agent-what'); assignment.rows = 3; assignment.value = row.assignment; assignment.id = `${id}-assignment`;
-    const confirm = el('button', 'wk-button primary');
+    const cancel = createAction({ label: t('cancel', 'Cancel'), size: 'compact', action: () => { editor = null; paint(); } });
+    const confirm = createAction({ label: index < 0 ? t('new_team.agent_add_confirm', 'Add') : t('save', 'Save'), kind: 'primary', size: 'compact' });
+    const actions = createActionBar({ label: t('new_team.agent_editor_actions', 'Agent actions'), actions: [cancel, confirm], className: 'ntf-agent-editor-actions' });
     name.addEventListener('input', () => {
       const at = name.selectionStart; const clean = sanitizeTeamName(name.value);
       if (clean !== name.value) { name.value = clean; name.setSelectionRange(at, at); }
-      row.name = name.value; confirm.disabled = !finalizeTeamName(row.name);
+      row.name = name.value; confirm.setDisabled(!finalizeTeamName(row.name));
     });
     assignment.addEventListener('input', () => { row.assignment = assignment.value; });
 
@@ -94,19 +70,20 @@ export function createAgentRows({ n, key, rows, changed, onToggle }) {
         row.output = on ? [...row.output, value] : row.output.filter((entry) => entry !== value); paint();
       }), row.output.map(mandateWord).join(', ')),
     );
-    const buttons = el('div', 'ntf-agent-editor-actions'); const cancel = el('button', 'wk-button');
-    cancel.type = 'button'; cancel.textContent = t('cancel', 'Cancel'); cancel.addEventListener('click', () => { editor = null; paint(); });
-    confirm.type = 'button'; confirm.textContent = index < 0 ? t('new_team.agent_add_confirm', 'Add') : t('save', 'Save');
-    confirm.disabled = !finalizeTeamName(row.name);
-    confirm.addEventListener('click', () => {
+    confirm.setDisabled(!finalizeTeamName(row.name));
+    confirm.el.addEventListener('click', () => {
       if (!finalizeTeamName(row.name)) return;
       if (row.lead) for (const other of rows()) other.lead = false;
       const saved = copyRow(row); saved.mandateOpen = '';
       if (index < 0) rows().push(saved); else rows()[index] = saved;
       editor = null; changed(); paint();
     });
-    buttons.append(cancel, confirm);
-    box.append(lead, field(t('new_team.agent_name', 'Name'), name), field(t('new_team.agent_assignment_label', 'Instructions'), assignment), mandate, providerStones(row), buttons);
+    const pair = providerModelStones(
+      () => ({ provider: row.provider, model: row.model }),
+      (provider, model) => { row.provider = provider; row.model = model; },
+      { prefix: 'ntf-agent' },
+    );
+    box.append(actions.el, lead, field(t('new_team.agent_name', 'Name'), name), field(t('new_team.agent_assignment_label', 'Instructions'), assignment), mandate, pair.el);
     return box;
   }
 

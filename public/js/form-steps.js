@@ -336,6 +336,34 @@ export function tierWord(tier) {
  */
 export const modelWord = (row) => t('forms.model_word', '{model} · {tier}', { model: row.model, tier: tierWord(row.tier) });
 
+/** Compact provider/model stones shared by the launch forms. */
+export function providerModelStones(read, write, { prefix = 'na' } = {}) {
+  const host = el('div', `${prefix}-model-picker`);
+  const paint = () => {
+    const current = read() || {};
+    const rows = providerCatalog().rows;
+    const providers = rows.filter((row, index) => rows.findIndex((other) => other.provider === row.provider) === index);
+    const group = (label, choices, selected, choose) => {
+      const wrap = el('div', `${prefix}-stone-group`); wrap.setAttribute('role', 'group'); wrap.setAttribute('aria-label', label);
+      wrap.append(el('p', 'fs-head', label)); const tray = el('div', `${prefix}-stones`);
+      for (const choice of choices) {
+        const button = el('button', `${prefix}-stone`); button.type = 'button';
+        button.setAttribute('aria-pressed', String(choice.key === selected));
+        button.append(el('b', null, choice.label)); button.disabled = choice.off === true;
+        button.addEventListener('click', () => choose(choice.key)); tray.append(button);
+      }
+      wrap.append(tray); return wrap;
+    };
+    const providerRows = providers.map((row) => ({ key: row.provider, label: row.provider_label || row.provider, off: row.off }));
+    const modelRows = rows.filter((row) => row.provider === current.provider).map((row) => ({ key: row.model, label: modelWord(row), off: row.off }));
+    host.replaceChildren(group(t('forms.provider', 'Model provider'), providerRows, current.provider, (provider) => { write(provider, ''); paint(); }));
+    if (current.provider) host.append(group(t('forms.model', 'Model'), modelRows, current.model, (model) => { write(current.provider, model); paint(); }));
+  };
+  if (!providerCatalog().loaded) void loadProviderCatalog().then(paint);
+  paint();
+  return { el: host, paint };
+}
+
 /** A CLI list is evidence from the client version that fetched it; only a current list can refuse a row. */
 export const modelAvailabilityFact = (row) => {
   const list = row.model_list;

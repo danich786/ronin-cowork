@@ -315,6 +315,7 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
   const agents = createAgentRows({
     n: 3, key: 'lead',
     rows: () => draft.agents,
+    createAction, createActionBar,
     changed: () => paintFoot(),
     onToggle: () => toggle('lead'),
   });

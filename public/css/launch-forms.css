@@ -155,9 +155,9 @@
   .ntf-agent-row-lead { color: var(--kaki); font-size: var(--form-note); text-transform: uppercase; }
   .ntf-agent-row-actions, .ntf-agent-editor-actions { display: flex; gap: var(--space-2); justify-content: flex-end; }
   .ntf-agent-mandate { display: grid; gap: var(--space-2); }
-  .ntf-agent-mandate-part + .ntf-agent-mandate-part { margin-top: var(--space-2); }
+  .ntf-agent-mandate-part + .ntf-agent-mandate-part { margin-top: var(--space-3); }
   .ntf-agent-mandate-toggle { display: flex; justify-content: space-between; gap: var(--space-4); width: 100%; border: var(--edge) solid var(--line-2); background: var(--well); color: var(--fg-strong); padding: var(--space-3) var(--space-4); cursor: pointer; text-align: left; font: inherit; }
-  .ntf-agent-mandate-toggle span { overflow: hidden; color: var(--accent); text-overflow: ellipsis; white-space: nowrap; }
+  .ntf-agent-mandate-toggle span { color: var(--accent); }
   .ntf-agent-mandate-part > .fs-dial { display: block; margin-top: var(--space-2); }
   .ntf-agent-mandate-part > .fs-dial > h4 { display: none; }
   .ntf-agent-model-picker, .ntf-agent-stone-group { display: flex; flex-direction: column; gap: var(--space-2); }
