@@ -14,6 +14,8 @@ test('New Agent is the canonical five-section launcher with three session types'
   assert.match(form, /Name · required/);
   assert.match(form, /providerModelStones/);
   assert.match(form, /Make Team Lead/);
+  assert.match(form, /el\('span', 'na-team-lead-mark', '人'\)/);
+  assert.doesNotMatch(form, /`将 /);
   assert.match(form, /stepPayload\.setNumber\(order\.length \+ 1\)/);
   assert.match(form, /key: 'payload'.*Payload/);
   assert.match(form, /agentChoices\.append\(modelPackage, mandatePackage\)/);
