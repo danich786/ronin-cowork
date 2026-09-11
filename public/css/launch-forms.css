@@ -134,10 +134,13 @@
   .ntf-agent:first-child { border-top: 0; }
   .ntf-agent-head { display: flex; align-items: center; gap: var(--space-3); }
   .ntf-agent-role { flex: 0 0 calc(var(--space-12) * 1.7); color: var(--accent); font-size: var(--form-key); font-weight: 700; text-transform: uppercase; }
+  .ntf-agent-field { display: grid; gap: var(--space-1); min-width: 0; }
+  .ntf-agent-label { color: var(--muted); font-size: var(--form-key); text-transform: uppercase; letter-spacing: .06em; }
+  .ntf-agent-name-field { flex: 0 1 calc(var(--space-12) * 3); }
+  .ntf-agent-what-field { flex: 1 1 auto; }
   .ntf-agent-adds { display: grid; width: min(100%, calc(var(--space-12) * 5)); gap: var(--space-3); margin-top: var(--space-3); }
   .ntf-agent-adds > .fs-door { width: 100%; }
-  .ntf-agent-name { width: calc(var(--space-12) * 3); }
-  .ntf-agent-what { flex: 1; min-width: 0; }
+  .ntf-agent-name, .ntf-agent-what { width: 100%; min-width: 0; }
   .ntf-agent-name, .ntf-agent-what {
     border: var(--edge) solid var(--line-2); border-radius: var(--radius-xs);
     background: var(--well); color: var(--fg); padding: var(--space-3) var(--space-4); font: inherit;
@@ -147,8 +150,10 @@
     grid-template-columns: calc(var(--space-12) * 1.7) minmax(0, 1fr) auto auto;
     align-items: start;
   }
-  .ntf-agent[data-open='true'] .ntf-agent-name { grid-column: 2; width: 100%; min-height: calc(var(--space-12) * 1.5); resize: vertical; }
-  .ntf-agent[data-open='true'] .ntf-agent-what { grid-column: 2 / -1; width: 100%; min-height: calc(var(--space-12) * 3); resize: vertical; }
+  .ntf-agent[data-open='true'] .ntf-agent-name-field { grid-column: 2; width: 100%; }
+  .ntf-agent[data-open='true'] .ntf-agent-what-field { grid-column: 2 / -1; width: 100%; }
+  .ntf-agent[data-open='true'] .ntf-agent-name { min-height: calc(var(--space-12) * 1.5); resize: vertical; }
+  .ntf-agent[data-open='true'] .ntf-agent-what { min-height: calc(var(--space-12) * 3); resize: vertical; }
   .ntf-agent-lead, .ntf-agent-more, .ntf-agent-drop {
     flex: none; border: var(--edge) solid transparent; border-radius: var(--radius-xs);
     background: transparent; color: var(--muted-3); padding: var(--space-2) var(--space-4);
@@ -158,6 +163,21 @@
 
   .ntf-agent-lead[aria-pressed='true'] { border-color: var(--kaki); color: var(--kaki); }
   .ntf-agent-detail { display: flex; flex-direction: column; gap: var(--space-5); padding: var(--space-5) 0 var(--space-3) calc(var(--space-12) * 1); }
+
+  @media (max-width: 44rem) {
+    .ntf-surface .ntf-agent-head,
+    .ntf-surface .ntf-agent[data-open='true'] .ntf-agent-head {
+      display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: start;
+    }
+    .ntf-surface .ntf-agent-role { grid-column: 1; min-width: 0; }
+    .ntf-surface .ntf-agent-name-field,
+    .ntf-surface .ntf-agent[data-open='true'] .ntf-agent-name-field,
+    .ntf-surface .ntf-agent-what-field,
+    .ntf-surface .ntf-agent[data-open='true'] .ntf-agent-what-field { grid-column: 1 / -1; width: 100%; }
+    .ntf-surface .ntf-agent-more { grid-column: 2; grid-row: 1; }
+    .ntf-surface .ntf-agent-drop { grid-column: 3; grid-row: 1; }
+    .ntf-surface .ntf-agent-detail { padding-left: 0; }
+  }
 
 
 

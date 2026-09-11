@@ -59,3 +59,29 @@ test('a new lead has an explicit coordinating mandate without a second launch sh
   assert.match(agents, /instructions: row\.assignment\.trim\(\)/);
   assert.match(agents, /team_lead: !!row\.lead/);
 });
+
+test('New Team cast controls are labelled, related, and stack without changing New Agent', async () => {
+  const [agents, css, newAgent] = await Promise.all([
+    source('team-agents.js'),
+    readFile(new URL('../public/css/launch-forms.css', import.meta.url), 'utf8'),
+    source('new-agent.js'),
+  ]);
+  assert.match(agents, /el\('label', 'ntf-agent-field ntf-agent-name-field'\)/);
+  assert.match(agents, /el\('label', 'ntf-agent-field ntf-agent-what-field'\)/);
+  assert.match(agents, /more\.setAttribute\('aria-expanded', String\(row\.open\)\)/);
+  assert.match(agents, /more\.setAttribute\('aria-controls', `\$\{id\}-detail`\)/);
+  assert.match(agents, /detail\.id = `\$\{id\}-detail`;\s*detail\.hidden = !row\.open/);
+  assert.match(agents, /drop\.setAttribute\('aria-label'/);
+  assert.match(css, /@media \(max-width: 44rem\)[\s\S]*\.ntf-surface \.ntf-agent-head/);
+  assert.doesNotMatch(css, /@media \(max-width: 44rem\)[\s\S]*\.na-surface \.ntf-agent/);
+  assert.doesNotMatch(newAgent, /ntf-agent-field|new-team-agent-/);
+});
+
+test('New Team checks names only for a cast and opens partial Teams with exact recovery evidence', async () => {
+  const form = await source('new-team-form.js');
+  assert.match(form, /if \(picks\.length\) \{[\s\S]*request\('\/api\/sessions'/);
+  assert.match(form, /const born = outcomes\.filter\(\(\{ result \}\) => result\?\.ok\)/);
+  assert.match(form, /Team created\. Launched \{launched\} of \{total\} Agents: \{born\}\. Failed: \{names\}/);
+  assert.match(form, /if \(refused\.length\) \{[\s\S]*seedReservedWorkspaceTab\(launchTab, 'team',[\s\S]*openWorkspaceTab\('team', name, launchTab\);[\s\S]*return;/);
+  assert.doesNotMatch(form, /if \(refused\.length\) \{\s*closeWorkspaceTab/);
+});
