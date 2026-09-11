@@ -166,6 +166,7 @@ export function createCoworkView(options = {}) {
   densityLines.append(el('i'), el('i'));
   densityToggle.el.replaceChildren(densityLines);
   const paintDensityToggle = () => {
+    if (bench?.host) bench.host.dataset.selectorDensity = thinSelectorCards ? 'thin' : 'thick';
     densityToggle.el.dataset.lines = thinSelectorCards ? 'two' : 'one';
     densityToggle.el.title = thinSelectorCards
       ? `Show full ${campaign ? 'Team' : 'Agent'} cards`
