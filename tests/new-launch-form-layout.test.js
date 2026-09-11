@@ -52,14 +52,16 @@ test('model disclosures open directly to choices and close after selection', asy
   assert.doesNotMatch(parts, /options\.append\(el\('p', 'na-choice-label', label\)\)/);
   assert.match(parts, /choose\(''\); open = ''; paint\(\)/);
   assert.match(parts, /choose\(choice\.key\); open = ''; paint\(\)/);
-  assert.match(css, /\.na-agent-choices \{ display: flex; flex-direction: column;/);
-  assert.match(css, /\.na-model-package, \.na-mandate-package \{ width: 100%; \}/);
+  assert.match(css, /\.na-agent-choices \{ display: flex; flex-wrap: wrap;/);
+  assert.match(css, /\.na-model-package, \.na-mandate-package \{ flex: 0 0 auto; width: fit-content; max-width: 100%; \}/);
+  assert.match(css, /\.na-choice-package:has\(\[aria-expanded='true'\]\) \{ flex-basis: 100%; width: 100%; \}/);
   assert.match(css, /\.na-surface \{ --na-stone-size: calc\(var\(--space-12\) \* 2\.5\); \}/);
   assert.match(css, /\.na-model-picker \{ display: grid; grid-template-columns: repeat\(2, minmax\(0, var\(--na-stone-size\)\)\) minmax\(0, 1fr\)/);
   assert.match(css, /\.na-mandate-grid \{ display: grid; grid-template-columns: repeat\(3, minmax\(0, var\(--na-stone-size\)\)\) minmax\(0, 1fr\)/);
   assert.match(css, /\.na-choice-options \{ grid-column: 1 \/ -1; \}/);
   assert.match(css, /\.na-stone \{ flex: 0 1 var\(--na-stone-size\); width: min\(100%, var\(--na-stone-size\)\); border-left: var\(--edge-2\) solid var\(--accent\); \}/);
-  assert.match(css, /\.na-surface \.fs-dial-opt \{ flex: 0 1 var\(--na-stone-size\); width: min\(100%, var\(--na-stone-size\)\); aspect-ratio: 1; border-left: var\(--edge-2\) solid var\(--accent\)/);
+  assert.match(css, /\.na-choice-stone, \.na-stone \{ aspect-ratio: 1\.618 \/ 1;/);
+  assert.match(css, /\.na-surface \.fs-dial-opt \{ flex: 0 1 var\(--na-stone-size\); width: min\(100%, var\(--na-stone-size\)\); aspect-ratio: 1\.618 \/ 1; border-left: var\(--edge-2\) solid var\(--accent\)/);
 });
 
 test('New Team folds Kind and template choice into one optional first section', async () => {
