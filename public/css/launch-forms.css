@@ -288,8 +288,9 @@
   .na-team-choices { margin-bottom: var(--space-4); }
   .na-model-picker { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
   .na-model-picker > .na-stone-group { display: contents; }
-  .na-agent-choices { display: flex; flex-wrap: wrap; gap: 0; align-items: flex-start; }
+  .na-agent-choices { display: flex; flex-wrap: wrap; gap: var(--space-1); align-items: flex-start; }
   .na-choice-package { min-width: 0; border: var(--edge) solid var(--line-2); border-radius: var(--radius-hair); background: color-mix(in srgb, var(--panel) 78%, transparent); padding: var(--space-2); }
+  .na-choice-package > .fs-head { margin: var(--space-3) 0 var(--space-4); }
   .na-model-package { flex: 2 1 calc(var(--space-12) * 7); }
   .na-mandate-package { flex: 3 1 calc(var(--space-12) * 10); }
   .na-stone-group { display: flex; flex-direction: column; gap: var(--space-2); }
@@ -313,7 +314,6 @@
   .na-workspace-stone { width: 100%; min-width: 0; }
   .na-surface .fs-dial + .fs-dial { margin-top: var(--space-3); }
   .na-mandate-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); }
-  .na-mandate-grid > .fs-head { grid-column: 1 / -1; }
   .na-mandate-part { display: contents; }
   .na-mandate-part > .fs-dial { grid-column: 1 / -1; }
   .na-mandate-toggle { gap: var(--space-4); }
