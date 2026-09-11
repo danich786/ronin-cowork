@@ -22,7 +22,7 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
 
   const draft = {
     template: '', templateName: '', title: '',
-    name: '', kind: 'coding', objective: '',
+    name: '', kind: 'open', objective: '',
     root: '', repos: [], branches: {},
     provider: '', model: '', reach: 'open', recruit: 'open', output: ['open'],
     dial: 'write',
@@ -108,6 +108,8 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
       name: pick.name || '',
       assignment: pick.instructions || '',
       lead: pick.team_lead === true,
+      provider: pick.provider || '',
+      model: pick.model || '',
       routinesOn: Array.isArray(pick.routines_on) ? [...pick.routines_on] : [],
       routinesOff: Array.isArray(pick.routines_off) ? [...pick.routines_off] : [],
       ...(pick.mandate ? {
@@ -121,18 +123,17 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
   }
   const templateDirty = () => !!templateRow() && authored() !== snapshot;
 
-  /* ---- step 2 · Template is optional and opens only when asked for. ---- */
-  const stepTemplate = createStep({ n: 2, key: 'template', title: t('new_team.template_optional', 'Template · optional'), onToggle: () => {
+  /* ---- step 1 · Templates are optional; Kind exists only inside this choice. ---- */
+  const stepTemplate = createStep({ n: 1, key: 'template', title: t('new_team.templates_optional', 'Templates · optional'), onToggle: () => {
     templateOpen = !templateOpen;
     paintFolds();
   } });
-  function paintTray() {
-    stepTemplate.body.replaceChildren(templateTray(offered(), draft.template, (name) => applyTemplate(name), { includeOwn: false }));
-  }
-
-  /* ---- step 1 · Kind ---- */
-  const stepKind = createStep({ n: 1, key: 'kind', title: t('kind', 'Kind') });
   const kindHost = el('div');
+  const trayHost = el('div');
+  stepTemplate.body.append(kindHost, trayHost);
+  function paintTray() {
+    trayHost.replaceChildren(templateTray(offered(), draft.template, (name) => applyTemplate(name), { includeOwn: false }));
+  }
   function paintKinds() {
     kindHost.replaceChildren(kindTiles(draft.kind, (key) => {
       draft.kind = key;
@@ -140,10 +141,8 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
       paint();
     }));
   }
-  stepKind.body.append(kindHost);
-
-  /* ---- step 3 · Name & instructions ---- */
-  const stepTop = createStep({ n: 3, key: 'top', title: t('new_team.name_instructions', 'Name & instructions') });
+  /* ---- step 2 · Name & instructions ---- */
+  const stepTop = createStep({ n: 2, key: 'top', title: t('new_team.name_instructions', 'Name & instructions') });
   const nameInput = el('input');
   nameInput.type = 'text';
   nameInput.autocapitalize = 'off';
@@ -314,9 +313,8 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
   /* ---- step 6 · Team lead ---- */
   /* ---- step 4 · the team's own agents (js/team-agents.js) ---- */
   const agents = createAgentRows({
-    n: 4, key: 'lead',
+    n: 3, key: 'lead',
     rows: () => draft.agents,
-    leadAssignment: () => draft.objective,
     changed: () => paintFoot(),
     onToggle: () => toggle('lead'),
   });
@@ -324,7 +322,7 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
 
   /* ---- the collapse rules: a template's answers fold; the header opens them ---- */
   const FOLDS = ['lead'];
-  const steps = { kind: stepKind, template: stepTemplate, top: stepTop, lead: stepLead, defaults: null, where: stepWhere, kit: stepKit };
+  const steps = { template: stepTemplate, top: stepTop, lead: stepLead, defaults: null, where: stepWhere, kit: stepKit };
   function toggle(key) {
     if (draft.expanded[key]) delete draft.expanded[key];
     else draft.expanded[key] = true;
@@ -333,7 +331,7 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
   // template first offered all fifteen tiles and then quietly dropped the pick when a
   // later kind excluded it. New Agent already asked in this order; the two forms agree.
   // One list, read by the form's numbering AND by the Launch selector's outline.
-  const plan = () => ['kind', 'template', 'top', 'lead', 'defaults', 'where', 'kit'];
+  const plan = () => ['template', 'top', 'lead', 'defaults', 'where', 'kit'];
   const meta = {
     lead: () => t('new_team.agents_meta', '{n} agents', { n: draft.agents.length }),
   };
@@ -613,7 +611,7 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
   } });
   stepPayload.body.append(foot, saveRow.el);
   stepPayload.setCollapsed(true, t('forms.payload_summary', 'Review what Launch will create'), true);
-  form.append(stepKind.el, stepTemplate.el, stepTop.el, stepLead.el, stepDefaults.el, stepWhere.el, stepKit.el, stepPayload.el);
+  form.append(stepTemplate.el, stepTop.el, stepLead.el, stepDefaults.el, stepWhere.el, stepKit.el, stepPayload.el);
   surface.content.append(form, notice.el);
 
   return {
