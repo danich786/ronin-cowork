@@ -123,6 +123,20 @@ new merge commit, not because the desk moved. The tool then tells the team lead 
 in the lead's tile (or on the team wipeboard when the tile cannot take it); a team with no
 lead gets one sentence back saying nobody was told.
 
+### Provisional visual staging is a separate lane
+
+Before ordinary hand-in, an Agent may commit a coherent private candidate and send the Team
+lead its Agent, repository, exact commit, intended surfaces, and supersedes information. This
+“provisional visual hand-in” is communication, not a first-class Tejun verb, hand-in receipt,
+approval, or promotion. The private branch remains the source.
+
+The lead serially composes exact provisional commits in one dedicated disposable staging
+branch/worktree and serves that worktree on a separate preview port. Agents do not edit it
+concurrently. Rejection changes or rebuilds only the disposable composition; it never deletes
+the Agent's private commit. Visual approval publishes nothing. Finished work still reaches the
+Team line through ordinary `tejun-desk hand-in`, then lead review and promotion. See the concise
+[visual-staging SOP](../ronin_sops/ronin_methodology.md#visual-staging-one-disposable-team-preview).
+
 Team promotion builds the combined candidate, advances `dev` by compare-and-swap,
 restarts the live service, and performs deployment health checks. Failed post-restart
 health triggers the promotion recovery path and remains visible in its receipt. When it

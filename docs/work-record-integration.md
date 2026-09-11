@@ -235,6 +235,12 @@ Each Agent record projects upward as a concise summary of its own Team card:
 - durable evidence such as accepted commit, test receipt, preview, or approval; and
 - linked execution-record identities and revisions.
 
+A provisional visual preview is evidence, not publication or approval. Its card may link the
+Agent's exact private candidate and the lead's aggregate staging commit and URL without calling
+the provisional merge a hand-in. The two-lane procedure is the
+[visual-staging SOP](../ronin_sops/ronin_methodology.md#visual-staging-one-disposable-team-preview); ordinary hand-in, lead review, and promotion
+remain separate events.
+
 The virtual Team board renders every card at its reported projected state or gate. Opening the linked
 individual record shows the detailed phases, legs, and evidence used to reach its next declared
 gate. Ordinary status flips, leg completion, phase retitles, tangents, and investigative notes do
