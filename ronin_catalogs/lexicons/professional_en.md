@@ -684,8 +684,8 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **team.flip_terminal:** Show the terminal in this workspace
 - **team.workspace_1:** Workspace 1
 - **team.workspace_2:** Workspace 2
-- **team.commons_card:** Team commons
-- **team.commons_summary:** See Docs / Wipeboard / Messages / Team Configuration
+- **team.commons_card:** Commons
+- **team.commons_summary:** See Roster / Docs / Wipeboard / Messages / Configuration
 - **team.roster_of:** Roster
 - **team.workspace_blank:** Workspace
 - **team.workspace_empty:** empty
@@ -697,7 +697,7 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **team.count_2_title:** Two workspaces around the roster
 - **team.count_4_title:** Four workspaces, two by two
 - **team.roster_title:** Roster
-- **team.commons:** Team commons
+- **team.commons:** Commons
 - **team.arranged_by:** arranged by {from}
 - **team.attached:** attached
 - **team.add_member:** ＋ Add team member
@@ -1719,7 +1719,8 @@ The catalog entry goes. {dir} is not touched.
 - **workspace.channel_chat:** Chat
 - **workspace.channel_wipeboard:** Wipeboard
 - **workspace.channel_docs:** Docs
-- **workspace.channel_team_configuration:** Team Configuration
+- **workspace.channel_roster:** Roster
+- **workspace.channel_team_configuration:** Configuration
 - **workspace.channel_agent_message_queue:** Messages
 - **workspace.channel_cron_jobs:** Cron jobs
 - **team_config.no_roster:** This Team has no saved record.
@@ -1855,6 +1856,9 @@ The catalog entry goes. {dir} is not touched.
 - **league.make_team_lead:** Make Lead
 - **league.rename_agent:** Rename
 - **league.rename_agent_prompt:** Edit Agent title
+- **league.open_agent:** Open
+- **league.close_agent:** Close
+- **league.close_named_agent:** Close {name}
 - **league.remove_member:** Remove
 - **league.remove_named_member:** Remove {name} from this team
 - **league.choose_member:** Choose an Agent to add

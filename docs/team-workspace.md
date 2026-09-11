@@ -12,7 +12,7 @@ rulings, the measurements, the traps — is `wip/buildouts/TEAM_WORKBENCH.md`.
 ## Purpose and non-goals
 
 `#/team/:name` is the Team workbench: **two workspaces around the Team roster.** Each
-workspace holds exactly one thing — a member's full terminal Tile, or the Team commons
+workspace holds exactly one thing — a member's full terminal Tile, or the Commons
 (chat · wipeboard · docs · configuration) — and trades between them with one button in
 its header row: **C** on a Tile's head, **T** on the commons' tab strip. The three
 columns are shown, hidden and reordered from a small **layout map** in the app bar.
@@ -25,7 +25,7 @@ workspace shell, or control system. Specifically:
 - never create another transport, composer, output selector, or terminal lifecycle;
 - never infer membership from a durable roster — membership is live and session-owned;
 - never improvise a Chat protocol — Chat is reserved, empty, and inert;
-- never make Team Configuration authoritative for membership or leadership;
+- never make Configuration authoritative for membership or leadership; those live in Roster;
 - never move Kit layout, splitter, responsive, or persistence behavior into Team;
 - never replace or narrow the existing Sessions destination.
 
@@ -185,7 +185,7 @@ from what the tab remembered.
 - **Messages** — inbound session messages that have not delivered yet; safe
   retries, owner-only Force, and Dismiss share the durable queue described in
   `docs/message-queue.md`.
-- **Team Configuration** — a compact editor for the durable `team_roster`: its stable
+- **Configuration** — a compact editor for the durable `team_roster`: its stable
   Cowork ID as a reading, plus editable readable title, purpose and launch defaults. Membership remains on
   Agents and is deliberately absent from this form.
 
