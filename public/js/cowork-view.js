@@ -593,6 +593,9 @@ export function createCoworkView(options = {}) {
     const state = [statusLabel(row.status), row.ctx != null ? `⛽ ${row.ctx}%` : ''].filter(Boolean).join(' · ');
     return {
       step: current.label,
+      description: current.text,
+      model: (row.model || '').toLowerCase(),
+      state,
       lines: [current.text, (row.model || '').toLowerCase(), state].filter(Boolean),
     };
   };
@@ -613,6 +616,8 @@ export function createCoworkView(options = {}) {
       const members = buildTeamMembers(team, {
         onChanged: changed,
         onFailed: (message) => commons.channels.setState('failed', message),
+        idPrefix: id,
+        reading: readingsOf,
         onOpen: (member) => putSession(member.name, oppositeSeat(id)),
         onClose: (member) => retireSession(member.name, `commons-${id}-${member.name}`, async () => {
           await Promise.all([fetchSessions(), refreshTeams()]);

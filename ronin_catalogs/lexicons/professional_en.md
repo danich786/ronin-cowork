@@ -1859,6 +1859,8 @@ The catalog entry goes. {dir} is not touched.
 - **league.open_agent:** Open
 - **league.close_agent:** Close
 - **league.close_named_agent:** Close {name}
+- **league.no_current_step:** No current step
+- **league.no_current_description:** No current work description.
 - **league.remove_member:** Remove
 - **league.remove_named_member:** Remove {name} from this team
 - **league.choose_member:** Choose an Agent to add
