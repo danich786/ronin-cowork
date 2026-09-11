@@ -286,19 +286,20 @@
   .na-omitted[hidden] { display: none; }
   .na-name-required > .wk-field-label { color: var(--accent); }
   .na-team-choices { margin-bottom: var(--space-4); }
-  .na-model-picker { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+  .na-model-picker { display: grid; grid-template-columns: repeat(2, minmax(0, var(--setup-stone-size))); gap: var(--space-4); }
   .na-model-picker > .na-stone-group { display: contents; }
   .na-agent-choices { display: flex; flex-direction: column; gap: var(--space-4); }
   .na-choice-package { min-width: 0; border: var(--edge) solid var(--line-2); border-radius: var(--radius-hair); background: color-mix(in srgb, var(--panel) 78%, transparent); padding: var(--space-2); }
   .na-choice-package > .fs-head { margin: var(--space-3) 0 var(--space-4); }
   .na-model-package, .na-mandate-package { width: 100%; }
   .na-stone-group { display: flex; flex-direction: column; gap: var(--space-2); }
-  .na-stones { display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(var(--space-12) * 2.2), 1fr)); gap: var(--space-2); }
+  .na-stones { display: flex; flex-wrap: wrap; gap: var(--space-2); }
   .na-choice-stone, .na-stone { aspect-ratio: 1; border: var(--edge) solid var(--line-2); border-radius: var(--radius-hair); background: var(--panel); color: var(--fg-strong); padding: var(--space-4); cursor: pointer; text-align: left; font: inherit; }
   .na-choice-stone { display: flex; flex-direction: column; justify-content: space-between; width: 100%; border-left: var(--edge-2) solid var(--accent); }
   .na-choice-stone small { color: var(--accent); font-size: var(--form-note); }
   .na-choice-stone[aria-expanded='true'] { border-color: var(--kaki); border-left-color: var(--kaki); background: var(--raise); box-shadow: inset var(--edge-2) 0 var(--kaki); }
   .na-choice-options { grid-column: 1 / -1; }
+  .na-stone { flex: 0 1 var(--setup-stone-size); width: min(100%, var(--setup-stone-size)); }
   .na-stone:hover { border-color: var(--kaki); }
   .na-stone[aria-pressed='true'] { border-color: var(--kaki); background: var(--raise); color: var(--kaki-lift); }
   .na-stone:disabled { opacity: .45; cursor: default; }
@@ -308,11 +309,11 @@
   .na-mini-stone { min-width: calc(var(--space-12) * 1.25); border: var(--edge) solid var(--line-2); border-radius: var(--radius-hair); background: var(--panel); color: var(--muted-2); padding: var(--space-2) var(--space-3); cursor: pointer; font: inherit; font-size: var(--form-note); }
   .na-mini-stone[aria-pressed='true'] { border-color: var(--kaki); background: var(--raise); color: var(--kaki-lift); box-shadow: inset var(--edge-2) 0 var(--kaki); }
   .na-where-workspaces > .fs-head { margin-bottom: var(--space-4); }
-  .na-where-picker { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+  .na-where-picker { display: grid; grid-template-columns: repeat(2, minmax(0, var(--setup-stone-size))); gap: var(--space-4); }
   .na-where-options { grid-column: 1 / -1; }
-  .na-workspace-stone { width: 100%; min-width: 0; }
+  .na-workspace-stone { flex: 0 1 var(--setup-stone-size); width: min(100%, var(--setup-stone-size)); min-width: 0; }
   .na-surface .fs-dial + .fs-dial { margin-top: var(--space-3); }
-  .na-mandate-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); }
+  .na-mandate-grid { display: grid; grid-template-columns: repeat(3, minmax(0, var(--setup-stone-size))); gap: var(--space-4); }
   .na-mandate-part { display: contents; }
   .na-mandate-part > .fs-dial { grid-column: 1 / -1; }
   .na-mandate-toggle { gap: var(--space-4); }
