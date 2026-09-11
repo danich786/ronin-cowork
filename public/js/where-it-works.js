@@ -60,21 +60,28 @@ export function createWhereItWorks(o = {}) {
     line.hidden = true;
     const born = el('div', 'na-stone-group'); born.append(el('p', 'fs-head', t('where.born_in', 'Where it’s born')));
     const bornTray = el('div', 'na-stones'); born.append(bornTray); rootRow.replaceChildren(born);
-    const additional = el('details', 'na-additional');
-    additional.append(el('summary', 'na-additional-toggle', t('where.additional', 'Add additional workspaces')));
+    const additional = el('section', 'na-additional');
+    additional.append(el('p', 'fs-head', t('where.additional', 'Additional workspaces')));
     const extraTray = el('div', 'na-stones'); additional.append(extraTray);
     list.replaceWith(additional);
     const stonePaint = () => {
       bornTray.replaceChildren(); extraTray.replaceChildren();
       for (const root of state.roots) {
-        const one = el('button', 'na-stone', root.name); one.type = 'button'; one.setAttribute('aria-pressed', String(root.name === state.root));
-        one.addEventListener('click', () => { state.root = root.name; state.repos = state.repos.filter((name) => name !== root.name); buildRoots(); stonePaint(); o.onChange?.(); }); bornTray.append(one);
+        const workspaceStone = () => {
+          const stone = el('button', 'sws-stone na-workspace-stone'); stone.type = 'button';
+          stone.append(
+            el('span', 'sws-label', root.name),
+            el('span', 'sws-secondary', root.repo_profile?.worktrees === 'enabled' ? t('where.worktree', 'worktree') : t('where.checkout', 'checkout')),
+          );
+          return stone;
+        };
+        const one = workspaceStone(); one.setAttribute('aria-pressed', String(root.name === state.root));
+        one.addEventListener('click', () => { state.root = root.name; state.repos = state.repos.filter((name) => name !== root.name); buildRoots(); buildRows(); stonePaint(); o.onChange?.(); }); bornTray.append(one);
         if (root.name === state.root) continue;
-        const extra = el('button', 'na-stone', root.name); extra.type = 'button'; const on = state.repos.includes(root.name); extra.setAttribute('aria-pressed', String(on));
+        const extra = workspaceStone(); const on = state.repos.includes(root.name); extra.setAttribute('aria-pressed', String(on));
         extra.addEventListener('click', () => { state.repos = on ? state.repos.filter((name) => name !== root.name) : [...state.repos, root.name]; buildRows(); stonePaint(); o.onChange?.(); }); extraTray.append(extra);
       }
     };
-    const oldSetRoots = state.setRoots;
     stonePaint();
     // Public setters repaint these alternate controls through the shared state below.
     o.onStonePaint = stonePaint;
@@ -84,7 +91,11 @@ export function createWhereItWorks(o = {}) {
     el: details,
     rootSelect,
     get root() { return rootSelect.value; },
-    set root(value) { state.root = value || ''; buildRoots(); paint(); },
+    set root(value) {
+      state.root = value || '';
+      state.repos = state.repos.filter((name) => name !== state.root);
+      buildRoots(); buildRows(); paint(); o.onStonePaint?.();
+    },
     repos: () => ticked(),
     branches: () => Object.fromEntries([...rows].filter(([, row]) => row.tick.checked && row.branch.value.trim()).map(([name, row]) => [name, row.branch.value.trim()])),
     setRoots(roots) { state.roots = Array.isArray(roots) ? roots : []; buildRoots(); buildRows(); paint(); o.onStonePaint?.(); },

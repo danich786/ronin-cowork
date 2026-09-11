@@ -695,13 +695,13 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
         request('/api/sops'),
         request('/api/ways'),
         request('/api/team-rosters'),
-        request('/api/project-roots'),
+        request('/api/project-roots/detail'),
       ]);
       templates = tray.ok && Array.isArray(tray.data) ? tray.data : [];
       sops = sopRows.ok && Array.isArray(sopRows.data) ? sopRows.data : [];
       ways = wayRows.ok && Array.isArray(wayRows.data) ? wayRows.data : [];
       teams = teamRows.ok && Array.isArray(teamRows.data) ? teamRows.data.filter((row) => row.state !== 'archived') : [];
-      roots = rootRows.ok && Array.isArray(rootRows.data) ? rootRows.data : [];
+      roots = rootRows.ok && Array.isArray(rootRows.data?.roots) ? rootRows.data.roots.filter((row) => !row.archived) : [];
       if (!loaded) { await loadSeed(); loaded = true; }
       if (typeof detail?.template === 'string' && detail.template) {
         const entry = templateEntryPlan({ currentKind: draft.kind, kindTouched: draft.kindTouched, templates, template: detail.template });

@@ -27,6 +27,20 @@ test('both workbench entrances use the canonical New Agent form with contextual 
   assert.match(cowork, /connect: \(name\) => connectSession\(name, id\)/);
 });
 
+test('Where it works separates birthplace and additional workspace profile stones', async () => {
+  const [form, where] = await Promise.all([source('new-agent.js'), source('where-it-works.js')]);
+  assert.match(form, /request\('\/api\/project-roots\/detail'\)/);
+  assert.match(form, /rootRows\.data\?\.roots/);
+  assert.match(where, /Where it’s born/);
+  assert.match(where, /Additional workspaces/);
+  assert.match(where, /sws-stone na-workspace-stone/);
+  assert.match(where, /repo_profile\?\.worktrees === 'enabled'/);
+  assert.match(where, /'worktree'/);
+  assert.match(where, /'checkout'/);
+  assert.match(where, /summary\.hidden = true/);
+  assert.match(where, /line\.hidden = true/);
+});
+
 test('New Team makes templates optional and offers explicit Agent roles', async () => {
   const [form, agents] = await Promise.all([source('new-team-form.js'), source('team-agents.js')]);
   assert.match(form, /\['kind', 'template', 'top', 'lead', 'defaults', 'where', 'kit'\]/);
