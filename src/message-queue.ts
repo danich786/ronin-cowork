@@ -195,23 +195,16 @@ export async function attemptMessage(
   let lock: FileHandle | null = null;
   try {
     await fs.mkdir(DIR, { recursive: true });
-    for (;;) {
+    try {
+      lock = await fs.open(lockFile(id), 'wx');
+      await lock.writeFile(`${process.pid}\n${Date.now()}\n`);
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code !== 'EEXIST') throw e;
       try {
-        lock = await fs.open(lockFile(id), 'wx');
-        await lock.writeFile(`${process.pid}\n${Date.now()}\n`);
-        break;
-      } catch (e) {
-        if ((e as NodeJS.ErrnoException).code !== 'EEXIST') throw e;
-        try {
-          const age = Date.now() - (await fs.stat(lockFile(id))).mtimeMs;
-          if (age <= 15_000) {
-            try { return JSON.parse(await fs.readFile(file(id), 'utf8')) as QueuedMessage; } catch { return null; }
-          }
-          await fs.unlink(lockFile(id));
-        } catch (lockError) {
-          if ((lockError as NodeJS.ErrnoException).code !== 'ENOENT') throw lockError;
-        }
-      }
+        const age = Date.now() - (await fs.stat(lockFile(id))).mtimeMs;
+        if (age > 15_000) { await fs.unlink(lockFile(id)); return attemptMessage(id, mode, delivery); }
+      } catch { /* it cleared between checks */ }
+      try { return JSON.parse(await fs.readFile(file(id), 'utf8')) as QueuedMessage; } catch { return null; }
     }
     let item: QueuedMessage;
     try { item = JSON.parse(await fs.readFile(file(id), 'utf8')) as QueuedMessage; } catch { return null; }

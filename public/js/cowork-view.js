@@ -160,19 +160,21 @@ export function createCoworkView(options = {}) {
   const liveSeats = () => bench?.visibleIds() || [];
 
   const rosterNote = el('span', 'tw-roster-note');
-  let thinAgentCards = false;
+  let thinSelectorCards = false;
   const densityToggle = createAction({ label: '', size: 'compact', className: 'tw-agent-density' });
   const densityLines = el('span', 'tw-agent-density-lines');
   densityLines.append(el('i'), el('i'));
   densityToggle.el.replaceChildren(densityLines);
   const paintDensityToggle = () => {
-    densityToggle.el.dataset.lines = thinAgentCards ? 'two' : 'one';
-    densityToggle.el.title = thinAgentCards ? 'Show full Agent cards' : 'Show Agent names only';
+    densityToggle.el.dataset.lines = thinSelectorCards ? 'two' : 'one';
+    densityToggle.el.title = thinSelectorCards
+      ? `Show full ${campaign ? 'Team' : 'Agent'} cards`
+      : `Show ${campaign ? 'Team' : 'Agent'} names only`;
     densityToggle.el.setAttribute('aria-label', densityToggle.el.title);
-    densityToggle.el.setAttribute('aria-pressed', String(thinAgentCards));
+    densityToggle.el.setAttribute('aria-pressed', String(thinSelectorCards));
   };
   densityToggle.el.addEventListener('click', () => {
-    thinAgentCards = !thinAgentCards;
+    thinSelectorCards = !thinSelectorCards;
     paintDensityToggle();
     bench?.refreshSelector();
     remember();
@@ -300,8 +302,8 @@ export function createCoworkView(options = {}) {
     sessions: () => campaign ? [] : membersOfTeam(team).map((member) => {
       const reading = readingsOf(member);
       const mika = team === RONIN_HELPERS && member.name === 'mika_agent';
-      return { key: member.name, label: mika ? t('mika.name', 'Mika') : agentTitle(member), className: `team-agent-card${thinAgentCards ? ' team-agent-card-thin' : ''}`,
-        ...(thinAgentCards ? {} : { summary: reading.step, metadata: reading.lines, mark: member.team_lead ? '人' : null }),
+      return { key: member.name, label: mika ? t('mika.name', 'Mika') : agentTitle(member), className: `team-agent-card${thinSelectorCards ? ' selector-card-thin' : ''}`,
+        ...(thinSelectorCards ? {} : { summary: reading.step, metadata: reading.lines, mark: member.team_lead ? '人' : null }),
         ...(mika ? { action: () => placeMikaWorkspaceTwo() } : {}),
         onPointerEnter: () => armPrewarm(member.name), onPointerLeave: disarmPrewarm };
     }),
@@ -310,7 +312,8 @@ export function createCoworkView(options = {}) {
         helperName: RONIN_HELPERS,
         noTeam: { name: UNASSIGNED, title: t('league.ronin', 'Ronin: no team'), objective: '' },
       });
-      return ordered.map((item) => ({ key: item.name, label: String(item.title ?? '').trim() || readableTeam(item.name), summary: item.objective || '' }));
+      return ordered.map((item) => ({ key: item.name, label: String(item.title ?? '').trim() || readableTeam(item.name),
+        className: thinSelectorCards ? 'selector-card-thin' : '', ...(thinSelectorCards ? {} : { summary: item.objective || '' }) }));
     })() : [],
   };
   bench = WorkspaceKit.workbench.create({
@@ -320,7 +323,7 @@ export function createCoworkView(options = {}) {
     label: campaign ? coworkIdentity.selectorLabel : t('team.roster_title', 'Team Roster'),
     // While ミ Help is open the column is Mika's, and every repaint says so.
     title: () => helpPanel?.isOpen() ? t('mika.header', 'Mika, your helpful assistant') : campaign ? coworkIdentity.selectorLabel : t('team.roster_title', 'Roster'),
-    actions: [...(campaign ? [] : [densityToggle.el]), rosterNote, mikaHelp], shapeControl: shapeBtn, deferSelector: true,
+    actions: [densityToggle.el, rosterNote, mikaHelp], shapeControl: shapeBtn, deferSelector: true,
     installDrop: (cell, id) => acceptSessionDrops(cell, () => id, (name, at) => arrange({ [at]: { session: name } })),
     onSelect: markSelected,
     onStateChange: () => remember(), onPlacement: () => remember(),
@@ -380,7 +383,7 @@ export function createCoworkView(options = {}) {
    *  keeps its tiles while it is out. One trade for every surface, present and future. */
   const putSurface = (token, id, tab = '', doc = '') => { const request = surfaceRequest(token); return bench?.place(request.type, id, { ...request.detail, tab, doc }) || false; };
   const isShown = (name) => Object.values(seats).some((seat) => seat.pool.active === name && !surfaceIn(seat.id));
-  const remember = () => { const snapshot = bench?.snapshot(); ctx?.patchViewState(viewKey, { ...snapshot, ...(campaign ? {} : { agentCardDensity: thinAgentCards ? 'thin' : 'thick' }), seats: Object.fromEntries(Object.keys(seats).map((id) => [id, surfaceIn(id) ? snapshot?.seats?.[id] : seats[id].pool.active])) }); reportView(); };
+  const remember = () => { const snapshot = bench?.snapshot(); ctx?.patchViewState(viewKey, { ...snapshot, [campaign ? 'teamCardDensity' : 'agentCardDensity']: thinSelectorCards ? 'thin' : 'thick', seats: Object.fromEntries(Object.keys(seats).map((id) => [id, surfaceIn(id) ? snapshot?.seats?.[id] : seats[id].pool.active])) }); reportView(); };
   const lead = () => membersOfTeam(team).find((m) => m.team_lead)?.name || '';
   const oppositeSeat = (id) => ({ workspace1: 'workspace2', workspace2: 'workspace1', workspace3: 'workspace4', workspace4: 'workspace3' })[id] || 'workspace1';
 
@@ -728,7 +731,7 @@ export function createCoworkView(options = {}) {
       stopMessageAttention = watchMessageQueueAttention();
       for (const seat of Object.values(seats)) seat.pool.destroyAll();
       team = campaign ? '' : context.param || context.state?.team || '';
-      thinAgentCards = !campaign && context.viewState(viewKey)?.agentCardDensity === 'thin';
+      thinSelectorCards = context.viewState(viewKey)?.[campaign ? 'teamCardDensity' : 'agentCardDensity'] === 'thin';
       paintDensityToggle();
       setBarLabel();
       const typed = teamWorkspaceState(context.state, context.viewState(viewKey), bench.declaration);
