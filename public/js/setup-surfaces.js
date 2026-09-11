@@ -3,7 +3,7 @@ import { WorkspaceKit } from './workspace-kit.js';
 import { request } from './request.js';
 import { t } from './lexicon.js';
 import { buildGbrain } from './gbrain.js';
-import { buildProjectRoots } from './projectroots.js';
+import { createWorkspaceFoldersSurface } from './workspace-folders-surface.js';
 import { CAMPAIGN_TEMPLATES_TYPE, createTemplatesSurface } from './campaign-templates.js';
 import { PROVIDER_SURFACE_TYPE, providerSurfaceDefinition } from './provider-surface.js';
 import { createStoneWorkSurface } from './stone-work-surface.js';
@@ -292,11 +292,11 @@ function createRegisterSurface(context) {
 }
 
 function createRootsSurface(context) {
-  const out = surface(t('setup_surface.roots', 'Workspace folders'));
-  // Mounted on the surface content itself, as Presets is, so the shared stone work surface
-  // owns the insets: a nested host would zero the content padding and get none of its own.
-  const room = buildProjectRoots(out.content, () => out.content.isConnected, () => context.tenant?.campaign || '', { presentation: 'stones' });
-  return { el: out.el, show: () => { room.enter(); notifySummary(SETUP_SURFACE_TYPES.roots, '2 folders + yours', context.workbench); } };
+  return createWorkspaceFoldersSurface({
+    campaignId: () => context.tenant?.campaign || '',
+    presentation: 'stones',
+    onShow: () => notifySummary(SETUP_SURFACE_TYPES.roots, '2 folders + yours', context.workbench),
+  });
 }
 
 /** The one Services mark file, read once and inlined so the R's stroke follows the app's data-theme, not only the OS scheme.

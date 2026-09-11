@@ -31,8 +31,8 @@ test('Setup and Settings share the machine-settings island without a right heade
   assert.doesNotMatch(html, /id="viewname"/);
   assert.match(main, /nameSlot: document\.getElementById\('viewplace'\)/);
   assert.match(header, /workspace\.navigate\(setup \? 'campaign' : 'setup'\)/);
-  assert.match(header, /Ronin Setup/);
-  assert.match(header, /Ronin Settings/);
+  assert.match(header, /'Setup'/);
+  assert.match(header, /'Settings'/);
 });
 
 test('phone Setup workspaces keep one common viewport height for stone rail scrolling', async () => {
