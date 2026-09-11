@@ -16,7 +16,8 @@ test('New Agent is the canonical five-section launcher with three session types'
   assert.match(form, /Make Team Lead/);
   assert.match(form, /stepPayload\.setNumber\(order\.length \+ 1\)/);
   assert.match(form, /key: 'payload'.*Payload/);
-  assert.match(form, /stepTop\.body\.replaceChildren\(nameField, pair\.el, mandateHost, instructionsField\)/);
+  assert.match(form, /agentChoices\.append\(modelPackage, mandatePackage\)/);
+  assert.match(form, /stepTop\.body\.replaceChildren\(nameField, agentChoices, instructionsField\)/);
 });
 
 test('both workbench entrances use the canonical New Agent form with contextual Team default', async () => {

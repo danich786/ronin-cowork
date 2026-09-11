@@ -646,8 +646,17 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
   } });
   stepPayload.body.append(foot, actions.el);
   stepPayload.setCollapsed(true, t('forms.payload_summary', 'Review what Launch will create'), true);
-  // The Agent body is one compact bundle: identity, provider/model, mandate, instructions.
-  stepTop.body.replaceChildren(nameField, pair.el, mandateHost, instructionsField);
+  // Two related choice packages: provider/model and the three mandate axes. They sit
+  // together when there is room and stack without changing their internal order.
+  const agentChoices = el('div', 'na-agent-choices');
+  const modelPackage = el('section', 'na-choice-package na-model-package');
+  modelPackage.setAttribute('aria-label', t('new_agent.model_package', 'Model'));
+  modelPackage.append(pair.el);
+  const mandatePackage = el('section', 'na-choice-package na-mandate-package');
+  mandatePackage.setAttribute('aria-label', t('mandate', 'Mandate'));
+  mandatePackage.append(mandateHost);
+  agentChoices.append(modelPackage, mandatePackage);
+  stepTop.body.replaceChildren(nameField, agentChoices, instructionsField);
   const form = el('div', 'ntf-form');
   form.append(stepType.el, stepTop.el, stepTeam.el, stepWhere.el, stepLoadout.el, stepPayload.el);
   // Save as template sits UNDER the reading, for the same reason as on New Team: the
