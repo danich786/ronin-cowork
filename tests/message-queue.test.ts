@@ -117,6 +117,33 @@ test('dismissal during an active attempt cannot resurrect the exact message', as
   await fs.rm(root, { recursive: true, force: true });
 });
 
+test('a stale delivery lock is reclaimed and delivered in the same attempt', async (t) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ronin-message-queue-stale-lock-'));
+  process.env.RONIN_MESSAGE_QUEUE_DIR = root;
+  const queue = await import(`../src/message-queue.ts?stale-lock=${Date.now()}`);
+  const target = await liveTarget(t, 'queue_stale_lock_target');
+  const item = await queue.enqueueMessage(target, 'deliver after reclaiming the lock', 'house');
+  const lock = path.join(root, `${item.id}.lock`);
+  await fs.writeFile(lock, 'orphaned\n');
+  const stale = new Date(Date.now() - 16_000);
+  await fs.utimes(lock, stale, stale);
+  let deliveries = 0;
+
+  const retained = await queue.attemptMessage(item.id, 'safe', {
+    safe: async (_target: string, _text: string, onAttempt: () => void) => {
+      deliveries += 1;
+      onAttempt();
+      return { delivered: true, submitted: true, reason: '' };
+    },
+    force: async () => ({ delivered: false, submitted: false, reason: 'unused' }),
+  });
+
+  assert.equal(retained, null);
+  assert.equal(deliveries, 1, 'recovery does not wait for a later queue sweep');
+  assert.deepEqual(await queue.listQueuedMessages(), []);
+  await fs.rm(root, { recursive: true, force: true });
+});
+
 test('bulk dismissal is exact-ID and preserves unread arrivals', async (t) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ronin-message-queue-bulk-'));
   process.env.RONIN_MESSAGE_QUEUE_DIR = root;

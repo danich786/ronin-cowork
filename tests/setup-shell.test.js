@@ -93,6 +93,18 @@ test('edited Cowork and Team workbench labels become the exact tab title', async
   assert.match(kit, /\.ui-bar-place \.wk-tab-name \{[^}]*background: transparent;[^}]*color: inherit;/);
 });
 
+test('Team Agent cards toggle between names-only and the full reading', async () => {
+  const [view, css] = await Promise.all([
+    readFile(new URL('../public/js/cowork-view.js', import.meta.url), 'utf8'),
+    readFile(new URL('../public/css/team-workspace.css', import.meta.url), 'utf8'),
+  ]);
+  assert.match(view, /agentCardDensity:\s*thinAgentCards \? 'thin' : 'thick'/);
+  assert.match(view, /thinAgentCards \? \{\} : \{ summary: reading\.step, metadata: reading\.lines, mark:/);
+  assert.match(view, /dataset\.lines = thinAgentCards \? 'two' : 'one'/);
+  assert.match(view, /actions: \[\.\.\.\(campaign \? \[\] : \[densityToggle\.el\]\)/);
+  assert.match(css, /\.team-agent-card-thin\s*\{[^}]*padding:/s);
+});
+
 test('the existing workbench can pin a Setup workspace and aim selector cards at the selected work surface', async () => {
   const workbench = await source('js/workbench.js');
   assert.match(workbench, /fixedWorkspaces\[id\].*fixedWorkspaces\[id\] !== type/);
