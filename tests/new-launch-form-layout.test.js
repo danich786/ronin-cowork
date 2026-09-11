@@ -58,7 +58,8 @@ test('model disclosures open directly to choices and close after selection', asy
   assert.match(css, /\.na-model-picker \{ display: grid; grid-template-columns: repeat\(2, minmax\(0, var\(--na-stone-size\)\)\) minmax\(0, 1fr\)/);
   assert.match(css, /\.na-mandate-grid \{ display: grid; grid-template-columns: repeat\(3, minmax\(0, var\(--na-stone-size\)\)\) minmax\(0, 1fr\)/);
   assert.match(css, /\.na-choice-options \{ grid-column: 1 \/ -1; \}/);
-  assert.match(css, /\.na-stone \{ flex: 0 1 var\(--na-stone-size\); width: min\(100%, var\(--na-stone-size\)\); \}/);
+  assert.match(css, /\.na-stone \{ flex: 0 1 var\(--na-stone-size\); width: min\(100%, var\(--na-stone-size\)\); border-left: var\(--edge-2\) solid var\(--accent\); \}/);
+  assert.match(css, /\.na-surface \.fs-dial-opt \{ flex: 0 1 var\(--na-stone-size\); width: min\(100%, var\(--na-stone-size\)\); aspect-ratio: 1; border-left: var\(--edge-2\) solid var\(--accent\)/);
 });
 
 test('New Team folds Kind and template choice into one optional first section', async () => {
