@@ -614,6 +614,7 @@ export function createCoworkView(options = {}) {
       step: current.label,
       description: current.text,
       model: (row.model || '').toLowerCase(),
+      provider: (row.provider || '').toLowerCase(),
       state,
       lines: [current.text, (row.model || '').toLowerCase(), state].filter(Boolean),
     };
