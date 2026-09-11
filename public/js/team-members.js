@@ -48,7 +48,33 @@ export const buildTeamMembers = (name, options = {}) => {
     const lead = createAction({ label: member.team_lead ? t('league.team_lead', 'Team Lead') : t('league.make_team_lead', 'Make Lead'), size: 'compact', selected: member.team_lead, action: async () => { const result = await setTeamLead(member.name, name, !member.team_lead); if (!result.ok) return options.onFailed?.(result.message); options.onChanged?.(); } });
     const eject = createAction({ label: t('league.remove_member', 'Remove'), title: t('league.remove_named_member', 'Remove {name} from this team', { name: member.name }), size: 'compact', action: async () => { const result = await setTeamMembership(member.name, name, false); if (!result.ok) return options.onFailed?.(result.message); options.onChanged?.(); } });
     const close = options.onClose ? createAction({ label: t('league.close_agent', 'Close'), title: t('league.close_named_agent', 'Close {name}', { name: member.name }), size: 'compact', action: () => options.onClose(member) }) : null;
-    row.append(identity, createActionBar({ className: 'league-team-member-actions', actions: [open, rename, lead, eject, close] }).el); list.append(row);
+    const reading = options.reading?.(member);
+    if (!reading) {
+      row.append(identity, createActionBar({ className: 'league-team-member-actions', actions: [open, rename, lead, eject, close] }).el);
+      list.append(row);
+      continue;
+    }
+    row.classList.add('league-team-member-live');
+    const toggle = el('button', 'league-team-member-toggle'); toggle.type = 'button'; toggle.setAttribute('aria-expanded', 'false');
+    const status = el('div', 'league-team-member-reading');
+    status.append(el('strong', null, reading.step || t('league.no_current_step', 'No current step')));
+    const live = [reading.model, reading.state].filter(Boolean).join(' · ');
+    if (live) status.append(el('span', null, live));
+    toggle.append(identity, status);
+    const detail = el('div', 'league-team-member-detail'); detail.hidden = true;
+    detail.id = `team-member-${options.idPrefix || name}-${member.name}-actions`;
+    toggle.setAttribute('aria-controls', detail.id);
+    detail.append(
+      el('p', 'league-team-member-description', reading.description || t('league.no_current_description', 'No current work description.')),
+      createActionBar({ className: 'league-team-member-actions', actions: [rename, lead, eject, close] }).el,
+    );
+    toggle.addEventListener('click', () => {
+      const expanded = toggle.getAttribute('aria-expanded') !== 'true';
+      toggle.setAttribute('aria-expanded', String(expanded));
+      detail.hidden = !expanded;
+    });
+    const main = el('div', 'league-team-member-main'); main.append(toggle, open.el);
+    row.append(main, detail); list.append(row);
   }
   roster.append(list);
   if (holding) return roster;
