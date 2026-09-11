@@ -104,12 +104,13 @@ distributed Agent records and consolidates their reported state. It does not pre
 ladder. Stable identity, never phase or gate text, connects declared events to their projection.
 Trello or another board is only an adapter over that view.
 
-For Team work, every linked card is expected to show an exact-candidate release-approval gate.
-That convention makes approval or its absence visible; it does not make the work-record or Tejun
-tools refuse commit or hand-in. Private checkpoint commits remain ungated. If an Agent proceeds
-without recorded approval, the record and views disclose the missing gate and consequence rather
-than inventing approval. Approval may release a voluntarily observed hold, while hand-in, lead
-review, and promotion remain separate actions.
+In the future design, a rung may carry an optional exit-check hint: absent leaves the choice to the
+Agent, `NONE` explicitly expects no check, and `TEAM_LEAD` or `OWNER` names who the Agent is expected
+to consult. It is not a gate or approval record. If the Agent advances without checking, the record
+simply advances; Ronin records no approval, omission, or violation. Team work commonly places such
+a hint on its final delivery rung, but it never blocks commit or hand-in. Private commits, hand-in,
+lead review, and promotion remain separate actions. A real exact-candidate approval belongs in a
+gate only when another work contract genuinely requires it.
 
 This does not exist in the current tools. Do not claim that an external card controls an Agent,
 and do not add future identity or state fields to today's record. Birth reading, generated record
