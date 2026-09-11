@@ -312,15 +312,16 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
       head.addEventListener('click', () => { mandateOpen = mandateOpen === key ? '' : key; paintMandate(); }); box.append(head);
       if (mandateOpen === key) box.append(content); return box;
     };
+    mandateHost.className = 'na-mandate-grid';
     mandateHost.replaceChildren(el('p', 'fs-head', t('mandate', 'Mandate')),
-      part('reach', t('reach', 'Reach'), dialRow('', REACH, draft.reach, (value) => { draft.reach = value; touched.mandate = true; paintMandate(); paintFoot(); }), mandateWord(draft.reach)),
-      part('recruit', t('recruit', 'Recruit'), dialRow('', RECRUIT, draft.recruit, (value) => { draft.recruit = value; touched.mandate = true; paintMandate(); paintFoot(); }), mandateWord(draft.recruit)),
+      part('reach', t('reach', 'Reach'), dialRow('', REACH, draft.reach, (value) => { draft.reach = value; touched.mandate = true; paintMandate(); paintFoot(); }), touched.mandate ? mandateWord(draft.reach) : t('forms.default', 'Default')),
+      part('recruit', t('recruit', 'Recruit'), dialRow('', RECRUIT, draft.recruit, (value) => { draft.recruit = value; touched.mandate = true; paintMandate(); paintFoot(); }), touched.mandate ? mandateWord(draft.recruit) : t('forms.default', 'Default')),
       part('output', t('output', 'Output'), dialRowMulti('', OUTPUT, draft.output, (value, on) => {
         draft.output = on ? [...draft.output, value] : draft.output.filter((entry) => entry !== value);
         touched.mandate = true;
         paintMandate();
         paintFoot();
-      }), draft.output.map(mandateWord).join(', ')),
+      }), touched.mandate ? draft.output.map(mandateWord).join(', ') : t('forms.default', 'Default')),
     );
   }
   stepMandate.body.append(mandateHost);
@@ -588,7 +589,8 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     if (!answer.ok) return;
     seed = answer.data || null;
     const value = (field) => seed?.seeds?.[field]?.value;
-    if (!touched.model && !draft.provider) { draft.provider = value('provider') || ''; draft.model = value('model') || ''; }
+    // Blank means inherit the resolved provider/model. The launcher says Default until the
+    // owner deliberately overrides either choice.
     if (!touched.root && value('project_root')) draft.root = value('project_root');
     if (!touched.mandate) {
       for (const key of ['reach', 'recruit']) if (value(key)) draft[key] = value(key);
