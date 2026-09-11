@@ -10,7 +10,7 @@ import { t } from './lexicon.js';
 import { createWhereItWorks } from './where-it-works.js';
 import { finalizeTeamName, isValidTeamName, sanitizeTeamName } from './new-team-draft.js';
 import {
-  createStep, dialRow, dialRowMulti, el, kindTiles, providerModelPair, readingRows, tagRow, templateTray, wayTiles, bookShelves,
+  createStep, dialRow, dialRowMulti, el, kindTiles, mandateWord, providerModelStones, readingRows, tagRow, templateTray, wayTiles, bookShelves,
 } from './form-steps.js';
 import { closeWorkspaceTab, openWorkspaceTab, reserveWorkspaceTab } from './workspace.js';
 
@@ -34,13 +34,13 @@ export function templateEntryPlan({ currentKind, kindTouched = false, templates 
   return { kind, template: row.name };
 }
 
-export function createNewAgentView(kit, { connect = null, embedded = false } = {}) {
+export function createNewAgentView(kit, { connect = null, embedded = false, team = null } = {}) {
   const { createSurface, createAction, createActionBar, createField, createNotice } = kit.primitives;
 
   const draft = {
     type: 'cowork_agent', template: '', templateName: '',
     name: '', kind: 'coding', kindTouched: false, provider: '', model: '', instructions: '',
-    teamMode: 'new', team: '', newTeam: '',
+    teamMode: typeof team === 'function' && team() ? 'existing' : 'new', team: typeof team === 'function' ? team() : '', newTeam: '', teamLead: false,
     reach: 'open', recruit: 'open', output: ['open'], launchMode: 'live_dangerously',
     books: [], root: '', routineOverrides: {},
     expanded: {},
@@ -102,19 +102,17 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
     { key: 'cowork_agent', label: t('new_agent.type_cowork', 'Cowork Agent'), sub: t('new_agent.type_cowork_sub', 'Born into Ronin: the floor, its routines, its reading and its team.') },
     { key: 'bare_metal_agent', label: t('new_agent.type_bare', 'Bare-metal Agent'), sub: t('new_agent.type_bare_sub', 'The provider’s agent and nothing else — no floor, no routines, no reading.') },
     { key: 'terminal', label: t('new_agent.type_terminal', 'Terminal'), sub: t('new_agent.type_terminal_sub', 'A raw tmux pane. No agent is launched and nothing is sent to it.') },
-    { key: 'template', label: t('new_agent.apply_template', 'Apply Template'), sub: t('new_agent.apply_template_sub', 'Start with one of your available Agent templates.') },
   ];
   function paintTypes() {
     typeHost.replaceChildren();
     for (const type of TYPES()) {
       const box = el('button', 'fs-way');
       box.type = 'button';
-      box.setAttribute('aria-pressed', String(type.key === 'template' ? templateMode : !templateMode && draft.type === type.key));
+      box.setAttribute('aria-pressed', String(draft.type === type.key));
       box.append(el('b', null, type.label), el('small', null, type.sub));
       box.addEventListener('click', () => {
-        templateMode = type.key === 'template';
-        if (templateMode) draft.type = 'cowork_agent';
-        else draft.type = type.key;
+        templateMode = false;
+        draft.type = type.key;
         paint();
       });
       typeHost.append(box);
@@ -123,7 +121,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
   stepType.body.append(typeHost, templateHost);
 
   /* ---- 3 · Name & instructions ---- */
-  const stepTop = createStep({ n: 3, key: 'top', title: t('new_agent.identity_step', 'Name & instructions') });
+  const stepTop = createStep({ n: 2, key: 'top', title: t('new_agent.agent_body', 'Agent') });
   const nameInput = el('input');
   nameInput.type = 'text';
   nameInput.autocapitalize = 'off';
@@ -279,16 +277,21 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
   }
   stepTeam.body.append(teamHost);
 
+  const leadChoice = el('label', 'na-team-lead');
+  const leadInput = el('input'); leadInput.type = 'checkbox';
+  leadInput.addEventListener('change', () => { draft.teamLead = leadInput.checked; paintFoot(); });
+  leadChoice.append(leadInput, el('span', null, t('add_agent.make_team_lead', 'Make Team Lead')));
+  stepTeam.body.append(leadChoice);
+
   /* ---- 5 · Who and where ---- */
   const stepWhere = createStep({ n: 5, key: 'where', title: t('new_team.who_where', 'Who and where'), onToggle: () => toggle('where') });
-  const pair = providerModelPair(
+  const pair = providerModelStones(
     () => ({ provider: draft.provider, model: draft.model }),
     (provider, model) => { draft.provider = provider; draft.model = model; touched.model = true; paintFoot(); },
-    (label, control) => createField({ label, control }).el,
   );
   // is this launch's own; the ticks are the Team's desks until the person changes them,
   // and then the launch carries its own `repos`. Branches are the Team's and read-only here.
-  const where = createWhereItWorks({ branchesEditable: false, onChange: () => { if (where.root !== draft.root) { draft.root = where.root; touched.root = true; } else { draft.repos = where.repos(); touched.repos = true; } paintFoot(); } });
+  const where = createWhereItWorks({ stones: true, branchesEditable: false, onChange: () => { if (where.root !== draft.root) { draft.root = where.root; touched.root = true; } draft.repos = where.repos().filter((name) => name !== draft.root); touched.repos = true; paintFoot(); } });
   const wherePair = el('div', 'fs-pair');
   wherePair.append(createField({ label: t('where.label', 'Where it works'), control: where.el }).el);
   stepWhere.body.append(pair.el, wherePair);
@@ -301,16 +304,23 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
   /* ---- 6 · Mandate ---- */
   const stepMandate = createStep({ n: 6, key: 'mandate', title: t('mandate', 'Mandate'), onToggle: () => toggle('mandate') });
   const mandateHost = el('div');
+  let mandateOpen = '';
   function paintMandate() {
-    mandateHost.replaceChildren(
-      dialRow(t('reach', 'Reach'), REACH, draft.reach, (value) => { draft.reach = value; touched.mandate = true; paintMandate(); paintFoot(); }),
-      dialRow(t('recruit', 'Recruit'), RECRUIT, draft.recruit, (value) => { draft.recruit = value; touched.mandate = true; paintMandate(); paintFoot(); }),
-      dialRowMulti(t('output', 'Output'), OUTPUT, draft.output, (value, on) => {
+    const part = (key, label, content, summary) => {
+      const box = el('div', 'na-mandate-part'); const head = el('button', 'na-mandate-toggle'); head.type = 'button';
+      head.setAttribute('aria-expanded', String(mandateOpen === key)); head.append(el('b', null, label), el('span', null, summary));
+      head.addEventListener('click', () => { mandateOpen = mandateOpen === key ? '' : key; paintMandate(); }); box.append(head);
+      if (mandateOpen === key) box.append(content); return box;
+    };
+    mandateHost.replaceChildren(el('p', 'fs-head', t('mandate', 'Mandate')),
+      part('reach', t('reach', 'Reach'), dialRow('', REACH, draft.reach, (value) => { draft.reach = value; touched.mandate = true; paintMandate(); paintFoot(); }), mandateWord(draft.reach)),
+      part('recruit', t('recruit', 'Recruit'), dialRow('', RECRUIT, draft.recruit, (value) => { draft.recruit = value; touched.mandate = true; paintMandate(); paintFoot(); }), mandateWord(draft.recruit)),
+      part('output', t('output', 'Output'), dialRowMulti('', OUTPUT, draft.output, (value, on) => {
         draft.output = on ? [...draft.output, value] : draft.output.filter((entry) => entry !== value);
         touched.mandate = true;
         paintMandate();
         paintFoot();
-      }),
+      }), draft.output.map(mandateWord).join(', ')),
     );
   }
   stepMandate.body.append(mandateHost);
@@ -387,11 +397,8 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
     kind: stepKind, type: stepType, top: stepTop,
     team: stepTeam, where: stepWhere, mandate: stepMandate, loadout: stepLoadout,
   };
-  const plan = () => {
-    if (draft.type === 'terminal') return ['type', 'top'];
-    if (draft.type === 'bare_metal_agent') return ['kind', 'type', 'top', 'team', 'where'];
-    return ['kind', 'type', 'top', 'team', 'where', 'mandate', 'loadout'];
-  };
+  const plan = () => draft.type === 'terminal' ? ['type', 'top', 'where'] : draft.type === 'bare_metal_agent'
+    ? ['type', 'top', 'where'] : ['type', 'top', 'team', 'where', 'loadout'];
   const FOLDS = ['team', 'where', 'mandate', 'loadout'];
   function toggle(key) {
     if (draft.expanded[key]) delete draft.expanded[key];
@@ -424,7 +431,6 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
       [t('squad', 'Team'), draft.teamMode === 'none' || !chosenTeam() ? '' : chosenTeam() + (draft.teamMode === 'new' ? `  ${t('new_agent.created_first', '(created first)')}` : '')],
     ];
     if (isCowork()) {
-      rows.push([t('kind', 'Kind'), draft.kind]);
       rows.push([t('mandate', 'Mandate'), `${draft.reach} · ${draft.recruit} · ${draft.output.join(', ')}`]);
     }
     rows.push([t('routines', 'Routines'), draft.type === 'terminal'
@@ -472,7 +478,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
 
   async function doStart() {
     if (busy) return;
-    const launchTab = reserveWorkspaceTab();
+    const launchTab = connect ? null : reserveWorkspaceTab();
     const name = draft.name.trim();
     busy = true;
     start.setDisabled(true);
@@ -483,7 +489,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
     if (draft.teamMode === 'new' && !team) team = '';
     if (draft.teamMode === 'new' && isCowork() && team) {
       if (!isValidTeamName(team)) {
-        closeWorkspaceTab(launchTab);
+        if (launchTab) closeWorkspaceTab(launchTab);
         busy = false;
         start.setDisabled(false);
         notice.set('failed', t('new_team.name_invalid', 'Lowercase letters, digits, _ and - only.'));
@@ -491,10 +497,10 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
       }
       const made = await request('/api/team-rosters', {
         method: 'POST',
-        json: { name: team, kind: draft.kind, ...(draft.template ? { template: draft.template } : {}) },
+        json: { name: team },
       });
       if (!made.ok) {
-        closeWorkspaceTab(launchTab);
+        if (launchTab) closeWorkspaceTab(launchTab);
         busy = false;
         start.setDisabled(false);
         notice.set('failed', made.message);
@@ -510,7 +516,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
         : {
           session_type: 'cowork_agent', name, team, project_root: draft.root,
           instructions: draft.instructions.trim(), provider: draft.provider, model: draft.model,
-          kind: draft.kind,
+          team_lead: draft.teamLead,
           ...(touched.repos && Array.isArray(draft.repos) ? { repos: draft.repos } : {}),
           mandate: { reach: draft.reach, recruit: draft.recruit, output: draft.output },
           behaviours: [...draft.books],
@@ -523,7 +529,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
     busy = false;
     start.setDisabled(false);
     if (!result.ok) {
-      closeWorkspaceTab(launchTab);
+      if (launchTab) closeWorkspaceTab(launchTab);
       notice.set('failed', result.message);
       return;
     }
@@ -531,7 +537,8 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
     const deskNote = result.data?.receipt?.desk_note || '';
     if (deskNote) notice.set('warning', t('add_agent.started_note', 'Started {name} — {note}', { name: born, note: deskNote }));
     else notice.set('success', t('add_agent.started', 'Started {name}', { name: born }));
-    openWorkspaceTab(team ? 'team' : 'cowork', team, launchTab);
+    if (connect) connect(born);
+    else openWorkspaceTab(team ? 'team' : 'cowork', team, launchTab);
   }
 
   async function doSave() {
@@ -609,9 +616,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
     order.forEach((key, index) => steps[key].setNumber(index + 1));
     stepPayload.setNumber(order.length + 1);
     stepPayload.el.hidden = draft.type === 'terminal';
-    stepTop.el.querySelector('h3').textContent = hasAgent()
-      ? t('new_agent.identity_step', 'Name & instructions')
-      : t('new_agent.name_required_step', 'Name · required');
+    stepTop.el.querySelector('h3').textContent = hasAgent() ? t('new_agent.agent_body', 'Agent') : t('new_agent.name_required_step', 'Name · required');
     pair.el.hidden = !hasAgent();
     instructionsField.hidden = !hasAgent();
     paintTypes();
@@ -639,8 +644,10 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
   } });
   stepPayload.body.append(foot, actions.el);
   stepPayload.setCollapsed(true, t('forms.payload_summary', 'Review what Launch will create'), true);
+  // The Agent body is one compact bundle: identity, provider/model, mandate, instructions.
+  stepTop.body.replaceChildren(nameField, pair.el, mandateHost, instructionsField);
   const form = el('div', 'ntf-form');
-  form.append(stepKind.el, stepType.el, stepTop.el, stepTeam.el, stepWhere.el, stepMandate.el, stepLoadout.el, stepPayload.el);
+  form.append(stepType.el, stepTop.el, stepTeam.el, stepWhere.el, stepLoadout.el, stepPayload.el);
   // Save as template sits UNDER the reading, for the same reason as on New Team: the
   // reading is the packet, and the button saves the packet.
   surface.content.append(form, notice.el);
@@ -659,6 +666,8 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
   return {
     el: embedded ? surface.content : surface.el,
     enter: async (detail = {}) => {
+      const entryTeam = typeof team === 'function' ? team() : team;
+      if (entryTeam) { draft.teamMode = 'existing'; draft.team = entryTeam; }
       paint();
       const [tray, sopRows, wayRows, teamRows, rootRows] = await Promise.all([
         request('/api/templates/agents'),

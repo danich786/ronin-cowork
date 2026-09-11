@@ -4,19 +4,26 @@ import { readFile } from 'node:fs/promises';
 
 const source = (file) => readFile(new URL(`../public/js/${file}`, import.meta.url), 'utf8');
 
-test('New Agent presents Kind, four session doors, combined instructions, and a final Payload', async () => {
+test('New Agent is the canonical five-section launcher with three session types', async () => {
   const form = await source('new-agent.js');
-  assert.match(form, /const plan = \(\) => \{[\s\S]*\['kind', 'type', 'top'/);
-  assert.match(form, /key: 'template'.*Apply Template/);
-  assert.match(form, /templateTray\(offered\(\), draft\.template,[\s\S]*includeOwn: false/);
-  assert.match(form, /Name & instructions/);
+  assert.match(form, /\['type', 'top', 'team', 'where', 'loadout'\]/);
+  assert.doesNotMatch(form, /key: 'template'.*Apply Template/);
+  assert.match(form, /Cowork Agent[\s\S]*Bare-metal Agent[\s\S]*Terminal/);
   assert.match(form, /Session type/);
+  assert.match(form, /agent_body', 'Agent'/);
   assert.match(form, /Name · required/);
-  assert.match(form, /draft\.type === 'terminal'\) return \['type', 'top'\]/);
-  assert.match(form, /stepPayload\.el\.hidden = draft\.type === 'terminal'/);
+  assert.match(form, /providerModelStones/);
+  assert.match(form, /Make Team Lead/);
   assert.match(form, /stepPayload\.setNumber\(order\.length \+ 1\)/);
   assert.match(form, /key: 'payload'.*Payload/);
-  assert.doesNotMatch(form, /const stepTemplate =/);
+  assert.match(form, /stepTop\.body\.replaceChildren\(nameField, pair\.el, mandateHost, instructionsField\)/);
+});
+
+test('both workbench entrances use the canonical New Agent form with contextual Team default', async () => {
+  const cowork = await source('cowork-view.js');
+  assert.doesNotMatch(cowork, /createAddAgentView/);
+  assert.match(cowork, /const view = createNewAgentView\(WorkspaceKit, \{[\s\S]*team: \(\) =>/);
+  assert.match(cowork, /connect: \(name\) => connectSession\(name, id\)/);
 });
 
 test('New Team makes templates optional and offers explicit Agent roles', async () => {
