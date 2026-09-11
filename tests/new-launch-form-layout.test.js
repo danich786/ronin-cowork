@@ -43,6 +43,13 @@ test('Where it works separates birthplace and additional workspace profile stone
   assert.match(where, /line\.hidden = true/);
 });
 
+test('model disclosures open directly to choices and close after selection', async () => {
+  const parts = await source('form-steps.js');
+  assert.doesNotMatch(parts, /options\.append\(el\('p', 'na-choice-label', label\)\)/);
+  assert.match(parts, /choose\(''\); open = ''; paint\(\)/);
+  assert.match(parts, /choose\(choice\.key\); open = ''; paint\(\)/);
+});
+
 test('New Team makes templates optional and offers explicit Agent roles', async () => {
   const [form, agents] = await Promise.all([source('new-team-form.js'), source('team-agents.js')]);
   assert.match(form, /\['kind', 'template', 'top', 'lead', 'defaults', 'where', 'kit'\]/);
