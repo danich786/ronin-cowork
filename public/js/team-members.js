@@ -1,6 +1,6 @@
 /* part of the ronin-cowork client — see js/README.md */
-/** The Team member list — identity rows, the lead/rename/remove actions, the add-select —
- *  shared by the Team commons configuration tab and the league team surfaces. */
+/** The Team member list — identity rows, optional open/close acts, membership acts and
+ *  the add-select — shared by the Commons roster and the league team surfaces. */
 import { WorkspaceKit } from './workspace-kit.js';
 import { membersOfTeam, refreshTeams, sessionsAvailableToTeam, setTeamLead, setTeamMembership, teamByName } from './team-controller.js';
 import { setSessionTitle } from './api.js';
@@ -37,6 +37,7 @@ export const buildTeamMembers = (name, options = {}) => {
     words.append(el('strong', null, agentTitle(member)), el('span', null, member.session_role || t('league.role_unset', 'Role not set')));
     identity.append(mark, words);
     if (holding) { row.append(identity); list.append(row); continue; }
+    const open = options.onOpen ? createAction({ label: t('league.open_agent', 'Open'), size: 'compact', action: () => options.onOpen(member) }) : null;
     const rename = createAction({ label: t('league.rename_agent', 'Rename'), size: 'compact', action: async () => {
       const currentTitle = agentTitle(member);
       const wanted = window.prompt(t('league.rename_agent_prompt', 'Edit Agent title'), currentTitle);
@@ -46,7 +47,8 @@ export const buildTeamMembers = (name, options = {}) => {
     } });
     const lead = createAction({ label: member.team_lead ? t('league.team_lead', 'Team Lead') : t('league.make_team_lead', 'Make Lead'), size: 'compact', selected: member.team_lead, action: async () => { const result = await setTeamLead(member.name, name, !member.team_lead); if (!result.ok) return options.onFailed?.(result.message); options.onChanged?.(); } });
     const eject = createAction({ label: t('league.remove_member', 'Remove'), title: t('league.remove_named_member', 'Remove {name} from this team', { name: member.name }), size: 'compact', action: async () => { const result = await setTeamMembership(member.name, name, false); if (!result.ok) return options.onFailed?.(result.message); options.onChanged?.(); } });
-    row.append(identity, createActionBar({ className: 'league-team-member-actions', actions: [rename, lead, eject] }).el); list.append(row);
+    const close = options.onClose ? createAction({ label: t('league.close_agent', 'Close'), title: t('league.close_named_agent', 'Close {name}', { name: member.name }), size: 'compact', action: () => options.onClose(member) }) : null;
+    row.append(identity, createActionBar({ className: 'league-team-member-actions', actions: [open, rename, lead, eject, close] }).el); list.append(row);
   }
   roster.append(list);
   if (holding) return roster;

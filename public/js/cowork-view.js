@@ -33,6 +33,7 @@ import { toast } from './ui.js';
 import { readyMika } from './mika-ready.js';
 import { createMikaHelpPanel } from './mika.js';
 import { coworkWorkbenchIdentity, orderCoworkTeams } from './campaign.js';
+import { retireSession } from './session-retire.js';
 
 const el = (tag, cls, text) => {
   const out = document.createElement(tag);
@@ -77,7 +78,7 @@ function registerWorkbenchCatalog() {
   registerPresetsSurface();
   const { library, profiles } = WorkspaceKit.workbench;
   const add = (definition) => { if (!library.has(definition.type)) library.register(definition); };
-  add({ type: WB_TYPES.commons, header: 'channels', className: 'wk-selector-utility', label: () => t('team.commons_card', 'Team commons'), summary: () => t('team.commons_summary', 'See Docs / Wipeboard / Configuration'), create: ({ workspace, environment }) => environment.teamCommons(workspace) });
+  add({ type: WB_TYPES.commons, header: 'channels', className: 'wk-selector-utility', label: () => t('team.commons_card', 'Commons'), summary: () => t('team.commons_summary', 'See Roster / Docs / Wipeboard / Configuration'), create: ({ workspace, environment }) => environment.teamCommons(workspace) });
   add({ type: WB_TYPES.desk, header: 'channels', label: () => t('cowork.commons', 'Ronin Desk'), create: ({ workspace, environment }) => environment.desk(workspace) });
   // one there"). Drawn contract: ronin-lab `concepts/add-agent-to-team.html`.
   add({ type: WB_TYPES.addAgent, header: 'surface', className: 'wk-selector-utility wk-selector-group-after', label: () => t('add_agent.card', 'Add Agent to Team'), summary: () => t('add_agent.card_summary', 'The Team answers the rest.'), variant: 'dotted', create: ({ workspace, environment }) => environment.addAgent(workspace) });
@@ -177,6 +178,7 @@ export function createCoworkView(options = {}) {
       enter: () => { void refreshHome(); docs.enter(); },
       leave: () => {}, destroy: () => {},
     };
+    const roster = el('div', 'tw-config tw-roster');
     const config = el('div', 'tw-config');
     const messages = el('div', 'tw-messages');
     const messageLabel = t('workspace.channel_agent_message_queue', 'Messages');
@@ -194,23 +196,24 @@ export function createCoworkView(options = {}) {
     };
     const messageQueue = buildMessageQueue(messages, (count) => { retainedCount = count; paintMessageAttention(); });
     const channels = createChannelSurface({
-      label: t('team.commons', 'Team commons'),
+      label: t('team.commons', 'Commons'),
       channels: [
+        { id: 'roster', label: t('workspace.channel_roster', 'Roster') },
         { id: 'docs', label: t('workspace.channel_docs', 'Docs') },
         { id: 'wipeboard', label: t('workspace.channel_wipeboard', 'Wipeboard') },
         { id: 'agent-message-queue', label: messageLabel },
         { id: 'cron-jobs', label: t('workspace.channel_cron_jobs', 'Cron jobs') },
-        { id: 'team-configuration', label: t('workspace.channel_team_configuration', 'Team Configuration') },
+        { id: 'team-configuration', label: t('workspace.channel_team_configuration', 'Configuration') },
       ],
-      selected: 'docs',
-      services: { wipeboard, docs: docsService, 'agent-message-queue': { el: messages, mount: () => {}, enter: messageQueue.enter, leave: messageQueue.leave, destroy: messageQueue.destroy }, 'cron-jobs': jikan, 'team-configuration': service(config) },
+      selected: 'roster',
+      services: { roster: service(roster), wipeboard, docs: docsService, 'agent-message-queue': { el: messages, mount: () => {}, enter: messageQueue.enter, leave: messageQueue.leave, destroy: messageQueue.destroy }, 'cron-jobs': jikan, 'team-configuration': service(config) },
     });
     messageTab = channels.tabs.querySelector('[data-service="agent-message-queue"]');
     channels.tabs.addEventListener('click', () => { chooseQueueOnOpen = false; });
     paintMessageAttention();
     channels.el.dataset.workbenchSurface = COMMONS;
     return {
-      el: channels.el, channels, wipeboard, jikan, docs, config, messageQueue,
+      el: channels.el, channels, wipeboard, jikan, docs, roster, config, messageQueue,
       attendQueueOnOpen: () => {
         chooseQueueOnOpen = true;
         if (retainedCount > 0) paintMessageAttention();
@@ -360,6 +363,7 @@ export function createCoworkView(options = {}) {
   const isShown = (name) => Object.values(seats).some((seat) => seat.pool.active === name && !surfaceIn(seat.id));
   const remember = () => { const snapshot = bench?.snapshot(); ctx?.patchViewState(viewKey, { ...snapshot, seats: Object.fromEntries(Object.keys(seats).map((id) => [id, surfaceIn(id) ? snapshot?.seats?.[id] : seats[id].pool.active])) }); reportView(); };
   const lead = () => membersOfTeam(team).find((m) => m.team_lead)?.name || '';
+  const oppositeSeat = (id) => ({ workspace1: 'workspace2', workspace2: 'workspace1', workspace3: 'workspace4', workspace4: 'workspace3' })[id] || 'workspace1';
 
   const putCommons = (id, tab = '', doc = '') => putSurface(COMMONS, id, tab, doc);
   const putCowork = (id, tab = '') => putSurface(COWORK, id, tab);
@@ -604,13 +608,23 @@ export function createCoworkView(options = {}) {
     const signature = configSignature(team);
     if (signature === seenConfig) return;
     seenConfig = signature;
-    for (const commons of Object.values(teamCommons)) {
+    for (const [id, commons] of Object.entries(teamCommons)) {
+      const changed = () => { commons.channels.setState(); paint(); };
+      const members = buildTeamMembers(team, {
+        onChanged: changed,
+        onFailed: (message) => commons.channels.setState('failed', message),
+        onOpen: (member) => putSession(member.name, oppositeSeat(id)),
+        onClose: (member) => retireSession(member.name, `commons-${id}-${member.name}`, async () => {
+          await Promise.all([fetchSessions(), refreshTeams()]);
+          paint();
+        }),
+      });
+      commons.roster.replaceChildren(members);
       if (!roster) { renderTeamConfiguration(commons.config, null, { createAction }); continue; }
       const fields = el('div');
       const config = el('section', 'league-team-config');
-      config.append(el('h3', 'league-team-roster-title', t('workspace.channel_team_configuration', 'Team Configuration')), fields);
-      const members = buildTeamMembers(team, { onChanged: () => { commons.channels.setState(); paint(); }, onFailed: (message) => commons.channels.setState('failed', message) });
-      commons.config.replaceChildren(members, config);
+      config.append(el('h3', 'league-team-roster-title', t('workspace.channel_team_configuration', 'Configuration')), fields);
+      commons.config.replaceChildren(config);
       renderTeamConfiguration(fields, { ...roster, durable: true }, { createAction, onSaved: async (saved) => {
         await refreshTeams();
         setBarLabel(); renderConfig(saved, live); paint();
