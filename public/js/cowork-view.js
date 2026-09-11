@@ -23,16 +23,17 @@ import { launchPresetPlan, presetLaunchUrl } from './preset-launch.js';
 import { refreshDesks } from './desks.js';
 import { acceptDrops as acceptSessionDrops } from './team-drag.js';
 import { S } from './state.js';
-import { createCampaignIdentity } from './campaign.js';
 import { renderTeamConfiguration } from './team-configuration.js';
 import { agentTitle, buildTeamMembers, configSignature } from './team-members.js';
 import { isCoarse } from './tiledrop.js';
 import { createFeedbackSurface, FEEDBACK_TYPE, registerFeedbackSurface } from './feedback.js';
 import { fetchSessions } from './api.js';
-import { helpersLast, RONIN_HELPERS } from './roster-groups.js';
+import { RONIN_HELPERS } from './roster-groups.js';
 import { toast } from './ui.js';
 import { readyMika } from './mika-ready.js';
 import { createMikaHelpPanel } from './mika.js';
+import { coworkWorkbenchIdentity, orderCoworkTeams } from './campaign.js';
+import { retireSession } from './session-retire.js';
 
 const el = (tag, cls, text) => {
   const out = document.createElement(tag);
@@ -77,7 +78,7 @@ function registerWorkbenchCatalog() {
   registerPresetsSurface();
   const { library, profiles } = WorkspaceKit.workbench;
   const add = (definition) => { if (!library.has(definition.type)) library.register(definition); };
-  add({ type: WB_TYPES.commons, header: 'channels', className: 'wk-selector-utility', label: () => t('team.commons_card', 'Team commons'), summary: () => t('team.commons_summary', 'See Docs / Wipeboard / Configuration'), create: ({ workspace, environment }) => environment.teamCommons(workspace) });
+  add({ type: WB_TYPES.commons, header: 'channels', className: 'wk-selector-utility', label: () => t('team.commons_card', 'Commons'), summary: () => t('team.commons_summary', 'See Roster / Docs / Wipeboard / Configuration'), create: ({ workspace, environment }) => environment.teamCommons(workspace) });
   add({ type: WB_TYPES.desk, header: 'channels', label: () => t('cowork.commons', 'Ronin Desk'), create: ({ workspace, environment }) => environment.desk(workspace) });
   // one there"). Drawn contract: ronin-lab `concepts/add-agent-to-team.html`.
   add({ type: WB_TYPES.addAgent, header: 'surface', className: 'wk-selector-utility wk-selector-group-after', label: () => t('add_agent.card', 'Add Agent to Team'), summary: () => t('add_agent.card_summary', 'The Team answers the rest.'), variant: 'dotted', create: ({ workspace, environment }) => environment.addAgent(workspace) });
@@ -102,11 +103,12 @@ export function createCoworkView(options = {}) {
   registerWorkbenchCatalog();
   const campaign = options.kind === 'cowork';
   const viewKey = campaign ? 'cowork' : 'team';
+  const coworkIdentity = coworkWorkbenchIdentity(t('campaign.coworks', 'Teams'));
   const { createSurface, createChannelSurface, createAction } = WorkspaceKit.primitives;
   const { createTerminalTileHost } = WorkspaceKit.adapters;
   const { teamWorkspaceState } = WorkspaceKit.contract;
   const root = el('main', 'tw-view');
-  root.dataset.coworkKind = campaign ? 'campaign' : 'team';
+  root.dataset.coworkKind = campaign ? coworkIdentity.kind : 'team';
   let ctx = null;
   let stopMessageAttention = null;
   let team = '';
@@ -194,6 +196,7 @@ export function createCoworkView(options = {}) {
       enter: () => { void refreshHome(); docs.enter(); },
       leave: () => {}, destroy: () => {},
     };
+    const roster = el('div', 'tw-config tw-roster');
     const config = el('div', 'tw-config');
     const messages = el('div', 'tw-messages');
     const messageLabel = t('workspace.channel_agent_message_queue', 'Messages');
@@ -211,23 +214,24 @@ export function createCoworkView(options = {}) {
     };
     const messageQueue = buildMessageQueue(messages, (count) => { retainedCount = count; paintMessageAttention(); });
     const channels = createChannelSurface({
-      label: t('team.commons', 'Team commons'),
+      label: t('team.commons', 'Commons'),
       channels: [
+        { id: 'roster', label: t('workspace.channel_roster', 'Roster') },
         { id: 'docs', label: t('workspace.channel_docs', 'Docs') },
         { id: 'wipeboard', label: t('workspace.channel_wipeboard', 'Wipeboard') },
         { id: 'agent-message-queue', label: messageLabel },
         { id: 'cron-jobs', label: t('workspace.channel_cron_jobs', 'Cron jobs') },
-        { id: 'team-configuration', label: t('workspace.channel_team_configuration', 'Team Configuration') },
+        { id: 'team-configuration', label: t('workspace.channel_team_configuration', 'Configuration') },
       ],
-      selected: 'docs',
-      services: { wipeboard, docs: docsService, 'agent-message-queue': { el: messages, mount: () => {}, enter: messageQueue.enter, leave: messageQueue.leave, destroy: messageQueue.destroy }, 'cron-jobs': jikan, 'team-configuration': service(config) },
+      selected: 'roster',
+      services: { roster: service(roster), wipeboard, docs: docsService, 'agent-message-queue': { el: messages, mount: () => {}, enter: messageQueue.enter, leave: messageQueue.leave, destroy: messageQueue.destroy }, 'cron-jobs': jikan, 'team-configuration': service(config) },
     });
     messageTab = channels.tabs.querySelector('[data-service="agent-message-queue"]');
     channels.tabs.addEventListener('click', () => { chooseQueueOnOpen = false; });
     paintMessageAttention();
     channels.el.dataset.workbenchSurface = COMMONS;
     return {
-      el: channels.el, channels, wipeboard, jikan, docs, config, messageQueue,
+      el: channels.el, channels, wipeboard, jikan, docs, roster, config, messageQueue,
       attendQueueOnOpen: () => {
         chooseQueueOnOpen = true;
         if (retainedCount > 0) paintMessageAttention();
@@ -248,9 +252,6 @@ export function createCoworkView(options = {}) {
     });
     return [id, { el: view.el, enter: () => view.enter() }];
   }));
-  const campaignIdentity = createCampaignIdentity((name) => {
-    if (entered && campaign) renderCards([]);
-  });
   // its roster exists, so the form that made it hands the workspace over to it and goes
   // back to empty. Staffing happens from inside the Team, through Add Agent.
   const newTeamFormBySeat = campaign ? Object.fromEntries(Object.keys(seats).map((id) => {
@@ -305,13 +306,10 @@ export function createCoworkView(options = {}) {
         onPointerEnter: () => armPrewarm(member.name), onPointerLeave: disarmPrewarm };
     }),
     teams: () => campaign ? (() => {
-      const teams = teamsFromState().filter((candidate) => !candidate.holding);
-      const helper = teams.find((candidate) => candidate.name === RONIN_HELPERS);
-      const ordered = [
-        ...teams.filter((candidate) => candidate.name !== RONIN_HELPERS).sort((a, b) => helpersLast(a.name, b.name)),
-        { name: UNASSIGNED, title: t('league.ronin', 'Ronin: no team'), objective: '' },
-        ...(helper ? [helper] : []),
-      ];
+      const ordered = orderCoworkTeams(teamsFromState(), {
+        helperName: RONIN_HELPERS,
+        noTeam: { name: UNASSIGNED, title: t('league.ronin', 'Ronin: no team'), objective: '' },
+      });
       return ordered.map((item) => ({ key: item.name, label: String(item.title ?? '').trim() || readableTeam(item.name), summary: item.objective || '' }));
     })() : [],
   };
@@ -319,15 +317,20 @@ export function createCoworkView(options = {}) {
     profile: campaign ? WB_PROFILES.cowork : WB_PROFILES.team,
     tenant: { kind: campaign ? 'cowork' : 'team', team: () => team }, environment,
     defaultNode: (id) => seats[id].surface.el,
-    label: campaign ? t('campaign', 'Campaign') : t('team.roster_title', 'Team Roster'),
+    label: campaign ? coworkIdentity.selectorLabel : t('team.roster_title', 'Team Roster'),
     // While ミ Help is open the column is Mika's, and every repaint says so.
-    title: () => helpPanel?.isOpen() ? t('mika.header', 'Mika, your helpful assistant') : campaign ? campaignIdentity.name() || t('campaign', 'Campaign') : t('team.roster_title', 'Roster'),
+    title: () => helpPanel?.isOpen() ? t('mika.header', 'Mika, your helpful assistant') : campaign ? coworkIdentity.selectorLabel : t('team.roster_title', 'Roster'),
     actions: [...(campaign ? [] : [densityToggle.el]), rosterNote, mikaHelp], shapeControl: shapeBtn, deferSelector: true,
     installDrop: (cell, id) => acceptSessionDrops(cell, () => id, (name, at) => arrange({ [at]: { session: name } })),
     onSelect: markSelected,
     onStateChange: () => remember(), onPlacement: () => remember(),
   });
   rosterTitle = bench.selectorHeader?.title ?? null;
+  if (campaign) {
+    const selector = bench.host.querySelector('.wk-workbench-selector');
+    selector?.setAttribute('role', 'navigation');
+    selector?.setAttribute('aria-label', coworkIdentity.selectorAriaLabel);
+  }
   root.append(bench.host);
   // ミ Help: Mika takes over the selector column — her ordinary tile, borrowed from the
   // pool, no workspace changes hands — and Close puts the roster cards back. The Mika
@@ -379,6 +382,7 @@ export function createCoworkView(options = {}) {
   const isShown = (name) => Object.values(seats).some((seat) => seat.pool.active === name && !surfaceIn(seat.id));
   const remember = () => { const snapshot = bench?.snapshot(); ctx?.patchViewState(viewKey, { ...snapshot, ...(campaign ? {} : { agentCardDensity: thinAgentCards ? 'thin' : 'thick' }), seats: Object.fromEntries(Object.keys(seats).map((id) => [id, surfaceIn(id) ? snapshot?.seats?.[id] : seats[id].pool.active])) }); reportView(); };
   const lead = () => membersOfTeam(team).find((m) => m.team_lead)?.name || '';
+  const oppositeSeat = (id) => ({ workspace1: 'workspace2', workspace2: 'workspace1', workspace3: 'workspace4', workspace4: 'workspace3' })[id] || 'workspace1';
 
   const putCommons = (id, tab = '', doc = '') => putSurface(COMMONS, id, tab, doc);
   const putCowork = (id, tab = '') => putSurface(COWORK, id, tab);
@@ -612,7 +616,7 @@ export function createCoworkView(options = {}) {
     };
   };
   function renderCards(members) {
-    if (rosterTitle) rosterTitle.textContent = campaign ? campaignIdentity.name() || t('campaign', 'Campaign') : t('team.roster_title', 'Roster');
+    if (rosterTitle) rosterTitle.textContent = campaign ? coworkIdentity.selectorLabel : t('team.roster_title', 'Roster');
     bench.refreshSelector();
   }
 
@@ -623,13 +627,23 @@ export function createCoworkView(options = {}) {
     const signature = configSignature(team);
     if (signature === seenConfig) return;
     seenConfig = signature;
-    for (const commons of Object.values(teamCommons)) {
+    for (const [id, commons] of Object.entries(teamCommons)) {
+      const changed = () => { commons.channels.setState(); paint(); };
+      const members = buildTeamMembers(team, {
+        onChanged: changed,
+        onFailed: (message) => commons.channels.setState('failed', message),
+        onOpen: (member) => putSession(member.name, oppositeSeat(id)),
+        onClose: (member) => retireSession(member.name, `commons-${id}-${member.name}`, async () => {
+          await Promise.all([fetchSessions(), refreshTeams()]);
+          paint();
+        }),
+      });
+      commons.roster.replaceChildren(members);
       if (!roster) { renderTeamConfiguration(commons.config, null, { createAction }); continue; }
       const fields = el('div');
       const config = el('section', 'league-team-config');
-      config.append(el('h3', 'league-team-roster-title', t('workspace.channel_team_configuration', 'Team Configuration')), fields);
-      const members = buildTeamMembers(team, { onChanged: () => { commons.channels.setState(); paint(); }, onFailed: (message) => commons.channels.setState('failed', message) });
-      commons.config.replaceChildren(members, config);
+      config.append(el('h3', 'league-team-roster-title', t('workspace.channel_team_configuration', 'Configuration')), fields);
+      commons.config.replaceChildren(config);
       renderTeamConfiguration(fields, { ...roster, durable: true }, { createAction, onSaved: async (saved) => {
         await refreshTeams();
         setBarLabel(); renderConfig(saved, live); paint();
@@ -684,14 +698,14 @@ export function createCoworkView(options = {}) {
     arrangement: bench.arrangement,
     // The owner's per-tab name; Teams defaults to its page name, a Team to the Team name.
     title: ({ param, viewState }) => {
-      const fallback = campaign ? t('campaign.coworks', 'Teams') : (readableTeam(param || team) || t('team.team', 'Team'));
+      const fallback = campaign ? coworkIdentity.tabLabel : (readableTeam(param || team) || t('team.team', 'Team'));
       const name = viewState?.(viewKey)?.tabName;
       return name ? { bare: name } : fallback;
     },
     tabName: {
       // The island edits the name it owns; a default is a real value, selectable and editable.
-      get: () => ctx?.viewState(viewKey)?.tabName || (campaign ? t('campaign.coworks', 'Teams') : readableTeam(team) || t('team.team', 'Team')),
-      placeholder: () => campaign ? t('campaign.coworks', 'Teams') : readableTeam(team) || t('team.team', 'Team'),
+      get: () => ctx?.viewState(viewKey)?.tabName || (campaign ? coworkIdentity.tabLabel : readableTeam(team) || t('team.team', 'Team')),
+      placeholder: () => campaign ? coworkIdentity.tabLabel : readableTeam(team) || t('team.team', 'Team'),
       set: (value) => { ctx?.patchViewState(viewKey, { tabName: String(value || '').trim() }); },
     },
     placeFeedback: () => bench.place(FEEDBACK_TYPE, bench.selected()),
@@ -712,7 +726,6 @@ export function createCoworkView(options = {}) {
       seenConfig = ''; // a fresh entry always paints the configuration once
       stopMessageAttention?.();
       stopMessageAttention = watchMessageQueueAttention();
-      if (campaign) void campaignIdentity.load();
       for (const seat of Object.values(seats)) seat.pool.destroyAll();
       team = campaign ? '' : context.param || context.state?.team || '';
       thinAgentCards = !campaign && context.viewState(viewKey)?.agentCardDensity === 'thin';
@@ -766,7 +779,6 @@ export function createCoworkView(options = {}) {
       entered = false;
       stopMessageAttention?.();
       stopMessageAttention = null;
-      campaignIdentity.destroy();
       unsubscribe?.();
       unsubscribe = null;
       teamPageHandlers.delete(onDraft);

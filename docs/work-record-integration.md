@@ -47,9 +47,8 @@ others. Live Team membership, derived from session Team tags, subscribes an Agen
 record. Agent ladders are never mechanically merged into one Team ladder.
 
 For a tiny assignment, the useful minimum is an objective, the assignment/provenance link, and a
-truthful current item. The shared release convention should be visible for Team work, either as a
-recorded gate or as an acknowledged missing expectation. More phases, gates, and evidence appear
-only when the work produces a reason for them.
+truthful current item. More phases, gates, checks, and evidence appear only when the work produces
+a reason for them.
 
 If several Agents contribute to a larger outcome, each keeps separate cards and work records.
 Their cards relate through a stable parent-outcome or grouping reference; they are not collapsed
@@ -72,6 +71,7 @@ ladder and declared gates; neither the Team view nor an external platform is the
 | Team, type, priority, risk, blocked | Labels or card metadata, not workflow states |
 | Durable commit, test, preview, and decision evidence | Card evidence or linked artifacts |
 | Current meaningful gate | A held card with its required outside act |
+| Optional `exit_check` | A lightweight expectation shown at the rung boundary |
 | Shared projection type | A recognized, mechanically mapped board list/state |
 | Agent-record gate instance | The identity-linked gate shown for that Team card |
 | Agent phases and legs | Agent-local detail, not projected board movement |
@@ -112,6 +112,25 @@ recommend a sequence, but accepting it does not surrender the Agent's plan to th
 identity links a declared gate to its projection; an adapter never guesses from phase or gate text.
 The Agent may add, revise, or drop local phases and optional gates as reality changes.
 
+### Optional exit checks
+
+A rung may carry one lightweight hint about whether the Agent is expected to consult someone
+before leaving it:
+
+```text
+exit_check: NONE | TEAM_LEAD | OWNER
+```
+
+An absent `exit_check` leaves the choice to the Agent. `NONE` explicitly says no check is expected;
+`TEAM_LEAD` and `OWNER` name the person the Agent is expected to check with. The hint belongs to
+the exit from the rung, not to the work inside it.
+
+This is supervision guidance, not a gate, approval record, or enforcement mechanism. It records no
+response, approval, skipped check, violation, or consequence. If the Agent advances without making
+the suggested check, the record simply advances. A real gate remains a separate Agent-owned rung
+created only when an applicable work contract identifies an outside act without which work cannot
+responsibly continue.
+
 ### Flexibility and non-enforcement
 
 Projection sophistication must not become per-Agent ceremony. Cards need not traverse the same
@@ -121,30 +140,28 @@ shapes. Detail is present only when it helps the work or records a real outside 
 custom or local stage that has no recognized projection keeps its honest name and appears as local
 detail or an `OTHER`-style fallback; the adapter does not guess a familiar state.
 
-Approval or rejection updates the virtual-board projection and the Agent-owned gate coherently. The
-event must bind the exact candidate, authorized actor, evidence, prior revisions, and resulting
-revisions on both sides. A partial update is a conflict, not success. Not every Team state is a
-gate, and a purely local investigative hold need not project to the Team card.
+For a real gate, approval or rejection updates the virtual-board projection and the Agent-owned
+gate coherently. The event binds the exact candidate, authorized actor, evidence, prior revisions,
+and resulting revisions on both sides. A partial update is a conflict, not success. This does not
+apply to an `exit_check`, which records no response. Not every Team state is a gate, and a purely
+local investigative hold need not project to the Team card.
 
-### The shared release convention
+### The shared release-check convention
 
-Every Team-linked card is expected to record an exact-candidate release-approval gate so the
-virtual board makes its absence, pending state, or satisfaction visible. This is a shared workflow
-convention, not a mechanical interlock or mandatory route through a workflow engine.
+Team work commonly marks its final delivery rung with `exit_check: TEAM_LEAD` or
+`exit_check: OWNER`. This makes the expected conversation visible while the rung is current; it
+does not record whether the conversation happened or create a release-approval ledger.
 
 Private checkpoint commits are always normal and ungated: a commit preserves work on the private
-desk and publishes nothing. When the candidate is ready, a recorded release approval binds the
-authorized approver to the exact candidate commit and its test, preview, or other evidence. It can
-release an Agent's voluntarily observed hold; it does not perform hand-in or imply that later
-review passed.
+desk and publishes nothing. The exit check does not perform hand-in or imply that later review
+passed.
 
-The work-record, projection, and Tejun layers do not refuse commit or hand-in solely because this
-gate is absent or incomplete. If an Agent proceeds without recorded approval, acknowledge the
-missing gate and its consequence in the source record and views; never fabricate approval or
-silently mark it passed. Both pedals remain with the Agent. Hand-in, Team-lead review, and later
+The work-record, projection, and Tejun layers do not refuse commit or hand-in because an exit check
+is absent or ignored. Both pedals remain with the Agent. Hand-in, Team-lead review, and later
 promotion/integration verification remain distinct events under the Worktrees Routine. An actual
 Git conflict or another operation that cannot safely be performed may still refuse for its own
-existing reason and name the next action.
+existing reason and name the next action. Exact-candidate approval and its evidence belong to a
+real gate only when a separate work contract actually requires one.
 
 ## Team-lead responsibility
 
@@ -156,8 +173,8 @@ virtual Team view. That includes:
 - tracking an Agent's several independent cards and its explicit current focus without merging them;
 - watching and accurately projecting the current and upcoming gates, progress, and evidence stated
   by linked Agent records;
-- watching and reporting the expected release gate's recorded state without turning it into a
-  publication interlock;
+- setting or recommending lightweight exit checks where useful without treating them as approval
+  records or publication interlocks;
 - managing coherent Team/Agent gate decisions against exact candidates and authorized actors; and
 - resolving version, assignment, evidence, and transition conflicts without erasing an Agent's
   detailed source record.
@@ -213,6 +230,7 @@ Each Agent record projects upward as a concise summary of its own Team card:
 - owner or owners;
 - outcome;
 - normalized projected state and upcoming Agent-record gates;
+- the current rung's optional exit-check hint;
 - current meaningful gate;
 - durable evidence such as accepted commit, test receipt, preview, or approval; and
 - linked execution-record identities and revisions.
@@ -248,14 +266,14 @@ Every recognized transition or synchronization attempt returns an acknowledgemen
 - the actor and source;
 - the record's current position;
 - the evidence and prior/resulting revisions involved;
-- any missing approval, missing evidence, stale write, or other conflict and its consequence; and
+- any stale write or other actual conflict and its consequence; and
 - the next useful action, while leaving the choice to the Agent.
 
-An incomplete ladder, missing optional gate, or absent approval is normally disclosed, not refused.
-A refusal belongs only to an operation that cannot safely be performed, such as accepting a stale
-conflicting write. Even then, the acknowledgement preserves both versions and names the recovery
-action. No synchronization action silently discards a source record, link, evidence item, conflict,
-or approval; destructive behavior remains a separate explicit operation.
+An incomplete ladder or absent exit-check hint is not a reason to refuse. A refusal belongs only to
+an operation that cannot safely be performed, such as accepting a stale conflicting write. Even
+then, the acknowledgement preserves both versions and names the recovery action. No synchronization
+action silently discards a source record, link, evidence item, conflict, or real gate decision;
+destructive behavior remains a separate explicit operation.
 
 ## Authority and conflicts
 
@@ -307,6 +325,6 @@ The following policy choices remain open for the implementation design:
 These questions must be settled explicitly before schema or synchronization is implemented.
 The invariants above—one card per work record, one-to-many Agent ownership, explicit focus,
 independent Agent source records, a non-enforcing shared projection vocabulary, Agent-owned useful
-plans plus a visible expected release gate that is not an interlock, virtual Team aggregation, parent grouping
+plans and optional exit-check hints, virtual Team aggregation, parent grouping
 rather than multi-Agent card collapse, explicit authority, auditable events, and conflict-safe
 revisions—must survive whichever policies are chosen.
