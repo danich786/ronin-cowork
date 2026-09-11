@@ -37,7 +37,7 @@ export const buildTeamMembers = (name, options = {}) => {
     words.append(el('strong', null, agentTitle(member)), el('span', null, member.session_role || t('league.role_unset', 'Role not set')));
     identity.append(mark, words);
     if (holding) { row.append(identity); list.append(row); continue; }
-    const open = options.onOpen ? createAction({ label: t('league.open_agent', 'Open'), size: 'compact', action: () => options.onOpen(member) }) : null;
+    const launch = options.onOpen ? createAction({ label: t('league.launch_agent', 'Launch'), size: 'compact', action: () => options.onOpen(member) }) : null;
     const rename = createAction({ label: t('league.rename_agent', 'Rename'), size: 'compact', action: async () => {
       const currentTitle = agentTitle(member);
       const wanted = window.prompt(t('league.rename_agent_prompt', 'Edit Agent title'), currentTitle);
@@ -50,30 +50,35 @@ export const buildTeamMembers = (name, options = {}) => {
     const close = options.onClose ? createAction({ label: t('league.close_agent', 'Close'), title: t('league.close_named_agent', 'Close {name}', { name: member.name }), size: 'compact', action: () => options.onClose(member) }) : null;
     const reading = options.reading?.(member);
     if (!reading) {
-      row.append(identity, createActionBar({ className: 'league-team-member-actions', actions: [open, rename, lead, eject, close] }).el);
+      row.append(identity, createActionBar({ className: 'league-team-member-actions', actions: [launch, rename, lead, eject, close] }).el);
       list.append(row);
       continue;
     }
     row.classList.add('league-team-member-live');
     const toggle = el('button', 'league-team-member-toggle'); toggle.type = 'button'; toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-label', t('league.expand_agent', 'Expand {name}', { name: agentTitle(member) }));
     const status = el('div', 'league-team-member-reading');
-    status.append(el('strong', null, reading.step || t('league.no_current_step', 'No current step')));
-    const live = [reading.model, reading.state].filter(Boolean).join(' · ');
-    if (live) status.append(el('span', null, live));
-    toggle.append(identity, status);
+    for (const [className, value] of [
+      ['league-team-member-step', reading.step],
+      ['league-team-member-state', reading.status],
+      ['league-team-member-ctx', reading.ctx],
+      ['league-team-member-model', reading.model],
+    ]) if (value) status.append(el('span', className, value));
+    const disclosure = el('span', 'league-team-member-disclosure', '⌄'); disclosure.setAttribute('aria-hidden', 'true');
+    toggle.append(identity, status, disclosure);
     const detail = el('div', 'league-team-member-detail'); detail.hidden = true;
     detail.id = `team-member-${options.idPrefix || name}-${member.name}-actions`;
     toggle.setAttribute('aria-controls', detail.id);
-    detail.append(
-      el('p', 'league-team-member-description', reading.description || t('league.no_current_description', 'No current work description.')),
-      createActionBar({ className: 'league-team-member-actions', actions: [rename, lead, eject, close] }).el,
-    );
+    if (reading.description) detail.append(el('p', 'league-team-member-description', reading.description));
+    detail.append(createActionBar({ className: 'league-team-member-actions', actions: [launch, rename, lead, eject, close] }).el);
     toggle.addEventListener('click', () => {
       const expanded = toggle.getAttribute('aria-expanded') !== 'true';
       toggle.setAttribute('aria-expanded', String(expanded));
+      toggle.setAttribute('aria-label', t(expanded ? 'league.collapse_agent' : 'league.expand_agent', expanded ? 'Collapse {name}' : 'Expand {name}', { name: agentTitle(member) }));
+      disclosure.textContent = expanded ? '⌃' : '⌄';
       detail.hidden = !expanded;
     });
-    const main = el('div', 'league-team-member-main'); main.append(toggle, open.el);
+    const main = el('div', 'league-team-member-main'); main.append(toggle);
     row.append(main, detail); list.append(row);
   }
   roster.append(list);

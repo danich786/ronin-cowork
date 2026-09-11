@@ -15,20 +15,23 @@ test('Commons opens on its separate Roster and keeps Configuration separate', as
   assert.doesNotMatch(view, /commons\.config\.replaceChildren\(members, config\)/);
 });
 
-test('Roster Open uses the paired workspace and Close reuses the tile retirement dialog', async () => {
+test('Roster expands live readings and actions; Launch uses the paired workspace and Close retires', async () => {
   const [view, members, retirement, css] = await Promise.all([
     source('public/js/cowork-view.js'), source('public/js/team-members.js'), source('public/js/session-retire.js'), source('public/css/team-workspace.css'),
   ]);
   assert.match(view, /workspace1: 'workspace2', workspace2: 'workspace1', workspace3: 'workspace4', workspace4: 'workspace3'/);
   assert.match(view, /onOpen: \(member\) => putSession\(member\.name, oppositeSeat\(id\)\)/);
   assert.match(view, /reading: readingsOf/);
+  assert.match(view, /configSignature\(team\) \+ JSON\.stringify\(members\.map\(\(member\) => readingsOf\(member\)\.lines\)\)/);
   assert.match(view, /onClose: \(member\) => retireSession\(member\.name/);
-  assert.match(members, /actions: \[open, rename, lead, eject, close\]/);
+  assert.match(members, /actions: \[launch, rename, lead, eject, close\]/);
   assert.match(members, /classList\.add\('league-team-member-live'\)/);
+  assert.match(members, /league-team-member-disclosure', '⌄'/);
+  assert.match(members, /label: t\('league\.launch_agent', 'Launch'\)/);
+  assert.match(css, /\.league-team-member-detail\[hidden\] \{ display: none; \}/);
   assert.match(members, /toggle\.setAttribute\('aria-expanded', 'false'\)/);
   assert.match(members, /toggle\.setAttribute\('aria-controls', detail\.id\)/);
-  assert.match(members, /reading\.description/);
-  assert.match(members, /actions: \[rename, lead, eject, close\]/);
+  assert.match(members, /if \(reading\.description\) detail\.append/);
   assert.match(css, /\.league-team-member-actions \{[^}]*flex-wrap: wrap;[^}]*justify-content: flex-end;/);
   for (const label of ['Archive', 'Delete', 'Hard Delete']) assert.match(retirement, new RegExp(`'${label}'`));
 });

@@ -613,13 +613,13 @@ export function createCoworkView(options = {}) {
   const readingsOf = (m) => {
     const row = rows.get(m.name) || {};
     const current = currentWorkStep(row.tegami);
-    const state = [statusLabel(row.status), row.ctx != null ? `⛽ ${row.ctx}%` : ''].filter(Boolean).join(' · ');
     return {
       step: current.label,
       description: current.text,
       model: (row.model || '').toLowerCase(),
-      state,
-      lines: [current.text, (row.model || '').toLowerCase(), state].filter(Boolean),
+      status: statusLabel(row.status),
+      ctx: row.ctx != null ? `⛽ ${row.ctx}%` : '',
+      lines: [current.text, statusLabel(row.status), row.ctx != null ? `⛽ ${row.ctx}%` : '', (row.model || '').toLowerCase()].filter(Boolean),
     };
   };
   function renderCards(members) {
@@ -631,7 +631,8 @@ export function createCoworkView(options = {}) {
   // torn down only when configSignature says something it draws actually moved.
   let seenConfig = '';
   function renderConfig(roster, live) {
-    const signature = configSignature(team);
+    const members = membersOfTeam(team);
+    const signature = configSignature(team) + JSON.stringify(members.map((member) => readingsOf(member).lines));
     if (signature === seenConfig) return;
     seenConfig = signature;
     for (const [id, commons] of Object.entries(teamCommons)) {
