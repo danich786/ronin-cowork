@@ -52,9 +52,10 @@ test('model disclosures open directly to choices and close after selection', asy
   assert.match(parts, /choose\(choice\.key\); open = ''; paint\(\)/);
   assert.match(css, /\.na-agent-choices \{ display: flex; flex-direction: column;/);
   assert.match(css, /\.na-model-package, \.na-mandate-package \{ width: 100%; \}/);
-  assert.match(css, /\.na-model-picker \{ display: grid; grid-template-columns: repeat\(2, minmax\(0, var\(--setup-stone-size\)\)\)/);
-  assert.match(css, /\.na-mandate-grid \{ display: grid; grid-template-columns: repeat\(3, minmax\(0, var\(--setup-stone-size\)\)\)/);
-  assert.match(css, /\.na-stone \{ flex: 0 1 var\(--setup-stone-size\); width: min\(100%, var\(--setup-stone-size\)\); \}/);
+  assert.match(css, /\.na-surface \{ --na-stone-size: calc\(var\(--space-12\) \* 2\.5\); \}/);
+  assert.match(css, /\.na-model-picker \{ display: grid; grid-template-columns: repeat\(2, minmax\(0, var\(--na-stone-size\)\)\)/);
+  assert.match(css, /\.na-mandate-grid \{ display: grid; grid-template-columns: repeat\(3, minmax\(0, var\(--na-stone-size\)\)\)/);
+  assert.match(css, /\.na-stone \{ flex: 0 1 var\(--na-stone-size\); width: min\(100%, var\(--na-stone-size\)\); \}/);
 });
 
 test('New Team makes templates optional and offers explicit Agent roles', async () => {
