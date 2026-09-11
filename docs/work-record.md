@@ -91,14 +91,18 @@ partially active legs across the ladder.
 
 ## Future Team projection, not current capability
 
-The intended architecture gives each Team a canonical workflow in its existing Team-owned store.
-Every active Agent has one visible assignment card linked one-to-one with its current work record;
-the card's outcome supplies the Agent objective. Ordered Team states and required transition gates
-form the shared backbone. Those gates are linked into the Agent record by stable identity, while
-the Agent keeps flexible phases and legs between them to explain how it will reach the next gate.
-A normalized Team-card state—not an interpretation of a phase title—supports optional external
-Kanban projection. The Team record remains canonical; Trello or another board is only a
-synchronized surface.
+The intended architecture keeps coordination fluid. A Team lead's lightweight planning record may
+hold a small inbox idea or a large project, shape it into recommended assignments, and offer them
+to new or existing Agents. On acceptance, the Agent creates and owns its work card and record,
+links it back to the lead item as provenance, and takes the assignment outcome as its objective.
+An Agent may own several independent cards and records at once.
+
+Each Agent independently records the smallest useful plan, stages or gates, progress, and evidence.
+Ronin's shared stage and gate vocabulary supports interoperable projection; it is guidance, not a
+closed enum or workflow engine. The virtual Team Kanban reads the lead's planning items plus the
+distributed Agent records and consolidates their reported state. It does not prescribe a card's
+ladder. Stable identity, never phase or gate text, connects declared events to their projection.
+Trello or another board is only an adapter over that view.
 
 This does not exist in the current tools. Do not claim that an external card controls an Agent,
 and do not add future identity or state fields to today's record. Birth reading, generated record
