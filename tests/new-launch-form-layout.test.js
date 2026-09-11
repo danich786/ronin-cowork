@@ -19,15 +19,17 @@ test('New Agent presents Kind, four session doors, combined instructions, and a 
   assert.doesNotMatch(form, /const stepTemplate =/);
 });
 
-test('New Team makes templates optional and offers explicit Agent roles', async () => {
+test('New Team folds Kind and template choice into one optional first section', async () => {
   const [form, agents] = await Promise.all([source('new-team-form.js'), source('team-agents.js')]);
-  assert.match(form, /\['kind', 'template', 'top', 'lead', 'defaults', 'where', 'kit'\]/);
-  assert.match(form, /Template · optional/);
+  assert.match(form, /\['template', 'top', 'lead', 'defaults', 'where', 'kit'\]/);
+  assert.match(form, /Templates · optional/);
+  assert.match(form, /stepTemplate\.body\.append\(kindHost, trayHost\)/);
+  assert.doesNotMatch(form, /const stepKind = createStep/);
   assert.match(form, /includeOwn: false/);
   assert.match(form, /Name & instructions/);
-  assert.match(agents, /Add Lead Agent/);
-  assert.match(agents, /Add Team Agent/);
-  assert.doesNotMatch(agents, /Mark as team lead/);
+  assert.match(agents, /＋ Add Agent/);
+  assert.match(agents, /Make Team Lead/);
+  assert.doesNotMatch(agents, /Add Lead Agent|Add Team Agent/);
 });
 
 test('collapsible steps expose one full-width disclosure row and Team defaults use it', async () => {
@@ -48,14 +50,17 @@ test('collapsible steps expose one full-width disclosure row and Team defaults u
   assert.match(team, /const FOLDS = \['lead'\]/);
   assert.doesNotMatch(team, /stepDefaults\.body\.append/);
   assert.doesNotMatch(team, /createBand/);
-  assert.ok(agents.indexOf('host.append(buttons)') < agents.indexOf('rows().forEach'), 'Add buttons precede Agent rows');
+  assert.ok(agents.indexOf('host.append(add)') < agents.indexOf('rows().forEach'), 'Add Agent precedes the mini forms');
 });
 
-test('a new lead has an explicit coordinating mandate without a second launch shape', async () => {
+test('each Agent mini-form carries lead, mandate, and provider choices in one launch shape', async () => {
   const agents = await source('team-agents.js');
-  assert.match(agents, /lead \? 'plan' : 'open'/);
-  assert.match(agents, /lead \? 'staff agents' : 'open'/);
-  assert.match(agents, /lead \? \['the team'\] : \['open'\]/);
+  assert.match(agents, /lead\.setAttribute\('aria-pressed', String\(row\.lead\)\)/);
+  assert.match(agents, /for \(const other of rows\(\)\) other\.lead = false/);
+  assert.match(agents, /providerModelPair/);
+  assert.match(agents, /provider: row\.provider/);
+  assert.match(agents, /model: row\.model/);
+  assert.match(agents, /row\.mandateOpen = ''/);
   assert.match(agents, /instructions: row\.assignment\.trim\(\)/);
   assert.match(agents, /team_lead: !!row\.lead/);
 });
@@ -66,13 +71,11 @@ test('New Team cast controls are labelled, related, and stack without changing N
     readFile(new URL('../public/css/launch-forms.css', import.meta.url), 'utf8'),
     source('new-agent.js'),
   ]);
-  assert.match(agents, /el\('label', 'ntf-agent-field ntf-agent-name-field'\)/);
-  assert.match(agents, /el\('label', 'ntf-agent-field ntf-agent-what-field'\)/);
-  assert.match(agents, /more\.setAttribute\('aria-expanded', String\(row\.open\)\)/);
-  assert.match(agents, /more\.setAttribute\('aria-controls', `\$\{id\}-detail`\)/);
-  assert.match(agents, /detail\.id = `\$\{id\}-detail`;\s*detail\.hidden = !row\.open/);
+  assert.match(agents, /el\('label', 'ntf-agent-field'\)/);
+  assert.match(agents, /button\.setAttribute\('aria-expanded', String\(row\.mandateOpen === axis\)\)/);
+  assert.match(agents, /button\.setAttribute\('aria-controls', `\$\{id\}-\$\{axis\}`\)/);
   assert.match(agents, /drop\.setAttribute\('aria-label'/);
-  assert.match(css, /@media \(max-width: 44rem\)[\s\S]*\.ntf-surface \.ntf-agent-head/);
+  assert.match(css, /@media \(max-width: 44rem\)[\s\S]*\.ntf-surface \.ntf-agent-mandate-summaries/);
   assert.doesNotMatch(css, /@media \(max-width: 44rem\)[\s\S]*\.na-surface \.ntf-agent/);
   assert.doesNotMatch(newAgent, /ntf-agent-field|new-team-agent-/);
 });
