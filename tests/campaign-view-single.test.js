@@ -48,6 +48,7 @@ test('Settings carries Setup capabilities and starts with Mika beside an empty w
   }
   assert.match(source, /createMikaHelpPanel/);
   assert.match(source, /className: 'campaign-mika-card'/);
+  assert.match(source, /profiles\.define\(PROFILE, \[\s*TERMINAL_TYPE,\s*TYPES\.identity/, 'Mika is the first Settings selector card');
   assert.match(source, /bench\.setCount\(2\)/);
   assert.match(source, /ensureAndPlaceMika\('workspace1'\)/);
   assert.match(source, /bench\.restoreDefault\('workspace2'\)/);
