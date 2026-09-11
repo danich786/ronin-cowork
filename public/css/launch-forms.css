@@ -288,11 +288,10 @@
   .na-team-choices { margin-bottom: var(--space-4); }
   .na-model-picker { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
   .na-model-picker > .na-stone-group { display: contents; }
-  .na-agent-choices { display: flex; flex-wrap: wrap; gap: var(--space-1); align-items: flex-start; }
+  .na-agent-choices { display: flex; flex-direction: column; gap: var(--space-4); }
   .na-choice-package { min-width: 0; border: var(--edge) solid var(--line-2); border-radius: var(--radius-hair); background: color-mix(in srgb, var(--panel) 78%, transparent); padding: var(--space-2); }
   .na-choice-package > .fs-head { margin: var(--space-3) 0 var(--space-4); }
-  .na-model-package { flex: 2 1 calc(var(--space-12) * 7); }
-  .na-mandate-package { flex: 3 1 calc(var(--space-12) * 10); }
+  .na-model-package, .na-mandate-package { width: 100%; }
   .na-stone-group { display: flex; flex-direction: column; gap: var(--space-2); }
   .na-stones { display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(var(--space-12) * 2.2), 1fr)); gap: var(--space-2); }
   .na-choice-stone, .na-stone { aspect-ratio: 1; border: var(--edge) solid var(--line-2); border-radius: var(--radius-hair); background: var(--panel); color: var(--fg-strong); padding: var(--space-4); cursor: pointer; text-align: left; font: inherit; }
