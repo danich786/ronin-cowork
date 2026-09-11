@@ -3,7 +3,20 @@ import assert from 'node:assert/strict';
 import os from 'node:os';
 import path from 'node:path';
 import { chmod, mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises';
-import { compileMikaKnowledgeAt, MIKA_INDEX_BUDGET, openMikaSourceAt, parseMikaTaxonomy } from '../src/mika-knowledge.js';
+import { fileURLToPath } from 'node:url';
+import { compileMikaKnowledgeAt, MIKA_INDEX_BUDGET, MIKA_TAXONOMY, openMikaSourceAt, parseMikaTaxonomy } from '../src/mika-knowledge.js';
+
+async function markdownIds(root: string, relative = ''): Promise<string[]> {
+  const ids: string[] = [];
+  const rows = await readdir(path.join(root, relative), { withFileTypes: true });
+  for (const row of rows.sort((a, b) => Buffer.from(a.name).compare(Buffer.from(b.name)))) {
+    if (row.name.startsWith('.') || row.isSymbolicLink()) continue;
+    const next = relative ? `${relative}/${row.name}` : row.name;
+    if (row.isDirectory()) ids.push(...await markdownIds(root, next));
+    else if (row.isFile() && row.name.toLowerCase().endsWith('.md')) ids.push(next);
+  }
+  return ids;
+}
 
 const taxonomy = `schema = 1
 [[node]]
@@ -136,10 +149,17 @@ test('Mika index shrinks every preview mechanically and never omits a source', a
 test('the stock taxonomy discovers the complete approved set within the hard index budget', async () => {
   const temp = await mkdtemp(path.join(os.tmpdir(), 'ronin-mika-stock-'));
   try {
+    const stockRoot = fileURLToPath(new URL('..', import.meta.url));
+    const nodes = parseMikaTaxonomy(await readFile(MIKA_TAXONOMY, 'utf8'));
+    const approved = (await Promise.all(nodes.map(async (node) =>
+      (await markdownIds(path.join(stockRoot, node.root))).map((relative) => `${node.root}/${relative}`),
+    ))).flat()
+      .filter((id) => id !== 'ronin_catalogs/MIKA_MACROS.md')
+      .filter((id) => !id.startsWith('ronin_session_boot/house/mika/'));
     const built = await compileMikaKnowledgeAt(temp, { ownerRoots: {
       docs: '', ronin_sops: '', ronin_catalogs: '', ronin_session_boot: '', ronin_library: '',
     } });
-    assert.equal(built.entries.length, 146); // +docs/work-record.md (2026-09-11)
+    assert.deepEqual(built.entries.map((row) => row.id), approved);
     // Her own house folder is read whole at birth, never indexed as a source.
     assert.ok(built.entries.every((row) => !row.id.startsWith('ronin_session_boot/house/mika/')));
     assert.ok(built.entries.every((row) => row.id !== 'ronin_catalogs/MIKA_MACROS.md'));
