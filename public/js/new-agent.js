@@ -279,7 +279,9 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
 
   const leadChoice = el('div', 'na-team-lead');
   leadChoice.setAttribute('role', 'group'); leadChoice.setAttribute('aria-label', t('add_agent.make_team_lead', 'Make Team Lead'));
-  leadChoice.append(el('b', 'na-team-lead-label', `将 ${t('team.lead', 'Team Lead')}`));
+  const leadLabel = el('b', 'na-team-lead-label');
+  const leadMark = el('span', 'na-team-lead-mark', '人'); leadMark.setAttribute('aria-hidden', 'true');
+  leadLabel.append(leadMark, t('team.lead', 'Team Lead')); leadChoice.append(leadLabel);
   const leadStones = el('div', 'na-team-lead-stones'); leadChoice.append(leadStones);
   function paintTeamLead() {
     leadStones.replaceChildren();
