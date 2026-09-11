@@ -88,11 +88,11 @@ function registerCampaignSurfaces() {
   // Desk profile remains registered so a remembered workspace can still restore it, but
   // its beta card is hidden from discovery. Themes now have their stable home in Ronin Desk.
   profiles.define(PROFILE, [
+    TERMINAL_TYPE,
     TYPES.identity, TYPES.roots, TYPES.defaults, TYPES.routines, TYPES.providers,
     SETUP_SURFACE_TYPES.register, SETUP_SURFACE_TYPES.services, SETUP_SURFACE_TYPES.gbrain,
     SETUP_SURFACE_TYPES.launchOwn, TYPES.templates, TYPES.machine,
     ...(MULTIPLE_CAMPAIGNS_ENABLED ? [TYPES.create] : []),
-    TERMINAL_TYPE,
     FEEDBACK_TYPE,
   ]);
 }
