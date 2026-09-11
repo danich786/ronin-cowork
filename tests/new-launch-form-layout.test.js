@@ -46,10 +46,12 @@ test('Where it works separates birthplace and additional workspace profile stone
 });
 
 test('model disclosures open directly to choices and close after selection', async () => {
-  const parts = await source('form-steps.js');
+  const [parts, css] = await Promise.all([source('form-steps.js'), readFile(new URL('../public/css/launch-forms.css', import.meta.url), 'utf8')]);
   assert.doesNotMatch(parts, /options\.append\(el\('p', 'na-choice-label', label\)\)/);
   assert.match(parts, /choose\(''\); open = ''; paint\(\)/);
   assert.match(parts, /choose\(choice\.key\); open = ''; paint\(\)/);
+  assert.match(css, /\.na-agent-choices \{ display: flex; flex-direction: column;/);
+  assert.match(css, /\.na-model-package, \.na-mandate-package \{ width: 100%; \}/);
 });
 
 test('New Team makes templates optional and offers explicit Agent roles', async () => {
