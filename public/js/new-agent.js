@@ -661,7 +661,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
   const agentChoices = el('div', 'na-agent-choices');
   const modelPackage = el('section', 'na-choice-package na-model-package');
   modelPackage.setAttribute('aria-label', t('new_agent.model_package', 'Model'));
-  modelPackage.append(pair.el);
+  modelPackage.append(el('p', 'fs-head', t('new_agent.model_package', 'Model')), pair.el);
   const mandatePackage = el('section', 'na-choice-package na-mandate-package');
   mandatePackage.setAttribute('aria-label', t('mandate', 'Mandate'));
   mandatePackage.append(mandateHost);
