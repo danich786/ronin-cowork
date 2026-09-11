@@ -106,6 +106,12 @@ test('the existing workbench can pin a Setup workspace and aim selector cards at
   assert.match(workbench, /cell\.addEventListener\('pointerdown',[\s\S]*select\(id\);[\s\S]*}, true\)/);
 });
 
+test('the selector keeps its own visible vertical scroll control when its cards exceed the seat', async () => {
+  const css = await readFile(new URL('../public/style.css', import.meta.url), 'utf8');
+  assert.match(css, /\.wk-workbench-selector\s*\{[^}]*min-height:\s*0;[^}]*overflow:\s*hidden;/s);
+  assert.match(css, /\.wk-workbench-selector-cards\s*\{[^}]*height:\s*100%;[^}]*overflow-y:\s*auto;/s);
+});
+
 test('the fourth Setup workbench registers real lane surfaces in ruled order', async () => {
   const [setup, main, cowork] = await Promise.all([
     source('js/setup-view.js'), source('js/main.js'), source('js/cowork-view.js'),
