@@ -7,7 +7,9 @@
 This document defines the boundary for a future shared view across lead and Agent work records. It is
 a design contract for later implementation work, not an Agent operating procedure. Birth reading,
 generated record instructions, tools, macros, and SOPs must not teach these mechanics before they
-exist.
+exist. [The Agent's philosophy of Ronin](agent-philosophy.md) is normative for this design:
+**structured by shared vocabulary, not forced through a shared workflow**—the virtual Team Kanban
+projects independent Agent-owned records.
 
 ## The durable levels
 
@@ -18,7 +20,8 @@ membership storage to the roster. Mutable workflow does not belong in that recor
 The Team lead's work record is a lightweight planning and coordination record in the existing
 Team-owned store. Its inbox may hold a small idea card or a large assignment or project. The lead
 may shape or decompose that work into recommended objective/assignment cards, obtain owner approval
-when the decision requires it, and offer assignments to new or existing Agents. This record is
+when useful, and offer assignments to new or existing Agents. A large item may remain one assignment
+when decomposition adds no value. This record is
 conceptually distinct from roster identity and configuration, and it does not control Agent
 execution ladders or require a new durability system.
 
@@ -42,6 +45,11 @@ several records are active, a separate focus pointer may identify
 which record the Agent is working on now; changing focus does not close, merge, or reassign the
 others. Live Team membership, derived from session Team tags, subscribes an Agent to the Team work
 record. Agent ladders are never mechanically merged into one Team ladder.
+
+For a tiny assignment, the useful minimum is an objective, the assignment/provenance link, and a
+truthful current item. The shared release convention should be visible for Team work, either as a
+recorded gate or as an acknowledged missing expectation. More phases, gates, and evidence appear
+only when the work produces a reason for them.
 
 If several Agents contribute to a larger outcome, each keeps separate cards and work records.
 Their cards relate through a stable parent-outcome or grouping reference; they are not collapsed
@@ -109,30 +117,34 @@ The Agent may add, revise, or drop local phases and optional gates as reality ch
 Projection sophistication must not become per-Agent ceremony. Cards need not traverse the same
 stages, carry the same number of gates, or obey one shared state machine. The vocabulary exists so
 independently useful records can be viewed together, not to force those records into identical
-shapes. Aside from the universal release boundary below, detail is present only when it helps the
-work or records a real outside dependency.
+shapes. Detail is present only when it helps the work or records a real outside dependency. A
+custom or local stage that has no recognized projection keeps its honest name and appears as local
+detail or an `OTHER`-style fallback; the adapter does not guess a familiar state.
 
 Approval or rejection updates the virtual-board projection and the Agent-owned gate coherently. The
 event must bind the exact candidate, authorized actor, evidence, prior revisions, and resulting
 revisions on both sides. A partial update is a conflict, not success. Not every Team state is a
 gate, and a purely local investigative hold need not project to the Team card.
 
-### The universal release-approval gate
+### The shared release convention
 
-Every card instantiates one final Ronin-defined release or approval gate before its work may be
-handed in or otherwise published to the Team line. This gate is ubiquitous even when optional
-gates such as visual approval do not apply.
+Every Team-linked card is expected to record an exact-candidate release-approval gate so the
+virtual board makes its absence, pending state, or satisfaction visible. This is a shared workflow
+convention, not a mechanical interlock or mandatory route through a workflow engine.
 
-Private checkpoint commits remain allowed before approval: a commit preserves work on the
-private desk and publishes nothing. When the candidate is ready, the release approval binds the
-authorized approver to the exact candidate commit and its required test, preview, or other
-evidence. Passing the gate permits hand-in; approval neither performs hand-in nor implies that
-later review passed.
+Private checkpoint commits are always normal and ungated: a commit preserves work on the private
+desk and publishes nothing. When the candidate is ready, a recorded release approval binds the
+authorized approver to the exact candidate commit and its test, preview, or other evidence. It can
+release an Agent's voluntarily observed hold; it does not perform hand-in or imply that later
+review passed.
 
-Hand-in then admits the approved candidate to the Team review line under the Worktrees Routine.
-The Team lead's review and later promotion/integration verification are a distinct subsequent
-gate. Never conflate private commit creation, release approval, hand-in, and lead promotion: they
-are four different events with different authority and publication effects.
+The work-record, projection, and Tejun layers do not refuse commit or hand-in solely because this
+gate is absent or incomplete. If an Agent proceeds without recorded approval, acknowledge the
+missing gate and its consequence in the source record and views; never fabricate approval or
+silently mark it passed. Both pedals remain with the Agent. Hand-in, Team-lead review, and later
+promotion/integration verification remain distinct events under the Worktrees Routine. An actual
+Git conflict or another operation that cannot safely be performed may still refuse for its own
+existing reason and name the next action.
 
 ## Team-lead responsibility
 
@@ -144,8 +156,8 @@ virtual Team view. That includes:
 - tracking an Agent's several independent cards and its explicit current focus without merging them;
 - watching and accurately projecting the current and upcoming gates, progress, and evidence stated
   by linked Agent records;
-- ensuring projections remain identity-linked to their Agent-owned instances and every published
-  card clears the universal release-approval boundary;
+- watching and reporting the expected release gate's recorded state without turning it into a
+  publication interlock;
 - managing coherent Team/Agent gate decisions against exact candidates and authorized actors; and
 - resolving version, assignment, evidence, and transition conflicts without erasing an Agent's
   detailed source record.
@@ -224,9 +236,30 @@ No adapter may arbitrarily replace an objective, ladder, repository, tracked doc
 evidence, or approval. An Agent-owned declared gate stays coherent in the Team projection and
 Agent record; local investigative holds remain local unless a defined transition promotes one.
 
+## One job and an acknowledgement
+
+This mechanism observes, records, links, projects, and acknowledges work-record facts. It does not
+decide how far the lead decomposes an idea, choose an Agent's plan, approve a candidate, commit,
+hand in, or promote work. Each neighboring decision remains with its existing actor and tool.
+
+Every recognized transition or synchronization attempt returns an acknowledgement that names:
+
+- what changed, or what was only observed;
+- the actor and source;
+- the record's current position;
+- the evidence and prior/resulting revisions involved;
+- any missing approval, missing evidence, stale write, or other conflict and its consequence; and
+- the next useful action, while leaving the choice to the Agent.
+
+An incomplete ladder, missing optional gate, or absent approval is normally disclosed, not refused.
+A refusal belongs only to an operation that cannot safely be performed, such as accepting a stale
+conflicting write. Even then, the acknowledgement preserves both versions and names the recovery
+action. No synchronization action silently discards a source record, link, evidence item, conflict,
+or approval; destructive behavior remains a separate explicit operation.
+
 ## Authority and conflicts
 
-Each mapped transition must define:
+A safely actionable transition mapping states:
 
 - who has authority to request it and, separately, who has authority to approve it;
 - the entry facts that must already be true;
@@ -274,6 +307,6 @@ The following policy choices remain open for the implementation design:
 These questions must be settled explicitly before schema or synchronization is implemented.
 The invariants above—one card per work record, one-to-many Agent ownership, explicit focus,
 independent Agent source records, a non-enforcing shared projection vocabulary, Agent-owned useful
-plans plus universal release approval, virtual Team aggregation, parent grouping
+plans plus a visible expected release gate that is not an interlock, virtual Team aggregation, parent grouping
 rather than multi-Agent card collapse, explicit authority, auditable events, and conflict-safe
 revisions—must survive whichever policies are chosen.

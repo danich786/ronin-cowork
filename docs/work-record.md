@@ -104,6 +104,13 @@ distributed Agent records and consolidates their reported state. It does not pre
 ladder. Stable identity, never phase or gate text, connects declared events to their projection.
 Trello or another board is only an adapter over that view.
 
+For Team work, every linked card is expected to show an exact-candidate release-approval gate.
+That convention makes approval or its absence visible; it does not make the work-record or Tejun
+tools refuse commit or hand-in. Private checkpoint commits remain ungated. If an Agent proceeds
+without recorded approval, the record and views disclose the missing gate and consequence rather
+than inventing approval. Approval may release a voluntarily observed hold, while hand-in, lead
+review, and promotion remain separate actions.
+
 This does not exist in the current tools. Do not claim that an external card controls an Agent,
 and do not add future identity or state fields to today's record. Birth reading, generated record
 instructions, tools, macros, and SOPs remain unchanged until the mechanics exist. The proposed
@@ -240,7 +247,7 @@ hand-in, or verification contract.
 ## Good and bad ladders
 
 A useful ladder treats the record as one deliverable moving through the smallest useful workflow.
-Its legs say what must become true before the deliverable leaves each state:
+Its legs say what becomes true as the deliverable progresses:
 
 ```text
 Objective: Publish an indexed guide that reconciles the existing work-record contracts.
