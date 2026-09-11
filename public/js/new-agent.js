@@ -277,10 +277,20 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
   }
   stepTeam.body.append(teamHost);
 
-  const leadChoice = el('label', 'na-team-lead');
-  const leadInput = el('input'); leadInput.type = 'checkbox';
-  leadInput.addEventListener('change', () => { draft.teamLead = leadInput.checked; paintFoot(); });
-  leadChoice.append(leadInput, el('span', null, t('add_agent.make_team_lead', 'Make Team Lead')));
+  const leadChoice = el('div', 'na-team-lead');
+  leadChoice.setAttribute('role', 'group'); leadChoice.setAttribute('aria-label', t('add_agent.make_team_lead', 'Make Team Lead'));
+  leadChoice.append(el('b', 'na-team-lead-label', `将 ${t('team.lead', 'Team Lead')}`));
+  const leadStones = el('div', 'na-team-lead-stones'); leadChoice.append(leadStones);
+  function paintTeamLead() {
+    leadStones.replaceChildren();
+    for (const [value, label] of [[true, t('yes', 'Yes')], [false, t('no', 'No')]]) {
+      const stone = el('button', 'na-mini-stone', label); stone.type = 'button';
+      stone.setAttribute('aria-pressed', String(draft.teamLead === value));
+      stone.addEventListener('click', () => { draft.teamLead = value; paintTeamLead(); paintFoot(); });
+      leadStones.append(stone);
+    }
+  }
+  paintTeamLead();
   stepTeam.body.append(leadChoice);
 
   /* ---- 5 · Who and where ---- */
