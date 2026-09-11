@@ -106,19 +106,6 @@ test('the existing workbench can pin a Setup workspace and aim selector cards at
   assert.match(workbench, /cell\.addEventListener\('pointerdown',[\s\S]*select\(id\);[\s\S]*}, true\)/);
 });
 
-test('Machine Settings selector categories are supplied by each scenario, not baked into shared surfaces', async () => {
-  const [workbench, setup, campaign] = await Promise.all([
-    readFile(new URL('../public/js/workbench.js', import.meta.url), 'utf8'),
-    readFile(new URL('../public/js/setup-view.js', import.meta.url), 'utf8'),
-    readFile(new URL('../public/js/campaign-view.js', import.meta.url), 'utf8'),
-  ]);
-  assert.match(workbench, /options\.selectorCategory\?\.\(definition\.type/);
-  assert.match(setup, /SETUP_SELECTOR_CATEGORIES/);
-  assert.match(setup, /Get Ronin ready/);
-  assert.match(campaign, /SETTINGS_SELECTOR_CATEGORIES/);
-  assert.match(campaign, /label: t\('campaign_home\.machine_settings', 'Machine Settings'\)/);
-});
-
 test('the fourth Setup workbench registers real lane surfaces in ruled order', async () => {
   const [setup, main, cowork] = await Promise.all([
     source('js/setup-view.js'), source('js/main.js'), source('js/cowork-view.js'),

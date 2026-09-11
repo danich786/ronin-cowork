@@ -22,15 +22,6 @@ const ORDER = Object.freeze([
   SETUP_SURFACE_TYPES.providers, SETUP_SURFACE_TYPES.register, SETUP_SURFACE_TYPES.roots,
   SETUP_SURFACE_TYPES.services, SETUP_SURFACE_TYPES.gbrain, SETUP_SURFACE_TYPES.launchOwn,
 ]);
-const SETUP_SELECTOR_CATEGORIES = Object.freeze({
-  [SETUP_SURFACE_TYPES.providers]: ['setup', 'Get Ronin ready'],
-  [SETUP_SURFACE_TYPES.register]: ['setup', 'Get Ronin ready'],
-  [SETUP_SURFACE_TYPES.roots]: ['setup', 'Get Ronin ready'],
-  [SETUP_SURFACE_TYPES.services]: ['capabilities', 'Optional capabilities'],
-  [SETUP_SURFACE_TYPES.gbrain]: ['capabilities', 'Optional capabilities'],
-  [SETUP_SURFACE_TYPES.launchOwn]: ['launch', 'Start working'],
-  [TERMINAL_TYPE]: ['help', 'Help'],
-});
 // THE SAME SHAPE AS THE TEAM PAGE: workspace 1, the selector, workspace 2. Presets is
 // pinned in workspace 1 and takes the widest column; the setup work sits compact in
 // workspace 2. The widths are only defaults — the splitters and the layout map still
@@ -181,10 +172,6 @@ export function createSetupView() {
     selectorWorkspace: 'workspace2',
     selectorCurrent: true,
     selectorFilter: (type) => type !== PRESETS_TYPE,
-    selectorCategory: (type) => {
-      const category = SETUP_SELECTOR_CATEGORIES[type];
-      return category ? { key: category[0], label: category[1] } : null;
-    },
     actions: [mikaHelp],
     onStateChange: save,
     onPlacement: save,
