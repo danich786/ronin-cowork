@@ -34,15 +34,16 @@ an outcome that can become true over a restatement of the activity:
 
 > Add an indexed work-record guide, verify the documentation change, and hand it in.
 
-Think of one Agent's work record as one card moving across a small Kanban board:
+For planning purposes, think of one Agent's work record as one deliverable card. Its ladder
+is the Agent's local checklist, not a shared board schema:
 
 | Work-record part | Kanban meaning |
 |---|---|
 | The whole record | One card: the deliverable owned by this Agent |
 | Objective | The card's outcome |
-| Phase rung | A workflow state or list |
-| Legs under a phase | Exit criteria or checklist items for leaving that state |
-| Active position | The list and checklist item where the card currently sits |
+| Phase rung | A flexible Agent-local section of work |
+| Legs under a phase | Outcomes or checklist items within that local section |
+| Active position | Where the Agent is working in its detailed local ladder |
 | Tracked materials and reported receipts | Evidence attached to the card |
 | Gate | A required outside act before the card may transition |
 
@@ -52,10 +53,10 @@ fields to preserve that distinction.
 
 Derive the ladder in three passes:
 
-1. Name the few **phases** that form the workflow from the objective's current state to
-   done. Treat them like the lists on a small Trello board: each phase answers one question
-   about the state of the work, such as “Shaping,” “Building,” “Review,” or “Delivering.”
-   Do not use phases for teams, priorities, risk labels, or vague periods such as “Later.”
+1. Name the few **phases** that organize the Agent's route from the current situation to
+   done. Use titles that fit the work, such as “Reconcile the contracts,” “Draft the guide,”
+   or “Verify and deliver.” Do not use phases for teams, priorities, risk labels, or vague
+   periods such as “Later.”
 2. Under the phase you can see, add **legs** for its observable exit criteria or checklist
    outcomes. “Guide covers gates and revision” is useful; “Work on docs” is not. A phase
    with no legs is honest when its exit criteria are not knowable yet.
@@ -67,7 +68,7 @@ can recognize. Split it when it hides distinct outcomes, decisions, owners, or v
 Combine it when separate entries would merely narrate keystrokes. The right granularity is
 the smallest set of steps that helps the owner understand and steer the work.
 
-A reusable product workflow might be:
+A product task might use local phases that resemble a familiar workflow:
 
 ```text
 Inbox → Shaping → Ready → Building → Code review → Show / preview
@@ -81,61 +82,29 @@ and its verification; and “Finished” means the result has landed and cleanup
 These facts are exit criteria and evidence, not more workflow states. For smaller work, three
 phases may communicate the same flow better than nine.
 
-The work record is not a formal state machine. Ronin does not enforce entry and exit rules for
-these phases; the Agent's judgment and the applicable work contract do. When reality sends work
-backward—for example, review rejects a change—revise or reactivate the Building work instead of
-pretending the review passed. Keep work in progress narrow: finish or revise the active item
-before accumulating partially active legs across the ladder.
+These names remain local descriptions, not stable external states. The work record is not a
+formal state machine. Ronin does not enforce entry and exit rules for its phases; the Agent's
+judgment and the applicable work contract do. When reality sends work backward—for example,
+review rejects a change—revise or reactivate the relevant build work instead of pretending the
+review passed. Keep work in progress narrow: finish or revise the active item before accumulating
+partially active legs across the ladder.
 
-## Future Team coordination, not current capability
+## Future Team projection, not current capability
 
-The intended architecture adds a **Team work record**, keyed by Team, beside each Team roster.
-The roster remains the Team's identity, configuration, membership, and launch defaults. It must
-not be overloaded with mutable workflow. The Team work record is the shared source of truth for
-deliverables: the Team's Kanban board. A card is one meaningful outcome and may exist before an
-Agent is assigned to it.
+The intended architecture gives each Team a canonical workflow in its existing Team-owned store.
+Every active Agent has one visible assignment card linked one-to-one with its current work record;
+the card's outcome supplies the Agent objective. Ordered Team states and required transition gates
+form the shared backbone. Those gates are linked into the Agent record by stable identity, while
+the Agent keeps flexible phases and legs between them to explain how it will reach the next gate.
+A normalized Team-card state—not an interpretation of a phase title—supports optional external
+Kanban projection. The Team record remains canonical; Trello or another board is only a
+synchronized surface.
 
-When assigned, an Agent work record links to that Team card and carries the detailed execution
-account. Team membership subscribes Agents to the Team work record. Concise Agent progress rolls
-up to the linked card, while authorized Team-board transitions can eventually send defined
-control events back down. This is intended future coordination, not something the current
-work-record tools do. Do not tell an owner that a Team work record exists today or that moving an
-external card currently updates an Agent.
-
-The synchronization boundary is deliberately coarse:
-
-- One Team card represents one deliverable. Its assigned Agent work record and any external
-  Trello card share that stable identity; neither routine legs nor sessions become extra cards.
-- The Team work record aggregates the cards. Agent work records are linked execution records,
-  not ladders mechanically merged into one giant Team ladder.
-- The detailed phase ladder and its routine legs remain Agent-local execution state. They do
-  not create external cards or make a board churn on every internal transition.
-- The projection carries only useful summary facts: stable record/card identity, owner,
-  outcome, current high-level state, current meaningful gate, and durable evidence such as an
-  accepted commit, test receipt, preview, or approval.
-- Each Agent's work record remains the source for its detailed execution; Team aggregation must
-  not erase it or replace it with the card summary.
-
-Bidirectional synchronization requires defined transitions, not arbitrary card editing. An
-inbound Team or external card move may become a high-level Agent work-record event only when that
-transition has an explicit mapping and entry/exit rules. For example, moving a gated card into a
-defined approved state could record who approved the exact candidate and release the Agent to
-continue; moving a rejected card back to Building could reopen the defined build work. Gates stay
-within their card. Routine leg changes and unrecognized list moves must remain external noise.
-
-Before such synchronization is safe, it needs all of these boundaries:
-
-- a stable identity binding the Team card, assigned Agent record, and any external card;
-- explicit transition mappings and entry/exit rules;
-- authority rules defining who may approve or return work;
-- durable evidence of the actor, action, candidate, and time;
-- version and conflict handling when the Agent and board change concurrently;
-- field-level limits that prevent a card edit from arbitrarily rewriting the objective,
-  evidence, repositories, or detailed ladder; and
-- Team aggregation that preserves every linked Agent source record.
-
-Until those boundaries exist in implementation and an operating contract, external boards are
-presentations and coordination aids only. Update the work record through its supported tools.
+This does not exist in the current tools. Do not claim that an external card controls an Agent,
+and do not add future identity or state fields to today's record. Birth reading, generated record
+instructions, tools, macros, and SOPs remain unchanged until the mechanics exist. The proposed
+lifecycle, Team-lead duties, identity, projection, authorization, audit, and conflict contracts
+are documented separately in [Future Team work-record integration](work-record-integration.md).
 
 Useful editing forms are:
 
