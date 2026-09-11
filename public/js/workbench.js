@@ -220,10 +220,13 @@ export function createWorkbench(options = {}) {
       const label = offer.label ?? (typeof definition.label === 'function' ? definition.label(tenant, options.environment) : definition.label || definition.type);
       const summary = offer.summary ?? (typeof definition.summary === 'function' ? definition.summary(tenant, options.environment) : definition.summary || '');
       const detail = { ...offer, key: offer.key || '' };
-      const groupKey = String(definition.groupKey || '');
-      if (offer.groupKey && groupKey && !renderedGroups.has(groupKey)) {
+      const category = options.selectorCategory?.(definition.type, tenant, options.environment, offer) || null;
+      const groupKey = String(category?.key || definition.groupKey || '');
+      if (groupKey && !renderedGroups.has(groupKey)) {
         const group = node('div', 'wk-selector-group');
-        group.textContent = typeof definition.label === 'function' ? definition.label(tenant, options.environment) : definition.label || definition.type;
+        group.textContent = category?.label || definition.groupLabel
+          || (typeof definition.label === 'function' ? definition.label(tenant, options.environment) : definition.label || definition.type);
+        group.dataset.selectorCategory = groupKey;
         selectorCards.append(group);
         renderedGroups.add(groupKey);
       }

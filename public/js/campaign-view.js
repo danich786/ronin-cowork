@@ -24,6 +24,17 @@ const TYPES = Object.freeze({ machine: 'campaign.machine', templates: CAMPAIGN_T
 /** The machine's tabs of the cowork commons — everything about this install that is not already a surface here. */
 const MACHINE_TABS = Object.freeze(['themes', 'account', 'archives', 'messages', 'help', 'keypad', 'health']);
 const LEGACY = Object.freeze({ '@campaign': TYPES.identity, '@profile': TYPES.profile, '@roots': TYPES.roots, '@templates': TYPES.templates, 'campaign.team-templates': TYPES.templates, 'campaign.session-roles': TYPES.templates, '@new-campaign': TYPES.create });
+const SETTINGS_SELECTOR_CATEGORIES = Object.freeze({
+  [TYPES.identity]: ['campaign', 'Campaign'],
+  [TYPES.roots]: ['campaign', 'Campaign'],
+  [TYPES.defaults]: ['campaign', 'Campaign'],
+  [TYPES.routines]: ['capabilities', 'Capabilities'],
+  [TYPES.providers]: ['capabilities', 'Capabilities'],
+  [TYPES.templates]: ['launch', 'Agents and Teams'],
+  [TYPES.machine]: ['machine', 'This Ronin'],
+  [TYPES.create]: ['campaigns', 'Campaigns'],
+  [FEEDBACK_TYPE]: ['feedback', 'Feedback'],
+});
 const elem = (tag, cls, text) => { const out = document.createElement(tag); if (cls) out.className = cls; if (text != null) out.textContent = text; return out; };
 
 /**
@@ -88,7 +99,11 @@ function registerCampaignSurfaces() {
   // Desk profile remains registered so a remembered workspace can still restore it, but
   // its beta card is hidden from discovery. Themes now have their stable home in Ronin Desk.
   profiles.define(PROFILE, [
-    ...Object.values(TYPES).filter((type) => (MULTIPLE_CAMPAIGNS_ENABLED || type !== TYPES.create) && type !== TYPES.profile),
+    ...[
+      TYPES.identity, TYPES.roots, TYPES.defaults,
+      TYPES.routines, TYPES.providers,
+      TYPES.templates, TYPES.machine, TYPES.create,
+    ].filter((type) => MULTIPLE_CAMPAIGNS_ENABLED || type !== TYPES.create),
     FEEDBACK_TYPE,
   ]);
 }
@@ -145,10 +160,19 @@ export function createCampaignView() {
   const DEFAULT_VIEW = Object.freeze({ workspace1: TYPES.machine, workspace2: TYPES.templates, workspace3: TYPES.defaults, workspace4: TYPES.roots });
   const blank = (id) => { const surface = createSurface({ label: id.replace('workspace', 'Workspace '), className: 'cv-blank' }); surface.content.append(elem('p', 'cv-blank-word', t('team.workspace_blank', 'Workspace'))); return surface.el; };
   const save = () => ctx?.patchViewState('campaign', bench.snapshot());
-  bench = WorkspaceKit.workbench.create({ profile: PROFILE, tenant: { kind: 'campaign', selected }, environment, defaultNode: blank, label: t('campaign.settings_title', 'Ronin Settings'), title: () => t('campaign.settings_title', 'Ronin Settings'), shapeControl: document.getElementById('shapecycle'), onStateChange: save, onPlacement: save });
+  bench = WorkspaceKit.workbench.create({
+    profile: PROFILE, tenant: { kind: 'campaign', selected }, environment, defaultNode: blank,
+    label: t('campaign_home.machine_settings', 'Machine Settings'),
+    title: () => t('campaign_home.machine_settings', 'Machine Settings'),
+    selectorCategory: (type) => {
+      const category = SETTINGS_SELECTOR_CATEGORIES[type];
+      return category ? { key: category[0], label: category[1] } : null;
+    },
+    shapeControl: document.getElementById('shapecycle'), onStateChange: save, onPlacement: save,
+  });
   return {
     el: bench.host, glyph: '⛩', arrangement: bench.arrangement,
-    title: () => t('campaign.settings_title', 'Ronin Settings'),
+    title: () => t('campaign_home.machine_settings', 'Machine Settings'),
     placeFeedback: () => bench.place(FEEDBACK_TYPE, bench.selected()),
     mount: (_host, context) => { ctx = context; },
     enter: async (context) => {
