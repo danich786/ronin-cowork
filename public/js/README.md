@@ -150,12 +150,17 @@ What works with no browser at all:
 npm run check:modules   # cycles, orphans, unresolved imports — structure only
 node --check public/js/*.js   # parse
 npx tsc --noEmit        # server types
-npm run stage           # copy this client to public-staging/, served at /staging/
+npm run stage           # low-level copy of this client to public-staging/
 ```
 
-`npm run stage` is therefore the real tool here: it puts a candidate at `/staging/` against
-the same server and sessions so **Glen** can look at it on his Mac and iPhone while his
-working UI stays up. That human look is currently the only render check that exists.
+`npm run stage` only copies static client files for the server's `/staging/` route. It can
+still be useful for one local client check, but it is not the preferred multi-Agent Team
+review process and does not establish which aggregate repository commit is running.
+
+For a Team visual review, use the two-lane [visual-staging SOP](../../ronin_sops/ronin_methodology.md#visual-staging-one-disposable-team-preview):
+Agents offer exact private commits provisionally, the lead serially composes one disposable
+staging worktree and separate preview process, and finished work later uses ordinary Worktrees
+hand-in. The preview's `/api/version` identifies the aggregate commit actually on display.
 
 The phone surface is the one that matters most for a client change: its compact Output
 selector can choose the live terminal or any record-fed view supplied by Ronin Services.
