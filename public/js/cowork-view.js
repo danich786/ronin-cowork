@@ -23,16 +23,16 @@ import { launchPresetPlan, presetLaunchUrl } from './preset-launch.js';
 import { refreshDesks } from './desks.js';
 import { acceptDrops as acceptSessionDrops } from './team-drag.js';
 import { S } from './state.js';
-import { createCampaignIdentity } from './campaign.js';
 import { renderTeamConfiguration } from './team-configuration.js';
 import { agentTitle, buildTeamMembers, configSignature } from './team-members.js';
 import { isCoarse } from './tiledrop.js';
 import { createFeedbackSurface, FEEDBACK_TYPE, registerFeedbackSurface } from './feedback.js';
 import { fetchSessions } from './api.js';
-import { helpersLast, RONIN_HELPERS } from './roster-groups.js';
+import { RONIN_HELPERS } from './roster-groups.js';
 import { toast } from './ui.js';
 import { readyMika } from './mika-ready.js';
 import { createMikaHelpPanel } from './mika.js';
+import { coworkWorkbenchIdentity, orderCoworkTeams } from './campaign.js';
 
 const el = (tag, cls, text) => {
   const out = document.createElement(tag);
@@ -102,11 +102,12 @@ export function createCoworkView(options = {}) {
   registerWorkbenchCatalog();
   const campaign = options.kind === 'cowork';
   const viewKey = campaign ? 'cowork' : 'team';
+  const coworkIdentity = coworkWorkbenchIdentity(t('campaign.coworks', 'Teams'));
   const { createSurface, createChannelSurface, createAction } = WorkspaceKit.primitives;
   const { createTerminalTileHost } = WorkspaceKit.adapters;
   const { teamWorkspaceState } = WorkspaceKit.contract;
   const root = el('main', 'tw-view');
-  root.dataset.coworkKind = campaign ? 'campaign' : 'team';
+  root.dataset.coworkKind = campaign ? coworkIdentity.kind : 'team';
   let ctx = null;
   let stopMessageAttention = null;
   let team = '';
@@ -230,9 +231,6 @@ export function createCoworkView(options = {}) {
     });
     return [id, { el: view.el, enter: () => view.enter() }];
   }));
-  const campaignIdentity = createCampaignIdentity((name) => {
-    if (entered && campaign) renderCards([]);
-  });
   // its roster exists, so the form that made it hands the workspace over to it and goes
   // back to empty. Staffing happens from inside the Team, through Add Agent.
   const newTeamFormBySeat = campaign ? Object.fromEntries(Object.keys(seats).map((id) => {
@@ -286,13 +284,10 @@ export function createCoworkView(options = {}) {
         onPointerEnter: () => armPrewarm(member.name), onPointerLeave: disarmPrewarm };
     }),
     teams: () => campaign ? (() => {
-      const teams = teamsFromState().filter((candidate) => !candidate.holding);
-      const helper = teams.find((candidate) => candidate.name === RONIN_HELPERS);
-      const ordered = [
-        ...teams.filter((candidate) => candidate.name !== RONIN_HELPERS).sort((a, b) => helpersLast(a.name, b.name)),
-        { name: UNASSIGNED, title: t('league.ronin', 'Ronin: no team'), objective: '' },
-        ...(helper ? [helper] : []),
-      ];
+      const ordered = orderCoworkTeams(teamsFromState(), {
+        helperName: RONIN_HELPERS,
+        noTeam: { name: UNASSIGNED, title: t('league.ronin', 'Ronin: no team'), objective: '' },
+      });
       return ordered.map((item) => ({ key: item.name, label: String(item.title ?? '').trim() || readableTeam(item.name), summary: item.objective || '' }));
     })() : [],
   };
@@ -300,15 +295,20 @@ export function createCoworkView(options = {}) {
     profile: campaign ? WB_PROFILES.cowork : WB_PROFILES.team,
     tenant: { kind: campaign ? 'cowork' : 'team', team: () => team }, environment,
     defaultNode: (id) => seats[id].surface.el,
-    label: campaign ? t('campaign', 'Campaign') : t('team.roster_title', 'Team Roster'),
+    label: campaign ? coworkIdentity.selectorLabel : t('team.roster_title', 'Team Roster'),
     // While ミ Help is open the column is Mika's, and every repaint says so.
-    title: () => helpPanel?.isOpen() ? t('mika.header', 'Mika, your helpful assistant') : campaign ? campaignIdentity.name() || t('campaign', 'Campaign') : t('team.roster_title', 'Roster'),
+    title: () => helpPanel?.isOpen() ? t('mika.header', 'Mika, your helpful assistant') : campaign ? coworkIdentity.selectorLabel : t('team.roster_title', 'Roster'),
     actions: [rosterNote, mikaHelp], shapeControl: shapeBtn, deferSelector: true,
     installDrop: (cell, id) => acceptSessionDrops(cell, () => id, (name, at) => arrange({ [at]: { session: name } })),
     onSelect: markSelected,
     onStateChange: () => remember(), onPlacement: () => remember(),
   });
   rosterTitle = bench.selectorHeader?.title ?? null;
+  if (campaign) {
+    const selector = bench.host.querySelector('.wk-workbench-selector');
+    selector?.setAttribute('role', 'navigation');
+    selector?.setAttribute('aria-label', coworkIdentity.selectorAriaLabel);
+  }
   root.append(bench.host);
   // ミ Help: Mika takes over the selector column — her ordinary tile, borrowed from the
   // pool, no workspace changes hands — and Close puts the roster cards back. The Mika
@@ -593,7 +593,7 @@ export function createCoworkView(options = {}) {
     };
   };
   function renderCards(members) {
-    if (rosterTitle) rosterTitle.textContent = campaign ? campaignIdentity.name() || t('campaign', 'Campaign') : t('team.roster_title', 'Roster');
+    if (rosterTitle) rosterTitle.textContent = campaign ? coworkIdentity.selectorLabel : t('team.roster_title', 'Roster');
     bench.refreshSelector();
   }
 
@@ -665,14 +665,14 @@ export function createCoworkView(options = {}) {
     arrangement: bench.arrangement,
     // The owner's per-tab name; Teams defaults to its page name, a Team to the Team name.
     title: ({ param, viewState }) => {
-      const fallback = campaign ? t('campaign.coworks', 'Teams') : (readableTeam(param || team) || t('team.team', 'Team'));
+      const fallback = campaign ? coworkIdentity.tabLabel : (readableTeam(param || team) || t('team.team', 'Team'));
       const name = viewState?.(viewKey)?.tabName;
       return name ? { bare: name } : fallback;
     },
     tabName: {
       // The island edits the name it owns; a default is a real value, selectable and editable.
-      get: () => ctx?.viewState(viewKey)?.tabName || (campaign ? t('campaign.coworks', 'Teams') : readableTeam(team) || t('team.team', 'Team')),
-      placeholder: () => campaign ? t('campaign.coworks', 'Teams') : readableTeam(team) || t('team.team', 'Team'),
+      get: () => ctx?.viewState(viewKey)?.tabName || (campaign ? coworkIdentity.tabLabel : readableTeam(team) || t('team.team', 'Team')),
+      placeholder: () => campaign ? coworkIdentity.tabLabel : readableTeam(team) || t('team.team', 'Team'),
       set: (value) => { ctx?.patchViewState(viewKey, { tabName: String(value || '').trim() }); },
     },
     placeFeedback: () => bench.place(FEEDBACK_TYPE, bench.selected()),
@@ -693,7 +693,6 @@ export function createCoworkView(options = {}) {
       seenConfig = ''; // a fresh entry always paints the configuration once
       stopMessageAttention?.();
       stopMessageAttention = watchMessageQueueAttention();
-      if (campaign) void campaignIdentity.load();
       for (const seat of Object.values(seats)) seat.pool.destroyAll();
       team = campaign ? '' : context.param || context.state?.team || '';
       setBarLabel();
@@ -745,7 +744,6 @@ export function createCoworkView(options = {}) {
       entered = false;
       stopMessageAttention?.();
       stopMessageAttention = null;
-      campaignIdentity.destroy();
       unsubscribe?.();
       unsubscribe = null;
       teamPageHandlers.delete(onDraft);
