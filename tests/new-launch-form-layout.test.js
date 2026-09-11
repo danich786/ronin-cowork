@@ -50,17 +50,22 @@ test('collapsible steps expose one full-width disclosure row and Team defaults u
   assert.match(team, /const FOLDS = \['lead'\]/);
   assert.doesNotMatch(team, /stepDefaults\.body\.append/);
   assert.doesNotMatch(team, /createBand/);
-  assert.ok(agents.indexOf('host.append(add)') < agents.indexOf('rows().forEach'), 'Add Agent precedes the mini forms');
+  assert.match(agents, /if \(editor\) host\.append\(paintEditor\(\)\);[\s\S]*else \{[\s\S]*＋ Add Agent/);
 });
 
-test('each Agent mini-form carries lead, mandate, and provider choices in one launch shape', async () => {
+test('Add Agent confirms a draft into a compact row with New Agent-style stones', async () => {
   const agents = await source('team-agents.js');
-  assert.match(agents, /lead\.setAttribute\('aria-pressed', String\(row\.lead\)\)/);
+  assert.match(agents, /let editor = null/);
+  assert.match(agents, /if \(index < 0\) rows\(\)\.push\(saved\)/);
+  assert.match(agents, /editor = null; changed\(\); paint\(\)/);
+  assert.match(agents, /agent_add_confirm', 'Add'/);
+  assert.match(agents, /ntf-agent-row/);
   assert.match(agents, /for \(const other of rows\(\)\) other\.lead = false/);
-  assert.match(agents, /providerModelPair/);
+  assert.match(agents, /ntf-agent-stone/);
+  assert.match(agents, /dialRowMulti/);
   assert.match(agents, /provider: row\.provider/);
   assert.match(agents, /model: row\.model/);
-  assert.match(agents, /row\.mandateOpen = ''/);
+  assert.match(agents, /saved\.mandateOpen = ''/);
   assert.match(agents, /instructions: row\.assignment\.trim\(\)/);
   assert.match(agents, /team_lead: !!row\.lead/);
 });
@@ -72,10 +77,12 @@ test('New Team cast controls are labelled, related, and stack without changing N
     source('new-agent.js'),
   ]);
   assert.match(agents, /el\('label', 'ntf-agent-field'\)/);
-  assert.match(agents, /button\.setAttribute\('aria-expanded', String\(row\.mandateOpen === axis\)\)/);
-  assert.match(agents, /button\.setAttribute\('aria-controls', `\$\{id\}-\$\{axis\}`\)/);
+  assert.match(agents, /toggle\.setAttribute\('aria-expanded', String\(row\.mandateOpen === axis\)\)/);
+  assert.match(agents, /toggle\.setAttribute\('aria-controls', `\$\{id\}-\$\{axis\}`\)/);
   assert.match(agents, /drop\.setAttribute\('aria-label'/);
-  assert.match(css, /@media \(max-width: 44rem\)[\s\S]*\.ntf-surface \.ntf-agent-mandate-summaries/);
+  assert.match(css, /@media \(max-width: 44rem\)[\s\S]*\.ntf-surface \.ntf-agent-stones/);
+  assert.match(css, /\.ntf-agent-stones \{ display: grid/);
+  assert.doesNotMatch(css, /\.na-[^,{ ]*[^}]*ntf-agent/);
   assert.doesNotMatch(css, /@media \(max-width: 44rem\)[\s\S]*\.na-surface \.ntf-agent/);
   assert.doesNotMatch(newAgent, /ntf-agent-field|new-team-agent-/);
 });

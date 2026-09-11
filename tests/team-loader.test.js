@@ -15,12 +15,18 @@ test('the Team loader finishes ordinary rows serially and the lead last', async 
   };
 
   const outcomes = await launchTeamAgents(request, 'dinner', [
-    { name: 'cook', instructions: 'cook', mandate: { reach: 'execute', recruit: 'open', output: ['an artifact'] }, team_lead: false },
+    { name: 'cook', instructions: 'cook', mandate: { reach: 'execute', recruit: 'open', output: ['an artifact'] }, team_lead: false, provider: 'openai', model: 'gpt-5' },
     { name: 'host', instructions: 'host', mandate: { reach: 'execute', recruit: 'staff agents', output: ['the team'] }, team_lead: true },
     { name: 'music', instructions: 'music', mandate: { reach: 'execute', recruit: 'open', output: ['ideas'] }, team_lead: false, routines_off: ['gbrain'], routines_on: ['ronin_worktrees'] },
   ]);
 
   assert.deepEqual(calls.map((call) => call.body.name), ['cook', 'music', 'host']);
+  assert.deepEqual(calls[0].body, {
+    session_type: 'cowork_agent', team: 'dinner', team_lead: false,
+    name: 'cook', instructions: 'cook',
+    mandate: { reach: 'execute', recruit: 'open', output: ['an artifact'] },
+    provider: 'openai', model: 'gpt-5',
+  }, 'the confirmed Agent mandate and model choice reach /api/launch');
   assert.equal(outcomes.length, 3);
   assert.deepEqual(calls[2].body, {
     session_type: 'cowork_agent', team: 'dinner', team_lead: true,
