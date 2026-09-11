@@ -35,12 +35,14 @@ test('Where it works separates birthplace and additional workspace profile stone
   assert.match(form, /rootRows\.data\?\.roots/);
   assert.match(where, /Where it’s born/);
   assert.match(where, /Additional workspaces/);
+  assert.match(where, /o\.stones \? 'div' : 'details'/);
+  assert.match(where, /details\.replaceChildren\(el\('p', 'fs-head', t\('where\.label', 'Where it works'\)\)\)/);
   assert.match(where, /sws-stone na-workspace-stone/);
   assert.match(where, /repo_profile\?\.worktrees === 'enabled'/);
   assert.match(where, /'worktree'/);
   assert.match(where, /'checkout'/);
-  assert.match(where, /summary\.hidden = true/);
-  assert.match(where, /line\.hidden = true/);
+  assert.match(where, /open === 'born'/);
+  assert.match(where, /root\.name !== state\.root/);
 });
 
 test('model disclosures open directly to choices and close after selection', async () => {
