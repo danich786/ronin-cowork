@@ -364,9 +364,10 @@ export function providerModelStones(read, write) {
       }
       options.append(tray); wrap.append(options); return wrap;
     };
-    const providerRows = providers.map((row) => ({ key: row.provider, label: row.provider_label || row.provider, off: row.off }));
+    const providerRows = providers.map((row) => ({ key: row.provider, label: row.cli_label || row.provider_label || row.provider, off: row.off }));
     const modelRows = rows.filter((row) => row.provider === current.provider).map((row) => ({ key: row.model, label: modelWord(row), off: row.off }));
-    const providerLabel = providers.find((row) => row.provider === current.provider)?.provider_label || current.provider;
+    const selectedProvider = providers.find((row) => row.provider === current.provider);
+    const providerLabel = selectedProvider?.cli_label || selectedProvider?.provider_label || current.provider;
     host.replaceChildren(group('provider', t('forms.provider', 'Model provider'), providerRows, providerLabel, (provider) => { write(provider, ''); }));
     host.append(group('model', t('forms.model', 'Model'), modelRows, current.model ? modelWord(rows.find((row) => row.provider === current.provider && row.model === current.model) || { model: current.model }) : '', (model) => { write(current.provider, model); }));
   };
