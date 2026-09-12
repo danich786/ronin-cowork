@@ -181,15 +181,35 @@ test('set() and options() repaint; Escape closes; a chosen option can draw its o
     { key: 'root', label: 'Born in', options: [{ v: 'a', l: 'ronin_cowork' }, { v: 'b', l: 'ronin_services' }] },
     { key: 'repos', label: 'Additional workspaces', many: true, after: 'root', options: (v) => [{ v: 'a', l: 'ronin_cowork' }, { v: 'b', l: 'ronin_services' }].filter((r) => r.v !== v.root), row: (o) => { const input = new FakeNode('input'); input.placeholder = `branch for ${o.l}`; return input; } },
   ] }], { value: { root: 'a', repos: ['b'] } });
-  stoneFor(form, 'repos').click();
   const extra = form.el.one('ask-extra');
-  assert.equal(extra.one('ask-extra-name').textContent, 'ronin_services');
+  assert.equal(extra.one('ask-extra-name').textContent, 'ronin_services', 'the chosen option\'s own control shows with the tray closed');
   assert.equal(extra.children[1].placeholder, 'branch for ronin_services');
+  assert.equal(form.el.all('ask-group')[0].one('ask-extras'), form.el.one('ask-extras'), 'it sits under the group, not in a tray');
+  stoneFor(form, 'repos').click();
+  assert.equal(form.el.one('ask-tray').one('ask-extras'), null);
   form.el.fire('keydown', { key: 'Escape' });
   assert.equal(form.el.all('ask-tray').length, 0);
+  assert.ok(form.el.one('ask-extra'), 'and it is still there after Escape');
   form.set('root', 'b');
   assert.equal(stoneFor(form, 'root').one('ask-reading').textContent, 'ronin_services');
   form.options('root', [{ v: 'c', l: 'notes' }]);
   stoneFor(form, 'root').click();
   assert.deepEqual(form.el.one('ask-tray').all('ask-opt').map((opt) => opt.one('ask-name').textContent), ['notes']);
+});
+
+test('set() takes a patch object in one paint, and show() limits which questions are drawn', () => {
+  const { form } = build();
+  form.set({ provider: 'openai', model: 'gpt-5.6-sol', reach: 'execute', lead: true });
+  assert.equal(stoneFor(form, 'provider').one('ask-reading').textContent, 'Codex');
+  assert.equal(stoneFor(form, 'model').one('ask-reading').textContent, 'gpt-5.6-solfrontier');
+  assert.equal(stoneFor(form, 'lead').attributes['aria-checked'], 'true');
+  stoneFor(form, 'reach').click();
+  assert.equal(form.el.dataset.open, 'reach');
+  form.show(['provider', 'model']);
+  assert.deepEqual(form.el.all('ask-group').map((group) => group.one('ask-group-head').textContent), ['Model'], 'groups with nothing shown are not drawn');
+  assert.equal(form.el.all('ask-stone').length, 2);
+  assert.equal(form.el.dataset.open, '', 'a hidden open field closes');
+  assert.equal(form.value().reach, 'execute', 'hidden answers are kept, not cleared');
+  form.show(null);
+  assert.equal(form.el.all('ask-stone').length, 5);
 });
