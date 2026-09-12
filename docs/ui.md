@@ -496,3 +496,58 @@ unfinished — it is finished and unproven, which is a different thing. The gap 
 restart and one press, not more code. If that first attempt fails, fix what it shows you;
 the shape above is deliberate and every choice in it has its reason recorded either here
 or in `src/passkey.ts`'s head comment.
+
+
+## Asking a question — `ask()` is the one selector
+
+Every place a form asks the owner to pick from a set of answers is drawn by
+`public/js/ask.js`, from a spec, and by nothing else. The ruling and the builder contract are
+ronin-lab `SELECTORS.md` (owner, 2026-09-12); the live benches that led to it are the lab's
+`concepts/selectors.html`. This is the minute an agent needs before adding a question.
+
+**The rule.** A field is a **reading stone** — 140 × 48 px, label over answer — that opens a
+**tray** of stones under its group in one of two fixed shapes: the **square** (85 px, a glyph
+and a ruled word) or the **rectangle** (140 × 48, a name and one short word). A stone carries
+a name, never a sentence; the **caption** line under the tray carries the sentence, the
+facts, and the reason a stone is greyed. A **switch** is the reading stone with a track. Fields
+sit in named **groups** that keep together and stack as a group; nothing stretches with the
+surface. Names break at their joints (`_` `-` `.`), never mid-word.
+
+```js
+import { ask } from './ask.js';
+const form = ask([
+  { group: t('new_agent.model_package', 'Model'), fields: [
+    { key: 'provider', label: t('forms.provider', 'model provider'), blank: t('forms.default', 'default'), options: () => providerRows() },
+    { key: 'model', label: t('forms.model', 'model'), blank: t('forms.default', 'default'), after: 'provider', options: (v) => modelRows(v.provider) },
+  ] },
+  { group: t('mandate', 'Mandate'), fields: [
+    { key: 'reach', label: t('reach', 'Reach'), shape: 'square', options: REACH_ROWS },
+    { key: 'output', label: t('output', 'Output'), shape: 'square', many: true, options: OUTPUT_ROWS },
+  ] },
+  { group: t('squad', 'Team'), fields: [{ key: 'lead', label: t('team.lead', 'Team lead'), switch: [t('yes', 'Yes'), t('no', 'No')] }] },
+], { value: draft, onChange: (value, key) => { Object.assign(draft, value); paintFoot(); } });
+host.append(form.el);   // form.value() · form.set(key, v) · form.options(key, rows) · form.open(key) · form.close()
+```
+
+| Spec key | Meaning |
+|---|---|
+| `group` · `fields` | a named group and the fields it keeps together |
+| `key` · `label` | the answer's name in the value; the label over the stone, through `t()` |
+| `options` | rows `{ v, l, sub?, off?, glyph?, word? }` or a function of the current value — `sub` reads in the caption, `off` is why the stone is greyed (disabled, never hidden), `glyph` sits on a square, `word` is the rectangle's short line (tier, worktree) |
+| `blank` | the empty answer's word, drawn as a stone; omit it and there is no blank |
+| `many` | any-of: the tray stays open; the reading says the names or "n chosen" |
+| `switch` | `[onWord, offWord]`: the field is a switch and opens nothing |
+| `shape` | `square` for a ruled word with a glyph, `rect` (default) for a name |
+| `after` | the field this depends on; the answer clears and the options are re-asked when it changes |
+| `row` | `(option, value) → node`: a control drawn under the tray for each chosen option (a branch field) |
+
+**What is not an `ask()`.** The stone work surface (`stone-work-surface.js`) is a page for
+browsing a collection whose item is the content — Presets, Workspace Folders, Model
+providers, Templates — and stays. Tabs, the Presets kind filter, the Control dial and the
+2 ⇄ 4 button are not selections from a list. The tile head's Output and @ selects move to
+`ask()` in a later wave that honours the head's own `.open` sweep.
+
+**What enforces it.** `tests/ask.test.js` is the unit floor. The consumer guard — failing a
+hand-drawn `select`, `Option`, checkbox or `aria-pressed` row outside `ask.js`, the tile head
+and the stone work surface — lands with the launch-form migration, once those forms no
+longer draw their own (the first consumer is New Agent).

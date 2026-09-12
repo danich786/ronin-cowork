@@ -585,6 +585,11 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **forms.own_blurb:** Fresh and empty. Fill it in yourself.
 - **forms.library_note:** More on the Ronin library — Campaign → Templates → Check the library to see them and download the ones you want.
 - **forms.default:** default
+- **ask.none:** None
+- **ask.chosen:** {n} chosen
+- **ask.find:** type to find
+- **ask.nothing:** Nothing to choose.
+- **ask.after:** Choose {field} first.
 - **forms.provider_off:** {name} — not on this machine
 - **forms.model_word:** {model} · {tier}
 - **forms.model_off:** {model} · {tier} — not on this machine
