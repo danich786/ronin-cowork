@@ -55,7 +55,6 @@
   .ask-caption { margin: 0; min-height: 1.4em; color: var(--muted); font-size: var(--form-note); line-height: 1.4; }
   .ask-caption b { color: var(--fg-strong); font-weight: 500; }
   .ask-extras { display: grid; gap: var(--space-2); }
-  .ask-extras:empty { display: none; }
   .ask-extra { display: grid; grid-template-columns: var(--ask-w) minmax(0, 1fr); gap: var(--space-4); align-items: center; font-size: var(--form-note); color: var(--fg); }
   .ask-extra-name { font-family: var(--font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .ask-extra input { min-width: 0; max-width: calc(var(--ask-w) * 2); border: var(--edge) solid var(--line-2); border-radius: var(--radius-xs); background: var(--well); color: var(--fg); padding: var(--space-2) var(--space-4); font: inherit; font-size: var(--form-note); }
