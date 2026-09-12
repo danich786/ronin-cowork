@@ -6,22 +6,23 @@
   .ask { --ask-w: 140px; --ask-h: 48px; --ask-sq: 85px; --ask-gap: var(--space-4); --ask-group-gap: var(--space-8);
     display: flex; flex-wrap: wrap; gap: var(--space-7) var(--ask-group-gap); align-items: flex-start; min-width: 0; font-size: var(--form-input); }
   .ask-group { display: grid; gap: var(--space-3); max-width: 100%; }
-  .ask-group-head { margin: 0; color: var(--muted); font-size: var(--form-key); font-weight: 600; letter-spacing: .07em; text-transform: uppercase; }
+  /* type follows the kit's field furniture: a group head IS a field label (.wk-field-label), the
+     stone's own label is a description (.wk-field-description), the reading is control text. */
+  .ask-group-head { margin: 0; color: var(--fg-strong); font-size: var(--form-key); font-weight: 650; }
   .ask-fields { display: flex; flex-wrap: wrap; gap: var(--ask-gap); }
 
   /* the reading stone */
   .ask-stone { position: relative; flex: 0 0 var(--ask-w); width: var(--ask-w); height: var(--ask-h); max-width: 100%; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden;
-    border: var(--edge) solid var(--line-2); border-left: var(--edge-2) solid var(--accent); border-radius: var(--radius-hair); background: var(--panel); color: var(--fg-strong);
-    padding: var(--space-3) var(--space-5); cursor: pointer; text-align: left; font: inherit; font-size: var(--form-input); }
+    border: var(--edge) solid var(--line-2); border-left: var(--edge-2) solid var(--accent); border-radius: var(--radius-xs); background: var(--well); color: var(--fg);
+    padding: var(--space-3) var(--space-4); cursor: pointer; text-align: left; font: inherit; font-size: var(--form-input); }
   .ask-stone:hover { border-color: var(--kaki); }
   .ask-stone[aria-expanded='true'] { border-color: var(--kaki); border-left-color: var(--kaki); background: var(--raise); box-shadow: inset var(--edge-2) 0 var(--kaki); }
   .ask-stone::after { content: '▾'; position: absolute; right: var(--space-4); bottom: var(--space-3); color: var(--accent); font-size: var(--text-2); }
   .ask-switch::after, .ask-switch .ask-reading { content: none; }
-  .ask-label { display: block; overflow: hidden; color: var(--muted); font-size: var(--form-key); font-weight: 600; letter-spacing: .07em; line-height: 1; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
-  .ask-label-mark { margin-right: var(--space-2); color: var(--kaki); font-style: normal; }
-  .ask-reading { display: block; overflow: hidden; padding-right: var(--space-7); font-size: var(--form-input); font-weight: 500; line-height: 1.15; text-overflow: ellipsis; white-space: nowrap; }
+  .ask-label { display: block; overflow: hidden; color: var(--muted); font-size: var(--form-note); line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
+  .ask-reading { display: block; overflow: hidden; padding-right: var(--space-7); color: var(--fg-strong); font-size: var(--form-input); font-weight: 500; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
   .ask-blank { color: var(--muted); font-weight: 400; }
-  .ask-fact { display: inline-block; margin-left: var(--space-3); color: var(--accent); font-size: var(--form-note); font-style: normal; }
+  .ask-fact { margin-left: var(--space-3); color: var(--accent); font-size: var(--form-note); font-style: normal; }
 
   /* the switch: the same stone with a track */
   .ask-switch { flex-direction: row; align-items: center; justify-content: space-between; gap: var(--space-3); }
@@ -40,13 +41,13 @@
   .ask-empty { color: var(--dim); font-size: var(--form-note); }
 
   /* the two shapes, and never a third */
-  .ask-opt { display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; border: var(--edge) solid var(--line-2); border-left: var(--edge-2) solid var(--accent); border-radius: var(--radius-hair); background: var(--panel); color: var(--fg-strong); cursor: pointer; text-align: left; font: inherit; }
+  .ask-opt { display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; border: var(--edge) solid var(--line-2); border-left: var(--edge-2) solid var(--accent); border-radius: var(--radius-xs); background: var(--well); color: var(--fg-strong); cursor: pointer; text-align: left; font: inherit; }
   .ask-square { flex: 0 0 var(--ask-sq); width: var(--ask-sq); height: var(--ask-sq); padding: var(--space-4) var(--space-5); }
   .ask-rect { flex: 0 0 var(--ask-w); width: var(--ask-w); height: var(--ask-h); justify-content: center; padding: var(--space-3) var(--space-5); }
   .ask-glyph { color: var(--accent); font-size: var(--text-8); font-style: normal; line-height: 1; }
   .ask-name { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: break-word; font-size: var(--form-input); font-weight: 500; line-height: 1.2; }
   .ask-square .ask-name { font-size: var(--form-note); }
-  .ask-word { overflow: hidden; color: var(--accent); font-size: var(--text-1); text-overflow: ellipsis; white-space: nowrap; }
+  .ask-word { overflow: hidden; color: var(--accent); font-size: var(--form-note); text-overflow: ellipsis; white-space: nowrap; }
   .ask-opt:hover { border-color: var(--kaki); }
   .ask-opt[aria-selected='true'] { border-color: var(--kaki); border-left-color: var(--kaki); background: var(--raise); color: var(--kaki-lift); box-shadow: inset var(--edge-2) 0 var(--kaki); }
   .ask-opt[aria-disabled='true'] { opacity: .45; cursor: default; }
@@ -57,7 +58,7 @@
   .ask-caption b { color: var(--fg-strong); font-weight: 500; }
   .ask-extras { display: grid; gap: var(--space-2); }
   .ask-extra { display: grid; grid-template-columns: var(--ask-w) minmax(0, 1fr); gap: var(--space-4); align-items: center; font-size: var(--form-note); color: var(--fg); }
-  .ask-extra-name { font-family: var(--font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ask-extra-name { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .ask-extra input { min-width: 0; max-width: calc(var(--ask-w) * 2); border: var(--edge) solid var(--line-2); border-radius: var(--radius-xs); background: var(--well); color: var(--fg); padding: var(--space-2) var(--space-4); font: inherit; font-size: var(--form-note); }
 
   .ask-stone:focus-visible, .ask-opt:focus-visible, .ask-filter:focus-visible { outline: var(--edge-2) solid var(--kaki); outline-offset: 1px; }
