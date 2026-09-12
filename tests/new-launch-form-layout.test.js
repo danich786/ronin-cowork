@@ -65,6 +65,9 @@ test('Add Agent confirms a draft into a compact row with the one selector utilit
   assert.match(agents, /group: t\('new_agent\.model_package', 'Model'\)/);
   assert.match(agents, /group: t\('mandate', 'Mandate'\)/);
   assert.match(agents, /shape: 'square'/);
+  assert.match(agents, /ruledRows\('reach', REACH, mandateWord\)/);
+  assert.match(agents, /ruledRows\('recruit', RECRUIT, mandateWord\)/);
+  assert.match(agents, /ruledRows\('output', OUTPUT, mandateWord\)/);
   assert.match(agents, /many: true/);
   assert.match(agents, /switch: \[t\('yes', 'Yes'\), t\('no', 'No'\)\]/);
   assert.doesNotMatch(agents, /switch:[^\n]+word:/);
@@ -100,6 +103,7 @@ test('New Team cast text is labelled and all cast selections belong to ask()', a
 test('New Team routes each selector region through ask() and leaves Templates browsing alone', async () => {
   const form = await source('new-team-form.js');
   assert.match(form, /const kindQuestions = ask\(/);
+  assert.match(form, /ruledRows\('kind', \['open', \.\.\.KINDS\]/);
   assert.match(form, /const whereQuestions = ask\(/);
   assert.match(form, /kitQuestions = ask\(/);
   assert.match(form, /after: 'provider'/);

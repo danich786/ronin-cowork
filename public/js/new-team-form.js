@@ -2,6 +2,7 @@
 import { request } from './request.js';
 import { t } from './lexicon.js';
 import { ask } from './ask.js';
+import { ruledRows } from './glyphs.js';
 import { finalizeTeamName, isValidTeamName, sanitizeTeamName } from './new-team-draft.js';
 import { conflictingAgentNames } from './new-team-check.js';
 import { agentPicks, agentRow, createAgentRows } from './team-agents.js';
@@ -67,7 +68,6 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
   const offered = () => (draft.kind === 'open' ? templates : templates.filter((row) => row.kinds.includes(draft.kind)));
   const routineOn = (name) => draft.routines[name] === true;
   const onNames = () => routineRows.filter((row) => routineOn(row.name)).map((row) => row.name);
-  const mandateRows = (values, glyphs) => values.map((v, at) => ({ v, l: mandateWord(v), glyph: glyphs[at] }));
   const providerRows = () => providerCatalog().rows
     .filter((row, at, all) => all.findIndex((other) => other.provider === row.provider) === at)
     .map((row) => {
@@ -155,10 +155,7 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
   }
   const kindQuestions = ask([{ group: t('kind', 'Kind'), fields: [{
     key: 'kind', label: t('kind', 'Kind'), shape: 'square',
-    options: [
-      { v: 'open', l: t('kind.open', 'Open'), glyph: '○' },
-      ...KINDS.map((key, at) => ({ v: key, l: t(`kind.${key}`, key), glyph: ['⌨', '💼', '🎩', '🏠', '🎪', '🎓'][at] })),
-    ],
+    options: ruledRows('kind', ['open', ...KINDS], (key) => t(`kind.${key}`, key === 'open' ? 'Open' : key)),
   }] }], {
     value: { kind: draft.kind },
     className: 'ntf-kind-questions',
