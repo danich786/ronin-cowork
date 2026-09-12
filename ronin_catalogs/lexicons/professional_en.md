@@ -590,6 +590,8 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **ask.find:** type to find
 - **ask.nothing:** Nothing to choose.
 - **ask.after:** Choose {field} first.
+- **yes:** Yes
+- **no:** No
 - **forms.reason_not_on_machine:** not on this machine
 - **forms.reason_turned_off:** turned off
 - **forms.reason_not_listed:** not listed by your {cli} {client_version}
@@ -631,6 +633,7 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **new_agent.terminal_note:** A terminal takes no kind, no instructions, no mandate and no loadout.
 - **new_agent.bare_note:** A bare-metal Agent takes no kind, no mandate and no loadout.
 - **new_agent.instructions:** Instructions
+- **new_agent.model_package:** Model
 - **new_agent.team_existing:** An existing team
 - **new_agent.team_existing_sub:** Join it. Its answers land at birth.
 - **new_agent.team_none:** No team — a rōnin
@@ -688,6 +691,7 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **desks.parked_none:** none
 
 ## team — team-view.js (the Team page)
+- **team.lead:** Team lead
 - **team.flip_commons:** Show the Team commons in this workspace
 - **team.flip_terminal:** Show the terminal in this workspace
 - **team.workspace_1:** Workspace 1
@@ -1743,6 +1747,7 @@ The catalog entry goes. {dir} is not touched.
 - **team_config.kind_school:** School
 - **team_config.objective:** Purpose
 - **where.born_in:** Born in
+- **where.additional:** Additional workspaces
 - **where.worktrees_on:** Worktrees are on (see Routines): a ticked repository opens a desk for each new Agent at birth; branches are Ronin's.
 - **where.worktrees_off:** Worktrees are off (see Routines): a ticked repository is where this Team works, on the branch you name, or as checked out.
 - **where.col_repo:** Repository

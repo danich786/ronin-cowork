@@ -18,9 +18,11 @@ test('New Agent uses one ruled ask() spec after its three session types', async 
   assert.match(form, /group: t\('mandate', 'Mandate'\)/);
   assert.match(form, /shape: 'square'[\s\S]*many: true/);
   assert.match(form, /group: t\('squad', 'Team'\)/);
-  assert.match(form, /switch: \[t\('yes', 'Yes'\), t\('no', 'No'\)\], word: '人'/);
+  assert.match(form, /switch: \[t\('yes', 'Yes'\), t\('no', 'No'\)\]/);
+  assert.doesNotMatch(form, /switch: \[[^\]]+\], word:/);
   assert.match(form, /group: t\('where\.label', 'Where it works'\)/);
   assert.match(form, /many: true, after: 'root'/);
+  assert.match(form, /questions\.show\(draft\.type === 'terminal' \? \['root', 'repos'\] : draft\.type === 'bare_metal_agent' \? \['provider', 'model', 'root', 'repos'\] : null\)/);
   assert.match(form, /stepPayload\.setNumber\(order\.length \+ 1\)/);
   assert.match(form, /key: 'payload'.*Payload/);
   assert.match(form, /stepTop\.body\.replaceChildren\(nameField, questions\.el, instructionsField\)/);

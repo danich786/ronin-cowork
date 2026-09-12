@@ -10,7 +10,7 @@ import { t } from './lexicon.js';
 import { ask } from './ask.js';
 import { finalizeTeamName, isValidTeamName, sanitizeTeamName } from './new-team-draft.js';
 import {
-  createStep, el, kindTiles, loadProviderCatalog, mandateWord, modelWord, providerCatalog, readingRows, tagRow, templateTray, wayTiles, bookShelves,
+  createStep, el, kindTiles, loadProviderCatalog, mandateWord, providerCatalog, readingRows, tagRow, templateTray, tierWord, wayTiles, bookShelves,
 } from './form-steps.js';
 import { closeWorkspaceTab, openWorkspaceTab, reserveWorkspaceTab } from './workspace.js';
 
@@ -217,16 +217,22 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
   const providerRows = () => providerCatalog().rows
     .filter((row, index, all) => all.findIndex((other) => other.provider === row.provider) === index)
     .map((row) => {
-      const machine = providerCatalog().machine.find((item) => item.id === row.cli);
       const unavailable = row.operational ? '' : row.off
-        ? t('forms.provider_turned_off', '{name} — turned off', { name: row.cli_label || row.provider_label })
-        : String(machine?.state || t('forms.provider_off', 'not on this machine')).replaceAll('_', ' ');
+        ? t('forms.reason_turned_off', 'turned off')
+        : t('forms.reason_not_on_machine', 'not on this machine');
       return { v: row.provider, l: row.cli_label || row.provider_label || row.provider, off: unavailable || undefined };
     });
-  const modelRows = (provider) => providerCatalog().rows.filter((row) => row.provider === provider).map((row) => ({
-    v: row.model, l: row.model, word: modelWord(row).split(' · ').at(-1), sub: row.cost || '',
-    off: !row.operational ? t('forms.provider_off', 'not on this machine') : row.model_list_current && row.listed === false ? t('forms.model_unlisted', 'not listed by this CLI') : undefined,
-  }));
+  const modelRows = (provider) => providerCatalog().rows.filter((row) => row.provider === provider).map((row) => {
+    const machine = providerCatalog().machine.find((item) => item.id === row.cli);
+    return {
+      v: row.model, l: row.model, word: tierWord(row.tier), sub: row.cost || '',
+      off: !row.operational
+        ? t('forms.reason_not_on_machine', 'not on this machine')
+        : row.model_list_current && row.listed === false
+          ? t('forms.reason_not_listed', 'not listed by your {cli} {client_version}', { cli: row.cli_label || row.cli, client_version: machine?.version || '' }).trim()
+          : undefined,
+    };
+  });
   const mandateRows = (values, glyphs) => values.map((v, index) => ({ v, l: mandateWord(v), glyph: glyphs[index] }));
   const teamValue = () => draft.teamMode === 'new' ? '__new__' : draft.teamMode === 'none' ? '__none__' : `team:${draft.team}`;
   const teamRows = () => [
@@ -237,7 +243,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
   const rootRows = () => roots.map((row) => ({ v: row.name, l: row.name, word: row.repo_profile?.worktrees === 'enabled' ? t('where.worktree', 'worktree') : t('where.checkout', 'checkout') }));
   const newTeamField = () => {
     const input = el('input'); input.type = 'text'; input.spellcheck = false; input.autocapitalize = 'off'; input.value = draft.newTeam;
-    input.placeholder = t('new_team.name_placeholder', 'lowercase, digits, - _');
+    input.placeholder = t('new_agent.team_new_blank', 'Blank makes no team — the Agent is a rōnin.');
     input.addEventListener('input', () => {
       const caret = input.selectionStart; const clean = sanitizeTeamName(input.value);
       if (clean !== input.value) { input.value = clean; input.setSelectionRange(caret, caret); }
@@ -251,13 +257,13 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
       { key: 'model', label: t('forms.model', 'Model'), blank: t('forms.default', 'Default'), after: 'provider', options: (value) => modelRows(value.provider) },
     ] },
     { group: t('mandate', 'Mandate'), fields: [
-      { key: 'reach', label: t('reach', 'Reach'), shape: 'square', options: mandateRows(REACH, ['○', '言', '図', '動']) },
-      { key: 'recruit', label: t('recruit', 'Recruit'), shape: 'square', options: mandateRows(RECRUIT, ['○', '一', '提', '人']) },
-      { key: 'output', label: t('output', 'Output'), shape: 'square', many: true, options: mandateRows(OUTPUT, ['○', '図', '灯', '符', '物', '人', '∅']) },
+      { key: 'reach', label: t('reach', 'Reach'), shape: 'square', options: mandateRows(REACH, ['○', '💬', '🗺', '⚙']) },
+      { key: 'recruit', label: t('recruit', 'Recruit'), shape: 'square', options: mandateRows(RECRUIT, ['·', '👤', '💡', '👥']) },
+      { key: 'output', label: t('output', 'Output'), shape: 'square', many: true, options: mandateRows(OUTPUT, ['·', '📝', '💭', '⌨', '📦', '👥', '🚫']) },
     ] },
     { group: t('squad', 'Team'), fields: [
       { key: 'team', label: t('squad', 'Team'), options: teamRows, row: (option) => option.v === '__new__' ? newTeamField() : null },
-      { key: 'teamLead', label: t('team.lead', 'Team lead'), mark: '人', switch: [t('yes', 'Yes'), t('no', 'No')] },
+      { key: 'teamLead', label: t('team.lead', 'Team lead'), switch: [t('yes', 'Yes'), t('no', 'No')] },
     ] },
     { group: t('where.label', 'Where it works'), fields: [
       { key: 'root', label: t('where.born_in', 'Born in'), options: rootRows },
@@ -577,6 +583,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     stepPayload.setNumber(order.length + 1);
     stepPayload.el.hidden = draft.type === 'terminal';
     stepTop.el.querySelector('h3').textContent = hasAgent() ? t('new_agent.agent_body', 'Agent') : t('new_agent.name_required_step', 'Name · required');
+    questions.show(draft.type === 'terminal' ? ['root', 'repos'] : draft.type === 'bare_metal_agent' ? ['provider', 'model', 'root', 'repos'] : null);
     questions.el.hidden = false;
     instructionsField.hidden = !hasAgent();
     paintTypes();
