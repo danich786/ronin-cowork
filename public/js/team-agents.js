@@ -1,6 +1,7 @@
 /* part of the ronin-cowork client — see js/README.md */
 import { t } from './lexicon.js';
-import { createStep, dialRow, dialRowMulti, el, mandateWord, providerModelStones } from './form-steps.js';
+import { ask } from './ask.js';
+import { createStep, el, mandateWord, modelWord, providerCatalog } from './form-steps.js';
 import { finalizeTeamName, sanitizeTeamName } from './new-team-draft.js';
 
 const REACH = ['open', 'discuss', 'plan', 'execute'];
@@ -39,10 +40,6 @@ export function createAgentRows({ n, key, rows, changed, onToggle, createAction,
     const { row, index } = editor; const id = `new-team-agent-${++rowId}`;
     const box = el('fieldset', 'ntf-agent ntf-agent-editor');
     box.append(el('legend', 'ntf-agent-legend', index < 0 ? t('new_team.agent_add_title', 'Add Agent') : t('new_team.agent_edit_title', 'Edit Agent')));
-    const lead = el('label', 'ntf-agent-lead-choice'); const leadInput = el('input');
-    leadInput.type = 'checkbox'; leadInput.checked = row.lead;
-    leadInput.addEventListener('change', () => { row.lead = leadInput.checked; });
-    lead.append(leadInput, el('span', null, t('add_agent.make_team_lead', 'Make Team Lead')));
     const name = el('input', 'ntf-agent-name'); name.type = 'text'; name.spellcheck = false; name.autocapitalize = 'off'; name.value = row.name; name.id = `${id}-name`;
     const assignment = el('textarea', 'ntf-agent-what'); assignment.rows = 3; assignment.value = row.assignment; assignment.id = `${id}-assignment`;
     const cancel = createAction({ label: t('cancel', 'Cancel'), size: 'compact', action: () => { editor = null; paint(); } });
@@ -55,21 +52,35 @@ export function createAgentRows({ n, key, rows, changed, onToggle, createAction,
     });
     assignment.addEventListener('input', () => { row.assignment = assignment.value; });
 
-    const mandate = el('div', 'ntf-agent-mandate'); mandate.append(el('p', 'fs-head', t('mandate', 'Mandate')));
-    const part = (axis, label, content, summary) => {
-      const wrap = el('div', 'ntf-agent-mandate-part'); const toggle = el('button', 'ntf-agent-mandate-toggle'); toggle.type = 'button';
-      toggle.setAttribute('aria-expanded', String(row.mandateOpen === axis)); toggle.setAttribute('aria-controls', `${id}-${axis}`);
-      toggle.append(el('b', null, label), el('span', null, summary));
-      toggle.addEventListener('click', () => { row.mandateOpen = row.mandateOpen === axis ? '' : axis; paint(); }); wrap.append(toggle);
-      if (row.mandateOpen === axis) { content.id = `${id}-${axis}`; wrap.append(content); } return wrap;
-    };
-    mandate.append(
-      part('reach', t('reach', 'Reach'), dialRow('', REACH, row.reach, (value) => { row.reach = value; paint(); }), mandateWord(row.reach)),
-      part('recruit', t('recruit', 'Recruit'), dialRow('', RECRUIT, row.recruit, (value) => { row.recruit = value; paint(); }), mandateWord(row.recruit)),
-      part('output', t('output', 'Output'), dialRowMulti('', OUTPUT, row.output, (value, on) => {
-        row.output = on ? [...row.output, value] : row.output.filter((entry) => entry !== value); paint();
-      }), row.output.map(mandateWord).join(', ')),
-    );
+    const providerRows = () => providerCatalog().rows
+      .filter((item, at, all) => all.findIndex((other) => other.provider === item.provider) === at)
+      .map((item) => ({ v: item.provider, l: item.cli_label || item.provider_label || item.provider, off: item.operational ? undefined : item.off || t('forms.provider_off', 'not on this machine') }));
+    const modelRows = (provider) => providerCatalog().rows.filter((item) => item.provider === provider).map((item) => ({
+      v: item.model, l: item.model, word: modelWord(item).split(' · ').at(-1), sub: item.cost || '',
+      off: item.operational ? undefined : t('forms.provider_off', 'not on this machine'),
+    }));
+    const ruled = (values, glyphs) => values.map((v, at) => ({ v, l: mandateWord(v), glyph: glyphs[at] }));
+    const questions = ask([
+      { group: t('new_agent.model_package', 'Model'), fields: [
+        { key: 'provider', label: t('forms.provider', 'Model provider'), blank: t('forms.default', 'Default'), options: providerRows },
+        { key: 'model', label: t('forms.model', 'Model'), blank: t('forms.default', 'Default'), after: 'provider', options: (value) => modelRows(value.provider) },
+      ] },
+      { group: t('mandate', 'Mandate'), fields: [
+        { key: 'reach', label: t('reach', 'Reach'), shape: 'square', options: ruled(REACH, ['○', '言', '図', '動']) },
+        { key: 'recruit', label: t('recruit', 'Recruit'), shape: 'square', options: ruled(RECRUIT, ['○', '一', '提', '人']) },
+        { key: 'output', label: t('output', 'Output'), shape: 'square', many: true, options: ruled(OUTPUT, ['○', '図', '灯', '符', '物', '人', '∅']) },
+      ] },
+      { group: t('squad', 'Team'), fields: [
+        { key: 'lead', label: t('team.lead', 'Team lead'), switch: [t('yes', 'Yes'), t('no', 'No')], word: '人' },
+      ] },
+    ], {
+      value: row,
+      className: 'ntf-agent-questions',
+      onChange: (value) => {
+        row.provider = value.provider; row.model = value.model;
+        row.reach = value.reach; row.recruit = value.recruit; row.output = value.output; row.lead = value.lead;
+      },
+    });
     confirm.setDisabled(!finalizeTeamName(row.name));
     confirm.el.addEventListener('click', () => {
       if (!finalizeTeamName(row.name)) return;
@@ -78,12 +89,7 @@ export function createAgentRows({ n, key, rows, changed, onToggle, createAction,
       if (index < 0) rows().push(saved); else rows()[index] = saved;
       editor = null; changed(); paint();
     });
-    const pair = providerModelStones(
-      () => ({ provider: row.provider, model: row.model }),
-      (provider, model) => { row.provider = provider; row.model = model; },
-      { prefix: 'ntf-agent' },
-    );
-    box.append(actions.el, lead, field(t('new_team.agent_name', 'Name'), name), field(t('new_team.agent_assignment_label', 'Instructions'), assignment), mandate, pair.el);
+    box.append(actions.el, field(t('new_team.agent_name', 'Name'), name), field(t('new_team.agent_assignment_label', 'Instructions'), assignment), questions.el);
     return box;
   }
 

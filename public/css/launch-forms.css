@@ -142,7 +142,6 @@
     background: var(--well); color: var(--fg); padding: var(--space-3) var(--space-4); font: inherit;
   }
   .ntf-agent-what { resize: vertical; }
-  .ntf-agent-lead-choice { display: flex; gap: var(--space-3); align-items: center; color: var(--fg-strong); }
   .ntf-agent-edit, .ntf-agent-drop {
     flex: none; border: var(--edge) solid transparent; border-radius: var(--radius-xs);
     background: transparent; color: var(--muted-3); padding: var(--space-2) var(--space-4);
@@ -154,24 +153,11 @@
   .ntf-agent-row-words small { flex-basis: 100%; overflow-wrap: anywhere; color: var(--muted); }
   .ntf-agent-row-lead { color: var(--kaki); font-size: var(--form-note); text-transform: uppercase; }
   .ntf-agent-row-actions, .ntf-agent-editor-actions { display: flex; gap: var(--space-2); justify-content: flex-end; }
-  .ntf-agent-mandate { display: grid; gap: var(--space-2); }
-  .ntf-agent-mandate-part + .ntf-agent-mandate-part { margin-top: var(--space-3); }
-  .ntf-agent-mandate-toggle { display: flex; justify-content: space-between; gap: var(--space-4); width: 100%; border: var(--edge) solid var(--line-2); background: var(--well); color: var(--fg-strong); padding: var(--space-3) var(--space-4); cursor: pointer; text-align: left; font: inherit; }
-  .ntf-agent-mandate-toggle span { color: var(--accent); }
-  .ntf-agent-mandate-part > .fs-dial { display: block; margin-top: var(--space-2); }
-  .ntf-agent-mandate-part > .fs-dial > h4 { display: none; }
-  .ntf-agent-model-picker, .ntf-agent-stone-group { display: flex; flex-direction: column; gap: var(--space-2); }
-  .ntf-agent-stones { display: grid; grid-template-columns: repeat(auto-fit, minmax(calc(var(--space-12) * 3), 1fr)); gap: var(--space-2); }
-  .ntf-agent-stone { border: var(--edge) solid var(--line-2); border-radius: var(--radius-xs); background: var(--well); color: var(--fg-strong); padding: var(--space-3) var(--space-4); cursor: pointer; text-align: left; font: inherit; }
-  .ntf-agent-stone:hover { border-color: var(--kaki); }
-  .ntf-agent-stone[aria-pressed='true'] { border-color: var(--kaki); background: var(--raise); color: var(--kaki-lift); }
-  .ntf-agent-stone:disabled { opacity: .45; cursor: default; }
 
   @media (max-width: 44rem) {
     .ntf-surface .ntf-agent { padding: var(--space-4); }
     .ntf-surface .ntf-agent-row { align-items: flex-start; }
     .ntf-surface .ntf-agent-row-actions { flex-direction: column; }
-    .ntf-surface .ntf-agent-stones { grid-template-columns: 1fr; }
   }
 
 
