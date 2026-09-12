@@ -6,6 +6,7 @@ import { t } from './lexicon.js';
 import { WorkspaceKit } from './workspace-kit.js';
 import { createFolderPicker } from './folder-picker.js';
 import { createStoneWorkSurface } from './stone-work-surface.js';
+import { ask } from './ask.js';
 
 export function buildProjectRoots(root, isShowing, campaignId = () => '', options = {}) {
   const { createAction } = WorkspaceKit.primitives;
@@ -179,23 +180,28 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
       };
       const repoFields = group(stones ? t('roots.section_repository', 'Repository') : t('roots.group_repository', 'Advanced repository workflow'), t('roots.group_repository_help', 'Optional Git publishing and Worktrees choices. An ordinary folder needs none of these.'));
       repoFields.classList.add('pr-group-advanced');
-      const pick = (label, value, options, hint, host = repoFields) => {
-        const wrap = document.createElement('label'); wrap.className = 'pr-f';
-        const l = document.createElement('span'); l.textContent = label; l.title = hint;
-        const select = document.createElement('select');
-        for (const [v, text] of options) { const o = document.createElement('option'); o.value = v; o.textContent = text; select.append(o); }
-        select.value = value; wrap.append(l, select); host.append(wrap); return select;
-      };
       const initialMode = creating ? (seedWorktrees === 'enabled' ? 'reviewed' : 'direct') : before.mode;
-      const mode = pick(t('roots.f_mode', 'publishing'), initialMode, [['reviewed', t('roots.mode_reviewed', 'reviewed release')], ['direct', t('roots.mode_direct', 'direct publishing')]], t('roots.f_mode_hint', 'Reviewed uses a working branch and a final PR to stable. Direct publishes on stable itself.'));
+      let repositoryAnswers = { mode: initialMode, worktrees: creating ? seedWorktrees : before.worktrees };
+      let syncProfile = () => {};
+      const repositoryQuestions = ask([{ group: '', fields: [
+        { key: 'mode', label: t('roots.f_mode', 'publishing'), options: [['reviewed', t('roots.mode_reviewed', 'reviewed release')], ['direct', t('roots.mode_direct', 'direct publishing')]].map(([v, l]) => ({ v, l })) },
+        { key: 'worktrees', label: t('roots.f_worktrees', 'Worktrees'), options: [['enabled', t('roots.worktrees_enabled', 'Use Ronin Worktrees')], ['disabled', t('roots.worktrees_disabled', 'Use the checkout')]].map(([v, l]) => ({ v, l })) },
+      ] }], { value: repositoryAnswers, onChange: (value) => { repositoryAnswers = value; syncProfile(); } });
+      repoFields.append(repositoryQuestions.el);
+      const adapter = (key) => ({
+        get value() { return repositoryAnswers[key]; },
+        set value(value) { repositoryAnswers[key] = value; repositoryQuestions.set(key, value); },
+        addEventListener() {},
+      });
+      const mode = adapter('mode');
       const working = mk(t('roots.f_working', 'working'), 'repo-working', before.working || 'dev', t('roots.f_working_hint', 'The integration branch for reviewed work. You choose its name.'), 'dev', repoFields);
       const stable = mk(t('roots.f_stable', 'stable'), 'repo-stable', before.stable || existing.facts?.repo?.branch || 'main', t('roots.f_stable_hint', 'The published branch. You choose its name.'), 'main', repoFields);
       working.removeAttribute('data-key'); stable.removeAttribute('data-key');
-      const worktrees = pick(t('roots.f_worktrees', 'Worktrees'), creating ? seedWorktrees : before.worktrees, [['enabled', t('roots.worktrees_enabled', 'Use Ronin Worktrees')], ['disabled', t('roots.worktrees_disabled', 'Use the checkout')]], t('roots.f_worktrees_hint', 'Worktrees keep each Agent’s file changes in a separate working folder and branch. Both the Agent and repo must have Worktrees on.'));
+      const worktrees = adapter('worktrees');
       const preview = document.createElement('p');
       preview.className = 'pr-flow';
       repoFields.append(preview);
-      const syncProfile = () => {
+      syncProfile = () => {
         working.closest('label').hidden = mode.value !== 'reviewed';
         const branchFlow = mode.value === 'reviewed'
           ? t('roots.flow_reviewed', '{working} → review → {stable}', { working: working.value.trim() || '—', stable: stable.value.trim() || '—' })
@@ -205,7 +211,7 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
           : t('roots.flow_checkout', 'Every Agent uses this checkout, even when the Agent has Worktrees on.');
         preview.textContent = t('roots.flow_preview', 'Flow: {branches}. {worktrees} Saving this profile does not create, move, or rename branches.', { branches: branchFlow, worktrees: worktreesFlow });
       };
-      for (const control of [mode, working, stable, worktrees]) control.addEventListener('input', syncProfile);
+      for (const control of [working, stable]) control.addEventListener('input', syncProfile);
       syncProfile();
       profileFields = { before, mode, working, stable, worktrees };
       if (creating) dirInput.addEventListener('change', async () => {
