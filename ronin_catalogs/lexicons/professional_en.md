@@ -617,6 +617,7 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 
 ## presets — Setup launch presets
 - **presets.tile_view:** Tile view
+- **presets.agents_side_by_side:** Agents run side by side
 - **presets.side_by_side:** Side by side
 - **presets.two_by_two:** Two by two
 - **presets.repeats:** Repeats
