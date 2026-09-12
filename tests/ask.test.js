@@ -197,6 +197,12 @@ test('set() and options() repaint; Escape closes; a chosen option can draw its o
   assert.deepEqual(form.el.one('ask-tray').all('ask-opt').map((opt) => opt.one('ask-name').textContent), ['notes']);
 });
 
+test('density is the caller\'s one word: loose by default, tight for the launch forms', () => {
+  assert.equal(build().form.el.dataset.density, 'loose');
+  const tight = ask([{ fields: [{ key: 'reach', label: 'Reach', options: REACH }] }], { density: 'tight' });
+  assert.equal(tight.el.dataset.density, 'tight');
+});
+
 test('set() takes a patch object in one paint, and show() limits which questions are drawn', () => {
   const { form } = build();
   form.set({ provider: 'openai', model: 'gpt-5.6-sol', reach: 'execute', lead: true });
