@@ -17,10 +17,11 @@
   .ask-stone[aria-expanded='true'] { border-color: var(--kaki); border-left-color: var(--kaki); background: var(--raise); box-shadow: inset var(--edge-2) 0 var(--kaki); }
   .ask-stone::after { content: '▾'; position: absolute; right: var(--space-4); bottom: var(--space-3); color: var(--accent); font-size: var(--text-2); }
   .ask-switch::after, .ask-switch .ask-reading { content: none; }
-  .ask-label { display: block; overflow: hidden; color: var(--muted); font-size: var(--text-1); letter-spacing: .06em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
-  .ask-reading { display: block; overflow: hidden; padding-right: var(--space-7); font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+  .ask-label { display: block; overflow: hidden; color: var(--muted); font-size: var(--form-key); font-weight: 600; letter-spacing: .07em; line-height: 1; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+  .ask-label-mark { margin-right: var(--space-2); color: var(--kaki); font-style: normal; }
+  .ask-reading { display: block; overflow: hidden; padding-right: var(--space-7); font-size: var(--form-input); font-weight: 500; line-height: 1.15; text-overflow: ellipsis; white-space: nowrap; }
   .ask-blank { color: var(--muted); font-weight: 400; }
-  .ask-fact { margin-left: var(--space-3); color: var(--accent); font-size: var(--form-note); font-style: normal; }
+  .ask-fact { display: inline-block; margin-left: var(--space-3); color: var(--accent); font-size: var(--form-note); font-style: normal; }
 
   /* the switch: the same stone with a track */
   .ask-switch { flex-direction: row; align-items: center; justify-content: space-between; gap: var(--space-3); }

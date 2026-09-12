@@ -257,7 +257,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     ] },
     { group: t('squad', 'Team'), fields: [
       { key: 'team', label: t('squad', 'Team'), options: teamRows, row: (option) => option.v === '__new__' ? newTeamField() : null },
-      { key: 'teamLead', label: t('team.lead', 'Team lead'), switch: [t('yes', 'Yes'), t('no', 'No')], word: '人' },
+      { key: 'teamLead', label: t('team.lead', 'Team lead'), mark: '人', switch: [t('yes', 'Yes'), t('no', 'No')] },
     ] },
     { group: t('where.label', 'Where it works'), fields: [
       { key: 'root', label: t('where.born_in', 'Born in'), options: rootRows },
@@ -285,7 +285,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     },
   });
   const syncQuestions = () => {
-    for (const [key, value] of Object.entries({ provider: draft.provider, model: draft.model, reach: draft.reach, recruit: draft.recruit, output: draft.output, team: teamValue(), teamLead: draft.teamLead, root: draft.root, repos: draft.repos || [] })) questions.set(key, value);
+    questions.set({ provider: draft.provider, model: draft.model, reach: draft.reach, recruit: draft.recruit, output: draft.output, team: teamValue(), teamLead: draft.teamLead, root: draft.root, repos: draft.repos || [] });
   };
   void loadProviderCatalog().then(() => questions.paint());
 

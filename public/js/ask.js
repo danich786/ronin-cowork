@@ -4,7 +4,7 @@
  * owner's ruling 2026-09-12). A consumer writes a spec; this module draws it. Nothing spatial
  * is the consumer's: not the width, not the wrapping, not the shape, not what opens.
  *
- *   ask([{ group, fields: [{ key, label, options, blank?, many?, switch?, shape?, after?, row?, word? }] }],
+ *   ask([{ group, fields: [{ key, label, mark?, options, blank?, many?, switch?, shape?, after?, row?, word? }] }],
  *       { value, onChange })  →  { el, value(), set(key, v) | set({...}), options(key, rows), show(keys|null), open(key), close(), destroy() }
  *
  * A field is a READING STONE (140 × 48: label over answer). Click it and a TRAY opens under
@@ -123,14 +123,20 @@ export function ask(groups = [], { value = {}, onChange = null, className = '' }
       button.setAttribute('role', 'switch');
       button.setAttribute('aria-checked', String(on));
       const words = el('span', 'ask-words');
-      words.append(el('small', 'ask-label', field.label), reading(field));
+      const label = el('small', 'ask-label');
+      if (field.mark) label.append(el('i', 'ask-label-mark', field.mark));
+      label.append(field.label);
+      words.append(label, reading(field));
       button.append(words, el('span', 'ask-track'));
       button.addEventListener('click', () => { state[field.key] = !state[field.key]; changed(field.key); paint(); });
       return button;
     }
     button.setAttribute('aria-expanded', String(open === field.key));
     button.setAttribute('aria-controls', trayId);
-    button.append(el('small', 'ask-label', field.label), reading(field));
+    const label = el('small', 'ask-label');
+    if (field.mark) label.append(el('i', 'ask-label-mark', field.mark));
+    label.append(field.label);
+    button.append(label, reading(field));
     button.addEventListener('click', () => { open = open === field.key ? '' : field.key; filter = ''; paint(); });
     return button;
   };
