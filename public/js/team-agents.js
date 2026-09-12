@@ -33,7 +33,7 @@ export function createAgentRows({ n, key, rows, changed, onToggle, createAction,
   const host = el('div'); let editor = null;
   const field = (label, control) => {
     const wrap = el('label', 'ntf-agent-field');
-    wrap.append(el('span', 'ntf-agent-label', label), control); return wrap;
+    wrap.append(el('span', 'wk-field-label', label), control); return wrap;
   };
   const openEditor = (row = agentRow(), index = -1) => { editor = { row: copyRow(row), index }; paint(); };
 
