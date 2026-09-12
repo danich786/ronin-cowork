@@ -61,6 +61,17 @@
   .ask-extra-name { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .ask-extra input { min-width: 0; max-width: calc(var(--ask-w) * 2); border: var(--edge) solid var(--line-2); border-radius: var(--radius-xs); background: var(--well); color: var(--fg); padding: var(--space-2) var(--space-4); font: inherit; font-size: var(--form-note); }
 
+  /* tight: the launch forms' density. Less line spacing inside a group (head sits on its stones,
+     a 40 px stone, 6 px between stones), the same paragraph spacing between groups. Widths do not change. */
+  .ask[data-density='tight'] { --ask-h: 40px; --ask-gap: var(--space-3); gap: var(--space-5) var(--ask-group-gap); }
+  .ask[data-density='tight'] .ask-group { gap: var(--space-1); }
+  .ask[data-density='tight'] .ask-group-head { font-size: var(--form-note); font-weight: 600; color: var(--muted); }
+  .ask[data-density='tight'] .ask-stone { padding: var(--space-2) var(--space-4); }
+  .ask[data-density='tight'] .ask-label { font-size: var(--text-2); line-height: 1; }
+  .ask[data-density='tight'] .ask-reading { line-height: 1.2; }
+  .ask[data-density='tight'] .ask-tray { gap: var(--space-3); padding: var(--space-4); }
+  .ask[data-density='tight'] .ask-extras { gap: var(--space-1); }
+
   .ask-stone:focus-visible, .ask-opt:focus-visible, .ask-filter:focus-visible { outline: var(--edge-2) solid var(--kaki); outline-offset: 1px; }
   @media (prefers-reduced-motion: reduce) { .ask-track, .ask-track::after { transition: none; } }
 
