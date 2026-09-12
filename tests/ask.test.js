@@ -90,7 +90,7 @@ test('a click opens one tray under the field\'s group; a one-of pick answers and
 
 test('a dependent field clears and re-asks its options when its parent changes', () => {
   const { form } = build({ provider: 'anthropic', model: 'sonnet' });
-  assert.equal(stoneFor(form, 'model').one('ask-reading').textContent, 'sonnetstandard', 'the rectangle\'s short word rides as the fact');
+  assert.equal(stoneFor(form, 'model').one('ask-reading').textContent, 'sonnet', 'the reading is the answer alone; the short word lives on the rectangle');
   stoneFor(form, 'provider').click();
   optNamed(form, 'Codex').click();
   assert.equal(form.value().model, '', 'the child answer cleared');
@@ -201,7 +201,7 @@ test('set() takes a patch object in one paint, and show() limits which questions
   const { form } = build();
   form.set({ provider: 'openai', model: 'gpt-5.6-sol', reach: 'execute', lead: true });
   assert.equal(stoneFor(form, 'provider').one('ask-reading').textContent, 'Codex');
-  assert.equal(stoneFor(form, 'model').one('ask-reading').textContent, 'gpt-5.6-solfrontier');
+  assert.equal(stoneFor(form, 'model').one('ask-reading').textContent, 'gpt-5.6-sol');
   assert.equal(stoneFor(form, 'lead').attributes['aria-checked'], 'true');
   stoneFor(form, 'reach').click();
   assert.equal(form.el.dataset.open, 'reach');
