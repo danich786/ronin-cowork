@@ -150,7 +150,10 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
   }
   const kindQuestions = ask([{ group: t('kind', 'Kind'), fields: [{
     key: 'kind', label: t('kind', 'Kind'), shape: 'square',
-    options: mandateRows(['open', ...KINDS], ['○', '符', '務', '人', '家', '話', '学']),
+    options: [
+      { v: 'open', l: t('kind.open', 'Open'), glyph: '○' },
+      ...KINDS.map((key, at) => ({ v: key, l: t(`kind.${key}`, key), glyph: ['⌨', '💼', '🎩', '🏠', '🎪', '🎓'][at] })),
+    ],
   }] }], {
     value: { kind: draft.kind },
     className: 'ntf-kind-questions',

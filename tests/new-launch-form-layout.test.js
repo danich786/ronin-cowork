@@ -50,7 +50,7 @@ test('collapsible steps expose one full-width disclosure row and Team defaults u
   assert.match(team, /const FOLDS = \['lead'\]/);
   assert.doesNotMatch(team, /stepDefaults\.body\.append/);
   assert.doesNotMatch(team, /createBand/);
-  assert.match(agents, /if \(editor\) host\.append\(paintEditor\(\)\);[\s\S]*else \{[\s\S]*＋ Add Agent/);
+  assert.match(agents, /if \(editor\) host\.append\(paintEditor\(\)\);[\s\S]*createAction\(\{ label:[\s\S]*＋ Add Agent/);
 });
 
 test('Add Agent confirms a draft into a compact row with the one selector utility', async () => {
@@ -72,7 +72,6 @@ test('Add Agent confirms a draft into a compact row with the one selector utilit
   assert.doesNotMatch(agents, /dialRow|providerModelPair|type = 'checkbox'|aria-pressed/);
   assert.match(agents, /provider: row\.provider/);
   assert.match(agents, /model: row\.model/);
-  assert.match(agents, /saved\.mandateOpen = ''/);
   assert.match(agents, /instructions: row\.assignment\.trim\(\)/);
   assert.match(agents, /team_lead: !!row\.lead/);
 });
@@ -85,7 +84,8 @@ test('New Team cast text is labelled and all cast selections belong to ask()', a
   ]);
   assert.match(agents, /el\('label', 'ntf-agent-field'\)/);
   assert.match(agents, /import \{ ask \} from '\.\/ask\.js'/);
-  assert.match(agents, /drop\.setAttribute\('aria-label'/);
+  assert.match(agents, /title: t\('new_team\.agent_drop_named'/);
+  assert.match(agents, /className: 'ntf-agent-row-actions'/);
   assert.doesNotMatch(css, /\.ntf-agent-(?:stone|mandate-toggle|lead-choice)/);
   assert.doesNotMatch(css, /\.na-[^,{ ]*[^}]*ntf-agent/);
   assert.doesNotMatch(css, /@media \(max-width: 44rem\)[\s\S]*\.na-surface \.ntf-agent/);

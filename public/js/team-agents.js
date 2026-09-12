@@ -12,7 +12,7 @@ let rowId = 0;
 export const agentRow = () => ({
   name: '', assignment: '', lead: false, provider: '', model: '',
   reach: 'open', recruit: 'open', output: ['open'],
-  routinesOn: [], routinesOff: [], mandateOpen: '',
+  routinesOn: [], routinesOff: [],
 });
 const copyRow = (row) => ({ ...agentRow(), ...row, output: [...(row.output || ['open'])] });
 
@@ -85,7 +85,7 @@ export function createAgentRows({ n, key, rows, changed, onToggle, createAction,
     confirm.el.addEventListener('click', () => {
       if (!finalizeTeamName(row.name)) return;
       if (row.lead) for (const other of rows()) other.lead = false;
-      const saved = copyRow(row); saved.mandateOpen = '';
+      const saved = copyRow(row);
       if (index < 0) rows().push(saved); else rows()[index] = saved;
       editor = null; changed(); paint();
     });
@@ -101,16 +101,18 @@ export function createAgentRows({ n, key, rows, changed, onToggle, createAction,
       if (row.lead) words.append(el('span', 'ntf-agent-row-lead', t('new_team.team_lead', 'Team Lead')));
       const details = [row.assignment, `${mandateWord(row.reach)} · ${mandateWord(row.recruit)} · ${row.output.map(mandateWord).join(', ')}`, [row.provider, row.model].filter(Boolean).join(' · ')].filter(Boolean);
       words.append(el('small', null, details.join(' — ')));
-      const actions = el('div', 'ntf-agent-row-actions'); const edit = el('button', 'ntf-agent-edit', t('edit', 'Edit')); edit.type = 'button'; edit.addEventListener('click', () => openEditor(row, index));
-      const drop = el('button', 'ntf-agent-drop', '✕'); drop.type = 'button';
-      drop.setAttribute('aria-label', t('new_team.agent_drop_named', 'Remove {name}', { name: row.name || t('new_team.unnamed_agent', 'unnamed Agent') }));
-      drop.addEventListener('click', () => { rows().splice(index, 1); changed(); paint(); });
-      actions.append(edit, drop); card.append(words, actions); host.append(card);
+      const edit = createAction({ label: t('edit', 'Edit'), size: 'compact', action: () => openEditor(row, index) });
+      const drop = createAction({
+        label: t('remove', 'Remove'), kind: 'danger', size: 'compact',
+        title: t('new_team.agent_drop_named', 'Remove {name}', { name: row.name || t('new_team.unnamed_agent', 'unnamed Agent') }),
+        action: () => { rows().splice(index, 1); changed(); paint(); },
+      });
+      const actions = createActionBar({ label: t('new_team.agent_row_actions', 'Agent row actions'), actions: [edit, drop], className: 'ntf-agent-row-actions' });
+      card.append(words, actions.el); host.append(card);
     });
     if (editor) host.append(paintEditor());
     else {
-      const add = el('button', 'fs-door ntf-agent-add', t('new_team.agent_add', '＋ Add Agent')); add.type = 'button';
-      add.addEventListener('click', () => openEditor()); host.append(add);
+      host.append(createAction({ label: t('new_team.agent_add', '＋ Add Agent'), kind: 'primary', action: () => openEditor() }).el);
     }
   }
   step.body.append(host); return { step, paint };
