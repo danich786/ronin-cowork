@@ -8,7 +8,7 @@ const el = (tag, cls, text) => { const node = document.createElement(tag); if (c
  *           worktreesOn?: boolean, branchesEditable?: boolean, rootDefaultLabel?: string, onChange?: () => void }} o
  */
 export function createWhereItWorks(o = {}) {
-  const details = el(o.stones ? 'div' : 'details', o.stones ? 'na-where-workspaces' : 'tw-where'); const summary = el('summary', 'wk-field-control'); const body = el('div', 'tw-where-body'); details.append(summary, body);
+  const details = el('details', 'tw-where'); const summary = el('summary', 'wk-field-control'); const body = el('div', 'tw-where-body'); details.append(summary, body);
   const rootRow = el('label', 'tw-config-field'); rootRow.append(el('span', null, t('where.born_in', 'Born in')));
   const rootSelect = el('select', 'wk-field-control'); rootRow.append(rootSelect); body.append(rootRow);
   const line = el('p', 'tw-config-note'); body.append(line);
@@ -53,54 +53,6 @@ export function createWhereItWorks(o = {}) {
   rootSelect.addEventListener('change', () => { state.root = rootSelect.value; changed(); });
   buildRoots(); buildRows(); paint();
 
-  if (o.stones) {
-    details.replaceChildren(el('p', 'fs-head', t('where.label', 'Where it works')));
-    const picker = el('div', 'na-where-picker'); details.append(picker);
-    let open = '';
-    const stonePaint = () => {
-      picker.replaceChildren();
-      const disclosure = (key, label, reading) => {
-        const button = el('button', 'na-choice-stone'); button.type = 'button';
-        button.setAttribute('aria-expanded', String(open === key));
-        button.append(el('b', null, label), el('small', null, reading || t('forms.default', 'Default')));
-        button.addEventListener('click', () => { open = open === key ? '' : key; stonePaint(); });
-        return button;
-      };
-      picker.append(
-        disclosure('born', t('where.born_in', 'Where it’s born'), state.root),
-        disclosure('additional', t('where.additional', 'Additional workspaces'), state.repos.length ? state.repos.join(', ') : t('where.none_selected', 'None')),
-      );
-      if (!open) return;
-      const options = el('div', 'na-choice-options na-where-options');
-      const tray = el('div', 'na-stones'); options.append(tray); picker.append(options);
-      const workspaceStone = (root) => {
-        const stone = el('button', 'sws-stone na-workspace-stone'); stone.type = 'button';
-        stone.append(
-          el('span', 'sws-label', root.name),
-          el('span', 'sws-secondary', root.repo_profile?.worktrees === 'enabled' ? t('where.worktree', 'worktree') : t('where.checkout', 'checkout')),
-        );
-        return stone;
-      };
-      for (const root of state.roots.filter((root) => open === 'born' || root.name !== state.root)) {
-        const stone = workspaceStone(root);
-        const on = open === 'born' ? root.name === state.root : state.repos.includes(root.name);
-        stone.setAttribute('aria-pressed', String(on));
-        stone.addEventListener('click', () => {
-          if (open === 'born') {
-            state.root = root.name; state.repos = state.repos.filter((name) => name !== root.name); open = '';
-          } else {
-            state.repos = on ? state.repos.filter((name) => name !== root.name) : [...state.repos, root.name];
-          }
-          buildRoots(); buildRows(); stonePaint(); o.onChange?.();
-        });
-        tray.append(stone);
-      }
-    };
-    stonePaint();
-    // Public setters repaint these alternate controls through the shared state below.
-    o.onStonePaint = stonePaint;
-  }
-
   return {
     el: details,
     rootSelect,
@@ -108,12 +60,12 @@ export function createWhereItWorks(o = {}) {
     set root(value) {
       state.root = value || '';
       state.repos = state.repos.filter((name) => name !== state.root);
-      buildRoots(); buildRows(); paint(); o.onStonePaint?.();
+      buildRoots(); buildRows(); paint();
     },
     repos: () => ticked(),
     branches: () => Object.fromEntries([...rows].filter(([, row]) => row.tick.checked && row.branch.value.trim()).map(([name, row]) => [name, row.branch.value.trim()])),
-    setRoots(roots) { state.roots = Array.isArray(roots) ? roots : []; buildRoots(); buildRows(); paint(); o.onStonePaint?.(); },
-    setRepos(repos, branches) { state.repos = [...(repos || [])].filter((name) => name !== state.root); if (branches) state.branches = { ...branches }; buildRows(); paint(); o.onStonePaint?.(); },
+    setRoots(roots) { state.roots = Array.isArray(roots) ? roots : []; buildRoots(); buildRows(); paint(); },
+    setRepos(repos, branches) { state.repos = [...(repos || [])].filter((name) => name !== state.root); if (branches) state.branches = { ...branches }; buildRows(); paint(); },
     setWorktrees(on) { state.worktreesOn = !!on; paint(); },
     summary: () => summary.textContent,
   };

@@ -336,46 +336,6 @@ export function tierWord(tier) {
  */
 export const modelWord = (row) => t('forms.model_word', '{model} · {tier}', { model: row.model, tier: tierWord(row.tier) });
 
-/** Compact provider/model stones for the New Agent body. The detailed catalog prose stays
- * on Model providers; this chooser says only provider, model and tier. */
-export function providerModelStones(read, write) {
-  const host = el('div', 'na-model-picker');
-  let open = '';
-  const paint = () => {
-    const current = read() || {};
-    const rows = providerCatalog().rows;
-    const providers = rows.filter((row, index) => rows.findIndex((other) => other.provider === row.provider) === index);
-    const group = (key, label, choices, selected, choose) => {
-      const wrap = el('div', 'na-stone-group'); wrap.setAttribute('role', 'group'); wrap.setAttribute('aria-label', label);
-      wrap.dataset.open = String(open === key);
-      const disclosure = el('button', 'na-choice-stone'); disclosure.type = 'button'; disclosure.setAttribute('aria-expanded', String(open === key));
-      disclosure.append(el('b', null, label), el('small', null, selected || t('forms.default', 'Default')));
-      disclosure.addEventListener('click', () => { open = open === key ? '' : key; paint(); }); wrap.append(disclosure);
-      if (open !== key) return wrap;
-      const options = el('div', 'na-choice-options');
-      const tray = el('div', 'na-stones');
-      const defaultStone = el('button', 'na-stone'); defaultStone.type = 'button'; defaultStone.setAttribute('aria-pressed', String(!selected)); defaultStone.append(el('b', null, t('forms.default', 'Default')));
-      defaultStone.addEventListener('click', () => { choose(''); open = ''; paint(); }); tray.append(defaultStone);
-      for (const choice of choices) {
-        const button = el('button', 'na-stone'); button.type = 'button';
-        button.setAttribute('aria-pressed', String(choice.key === selected));
-        button.append(el('b', null, choice.label)); button.disabled = choice.off === true;
-        button.addEventListener('click', () => { choose(choice.key); open = ''; paint(); }); tray.append(button);
-      }
-      options.append(tray); wrap.append(options); return wrap;
-    };
-    const providerRows = providers.map((row) => ({ key: row.provider, label: row.cli_label || row.provider_label || row.provider, off: row.off }));
-    const modelRows = rows.filter((row) => row.provider === current.provider).map((row) => ({ key: row.model, label: modelWord(row), off: row.off }));
-    const selectedProvider = providers.find((row) => row.provider === current.provider);
-    const providerLabel = selectedProvider?.cli_label || selectedProvider?.provider_label || current.provider;
-    host.replaceChildren(group('provider', t('forms.provider', 'Model provider'), providerRows, providerLabel, (provider) => { write(provider, ''); }));
-    host.append(group('model', t('forms.model', 'Model'), modelRows, current.model ? modelWord(rows.find((row) => row.provider === current.provider && row.model === current.model) || { model: current.model }) : '', (model) => { write(current.provider, model); }));
-  };
-  if (!providerCatalog().loaded) void loadProviderCatalog().then(paint);
-  paint();
-  return { el: host, paint };
-}
-
 /** A CLI list is evidence from the client version that fetched it; only a current list can refuse a row. */
 export const modelAvailabilityFact = (row) => {
   const list = row.model_list;
