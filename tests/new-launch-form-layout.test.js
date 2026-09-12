@@ -91,6 +91,8 @@ test('New Team cast text is labelled and all cast selections belong to ask()', a
     source('new-agent.js'),
   ]);
   assert.match(agents, /el\('label', 'ntf-agent-field'\)/);
+  assert.match(agents, /el\('span', 'wk-field-label', label\)/);
+  assert.doesNotMatch(agents, /ntf-agent-label/);
   assert.match(agents, /import \{ ask \} from '\.\/ask\.js'/);
   assert.match(agents, /title: t\('new_team\.agent_drop_named'/);
   assert.match(agents, /className: 'ntf-agent-row-actions'/);
