@@ -135,8 +135,9 @@ test('Register presents one open profile flow with card choices and anonymous de
   for (const name of ['email', 'own_words']) assert.match(source, new RegExp(`name = '${name}'|input\\('${name}'`));
   for (const name of ['identity_mode', 'kind', 'preferred_feature', 'run_location']) assert.match(source, new RegExp(`choiceGroup\\('${name}'`));
   assert.match(source, /const question = ask\(/);
-  assert.match(source, /key: name, label, many: multiple, shape: 'square'/);
-  assert.match(source, /key: name, label, many: true, shape: 'square'/);
+  assert.match(source, /key: name, label, many: multiple, options:/);
+  assert.match(source, /key: name, label, many: true, options:/);
+  assert.doesNotMatch(source, /glyph: '·'/, 'unruled Register answers are rectangles without placeholder glyphs');
   assert.match(source, /reasons\.other\.value/);
   assert.match(source, /kind_other: kindOther\.value/);
   assert.doesNotMatch(source, /Who is using Ronin\?|\['individual', 'Just me'\]|\['team', 'A team'\]|\['builder', 'Builder'\]|\['exploring', 'Exploring'\]/);

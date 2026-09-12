@@ -223,16 +223,17 @@ export function buildGbrain(root, isShowing, askPersonalAssistant, options = {})
       const note = make('p', 'setup-gbrain-hint', t('gbrain.setup_agents_hint', 'Selected Agents get it in Team Configuration or on the New Agent form.'));
       const question = ask([{ group: '', fields: [{
         key: 'available', label: t('gbrain.setup_q_agents', 'Available to Agents'),
-        switch: [t('gbrain.setup_agents_all', 'Default for all Agents'), t('gbrain.setup_agents_selected', 'Only selected Agents')],
-      }] }], { value: { available: Boolean(agentsDefault) }, onChange: async (next) => {
+        options: [{ v: 'all', l: t('gbrain.setup_agents_all', 'Default for all Agents') }, { v: 'selected', l: t('gbrain.setup_agents_selected', 'Only selected Agents') }],
+      }] }], { value: { available: agentsDefault ? 'all' : 'selected' }, onChange: async (next) => {
         const before = agentsDefault;
-        const saved = await options.agentsDefault.write(next.available);
-        agentsDefault = saved?.ok ? next.available : before;
-        if (!saved?.ok) question.set('available', Boolean(before));
+        const chosen = next.available === 'all';
+        const saved = await options.agentsDefault.write(chosen);
+        agentsDefault = saved?.ok ? chosen : before;
+        if (!saved?.ok) question.set('available', before ? 'all' : 'selected');
         note.textContent = saved?.ok ? '' : (saved?.message || t('gbrain.setup_agents_save_failed', 'Could not save.'));
       } });
       agents.append(question.el, note);
-      if (agentsDefault === null) void Promise.resolve(options.agentsDefault.read()).then((value) => { agentsDefault = value; question.set('available', Boolean(value)); });
+      if (agentsDefault === null) void Promise.resolve(options.agentsDefault.read()).then((value) => { agentsDefault = value; question.set('available', value ? 'all' : 'selected'); });
     }
 
     // 3. Which accounts are linked? Yes or no, per account, from gbrain's own list.

@@ -68,7 +68,7 @@ function createRegisterSurface(context) {
     for (const [key, text] of choices) labels.set(key, text);
     let selected = multiple ? [] : '';
     const listeners = [];
-    const question = ask([{ group: label, fields: [{ key: name, label, many: multiple, shape: 'square', options: choices.map(([key, text, description = '']) => ({ v: key, l: text, sub: description, glyph: '·' })) }] }], {
+    const question = ask([{ group: label, fields: [{ key: name, label, many: multiple, options: choices.map(([key, text, description = '']) => ({ v: key, l: text, sub: description })) }] }], {
       value: { [name]: selected },
       onChange: (next) => { selected = next[name]; value.value = multiple ? JSON.stringify(selected) : selected; for (const listener of listeners) listener(selected); },
     });
@@ -79,7 +79,7 @@ function createRegisterSurface(context) {
     const other = input(`${name}_other`); other.className = 'setup-register-other'; other.placeholder = t('setup_surface.something_else_prompt', 'Tell us'); other.hidden = true;
     for (const [value, text] of choices) labels.set(value, text);
     let selected = [];
-    const question = ask([{ group: label, fields: [{ key: name, label, many: true, shape: 'square', options: choices.map(([value, text]) => ({ v: value, l: text, glyph: '·' })) }] }], {
+    const question = ask([{ group: label, fields: [{ key: name, label, many: true, options: choices.map(([value, text]) => ({ v: value, l: text })) }] }], {
       value: { [name]: selected },
       onChange: (next) => { selected = next[name]; other.hidden = !selected.includes('something_else'); if (!other.hidden) other.focus(); },
     });

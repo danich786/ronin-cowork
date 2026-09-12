@@ -5,6 +5,7 @@ import { saveCampaign } from './campaigns.js';
 import { WorkspaceKit } from './workspace-kit.js';
 import { loadProviderCatalog, providerCatalog, modelAvailabilityFact } from './form-steps.js';
 import { ask } from './ask.js';
+import { ruledRows } from './glyphs.js';
 
 const el = (tag, cls, text) => { const out = document.createElement(tag); if (cls) out.className = cls; if (text != null) out.textContent = String(text); return out; };
 const bucket = (value) => value && typeof value === 'object' && !Array.isArray(value) ? value : {};
@@ -24,8 +25,6 @@ const labeled = (form, label, control, help = '') => {
   const row = el('label', 'cv-default-field'); row.append(el('span', 'cv-default-label', label), control);
   if (help) row.append(el('small', 'cv-from', help)); form.append(row); return control;
 };
-const rows = (values) => values.map((value) => ({ v: value, l: optionLabel(value), glyph: '·' }));
-
 export function createAgentDefaultsSurface(campaign) {
   const { createSurface, createNotice } = WorkspaceKit.primitives;
   const surface = createSurface({ label: t('campaign_view.agent_defaults', 'Agent defaults'), className: 'cv-surface' });
@@ -41,6 +40,11 @@ export function createAgentDefaultsSurface(campaign) {
     body.append(el('p', 'cv-note', t('campaign_view.defaults_help', 'These defaults land in the next Team or Agent form that opens. They remain editable there; nothing live changes.')));
     const catalog = providerCatalog().rows;
     const providers = catalog.filter((row, index) => catalog.findIndex((other) => other.provider === row.provider) === index);
+    const reason = (providerRow) => providerRow.off
+      ? t('forms.reason_turned_off', 'turned off')
+      : providerRow.listed === false && providerRow.model_list_current
+        ? t('forms.reason_not_listed', 'not listed by your {cli} {client_version}', { cli: providerRow.cli_label || providerRow.cli, client_version: providerRow.model_list?.client_version || '' })
+        : t('forms.reason_not_on_machine', 'not on this machine');
     let picked = {
       provider: String(current.provider || ''), model: String(current.model || ''),
       reach: current.reach || CHOICES.reach[0], recruit: current.recruit || CHOICES.recruit[0],
@@ -48,17 +52,20 @@ export function createAgentDefaultsSurface(campaign) {
     };
     const questions = ask([
       { group: t('new_agent.model_package', 'Model'), fields: [
-        { key: 'provider', label: t('campaign_view.col_provider', 'Provider'), blank: t('campaign_view.provider_default', 'Default provider'), options: providers.map((row) => ({ v: row.provider, l: row.provider_label, off: row.operational ? '' : (row.off || t('forms.provider_off', '{name} — not on this machine', { name: row.provider_label })) })) },
-        { key: 'model', label: t('campaign_view.col_model', 'Preferred model'), blank: t('campaign_view.model_default', 'Default model'), after: 'provider', options: (value) => catalog.filter((row) => row.provider === value.provider).map((row) => ({ v: row.model, l: row.model, word: row.tier, sub: modelAvailabilityFact(row), off: row.operational ? '' : t('forms.model_off', '{model} · {tier} — not on this machine', { model: row.model, tier: row.tier }) })) },
+        { key: 'provider', label: t('campaign_view.col_provider', 'Provider'), blank: t('campaign_view.provider_default', 'Default provider'), options: providers.map((row) => ({ v: row.provider, l: row.provider_label, off: row.operational ? '' : reason(row) })) },
+        { key: 'model', label: t('campaign_view.col_model', 'Preferred model'), blank: t('campaign_view.model_default', 'Default model'), after: 'provider', options: (value) => catalog.filter((row) => row.provider === value.provider).map((row) => ({ v: row.model, l: row.model, word: row.tier, sub: modelAvailabilityFact(row), off: row.operational && row.listed !== false ? '' : reason(row) })) },
       ] },
       { group: t('mandate', 'Mandate'), fields: [
-        { key: 'reach', label: t('campaign_view.default_reach', 'Reach'), shape: 'square', options: rows(CHOICES.reach) },
-        { key: 'recruit', label: t('campaign_view.default_recruit', 'Recruit'), shape: 'square', options: rows(CHOICES.recruit) },
-        { key: 'output', label: t('campaign_view.default_output', 'Output'), shape: 'square', many: true, options: rows(CHOICES.output) },
+        { key: 'reach', label: t('campaign_view.default_reach', 'Reach'), shape: 'square', options: ruledRows('reach', CHOICES.reach, optionLabel) },
+        { key: 'recruit', label: t('campaign_view.default_recruit', 'Recruit'), shape: 'square', options: ruledRows('recruit', CHOICES.recruit, optionLabel) },
+        { key: 'output', label: t('campaign_view.default_output', 'Output'), shape: 'square', many: true, options: ruledRows('output', CHOICES.output, optionLabel) },
       ] },
       { group: t('campaign_view.defaults_runtime', 'Runtime'), fields: [
-        { key: 'dial', label: t('campaign_view.default_dial', 'Control'), shape: 'square', options: rows(CHOICES.dial) },
-        { key: 'launch_mode', label: t('launch_mode.head', 'Launch mode'), options: rows(CHOICES.launch_mode) },
+        { key: 'dial', label: t('campaign_view.default_dial', 'Control'), shape: 'square', options: ruledRows('dial', CHOICES.dial, optionLabel) },
+        { key: 'launch_mode', label: t('launch_mode.head', 'Launch mode'), options: [
+          { v: 'configured', l: optionLabel('configured'), sub: t('launch_mode.configured_sub', 'Ronin adds nothing to the command. The Agent starts with whatever its provider CLI already loads.') },
+          { v: 'live_dangerously', l: optionLabel('live_dangerously'), sub: t('launch_mode.live_sub', 'Ronin appends that provider’s own bypass flag, so the Agent does not stop to ask.') },
+        ] },
       ] },
     ], { value: picked, onChange: (value) => { picked = value; } });
     form.append(questions.el);

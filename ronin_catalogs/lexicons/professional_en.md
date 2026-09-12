@@ -608,6 +608,27 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **forms.campaign:** campaign
 - **forms.campaign_on:** campaign on
 - **forms.campaign_off:** campaign off
+
+## presets — Setup launch presets
+- **presets.tile_view:** Tile view
+- **presets.side_by_side:** Side by side
+- **presets.two_by_two:** Two by two
+- **presets.repeats:** Repeats
+- **presets.every_day:** Every day
+- **presets.day_of_week:** Day of the week
+- **presets.one_time:** One time
+- **presets.day:** Day
+- **presets.how_it_runs:** How it runs
+- **presets.single_assistant:** Single assistant
+- **presets.chief_of_staff:** Chief of Staff
+- **presets.evaluate:** Evaluate
+- **presets.evaluate_none:** Choose a folder
+- **presets.workspace_folder:** workspace folder
+- **presets.repository:** repository
+- **presets.folder:** folder
+- **presets.kept:** Kept
+- **presets.keep:** Keep
+- **presets.skip:** Skip
 - **forms.team_on:** team turns on
 - **forms.team_off:** team turns off
 - **forms.agent:** agent
