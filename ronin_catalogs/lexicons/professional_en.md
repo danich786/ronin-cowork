@@ -71,6 +71,8 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **reach:** Reach
 - **recruit:** Recruit
 - **output:** Output
+- **on:** On
+- **off:** Off
 - **routine_bundles:** Routine Bundles
 - **go:** Go
 - **save_template:** Save as template
@@ -84,6 +86,7 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **kind.work:** Work
 - **kind.social:** Events
 - **kind.school:** Learning
+- **kind.open:** Open
 
 ## desk — system.js (the ⚙ desk's own rooms: appearance, the updater, the account)
 - **desk.row_release:** Release & update
@@ -593,6 +596,7 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **forms.reason_not_on_machine:** not on this machine
 - **forms.reason_turned_off:** turned off
 - **forms.reason_not_listed:** not listed by your {cli} {client_version}
+- **forms.model_unlisted:** not listed by this CLI
 - **forms.provider_off:** {name} — not on this machine
 - **forms.model_word:** {model} · {tier}
 - **forms.model_off:** {model} · {tier} — not on this machine
@@ -615,6 +619,7 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 
 ## new_agent — new-agent.js (the drawn launch form, staged beside the ＋ New board)
 - **new_agent.title:** New Agent
+- **new_agent.model_package:** Model
 - **new_agent.card_summary:** Session type first — the drawn launch form.
 - **new_agent.new_session:** New session
 - **new_agent.type_cowork:** Cowork Agent
@@ -1743,6 +1748,7 @@ The catalog entry goes. {dir} is not touched.
 - **team_config.kind_school:** School
 - **team_config.objective:** Purpose
 - **where.born_in:** Born in
+- **where.additional:** Additional workspaces
 - **where.worktrees_on:** Worktrees are on (see Routines): a ticked repository opens a desk for each new Agent at birth; branches are Ronin's.
 - **where.worktrees_off:** Worktrees are off (see Routines): a ticked repository is where this Team works, on the branch you name, or as checked out.
 - **where.col_repo:** Repository

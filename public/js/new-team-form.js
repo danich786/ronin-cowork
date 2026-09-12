@@ -7,7 +7,7 @@ import { conflictingAgentNames } from './new-team-check.js';
 import { agentPicks, agentRow, createAgentRows } from './team-agents.js';
 import { launchTeamAgents } from './team-loader.js';
 import {
-  createStep, el, mandateWord, modelWord, providerCatalog, readingRows, tagRow, templateTray,
+  createStep, el, mandateWord, providerCatalog, readingRows, tagRow, templateTray, tierWord,
 } from './form-steps.js';
 import { closeWorkspaceTab, openWorkspaceTab, reserveWorkspaceTab, seedReservedWorkspaceTab } from './workspace.js';
 
@@ -71,15 +71,20 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
   const providerRows = () => providerCatalog().rows
     .filter((row, at, all) => all.findIndex((other) => other.provider === row.provider) === at)
     .map((row) => {
-      const machine = providerCatalog().machine.find((item) => item.id === row.cli);
       const unavailable = row.operational ? '' : row.off
-        ? t('forms.provider_turned_off', '{name} — turned off', { name: row.cli_label || row.provider_label })
-        : String(machine?.state || t('forms.provider_off', 'not on this machine')).replaceAll('_', ' ');
+        ? t('forms.reason_turned_off', 'turned off')
+        : t('forms.reason_not_on_machine', 'not on this machine');
       return { v: row.provider, l: row.cli_label || row.provider_label || row.provider, off: unavailable || undefined };
     });
   const modelRows = (provider) => providerCatalog().rows.filter((row) => row.provider === provider).map((row) => ({
-    v: row.model, l: row.model, word: modelWord(row).split(' · ').at(-1), sub: row.cost || '',
-    off: !row.operational ? t('forms.provider_off', 'not on this machine') : row.model_list_current && row.listed === false ? t('forms.model_unlisted', 'not listed by this CLI') : undefined,
+    v: row.model, l: row.model, word: tierWord(row.tier), sub: row.cost || '',
+    off: !row.operational
+      ? (row.off ? t('forms.reason_turned_off', 'turned off') : t('forms.reason_not_on_machine', 'not on this machine'))
+      : row.model_list_current && row.listed === false
+        ? t('forms.reason_not_listed', 'not listed by your {cli} {client_version}', {
+          cli: row.cli_label || row.cli, client_version: row.model_list?.client_version || row.model_list_installed || '',
+        })
+        : undefined,
   }));
 
   /** What a template authors, as one string — the dirty test compares against it. */
@@ -261,6 +266,7 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
   ], {
     value: { provider: draft.provider, model: draft.model, root: draft.root, repos: draft.repos },
     className: 'ntf-where-questions',
+    density: 'tight',
     onChange: (value) => {
       draft.provider = value.provider; draft.model = value.model; draft.root = value.root;
       draft.repos = value.repos.filter((name) => name !== value.root);
@@ -349,6 +355,7 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
           'books:ways': draft.books.filter((book) => book.startsWith('ways:')).map((book) => book.slice(5)),
         },
         className: 'ntf-kit-questions',
+        density: 'tight',
         onChange: (value, key) => {
           draft.launchMode = value.launchMode;
           if (key.startsWith('routine:')) {
