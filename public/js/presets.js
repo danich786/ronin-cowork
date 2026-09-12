@@ -441,6 +441,7 @@ function renderMorningBriefTiming(host, state) {
   const summary = el('summary', 'sp-timing-summary');
   const editor = el('div', 'sp-timing-editor');
   let timingValue = { cadence, weekday: weekly?.[1] || 'mon' };
+  const weekdayNames = { mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday' };
   const timingAsk = ask([{ group: '', fields: [
     { key: 'cadence', label: 'Repeats', options: [{ v: 'daily', l: 'Every day' }, { v: 'weekly', l: 'Day of the week' }, { v: 'once', l: 'One time' }] },
     { key: 'weekday', label: 'Day', after: 'cadence', options: () => timingValue.cadence === 'weekly' ? [['mon', 'Monday'], ['tue', 'Tuesday'], ['wed', 'Wednesday'], ['thu', 'Thursday'], ['fri', 'Friday'], ['sat', 'Saturday'], ['sun', 'Sunday']].map(([v, l]) => ({ v, l })) : [] },
@@ -457,7 +458,7 @@ function renderMorningBriefTiming(host, state) {
       : cadence === 'weekly' ? `weekly ${timingValue.weekday} ${time.value}` : `daily ${time.value}`;
     summary.textContent = cadence === 'once'
       ? `Once · ${date.value} at ${time.value}`
-      : cadence === 'weekly' ? `Every ${timingValue.weekday} at ${time.value}` : `Every day at ${time.value}`;
+      : cadence === 'weekly' ? `Every ${weekdayNames[timingValue.weekday] || 'Monday'} at ${time.value}` : `Every day at ${time.value}`;
   };
   date.addEventListener('input', paint); time.addEventListener('input', paint);
   editor.append(timingAsk.el, dateField, timeField); timing.append(summary, editor); paint();
