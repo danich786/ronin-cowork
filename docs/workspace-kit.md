@@ -212,3 +212,12 @@ registry-derived five-room Commons.
     patch, then commit at your desk; hand in only when the work is coherent for the team.
 12. Handoff hash or uncommitted state, verification verdict, exact paths, migration steps,
     unrelated failures, and anything not tested or done.
+
+
+## Questions are `ask()` specs
+
+A question a surface asks — a pick, a many, a switch — is an `ask()` spec (`public/js/ask.js`,
+docs/ui.md § Asking a question, ronin-lab `SELECTORS.md`). Consumers do not declare selector
+DOM: no `select`, no option rows, no `aria-pressed` button rows, no bespoke stones. The
+utility owns the width, the shapes, the tray and the caption; the consumer owns the words
+and the answers.
