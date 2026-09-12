@@ -4,24 +4,27 @@ import { readFile } from 'node:fs/promises';
 
 const source = (file) => readFile(new URL(`../public/js/${file}`, import.meta.url), 'utf8');
 
-test('New Agent is the canonical five-section launcher with three session types', async () => {
+test('New Agent uses one ruled ask() spec after its three session types', async () => {
   const form = await source('new-agent.js');
-  assert.match(form, /\['type', 'top', 'team', 'where', 'loadout'\]/);
+  assert.match(form, /import \{ ask \} from '\.\/ask\.js'/);
+  assert.match(form, /const questions = ask\(\[/);
   assert.doesNotMatch(form, /key: 'template'.*Apply Template/);
   assert.match(form, /Cowork Agent[\s\S]*Bare-metal Agent[\s\S]*Terminal/);
   assert.match(form, /Session type/);
   assert.match(form, /agent_body', 'Agent'/);
   assert.match(form, /Name · required/);
-  assert.match(form, /providerModelStones/);
-  assert.match(form, /Make Team Lead/);
-  assert.match(form, /el\('span', 'na-team-lead-mark', '人'\)/);
-  assert.doesNotMatch(form, /`将 /);
+  assert.match(form, /group: t\('new_agent\.model_package', 'Model'\)/);
+  assert.match(form, /after: 'provider'/);
+  assert.match(form, /group: t\('mandate', 'Mandate'\)/);
+  assert.match(form, /shape: 'square'[\s\S]*many: true/);
+  assert.match(form, /group: t\('squad', 'Team'\)/);
+  assert.match(form, /switch: \[t\('yes', 'Yes'\), t\('no', 'No'\)\], word: '人'/);
+  assert.match(form, /group: t\('where\.label', 'Where it works'\)/);
+  assert.match(form, /many: true, after: 'root'/);
   assert.match(form, /stepPayload\.setNumber\(order\.length \+ 1\)/);
   assert.match(form, /key: 'payload'.*Payload/);
-  assert.match(form, /agentChoices\.append\(modelPackage, mandatePackage\)/);
-  assert.match(form, /modelPackage\.append\(el\('p', 'fs-head', t\('new_agent\.model_package', 'Model'\)\), pair\.el\)/);
-  assert.match(form, /mandatePackage\.append\(el\('p', 'fs-head', t\('mandate', 'Mandate'\)\), mandateHost\)/);
-  assert.match(form, /stepTop\.body\.replaceChildren\(nameField, agentChoices, instructionsField\)/);
+  assert.match(form, /stepTop\.body\.replaceChildren\(nameField, questions\.el, instructionsField\)/);
+  assert.doesNotMatch(form, /providerModelStones|na-choice-stone|na-mini-stone|stones: true/);
 });
 
 test('both workbench entrances use the canonical New Agent form with contextual Team default', async () => {
@@ -31,39 +34,20 @@ test('both workbench entrances use the canonical New Agent form with contextual 
   assert.match(cowork, /connect: \(name\) => connectSession\(name, id\)/);
 });
 
-test('Where it works separates birthplace and additional workspace profile stones', async () => {
-  const [form, where] = await Promise.all([source('new-agent.js'), source('where-it-works.js')]);
+test('Where it works asks birthplace then additional workspace names from root profiles', async () => {
+  const form = await source('new-agent.js');
   assert.match(form, /request\('\/api\/project-roots\/detail'\)/);
   assert.match(form, /rootRows\.data\?\.roots/);
-  assert.match(where, /Where it’s born/);
-  assert.match(where, /Additional workspaces/);
-  assert.match(where, /o\.stones \? 'div' : 'details'/);
-  assert.match(where, /details\.replaceChildren\(el\('p', 'fs-head', t\('where\.label', 'Where it works'\)\)\)/);
-  assert.match(where, /sws-stone na-workspace-stone/);
-  assert.match(where, /repo_profile\?\.worktrees === 'enabled'/);
-  assert.match(where, /'worktree'/);
-  assert.match(where, /'checkout'/);
-  assert.match(where, /open === 'born'/);
-  assert.match(where, /root\.name !== state\.root/);
+  assert.match(form, /repo_profile\?\.worktrees === 'enabled'/);
+  assert.match(form, /label: t\('where\.born_in', 'Born in'\), options: rootRows/);
+  assert.match(form, /label: t\('where\.additional', 'Additional workspaces'\), many: true, after: 'root'/);
 });
 
-test('model disclosures open directly to choices and close after selection', async () => {
-  const [parts, css] = await Promise.all([source('form-steps.js'), readFile(new URL('../public/css/launch-forms.css', import.meta.url), 'utf8')]);
-  assert.doesNotMatch(parts, /options\.append\(el\('p', 'na-choice-label', label\)\)/);
-  assert.match(parts, /choose\(''\); open = ''; paint\(\)/);
-  assert.match(parts, /choose\(choice\.key\); open = ''; paint\(\)/);
-  assert.match(parts, /label: row\.cli_label \|\| row\.provider_label \|\| row\.provider/);
-  assert.match(parts, /selectedProvider\?\.cli_label \|\| selectedProvider\?\.provider_label/);
-  assert.match(css, /\.na-agent-choices \{ display: flex; flex-wrap: wrap;/);
-  assert.match(css, /\.na-model-package, \.na-mandate-package \{ flex: 0 0 auto; width: fit-content; max-width: 100%; \}/);
-  assert.match(css, /\.na-choice-package:has\(\[aria-expanded='true'\]\) \{ flex-basis: 100%; width: 100%; \}/);
-  assert.match(css, /\.na-surface \{ --na-stone-size: calc\(var\(--space-12\) \* 2\.5\); --na-stone-height: calc\(var\(--na-stone-size\) \* \.75\); \}/);
-  assert.match(css, /\.na-model-picker \{ display: grid; grid-template-columns: repeat\(2, var\(--na-stone-size\)\) minmax\(0, 1fr\)/);
-  assert.match(css, /\.na-mandate-grid \{ display: grid; grid-template-columns: repeat\(3, var\(--na-stone-size\)\) minmax\(0, 1fr\)/);
-  assert.match(css, /\.na-choice-options \{ grid-column: 1 \/ -1; \}/);
-  assert.match(css, /\.na-choice-stone, \.na-stone \{ width: var\(--na-stone-size\); height: var\(--na-stone-height\);/);
-  assert.match(css, /\.na-stone \{ flex: 0 0 var\(--na-stone-size\); border-left: var\(--edge-2\) solid var\(--accent\); \}/);
-  assert.match(css, /\.na-surface \.fs-dial-opt \{ flex: 0 0 var\(--na-stone-size\); width: var\(--na-stone-size\); height: var\(--na-stone-height\);/);
+test('the old New Agent selector implementation and CSS are deleted', async () => {
+  const [parts, where, css] = await Promise.all([source('form-steps.js'), source('where-it-works.js'), readFile(new URL('../public/css/launch-forms.css', import.meta.url), 'utf8')]);
+  assert.doesNotMatch(parts, /providerModelStones/);
+  assert.doesNotMatch(where, /o\.stones|na-workspace-stone|na-choice-stone/);
+  assert.doesNotMatch(css, /na-choice-stone|na-stone|na-mandate-grid|na-model-picker|na-workspace-stone/);
 });
 
 test('New Team makes templates optional and offers explicit Agent roles', async () => {
