@@ -526,7 +526,7 @@ const form = ask([
   ] },
   { group: t('squad', 'Team'), fields: [{ key: 'lead', label: t('team.lead', 'Team lead'), switch: [t('yes', 'Yes'), t('no', 'No')] }] },
 ], { value: draft, onChange: (value, key) => { Object.assign(draft, value); paintFoot(); } });
-host.append(form.el);   // form.value() · form.set(key, v) · form.options(key, rows) · form.open(key) · form.close()
+host.append(form.el);   // form.value() · form.set(key, v) or set({…}) · form.options(key, rows) · form.show([keys]) or show(null) · form.open(key) · form.close()
 ```
 
 | Spec key | Meaning |
@@ -538,8 +538,9 @@ host.append(form.el);   // form.value() · form.set(key, v) · form.options(key,
 | `many` | any-of: the tray stays open; the reading says the names or "n chosen" |
 | `switch` | `[onWord, offWord]`: the field is a switch and opens nothing |
 | `shape` | `square` for a ruled word with a glyph, `rect` (default) for a name |
+| `show(keys)` | on the returned form: draw only these fields (a session type decides which questions exist — a Terminal asks only where it is born); `show(null)` draws all; hidden answers are kept, not cleared |
 | `after` | the field this depends on; the answer clears and the options are re-asked when it changes |
-| `row` | `(option, value) → node`: a control drawn under the tray for each chosen option (a branch field) |
+| `row` | `(option, value) → node`: a control that belongs to a chosen option (a branch name, a new team's name), drawn under the group's stones whether the tray is open or closed, so an answer's own field never vanishes with the tray |
 
 **What is not an `ask()`.** The stone work surface (`stone-work-surface.js`) is a page for
 browsing a collection whose item is the content — Presets, Workspace Folders, Model
