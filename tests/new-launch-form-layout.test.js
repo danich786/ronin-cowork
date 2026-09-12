@@ -52,6 +52,8 @@ test('model disclosures open directly to choices and close after selection', asy
   assert.doesNotMatch(parts, /options\.append\(el\('p', 'na-choice-label', label\)\)/);
   assert.match(parts, /choose\(''\); open = ''; paint\(\)/);
   assert.match(parts, /choose\(choice\.key\); open = ''; paint\(\)/);
+  assert.match(parts, /label: row\.cli_label \|\| row\.provider_label \|\| row\.provider/);
+  assert.match(parts, /selectedProvider\?\.cli_label \|\| selectedProvider\?\.provider_label/);
   assert.match(css, /\.na-agent-choices \{ display: flex; flex-wrap: wrap;/);
   assert.match(css, /\.na-model-package, \.na-mandate-package \{ flex: 0 0 auto; width: fit-content; max-width: 100%; \}/);
   assert.match(css, /\.na-choice-package:has\(\[aria-expanded='true'\]\) \{ flex-basis: 100%; width: 100%; \}/);
