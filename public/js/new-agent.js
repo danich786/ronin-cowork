@@ -272,6 +272,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
   ], {
     value: { provider: draft.provider, model: draft.model, reach: draft.reach, recruit: draft.recruit, output: draft.output, team: teamValue(), teamLead: draft.teamLead, root: draft.root, repos: draft.repos },
     className: 'na-questions',
+    density: 'tight',
     onChange: (value, key) => {
       draft.provider = value.provider; draft.model = value.model; draft.reach = value.reach; draft.recruit = value.recruit; draft.output = value.output;
       draft.teamLead = value.teamLead; draft.root = value.root; draft.repos = value.repos.filter((name) => name !== value.root);

@@ -8,6 +8,7 @@ test('New Agent uses one ruled ask() spec after its three session types', async 
   const form = await source('new-agent.js');
   assert.match(form, /import \{ ask \} from '\.\/ask\.js'/);
   assert.match(form, /const questions = ask\(\[/);
+  assert.match(form, /className: 'na-questions',[\s\S]*density: 'tight'/);
   assert.doesNotMatch(form, /key: 'template'.*Apply Template/);
   assert.match(form, /Cowork Agent[\s\S]*Bare-metal Agent[\s\S]*Terminal/);
   assert.match(form, /Session type/);
