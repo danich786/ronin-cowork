@@ -301,7 +301,7 @@
   .na-omitted[hidden] { display: none; }
   .na-name-required > .wk-field-label { color: var(--accent); }
   .na-team-choices { margin-bottom: var(--space-4); }
-  .na-surface { --na-stone-size: calc(var(--space-12) * 2.5); --na-stone-height: calc(var(--na-stone-size) * .618); }
+  .na-surface { --na-stone-size: calc(var(--space-12) * 2.5); --na-stone-height: calc(var(--na-stone-size) * .75); }
   .na-model-picker { display: grid; grid-template-columns: repeat(2, var(--na-stone-size)) minmax(0, 1fr); gap: var(--space-4); }
   .na-model-picker > .na-stone-group { display: contents; }
   .na-agent-choices { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: flex-start; }

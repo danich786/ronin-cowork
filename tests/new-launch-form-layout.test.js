@@ -55,7 +55,7 @@ test('model disclosures open directly to choices and close after selection', asy
   assert.match(css, /\.na-agent-choices \{ display: flex; flex-wrap: wrap;/);
   assert.match(css, /\.na-model-package, \.na-mandate-package \{ flex: 0 0 auto; width: fit-content; max-width: 100%; \}/);
   assert.match(css, /\.na-choice-package:has\(\[aria-expanded='true'\]\) \{ flex-basis: 100%; width: 100%; \}/);
-  assert.match(css, /\.na-surface \{ --na-stone-size: calc\(var\(--space-12\) \* 2\.5\); --na-stone-height: calc\(var\(--na-stone-size\) \* \.618\); \}/);
+  assert.match(css, /\.na-surface \{ --na-stone-size: calc\(var\(--space-12\) \* 2\.5\); --na-stone-height: calc\(var\(--na-stone-size\) \* \.75\); \}/);
   assert.match(css, /\.na-model-picker \{ display: grid; grid-template-columns: repeat\(2, var\(--na-stone-size\)\) minmax\(0, 1fr\)/);
   assert.match(css, /\.na-mandate-grid \{ display: grid; grid-template-columns: repeat\(3, var\(--na-stone-size\)\) minmax\(0, 1fr\)/);
   assert.match(css, /\.na-choice-options \{ grid-column: 1 \/ -1; \}/);
