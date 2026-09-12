@@ -315,8 +315,10 @@ test('Where lists every tracked workspace folder and refills in place when one i
 test('Code Stack Eval keeps ticked folders on Apply and evaluates the chosen one', async () => {
   const source = await readFile(new URL('../public/js/presets.js', import.meta.url), 'utf8');
   assert.doesNotMatch(source, /createFolderPicker|Show hidden folders|GitHub repo · remote evaluation pending/);
-  assert.match(source, /tick\.checked = Boolean\(folder\.registered_root\) \|\| state\.pending\.includes\(folder\.dir\)/);
-  assert.match(source, /state\.root_dir = folder\.dir; state\.root = folder\.registered_root\?\.name \|\| '';\n\s+if \(!folder\.registered_root\) state\.pending = /);
+  assert.match(source, /key: 'keep'.*switch:/, 'an unkept folder uses the canonical switch');
+  assert.match(source, /key: 'folder'.*options: folders\.map/, 'one canonical pick chooses the evaluation folder');
+  assert.match(source, /state\.root_dir = folder\.dir; state\.root = folder\.registered_root\?\.name \|\| '';/);
+  assert.match(source, /if \(!folder\.registered_root\) state\.pending = /);
   assert.match(source, /request\('\/api\/project-roots', \{ method: 'POST', json: \{ name, dir: folder\.dir, \.\.\.\(profile \? \{ before, profile, confirmed: true \} : \{\}\) \} \}\)/);
   assert.match(source, /if \(state\.root_dir === dir\) state\.root = made\.name/);
   assert.match(source, /environment\?\.navigateToSurface\?\.\('setup\.roots'\)/);

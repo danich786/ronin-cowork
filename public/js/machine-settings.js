@@ -134,11 +134,16 @@ export function buildMachineSettings(root, isShowing) {
     if (f.aside) note.textContent = f.aside;
     const catalog = providerCatalog().rows;
     const providers = catalog.filter((item, index) => catalog.findIndex((other) => other.provider === item.provider) === index);
+    const reason = (item) => item.off
+      ? t('forms.reason_turned_off', 'turned off')
+      : item.listed === false && item.model_list_current
+        ? t('forms.reason_not_listed', 'not listed by your {cli} {client_version}', { cli: item.cli_label || item.cli, client_version: item.model_list?.client_version || '' })
+        : t('forms.reason_not_on_machine', 'not on this machine');
     const fields = fixed ? [
-      { key: 'model', label: f.short ?? f.label, blank: t('settei.none_set', '— none set —'), options: catalog.filter((item) => item.provider === fixed).map((item) => ({ v: item.model, l: item.model, word: item.tier, sub: modelAvailabilityFact(item), off: item.operational ? '' : 'Not on this machine' })) },
+      { key: 'model', label: f.short ?? f.label, blank: t('settei.none_set', '— none set —'), options: catalog.filter((item) => item.provider === fixed).map((item) => ({ v: item.model, l: item.model, word: item.tier, sub: modelAvailabilityFact(item), off: item.operational && item.listed !== false ? '' : reason(item) })) },
     ] : [
-      { key: 'provider', label: t('forms.provider', 'Model provider'), blank: t('settei.none_set', '— none set —'), options: providers.map((item) => ({ v: item.provider, l: item.provider_label, off: item.operational ? '' : (item.off || 'Not on this machine') })) },
-      { key: 'model', label: t('forms.model', 'Model'), blank: t('settei.none_set', '— none set —'), after: 'provider', options: (value) => catalog.filter((item) => item.provider === value.provider).map((item) => ({ v: item.model, l: item.model, word: item.tier, sub: modelAvailabilityFact(item), off: item.operational ? '' : 'Not on this machine' })) },
+      { key: 'provider', label: t('forms.provider', 'Model provider'), blank: t('settei.none_set', '— none set —'), options: providers.map((item) => ({ v: item.provider, l: item.provider_label, off: item.operational ? '' : reason(item) })) },
+      { key: 'model', label: t('forms.model', 'Model'), blank: t('settei.none_set', '— none set —'), after: 'provider', options: (value) => catalog.filter((item) => item.provider === value.provider).map((item) => ({ v: item.model, l: item.model, word: item.tier, sub: modelAvailabilityFact(item), off: item.operational && item.listed !== false ? '' : reason(item) })) },
     ];
     const pair = ask([{ group: fixed ? '' : t('new_agent.model_package', 'Model'), fields }], {
       value: picked,
@@ -327,22 +332,16 @@ export function buildMachineSettings(root, isShowing) {
     group(t('settei.group_services', 'services'));
     body.appendChild(tickRow(observed.ronin.services.length > 0, 'service', '*', t('settei.ronin_services', 'Ronin Services'), ''));
     body.appendChild(tickRow(observed.ronin.services.includes('gbrain'), 'service', 'gbrain', 'gbrain', ''));
-    const gb = document.createElement('input');
-    gb.type = 'checkbox';
-    gb.className = 'st-check';
-    gb.checked = set.gbrain.enabled;
-    const gbField = field(gb, { label: t('settei.use_gbrain', 'use gbrain'), sr: false });
-    gbField.el.classList.add('st-field');
-    // The installed FACT is the row above; this tick is the CHOICE.
-    gbField.say(t('settei.use_gbrain_hint', 'tick this if your agents use it'));
-    gb.addEventListener('change', async () => {
-      gbField.say(t('settei.saving', 'saving…'));
-      const r = await request('/api/machine-settings', { method: 'PATCH', json: { family: 'gbrain', value: { enabled: gb.checked } } });
-      gbField.say(r.ok ? t('settei.saved', 'saved') : r.message, !r.ok);
-    });
+    const gbNote = document.createElement('p'); gbNote.className = 'st-note'; gbNote.setAttribute('role', 'status');
+    gbNote.textContent = t('settei.use_gbrain_hint', 'tick this if your agents use it');
+    const gb = ask([{ group: '', fields: [{ key: 'enabled', label: t('settei.use_gbrain', 'use gbrain'), switch: [t('gbrain.on', 'on'), t('gbrain.off', 'off')] }] }], { value: { enabled: set.gbrain.enabled }, onChange: async (value) => {
+      gbNote.textContent = t('settei.saving', 'saving…');
+      const r = await request('/api/machine-settings', { method: 'PATCH', json: { family: 'gbrain', value: { enabled: value.enabled } } });
+      gbNote.textContent = r.ok ? t('settei.saved', 'saved') : r.message; gbNote.classList.toggle('bad', !r.ok);
+    } });
     const gbRow = document.createElement('div');
     gbRow.className = 'st-row';
-    gbRow.appendChild(gbField.el);
+    gbRow.append(gb.el, gbNote);
     body.appendChild(gbRow);
 
     /* the deal — Ronin Services the subscription, a different thing from the sockets above */

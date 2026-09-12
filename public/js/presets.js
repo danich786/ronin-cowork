@@ -317,30 +317,36 @@ function renderCodebaseControls(host, state, environment) {
     const up = el('button', 'sp-workspace-link', '← Up'); up.type = 'button'; up.disabled = !parent; up.addEventListener('click', () => parent && load(parent));
     place.append(up, el('strong', '', current === result.data.home ? 'Home' : current));
     listing.replaceChildren();
+    const evaluate = ask([{ group: '', fields: [{ key: 'folder', label: t('presets.evaluate', 'Evaluate'), blank: t('presets.evaluate_none', 'Choose a folder'), options: folders.map((folder) => ({ v: folder.dir, l: folder.name, word: folder.registered_root ? t('presets.workspace_folder', 'workspace folder') : folder.kind === 'repository' ? t('presets.repository', 'repository') : t('presets.folder', 'folder') })) }] }], {
+      value: { folder: state.root_dir || '' },
+      onChange: (value) => {
+        const folder = folders.find((row) => row.dir === value.folder); if (!folder) return;
+        state.root_dir = folder.dir; state.root = folder.registered_root?.name || '';
+        if (!folder.registered_root) state.pending = [...new Set([...state.pending, folder.dir])];
+        paintStatus();
+      },
+    });
+    listing.append(evaluate.el);
     for (const folder of folders) {
       const row = el('div', 'sp-codebase-row');
       const open = el('button', 'sp-codebase-open', folder.name); open.type = 'button'; open.addEventListener('click', () => load(folder.dir));
       const kind = el('span', 'sp-codebase-kind', folder.registered_root ? 'workspace folder' : folder.kind === 'repository' ? 'repository' : 'folder');
-      const keep = el('label', 'sp-codebase-keep');
-      const tick = el('input'); tick.type = 'checkbox';
-      tick.checked = Boolean(folder.registered_root) || state.pending.includes(folder.dir);
-      tick.disabled = Boolean(folder.registered_root);
-      tick.setAttribute('aria-label', `Keep ${folder.name} as a workspace folder`);
-      tick.addEventListener('change', () => {
-        state.pending = tick.checked ? [...new Set([...state.pending, folder.dir])] : state.pending.filter((dir) => dir !== folder.dir);
-        if (!tick.checked && state.root_dir === folder.dir && !folder.registered_root) { state.root_dir = ''; state.root = ''; void load(current); return; }
-        paintStatus();
-      });
-      keep.append(tick, el('span', '', folder.registered_root ? 'Kept' : 'Keep'));
-      const evaluating = state.root_dir === folder.dir;
-      const choose = el('button', 'sp-codebase-evaluate', evaluating ? 'Evaluating' : 'Evaluate'); choose.type = 'button';
-      choose.setAttribute('aria-pressed', String(evaluating));
-      choose.addEventListener('click', () => {
-        state.root_dir = folder.dir; state.root = folder.registered_root?.name || '';
-        if (!folder.registered_root) state.pending = [...new Set([...state.pending, folder.dir])];
-        void load(current);
-      });
-      row.append(open, kind, keep, choose); listing.append(row);
+      let keep;
+      if (folder.registered_root) {
+        keep = el('label', 'sp-codebase-keep'); const fact = el('input'); fact.type = 'checkbox'; fact.checked = true; fact.disabled = true;
+        keep.append(fact, el('span', '', t('presets.kept', 'Kept')));
+      } else {
+        const keepAsk = ask([{ group: '', fields: [{ key: 'keep', label: folder.name, switch: [t('presets.keep', 'Keep'), t('presets.skip', 'Skip')] }] }], {
+          value: { keep: state.pending.includes(folder.dir) }, density: 'tight',
+          onChange: (value) => {
+            state.pending = value.keep ? [...new Set([...state.pending, folder.dir])] : state.pending.filter((dir) => dir !== folder.dir);
+            if (!value.keep && state.root_dir === folder.dir) { state.root_dir = ''; state.root = ''; evaluate.set('folder', ''); }
+            paintStatus();
+          },
+        });
+        keep = keepAsk.el;
+      }
+      row.append(open, kind, keep); listing.append(row);
     }
     if (!listing.children.length) listing.append(el('p', 'setup-fine', 'No folders here.'));
     paintStatus();
@@ -379,10 +385,15 @@ function renderRows(host, state, key, addLabel) {
       name.addEventListener('input', () => { row.name = slug(name.value); });
       const catalog = providerCatalog().rows;
       const providers = catalog.filter((item, at) => catalog.findIndex((other) => other.provider === item.provider) === at);
+      const reason = (item) => item.off
+        ? t('forms.reason_turned_off', 'turned off')
+        : item.listed === false && item.model_list_current
+          ? t('forms.reason_not_listed', 'not listed by your {cli} {client_version}', { cli: item.cli_label || item.cli, client_version: item.model_list?.client_version || '' })
+          : t('forms.reason_not_on_machine', 'not on this machine');
       const pair = ask([{ group: t('new_agent.model_package', 'Model'), fields: [
-        { key: 'provider', label: t('forms.provider', 'Model provider'), blank: t('campaign_view.provider_default', 'Default provider'), options: providers.map((item) => ({ v: item.provider, l: item.provider_label, off: item.operational ? '' : (item.off || 'Not on this machine') })) },
-        { key: 'model', label: t('forms.model', 'Model'), blank: t('campaign_view.model_default', 'Default model'), after: 'provider', options: (value) => catalog.filter((item) => item.provider === value.provider).map((item) => ({ v: item.model, l: item.model, word: item.tier, sub: modelAvailabilityFact(item), off: item.operational ? '' : 'Not on this machine' })) },
-      ] }], { value: { provider: row.provider || '', model: row.model || '' }, onChange: (value) => { row.provider = value.provider; row.model = value.model; } });
+        { key: 'provider', label: t('forms.provider', 'Model provider'), blank: t('campaign_view.provider_default', 'Default provider'), options: providers.map((item) => ({ v: item.provider, l: item.provider_label, off: item.operational ? '' : reason(item) })) },
+        { key: 'model', label: t('forms.model', 'Model'), blank: t('campaign_view.model_default', 'Default model'), after: 'provider', options: (value) => catalog.filter((item) => item.provider === value.provider).map((item) => ({ v: item.model, l: item.model, word: item.tier, sub: modelAvailabilityFact(item), off: item.operational && item.listed !== false ? '' : reason(item) })) },
+      ] }], { value: { provider: row.provider || '', model: row.model || '' }, density: 'tight', onChange: (value) => { row.provider = value.provider; row.model = value.model; } });
       const remove = el('button', 'sp-remove', '✕'); remove.type = 'button'; remove.title = `Remove ${addLabel}`;
       remove.addEventListener('click', () => { state[key].splice(index, 1); paint(); });
       const lead = el('span', 'sp-lead', row.team_lead ? 'Team Lead' : '');
@@ -397,7 +408,7 @@ function renderRows(host, state, key, addLabel) {
 }
 
 function renderTileChoices(host, state) {
-  const choices = ask([{ group: '', fields: [{ key: 'tiles', label: 'Tile view', options: [{ v: 2, l: 'Side by side' }, { v: 4, l: 'Two by two' }] }] }], { value: { tiles: state.tiles }, onChange: (value) => { state.tiles = Number(value.tiles); } });
+  const choices = ask([{ group: '', fields: [{ key: 'tiles', label: t('presets.tile_view', 'Tile view'), options: [{ v: 2, l: t('presets.side_by_side', 'Side by side') }, { v: 4, l: t('presets.two_by_two', 'Two by two') }] }] }], { value: { tiles: state.tiles }, onChange: (value) => { state.tiles = Number(value.tiles); } });
   host.append(choices.el);
 }
 
@@ -443,9 +454,9 @@ function renderMorningBriefTiming(host, state) {
   let timingValue = { cadence, weekday: weekly?.[1] || 'mon' };
   const weekdayNames = { mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday' };
   const timingAsk = ask([{ group: '', fields: [
-    { key: 'cadence', label: 'Repeats', options: [{ v: 'daily', l: 'Every day' }, { v: 'weekly', l: 'Day of the week' }, { v: 'once', l: 'One time' }] },
-    { key: 'weekday', label: 'Day', after: 'cadence', options: () => timingValue.cadence === 'weekly' ? [['mon', 'Monday'], ['tue', 'Tuesday'], ['wed', 'Wednesday'], ['thu', 'Thursday'], ['fri', 'Friday'], ['sat', 'Saturday'], ['sun', 'Sunday']].map(([v, l]) => ({ v, l })) : [] },
-  ] }], { value: timingValue, onChange: (value) => { timingValue = value; paint(); } });
+    { key: 'cadence', label: t('presets.repeats', 'Repeats'), options: [{ v: 'daily', l: t('presets.every_day', 'Every day') }, { v: 'weekly', l: t('presets.day_of_week', 'Day of the week') }, { v: 'once', l: t('presets.one_time', 'One time') }] },
+    { key: 'weekday', label: t('presets.day', 'Day'), after: 'cadence', options: (value) => value.cadence === 'weekly' ? Object.entries(weekdayNames).map(([v, l]) => ({ v, l })) : [] },
+  ] }], { value: timingValue, density: 'tight', onChange: (value) => { timingValue = value; paint(); } });
   const date = input(once?.[1] || nextDay, 'date');
   const time = input(daily?.[1] || weekly?.[2] || once?.[2] || '08:00', 'time');
   const dateField = el('label', 'sp-timing-field'); dateField.append(el('span', '', 'Date'), date);
@@ -483,7 +494,7 @@ function renderSpecialControls(host, handle, state, runtime, environment, live =
   if (handle === 'develop_new_project') { const body = el('div'); renderRows(body, state, 'features', 'Feature Agent'); host.append(section('Split the work · each feature agent gets its own worktree', '', ...body.children)); }
   if (handle === 'health_and_fitness') { const body = el('div'); renderAskRows(body, state, 'roles', 'role'); host.append(section("Each agent's kick-off message", 'edit', ...body.children)); }
   if (handle === 'personal_assistant') {
-    const modes = ask([{ group: '', fields: [{ key: 'assistant_mode', label: 'How it runs', options: [{ v: 'single', l: 'Single assistant' }, { v: 'recruit', l: 'Chief of Staff' }] }] }], { value: { assistant_mode: state.assistant_mode }, onChange: (value) => { state.assistant_mode = value.assistant_mode; recruit.hidden = state.assistant_mode !== 'recruit'; } });
+    const modes = ask([{ group: '', fields: [{ key: 'assistant_mode', label: t('presets.how_it_runs', 'How it runs'), options: [{ v: 'single', l: t('presets.single_assistant', 'Single assistant') }, { v: 'recruit', l: t('presets.chief_of_staff', 'Chief of Staff') }] }] }], { value: { assistant_mode: state.assistant_mode }, onChange: (value) => { state.assistant_mode = value.assistant_mode; recruit.hidden = state.assistant_mode !== 'recruit'; } });
     const specialists = input(state.specialists); specialists.placeholder = 'financial adviser, research, scheduling…'; specialists.addEventListener('input', () => { state.specialists = specialists.value; });
     const recruit = field('Recruit', specialists);
     recruit.hidden = state.assistant_mode !== 'recruit';
