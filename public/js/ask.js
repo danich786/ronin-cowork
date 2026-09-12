@@ -5,7 +5,7 @@
  * is the consumer's: not the width, not the wrapping, not the shape, not what opens.
  *
  *   ask([{ group, fields: [{ key, label, options, blank?, many?, switch?, shape?, after?, row?, word? }] }],
- *       { value, onChange })  →  { el, value(), set(key, v) | set({...}), options(key, rows), show(keys|null), open(key), close(), destroy() }
+ *       { value, onChange, density })  →  { el, value(), set(key, v) | set({...}), options(key, rows), show(keys|null), open(key), close(), destroy() }
  *
  * A field is a READING STONE (140 × 48: label over answer). Click it and a TRAY opens under
  * its group, holding option stones in one of two fixed shapes — the SQUARE (85, a glyph and
@@ -21,7 +21,10 @@
  * asked again. `row(option, value)` draws a control that belongs to a chosen option — a branch
  * name, a new team's name — under the group's stones, open or closed, so an answer's own field
  * never vanishes with the tray. `show([...keys])` limits which fields are drawn (a session type
- * decides which questions exist); `show(null)` draws them all.
+ * decides which questions exist); `show(null)` draws them all. `density: 'tight'` is the launch
+ * forms' setting — less line spacing inside a group, the same paragraph spacing between groups,
+ * a 40 px stone — for questions that are optional and must not be in the owner's face; 'loose'
+ * (the default) is the commons' setting where a question is the page's subject.
  */
 import { t } from './lexicon.js';
 
@@ -46,7 +49,7 @@ export function snake(text) {
 const FILTER_FROM = 12;
 let trayIds = 0;
 
-export function ask(groups = [], { value = {}, onChange = null, className = '' } = {}) {
+export function ask(groups = [], { value = {}, onChange = null, className = '', density = 'loose' } = {}) {
   const spec = (Array.isArray(groups) ? groups : []).map((group) => ({
     label: group.group || group.label || '',
     fields: (group.fields || []).map((field) => ({ ...field, shape: field.shape === 'square' ? 'square' : 'rect' })),
@@ -62,6 +65,7 @@ export function ask(groups = [], { value = {}, onChange = null, className = '' }
   const visible = (field) => !shown || shown.has(field.key);
 
   const root = el('section', `ask ${className}`.trim());
+  root.dataset.density = density === 'tight' ? 'tight' : 'loose';
   const trayId = `ask-tray-${++trayIds}`;
 
   const rowsOf = (field) => {
