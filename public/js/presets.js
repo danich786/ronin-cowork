@@ -488,7 +488,7 @@ function renderSpecialControls(host, handle, state, runtime, environment, live =
     renderRootControls(host, state, roots, 'Where', environment, true, live);
     const agents = el('div'); renderRows(agents, state, 'sessions', 'Session');
     const tiles = el('div'); renderTileChoices(tiles, state);
-    host.append(section('Agents run side by side', 'select', ...agents.children), section('Tile view', 'select', ...tiles.children));
+    host.append(section(t('presets.agents_side_by_side', 'Agents run side by side'), 'select', ...agents.children), section(t('presets.tile_view', 'Tile view'), 'select', ...tiles.children));
   }
   if (handle === 'ronin_team') { const body = el('div'); renderRows(body, state, 'sessions', 'Agent'); host.append(section('Team Lead and agents', 'select', ...body.children)); }
   if (handle === 'develop_new_project') { const body = el('div'); renderRows(body, state, 'features', 'Feature Agent'); host.append(section('Split the work · each feature agent gets its own worktree', '', ...body.children)); }
