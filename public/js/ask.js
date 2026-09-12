@@ -5,7 +5,7 @@
  * is the consumer's: not the width, not the wrapping, not the shape, not what opens.
  *
  *   ask([{ group, fields: [{ key, label, options, blank?, many?, switch?, shape?, after?, row?, word? }] }],
- *       { value, onChange })  →  { el, value(), set(key, v), options(key, rows), open(key), close(), destroy() }
+ *       { value, onChange })  →  { el, value(), set(key, v) | set({...}), options(key, rows), show(keys|null), open(key), close(), destroy() }
  *
  * A field is a READING STONE (140 × 48: label over answer). Click it and a TRAY opens under
  * its group, holding option stones in one of two fixed shapes — the SQUARE (85, a glyph and
@@ -18,7 +18,10 @@
  * is the reason the stone is greyed (disabled, never hidden), `glyph` sits on a square,
  * `word` is the rectangle's short second line (tier, worktree, checkout). `after` names the
  * field this one depends on: when that one changes, this answer clears and its options are
- * asked again. `row(option)` draws a control for a chosen option under the tray (a branch).
+ * asked again. `row(option, value)` draws a control that belongs to a chosen option — a branch
+ * name, a new team's name — under the group's stones, open or closed, so an answer's own field
+ * never vanishes with the tray. `show([...keys])` limits which fields are drawn (a session type
+ * decides which questions exist); `show(null)` draws them all.
  */
 import { t } from './lexicon.js';
 
@@ -55,6 +58,8 @@ export function ask(groups = [], { value = {}, onChange = null, className = '' }
   let open = '';
   let filter = '';
   let outside = null;
+  let shown = null;
+  const visible = (field) => !shown || shown.has(field.key);
 
   const root = el('section', `ask ${className}`.trim());
   const trayId = `ask-tray-${++trayIds}`;
@@ -148,10 +153,8 @@ export function ask(groups = [], { value = {}, onChange = null, className = '' }
     const options = el('div', 'ask-options');
     options.setAttribute('role', 'listbox');
     if (field.many) options.setAttribute('aria-multiselectable', 'true');
-    const extras = el('div', 'ask-extras');
     const stonesOf = () => {
       options.replaceChildren();
-      extras.replaceChildren();
       if (!all.length) {
         const parent = field.after ? byKey(field.after) : null;
         options.append(el('span', 'ask-empty', parent ? t('ask.after', 'Choose {field} first.', { field: parent.label }) : t('ask.nothing', 'Nothing to choose.')));
@@ -178,18 +181,6 @@ export function ask(groups = [], { value = {}, onChange = null, className = '' }
       }
       const pressed = field.many ? null : all.find((row) => String(row.v) === String(state[field.key]));
       say(pressed || null);
-      if (typeof field.row === 'function') {
-        const chosen = field.many ? state[field.key] : [state[field.key]];
-        for (const v of chosen) {
-          const row = rowFor(field, v);
-          if (!row) continue;
-          const node = field.row(row, snapshot());
-          if (!node) continue;
-          const line = el('label', 'ask-extra');
-          line.append(el('span', 'ask-extra-name', row.l), node);
-          extras.append(line);
-        }
-      }
     };
     if (all.length > FILTER_FROM) {
       const find = el('input', 'ask-filter');
@@ -200,22 +191,46 @@ export function ask(groups = [], { value = {}, onChange = null, className = '' }
       box.append(find);
     }
     stonesOf();
-    box.append(options, caption, extras);
+    box.append(options, caption);
     return box;
+  };
+
+  /* ---- extras: a chosen option's own control, under the group, open or closed ---- */
+  const extrasOf = (group) => {
+    const extras = el('div', 'ask-extras');
+    for (const field of group.fields) {
+      if (typeof field.row !== 'function' || !visible(field)) continue;
+      const chosen = field.many ? state[field.key] : [state[field.key]];
+      for (const v of chosen) {
+        const row = rowFor(field, v);
+        if (!row) continue;
+        const node = field.row(row, snapshot());
+        if (!node) continue;
+        const line = el('label', 'ask-extra');
+        line.append(el('span', 'ask-extra-name', row.l), node);
+        extras.append(line);
+      }
+    }
+    return extras.children.length ? extras : null;
   };
 
   /* ---- paint: groups, their stones, and the one open tray ---- */
   function paint() {
     root.replaceChildren();
+    if (open && !fields.some((field) => field.key === open && visible(field))) open = '';
     root.dataset.open = open;
     for (const group of spec) {
+      const drawn = group.fields.filter(visible);
+      if (!drawn.length) continue;
       const box = el('div', 'ask-group');
       if (group.label) box.append(el('h4', 'ask-group-head', group.label));
       const row = el('div', 'ask-fields');
-      for (const field of group.fields) row.append(stone(field));
+      for (const field of drawn) row.append(stone(field));
       box.append(row);
+      const extras = extrasOf(group);
+      if (extras) box.append(extras);
       root.append(box);
-      const opened = group.fields.find((field) => field.key === open && !field.switch);
+      const opened = drawn.find((field) => field.key === open && !field.switch);
       if (opened) root.append(tray(opened));
     }
     bindOutside();
@@ -241,7 +256,12 @@ export function ask(groups = [], { value = {}, onChange = null, className = '' }
   return {
     el: root,
     value: snapshot,
-    set(key, v) { const field = byKey(key); if (!field) return; state[key] = field.switch ? Boolean(v) : field.many ? [...(v || [])] : (v ?? ''); paint(); },
+    set(key, v) {
+      const patch = key && typeof key === 'object' ? key : { [key]: v };
+      for (const [name, next] of Object.entries(patch)) { const field = byKey(name); if (field) state[name] = field.switch ? Boolean(next) : field.many ? [...(next || [])] : (next ?? ''); }
+      paint();
+    },
+    show(keys) { shown = Array.isArray(keys) ? new Set(keys) : null; paint(); },
     options(key, rows) { const field = byKey(key); if (!field) return; field.options = rows; paint(); },
     open(key) { open = byKey(key) && !byKey(key).switch ? key : ''; filter = ''; paint(); },
     close() { open = ''; paint(); },
