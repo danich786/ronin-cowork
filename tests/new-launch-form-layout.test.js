@@ -59,7 +59,7 @@ test('New Team folds Kind and template choice into one optional first section', 
   assert.match(form, /includeOwn: false/);
   assert.match(form, /Name & instructions/);
   assert.match(agents, /＋ Add Agent/);
-  assert.match(agents, /Make Team Lead/);
+  assert.match(agents, /key: 'lead'.*Team lead.*switch:/);
   assert.doesNotMatch(agents, /Add Lead Agent|Add Team Agent/);
 });
 
@@ -81,10 +81,10 @@ test('collapsible steps expose one full-width disclosure row and Team defaults u
   assert.match(team, /const FOLDS = \['lead'\]/);
   assert.doesNotMatch(team, /stepDefaults\.body\.append/);
   assert.doesNotMatch(team, /createBand/);
-  assert.match(agents, /if \(editor\) host\.append\(paintEditor\(\)\);[\s\S]*else \{[\s\S]*＋ Add Agent/);
+  assert.match(agents, /if \(editor\) host\.append\(paintEditor\(\)\);[\s\S]*createAction\(\{ label:[\s\S]*＋ Add Agent/);
 });
 
-test('Add Agent confirms a draft into a compact row with New Agent-style stones', async () => {
+test('Add Agent confirms a draft into a compact row with the one selector utility', async () => {
   const agents = await source('team-agents.js');
   assert.match(agents, /let editor = null/);
   assert.match(agents, /if \(index < 0\) rows\(\)\.push\(saved\)/);
@@ -92,30 +92,50 @@ test('Add Agent confirms a draft into a compact row with New Agent-style stones'
   assert.match(agents, /agent_add_confirm', 'Add'/);
   assert.match(agents, /ntf-agent-row/);
   assert.match(agents, /for \(const other of rows\(\)\) other\.lead = false/);
-  assert.match(agents, /ntf-agent-stone/);
-  assert.match(agents, /dialRowMulti/);
+  assert.match(agents, /const questions = ask\(\[/);
+  assert.match(agents, /group: t\('new_agent\.model_package', 'Model'\)/);
+  assert.match(agents, /group: t\('mandate', 'Mandate'\)/);
+  assert.match(agents, /shape: 'square'/);
+  assert.match(agents, /many: true/);
+  assert.match(agents, /switch: \[t\('yes', 'Yes'\), t\('no', 'No'\)\]/);
+  assert.match(agents, /box\.append\(actions\.el, field/);
+  assert.doesNotMatch(agents, /wk-button/);
+  assert.doesNotMatch(agents, /dialRow|providerModelPair|type = 'checkbox'|aria-pressed/);
   assert.match(agents, /provider: row\.provider/);
   assert.match(agents, /model: row\.model/);
-  assert.match(agents, /saved\.mandateOpen = ''/);
   assert.match(agents, /instructions: row\.assignment\.trim\(\)/);
   assert.match(agents, /team_lead: !!row\.lead/);
 });
 
-test('New Team cast controls are labelled, related, and stack without changing New Agent', async () => {
+test('New Team cast text is labelled and all cast selections belong to ask()', async () => {
   const [agents, css, newAgent] = await Promise.all([
     source('team-agents.js'),
     readFile(new URL('../public/css/launch-forms.css', import.meta.url), 'utf8'),
     source('new-agent.js'),
   ]);
   assert.match(agents, /el\('label', 'ntf-agent-field'\)/);
-  assert.match(agents, /toggle\.setAttribute\('aria-expanded', String\(row\.mandateOpen === axis\)\)/);
-  assert.match(agents, /toggle\.setAttribute\('aria-controls', `\$\{id\}-\$\{axis\}`\)/);
-  assert.match(agents, /drop\.setAttribute\('aria-label'/);
-  assert.match(css, /@media \(max-width: 44rem\)[\s\S]*\.ntf-surface \.ntf-agent-stones/);
-  assert.match(css, /\.ntf-agent-stones \{ display: grid/);
+  assert.match(agents, /import \{ ask \} from '\.\/ask\.js'/);
+  assert.match(agents, /title: t\('new_team\.agent_drop_named'/);
+  assert.match(agents, /className: 'ntf-agent-row-actions'/);
+  assert.doesNotMatch(css, /\.ntf-agent-(?:stone|mandate-toggle|lead-choice)/);
   assert.doesNotMatch(css, /\.na-[^,{ ]*[^}]*ntf-agent/);
   assert.doesNotMatch(css, /@media \(max-width: 44rem\)[\s\S]*\.na-surface \.ntf-agent/);
   assert.doesNotMatch(newAgent, /ntf-agent-field|new-team-agent-/);
+});
+
+test('New Team routes each selector region through ask() and leaves Templates browsing alone', async () => {
+  const form = await source('new-team-form.js');
+  assert.match(form, /const kindQuestions = ask\(/);
+  assert.match(form, /const whereQuestions = ask\(/);
+  assert.match(form, /kitQuestions = ask\(/);
+  assert.match(form, /after: 'provider'/);
+  assert.match(form, /after: 'root'/);
+  assert.match(form, /row: branchField/);
+  assert.match(form, /switch: \[t\('on', 'On'\), t\('off', 'Off'\)\]/);
+  assert.match(form, /options: LAUNCH_MODES\(\)\.map/);
+  assert.match(form, /many: true, options: shelfRows/);
+  assert.match(form, /templateTray\(offered\(\)/);
+  assert.doesNotMatch(form, /kindTiles|providerModelPair|mandateSelect|dialRowMulti|wayTiles|bookShelves|createWhereItWorks|fs-routine/);
 });
 
 test('New Team checks names only for a cast and opens partial Teams with exact recovery evidence', async () => {

@@ -174,6 +174,9 @@ test('no client module keeps its own provider or model list, join, or vendor nam
     if (file === 'new-agent.js') {
       assert.match(source, /const questions = ask\(/, 'New Agent asks through the one selector utility');
       assert.match(source, /providerCatalog\(\)\.rows/, 'New Agent options read the one provider catalog');
+    } else if (file === 'new-team-form.js') {
+      assert.match(source, /ask\(\[/, 'New Team calls the one selector utility');
+      assert.match(source, /providerCatalog\(\)\.rows/, 'New Team asks from the shared provider catalog');
     } else assert.match(source, /providerModelPair/, `${file} calls the one catalog-backed picker`);
     assert.doesNotMatch(source, /session-launch-specs|launchSpecData|launchTable|new Option\([^)]*\b(?:provider|model)\b|Claude Code|Codex|anthropic|openai/, `${file} keeps no copy`);
   }
