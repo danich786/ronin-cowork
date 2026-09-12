@@ -99,8 +99,16 @@ test('Add Agent confirms a draft into a compact row with the one selector utilit
   assert.match(agents, /group: t\('new_agent\.model_package', 'Model'\)/);
   assert.match(agents, /group: t\('mandate', 'Mandate'\)/);
   assert.match(agents, /shape: 'square'/);
+  assert.match(agents, /ruledRows\('reach', REACH, mandateWord\)/);
+  assert.match(agents, /ruledRows\('recruit', RECRUIT, mandateWord\)/);
+  assert.match(agents, /ruledRows\('output', OUTPUT, mandateWord\)/);
   assert.match(agents, /many: true/);
   assert.match(agents, /switch: \[t\('yes', 'Yes'\), t\('no', 'No'\)\]/);
+  assert.doesNotMatch(agents, /switch:[^\n]+word:/);
+  assert.match(agents, /density: 'tight'/);
+  assert.match(agents, /tierWord\(item\.tier\)/);
+  assert.match(agents, /forms\.reason_not_listed/);
+  assert.doesNotMatch(agents, /forms\.provider_off|forms\.provider_turned_off|machine\?\.state|modelWord\([^)]*\)\.split/);
   assert.match(agents, /box\.append\(actions\.el, field/);
   assert.doesNotMatch(agents, /wk-button/);
   assert.doesNotMatch(agents, /dialRow|providerModelPair|type = 'checkbox'|aria-pressed/);
@@ -129,6 +137,7 @@ test('New Team cast text is labelled and all cast selections belong to ask()', a
 test('New Team routes each selector region through ask() and leaves Templates browsing alone', async () => {
   const form = await source('new-team-form.js');
   assert.match(form, /const kindQuestions = ask\(/);
+  assert.match(form, /ruledRows\('kind', \['open', \.\.\.KINDS\]/);
   assert.match(form, /const whereQuestions = ask\(/);
   assert.match(form, /kitQuestions = ask\(/);
   assert.match(form, /after: 'provider'/);
@@ -137,6 +146,10 @@ test('New Team routes each selector region through ask() and leaves Templates br
   assert.match(form, /switch: \[t\('on', 'On'\), t\('off', 'Off'\)\]/);
   assert.match(form, /options: LAUNCH_MODES\(\)\.map/);
   assert.match(form, /many: true, options: shelfRows/);
+  assert.equal((form.match(/density: 'tight'/g) || []).length, 2, 'both defaults regions use launch density');
+  assert.match(form, /tierWord\(row\.tier\)/);
+  assert.match(form, /forms\.reason_not_listed/);
+  assert.doesNotMatch(form, /forms\.provider_off|forms\.provider_turned_off|machine\?\.state|modelWord\([^)]*\)\.split/);
   assert.match(form, /templateTray\(offered\(\)/);
   assert.doesNotMatch(form, /kindTiles|providerModelPair|mandateSelect|dialRowMulti|wayTiles|bookShelves|createWhereItWorks|fs-routine/);
 });

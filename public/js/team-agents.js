@@ -1,7 +1,8 @@
 /* part of the ronin-cowork client — see js/README.md */
 import { t } from './lexicon.js';
 import { ask } from './ask.js';
-import { createStep, el, mandateWord, modelWord, providerCatalog } from './form-steps.js';
+import { ruledRows } from './glyphs.js';
+import { createStep, el, mandateWord, providerCatalog, tierWord } from './form-steps.js';
 import { finalizeTeamName, sanitizeTeamName } from './new-team-draft.js';
 
 const REACH = ['open', 'discuss', 'plan', 'execute'];
@@ -54,28 +55,37 @@ export function createAgentRows({ n, key, rows, changed, onToggle, createAction,
 
     const providerRows = () => providerCatalog().rows
       .filter((item, at, all) => all.findIndex((other) => other.provider === item.provider) === at)
-      .map((item) => ({ v: item.provider, l: item.cli_label || item.provider_label || item.provider, off: item.operational ? undefined : item.off || t('forms.provider_off', 'not on this machine') }));
+      .map((item) => ({
+        v: item.provider, l: item.cli_label || item.provider_label || item.provider,
+        off: item.operational ? undefined : item.off ? t('forms.reason_turned_off', 'turned off') : t('forms.reason_not_on_machine', 'not on this machine'),
+      }));
     const modelRows = (provider) => providerCatalog().rows.filter((item) => item.provider === provider).map((item) => ({
-      v: item.model, l: item.model, word: modelWord(item).split(' · ').at(-1), sub: item.cost || '',
-      off: item.operational ? undefined : t('forms.provider_off', 'not on this machine'),
+      v: item.model, l: item.model, word: tierWord(item.tier), sub: item.cost || '',
+      off: !item.operational
+        ? (item.off ? t('forms.reason_turned_off', 'turned off') : t('forms.reason_not_on_machine', 'not on this machine'))
+        : item.model_list_current && item.listed === false
+          ? t('forms.reason_not_listed', 'not listed by your {cli} {client_version}', {
+            cli: item.cli_label || item.cli, client_version: item.model_list?.client_version || item.model_list_installed || '',
+          })
+          : undefined,
     }));
-    const ruled = (values, glyphs) => values.map((v, at) => ({ v, l: mandateWord(v), glyph: glyphs[at] }));
     const questions = ask([
       { group: t('new_agent.model_package', 'Model'), fields: [
         { key: 'provider', label: t('forms.provider', 'Model provider'), blank: t('forms.default', 'Default'), options: providerRows },
         { key: 'model', label: t('forms.model', 'Model'), blank: t('forms.default', 'Default'), after: 'provider', options: (value) => modelRows(value.provider) },
       ] },
       { group: t('mandate', 'Mandate'), fields: [
-        { key: 'reach', label: t('reach', 'Reach'), shape: 'square', options: ruled(REACH, ['○', '言', '図', '動']) },
-        { key: 'recruit', label: t('recruit', 'Recruit'), shape: 'square', options: ruled(RECRUIT, ['○', '一', '提', '人']) },
-        { key: 'output', label: t('output', 'Output'), shape: 'square', many: true, options: ruled(OUTPUT, ['○', '図', '灯', '符', '物', '人', '∅']) },
+        { key: 'reach', label: t('reach', 'Reach'), shape: 'square', options: ruledRows('reach', REACH, mandateWord) },
+        { key: 'recruit', label: t('recruit', 'Recruit'), shape: 'square', options: ruledRows('recruit', RECRUIT, mandateWord) },
+        { key: 'output', label: t('output', 'Output'), shape: 'square', many: true, options: ruledRows('output', OUTPUT, mandateWord) },
       ] },
       { group: t('squad', 'Team'), fields: [
-        { key: 'lead', label: t('team.lead', 'Team lead'), switch: [t('yes', 'Yes'), t('no', 'No')], word: '人' },
+        { key: 'lead', label: t('team.lead', 'Team lead'), switch: [t('yes', 'Yes'), t('no', 'No')] },
       ] },
     ], {
       value: row,
       className: 'ntf-agent-questions',
+      density: 'tight',
       onChange: (value) => {
         row.provider = value.provider; row.model = value.model;
         row.reach = value.reach; row.recruit = value.recruit; row.output = value.output; row.lead = value.lead;
