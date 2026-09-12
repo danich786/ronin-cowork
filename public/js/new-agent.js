@@ -8,6 +8,7 @@
 import { request } from './request.js';
 import { t } from './lexicon.js';
 import { ask } from './ask.js';
+import { ruledRows } from './glyphs.js';
 import { finalizeTeamName, isValidTeamName, sanitizeTeamName } from './new-team-draft.js';
 import {
   createStep, el, kindTiles, loadProviderCatalog, mandateWord, providerCatalog, readingRows, tagRow, templateTray, tierWord, wayTiles, bookShelves,
@@ -233,7 +234,6 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
           : undefined,
     };
   });
-  const mandateRows = (values, glyphs) => values.map((v, index) => ({ v, l: mandateWord(v), glyph: glyphs[index] }));
   const teamValue = () => draft.teamMode === 'new' ? '__new__' : draft.teamMode === 'none' ? '__none__' : `team:${draft.team}`;
   const teamRows = () => [
     { v: '__new__', l: t('new_agent.team_new', 'A new team'), sub: t('new_agent.team_new_sub', 'Created first, then this Agent is born into it.') },
@@ -257,9 +257,9 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
       { key: 'model', label: t('forms.model', 'Model'), blank: t('forms.default', 'Default'), after: 'provider', options: (value) => modelRows(value.provider) },
     ] },
     { group: t('mandate', 'Mandate'), fields: [
-      { key: 'reach', label: t('reach', 'Reach'), shape: 'square', options: mandateRows(REACH, ['○', '💬', '🗺', '⚙']) },
-      { key: 'recruit', label: t('recruit', 'Recruit'), shape: 'square', options: mandateRows(RECRUIT, ['·', '👤', '💡', '👥']) },
-      { key: 'output', label: t('output', 'Output'), shape: 'square', many: true, options: mandateRows(OUTPUT, ['·', '📝', '💭', '⌨', '📦', '👥', '🚫']) },
+      { key: 'reach', label: t('reach', 'Reach'), shape: 'square', options: ruledRows('reach', REACH, mandateWord) },
+      { key: 'recruit', label: t('recruit', 'Recruit'), shape: 'square', options: ruledRows('recruit', RECRUIT, mandateWord) },
+      { key: 'output', label: t('output', 'Output'), shape: 'square', many: true, options: ruledRows('output', OUTPUT, mandateWord) },
     ] },
     { group: t('squad', 'Team'), fields: [
       { key: 'team', label: t('squad', 'Team'), options: teamRows, row: (option) => option.v === '__new__' ? newTeamField() : null },
