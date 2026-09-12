@@ -537,7 +537,7 @@ host.append(form.el);   // form.value() · form.set(key, v) or set({…}) · for
 | `blank` | the empty answer's word, drawn as a stone; omit it and there is no blank |
 | `many` | any-of: the tray stays open; the reading says the names or "n chosen" |
 | `switch` | `[onWord, offWord]`: the field is a switch and opens nothing |
-| `shape` | `square` for a ruled word with a glyph, `rect` (default) for a name |
+| `shape` | `square` for a ruled word with a glyph, `rect` (default) for a name; the glyph comes from `glyphs.js` (`ruledRows(axis, values, word)`), never an inline list, so one word wears one face product-wide |
 | `density` | on the call: `'tight'` for the launch forms (less line spacing inside a group, a 40 px stone; the questions are optional and stay out of the owner's face), `'loose'` (default) for the commons where the question is the page's subject; widths never change |
 | `show(keys)` | on the returned form: draw only these fields (a session type decides which questions exist — a Terminal asks only where it is born); `show(null)` draws all; hidden answers are kept, not cleared |
 | `after` | the field this depends on; the answer clears and the options are re-asked when it changes |
