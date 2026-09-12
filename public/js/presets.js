@@ -3,7 +3,8 @@ import { request } from './request.js';
 import { t } from './lexicon.js';
 import { WorkspaceKit } from './workspace-kit.js';
 import { createStoneWorkSurface } from './stone-work-surface.js';
-import { loadProviderCatalog, providerModelPair } from './form-steps.js';
+import { loadProviderCatalog, providerCatalog, modelAvailabilityFact } from './form-steps.js';
+import { ask } from './ask.js';
 
 export { createStoneWorkSurface };
 
@@ -240,21 +241,20 @@ export function rootChoices(runtime = {}, environment = null) {
 }
 
 function renderRootControls(host, state, roots, label = 'Which project', environment = null, manage = false, live = null) {
-  const select = el('select');
+  let question = null;
   // Filled again in place when the catalog changes: the person's choice and the rest of
   // the open detail stay as they were.
   const fill = (choices) => {
-    const wanted = select.value || state.root;
-    select.replaceChildren();
-    for (const root of choices) select.append(option(root.name || root.id, root.label || root.name || root.id));
-    if (!select.options.length) select.append(option(state.root || 'ronin_project_1', state.root || 'Ronin Project 1'));
-    select.value = choices.some((root) => (root.name || root.id) === wanted) ? wanted : select.options[0]?.value;
-    state.root = select.value;
+    const rows = choices.map((root) => ({ v: root.name || root.id, l: root.label || root.name || root.id }));
+    if (!rows.length) rows.push({ v: state.root || 'ronin_project_1', l: state.root || 'Ronin Project 1' });
+    const wanted = rows.some((root) => root.v === state.root) ? state.root : rows[0].v;
+    state.root = wanted;
+    if (question) { question.options('root', rows); question.set('root', wanted); }
+    else question = ask([{ group: '', fields: [{ key: 'root', label, options: rows }] }], { value: { root: wanted }, onChange: (value) => { state.root = value.root; } });
   };
   fill(roots);
-  select.addEventListener('change', () => { state.root = select.value; });
   live?.add(fill);
-  const content = el('div', 'sp-root-choice'); content.append(select);
+  const content = el('div', 'sp-root-choice'); content.append(question.el);
   if (manage) content.append(workspaceFoldersAction(environment));
   host.append(field(label, content, 'select'));
 }
@@ -377,12 +377,12 @@ function renderRows(host, state, key, addLabel) {
       const line = el('div', 'sp-row');
       const name = input(row.name); name.setAttribute('aria-label', `${addLabel} ${index + 1}`);
       name.addEventListener('input', () => { row.name = slug(name.value); });
-      const pair = providerModelPair(
-        () => ({ provider: row.provider || '', model: row.model || '' }),
-        (provider, model) => { row.provider = provider; row.model = model; },
-        (label, control) => { control.setAttribute('aria-label', `${label} ${index + 1}`); return control; },
-        { blank: { provider: t('campaign_view.provider_default', 'Default provider'), model: t('campaign_view.model_default', 'Default model') } },
-      );
+      const catalog = providerCatalog().rows;
+      const providers = catalog.filter((item, at) => catalog.findIndex((other) => other.provider === item.provider) === at);
+      const pair = ask([{ group: t('new_agent.model_package', 'Model'), fields: [
+        { key: 'provider', label: t('forms.provider', 'Model provider'), blank: t('campaign_view.provider_default', 'Default provider'), options: providers.map((item) => ({ v: item.provider, l: item.provider_label, off: item.operational ? '' : (item.off || 'Not on this machine') })) },
+        { key: 'model', label: t('forms.model', 'Model'), blank: t('campaign_view.model_default', 'Default model'), after: 'provider', options: (value) => catalog.filter((item) => item.provider === value.provider).map((item) => ({ v: item.model, l: item.model, word: item.tier, sub: modelAvailabilityFact(item), off: item.operational ? '' : 'Not on this machine' })) },
+      ] }], { value: { provider: row.provider || '', model: row.model || '' }, onChange: (value) => { row.provider = value.provider; row.model = value.model; } });
       const remove = el('button', 'sp-remove', '✕'); remove.type = 'button'; remove.title = `Remove ${addLabel}`;
       remove.addEventListener('click', () => { state[key].splice(index, 1); paint(); });
       const lead = el('span', 'sp-lead', row.team_lead ? 'Team Lead' : '');
@@ -397,18 +397,8 @@ function renderRows(host, state, key, addLabel) {
 }
 
 function renderTileChoices(host, state) {
-  const choices = el('div', 'sp-tile-options');
-  const paint = () => {
-    for (const button of choices.querySelectorAll?.('[data-tiles]') || []) button.setAttribute('aria-pressed', String(Number(button.dataset.tiles) === state.tiles));
-  };
-  for (const count of [2, 4]) {
-    const button = el('button', 'sp-tile-choice'); button.type = 'button'; button.dataset.tiles = String(count);
-    const icon = el('span', 'sp-tile-icon');
-    for (let index = 0; index < count; index += 1) icon.append(el('i'));
-    button.append(icon, el('span', '', count === 1 ? 'one tile' : count === 2 ? 'side by side' : 'two by two'));
-    button.addEventListener('click', () => { state.tiles = count; paint(); }); choices.append(button);
-  }
-  paint(); host.append(choices);
+  const choices = ask([{ group: '', fields: [{ key: 'tiles', label: 'Tile view', options: [{ v: 2, l: 'Side by side' }, { v: 4, l: 'Two by two' }] }] }], { value: { tiles: state.tiles }, onChange: (value) => { state.tiles = Number(value.tiles); } });
+  host.append(choices.el);
 }
 
 function renderAskRows(host, state, key, addLabel) {
@@ -450,31 +440,27 @@ function renderMorningBriefTiming(host, state) {
   const timing = el('details', 'sp-timing');
   const summary = el('summary', 'sp-timing-summary');
   const editor = el('div', 'sp-timing-editor');
-  const cadenceSelect = el('select');
-  cadenceSelect.append(option('daily', 'Every day'), option('weekly', 'Day of the week'), option('once', 'One time'));
-  cadenceSelect.value = cadence;
-  const weekday = el('select');
-  for (const [value, label] of [['mon', 'Monday'], ['tue', 'Tuesday'], ['wed', 'Wednesday'], ['thu', 'Thursday'], ['fri', 'Friday'], ['sat', 'Saturday'], ['sun', 'Sunday']]) weekday.append(option(value, label));
-  weekday.value = weekly?.[1] || 'mon';
+  let timingValue = { cadence, weekday: weekly?.[1] || 'mon' };
+  const timingAsk = ask([{ group: '', fields: [
+    { key: 'cadence', label: 'Repeats', options: [{ v: 'daily', l: 'Every day' }, { v: 'weekly', l: 'Day of the week' }, { v: 'once', l: 'One time' }] },
+    { key: 'weekday', label: 'Day', after: 'cadence', options: () => timingValue.cadence === 'weekly' ? [['mon', 'Monday'], ['tue', 'Tuesday'], ['wed', 'Wednesday'], ['thu', 'Thursday'], ['fri', 'Friday'], ['sat', 'Saturday'], ['sun', 'Sunday']].map(([v, l]) => ({ v, l })) : [] },
+  ] }], { value: timingValue, onChange: (value) => { timingValue = value; paint(); } });
   const date = input(once?.[1] || nextDay, 'date');
   const time = input(daily?.[1] || weekly?.[2] || once?.[2] || '08:00', 'time');
-  const weekdayField = el('label', 'sp-timing-field'); weekdayField.append(el('span', '', 'Day'), weekday);
   const dateField = el('label', 'sp-timing-field'); dateField.append(el('span', '', 'Date'), date);
-  const cadenceField = el('label', 'sp-timing-field'); cadenceField.append(el('span', '', 'Repeats'), cadenceSelect);
   const timeField = el('label', 'sp-timing-field'); timeField.append(el('span', '', 'Time'), time);
   const paint = () => {
-    cadence = cadenceSelect.value;
-    weekdayField.hidden = cadence !== 'weekly';
+    cadence = timingValue.cadence;
     dateField.hidden = cadence !== 'once';
     state.schedule = cadence === 'once'
       ? `once ${date.value} ${time.value}`
-      : cadence === 'weekly' ? `weekly ${weekday.value} ${time.value}` : `daily ${time.value}`;
+      : cadence === 'weekly' ? `weekly ${timingValue.weekday} ${time.value}` : `daily ${time.value}`;
     summary.textContent = cadence === 'once'
       ? `Once · ${date.value} at ${time.value}`
-      : cadence === 'weekly' ? `Every ${weekday.options[weekday.selectedIndex].text} at ${time.value}` : `Every day at ${time.value}`;
+      : cadence === 'weekly' ? `Every ${timingValue.weekday} at ${time.value}` : `Every day at ${time.value}`;
   };
-  cadenceSelect.addEventListener('change', paint); weekday.addEventListener('change', paint); date.addEventListener('input', paint); time.addEventListener('input', paint);
-  editor.append(cadenceField, weekdayField, dateField, timeField); timing.append(summary, editor); paint();
+  date.addEventListener('input', paint); time.addEventListener('input', paint);
+  editor.append(timingAsk.el, dateField, timeField); timing.append(summary, editor); paint();
   host.append(field('When', timing, 'select'));
 }
 
@@ -496,19 +482,11 @@ function renderSpecialControls(host, handle, state, runtime, environment, live =
   if (handle === 'develop_new_project') { const body = el('div'); renderRows(body, state, 'features', 'Feature Agent'); host.append(section('Split the work · each feature agent gets its own worktree', '', ...body.children)); }
   if (handle === 'health_and_fitness') { const body = el('div'); renderAskRows(body, state, 'roles', 'role'); host.append(section("Each agent's kick-off message", 'edit', ...body.children)); }
   if (handle === 'personal_assistant') {
-    const modes = el('div', 'sp-mode-options');
+    const modes = ask([{ group: '', fields: [{ key: 'assistant_mode', label: 'How it runs', options: [{ v: 'single', l: 'Single assistant' }, { v: 'recruit', l: 'Chief of Staff' }] }] }], { value: { assistant_mode: state.assistant_mode }, onChange: (value) => { state.assistant_mode = value.assistant_mode; recruit.hidden = state.assistant_mode !== 'recruit'; } });
     const specialists = input(state.specialists); specialists.placeholder = 'financial adviser, research, scheduling…'; specialists.addEventListener('input', () => { state.specialists = specialists.value; });
     const recruit = field('Recruit', specialists);
-    const paintMode = () => {
-      for (const button of modes.children) button.setAttribute('aria-pressed', String(button.dataset.mode === state.assistant_mode));
-      recruit.hidden = state.assistant_mode !== 'recruit';
-    };
-    for (const [mode, label] of [['single', 'Single assistant'], ['recruit', 'Chief of Staff']]) {
-      const button = el('button', 'sp-mode-choice', label); button.type = 'button'; button.dataset.mode = mode;
-      button.addEventListener('click', () => { state.assistant_mode = mode; paintMode(); }); modes.append(button);
-    }
-    paintMode();
-    host.append(field('How it runs', modes, 'select'), recruit);
+    recruit.hidden = state.assistant_mode !== 'recruit';
+    host.append(modes.el, recruit);
   }
   if (handle === 'morning_brief') {
     renderMorningBriefTiming(host, state);

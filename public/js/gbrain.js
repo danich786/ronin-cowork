@@ -2,6 +2,7 @@
 import { request } from './request.js';
 import { t } from './lexicon.js';
 import { gbrainAssistantPrompt, gbrainSetupModel } from './gbrain-setup-state.js';
+import { ask } from './ask.js';
 
 // A function, not a table: the lexicon loads after this module is evaluated.
 function words() {
@@ -219,29 +220,19 @@ export function buildGbrain(root, isShowing, askPersonalAssistant, options = {})
     //    only where a team or a launch turns it on.
     if (model.installed && options.agentsDefault) {
       const agents = row(t('gbrain.setup_q_agents', 'Available to Agents'));
-      const group = make('div', 'setup-gbrain-choice');
-      group.setAttribute('role', 'group');
-      group.setAttribute('aria-label', t('gbrain.setup_q_agents', 'Available to Agents'));
-      const choices = [[true, t('gbrain.setup_agents_all', 'Default for all Agents')], [false, t('gbrain.setup_agents_selected', 'Only selected Agents')]];
-      const paintChoice = () => { for (const el of group.children) el.setAttribute('aria-pressed', String(agentsDefault !== null && (el.dataset.on === 'true') === agentsDefault)); };
-      for (const [on, label] of choices) {
-        const el = make('button', 'setup-gbrain-option', label);
-        el.type = 'button';
-        el.dataset.on = String(on);
-        el.addEventListener('click', async () => {
-          for (const each of group.children) each.disabled = true;
-          const saved = await options.agentsDefault.write(on);
-          agentsDefault = saved?.ok ? on : agentsDefault;
-          for (const each of group.children) each.disabled = false;
-          paintChoice();
-          note.textContent = saved?.ok ? '' : (saved?.message || t('gbrain.setup_agents_save_failed', 'Could not save.'));
-        });
-        group.append(el);
-      }
       const note = make('p', 'setup-gbrain-hint', t('gbrain.setup_agents_hint', 'Selected Agents get it in Team Configuration or on the New Agent form.'));
-      agents.append(group, note);
-      paintChoice();
-      if (agentsDefault === null) void Promise.resolve(options.agentsDefault.read()).then((value) => { agentsDefault = value; paintChoice(); });
+      const question = ask([{ group: '', fields: [{
+        key: 'available', label: t('gbrain.setup_q_agents', 'Available to Agents'),
+        switch: [t('gbrain.setup_agents_all', 'Default for all Agents'), t('gbrain.setup_agents_selected', 'Only selected Agents')],
+      }] }], { value: { available: Boolean(agentsDefault) }, onChange: async (next) => {
+        const before = agentsDefault;
+        const saved = await options.agentsDefault.write(next.available);
+        agentsDefault = saved?.ok ? next.available : before;
+        if (!saved?.ok) question.set('available', Boolean(before));
+        note.textContent = saved?.ok ? '' : (saved?.message || t('gbrain.setup_agents_save_failed', 'Could not save.'));
+      } });
+      agents.append(question.el, note);
+      if (agentsDefault === null) void Promise.resolve(options.agentsDefault.read()).then((value) => { agentsDefault = value; question.set('available', Boolean(value)); });
     }
 
     // 3. Which accounts are linked? Yes or no, per account, from gbrain's own list.
