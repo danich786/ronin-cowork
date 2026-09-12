@@ -105,7 +105,6 @@ function createRegisterSurface(context) {
     ['multiple_providers', 'Multiple providers without lock-in', t('setup_surface.feature_multiple_providers', 'You keep your own accounts and your direct relationship with each model provider. Ronin never stands in between, everything runs on your machine, and how your agents work together is yours.')],
     ['team_coordination', 'Agents with team coordination skills', t('setup_surface.feature_team_coordination', 'Coordination is light reading an agent does to build its brief. Each launch brief carries a few simple tools so agents can message and coordinate with one another.')],
   ], { explain: true });
-  preferredFeature.wrap.querySelector('.setup-register-choice-grid').dataset.layout = 'rows';
   const reasons = checklistGroup('reasons', t('setup_surface.reasons', 'Which of these describes you best in terms of getting value from Ronin?'), [
     ['different_strengths', 'Different models have different strengths. I want to use the best one for each job.'],
     ['network_resilience', 'Sometimes one model provider is having network issues, so I want another available.'],

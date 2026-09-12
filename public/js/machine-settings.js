@@ -4,7 +4,8 @@ import { button, field, status } from './ui.js';
 import { pm, getPath, currentOf, optionsOf, pickerProvider, toRequest } from './machine-settings-schema.js';
 import { servicesCard } from './services-card.js';
 import { t } from './lexicon.js';
-import { loadProviderCatalog, providerModelPair } from './form-steps.js';
+import { loadProviderCatalog, providerCatalog, modelAvailabilityFact } from './form-steps.js';
+import { ask } from './ask.js';
 
 /* ---------- ⚙ CONFIGURATION — what this install IS, in one room ----------
  *
@@ -128,11 +129,22 @@ export function buildMachineSettings(root, isShowing) {
     const picked = fixed
       ? { provider: fixed, model: String(stored ?? '') }
       : { provider: String(stored?.provider || ''), model: String(stored?.model || '') };
-    let say = () => {};
-    const pair = providerModelPair(
-      () => picked,
-      async (provider, model) => {
-        picked.provider = provider; picked.model = model;
+    const row = document.createElement('div'); row.className = 'st-row';
+    const note = document.createElement('p'); note.className = 'st-note'; note.setAttribute('role', 'status');
+    if (f.aside) note.textContent = f.aside;
+    const catalog = providerCatalog().rows;
+    const providers = catalog.filter((item, index) => catalog.findIndex((other) => other.provider === item.provider) === index);
+    const fields = fixed ? [
+      { key: 'model', label: f.short ?? f.label, blank: t('settei.none_set', '— none set —'), options: catalog.filter((item) => item.provider === fixed).map((item) => ({ v: item.model, l: item.model, word: item.tier, sub: modelAvailabilityFact(item), off: item.operational ? '' : 'Not on this machine' })) },
+    ] : [
+      { key: 'provider', label: t('forms.provider', 'Model provider'), blank: t('settei.none_set', '— none set —'), options: providers.map((item) => ({ v: item.provider, l: item.provider_label, off: item.operational ? '' : (item.off || 'Not on this machine') })) },
+      { key: 'model', label: t('forms.model', 'Model'), blank: t('settei.none_set', '— none set —'), after: 'provider', options: (value) => catalog.filter((item) => item.provider === value.provider).map((item) => ({ v: item.model, l: item.model, word: item.tier, sub: modelAvailabilityFact(item), off: item.operational ? '' : 'Not on this machine' })) },
+    ];
+    const pair = ask([{ group: fixed ? '' : t('new_agent.model_package', 'Model'), fields }], {
+      value: picked,
+      onChange: async (value) => {
+        picked = { provider: fixed || value.provider || '', model: value.model || '' };
+        const { provider, model } = picked;
         if (!fixed && provider && !model) return say(t('settei.pick_model', 'choose a model to save'));
         say(t('settei.saving', 'saving…'));
         const req = toRequest(rec.schema, f, fixed ? model : (model ? pm(picked) : ''));
@@ -141,17 +153,9 @@ export function buildMachineSettings(root, isShowing) {
         say(t('settei.saved', 'saved'));
         await load({ quiet: true });
       },
-      (label, control) => { control.setAttribute('aria-label', label); return control; },
-      { fixed, classes: 'st-inp', blank: { provider: t('settei.none_set', '— none set —'), model: t('settei.none_set', '— none set —') } },
-    );
-    const row = document.createElement('div');
-    row.className = 'st-row';
-    const shown = field(pair.el, { label: f.short ?? f.label, sr: false });
-    shown.el.classList.add('st-field');
-    say = shown.say;
-    const notes = [f.aside].filter(Boolean);
-    if (notes.length) shown.say(notes.join(' · '));
-    row.appendChild(shown.el);
+    });
+    const say = (message, bad = false) => { note.textContent = message; note.classList.toggle('bad', bad); };
+    row.append(pair.el, note);
     return row;
   };
 
@@ -161,18 +165,26 @@ export function buildMachineSettings(root, isShowing) {
     if (picker) return pickerRow(f, picker);
     const cur = currentOf(f, { record: rec });
     const ctx = { record: rec, deskProfiles };
-    let control;
     if (f.kind === 'select') {
-      control = document.createElement('select');
-      control.className = 'st-inp';
-      control.add(new Option(t('settei.none_set', '— none set —'), ''));
-      for (const o of optionsOf(f, ctx)) control.add(new Option(o.label, o.value));
-      control.value = cur;
-    } else if (f.kind === 'number') {
-      control = input(cur, { type: 'number', cls: 'st-num', min: f.min });
-    } else {
-      control = input(cur, { max: 120, placeholder: f.fallback ? String(getPath(rec, f.fallback) ?? '') : f.placeholder });
+      const row = document.createElement('div'); row.className = 'st-row';
+      const notes = document.createElement('p'); notes.className = 'st-note'; notes.setAttribute('role', 'status');
+      const baseNote = [f.note ? String(getPath(rec, f.note) ?? '') : '', cur === '' && f.fallback ? t('settei.unset_using', 'unset — using {value}', { value: getPath(rec, f.fallback) ?? '' }) : '', f.aside || ''].filter(Boolean).join(' · ');
+      notes.textContent = baseNote;
+      const question = ask([{ group: '', fields: [{ key: f.id, label: f.short ?? f.label, blank: t('settei.none_set', '— none set —'), options: optionsOf(f, ctx).map((o) => ({ v: o.value, l: o.label })) }] }], {
+        value: { [f.id]: cur },
+        onChange: async (value) => {
+          notes.textContent = t('settei.saving', 'saving…');
+          const req = toRequest(rec.schema, f, value[f.id]);
+          const result = await request(req.route, { method: req.method, json: req.json });
+          if (!result.ok) { notes.textContent = result.message; notes.classList.add('bad'); return; }
+          notes.classList.remove('bad'); notes.textContent = t('settei.saved', 'saved'); await load({ quiet: true });
+        },
+      });
+      row.append(question.el, notes); return row;
     }
+    const control = f.kind === 'number'
+      ? input(cur, { type: 'number', cls: 'st-num', min: f.min })
+      : input(cur, { max: 120, placeholder: f.fallback ? String(getPath(rec, f.fallback) ?? '') : f.placeholder });
     const notes = [];
     if (f.note) notes.push(String(getPath(rec, f.note) ?? ''));
     // A fallback in force is visible — a default is never passed off as an answer.
