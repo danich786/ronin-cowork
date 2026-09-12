@@ -1753,7 +1753,7 @@ The catalog entry goes. {dir} is not touched.
 - **team_config.kind_school:** School
 - **team_config.objective:** Purpose
 - **where.born_in:** Born in
-- **where.additional:** Additional workspaces
+- **where.workspaces:** Workspaces
 - **where.worktrees_on:** Worktrees are on (see Routines): a ticked repository opens a desk for each new Agent at birth; branches are Ronin's.
 - **where.worktrees_off:** Worktrees are off (see Routines): a ticked repository is where this Team works, on the branch you name, or as checked out.
 - **where.col_repo:** Repository

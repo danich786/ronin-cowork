@@ -37,13 +37,15 @@ test('both workbench entrances use the canonical New Agent form with contextual 
   assert.match(cowork, /connect: \(name\) => connectSession\(name, id\)/);
 });
 
-test('Where it works asks birthplace then additional workspace names from root profiles', async () => {
+test('Where it works asks birthplace then a workspace set which includes the birthplace', async () => {
   const form = await source('new-agent.js');
   assert.match(form, /request\('\/api\/project-roots\/detail'\)/);
   assert.match(form, /rootRows\.data\?\.roots/);
   assert.match(form, /repo_profile\?\.worktrees === 'enabled'/);
   assert.match(form, /label: t\('where\.born_in', 'Born in'\), options: rootRows/);
-  assert.match(form, /label: t\('where\.additional', 'Additional workspaces'\), many: true, after: 'root'/);
+  assert.match(form, /label: t\('where\.workspaces', 'Workspaces'\), many: true, after: 'root', options: rootRows/);
+  assert.match(form, /draft\.repos = draft\.root \? \[draft\.root\] : \[\]/);
+  assert.doesNotMatch(form, /filter\(\(row\) => row\.v !== value\.root\)/);
 });
 
 test('the old New Agent selector implementation and CSS are deleted', async () => {
