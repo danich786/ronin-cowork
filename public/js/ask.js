@@ -107,9 +107,8 @@ export function ask(groups = [], { value = {}, onChange = null, className = '' }
       return b;
     }
     if (cur === '' || cur == null) { b.className += ' ask-blank'; b.textContent = field.blank ?? t('ask.none', 'None'); return b; }
-    const row = rowFor(field, cur);
-    b.textContent = row?.l ?? cur;
-    if (row?.word) b.append(el('i', 'ask-fact', row.word));
+    // The reading is the answer and nothing else; a row's short word lives on its rectangle.
+    b.textContent = rowFor(field, cur)?.l ?? cur;
     return b;
   };
 
