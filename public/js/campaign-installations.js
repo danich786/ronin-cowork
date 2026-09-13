@@ -1,6 +1,6 @@
 /* part of the ronin-cowork client — see js/README.md */
 /**
- * INSTALLATIONS — installs and switches on one page (owner, 2026-09-03).
+ * ROUTINES — installs and switches on one page (owner, 2026-09-03).
  *
  * The catalog supplies the rows; campaign_config owns the on/off answer. Ronin Services
  * is both an install and a Installation, so its row carries the install as well: what is on
@@ -11,10 +11,10 @@
  * slow check while a confirmation is outstanding.
  */
 import { t } from './lexicon.js';
+import { S } from './state.js';
 import { request } from './request.js';
 import { saveCampaign } from './campaigns.js';
 import { WorkspaceKit } from './workspace-kit.js';
-import { ask } from './ask.js';
 
 const el = (tag, cls, text) => {
   const out = document.createElement(tag);
@@ -52,6 +52,7 @@ export function createInstallationsSurface(campaign) {
   let activation = null;  // /api/services/activation — stage, masked email
   let timer = null;
 
+  const available = (installation) => (installation.mcp || []).every((name) => !Array.isArray(S.services) || S.services.includes(name));
   const save = async (name, on, notice) => {
     const row = campaign();
     if (!row) return;
@@ -141,22 +142,25 @@ export function createInstallationsSurface(campaign) {
     const notice = createNotice();
     body.append(el('p', 'cv-note', t('campaign_view.installations_help', 'What is installed and switched on for this system. Feature providers make their features available; nothing already running changes.')));
     for (const installation of catalog) {
-      const requirementsMet = (installation.requires || []).every((name) =>
-        values[name] === true && (name !== 'ronin_services' || (installed?.services?.parts || []).length > 0));
-      const required = requirementsMet ? '' : t('campaign_view.services_required', 'Ronin Services required');
-      const question = ask([{ group: t('campaign_view.installations', 'Installations'), fields: [{
-        key: installation.name,
-        label: installation.label || installation.name,
-        options: [
-          { v: 'off', l: t('campaign_view.off', 'Off'), sub: installation.blurb || '', off: required },
-          { v: 'on', l: t('campaign_view.on', 'On'), sub: installation.blurb || '', off: required },
-        ],
-      }] }], {
-        value: { [installation.name]: values[installation.name] ? 'on' : 'off' },
-        onChange: (answer) => void save(installation.name, answer[installation.name] === 'on', notice),
-      });
-      body.append(question.el);
-      if (installation.name === 'ronin_services') body.append(installBlock(notice));
+      const line = el('div', 'cv-choice');
+      const words = el('div', 'cv-choice-pick');
+      words.append(el('span', 'cv-choice-name', installation.label || installation.name), el('p', 'cv-choice-why', installation.blurb || t('campaign_view.routine_no_description', 'No description supplied.')));
+      if (installation.name === 'ronin_services') words.append(installBlock(notice));
+      const controls = el('div', 'cv-installation-control');
+      // The pill is the INSTALL fact. For Services: installed (its parts are here) or not; activation is said in the row, not here.
+      const requirementsMet = (installation.requires || []).every((name) => values[name] === true);
+      const ok = installation.name === 'ronin_services' ? (installed?.services?.parts || []).length > 0 : available(installation) && requirementsMet;
+      const word = installation.name === 'ronin_services'
+        ? (ok ? (installed?.services?.activated ? t('campaign_view.svc_pill_activated', 'Installed · activated') : t('campaign_view.svc_pill_installed', 'Installed')) : t('campaign_view.svc_pill_absent', 'Not installed'))
+        : (ok ? t('campaign_view.available', 'Available') : t('campaign_view.unavailable', 'Unavailable'));
+      controls.append(el('span', ok ? 'cv-state cv-state-ok' : 'cv-state', word));
+      const toggle = el('label', 'cv-switch');
+      const box = el('input'); box.type = 'checkbox'; box.checked = values[installation.name];
+      box.disabled = !requirementsMet;
+      if (!requirementsMet) words.append(el('p', 'cv-choice-why', `${(installation.requires || []).map((name) => catalog.find((row) => row.name === name)?.label || name).join(', ')} required`));
+      const state = el('span', null, box.checked ? t('campaign_view.on', 'On') : t('campaign_view.off', 'Off'));
+      box.addEventListener('change', () => { state.textContent = box.checked ? t('campaign_view.on', 'On') : t('campaign_view.off', 'Off'); void save(installation.name, box.checked, notice); });
+      toggle.append(box, state); controls.append(toggle); line.append(words, controls); body.append(line);
     }
     body.append(notice.el);
     // While a confirmation is outstanding, look again slowly; otherwise the page is still.
