@@ -7,7 +7,7 @@ import { applyTheme } from './theme.js';
 import { restoreSkin } from './skins.js';
 import { activeProfile, loadDeskProfile } from './desk-profile.js';
 import { connectEvents } from './events.js';
-import { loadMacros, loadPresets, loadProjects, loadSavedLaunches, refreshHome } from './home.js';
+import { loadMacros, loadProjects, loadSavedLaunches, refreshHome } from './home.js';
 import { build } from './layout.js';
 import { S, tiles } from './state.js';
 import { installTips } from './tips.js';
@@ -124,7 +124,6 @@ export async function init() {
   guard('session event stream', connectEvents); // births & deaths push over this
   guard('load macros', loadMacros); // macro forms for the home panels
   guard('load projects', loadProjects); // PROJECT_ROOTS.md — WHERE a spawn happens
-  guard('load presets', loadPresets); // role_families/ + session_roles/ — who a session is, and what it is doing
   guard('load saved launches', loadSavedLaunches); // SAVED_LAUNCHES.md — user scope, often empty
   guard('refresh home panels', refreshHome);
   // Mark the first tile active but don't grab the keyboard on load (avoids the

@@ -138,19 +138,8 @@ It exempts the **spawn**, never the **census**: she counts the moment she exists
 NEXT session is the one refused. **Nothing is evicted to make room** and no session is ever
 chosen to die.
 
-The implementation is one field in the catalog and one condition in code:
-
-```markdown
-- **cap:** exempt          # ronin_catalogs/session_roles/MikaAssist.md
-```
-
-```ts
-if (opts.agent !== false && !opts.exempt) await assertUnderMax();   // src/tmux.ts
-```
-
-It lives in the catalog rather than in code for the reason every other launch constant
-does: **nothing in `src/` may name a session_role**, or the catalog stops being the answer
-to what a session is.
+The house-seat profile in `src/house-seats.ts` states her exemption; `src/tmux.ts` applies
+it when enforcing the session maximum.
 
 ## What she is made of
 
@@ -158,7 +147,7 @@ Six things, and five of them are data:
 
 | | |
 |---|---|
-| `ronin_catalogs/session_roles/MikaAssist.md` | her definition — icon ミ, her posture, her opening, `cap: exempt`, `dir: {mika_home}` |
+| `src/house-seats.ts` | her explicit house-seat posture, opening, exemption, and home |
 | `src/mika-runtime.ts` · `src/mika-knowledge.ts` | which model (the rule above) · the source index compiled into her README |
 | `ronin_bin/lookup` · `owner_view` · `show` | her three commands, over the operator socket (`src/mika-context.ts`) |
 | `ronin_session_boot/house/mika/START_HERE.md` · `MIKA_RULES.md` · `MIKA_TIPS.md` | the Setup walkthrough, her rules, and the owner's tips — three sections of her README |

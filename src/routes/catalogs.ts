@@ -36,16 +36,11 @@ import {
   savedLaunchFields,
 } from '../resources.js';
 import {
-  findDefinition,
   listAgentTemplates,
-  listRoleFamilies,
   listRoutines, listInstallations, listFeatures,
-  listSessionRoles,
   listTeamTemplates,
-  writeRoleTasks,
 } from '../resource-adapters.js';
 import { removeUserTemplate, saveAgentTemplate, saveTeamTemplate } from '../templates.js';
-import { resolveLaunchProfile } from '../launch-profile.js';
 import { browseFolders, createFolder, withRegisteredRoots } from '../folder-browser.js';
 
 const errMsg = (e: unknown) => String((e as Error)?.message ?? e).replaceAll(homedir(), '~');
@@ -300,22 +295,6 @@ export function registerCatalogs(app: express.Express): void {
     }
   });
 
-  app.get('/api/role-families', async (_req, res) => {
-    try {
-      res.json(await listRoleFamilies());
-    } catch (e) {
-      res.status(500).json({ error: errMsg(e) });
-    }
-  });
-
-  app.get('/api/session-roles', async (_req, res) => {
-    try {
-      res.json(await listSessionRoles());
-    } catch (e) {
-      res.status(500).json({ error: errMsg(e) });
-    }
-  });
-
   app.get('/api/routines', async (_req, res) => {
     try {
       res.json(await listRoutines());
@@ -403,32 +382,6 @@ export function registerCatalogs(app: express.Express): void {
       res.json(lex);
     } catch (e) {
       res.status(500).json({ error: errMsg(e) });
-    }
-  });
-
-  app.put('/api/role-families/:name/session_roles', async (req, res) => {
-    const list = req.body?.session_roles;
-    if (!Array.isArray(list)) return res.status(400).json({ error: 'Send { session_roles: [...] }.' });
-    try {
-      res.json({ ok: true, session_roles: await writeRoleTasks(req.params.name, list as string[]) });
-    } catch (e) {
-      res.status(400).json({ error: errMsg(e) });
-    }
-  });
-
-  app.get('/api/launch-profile', async (req, res) => {
-    if (req.query?.role_family !== undefined) {
-      return res.status(400).json({
-        error: 'role_family is retired — a launch profile is resolved from the session_role alone.',
-      });
-    }
-    const task = String(req.query?.session_role ?? '').trim();
-    try {
-      const taskDef = await findDefinition('session_roles', task);
-      if (task && !taskDef) return res.status(404).json({ error: `Unknown session_role "${task}".` });
-      res.json(resolveLaunchProfile(taskDef));
-    } catch (e) {
-      res.status(400).json({ error: errMsg(e) });
     }
   });
 

@@ -57,46 +57,6 @@ export async function loadProjects() {
   for (const listener of projectListeners) { try { listener(projectData); } catch (error) { console.error(error); } }
 }
 
-export let familyData = null; // /api/role-families — the shelves
-export let roleData = null; // /api/session-roles — the buttons
-
-export async function loadPresets() {
-  const paint = () => tiles.forEach((tile) => tile.renderHome?.());
-  await Promise.allSettled([
-    request('/api/role-families').then((r) => { if (r.ok && Array.isArray(r.data)) familyData = r.data; paint(); }),
-    request('/api/session-roles').then((r) => { if (r.ok && Array.isArray(r.data)) roleData = r.data; paint(); }),
-  ]);
-}
-
-/**
- * The mark a session wears wherever sessions are listed — the ⌂ Roster, the tile header's
- * picker, the ⚡ macro targets. This is what replaced the hand-set 人: it says what the
- * session is DOING rather than who outranks whom.
- *
- * **IT IS THE TASK, NEVER THE ROLE.** The two axes are drawn differently on purpose: the
- * task changes as the work moves, so it is the live mark; the role is stable context and
- * belongs in the session's details, where it does not compete with a mark that moves. A
- * session with a role and no task shows no mark, and that is correct — it has not said
- * what it is doing.
- *
- * **It comes off the LETTER, and it is on every session list.** `session_role` is a field
- * of the session's own TEGAMI, filled mechanically at birth with the button the owner
- * pressed and changed by the session itself with `write_tegami` — "a session that
- * finishes planning and starts building has changed task, not become a new session". The
- * server reads it back onto every list it serves (`src/tegami.ts`, `withAxes`), so the
- * roster, the tile header and the ⚡ targets cannot disagree, and no second copy exists
- * anywhere to drift from the file.
- *
- * The axis half of the letter is COWORK's — a session has a task whether or not it ever
- * puts a ladder up — so this works on a build with no michi, where `s.tegami` and the
- * SHINGO chip are absent entirely.
- *
- * '' whenever nobody has said, and callers draw nothing rather than guessing.
- */
-export const taskIcon = (s) =>
-  (s?.session_role && (roleData || []).find((k) => k.name === s.session_role)?.icon) || '';
-
-
 export async function loadMacros() {
   const r = await request('/api/macros');
   if (r.ok && Array.isArray(r.data)) macroData = r.data;

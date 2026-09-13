@@ -10,12 +10,6 @@ let loaded = false;
 let revision = 0;
 const listeners = new Set();
 
-const blankLast = (key) => (a, b) => {
-  const av = String(a[key] || '').trim();
-  const bv = String(b[key] || '').trim();
-  if (!!av !== !!bv) return av ? -1 : 1;
-  return (av || a.name).localeCompare(bv || b.name) || a.name.localeCompare(b.name);
-};
 const sessions = () => Array.isArray(S.sessions) ? S.sessions : [];
 const publish = () => { revision++; for (const listener of listeners) listener(snapshot()); };
 
@@ -59,7 +53,7 @@ export async function setTeamLead(session, team, lead) {
   return result;
 }
 export function sessionsAvailableToTeam(team) {
-  return sessions().filter((session) => !sessionBelongsToTeam(session, team)).sort(blankLast('session_role'));
+  return sessions().filter((session) => !sessionBelongsToTeam(session, team)).sort((a, b) => a.name.localeCompare(b.name));
 }
 export const sessionBelongsToTeam = (session, team) => {
   const tags = session.tags || [];
@@ -70,14 +64,13 @@ export const sessionBelongsToTeam = (session, team) => {
 export const leadsTeam = (session, team) => (session.leads || []).includes(team);
 export function unassignedSessions() {
   const valid = new Set(rosters.filter((team) => team.state !== 'archived').map((team) => team.name));
-  return sessions().filter((s) => !(s.tags || []).some((team) => valid.has(team))).sort(blankLast('session_role'));
+  return sessions().filter((s) => !(s.tags || []).some((team) => valid.has(team))).sort((a, b) => a.name.localeCompare(b.name));
 }
 export function membersOfTeam(team) {
   if (team === UNASSIGNED) return unassignedSessions();
-  const byRole = blankLast('session_role');
   return sessions().filter((s) => sessionBelongsToTeam(s, team))
     .map((session) => ({ ...session, team_lead: leadsTeam(session, team) }))
-    .sort((a, b) => Number(b.team_lead) - Number(a.team_lead) || byRole(a, b));
+    .sort((a, b) => Number(b.team_lead) - Number(a.team_lead) || a.name.localeCompare(b.name));
 }
 export function teamByName(name) {
   const roster = rosters.find((row) => row.name === name && row.state !== 'archived');

@@ -20,8 +20,7 @@ A session receives every applicable level compiled into one per-session `README.
 Ronin's teaching inlined, your `root/` documents listed by title and path.
 Nothing overrides another level; owner files shadow stock only at the same coordinate.
 
-**Stock has no `root/` and no connected folder, and cannot.** The session_roles ship, so
-we know their names; your project roots are yours alone, and a connected level is the
+**Stock has no `root/` and no connected folder, and cannot.** Your project roots are yours alone, and a connected level is the
 seeding service's own act — an empty one nothing seeded would claim a connection that does
 not exist.
 

@@ -1183,7 +1183,6 @@ The catalog entry goes. {dir} is not touched.
 - **stats.peak:** peak {n}
 - **stats.teams:** Teams
 - **stats.migrated:** {n} migrated · {list}
-- **stats.mek:** Task at birth × task at death
 - **stats.started:** {n} started
 - **stats.doing_now:** Doing right now
 - **stats.born:** Born
@@ -1226,10 +1225,6 @@ The catalog entry goes. {dir} is not touched.
 - **customize.tools:** Tools
 - **customize.tools_why:** TOOLS.md is a table, and the server has no table reader — the rule in docs/shadowing.md is implemented in ronin_bin/tejun and not in src/resources.ts (prerequisite P1).
 - **customize.tools_blurb:** The executables that implement actions. A markdown row cannot author one.
-- **customize.role_families:** Role families
-- **customize.role_families_blurb:** The shelves of the ＋ New board. Presentation only — a family never rides a launch.
-- **customize.session_roles:** Session roles
-- **customize.session_roles_blurb:** What a session is doing now. Its fields cascade into every launch.
 - **customize.saved_launches:** Saved launches
 - **customize.saved_launches_blurb:** The launcher form, filled in ahead of time and named.
 - **customize.skins:** Skins
@@ -1250,12 +1245,10 @@ The catalog entry goes. {dir} is not touched.
 - **customize.not_a_list:** the route did not answer with a list
 - **customize.empty:** Nothing here yet. That is an ordinary state, not a fault.
 - **customize.roles_not_a_list:** the session-role route did not answer with a list
-- **customize.roles_read_failed:** could not read session roles — {message}
 - **customize.read_entry:** Read entry
 
 ## customize — customize-role-families.js
 - **customize.family_warning:** Changing a shipped family makes the whole definition yours; later improvements to Ronin’s copy stop reaching it.
-- **customize.family_summary:** Choose which session roles this Family presents.
 - **customize.pinned_first:** pinned first: {role}
 - **customize.saving_membership:** Saving membership…
 - **customize.membership_saved:** Membership saved.

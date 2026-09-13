@@ -47,7 +47,6 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
   };
   let seed = null;
   let templates = [];
-  let sops = [];
   let ways = [];
   let teams = [];
   let roots = [];
@@ -371,8 +370,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
   const shelvesHost = el('div');
   function paintShelves() {
     shelvesHost.replaceChildren(bookShelves([
-      { head: t('new_agent.shelf_house', 'behaviours · the house'), prefix: 'sops', rows: sops },
-      { head: t('new_agent.shelf_ways', 'behaviours · ways of working'), prefix: 'ways', rows: ways },
+      { head: t('behaviours', 'Behaviours'), prefix: '', rows: ways },
     ], draft.books, (address, on) => {
       draft.books = on ? [...draft.books, address] : draft.books.filter((book) => book !== address);
       touched.books = true;
@@ -635,15 +633,10 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
   // reading is the packet, and the button saves the packet.
   surface.content.append(form, notice.el);
 
-  const PA_BOOK = 'ways:personal_assistant';
   const seedPrompt = (prompt) => {
     if (!prompt) return;
     draft.instructions = prompt;
     instructionsInput.value = prompt;
-    if (ways.some((row) => row.name === 'personal_assistant') && !draft.books.includes(PA_BOOK)) {
-      draft.books = [...draft.books, PA_BOOK];
-      touched.books = true;
-    }
   };
 
   return {
@@ -652,15 +645,13 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
       const entryTeam = typeof team === 'function' ? team() : team;
       if (entryTeam) { draft.teamMode = 'existing'; draft.team = entryTeam; }
       paint();
-      const [tray, sopRows, wayRows, teamRows, rootRows] = await Promise.all([
+      const [tray, wayRows, teamRows, rootRows] = await Promise.all([
         request('/api/templates/agents'),
-        request('/api/sops'),
         request('/api/ways'),
         request('/api/team-rosters'),
         request('/api/project-roots/detail'),
       ]);
       templates = tray.ok && Array.isArray(tray.data) ? tray.data : [];
-      sops = sopRows.ok && Array.isArray(sopRows.data) ? sopRows.data : [];
       ways = wayRows.ok && Array.isArray(wayRows.data) ? wayRows.data : [];
       teams = teamRows.ok && Array.isArray(teamRows.data) ? teamRows.data.filter((row) => row.state !== 'archived') : [];
       roots = rootRows.ok && Array.isArray(rootRows.data?.roots) ? rootRows.data.roots.filter((row) => !row.archived) : [];

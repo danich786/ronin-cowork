@@ -18,7 +18,7 @@ export const agentTitle = (session) => session.title || String(session.name || '
 // candidates — and tear the panel down only when it moves.
 export const configSignature = (name) => {
   const roster = teamByName(name);
-  const line = (s) => [s.name, !!s.team_lead, agentTitle(s), s.session_role || ''];
+  const line = (s) => [s.name, !!s.team_lead, agentTitle(s), s.session_type || ''];
   return JSON.stringify([roster.durable ? roster : null, membersOfTeam(name).map(line), sessionsAvailableToTeam(name).map(line)]);
 };
 
@@ -34,7 +34,7 @@ export const buildTeamMembers = (name, options = {}) => {
     const identity = el('div', 'league-team-member-identity');
     const mark = el('span', 'league-team-member-mark', member.team_lead ? '人' : ''); mark.setAttribute('aria-hidden', 'true');
     const words = el('div', 'league-team-member-words');
-    words.append(el('strong', null, agentTitle(member)), el('span', null, member.session_role || t('league.role_unset', 'Role not set')));
+    words.append(el('strong', null, agentTitle(member)));
     identity.append(mark, words);
     if (holding) { row.append(identity); list.append(row); continue; }
     const launch = options.onOpen ? createAction({ label: t('league.launch_agent', 'Launch'), size: 'compact', action: () => options.onOpen(member) }) : null;
@@ -86,7 +86,7 @@ export const buildTeamMembers = (name, options = {}) => {
   const available = sessionsAvailableToTeam(name), add = el('div', 'league-team-add');
   const select = el('select', null); select.setAttribute('aria-label', t('league.choose_member', 'Choose an Agent to add'));
   select.append(new Option(available.length ? t('league.choose_member', 'Choose an Agent to add') : t('league.no_available_members', 'No other Agents available'), ''));
-  for (const session of available) select.append(new Option(agentTitle(session) + (session.session_role ? ` — ${session.session_role}` : ''), session.name));
+  for (const session of available) select.append(new Option(agentTitle(session), session.name));
   const assign = createAction({ label: t('league.assign_member', 'Assign'), size: 'compact', disabled: true, action: async () => { if (!select.value) return; const result = await setTeamMembership(select.value, name, true); if (!result.ok) return options.onFailed?.(result.message); options.onChanged?.(); } });
   select.addEventListener('change', () => assign.setDisabled(!select.value));
   add.append(select, assign.el); roster.append(add);

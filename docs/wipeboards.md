@@ -180,9 +180,8 @@ a single whiteboard. I don't care what the names are."*
 - A session on several teams reads all their boards; posting bare asks which team it means.
 - **A team with no roster** — sessions carrying a tag and nothing behind it — talks on a
   board of its own name. It has no roster to carry an id.
-- A team is composition and carries its type on its **team roster**, the durable record
-  above the board. Its members may mix any `session_role`s, which is why the readouts print
-  each member's own role beside its name, leads (人) first.
+- A team is composition and carries its facts on its **team roster**, the durable record
+  above the board. Its members are listed by name, with leads (人) first.
 
 **`house`** is the one board no team owns: seeded at boot if missing, never replaced,
 never removed. With enrolment gone it has no members — reachable by name, cleared by TTL

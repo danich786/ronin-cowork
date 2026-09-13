@@ -496,7 +496,7 @@ async function checkJourneys(page, label, jsErrors) {
   await page.waitForTimeout(300);
   const kindBtn = page.locator('.tile.active .ks-btn').first();
   if ((await kindBtn.count()) === 0) {
-    console.log('  note — no session_roles in the catalog; the launch-validation journey skipped');
+    console.log('  note — no launch choices are available; the launch-validation journey skipped');
   } else {
     let launched = false;
     const sniff = (req) => {
@@ -549,8 +549,8 @@ async function checkJourneys(page, label, jsErrors) {
       const sent = await page.evaluate(() => {
         try { return JSON.parse(window.__launchBody ?? 'null'); } catch { return 'unparseable'; }
       });
-      if (sent && sent !== 'unparseable' && sent.session_role && sent.project_root) {
-        ok(`${label}: an ordinary launch names its axis on the wire (session_role="${sent.session_role}")`);
+      if (sent && sent !== 'unparseable' && sent.project_root && !('session_role' in sent)) {
+        ok(`${label}: an ordinary launch names its project root and carries no role axis`);
       } else {
         bad(`${label}: launch payload lost its axis — a body naming none is born a bare shell. Sent: ${JSON.stringify(sent)}`);
       }

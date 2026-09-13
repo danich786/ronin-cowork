@@ -42,7 +42,7 @@ const el = (tag, cls, text) => {
 };
 // The roster reads the same frontier as the expanded work record: an explicit pointer
 // wins, otherwise the first unfinished rung is current. Keep the agent's actual words
-// beside that coordinate instead of substituting its launcher role (CutCode, OddJob…).
+// beside that coordinate instead of substituting a launch-time label.
 const currentWorkStep = (letter) => {
   const ladder = letter?.ladder || [];
   if (!ladder.length) return { label: '', text: '' };

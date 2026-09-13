@@ -29,7 +29,7 @@ const assignment: Assignment = {
   ],
 };
 
-const profile = { session_role: 'CutCode', label: 'cut code', posture: [], opening: '{prompt}', ack: false, agent: true } as LaunchProfile;
+const profile = { label: 'Cowork Agent', posture: [], opening: '{prompt}', ack: false, agent: true } as LaunchProfile;
 
 test('a launch that wants no desk resolves null without touching any registry', async () => {
   const a = await resolveLaunchDesks({ session: 'x', team: '', project_root: 'nowhere', agent: true, control: false });
@@ -68,13 +68,13 @@ test('the 2x2 result tells an Agent the location for managed and direct reposito
   assert.match(locations, /lab  \/src\/lab  \(ordinary Git checkout; no managed desk or desk record\)/);
   assert.match(renderWorkLocations([...repositories], { lab: 'release' }), /lab  \/src\/lab  \(ordinary Git checkout; no managed desk or desk record, on branch release\)/, "the team's branch for that repository rides the line");
   assert.equal(primaryWorkLocation([...repositories], 'lab'), '/src/lab');
-  const brief = buildBrief(profile, undefined, { session_role: 'CutCode', prompt: 'Plan in lab.' }, undefined, [], null, assignment, [...repositories]);
+  const brief = buildBrief(profile, undefined, { prompt: 'Plan in lab.' }, undefined, [], null, assignment, [...repositories]);
   assert.match(brief, /Direct work locations:/);
   assert.match(brief, /lab  \/src\/lab  \(ordinary Git checkout; no managed desk or desk record\)/);
 });
 
 test('the brief carries every desk, the primary, the line, and the four words — or nothing at all', () => {
-  const form: SpawnForm = { session_role: 'CutCode', prompt: 'Build it.' };
+  const form: SpawnForm = { prompt: 'Build it.' };
   const root = { name: 'cowork', dir: '/w/cowork', match: [], remit: '' } as unknown as Parameters<typeof buildBrief>[1];
   const brief = buildBrief(profile, root, form, undefined, [], null, assignment);
   assert.match(brief, /^Born in cowork at \/w\/cowork\.$/m);

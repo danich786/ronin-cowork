@@ -17,7 +17,7 @@ The provider and tmux do different halves of the job:
    forms are `codex resume <uuid>` and `claude --resume <uuid>`.
 5. The provider CLI loads its own conversation history. Ronin restores the session key,
    teams, leads, wipeboards, note, project root, control dial, agent stamp, provider UUID,
-   and session role. Only then is the archive manifest removed.
+   and session type. Only then is the archive manifest removed.
 
 So this is not tmux serialization and it is not a suspended process. tmux is genuinely
 stopped; provider-native conversation resume is what makes the later process continuous.

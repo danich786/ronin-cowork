@@ -4,7 +4,6 @@ export const CONTRACT_V = 2;
 export interface BornInfo {
   name: string;
   key?: string; // @ronin-key (<name>-<created-epoch>) — when the caller has it resolved
-  role?: string; // session_role token — WHAT it is doing at birth; may be blank
   team?: string; // the team it was born onto, when the launch named one; may be blank
   root?: string; // project_root dir, when known
   cmd?: string; // what was started in the pane

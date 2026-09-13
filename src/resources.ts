@@ -189,18 +189,11 @@ export interface WayRow {
 const WAY_KINDS = new Set(['coding', 'work', 'personal', 'household', 'social', 'school']);
 
 export async function listWays(): Promise<WayRow[]> {
-  const roleFiles = await resolveFiles({
-    stock: path.join(STOCK_DIR, 'session_roles'),
+  const files = await resolveFiles({
+    stock: path.join(STOCK_DIR, 'behaviours'), store: 'ways',
     include: (name) => name.endsWith('.md') && name !== 'README.md',
   });
-  const userFiles = await resolveFiles({
-    stock: '', store: 'ways',
-    include: (name) => name.endsWith('.md') && name !== 'README.md',
-  });
-  const snake = (name: string) => name.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();
-  const files = new Map(roleFiles.map((file) => [snake(file.name), { ...file, name: snake(file.name) }]));
-  for (const file of userFiles) files.set(file.name, { ...file, shadowed: files.has(file.name) });
-  return [...files.values()].map((file) => {
+  return files.map((file) => {
     const label = file.text.match(/^#\s+(.+)$/m)?.[1]?.trim() || file.name;
     const kinds = (file.text.match(/^-\s+\*\*kinds:\*\*\s*(.+)$/m)?.[1] ?? '')
       .split(',').map((kind) => kind.trim()).filter((kind) => WAY_KINDS.has(kind));
@@ -216,12 +209,7 @@ export async function listWays(): Promise<WayRow[]> {
 
 export async function wayFile(name: string, origin: Origin): Promise<string> {
   if (origin === 'user') return path.join(storeDir('ways'), `${name}.md`);
-  const snake = (token: string) => token.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();
-  const files = await resolveFiles({
-    stock: path.join(STOCK_DIR, 'session_roles'),
-    include: (relative) => relative.endsWith('.md') && relative !== 'README.md',
-  });
-  return files.find((file) => snake(file.name) === name)?.path ?? '';
+  return path.join(STOCK_DIR, 'behaviours', `${name}.md`);
 }
 
 export interface CatalogSection {
@@ -391,8 +379,6 @@ export interface SavedLaunchInfo {
   origin: Origin;
   shadowed: boolean;
   label: string;
-  role_family: string;
-  session_role: string;
   project_root: string;
   group: string;
   prompt: string;
@@ -405,18 +391,16 @@ export async function listSavedLaunches(): Promise<SavedLaunchInfo[]> {
       origin: e.origin,
       shadowed: e.shadowed,
       label: e.get('label') || e.name,
-      role_family: e.get('role_family'),
-      session_role: e.get('session_role'),
       project_root: e.get('project_root'),
       group: e.get('team') || e.get('group'),
       prompt: e.get('prompt'),
     }))
-    .filter((l) => l.role_family || l.session_role);
+    .filter((l) => l.project_root || l.group || l.prompt);
 }
 
 export const isValidLaunchName = (n: string) => /^[a-z0-9][a-z0-9_-]*$/.test(n) && n.length <= 32;
 
-const LAUNCH_FIELDS = ['label', 'session_role', 'project_root', 'team', 'prompt'] as const;
+const LAUNCH_FIELDS = ['label', 'project_root', 'team', 'prompt'] as const;
 export type LaunchField = (typeof LAUNCH_FIELDS)[number];
 
 export function savedLaunchFields(body: unknown): Partial<Record<LaunchField, string>> {
@@ -430,7 +414,6 @@ export function savedLaunchFields(body: unknown): Partial<Record<LaunchField, st
 
 export async function saveLaunch(name: string, fields: Partial<Record<LaunchField, string>>): Promise<void> {
   if (!isValidLaunchName(name)) throw new Error(`"${name}" is not a valid handle (lowercase letters, digits, - and _).`);
-  if (!fields.session_role) throw new Error('A saved launch needs a session_role.');
   const file = 'SAVED_LAUNCHES.md';
   await seedUserCatalog(file);
   const raw = await readUserCatalog(file);

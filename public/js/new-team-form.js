@@ -37,7 +37,6 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
   let handRoutines = new Set();
   let templates = [];
   let routineRows = [];
-  let sops = [];
   let ways = [];
   let roots = [];
   let snapshot = '';        // what the applied template wrote, for the dirty test
@@ -324,7 +323,7 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
         : t('new_team.worktrees_off', 'Use the project checkout and its branches')),
       el('small', null, t('new_team.worktrees_help', 'Worktrees give each Agent a separate working folder and branch, so their file changes do not collide. They run only when both the Agent and repo have Worktrees on, and use the managed hand-in and Team-lead merge process.')),
     );
-    const signature = JSON.stringify([routineRows.map((row) => row.name), sops.map((row) => row.name), ways.map((row) => row.name), [...handRoutines]]);
+    const signature = JSON.stringify([routineRows.map((row) => row.name), ways.map((row) => row.name), [...handRoutines]]);
     if (signature !== kitSignature) {
       kitQuestions?.destroy();
       const shelfRows = (rows) => rows.map((row) => ({ v: row.name, l: row.label || row.name, sub: row.blurb || '' }));
@@ -337,18 +336,14 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
           key: `routine:${routine.name}`, label: routine.label || routine.name,
           switch: [t('on', 'On'), t('off', 'Off')], word: routineProvenance(routine.name),
         })) },
-        { group: t('new_agent.shelf_house', 'Behaviours · the house'), fields: [{
-          key: 'books:sops', label: t('behaviours', 'Behaviours'), many: true, options: shelfRows(sops),
-        }] },
-        { group: t('new_agent.shelf_ways', 'Behaviours · ways of working'), fields: [{
-          key: 'books:ways', label: t('behaviours', 'Behaviours'), many: true, options: shelfRows(ways),
+        { group: t('behaviours', 'Behaviours'), fields: [{
+          key: 'books', label: t('behaviours', 'Behaviours'), many: true, options: shelfRows(ways),
         }] },
       ], {
         value: {
           launchMode: draft.launchMode,
           ...Object.fromEntries(routineRows.map((row) => [`routine:${row.name}`, routineOn(row.name)])),
-          'books:sops': draft.books.filter((book) => book.startsWith('sops:')).map((book) => book.slice(5)),
-          'books:ways': draft.books.filter((book) => book.startsWith('ways:')).map((book) => book.slice(5)),
+          books: [...draft.books],
         },
         className: 'ntf-kit-questions',
         density: 'tight',
@@ -359,10 +354,7 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
             if (draft.routines[name] === (seedRoutines[name] === true)) handRoutines.delete(name); else handRoutines.add(name);
             kitSignature = '';
           }
-          draft.books = [
-            ...value['books:sops'].map((name) => `sops:${name}`),
-            ...value['books:ways'].map((name) => `ways:${name}`),
-          ];
+          draft.books = [...value.books];
           paintKitQuestions(); whereQuestions.paint(); paintFoot();
         },
       });
@@ -371,8 +363,7 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
     }
     kitQuestions.set('launchMode', draft.launchMode);
     for (const routine of routineRows) kitQuestions.set(`routine:${routine.name}`, routineOn(routine.name));
-    kitQuestions.set('books:sops', draft.books.filter((book) => book.startsWith('sops:')).map((book) => book.slice(5)));
-    kitQuestions.set('books:ways', draft.books.filter((book) => book.startsWith('ways:')).map((book) => book.slice(5)));
+    kitQuestions.set('books', [...draft.books]);
   }
   stepKit.body.append(worktreesMode, kitHost);
 
@@ -681,15 +672,13 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
     el: embedded ? surface.content : surface.el,
     enter: async (detail = {}) => {
       paint();
-      const [seeded, tray, catalog, rootRows, sopRows, wayRows] = await Promise.all([
+      const [seeded, tray, catalog, rootRows, wayRows] = await Promise.all([
         request('/api/launch-seed'),
         request('/api/templates/teams'),
         request('/api/routines'),
         request('/api/project-roots'),
-        request('/api/sops'),
         request('/api/ways'),
       ]);
-      sops = sopRows.ok && Array.isArray(sopRows.data) ? sopRows.data : [];
       ways = wayRows.ok && Array.isArray(wayRows.data) ? wayRows.data : [];
       templates = tray.ok && Array.isArray(tray.data) ? tray.data : [];
       routineRows = catalog.ok && Array.isArray(catalog.data) ? catalog.data : [];

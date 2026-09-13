@@ -81,19 +81,13 @@ both be shelved — rename one on the way in (plans-README.md), and say that you
 
 ## new_session
 - **class:** mika_macro
-One sentence in, a filled form out. Match it against the `match:` words in
-`ronin_catalogs/session_roles/`, `ronin_catalogs/role_families/` and the owner's
-`PROJECT_ROOTS.md`.
-
-**Both catalog axes are optional, and a blank one is a real answer.** `role_family` is who
-the session is and does not change once it is running; `session_role` is what it is doing
-now and does. Propose a role with a blank task when the sentence asks for a standing seat
-("be my assistant", "coordinate these") and a task with a blank role when it asks for one
-piece of work that fits no hat. Never invent a task to fill the slot.
+One sentence in, a filled form out. Use the templates and the owner's project roots,
+features, behaviours, mandate, provider and model choices. Never invent a choice the
+owner did not make.
 
 | # | Action | With |
 |---|---|---|
-| 1 | propose-and-confirm | `role_family`, `session_role`, `project_root`, session_launch_spec, MCP on/off, the name you would give it. As a form, not prose |
+| 1 | propose-and-confirm | session type, template, `project_root`, mandate, features, behaviours, provider/model, and the name you would give it. As a form, not prose |
 | 2 | session-create | On a yes: `POST /api/launch` creates the session with the confirmed features, tag, dial, CLI and brief in one call |
 | 3 | report-outcome | The name, and that it is in the grid |
 

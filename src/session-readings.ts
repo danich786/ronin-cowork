@@ -45,7 +45,7 @@ async function levelDirs(base: string, origin: Origin): Promise<LevelDir[]> {
     }
   };
   await add('all', path.join(base, 'all'));
-  for (const prefix of ['root', 'role', 'routine']) {
+  for (const prefix of ['root', 'routine']) {
     for (const item of await realDirectories(path.join(base, prefix), prefix)) out.push({ ...item, origin });
   }
   let top;

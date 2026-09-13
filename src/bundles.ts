@@ -63,7 +63,7 @@ const STORES: readonly BundleStore[] = ['catalogs', 'sops', 'ways', 'library', '
 const CATALOGS: readonly BundleCatalog[] = ['MACROS.md', 'ACTIONS.md', 'TOOLS.md', 'MODEL_PROVIDERS.md'];
 /** A provider section's id: `- **provider:** \`openai\`` — the key it merges by, since its heading is a vendor's name. */
 const providerIdOf = (section: string): string => /^-\s*\*\*provider:\*\*\s*`([^`]+)`\s*$/m.exec(section)?.[1]?.trim() ?? '';
-const CATALOG_DIRS = ['templates/agents', 'templates/teams', 'features', 'session_roles', 'role_families', 'desk_profiles', 'lexicons'];
+const CATALOG_DIRS = ['templates/agents', 'templates/teams', 'features', 'behaviours', 'desk_profiles', 'lexicons'];
 const KINDS = ['coding', 'work', 'personal', 'household', 'social', 'school'];
 const GUARDS = ['tmux', 'systemctl', 'git'];
 
@@ -412,10 +412,14 @@ export async function packBundle(req: PackRequest): Promise<Bundle> {
     for (const a of feature.get('actions').split(',')) if (a.trim() && a.trim() !== '—') actionNames.add(a.trim());
     for (const t of feature.get('tools').split(',')) if (t.trim() && t.trim() !== '—') toolNames.add(t.trim());
   }
+  for (const book of books) {
+    const match = /^sops:([a-z0-9][a-z0-9_-]*)$/.exec(book);
+    if (match) await addFile('sops', `${match[1]}.md`, path.join(storeDir('sops'), `${match[1]}.md`));
+  }
   const resolved = await resolveBehaviourBooks([...books]);
   for (const b of resolved.delivered) {
-    const [shelf, name] = b.book.split(':') as [BundleStore, string];
-    if (b.file.startsWith(storeDir(shelf))) await addFile(shelf, `${name}.md`, b.file);
+    const name = b.book.replace(/^ways:/, '');
+    if (b.file.startsWith(storeDir('ways'))) await addFile('ways', `${name}.md`, b.file);
   }
   for (const name of req.library ?? []) await addFile('library', `${name}.md`, path.join(storeDir('library'), `${name}.md`));
   for (const name of toolNames) {

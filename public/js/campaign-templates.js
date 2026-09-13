@@ -30,7 +30,7 @@ function holdsWords(holds) {
     agents: (n) => (n === 1 ? t('campaign_view.library_hold_agent', 'agent') : t('campaign_view.library_hold_agents', 'agents')),
     routines: (n) => (n === 1 ? t('campaign_view.library_hold_routine', 'Routine') : t('campaign_view.library_hold_routines', 'Routines')),
     sops: (n) => (n === 1 ? t('campaign_view.library_hold_sop', 'SOP') : t('campaign_view.library_hold_sops', 'SOPs')),
-    ways: (n) => (n === 1 ? t('campaign_view.library_hold_way', 'way of working') : t('campaign_view.library_hold_ways', 'ways of working')),
+    ways: (n) => (n === 1 ? t('campaign_view.library_hold_way', 'behaviour') : t('campaign_view.library_hold_ways', 'behaviours')),
     library: (n) => (n === 1 ? t('campaign_view.library_hold_page', 'reference page') : t('campaign_view.library_hold_pages', 'reference pages')),
     macros: (n) => (n === 1 ? t('campaign_view.library_hold_macro', 'macro') : t('campaign_view.library_hold_macros', 'macros')),
     actions: (n) => (n === 1 ? t('campaign_view.library_hold_action', 'action') : t('campaign_view.library_hold_actions', 'actions')),

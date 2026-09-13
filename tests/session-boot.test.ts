@@ -31,7 +31,6 @@ test('every assisted session is handed the session macro routing guide', async (
     for (const macro of active) assert.match(guide, new RegExp(`\\+${macro.name}:`));
 
     const profile = {
-      session_role: 'CheckWork',
       label: 'Checker',
       posture: [],
       opening: '{prompt}',
@@ -39,7 +38,6 @@ test('every assisted session is handed the session macro routing guide', async (
       agent: true,
     } as LaunchProfile;
     const form: SpawnForm = {
-      session_role: profile.session_role,
       prompt: 'Review the installer.',
     };
 
@@ -172,7 +170,6 @@ test('Routine reading teaches only the selected capability; test policy stays wi
 
 test('a referenced session is caught up on through the tape, pane peek as fallback', () => {
   const profile = {
-    session_role: 'CheckWork',
     label: 'Checker',
     posture: [],
     opening: '{prompt}',
@@ -180,7 +177,6 @@ test('a referenced session is caught up on through the tape, pane peek as fallba
     agent: true,
   } as LaunchProfile;
   const form: SpawnForm = {
-    session_role: profile.session_role,
     prompt: 'Review the login work.',
     reference: 'login_fix',
   };
@@ -268,9 +264,8 @@ test('generated macro reading contains only the effective Routine macros', async
 });
 
 test('startup reading is never stripped when instructions are present', () => {
-  const profile = { session_role: 'OpenShell', posture: [] } as unknown as LaunchProfile;
+  const profile = { posture: [] } as unknown as LaunchProfile;
   const form: SpawnForm = {
-    session_role: profile.session_role,
     prompt: '  owner text only  ',
   };
 

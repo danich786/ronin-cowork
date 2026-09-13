@@ -46,7 +46,6 @@ const { resolveForm } = await import('../src/spawn.js');
 type SpawnForm = import('../src/spawn.js').SpawnForm;
 
 const launch = (over: Partial<SpawnForm> = {}): SpawnForm => ({
-  session_role: 'CutCode',
   project_root: 'alpha',
   prompt: 'Cut the leg in the plan doc.',
   ...over,
@@ -198,11 +197,9 @@ test('a provider the owner turned off launches nothing new, in its own words; on
   assert.ok(r.cmd.startsWith('claude --model haiku'));
 });
 
-test('an agentless launch takes no provider resolution at all', async () => {
+test('a terminal takes no provider resolution at all', async () => {
   await agents({ default: { provider: 'openai', model: 'gpt-5.6-sol' }, by_provider: { anthropic: 'fable' } });
-  // `OpenShell` is `agent: none` — there is no CLI, so there is nothing for a provider
-  // to choose between and no command to build.
-  const r = await resolveForm(launch({ session_role: 'OpenShell', provider: 'anthropic' }), new Set());
+  const r = await resolveForm(launch({ session_type: 'terminal', provider: 'anthropic' }), new Set());
   assert.equal(r.agent, false);
   assert.equal(r.cmd, '', 'a terminal launches nothing, whatever provider was named');
 });

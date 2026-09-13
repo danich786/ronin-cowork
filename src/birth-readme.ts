@@ -13,7 +13,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const STOCK = path.join(__dirname, '..', 'ronin_session_boot');
 const SESSION_MACROS_TEMPLATE = path.join(STOCK, 'SESSION_MACROS.md');
 
-export type Level = 'all' | 'root' | 'role' | 'routine';
+export type Level = 'all' | 'root' | 'routine';
 
 /** The glossary's filename on the universal shelf; the owner may shadow it by name. */
 const GLOSSARY = 'KOTOBA_GLOSSARY.md';

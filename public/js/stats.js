@@ -23,9 +23,6 @@ import { t } from './lexicon.js';
  * Everything is CSS and one inline SVG sparkline. No chart library, no dependency.
  */
 
-// `other` is a real bucket, not a gap: a session whose letter names no job still has
-// to be drawable, or it silently vanishes from a chart that claims to show everything.
-const TASKS = ['RiffOnIt', 'DraftPlan', 'CutCode', 'ChaseBug', 'CheckWork', 'QuarterBack', 'OddJob', 'Atarashi', 'PersonalAssistant', 'OpenShell', 'MikaAssist', 'other'];
 // Functions, not tables: the lexicon loads after this module is evaluated.
 function windows() {
   return [
@@ -40,9 +37,6 @@ function caps() {
   return [
     ['forks', t('stats.cap_forks', 'forks')],
     ['groups', t('stats.cap_teams', 'teams')],
-    // `led` (@ronin-lead) was here until the 人 was retired. A cap is "the thing you would
-    // go and try", and there is nothing to go and try any more — a session's coordinator is
-    // its session_role now, which the task chart above already counts.
     ['board_posts', t('stats.cap_board_posts', 'wipeboard posts')],
     ['board_reads', t('stats.cap_board_reads', 'wipeboard reads')],
     ['voice', t('stats.cap_voice', 'voice')],
@@ -130,48 +124,6 @@ export function buildStats(root) {
     }
     wrap.appendChild(h);
     if (note) wrap.appendChild(el('div', 'td-mean', note));
-    return wrap;
-  };
-
-  /** Job at birth × job at death. The diagonal stayed put; everything else migrated. */
-  const marimekko = (nested) => {
-    const wrap = el('div');
-    const total = Object.values(nested).reduce((a, ends) => a + sumOf(ends), 0);
-    if (!total) return null;
-    const mek = el('div', 'td-mek');
-    const axis = el('div', 'td-mekaxis');
-    for (const birth of TASKS) {
-      const ends = nested[birth];
-      if (!ends) continue;
-      const n = sumOf(ends);
-      const w = (n / total) * 100;
-      const colEl = el('div', 'td-mekcol');
-      colEl.style.flex = `${n} 1 0`;
-      colEl.title = `${birth} — ${n}`;
-      for (const end of TASKS) {
-        if (!ends[end]) continue;
-        const seg = el('div', 'td-seg');
-        seg.style.height = `${(ends[end] / n) * 100}%`;
-        seg.style.background = `var(--k-${end})`;
-        seg.title = t('stats.mek_seg', 'launched {birth} · died {end} — {n}', { birth, end, n: ends[end] });
-        if (w > 7 && ends[end] / n > 0.28) seg.appendChild(el('span', null, String(ends[end])));
-        colEl.appendChild(seg);
-      }
-      mek.appendChild(colEl);
-      const a = el('div', null, w > 9 ? `${birth} ${n}` : w > 5 ? birth : String(n));
-      a.style.flex = `${n} 1 0`;
-      a.title = `${birth} — ${n}`;
-      axis.appendChild(a);
-    }
-    const legend = el('div', 'td-legend');
-    for (const j of TASKS) {
-      const s = el('span', null);
-      const i = el('i');
-      i.style.background = `var(--k-${j})`;
-      s.append(i, document.createTextNode(j));
-      legend.appendChild(s);
-    }
-    wrap.append(mek, axis, legend);
     return wrap;
   };
 
@@ -263,26 +215,10 @@ export function buildStats(root) {
     body.appendChild(cards);
 
     // sessions
-    const mek = marimekko(s.by_task_birth_end || {});
-    const migN = sumOf(s.migrations);
-    const migNote = migN
-      ? el(
-          'div',
-          'td-mean',
-          t('stats.migrated', '{n} migrated · {list}', { n: migN, list: Object.entries(s.migrations).map(([k, v]) => `${k.replace('>', '→')} ${v}`).join(' · ') }),
-        )
-      : null;
-    const mekPanel = mek ? panel(t('stats.mek', 'Task at birth × task at death'), mek, true) : null;
-    if (mekPanel && migNote) mekPanel.appendChild(migNote);
-
     body.appendChild(
       section(
         t('stats.sessions', 'Sessions'),
         t('stats.started', '{n} started', { n: s.started ?? 0 }),
-        sumOf(s.by_task_now) ? panel(t('stats.doing_now', 'Doing right now'), bars(s.by_task_now, TASKS)) : null,
-        // The role is a census and never a migration: it cannot change while a session
-        // lives, so there is no birth-vs-now pair for it and no arrow to draw.
-        mekPanel,
         sumOf(s.born) ? panel(t('stats.born', 'Born'), bars(s.born, ['assisted', 'manual', 'fork', 'macro', 'hand'])) : null,
         sumOf(s.end) ? panel(t('stats.ended', 'Ended'), bars(s.end, ['harakiri', 'deleted', 'cold', 'archived'])) : null,
         sumOf(s.life) ? panel(t('stats.lifetime', 'Lifetime'), hist(s.life, ['<1h', '1-8h', '8h-1d', '1-7d', '>7d'])) : null,

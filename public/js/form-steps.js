@@ -143,7 +143,7 @@ export function bookShelves(shelves, chosen, onToggle) {
     host.append(el('p', 'fs-head', shelf.head));
     const grid = el('div', 'na-sopgrid');
     for (const row of shelf.rows) {
-      const address = `${shelf.prefix}:${row.name}`;
+      const address = shelf.prefix ? `${shelf.prefix}:${row.name}` : row.name;
       const on = chosen.includes(address);
       const box = el('button', 'na-sop');
       box.type = 'button';

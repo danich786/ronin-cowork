@@ -3,7 +3,7 @@
  * CUSTOMIZE — the guided agent handoff, and the read-only sentence that replaces it.
  *
  * THE HANDOFF IS NOT A LESSER EDITOR. The front door that actually gets used is a person
- * telling their own agent *"add a session_role that…"*; the file existing, with a header
+ * telling their own agent what to add; the file existing, with a header
  * explaining its format, is what makes that work. So this makes the owner's file exist,
  * says where it is, and hands over a briefed instruction. A form here would be a worse
  * editor than the one they already have.

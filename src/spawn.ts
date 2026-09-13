@@ -9,7 +9,7 @@ import { agentSpec } from './agents.js';
 import { readAgentsSection, readDesksSection, readSetupSection } from './machine-state.js';
 import { offAt } from './provider-summary.js';
 import { storeDir } from './resources.js';
-import { findDefinition, listFeatures, listInstallations, routineReading } from './resource-adapters.js';
+import { listFeatures, listInstallations, routineReading } from './resource-adapters.js';
 import { isCreatableTeamName as isTeamName, readTeamRoster, teamRosterFile, type TeamRoster } from './team-rosters.js';
 import { resolveLaunchProfile, type Dial, type LaunchProfile, type StatedBy } from './launch-profile.js';
 import { readCampaign } from './campaigns.js';
@@ -37,7 +37,6 @@ const CORE_CONTRIBUTION: ResolvedRoutine = {
 export interface SpawnForm {
   session_type?: 'cowork_agent' | 'bare_metal_agent' | 'terminal';
   house_seat?: HouseSeat;
-  session_role?: string;
   team?: string;
   team_lead?: boolean;
   model?: string;
@@ -69,7 +68,6 @@ export interface Resolved {
   cmd: string;
   tags: string[];
   dial: Dial;
-  session_role: string;
   mandate: Mandate;
   team: string;
   project_root: string;
@@ -209,8 +207,7 @@ export async function resolveForm(
   const coworkAgent = sessionType === 'cowork_agent';
   const bareMetalAgent = sessionType === 'bare_metal_agent';
   const campaignId = coworkAgent ? (form.campaign_id || await initialCampaignId()) : '';
-  const [taskDef, roots, launchSpecs, agentsSet, campaign, installationCatalog, featureCatalog, desksSet] = await Promise.all([
-    findDefinition('session_roles', form.session_role ?? ''),
+  const [roots, launchSpecs, agentsSet, campaign, installationCatalog, featureCatalog, desksSet] = await Promise.all([
     listProjectRoots(),
     listSessionLaunchSpecs(),
     readAgentsSection(),
@@ -220,9 +217,6 @@ export async function resolveForm(
     readDesksSection(),
   ]);
   const preset = await templateProvenance(coworkAgent ? form : {});
-  if (form.session_role && !taskDef) {
-    throw new Error(`Unknown session_role "${form.session_role}" (see ronin_catalogs/session_roles/).`);
-  }
   if (form.team && !isTeamName(form.team)) {
     throw new Error(`A team name is lowercase letters, digits, _ and - (it is also the tag): "${form.team}".`);
   }
@@ -231,7 +225,7 @@ export async function resolveForm(
         ? proposedRoster
         : await readTeamRoster(form.team, campaignId) ?? await readTeamRoster(form.team, ''))
     : null;
-  const profile = resolveHouseSeatProfile(form.house_seat, resolveLaunchProfile(taskDef));
+  const profile = resolveHouseSeatProfile(form.house_seat, resolveLaunchProfile());
   const parentSeed = coworkAgent && campaign
     ? resolveLaunchSeed({
         campaign,
@@ -327,7 +321,7 @@ export async function resolveForm(
   let mcpOffWanted = false;
   if (askedOff && profile.mcpAlways) {
     throw new Error(
-      `${profile.session_role} is born connected (\`mcp: always\`) — ` +
+      'This Agent is born connected (`mcp: always`) — ' +
         'it cannot be launched with MCP off.',
     );
   }
@@ -377,7 +371,7 @@ export async function resolveForm(
       return true;
     });
   };
-  const name = wanted || slugName(profile.session_role || form.team || 'session', form.prompt ?? '', taken);
+  const name = wanted || slugName(form.team || (agent ? 'agent' : 'terminal'), form.prompt ?? '', taken);
   const worktreesOn = routines.some((routine) => routine.name === 'ronin_worktrees' && routine.enabled);
   const worktrees = bareMetalAgent || sessionType === 'terminal' || !worktreesOn
     ? { assignment: null, repositories: [] }
@@ -425,7 +419,6 @@ export async function resolveForm(
       .filter((t, i, a) => a.indexOf(t) === i)
       .slice(0, 16),
     dial: form.dial ?? (parentSeed?.seeds.dial.value as Dial | undefined) ?? profile.dial,
-    session_role: profile.session_role,
     mandate: resolvedMandate,
     team: form.team ?? '',
     project_root: root.name,
@@ -472,7 +465,6 @@ export async function resolveForm(
       cmd: cmdSource,
       tags: unique(roster ? rosterSource : [], form.tags?.length ? explicit : []),
       session_type: explicit,
-      session_role: form.session_role !== undefined ? explicit : profile.stated_by.session_role,
       template: preset.source ?? system,
       mandate: form.mandate ? (preset.mandate ? preset.source! : explicit) : parentSeed?.seeds.reach.stated_by ?? (campaign
         ? [{ layer: 'campaign', source: `#/campaign (${campaign.id}: defaults)` }]

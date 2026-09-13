@@ -31,7 +31,7 @@ test('an empty ladder takes the gate, and nothing else in the letter moves', asy
   assert.deepEqual(b.ladder, [{ gate: 'The agent never came up.', status: 'ACTIVE' }]);
   assert.equal(b.objective, 'keep me'); // the session's own words survive
   assert.equal(b.role_family, 'developer');
-  assert.equal(b.session_role, 'CutCode');
+  assert.equal(b.session_role, 'CutCode', 'an old owner-authored field is left untouched');
 });
 
 test("a real ladder is the agent's words and is refused, untouched", async () => {

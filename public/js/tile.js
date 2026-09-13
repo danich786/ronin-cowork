@@ -267,19 +267,6 @@ export class Tile {
     this.refreshControl(true);
   }
 
-  /** 🏷 shows how many groups this session is in — the label an agent can address it by. */
-  /**
-   * Set what this session is doing, by hand — `session_role` in its TEGAMI, the same
-   * field the agent maintains with `write_tegami`. The owner is the other writer, for an
-   * agent that has not re-marked itself; the dial and permissions are untouched.
-   *
-   * NOT JUST A RE-LABEL: the server hands it to the task observer, which delivers the
-   * new task's reading into the session exactly once (src/role-watch.ts), whoever
-   * authored it. THE SESSION_ROLE ONLY — teams have their own controls.
-   *
-   * The list is updated locally before the ws poll gets there, so the mark moves under
-   * your finger; the poll then confirms it, and would correct it if the write lost a race.
-   */
   openNote() {
     if (S.notePanel) S.notePanel.open(this.session);
   }

@@ -32,9 +32,9 @@ a file at the tier that teaches it.
 
 ## T0 — the brief
 
-The one composed first message (`src/spawn.ts`): the session_role's posture, the team
-context when the session is born onto one (the roster's objective, its wipeboard), the
-opening template, the session it was pointed at (catch-up route included), the one-off
+The one composed first message (`src/spawn.ts`): Team context when the session is born
+onto one (the roster's objective, its wipeboard), the opening, the session it was pointed
+at (catch-up route included), the one-off
 inject, the ack rule. Inlined
 because inlining is the only guarantee of being read; never longer than a screen;
 everything durable is a pointer to T1. Manual mode bypasses all of it — the owner's
@@ -87,12 +87,10 @@ every time.
 
 ## One pyramid, instantiated per session
 
-A session receives the pyramid instantiated for `project_root` × `session_role` × its
-birth team × the MCP choice. The session_role bends it hardest: T0 differs by it (its
-posture, and dial, ack and the rest resolve through the cascade — system < team_roster <
-session_role < this launch), T1 never differs (that is its definition), T2 carries the
-role's own always-taught material, T3–T5 are one house-wide body of
-knowledge.
+A session receives the pyramid instantiated for its installation, Campaign, Team, launch
+choices, and conditional facts. T1 never differs; T2 carries enabled installation
+contributions, selected features and behaviours, and conditional reading; T3–T5 are one
+house-wide body of knowledge.
 
 ## The routing table
 
