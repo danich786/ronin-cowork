@@ -171,10 +171,24 @@ export function createCampaignView() {
     return bench?.place(TERMINAL_TYPE, workspace, { key: MIKA_SESSION }) || false;
   };
   const blank = (id) => WorkspaceKit.primitives.createBlankSurface(id.replace('workspace', 'Workspace ')).el;
-  const save = () => ctx?.patchViewState('campaign', bench.snapshot());
+  let thinSelectorCards = true;
+  const save = () => ctx?.patchViewState('campaign', { ...bench.snapshot(), selectorDensity: thinSelectorCards ? 'thin' : 'thick' });
+  const densityToggle = WorkspaceKit.primitives.createAction({ label: '', size: 'compact', className: 'tw-agent-density' });
+  const densityLines = elem('span', 'tw-agent-density-lines');
+  densityLines.append(elem('i'), elem('i'));
+  densityToggle.el.replaceChildren(densityLines);
+  const paintDensityToggle = () => {
+    if (bench?.host) bench.host.dataset.selectorDensity = thinSelectorCards ? 'thin' : 'thick';
+    densityToggle.el.dataset.lines = thinSelectorCards ? 'two' : 'one';
+    densityToggle.el.title = thinSelectorCards ? 'Show full Settings cards' : 'Show Settings names only';
+    densityToggle.el.setAttribute('aria-label', densityToggle.el.title);
+    densityToggle.el.setAttribute('aria-pressed', String(thinSelectorCards));
+  };
+  densityToggle.el.addEventListener('click', () => { thinSelectorCards = !thinSelectorCards; paintDensityToggle(); save(); });
   const mikaHelp = WorkspaceKit.primitives.createAction({ label: t('mika.help', 'ミ Help'), size: 'compact' });
   let helpPanel = null;
-  bench = WorkspaceKit.workbench.create({ profile: PROFILE, tenant: { kind: 'campaign', selected }, environment, defaultNode: blank, label: t('campaign.settings_short_title', 'Settings'), title: () => helpPanel?.isOpen() ? t('mika.header', 'Mika, your helpful assistant') : t('campaign.settings_short_title', 'Settings'), actions: [mikaHelp], shapeControl: document.getElementById('shapecycle'), onStateChange: save, onPlacement: save });
+  bench = WorkspaceKit.workbench.create({ profile: PROFILE, tenant: { kind: 'campaign', selected }, environment, defaultNode: blank, label: t('campaign.settings_short_title', 'Settings'), title: () => helpPanel?.isOpen() ? t('mika.header', 'Mika, your helpful assistant') : t('campaign.settings_short_title', 'Settings'), actions: [densityToggle, mikaHelp], shapeControl: document.getElementById('shapecycle'), onStateChange: save, onPlacement: save });
+  paintDensityToggle();
   helpPanel = createMikaHelpPanel({
     selector: bench.host.querySelector('.wk-workbench-selector'), header: bench.selectorHeader,
     refreshHeader: () => bench.refreshSelector(), createAction: WorkspaceKit.primitives.createAction,
@@ -196,6 +210,8 @@ export function createCampaignView() {
       campaignRead = false;
       for (const surface of campaignSurfaces) surface.begin();
       const stored = context.viewState('campaign') || {};
+      thinSelectorCards = stored.selectorDensity !== 'thick';
+      paintDensityToggle();
       const typed = teamWorkspaceState(context.state, stored, bench.declaration);
       bench.enter({ ...typed, ...stored });
       for (const id of bench.ids) { const type = LEGACY[typed.seats[id]] || typed.seats[id]; if (WorkspaceKit.workbench.library.has(type)) bench.place(type, id); }
