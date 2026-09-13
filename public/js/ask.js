@@ -24,9 +24,12 @@
  * decides which questions exist); `show(null)` draws them all. `then` is A SECOND LAYER: a
  * list of nested questions, each with `when` naming the parent answer that reveals it —
  * `then: [{ when: 'current', key: 'teamName', label: 'Which team', options: () => teamRows() }]`.
- * Picking `current` keeps the tray open and draws the nested question's stones beneath the
- * first layer; answering it closes the tray, and the reading says the nested answer. Any other
- * parent answer clears the nested one. A nested question is a field like any other in `value()`,
+ * Opening a tray shows layer one only, whatever the saved answer; the second layer appears
+ * only after an explicit click during that open interaction — clicking `current` keeps the
+ * tray open and draws the nested question's stones in the slot beneath layer one; answering
+ * it closes the tray, and the reading says the nested answer. Any other parent answer clears
+ * the nested one. An option with its own `row` uses the same slot: clicking it keeps the tray
+ * open and draws that control as a full-width line beneath layer one, so layer one never moves. A nested question is a field like any other in `value()`,
  * `set()` and `onChange`, but it is never a stone of its own in the group. `trayHost` names a
  * wrapping row the consumer owns (a flex-wrap or grid container holding this instance beside
  * other controls): the open tray is placed at the end of that row instead of inside this
@@ -77,6 +80,7 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
   let outside = null;
   let shown = null;
   let trayNode = null;
+  let revealed = null; // the layer-one answer clicked during this open interaction, if any
   const visible = (field) => !shown || shown.has(field.key) || (field.parent != null && shown.has(field.parent));
 
   const root = el('section', `ask ${className}`.trim());
@@ -111,7 +115,8 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
       state[field.key] = cur.includes(row.v) ? cur.filter((v) => v !== row.v) : [...cur, row.v];
     } else {
       state[field.key] = row.v;
-      const reveals = childrenOf(field).some((child) => String(child.when) === String(row.v));
+      const reveals = childrenOf(field).some((child) => String(child.when) === String(row.v)) || typeof row.row === 'function';
+      revealed = reveals ? row.v : null;
       if (!reveals) open = '';
     }
     changed(field.key);
@@ -155,7 +160,7 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     button.setAttribute('aria-expanded', String(open === field.key));
     button.setAttribute('aria-controls', trayId);
     button.append(el('small', 'ask-label', field.label), reading(field));
-    button.addEventListener('click', () => { open = open === field.key ? '' : field.key; filter = ''; paint(); });
+    button.addEventListener('click', () => { open = open === field.key ? '' : field.key; filter = ''; revealed = null; paint(); });
     return button;
   };
 
@@ -174,8 +179,11 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
       const rest = row.off || row.sub || '';
       if (rest) caption.append(` — ${rest}`);
     };
-    // One layer of stones for one question; the second layer, when revealed, is the same thing again.
-    const child = activeChild(field);
+    // One layer of stones for one question; the second layer, when revealed by a click in this
+    // open interaction, is the same thing again — or the clicked option's own line.
+    const shown = revealed != null && String(state[field.key]) === String(revealed);
+    const child = shown ? activeChild(field) : null;
+    const lineRow = shown && !child ? all.find((row) => String(row.v) === String(revealed) && typeof row.row === 'function') : null;
     const target = child && rowsOf(child).length > FILTER_FROM ? child : all.length > FILTER_FROM ? field : null;
     const layerOf = (f) => {
       const options = el('div', 'ask-options');
@@ -235,6 +243,18 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     say((child && pressedIn(child)) || pressedIn(field) || null);
     box.append(first.options);
     if (second) box.append(second.el);
+    if (lineRow) {
+      const node = lineRow.row(lineRow, snapshot());
+      if (node) {
+        const line = el('div', 'ask-layer ask-line');
+        line.setAttribute('role', 'group');
+        line.setAttribute('aria-label', lineRow.l);
+        const label = el('label', 'ask-extra');
+        label.append(el('span', 'ask-extra-name', lineRow.l), node);
+        line.append(label);
+        box.append(line);
+      }
+    }
     box.append(caption);
     return box;
   };
@@ -290,14 +310,14 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
 
   /* ---- dismissal: Escape, and a press outside the utility ---- */
   const onEscape = (event) => {
-    if (event.key === 'Escape' && open) { event.preventDefault(); const key = open; open = ''; paint(); focusStone(key); }
+    if (event.key === 'Escape' && open) { event.preventDefault(); const key = open; open = ''; revealed = null; paint(); focusStone(key); }
   };
   root.addEventListener('keydown', onEscape);
   const focusStone = (key) => { for (const node of root.children) { /* groups */ for (const inner of node.children || []) { for (const button of inner.children || []) if (button.dataset?.askKey === key) button.focus?.(); } } };
   function bindOutside() {
     if (typeof document.addEventListener !== 'function') return;
     if (open && !outside) {
-      outside = (event) => { if (typeof root.contains === 'function' && (root.contains(event.target) || trayNode?.contains?.(event.target))) return; open = ''; paint(); };
+      outside = (event) => { if (typeof root.contains === 'function' && (root.contains(event.target) || trayNode?.contains?.(event.target))) return; open = ''; revealed = null; paint(); };
       document.addEventListener('pointerdown', outside);
     } else if (!open && outside) {
       document.removeEventListener('pointerdown', outside);
@@ -316,8 +336,8 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     },
     show(keys) { shown = Array.isArray(keys) ? new Set(keys) : null; paint(); },
     options(key, rows) { const field = byKey(key); if (!field) return; field.options = rows; paint(); },
-    open(key) { open = byKey(key) && !byKey(key).switch ? key : ''; filter = ''; paint(); },
-    close() { open = ''; paint(); },
+    open(key) { open = byKey(key) && !byKey(key).switch ? key : ''; filter = ''; revealed = null; paint(); },
+    close() { open = ''; revealed = null; paint(); },
     paint,
     destroy() { open = ''; bindOutside(); trayNode?.remove?.(); trayNode = null; root.remove?.(); },
   };

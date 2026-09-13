@@ -43,6 +43,8 @@
   /* the second layer: the nested question's stones under the first layer's, one hairline between */
   .ask-layer { display: grid; gap: var(--space-3); border-top: var(--edge) dashed var(--line); padding-top: var(--space-4); }
   .ask-layer-head { color: var(--muted); font-size: var(--form-note); }
+  .ask-line .ask-extra { grid-template-columns: var(--ask-w) minmax(0, 1fr); }
+  .ask-line .ask-extra input { max-width: none; width: 100%; }
 
   /* the two shapes, and never a third */
   .ask-opt { display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; border: var(--edge) solid var(--line-2); border-left: var(--edge-2) solid var(--accent); border-radius: var(--radius-xs); background: var(--well); color: var(--fg-strong); cursor: pointer; text-align: left; font: inherit; }
