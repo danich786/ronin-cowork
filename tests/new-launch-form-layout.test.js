@@ -11,6 +11,9 @@ test('New Agent uses one ruled ask() spec after its three session types', async 
   assert.match(form, /const teamQuestions = ask\(\[/);
   assert.match(form, /trayHost: identityRow/);
   assert.match(form, /when: 'current', key: 'teamName'/);
+  assert.match(form, /new_agent\.team_none', 'No team \(rōnin\)'/);
+  assert.match(form, /row: \(\) => newTeamField\(\), required: true/);
+  assert.match(form, /invalid: \(\) => \(draft\.newTeam && !isValidTeamName\(draft\.newTeam\)/);
   assert.match(form, /new_team\.name_placeholder', 'lowercase, digits, - _'/);
   assert.doesNotMatch(form, /input\.placeholder = t\('new_agent\.team_new_blank'/);
   assert.match(form, /className: 'na-questions',[\s\S]*density: 'tight'/);

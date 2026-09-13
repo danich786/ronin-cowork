@@ -637,7 +637,7 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **new_agent.model_package:** Model
 - **new_agent.team_existing:** An existing team
 - **new_agent.team_existing_sub:** Join it. Its answers land at birth.
-- **new_agent.team_none:** No team — a rōnin
+- **new_agent.team_none:** No team (rōnin)
 - **new_agent.team_none_sub:** Ordinary, not a gap.
 - **new_agent.team_new:** New team
 - **new_agent.team_new_sub:** Created first, then this Agent is born into it.

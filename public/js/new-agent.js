@@ -294,9 +294,10 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
   const teamQuestions = ask([
     { group: t('squad', 'Team'), fields: [
       { key: 'team', label: t('squad', 'Team'), options: [
-        { v: 'none', l: t('new_agent.team_none', 'No team — a rōnin'), sub: t('new_agent.team_none_sub', 'Ordinary, not a gap.') },
+        { v: 'none', l: t('new_agent.team_none', 'No team (rōnin)'), sub: t('new_agent.team_none_sub', 'Ordinary, not a gap.') },
         { v: 'current', l: t('new_agent.team_current', 'Current team'), sub: t('new_agent.team_current_sub', 'Choose from your teams.') },
-        { v: 'new', l: t('new_agent.team_new', 'New team'), sub: t('new_agent.team_new_sub', 'Created first, then this Agent is born into it.'), row: () => newTeamField() },
+        { v: 'new', l: t('new_agent.team_new', 'New team'), sub: t('new_agent.team_new_sub', 'Created first, then this Agent is born into it.'), row: () => newTeamField(), required: true,
+          invalid: () => (draft.newTeam && !isValidTeamName(draft.newTeam) ? t('new_team.name_invalid', 'Lowercase letters, digits, _ and - only.') : '') },
       ], then: [
         { when: 'current', key: 'teamName', label: t('new_agent.which_team', 'Which team'), options: teamRows },
       ] },
