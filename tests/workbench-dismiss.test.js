@@ -38,3 +38,14 @@ test('New Team is consumed only after complete creation and destination opening'
   assert.match(cowork, /create: \(\{ workspace, environment, consumed \}\) => environment\.newTeamForm\(workspace, consumed\)/);
   assert.match(cowork, /createNewTeamFormView\(WorkspaceKit, \{ consumed,/);
 });
+
+test('New Agent consumes its workbench form only after a successful handoff', async () => {
+  const [form, cowork, setup] = await Promise.all([
+    source('new-agent.js'), source('cowork-view.js'), source('setup-surfaces.js'),
+  ]);
+  assert.match(form, /\{ connect = null, consumed = null, embedded = false, team = null \}/);
+  assert.match(form, /if \(connect\) await connect\(born\);\s*else openWorkspaceTab\([^;]+;\s*await consumed\?\.\(\);/);
+  assert.match(cowork, /create: \(\{ workspace, environment, consumed \}\) => environment\.newAgent\(workspace, consumed\)/);
+  assert.match(cowork, /createNewAgentView\(WorkspaceKit, \{\s*consumed,/);
+  assert.doesNotMatch(setup, /createEmbeddedNewAgentView\([^)]*consumed/);
+});

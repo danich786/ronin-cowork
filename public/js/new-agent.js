@@ -32,7 +32,7 @@ export function templateEntryPlan({ currentKind, kindTouched = false, templates 
   return { kind, template: row.name };
 }
 
-export function createNewAgentView(kit, { connect = null, embedded = false, team = null } = {}) {
+export function createNewAgentView(kit, { connect = null, consumed = null, embedded = false, team = null } = {}) {
   const { createSurface, createAction, createActionBar, createField, createNotice } = kit.primitives;
 
   const draft = {
@@ -471,8 +471,9 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     const deskNote = result.data?.receipt?.desk_note || '';
     if (deskNote) notice.set('warning', t('add_agent.started_note', 'Started {name} — {note}', { name: born, note: deskNote }));
     else notice.set('success', t('add_agent.started', 'Started {name}', { name: born }));
-    if (connect) connect(born);
+    if (connect) await connect(born);
     else openWorkspaceTab(team ? 'team' : 'cowork', team, launchTab);
+    await consumed?.();
   }
 
   async function doSave() {
