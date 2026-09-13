@@ -18,4 +18,4 @@ and installation state go stale.
 Run the relevant tool before advising or changing machine-level state. If a Machine tool
 is absent from `PATH`, report that the behaviour was not delivered; do not improvise its
 guarded operation. The full procedures live in the Machine SOPs and the corresponding
-rows of `ronin_catalogs/TOOLS.md` and `ronin_catalogs/ACTIONS.md`.
+rows of `ronin_catalogs/TOOLS.md`.

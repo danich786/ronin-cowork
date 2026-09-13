@@ -15,18 +15,17 @@ prescriptive. **The difference is who fetches it:**
 | | fetched by | arrives | written for |
 |---|---|---|---|
 | **`ronin_sops/`** | the **situation** — nothing names it until one arises | when someone goes looking | whoever the SOP's own `Voice:` header names — a person (relay) or the agent itself (§ Voice, below) |
-| **`ronin_library/`** | the **machinery** — an action names it, `ronin_bin/tejun` inlines it at compile | mid-task, unasked | the agent, mid-step |
+| **`ronin_library/`** | a tool or capability-specific instruction names it | mid-task, when needed | the agent doing the work |
 
-**An action never leads to an SOP.** An SOP may point at an action — its `> Tool:` header
-does — and the arrow runs that way only. The test when you are
-unsure: **if you can name the action that would cite it, it is library.** If the only
-answer is "someone would look it up when the topic came up", it is an SOP.
+An SOP may point at a tool, but a tool does not turn an SOP into compiled instructions.
+The test when you are unsure: if an executable needs the material while it works, it is
+library. If someone would look it up when the topic came up, it is an SOP.
 
 **Cut what is blindingly obvious.** The test is not length — it is whether a competent
 agent already knows the step. If a procedure has ten steps and eight of them are obvious,
 write the two. An SOP is not there to replace the agent's judgment with a checklist; it is
 there to say **which of several workable ways this house picks**, and to point at the
-actions that do the work. Length is a symptom: a file that keeps growing is usually one
+tools that do the work. Length is a symptom: a file that keeps growing is usually one
 that has started explaining rather than deciding.
 
 The obvious step and the house preference can look alike, so the discriminator is: could
@@ -43,7 +42,7 @@ fact about a box is wrong the day the box changes, and nobody notices.
 `> Tool:` line in its header so the eye
 finds it in the same place everywhere. `data.md` names `tejun-survey`; `secrets.md` names
 `tejun-secrets`; repository arrangement pages name nothing, because git is git. The pointer is always to a
-**cataloged action's tool**, never a loose script.
+**cataloged tool**, never a loose script.
 
 This is the shelf's sharpest edge, and it is not really about discovery. **A capable agent
 will reason well about a domain and skip the step of finding out what is actually true
@@ -68,8 +67,8 @@ An SOP declares its voice in its header, because the two failure modes are oppos
 Judge the voice by who acts in the body, not by what the header of the file beside it
 happened to say. The line was boilerplate on ten of these before the shelf was audited on
 
-A rule an *action* cites is neither: `documents.md` sits in `ronin_library/` because the
-machinery fetches it and a compile inlines it, so no situation ever has to go looking.
+A rule an executable consumes is neither: `documents.md` sits in `ronin_library/`
+because the machinery fetches it directly, so no situation ever has to go looking.
 
 **Who they are for.** The_owner may know an area cold or may never have had a repo.
 Nothing here is pushed at either of them — an SOP costs nothing until a situation calls

@@ -75,8 +75,7 @@ Persistence is per browser tab (sessionStorage); one tab is one team.
 Everything that changes the page goes through one controller, `arrange(draft)` in
 `cowork-view.js`, built by `createArranger` (`team-arrange.js`). The C/T buttons and the
 roster cards call it — and so does a **draft** an agent hands in with `tejun-teampage`
-(`ronin_bin/`, catalogued in `ronin_catalogs/TOOLS.md`; actions `team-page-read` and
-`team-page-draft` in `ACTIONS.md`). The tool's bare form prints the view (the roster;
+(`ronin_bin/`, catalogued in `ronin_catalogs/TOOLS.md`). The tool's bare form prints the view (the roster;
 each tab on the team; which workspace the owner is typing in; which shows the agent;
 what each holds); its other form takes `key=value` words naming only what should
 change. The wire is `src/routes/team-page-api.ts`: tabs report their view (`PUT`),

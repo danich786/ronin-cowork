@@ -1369,11 +1369,6 @@ The catalog entry goes. {dir} is not touched.
 
 ## tile — tile.js (the Agent terminal tile)
 
-## macros — tilemacros.js (the ⚡ menu)
-- **macros.button_title:** Macros — drop one into this session's input
-- **macros.cooldown:** sent — wait {s}s before sending it again
-- **macros.none_previewed:** no macros previewed — see MACROS.md
-
 ## composer — composer.js
 - **composer.placeholder:** Message…
 - **composer.title:** Enter sends · Shift+Enter or Option+Enter for a new line
@@ -1673,11 +1668,6 @@ The catalog entry goes. {dir} is not touched.
 - **pad.asks_on_press:** (asks on press)
 - **pad.prog_ready:** writes F13–F24 + 🎙 Wispr straight onto the pad — no Input app needed
 - **pad.prog_needs_webhid:** programming the pad needs Chrome/Edge on desktop (WebHID)
-
-## macros — no-blurb and accessible names
-- **macros.no_blurb:** no blurb yet — add a blurb: line to its MACROS.md entry
-- **macros.aria_send:** {label} — +{name} ⏎, typed into the session and sent for you
-- **macros.aria_drop:** {label} — +{name}: dropped into the input for you to finish
 
 ## voice — voice.js failures
 - **voice.failed:** Dictation failed ({why})
