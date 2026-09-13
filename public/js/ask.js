@@ -4,8 +4,8 @@
  * owner's ruling 2026-09-12). A consumer writes a spec; this module draws it. Nothing spatial
  * is the consumer's: not the width, not the wrapping, not the shape, not what opens.
  *
- *   ask([{ group, fields: [{ key, label, options, blank?, many?, switch?, shape?, after?, row?, word? }] }],
- *       { value, onChange, density })  →  { el, value(), set(key, v) | set({...}), options(key, rows), show(keys|null), open(key), close(), destroy() }
+ *   ask([{ group, fields: [{ key, label, options, blank?, many?, switch?, shape?, after?, row?, word?, then? }] }],
+ *       { value, onChange, density, trayHost })  →  { el, value(), set(key, v) | set({...}), options(key, rows), show(keys|null), open(key), close(), destroy() }
  *
  * A field is a READING STONE (140 × 48: label over answer). Click it and a TRAY opens under
  * its group, holding option stones in one of two fixed shapes — the SQUARE (85, a glyph and
@@ -21,7 +21,31 @@
  * asked again. `row(option, value)` draws a control that belongs to a chosen option — a branch
  * name, a new team's name — under the group's stones, open or closed, so an answer's own field
  * never vanishes with the tray. `show([...keys])` limits which fields are drawn (a session type
- * decides which questions exist); `show(null)` draws them all. `density: 'tight'` is the launch
+ * decides which questions exist); `show(null)` draws them all. `then` is A SECOND LAYER: a
+ * list of nested questions, each with `when` naming the parent answer that reveals it —
+ * `then: [{ when: 'current', key: 'teamName', label: 'Which team', options: () => teamRows() }]`.
+ * Opening a tray shows layer one only, whatever the saved answer; the second layer appears
+ * only after an explicit click during that open interaction — clicking `current` keeps the
+ * tray open and draws the nested question's stones in the slot beneath layer one; answering
+ * it closes the tray, and the reading says the nested answer. Any other parent answer clears
+ * the nested one. A GROUP HOLDS STONES AND NOTHING ELSE, so its geometry never changes: every
+ * control that belongs to an answer (`row` on an option or on the field — a team's name, a
+ * branch) is a full-width LINE in the tray beneath the stones. For a one-of question the line
+ * appears after the click that chose its option, in the same slot as a second layer, and the
+ * tray stays open; for a many question the lines of every chosen option show while the tray is
+ * open. Closing the tray hides them; the consumer keeps the typed value and rebinds it when
+ * `row()` is asked again. A REQUIRED LINE — an option with `required: true` beside its `row`,
+ * and optionally `invalid: (option, value) → '' | message` — refuses every dismissal of its
+ * tray (the stone, a press outside, Escape, `close()`) while its control is blank or the
+ * consumer's validator returns a message: the tray stays open, the control is focused and
+ * marked `aria-invalid`, and the message (default `t('forms.required')`) is announced in the
+ * line's live text. Choosing another layer-one answer still dismisses, because the requirement
+ * belongs to the answer, not the tray. Typing clears the mark. A nested question is a field like any other in `value()`,
+ * `set()` and `onChange`, but it is never a stone of its own in the group. `trayHost` names a
+ * wrapping row the consumer owns (a flex-wrap or grid container holding this instance beside
+ * other controls): the open tray is placed at the end of that row instead of inside this
+ * instance, so it spans the row's full width — a Team question on the right of a Name field
+ * still opens across the whole workspace. `density: 'tight'` is the launch
  * forms' setting — less line spacing inside a group, the same paragraph spacing between groups,
  * a 40 px stone — for questions that are optional and must not be in the owner's face; 'loose'
  * (the default) is the commons' setting where a question is the page's subject.
@@ -49,12 +73,16 @@ export function snake(text) {
 const FILTER_FROM = 12;
 let trayIds = 0;
 
-export function ask(groups = [], { value = {}, onChange = null, className = '', density = 'loose' } = {}) {
+export function ask(groups = [], { value = {}, onChange = null, className = '', density = 'loose', trayHost = null } = {}) {
   const spec = (Array.isArray(groups) ? groups : []).map((group) => ({
     label: group.group || group.label || '',
     fields: (group.fields || []).map((field) => ({ ...field, shape: field.shape === 'square' ? 'square' : 'rect' })),
   }));
-  const fields = spec.flatMap((group) => group.fields);
+  const nested = (field) => (Array.isArray(field.then) ? field.then : []).map((child) => ({ ...child, parent: field.key, when: child.when, shape: child.shape === 'square' ? 'square' : 'rect' }));
+  const fields = spec.flatMap((group) => [...group.fields.flatMap((field) => [field, ...nested(field)])]);
+  const childrenOf = (field) => fields.filter((child) => child.parent === field.key);
+  const activeChild = (field) => childrenOf(field).find((child) => String(child.when) === String(state[field.key])) || null;
+  const answered = (field) => (field.many ? state[field.key].length > 0 : state[field.key] !== '' && state[field.key] != null);
   const byKey = (key) => fields.find((field) => field.key === key) || null;
   const state = {};
   for (const field of fields) state[field.key] = field.switch ? Boolean(value[field.key]) : field.many ? [...(value[field.key] || [])] : (value[field.key] ?? '');
@@ -62,7 +90,10 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
   let filter = '';
   let outside = null;
   let shown = null;
-  const visible = (field) => !shown || shown.has(field.key);
+  let trayNode = null;
+  let revealed = null; // the layer-one answer clicked during this open interaction, if any
+  let lines = []; // the line controls drawn in the open tray: { field, row, node, line, note }
+  const visible = (field) => !shown || shown.has(field.key) || (field.parent != null && shown.has(field.parent));
 
   const root = el('section', `ask ${className}`.trim());
   root.dataset.density = density === 'tight' ? 'tight' : 'loose';
@@ -79,11 +110,14 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     return out;
   };
 
+  const clear = (field) => { state[field.key] = field.switch ? false : field.many ? [] : ''; };
   const changed = (key) => {
     for (const field of fields) {
-      if (field.after !== key) continue;
-      state[field.key] = field.switch ? false : field.many ? [] : '';
-      changed(field.key);
+      if (field.after === key || (field.parent === key && String(field.when) !== String(state[key]))) {
+        if (!answered(field)) continue;
+        clear(field);
+        changed(field.key);
+      }
     }
     onChange?.(snapshot(), key);
   };
@@ -93,7 +127,9 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
       state[field.key] = cur.includes(row.v) ? cur.filter((v) => v !== row.v) : [...cur, row.v];
     } else {
       state[field.key] = row.v;
-      open = '';
+      const reveals = childrenOf(field).some((child) => String(child.when) === String(row.v)) || typeof row.row === 'function' || typeof field.row === 'function';
+      revealed = reveals ? row.v : null;
+      if (!reveals) open = '';
     }
     changed(field.key);
     paint();
@@ -111,6 +147,8 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
       return b;
     }
     if (cur === '' || cur == null) { b.className += ' ask-blank'; b.textContent = field.blank ?? t('ask.none', 'None'); return b; }
+    const child = activeChild(field);
+    if (child && answered(child)) return reading(child);
     // The reading is the answer and nothing else; a row's short word lives on its rectangle.
     b.textContent = rowFor(field, cur)?.l ?? cur;
     return b;
@@ -134,7 +172,7 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     button.setAttribute('aria-expanded', String(open === field.key));
     button.setAttribute('aria-controls', trayId);
     button.append(el('small', 'ask-label', field.label), reading(field));
-    button.addEventListener('click', () => { open = open === field.key ? '' : field.key; filter = ''; paint(); });
+    button.addEventListener('click', () => { dismiss(open === field.key ? '' : field.key); });
     return button;
   };
 
@@ -145,81 +183,108 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     box.setAttribute('role', 'group');
     box.setAttribute('aria-label', field.label);
     const all = rowsOf(field);
+    lines = [];
+    // The caption speaks only when a stone has more to say than its name — a sentence, or the
+    // reason it is greyed — and then says only that. A tray of plain words has no caption at all.
+    const wordy = (f) => rowsOf(f).some((row) => row.sub || row.off);
     const caption = el('p', 'ask-caption');
-    const say = (row) => {
-      caption.replaceChildren();
-      if (!row) return;
-      caption.append(el('b', null, row.l));
-      const rest = row.off || row.sub || '';
-      if (rest) caption.append(` — ${rest}`);
+    const say = (row) => { caption.textContent = row ? (row.off || row.sub || '') : ''; };
+    // One layer of stones for one question; the second layer, when revealed by a click in this
+    // open interaction, is the same thing again — or the clicked option's own line.
+    const shown = revealed != null && String(state[field.key]) === String(revealed);
+    const child = shown ? activeChild(field) : null;
+    const drawFor = (row) => (typeof row.row === 'function' ? row.row : typeof field.row === 'function' ? field.row : null);
+    const lineRows = field.many
+      ? all.filter((row) => state[field.key].includes(row.v) && drawFor(row))
+      : shown && !child ? all.filter((row) => String(row.v) === String(revealed) && drawFor(row)) : [];
+    const target = child && rowsOf(child).length > FILTER_FROM ? child : all.length > FILTER_FROM ? field : null;
+    const layerOf = (f) => {
+      const options = el('div', 'ask-options');
+      options.setAttribute('role', 'listbox');
+      if (f.many) options.setAttribute('aria-multiselectable', 'true');
+      const rows = f === field ? all : rowsOf(f);
+      const fill = () => {
+        options.replaceChildren();
+        if (!rows.length) {
+          const parent = f.after ? byKey(f.after) : null;
+          options.append(el('span', 'ask-empty', parent ? t('ask.after', 'Choose {field} first.', { field: parent.label }) : t('ask.nothing', 'Nothing to choose.')));
+          return;
+        }
+        const shown = rows.filter((row) => f !== target || !filter || `${row.l} ${row.sub || ''} ${row.word || ''}`.toLowerCase().includes(filter));
+        const items = [...(!f.many && f.blank != null ? [{ v: '', l: f.blank, blank: true }] : []), ...shown];
+        for (const row of items) {
+          const opt = el('button', `ask-opt ask-${f.shape}`);
+          opt.type = 'button';
+          opt.setAttribute('role', 'option');
+          const on = f.many ? state[f.key].includes(row.v) : String(state[f.key]) === String(row.v);
+          opt.setAttribute('aria-selected', String(on));
+          if (row.off) { opt.setAttribute('aria-disabled', 'true'); opt.title = row.off; }
+          if (f.shape === 'square') opt.append(el('i', 'ask-glyph', row.glyph || (row.blank ? '○' : '·')));
+          const name = el('b', 'ask-name');
+          name.append(snake(row.l));
+          opt.append(name);
+          if (f.shape === 'rect' && row.word) opt.append(el('small', 'ask-word', row.word));
+          opt.addEventListener('mouseenter', () => say(row));
+          opt.addEventListener('focus', () => say(row));
+          opt.addEventListener('click', () => { if (row.off) { say(row); return; } choose(f, row); });
+          options.append(opt);
+        }
+      };
+      fill();
+      return { options, fill };
     };
-    const options = el('div', 'ask-options');
-    options.setAttribute('role', 'listbox');
-    if (field.many) options.setAttribute('aria-multiselectable', 'true');
-    const stonesOf = () => {
-      options.replaceChildren();
-      if (!all.length) {
-        const parent = field.after ? byKey(field.after) : null;
-        options.append(el('span', 'ask-empty', parent ? t('ask.after', 'Choose {field} first.', { field: parent.label }) : t('ask.nothing', 'Nothing to choose.')));
-        return;
-      }
-      const shown = all.filter((row) => !filter || `${row.l} ${row.sub || ''} ${row.word || ''}`.toLowerCase().includes(filter));
-      const items = [...(!field.many && field.blank != null ? [{ v: '', l: field.blank, blank: true }] : []), ...shown];
-      for (const row of items) {
-        const opt = el('button', `ask-opt ask-${field.shape}`);
-        opt.type = 'button';
-        opt.setAttribute('role', 'option');
-        const on = field.many ? state[field.key].includes(row.v) : String(state[field.key]) === String(row.v);
-        opt.setAttribute('aria-selected', String(on));
-        if (row.off) { opt.setAttribute('aria-disabled', 'true'); opt.title = row.off; }
-        if (field.shape === 'square') opt.append(el('i', 'ask-glyph', row.glyph || (row.blank ? '○' : '·')));
-        const name = el('b', 'ask-name');
-        name.append(snake(row.l));
-        opt.append(name);
-        if (field.shape === 'rect' && row.word) opt.append(el('small', 'ask-word', row.word));
-        opt.addEventListener('mouseenter', () => say(row));
-        opt.addEventListener('focus', () => say(row));
-        opt.addEventListener('click', () => { if (row.off) { say(row); return; } choose(field, row); });
-        options.append(opt);
-      }
-      const pressed = field.many ? null : all.find((row) => String(row.v) === String(state[field.key]));
-      say(pressed || null);
-    };
-    if (all.length > FILTER_FROM) {
+    const first = layerOf(field);
+    let second = null;
+    if (child) {
+      second = layerOf(child);
+      const layer = el('div', 'ask-layer');
+      layer.setAttribute('role', 'group');
+      layer.setAttribute('aria-label', child.label);
+      if (child.label) layer.append(el('small', 'ask-layer-head', child.label));
+      layer.append(second.options);
+      second.el = layer;
+    }
+    if (target) {
       const find = el('input', 'ask-filter');
       find.type = 'search';
       find.placeholder = t('ask.find', 'type to find');
       find.value = filter;
-      find.addEventListener('input', () => { filter = find.value.trim().toLowerCase(); stonesOf(); });
+      find.addEventListener('input', () => { filter = find.value.trim().toLowerCase(); (target === field ? first : second).fill(); });
       box.append(find);
     }
-    stonesOf();
-    box.append(options, caption);
-    return box;
-  };
-
-  /* ---- extras: a chosen option's own control, under the group, open or closed ---- */
-  const extrasOf = (group) => {
-    const extras = el('div', 'ask-extras');
-    for (const field of group.fields) {
-      if (typeof field.row !== 'function' || !visible(field)) continue;
-      const chosen = field.many ? state[field.key] : [state[field.key]];
-      for (const v of chosen) {
-        const row = rowFor(field, v);
-        if (!row) continue;
-        const node = field.row(row, snapshot());
+    const pressedIn = (f) => (f.many ? null : rowsOf(f).find((row) => String(row.v) === String(state[f.key])));
+    say((child && pressedIn(child)) || pressedIn(field) || null);
+    box.append(first.options);
+    if (second) box.append(second.el);
+    const captioned = wordy(field) || (child && wordy(child));
+    if (lineRows.length) {
+      const line = el('div', 'ask-layer ask-line');
+      line.setAttribute('role', 'group');
+      line.setAttribute('aria-label', field.label);
+      for (const row of lineRows) {
+        const node = drawFor(row)(row, snapshot());
         if (!node) continue;
-        const line = el('label', 'ask-extra');
-        line.append(el('span', 'ask-extra-name', row.l), node);
-        extras.append(line);
+        const label = el('label', 'ask-extra');
+        const note = el('small', 'ask-validation');
+        note.id = `${trayId}-note-${lines.length}`;
+        note.setAttribute('role', 'status');
+        note.setAttribute('aria-live', 'polite');
+        if (row.required) { node.setAttribute?.('aria-required', 'true'); node.setAttribute?.('aria-describedby', note.id); }
+        node.addEventListener?.('input', () => { node.setAttribute?.('aria-invalid', 'false'); note.textContent = ''; line.dataset.invalid = 'false'; });
+        label.append(el('span', 'ask-extra-name', row.l), node, note);
+        line.append(label);
+        lines.push({ field, row, node, line, note });
       }
+      if (line.children.length) box.append(line);
     }
-    return extras.children.length ? extras : null;
+    if (captioned) box.append(caption);
+    return box;
   };
 
   /* ---- paint: groups, their stones, and the one open tray ---- */
   function paint() {
     root.replaceChildren();
+    if (trayNode) { trayNode.remove?.(); trayNode = null; }
     if (open && !fields.some((field) => field.key === open && visible(field))) open = '';
     root.dataset.open = open;
     for (const group of spec) {
@@ -230,28 +295,68 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
       const row = el('div', 'ask-fields');
       for (const field of drawn) row.append(stone(field));
       box.append(row);
-      const extras = extrasOf(group);
-      if (extras) box.append(extras);
       root.append(box);
       const opened = drawn.find((field) => field.key === open && !field.switch);
-      if (opened) root.append(tray(opened));
+      if (opened) {
+        trayNode = tray(opened);
+        trayNode.dataset.density = root.dataset.density;
+        trayNode.addEventListener('keydown', onEscape);
+        (trayHost || root).append(trayNode);
+      }
     }
     bindOutside();
   }
 
+  /* ---- a required line refuses dismissal while blank or invalid ---- */
+  const blank = (node) => typeof node?.value === 'string' && node.value.trim() === '';
+  const objection = ({ row, node }) => {
+    if (!row.required) return '';
+    const message = typeof row.invalid === 'function' ? String(row.invalid(row, snapshot()) || '') : '';
+    return message || (blank(node) ? t('forms.required', 'Required') : '');
+  };
+  const refuse = () => {
+    for (const entry of lines) {
+      const message = objection(entry);
+      if (!message) continue;
+      entry.node.setAttribute?.('aria-invalid', 'true');
+      entry.note.textContent = message;
+      entry.line.dataset.invalid = 'false';
+      if (typeof entry.line.offsetWidth === 'number') void entry.line.offsetWidth; // restart the flash
+      entry.line.dataset.invalid = 'true';
+      entry.node.focus?.();
+      return true;
+    }
+    return false;
+  };
+  /** Try to close the open tray (or move to `next`); a required line may say no. */
+  const dismiss = (next = '') => {
+    if (open && refuse()) return false;
+    open = next;
+    filter = '';
+    revealed = null;
+    paint();
+    return true;
+  };
+
   /* ---- dismissal: Escape, and a press outside the utility ---- */
-  root.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && open) { event.preventDefault(); const key = open; open = ''; paint(); focusStone(key); }
-  });
+  const onEscape = (event) => {
+    if (event.key === 'Escape' && open) { event.preventDefault(); const key = open; if (dismiss()) focusStone(key); }
+  };
+  root.addEventListener('keydown', onEscape);
   const focusStone = (key) => { for (const node of root.children) { /* groups */ for (const inner of node.children || []) { for (const button of inner.children || []) if (button.dataset?.askKey === key) button.focus?.(); } } };
+  let anyKey = null;
   function bindOutside() {
     if (typeof document.addEventListener !== 'function') return;
     if (open && !outside) {
-      outside = (event) => { if (typeof root.contains === 'function' && root.contains(event.target)) return; open = ''; paint(); };
+      outside = (event) => { if (typeof root.contains === 'function' && (root.contains(event.target) || trayNode?.contains?.(event.target))) return; dismiss(); };
+      anyKey = (event) => { if (event.key === 'Escape' && open && !(typeof root.contains === 'function' && (root.contains(event.target) || trayNode?.contains?.(event.target)))) onEscape(event); };
       document.addEventListener('pointerdown', outside);
+      document.addEventListener('keydown', anyKey);
     } else if (!open && outside) {
       document.removeEventListener('pointerdown', outside);
+      document.removeEventListener('keydown', anyKey);
       outside = null;
+      anyKey = null;
     }
   }
 
@@ -266,9 +371,9 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     },
     show(keys) { shown = Array.isArray(keys) ? new Set(keys) : null; paint(); },
     options(key, rows) { const field = byKey(key); if (!field) return; field.options = rows; paint(); },
-    open(key) { open = byKey(key) && !byKey(key).switch ? key : ''; filter = ''; paint(); },
-    close() { open = ''; paint(); },
+    open(key) { return dismiss(byKey(key) && !byKey(key).switch ? key : ''); },
+    close() { return dismiss(); },
     paint,
-    destroy() { open = ''; bindOutside(); root.remove?.(); },
+    destroy() { open = ''; lines = []; bindOutside(); trayNode?.remove?.(); trayNode = null; root.remove?.(); },
   };
 }

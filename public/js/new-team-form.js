@@ -1,13 +1,14 @@
 /* part of the ronin-cowork client — see js/README.md */
 import { request } from './request.js';
 import { t } from './lexicon.js';
-import { createWhereItWorks } from './where-it-works.js';
+import { ask } from './ask.js';
+import { ruledRows } from './glyphs.js';
 import { finalizeTeamName, isValidTeamName, sanitizeTeamName } from './new-team-draft.js';
 import { conflictingAgentNames } from './new-team-check.js';
 import { agentPicks, agentRow, createAgentRows } from './team-agents.js';
 import { launchTeamAgents } from './team-loader.js';
 import {
-  createStep, dialRowMulti, el, kindTiles, mandateSelect, providerModelPair, readingRows, tagRow, templateTray, wayTiles, bookShelves,
+  createStep, el, mandateWord, providerCatalog, readingRows, tagRow, templateTray, tierWord,
 } from './form-steps.js';
 import { closeWorkspaceTab, openWorkspaceTab, reserveWorkspaceTab, seedReservedWorkspaceTab } from './workspace.js';
 
@@ -67,6 +68,24 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
   const offered = () => (draft.kind === 'open' ? templates : templates.filter((row) => row.kinds.includes(draft.kind)));
   const routineOn = (name) => draft.routines[name] === true;
   const onNames = () => routineRows.filter((row) => routineOn(row.name)).map((row) => row.name);
+  const providerRows = () => providerCatalog().rows
+    .filter((row, at, all) => all.findIndex((other) => other.provider === row.provider) === at)
+    .map((row) => {
+      const unavailable = row.operational ? '' : row.off
+        ? t('forms.reason_turned_off', 'turned off')
+        : t('forms.reason_not_on_machine', 'not on this machine');
+      return { v: row.provider, l: row.cli_label || row.provider_label || row.provider, off: unavailable || undefined };
+    });
+  const modelRows = (provider) => providerCatalog().rows.filter((row) => row.provider === provider).map((row) => ({
+    v: row.model, l: row.model, word: tierWord(row.tier), sub: row.cost || '',
+    off: !row.operational
+      ? (row.off ? t('forms.reason_turned_off', 'turned off') : t('forms.reason_not_on_machine', 'not on this machine'))
+      : row.model_list_current && row.listed === false
+        ? t('forms.reason_not_listed', 'not listed by your {cli} {client_version}', {
+          cli: row.cli_label || row.cli, client_version: row.model_list?.client_version || row.model_list_installed || '',
+        })
+        : undefined,
+  }));
 
   /** What a template authors, as one string — the dirty test compares against it. */
   const authored = () => JSON.stringify({
@@ -134,12 +153,21 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
   function paintTray() {
     trayHost.replaceChildren(templateTray(offered(), draft.template, (name) => applyTemplate(name), { includeOwn: false }));
   }
-  function paintKinds() {
-    kindHost.replaceChildren(kindTiles(draft.kind, (key) => {
-      draft.kind = key;
+  const kindQuestions = ask([{ group: t('kind', 'Kind'), fields: [{
+    key: 'kind', label: t('kind', 'Kind'), shape: 'square',
+    options: ruledRows('kind', ['open', ...KINDS], (key) => t(`kind.${key}`, key === 'open' ? 'Open' : key)),
+  }] }], {
+    value: { kind: draft.kind },
+    className: 'ntf-kind-questions',
+    onChange: (value) => {
+      draft.kind = value.kind;
       if (draft.template && !offered().some((row) => row.name === draft.template)) { draft.template = ''; snapshot = ''; }
-      paint();
-    }));
+      paintTray(); paintFoot(); paintActions();
+    },
+  });
+  function paintKinds() {
+    kindQuestions.set('kind', draft.kind);
+    kindHost.replaceChildren(kindQuestions.el);
   }
   /* ---- step 2 · Name & instructions ---- */
   const stepTop = createStep({ n: 2, key: 'top', title: t('new_team.name_instructions', 'Name & instructions') });
@@ -207,19 +235,54 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
 
   /* ---- step 4 · Where ---- */
   const stepWhere = createStep({ n: 5, key: 'where', title: t('new_team.who_where', 'Who and where') });
-  const pair = providerModelPair(
-    () => ({ provider: draft.provider, model: draft.model }),
-    (provider, model) => { draft.provider = provider; draft.model = model; paintFoot(); },
-    (label, control) => createField({ label, control }).el,
-  );
-  // a Branch column only when Worktrees is off. The single team branch field is gone.
-  const where = createWhereItWorks({ rootDefaultLabel: t('new_team.root_default', '— the box’s default —'), onChange: () => { draft.root = where.root; draft.repos = where.repos(); draft.branches = where.branches(); paintFoot(); } });
-  const wherePair = el('div', 'fs-pair');
-  wherePair.append(createField({ label: t('where.label', 'Where it works'), control: where.el }).el);
-  // no one ever even sees the fucking name." The store already defaults it to the team's
-  // own token, so the form asks nothing and sends nothing.
-  stepWhere.body.append(pair.el, wherePair);
-  function paintRoots() { where.setRoots(roots); where.root = draft.root; where.setRepos(draft.repos, draft.branches); draft.root = where.root; }
+  const rootRows = (additional = false) => roots.filter((row) => !additional || row.repo !== false).map((row) => ({
+    v: row.name, l: row.name,
+    word: row.repo_profile?.worktrees === 'enabled' ? t('where.worktree', 'worktree') : t('where.checkout', 'checkout'),
+  }));
+  const branchField = (option) => {
+    if (routineOn('ronin_worktrees')) return null;
+    const input = el('input', 'wk-field-control'); input.type = 'text'; input.spellcheck = false;
+    input.value = draft.branches[option.v] || ''; input.placeholder = t('where.branch', 'Branch');
+    input.addEventListener('input', () => {
+      const branch = input.value.trim();
+      if (branch) draft.branches[option.v] = branch; else delete draft.branches[option.v];
+      paintFoot();
+    });
+    return input;
+  };
+  const whereQuestions = ask([
+    { group: t('new_agent.model_package', 'Model'), fields: [
+      { key: 'provider', label: t('forms.provider', 'Model provider'), blank: t('forms.default', 'Default'), options: providerRows },
+      { key: 'model', label: t('forms.model', 'Model'), blank: t('forms.default', 'Default'), after: 'provider', options: (value) => modelRows(value.provider) },
+    ] },
+    { group: t('where.label', 'Where it works'), fields: [
+      { key: 'root', label: t('where.born_in', 'Born in'), blank: t('new_team.root_default', 'The box’s default'), options: () => rootRows() },
+      { key: 'repos', label: t('where.additional', 'Additional workspaces'), many: true, after: 'root',
+        options: (value) => rootRows(true).filter((row) => row.v !== value.root), row: branchField },
+    ] },
+  ], {
+    value: { provider: draft.provider, model: draft.model, root: draft.root, repos: draft.repos },
+    className: 'ntf-where-questions',
+    density: 'tight',
+    onChange: (value) => {
+      draft.provider = value.provider; draft.model = value.model; draft.root = value.root;
+      draft.repos = value.repos.filter((name) => name !== value.root);
+      for (const name of Object.keys(draft.branches)) if (!draft.repos.includes(name)) delete draft.branches[name];
+      paintFoot();
+    },
+  });
+  stepWhere.body.append(whereQuestions.el);
+  function paintRoots() {
+    whereQuestions.set('provider', draft.provider); whereQuestions.set('model', draft.model);
+    whereQuestions.set('root', draft.root); whereQuestions.set('repos', draft.repos);
+  }
+  const whereSummary = () => t('where.summary', 'born in {root} · {repos}', {
+    root: draft.root || t('team_config.default', 'Default'),
+    repos: draft.repos.length ? (routineOn('ronin_worktrees')
+      ? t('where.desks', 'desks in {list}', { list: draft.repos.join(', ') })
+      : t('where.checkouts', 'works in {list}', { list: draft.repos.join(', ') }))
+      : t('where.none', 'no auto desk'),
+  });
 
   /* ---- step 5 · Team kit ---- */
   const stepKit = createStep({ n: 6, key: 'kit', title: t('team_kit', 'Shared toolkit') });
@@ -242,21 +305,19 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
     { key: 'live_dangerously', label: t('launch_mode.live', 'Dangerously'),
       sub: t('launch_mode.live_sub', 'Ronin appends that provider’s own bypass flag, so the Agent does not stop to ask.') },
   ];
-  const modeHost = el('div');
-  const paintLaunchMode = () => {
-    modeHost.replaceChildren(
-      el('p', 'fs-head', t('launch_mode.head', 'launch mode')),
-      wayTiles(LAUNCH_MODES(), draft.launchMode, (key) => { draft.launchMode = key; paintLaunchMode(); paintFoot(); }),
-    );
-  };
   const gbrainMode = () => (routineOn('gbrain') ? 'connected' : 'disconnected');
-  const routinesHead = el('p', 'fs-head', t('routines', 'Routines'));
   const worktreesMode = el('div', 'fs-worktrees-mode');
-  const routinesHost = el('div');
-  function paintRoutines() {
-    routinesHost.replaceChildren();
+  const kitHost = el('div');
+  let kitQuestions = null;
+  let kitSignature = '';
+  const routineProvenance = (name) => {
+    const on = routineOn(name);
+    return handRoutines.has(name)
+      ? (on ? t('forms.team_on', 'team turns on') : t('forms.team_off', 'team turns off'))
+      : (on ? t('forms.campaign_on', 'campaign on') : t('forms.campaign_off', 'campaign off'));
+  };
+  function paintKitQuestions() {
     const worktreesOn = routineOn('ronin_worktrees');
-    where.setWorktrees(worktreesOn);
     worktreesMode.replaceChildren(
       el('b', null, t('new_team.worktrees_mode', 'Agent work mode')),
       el('strong', null, worktreesOn
@@ -264,57 +325,64 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
         : t('new_team.worktrees_off', 'Use the project checkout and its branches')),
       el('small', null, t('new_team.worktrees_help', 'Worktrees give each Agent a separate working folder and branch, so their file changes do not collide. They run only when both the Agent and repo have Worktrees on, and use the managed hand-in and Team-lead merge process.')),
     );
-    const row = (label, blurb, on, prov, act) => {
-      const line = el(act ? 'button' : 'div', 'fs-routine');
-      if (act) { line.type = 'button'; line.addEventListener('click', act); }
-      line.dataset.on = String(on);
-      const words = el('div');
-      words.append(el('b', null, label), el('small', null, blurb));
-      line.append(el('span', 'fs-mark', on ? '✓' : ''), words, el('span', 'fs-prov', prov));
-      routinesHost.append(line);
-    };
-    row(
-      t('new_team.floor', 'Cowork floor'),
-      t('new_team.floor_why', 'The launch, campaign and team resolution, the shelf map, the birth receipt.'),
-      true, t('forms.always', 'always'), null,
-    );
-    for (const routine of routineRows) {
-      const on = routineOn(routine.name);
-      const prov = handRoutines.has(routine.name)
-        ? (on ? t('forms.team_on', 'team turns on') : t('forms.team_off', 'team turns off'))
-        : (on ? t('forms.campaign_on', 'campaign on') : t('forms.campaign_off', 'campaign off'));
-      row(routine.label, routine.blurb, on, prov, () => {
-        draft.routines[routine.name] = !on;
-        if (draft.routines[routine.name] === (seedRoutines[routine.name] === true)) handRoutines.delete(routine.name);
-        else handRoutines.add(routine.name);
-        paintRoutines();
-        paintFoot();
+    const signature = JSON.stringify([routineRows.map((row) => row.name), sops.map((row) => row.name), ways.map((row) => row.name), [...handRoutines]]);
+    if (signature !== kitSignature) {
+      kitQuestions?.destroy();
+      const shelfRows = (rows) => rows.map((row) => ({ v: row.name, l: row.label || row.name, sub: row.blurb || '' }));
+      kitQuestions = ask([
+        { group: t('launch_mode.head', 'Launch mode'), fields: [{
+          key: 'launchMode', label: t('launch_mode.head', 'Launch mode'),
+          options: LAUNCH_MODES().map((row) => ({ v: row.key, l: row.label, sub: row.sub })),
+        }] },
+        { group: t('routines', 'Routines'), fields: routineRows.map((routine) => ({
+          key: `routine:${routine.name}`, label: routine.label || routine.name,
+          switch: [t('on', 'On'), t('off', 'Off')], word: routineProvenance(routine.name),
+        })) },
+        { group: t('new_agent.shelf_house', 'Behaviours · the house'), fields: [{
+          key: 'books:sops', label: t('behaviours', 'Behaviours'), many: true, options: shelfRows(sops),
+        }] },
+        { group: t('new_agent.shelf_ways', 'Behaviours · ways of working'), fields: [{
+          key: 'books:ways', label: t('behaviours', 'Behaviours'), many: true, options: shelfRows(ways),
+        }] },
+      ], {
+        value: {
+          launchMode: draft.launchMode,
+          ...Object.fromEntries(routineRows.map((row) => [`routine:${row.name}`, routineOn(row.name)])),
+          'books:sops': draft.books.filter((book) => book.startsWith('sops:')).map((book) => book.slice(5)),
+          'books:ways': draft.books.filter((book) => book.startsWith('ways:')).map((book) => book.slice(5)),
+        },
+        className: 'ntf-kit-questions',
+        density: 'tight',
+        onChange: (value, key) => {
+          draft.launchMode = value.launchMode;
+          if (key.startsWith('routine:')) {
+            const name = key.slice(8); draft.routines[name] = value[key];
+            if (draft.routines[name] === (seedRoutines[name] === true)) handRoutines.delete(name); else handRoutines.add(name);
+            kitSignature = '';
+          }
+          draft.books = [
+            ...value['books:sops'].map((name) => `sops:${name}`),
+            ...value['books:ways'].map((name) => `ways:${name}`),
+          ];
+          paintKitQuestions(); whereQuestions.paint(); paintFoot();
+        },
       });
+      kitSignature = signature;
+      kitHost.replaceChildren(kitQuestions.el);
     }
+    kitQuestions.set('launchMode', draft.launchMode);
+    for (const routine of routineRows) kitQuestions.set(`routine:${routine.name}`, routineOn(routine.name));
+    kitQuestions.set('books:sops', draft.books.filter((book) => book.startsWith('sops:')).map((book) => book.slice(5)));
+    kitQuestions.set('books:ways', draft.books.filter((book) => book.startsWith('ways:')).map((book) => book.slice(5)));
   }
-  const booksHost = el('div');
-  function paintBooks() {
-    // here, and you can just choose it the same as you could in the agent form"). The same
-    // two shelves New Agent offers, the same `<shelf>:<name>` addresses, one implementation
-    // in form-steps.js. A team's books land in the next Agent form like every other default
-    // and the hand has the last word — there is no required/offered switch any more.
-    booksHost.replaceChildren(bookShelves([
-      { head: t('new_agent.shelf_house', 'behaviours · the house'), prefix: 'sops', rows: sops },
-      { head: t('new_agent.shelf_ways', 'behaviours · ways of working'), prefix: 'ways', rows: ways },
-    ], draft.books, (address, on) => {
-      draft.books = on ? [...draft.books, address] : draft.books.filter((book) => book !== address);
-      paintBooks();
-      paintFoot();
-    }));
-  }
-  // No bare Behaviours heading: the two shelves head themselves.
-  stepKit.body.append(modeHost, routinesHead, worktreesMode, routinesHost, booksHost);
+  stepKit.body.append(worktreesMode, kitHost);
 
   /* ---- step 6 · Team lead ---- */
   /* ---- step 4 · the team's own agents (js/team-agents.js) ---- */
   const agents = createAgentRows({
     n: 3, key: 'lead',
     rows: () => draft.agents,
+    createAction, createActionBar,
     changed: () => paintFoot(),
     onToggle: () => toggle('lead'),
   });
@@ -351,7 +419,7 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
     foot.append(readingRows([
       [t('add_agent.team', 'team'), name],
       [t('team.objective', 'Objective'), draft.objective],
-      [t('add_agent.place', 'place'), where.summary()],
+      [t('add_agent.place', 'place'), whereSummary()],
       [t('new_team.agents', 'Agents'), draft.agents.some((row) => row.name)
         ? tagRow(draft.agents.filter((row) => row.name).map((row) => ({ text: row.lead ? `人 ${row.name}` : row.name, on: true })))
         : ''],
@@ -583,11 +651,8 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
     paintKinds();
     paintName();
     paintRoots();
-    pair.paint();
     agents.paint();
-    paintRoutines();
-    paintLaunchMode();
-    paintBooks();
+    paintKitQuestions();
     paintFolds();
     paintActions();
     paintFoot();

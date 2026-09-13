@@ -7,10 +7,10 @@
  * launch. */
 import { request } from './request.js';
 import { t } from './lexicon.js';
-import { createWhereItWorks } from './where-it-works.js';
+import { ask } from './ask.js';
 import { finalizeTeamName, isValidTeamName, sanitizeTeamName } from './new-team-draft.js';
 import {
-  createStep, dialRow, dialRowMulti, el, kindTiles, providerModelPair, readingRows, tagRow, templateTray, wayTiles, bookShelves,
+  createStep, el, kindTiles, loadProviderCatalog, mandateWord, providerCatalog, readingRows, tagRow, templateTray, tierWord, wayTiles, bookShelves,
 } from './form-steps.js';
 import { closeWorkspaceTab, openWorkspaceTab, reserveWorkspaceTab } from './workspace.js';
 
@@ -34,15 +34,15 @@ export function templateEntryPlan({ currentKind, kindTouched = false, templates 
   return { kind, template: row.name };
 }
 
-export function createNewAgentView(kit, { connect = null, embedded = false } = {}) {
+export function createNewAgentView(kit, { connect = null, embedded = false, team = null } = {}) {
   const { createSurface, createAction, createActionBar, createField, createNotice } = kit.primitives;
 
   const draft = {
     type: 'cowork_agent', template: '', templateName: '',
     name: '', kind: 'coding', kindTouched: false, provider: '', model: '', instructions: '',
-    teamMode: 'new', team: '', newTeam: '',
+    teamMode: typeof team === 'function' && team() ? 'existing' : 'none', team: typeof team === 'function' ? team() : '', newTeam: '', teamLead: false,
     reach: 'open', recruit: 'open', output: ['open'], launchMode: 'live_dangerously',
-    books: [], root: '', routineOverrides: {},
+    books: [], root: '', repos: [], routineOverrides: {},
     expanded: {},
   };
   let seed = null;
@@ -102,19 +102,17 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
     { key: 'cowork_agent', label: t('new_agent.type_cowork', 'Cowork Agent'), sub: t('new_agent.type_cowork_sub', 'Born into Ronin: the floor, its routines, its reading and its team.') },
     { key: 'bare_metal_agent', label: t('new_agent.type_bare', 'Bare-metal Agent'), sub: t('new_agent.type_bare_sub', 'The provider’s agent and nothing else — no floor, no routines, no reading.') },
     { key: 'terminal', label: t('new_agent.type_terminal', 'Terminal'), sub: t('new_agent.type_terminal_sub', 'A raw tmux pane. No agent is launched and nothing is sent to it.') },
-    { key: 'template', label: t('new_agent.apply_template', 'Apply Template'), sub: t('new_agent.apply_template_sub', 'Start with one of your available Agent templates.') },
   ];
   function paintTypes() {
     typeHost.replaceChildren();
     for (const type of TYPES()) {
       const box = el('button', 'fs-way');
       box.type = 'button';
-      box.setAttribute('aria-pressed', String(type.key === 'template' ? templateMode : !templateMode && draft.type === type.key));
+      box.setAttribute('aria-pressed', String(draft.type === type.key));
       box.append(el('b', null, type.label), el('small', null, type.sub));
       box.addEventListener('click', () => {
-        templateMode = type.key === 'template';
-        if (templateMode) draft.type = 'cowork_agent';
-        else draft.type = type.key;
+        templateMode = false;
+        draft.type = type.key;
         paint();
       });
       typeHost.append(box);
@@ -123,7 +121,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
   stepType.body.append(typeHost, templateHost);
 
   /* ---- 3 · Name & instructions ---- */
-  const stepTop = createStep({ n: 3, key: 'top', title: t('new_agent.identity_step', 'Name & instructions') });
+  const stepTop = createStep({ n: 2, key: 'top', title: t('new_agent.agent_body', 'Agent') });
   const nameInput = el('input');
   nameInput.type = 'text';
   nameInput.autocapitalize = 'off';
@@ -215,105 +213,108 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
   const instructionsField = createField({ label: t('new_agent.instructions', 'Instructions'), control: instructionsInput }).el;
   stepTop.body.append(instructionsField);
 
-  /* ---- 4 · Team ---- */
-  const stepTeam = createStep({ n: 4, key: 'team', title: t('squad', 'Team'), onToggle: () => toggle('team') });
-  const teamHost = el('div');
-  function paintTeam() {
-    teamHost.replaceChildren();
-    const ways3 = el('div', 'fs-pair na-team-choices');
-    const way = (key, label, sub) => {
-      const box = el('button', 'fs-way');
-      box.type = 'button';
-      box.setAttribute('aria-pressed', String(draft.teamMode === key));
-      box.append(el('b', null, label), el('small', null, sub));
-      box.addEventListener('click', () => {
-        draft.teamMode = key;
-        if (key === 'existing' && !draft.team && teams.length) draft.team = teams[0].name;
-        // THE DEFAULT LANDS: joining a team brings its answers into the form; the hand
-        // has the last word. The seed door is re-asked for the team's resolution.
-        void loadSeed();
-        paintTeam();
-        paintBranch();
-        paintFoot();
-      });
-      return box;
+  /* ---- The one question utility: Model, Mandate, Team, and Where it works. ---- */
+  const providerRows = () => providerCatalog().rows
+    .filter((row, index, all) => all.findIndex((other) => other.provider === row.provider) === index)
+    .map((row) => {
+      const unavailable = row.operational ? '' : row.off
+        ? t('forms.reason_turned_off', 'turned off')
+        : t('forms.reason_not_on_machine', 'not on this machine');
+      return { v: row.provider, l: row.cli_label || row.provider_label || row.provider, off: unavailable || undefined };
+    });
+  const modelRows = (provider) => providerCatalog().rows.filter((row) => row.provider === provider).map((row) => {
+    const machine = providerCatalog().machine.find((item) => item.id === row.cli);
+    return {
+      v: row.model, l: row.model, word: tierWord(row.tier), sub: row.cost || '',
+      off: !row.operational
+        ? t('forms.reason_not_on_machine', 'not on this machine')
+        : row.model_list_current && row.listed === false
+          ? t('forms.reason_not_listed', 'not listed by your {cli} {client_version}', { cli: row.cli_label || row.cli, client_version: machine?.version || '' }).trim()
+          : undefined,
     };
-    // of intent: most launches are the start of something, joining one is next, and a
-    // rōnin is the ordinary remainder rather than the opening offer.
-    ways3.append(
-      way('new', t('new_agent.team_new', 'A new team'), t('new_agent.team_new_sub', 'Created first, then this Agent is born into it.')),
-      way('existing', t('new_agent.team_existing', 'An existing team'), t('new_agent.team_existing_sub', 'Join it. Its answers land at birth.')),
-      way('none', t('new_agent.team_none', 'No team — a rōnin'), t('new_agent.team_none_sub', 'Ordinary, not a gap.')),
-    );
-    teamHost.append(ways3);
-    if (draft.teamMode === 'existing') {
-      const select = el('select');
-      for (const team of teams) select.add(new Option(String(team.title ?? '').trim() || team.name, team.name));
-      select.value = draft.team;
-      select.addEventListener('change', () => { draft.team = select.value; paintBranch(); void loadSeed(); paintFoot(); });
-      teamHost.append(createField({ label: t('squad', 'Team'), control: select }).el);
+  });
+  const teamChoice = () => draft.teamMode === 'new' ? 'new' : draft.teamMode === 'none' ? 'none' : 'current';
+  const teamRows = () => teams.map((row) => ({ v: row.name, l: String(row.title ?? '').trim() || row.name, sub: row.name }));
+  const rootRows = () => roots.map((row) => ({ v: row.name, l: row.name, word: row.repo_profile?.worktrees === 'enabled' ? t('where.worktree', 'worktree') : t('where.checkout', 'checkout') }));
+  const mandateRows = (values) => values.map((value) => ({ v: value, l: mandateWord(value) }));
+  const newTeamField = () => {
+    const input = el('input'); input.type = 'text'; input.spellcheck = false; input.autocapitalize = 'off'; input.value = draft.newTeam;
+    input.placeholder = t('new_team.name_placeholder', 'lowercase, digits, - _');
+    input.addEventListener('input', () => {
+      const caret = input.selectionStart; const clean = sanitizeTeamName(input.value);
+      if (clean !== input.value) { input.value = clean; input.setSelectionRange(caret, caret); }
+      draft.newTeam = input.value; paintFoot(); paintActions();
+    });
+    return input;
+  };
+  const identityRow = el('div', 'na-identity-row');
+  const onQuestionChange = (value, key) => {
+    if ('provider' in value) { draft.provider = value.provider; draft.model = value.model; }
+    if ('reach' in value) { draft.reach = value.reach; draft.recruit = value.recruit; draft.output = value.output; }
+    if ('root' in value) { draft.root = value.root; draft.repos = [...value.repos]; }
+    if ('teamLead' in value) draft.teamLead = value.teamLead;
+    if (key === 'provider' || key === 'model') touched.model = true;
+    if (['reach', 'recruit', 'output'].includes(key)) touched.mandate = true;
+    if (key === 'root') {
+      touched.root = true;
+      draft.repos = [];
+      questions.set('repos', draft.repos);
     }
-    if (draft.teamMode === 'new') {
-      const input = el('input');
-      input.type = 'text';
-      input.spellcheck = false;
-      input.autocapitalize = 'off';
-      input.value = draft.newTeam;
-      input.placeholder = t('new_team.name_placeholder', 'lowercase, digits, - _');
-      input.addEventListener('input', () => {
-        const caret = input.selectionStart;
-        const clean = sanitizeTeamName(input.value);
-        if (clean !== input.value) { input.value = clean; input.setSelectionRange(caret, caret); }
-        draft.newTeam = input.value;
-        paintFoot();
-        paintActions(); // the button's promise follows the name as it is typed
-      });
-      // GO NEVER FAILS, and this tile is now the one you land on: leaving the name blank
-      // is an answer — no team is made and the Agent is a rōnin — not an error to clear.
-      teamHost.append(createField({
-        label: t('new_team.name', 'Team name'),
-        control: input,
-        description: t('new_agent.team_new_blank', 'Blank makes no team — the Agent is a rōnin.'),
-      }).el);
+    if (key === 'repos') touched.repos = true;
+    if (key === 'team' || key === 'teamName') {
+      draft.teamMode = value.team === 'new' ? 'new' : value.team === 'none' ? 'none' : 'existing';
+      draft.team = draft.teamMode === 'existing' ? value.teamName : '';
+      touched.repos = false;
+      const selected = teams.find((row) => row.name === draft.team);
+      draft.repos = [...new Set((draft.teamMode === 'existing' ? selected?.repos || [] : []).filter((name) => name && name !== draft.root))];
+      void loadSeed();
     }
-  }
-  stepTeam.body.append(teamHost);
-
-  /* ---- 5 · Who and where ---- */
-  const stepWhere = createStep({ n: 5, key: 'where', title: t('new_team.who_where', 'Who and where'), onToggle: () => toggle('where') });
-  const pair = providerModelPair(
-    () => ({ provider: draft.provider, model: draft.model }),
-    (provider, model) => { draft.provider = provider; draft.model = model; touched.model = true; paintFoot(); },
-    (label, control) => createField({ label, control }).el,
-  );
-  // is this launch's own; the ticks are the Team's desks until the person changes them,
-  // and then the launch carries its own `repos`. Branches are the Team's and read-only here.
-  const where = createWhereItWorks({ branchesEditable: false, onChange: () => { if (where.root !== draft.root) { draft.root = where.root; touched.root = true; } else { draft.repos = where.repos(); touched.repos = true; } paintFoot(); } });
-  const wherePair = el('div', 'fs-pair');
-  wherePair.append(createField({ label: t('where.label', 'Where it works'), control: where.el }).el);
-  stepWhere.body.append(pair.el, wherePair);
-  function paintBranch() {
-    const team = draft.teamMode === 'existing' ? teams.find((row) => row.name === draft.team) : null;
-    if (!touched.repos) { draft.repos = null; where.setRepos(team?.repos || [], team?.branches || {}); }
-  }
-  function paintRoots() { where.setRoots(roots); where.root = draft.root; draft.root = where.root; }
-
-  /* ---- 6 · Mandate ---- */
-  const stepMandate = createStep({ n: 6, key: 'mandate', title: t('mandate', 'Mandate'), onToggle: () => toggle('mandate') });
-  const mandateHost = el('div');
-  function paintMandate() {
-    mandateHost.replaceChildren(
-      dialRow(t('reach', 'Reach'), REACH, draft.reach, (value) => { draft.reach = value; touched.mandate = true; paintMandate(); paintFoot(); }),
-      dialRow(t('recruit', 'Recruit'), RECRUIT, draft.recruit, (value) => { draft.recruit = value; touched.mandate = true; paintMandate(); paintFoot(); }),
-      dialRowMulti(t('output', 'Output'), OUTPUT, draft.output, (value, on) => {
-        draft.output = on ? [...draft.output, value] : draft.output.filter((entry) => entry !== value);
-        touched.mandate = true;
-        paintMandate();
-        paintFoot();
-      }),
-    );
-  }
-  stepMandate.body.append(mandateHost);
+    paintFoot(); paintActions();
+  };
+  const questions = ask([
+    { group: t('new_agent.model_package', 'Model'), fields: [
+      { key: 'provider', label: t('forms.provider', 'Model provider'), blank: t('forms.default', 'Default'), options: providerRows },
+      { key: 'model', label: t('forms.model', 'Model'), blank: t('forms.default', 'Default'), after: 'provider', options: (value) => modelRows(value.provider) },
+    ] },
+    { group: t('mandate', 'Mandate'), fields: [
+      { key: 'reach', label: t('reach', 'Reach'), options: mandateRows(REACH) },
+      { key: 'recruit', label: t('recruit', 'Recruit'), options: mandateRows(RECRUIT) },
+      { key: 'output', label: t('output', 'Output'), many: true, options: mandateRows(OUTPUT) },
+    ] },
+    { group: t('where.label', 'Where it works'), fields: [
+      { key: 'root', label: t('where.born_in', 'Born in'), options: rootRows },
+      { key: 'repos', label: t('where.additional', 'Additional workspaces'), many: true, after: 'root', options: (value) => rootRows().filter((row) => row.v !== value.root) },
+    ] },
+  ], {
+    value: { provider: draft.provider, model: draft.model, reach: draft.reach, recruit: draft.recruit, output: draft.output, root: draft.root, repos: draft.repos },
+    className: 'na-questions',
+    density: 'tight',
+    onChange: onQuestionChange,
+  });
+  const teamQuestions = ask([
+    { group: t('squad', 'Team'), fields: [
+      { key: 'team', label: t('squad', 'Team'), options: [
+        { v: 'none', l: t('new_agent.team_none', 'No team (rōnin)'), sub: t('new_agent.team_none_sub', 'Ordinary, not a gap.') },
+        { v: 'current', l: t('new_agent.team_current', 'Current team'), sub: t('new_agent.team_current_sub', 'Choose from your teams.') },
+        { v: 'new', l: t('new_agent.team_new', 'New team'), sub: t('new_agent.team_new_sub', 'Created first, then this Agent is born into it.'), row: () => newTeamField(), required: true,
+          invalid: () => (draft.newTeam && !isValidTeamName(draft.newTeam) ? t('new_team.name_invalid', 'Lowercase letters, digits, _ and - only.') : '') },
+      ], then: [
+        { when: 'current', key: 'teamName', label: t('new_agent.which_team', 'Which team'), options: teamRows },
+      ] },
+      { key: 'teamLead', label: t('team.lead', 'Team lead'), switch: [t('yes', 'Yes'), t('no', 'No')] },
+    ] },
+  ], {
+    value: { team: teamChoice(), teamName: draft.team, teamLead: draft.teamLead },
+    className: 'na-team-questions',
+    density: 'tight',
+    trayHost: identityRow,
+    onChange: onQuestionChange,
+  });
+  const syncQuestions = () => {
+    questions.set({ provider: draft.provider, model: draft.model, reach: draft.reach, recruit: draft.recruit, output: draft.output, root: draft.root, repos: draft.repos || [] });
+    teamQuestions.set({ team: teamChoice(), teamName: draft.team, teamLead: draft.teamLead });
+  };
+  void loadProviderCatalog().then(() => questions.paint());
 
   /* ---- 7 · Loadout ---- */
   const stepLoadout = createStep({ n: 7, key: 'loadout', title: t('loadout', 'Tools and skills'), onToggle: () => toggle('loadout') });
@@ -346,7 +347,6 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
     const worktrees = (seed?.routines || []).find((routine) => routine.name === 'ronin_worktrees');
     const overridden = Object.prototype.hasOwnProperty.call(draft.routineOverrides, 'ronin_worktrees');
     const worktreesOn = overridden ? draft.routineOverrides.ronin_worktrees : worktrees?.on;
-    where.setWorktrees(!!worktreesOn);
     worktreesMode.replaceChildren(
       el('b', null, t('new_agent.worktrees_mode', 'Agent work mode')),
       el('strong', null, worktreesOn ? t('new_agent.worktrees_on', 'Own worktree where the Workspace folder allows it')
@@ -384,24 +384,16 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
 
   /* ---- the plan: which steps exist for this type and door ---- */
   const steps = {
-    kind: stepKind, type: stepType, top: stepTop,
-    team: stepTeam, where: stepWhere, mandate: stepMandate, loadout: stepLoadout,
+    kind: stepKind, type: stepType, top: stepTop, loadout: stepLoadout,
   };
-  const plan = () => {
-    if (draft.type === 'terminal') return ['type', 'top'];
-    if (draft.type === 'bare_metal_agent') return ['kind', 'type', 'top', 'team', 'where'];
-    return ['kind', 'type', 'top', 'team', 'where', 'mandate', 'loadout'];
-  };
-  const FOLDS = ['team', 'where', 'mandate', 'loadout'];
+  const plan = () => draft.type === 'cowork_agent' ? ['type', 'top', 'loadout'] : ['type', 'top'];
+  const FOLDS = ['loadout'];
   function toggle(key) {
     if (draft.expanded[key]) delete draft.expanded[key];
     else draft.expanded[key] = true;
     paintFolds();
   }
   const meta = {
-    team: () => (draft.teamMode === 'none' ? t('new_agent.a_ronin', 'a rōnin') : chosenTeam()),
-    where: () => draft.root,
-    mandate: () => `${draft.reach} · ${draft.recruit} · ${draft.output.join(', ')}`,
     loadout: () => t('new_agent.loadout_meta', '{routines} routines · {books} books', {
       routines: (seed?.routines || []).filter((row) => Object.prototype.hasOwnProperty.call(draft.routineOverrides, row.name) ? draft.routineOverrides[row.name] : row.on).length + 1, books: draft.books.length,
     }),
@@ -424,7 +416,6 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
       [t('squad', 'Team'), draft.teamMode === 'none' || !chosenTeam() ? '' : chosenTeam() + (draft.teamMode === 'new' ? `  ${t('new_agent.created_first', '(created first)')}` : '')],
     ];
     if (isCowork()) {
-      rows.push([t('kind', 'Kind'), draft.kind]);
       rows.push([t('mandate', 'Mandate'), `${draft.reach} · ${draft.recruit} · ${draft.output.join(', ')}`]);
     }
     rows.push([t('routines', 'Routines'), draft.type === 'terminal'
@@ -460,7 +451,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
   function paintActions() {
     // The button says what the press will DO: with the name blank there is no team to
     // create, so it must not promise one.
-    const ready = !!draft.name.trim();
+    const ready = !!draft.name.trim() && (draft.teamMode !== 'new' || isValidTeamName(chosenTeam()));
     start.setDisabled(!ready);
     if (ready) start.el.dataset.kind = 'primary';
     else delete start.el.dataset.kind;
@@ -472,18 +463,16 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
 
   async function doStart() {
     if (busy) return;
-    const launchTab = reserveWorkspaceTab();
+    const launchTab = connect ? null : reserveWorkspaceTab();
     const name = draft.name.trim();
     busy = true;
     start.setDisabled(true);
     notice.set('info', t('add_agent.starting', 'Starting…'));
     // A NEW TEAM IS TWO IDEMPOTENT DOORS (§ 7.5): write the record, then launch into it.
     let team = chosenTeam();
-    // An unnamed new team is no team, not a refusal — see the field's own sentence.
-    if (draft.teamMode === 'new' && !team) team = '';
-    if (draft.teamMode === 'new' && isCowork() && team) {
+    if (draft.teamMode === 'new') {
       if (!isValidTeamName(team)) {
-        closeWorkspaceTab(launchTab);
+        if (launchTab) closeWorkspaceTab(launchTab);
         busy = false;
         start.setDisabled(false);
         notice.set('failed', t('new_team.name_invalid', 'Lowercase letters, digits, _ and - only.'));
@@ -491,10 +480,10 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
       }
       const made = await request('/api/team-rosters', {
         method: 'POST',
-        json: { name: team, kind: draft.kind, ...(draft.template ? { template: draft.template } : {}) },
+        json: { name: team },
       });
       if (!made.ok) {
-        closeWorkspaceTab(launchTab);
+        if (launchTab) closeWorkspaceTab(launchTab);
         busy = false;
         start.setDisabled(false);
         notice.set('failed', made.message);
@@ -504,13 +493,13 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
     // ONLY THE § 7.4 BODY, by type — the route refuses the rest by name, and the desk is
     // never sent (the routine selection is the decision; the escape hatch stays unadvertised).
     const body = draft.type === 'terminal'
-      ? { session_type: 'terminal', name, team, project_root: draft.root }
+      ? { session_type: 'terminal', name, team }
       : draft.type === 'bare_metal_agent'
         ? { session_type: 'bare_metal_agent', name, team, project_root: draft.root, instructions: draft.instructions.trim(), provider: draft.provider, model: draft.model }
         : {
           session_type: 'cowork_agent', name, team, project_root: draft.root,
           instructions: draft.instructions.trim(), provider: draft.provider, model: draft.model,
-          kind: draft.kind,
+          team_lead: draft.teamLead,
           ...(touched.repos && Array.isArray(draft.repos) ? { repos: draft.repos } : {}),
           mandate: { reach: draft.reach, recruit: draft.recruit, output: draft.output },
           behaviours: [...draft.books],
@@ -523,7 +512,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
     busy = false;
     start.setDisabled(false);
     if (!result.ok) {
-      closeWorkspaceTab(launchTab);
+      if (launchTab) closeWorkspaceTab(launchTab);
       notice.set('failed', result.message);
       return;
     }
@@ -531,7 +520,8 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
     const deskNote = result.data?.receipt?.desk_note || '';
     if (deskNote) notice.set('warning', t('add_agent.started_note', 'Started {name} — {note}', { name: born, note: deskNote }));
     else notice.set('success', t('add_agent.started', 'Started {name}', { name: born }));
-    openWorkspaceTab(team ? 'team' : 'cowork', team, launchTab);
+    if (connect) connect(born);
+    else openWorkspaceTab(team ? 'team' : 'cowork', team, launchTab);
   }
 
   async function doSave() {
@@ -581,8 +571,13 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
     if (!answer.ok) return;
     seed = answer.data || null;
     const value = (field) => seed?.seeds?.[field]?.value;
-    if (!touched.model && !draft.provider) { draft.provider = value('provider') || ''; draft.model = value('model') || ''; }
+    // Blank means inherit the resolved provider/model. The launcher says Default until the
+    // owner deliberately overrides either choice.
     if (!touched.root && value('project_root')) draft.root = value('project_root');
+    if (!touched.repos) {
+      const selected = draft.teamMode === 'existing' ? teams.find((row) => row.name === draft.team) : null;
+      draft.repos = [...new Set((selected?.repos || []).filter((name) => name && name !== draft.root))];
+    }
     if (!touched.mandate) {
       for (const key of ['reach', 'recruit']) if (value(key)) draft[key] = value(key);
       if (value('output')) draft.output = [value('output')].flat().filter(Boolean);
@@ -591,12 +586,9 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
     // The campaign's, or the team's if one is joined — an editable value like every other
     if (!touched.launchMode && value('launch_mode')) draft.launchMode = value('launch_mode');
     if (!draft.kindTouched && team && value('kind')) draft.kind = value('kind');
-    pair.paint();
-    paintRoots();
-    paintBranch();
+    syncQuestions();
     paintKinds();
     paintTray();
-    paintMandate();
     paintShelves();
     paintRoutinePreview();
     paintFolds();
@@ -609,20 +601,17 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
     order.forEach((key, index) => steps[key].setNumber(index + 1));
     stepPayload.setNumber(order.length + 1);
     stepPayload.el.hidden = draft.type === 'terminal';
-    stepTop.el.querySelector('h3').textContent = hasAgent()
-      ? t('new_agent.identity_step', 'Name & instructions')
-      : t('new_agent.name_required_step', 'Name · required');
-    pair.el.hidden = !hasAgent();
+    stepTop.el.querySelector('h3').textContent = hasAgent() ? t('new_agent.agent_body', 'Agent') : t('new_agent.name_required_step', 'Name · required');
+    questions.show(draft.type === 'terminal' ? [] : draft.type === 'bare_metal_agent' ? ['provider', 'model', 'root', 'repos'] : null);
+    teamQuestions.show(isCowork() ? null : ['team']);
+    teamQuestions.el.hidden = false;
+    questions.el.hidden = draft.type === 'terminal';
     instructionsField.hidden = !hasAgent();
     paintTypes();
     paintLeanNote();
     paintKinds();
     paintTray();
-    paintTeam();
-    paintRoots();
-    paintBranch();
-    pair.paint();
-    paintMandate();
+    syncQuestions();
     paintRoutinePreview();
     paintShelves();
     paintLaunchMode();
@@ -639,8 +628,10 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
   } });
   stepPayload.body.append(foot, actions.el);
   stepPayload.setCollapsed(true, t('forms.payload_summary', 'Review what Launch will create'), true);
+  identityRow.append(nameField, teamQuestions.el);
+  stepTop.body.replaceChildren(identityRow, questions.el, instructionsField);
   const form = el('div', 'ntf-form');
-  form.append(stepKind.el, stepType.el, stepTop.el, stepTeam.el, stepWhere.el, stepMandate.el, stepLoadout.el, stepPayload.el);
+  form.append(stepType.el, stepTop.el, stepLoadout.el, stepPayload.el);
   // Save as template sits UNDER the reading, for the same reason as on New Team: the
   // reading is the packet, and the button saves the packet.
   surface.content.append(form, notice.el);
@@ -659,19 +650,21 @@ export function createNewAgentView(kit, { connect = null, embedded = false } = {
   return {
     el: embedded ? surface.content : surface.el,
     enter: async (detail = {}) => {
+      const entryTeam = typeof team === 'function' ? team() : team;
+      if (entryTeam) { draft.teamMode = 'existing'; draft.team = entryTeam; }
       paint();
       const [tray, sopRows, wayRows, teamRows, rootRows] = await Promise.all([
         request('/api/templates/agents'),
         request('/api/sops'),
         request('/api/ways'),
         request('/api/team-rosters'),
-        request('/api/project-roots'),
+        request('/api/project-roots/detail'),
       ]);
       templates = tray.ok && Array.isArray(tray.data) ? tray.data : [];
       sops = sopRows.ok && Array.isArray(sopRows.data) ? sopRows.data : [];
       ways = wayRows.ok && Array.isArray(wayRows.data) ? wayRows.data : [];
       teams = teamRows.ok && Array.isArray(teamRows.data) ? teamRows.data.filter((row) => row.state !== 'archived') : [];
-      roots = rootRows.ok && Array.isArray(rootRows.data) ? rootRows.data : [];
+      roots = rootRows.ok && Array.isArray(rootRows.data?.roots) ? rootRows.data.roots.filter((row) => !row.archived) : [];
       if (!loaded) { await loadSeed(); loaded = true; }
       if (typeof detail?.template === 'string' && detail.template) {
         const entry = templateEntryPlan({ currentKind: draft.kind, kindTouched: draft.kindTouched, templates, template: detail.template });
