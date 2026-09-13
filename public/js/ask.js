@@ -147,7 +147,7 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     const on = field.many ? state[field.key].includes(row.v) : String(state[field.key]) === String(row.v);
     opt.setAttribute('aria-selected', String(on));
     if (row.off) { opt.setAttribute('aria-disabled', 'true'); opt.title = row.off; }
-    if (field.shape === 'square') opt.append(el('i', 'ask-glyph', row.glyph || (row.blank ? '○' : '·')));
+    if (field.shape === 'square' && (row.glyph || row.blank)) opt.append(el('i', 'ask-glyph', row.glyph || '○'));
     const name = el('b', 'ask-name');
     name.append(snake(row.l));
     opt.append(name);
