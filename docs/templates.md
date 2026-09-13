@@ -107,12 +107,12 @@ shelf like anything you wrote. The listing is the directory (`ls ronin_catalogs/
 
 ## Bundles and the template library
 
-A template names its books and its Routines; it carries no copy of them, and on the
+A template names its behaviours and its features; it carries no copy of them, and on the
 shelf that is right. It is wrong for a download: a Dinner Party template is worthless on
 another install without the menu book it reads. So the one place copies are allowed is
 **in transit** — a **template bundle**, one JSON document (`ronin-bundle/1`) holding a team
-template, the agent templates beside it, the SOPs and ways they name, the Routines they
-turn on, and those Routines' macros, actions and tools. On install every copy lands in
+template, the agent templates beside it, the behaviours they name, the features they
+turn on, and those features' macros, actions and tools. On install every copy lands in
 **your own stores** — catalogs, sops, ways, library, and a `tools` store for executables —
 where the ordinary readers find it exactly as they find anything you wrote by hand. Nothing
 a bundle installs touches the install itself; an upgrade never sees it.
@@ -130,7 +130,7 @@ Campaign page's **Templates** card is the way in: *Check the library* reads the 
 only when pressed, never on a timer — and pressing a bundle shows **everything it holds**
 and the **plan** before anything is written: each item, the shelf it lands on, and its
 outcome. Without Services the shelf is there but opaque, the card says so and names the
-Ronin Services row on the Campaign page's Routines and Installs (an email and a confirmation), and the handful that ship inside Ronin stay
+Ronin Services row on the Campaign page's Installations card (an email and a confirmation), and the handful that ship inside Ronin stay
 on the launch forms. Three rules an install obeys, all of them the house's already:
 
 - a copy identical to what ships is **skipped** — a shadow that changes nothing is an

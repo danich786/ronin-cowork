@@ -20,6 +20,7 @@ These are operational routes for a user or an Agent working on the user's behalf
 | Why are Teams or New Project unavailable? | [Ronin Setup](setup-workbench.md#activate-a-provider) |
 | How do I add or change a Workspace Folder? | [Workspace folders](project-roots.md) |
 | How do parallel Agents avoid colliding in the same files? | [Ronin Worktrees](worktrees.md) |
+| What is installed, what a Team or Agent can add, and how a new Agent is equipped? | [Installations, features, and behaviours](installations.md) |
 | How should an Agent plan and maintain its work record? | [Keep a useful work record](work-record.md) |
 | How do session Control settings work? | [Session Control](session-control-dials.md) |
 | What does a new Agent read at birth, and why does it fit one read? | [The birth packet](birth-packet.md) |
@@ -66,4 +67,4 @@ A terminal tile provides the live terminal, composer, output view, Control value
 record. Commons provides Roster, Docs, Wipeboard, Messages, Cron jobs, and Configuration.
 Cowork commons provides account, appearance, release, voice, Services, project-root, and
 archive controls. Campaign commons provides Campaign configuration, roots, Coworks,
-templates, and Routines.
+templates, installations, and defaults.

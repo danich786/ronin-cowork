@@ -84,7 +84,7 @@ from her tile. Your own copy on the session-boot shelf (`ronin-store session_boo
 ## Her birth
 
 She is born in her own private home (`ronin-store mika_home`), not in any project root, with
-every Routine off. Her birth README is the ordinary compiled packet with one difference: in
+no feature and no behaviour. Her birth README is the ordinary compiled packet with one difference: in
 place of the startup shelf it carries the **Mika source index** — the top of every document
 under `docs/`, `ronin_sops/`, `ronin_catalogs/`, `ronin_session_boot/` and `ronin_library/`,
 owner shadow winning, each with its `mika-source:` reference (`src/mika-knowledge.ts`, budgeted

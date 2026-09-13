@@ -40,9 +40,9 @@ answers its word for the key, else the literal. It never returns `undefined` or 
   that means "save this" may share `panels.save`; the Team page family shares `team.project_root`
   for the row label *Project root*. **Never reuse a key for a different sense**, even if the
   English happens to match today — another language may not.
-- **Reserved prefixes** name catalog tokens, not surface strings: `kind.*`, `role.*`,
-  `team_role.*`, `behaviour.*`. When you list definitions, ask
-  `t('role.' + def.token, def.label)` — the definition's own `label:` is their floor and they
+- **Reserved prefixes** name catalog tokens, not surface strings: `kind.*`. When you
+  list definitions, ask
+  `t('kind.' + def.token, def.label)` — the definition's own `label:` is their floor and they
   are exempt from the floor check.
 - **Singular and plural are two keys** (`roots.count_one` / `roots.count_many`), chosen in
   code. Do not build a plural by appending `s`.

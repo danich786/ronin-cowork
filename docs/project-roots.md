@@ -221,12 +221,12 @@ remains.
 
 The Project Root editor reads these four profile fields live from `RONIN_REPO`. `mode=reviewed`
 means work collects on `working` before the owner's final PR to `stable`; `mode=direct` means
-accepted work publishes on `stable` itself. The Worktrees choice is a separate repository
-permission. **Two independent answers must both allow managed Worktrees:** the Agent is born
-with the Ronin Worktrees Routine after Campaign → Team → Agent resolution, and this repository allows
-Worktrees. If either answer is off, the Agent uses the checkout. A worktree by itself is
-only Git isolation; the Ronin Worktrees combination adds the private branch, internal desk
-record, assignment reading, and hand-in path with receipts. `desks=managed|none` remains
+accepted work publishes on `stable` itself. The Worktrees choice is the repository's alone:
+`desks=managed` makes the folder a **worktree root** and its Agents work at managed desks;
+`desks=none` makes it a **checkout**. No Agent-side switch exists; the Agent is told which
+the folder is and reads the matching page. A worktree by itself is only Git isolation; a
+worktree root adds the private branch, internal desk record, assignment reading, and
+hand-in path with receipts. `desks=managed|none` remains
 only the compatibility spelling stored in `RONIN_REPO`; the editor presents **Allow Ronin
 Worktrees** and **Use the checkout**. Branch names are owner choices. A changed profile
 is shown once as exact before/after text and, on confirmation, rewritten directly and
@@ -239,12 +239,12 @@ branch suggestions remain editable before **Add**. For a Git directory the confi
 is the file that is written; the backend does not substitute `dev`, `master`, or `main`.
 Non-Git directories remain legal project roots and receive no `RONIN_REPO`.
 
-A session in the enabled/enabled cell works at a **repo desk** — the internal record for its
+A session in a worktree root works at a **repo desk** — the internal record for its
 own branch and worktree, cut from its team's line
-(`ronin_session_boot/routine/ronin_worktrees/WORKTREES.md`; the model is `docs/worktrees.md`). Commit preserves work privately at the desk;
+(`ronin_sops/worktree-root.md`; the model is `docs/worktrees.md`). Commit preserves work privately at the desk;
 **hand-in** publishes committed work to the team line; the lead's **team promotion** runs the
 one full repository BYOIN and admits the team's state to `dev`. A desk branch is never
-published to the remote and never opened as a PR. Until a repository's desks are enabled, its
+published to the remote and never opened as a PR. In a checkout (`ronin_sops/checkout.md`), the
 home checkout is shared: stage only your own paths and preserve every unrelated change there.
 
 For a new reviewed repository, agree whether the stable branch is `main` or `master`, create

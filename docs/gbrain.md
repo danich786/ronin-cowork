@@ -161,7 +161,7 @@ The Setup workbench's gbrain selector opens the same tab in its Setup presentati
 (`buildGbrain(..., { presentation: 'setup' })`): three questions with measured answers,
 Installed, Available to Agents, and Accounts linked, then the one next step, all chosen by
 `public/js/gbrain-setup-state.js` from the same `GET /api/gbrain` snapshot. Available to
-Agents is the Campaign's gbrain Routine; Accounts linked is the integrations list, one
+Agents is the gbrain installation on the Campaign's Installations card; Accounts linked is the integrations list, one
 Linked or Not linked per account. `docs/setup-workbench.md` has the table.
 
 ### Where connection credentials live

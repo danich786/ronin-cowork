@@ -72,18 +72,17 @@ last status, ctx and model.
 The Services parts live under `src/services/` (a placed copy; see the services repo's
 `bin/dev-sync`). Whether a part **runs** is decided at start by `src/parts.ts`:
 
-- A Routine claims the parts it runs — `- **parts:** …` in
-  `ronin_catalogs/routines/<name>.md`; Ronin Services claims `counting, koe, koshi,
-  koshi_weights, michi, rireki`. A claimed part loads only while that Routine is on for
-  the Campaign. Off means the part is never imported: no timers, no routes, no recorder,
+- An installation claims the parts it runs — `- **parts:** …` in
+  `ronin_catalogs/installations/<name>.md`; Ronin Services claims `counting, koe, koshi,
+  koshi_weights, michi, rireki`. A claimed part loads only while that installation is on. Off means the part is never imported: no timers, no routes, no recorder,
   and `/api/version` reports `stream: false`, so every tile is Locked.
 - A part can declare itself parked with a `PARKED.md` in its folder whose first line is
   the reason. It is parked regardless of any switch. The recorder (`rireki`) is parked
   this way for the whole Services beta.
-- A part no Routine claims (`machine`, `gbrain`) always loads.
+- A part no installation claims (`machine`, `gbrain`) always loads.
 - The switch is read once at start. `/api/installed` reports `parts` (on disk), `loaded`,
-  `parked` (with `routine` or `reason`) and `restart_needed`; the Routines and Installs
-  page's Services row says when the switch and the running copy disagree.
+  `parked` (with `installation` or `reason`) and `restart_needed`; the Installations
+  card's Services row says when the switch and the running copy disagree.
 
 ## Measuring it
 

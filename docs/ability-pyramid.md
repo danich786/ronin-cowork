@@ -52,7 +52,7 @@ only that per-session README (`docs/session-boot.md`):
 
 Generated content exists because a checked-in list describes stock, not this machine, the
 moment the owner customizes anything. Admission test for T1: would every assisted Agent
-plausibly use it? Optional abilities belong to their Routine, never this tier.
+plausibly use it? Optional abilities belong to a feature, never this tier.
 
 ## T2 — scoped-taught
 
@@ -62,15 +62,15 @@ Launch facts select the levels:
 
 | Level | Selected by | Who stocks it |
 |---|---|---|
-| `<service>_connected/` | an enabled Routine declaration plus the live connection choice | a connected service seeds its own signed reading |
+| `<service>_connected/` | a chosen feature's declaration plus the live connection | a connected service seeds its own signed reading |
 | `root/<project_root>/` | the root picked at launch | the owner only — stock cannot know a machine's directories |
-| `routine/<routine>/FILE.md` | each effective Routine manifest at birth | stock and owner Routine readings, selected explicitly by the catalog |
+| `routine/<name>/FILE.md` | each system installation at birth (its on-page or off-page) and each chosen feature | stock and owner readings, selected explicitly by the catalog |
 
 The toggle governs both halves of a connection: launched
 off, a session gets neither a service's tools nor a word about them. These levels add up
-rather than override: root, connection and effective Routines are fixed
+rather than override: root, connection, installations and features are fixed
 at birth and compiled into one README. Work-specific reading is selected separately
-as `behaviours`; those `ways:<book>` files join that same birth reading once and are not a
+as `behaviours`; the behaviours that are on join that same birth reading once and are not a
 mutable shelf axis. A T2 file that would help every session is mis-shelved and belongs up
 a tier.
 

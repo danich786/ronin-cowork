@@ -12,9 +12,9 @@ same name replaces ours whole; a new name sits beside it.
 | | read by |
 |---|---|
 | `all/` | every session, always |
-| `<service>_connected/` | only when an enabled Routine declares it and the connection is on |
+| `<service>_connected/` | only when a chosen feature declares it and the connection is on |
 | `root/<project_root>/` | only sessions working in that directory |
-| `routine/<routine>/FILE.md` | when a Routine manifest declares the file: `reading:` if the Routine is on, `reading_off:` if it is off |
+| `routine/<name>/FILE.md` | when an installation's or a feature's definition declares the file: `reading:` if it is on, `reading_off:` if it is off |
 
 A session receives every applicable level compiled into one per-session `README.md`:
 Ronin's teaching inlined, your `root/` documents listed by title and path.
@@ -36,7 +36,7 @@ README beside a session's letter is the only document the newborn is asked to op
 
 ## What ships
 
-Three universal sources and two generated fragments, compiled in reading order — Routine
+Three universal sources and two generated fragments, compiled in reading order — the
 contracts first, the glossary last — and held to a one-read budget by
 `tests/session-boot.test.ts` (a 121 KB packet was born on 2026-09-03 when a UI string
 table was shelved as vocabulary; nothing objected, because no test read the real shelf):
@@ -49,7 +49,7 @@ table was shelved as vocabulary; nothing objected, because no test read the real
   macro section from the resolved `MACROS.md` catalog (`preview: yes`) and includes it in
   the compiled README.
 
-Abilities are selected by Routine manifests. Repository test protocols stay in repository
+Abilities are selected by installation and feature definitions. Repository test protocols stay in repository
 developer instructions and are never ordinary user birth reading.
 
 See `docs/session-boot.md`.

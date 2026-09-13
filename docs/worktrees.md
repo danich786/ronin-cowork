@@ -9,28 +9,24 @@ Three keys carry the whole idea:
 
 - **What it does:** isolated working folders and branches keep parallel Agents from
   colliding in the same files.
-- **When it works:** both sides must say yes — the repository's Project Root enables
-  Worktrees, and the Agent carries the Worktrees Routine.
+- **When it works:** the repository's Project Root declares Worktrees (`desks=managed` in
+  `RONIN_REPO`). The Agent needs no switch; it is told the folder is a worktree root.
 - **The tradeoff:** work leaves the private worktree through the managed path — commit,
   hand-in, and the Team lead's merge — rather than landing directly on the shared branch.
 
 ## Resolution model
 
-Two facts determine the result for each repository:
+One fact determines the result for each repository, its own `RONIN_REPO`:
 
-| Agent carries Ronin Worktrees | Repository enables Worktrees | Result |
+| The Workspace Folder declares | Result | The page the Agent is pointed at |
 |---|---|---|
-| no | no | Use the repository checkout and ordinary Git. |
-| no | yes | Use the checkout; repository metadata remains passive for this Agent. |
-| yes | no | Use the checkout; the Agent's capability does not override the repository. |
-| yes | yes | Use the Agent's managed branch and worktree. |
+| `desks=none`, or no `RONIN_REPO` | a **checkout**: work on the repository's working line with ordinary Git; announce files; no hand-in | `ronin_sops/checkout.md` |
+| `desks=managed` | a **worktree root**: the Agent's managed branch and worktree, commit, hand-in, the lead's promotion | `ronin_sops/worktree-root.md` |
 
-The Agent capability is a cascade: the Campaign supplies the default, a saved Team owns a
-complete override, and the New Agent form may override individual Routine answers for that
-Agent. The resolved `ronin_worktrees` answer is fixed at birth. Repository applicability
-comes independently from each Project Root's `RONIN_REPO`; changing an Agent answer never
-changes a repository profile. Resolution is per repository, so one assignment may contain
-both managed worktrees and direct checkouts.
+There is no Agent-side answer. The birth packet names the birth root's arrangement, and
+`tejun-desk open <repo>` names any other root's. The desk actions and tools are in an
+Agent's command lookup only in a worktree root. Resolution is per repository, so one
+assignment may contain both a worktree root and a checkout.
 
 `src/worktrees-resolution.ts` owns the pure 2×2 decision. Its input contains the resolved
 Agent capability, normalized repository applicability, checkout location, branch profile,
