@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { moveMessage } from '../public/js/team-kanban.js';
+import { definedTargets, moveMessage } from '../public/js/team-kanban.js';
 
 const project = (values = {}) => ({
   id: 'virtual-kanban/7', title: 'Kanban tab', objective: 'Render it.', holder: 'tab_cut',
@@ -31,4 +31,11 @@ test('Planning back to Ideas and Landing forward are sent to the lead', () => {
   const promoted = moveMessage(project({ stage: 'LANDING', exit: 'lead' }), 'DONE', 'kanban_revive', NOW);
   assert.equal(promoted.target, 'kanban_revive');
   assert.match(promoted.text, /meaning: promote/);
+});
+
+test('dragging marks only destinations with a defined meaning', () => {
+  assert.deepEqual([...definedTargets({ stage: 'IDEAS', status: 'green' })], ['PLANNING']);
+  assert.deepEqual([...definedTargets({ stage: 'PLANNING', status: 'green' })], ['BUILDING', 'IDEAS']);
+  assert.deepEqual([...definedTargets({ stage: 'BUILDING', status: 'yellow' })], []);
+  assert.deepEqual([...definedTargets({ stage: 'DONE', status: 'green' })], []);
 });

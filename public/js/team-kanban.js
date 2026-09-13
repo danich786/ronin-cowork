@@ -22,7 +22,7 @@ const normalizedProject = (value) => ({
   ...value,
   id: String(value?.id || ''),
   title: String(value?.title || value?.id || 'Untitled project'),
-  objective: String(value?.objective || value?.outcome || value?.o || ''),
+  objective: String(value?.objective || ''),
   holder: String(value?.holder || 'lead'),
   stage: INDEX[value?.stage] == null ? 'IDEAS' : value.stage,
   exit: String(value?.exit || 'none'),
@@ -35,6 +35,16 @@ const chipFor = (project) => {
   if (project.status === 'red') return { cls: 'red', text: 'blocked' };
   return null;
 };
+
+export function definedTargets(project) {
+  const targets = new Set();
+  if (project.stage === 'DONE') return targets;
+  if (project.status === 'green' && COLUMNS[INDEX[project.stage] + 1]) targets.add(COLUMNS[INDEX[project.stage] + 1].key);
+  if (project.stage === 'PLANNING') targets.add('IDEAS');
+  return targets;
+}
+
+const meaningLine = (move) => move.text.split('meaning: ')[1]?.split('\n')[0] || '';
 
 /** The exact one-message write path described by the Team Kanban concept. */
 export function moveMessage(project, toStage, leadName, now = new Date()) {
@@ -96,6 +106,7 @@ export function createTeamKanban(options = {}) {
       section.dataset.stage = column.key;
       const heading = node('h3');
       heading.append(document.createTextNode(column.label), node('span', 'tk-count', columnProjects.length));
+      const hint = node('p', 'tk-drop-hint');
       const cards = node('div', 'tk-cards');
       if (!columnProjects.length) cards.append(node('p', 'tk-empty', t('team_kanban.empty', 'nothing here')));
       for (const project of columnProjects) {
@@ -121,14 +132,25 @@ export function createTeamKanban(options = {}) {
         card.addEventListener('dragstart', (event) => {
           event.dataTransfer?.setData('text/plain', project.id);
           card.classList.add('dragging'); board.classList.add('dragging');
+          const targets = definedTargets(project);
+          for (const target of board.querySelectorAll('.tk-column')) {
+            const defined = targets.has(target.dataset.stage);
+            target.classList.toggle('means', defined);
+            target.querySelector('.tk-drop-hint').textContent = defined
+              ? `drop here: ${meaningLine(moveMessage(project, target.dataset.stage, leadName()))}`
+              : '';
+          }
         });
         card.addEventListener('dragend', () => {
           card.classList.remove('dragging'); board.classList.remove('dragging');
-          for (const item of board.querySelectorAll('.tk-column')) item.classList.remove('over');
+          for (const item of board.querySelectorAll('.tk-column')) {
+            item.classList.remove('means', 'over');
+            item.querySelector('.tk-drop-hint').textContent = '';
+          }
         });
         cards.append(card);
       }
-      section.append(heading, cards);
+      section.append(heading, hint, cards);
       section.addEventListener('dragover', (event) => { event.preventDefault(); section.classList.add('over'); });
       section.addEventListener('dragleave', () => section.classList.remove('over'));
       section.addEventListener('drop', (event) => {
