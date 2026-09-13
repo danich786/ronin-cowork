@@ -3,7 +3,7 @@
 > Stock SOP. Your own copy in the sops store (`ronin-store sops` → `codex.md`) replaces
 > this file whole — a default, not law.
 > **Voice: agent.** How the agent sets the account that pays for a session — not a walkthrough to relay.
-> **Tool: `tejun-secrets [path]`** — establish whether a project names an OpenAI key
+> **Tool: `ronin-host secrets [path]`** — establish whether a project names an OpenAI key
 > before advising on credentials. It reports names and exposure state, never values.
 
 For an interactive Codex session in Ronin, use the owner's **ChatGPT subscription
@@ -16,7 +16,7 @@ Run `codex login status` before changing anything. It says whether Codex is usin
 ChatGPT or an API key without showing a credential. If the answer already matches the
 owner's choice, leave it alone.
 
-When a project may need an OpenAI key, run `tejun-secrets [path]` before the
+When a project may need an OpenAI key, run `ronin-host secrets [path]` before the
 conversation as well. `OPENAI_API_KEY` is a project credential, not evidence that an
 interactive Ronin tile should use API billing.
 
@@ -49,7 +49,7 @@ After any change, `codex login status` is the only confirmation needed.
 ## When the status is wrong
 
 Do not guess from the model name, a browser tab, or an invoice. Read the status, inspect
-the project's secret *names* with `tejun-secrets` when applicable, then ask the owner
+the project's secret *names* with `ronin-host secrets` when applicable, then ask the owner
 which account should pay. Use the device-code flow to return an interactive tile to the
 owner's ChatGPT account; use API-key login only after the owner has deliberately chosen
 that exception.

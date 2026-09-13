@@ -179,7 +179,7 @@ test('core reading points to arrangement pages; system reading stays installatio
   assert.match(worktrees, /session_end/);
   assert.match(worktrees, /CERTIFIED CLEAN/);
   assert.doesNotMatch(worktrees, /first full repository BYOIN/i);
-  assert.match(machine, /tejun-survey/);
+  assert.match(machine, /ronin-host inspect/);
   assert.match(machine, /bin\/ronin-store --all/);
 });
 

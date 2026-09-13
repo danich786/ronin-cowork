@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
-# tejun-account — who this install belongs to, and what it is entitled to
-# (TEJUN survey-account).
-# Usage: tejun-account          no arguments
+# Internal implementation for `ronin-host account`.
 #
 # The account side of the story. SETTEI answers what the owner chose; the activation
-# aggregate answers which entitlement Shiwake issued. `tejun-secrets` answers which
+# aggregate answers which entitlement Shiwake issued. `ronin-host secrets` answers which
 # CREDENTIAL is in force. These are different facts with different owners.
 #
 # Read-only, and it never prints a credential — BY SELECTION, not because the file has
@@ -17,7 +15,7 @@
 # exact moment an account question gets asked. Named keys only, never the document.
 set -u
 
-. "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"
+. "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/../ronin_bin/tool-path.sh"
 STORE="$(cd "$(dirname "$SELF")/../bin" && pwd)/ronin-store"
 [ -x "$STORE" ] || STORE=ronin-store
 CONFIG_DIR="$("$STORE" config 2>/dev/null)"
@@ -91,4 +89,4 @@ PY
 
 echo
 echo "SETTEI supplies the owner choices; the activation record supplies entitlement identity."
-echo "For which credential is actually in force, run tejun-secrets."
+echo "For which credential is actually in force, run ronin-host secrets."

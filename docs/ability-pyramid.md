@@ -27,7 +27,7 @@ a file at the tier that teaches it.
         │                │  selects the reader.
         └────────────────┘
    side │  MEASURED      │  facts about THIS machine — in no tier, ever.
-        │                │  tejun-survey, tejun-account, ronin-store --all.
+        │                │  ronin-host inspect, ronin-host account, ronin-store --all.
 ```
 
 ## T0 — the brief

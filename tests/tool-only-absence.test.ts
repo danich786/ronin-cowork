@@ -14,6 +14,10 @@ const retired = [
   'ronin_catalogs/MACROS.md',
   'ronin_catalogs/ACTIONS.md',
   'ronin_catalogs/MIKA_MACROS.md',
+  'ronin_bin/tejun-survey',
+  'ronin_bin/tejun-account',
+  'ronin_bin/tejun-secrets',
+  'ronin_bin/tejun-machine-restart',
 ];
 const shipped = ['src', 'public', 'scripts', 'ronin_bin', 'ronin_catalogs', 'ronin_library', 'ronin_session_boot', 'ronin_sops', 'docs'];
 const forbidden = /(?:\/api\/(?:macros|actions)\b|\btejun-step\b|\b(?:MIKA_)?(?:MACROS|ACTIONS)\.md\b|compile-macro|\*\*(?:macros|actions):\*\*)/;

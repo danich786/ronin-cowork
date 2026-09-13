@@ -61,7 +61,7 @@ test('missing enabled tools are visible and do not refuse projection', async () 
 const REACH_FAILURES = /Cannot find module|command not found|No such file or directory|NO-REPO/;
 const URL_CALLERS = ['session_archive', 'session_fork', 'session_end', 'session_restore', 'session_check', 'session_create', 'session_set', 'tejun-team-set', 'tejun-teampage', 'mika'];
 test('projected ronin_bin tools resolve the symlink and reach the repository and the operator', async (t) => {
-  const tools = ['tejun-desk', 'tejun-team', 'tejun-wipeboard', 'tejun-send', 'read_tegami', 'write_tegami', 'tejun-survey', 'tejun-account', 'ronin-url', ...URL_CALLERS];
+  const tools = ['tejun-desk', 'tejun-team', 'tejun-wipeboard', 'tejun-send', 'read_tegami', 'write_tegami', 'ronin-host', 'ronin-url', ...URL_CALLERS];
   const projected = await projectRoutineTools('resolve', [routine('ronin_base', true, tools)]);
   for (const t of tools) assert.ok(projected.delivered.includes(t), `${t} projected`);
   const reached: string[] = [];
@@ -129,6 +129,14 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
     assert.notEqual(invalidHelp.code, 0, `${command} refuses surplus help arguments`);
     assert.match(invalidHelp.out, new RegExp(`Run ${command.replace('_', '.')} --help`));
   }
+  reached.length = 0;
+  const hostHelp = await run(['ronin-host', '--help']);
+  assert.equal(hostHelp.code, 0, hostHelp.out);
+  assert.match(hostHelp.out, /ronin-host inspect \[path\]/);
+  assert.match(hostHelp.out, /ronin-host account/);
+  assert.match(hostHelp.out, /ronin-host secrets \[path\]/);
+  assert.match(hostHelp.out, /ronin-host restart/);
+  assert.equal(reached.length, 0, 'ronin-host help is local and reflects the projected command');
   const deskHelp = (await run(['tejun-desk', '--help'])).out;
   for (const task of ['open', 'assign', 'status', 'sync', 'hand-in', 'close', 'receipts', 'handoff', 'discard']) {
     assert.match(deskHelp, new RegExp(`tejun-desk ${task}`), `desk help includes ${task}`);
@@ -151,7 +159,7 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
   assert.match(teamHelp, /remove the old Team on that Team's page/i);
   assert.match(teamHelp, /sets? or changes? that Team's lead/i);
   assert.doesNotMatch(teamHelp, /session_fork --help/);
-  for (const args of [['tejun-wipeboard'], ['tejun-send'], ['read_tegami', '--session', 'nobody'], ['write_tegami', '--session', 'nobody', '--at', '1'], ['tejun-survey'], ['tejun-account']]) {
+  for (const args of [['tejun-wipeboard'], ['tejun-send'], ['read_tegami', '--session', 'nobody'], ['write_tegami', '--session', 'nobody', '--at', '1'], ['ronin-host', 'inspect'], ['ronin-host', 'account']]) {
     const r = await run(args);
     assert.doesNotMatch(r.out, REACH_FAILURES, `${args.join(' ')}: ${r.out}`);
   }

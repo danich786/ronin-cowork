@@ -40,7 +40,7 @@ billed API access. Do not infer the answer from a model name.
 
 Environment variables can override a subscription session, but precedence is
 provider-specific. Inspect names without printing values and do not claim a universal
-credential winner. For Claude/Anthropic, `tejun-secrets` reports the Anthropic credential
+credential winner. For Claude/Anthropic, `ronin-host secrets` reports the Anthropic credential
 that would win in the shell it checks and never prints its value; the spawned tile may
 inherit a different service environment. Resolve a conflict with the owner rather than
 dismissing the CLI warning.
@@ -79,7 +79,7 @@ Use Claude Code's own current login/status surface and follow the interactive in
 it displays. This repository does not carry a provider-neutral command that proves Claude
 subscription versus API billing, so do not translate “CLI installed” into “signed in.”
 
-Before launch, use `tejun-secrets` to check whether `ANTHROPIC_API_KEY` or
+Before launch, use `ronin-host secrets` to check whether `ANTHROPIC_API_KEY` or
 `ANTHROPIC_AUTH_TOKEN` is in force without revealing its value. Those variables outrank an
 OAuth/default profile and can silently move work to per-token billing. If the safe evidence
 cannot distinguish the active account, report **unknown** and let the first interactive

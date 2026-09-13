@@ -191,7 +191,7 @@ test('the stock capability documents are well-formed and carry no retired vocabu
     const text = await readFile(item.file, 'utf8');
     assert.ok(item.label && item.blurb, `${item.name} has a label and a blurb`);
     assert.ok(CAPABILITY_CLASSES.includes(item.class), `${item.name} class`);
-    if (item.name !== 'ronin-host') assert.doesNotMatch(text, /tejun|MACROS\.md|ACTIONS\.md|\+\w+:/, `${item.name} teaches no retired name`);
+    assert.doesNotMatch(text, /tejun|MACROS\.md|ACTIONS\.md|\+\w+:/, `${item.name} teaches no retired name`);
     assert.doesNotMatch(text, /initial revision|revision-aware|revision counter is|reclaim|park a project|a verdict of|the decider/i, `${item.name} carries no retired project field`);
     for (const requirement of item.requires) assert.equal(checkRequirement(requirement, { ...none, everything: false, arrangement: 'managed', installations: new Set(['x', 'ronin_services']), behaviours: new Set(['x', 'ronin_host', 'gbrain', 'trello', 'perplexity']), connected: true, campaign: true, team: true, lead: true }), '', `${item.name} requires ${requirement}`);
     for (const tool of item.tools) assert.match(tool.name, /^[a-z][a-z0-9_-]*$/, `${item.name}: ${tool.command}`);
@@ -209,8 +209,8 @@ test('the stock capability documents are well-formed and carry no retired vocabu
   assert.deepEqual(by.trello.requires, ['behaviour:trello', 'connected']);
   assert.deepEqual(by.perplexity.requires, ['behaviour:perplexity', 'connected']);
   for (const name of ['ronin-services', 'gbrain', 'trello', 'perplexity']) assert.deepEqual(by[name].tools, []);
-  assert.deepEqual(by['ronin-host'].tools.map((tool) => tool.name),
-    ['tejun-survey', 'tejun-account', 'tejun-secrets', 'tejun-machine-restart']);
+  assert.deepEqual(by['ronin-host'].tools.map((tool) => tool.name), ['ronin-host']);
+  assert.equal(by['ronin-host'].tools[0]?.help, 'ronin-host --help');
   // Lead rulings, 2026-09-13: project create is first-class and a priority; session_create
   // is the lead's, never universal; session_check and session_set stay base.
   const priority = (name: string) => by[name].tools.filter((tool) => tool.priority).map((tool) => tool.command);
