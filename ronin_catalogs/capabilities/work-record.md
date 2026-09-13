@@ -13,7 +13,7 @@ Reach for the work-record tools whenever your task, position, documents, or a pr
 |---|---|---|---|
 | `work-record update-record` | write: objective, repository rows, focus | priority | `work-record --help` |
 | `work-record document add` | write: what the owner can open from Docs | priority | `work-record --help` |
-| `work-record project create` | create: one complete project with a unique stable ID; refuses an existing ID | priority | `work-record --help` |
+| `work-record project create` | create: one complete project; the Team roster issues its unique stable ID | priority | `work-record --help` |
 | `work-record project read` | read: one held project | priority | `work-record --help` |
 | `work-record project write` | write: one held project's fields, stages, gates, and flags | priority | `work-record --help` |
 | `work-record document list` | read | | `work-record --help` |
@@ -30,9 +30,9 @@ path.
 A project is one canonical object with a stable ID. It moves whole between a Team roster
 and an Agent's work record; it is never copied. An Agent writes only the projects it holds.
 
-`project create` is first-class creation, not an upsert: it makes a complete, valid project
-with a unique stable ID, its position, and its starting state, and refuses an ID that
-already exists. `project read` and `project write` work on a held project by ID; steps,
+`project create` is first-class creation, not an upsert: the Team roster issues its ID,
+then the operation writes a complete, valid project with its position and starting state.
+Agents never choose or reuse IDs. `project read` and `project write` work on a held project by ID; steps,
 stages, and gates change through `project write`, never through a second ladder command.
 
 A project carries exactly two flags:

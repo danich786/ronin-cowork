@@ -23,7 +23,7 @@ const {
   readTeamRoster,
   writeTeamRoster,
 } = await import('../src/team-rosters.js');
-const { assignTeamProject, returnTeamProject, writeTeamIdea } = await import('../src/team-projects.js');
+const { assignTeamProject, issueTeamProjectId, returnTeamProject, writeTeamIdea } = await import('../src/team-projects.js');
 test('create → read → list: a zero-member team is a real, openable record', async () => {
   const r = await createTeamRoster('alpha', {
     kind: 'coding',
@@ -62,6 +62,16 @@ test('ideas live in the roster and its monotonic id issuer is the only id source
   const roster = await readTeamRoster('alpha');
   assert.equal(roster?.next_project_id, 3);
   assert.deepEqual(roster?.projects.map((p) => p.id), ['alpha/1', 'alpha/2']);
+});
+
+test('an Agent project reserves its id without creating a roster idea', async () => {
+  const id = await issueTeamProjectId('alpha');
+  assert.equal(id, 'alpha/3');
+  const concurrent = await Promise.all([issueTeamProjectId('alpha'), issueTeamProjectId('alpha')]);
+  assert.deepEqual(concurrent, ['alpha/4', 'alpha/5'], 'concurrent issuers cannot observe the same counter');
+  const roster = await readTeamRoster('alpha');
+  assert.equal(roster?.next_project_id, 6);
+  assert.equal(roster?.projects.some((project) => project.id === id), false);
 });
 
 test('assign and return move one whole project across the roster boundary', async () => {

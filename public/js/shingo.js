@@ -32,6 +32,12 @@ export function clampTip(s, room = 120) {
   return s.length > room ? s.slice(0, room - 1) + '…' : s;
 }
 
+export function taskAtHand(letter) {
+  return letter?.project
+    ? { objective: letter.project.objective, project: letter.project }
+    : { objective: letter?.objective || '', project: null };
+}
+
 /**
  * The ladder — the same data the chip reads, at full zoom.
  *
@@ -63,56 +69,9 @@ export function buildLadder(letter, deskEntry = null) {
     return el;
   };
 
-  // Projects are the work record now. `project` is the one selected by the position
-  // marker; the remaining project titles are kept beside it, one tap away.
-  if (letter.project) {
-    const current = letter.project;
-    const project = section(current.title, 'sl-project');
-    const objective = document.createElement('p');
-    objective.textContent = current.objective;
-    project.appendChild(objective);
-    const state = document.createElement('p');
-    state.className = 'sl-action';
-    state.textContent = [current.stage, current.status, current.exit !== 'none' ? `exit: ${current.exit}` : ''].filter(Boolean).join(' · ');
-    project.appendChild(state);
-    for (const rung of current.ladder || []) {
-      const heading = document.createElement('strong');
-      heading.className = 'sl-project-stage';
-      heading.textContent = rung.stage;
-      project.appendChild(heading);
-      for (const leg of rung.legs || []) {
-        const line = document.createElement('p');
-        line.className = 'sl-project-leg';
-        line.textContent = `${leg.done ? '✓' : '□'} ${leg.title}`;
-        project.appendChild(line);
-      }
-    }
-    for (const evidence of current.evidence || []) {
-      const line = document.createElement('p');
-      line.className = 'sl-project-evidence';
-      line.textContent = evidence;
-      project.appendChild(line);
-    }
-    const others = (letter.projects || []).filter((item) => item.id !== current.id);
-    if (others.length) {
-      const switcher = document.createElement('div');
-      switcher.className = 'sl-projects-other';
-      for (const item of others) {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.textContent = item.title;
-        button.addEventListener('click', () => {
-          letter.project = item;
-          box.replaceWith(buildLadder(letter, deskEntry));
-        });
-        switcher.appendChild(button);
-      }
-      project.appendChild(switcher);
-    }
-  }
-
   const firstOpen = letter.ladder?.find((rung) => rung.status !== 'DONE' || rung.legs?.some((leg) => leg.status !== 'DONE'));
-  const summaryText = letter.chip?.text || (firstOpen?.gate !== undefined ? '⛩ ' + t('ladder.gate', 'GATE') : firstOpen?.phase || '');
+  const current = taskAtHand(letter);
+  const summaryText = current.project?.title || letter.chip?.text || (firstOpen?.gate !== undefined ? '⛩ ' + t('ladder.gate', 'GATE') : firstOpen?.phase || '');
   if (summaryText) {
     const summary = document.createElement('div');
     summary.className = 'sl-summary' + (letter.chip?.gate || firstOpen?.gate !== undefined ? ' gate' : '');
@@ -122,8 +81,14 @@ export function buildLadder(letter, deskEntry = null) {
 
   const task = section(t('ladder.task_at_hand', 'Task at hand'), 'sl-task');
   const objective = document.createElement('p');
-  objective.textContent = letter.objective || t('ladder.task_unstated', 'No task stated in this work record.');
+  objective.textContent = current.objective || t('ladder.task_unstated', 'No task stated in this work record.');
   task.appendChild(objective);
+  if (current.project) {
+    const state = document.createElement('p');
+    state.className = 'sl-action';
+    state.textContent = [current.project.stage, current.project.status, current.project.exit !== 'none' ? `exit: ${current.project.exit}` : ''].filter(Boolean).join(' · ');
+    task.appendChild(state);
+  }
   if (letter.mandate) {
     const mandate = document.createElement('p');
     mandate.className = 'sl-action';
@@ -206,6 +171,45 @@ export function buildLadder(letter, deskEntry = null) {
     empty.className = 'sl-empty';
     empty.textContent = t('ladder.none', 'no work record yet');
     box.appendChild(empty);
+    return box;
+  }
+
+  if (current.project) {
+    const progress = section(t('ladder.progress', 'Progress'), 'sl-progress sl-project');
+    for (const rung of current.project.ladder || []) {
+      const heading = document.createElement('strong');
+      heading.className = 'sl-project-stage';
+      heading.textContent = rung.stage;
+      progress.appendChild(heading);
+      for (const leg of rung.legs || []) {
+        const line = document.createElement('p');
+        line.className = 'sl-project-leg';
+        line.textContent = `${leg.done ? '✓' : '□'} ${leg.title}`;
+        progress.appendChild(line);
+      }
+    }
+    for (const evidence of current.project.evidence || []) {
+      const line = document.createElement('p');
+      line.className = 'sl-project-evidence';
+      line.textContent = evidence;
+      progress.appendChild(line);
+    }
+    const others = (letter.projects || []).filter((item) => item.id !== current.project.id);
+    if (others.length) {
+      const switcher = document.createElement('div');
+      switcher.className = 'sl-projects-other';
+      for (const item of others) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = item.title;
+        button.addEventListener('click', () => {
+          letter.project = item;
+          box.replaceWith(buildLadder(letter, deskEntry));
+        });
+        switcher.appendChild(button);
+      }
+      progress.appendChild(switcher);
+    }
     return box;
   }
 

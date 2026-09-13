@@ -37,13 +37,16 @@ dynamic_help() {
 session_create — create one new Agent
 
 Usage:
-  session_create <name> [--prompt <text>] [--team <team>] [--lead]
+  session_create <name> [--prompt <text>] [--team <team>] [--project <id>] [--lead]
                         [--root <path>] [--provider <provider>] [--model <model>]
                         [--mode manual|assisted] [--cmd <cli>]
                         [--mcp on|off] [--tags a,b] [--seed p1,p2]
 
 Creation is always explicit. An existing name is refused rather than read or updated.
 With no --team, the new Agent joins the caller's first Team when there is one.
+--project raises the Agent for one roster-held project: the brief names the project,
+then the whole project moves into the newborn's work record. A failed move is reported
+as a partial result; it never claims the project was installed.
 Choose a current pair in one call: session_create <name> --provider <provider> --model <model>.
 The choices, availability, and defaults below are read now from the same canonical
 Campaign/provider sources as Ronin's model dropdowns; this tool keeps no model list.
@@ -90,11 +93,12 @@ need_value() {
 NAME="${1:-}"
 [ -n "$NAME" ] && [ "${NAME#-}" = "$NAME" ] || die "usage: session_create <name> [options]. Run session_create --help." 2
 shift
-PROMPT="" TEAM="" LEAD="" ROOT="" PROVIDER="" MODE="" CMD="" MODEL="" MCP="" TAGS="" SEED=""
+PROMPT="" TEAM="" PROJECT="" LEAD="" ROOT="" PROVIDER="" MODE="" CMD="" MODEL="" MCP="" TAGS="" SEED=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --prompt) need_value "$@"; PROMPT="$2"; shift 2 ;;
     --team) need_value "$@"; TEAM="$2"; shift 2 ;;
+    --project) need_value "$@"; PROJECT="$2"; shift 2 ;;
     --lead) LEAD=1; shift ;;
     --root|--project_root) need_value "$@"; ROOT="$2"; shift 2 ;;
     --provider) need_value "$@"; PROVIDER="$2"; shift 2 ;;
@@ -110,6 +114,28 @@ done
 
 . "$TOOL_DIR/ronin-http.sh"
 ronin_connect || exit $?
+if [ -n "$PROJECT" ]; then
+  PROJECT_TEAM=${PROJECT%%/*}
+  PROJECT_NUMBER=${PROJECT#*/}
+  [ "$PROJECT_TEAM" != "$PROJECT" ] && [ -n "$PROJECT_TEAM" ] && [[ "$PROJECT_NUMBER" =~ ^[0-9]+$ ]] \
+    || die "BAD-ARG: --project needs a canonical <team>/<number> id." 2
+  [ -z "$TEAM" ] || [ "$TEAM" = "$PROJECT_TEAM" ] \
+    || die "BAD-ARG: project $PROJECT belongs to Team $PROJECT_TEAM, not $TEAM." 2
+  TEAM=$PROJECT_TEAM
+  roster=$(curl -sS -m 15 "${RONIN_CURL[@]+"${RONIN_CURL[@]}"}" "$url/api/team-rosters/$TEAM" 2>/dev/null) \
+    || die "UNREACHABLE: Ronin did not answer at $url" 5
+  PROJECT_BRIEF=$(ROSTER_JSON="$roster" python3 - "$PROJECT" <<'PY'
+import json, os, sys
+project_id = sys.argv[1]
+try: data = json.loads(os.environ["ROSTER_JSON"])
+except Exception: raise SystemExit(2)
+project = next((p for p in data.get("projects", []) if p.get("id") == project_id), None)
+if not project: raise SystemExit(3)
+print(f'Project {project_id}: {project.get("title", "")}. {project.get("objective", "")} Check your work record for the whole project.')
+PY
+  ) || die "NO-PROJECT: $PROJECT is not held in Team $TEAM's roster." 3
+  PROMPT=$(printf '%s\n%s' "$PROMPT" "$PROJECT_BRIEF" | sed '/^$/d')
+fi
 if [ -n "$MODEL" ]; then
   catalog=$(mktemp /tmp/session_create-catalog.XXXXXX) || exit 2
   trap "rm -f '$catalog'" EXIT
@@ -168,4 +194,30 @@ raise SystemExit(4)
 PY
 rc=$?
 rm -f "$out"
-exit $rc
+[ "$rc" -eq 0 ] || exit "$rc"
+if [ -n "$PROJECT" ]; then
+  assign_body=$(NAME="$NAME" python3 -c 'import json,os; print(json.dumps({"session": os.environ["NAME"]}))')
+  assign_out=$(mktemp /tmp/session_create_project.XXXXXX) || exit 2
+  assign_code=$(curl -sS -m 30 "${RONIN_CURL[@]+"${RONIN_CURL[@]}"}" -o "$assign_out" -w '%{http_code}' \
+    -H 'content-type: application/json' -X POST --data "$assign_body" \
+    "$url/api/team-rosters/$TEAM/projects/$PROJECT_NUMBER/assign" 2>/dev/null) || assign_code=000
+  if [ "$assign_code" != 200 ] || ! python3 - "$assign_out" <<'PY'
+import json, sys
+try: data=json.load(open(sys.argv[1]))
+except Exception: raise SystemExit(1)
+raise SystemExit(0 if data.get("ok") else 1)
+PY
+  then
+    detail=$(python3 - "$assign_out" <<'PY'
+import json, sys
+try: print(json.load(open(sys.argv[1])).get("error") or "project placement failed")
+except Exception: print("project placement failed")
+PY
+)
+    rm -f "$assign_out"
+    die "PARTIAL: $NAME was born, but project $PROJECT was not installed: $detail" 6
+  fi
+  rm -f "$assign_out"
+  printf 'ASSIGNED %s to %s — check your work record\n' "$PROJECT" "$NAME"
+fi
+exit 0

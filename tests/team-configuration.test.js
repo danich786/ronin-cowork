@@ -105,7 +105,7 @@ test('the tab is the launch forms’ format: step 1 Team (ID · Title · Kind, t
   const labels = identity.all('wk-field-label').map((node) => node.textContent);
   assert.deepEqual(labels, ['Team ID', 'Title'], 'the kit’s labelled fields, the same furniture as the forms');
   assert.equal(identity.all('wk-field-control')[0].value, 'jobber');
-  assert.equal(identity.all('wk-field-control')[0].readOnly, true, 'the ID is read, not edited');
+  assert.equal(identity.all('wk-field-control')[0].disabled, true, 'the Team ID box is greyed out, not editable');
   assert.equal(identity.all('wk-field-control')[1].value, 'Jobber');
   assert.ok(identity.all('ask-stone').some((node) => node.dataset.askKey === 'kind'), 'Kind is a stone on the identity line');
   assert.equal(form.all('ask').every((node) => node.dataset.density === 'tight'), true, 'the forms’ tight density');

@@ -9,7 +9,11 @@ import path from 'node:path';
 const exec = promisify(execFile);
 const root = path.resolve(import.meta.dirname, '..');
 
-async function fixture(sessions: unknown[] = [], modelFacts?: { provider: string; cli: string; model: string }) {
+async function fixture(
+  sessions: unknown[] = [],
+  modelFacts?: { provider: string; cli: string; model: string },
+  assignError = '',
+) {
   const requests: Array<{ method: string; url: string; body: string }> = [];
   const server = createServer((req, res) => {
     let body = '';
@@ -20,6 +24,10 @@ async function fixture(sessions: unknown[] = [], modelFacts?: { provider: string
       res.setHeader('content-type', 'application/json');
       if (req.method === 'GET' && req.url === '/api/sessions') {
         res.end(JSON.stringify(sessions));
+        return;
+      }
+      if (req.method === 'GET' && req.url === '/api/team-rosters/build') {
+        res.end(JSON.stringify({ name: 'build', projects: [{ id: 'build/7', title: 'Render board', objective: 'Return live JSON.' }] }));
         return;
       }
       if (req.method === 'GET' && req.url === '/api/provider-catalog') {
@@ -38,11 +46,17 @@ async function fixture(sessions: unknown[] = [], modelFacts?: { provider: string
         return;
       }
       if (req.method === 'POST' && req.url === '/api/session') {
-        res.end(JSON.stringify({ ok: true, name: 'unused', receipt: {} }));
+        const stated = JSON.parse(body || '{}') as { name?: string; team?: string };
+        res.end(JSON.stringify({ ok: true, name: stated.name ?? 'unused', receipt: { team: stated.team } }));
         return;
       }
       if (req.method === 'POST' && req.url?.startsWith('/api/sessions/')) {
         res.end(JSON.stringify({ ok: true }));
+        return;
+      }
+      if (req.method === 'POST' && req.url === '/api/team-rosters/build/projects/7/assign') {
+        if (assignError) { res.statusCode = 400; res.end(JSON.stringify({ error: assignError })); }
+        else res.end(JSON.stringify({ ok: true }));
         return;
       }
       res.statusCode = 404;
@@ -82,6 +96,31 @@ test('creation is an explicit command and uses the launch door', async (t) => {
   assert.match(result.output, /BORN unused/);
   assert.equal(f.requests.length, 1);
   assert.deepEqual({ method: f.requests[0].method, url: f.requests[0].url }, { method: 'POST', url: '/api/session' });
+});
+
+test('raising for a project puts its identity in the brief and assigns it after birth', async (t) => {
+  const f = await fixture();
+  t.after(f.close);
+  const result = await f.run('session_create', ['builder', '--project', 'build/7']);
+  assert.equal(result.code, 0, result.output);
+  assert.match(result.output, /ASSIGNED build\/7 to builder.*check your work record/);
+  assert.deepEqual(f.requests.map(({ method, url }) => ({ method, url })), [
+    { method: 'GET', url: '/api/team-rosters/build' },
+    { method: 'POST', url: '/api/session' },
+    { method: 'POST', url: '/api/team-rosters/build/projects/7/assign' },
+  ]);
+  const birth = JSON.parse(f.requests[1].body) as { prompt: string; team: string };
+  assert.equal(birth.team, 'build');
+  assert.match(birth.prompt, /Project build\/7: Render board\. Return live JSON\./);
+});
+
+test('raise reports a truthful partial result when placement fails after birth', async (t) => {
+  const f = await fixture([], undefined, 'letter unavailable');
+  t.after(f.close);
+  const result = await f.run('session_create', ['builder', '--project', 'build/7']);
+  assert.equal(result.code, 6);
+  assert.match(result.output, /BORN builder/);
+  assert.match(result.output, /PARTIAL: builder was born, but project build\/7 was not installed: letter unavailable/);
 });
 
 test('creation help renders current catalog choices, availability, and Campaign defaults', async (t) => {

@@ -9,10 +9,26 @@ const projectId = (team: string, stated: string): string => {
   return value.includes('/') ? value : `${team}/${value}`;
 };
 
+const issuerTail = new Map<string, Promise<void>>();
+async function withTeamIssuer<T>(team: string, action: () => Promise<T>): Promise<T> {
+  const prior = issuerTail.get(team) ?? Promise.resolve();
+  let release!: () => void;
+  const turn = new Promise<void>((resolve) => { release = resolve; });
+  const tail = prior.then(() => turn);
+  issuerTail.set(team, tail);
+  await prior;
+  try { return await action(); }
+  finally {
+    release();
+    if (issuerTail.get(team) === tail) issuerTail.delete(team);
+  }
+}
+
 export async function writeTeamIdea(team: string, statedId: string | undefined, edit: IdeaEdit): Promise<{
   created: boolean;
   project: Project;
 }> {
+  return withTeamIssuer(team, async () => {
   const roster = await readTeamRoster(team);
   if (!roster) throw new Error(`Team "${team}" has no roster.`);
   const created = !statedId;
@@ -39,7 +55,8 @@ export async function writeTeamIdea(team: string, statedId: string | undefined, 
     projects,
     ...(created ? { next_project_id: roster.next_project_id + 1 } : {}),
   });
-  return { created, project };
+    return { created, project };
+  });
 }
 
 export async function removeTeamIdea(team: string, statedId: string): Promise<Project> {
@@ -68,6 +85,19 @@ export type ProjectMover = (input:
 ) => Promise<{ project: Project; projectsRemaining: number }>;
 
 const houseMove: ProjectMover = moveTegamiProject;
+
+/** Issue an ID without creating a roster-held idea. Agent-authored projects use this
+ * door before writing the complete project into their own work record. A failed later
+ * write may leave a gap; IDs are monotonic identities, not a count of projects. */
+export async function issueTeamProjectId(team: string): Promise<string> {
+  return withTeamIssuer(team, async () => {
+    const roster = await readTeamRoster(team);
+    if (!roster) throw new Error(`Team "${team}" has no roster.`);
+    const id = `${team}/${roster.next_project_id}`;
+    await writeTeamRoster(team, { next_project_id: roster.next_project_id + 1 });
+    return id;
+  });
+}
 
 export async function assignTeamProject(team: string, statedId: string, session: string, move: ProjectMover = houseMove): Promise<Project> {
   const roster = await readTeamRoster(team);

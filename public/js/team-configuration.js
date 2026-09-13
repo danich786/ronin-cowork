@@ -54,7 +54,7 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
 
     /* ---- step 1 · Team: ID, Title and Kind on one line, then Purpose — the New Team form's own head ---- */
     const stepTeam = createStep({ n: 1, key: 'team', title: t('team_config.team_step', 'Team') });
-    const idInput = el('input', 'tw-config-id'); idInput.type = 'text'; idInput.name = 'name'; idInput.value = roster.name; idInput.readOnly = true; idInput.tabIndex = -1;
+    const idInput = el('input', 'tw-config-id'); idInput.type = 'text'; idInput.name = 'name'; idInput.value = roster.name; idInput.disabled = true;
     const title = el('input'); title.type = 'text'; title.name = 'title'; title.spellcheck = false; title.value = roster.title || '';
     const identity = el('div', 'tw-config-identity');
     const kind = ask([{ group: t('team_config.kind', 'Kind'), fields: [
