@@ -1,6 +1,6 @@
 # Ronin Services
 - **label:** Ronin Services
-- **blurb:** The system-wide Services installation: template library, live status from Koshi, voice and Hotwords.
+- **blurb:** The system-wide Services installation: Team Kanban, template library, live status from Koshi, voice and Hotwords.
 - **effect:** system
 - **provides:** —
 - **reading:** routine/ronin_services/SERVICES_ABILITIES.md
@@ -8,6 +8,6 @@
 - **sops:** —
 - **tools:** —
 - **mcp:** —
-- **parts:** counting, koe, koshi, koshi_weights, michi, rireki
+- **parts:** counting, kanban, koe, koshi, koshi_weights, michi, rireki
 - **requires:** —
 - **order:** 30
