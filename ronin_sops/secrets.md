@@ -3,7 +3,7 @@
 > Stock SOP. Your own copy in the sops store (`ronin-store sops` → `secrets.md`) replaces
 > this file whole — a default, not law.
 > **Voice: relay.** Written for the agent to walk a person through, not to follow itself.
-> **Tool: `tejun-secrets [path]`** — which env files exist, the key NAMES in each, whether
+> **Tool: `ronin-host secrets [path]`** — which env files exist, the key NAMES in each, whether
 > git tracks them, whether `.gitignore` covers them, and which provider credential a
 > launched agent would actually use. Run it before the conversation, not after. It never
 > prints a value; exit 4 means something is already public.
@@ -43,7 +43,7 @@ environment variable; this SOP governs its value and where that value may live.
 disk. **A set `ANTHROPIC_API_KEY` silently outranks a subscription login — and an empty
 one still wins its slot.** So a stale export in a shell profile can quietly move every
 session onto per-token billing, and the only symptom is the invoice. Pick one, and check
-which one is actually winning (`tejun-secrets`) rather than assuming.
+which one is actually winning (`ronin-host secrets`) rather than assuming.
 
 Two follow-ons worth knowing: if you log in *both* ways the CLI may warn about the
 conflict — resolve it, don't dismiss it. And what a Ronin pane inherits is the **service's**

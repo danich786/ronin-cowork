@@ -14,10 +14,7 @@ authority and settings authority does not grant Host operations.
 
 | Tool | Authority | Teach | Help |
 |---|---|---|---|
-| `tejun-survey` | read: measured machine facts | priority | `tejun-survey --help` |
-| `tejun-account` | read: secret-free account state | | `tejun-account --help` |
-| `tejun-secrets` | read: secret presence, never values | | `tejun-secrets --help` |
-| `tejun-machine-restart` | write: restart Ronin through its guarded operation | | `tejun-machine-restart --help` |
+| `ronin-host` | inspect/account/secrets: read; restart: guarded write | priority | `ronin-host --help` |
 
 Measurements are observations, not Machine Settings fields. Never turn an observed fact
 into a configuration write, and never print credential values.

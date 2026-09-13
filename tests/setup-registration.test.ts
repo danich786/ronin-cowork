@@ -237,7 +237,8 @@ test('Services leads with identity, the beta, and benefits, then one measured st
   assert.match(source, /probe\.data\.cowork\.startedAt !== startedAt\) break;/, 'the restart is read off the machine, not assumed');
   assert.match(source, /installed\.kind === 'network' && body\.dataset\.state\) \{ timer = setTimeout/, 'a server down for a moment does not repaint the surface as Not installed');
   const route = await (await import('node:fs/promises')).readFile(new URL('../src/routes/machine-restart-api.ts', import.meta.url), 'utf8');
-  assert.match(route, /join\(REPO_ROOT, 'ronin_bin', 'tejun-machine-restart'\)/, 'the route runs the sanctioned tool and names no unit');
+  assert.match(route, /join\(REPO_ROOT, 'ronin_bin', 'ronin-host'\)/, 'the route runs the sanctioned tool and names no unit');
+  assert.match(route, /execFile\(RESTART_TOOL, \['restart'\]/, 'the route selects only the fixed restart subcommand');
   assert.doesNotMatch(route, /execFile\(['"]systemctl|ronin\.service/, 'the route invokes no systemctl and names no unit; only the tool does');
   assert.match(route, /if \(!process\.env\.INVOCATION_ID\) \{\n\s*res\.status\(409\)/, 'a copy that is not the installed service refuses rather than restarting the wrong Ronin');
   assert.match(route, /res\.status\(409\)\.json\(\{ error: \(error\.stderr \|\| error\.message\)/, 'the tool\'s refusal is answered in its own words');

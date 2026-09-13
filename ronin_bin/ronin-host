@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# ronin-host — inspect and operate the host through a constrained vocabulary.
+set -u
+
+SELF="$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")"
+ROOT="$(cd "$(dirname "$SELF")/.." && pwd)"
+
+usage() {
+  cat <<'EOF'
+Usage:
+  ronin-host inspect [path]  Measure the host and storage for path (default: $PWD)
+  ronin-host account         Show secret-free owner, entitlement, and limit facts
+  ronin-host secrets [path]  Show secret names and exposure state, never values
+  ronin-host restart         Restart Ronin only; sessions remain running
+
+Each subcommand has a fixed authority boundary. There is no generic host command,
+arbitrary service target, credential-value mode, or write surface beyond restart.
+EOF
+}
+
+case "${1:-}" in
+  -h|--help|'') usage; [ -n "${1:-}" ] || exit 2 ;;
+  inspect)
+    shift
+    [ "$#" -le 1 ] || { usage >&2; exit 4; }
+    exec bash "$ROOT/libexec/ronin-host-inspect" "$@" ;;
+  account)
+    shift
+    [ "$#" -eq 0 ] || { usage >&2; exit 4; }
+    exec bash "$ROOT/libexec/ronin-host-account" ;;
+  secrets)
+    shift
+    [ "$#" -le 1 ] || { usage >&2; exit 4; }
+    exec bash "$ROOT/libexec/ronin-host-secrets" "$@" ;;
+  restart)
+    shift
+    exec bash "$ROOT/libexec/ronin-host-restart" "$@" ;;
+  *)
+    echo "UNKNOWN: ronin-host has no '$1' subcommand." >&2
+    usage >&2
+    exit 2 ;;
+esac

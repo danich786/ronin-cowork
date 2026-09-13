@@ -52,7 +52,7 @@ Start with the root [`AGENTS.md`](../AGENTS.md), then use the relevant architect
 
 The owner's stores shadow shipped resources file-for-file. `bin/ronin-store --all` lists
 their resolved locations. A macro is compiled with `tejun <name>`; a machine fact is
-measured with `tejun-survey`, `tejun-account`, or the relevant tool.
+measured with `ronin-host inspect`, `ronin-host account`, or the relevant tool.
 
 ## Coworkspace
 

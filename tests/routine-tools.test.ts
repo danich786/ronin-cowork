@@ -61,7 +61,7 @@ test('missing enabled tools are visible and do not refuse projection', async () 
 const REACH_FAILURES = /Cannot find module|command not found|No such file or directory|NO-REPO/;
 const URL_CALLERS = ['tejun-archive', 'tejun-fork', 'tejun-harakiri', 'tejun-rehydrate', 'session_check', 'session_create', 'session_set', 'tejun-team-set', 'tejun-teampage', 'mika'];
 test('projected ronin_bin tools resolve the symlink and reach the repository and the operator', async (t) => {
-  const tools = ['tejun', 'tejun-desk', 'tejun-team', 'tejun-wipeboard', 'tejun-send', 'read_tegami', 'write_tegami', 'tejun-survey', 'tejun-account', 'ronin-url', ...URL_CALLERS];
+  const tools = ['tejun', 'tejun-desk', 'tejun-team', 'tejun-wipeboard', 'tejun-send', 'read_tegami', 'write_tegami', 'ronin-host', 'ronin-url', ...URL_CALLERS];
   const projected = await projectRoutineTools('resolve', [routine('ronin_base', true, tools)]);
   for (const t of tools) assert.ok(projected.delivered.includes(t), `${t} projected`);
   const reached: string[] = [];
@@ -141,7 +141,7 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
   const surplus = await run(['tejun', 'team', 'extra']);
   assert.equal(surplus.code, 2);
   assert.match(surplus.out, /Run tejun --help/);
-  for (const args of [['tejun-wipeboard'], ['tejun-send'], ['read_tegami', '--session', 'nobody'], ['write_tegami', '--session', 'nobody', '--at', '1'], ['tejun-survey'], ['tejun-account']]) {
+  for (const args of [['tejun-wipeboard'], ['tejun-send'], ['read_tegami', '--session', 'nobody'], ['write_tegami', '--session', 'nobody', '--at', '1'], ['ronin-host', 'inspect'], ['ronin-host', 'account']]) {
     const r = await run(args);
     assert.doesNotMatch(r.out, REACH_FAILURES, `${args.join(' ')}: ${r.out}`);
   }

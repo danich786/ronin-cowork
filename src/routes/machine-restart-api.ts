@@ -3,8 +3,8 @@ import { join } from 'node:path';
 import { REPO_ROOT } from '../resources.js';
 import { execFile } from '../spawn-broker.js';
 
-/** The one sanctioned restart: ronin_bin/tejun-machine-restart, which restarts Ronin and nothing else. */
-const RESTART_TOOL = join(REPO_ROOT, 'ronin_bin', 'tejun-machine-restart');
+/** The one sanctioned restart: `ronin-host restart`, which restarts Ronin and nothing else. */
+const RESTART_TOOL = join(REPO_ROOT, 'ronin_bin', 'ronin-host');
 
 /**
  * POST /api/machine/restart — the Setup Services surface's Restart press.
@@ -24,7 +24,7 @@ export function registerMachineRestart(app: express.Express): void {
       res.status(409).json({ error: 'This copy of Ronin is not the installed service, so it cannot restart itself; whoever started it restarts it.' });
       return;
     }
-    void execFile(RESTART_TOOL, [], { timeout: 90_000 }).then(
+    void execFile(RESTART_TOOL, ['restart'], { timeout: 90_000 }).then(
       ({ stdout }) => res.json({ started: true, said: String(stdout || '').trim().slice(0, 400) }),
       (error: Error & { stderr?: string }) => res.status(409).json({ error: (error.stderr || error.message).trim().slice(0, 400) }),
     );

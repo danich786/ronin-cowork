@@ -41,8 +41,8 @@ fact about a box is wrong the day the box changes, and nobody notices.
 
 **Where a domain has a measurable, name the tool — at the top.** An SOP carries a
 `> Tool:` line in its header, the same form `ronin_catalogs/ACTIONS.md` uses, so the eye
-finds it in the same place everywhere. `data.md` names `tejun-survey`; `secrets.md` names
-`tejun-secrets`; repository arrangement pages name nothing, because git is git. The pointer is always to a
+finds it in the same place everywhere. `data.md` names `ronin-host inspect`; `secrets.md` names
+`ronin-host secrets`; repository arrangement pages name nothing, because git is git. The pointer is always to a
 **cataloged action's tool**, never a loose script.
 
 This is the shelf's sharpest edge, and it is not really about discovery. **A capable agent

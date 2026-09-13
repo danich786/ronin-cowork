@@ -11,8 +11,7 @@ whole:
 - **the designated Team lead** — `session_create` (supporting-Agent creation is lead work;
   it is on no delivery list until the lead-conditional capability projection lands);
 - **with a managed desk** — `tejun-desk`, `ronin-repo-init`;
-- **with the Ronin Host behaviour** — `tejun-survey`, `tejun-account`, `tejun-secrets`,
-  `tejun-machine-restart`;
+- **with the Ronin Host behaviour** — `ronin-host` and its dynamically available `--help`;
 - **with the gbrain behaviour** — `tejun-recall`, `tejun-remember`;
 - **with Ronin Services** — `mika`; `lookup`, `owner_view` and `show` are hers alone.
 
