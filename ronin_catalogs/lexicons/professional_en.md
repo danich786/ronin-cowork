@@ -263,7 +263,6 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **campaign_view.col_provider:** Provider
 - **campaign_view.col_model:** Preferred model
 - **campaign_view.col_default:** Default
-- **campaign_view.templates_summary:** Team casts, agent loadouts, and the library to download more from.
 - **campaign_view.templates_help:** A template fills a launch form and stops — its answers become yours. Agents are people you assign; teams are projects a cast delivers. A handful ship inside Ronin; the rest are on the library.
 - **campaign_view.library_none_kind:** Nothing of this kind on the library.
 - **campaign_view.templates_teams:** Teams — projects
@@ -661,7 +660,6 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **new_agent.terminal_note:** A terminal takes no kind, no instructions, no mandate and no loadout.
 - **new_agent.bare_note:** A bare-metal Agent takes no kind, no mandate and no loadout.
 - **new_agent.instructions:** Instructions
-- **new_agent.model_package:** Model
 - **new_agent.team_existing:** An existing team
 - **new_agent.team_existing_sub:** Join it. Its answers land at birth.
 - **new_agent.team_none:** No team (rōnin)
@@ -1808,6 +1806,8 @@ The catalog entry goes. {dir} is not touched.
 - **team_config.reach:** Reach
 - **team_config.recruit:** Recruit
 - **team_config.output:** Output
+- **team_config.required_short:** Required
+- **team_config.runtime:** Runtime
 - **team_config.dial:** Control
 - **team_config.next_form:** These defaults land in the next Agent form that opens. Nothing live changes.
 - **team_config.saving:** Saving…
@@ -1894,7 +1894,6 @@ The catalog entry goes. {dir} is not touched.
 - **league.delete_team:** Delete team
 - **league.delete_team_confirm:** Delete {team}? {count} Agents will lose this Team membership.
 - **league.members:** Team members
-- **league.no_members:** No Agents assigned yet.
 - **league.role_unset:** Role not set
 - **league.team_lead:** Team Lead
 - **league.make_team_lead:** Make Lead
