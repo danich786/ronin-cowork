@@ -6,14 +6,14 @@ import assert from 'node:assert/strict';
 
 class FakeNode {
   constructor(tag = '') { this.tagName = tag.toUpperCase(); this.dataset = {}; this.children = []; this.listeners = {}; this.attributes = {}; this._text = ''; this.className = ''; }
-  append(...nodes) { this.children.push(...nodes.flat().filter((node) => node != null && node !== '')); }
+  append(...nodes) { for (const node of nodes.flat().filter((node) => node != null && node !== '')) { if (node instanceof FakeNode) { node.parent?.children.splice(node.parent.children.indexOf(node), 1); node.parent = this; } this.children.push(node); } }
   replaceChildren(...nodes) { this.children = []; this.append(...nodes); }
   setAttribute(name, value) { this.attributes[name] = String(value); }
   addEventListener(name, callback) { (this.listeners[name] ||= []).push(callback); }
   fire(name, event = {}) { for (const callback of this.listeners[name] || []) callback({ currentTarget: this, preventDefault() {}, ...event }); }
   click() { this.fire('click'); }
   focus() { this.focused = true; }
-  remove() { this.removed = true; }
+  remove() { this.removed = true; if (this.parent) { this.parent.children = this.parent.children.filter((node) => node !== this); this.parent = null; } }
   *walk() { for (const child of this.children) { if (!(child instanceof FakeNode)) continue; yield child; yield* child.walk(); } }
   all(cls) { return [...this.walk()].filter((node) => node.className.split(' ').includes(cls)); }
   one(cls) { return this.all(cls)[0] || null; }
@@ -261,4 +261,20 @@ test('a second layer: the parent answer that reveals it keeps the tray open, the
   assert.equal(form.el.all('ask-stone').length, 1);
   form.show(['team', 'lead']);
   assert.equal(form.el.all('ask-stone').length, 2, 'the nested question follows its parent through show()');
+});
+
+test('trayHost: the open tray is placed at the end of the consumer\'s row, not inside the instance, and leaves when it closes', () => {
+  const row = new FakeNode('div'); row.className = 'identity-row';
+  const name = new FakeNode('div'); name.className = 'name'; row.append(name);
+  const form = ask([{ group: 'Team', fields: [{ key: 'team', label: 'Team', options: [{ v: 'none', l: 'No team' }, { v: 'current', l: 'Current team' }], then: [{ when: 'current', key: 'teamName', label: 'Which team', options: [{ v: 'jobber', l: 'jobber' }] }] }] }], { value: { team: 'none' }, trayHost: row });
+  row.append(form.el);
+  stoneFor(form, 'team').click();
+  assert.equal(form.el.all('ask-tray').length, 0, 'not inside the instance');
+  assert.equal(row.children.at(-1).className, 'ask-tray', 'at the end of the row');
+  row.children.at(-1).all('ask-opt').find((o) => o.one('ask-name').textContent === 'Current team').click();
+  assert.equal(row.children.filter((n) => n.className === 'ask-tray').length, 1, 'one tray after a repaint, not two');
+  assert.ok(row.children.at(-1).one('ask-layer'), 'the second layer rides in it');
+  row.children.at(-1).fire('keydown', { key: 'Escape' });
+  assert.equal(row.children.filter((n) => n.className === 'ask-tray').length, 0, 'Escape inside the hosted tray closes it');
+  assert.deepEqual(row.children.map((n) => n.className), ['name', 'ask'], 'the row is back to its controls');
 });

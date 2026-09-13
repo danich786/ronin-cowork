@@ -5,7 +5,7 @@
  * is the consumer's: not the width, not the wrapping, not the shape, not what opens.
  *
  *   ask([{ group, fields: [{ key, label, options, blank?, many?, switch?, shape?, after?, row?, word?, then? }] }],
- *       { value, onChange, density })  →  { el, value(), set(key, v) | set({...}), options(key, rows), show(keys|null), open(key), close(), destroy() }
+ *       { value, onChange, density, trayHost })  →  { el, value(), set(key, v) | set({...}), options(key, rows), show(keys|null), open(key), close(), destroy() }
  *
  * A field is a READING STONE (140 × 48: label over answer). Click it and a TRAY opens under
  * its group, holding option stones in one of two fixed shapes — the SQUARE (85, a glyph and
@@ -27,7 +27,11 @@
  * Picking `current` keeps the tray open and draws the nested question's stones beneath the
  * first layer; answering it closes the tray, and the reading says the nested answer. Any other
  * parent answer clears the nested one. A nested question is a field like any other in `value()`,
- * `set()` and `onChange`, but it is never a stone of its own in the group. `density: 'tight'` is the launch
+ * `set()` and `onChange`, but it is never a stone of its own in the group. `trayHost` names a
+ * wrapping row the consumer owns (a flex-wrap or grid container holding this instance beside
+ * other controls): the open tray is placed at the end of that row instead of inside this
+ * instance, so it spans the row's full width — a Team question on the right of a Name field
+ * still opens across the whole workspace. `density: 'tight'` is the launch
  * forms' setting — less line spacing inside a group, the same paragraph spacing between groups,
  * a 40 px stone — for questions that are optional and must not be in the owner's face; 'loose'
  * (the default) is the commons' setting where a question is the page's subject.
@@ -55,7 +59,7 @@ export function snake(text) {
 const FILTER_FROM = 12;
 let trayIds = 0;
 
-export function ask(groups = [], { value = {}, onChange = null, className = '', density = 'loose' } = {}) {
+export function ask(groups = [], { value = {}, onChange = null, className = '', density = 'loose', trayHost = null } = {}) {
   const spec = (Array.isArray(groups) ? groups : []).map((group) => ({
     label: group.group || group.label || '',
     fields: (group.fields || []).map((field) => ({ ...field, shape: field.shape === 'square' ? 'square' : 'rect' })),
@@ -72,6 +76,7 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
   let filter = '';
   let outside = null;
   let shown = null;
+  let trayNode = null;
   const visible = (field) => !shown || shown.has(field.key) || (field.parent != null && shown.has(field.parent));
 
   const root = el('section', `ask ${className}`.trim());
@@ -258,6 +263,7 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
   /* ---- paint: groups, their stones, and the one open tray ---- */
   function paint() {
     root.replaceChildren();
+    if (trayNode) { trayNode.remove?.(); trayNode = null; }
     if (open && !fields.some((field) => field.key === open && visible(field))) open = '';
     root.dataset.open = open;
     for (const group of spec) {
@@ -272,20 +278,25 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
       if (extras) box.append(extras);
       root.append(box);
       const opened = drawn.find((field) => field.key === open && !field.switch);
-      if (opened) root.append(tray(opened));
+      if (opened) {
+        trayNode = tray(opened);
+        trayNode.addEventListener('keydown', onEscape);
+        (trayHost || root).append(trayNode);
+      }
     }
     bindOutside();
   }
 
   /* ---- dismissal: Escape, and a press outside the utility ---- */
-  root.addEventListener('keydown', (event) => {
+  const onEscape = (event) => {
     if (event.key === 'Escape' && open) { event.preventDefault(); const key = open; open = ''; paint(); focusStone(key); }
-  });
+  };
+  root.addEventListener('keydown', onEscape);
   const focusStone = (key) => { for (const node of root.children) { /* groups */ for (const inner of node.children || []) { for (const button of inner.children || []) if (button.dataset?.askKey === key) button.focus?.(); } } };
   function bindOutside() {
     if (typeof document.addEventListener !== 'function') return;
     if (open && !outside) {
-      outside = (event) => { if (typeof root.contains === 'function' && root.contains(event.target)) return; open = ''; paint(); };
+      outside = (event) => { if (typeof root.contains === 'function' && (root.contains(event.target) || trayNode?.contains?.(event.target))) return; open = ''; paint(); };
       document.addEventListener('pointerdown', outside);
     } else if (!open && outside) {
       document.removeEventListener('pointerdown', outside);
@@ -307,6 +318,6 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     open(key) { open = byKey(key) && !byKey(key).switch ? key : ''; filter = ''; paint(); },
     close() { open = ''; paint(); },
     paint,
-    destroy() { open = ''; bindOutside(); root.remove?.(); },
+    destroy() { open = ''; bindOutside(); trayNode?.remove?.(); trayNode = null; root.remove?.(); },
   };
 }
