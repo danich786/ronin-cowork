@@ -17,6 +17,10 @@ test('Campaign defaults use ask() and Output keeps multi-select semantics', asyn
   }
   assert.doesNotMatch(source, /ruledRows\('(reach|recruit|output)'/, 'mandates are icon-free rectangles');
   assert.match(source, /shape: 'square'.*ruledRows\('dial'/, 'Control remains a ruled square');
+  assert.match(source, /key: 'features'.*many: true/);
+  assert.match(source, /key: 'behaviours'.*many: true/);
+  assert.match(source, /request\('\/api\/ways'\)/);
+  assert.doesNotMatch(source, /textarea/);
   assert.match(source, /const next = \{ \.\.\.current, \.\.\.picked,/);
   assert.match(css, /\.cv-defaults-form > \.ask,[\s\S]*?\.cv-defaults-form > \.cv-default-field \{ grid-column: 1 \/ -1; \}/, 'questions take the full row and Behaviours follows beneath');
 });

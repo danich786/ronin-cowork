@@ -67,6 +67,7 @@ function parse(name: string, raw: string, campaign_id = ''): TeamRoster {
   const behaviourValue = json('behaviours');
   const behaviourMap = behaviourValue && typeof behaviourValue === 'object' && !Array.isArray(behaviourValue)
     ? behaviourValue as Record<string, unknown> : {};
+  const settled = lines.some((line) => /^\s*-\s*\*\*features:\*\*/i.test(line));
   const kind = get('kind');
   return {
     name,
@@ -82,8 +83,10 @@ function parse(name: string, raw: string, campaign_id = ''): TeamRoster {
     wipeboard: get('wipeboard') || name,
     state: /^archived$/i.test(get('state')) ? 'archived' : 'active',
     references: strings(json('references'), 500),
-    features: strings(json('features'), 64),
-    behaviours: { selected: strings(behaviourMap.selected, 160), required: strings(behaviourMap.required, 160) },
+    features: settled ? strings(json('features'), 64) : [],
+    behaviours: settled
+      ? { selected: strings(behaviourMap.selected, 160), required: strings(behaviourMap.required, 160) }
+      : { selected: ['mandates'], required: [] },
     agent_defaults: teamAgentDefaults(json('agent_defaults')),
   };
 }

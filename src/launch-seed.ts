@@ -26,17 +26,24 @@ const teamBy = (roster: TeamRoster): StatedBy[] => [{ layer: 'team', source: tea
 export function resolveLaunchSeed(s: LaunchSeedSources): LaunchSeed & { resolved_contributions: ResolvedContribution[]; undelivered: string[] } {
   const c = s.campaign.config.defaults;
   const t = s.roster;
+  const campaignSettled = Object.prototype.hasOwnProperty.call(s.campaign.config, 'installations');
+  const teamSettled = !!t && Object.prototype.hasOwnProperty.call(t, 'features');
+  const campaignFeatures = campaignSettled ? c.features : [];
+  const campaignBehaviours = campaignSettled ? c.behaviours : ['mandates'];
   const a = t ? { ...c, ...t.agent_defaults } : c;
   const teamSource = t ? teamBy(t) : null;
   const source = (field: string): StatedBy[] => teamSource ?? campaignBy(s.campaign.id, `defaults.${field}`);
   const root = t?.project_root || s.roots.find((item) => !item.archived)?.name || '';
   const available = availableFeatures(s.installations, s.campaign.config.installations, s.features);
-  const cascade = resolveContributions(s.installations, s.campaign.config.installations, s.features, available, c.features, t?.features);
+  const cascade = resolveContributions(
+    s.installations, s.campaign.config.installations, s.features, available,
+    campaignFeatures, t ? (teamSettled ? t.features : []) : undefined,
+  );
   const pair = c.provider && c.model ? c : s.sessions?.default;
   const pairSource = c.provider && c.model ? campaignBy(s.campaign.id, 'defaults.provider/model') : installation('Model providers');
   const featureSource = t ? teamBy(t) : campaignBy(s.campaign.id, 'defaults.features');
-  const selectedBehaviours = t ? t.behaviours.selected : c.behaviours;
-  const required = new Set(t?.behaviours.required ?? []);
+  const selectedBehaviours = t ? (teamSettled ? t.behaviours.selected : ['mandates']) : campaignBehaviours;
+  const required = new Set(teamSettled ? t?.behaviours.required ?? [] : []);
   const behaviourSource = t ? teamBy(t) : campaignBy(s.campaign.id, 'defaults.behaviours');
   return {
     campaign_id: s.campaign.id,

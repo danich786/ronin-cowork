@@ -1,11 +1,12 @@
 /* part of the ronin-cowork client — see js/README.md */
-/** Campaign Agent defaults. These values seed the next form; they never edit a live Agent. */
+/** Campaign Team and Agent defaults. These values seed the next form; they never edit a live Team or Agent. */
 import { t } from './lexicon.js';
 import { saveCampaign } from './campaigns.js';
 import { WorkspaceKit } from './workspace-kit.js';
 import { loadProviderCatalog, providerCatalog, modelAvailabilityFact } from './form-steps.js';
 import { ask } from './ask.js';
 import { ruledRows } from './glyphs.js';
+import { request } from './request.js';
 
 const el = (tag, cls, text) => { const out = document.createElement(tag); if (cls) out.className = cls; if (text != null) out.textContent = String(text); return out; };
 const bucket = (value) => value && typeof value === 'object' && !Array.isArray(value) ? value : {};
@@ -21,16 +22,12 @@ const optionLabel = (value) => ({
   configured: t('launch_mode.configured', 'Model provider configuration'), live_dangerously: t('launch_mode.live', 'Dangerously'),
 })[value] || value;
 
-const labeled = (form, label, control, help = '') => {
-  const row = el('label', 'cv-default-field'); row.append(el('span', 'cv-default-label', label), control);
-  if (help) row.append(el('small', 'cv-from', help)); form.append(row); return control;
-};
 export function createAgentDefaultsSurface(campaign) {
   const { createSurface, createNotice } = WorkspaceKit.primitives;
   const surface = createSurface({ label: t('campaign_view.defaults', 'Defaults'), className: 'cv-surface' });
   const body = el('div', 'cv-body'); surface.content.append(body);
 
-  function paint() {
+  function paint(seed = null, ways = []) {
     const row = campaign(); body.replaceChildren();
     if (!row) return surface.setState('empty', t('campaign_view.none_selected', 'No Campaign selected.'));
     surface.setState(null, '');
@@ -45,10 +42,13 @@ export function createAgentDefaultsSurface(campaign) {
       : providerRow.listed === false && providerRow.model_list_current
         ? t('forms.reason_not_listed', 'not listed by your {cli} {client_version}', { cli: providerRow.cli_label || providerRow.cli, client_version: providerRow.model_list?.client_version || '' })
         : t('forms.reason_not_on_machine', 'not on this machine');
+    const availableNames = new Set(list(seed?.available));
+    const availableFeatures = list(seed?.features).filter((feature) => availableNames.has(feature.name));
     let picked = {
       provider: String(current.provider || ''), model: String(current.model || ''),
       reach: current.reach || CHOICES.reach[0], recruit: current.recruit || CHOICES.recruit[0],
       output: list(current.output), dial: current.dial || CHOICES.dial[0], launch_mode: current.launch_mode || CHOICES.launch_mode[0],
+      features: list(current.features), behaviours: list(current.behaviours),
     };
     const questions = ask([
       { group: t('new_agent.model_package', 'Model'), fields: [
@@ -67,24 +67,35 @@ export function createAgentDefaultsSurface(campaign) {
           { v: 'live_dangerously', l: optionLabel('live_dangerously'), sub: t('launch_mode.live_sub', 'Ronin appends that provider’s own bypass flag, so the Agent does not stop to ask.') },
         ] },
       ] },
+      { group: t('campaign_view.default_features', 'Features'), fields: [{
+        key: 'features', label: t('campaign_view.default_features', 'Features'), many: true,
+        options: availableFeatures.map((feature) => ({ v: feature.name, l: feature.label || feature.name, sub: feature.blurb || '' })),
+      }] },
+      { group: t('campaign_view.default_behaviours', 'Behaviours'), fields: [{
+        key: 'behaviours', label: t('campaign_view.default_behaviours', 'Behaviours'), many: true,
+        options: ways.map((way) => ({ v: way.name, l: way.label || way.name, sub: way.blurb || '' })),
+      }] },
     ], { value: picked, onChange: (value) => { picked = value; } });
     form.append(questions.el);
-    const features = el('textarea', 'cv-input'); features.value = list(current.features).join('\n');
-    labeled(form, t('campaign_view.default_features', 'Features'), features, t('campaign_view.features_help', 'One feature name per line.'));
-    const behaviours = el('textarea', 'cv-input'); behaviours.value = list(current.behaviours).join('\n');
-    labeled(form, t('campaign_view.default_behaviours', 'Behaviours'), behaviours, t('campaign_view.behaviours_help', 'One shelf:name book per line.'));
     const actions = el('div', 'cv-default-actions');
     const save = el('button', 'cv-save', t('panels.save', 'Save')); save.type = 'submit'; actions.append(notice.el, save); form.append(actions); body.append(form);
     form.addEventListener('submit', async (event) => {
       event.preventDefault(); save.disabled = true; notice.set('info', t('campaign.saving', 'saving…'));
-      const next = { ...current, ...picked, features: features.value.split('\n').map((value) => value.trim()).filter(Boolean), behaviours: behaviours.value.split('\n').map((value) => value.trim()).filter(Boolean) };
+      const next = { ...current, ...picked, features: list(picked.features), behaviours: list(picked.behaviours) };
       const result = await saveCampaign(row.id, { config: { defaults: next } });
       notice.set(result.ok ? 'success' : 'failed', result.ok ? t('settei.saved', 'saved') : result.message); save.disabled = false;
-      if (result.ok) paint();
+      if (result.ok) paint(seed, ways);
     });
   }
 
-  return { el: surface.el, enter: () => void loadProviderCatalog().then(paint) };
+  return { el: surface.el, enter: () => void Promise.all([
+    loadProviderCatalog(),
+    request(`/api/launch-seed?campaign_id=${encodeURIComponent(campaign()?.id || '')}`),
+    request('/api/ways'),
+  ]).then(([, seedResult, wayResult]) => paint(
+    seedResult.ok ? seedResult.data : null,
+    wayResult.ok && Array.isArray(wayResult.data) ? wayResult.data : [],
+  )) };
 }
 
 export function defaultsSummary(campaign) {

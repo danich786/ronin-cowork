@@ -17,6 +17,7 @@ await fs.writeFile(path.join(process.env.RONIN_CONFIG_DIR, 'machine_settings.jso
     home_machine: {
       title: 'Home', state: 'active', created_at: '2026-01-01T00:00:00.000Z',
       config: {
+        installations: {},
         defaults: {
           provider: 'openai', model: 'gpt-test', reach: 'execute', recruit: 'nobody', output: ['code'],
           features: ['gbrain'], behaviours: ['mandates'], dial: 'read', launch_mode: 'configured',

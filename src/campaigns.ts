@@ -91,9 +91,11 @@ const bucket = (v: unknown): Record<string, unknown> =>
 
 const settings = (v: unknown): CampaignSettings => {
   const c = bucket(v);
+  const defaults = bucket(c.defaults);
+  const settled = Object.prototype.hasOwnProperty.call(c, 'installations');
   return {
     installations: booleanMap(c.installations),
-    defaults: agentDefaults(c.defaults),
+    defaults: agentDefaults(settled ? defaults : { ...defaults, features: undefined, behaviours: undefined }),
     cowork_defaults: bucket(c.cowork_defaults),
     template_defaults: bucket(c.template_defaults),
   };

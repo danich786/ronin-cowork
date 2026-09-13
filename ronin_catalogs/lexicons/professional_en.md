@@ -237,7 +237,7 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **campaign_view.lexicon_help:** The words. Held to one lexicon for now, so nothing on this page is offered.
 - **campaign_view.id:** Id
 - **campaign_view.id_help:** Fixed once created — printed on every record that points here, so it cannot change.
-- **campaign_view.agent_defaults:** Agent defaults
+- **campaign_view.agent_defaults:** Team and Agent defaults
 - **campaign_view.defaults_help:** These defaults land in the next Team or Agent form that opens. They remain editable there; nothing live changes.
 - **campaign_view.provider_default:** Default provider
 - **campaign_view.model_default:** Default model

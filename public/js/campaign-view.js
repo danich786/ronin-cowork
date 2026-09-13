@@ -72,7 +72,7 @@ function registerCampaignSurfaces() {
     campaignId: () => e.selected()?.id || '',
     connected: (host) => e.entered() && host.isConnected,
   }) });
-  add({ type: TYPES.defaults, header: 'surface', label: () => t('campaign_view.agent_defaults', 'Agent defaults'), summary: (_tenant, e) => currently.defaults(e), create: ({ environment: e }) => { const surface = createAgentDefaultsSurface(e.selected); return e.progressive({ el: surface.el, show: () => surface.enter() }); } });
+  add({ type: TYPES.defaults, header: 'surface', label: () => t('campaign_view.agent_defaults', 'Team and Agent defaults'), summary: (_tenant, e) => currently.defaults(e), create: ({ environment: e }) => { const surface = createAgentDefaultsSurface(e.selected); return e.progressive({ el: surface.el, show: () => surface.enter() }); } });
   // CONTROL_BUNDLES build-out for the bundle model behind it.
   add({ type: TYPES.installations, header: 'surface', label: () => t('campaign_view.installations', 'Installations'), summary: (_tenant, e) => installationsSummary(e.selected()), create: ({ environment: e }) => { const surface = createInstallationsSurface(e.selected); return e.progressive({ el: surface.el, show: () => surface.enter() }); } });
   add(providerSurfaceDefinition()); // Model providers — the one surface Ronin Setup also seats; provider-surface.js

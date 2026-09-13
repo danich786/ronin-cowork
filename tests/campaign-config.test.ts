@@ -26,6 +26,19 @@ test('campaign ids remain safe stable tokens', () => {
   }
 });
 
+test('a pre-installation-cascade campaign gets stock defaults without a rewrite', async () => {
+  const file = path.join(root, 'machine_settings.json');
+  const old = JSON.stringify({ campaigns: { home_machine: {
+    id: 'home_machine', title: 'Ronin Home', desk: {}, config: { defaults: { features: [], behaviours: [] } },
+  } } }, null, 2) + '\n';
+  await fs.writeFile(file, old, 'utf8');
+  const campaign = await readCampaign('home_machine');
+  assert.deepEqual(campaign?.config.defaults.features, []);
+  assert.deepEqual(campaign?.config.defaults.behaviours, ['mandates']);
+  assert.equal(await fs.readFile(file, 'utf8'), old, 'reading the old shape does not migrate it');
+  await fs.writeFile(file, JSON.stringify({ campaigns: {} }, null, 2) + '\n', 'utf8');
+});
+
 test('campaigns share the machine configuration document', async () => {
   const created = await createCampaign({
     id: 'alpha',

@@ -48,3 +48,14 @@ test('unavailable requested features are reported, never refused', () => {
   assert.deepEqual(seed.available, ['ronin_host']);
   assert.deepEqual(seed.undelivered, ['gbrain']);
 });
+
+test('old-shape Campaign and Team inputs seed stock Mandates and no features', () => {
+  const oldCampaign = { ...campaign, config: {
+    defaults: agentDefaults({ features: ['gbrain'], behaviours: [] }), cowork_defaults: {}, template_defaults: {},
+  } } as CampaignConfig;
+  const oldTeam = { ...team, behaviours: { books: [], required: false } } as unknown as TeamRoster;
+  delete (oldTeam as unknown as Record<string, unknown>).features;
+  const seed = resolveLaunchSeed({ ...sources(oldTeam), campaign: oldCampaign });
+  assert.deepEqual(seed.seeds.features.value, []);
+  assert.deepEqual(seed.seeds.behaviours.value, ['mandates']);
+});
