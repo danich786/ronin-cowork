@@ -9,6 +9,10 @@ test('New Agent uses one ruled ask() spec after its three session types', async 
   assert.match(form, /import \{ ask \} from '\.\/ask\.js'/);
   assert.match(form, /const questions = ask\(\[/);
   assert.match(form, /const teamQuestions = ask\(\[/);
+  assert.match(form, /trayHost: identityRow/);
+  assert.match(form, /when: 'current', key: 'teamName'/);
+  assert.match(form, /new_team\.name_placeholder', 'lowercase, digits, - _'/);
+  assert.doesNotMatch(form, /input\.placeholder = t\('new_agent\.team_new_blank'/);
   assert.match(form, /className: 'na-questions',[\s\S]*density: 'tight'/);
   assert.doesNotMatch(form, /key: 'template'.*Apply Template/);
   assert.match(form, /Cowork Agent[\s\S]*Bare-metal Agent[\s\S]*Terminal/);

@@ -239,7 +239,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
   const mandateRows = (values) => values.map((value) => ({ v: value, l: mandateWord(value) }));
   const newTeamField = () => {
     const input = el('input'); input.type = 'text'; input.spellcheck = false; input.autocapitalize = 'off'; input.value = draft.newTeam;
-    input.placeholder = t('new_agent.team_new_blank', 'Blank makes no team — the Agent is a rōnin.');
+    input.placeholder = t('new_team.name_placeholder', 'lowercase, digits, - _');
     input.addEventListener('input', () => {
       const caret = input.selectionStart; const clean = sanitizeTeamName(input.value);
       if (clean !== input.value) { input.value = clean; input.setSelectionRange(caret, caret); }
