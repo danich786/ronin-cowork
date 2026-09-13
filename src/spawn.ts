@@ -234,7 +234,7 @@ export async function resolveForm(
 
   const active = roots.filter((r) => !r.archived);
   const houseRoot = form.house_seat === 'mika' ? {
-    name: 'mika_home', dir: profileDir(profile), remit: 'Ronin help only', match: [],
+    name: 'mika_home', title: '', dir: profileDir(profile), remit: 'Ronin help only', match: [],
     docs: [], plans: [], archived: false, campaign_id: campaignId,
   } : undefined;
   const rosterRoot = roster?.project_root ? roots.find((r) => r.name === roster.project_root) : undefined;

@@ -237,7 +237,7 @@ export function rootChoices(runtime = {}, environment = null) {
   const tracked = typeof environment?.trackedRoots === 'function' ? environment.trackedRoots() : null;
   if (!Array.isArray(tracked) || !tracked.length) return seeded;
   const names = new Set(tracked.map((root) => root.name));
-  return [...seeded.filter((root) => names.has(root.name)), ...tracked.filter((root) => !seeded.some((seed) => seed.name === root.name)).map((root) => ({ name: root.name, label: root.name }))];
+  return [...seeded.filter((root) => names.has(root.name)), ...tracked.filter((root) => !seeded.some((seed) => seed.name === root.name)).map((root) => ({ name: root.name, label: root.title || root.name }))];
 }
 
 function renderRootControls(host, state, roots, label = 'Which project', environment = null, manage = false, live = null) {

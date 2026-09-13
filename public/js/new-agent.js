@@ -235,7 +235,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
   });
   const teamChoice = () => draft.teamMode === 'new' ? 'new' : draft.teamMode === 'none' ? 'none' : 'current';
   const teamRows = () => teams.map((row) => ({ v: row.name, l: String(row.title ?? '').trim() || row.name, sub: row.name }));
-  const rootRows = () => roots.map((row) => ({ v: row.name, l: row.name, word: row.repo_profile?.worktrees === 'enabled' ? t('where.worktree', 'worktree') : t('where.checkout', 'checkout') }));
+  const rootRows = () => roots.map((row) => ({ v: row.name, l: row.title || row.name, sub: row.title ? row.name : '', word: row.repo_profile?.worktrees === 'enabled' ? t('where.worktree', 'worktree') : t('where.checkout', 'checkout') }));
   const mandateRows = (values) => values.map((value) => ({ v: value, l: mandateWord(value) }));
   const newTeamField = () => {
     const input = el('input'); input.type = 'text'; input.spellcheck = false; input.autocapitalize = 'off'; input.value = draft.newTeam;
