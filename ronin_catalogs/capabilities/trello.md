@@ -7,4 +7,4 @@
 
 Only a selected, connected Trello grants this bundle; it grants no settings, lead, or host authority.
 
-The document is authority and boundary teaching until a callable Trello tool is projected.
+**TBD capability:** this is authority and boundary teaching; no callable Trello tool ships yet.

@@ -5,7 +5,9 @@
 - **requires:** —
 - **order:** 10
 
-Reach for the edge tools whenever the work crosses out of this session: a line for one other Agent, a post the whole Team must see, a look at what another session is doing, the Team roster, the Team page, or a scheduled request. Nothing here changes your own record; that is the Work Record bundle.
+Reach for this bundle whenever work crosses out of this session: one-to-one messaging,
+Team-wide posts, another session's recent view, rosters, Team pages, schedules, or visible
+Control. Nothing here changes your own record; that belongs to Work Record.
 
 ## Tools
 
