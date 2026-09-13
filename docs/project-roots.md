@@ -116,8 +116,8 @@ Content-Type: application/json
 }
 ```
 
-The Admin Desk's **▣ Project root** include action and MIKA's `+project_root` job use this same
-endpoint. They are preferred human-facing paths. Editing the owner catalog by hand remains an
+The Admin Desk's **▣ Project root** control and Mika's constrained `machine-settings
+project-root` tool use this same endpoint. They are preferred human-facing paths. Editing the owner catalog by hand remains an
 emergency/advanced path, not a separate workflow.
 
 `409` means the ID already exists: inspect and use `PUT /api/project-roots/:name` only if
@@ -299,6 +299,6 @@ roster nests its storage where a root does not, is `docs/campaign-scope.md`.
 - Campaign scoping, the refusals and the migration: `src/campaign-scope.ts` · `docs/campaign-scope.md`
 - HTTP API and live facts: `src/routes/catalogs.ts`
 - Session identity: `src/tmux.ts` and `src/routes/sessions-api.ts`
-- Assisted owner workflow: `ronin_catalogs/MIKA_MACROS.md` (`project_root`)
+- Assisted owner workflow: `ronin_catalogs/capabilities/machine-settings.md`
 - Session-boot shelf: `docs/session-boot.md`
 - Owner configuration boundary: `docs/user-config.md`

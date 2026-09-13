@@ -102,7 +102,7 @@ test('the plan says what an install would do, and a tool never replaces one of R
       { store: 'tools', path: 'tejun-send', text: '#!/bin/sh\n' },
     ],
     entries: [
-      { catalog: 'TOOLS.md', name: 'tejun', text: '| `tejun` | compile-macro | mine |' },
+      { catalog: 'TOOLS.md', name: 'review_tool', text: '| `review_tool` | review | mine |' },
     ],
   });
   const plan = await planInstall(b);

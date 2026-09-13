@@ -35,7 +35,7 @@ const CORE_CONTRIBUTION: ResolvedContribution = {
   reading: [], reading_off: [], sops: [],
   macros: [],
   actions: [],
-  tools: ['tejun-send', 'tejun-harakiri', 'tejun-archive', 'tejun-rehydrate', 'tejun-team', 'tejun-fork', 'session_check', 'session_set', 'tejun-team-set', 'tejun-wipeboard', 'tejun-teampage', 'tejun-peek', 'read_tegami', 'write_tegami', 'tejun-jikan', 'ronin-url'],
+  tools: ['tejun-send', 'session_end', 'session_archive', 'session_restore', 'tejun-team', 'session_fork', 'session_check', 'session_set', 'tejun-team-set', 'tejun-wipeboard', 'tejun-teampage', 'tejun-peek', 'read_tegami', 'write_tegami', 'tejun-jikan', 'ronin-url'],
   mcp: [], parts: [], enabled: true, stated_by: 'conditional', required_by: [],
 };
 
