@@ -281,6 +281,7 @@ test('Ronin Team and Agent + Editable Doc ask Where from the one list of workspa
     { name: 'ronin_lab', label: 'Ronin Lab' }, { name: 'ronin_project_1', label: 'Ronin Project 1' }, { name: 'site', label: 'site' }, { name: 'shiwake', label: 'shiwake' },
   ]);
   assert.deepEqual(presets.rootChoices(runtime, { trackedRoots: () => [{ name: 'site' }] }), [{ name: 'site', label: 'site' }], 'an excluded seeded folder is no choice');
+  assert.deepEqual(presets.rootChoices({}, { trackedRoots: () => [{ name: 'site', title: 'Ronin Site' }] }), [{ name: 'site', label: 'Ronin Site' }], 'a title changes presentation without changing the root ID');
   assert.deepEqual(presets.rootChoices(runtime, {}), runtime.roots.map(({ name, label }) => ({ name, label })));
 });
 

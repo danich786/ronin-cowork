@@ -4,7 +4,7 @@ import { t } from './lexicon.js';
 const el = (tag, cls, text) => { const node = document.createElement(tag); if (cls) node.className = cls; if (text != null) node.textContent = String(text); return node; };
 
 /**
- * @param {{ roots?: {name: string, repo?: boolean}[], root?: string, repos?: string[], branches?: Record<string,string>,
+ * @param {{ roots?: {name: string, title?: string, repo?: boolean}[], root?: string, repos?: string[], branches?: Record<string,string>,
  *           worktreesOn?: boolean, branchesEditable?: boolean, rootDefaultLabel?: string, onChange?: () => void }} o
  */
 export function createWhereItWorks(o = {}) {
@@ -20,7 +20,7 @@ export function createWhereItWorks(o = {}) {
   function buildRoots() {
     rootSelect.replaceChildren();
     if (o.rootDefaultLabel != null) rootSelect.add(new Option(o.rootDefaultLabel, ''));
-    for (const root of state.roots) rootSelect.add(new Option(root.name, root.name));
+    for (const root of state.roots) rootSelect.add(new Option(root.title || root.name, root.name));
     if (state.root && !state.roots.some((root) => root.name === state.root)) rootSelect.add(new Option(state.root, state.root));
     rootSelect.value = state.root;
     if (rootSelect.value !== state.root) { rootSelect.value = o.rootDefaultLabel != null ? '' : (state.roots[0]?.name ?? ''); state.root = rootSelect.value; }
@@ -33,7 +33,7 @@ export function createWhereItWorks(o = {}) {
       const branch = el('input', 'wk-field-control'); branch.type = 'text'; branch.spellcheck = false; branch.value = state.branches[root.name] || ''; branch.readOnly = !state.editable;
       tick.addEventListener('change', () => { state.repos = ticked(); changed(); });
       branch.addEventListener('input', () => { state.branches[root.name] = branch.value.trim(); o.onChange?.(); });
-      row.append(tick, el('span', null, root.name), branch); list.append(row); rows.set(root.name, { tick, branch });
+      row.append(tick, el('span', null, root.title || root.name), branch); list.append(row); rows.set(root.name, { tick, branch });
     }
   }
   const ticked = () => [...rows].filter(([, row]) => row.tick.checked).map(([name]) => name);
@@ -46,7 +46,7 @@ export function createWhereItWorks(o = {}) {
     for (const { branch } of rows.values()) branch.disabled = on;
     const names = ticked();
     summary.textContent = t('where.summary', 'born in {root} · {repos}', {
-      root: rootSelect.value || o.rootDefaultLabel || t('team_config.default', 'Default'),
+      root: rootSelect.selectedOptions[0]?.textContent || o.rootDefaultLabel || t('team_config.default', 'Default'),
       repos: names.length ? (on ? t('where.desks', 'desks in {list}', { list: names.join(', ') }) : t('where.checkouts', 'works in {list}', { list: names.join(', ') })) : t('where.none', 'no auto desk'),
     });
   }
