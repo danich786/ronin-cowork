@@ -2,7 +2,6 @@
 import { request } from './request.js';
 import { t } from './lexicon.js';
 import { gbrainAssistantPrompt, gbrainSetupModel } from './gbrain-setup-state.js';
-import { ask } from './ask.js';
 
 // A function, not a table: the lexicon loads after this module is evaluated.
 function words() {
@@ -137,9 +136,7 @@ export function buildGbrain(root, isShowing, askPersonalAssistant, options = {})
   let polling = null;
   const stopPolling = () => { if (polling) { clearInterval(polling); polling = null; } };
 
-  // THE SETUP WORK SURFACE: three questions, plain answers, one control each.
-  // Installed? Available to Agents? Which accounts are linked? Then the one next step.
-  let agentsDefault = null;
+  // THE SETUP WORK SURFACE: the measured installation and linked accounts, then one next step.
   const renderSetup = (result) => {
     const model = gbrainSetupModel(result, options.availability?.());
     if (model.summary) options.onState?.(model.summary, model);
@@ -216,27 +213,7 @@ export function buildGbrain(root, isShowing, askPersonalAssistant, options = {})
       installed.append(el);
     }
 
-    // 2. Available to Agents? The Campaign's own gbrain Routine: on for every new Agent, or
-    //    only where a team or a launch turns it on.
-    if (model.installed && options.agentsDefault) {
-      const agents = row(t('gbrain.setup_q_agents', 'Available to Agents'));
-      const note = make('p', 'setup-gbrain-hint', t('gbrain.setup_agents_hint', 'Selected Agents get it in Team Configuration or on the New Agent form.'));
-      const question = ask([{ group: '', fields: [{
-        key: 'available', label: t('gbrain.setup_q_agents', 'Available to Agents'),
-        options: [{ v: 'all', l: t('gbrain.setup_agents_all', 'Default for all Agents') }, { v: 'selected', l: t('gbrain.setup_agents_selected', 'Only selected Agents') }],
-      }] }], { value: { available: agentsDefault ? 'all' : 'selected' }, onChange: async (next) => {
-        const before = agentsDefault;
-        const chosen = next.available === 'all';
-        const saved = await options.agentsDefault.write(chosen);
-        agentsDefault = saved?.ok ? chosen : before;
-        if (!saved?.ok) question.set('available', before ? 'all' : 'selected');
-        note.textContent = saved?.ok ? '' : (saved?.message || t('gbrain.setup_agents_save_failed', 'Could not save.'));
-      } });
-      agents.append(question.el, note);
-      if (agentsDefault === null) void Promise.resolve(options.agentsDefault.read()).then((value) => { agentsDefault = value; question.set('available', value ? 'all' : 'selected'); });
-    }
-
-    // 3. Which accounts are linked? Yes or no, per account, from gbrain's own list.
+    // 2. Which accounts are linked? Yes or no, per account, from gbrain's own list.
     if (model.installed) {
       const accounts = row(t('gbrain.setup_q_accounts', 'Accounts linked'));
       if (!model.accounts) accounts.append(make('p', 'setup-gbrain-line', t('gbrain.setup_unreadable', 'Could not read')));

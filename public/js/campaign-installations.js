@@ -8,6 +8,7 @@ import { ask } from './ask.js';
 import { createStoneWorkSurface } from './stone-work-surface.js';
 import { createServicesSurface, createGbrainSurface } from './setup-surfaces.js';
 import { completeInstallationMap as completeMap } from './installation-map.js';
+import { applyFeatureProviderState, featureProviderState } from './feature-provider-installation.js';
 
 const INSTALLATION_ORDER = ['ronin_services', 'gbrain', 'trello', 'perplexity'];
 
@@ -25,14 +26,21 @@ export function createInstallationsSurface(campaign, context = {}) {
   let catalog = [];
   let installed = null;
   let values = {};
+  let defaultFeatures = [];
   let stoneSurface = null;
+
+  const providerState = (installation) => featureProviderState(installation, values, defaultFeatures);
+  const stateWord = (installation) => installation.effect === 'feature_provider'
+    ? ({ off: t('campaign_view.off', 'Off'), on: t('campaign_view.on', 'On'), all: t('campaign_view.shape_all', 'All') })[providerState(installation)]
+    : values[installation.name] ? t('campaign_view.on', 'On') : t('campaign_view.off', 'Off');
 
   const servicesReady = () => values.ronin_services === true && (installed?.services?.parts || []).length > 0;
   const gated = (name) => (name === 'trello' || name === 'perplexity') && !servicesReady();
   const itemFor = (installation) => ({
+    ...installation,
     id: installation.name,
     label: installation.label || installation.name,
-    state: values[installation.name] ? t('campaign_view.on', 'On') : t('campaign_view.off', 'Off'),
+    state: stateWord(installation),
     attrs: gated(installation.name)
       ? { 'data-gated': 'true', title: t('campaign_view.services_required', 'Ronin Services required') }
       : {},
@@ -43,35 +51,49 @@ export function createInstallationsSurface(campaign, context = {}) {
       if (!stone) continue;
       const reason = gated(installation.name) ? t('campaign_view.services_required', 'Ronin Services required') : '';
       const state = stone.querySelector('.sws-state');
-      if (state) state.textContent = values[installation.name] ? t('campaign_view.on', 'On') : t('campaign_view.off', 'Off');
+      if (state) state.textContent = stateWord(installation);
       stone.toggleAttribute('data-gated', Boolean(reason));
       stone.title = reason;
     }
   };
 
-  const save = async (name, on, notice) => {
+  const saveProvider = async (installation, answer, notice) => {
     const row = campaign();
     if (!row) return;
     notice.textContent = t('campaign.saving', 'saving…');
-    const installations = { ...completeMap(catalog, row.config?.installations), [name]: on };
-    const result = await saveCampaign(row.id, { config: { installations } });
+    const currentInstallations = completeMap(catalog, row.config?.installations);
+    const { installations, defaults } = applyFeatureProviderState(
+      installation, answer, currentInstallations, { ...(row.config?.defaults || {}), features: defaultFeatures },
+    );
+    const result = await saveCampaign(row.id, { config: { installations, defaults } });
     notice.textContent = result.ok ? t('settei.saved', 'saved') : result.message;
     notice.dataset.tone = result.ok ? 'success' : 'failed';
     if (result.ok) {
       values = installations;
+      defaultFeatures = defaults.features;
       refreshStoneMarks();
+      context.onInstallationChange?.(installation.name, answer !== 'off');
     }
+    return result;
   };
 
-  const choice = (installation, host) => {
+  const featureProviderChoice = (installation, host) => {
     const reason = gated(installation.name) ? t('campaign_view.services_required', 'Ronin Services required') : '';
     const notice = el('p', 'setup-notice');
     const question = ask([{ fields: [{
       key: 'installation', label: installation.label || installation.name,
-      switch: [t('campaign_view.on', 'On'), t('campaign_view.off', 'Off')],
+      options: [
+        { v: 'off', l: t('campaign_view.off', 'Off') },
+        { v: 'on', l: t('campaign_view.on', 'On') },
+        { v: 'all', l: t('campaign_view.shape_all', 'All') },
+      ],
     }] }], {
-      value: { installation: values[installation.name] === true },
-      onChange: (answer) => void save(installation.name, answer.installation === true, notice),
+      value: { installation: providerState(installation) },
+      onChange: async (answer) => {
+        const before = providerState(installation);
+        const result = await saveProvider(installation, answer.installation, notice);
+        if (!result?.ok) question.set('installation', before);
+      },
     });
     const control = question.el.querySelector('[data-ask-key="installation"]');
     if (reason && control) { control.disabled = true; control.title = reason; }
@@ -79,7 +101,7 @@ export function createInstallationsSurface(campaign, context = {}) {
   };
 
   const renderDetail = (installation, host) => {
-    if (installation.id !== 'ronin_services') choice(installation, host);
+    if (installation.effect === 'feature_provider') featureProviderChoice(installation, host);
     const sharedContext = {
       ...context,
       tenant: { ...(context.tenant || {}), campaign: campaign()?.id },
@@ -111,6 +133,7 @@ export function createInstallationsSurface(campaign, context = {}) {
     catalog = INSTALLATION_ORDER.map((name) => rows.find((row) => row.name === name)).filter(Boolean);
     installed = installedResult.ok ? installedResult.data : null;
     values = completeMap(catalog, campaign()?.config?.installations);
+    defaultFeatures = Array.isArray(campaign()?.config?.defaults?.features) ? [...campaign().config.defaults.features] : [];
     stoneSurface.setItems(catalog.map(itemFor));
     stoneSurface.select('ronin_services');
   };

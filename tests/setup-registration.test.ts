@@ -405,7 +405,7 @@ test('Setup gbrain answers three questions plainly with at most one action per s
   assert.deepEqual(gbrainSetupModel(snapshot({ installed: false, install: { state: 'failed', op: 'install', log: ['step 3 failed'] } })).log, ['step 3 failed']);
 });
 
-test('Setup gbrain paints the three questions, switches the Campaign gbrain installation, and keeps the commons dashboard on its default', async () => {
+test('Setup gbrain keeps installation/default choice on Campaign Installations and keeps the commons dashboard on its default', async () => {
   const [setup, gbrain] = await Promise.all([
     (await import('node:fs/promises')).readFile(new URL('../public/js/setup-surfaces.js', import.meta.url), 'utf8'),
     (await import('node:fs/promises')).readFile(new URL('../public/js/gbrain.js', import.meta.url), 'utf8'),
@@ -415,10 +415,7 @@ test('Setup gbrain paints the three questions, switches the Campaign gbrain inst
   assert.match(setup, /onState: \(summary\) => notifySummary\(SETUP_SURFACE_TYPES\.gbrain, summary/);
   assert.match(setup, /openServices: \(\) => context\.workbench\?\.place\(SETUP_SURFACE_TYPES\.services/);
   assert.match(setup, /openProviders: \(\) => context\.workbench\?\.place\(SETUP_SURFACE_TYPES\.providers/);
-  // Available to Agents follows the Campaign's gbrain installation.
-  assert.match(setup, /installations\.gbrain === true/);
-  assert.match(setup, /completeInstallationMap\([\s\S]*?row\.config\?\.installations\), gbrain: on === true \}/);
-  assert.match(setup, /saveCampaign\(row\.id, \{ config: \{ installations \} \}\)/);
+  assert.doesNotMatch(setup, /agentsDefault/);
   // Start your first Personal Assistant is exactly the preset's launch: same plan, same route, same new tab.
   assert.match(setup, /launchPresetPlan\(buildLaunchPlan\(slot, '', controls\)\)/);
   assert.match(setup, /HOUSE_PRESETS\.find\(\(row\) => row\.handle === 'personal_assistant'\)/);
@@ -427,7 +424,8 @@ test('Setup gbrain paints the three questions, switches the Campaign gbrain inst
   assert.match(gbrain, /if \(!root\.querySelector\('\.setup-gbrain-compact'\)\) renderSetup\(undefined\)/);
   assert.match(gbrain, /const mine = \+\+reads;[\s\S]*?if \(mine === reads\) renderSetup\(result\)/);
   assert.match(gbrain, /if \(!setup\) root\.append\(head, privacy, search, integrations\)/);
-  for (const question of ['gbrain.setup_q_installed', 'gbrain.setup_q_agents', 'gbrain.setup_q_accounts']) assert.ok(gbrain.includes(question), question);
+  for (const question of ['gbrain.setup_q_installed', 'gbrain.setup_q_accounts']) assert.ok(gbrain.includes(question), question);
+  assert.doesNotMatch(gbrain, /gbrain\.setup_q_agents|gbrain\.setup_agents_/);
   assert.match(gbrain, /setAttribute\('aria-live', 'polite'\)/);
   assert.match(gbrain, /request\('\/api\/gbrain\/install', \{ method: 'POST', json: \{\} \}\)/);
   assert.match(gbrain, /root\.replaceChildren\(wrap\)/);

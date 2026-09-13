@@ -885,7 +885,6 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 ## gbrain — gbrain-setup-state.js and gbrain.js (the Ronin Setup work surface)
 - **gbrain.setup_intro:** A shared, searchable memory for your Agents.
 - **gbrain.setup_q_installed:** Installed
-- **gbrain.setup_q_agents:** Available to Agents
 - **gbrain.setup_q_accounts:** Accounts linked
 - **gbrain.setup_checking:** Checking…
 - **gbrain.setup_not_installed:** Not installed
@@ -904,11 +903,6 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **gbrain.setup_stopped_hint:** Turn Ronin Services off and on in Team Configuration, or ask an Agent to look.
 - **gbrain.setup_check_assistant:** Ask an Agent to check gbrain
 - **gbrain.setup_unreadable:** Could not read
-- **gbrain.setup_agents_all:** Default for all Agents
-- **gbrain.setup_agents_selected:** Only selected Agents
-- **gbrain.setup_agents_hint:** Selected Agents get it in Team Configuration or on the New Agent form.
-- **gbrain.setup_agents_save_failed:** Could not save.
-- **gbrain.setup_no_campaign:** No Campaign to set a default for.
 - **gbrain.setup_linked:** Linked
 - **gbrain.setup_not_linked:** Not linked
 - **gbrain.setup_no_accounts:** None to link on this install.
