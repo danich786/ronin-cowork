@@ -582,6 +582,12 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **forms.own_blurb:** Fresh and empty. Fill it in yourself.
 - **forms.library_note:** More on the Ronin library — Campaign → Templates → Check the library to see them and download the ones you want.
 - **forms.default:** default
+- **ask.answer:** Answer
+- **setup_surface.identity_short:** Register as
+- **setup_surface.kind_short:** You use Ronin for
+- **setup_surface.preferred_feature_short:** Feature
+- **setup_surface.reasons_short:** Describes you
+- **setup_surface.run_location_short:** Install on
 - **ask.none:** None
 - **ask.chosen:** {n} chosen
 - **ask.find:** type to find

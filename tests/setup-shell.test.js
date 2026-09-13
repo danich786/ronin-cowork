@@ -100,6 +100,8 @@ test('Cowork Team and Team Agent cards toggle between names-only and the full re
     readFile(new URL('../public/css/team-workspace.css', import.meta.url), 'utf8'),
   ]);
   assert.match(view, /\[campaign \? 'teamCardDensity' : 'agentCardDensity'\]: thinSelectorCards \? 'thin' : 'thick'/);
+  assert.match(view, /let thinSelectorCards = true;/);
+  assert.match(view, /context\.viewState\(viewKey\)\?\.\[campaign \? 'teamCardDensity' : 'agentCardDensity'\] !== 'thick'/);
   assert.match(view, /thinSelectorCards \? \{\} : \{ summary: reading\.step, metadata: reading\.lines, mark:/);
   assert.match(view, /thinSelectorCards \? \{\} : \{ summary: item\.objective \|\| '' \}/);
   assert.match(view, /dataset\.lines = thinSelectorCards \? 'two' : 'one'/);
