@@ -309,7 +309,7 @@ export async function resolveForm(
       throw new Error(`${label} is turned off on this machine — Ronin is not using it. Turn it on under Model providers; your sign-in is kept.`);
     }
   }
-  const launchMode = agent ? (form.launch_mode ?? parentSeed?.seeds.launch_mode.value ?? 'live_dangerously') as LaunchMode : 'configured';
+  const launchMode = agent ? (form.launch_mode ?? parentSeed?.seeds.launch_mode.value ?? 'configured') as LaunchMode : 'configured';
   if (launchMode === 'live_dangerously') {
     if (!spec?.liveDangerously) {
       throw new Error('This launch command declares no `live_dangerously:` flag in the provider catalog, so it cannot launch Dangerously (see ronin_catalogs/MODEL_PROVIDERS.md).');
@@ -319,7 +319,7 @@ export async function resolveForm(
   const contributionMcp = contributions
     .filter((contribution) => contribution.enabled)
     .flatMap((contribution) => contribution.mcp);
-  const gbrainAnswer = cascade.selected.includes('gbrain') ? 'connected' as const : undefined;
+  const gbrainAnswer = bareMetalAgent ? 'disconnected' as const : cascade.selected.includes('gbrain') ? 'connected' as const : undefined;
   const mcpWanted = profile.mcpAlways || contributionMcp.length > 0
     ? true
     : gbrainAnswer === 'connected'
@@ -327,10 +327,10 @@ export async function resolveForm(
       : gbrainAnswer === 'disconnected'
         ? false
         : profile.mcpDefault;
-  const askedOff = false;
+  const askedOff = bareMetalAgent;
   // Feature silence is not a request to reconfigure the provider. An absent gbrain
   // feature contributes neither connection material nor disconnect CLI flags.
-  let mcpOffWanted = false;
+  let mcpOffWanted = bareMetalAgent;
   if (askedOff && profile.mcpAlways) {
     throw new Error(
       'This Agent is born connected (`mcp: always`) — ' +

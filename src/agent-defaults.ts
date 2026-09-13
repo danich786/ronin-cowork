@@ -49,7 +49,7 @@ export function agentDefaults(value: unknown): AgentDefaults {
     features: books(input.features),
     behaviours: input.behaviours === undefined ? ['mandates'] : books(input.behaviours),
     dial: oneOf(input.dial, ['user', 'read', 'write'], 'write'),
-    launch_mode: oneOf(input.launch_mode, ['configured', 'live_dangerously'], 'live_dangerously'),
+    launch_mode: oneOf(input.launch_mode, ['configured', 'live_dangerously'], 'configured'),
   };
 }
 
