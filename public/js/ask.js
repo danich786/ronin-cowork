@@ -28,8 +28,13 @@
  * only after an explicit click during that open interaction — clicking `current` keeps the
  * tray open and draws the nested question's stones in the slot beneath layer one; answering
  * it closes the tray, and the reading says the nested answer. Any other parent answer clears
- * the nested one. An option with its own `row` uses the same slot: clicking it keeps the tray
- * open and draws that control as a full-width line beneath layer one, so layer one never moves. A nested question is a field like any other in `value()`,
+ * the nested one. A GROUP HOLDS STONES AND NOTHING ELSE, so its geometry never changes: every
+ * control that belongs to an answer (`row` on an option or on the field — a team's name, a
+ * branch) is a full-width LINE in the tray beneath the stones. For a one-of question the line
+ * appears after the click that chose its option, in the same slot as a second layer, and the
+ * tray stays open; for a many question the lines of every chosen option show while the tray is
+ * open. Closing the tray hides them; the consumer keeps the typed value and rebinds it when
+ * `row()` is asked again. A nested question is a field like any other in `value()`,
  * `set()` and `onChange`, but it is never a stone of its own in the group. `trayHost` names a
  * wrapping row the consumer owns (a flex-wrap or grid container holding this instance beside
  * other controls): the open tray is placed at the end of that row instead of inside this
@@ -115,7 +120,7 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
       state[field.key] = cur.includes(row.v) ? cur.filter((v) => v !== row.v) : [...cur, row.v];
     } else {
       state[field.key] = row.v;
-      const reveals = childrenOf(field).some((child) => String(child.when) === String(row.v)) || typeof row.row === 'function';
+      const reveals = childrenOf(field).some((child) => String(child.when) === String(row.v)) || typeof row.row === 'function' || typeof field.row === 'function';
       revealed = reveals ? row.v : null;
       if (!reveals) open = '';
     }
@@ -183,7 +188,10 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     // open interaction, is the same thing again — or the clicked option's own line.
     const shown = revealed != null && String(state[field.key]) === String(revealed);
     const child = shown ? activeChild(field) : null;
-    const lineRow = shown && !child ? all.find((row) => String(row.v) === String(revealed) && typeof row.row === 'function') : null;
+    const drawFor = (row) => (typeof row.row === 'function' ? row.row : typeof field.row === 'function' ? field.row : null);
+    const lineRows = field.many
+      ? all.filter((row) => state[field.key].includes(row.v) && drawFor(row))
+      : shown && !child ? all.filter((row) => String(row.v) === String(revealed) && drawFor(row)) : [];
     const target = child && rowsOf(child).length > FILTER_FROM ? child : all.length > FILTER_FROM ? field : null;
     const layerOf = (f) => {
       const options = el('div', 'ask-options');
@@ -243,41 +251,21 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     say((child && pressedIn(child)) || pressedIn(field) || null);
     box.append(first.options);
     if (second) box.append(second.el);
-    if (lineRow) {
-      const node = lineRow.row(lineRow, snapshot());
-      if (node) {
-        const line = el('div', 'ask-layer ask-line');
-        line.setAttribute('role', 'group');
-        line.setAttribute('aria-label', lineRow.l);
+    if (lineRows.length) {
+      const line = el('div', 'ask-layer ask-line');
+      line.setAttribute('role', 'group');
+      line.setAttribute('aria-label', field.label);
+      for (const row of lineRows) {
+        const node = drawFor(row)(row, snapshot());
+        if (!node) continue;
         const label = el('label', 'ask-extra');
-        label.append(el('span', 'ask-extra-name', lineRow.l), node);
+        label.append(el('span', 'ask-extra-name', row.l), node);
         line.append(label);
-        box.append(line);
       }
+      if (line.children.length) box.append(line);
     }
     box.append(caption);
     return box;
-  };
-
-  /* ---- extras: a chosen option's own control, under the group, open or closed ---- */
-  const extrasOf = (group) => {
-    const extras = el('div', 'ask-extras');
-    for (const field of group.fields) {
-      if (!visible(field) || field.key === open) continue; // an open tray owns its chosen option's line; the group takes it on close
-      const chosen = field.many ? state[field.key] : [state[field.key]];
-      for (const v of chosen) {
-        const row = rowFor(field, v);
-        if (!row) continue;
-        const draw = typeof row.row === 'function' ? row.row : field.row;
-        if (typeof draw !== 'function') continue;
-        const node = draw(row, snapshot());
-        if (!node) continue;
-        const line = el('label', 'ask-extra');
-        line.append(el('span', 'ask-extra-name', row.l), node);
-        extras.append(line);
-      }
-    }
-    return extras.children.length ? extras : null;
   };
 
   /* ---- paint: groups, their stones, and the one open tray ---- */
@@ -294,8 +282,6 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
       const row = el('div', 'ask-fields');
       for (const field of drawn) row.append(stone(field));
       box.append(row);
-      const extras = extrasOf(group);
-      if (extras) box.append(extras);
       root.append(box);
       const opened = drawn.find((field) => field.key === open && !field.switch);
       if (opened) {

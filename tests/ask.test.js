@@ -181,15 +181,14 @@ test('set() and options() repaint; Escape closes; a chosen option can draw its o
     { key: 'root', label: 'Born in', options: [{ v: 'a', l: 'ronin_cowork' }, { v: 'b', l: 'ronin_services' }] },
     { key: 'repos', label: 'Additional workspaces', many: true, after: 'root', options: (v) => [{ v: 'a', l: 'ronin_cowork' }, { v: 'b', l: 'ronin_services' }].filter((r) => r.v !== v.root), row: (o) => { const input = new FakeNode('input'); input.placeholder = `branch for ${o.l}`; return input; } },
   ] }], { value: { root: 'a', repos: ['b'] } });
-  const extra = form.el.one('ask-extra');
-  assert.equal(extra.one('ask-extra-name').textContent, 'ronin_services', 'the chosen option\'s own control shows with the tray closed');
-  assert.equal(extra.children[1].placeholder, 'branch for ronin_services');
-  assert.equal(form.el.all('ask-group')[0].one('ask-extras'), form.el.one('ask-extras'), 'it sits under the group, not in a tray');
+  assert.equal(form.el.all('ask-extra').length, 0, 'closed, a group is exactly its stones');
   stoneFor(form, 'repos').click();
-  assert.equal(form.el.one('ask-tray').one('ask-extras'), null);
+  const extra = form.el.one('ask-tray').one('ask-extra');
+  assert.equal(extra.one('ask-extra-name').textContent, 'ronin_services', 'open, a many question shows the lines of its chosen options in the tray');
+  assert.equal(extra.children[1].placeholder, 'branch for ronin_services');
   form.el.fire('keydown', { key: 'Escape' });
   assert.equal(form.el.all('ask-tray').length, 0);
-  assert.ok(form.el.one('ask-extra'), 'and it is still there after Escape');
+  assert.equal(form.el.all('ask-extra').length, 0, 'and closing takes the lines with it');
   form.set('root', 'b');
   assert.equal(stoneFor(form, 'root').one('ask-reading').textContent, 'ronin_services');
   form.options('root', [{ v: 'c', l: 'notes' }]);
@@ -256,12 +255,15 @@ test('a second layer appears only on an explicit click in this open interaction;
   const line = form.el.one('ask-line');
   assert.ok(line, 'and draws its own line in the second-layer slot');
   assert.equal(line.one('ask-extra').children[1].placeholder, 'team name');
-  assert.equal(form.el.all('ask-group')[0].one('ask-extras'), null, 'while its tray is open, the group draws no extra row — the line lives in the tray, so layer one does not move');
+  assert.equal(form.el.all('ask-group')[0].one('ask-extra'), null, 'the group holds stones only — the line lives in the tray, so layer one never moves');
   assert.equal(form.value().teamName, '', 'the nested answer is cleared by another layer-one answer');
   form.el.fire('keydown', { key: 'Escape' });
   assert.equal(form.el.all('ask-tray').length, 0);
-  assert.equal(form.el.one('ask-extra').children[1].placeholder, 'team name', 'closed, the chosen option\'s own control stays under the group');
+  assert.equal(form.el.all('ask-extra').length, 0, 'closed, the group is exactly its stones again');
   stoneFor(form, 'team').click();
+  assert.equal(form.el.all('ask-line').length, 0, 'reopening with New team saved shows layer one only');
+  optNamed(form, 'New team').click();
+  assert.ok(form.el.one('ask-line'), 'the click brings the line back, in the slot beneath');
   optNamed(form, 'No team — a rōnin').click();
   assert.equal(form.el.all('ask-tray').length, 0, 'No team closes at once');
   assert.equal(form.el.all('ask-extra').length, 0, 'and leaves nothing under the group');

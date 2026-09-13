@@ -43,6 +43,7 @@
   /* the second layer: the nested question's stones under the first layer's, one hairline between */
   .ask-layer { display: grid; gap: var(--space-3); border-top: var(--edge) dashed var(--line); padding-top: var(--space-4); }
   .ask-layer-head { color: var(--muted); font-size: var(--form-note); }
+  .ask-line { gap: var(--space-2); }
   .ask-line .ask-extra { grid-template-columns: var(--ask-w) minmax(0, 1fr); }
   .ask-line .ask-extra input { max-width: none; width: 100%; }
 
@@ -62,7 +63,6 @@
   /* the caption carries the sentence, the facts, and the reason a stone is greyed */
   .ask-caption { margin: 0; min-height: 1.4em; color: var(--muted); font-size: var(--form-note); line-height: 1.4; }
   .ask-caption b { color: var(--fg-strong); font-weight: 500; }
-  .ask-extras { display: grid; gap: var(--space-2); }
   .ask-extra { display: grid; grid-template-columns: var(--ask-w) minmax(0, 1fr); gap: var(--space-4); align-items: center; font-size: var(--form-note); color: var(--fg); }
   .ask-extra-name { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .ask-extra input { min-width: 0; max-width: calc(var(--ask-w) * 2); border: var(--edge) solid var(--line-2); border-radius: var(--radius-xs); background: var(--well); color: var(--fg); padding: var(--space-2) var(--space-4); font: inherit; font-size: var(--form-note); }
