@@ -665,8 +665,11 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **new_agent.team_existing_sub:** Join it. Its answers land at birth.
 - **new_agent.team_none:** No team — a rōnin
 - **new_agent.team_none_sub:** Ordinary, not a gap.
-- **new_agent.team_new:** A new team
+- **new_agent.team_new:** New team
 - **new_agent.team_new_sub:** Created first, then this Agent is born into it.
+- **new_agent.team_current:** Current team
+- **new_agent.team_current_sub:** Choose from your teams.
+- **new_agent.which_team:** Which team
 - **new_agent.team_new_blank:** Blank makes no team — the Agent is a rōnin.
 - **new_agent.a_ronin:** a rōnin
 - **new_agent.loadout_meta:** {routines} routines · {books} books

@@ -287,10 +287,7 @@
   .na-identity-row { display: flex; flex-wrap: wrap; gap: var(--space-4) var(--space-8); align-items: flex-end; }
   .na-identity-row > .na-name-required { flex: 1 1 calc(var(--space-12) * 8); min-width: 0; }
   .na-name-required > .wk-field-control { box-sizing: border-box; height: 40px; }
-  /* An open tray must grow below its Team pair, never change the pair's intrinsic width and
-     push the whole package onto another line beside Name. */
-  .na-team-questions { flex: 0 0 calc(var(--ask-w) + var(--ask-w) + var(--ask-gap)); width: calc(var(--ask-w) + var(--ask-w) + var(--ask-gap)); }
-  .na-team-questions > .ask-tray { box-sizing: border-box; min-width: 100%; }
+  .na-team-questions { flex: 0 0 auto; }
   .na-surface textarea { min-height: calc(var(--space-12) * 3); resize: vertical; }
   .na-note { margin: var(--space-4) 0 0; color: var(--dim); font-size: var(--form-note); }
   .na-sopgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(var(--space-12) * 4), 1fr)); gap: var(--space-1); }

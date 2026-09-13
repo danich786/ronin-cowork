@@ -40,7 +40,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
   const draft = {
     type: 'cowork_agent', template: '', templateName: '',
     name: '', kind: 'coding', kindTouched: false, provider: '', model: '', instructions: '',
-    teamMode: typeof team === 'function' && team() ? 'existing' : 'new', team: typeof team === 'function' ? team() : '', newTeam: '', teamLead: false,
+    teamMode: typeof team === 'function' && team() ? 'existing' : 'none', team: typeof team === 'function' ? team() : '', newTeam: '', teamLead: false,
     reach: 'open', recruit: 'open', output: ['open'], launchMode: 'live_dangerously',
     books: [], root: '', repos: [], routineOverrides: {},
     expanded: {},
@@ -233,12 +233,8 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
           : undefined,
     };
   });
-  const teamValue = () => draft.teamMode === 'new' ? '__new__' : draft.teamMode === 'none' ? '__none__' : `team:${draft.team}`;
-  const teamRows = () => [
-    { v: '__new__', l: t('new_agent.team_new', 'A new team'), sub: t('new_agent.team_new_sub', 'Created first, then this Agent is born into it.') },
-    ...teams.map((row) => ({ v: `team:${row.name}`, l: String(row.title ?? '').trim() || row.name, sub: row.name })),
-    { v: '__none__', l: t('new_agent.team_none', 'No team — a rōnin'), sub: t('new_agent.team_none_sub', 'Ordinary, not a gap.') },
-  ];
+  const teamChoice = () => draft.teamMode === 'new' ? 'new' : draft.teamMode === 'none' ? 'none' : 'current';
+  const teamRows = () => teams.map((row) => ({ v: row.name, l: String(row.title ?? '').trim() || row.name, sub: row.name }));
   const rootRows = () => roots.map((row) => ({ v: row.name, l: row.name, word: row.repo_profile?.worktrees === 'enabled' ? t('where.worktree', 'worktree') : t('where.checkout', 'checkout') }));
   const mandateRows = (values) => values.map((value) => ({ v: value, l: mandateWord(value) }));
   const newTeamField = () => {
@@ -251,6 +247,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     });
     return input;
   };
+  const identityRow = el('div', 'na-identity-row');
   const onQuestionChange = (value, key) => {
     if ('provider' in value) { draft.provider = value.provider; draft.model = value.model; }
     if ('reach' in value) { draft.reach = value.reach; draft.recruit = value.recruit; draft.output = value.output; }
@@ -264,9 +261,9 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
       questions.set('repos', draft.repos);
     }
     if (key === 'repos') touched.repos = true;
-    if (key === 'team') {
-      draft.teamMode = value.team === '__new__' ? 'new' : value.team === '__none__' ? 'none' : 'existing';
-      draft.team = value.team.startsWith('team:') ? value.team.slice(5) : '';
+    if (key === 'team' || key === 'teamName') {
+      draft.teamMode = value.team === 'new' ? 'new' : value.team === 'none' ? 'none' : 'existing';
+      draft.team = draft.teamMode === 'existing' ? value.teamName : '';
       touched.repos = false;
       const selected = teams.find((row) => row.name === draft.team);
       draft.repos = [...new Set([draft.root, ...(draft.teamMode === 'existing' ? selected?.repos || [] : [])].filter(Boolean))];
@@ -296,18 +293,25 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
   });
   const teamQuestions = ask([
     { group: t('squad', 'Team'), fields: [
-      { key: 'team', label: t('squad', 'Team'), options: teamRows, row: (option) => option.v === '__new__' ? newTeamField() : null },
+      { key: 'team', label: t('squad', 'Team'), options: [
+        { v: 'none', l: t('new_agent.team_none', 'No team — a rōnin'), sub: t('new_agent.team_none_sub', 'Ordinary, not a gap.') },
+        { v: 'current', l: t('new_agent.team_current', 'Current team'), sub: t('new_agent.team_current_sub', 'Choose from your teams.') },
+        { v: 'new', l: t('new_agent.team_new', 'New team'), sub: t('new_agent.team_new_sub', 'Created first, then this Agent is born into it.'), row: () => newTeamField() },
+      ], then: [
+        { when: 'current', key: 'teamName', label: t('new_agent.which_team', 'Which team'), options: teamRows },
+      ] },
       { key: 'teamLead', label: t('team.lead', 'Team lead'), switch: [t('yes', 'Yes'), t('no', 'No')] },
     ] },
   ], {
-    value: { team: teamValue(), teamLead: draft.teamLead },
+    value: { team: teamChoice(), teamName: draft.team, teamLead: draft.teamLead },
     className: 'na-team-questions',
     density: 'tight',
+    trayHost: identityRow,
     onChange: onQuestionChange,
   });
   const syncQuestions = () => {
     questions.set({ provider: draft.provider, model: draft.model, reach: draft.reach, recruit: draft.recruit, output: draft.output, root: draft.root, repos: draft.repos || [] });
-    teamQuestions.set({ team: teamValue(), teamLead: draft.teamLead });
+    teamQuestions.set({ team: teamChoice(), teamName: draft.team, teamLead: draft.teamLead });
   };
   void loadProviderCatalog().then(() => questions.paint());
 
@@ -625,7 +629,6 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
   } });
   stepPayload.body.append(foot, actions.el);
   stepPayload.setCollapsed(true, t('forms.payload_summary', 'Review what Launch will create'), true);
-  const identityRow = el('div', 'na-identity-row');
   identityRow.append(nameField, teamQuestions.el);
   stepTop.body.replaceChildren(identityRow, questions.el, instructionsField);
   const form = el('div', 'ntf-form');

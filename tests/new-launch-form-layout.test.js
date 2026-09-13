@@ -38,8 +38,11 @@ test('New Agent uses one ruled ask() spec after its three session types', async 
 test('both workbench entrances use the canonical New Agent form with contextual Team default', async () => {
   const cowork = await source('cowork-view.js');
   assert.doesNotMatch(cowork, /createAddAgentView/);
-  assert.match(cowork, /const view = createNewAgentView\(WorkspaceKit, \{[\s\S]*team: \(\) =>/);
+  assert.doesNotMatch(cowork, /WB_TYPES\.addAgent|addAgentBySeat|environment\.addAgent/);
+  assert.match(cowork, /profiles\.define\(WB_PROFILES\.team, \[WB_TYPES\.commons, WB_TYPES\.terminal, WB_TYPES\.newAgent/);
+  assert.match(cowork, /const newAgentBySeat = Object\.fromEntries[\s\S]*createNewAgentView\(WorkspaceKit, \{[\s\S]*team: \(\) =>/);
   assert.match(cowork, /connect: \(name\) => connectSession\(name, id\)/);
+  assert.match(cowork, /'team\.add-agent': WB_TYPES\.newAgent/);
 });
 
 test('Where it works asks birthplace then a workspace set which includes the birthplace', async () => {
@@ -83,7 +86,7 @@ test('collapsible steps expose one full-width disclosure row and Team defaults u
   assert.match(steps, /forms\.expand', 'Expand'/);
   assert.match(steps, /forms\.collapse', 'Collapse'/);
   assert.match(css, /\.fs-togglable \{ grid-column: 1 \/ -1; width: 100%/);
-  assert.match(css, /\.na-team-questions \{ flex: 0 0 calc\(var\(--ask-w\) \+ var\(--ask-w\) \+ var\(--ask-gap\)\); width:/);
+  assert.match(css, /\.na-team-questions \{ flex: 0 0 auto; \}/);
   assert.match(team, /key: 'defaults'.*Agent defaults/);
   assert.match(team, /Settings inherited by Agents launched in this Team/);
   assert.match(team, /for \(const key of \['where', 'kit'\]\) steps\[key\]\.el\.hidden = !defaultsOpen/);

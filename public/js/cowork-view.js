@@ -31,7 +31,7 @@ import { RONIN_HELPERS } from './roster-groups.js';
 import { toast } from './ui.js';
 import { readyMika } from './mika-ready.js';
 import { createMikaHelpPanel } from './mika.js';
-import { coworkWorkbenchIdentity, orderCoworkTeams } from './campaign.js';
+import { coworkWorkbenchIdentity, createCampaignIdentity, orderCoworkTeams } from './campaign.js';
 import { retireSession } from './session-retire.js';
 
 const el = (tag, cls, text) => {
@@ -69,7 +69,7 @@ const currentWorkStep = (letter) => {
 const COMMONS = '@commons';
 const COWORK = '@cowork';
 const NEW = '@new';
-const WB_TYPES = Object.freeze({ addAgent: 'team.add-agent', commons: 'team.commons', cron: 'cowork.cron-jobs', desk: 'ronin.desk', document: 'document', terminal: 'session.terminal', roster: 'cowork.team-roster', newTeamForm: 'cowork.new-team-form', newAgent: 'session.new-agent', team: 'team.profile', archives: 'cowork.archives' });
+const WB_TYPES = Object.freeze({ commons: 'team.commons', cron: 'cowork.cron-jobs', desk: 'ronin.desk', document: 'document', terminal: 'session.terminal', roster: 'cowork.team-roster', newTeamForm: 'cowork.new-team-form', newAgent: 'session.new-agent', team: 'team.profile', archives: 'cowork.archives' });
 const WB_PROFILES = Object.freeze({ cowork: 'cowork', team: 'team' });
 
 function registerWorkbenchCatalog() {
@@ -79,8 +79,6 @@ function registerWorkbenchCatalog() {
   const add = (definition) => { if (!library.has(definition.type)) library.register(definition); };
   add({ type: WB_TYPES.commons, header: 'channels', className: 'wk-selector-utility', label: () => t('team.commons_card', 'Commons'), summary: () => t('team.commons_summary', 'See Roster / Docs / Wipeboard / Configuration'), create: ({ workspace, environment }) => environment.teamCommons(workspace) });
   add({ type: WB_TYPES.desk, header: 'channels', label: () => t('cowork.commons', 'Ronin Desk'), create: ({ workspace, environment }) => environment.desk(workspace) });
-  // one there"). Drawn contract: ronin-lab `concepts/add-agent-to-team.html`.
-  add({ type: WB_TYPES.addAgent, header: 'surface', className: 'wk-selector-utility wk-selector-group-after', label: () => t('add_agent.card', 'Add Agent to Team'), summary: () => t('add_agent.card_summary', 'The Team answers the rest.'), variant: 'dotted', create: ({ workspace, environment }) => environment.addAgent(workspace) });
   add({ type: WB_TYPES.terminal, header: 'terminal', className: 'wk-selector-entity', discover: (_tenant, environment) => environment.sessions(), create: ({ workspace, detail, environment }) => environment.terminal(workspace, detail) });
   add({ type: WB_TYPES.roster, header: 'surface', className: 'wk-selector-utility', label: () => t('league.team_roster', 'Team roster'), create: ({ workspace, environment }) => environment.roster(workspace) });
   add({ type: WB_TYPES.cron, header: 'surface', className: 'wk-selector-utility', label: () => t('workspace.channel_cron_jobs', 'Cron jobs'), summary: () => t('team_jikan.all_teams_summary', 'Scheduled messages across every team'), create: ({ workspace, environment }) => environment.cron(workspace) });
@@ -94,9 +92,7 @@ function registerWorkbenchCatalog() {
   add({ type: WB_TYPES.document, header: 'surface', label: () => t('docs.frame_title', 'Document'), discover: () => [], create: ({ detail, environment }) => environment.document(detail) });
   add({ type: WB_TYPES.team, header: 'surface', className: 'wk-selector-entity', discover: (_tenant, environment) => environment.teams(), create: ({ workspace, detail, environment }) => environment.team(workspace, detail) });
   profiles.define(WB_PROFILES.cowork, [WB_TYPES.roster, WB_TYPES.cron, WB_TYPES.team, WB_TYPES.newTeamForm, WB_TYPES.newAgent, WB_TYPES.archives, WB_TYPES.document, PRESETS_TYPE, FEEDBACK_TYPE]);
-  // THE TEAM BENCH HAS ONE SHORTCUT: Add Agent to Team. It always births a Cowork Agent;
-  // terminal and bare-metal choices stay on the full launch page.
-  profiles.define(WB_PROFILES.team, [WB_TYPES.commons, WB_TYPES.terminal, WB_TYPES.addAgent, FEEDBACK_TYPE]);
+  profiles.define(WB_PROFILES.team, [WB_TYPES.commons, WB_TYPES.terminal, WB_TYPES.newAgent, FEEDBACK_TYPE]);
 }
 export function createCoworkView(options = {}) {
   registerWorkbenchCatalog();
@@ -242,27 +238,25 @@ export function createCoworkView(options = {}) {
   };
   const teamCommons = Object.fromEntries(Object.keys(seats).map((id) => [id, createTeamCommons()]));
   const extras = new Set();
-  // One instance per seat, like every other surface: a birth returns to the workspace
-  // whose form made it, which is the property this door exists for.
-  const addAgentBySeat = Object.fromEntries(Object.keys(seats).map((id) => {
-    const view = createNewAgentView(WorkspaceKit, {
-      team: () => (campaign || team === UNASSIGNED ? '' : team),
-      connect: (name) => connectSession(name, id),
-    });
-    return [id, { el: view.el, enter: () => view.enter() }];
-  }));
+  const campaignIdentity = createCampaignIdentity((name) => {
+    if (entered && campaign) renderCards([]);
+  });
   // its roster exists, so the form that made it hands the workspace over to it and goes
   // back to empty. Staffing happens from inside the Team, through Add Agent.
   const newTeamFormBySeat = campaign ? Object.fromEntries(Object.keys(seats).map((id) => {
     const view = createNewTeamFormView(WorkspaceKit, { created: async () => { await refreshTeams(); bench.refreshSelector(); } });
     return [id, { el: view.el, enter: () => view.enter() }];
   })) : {};
-  // The drawn New Agent, per seat: a birth returns to the workspace whose form made it.
-  const newAgentBySeat = campaign ? Object.fromEntries(Object.keys(seats).map((id) => {
-    const view = createNewAgentView(WorkspaceKit, {});
+  // One canonical New Agent surface per seat. Team context changes only the initial Team
+  // answer; the form, session-type choices and launch path are otherwise identical.
+  const newAgentBySeat = Object.fromEntries(Object.keys(seats).map((id) => {
+    const view = createNewAgentView(WorkspaceKit, {
+      team: () => (campaign || team === UNASSIGNED ? '' : team),
+      connect: (name) => connectSession(name, id),
+    });
     // The detail rides through: `S.showNewSession(prompt)` seeds the form's Instructions.
     return [id, { el: view.el, enter: (detail) => view.enter(detail) }];
-  })) : {};
+  }));
   // carried Campaign identity, Project roots and Templates behind a tab strip here; those
   // are Campaign-level and are now surfaces of Campaign Manage (js/campaign-view.js).
   // The Team roster stayed — a Cowork is not Campaign configuration — and is its own
@@ -286,7 +280,6 @@ export function createCoworkView(options = {}) {
     cron: (id) => ({ el: cronBySeat[id].el, show: () => cronBySeat[id].room.enter() }),
     newTeamForm: (id) => ({ el: newTeamFormBySeat[id].el, show: () => void newTeamFormBySeat[id].enter() }),
     newAgent: (id) => ({ el: newAgentBySeat[id].el, show: (detail) => void newAgentBySeat[id].enter(detail) }),
-    addAgent: (id) => ({ el: addAgentBySeat[id].el, show: () => addAgentBySeat[id].enter() }),
     presets: (id) => createPresetsSurface({ environment: {
       customize: ({ template, user_message } = {}) => openWorkspaceStateTab(ctx, 'launch', { customize: { template, user_message: String(user_message || '') } }),
       launch: launchPresetPlan,
@@ -365,7 +358,7 @@ export function createCoworkView(options = {}) {
   // A REMEMBERED PLACEMENT OUTLIVES THE SURFACE IT NAMED. `@new` and `@new-team` were
   // the retired board and the seven-field card; a workspace that still remembers one
   // opens its replacement rather than nothing.
-  const legacyTypes = { [COMMONS]: WB_TYPES.commons, [COWORK]: WB_TYPES.desk, [NEW]: WB_TYPES.newAgent, 'session.new': WB_TYPES.newAgent, '@new-team': WB_TYPES.newTeamForm, 'cowork.new-team': WB_TYPES.newTeamForm, '@team-roster': WB_TYPES.roster };
+  const legacyTypes = { [COMMONS]: WB_TYPES.commons, [COWORK]: WB_TYPES.desk, [NEW]: WB_TYPES.newAgent, 'session.new': WB_TYPES.newAgent, 'team.add-agent': WB_TYPES.newAgent, '@new-team': WB_TYPES.newTeamForm, 'cowork.new-team': WB_TYPES.newTeamForm, '@team-roster': WB_TYPES.roster };
   const tokenOf = (node) => node?.dataset?.workbenchSurface || '';
   /** Which surface token this cell holds, or '' for its own seat. */
   const heldSurface = (id) => tokenOf(cellHolding(id));
