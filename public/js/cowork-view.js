@@ -318,7 +318,8 @@ export function createCoworkView(options = {}) {
       const reading = readingsOf(member);
       const mika = team === RONIN_HELPERS && member.name === 'mika_agent';
       return { key: member.name, label: mika ? t('mika.name', 'Mika') : agentTitle(member), className: `team-agent-card${thinSelectorCards ? ' selector-card-thin' : ''}`,
-        ...(thinSelectorCards ? {} : { summary: reading.step, metadata: reading.lines, mark: member.team_lead ? '人' : null }),
+        mark: member.team_lead ? '人' : null,
+        ...(thinSelectorCards ? {} : { summary: reading.step, metadata: reading.lines }),
         ...(mika ? { action: () => placeMikaWorkspaceTwo() } : {}),
         onPointerEnter: () => armPrewarm(member.name), onPointerLeave: disarmPrewarm };
     }),
