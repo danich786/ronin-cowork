@@ -551,7 +551,7 @@ else
   find_ "bin/ronin-store is missing or not executable — no tool can resolve a Ronin path on this box"
 fi
 
-# ---- 8. the two Claude Code settings Ronin's own features need ----------------------
+# ---- 8. the two Claude Code settings Ronin's own behaviours need --------------------
 # NOT a settings audit and never becoming one: two keys, each the reason a Ronin feature
 # would otherwise be silently dark. This is a FIND rather than a note because both failures
 # look like Ronin being broken — a context gauge that never fills, and a light shell whose

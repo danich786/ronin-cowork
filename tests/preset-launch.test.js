@@ -34,7 +34,7 @@ test('Morning Brief creates a real schedule and returns its receipt', async () =
 
 test('Develop Project retains every ordinary launch receipt and work location', async () => {
   const calls = [], send = responder({ name: 'develop_new_project', label: 'Develop', agents: [] }, calls);
-  const result = await launchPresetPlan({ template: { shelf: 'teams', name: 'develop_new_project' }, inputs: { root: 'ronin_project_1', features: ['frontend', 'backend'] } }, send);
+  const result = await launchPresetPlan({ template: { shelf: 'teams', name: 'develop_new_project' }, inputs: { root: 'ronin_project_1', workstreams: ['frontend', 'backend'] } }, send);
   assert.equal(result.data.receipts.length, 2);
   assert.ok(result.data.receipts.every((receipt) => receipt.project_root === 'ronin_project_1' && receipt.work_locations.length === 1));
 });
@@ -70,7 +70,7 @@ test('Bare Metal launches a bare-metal team: bare_metal_<code> with native agent
   const code = roster.name.match(/^bare_metal_(\d{3})$/)?.[1];
   assert.ok(code, 'the team is bare_metal_<code>');
   assert.equal(roster.project_root, 'ronin_lab');
-  assert.equal(roster.features, undefined, 'a bare-metal team adds no Cowork features');
+  assert.equal(roster.behaviours, undefined, 'a bare-metal team adds no Cowork behaviours');
   assert.equal(result.data.team, roster.name);
   const births = calls.filter((row) => row.url === '/api/launch').map((row) => row.body);
   assert.deepEqual(births.map((body) => body.name), [`session_1_${code}`, `session_2_${code}`, `session_3_${code}`], 'row names plus the launch code');

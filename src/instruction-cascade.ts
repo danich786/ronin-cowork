@@ -17,7 +17,7 @@ export const switches = (value: unknown): Switches => {
 
 export const names = (value: unknown): string[] => Array.isArray(value)
   ? [...new Set(value.filter((item): item is string =>
-      typeof item === 'string' && /^[a-z0-9][a-z0-9_-]{0,63}$/.test(item)))]
+      typeof item === 'string' && /^[a-z0-9][a-z0-9_:-]{0,159}$/.test(item)))]
   : [];
 
 export function availableBehaviours(installations: InstallationRow[], value: unknown, behaviours: BehaviourRow[]): string[] {

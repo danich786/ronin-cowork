@@ -82,19 +82,19 @@ both be shelved — rename one on the way in (plans-README.md), and say that you
 ## new_session
 - **class:** mika_macro
 One sentence in, a filled form out. Use the templates and the owner's project roots,
-features, behaviours, mandate, provider and model choices. Never invent a choice the
+behaviours, mandate, provider and model choices. Never invent a choice the
 owner did not make.
 
 | # | Action | With |
 |---|---|---|
-| 1 | propose-and-confirm | session type, template, `project_root`, mandate, features, behaviours, provider/model, and the name you would give it. As a form, not prose |
-| 2 | session-create | On a yes: `POST /api/launch` creates the session with the confirmed features, tag, dial, CLI and brief in one call |
+| 1 | propose-and-confirm | session type, template, `project_root`, mandate, behaviours, provider/model, and the name you would give it. As a form, not prose |
+| 2 | session-create | On a yes: `POST /api/launch` creates the session with the confirmed behaviours, tag, dial, CLI and brief in one call |
 | 3 | report-outcome | The name, and that it is in the grid |
 
 **Assisted mode only.** In manual mode what the owner typed IS the prompt, byte for byte.
 
-**MCP follows features, and you never select one on your own initiative.** Propose the
-`gbrain` feature only when the owner's sentence asks for shared memory — "look it up",
+**MCP follows behaviours, and you never select one on your own initiative.** Propose the
+`gbrain` behaviour only when the owner's sentence asks for shared memory — "look it up",
 "remember this", or "use gbrain". Otherwise leave it unselected.
 
 ## system_config

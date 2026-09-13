@@ -16,7 +16,7 @@ process.env.RONIN_USER_ROOT = path.join(root, 'user');
 process.env.RONIN_DATA_ROOT = path.join(root, 'data');
 const { installBundle, packBundle, parseBundle, parseLibraryIndex, planInstall, libraryCard, bundleHolds, BUNDLE_FORMAT, LIBRARY_FORMAT } =
   await import('../src/bundles.js');
-const { listTeamTemplates, listFeatures } = await import('../src/resource-adapters.js');
+const { listTeamTemplates, listBehaviours } = await import('../src/resource-adapters.js');
 const { resolveBehaviourBooks } = await import('../src/behaviours.js');
 const { STOCK_DIR } = await import('../src/resources.js');
 const { storeDir } = await import('../src/resources.js');
@@ -28,7 +28,6 @@ const TEAM = `# Weekly Review
 - **kinds:** work
 - **objective:** Review the week and shape the next.
 - **behaviours:** weekly_review
-- **features:** weekly_review
 
 ## agents
 
@@ -38,7 +37,7 @@ const TEAM = `# Weekly Review
 - **mandate:** execute · nobody · an artifact
 `;
 const SOP = '# weekly_review — how this house reviews a week\n\nLook back, then forward.\n';
-const FEATURE = `# Weekly Review
+const BEHAVIOUR = `# Weekly Review
 - **label:** Weekly Review
 - **blurb:** The review macro and its book.
 - **reading:** —
@@ -47,7 +46,7 @@ const FEATURE = `# Weekly Review
 - **actions:** —
 - **tools:** tejun-review
 - **mcp:** —
-- **provider:** —
+- **installation:** —
 - **order:** 90
 `;
 const MACRO = `## review
@@ -69,9 +68,8 @@ const bundle = () => parseBundle({
   version: '2026-09-03',
   files: [
     { store: 'catalogs', path: 'templates/teams/weekly_review.md', text: TEAM },
-    { store: 'catalogs', path: 'features/weekly_review.md', text: FEATURE },
     { store: 'sops', path: 'weekly_review.md', text: SOP },
-    { store: 'ways', path: 'weekly_review.md', text: SOP },
+    { store: 'ways', path: 'weekly_review.md', text: BEHAVIOUR },
     { store: 'tools', path: 'tejun-review', text: TOOL },
   ],
   entries: [
@@ -97,7 +95,7 @@ test('a bundle is held to its shape', () => {
   const b = bundle();
   assert.deepEqual(b.kinds, ['work'], 'an unruled kind is dropped, not fatal');
   assert.equal(b.files.find((f) => f.store === 'tools')?.executable, true);
-  assert.deepEqual(bundleHolds(b), { teams: 1, features: 1, sops: 1, ways: 1, tools: 2, macros: 1 });
+  assert.deepEqual(bundleHolds(b), { teams: 1, sops: 1, ways: 1, tools: 2, macros: 1 });
 });
 
 test('the plan says what an install would do, and a tool never replaces one of Ronin\'s', async () => {
@@ -135,16 +133,16 @@ test('the plan says what an install would do, and a tool never replaces one of R
 test('an install lands in the owner\'s stores, reads back, and is idempotent', async () => {
   const first = await installBundle(bundle());
   assert.equal(first.refused.length, 0);
-  assert.equal(first.written.length, 7);
+  assert.equal(first.written.length, 6);
   const team = (await listTeamTemplates()).find((row) => row.name === 'weekly_review');
   assert.equal(team?.origin, 'user');
   assert.equal(team?.agents[0]?.team_lead, true);
-  assert.deepEqual(team?.features, ['weekly_review']);
+  assert.deepEqual(team?.behaviours, ['weekly_review']);
   const books = await resolveBehaviourBooks(team?.behaviours ?? []);
   assert.equal(books.delivered[0]?.file, path.join(storeDir('ways'), 'weekly_review.md'));
-  const feature = (await listFeatures()).find((row) => row.name === 'weekly_review');
-  assert.deepEqual(feature?.tools, ['tejun-review']);
-  assert.equal(feature?.provider, '', 'the catalog dash means this feature has no provider');
+  const behaviour = (await listBehaviours()).find((row) => row.name === 'weekly_review');
+  assert.deepEqual(behaviour?.tools, ['tejun-review']);
+  assert.equal(behaviour?.installation, '', 'the catalog dash means this behaviour needs no installation');
   const tool = await stat(path.join(storeDir('tools'), 'tejun-review'));
   assert.ok(tool.mode & 0o100, 'a bundled tool is executable');
   const macros = await readFile(path.join(storeDir('catalogs'), 'MACROS.md'), 'utf8');
@@ -156,7 +154,7 @@ test('an install lands in the owner\'s stores, reads back, and is idempotent', a
 
   const again = await installBundle(bundle());
   assert.equal(again.written.length, 0);
-  assert.equal(again.skipped.length, 7);
+  assert.equal(again.skipped.length, 6);
   assert.ok(again.skipped.every((i) => i.verdict === 'same-as-yours'));
 
   // The owner edits their copy; the bundle does not write over it unless told to.
@@ -182,7 +180,6 @@ test('a pack carries back out what the owner\'s copies hold, and reads as a bund
   const packed = await packBundle({ team: 'weekly_review', ways: ['my_way'], version: '2026-09-03' });
   const paths = packed.files.map((f) => `${f.store}:${f.path}`).sort();
   assert.deepEqual(paths, [
-    'catalogs:features/weekly_review.md',
     'catalogs:templates/teams/weekly_review.md',
     'sops:weekly_review.md',
     'tools:tejun-review',
@@ -201,7 +198,7 @@ test('a pack carries back out what the owner\'s copies hold, and reads as a bund
   const text = JSON.stringify(packed);
   const card = libraryCard(packed, text, 'bundles/weekly_review.json');
   assert.equal(card.sha256.length, 64);
-  assert.deepEqual(card.holds, { teams: 1, features: 1, sops: 1, tools: 2, ways: 2, macros: 1 });
+  assert.deepEqual(card.holds, { teams: 1, sops: 1, tools: 2, ways: 2, macros: 1 });
   const index = parseLibraryIndex({ format: LIBRARY_FORMAT, bundles: [card, { name: 'evil', url: 'https://elsewhere.example/x.json' }, { name: 'up', url: '../x.json' }] });
   assert.deepEqual(index.bundles.map((c) => c.name), ['weekly_review'], 'a card pointing off the library is dropped');
   assert.throws(() => parseLibraryIndex({ format: 'nope' }), /not ronin-library\/1/);

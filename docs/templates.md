@@ -107,12 +107,12 @@ shelf like anything you wrote. The listing is the directory (`ls ronin_catalogs/
 
 ## Bundles and the template library
 
-A template names its behaviours and its features; it carries no copy of them, and on the
+A template names its behaviours; it carries no copy of them, and on the
 shelf that is right. It is wrong for a download: a Dinner Party template is worthless on
 another install without the menu book it reads. So the one place copies are allowed is
 **in transit** — a **template bundle**, one JSON document (`ronin-bundle/1`) holding a team
-template, the agent templates beside it, the behaviours they name, the features they
-turn on, and those features' macros, actions and tools. On install every copy lands in
+template, the agent templates beside it, the behaviours they name, and those behaviours'
+macros, actions and tools. On install every copy lands in
 **your own stores** — catalogs, sops, ways, library, and a `tools` store for executables —
 where the ordinary readers find it exactly as they find anything you wrote by hand. Nothing
 a bundle installs touches the install itself; an upgrade never sees it.

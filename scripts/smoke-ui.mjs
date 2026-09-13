@@ -532,10 +532,10 @@ async function checkJourneys(page, label, jsErrors) {
       ['new-agent.js', 'new-team-form.js', 'add-agent.js', 'team-configuration.js']
         .map((name) => fetch(`js/${name}`).then((response) => response.text())),
     );
-    return [agent, team, add, config].every((source) => source.includes("t('features', 'Features')") && source.includes("t('behaviours', 'Behaviours')"))
+    return [agent, team, add, config].every((source) => !source.includes("t('features', 'Features')") && source.includes("t('behaviours', 'Behaviours')"))
       && [agent, team, add, config].every((source) => !/routines|routine_bundles/.test(source));
   });
-  if (cascadeForms) ok(`${label}: New Team, New Agent, Add Agent and Team Configuration expose only Features and Behaviours`);
+  if (cascadeForms) ok(`${label}: New Team, New Agent, Add Agent and Team Configuration expose only Behaviours`);
   else bad(`${label}: an installation-cascade form still exposes a retired section`);
 
   await page.keyboard.press('Control+Shift+KeyN');

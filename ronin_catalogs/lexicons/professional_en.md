@@ -38,7 +38,6 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **add_agent.still_asked:** still asked
 - **add_agent.none:** —
 - **installations:** Installations
-- **features:** Features
 - **defaults:** Defaults
 - **campaign.name:** Campaign name
 - **campaign.name_placeholder:** Ronin Home
@@ -66,7 +65,6 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **loadout:** Tools and skills
 - **behaviours:** Behaviours
 - **glossary.installation:** installation
-- **glossary.feature:** feature
 - **glossary.behaviour:** behaviour
 - **glossary.installations:** Installations
 - **glossary.defaults:** Defaults
@@ -334,8 +332,6 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **campaign_view.installations:** Installations
 - **campaign_view.installations_help:** System components installed on this machine. Each is on or off for the whole system; nothing already running changes.
 - **campaign_view.defaults:** Defaults
-- **campaign_view.default_features:** Features
-- **campaign_view.features_help:** Extra facilities and taught practices offered by installations. These answers land in the next Team or teamless Agent form.
 - **campaign_view.svc_activated:** Activated with Ronin HQ: the template library and the hosted parts are yours.
 - **campaign_view.svc_not_activated:** Not activated with Ronin HQ. Activation is optional and separate from the switch: it unlocks the hosted parts — the template library first — with an email and a confirmation.
 - **campaign_view.svc_off_running:** Off: none of it runs — no recording, no transcripts, tiles are Locked only. Files stay in place.
@@ -429,9 +425,7 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **help.agents:** Agents
 - **help.agents_body:** The Agents this Team is raised with. A row is short on purpose — a name and what that Agent does — and opens for its mandate when you want it. 人 marks the lead; this form offers one, though a running Team may gain more. Raising creates the Team and then births every named row, the lead last. A Team with no rows is ordinary and raises fine.
 - **help.installations:** What an Installation is
-- **help.installations_body:** An Installation is a system-level switch in the Campaign. A system installation joins every Cowork Agent; a feature-provider installation makes its features available for Teams and Agents to choose.
-- **help.features:** What a Feature is
-- **help.features_body:** A Feature is an extra facility or taught practice a Team or Agent adds. It is offered only while its provider is installed and on, and its instructions arrive only when it is chosen.
+- **help.installations_body:** An Installation is a system-level switch in the Campaign. A system installation joins every Cowork Agent; a provider installation makes its behaviours available for Teams and Agents to choose.
 - **help.behaviours:** What a Behaviour is
 - **help.behaviours_body:** A Behaviour says how the owner wants ordinary work done. Each is one short page delivered at birth when selected; Mandates is on by default, and the rest are additions the owner may choose.
 - **help.type:** New session
@@ -1750,7 +1744,6 @@ The catalog entry goes. {dir} is not touched.
 - **workspace.channel_agent_message_queue:** Messages
 - **workspace.channel_cron_jobs:** Cron jobs
 - **team_config.no_roster:** This Team has no saved record.
-- **team_config.no_features:** No installation on this box offers a feature yet. Switch one on at the Campaign’s Installations.
 - **team_config.loading:** Loading Team Configuration…
 - **team_config.cowork_id:** Team ID
 - **team_config.title:** Readable title

@@ -419,7 +419,7 @@ test('a name alone resolves the ordinary Cowork Agent birth', async () => {
   assert.equal(born.dial, 'write');
 });
 
-test('kind and behaviours resolve at birth, with unusable books ignored rather than refused', async () => {
+test('kind and behaviours resolve at birth, with unusable books reported as undelivered', async () => {
   const born = await resolveForm(commonsForm({
     kind: 'coding',
     behaviours: ['mandates', 'write_it_down', 'ways:not_there'],
@@ -428,7 +428,8 @@ test('kind and behaviours resolve at birth, with unusable books ignored rather t
   assert.deepEqual(born.behaviours.map((row) => row.book), ['mandates', 'write_it_down']);
   assert.ok(born.birth_reading.some((file) => file.endsWith('/behaviours/mandates.md')));
   assert.ok(born.birth_reading.some((file) => file.endsWith('/behaviours/write_it_down.md')));
-  assert.deepEqual(born.ignored, ['behaviours[ways:not_there]']);
+  assert.deepEqual(born.ignored, []);
+  assert.deepEqual(born.undelivered, ['ways:not_there']);
   assert.equal(born.stated_by.kind[0]?.layer, 'launch');
   assert.equal(born.stated_by.behaviours[0]?.layer, 'launch');
 });
