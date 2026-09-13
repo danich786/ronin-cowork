@@ -135,6 +135,12 @@ test('project create, read and one-field write use the existing letter tools', (
   assert.equal(p?.status, 'green');
   assert.equal(p?.title, 'First', 'an unrelated project field survives');
 
+  run(f.env, ['project', 'write', 'team/1', '--ladder', JSON.stringify([{ stage: 'PLANNING' }, { stage: 'BUILDING', legs: [] }])]);
+  run(f.env, ['project', 'write', 'team/1', '--leg', 'BUILDING', 'Implement it']);
+  run(f.env, ['project', 'write', 'team/1', '--leg', 'BUILDING.1', 'done']);
+  p = block(f.letter).projects?.[0];
+  assert.deepEqual(p?.ladder, [{ stage: 'PLANNING' }, { stage: 'BUILDING', legs: [{ title: 'Implement it', done: true }] }]);
+
   const read = execFileSync(path.join(root, 'ronin_bin', 'read_tegami'), ['project', 'read', 'team/1'], { encoding: 'utf8', env: f.env });
   assert.equal((JSON.parse(read) as Record<string, unknown>).objective, 'Ship it');
 });
