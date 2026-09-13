@@ -7,6 +7,4 @@
 - **brief:** Be my personal assistant — questions, facts, drafting, and the day's work as it comes.
 - **mandate:** execute · nobody · open
 - **team_mode:** new
-- **behaviours:** ways:personal_assistant
 - **features:** gbrain
-- **routines_off:** ronin_worktrees

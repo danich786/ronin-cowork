@@ -429,7 +429,7 @@ export function registerSessions(app: express.Express): void {
     }
   });
 
-  for (const retired of ['session_job', 'family_role', 'session_task', 'session_role', 'role_family', 'team_role', 'campaign_kind', 'lifecycle']) {
+  for (const retired of ['session_job', 'family_role', 'session_task', 'role_family', 'team_role', 'campaign_kind', 'lifecycle']) {
     app.all(`/api/sessions/:name/${retired}`, (req, res) => {
       res.status(410).json({
         error:

@@ -15,7 +15,6 @@ export async function resolveLaunchDesks(input: {
   team: string;
   project_root: string;
   agent: boolean;
-  control: boolean;
   desk?: DeskChoice;
   repos?: string[];
 }): Promise<LaunchWorktrees> {
@@ -29,13 +28,7 @@ export async function resolveLaunchDesks(input: {
       line: candidate.line,
     });
   }));
-  const resolution = resolveWorktrees({
-    capability: {
-      worktrees: input.control ? 'enabled' : 'disabled',
-      provenance: 'resolved_routines.ronin_worktrees',
-    },
-    repositories,
-  });
+  const resolution = resolveWorktrees({ repositories });
   const managed = new Set(resolution.repositories.filter((repository) => repository.mode === 'managed').map((repository) => repository.repo));
   const desks = assignment.desks.filter((desk) => managed.has(desk.repo));
   if (!desks.length) return { assignment: null, repositories: resolution.repositories };
@@ -100,7 +93,7 @@ export function renderDeskBlock(a: Assignment): string {
   return [
     `Your assignment has ${n} desk${n === 1 ? '' : 's'}:`,
     ...rows,
-    'Get, update, and hand in through tejun-desk; your Worktrees Routine is the contract.',
+    'Get, update, and hand in through tejun-desk; read the worktree-root page before your first write.',
   ].join('\n');
 }
 
@@ -111,7 +104,7 @@ export function renderWorkLocations(repositories: ResolvedWorktreesRepository[],
     'Direct work locations:',
     ...direct.map((repository) => {
       const branch = branches[repository.repo];
-      return `  ${repository.repo}  ${repository.location}  (ordinary Git checkout; no managed desk or desk record${branch ? `, on branch ${branch}` : ''})`;
+      return `  ${repository.repo}  ${repository.location}  (checkout; read the checkout page before your first write${branch ? `, on branch ${branch}` : ''})`;
     }),
   ].join('\n');
 }

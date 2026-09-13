@@ -50,7 +50,7 @@ one on leave so no transport survives outside the entered destination.
    designated lead) left, the commons right. A remembered member the roster no longer has
    is waited for while the roster is still arriving, then let go.
 6. The roster renders one card per member and a `＋ Add Agent to Team` card. A card
-   is a **reading**: session role, 人, SHINGO chip, status (ready · thinking · awaiting
+   is a **reading**: Agent title, 人, SHINGO chip, status (ready · thinking · awaiting
    input), model, ⛽ context, attached — read off `/api/home`'s row on entry and every 5s.
 7. **Click a card** and its Tile goes into the workspace last touched (the one carrying
    the Sessions grid's `.tile.active` highlight); **drag a card** onto a workspace and it
@@ -231,7 +231,7 @@ The designated integrator runs one BYOIN mode on the release candidate; a SKIP i
 
 ## Exact resume checklist
 
-1. Work at your repo desk (`ronin_session_boot/routine/ronin_worktrees/WORKTREES.md`); never act on
+1. Work at your repo desk (`ronin_sops/worktree-root.md`); never act on
    `master` without a fresh owner instruction.
 2. Read `wip/buildouts/TEAM_WORKBENCH.md` (HANDOFF first), this file, and `docs/workspace-kit.md`.
 3. Inspect `git status`; in a shared checkout, preserve unrelated changes.

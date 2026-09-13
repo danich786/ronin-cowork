@@ -30,8 +30,8 @@ not just the brain — and reads no connected shelf either; tools and know-how r
 choice. It cannot be flipped mid-session; that is a relaunch. An agent
 never proposes off on its own initiative — only when the owner's words asked for it.
 
-**🎩 PersonalAssistant has no toggle: it is born connected** (`mcp: always`,
-`ronin_catalogs/role_families/`) — the form does not offer off and the spawn refuses it.
+The feature is selected in Campaign, Team, or Agent defaults only while its provider
+installation is available. A running Agent never changes.
 
 ## What you may do with the brain
 

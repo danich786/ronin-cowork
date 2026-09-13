@@ -20,15 +20,16 @@ first window of about 250 lines. Measured on this box, 2026-09-04:
 So the compiled packet is held to a **budget**: `PACKET_BUDGET` in `src/birth-readme.ts`,
 30,000 bytes and 450 lines. Bytes are the hard cap, the smallest single read among the
 providers. Lines are the habit: the fullest stock birth compiles to about 425 lines with
-the Routine contracts inside the first 250. `tests/session-boot.test.ts` compiles the real
-stock shelf at its fullest, every Routine on, and holds it to the budget; a shelf addition
+the contracts inside the first 250. `tests/session-boot.test.ts` compiles the real
+stock shelf at its fullest, every installation and feature on, and holds it to the budget; a shelf addition
 that would break one read fails that test, not a newborn.
 
 ## What is in it, in order
 
-1. **The Routine contracts** — BASE ABILITIES (fork versus spawn, the work record, the
-   wipeboard), WORKTREES (the desk, hand-in, never `git push`), and each Routine's on-page
-   or its off-page saying what the Agent is working without.
+1. **The contracts** — BASE ABILITIES (fork versus spawn, the work record, the
+   wipeboard, and the pointer to the repository arrangement page: worktree root or
+   checkout), then each system installation's on-page or its off-page saying what the
+   Agent is working without, and each chosen feature's page.
 2. **The maps** — `docs/README.md`, the question-first index, and `docs/RONIN_UTILITY.md`,
    the coworkspace for an Agent: pages, workbenches, surfaces, the tile head, Locked and
    Unlocked, copy and paste.
@@ -60,8 +61,8 @@ last line — that is what arrived, on the tape, in the Agent's own words.
 
 Put the file on the shelf (`docs/session-boot.md` says where each level reaches) and run
 the session-boot tests. If the real-shelf test fails, the packet no longer fits one read:
-shorten the file, make it a card instead of inline reading, or move it to a Routine so only
-the Agents who need it pay for it. Do not raise the budget to make room; it is the
+shorten the file, make it a card instead of inline reading, or move it to a feature so only
+the Agents who choose it pay for it. Do not raise the budget to make room; it is the
 provider's cap, not ours.
 
 ## Why this page exists

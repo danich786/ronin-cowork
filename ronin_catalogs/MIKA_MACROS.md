@@ -50,8 +50,8 @@ origin`, `branch --show-current`. Not there? Say so and stop.
 
 | # | Action | With |
 |---|---|---|
-| 1 | propose-and-confirm | The block: handle from the basename, `remit` from that README line, `read` from README/KOTOBA **only where they exist**, `match` from basename + remote — and, for a Git repository, whether the repository **allows Ronin Worktrees** or **uses the checkout**. Explain that this is repository applicability; the Agent separately needs the Ronin Worktrees Routine from its Campaign or Team. Propose the ⚙ default (*Worktrees for new project roots*, `GET /api/machine-settings` → `set.desks.new_project`); the owner may flip it in the same breath |
-| 2 | report-outcome | On confirmation: `POST /api/project-roots` with the normalized repository profile (`PUT` edit, `DELETE` exclude). Compatibility storage may still write `desks=managed|none` in the repository's `RONIN_REPO`; never present that storage spelling as the product choice. Say the file is theirs to commit, then report the block as written |
+| 1 | propose-and-confirm | The block: handle from the basename, `remit` from that README line, `read` from README/KOTOBA **only where they exist**, `match` from basename + remote — and, for a Git repository, whether the repository is a **worktree root** or **checkout**. Explain that this is the folder's own arrangement, declared in `RONIN_REPO`; no Agent or Campaign switch changes it. |
+| 2 | report-outcome | On confirmation: `POST /api/project-roots` with the repository profile (`PUT` edit, `DELETE` exclude). `RONIN_REPO` writes `desks=managed|none`; present the resolved fact as worktree root or checkout. Say the file is theirs to commit, then report the block as written |
 
 **Never invent a `dir`** — ask which one. **Excluding touches nothing on disk**, and you
 say so when you propose it. Absolute paths at any depth are all first-class; Ronin does
@@ -81,19 +81,13 @@ both be shelved — rename one on the way in (plans-README.md), and say that you
 
 ## new_session
 - **class:** mika_macro
-One sentence in, a filled form out. Match it against the `match:` words in
-`ronin_catalogs/session_roles/`, `ronin_catalogs/role_families/` and the owner's
-`PROJECT_ROOTS.md`.
-
-**Both catalog axes are optional, and a blank one is a real answer.** `role_family` is who
-the session is and does not change once it is running; `session_role` is what it is doing
-now and does. Propose a role with a blank task when the sentence asks for a standing seat
-("be my assistant", "coordinate these") and a task with a blank role when it asks for one
-piece of work that fits no hat. Never invent a task to fill the slot.
+One sentence in, a filled form out. Use the templates and the owner's project roots,
+features, behaviours, mandate, provider and model choices. Never invent a choice the
+owner did not make.
 
 | # | Action | With |
 |---|---|---|
-| 1 | propose-and-confirm | `role_family`, `session_role`, `project_root`, session_launch_spec, MCP on/off, the name you would give it. As a form, not prose |
+| 1 | propose-and-confirm | session type, template, `project_root`, mandate, features, behaviours, provider/model, and the name you would give it. As a form, not prose |
 | 2 | session-create | On a yes: `POST /api/launch` creates the session with the confirmed features, tag, dial, CLI and brief in one call |
 | 3 | report-outcome | The name, and that it is in the grid |
 

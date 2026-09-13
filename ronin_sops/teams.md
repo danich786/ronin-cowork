@@ -5,9 +5,8 @@
 > **Voice: agent.** Written for the session that leads, to follow itself.
 
 You are reading this because you LEAD a team — either you were launched as a family's
-`default_lead_role` (the pinned first button on a New Session shelf), or the owner
-designated you `team_lead` on a live team. Leading is a designation, not a job title:
-your `session_role` may be anything, and it may change while you go on leading.
+the owner designated you `team_lead` on a live team. Leading is a designation, not a job title
+or a behaviour choice.
 
 ## What a team is
 

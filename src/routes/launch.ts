@@ -105,26 +105,23 @@ async function birthCampaign(team: string, explicit = ''): Promise<string> {
   return roster?.campaign_id || (await initialCampaignId());
 }
 
-async function deskNote(r: { assignment?: unknown; routines?: Array<{ name: string; enabled: boolean }>; project_root?: string; agent?: unknown; cmd?: string }): Promise<string> {
-  if (r.assignment || !r.cmd || !r.routines?.some((routine) => routine.name === 'ronin_worktrees' && routine.enabled) || !r.project_root) return '';
+async function deskNote(r: { assignment?: unknown; project_root?: string; agent?: unknown; cmd?: string }): Promise<string> {
+  if (r.assignment || !r.cmd || !r.project_root) return '';
   const root = (await listProjectRoots()).find((x) => x.name === r.project_root);
   if (!root) return '';
   const a = await readArrangement(root.name, root.dir).catch(() => null);
   if (!a) return `no desk — ${root.name}'s RONIN_REPO could not be read`;
-  if (a.source === 'absent') return `no desk — ${root.name} has no RONIN_REPO (add one: mode=reviewed working=dev stable=master desks=managed)`;
+  if (a.source === 'absent') return `checkout — ${root.name} has no RONIN_REPO`;
   if (a.desks !== 'managed') return `no Worktree — ${root.name} uses its checkout at ${root.dir}; edit directly there`;
   return '';
 }
 
 const LAUNCH_KEYS = new Set([
-  'session_type', 'session_role', 'team', 'team_lead', 'instructions', 'prompt', 'name',
+  'session_type', 'team', 'team_lead', 'instructions', 'prompt', 'name',
   'dial', 'project_root', 'cmd', 'model', 'provider', 'mandate', 'campaign_id', 'launch_mode',
   'tags', 'seed', 'inject', 'reference', 'desk', 'repos',
   'kind', 'features', 'behaviours',
   'template',
-]);
-const RETIRED_LAUNCH_KEYS = new Set([
-  'role_family', 'family_role', 'session_task', 'team_role', 'campaign_kind', 'lifecycle', 'permissions', 'mcp',
 ]);
 const RETURNED_LAUNCH_KEYS = new Set([
   'assignment', 'work_locations', 'posture', 'opening', 'ack', 'capExempt', 'launchAgent', 'stated_by', 'birth_reading',
@@ -144,7 +141,7 @@ export function acceptedLaunchBody(input: unknown): { body: Record<string, unkno
   };
 
   for (const key of Object.keys(body)) {
-    if (!LAUNCH_KEYS.has(key) || RETIRED_LAUNCH_KEYS.has(key) || RETURNED_LAUNCH_KEYS.has(key)) drop(key);
+    if (!LAUNCH_KEYS.has(key) || RETURNED_LAUNCH_KEYS.has(key)) drop(key);
   }
 
   const statedType = typeof body.session_type === 'string' ? body.session_type.trim() : body.session_type;
@@ -169,9 +166,9 @@ export function acceptedLaunchBody(input: unknown): { body: Record<string, unkno
   if (body.template !== undefined) body.template = String(body.template).trim();
 
   const inapplicable = sessionType === 'terminal'
-      ? ['provider', 'model', 'instructions', 'prompt', 'kind', 'mandate', 'features', 'behaviours', 'template', 'sops', 'cmd', 'launch_mode', 'seed', 'inject', 'reference', 'session_role']
+      ? ['provider', 'model', 'instructions', 'prompt', 'kind', 'mandate', 'features', 'behaviours', 'template', 'sops', 'cmd', 'launch_mode', 'seed', 'inject', 'reference']
     : sessionType === 'bare_metal_agent'
-      ? ['kind', 'mandate', 'features', 'behaviours', 'template', 'sops', 'seed', 'inject', 'reference', 'session_role', 'team_lead']
+      ? ['kind', 'mandate', 'features', 'behaviours', 'template', 'sops', 'seed', 'inject', 'reference', 'team_lead']
       : [];
   for (const key of inapplicable) drop(key);
   if (sessionType === 'bare_metal_agent' && body.desk === 'own') drop('desk');
@@ -302,12 +299,10 @@ export function registerLaunch(app: express.Express): LaunchControl {
         return res.status(400).json({ error: 'A `bare_metal_agent` requires `project_root` for its working directory; it is placement, not Ronin birth material.' });
       }
     }
-    const sessionRole = String(req.body?.session_role ?? '').trim();
     const team = String(req.body?.team ?? '').trim();
     const form: SpawnForm = {
       session_type: sessionType as SpawnForm['session_type'],
       house_seat: houseSeat,
-      session_role: sessionRole,
       team: team || undefined,
       team_lead: req.body?.team_lead === true,
       prompt: String(req.body?.instructions ?? req.body?.prompt ?? '').trim(),
@@ -435,7 +430,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
             houseSeat === 'mika' ? MIKA_PARENT_PATH : undefined,
             houseSeat === 'mika'
               ? { includeTmux: false, extraTools: [...MIKA_TOOLS] }
-              : {},
+              : { extraTools: resolved.conditional_tools },
           )
         : null;
       await createSession(resolved.name, resolved.dir, {
@@ -492,14 +487,9 @@ export function registerLaunch(app: express.Express): LaunchControl {
       return res.status(500).json({ error: String((e as Error)?.message ?? e) });
     }
 
-    count('born', {
-      name: resolved.name,
-      born: 'launch',
-      role: resolved.session_role,
-    });
+    count('born', { name: resolved.name, born: 'launch' });
     emitSessionBorn({
       name: resolved.name,
-      role: resolved.session_role,
       team: resolved.team,
       root: resolved.project_root,
       cmd: resolved.cmd,
@@ -519,7 +509,6 @@ export function registerLaunch(app: express.Express): LaunchControl {
     } else {
       const receipt = {
         session_type: resolved.session_type,
-        session_role: resolved.session_role,
         team: resolved.team,
         project_root: resolved.project_root,
         dir: resolved.dir,

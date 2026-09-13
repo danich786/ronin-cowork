@@ -27,7 +27,7 @@ test('New Agent uses one ruled ask() spec after its three session types', async 
   assert.match(form, /group: t\('mandate', 'Mandate'\)/);
   assert.doesNotMatch(form, /key: '(?:reach|recruit|output)'[^\n]+shape: 'square'/);
   assert.match(form, /group: t\('squad', 'Team'\)/);
-  assert.match(form, /switch: \[t\('yes', 'Yes'\), t\('no', 'No'\)\]/);
+  assert.doesNotMatch(form, /teamLead|team_lead|leadership/);
   assert.doesNotMatch(form, /switch: \[[^\]]+\], word:/);
   assert.match(form, /group: t\('where\.label', 'Where it works'\)/);
   assert.match(form, /many: true, after: 'root'/);
@@ -63,7 +63,7 @@ test('Where it works keeps birthplace separate from optional additional workspac
   const form = await source('new-agent.js');
   assert.match(form, /request\('\/api\/project-roots\/detail'\)/);
   assert.match(form, /rootRows\.data\?\.roots/);
-  assert.match(form, /repo_profile\?\.worktrees === 'enabled'/);
+  assert.doesNotMatch(form, /worktrees/);
   assert.match(form, /v: row\.name, l: row\.title \|\| row\.name/, 'root choices submit the stable ID and display the optional title');
   assert.match(form, /label: t\('where\.born_in', 'Born in'\), options: rootRows/);
   assert.match(form, /label: t\('where\.additional', 'Additional workspaces'\), many: true, after: 'root', options: \(value\) => rootRows\(\)\.filter\(\(row\) => row\.v !== value\.root\)/);
@@ -88,7 +88,7 @@ test('New Team folds Kind and template choice into one optional first section', 
   assert.match(form, /includeOwn: false/);
   assert.match(form, /Name & instructions/);
   assert.match(agents, /＋ Add Agent/);
-  assert.match(agents, /key: 'lead'.*Team lead.*switch:/);
+  assert.doesNotMatch(agents, /Team lead|team_lead|\.lead/);
   assert.doesNotMatch(agents, /Add Lead Agent|Add Team Agent/);
 });
 
@@ -121,7 +121,6 @@ test('Add Agent confirms a draft into a compact row with the one selector utilit
   assert.match(agents, /editor = null; changed\(\); paint\(\)/);
   assert.match(agents, /agent_add_confirm', 'Add'/);
   assert.match(agents, /ntf-agent-row/);
-  assert.match(agents, /for \(const other of rows\(\)\) other\.lead = false/);
   assert.match(agents, /const questions = ask\(\[/);
   assert.match(agents, /group: t\('new_agent\.model_package', 'Model'\)/);
   assert.match(agents, /group: t\('mandate', 'Mandate'\)/);
@@ -131,7 +130,7 @@ test('Add Agent confirms a draft into a compact row with the one selector utilit
   assert.match(agents, /many: true, options: mandateRows\(OUTPUT\)/);
   assert.doesNotMatch(agents, /shape: 'square'|ruledRows|glyph:/);
   assert.match(agents, /many: true/);
-  assert.match(agents, /switch: \[t\('yes', 'Yes'\), t\('no', 'No'\)\]/);
+  assert.doesNotMatch(agents, /switch:/);
   assert.doesNotMatch(agents, /switch:[^\n]+word:/);
   assert.match(agents, /density: 'tight'/);
   assert.match(agents, /tierWord\(item\.tier\)/);
@@ -143,7 +142,7 @@ test('Add Agent confirms a draft into a compact row with the one selector utilit
   assert.match(agents, /provider: row\.provider/);
   assert.match(agents, /model: row\.model/);
   assert.match(agents, /instructions: row\.assignment\.trim\(\)/);
-  assert.match(agents, /team_lead: !!row\.lead/);
+  assert.doesNotMatch(agents, /team_lead|routines_/);
 });
 
 test('New Team cast text is labelled and all cast selections belong to ask()', async () => {
@@ -173,7 +172,9 @@ test('New Team routes each selector region through ask() and leaves Templates br
   assert.match(form, /after: 'provider'/);
   assert.match(form, /after: 'root'/);
   assert.match(form, /row: branchField/);
-  assert.match(form, /switch: \[t\('on', 'On'\), t\('off', 'Off'\)\]/);
+  assert.match(form, /group: t\('features', 'Features'\)/);
+  assert.match(form, /group: t\('behaviours', 'Behaviours'\)/);
+  assert.match(form, /availableFeatures\(\)/);
   assert.match(form, /options: LAUNCH_MODES\(\)\.map/);
   assert.match(form, /many: true, options: shelfRows/);
   assert.equal((form.match(/density: 'tight'/g) || []).length, 2, 'both defaults regions use launch density');

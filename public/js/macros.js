@@ -1,6 +1,5 @@
 /* part of the ronin-cowork client — see js/README.md */
 import { openSessionSomewhere } from './events.js';
-import { taskIcon } from './home.js';
 import { sheet, toast } from './ui.js';
 import { IS_TOUCH, S, tiles } from './state.js';
 import { t } from './lexicon.js';
@@ -31,8 +30,7 @@ export function buildSessionPicker() {
       const row = document.createElement('button');
       row.className = 'sp-row' + (i === idx ? ' on' : '') + (S.active && S.active.session === name ? ' cur' : '');
       const b = document.createElement('b');
-      const mark = taskIcon(s);
-      b.textContent = (mark ? mark + ' ' : '') + name;
+      b.textContent = name;
       // Groups, not window counts: when you're choosing what to pull into a tile, what
       // you want to know is which piece of work this belongs to.
       const meta = document.createElement('span');

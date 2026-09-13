@@ -25,7 +25,6 @@ import {
 } from '../project-roots.js';
 import { campaignResolver, machineCampaignId } from '../campaign-scope.js';
 import { arrangementProfile, assertArrangementProfileCurrent, readArrangement, setArrangementProfile, validateArrangementProfile } from '../desks/arrangement.js';
-import { readDesksSection } from '../machine-state.js';
 import {
   listSavedLaunches,
   saveLaunch,
@@ -36,16 +35,11 @@ import {
   savedLaunchFields,
 } from '../resources.js';
 import {
-  findDefinition,
   listAgentTemplates,
-  listRoleFamilies,
   listRoutines, listInstallations, listFeatures,
-  listSessionRoles,
   listTeamTemplates,
-  writeRoleTasks,
 } from '../resource-adapters.js';
 import { removeUserTemplate, saveAgentTemplate, saveTeamTemplate } from '../templates.js';
-import { resolveLaunchProfile } from '../launch-profile.js';
 import { browseFolders, createFolder, withRegisteredRoots } from '../folder-browser.js';
 
 const errMsg = (e: unknown) => String((e as Error)?.message ?? e).replaceAll(homedir(), '~');
@@ -173,7 +167,6 @@ export function registerCatalogs(app: express.Express): void {
           sessions: counts[r.name] ?? 0,
         })),
         untagged,
-        new_project_worktrees: (await readDesksSection()).new_project === 'none' ? 'disabled' : 'enabled',
       });
     } catch (e) {
       res.status(500).json({ error: errMsg(e) });
@@ -190,7 +183,6 @@ export function registerCatalogs(app: express.Express): void {
         ...facts,
         arrangement,
         repo_profile: arrangement ? arrangementProfile(arrangement) : null,
-        new_project_worktrees: (await readDesksSection()).new_project === 'none' ? 'disabled' : 'enabled',
       });
     } catch (e) {
       res.status(500).json({ error: errMsg(e) });
@@ -220,7 +212,7 @@ export function registerCatalogs(app: express.Express): void {
         validateArrangementProfile(req.body?.profile);
         await assertArrangementProfileCurrent(facts.dir, req.body?.before);
       }
-      await upsertProjectRoot(name, fields, { declareArrangement: false });
+      await upsertProjectRoot(name, fields);
       const root = (await listProjectRoots()).find((r) => r.name === name);
       const arrangement = root && facts.repo
         ? await setArrangementProfile(root.dir, req.body?.profile, req.body?.before)
@@ -295,22 +287,6 @@ export function registerCatalogs(app: express.Express): void {
       .filter((i) => i.kind && i.name);
     try {
       res.json(await dispatchInstall(items));
-    } catch (e) {
-      res.status(500).json({ error: errMsg(e) });
-    }
-  });
-
-  app.get('/api/role-families', async (_req, res) => {
-    try {
-      res.json(await listRoleFamilies());
-    } catch (e) {
-      res.status(500).json({ error: errMsg(e) });
-    }
-  });
-
-  app.get('/api/session-roles', async (_req, res) => {
-    try {
-      res.json(await listSessionRoles());
     } catch (e) {
       res.status(500).json({ error: errMsg(e) });
     }
@@ -403,32 +379,6 @@ export function registerCatalogs(app: express.Express): void {
       res.json(lex);
     } catch (e) {
       res.status(500).json({ error: errMsg(e) });
-    }
-  });
-
-  app.put('/api/role-families/:name/session_roles', async (req, res) => {
-    const list = req.body?.session_roles;
-    if (!Array.isArray(list)) return res.status(400).json({ error: 'Send { session_roles: [...] }.' });
-    try {
-      res.json({ ok: true, session_roles: await writeRoleTasks(req.params.name, list as string[]) });
-    } catch (e) {
-      res.status(400).json({ error: errMsg(e) });
-    }
-  });
-
-  app.get('/api/launch-profile', async (req, res) => {
-    if (req.query?.role_family !== undefined) {
-      return res.status(400).json({
-        error: 'role_family is retired — a launch profile is resolved from the session_role alone.',
-      });
-    }
-    const task = String(req.query?.session_role ?? '').trim();
-    try {
-      const taskDef = await findDefinition('session_roles', task);
-      if (task && !taskDef) return res.status(404).json({ error: `Unknown session_role "${task}".` });
-      res.json(resolveLaunchProfile(taskDef));
-    } catch (e) {
-      res.status(400).json({ error: errMsg(e) });
     }
   });
 

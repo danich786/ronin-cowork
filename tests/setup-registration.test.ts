@@ -206,7 +206,7 @@ test('Services leads with identity, the beta, and benefits, then one measured st
   const source = await (await import('node:fs/promises')).readFile(new URL('../public/js/setup-surfaces.js', import.meta.url), 'utf8');
   assert.match(source, /import \{ servicesSetupModel \} from '\.\/services-setup-state\.js'/);
   assert.match(source, /import \{ campaignById, campaigns, loadCampaigns, saveCampaign \} from '\.\/campaigns\.js'/);
-  assert.match(source, /import \{ completeInstallationMap \} from '\.\/campaign-routines\.js'/);
+  assert.match(source, /import \{ completeInstallationMap \} from '\.\/campaign-installations\.js'/);
   assert.match(source, /setup-services-mark/);
   assert.match(source, /mark\.src = 'brand\/services-mark\.svg'/);
   assert.match(source, /fetch\('brand\/services-mark\.svg'\)/, 'the one mark file is inlined so the R follows data-theme');
@@ -468,7 +468,7 @@ test('retired Services mutation handlers return 410 while registration routes re
 
 test('all browser mutation callers use registration; Services activation is read/poll/install only', async () => {
   const fs = await import('node:fs/promises');
-  for (const file of ['services-card.js', 'services-activation.js', 'campaign-routines.js']) {
+  for (const file of ['services-card.js', 'services-activation.js', 'campaign-installations.js']) {
     const source = await fs.readFile(new URL(`../public/js/${file}`, import.meta.url), 'utf8');
     assert.doesNotMatch(source, /['"]\/api\/services\/activation(?:\/resend|\/address)?['"][\s\S]{0,80}(?:method:\s*['"](?:POST|DELETE)|,\s*['"]DELETE)/, file);
   }

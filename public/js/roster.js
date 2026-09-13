@@ -164,7 +164,7 @@ export function buildRoster(tile, host, options = {}) {
     });
     // The session's MARK: 人 when the session LEADS a team — the hand-set designation,
     // read off `leads`, the same fact the team cards draw — and nothing otherwise.
-    // Owner's ruling, 2026-09-05: no session roles anywhere; a session that leads
+    // Leadership is explicit; a session that leads
     // nothing has no mark, because there is nothing true to draw.
     const jb = document.createElement('span');
     const leads = s.leads?.length ? t('roster.leads', '人 leads {teams}', { teams: s.leads.join(', ') }) : '';

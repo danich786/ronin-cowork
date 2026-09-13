@@ -10,9 +10,8 @@ const OUTPUT = ['open', 'a plan', 'ideas', 'code', 'an artifact', 'the team', 'n
 let rowId = 0;
 
 export const agentRow = () => ({
-  name: '', assignment: '', lead: false, provider: '', model: '',
+  name: '', assignment: '', provider: '', model: '',
   reach: 'open', recruit: 'open', output: ['open'],
-  routinesOn: [], routinesOff: [],
 });
 const copyRow = (row) => ({ ...agentRow(), ...row, output: [...(row.output || ['open'])] });
 
@@ -20,10 +19,8 @@ export function agentPicks(rows) {
   return rows.filter((row) => finalizeTeamName(row.name)).map((row) => ({
     name: finalizeTeamName(row.name), instructions: row.assignment.trim(),
     mandate: { reach: row.reach, recruit: row.recruit, output: [...row.output] },
-    team_lead: !!row.lead,
     ...(row.provider ? { provider: row.provider } : {}),
     ...(row.model ? { model: row.model } : {}),
-    routines_on: [...(row.routinesOn || [])], routines_off: [...(row.routinesOff || [])],
   }));
 }
 
@@ -79,22 +76,18 @@ export function createAgentRows({ n, key, rows, changed, onToggle, createAction,
         { key: 'recruit', label: t('recruit', 'Recruit'), options: mandateRows(RECRUIT) },
         { key: 'output', label: t('output', 'Output'), many: true, options: mandateRows(OUTPUT) },
       ] },
-      { group: t('squad', 'Team'), fields: [
-        { key: 'lead', label: t('team.lead', 'Team lead'), switch: [t('yes', 'Yes'), t('no', 'No')] },
-      ] },
     ], {
       value: row,
       className: 'ntf-agent-questions',
       density: 'tight',
       onChange: (value) => {
         row.provider = value.provider; row.model = value.model;
-        row.reach = value.reach; row.recruit = value.recruit; row.output = value.output; row.lead = value.lead;
+        row.reach = value.reach; row.recruit = value.recruit; row.output = value.output;
       },
     });
     confirm.setDisabled(!finalizeTeamName(row.name));
     confirm.el.addEventListener('click', () => {
       if (!finalizeTeamName(row.name)) return;
-      if (row.lead) for (const other of rows()) other.lead = false;
       const saved = copyRow(row);
       if (index < 0) rows().push(saved); else rows()[index] = saved;
       editor = null; changed(); paint();
@@ -108,7 +101,6 @@ export function createAgentRows({ n, key, rows, changed, onToggle, createAction,
     rows().forEach((row, index) => {
       const card = el('div', 'ntf-agent-row'); const words = el('div', 'ntf-agent-row-words');
       words.append(el('b', null, row.name || t('new_team.unnamed_agent', 'unnamed Agent')));
-      if (row.lead) words.append(el('span', 'ntf-agent-row-lead', t('new_team.team_lead', 'Team Lead')));
       const details = [row.assignment, `${mandateWord(row.reach)} · ${mandateWord(row.recruit)} · ${row.output.map(mandateWord).join(', ')}`, [row.provider, row.model].filter(Boolean).join(' · ')].filter(Boolean);
       words.append(el('small', null, details.join(' — ')));
       const edit = createAction({ label: t('edit', 'Edit'), size: 'compact', action: () => openEditor(row, index) });

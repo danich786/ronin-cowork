@@ -492,11 +492,22 @@ async function checkJourneys(page, label, jsErrors) {
   if (!noteAfter.open && noteAfter.focusBack) ok(`${label}: Escape closes the sheet and returns focus to 📝`);
   else bad(`${label}: sheet close broken — open=${noteAfter.open} focusReturned=${noteAfter.focusBack}`);
 
+  const cascadeForms = await page.evaluate(async () => {
+    const [agent, team, add, config] = await Promise.all(
+      ['new-agent.js', 'new-team-form.js', 'add-agent.js', 'team-configuration.js']
+        .map((name) => fetch(`js/${name}`).then((response) => response.text())),
+    );
+    return [agent, team, add, config].every((source) => source.includes("t('features', 'Features')") && source.includes("t('behaviours', 'Behaviours')"))
+      && [agent, team, add, config].every((source) => !/routines|routine_bundles/.test(source));
+  });
+  if (cascadeForms) ok(`${label}: New Team, New Agent, Add Agent and Team Configuration expose only Features and Behaviours`);
+  else bad(`${label}: an installation-cascade form still exposes a retired section`);
+
   await page.keyboard.press('Control+Shift+KeyN');
   await page.waitForTimeout(300);
   const kindBtn = page.locator('.tile.active .ks-btn').first();
   if ((await kindBtn.count()) === 0) {
-    console.log('  note — no session_roles in the catalog; the launch-validation journey skipped');
+    console.log('  note — no launch choices are available; the launch-validation journey skipped');
   } else {
     let launched = false;
     const sniff = (req) => {
@@ -549,8 +560,8 @@ async function checkJourneys(page, label, jsErrors) {
       const sent = await page.evaluate(() => {
         try { return JSON.parse(window.__launchBody ?? 'null'); } catch { return 'unparseable'; }
       });
-      if (sent && sent !== 'unparseable' && sent.session_role && sent.project_root) {
-        ok(`${label}: an ordinary launch names its axis on the wire (session_role="${sent.session_role}")`);
+      if (sent && sent !== 'unparseable' && sent.project_root && !('session_role' in sent)) {
+        ok(`${label}: an ordinary launch names its project root and carries no role axis`);
       } else {
         bad(`${label}: launch payload lost its axis — a body naming none is born a bare shell. Sent: ${JSON.stringify(sent)}`);
       }

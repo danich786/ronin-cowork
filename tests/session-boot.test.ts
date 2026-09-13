@@ -31,7 +31,6 @@ test('every assisted session is handed the session macro routing guide', async (
     for (const macro of active) assert.match(guide, new RegExp(`\\+${macro.name}:`));
 
     const profile = {
-      session_role: 'CheckWork',
       label: 'Checker',
       posture: [],
       opening: '{prompt}',
@@ -39,7 +38,6 @@ test('every assisted session is handed the session macro routing guide', async (
       agent: true,
     } as LaunchProfile;
     const form: SpawnForm = {
-      session_role: profile.session_role,
       prompt: 'Review the installer.',
     };
 
@@ -94,7 +92,6 @@ test('the real stock shelf compiles to one read: contracts first, glossary last,
     // The largest stock birth: every Routine on, MCP on.
     const boot = await bootFiles('', true, [
       'all/BASE_ABILITIES.md',
-      'routine/ronin_worktrees/WORKTREES.md',
       'routine/ronin_services/SERVICES_ABILITIES.md',
       'routine/ronin_host/HOST_ABILITIES.md',
     ], undefined, 'newborn');
@@ -108,16 +105,15 @@ test('the real stock shelf compiles to one read: contracts first, glossary last,
 
     const at = (re: RegExp) => { const i = text.search(re); assert.ok(i >= 0, `${re} is in the packet`); return i; };
     const contracts = at(/^## BASE ABILITIES/m);
-    const desk = at(/^## RONIN WORKTREES/m);
     const map = at(/^## Ronin documentation/m);
     const glossary = at(/^## KOTOBA_GLOSSARY/m);
-    assert.ok(contracts < map && desk < map, 'the Routine contracts come before the documentation map');
+    assert.ok(contracts < map, 'the core contract comes before the documentation map');
     assert.ok(glossary > at(/^## SESSION_MACROS/m), 'the glossary is last');
     assert.equal(text.lastIndexOf('\n## '), text.lastIndexOf('\n## KOTOBA_GLOSSARY'), 'nothing follows the glossary');
     // The two rules a newborn most often breaks sit inside the first window it opens.
     const firstWindow = text.split('\n').slice(0, 250).join('\n');
     assert.match(firstWindow, /Fork versus spawn/);
-    assert.match(firstWindow, /Never `git push`/);
+    assert.match(firstWindow, /ronin_sops\/worktree-root\.md/);
     // The glossary arrived rendered: markers gone, header rewritten.
     assert.doesNotMatch(text, /<!--g:/);
     assert.match(text, /Rendered for/);
@@ -139,12 +135,12 @@ test('the real stock shelf compiles to one read: contracts first, glossary last,
   }
 });
 
-test('Routine reading teaches only the selected capability; test policy stays with repository contributors', async () => {
+test('core reading points to arrangement pages; system reading stays installation-selected', async () => {
   const repo = path.join(path.dirname(new URL(import.meta.url).pathname), '..');
   const [base, services, worktrees, machine] = await Promise.all([
     readFile(path.join(repo, 'ronin_session_boot', 'all', 'BASE_ABILITIES.md'), 'utf8'),
     readFile(path.join(repo, 'ronin_session_boot', 'routine', 'ronin_services', 'SERVICES_ABILITIES.md'), 'utf8'),
-    readFile(path.join(repo, 'ronin_session_boot', 'routine', 'ronin_worktrees', 'WORKTREES.md'), 'utf8'),
+    readFile(path.join(repo, 'ronin_sops', 'worktree-root.md'), 'utf8'),
     readFile(path.join(repo, 'ronin_session_boot', 'routine', 'ronin_host', 'HOST_ABILITIES.md'), 'utf8'),
   ]);
 
@@ -154,6 +150,8 @@ test('Routine reading teaches only the selected capability; test policy stays wi
   assert.match(base, /neither vocabulary/i);
   assert.match(base, /read_tegami/);
   assert.match(base, /tejun-wipeboard/);
+  assert.match(base, /ronin_sops\/worktree-root\.md/);
+  assert.match(base, /ronin_sops\/checkout\.md/);
   assert.doesNotMatch(base, /tejun-rireki/);
   assert.match(services, /Readable transcripts are not in this beta/);
   assert.match(services, /there is no durable tape and no `tejun-rireki`/);
@@ -164,7 +162,7 @@ test('Routine reading teaches only the selected capability; test policy stays wi
   assert.match(worktrees, /tejun-desk status --assignment/);
   assert.match(worktrees, /tejun-desk hand-in/);
   assert.match(worktrees, /tejun-harakiri/);
-  assert.match(worktrees, /ACCEPTED.*hand-in is enough/);
+  assert.match(worktrees, /CERTIFIED CLEAN/);
   assert.doesNotMatch(worktrees, /first full repository BYOIN/i);
   assert.match(machine, /tejun-survey/);
   assert.match(machine, /bin\/ronin-store --all/);
@@ -172,7 +170,6 @@ test('Routine reading teaches only the selected capability; test policy stays wi
 
 test('a referenced session is caught up on through the tape, pane peek as fallback', () => {
   const profile = {
-    session_role: 'CheckWork',
     label: 'Checker',
     posture: [],
     opening: '{prompt}',
@@ -180,7 +177,6 @@ test('a referenced session is caught up on through the tape, pane peek as fallba
     agent: true,
   } as LaunchProfile;
   const form: SpawnForm = {
-    session_role: profile.session_role,
     prompt: 'Review the login work.',
     reference: 'login_fix',
   };
@@ -268,9 +264,8 @@ test('generated macro reading contains only the effective Routine macros', async
 });
 
 test('startup reading is never stripped when instructions are present', () => {
-  const profile = { session_role: 'OpenShell', posture: [] } as unknown as LaunchProfile;
+  const profile = { posture: [] } as unknown as LaunchProfile;
   const form: SpawnForm = {
-    session_role: profile.session_role,
     prompt: '  owner text only  ',
   };
 

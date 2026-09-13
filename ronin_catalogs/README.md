@@ -53,10 +53,12 @@ keys to strings with a `base:` to fall through to. Both shadow whole-file by nam
 `professional_en` is the floor and complete, a lexicon says only what it changes, and
 `scripts/check-lexicon.mjs` keeps the floor honest. `docs/desk-profiles.md`, `docs/lexicons.md`.
 
-## Adding a ROUTINE (existing behaviours, one switch)
+## Adding an INSTALLATION, a FEATURE, or a BEHAVIOUR
 
-`routines/<name>.md` is the single membership list for behaviours delivered together at
-Agent birth. Add or identify the actions and tools first, then name existing boot reading,
-SOPs, macros, actions, tools and MCP connections in the Routine manifest. Do not add a
-second `routine:` owner field to each member. The directory's `README.md` carries the exact
-format; `docs/routines.md` owns Campaign → Team inheritance and birth behavior.
+`installations/<name>.md` is one machine installation: `effect` is `system` (its reading,
+tools and parts join every Cowork Agent birth) or `feature_provider` (it `provides`
+features). `features/<name>.md` is one selectable feature: its `provider` installation,
+reading, SOPs, macros, actions, tools and MCP connection. `behaviours/<name>.md` is one
+short page on how ordinary work is done. Each directory's `README.md` carries the exact
+format; `docs/installations.md` owns the cascade and birth behaviour. Membership is
+listed once, in the definition; do not add an owner field to each member.

@@ -1,7 +1,7 @@
 /* Editable reading of one complete durable team_roster. Membership is intentionally absent.
- * Every question here is asked through ERABI (ask.js): Where it works, Kind, the Routines
- * switches, the required-behaviours switch, and the Agent defaults (Model · Mandate · Runtime).
- * Loose density: this is a commons page where the questions are the subject. */
+ * Every question here is asked through ERABI (ask.js): Where it works, Kind, the Features
+ * switches, one three-way pick per Behaviour (off · on · required), and the Agent defaults
+ * (Model · Mandate · Runtime). Loose density: a commons page where the questions are the subject. */
 import { t } from './lexicon.js';
 import { request } from './request.js';
 import { ask } from './ask.js';
@@ -28,11 +28,6 @@ const RECRUIT = ['open', 'nobody', 'propose agents', 'staff agents'];
 const OUTPUT = ['open', 'a plan', 'ideas', 'code', 'an artifact', 'the team'];
 const DIAL = ['user', 'read', 'write'];
 
-export function completeTeamRoutineMap(catalog, stored) {
-  const current = bucket(stored);
-  return Object.fromEntries(catalog.map((routine) => [routine.name, current[routine.name] === true]));
-}
-
 /** The provider and model rows as every ask() consumer reads them: the one catalog, reasons only. */
 const reason = (row) => (row.off
   ? t('forms.reason_turned_off', 'turned off')
@@ -56,23 +51,21 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
   // only on real change now, so a commons waiting off-screen must receive its form here —
   // nothing will render it again when it is placed. A superseded render's host is a
   // discarded node; painting it is invisible and cheap.
-  void Promise.all([request('/api/routines'), loadProviderCatalog(), request('/api/project-roots/detail')]).then(([routineResult, , rootResult]) => {
-    const routines = routineResult.ok && Array.isArray(routineResult.data) ? routineResult.data : [];
+  void Promise.all([request(`/api/launch-seed?team=${encodeURIComponent(roster.name)}`), request('/api/ways'), loadProviderCatalog(), request('/api/project-roots/detail')]).then(([seedResult, wayResult, , rootResult]) => {
+    const seed = seedResult.ok ? seedResult.data : null;
+    const ways = wayResult.ok && Array.isArray(wayResult.data) ? wayResult.data : [];
     const roots = rootResult.ok && Array.isArray(rootResult.data?.roots) ? rootResult.data.roots.filter((root) => !root.archived) : [];
     const defaults = bucket(roster.agent_defaults); const behaviour = bucket(roster.behaviours);
     const form = el('form', 'tw-config-form'); reading(form, t('team_config.cowork_id', 'Team ID'), roster.name, t('settei.none_set', '— none set —'));
     const title = field(form, t('team_config.title', 'Readable title'), 'title', roster.title);
 
-    /* ---- Routines: the Team's own on/off map, as switches; read live by Where it works ---- */
-    const routineMap = completeTeamRoutineMap(routines, roster.routines);
-    const worktreesOn = () => routineMap.ronin_worktrees === true;
-
-    /* ---- Where it works: born in, then the additional workspaces, with a branch line per checkout when worktrees are off ---- */
+    /* ---- Where it works: born in, then the additional workspaces; a branch line per checkout ---- */
     const branches = { ...bucket(roster.branches) };
     const rootWasDesk = list(roster.repos).includes(roster.project_root); // a birthplace that is also a desk stays one
-    const rootRows = () => roots.map((root) => ({ v: root.name, l: root.title || root.name, word: root.repo_profile?.worktrees === 'enabled' ? t('where.worktree', 'worktree') : t('where.checkout', 'checkout') }));
+    const worktrees = (name) => roots.find((root) => root.name === name)?.repo_profile?.worktrees === 'enabled';
+    const rootRows = () => roots.map((root) => ({ v: root.name, l: root.title || root.name, word: worktrees(root.name) ? t('where.worktree', 'worktree') : t('where.checkout', 'checkout') }));
     const branchLine = (option) => {
-      if (worktreesOn()) return null;
+      if (worktrees(option.v)) return null; // worktree or checkout follows the Workspace Folder; only a checkout names a branch
       const input = el('input'); input.type = 'text'; input.spellcheck = false; input.value = branches[option.v] || '';
       input.placeholder = t('where.col_branch', 'Branch');
       input.addEventListener('input', () => { branches[option.v] = input.value.trim(); });
@@ -92,35 +85,24 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
     const objective = field(form, t('team_config.objective', 'Purpose'), 'objective', roster.objective, 'textarea');
     const references = field(form, t('team_config.references', 'References'), 'references', list(roster.references).join('\n'), 'textarea', t('team_config.references_help', 'One URL or note per line.'));
 
-    // THE KIT AS SELECTED, kept beside the editable map below: what an Agent born here is
-    // equipped with, in one line, in the catalog's own owner-facing labels. The floor is not
-    // a switch and is not listed; with nothing on above it, the honest answer is the floor alone.
-    const kitReading = el('output');
-    const paintKit = () => { const on = routines.filter((routine) => routineMap[routine.name]).map((routine) => routine.label || routine.name); kitReading.textContent = on.length ? on.join(' · ') : t('team_config.kit_floor_alone', 'the floor alone — no Routine is on'); };
-    const kitRow = el('div', 'tw-config-reading tw-config-wide'); kitRow.append(el('span', null, t('team_kit', 'Shared toolkit')), kitReading); form.append(kitRow); paintKit();
-    const worktreesMode = el('div', 'tw-worktrees-mode');
-    const paintWorktreesMode = () => {
-      worktreesMode.replaceChildren(
-        el('b', null, t('team_config.worktrees_mode', 'Agent work mode')),
-        el('strong', null, worktreesOn() ? t('team_config.worktrees_on', 'Own worktree where the Workspace folder allows it') : t('team_config.worktrees_off', 'Use the project checkout and its branches')),
-        el('small', null, t('team_config.worktrees_help', 'Worktrees give each Agent a separate working folder and branch, so their file changes do not collide. They run only when both the Agent and repo have Worktrees on, and use the managed hand-in and Team-lead merge process.')),
-      );
-    };
-    const routineAsk = ask([{ group: t('team_config.routines', 'Routines'), fields: routines.map((routine) => ({
-      key: routine.name, label: routine.label || routine.name, switch: [t('on', 'On'), t('off', 'Off')],
-    })) }], {
-      value: { ...routineMap },
-      onChange: (value, key) => { routineMap[key] = value[key] === true; paintKit(); paintWorktreesMode(); },
-    });
-    const routineBlock = el('div', 'tw-config-wide tw-routines-block');
-    routineBlock.append(el('p', 'tw-config-note', t('team_config.routines_help', 'This complete on/off map is the Team’s own and is inherited by new Agents. It replaces the Campaign defaults; existing Agents do not change.')), routineAsk.el, worktreesMode);
-    paintWorktreesMode();
-    form.append(routineBlock);
+    /* ---- Features: one switch per feature this machine makes available ---- */
+    const available = (seed?.features || []).filter((row) => (seed?.available || []).includes(row.name));
+    const featureAsk = ask([{ group: t('features', 'Features'), fields: available.map((row) => ({
+      key: row.name, label: row.label || row.name, switch: [t('on', 'On'), t('off', 'Off')],
+    })) }], { value: Object.fromEntries(available.map((row) => [row.name, list(roster.features).includes(row.name)])) });
+    if (available.length) form.append(featureAsk.el);
 
-    /* ---- Behaviours ---- */
-    const behaviours = field(form, t('team_config.behaviours', 'Behaviours'), 'behaviours', list(behaviour.books).join('\n'), 'textarea', t('team_config.behaviours_help', 'One shelf:name book per line.'));
-    const required = ask([{ group: t('team_config.required', 'Require these behaviours for each new Agent'), fields: [{ key: 'required', label: t('team_config.required_short', 'Required'), switch: [t('yes', 'Yes'), t('no', 'No')] }] }], { value: { required: behaviour.required === true } });
-    form.append(required.el);
+    /* ---- Behaviours: one three-way pick per way — off, on, or on and required for each new Agent ---- */
+    const states = [
+      { v: 'off', l: t('off', 'Off') },
+      { v: 'on', l: t('on', 'On') },
+      { v: 'required', l: t('team_config.required_short', 'Required'), sub: t('team_config.required', 'Required for each new Agent') },
+    ];
+    const stateOf = (name) => (list(behaviour.required).includes(name) ? 'required' : list(behaviour.selected).includes(name) ? 'on' : 'off');
+    const behaviourAsk = ask([{ group: t('behaviours', 'Behaviours'), fields: ways.map((row) => ({
+      key: row.name, label: row.label || row.name, options: states.map((state) => ({ ...state, sub: state.sub || row.blurb || '' })),
+    })) }], { value: Object.fromEntries(ways.map((row) => [row.name, stateOf(row.name)])) });
+    if (ways.length) form.append(behaviourAsk.el);
 
     /* ---- Agent defaults: Model · Mandate · Runtime ---- */
     const launchModes = [
@@ -153,12 +135,16 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
     const saveAction = optionsArg.createAction?.({ label: t('panels.save', 'Save'), size: 'compact' }); const save = saveAction?.el || el('button', null, t('panels.save', 'Save')); save.type = 'submit'; actions.append(status, save); form.append(actions); host.replaceChildren(form);
     form.addEventListener('submit', async (event) => {
       event.preventDefault(); if (saveAction) saveAction.setDisabled(true); else save.disabled = true; status.textContent = t('team_config.saving', 'Saving…');
-      const place = where.value(); const picked = agentDefaults.value();
+      const place = where.value(); const picked = agentDefaults.value(); const featureOn = featureAsk.value(); const behaviourState = behaviourAsk.value();
       const repos = rootWasDesk && place.root && place.root === roster.project_root ? [place.root, ...place.repos.filter((name) => name !== place.root)] : place.repos.filter((name) => name !== place.root);
       const saved = await request(`/api/team-rosters/${encodeURIComponent(roster.name)}`, { method: 'PUT', json: {
         title: title.value, kind: kind.value().kind, objective: objective.value, project_root: place.root, repos,
-        branches: worktreesOn() ? {} : Object.fromEntries(repos.filter((name) => branches[name]).map((name) => [name, branches[name]])), references: lines(references.value),
-        routines: { ...routineMap }, behaviours: { books: lines(behaviours.value), required: required.value().required === true },
+        branches: Object.fromEntries(repos.filter((name) => !worktrees(name) && branches[name]).map((name) => [name, branches[name]])), references: lines(references.value),
+        features: available.filter((row) => featureOn[row.name] === true).map((row) => row.name),
+        behaviours: {
+          selected: ways.filter((row) => behaviourState[row.name] === 'on' || behaviourState[row.name] === 'required').map((row) => row.name),
+          required: ways.filter((row) => behaviourState[row.name] === 'required').map((row) => row.name),
+        },
         // Spread what was read so a key this card does not draw is carried rather than
         // dropped — but NOT `permissions`, which is ruled out of agent_defaults entirely;
         // spreading it would rewrite a retired field on every save.

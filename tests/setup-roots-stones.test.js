@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 
 const source = async (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
-test('Setup opts into roots stones while Campaign keeps the existing project-root surface', async () => {
+test('Setup opts into roots stones while Campaign keeps the arrangement-default-free root surface', async () => {
   const [setup, campaign, shared] = await Promise.all([
     source('public/js/setup-surfaces.js'),
     source('public/js/campaign-view.js'),
@@ -12,7 +12,8 @@ test('Setup opts into roots stones while Campaign keeps the existing project-roo
   ]);
   assert.match(setup, /createWorkspaceFoldersSurface\(\{[\s\S]*presentation: 'stones'/);
   assert.doesNotMatch(campaign, /presentation: 'stones'/);
-  assert.match(campaign, /createWorkspaceFoldersSurface\(\{[\s\S]*worktreesDefault: true/);
+  assert.match(campaign, /createWorkspaceFoldersSurface\(\{/);
+  assert.doesNotMatch(campaign, /worktreesDefault/);
   assert.match(shared, /buildProjectRoots\([\s\S]*presentation \? \{ presentation \} : \{\}/);
 });
 

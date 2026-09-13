@@ -6,7 +6,7 @@ import { MULTIPLE_CAMPAIGNS_ENABLED, campaignById, campaignOf, createCampaign, l
 import { createCampaignIdentitySurface, createNewCampaignSurface } from './campaign-surfaces.js';
 import { createDeskProfileSurface, skinWord } from './campaign-desk.js';
 import { createAgentDefaultsSurface, defaultsSummary } from './campaign-defaults.js';
-import { createInstallationsSurface, installationsSummary } from './campaign-routines.js';
+import { createInstallationsSurface, installationsSummary } from './campaign-installations.js';
 import { CAMPAIGN_TEMPLATES_TYPE, campaignTemplatesDefinition } from './campaign-templates.js';
 import { PROVIDER_SURFACE_TYPE, providerSurfaceDefinition } from './provider-surface.js';
 import { createProviderSetupSessionMount } from './provider-setup-session.js';
@@ -71,7 +71,6 @@ function registerCampaignSurfaces() {
   add({ type: TYPES.roots, header: 'surface', label: () => t('cowork.tab_roots', 'Workspace folders'), summary: (_tenant, e) => currently.roots(e), create: ({ environment: e }) => createWorkspaceFoldersSurface({
     campaignId: () => e.selected()?.id || '',
     connected: (host) => e.entered() && host.isConnected,
-    worktreesDefault: true,
   }) });
   add({ type: TYPES.defaults, header: 'surface', label: () => t('campaign_view.agent_defaults', 'Agent defaults'), summary: (_tenant, e) => currently.defaults(e), create: ({ environment: e }) => { const surface = createAgentDefaultsSurface(e.selected); return e.progressive({ el: surface.el, show: () => surface.enter() }); } });
   // CONTROL_BUNDLES build-out for the bundle model behind it.

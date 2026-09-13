@@ -125,7 +125,7 @@ There is no Campaign picker, default star, archive action or New Campaign footer
 
 The live owner is `public/js/campaign-home.js`.
 
-The Campaign page shows the Campaign's editable identity, desk profile, routines,
+The Campaign page shows the Campaign's editable identity, desk profile, installations,
 defaults and templates. With `MULTIPLE_CAMPAIGNS_ENABLED` off, the client does not render
 controls that add, select, default, archive or delete Campaigns. The Campaign API remains
 available. The fixed Campaign id is not rendered; its title, description and all other

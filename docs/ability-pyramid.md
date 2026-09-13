@@ -32,9 +32,9 @@ a file at the tier that teaches it.
 
 ## T0 — the brief
 
-The one composed first message (`src/spawn.ts`): the session_role's posture, the team
-context when the session is born onto one (the roster's objective, its wipeboard), the
-opening template, the session it was pointed at (catch-up route included), the one-off
+The one composed first message (`src/spawn.ts`): Team context when the session is born
+onto one (the roster's objective, its wipeboard), the opening, the session it was pointed
+at (catch-up route included), the one-off
 inject, the ack rule. Inlined
 because inlining is the only guarantee of being read; never longer than a screen;
 everything durable is a pointer to T1. Manual mode bypasses all of it — the owner's
@@ -52,7 +52,7 @@ only that per-session README (`docs/session-boot.md`):
 
 Generated content exists because a checked-in list describes stock, not this machine, the
 moment the owner customizes anything. Admission test for T1: would every assisted Agent
-plausibly use it? Optional abilities belong to their Routine, never this tier.
+plausibly use it? Optional abilities belong to a feature, never this tier.
 
 ## T2 — scoped-taught
 
@@ -62,15 +62,15 @@ Launch facts select the levels:
 
 | Level | Selected by | Who stocks it |
 |---|---|---|
-| `<service>_connected/` | an enabled Routine declaration plus the live connection choice | a connected service seeds its own signed reading |
+| `<service>_connected/` | a chosen feature's declaration plus the live connection | a connected service seeds its own signed reading |
 | `root/<project_root>/` | the root picked at launch | the owner only — stock cannot know a machine's directories |
-| `routine/<routine>/FILE.md` | each effective Routine manifest at birth | stock and owner Routine readings, selected explicitly by the catalog |
+| `routine/<name>/FILE.md` | each system installation at birth (its on-page or off-page) and each chosen feature | stock and owner readings, selected explicitly by the catalog |
 
 The toggle governs both halves of a connection: launched
 off, a session gets neither a service's tools nor a word about them. These levels add up
-rather than override: root, connection and effective Routines are fixed
+rather than override: root, connection, installations and features are fixed
 at birth and compiled into one README. Work-specific reading is selected separately
-as `behaviours`; those `ways:<book>` files join that same birth reading once and are not a
+as `behaviours`; the behaviours that are on join that same birth reading once and are not a
 mutable shelf axis. A T2 file that would help every session is mis-shelved and belongs up
 a tier.
 
@@ -87,12 +87,10 @@ every time.
 
 ## One pyramid, instantiated per session
 
-A session receives the pyramid instantiated for `project_root` × `session_role` × its
-birth team × the MCP choice. The session_role bends it hardest: T0 differs by it (its
-posture, and dial, ack and the rest resolve through the cascade — system < team_roster <
-session_role < this launch), T1 never differs (that is its definition), T2 carries the
-role's own always-taught material, T3–T5 are one house-wide body of
-knowledge.
+A session receives the pyramid instantiated for its installation, Campaign, Team, launch
+choices, and conditional facts. T1 never differs; T2 carries enabled installation
+contributions, selected features and behaviours, and conditional reading; T3–T5 are one
+house-wide body of knowledge.
 
 ## The routing table
 

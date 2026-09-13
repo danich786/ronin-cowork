@@ -29,23 +29,23 @@ const assignment: Assignment = {
   ],
 };
 
-const profile = { session_role: 'CutCode', label: 'cut code', posture: [], opening: '{prompt}', ack: false, agent: true } as LaunchProfile;
+const profile = { label: 'Cowork Agent', posture: [], opening: '{prompt}', ack: false, agent: true } as LaunchProfile;
 
-test('a launch that wants no desk resolves null without touching any registry', async () => {
-  const a = await resolveLaunchDesks({ session: 'x', team: '', project_root: 'nowhere', agent: true, control: false });
+test('a non-Agent launch resolves no repository arrangement', async () => {
+  const a = await resolveLaunchDesks({ session: 'x', team: '', project_root: 'nowhere', agent: false });
   assert.equal(a.assignment, null);
 });
 
-test('the retired desk override is not a second Worktrees switch', async () => {
-  const forced = await resolveLaunchDesks({ session: 'x', team: '', project_root: 'nowhere', agent: true, control: false, desk: 'own' });
-  const refused = await resolveLaunchDesks({ session: 'x', team: '', project_root: 'nowhere', agent: true, control: true, desk: 'none' });
+test('the retired desk override is not an arrangement switch', async () => {
+  const forced = await resolveLaunchDesks({ session: 'x', team: '', project_root: 'nowhere', agent: true, desk: 'own' });
+  const refused = await resolveLaunchDesks({ session: 'x', team: '', project_root: 'nowhere', agent: true, desk: 'none' });
   assert.equal(forced.assignment, null);
   assert.equal(refused.assignment, null);
 });
 
 test('a coding launch on a repository with no RONIN_REPO resolves null — the file is the gate', async () => {
   // `nowhere` is no project_root on this box, so its arrangement is absent → no desk.
-  const a = await resolveLaunchDesks({ session: 'x', team: '', project_root: 'nowhere', agent: true, control: true });
+  const a = await resolveLaunchDesks({ session: 'x', team: '', project_root: 'nowhere', agent: true });
   assert.equal(a.assignment, null);
 });
 
@@ -55,40 +55,41 @@ test('the 2x2 result tells an Agent the location for managed and direct reposito
       repo: 'cowork', project_root: 'cowork', worktrees: 'enabled', mode: 'managed',
       location: '/w/cowork', branches: { working: 'dev', stable: 'master' },
       managed: { worktree: '/w/cowork', branch: 'team/comp/fable', line: 'team/comp/dev' },
-      reason: 'agent_and_repository_enabled', provenance: { agent: 'routine', repository: 'RONIN_REPO' },
+      reason: 'worktree_root', provenance: { repository: 'RONIN_REPO' },
     },
     {
       repo: 'lab', project_root: 'lab', worktrees: 'disabled', mode: 'direct',
       location: '/src/lab', branches: { working: 'main', stable: 'main' }, managed: null,
-      reason: 'repository_disabled', provenance: { agent: 'routine', repository: 'RONIN_REPO' },
+      reason: 'checkout', provenance: { repository: 'RONIN_REPO' },
     },
   ] as const;
   const locations = renderWorkLocations([...repositories]);
   assert.doesNotMatch(locations, /cowork/, 'managed locations are already named by the desk block');
-  assert.match(locations, /lab  \/src\/lab  \(ordinary Git checkout; no managed desk or desk record\)/);
-  assert.match(renderWorkLocations([...repositories], { lab: 'release' }), /lab  \/src\/lab  \(ordinary Git checkout; no managed desk or desk record, on branch release\)/, "the team's branch for that repository rides the line");
+  assert.match(locations, /lab  \/src\/lab  \(checkout; read the checkout page before your first write\)/);
+  assert.match(renderWorkLocations([...repositories], { lab: 'release' }), /lab  \/src\/lab  \(checkout; read the checkout page before your first write, on branch release\)/, "the team's branch for that repository rides the line");
   assert.equal(primaryWorkLocation([...repositories], 'lab'), '/src/lab');
-  const brief = buildBrief(profile, undefined, { session_role: 'CutCode', prompt: 'Plan in lab.' }, undefined, [], null, assignment, [...repositories]);
+  const brief = buildBrief(profile, undefined, { prompt: 'Plan in lab.' }, undefined, [], null, assignment, [...repositories]);
   assert.match(brief, /Direct work locations:/);
-  assert.match(brief, /lab  \/src\/lab  \(ordinary Git checkout; no managed desk or desk record\)/);
+  assert.match(brief, /lab  \/src\/lab  \(checkout; read the checkout page before your first write\)/);
 });
 
 test('the brief carries every desk, the primary, the line, and the four words — or nothing at all', () => {
-  const form: SpawnForm = { session_role: 'CutCode', prompt: 'Build it.' };
+  const form: SpawnForm = { prompt: 'Build it.' };
   const root = { name: 'cowork', dir: '/w/cowork', match: [], remit: '' } as unknown as Parameters<typeof buildBrief>[1];
-  const brief = buildBrief(profile, root, form, undefined, [], null, assignment);
-  assert.match(brief, /^Born in cowork at \/w\/cowork\.$/m);
+  const rows = [{ repo: 'cowork', project_root: 'cowork', worktrees: 'enabled', mode: 'managed', location: '/w/cowork', branches: { working: 'dev', stable: 'master' }, managed: assignment.desks[0], reason: 'worktree_root', provenance: { repository: 'RONIN_REPO' } }] as const;
+  const brief = buildBrief(profile, root, form, undefined, [], null, assignment, [...rows]);
+  assert.match(brief, /Born in cowork at \/w\/cowork\. Arrangement: worktree root/);
   assert.match(brief, /Your assignment has 2 desks:/);
   assert.match(brief, /cowork\s+\/w\/cowork\/team\/comp\/fable\s+→ team\/comp\/dev\s+\(you start here: your shell opens inside this desk, and the desk ends with you\)/);
   assert.match(brief, /services\s+\/w\/services\/team\/comp\/fable\s+→ team\/comp\/dev/);
-  assert.match(brief, /Get, update, and hand in through tejun-desk; your Worktrees Routine is the contract\./);
+  assert.match(brief, /Get, update, and hand in through tejun-desk; read the worktree-root page before your first write\./);
   assert.doesNotMatch(brief, /BYOIN/, 'the brief states desks, not the Git contract the README already carries');
 
   const none = buildBrief(profile, root, form, undefined, [], null, null);
   assert.doesNotMatch(none, /desk/i, 'a launch with no assignment is told nothing about desks');
 });
 
-test('the desk contract is the Worktrees Routine\'s page: no Routine, no desk reading', async () => {
+test('arrangement pages stay on the SOP shelf and are pointed at, not pasted at birth', async () => {
   const temp = await mkdtemp(path.join(os.tmpdir(), 'ronin-launch-desks-test-'));
   const oldCache = process.env.RONIN_SESSION_BOOT_CACHE_DIR;
   const oldCatalogs = process.env.RONIN_CATALOGS_DIR;
@@ -96,17 +97,12 @@ test('the desk contract is the Worktrees Routine\'s page: no Routine, no desk re
   process.env.RONIN_CATALOGS_DIR = path.join(temp, 'catalogs');
   try {
     const without = (await bootFiles('', false, [])).map((f) => path.basename(f));
-    const withRoutine = await bootFiles('', false, ['routine/ronin_worktrees/WORKTREES.md']);
-    const names = withRoutine.map((f) => path.basename(f));
-    assert.ok(!without.includes('WORKTREES.md'), 'no Worktrees Routine, no desk reading');
-    assert.ok(names.includes('WORKTREES.md'), 'the Worktrees Routine reads its page');
-    assert.deepEqual(names.filter((f) => f !== 'WORKTREES.md').sort(), without.sort(), 'the Routine adds exactly one page');
-    assert.ok(!names.some((f) => f.includes('DESK_CONTRACT')), 'there is no separate desk contract');
-    const contract = await readFile(withRoutine.find((f) => path.basename(f) === 'WORKTREES.md')!, 'utf8');
-    assert.match(contract, /Your brief names no desk/);
-    assert.match(contract, /If they disagree, put the exact discrepancy on the team wipeboard/);
+    assert.ok(!without.includes('worktree-root.md'));
+    assert.ok(!without.includes('checkout.md'));
+    const contract = await readFile(path.join(process.cwd(), 'ronin_sops', 'worktree-root.md'), 'utf8');
+    assert.match(contract, /contradiction between the assignment and status/);
     assert.match(contract, /tejun-desk status --assignment/);
-    assert.match(contract, /do not create the missing branch or worktree yourself/);
+    assert.match(contract, /do not create the missing branch or\s+worktree yourself/);
   } finally {
     if (oldCache === undefined) delete process.env.RONIN_SESSION_BOOT_CACHE_DIR; else process.env.RONIN_SESSION_BOOT_CACHE_DIR = oldCache;
     if (oldCatalogs === undefined) delete process.env.RONIN_CATALOGS_DIR; else process.env.RONIN_CATALOGS_DIR = oldCatalogs;
@@ -114,9 +110,10 @@ test('the desk contract is the Worktrees Routine\'s page: no Routine, no desk re
   }
 });
 
-test('Ronin Worktrees declares its one page, and no separate desk contract', async () => {
+test('the core points at both arrangement pages and the Routine manifest is gone', async () => {
   const repo = path.join(path.dirname(new URL(import.meta.url).pathname), '..');
-  const control = await readFile(path.join(repo, 'ronin_catalogs', 'routines', 'ronin_worktrees.md'), 'utf8');
-  assert.match(control, /\*\*reading:\*\* routine\/ronin_worktrees\/WORKTREES\.md/);
-  assert.doesNotMatch(control, /assignment\/DESK_CONTRACT\.md/);
+  const core = await readFile(path.join(repo, 'ronin_session_boot', 'all', 'BASE_ABILITIES.md'), 'utf8');
+  assert.match(core, /ronin_sops\/worktree-root\.md/);
+  assert.match(core, /ronin_sops\/checkout\.md/);
+  await assert.rejects(readFile(path.join(repo, 'ronin_catalogs', 'routines', 'ronin_worktrees.md')), /ENOENT/);
 });

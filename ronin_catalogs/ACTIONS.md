@@ -52,29 +52,20 @@ same door the ＋ New board presses (`POST /api/launch`), and it does create, ta
 CLI launch and brief delivery in ONE call — so there is nothing to type at a pane and
 nothing to wait for a prompt to appear.
 
-It is also the ONLY way a new session gets a **`role_family`**. The role is stamped at birth
-and immutable afterwards, so a session hand-rolled with `tmux new-session` has a blank
-role for its entire life and no tool can repair it. That was measured: forks made the old
-way carried no role at all and could only ever self-set a task.
-
 ```bash
 curl -sS -X POST http://127.0.0.1:${PORT:-4810}/api/launch \
   -H 'content-type: application/json' \
-  -d '{"role_family":"<role>","session_role":"<task>","name":"<name>",
-       "project_root":"<root>","tags":["<team>"],"prompt":"<what it is told>"}'
+  -d '{"session_type":"cowork_agent","name":"<name>","project_root":"<root>",
+       "team":"<team>","prompt":"<what it is told>","behaviours":["mandates"]}'
 ```
 
-**The axes, and what each may be left out of.** `project_root` is required and omitting it
-selects the top active root. `role_family` and `session_role` may each be blank, and blank is
-a real launch — but **an agent-launching fork must RESOLVE them deliberately rather than
-omit them by accident**. The receipt names what was actually resolved;
+`name` is required. Omitting `project_root` selects the top active root. The receipt names what was actually resolved;
 read it back and report it.
 The `BORN` verdict prints both receipt lists: `ignored` input and requested features that
 were `undelivered` because their installation was unavailable.
 
 **THE MODEL — leave it out unless the owner named one.** Omit `cmd` and the launch is born
-on the owner's own session default (⚙ Configuration, `agents.sessions.default`); a
-`session_role` states no model and biases none, so nothing sits between that default and
+on the owner's own session default (⚙ Configuration, `agents.sessions.default`); nothing sits between that default and
 an explicit pick. Passing `cmd` is the explicit pick and beats it.
 
 **Naming a VENDOR without naming a model is its own field: `provider`.** *"Give me
@@ -87,14 +78,13 @@ never a command you composed — a hand-typed command matches no table row, so t
 cannot honor an MCP-off choice for it.
 
 **IT DELIVERS THE WHOLE BUILD BRIEF, which is the other half of why this is the door.** A
-launch composes the posture, the reading list — `all/` + `root/<project_root>/` +
-Team + `role/<session_role>/`, plus any connected level when the brain is on
-— the task's opening template with your prompt in it, and the acknowledgement rule. A
+launch composes the core reading, enabled installation contributions, selected features
+and behaviours, Team and conditional reading, plus your prompt. A
 session made with `tmux new-session` gets NONE of that: no reading list, no posture, no
-letter, and no role, ever.
+letter, ever.
 
-The response carries `receipt` — `session_role`, Team, `project_root`, `dial`,
-`cmd`, `mcp`. A launch that refuses answers 400 with the reason written for the owner (an
+The response carries a receipt with session type, Team, project root, mandate, behaviours,
+features, dial, and command. A launch that refuses answers 400 with the reason written for the owner (an
 unknown axis, a locked `mcp:` contradicted, an agentless launch handed a command); report
 the reason, do not retry around it.
 
@@ -165,7 +155,7 @@ execute from.
 ## read-letter — read the ladder a session is keeping
 `action_kind: mechanical` — run it, don't deliberate.
 > **Tool: `read_tegami`** (TOOLS.md)
-Your own letter — objective, role_family, session_role, the ladder, and where on it you are.
+Your own work record — objective, mandate, repositories, Teams, the ladder, and where on it you are.
 ```bash
 read_tegami                     # your letter, as written
 read_tegami --json              # just the block, for a machine
@@ -574,8 +564,7 @@ what a document can tell you.
 `action_kind: mechanical` — run it, don't deliberate.
 > **Tool: `tejun-recall`** (TOOLS.md)
 Sessions are mortal; what they learned is not. This hands you the memories matched to
-what this session IS — its `project_root`, its `role_family` and its `session_role`, read off the session
-itself — ordered universal-first, then this project, then cross-project.
+for its `project_root`, read off the session itself — ordered universal-first, then this project.
 ```bash
 tejun-recall            # one file path per line, deduped
 tejun-recall --list     # kind + scope + summary per match, to choose from

@@ -1,10 +1,8 @@
 /* part of the ronin-cowork client — see js/README.md */
 /** NEW AGENT — the sole drawn launch form. Session type decides which questions exist;
  * only a Cowork Agent has kind, template, mandate, and loadout. Defaults arrive through
- * `GET /api/launch-seed?team=` and land until the user's hand changes them. Routines use
- * Campaign → Team → Agent resolution; the resulting Worktrees capability is combined
- * later with the selected Project Root's independent permission. No desk key rides the
- * launch. */
+ * `GET /api/launch-seed?team=` and land until the user's hand changes them. Features and
+ * Behaviours are the complete editable cascade for a Cowork Agent. */
 import { request } from './request.js';
 import { t } from './lexicon.js';
 import { ask } from './ask.js';
@@ -40,14 +38,13 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
   const draft = {
     type: 'cowork_agent', template: '', templateName: '',
     name: '', kind: 'coding', kindTouched: false, provider: '', model: '', instructions: '',
-    teamMode: typeof team === 'function' && team() ? 'existing' : 'none', team: typeof team === 'function' ? team() : '', newTeam: '', teamLead: false,
+    teamMode: typeof team === 'function' && team() ? 'existing' : 'none', team: typeof team === 'function' ? team() : '', newTeam: '',
     reach: 'open', recruit: 'open', output: ['open'], launchMode: 'live_dangerously',
-    books: [], root: '', repos: [], routineOverrides: {},
+    features: [], books: [], root: '', repos: [],
     expanded: {},
   };
   let seed = null;
   let templates = [];
-  let sops = [];
   let ways = [];
   let teams = [];
   let roots = [];
@@ -99,8 +96,8 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
   const typeHost = el('div', 'fs-pair');
   const templateHost = el('div', 'na-template-tray');
   const TYPES = () => [
-    { key: 'cowork_agent', label: t('new_agent.type_cowork', 'Cowork Agent'), sub: t('new_agent.type_cowork_sub', 'Born into Ronin: the floor, its routines, its reading and its team.') },
-    { key: 'bare_metal_agent', label: t('new_agent.type_bare', 'Bare-metal Agent'), sub: t('new_agent.type_bare_sub', 'The provider’s agent and nothing else — no floor, no routines, no reading.') },
+    { key: 'cowork_agent', label: t('new_agent.type_cowork', 'Cowork Agent'), sub: t('new_agent.type_cowork_sub', 'Born into Ronin with its installation, selected features, behaviours, reading and Team.') },
+    { key: 'bare_metal_agent', label: t('new_agent.type_bare', 'Bare-metal Agent'), sub: t('new_agent.type_bare_sub', 'The provider’s agent and nothing else from Ronin.') },
     { key: 'terminal', label: t('new_agent.type_terminal', 'Terminal'), sub: t('new_agent.type_terminal_sub', 'A raw tmux pane. No agent is launched and nothing is sent to it.') },
   ];
   function paintTypes() {
@@ -159,6 +156,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     draft.instructions = '';
     instructionsInput.value = '';
     draft.books = Array.isArray(value('behaviours')) ? [...value('behaviours')] : [];
+    draft.features = Array.isArray(value('features')) ? value('features').filter((name) => (seed?.available || []).includes(name)) : [];
     for (const key of ['reach', 'recruit']) draft[key] = value(key) || 'open';
     draft.output = [value('output') || 'open'].flat().filter(Boolean);
     draft.teamMode = 'new'; draft.team = ''; draft.newTeam = '';
@@ -182,11 +180,12 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     // `team_mode: 'new'` births the box into its own team (the Personal Assistant ruling).
     if (row.team_mode === 'new') { draft.teamMode = 'new'; }
     if (row.behaviours.length) { draft.books = [...row.behaviours]; touched.books = true; }
+    if (row.features.length) draft.features = row.features.filter((name) => (seed?.available || []).includes(name));
     snapshot = authored();
     paint();
   }
   const authored = () => JSON.stringify({
-    instructions: draft.instructions, books: [...draft.books].sort(),
+    instructions: draft.instructions, books: [...draft.books].sort(), features: [...draft.features].sort(),
     mandate: [draft.reach, draft.recruit, ...draft.output],
   });
   const templateDirty = () => !!templateRow() && authored() !== snapshot;
@@ -235,7 +234,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
   });
   const teamChoice = () => draft.teamMode === 'new' ? 'new' : draft.teamMode === 'none' ? 'none' : 'current';
   const teamRows = () => teams.map((row) => ({ v: row.name, l: String(row.title ?? '').trim() || row.name, sub: row.name }));
-  const rootRows = () => roots.map((row) => ({ v: row.name, l: row.title || row.name, sub: row.title ? row.name : '', word: row.repo_profile?.worktrees === 'enabled' ? t('where.worktree', 'worktree') : t('where.checkout', 'checkout') }));
+  const rootRows = () => roots.map((row) => ({ v: row.name, l: row.title || row.name, sub: row.title ? row.name : '' }));
   const mandateRows = (values) => values.map((value) => ({ v: value, l: mandateWord(value) }));
   const newTeamField = () => {
     const input = el('input'); input.type = 'text'; input.spellcheck = false; input.autocapitalize = 'off'; input.value = draft.newTeam;
@@ -252,7 +251,6 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     if ('provider' in value) { draft.provider = value.provider; draft.model = value.model; }
     if ('reach' in value) { draft.reach = value.reach; draft.recruit = value.recruit; draft.output = value.output; }
     if ('root' in value) { draft.root = value.root; draft.repos = [...value.repos]; }
-    if ('teamLead' in value) draft.teamLead = value.teamLead;
     if (key === 'provider' || key === 'model') touched.model = true;
     if (['reach', 'recruit', 'output'].includes(key)) touched.mandate = true;
     if (key === 'root') {
@@ -301,10 +299,9 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
       ], then: [
         { when: 'current', key: 'teamName', label: t('new_agent.which_team', 'Which team'), options: teamRows },
       ] },
-      { key: 'teamLead', label: t('team.lead', 'Team lead'), switch: [t('yes', 'Yes'), t('no', 'No')] },
     ] },
   ], {
-    value: { team: teamChoice(), teamName: draft.team, teamLead: draft.teamLead },
+    value: { team: teamChoice(), teamName: draft.team },
     className: 'na-team-questions',
     density: 'tight',
     trayHost: identityRow,
@@ -312,48 +309,12 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
   });
   const syncQuestions = () => {
     questions.set({ provider: draft.provider, model: draft.model, reach: draft.reach, recruit: draft.recruit, output: draft.output, root: draft.root, repos: draft.repos || [] });
-    teamQuestions.set({ team: teamChoice(), teamName: draft.team, teamLead: draft.teamLead });
+    teamQuestions.set({ team: teamChoice(), teamName: draft.team });
   };
   void loadProviderCatalog().then(() => questions.paint());
 
   /* ---- 7 · Loadout ---- */
   const stepLoadout = createStep({ n: 7, key: 'loadout', title: t('loadout', 'Tools and skills'), onToggle: () => toggle('loadout') });
-  const routinesHead = el('p', 'fs-head', t('routines', 'Routines'));
-  const worktreesMode = el('div', 'fs-worktrees-mode');
-  const routinesHost = el('div');
-  function paintRoutinePreview() {
-    // Campaign → Team → Agent; Project Root applicability stays orthogonal.
-    routinesHost.replaceChildren();
-    const row = (label, prov, on, act = null) => {
-      const line = el(act ? 'button' : 'div', 'fs-routine');
-      if (act) { line.type = 'button'; line.addEventListener('click', act); }
-      line.dataset.on = String(on);
-      const words = el('div'); words.append(el('b', null, label));
-      line.append(el('span', 'fs-mark', on ? '✓' : ''), words, el('span', 'fs-prov', prov));
-      routinesHost.append(line);
-    };
-    row(t('new_team.floor', 'Cowork floor'), t('forms.always', 'always'), true);
-    for (const routine of seed?.routines || []) {
-      const overridden = Object.prototype.hasOwnProperty.call(draft.routineOverrides, routine.name);
-      const on = overridden ? draft.routineOverrides[routine.name] : routine.on;
-      const provenance = overridden ? t('forms.agent_override', 'agent overrides') : (routine.stated_by?.[0]?.layer || '');
-      row(routine.name, provenance, on, () => {
-        const next = !on;
-        if (next === routine.on) delete draft.routineOverrides[routine.name];
-        else draft.routineOverrides[routine.name] = next;
-        paintRoutinePreview(); paintFolds(); paintFoot();
-      });
-    }
-    const worktrees = (seed?.routines || []).find((routine) => routine.name === 'ronin_worktrees');
-    const overridden = Object.prototype.hasOwnProperty.call(draft.routineOverrides, 'ronin_worktrees');
-    const worktreesOn = overridden ? draft.routineOverrides.ronin_worktrees : worktrees?.on;
-    worktreesMode.replaceChildren(
-      el('b', null, t('new_agent.worktrees_mode', 'Agent work mode')),
-      el('strong', null, worktreesOn ? t('new_agent.worktrees_on', 'Own worktree where the Workspace folder allows it')
-        : t('new_agent.worktrees_off', 'Use the project checkout and its branches')),
-      el('small', null, t('new_agent.worktrees_help', 'Worktrees give this Agent a separate working folder and branch, so its file changes do not collide with another Agent’s. They run only when both the Agent and repo have Worktrees on, and use the managed hand-in and Team-lead merge process.')),
-    );
-  }
   const LAUNCH_MODES = () => [
     { key: 'configured', label: t('launch_mode.configured', 'Model provider configuration'),
       sub: t('launch_mode.configured_sub', 'Ronin adds nothing to the command. The Agent starts with whatever its provider CLI already loads.') },
@@ -367,20 +328,20 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
       wayTiles(LAUNCH_MODES(), draft.launchMode, (key) => { draft.launchMode = key; touched.launchMode = true; paintLaunchMode(); paintFoot(); }),
     );
   };
-  const selectedFeatures = () => (seed?.features || []).filter((row) => row.on).map((row) => row.name);
+  const availableFeatures = () => (seed?.features || []).filter((row) => (seed?.available || []).includes(row.name));
   const shelvesHost = el('div');
   function paintShelves() {
     shelvesHost.replaceChildren(bookShelves([
-      { head: t('new_agent.shelf_house', 'behaviours · the house'), prefix: 'sops', rows: sops },
-      { head: t('new_agent.shelf_ways', 'behaviours · ways of working'), prefix: 'ways', rows: ways },
-    ], draft.books, (address, on) => {
-      draft.books = on ? [...draft.books, address] : draft.books.filter((book) => book !== address);
-      touched.books = true;
+      { head: t('features', 'Features'), prefix: '', rows: availableFeatures() },
+      { head: t('behaviours', 'Behaviours'), prefix: '', rows: ways.map((row) => ({ ...row, required: seed?.behaviours?.find((item) => item.name === row.name)?.required === true })) },
+    ], [...draft.features, ...draft.books], (address, on) => {
+      if (availableFeatures().some((row) => row.name === address)) draft.features = on ? [...draft.features, address] : draft.features.filter((feature) => feature !== address);
+      else { draft.books = on ? [...draft.books, address] : draft.books.filter((book) => book !== address); touched.books = true; }
       paintShelves();
       paintFoot();
     }));
   }
-  stepLoadout.body.append(modeHost, routinesHead, worktreesMode, routinesHost, shelvesHost);
+  stepLoadout.body.append(modeHost, shelvesHost);
 
   /* ---- the plan: which steps exist for this type and door ---- */
   const steps = {
@@ -394,9 +355,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     paintFolds();
   }
   const meta = {
-    loadout: () => t('new_agent.loadout_meta', '{routines} routines · {books} books', {
-      routines: (seed?.routines || []).filter((row) => Object.prototype.hasOwnProperty.call(draft.routineOverrides, row.name) ? draft.routineOverrides[row.name] : row.on).length + 1, books: draft.books.length,
-    }),
+    loadout: () => t('new_agent.loadout_meta', '{features} features · {books} behaviours', { features: draft.features.length, books: draft.books.length }),
   };
   function paintFolds() {
     const templateFolded = isCowork() && !!templateRow();
@@ -418,11 +377,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     if (isCowork()) {
       rows.push([t('mandate', 'Mandate'), `${draft.reach} · ${draft.recruit} · ${draft.output.join(', ')}`]);
     }
-    rows.push([t('routines', 'Routines'), draft.type === 'terminal'
-      ? el('em', null, t('new_agent.routines_terminal', 'agent: none — a pane'))
-      : draft.type === 'bare_metal_agent'
-        ? el('em', null, t('new_agent.routines_bare', 'no floor, no routines'))
-        : tagRow([{ text: t('new_team.floor_tag', 'floor'), on: true }, ...(seed?.routines || []).filter((row) => Object.prototype.hasOwnProperty.call(draft.routineOverrides, row.name) ? draft.routineOverrides[row.name] : row.on).map((row) => ({ text: row.name, on: true }))])]);
+    if (isCowork() && draft.features.length) rows.push([t('features', 'Features'), tagRow(draft.features.map((text) => ({ text, on: true })))]);
     if (isCowork() && draft.books.length) rows.push([t('behaviours', 'Behaviours'), tagRow(draft.books.map((text) => ({ text, on: true })))]);
     rows.push([t('launch_mode.head', 'launch mode'), LAUNCH_MODES().find((row) => row.key === draft.launchMode)?.label || draft.launchMode]);
     rows.push([t('add_agent.place', 'place'), draft.root]);
@@ -489,8 +444,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
         return;
       }
     }
-    // ONLY THE § 7.4 BODY, by type — the route refuses the rest by name, and the desk is
-    // never sent (the routine selection is the decision; the escape hatch stays unadvertised).
+    // ONLY THE § 7.4 BODY, by type — the route refuses the rest by name.
     const body = draft.type === 'terminal'
       ? { session_type: 'terminal', name, team }
       : draft.type === 'bare_metal_agent'
@@ -498,13 +452,11 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
         : {
           session_type: 'cowork_agent', name, team, project_root: draft.root,
           instructions: draft.instructions.trim(), provider: draft.provider, model: draft.model,
-          team_lead: draft.teamLead,
           ...(touched.repos && Array.isArray(draft.repos) ? { repos: draft.repos } : {}),
           mandate: { reach: draft.reach, recruit: draft.recruit, output: draft.output },
           behaviours: [...draft.books],
-          ...(Object.keys(draft.routineOverrides).length ? { routines: { ...draft.routineOverrides } } : {}),
           launch_mode: draft.launchMode,
-          features: selectedFeatures(),
+          features: [...draft.features],
           ...(draft.template ? { template: draft.template } : {}),
         };
     const result = await request('/api/launch', { method: 'POST', json: body });
@@ -540,17 +492,11 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
         mandate: `${draft.reach} · ${draft.recruit} · ${draft.output.join(', ')}`,
         team_mode: draft.teamMode === 'new' ? 'new' : '',
         behaviours: draft.books,
+        features: draft.features,
         // THE SWITCHES A LOADOUT IS MEANT TO CARRY. `TemplateBoxSave` stores these
         // (@template_shelves measured `boxTail` writing all three) and this form was
         // sending only `behaviours`, so a saved Personal Assistant lost its gbrain.
         //
-        // ONLY THE ONS, DELIBERATELY. A template "carries exactly the fields it carries;
-        // everything unnamed stays as the level above landed it" (CASCADE § 1). This form
-        // previews routines and never flips them (§ 5.1), so there is no OFF a person
-        // chose here — sending every unresolved routine as `routines_off` would make a
-        // saved loadout dictate the whole map instead of adding to it.
-        routines_on: (seed?.routines || []).filter((row) => row.on).map((row) => row.name),
-        routines_off: [],
       },
     });
     if (!result.ok) return notice.set('failed', result.message);
@@ -582,6 +528,8 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
       if (value('output')) draft.output = [value('output')].flat().filter(Boolean);
     }
     if (!touched.books && Array.isArray(value('behaviours'))) draft.books = [...value('behaviours')];
+    draft.features = Array.isArray(value('features'))
+      ? value('features').filter((name) => (seed?.available || []).includes(name)) : [];
     // The campaign's, or the team's if one is joined — an editable value like every other
     if (!touched.launchMode && value('launch_mode')) draft.launchMode = value('launch_mode');
     if (!draft.kindTouched && team && value('kind')) draft.kind = value('kind');
@@ -589,7 +537,6 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     paintKinds();
     paintTray();
     paintShelves();
-    paintRoutinePreview();
     paintFolds();
     paintFoot();
   }
@@ -611,7 +558,6 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     paintKinds();
     paintTray();
     syncQuestions();
-    paintRoutinePreview();
     paintShelves();
     paintLaunchMode();
     paintFolds();
@@ -635,15 +581,10 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
   // reading is the packet, and the button saves the packet.
   surface.content.append(form, notice.el);
 
-  const PA_BOOK = 'ways:personal_assistant';
   const seedPrompt = (prompt) => {
     if (!prompt) return;
     draft.instructions = prompt;
     instructionsInput.value = prompt;
-    if (ways.some((row) => row.name === 'personal_assistant') && !draft.books.includes(PA_BOOK)) {
-      draft.books = [...draft.books, PA_BOOK];
-      touched.books = true;
-    }
   };
 
   return {
@@ -652,15 +593,13 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
       const entryTeam = typeof team === 'function' ? team() : team;
       if (entryTeam) { draft.teamMode = 'existing'; draft.team = entryTeam; }
       paint();
-      const [tray, sopRows, wayRows, teamRows, rootRows] = await Promise.all([
+      const [tray, wayRows, teamRows, rootRows] = await Promise.all([
         request('/api/templates/agents'),
-        request('/api/sops'),
         request('/api/ways'),
         request('/api/team-rosters'),
         request('/api/project-roots/detail'),
       ]);
       templates = tray.ok && Array.isArray(tray.data) ? tray.data : [];
-      sops = sopRows.ok && Array.isArray(sopRows.data) ? sopRows.data : [];
       ways = wayRows.ok && Array.isArray(wayRows.data) ? wayRows.data : [];
       teams = teamRows.ok && Array.isArray(teamRows.data) ? teamRows.data.filter((row) => row.state !== 'archived') : [];
       roots = rootRows.ok && Array.isArray(rootRows.data?.roots) ? rootRows.data.roots.filter((row) => !row.archived) : [];

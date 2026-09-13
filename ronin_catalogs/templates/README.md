@@ -29,7 +29,7 @@ form's, not a file here: a template that filled nothing in would collapse nothin
 | `blurb` | one line under the name |
 | `order` | tray order; unordered boxes follow, by label |
 | `kinds` | which kinds bring this box forward — `open` on the form shows every template |
-| `behaviours` | `<shelf>:<name>` book addresses laid into the tray, e.g. `sops:github, ways:cut_code` |
+| `behaviours` | `<shelf>:<name>` book addresses laid into the tray, e.g. `sops:teams, ways:write_it_down` |
 | `features` | Features this template selects — exactly the fields it carries, nothing else moves |
 
 ## The agent shelf's own fields
@@ -78,7 +78,7 @@ your store, shadows the template, and adds the book itself — `docs/templates.m
 ## Bundles
 
 A **template bundle** is a team template with copies of everything it names — agent boxes,
-SOPs, ways, Routines and their macros, actions and tools — as one JSON document, for the
+behaviours, features and their macros, actions and tools — as one JSON document, for the
 template library on ronincowork.com or a library of your own. Installing one lands every
 copy in your stores (never here); `bin/ronin-bundle` packs and installs by hand, and the
 Campaign page's Templates card does it from the library. The rules are in `docs/templates.md`.

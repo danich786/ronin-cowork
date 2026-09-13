@@ -45,8 +45,8 @@ export function addProvMark(el, entry) {
  * The "add your own" row that ends a catalog list.
  *
  * It creates the file and tells you where it is, and that is deliberately all. The front
- * door that actually gets used is a person telling their own agent *"add a session_role
- * that…"* — the file existing, with a header explaining the format, is what makes that
+ * door that actually gets used is a person telling their own agent what to add. The file
+ * existing, with a header explaining the format, is what makes that
  * work. A form here would be a worse editor than the one they already have.
  */
 export function addYourOwn(file, what, onDone) {

@@ -3,20 +3,17 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { STOCK_DIR, splitSections, readEntries } from '../src/resources.js';
 import {
+  findDefinition,
   listAgentTemplates,
-  listRoleFamilies,
   listRoutines,
   listInstallations,
   listFeatures,
-  listSessionRoles,
   listTeamTemplates,
   type DefinitionKind,
   type TemplateBox,
 } from '../src/resource-adapters.js';
 import { listDeskProfiles } from '../src/desk-profiles.js';
 import { listLexicons } from '../src/lexicon-catalog.js';
-import { resolveLaunchProfile, type LaunchProfile } from '../src/launch-profile.js';
-import { findDefinition } from '../src/resource-adapters.js';
 import { listMacros } from '../src/macros.js';
 import { catalogUpdated, parseProviderCatalog, STOCK_CATALOG_MD, TIERS } from '../src/model-providers.js';
 import { AGENTS } from '../src/agents.js';
@@ -89,7 +86,13 @@ async function surfacingDefinitions(
   kind: DefinitionKind,
   served: () => Promise<{ name: string }[]>,
 ): Promise<void> {
-  const want = (await readdir(path.join(STOCK_DIR, kind)))
+  let files: string[] = [];
+  try {
+    files = await readdir(path.join(STOCK_DIR, kind));
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
+  }
+  const want = files
     .filter((f) => f.endsWith('.md') && f !== 'README.md')
     .map((f) => f.replace(/\.md$/, ''));
   const got = new Set((await served()).map((e) => e.name));
@@ -100,41 +103,6 @@ async function surfacingDefinitions(
           `malformed (no \`- **key:** value\` lines), or hidden by a user file on this box`,
       );
     }
-  }
-}
-
-async function definitionsResolve(): Promise<void> {
-  const families = await listRoleFamilies();
-  const tasks = await listSessionRoles();
-  for (const f of families) {
-    for (const tk of f.session_roles) {
-      if (!(await findDefinition('session_roles', tk))) {
-        fail(`role_families/${f.name}.md: its session_roles names "${tk}", which is not a session_role on this box`);
-      }
-    }
-    if (f.default_lead_role && !f.session_roles.includes(f.default_lead_role)) {
-      fail(
-        `role_families/${f.name}.md: its default_lead_role "${f.default_lead_role}" is not in its own family — the pin has nothing to pin to`,
-      );
-    }
-  }
-  for (const tk of tasks) {
-    const taskDef = await findDefinition('session_roles', tk.name);
-    let profile: LaunchProfile;
-    try {
-      profile = resolveLaunchProfile(taskDef);
-    } catch (e) {
-      fail(`launch profile ${tk.name}: ${String((e as Error).message)}`);
-      continue;
-    }
-    if (profile.agent && !profile.opening) {
-      fail(`launch profile ${tk.name}: launches an agent with no \`opening:\``);
-    }
-  }
-  try {
-    resolveLaunchProfile(undefined);
-  } catch (e) {
-    fail(`launch profile (blank): ${String((e as Error).message)}`);
   }
 }
 
@@ -227,8 +195,6 @@ async function templatesResolve(): Promise<void> {
 
 const FILES = ['MACROS.md', 'ACTIONS.md', 'TOOLS.md', 'PROJECT_ROOTS.md', 'MODEL_PROVIDERS.md'];
 
-await surfacingDefinitions('role_families', listRoleFamilies);
-await surfacingDefinitions('session_roles', listSessionRoles);
 await surfacingDefinitions('desk_profiles', listDeskProfiles);
 await surfacingDefinitions('lexicons', listLexicons);
 await surfacingDefinitions('routines', listRoutines);
@@ -236,7 +202,6 @@ await surfacingDefinitions('installations', listInstallations);
 await surfacingDefinitions('features', listFeatures);
 await surfacingDefinitions('templates/agents', listAgentTemplates);
 await surfacingDefinitions('templates/teams', listTeamTemplates);
-await definitionsResolve();
 await routinesResolve();
 await templatesResolve();
 await surfacing('MACROS.md', listMacros);

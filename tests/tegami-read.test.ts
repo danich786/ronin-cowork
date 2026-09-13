@@ -34,7 +34,6 @@ test('a missing letter reads as null, not an error', async () => {
 test('the seeded newborn shape parses: gate active, chip says held', async () => {
   await writeLetter('tegami-read-born', `{
     "objective": "prove the reader",
-    "session_role": "CheckWork",
     "teams": [],
     "ladder": [
       { "gate": "go / no-go — read the brief, report back, wait", "status": "ACTIVE" }
@@ -43,7 +42,6 @@ test('the seeded newborn shape parses: gate active, chip says held', async () =>
   assert.ok(t);
   assert.equal(t.chip.text, '⛩ GATE');
   assert.equal(t.chip.gate, true);
-  assert.equal(t.session_role, 'CheckWork');
 });
 
 test('the pointer wins over inference, and legs render as position not score', async () => {

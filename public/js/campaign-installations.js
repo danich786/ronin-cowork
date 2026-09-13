@@ -145,7 +145,6 @@ export function createInstallationsSurface(campaign) {
       const line = el('div', 'cv-choice');
       const words = el('div', 'cv-choice-pick');
       words.append(el('span', 'cv-choice-name', installation.label || installation.name), el('p', 'cv-choice-why', installation.blurb || t('campaign_view.routine_no_description', 'No description supplied.')));
-      if (installation.name === 'ronin_worktrees') words.append(el('p', 'cv-choice-why', t('campaign_view.worktrees_routine_help', 'Worktrees give each Agent a separate working folder and branch, so file changes do not collide. They run only when both the Agent and repo have Worktrees on, and use the managed hand-in and Team-lead merge process.')));
       if (installation.name === 'ronin_services') words.append(installBlock(notice));
       const controls = el('div', 'cv-installation-control');
       // The pill is the INSTALL fact. For Services: installed (its parts are here) or not; activation is said in the row, not here.
@@ -186,5 +185,5 @@ export function createInstallationsSurface(campaign) {
 
 export function installationsSummary(campaign) {
   const values = bucket(campaign?.config?.installations);
-  return t('campaign_view.routines_n', '{n} on', { n: Object.values(values).filter((value) => value === true).length });
+  return t('campaign_view.installations_n', '{n} on', { n: Object.values(values).filter((value) => value === true).length });
 }

@@ -5,7 +5,6 @@
 - **order:** 5
 - **kinds:** coding
 - **objective:** Know this codebase and answer for it — one specialist per service, staffed by the team itself, coordinated by its lead.
-- **behaviours:** sops:codebase_team, sops:teams, sops:github
 
 ## agents
 
