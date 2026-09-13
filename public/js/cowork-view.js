@@ -34,6 +34,7 @@ import { createMikaHelpPanel } from './mika.js';
 import { coworkWorkbenchIdentity, createCampaignIdentity, orderCoworkTeams } from './campaign.js';
 import { retireSession } from './session-retire.js';
 import { installBehaviourReader } from './behaviour-reader.js';
+import { createTeamKanban } from './team-kanban.js';
 
 const el = (tag, cls, text) => {
   const out = document.createElement(tag);
@@ -70,7 +71,7 @@ const currentWorkStep = (letter) => {
 const COMMONS = '@commons';
 const COWORK = '@cowork';
 const NEW = '@new';
-const WB_TYPES = Object.freeze({ commons: 'team.commons', cron: 'cowork.cron-jobs', desk: 'ronin.desk', document: 'document', terminal: 'session.terminal', roster: 'cowork.team-roster', newTeamForm: 'cowork.new-team-form', newAgent: 'session.new-agent', team: 'team.profile', archives: 'cowork.archives' });
+const WB_TYPES = Object.freeze({ commons: 'team.commons', kanban: 'team.kanban', cron: 'cowork.cron-jobs', desk: 'ronin.desk', document: 'document', terminal: 'session.terminal', roster: 'cowork.team-roster', newTeamForm: 'cowork.new-team-form', newAgent: 'session.new-agent', team: 'team.profile', archives: 'cowork.archives' });
 const WB_PROFILES = Object.freeze({ cowork: 'cowork', team: 'team' });
 
 function registerWorkbenchCatalog() {
@@ -78,7 +79,8 @@ function registerWorkbenchCatalog() {
   registerPresetsSurface();
   const { library, profiles } = WorkspaceKit.workbench;
   const add = (definition) => { if (!library.has(definition.type)) library.register(definition); };
-  add({ type: WB_TYPES.commons, header: 'channels', className: 'wk-selector-utility', label: () => t('team.commons_card', 'Commons'), summary: () => t('team.commons_summary', 'See Roster / Docs / Wipeboard / Configuration'), create: ({ workspace, environment }) => environment.teamCommons(workspace) });
+  add({ type: WB_TYPES.commons, header: 'channels', className: 'wk-selector-utility', label: () => t('team.commons_card', 'Commons'), summary: () => t('team.commons_summary', 'See Roster / Docs / Wipeboard / Kanban / Configuration'), create: ({ workspace, environment }) => environment.teamCommons(workspace) });
+  add({ type: WB_TYPES.kanban, header: 'channels', className: 'wk-selector-utility', label: () => t('workspace.channel_kanban', 'Kanban'), summary: () => t('team_kanban.card_summary', 'The Team’s work, from Ideas through Done'), create: ({ workspace, environment }) => environment.teamKanban(workspace) });
   add({ type: WB_TYPES.desk, header: 'channels', label: () => t('cowork.commons', 'Ronin Desk'), create: ({ workspace, environment }) => environment.desk(workspace) });
   add({ type: WB_TYPES.terminal, header: 'terminal', className: 'wk-selector-entity', discover: (_tenant, environment) => environment.sessions(), create: ({ workspace, detail, environment }) => environment.terminal(workspace, detail) });
   add({ type: WB_TYPES.roster, header: 'surface', className: 'wk-selector-utility', label: () => t('league.team_roster', 'Team roster'), create: ({ workspace, environment }) => environment.roster(workspace) });
@@ -93,7 +95,7 @@ function registerWorkbenchCatalog() {
   add({ type: WB_TYPES.document, header: 'surface', label: () => t('docs.frame_title', 'Document'), discover: () => [], create: ({ detail, environment }) => environment.document(detail) });
   add({ type: WB_TYPES.team, header: 'surface', className: 'wk-selector-entity', discover: (_tenant, environment) => environment.teams(), create: ({ workspace, detail, environment }) => environment.team(workspace, detail) });
   profiles.define(WB_PROFILES.cowork, [WB_TYPES.roster, WB_TYPES.cron, WB_TYPES.team, WB_TYPES.newTeamForm, WB_TYPES.newAgent, WB_TYPES.archives, WB_TYPES.document, PRESETS_TYPE, FEEDBACK_TYPE]);
-  profiles.define(WB_PROFILES.team, [WB_TYPES.commons, WB_TYPES.terminal, WB_TYPES.newAgent, FEEDBACK_TYPE]);
+  profiles.define(WB_PROFILES.team, [WB_TYPES.commons, WB_TYPES.kanban, WB_TYPES.terminal, WB_TYPES.newAgent, FEEDBACK_TYPE]);
 }
 export function createCoworkView(options = {}) {
   registerWorkbenchCatalog();
@@ -190,7 +192,7 @@ export function createCoworkView(options = {}) {
 
   const service = (node) => ({ el: node, mount: () => {}, enter: () => {}, leave: () => {}, destroy: () => {} });
   // Each workspace owns its rendered Commons instance and local presentation state.
-  const createTeamCommons = () => {
+  const createTeamCommons = (id) => {
     const wipeboard = createTeamWipeboard();
     const jikan = createTeamJikan();
     const docsPane = el('div', 'home-docs tw-docs');
@@ -203,6 +205,10 @@ export function createCoworkView(options = {}) {
     };
     const roster = el('div', 'tw-config tw-roster');
     const config = el('div', 'tw-config');
+    const kanban = createTeamKanban({
+      lead: () => lead(),
+      openOwner: (name) => arrange({ [oppositeSeat(id)]: { session: name } }),
+    });
     const messages = el('div', 'tw-messages');
     const messageLabel = t('workspace.channel_agent_message_queue', 'Messages');
     let messageTab = null;
@@ -225,25 +231,26 @@ export function createCoworkView(options = {}) {
         { id: 'docs', label: t('workspace.channel_docs', 'Docs') },
         { id: 'wipeboard', label: t('workspace.channel_wipeboard', 'Wipeboard') },
         { id: 'agent-message-queue', label: messageLabel },
+        { id: 'kanban', label: t('workspace.channel_kanban', 'Kanban') },
         { id: 'cron-jobs', label: t('workspace.channel_cron_jobs', 'Cron jobs') },
         { id: 'team-configuration', label: t('workspace.channel_team_configuration', 'Configuration') },
       ],
       selected: 'roster',
-      services: { roster: service(roster), wipeboard, docs: docsService, 'agent-message-queue': { el: messages, mount: () => {}, enter: messageQueue.enter, leave: messageQueue.leave, destroy: messageQueue.destroy }, 'cron-jobs': jikan, 'team-configuration': service(config) },
+      services: { roster: service(roster), wipeboard, docs: docsService, 'agent-message-queue': { el: messages, mount: () => {}, enter: messageQueue.enter, leave: messageQueue.leave, destroy: messageQueue.destroy }, 'cron-jobs': jikan, kanban, 'team-configuration': service(config) },
     });
     messageTab = channels.tabs.querySelector('[data-service="agent-message-queue"]');
     channels.tabs.addEventListener('click', () => { chooseQueueOnOpen = false; });
     paintMessageAttention();
     channels.el.dataset.workbenchSurface = COMMONS;
     return {
-      el: channels.el, channels, wipeboard, jikan, docs, roster, config, messageQueue,
+      el: channels.el, channels, wipeboard, jikan, kanban, docs, roster, config, messageQueue,
       attendQueueOnOpen: () => {
         chooseQueueOnOpen = true;
         if (retainedCount > 0) paintMessageAttention();
       },
     };
   };
-  const teamCommons = Object.fromEntries(Object.keys(seats).map((id) => [id, createTeamCommons()]));
+  const teamCommons = Object.fromEntries(Object.keys(seats).map((id) => [id, createTeamCommons(id)]));
   const extras = new Set();
   const campaignIdentity = createCampaignIdentity((name) => {
     if (entered && campaign) renderCards([]);
@@ -272,6 +279,7 @@ export function createCoworkView(options = {}) {
   const environment = {
     feedback: (workspace) => createFeedbackSurface(() => bench.place(campaign ? WB_TYPES.roster : WB_TYPES.commons, workspace)),
     teamCommons: (id) => ({ el: teamCommons[id].el, show: (detail = {}) => { const item = teamCommons[id]; if (!detail.doc && !detail.tab) item.attendQueueOnOpen(); item.channels.enter(ctx); if (detail.doc) { item.channels.select('docs'); void item.docs.open(detail.doc); } else if (detail.tab) item.channels.select(detail.tab); } }),
+    teamKanban: (id) => ({ el: teamCommons[id].el, show: () => { const item = teamCommons[id]; item.channels.enter(ctx); item.channels.select('kanban'); } }),
     terminal: (id, detail) => ({ el: seats[id].surface.el, show: () => putSession(detail.key, id) }),
     roster: (id) => ({ el: teamRosterBySeat[id].el, show: () => teamRosterBySeat[id].render() }),
     cron: (id) => ({ el: cronBySeat[id].el, show: () => cronBySeat[id].room.enter() }),
@@ -712,6 +720,7 @@ export function createCoworkView(options = {}) {
     // tag-only team. The server creates it on open, so the slice never meets a void.
     for (const commons of Object.values(teamCommons)) {
       commons.wipeboard.setBoard(team === UNASSIGNED ? '' : (roster.durable && roster.wipeboard) || team);
+      commons.kanban.setTeam(team === UNASSIGNED ? '' : team);
       // JIKAN is by active team: the tag-only or durable team, and its live members for the To list.
       commons.jikan.setTeam(team === UNASSIGNED ? '' : team, members.map((m) => m.name));
     }

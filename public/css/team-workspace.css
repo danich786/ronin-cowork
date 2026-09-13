@@ -41,6 +41,48 @@
   .team-roster-detail .home-maxrow, .team-roster-detail .home-group-add { display: none; }
   .home-grp-actions.tile-head { min-height: 0; padding: 0; border: 0; background: transparent; flex-wrap: nowrap; }
   .tw-config { display: flex; flex-direction: column; gap: var(--space-10); padding: var(--space-6) var(--space-7); overflow-y: auto; }
+  /* Team Kanban is a read. Its only write path is a move request to the holder. */
+  .tk-kanban {
+    --tk-notice-line: 1.5em;
+    --tk-heading-track: .04em;
+    --tk-card-meta-line: 1em;
+    --tk-chip-track: .03em;
+    height: 100%; min-height: 0; overflow: auto; background: var(--bg-2); container: team-kanban / inline-size;
+  }
+  .tk-legend { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-4) var(--space-6); padding: var(--space-4) var(--space-5) 0; color: var(--muted); font-size: var(--text-1); }
+  .tk-legend span { display: inline-flex; align-items: center; gap: var(--space-2); }
+  .tk-dot { width: var(--space-3); height: var(--space-3); border-radius: var(--radius-xs); background: var(--line-2); }
+  .tk-dot.green { background: var(--ok-2); }
+  .tk-dot.yellow { background: var(--warn); }
+  .tk-dot.red { background: var(--bad); }
+  .tk-notice { min-height: var(--tk-notice-line); margin: 0; padding: var(--space-3) var(--space-5) 0; color: var(--muted); font-size: var(--text-1); }
+  .tk-board { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-4); min-width: 0; padding: var(--space-4) var(--space-5) var(--space-5); }
+  .tk-column { display: flex; min-width: 0; min-height: calc(var(--space-12) * 3); flex-direction: column; border: var(--edge) solid var(--line); border-radius: var(--radius-sm); background: var(--well); transition: border-color var(--motion-quick) var(--ease), background var(--motion-quick) var(--ease); }
+  .tk-column > h3 { display: flex; justify-content: space-between; gap: var(--space-2); margin: 0; border-bottom: var(--edge) solid var(--line); padding: var(--space-3) var(--space-4); color: var(--muted); font-size: var(--text-1); font-weight: 650; letter-spacing: var(--tk-heading-track); text-transform: uppercase; }
+  .tk-count { color: var(--dim); font-weight: inherit; }
+  .tk-cards { display: flex; flex: 1 1 auto; flex-direction: column; gap: var(--space-3); padding: var(--space-3); }
+  .tk-empty { margin: 0; padding: var(--space-3); color: var(--dim); font-size: var(--text-1); font-style: italic; }
+  .tk-card { min-width: 0; border-left: var(--space-2) solid var(--line-2); border-radius: var(--radius-xs); padding: var(--space-3) var(--space-4); cursor: grab; }
+  .tk-card:active { cursor: grabbing; }
+  .tk-card.dragging { opacity: .45; }
+  .tk-card[data-status='green'] { border-left-color: var(--ok-2); }
+  .tk-card[data-status='yellow'] { border-left-color: var(--warn); }
+  .tk-card[data-status='red'] { border-left-color: var(--bad); }
+  .tk-board.dragging .tk-column.means { border-color: var(--accent); border-style: dashed; background: var(--raise); }
+  .tk-column.over { border-color: var(--accent); background: var(--raise); }
+  .tk-drop-hint { display: none; margin: 0; padding: var(--space-2) var(--space-4) 0; color: var(--accent); font-size: var(--text-1); }
+  .tk-board.dragging .tk-column.means .tk-drop-hint { display: block; }
+  .tk-title { display: block; overflow: hidden; font-size: var(--text-2); text-overflow: ellipsis; white-space: nowrap; }
+  .tk-outcome { overflow: hidden; margin-top: var(--space-1); color: var(--muted); font-size: var(--text-1); text-overflow: ellipsis; white-space: nowrap; }
+  .tk-card-row { min-height: var(--tk-card-meta-line); align-items: center; gap: var(--space-2); margin-top: var(--space-3); padding-top: 0; font-size: var(--text-1); }
+  .tk-chip { border: var(--edge) solid var(--line); border-radius: var(--radius-pill); padding: 0 var(--space-3); background: var(--raise); color: var(--fg); font-variant: all-small-caps; letter-spacing: var(--tk-chip-track); }
+  .tk-chip.green { border-color: var(--ok-2); color: var(--ok-2); }
+  .tk-chip.red { border-color: var(--bad); color: var(--bad); }
+  .tk-chip.asked { border-style: dashed; color: var(--muted); }
+  .tk-owner { border: 0; border-bottom: var(--edge) dotted currentColor; border-radius: 0; padding: 0; background: transparent; color: var(--accent-2); font: inherit; }
+  .tk-owner:hover { border-bottom-style: solid; }
+  @container team-kanban (max-width: calc(var(--space-12) * 21)) { .tk-board { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @container team-kanban (max-width: calc(var(--space-12) * 14)) { .tk-board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   /* The tab is drawn on the launch forms' furniture (launch-forms.css: .ntf-form, .fs-step, .wk-field);
      only the identity line is its own: Team ID · Title · Kind, one height, the Kind tray hosted by the line. */
   .tw-config-form { min-width: 0; }

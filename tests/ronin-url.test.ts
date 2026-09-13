@@ -103,6 +103,7 @@ test('every agent-facing API caller connects through the one library and carries
     'session_restore',
     'session_set',
     'show',
+    'tejun-kanban',
     'tejun-team-set',
     'tejun-teampage',
   ]);
