@@ -31,8 +31,9 @@ that scrolls away.
 
 ### 2. Give unfinished thinking one mortal document
 
-**`+buildout`** plans a piece of work as a document the owner can read and edit, and then
-waits — no code is cut from it until they have been through it. Iteration lives in `wip/`:
+A mandate of reach `plan` produces a document the owner can read and edit, and then
+waits — no code is cut from it until they have been through it. The `buildout` behaviour
+says how the house writes one. Iteration lives in `wip/`:
 normally `wip/buildouts/<topic>.md`, or `wip/handoffs/<topic>.md` when another session
 needs the context. A build-out holds the goal, remaining legs, constraints, verification
 and definition of done. It is where the owner and agents riff on the work before and
@@ -40,8 +41,7 @@ during implementation.
 
 Do not turn it into history. Remove completed items as they land, and do not preserve a
 "done" section. Git records what changed; the working document says only what remains.
-The exact document contract lives in `ronin_library/documents.md` and arrives through the
-build-out and landing actions.
+The exact document contract lives in `ronin_library/documents.md`.
 
 ### 3. Coordinate through shared edges
 
@@ -113,12 +113,12 @@ first full repository BYOIN, with a receipt for the exact SHA; `dev` restarts. T
 full BYOIN runs at `dev → master`; neither runs at a commit or hand-in
 (`docs/test-protocols.md`).
 
-**`+cutcode`** builds from an agreed build-out, deleting each item from the doc as it
-lands, working in the assignment's desks. At each DONE leg it *offers* a hand-in — the
-session decides when its work is coherent for the team, and a tool never decides that for
-it. It opens no pull request. A launch whose brief lists no desk (manual, plain terminal,
-direct repository, non-code job) has none: it commits to the repository's declared line as
-that repository's own instructions say, and invents no desk state.
+A mandate of reach `execute` builds from the agreed build-out, deleting each item from
+the doc as it lands. Where the work lands follows the Workspace Folder's arrangement: in a
+worktree root (`ronin_sops/worktree-root.md`) the session works at its desk and *offers* a
+hand-in at each DONE leg — the session decides when its work is coherent for the team,
+and a tool never decides that for it; in a checkout (`ronin_sops/checkout.md`) it commits
+to the repository's declared line and invents no desk state. Neither opens a pull request.
 
 #### Visual staging: one disposable Team preview
 
@@ -157,14 +157,14 @@ agent. A Ronin repository under the direct arrangement instead publishes to its 
 
 ### 5. Land the state, then retire the session
 
-**`+land`** finishes the work of this session and then ends it. Finished work leaves no
-essential knowledge in a pane or in `wip/`:
+Finishing the work of a session, before it ends, leaves no essential knowledge in a pane
+or in `wip/`:
 
 - delete the work's build-out and handoff documents, and take them off the tegami list;
 - write or update a state-as-is page in `docs/`, or the README beside the thing, saying
-  what exists and how it works now (`land-work`);
-- add the single manifest pointer when the project uses a manifest — `land-manifest` is
-  one line, an index entry and not a history;
+  what exists and how it works now;
+- add the single manifest pointer when the project uses a manifest — one line, an index
+  entry and not a history;
 - close every finished desk explicitly after `tejun-desk hand-in --assignment`; hand-in
   does not close one, and the live session stays ready at the project root for later work;
   under direct publishing, use ordinary Git instead;
