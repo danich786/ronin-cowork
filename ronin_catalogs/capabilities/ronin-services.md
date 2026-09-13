@@ -10,6 +10,9 @@ template library, or service-backed records. The installation switch, installed 
 activation, loaded and parked state, and restart-needed state remain distinct facts in
 Machine settings.
 
+**Live tool:** the table contains the shipped Mika launcher. Other Services facilities are
+TBD capabilities until a callable non-curated tool exists; do not invent commands for them.
+
 ## Tools
 
 | Tool | Authority | Teach | Help |

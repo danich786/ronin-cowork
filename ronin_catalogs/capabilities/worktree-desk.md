@@ -5,24 +5,16 @@
 - **requires:** arrangement:managed
 - **order:** 40
 
-Reach for the desk tool because you hold a managed desk: a private branch and worktree leased to you. Compare its status with your brief before writing; sync adopts accepted `dev` changes; commit is a private checkpoint; hand-in admits committed work to the Team review line. None of these is Git push, and Git push belongs only to release work. Read `ronin_sops/worktree-root.md` before your first write.
+Reach for this bundle because you hold a managed desk: a private branch and worktree leased
+to you. Status, sync, commit, and hand-in are distinct; none is Git push. Read
+`ronin_sops/worktree-root.md` before the first write.
 
-## Tools
+**TBD capability:** no `worktree-desk` executable ships yet, so this document grants the
+desk contract but teaches no callable command. Do not type or invent `worktree-desk ...`
+operations. Its future typed surface covers status, sync, hand-in, open, close, receipts,
+conflict reply, handoff, exact-confirmed discard, assignment, and local repository init.
 
-| Tool | Authority | Teach | Help |
-|---|---|---|---|
-| `worktree-desk status` | read: lifecycle facts of your desks | priority | `worktree-desk --help` |
-| `worktree-desk sync` | write: merge current local `dev` into the desk | priority | `worktree-desk --help` |
-| `worktree-desk hand-in` | write: admit committed work to the Team line | priority | `worktree-desk --help` |
-| `worktree-desk open` | create: a private desk | | `worktree-desk --help` |
-| `worktree-desk close` | write: remove a clean, integrated desk | | `worktree-desk --help` |
-| `worktree-desk receipts` | read: the publication record | | `worktree-desk --help` |
-| `worktree-desk reply` | write: answer a conflict on a receipt | | `worktree-desk --help` |
-| `worktree-desk handoff` | write: transfer custody | | `worktree-desk --help` |
-| `worktree-desk discard` | destroy: exact confirmation required | | `worktree-desk --help` |
-| `worktree-desk repository-init` | create: local `git init` in an existing Workspace Folder | | `worktree-desk --help` |
-
-An ordinary contributor uses `status`, `sync`, and `hand-in`. Opening, handoff, receipts,
+An ordinary contributor needs status, sync, and hand-in. Opening, handoff, receipts,
 conflict replies, discard, and closing are in help and on the Worktrees page; assigning a
 desk to another Agent is the lead's.
 
