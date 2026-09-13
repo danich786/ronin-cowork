@@ -35,7 +35,7 @@ import { listProjectRoots } from '../project-roots.js';
 import { campaignResolver, initialCampaignId } from '../campaign-scope.js';
 import { readTeamRoster } from '../team-rosters.js';
 import { readCampaign } from '../campaigns.js';
-import { listFeatures, listInstallations } from '../resource-adapters.js';
+import { listBehaviours, listInstallations } from '../resource-adapters.js';
 import { agentBinDir } from '../agent-install.js';
 import { resolveLaunchSeed, shownLaunchSeed } from '../launch-seed.js';
 import type { SessionsDefaults } from '../launch-command.js';
@@ -120,7 +120,7 @@ const LAUNCH_KEYS = new Set([
   'session_type', 'team', 'team_lead', 'instructions', 'prompt', 'name',
   'dial', 'project_root', 'cmd', 'model', 'provider', 'mandate', 'campaign_id', 'launch_mode',
   'tags', 'seed', 'inject', 'reference', 'desk', 'repos',
-  'kind', 'features', 'behaviours',
+  'kind', 'behaviours',
   'template',
 ]);
 const RETURNED_LAUNCH_KEYS = new Set([
@@ -161,14 +161,13 @@ export function acceptedLaunchBody(input: unknown): { body: Record<string, unkno
   if (body.kind !== undefined && (typeof body.kind !== 'string' || !KINDS.has(body.kind.trim()))) drop('kind');
   if (body.kind !== undefined) body.kind = String(body.kind).trim();
   if (body.behaviours !== undefined && !Array.isArray(body.behaviours)) drop('behaviours');
-  if (body.features !== undefined && !Array.isArray(body.features)) drop('features');
   if (body.template !== undefined && (typeof body.template !== 'string' || !/^[\w-]{1,64}$/.test(body.template.trim()))) drop('template');
   if (body.template !== undefined) body.template = String(body.template).trim();
 
   const inapplicable = sessionType === 'terminal'
-      ? ['provider', 'model', 'instructions', 'prompt', 'kind', 'mandate', 'features', 'behaviours', 'template', 'sops', 'cmd', 'launch_mode', 'seed', 'inject', 'reference']
+      ? ['provider', 'model', 'instructions', 'prompt', 'kind', 'mandate', 'behaviours', 'template', 'sops', 'cmd', 'launch_mode', 'seed', 'inject', 'reference']
     : sessionType === 'bare_metal_agent'
-      ? ['kind', 'mandate', 'features', 'behaviours', 'template', 'sops', 'seed', 'inject', 'reference', 'team_lead']
+      ? ['kind', 'mandate', 'behaviours', 'template', 'sops', 'seed', 'inject', 'reference', 'team_lead']
       : [];
   for (const key of inapplicable) drop(key);
   if (sessionType === 'bare_metal_agent' && body.desk === 'own') drop('desk');
@@ -240,12 +239,12 @@ export function registerLaunch(app: express.Express): LaunchControl {
       if (team && !/^[a-z0-9][a-z0-9_-]{0,63}$/.test(team)) {
         return res.status(400).json({ error: `A team name is lowercase letters, digits, _ and -: "${team}".` });
       }
-      const [roster, allRoots, agents, installations, features, resolveCampaign] = await Promise.all([
+      const [roster, allRoots, agents, installations, behaviours, resolveCampaign] = await Promise.all([
         team ? readTeamRoster(team, campaign_id).then((found) => found ?? readTeamRoster(team, '')) : Promise.resolve(null),
         listProjectRoots(),
         readAgentsSection(),
         listInstallations(),
-        listFeatures(),
+        listBehaviours(),
         campaignResolver(),
       ]);
       const roots = allRoots.filter((root) => resolveCampaign(root.campaign_id) === campaign_id);
@@ -256,7 +255,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
         roots,
         sessions: agents.sessions as SessionsDefaults | undefined,
         installations,
-        features,
+        behaviours,
       });
       res.json(shownLaunchSeed(seed));
     } catch (e) {
@@ -321,7 +320,6 @@ export function registerLaunch(app: express.Express): LaunchControl {
       campaign_id: String(req.body?.campaign_id ?? '').trim() || undefined,
       kind: typeof req.body?.kind === 'string' ? req.body.kind : undefined,
       behaviours: Array.isArray(req.body?.behaviours) ? req.body.behaviours.map(String) : undefined,
-      features: Array.isArray(req.body?.features) ? req.body.features.map(String) : undefined,
       template: typeof req.body?.template === 'string' ? req.body.template : undefined,
       tags: Array.isArray(req.body?.tags) ? req.body.tags.map(String) : [],
       seed: Array.isArray(req.body?.seed) ? req.body.seed.map(String) : [],

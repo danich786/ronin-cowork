@@ -52,9 +52,9 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
   // only on real change now, so a commons waiting off-screen must receive its form here —
   // nothing will render it again when it is placed. A superseded render's host is a
   // discarded node; painting it is invisible and cheap.
-  void Promise.all([request(`/api/launch-seed?team=${encodeURIComponent(roster.name)}`), request('/api/ways'), loadProviderCatalog(), request('/api/project-roots/detail')]).then(([seedResult, wayResult, , rootResult]) => {
+  void Promise.all([request(`/api/launch-seed?team=${encodeURIComponent(roster.name)}`), loadProviderCatalog(), request('/api/project-roots/detail')]).then(([seedResult, , rootResult]) => {
     const seed = seedResult.ok ? seedResult.data : null;
-    const ways = wayResult.ok && Array.isArray(wayResult.data) ? wayResult.data : [];
+    const ways = (seed?.behaviours || []).filter((row) => row.available === true);
     const roots = rootResult.ok && Array.isArray(rootResult.data?.roots) ? rootResult.data.roots.filter((root) => !root.archived) : [];
     const defaults = bucket(roster.agent_defaults); const behaviour = bucket(roster.behaviours);
     const form = el('form', 'tw-config-form');
@@ -88,18 +88,6 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
     const objective = field(form, t('team_config.objective', 'Purpose'), 'objective', roster.objective, 'textarea');
     const references = field(form, t('team_config.references', 'References'), 'references', list(roster.references).join('\n'), 'textarea', t('team_config.references_help', 'One URL or note per line.'));
 
-    /* ---- Features: one switch per feature this machine makes available ---- */
-    const available = (seed?.features || []).filter((row) => (seed?.available || []).includes(row.name));
-    const featureAsk = ask([{ group: t('features', 'Features'), fields: available.map((row) => ({
-      key: row.name, label: row.label || row.name, switch: [t('on', 'On'), t('off', 'Off')],
-    })) }], { value: Object.fromEntries(available.map((row) => [row.name, list(roster.features).includes(row.name)])) });
-    if (available.length) form.append(featureAsk.el);
-    else {
-      // The group is never silent: with no installation on, the head still stands and says where the switch is.
-      const none = el('div', 'tw-config-group'); none.append(el('h4', 'tw-config-group-head', t('features', 'Features')));
-      none.append(el('p', 'tw-config-note', t('team_config.no_features', 'No installation on this box offers a feature yet. Switch one on at the Campaign’s Installations.'))); form.append(none);
-    }
-
     /* ---- Behaviours: one three-way pick per way — off, on, or on and required for each new Agent ---- */
     const states = [
       { v: 'off', l: t('off', 'Off') },
@@ -108,7 +96,7 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
     ];
     const stateOf = (name) => (list(behaviour.required).includes(name) ? 'required' : list(behaviour.selected).includes(name) ? 'on' : 'off');
     const behaviourAsk = ask([{ group: t('behaviours', 'Behaviours'), fields: ways.map((row) => ({
-      key: row.name, label: row.label || row.name, options: states.map((state) => ({ ...state, sub: state.sub || row.blurb || '' })),
+      key: row.name, label: row.label || row.name, shape: 'tall', options: states.map((state) => ({ ...state, sub: state.sub || row.blurb || '', read: row.reading })),
     })) }], { value: Object.fromEntries(ways.map((row) => [row.name, stateOf(row.name)])) });
     if (ways.length) form.append(behaviourAsk.el);
 
@@ -143,12 +131,11 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
     const saveAction = optionsArg.createAction?.({ label: t('panels.save', 'Save'), size: 'compact' }); const save = saveAction?.el || el('button', null, t('panels.save', 'Save')); save.type = 'submit'; actions.append(status, save); form.append(actions); host.replaceChildren(form);
     form.addEventListener('submit', async (event) => {
       event.preventDefault(); if (saveAction) saveAction.setDisabled(true); else save.disabled = true; status.textContent = t('team_config.saving', 'Saving…');
-      const place = where.value(); const picked = agentDefaults.value(); const featureOn = featureAsk.value(); const behaviourState = behaviourAsk.value();
+      const place = where.value(); const picked = agentDefaults.value(); const behaviourState = behaviourAsk.value();
       const repos = rootWasDesk && place.root && place.root === roster.project_root ? [place.root, ...place.repos.filter((name) => name !== place.root)] : place.repos.filter((name) => name !== place.root);
       const saved = await request(`/api/team-rosters/${encodeURIComponent(roster.name)}`, { method: 'PUT', json: {
         title: title.value, kind: kind.value().kind, objective: objective.value, project_root: place.root, repos,
         branches: Object.fromEntries(repos.filter((name) => !worktrees(name) && branches[name]).map((name) => [name, branches[name]])), references: lines(references.value),
-        features: available.filter((row) => featureOn[row.name] === true).map((row) => row.name),
         behaviours: {
           selected: ways.filter((row) => behaviourState[row.name] === 'on' || behaviourState[row.name] === 'required').map((row) => row.name),
           required: ways.filter((row) => behaviourState[row.name] === 'required').map((row) => row.name),

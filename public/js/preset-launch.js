@@ -120,7 +120,7 @@ export async function launchPresetPlan(plan = {}, send) {
       : plan.template.name === 'morning_brief'
         ? (plan.inputs?.roles || template.agents || []).map((row) => ({ ...row, instructions: [row.ask || row.instructions, plan.user_message].filter(Boolean).join('\n\n') }))
       : plan.template.name === 'develop_new_project'
-        ? (plan.inputs?.features || []).map((row) => ({ ...(typeof row === 'string' ? { name: row } : row), instructions: plan.user_message }))
+        ? (plan.inputs?.workstreams || []).map((row) => ({ ...(typeof row === 'string' ? { name: row } : row), instructions: plan.user_message }))
         : (template.agents || []);
   // THE TEMPLATE IS THE TEMPLATE. Each row is one of the stored template's agents — its
   // instructions, mandate, lead mark and Routine switches — and goes through the same

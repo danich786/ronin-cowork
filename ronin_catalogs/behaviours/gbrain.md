@@ -1,12 +1,10 @@
 # gbrain
 - **label:** gbrain
 - **blurb:** Shared memory and coordination through the connected gbrain service.
-- **provider:** gbrain
+- **installation:** gbrain
 - **reading:** gbrain_connected/
 - **sops:** gbrain
-- **macros:** —
 - **actions:** recall-memories, remember-lesson
 - **tools:** tejun-recall, tejun-remember
-- **parts:** —
 - **mcp:** gbrain
-- **order:** 50
+- **order:** 110

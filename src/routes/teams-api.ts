@@ -41,7 +41,6 @@ async function creationEdit(campaign_id: string, stated: RosterEdit): Promise<Ro
     ...(typeof cowork.branch === 'string' ? { branch: cowork.branch } : {}),
     ...(object(cowork.branches) ? { branches: Object.fromEntries(Object.entries(object(cowork.branches)).map(([k, v]) => [k, String(v)])) } : {}),
     ...stated,
-    features: stated.features ?? [...inherited.features],
     behaviours: stated.behaviours ?? { selected: [...inherited.behaviours], required: [] },
     agent_defaults: { ...teamAgentDefaults(inherited), ...(stated.agent_defaults ?? {}) },
   };
@@ -79,8 +78,6 @@ function editOf(body: unknown): RosterEdit {
         .filter(([repo, branch]) => repo && branch)) : {};
   if (b.references !== undefined) edit.references = Array.isArray(b.references)
     ? b.references.map(String).map((v) => v.trim().slice(0, 500)).filter(Boolean) : [];
-  if (b.features !== undefined) edit.features = Array.isArray(b.features)
-    ? b.features.map(String).map((v) => v.trim().slice(0, 64)).filter(Boolean) : [];
   if (b.behaviours !== undefined) {
     const value = b.behaviours && typeof b.behaviours === 'object' && !Array.isArray(b.behaviours)
       ? b.behaviours as Record<string, unknown> : {};

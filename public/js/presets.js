@@ -114,7 +114,7 @@ export const CORE_PRESET_TREATMENTS = Object.freeze({
   bare_metal: treatment(['sessions'], 'team', (receipt) => agentsAroundConfiguration(receipt)),
   ronin_team: treatment(['sessions'], 'team', (receipt) => agentsAroundConfiguration(receipt)),
   staff_my_codebase: treatment(['root'], 'team', () => ({ count: 2, seats: [] })),
-  develop_new_project: treatment(['root', 'features'], 'team', ({ sessions = [] }) => ({ count: sessions.length >= 3 ? 4 : 2, seats: sessions.map((session, index) => ({ workspace: `workspace${index + 1}`, type: 'session', key: session.name })) })),
+  develop_new_project: treatment(['root', 'workstreams'], 'team', ({ sessions = [] }) => ({ count: sessions.length >= 3 ? 4 : 2, seats: sessions.map((session, index) => ({ workspace: `workspace${index + 1}`, type: 'session', key: session.name })) })),
   personal_assistant: treatment(['assistant_mode', 'specialists'], 'choice', ({ sessions = [] }) => ({ count: sessions.length >= 3 ? 4 : Math.max(1, sessions.length), seats: sessions.map((session, index) => ({ workspace: `workspace${index + 1}`, type: 'session', key: session.name })) })),
   health_and_fitness: treatment(['roles'], 'team', ({ sessions = [], team = '' }) => ({ count: 4, seats: [
     sessions.find((row) => /head[_ -]coach/i.test(row.name)) && { workspace: 'workspace1', type: 'session', key: sessions.find((row) => /head[_ -]coach/i.test(row.name)).name },
@@ -192,7 +192,7 @@ export function initialControls(handle) {
     case 'bare_metal': return { tiles: 4, root: 'ronin_lab', sessions: [{ name: 'session_1' }, { name: 'session_2' }, { name: 'session_3' }] };
     case 'ronin_team': return { root: 'ronin_lab', sessions: [{ name: 'team_lead', team_lead: true }, { name: 'agent_1' }, { name: 'agent_2' }] };
     case 'staff_my_codebase': return { root: 'ronin_project_1', root_dir: '' };
-    case 'develop_new_project': return { root: 'ronin_project_1', features: ['frontend', 'backend'] };
+    case 'develop_new_project': return { root: 'ronin_project_1', workstreams: ['frontend', 'backend'] };
     case 'personal_assistant': return { assistant_mode: 'single', specialists: '' };
     case 'health_and_fitness': return { roles: [
       { name: 'Head Coach', ask: 'Set the programme, hold the check-ins, and adjust it season by season.' },
@@ -491,7 +491,7 @@ function renderSpecialControls(host, handle, state, runtime, environment, live =
     host.append(section(t('presets.agents_side_by_side', 'Agents run side by side'), 'select', ...agents.children), section(t('presets.tile_view', 'Tile view'), 'select', ...tiles.children));
   }
   if (handle === 'ronin_team') { const body = el('div'); renderRows(body, state, 'sessions', 'Agent'); host.append(section('Team Lead and agents', 'select', ...body.children)); }
-  if (handle === 'develop_new_project') { const body = el('div'); renderRows(body, state, 'features', 'Feature Agent'); host.append(section('Split the work · each feature agent gets its own worktree', '', ...body.children)); }
+  if (handle === 'develop_new_project') { const body = el('div'); renderRows(body, state, 'workstreams', 'Workstream Agent'); host.append(section('Split the work · each workstream Agent gets its own worktree', '', ...body.children)); }
   if (handle === 'health_and_fitness') { const body = el('div'); renderAskRows(body, state, 'roles', 'role'); host.append(section("Each agent's kick-off message", 'edit', ...body.children)); }
   if (handle === 'personal_assistant') {
     const modes = ask([{ group: '', fields: [{ key: 'assistant_mode', label: t('presets.how_it_runs', 'How it runs'), options: [{ v: 'single', l: t('presets.single_assistant', 'Single assistant') }, { v: 'recruit', l: t('presets.chief_of_staff', 'Chief of Staff') }] }] }], { value: { assistant_mode: state.assistant_mode }, onChange: (value) => { state.assistant_mode = value.assistant_mode; recruit.hidden = state.assistant_mode !== 'recruit'; } });

@@ -25,14 +25,13 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
     name: '', kind: 'open', objective: '',
     root: '', repos: [], branches: {},
     provider: '', model: '', reach: 'open', recruit: 'open', output: ['open'],
-    features: [], books: [], launchMode: 'configured',
+    books: [], launchMode: 'configured',
     // The Agents this Team is raised with.
     agents: [],
     expanded: {},
   };
   let seed = null;          // the campaign's answers, once the door has spoken
   let templates = [];
-  let ways = [];
   let roots = [];
   let snapshot = '';        // what the applied template wrote, for the dirty test
   let busy = false;
@@ -60,7 +59,7 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
 
   const templateRow = () => templates.find((row) => row.name === draft.template) || null;
   const offered = () => (draft.kind === 'open' ? templates : templates.filter((row) => row.kinds.includes(draft.kind)));
-  const availableFeatures = () => (seed?.features || []).filter((row) => (seed?.available || []).includes(row.name));
+  const availableBehaviours = () => (seed?.behaviours || []).filter((row) => row.available === true);
   const providerRows = () => providerCatalog().rows
     .filter((row, at, all) => all.findIndex((other) => other.provider === row.provider) === at)
     .map((row) => {
@@ -82,7 +81,7 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
 
   /** What a template authors, as one string — the dirty test compares against it. */
   const authored = () => JSON.stringify({
-    objective: draft.objective, books: [...draft.books].sort(), features: [...draft.features].sort(),
+    objective: draft.objective, books: [...draft.books].sort(),
     mandate: [draft.reach, draft.recruit, ...draft.output], agents: draft.agents,
   });
 
@@ -97,8 +96,7 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
     if (!row) {
       draft.objective = '';
       objectiveInput.value = '';
-      draft.books = [];
-      draft.features = [...(seed?.seeds?.features?.value || [])].filter((name) => (seed?.available || []).includes(name));
+      draft.books = [...(seed?.seeds?.behaviours?.value || [])].filter((name) => (seed?.available || []).includes(name));
       draft.agents = [];
       for (const key of ['reach', 'recruit']) draft[key] = seed?.seeds?.[key]?.value || 'open';
       draft.output = [seed?.seeds?.output?.value || 'open'].flat().filter(Boolean);
@@ -108,7 +106,6 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
     }
     if (row.objective) { draft.objective = row.objective; objectiveInput.value = row.objective; }
     if (row.behaviours.length) draft.books = [...row.behaviours];
-    if (row.features.length) draft.features = row.features.filter((name) => (seed?.available || []).includes(name));
     if (row.mandate) { draft.reach = row.mandate.reach; draft.recruit = row.mandate.recruit; draft.output = [row.mandate.output].flat().filter(Boolean); }
     // carries `agents[]` in exactly the ruled wire shape `agentPicks()` produces, so it
     // reads straight into the editor — instructions becomes the row's assignment and
@@ -293,25 +290,21 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
   let kitQuestions = null;
   let kitSignature = '';
   function paintKitQuestions() {
-    const signature = JSON.stringify([availableFeatures().map((row) => row.name), ways.map((row) => row.name)]);
+    const signature = JSON.stringify(availableBehaviours().map((row) => row.name));
     if (signature !== kitSignature) {
       kitQuestions?.destroy();
-      const shelfRows = (rows) => rows.map((row) => ({ v: row.name, l: row.label || row.name, sub: row.blurb || '' }));
+      const shelfRows = (rows) => rows.map((row) => ({ v: row.name, l: row.label || row.name, sub: row.blurb || '', read: row.reading }));
       kitQuestions = ask([
         { group: t('launch_mode.head', 'Launch mode'), fields: [{
           key: 'launchMode', label: t('launch_mode.head', 'Launch mode'),
           options: LAUNCH_MODES().map((row) => ({ v: row.key, l: row.label, sub: row.sub })),
         }] },
-        { group: t('features', 'Features'), fields: [{
-          key: 'features', label: t('features', 'Features'), many: true, options: shelfRows(availableFeatures()),
-        }] },
         { group: t('behaviours', 'Behaviours'), fields: [{
-          key: 'books', label: t('behaviours', 'Behaviours'), many: true, options: shelfRows(ways),
+          key: 'books', label: t('behaviours', 'Behaviours'), many: true, shape: 'tall', options: shelfRows(availableBehaviours()),
         }] },
       ], {
         value: {
           launchMode: draft.launchMode,
-          features: [...draft.features],
           books: [...draft.books],
         },
         className: 'ntf-kit-questions',
@@ -319,7 +312,6 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
         trayHost: kitHost,
         onChange: (value, key) => {
           draft.launchMode = value.launchMode;
-          draft.features = [...value.features];
           draft.books = [...value.books];
           paintKitQuestions(); whereQuestions.paint(); paintFoot();
         },
@@ -328,7 +320,6 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
       kitHost.replaceChildren(kitQuestions.el);
     }
     kitQuestions.set('launchMode', draft.launchMode);
-    kitQuestions.set('features', [...draft.features]);
     kitQuestions.set('books', [...draft.books]);
   }
   stepKit.body.append(kitHost);
@@ -384,7 +375,6 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
     foot.append(el('p', 'fs-head', t('new_team.inherits', 'an agent born here inherits')));
     foot.append(readingRows([
       [t('kind', 'Kind'), draft.kind],
-      [t('features', 'Features'), draft.features.length ? tagRow(draft.features.map((text) => ({ text, on: true }))) : ''],
       [t('behaviours', 'Behaviours'), draft.books.length ? tagRow(draft.books.map((text) => ({ text, on: true }))) : ''],
       [t('forms.model', 'model'), draft.provider ? `${draft.provider}${draft.model ? ` / ${draft.model}` : ''}` : t('forms.default', 'default')],
       [t('launch_mode.head', 'launch mode'), LAUNCH_MODES().find((row) => row.key === draft.launchMode)?.label || draft.launchMode],
@@ -434,7 +424,6 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
     project_root: draft.root,
     repos: draft.repos,
     branches: draft.branches,
-    features: [...draft.features],
     behaviours: { selected: [...draft.books], required: [] },
     agent_defaults: {
       provider: draft.provider, model: draft.model,
@@ -539,7 +528,6 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
         objective: draft.objective.trim(),
         mandate: `${draft.reach} · ${draft.recruit} · ${draft.output.join(', ')}`,
         behaviours: draft.books,
-        features: draft.features,
         // The same rows the loader launches — one shape, produced in one place.
         agents: agentPicks(draft.agents),
       },
@@ -584,8 +572,6 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
     // launch_mode is named on its own because the seed's key is snake and the draft's is camel.
     if (value('launch_mode')) draft.launchMode = value('launch_mode');
     draft.books = Array.isArray(value('behaviours')) ? [...value('behaviours')] : [];
-    draft.features = Array.isArray(value('features'))
-      ? value('features').filter((name) => (seed.available || []).includes(name)) : [];
     paintRoots();
   }
 
@@ -631,13 +617,11 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
     el: embedded ? surface.content : surface.el,
     enter: async (detail = {}) => {
       paint();
-      const [seeded, tray, rootRows, wayRows] = await Promise.all([
+      const [seeded, tray, rootRows] = await Promise.all([
         request('/api/launch-seed'),
         request('/api/templates/teams'),
         request('/api/project-roots'),
-        request('/api/ways'),
       ]);
-      ways = wayRows.ok && Array.isArray(wayRows.data) ? wayRows.data : [];
       templates = tray.ok && Array.isArray(tray.data) ? tray.data : [];
       roots = rootRows.ok && Array.isArray(rootRows.data) ? rootRows.data : [];
       if (seeded.ok) seed = seeded.data;

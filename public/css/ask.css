@@ -61,6 +61,12 @@
   .ask-opt { display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; border: var(--edge) solid var(--line-2); border-left: var(--edge-2) solid var(--accent); border-radius: var(--radius-xs); background: var(--well); color: var(--fg-strong); cursor: pointer; text-align: left; font: inherit; }
   .ask-square { flex: 0 0 var(--ask-sq); width: var(--ask-sq); height: var(--ask-sq); padding: var(--space-4) var(--space-5); }
   .ask-rect { flex: 0 0 var(--ask-w); width: var(--ask-w); height: var(--ask-h); justify-content: center; padding: var(--space-3) var(--space-5); }
+  .ask-opt-wrap { position: relative; flex: 0 0 var(--ask-w); width: var(--ask-w); }
+  .ask-opt-wrap .ask-opt { width: 100%; }
+  .ask-tall { width: var(--ask-w); height: calc(var(--ask-h) * 2); justify-content: center; padding: var(--space-4) var(--space-5); }
+  .ask-tall .ask-name { -webkit-line-clamp: 4; white-space: normal; }
+  .ask-read { position: absolute; right: var(--space-2); bottom: var(--space-2); border: 0; background: transparent; color: var(--accent); font-size: 0; cursor: pointer; }
+  .ask-read::before { content: '▧'; font-size: var(--text-3); }
   .ask-glyph { color: var(--accent); font-size: var(--text-8); font-style: normal; line-height: 1; }
   .ask-name { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: break-word; font-size: var(--form-input); font-weight: 500; line-height: 1.2; }
   .ask-square .ask-name { font-size: var(--form-note); }

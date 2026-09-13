@@ -1,6 +1,6 @@
 # Perplexity
 - **label:** Perplexity
-- **blurb:** Makes the Perplexity research feature available when its connection exists.
+- **blurb:** Makes the Perplexity research behaviour available when its connection exists.
 - **effect:** feature_provider
 - **provides:** perplexity
 - **reading:** —

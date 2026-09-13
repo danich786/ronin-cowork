@@ -11,13 +11,12 @@ export interface AgentDefaults {
   reach: Reach;
   recruit: Recruit;
   output: Output[];
-  features: string[];
   behaviours: string[];
   dial: AgentDial;
   launch_mode: LaunchMode;
 }
 
-export type TeamAgentDefaults = Omit<AgentDefaults, 'features' | 'behaviours'>;
+export type TeamAgentDefaults = Omit<AgentDefaults, 'behaviours'>;
 
 const text = (value: unknown, max = 120): string =>
   typeof value === 'string' ? value.trim().slice(0, max) : '';
@@ -46,7 +45,6 @@ export function agentDefaults(value: unknown): AgentDefaults {
     reach: oneOf(input.reach, ['open', 'discuss', 'plan', 'execute'], 'plan'),
     recruit: oneOf(input.recruit, ['open', 'nobody', 'propose agents', 'staff agents'], 'propose agents'),
     output: outputs(input.output),
-    features: books(input.features),
     behaviours: input.behaviours === undefined ? ['mandates'] : books(input.behaviours),
     dial: oneOf(input.dial, ['user', 'read', 'write'], 'write'),
     launch_mode: oneOf(input.launch_mode, ['configured', 'live_dangerously'], 'configured'),
@@ -59,6 +57,6 @@ export function mandate(value: unknown): Mandate {
 }
 
 export function teamAgentDefaults(value: unknown): TeamAgentDefaults {
-  const { features: _features, behaviours: _behaviours, ...defaults } = agentDefaults(value);
+  const { behaviours: _behaviours, ...defaults } = agentDefaults(value);
   return defaults;
 }

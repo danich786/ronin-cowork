@@ -9,7 +9,7 @@ import { agentSpec } from './agents.js';
 import { readAgentsSection, readSetupSection } from './machine-state.js';
 import { offAt } from './provider-summary.js';
 import { storeDir } from './resources.js';
-import { contributionReading, listFeatures, listInstallations } from './resource-adapters.js';
+import { contributionReading, listBehaviours, listInstallations } from './resource-adapters.js';
 import { isCreatableTeamName as isTeamName, readTeamRoster, teamRosterFile, type TeamRoster } from './team-rosters.js';
 import { resolveLaunchProfile, type Dial, type LaunchProfile, type StatedBy } from './launch-profile.js';
 import { readCampaign } from './campaigns.js';
@@ -17,7 +17,7 @@ import { primaryWorkLocation, renderDeskBlock, renderWorkLocations, resolveLaunc
 import type { ResolvedWorktreesRepository } from './worktrees-resolution.js';
 import type { Assignment } from './desks/schema.js';
 import { mandate, type LaunchMode, type Mandate } from './agent-defaults.js';
-import { availableFeatures, resolveContributions, type ResolvedContribution } from './instruction-cascade.js';
+import { availableBehaviours, resolveContributions, type ResolvedContribution } from './instruction-cascade.js';
 import { resolveInstallations, type ResolvedInstallation } from './installations.js';
 import { initialCampaignId } from './campaign-scope.js';
 import { resolveLaunchSeed } from './launch-seed.js';
@@ -49,7 +49,6 @@ export interface SpawnForm {
   campaign_id?: string;
   kind?: string;
   behaviours?: string[]; template?: string; // preset is validated provenance only, never reapplied
-  features?: string[];
   prompt?: string;
   name?: string;
   dial?: Dial;
@@ -219,13 +218,13 @@ export async function resolveForm(
   const coworkAgent = sessionType === 'cowork_agent';
   const bareMetalAgent = sessionType === 'bare_metal_agent';
   const campaignId = coworkAgent ? (form.campaign_id || await initialCampaignId()) : '';
-  const [roots, launchSpecs, agentsSet, campaign, installationCatalog, featureCatalog] = await Promise.all([
+  const [roots, launchSpecs, agentsSet, campaign, installationCatalog, behaviourCatalog] = await Promise.all([
     listProjectRoots(),
     listSessionLaunchSpecs(),
     readAgentsSection(),
     coworkAgent ? readCampaign(campaignId) : null,
     listInstallations(),
-    listFeatures(),
+    listBehaviours(),
   ]);
   const preset = await templateProvenance(coworkAgent ? form : {});
   if (form.team && !isTeamName(form.team)) {
@@ -244,7 +243,7 @@ export async function resolveForm(
         roots,
         sessions: agentsSet.sessions as SessionsDefaults | undefined,
         installations: installationCatalog,
-        features: featureCatalog,
+        behaviours: behaviourCatalog,
       })
     : null;
 
@@ -278,11 +277,11 @@ export async function resolveForm(
   }
 
   const agent = sessionType === 'terminal' ? false : bareMetalAgent ? true : profile.agent;
-  const available = campaign ? availableFeatures(installationCatalog, campaign.config.installations, featureCatalog) : [];
+  const available = campaign ? availableBehaviours(installationCatalog, campaign.config.installations, behaviourCatalog) : [];
   const cascade = campaign
-    ? resolveContributions(installationCatalog, campaign.config.installations, featureCatalog, available,
-        campaign.config.defaults.features, roster?.features, form.features)
-    : { contributions: [], selected: [], undelivered: [], feature_layer: 'campaign' as const };
+    ? resolveContributions(installationCatalog, campaign.config.installations, behaviourCatalog, available,
+        campaign.config.defaults.behaviours, roster ? [...new Set([...roster.behaviours.selected, ...roster.behaviours.required])] : undefined, form.behaviours)
+    : { contributions: [], selected: [], undelivered: [], behaviour_layer: 'campaign' as const };
   const installations = resolveInstallations(installationCatalog, campaign?.config.installations);
   const contributions = form.house_seat === 'mika' ? [] : [CORE_CONTRIBUTION, ...cascade.contributions];
   const merged = mergeSessionDefaults(agentsSet.sessions as SessionsDefaults | undefined, campaign?.config.defaults);
@@ -328,8 +327,8 @@ export async function resolveForm(
         ? false
         : profile.mcpDefault;
   const askedOff = bareMetalAgent;
-  // Feature silence is not a request to reconfigure the provider. An absent gbrain
-  // feature contributes neither connection material nor disconnect CLI flags.
+  // Behaviour silence is not a request to reconfigure the provider. An absent gbrain
+  // behaviour contributes neither connection material nor disconnect CLI flags.
   let mcpOffWanted = bareMetalAgent;
   if (askedOff && profile.mcpAlways) {
     throw new Error(
@@ -372,7 +371,7 @@ export async function resolveForm(
     : defaultMcpWasUndeliverable
       ? system
       : cascade.selected.includes('gbrain')
-        ? [{ layer: cascade.feature_layer, source: `${cascade.feature_layer} features` }]
+        ? [{ layer: cascade.behaviour_layer, source: `${cascade.behaviour_layer} behaviours` }]
         : profile.stated_by.mcpDefault;
   const unique = (...groups: StatedBy[][]): StatedBy[] => {
     const seen = new Set<string>();
@@ -398,9 +397,8 @@ export async function resolveForm(
   const enabledReading = contributionReading(contributions);
   const enabledMacros = new Set(contributions.filter((contribution) => contribution.enabled).flatMap((contribution) => contribution.macros));
   const kind = form.kind ?? String(parentSeed?.seeds.kind.value ?? 'open');
-  const selectedBehaviours = form.behaviours ?? (parentSeed?.seeds.behaviours.value as string[] | undefined) ?? [];
   const resolvedBehaviours = coworkAgent && agent
-    ? await resolveBehaviourBooks(selectedBehaviours)
+    ? await resolveBehaviourBooks(cascade.selected)
     : { delivered: [], ignored: [] };
   const shelfReading = coworkAgent && agent
     ? await bootReading(root.name, !mcpOffWanted, !!form.team_lead && !!form.team, enabledReading, enabledMacros, name)

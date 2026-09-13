@@ -16,7 +16,9 @@
  *
  * An option row is `{ v, l, sub?, off?, glyph?, word? }`: `sub` reads in the caption, `off`
  * is the reason the stone is greyed (disabled, never hidden), `glyph` sits on a square,
- * `word` is the rectangle's short second line (tier, worktree, checkout). `after` names the
+ * `word` is the rectangle's short second line (tier, worktree, checkout). `read` is a
+ * document path; ERABI draws its separate read glyph and emits `ronin:read-document`.
+ * `after` names the
  * field this one depends on: when that one changes, this answer clears and its options are
  * asked again. `row(option, value)` draws a control that belongs to a chosen option — a branch
  * name, a new team's name — under the group's stones, open or closed, so an answer's own field
@@ -77,7 +79,7 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
   const spec = (Array.isArray(groups) ? groups : []).map((group) => {
     const label = group.group || group.label || '';
     // A stone never repeats its group head: the head carries the question, the stone a noun.
-    return { label, fields: (group.fields || []).map((field) => ({ ...field, label: field.label === label && label ? t('ask.answer', 'Answer') : field.label, shape: field.shape === 'square' ? 'square' : 'rect' })) };
+    return { label, fields: (group.fields || []).map((field) => ({ ...field, label: field.label === label && label ? t('ask.answer', 'Answer') : field.label, shape: ['square', 'tall'].includes(field.shape) ? field.shape : 'rect' })) };
   });
   const nested = (field) => (Array.isArray(field.then) ? field.then : []).map((child) => ({ ...child, parent: field.key, when: child.when, shape: child.shape === 'square' ? 'square' : 'rect' }));
   const fields = spec.flatMap((group) => [...group.fields.flatMap((field) => [field, ...nested(field)])]);
@@ -228,7 +230,18 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
           opt.addEventListener('mouseenter', () => say(row));
           opt.addEventListener('focus', () => say(row));
           opt.addEventListener('click', () => { if (row.off) { say(row); return; } choose(f, row); });
-          options.append(opt);
+          if (row.read) {
+            const wrap = el('span', 'ask-opt-wrap');
+            const read = el('button', 'ask-read', t('ask.read', 'Read'));
+            read.type = 'button';
+            read.title = t('ask.read_behaviour', 'Read this behaviour');
+            read.setAttribute('aria-label', `${t('ask.read', 'Read')} ${row.l}`);
+            read.addEventListener('click', (event) => {
+              event.stopPropagation();
+              window.dispatchEvent(new CustomEvent('ronin:read-document', { detail: { path: row.read, source: root } }));
+            });
+            wrap.append(opt, read); options.append(wrap);
+          } else options.append(opt);
         }
       };
       fill();

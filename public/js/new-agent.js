@@ -1,14 +1,14 @@
 /* part of the ronin-cowork client — see js/README.md */
 /** NEW AGENT — the sole drawn launch form. Session type decides which questions exist;
  * only a Cowork Agent has kind, template, mandate, and loadout. Defaults arrive through
- * `GET /api/launch-seed?team=` and land until the user's hand changes them. Features and
- * Behaviours are the complete editable cascade for a Cowork Agent. */
+ * `GET /api/launch-seed?team=` and land until the user's hand changes them. Behaviours
+ * are the complete editable cascade for a Cowork Agent. */
 import { request } from './request.js';
 import { t } from './lexicon.js';
 import { ask } from './ask.js';
 import { finalizeTeamName, isValidTeamName, sanitizeTeamName } from './new-team-draft.js';
 import {
-  createStep, el, kindTiles, loadProviderCatalog, mandateWord, providerCatalog, readingRows, tagRow, templateTray, tierWord, bookShelves,
+  createStep, el, kindTiles, loadProviderCatalog, mandateWord, providerCatalog, readingRows, tagRow, templateTray, tierWord,
 } from './form-steps.js';
 import { closeWorkspaceTab, openWorkspaceTab, reserveWorkspaceTab } from './workspace.js';
 
@@ -42,14 +42,13 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
       name: '', kind: 'coding', kindTouched: false, provider: '', model: '', instructions: '',
       teamMode: entryTeam ? 'existing' : 'none', team: entryTeam || '', newTeam: '',
       reach: 'open', recruit: 'open', output: ['open'], launchMode: 'configured',
-      features: [], books: [], root: '', repos: [],
+      books: [], root: '', repos: [],
       expanded: {},
     };
   };
   const draft = freshDraft();
   let seed = null;
   let templates = [];
-  let ways = [];
   let teams = [];
   let roots = [];
   let snapshot = '';
@@ -100,7 +99,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
   const typeHost = el('div', 'fs-pair');
   const templateHost = el('div', 'na-template-tray');
   const TYPES = () => [
-    { key: 'cowork_agent', label: t('new_agent.type_cowork', 'Cowork Agent'), sub: t('new_agent.type_cowork_sub', 'Born into Ronin with its installation, selected features, behaviours, reading and Team.') },
+    { key: 'cowork_agent', label: t('new_agent.type_cowork', 'Cowork Agent'), sub: t('new_agent.type_cowork_sub', 'Born into Ronin with its installation, selected behaviours, reading and Team.') },
     { key: 'bare_metal_agent', label: t('new_agent.type_bare', 'Bare-metal Agent'), sub: t('new_agent.type_bare_sub', 'The provider’s agent and nothing else from Ronin.') },
     { key: 'terminal', label: t('new_agent.type_terminal', 'Terminal'), sub: t('new_agent.type_terminal_sub', 'A raw tmux pane. No agent is launched and nothing is sent to it.') },
   ];
@@ -160,7 +159,6 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     draft.instructions = '';
     instructionsInput.value = '';
     draft.books = Array.isArray(value('behaviours')) ? [...value('behaviours')] : [];
-    draft.features = Array.isArray(value('features')) ? value('features').filter((name) => (seed?.available || []).includes(name)) : [];
     for (const key of ['reach', 'recruit']) draft[key] = value(key) || 'open';
     draft.output = [value('output') || 'open'].flat().filter(Boolean);
     draft.teamMode = 'new'; draft.team = ''; draft.newTeam = '';
@@ -184,12 +182,11 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     // `team_mode: 'new'` births the box into its own team (the Personal Assistant ruling).
     if (row.team_mode === 'new') { draft.teamMode = 'new'; }
     if (row.behaviours.length) { draft.books = [...row.behaviours]; touched.books = true; }
-    if (row.features.length) draft.features = row.features.filter((name) => (seed?.available || []).includes(name));
     snapshot = authored();
     paint();
   }
   const authored = () => JSON.stringify({
-    instructions: draft.instructions, books: [...draft.books].sort(), features: [...draft.features].sort(),
+    instructions: draft.instructions, books: [...draft.books].sort(),
     mandate: [draft.reach, draft.recruit, ...draft.output],
   });
   const templateDirty = () => !!templateRow() && authored() !== snapshot;
@@ -330,18 +327,17 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
 
   /* ---- 7 · Loadout ---- */
   const stepLoadout = createStep({ n: 7, key: 'loadout', title: t('loadout', 'Tools and skills'), onToggle: () => toggle('loadout') });
-  const availableFeatures = () => (seed?.features || []).filter((row) => (seed?.available || []).includes(row.name));
+  const availableBehaviours = () => (seed?.behaviours || []).filter((row) => row.available === true);
   const shelvesHost = el('div');
   function paintShelves() {
-    shelvesHost.replaceChildren(bookShelves([
-      { head: t('features', 'Features'), prefix: '', rows: availableFeatures() },
-      { head: t('behaviours', 'Behaviours'), prefix: '', rows: ways.map((row) => ({ ...row, required: seed?.behaviours?.find((item) => item.name === row.name)?.required === true })) },
-    ], [...draft.features, ...draft.books], (address, on) => {
-      if (availableFeatures().some((row) => row.name === address)) draft.features = on ? [...draft.features, address] : draft.features.filter((feature) => feature !== address);
-      else { draft.books = on ? [...draft.books, address] : draft.books.filter((book) => book !== address); touched.books = true; }
-      paintShelves();
-      paintFoot();
-    }));
+    const picker = ask([{ group: t('behaviours', 'Behaviours'), fields: [{
+      key: 'behaviours', label: t('behaviours', 'Behaviours'), many: true, shape: 'tall',
+      options: availableBehaviours().map((row) => ({ v: row.name, l: row.label || row.name, sub: row.blurb || '', read: row.reading,
+        off: row.required ? t('team_config.required', 'Required for each new Agent') : '' })),
+    }] }], { value: { behaviours: draft.books }, density: 'tight', onChange: (value) => {
+      draft.books = [...value.behaviours]; touched.books = true; paintFoot();
+    } });
+    shelvesHost.replaceChildren(picker.el);
   }
   stepLoadout.body.append(shelvesHost);
 
@@ -357,7 +353,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     paintFolds();
   }
   const meta = {
-    loadout: () => t('new_agent.loadout_meta', '{features} features · {books} behaviours', { features: draft.features.length, books: draft.books.length }),
+    loadout: () => t('new_agent.loadout_meta', '{books} behaviours', { books: draft.books.length }),
   };
   function paintFolds() {
     const templateFolded = isCowork() && !!templateRow();
@@ -379,7 +375,6 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     if (isCowork()) {
       rows.push([t('mandate', 'Mandate'), `${draft.reach} · ${draft.recruit} · ${draft.output.join(', ')}`]);
     }
-    if (isCowork() && draft.features.length) rows.push([t('features', 'Features'), tagRow(draft.features.map((text) => ({ text, on: true })))]);
     if (isCowork() && draft.books.length) rows.push([t('behaviours', 'Behaviours'), tagRow(draft.books.map((text) => ({ text, on: true })))]);
     rows.push([t('launch_mode.head', 'launch mode'), launchModes().find((row) => row.v === draft.launchMode)?.l || draft.launchMode]);
     rows.push([t('add_agent.place', 'place'), draft.root]);
@@ -470,7 +465,6 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
           mandate: { reach: draft.reach, recruit: draft.recruit, output: draft.output },
           behaviours: [...draft.books],
           launch_mode: draft.launchMode,
-          features: [...draft.features],
           ...(draft.template ? { template: draft.template } : {}),
         };
     const result = await request('/api/launch', { method: 'POST', json: body });
@@ -508,7 +502,6 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
         mandate: `${draft.reach} · ${draft.recruit} · ${draft.output.join(', ')}`,
         team_mode: draft.teamMode === 'new' ? 'new' : '',
         behaviours: draft.books,
-        features: draft.features,
         // THE SWITCHES A LOADOUT IS MEANT TO CARRY. `TemplateBoxSave` stores these
         // (@template_shelves measured `boxTail` writing all three) and this form was
         // sending only `behaviours`, so a saved Personal Assistant lost its gbrain.
@@ -544,8 +537,6 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
       if (value('output')) draft.output = [value('output')].flat().filter(Boolean);
     }
     if (!touched.books && Array.isArray(value('behaviours'))) draft.books = [...value('behaviours')];
-    draft.features = Array.isArray(value('features'))
-      ? value('features').filter((name) => (seed?.available || []).includes(name)) : [];
     // The campaign's, or the team's if one is joined — an editable value like every other
     if (!touched.launchMode && value('launch_mode')) draft.launchMode = value('launch_mode');
     if (!draft.kindTouched && team && value('kind')) draft.kind = value('kind');
@@ -608,14 +599,12 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
       const entryTeam = typeof team === 'function' ? team() : team;
       if (entryTeam) { draft.teamMode = 'existing'; draft.team = entryTeam; }
       paint();
-      const [tray, wayRows, teamRows, rootRows] = await Promise.all([
+      const [tray, teamRows, rootRows] = await Promise.all([
         request('/api/templates/agents'),
-        request('/api/ways'),
         request('/api/team-rosters'),
         request('/api/project-roots/detail'),
       ]);
       templates = tray.ok && Array.isArray(tray.data) ? tray.data : [];
-      ways = wayRows.ok && Array.isArray(wayRows.data) ? wayRows.data : [];
       teams = teamRows.ok && Array.isArray(teamRows.data) ? teamRows.data.filter((row) => row.state !== 'archived') : [];
       roots = rootRows.ok && Array.isArray(rootRows.data?.roots) ? rootRows.data.roots.filter((row) => !row.archived) : [];
       if (!loaded) { await loadSeed(); loaded = true; }
