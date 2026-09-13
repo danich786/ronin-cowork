@@ -49,15 +49,16 @@ test('both workbench entrances use the canonical New Agent form with contextual 
   assert.match(cowork, /'team\.add-agent': WB_TYPES\.newAgent/);
 });
 
-test('Where it works asks birthplace then a workspace set which includes the birthplace', async () => {
+test('Where it works keeps birthplace separate from optional additional workspaces', async () => {
   const form = await source('new-agent.js');
   assert.match(form, /request\('\/api\/project-roots\/detail'\)/);
   assert.match(form, /rootRows\.data\?\.roots/);
   assert.match(form, /repo_profile\?\.worktrees === 'enabled'/);
   assert.match(form, /label: t\('where\.born_in', 'Born in'\), options: rootRows/);
-  assert.match(form, /label: t\('where\.workspaces', 'Workspaces'\), many: true, after: 'root', options: rootRows/);
-  assert.match(form, /draft\.repos = draft\.root \? \[draft\.root\] : \[\]/);
-  assert.doesNotMatch(form, /filter\(\(row\) => row\.v !== value\.root\)/);
+  assert.match(form, /label: t\('where\.additional', 'Additional workspaces'\), many: true, after: 'root', options: \(value\) => rootRows\(\)\.filter\(\(row\) => row\.v !== value\.root\)/);
+  assert.match(form, /draft\.repos = \[\]/);
+  assert.match(form, /filter\(\(name\) => name && name !== draft\.root\)/);
+  assert.doesNotMatch(form, /no auto desk|extra sessions/i);
 });
 
 test('the old New Agent selector implementation and CSS are deleted', async () => {
