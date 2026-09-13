@@ -269,7 +269,7 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
         note.id = `${trayId}-note-${lines.length}`;
         note.setAttribute('role', 'status');
         note.setAttribute('aria-live', 'polite');
-        if (row.required) { node.setAttribute?.('aria-required', 'true'); node.setAttribute?.('aria-describedby', note.id); }
+        if (row.required) { label.dataset.required = 'true'; node.setAttribute?.('aria-required', 'true'); node.setAttribute?.('aria-describedby', note.id); }
         node.addEventListener?.('input', () => { node.setAttribute?.('aria-invalid', 'false'); note.textContent = ''; line.dataset.invalid = 'false'; });
         label.append(el('span', 'ask-extra-name', row.l), node, note);
         line.append(label);
