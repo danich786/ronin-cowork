@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# read_tegami — show a ladder.
-# Usage: read_tegami                      your letter, teaching lines and all
-#        read_tegami --json               just the block, for a machine
-#        read_tegami --rungs              the markable positions, numbered
-#        read_tegami --session <name> …   another session (dial 👁 read or 🤖 write)
+# Internal read implementation for `work-record`.
+# Usage: work-record read                      your letter, teaching lines and all
+#        work-record read --json               just the block, for a machine
+#        work-record read --rungs              the markable positions, numbered
+#        work-record read --session <name> …   another session (dial 👁 read or 🤖 write)
 #
 # --rungs prints the positions a marker can point at, AS THEY SIT IN THE LETTER: a gate
 # is rung N, a leg is N.M. Deliberately not an index into a flattened list — that number
 # is invisible to a human reading the file, and `at` has to be checkable by eye.
-# `write_tegami --at` takes exactly one of these.
+# `work-record update-record --at` takes exactly one of these.
 #
 # NO ARGUMENTS, BY DESIGN. You do not name a session and you do not learn a path: the
 # tool knows which pane it is running in, and where the file lives is Ronin's business.
@@ -16,31 +16,31 @@
 # afterwards, which is how a wrong path becomes a wrong ladder becomes a tile that lies —
 # and coordinators had begun pasting shell incantations to derive session keys by hand.
 #
-# Read-only. `write_tegami` is the other half, and there is no third tool.
+# Read-only. `work-record update-record` is the other half, and there is no third tool.
 set -u
 
 die() { printf '%s\n' "$*" >&2; exit 3; }
 help() {
   cat <<'EOF'
-read_tegami — read a session's work record
+work-record read — read a session's work record
 
 Usage:
-  read_tegami project read <id>
-  read_tegami
-  read_tegami --json
-  read_tegami --rungs
-  read_tegami --session <name> [--json|--rungs]
+  work-record read project read <id>
+  work-record read
+  work-record read --json
+  work-record read --rungs
+  work-record read --session <name> [--json|--rungs]
 
 Common tasks:
   Use the bare form for the complete record, --json for its data block, and
-  --rungs for positions accepted by write_tegami --session <name> --at N[.M].
+  --rungs for positions accepted by work-record update-record --session <name> --at N[.M].
 
 This tool reads records; it does not author progress. Reading may refresh the
-machine-owned Team summary in the record. Related: write_tegami --help
+machine-owned Team summary in the record. Related: work-record update-record --help
 EOF
 }
 case "${1-}" in
-  -h|--help) [ "$#" -eq 1 ] || die "read_tegami: --help takes no other arguments. Run read_tegami --help."; help; exit 0 ;;
+  -h|--help) [ "$#" -eq 1 ] || die "work-record read: --help takes no other arguments. Run work-record read --help."; help; exit 0 ;;
 esac
 
 # WHICH SESSION AM I — and it must NEVER guess.
@@ -62,11 +62,11 @@ esac
 # correct behaviour, and it is not "pick the one on screen".
 me() {
   ronin_session_me && return 0
-  die "read_tegami: cannot tell which session this is — TMUX_PANE and \$TMUX are both unset, and this
+  die "work-record read: cannot tell which session this is — TMUX_PANE and \$TMUX are both unset, and this
   was not run through a session's own command directory.
   Refusing rather than guessing: this used to fall back to the focused tile and wrote one
   session's ladder into another's letter. Pin the pane and retry:
-    TMUX_PANE=\$(tmux list-panes -t <your-session> -F '#{pane_id}' | head -1) read_tegami ..."
+    TMUX_PANE=\$(tmux list-panes -t <your-session> -F '#{pane_id}' | head -1) work-record read ..."
 }
 
 # <name> -> the session KEY, by EXACT name.
@@ -81,7 +81,7 @@ key_of() {
   local row stamped created
   row=$(tmux list-sessions -F '#{session_name}	#{@ronin-key}	#{session_created}' 2>/dev/null \
         | awk -F'	' -v n="$1" '$1==n {print; exit}')
-  [ -n "$row" ] || die "read_tegami: no such session: $1"
+  [ -n "$row" ] || die "work-record read: no such session: $1"
   stamped=$(printf '%s' "$row" | cut -f2)
   created=$(printf '%s' "$row" | cut -f3)
   if   [ -n "${stamped// /}" ]; then printf '%s\n' "$stamped"
@@ -94,7 +94,7 @@ TARGET=""
 PROJECT_ID=""
 if [ "${1-}" = project ]; then
   [ "${2-}" = read ] && [ -n "${3-}" ] && [ "$#" -eq 3 ] \
-    || die "read_tegami: use project read <id>."
+    || die "work-record read: use project read <id>."
   MODE=project; PROJECT_ID=$3; shift 3
 fi
 while [ $# -gt 0 ]; do
@@ -102,12 +102,13 @@ while [ $# -gt 0 ]; do
     --json)    MODE=json ;;
     --rungs)   MODE=rungs ;;
     --session) shift; TARGET=${1-} ;;
-    *) die "read_tegami: unknown argument: $1. Run read_tegami --help." ;;
+    *) die "work-record read: unknown argument: $1. Run work-record read --help." ;;
   esac
   shift
 done
 
-. "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"
+. "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/../ronin_bin/tool-path.sh"
+RONIN_TOOL_INVOKED=${WORK_RECORD_INVOKED:-$RONIN_TOOL_INVOKED}
 if [ -n "$TARGET" ]; then
   NAME=$TARGET
 else
@@ -117,7 +118,7 @@ fi
 STORE="$(cd "$(dirname "$SELF")/../bin" && pwd)/ronin-store"
 [ -x "$STORE" ] || STORE=ronin-store
 FILE="$("$STORE" session)/$(key_of "$NAME")/tegami.md"
-[ -f "$FILE" ] || die "read_tegami: @$NAME has no letter yet — Ronin seeds one within a minute."
+[ -f "$FILE" ] || die "work-record read: @$NAME has no letter yet — Ronin seeds one within a minute."
 
 # READ-REPAIR THE TEAMS BLOCK (R35). The letter's "teams" key is machinery-derived —
 # team name, team_role, objective per team — and a reread is exactly the moment the
@@ -163,7 +164,7 @@ if [ "$MODE" = project ]; then
 import json, sys
 d=json.load(sys.stdin); want=sys.argv[1]
 p=next((p for p in (d.get("projects") or []) if isinstance(p,dict) and p.get("id")==want),None)
-if p is None: sys.exit("read_tegami: no project %s." % want)
+if p is None: sys.exit("work-record read: no project %s." % want)
 print(json.dumps(p, indent=2, ensure_ascii=False))
 ' "$PROJECT_ID"
 elif [ "$MODE" = rungs ]; then
@@ -172,7 +173,7 @@ elif [ "$MODE" = rungs ]; then
   awk '/^```/{f=!f; if(f) next; else exit} f' "$FILE" | python3 -c '
 import json, sys
 try: d = json.load(sys.stdin)
-except Exception: sys.exit("read_tegami: block does not parse")
+except Exception: sys.exit("work-record read: block does not parse")
 at = d.get("at")
 at = at if isinstance(at, dict) else {}   # any other shape is not a pointer
 ar, al = at.get("rung"), at.get("leg")

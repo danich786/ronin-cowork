@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# tejun-team-set — make a team, or change its facts, in one line. The rare door.
+# Internal roster-write implementation for `team-lead`.
 #
-# Usage: tejun-team-set <team> [--objective <text>] [--role <team_role>] [--root <project_root>]
+# Usage: team-lead roster write <team> [--objective <text>] [--role <team_role>] [--root <project_root>]
 #                              [--repos a,b] [--branch <b>] [--wipeboard <board>]
 #                              [--state active|archived] [--campaign-defaults] [--add s1,s2]
 #
@@ -18,12 +18,12 @@
 # was given. Exit 0 done, 2 bad arguments, 4 refused, 5 Ronin unreachable.
 set -u
 case "${1-}" in
-  -h|--help) [ "$#" -eq 1 ] || { echo "tejun-team-set: --help takes no other arguments. Run tejun-team-set --help." >&2; exit 2; }
+  -h|--help) [ "$#" -eq 1 ] || { echo "team-lead roster write: --help takes no other arguments. Run team-lead roster write --help." >&2; exit 2; }
     cat <<'EOF'
-tejun-team-set — create a Team or update its stated facts
+team-lead roster write — create a Team or update its stated facts
 
 Usage:
-  tejun-team-set <team> [--objective <text>] [--role <role>] [--root <path>]
+  team-lead roster write <team> [--objective <text>] [--role <role>] [--root <path>]
                         [--repos a,b] [--branch <branch>] [--wipeboard <board>]
                         [--state active|archived] [--campaign-defaults] [--add s1,s2]
 
@@ -36,12 +36,12 @@ session_create --help; session_set --help
 EOF
     exit 0 ;;
 esac
-. "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"
-TOOL_DIR=$(dirname "$SELF")
+. "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/../ronin_bin/tool-path.sh"
+TOOL_DIR=$(cd "$(dirname "$SELF")/../ronin_bin" && pwd)
 die() { printf '%s\n' "$1" >&2; exit "${2:-4}"; }
 
 NAME="${1:-}"
-[ -n "$NAME" ] && [ "${NAME#-}" = "$NAME" ] || die "usage: tejun-team-set <team> [options]. Run tejun-team-set --help." 2
+[ -n "$NAME" ] && [ "${NAME#-}" = "$NAME" ] || die "usage: team-lead roster write <team> [options]. Run team-lead roster write --help." 2
 shift
 OBJ="" ROLE="" ROOT="" REPOS="" BRANCH="" BOARD="" STATE="" ADD="" CAMPAIGN_DEFAULTS=""
 while [ $# -gt 0 ]; do
@@ -55,7 +55,7 @@ while [ $# -gt 0 ]; do
     --state) STATE="${2:-}"; shift 2 ;;
     --campaign-defaults) CAMPAIGN_DEFAULTS=1; shift ;;
     --add) ADD="${2:-}"; shift 2 ;;
-    *) die "BAD-ARG: $1. Run tejun-team-set --help." 2 ;;
+    *) die "BAD-ARG: $1. Run team-lead roster write --help." 2 ;;
   esac
 done
 
@@ -77,7 +77,7 @@ print(json.dumps(b))
 PY
 ) || die "BAD-ARG: could not build the request" 2
 
-out=/tmp/tejun-team-set.$$
+out=/tmp/team-lead roster write.$$
 code=$(curl -sS -m 20 "${RONIN_CURL[@]+"${RONIN_CURL[@]}"}" -o "$out" -w '%{http_code}' \
        -H 'content-type: application/json' -X PUT --data "$body" "$url/api/team" 2>/dev/null) \
   || { rm -f "$out"; die "UNREACHABLE: Ronin did not answer at $url" 5; }
