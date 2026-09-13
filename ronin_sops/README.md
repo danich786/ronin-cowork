@@ -94,4 +94,4 @@ store. Redefining one is how your sessions inherit *your* process instead of our
 **Deliberately near-empty.** Stock SOPs are screened in one at a time, exactly like the
 library. The stock roster and the situation that selects each book live in
 `docs/README.md`; `ronin_methodology.md` is the shared session-to-session method, while
-`worktree-root.md` and `checkout.md` are the two repository-arrangement guides.
+`worktree-root.md` and `checkout.md` are the two repository-arrangement guides. `visual_staging.md` is the Team preview procedure, given to an Agent by the `visual_staging` behaviour.
