@@ -257,7 +257,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     if (['reach', 'recruit', 'output'].includes(key)) touched.mandate = true;
     if (key === 'root') {
       touched.root = true;
-      draft.repos = draft.root ? [draft.root] : [];
+      draft.repos = [];
       questions.set('repos', draft.repos);
     }
     if (key === 'repos') touched.repos = true;
@@ -266,7 +266,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
       draft.team = draft.teamMode === 'existing' ? value.teamName : '';
       touched.repos = false;
       const selected = teams.find((row) => row.name === draft.team);
-      draft.repos = [...new Set([draft.root, ...(draft.teamMode === 'existing' ? selected?.repos || [] : [])].filter(Boolean))];
+      draft.repos = [...new Set((draft.teamMode === 'existing' ? selected?.repos || [] : []).filter((name) => name && name !== draft.root))];
       void loadSeed();
     }
     paintFoot(); paintActions();
@@ -283,7 +283,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     ] },
     { group: t('where.label', 'Where it works'), fields: [
       { key: 'root', label: t('where.born_in', 'Born in'), options: rootRows },
-      { key: 'repos', label: t('where.workspaces', 'Workspaces'), many: true, after: 'root', options: rootRows },
+      { key: 'repos', label: t('where.additional', 'Additional workspaces'), many: true, after: 'root', options: (value) => rootRows().filter((row) => row.v !== value.root) },
     ] },
   ], {
     value: { provider: draft.provider, model: draft.model, reach: draft.reach, recruit: draft.recruit, output: draft.output, root: draft.root, repos: draft.repos },
@@ -577,7 +577,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     if (!touched.root && value('project_root')) draft.root = value('project_root');
     if (!touched.repos) {
       const selected = draft.teamMode === 'existing' ? teams.find((row) => row.name === draft.team) : null;
-      draft.repos = [...new Set([draft.root, ...(selected?.repos || [])].filter(Boolean))];
+      draft.repos = [...new Set((selected?.repos || []).filter((name) => name && name !== draft.root))];
     }
     if (!touched.mandate) {
       for (const key of ['reach', 'recruit']) if (value(key)) draft[key] = value(key);
