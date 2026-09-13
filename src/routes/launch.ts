@@ -426,7 +426,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
       routineTools = resolved.agent
         ? await projectRoutineTools(
             resolved.name,
-            resolved.routines,
+            resolved.contributions,
             houseSeat === 'mika' ? MIKA_PARENT_PATH : undefined,
             houseSeat === 'mika'
               ? { includeTmux: false, extraTools: [...MIKA_TOOLS] }
@@ -447,7 +447,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
         // off means RIREKI never records it. Set here and never again — nothing cascades
         // onto a running session (owner, 2026-09-04). A terminal has no Routines and keeps
         // the recorder's own default.
-        rireki: resolved.routines.length ? resolved.routines.some((routine) => routine.name === 'ronin_services' && routine.enabled) : undefined,
+        rireki: resolved.contributions.length ? resolved.contributions.some((contribution) => contribution.name === 'ronin_services' && contribution.enabled) : undefined,
         strictCwd: houseSeat === 'mika',
       });
       runtimeBorn = true;
