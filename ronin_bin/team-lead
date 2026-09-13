@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+set -u -o pipefail
+SELF="$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")"
+ROOT="$(cd "$(dirname "$SELF")/.." && pwd)"
+. "$ROOT/ronin_bin/ronin-http.sh"
+die() { echo "$1" >&2; exit "${2:-4}"; }
+usage() { cat <<'EOF'
+Usage:
+  team-lead roster read <team>
+  team-lead roster write <team> [typed roster flags]
+  team-lead project create <team> --title <text> --objective <text>
+  team-lead project read <team> <id>
+  team-lead project list <team>
+  team-lead project write <team> <id> --field <value> ...
+  team-lead project assign <team> <id> <session>
+  team-lead project return <team> <id> <session>
+  team-lead member status <team>
+All writes use canonical Team/project routes; member status is the settled Kanban view.
+Create a Team with roster write. Add membership or move an Agent with session_set; remove
+the old Team on that Team's page. Set or change that Team's lead with session_set.
+Read-only Team enumeration belongs to `edges team`. Related: session_create --help;
+session_set --help; edges --help
+EOF
+}
+case "${1:-}" in -h|--help) [ "$#" -eq 1 ] || { echo 'Run team-lead --help.' >&2; exit 2; }; usage; exit 0;; esac
+ronin_connect || exit $?
+request() {
+  method=$1; path=$2; body=${3-}; args=(-sS -m 30 "${RONIN_CURL[@]+"${RONIN_CURL[@]}"}" -X "$method")
+  [ -z "$body" ] || args+=(-H 'content-type: application/json' --data "$body")
+  out=$(curl "${args[@]}" "$url$path") || die "UNREACHABLE: Ronin did not answer at $url" 5
+  printf '%s' "$out" | python3 -m json.tool || die 'REFUSED: Ronin returned an invalid answer' 4
+}
+json_fields() { python3 -c 'import json,sys
+a=sys.argv[1:]; d={}
+while a:
+ k=a.pop(0); v=a.pop(0) if a else ""; d[k[2:].replace("-","_")]=v
+print(json.dumps(d))' "$@"; }
+area=${1:-}; verb=${2:-}; shift 2 || true
+case "$area:$verb" in
+  roster:read) [ "$#" -eq 1 ] || die 'BAD-ARG: roster read needs team' 2; request GET "/api/team-rosters/$1" ;;
+  roster:write) [ "$#" -ge 1 ] || die 'BAD-ARG: roster write needs team' 2; exec bash "$ROOT/libexec/team-lead-roster-write" "$@" ;;
+  project:list) [ "$#" -eq 1 ] || die 'BAD-ARG: project list needs team' 2; request GET "/api/team-rosters/$1" | python3 -c 'import json,sys; print(json.dumps(json.load(sys.stdin).get("projects",[]),indent=2))' ;;
+  project:read) [ "$#" -eq 2 ] || die 'BAD-ARG: project read needs team and id' 2; request GET "/api/team-rosters/$1" | ID="$2" python3 -c 'import json,os,sys; d=json.load(sys.stdin); p=next((x for x in d.get("projects",[]) if x.get("id")==os.environ["ID"]),None); print(json.dumps(p,indent=2)) if p else sys.exit(3)' ;;
+  project:create) [ "$#" -ge 3 ] || die 'BAD-ARG: project create needs team and fields' 2; team=$1; shift; body=$(json_fields "$@"); request POST "/api/team-rosters/$team/projects" "$body" ;;
+  project:write) [ "$#" -ge 4 ] || die 'BAD-ARG: project write needs team, id and fields' 2; team=$1; id=${2#"$team/"}; shift 2; body=$(json_fields "$@"); request PUT "/api/team-rosters/$team/projects/$id" "$body" ;;
+  project:assign|project:return) [ "$#" -eq 3 ] || die "BAD-ARG: project $verb needs team, id and session" 2; team=$1; id=${2#"$team/"}; body=$(python3 -c 'import json,sys; print(json.dumps({"session":sys.argv[1]}))' "$3"); request POST "/api/team-rosters/$team/projects/$id/$verb" "$body" ;;
+  member:status) [ "$#" -eq 1 ] || die 'BAD-ARG: member status needs team' 2; request GET "/api/teams/$1/kanban" ;;
+  *) usage >&2; exit 2;;
+esac

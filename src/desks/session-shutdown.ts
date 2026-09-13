@@ -155,29 +155,29 @@ export async function closeAssignedDesks(
     }
     if (desk.pending) {
       reasons.push(`pending update from ${desk.pending.by}${desk.pending.overlap.length ? ` overlapping ${desk.pending.overlap.join(', ')}` : ''}`);
-      actions.push(`run tejun-desk sync ${id(desk)}`);
+      actions.push(`run worktree-desk sync ${id(desk)}`);
     }
     if (desk.blocked) {
       reasons.push(`blocked: ${desk.blocked}`);
-      actions.push(`run tejun-desk status ${id(desk)} and use tejun-desk reply ${desk.repo} <receipt-id> <message> to resolve it with the lead`);
+      actions.push(`run worktree-desk status ${id(desk)} and use worktree-desk reply ${desk.repo} <receipt-id> <message> to resolve it with the lead`);
     }
     if (desk.ahead > 0) {
       reasons.push(`${desk.ahead} unique commit(s) are not contained in ${desk.line}`);
-      actions.push(`run tejun-desk hand-in ${id(desk)}; a pending or rejected hand-in must be resolved before retrying session_end`);
+      actions.push(`run worktree-desk hand-in ${id(desk)}; a pending or rejected hand-in must be resolved before retrying session_end`);
     }
     const otherOwners = (desk.owners?.length ? desk.owners : [desk.session]).filter((owner) => owner !== session);
     if (otherOwners.length) {
       reasons.push(`shared with ${otherOwners.join(', ')}`);
-      actions.push(`run tejun-desk handoff ${id(desk)} --to ${otherOwners.join(',')} to leave it with the remaining owner(s)`);
+      actions.push(`run worktree-desk handoff ${id(desk)} --to ${otherOwners.join(',')} to leave it with the remaining owner(s)`);
     }
     if (!desk.mounted) {
       reasons.push('worktree is not mounted, so its state cannot be safely closed');
-      actions.push(`run tejun-desk status ${id(desk)} and restore or hand off the desk before retrying`);
+      actions.push(`run worktree-desk status ${id(desk)} and restore or hand off the desk before retrying`);
     }
     const occupants = cwdRows.filter((row) => row.name !== session && isInside(desk.worktree, row.cwd)).map((row) => row.name);
     if (occupants.length) {
       reasons.push(`occupied by ${occupants.join(', ')}`);
-      actions.push(`run tejun-send ${occupants[0]} "Please leave ${desk.worktree}; session_end is waiting to close ${id(desk)}"`);
+      actions.push(`run edges send ${occupants[0]} "Please leave ${desk.worktree}; session_end is waiting to close ${id(desk)}"`);
     }
     if (reasons.length) blockers.push({ desk: id(desk), reasons, next_action: [...new Set(actions)].join(' THEN ') });
   }

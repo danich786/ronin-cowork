@@ -143,7 +143,7 @@ Built order (`public/js/tilehead.js`):
 **Three on top, the rest behind メ**. The row used to end in
 eight controls against a picker that has to fit a session name, and at four tiles up
 there was not room for both — measured at a 629px tile, the eight left the spacer 23px
-short before the picker started giving up characters. So ⛩ Commons and ⚡ Macros stay,
+short before the picker started giving up characters. So ⛩ Commons and ⚡ session picker stay,
 and the rest drop out of メ **as themselves**: the same elements, appended into a
 horizontal strip instead of into the row, keeping every handler, every live setter and
 every `needs` rule they were built with. Nothing was redesigned into a menu row — the
@@ -316,7 +316,7 @@ Behind メ.
 The session's memberships, stored on the tmux session itself (`@ronin-tags`). The point is
 **addressing, not decoration** — "the kojinsa group" resolves to a session list, so a
 coordinator can be pointed at a set instead of at named members one by one. Agents resolve
-the same names with `ronin_bin/tejun-team`. The button lights when the session is in any.
+the same names with `ronin_bin/edges team`. The button lights when the session is in any.
 
 ### ⛽ The context gauge
 
@@ -382,7 +382,7 @@ you can just close the commons and you're back in the session."* The Commons alr
 still streaming behind it, ✕ on the tab strip to come back.
 
 **It is not the file browser, and it is not a crack in that rule.** A doc is on this list for
-the one reason it is on the ▧ Docs tab: an agent ran `write_tegami --doc <path>`. All that is
+the one reason it is on the ▧ Docs tab: an agent ran `work-record document add <path>`. All that is
 different is the scope. Which is also why a session that has listed nothing gets a sentence
 saying so — the same sentence the tab uses for its own empty list, narrowed to one session —
 and never a fallback to the global list, which would rebuild the hunt inside the tile.
@@ -552,7 +552,7 @@ no desktop bar, workbench or boot skeleton in it to paint first — at `/` for a
 User-Agent and always at `/m` (`src/index.ts`). Three screens, one at a time: the Teams
 list, a Team's **Agents | Docs**, and one Agent's tile. On the tile the head is hidden and
 the document's slim bar replaces it — ‹ back, the Agent's title, and one メ sheet holding
-the head's own controls (Work record, Docs, Macros, Output where Services allow, Note,
+the head's own controls (Work record, Docs, session picker, Output where Services allow, Note,
 Control, Kill), **relocated, not cloned**, so every handler and live widget keeps its owner.
 
 **The keys ride the composer on every coarse tile** — phone shell and iPad workbench

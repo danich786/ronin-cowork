@@ -25,14 +25,14 @@ next due time. Each job retains its five latest outcomes.
 Jobs are stored as one hand-editable Markdown file per Team. Each record has `request`,
 `to`, `when`, `due`, `expires`, `state`, `last`, `history`, and `by`.
 
-Agents use `tejun-jikan`, with the same Request, To, When, Expires, and one-off/recurring
+Agents use `edges schedule`, with the same Request, To, When, Expires, and one-off/recurring
 fields as the form. Their session name appears under Set by:
 
 ```sh
-tejun-jikan add --to lead --when "weekdays 09:00" --kind recurring \
+edges schedule add --to lead --when "weekdays 09:00" --kind recurring \
   --expires "2026-12-31 17:00" --team studio "Review the overnight results"
 ```
 
-Bare `tejun-jikan` lists the current Team's jobs. `pause`, `resume`, `now`, and `remove`
+Bare `edges schedule` lists the current Team's jobs. `pause`, `resume`, `now`, and `remove`
 change one. The command is a thin client of the operator's HTTP JIKAN surface. The
 behavior floor is `tests/jikan.test.ts`.

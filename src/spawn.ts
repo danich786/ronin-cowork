@@ -28,12 +28,12 @@ import { capabilityTools, renderCapabilitiesOverview, resolveCapabilities, type 
 
 const WORKTREE_SOP = path.join(REPO_ROOT, 'ronin_sops', 'worktree-root.md');
 const CHECKOUT_SOP = path.join(REPO_ROOT, 'ronin_sops', 'checkout.md');
-const WORKTREE_TOOLS = ['tejun-desk', 'ronin-repo-init'] as const;
+const WORKTREE_TOOLS = ['worktree-desk'] as const;
 
 const CORE_CONTRIBUTION: ResolvedContribution = {
   name: 'cowork_agent', origin: 'stock', shadowed: false, label: 'Cowork Agent', blurb: '',
   reading: [], reading_off: [], sops: [],
-  tools: ['tejun-send', 'session_end', 'session_archive', 'session_restore', 'tejun-team', 'session_fork', 'session_check', 'session_set', 'tejun-team-set', 'tejun-wipeboard', 'tejun-teampage', 'tejun-peek', 'read_tegami', 'write_tegami', 'tejun-jikan', 'ronin-url'],
+  tools: ['edges', 'session_end', 'session_archive', 'session_restore', 'session_fork', 'session_check', 'session_set', 'work-record', 'ronin-url'],
   mcp: [], parts: [], enabled: true, stated_by: 'conditional', required_by: [],
 };
 
@@ -127,12 +127,12 @@ export function buildBrief(
   if (roster) {
     const lines = [`Team: ${roster.name}`];
     if (roster.objective) lines.push(`Objective: ${roster.objective}`);
-    lines.push(`Wipeboard: ${roster.wipeboard} (tejun-wipeboard ${roster.wipeboard})`);
+    lines.push(`Wipeboard: ${roster.wipeboard} (edges wipeboard ${roster.wipeboard})`);
     parts.push(lines.join('\n'));
   } else if (form.team) {
     parts.push(
       `You are born onto team "${form.team}" — a tag-only team: its members are the sessions carrying its tag ` +
-        `(tejun-team ${form.team}), it has no durable roster, and its wipeboard is "${form.team}" (tejun-wipeboard ${form.team}).`,
+        `(edges team ${form.team}), it has no durable roster, and its wipeboard is "${form.team}" (edges wipeboard ${form.team}).`,
     );
   }
   // THE LAUNCH CONTRACT, IN THE PROMPT. These are suggestions the Agent reads, never
@@ -168,8 +168,8 @@ export function buildBrief(
     parts.push(
       `The session in question is @${form.reference}` +
         (referenceDir ? ` (working in ${referenceDir})` : '') +
-        `. Catch up on it with \`tejun-rireki ${form.reference} since\` ` +
-        `(\`tejun-peek ${form.reference}\` if it has no tape), and control-check before touching it.`,
+        `. Catch up on it with \`edges read ${form.reference}\`, which reads its durable record first ` +
+        `and falls back to the live view, then run \`edges control ${form.reference}\` before touching it.`,
     );
   }
   if (form.inject?.trim()) parts.push(form.inject.trim());

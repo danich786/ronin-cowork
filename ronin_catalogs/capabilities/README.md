@@ -15,9 +15,31 @@ knows a bundle by name.
 
 ## The definition
 
-`- **key:** value` lines under the title, then a `## Tools` table, then the full teaching
-as ordinary Markdown. The first prose paragraph after the keys is the card text a newborn
-sees on its shelf: say when to reach for this bundle.
+`- **key:** value` lines under the title, an optional `## Tools` table containing only live
+executables, then the full teaching as ordinary Markdown. The first prose paragraph after
+the keys is the card text a newborn sees on its shelf: say when to reach for this bundle.
+
+## Shipped file index
+
+These exact files are the source catalog for the virtual `YOUR TOOLS` view:
+
+| Group | File | Scope |
+|---|---|---|
+| Core | `edges.md` | cross-session and Team boundaries; tool TBD |
+| Core | `work-record.md` | live personal record, document, and held-project tool |
+| Core | `session.md` | live session inspection and lifecycle tools |
+| Core | `worktree-desk.md` | managed-desk contract; tool TBD |
+| Core | `machine-settings.md` | typed Campaign, installation, provider, and machine settings |
+| Conditional | `team-lead.md` | live lead-only roster, Team-project, and member-status tools |
+| Optional | `ronin-host.md` | selected Ronin Host operations |
+| Optional | `ronin-services.md` | selected Ronin Services teaching and Mika launcher |
+| Optional | `gbrain.md` | selected GBrain boundary teaching; tool TBD |
+| Optional | `trello.md` | selected, connected Trello boundary teaching; tool TBD |
+| Optional | `perplexity.md` | selected, connected Perplexity boundary teaching; tool TBD |
+
+Ronin reads these files, applies each file's predicates, checks each listed executable,
+and generates the virtual `YOUR TOOLS` overview from the selected definitions. The virtual
+view is not a parallel catalog and is never maintained by hand.
 
 | Key | Holds |
 |---|---|
@@ -34,14 +56,14 @@ One row per actual tool, columns found by name in any order:
 
 | Column | Holds |
 |---|---|
-| `Tool` | the executable as typed — `session_check`, or executable plus operation such as `worktree-desk status`; the first word is what is projected onto PATH |
+| `Tool` | the live executable as typed — `session_check`, or executable plus operation such as `machine-settings read`; the first word is what is projected onto PATH |
 | `Authority` | what the tool may do, in a word or two: read · write · create · end · read/write |
 | `Teach` | `priority` marks a tool taught in the birth overview; blank leaves it to `--help` |
 | `Help` | the discovery route when it is not `<tool> --help` |
 
-A row whose executable does not exist on this box — not in the owner's tools store, not in
-`ronin_bin/` — is projected nowhere and taught nowhere; the birth receipt names it under
-`missing`. When a tool is renamed, its row is the whole migration for the birth lesson.
+A nonexistent command belongs in prose as **TBD capability**, never in this table. A row
+whose executable is absent from this particular box — not in the owner's tools store or
+`ronin_bin/` — is projected and taught nowhere; the birth receipt names it under `missing`.
 
 ## `requires:` — the launch facts a bundle may read
 

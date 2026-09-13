@@ -287,7 +287,7 @@ else
     BLOCK_NOTE="# bin/shim is already prepended earlier in this file (or in a sibling rc); the"$'\n'"# \${PATH#…} strip keeps ONE shim entry and puts the tool dirs directly behind it."
     echo "    bin/shim already on PATH via $SHIM_AT:"
     echo "      $SHIM_HIT"
-    echo "    adding $RBIN_DIR (tejun*) and $BIN_DIR (write_tegami, read_tegami, koshi) behind it."
+    echo "    adding $RBIN_DIR (Agent tools) and $BIN_DIR (house tools) behind it."
   elif [ -n "$TOOLS_AT" ]; then
     PATH_LINE="$PATH_LINE_SHIM"; PATH_ADDS="$SHIM_DIR"
     BLOCK_NOTE="# the tool dirs are already on PATH via $TOOLS_AT; prepending the shim puts it ahead of them too."
@@ -313,8 +313,8 @@ else
       printf '\n%s\n' "$SHIM_BEGIN"
       printf '%s\n' "# bin/shim/tmux makes tmux kill-server unavailable. It is INERT unless this"
       printf '%s\n' "# directory comes before /usr/bin, which is why it is PREPENDED and stays FIRST."
-      printf '%s\n' "# ronin_bin holds the agent-facing tools (tejun*) and bin the house's own scripts"
-      printf '%s\n' "# (write_tegami, read_tegami, koshi) — all typed by bare name, so both stay on PATH."
+      printf '%s\n' "# ronin_bin holds Agent-facing tools and bin holds the house's own scripts"
+      printf '%s\n' "# (including koshi) — all typed by bare name, so both stay on PATH."
       printf '%s\n' "#  Safe to delete this block."
       [ -z "$3" ] || printf '%s\n' "$3"
       printf '%s\n' "$2"
@@ -362,8 +362,8 @@ else
   ronin_say "    NOTE: rc files are read at shell START — this shell and every session already"
   ronin_say "    open keep the old PATH. For the current shell, run:"
   ronin_say "      $PATH_LINE_BOTH"
-  ronin_say "    Check any shell with:  command -v tmux write_tegami"
-  ronin_say "      -> $SHIM_DIR/tmux  and  $BIN_DIR/write_tegami"
+  ronin_say "    Check any shell with:  command -v tmux work-record"
+  ronin_say "      -> $SHIM_DIR/tmux  and  $RBIN_DIR/work-record"
 fi
 
 # --- PATH: where an agent Ronin installs lands ---

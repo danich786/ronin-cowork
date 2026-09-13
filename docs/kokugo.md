@@ -64,7 +64,7 @@ Two shapes that come up:
 
 - **A leading or trailing space** is not a word. Catalog values are trimmed, so `' (dirty)'`
   becomes `' ' + t('desk.dirty', '(dirty)')`.
-- **Markup inside a sentence** (`Agents resolve these with <code>tejun-team</code>.`): keep
+- **Markup inside a sentence** (`Agents resolve these with <code>edges team</code>.`): keep
   one key with a placeholder and split on it —
   `const [before, after] = t('panels.team_hint', 'Agents resolve these with {cmd}.').split('{cmd}')`
   — then append `before`, the `<code>` element, `after`. A lexicon's word is text and must
@@ -73,9 +73,9 @@ Two shapes that come up:
 ## 4 · What is never translated
 
 - **Anything an agent reads** — the letter, the brief, the boot shelf, a prompt handed to a
-  session, `write_tegami` output, tool output. A session on a Home desk is still `DraftPlan`
+  session, `work-record update-record` output, tool output. A session on a Home desk is still `DraftPlan`
   with `reach: plan`.
-- **The house's internal names** — KOTOBA's closed list (TEJUN, RIREKI, KOSHI, …); *Ronin*
+- **The house's internal names** — KOTOBA's closed list (RIREKI, KOSHI, …); *Ronin*
   the product; a vendor's name (gbrain, Claude).
 - **Values** — a session name, a path, a branch, a model, a count, a timestamp, a token
   (`manual`, `cherry_pick`, a status word the server sends as data). A label is a word; a
@@ -140,7 +140,7 @@ reads these attributes as keys the client reads.
 
 ## 8 · The glossary room — what an agent says to a person
 
-The house names (TEGAMI, TEJUN, RIREKI …) never reach a person's face, and tools and docs
+The house names (TEGAMI, RIREKI …) never reach a person's face, and tools and docs
 use them freely with agents. `KOTOBA_GLOSSARY.md` is where a session learns which word to
 SAY for each — and since the desk profile decides what the person is looking at, that
 page is rendered per session. Its keyed cells are `**word**<!--g:glossary.key-->`; the

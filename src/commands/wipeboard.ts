@@ -209,7 +209,7 @@ async function post(named: string | null, argv: string[]): Promise<number> {
     words.push(arg);
   }
   const text = words.join(' ').trim();
-  if (!text) return die('usage: tejun-wipeboard post [--to a,b|all|none] <text…>   (a board name only for a board that is not your team\'s)', 2);
+  if (!text) return die('usage: edges wipeboard post [--to a,b|all|none] <text…>   (a board name only for a board that is not your team\'s)', 2);
 
   let board = named;
   let team: string | null = named ? await teamOfBoard(named) : null;

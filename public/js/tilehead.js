@@ -77,7 +77,7 @@ const HEADER = () => {
     // メ explains itself by opening; every control inside carries its own words.
     widget: () => buildTileMore() },
 
-  // Window acts sit at the outside edge. Macros and メ remain beside them, but these
+  // Window acts sit at the outside edge. The session picker and メ remain beside them, but these
   // two familiar marks get the corner: minus stops viewing; times opens the existing
   // retirement sheet. Killing is not reimplemented here (and the incoming Control-C
   // path can land on the same Tile.kill boundary).

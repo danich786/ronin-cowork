@@ -13,13 +13,13 @@ or a behaviour choice.
 A **team** is the organizing unit of this house. Its durable half is its **roster**
 (`GET /api/team-rosters/<team>`): the team's `team_role`, its objective, and the
 defaults a launch into it inherits — root, repos, branch. Its live half is the sessions
-carrying its tag, derived fresh every time (`tejun-team <team>`, or
+carrying its tag, derived fresh every time (`edges team <team>`, or
 `GET /api/teams/<team>/live`). The roster never stores members or leads — each session
 says whose team it is on — and a roster with zero live members is a normal state: the
 plan without the execution, waiting for you.
 
 Underneath the roster sits the team's **wipeboard** — one file the whole team reads and
-appends to (`tejun-wipeboard <team>`). Post decisions and cross-session findings there,
+appends to (`edges wipeboard <team>`). Post decisions and cross-session findings there,
 not in your own ladder.
 
 ## Raising the team
@@ -40,13 +40,13 @@ sessions one at a time, as the work actually needs them — not a batch at birth
    (name taken, unknown model, box full); a session that lands as a rōnin still exists
    and the owner can drag it onto a team from the page.
 3. **Or place an EXISTING session onto the team** — its tags are its membership
-   (`tejun-team-set <team> --add <name>`, `POST /api/sessions/<name>/tags`, or ask the
+   (`team-lead roster write <team> --add <name>`, `POST /api/sessions/<name>/tags`, or ask the
    owner from the tile). A session joining late is not re-briefed by ruling; hand it
    what it needs on the wipeboard.
 4. **A team of your own choosing** — `session_create <name> --team <new-team> --prompt …`
    raises into it. A team that exists only as its tag is an ordinary team; the session
    is born tagged onto it, told it is tag-only, and inherits no root or objective. Give
-   the team a roster when it has a brief worth inheriting — `tejun-team-set <team>
+   the team a roster when it has a brief worth inheriting — `team-lead roster write <team>
    --objective "…" --role <team_role> --root <project_root>` creates one, or updates the
    fields you name on one that exists. A simple creation inherits the current Campaign's
    Team defaults: Routines and kit, root/repositories/branch, and Agent launch defaults;
@@ -55,7 +55,7 @@ sessions one at a time, as the work actually needs them — not a batch at birth
    boring, typeable.
 
    For a Team created before this inheritance was available, the explicit one-time repair
-   is `tejun-team-set <team> --campaign-defaults`. It reapplies the current Campaign layer;
+   is `team-lead roster write <team> --campaign-defaults`. It reapplies the current Campaign layer;
    review the Campaign defaults first, then run it once. Ordinary updates never do this.
 
 ### Choose the desk source when assigning code work
@@ -66,7 +66,7 @@ If the work does not clearly fit either description, ask the lead rather than gu
 The lead can make the choice while assigning the desk:
 
 ```bash
-tejun-desk assign <repo[:branch]> --session <name> --team <team> --source dev|team
+worktree-desk assign <repo[:branch]> --session <name> --team <team> --source dev|team
 ```
 
 The choice changes only where the private desk starts. It does not change the Team line
@@ -74,12 +74,12 @@ where the desk hands in, grant permission, or add an approval step.
 
 ## Running it
 
-- **Catch up through the tape** — `tejun-rireki <member> since` — before touching any
-  member; the durable record is authoritative. `tejun-peek` only when there is no tape.
+- **Catch up through the tape** — `edges read <member> since` — before touching any
+  member; the durable record is authoritative. `edges read` only when there is no tape.
 - **Control is visible context.** Every member keeps its stored dial, and it does not
   restrict reading or messaging the session.
 - **Address the team as one** with `+team:` and the wipeboard for team-wide messages;
-  use `tejun-send` for one session, with no board in between.
+  use `edges send` for one session, with no board in between.
 - **Escalate what is the owner's** — a ruling, a merge, a spend — rather than sitting on
   it. That is most of what leading is.
 - **Membership is nobody's fortress.** Anyone may move a session between teams — you,

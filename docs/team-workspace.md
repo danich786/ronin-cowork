@@ -70,11 +70,11 @@ this tab is for" — since three tabs on one team read the same. Named, the tab 
 `<name> · <team>`; empty means the default, `<team>`.
 Persistence is per browser tab (sessionStorage); one tab is one team.
 
-## The page takes instructions (`tejun-teampage`)
+## The page takes instructions (`edges page`)
 
 Everything that changes the page goes through one controller, `arrange(draft)` in
 `cowork-view.js`, built by `createArranger` (`team-arrange.js`). The C/T buttons and the
-roster cards call it — and so does a **draft** an agent hands in with `tejun-teampage`
+roster cards call it — and so does a **draft** an agent hands in with `edges page`
 (`ronin_bin/`, catalogued in `ronin_catalogs/TOOLS.md`). The tool's bare form prints the view (the roster;
 each tab on the team; which workspace the owner is typing in; which shows the agent;
 what each holds); its other form takes `key=value` words naming only what should
@@ -132,7 +132,7 @@ not thrown away; the Coworks page's copy of the tab keeps the same rule. **Save*
 - `public/css/team-workspace.css` — roster header, cards, flip button, configuration.
 - `src/routes/team-page-api.ts` — the page's view and drafts; `src/ws/events.ts`
   `broadcastEvent`.
-- `ronin_bin/tejun-teampage` — the agent's tool.
+- `ronin_bin/edges page` — the agent's tool.
 - `tests/team-terminal-pool.test.js`, `tests/team-arrange.test.js`, `tests/team-configuration.test.js`.
 - `docs/team-workspace.md` — this persistent implementation and resume contract.
 
@@ -217,7 +217,7 @@ readable and every control — C included — stays reachable at the workspace f
 
 the layout map · `dfc627f`/`8d1758b`/`085426b` discrete workspaces, C/T, KISS ·
 `08c6813` end-to-end review · `272428c` roster readings · `4b42d44` 人 from the tile,
-keyboard · `5acb840` `tejun-teampage` · `a6819eb` the roster in its view · `041206a`
+keyboard · `5acb840` `edges page` · `a6819eb` the roster in its view · `041206a`
 `+show_file` on the team page · `02f288b` live membership seats and unseats ·
 `7c5c619` the head row and Team Configuration finished on measurement.
 
@@ -269,6 +269,6 @@ The designated integrator runs one BYOIN mode on the release candidate; a SKIP i
 4. Click a card: its Tile lands in the highlighted workspace; drag a card onto the other:
    it lands there; the same session in both.
 5. C on a Tile: the commons trades in; T: the terminal trades back with its session.
-6. From a member's shell: `tejun-teampage` prints the view; a draft moves the page and the
+6. From a member's shell: `edges page` prints the view; a draft moves the page and the
    roster header says who.
 7. Open Sessions and exercise raw 1/2/4 layouts; confirm exactly four Tiles.

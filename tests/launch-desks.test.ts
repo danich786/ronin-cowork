@@ -82,7 +82,7 @@ test('the brief carries every desk, the primary, the line, and the four words �
   assert.match(brief, /Your assignment has 2 desks:/);
   assert.match(brief, /cowork\s+\/w\/cowork\/team\/comp\/fable\s+→ team\/comp\/dev\s+\(you start here: your shell opens inside this desk, and the desk ends with you\)/);
   assert.match(brief, /services\s+\/w\/services\/team\/comp\/fable\s+→ team\/comp\/dev/);
-  assert.match(brief, /Get, update, and hand in through tejun-desk; read the worktree-root page before your first write\./);
+  assert.match(brief, /Get, update, and hand in through worktree-desk; read the worktree-root page before your first write\./);
   assert.doesNotMatch(brief, /BYOIN/, 'the brief states desks, not the Git contract the README already carries');
 
   const none = buildBrief(profile, root, form, undefined, [], null, null);
@@ -101,7 +101,7 @@ test('arrangement pages stay on the SOP shelf and are pointed at, not pasted at 
     assert.ok(!without.includes('checkout.md'));
     const contract = await readFile(path.join(process.cwd(), 'ronin_sops', 'worktree-root.md'), 'utf8');
     assert.match(contract, /contradiction between the assignment and status/);
-    assert.match(contract, /tejun-desk status --assignment/);
+    assert.match(contract, /worktree-desk status --assignment/);
     assert.match(contract, /do not create the missing branch or\s+worktree yourself/);
   } finally {
     if (oldCache === undefined) delete process.env.RONIN_SESSION_BOOT_CACHE_DIR; else process.env.RONIN_SESSION_BOOT_CACHE_DIR = oldCache;

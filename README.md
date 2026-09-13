@@ -34,7 +34,7 @@ files you already use.
 |---|---|
 | **[Your work stays yours](https://ronincowork.com/explainers/no-platform-lock-in/)** | Your code and documents stay on your machine, in ordinary repositories and files. Ronin does not become a data intermediary or proprietary home for them—so there is no platform lock-in. |
 | **[No behavioral takeover](https://ronincowork.com/explainers/no-behavioral-takeover/)** | Ronin gives Agents convenient tools at the edges of cooperation. It does not become their prompt engine or prescribe how they reason, code, or complete their work. |
-| **[Editable coordination](https://ronincowork.com/explainers/editable-coordination/)** | Select and customize the reading, SOPs, Macros, Actions, tools, and connections offered to new Agents. Owner versions live outside the repositories Ronin updates. |
+| **[Editable coordination](https://ronincowork.com/explainers/editable-coordination/)** | Select and customize the reading, SOPs, capability tools, and connections offered to new Agents. Owner versions live outside the repositories Ronin updates. |
 
 Ronin does not relay your Agent traffic or upload your code and conversations to a Ronin
 cloud. Your provider CLI still communicates directly with its model provider, whose data
@@ -62,7 +62,7 @@ independent Agent ── choose what helps ── Team coordination
 |---|---|
 | **Terminal** | A shell in an always-on tmux terminal. Nothing from Ronin. |
 | **Bare-metal Agent** | Claude, Codex, or another provider CLI in an always-on tmux terminal. No Ronin reading list, work record, or receipt. |
-| **Cowork Agent** | The same CLI born through Ronin: a work record, Macros, documents, messaging, and session coordination; in a repository declared for Worktrees, a private branch and worktree with hand-in and the Team lead's promotion, so parallel Agents avoid file collisions ([how it decides](docs/worktrees.md)). |
+| **Cowork Agent** | The same CLI born through Ronin: a work record, documents, capability tools, messaging, and session coordination; in a repository declared for Worktrees, a private branch and worktree with hand-in and the Team lead's promotion, so parallel Agents avoid file collisions ([how it decides](docs/worktrees.md)). |
 | **Installations** | What is on the machine, switched on or off in System settings. Ronin Services joins every Cowork Agent when it is on; gbrain, Trello and Perplexity make behaviours a Team or Agent can add ([installations and behaviours](docs/installations.md)). |
 
 [See how session types, installations and behaviours fit together.](https://ronincowork.com/explainers/cowork-and-services/)
@@ -82,7 +82,7 @@ independent Agent ── choose what helps ── Team coordination
 
 | Repo | What it is | Ships as |
 |---|---|---|
-| **ronin-cowork** (this one) | the open package — sessions, tiles, Workbench, rosters, notes, wipeboards, Macros, the commons, launch, and **all frontend** | open repo; versioned releases |
+| **ronin-cowork** (this one) | the open package — sessions, tiles, Workbench, rosters, notes, wipeboards, capability tools, the commons, launch, and **all frontend** | open repo; versioned releases |
 | **ronin-services** | the optional paid layer — incremental capabilities installed beside the open `ronin-cowork` package | hosted, versioned archive |
 
 **The open package runs completely alone.** It compiles, boots, and serves a machine's tmux

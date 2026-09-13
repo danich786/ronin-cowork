@@ -5,9 +5,8 @@ repositories, documents, and focus—and every project the Agent currently holds
 Team Kanban is derived from these records and the Team roster; there is no stored board
 to reconcile.
 
-Use the `work-record` vocabulary exposed to your session. During the command-bundle
-transition, `read_tegami` and `write_tegami` are the compatible underlying verbs. Tool
-names may change; the record and project shapes do not.
+Use the shipped `work-record` command exposed to your session. `work-record --help` is the
+canonical command vocabulary; there are no legacy reader or writer aliases.
 
 ## Projects are the work ladder
 
@@ -42,8 +41,7 @@ work-record project create --team virtual-kanban \
   --objective "Create collision-free projects in an Agent work record."
 ```
 
-The compatibility form is identical under `write_tegami`. Issuing an ID advances the
-roster counter before the project is written. If the later write fails, create a new
+Issuing an ID advances the roster counter before the project is written. If the later write fails, create a new
 project; a gap is harmless, while reusing an issued identity is not.
 
 `project create` is creation, never an upsert. It writes the complete starting shape into
@@ -74,14 +72,14 @@ Team roster or one Agent record. There is also no revision counter, history, ver
 decider. Evidence is an append-only list of useful facts such as commit SHAs and hand-in
 receipts, not a second status system.
 
-Typical compatible updates are:
+Typical updates are:
 
 ```text
-write_tegami project write virtual-kanban/6 --stage LANDING
-write_tegami project write virtual-kanban/6 --exit lead
-write_tegami project write virtual-kanban/6 --status green
-write_tegami project write virtual-kanban/6 --leg BUILDING.2 done
-write_tegami project write virtual-kanban/6 --evidence "commit 0123456789"
+work-record project write virtual-kanban/6 --stage LANDING
+work-record project write virtual-kanban/6 --exit lead
+work-record project write virtual-kanban/6 --status green
+work-record project write virtual-kanban/6 --leg BUILDING.2 done
+work-record project write virtual-kanban/6 --evidence "commit 0123456789"
 ```
 
 ## Whole-project moves
@@ -109,8 +107,8 @@ compatibility and non-project work. Do not duplicate a project ladder there. Lis
 the owner should be able to open and keep checkout rows current:
 
 ```text
-write_tegami --doc docs/work-record.md
-write_tegami --repo ronin_cowork:team/example/cut
+work-record document add docs/work-record.md
+work-record update-record --repo ronin_cowork:team/example/cut
 ```
 
 These fields locate work; they do not replace commits, hand-ins, or project evidence.

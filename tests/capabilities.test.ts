@@ -220,10 +220,14 @@ test('the stock capability documents are well-formed and carry no retired vocabu
   assert.deepEqual(priority('work-record'), ['work-record update-record', 'work-record document add', 'work-record project create', 'work-record project read', 'work-record project write']);
   assert.deepEqual(priority('edges'), ['edges send', 'edges wipeboard', 'edges read', 'edges team']);
   assert.deepEqual(priority('worktree-desk'), ['worktree-desk status', 'worktree-desk sync', 'worktree-desk hand-in']);
-  assert.deepEqual(priority('session'), ['session_check']);
+  assert.deepEqual(priority('session'), ['session_check', 'session_fork']);
   assert.ok(by.session.tools.some((tool) => tool.name === 'session_set'));
   assert.ok(!by.session.tools.some((tool) => tool.name === 'session_create'), 'session_create is not universal');
-  assert.deepEqual(priority('team-lead'), ['session_create']);
+  assert.deepEqual(priority('team-lead'), [
+    'session_create', 'team-lead roster read', 'team-lead project create',
+    'team-lead project read', 'team-lead project list', 'team-lead project write',
+    'team-lead project assign', 'team-lead project return', 'team-lead member status',
+  ]);
   assert.match(await readFile(by['work-record'].file, 'utf8'), /Team roster issues its ID/);
   assert.match(await readFile(by['work-record'].file, 'utf8'), /Agents never choose or reuse IDs/);
   assert.match(await readFile(by['work-record'].file, 'utf8'), /`exit`[\s\S]*`none` · `agent` · `lead` · `user`[\s\S]*`status`[\s\S]*`green` · `yellow` · `red`/);

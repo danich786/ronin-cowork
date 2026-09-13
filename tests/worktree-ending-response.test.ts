@@ -59,5 +59,5 @@ test('proceed-without-choosing acknowledges quarantine custody and names the nex
   assert.equal(acknowledgement.automatic_prompt, false);
   assert.equal(acknowledgement.disposition, disposition);
   assert.match(String(acknowledgement.warning), /proceeded/);
-  assert.deepEqual(acknowledgement.next_tools, ['tejun-desk status', 'ronin-desk-settle --dry-run']);
+  assert.deepEqual(acknowledgement.next_tools, ['worktree-desk status', 'ronin-desk-settle --dry-run']);
 });

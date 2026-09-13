@@ -55,7 +55,7 @@ export interface LeadNotice {
 
 export function leadMessage(n: LeadNotice): string {
   if (n.result === 'accepted') {
-    return `hand-in ${n.receiptId} by ${n.session} is on ${n.line} (${(n.lineSha ?? '').slice(0, 10)}). Your job: review the team line and promote it to dev when it is coherent — bin/ronin-promote ${n.team}. tejun-desk receipts --line --accepted lists what it carries.`;
+    return `hand-in ${n.receiptId} by ${n.session} is on ${n.line} (${(n.lineSha ?? '').slice(0, 10)}). Your job: review the team line and promote it to dev when it is coherent — bin/ronin-promote ${n.team}. worktree-desk receipts --line --accepted lists what it carries.`;
   }
   return `hand-in ${n.receiptId} by ${n.session} CONFLICTS with ${n.line}${n.files?.length ? ` on ${n.files.join(', ')}` : ''}. Your job: adjudicate — the line is untouched; the desk is blocked until you rule.`;
 }
@@ -112,7 +112,7 @@ export async function notifyLeads(n: LeadNotice): Promise<Delivery[]> {
 
 async function wipeboard(team: string, msg: string, to: string): Promise<string> {
   try {
-    const { stdout } = await brokerExecFile(path.join(REPO, 'ronin_bin', 'tejun-wipeboard'), [team, 'post', '--to', to, msg]);
+    const { stdout } = await brokerExecFile(path.join(REPO, 'ronin_bin', 'edges'), ['wipeboard', team, 'post', '--to', to, msg]);
     return stdout.trim().split('\n')[0] ?? 'posted';
   } catch (e) {
     const err = e as { stdout?: string; message?: string };

@@ -104,7 +104,7 @@ master                  reviewed/released line — moves by PR from dev
 
 Three scopes, kept distinct. **Commit** preserves: a checkpoint on your desk, as often as
 coherent, partial ones included; nothing propagates and no gate runs. **Hand-in**
-publishes: `tejun-desk hand-in` admits your committed range to the team line by mechanical
+publishes: `worktree-desk hand-in` admits your committed range to the team line by mechanical
 admission (merge, conflict check, near-instant invariants) — a conflict is contained in a
 candidate, the line is untouched, and the lead adjudicates. **Team promotion** is the
 lead's or compiler's act: the team line admitted to `dev` on a candidate that passed the
@@ -126,7 +126,7 @@ commits as candidates, the lead composes and serves one disposable preview, and 
 changes no Git line. The procedure is `ronin_sops/visual_staging.md`; the `visual_staging`
 behaviour gives it to an Agent, whose first act is to tell the Team and the lead to read it.
 
-Accepted state reaches a desk when its Agent chooses `tejun-desk sync`, which merges
+Accepted state reaches a desk when its Agent chooses `worktree-desk sync`, which merges
 current local `dev`. Status reports the distance; 20 commits behind is a notice, not a
 block. Read pending and overlap notices before you go on.
 
@@ -145,7 +145,7 @@ or in `wip/`:
   what exists and how it works now;
 - add the single manifest pointer when the project uses a manifest — one line, an index
   entry and not a history;
-- close every finished desk explicitly after `tejun-desk hand-in --assignment`; hand-in
+- close every finished desk explicitly after `worktree-desk hand-in --assignment`; hand-in
   does not close one, and the live session stays ready at the project root for later work;
   under direct publishing, use ordinary Git instead;
 - report the paths, what was handed in, what was closed, and the manifest line **before**
