@@ -328,3 +328,9 @@ test('a required line refuses dismissal while blank or invalid, announces why, a
   assert.equal(form.el.all('ask-tray').length, 0, 'another layer-one answer dismisses even with the line blank: the requirement belongs to the answer');
   assert.equal(form.value().team, 'none');
 });
+
+test('a stone never repeats its group head: the head carries the question, the stone says Answer', () => {
+  const form = ask([{ group: 'Where will you install Ronin?', fields: [{ key: 'where', label: 'Where will you install Ronin?', options: [{ v: 'here', l: 'This machine' }] }] }]);
+  assert.equal(form.el.one('ask-group-head').textContent, 'Where will you install Ronin?');
+  assert.equal(stoneFor(form, 'where').one('ask-label').textContent, 'Answer');
+});
