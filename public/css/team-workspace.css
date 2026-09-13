@@ -69,8 +69,10 @@
   .tk-card[data-status='green'] { border-left-color: var(--ok-2); }
   .tk-card[data-status='yellow'] { border-left-color: var(--warn); }
   .tk-card[data-status='red'] { border-left-color: var(--bad); }
-  .tk-board.dragging .tk-column { border-style: dashed; }
+  .tk-board.dragging .tk-column.means { border-color: var(--accent); border-style: dashed; background: var(--raise); }
   .tk-column.over { border-color: var(--accent); background: var(--raise); }
+  .tk-drop-hint { display: none; margin: 0; padding: var(--space-2) var(--space-4) 0; color: var(--accent); font-size: var(--text-1); }
+  .tk-board.dragging .tk-column.means .tk-drop-hint { display: block; }
   .tk-title { display: block; overflow: hidden; font-size: var(--text-2); text-overflow: ellipsis; white-space: nowrap; }
   .tk-outcome { overflow: hidden; margin-top: var(--space-1); color: var(--muted); font-size: var(--text-1); text-overflow: ellipsis; white-space: nowrap; }
   .tk-card-row { min-height: var(--tk-card-meta-line); align-items: center; gap: var(--space-2); margin-top: var(--space-3); padding-top: 0; font-size: var(--text-1); }
