@@ -102,7 +102,7 @@ export function createCoworkView(options = {}) {
   const coworkIdentity = coworkWorkbenchIdentity(t('campaign.coworks', 'Teams'));
   const { createSurface, createChannelSurface, createAction } = WorkspaceKit.primitives;
   const { createTerminalTileHost } = WorkspaceKit.adapters;
-  const { teamWorkspaceState } = WorkspaceKit.contract;
+  const { DISMISSED_WORKSPACE, teamWorkspaceState, workspaceMaySeedDefault } = WorkspaceKit.contract;
   const root = el('main', 'tw-view');
   root.dataset.coworkKind = campaign ? coworkIdentity.kind : 'team';
   let ctx = null;
@@ -391,7 +391,14 @@ export function createCoworkView(options = {}) {
    *  keeps its tiles while it is out. One trade for every surface, present and future. */
   const putSurface = (token, id, tab = '', doc = '') => { const request = surfaceRequest(token); return bench?.place(request.type, id, { ...request.detail, tab, doc }) || false; };
   const isShown = (name) => Object.values(seats).some((seat) => seat.pool.active === name && !surfaceIn(seat.id));
-  const remember = () => { const snapshot = bench?.snapshot(); ctx?.patchViewState(viewKey, { ...snapshot, [campaign ? 'teamCardDensity' : 'agentCardDensity']: thinSelectorCards ? 'thin' : 'thick', seats: Object.fromEntries(Object.keys(seats).map((id) => [id, surfaceIn(id) ? snapshot?.seats?.[id] : seats[id].pool.active])) }); reportView(); };
+  const remember = () => {
+    const snapshot = bench?.snapshot();
+    const seatState = Object.fromEntries(Object.keys(seats).map((id) => [id,
+      surfaceIn(id) ? snapshot?.seats?.[id] : seats[id].pool.active || DISMISSED_WORKSPACE]));
+    remembered = { ...seatState };
+    ctx?.patchViewState(viewKey, { ...snapshot, [campaign ? 'teamCardDensity' : 'agentCardDensity']: thinSelectorCards ? 'thin' : 'thick', seats: seatState });
+    reportView();
+  };
   const lead = () => membersOfTeam(team).find((m) => m.team_lead)?.name || '';
   const oppositeSeat = (id) => ({ workspace1: 'workspace2', workspace2: 'workspace1', workspace3: 'workspace4', workspace4: 'workspace3' })[id] || 'workspace1';
 
@@ -515,6 +522,9 @@ export function createCoworkView(options = {}) {
     for (const id of liveSeats()) {
       if (holds(id)) continue;
       const wanted = remembered[id];
+      // An absent value is a first visit and may receive the lead/default. @empty is the
+      // owner's explicit dash: later roster and view paints must leave that seat alone.
+      if (!workspaceMaySeedDefault(wanted)) continue;
       const request = surfaceRequest(wanted);
       if (WorkspaceKit.workbench.library.has(request.type) && bench.place(request.type, id, request.detail)) continue;
       else if (wanted && seats[id].pool.has(wanted)) putSession(wanted, id, false);

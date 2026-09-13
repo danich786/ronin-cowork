@@ -111,6 +111,21 @@ test('Cowork Team and Team Agent cards toggle between names-only and the full re
   assert.match(css, /\.wk-workbench-host\[data-selector-density='thin'\] \.wk-workbench-selector-cards > \.wk-card \.wk-card-summary/);
 });
 
+test('Campaign Settings and Setup selectors default to names-only and remember expansion', async () => {
+  const [campaign, setup] = await Promise.all([
+    source('js/campaign-view.js'), source('js/setup-view.js'),
+  ]);
+  for (const view of [campaign, setup]) {
+    assert.match(view, /let thinSelectorCards = true;/);
+    assert.match(view, /selectorDensity: thinSelectorCards \? 'thin' : 'thick'/);
+    assert.match(view, /thinSelectorCards = stored\.selectorDensity !== 'thick'/);
+    assert.match(view, /host\.dataset\.selectorDensity = thinSelectorCards \? 'thin' : 'thick'/);
+  }
+  assert.match(campaign, /actions: \[densityToggle, mikaHelp\]/);
+  assert.match(setup, /actions: \[mikaHelp\]/);
+  assert.match(setup, /barActions: \[densityToggle, surfaceToggle, themeToggle\]/);
+});
+
 test('the existing workbench can pin a Setup workspace and aim selector cards at the selected work surface', async () => {
   const workbench = await source('js/workbench.js');
   assert.match(workbench, /fixedWorkspaces\[id\].*fixedWorkspaces\[id\] !== type/);
@@ -177,7 +192,7 @@ test('Setup adds only Help to its selector header and keeps appearance in the to
   assert.match(setup, /actions: \[mikaHelp\]/);
   // Light/dark is a bar action: built by Setup, seated by the ViewHost in the bar's one
   // actions slot at the right, pinning the device theme through theme.js and nothing else.
-  assert.match(setup, /barActions: \[surfaceToggle, themeToggle\]/);
+  assert.match(setup, /barActions: \[densityToggle, surfaceToggle, themeToggle\]/);
   assert.match(setup, /barButton\('setup-theme-toggle'\)/);
   assert.match(setup, /barButton\('setup-surface-toggle'\)/);
   assert.match(setup, /saveCampaign\(id, \{ desk: \{ \[field\]: /);

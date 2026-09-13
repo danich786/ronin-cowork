@@ -12,7 +12,7 @@ const { openLaunchForm, openTemplateLaunchForm } = await import('../public/js/wo
 const { launchEntryPlan } = await import('../public/js/launch-view.js');
 const { templateEntryPlan } = await import('../public/js/new-agent.js');
 const { presetLaunchUrl } = await import('../public/js/preset-launch.js');
-const { teamWorkspaceState } = await import('../public/js/workspace-contract.js');
+const { DISMISSED_WORKSPACE, teamWorkspaceState, workspaceMaySeedDefault } = await import('../public/js/workspace-contract.js');
 
 function harness(blocked = false) {
   const state = { launch: { seats: { workspace4: 'launch.help' }, untouched: { exact: true } } };
@@ -118,6 +118,14 @@ test('a reserved launch tab receives exact Cowork seating without changing sourc
     workspace1: 'doc_agent', workspace2: { type: 'document', key: 'README.md', root: 'ronin_lab', path: 'README.md' },
   } });
   assert.deepEqual(teamWorkspaceState({}, stored).seats, stored.seats);
+});
+
+test('an explicitly dismissed workspace stays blank while an uninitialized seat may seed its default', () => {
+  const restored = teamWorkspaceState({}, { seats: { workspace1: DISMISSED_WORKSPACE } });
+  assert.equal(restored.seats.workspace1, DISMISSED_WORKSPACE);
+  assert.equal(workspaceMaySeedDefault(restored.seats.workspace1), false);
+  assert.equal('workspace2' in restored.seats, false);
+  assert.equal(workspaceMaySeedDefault(restored.seats.workspace2), true);
 });
 
 test('blocked popup and destination storage failure leave seating transport harmless', () => {
