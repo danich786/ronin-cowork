@@ -1,6 +1,6 @@
 # KOTOBA_GLOSSARY — the words to use with the person you work for
 
-Ronin's internal system names are Japanese: **TEJUN · MICHI · TEGAMI · SHINGO · RIREKI ·
+Ronin's internal system names are Japanese: **MICHI · TEGAMI · SHINGO · RIREKI ·
 OBOERU · TOMODACHI · SOROBAN · KOSHI · KOE · DAIKUSAN · KOTOBA · AGERU · JUSHO · BYOIN ·
 SETTEI · KYOKAI · SHIWAKE · KOKUGO · JIKAN · ERABI**. You will meet them in tool names, files and documents.
 They never reach the person you work for: use the plain word below. Only **Ronin** itself
@@ -14,7 +14,6 @@ is a name a user learns. Everything not listed here is ordinary English and need
 
 | You will see | Say | What it is |
 |---|---|---|
-| TEJUN | **macros**<!--g:glossary.macros--> | A saved instruction, typed at an agent as `+name: what you want`. |
 | JIKAN | **Cron jobs**<!--g:glossary.cron_jobs--> | A request delivered to an agent of the team, by name or to its lead, at a set time or on a rhythm, by Ronin's own clock. Say "schedule a request"; never "jikan". |
 | MICHI · TEGAMI · SHINGO · `ladder` | **work record**<!--g:glossary.work_record--> | The one record a session keeps of its work. Say "update your work record". |
 | RIREKI | the recording | Everything a tile printed, kept on disk. The Services card calls it Readable transcripts. |
@@ -58,7 +57,7 @@ is a name a user learns. Everything not listed here is ordinary English and need
 | `team_lead` | **team lead · 人**<!--g:glossary.team_lead--> | Set by hand, never inferred from what a session does. |
 | `session_type` | **session type**<!--g:glossary.session_type--> | **Cowork Agent**<!--g:glossary.cowork_agent--> born with everything Ronin provides on this box · **bare-metal Agent**<!--g:glossary.bare_metal_agent--> a CLI started without it · **terminal**<!--g:glossary.terminal--> a shell with no agent. |
 | `session_mandate` | **mandate**<!--g:glossary.mandate--> | **Reach**<!--g:glossary.reach--> how far an Agent goes · **Recruit**<!--g:glossary.recruit--> how it builds a Team · **Output**<!--g:glossary.output--> what it hands back. |
-| instruction cascade | **installation**<!--g:glossary.installation--> · **behaviour**<!--g:glossary.behaviour--> | A Campaign installation is a system switch: system joins every Cowork Agent; a provider offers behaviours. A behaviour may say how ordinary work is done or add a facility and its taught practice; it can carry reading, SOPs, macros, actions, tools, and a connection. **Mandates** defaults on. System settings: **Installations**<!--g:glossary.installations--> and **Defaults**<!--g:glossary.defaults-->. **Services**<!--g:glossary.services-->: paid. |
+| instruction cascade | **installation**<!--g:glossary.installation--> · **behaviour**<!--g:glossary.behaviour--> | A Campaign installation is a system switch: system joins every Cowork Agent; a provider offers behaviours. A behaviour may say how ordinary work is done or add a facility and its taught practice; it can carry reading, SOPs, capability tools, and a connection. **Mandates** defaults on. System settings: **Installations**<!--g:glossary.installations--> and **Defaults**<!--g:glossary.defaults-->. **Services**<!--g:glossary.services-->: paid. |
 | `message_queue` | **message queue**<!--g:glossary.message_queue--> | Messages waiting to enter a live session. |
 | `project_root` | **project root**<!--g:glossary.project_root--> | A folder Ronin is allowed to work in. |
 | `desk_profile` | **desk profile**<!--g:glossary.desk_profile--> | The owner's standing defaults: skin, words, layout. |
