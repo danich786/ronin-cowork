@@ -83,7 +83,9 @@ test('value-taking flags refuse a missing value before making a request', async 
   t.after(f.close);
   for (const [tool, args] of [
     ['tejun-session-create', ['unused', '--prompt']],
+    ['tejun-session-create', ['unused', '--team', '--lead']],
     ['tejun-session-set', ['unused', '--team']],
+    ['tejun-session-set', ['unused', '--root', '--lead']],
   ] as const) {
     const result = await f.run(tool, [...args]);
     assert.equal(result.code, 2);
