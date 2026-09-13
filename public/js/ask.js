@@ -1,6 +1,6 @@
 /* part of the ronin-cowork client — see js/README.md */
 /**
- * ASK — how a form asks a question. THE ONE SELECTOR UTILITY (ronin-lab SELECTORS.md,
+ * ERABI — how a form asks a question. THE ONE SELECTOR UTILITY (ronin-lab SELECTORS.md,
  * owner's ruling 2026-09-12). A consumer writes a spec; this module draws it. Nothing spatial
  * is the consumer's: not the width, not the wrapping, not the shape, not what opens.
  *
