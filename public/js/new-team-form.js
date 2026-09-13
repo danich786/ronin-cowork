@@ -17,7 +17,7 @@ const RECRUIT = ['open', 'nobody', 'propose agents', 'staff agents'];
 const OUTPUT = ['open', 'a plan', 'ideas', 'code', 'an artifact', 'the team', 'no code'];
 const KINDS = ['coding', 'work', 'personal', 'household', 'social', 'school'];
 
-export function createNewTeamFormView(kit, { created = null, embedded = false } = {}) {
+export function createNewTeamFormView(kit, { created = null, consumed = null, embedded = false } = {}) {
   const { createSurface, createAction, createActionBar, createField, createNotice } = kit.primitives;
 
   const draft = {
@@ -515,12 +515,13 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
     }
     notice.set('', '');
     reset();
-    await created?.(name);
     // The reserved tab cloned the opener's sessionStorage when it was opened. A Team tab
     // name belongs to that older tab, not to the Team born here; clear it so the new page
     // falls back to the roster title (and ultimately the Team name).
     seedReservedWorkspaceTab(launchTab, 'team', { tabName: '' });
     openWorkspaceTab('team', name, launchTab);
+    await created?.(name);
+    await consumed?.();
   }
 
   async function doSave() {

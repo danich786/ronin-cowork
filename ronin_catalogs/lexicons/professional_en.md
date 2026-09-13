@@ -722,6 +722,7 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **team.roster_of:** Roster
 - **team.workspace_blank:** Workspace
 - **team.workspace_empty:** empty
+- **workspace.close_surface:** Close this work surface
 - **team.new_session:** New session
 - **cowork.tab_roster:** Roster
 - **cowork.tab_archives:** Archived

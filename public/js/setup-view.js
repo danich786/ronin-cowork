@@ -96,12 +96,7 @@ export function createSetupView() {
     paintAppearance();
   });
   paintAppearance();
-  const blank = (id) => {
-    const surface = createSurface({ label: id.replace('workspace', 'Workspace '), className: 'cv-blank' });
-    const word = document.createElement('p'); word.className = 'cv-blank-word'; word.textContent = t('team.workspace_blank', 'Workspace');
-    surface.content.append(word);
-    return surface.el;
-  };
+  const blank = (id) => WorkspaceKit.primitives.createBlankSurface(id.replace('workspace', 'Workspace ')).el;
   const presetEnvironment = () => ({
     customize: ({ template, user_message } = {}) => openWorkspaceStateTab(ctx, 'launch', { customize: { template, user_message: String(user_message || '') } }),
     launch: launchPresetPlan,

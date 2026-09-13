@@ -170,7 +170,7 @@ export function createCampaignView() {
     mikaPool.sync([MIKA_SESSION]);
     return bench?.place(TERMINAL_TYPE, workspace, { key: MIKA_SESSION }) || false;
   };
-  const blank = (id) => { const surface = createSurface({ label: id.replace('workspace', 'Workspace '), className: 'cv-blank' }); surface.content.append(elem('p', 'cv-blank-word', t('team.workspace_blank', 'Workspace'))); return surface.el; };
+  const blank = (id) => WorkspaceKit.primitives.createBlankSurface(id.replace('workspace', 'Workspace ')).el;
   const save = () => ctx?.patchViewState('campaign', bench.snapshot());
   const mikaHelp = WorkspaceKit.primitives.createAction({ label: t('mika.help', 'ミ Help'), size: 'compact' });
   let helpPanel = null;
