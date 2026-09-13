@@ -321,7 +321,7 @@ function createServicesSurface(context) {
     return intro;
   };
   const openRegister = () => context.workbench?.place(SETUP_SURFACE_TYPES.register, context.workspace || 'workspace2');
-  /** The Routine switch for new Agents: the Campaign's own map, saved the way Routines and Installs saves it. */
+      /** The Services installation switch in the Campaign's complete installation map. */
   const switchServices = async (on) => {
     const [catalog] = await Promise.all([request('/api/installations'), loadCampaigns()]);
     const row = campaignById(context.tenant?.campaign) || campaigns()[0];
@@ -409,7 +409,7 @@ function createGbrainSurface(context) {
     onState: (summary) => notifySummary(SETUP_SURFACE_TYPES.gbrain, summary, context.workbench),
     openServices: () => context.workbench?.place(SETUP_SURFACE_TYPES.services, context.workspace || 'workspace2'),
     openProviders: () => context.workbench?.place(SETUP_SURFACE_TYPES.providers, context.workspace || 'workspace2'),
-    // Available to Agents: the Campaign's own gbrain Routine, saved the way Routines and Installs saves it.
+        // Available to Agents follows the Campaign's gbrain installation.
     agentsDefault: {
       read: async () => {
         await loadCampaigns();

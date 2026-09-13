@@ -313,7 +313,7 @@ export async function resolveForm(
   const routineMcp = routines
     .filter((routine) => routine.enabled)
     .flatMap((routine) => routine.mcp);
-  const gbrainAnswer = cascade.selected.includes('gbrain') ? 'connected' as const : 'disconnected' as const;
+  const gbrainAnswer = cascade.selected.includes('gbrain') ? 'connected' as const : undefined;
   const mcpWanted = profile.mcpAlways || routineMcp.length > 0
     ? true
     : gbrainAnswer === 'connected'
@@ -322,7 +322,9 @@ export async function resolveForm(
         ? false
         : profile.mcpDefault;
   const askedOff = false;
-  let mcpOffWanted = agent && !mcpWanted;
+  // Feature silence is not a request to reconfigure the provider. An absent gbrain
+  // feature contributes neither connection material nor disconnect CLI flags.
+  let mcpOffWanted = false;
   if (askedOff && profile.mcpAlways) {
     throw new Error(
       `${profile.session_role} is born connected (\`mcp: always\`) — ` +
@@ -356,7 +358,7 @@ export async function resolveForm(
   const cmdSource: StatedBy[] = chosen.source === 'explicit_launch'
     ? explicit
     : chosen.source === 'settei_provider'
-      ? [{ layer: 'system', source: form.provider && merged.providerOwn(form.provider) ? `#/campaign (${campaign?.id ?? form.campaign_id}: agent_defaults)` : '⚙ Configuration (agents.sessions)' }]
+      ? [{ layer: 'system', source: form.provider && merged.providerOwn(form.provider) ? `#/campaign (${campaign?.id ?? form.campaign_id}: defaults)` : '⚙ Configuration (agents.sessions)' }]
       : system;
   const defaultMcpWasUndeliverable = agent && !mcpWanted && !mcpOffWanted;
   const mcpSource: StatedBy[] = !agent
@@ -473,7 +475,7 @@ export async function resolveForm(
       session_role: form.session_role !== undefined ? explicit : profile.stated_by.session_role,
       template: preset.source ?? system,
       mandate: form.mandate ? (preset.mandate ? preset.source! : explicit) : parentSeed?.seeds.reach.stated_by ?? (campaign
-        ? [{ layer: 'campaign', source: `#/campaign (${campaign.id}: agent_defaults)` }]
+        ? [{ layer: 'campaign', source: `#/campaign (${campaign.id}: defaults)` }]
         : system),
       team: form.team ? explicit : system,
       project_root: rootSource,

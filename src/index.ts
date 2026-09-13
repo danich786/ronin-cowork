@@ -254,8 +254,8 @@ const plan = partsToLoad(
   (await initialCampaign().catch(() => null))?.config?.installations ?? {},
 );
 for (const parked of plan.parked) {
-  console.log(`[services] ${parked.name} is parked: ${parked.reason ?? `${parked.routine} is off for this Campaign (restart after switching it on)`}`);
-  noteServiceParked(parked.name, parked.routine, parked.reason);
+  console.log(`[services] ${parked.name} is parked: ${parked.reason ?? `${parked.installation} is off for this Campaign (restart after switching it on)`}`);
+  noteServiceParked(parked.name, parked.installation, parked.reason);
 }
 for (const { name: dir, entry } of plan.load) {
   try {

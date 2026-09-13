@@ -5,6 +5,7 @@ import { storeDir } from './resources.js';
 import { listWays, wayFile } from './resources.js';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+const STOCK_BEHAVIOURS = new Map([['mandates', path.join(ROOT, 'ronin_catalogs', 'behaviours', 'mandates.md')]]);
 
 export interface DeliveredBehaviour {
   book: string;
@@ -29,6 +30,11 @@ export async function resolveBehaviourBooks(input: readonly string[]): Promise<R
     const book = String(raw).trim();
     if (!book || seen.has(book)) continue;
     seen.add(book);
+    const stock = STOCK_BEHAVIOURS.get(book);
+    if (stock) {
+      delivered.push({ book, file: stock });
+      continue;
+    }
     const match = /^(sops|ways):([a-z0-9][a-z0-9_-]*)$/.exec(book);
     const shelf = match?.[1] as keyof typeof shelves | undefined;
     const name = match?.[2] ?? '';

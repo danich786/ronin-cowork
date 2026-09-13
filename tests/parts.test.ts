@@ -10,20 +10,20 @@ import path from 'node:path';
 import { discoverParts, partClaims, partsToLoad } from '../src/parts.js';
 import { listInstallations } from '../src/resource-adapters.js';
 
-const routines = [
+const installations = [
   { name: 'ronin_services', parts: ['counting', 'koe', 'koshi', 'koshi_weights', 'michi', 'rireki'] },
   { name: 'gbrain', parts: [] },
 ];
 const onDisk = ['counting', 'gbrain', 'koe', 'koshi', 'koshi_weights', 'machine', 'michi', 'rireki'].map((name) => ({ name }));
 
 test('Services off parks every part the installation claims; unclaimed parts still load', () => {
-  const plan = partsToLoad(onDisk, routines, { ronin_base: true, ronin_services: false });
+  const plan = partsToLoad(onDisk, installations, { ronin_services: false });
   assert.deepEqual(plan.load.map((p) => p.name), ['gbrain', 'machine']);
-  assert.deepEqual(plan.parked, ['counting', 'koe', 'koshi', 'koshi_weights', 'michi', 'rireki'].map((name) => ({ name, routine: 'ronin_services' })));
+  assert.deepEqual(plan.parked, ['counting', 'koe', 'koshi', 'koshi_weights', 'michi', 'rireki'].map((name) => ({ name, installation: 'ronin_services' })));
 });
 
 test('Services on loads everything on disk', () => {
-  const plan = partsToLoad(onDisk, routines, { ronin_services: true });
+  const plan = partsToLoad(onDisk, installations, { ronin_services: true });
   assert.deepEqual(plan.load.map((p) => p.name), onDisk.map((p) => p.name));
   assert.deepEqual(plan.parked, []);
 });
@@ -35,7 +35,7 @@ test('PARKED.md parks a part with its reason regardless of the installation swit
   await writeFile(path.join(dir, 'rireki', 'PARKED.md'), 'RIREKI is off in this beta: not ready, to be refactored\n\nDetails.\n');
   const parts = discoverParts(dir);
   assert.equal(parts[0].parked, 'RIREKI is off in this beta: not ready, to be refactored');
-  assert.deepEqual(partsToLoad(parts, routines, { ronin_services: true }), {
+  assert.deepEqual(partsToLoad(parts, installations, { ronin_services: true }), {
     load: [],
     parked: [{ name: 'rireki', reason: 'RIREKI is off in this beta: not ready, to be refactored' }],
   });
@@ -43,7 +43,7 @@ test('PARKED.md parks a part with its reason regardless of the installation swit
 
 test('an absent or malformed switch map reads as off — the recorder never runs by accident', () => {
   for (const switches of [undefined, null, {}, [], 'on', { ronin_services: 'yes' }]) {
-    const plan = partsToLoad(onDisk, routines, switches);
+    const plan = partsToLoad(onDisk, installations, switches);
     assert.equal(plan.load.some((p) => p.name === 'rireki'), false, `switches=${JSON.stringify(switches)}`);
   }
 });
