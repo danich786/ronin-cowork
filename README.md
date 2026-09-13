@@ -174,6 +174,10 @@ system knowledge.
 
 ## Running it (contributors, from a checkout)
 
+Before proposing a change, read [`CONTRIBUTING.md`](CONTRIBUTING.md). Contributions begin
+with an issue, use a linked PR into `dev`, and pass the repository and BYOIN checks before
+maintainer integration.
+
 ```bash
 ./setup.sh     # installs deps, the tmux server unit, the cowork unit; the service
                # checks its own rendered page on every start
