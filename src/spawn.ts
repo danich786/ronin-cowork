@@ -321,12 +321,14 @@ export async function resolveForm(
   const contributionMcp = contributions
     .filter((contribution) => contribution.enabled)
     .flatMap((contribution) => contribution.mcp);
-  // An Agent receives gbrain only when the behaviour is both available and selected.
-  // Otherwise explicitly disconnect the provider's globally configured gbrain: silence
-  // here must not let a user-level MCP registration leak into this session.
-  const gbrainAnswer = agent
-    ? cascade.selected.includes('gbrain') ? 'connected' as const : 'disconnected' as const
-    : undefined;
+  // Bare metal never receives Campaign or Team defaults. A Cowork Agent receives gbrain
+  // only when the behaviour is both available and selected; every other Agent launch
+  // explicitly disconnects the provider's globally configured gbrain.
+  const gbrainAnswer = bareMetalAgent
+    ? 'disconnected' as const
+    : agent
+      ? cascade.selected.includes('gbrain') ? 'connected' as const : 'disconnected' as const
+      : undefined;
   const mcpWanted = profile.mcpAlways || contributionMcp.length > 0
     ? true
     : gbrainAnswer === 'connected'

@@ -181,6 +181,7 @@ test('bare_metal_agent resolves a real CLI without Ronin birth machinery', async
   assert.ok(bare.launchAgent, 'the launched provider is stamped');
   assert.equal(bare.brief, '', 'Ronin composes no brief');
   assert.deepEqual(bare.birth_reading, [], 'Ronin reads no boot shelf');
+  assert.deepEqual(bare.behaviours, [], 'Campaign and Team behaviour defaults never reach bare metal');
   assert.equal(bare.assignment, null, 'Ronin opens no managed repository desk');
   assert.deepEqual(bare.tags, ['scratchteam'], 'Team is only an addressing tag');
   assert.equal(bare.team_objective, '', 'the Team roster does not resolve into the launch');
