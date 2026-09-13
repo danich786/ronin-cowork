@@ -5,18 +5,21 @@ import { readFile } from 'node:fs/promises';
 const source = async (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
 test('Setup opts into roots stones while Campaign keeps the existing project-root surface', async () => {
-  const [setup, campaign] = await Promise.all([
+  const [setup, campaign, shared] = await Promise.all([
     source('public/js/setup-surfaces.js'),
     source('public/js/campaign-view.js'),
+    source('public/js/workspace-folders-surface.js'),
   ]);
-  assert.match(setup, /buildProjectRoots\([^;]+\{ presentation: 'stones' \}\)/);
+  assert.match(setup, /createWorkspaceFoldersSurface\(\{[\s\S]*presentation: 'stones'/);
   assert.doesNotMatch(campaign, /presentation: 'stones'/);
+  assert.match(campaign, /createWorkspaceFoldersSurface\(\{[\s\S]*worktreesDefault: true/);
+  assert.match(shared, /buildProjectRoots\([\s\S]*presentation \? \{ presentation \} : \{\}/);
 });
 
 test('Setup mounts the roots stones on the surface content so the shared insets apply', async () => {
-  const setup = await source('public/js/setup-surfaces.js');
-  assert.match(setup, /buildProjectRoots\(out\.content, \(\) => out\.content\.isConnected,[^;]+\{ presentation: 'stones' \}\)/);
-  assert.doesNotMatch(setup, /'desk-pane desk-proj show'\); out\.content\.append\(host\);\s*const room = buildProjectRoots\(host/, 'a nested host zeroes the content padding and gets none of its own');
+  const shared = await source('public/js/workspace-folders-surface.js');
+  assert.match(shared, /presentation === 'stones'\s*\? surface\.content\s*: el\('div', 'desk-pane desk-proj show'\)/);
+  assert.match(shared, /connected\?\.\(rootHost\) \?\? rootHost\.isConnected/);
 });
 
 test('roots adapt the real project-root detail and Add form to the shared stone work surface', async () => {

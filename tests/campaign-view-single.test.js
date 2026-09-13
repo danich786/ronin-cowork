@@ -7,7 +7,7 @@ test('the Campaign page has one switch for offering New Campaign', async () => {
   const campaigns = await readFile(new URL('../public/js/campaigns.js', import.meta.url), 'utf8');
   assert.match(campaigns, /export const MULTIPLE_CAMPAIGNS_ENABLED = false;/);
   assert.match(source, /if \(MULTIPLE_CAMPAIGNS_ENABLED\) add\(\{ type: TYPES\.create/);
-  assert.match(source, /MULTIPLE_CAMPAIGNS_ENABLED \|\| type !== TYPES\.create/);
+  assert.match(source, /\.\.\.\(MULTIPLE_CAMPAIGNS_ENABLED \? \[TYPES\.create\] : \[\]\)/);
   for (const type of ['identity', 'profile', 'routines', 'defaults']) {
     assert.match(source, new RegExp(`add\\(\\{ type: TYPES\\.${type}`));
   }
@@ -39,4 +39,30 @@ test('the Campaign page clears the loading state it set before it paints a surfa
   // wrapper that said "Loading Campaign…" is the one that must take it back.
   const source = await readFile(new URL('../public/js/campaign-view.js', import.meta.url), 'utf8');
   assert.match(source, /paint: \(\.\.\.args\) => \{ WorkspaceKit\.primitives\.setSurfaceState\(surface\.el, null, ''\); return surface\.show\?\.\(\.\.\.args\); \}/);
+});
+
+test('Settings carries Setup capabilities and starts with Mika beside an empty workspace', async () => {
+  const source = await readFile(new URL('../public/js/campaign-view.js', import.meta.url), 'utf8');
+  for (const type of ['register', 'services', 'gbrain', 'launchOwn']) {
+    assert.match(source, new RegExp(`SETUP_SURFACE_TYPES\\.${type}`));
+  }
+  assert.match(source, /createMikaHelpPanel/);
+  assert.match(source, /className: 'campaign-mika-card'/);
+  assert.match(source, /profiles\.define\(PROFILE, \[\s*TERMINAL_TYPE,\s*TYPES\.identity/, 'Mika is the first Settings selector card');
+  assert.match(source, /bench\.setCount\(2\)/);
+  assert.match(source, /ensureAndPlaceMika\('workspace1'\)/);
+  assert.match(source, /bench\.restoreDefault\('workspace2'\)/);
+  assert.doesNotMatch(source, /const DEFAULT_VIEW/);
+});
+
+test('Campaign delegates Workspace folders assembly while retaining scope and future-root defaults', async () => {
+  const [campaign, shared] = await Promise.all([
+    readFile(new URL('../public/js/campaign-view.js', import.meta.url), 'utf8'),
+    readFile(new URL('../public/js/workspace-folders-surface.js', import.meta.url), 'utf8'),
+  ]);
+  assert.match(campaign, /campaignId: \(\) => e\.selected\(\)\?\.id \|\| ''/);
+  assert.match(campaign, /connected: \(host\) => e\.entered\(\) && host\.isConnected/);
+  assert.match(campaign, /worktreesDefault: true/);
+  assert.match(shared, /family: 'desks', value: \{ new_project: value \}/);
+  assert.match(shared, /result\.data\?\.set\?\.desks\?\.new_project === 'none'/);
 });

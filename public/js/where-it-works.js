@@ -57,11 +57,15 @@ export function createWhereItWorks(o = {}) {
     el: details,
     rootSelect,
     get root() { return rootSelect.value; },
-    set root(value) { state.root = value || ''; buildRoots(); paint(); },
+    set root(value) {
+      state.root = value || '';
+      state.repos = state.repos.filter((name) => name !== state.root);
+      buildRoots(); buildRows(); paint();
+    },
     repos: () => ticked(),
     branches: () => Object.fromEntries([...rows].filter(([, row]) => row.tick.checked && row.branch.value.trim()).map(([name, row]) => [name, row.branch.value.trim()])),
     setRoots(roots) { state.roots = Array.isArray(roots) ? roots : []; buildRoots(); buildRows(); paint(); },
-    setRepos(repos, branches) { state.repos = [...(repos || [])]; if (branches) state.branches = { ...branches }; buildRows(); paint(); },
+    setRepos(repos, branches) { state.repos = [...(repos || [])].filter((name) => name !== state.root); if (branches) state.branches = { ...branches }; buildRows(); paint(); },
     setWorktrees(on) { state.worktreesOn = !!on; paint(); },
     summary: () => summary.textContent,
   };

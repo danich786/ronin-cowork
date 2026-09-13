@@ -18,7 +18,8 @@ Usage:
 
 Common starting points:
   work records  read_tegami --help, write_tegami --help
-  teams         tejun-team --help, tejun-session-set --help, tejun-team-set --help
+  teams         tejun-team --help, tejun-session-check --help,
+                tejun-session-create --help, tejun-session-set --help, tejun-team-set --help
   worktrees     tejun-desk --help
   lifecycle     tejun-archive --help, tejun-rehydrate --help
 

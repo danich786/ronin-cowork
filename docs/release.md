@@ -116,8 +116,11 @@ versions of the UI, and `/api/version` tells them apart: a release string on one
 bare commit on the other. **After cutover, never run `setup.sh` from the checkout** —
 setup points the unit at a directory, and from the checkout it would re-point the
 serving Ronin at a source tree. The checkout is updated by git; the install by
-releases. For client-only diffs, `npm run stage` + `/staging/` shows a candidate UI
-on the serving port while the working UI stays up.
+releases. `npm run stage` remains a low-level static-client copy to `/staging/`; it is not
+the multi-Agent visual-review workflow. Team preview composition uses one disposable,
+lead-owned staging worktree and a hand-started server on a separate port, as described in
+the [visual-staging SOP](../ronin_sops/ronin_methodology.md#visual-staging-one-disposable-team-preview). `/api/version` must name the
+aggregate commit that process actually serves.
 
 ## Cutover (a checkout-serving box moves to releases, once)
 

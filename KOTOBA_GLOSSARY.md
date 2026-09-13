@@ -2,7 +2,7 @@
 
 Ronin's internal system names are Japanese: **TEJUN · MICHI · TEGAMI · SHINGO · RIREKI ·
 OBOERU · TOMODACHI · SOROBAN · KOSHI · KOE · DAIKUSAN · KOTOBA · AGERU · JUSHO · BYOIN ·
-SETTEI · KYOKAI · SHIWAKE · KOKUGO · JIKAN**. You will meet them in tool names, files and documents.
+SETTEI · KYOKAI · SHIWAKE · KOKUGO · JIKAN · ERABI**. You will meet them in tool names, files and documents.
 They never reach the person you work for: use the plain word below. Only **Ronin** itself
 is a name a user learns. Everything not listed here is ordinary English and needs no gloss.
 
@@ -24,6 +24,7 @@ is a name a user learns. Everything not listed here is ordinary English and need
 | KOE | **Hotwords**<!--g:glossary.hotwords--> | Voice. The mic on a tile; Hotwords are the words dictation mishears. |
 | SETTEI | **Configuration**<!--g:glossary.configuration--> | The ⚙ tab. "Your settings" for what is in it. |
 | AGERU | **what gets sent**<!--g:glossary.packet--> · **where Ronin has connected**<!--g:glossary.egress_log--> | The one door out: a packet shown in full before it leaves, and the list of every outbound request. |
+| ERABI | — | The one selector utility: how a form asks a question — the reading stone, its tray, the two stone shapes, the caption, the switch (`ask()` in `public/js/ask.js`; ronin-lab `SELECTORS.md`). Internal machinery; the user sees a question, never the name. |
 | KOTOBA · KOKUGO · DAIKUSAN · JUSHO · BYOIN · KYOKAI · SHIWAKE | — | Internal machinery. There is no user word; do not translate or explain them. |
 
 ## The space

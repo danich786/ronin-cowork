@@ -89,34 +89,6 @@ review rejects a change—revise or reactivate the relevant build work instead o
 review passed. Keep work in progress narrow: finish or revise the active item before accumulating
 partially active legs across the ladder.
 
-## Future Team projection, not current capability
-
-The intended architecture keeps coordination fluid. A Team lead's lightweight planning record may
-hold a small inbox idea or a large project, shape it into recommended assignments, and offer them
-to new or existing Agents. On acceptance, the Agent creates and owns its work card and record,
-links it back to the lead item as provenance, and takes the assignment outcome as its objective.
-An Agent may own several independent cards and records at once.
-
-Each Agent independently records the smallest useful plan, stages or gates, progress, and evidence.
-Ronin's shared stage and gate vocabulary supports interoperable projection; it is guidance, not a
-closed enum or workflow engine. The virtual Team Kanban reads the lead's planning items plus the
-distributed Agent records and consolidates their reported state. It does not prescribe a card's
-ladder. Stable identity, never phase or gate text, connects declared events to their projection.
-Trello or another board is only an adapter over that view.
-
-For Team work, every linked card is expected to show an exact-candidate release-approval gate.
-That convention makes approval or its absence visible; it does not make the work-record or Tejun
-tools refuse commit or hand-in. Private checkpoint commits remain ungated. If an Agent proceeds
-without recorded approval, the record and views disclose the missing gate and consequence rather
-than inventing approval. Approval may release a voluntarily observed hold, while hand-in, lead
-review, and promotion remain separate actions.
-
-This does not exist in the current tools. Do not claim that an external card controls an Agent,
-and do not add future identity or state fields to today's record. Birth reading, generated record
-instructions, tools, macros, and SOPs remain unchanged until the mechanics exist. The proposed
-lifecycle, Team-lead duties, identity, projection, authorization, audit, and conflict contracts
-are documented separately in [Future Team work-record integration](work-record-integration.md).
-
 Useful editing forms are:
 
 ```text
