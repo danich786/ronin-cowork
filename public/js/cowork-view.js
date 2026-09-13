@@ -252,7 +252,10 @@ export function createCoworkView(options = {}) {
   const newAgentBySeat = Object.fromEntries(Object.keys(seats).map((id) => {
     const view = createNewAgentView(WorkspaceKit, {
       team: () => (campaign || team === UNASSIGNED ? '' : team),
-      connect: (name) => connectSession(name, id),
+      connect: async (name) => {
+        await fetchSessions();
+        return connectSession(name, id);
+      },
     });
     // The detail rides through: `S.showNewSession(prompt)` seeds the form's Instructions.
     return [id, { el: view.el, enter: (detail) => view.enter(detail) }];
@@ -508,7 +511,7 @@ export function createCoworkView(options = {}) {
   };
 
   const syncPools = (members) => {
-    const live = new Set((homeData || []).map((s) => s.name));
+    const live = new Set(S.sessions.map((s) => s.name));
     for (const x of [...extras]) if (!live.has(x) && live.size) extras.delete(x); // a gone extra leaves the pool
     const names = [...new Set([...members.map((m) => m.name), ...extras])];
     for (const seat of Object.values(seats)) seat.pool.sync(names);

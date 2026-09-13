@@ -37,14 +37,18 @@ export function templateEntryPlan({ currentKind, kindTouched = false, templates 
 export function createNewAgentView(kit, { connect = null, embedded = false, team = null } = {}) {
   const { createSurface, createAction, createActionBar, createField, createNotice } = kit.primitives;
 
-  const draft = {
-    type: 'cowork_agent', template: '', templateName: '',
-    name: '', kind: 'coding', kindTouched: false, provider: '', model: '', instructions: '',
-    teamMode: typeof team === 'function' && team() ? 'existing' : 'none', team: typeof team === 'function' ? team() : '', newTeam: '', teamLead: false,
-    reach: 'open', recruit: 'open', output: ['open'], launchMode: 'live_dangerously',
-    books: [], root: '', repos: [], routineOverrides: {},
-    expanded: {},
+  const freshDraft = () => {
+    const entryTeam = typeof team === 'function' ? team() : team;
+    return {
+      type: 'cowork_agent', template: '', templateName: '',
+      name: '', kind: 'coding', kindTouched: false, provider: '', model: '', instructions: '',
+      teamMode: entryTeam ? 'existing' : 'none', team: entryTeam || '', newTeam: '', teamLead: false,
+      reach: 'open', recruit: 'open', output: ['open'], launchMode: 'live_dangerously',
+      books: [], root: '', repos: [], routineOverrides: {},
+      expanded: {},
+    };
   };
+  const draft = freshDraft();
   let seed = null;
   let templates = [];
   let sops = [];
@@ -461,6 +465,18 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     save.el.textContent = !templateRow() ? t('save_template', 'Save as template') : t('new_team.save_as_new', 'Save as new template');
   }
 
+  function clearAfterLaunch() {
+    Object.assign(draft, freshDraft());
+    for (const key of Object.keys(touched)) touched[key] = false;
+    seed = null;
+    loaded = false;
+    snapshot = '';
+    templateMode = false;
+    nameInput.value = '';
+    instructionsInput.value = '';
+    paint();
+  }
+
   async function doStart() {
     if (busy) return;
     const launchTab = connect ? null : reserveWorkspaceTab();
@@ -520,8 +536,11 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     const deskNote = result.data?.receipt?.desk_note || '';
     if (deskNote) notice.set('warning', t('add_agent.started_note', 'Started {name} — {note}', { name: born, note: deskNote }));
     else notice.set('success', t('add_agent.started', 'Started {name}', { name: born }));
-    if (connect) connect(born);
-    else openWorkspaceTab(team ? 'team' : 'cowork', team, launchTab);
+    // A successful launch consumes this form. Await the handover because a provider
+    // Agent can take longer to enter the observable session set than a plain shell.
+    if (connect) await connect(born);
+    clearAfterLaunch();
+    if (!connect) openWorkspaceTab(team ? 'team' : 'cowork', team, launchTab);
   }
 
   async function doSave() {

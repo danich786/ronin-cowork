@@ -35,6 +35,7 @@ test('New Agent uses one ruled ask() spec after its three session types', async 
   assert.match(form, /teamQuestions\.show\(isCowork\(\) \? null : \['team'\]\)/);
   assert.match(form, /questions\.el\.hidden = draft\.type === 'terminal'/);
   assert.match(form, /\? \{ session_type: 'terminal', name, team \}/);
+  assert.match(form, /if \(connect\) await connect\(born\)/, 'every successful birth awaits replacement of the launcher');
   assert.match(form, /stepPayload\.setNumber\(order\.length \+ 1\)/);
   assert.match(form, /key: 'payload'.*Payload/);
   assert.match(form, /identityRow\.append\(nameField, teamQuestions\.el\)/);
@@ -48,7 +49,8 @@ test('both workbench entrances use the canonical New Agent form with contextual 
   assert.doesNotMatch(cowork, /WB_TYPES\.addAgent|addAgentBySeat|environment\.addAgent/);
   assert.match(cowork, /profiles\.define\(WB_PROFILES\.team, \[WB_TYPES\.commons, WB_TYPES\.terminal, WB_TYPES\.newAgent/);
   assert.match(cowork, /const newAgentBySeat = Object\.fromEntries[\s\S]*createNewAgentView\(WorkspaceKit, \{[\s\S]*team: \(\) =>/);
-  assert.match(cowork, /connect: \(name\) => connectSession\(name, id\)/);
+  assert.match(cowork, /connect: async \(name\) => \{\s*await fetchSessions\(\);\s*return connectSession\(name, id\)/);
+  assert.match(cowork, /const live = new Set\(S\.sessions\.map/, 'a newborn is not discarded against the slower home reading');
   assert.match(cowork, /'team\.add-agent': WB_TYPES\.newAgent/);
 });
 
