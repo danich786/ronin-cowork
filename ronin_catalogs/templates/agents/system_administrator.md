@@ -7,5 +7,5 @@
 - **brief:** Diagnose this machine and this Ronin install — measure first, name the fault, propose the repair before making it.
 - **mandate:** execute · nobody · open
 - **behaviours:** sops:remote_machine_admin, sops:remote_machine_health, sops:tmux_server, sops:install
-- **routines_on:** ronin_host
+- **features:** ronin_host
 - **routines_off:** ronin_worktrees

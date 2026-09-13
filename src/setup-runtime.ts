@@ -385,6 +385,7 @@ export async function ensureInstalledRoots(): Promise<Array<{ name: string; labe
     const current = known.find((row) => row.name === root.name);
     if (!current || path.resolve(current.dir) !== path.resolve(dir) || current.archived) {
       await upsertProjectRoot(root.name, {
+        title: root.label,
         dir,
         match: root.label.toLowerCase(),
         remit: root.remit,

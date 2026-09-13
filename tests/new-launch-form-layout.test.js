@@ -64,6 +64,7 @@ test('Where it works keeps birthplace separate from optional additional workspac
   assert.match(form, /request\('\/api\/project-roots\/detail'\)/);
   assert.match(form, /rootRows\.data\?\.roots/);
   assert.match(form, /repo_profile\?\.worktrees === 'enabled'/);
+  assert.match(form, /v: row\.name, l: row\.title \|\| row\.name/, 'root choices submit the stable ID and display the optional title');
   assert.match(form, /label: t\('where\.born_in', 'Born in'\), options: rootRows/);
   assert.match(form, /label: t\('where\.additional', 'Additional workspaces'\), many: true, after: 'root', options: \(value\) => rootRows\(\)\.filter\(\(row\) => row\.v !== value\.root\)/);
   assert.match(form, /draft\.repos = \[\]/);

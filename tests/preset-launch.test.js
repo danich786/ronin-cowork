@@ -70,7 +70,7 @@ test('Bare Metal launches a bare-metal team: bare_metal_<code> with native agent
   const code = roster.name.match(/^bare_metal_(\d{3})$/)?.[1];
   assert.ok(code, 'the team is bare_metal_<code>');
   assert.equal(roster.project_root, 'ronin_lab');
-  assert.deepEqual(roster.routines, { ronin_base: false, ronin_worktrees: false }, 'a bare-metal team launches bare');
+  assert.equal(roster.features, undefined, 'a bare-metal team adds no Cowork features');
   assert.equal(result.data.team, roster.name);
   const births = calls.filter((row) => row.url === '/api/launch').map((row) => row.body);
   assert.deepEqual(births.map((body) => body.name), [`session_1_${code}`, `session_2_${code}`, `session_3_${code}`], 'row names plus the launch code');

@@ -254,63 +254,27 @@ test('the model cascade is the mechanism\'s: blank inherits, explicit wins, iden
   assert.equal(f2.cmd, c2.cmd, 'and both callers get the identical resolved command');
 });
 
-test("an agent template's routines_on gbrain delivers as gbrain_mode connected, explicit hand still winning", async () => {
-  const fromTemplate = await resolveForm(commonsForm({
-    provider: 'anthropic', model: 'opus', template: 'personal_assistant',
-  }), new Set());
-  assert.equal(fromTemplate.gbrain_mode, 'connected', "the template's gbrain reaches the launch");
-  assert.deepEqual(fromTemplate.stated_by.gbrain_mode, [{ layer: 'template', source: 'personal_assistant' }]);
-
-  const overruled = await resolveForm(commonsForm({
-    provider: 'anthropic', model: 'opus', template: 'personal_assistant', gbrain_mode: 'disconnected',
-  }), new Set());
-  assert.equal(overruled.gbrain_mode, 'disconnected', 'an explicit launch answer beats the template');
-  assert.deepEqual(overruled.stated_by.gbrain_mode, [{ layer: 'launch', source: 'launch request' }]);
-});
 
 test('launch_mode preserves provider configuration or appends the declared bypass flag', async () => {
   const configured = await resolveForm(commonsForm({
-    provider: 'anthropic', model: 'opus', launch_mode: 'configured', gbrain_mode: 'connected',
+    provider: 'anthropic', model: 'opus', launch_mode: 'configured',
   }), new Set());
   assert.equal(configured.cmd, 'claude --model opus');
   assert.equal(configured.launch_mode, 'configured');
   assert.deepEqual(configured.stated_by.launch_mode, [{ layer: 'launch', source: 'launch request' }]);
 
   const dangerous = await resolveForm(commonsForm({
-    provider: 'anthropic', model: 'opus', launch_mode: 'live_dangerously', gbrain_mode: 'connected',
+    provider: 'anthropic', model: 'opus', launch_mode: 'live_dangerously',
   }), new Set());
   assert.equal(dangerous.cmd, 'claude --model opus --dangerously-skip-permissions');
   assert.equal(dangerous.launch_mode, 'live_dangerously');
 
   await assert.rejects(
-    () => resolveForm(commonsForm({ cmd: 'custom-agent', launch_mode: 'live_dangerously', gbrain_mode: 'connected' }), new Set()),
+    () => resolveForm(commonsForm({ cmd: 'custom-agent', launch_mode: 'live_dangerously' }), new Set()),
     /declares no `live_dangerously:` flag/,
   );
 });
 
-test('gbrain_mode preserves provider configuration or appends its declared disconnect tokens', async () => {
-  const connected = await resolveForm(commonsForm({
-    provider: 'openai', model: 'gpt-5.6-terra', launch_mode: 'configured', gbrain_mode: 'connected',
-  }), new Set());
-  assert.equal(connected.cmd, 'codex --model gpt-5.6-terra');
-  assert.equal(connected.gbrain_mode, 'connected');
-
-  const codexDisconnected = await resolveForm(commonsForm({
-    provider: 'openai', model: 'gpt-5.6-terra', launch_mode: 'configured', gbrain_mode: 'disconnected',
-  }), new Set());
-  assert.equal(codexDisconnected.cmd, 'codex --model gpt-5.6-terra -c mcp_servers.gbrain.enabled=false');
-  assert.equal(codexDisconnected.gbrain_mode, 'disconnected');
-
-  const claudeDisconnected = await resolveForm(commonsForm({
-    provider: 'anthropic', model: 'opus', launch_mode: 'configured', gbrain_mode: 'disconnected',
-  }), new Set());
-  assert.equal(claudeDisconnected.cmd, 'claude --model opus --strict-mcp-config');
-
-  await assert.rejects(
-    () => resolveForm(commonsForm({ cmd: 'custom-agent', launch_mode: 'configured', gbrain_mode: 'disconnected' }), new Set()),
-    /declares no `gbrain_disconnected:` tokens/,
-  );
-});
 
 test('mandate defaults are complete, Team seeds them, and the explicit launch wins', async () => {
   const stock = await resolveForm(commonsForm(), new Set());
@@ -345,9 +309,8 @@ test('stated_by carries the settled launch, Team, role, and Campaign layers', as
     name: 'attribution-proof',
     project_root: 'beta',
     cmd: 'claude --model haiku',
-    gbrain_mode: 'connected',
   }), new Set());
-  for (const key of ['name', 'project_root', 'cmd', 'gbrain_mode', 'session_role']) {
+  for (const key of ['name', 'project_root', 'cmd', 'session_role']) {
     assert.deepEqual(explicit.stated_by[key], [{ layer: 'launch', source: 'launch request' }], key);
   }
 
@@ -357,22 +320,9 @@ test('stated_by carries the settled launch, Team, role, and Campaign layers', as
 
   const campaign = await resolveForm(commonsForm({ session_role: '' }), new Set());
   assert.equal(campaign.stated_by.dial[0]?.layer, 'campaign');
-  assert.match(campaign.stated_by.dial[0]?.source ?? '', /agent_defaults\.dial/);
+  assert.match(campaign.stated_by.dial[0]?.source ?? '', /defaults.dial/);
 });
 
-test('a sparse Agent Routine choice overrides its parent only for that birth', async () => {
-  const inherited = await resolveForm(forkitForm(), new Set());
-  const parentWorktrees = inherited.routines.find((routine) => routine.name === 'ronin_worktrees');
-  assert.ok(parentWorktrees, 'the Worktrees Routine is in the launch catalog');
-
-  const overridden = await resolveForm(forkitForm({
-    routines: { ronin_worktrees: !parentWorktrees!.enabled },
-  }), new Set());
-  const agentWorktrees = overridden.routines.find((routine) => routine.name === 'ronin_worktrees');
-  assert.equal(agentWorktrees?.enabled, !parentWorktrees!.enabled);
-  assert.equal(agentWorktrees?.stated_by, 'agent');
-  assert.deepEqual(overridden.stated_by.routines, [{ layer: 'launch', source: 'launch request' }]);
-});
 
 test('server resolution returns profile and durable Team context without browser reconstruction', async () => {
   const resolved = await resolveForm(forkitForm(), new Set());

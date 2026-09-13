@@ -1,0 +1,15 @@
+# gbrain
+- **label:** gbrain
+- **blurb:** Makes shared gbrain memory available as a feature.
+- **effect:** feature_provider
+- **provides:** gbrain
+- **reading:** —
+- **reading_off:** —
+- **sops:** —
+- **macros:** —
+- **actions:** —
+- **tools:** —
+- **parts:** —
+- **mcp:** —
+- **requires:** —
+- **order:** 20

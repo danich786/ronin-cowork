@@ -87,7 +87,7 @@ test('Campaign Agent defaults answer before install defaults, and an explicit as
   const document = JSON.parse(await fs.readFile(file, 'utf8'));
   document.campaigns = { work: {
     title: 'Work',
-    config: { agent_defaults: { provider: 'anthropic', model: 'opus' } },
+    config: { defaults: { provider: 'anthropic', model: 'opus' } },
   } };
   await fs.writeFile(file, JSON.stringify(document));
   // Nothing named: the Campaign's default pair, not ⚙'s.
@@ -96,7 +96,7 @@ test('Campaign Agent defaults answer before install defaults, and an explicit as
   // A provider named: the Campaign's own row for it, and the reading says so.
   const vendor = await resolveForm(launch({ campaign_id: 'work', provider: 'anthropic' }), new Set());
   assert.ok(vendor.cmd.startsWith('claude --model opus'), vendor.cmd);
-  assert.deepEqual(vendor.stated_by.cmd, [{ layer: 'system', source: '#/campaign (work: agent_defaults)' }]);
+  assert.deepEqual(vendor.stated_by.cmd, [{ layer: 'system', source: '#/campaign (work: defaults)' }]);
   // A provider the Campaign has no row for: ⚙'s row, and the reading says ⚙.
   const theirs = await resolveForm(launch({ campaign_id: 'work', provider: 'openai' }), new Set());
   assert.ok(theirs.cmd.startsWith('codex --model gpt-5.6-terra'), theirs.cmd);
@@ -108,7 +108,7 @@ test('Campaign Agent defaults answer before install defaults, and an explicit as
   const withHalf = JSON.parse(await fs.readFile(file, 'utf8'));
   withHalf.campaigns.half = {
     title: 'Half',
-    config: { agent_defaults: { provider: 'anthropic' } },
+    config: { defaults: { provider: 'anthropic' } },
   };
   await fs.writeFile(file, JSON.stringify(withHalf));
   const half = await resolveForm(launch({ campaign_id: 'half' }), new Set());

@@ -259,6 +259,7 @@ const TAILNET_IP = tailnetIp();
 
 export interface MachineSettingsProject {
   name: string;
+  title: string;
   dir: string;
   remit: string;
 }
@@ -446,6 +447,7 @@ async function readSet(): Promise<Record<string, unknown>> {
 
   const projects: MachineSettingsProject[] = roots.map((r) => ({
     name: r.name,
+    title: r.title,
     dir: r.dir,
     remit: r.remit,
   }));

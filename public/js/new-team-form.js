@@ -305,7 +305,6 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
     { key: 'live_dangerously', label: t('launch_mode.live', 'Dangerously'),
       sub: t('launch_mode.live_sub', 'Ronin appends that provider’s own bypass flag, so the Agent does not stop to ask.') },
   ];
-  const gbrainMode = () => (routineOn('gbrain') ? 'connected' : 'disconnected');
   const worktreesMode = el('div', 'fs-worktrees-mode');
   const kitHost = el('div');
   let kitQuestions = null;
@@ -432,7 +431,6 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
       [t('behaviours', 'Behaviours'), draft.books.length ? tagRow(draft.books.map((text) => ({ text, on: true }))) : ''],
       [t('forms.model', 'model'), draft.provider ? `${draft.provider}${draft.model ? ` / ${draft.model}` : ''}` : t('forms.default', 'default')],
       [t('launch_mode.head', 'launch mode'), LAUNCH_MODES().find((row) => row.key === draft.launchMode)?.label || draft.launchMode],
-      [t('gbrain_mode.head', 'gbrain connection'), gbrainMode() === 'connected' ? t('gbrain_mode.connected', 'Connected') : t('gbrain_mode.disconnected', 'Disconnected')],
       [t('mandate', 'Mandate'), `${draft.reach} · ${draft.recruit} · ${draft.output.join(', ')}`],
       [t('add_agent.still_asked', 'still asked'), tagRow([
         t('session_type', 'Session type'), t('add_agent.name', 'name'), t('add_agent.instruction', 'instruction'),
@@ -479,12 +477,12 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
     project_root: draft.root,
     repos: draft.repos,
     branches: draft.branches,
-    routines: { ...draft.routines },
+    features: (seed?.features || []).filter((row) => row.on).map((row) => row.name),
     behaviours: { books: [...draft.books] },
     agent_defaults: {
       provider: draft.provider, model: draft.model,
       reach: draft.reach, recruit: draft.recruit, output: draft.output,
-      dial: draft.dial, launch_mode: draft.launchMode, gbrain_mode: gbrainMode(),
+      dial: draft.dial, launch_mode: draft.launchMode,
     },
   });
 

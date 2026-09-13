@@ -27,14 +27,14 @@ const labeled = (form, label, control, help = '') => {
 };
 export function createAgentDefaultsSurface(campaign) {
   const { createSurface, createNotice } = WorkspaceKit.primitives;
-  const surface = createSurface({ label: t('campaign_view.agent_defaults', 'Agent defaults'), className: 'cv-surface' });
+  const surface = createSurface({ label: t('campaign_view.defaults', 'Defaults'), className: 'cv-surface' });
   const body = el('div', 'cv-body'); surface.content.append(body);
 
   function paint() {
     const row = campaign(); body.replaceChildren();
     if (!row) return surface.setState('empty', t('campaign_view.none_selected', 'No Campaign selected.'));
     surface.setState(null, '');
-    const current = bucket(row.config?.agent_defaults);
+    const current = bucket(row.config?.defaults);
     const form = el('form', 'cv-defaults-form');
     const notice = createNotice();
     body.append(el('p', 'cv-note', t('campaign_view.defaults_help', 'These defaults land in the next Team or Agent form that opens. They remain editable there; nothing live changes.')));
@@ -69,14 +69,16 @@ export function createAgentDefaultsSurface(campaign) {
       ] },
     ], { value: picked, onChange: (value) => { picked = value; } });
     form.append(questions.el);
+    const features = el('textarea', 'cv-input'); features.value = list(current.features).join('\n');
+    labeled(form, t('campaign_view.default_features', 'Features'), features, t('campaign_view.features_help', 'One feature name per line.'));
     const behaviours = el('textarea', 'cv-input'); behaviours.value = list(current.behaviours).join('\n');
     labeled(form, t('campaign_view.default_behaviours', 'Behaviours'), behaviours, t('campaign_view.behaviours_help', 'One shelf:name book per line.'));
     const actions = el('div', 'cv-default-actions');
     const save = el('button', 'cv-save', t('panels.save', 'Save')); save.type = 'submit'; actions.append(notice.el, save); form.append(actions); body.append(form);
     form.addEventListener('submit', async (event) => {
       event.preventDefault(); save.disabled = true; notice.set('info', t('campaign.saving', 'saving…'));
-      const next = { ...current, ...picked, behaviours: behaviours.value.split('\n').map((value) => value.trim()).filter(Boolean) };
-      const result = await saveCampaign(row.id, { config: { agent_defaults: next } });
+      const next = { ...current, ...picked, features: features.value.split('\n').map((value) => value.trim()).filter(Boolean), behaviours: behaviours.value.split('\n').map((value) => value.trim()).filter(Boolean) };
+      const result = await saveCampaign(row.id, { config: { defaults: next } });
       notice.set(result.ok ? 'success' : 'failed', result.ok ? t('settei.saved', 'saved') : result.message); save.disabled = false;
       if (result.ok) paint();
     });
@@ -86,7 +88,7 @@ export function createAgentDefaultsSurface(campaign) {
 }
 
 export function defaultsSummary(campaign) {
-  const defaults = bucket(campaign?.config?.agent_defaults);
+  const defaults = bucket(campaign?.config?.defaults);
   const model = [defaults.provider, defaults.model].filter(Boolean).join(' · ') || t('campaign_view.provider_default', 'Default provider');
   return t('campaign_view.defaults_summary', '{model} · {reach} · {dial}', { model, reach: defaults.reach || 'open', dial: defaults.dial || 'write' });
 }

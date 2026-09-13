@@ -235,7 +235,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
   });
   const teamChoice = () => draft.teamMode === 'new' ? 'new' : draft.teamMode === 'none' ? 'none' : 'current';
   const teamRows = () => teams.map((row) => ({ v: row.name, l: String(row.title ?? '').trim() || row.name, sub: row.name }));
-  const rootRows = () => roots.map((row) => ({ v: row.name, l: row.name, word: row.repo_profile?.worktrees === 'enabled' ? t('where.worktree', 'worktree') : t('where.checkout', 'checkout') }));
+  const rootRows = () => roots.map((row) => ({ v: row.name, l: row.title || row.name, sub: row.title ? row.name : '', word: row.repo_profile?.worktrees === 'enabled' ? t('where.worktree', 'worktree') : t('where.checkout', 'checkout') }));
   const mandateRows = (values) => values.map((value) => ({ v: value, l: mandateWord(value) }));
   const newTeamField = () => {
     const input = el('input'); input.type = 'text'; input.spellcheck = false; input.autocapitalize = 'off'; input.value = draft.newTeam;
@@ -367,7 +367,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
       wayTiles(LAUNCH_MODES(), draft.launchMode, (key) => { draft.launchMode = key; touched.launchMode = true; paintLaunchMode(); paintFoot(); }),
     );
   };
-  const gbrainMode = () => ((seed?.routines || []).some((row) => row.name === 'gbrain' && row.on) ? 'connected' : 'disconnected');
+  const selectedFeatures = () => (seed?.features || []).filter((row) => row.on).map((row) => row.name);
   const shelvesHost = el('div');
   function paintShelves() {
     shelvesHost.replaceChildren(bookShelves([
@@ -425,7 +425,6 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
         : tagRow([{ text: t('new_team.floor_tag', 'floor'), on: true }, ...(seed?.routines || []).filter((row) => Object.prototype.hasOwnProperty.call(draft.routineOverrides, row.name) ? draft.routineOverrides[row.name] : row.on).map((row) => ({ text: row.name, on: true }))])]);
     if (isCowork() && draft.books.length) rows.push([t('behaviours', 'Behaviours'), tagRow(draft.books.map((text) => ({ text, on: true })))]);
     rows.push([t('launch_mode.head', 'launch mode'), LAUNCH_MODES().find((row) => row.key === draft.launchMode)?.label || draft.launchMode]);
-    rows.push([t('gbrain_mode.head', 'gbrain connection'), gbrainMode() === 'connected' ? t('gbrain_mode.connected', 'Connected') : t('gbrain_mode.disconnected', 'Disconnected')]);
     rows.push([t('add_agent.place', 'place'), draft.root]);
     if (hasAgent()) rows.push([t('forms.model', 'model'), draft.provider ? `${draft.provider}${draft.model ? ` / ${draft.model}` : ''}` : t('forms.default', 'default')]);
     return rows;
@@ -505,7 +504,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
           behaviours: [...draft.books],
           ...(Object.keys(draft.routineOverrides).length ? { routines: { ...draft.routineOverrides } } : {}),
           launch_mode: draft.launchMode,
-          gbrain_mode: gbrainMode(),
+          features: selectedFeatures(),
           ...(draft.template ? { template: draft.template } : {}),
         };
     const result = await request('/api/launch', { method: 'POST', json: body });

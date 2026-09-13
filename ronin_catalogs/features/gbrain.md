@@ -1,6 +1,7 @@
 # gbrain
 - **label:** gbrain
 - **blurb:** Shared memory and coordination through the connected gbrain service.
+- **provider:** gbrain
 - **reading:** gbrain_connected/
 - **sops:** gbrain
 - **macros:** —
@@ -8,6 +9,4 @@
 - **tools:** tejun-recall, tejun-remember
 - **parts:** —
 - **mcp:** gbrain
-- **requires:** ronin_base
-- **bundles:** services
 - **order:** 50

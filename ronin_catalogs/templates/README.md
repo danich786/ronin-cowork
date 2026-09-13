@@ -30,7 +30,7 @@ form's, not a file here: a template that filled nothing in would collapse nothin
 | `order` | tray order; unordered boxes follow, by label |
 | `kinds` | which kinds bring this box forward — `open` on the form shows every template |
 | `behaviours` | `<shelf>:<name>` book addresses laid into the tray, e.g. `sops:github, ways:cut_code` |
-| `routines_on` / `routines_off` | Routines this template turns on / off over the seeded map — exactly the fields it carries, nothing else moves |
+| `features` | Features this template selects — exactly the fields it carries, nothing else moves |
 
 ## The agent shelf's own fields
 
@@ -49,7 +49,7 @@ form's, not a file here: a template that filled nothing in would collapse nothin
 
 Each cast row carries `instructions:`, optionally `mandate:`, and `team_lead: yes` on
 exactly one row — the lead is just one of the agents, marked. A row may also carry its
-own `routines_on:` / `routines_off:` over the team's map — the agent layer of the
+own `features:` over the team's map — the agent layer of the
 cascade, so a template can say "this lane, gbrain off" while the team keeps it on. A row is the same object
 the New Team form's agent line produces and the team loader launches; every row stays
 editable and deletable on the form before the raise.

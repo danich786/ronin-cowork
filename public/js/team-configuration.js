@@ -70,7 +70,7 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
     /* ---- Where it works: born in, then the additional workspaces, with a branch line per checkout when worktrees are off ---- */
     const branches = { ...bucket(roster.branches) };
     const rootWasDesk = list(roster.repos).includes(roster.project_root); // a birthplace that is also a desk stays one
-    const rootRows = () => roots.map((root) => ({ v: root.name, l: root.name, word: root.repo_profile?.worktrees === 'enabled' ? t('where.worktree', 'worktree') : t('where.checkout', 'checkout') }));
+    const rootRows = () => roots.map((root) => ({ v: root.name, l: root.title || root.name, word: root.repo_profile?.worktrees === 'enabled' ? t('where.worktree', 'worktree') : t('where.checkout', 'checkout') }));
     const branchLine = (option) => {
       if (worktreesOn()) return null;
       const input = el('input'); input.type = 'text'; input.spellcheck = false; input.value = branches[option.v] || '';

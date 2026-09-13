@@ -32,7 +32,7 @@ const object = (value: unknown): Record<string, unknown> =>
 async function creationEdit(campaign_id: string, stated: RosterEdit): Promise<RosterEdit> {
   const campaign = await readCampaign(campaign_id);
   if (!campaign) throw new Error(`Unknown Campaign: ${campaign_id || '(none)'}.`);
-  const inherited = campaign.config.agent_defaults;
+  const inherited = campaign.config.defaults;
   const cowork = object(campaign.config.cowork_defaults);
   const edit: RosterEdit = {
     ...(typeof cowork.kind === 'string' ? { kind: cowork.kind as RosterEdit['kind'] } : {}),
@@ -41,8 +41,8 @@ async function creationEdit(campaign_id: string, stated: RosterEdit): Promise<Ro
     ...(typeof cowork.branch === 'string' ? { branch: cowork.branch } : {}),
     ...(object(cowork.branches) ? { branches: Object.fromEntries(Object.entries(object(cowork.branches)).map(([k, v]) => [k, String(v)])) } : {}),
     ...stated,
-    routines: { ...inherited.routines, ...(stated.routines ?? {}) },
-    behaviours: stated.behaviours ?? { books: [...inherited.behaviours], required: false },
+    features: stated.features ?? [...inherited.features],
+    behaviours: stated.behaviours ?? { selected: [...inherited.behaviours], required: [] },
     agent_defaults: { ...teamAgentDefaults(inherited), ...(stated.agent_defaults ?? {}) },
   };
   await assertSameCampaignRoot(campaign_id, edit.project_root ?? '');
@@ -79,14 +79,14 @@ function editOf(body: unknown): RosterEdit {
         .filter(([repo, branch]) => repo && branch)) : {};
   if (b.references !== undefined) edit.references = Array.isArray(b.references)
     ? b.references.map(String).map((v) => v.trim().slice(0, 500)).filter(Boolean) : [];
-  if (b.routines !== undefined) edit.routines = b.routines && typeof b.routines === 'object' && !Array.isArray(b.routines)
-    ? Object.fromEntries(Object.entries(b.routines).filter(([, value]) => typeof value === 'boolean')) : {};
+  if (b.features !== undefined) edit.features = Array.isArray(b.features)
+    ? b.features.map(String).map((v) => v.trim().slice(0, 64)).filter(Boolean) : [];
   if (b.behaviours !== undefined) {
     const value = b.behaviours && typeof b.behaviours === 'object' && !Array.isArray(b.behaviours)
       ? b.behaviours as Record<string, unknown> : {};
     edit.behaviours = {
-      books: Array.isArray(value.books) ? value.books.map(String).map((v) => v.trim().slice(0, 160)).filter(Boolean) : [],
-      required: value.required === true,
+      selected: Array.isArray(value.selected) ? value.selected.map(String).map((v) => v.trim().slice(0, 160)).filter(Boolean) : [],
+      required: Array.isArray(value.required) ? value.required.map(String).map((v) => v.trim().slice(0, 160)).filter(Boolean) : [],
     };
   }
   if (b.agent_defaults !== undefined) edit.agent_defaults = b.agent_defaults && typeof b.agent_defaults === 'object' && !Array.isArray(b.agent_defaults)
@@ -141,12 +141,7 @@ export function registerTeams(app: express.Express): void {
         const { listAgentTemplates } = await import('../resource-adapters.js');
         const box = (await listAgentTemplates()).find((row) => row.name === token);
         if (!box) template = { source: token, ignored: 'not an agent template on this box' };
-        else {
-          const routines = edit.routines ??= {};
-          for (const on of box.routines_on) routines[on] = true;
-          for (const off of box.routines_off) routines[off] = false;
-          template = { source: token, routines_on: box.routines_on, routines_off: box.routines_off };
-        }
+        else template = { source: token };
       }
       const roster = await createTeamRoster(name, edit, campaign_id);
       count('team.create');

@@ -17,10 +17,9 @@ await fs.writeFile(path.join(process.env.RONIN_CONFIG_DIR, 'machine_settings.jso
     home_machine: {
       title: 'Home', state: 'active', created_at: '2026-01-01T00:00:00.000Z',
       config: {
-        agent_defaults: {
+        defaults: {
           provider: 'openai', model: 'gpt-test', reach: 'execute', recruit: 'nobody', output: ['code'],
-          routines: { ronin_base: true, ronin_worktrees: true, ronin_services: false },
-          behaviours: ['ways:careful'], dial: 'read', launch_mode: 'configured', gbrain_mode: 'disconnected',
+          features: ['gbrain'], behaviours: ['mandates'], dial: 'read', launch_mode: 'configured',
         },
         cowork_defaults: { project_root: 'ronin_cowork', repos: ['ronin_cowork'], branch: 'dev' },
       },
@@ -48,12 +47,11 @@ test('POST /api/team-rosters creates a Team from its name alone', async () => {
   assert.equal(body.roster.project_root, 'ronin_cowork');
   assert.deepEqual(body.roster.repos, ['ronin_cowork']);
   assert.equal(body.roster.branch, 'dev');
-  assert.equal((body.roster.routines as Record<string, boolean>).ronin_base, true);
-  assert.equal((body.roster.routines as Record<string, boolean>).ronin_worktrees, true);
-  assert.deepEqual(body.roster.behaviours, { books: ['ways:careful'], required: false });
+  assert.deepEqual(body.roster.features, ['gbrain']);
+  assert.deepEqual(body.roster.behaviours, { selected: ['mandates'], required: [] });
   assert.deepEqual(body.roster.agent_defaults, {
     provider: 'openai', model: 'gpt-test', reach: 'execute', recruit: 'nobody', output: ['code'],
-    dial: 'read', launch_mode: 'configured', gbrain_mode: 'disconnected',
+    dial: 'read', launch_mode: 'configured',
   });
 });
 
@@ -67,7 +65,7 @@ test('PUT /api/team creates with Campaign defaults, then omission on update pres
   assert.equal(first.roster.project_root, 'ronin_cowork');
   assert.deepEqual(first.roster.repos, ['ronin_cowork']);
   assert.equal(first.roster.branch, 'dev');
-  assert.equal(first.roster.routines.ronin_base, true);
+  assert.deepEqual(first.roster.features, ['gbrain']);
   assert.equal(first.roster.agent_defaults.model, 'gpt-test');
 
   const updated = await fetch(`${base}/api/team`, {
@@ -80,34 +78,31 @@ test('PUT /api/team creates with Campaign defaults, then omission on update pres
   assert.equal(second.roster.project_root, 'ronin_cowork');
   assert.deepEqual(second.roster.repos, ['ronin_cowork']);
   assert.equal(second.roster.branch, 'dev');
-  assert.equal(second.roster.routines.ronin_base, true);
+  assert.deepEqual(second.roster.features, ['gbrain']);
   assert.equal(second.roster.agent_defaults.model, 'gpt-test');
 });
 
 test('PUT /api/team reapplies Campaign defaults to an existing Team only when explicitly requested', async () => {
   const response = await fetch(`${base}/api/team`, {
     method: 'PUT', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ name: 'tool_team', campaign_defaults: true, routines: { ronin_services: true } }),
+    body: JSON.stringify({ name: 'tool_team', campaign_defaults: true, features: ['ronin_host'] }),
   });
   assert.equal(response.status, 200);
   const body = await response.json() as { created: boolean; roster: Record<string, any> };
   assert.equal(body.created, false);
-  assert.equal(body.roster.routines.ronin_base, true);
-  assert.equal(body.roster.routines.ronin_worktrees, true);
-  assert.equal(body.roster.routines.ronin_services, true, 'an explicit override remains final');
+  assert.deepEqual(body.roster.features, ['ronin_host'], 'an explicit choice remains final');
   assert.equal(body.roster.agent_defaults.model, 'gpt-test');
 });
 
 test('POST /api/team-rosters overlays explicit choices on Campaign defaults', async () => {
   const response = await fetch(`${base}/api/team-rosters`, {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({
-      name: 'overlaid', routines: { ronin_worktrees: false }, agent_defaults: { reach: 'discuss' },
+      name: 'overlaid', features: ['ronin_host'], agent_defaults: { reach: 'discuss' },
     }),
   });
   assert.equal(response.status, 200);
   const body = await response.json() as { roster: Record<string, any> };
-  assert.equal(body.roster.routines.ronin_base, true);
-  assert.equal(body.roster.routines.ronin_worktrees, false);
+  assert.deepEqual(body.roster.features, ['ronin_host']);
   assert.equal(body.roster.agent_defaults.reach, 'discuss');
   assert.equal(body.roster.agent_defaults.model, 'gpt-test');
 });
