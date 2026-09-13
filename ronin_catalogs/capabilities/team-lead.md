@@ -9,19 +9,27 @@ Reach for this because you are the designated Team lead. Every Agent keeps its p
 work record; you additionally own the Team roster and the projects it holds.
 `ronin_sops/teams.md` is the procedure.
 
-**Live tools:** only the shipped session commands below are callable from this bundle.
+**Live tools:** the shipped `team-lead` dispatcher owns Team records and projects; the
+session commands retain supporting-Agent creation and membership authority.
 
 ## Tools
 
 | Tool | Authority | Teach | Help |
 |---|---|---|---|
 | `session_create` | create: one supporting Agent, optionally for a roster-held project, through the ordinary launch resolver; refuses an existing name | priority | `session_create --help` |
+| `team-lead roster read` | read: one canonical Team roster | priority | `team-lead --help` |
+| `team-lead project create` | create: one roster-held project | priority | `team-lead --help` |
+| `team-lead project read` | read: one roster-held project | priority | `team-lead --help` |
+| `team-lead project write` | write: one roster-held project's typed fields | priority | `team-lead --help` |
+| `team-lead project assign` | write: move a project whole to one Agent | priority | `team-lead --help` |
+| `team-lead project return` | write: move a project whole back from one Agent | priority | `team-lead --help` |
+| `team-lead member status` | read: settled Team Kanban member/project shape | priority | `team-lead --help` |
+| `team-lead roster write` | write: typed Team roster fields | | `team-lead --help` |
 | `session_check` | read: one live session by exact name | | `session_check --help` |
 | `session_set` | write: a member's Team membership, lead designation, or project root | | `session_set --help` |
 
-**TBD capabilities:** typed Team-record/project moves, desk assignment, and Team broadcast
-tools do not ship yet. Their authority is described below, but no command is callable or
-should be invented for them.
+Desk assignment and Team broadcast remain in their own capability bundles; this tool does
+not duplicate them. Read-only Team enumeration belongs to `edges team`.
 
 ## What the lead does
 

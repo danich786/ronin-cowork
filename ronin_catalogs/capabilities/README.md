@@ -26,11 +26,11 @@ These exact files are the source catalog for the virtual `YOUR TOOLS` view:
 | Group | File | Scope |
 |---|---|---|
 | Core | `edges.md` | cross-session and Team boundaries; tool TBD |
-| Core | `work-record.md` | personal record, documents, and held projects; tool TBD |
+| Core | `work-record.md` | live personal record, document, and held-project tool |
 | Core | `session.md` | live session inspection and lifecycle tools |
 | Core | `worktree-desk.md` | managed-desk contract; tool TBD |
 | Core | `machine-settings.md` | typed Campaign, installation, provider, and machine settings |
-| Conditional | `team-lead.md` | lead-only session creation plus lead authority boundaries |
+| Conditional | `team-lead.md` | live lead-only roster, Team-project, and member-status tools |
 | Optional | `ronin-host.md` | selected Ronin Host operations |
 | Optional | `ronin-services.md` | selected Ronin Services teaching and Mika launcher |
 | Optional | `gbrain.md` | selected GBrain boundary teaching; tool TBD |

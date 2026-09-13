@@ -36,8 +36,8 @@ case "$area:$verb" in
   project:list) [ "$#" -eq 1 ] || die 'BAD-ARG: project list needs team' 2; request GET "/api/team-rosters/$1" | python3 -c 'import json,sys; print(json.dumps(json.load(sys.stdin).get("projects",[]),indent=2))' ;;
   project:read) [ "$#" -eq 2 ] || die 'BAD-ARG: project read needs team and id' 2; request GET "/api/team-rosters/$1" | ID="$2" python3 -c 'import json,os,sys; d=json.load(sys.stdin); p=next((x for x in d.get("projects",[]) if x.get("id")==os.environ["ID"]),None); print(json.dumps(p,indent=2)) if p else sys.exit(3)' ;;
   project:create) [ "$#" -ge 3 ] || die 'BAD-ARG: project create needs team and fields' 2; team=$1; shift; body=$(json_fields "$@"); request POST "/api/team-rosters/$team/projects" "$body" ;;
-  project:write) [ "$#" -ge 4 ] || die 'BAD-ARG: project write needs team, id and fields' 2; team=$1; id=$2; shift 2; body=$(json_fields "$@"); request PUT "/api/team-rosters/$team/projects/$id" "$body" ;;
-  project:assign|project:return) [ "$#" -eq 3 ] || die "BAD-ARG: project $verb needs team, id and session" 2; body=$(python3 -c 'import json,sys; print(json.dumps({"session":sys.argv[1]}))' "$3"); request POST "/api/team-rosters/$1/projects/$2/$verb" "$body" ;;
+  project:write) [ "$#" -ge 4 ] || die 'BAD-ARG: project write needs team, id and fields' 2; team=$1; id=${2#"$team/"}; shift 2; body=$(json_fields "$@"); request PUT "/api/team-rosters/$team/projects/$id" "$body" ;;
+  project:assign|project:return) [ "$#" -eq 3 ] || die "BAD-ARG: project $verb needs team, id and session" 2; team=$1; id=${2#"$team/"}; body=$(python3 -c 'import json,sys; print(json.dumps({"session":sys.argv[1]}))' "$3"); request POST "/api/team-rosters/$team/projects/$id/$verb" "$body" ;;
   member:status) [ "$#" -eq 1 ] || die 'BAD-ARG: member status needs team' 2; request GET "/api/teams/$1/kanban" ;;
   *) usage >&2; exit 2;;
 esac
