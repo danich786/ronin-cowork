@@ -37,15 +37,12 @@ test('an empty Team has one useful, empty board answer', async () => {
   });
 });
 
-test('a pre-project bare ladder remains visible as one Building project', async () => {
+test('a pre-project bare ladder is not an authored Team Kanban project', async () => {
   await fs.mkdir(path.join(sessions, 'old-key'), { recursive: true });
   await fs.writeFile(path.join(sessions, 'old-key', 'tegami.md'), `\`\`\`json\n${JSON.stringify({
     objective: 'Old work', ladder: [{ phase: 'Build', legs: [{ title: 'Works', status: 'ACTIVE' }] }, { gate: 'Review', status: 'PLANNED' }],
   })}\n\`\`\`\n`);
-  const [legacy] = await projectsAtSessionKey('old-key', 'old_agent');
-  assert.equal(legacy.id, 'legacy:old_agent');
-  assert.equal(legacy.stage, 'BUILDING');
-  assert.equal(legacy.exit, 'user');
+  assert.deepEqual(await projectsAtSessionKey('old-key', 'old_agent'), []);
 });
 
 test('hand-in, promotion, and master containment derive Landing and Done without writes', async () => {
