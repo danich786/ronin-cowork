@@ -1,11 +1,91 @@
-# Routines — what a new Agent is equipped with
+# How Cowork resolves an Agent's instructions
 
-A **Routine** is a named, switchable bundle of behaviours that work together: startup
-reading, discoverable SOPs, macros, actions, command-line tools and MCP connections. A
-Routine changes what a newly launched Agent is offered. Changing a switch never mutates
+Ronin should settle what is installed and enabled for the system before it asks how a
+particular Cowork Agent should behave. That order keeps system facts out of Team and Agent
+pickers and leaves only meaningful choices there.
+
+This is the intended instruction model. The existing Routine manifest and
+Campaign-to-Team resolver described under [Current implementation](#current-implementation)
+still deliver births today; this page does not claim that the new settings or migration
+already exist.
+
+## Installation first, Agent configuration second
+
+```text
+Installations
+    ↓ resolve what is installed and on for this system
+System shape
+    ├── resolved Cowork core
+    └── features made available by installed providers
+              ↓
+Cowork Agent configuration
+    ├── Team defaults → Agent overrides for available features
+    └── Team defaults → Agent overrides for behaviours
+              ↓
+Launch context adds automatic conditional instructions
+              ↓
+one resolved Agent birth
+```
+
+An **installation** is a system-level switch. Campaign settings is where the owner turns
+an installed component on or off, but that location does not make the switch a Team or
+Agent preference. Installation is resolved first because it determines what kind of
+Cowork system exists for everything below it.
+
+An installation can have either of two effects:
+
+| Installation effect | What it means downstream |
+|---|---|
+| System contribution | Its functionality and instructions become part of the resolved Cowork core. There is no duplicate Team or Agent switch. Cowork itself, Ronin Base, and system-wide Ronin Services belong here when installed and on. |
+| Feature provider | It makes one or more features available for Team defaults and Agent overrides. gbrain, a Trello connection, or a Perplexity research service can work this way. Installation makes the choice possible; it does not necessarily enable the feature for every Team. |
+
+One installation may eventually do both, but each downstream effect should be stated
+plainly. Turning an installation off removes its contribution or availability on the next
+birth. It does not rewrite an Agent that is already running.
+
+## What reaches a Cowork Agent
+
+The **resolved Cowork core** is the base Cowork birth plus contributions from enabled
+system installations. Choosing a Cowork Agent selects that assembled core; the owner does
+not then choose Ronin Base again in the Agent form. A bare-metal Agent remains the explicit
+escape hatch: it bypasses Cowork instruction assembly rather than representing a Cowork
+Agent with every option off.
+
+**Conditional instructions** follow facts that have already been chosen elsewhere. A Team
+lead receives Team-lead instructions because it is the lead. A managed repository receives
+the Worktrees contract because of its repository arrangement; a direct checkout receives
+the corresponding checkout guidance. These are automatic consequences, not features in a
+picker and not preferences an owner must understand to launch an Agent.
+
+After installation resolution, two genuinely configurable kinds remain:
+
+| Kind | Question it answers | Resolution |
+|---|---|---|
+| Feature | What extra facility or taught practice should this Agent have? | The Team answer is the default for its Agents; an Agent may override it. A feature may depend on an installed provider or may be prompt-only. |
+| Behaviour | How should the Agent conduct otherwise ordinary work? | The Team answer is the default; an Agent may override it. Behaviours should express useful preferences such as writing decisions down or asking for more checkpoints, not job descriptions or skills the model already has. |
+
+The practical resolution order is therefore:
+
+1. resolve system installations and whether each is on;
+2. assemble the Cowork core and the set of available features;
+3. apply Team defaults and Agent overrides for features and behaviours;
+4. derive conditional instructions from the Agent's actual role, repository, and setting;
+5. compile the result into one birth packet with provenance.
+
+Each fact has one owner. A system installation is not repeated as an Agent feature; a
+repository contract is not disguised as a behaviour; becoming Team lead is not a selectable
+coordination persona. The planned simplification also retires session-role descriptions
+such as “cut code” or “riff on it” as a configuration category. The objective says what the
+Agent is doing; optional behaviours say only how the owner wants it done.
+
+## Current implementation
+
+A **Routine** is currently a named, switchable bundle of behaviours that work together:
+startup reading, discoverable SOPs, macros, actions, command-line tools and MCP connections.
+A Routine changes what a newly launched Agent is offered. Changing a switch never mutates
 an Agent already running.
 
-## Four ways to work
+### Four ways to work
 
 | Choice | Meaning | How it is chosen |
 |---|---|---|
@@ -87,7 +167,7 @@ Hotwords have no independent use when Voice is unavailable. Installing Services 
 one of its registered services proves availability only; it never selects the Routine.
 Selecting Ronin Services additively includes Ronin Base.
 
-## Campaign defaults and Team answers
+### Campaign defaults and Team answers
 
 The effective set for a birth is resolved in one direction:
 
@@ -110,7 +190,7 @@ The resolver keeps provenance, so a surface and birth receipt can say whether th
 came from the Campaign or Team. It resolves once before the Agent process exists; the
 same result feeds every delivery mechanism.
 
-## One birth, several deliveries
+### One birth, several deliveries
 
 For each enabled Routine, the unified birth transaction projects the manifest into the
 places where its behaviours actually work:
@@ -127,7 +207,7 @@ to a connection; it is only one case and is not the general Routine switch. The 
 cut explicitly retains the `gbrain_connected` level: gbrain's service authors and seeds that
 connection reading, while the `gbrain` Routine selects its macros, tools and MCP request.
 
-## Four different facts
+### Four different facts
 
 | Fact | Answers |
 |---|---|
@@ -154,7 +234,7 @@ These facts never stand in for one another. In particular, an enabled but unavai
 Routine **never blocks Agent birth**. The Agent opens normally; the unavailable behaviour
 does not work, and the receipt and surfaces say it was not delivered.
 
-## Catalog authority
+### Catalog authority
 
 Routine manifests live in `ronin_catalogs/routines/`, one Markdown definition per token.
 The owner's catalog store shadows a stock definition whole. A manifest names existing
