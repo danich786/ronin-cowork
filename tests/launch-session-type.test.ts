@@ -59,6 +59,16 @@ test('terminal ignores Agent-only fields and notes each one for the receipt', ()
   }
 });
 
+test('a Team terminal receives membership metadata but no injected Team notice', async () => {
+  const source = await fs.readFile(new URL('../src/routes/launch.ts', import.meta.url), 'utf8');
+  assert.match(source, /await setTags\(resolved\.name, resolved\.tags\)/, 'the terminal keeps its Team tag');
+  assert.match(
+    source,
+    /if \(resolved\.session_type === 'cowork_agent' && houseSeat !== 'mika'\) \{\s*await announceTeamChanges/,
+    'only a Cowork Agent receives prose in its pane after joining a Team',
+  );
+});
+
 test('bare-metal Agent ignores Ronin-only fields and a managed desk', () => {
   for (const [key, value] of [['mandate', {}], ['behaviours', []], ['routines', {}], ['seed', []], ['desk', 'own']] as const) {
     const result = acceptedLaunchBody({ session_type: 'bare_metal_agent', name: 'proof', project_root: 'home', [key]: value });
