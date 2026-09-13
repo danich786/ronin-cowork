@@ -485,12 +485,10 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     const deskNote = result.data?.receipt?.desk_note || '';
     if (deskNote) notice.set('warning', t('add_agent.started_note', 'Started {name} — {note}', { name: born, note: deskNote }));
     else notice.set('success', t('add_agent.started', 'Started {name}', { name: born }));
-    // A successful launch consumes the temporary form before the newborn takes its
-    // workspace. Dismissing after connect would dismiss the newborn that replaced it.
-    clearAfterLaunch();
-    await consumed?.();
     if (connect) await connect(born);
     else openWorkspaceTab(team ? 'team' : 'cowork', team, launchTab);
+    clearAfterLaunch();
+    await consumed?.();
   }
 
   async function doSave() {

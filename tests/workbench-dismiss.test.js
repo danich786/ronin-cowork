@@ -6,11 +6,12 @@ const source = (file) => readFile(new URL(`../public/js/${file}`, import.meta.ur
 
 test('Workbench owns one non-destructive dismissal boundary for every surface header', async () => {
   const workbench = await source('workbench.js');
-  assert.match(workbench, /const dismiss = \(id\) => \{/);
+  assert.match(workbench, /const dismiss = \(id, expected = null\) => \{/);
+  assert.match(workbench, /if \(expected && previous !== expected\) return true;/);
   assert.match(workbench, /if \(value\?\.leave\?\.\(\) === false\) return false;/);
   assert.match(workbench, /if \(!restoreDefault\(id\)\) return false;/);
   assert.match(workbench, /refreshSelector\(\);\s*options\.onPlacement\?\.\(snapshot\(\)\);/);
-  assert.match(workbench, /consumed: \(\) => dismiss\(id\)/);
+  assert.match(workbench, /consumed: \(\) => dismiss\(id, owned\)/);
   assert.match(workbench, /className: 'wk-surface-dismiss', action: \(\) => dismiss\(id\)/);
   assert.doesNotMatch(workbench, /const dismiss = WorkspacePrimitives\.createAction/);
   assert.match(workbench, /querySelector\('\.tile-head \.minimize'\)\?\.addEventListener\('click', \(\) => dismiss\(id\)\)/);
@@ -44,7 +45,7 @@ test('New Agent consumes its workbench form only after a successful handoff', as
     source('new-agent.js'), source('cowork-view.js'), source('setup-surfaces.js'),
   ]);
   assert.match(form, /\{ connect = null, consumed = null, embedded = false, team = null \}/);
-  assert.match(form, /if \(connect\) await connect\(born\);\s*else openWorkspaceTab\([^;]+;\s*await consumed\?\.\(\);/);
+  assert.match(form, /if \(connect\) await connect\(born\);\s*else openWorkspaceTab\([^;]+;\s*clearAfterLaunch\(\);\s*await consumed\?\.\(\);/);
   assert.match(cowork, /create: \(\{ workspace, environment, consumed \}\) => environment\.newAgent\(workspace, consumed\)/);
   assert.match(cowork, /createNewAgentView\(WorkspaceKit, \{\s*consumed,/);
   assert.doesNotMatch(setup, /createEmbeddedNewAgentView\([^)]*consumed/);

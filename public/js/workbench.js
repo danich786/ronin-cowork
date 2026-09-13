@@ -163,8 +163,11 @@ export function createWorkbench(options = {}) {
     return true;
   };
   const restoreDefault = (id) => placeNode(id, defaults[id]);
-  const dismiss = (id) => {
+  const dismiss = (id, expected = null) => {
     const previous = holding(id);
+    // A completion callback belongs to the surface that received it. If that surface
+    // already handed the workspace to a newborn, it must not dismiss the replacement.
+    if (expected && previous !== expected) return true;
     const value = previous ? [...instances.values()].find((candidate) => candidate.el === previous) : null;
     if (value?.leave?.() === false) return false;
     value?.hide?.();
@@ -187,10 +190,12 @@ export function createWorkbench(options = {}) {
     const resource = String(detail.key || '');
     const key = `${id}\0${type}\0${resource}`;
     if (instances.has(key)) return instances.get(key);
+    let owned = null;
     const made = definition.create({ workspace: id, tenant, environment: options.environment, workbench: api, detail,
-      consumed: () => dismiss(id) });
+      consumed: () => dismiss(id, owned) });
     const value = made instanceof Node ? { el: made } : made;
     if (!(value?.el instanceof Node)) throw new Error(`${type} did not create a workspace surface for ${id}`);
+    owned = value.el;
     const owner = instanceNodes.get(value.el);
     if (owner && owner !== id) throw new Error(`${type} reused a surface node from ${owner}`);
     value.el.dataset.workbenchSurface = type;
