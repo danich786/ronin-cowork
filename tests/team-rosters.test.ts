@@ -22,6 +22,7 @@ const {
   readTeamRoster,
   writeTeamRoster,
 } = await import('../src/team-rosters.js');
+const { writeTeamIdea } = await import('../src/team-projects.js');
 test('create → read → list: a zero-member team is a real, openable record', async () => {
   const r = await createTeamRoster('alpha', {
     kind: 'coding',
@@ -38,10 +39,28 @@ test('create → read → list: a zero-member team is a real, openable record', 
   assert.equal(r.title, 'Alpha');
   assert.equal(r.wipeboard, 'alpha', 'the board defaults to the team’s own token');
   assert.equal(r.state, 'active');
+  assert.deepEqual(r.projects, []);
+  assert.equal(r.next_project_id, 1);
 
   const back = await readTeamRoster('alpha');
   assert.deepEqual(back, r);
   assert.equal((await listTeamRosters()).length, 1, 'listed with zero live members');
+});
+
+test('ideas live in the roster and its monotonic id issuer is the only id source', async () => {
+  const first = await writeTeamIdea('alpha', undefined, { title: 'Board read', objective: 'Return one JSON board.' });
+  assert.equal(first.project.id, 'alpha/1');
+  assert.equal(first.project.stage, 'IDEAS');
+  assert.equal(first.project.exit, 'lead');
+  assert.equal(first.project.status, 'yellow');
+  const edited = await writeTeamIdea('alpha', '1', { status: 'green', exit: 'user' });
+  assert.equal(edited.created, false);
+  assert.equal(edited.project.status, 'green');
+  const second = await writeTeamIdea('alpha', undefined, { title: 'Thin verbs', objective: 'Keep names replaceable.' });
+  assert.equal(second.project.id, 'alpha/2');
+  const roster = await readTeamRoster('alpha');
+  assert.equal(roster?.next_project_id, 3);
+  assert.deepEqual(roster?.projects.map((p) => p.id), ['alpha/1', 'alpha/2']);
 });
 
 test('the settled nested shapes round-trip, and an edit touches only what it states', async () => {
