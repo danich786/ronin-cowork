@@ -56,9 +56,9 @@ export function createAgentDefaultsSurface(campaign) {
         { key: 'model', label: t('campaign_view.col_model', 'Preferred model'), blank: t('campaign_view.model_default', 'Default model'), after: 'provider', options: (value) => catalog.filter((row) => row.provider === value.provider).map((row) => ({ v: row.model, l: row.model, word: row.tier, sub: modelAvailabilityFact(row), off: row.operational && row.listed !== false ? '' : reason(row) })) },
       ] },
       { group: t('mandate', 'Mandate'), fields: [
-        { key: 'reach', label: t('campaign_view.default_reach', 'Reach'), shape: 'square', options: ruledRows('reach', CHOICES.reach, optionLabel) },
-        { key: 'recruit', label: t('campaign_view.default_recruit', 'Recruit'), shape: 'square', options: ruledRows('recruit', CHOICES.recruit, optionLabel) },
-        { key: 'output', label: t('campaign_view.default_output', 'Output'), shape: 'square', many: true, options: ruledRows('output', CHOICES.output, optionLabel) },
+        { key: 'reach', label: t('campaign_view.default_reach', 'Reach'), options: CHOICES.reach.map((value) => ({ v: value, l: optionLabel(value) })) },
+        { key: 'recruit', label: t('campaign_view.default_recruit', 'Recruit'), options: CHOICES.recruit.map((value) => ({ v: value, l: optionLabel(value) })) },
+        { key: 'output', label: t('campaign_view.default_output', 'Output'), many: true, options: CHOICES.output.map((value) => ({ v: value, l: optionLabel(value) })) },
       ] },
       { group: t('campaign_view.defaults_runtime', 'Runtime'), fields: [
         { key: 'dial', label: t('campaign_view.default_dial', 'Control'), shape: 'square', options: ruledRows('dial', CHOICES.dial, optionLabel) },
