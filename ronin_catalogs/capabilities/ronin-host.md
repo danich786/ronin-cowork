@@ -8,6 +8,8 @@
 Reach for this bundle for measured machine facts, account state, secret presence, restart,
 or maintenance. Machine configuration belongs to Machine settings; neither authority grants the other.
 
+**Live tool:** `ronin-host --help` renders its fixed inspect, account, secrets, and restart subcommands.
+
 ## Tools
 
 | Tool | Authority | Teach | Help |
