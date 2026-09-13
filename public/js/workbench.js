@@ -206,12 +206,12 @@ export function createWorkbench(options = {}) {
         : value.el.querySelector(':scope > .wk-surface-header .wk-surface-header-actions');
       if (host) {
         const title = t('workspace.close_surface', 'Close this work surface');
-        const dismiss = WorkspacePrimitives.createAction({
+        const dismissAction = WorkspacePrimitives.createAction({
           label: '−', title,
           size: 'compact', className: 'wk-surface-dismiss', action: () => dismiss(id),
         });
-        dismiss.el.setAttribute('aria-label', title);
-        host.append(dismiss.el);
+        dismissAction.el.setAttribute('aria-label', title);
+        host.append(dismissAction.el);
       }
     }
     instances.set(key, value);

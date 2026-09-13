@@ -12,6 +12,7 @@ test('Workbench owns one non-destructive dismissal boundary for every surface he
   assert.match(workbench, /refreshSelector\(\);\s*options\.onPlacement\?\.\(snapshot\(\)\);/);
   assert.match(workbench, /consumed: \(\) => dismiss\(id\)/);
   assert.match(workbench, /className: 'wk-surface-dismiss', action: \(\) => dismiss\(id\)/);
+  assert.doesNotMatch(workbench, /const dismiss = WorkspacePrimitives\.createAction/);
   assert.match(workbench, /querySelector\('\.tile-head \.minimize'\)\?\.addEventListener\('click', \(\) => dismiss\(id\)\)/);
   assert.match(workbench, /restoreDefault, dismiss, isDefault/);
   assert.doesNotMatch(workbench, /Tile\.kill|retireSession/);
