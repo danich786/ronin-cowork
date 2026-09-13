@@ -125,9 +125,12 @@ test('a square stone carries a glyph and a ruled word; the caption carries the s
   assert.match(execute.className, /ask-square/);
   assert.equal(execute.one('ask-glyph').textContent, '⚙');
   const tray = form.el.one('ask-tray');
-  assert.equal(tray.one('ask-caption').textContent, 'Plan', 'the pressed stone reads in the caption at rest');
+  assert.equal(tray.one('ask-caption').textContent, '', 'a stone that is only its name says nothing in the caption');
   execute.fire('mouseenter');
-  assert.equal(tray.one('ask-caption').textContent, 'Execute — Does the work.');
+  assert.equal(tray.one('ask-caption').textContent, 'Does the work.', 'the caption says the sentence alone, never the name');
+  form.el.fire('keydown', { key: 'Escape' });
+  stoneFor(form, 'output').click();
+  assert.equal(form.el.one('ask-tray').one('ask-caption'), null, 'a tray of plain words has no caption at all');
 });
 
 test('a greyed stone stays in the tray with its reason, and a click on it says why instead of picking', () => {
@@ -138,7 +141,7 @@ test('a greyed stone stays in the tray with its reason, and a click on it says w
   assert.equal(gemini.title, 'not on this machine');
   gemini.click();
   assert.equal(form.value().provider, '');
-  assert.equal(form.el.one('ask-caption').textContent, 'Gemini CLI — not on this machine');
+  assert.equal(form.el.one('ask-caption').textContent, 'not on this machine');
 });
 
 test('a switch is the reading stone with a track: it flips and opens nothing', () => {

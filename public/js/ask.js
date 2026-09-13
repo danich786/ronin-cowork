@@ -176,14 +176,11 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     box.setAttribute('role', 'group');
     box.setAttribute('aria-label', field.label);
     const all = rowsOf(field);
+    // The caption speaks only when a stone has more to say than its name — a sentence, or the
+    // reason it is greyed — and then says only that. A tray of plain words has no caption at all.
+    const wordy = (f) => rowsOf(f).some((row) => row.sub || row.off);
     const caption = el('p', 'ask-caption');
-    const say = (row) => {
-      caption.replaceChildren();
-      if (!row) return;
-      caption.append(el('b', null, row.l));
-      const rest = row.off || row.sub || '';
-      if (rest) caption.append(` — ${rest}`);
-    };
+    const say = (row) => { caption.textContent = row ? (row.off || row.sub || '') : ''; };
     // One layer of stones for one question; the second layer, when revealed by a click in this
     // open interaction, is the same thing again — or the clicked option's own line.
     const shown = revealed != null && String(state[field.key]) === String(revealed);
@@ -251,6 +248,7 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     say((child && pressedIn(child)) || pressedIn(field) || null);
     box.append(first.options);
     if (second) box.append(second.el);
+    const captioned = wordy(field) || (child && wordy(child));
     if (lineRows.length) {
       const line = el('div', 'ask-layer ask-line');
       line.setAttribute('role', 'group');
@@ -264,7 +262,7 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
       }
       if (line.children.length) box.append(line);
     }
-    box.append(caption);
+    if (captioned) box.append(caption);
     return box;
   };
 
