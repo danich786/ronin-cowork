@@ -19,7 +19,7 @@ test('Work Record and Team Lead are the only public names for their migrated sur
   assert.match(lead, /\/api\/teams\/\$1\/kanban/);
   assert.match(lead, /\/api\/team-rosters\/\$team\/projects\/\$id\/\$verb/);
 
-  for (const retired of ['read_tegami', 'write_tegami', 'tejun-team-set']) {
+  for (const retired of ['read_tegami', 'write_tegami', 'tejun-team-set', 'tejun-kanban']) {
     await assert.rejects(access(path.join(root, 'ronin_bin', retired)), `${retired} must not exist, even as an alias`);
   }
 });

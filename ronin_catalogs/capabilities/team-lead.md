@@ -40,7 +40,7 @@ not duplicate them. Read-only Team enumeration belongs to `edges team`.
 | Team project create, read, write | projects the Team holds before they are assigned; lead ideas live in the Team roster, not in a separate file or pool |
 | Assign and return | the two lead moves: assign a held project whole to one Agent; take one back from an Agent's record. A project is one canonical object and is never copied |
 | Member and project status | each member's work record and each project's two flags — `exit` (none · agent · lead · user) and `status` (green · yellow · red) — as the Team Kanban projects them at read time |
-| Supporting-Agent lifecycle | create, re-cut, and end supporting Agents; assign their desks with the same source choice |
+| Supporting-Agent configuration | explicitly create through `session_create`, then inspect and configure Team, lead, or project-root state through `session_check` and `session_set` |
 | Team broadcasts | the wipeboard for everything the whole Team must see; one-on-one goes directly to the session |
 
 The move is the approval: there is no verdict, decider, revision counter, or history on a
