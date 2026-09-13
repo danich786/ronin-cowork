@@ -39,7 +39,7 @@ export function resources() {
       blurb: t('customize.sops_blurb', 'How this house goes about a domain — fetched by a situation, never pushed.') },
     { id: 'tools', section: 'behavior', mark: '⚙', label: t('customize.tools', 'Tools'),
       capability: 'read-only', read: null,
-      why: t('customize.tools_why', 'TOOLS.md is a table, and the server has no table reader — the rule in docs/shadowing.md is implemented in ronin_bin/tejun and not in src/resources.ts (prerequisite P1).'),
+      why: t('customize.tools_why', 'Agent tool teaching is composed from the capability files in ronin_catalogs/capabilities; Customize does not yet expose a reader for that catalog.'),
       blurb: t('customize.tools_blurb', 'The executables available to Agents. A markdown row cannot author one.') },
 
     { id: 'saved-launches', section: 'people', mark: '↗', label: t('customize.saved_launches', 'Saved launches'),
