@@ -21,22 +21,25 @@ esac
 . "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"
 TOOL_DIR=$(dirname "$SELF")
 die() { printf '%s\n' "$1" >&2; exit "${2:-4}"; }
+need_value() {
+  [ "$#" -ge 2 ] && [ -n "$2" ] || die "BAD-ARG: $1 requires a value. Run tejun-session-create --help." 2
+}
 NAME="${1:-}"
 [ -n "$NAME" ] && [ "${NAME#-}" = "$NAME" ] || die "usage: tejun-session-create <name> [options]. Run tejun-session-create --help." 2
 shift
 PROMPT="" TEAM="" LEAD="" ROOT="" MODE="" CMD="" MODEL="" MCP="" TAGS="" SEED=""
 while [ $# -gt 0 ]; do
   case "$1" in
-    --prompt) PROMPT="${2:-}"; shift 2 ;;
-    --team) TEAM="${2:-}"; shift 2 ;;
+    --prompt) need_value "$@"; PROMPT="$2"; shift 2 ;;
+    --team) need_value "$@"; TEAM="$2"; shift 2 ;;
     --lead) LEAD=1; shift ;;
-    --root|--project_root) ROOT="${2:-}"; shift 2 ;;
-    --mode) MODE="${2:-}"; shift 2 ;;
-    --cmd) CMD="${2:-}"; shift 2 ;;
-    --model) MODEL="${2:-}"; shift 2 ;;
-    --mcp) MCP="${2:-}"; shift 2 ;;
-    --tags) TAGS="${2:-}"; shift 2 ;;
-    --seed) SEED="${2:-}"; shift 2 ;;
+    --root|--project_root) need_value "$@"; ROOT="$2"; shift 2 ;;
+    --mode) need_value "$@"; MODE="$2"; shift 2 ;;
+    --cmd) need_value "$@"; CMD="$2"; shift 2 ;;
+    --model) need_value "$@"; MODEL="$2"; shift 2 ;;
+    --mcp) need_value "$@"; MCP="$2"; shift 2 ;;
+    --tags) need_value "$@"; TAGS="$2"; shift 2 ;;
+    --seed) need_value "$@"; SEED="$2"; shift 2 ;;
     *) die "BAD-ARG: $1. Run tejun-session-create --help." 2 ;;
   esac
 done
