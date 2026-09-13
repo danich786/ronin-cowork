@@ -1,4 +1,5 @@
 import { request } from './request.js';
+export { coworkWorkbenchIdentity, orderCoworkTeams } from './cowork-workbench-contract.js';
 
 /** One observer for Campaign identity; every surface reads the same SETTEI leaf. */
 export function createCampaignIdentity(onChange) {

@@ -71,6 +71,8 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **reach:** Reach
 - **recruit:** Recruit
 - **output:** Output
+- **on:** On
+- **off:** Off
 - **routine_bundles:** Routine Bundles
 - **go:** Go
 - **save_template:** Save as template
@@ -84,6 +86,7 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **kind.work:** Work
 - **kind.social:** Events
 - **kind.school:** Learning
+- **kind.open:** Open
 
 ## desk — system.js (the ⚙ desk's own rooms: appearance, the updater, the account)
 - **desk.row_release:** Release & update
@@ -590,9 +593,13 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **ask.find:** type to find
 - **ask.nothing:** Nothing to choose.
 - **ask.after:** Choose {field} first.
+- **yes:** Yes
+- **no:** No
+- **forms.required:** Required
 - **forms.reason_not_on_machine:** not on this machine
 - **forms.reason_turned_off:** turned off
 - **forms.reason_not_listed:** not listed by your {cli} {client_version}
+- **forms.model_unlisted:** not listed by this CLI
 - **forms.provider_off:** {name} — not on this machine
 - **forms.model_word:** {model} · {tier}
 - **forms.model_off:** {model} · {tier} — not on this machine
@@ -637,6 +644,7 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 
 ## new_agent — new-agent.js (the drawn launch form, staged beside the ＋ New board)
 - **new_agent.title:** New Agent
+- **new_agent.model_package:** Model
 - **new_agent.card_summary:** Session type first — the drawn launch form.
 - **new_agent.new_session:** New session
 - **new_agent.type_cowork:** Cowork Agent
@@ -653,12 +661,16 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **new_agent.terminal_note:** A terminal takes no kind, no instructions, no mandate and no loadout.
 - **new_agent.bare_note:** A bare-metal Agent takes no kind, no mandate and no loadout.
 - **new_agent.instructions:** Instructions
+- **new_agent.model_package:** Model
 - **new_agent.team_existing:** An existing team
 - **new_agent.team_existing_sub:** Join it. Its answers land at birth.
-- **new_agent.team_none:** No team — a rōnin
+- **new_agent.team_none:** No team (rōnin)
 - **new_agent.team_none_sub:** Ordinary, not a gap.
-- **new_agent.team_new:** A new team
+- **new_agent.team_new:** New team
 - **new_agent.team_new_sub:** Created first, then this Agent is born into it.
+- **new_agent.team_current:** Current team
+- **new_agent.team_current_sub:** Choose from your teams.
+- **new_agent.which_team:** Which team
 - **new_agent.team_new_blank:** Blank makes no team — the Agent is a rōnin.
 - **new_agent.a_ronin:** a rōnin
 - **new_agent.loadout_meta:** {routines} routines · {books} books
@@ -710,12 +722,13 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **desks.parked_none:** none
 
 ## team — team-view.js (the Team page)
+- **team.lead:** Team lead
 - **team.flip_commons:** Show the Team commons in this workspace
 - **team.flip_terminal:** Show the terminal in this workspace
 - **team.workspace_1:** Workspace 1
 - **team.workspace_2:** Workspace 2
-- **team.commons_card:** Team commons
-- **team.commons_summary:** See Docs / Wipeboard / Messages / Team Configuration
+- **team.commons_card:** Commons
+- **team.commons_summary:** See Roster / Docs / Wipeboard / Messages / Configuration
 - **team.roster_of:** Roster
 - **team.workspace_blank:** Workspace
 - **team.workspace_empty:** empty
@@ -727,7 +740,7 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **team.count_2_title:** Two workspaces around the roster
 - **team.count_4_title:** Four workspaces, two by two
 - **team.roster_title:** Roster
-- **team.commons:** Team commons
+- **team.commons:** Commons
 - **team.arranged_by:** arranged by {from}
 - **team.attached:** attached
 - **team.add_member:** ＋ Add team member
@@ -1749,7 +1762,8 @@ The catalog entry goes. {dir} is not touched.
 - **workspace.channel_chat:** Chat
 - **workspace.channel_wipeboard:** Wipeboard
 - **workspace.channel_docs:** Docs
-- **workspace.channel_team_configuration:** Team Configuration
+- **workspace.channel_roster:** Roster
+- **workspace.channel_team_configuration:** Configuration
 - **workspace.channel_agent_message_queue:** Messages
 - **workspace.channel_cron_jobs:** Cron jobs
 - **team_config.no_roster:** This Team has no saved record.
@@ -1765,6 +1779,7 @@ The catalog entry goes. {dir} is not touched.
 - **team_config.kind_school:** School
 - **team_config.objective:** Purpose
 - **where.born_in:** Born in
+- **where.additional:** Additional workspaces
 - **where.worktrees_on:** Worktrees are on (see Routines): a ticked repository opens a desk for each new Agent at birth; branches are Ronin's.
 - **where.worktrees_off:** Worktrees are off (see Routines): a ticked repository is where this Team works, on the branch you name, or as checked out.
 - **where.col_repo:** Repository
@@ -1885,6 +1900,11 @@ The catalog entry goes. {dir} is not touched.
 - **league.make_team_lead:** Make Lead
 - **league.rename_agent:** Rename
 - **league.rename_agent_prompt:** Edit Agent title
+- **league.open_agent:** Open
+- **league.close_agent:** Close
+- **league.close_named_agent:** Close {name}
+- **league.no_current_step:** No current step
+- **league.no_current_description:** No current work description.
 - **league.remove_member:** Remove
 - **league.remove_named_member:** Remove {name} from this team
 - **league.choose_member:** Choose an Agent to add
