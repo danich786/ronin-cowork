@@ -64,7 +64,12 @@ await fs.writeFile(
       home_machine: {
         title: 'Ronin Home',
         state: 'active',
-        config: { agent_defaults: { dial: 'write' } },
+        config: { installations: { gbrain: false }, defaults: { dial: 'write' } },
+      },
+      gbrain_connected: {
+        title: 'Gbrain connected',
+        state: 'archived',
+        config: { installations: { gbrain: true }, defaults: { behaviours: ['gbrain'], dial: 'write' } },
       },
     },
   }),
@@ -99,6 +104,7 @@ type SpawnForm = import('../src/spawn.js').SpawnForm;
 
 /** What the ＋ New form posts: the axes, the picks, and the owner's words. */
 const commonsForm = (over: Partial<SpawnForm> = {}): SpawnForm => ({
+  campaign_id: 'home_machine',
   project_root: 'alpha',
   prompt: 'Work out the shape of the thing.',
   ...over,
@@ -180,6 +186,39 @@ test('bare_metal_agent resolves a real CLI without Ronin birth machinery', async
   assert.equal(bare.team_objective, '', 'the Team roster does not resolve into the launch');
 });
 
+test('a Cowork Agent disconnects globally configured gbrain when its installation is off', async () => {
+  const cowork = await resolveForm(commonsForm({
+    session_type: 'cowork_agent',
+    name: 'gbrain-off-proof',
+    provider: 'openai',
+    model: 'gpt-5.6-terra',
+  }), new Set());
+  const gbrain = cowork.installations.find((installation) => installation.name === 'gbrain');
+
+  assert.equal(gbrain?.enabled, false, 'the receipt source says the gbrain installation is off');
+  assert.match(cowork.cmd, /-c mcp_servers\.gbrain\.enabled=false/,
+    'the resolved command enforces the same disconnected truth at provider startup');
+  assert.ok(!cowork.behaviours.some((behaviour) => behaviour.book === 'gbrain'),
+    'no gbrain behaviour is delivered while its installation is off');
+});
+
+test('a Cowork Agent preserves provider configuration when gbrain is available and selected', async () => {
+  const cowork = await resolveForm(commonsForm({
+    session_type: 'cowork_agent',
+    campaign_id: 'gbrain_connected',
+    name: 'gbrain-on-proof',
+    provider: 'openai',
+    model: 'gpt-5.6-terra',
+  }), new Set());
+  const gbrain = cowork.installations.find((installation) => installation.name === 'gbrain');
+
+  assert.equal(gbrain?.enabled, true, 'the receipt source says the gbrain installation is on');
+  assert.doesNotMatch(cowork.cmd, /mcp_servers\.gbrain\.enabled=false/,
+    'the selected connected behaviour leaves the provider gbrain configuration available');
+  assert.ok(cowork.behaviours.some((behaviour) => behaviour.book === 'gbrain'),
+    'the selected gbrain behaviour is delivered');
+});
+
 test('and to the same role-free reading list — all + root, compiled once', async () => {
   const fromCommons = await resolveForm(commonsForm(), new Set());
   const fromForkit = await resolveForm(forkitForm({ prompt: commonsForm().prompt }), new Set());
@@ -257,14 +296,14 @@ test('launch_mode preserves provider configuration or appends the declared bypas
   const configured = await resolveForm(commonsForm({
     provider: 'anthropic', model: 'opus', launch_mode: 'configured',
   }), new Set());
-  assert.equal(configured.cmd, 'claude --model opus');
+  assert.equal(configured.cmd, 'claude --model opus --strict-mcp-config');
   assert.equal(configured.launch_mode, 'configured');
   assert.deepEqual(configured.stated_by.launch_mode, [{ layer: 'launch', source: 'launch request' }]);
 
   const dangerous = await resolveForm(commonsForm({
     provider: 'anthropic', model: 'opus', launch_mode: 'live_dangerously',
   }), new Set());
-  assert.equal(dangerous.cmd, 'claude --model opus --dangerously-skip-permissions');
+  assert.equal(dangerous.cmd, 'claude --model opus --dangerously-skip-permissions --strict-mcp-config');
   assert.equal(dangerous.launch_mode, 'live_dangerously');
 
   const bareDangerous = await resolveForm(commonsForm({

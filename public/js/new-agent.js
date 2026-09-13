@@ -555,7 +555,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     stepPayload.setNumber(order.length + 1);
     stepPayload.el.hidden = draft.type === 'terminal';
     stepTop.el.querySelector('h3').textContent = hasAgent() ? t('new_agent.agent_body', 'Agent') : t('new_agent.name_required_step', 'Name · required');
-    questions.show(draft.type === 'terminal' ? [] : draft.type === 'bare_metal_agent' ? ['provider', 'model', 'root', 'repos', 'launchMode'] : null);
+    questions.show(draft.type === 'terminal' ? [] : draft.type === 'bare_metal_agent' ? ['provider', 'model', 'root', 'launchMode'] : null);
     teamQuestions.show(isCowork() ? null : ['team']);
     teamQuestions.el.hidden = false;
     questions.el.hidden = draft.type === 'terminal';
