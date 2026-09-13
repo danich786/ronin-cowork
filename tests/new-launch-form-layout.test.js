@@ -100,10 +100,11 @@ test('Add Agent confirms a draft into a compact row with the one selector utilit
   assert.match(agents, /const questions = ask\(\[/);
   assert.match(agents, /group: t\('new_agent\.model_package', 'Model'\)/);
   assert.match(agents, /group: t\('mandate', 'Mandate'\)/);
-  assert.match(agents, /shape: 'square'/);
-  assert.match(agents, /ruledRows\('reach', REACH, mandateWord\)/);
-  assert.match(agents, /ruledRows\('recruit', RECRUIT, mandateWord\)/);
-  assert.match(agents, /ruledRows\('output', OUTPUT, mandateWord\)/);
+  assert.match(agents, /const mandateRows = \(values\) => values\.map/);
+  assert.match(agents, /options: mandateRows\(REACH\)/);
+  assert.match(agents, /options: mandateRows\(RECRUIT\)/);
+  assert.match(agents, /many: true, options: mandateRows\(OUTPUT\)/);
+  assert.doesNotMatch(agents, /shape: 'square'|ruledRows|glyph:/);
   assert.match(agents, /many: true/);
   assert.match(agents, /switch: \[t\('yes', 'Yes'\), t\('no', 'No'\)\]/);
   assert.doesNotMatch(agents, /switch:[^\n]+word:/);

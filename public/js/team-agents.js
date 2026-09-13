@@ -1,7 +1,6 @@
 /* part of the ronin-cowork client — see js/README.md */
 import { t } from './lexicon.js';
 import { ask } from './ask.js';
-import { ruledRows } from './glyphs.js';
 import { createStep, el, mandateWord, providerCatalog, tierWord } from './form-steps.js';
 import { finalizeTeamName, sanitizeTeamName } from './new-team-draft.js';
 
@@ -69,15 +68,16 @@ export function createAgentRows({ n, key, rows, changed, onToggle, createAction,
           })
           : undefined,
     }));
+    const mandateRows = (values) => values.map((value) => ({ v: value, l: mandateWord(value) }));
     const questions = ask([
       { group: t('new_agent.model_package', 'Model'), fields: [
         { key: 'provider', label: t('forms.provider', 'Model provider'), blank: t('forms.default', 'Default'), options: providerRows },
         { key: 'model', label: t('forms.model', 'Model'), blank: t('forms.default', 'Default'), after: 'provider', options: (value) => modelRows(value.provider) },
       ] },
       { group: t('mandate', 'Mandate'), fields: [
-        { key: 'reach', label: t('reach', 'Reach'), shape: 'square', options: ruledRows('reach', REACH, mandateWord) },
-        { key: 'recruit', label: t('recruit', 'Recruit'), shape: 'square', options: ruledRows('recruit', RECRUIT, mandateWord) },
-        { key: 'output', label: t('output', 'Output'), shape: 'square', many: true, options: ruledRows('output', OUTPUT, mandateWord) },
+        { key: 'reach', label: t('reach', 'Reach'), options: mandateRows(REACH) },
+        { key: 'recruit', label: t('recruit', 'Recruit'), options: mandateRows(RECRUIT) },
+        { key: 'output', label: t('output', 'Output'), many: true, options: mandateRows(OUTPUT) },
       ] },
       { group: t('squad', 'Team'), fields: [
         { key: 'lead', label: t('team.lead', 'Team lead'), switch: [t('yes', 'Yes'), t('no', 'No')] },
