@@ -36,7 +36,7 @@ import {
 } from '../resources.js';
 import {
   listAgentTemplates,
-  listRoutines, listInstallations, listFeatures,
+  listInstallations, listFeatures,
   listTeamTemplates,
 } from '../resource-adapters.js';
 import { removeUserTemplate, saveAgentTemplate, saveTeamTemplate } from '../templates.js';
@@ -287,14 +287,6 @@ export function registerCatalogs(app: express.Express): void {
       .filter((i) => i.kind && i.name);
     try {
       res.json(await dispatchInstall(items));
-    } catch (e) {
-      res.status(500).json({ error: errMsg(e) });
-    }
-  });
-
-  app.get('/api/routines', async (_req, res) => {
-    try {
-      res.json(await listRoutines());
     } catch (e) {
       res.status(500).json({ error: errMsg(e) });
     }

@@ -404,6 +404,9 @@ test('a name alone resolves the ordinary Cowork Agent birth', async () => {
   assert.equal(born.session_type, 'cowork_agent');
   assert.equal(born.name, 'name_only');
   assert.equal(born.project_root, 'alpha', 'the existing top-active-root chain answers placement');
+  assert.ok(born.installations.length > 0, 'the receipt source carries every installation');
+  assert.ok(!born.installations.some((installation) => installation.name === 'cowork_agent'), 'the Cowork Agent is not an installation switch');
+  assert.ok(born.installations.every((installation) => installation.stated_by === 'installation'));
   assert.deepEqual(born.mandate, { reach: 'plan', recruit: 'propose agents', output: ['open'] });
   assert.equal(born.dial, 'write');
 });

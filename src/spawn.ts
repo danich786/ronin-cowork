@@ -18,7 +18,7 @@ import type { ResolvedWorktreesRepository } from './worktrees-resolution.js';
 import type { Assignment } from './desks/schema.js';
 import { mandate, type LaunchMode, type Mandate } from './agent-defaults.js';
 import type { ResolvedRoutine } from './routines.js';
-import { availableFeatures, resolveContributions } from './instruction-cascade.js';
+import { availableFeatures, resolveContributions, switches, type ResolvedContribution } from './instruction-cascade.js';
 import { initialCampaignId } from './campaign-scope.js';
 import { resolveLaunchSeed } from './launch-seed.js';
 import { resolveBehaviourBooks, type DeliveredBehaviour } from './behaviours.js';
@@ -98,6 +98,7 @@ export interface Resolved {
   ignored: string[];
   undelivered: string[];
   routines: ResolvedRoutine[];
+  installations: ResolvedContribution[];
   conditional_tools: string[];
   stated_by: Record<string, StatedBy[]>;
 }
@@ -282,6 +283,13 @@ export async function resolveForm(
     ? resolveContributions(installationCatalog, campaign.config.installations, featureCatalog, available,
         campaign.config.defaults.features, roster?.features, form.features)
     : { contributions: [], selected: [], undelivered: [], feature_layer: 'campaign' as const };
+  const installationSwitches = switches(campaign?.config.installations);
+  const installations = installationCatalog.map((installation) => ({
+    ...installation,
+    enabled: installationSwitches[installation.name] === true,
+    stated_by: 'installation' as const,
+    required_by: [] as string[],
+  }));
   const routines = (form.house_seat === 'mika' ? [] : [CORE_CONTRIBUTION, ...cascade.contributions]) as ResolvedRoutine[];
   const merged = mergeSessionDefaults(agentsSet.sessions as SessionsDefaults | undefined, campaign?.config.defaults);
   const sessionsSet = merged.sessions;
@@ -466,6 +474,7 @@ export async function resolveForm(
     ],
     undelivered: cascade.undelivered,
     routines,
+    installations,
     conditional_tools: worktrees.repositories.some((row) => row.repo === root.name && row.mode === 'managed')
       ? [...WORKTREE_TOOLS]
       : [],

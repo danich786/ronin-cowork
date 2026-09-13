@@ -4,7 +4,7 @@ import { STOCK_DIR, entryValue, isKeyLine, resolveFiles, type Origin } from './r
 import { storeDir } from './resources.js';
 
 export type DefinitionKind =
-  | 'desk_profiles' | 'lexicons' | 'routines' | 'installations' | 'features'
+  | 'desk_profiles' | 'lexicons' | 'installations' | 'features'
   | 'templates/agents' | 'templates/teams';
 
 export interface Definition {
@@ -112,24 +112,6 @@ const row = (d: Definition): Row => ({
   remit: d.get('remit'),
   credit: credit(d.get('credit')),
 });
-
-export async function listRoutines(): Promise<RoutineRow[]> {
-  return (await readDefinitions('routines')).map((d) => ({
-    name: d.name,
-    origin: d.origin,
-    shadowed: d.shadowed,
-    label: d.get('label') || d.name,
-    blurb: d.get('blurb'),
-    reading: splitDefinitionList(d.get('reading')),
-    reading_off: splitDefinitionList(d.get('reading_off')),
-    sops: splitDefinitionList(d.get('sops')),
-    macros: splitDefinitionList(d.get('macros')),
-    actions: splitDefinitionList(d.get('actions')),
-    tools: splitDefinitionList(d.get('tools')),
-    mcp: splitDefinitionList(d.get('mcp')),
-    parts: splitDefinitionList(d.get('parts')),
-  }));
-}
 
 const contribution = (d: Definition): RoutineRow => ({
   name: d.name, origin: d.origin, shadowed: d.shadowed,
