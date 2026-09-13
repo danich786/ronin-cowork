@@ -60,3 +60,50 @@ export async function restoreTeamIdea(team: string, value: Project): Promise<Pro
   await writeTeamRoster(team, { projects: [...roster.projects, project] });
   return project;
 }
+
+export type ProjectMover = (input:
+  | { direction: 'place'; session: string; project: Project }
+  | { direction: 'return'; session: string; projectId: string }
+) => Promise<{ project: Project; projectsRemaining: number }>;
+
+const houseMove: ProjectMover = async (input) => {
+  const module = await import('./tegami.js') as unknown as { moveTegamiProject?: ProjectMover };
+  if (!module.moveTegamiProject) throw new Error('The whole-project Work Record move is not installed yet.');
+  return module.moveTegamiProject(input);
+};
+
+export async function assignTeamProject(team: string, statedId: string, session: string, move: ProjectMover = houseMove): Promise<Project> {
+  const roster = await readTeamRoster(team);
+  if (!roster) throw new Error(`Team "${team}" has no roster.`);
+  const id = projectId(team, statedId);
+  const at = roster.projects.findIndex((project) => project.id === id);
+  if (at < 0) throw new Error(`Project "${id}" is not an idea in Team "${team}".`);
+  const project = normalizeProject({ ...roster.projects[at], stage: 'PLANNING', exit: 'user', status: 'yellow' })!;
+  await move({ direction: 'place', session, project });
+  try {
+    await writeTeamRoster(team, { projects: roster.projects.filter((entry) => entry.id !== id) });
+  } catch (error) {
+    await move({ direction: 'return', session, projectId: id }).catch(() => undefined);
+    throw error;
+  }
+  return project;
+}
+
+export async function returnTeamProject(team: string, statedId: string, session: string, move: ProjectMover = houseMove): Promise<{
+  project: Project;
+  projectsRemaining: number;
+}> {
+  const roster = await readTeamRoster(team);
+  if (!roster) throw new Error(`Team "${team}" has no roster.`);
+  const id = projectId(team, statedId);
+  if (roster.projects.some((entry) => entry.id === id)) throw new Error(`Project "${id}" is already in the roster.`);
+  const moved = await move({ direction: 'return', session, projectId: id });
+  const project = normalizeProject({ ...moved.project, stage: 'IDEAS', exit: 'lead', status: 'yellow' })!;
+  try {
+    await writeTeamRoster(team, { projects: [...roster.projects, project] });
+  } catch (error) {
+    await move({ direction: 'place', session, project: moved.project }).catch(() => undefined);
+    throw error;
+  }
+  return { project, projectsRemaining: moved.projectsRemaining };
+}

@@ -11,6 +11,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import type { Project } from '../src/projects.js';
 
 const temp = await fs.mkdtemp(path.join(os.tmpdir(), 'ronin-rosters-test-'));
 process.env.RONIN_TEAM_ROSTERS_DIR = temp;
@@ -22,7 +23,7 @@ const {
   readTeamRoster,
   writeTeamRoster,
 } = await import('../src/team-rosters.js');
-const { writeTeamIdea } = await import('../src/team-projects.js');
+const { assignTeamProject, returnTeamProject, writeTeamIdea } = await import('../src/team-projects.js');
 test('create → read → list: a zero-member team is a real, openable record', async () => {
   const r = await createTeamRoster('alpha', {
     kind: 'coding',
@@ -61,6 +62,31 @@ test('ideas live in the roster and its monotonic id issuer is the only id source
   const roster = await readTeamRoster('alpha');
   assert.equal(roster?.next_project_id, 3);
   assert.deepEqual(roster?.projects.map((p) => p.id), ['alpha/1', 'alpha/2']);
+});
+
+test('assign and return move one whole project across the roster boundary', async () => {
+  const held: Project[] = [];
+  const firstProject = (await readTeamRoster('alpha'))!.projects[0];
+  const move = async (input: { direction: 'place'; session: string; project: Project } | { direction: 'return'; session: string; projectId: string }) => {
+    if (input.direction === 'place') {
+      held.push(input.project);
+      return { project: input.project, projectsRemaining: held.length };
+    }
+    const at = held.findIndex((project) => project.id === input.projectId);
+    assert.notEqual(at, -1);
+    const [project] = held.splice(at, 1);
+    return { project, projectsRemaining: held.length };
+  };
+  const assigned = await assignTeamProject('alpha', '1', 'worker', move);
+  assert.deepEqual(held, [assigned]);
+  assert.equal(assigned.stage, 'PLANNING');
+  assert.equal((await readTeamRoster('alpha'))?.projects.some((p) => p.id === assigned.id), false);
+  const returned = await returnTeamProject('alpha', '1', 'worker', move);
+  assert.equal(returned.projectsRemaining, 0);
+  assert.equal(returned.project.stage, 'IDEAS');
+  assert.equal(returned.project.exit, 'lead');
+  assert.equal(returned.project.status, 'yellow');
+  assert.equal((await readTeamRoster('alpha'))?.projects.some((p) => p.id === assigned.id), true);
 });
 
 test('the settled nested shapes round-trip, and an edit touches only what it states', async () => {
