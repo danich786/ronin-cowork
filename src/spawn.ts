@@ -9,7 +9,7 @@ import { agentSpec } from './agents.js';
 import { readAgentsSection, readSetupSection } from './machine-state.js';
 import { offAt } from './provider-summary.js';
 import { storeDir } from './resources.js';
-import { listFeatures, listInstallations, routineReading } from './resource-adapters.js';
+import { contributionReading, listFeatures, listInstallations } from './resource-adapters.js';
 import { isCreatableTeamName as isTeamName, readTeamRoster, teamRosterFile, type TeamRoster } from './team-rosters.js';
 import { resolveLaunchProfile, type Dial, type LaunchProfile, type StatedBy } from './launch-profile.js';
 import { readCampaign } from './campaigns.js';
@@ -17,8 +17,8 @@ import { primaryWorkLocation, renderDeskBlock, renderWorkLocations, resolveLaunc
 import type { ResolvedWorktreesRepository } from './worktrees-resolution.js';
 import type { Assignment } from './desks/schema.js';
 import { mandate, type LaunchMode, type Mandate } from './agent-defaults.js';
-import type { ResolvedRoutine } from './routines.js';
-import { availableFeatures, resolveContributions } from './instruction-cascade.js';
+import { availableFeatures, resolveContributions, type ResolvedContribution } from './instruction-cascade.js';
+import { resolveInstallations, type ResolvedInstallation } from './installations.js';
 import { initialCampaignId } from './campaign-scope.js';
 import { resolveLaunchSeed } from './launch-seed.js';
 import { resolveBehaviourBooks, type DeliveredBehaviour } from './behaviours.js';
@@ -29,13 +29,13 @@ const WORKTREE_SOP = path.join(REPO_ROOT, 'ronin_sops', 'worktree-root.md');
 const CHECKOUT_SOP = path.join(REPO_ROOT, 'ronin_sops', 'checkout.md');
 const WORKTREE_TOOLS = ['tejun-desk', 'ronin-repo-init'] as const;
 
-const CORE_CONTRIBUTION: ResolvedRoutine = {
+const CORE_CONTRIBUTION: ResolvedContribution = {
   name: 'cowork_agent', origin: 'stock', shadowed: false, label: 'Cowork Agent', blurb: '',
   reading: [], reading_off: [], sops: [],
   macros: ['updateplan', 'show_file', 'forkit', 'team', 'wipeboard', 'tell', 'read', 'readwrite', 'evaluate', 'delete'],
   actions: ['control-check', 'control-set', 'session-launch', 'read-letter', 'write-letter', 'list-doc', 'session-catchup', 'team-roster', 'session-upsert', 'team-upsert', 'team-page-read', 'team-page-draft', 'wipeboard-check', 'wipeboard-post', 'send-to-session', 'step-through', 'compile-macro', 'read-work-record', 'propose-and-confirm', 'report-outcome', 'harakiri', 'status-probe', 'schedule-request'],
   tools: ['tejun', 'tejun-step', 'tejun-send', 'tejun-harakiri', 'tejun-archive', 'tejun-rehydrate', 'tejun-team', 'tejun-fork', 'tejun-session-set', 'tejun-team-set', 'tejun-wipeboard', 'tejun-teampage', 'tejun-peek', 'read_tegami', 'write_tegami', 'tejun-jikan', 'ronin-url'],
-  mcp: [], parts: [], enabled: true, stated_by: 'implicit_off', required_by: [],
+  mcp: [], parts: [], enabled: true, stated_by: 'conditional', required_by: [],
 };
 
 export interface SpawnForm {
@@ -97,7 +97,8 @@ export interface Resolved {
   kind: string;
   ignored: string[];
   undelivered: string[];
-  routines: ResolvedRoutine[];
+  contributions: ResolvedContribution[];
+  installations: ResolvedInstallation[];
   conditional_tools: string[];
   stated_by: Record<string, StatedBy[]>;
 }
@@ -282,7 +283,8 @@ export async function resolveForm(
     ? resolveContributions(installationCatalog, campaign.config.installations, featureCatalog, available,
         campaign.config.defaults.features, roster?.features, form.features)
     : { contributions: [], selected: [], undelivered: [], feature_layer: 'campaign' as const };
-  const routines = (form.house_seat === 'mika' ? [] : [CORE_CONTRIBUTION, ...cascade.contributions]) as ResolvedRoutine[];
+  const installations = resolveInstallations(installationCatalog, campaign?.config.installations);
+  const contributions = form.house_seat === 'mika' ? [] : [CORE_CONTRIBUTION, ...cascade.contributions];
   const merged = mergeSessionDefaults(agentsSet.sessions as SessionsDefaults | undefined, campaign?.config.defaults);
   const sessionsSet = merged.sessions;
   const chosen = resolveLaunchCommand({
@@ -314,11 +316,11 @@ export async function resolveForm(
     }
     cmd = `${cmd} ${spec.liveDangerously}`;
   }
-  const routineMcp = routines
-    .filter((routine) => routine.enabled)
-    .flatMap((routine) => routine.mcp);
+  const contributionMcp = contributions
+    .filter((contribution) => contribution.enabled)
+    .flatMap((contribution) => contribution.mcp);
   const gbrainAnswer = cascade.selected.includes('gbrain') ? 'connected' as const : undefined;
-  const mcpWanted = profile.mcpAlways || routineMcp.length > 0
+  const mcpWanted = profile.mcpAlways || contributionMcp.length > 0
     ? true
     : gbrainAnswer === 'connected'
       ? true
@@ -393,8 +395,8 @@ export async function resolveForm(
     repos: form.repos,
   });
   const assignment = worktrees.assignment;
-  const enabledReading = routineReading(routines);
-  const enabledMacros = new Set(routines.filter((routine) => routine.enabled).flatMap((routine) => routine.macros));
+  const enabledReading = contributionReading(contributions);
+  const enabledMacros = new Set(contributions.filter((contribution) => contribution.enabled).flatMap((contribution) => contribution.macros));
   const kind = form.kind ?? String(parentSeed?.seeds.kind.value ?? 'open');
   const selectedBehaviours = form.behaviours ?? (parentSeed?.seeds.behaviours.value as string[] | undefined) ?? [];
   const resolvedBehaviours = coworkAgent && agent
@@ -465,7 +467,8 @@ export async function resolveForm(
       ...preset.ignored,
     ],
     undelivered: cascade.undelivered,
-    routines,
+    contributions,
+    installations,
     conditional_tools: worktrees.repositories.some((row) => row.repo === root.name && row.mode === 'managed')
       ? [...WORKTREE_TOOLS]
       : [],
@@ -506,7 +509,7 @@ export async function resolveForm(
         ? (preset.behaviours ? preset.source! : explicit)
         : parentSeed?.seeds.behaviours.stated_by ?? system,
       kind: form.kind !== undefined ? explicit : parentSeed?.seeds.kind.stated_by ?? system,
-      routines: routines.flatMap((routine) => [{ layer: (['campaign', 'team', 'agent'].includes(routine.stated_by) ? routine.stated_by : 'installation') as StatedBy['layer'], source: `${routine.stated_by} contribution` }]),
+      contributions: contributions.flatMap((contribution) => [{ layer: contribution.stated_by, source: `${contribution.stated_by} contribution` }]),
       arrangement: worktrees.repositories.length
         ? [{ layer: 'conditional', source: `RONIN_REPO for ${root.name}` }]
         : [],

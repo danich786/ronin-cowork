@@ -4,7 +4,7 @@ import { STOCK_DIR, entryValue, isKeyLine, resolveFiles, type Origin } from './r
 import { storeDir } from './resources.js';
 
 export type DefinitionKind =
-  | 'desk_profiles' | 'lexicons' | 'routines' | 'installations' | 'features'
+  | 'desk_profiles' | 'lexicons' | 'installations' | 'features'
   | 'templates/agents' | 'templates/teams';
 
 export interface Definition {
@@ -76,7 +76,7 @@ interface Row {
   credit?: { text: string; url: string };
 }
 
-export interface RoutineRow extends Pick<Row, 'name' | 'origin' | 'shadowed' | 'label' | 'blurb'> {
+export interface ContributionRow extends Pick<Row, 'name' | 'origin' | 'shadowed' | 'label' | 'blurb'> {
   reading: string[];
   reading_off: string[];
   sops: string[];
@@ -84,17 +84,17 @@ export interface RoutineRow extends Pick<Row, 'name' | 'origin' | 'shadowed' | '
   actions: string[];
   tools: string[];
   mcp: string[];
-  /** Services parts this Routine runs inside the server; loaded only while its switch is on. */
+  /** Services parts this contribution runs inside the server; loaded only while its switch is on. */
   parts: string[];
 }
 
-export interface InstallationRow extends RoutineRow {
+export interface InstallationRow extends ContributionRow {
   effect: 'system' | 'feature_provider';
   provides: string[];
   requires: string[];
 }
 
-export interface FeatureRow extends RoutineRow { provider: string }
+export interface FeatureRow extends ContributionRow { provider: string }
 
 function credit(v: string): { text: string; url: string } | undefined {
   const m = /^\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)$/.exec(v.trim());
@@ -113,25 +113,7 @@ const row = (d: Definition): Row => ({
   credit: credit(d.get('credit')),
 });
 
-export async function listRoutines(): Promise<RoutineRow[]> {
-  return (await readDefinitions('routines')).map((d) => ({
-    name: d.name,
-    origin: d.origin,
-    shadowed: d.shadowed,
-    label: d.get('label') || d.name,
-    blurb: d.get('blurb'),
-    reading: splitDefinitionList(d.get('reading')),
-    reading_off: splitDefinitionList(d.get('reading_off')),
-    sops: splitDefinitionList(d.get('sops')),
-    macros: splitDefinitionList(d.get('macros')),
-    actions: splitDefinitionList(d.get('actions')),
-    tools: splitDefinitionList(d.get('tools')),
-    mcp: splitDefinitionList(d.get('mcp')),
-    parts: splitDefinitionList(d.get('parts')),
-  }));
-}
-
-const contribution = (d: Definition): RoutineRow => ({
+const contribution = (d: Definition): ContributionRow => ({
   name: d.name, origin: d.origin, shadowed: d.shadowed,
   label: d.get('label') || d.name, blurb: d.get('blurb'),
   reading: splitDefinitionList(d.get('reading')), reading_off: splitDefinitionList(d.get('reading_off')),
@@ -253,6 +235,6 @@ export async function listTeamTemplates(): Promise<TeamTemplateRow[]> {
   return rows;
 }
 
-export const routineReading = (
-  routines: readonly { enabled: boolean; reading: string[]; reading_off: string[] }[],
-): string[] => routines.flatMap((routine) => routine.enabled ? routine.reading : routine.reading_off);
+export const contributionReading = (
+  contributions: readonly { enabled: boolean; reading: string[]; reading_off: string[] }[],
+): string[] => contributions.flatMap((contribution) => contribution.enabled ? contribution.reading : contribution.reading_off);

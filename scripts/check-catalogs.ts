@@ -5,7 +5,6 @@ import { STOCK_DIR, splitSections, readEntries } from '../src/resources.js';
 import {
   findDefinition,
   listAgentTemplates,
-  listRoutines,
   listInstallations,
   listFeatures,
   listTeamTemplates,
@@ -106,49 +105,9 @@ async function surfacingDefinitions(
   }
 }
 
-async function routinesResolve(): Promise<void> {
-  const routines = await listRoutines();
-  const [macros, actionsRaw, toolsRaw] = await Promise.all([
-    listMacros(),
-    readFile(path.join(STOCK_DIR, 'ACTIONS.md'), 'utf8'),
-    readFile(path.join(STOCK_DIR, 'TOOLS.md'), 'utf8'),
-  ]);
-  const known = {
-    macros: new Set(macros.map((x) => x.name)),
-    actions: new Set(splitSections(actionsRaw, 'stock').map((x) => x.name)),
-    tools: new Set([...toolsRaw.matchAll(/^\|\s*`([^`]+)`\s*\|/gm)].map((m) => m[1])),
-  };
-  const owners = new Map<string, string>();
-  for (const routine of routines.filter((x) => x.origin === 'stock')) {
-    if (!routine.blurb.trim()) fail(`routines/${routine.name}.md: missing blurb`);
-    for (const reading of [...routine.reading, ...routine.reading_off].filter((name) => name.startsWith('routine/'))) {
-      try { await stat(path.join(REPO, 'ronin_session_boot', reading)); }
-      catch { fail(`routines/${routine.name}.md: reading names missing "${reading}"`); }
-    }
-    for (const field of ['macros', 'actions', 'tools'] as const) {
-      for (const name of routine[field]) {
-        if (!known[field].has(name)) fail(`routines/${routine.name}.md: ${field} names missing "${name}"`);
-        const key = `${field}:${name}`;
-        const prior = owners.get(key);
-        if (prior) fail(`routines/${routine.name}.md: ${key} already belongs to ${prior}`);
-        else owners.set(key, routine.name);
-      }
-    }
-    for (const sop of routine.sops) {
-      try { await stat(path.join(REPO, 'ronin_sops', `${sop}.md`)); }
-      catch { fail(`routines/${routine.name}.md: sops names missing "${sop}"`); }
-      const key = `sops:${sop}`;
-      const prior = owners.get(key);
-      if (prior) fail(`routines/${routine.name}.md: ${key} already belongs to ${prior}`);
-      else owners.set(key, routine.name);
-    }
-  }
-}
-
 async function templateBoxResolves(
   at: string,
   box: TemplateBox,
-  routineNames: Set<string>,
 ): Promise<void> {
   if (!box.blurb.trim()) fail(`${at}: missing blurb`);
   if (!box.art.trim()) fail(`${at}: missing art`);
@@ -160,11 +119,10 @@ async function templateBoxResolves(
 }
 
 async function templatesResolve(): Promise<void> {
-  const routineNames = new Set((await listRoutines()).map((routine) => routine.name));
   const DEAD = ['lead_brief', 'lead_mandate'];
   for (const template of (await listAgentTemplates()).filter((x) => x.origin === 'stock')) {
     const at = `templates/agents/${template.name}.md`;
-    await templateBoxResolves(at, template, routineNames);
+    await templateBoxResolves(at, template);
     const def = await findDefinition('templates/agents', template.name);
     if (def?.has('mandate') && !template.mandate) fail(`${at}: mandate is not \`reach · recruit · output\` in ruled values`);
     if (!template.brief.trim()) fail(`${at}: an agent template seeds a brief`);
@@ -174,7 +132,7 @@ async function templatesResolve(): Promise<void> {
   }
   for (const template of (await listTeamTemplates()).filter((x) => x.origin === 'stock')) {
     const at = `templates/teams/${template.name}.md`;
-    await templateBoxResolves(at, template, routineNames);
+    await templateBoxResolves(at, template);
     const def = await findDefinition('templates/teams', template.name);
     if (!template.objective.trim()) fail(`${at}: a team template states its objective`);
     for (const key of ['brief', 'team_mode', ...DEAD]) {
@@ -197,12 +155,10 @@ const FILES = ['MACROS.md', 'ACTIONS.md', 'TOOLS.md', 'PROJECT_ROOTS.md', 'MODEL
 
 await surfacingDefinitions('desk_profiles', listDeskProfiles);
 await surfacingDefinitions('lexicons', listLexicons);
-await surfacingDefinitions('routines', listRoutines);
 await surfacingDefinitions('installations', listInstallations);
 await surfacingDefinitions('features', listFeatures);
 await surfacingDefinitions('templates/agents', listAgentTemplates);
 await surfacingDefinitions('templates/teams', listTeamTemplates);
-await routinesResolve();
 await templatesResolve();
 await surfacing('MACROS.md', listMacros);
 await surfacing('ACTIONS.md', () => readEntries('ACTIONS.md'));

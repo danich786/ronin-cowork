@@ -2,7 +2,7 @@ import { access, mkdir, rm, symlink } from 'node:fs/promises';
 import path from 'node:path';
 import { REPO_ROOT } from './resources.js';
 import { storeDir } from './resources.js';
-import type { ResolvedRoutine } from './routines.js';
+import type { ResolvedContribution } from './instruction-cascade.js';
 
 export interface RoutineToolProjection {
   dir: string;
@@ -27,7 +27,7 @@ const sourceFor = async (name: string): Promise<{ command: string; source: strin
 
 export async function projectRoutineTools(
   session: string,
-  routines: ResolvedRoutine[],
+  routines: ResolvedContribution[],
   parentPath = process.env.PATH ?? '/usr/local/bin:/usr/bin:/bin',
   options: { includeTmux?: boolean; extraTools?: string[] } = {},
 ): Promise<RoutineToolProjection> {

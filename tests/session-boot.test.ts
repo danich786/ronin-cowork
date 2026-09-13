@@ -6,7 +6,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { PACKET_BUDGET, bootFiles, compileBirthReadmeAt, describePacket, isShelfTeaching, packetEndLine, readFirstSentence } from '../src/birth-readme.js';
 import { storeDir } from '../src/resources.js';
 import { buildBrief, type SpawnForm } from '../src/spawn.js';
-import { routineReading } from '../src/resource-adapters.js';
+import { contributionReading } from '../src/resource-adapters.js';
 import type { LaunchProfile } from '../src/launch-profile.js';
 import { listMacros } from '../src/macros.js';
 
@@ -220,7 +220,7 @@ test('a service-signed *_connected level rides the MCP toggle', async () => {
   }
 });
 
-test('only enabled Routine levels contribute startup reading', async () => {
+test('only enabled installation contributions add startup reading', async () => {
   const temp = await mkdtemp(path.join(os.tmpdir(), 'ronin-session-boot-test-'));
   const oldShelf = process.env.RONIN_SESSION_BOOT_DIR;
   const oldCache = process.env.RONIN_SESSION_BOOT_CACHE_DIR;
@@ -247,7 +247,7 @@ test('only enabled Routine levels contribute startup reading', async () => {
   }
 });
 
-test('generated macro reading contains only the effective Routine macros', async () => {
+test('generated macro reading contains only the effective contribution macros', async () => {
   const temp = await mkdtemp(path.join(os.tmpdir(), 'ronin-session-boot-test-'));
   const oldCache = process.env.RONIN_SESSION_BOOT_CACHE_DIR;
   process.env.RONIN_SESSION_BOOT_CACHE_DIR = path.join(temp, 'generated');
@@ -332,7 +332,7 @@ test('a system installation reads one way or the other', async () => {
     { enabled: true, reading: ['routine/a/ON.md'], reading_off: ['routine/a/OFF.md'] },
     { enabled: false, reading: ['routine/b/ON.md'], reading_off: ['routine/b/OFF.md'] },
   ];
-  assert.deepEqual(routineReading(routines), ['routine/a/ON.md', 'routine/b/OFF.md']);
+  assert.deepEqual(contributionReading(routines), ['routine/a/ON.md', 'routine/b/OFF.md']);
   const repo = path.join(path.dirname(new URL(import.meta.url).pathname), '..');
   for (const name of ['ronin_services']) {
     const manifest = await readFile(path.join(repo, 'ronin_catalogs', 'installations', `${name}.md`), 'utf8');

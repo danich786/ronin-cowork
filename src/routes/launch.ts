@@ -426,7 +426,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
       routineTools = resolved.agent
         ? await projectRoutineTools(
             resolved.name,
-            resolved.routines,
+            resolved.contributions,
             houseSeat === 'mika' ? MIKA_PARENT_PATH : undefined,
             houseSeat === 'mika'
               ? { includeTmux: false, extraTools: [...MIKA_TOOLS] }
@@ -447,7 +447,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
         // off means RIREKI never records it. Set here and never again — nothing cascades
         // onto a running session (owner, 2026-09-04). A terminal has no Routines and keeps
         // the recorder's own default.
-        rireki: resolved.routines.length ? resolved.routines.some((routine) => routine.name === 'ronin_services' && routine.enabled) : undefined,
+        rireki: resolved.contributions.length ? resolved.contributions.some((contribution) => contribution.name === 'ronin_services' && contribution.enabled) : undefined,
         strictCwd: houseSeat === 'mika',
       });
       runtimeBorn = true;
@@ -530,22 +530,21 @@ export function registerLaunch(app: express.Express): LaunchControl {
         ...(packet ? { packet } : {}),
         desks: resolved.assignment?.desks.map((d) => ({ repo: d.repo, branch: d.branch, worktree: d.worktree, line: d.line })) ?? [],
         work_locations: resolved.work_locations,
+        arrangement: resolved.work_locations.find((row) => row.repo === resolved.project_root)?.reason ?? '',
         desk_note: await deskNote(resolved),
-        routines: resolved.routines.map((routine) => {
+        installations: resolved.installations.map((installation) => {
           const services = new Set(listServices());
-          const missing = routine.enabled
+          const missing = installation.enabled
             ? [
-                ...routine.tools.filter((tool) => routineTools?.missing.includes(tool)).map((tool) => `tool:${tool}`),
-                ...routine.mcp.filter((name) => !services.has(name)).map((name) => `mcp:${name}`),
+                ...installation.tools.filter((tool) => routineTools?.missing.includes(tool)).map((tool) => `tool:${tool}`),
+                ...installation.mcp.filter((name) => !services.has(name)).map((name) => `mcp:${name}`),
               ]
             : [];
           return {
-            name: routine.name,
-            on: routine.enabled,
-            stated_by: routine.stated_by,
-            delivered: routine.enabled && missing.length === 0,
+            name: installation.name,
+            on: installation.enabled,
+            delivered: installation.enabled && missing.length === 0,
             missing,
-            mcp: routine.enabled ? routine.mcp.filter((name) => services.has(name)) : [],
           };
         }),
       };

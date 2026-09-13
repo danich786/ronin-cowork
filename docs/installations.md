@@ -63,7 +63,9 @@ the guard shims when it reaches for `systemctl`.
 
 Stock behaviours: `mandates` (on by default: one page, one line per reach, recruit and
 output value, naming the behaviour that holds the how), `buildout`, `recruit`,
-`write_it_down`, `more_checkpoints`, `report_before_fixing`. On means delivered at birth;
+`write_it_down`, `more_checkpoints`, `report_before_fixing`, `visual_staging` (the Team
+preview procedure, `ronin_sops/visual_staging.md`; an Agent given it tells the Team and the
+lead to read that page). On means delivered at birth;
 off means not delivered; the shelf is readable either way, so the mandates page can
 point at a behaviour that is off. A Team's *required* behaviours cannot be removed on an
 Agent form.

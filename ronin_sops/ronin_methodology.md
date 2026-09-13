@@ -122,29 +122,10 @@ to the repository's declared line and invents no desk state. Neither opens a pul
 
 #### Visual staging: one disposable Team preview
 
-Visual work may take a provisional lane before ordinary hand-in. An Agent keeps its private
-branch as the source, commits one coherent candidate, and sends the lead its Agent,
-repository, exact commit, intended surfaces, and which earlier candidate it supersedes.
-“Provisional visual hand-in” names that communication today; it is not a first-class Tejun
-verb and creates no Worktrees hand-in receipt.
-
-The Team lead owns one dedicated disposable staging branch/worktree and one preview process
-on a separate port. No staging Agent is required. The lead serially merges exact provisional
-commits, then reports the aggregate commit and URL. Agents never concurrently edit that
-worktree. The server runs directly from it, and after refresh or restart `/api/version`
-identifies the aggregate commit actually on display.
-
-Rejecting or superseding a candidate rebuilds or reverts only the disposable composition;
-the Agent's private commit remains recoverable. Avoid a cherry-pick maze, per-candidate
-servers, a file-copy carousel, repeated BYOIN/full verification, or automatic enforcement.
-Use focused checks while composing, then one candidate-wide BYOIN/full verdict at the final
-handoff or promotion boundary.
-
-Visual approval changes no Git line. The Agent still offers finished work with ordinary
-`tejun-desk hand-in`; lead review and promotion admit approved coherent work to `dev`.
-Provisional staging, the Team review line, and global `dev` are three distinct states. As an
-example rather than a default, jobber has used `team/jobber/visual-stage` on port `3776`
-while the live service remained separate.
+Visual work may take a provisional lane before ordinary hand-in: the Agent offers exact
+commits as candidates, the lead composes and serves one disposable preview, and approval
+changes no Git line. The procedure is `ronin_sops/visual_staging.md`; the `visual_staging`
+behaviour gives it to an Agent, whose first act is to tell the Team and the lead to read it.
 
 Accepted state reaches a desk when its Agent chooses `tejun-desk sync`, which merges
 current local `dev`. Status reports the distance; 20 commits behind is a notice, not a
