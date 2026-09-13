@@ -73,9 +73,9 @@ test('Where it works keeps birthplace separate from optional additional workspac
 });
 
 test('the old New Agent selector implementation and CSS are deleted', async () => {
-  const [parts, where, css] = await Promise.all([source('form-steps.js'), source('where-it-works.js'), readFile(new URL('../public/css/launch-forms.css', import.meta.url), 'utf8')]);
+  const [parts, css] = await Promise.all([source('form-steps.js'), readFile(new URL('../public/css/launch-forms.css', import.meta.url), 'utf8')]);
   assert.doesNotMatch(parts, /providerModelStones/);
-  assert.doesNotMatch(where, /o\.stones|na-workspace-stone|na-choice-stone/);
+  await assert.rejects(source('where-it-works.js'), 'the details popover is gone: Where it works is two ERABI questions everywhere');
   assert.doesNotMatch(css, /na-choice-stone|na-stone|na-mandate-grid|na-model-picker|na-workspace-stone/);
 });
 
