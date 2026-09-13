@@ -181,7 +181,7 @@ test('openDesk: an explicit team source is resolved once, recorded exactly, and 
   assert.equal(sh(cowork, ['rev-parse', 'dev']), devBefore);
 });
 
-test('tejun-desk assign gives the lead the same observable source choice for a named session', async () => {
+test('worktree-desk assign gives the lead the same observable source choice for a named session', async () => {
   const exact = sh(cowork, ['rev-parse', 'team/comp/dev']);
   const output = execFileSync(process.execPath, [
     '--import', 'tsx', path.resolve('src/commands/desk.ts'),

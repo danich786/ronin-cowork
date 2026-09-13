@@ -35,7 +35,7 @@ export function endingAcknowledgement(
     acknowledged: true,
     automatic_prompt: false,
     disposition,
-    next_tools: ['tejun-desk status', 'ronin-desk-settle --dry-run'],
+    next_tools: ['worktree-desk status', 'ronin-desk-settle --dry-run'],
   };
 }
 

@@ -1,8 +1,8 @@
 /**
  * THE DESK KIT FOLLOWS THE ASSIGNMENT, NOT THE BIRTH ROOT. An Agent born in a checkout
  * (a lab of documents) whose Team has ticked a managed repository is assigned a desk
- * there, and its brief says "Get, update, and hand in through tejun-desk". The command
- * projection must therefore carry `tejun-desk` and `ronin-repo-init` for that Agent —
+ * there, and its brief says "Get, update, and hand in through worktree-desk". The command
+ * projection must therefore carry `worktree-desk` for that Agent —
  * otherwise the brief names a tool the Agent cannot type (measured 2026-09-13 on three
  * Agents born in `lab` with a `ronin_cowork` desk: no desk tool on PATH).
  *
@@ -75,9 +75,9 @@ test('an Agent born in a checkout with a managed desk is projected the desk kit'
   assert.equal(resolved.project_root, 'lab', 'born in the checkout');
   assert.deepEqual(resolved.assignment?.desks.map((desk) => desk.repo), ['cowork'], 'assigned one desk in the managed repository');
   assert.ok(resolved.work_locations.some((row) => row.repo === 'cowork' && row.mode === 'managed'), 'the desk is a managed location');
-  assert.match(resolved.brief, /hand in through tejun-desk/, 'the brief tells the Agent to use the desk tool');
-  assert.ok(resolved.conditional_tools.includes('tejun-desk'), `the brief's desk tool is projected: ${JSON.stringify(resolved.conditional_tools)}`);
-  assert.ok(resolved.conditional_tools.includes('ronin-repo-init'), 'the whole desk kit rides with it');
+  assert.match(resolved.brief, /hand in through worktree-desk/, 'the brief tells the Agent to use the desk tool');
+  assert.ok(resolved.conditional_tools.includes('worktree-desk'), `the brief's desk tool is projected: ${JSON.stringify(resolved.conditional_tools)}`);
+  assert.equal(resolved.conditional_tools.filter((tool) => tool === 'worktree-desk').length, 1, 'one executable carries the whole desk kit');
 });
 
 test('an Agent born in a checkout with no desk is projected no desk kit', async () => {

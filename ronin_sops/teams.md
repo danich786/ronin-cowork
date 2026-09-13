@@ -66,7 +66,7 @@ If the work does not clearly fit either description, ask the lead rather than gu
 The lead can make the choice while assigning the desk:
 
 ```bash
-tejun-desk assign <repo[:branch]> --session <name> --team <team> --source dev|team
+worktree-desk assign <repo[:branch]> --session <name> --team <team> --source dev|team
 ```
 
 The choice changes only where the private desk starts. It does not change the Team line

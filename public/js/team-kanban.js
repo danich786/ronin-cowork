@@ -68,7 +68,7 @@ export function moveMessage(project, toStage, leadName, now = new Date()) {
   }
   if (project.stage === 'IDEAS') return result(leadName, 'engage — the user wants this started.', `assign it to an Agent, or raise one for it (project ${n} lands in that Agent's work record)`);
   if (project.stage === 'PLANNING') return result(holder, `the plan is agreed${byNote}; build.`, `work-record project write ${n} --stage BUILDING`);
-  if (project.stage === 'BUILDING') return result(holder, `show approved${byNote}; hand in.`, `tejun-desk hand-in, then work-record project write ${n} --stage LANDING`);
+  if (project.stage === 'BUILDING') return result(holder, `show approved${byNote}; hand in.`, `worktree-desk hand-in, then work-record project write ${n} --stage LANDING`);
   if (project.stage === 'LANDING') {
     const release = project.exit === 'user';
     return result(leadName, `${release ? 'release — merge the dev → master pull request' : 'promote'}${byNote}.`, release ? 'open or merge the pull request' : `bin/ronin-promote ${project.id.split('/')[0]}`);
