@@ -256,6 +256,7 @@ test('a second layer appears only on an explicit click in this open interaction;
   const line = form.el.one('ask-line');
   assert.ok(line, 'and draws its own line in the second-layer slot');
   assert.equal(line.one('ask-extra').children[1].placeholder, 'team name');
+  assert.equal(form.el.all('ask-group')[0].one('ask-extras'), null, 'while its tray is open, the group draws no extra row — the line lives in the tray, so layer one does not move');
   assert.equal(form.value().teamName, '', 'the nested answer is cleared by another layer-one answer');
   form.el.fire('keydown', { key: 'Escape' });
   assert.equal(form.el.all('ask-tray').length, 0);
