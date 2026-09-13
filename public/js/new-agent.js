@@ -40,7 +40,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
   const draft = {
     type: 'cowork_agent', template: '', templateName: '',
     name: '', kind: 'coding', kindTouched: false, provider: '', model: '', instructions: '',
-    teamMode: typeof team === 'function' && team() ? 'existing' : 'new', team: typeof team === 'function' ? team() : '', newTeam: '', teamLead: false,
+    teamMode: typeof team === 'function' && team() ? 'existing' : 'none', team: typeof team === 'function' ? team() : '', newTeam: '', teamLead: false,
     reach: 'open', recruit: 'open', output: ['open'], launchMode: 'live_dangerously',
     books: [], root: '', repos: [], routineOverrides: {},
     expanded: {},

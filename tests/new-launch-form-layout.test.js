@@ -38,8 +38,11 @@ test('New Agent uses one ruled ask() spec after its three session types', async 
 test('both workbench entrances use the canonical New Agent form with contextual Team default', async () => {
   const cowork = await source('cowork-view.js');
   assert.doesNotMatch(cowork, /createAddAgentView/);
-  assert.match(cowork, /const view = createNewAgentView\(WorkspaceKit, \{[\s\S]*team: \(\) =>/);
+  assert.doesNotMatch(cowork, /WB_TYPES\.addAgent|addAgentBySeat|environment\.addAgent/);
+  assert.match(cowork, /profiles\.define\(WB_PROFILES\.team, \[WB_TYPES\.commons, WB_TYPES\.terminal, WB_TYPES\.newAgent/);
+  assert.match(cowork, /const newAgentBySeat = Object\.fromEntries[\s\S]*createNewAgentView\(WorkspaceKit, \{[\s\S]*team: \(\) =>/);
   assert.match(cowork, /connect: \(name\) => connectSession\(name, id\)/);
+  assert.match(cowork, /'team\.add-agent': WB_TYPES\.newAgent/);
 });
 
 test('Where it works asks birthplace then a workspace set which includes the birthplace', async () => {
