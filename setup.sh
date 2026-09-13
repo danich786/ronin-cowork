@@ -130,9 +130,9 @@ OS="$(uname -s)"   # also used by the autostart section below
 
 # --- PATH: bin/shim (the tmux server wall), ronin_bin (agent tools), bin (house scripts) ---
 #   <repo>/bin/shim  bin/shim/tmux makes kill-server unavailable.
-#   <repo>/ronin_bin the agent-facing tools (tejun*) — what the catalogs tell agents to
-#                    type by bare name. Off PATH they only work from the repo root, which
-#                    no agent can rely on.
+#   <repo>/ronin_bin the Agent-facing capability tools — selected documents tell Agents
+#                    which bare names they receive. Off PATH they only work from the repo
+#                    root, which no Agent can rely on.
 #   <repo>/bin       the owner's own commands (ronin-byoin, ronin-doctor, ronin-deploy,
 #                    ronin-store, ronin-uninstall, ronin-export, bench) — typed by a
 #                    person, so they are on PATH too. Not libexec/: nobody types those.
