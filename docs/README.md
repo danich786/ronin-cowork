@@ -22,7 +22,7 @@ These are operational routes for a user or an Agent working on the user's behalf
 | How do parallel Agents avoid colliding in the same files? | [Ronin Worktrees](worktrees.md) |
 | How should an Agent plan and maintain its work record? | [Keep a useful work record](work-record.md) |
 | How do session Control settings work? | [Session Control](session-control-dials.md) |
-| What does a new Agent read at birth, how are system instructions resolved, and why does it fit one read? | [Instruction resolution](routines.md) and [the birth packet](birth-packet.md) |
+| What does a new Agent read at birth, and why does it fit one read? | [The birth packet](birth-packet.md) |
 | What does Ronin let an Agent do, and what does it only tell it? | [The Agent's philosophy: a gas pedal and a brake pedal](agent-philosophy.md) |
 | How do I customize Ronin without editing shipped files? | [Customize](customize.md) and [shadowing](shadowing.md) |
 | What is a template, and how does my agent keep mine? | [Templates](templates.md) |
@@ -38,7 +38,6 @@ Start with the root [`AGENTS.md`](../AGENTS.md), then use the relevant architect
 |---|---|
 | How do I verify or provisionally preview a repository change? | Run `npm run verify`; run Playwright suites explicitly when diagnosing the rendered UI; for one Team preview without publication, use [visual staging](../ronin_sops/ronin_methodology.md#visual-staging-one-disposable-team-preview). |
 | How does the server talk to tmux, start programs, and switch Services parts on and off? | [The tmux connection, the spawn broker, and parked parts](tmux-connection.md) |
-| What is the intended Team work-record and external-board synchronization boundary? | [Future Team work-record integration](work-record-integration.md) |
 
 ## Shelves
 
