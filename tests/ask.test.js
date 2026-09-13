@@ -219,3 +219,46 @@ test('set() takes a patch object in one paint, and show() limits which questions
   form.show(null);
   assert.equal(form.el.all('ask-stone').length, 5);
 });
+
+test('a second layer: the parent answer that reveals it keeps the tray open, the nested answer speaks for the parent, other answers clear it', () => {
+  const changes = [];
+  const teams = [{ v: 'jobber', l: 'jobber' }, { v: 'setup', l: 'setup' }];
+  const form = ask([
+    { group: 'Team', fields: [
+      { key: 'team', label: 'Team', options: [
+        { v: 'none', l: 'No team — a rōnin' },
+        { v: 'current', l: 'Current team' },
+        { v: 'new', l: 'New team', row: () => { const i = new FakeNode('input'); i.placeholder = 'team name'; return i; } },
+      ], then: [{ when: 'current', key: 'teamName', label: 'Which team', options: () => teams }] },
+      { key: 'lead', label: 'Team lead', switch: ['Yes', 'No'] },
+    ] },
+    { group: 'Model', fields: [{ key: 'provider', label: 'Model provider', options: PROVIDERS }] },
+  ], { value: { team: 'none' }, onChange: (value, key) => changes.push([key, { ...value }]) });
+  assert.deepEqual(Object.keys(form.value()).sort(), ['lead', 'provider', 'team', 'teamName'], 'the nested question is a field in the value');
+  assert.equal(form.el.all('ask-stone').length, 3, 'but never a stone of its own');
+  stoneFor(form, 'team').click();
+  assert.equal(form.el.all('ask-layer').length, 0, 'no second layer until its answer is picked');
+  optNamed(form, 'Current team').click();
+  assert.equal(form.el.dataset.open, 'team', 'the revealing answer keeps the tray open');
+  const layer = form.el.one('ask-layer');
+  assert.ok(layer, 'and draws the second layer');
+  assert.equal(layer.one('ask-layer-head').textContent, 'Which team');
+  assert.deepEqual(layer.all('ask-opt').map((o) => o.one('ask-name').textContent), ['jobber', 'setup']);
+  assert.equal(stoneFor(form, 'team').one('ask-reading').textContent, 'Current team', 'unanswered, the reading says the parent answer');
+  layer.all('ask-opt')[0].click();
+  assert.equal(form.el.all('ask-tray').length, 0, 'answering the second layer closes the tray');
+  assert.deepEqual([form.value().team, form.value().teamName], ['current', 'jobber']);
+  assert.equal(stoneFor(form, 'team').one('ask-reading').textContent, 'jobber', 'the nested answer speaks for the parent');
+  assert.equal(changes.at(-1)[0], 'teamName');
+  stoneFor(form, 'team').click();
+  optNamed(form, 'New team').click();
+  assert.equal(form.el.all('ask-tray').length, 0, 'an answer with no second layer closes');
+  assert.equal(form.value().teamName, '', 'and the nested answer is cleared');
+  assert.equal(form.el.one('ask-extra').children[1].placeholder, 'team name', 'the option\'s own row shows under the group');
+  form.set({ team: 'current', teamName: 'setup' });
+  assert.equal(stoneFor(form, 'team').one('ask-reading').textContent, 'setup');
+  form.show(['provider']);
+  assert.equal(form.el.all('ask-stone').length, 1);
+  form.show(['team', 'lead']);
+  assert.equal(form.el.all('ask-stone').length, 2, 'the nested question follows its parent through show()');
+});
