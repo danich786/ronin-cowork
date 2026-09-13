@@ -278,8 +278,8 @@
   .na-omitted { margin: 0; color: var(--dim); font-size: var(--form-note); }
   .na-omitted[hidden] { display: none; }
   .na-name-required > .wk-field-label { color: var(--accent); }
-  .na-identity-row { display: flex; flex-wrap: wrap; gap: var(--space-5) var(--space-8); align-items: flex-end; }
-  .na-identity-row > .na-name-required { flex: 1 1 calc(var(--space-12) * 4); min-width: var(--ask-w, 140px); }
+  .na-identity-row { display: flex; flex-wrap: wrap; gap: var(--space-4) var(--space-8); align-items: flex-end; }
+  .na-identity-row > .na-name-required { flex: 1 1 calc(var(--space-12) * 8); min-width: 0; }
   .na-name-required > .wk-field-control { box-sizing: border-box; height: 40px; }
   .na-team-questions { flex: 0 0 auto; }
   .na-surface textarea { min-height: calc(var(--space-12) * 3); resize: vertical; }
