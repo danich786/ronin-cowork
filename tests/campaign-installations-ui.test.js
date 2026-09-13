@@ -9,13 +9,36 @@ test('Campaign Installations is the shared stone surface with the Setup Services
   assert.match(source, /createServicesSurface\(sharedContext\)/);
   assert.match(source, /createGbrainSurface\(sharedContext\)/);
   assert.match(source, /const question = ask\(/);
-  assert.match(source, /switch: \[t\('campaign_view\.on'.*t\('campaign_view\.off'/);
-  assert.match(source, /if \(installation\.id !== 'ronin_services'\) choice\(installation, host\)/);
+  assert.match(source, /v: 'off'.*campaign_view\.off/);
+  assert.match(source, /v: 'on'.*campaign_view\.on/);
+  assert.match(source, /v: 'all'.*campaign_view\.shape_all/);
+  assert.match(source, /installation\.effect === 'feature_provider'/);
+  assert.match(source, /saveCampaign\(row\.id, \{ config: \{ installations, defaults \} \}\)/);
+  assert.doesNotMatch(source, /switch:/);
   assert.match(source, /stoneSurface\.select\('ronin_services'\)/);
   assert.match(source, /Ronin Services required/);
   assert.match(source, /name === 'trello' \|\| name === 'perplexity'/);
   assert.match(source, /values\.ronin_services === true.*installed\?\.services\?\.parts/);
   assert.doesNotMatch(source, /servicesSell|installBlock|cv-choice|type = 'checkbox'|Available to Teams and Agents/);
+});
+
+test('provider Off, On, and All project onto installation and Campaign behaviour defaults', async () => {
+  const { applyFeatureProviderState, featureProviderState } = await import('../public/js/feature-provider-installation.js');
+  const gbrain = { name: 'gbrain', provides: ['gbrain'] };
+  const base = { provider: 'openai', behaviours: ['ronin_host', 'gbrain'] };
+
+  assert.equal(featureProviderState(gbrain, { gbrain: false }, base.behaviours), 'off');
+  assert.equal(featureProviderState(gbrain, { gbrain: true }, ['ronin_host']), 'on');
+  assert.equal(featureProviderState(gbrain, { gbrain: true }, base.behaviours), 'all');
+  assert.deepEqual(applyFeatureProviderState(gbrain, 'off', { gbrain: true }, base), {
+    installations: { gbrain: false }, defaults: { provider: 'openai', behaviours: ['ronin_host'] },
+  });
+  assert.deepEqual(applyFeatureProviderState(gbrain, 'on', { gbrain: false }, base), {
+    installations: { gbrain: true }, defaults: { provider: 'openai', behaviours: ['ronin_host'] },
+  });
+  assert.deepEqual(applyFeatureProviderState(gbrain, 'all', { gbrain: false }, { ...base, behaviours: ['ronin_host'] }), {
+    installations: { gbrain: true }, defaults: { provider: 'openai', behaviours: ['ronin_host', 'gbrain'] },
+  });
 });
 
 test('the Campaign imports the exact exported Setup page builders', async () => {

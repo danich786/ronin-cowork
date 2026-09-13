@@ -28,8 +28,6 @@ test('create → read → list: a zero-member team is a real, openable record', 
     objective: 'ship the teams cut',
     project_root: 'ronin-cowork',
     branch: 'dev',
-    references: ['https://example.test/spec', 'Owner note'],
-    features: ['gbrain'],
     behaviours: { selected: ['mandates'], required: ['mandates'] },
     agent_defaults: {
       provider: 'anthropic', model: 'opus', reach: 'execute', recruit: 'nobody',
@@ -40,7 +38,6 @@ test('create → read → list: a zero-member team is a real, openable record', 
   assert.equal(r.title, 'Alpha');
   assert.equal(r.wipeboard, 'alpha', 'the board defaults to the team’s own token');
   assert.equal(r.state, 'active');
-  assert.deepEqual(r.features, ['gbrain']);
 
   const back = await readTeamRoster('alpha');
   assert.deepEqual(back, r);
@@ -51,8 +48,6 @@ test('the settled nested shapes round-trip, and an edit touches only what it sta
   const r = await writeTeamRoster('alpha', { title: 'Alpha Platform' });
   assert.equal(r.title, 'Alpha Platform');
   assert.equal(r.objective, 'ship the teams cut', 'unstated fields survive');
-  assert.deepEqual(r.references, ['https://example.test/spec', 'Owner note']);
-  assert.deepEqual(r.features, ['gbrain']);
   assert.deepEqual(r.behaviours, { selected: ['mandates'], required: ['mandates'] });
   assert.deepEqual(r.agent_defaults, {
     provider: 'anthropic', model: 'opus', reach: 'execute', recruit: 'nobody',
@@ -70,8 +65,6 @@ test('a blank field is written as "—" and reads back as the blank it stands fo
   const r = await writeTeamRoster('bare', { branch: 'dev' });
   assert.equal(r.project_root, '', 'an untouched blank stays blank after an edit');
   assert.equal(r.kind, 'open');
-  assert.deepEqual(r.references, []);
-  assert.deepEqual(r.features, []);
   assert.deepEqual(r.behaviours, { selected: ['mandates'], required: [] });
   assert.equal(r.branch, 'dev');
   const cleared = await writeTeamRoster('bare', { objective: '' });
@@ -79,22 +72,20 @@ test('a blank field is written as "—" and reads back as the blank it stands fo
   await deleteTeamRoster('bare');
 });
 
-test('a pre-installation-cascade roster gets stock feature and behaviour defaults without a rewrite', async () => {
+test('an old behaviour shape is not mapped and is not rewritten', async () => {
   const file = path.join(temp, 'home_machine', 'old_shape.md');
   await fs.mkdir(path.dirname(file), { recursive: true });
   const raw = '# old_shape\n- **title:** Old Shape\n- **behaviours:** {"books":[],"required":false}\n';
   await fs.writeFile(file, raw, 'utf8');
   const roster = await readTeamRoster('old_shape', 'home_machine');
-  assert.deepEqual(roster?.features, []);
-  assert.deepEqual(roster?.behaviours, { selected: ['mandates'], required: [] });
+  assert.deepEqual(roster?.behaviours, { selected: [], required: [] });
   assert.equal(await fs.readFile(file, 'utf8'), raw, 'reading the old shape does not migrate it');
 });
 
-test('a settled roster honours explicit empty feature and behaviour lists', async () => {
+test('a settled roster honours an explicit empty behaviour list', async () => {
   const roster = await createTeamRoster('explicit_empty', {
-    features: [], behaviours: { selected: [], required: [] },
+    behaviours: { selected: [], required: [] },
   }, 'home_machine');
-  assert.deepEqual(roster.features, []);
   assert.deepEqual(roster.behaviours, { selected: [], required: [] });
   assert.deepEqual((await readTeamRoster('explicit_empty', 'home_machine'))?.behaviours, { selected: [], required: [] });
 });

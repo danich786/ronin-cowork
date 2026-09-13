@@ -76,8 +76,6 @@ function editOf(body: unknown): RosterEdit {
     ? Object.fromEntries(Object.entries(b.branches as Record<string, unknown>)
         .map(([repo, branch]) => [repo.trim().slice(0, 128), String(branch ?? '').trim().slice(0, 128)])
         .filter(([repo, branch]) => repo && branch)) : {};
-  if (b.references !== undefined) edit.references = Array.isArray(b.references)
-    ? b.references.map(String).map((v) => v.trim().slice(0, 500)).filter(Boolean) : [];
   if (b.behaviours !== undefined) {
     const value = b.behaviours && typeof b.behaviours === 'object' && !Array.isArray(b.behaviours)
       ? b.behaviours as Record<string, unknown> : {};

@@ -29,10 +29,16 @@ export function createInstallationsSurface(campaign, context = {}) {
   let defaultBehaviours = [];
   let stoneSurface = null;
 
+  const providerState = (installation) => featureProviderState(installation, values, defaultBehaviours);
+  const stateWord = (installation) => installation.effect === 'feature_provider'
+    ? ({ off: t('campaign_view.off', 'Off'), on: t('campaign_view.on', 'On'), all: t('campaign_view.shape_all', 'All') })[providerState(installation)]
+    : values[installation.name] ? t('campaign_view.on', 'On') : t('campaign_view.off', 'Off');
+
   const servicesReady = () => values.ronin_services === true && (installed?.services?.parts || []).length > 0;
   const gated = (name) => (name === 'trello' || name === 'perplexity') && !servicesReady();
   const itemFor = (installation) => ({
-    ...installation, id: installation.name,
+    ...installation,
+    id: installation.name,
     label: installation.label || installation.name,
     state: stateWord(installation),
     attrs: gated(installation.name)
@@ -140,7 +146,3 @@ export function installationsSummary(campaign) {
   const map = values && typeof values === 'object' && !Array.isArray(values) ? values : {};
   return t('campaign_view.installations_n', '{n} on', { n: Object.values(map).filter((value) => value === true).length });
 }
-  const providerState = (installation) => featureProviderState(installation, values, defaultBehaviours);
-  const stateWord = (installation) => installation.effect === 'feature_provider'
-    ? ({ off: t('campaign_view.off', 'Off'), on: t('campaign_view.on', 'On'), all: t('campaign_view.shape_all', 'All') })[providerState(installation)]
-    : values[installation.name] ? t('campaign_view.on', 'On') : t('campaign_view.off', 'Off');
