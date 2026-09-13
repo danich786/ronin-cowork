@@ -10,6 +10,15 @@ const COLUMNS = [
   { key: 'DONE', label: 'Done' },
 ];
 const INDEX = Object.fromEntries(COLUMNS.map((column, index) => [column.key, index]));
+export const KANBAN_NOT_INSTALLED = 'Ronin Services is not installed';
+export const KANBAN_CAMPAIGN_OFF = 'Ronin Services is off for this Campaign';
+
+export function kanbanAvailability(installed) {
+  const services = installed?.services || {};
+  if (Array.isArray(services.loaded) && services.loaded.includes('kanban')) return { available: true, message: '' };
+  const parked = Array.isArray(services.parked) && services.parked.some((part) => part?.name === 'kanban');
+  return { available: false, message: parked ? KANBAN_CAMPAIGN_OFF : KANBAN_NOT_INSTALLED };
+}
 
 const node = (tag, cls, text) => {
   const out = document.createElement(tag);
@@ -96,6 +105,7 @@ export function createTeamKanban(options = {}) {
   let refreshTimer = 0;
   let seat = null;
   let visibility = null;
+  let availability = { available: false, message: KANBAN_NOT_INSTALLED };
   const asked = new Map(); // id -> { stage, target }; never written to the project record
   const leadName = () => String(options.lead?.() || '');
   const holderName = (project) => project.holder === 'lead' ? leadName() : project.holder;
@@ -180,6 +190,12 @@ export function createTeamKanban(options = {}) {
 
   const refresh = async () => {
     if (!team || loading || (seat && seat.hidden)) return loading;
+    if (!availability.available) {
+      projects = [];
+      notice.textContent = availability.message;
+      render();
+      return;
+    }
     const requestedTeam = team;
     notice.textContent = t('team_kanban.loading', 'Loading Team Kanban…');
     loading = request(`/api/teams/${encodeURIComponent(requestedTeam)}/kanban`, { cache: 'no-store' });
@@ -189,6 +205,11 @@ export function createTeamKanban(options = {}) {
     if (result.ok && Array.isArray(result.data.projects)) {
       projects = result.data.projects.map(normalizedProject);
       notice.textContent = '';
+    } else if (result.status === 404) {
+      availability = { available: false, message: KANBAN_CAMPAIGN_OFF };
+      projects = [];
+      notice.textContent = availability.message;
+      options.unavailable?.(availability.message);
     } else {
       notice.textContent = result.message || t('team_kanban.failed', 'Could not load this Team Kanban.');
     }
@@ -216,6 +237,13 @@ export function createTeamKanban(options = {}) {
       if (team === next) return;
       team = next; projects = []; asked.clear(); render();
       if (entered) void refresh();
+    },
+    setAvailability: (next) => {
+      availability = next?.available === true
+        ? { available: true, message: '' }
+        : { available: false, message: String(next?.message || KANBAN_NOT_INSTALLED) };
+      if (!availability.available) { projects = []; notice.textContent = availability.message; render(); }
+      if (entered && availability.available) void refresh();
     },
     refresh,
   };

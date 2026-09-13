@@ -11,15 +11,15 @@ import { discoverParts, partClaims, partsToLoad } from '../src/parts.js';
 import { listInstallations } from '../src/resource-adapters.js';
 
 const installations = [
-  { name: 'ronin_services', parts: ['counting', 'koe', 'koshi', 'koshi_weights', 'michi', 'rireki'] },
+  { name: 'ronin_services', parts: ['counting', 'kanban', 'koe', 'koshi', 'koshi_weights', 'michi', 'rireki'] },
   { name: 'gbrain', parts: [] },
 ];
-const onDisk = ['counting', 'gbrain', 'koe', 'koshi', 'koshi_weights', 'machine', 'michi', 'rireki'].map((name) => ({ name }));
+const onDisk = ['counting', 'gbrain', 'kanban', 'koe', 'koshi', 'koshi_weights', 'machine', 'michi', 'rireki'].map((name) => ({ name }));
 
 test('Services off parks every part the installation claims; unclaimed parts still load', () => {
   const plan = partsToLoad(onDisk, installations, { ronin_services: false });
   assert.deepEqual(plan.load.map((p) => p.name), ['gbrain', 'machine']);
-  assert.deepEqual(plan.parked, ['counting', 'koe', 'koshi', 'koshi_weights', 'michi', 'rireki'].map((name) => ({ name, installation: 'ronin_services' })));
+  assert.deepEqual(plan.parked, ['counting', 'kanban', 'koe', 'koshi', 'koshi_weights', 'michi', 'rireki'].map((name) => ({ name, installation: 'ronin_services' })));
 });
 
 test('Services on loads everything on disk', () => {
@@ -50,6 +50,7 @@ test('an absent or malformed switch map reads as off — the recorder never runs
 
 test('the stock Ronin Services installation claims the recorder', async () => {
   const claims = partClaims(await listInstallations());
+  assert.equal(claims.get('kanban'), 'ronin_services');
   assert.equal(claims.get('rireki'), 'ronin_services');
   assert.equal(claims.get('koshi'), 'ronin_services');
   assert.equal(claims.get('machine'), undefined, 'the Host part is unclaimed and always loads');
