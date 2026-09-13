@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# edges read — read a session's recent output in one call (TEJUN session-catchup).
+# edges read — read a session's recent output in one call.
 # Usage: edges read <session> [lines=60]
 set -u
 [ $# -ge 1 ] || { echo "usage: edges read <session> [lines]" >&2; exit 2; }

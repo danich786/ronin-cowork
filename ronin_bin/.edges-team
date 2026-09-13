@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# edges team — resolve a team name to its sessions (TEJUN team-roster).
+# edges team — resolve a Team name to its sessions.
 # Usage: edges team [team]          no arg = list every team in play
 #
 # A "team" (KOTOBA: session_team) is just the sessions carrying the same tag in
@@ -20,10 +20,11 @@ Usage:
 Use the bare form to discover Teams, then name one before coordinating its members.
 This is a live, read-only tmux roster; it changes no membership or Control setting.
 Create an Agent, add it to a Team, or set or change that Team's lead with
-session_create --help. Inspect an Agent with session_check --help. Create a Team with tejun-team-set --help. Add membership
+session_create --help. Inspect an Agent with session_check --help. Create a Team with
+team-lead roster write. Add membership
 is available by CLI; for a true move, add the new Team then remove the old Team on that
 Team's page in the coworkspace. Related: session_check --help;
-session_create --help; session_set --help; tejun-team-set --help
+session_create --help; session_set --help; team-lead --help
 EOF
     exit 0 ;;
 esac
