@@ -9,7 +9,7 @@ process.env.RONIN_SESSION_DIR = sessions;
 process.env.RONIN_TEAM_ROSTERS_DIR = await fs.mkdtemp(path.join(os.tmpdir(), 'ronin-kanban-rosters-'));
 process.env.RONIN_PROJECT_ROOTS_DIR = await fs.mkdtemp(path.join(os.tmpdir(), 'ronin-kanban-roots-'));
 
-const { deriveTeamKanban } = await import('../src/team-kanban.js');
+const { deriveTeamKanban, projectsAtSessionKey } = await import('../src/team-kanban.js');
 
 const project = {
   id: 'alpha/1', title: 'Board read', objective: 'Return derived JSON.',
@@ -35,6 +35,17 @@ test('an empty Team has one useful, empty board answer', async () => {
   assert.deepEqual(await deriveTeamKanban('alpha', { rosterProjects: [], sessions: [], handIns: [], promotions: [] }), {
     team: 'alpha', projects: [],
   });
+});
+
+test('a pre-project bare ladder remains visible as one Building project', async () => {
+  await fs.mkdir(path.join(sessions, 'old-key'), { recursive: true });
+  await fs.writeFile(path.join(sessions, 'old-key', 'tegami.md'), `\`\`\`json\n${JSON.stringify({
+    objective: 'Old work', ladder: [{ phase: 'Build', legs: [{ title: 'Works', status: 'ACTIVE' }] }, { gate: 'Review', status: 'PLANNED' }],
+  })}\n\`\`\`\n`);
+  const [legacy] = await projectsAtSessionKey('old-key', 'old_agent');
+  assert.equal(legacy.id, 'legacy:old_agent');
+  assert.equal(legacy.stage, 'BUILDING');
+  assert.equal(legacy.exit, 'user');
 });
 
 test('hand-in, promotion, and master containment derive Landing and Done without writes', async () => {
