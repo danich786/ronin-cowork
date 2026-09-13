@@ -10,7 +10,7 @@ const catalogs = path.join(box, 'catalogs');
 await mkdir(catalogs, { recursive: true });
 process.env.RONIN_CATALOGS_DIR = catalogs;
 
-const { upsertProjectRoot } = await import('../src/project-roots.js');
+const { listProjectRoots, upsertProjectRoot } = await import('../src/project-roots.js');
 const { arrangementProfile, readArrangement, setArrangementProfile } = await import('../src/desks/arrangement.js');
 
 test('new root creation can defer declaration and write the owner-proposed profile', async () => {
@@ -31,8 +31,11 @@ test('new root creation can defer declaration and write the owner-proposed profi
 
 test('non-git root remains legal when automatic declaration is deferred', async () => {
   const plain = path.join(box, 'plain'); await mkdir(plain);
-  await upsertProjectRoot('plain', { dir: plain }, { declareArrangement: false });
+  await upsertProjectRoot('plain', { title: 'Plain Workspace', dir: plain }, { declareArrangement: false });
   await assert.rejects(access(path.join(plain, 'RONIN_REPO')), /ENOENT/);
+  const root = (await listProjectRoots()).find((row) => row.name === 'plain');
+  assert.equal(root?.title, 'Plain Workspace');
+  assert.equal(root?.name, 'plain', 'the display title never replaces the stable ID');
 });
 
 test.after(async () => { await rm(box, { recursive: true, force: true }); });

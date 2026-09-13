@@ -8,4 +8,3 @@
 - **mandate:** execute · nobody · open
 - **team_mode:** new
 - **features:** gbrain
-- **routines_off:** ronin_worktrees

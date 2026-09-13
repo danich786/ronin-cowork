@@ -42,7 +42,7 @@ fact about a box is wrong the day the box changes, and nobody notices.
 **Where a domain has a measurable, name the tool — at the top.** An SOP carries a
 `> Tool:` line in its header, the same form `ronin_catalogs/ACTIONS.md` uses, so the eye
 finds it in the same place everywhere. `data.md` names `tejun-survey`; `secrets.md` names
-`tejun-secrets`; `github.md` names nothing, because git is git. The pointer is always to a
+`tejun-secrets`; repository arrangement pages name nothing, because git is git. The pointer is always to a
 **cataloged action's tool**, never a loose script.
 
 This is the shelf's sharpest edge, and it is not really about discovery. **A capable agent
@@ -94,4 +94,4 @@ store. Redefining one is how your sessions inherit *your* process instead of our
 **Deliberately near-empty.** Stock SOPs are screened in one at a time, exactly like the
 library. The stock roster and the situation that selects each book live in
 `docs/README.md`; `ronin_methodology.md` is the shared session-to-session method, while
-`github.md` remains the source-control walkthrough for ordinary owner projects.
+`worktree-root.md` and `checkout.md` are the two repository-arrangement guides.

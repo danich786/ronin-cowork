@@ -6,7 +6,7 @@ import { bootFiles, ensureShelf } from './birth-readme.js';
 import { listProjectRoots, USER_PROJECT_ROOTS_MD, type ProjectRootInfo } from './project-roots.js';
 import { listSessionLaunchSpecs } from './model-providers.js';
 import { agentSpec } from './agents.js';
-import { readAgentsSection, readDesksSection, readSetupSection } from './machine-state.js';
+import { readAgentsSection, readSetupSection } from './machine-state.js';
 import { offAt } from './provider-summary.js';
 import { storeDir } from './resources.js';
 import { listFeatures, listInstallations, routineReading } from './resource-adapters.js';
@@ -24,6 +24,10 @@ import { resolveLaunchSeed } from './launch-seed.js';
 import { resolveBehaviourBooks, type DeliveredBehaviour } from './behaviours.js';
 import { templateProvenance } from './template-provenance.js';
 import { profileDir, resolveHouseSeatProfile, type HouseSeat } from './house-seats.js';
+
+const WORKTREE_SOP = path.join(REPO_ROOT, 'ronin_sops', 'worktree-root.md');
+const CHECKOUT_SOP = path.join(REPO_ROOT, 'ronin_sops', 'checkout.md');
+const WORKTREE_TOOLS = ['tejun-desk', 'ronin-repo-init'] as const;
 
 const CORE_CONTRIBUTION: ResolvedRoutine = {
   name: 'cowork_agent', origin: 'stock', shadowed: false, label: 'Cowork Agent', blurb: '',
@@ -94,6 +98,7 @@ export interface Resolved {
   ignored: string[];
   undelivered: string[];
   routines: ResolvedRoutine[];
+  conditional_tools: string[];
   stated_by: Record<string, StatedBy[]>;
 }
 
@@ -143,7 +148,13 @@ export function buildBrief(
   ];
   if (birthContract.length) parts.push(birthContract.join('\n'));
   if (workLocations.length) parts.push(renderWorkLocations(workLocations, roster?.branches ?? {}));
-  if (root) parts.push(`Born in ${root.name} at ${root.dir}.`);
+  if (root) {
+    const arrangement = workLocations.find((row) => row.repo === root.name);
+    const line = arrangement?.mode === 'managed'
+      ? ` Arrangement: worktree root (read ${WORKTREE_SOP} before your first write).`
+      : ` Arrangement: checkout (read ${CHECKOUT_SOP} before your first write).`;
+    parts.push(`Born in ${root.name} at ${root.dir}.${arrangement ? line : ''}`);
+  }
   if (assignment?.desks.length) parts.push(renderDeskBlock(assignment));
   const reading = [...boot, ...(form.seed ?? [])].filter(Boolean);
   if (reading.length) parts.push(`Read first: ${reading.join(', ')}.`);
@@ -207,14 +218,13 @@ export async function resolveForm(
   const coworkAgent = sessionType === 'cowork_agent';
   const bareMetalAgent = sessionType === 'bare_metal_agent';
   const campaignId = coworkAgent ? (form.campaign_id || await initialCampaignId()) : '';
-  const [roots, launchSpecs, agentsSet, campaign, installationCatalog, featureCatalog, desksSet] = await Promise.all([
+  const [roots, launchSpecs, agentsSet, campaign, installationCatalog, featureCatalog] = await Promise.all([
     listProjectRoots(),
     listSessionLaunchSpecs(),
     readAgentsSection(),
     coworkAgent ? readCampaign(campaignId) : null,
     listInstallations(),
     listFeatures(),
-    readDesksSection(),
   ]);
   const preset = await templateProvenance(coworkAgent ? form : {});
   if (form.team && !isTeamName(form.team)) {
@@ -239,7 +249,7 @@ export async function resolveForm(
 
   const active = roots.filter((r) => !r.archived);
   const houseRoot = form.house_seat === 'mika' ? {
-    name: 'mika_home', dir: profileDir(profile), remit: 'Ronin help only', match: [],
+    name: 'mika_home', title: '', dir: profileDir(profile), remit: 'Ronin help only', match: [],
     docs: [], plans: [], archived: false, campaign_id: campaignId,
   } : undefined;
   const rosterRoot = roster?.project_root ? roots.find((r) => r.name === roster.project_root) : undefined;
@@ -372,15 +382,13 @@ export async function resolveForm(
     });
   };
   const name = wanted || slugName(form.team || (agent ? 'agent' : 'terminal'), form.prompt ?? '', taken);
-  const worktreesOn = routines.some((routine) => routine.name === 'ronin_worktrees' && routine.enabled);
-  const worktrees = bareMetalAgent || sessionType === 'terminal' || !worktreesOn
+  const worktrees = bareMetalAgent || sessionType === 'terminal'
     ? { assignment: null, repositories: [] }
     : await resolveLaunchDesks({
     session: name,
     team: form.team ?? '',
     project_root: root.name,
     agent,
-    control: worktreesOn,
     desk: form.desk,
     repos: form.repos,
   });
@@ -458,6 +466,9 @@ export async function resolveForm(
     ],
     undelivered: cascade.undelivered,
     routines,
+    conditional_tools: worktrees.repositories.some((row) => row.repo === root.name && row.mode === 'managed')
+      ? [...WORKTREE_TOOLS]
+      : [],
     stated_by: {
       name: form.name ? explicit : system,
       dir: profile.dir ? profile.stated_by.dir : assignment ? system : rootSource,
@@ -496,6 +507,9 @@ export async function resolveForm(
         : parentSeed?.seeds.behaviours.stated_by ?? system,
       kind: form.kind !== undefined ? explicit : parentSeed?.seeds.kind.stated_by ?? system,
       routines: routines.flatMap((routine) => [{ layer: (['campaign', 'team', 'agent'].includes(routine.stated_by) ? routine.stated_by : 'installation') as StatedBy['layer'], source: `${routine.stated_by} contribution` }]),
+      arrangement: worktrees.repositories.length
+        ? [{ layer: 'conditional', source: `RONIN_REPO for ${root.name}` }]
+        : [],
     },
   };
 }

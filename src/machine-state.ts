@@ -127,18 +127,6 @@ export const writeMachineSection = (v: { name?: string; where?: string; monitor?
     doc.machine = m;
   });
 
-export type NewProjectDesks = 'managed' | 'none';
-export const readDesksSection = async (): Promise<{ new_project: NewProjectDesks }> => {
-  const s = await readSection<{ new_project?: unknown }>('desks', {});
-  return { new_project: s.new_project === 'none' ? 'none' : 'managed' };
-};
-export const writeDesksSection = (v: { new_project?: string }): Promise<void> =>
-  updateConfig((doc) => {
-    const d = ((doc.desks ?? {}) as Record<string, unknown>) || {};
-    if (v.new_project !== undefined) d.new_project = v.new_project === 'none' ? 'none' : 'managed';
-    doc.desks = d;
-  });
-
 export const readAgentsSection = (): Promise<Record<string, unknown>> =>
   readSection<Record<string, unknown>>('agents', {});
 

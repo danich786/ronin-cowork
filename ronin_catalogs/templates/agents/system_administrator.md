@@ -7,4 +7,3 @@
 - **brief:** Diagnose this machine and this Ronin install — measure first, name the fault, propose the repair before making it.
 - **mandate:** execute · nobody · open
 - **features:** ronin_host
-- **routines_off:** ronin_worktrees

@@ -5,7 +5,6 @@
 - **order:** 2
 - **kinds:** coding
 - **objective:** Build the project the owner describes, coordinating parallel features without colliding.
-- **features:** ronin_worktrees
 
 ## agents
 

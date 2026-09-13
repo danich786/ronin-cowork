@@ -57,7 +57,7 @@ test('folder creation stays under home and can initialize local git without a re
     const made = await createFolder(base, 'New Work', true);
     assert.equal(made.git, true);
     const { repoFacts } = await import('../src/project-roots.js');
-    const facts = await repoFacts({ name: 'new-work', dir: made.dir, match: [], remit: '', docs: [], plans: [], archived: false, campaign_id: '' });
+    const facts = await repoFacts({ name: 'new-work', title: '', dir: made.dir, match: [], remit: '', docs: [], plans: [], archived: false, campaign_id: '' });
     assert.equal(facts.repo?.remote, '');
     await assert.rejects(() => createFolder('/tmp', 'outside'), /inside your home/);
     await assert.rejects(() => createFolder(base, '../outside'), /without slashes/);

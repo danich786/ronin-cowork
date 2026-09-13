@@ -239,7 +239,6 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
     word: row.repo_profile?.worktrees === 'enabled' ? t('where.worktree', 'worktree') : t('where.checkout', 'checkout'),
   }));
   const branchField = (option) => {
-    if (routineOn('ronin_worktrees')) return null;
     const input = el('input', 'wk-field-control'); input.type = 'text'; input.spellcheck = false;
     input.value = draft.branches[option.v] || ''; input.placeholder = t('where.branch', 'Branch');
     input.addEventListener('input', () => {
@@ -277,9 +276,7 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
   }
   const whereSummary = () => t('where.summary', 'born in {root} · {repos}', {
     root: draft.root || t('team_config.default', 'Default'),
-    repos: draft.repos.length ? (routineOn('ronin_worktrees')
-      ? t('where.desks', 'desks in {list}', { list: draft.repos.join(', ') })
-      : t('where.checkouts', 'works in {list}', { list: draft.repos.join(', ') }))
+    repos: draft.repos.length ? t('where.roots', 'also in {list}', { list: draft.repos.join(', ') })
       : t('where.none', 'no auto desk'),
   });
 
@@ -315,14 +312,7 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
       : (on ? t('forms.campaign_on', 'campaign on') : t('forms.campaign_off', 'campaign off'));
   };
   function paintKitQuestions() {
-    const worktreesOn = routineOn('ronin_worktrees');
-    worktreesMode.replaceChildren(
-      el('b', null, t('new_team.worktrees_mode', 'Agent work mode')),
-      el('strong', null, worktreesOn
-        ? t('new_team.worktrees_on', 'Own worktree where the Workspace folder allows it')
-        : t('new_team.worktrees_off', 'Use the project checkout and its branches')),
-      el('small', null, t('new_team.worktrees_help', 'Worktrees give each Agent a separate working folder and branch, so their file changes do not collide. They run only when both the Agent and repo have Worktrees on, and use the managed hand-in and Team-lead merge process.')),
-    );
+    worktreesMode.replaceChildren();
     const signature = JSON.stringify([routineRows.map((row) => row.name), ways.map((row) => row.name), [...handRoutines]]);
     if (signature !== kitSignature) {
       kitQuestions?.destroy();

@@ -42,7 +42,7 @@ export async function refreshHome() {
   tiles.forEach((tile) => tile.renderHome?.());
 }
 
-export let projectData = null; // /api/project-roots: [{name, dir, read[], provider, model, match[], remit, cmd}]
+export let projectData = null; // /api/project-roots: [{name, title, dir, match[], remit, docs[], plans[]}]
 // The provider catalog is not cached here: form-steps.js reads it for the one picker and
 // the Campaign's Model providers surface, fresh on every surface entry.
 

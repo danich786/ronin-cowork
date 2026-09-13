@@ -4,7 +4,6 @@ import { access, mkdir, readdir, rename, stat, writeFile } from 'node:fs/promise
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { MACHINE_SETTINGS_SCHEMA, providerModelFields, type ProviderModelField } from './machine-settings-schema.js';
-import { repositoryNeeds } from './repository-needs.js';
 import { secureUrl } from './passkey.js';
 import { listServices } from './sockets.js';
 import { CONTRACT_V } from './sockets-contract.js';
@@ -173,23 +172,12 @@ async function writeOwner(name: string): Promise<string> {
 const readMachineSection = () => readSection<Record<string, unknown>>('machine', {});
 const readAgentsSection = () => readSection<Record<string, unknown>>('agents', {});
 const readSetupSection = () => readSection<Record<string, unknown>>('setup', {});
-async function readDesksSection(): Promise<{ new_project: 'managed' | 'none' }> {
-  const value = await readSection<{ new_project?: unknown }>('desks', {});
-  return { new_project: value.new_project === 'none' ? 'none' : 'managed' };
-}
 const writeMachineSection = (value: Record<string, unknown>) =>
   updateSection('machine', (current) => ({ ...current, ...value }));
 const writeAgentsSection = (value: Record<string, unknown>) =>
   updateDocument((document) => { document.agents = value; });
 const writeGbrainSection = (value: Record<string, unknown>) =>
   updateDocument((document) => { document.gbrain = value; });
-const writeDesksSection = (value: { new_project?: string }) =>
-  updateSection('desks', (current) => ({
-    ...current,
-    ...(value.new_project === undefined ? {} : {
-      new_project: value.new_project === 'none' ? 'none' : 'managed',
-    }),
-  }));
 const writeMessagesSection = (value: { auto_force_after_s?: number }) =>
   updateDocument((document) => {
     const messages = ((document.messages ?? {}) as Record<string, unknown>) || {};
@@ -259,6 +247,7 @@ const TAILNET_IP = tailnetIp();
 
 export interface MachineSettingsProject {
   name: string;
+  title: string;
   dir: string;
   remit: string;
 }
@@ -446,6 +435,7 @@ async function readSet(): Promise<Record<string, unknown>> {
 
   const projects: MachineSettingsProject[] = roots.map((r) => ({
     name: r.name,
+    title: r.title,
     dir: r.dir,
     remit: r.remit,
   }));
@@ -467,7 +457,6 @@ async function readSet(): Promise<Record<string, unknown>> {
     koshi,
     wipeboard,
     desk: { profile: typedStr(campaignRecord?.desk_profile) },
-    desks: { new_project: typedStr((await readDesksSection()).new_project) },
     wanted: (await readSection<Array<{ kind?: unknown; name?: unknown }>>('wanted', []))
       .filter((w) => typeof w?.kind === 'string' && typeof w?.name === 'string')
       .map((w) => ({ kind: w.kind as string, name: w.name as string })),
@@ -727,7 +716,6 @@ export async function readMachineSettings(): Promise<MachineSettingsRecord> {
   const observed = await cachedObserved(jobKeyNames);
   const status = await computeStatus(set, observed);
   const needed = computeNeeded(set, observed);
-  needed.push(...repositoryNeeds(set, status));
   if (!(await listProjectRoots()).some((root) => !root.archived)) {
     needed.push({
       leaf: 'workspace_folder',
@@ -772,10 +760,6 @@ export const MACHINE_SETTINGS_WRITERS = {
   desk: async (body) => {
     const { writeDeskSection } = await import('./campaigns.js');
     await writeDeskSection({ profile: editString(body.profile) ?? '' });
-    return { ok: true };
-  },
-  desks: async (body) => {
-    await writeDesksSection({ new_project: editString(body.new_project) ?? 'managed' });
     return { ok: true };
   },
   'session-max': async (body) => ({ max: await writeMax(Number(body.max)) }),

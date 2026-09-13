@@ -105,13 +105,13 @@ async function birthCampaign(team: string, explicit = ''): Promise<string> {
   return roster?.campaign_id || (await initialCampaignId());
 }
 
-async function deskNote(r: { assignment?: unknown; routines?: Array<{ name: string; enabled: boolean }>; project_root?: string; agent?: unknown; cmd?: string }): Promise<string> {
-  if (r.assignment || !r.cmd || !r.routines?.some((routine) => routine.name === 'ronin_worktrees' && routine.enabled) || !r.project_root) return '';
+async function deskNote(r: { assignment?: unknown; project_root?: string; agent?: unknown; cmd?: string }): Promise<string> {
+  if (r.assignment || !r.cmd || !r.project_root) return '';
   const root = (await listProjectRoots()).find((x) => x.name === r.project_root);
   if (!root) return '';
   const a = await readArrangement(root.name, root.dir).catch(() => null);
   if (!a) return `no desk — ${root.name}'s RONIN_REPO could not be read`;
-  if (a.source === 'absent') return `no desk — ${root.name} has no RONIN_REPO (add one: mode=reviewed working=dev stable=master desks=managed)`;
+  if (a.source === 'absent') return `checkout — ${root.name} has no RONIN_REPO`;
   if (a.desks !== 'managed') return `no Worktree — ${root.name} uses its checkout at ${root.dir}; edit directly there`;
   return '';
 }
@@ -433,7 +433,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
             houseSeat === 'mika' ? MIKA_PARENT_PATH : undefined,
             houseSeat === 'mika'
               ? { includeTmux: false, extraTools: [...MIKA_TOOLS] }
-              : {},
+              : { extraTools: resolved.conditional_tools },
           )
         : null;
       await createSession(resolved.name, resolved.dir, {

@@ -93,7 +93,7 @@ learned*.
 
 ### 4. Commit privately, hand in deliberately, let the lead promote
 
-Under the reviewed arrangement (`github.md`, declared in each repository's `RONIN_REPO`),
+Under the reviewed arrangement (declared in each repository's `RONIN_REPO`),
 Ronin's product repositories use:
 
 ```text

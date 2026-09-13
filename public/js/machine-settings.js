@@ -247,7 +247,7 @@ export function buildMachineSettings(root, isShowing) {
     group(t('settei.group_projects', 'projects · {n}', { n: set.projects.length }));
     for (const p of set.projects) {
       const health = st.projects.find((x) => x.name === p.name);
-      body.appendChild(obsRow(p.name, p.remit || p.dir,
+      body.appendChild(obsRow(p.title || p.name, p.remit || p.dir,
         health?.dir === 'missing' ? ' ' + t('settei.dir_gone', '✕ {dir} is gone', { dir: p.dir }) : health?.repo ? ` ${health.repo}` : ''));
     }
     const link = document.createElement('div');
