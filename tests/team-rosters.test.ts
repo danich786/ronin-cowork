@@ -72,13 +72,13 @@ test('a blank field is written as "—" and reads back as the blank it stands fo
   await deleteTeamRoster('bare');
 });
 
-test('an old behaviour shape is not mapped and is not rewritten', async () => {
+test('an old behaviour shape reads stock Mandates and is not rewritten', async () => {
   const file = path.join(temp, 'home_machine', 'old_shape.md');
   await fs.mkdir(path.dirname(file), { recursive: true });
   const raw = '# old_shape\n- **title:** Old Shape\n- **behaviours:** {"books":[],"required":false}\n';
   await fs.writeFile(file, raw, 'utf8');
   const roster = await readTeamRoster('old_shape', 'home_machine');
-  assert.deepEqual(roster?.behaviours, { selected: [], required: [] });
+  assert.deepEqual(roster?.behaviours, { selected: ['mandates'], required: [] });
   assert.equal(await fs.readFile(file, 'utf8'), raw, 'reading the old shape does not migrate it');
 });
 

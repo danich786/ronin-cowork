@@ -1,7 +1,7 @@
 # Develop a New Project
 - **label:** Develop a New Project
 - **art:** ⌘
-- **blurb:** A project lead and parallel feature Agents, each with its own worktree.
+- **blurb:** A project lead and parallel workstream Agents, each with its own worktree.
 - **order:** 2
 - **kinds:** coding
 - **objective:** Build the project the owner describes, coordinating parallel workstreams without colliding.
@@ -10,7 +10,7 @@
 
 ### project lead
 - **team_lead:** yes
-- **instructions:** Own the whole project, divide feature work cleanly, and integrate the team's results.
+- **instructions:** Own the whole project, divide workstreams cleanly, and integrate the team's results.
 - **mandate:** execute · staff agents · code
 
 ### frontend

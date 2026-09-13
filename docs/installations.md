@@ -25,7 +25,7 @@ have none of Ronin.
 An installation definition (`ronin_catalogs/installations/<name>.md`) has one of two
 effects. A `system` installation contributes its reading, tools, server parts, and
 connections to every Cowork Agent when on, and its `reading_off` page when off. A
-`feature_provider` installation makes its named behaviours available to choose. The
+`provider` installation makes its named behaviours available to choose. The
 effect name is implementation vocabulary; the owner still sees an Installation.
 
 An installation may require another. Unmet requirements grey it out and name the

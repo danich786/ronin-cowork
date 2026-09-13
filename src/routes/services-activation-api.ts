@@ -97,7 +97,7 @@ export function registerServicesActivation(app: express.Express): void {
           saved.kind_other && `Kind detail: ${saved.kind_other}`,
           saved.user_type && `User type: ${saved.user_type}`,
           saved.goals.length && `Why Ronin: ${saved.goals.join(', ')}`,
-          saved.preferred_feature && `Preferred feature: ${saved.preferred_feature}`,
+          saved.preferred_feature && `Preferred capability: ${saved.preferred_feature}`,
           saved.reasons.length && `Reasons: ${saved.reasons.join(', ')}`,
           saved.reason_other && `Other reason: ${saved.reason_other}`,
           saved.run_location && `Runs on: ${saved.run_location}`,

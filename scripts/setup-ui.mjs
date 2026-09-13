@@ -15,7 +15,7 @@ const bad = (message) => { failures.push(message); console.log(`  FAIL — ${mes
 const PRESET_COPY = [
   ['Bare Metal', 'Start one to four agents, each in its own tile. Lock and load.'],
   ['Code Stack Eval', 'Point a team at a codebase and get its read on the stack.'],
-  ['Develop a New Project', 'A lead plus feature agents, each in its own worktree.'],
+  ['Develop a New Project', 'A lead plus workstream agents, each in its own worktree.'],
   ['Personal Assistant', 'One assistant that remembers. Alone, or a lead that hires help.'],
   ['Home Health', 'Head coach, nutritionist, race guide. Drop or add roles.'],
   ['Grokbot Morning Briefing', 'Grok writes you a briefing on a schedule you set.'],
@@ -345,7 +345,7 @@ async function presetContentPass(browser) {
   await page.goto(`${URL_.replace(/#.*$/, '')}#/setup`, { waitUntil: 'networkidle' });
   const expectedGroups = [
     ['Choose the model for each session'], ['Which project'],
-    ['Which project', 'Split the work · each feature agent gets its own worktree'], ['Launch as'],
+    ['Which project', 'Split the work · each workstream agent gets its own worktree'], ['Launch as'],
     ['Tell each agent what you want'], ['When', 'Deliver to', 'Start active'],
     ['Which folder', 'Which document'],
   ];

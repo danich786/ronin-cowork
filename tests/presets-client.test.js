@@ -72,7 +72,7 @@ test('the approved resting-stone lines are verbatim and every stone has a glyph'
     ['bare_metal', 'Choose a provider and model for each native session, or leave it at Default.'],
     ['ronin_team', 'Launch a Team Lead and open Team Configuration beside the team.'],
     ['staff_my_codebase', 'Point a team at a codebase and get its read on the stack.'],
-    ['develop_new_project', 'A lead plus feature agents, each in its own worktree.'],
+    ['develop_new_project', 'A lead plus workstream agents, each in its own worktree.'],
     ['personal_assistant', 'One assistant that remembers. Alone, or a lead that hires help.'],
     ['health_and_fitness', 'Head coach, nutritionist, race guide. Drop or add roles.'],
     ['morning_brief', 'Grok writes you a briefing on a schedule you set.'],
@@ -133,9 +133,9 @@ test('every preset gates on a provider and named presets add their dependencies'
     assert.equal(presets.presetReadiness(row.handle, { activated_count: 0 }).surface, 'setup.providers');
   }
   assert.equal(presets.presetReadiness('bare_metal', { activated_count: 1 }).ready, true);
-  assert.equal(presets.presetReadiness('personal_assistant', { activated_count: 1, gbrain: { active: false } }).surface, 'setup.gbrain');
+  assert.equal(presets.presetReadiness('personal_assistant', { activated_count: 1, gbrain: { active: false } }).surface, 'setup.installations');
   assert.equal(presets.presetReadiness('personal_assistant', { activated_count: 1, gbrain: { active: true } }).ready, true);
-  assert.equal(presets.presetReadiness('morning_brief', { activated_count: 1, services: { active: false } }).surface, 'setup.services');
+  assert.equal(presets.presetReadiness('morning_brief', { activated_count: 1, services: { active: false } }).surface, 'setup.installations');
   assert.equal(presets.presetReadiness('morning_brief', { activated_count: 1, services: { active: true } }).ready, true);
 });
 
