@@ -84,7 +84,7 @@ test('collapsible steps expose one full-width disclosure row and Team defaults u
   assert.match(steps, /forms\.expand', 'Expand'/);
   assert.match(steps, /forms\.collapse', 'Collapse'/);
   assert.match(css, /\.fs-togglable \{ grid-column: 1 \/ -1; width: 100%/);
-  assert.match(css, /\.na-team-questions \{ flex: 0 0 calc\(var\(--ask-w\) \+ var\(--ask-w\) \+ var\(--ask-gap\)\); width:/);
+  assert.match(css, /\.na-team-questions \{ flex: 0 0 auto; \}/);
   assert.match(team, /key: 'defaults'.*Agent defaults/);
   assert.match(team, /Settings inherited by Agents launched in this Team/);
   assert.match(team, /for \(const key of \['where', 'kit'\]\) steps\[key\]\.el\.hidden = !defaultsOpen/);
