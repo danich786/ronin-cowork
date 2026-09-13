@@ -1,9 +1,11 @@
 # Project roots — include a project in Ronin
 
-A `project_root` is Ronin's handle for **where work happens**. It binds a short name to
-an existing directory, the project's remit and matching words, its session-boot shelf,
+A `project_root` is Ronin's stable ID for **where work happens**. It binds that ID to
+an optional display title, an existing directory, the project's remit and matching words,
+its session-boot shelf,
 and its memory keys. The new-session launcher, Admin Desk, session identity, and recall
-all resolve that one handle.
+all resolve that one ID. The title is presentation only: changing it never changes the ID,
+directory, session identity, or repository identity.
 
 ## Installed starting folders
 
@@ -28,7 +30,7 @@ cannot replace the owner's directories. It is part of the running Ronin installa
 not a second product catalog and should not be committed to `ronin-cowork`.
 
 The API and Admin Desk are co-editors of this markdown file. Use the API for ordinary changes
-because it validates the handle, directory, and resulting document atomically. Do not add an
+because it validates the ID, directory, and resulting document atomically. Do not add an
 owner directory to the shipped catalog.
 
 ## The invariant
@@ -61,7 +63,8 @@ kept out of the ordinary flow.
 Resolve these facts from the actual directory:
 
 ```text
-name    lowercase handle: letters, digits, - and _
+name    stable lowercase ID: letters, digits, - and _
+title   optional display title used only on human-facing surfaces
 dir     absolute directory path
 remit   one plain sentence saying what work belongs there
 match   words a person may use when asking to work there
@@ -86,6 +89,7 @@ Show the owner the exact values before writing. Example:
 
 ```markdown
 ## shiwake
+- **title:** Ronin HQ
 - **dir:** /home/glen3/dohyo/ronin-shiwake
 - **memory:** ronin, shiwake
 - **match:** shiwake, ronin-shiwake, hq, entitlement, tomodachi
@@ -104,6 +108,7 @@ Content-Type: application/json
 
 {
   "name": "shiwake",
+  "title": "Ronin HQ",
   "dir": "/home/glen3/dohyo/ronin-shiwake",
   "memory": "ronin, shiwake",
   "match": "shiwake, ronin-shiwake, hq, entitlement, tomodachi",
@@ -115,19 +120,19 @@ The Admin Desk's **▣ Project root** include action and MIKA's `+project_root` 
 endpoint. They are preferred human-facing paths. Editing the owner catalog by hand remains an
 emergency/advanced path, not a separate workflow.
 
-`409` means the handle already exists: inspect and use `PUT /api/project-roots/:name` only if
+`409` means the ID already exists: inspect and use `PUT /api/project-roots/:name` only if
 the owner intended to edit it. A validation refusal is an answer; do not bypass it by hand-editing.
 
 ### 4. Verify all four surfaces
 
 Inclusion is not complete until all of these agree:
 
-1. `GET /api/project-roots` contains the handle and directory; this is the launcher's live list.
+1. `GET /api/project-roots` contains the ID, title, and directory; this is the launcher's live list.
 2. `GET /api/project-roots/detail` reports `exists: true`. For a repository, its live `remote`
    and `branch` match git; these facts are read from disk and are never copied into the catalog.
 3. Admin Desk → **▣ Project root** shows the entry without an excluded/archived state.
 4. **＋ New** offers the project root; a test session launched with it starts in the recorded
-   directory and carries `@ronin-project_root=<handle>`.
+   directory and carries `@ronin-project_root=<id>`.
 
 If API verification succeeds but the browser is stale, reload the surface; do not create a
 duplicate entry.
@@ -216,12 +221,12 @@ remains.
 
 The Project Root editor reads these four profile fields live from `RONIN_REPO`. `mode=reviewed`
 means work collects on `working` before the owner's final PR to `stable`; `mode=direct` means
-accepted work publishes on `stable` itself. The Worktrees choice is a separate repository
-permission. **Two independent answers must both allow managed Worktrees:** the Agent is born
-with the Ronin Worktrees Routine after Campaign → Team → Agent resolution, and this repository allows
-Worktrees. If either answer is off, the Agent uses the checkout. A worktree by itself is
-only Git isolation; the Ronin Worktrees combination adds the private branch, internal desk
-record, assignment reading, and hand-in path with receipts. `desks=managed|none` remains
+accepted work publishes on `stable` itself. The Worktrees choice is the repository's alone:
+`desks=managed` makes the folder a **worktree root** and its Agents work at managed desks;
+`desks=none` makes it a **checkout**. No Agent-side switch exists; the Agent is told which
+the folder is and reads the matching page. A worktree by itself is only Git isolation; a
+worktree root adds the private branch, internal desk record, assignment reading, and
+hand-in path with receipts. `desks=managed|none` remains
 only the compatibility spelling stored in `RONIN_REPO`; the editor presents **Allow Ronin
 Worktrees** and **Use the checkout**. Branch names are owner choices. A changed profile
 is shown once as exact before/after text and, on confirmation, rewritten directly and
@@ -234,12 +239,12 @@ branch suggestions remain editable before **Add**. For a Git directory the confi
 is the file that is written; the backend does not substitute `dev`, `master`, or `main`.
 Non-Git directories remain legal project roots and receive no `RONIN_REPO`.
 
-A session in the enabled/enabled cell works at a **repo desk** — the internal record for its
+A session in a worktree root works at a **repo desk** — the internal record for its
 own branch and worktree, cut from its team's line
-(`ronin_session_boot/routine/ronin_worktrees/WORKTREES.md`; the model is `docs/worktrees.md`). Commit preserves work privately at the desk;
+(`ronin_sops/worktree-root.md`; the model is `docs/worktrees.md`). Commit preserves work privately at the desk;
 **hand-in** publishes committed work to the team line; the lead's **team promotion** runs the
 one full repository BYOIN and admits the team's state to `dev`. A desk branch is never
-published to the remote and never opened as a PR. Until a repository's desks are enabled, its
+published to the remote and never opened as a PR. In a checkout (`ronin_sops/checkout.md`), the
 home checkout is shared: stage only your own paths and preserve every unrelated change there.
 
 For a new reviewed repository, agree whether the stable branch is `main` or `master`, create
@@ -270,10 +275,10 @@ must not become a filesystem deletion by assumption.
 ## Failure rules
 
 - Directory absent: stop; create/clone it or correct the path before inclusion.
-- Invalid handle: choose a valid lowercase handle; do not weaken validation.
+- Invalid ID: choose a valid lowercase ID; do not weaken validation.
 - Wrong git top level: choose the repository root rather than a nested directory.
 - Wrong/missing remote: repair repository identity before presenting it as a project repo.
-- Duplicate handle: inspect before editing; never silently replace another project.
+- Duplicate ID: inspect before editing; never silently replace another project.
 - Ronin API unavailable: report the service failure. Do not create a competing write path.
 - Browser does not show an API-verified root: diagnose the read/render path, not the catalog data.
 

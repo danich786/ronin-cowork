@@ -15,8 +15,8 @@ import { homedir } from 'node:os';
 import { isEntitled } from '../activation/flow.js';
 import { readState } from '../activation/state.js';
 import { initialCampaign } from '../campaigns.js';
-import { listRoutines } from '../resource-adapters.js';
-import { routineChoices } from '../routines.js';
+import { listInstallations } from '../resource-adapters.js';
+import { switches } from '../instruction-cascade.js';
 import { listParkedServices, listServices } from '../sockets.js';
 import { discoverParts, partClaims } from '../parts.js';
 import { roninIdentity } from './version.js';
@@ -41,16 +41,16 @@ export interface InstalledAnswer {
     switched_on: boolean;
   };
   /** Every Routine, with the Campaign's default switch — switches, not installs. */
-  routines: { name: string; label: string; blurb: string; on: boolean }[];
+  installations: { name: string; label: string; blurb: string; on: boolean; available: boolean; requires: string[] }[];
 }
 
 export async function installedAnswer(): Promise<InstalledAnswer> {
-  const [state, entitled, campaign, routines] = await Promise.all([readState().catch(() => null), isEntitled().catch(() => false), initialCampaign().catch(() => null), listRoutines()]);
-  const map = routineChoices(campaign?.config?.agent_defaults?.routines ?? {});
+  const [state, entitled, campaign, installations] = await Promise.all([readState().catch(() => null), isEntitled().catch(() => false), initialCampaign().catch(() => null), listInstallations()]);
+  const map = switches(campaign?.config?.installations ?? {});
   const loaded = listServices();
   const parked = listParkedServices();
   const parts = [...new Set([...discoverParts().map((part) => part.name), ...loaded, ...parked.map((part) => part.name)])].sort();
-  const claims = partClaims(routines);
+  const claims = partClaims(installations);
   const switchedOn = map.ronin_services === true;
   // The running copy read the switch at start; if the switch moved since, only a restart honours it.
   const permanentlyParked = new Set(parked.filter((part) => part.reason).map((part) => part.name));
@@ -58,7 +58,7 @@ export async function installedAnswer(): Promise<InstalledAnswer> {
   return {
     cowork: roninIdentity(),
     services: { parts, loaded, parked, installed: parts.length > 0, activated: entitled, stage: state?.stage ?? 'not_requested', switched_on: switchedOn, restart_needed: restartNeeded },
-    routines: routines.map((r) => ({ name: r.name, label: r.label, blurb: r.blurb, on: map[r.name] === true })),
+    installations: installations.map((r) => ({ name: r.name, label: r.label, blurb: r.blurb, on: map[r.name] === true, available: r.requires.every((name) => map[name] === true), requires: r.requires })),
   };
 }
 

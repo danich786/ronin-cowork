@@ -46,7 +46,6 @@ const { resolveForm } = await import('../src/spawn.js');
 type SpawnForm = import('../src/spawn.js').SpawnForm;
 
 const launch = (over: Partial<SpawnForm> = {}): SpawnForm => ({
-  session_role: 'CutCode',
   project_root: 'alpha',
   prompt: 'Cut the leg in the plan doc.',
   ...over,
@@ -87,7 +86,7 @@ test('Campaign Agent defaults answer before install defaults, and an explicit as
   const document = JSON.parse(await fs.readFile(file, 'utf8'));
   document.campaigns = { work: {
     title: 'Work',
-    config: { agent_defaults: { provider: 'anthropic', model: 'opus' } },
+    config: { defaults: { provider: 'anthropic', model: 'opus' } },
   } };
   await fs.writeFile(file, JSON.stringify(document));
   // Nothing named: the Campaign's default pair, not ⚙'s.
@@ -96,7 +95,7 @@ test('Campaign Agent defaults answer before install defaults, and an explicit as
   // A provider named: the Campaign's own row for it, and the reading says so.
   const vendor = await resolveForm(launch({ campaign_id: 'work', provider: 'anthropic' }), new Set());
   assert.ok(vendor.cmd.startsWith('claude --model opus'), vendor.cmd);
-  assert.deepEqual(vendor.stated_by.cmd, [{ layer: 'system', source: '#/campaign (work: agent_defaults)' }]);
+  assert.deepEqual(vendor.stated_by.cmd, [{ layer: 'system', source: '#/campaign (work: defaults)' }]);
   // A provider the Campaign has no row for: ⚙'s row, and the reading says ⚙.
   const theirs = await resolveForm(launch({ campaign_id: 'work', provider: 'openai' }), new Set());
   assert.ok(theirs.cmd.startsWith('codex --model gpt-5.6-terra'), theirs.cmd);
@@ -108,7 +107,7 @@ test('Campaign Agent defaults answer before install defaults, and an explicit as
   const withHalf = JSON.parse(await fs.readFile(file, 'utf8'));
   withHalf.campaigns.half = {
     title: 'Half',
-    config: { agent_defaults: { provider: 'anthropic' } },
+    config: { defaults: { provider: 'anthropic' } },
   };
   await fs.writeFile(file, JSON.stringify(withHalf));
   const half = await resolveForm(launch({ campaign_id: 'half' }), new Set());
@@ -198,11 +197,9 @@ test('a provider the owner turned off launches nothing new, in its own words; on
   assert.ok(r.cmd.startsWith('claude --model haiku'));
 });
 
-test('an agentless launch takes no provider resolution at all', async () => {
+test('a terminal takes no provider resolution at all', async () => {
   await agents({ default: { provider: 'openai', model: 'gpt-5.6-sol' }, by_provider: { anthropic: 'fable' } });
-  // `OpenShell` is `agent: none` — there is no CLI, so there is nothing for a provider
-  // to choose between and no command to build.
-  const r = await resolveForm(launch({ session_role: 'OpenShell', provider: 'anthropic' }), new Set());
+  const r = await resolveForm(launch({ session_type: 'terminal', provider: 'anthropic' }), new Set());
   assert.equal(r.agent, false);
   assert.equal(r.cmd, '', 'a terminal launches nothing, whatever provider was named');
 });

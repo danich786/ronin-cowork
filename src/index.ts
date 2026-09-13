@@ -59,7 +59,7 @@ import { checkTmuxServerCgroup } from './host-guard.js';
 import { sockets, startBootHooks, stopBootHooks, mountServiceRoutes, noteService, noteServiceFailure, noteServiceParked } from './sockets.js';
 import { discoverParts, partsToLoad } from './parts.js';
 import { initialCampaign } from './campaigns.js';
-import { listRoutines } from './resource-adapters.js';
+import { listInstallations } from './resource-adapters.js';
 import type { ServiceRegistration } from './sockets-contract.js';
 import { resourceRequestCache } from './resources.js';
 import { compressResponse } from './http-performance.js';
@@ -217,7 +217,7 @@ app.get('/api/health', (_req, res) =>
 registerPasskeyManage(app); // /api/passkey/{list,register-options,register,remove} — BEHIND the gate on purpose
 registerLaunch(app); // /api/launch (both variants), /api/sessions, /api/home, session-max, owner — src/routes/launch.ts
 registerMikaContext(app); // /api/mika/context/:tab — tiny tab-scoped owner_view/show seam
-registerCatalogs(app); // /api/macros, /api/hotwords*, /api/project-roots*, /api/provider-catalog, /api/role-families*, /api/session-roles, /api/team-roles, /api/launch-profile — src/routes/catalogs.ts
+registerCatalogs(app); // catalogs and configuration resources — src/routes/catalogs.ts
 registerDocs(app); // /api/docs?shelf=plans|docs — the ▧ Docs tab's shelves — src/routes/docs-api.ts
 registerTeams(app); // /api/team-rosters* — the durable half of every team — src/routes/teams-api.ts
 registerDesks(app); // /api/sessions/:name/desks, /api/teams/:name/desks — derived desk state, the control surface's visible half — src/routes/desks-api.ts
@@ -250,12 +250,12 @@ const services: ServiceRegistration[] = [];
 // no recorder — as if not installed, files in place (src/parts.ts). Read once, at start.
 const plan = partsToLoad(
   discoverParts(),
-  await listRoutines().catch(() => []),
-  (await initialCampaign().catch(() => null))?.config?.agent_defaults?.routines ?? {},
+  await listInstallations().catch(() => []),
+  (await initialCampaign().catch(() => null))?.config?.installations ?? {},
 );
 for (const parked of plan.parked) {
-  console.log(`[services] ${parked.name} is parked: ${parked.reason ?? `${parked.routine} is off for this Campaign (restart after switching it on)`}`);
-  noteServiceParked(parked.name, parked.routine, parked.reason);
+  console.log(`[services] ${parked.name} is parked: ${parked.reason ?? `${parked.installation} is off for this Campaign (restart after switching it on)`}`);
+  noteServiceParked(parked.name, parked.installation, parked.reason);
 }
 for (const { name: dir, entry } of plan.load) {
   try {

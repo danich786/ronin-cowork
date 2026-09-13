@@ -97,23 +97,22 @@ test('cowork kind and behaviours survive body acceptance while unusable shapes a
   assert.deepEqual(ignored.ignored, ['behaviours', 'kind']);
 });
 
-test('cowork accepts a partial Agent Routine override and filters malformed choices', () => {
+test('cowork accepts feature choices and rejects malformed shapes', () => {
   const accepted = acceptedLaunchBody({
     name: 'proof',
-    routines: { ronin_worktrees: false, gbrain: true, malformed: 'yes', '../bad': true },
+    features: ['gbrain', 'ronin_host'],
   });
-  assert.deepEqual(accepted.body.routines, { ronin_worktrees: false, gbrain: true });
+  assert.deepEqual(accepted.body.features, ['gbrain', 'ronin_host']);
   assert.deepEqual(accepted.ignored, []);
 
-  const malformed = acceptedLaunchBody({ name: 'proof', routines: ['ronin_worktrees'] });
-  assert.equal(malformed.body.routines, undefined);
-  assert.deepEqual(malformed.ignored, ['routines']);
+  const malformed = acceptedLaunchBody({ name: 'proof', features: { gbrain: true } });
+  assert.equal(malformed.body.features, undefined);
+  assert.deepEqual(malformed.ignored, ['features']);
 });
 
 test('settled launch enums are accepted and their retired keys are receipt-only', () => {
-  const accepted = acceptedLaunchBody({ name: 'proof', launch_mode: 'configured', gbrain_mode: 'connected' });
+  const accepted = acceptedLaunchBody({ name: 'proof', launch_mode: 'configured' });
   assert.equal(accepted.body.launch_mode, 'configured');
-  assert.equal(accepted.body.gbrain_mode, 'connected');
 
   const malformed = acceptedLaunchBody({ name: 'proof', launch_mode: 'safe', gbrain_mode: 'maybe', permissions: 'bypass', mcp: false });
   assert.equal(malformed.body.launch_mode, undefined);
@@ -155,7 +154,6 @@ test('the Mika door accepts words only and fixes every public birth input', () =
     mandate: { reach: 'discuss', recruit: 'nobody', output: ['ideas'] },
     prompt: '+system_help:',
     launch_mode: 'configured',
-    gbrain_mode: 'disconnected',
   });
 });
 
@@ -178,7 +176,8 @@ test('the in-Team Agent form sends template behaviours and mandate, never a laun
   assert.match(source, /draft\.recruit = row\.mandate\.recruit/);
   assert.match(source, /draft\.output = \[row\.mandate\.output\]\.flat\(\)\.filter\(Boolean\)/);
   assert.match(source, /behaviours:\s*\[\.\.\.draft\.behaviours\]/);
-  assert.match(source, /team_lead:\s*draft\.teamLead/);
+  assert.match(source, /features:\s*\[\.\.\.draft\.features\]/);
+  assert.doesNotMatch(source, /team_lead|routines|worktrees|leadership/);
   assert.match(source, /mandate:\s*\{ reach: draft\.reach, recruit: draft\.recruit, output: \[\.\.\.draft\.output\] \}/);
   assert.doesNotMatch(source, /session_role\s*:/);
 });

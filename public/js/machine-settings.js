@@ -247,7 +247,7 @@ export function buildMachineSettings(root, isShowing) {
     group(t('settei.group_projects', 'projects · {n}', { n: set.projects.length }));
     for (const p of set.projects) {
       const health = st.projects.find((x) => x.name === p.name);
-      body.appendChild(obsRow(p.name, p.remit || p.dir,
+      body.appendChild(obsRow(p.title || p.name, p.remit || p.dir,
         health?.dir === 'missing' ? ' ' + t('settei.dir_gone', '✕ {dir} is gone', { dir: p.dir }) : health?.repo ? ` ${health.repo}` : ''));
     }
     const link = document.createElement('div');
@@ -373,7 +373,12 @@ export function buildMachineSettings(root, isShowing) {
           go.disabled = true;
           const r = await request('/api/launch', {
             method: 'POST',
-            json: { behaviours: schema.seat.behaviours, name: schema.seat.name, prompt: schema.seat.prompt },
+            json: {
+              behaviours: schema.seat.behaviours,
+              name: schema.seat.name,
+              prompt: schema.seat.prompt,
+              seed: ['ronin_session_boot/house/atarashi/install.md'],
+            },
           });
           go.disabled = false;
           go.textContent = r.ok ? t('settei.setup_started', 'setup session started — see ⌂ Roster') : r.message || t('settei.setup_failed', 'could not start');

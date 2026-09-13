@@ -49,12 +49,6 @@ export function resources() {
       why: t('customize.tools_why', 'TOOLS.md is a table, and the server has no table reader — the rule in docs/shadowing.md is implemented in ronin_bin/tejun and not in src/resources.ts (prerequisite P1).'),
       blurb: t('customize.tools_blurb', 'The executables that implement actions. A markdown row cannot author one.') },
 
-    { id: 'role-families', section: 'people', mark: '人', label: t('customize.role_families', 'Role families'),
-      capability: 'direct', read: '/api/role-families', dir: 'role_families',
-      blurb: t('customize.role_families_blurb', 'The shelves of the ＋ New board. Presentation only — a family never rides a launch.') },
-    { id: 'session-roles', section: 'people', mark: '◫', label: t('customize.session_roles', 'Session roles'),
-      capability: 'handoff', read: '/api/session-roles', dir: 'session_roles',
-      blurb: t('customize.session_roles_blurb', 'What a session is doing now. Its fields cascade into every launch.') },
     { id: 'saved-launches', section: 'people', mark: '↗', label: t('customize.saved_launches', 'Saved launches'),
       capability: 'read-only', read: '/api/saved-launches',
       blurb: t('customize.saved_launches_blurb', 'The launcher form, filled in ahead of time and named.') },

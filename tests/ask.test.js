@@ -303,6 +303,7 @@ test('a required line refuses dismissal while blank or invalid, announces why, a
   optNamed(form, 'New team').click();
   const input = form.el.one('ask-line').one('ask-extra').children[1];
   assert.equal(input.attributes['aria-required'], 'true');
+  assert.equal(form.el.one('ask-line').one('ask-extra').dataset.required, 'true', 'a required line reserves its note\'s line, so a refusal moves nothing');
   form.el.fire('keydown', { key: 'Escape' });
   assert.equal(form.el.dataset.open, 'team', 'Escape with a blank required line keeps the tray open');
   assert.equal(input.attributes['aria-invalid'], 'true');
@@ -326,4 +327,10 @@ test('a required line refuses dismissal while blank or invalid, announces why, a
   optNamed(form, 'No team').click();
   assert.equal(form.el.all('ask-tray').length, 0, 'another layer-one answer dismisses even with the line blank: the requirement belongs to the answer');
   assert.equal(form.value().team, 'none');
+});
+
+test('a stone never repeats its group head: the head carries the question, the stone says Answer', () => {
+  const form = ask([{ group: 'Where will you install Ronin?', fields: [{ key: 'where', label: 'Where will you install Ronin?', options: [{ v: 'here', l: 'This machine' }] }] }]);
+  assert.equal(form.el.one('ask-group-head').textContent, 'Where will you install Ronin?');
+  assert.equal(stoneFor(form, 'where').one('ask-label').textContent, 'Answer');
 });

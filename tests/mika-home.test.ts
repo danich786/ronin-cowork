@@ -19,7 +19,7 @@ test('Mika home is a private stable store outside project-root selection', async
   assert.equal((await stat(mikaStartHerePath())).mode & 0o777, 0o444);
   const starter = await readFile(mikaStartHerePath(), 'utf8');
   assert.match(starter, /What do you want to do with Ronin—build software, get assistance, do research, coordinate a team, or something else\?/);
-  assert.match(starter, /one-time Setup task, not a change to your general Ronin-helper role/);
+  assert.match(starter, /one-time Setup task/);
   for (const id of ['bare_metal', 'ronin_team', 'staff_my_codebase', 'develop_new_project', 'personal_assistant', 'health_and_fitness', 'morning_brief', 'agent_editable_doc']) assert.match(starter, new RegExp(`\\b${id}\\b`));
   delete process.env.RONIN_MIKA_HOME_DIR;
 });

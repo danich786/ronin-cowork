@@ -27,7 +27,7 @@ const readableSession = (name) => {
 };
 
 export class Tile {
-  constructor(index) {
+  constructor(index, options = {}) {
     this.index = index;
     this.session = null;
     this.pending = ''; // UNLOCKED: locally-parked typed text (sent as one parcel on Enter)
@@ -45,6 +45,15 @@ export class Tile {
     // references rather than re-queried: on touch these nodes are RELOCATED into the app
     // bar (js/tiledrop.js), and a later `querySelector` on the tile would find nothing.
     Object.assign(this, buildTileHead(this));
+    this.onMinimize = typeof options.onMinimize === 'function' ? options.onMinimize : null;
+    this.emptyMark = document.createElement('div');
+    this.emptyMark.className = 'tile-empty-mark';
+    this.emptyMark.setAttribute('aria-hidden', 'true');
+    const emptyLogo = document.createElement('img');
+    emptyLogo.src = 'brand/nin-mark.svg';
+    emptyLogo.alt = '';
+    this.emptyMark.append(emptyLogo);
+    this.body.append(this.emptyMark);
     // Text dropped on the tile — an @mention or a doc reference — lands like a macro's.
     installTextDrops(this);
 
@@ -267,19 +276,6 @@ export class Tile {
     this.refreshControl(true);
   }
 
-  /** 🏷 shows how many groups this session is in — the label an agent can address it by. */
-  /**
-   * Set what this session is doing, by hand — `session_role` in its TEGAMI, the same
-   * field the agent maintains with `write_tegami`. The owner is the other writer, for an
-   * agent that has not re-marked itself; the dial and permissions are untouched.
-   *
-   * NOT JUST A RE-LABEL: the server hands it to the task observer, which delivers the
-   * new task's reading into the session exactly once (src/role-watch.ts), whoever
-   * authored it. THE SESSION_ROLE ONLY — teams have their own controls.
-   *
-   * The list is updated locally before the ws poll gets there, so the mark moves under
-   * your finger; the poll then confirms it, and would correct it if the write lost a race.
-   */
   openNote() {
     if (S.notePanel) S.notePanel.open(this.session);
   }
@@ -529,7 +525,20 @@ export class Tile {
     this.closeLadder();
     this.setDot('off');
     this.term.reset();
+    this.syncEmpty();
     saveState();
+  }
+
+  /** Stop viewing without touching the Agent. A managed workbench empties its whole
+   *  seat; an ordinary tile simply detaches its transport. */
+  minimize() {
+    if (!this.session) return;
+    if (this.onMinimize) this.onMinimize(this);
+    else this.detach();
+  }
+
+  syncEmpty() {
+    if (this.emptyMark) this.emptyMark.hidden = !!this.session;
   }
 
   /** Destroy the tmux session on the host (root + its grid_* viewers), then detach. */
@@ -544,6 +553,7 @@ export class Tile {
 
   connect(session) {
     this.session = session;
+    this.syncEmpty();
     // The Services answer is per session. A tile that held an unlocked view for one Agent
     // and now shows one born with Services off comes down to Locked before the wire opens
     // — set directly, not through setOutput, which would reopen the wire mid-connect.

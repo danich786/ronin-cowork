@@ -5,7 +5,6 @@
 - **order:** 50
 - **kinds:** personal
 - **objective:** An ongoing campaign with no finish line — the programme, the plate, and the next start line, season by season.
-- **routines_off:** ronin_worktrees
 
 ## agents
 

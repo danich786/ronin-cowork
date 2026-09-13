@@ -38,8 +38,7 @@ file happens to define every stock name.
 
 | Catalog | Shape | Rule |
 |---|---|---|
-| `role_families/` | one file per role | whole-definition, by filename |
-| `session_roles/` | one file per task | whole-definition, by filename |
+| `behaviours/` with the owner's `ways/` store | one Markdown page per behaviour | whole-file, by filename |
 | `MACROS.md` | `## name` blocks | entry-merge |
 | `ACTIONS.md` | `## name` blocks | entry-merge |
 | `TOOLS.md` | a table | same rule, keyed on the tool name in column 1 |

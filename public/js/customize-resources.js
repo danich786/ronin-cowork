@@ -15,7 +15,6 @@ import { request } from './request.js';
 import { addProvMark, isOwn } from './provenance.js';
 import { WorkspaceKit } from './workspace-kit.js';
 import { buildHandoff } from './customize-handoff.js';
-import { buildRoleFamilyEditor } from './customize-role-families.js';
 import { t } from './lexicon.js';
 
 
@@ -70,19 +69,8 @@ export async function renderResource(resource, surface, onRefresh = async () => 
     surface.content.append(createNotice({ message: t('customize.empty', 'Nothing here yet. That is an ordinary state, not a fault.') }).el);
   }
 
-  if (resource.id === 'role-families') {
-    const rolesResult = await request('/api/session-roles');
-    const roles = rolesResult.ok && Array.isArray(rolesResult.data) ? rolesResult.data : null;
-    if (!roles) {
-      surface.setState('failed', rolesResult.ok ? t('customize.roles_not_a_list', 'the session-role route did not answer with a list') : t('customize.roles_read_failed', 'could not read session roles — {message}', { message: rolesResult.message }));
-      return { count: list.length, mark: null };
-    }
-    surface.content.append(buildRoleFamilyEditor(list, roles, onRefresh));
-  }
-
   const grid = el('div', 'cz-grid');
   for (const entry of list) {
-    if (resource.id === 'role-families') continue;
     const card = createCard({
       heading: entry.label || entry.name,
       summary: entry.blurb || '',

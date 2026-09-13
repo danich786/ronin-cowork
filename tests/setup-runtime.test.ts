@@ -253,6 +253,7 @@ test('installed roots are distinct registered repositories with READMEs and firs
   }
   const registered = await roots.listProjectRoots();
   assert.deepEqual(registered.map((root) => root.name), ['ronin_lab', 'ronin_project_1']);
+  assert.deepEqual(registered.map((root) => root.title), ['Ronin Lab', 'Ronin Project 1']);
   const project = made.find((root) => root.name === 'ronin_project_1')!;
   assert.match(await readFile(path.join(project.dir, 'RONIN_REPO'), 'utf8'), /mode=reviewed[\s\S]*working=dev[\s\S]*stable=main[\s\S]*desks=managed/);
   assert.doesNotThrow(() => execFileSync('git', ['-C', project.dir, 'show-ref', '--verify', '--quiet', 'refs/heads/dev']));

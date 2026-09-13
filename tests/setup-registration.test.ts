@@ -135,8 +135,9 @@ test('Register presents one open profile flow with card choices and anonymous de
   for (const name of ['email', 'own_words']) assert.match(source, new RegExp(`name = '${name}'|input\\('${name}'`));
   for (const name of ['identity_mode', 'kind', 'preferred_feature', 'run_location']) assert.match(source, new RegExp(`choiceGroup\\('${name}'`));
   assert.match(source, /const question = ask\(/);
-  assert.match(source, /key: name, label, many: multiple, options:/);
-  assert.match(source, /key: name, label, many: true, options:/);
+  assert.match(source, /key: name, label: short \|\| t\('ask\.answer', 'Answer'\), many: multiple, options:/, 'the head carries the question; the stone carries a short noun, never the question again');
+  assert.match(source, /key: name, label: short \|\| t\('ask\.answer', 'Answer'\), many: true, options:/);
+  for (const key of ['identity_short', 'kind_short', 'preferred_feature_short', 'reasons_short', 'run_location_short']) assert.match(source, new RegExp(`short: t\\('setup_surface\\.${key}'`), `${key} names the stone`);
   assert.doesNotMatch(source, /glyph: '·'/, 'unruled Register answers are rectangles without placeholder glyphs');
   assert.match(source, /reasons\.other\.value/);
   assert.match(source, /kind_other: kindOther\.value/);
@@ -206,7 +207,7 @@ test('Services leads with identity, the beta, and benefits, then one measured st
   const source = await (await import('node:fs/promises')).readFile(new URL('../public/js/setup-surfaces.js', import.meta.url), 'utf8');
   assert.match(source, /import \{ servicesSetupModel \} from '\.\/services-setup-state\.js'/);
   assert.match(source, /import \{ campaignById, campaigns, loadCampaigns, saveCampaign \} from '\.\/campaigns\.js'/);
-  assert.match(source, /import \{ completeRoutineMap \} from '\.\/campaign-routines\.js'/);
+  assert.match(source, /import \{ completeInstallationMap \} from '\.\/installation-map\.js'/);
   assert.match(source, /setup-services-mark/);
   assert.match(source, /mark\.src = 'brand\/services-mark\.svg'/);
   assert.match(source, /fetch\('brand\/services-mark\.svg'\)/, 'the one mark file is inlined so the R follows data-theme');
@@ -223,10 +224,10 @@ test('Services leads with identity, the beta, and benefits, then one measured st
   assert.match(source, /if \(item\.act === 'register'\) \{ openRegister\(\); return; \}/);
   assert.match(source, /workbench\?\.place\(SETUP_SURFACE_TYPES\.register/);
   assert.match(source, /item\.act === 'install' \? '\/api\/services\/install' : '\/api\/services\/activation\/poll'/);
-  // The On step is the Campaign's own Routine switch, saved the way Routines and Installs saves it.
-  assert.match(source, /request\('\/api\/routines'\)/);
+  // The On step is the Campaign's own installation switch.
+  assert.match(source, /request\('\/api\/installations'\)/);
   assert.match(source, /ronin_services: on/);
-  assert.match(source, /saveCampaign\(row\.id, \{ config: \{ agent_defaults: \{ \.\.\.defaults, routines \} \} \}\)/);
+  assert.match(source, /saveCampaign\(row\.id, \{ config: \{ installations \} \}\)/);
   assert.match(source, /setAttribute\('aria-pressed', String\(item\.pressed === true\)\)/);
   // Restart: the one sanctioned tool behind one route; the browser asks, then reads the restart off startedAt changing.
   assert.match(source, /if \(item\.act === 'restart'\) \{ await restartRonin\(state, startedAt\); return; \}/);
@@ -404,7 +405,7 @@ test('Setup gbrain answers three questions plainly with at most one action per s
   assert.deepEqual(gbrainSetupModel(snapshot({ installed: false, install: { state: 'failed', op: 'install', log: ['step 3 failed'] } })).log, ['step 3 failed']);
 });
 
-test('Setup gbrain paints the three questions, switches the Campaign gbrain Routine, and keeps the commons dashboard on its default', async () => {
+test('Setup gbrain paints the three questions, switches the Campaign gbrain installation, and keeps the commons dashboard on its default', async () => {
   const [setup, gbrain] = await Promise.all([
     (await import('node:fs/promises')).readFile(new URL('../public/js/setup-surfaces.js', import.meta.url), 'utf8'),
     (await import('node:fs/promises')).readFile(new URL('../public/js/gbrain.js', import.meta.url), 'utf8'),
@@ -414,10 +415,10 @@ test('Setup gbrain paints the three questions, switches the Campaign gbrain Rout
   assert.match(setup, /onState: \(summary\) => notifySummary\(SETUP_SURFACE_TYPES\.gbrain, summary/);
   assert.match(setup, /openServices: \(\) => context\.workbench\?\.place\(SETUP_SURFACE_TYPES\.services/);
   assert.match(setup, /openProviders: \(\) => context\.workbench\?\.place\(SETUP_SURFACE_TYPES\.providers/);
-  // Available to Agents is the Campaign's own gbrain Routine, saved the way Routines and Installs saves it.
-  assert.match(setup, /routines\.gbrain === true/);
-  assert.match(setup, /completeRoutineMap\([\s\S]*?defaults\.routines\), gbrain: on === true \}/);
-  assert.match(setup, /saveCampaign\(row\.id, \{ config: \{ agent_defaults: \{ \.\.\.defaults, routines \} \} \}\)/);
+  // Available to Agents follows the Campaign's gbrain installation.
+  assert.match(setup, /installations\.gbrain === true/);
+  assert.match(setup, /completeInstallationMap\([\s\S]*?row\.config\?\.installations\), gbrain: on === true \}/);
+  assert.match(setup, /saveCampaign\(row\.id, \{ config: \{ installations \} \}\)/);
   // Start your first Personal Assistant is exactly the preset's launch: same plan, same route, same new tab.
   assert.match(setup, /launchPresetPlan\(buildLaunchPlan\(slot, '', controls\)\)/);
   assert.match(setup, /HOUSE_PRESETS\.find\(\(row\) => row\.handle === 'personal_assistant'\)/);
@@ -468,7 +469,7 @@ test('retired Services mutation handlers return 410 while registration routes re
 
 test('all browser mutation callers use registration; Services activation is read/poll/install only', async () => {
   const fs = await import('node:fs/promises');
-  for (const file of ['services-card.js', 'services-activation.js', 'campaign-routines.js']) {
+  for (const file of ['services-card.js', 'services-activation.js', 'campaign-installations.js']) {
     const source = await fs.readFile(new URL(`../public/js/${file}`, import.meta.url), 'utf8');
     assert.doesNotMatch(source, /['"]\/api\/services\/activation(?:\/resend|\/address)?['"][\s\S]{0,80}(?:method:\s*['"](?:POST|DELETE)|,\s*['"]DELETE)/, file);
   }

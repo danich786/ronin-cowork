@@ -52,27 +52,20 @@ same door the ＋ New board presses (`POST /api/launch`), and it does create, ta
 CLI launch and brief delivery in ONE call — so there is nothing to type at a pane and
 nothing to wait for a prompt to appear.
 
-It is also the ONLY way a new session gets a **`role_family`**. The role is stamped at birth
-and immutable afterwards, so a session hand-rolled with `tmux new-session` has a blank
-role for its entire life and no tool can repair it. That was measured: forks made the old
-way carried no role at all and could only ever self-set a task.
-
 ```bash
 curl -sS -X POST http://127.0.0.1:${PORT:-4810}/api/launch \
   -H 'content-type: application/json' \
-  -d '{"role_family":"<role>","session_role":"<task>","name":"<name>",
-       "project_root":"<root>","tags":["<team>"],"prompt":"<what it is told>"}'
+  -d '{"session_type":"cowork_agent","name":"<name>","project_root":"<root>",
+       "team":"<team>","prompt":"<what it is told>","behaviours":["mandates"]}'
 ```
 
-**The axes, and what each may be left out of.** `project_root` is required and omitting it
-selects the top active root. `role_family` and `session_role` may each be blank, and blank is
-a real launch — but **an agent-launching fork must RESOLVE them deliberately rather than
-omit them by accident**. The receipt names what was actually resolved;
+`name` is required. Omitting `project_root` selects the top active root. The receipt names what was actually resolved;
 read it back and report it.
+The `BORN` verdict prints both receipt lists: `ignored` input and requested features that
+were `undelivered` because their installation was unavailable.
 
 **THE MODEL — leave it out unless the owner named one.** Omit `cmd` and the launch is born
-on the owner's own session default (⚙ Configuration, `agents.sessions.default`); a
-`session_role` states no model and biases none, so nothing sits between that default and
+on the owner's own session default (⚙ Configuration, `agents.sessions.default`); nothing sits between that default and
 an explicit pick. Passing `cmd` is the explicit pick and beats it.
 
 **Naming a VENDOR without naming a model is its own field: `provider`.** *"Give me
@@ -85,14 +78,13 @@ never a command you composed — a hand-typed command matches no table row, so t
 cannot honor an MCP-off choice for it.
 
 **IT DELIVERS THE WHOLE BUILD BRIEF, which is the other half of why this is the door.** A
-launch composes the posture, the reading list — `all/` + `root/<project_root>/` +
-Team + `role/<session_role>/`, plus any connected level when the brain is on
-— the task's opening template with your prompt in it, and the acknowledgement rule. A
+launch composes the core reading, enabled installation contributions, selected features
+and behaviours, Team and conditional reading, plus your prompt. A
 session made with `tmux new-session` gets NONE of that: no reading list, no posture, no
-letter, and no role, ever.
+letter, ever.
 
-The response carries `receipt` — `session_role`, Team, `project_root`, `dial`,
-`cmd`, `mcp`. A launch that refuses answers 400 with the reason written for the owner (an
+The response carries a receipt with session type, Team, project root, mandate, behaviours,
+features, dial, and command. A launch that refuses answers 400 with the reason written for the owner (an
 unknown axis, a locked `mcp:` contradicted, an agentless launch handed a command); report
 the reason, do not retry around it.
 
@@ -163,7 +155,7 @@ execute from.
 ## read-letter — read the ladder a session is keeping
 `action_kind: mechanical` — run it, don't deliberate.
 > **Tool: `read_tegami`** (TOOLS.md)
-Your own letter — objective, role_family, session_role, the ladder, and where on it you are.
+Your own work record — objective, mandate, repositories, Teams, the ladder, and where on it you are.
 ```bash
 read_tegami                     # your letter, as written
 read_tegami --json              # just the block, for a machine
@@ -423,44 +415,6 @@ confirmation. Every other condition retains the message with its measured reason
 operator checks it mechanically, and the coworkspace exposes Try Again and owner-only
 Force. Never perform the queue or tmux steps separately.
 
-## write-buildout-doc
-`action_kind: judgement` — this one needs your reasoning; no tool can do it for you.
-- **library:** documents
-Draft the plan for a piece of work so the owner can read, edit and riff on it BEFORE
-any code is cut. **Agree the goal in plain language with the owner first**; only then
-write the plan.
-- Location: per the documents library page — inlined when this compiles. **Transient by
-  design**: it holds only what is still TO DO. No changelog, no "done" section, no
-  history (git holds history), and it is DELETED when the work lands.
-- Content: goal in the owner's words, the legs (ordered chunks that can each be
-  finished and reviewed), constraints/conventions, how to verify, definition of done.
-- **Then `list-doc` it**, before you hand it over — the owner is about to read it, and the
-  ▧ Docs tab is where they open it without you pasting a path.
-- Then STOP and hand it to the owner for review. Planning is not building.
-
-## cut-code
-`action_kind: judgement` — this one needs your reasoning; no tool can do it for you.
-Implement from a buildout doc. Two independent dials, both stated by the owner:
-- **Scope:** `leg` = finish ONE leg, report, stop (owner riffs between legs) ·
-  `finish` = work all legs to done without stopping.
-- **Coordination:** `dev` = no sequencing concerns, just build ·
-  `live` = other work/agents/services depend on this, so sequence deliberately and
-  say what must land in what order.
-Rules: **delete each item from the buildout doc as it is completed** (the doc shrinks
-to nothing; it is never a log). **Work in your assignment's desks** — the repo desks in
-your brief and on your letter (`repos[]`); never edit `dev` or a team line, which are
-funnel points. **Commit** coherent checkpoints privately as you go. At each DONE leg,
-**offer a hand-in** — `tejun-desk hand-in` when the work is coherent for the team; a leg
-may prompt it, never perform it for you, and it is not `git push`. Run no repository-wide verification at a
-commit or a hand-in. Reviewing the team line and promoting it is the lead's job; hand-in
-notifies the team lead itself. If the team has no lead, the
-hand-in tells you: “this didn't work for promotion: team <team> has no lead; ask the owner
-to mark one on the Team page.” A conflict at hand-in is still yours to
-resolve (`tejun-desk sync`, fix, hand in).
-If your brief lists no desk, none has been opened for you yet. For a managed repository,
-run `tejun-desk open <repo>` before your first write; `NO-DESK` from status means only that
-none is recorded for this session. For a direct repository, ordinary Git in its named
-checkout is correct. Verify per the doc, with scoped evidence, before reporting.
 
 ## open-pr
 `action_kind: mechanical` — run it, don't deliberate.
@@ -484,37 +438,6 @@ the receipt fenced, and creates the PR — or updates the one already open, neve
 It finds `gh` itself. Report the URL it prints. Under direct publishing there is no working
 line and no PR: this action does not apply.
 
-## land-work
-`action_kind: judgement` — this one needs your reasoning; no tool can do it for you.
-> **The finish line is the documents library page's three questions** — which wip docs does this
-> delete, did the facts change enough for a standing doc, is there a manifest line.
-Close out finished work so nothing transient survives.
-1. Write/refresh a **persistent README** where the code lives (not in wip/) —
-   what it is, how to run it, the decisions worth keeping.
-2. **Delete** the build-out doc — it has served its purpose (the documents library page's first landing question).
-3. **Close every finished desk explicitly.** Hand in the assignment (`tejun-desk hand-in
-   --assignment`), then close each finished desk. Hand-in does not close a desk, and the
-   live session remains ready at the project root for a later fresh desk. No desk (direct
-   publishing, shared checkout): commit and push the declared line instead.
-
-## land-manifest — ONE LINE. READ THIS TWICE.
-`action_kind: judgement` — this one needs your reasoning; no tool can do it for you.
-- **library:** documents
-Append a single pointer line to the project_repo's manifest — location per the
-documents SOP. **The manifest is an index, not a history.** Git commits and READMEs
-hold the story; this is the signpost that tells someone where to look.
-
-Format — exactly one line, nothing else:
-```
-YYYY-MM-DD · <what happened, ≤12 words> · <commit> or <path>
-```
-**Hard rules (agents pad; do not):**
-- ONE line per landed thing. Never two. Never a paragraph.
-- No sub-bullets, no "changes included", no rationale, no before/after, no lists of
-  files, no test results, no emoji decoration.
-- Do not explain HOW. If it needs explaining, it belongs in the README or the commit.
-- Never edit or "improve" earlier lines. Append only.
-If your line exceeds one screen-width, cut words until it doesn't.
 
 ## step-through — run a macro step by step, checking each one in
 `action_kind: mechanical` — run it, don't deliberate.
@@ -622,8 +545,7 @@ what a document can tell you.
 `action_kind: mechanical` — run it, don't deliberate.
 > **Tool: `tejun-recall`** (TOOLS.md)
 Sessions are mortal; what they learned is not. This hands you the memories matched to
-what this session IS — its `project_root`, its `role_family` and its `session_role`, read off the session
-itself — ordered universal-first, then this project, then cross-project.
+for its `project_root`, read off the session itself — ordered universal-first, then this project.
 ```bash
 tejun-recall            # one file path per line, deduped
 tejun-recall --list     # kind + scope + summary per match, to choose from

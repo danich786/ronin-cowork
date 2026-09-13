@@ -81,9 +81,6 @@ export function mandateWord(value) {
     'an artifact': t('campaign_view.option_artifact', 'An artifact'),
     'no code': t('campaign_view.option_no_code', 'No code'),
     'the team': t('campaign_view.option_team', 'The Team'),
-    user: t('campaign_view.option_user', 'You only'),
-    read: t('campaign_view.option_read', 'Read'),
-    write: t('campaign_view.option_write', 'Read and write'),
   };
   return words[value] || value;
 }
@@ -143,14 +140,16 @@ export function bookShelves(shelves, chosen, onToggle) {
     host.append(el('p', 'fs-head', shelf.head));
     const grid = el('div', 'na-sopgrid');
     for (const row of shelf.rows) {
-      const address = `${shelf.prefix}:${row.name}`;
+      const address = shelf.prefix ? `${shelf.prefix}:${row.name}` : row.name;
       const on = chosen.includes(address);
       const box = el('button', 'na-sop');
       box.type = 'button';
       box.title = row.blurb || row.label || row.name;
       box.setAttribute('aria-pressed', String(on));
+      box.disabled = row.required === true;
+      if (row.required) box.title = `${box.title}${box.title ? ' · ' : ''}${t('forms.required_by_team', 'Required by Team')}`;
       box.append(el('span', 'aa-box'), el('b', null, row.name));
-      box.addEventListener('click', () => onToggle(address, !on));
+      if (!row.required) box.addEventListener('click', () => onToggle(address, !on));
       grid.append(box);
     }
     host.append(grid);

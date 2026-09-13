@@ -74,10 +74,11 @@ const FILTER_FROM = 12;
 let trayIds = 0;
 
 export function ask(groups = [], { value = {}, onChange = null, className = '', density = 'loose', trayHost = null } = {}) {
-  const spec = (Array.isArray(groups) ? groups : []).map((group) => ({
-    label: group.group || group.label || '',
-    fields: (group.fields || []).map((field) => ({ ...field, shape: field.shape === 'square' ? 'square' : 'rect' })),
-  }));
+  const spec = (Array.isArray(groups) ? groups : []).map((group) => {
+    const label = group.group || group.label || '';
+    // A stone never repeats its group head: the head carries the question, the stone a noun.
+    return { label, fields: (group.fields || []).map((field) => ({ ...field, label: field.label === label && label ? t('ask.answer', 'Answer') : field.label, shape: field.shape === 'square' ? 'square' : 'rect' })) };
+  });
   const nested = (field) => (Array.isArray(field.then) ? field.then : []).map((child) => ({ ...child, parent: field.key, when: child.when, shape: child.shape === 'square' ? 'square' : 'rect' }));
   const fields = spec.flatMap((group) => [...group.fields.flatMap((field) => [field, ...nested(field)])]);
   const childrenOf = (field) => fields.filter((child) => child.parent === field.key);
@@ -269,7 +270,7 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
         note.id = `${trayId}-note-${lines.length}`;
         note.setAttribute('role', 'status');
         note.setAttribute('aria-live', 'polite');
-        if (row.required) { node.setAttribute?.('aria-required', 'true'); node.setAttribute?.('aria-describedby', note.id); }
+        if (row.required) { label.dataset.required = 'true'; node.setAttribute?.('aria-required', 'true'); node.setAttribute?.('aria-describedby', note.id); }
         node.addEventListener?.('input', () => { node.setAttribute?.('aria-invalid', 'false'); note.textContent = ''; line.dataset.invalid = 'false'; });
         label.append(el('span', 'ask-extra-name', row.l), node, note);
         line.append(label);

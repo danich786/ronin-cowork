@@ -208,7 +208,7 @@ MODEL_PROVIDERS.md row
 
 Every place the product asks *which provider, and which model* is one control:
 `providerModelPair` in `public/js/form-steps.js`. New Agent, New Team, Add Agent to Team,
-the Campaign's Agent defaults, Team Configuration, ⚙ Configuration (the general default,
+the Campaign's Team and Agent defaults, Team Configuration, ⚙ Configuration (the general default,
 each provider's preferred model, and Mika's row), cowork setup and the Presets rows all call
 it; none keeps a list, a join or a vendor's name of its own. The picker reads the catalog
 itself (`GET /api/provider-catalog`: its origin, its `updated` date, and one entry per

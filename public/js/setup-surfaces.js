@@ -10,7 +10,7 @@ import { PROVIDER_SURFACE_TYPE, providerSurfaceDefinition } from './provider-sur
 import { createStoneWorkSurface } from './stone-work-surface.js';
 import { servicesSetupModel } from './services-setup-state.js';
 import { campaignById, campaigns, loadCampaigns, saveCampaign } from './campaigns.js';
-import { completeRoutineMap } from './campaign-routines.js';
+import { completeInstallationMap } from './installation-map.js';
 import { createEmbeddedNewTeamFormView } from './new-team-form.js';
 import { createEmbeddedNewAgentView } from './new-agent.js';
 import { HOUSE_PRESETS, buildLaunchPlan, initialControls, seatingPlan } from './presets.js';
@@ -63,23 +63,23 @@ function createRegisterSurface(context) {
   const field = (label, control) => { const wrap = el('label', 'setup-field setup-register-input'); wrap.append(el('span', 'setup-register-question', label), control); return wrap; };
   const input = (name, type = 'text') => { const node = el('input'); node.name = name; node.type = type; return node; };
   const checkRow = (label, box, className = '') => { const row = el('label', `setup-register-check ${className}`.trim()); row.append(box, el('span', '', label)); return row; };
-  const choiceGroup = (name, label, choices, { multiple = false, explain = false } = {}) => {
+  const choiceGroup = (name, label, choices, { multiple = false, explain = false, short = '' } = {}) => {
     const value = input(name, 'hidden');
     for (const [key, text] of choices) labels.set(key, text);
     let selected = multiple ? [] : '';
     const listeners = [];
-    const question = ask([{ group: label, fields: [{ key: name, label, many: multiple, options: choices.map(([key, text, description = '']) => ({ v: key, l: text, sub: description })) }] }], {
+    const question = ask([{ group: label, fields: [{ key: name, label: short || t('ask.answer', 'Answer'), many: multiple, options: choices.map(([key, text, description = '']) => ({ v: key, l: text, sub: description })) }] }], {
       value: { [name]: selected },
       onChange: (next) => { selected = next[name]; value.value = multiple ? JSON.stringify(selected) : selected; for (const listener of listeners) listener(selected); },
     });
     question.el.classList.add('setup-register-bounded');
     return { value, wrap: question.el, values: () => multiple ? [...selected] : selected, onChange: (listener) => listeners.push(listener) };
   };
-  const checklistGroup = (name, label, choices) => {
+  const checklistGroup = (name, label, choices, { short = '' } = {}) => {
     const other = input(`${name}_other`); other.className = 'setup-register-other'; other.placeholder = t('setup_surface.something_else_prompt', 'Tell us'); other.hidden = true;
     for (const [value, text] of choices) labels.set(value, text);
     let selected = [];
-    const question = ask([{ group: label, fields: [{ key: name, label, many: true, options: choices.map(([value, text]) => ({ v: value, l: text })) }] }], {
+    const question = ask([{ group: label, fields: [{ key: name, label: short || t('ask.answer', 'Answer'), many: true, options: choices.map(([value, text]) => ({ v: value, l: text })) }] }], {
       value: { [name]: selected },
       onChange: (next) => { selected = next[name]; other.hidden = !selected.includes('something_else'); if (!other.hidden) other.focus(); },
     });
@@ -89,12 +89,12 @@ function createRegisterSurface(context) {
   const email = input('email', 'email'); email.placeholder = 'you@example.com'; email.autocomplete = 'email';
   const identityMode = choiceGroup('identity_mode', t('setup_surface.identity', 'How would you like to register?'), [
     ['email', 'With email'], ['anonymous', 'Anonymous'], ['no_thanks', 'No thank you'],
-  ]);
+  ], { short: t('setup_surface.identity_short', 'Register as') });
   identityMode.wrap.classList.add('setup-register-identity-choice');
   const kind = choiceGroup('kind', t('setup_surface.kind', 'Which of these are you most likely to use?'), [
     ['build_software', 'Build software'], ['life_assistants', 'Life assistants'],
     ['research_writing', 'Research and writing'], ['other', 'Something else'],
-  ]);
+  ], { short: t('setup_surface.kind_short', 'You use Ronin for') });
   const kindOther = input('kind_other'); kindOther.className = 'setup-register-other'; kindOther.placeholder = t('setup_surface.something_else_prompt', 'Tell us'); kindOther.hidden = true;
   kind.wrap.append(kindOther);
   kind.onChange(() => {
@@ -104,7 +104,7 @@ function createRegisterSurface(context) {
     ['remote_access', 'Work from anywhere', t('setup_surface.feature_remote_access', 'Ronin runs on your home machine or a virtual machine. You open it from a browser wherever you are, any time.')],
     ['multiple_providers', 'Multiple providers without lock-in', t('setup_surface.feature_multiple_providers', 'You keep your own accounts and your direct relationship with each model provider. Ronin never stands in between, everything runs on your machine, and how your agents work together is yours.')],
     ['team_coordination', 'Agents with team coordination skills', t('setup_surface.feature_team_coordination', 'Coordination is light reading an agent does to build its brief. Each launch brief carries a few simple tools so agents can message and coordinate with one another.')],
-  ], { explain: true });
+  ], { explain: true, short: t('setup_surface.preferred_feature_short', 'Feature') });
   const reasons = checklistGroup('reasons', t('setup_surface.reasons', 'Which of these describes you best in terms of getting value from Ronin?'), [
     ['different_strengths', 'Different models have different strengths. I want to use the best one for each job.'],
     ['network_resilience', 'Sometimes one model provider is having network issues, so I want another available.'],
@@ -115,10 +115,10 @@ function createRegisterSurface(context) {
     ['own_instructions', 'I want my own standing instructions handed to my agents every time: a README or SOP that some agents, every agent, or a whole team reads by default.'],
     ['no_collisions', 'When several agents work in one codebase, I want a structured way to keep them from colliding.'],
     ['something_else', 'Something else.'],
-  ]);
+  ], { short: t('setup_surface.reasons_short', 'Describes you') });
   const runLocation = choiceGroup('run_location', t('setup_surface.run_location', 'Where will you install Ronin?'), [
     ['virtual_machine', 'Virtual machine'], ['personal_server', 'Personal server'], ['personal_computer', 'Personal computer'],
-  ]);
+  ], { short: t('setup_surface.run_location_short', 'Install on') });
   const own = el('textarea'); own.name = 'own_words'; own.rows = 3;
   const identity = el('div', 'setup-registration-identity');
   const form = el('form', 'setup-form setup-register-form');
@@ -283,7 +283,7 @@ async function inlineServicesMark(host) {
 }
 
 /** Ronin Services: identity, the beta, its value, one measured status, and the three steps. */
-function createServicesSurface(context) {
+export function createServicesSurface(context) {
   const out = surface(t('settei.ronin_services', 'Ronin Services'));
   const body = el('div', 'setup-surface-body setup-services-compact'); out.content.append(body);
   let timer = null;
@@ -321,14 +321,15 @@ function createServicesSurface(context) {
     return intro;
   };
   const openRegister = () => context.workbench?.place(SETUP_SURFACE_TYPES.register, context.workspace || 'workspace2');
-  /** The Routine switch for new Agents: the Campaign's own map, saved the way Routines and Installs saves it. */
+      /** The Services installation switch in the Campaign's complete installation map. */
   const switchServices = async (on) => {
-    const [catalog] = await Promise.all([request('/api/routines'), loadCampaigns()]);
+    const [catalog] = await Promise.all([request('/api/installations'), loadCampaigns()]);
     const row = campaignById(context.tenant?.campaign) || campaigns()[0];
     if (!row) return { ok: false, message: t('services_setup.no_campaign', 'No Campaign to switch it on for.') };
-    const defaults = row.config?.agent_defaults && typeof row.config.agent_defaults === 'object' ? row.config.agent_defaults : {};
-    const routines = { ...completeRoutineMap(catalog.ok && Array.isArray(catalog.data) ? catalog.data : [], defaults.routines), ronin_services: on };
-    return saveCampaign(row.id, { config: { agent_defaults: { ...defaults, routines } } });
+    const installations = { ...completeInstallationMap(catalog.ok && Array.isArray(catalog.data) ? catalog.data : [], row.config?.installations), ronin_services: on };
+    const result = await saveCampaign(row.id, { config: { installations } });
+    if (result.ok) context.onInstallationChange?.('ronin_services', on);
+    return result;
   };
   /** Restart: ask, then read the restart off the machine — /api/installed's startedAt changes when Ronin is back.
    *  A refusal answers in the tool's own words; no answer means Ronin went down, which is the restart happening. */
@@ -397,7 +398,7 @@ function createServicesSurface(context) {
 }
 
 /** gbrain: the Setup presentation of the commons tab. Reads and presses are the tab's own. */
-function createGbrainSurface(context) {
+export function createGbrainSurface(context) {
   const out = surface(t('pane.gbrain', 'gbrain'));
   const host = el('div', 'setup-surface-body'); out.content.append(host);
   const room = buildGbrain(host, () => host.isConnected, (prompt) => context.environment?.showNewSession?.(prompt), {
@@ -410,21 +411,22 @@ function createGbrainSurface(context) {
     onState: (summary) => notifySummary(SETUP_SURFACE_TYPES.gbrain, summary, context.workbench),
     openServices: () => context.workbench?.place(SETUP_SURFACE_TYPES.services, context.workspace || 'workspace2'),
     openProviders: () => context.workbench?.place(SETUP_SURFACE_TYPES.providers, context.workspace || 'workspace2'),
-    // Available to Agents: the Campaign's own gbrain Routine, saved the way Routines and Installs saves it.
+        // Available to Agents follows the Campaign's gbrain installation.
     agentsDefault: {
       read: async () => {
         await loadCampaigns();
         const row = campaignById(context.tenant?.campaign) || campaigns()[0];
-        const routines = row?.config?.agent_defaults?.routines;
-        return routines && typeof routines === 'object' ? routines.gbrain === true : null;
+        const installations = row?.config?.installations;
+        return installations && typeof installations === 'object' ? installations.gbrain === true : null;
       },
       write: async (on) => {
-        const [catalog] = await Promise.all([request('/api/routines'), loadCampaigns()]);
+        const [catalog] = await Promise.all([request('/api/installations'), loadCampaigns()]);
         const row = campaignById(context.tenant?.campaign) || campaigns()[0];
         if (!row) return { ok: false, message: t('gbrain.setup_no_campaign', 'No Campaign to set a default for.') };
-        const defaults = row.config?.agent_defaults && typeof row.config.agent_defaults === 'object' ? row.config.agent_defaults : {};
-        const routines = { ...completeRoutineMap(catalog.ok && Array.isArray(catalog.data) ? catalog.data : [], defaults.routines), gbrain: on === true };
-        return saveCampaign(row.id, { config: { agent_defaults: { ...defaults, routines } } });
+        const installations = { ...completeInstallationMap(catalog.ok && Array.isArray(catalog.data) ? catalog.data : [], row.config?.installations), gbrain: on === true };
+        const result = await saveCampaign(row.id, { config: { installations } });
+        if (result.ok) context.onInstallationChange?.('gbrain', on === true);
+        return result;
       },
     },
     // Exactly the Personal Assistant preset's launch, single assistant, opened in a new tab.

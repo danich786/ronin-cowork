@@ -22,7 +22,6 @@ export interface Tegami {
   objective: string;
   repos: { repo: string; branch: string }[];
   at: { rung: number; leg?: number } | null;
-  session_role: string;
   teams: { team: string; team_role: string; objective: string }[];
   ladder_state: string;
   ladder: Rung[];
@@ -152,7 +151,6 @@ export async function readTegami(name: string): Promise<Tegami | null> {
               : [];
           })
         : [],
-      session_role: String(b.session_role ?? ''),
       teams: Array.isArray(b.teams)
         ? b.teams.flatMap((x) => {
             if (!x || typeof x !== 'object') return [];

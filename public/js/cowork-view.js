@@ -42,7 +42,7 @@ const el = (tag, cls, text) => {
 };
 // The roster reads the same frontier as the expanded work record: an explicit pointer
 // wins, otherwise the first unfinished rung is current. Keep the agent's actual words
-// beside that coordinate instead of substituting its launcher role (CutCode, OddJob…).
+// beside that coordinate instead of substituting a launch-time label.
 const currentWorkStep = (letter) => {
   const ladder = letter?.ladder || [];
   if (!ladder.length) return { label: '', text: '' };
@@ -118,7 +118,7 @@ export function createCoworkView(options = {}) {
   const makeSeat = (id, label) => {
     const surface = createSurface({ label, className: 'tw-terminal', flush: true, header: false });
     const pool = createWarmTerminalPool({
-      createHost: (options) => createTerminalTileHost(options),
+      createHost: (options) => createTerminalTileHost({ ...options, onMinimize: () => emptySeat(id) }),
       container: surface.content,
       streamCap: 2,
     });
@@ -130,7 +130,13 @@ export function createCoworkView(options = {}) {
       else if (!seat.empty) {
         const blank = createSurface({ label: t('team.workspace_blank', 'Workspace'), className: 'tw-blank' });
         // The header already says Workspace; the body saying it again read as a stutter
-        blank.content.append(el('p', 'tw-blank-word', t('team.workspace_empty', 'empty')));
+        const mark = el('div', 'tile-empty-mark');
+        mark.setAttribute('aria-hidden', 'true');
+        const logo = el('img');
+        logo.src = 'brand/nin-mark.svg';
+        logo.alt = '';
+        mark.append(logo);
+        blank.content.append(mark);
         seat.empty = { el: blank.el, mount: () => {}, destroy: () => blank.el.remove() };
         seat.surface.content.append(seat.empty.el);
       } else if (!seat.empty.el.isConnected) seat.surface.content.append(seat.empty.el);
@@ -155,7 +161,7 @@ export function createCoworkView(options = {}) {
   const liveSeats = () => bench?.visibleIds() || [];
 
   const rosterNote = el('span', 'tw-roster-note');
-  let thinSelectorCards = false;
+  let thinSelectorCards = true;
   const densityToggle = createAction({ label: '', size: 'compact', className: 'tw-agent-density' });
   const densityLines = el('span', 'tw-agent-density-lines');
   densityLines.append(el('i'), el('i'));
@@ -730,7 +736,7 @@ export function createCoworkView(options = {}) {
       stopMessageAttention = watchMessageQueueAttention();
       for (const seat of Object.values(seats)) seat.pool.destroyAll();
       team = campaign ? '' : context.param || context.state?.team || '';
-      thinSelectorCards = context.viewState(viewKey)?.[campaign ? 'teamCardDensity' : 'agentCardDensity'] === 'thin';
+      thinSelectorCards = context.viewState(viewKey)?.[campaign ? 'teamCardDensity' : 'agentCardDensity'] !== 'thick';
       paintDensityToggle();
       setBarLabel();
       const typed = teamWorkspaceState(context.state, context.viewState(viewKey), bench.declaration);

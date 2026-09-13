@@ -31,8 +31,9 @@ that scrolls away.
 
 ### 2. Give unfinished thinking one mortal document
 
-**`+buildout`** plans a piece of work as a document the owner can read and edit, and then
-waits — no code is cut from it until they have been through it. Iteration lives in `wip/`:
+A mandate of reach `plan` produces a document the owner can read and edit, and then
+waits — no code is cut from it until they have been through it. The `buildout` behaviour
+says how the house writes one. Iteration lives in `wip/`:
 normally `wip/buildouts/<topic>.md`, or `wip/handoffs/<topic>.md` when another session
 needs the context. A build-out holds the goal, remaining legs, constraints, verification
 and definition of done. It is where the owner and agents riff on the work before and
@@ -40,8 +41,7 @@ during implementation.
 
 Do not turn it into history. Remove completed items as they land, and do not preserve a
 "done" section. Git records what changed; the working document says only what remains.
-The exact document contract lives in `ronin_library/documents.md` and arrives through the
-build-out and landing actions.
+The exact document contract lives in `ronin_library/documents.md`.
 
 ### 3. Coordinate through shared edges
 
@@ -93,7 +93,7 @@ learned*.
 
 ### 4. Commit privately, hand in deliberately, let the lead promote
 
-Under the reviewed arrangement (`github.md`, declared in each repository's `RONIN_REPO`),
+Under the reviewed arrangement (declared in each repository's `RONIN_REPO`),
 Ronin's product repositories use:
 
 ```text
@@ -113,38 +113,19 @@ first full repository BYOIN, with a receipt for the exact SHA; `dev` restarts. T
 full BYOIN runs at `dev → master`; neither runs at a commit or hand-in
 (`docs/test-protocols.md`).
 
-**`+cutcode`** builds from an agreed build-out, deleting each item from the doc as it
-lands, working in the assignment's desks. At each DONE leg it *offers* a hand-in — the
-session decides when its work is coherent for the team, and a tool never decides that for
-it. It opens no pull request. A launch whose brief lists no desk (manual, plain terminal,
-direct repository, non-code job) has none: it commits to the repository's declared line as
-that repository's own instructions say, and invents no desk state.
+A mandate of reach `execute` builds from the agreed build-out, deleting each item from
+the doc as it lands. Where the work lands follows the Workspace Folder's arrangement: in a
+worktree root (`ronin_sops/worktree-root.md`) the session works at its desk and *offers* a
+hand-in at each DONE leg — the session decides when its work is coherent for the team,
+and a tool never decides that for it; in a checkout (`ronin_sops/checkout.md`) it commits
+to the repository's declared line and invents no desk state. Neither opens a pull request.
 
 #### Visual staging: one disposable Team preview
 
-Visual work may take a provisional lane before ordinary hand-in. An Agent keeps its private
-branch as the source, commits one coherent candidate, and sends the lead its Agent,
-repository, exact commit, intended surfaces, and which earlier candidate it supersedes.
-“Provisional visual hand-in” names that communication today; it is not a first-class Tejun
-verb and creates no Worktrees hand-in receipt.
-
-The Team lead owns one dedicated disposable staging branch/worktree and one preview process
-on a separate port. No staging Agent is required. The lead serially merges exact provisional
-commits, then reports the aggregate commit and URL. Agents never concurrently edit that
-worktree. The server runs directly from it, and after refresh or restart `/api/version`
-identifies the aggregate commit actually on display.
-
-Rejecting or superseding a candidate rebuilds or reverts only the disposable composition;
-the Agent's private commit remains recoverable. Avoid a cherry-pick maze, per-candidate
-servers, a file-copy carousel, repeated BYOIN/full verification, or automatic enforcement.
-Use focused checks while composing, then one candidate-wide BYOIN/full verdict at the final
-handoff or promotion boundary.
-
-Visual approval changes no Git line. The Agent still offers finished work with ordinary
-`tejun-desk hand-in`; lead review and promotion admit approved coherent work to `dev`.
-Provisional staging, the Team review line, and global `dev` are three distinct states. As an
-example rather than a default, jobber has used `team/jobber/visual-stage` on port `3776`
-while the live service remained separate.
+Visual work may take a provisional lane before ordinary hand-in: the Agent offers exact
+commits as candidates, the lead composes and serves one disposable preview, and approval
+changes no Git line. The procedure is `ronin_sops/visual_staging.md`; the `visual_staging`
+behaviour gives it to an Agent, whose first act is to tell the Team and the lead to read it.
 
 Accepted state reaches a desk when its Agent chooses `tejun-desk sync`, which merges
 current local `dev`. Status reports the distance; 20 commits behind is a notice, not a
@@ -157,14 +138,14 @@ agent. A Ronin repository under the direct arrangement instead publishes to its 
 
 ### 5. Land the state, then retire the session
 
-**`+land`** finishes the work of this session and then ends it. Finished work leaves no
-essential knowledge in a pane or in `wip/`:
+Finishing the work of a session, before it ends, leaves no essential knowledge in a pane
+or in `wip/`:
 
 - delete the work's build-out and handoff documents, and take them off the tegami list;
 - write or update a state-as-is page in `docs/`, or the README beside the thing, saying
-  what exists and how it works now (`land-work`);
-- add the single manifest pointer when the project uses a manifest — `land-manifest` is
-  one line, an index entry and not a history;
+  what exists and how it works now;
+- add the single manifest pointer when the project uses a manifest — one line, an index
+  entry and not a history;
 - close every finished desk explicitly after `tejun-desk hand-in --assignment`; hand-in
   does not close one, and the live session stays ready at the project root for later work;
   under direct publishing, use ordinary Git instead;

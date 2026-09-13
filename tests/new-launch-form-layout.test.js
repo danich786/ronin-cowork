@@ -27,7 +27,7 @@ test('New Agent uses one ruled ask() spec after its three session types', async 
   assert.match(form, /group: t\('mandate', 'Mandate'\)/);
   assert.doesNotMatch(form, /key: '(?:reach|recruit|output)'[^\n]+shape: 'square'/);
   assert.match(form, /group: t\('squad', 'Team'\)/);
-  assert.match(form, /switch: \[t\('yes', 'Yes'\), t\('no', 'No'\)\]/);
+  assert.doesNotMatch(form, /teamLead|team_lead|leadership/);
   assert.doesNotMatch(form, /switch: \[[^\]]+\], word:/);
   assert.match(form, /group: t\('where\.label', 'Where it works'\)/);
   assert.match(form, /many: true, after: 'root'/);
@@ -65,7 +65,8 @@ test('Where it works keeps birthplace separate from optional additional workspac
   const form = await source('new-agent.js');
   assert.match(form, /request\('\/api\/project-roots\/detail'\)/);
   assert.match(form, /rootRows\.data\?\.roots/);
-  assert.match(form, /repo_profile\?\.worktrees === 'enabled'/);
+  assert.doesNotMatch(form, /worktrees/);
+  assert.match(form, /v: row\.name, l: row\.title \|\| row\.name/, 'root choices submit the stable ID and display the optional title');
   assert.match(form, /label: t\('where\.born_in', 'Born in'\), options: rootRows/);
   assert.match(form, /label: t\('where\.additional', 'Additional workspaces'\), many: true, after: 'root', options: \(value\) => rootRows\(\)\.filter\(\(row\) => row\.v !== value\.root\)/);
   assert.match(form, /draft\.repos = \[\]/);
@@ -74,9 +75,9 @@ test('Where it works keeps birthplace separate from optional additional workspac
 });
 
 test('the old New Agent selector implementation and CSS are deleted', async () => {
-  const [parts, where, css] = await Promise.all([source('form-steps.js'), source('where-it-works.js'), readFile(new URL('../public/css/launch-forms.css', import.meta.url), 'utf8')]);
+  const [parts, css] = await Promise.all([source('form-steps.js'), readFile(new URL('../public/css/launch-forms.css', import.meta.url), 'utf8')]);
   assert.doesNotMatch(parts, /providerModelStones/);
-  assert.doesNotMatch(where, /o\.stones|na-workspace-stone|na-choice-stone/);
+  await assert.rejects(source('where-it-works.js'), 'the details popover is gone: Where it works is two ERABI questions everywhere');
   assert.doesNotMatch(css, /na-choice-stone|na-stone|na-mandate-grid|na-model-picker|na-workspace-stone/);
   assert.match(css, /\.na-surface :is\(\.wk-field, \.ask\)\[hidden\] \{ display: none; \}/);
 });
@@ -90,7 +91,7 @@ test('New Team folds Kind and template choice into one optional first section', 
   assert.match(form, /includeOwn: false/);
   assert.match(form, /Name & instructions/);
   assert.match(agents, /＋ Add Agent/);
-  assert.match(agents, /key: 'lead'.*Team lead.*switch:/);
+  assert.doesNotMatch(agents, /Team lead|team_lead|\.lead/);
   assert.doesNotMatch(agents, /Add Lead Agent|Add Team Agent/);
 });
 
@@ -123,7 +124,6 @@ test('Add Agent confirms a draft into a compact row with the one selector utilit
   assert.match(agents, /editor = null; changed\(\); paint\(\)/);
   assert.match(agents, /agent_add_confirm', 'Add'/);
   assert.match(agents, /ntf-agent-row/);
-  assert.match(agents, /for \(const other of rows\(\)\) other\.lead = false/);
   assert.match(agents, /const questions = ask\(\[/);
   assert.match(agents, /group: t\('new_agent\.model_package', 'Model'\)/);
   assert.match(agents, /group: t\('mandate', 'Mandate'\)/);
@@ -133,7 +133,7 @@ test('Add Agent confirms a draft into a compact row with the one selector utilit
   assert.match(agents, /many: true, options: mandateRows\(OUTPUT\)/);
   assert.doesNotMatch(agents, /shape: 'square'|ruledRows|glyph:/);
   assert.match(agents, /many: true/);
-  assert.match(agents, /switch: \[t\('yes', 'Yes'\), t\('no', 'No'\)\]/);
+  assert.doesNotMatch(agents, /switch:/);
   assert.doesNotMatch(agents, /switch:[^\n]+word:/);
   assert.match(agents, /density: 'tight'/);
   assert.match(agents, /tierWord\(item\.tier\)/);
@@ -145,7 +145,7 @@ test('Add Agent confirms a draft into a compact row with the one selector utilit
   assert.match(agents, /provider: row\.provider/);
   assert.match(agents, /model: row\.model/);
   assert.match(agents, /instructions: row\.assignment\.trim\(\)/);
-  assert.match(agents, /team_lead: !!row\.lead/);
+  assert.doesNotMatch(agents, /team_lead|routines_/);
 });
 
 test('New Team cast text is labelled and all cast selections belong to ask()', async () => {
@@ -175,8 +175,11 @@ test('New Team routes each selector region through ask() and leaves Templates br
   assert.match(form, /after: 'provider'/);
   assert.match(form, /after: 'root'/);
   assert.match(form, /row: branchField/);
-  assert.match(form, /switch: \[t\('on', 'On'\), t\('off', 'Off'\)\]/);
+  assert.match(form, /group: t\('features', 'Features'\)/);
+  assert.match(form, /group: t\('behaviours', 'Behaviours'\)/);
+  assert.match(form, /availableFeatures\(\)/);
   assert.match(form, /options: LAUNCH_MODES\(\)\.map/);
+  assert.match(form, /trayHost: kitHost/, 'launch mode opens below the full kit row without moving Features or Behaviours');
   assert.match(form, /many: true, options: shelfRows/);
   assert.equal((form.match(/density: 'tight'/g) || []).length, 2, 'both defaults regions use launch density');
   assert.match(form, /tierWord\(row\.tier\)/);
@@ -184,6 +187,14 @@ test('New Team routes each selector region through ask() and leaves Templates br
   assert.doesNotMatch(form, /forms\.provider_off|forms\.provider_turned_off|machine\?\.state|modelWord\([^)]*\)\.split/);
   assert.match(form, /templateTray\(offered\(\)/);
   assert.doesNotMatch(form, /kindTiles|providerModelPair|mandateSelect|dialRowMulti|wayTiles|bookShelves|createWhereItWorks|fs-routine/);
+  assert.doesNotMatch(form, /draft\.dial|value\('dial'\)/, 'New Team stores the fixed Control default without presenting or seeding a dial');
+});
+
+test('Team Configuration hides legacy Control and hosts Runtime trays below its full row', async () => {
+  const form = await source('team-configuration.js');
+  assert.doesNotMatch(form, /key: 'dial'|ruledRows\('dial'|team_config\.dial/);
+  assert.match(form, /trayHost: defaultsRow/);
+  assert.match(form, /dial: 'write'/);
 });
 
 test('New Team checks names only for a cast and opens partial Teams with exact recovery evidence', async () => {

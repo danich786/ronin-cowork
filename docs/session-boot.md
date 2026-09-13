@@ -6,27 +6,27 @@ starts. It is read once, when a session is born.
 The birth compiler selects the applicable shelf files, removes duplicate sources, and
 writes one `README.md` into the newborn's per-session directory. The brief points to that
 one document, and the same README appears automatically in the Agent's tracked Docs. The
-page opens with its own contents list. Ronin's teaching — `all/`, Routine reading, the
-desk contract, the generated macro roster — is inlined; the owner's project-root documents,
+page opens with its own contents list. Ronin's teaching — `all/`, each system installation's page, the
+generated macro roster — is inlined; the owner's project-root documents,
 selected behaviour books and explicit seeds are listed by title and path under **On your
 shelf**, because pasting a project's whole catalog is what made the packet unreadable.
 
 | put it in | and it reaches |
 |---|---|
 | `all/` | every session, always |
-| `<service>_connected/` (e.g. `gbrain_connected/`) | only when an enabled Routine declares that level and its connection is on |
+| `<service>_connected/` (e.g. `gbrain_connected/`) | only when a chosen feature declares that level and its connection is on |
 | `root/<project_root>/` | only sessions working in that directory |
-| `routine/<routine>/FILE.md` | only when an effective Routine's manifest explicitly names that file — `reading:` when the Routine is on, `reading_off:` when it is off (the page that says what the owner is working without, and where the switch is) |
+| `routine/<name>/FILE.md` | only when an installation's or a feature's definition names that file — `reading:` when it is on, `reading_off:` when it is off (the page that says what the owner is working without, and where the switch is) |
 
-The levels are **additive, not a hierarchy**. Root, connection and effective Routines are
+The levels are **additive, not a hierarchy**. Root, connection, installations and features are
 independent launch facts; their files compile into one birth README
 and nothing overrides another level. Work-specific reading uses the separate
-`behaviours` choice: each selected `ways:<book>` joins that same birth reading once.
+`behaviours` choice: each behaviour that is on joins that same birth reading once.
 There is no mutable role level and no live re-delivery observer.
 
 The connected level makes the launch decision govern both halves of a connection: off
 means neither tools nor connection reading. A connected directory is not broadcast merely
-because it exists; an enabled Routine manifest must select it.
+because it exists; a chosen feature's definition must select it.
 
 ## The two halves
 
@@ -60,7 +60,7 @@ goes stale.
 ## Resolution
 
 The shelf resolves live files rather than stored absolute paths. Universal and
-root levels select their live directory contents; Routine manifests select exact shelf
+root levels select their live directory contents; installation and feature definitions select exact shelf
 coordinates. A removed file simply stops appearing. `SESSION_MACROS.md` is rebuilt from
 the live catalog at that same instant.
 
@@ -101,7 +101,7 @@ per shell read, Claude Code 30,000 chars per Bash call and 25,000 tokens per Rea
 open a file in a first window of ~250 lines — which is why the contracts come first.
 
 Three universal shelf files and two generated fragments, compiled in reading order —
-Routine contracts first, the maps, the macro roster, the glossary last — and held to the
+the contracts first, the maps, the macro roster, the glossary last — and held to the
 one-read budget (`PACKET_BUDGET` in `src/birth-readme.ts`) by `tests/session-boot.test.ts`
 on the real shelf:
 
@@ -119,7 +119,9 @@ on the real shelf:
   tile button shows and what the new session reads. The generated copy is disposable data
   as an internal compiler fragment; the template is not handed over directly.
 
-Abilities belong to the Routine that equips them: Base, Worktrees, Services or Host. Test
+Abilities belong to the Cowork Agent itself (`all/BASE_ABILITIES.md`), to a system
+installation (Ronin Services) or to a feature (Ronin Host, gbrain); see
+[`docs/installations.md`](installations.md). Test
 protocols are repository-contributor instructions and never enter user birth reading.
 The compiled result lives as `README.md` beside that session's letter and birth receipt.
 

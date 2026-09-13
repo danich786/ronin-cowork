@@ -76,12 +76,6 @@ export function buildLadder(letter, deskEntry = null) {
   const objective = document.createElement('p');
   objective.textContent = letter.objective || t('ladder.task_unstated', 'No task stated in this work record.');
   task.appendChild(objective);
-  if (letter.session_role) {
-    const action = document.createElement('p');
-    action.className = 'sl-action';
-    action.append(t('ladder.current_action', 'Current action'), ' · ', letter.session_role);
-    task.appendChild(action);
-  }
   if (letter.mandate) {
     const mandate = document.createElement('p');
     mandate.className = 'sl-action';

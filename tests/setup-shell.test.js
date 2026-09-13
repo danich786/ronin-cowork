@@ -62,7 +62,8 @@ test('launch actions reuse the nin mark, never the Team Roster torii, and open t
   // An Agent added from inside a Team workbench takes the workspace its form is on, in
   // this tab (Glen, 2026-09-08); the launch mark is the same.
   assert.match(add, /launch: true/);
-  assert.match(add, /if \(!deskNote && !leadNote\) connect\?\.\(born\);/);
+  assert.match(add, /if \(!deskNote\) connect\?\.\(born\);/);
+  assert.doesNotMatch(add, /leadNote|team_lead|leadership/);
   assert.doesNotMatch(add, /openWorkspaceTab|reserveWorkspaceTab/);
 });
 
@@ -99,6 +100,8 @@ test('Cowork Team and Team Agent cards toggle between names-only and the full re
     readFile(new URL('../public/css/team-workspace.css', import.meta.url), 'utf8'),
   ]);
   assert.match(view, /\[campaign \? 'teamCardDensity' : 'agentCardDensity'\]: thinSelectorCards \? 'thin' : 'thick'/);
+  assert.match(view, /let thinSelectorCards = true;/);
+  assert.match(view, /context\.viewState\(viewKey\)\?\.\[campaign \? 'teamCardDensity' : 'agentCardDensity'\] !== 'thick'/);
   assert.match(view, /thinSelectorCards \? \{\} : \{ summary: reading\.step, metadata: reading\.lines, mark:/);
   assert.match(view, /thinSelectorCards \? \{\} : \{ summary: item\.objective \|\| '' \}/);
   assert.match(view, /dataset\.lines = thinSelectorCards \? 'two' : 'one'/);

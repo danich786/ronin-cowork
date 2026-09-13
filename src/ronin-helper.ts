@@ -16,7 +16,7 @@ export async function ensureRoninHelpersTeam(): Promise<TeamRoster> {
       kind: 'open',
       objective: 'Sessions that help operate Ronin itself.',
       wipeboard: 'ronin_helpers',
-      routines: {},
+      features: [],
     });
   } catch (error) {
     const winner = await readTeamRoster(RONIN_HELPERS_TEAM, '');

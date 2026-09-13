@@ -1,0 +1,15 @@
+# Ronin Services
+- **label:** Ronin Services
+- **blurb:** The system-wide Services installation: template library, live status from Koshi, voice and Hotwords.
+- **effect:** system
+- **provides:** —
+- **reading:** routine/ronin_services/SERVICES_ABILITIES.md
+- **reading_off:** routine/ronin_services/OFF.md
+- **sops:** —
+- **macros:** —
+- **actions:** —
+- **tools:** mika
+- **mcp:** —
+- **parts:** counting, koe, koshi, koshi_weights, michi, rireki
+- **requires:** —
+- **order:** 30

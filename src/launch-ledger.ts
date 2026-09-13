@@ -24,7 +24,6 @@ export async function appendLaunchLedger(form: SpawnForm, resolved: Resolved, ok
     await mkdir(path.dirname(LEDGER), { recursive: true });
     await appendFile(LEDGER, JSON.stringify({
       ts: new Date().toISOString(),
-      session_role: form.session_role ?? '',
       team: form.team ?? '',
       intent: form.prompt,
       picks: { project_root: form.project_root, tags: form.tags, seed: form.seed, reference: form.reference },

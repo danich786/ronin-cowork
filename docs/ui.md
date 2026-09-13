@@ -532,6 +532,7 @@ host.append(form.el);   // form.value() · form.set(key, v) or set({…}) · for
 | Spec key | Meaning |
 |---|---|
 | `group` · `fields` | a named group and the fields it keeps together |
+| — | a stone never repeats its group head: the head carries the question (a sentence), the stone's label a noun ("Register as", "Feature"); a field whose label equals its head is drawn with the label "Answer" |
 | `key` · `label` | the answer's name in the value; the label over the stone, through `t()` |
 | `options` | rows `{ v, l, sub?, off?, glyph?, word? }` or a function of the current value — `sub` reads in the caption, `off` is why the stone is greyed (disabled, never hidden), `glyph` sits on a square, `word` is the rectangle's short line (tier, worktree) |
 | `blank` | the empty answer's word, drawn as a stone; omit it and there is no blank |
@@ -555,6 +556,12 @@ question (New Agent's Name beside Team and Team lead) makes two `ask()` instance
 package, and the rest — and lays them out in its own flex row; both call the same `onChange`.
 Team and Team lead are one group in one instance, so they move below Name as a pair when the
 row narrows. The utility has no slot for foreign DOM and gains none.
+
+**The commons' Configuration tab** is the first commons consumer: a team's record asked at
+loose density, one full-width column — the head line (Team ID, Readable title), then the
+groups. Its text entries are the kit's, beside the stones, not inside them. A group whose
+list is empty is never silent: with no installation on, Features still stands and says where
+the switch is. Contract and file list: `docs/team-workspace.md` § Durable Team record.
 
 **What is not an `ask()`.** The stone work surface (`stone-work-surface.js`) is a page for
 browsing a collection whose item is the content — Presets, Workspace Folders, Model

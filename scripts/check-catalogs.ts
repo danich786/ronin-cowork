@@ -3,18 +3,16 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { STOCK_DIR, splitSections, readEntries } from '../src/resources.js';
 import {
+  findDefinition,
   listAgentTemplates,
-  listRoleFamilies,
-  listRoutines,
-  listSessionRoles,
+  listInstallations,
+  listFeatures,
   listTeamTemplates,
   type DefinitionKind,
   type TemplateBox,
 } from '../src/resource-adapters.js';
 import { listDeskProfiles } from '../src/desk-profiles.js';
 import { listLexicons } from '../src/lexicon-catalog.js';
-import { resolveLaunchProfile, type LaunchProfile } from '../src/launch-profile.js';
-import { findDefinition } from '../src/resource-adapters.js';
 import { listMacros } from '../src/macros.js';
 import { catalogUpdated, parseProviderCatalog, STOCK_CATALOG_MD, TIERS } from '../src/model-providers.js';
 import { AGENTS } from '../src/agents.js';
@@ -87,7 +85,13 @@ async function surfacingDefinitions(
   kind: DefinitionKind,
   served: () => Promise<{ name: string }[]>,
 ): Promise<void> {
-  const want = (await readdir(path.join(STOCK_DIR, kind)))
+  let files: string[] = [];
+  try {
+    files = await readdir(path.join(STOCK_DIR, kind));
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
+  }
+  const want = files
     .filter((f) => f.endsWith('.md') && f !== 'README.md')
     .map((f) => f.replace(/\.md$/, ''));
   const got = new Set((await served()).map((e) => e.name));
@@ -101,105 +105,9 @@ async function surfacingDefinitions(
   }
 }
 
-async function definitionsResolve(): Promise<void> {
-  const families = await listRoleFamilies();
-  const tasks = await listSessionRoles();
-  for (const f of families) {
-    for (const tk of f.session_roles) {
-      if (!(await findDefinition('session_roles', tk))) {
-        fail(`role_families/${f.name}.md: its session_roles names "${tk}", which is not a session_role on this box`);
-      }
-    }
-    if (f.default_lead_role && !f.session_roles.includes(f.default_lead_role)) {
-      fail(
-        `role_families/${f.name}.md: its default_lead_role "${f.default_lead_role}" is not in its own family — the pin has nothing to pin to`,
-      );
-    }
-  }
-  for (const tk of tasks) {
-    const taskDef = await findDefinition('session_roles', tk.name);
-    let profile: LaunchProfile;
-    try {
-      profile = resolveLaunchProfile(taskDef);
-    } catch (e) {
-      fail(`launch profile ${tk.name}: ${String((e as Error).message)}`);
-      continue;
-    }
-    if (profile.agent && !profile.opening) {
-      fail(`launch profile ${tk.name}: launches an agent with no \`opening:\``);
-    }
-  }
-  try {
-    resolveLaunchProfile(undefined);
-  } catch (e) {
-    fail(`launch profile (blank): ${String((e as Error).message)}`);
-  }
-}
-
-async function routinesResolve(): Promise<void> {
-  const routines = await listRoutines();
-  const routineNames = new Set(routines.map((routine) => routine.name));
-  const [macros, actionsRaw, toolsRaw] = await Promise.all([
-    listMacros(),
-    readFile(path.join(STOCK_DIR, 'ACTIONS.md'), 'utf8'),
-    readFile(path.join(STOCK_DIR, 'TOOLS.md'), 'utf8'),
-  ]);
-  const known = {
-    macros: new Set(macros.map((x) => x.name)),
-    actions: new Set(splitSections(actionsRaw, 'stock').map((x) => x.name)),
-    tools: new Set([...toolsRaw.matchAll(/^\|\s*`([^`]+)`\s*\|/gm)].map((m) => m[1])),
-  };
-  const owners = new Map<string, string>();
-  for (const routine of routines.filter((x) => x.origin === 'stock')) {
-    if (!routine.blurb.trim()) fail(`routines/${routine.name}.md: missing blurb`);
-    const def = await findDefinition('routines', routine.name);
-    const rawBundles = (def?.get('bundles') ?? '').split(',').map((s) => s.trim()).filter((s) => s && s !== '—');
-    for (const rung of rawBundles) {
-      if (!routine.bundles.includes(rung)) fail(`routines/${routine.name}.md: bundles names unknown rung "${rung}"`);
-    }
-    for (const dependency of routine.requires) {
-      if (!routineNames.has(dependency)) fail(`routines/${routine.name}.md: requires missing "${dependency}"`);
-      if (dependency === routine.name) fail(`routines/${routine.name}.md: requires itself`);
-    }
-    for (const reading of [...routine.reading, ...routine.reading_off].filter((name) => name.startsWith('routine/'))) {
-      try { await stat(path.join(REPO, 'ronin_session_boot', reading)); }
-      catch { fail(`routines/${routine.name}.md: reading names missing "${reading}"`); }
-    }
-    for (const field of ['macros', 'actions', 'tools'] as const) {
-      for (const name of routine[field]) {
-        if (!known[field].has(name)) fail(`routines/${routine.name}.md: ${field} names missing "${name}"`);
-        const key = `${field}:${name}`;
-        const prior = owners.get(key);
-        if (prior) fail(`routines/${routine.name}.md: ${key} already belongs to ${prior}`);
-        else owners.set(key, routine.name);
-      }
-    }
-    for (const sop of routine.sops) {
-      try { await stat(path.join(REPO, 'ronin_sops', `${sop}.md`)); }
-      catch { fail(`routines/${routine.name}.md: sops names missing "${sop}"`); }
-      const key = `sops:${sop}`;
-      const prior = owners.get(key);
-      if (prior) fail(`routines/${routine.name}.md: ${key} already belongs to ${prior}`);
-      else owners.set(key, routine.name);
-    }
-  }
-  const visit = (name: string, path: string[]) => {
-    const at = path.indexOf(name);
-    if (at !== -1) {
-      fail(`routines: requires cycle ${[...path.slice(at), name].join(' -> ')}`);
-      return;
-    }
-    const routine = routines.find((item) => item.name === name);
-    if (!routine) return;
-    for (const dependency of routine.requires) visit(dependency, [...path, name]);
-  };
-  for (const routine of routines) visit(routine.name, []);
-}
-
 async function templateBoxResolves(
   at: string,
   box: TemplateBox,
-  routineNames: Set<string>,
 ): Promise<void> {
   if (!box.blurb.trim()) fail(`${at}: missing blurb`);
   if (!box.art.trim()) fail(`${at}: missing art`);
@@ -208,17 +116,13 @@ async function templateBoxResolves(
     const resolved = await resolveBehaviourBooks([book]);
     if (!resolved.delivered.length) fail(`${at}: behaviour does not resolve "${book}"`);
   }
-  for (const name of [...box.routines_on, ...box.routines_off]) {
-    if (!routineNames.has(name)) fail(`${at}: routines switch names missing routine "${name}"`);
-  }
 }
 
 async function templatesResolve(): Promise<void> {
-  const routineNames = new Set((await listRoutines()).map((routine) => routine.name));
   const DEAD = ['lead_brief', 'lead_mandate'];
   for (const template of (await listAgentTemplates()).filter((x) => x.origin === 'stock')) {
     const at = `templates/agents/${template.name}.md`;
-    await templateBoxResolves(at, template, routineNames);
+    await templateBoxResolves(at, template);
     const def = await findDefinition('templates/agents', template.name);
     if (def?.has('mandate') && !template.mandate) fail(`${at}: mandate is not \`reach · recruit · output\` in ruled values`);
     if (!template.brief.trim()) fail(`${at}: an agent template seeds a brief`);
@@ -228,7 +132,7 @@ async function templatesResolve(): Promise<void> {
   }
   for (const template of (await listTeamTemplates()).filter((x) => x.origin === 'stock')) {
     const at = `templates/teams/${template.name}.md`;
-    await templateBoxResolves(at, template, routineNames);
+    await templateBoxResolves(at, template);
     const def = await findDefinition('templates/teams', template.name);
     if (!template.objective.trim()) fail(`${at}: a team template states its objective`);
     for (const key of ['brief', 'team_mode', ...DEAD]) {
@@ -249,15 +153,12 @@ async function templatesResolve(): Promise<void> {
 
 const FILES = ['MACROS.md', 'ACTIONS.md', 'TOOLS.md', 'PROJECT_ROOTS.md', 'MODEL_PROVIDERS.md'];
 
-await surfacingDefinitions('role_families', listRoleFamilies);
-await surfacingDefinitions('session_roles', listSessionRoles);
 await surfacingDefinitions('desk_profiles', listDeskProfiles);
 await surfacingDefinitions('lexicons', listLexicons);
-await surfacingDefinitions('routines', listRoutines);
+await surfacingDefinitions('installations', listInstallations);
+await surfacingDefinitions('features', listFeatures);
 await surfacingDefinitions('templates/agents', listAgentTemplates);
 await surfacingDefinitions('templates/teams', listTeamTemplates);
-await definitionsResolve();
-await routinesResolve();
 await templatesResolve();
 await surfacing('MACROS.md', listMacros);
 await surfacing('ACTIONS.md', () => readEntries('ACTIONS.md'));

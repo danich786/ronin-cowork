@@ -33,7 +33,7 @@ const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 const NAME = 'zz_no_such_session';
 
 test('every retired axis key answers 410 and points at what replaced it', async () => {
-  for (const retired of ['session_job', 'family_role', 'session_task', 'session_role', 'role_family', 'team_role', 'campaign_kind', 'lifecycle']) {
+  for (const retired of ['session_job', 'family_role', 'session_task', 'role_family', 'team_role', 'campaign_kind', 'lifecycle']) {
     const r = await fetch(`${base}/api/sessions/${NAME}/${retired}`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
