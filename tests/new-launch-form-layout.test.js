@@ -24,7 +24,10 @@ test('New Agent uses one ruled ask() spec after its three session types', async 
   assert.doesNotMatch(form, /switch: \[[^\]]+\], word:/);
   assert.match(form, /group: t\('where\.label', 'Where it works'\)/);
   assert.match(form, /many: true, after: 'root'/);
-  assert.match(form, /questions\.show\(draft\.type === 'terminal' \? \['root', 'repos'\] : draft\.type === 'bare_metal_agent' \? \['provider', 'model', 'root', 'repos'\] : null\)/);
+  assert.match(form, /questions\.show\(draft\.type === 'terminal' \? \[\] : draft\.type === 'bare_metal_agent' \? \['provider', 'model', 'root', 'repos'\] : null\)/);
+  assert.match(form, /teamQuestions\.show\(isCowork\(\) \? null : \['team'\]\)/);
+  assert.match(form, /questions\.el\.hidden = draft\.type === 'terminal'/);
+  assert.match(form, /\? \{ session_type: 'terminal', name, team \}/);
   assert.match(form, /stepPayload\.setNumber\(order\.length \+ 1\)/);
   assert.match(form, /key: 'payload'.*Payload/);
   assert.match(form, /identityRow\.append\(nameField, teamQuestions\.el\)/);

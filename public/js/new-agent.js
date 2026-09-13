@@ -490,7 +490,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     // ONLY THE § 7.4 BODY, by type — the route refuses the rest by name, and the desk is
     // never sent (the routine selection is the decision; the escape hatch stays unadvertised).
     const body = draft.type === 'terminal'
-      ? { session_type: 'terminal', name, team, project_root: draft.root }
+      ? { session_type: 'terminal', name, team }
       : draft.type === 'bare_metal_agent'
         ? { session_type: 'bare_metal_agent', name, team, project_root: draft.root, instructions: draft.instructions.trim(), provider: draft.provider, model: draft.model }
         : {
@@ -599,9 +599,10 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     stepPayload.setNumber(order.length + 1);
     stepPayload.el.hidden = draft.type === 'terminal';
     stepTop.el.querySelector('h3').textContent = hasAgent() ? t('new_agent.agent_body', 'Agent') : t('new_agent.name_required_step', 'Name · required');
-    questions.show(draft.type === 'terminal' ? ['root', 'repos'] : draft.type === 'bare_metal_agent' ? ['provider', 'model', 'root', 'repos'] : null);
-    teamQuestions.el.hidden = !isCowork();
-    questions.el.hidden = false;
+    questions.show(draft.type === 'terminal' ? [] : draft.type === 'bare_metal_agent' ? ['provider', 'model', 'root', 'repos'] : null);
+    teamQuestions.show(isCowork() ? null : ['team']);
+    teamQuestions.el.hidden = false;
+    questions.el.hidden = draft.type === 'terminal';
     instructionsField.hidden = !hasAgent();
     paintTypes();
     paintLeanNote();
