@@ -44,7 +44,7 @@ Resolution order, the same in both readers:
 3. **the default path** — `<data root>/run/ronin.sock`, for a tool with no session at all:
    a cron job, a shell over SSH, the owner at a prompt.
 
-The two readers are `src/cli-http.ts`, which every TypeScript command (`tejun-desk`,
+The two readers are `src/cli-http.ts`, which every TypeScript command (`worktree-desk`,
 `edges wipeboard`, `edges send`, `edges schedule`, promotion, recovery, bundle, auth) goes
 through, and `ronin_bin/ronin-url` with its sourced sibling `ronin_bin/ronin-http.sh`, which
 the zero-dependency shell tools (`session_fork`, `session_end`, `session_check`,

@@ -16,7 +16,7 @@
    desks together; it does not ask whether the Agent is sure.
 3. **An acknowledgement, every time.** What happened, who holds what, and the verb that
    gets the rest: `ACCEPTED … now <sha>`, `KEPT … <why>`, `custody: <holder> — not yours:
-   … tejun-desk handoff …`. Failure is said in the tool's own words, never hidden behind
+   … worktree-desk handoff …`. Failure is said in the tool's own words, never hidden behind
    a green line. When the box is the authority, it is *measured, never asked*.
 4. **The Agent chooses.** Gas and brake are both under its foot. It may reopen a desk
    and forget to ask for custody, park forever, or end itself on a whim. Those are its
@@ -32,7 +32,7 @@ name, an occupied port — and then it says why and what to do next. Everything 
 disclosure. *Honey, not sticks.*
 
 The house keeps one brake of its own: nothing is discarded silently. The one destructive
-verb, `tejun-desk discard`, wants the exact confirmation it prints; everything else keeps
+verb, `worktree-desk discard`, wants the exact confirmation it prints; everything else keeps
 the Agent's work and returns the next action.
 
 ## Where this already lives

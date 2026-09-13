@@ -14,7 +14,7 @@ test('a green forward drop tells the holder the defined move without moving data
   assert.match(move.text, /^from @kanban \(the Team Kanban, moved by the user at 2026-09-13T13:02Z\):/);
   assert.match(move.text, /MOVE virtual-kanban\/7 "Kanban tab" from Building \(green, exit: user\) to Landing/);
   assert.match(move.text, /meaning: show approved; hand in\./);
-  assert.match(move.text, /next: tejun-desk hand-in, then work-record project write 7 --stage LANDING/);
+  assert.match(move.text, /next: worktree-desk hand-in, then work-record project write 7 --stage LANDING/);
 });
 
 test('lead moves resolve to the live lead session and non-green drops remain requests', () => {

@@ -77,7 +77,7 @@ const userShelf = () => storeDir('session_boot');
  * THE GLOSSARY, RENDERED FOR THE OWNER'S DESK (KOKUGO, owner's ruling 2026-08-27).
  *
  * KOTOBA_GLOSSARY.md tells a session which word to SAY to a person for a house term the
- * tools and docs use (TEGAMI, TEJUN, the wipeboard …). Those words are keys in the lexicon
+ * tools and docs use (TEGAMI, RIREKI, the wipeboard …). Those words are keys in the lexicon
  * under `glossary.*`, and no surface reads them — their one consumer is this render. Each
  * keyed cell is marked in the template as `**word**<!--g:glossary.key-->`; the active desk
  * profile's resolved lexicon replaces the word, and the marker is dropped so the session

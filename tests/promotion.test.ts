@@ -128,7 +128,7 @@ test('a complete promotion tells each contributing session once and posts the mo
   assert.equal(told[0]![0], 'comp_fable');
   assert.match(told[0]![1], /your hand-in is on dev/);
   assert.match(told[0]![1], /certified clean: stay parked for more work, or go with session_end/);
-  assert.doesNotMatch(told[0]![1], /tejun-desk close/, 'a birth desk is never closed under a live session');
+  assert.doesNotMatch(told[0]![1], /worktree-desk close/, 'a birth desk is never closed under a live session');
 });
 
 test('HTTP promotion replies with the restarting receipt before post-restart health completes it', async () => {

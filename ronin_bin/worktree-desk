@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# worktree-desk — your managed worktrees: get, update, hand in, close, and inspect status.
+#
+# Usage: worktree-desk status [--session s | --team t | --repo r]   per desk: clean/dirty · ahead · pending · blocked
+#        worktree-desk open <repo[:branch]> [--team t]              get a desk from current local dev
+#        worktree-desk hand-in [<repo[:branch]>] [--assignment]     hand your committed delta to the team line
+#        worktree-desk sync [<repo[:branch]>]                       update the desk from current local dev
+#        worktree-desk close [<repo[:branch]>]                      remove a clean desk whose tip is on its line
+#        worktree-desk repository-init <existing-project-root>      initialize a local repository
+#
+# COMMIT PRESERVES. HAND-IN PUBLISHES (owner, 2026-08-28). A hand-in is mechanical
+# admission to your team's line — merge and conflict detection only, no BYOIN, no `git
+# push`; the line moves atomically or not at all, and a receipt is appended either way.
+# Sibling desks change only when their Agents explicitly run `worktree-desk sync`.
+# Nothing here deletes an unintegrated tip except
+# an exact confirmed discard with a durable receipt.
+#
+# src/desk-cli.ts calls the operator HTTP surface and prints its reply.
+set -u
+case "${1-}" in
+  -h|--help) [ "$#" -eq 1 ] || { echo "worktree-desk: --help takes no other arguments. Run worktree-desk --help." >&2; exit 2; }
+    cat <<'EOF'
+worktree-desk — manage private worktrees and their Team hand-in lifecycle
+
+Usage:
+  worktree-desk open <repo[:branch]> [--source dev|team]
+  worktree-desk assign <repo[:branch]> --session <name> --team <team> [--source dev|team]
+  worktree-desk status [<repo[:branch]>] [--assignment]
+  worktree-desk sync [<repo[:branch]>]
+  worktree-desk hand-in [<repo[:branch]>] [--assignment]
+  worktree-desk close [<repo[:branch]>] [--with-session]
+  worktree-desk receipts [<repo>] [--line | --id <receipt-id>]
+  worktree-desk reply <repo> <receipt-id> <message…>
+  worktree-desk handoff <repo[:branch]> --to <session[,session]>
+  worktree-desk discard <repo[:branch]> --confirm "DISCARD repo:branch"
+  worktree-desk repository-init <existing-project-root>
+
+Common tasks:
+  Start fresh work with --source dev; use --source team when joining ongoing Team work.
+  Check status when surprised, sync accepted dev changes, commit, then hand in.
+
+Open creates a private desk; sync merges local dev; hand-in admits committed work to
+the Team review line. Assign lets the lead choose the same source for another Agent;
+receipts are the publication record; handoff transfers custody without moving work.
+None performs Git push. Close only removes a clean, integrated desk. Discard is the
+only destructive form and requires the exact confirmation shown above. `--with-session`
+validates the named desk, then safely closes every assigned desk before ending the Agent.
+Related: the Ronin Worktrees birth guidance.
+EOF
+    exit 0 ;;
+  repository-init)
+    shift
+    if [ "$#" -ne 1 ] || [ ! -d "$1" ]; then
+      echo "usage: worktree-desk repository-init <existing-project-root>" >&2
+      exit 2
+    fi
+    root=$(cd "$1" && pwd -P)
+    if git -C "$root" rev-parse --git-dir >/dev/null 2>&1; then
+      echo "READY $root — repository already exists"
+      exit 0
+    fi
+    git -c advice.defaultBranchName=false -C "$root" init -q
+    echo "INITIALIZED $root — local repository only; no remote was assumed"
+    exit 0 ;;
+esac
+. "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"
+HERE=$(cd "$(dirname "$SELF")/.." && pwd)
+cd "$HERE" || { echo "NO-REPO: cannot reach the Ronin tree"; exit 1; }
+exec npx tsx src/desk-cli.ts "$@"

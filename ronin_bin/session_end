@@ -28,7 +28,7 @@ contained in their Team lines close automatically, including immediately after a
 ACCEPTED hand-in; global-dev promotion and a separate desk close are not required.
 Dirty files, pending/rejected hand-ins, unique commits, shared custody, or another
 session in the worktree keep every desk and this Agent alive and print exact NEXT
-actions. Nothing is implicitly discarded. Related: tejun-desk --help.
+actions. Nothing is implicitly discarded. Related: worktree-desk --help.
 EOF
 }
 

@@ -9,7 +9,7 @@ whole:
   `read_tegami`, `write_tegami`, and `ronin-url`, the operator address the others source;
 - **the designated Team lead** — `session_create` (supporting-Agent creation is lead work;
   it is on no delivery list until the lead-conditional capability projection lands);
-- **with a managed desk** — `tejun-desk`, `ronin-repo-init`;
+- **with a managed desk** — `worktree-desk`;
 - **with the Ronin Host behaviour** — `ronin-host` and its dynamically available `--help`;
 - **with the GBrain behaviour** — boundary teaching only; no callable GBrain tool yet;
 - **with Ronin Services** — `mika`; `lookup`, `owner_view`, `show`, constrained
@@ -62,6 +62,6 @@ operation listed in `ronin_catalogs/TOOLS.md` and taught by a capability documen
    preference, not an access boundary.
 3. Zero-dependency bash (assume no jq; python3 exists if JSON is unavoidable).
 4. One-line outcomes make the result easy to read; warnings do not stop the action.
-5. Name: `tejun-<verb>`. Keep flags minimal; positional args.
+5. Name the task surface plainly. Keep flags minimal; positional args.
 6. Test against a scratch session (`tmux new-session -d -s ttest`) before
    committing; kill it after.

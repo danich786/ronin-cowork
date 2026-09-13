@@ -27,7 +27,7 @@ the real thing and says what is wrong in minutes, not hours.
    Agent's private commit stays recoverable. No cherry-pick maze, no per-candidate
    servers, no file-copy carousel, no repeated full verification while composing.
 7. **Approval changes no Git line.** The Agent still hands finished work in with
-   `tejun-desk hand-in`; the lead's review and promotion admit it to `dev`. Staging, the
+   `worktree-desk hand-in`; the lead's review and promotion admit it to `dev`. Staging, the
    Team line and `dev` are three distinct states, and staging never promotes.
 8. **Phase end.** The lead stops the preview and records the last served commit beside
    the promotion receipt.
