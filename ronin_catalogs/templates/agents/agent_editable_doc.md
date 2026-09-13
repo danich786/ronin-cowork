@@ -6,4 +6,4 @@
 - **kinds:** coding, work, school
 - **brief:** Brainstorm with me about the selected document, turn the discussion into concrete edits, and keep the document accurate.
 - **mandate:** execute · nobody · code, an artifact
-- **behaviours:** sops:github
+- **behaviours:** —

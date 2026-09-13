@@ -2,11 +2,6 @@ export type WorktreesSetting = 'enabled' | 'disabled';
 
 export type WorktreesApplicabilitySource = 'RONIN_REPO' | 'absent';
 
-export interface WorktreesCapability {
-  worktrees: WorktreesSetting;
-  provenance: string;
-}
-
 export interface WorktreesManagedCandidate {
   worktree: string;
   branch: string;
@@ -27,9 +22,8 @@ export interface WorktreesRepositoryInput {
 }
 
 export type WorktreesResolutionReason =
-  | 'agent_and_repository_enabled'
-  | 'agent_disabled'
-  | 'repository_disabled';
+  | 'worktree_root'
+  | 'checkout';
 
 export interface ResolvedWorktreesRepository {
   repo: string;
@@ -44,35 +38,25 @@ export interface ResolvedWorktreesRepository {
   managed: WorktreesManagedCandidate | null;
   reason: WorktreesResolutionReason;
   provenance: {
-    agent: string;
     repository: WorktreesApplicabilitySource;
   };
 }
 
 export interface WorktreesResolution {
-  packet: WorktreesSetting;
   repositories: ResolvedWorktreesRepository[];
 }
 
 export interface ResolveWorktreesInput {
-  capability: WorktreesCapability;
   repositories: WorktreesRepositoryInput[];
 }
 
 export function resolveWorktrees(input: ResolveWorktreesInput): WorktreesResolution {
-  const { capability } = input;
   return {
-    packet: capability.worktrees,
     repositories: input.repositories.map((repository) => {
-      const managed = capability.worktrees === 'enabled' && repository.worktrees === 'enabled';
+      const managed = repository.worktrees === 'enabled';
       if (managed && !repository.managed) {
-        throw new Error(`Worktrees is enabled for ${repository.repo}, but no managed candidate was supplied.`);
+        throw new Error(`${repository.repo} is a worktree root, but no managed candidate was supplied.`);
       }
-      const reason: WorktreesResolutionReason = managed
-        ? 'agent_and_repository_enabled'
-        : capability.worktrees === 'disabled'
-          ? 'agent_disabled'
-          : 'repository_disabled';
       return {
         repo: repository.repo,
         project_root: repository.project_root,
@@ -81,9 +65,8 @@ export function resolveWorktrees(input: ResolveWorktreesInput): WorktreesResolut
         location: managed ? repository.managed!.worktree : repository.checkout,
         branches: { ...repository.branches },
         managed: managed ? { ...repository.managed! } : null,
-        reason,
+        reason: managed ? 'worktree_root' : 'checkout',
         provenance: {
-          agent: capability.provenance,
           repository: repository.applicability_source,
         },
       };

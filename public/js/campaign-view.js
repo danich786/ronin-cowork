@@ -71,7 +71,6 @@ function registerCampaignSurfaces() {
   add({ type: TYPES.roots, header: 'surface', label: () => t('cowork.tab_roots', 'Workspace folders'), summary: (_tenant, e) => currently.roots(e), create: ({ environment: e }) => createWorkspaceFoldersSurface({
     campaignId: () => e.selected()?.id || '',
     connected: (host) => e.entered() && host.isConnected,
-    worktreesDefault: true,
   }) });
   add({ type: TYPES.defaults, header: 'surface', label: () => t('campaign_view.agent_defaults', 'Agent defaults'), summary: (_tenant, e) => currently.defaults(e), create: ({ environment: e }) => { const surface = createAgentDefaultsSurface(e.selected); return e.progressive({ el: surface.el, show: () => surface.enter() }); } });
   // CONTROL_BUNDLES build-out for the bundle model behind it.

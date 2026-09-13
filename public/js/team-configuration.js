@@ -58,7 +58,7 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
     const routineMap = completeTeamRoutineMap(routines, roster.routines);
     // THE KIT AS SELECTED (dev 3d920e2), kept beside the editable map below: what an
     // Agent born here is equipped with, in one line, in the catalog's own owner-facing
-    // labels (`ronin_worktrees` reads "Ronin Worktrees"). The floor is not a
+    // labels. The floor is not a
     // switch and is not listed; with nothing on above it, the honest answer is the
     // floor alone.
     const kitOn = routines.filter((routine) => routineMap[routine.name]).map((routine) => routine.label || routine.name);
@@ -66,18 +66,6 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
     const routineSet = el('fieldset', 'tw-config-wide tw-routines'); routineSet.append(el('legend', null, t('team_config.routines', 'Routines')), el('p', 'tw-config-note', t('team_config.routines_help', 'This complete on/off map is the Team’s own and is inherited by new Agents. It replaces the Campaign defaults; existing Agents do not change.')));
     const routineInputs = new Map();
     for (const routine of routines) { const row = el('label', 'tw-routine'); const input = el('input'); input.type = 'checkbox'; input.checked = routineMap[routine.name]; routineInputs.set(routine.name, input); const words = el('span'); words.append(el('b', null, routine.label || routine.name), el('small', null, routine.blurb || t('team_config.no_description', 'No description supplied.'))); row.append(input, words); routineSet.append(row); }
-    const worktreesMode = el('div', 'tw-worktrees-mode');
-    const paintWorktreesMode = () => {
-      const on = routineInputs.get('ronin_worktrees')?.checked === true;
-      worktreesMode.replaceChildren(
-        el('b', null, t('team_config.worktrees_mode', 'Agent work mode')),
-        el('strong', null, on ? t('team_config.worktrees_on', 'Own worktree where the Workspace folder allows it') : t('team_config.worktrees_off', 'Use the project checkout and its branches')),
-        el('small', null, t('team_config.worktrees_help', 'Worktrees give each Agent a separate working folder and branch, so their file changes do not collide. They run only when both the Agent and repo have Worktrees on, and use the managed hand-in and Team-lead merge process.')),
-      );
-    };
-    routineInputs.get('ronin_worktrees')?.addEventListener('change', paintWorktreesMode);
-    paintWorktreesMode();
-    routineSet.insertBefore(worktreesMode, routineSet.children[2] || null);
     form.append(routineSet);
 
     const behaviours = field(form, t('team_config.behaviours', 'Behaviours'), 'behaviours', list(behaviour.books).join('\n'), 'textarea', t('team_config.behaviours_help', 'One shelf:name book per line.'));
@@ -105,9 +93,6 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
       { value: 'configured', label: t('launch_mode.configured', 'Model provider configuration') },
       { value: 'live_dangerously', label: t('launch_mode.live', 'Dangerously') },
     ], defaults.launch_mode || 'live_dangerously');
-    // The control reads the Worktrees switch live.
-    const worktreesInput = routineInputs.get('ronin_worktrees');
-    where.setWorktrees(!!worktreesInput?.checked); worktreesInput?.addEventListener('change', () => where.setWorktrees(worktreesInput.checked));
     form.append(el('p', 'tw-config-note tw-config-wide', t('team_config.next_form', 'These defaults land in the next Agent form that opens. Nothing live changes.')));
 
     const actions = el('div', 'tw-config-actions'); const status = el('span', 'tw-config-status');

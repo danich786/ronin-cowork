@@ -5,8 +5,7 @@
 - **order:** 2
 - **kinds:** coding
 - **objective:** Build the project the owner describes, coordinating parallel features without colliding.
-- **behaviours:** sops:teams, sops:github
-- **features:** ronin_worktrees
+- **behaviours:** sops:teams
 
 ## agents
 

@@ -8,4 +8,3 @@
 - **mandate:** execute · nobody · open
 - **behaviours:** sops:remote_machine_admin, sops:remote_machine_health, sops:tmux_server, sops:install
 - **features:** ronin_host
-- **routines_off:** ronin_worktrees

@@ -25,7 +25,6 @@ const routine = (name: string, enabled: boolean, tools: string[]): ResolvedRouti
 test('birth PATH exposes enabled tools by name without inheriting a Ronin PATH', async () => {
   const projected = await projectRoutineTools('pathless', [
     routine('ronin_base', true, ['write_tegami', 'read_tegami', 'tejun-fork', 'ronin-url']),
-    routine('ronin_worktrees', false, ['tejun-desk']),
   ], '/usr/bin:/bin');
   for (const command of ['write_tegami', 'read_tegami', 'tejun-fork', 'ronin-url']) {
     const found = await exec('/bin/sh', ['-c', `command -v ${command}`], { env: { PATH: projected.path } });
@@ -33,6 +32,14 @@ test('birth PATH exposes enabled tools by name without inheriting a Ronin PATH',
   }
   await assert.rejects(() => exec('/bin/sh', ['-c', 'command -v tejun-desk'], { env: { PATH: projected.path } }));
   assert.ok(projected.delivered.includes('shim/tmux'), 'the tmux guard is Routine floor');
+});
+
+test('a worktree-root conditional projects the desk kit without a Routine', async () => {
+  const projected = await projectRoutineTools('worktree-root', [], '/usr/bin:/bin', {
+    extraTools: ['tejun-desk', 'ronin-repo-init'],
+  });
+  assert.ok(projected.delivered.includes('tejun-desk'));
+  assert.ok(projected.delivered.includes('ronin-repo-init'));
 });
 
 test('missing enabled tools are visible and do not refuse projection', async () => {

@@ -25,7 +25,6 @@ import {
 } from '../project-roots.js';
 import { campaignResolver, machineCampaignId } from '../campaign-scope.js';
 import { arrangementProfile, assertArrangementProfileCurrent, readArrangement, setArrangementProfile, validateArrangementProfile } from '../desks/arrangement.js';
-import { readDesksSection } from '../machine-state.js';
 import {
   listSavedLaunches,
   saveLaunch,
@@ -173,7 +172,6 @@ export function registerCatalogs(app: express.Express): void {
           sessions: counts[r.name] ?? 0,
         })),
         untagged,
-        new_project_worktrees: (await readDesksSection()).new_project === 'none' ? 'disabled' : 'enabled',
       });
     } catch (e) {
       res.status(500).json({ error: errMsg(e) });
@@ -190,7 +188,6 @@ export function registerCatalogs(app: express.Express): void {
         ...facts,
         arrangement,
         repo_profile: arrangement ? arrangementProfile(arrangement) : null,
-        new_project_worktrees: (await readDesksSection()).new_project === 'none' ? 'disabled' : 'enabled',
       });
     } catch (e) {
       res.status(500).json({ error: errMsg(e) });
@@ -220,7 +217,7 @@ export function registerCatalogs(app: express.Express): void {
         validateArrangementProfile(req.body?.profile);
         await assertArrangementProfileCurrent(facts.dir, req.body?.before);
       }
-      await upsertProjectRoot(name, fields, { declareArrangement: false });
+      await upsertProjectRoot(name, fields);
       const root = (await listProjectRoots()).find((r) => r.name === name);
       const arrangement = root && facts.repo
         ? await setArrangementProfile(root.dir, req.body?.profile, req.body?.before)

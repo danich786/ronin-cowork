@@ -29,7 +29,7 @@ form's, not a file here: a template that filled nothing in would collapse nothin
 | `blurb` | one line under the name |
 | `order` | tray order; unordered boxes follow, by label |
 | `kinds` | which kinds bring this box forward — `open` on the form shows every template |
-| `behaviours` | `<shelf>:<name>` book addresses laid into the tray, e.g. `sops:github, ways:cut_code` |
+| `behaviours` | `<shelf>:<name>` book addresses laid into the tray, e.g. `sops:teams, ways:write_it_down` |
 | `features` | Features this template selects — exactly the fields it carries, nothing else moves |
 
 ## The agent shelf's own fields

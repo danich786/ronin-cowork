@@ -167,11 +167,11 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
     mk(t('roots.f_docs', 'docs'), 'docs', (existing.docs || []).join(', '), t('roots.f_docs_hint', 'Where this root keeps its documentation — directories or files, relative to the directory'), 'docs, README.md');
     mk(t('roots.f_plans', 'plans'), 'plans', (existing.plans || []).join(', '), t('roots.f_plans_hint', 'Where this root keeps its build-out plans'), 'wip/buildouts, wip/handoffs');
 
-    // Existing repositories expose the complete checked-in profile. Mode describes how
-    // accepted work publishes; Worktrees is a separate, additive choice.
+    // Existing repositories expose the complete checked-in profile. The repository alone
+    // declares whether it is a worktree root or a checkout.
     let profileFields = null;
     if (creating || existing.facts?.repo) {
-      const seedWorktrees = creating ? (data?.new_project_worktrees || 'enabled') : (existing.repo_profile?.worktrees || 'disabled');
+      const seedWorktrees = existing.repo_profile?.worktrees || 'disabled';
       const before = {
         mode: existing.repo_profile?.mode || 'direct',
         working: existing.arrangement?.source === 'absent' ? '' : (existing.arrangement?.working || ''),
@@ -185,7 +185,7 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
       let syncProfile = () => {};
       const repositoryQuestions = ask([{ group: '', fields: [
         { key: 'mode', label: t('roots.f_mode', 'publishing'), options: [['reviewed', t('roots.mode_reviewed', 'reviewed release')], ['direct', t('roots.mode_direct', 'direct publishing')]].map(([v, l]) => ({ v, l })) },
-        { key: 'worktrees', label: t('roots.f_worktrees', 'Worktrees'), options: [['enabled', t('roots.worktrees_enabled', 'Use Ronin Worktrees')], ['disabled', t('roots.worktrees_disabled', 'Use the checkout')]].map(([v, l]) => ({ v, l })) },
+        { key: 'worktrees', label: t('roots.f_worktrees', 'Arrangement'), options: [['enabled', t('roots.worktrees_enabled', 'Worktree root')], ['disabled', t('roots.worktrees_disabled', 'Checkout')]].map(([v, l]) => ({ v, l })) },
       ] }], { value: repositoryAnswers, onChange: (value) => { repositoryAnswers = value; syncProfile(); } });
       repoFields.append(repositoryQuestions.el);
       const adapter = (key) => ({

@@ -185,13 +185,7 @@ export function createAddAgentView(kit, { team, roster, members, connect, fullLa
   const deskToggle = createAction({ label: '', size: 'compact', action: () => { worktreesOverride = !(worktreesOverride ?? controlled()); paintDesk(); } }).el;
   deskToggle.classList.add('aa-worktrees-toggle');
   deskLine.append(el('b', null, t('add_agent.worktrees_mode', 'Agent work mode')), deskMode, deskWhy, deskToggle);
-  /** Is `ronin_worktrees` on for this birth? The resolved map's answer, never this
-   *  form's — and null while the seed door is not there to ask. */
-  const controlled = () => {
-    const rows = seed?.routines;
-    if (!Array.isArray(rows)) return null;
-    return rows.some((r) => r.on && r.name === 'ronin_worktrees');
-  };
+  const controlled = () => null;
   function paintDesk() {
     const control = controlled();
     // Nothing is claimed before the resolved map has answered.
@@ -267,7 +261,6 @@ export function createAddAgentView(kit, { team, roster, members, connect, fullLa
         kind: kindOf(),
         team_lead: draft.teamLead,
         mandate: { reach: draft.reach, recruit: draft.recruit, output: [...draft.output] },
-        ...(worktreesOverride === null ? {} : { routines: { ronin_worktrees: worktreesOverride } }),
         ...(draft.template ? { template: draft.template } : {}),
       },
     });

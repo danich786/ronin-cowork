@@ -156,7 +156,7 @@ async function writeCatalog(text: string, verify: (roots: ProjectRootInfo[]) => 
   await rename(tmp, USER_PROJECT_ROOTS_MD);
 }
 
-export async function upsertProjectRoot(name: string, fields: Partial<Record<RootField, string>>, options: { declareArrangement?: boolean } = {}): Promise<void> {
+export async function upsertProjectRoot(name: string, fields: Partial<Record<RootField, string>>, _options: { declareArrangement?: boolean } = {}): Promise<void> {
   if (!isValidRootName(name)) throw new Error(`"${name}" is not a valid handle (lowercase letters, digits, - and _).`);
   const existing = await readUserRoots();
   const raw = existing.trim() ? existing : NEW_USER_FILE;
@@ -197,11 +197,6 @@ export async function upsertProjectRoot(name: string, fields: Partial<Record<Roo
     return null;
   });
 
-  if (!found && fields.dir && options.declareArrangement !== false) {
-    const { declareArrangement } = await import('./desks/arrangement.js');
-    const { readDesksSection } = await import('./machine-state.js');
-    await declareArrangement(expand(fields.dir), (await readDesksSection()).new_project).catch(() => null);
-  }
 }
 
 export async function removeProjectRoot(name: string): Promise<void> {

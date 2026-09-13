@@ -50,8 +50,8 @@ origin`, `branch --show-current`. Not there? Say so and stop.
 
 | # | Action | With |
 |---|---|---|
-| 1 | propose-and-confirm | The block: handle from the basename, `remit` from that README line, `read` from README/KOTOBA **only where they exist**, `match` from basename + remote — and, for a Git repository, whether the repository **allows Ronin Worktrees** or **uses the checkout**. Explain that this is repository applicability; the Agent separately needs the Ronin Worktrees Routine from its Campaign or Team. Propose the ⚙ default (*Worktrees for new project roots*, `GET /api/machine-settings` → `set.desks.new_project`); the owner may flip it in the same breath |
-| 2 | report-outcome | On confirmation: `POST /api/project-roots` with the normalized repository profile (`PUT` edit, `DELETE` exclude). Compatibility storage may still write `desks=managed|none` in the repository's `RONIN_REPO`; never present that storage spelling as the product choice. Say the file is theirs to commit, then report the block as written |
+| 1 | propose-and-confirm | The block: handle from the basename, `remit` from that README line, `read` from README/KOTOBA **only where they exist**, `match` from basename + remote — and, for a Git repository, whether the repository is a **worktree root** or **checkout**. Explain that this is the folder's own arrangement, declared in `RONIN_REPO`; no Agent or Campaign switch changes it. |
+| 2 | report-outcome | On confirmation: `POST /api/project-roots` with the repository profile (`PUT` edit, `DELETE` exclude). `RONIN_REPO` writes `desks=managed|none`; present the resolved fact as worktree root or checkout. Say the file is theirs to commit, then report the block as written |
 
 **Never invent a `dir`** — ask which one. **Excluding touches nothing on disk**, and you
 say so when you propose it. Absolute paths at any depth are all first-class; Ronin does
