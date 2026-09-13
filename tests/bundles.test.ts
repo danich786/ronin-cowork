@@ -144,6 +144,7 @@ test('an install lands in the owner\'s stores, reads back, and is idempotent', a
   assert.equal(books.delivered[0]?.file, path.join(storeDir('ways'), 'weekly_review.md'));
   const feature = (await listFeatures()).find((row) => row.name === 'weekly_review');
   assert.deepEqual(feature?.tools, ['tejun-review']);
+  assert.equal(feature?.provider, '', 'the catalog dash means this feature has no provider');
   const tool = await stat(path.join(storeDir('tools'), 'tejun-review'));
   assert.ok(tool.mode & 0o100, 'a bundled tool is executable');
   const macros = await readFile(path.join(storeDir('catalogs'), 'MACROS.md'), 'utf8');

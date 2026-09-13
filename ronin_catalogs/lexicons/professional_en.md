@@ -244,10 +244,9 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **campaign_view.default_reach:** Reach
 - **campaign_view.default_recruit:** Recruit
 - **campaign_view.default_output:** Output
-- **campaign_view.default_dial:** Control
 - **campaign_view.default_behaviours:** Behaviours
 - **campaign_view.behaviours_help:** One shelf:name book per line.
-- **campaign_view.defaults_summary:** {model} · {reach} · {dial}
+- **campaign_view.defaults_summary:** {model} · {reach}
 - **campaign_view.option_open:** Open
 - **campaign_view.option_discuss:** Discuss
 - **campaign_view.option_plan:** Plan
@@ -261,9 +260,6 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **campaign_view.option_artifact:** An artifact
 - **campaign_view.option_no_code:** No code
 - **campaign_view.option_team:** The Team
-- **campaign_view.option_user:** You only
-- **campaign_view.option_read:** Read
-- **campaign_view.option_write:** Read and write
 - **campaign_view.default_help:** The row a launch that names nothing starts from.
 - **campaign_view.from_settei:** from SETTEI
 - **campaign_view.col_provider:** Provider
@@ -428,7 +424,7 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **help.card_summary:** What each step means, beside the step you are on.
 - **help.top_body:** The name is the only thing you must give, and it is also the tag every session carries, so it is lowercase and typeable — the field enforces that as you type. A Team’s title is written for you from the name and is yours to change. The kind says what this is for, and it narrows the templates below to the ones that suit it.
 - **help.template_body:** A template fills part of the form in and stops. Its answers become yours the moment they land — nothing stays linked, and you can change any of it. An Agent template is a loadout for one session; a Team template is a cast, and picking one lands its Agents as rows you can edit. Make your own fills nothing in, and going back to it empties what a template wrote.
-- **help.mandate_body:** How far this Agent goes before it checks in, whether it may build out a team, and what it hands back. Output takes as many answers as you mean — a plan AND the team AND no code — and nothing argues with a combination. Open leads every dial and means no requirement. None of it is enforced: the mandate is carried in the Agent’s letter and read by it, not imposed on it.
+- **help.mandate_body:** How far this Agent goes before it checks in, whether it may build out a team, and what it hands back. Output takes as many answers as you mean — a plan AND the team AND no code — and nothing argues with a combination. Open means no requirement. None of it is enforced: the mandate is carried in the Agent’s letter and read by it, not imposed on it.
 - **help.loadout_body:** Launch mode decides what Ronin appends to the command that starts this Agent. Features add facilities or taught practices; behaviours say how ordinary work should be done.
 - **help.agents:** Agents
 - **help.agents_body:** The Agents this Team is raised with. A row is short on purpose — a name and what that Agent does — and opens for its mandate when you want it. 人 marks the lead; this form offers one, though a running Team may gain more. Raising creates the Team and then births every named row, the lead last. A Team with no rows is ordinary and raises fine.
@@ -1797,7 +1793,6 @@ The catalog entry goes. {dir} is not touched.
 - **team_config.output:** Output
 - **team_config.required_short:** Required
 - **team_config.runtime:** Runtime
-- **team_config.dial:** Control
 - **team_config.next_form:** These defaults land in the next Agent form that opens. Nothing live changes.
 - **team_config.saving:** Saving…
 - **team_config.saved:** Saved

@@ -18,6 +18,10 @@ export interface LaunchSeedSources {
   campaign: CampaignConfig; roster: TeamRoster | null; roots: ProjectRootInfo[];
   sessions: SessionsDefaults | undefined; installations: InstallationRow[]; features: FeatureRow[];
 }
+export function shownLaunchSeed(seed: LaunchSeed): Omit<LaunchSeed, 'seeds'> & { seeds: Omit<LaunchSeed['seeds'], 'dial'> } {
+  const { dial: _dial, ...seeds } = seed.seeds;
+  return { ...seed, seeds };
+}
 const installation = (source: string): StatedBy[] => [{ layer: 'installation', source }];
 const conditional = (source: string): StatedBy[] => [{ layer: 'conditional', source }];
 const campaignBy = (id: string, field: string): StatedBy[] => [{ layer: 'campaign', source: `#/campaign (${id}: ${field})` }];

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { agentDefaults } from '../src/agent-defaults.js';
-import { resolveLaunchSeed } from '../src/launch-seed.js';
+import { resolveLaunchSeed, shownLaunchSeed } from '../src/launch-seed.js';
 import type { CampaignConfig } from '../src/campaigns.js';
 import type { FeatureRow, InstallationRow } from '../src/resource-adapters.js';
 import type { TeamRoster } from '../src/team-rosters.js';
@@ -31,6 +31,7 @@ test('teamless seed exposes available features and the fixed residue', () => {
   assert.equal(seed.resolved_contributions.find((row) => row.name === 'ronin_services')?.reading[0], 'routine/ronin_services/OFF.md');
   assert.equal(seed.resolved_contributions[0]?.stated_by, 'installation');
   assert.deepEqual(seed.still_asked, ['session_type', 'name', 'instructions']);
+  assert.equal('dial' in shownLaunchSeed(seed).seeds, false, 'the fixed stored Control value is not a launch-seed field');
 });
 
 test('Team complete lists replace campaign defaults and carry team provenance', () => {

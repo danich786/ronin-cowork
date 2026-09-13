@@ -15,7 +15,6 @@ import { closeWorkspaceTab, openWorkspaceTab, reserveWorkspaceTab, seedReservedW
 const REACH = ['open', 'discuss', 'plan', 'execute'];
 const RECRUIT = ['open', 'nobody', 'propose agents', 'staff agents'];
 const OUTPUT = ['open', 'a plan', 'ideas', 'code', 'an artifact', 'the team', 'no code'];
-const DIALS = ['user', 'read', 'write'];
 const KINDS = ['coding', 'work', 'personal', 'household', 'social', 'school'];
 
 export function createNewTeamFormView(kit, { created = null, embedded = false } = {}) {
@@ -26,7 +25,6 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
     name: '', kind: 'open', objective: '',
     root: '', repos: [], branches: {},
     provider: '', model: '', reach: 'open', recruit: 'open', output: ['open'],
-    dial: 'write',
     features: [], books: [], launchMode: 'live_dangerously',
     // The Agents this Team is raised with.
     agents: [],
@@ -318,6 +316,7 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
         },
         className: 'ntf-kit-questions',
         density: 'tight',
+        trayHost: kitHost,
         onChange: (value, key) => {
           draft.launchMode = value.launchMode;
           draft.features = [...value.features];
@@ -440,7 +439,7 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
     agent_defaults: {
       provider: draft.provider, model: draft.model,
       reach: draft.reach, recruit: draft.recruit, output: draft.output,
-      dial: draft.dial, launch_mode: draft.launchMode,
+      dial: 'write', launch_mode: draft.launchMode,
     },
   });
 
@@ -577,13 +576,11 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
     draft.root = value('project_root') || '';
     draft.provider = value('provider') || '';
     draft.model = value('model') || '';
-    for (const key of ['reach', 'recruit', 'dial']) {
+    for (const key of ['reach', 'recruit']) {
       if (value(key)) draft[key] = value(key);
     }
     if (value('output')) draft.output = [value('output')].flat().filter(Boolean);
-    // § 7.2 is { provider, model, reach, recruit, output, dial, launch_mode }. Named on its
-    // own because the seed's key is snake and the draft's is camel — folding it into the
-    // loop above would have written `draft.launch_mode` and seeded nothing, forever.
+    // launch_mode is named on its own because the seed's key is snake and the draft's is camel.
     if (value('launch_mode')) draft.launchMode = value('launch_mode');
     draft.books = Array.isArray(value('behaviours')) ? [...value('behaviours')] : [];
     draft.features = Array.isArray(value('features'))

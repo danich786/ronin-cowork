@@ -16,11 +16,12 @@ test('Campaign defaults use ask() and Output keeps multi-select semantics', asyn
     assert.match(source, new RegExp(`key: '${key}'.*options: CHOICES\\.${key}\\.map`));
   }
   assert.doesNotMatch(source, /ruledRows\('(reach|recruit|output)'/, 'mandates are icon-free rectangles');
-  assert.match(source, /shape: 'square'.*ruledRows\('dial'/, 'Control remains a ruled square');
+  assert.doesNotMatch(source, /key: 'dial'|ruledRows\('dial'|default_dial/, 'the legacy Control default has no surface');
   assert.match(source, /key: 'features'.*many: true/);
   assert.match(source, /key: 'behaviours'.*many: true/);
   assert.match(source, /request\('\/api\/ways'\)/);
   assert.doesNotMatch(source, /textarea/);
-  assert.match(source, /const next = \{ \.\.\.current, \.\.\.picked,/);
-  assert.match(css, /\.cv-defaults-form > \.ask,[\s\S]*?\.cv-defaults-form > \.cv-default-field \{ grid-column: 1 \/ -1; \}/, 'questions take the full row and Behaviours follows beneath');
+  assert.match(source, /const next = \{ \.\.\.current, \.\.\.picked, dial: 'write',/);
+  assert.match(source, /trayHost: questionsRow/, 'the launch-mode tray drops below the row, so neighbouring groups stay anchored');
+  assert.match(css, /\.cv-defaults-form > \.ask,[\s\S]*?\.cv-defaults-form > \.cv-default-field \{ grid-column: 1 \/ -1; \}/, 'the question row spans the card');
 });

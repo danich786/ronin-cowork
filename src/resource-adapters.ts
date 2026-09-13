@@ -132,7 +132,10 @@ export async function listInstallations(): Promise<InstallationRow[]> {
 }
 
 export async function listFeatures(): Promise<FeatureRow[]> {
-  return (await readDefinitions('features')).map((d) => ({ ...contribution(d), provider: d.get('provider') }));
+  return (await readDefinitions('features')).map((d) => {
+    const provider = d.get('provider').trim();
+    return { ...contribution(d), provider: /^[\u2013\u2014-]$/.test(provider) ? '' : provider };
+  });
 }
 
 const REACH = ['open', 'discuss', 'plan', 'execute'];
