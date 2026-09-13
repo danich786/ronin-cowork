@@ -63,23 +63,23 @@
   .tw-config-status, .tw-config-empty { color: var(--muted); }
   .tw-config-wide { grid-column: 1 / -1; }
   .tw-config-note { margin: 0; color: var(--muted); line-height: 1.5; }
-  .tw-routines { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); border: var(--edge) solid var(--line); border-radius: var(--radius-sm); padding: var(--space-4); }
-  .tw-routines legend { color: var(--fg-strong); font-weight: 600; padding: 0 var(--space-2); }
-  .tw-routines > .tw-config-note { grid-column: 1 / -1; }
+  .tw-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); border: var(--edge) solid var(--line); border-radius: var(--radius-sm); padding: var(--space-4); }
+  .tw-choices legend { color: var(--fg-strong); font-weight: 600; padding: 0 var(--space-2); }
+  .tw-choices > .tw-config-note { grid-column: 1 / -1; }
   .tw-worktrees-mode { grid-column: 1 / -1; display: flex; flex-direction: column; gap: var(--space-1); border-left: var(--edge-2) solid var(--kiiro); background: color-mix(in srgb, var(--panel) 90%, var(--kiiro)); padding: var(--space-3) var(--space-4); }
   .tw-worktrees-mode b { color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
   .tw-worktrees-mode strong { color: var(--fg-strong); }
   .tw-worktrees-mode small { color: var(--muted); line-height: 1.4; }
-  .tw-routine { display: flex; align-items: flex-start; gap: var(--space-3); }
-  .tw-routine input { accent-color: var(--accent); margin-top: var(--space-1); }
-  .tw-routine span { display: flex; flex-direction: column; gap: var(--space-1); }
-  .tw-routine small, .tw-config-field small { color: var(--muted); line-height: 1.4; }
+  .tw-choice { display: flex; align-items: flex-start; gap: var(--space-3); }
+  .tw-choice input { accent-color: var(--accent); margin-top: var(--space-1); }
+  .tw-choice span { display: flex; flex-direction: column; gap: var(--space-1); }
+  .tw-choice small, .tw-config-field small { color: var(--muted); line-height: 1.4; }
 
   .tw-config, .league-team-edit-content { font-size: var(--form-input); }
-  .tw-routines legend, .league-team-roster-title { font-size: var(--form-head); }
+  .tw-choices legend, .league-team-roster-title { font-size: var(--form-head); }
   .tw-config-field > span, .tw-config-reading > span, .tw-where-head, .tw-worktrees-mode b { font-size: var(--form-key); }
-  .tw-config-field input, .tw-config-field textarea, .tw-config-field select, .tw-where summary, .tw-where-repo input, .tw-config-reading output, .tw-routine b, .tw-worktrees-mode strong, .tw-config-check span, .league-team-member-words strong, .league-team-add select, .tw-config-actions { font-size: var(--form-input); }
-  .tw-config-note, .tw-config-field small, .tw-routine small, .tw-worktrees-mode small, .tw-config-status, .league-team-member-words span, .league-team-empty { font-size: var(--form-note); }
+  .tw-config-field input, .tw-config-field textarea, .tw-config-field select, .tw-where summary, .tw-where-repo input, .tw-config-reading output, .tw-choice b, .tw-worktrees-mode strong, .tw-config-check span, .league-team-member-words strong, .league-team-add select, .tw-config-actions { font-size: var(--form-input); }
+  .tw-config-note, .tw-config-field small, .tw-choice small, .tw-worktrees-mode small, .tw-config-status, .league-team-member-words span, .league-team-empty { font-size: var(--form-note); }
   .tw-config-check { display: flex; align-items: center; gap: var(--space-3); color: var(--fg-strong); }
   .tw-config-check input { accent-color: var(--accent); }
 

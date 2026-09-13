@@ -179,7 +179,6 @@ export async function buildPhone() {
         method: 'POST',
         json: {
           session_type: 'cowork_agent',
-          behaviours: [],
           team: team === UNASSIGNED ? '' : team,
           instructions: words.value.trim(),
           name: name.value.trim(),
@@ -215,7 +214,7 @@ export async function buildPhone() {
     if (main.querySelector('.ph-launch-form:not([hidden])')) return;
     // And never repaint what has not moved: rebuilding identical cards detaches the node
     // under a finger mid-tap — a tap that does nothing.
-    const signature = [team, teamLabel({ ...teamByName(team), name: team })].concat(membersOfTeam(team).map((member) => [member.name, member.title, member.team_lead].join('|'))).join('\n');
+    const signature = [team, teamLabel({ ...teamByName(team), name: team })].concat(membersOfTeam(team).map((member) => [member.name, member.title].join('|'))).join('\n');
     if (signature === agentsPainted) return;
     agentsPainted = signature;
     teamBar(team);
@@ -224,7 +223,7 @@ export async function buildPhone() {
       const card = el('a', 'ph-card');
       card.href = sessionHash(team, member.name);
       const line = el('div', 'ph-card-line');
-      line.append(el('span', 'ph-card-name', (member.team_lead ? '人 ' : '') + agentLabel(member)));
+      line.append(el('span', 'ph-card-name', agentLabel(member)));
       card.append(line);
       list.append(card);
     }

@@ -10,7 +10,7 @@ export type SeedField = 'kind' | 'project_root' | 'branch' | 'provider' | 'model
 export interface SeedValue<T = unknown> { value: T; stated_by: StatedBy[] }
 export interface LaunchSeed {
   campaign_id: string; seeds: Record<SeedField, SeedValue>;
-  features: Array<{ name: string; on: boolean; stated_by: StatedBy[] }>;
+  features: Array<{ name: string; label: string; blurb: string; on: boolean; stated_by: StatedBy[] }>;
   behaviours: Array<{ name: string; on: boolean; required: boolean; stated_by: StatedBy[] }>;
   available: string[]; still_asked: Array<'session_type' | 'name' | 'instructions'>;
 }
@@ -48,9 +48,9 @@ export function resolveLaunchSeed(s: LaunchSeedSources): LaunchSeed & { resolved
       reach: { value: a.reach, stated_by: source('reach') }, recruit: { value: a.recruit, stated_by: source('recruit') },
       output: { value: a.output, stated_by: source('output') }, dial: { value: a.dial, stated_by: source('dial') },
       launch_mode: { value: a.launch_mode, stated_by: source('launch_mode') },
-      features: { value: cascade.selected, stated_by: featureSource }, behaviours: { value: selectedBehaviours, stated_by: behaviourSource },
+      features: { value: cascade.selected, stated_by: featureSource }, behaviours: { value: [...new Set([...selectedBehaviours, ...required])], stated_by: behaviourSource },
     },
-    features: s.features.map((row) => ({ name: row.name, on: cascade.selected.includes(row.name), stated_by: featureSource })),
+    features: s.features.map((row) => ({ name: row.name, label: row.label, blurb: row.blurb, on: cascade.selected.includes(row.name), stated_by: featureSource })),
     behaviours: [...new Set([...selectedBehaviours, ...required])].map((name) => ({ name, on: selectedBehaviours.includes(name) || required.has(name), required: required.has(name), stated_by: behaviourSource })),
     available, still_asked: ['session_type', 'name', 'instructions'],
     resolved_contributions: cascade.contributions, undelivered: cascade.undelivered,

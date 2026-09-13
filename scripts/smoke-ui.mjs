@@ -492,6 +492,17 @@ async function checkJourneys(page, label, jsErrors) {
   if (!noteAfter.open && noteAfter.focusBack) ok(`${label}: Escape closes the sheet and returns focus to 📝`);
   else bad(`${label}: sheet close broken — open=${noteAfter.open} focusReturned=${noteAfter.focusBack}`);
 
+  const cascadeForms = await page.evaluate(async () => {
+    const [agent, team, add, config] = await Promise.all(
+      ['new-agent.js', 'new-team-form.js', 'add-agent.js', 'team-configuration.js']
+        .map((name) => fetch(`js/${name}`).then((response) => response.text())),
+    );
+    return [agent, team, add, config].every((source) => source.includes("t('features', 'Features')") && source.includes("t('behaviours', 'Behaviours')"))
+      && [agent, team, add, config].every((source) => !/routines|routine_bundles/.test(source));
+  });
+  if (cascadeForms) ok(`${label}: New Team, New Agent, Add Agent and Team Configuration expose only Features and Behaviours`);
+  else bad(`${label}: an installation-cascade form still exposes a retired section`);
+
   await page.keyboard.press('Control+Shift+KeyN');
   await page.waitForTimeout(300);
   const kindBtn = page.locator('.tile.active .ks-btn').first();

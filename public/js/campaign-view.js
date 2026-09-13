@@ -6,7 +6,7 @@ import { MULTIPLE_CAMPAIGNS_ENABLED, campaignById, campaignOf, createCampaign, l
 import { createCampaignIdentitySurface, createNewCampaignSurface } from './campaign-surfaces.js';
 import { createDeskProfileSurface, skinWord } from './campaign-desk.js';
 import { createAgentDefaultsSurface, defaultsSummary } from './campaign-defaults.js';
-import { createInstallationsSurface, installationsSummary } from './campaign-routines.js';
+import { createInstallationsSurface, installationsSummary } from './campaign-installations.js';
 import { CAMPAIGN_TEMPLATES_TYPE, campaignTemplatesDefinition } from './campaign-templates.js';
 import { PROVIDER_SURFACE_TYPE, providerSurfaceDefinition } from './provider-surface.js';
 import { createProviderSetupSessionMount } from './provider-setup-session.js';

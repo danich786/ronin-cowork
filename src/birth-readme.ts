@@ -180,7 +180,7 @@ async function declaredFiles(refs: readonly string[], mcpOn: boolean): Promise<s
     const ref = raw.trim().replace(/^\/+/, '');
     if (!ref || ref.includes('..') || path.isAbsolute(raw)) continue;
     if (ref.endsWith('_connected/') && !mcpOn) continue;
-    if (!ref.startsWith('routine/') && !/^[a-z0-9_-]+_connected\/$/.test(ref)) continue;
+    if (!ref.startsWith('routine/') && !ref.startsWith('house/') && !/^[a-z0-9_-]+_connected\/$/.test(ref)) continue;
     if (ref.endsWith('/')) {
       out.push(...await levelFiles(path.join(STOCK, ref), path.join(user, ref)));
       continue;

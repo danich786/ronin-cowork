@@ -27,11 +27,6 @@ const valueLabel = (value, tr) => ({
 })[value] || value;
 const optionRows = (values, tr) => values.map((value) => ({ value, label: value ? valueLabel(value, tr) : tr('team_config.default', 'Default') }));
 
-export function completeTeamRoutineMap(catalog, stored) {
-  const current = bucket(stored);
-  return Object.fromEntries(catalog.map((routine) => [routine.name, current[routine.name] === true]));
-}
-
 export function renderTeamConfiguration(host, roster, optionsArg = {}) {
   host.replaceChildren();
   if (!roster?.durable) { host.append(el('p', 'tw-config-empty', t('team_config.no_roster', 'This Team has no saved record.'))); return; }
@@ -41,8 +36,9 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
   // only on real change now, so a commons waiting off-screen must receive its form here —
   // nothing will render it again when it is placed. A superseded render's host is a
   // discarded node; painting it is invisible and cheap.
-  void Promise.all([request('/api/routines'), loadProviderCatalog(), request('/api/project-roots/detail')]).then(([routineResult, , rootResult]) => {
-    const routines = routineResult.ok && Array.isArray(routineResult.data) ? routineResult.data : [];
+  void Promise.all([request(`/api/launch-seed?team=${encodeURIComponent(roster.name)}`), request('/api/ways'), loadProviderCatalog(), request('/api/project-roots/detail')]).then(([seedResult, wayResult, , rootResult]) => {
+    const seed = seedResult.ok ? seedResult.data : null;
+    const ways = wayResult.ok && Array.isArray(wayResult.data) ? wayResult.data : [];
     const roots = rootResult.ok && Array.isArray(rootResult.data?.roots) ? rootResult.data.roots.filter((root) => !root.archived) : [];
     const defaults = bucket(roster.agent_defaults); const behaviour = bucket(roster.behaviours);
     const form = el('form', 'tw-config-form'); reading(form, t('team_config.cowork_id', 'Team ID'), roster.name, t('settei.none_set', '— none set —'));
@@ -55,21 +51,26 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
     const objective = field(form, t('team_config.objective', 'Purpose'), 'objective', roster.objective, 'textarea');
     const references = field(form, t('team_config.references', 'References'), 'references', list(roster.references).join('\n'), 'textarea', t('team_config.references_help', 'One URL or note per line.'));
 
-    const routineMap = completeTeamRoutineMap(routines, roster.routines);
-    // THE KIT AS SELECTED (dev 3d920e2), kept beside the editable map below: what an
-    // Agent born here is equipped with, in one line, in the catalog's own owner-facing
-    // labels. The floor is not a
-    // switch and is not listed; with nothing on above it, the honest answer is the
-    // floor alone.
-    const kitOn = routines.filter((routine) => routineMap[routine.name]).map((routine) => routine.label || routine.name);
-    reading(form, t('team_kit', 'Shared toolkit'), kitOn.join(' · '), t('team_config.kit_floor_alone', 'the floor alone — no Routine is on'));
-    const routineSet = el('fieldset', 'tw-config-wide tw-routines'); routineSet.append(el('legend', null, t('team_config.routines', 'Routines')), el('p', 'tw-config-note', t('team_config.routines_help', 'This complete on/off map is the Team’s own and is inherited by new Agents. It replaces the Campaign defaults; existing Agents do not change.')));
-    const routineInputs = new Map();
-    for (const routine of routines) { const row = el('label', 'tw-routine'); const input = el('input'); input.type = 'checkbox'; input.checked = routineMap[routine.name]; routineInputs.set(routine.name, input); const words = el('span'); words.append(el('b', null, routine.label || routine.name), el('small', null, routine.blurb || t('team_config.no_description', 'No description supplied.'))); row.append(input, words); routineSet.append(row); }
-    form.append(routineSet);
-
-    const behaviours = field(form, t('team_config.behaviours', 'Behaviours'), 'behaviours', list(behaviour.books).join('\n'), 'textarea', t('team_config.behaviours_help', 'One shelf:name book per line.'));
-    const requiredRow = el('label', 'tw-config-check tw-config-wide'); const required = el('input'); required.type = 'checkbox'; required.checked = behaviour.required === true; requiredRow.append(required, el('span', null, t('team_config.required', 'Require these behaviours for each new Agent'))); form.append(requiredRow);
+    const choices = (legend, rows, selected, required = []) => {
+      const set = el('fieldset', 'tw-config-wide tw-choices'); set.append(el('legend', null, legend));
+      const inputs = new Map(); const requiredInputs = new Map();
+      for (const item of rows) {
+        const row = el('label', 'tw-choice'); const input = el('input'); input.type = 'checkbox'; input.checked = selected.includes(item.name);
+        inputs.set(item.name, input); const words = el('span'); words.append(el('b', null, item.label || item.name), el('small', null, item.blurb || ''));
+        const requiredInput = el('input'); requiredInput.type = 'checkbox'; requiredInput.checked = required.includes(item.name); requiredInput.title = t('team_config.required', 'Required for each new Agent');
+        requiredInput.addEventListener('change', () => { if (requiredInput.checked) input.checked = true; });
+        if (legend === t('behaviours', 'Behaviours')) {
+          requiredInputs.set(item.name, requiredInput);
+          const requiredMark = el('span', 'tw-required'); requiredMark.append(requiredInput, t('team_config.required_short', 'Required'));
+          row.append(input, words, requiredMark);
+        } else row.append(input, words);
+        set.append(row);
+      }
+      form.append(set); return { inputs, requiredInputs };
+    };
+    const available = (seed?.features || []).filter((row) => (seed?.available || []).includes(row.name));
+    const featureChoices = choices(t('features', 'Features'), available, list(roster.features));
+    const behaviourChoices = choices(t('behaviours', 'Behaviours'), ways, list(behaviour.selected), list(behaviour.required));
 
     // THE ONE PICKER (form-steps.js) in this form's own field rows: the Team's provider
     // and model, either standing alone; the Campaign's answer when both are Default.
@@ -101,7 +102,11 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
       event.preventDefault(); if (saveAction) saveAction.setDisabled(true); else save.disabled = true; status.textContent = t('team_config.saving', 'Saving…');
       const saved = await request(`/api/team-rosters/${encodeURIComponent(roster.name)}`, { method: 'PUT', json: {
         title: title.value, kind: kind.value, objective: objective.value, project_root: where.root, repos: where.repos(), branches: where.branches(), references: lines(references.value),
-        routines: Object.fromEntries([...routineInputs].map(([name, input]) => [name, input.checked])), behaviours: { books: lines(behaviours.value), required: required.checked },
+        features: [...featureChoices.inputs].filter(([, input]) => input.checked).map(([name]) => name),
+        behaviours: {
+          selected: [...behaviourChoices.inputs].filter(([, input]) => input.checked).map(([name]) => name),
+          required: [...behaviourChoices.requiredInputs].filter(([, input]) => input.checked).map(([name]) => name),
+        },
         // Spread what was read so a key this card does not draw is carried rather than
         // dropped — but NOT `permissions`, which is ruled out of agent_defaults entirely;
         // spreading it would rewrite a retired field on every save. (Caught by capturing
