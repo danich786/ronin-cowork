@@ -38,6 +38,9 @@
   --ok: #b5bd68;
   --ok-2: #7fd4a8;
   --warn: #f0c674;
+  --kanban-green: #7fd4a8;
+  --kanban-yellow: #e0c060;
+  --kanban-red: #e0705f;
 
 
   --kiiro: #e0af68;
@@ -236,6 +239,9 @@
   --ok: #5c7a1d;
   --ok-2: #1e7a4c;
   --warn: #9a7b00;
+  --kanban-green: #1e7a4c;
+  --kanban-yellow: #c9a227;
+  --kanban-red: #b8362a;
   --bad: #b04343;
   --bad-soft: #8f3a3a;
   --bad-deep: #a33c33;
