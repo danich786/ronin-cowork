@@ -278,6 +278,10 @@
   .na-omitted { margin: 0; color: var(--dim); font-size: var(--form-note); }
   .na-omitted[hidden] { display: none; }
   .na-name-required > .wk-field-label { color: var(--accent); }
+  .na-identity-row { display: flex; flex-wrap: wrap; gap: var(--space-5) var(--space-8); align-items: flex-end; }
+  .na-identity-row > .na-name-required { flex: 1 1 calc(var(--space-12) * 4); min-width: var(--ask-w, 140px); }
+  .na-name-required > .wk-field-control { box-sizing: border-box; height: 40px; }
+  .na-team-questions { flex: 0 0 auto; }
   .na-surface textarea { min-height: calc(var(--space-12) * 3); resize: vertical; }
   .na-note { margin: var(--space-4) 0 0; color: var(--dim); font-size: var(--form-note); }
   .na-sopgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(var(--space-12) * 4), 1fr)); gap: var(--space-1); }

@@ -8,6 +8,7 @@ test('New Agent uses one ruled ask() spec after its three session types', async 
   const form = await source('new-agent.js');
   assert.match(form, /import \{ ask \} from '\.\/ask\.js'/);
   assert.match(form, /const questions = ask\(\[/);
+  assert.match(form, /const teamQuestions = ask\(\[/);
   assert.match(form, /className: 'na-questions',[\s\S]*density: 'tight'/);
   assert.doesNotMatch(form, /key: 'template'.*Apply Template/);
   assert.match(form, /Cowork Agent[\s\S]*Bare-metal Agent[\s\S]*Terminal/);
@@ -17,7 +18,7 @@ test('New Agent uses one ruled ask() spec after its three session types', async 
   assert.match(form, /group: t\('new_agent\.model_package', 'Model'\)/);
   assert.match(form, /after: 'provider'/);
   assert.match(form, /group: t\('mandate', 'Mandate'\)/);
-  assert.match(form, /shape: 'square'[\s\S]*many: true/);
+  assert.doesNotMatch(form, /key: '(?:reach|recruit|output)'[^\n]+shape: 'square'/);
   assert.match(form, /group: t\('squad', 'Team'\)/);
   assert.match(form, /switch: \[t\('yes', 'Yes'\), t\('no', 'No'\)\]/);
   assert.doesNotMatch(form, /switch: \[[^\]]+\], word:/);
@@ -26,7 +27,8 @@ test('New Agent uses one ruled ask() spec after its three session types', async 
   assert.match(form, /questions\.show\(draft\.type === 'terminal' \? \['root', 'repos'\] : draft\.type === 'bare_metal_agent' \? \['provider', 'model', 'root', 'repos'\] : null\)/);
   assert.match(form, /stepPayload\.setNumber\(order\.length \+ 1\)/);
   assert.match(form, /key: 'payload'.*Payload/);
-  assert.match(form, /stepTop\.body\.replaceChildren\(nameField, questions\.el, instructionsField\)/);
+  assert.match(form, /identityRow\.append\(nameField, teamQuestions\.el\)/);
+  assert.match(form, /stepTop\.body\.replaceChildren\(identityRow, questions\.el, instructionsField\)/);
   assert.doesNotMatch(form, /providerModelStones|na-choice-stone|na-mini-stone|stones: true/);
 });
 

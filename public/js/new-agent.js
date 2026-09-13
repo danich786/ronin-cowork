@@ -257,25 +257,21 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
       { key: 'model', label: t('forms.model', 'Model'), blank: t('forms.default', 'Default'), after: 'provider', options: (value) => modelRows(value.provider) },
     ] },
     { group: t('mandate', 'Mandate'), fields: [
-      { key: 'reach', label: t('reach', 'Reach'), shape: 'square', options: ruledRows('reach', REACH, mandateWord) },
-      { key: 'recruit', label: t('recruit', 'Recruit'), shape: 'square', options: ruledRows('recruit', RECRUIT, mandateWord) },
-      { key: 'output', label: t('output', 'Output'), shape: 'square', many: true, options: ruledRows('output', OUTPUT, mandateWord) },
-    ] },
-    { group: t('squad', 'Team'), fields: [
-      { key: 'team', label: t('squad', 'Team'), options: teamRows, row: (option) => option.v === '__new__' ? newTeamField() : null },
-      { key: 'teamLead', label: t('team.lead', 'Team lead'), switch: [t('yes', 'Yes'), t('no', 'No')] },
+      { key: 'reach', label: t('reach', 'Reach'), options: ruledRows('reach', REACH, mandateWord) },
+      { key: 'recruit', label: t('recruit', 'Recruit'), options: ruledRows('recruit', RECRUIT, mandateWord) },
+      { key: 'output', label: t('output', 'Output'), many: true, options: ruledRows('output', OUTPUT, mandateWord) },
     ] },
     { group: t('where.label', 'Where it works'), fields: [
       { key: 'root', label: t('where.born_in', 'Born in'), options: rootRows },
       { key: 'repos', label: t('where.workspaces', 'Workspaces'), many: true, after: 'root', options: rootRows },
     ] },
   ], {
-    value: { provider: draft.provider, model: draft.model, reach: draft.reach, recruit: draft.recruit, output: draft.output, team: teamValue(), teamLead: draft.teamLead, root: draft.root, repos: draft.repos },
+    value: { provider: draft.provider, model: draft.model, reach: draft.reach, recruit: draft.recruit, output: draft.output, root: draft.root, repos: draft.repos },
     className: 'na-questions',
     density: 'tight',
     onChange: (value, key) => {
       draft.provider = value.provider; draft.model = value.model; draft.reach = value.reach; draft.recruit = value.recruit; draft.output = value.output;
-      draft.teamLead = value.teamLead; draft.root = value.root; draft.repos = [...value.repos];
+      draft.root = value.root; draft.repos = [...value.repos];
       if (key === 'provider' || key === 'model') touched.model = true;
       if (['reach', 'recruit', 'output'].includes(key)) touched.mandate = true;
       if (key === 'root') {
@@ -284,6 +280,20 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
         questions.set('repos', draft.repos);
       }
       if (key === 'repos') touched.repos = true;
+      paintFoot(); paintActions();
+    },
+  });
+  const teamQuestions = ask([
+    { group: t('squad', 'Team'), fields: [
+      { key: 'team', label: t('squad', 'Team'), options: teamRows, row: (option) => option.v === '__new__' ? newTeamField() : null },
+      { key: 'teamLead', label: t('team.lead', 'Team lead'), switch: [t('yes', 'Yes'), t('no', 'No')] },
+    ] },
+  ], {
+    value: { team: teamValue(), teamLead: draft.teamLead },
+    className: 'na-team-questions',
+    density: 'tight',
+    onChange: (value, key) => {
+      draft.teamLead = value.teamLead;
       if (key === 'team') {
         draft.teamMode = value.team === '__new__' ? 'new' : value.team === '__none__' ? 'none' : 'existing';
         draft.team = value.team.startsWith('team:') ? value.team.slice(5) : '';
@@ -296,7 +306,8 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     },
   });
   const syncQuestions = () => {
-    questions.set({ provider: draft.provider, model: draft.model, reach: draft.reach, recruit: draft.recruit, output: draft.output, team: teamValue(), teamLead: draft.teamLead, root: draft.root, repos: draft.repos || [] });
+    questions.set({ provider: draft.provider, model: draft.model, reach: draft.reach, recruit: draft.recruit, output: draft.output, root: draft.root, repos: draft.repos || [] });
+    teamQuestions.set({ team: teamValue(), teamLead: draft.teamLead });
   };
   void loadProviderCatalog().then(() => questions.paint());
 
@@ -589,6 +600,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     stepPayload.el.hidden = draft.type === 'terminal';
     stepTop.el.querySelector('h3').textContent = hasAgent() ? t('new_agent.agent_body', 'Agent') : t('new_agent.name_required_step', 'Name · required');
     questions.show(draft.type === 'terminal' ? ['root', 'repos'] : draft.type === 'bare_metal_agent' ? ['provider', 'model', 'root', 'repos'] : null);
+    teamQuestions.el.hidden = !isCowork();
     questions.el.hidden = false;
     instructionsField.hidden = !hasAgent();
     paintTypes();
@@ -612,7 +624,9 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
   } });
   stepPayload.body.append(foot, actions.el);
   stepPayload.setCollapsed(true, t('forms.payload_summary', 'Review what Launch will create'), true);
-  stepTop.body.replaceChildren(nameField, questions.el, instructionsField);
+  const identityRow = el('div', 'na-identity-row');
+  identityRow.append(nameField, teamQuestions.el);
+  stepTop.body.replaceChildren(identityRow, questions.el, instructionsField);
   const form = el('div', 'ntf-form');
   form.append(stepType.el, stepTop.el, stepLoadout.el, stepPayload.el);
   // Save as template sits UNDER the reading, for the same reason as on New Team: the
