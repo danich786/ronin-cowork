@@ -1517,8 +1517,10 @@ The catalog entry goes. {dir} is not touched.
 - **head.note_quiet:** Session note — no session in this tile yet
 - **head.note_has:** Session note (has notes)
 - **head.note_empty:** Session note (empty)
-- **head.kill_help:** Kill session (ends it + its viewers)
-- **head.kill_quiet:** Kill session — no session in this tile yet
+- **head.minimize_help:** Close this view — the Agent keeps running
+- **head.minimize_quiet:** Close view — no Agent in this workspace
+- **head.kill_help:** Delete or archive this Agent
+- **head.kill_quiet:** Delete or archive Agent — no Agent in this workspace
 
 ## pad — pad.js (the pad's widget captions)
 - **pad.w_encoder:** encoder — volume and play/pause; it speaks media-key only, so it cannot drive Ronin

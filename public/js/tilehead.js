@@ -87,6 +87,20 @@ const HEADER = () => {
     // メ explains itself by opening; every control inside carries its own words.
     widget: () => buildTileMore() },
 
+  // Window acts sit at the outside edge. Macros and メ remain beside them, but these
+  // two familiar marks get the corner: minus stops viewing; times opens the existing
+  // retirement sheet. Killing is not reimplemented here (and the incoming Control-C
+  // path can land on the same Tile.kill boundary).
+  { key: 'killBtn', cls: 'window-control kill', text: '×', needs: 'session',
+    help: t('head.kill_help', 'Delete or archive this Agent'),
+    quiet: t('head.kill_quiet', 'Delete or archive Agent — no Agent in this workspace'),
+    on: (tile) => tile.kill() },
+
+  { key: 'minimizeBtn', cls: 'window-control minimize', text: '−', needs: 'session',
+    help: t('head.minimize_help', 'Close this view — the Agent keeps running'),
+    quiet: t('head.minimize_quiet', 'Close view — no Agent in this workspace'),
+    on: (tile) => tile.minimize() },
+
   // Hidden until there is a reading — a plain shell pane has no context, and that is fine.
   //
   // A LIVE READING BEHIND A CLICK, which is normally the wrong trade — a gauge you have
@@ -125,11 +139,6 @@ const HEADER = () => {
       el.classList.toggle('has-note', has);
       return has ? t('head.note_has', 'Session note (has notes)') : t('head.note_empty', 'Session note (empty)');
     } },
-
-  { key: 'killBtn', cls: 'kill', text: '🗑', drop: true, needs: 'session',
-    help: t('head.kill_help', 'Kill session (ends it + its viewers)'),
-    quiet: t('head.kill_quiet', 'Kill session — no session in this tile yet'),
-    on: (tile) => tile.kill() },
 
   ];
   return rows;
