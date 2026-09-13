@@ -51,6 +51,7 @@
   .ask-line .ask-extra > :not(.ask-extra-name):not(.ask-validation) { grid-area: control; }
   .ask-validation { grid-area: note; min-height: 0; color: var(--bad); font-size: var(--form-note); }
   .ask-validation:empty { display: none; }
+  .ask-extra[data-required='true'] .ask-validation { display: block; min-height: 1.4em; } /* the note's line is reserved, so a refusal moves nothing */
   .ask-line [aria-invalid='true'] { border-color: var(--bad); }
   .ask-line[data-invalid='true'] { animation: ask-flash var(--motion-settle, 240ms) var(--ease) 2; }
   @keyframes ask-flash { from { box-shadow: 0 0 0 3px color-mix(in srgb, var(--bad) 45%, transparent); } to { box-shadow: none; } }

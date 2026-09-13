@@ -303,6 +303,7 @@ test('a required line refuses dismissal while blank or invalid, announces why, a
   optNamed(form, 'New team').click();
   const input = form.el.one('ask-line').one('ask-extra').children[1];
   assert.equal(input.attributes['aria-required'], 'true');
+  assert.equal(form.el.one('ask-line').one('ask-extra').dataset.required, 'true', 'a required line reserves its note\'s line, so a refusal moves nothing');
   form.el.fire('keydown', { key: 'Escape' });
   assert.equal(form.el.dataset.open, 'team', 'Escape with a blank required line keeps the tray open');
   assert.equal(input.attributes['aria-invalid'], 'true');
