@@ -618,7 +618,7 @@ narration of steps you took, no restating the recipe. If a session is about to e
 
 ## harakiri — end your own session
 `action_kind: mechanical` — run it, don't deliberate.
-> **Tool: `tejun-harakiri`** (TOOLS.md) — run it. Don't hand-roll it.
+> **Tool: `session_end`** (TOOLS.md) — run it. Don't hand-roll it.
 The final act of `land` / `delete`: the session that finished the work ends itself.
 Sessions are disposable; the record lives in git, the README and the manifest —
 never in a pane.
@@ -631,7 +631,7 @@ unique commits, shared ownership, and other-session occupancy refuse the whole p
 keep the Agent and desks alive, message the Agent, and name the exact next action. It never
 quarantines or discards work implicitly.
 
-**It takes no arguments and you do not name a session.** `tejun-harakiri`, nothing else.
+**It takes no arguments and you do not name a session.** `session_end`, nothing else.
 The tool hands your pane to Ronin; Ronin works out which session that is, checks the
 dial, and ends it. How a session is actually killed is Ronin's business, not yours —
 you are meant to be blind to it, the same way spawning from the commons is mechanical Ronin
@@ -653,7 +653,7 @@ point is that one implementation does the killing.
 
 ## archive-session — stop a live session so it may return
 `action_kind: mechanical` — run it, don't deliberate.
-> **Tool: `tejun-archive <session>`** (TOOLS.md)
+> **Tool: `session_archive <session>`** (TOOLS.md)
 
 Archive when the session's work may be resumed. The tool calls Ronin's existing archive
 path: Ronin records the provider conversation and session metadata before stopping the
@@ -662,7 +662,7 @@ second lifecycle store. A refusal leaves the live session in place.
 
 ## rehydrate-session — restore an archived session
 `action_kind: mechanical` — run it, don't deliberate.
-> **Tool: `tejun-rehydrate <archive-id>`** (TOOLS.md)
+> **Tool: `session_restore <archive-id>`** (TOOLS.md)
 
 Rehydrate restores an archived session through Ronin's existing provider-resume path and
 restores its session metadata. The archive disappears only after the live session and all

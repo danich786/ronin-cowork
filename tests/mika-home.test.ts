@@ -116,15 +116,15 @@ test('Mika birth stays visible through the ordinary session Docs record', async 
   assert.match(tegami, /path\.join\(sessionDir\(key\), 'README\.md'\)/);
 });
 
-test('fresh Mika projection exposes exactly lookup, owner_view, and show', async () => {
+test('fresh Mika projection adds constrained settings and separately granted session creation', async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'ronin-mika-tools-'));
   process.env.RONIN_SESSION_COMMANDS_DIR = path.join(root, 'commands');
   const projected = await projectRoutineTools('mika', [], '/usr/local/bin:/usr/bin:/bin', {
     includeTmux: false,
-    extraTools: ['lookup', 'owner_view', 'show'],
+    extraTools: ['lookup', 'owner_view', 'show', 'machine-settings', 'session_create'],
   });
-  assert.deepEqual((await readdir(projected.dir)).sort(), ['lookup', 'owner_view', 'show']);
-  assert.deepEqual(projected.delivered.sort(), ['lookup', 'owner_view', 'show']);
+  assert.deepEqual((await readdir(projected.dir)).sort(), ['lookup', 'machine-settings', 'owner_view', 'session_create', 'show']);
+  assert.deepEqual(projected.delivered.sort(), ['lookup', 'machine-settings', 'owner_view', 'session_create', 'show']);
   assert.deepEqual(projected.missing, []);
   assert.equal(projected.path, `${projected.dir}:/usr/local/bin:/usr/bin:/bin`, 'her tools first, then a shell she can actually run; nothing of Ronin\'s own bin');
   delete process.env.RONIN_SESSION_COMMANDS_DIR;
@@ -132,10 +132,11 @@ test('fresh Mika projection exposes exactly lookup, owner_view, and show', async
 
 test('the cold launch projects exactly her three tools over a working system PATH', async () => {
   const launch = await readFile(new URL('../src/routes/launch.ts', import.meta.url), 'utf8');
-  assert.match(launch, /const MIKA_TOOLS = \['lookup', 'owner_view', 'show'\] as const/);
+  assert.match(launch, /const MIKA_TOOLS = \['lookup', 'owner_view', 'show', 'machine-settings', 'session_create'\] as const/);
   assert.match(launch, /const MIKA_PARENT_PATH = '\/usr\/local\/bin:\/usr\/bin:\/bin'/);
   assert.match(launch, /houseSeat === 'mika' \? MIKA_PARENT_PATH : undefined/);
   assert.match(launch, /includeTmux: false, extraTools: \[\.\.\.MIKA_TOOLS\]/);
+  assert.match(launch, /RONIN_MACHINE_SETTINGS_AUTHORITY: 'mika'/);
   assert.match(launch, /houseSeat === 'mika'\),/);
 });
 

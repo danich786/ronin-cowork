@@ -216,4 +216,7 @@ test('the stock capability documents are well-formed and carry no retired vocabu
   assert.match(await readFile(by['work-record'].file, 'utf8'), /refuses an ID that\s+already exists/);
   assert.match(await readFile(by['work-record'].file, 'utf8'), /`exit`[\s\S]*`none` · `agent` · `lead` · `user`[\s\S]*`status`[\s\S]*`green` · `yellow` · `red`/);
   assert.match(await readFile(by['team-lead'].file, 'utf8'), /Assign and return/);
+  const machine = await readFile(by['machine-settings'].file, 'utf8');
+  assert.match(machine, /canonical Campaign\/provider model\s+catalog used by the UI dropdowns/);
+  assert.doesNotMatch(machine, /gpt-|claude-|gemini-|sonnet|opus/i, 'the capability carries no maintained model IDs');
 });

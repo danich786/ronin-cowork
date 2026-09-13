@@ -5,8 +5,8 @@ decided at birth (`src/spawn.ts`, `src/routine-tools.ts`), never by this directo
 whole:
 
 - **every Cowork Agent** — `tejun`, `tejun-step`, `tejun-send`, `tejun-peek`, `tejun-team`,
-  `tejun-fork`, `session_check`, `session_set`, `tejun-team-set`, `tejun-wipeboard`,
-  `tejun-teampage`, `tejun-jikan`, `tejun-harakiri`, `tejun-archive`, `tejun-rehydrate`,
+  `session_fork`, `session_check`, `session_set`, `tejun-team-set`, `tejun-wipeboard`,
+  `tejun-teampage`, `tejun-jikan`, `session_end`, `session_archive`, `session_restore`,
   `read_tegami`, `write_tegami`, and `ronin-url`, the operator address the others source;
 - **the designated Team lead** — `session_create` (supporting-Agent creation is lead work;
   it is on no delivery list until the lead-conditional capability projection lands);

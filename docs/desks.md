@@ -140,7 +140,7 @@ worktree it checks every live session's current directory. If a session is in th
 or below it, close keeps the desk and tells the caller to notify that session to leave,
 then retry. It does not message, relocate, stop, or retry for the caller. Otherwise the
 worktree, branch, and desk row are removed. `handoffDesk` changes explicit owners without
-moving work. `tejun-harakiri`, safe live-session Delete, and `--with-session` use the
+moving work. `session_end`, safe live-session Delete, and `--with-session` use the
 coordinated end: all assigned desks and ownership checks run first, clean Team-contained
 desks are removed, then the Agent is stopped. An ACCEPTED hand-in is immediately eligible
 when its clean tip is contained in the Team line; global-dev promotion and a second manual

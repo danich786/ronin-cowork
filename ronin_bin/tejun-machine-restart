@@ -59,7 +59,7 @@ systemctl --user restart ronin.service || {
 }
 
 # Wait for it to come back rather than announcing an outcome we have not seen. Reporting
-# "restarted" while the unit is still flapping is the same failure tejun-harakiri warns
+# "restarted" while the unit is still flapping is the same failure session_end warns
 # about: never claim the ending you did not watch happen.
 state=""
 i=0

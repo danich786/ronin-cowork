@@ -47,7 +47,7 @@ Resolution order, the same in both readers:
 The two readers are `src/cli-http.ts`, which every TypeScript command (`tejun-desk`,
 `tejun-wipeboard`, `tejun-send`, `tejun-jikan`, promotion, recovery, bundle, auth) goes
 through, and `ronin_bin/ronin-url` with its sourced sibling `ronin_bin/ronin-http.sh`, which
-the zero-dependency shell tools (`tejun-fork`, `tejun-harakiri`, `session_check`,
+the zero-dependency shell tools (`session_fork`, `session_end`, `session_check`,
 `session_create`, `session_set`,
 `tejun-team-set`, `tejun-teampage`, `mika`) go through. `ronin-url` prints one line —
 `RONIN_URL` when set, else the socket path — and `ronin_connect` turns that into the base
@@ -83,7 +83,7 @@ it; they do not source `.bashrc`, `.profile`, or another owner shell file. That 
 name is also how `read_tegami`, `write_tegami` and `tejun-teampage` learn which session they
 act for when the calling shell is not inside tmux and carries neither `TMUX_PANE` nor
 `$TMUX`; the name is accepted only when it is a live session. An Agent born with Ronin Base
-off therefore does not receive Base commands such as `write_tegami`, `tejun-fork`, or
+off therefore does not receive Base commands such as `write_tegami`, `session_fork`, or
 `ronin-url`. Changing a Team or Campaign default later does not mutate a running Agent's
 birth environment; recreate that Agent to give it the newly enabled tools.
 
