@@ -20,7 +20,8 @@ esac
 TOOL_DIR=$(dirname "$SELF")
 die() { printf '%s\n' "$1" >&2; exit "${2:-4}"; }
 need_value() {
-  [ "$#" -ge 2 ] && [ -n "$2" ] || die "BAD-ARG: $1 requires a value. Run tejun-session-set --help." 2
+  [ "$#" -ge 2 ] && [ -n "$2" ] && [ "${2#-}" = "$2" ] \
+    || die "BAD-ARG: $1 requires a value. Run tejun-session-set --help." 2
 }
 NAME="${1:-}"
 [ -n "$NAME" ] && [ "${NAME#-}" = "$NAME" ] || die "usage: tejun-session-set <name> [options]. Run tejun-session-set --help." 2
