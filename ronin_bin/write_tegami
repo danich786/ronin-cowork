@@ -85,6 +85,9 @@ write_tegami — update the current session's work record
 Usage:
   write_tegami project create <id> --title <text> --objective <text> [--stage <stage>]
   write_tegami project write <id> --title|--objective|--stage|--exit|--status|--evidence <value>
+  write_tegami project write <id> --ladder <json>
+  write_tegami project write <id> --leg <STAGE> <title>
+  write_tegami project write <id> --leg <STAGE.N> done|open
   write_tegami --objective <text>
   write_tegami --phase <title> | --gate <text>
   write_tegami --leg N <title> | --leg N.M <title>
@@ -188,7 +191,12 @@ found = next((p for p in projects if isinstance(p, dict) and p.get("id") == proj
 def pairs(words):
     if len(words) % 2: sys.exit("write_tegami: project fields take one --field value pair.")
     return [(words[i].removeprefix("--"), words[i+1]) for i in range(0, len(words), 2)]
-edits = pairs(args)
+leg_edit = None
+if verb == "write" and args[:1] == ["--leg"]:
+    if len(args) != 3: sys.exit("write_tegami: --leg takes <STAGE> <title> or <STAGE.N> done|open.")
+    leg_edit = (args[1], args[2]); edits = []
+else:
+    edits = pairs(args)
 if verb == "create":
     if found: sys.exit("write_tegami: project %s already exists." % project_id)
     vals = dict(edits)
@@ -200,17 +208,39 @@ if verb == "create":
     projects.append(found)
 else:
     if not found: sys.exit("write_tegami: no project %s." % project_id)
-    if len(edits) != 1: sys.exit("write_tegami: project write changes one field per call.")
-    key, value = edits[0]
-    if key not in ("title", "objective", "stage", "exit", "status", "evidence"):
-        sys.exit("write_tegami: project write field must be title, objective, stage, exit, status or evidence.")
-    if key == "evidence": found.setdefault("evidence", []).append(value)
-    else: found[key] = value
+    if leg_edit:
+        where, value = leg_edit; stage, dot, index = where.partition(".")
+        rung = next((r for r in found.get("ladder", []) if isinstance(r,dict) and r.get("stage") == stage), None)
+        if rung is None:
+            if dot: sys.exit("write_tegami: project %s has no %s ladder stage." % (project_id, stage))
+            rung = {"stage": stage, "legs": []}; found.setdefault("ladder", []).append(rung)
+        legs = rung.setdefault("legs", [])
+        if dot:
+            if not index.isdigit() or not 1 <= int(index) <= len(legs): sys.exit("write_tegami: --leg position is out of range.")
+            if value not in ("done", "open"): sys.exit("write_tegami: an indexed --leg takes done or open.")
+            legs[int(index)-1]["done"] = value == "done"
+        else:
+            legs.append({"title": value, "done": False})
+    else:
+        if len(edits) != 1: sys.exit("write_tegami: project write changes one field per call.")
+        key, value = edits[0]
+        if key not in ("title", "objective", "stage", "exit", "status", "evidence", "ladder"):
+            sys.exit("write_tegami: project write field must be title, objective, stage, exit, status, evidence or ladder.")
+        if key == "evidence": found.setdefault("evidence", []).append(value)
+        elif key == "ladder":
+            try: found["ladder"] = json.loads(value)
+            except Exception as e: sys.exit("write_tegami: --ladder is not valid JSON — %s" % e)
+        else: found[key] = value
 stages={"IDEAS","PLANNING","BUILDING","LANDING","DONE"}; exits={"none","agent","lead","user"}; statuses={"green","yellow","red"}
 for p in projects:
     if not isinstance(p,dict) or not all(isinstance(p.get(k),str) for k in ("id","title","objective")): sys.exit("write_tegami: invalid project shape.")
     if p.get("stage") not in stages or p.get("exit") not in exits or p.get("status") not in statuses: sys.exit("write_tegami: invalid project stage, exit or status.")
     if not isinstance(p.get("ladder"),list) or not isinstance(p.get("evidence"),list): sys.exit("write_tegami: invalid project ladder or evidence.")
+    for rung in p["ladder"]:
+        if not isinstance(rung,dict) or rung.get("stage") not in stages: sys.exit("write_tegami: invalid project ladder stage.")
+        if "legs" in rung and not isinstance(rung["legs"],list): sys.exit("write_tegami: invalid project legs.")
+        for leg in rung.get("legs",[]):
+            if not isinstance(leg,dict) or not isinstance(leg.get("title"),str) or ("done" in leg and not isinstance(leg["done"],bool)): sys.exit("write_tegami: invalid project leg.")
 block=json.dumps(d, indent=2, ensure_ascii=False); tmp=src+".project"
 open(tmp,"w").write(text[:m.start(1)]+block+text[m.end(1):]); os.replace(tmp,src)
 print("write_tegami: project %s %s." % (project_id, "created" if verb == "create" else "updated"))
