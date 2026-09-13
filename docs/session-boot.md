@@ -111,7 +111,7 @@ on the real shelf:
   wins whenever the two disagree.
 - **`all/RONIN_UTILITY.md`** — the coworkspace for an Agent: the pages, the three
   workbenches and their surfaces, the tile head's buttons, Locked and Unlocked, copy and paste.
-- **`all/KOTOBA_GLOSSARY.md`** — the house names (TEGAMI, TEJUN, the wipeboard …) and the
+- **`all/KOTOBA_GLOSSARY.md`** — the house names (TEGAMI, RIREKI, the wipeboard …) and the
   plain word to say for each, so no Japanese leaks from the tools to the person. Rendered at
   birth with the owner's desk words (`renderGlossary`; `docs/kokugo.md` §8) and compiled
   **last**: reference, not rules.
@@ -129,13 +129,6 @@ protocols are repository-contributor instructions and never enter user birth rea
 The compiled result lives as `README.md` beside that session's letter and birth receipt.
 
 A shelf that arrives full is a shelf nobody curates.
-
-## Asking Mika
-
-*"put this on the shelf for ronin_cowork"* → `+session_boot:` (or `+shelve:`). She links or
-copies it into the right folder, having shown you what she is about to do. If which level
-you meant is not obvious, she asks — "everyone", "only in this repo" and "only when chasing
-bugs" are three different answers.
 
 ## It is per-machine
 
