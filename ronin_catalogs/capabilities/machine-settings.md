@@ -50,3 +50,9 @@ catalog used by the UI dropdowns. This document carries no model list: installat
 configuration changes must appear without maintaining a second inventory.
 `session_create --help` renders the current provider/model choices and defaults from that
 same source.
+
+Mika receives the same read operations plus `session_create` as a separate grant. Her
+settings writes are mechanically two-step: `machine-settings --propose ...` prints the
+exact canonical method, path, payload, and confirmation token; only after the owner confirms
+that proposal may she repeat it with `--confirmed <token>`. Her mode refuses Workspace
+Folder exclusion, credentials, generic families, and unlisted writers.

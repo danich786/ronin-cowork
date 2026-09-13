@@ -129,3 +129,30 @@ test('Campaign omission refuses without exact session context and help carries o
   assert.match(help.output, /canonical Campaign\/provider model catalog shared with\s+the UI dropdowns/);
   assert.doesNotMatch(help.output, /gpt-|claude-|gemini-|sonnet|opus/i);
 });
+
+test('Mika reads directly but every allowed write requires an exact proposal confirmation', async (t) => {
+  const f = await fixture();
+  t.after(f.close);
+  const env = { RONIN_MACHINE_SETTINGS_AUTHORITY: 'mika' };
+  assert.equal((await f.run(['machine', 'read'], env)).code, 0);
+  const direct = await f.run(['machine', 'write', 'monitor', 'on'], env);
+  assert.equal(direct.code, 4);
+  assert.match(direct.error, /CONFIRMATION-REQUIRED/);
+  assert.equal(f.requests.filter((request) => request.method === 'PATCH').length, 0);
+
+  const proposed = await f.run(['--propose', 'machine', 'write', 'monitor', 'on'], env);
+  assert.equal(proposed.code, 0, proposed.error);
+  const proposal = JSON.parse(proposed.output);
+  assert.deepEqual(proposal.proposal, {
+    method: 'PATCH', path: '/api/machine-settings',
+    payload: { family: 'machine', value: { monitor: true } },
+  });
+  assert.equal(f.requests.filter((request) => request.method === 'PATCH').length, 0);
+  const applied = await f.run(['--confirmed', proposal.confirmation, 'machine', 'write', 'monitor', 'on'], env);
+  assert.equal(applied.code, 0, applied.error);
+  assert.equal(f.requests.filter((request) => request.method === 'PATCH').length, 1);
+
+  const excluded = await f.run(['--propose', 'project-root', 'exclude', 'repo'], env);
+  assert.equal(excluded.code, 4);
+  assert.match(excluded.error, /Mika cannot exclude/);
+});
