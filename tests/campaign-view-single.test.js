@@ -43,9 +43,10 @@ test('the Campaign page clears the loading state it set before it paints a surfa
 
 test('Settings carries Setup capabilities and starts with Mika beside an empty workspace', async () => {
   const source = await readFile(new URL('../public/js/campaign-view.js', import.meta.url), 'utf8');
-  for (const type of ['register', 'services', 'gbrain', 'launchOwn']) {
+  for (const type of ['register', 'launchOwn']) {
     assert.match(source, new RegExp(`SETUP_SURFACE_TYPES\\.${type}`));
   }
+  assert.doesNotMatch(source, /SETUP_SURFACE_TYPES\.(?:services|gbrain|installations)/, 'Campaign uses its own Installations surface');
   assert.match(source, /createMikaHelpPanel/);
   assert.match(source, /className: 'campaign-mika-card'/);
   assert.match(source, /profiles\.define\(PROFILE, \[\s*TERMINAL_TYPE,\s*TYPES\.identity/, 'Mika is the first Settings selector card');
