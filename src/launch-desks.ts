@@ -93,7 +93,7 @@ export function renderDeskBlock(a: Assignment): string {
   return [
     `Your assignment has ${n} desk${n === 1 ? '' : 's'}:`,
     ...rows,
-    'Get, update, and hand in through tejun-desk; read the worktree-root page before your first write.',
+    'Get, update, and hand in through worktree-desk; read the worktree-root page before your first write.',
   ].join('\n');
 }
 

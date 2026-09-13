@@ -46,7 +46,7 @@ test('dirty, pending, rejected, unique, shared, and occupied desks block the who
     assert.ok(e instanceof ShutdownRefused);
     assert.match(e.message, /ronin:team\/t\/agent/);
     assert.match(e.message, /dirty files: draft\.txt/);
-    assert.match(e.message, /tejun-desk hand-in/);
+    assert.match(e.message, /worktree-desk hand-in/);
     assert.match(e.message, /shared with peer/);
     assert.match(e.message, /occupied by viewer/);
     return true;

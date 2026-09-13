@@ -54,6 +54,6 @@ behind inspection); the API carries them for anyone who asks.
 
 ## What this page does not cover
 
-Opening, syncing, parking and handing in a desk are Track 1's tools (`tejun-desk`). The
+Opening, syncing, parking and handing in a desk are Track 1's tools (`worktree-desk`). The
 notice a sibling gets when the line moves is delivered by the registry's adoption step;
 here it only *shows*, as `pending` on the desk until the desk syncs.

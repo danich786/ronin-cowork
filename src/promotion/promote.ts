@@ -38,7 +38,7 @@ const promotedLine = (r: PromotionReceipt): string =>
  *  originator itself; nobody waits for it to percolate). */
 export async function announcePromotion(r: PromotionReceipt, primary: string, fx: Effects, log: (line: string) => void): Promise<void> {
   if (r.kind !== 'team_promotion') return;
-  await fx.notify(primary, r.team, `from promotion: ${r.id} is COMPLETE — ${promotedLine(r)}; ${r.restart ? 'restart and health passed' : 'no restart requested'}. Every desk: tejun-desk status says whether you are behind ${r.repos[0]?.target ?? 'dev'}; each contributor has been told its desk is on ${r.repos[0]?.target ?? 'dev'}.`);
+  await fx.notify(primary, r.team, `from promotion: ${r.id} is COMPLETE — ${promotedLine(r)}; ${r.restart ? 'restart and health passed' : 'no restart requested'}. Every desk: worktree-desk status says whether you are behind ${r.repos[0]?.target ?? 'dev'}; each contributor has been told its desk is on ${r.repos[0]?.target ?? 'dev'}.`);
   if (!fx.tell) return;
   const per = new Map<string, string[]>();
   for (const repo of r.repos) {

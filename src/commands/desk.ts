@@ -62,16 +62,16 @@ function parse(argv: string[]): Args {
 
 const str = (v: string | true | undefined): string => (typeof v === 'string' ? v : '');
 
-const USAGE = `usage: tejun-desk status [<repo[:branch]>] [--session s | --team t | --repo r]
-       tejun-desk open <repo[:branch]> [--team t] [--session s] [--source dev|team]
-       tejun-desk assign <repo[:branch]> --session s --team t [--source dev|team]
-       tejun-desk hand-in [<repo[:branch]>] [--assignment]
-       tejun-desk sync [<repo[:branch]>]
-       tejun-desk close [<repo[:branch]>] [--with-session]
-       tejun-desk handoff <repo[:branch]> --to <session[,session]>
-       tejun-desk discard <repo[:branch]> --confirm "DISCARD repo:branch"
-       tejun-desk reply <repo> <receipt id> <message…>
-       tejun-desk receipts [<repo>] [--line [--accepted | --since <line sha>] | --id <receipt id>]`;
+const USAGE = `usage: worktree-desk status [<repo[:branch]>] [--session s | --team t | --repo r]
+       worktree-desk open <repo[:branch]> [--team t] [--session s] [--source dev|team]
+       worktree-desk assign <repo[:branch]> --session s --team t [--source dev|team]
+       worktree-desk hand-in [<repo[:branch]>] [--assignment]
+       worktree-desk sync [<repo[:branch]>]
+       worktree-desk close [<repo[:branch]>] [--with-session]
+       worktree-desk handoff <repo[:branch]> --to <session[,session]>
+       worktree-desk discard <repo[:branch]> --confirm "DISCARD repo:branch"
+       worktree-desk reply <repo> <receipt id> <message…>
+       worktree-desk receipts [<repo>] [--line [--accepted | --since <line sha>] | --id <receipt id>]`;
 
 function row(d: DeskStatus): string {
   const bits = [
@@ -113,7 +113,7 @@ async function mine(session: string, value: string): Promise<DeskStatus[]> {
 async function pickOne(session: string, value: string, verb: string): Promise<DeskStatus> {
   const desks = await mine(session, value);
   if (!desks.length) die(value ? `NO-DESK: ${session} has no open desk matching ${value}` : `NO-DESK: ${session} has no open desk`, 3);
-  if (desks.length > 1) die(`WHICH-DESK: ${session} has ${desks.map((d) => deskId(d)).join(', ')} — name repo:branch (tejun-desk ${verb} <repo:branch>)`, 2);
+  if (desks.length > 1) die(`WHICH-DESK: ${session} has ${desks.map((d) => deskId(d)).join(', ')} — name repo:branch (worktree-desk ${verb} <repo:branch>)`, 2);
   return desks[0]!;
 }
 
@@ -164,7 +164,7 @@ async function main(): Promise<void> {
         if (!selector.repo) die(USAGE, 2);
         if (!session) die('NO-SESSION: not inside a session and no --session', 3);
         const team = str(flags.get('team')) || (await myTeams(session))[0] || '';
-        if (verb === 'assign' && (!str(flags.get('session')) || !str(flags.get('team')))) die('usage: tejun-desk assign <repo[:branch]> --session s --team t [--source dev|team]', 2);
+        if (verb === 'assign' && (!str(flags.get('session')) || !str(flags.get('team')))) die('usage: worktree-desk assign <repo[:branch]> --session s --team t [--source dev|team]', 2);
         const requestedSource = str(flags.get('source'));
         if (requestedSource && !['dev', 'team'].includes(requestedSource)) die("SOURCE: choose 'dev' or 'team'", 2);
         if (requestedSource === 'team' && !team) die('SOURCE: team requires --team or Team membership', 2);
@@ -181,7 +181,7 @@ async function main(): Promise<void> {
         // with the verb, rather than let OPENED read as "yours again".
         const owners = d.owners?.length ? d.owners : [d.session];
         if (owners.includes(session)) out(`  custody: ${owners.join(', ')}`);
-        else out(`  custody: ${owners.join(', ')} — not yours: sync, hand-in and close answer NO-DESK for ${session} until a holder runs  tejun-desk handoff ${deskId(d)} --to ${session}`);
+        else out(`  custody: ${owners.join(', ')} — not yours: sync, hand-in and close answer NO-DESK for ${session} until a holder runs worktree-desk handoff ${deskId(d)} --to ${session}`);
         return;
       }
       case 'hand-in': {
@@ -200,7 +200,7 @@ async function main(): Promise<void> {
           if (receipt.result === 'accepted' && tidy.desk) {
             out(`  desk is ${tidy.desk.ahead === 0 ? 'level with the line' : `${tidy.desk.ahead} commit(s) ahead of the line`}`);
             out(tidy.unsaved_files.length ? `  not handed in: ${tidy.unsaved_files.join(', ')}` : '  no unsaved or untracked files');
-            out(`  NEXT: line moved; run tejun-desk status ${deskId(d)}; if it reports a dev update, run tejun-desk sync ${deskId(d)}; contact the lead with tejun-send <lead>`);
+            out(`  NEXT: line moved; run worktree-desk status ${deskId(d)}; if it reports a dev update, run worktree-desk sync ${deskId(d)}; contact the lead through the Edges tool`);
           }
           if (receipt.result !== 'accepted') worst = 4;
           // The tool finds the lead and tells them (owner, 2026-09-05: the session neither
@@ -286,7 +286,7 @@ async function main(): Promise<void> {
       case 'reply': {
         const [repo, id, ...words] = positional;
         const message = words.join(' ').trim();
-        if (!repo || !id || !message) die('usage: tejun-desk reply <repo> <receipt id> <message…>', 2);
+        if (!repo || !id || !message) die('usage: worktree-desk reply <repo> <receipt id> <message…>', 2);
         if (!session) die('NO-SESSION: not inside a session and no --session', 3);
         const receipt = await receiptById(repo, id);
         if (!receipt) die(`NONE: no receipt ${id} on ${repo}`, 3);
@@ -305,7 +305,7 @@ async function main(): Promise<void> {
         const repo = positional[0] ?? '';
         let rows: HandInReceipt[] = [];
         if (str(flags.get('id'))) {
-          if (!repo) die('usage: tejun-desk receipts <repo> --id <receipt id>', 2);
+          if (!repo) die('usage: worktree-desk receipts <repo> --id <receipt id>', 2);
           const r = await receiptById(repo, str(flags.get('id')));
           if (!r) die(`NONE: no receipt ${str(flags.get('id'))} on ${repo}`, 3);
           out(receiptLine(r));
