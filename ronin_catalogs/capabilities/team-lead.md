@@ -5,17 +5,23 @@
 - **requires:** lead
 - **order:** 60
 
-Reach for this because you are the designated Team lead. Every Agent keeps its personal work record; you additionally read and update the Team roster — the Team's record — and manage the projects the Team holds. `ronin_sops/teams.md` is the procedure; the Team roster tools are being settled with the session vocabulary and join the table below as they land.
+Reach for this because you are the designated Team lead. Every Agent keeps its personal
+work record; you additionally own the Team roster and the projects it holds.
+`ronin_sops/teams.md` is the procedure.
+
+**Live tools:** only the shipped session commands below are callable from this bundle.
 
 ## Tools
 
 | Tool | Authority | Teach | Help |
 |---|---|---|---|
 | `session_create` | create: one supporting Agent, optionally for a roster-held project, through the ordinary launch resolver; refuses an existing name | priority | `session_create --help` |
-| `session_check` | read: one live session by exact name | | |
-| `session_set` | write: a member's Team membership, lead designation, or project root | | |
-| `worktree-desk assign` | write: give a named Agent a desk with the same source choice | | `worktree-desk --help` |
-| `edges wipeboard post --to all` | write: a broadcast every member is interrupted for | | `edges --help` |
+| `session_check` | read: one live session by exact name | | `session_check --help` |
+| `session_set` | write: a member's Team membership, lead designation, or project root | | `session_set --help` |
+
+**TBD capabilities:** typed Team-record/project moves, desk assignment, and Team broadcast
+tools do not ship yet. Their authority is described below, but no command is callable or
+should be invented for them.
 
 ## What the lead does
 

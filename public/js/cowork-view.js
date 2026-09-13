@@ -412,7 +412,7 @@ export function createCoworkView(options = {}) {
 
   const putCommons = (id, tab = '', doc = '') => putSurface(COMMONS, id, tab, doc);
   const putCowork = (id, tab = '') => putSurface(COWORK, id, tab);
-  // `tejun-teampage … workspace1=new` still says "the door work starts at"; that door is
+  // `edges page … workspace1=new` still says "the door work starts at"; that door is
   // the drawn New Agent now (TOOLS.md's `new` word is unchanged for the owner).
   const putNew = (id) => putSurface(WB_TYPES.newAgent, id);
   const setCount = (n) => bench.setCount(n);
@@ -470,7 +470,7 @@ export function createCoworkView(options = {}) {
 
   /* ---------- one controller, two callers ---------- */
   // Everything that changes this page goes through arrange(): the C/T buttons and the
-  // roster cards call it, and so does a draft an agent hands in with tejun-teampage
+  // roster cards call it, and so does a draft an agent hands in with edges page
   const arranger = createArranger({
     showColumn: (name) => { name = name === 'roster' ? 'selector' : name; if (bench.arrangement.state().hidden.includes(name)) bench.arrangement.toggle(name); },
     hideColumn: (name) => { name = name === 'roster' ? 'selector' : name; if (!bench.arrangement.state().hidden.includes(name)) bench.arrangement.toggle(name); },
@@ -490,7 +490,7 @@ export function createCoworkView(options = {}) {
     reportView();
     return did;
   };
-  /** What this tab shows — reported to Ronin so an agent can read it (tejun-teampage). */
+  /** What this tab shows — reported to Ronin so an agent can read it (edges page). */
   const TAB = (() => {
     try {
       let id = sessionStorage.getItem('ronin.team.tab');

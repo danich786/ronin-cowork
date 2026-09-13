@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# tejun-rireki — read a session's tape from a shell. The lens, minus the emulator.
-# Usage: tejun-rireki                       every session with a tape, and its size
-#        tejun-rireki <session>             what the tape holds: segments, marks, dial
-#        tejun-rireki <session> text [n]    last n KB of readable text (default 32)
-#        tejun-rireki <session> since       everything since the owner's last message
-#        tejun-rireki <session> raw         the raw bytes, concatenated, to stdout
-#        tejun-rireki <session> scroll [n] [before]  the settled transcript
-#        tejun-rireki <session> voice      the settled transcript as a plain text blob
+# edges read — read a session's tape from a shell. The lens, minus the emulator.
+# Usage: edges read                       every session with a tape, and its size
+#        edges read <session>             what the tape holds: segments, marks, dial
+#        edges read <session> text [n]    last n KB of readable text (default 32)
+#        edges read <session> since       everything since the owner's last message
+#        edges read <session> raw         the raw bytes, concatenated, to stdout
+#        edges read <session> scroll [n] [before]  the settled transcript
+#        edges read <session> voice      the settled transcript as a plain text blob
 #
 # RIREKI is the record of what a session's panes emitted. The recorder is a tmux applet
 # (libexec/rireki/) holding FAUCET B — tmux's one pipe-pane per pane — so the tape fills
 # whether or not Ronin is up and whether or not anyone is watching.
 #
-# This is the shell twin of src/lens.ts, the same way tejun-wipeboard twins
+# This is the shell twin of src/lens.ts, the same way edges wipeboard twins
 # src/wipeboards.ts. Neither is the "real" one. The strip here is deliberately dumb:
 # escape codes out, repeats left in. Ronin's lens collapses repaints properly and
 # labels the result as reconstruction — this does not pretend to.
@@ -23,7 +23,7 @@ HERE=$(cd "$(dirname "$SELF")/.." && pwd)
 : "${RIREKI_DIR:=$("$HERE/bin/ronin-store" session)}"
 VIEWER_PREFIX='grid_'
 
-usage() { echo "usage: tejun-rireki [session [text|since|raw] [n]]" >&2; exit 2; }
+usage() { echo "usage: edges read [session [text|since|raw] [n]]" >&2; exit 2; }
 
 # Strip what is PROVABLY not content: CSI/OSC sequences, carriage returns. Never strip
 # by screen position — a permission prompt lives in the same rows as the input box.
@@ -84,9 +84,36 @@ if [ $# -eq 0 ]; then
   exit 0
 fi
 
+case "${1-}" in
+  -h|--help)
+    [ "$#" -eq 1 ] || { echo "edges read: --help takes no other arguments. Run edges read --help." >&2; exit 2; }
+    cat <<'EOF'
+Usage: edges read [session [lines|text|since|raw|scroll|voice] [argument...]]
+
+With a session and optional line count, reads its durable settled transcript
+first and falls back to its recent live pane only when no durable tape exists.
+The named modes read the durable record directly. With no arguments, lists tapes.
+EOF
+    exit 0
+    ;;
+esac
+
 SESSION="$1"; shift
-DIR=$(pane_dir "$SESSION") || { echo "no tape for \"$SESSION\"." >&2; exit 1; }
-CMD="${1:-info}"; [ $# -gt 0 ] && shift
+REQUESTED="${1:-}"
+case "$REQUESTED" in ''|*[!0-9]*) ;; *) LINES="$REQUESTED"; shift ;; esac
+if ! DIR=$(pane_dir "$SESSION"); then
+  if [ -z "$REQUESTED" ] || [ -n "${LINES:-}" ]; then
+    exec "$HERE/ronin_bin/.edges-peek" "$SESSION" "${LINES:-60}"
+  fi
+  echo "no tape for \"$SESSION\"." >&2
+  exit 1
+fi
+if [ -z "$REQUESTED" ] || [ -n "${LINES:-}" ]; then
+  CMD=scroll
+  set -- "${LINES:-120}"
+else
+  CMD="$1"; shift
+fi
 
 case "$CMD" in
   info)

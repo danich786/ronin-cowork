@@ -44,7 +44,7 @@ if tmux has-session -t mika_agent 2>/dev/null; then
   # suggested reply at the prompt — the kind you press Tab to accept — in dim text, and
   # there is almost always one sitting there. A check that could not tell dim from typed
   # would refuse every send forever.
-  exec "$TOOL_DIR/tejun-send" mika_agent "$msg"
+  exec "$TOOL_DIR/edges" send mika_agent "$msg"
 fi
 
 # Not up. Her dedicated server door owns the house-only birth mechanics.

@@ -99,7 +99,7 @@ house-wide body of knowledge.
 | what a `+name:` means | `tejun <name>` — compile, execute, report | a remembered workflow |
 | whether a capability exists | the catalogs, via the map | improvising with tmux |
 | how to do a compiled step | it arrived in the compile | searching |
-| anything about another session | dial first; `tejun-rireki <session> since` first, with the durable record authoritative; then `tejun-send` | pane capture only when there is no tape or live prompt state is unknowable, and report the fallback; raw `send-keys` |
+| anything about another session | dial first; `edges read <session> since` first, with the durable record authoritative; then `edges send` | pane capture only when there is no tape or live prompt state is unknowable, and report the fallback; raw `send-keys` |
 | how the house does a domain | the SOP shelf, by book | inventing a process |
 | what is true on this machine | run the named tool | any document |
 | where anything else is | the shelves section of the birth README | — |

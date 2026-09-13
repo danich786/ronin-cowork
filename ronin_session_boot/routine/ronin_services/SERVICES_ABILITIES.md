@@ -1,8 +1,8 @@
 # RONIN SERVICES ABILITIES — Koshi and Voice
 
 **Readable transcripts are not in this beta.** The recorder is off while it is refactored,
-so there is no durable tape and no `tejun-rireki`. Read another live session with
-`tejun-peek`, say that you used the live view, and never call a pane capture durable or read
+so `edges read` falls back to another session's live pane. Say that you used the live
+view, and never call a pane capture durable or read
 service stores directly.
 
 **Koshi** is Ronin's assisted administrative behavior: Ronin's own agents doing the house's

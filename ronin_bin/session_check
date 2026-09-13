@@ -11,7 +11,7 @@ Usage:
 
 Reports the Agent's Teams, lead designations, Control setting, and project root.
 An unused name returns NO-SESSION and changes nothing. Related:
-session_create --help; session_set --help; tejun-team --help
+session_create --help; session_set --help; edges team --help
 EOF
     exit 0 ;;
 esac

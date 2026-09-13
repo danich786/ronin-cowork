@@ -21,7 +21,7 @@ test('a wipeboard notice uses direct delivery and submits on an isolated Codex-s
   });
 
   const queue = await import(`../src/message-queue.ts?board=${Date.now()}`);
-  const notice = 'WIPEBOARD team — @sender posted. Run: tejun-wipeboard';
+  const notice = 'WIPEBOARD team — @sender posted. Run: edges wipeboard';
   assert.equal(await queue.deliverMessage('board_notice_target', notice, 'wipeboard_notice'), null);
   const stdout = await server.run('capture-pane', '-p', '-t', '=board_notice_target:');
   assert.match(stdout, new RegExp(`SUBMITTED:${notice}`));

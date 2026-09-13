@@ -64,7 +64,7 @@ Two shapes that come up:
 
 - **A leading or trailing space** is not a word. Catalog values are trimmed, so `' (dirty)'`
   becomes `' ' + t('desk.dirty', '(dirty)')`.
-- **Markup inside a sentence** (`Agents resolve these with <code>tejun-team</code>.`): keep
+- **Markup inside a sentence** (`Agents resolve these with <code>edges team</code>.`): keep
   one key with a placeholder and split on it —
   `const [before, after] = t('panels.team_hint', 'Agents resolve these with {cmd}.').split('{cmd}')`
   — then append `before`, the `<code>` element, `after`. A lexicon's word is text and must

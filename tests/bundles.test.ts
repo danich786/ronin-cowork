@@ -99,7 +99,7 @@ test('the plan says what an install would do, and a tool never replaces one of R
       { store: 'catalogs', path: 'templates/teams/staff_my_codebase.md', text: stockTeam },
       { store: 'catalogs', path: 'templates/teams/dinner_party.md', text: '# Dinner Party\n- **label:** Mine\n' },
       { store: 'sops', path: 'brand_new.md', text: '# new\n' },
-      { store: 'tools', path: 'tejun-send', text: '#!/bin/sh\n' },
+      { store: 'tools', path: 'edges', text: '#!/bin/sh\n' },
     ],
     entries: [
       { catalog: 'TOOLS.md', name: 'review_tool', text: '| `review_tool` | review | mine |' },
@@ -110,10 +110,10 @@ test('the plan says what an install would do, and a tool never replaces one of R
   assert.equal(verdict('templates/teams/staff_my_codebase.md'), 'same-as-shipped');
   assert.equal(verdict('templates/teams/dinner_party.md'), 'shadows-shipped');
   assert.equal(verdict('brand_new.md'), 'new');
-  assert.equal(verdict('tejun-send'), 'refused');
+  assert.equal(verdict('edges'), 'refused');
   assert.equal(verdict('review_tool'), 'new');
   const receipt = await installBundle(b);
-  assert.deepEqual(receipt.refused.map((i) => i.path), ['tejun-send']);
+  assert.deepEqual(receipt.refused.map((i) => i.path), ['edges']);
   assert.deepEqual(receipt.skipped.map((i) => i.path), ['templates/teams/staff_my_codebase.md']);
   assert.deepEqual(receipt.written.map((i) => i.path).sort(), ['brand_new.md', 'review_tool', 'templates/teams/dinner_party.md']);
   await rm(storeDir('catalogs'), { recursive: true, force: true });

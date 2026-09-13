@@ -95,7 +95,7 @@ export function createArranger(verbs) {
   return { apply };
 }
 
-/** This tab's view, reported to Ronin so an agent can read it (tejun-teampage). */
+/** This tab's view, reported to Ronin so an agent can read it (edges page). */
 export function reportView(team, tab, view) {
   return request(`/api/teams/${encodeURIComponent(team)}/page/${encodeURIComponent(tab)}`, { method: 'PUT', json: { view } });
 }

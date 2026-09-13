@@ -49,7 +49,7 @@ export async function expandLookup(text: string): Promise<string | null> {
       `${text.trim()} → resolved by Ronin (no lookup needed): ${isTeam ? `the ${asTeam} team's board` : `board "${boardId}"`} is ${boardPath(boardId)}. ` +
       `Brief: ${brief || '(empty — the owner has not written one yet)'}. ` +
       `On it${isTeam ? ' (membership follows the team)' : ''}: ${rows.length ? rows.join(', ') : 'nobody yet'}. ${board.posts.length} post(s) so far. ` +
-      `Run "tejun-wipeboard" to be handed whatever you have not read; post to your own team's board with "tejun-wipeboard post <text>" ` +
+      `Run "edges wipeboard" to be handed whatever you have not read; post to your own team's board with "edges wipeboard post <text>" ` +
       `(no name needed — a name is only for a board that is not your team's; --to names who is interrupted, not who may read; the lead always is). ` +
       `Never rewrite another agent's post, never edit the Brief. ` +
       `This is a lookup: report it and wait unless you were already told what to say there.`
@@ -76,7 +76,7 @@ export async function expandLookup(text: string): Promise<string | null> {
     }
     return (
       `${text.trim()} → resolved by Ronin (no lookup needed): the ${want} team is ${rows.length} session(s) — ${rows.join(', ')}. ` +
-      `That set is what "${want}" means here. Membership changes as sessions are born, tagged or die, so re-run "tejun-team ${want}" before acting on the team later, and control-check each member before touching it. ` +
+      `That set is what "${want}" means here. Membership changes as sessions are born, tagged or die, so re-run "edges team ${want}" before acting on the team later, and control-check each member before touching it. ` +
       `This is a lookup: report it and wait unless you were already told what to do with them.`
     );
   }
@@ -98,6 +98,6 @@ export async function expandLookup(text: string): Promise<string | null> {
   }
   return (
     `${text.trim()}  ⟨resolved by Ronin, no lookup needed: ${clauses.join('; ')}. ` +
-    `Membership can change — re-check with "tejun-team <team>" before acting later, and control-check each member before touching it.⟩`
+    `Membership can change — re-check with "edges team <team>" before acting later, and control-check each member before touching it.⟩`
   );
 }

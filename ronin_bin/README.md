@@ -4,9 +4,8 @@
 decided at birth (`src/spawn.ts`, `src/routine-tools.ts`), never by this directory as a
 whole:
 
-- **every Cowork Agent** — `tejun-send`, `tejun-peek`, `tejun-team`,
-  `session_fork`, `session_check`, `session_set`, `tejun-team-set`, `tejun-wipeboard`,
-  `tejun-teampage`, `tejun-jikan`, `session_end`, `session_archive`, `session_restore`,
+- **every Cowork Agent** — `edges`, `session_fork`, `session_check`, `session_set`,
+  `tejun-team-set`, `session_end`, `session_archive`, `session_restore`,
   `read_tegami`, `write_tegami`, and `ronin-url`, the operator address the others source;
 - **the designated Team lead** — `session_create` (supporting-Agent creation is lead work;
   it is on no delivery list until the lead-conditional capability projection lands);
@@ -16,13 +15,11 @@ whole:
 - **with Ronin Services** — `mika`; `lookup`, `owner_view`, `show`, constrained
   `machine-settings`, and separately granted `session_create` are hers alone.
 
-`tejun-rireki` has a row in `ronin_catalogs/TOOLS.md` but sits on no delivery list, so no
-Agent finds it by bare name while the recorder is being refactored. `ronin-desk-settle` (the
-lead's desk reconciler) and `ronin-team` (Team retirement) are house-side scripts kept here
+`ronin-desk-settle` (the lead's desk reconciler) and `ronin-team` (Team retirement) are house-side scripts kept here
 for `tool-path.sh`; they implement no catalogued action. `setup.sh` puts this directory on
 PATH, after `bin/shim` (the guards) and ahead of `bin/`.
 
-Use the wipeboard for team-wide messages and `tejun-send` for one session, with no board in between.
+Use the wipeboard for team-wide messages and `edges send` for one session, with no board in between.
 
 **The shelf is defined by its audience, the catalog by its rule.** Anything an agent
 types by bare name belongs here — the letter tools included, which is why they moved

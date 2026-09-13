@@ -105,7 +105,7 @@ test('every agent-facing API caller connects through the one library and carries
     'show',
     'tejun-kanban',
     'tejun-team-set',
-    'tejun-teampage',
+    '.edges-page',
   ]);
   for (const name of callers) {
     const body = readFileSync(path.join(bin, name), 'utf8');

@@ -20,6 +20,13 @@ const retired = [
   'ronin_bin/tejun-machine-restart',
   'ronin_bin/tejun-recall',
   'ronin_bin/tejun-remember',
+  'ronin_bin/tejun-send',
+  'ronin_bin/tejun-peek',
+  'ronin_bin/tejun-team',
+  'ronin_bin/tejun-wipeboard',
+  'ronin_bin/tejun-teampage',
+  'ronin_bin/tejun-jikan',
+  'ronin_bin/tejun-rireki',
 ];
 const shipped = ['src', 'public', 'scripts', 'ronin_bin', 'ronin_catalogs', 'ronin_library', 'ronin_session_boot', 'ronin_sops', 'docs'];
 const forbidden = /(?:\/api\/(?:macros|actions)\b|\btejun-step\b|\b(?:MIKA_)?(?:MACROS|ACTIONS)\.md\b|compile-macro|\*\*(?:macros|actions):\*\*)/;
