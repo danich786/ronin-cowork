@@ -59,7 +59,7 @@ const serve = (seed) => {
 };
 
 const roster = {
-  durable: true, name: 'jobber', title: 'Jobber', kind: 'coding', objective: 'Polish.', references: ['https://example.test'],
+  durable: true, name: 'jobber', title: 'Jobber', kind: 'coding', objective: 'Polish.',
   project_root: 'ronin_cowork', repos: ['ronin_services'], branches: { ronin_services: 'dev' }, features: ['ronin_host'],
   behaviours: { selected: ['mandates', 'buildout'], required: ['mandates'] },
   agent_defaults: { provider: 'openai', model: 'gpt-5.6-sol', reach: 'plan', recruit: 'propose agents', output: 'open', dial: 'write', launch_mode: 'live_dangerously', permissions: 'retired', note: 'carried' },
@@ -106,7 +106,7 @@ test('the head is one line, the entries are the kit’s, and nothing else is han
   assert.equal(head.one('tw-config-reading').textContent, 'Team IDjobber');
   assert.ok(head.one('tw-config-field').one('wk-field-control'), 'the title entry wears the kit’s control class');
   const entries = form.all('tw-config-field').map((node) => [node.children[0].textContent, node.children[1].tagName, node.children[1].value]);
-  assert.deepEqual(entries, [['Readable title', 'INPUT', 'Jobber'], ['Purpose', 'TEXTAREA', 'Polish.'], ['References', 'TEXTAREA', 'https://example.test']]);
+  assert.deepEqual(entries, [['Readable title', 'INPUT', 'Jobber'], ['Purpose', 'TEXTAREA', 'Polish.']], 'title and purpose, and no references — that field left the shape');
   for (const node of form.walk()) {
     assert.notEqual(node.tagName, 'SELECT', 'no native select');
     assert.notEqual(node.type, 'checkbox', 'no checkbox');
@@ -142,7 +142,7 @@ test('Save sends the record: features, behaviours by state, agent defaults carri
   assert.equal(body.project_root, 'ronin_cowork');
   assert.deepEqual(body.repos, ['ronin_services']);
   assert.deepEqual(body.branches, { ronin_services: 'dev' }, 'a checkout keeps its branch');
-  assert.deepEqual(body.references, ['https://example.test']);
+  assert.equal('references' in body, false, 'references is not sent');
   assert.deepEqual(body.features, [], 'the switched-off feature is not listed');
   assert.deepEqual(body.behaviours, { selected: ['mandates', 'buildout'], required: ['mandates'] });
   assert.equal(body.agent_defaults.note, 'carried', 'a key the tab does not draw is carried');

@@ -624,12 +624,21 @@ export function createCoworkView(options = {}) {
 
   // team configuration on and off"). Every tick and publish lands here; the panel is
   // torn down only when configSignature says something it draws actually moved.
+  // Two signatures, because the two panels move for different reasons: the member rows
+  // follow the live readings (status, ⛽, model — a five-second tick), the Configuration
+  // tab follows the saved record alone. Repainting the tab on a tick threw away the owner's
+  // edit in progress (owner, 2026-09-13).
   let seenConfig = '';
+  let seenRecord = '';
   function renderConfig(roster, live) {
     const members = membersOfTeam(team);
     const signature = configSignature(team) + JSON.stringify(members.map((member) => readingsOf(member).lines));
-    if (signature === seenConfig) return;
+    const record = JSON.stringify(roster || null);
+    const rowsMoved = signature !== seenConfig;
+    const recordMoved = record !== seenRecord;
+    if (!rowsMoved && !recordMoved) return;
     seenConfig = signature;
+    seenRecord = record;
     for (const [id, commons] of Object.entries(teamCommons)) {
       const changed = () => { commons.channels.setState(); paint(); };
       const members = buildTeamMembers(team, {
@@ -644,6 +653,7 @@ export function createCoworkView(options = {}) {
         }),
       });
       commons.roster.replaceChildren(members);
+      if (!recordMoved) continue;
       if (!roster) { renderTeamConfiguration(commons.config, null, { createAction }); continue; }
       const fields = el('div');
       const config = el('section', 'league-team-config');
