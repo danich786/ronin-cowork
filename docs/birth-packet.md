@@ -34,7 +34,10 @@ that would break one read fails that test, not a newborn.
    the coworkspace for an Agent: pages, workbenches, surfaces, the tile head, Locked and
    Unlocked, copy and paste.
 3. **The owner's root shelf**, as cards: title, first sentence, path. Never pasted in.
-4. **SESSION_MACROS**, generated at birth from the live macro catalog.
+4. **YOUR TOOLS**, generated at birth from the capability documents selected for this
+   Agent (`ronin_catalogs/capabilities/`): one entry per bundle — the question it answers,
+   the priority tools that exist on this box with their authority, `--help`, and the path
+   of the full document. Only what the launch facts select and only tools the box has.
 5. **KOTOBA_GLOSSARY**, last: the house names and the plain word to say for each, rendered
    with the owner's desk words. Reference, and the least costly thing to miss.
 
@@ -63,7 +66,9 @@ Put the file on the shelf (`docs/session-boot.md` says where each level reaches)
 the session-boot tests. If the real-shelf test fails, the packet no longer fits one read:
 shorten the file, make it a card instead of inline reading, or move it to a feature so only
 the Agents who choose it pay for it. Do not raise the budget to make room; it is the
-provider's cap, not ours.
+provider's cap, not ours. A new capability document costs the packet one overview entry
+(about 350 bytes), and only for the Agents whose launch facts select it; its full text
+never enters the packet.
 
 ## Why this page exists
 

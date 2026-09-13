@@ -428,7 +428,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
             houseSeat === 'mika' ? MIKA_PARENT_PATH : undefined,
             houseSeat === 'mika'
               ? { includeTmux: false, extraTools: [...MIKA_TOOLS] }
-              : { extraTools: resolved.conditional_tools },
+              : { extraTools: [...resolved.conditional_tools, ...resolved.capability_tools] },
           )
         : null;
       await createSession(resolved.name, resolved.dir, {
@@ -534,6 +534,15 @@ export function registerLaunch(app: express.Express): LaunchControl {
         work_locations: resolved.work_locations,
         arrangement: resolved.work_locations.find((row) => row.repo === resolved.project_root)?.reason ?? '',
         desk_note: await deskNote(resolved),
+        // The capability documents this birth read from the folder: which were selected,
+        // why the rest were not, and which listed tools the box could not project.
+        capabilities: resolved.capabilities.map((capability) => ({
+          name: capability.name,
+          selected: capability.selected,
+          reason: capability.reason,
+          tools: capability.delivered,
+          missing: capability.missing,
+        })),
         installations: resolved.installations.map((installation) => {
           const services = new Set(listServices());
           const missing = installation.enabled

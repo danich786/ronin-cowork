@@ -4,14 +4,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { storeDir } from './resources.js';
 import { resolveFiles } from './resources.js';
-import { listMacros } from './macros.js';
 import { activeDeskProfileName, listDeskProfiles } from './desk-profiles.js';
 import { resolveLexicon } from './lexicon-catalog.js';
+import { CAPABILITIES_READING } from './capabilities.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const STOCK = path.join(__dirname, '..', 'ronin_session_boot');
-const SESSION_MACROS_TEMPLATE = path.join(STOCK, 'SESSION_MACROS.md');
 
 export type Level = 'all' | 'root' | 'routine';
 
@@ -74,24 +73,6 @@ export function readFirstSentence(packet: PacketReport): string {
 
 const userShelf = () => storeDir('session_boot');
 
-export async function renderSessionMacrosReading(allowed?: ReadonlySet<string>): Promise<string> {
-  const [template, active] = await Promise.all([
-    readFile(SESSION_MACROS_TEMPLATE, 'utf8'),
-    listMacros().then((macros) => macros.filter((macro) => macro.preview && (!allowed || allowed.has(macro.name)))),
-  ]);
-  const rendered = active.length
-    ? active
-        .map((macro) => `- \`+${macro.name}:\` — **${macro.label}**. ${macro.blurb}`)
-        .join('\n')
-    : '- No session macros are currently previewed on the tile button.';
-  const start = '<!-- ACTIVE_SESSION_MACROS:START -->';
-  const end = '<!-- ACTIVE_SESSION_MACROS:END -->';
-  const pattern = new RegExp(`${start}[\\s\\S]*?${end}`);
-  if (!pattern.test(template)) throw new Error('SESSION_MACROS.md has no generated-section markers.');
-
-  return template.replace(pattern, `${start}\n${rendered}\n${end}`);
-}
-
 /**
  * THE GLOSSARY, RENDERED FOR THE OWNER'S DESK (KOKUGO, owner's ruling 2026-08-27).
  *
@@ -147,10 +128,15 @@ async function glossaryReading(templatePath: string, session = ''): Promise<stri
   return target;
 }
 
-async function sessionMacrosReading(allowed?: ReadonlySet<string>, session = ''): Promise<string> {
-  const text = await renderSessionMacrosReading(allowed);
+/**
+ * THE TOOL OVERVIEW, as a generated fragment. Rendered by `renderCapabilitiesOverview`
+ * from the capability documents the launch resolver selected; written beside the glossary
+ * so the compiler inlines it like any other shelf teaching. The selected documents
+ * themselves ride in as shelf cards, so the overview is a front door, never a second copy.
+ */
+async function capabilitiesReading(text: string, session = ''): Promise<string> {
   const dir = session ? path.join(storeDir('session_boot_cache'), 'sessions', session) : storeDir('session_boot_cache');
-  const target = path.join(dir, 'SESSION_MACROS.md');
+  const target = path.join(dir, CAPABILITIES_READING);
   const temp = `${target}.${process.pid}.${randomUUID()}.tmp`;
   await mkdir(dir, { recursive: true });
   await writeFile(temp, text);
@@ -202,7 +188,7 @@ export async function bootFiles(
   projectRoot: string,
   mcpOn = true,
   routineReading: string[] = [],
-  routineMacros?: ReadonlySet<string>,
+  capabilitiesOverview?: string,
   session = '',
 ): Promise<string[]> {
   const user = userShelf();
@@ -210,8 +196,9 @@ export async function bootFiles(
   const isGlossary = (file: string) => path.basename(file) === GLOSSARY;
   // READING ORDER. What a session must OBEY comes first — the Routine contracts (fork
   // versus spawn, the desk, never `git push`) — then the maps, then the owner's root shelf,
-  // then the live macro roster, and the glossary last: it is reference, and the least
-  // costly thing to miss. A newborn that reads only its first window reads the rules.
+  // then the tool overview built from the selected capability documents, and the glossary
+  // last: it is reference, and the least costly thing to miss. A newborn that reads only
+  // its first window reads the rules.
   // (Owner's ruling 2026-09-04, after a lexicon inlined ahead of the contracts pushed
   // them past line 1,997 of a 121 KB packet.)
   const selected = [
@@ -230,7 +217,7 @@ export async function bootFiles(
     seen.add(key);
     files.push(file);
   }
-  files.push(await sessionMacrosReading(routineMacros, session));
+  if (capabilitiesOverview !== undefined) files.push(await capabilitiesReading(capabilitiesOverview, session));
   for (const template of universal.filter(isGlossary)) files.push(await glossaryReading(template, session));
   return files;
 }

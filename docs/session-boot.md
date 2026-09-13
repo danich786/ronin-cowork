@@ -7,7 +7,7 @@ The birth compiler selects the applicable shelf files, removes duplicate sources
 writes one `README.md` into the newborn's per-session directory. The brief points to that
 one document, and the same README appears automatically in the Agent's tracked Docs. The
 page opens with its own contents list. Ronin's teaching — `all/`, each system installation's page, the
-generated macro roster — is inlined; the owner's project-root documents,
+generated tool overview — is inlined; the owner's project-root documents,
 selected behaviour books and explicit seeds are listed by title and path under **On your
 shelf**, because pasting a project's whole catalog is what made the packet unreadable.
 
@@ -17,6 +17,7 @@ shelf**, because pasting a project's whole catalog is what made the packet unrea
 | `<service>_connected/` (e.g. `gbrain_connected/`) | only when a chosen feature declares that level and its connection is on |
 | `root/<project_root>/` | only sessions working in that directory |
 | `routine/<name>/FILE.md` | only when an installation's or a feature's definition names that file — `reading:` when it is on, `reading_off:` when it is off (the page that says what the owner is working without, and where the switch is) |
+| `ronin_catalogs/capabilities/<bundle>.md` | not a shelf level but the source of the generated **tool overview**: each capability bundle whose `requires:` predicates hold for this birth is rendered as one entry — title, blurb, the projected priority tools, help route, and the path of the full document (`ronin_catalogs/capabilities/README.md`) |
 
 The levels are **additive, not a hierarchy**. Root, connection, installations and behaviours are
 independent launch facts; their files compile into one birth README
@@ -61,8 +62,8 @@ goes stale.
 
 The shelf resolves live files rather than stored absolute paths. Universal and
 root levels select their live directory contents; installation and feature definitions select exact shelf
-coordinates. A removed file simply stops appearing. `SESSION_MACROS.md` is rebuilt from
-the live catalog at that same instant.
+coordinates. A removed file simply stops appearing. `CAPABILITIES.md` — the tool overview —
+is rendered from the selected capability documents at that same instant.
 
 ## Name collisions are real
 
@@ -114,10 +115,12 @@ on the real shelf:
   plain word to say for each, so no Japanese leaks from the tools to the person. Rendered at
   birth with the owner's desk words (`renderGlossary`; `docs/kokugo.md` §8) and compiled
   **last**: reference, not rules.
-- **`SESSION_MACROS.md`** — a stock template whose active section is generated at birth
-  from the resolved `MACROS.md` catalog. The entries marked `preview: yes` are both what the
-  tile button shows and what the new session reads. The generated copy is disposable data
-  as an internal compiler fragment; the template is not handed over directly.
+- **`CAPABILITIES.md`** — no template: rendered whole at birth by `renderCapabilitiesOverview`
+  from the capability documents the launch resolver selected (`src/capabilities.ts`). One
+  entry per selected bundle: its title, blurb, the priority tools that exist on this box with
+  their authority, the `--help` route, and the path of the full document. A tool the box
+  lacks is never advertised; a bundle with no tool is taught as authority and its document.
+  The generated copy is disposable data as an internal compiler fragment.
 
 Abilities belong to the Cowork Agent itself (`all/BASE_ABILITIES.md`), to a system
 installation (Ronin Services) or to a feature (Ronin Host, gbrain); see

@@ -8,27 +8,37 @@ import { storeDir } from '../src/resources.js';
 import { buildBrief, type SpawnForm } from '../src/spawn.js';
 import { contributionReading } from '../src/resource-adapters.js';
 import type { LaunchProfile } from '../src/launch-profile.js';
-import { listMacros } from '../src/macros.js';
+import { CAPABILITIES_READING, renderCapabilitiesOverview, resolveCapabilities } from '../src/capabilities.js';
 
-test('every assisted session is handed the session macro routing guide', async () => {
+/** The fullest overview: every stock capability document selected, every listed tool present. */
+const fullOverview = async (): Promise<string> => renderCapabilitiesOverview(await resolveCapabilities(
+  { arrangement: 'managed', installations: new Set(), behaviours: new Set(), connected: true, campaign: true, team: true, lead: true, everything: true },
+  { present: async () => true },
+));
+
+test('every assisted session is handed the tool overview built from its selected capability documents', async () => {
   const temp = await mkdtemp(path.join(os.tmpdir(), 'ronin-session-boot-test-'));
   const oldCache = process.env.RONIN_SESSION_BOOT_CACHE_DIR;
   const oldCatalogs = process.env.RONIN_CATALOGS_DIR;
   process.env.RONIN_SESSION_BOOT_CACHE_DIR = path.join(temp, 'generated');
   process.env.RONIN_CATALOGS_DIR = path.join(temp, 'catalogs');
   try {
-    const boot = await bootFiles('', false);
-    const macroGuide = boot.find((file) => path.basename(file) === 'SESSION_MACROS.md');
-    assert.ok(macroGuide, 'the universal boot shelf should contain SESSION_MACROS.md');
-    assert.equal(macroGuide, path.join(temp, 'generated', 'SESSION_MACROS.md'));
-    const guide = await readFile(macroGuide, 'utf8');
-    // The guide teaches compile-first and carries the live roster; the fork/spawn routing
-    // rule is Ronin Base's teaching, asserted on BASE_ABILITIES below, and is not repeated here.
-    assert.match(guide, /compile it first — `tejun <name>`/);
-    assert.doesNotMatch(guide, /spawn an agent/i);
-    const active = (await listMacros()).filter((macro) => macro.preview);
-    assert.ok(active.length, 'the stock catalog should preview at least one session macro');
-    for (const macro of active) assert.match(guide, new RegExp(`\\+${macro.name}:`));
+    const overview = await fullOverview();
+    const boot = await bootFiles('', false, [], overview);
+    const lesson = boot.find((file) => path.basename(file) === CAPABILITIES_READING);
+    assert.ok(lesson, `the boot shelf should carry ${CAPABILITIES_READING}`);
+    assert.equal(lesson, path.join(temp, 'generated', CAPABILITIES_READING));
+    const text = await readFile(lesson, 'utf8');
+    assert.equal(text, overview, 'the fragment is the rendered overview, byte for byte');
+    // The lesson is derived from the folder: every stock bundle, its priority tools, its help route.
+    for (const label of ['Edges', 'Work Record', 'Session', 'Worktree desk', 'Machine settings', 'Team lead']) {
+      assert.match(text, new RegExp(`^### ${label}$`, 'm'));
+    }
+    assert.match(text, /`work-record project create`/);
+    assert.match(text, /`session_check --help`/);
+    assert.doesNotMatch(text, /tejun|\+\w+:|MACROS/, 'no retired vocabulary reaches a newborn');
+    // The fork/spawn routing rule is Ronin Base's teaching, asserted on BASE_ABILITIES below.
+    assert.doesNotMatch(text, /spawn an agent/i);
 
     const profile = {
       label: 'Checker',
@@ -42,7 +52,10 @@ test('every assisted session is handed the session macro routing guide', async (
     };
 
     const brief = buildBrief(profile, undefined, form, undefined, boot);
-    assert.match(brief, /Read first: .*SESSION_MACROS\.md/);
+    assert.match(brief, new RegExp(`Read first: .*${CAPABILITIES_READING}`));
+    // No overview, no fragment: a birth that resolved no capabilities hands over none.
+    const bare = await bootFiles('', false, []);
+    assert.ok(!bare.some((file) => path.basename(file) === CAPABILITIES_READING));
   } finally {
     if (oldCache === undefined) delete process.env.RONIN_SESSION_BOOT_CACHE_DIR;
     else process.env.RONIN_SESSION_BOOT_CACHE_DIR = oldCache;
@@ -89,12 +102,13 @@ test('the real stock shelf compiles to one read: contracts first, glossary last,
   process.env.RONIN_SESSION_BOOT_CACHE_DIR = path.join(temp, 'generated');
   process.env.RONIN_SESSION_BOOT_DIR = path.join(temp, 'shelf');
   try {
-    // The largest stock birth: every Routine on, MCP on.
+    // The largest stock birth: every Routine on, MCP on, every capability bundle selected
+    // with every listed tool present.
     const boot = await bootFiles('', true, [
       'all/BASE_ABILITIES.md',
       'routine/ronin_services/SERVICES_ABILITIES.md',
       'routine/ronin_host/HOST_ABILITIES.md',
-    ], undefined, 'newborn');
+    ], await fullOverview(), 'newborn');
     const target = await compileBirthReadmeAt(path.join(temp, 'session'), boot, 'newborn', isShelfTeaching);
     const text = await readFile(target, 'utf8');
     const bytes = Buffer.byteLength(text, 'utf8');
@@ -108,7 +122,8 @@ test('the real stock shelf compiles to one read: contracts first, glossary last,
     const map = at(/^## Ronin documentation/m);
     const glossary = at(/^## KOTOBA_GLOSSARY/m);
     assert.ok(contracts < map, 'the core contract comes before the documentation map');
-    assert.ok(glossary > at(/^## SESSION_MACROS/m), 'the glossary is last');
+    assert.ok(glossary > at(/^## YOUR TOOLS/m), 'the glossary is last');
+    assert.ok(at(/^## YOUR TOOLS/m) > map, 'the tool overview follows the maps');
     assert.equal(text.lastIndexOf('\n## '), text.lastIndexOf('\n## KOTOBA_GLOSSARY'), 'nothing follows the glossary');
     // The two rules a newborn most often breaks sit inside the first window it opens.
     const firstWindow = text.split('\n').slice(0, 250).join('\n');
@@ -247,30 +262,14 @@ test('only enabled installation contributions add startup reading', async () => 
   }
 });
 
-test('generated macro reading contains only the effective contribution macros', async () => {
-  const temp = await mkdtemp(path.join(os.tmpdir(), 'ronin-session-boot-test-'));
-  const oldCache = process.env.RONIN_SESSION_BOOT_CACHE_DIR;
-  process.env.RONIN_SESSION_BOOT_CACHE_DIR = path.join(temp, 'generated');
-  try {
-    const boot = await bootFiles('', false, [], new Set(['forkit']));
-    const guide = await readFile(boot.find((file) => path.basename(file) === 'SESSION_MACROS.md')!, 'utf8');
-    assert.match(guide, /\+forkit:/);
-    assert.doesNotMatch(guide, /\+cutcode:/, 'a Control macro is not taught by Base alone');
-  } finally {
-    if (oldCache === undefined) delete process.env.RONIN_SESSION_BOOT_CACHE_DIR;
-    else process.env.RONIN_SESSION_BOOT_CACHE_DIR = oldCache;
-    await rm(temp, { recursive: true, force: true });
-  }
-});
-
 test('startup reading is never stripped when instructions are present', () => {
   const profile = { posture: [] } as unknown as LaunchProfile;
   const form: SpawnForm = {
     prompt: '  owner text only  ',
   };
 
-  const brief = buildBrief(profile, undefined, form, undefined, ['/stock/SESSION_MACROS.md']);
-  assert.match(brief, /Read first: \/stock\/SESSION_MACROS\.md\./);
+  const brief = buildBrief(profile, undefined, form, undefined, ['/stock/CAPABILITIES.md']);
+  assert.match(brief, /Read first: \/stock\/CAPABILITIES\.md\./);
 });
 
 test('resolved sources compile into one session README: teaching inlined once, reference listed by title and path', async () => {

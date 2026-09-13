@@ -4,7 +4,7 @@ import { STOCK_DIR, entryValue, isKeyLine, resolveFiles, type Origin } from './r
 import { storeDir } from './resources.js';
 
 export type DefinitionKind =
-  | 'desk_profiles' | 'lexicons' | 'installations' | 'behaviours'
+  | 'desk_profiles' | 'lexicons' | 'installations' | 'behaviours' | 'capabilities'
   | 'templates/agents' | 'templates/teams';
 
 export interface Definition {
@@ -12,6 +12,8 @@ export interface Definition {
   origin: Origin;
   shadowed: boolean;
   file: string;
+  /** The whole file, for definitions whose body carries structure beyond the key lines. */
+  text: string;
   get: (key: string) => string;
   has: (key: string) => boolean;
 }
@@ -39,6 +41,7 @@ export async function readDefinitions(kind: DefinitionKind): Promise<Definition[
       origin: file.origin,
       shadowed: file.shadowed,
       file: file.path,
+      text: file.text,
       get: (key: string) => entryValue(lines, key),
       has: (key: string) => entryValue(lines, key) !== '',
     });

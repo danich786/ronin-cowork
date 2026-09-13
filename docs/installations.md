@@ -54,6 +54,28 @@ There is no inherit control and no reach-down. A Campaign default fills the next
 a Team saves complete selected and required lists; an Agent launch may supply its own
 complete list. A template clobbers only the fields it carries.
 
+## Capability bundles: the tools an Agent is taught
+
+The commands an Agent is taught are grouped into **capability bundles**, one authored
+Markdown document each in `ronin_catalogs/capabilities/` (the owner's catalogs store
+shadows a name whole and adds new ones). A bundle is a document grouping, not an
+executable: it answers one question, lists the actual tools that answer it in a `## Tools`
+table — each with its authority, whether it is taught at birth, and its help route — and
+carries the teaching around them. A bundle may list several tools, one, or none; a tool may
+be surfaced by more than one bundle.
+
+Each document's `requires:` line names the launch facts that select it: a system
+installation being on, a behaviour being selected, a managed desk in the resolved
+assignment, MCP being connected, a Campaign, a Team, or the lead designation. The five
+Cowork bundles ship with Ronin; Ronin Host, Ronin Services, gbrain, Trello, Perplexity and
+future add-ons are one more file each, gated the same way. Nothing in the resolver knows a
+bundle by name.
+
+At birth the resolver selects the documents whose requirements hold, projects the listed
+tools that exist on this box onto the Agent's PATH, and the packet compiler renders one
+**YOUR TOOLS** overview from exactly those documents. A tool the box lacks is recorded in
+the receipt and never taught. The format is `ronin_catalogs/capabilities/README.md`.
+
 ## Conditional instructions
 
 Some reading follows a fact set elsewhere and is never a picker: Team lead status, Team
@@ -69,7 +91,10 @@ One resolver runs before the Agent process exists:
 3. A Team's complete selected and required behaviour lists answer for its Agents.
 4. An Agent's launch list, when present, answers for that Agent.
 5. Root arrangement, lead status, and Team membership add conditional reading.
-6. One packet and receipt record the result, with `stated_by` naming
+6. The capability documents whose `requires:` hold are selected, and their tools that exist
+   on this box are projected; the receipt records every document with `selected`,
+   `reason`, `tools` and `missing`.
+7. One packet and receipt record the result, with `stated_by` naming
    `installation · campaign · team · agent · conditional`.
 
 The same result feeds the birth README, command directory, MCP connections, and receipt.

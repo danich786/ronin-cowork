@@ -15,6 +15,7 @@ same name replaces ours whole; a new name sits beside it.
 | `<service>_connected/` | only when a chosen behaviour declares it and the connection is on |
 | `root/<project_root>/` | only sessions working in that directory |
 | `routine/<name>/FILE.md` | when an installation's or a behaviour's definition declares the file: `reading:` if it is on, `reading_off:` if it is off |
+| `ronin_catalogs/capabilities/<bundle>.md` | not a shelf: the source of the generated tool overview, one entry per bundle whose `requires:` hold for this birth |
 
 A session receives every applicable level compiled into one per-session `README.md`:
 Ronin's teaching inlined, your `root/` documents listed by title and path.
@@ -36,8 +37,9 @@ README beside a session's letter is the only document the newborn is asked to op
 
 ## What ships
 
-Three universal sources and two generated fragments, compiled in reading order — the
-contracts first, the glossary last — and held to a one-read budget by
+Three universal sources and two generated fragments — the tool overview and the rendered
+glossary — compiled in reading order, the contracts first, the glossary last, and held to a
+one-read budget by
 `tests/session-boot.test.ts` (a 121 KB packet was born on 2026-09-03 when a UI string
 table was shelved as vocabulary; nothing objected, because no test read the real shelf):
 
@@ -45,9 +47,10 @@ table was shelved as vocabulary; nothing objected, because no test read the real
 - `all/RONIN_UTILITY.md` — where everything is in the coworkspace and how the owner drives it.
 - `all/KOTOBA_GLOSSARY.md` — the house names and the plain word to say for each, rendered at
   birth with the owner's desk words.
-- `SESSION_MACROS.md` is a template, not read directly. At birth Ronin fills its active
-  macro section from the resolved `MACROS.md` catalog (`preview: yes`) and includes it in
-  the compiled README.
+- `CAPABILITIES.md` has no template. At birth Ronin renders it from the capability documents
+  the launch resolver selected (`ronin_catalogs/capabilities/`) — the priority tools that
+  exist on this box, `--help`, and each full document's path — and includes it in the
+  compiled README.
 
 Abilities are selected by installation and behaviour definitions. Repository test protocols stay in repository
 developer instructions and are never ordinary user birth reading.

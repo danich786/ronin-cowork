@@ -37,7 +37,10 @@ test('Session Readings resolves level shapes, leaf links and per-level shadows',
     assert.equal(linked?.linked, true);
     assert.equal(linked?.content, '# Linked reading\n');
     assert.equal(rows.some((row) => row.level === 'routine/linked-routine'), false);
-    assert.match(rows.find((row) => row.name === 'all/SESSION_MACROS.md')?.content || '', /ACTIVE_SESSION_MACROS/);
+    const lesson = rows.find((row) => row.name === 'all/CAPABILITIES.md');
+    assert.match(lesson?.content || '', /^# YOUR TOOLS/m);
+    assert.match(lesson?.content || '', /^### Team lead$/m, 'the listing shows every bundle as the fullest birth would');
+    assert.doesNotMatch(lesson?.content || '', /tejun/);
     assert.ok(rows.every((row) => !('file' in row) && !('path' in row)));
   } finally {
     if (previous === undefined) delete process.env.RONIN_SESSION_BOOT_DIR;

@@ -48,7 +48,7 @@ only that per-session README (`docs/session-boot.md`):
 | File | Static / generated | What it is |
 |---|---|---|
 | `ronin_catalogs/lexicons/professional_en.md` | static | the vocabulary — the same words meaning the same things |
-| `SESSION_MACROS.md` | generated at each birth | the live `+macro:` roster from the resolved catalog, and the compile-first routing rule |
+| `CAPABILITIES.md` | generated at each birth | the tool overview rendered from the capability documents this birth selected (`ronin_catalogs/capabilities/`): per bundle, the priority tools that exist on this box, `--help`, and the full document's path |
 
 Generated content exists because a checked-in list describes stock, not this machine, the
 moment the owner customizes anything. Admission test for T1: would every assisted Agent

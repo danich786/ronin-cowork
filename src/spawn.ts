@@ -24,6 +24,7 @@ import { resolveLaunchSeed } from './launch-seed.js';
 import { resolveBehaviourBooks, type DeliveredBehaviour } from './behaviours.js';
 import { templateProvenance } from './template-provenance.js';
 import { profileDir, resolveHouseSeatProfile, type HouseSeat } from './house-seats.js';
+import { capabilityTools, renderCapabilitiesOverview, resolveCapabilities, type ResolvedCapability } from './capabilities.js';
 
 const WORKTREE_SOP = path.join(REPO_ROOT, 'ronin_sops', 'worktree-root.md');
 const CHECKOUT_SOP = path.join(REPO_ROOT, 'ronin_sops', 'checkout.md');
@@ -99,6 +100,10 @@ export interface Resolved {
   contributions: ResolvedContribution[];
   installations: ResolvedInstallation[];
   conditional_tools: string[];
+  /** Every capability document, selected or not, with the reason and the tools found. */
+  capabilities: ResolvedCapability[];
+  /** The selected bundles' tools that exist on this box; projected onto PATH at birth. */
+  capability_tools: string[];
   stated_by: Record<string, StatedBy[]>;
 }
 
@@ -195,10 +200,10 @@ async function bootReading(
   mcpOn: boolean,
   bornLead = false,
   routineReading: string[] = [],
-  routineMacros?: ReadonlySet<string>,
+  capabilitiesOverview?: string,
   session = '',
 ): Promise<string[]> {
-  const files = await bootFiles(projectRoot, mcpOn, routineReading, routineMacros, session);
+  const files = await bootFiles(projectRoot, mcpOn, routineReading, capabilitiesOverview, session);
   if (bornLead && !files.includes(teamsSopPath())) files.push(teamsSopPath());
   return files;
 }
@@ -394,15 +399,42 @@ export async function resolveForm(
     repos: form.repos,
   });
   const assignment = worktrees.assignment;
+  // A MANAGED DESK IS A LAUNCH FACT, NOT A BIRTH-ROOT FACT. An Agent born in a checkout
+  // root with a managed desk assigned elsewhere still works at that desk; the desk tools
+  // and the worktree capability follow the resolved assignment (bundle_commands, 2026-09-13:
+  // three Agents born in the lab checkout with a cowork desk had no desk tool on PATH).
+  const managedDesk = !!assignment?.desks.length || worktrees.repositories.some((row) => row.mode === 'managed');
   const enabledReading = contributionReading(contributions);
-  const enabledMacros = new Set(contributions.filter((contribution) => contribution.enabled).flatMap((contribution) => contribution.macros));
   const kind = form.kind ?? String(parentSeed?.seeds.kind.value ?? 'open');
   const resolvedBehaviours = coworkAgent && agent
     ? await resolveBehaviourBooks(cascade.selected)
     : { delivered: [], ignored: [] };
-  const shelfReading = coworkAgent && agent
-    ? await bootReading(root.name, !mcpOffWanted, !!form.team_lead && !!form.team, enabledReading, enabledMacros, name)
+  // CAPABILITY BUNDLES: the folder decides what exists, the facts decide what is selected,
+  // the box decides what is projected. Mika keeps her own curated toolset.
+  const capabilities = coworkAgent && agent && form.house_seat !== 'mika'
+    ? await resolveCapabilities({
+        arrangement: managedDesk ? 'managed' : worktrees.repositories.length ? 'checkout' : 'none',
+        installations: new Set(installations.filter((installation) => installation.enabled).map((installation) => installation.name)),
+        behaviours: new Set(cascade.selected),
+        connected: !mcpOffWanted,
+        campaign: !!campaign,
+        team: !!form.team,
+        lead: !!form.team_lead && !!form.team,
+      })
     : [];
+  const shelfReading = coworkAgent && agent
+    ? await bootReading(
+        root.name,
+        !mcpOffWanted,
+        !!form.team_lead && !!form.team,
+        enabledReading,
+        form.house_seat === 'mika' ? undefined : renderCapabilitiesOverview(capabilities),
+        name,
+      )
+    : [];
+  // The selected capability documents are reached through the overview's own
+  // "Full document" line, not as shelf cards: the packet has a one-read budget and the
+  // fullest stock birth already sits within 2 KB of it with the overview inlined.
   const completeReading = [...shelfReading, ...resolvedBehaviours.delivered.map((book) => book.file)];
   const birthReading = coworkAgent && agent
     ? [...completeReading, ...(form.seed ?? [])].filter(Boolean)
@@ -467,9 +499,9 @@ export async function resolveForm(
     undelivered: cascade.undelivered,
     contributions,
     installations,
-    conditional_tools: worktrees.repositories.some((row) => row.repo === root.name && row.mode === 'managed')
-      ? [...WORKTREE_TOOLS]
-      : [],
+    conditional_tools: managedDesk ? [...WORKTREE_TOOLS] : [],
+    capabilities,
+    capability_tools: capabilityTools(capabilities),
     stated_by: {
       name: form.name ? explicit : system,
       dir: profile.dir ? profile.stated_by.dir : assignment ? system : rootSource,
@@ -508,6 +540,7 @@ export async function resolveForm(
         : parentSeed?.seeds.behaviours.stated_by ?? system,
       kind: form.kind !== undefined ? explicit : parentSeed?.seeds.kind.stated_by ?? system,
       contributions: contributions.flatMap((contribution) => [{ layer: contribution.stated_by, source: `${contribution.stated_by} contribution` }]),
+      capabilities: capabilities.length ? [{ layer: 'conditional', source: 'ronin_catalogs/capabilities' }] : [],
       arrangement: worktrees.repositories.length
         ? [{ layer: 'conditional', source: `RONIN_REPO for ${root.name}` }]
         : [],
