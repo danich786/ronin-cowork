@@ -89,7 +89,7 @@ export interface ContributionRow extends Pick<Row, 'name' | 'origin' | 'shadowed
 }
 
 export interface InstallationRow extends ContributionRow {
-  effect: 'system' | 'feature_provider';
+  effect: 'system' | 'provider';
   provides: string[];
   requires: string[];
 }
@@ -125,7 +125,7 @@ const contribution = (d: Definition): ContributionRow => ({
 export async function listInstallations(): Promise<InstallationRow[]> {
   return (await readDefinitions('installations')).map((d) => ({
     ...contribution(d),
-    effect: d.get('effect') === 'system' ? 'system' : 'feature_provider',
+    effect: d.get('effect') === 'system' ? 'system' : 'provider',
     provides: splitDefinitionList(d.get('provides')),
     requires: splitDefinitionList(d.get('requires')),
   }));

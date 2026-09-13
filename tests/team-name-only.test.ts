@@ -28,10 +28,12 @@ await fs.writeFile(path.join(process.env.RONIN_CONFIG_DIR, 'machine_settings.jso
   },
 }));
 const { registerTeams } = await import('../src/routes/teams-api.js');
+const { registerLaunch } = await import('../src/routes/launch.js');
 
 const app = express();
 app.use(express.json());
 registerTeams(app);
+registerLaunch(app);
 const server: Server = createServer(app);
 await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
 const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
@@ -105,6 +107,26 @@ test('POST /api/team-rosters overlays explicit choices on Campaign defaults', as
   assert.deepEqual(body.roster.behaviours.selected, ['ronin_host']);
   assert.equal(body.roster.agent_defaults.reach, 'discuss');
   assert.equal(body.roster.agent_defaults.model, 'gpt-test');
+});
+
+test('the seed door reads this Team\'s pre-cut behaviour shape as stock Mandates', async () => {
+  const file = path.join(process.env.RONIN_TEAM_ROSTERS_DIR!, 'home_machine', 'installation-cascade.md');
+  await fs.mkdir(path.dirname(file), { recursive: true });
+  const raw = [
+    '# installation-cascade',
+    '- **title:** Installation Cascade',
+    '- **kind:** coding',
+    '- **behaviours:** {"books":[],"required":false}',
+    '- **agent_defaults:** {}',
+    '',
+  ].join('\n');
+  await fs.writeFile(file, raw, 'utf8');
+  const response = await fetch(`${base}/api/launch-seed?team=installation-cascade`);
+  assert.equal(response.status, 200);
+  const seed = await response.json() as { seeds: { behaviours: { value: string[] } }; behaviours: Array<{ name: string; on: boolean }> };
+  assert.deepEqual(seed.seeds.behaviours.value, ['mandates']);
+  assert.equal(seed.behaviours.find((row) => row.name === 'mandates')?.on, true);
+  assert.equal(await fs.readFile(file, 'utf8'), raw, 'the seed read performs no migration');
 });
 
 test.after(async () => {

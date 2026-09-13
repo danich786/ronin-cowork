@@ -56,7 +56,7 @@ keys to strings with a `base:` to fall through to. Both shadow whole-file by nam
 ## Adding an INSTALLATION, a FEATURE, or a BEHAVIOUR
 
 `installations/<name>.md` is one machine installation: `effect` is `system` (its reading,
-tools and parts join every Cowork Agent birth) or `feature_provider` (it `provides`
+tools and parts join every Cowork Agent birth) or `provider` (it `provides`
 behaviours). `behaviours/<name>.md` is one selectable behaviour: its `installation`,
 reading, SOPs, macros, actions, tools and MCP connection. `behaviours/<name>.md` is one
 short page on how ordinary work is done. Each directory's `README.md` carries the exact

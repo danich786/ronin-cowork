@@ -146,7 +146,7 @@ test('Register presents one open profile flow with card choices and anonymous de
   assert.match(source, /setup-register-group/);
   assert.match(source, /setup-register-bounded/);
   const css = await (await import('node:fs/promises')).readFile(new URL('../public/style.css', import.meta.url), 'utf8');
-  assert.match(source, /sub: description/, 'the core-feature explanation is the ask caption');
+  assert.match(source, /sub: description/, 'the core-capability explanation is the ask caption');
   assert.match(source, /Which of these describes you best in terms of getting value from Ronin\?/);
   assert.doesNotMatch(source, /Which of these things Ronin does would you appreciate most\?/);
   assert.doesNotMatch(source, /setup-register-half/, 'About you stacks its questions at every width');
@@ -176,7 +176,7 @@ test('Register presents one open profile flow with card choices and anonymous de
   assert.doesNotMatch(source, /Where will you run Ronin\?|Where Ronin fits/);
   for (const kind of ['Which of these are you most likely to use?', 'Build software', 'Life assistants', 'Research and writing']) assert.match(source, new RegExp(kind.replace('?', '\\?')));
   assert.match(source, /about\.append\([\s\S]*?identityMode\.wrap, emailField, runLocation\.wrap\)/, 'where Ronin will live belongs to About you');
-  assert.ok(source.indexOf('runLocation.wrap') < source.indexOf('preferredFeature.wrap, reasons.wrap'), 'machine location comes before feature preference');
+  assert.ok(source.indexOf('runLocation.wrap') < source.indexOf('preferredFeature.wrap, reasons.wrap'), 'machine location comes before capability preference');
   assert.doesNotMatch(source, /Your starting theme|theme\.wrap/);
   assert.doesNotMatch(source, /What would make Ronin useful to you\?|Anything else\? \(optional\)/);
   assert.match(source, /setup_surface\.own_words', 'Anything else'/);

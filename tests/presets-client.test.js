@@ -72,7 +72,7 @@ test('the approved resting-stone lines are verbatim and every stone has a glyph'
     ['bare_metal', 'Choose a provider and model for each native session, or leave it at Default.'],
     ['ronin_team', 'Launch a Team Lead and open Team Configuration beside the team.'],
     ['staff_my_codebase', 'Point a team at a codebase and get its read on the stack.'],
-    ['develop_new_project', 'A lead plus feature agents, each in its own worktree.'],
+    ['develop_new_project', 'A lead plus workstream agents, each in its own worktree.'],
     ['personal_assistant', 'One assistant that remembers. Alone, or a lead that hires help.'],
     ['health_and_fitness', 'Head coach, nutritionist, race guide. Drop or add roles.'],
     ['morning_brief', 'Grok writes you a briefing on a schedule you set.'],

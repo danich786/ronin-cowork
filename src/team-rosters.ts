@@ -65,7 +65,8 @@ function parse(name: string, raw: string, campaign_id = ''): TeamRoster {
   const behaviourValue = json('behaviours');
   const behaviourMap = behaviourValue && typeof behaviourValue === 'object' && !Array.isArray(behaviourValue)
     ? behaviourValue as Record<string, unknown> : {};
-  const settled = lines.some((line) => /^\s*-\s*\*\*behaviours:\*\*/i.test(line));
+  const settled = lines.some((line) => /^\s*-\s*\*\*behaviours:\*\*/i.test(line))
+    && Array.isArray(behaviourMap.selected);
   const kind = get('kind');
   return {
     name,
