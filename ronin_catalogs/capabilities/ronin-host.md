@@ -5,10 +5,8 @@
 - **requires:** behaviour:ronin_host
 - **order:** 70
 
-Reach for this bundle when work concerns the host itself: measured machine facts, account
-state, secret presence, a Ronin restart, or host maintenance. Machine and Campaign
-configuration belongs to Machine settings; Host authority does not grant that settings
-authority and settings authority does not grant Host operations.
+Reach for this bundle for measured machine facts, account state, secret presence, restart,
+or maintenance. Machine configuration belongs to Machine settings; neither authority grants the other.
 
 ## Tools
 
@@ -16,5 +14,4 @@ authority and settings authority does not grant Host operations.
 |---|---|---|---|
 | `ronin-host` | inspect/account/secrets: read; restart: guarded write | priority | `ronin-host --help` |
 
-Measurements are observations, not Machine Settings fields. Never turn an observed fact
-into a configuration write, and never print credential values.
+Measurements are observations, not settings fields. Never write them or print credential values.

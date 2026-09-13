@@ -130,14 +130,17 @@ test('fresh Mika projection adds constrained settings and separately granted ses
   delete process.env.RONIN_SESSION_COMMANDS_DIR;
 });
 
-test('the cold launch projects exactly her three tools over a working system PATH', async () => {
+test('the cold launch projects exactly her five constrained tools with settings authority', async () => {
   const launch = await readFile(new URL('../src/routes/launch.ts', import.meta.url), 'utf8');
-  assert.match(launch, /const MIKA_TOOLS = \['lookup', 'owner_view', 'show', 'machine-settings', 'session_create'\] as const/);
+  const declaration = launch.match(/const MIKA_TOOLS = \[([^\]]+)\] as const/);
+  assert.ok(declaration, 'Mika has one explicit projected-tool set');
+  assert.deepEqual([...declaration[1].matchAll(/'([^']+)'/g)].map((match) => match[1]),
+    ['lookup', 'owner_view', 'show', 'machine-settings', 'session_create']);
   assert.match(launch, /const MIKA_PARENT_PATH = '\/usr\/local\/bin:\/usr\/bin:\/bin'/);
   assert.match(launch, /houseSeat === 'mika' \? MIKA_PARENT_PATH : undefined/);
   assert.match(launch, /includeTmux: false, extraTools: \[\.\.\.MIKA_TOOLS\]/);
-  assert.match(launch, /RONIN_MACHINE_SETTINGS_AUTHORITY: 'mika'/);
-  assert.match(launch, /houseSeat === 'mika'\),/);
+  assert.match(launch, /env: houseSeat === 'mika'[\s\S]*RONIN_MACHINE_SETTINGS_AUTHORITY: 'mika',[\s\S]*: birthEnv/,
+    'only the Mika house-seat launch receives typed settings proposal authority');
 });
 
 test("the owner's tips come from their session-boot shadow when one exists, else the shipped file", async () => {

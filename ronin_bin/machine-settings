@@ -128,7 +128,12 @@ print(rows[0].get("campaign_id") or "")') || die "NO-CAMPAIGN: no exact live ses
 
 campaign_json() { resolve_campaign; api GET "/api/campaigns/$CAMPAIGN"; }
 json_body() { python3 -c "$1" "${@:2}"; }
-pretty() { python3 -m json.tool; }
+pretty() {
+  local input
+  input=$(cat)
+  [ -n "$input" ] || return 0
+  printf '%s' "$input" | python3 -m json.tool
+}
 
 COMMAND=$1; shift
 case "$COMMAND" in
