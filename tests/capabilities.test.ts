@@ -208,7 +208,10 @@ test('the stock capability documents are well-formed and carry no retired vocabu
   assert.deepEqual(by.gbrain.requires, ['behaviour:gbrain']);
   assert.deepEqual(by.trello.requires, ['behaviour:trello', 'connected']);
   assert.deepEqual(by.perplexity.requires, ['behaviour:perplexity', 'connected']);
-  for (const name of ['ronin-services', 'gbrain', 'trello', 'perplexity']) assert.deepEqual(by[name].tools, []);
+  for (const name of ['gbrain', 'trello', 'perplexity']) assert.deepEqual(by[name].tools, []);
+  assert.deepEqual(by['ronin-services'].tools.map((tool) => tool.name), ['mika']);
+  assert.doesNotMatch(await readFile(by.gbrain.file, 'utf8'), /\bmemor(?:y|ies)\b|tejun-(?:recall|remember)/i,
+    'GBrain remains authority-only teaching with no retired memory vocabulary');
   assert.deepEqual(by['ronin-host'].tools.map((tool) => tool.name), ['ronin-host']);
   assert.equal(by['ronin-host'].tools[0]?.help, 'ronin-host --help');
   // Lead rulings, 2026-09-13: project create is first-class and a priority; session_create

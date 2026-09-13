@@ -12,7 +12,7 @@ whole:
   it is on no delivery list until the lead-conditional capability projection lands);
 - **with a managed desk** — `tejun-desk`, `ronin-repo-init`;
 - **with the Ronin Host behaviour** — `ronin-host` and its dynamically available `--help`;
-- **with the gbrain behaviour** — `tejun-recall`, `tejun-remember`;
+- **with the GBrain behaviour** — boundary teaching only; no callable GBrain tool yet;
 - **with Ronin Services** — `mika`; `lookup`, `owner_view`, `show`, constrained
   `machine-settings`, and separately granted `session_create` are hers alone.
 

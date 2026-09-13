@@ -161,7 +161,7 @@ artifact, finding, uncommitted change or commit not yet handed in must land inst
 Ronin owns the shared edges, not the agent's mind. Claude continues to follow the
 repository's `CLAUDE.md` and `CLAUDE.local.md`; Codex continues to follow `AGENTS.md`, its
 active plan, skills and native session conventions. Other providers keep their own
-equivalents. Provider-native memory, planning and delegation may help that session
+equivalents. Provider-native context, planning and delegation may help that session
 execute, and none of it is Ronin's to redesign — but none of it replaces the cross-session
 record above, because none of it is visible to anyone outside that session.
 
@@ -169,8 +169,8 @@ When the two layers overlap:
 
 - repository instructions and the owner's current direction govern the implementation;
 - an ordinary request to delegate or plan may use the provider's native capability;
-- durable project truth goes to code, `docs/` or README; a reusable lesson may go through
-  Ronin's scoped memory tools; neither belongs only in a provider transcript.
+- durable project truth goes to code, `docs/`, README, or the Work Record's project
+  read/write tools; it does not belong only in a provider transcript.
 
 This keeps the protocol common without flattening Claude into Codex or Codex into Claude:
 each may reason in its own way, while either can recover the work from the same files,
