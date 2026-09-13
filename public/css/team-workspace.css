@@ -50,14 +50,15 @@
     --tk-column-min: 230px;
     height: 100%; min-height: 0; overflow: auto; background: var(--bg-2); container: team-kanban / inline-size;
   }
-  .tk-legend { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-4) var(--space-6); padding: var(--space-4) var(--space-5) 0; color: var(--muted); font-size: var(--text-3); }
+  .tk-topline { display: flex; align-items: center; gap: var(--space-6); min-height: var(--tk-notice-line); padding: var(--space-4) var(--space-5) 0; }
+  .tk-legend { display: flex; flex: none; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-4) var(--space-6); color: var(--muted); font-size: var(--text-3); }
   .tk-legend span { display: inline-flex; align-items: center; gap: var(--space-2); }
   .tk-dot { width: var(--space-3); height: var(--space-3); border-radius: var(--radius-xs); background: var(--line-2); }
   .tk-dot.green { background: var(--kanban-green); }
   .tk-dot.yellow { background: var(--kanban-yellow); }
   .tk-dot.red { background: var(--kanban-red); }
-  .tk-notice { min-height: var(--tk-notice-line); margin: 0; padding: var(--space-3) var(--space-5) 0; color: var(--muted); font-size: var(--text-3); }
-  .tk-board { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--tk-column-min), 1fr)); gap: var(--space-4); min-width: 0; padding: var(--space-4) var(--space-5) var(--space-5); }
+  .tk-notice { flex: 1 1 auto; min-width: 0; margin: 0; overflow: hidden; color: var(--muted); font-size: var(--text-3); text-overflow: ellipsis; white-space: nowrap; }
+  .tk-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(var(--tk-column-min), 1fr)); gap: var(--space-4); min-width: 0; padding: var(--space-4) var(--space-5) var(--space-5); }
   .tk-column { display: flex; min-width: 0; min-height: calc(var(--space-12) * 3); flex-direction: column; border: var(--edge) solid var(--line); border-radius: var(--radius-sm); background: var(--well); transition: border-color var(--motion-quick) var(--ease), background var(--motion-quick) var(--ease); }
   .tk-column > h3 { display: flex; justify-content: space-between; gap: var(--space-2); margin: 0; border-bottom: var(--edge) solid var(--line); padding: var(--space-3) var(--space-4); color: var(--muted); font-size: var(--text-3); font-weight: 650; letter-spacing: var(--tk-heading-track); text-transform: uppercase; }
   .tk-count { color: var(--dim); font-weight: inherit; }

@@ -84,8 +84,10 @@ export function createTeamKanban(options = {}) {
   }
   const notice = node('p', 'tk-notice');
   notice.setAttribute('role', 'status');
+  const topline = node('div', 'tk-topline');
+  topline.append(notice, legend);
   const board = node('div', 'tk-board');
-  root.append(legend, notice, board);
+  root.append(topline, board);
 
   let team = '';
   let projects = [];
