@@ -560,10 +560,10 @@ package, and the rest — and lays them out in its own flex row; both call the s
 Team and Team lead are one group in one instance, so they move below Name as a pair when the
 row narrows. The utility has no slot for foreign DOM and gains none.
 
-**The commons' Configuration tab** is the first commons consumer: a team's record asked at
-loose density, one full-width column — the head line (Team ID, Title, Kind), Purpose, then
-the New Agent defaults as groups. Its text entries are the kit's, beside the stones, not
-inside them. Contract and file list: `docs/team-workspace.md` § Durable Team record.
+**The commons' Configuration tab** is the first commons consumer, drawn in the launch forms'
+own format: two numbered steps — Team (ID · Title · Kind, then Purpose) and New Agent
+defaults (the groups) — at the forms' tight density. Its text entries are the kit's, beside
+the stones, not inside them. Contract and file list: `docs/team-workspace.md` § Durable Team record.
 
 **What is not an `ask()`.** The stone work surface (`stone-work-surface.js`) is a page for
 browsing a collection whose item is the content — Presets, Workspace Folders, Model
