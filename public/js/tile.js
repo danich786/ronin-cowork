@@ -243,7 +243,7 @@ export class Tile {
   clearOverlays() {
     this.closeLadder();
     document
-      .querySelectorAll('.tdrop.open, .tmac.open')
+      .querySelectorAll('.tdrop.open')
       .forEach((m) => m.classList.remove('open'));
   }
 

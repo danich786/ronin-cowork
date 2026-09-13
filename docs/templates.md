@@ -111,8 +111,7 @@ A template names its behaviours; it carries no copy of them, and on the
 shelf that is right. It is wrong for a download: a Dinner Party template is worthless on
 another install without the menu book it reads. So the one place copies are allowed is
 **in transit** — a **template bundle**, one JSON document (`ronin-bundle/1`) holding a team
-template, the agent templates beside it, the behaviours they name, and those behaviours'
-macros, actions and tools. On install every copy lands in
+template, the agent templates beside it, the behaviours they name, and their tools. On install every copy lands in
 **your own stores** — catalogs, sops, ways, library, and a `tools` store for executables —
 where the ordinary readers find it exactly as they find anything you wrote by hand. Nothing
 a bundle installs touches the install itself; an upgrade never sees it.
@@ -120,7 +119,7 @@ a bundle installs touches the install itself; an upgrade never sees it.
 ```text
 { format: "ronin-bundle/1", name, label, art, blurb, kinds, version,
   files:   [{ store: catalogs|sops|ways|library|tools, path, text }],   whole files
-  entries: [{ catalog: MACROS.md|ACTIONS.md|TOOLS.md, name, text }] }   entry-merged
+  entries: [{ catalog: TOOLS.md|MODEL_PROVIDERS.md, name, text }] }    entry-merged
 ```
 
 **The template library** is the shelf Ronin keeps and grows — a **Ronin Services**

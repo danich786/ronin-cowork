@@ -31,9 +31,8 @@ function holdsWords(holds) {
     sops: (n) => (n === 1 ? t('campaign_view.library_hold_sop', 'SOP') : t('campaign_view.library_hold_sops', 'SOPs')),
     ways: (n) => (n === 1 ? t('campaign_view.library_hold_way', 'behaviour') : t('campaign_view.library_hold_ways', 'behaviours')),
     library: (n) => (n === 1 ? t('campaign_view.library_hold_page', 'reference page') : t('campaign_view.library_hold_pages', 'reference pages')),
-    macros: (n) => (n === 1 ? t('campaign_view.library_hold_macro', 'macro') : t('campaign_view.library_hold_macros', 'macros')),
-    actions: (n) => (n === 1 ? t('campaign_view.library_hold_action', 'action') : t('campaign_view.library_hold_actions', 'actions')),
     tools: (n) => (n === 1 ? t('campaign_view.library_hold_tool', 'tool') : t('campaign_view.library_hold_tools', 'tools')),
+    providers: (n) => (n === 1 ? t('campaign_view.library_hold_provider', 'provider') : t('campaign_view.library_hold_providers', 'providers')),
   };
   const parts = [];
   for (const [key, say] of Object.entries(word)) {

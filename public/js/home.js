@@ -5,13 +5,13 @@
  *
  * This module was always the de-facto repository (`homeData`, `projectData`, an
  * inflight guard); it is now the declared one. Every reader —
- * the roster, the launcher, the tile pickers, the ⚡ menus — renders from these
+ * the roster, the launcher, and the tile pickers — renders from these
  * caches, and every refresh path (boot, visibility, bfcache, the 8s poll, a
  * mutation's follow-up) lands here rather than fetching its own copy.
  *
  * A failed refresh keeps the LAST GOOD data and records the fault (`homeFault`)
  * instead of swallowing it: stale-and-labelled beats empty-and-silent, and the
- * roster draws the label (js/roster.js). The catalogs (macros, projects, presets,
+ * roster draws the label (js/roster.js). The catalogs (projects, presets,
  * saved launches) stay best-effort — they change when the owner changes them, and
  * the next successful load heals them without a banner.
  */
@@ -21,9 +21,6 @@ import { tiles } from './state.js';
 import { t } from './lexicon.js';
 
 export let homeData = null; // session list enriched with status + ctx
-// `instruction` is the AGENT's prose and `label`/`blurb` are the PERSON's copy — two
-// readers, two fields, and no client surface may render the first (src/macros.ts).
-export let macroData = null; // [{name, instruction, label, blurb, params:[{name, hint}]}]
 export let homeInflight = false;
 /** Why the roster might be stale: the last /api/home failure's message, or null. */
 export let homeFault = null;
@@ -55,12 +52,6 @@ export async function loadProjects() {
   if (r.ok && Array.isArray(r.data)) projectData = r.data;
   tiles.forEach((tile) => tile.renderHome?.());
   for (const listener of projectListeners) { try { listener(projectData); } catch (error) { console.error(error); } }
-}
-
-export async function loadMacros() {
-  const r = await request('/api/macros');
-  if (r.ok && Array.isArray(r.data)) macroData = r.data;
-  tiles.forEach((tile) => tile.renderHome?.());
 }
 
 /** /api/saved-launches — the launcher form, filled in ahead of time and named.

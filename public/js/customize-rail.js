@@ -34,20 +34,13 @@ export function sections() {
  */
 export function resources() {
   return [
-    { id: 'macros', section: 'behavior', mark: '⚡', label: t('customize.macros', 'Macros'),
-      capability: 'handoff', read: '/api/macros', file: 'MACROS.md', what: t('customize.macros_what', 'a workflow an agent runs when you type +name:'),
-      blurb: t('customize.macros_blurb', 'Saved instructions you would otherwise have typed to your agent.') },
     { id: 'sops', section: 'behavior', mark: '▤', label: t('customize.sops', 'SOPs'),
       capability: 'read-only', read: '/api/sops', readLabel: t('customize.sops_read', 'Read procedure'),
       blurb: t('customize.sops_blurb', 'How this house goes about a domain — fetched by a situation, never pushed.') },
-    { id: 'actions', section: 'behavior', mark: '◇', label: t('customize.actions', 'Actions'),
-      capability: 'handoff', read: '/api/actions', readLabel: t('customize.actions_read', 'Read action'),
-      file: 'ACTIONS.md', what: t('customize.actions_what', 'a primitive step macros are composed from'),
-      blurb: t('customize.actions_blurb', 'The cataloged procedures macros are made of.') },
     { id: 'tools', section: 'behavior', mark: '⚙', label: t('customize.tools', 'Tools'),
       capability: 'read-only', read: null,
       why: t('customize.tools_why', 'TOOLS.md is a table, and the server has no table reader — the rule in docs/shadowing.md is implemented in ronin_bin/tejun and not in src/resources.ts (prerequisite P1).'),
-      blurb: t('customize.tools_blurb', 'The executables that implement actions. A markdown row cannot author one.') },
+      blurb: t('customize.tools_blurb', 'The executables available to Agents. A markdown row cannot author one.') },
 
     { id: 'saved-launches', section: 'people', mark: '↗', label: t('customize.saved_launches', 'Saved launches'),
       capability: 'read-only', read: '/api/saved-launches',

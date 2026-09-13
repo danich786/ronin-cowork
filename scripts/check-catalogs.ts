@@ -13,7 +13,6 @@ import {
 } from '../src/resource-adapters.js';
 import { listDeskProfiles } from '../src/desk-profiles.js';
 import { listLexicons } from '../src/lexicon-catalog.js';
-import { listMacros } from '../src/macros.js';
 import { catalogUpdated, parseProviderCatalog, STOCK_CATALOG_MD, TIERS } from '../src/model-providers.js';
 import { AGENTS } from '../src/agents.js';
 import { resolveBehaviourBooks } from '../src/behaviours.js';
@@ -46,21 +45,6 @@ async function surfacing(file: string, served: () => Promise<{ name: string }[]>
         `${file}: stock entry "${name}" does not surface from its reader — ` +
           `half-written (dropped by a filter), or hidden by a user file on this box`,
       );
-    }
-  }
-}
-
-async function macroCopy(): Promise<void> {
-  for (const m of await listMacros()) {
-    if (m.origin !== 'stock') continue; // a user's own file is theirs; the client handles a blank
-    for (const field of ['label', 'blurb'] as const) {
-      if (!m[field].trim()) {
-        fail(
-          `MACROS.md: macro "${m.name}" has no \`- **${field}:**\` — every entry carries the ` +
-            `human copy as well as the agent's instruction, and no surface may show the ` +
-            `instruction to a person in its place`,
-        );
-      }
     }
   }
 }
@@ -151,7 +135,7 @@ async function templatesResolve(): Promise<void> {
   }
 }
 
-const FILES = ['MACROS.md', 'ACTIONS.md', 'TOOLS.md', 'PROJECT_ROOTS.md', 'MODEL_PROVIDERS.md'];
+const FILES = ['TOOLS.md', 'PROJECT_ROOTS.md', 'MODEL_PROVIDERS.md'];
 
 await surfacingDefinitions('desk_profiles', listDeskProfiles);
 await surfacingDefinitions('lexicons', listLexicons);
@@ -160,10 +144,7 @@ await surfacingDefinitions('behaviours', listBehaviours);
 await surfacingDefinitions('templates/agents', listAgentTemplates);
 await surfacingDefinitions('templates/teams', listTeamTemplates);
 await templatesResolve();
-await surfacing('MACROS.md', listMacros);
-await surfacing('ACTIONS.md', () => readEntries('ACTIONS.md'));
 await surfacing('TOOLS.md', () => readEntries('TOOLS.md'));
-await macroCopy();
 
 // The SHIPPED file, explicitly: `readProviderCatalog()` lays the owner's copy over it, and a
 // verify that judged the owner's rows would guard the wrong file on a box with a copy.

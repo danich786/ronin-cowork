@@ -13,7 +13,7 @@ export const BUNDLE_FORMAT = 'ronin-bundle/1';
 export const LIBRARY_FORMAT = 'ronin-library/1';
 
 export type BundleStore = 'catalogs' | 'sops' | 'ways' | 'library' | 'tools';
-export type BundleCatalog = 'MACROS.md' | 'ACTIONS.md' | 'TOOLS.md' | 'MODEL_PROVIDERS.md';
+export type BundleCatalog = 'TOOLS.md' | 'MODEL_PROVIDERS.md';
 
 export interface BundleFile {
   store: BundleStore;
@@ -60,7 +60,7 @@ export interface LibraryIndex {
 
 const TOKEN = /^[a-z0-9][a-z0-9_-]{0,63}$/;
 const STORES: readonly BundleStore[] = ['catalogs', 'sops', 'ways', 'library', 'tools'];
-const CATALOGS: readonly BundleCatalog[] = ['MACROS.md', 'ACTIONS.md', 'TOOLS.md', 'MODEL_PROVIDERS.md'];
+const CATALOGS: readonly BundleCatalog[] = ['TOOLS.md', 'MODEL_PROVIDERS.md'];
 /** A provider section's id: `- **provider:** \`openai\`` — the key it merges by, since its heading is a vendor's name. */
 const providerIdOf = (section: string): string => /^-\s*\*\*provider:\*\*\s*`([^`]+)`\s*$/m.exec(section)?.[1]?.trim() ?? '';
 const CATALOG_DIRS = ['templates/agents', 'templates/teams', 'behaviours', 'desk_profiles', 'lexicons'];
@@ -119,10 +119,7 @@ function checkEntry(entry: BundleEntry): string | null {
     if (/^##\s|^###\s/m.test(entry.text.split('\n').slice(1).join('\n'))) return 'one entry, one heading';
     return null;
   }
-  const head = /^##\s+`?([\w-]+)`?(?:\s.*)?$/.exec(entry.text.split('\n')[0] ?? '');
-  if (!head || head[1] !== entry.name) return 'a MACROS or ACTIONS entry opens with its own `## name` heading';
-  if (/^##\s/m.test(entry.text.split('\n').slice(1).join('\n'))) return 'one entry, one heading';
-  return null;
+  return 'the catalog is unsupported';
 }
 
 export function parseBundle(raw: unknown): Bundle {
@@ -174,7 +171,7 @@ export function bundleHolds(bundle: Bundle): Record<string, number> {
     if (f.store === 'catalogs') bump(f.path.startsWith('templates/teams/') ? 'teams' : f.path.startsWith('templates/agents/') ? 'agents' : f.path.split('/')[0]);
     else bump(f.store);
   }
-  for (const e of bundle.entries) bump(e.catalog === 'MACROS.md' ? 'macros' : e.catalog === 'ACTIONS.md' ? 'actions' : 'tools');
+  for (const e of bundle.entries) bump(e.catalog === 'TOOLS.md' ? 'tools' : 'providers');
   return holds;
 }
 
@@ -369,8 +366,6 @@ export interface PackRequest {
   sops?: string[];
   ways?: string[];
   library?: string[];
-  macros?: string[];
-  actions?: string[];
   tools?: string[];
   version?: string;
 }
@@ -399,15 +394,11 @@ export async function packBundle(req: PackRequest): Promise<Bundle> {
   }
   for (const s of req.sops ?? []) books.add(`sops:${s}`);
   for (const w of req.ways ?? []) books.add(`ways:${w}`);
-  const macroNames = new Set(req.macros ?? []);
-  const actionNames = new Set(req.actions ?? []);
   const toolNames = new Set(req.tools ?? []);
   for (const behaviour of await readDefinitions('behaviours')) {
     if (!books.has(behaviour.name)) continue;
     if (behaviour.origin === 'user') await addFile('ways', `${behaviour.name}.md`, behaviour.file);
     for (const s of behaviour.get('sops').split(',')) if (s.trim() && s.trim() !== '—') books.add(`sops:${s.trim()}`);
-    for (const m of behaviour.get('macros').split(',')) if (m.trim() && m.trim() !== '—') macroNames.add(m.trim());
-    for (const a of behaviour.get('actions').split(',')) if (a.trim() && a.trim() !== '—') actionNames.add(a.trim());
     for (const t of behaviour.get('tools').split(',')) if (t.trim() && t.trim() !== '—') toolNames.add(t.trim());
   }
   for (const book of books) {
@@ -439,8 +430,6 @@ export async function packBundle(req: PackRequest): Promise<Bundle> {
       entries.set(`${catalog}:${s.name}`, { catalog, name: s.name, text: `## ${s.head}\n${s.lines.join('\n')}`.trimEnd() });
     }
   };
-  await takeEntries('MACROS.md', macroNames);
-  await takeEntries('ACTIONS.md', actionNames);
   await takeEntries('TOOLS.md', toolNames);
   return parseBundle({
     format: BUNDLE_FORMAT,

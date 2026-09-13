@@ -15,7 +15,7 @@ import { request } from './request.js';
 import { guard, showFailure } from './errors.js';
 import { connectEvents, sessionsHandlers } from './events.js';
 import { membersOfTeam, refreshTeams, subscribe, teamByName, teamsFromState, UNASSIGNED, unassignedSessions } from './team-controller.js';
-import { loadMacros, loadProjects, projectData, refreshHome } from './home.js';
+import { loadProjects, projectData, refreshHome } from './home.js';
 import { buildDocs } from './docs.js';
 import { createTerminalTileHost } from './terminal-tile-host.js';
 import { makeDrop } from './tiledrop.js';
@@ -266,25 +266,23 @@ export async function buildPhone() {
     const tile = host.mount(session);
     stageTile = tile;
 
-    sheet = makeDrop('メ', t('phone.me_title', 'This Agent — work record, docs, macros, note, control, kill'), 'me');
+    sheet = makeDrop('メ', t('phone.me_title', 'This Agent — work record, docs, note, control, kill'), 'me');
     const node = (key) => tile[key]?.el ?? tile[key];
     sheet.addRow(node('workRecordBtn'), t('me.ladder', 'Work record'));
     sheet.addRow(node('docsBtn'), t('me.docs', 'Docs'));
-    sheet.addRow(node('tmacBtn'), t('me.macros', 'Macros'));
     // No Services, no choice: the Output row only exists where an unlocked view does.
     if (!tile.servicesOff()) sheet.addRow(node('outputEl'), t('me.output', 'Output'), 'stay');
     sheet.addRow(node('noteBtn'), t('me.note', 'Note'));
     sheet.addRow(node('dial'), t('me.control', 'Control'), 'stay');
     sheet.addRow(node('killBtn'), t('me.kill', 'Kill session'));
 
-    // The 📄 and ⚡ menus hang off the hidden tile head; here they hang off the bar.
+    // The 📄 menu hangs off the hidden tile head; here it hangs off the bar.
     bar.replaceChildren(...barContent(
       backLink(teamHash(team)),
       el('span', 'ph-title', agentLabel(S.sessions.find((row) => row.name === session) || { name: session })),
       sheet.btn,
       sheet.menu,
       tile.docsBtn.menu,
-      tile.tmacBtn.menu,
     ));
   };
   const closeTerminal = () => {
@@ -363,7 +361,6 @@ export async function buildPhone() {
   guard('session event stream', connectEvents);
   await refreshTeams();
   guard('load projects', loadProjects); // the launch card's project_root fallback
-  guard('load macros', loadMacros); // the メ sheet's Macros row reads the same catalog the desktop ⚡ does
   guard('phone paint', render);
 }
 

@@ -55,7 +55,7 @@ export function makeDrop(glyph, title, kind) {
     e.stopPropagation();
     const wasOpen = menu.classList.contains('open');
     // header is hoisted, so it is a rival exactly as ⚡'s macro list is.
-    document.querySelectorAll('.tdrop.open, .tmac.open, .tdocs.open').forEach((m) => m.classList.remove('open'));
+    document.querySelectorAll('.tdrop.open, .tdocs.open').forEach((m) => m.classList.remove('open'));
     if (wasOpen) return;
     // A control that hides itself (no ladder up, no context reading) must not leave
     // its word stranded on a row with nothing to tap. CSS `:has()` does this too;

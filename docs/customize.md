@@ -68,9 +68,7 @@ This matrix is the v1 product authority. Completion may add a planned capability
 
 | Resource | Intended v1 capability | Current preview |
 |---|---|---|
-| Macros | Guided agent handoff | Reads `/api/macros`; seed/path handoff |
 | SOPs | Read-only | Reads `/api/sops`; resolved procedure text expands in place |
-| Actions | Guided agent handoff | Reads `/api/actions`; resolved action text expands in place |
 | Tools | Read-only | Unavailable: table parser and route missing |
 | Behaviours | Read-only | Reads `/api/ways`; stock pages and whole-file owner shadows |
 | Team roles | Guided agent handoff | Reads `/api/team-roles`; directory guidance |

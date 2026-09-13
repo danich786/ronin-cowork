@@ -40,7 +40,7 @@ are resolved (`bin/ronin-doctor`, `bin/ronin-store --all`), never written down. 
 fact about a box is wrong the day the box changes, and nobody notices.
 
 **Where a domain has a measurable, name the tool — at the top.** An SOP carries a
-`> Tool:` line in its header, the same form `ronin_catalogs/ACTIONS.md` uses, so the eye
+`> Tool:` line in its header so the eye
 finds it in the same place everywhere. `data.md` names `tejun-survey`; `secrets.md` names
 `tejun-secrets`; repository arrangement pages name nothing, because git is git. The pointer is always to a
 **cataloged action's tool**, never a loose script.
@@ -80,8 +80,8 @@ is no other.
 
 **One route, and it never pastes an SOP at a session that did not ask.** An SOP is
 **found by name**: `docs/README.md` says the shelf is there, and every session is handed
-that map at birth through `ronin_session_boot/all/`. Nothing else fetches one — no macro
-compile, no action, no boot paste of the SOPs themselves.
+that map at birth through `ronin_session_boot/all/`. Nothing else fetches one, and the SOPs
+themselves are not pasted at birth.
 
 That is the point, not a gap. A shelf that arrived unasked would be pushing a GitHub
 walkthrough at someone who has used git for fifteen years, every session, forever.
