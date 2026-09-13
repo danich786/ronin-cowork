@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
-# tejun-session-create — explicitly create one new Agent through the ordinary launch route.
+# session_create — explicitly create one new Agent through the ordinary launch route.
 set -u
 case "${1-}" in
-  -h|--help) [ "$#" -eq 1 ] || { echo "tejun-session-create: --help takes no other arguments. Run tejun-session-create --help." >&2; exit 2; }
+  -h|--help) [ "$#" -eq 1 ] || { echo "session_create: --help takes no other arguments. Run session_create --help." >&2; exit 2; }
     cat <<'EOF'
-tejun-session-create — create one new Agent
+session_create — create one new Agent
 
 Usage:
-  tejun-session-create <name> [--prompt <text>] [--team <team>] [--lead]
-                              [--root <path>] [--model <name>]
-                              [--mode manual|assisted] [--cmd <cli>]
-                              [--mcp on|off] [--tags a,b] [--seed p1,p2]
+  session_create <name> [--prompt <text>] [--team <team>] [--lead]
+                        [--root <path>] [--model <name>]
+                        [--mode manual|assisted] [--cmd <cli>]
+                        [--mcp on|off] [--tags a,b] [--seed p1,p2]
 
 Creation is always explicit. An existing name is refused rather than read or updated.
 With no --team, the new Agent joins the caller's first Team when there is one.
-Related: tejun-session-check --help; tejun-session-set --help; tejun-fork
+Related: session_check --help; session_set --help; tejun-fork
 EOF
     exit 0 ;;
 esac
@@ -23,10 +23,10 @@ TOOL_DIR=$(dirname "$SELF")
 die() { printf '%s\n' "$1" >&2; exit "${2:-4}"; }
 need_value() {
   [ "$#" -ge 2 ] && [ -n "$2" ] && [ "${2#-}" = "$2" ] \
-    || die "BAD-ARG: $1 requires a value. Run tejun-session-create --help." 2
+    || die "BAD-ARG: $1 requires a value. Run session_create --help." 2
 }
 NAME="${1:-}"
-[ -n "$NAME" ] && [ "${NAME#-}" = "$NAME" ] || die "usage: tejun-session-create <name> [options]. Run tejun-session-create --help." 2
+[ -n "$NAME" ] && [ "${NAME#-}" = "$NAME" ] || die "usage: session_create <name> [options]. Run session_create --help." 2
 shift
 PROMPT="" TEAM="" LEAD="" ROOT="" MODE="" CMD="" MODEL="" MCP="" TAGS="" SEED=""
 while [ $# -gt 0 ]; do
@@ -41,7 +41,7 @@ while [ $# -gt 0 ]; do
     --mcp) need_value "$@"; MCP="$2"; shift 2 ;;
     --tags) need_value "$@"; TAGS="$2"; shift 2 ;;
     --seed) need_value "$@"; SEED="$2"; shift 2 ;;
-    *) die "BAD-ARG: $1. Run tejun-session-create --help." 2 ;;
+    *) die "BAD-ARG: $1. Run session_create --help." 2 ;;
   esac
 done
 
@@ -65,7 +65,7 @@ PY
 
 . "$TOOL_DIR/ronin-http.sh"
 ronin_connect || exit $?
-out=$(mktemp /tmp/tejun-session-create.XXXXXX) || exit 2
+out=$(mktemp /tmp/session_create.XXXXXX) || exit 2
 code=$(curl -sS -m 60 "${RONIN_CURL[@]+"${RONIN_CURL[@]}"}" -o "$out" -w '%{http_code}' \
        -H 'content-type: application/json' -X POST --data "$body" "$url/api/session" 2>/dev/null) \
   || { rm -f "$out"; die "UNREACHABLE: Ronin did not answer at $url" 5; }

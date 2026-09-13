@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-# tejun-session-set — change named facts on one existing live session; never creates it.
+# session_set — change named facts on one existing live session; never creates it.
 set -u
 case "${1-}" in
-  -h|--help) [ "$#" -eq 1 ] || { echo "tejun-session-set: --help takes no other arguments. Run tejun-session-set --help." >&2; exit 2; }
+  -h|--help) [ "$#" -eq 1 ] || { echo "session_set: --help takes no other arguments. Run session_set --help." >&2; exit 2; }
     cat <<'EOF'
-tejun-session-set — update one existing live Agent
+session_set — update one existing live Agent
 
 Usage:
-  tejun-session-set <name> [--team <team>] [--lead] [--root <path>]
+  session_set <name> [--team <team>] [--lead] [--root <path>]
 
 Only the named facts change. A missing Agent is refused and never created; use
-tejun-session-create for a birth. The bare form is refused; use tejun-session-check
-for a read. Related: tejun-session-check --help; tejun-session-create --help;
+session_create for a birth. The bare form is refused; use session_check
+for a read. Related: session_check --help; session_create --help;
 tejun-team-set --help
 EOF
     exit 0 ;;
@@ -21,10 +21,10 @@ TOOL_DIR=$(dirname "$SELF")
 die() { printf '%s\n' "$1" >&2; exit "${2:-4}"; }
 need_value() {
   [ "$#" -ge 2 ] && [ -n "$2" ] && [ "${2#-}" = "$2" ] \
-    || die "BAD-ARG: $1 requires a value. Run tejun-session-set --help." 2
+    || die "BAD-ARG: $1 requires a value. Run session_set --help." 2
 }
 NAME="${1:-}"
-[ -n "$NAME" ] && [ "${NAME#-}" = "$NAME" ] || die "usage: tejun-session-set <name> [options]. Run tejun-session-set --help." 2
+[ -n "$NAME" ] && [ "${NAME#-}" = "$NAME" ] || die "usage: session_set <name> [options]. Run session_set --help." 2
 shift
 TEAM="" LEAD="" ROOT=""
 while [ $# -gt 0 ]; do
@@ -32,10 +32,10 @@ while [ $# -gt 0 ]; do
     --team) need_value "$@"; TEAM="$2"; shift 2 ;;
     --lead) LEAD=1; shift ;;
     --root|--project_root) need_value "$@"; ROOT="$2"; shift 2 ;;
-    *) die "BAD-ARG: $1. Run tejun-session-set --help." 2 ;;
+    *) die "BAD-ARG: $1. Run session_set --help." 2 ;;
   esac
 done
-[ -n "$TEAM$LEAD$ROOT" ] || die "REFUSED: no update named — use tejun-session-check \"$NAME\" to read it" 4
+[ -n "$TEAM$LEAD$ROOT" ] || die "REFUSED: no update named — use session_check \"$NAME\" to read it" 4
 
 . "$TOOL_DIR/ronin-http.sh"
 ronin_connect || exit $?
@@ -47,7 +47,7 @@ for s in json.load(sys.stdin):
     if s.get("name") == os.environ["NAME"]:
         print(json.dumps(s)); break
 ' 2>/dev/null || true)
-[ -n "$live" ] || die "NO-SESSION: no live session named \"$NAME\" — use tejun-session-create to create it" 3
+[ -n "$live" ] || die "NO-SESSION: no live session named \"$NAME\" — use session_create to create it" 3
 
 did=""
 if [ -n "$TEAM" ]; then
