@@ -10,7 +10,7 @@ import { PROVIDER_SURFACE_TYPE, providerSurfaceDefinition } from './provider-sur
 import { createStoneWorkSurface } from './stone-work-surface.js';
 import { servicesSetupModel } from './services-setup-state.js';
 import { campaignById, campaigns, loadCampaigns, saveCampaign } from './campaigns.js';
-import { completeInstallationMap } from './campaign-installations.js';
+import { completeInstallationMap } from './installation-map.js';
 import { createEmbeddedNewTeamFormView } from './new-team-form.js';
 import { createEmbeddedNewAgentView } from './new-agent.js';
 import { HOUSE_PRESETS, buildLaunchPlan, initialControls, seatingPlan } from './presets.js';
@@ -283,7 +283,7 @@ async function inlineServicesMark(host) {
 }
 
 /** Ronin Services: identity, the beta, its value, one measured status, and the three steps. */
-function createServicesSurface(context) {
+export function createServicesSurface(context) {
   const out = surface(t('settei.ronin_services', 'Ronin Services'));
   const body = el('div', 'setup-surface-body setup-services-compact'); out.content.append(body);
   let timer = null;
@@ -327,7 +327,9 @@ function createServicesSurface(context) {
     const row = campaignById(context.tenant?.campaign) || campaigns()[0];
     if (!row) return { ok: false, message: t('services_setup.no_campaign', 'No Campaign to switch it on for.') };
     const installations = { ...completeInstallationMap(catalog.ok && Array.isArray(catalog.data) ? catalog.data : [], row.config?.installations), ronin_services: on };
-    return saveCampaign(row.id, { config: { installations } });
+    const result = await saveCampaign(row.id, { config: { installations } });
+    if (result.ok) context.onInstallationChange?.('ronin_services', on);
+    return result;
   };
   /** Restart: ask, then read the restart off the machine — /api/installed's startedAt changes when Ronin is back.
    *  A refusal answers in the tool's own words; no answer means Ronin went down, which is the restart happening. */
@@ -396,7 +398,7 @@ function createServicesSurface(context) {
 }
 
 /** gbrain: the Setup presentation of the commons tab. Reads and presses are the tab's own. */
-function createGbrainSurface(context) {
+export function createGbrainSurface(context) {
   const out = surface(t('pane.gbrain', 'gbrain'));
   const host = el('div', 'setup-surface-body'); out.content.append(host);
   const room = buildGbrain(host, () => host.isConnected, (prompt) => context.environment?.showNewSession?.(prompt), {
@@ -422,7 +424,9 @@ function createGbrainSurface(context) {
         const row = campaignById(context.tenant?.campaign) || campaigns()[0];
         if (!row) return { ok: false, message: t('gbrain.setup_no_campaign', 'No Campaign to set a default for.') };
         const installations = { ...completeInstallationMap(catalog.ok && Array.isArray(catalog.data) ? catalog.data : [], row.config?.installations), gbrain: on === true };
-        return saveCampaign(row.id, { config: { installations } });
+        const result = await saveCampaign(row.id, { config: { installations } });
+        if (result.ok) context.onInstallationChange?.('gbrain', on === true);
+        return result;
       },
     },
     // Exactly the Personal Assistant preset's launch, single assistant, opened in a new tab.

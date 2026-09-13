@@ -74,7 +74,7 @@ function registerCampaignSurfaces() {
   }) });
   add({ type: TYPES.defaults, header: 'surface', label: () => t('campaign_view.agent_defaults', 'Team and Agent defaults'), summary: (_tenant, e) => currently.defaults(e), create: ({ environment: e }) => { const surface = createAgentDefaultsSurface(e.selected); return e.progressive({ el: surface.el, show: () => surface.enter() }); } });
   // CONTROL_BUNDLES build-out for the bundle model behind it.
-  add({ type: TYPES.installations, header: 'surface', label: () => t('campaign_view.installations', 'Installations'), summary: (_tenant, e) => installationsSummary(e.selected()), create: ({ environment: e }) => { const surface = createInstallationsSurface(e.selected); return e.progressive({ el: surface.el, show: () => surface.enter() }); } });
+  add({ type: TYPES.installations, header: 'surface', label: () => t('campaign_view.installations', 'Installations'), summary: (_tenant, e) => installationsSummary(e.selected()), create: (context) => { const surface = createInstallationsSurface(context.environment.selected, context); return context.environment.progressive({ el: surface.el, show: () => surface.enter(), destroy: () => surface.destroy() }); } });
   add(providerSurfaceDefinition()); // Model providers — the one surface Ronin Setup also seats; provider-surface.js
   // settings — health, account (configuration, updates, hotwords, Koshi, gbrain, log out),
   // archived sessions, help desk, keypad — are a surface here, the cowork commons with the

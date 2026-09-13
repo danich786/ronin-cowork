@@ -1,189 +1,125 @@
 /* part of the ronin-cowork client — see js/README.md */
-/**
- * ROUTINES — installs and switches on one page (owner, 2026-09-03).
- *
- * The catalog supplies the rows; campaign_config owns the on/off answer. Ronin Services
- * is both an install and a Installation, so its row carries the install as well: what is on
- * this machine, whether the box is activated, and the whole activation flow inline —
- * enter an email, send, and the row collapses to "waiting for your confirmation" with
- * resend and cancel; activated, it says so. No separate card, no separate surface, and
- * nothing here re-renders on a poll: the row repaints only after a press, and after the
- * slow check while a confirmation is outstanding.
- */
+/** Campaign installation choices, presented through the shared Setup stone work surface. */
 import { t } from './lexicon.js';
-import { S } from './state.js';
 import { request } from './request.js';
 import { saveCampaign } from './campaigns.js';
 import { WorkspaceKit } from './workspace-kit.js';
+import { ask } from './ask.js';
+import { createStoneWorkSurface } from './stone-work-surface.js';
+import { createServicesSurface, createGbrainSurface } from './setup-surfaces.js';
+import { completeInstallationMap as completeMap } from './installation-map.js';
 
-const el = (tag, cls, text) => {
+const INSTALLATION_ORDER = ['ronin_services', 'gbrain', 'trello', 'perplexity'];
+
+const el = (tag, cls = '', text = null) => {
   const out = document.createElement(tag);
   if (cls) out.className = cls;
   if (text != null) out.textContent = String(text);
   return out;
 };
-const bucket = (value) => value && typeof value === 'object' && !Array.isArray(value) ? value : {};
 
-export function completeInstallationMap(catalog, stored) {
-  const current = bucket(stored);
-  return Object.fromEntries(catalog.map((installation) => [installation.name, current[installation.name] === true]));
-}
+export const completeInstallationMap = completeMap;
 
-/** What Ronin Services adds — the owner's list, not a closed one. */
-function servicesSell() {
-  return [
-    t('campaign_view.sell_library', 'The template library — teams and agents Ronin keeps and grows, with the procedures, macros and tools they read, installed with one press.'),
-    t('campaign_view.sell_assistant', 'A background assistant that keeps every agent’s work record and instructions current, so the roster and the tile say what each agent is doing.'),
-    t('campaign_view.sell_transcripts', 'Readable transcripts are not in this beta; the recorder is off while it is refactored.'),
-    t('campaign_view.sell_voice', 'Text to voice, and voice in — hear a report read back; speak to an agent from the tile.'),
-    t('campaign_view.sell_hotwords', 'Hotwords — teach dictation the words it mishears, once, for every session.'),
-    t('campaign_view.sell_memory', 'Unified team memory — what a session learns is kept for the team and recalled at birth.'),
-    t('campaign_view.sell_stats', 'Usage history — what your sessions did, counted over time, never their content.'),
-  ];
-}
-
-export function createInstallationsSurface(campaign) {
-  const { createSurface, createNotice } = WorkspaceKit.primitives;
-  const surface = createSurface({ label: t('campaign_view.installations', 'Installations'), className: 'cv-surface' });
-  const body = el('div', 'cv-body');
-  surface.content.append(body);
+export function createInstallationsSurface(campaign, context = {}) {
+  const surface = WorkspaceKit.primitives.createSurface({ label: t('campaign_view.installations', 'Installations'), className: 'cv-surface' });
   let catalog = [];
-  let installed = null;   // /api/installed — installed parts, activated
-  let activation = null;  // /api/services/activation — stage, masked email
-  let timer = null;
+  let installed = null;
+  let values = {};
+  let stoneSurface = null;
 
-  const available = (installation) => (installation.mcp || []).every((name) => !Array.isArray(S.services) || S.services.includes(name));
+  const servicesReady = () => values.ronin_services === true && (installed?.services?.parts || []).length > 0;
+  const gated = (name) => (name === 'trello' || name === 'perplexity') && !servicesReady();
+  const itemFor = (installation) => ({
+    id: installation.name,
+    label: installation.label || installation.name,
+    state: values[installation.name] ? t('campaign_view.on', 'On') : t('campaign_view.off', 'Off'),
+    attrs: gated(installation.name)
+      ? { 'data-gated': 'true', title: t('campaign_view.services_required', 'Ronin Services required') }
+      : {},
+  });
+  const refreshStoneMarks = () => {
+    for (const installation of catalog) {
+      const stone = stoneSurface.el.querySelector(`[data-sws-id="${installation.name}"]`);
+      if (!stone) continue;
+      const reason = gated(installation.name) ? t('campaign_view.services_required', 'Ronin Services required') : '';
+      const state = stone.querySelector('.sws-state');
+      if (state) state.textContent = values[installation.name] ? t('campaign_view.on', 'On') : t('campaign_view.off', 'Off');
+      stone.toggleAttribute('data-gated', Boolean(reason));
+      stone.title = reason;
+    }
+  };
+
   const save = async (name, on, notice) => {
     const row = campaign();
     if (!row) return;
-    const installations = { ...completeInstallationMap(catalog, row.config?.installations), [name]: on };
-    notice.set('info', t('campaign.saving', 'saving…'));
+    notice.textContent = t('campaign.saving', 'saving…');
+    const installations = { ...completeMap(catalog, row.config?.installations), [name]: on };
     const result = await saveCampaign(row.id, { config: { installations } });
-    notice.set(result.ok ? 'success' : 'failed', result.ok ? t('settei.saved', 'saved') : result.message);
-    if (result.ok) paint();
-  };
-
-  /* ---- the install, on the Services row ---- */
-  const act = async (route, json, notice) => {
-    notice.set('info', t('campaign.saving', 'saving…'));
-    const r = await request(route, json === 'DELETE' ? { method: 'DELETE' } : { method: 'POST', ...(json ? { json } : {}) });
-    if (!r.ok) { notice.set('failed', r.message); return; }
-    notice.set('', '');
-    await readInstall();
-    paint();
-  };
-  const installBlock = (notice) => {
-    const block = el('div', 'cv-install');
-    const stage = activation?.stage || 'not_requested';
-    const activated = installed?.services?.activated === true;
-    const parts = installed?.services?.parts || [];
-    // THREE FACTS, IN THE ORDER THEY MATTER (owner, 2026-09-03): the parts ship with Ronin,
-    // so "installed" is the usual answer; the SWITCH on the right is what turns them on for
-    // new Agents; ACTIVATION with Ronin HQ is a separate, optional step for the hosted parts.
-    block.append(el('p', 'cv-choice-why', parts.length
-      ? t('campaign_view.svc_installed', 'Installed on this machine: {parts}. The switch on the right turns it on for new Agents.', { parts: parts.join(', ') })
-      : t('campaign_view.svc_absent', 'Not installed on this machine.')));
-    const parked = installed?.services?.parked || [];
-    if (parked.length) block.append(el('p', 'cv-choice-why', t('campaign_view.svc_parked', 'Parked parts: {parts}.', {
-      parts: parked.map((part) => {
-        const reason = String(part.reason || `${part.installation || 'Installation'} is off`)
-          .replace(new RegExp(`^${part.name} is `, 'i'), '')
-          .replace(/, to be refactored$/i, '');
-        return `${part.name} — ${reason}`;
-      }).join('; '),
-    })));
-    // The running copy: the parts load at start, by the switch. Off means none of it runs —
-    // no recorder, no tapes, Locked tiles only — until the switch is on and Ronin restarts.
-    if (installed?.services?.restart_needed) block.append(el('p', 'cv-choice-why cv-restart', installed.services.switched_on
-      ? t('campaign_view.svc_restart_on', 'Switched on, but not running in this copy of Ronin: restart Ronin to start it.')
-      : t('campaign_view.svc_restart_off', 'Switched off, but still running in this copy of Ronin until it restarts.')));
-    else if (parts.length && !installed?.services?.switched_on) block.append(el('p', 'cv-choice-why', t('campaign_view.svc_off_running', 'Off: none of it runs — no recording, no transcripts, tiles are Locked only. Files stay in place.')));
-    block.append(el('p', 'cv-choice-why', activated
-      ? t('campaign_view.svc_activated', 'Activated with Ronin HQ: the template library and the hosted parts are yours.')
-      : t('campaign_view.svc_not_activated', 'Not activated with Ronin HQ. Activation is optional and separate from the switch: it unlocks the hosted parts — the template library first — with an email and a confirmation.')));
-    if (!activated) {
-      if (stage === 'awaiting_email' || stage === 'address_changed' || stage === 'requesting') {
-        block.append(el('p', 'cv-choice-why', stage === 'requesting' ? t('campaign_view.svc_sending', 'Sending the confirmation email…') : t('campaign_view.svc_waiting', 'Waiting for your confirmation — open the email sent to {email}.', { email: activation?.email_masked || '' })));
-        const actions = el('div', 'cv-actions');
-        const resend = el('button', 'cv-button', t('campaign_view.svc_resend', 'Send the email again')); resend.type = 'button';
-        if (activation?.resend_available_at && new Date(activation.resend_available_at) > new Date()) { resend.disabled = true; resend.title = t('campaign_view.svc_resend_after', 'after {time}', { time: new Date(activation.resend_available_at).toLocaleTimeString() }); }
-        resend.addEventListener('click', () => act('/api/setup/registration/recovery', { action: 'resend' }, notice));
-        const cancel = el('button', 'cv-button', t('campaign_view.svc_cancel', 'Cancel the request')); cancel.type = 'button';
-        cancel.addEventListener('click', () => act('/api/setup/registration', 'DELETE', notice));
-        actions.append(resend, cancel);
-        block.append(actions);
-      } else if (stage === 'verified' || stage === 'installing') {
-        block.append(el('p', 'cv-choice-why', t('campaign_view.svc_installing', 'Confirmed — Ronin is finishing the install.')));
-      } else {
-        // not_requested · cancelled · expired · error: the form, and nothing else.
-        const form = el('form', 'cv-actions');
-        const email = el('input', 'cv-input'); email.type = 'email'; email.required = true; email.placeholder = t('campaign_view.svc_email', 'you@example.com'); email.autocomplete = 'email';
-        const send = el('button', 'cv-button', t('campaign_view.svc_send', 'Send confirmation email')); send.type = 'submit'; send.dataset.primary = 'true';
-        form.append(email, send);
-        form.addEventListener('submit', (event) => { event.preventDefault(); if (email.value.trim()) void act('/api/setup/registration', { email: email.value.trim() }, notice); });
-        block.append(el('p', 'cv-choice-why', stage === 'expired' ? t('campaign_view.svc_expired', 'That confirmation link expired. Ask for a fresh one.') : t('campaign_view.svc_ask', 'To activate: the address the entitlement should go to, then confirm from the email.')), form);
-      }
+    notice.textContent = result.ok ? t('settei.saved', 'saved') : result.message;
+    notice.dataset.tone = result.ok ? 'success' : 'failed';
+    if (result.ok) {
+      values = installations;
+      refreshStoneMarks();
     }
-    const sell = el('details', 'cv-sell');
-    sell.append(el('summary', null, t('campaign_view.sell_head', 'What Ronin Services adds')));
-    const ul = el('ul');
-    for (const line of servicesSell()) ul.append(el('li', null, line));
-    sell.append(ul);
-    block.append(sell);
-    return block;
   };
 
-  function paint() {
-    body.replaceChildren();
-    const row = campaign();
-    if (!row) return surface.setState('empty', t('campaign_view.none_selected', 'No Campaign selected.'));
-    surface.setState(null, '');
-    const values = completeInstallationMap(catalog, row.config?.installations);
-    const notice = createNotice();
-    body.append(el('p', 'cv-note', t('campaign_view.installations_help', 'What is installed and switched on for this system. Feature providers make their features available; nothing already running changes.')));
-    for (const installation of catalog) {
-      const line = el('div', 'cv-choice');
-      const words = el('div', 'cv-choice-pick');
-      words.append(el('span', 'cv-choice-name', installation.label || installation.name), el('p', 'cv-choice-why', installation.blurb || t('campaign_view.routine_no_description', 'No description supplied.')));
-      if (installation.name === 'ronin_services') words.append(installBlock(notice));
-      const controls = el('div', 'cv-installation-control');
-      // The pill is the INSTALL fact. For Services: installed (its parts are here) or not; activation is said in the row, not here.
-      const requirementsMet = (installation.requires || []).every((name) => values[name] === true);
-      const ok = installation.name === 'ronin_services' ? (installed?.services?.parts || []).length > 0 : available(installation) && requirementsMet;
-      const word = installation.name === 'ronin_services'
-        ? (ok ? (installed?.services?.activated ? t('campaign_view.svc_pill_activated', 'Installed · activated') : t('campaign_view.svc_pill_installed', 'Installed')) : t('campaign_view.svc_pill_absent', 'Not installed'))
-        : (ok ? t('campaign_view.available', 'Available') : t('campaign_view.unavailable', 'Unavailable'));
-      controls.append(el('span', ok ? 'cv-state cv-state-ok' : 'cv-state', word));
-      const toggle = el('label', 'cv-switch');
-      const box = el('input'); box.type = 'checkbox'; box.checked = values[installation.name];
-      box.disabled = !requirementsMet;
-      if (!requirementsMet) words.append(el('p', 'cv-choice-why', `${(installation.requires || []).map((name) => catalog.find((row) => row.name === name)?.label || name).join(', ')} required`));
-      const state = el('span', null, box.checked ? t('campaign_view.on', 'On') : t('campaign_view.off', 'Off'));
-      box.addEventListener('change', () => { state.textContent = box.checked ? t('campaign_view.on', 'On') : t('campaign_view.off', 'Off'); void save(installation.name, box.checked, notice); });
-      toggle.append(box, state); controls.append(toggle); line.append(words, controls); body.append(line);
+  const choice = (installation, host) => {
+    const reason = gated(installation.name) ? t('campaign_view.services_required', 'Ronin Services required') : '';
+    const notice = el('p', 'setup-notice');
+    const question = ask([{ group: installation.label || installation.name, fields: [{
+      key: 'installation', label: t('campaign_view.installation_default', 'Available to Teams and Agents'),
+      options: [
+        { v: 'off', l: t('campaign_view.off', 'Off'), off: reason },
+        { v: 'on', l: t('campaign_view.on', 'On'), off: reason },
+      ],
+    }] }], {
+      value: { installation: values[installation.name] ? 'on' : 'off' },
+      onChange: (answer) => void save(installation.name, answer.installation === 'on', notice),
+    });
+    host.append(question.el, notice);
+  };
+
+  const renderDetail = (installation, host) => {
+    choice(installation, host);
+    const sharedContext = {
+      ...context,
+      tenant: { ...(context.tenant || {}), campaign: campaign()?.id },
+      onInstallationChange: (name, on) => {
+        values = { ...values, [name]: on };
+        refreshStoneMarks();
+      },
+    };
+    const page = installation.id === 'ronin_services'
+      ? createServicesSurface(sharedContext)
+      : installation.id === 'gbrain' ? createGbrainSurface(sharedContext) : null;
+    if (page) {
+      host.append(page.el);
+      void page.show?.();
+      return () => page.destroy?.();
     }
-    body.append(notice.el);
-    // While a confirmation is outstanding, look again slowly; otherwise the page is still.
-    clearTimeout(timer);
-    const stage = activation?.stage;
-    if (!installed?.services?.activated && (stage === 'awaiting_email' || stage === 'requesting' || stage === 'verified' || stage === 'installing')) {
-      timer = setTimeout(() => { if (surface.el.isConnected) void readInstall().then(paint); }, 15000);
-    }
-  }
-
-  const readInstall = async () => {
-    const [i, a] = await Promise.all([request('/api/installed', { cache: 'no-store' }), request('/api/services/activation', { cache: 'no-store' })]);
-    installed = i.ok ? i.data : null;
-    activation = a.ok ? a.data : null;
+    return null;
   };
 
-  return {
-    el: surface.el,
-    enter: () => void Promise.all([request('/api/installations'), readInstall()]).then(([result]) => { catalog = result.ok && Array.isArray(result.data) ? result.data : []; paint(); }),
+  stoneSurface = createStoneWorkSurface({ items: [], className: 'campaign-installations-stones', renderDetail });
+  stoneSurface.mount(surface.content);
+
+  const enter = async () => {
+    const [catalogResult, installedResult] = await Promise.all([
+      request('/api/installations'),
+      request('/api/installed', { cache: 'no-store' }),
+    ]);
+    const rows = catalogResult.ok && Array.isArray(catalogResult.data) ? catalogResult.data : [];
+    catalog = INSTALLATION_ORDER.map((name) => rows.find((row) => row.name === name)).filter(Boolean);
+    installed = installedResult.ok ? installedResult.data : null;
+    values = completeMap(catalog, campaign()?.config?.installations);
+    stoneSurface.setItems(catalog.map(itemFor));
   };
+
+  return { el: surface.el, enter, destroy: () => stoneSurface.destroy() };
 }
 
 export function installationsSummary(campaign) {
-  const values = bucket(campaign?.config?.installations);
-  return t('campaign_view.installations_n', '{n} on', { n: Object.values(values).filter((value) => value === true).length });
+  const values = campaign?.config?.installations;
+  const map = values && typeof values === 'object' && !Array.isArray(values) ? values : {};
+  return t('campaign_view.installations_n', '{n} on', { n: Object.values(map).filter((value) => value === true).length });
 }

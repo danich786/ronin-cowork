@@ -207,7 +207,7 @@ test('Services leads with identity, the beta, and benefits, then one measured st
   const source = await (await import('node:fs/promises')).readFile(new URL('../public/js/setup-surfaces.js', import.meta.url), 'utf8');
   assert.match(source, /import \{ servicesSetupModel \} from '\.\/services-setup-state\.js'/);
   assert.match(source, /import \{ campaignById, campaigns, loadCampaigns, saveCampaign \} from '\.\/campaigns\.js'/);
-  assert.match(source, /import \{ completeInstallationMap \} from '\.\/campaign-installations\.js'/);
+  assert.match(source, /import \{ completeInstallationMap \} from '\.\/installation-map\.js'/);
   assert.match(source, /setup-services-mark/);
   assert.match(source, /mark\.src = 'brand\/services-mark\.svg'/);
   assert.match(source, /fetch\('brand\/services-mark\.svg'\)/, 'the one mark file is inlined so the R follows data-theme');
