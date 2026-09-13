@@ -66,21 +66,20 @@ export function createInstallationsSurface(campaign, context = {}) {
   const choice = (installation, host) => {
     const reason = gated(installation.name) ? t('campaign_view.services_required', 'Ronin Services required') : '';
     const notice = el('p', 'setup-notice');
-    const question = ask([{ group: installation.label || installation.name, fields: [{
-      key: 'installation', label: t('campaign_view.installation_default', 'Available to Teams and Agents'),
-      options: [
-        { v: 'off', l: t('campaign_view.off', 'Off'), off: reason },
-        { v: 'on', l: t('campaign_view.on', 'On'), off: reason },
-      ],
+    const question = ask([{ fields: [{
+      key: 'installation', label: installation.label || installation.name,
+      switch: [t('campaign_view.on', 'On'), t('campaign_view.off', 'Off')],
     }] }], {
-      value: { installation: values[installation.name] ? 'on' : 'off' },
-      onChange: (answer) => void save(installation.name, answer.installation === 'on', notice),
+      value: { installation: values[installation.name] === true },
+      onChange: (answer) => void save(installation.name, answer.installation === true, notice),
     });
+    const control = question.el.querySelector('[data-ask-key="installation"]');
+    if (reason && control) { control.disabled = true; control.title = reason; }
     host.append(question.el, notice);
   };
 
   const renderDetail = (installation, host) => {
-    choice(installation, host);
+    if (installation.id !== 'ronin_services') choice(installation, host);
     const sharedContext = {
       ...context,
       tenant: { ...(context.tenant || {}), campaign: campaign()?.id },
@@ -113,6 +112,7 @@ export function createInstallationsSurface(campaign, context = {}) {
     installed = installedResult.ok ? installedResult.data : null;
     values = completeMap(catalog, campaign()?.config?.installations);
     stoneSurface.setItems(catalog.map(itemFor));
+    stoneSurface.select('ronin_services');
   };
 
   return { el: surface.el, enter, destroy: () => stoneSurface.destroy() };
