@@ -49,7 +49,7 @@ test('missing enabled tools are visible and do not refuse projection', async () 
 
 /* A BORN SESSION RUNS ITS TOOLS THROUGH THESE SYMLINKS, so every ronin_bin tool that
  * locates the repository from its own path must resolve the link first (measured
- * 2026-09-02: the desk tool, `edges wipeboard`, `work-record read`, `work-record update-record`
+ * 2026-09-02: the desk tool, `edges wipeboard`, `work-record read`, `work-record update_record`
  * all failed from a projected session, and the guard shims had been fixed the day
  * before). Each is run exactly as a session would type it, with an invocation that stops
  * before it needs a tmux session, and must not report a path it could not reach.
@@ -159,7 +159,7 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
   assert.match(teamHelp, /remove the old Team on that Team's page/i);
   assert.match(teamHelp, /sets? or changes? that Team's lead/i);
   assert.doesNotMatch(teamHelp, /session_fork --help/);
-  for (const args of [['edges', 'wipeboard'], ['edges', 'send'], ['work-record', 'read', '--session', 'nobody'], ['work-record', 'update-record', '--session', 'nobody', '--at', '1'], ['ronin-host', 'inspect'], ['ronin-host', 'account']]) {
+  for (const args of [['edges', 'wipeboard'], ['edges', 'send'], ['work-record', 'read', '--session', 'nobody'], ['work-record', 'update_record', '--session', 'nobody', '--at', '1'], ['ronin-host', 'inspect'], ['ronin-host', 'account']]) {
     const r = await run(args);
     assert.doesNotMatch(r.out, REACH_FAILURES, `${args.join(' ')}: ${r.out}`);
   }

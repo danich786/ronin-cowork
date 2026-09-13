@@ -108,7 +108,7 @@ the owner should be able to open and keep checkout rows current:
 
 ```text
 work-record document add docs/work-record.md
-work-record update-record --repo ronin_cowork:team/example/cut
+work-record update_record --repo ronin_cowork:team/example/cut
 ```
 
 These fields locate work; they do not replace commits, hand-ins, or project evidence.

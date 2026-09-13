@@ -80,10 +80,10 @@ directory of the session-commands store, and prepends that directory — then Ro
 and Update put a CLI, so that a CLI named inside a tile is the one Ronin installed and not an
 older system copy — to the environment given directly to tmux and the Agent process. Ordinary non-interactive descendants inherit
 it; they do not source `.bashrc`, `.profile`, or another owner shell file. That directory's
-name is also how `work-record read`, `work-record update-record` and `edges page` learn which session they
+name is also how `work-record read`, `work-record update_record` and `edges page` learn which session they
 act for when the calling shell is not inside tmux and carries neither `TMUX_PANE` nor
 `$TMUX`; the name is accepted only when it is a live session. An Agent born with Ronin Base
-off therefore does not receive Base commands such as `work-record update-record`, `session_fork`, or
+off therefore does not receive Base commands such as `work-record update_record`, `session_fork`, or
 `ronin-url`. Changing a Team or Campaign default later does not mutate a running Agent's
 birth environment; recreate that Agent to give it the newly enabled tools.
 

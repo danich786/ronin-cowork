@@ -49,7 +49,7 @@ const run = (env: NodeJS.ProcessEnv, args: string[], input?: string) =>
     args[0] === 'project' ? args
       : args[0] === '--doc' ? ['document', 'add', args[1]]
         : args[0] === '--undoc' ? ['document', 'remove', args[1]]
-          : ['update-record', ...args],
+          : ['update_record', ...args],
     { encoding: 'utf8', env, input, stdio: ['pipe', 'pipe', 'pipe'] });
 
 test('help is side-effect-free, actionable, and separates lead positioning', () => {
@@ -66,6 +66,9 @@ test('help is side-effect-free, actionable, and separates lead positioning', () 
     assert.match(r.stdout, /--session <name> --at N\[\.M\]/);
     assert.doesNotMatch(r.stderr, /cannot tell which session/);
   }
+  const direct = spawnSync(tool, ['--objective', 'not an alias'], { encoding: 'utf8', env: { ...process.env, TMUX: '', TMUX_PANE: '' } });
+  assert.equal(direct.status, 2);
+  assert.match(direct.stderr, /work-record update_record --objective <text>/);
 });
 
 test('field verbs edit one field each and carry the pointer and the doc list through', (t) => {
@@ -110,7 +113,7 @@ test('field verbs refuse a wrong position, a wrong status, a missing value, and 
   t.after(() => rmSync(f.dir, { recursive: true, force: true }));
   run(f.env, [], JSON.stringify({ objective: 'start', ladder: [{ gate: 'go', status: 'ACTIVE' }, { phase: 'one', legs: [{ title: 'a' }] }] }));
   const refuse = (args: string[]) => {
-    const r = spawnSync(tool, args, { encoding: 'utf8', env: f.env });
+    const r = spawnSync(tool, ['update_record', ...args], { encoding: 'utf8', env: f.env });
     assert.equal(r.status, 3, args.join(' '));
     return r.stderr;
   };
@@ -178,11 +181,11 @@ test('the invocation path names the session when tmux does not, and never a gues
     assert.equal(r.status, 3, `${bin} ${args.join(' ')} refused`);
     assert.match(r.stderr, /cannot tell which session/);
   };
-  refused(tool, ['update-record', '--objective', 'by its real path']);
-  refused(projected('nobody', 'work-record'), ['update-record', '--objective', 'through a directory naming no session']);
+  refused(tool, ['update_record', '--objective', 'by its real path']);
+  refused(projected('nobody', 'work-record'), ['update_record', '--objective', 'through a directory naming no session']);
   assert.deepEqual(readdirSync(path.join(f.dir, 'sessions')), [], 'a refusal writes nothing — not even a stray record at the store root');
 
-  execFileSync(projected('probe', 'work-record'), ['update-record', '--objective', 'through my own directory', '--gate', 'go'], { encoding: 'utf8', env: noTmux, stdio: ['pipe', 'pipe', 'pipe'] });
+  execFileSync(projected('probe', 'work-record'), ['update_record', '--objective', 'through my own directory', '--gate', 'go'], { encoding: 'utf8', env: noTmux, stdio: ['pipe', 'pipe', 'pipe'] });
   assert.equal(block(f.letter).objective, 'through my own directory');
   const read = execFileSync(projected('probe', 'work-record'), ['read', '--json'], { encoding: 'utf8', env: noTmux, stdio: ['pipe', 'pipe', 'pipe'] });
   assert.equal((JSON.parse(read) as Block).objective, 'through my own directory');

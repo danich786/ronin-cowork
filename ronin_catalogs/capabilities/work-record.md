@@ -16,7 +16,7 @@ and held-project create/read/write.
 
 | Tool | Authority | Teach | Help |
 |---|---|---|---|
-| `work-record update-record` | write: objective, repositories, ladder, and focus | priority | `work-record --help` |
+| `work-record update_record` | write: objective, repositories, ladder, and focus | priority | `work-record --help` |
 | `work-record document add` | write: make one document visible in Docs | priority | `work-record --help` |
 | `work-record project create` | create: one complete project with a Team-issued ID | priority | `work-record --help` |
 | `work-record project read` | read: one held project | priority | `work-record --help` |

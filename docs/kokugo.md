@@ -73,7 +73,7 @@ Two shapes that come up:
 ## 4 · What is never translated
 
 - **Anything an agent reads** — the letter, the brief, the boot shelf, a prompt handed to a
-  session, `work-record update-record` output, tool output. A session on a Home desk is still `DraftPlan`
+  session, `work-record update_record` output, tool output. A session on a Home desk is still `DraftPlan`
   with `reach: plan`.
 - **The house's internal names** — KOTOBA's closed list (RIREKI, KOSHI, …); *Ronin*
   the product; a vendor's name (gbrain, Claude).

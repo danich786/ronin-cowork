@@ -23,7 +23,7 @@
 # party that knows.
 #
 # IT NEVER AUTHORS. The agent owns every word of its letter. Koshi owns one key — "at" —
-# and writes it through `work-record update-record --session --at`, which cannot express anything else.
+# and writes it through `work-record update_record --session --at`, which cannot express anything else.
 #
 # Needs whatever key its outlet needs — the default (`koshi_external`, OpenAI) wants
 # OPENAI_API_KEY; `koshi_hosted_weights` wants none. No key, no Koshi — it says so and

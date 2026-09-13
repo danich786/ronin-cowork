@@ -6,12 +6,12 @@ export WORK_RECORD_INVOKED="${BASH_SOURCE[0]}"
 usage() { cat <<'EOF'
 Usage:
   work-record read [--json|--rungs] [--session <name>]
-  work-record update-record --objective <text>
-  work-record update-record --phase <title> | --gate <text>
-  work-record update-record --leg N <title> | --leg N.M <title>
-  work-record update-record --status N[.M] PLANNED|ACTIVE|DONE
-  work-record update-record --done N[.M] | --active N[.M] | --drop N[.M]
-  work-record update-record --repo <repo>:<branch> | --unrepo <repo>[:<branch>]
+  work-record update_record --objective <text>
+  work-record update_record --phase <title> | --gate <text>
+  work-record update_record --leg N <title> | --leg N.M <title>
+  work-record update_record --status N[.M] PLANNED|ACTIVE|DONE
+  work-record update_record --done N[.M] | --active N[.M] | --drop N[.M]
+  work-record update_record --repo <repo>:<branch> | --unrepo <repo>[:<branch>]
   work-record document add <path>
   work-record document remove <path>
   work-record document list
@@ -21,7 +21,7 @@ Usage:
   work-record project list
 Update fields include --objective, --phase, --gate, --leg, --status, --done, --active,
 --drop, --repo, --unrepo, --on_tangent, and --on_track. A whole JSON record is accepted
-on stdin. Lead positioning is a separate form: update-record --session <name> --at N[.M].
+on stdin. Lead positioning is a separate form: update_record --session <name> --at N[.M].
 Document add replaces --doc; document remove replaces --undoc.
 Related: session_fork --help; team-lead --help
 EOF
@@ -34,7 +34,7 @@ list_field() {
 case "${1:-}" in
   -h|--help) [ "$#" -eq 1 ] || { echo 'Run work-record --help.' >&2; exit 2; }; usage ;;
   read) shift; read_impl "$@" ;;
-  update-record) shift; case "${1:-}" in -h|--help) write_impl --help;; esac; write_impl "$@" ;;
+  update_record) shift; case "${1:-}" in -h|--help) write_impl --help;; esac; write_impl "$@" ;;
   document)
     verb=${2:-}; case "$verb" in
       add) [ "$#" -eq 3 ] || { usage >&2; exit 2; }; write_impl --doc "$3" ;;
@@ -48,6 +48,5 @@ case "${1:-}" in
       read) read_impl project read "$@" ;;
       list) [ "$#" -eq 0 ] || { usage >&2; exit 2; }; list_field projects ;;
       *) usage >&2; exit 2;; esac ;;
-  -*) write_impl "$@" ;;
   *) usage >&2; exit 2;;
 esac

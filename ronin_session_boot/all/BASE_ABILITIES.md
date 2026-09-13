@@ -12,11 +12,11 @@ root where you start; `worktree-desk open <repo>` names it for another root.
 
 **Your work record** is the owner's account of your task, progress, tracked documents,
 worktrees and team. `work-record read` prints it. Change one field with one call:
-`work-record update-record --objective "<sentence>"`, `--phase "<title>"`, `--leg N "<title>"`,
+`work-record update_record --objective "<sentence>"`, `--phase "<title>"`, `--leg N "<title>"`,
 `--done N.M`, `--gate "<what you wait for>"`; `work-record document add <path>` lists a
-document, and `work-record update-record < block.json`
+document, and `work-record update_record < block.json`
 replaces the whole authored block. The shape is in the letter you were seeded with and
-in the `work-record update-record` row of `ronin_catalogs/TOOLS.md`. Keep it true whenever your task,
+in the `work-record update_record` row of `ronin_catalogs/TOOLS.md`. Keep it true whenever your task,
 position or documents change.
 
 **Other sessions.** `edges read <session>` reads its durable record first and falls back
