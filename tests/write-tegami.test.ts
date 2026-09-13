@@ -28,6 +28,11 @@ function fixture(): { dir: string; env: NodeJS.ProcessEnv; letter: string } {
     'esac',
     '',
   ].join('\n'), { mode: 0o755 });
+  writeFileSync(path.join(dir, 'curl'), [
+    '#!/bin/sh',
+    "case \"$*\" in *'/api/team-rosters/team/projects/issue'*) printf '{\"ok\":true,\"id\":\"team/1\"}';; *) exit 1;; esac",
+    '',
+  ].join('\n'), { mode: 0o755 });
   const env: NodeJS.ProcessEnv = { ...process.env, PATH: `${dir}:${process.env.PATH ?? ''}`, TMUX_PANE: '%1', RONIN_SESSION_DIR: path.join(dir, 'sessions') };
   delete env.TMUX;
   return { dir, env, letter: path.join(dir, 'sessions', 'probe-key', 'tegami.md') };
@@ -126,7 +131,7 @@ test('project create, read and one-field write use the existing letter tools', (
   const f = fixture();
   t.after(() => rmSync(f.dir, { recursive: true, force: true }));
   run(f.env, [], JSON.stringify({ objective: 'session', ladder: [] }));
-  run(f.env, ['project', 'create', 'team/1', '--title', 'First', '--objective', 'Ship it']);
+  run({ ...f.env, RONIN_URL: 'http://operator.test' }, ['project', 'create', '--team', 'team', '--title', 'First', '--objective', 'Ship it']);
   let p = block(f.letter).projects?.[0];
   assert.deepEqual(p, { id: 'team/1', title: 'First', objective: 'Ship it', stage: 'PLANNING', exit: 'none', status: 'yellow', ladder: [], evidence: [] });
 

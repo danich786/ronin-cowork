@@ -83,7 +83,7 @@ help() {
 write_tegami — update the current session's work record
 
 Usage:
-  write_tegami project create <id> --title <text> --objective <text> [--stage <stage>]
+  write_tegami project create --team <team> --title <text> --objective <text> [--stage <stage>]
   write_tegami project write <id> --title|--objective|--stage|--exit|--status|--evidence <value>
   write_tegami project write <id> --ladder <json>
   write_tegami project write <id> --leg <STAGE> <title>
@@ -166,16 +166,39 @@ key_of() {
 # hardcode the path while the rest of Ronin resolved it, so moving the store sent the
 # letters one way and the tape the other. See docs/stores.md.
 . "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"
+TOOL_DIR=$(dirname "$SELF")
 STORE="$(cd "$(dirname "$SELF")/../bin" && pwd)/ronin-store"
 [ -x "$STORE" ] || STORE=ronin-store
 SESSION_STORE="$("$STORE" session)"
 
 if [ "${1-}" = project ]; then
   shift; PROJECT_VERB=${1-}; shift || true
-  PROJECT_ID=${1-}; shift || true
   [ "$PROJECT_VERB" = create ] || [ "$PROJECT_VERB" = write ] \
     || die "write_tegami: project takes create or write."
-  [ -n "$PROJECT_ID" ] || die "write_tegami: project $PROJECT_VERB needs an id."
+  if [ "$PROJECT_VERB" = create ]; then
+    PROJECT_TEAM=""
+    CREATE_ARGS=()
+    while [ $# -gt 0 ]; do
+      if [ "$1" = --team ]; then
+        [ -n "${2-}" ] || die "write_tegami: project create --team needs a value."
+        PROJECT_TEAM=$2; shift 2
+      else CREATE_ARGS+=("$1"); shift
+      fi
+    done
+    [ -n "$PROJECT_TEAM" ] || die "write_tegami: project create needs --team <team>; its id comes from that Team's roster."
+    . "$TOOL_DIR/ronin-http.sh"
+    ronin_connect || exit $?
+    ISSUE=$(curl -sS -m 15 "${RONIN_CURL[@]+"${RONIN_CURL[@]}"}" -H 'content-type: application/json' \
+      -X POST "$url/api/team-rosters/$PROJECT_TEAM/projects/issue" 2>/dev/null) \
+      || die "write_tegami: could not reach Ronin to issue a project id."
+    PROJECT_ID=$(printf '%s' "$ISSUE" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("id", "")); print(d.get("error", ""), file=sys.stderr)' 2>/dev/null) \
+      || die "write_tegami: Ronin returned an invalid project-id response."
+    [ -n "$PROJECT_ID" ] || die "write_tegami: Team $PROJECT_TEAM did not issue a project id."
+    set -- "${CREATE_ARGS[@]}"
+  else
+    PROJECT_ID=${1-}; shift || true
+    [ -n "$PROJECT_ID" ] || die "write_tegami: project write needs an id."
+  fi
   NAME=$(me) || exit 3
   PFILE="$SESSION_STORE/$(key_of "$NAME")/tegami.md"
   [ -f "$PFILE" ] || die "write_tegami: you have no letter yet."

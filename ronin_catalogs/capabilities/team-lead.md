@@ -11,7 +11,7 @@ Reach for this because you are the designated Team lead. Every Agent keeps its p
 
 | Tool | Authority | Teach | Help |
 |---|---|---|---|
-| `session_create` | create: one supporting Agent through the ordinary launch resolver; refuses an existing name | priority | |
+| `session_create` | create: one supporting Agent, optionally for a roster-held project, through the ordinary launch resolver; refuses an existing name | priority | `session_create --help` |
 | `session_check` | read: one live session by exact name | | |
 | `session_set` | write: a member's Team membership, lead designation, or project root | | |
 | `worktree-desk assign` | write: give a named Agent a desk with the same source choice | | `worktree-desk --help` |
@@ -30,6 +30,11 @@ Reach for this because you are the designated Team lead. Every Agent keeps its p
 
 The move is the approval: there is no verdict, decider, revision counter, or history on a
 project. Parking a project for a future common pool is outside this bundle.
+
+`session_create <name> --project <team/id>` composes two existing operations. Its brief
+names the project, birth happens through the ordinary resolver, and only then is the whole
+project assigned. If assignment fails after birth, it reports that partial result and does
+not claim the newborn holds the project.
 
 Promotion is the lead's: hand-ins reach the Team line, and the lead moves the coherent Team
 line to `dev` once, on the owner's word. Never promote mid-refactor.

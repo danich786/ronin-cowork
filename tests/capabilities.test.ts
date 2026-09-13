@@ -213,7 +213,8 @@ test('the stock capability documents are well-formed and carry no retired vocabu
   assert.ok(by.session.tools.some((tool) => tool.name === 'session_set'));
   assert.ok(!by.session.tools.some((tool) => tool.name === 'session_create'), 'session_create is not universal');
   assert.deepEqual(priority('team-lead'), ['session_create']);
-  assert.match(await readFile(by['work-record'].file, 'utf8'), /refuses an ID that\s+already exists/);
+  assert.match(await readFile(by['work-record'].file, 'utf8'), /Team roster issues its ID/);
+  assert.match(await readFile(by['work-record'].file, 'utf8'), /Agents never choose or reuse IDs/);
   assert.match(await readFile(by['work-record'].file, 'utf8'), /`exit`[\s\S]*`none` · `agent` · `lead` · `user`[\s\S]*`status`[\s\S]*`green` · `yellow` · `red`/);
   assert.match(await readFile(by['team-lead'].file, 'utf8'), /Assign and return/);
 });

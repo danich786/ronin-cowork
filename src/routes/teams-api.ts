@@ -16,7 +16,7 @@ import { assertSameCampaignRoot, campaignFilter, campaignResolver, initialCampai
 import { retireTeam } from '../team-retire.js';
 import { readCampaign } from '../campaigns.js';
 import { teamAgentDefaults } from '../agent-defaults.js';
-import { assignTeamProject, returnTeamProject, writeTeamIdea } from '../team-projects.js';
+import { assignTeamProject, issueTeamProjectId, returnTeamProject, writeTeamIdea } from '../team-projects.js';
 import { PROJECT_EXITS, PROJECT_STATUSES, normalizeProject, type Project } from '../projects.js';
 import { deriveTeamKanban } from '../team-kanban.js';
 
@@ -137,6 +137,14 @@ export function registerTeams(app: express.Express): void {
   app.post('/api/team-rosters/:name/projects', async (req, res) => {
     try {
       res.json({ ok: true, ...(await writeTeamIdea(req.params.name, undefined, ideaEditOf(req.body))) });
+    } catch (e) {
+      res.status(400).json({ error: errMsg(e) });
+    }
+  });
+
+  app.post('/api/team-rosters/:name/projects/issue', async (req, res) => {
+    try {
+      res.json({ ok: true, id: await issueTeamProjectId(req.params.name) });
     } catch (e) {
       res.status(400).json({ error: errMsg(e) });
     }
