@@ -24,9 +24,23 @@
  * decides which questions exist); `show(null)` draws them all. `then` is A SECOND LAYER: a
  * list of nested questions, each with `when` naming the parent answer that reveals it —
  * `then: [{ when: 'current', key: 'teamName', label: 'Which team', options: () => teamRows() }]`.
- * Picking `current` keeps the tray open and draws the nested question's stones beneath the
- * first layer; answering it closes the tray, and the reading says the nested answer. Any other
- * parent answer clears the nested one. A nested question is a field like any other in `value()`,
+ * Opening a tray shows layer one only, whatever the saved answer; the second layer appears
+ * only after an explicit click during that open interaction — clicking `current` keeps the
+ * tray open and draws the nested question's stones in the slot beneath layer one; answering
+ * it closes the tray, and the reading says the nested answer. Any other parent answer clears
+ * the nested one. A GROUP HOLDS STONES AND NOTHING ELSE, so its geometry never changes: every
+ * control that belongs to an answer (`row` on an option or on the field — a team's name, a
+ * branch) is a full-width LINE in the tray beneath the stones. For a one-of question the line
+ * appears after the click that chose its option, in the same slot as a second layer, and the
+ * tray stays open; for a many question the lines of every chosen option show while the tray is
+ * open. Closing the tray hides them; the consumer keeps the typed value and rebinds it when
+ * `row()` is asked again. A REQUIRED LINE — an option with `required: true` beside its `row`,
+ * and optionally `invalid: (option, value) → '' | message` — refuses every dismissal of its
+ * tray (the stone, a press outside, Escape, `close()`) while its control is blank or the
+ * consumer's validator returns a message: the tray stays open, the control is focused and
+ * marked `aria-invalid`, and the message (default `t('forms.required')`) is announced in the
+ * line's live text. Choosing another layer-one answer still dismisses, because the requirement
+ * belongs to the answer, not the tray. Typing clears the mark. A nested question is a field like any other in `value()`,
  * `set()` and `onChange`, but it is never a stone of its own in the group. `trayHost` names a
  * wrapping row the consumer owns (a flex-wrap or grid container holding this instance beside
  * other controls): the open tray is placed at the end of that row instead of inside this
@@ -77,6 +91,8 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
   let outside = null;
   let shown = null;
   let trayNode = null;
+  let revealed = null; // the layer-one answer clicked during this open interaction, if any
+  let lines = []; // the line controls drawn in the open tray: { field, row, node, line, note }
   const visible = (field) => !shown || shown.has(field.key) || (field.parent != null && shown.has(field.parent));
 
   const root = el('section', `ask ${className}`.trim());
@@ -111,7 +127,8 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
       state[field.key] = cur.includes(row.v) ? cur.filter((v) => v !== row.v) : [...cur, row.v];
     } else {
       state[field.key] = row.v;
-      const reveals = childrenOf(field).some((child) => String(child.when) === String(row.v));
+      const reveals = childrenOf(field).some((child) => String(child.when) === String(row.v)) || typeof row.row === 'function' || typeof field.row === 'function';
+      revealed = reveals ? row.v : null;
       if (!reveals) open = '';
     }
     changed(field.key);
@@ -155,7 +172,7 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     button.setAttribute('aria-expanded', String(open === field.key));
     button.setAttribute('aria-controls', trayId);
     button.append(el('small', 'ask-label', field.label), reading(field));
-    button.addEventListener('click', () => { open = open === field.key ? '' : field.key; filter = ''; paint(); });
+    button.addEventListener('click', () => { dismiss(open === field.key ? '' : field.key); });
     return button;
   };
 
@@ -166,16 +183,20 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     box.setAttribute('role', 'group');
     box.setAttribute('aria-label', field.label);
     const all = rowsOf(field);
+    lines = [];
+    // The caption speaks only when a stone has more to say than its name — a sentence, or the
+    // reason it is greyed — and then says only that. A tray of plain words has no caption at all.
+    const wordy = (f) => rowsOf(f).some((row) => row.sub || row.off);
     const caption = el('p', 'ask-caption');
-    const say = (row) => {
-      caption.replaceChildren();
-      if (!row) return;
-      caption.append(el('b', null, row.l));
-      const rest = row.off || row.sub || '';
-      if (rest) caption.append(` — ${rest}`);
-    };
-    // One layer of stones for one question; the second layer, when revealed, is the same thing again.
-    const child = activeChild(field);
+    const say = (row) => { caption.textContent = row ? (row.off || row.sub || '') : ''; };
+    // One layer of stones for one question; the second layer, when revealed by a click in this
+    // open interaction, is the same thing again — or the clicked option's own line.
+    const shown = revealed != null && String(state[field.key]) === String(revealed);
+    const child = shown ? activeChild(field) : null;
+    const drawFor = (row) => (typeof row.row === 'function' ? row.row : typeof field.row === 'function' ? field.row : null);
+    const lineRows = field.many
+      ? all.filter((row) => state[field.key].includes(row.v) && drawFor(row))
+      : shown && !child ? all.filter((row) => String(row.v) === String(revealed) && drawFor(row)) : [];
     const target = child && rowsOf(child).length > FILTER_FROM ? child : all.length > FILTER_FROM ? field : null;
     const layerOf = (f) => {
       const options = el('div', 'ask-options');
@@ -235,29 +256,29 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     say((child && pressedIn(child)) || pressedIn(field) || null);
     box.append(first.options);
     if (second) box.append(second.el);
-    box.append(caption);
-    return box;
-  };
-
-  /* ---- extras: a chosen option's own control, under the group, open or closed ---- */
-  const extrasOf = (group) => {
-    const extras = el('div', 'ask-extras');
-    for (const field of group.fields) {
-      if (!visible(field)) continue;
-      const chosen = field.many ? state[field.key] : [state[field.key]];
-      for (const v of chosen) {
-        const row = rowFor(field, v);
-        if (!row) continue;
-        const draw = typeof row.row === 'function' ? row.row : field.row;
-        if (typeof draw !== 'function') continue;
-        const node = draw(row, snapshot());
+    const captioned = wordy(field) || (child && wordy(child));
+    if (lineRows.length) {
+      const line = el('div', 'ask-layer ask-line');
+      line.setAttribute('role', 'group');
+      line.setAttribute('aria-label', field.label);
+      for (const row of lineRows) {
+        const node = drawFor(row)(row, snapshot());
         if (!node) continue;
-        const line = el('label', 'ask-extra');
-        line.append(el('span', 'ask-extra-name', row.l), node);
-        extras.append(line);
+        const label = el('label', 'ask-extra');
+        const note = el('small', 'ask-validation');
+        note.id = `${trayId}-note-${lines.length}`;
+        note.setAttribute('role', 'status');
+        note.setAttribute('aria-live', 'polite');
+        if (row.required) { node.setAttribute?.('aria-required', 'true'); node.setAttribute?.('aria-describedby', note.id); }
+        node.addEventListener?.('input', () => { node.setAttribute?.('aria-invalid', 'false'); note.textContent = ''; line.dataset.invalid = 'false'; });
+        label.append(el('span', 'ask-extra-name', row.l), node, note);
+        line.append(label);
+        lines.push({ field, row, node, line, note });
       }
+      if (line.children.length) box.append(line);
     }
-    return extras.children.length ? extras : null;
+    if (captioned) box.append(caption);
+    return box;
   };
 
   /* ---- paint: groups, their stones, and the one open tray ---- */
@@ -274,12 +295,11 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
       const row = el('div', 'ask-fields');
       for (const field of drawn) row.append(stone(field));
       box.append(row);
-      const extras = extrasOf(group);
-      if (extras) box.append(extras);
       root.append(box);
       const opened = drawn.find((field) => field.key === open && !field.switch);
       if (opened) {
         trayNode = tray(opened);
+        trayNode.dataset.density = root.dataset.density;
         trayNode.addEventListener('keydown', onEscape);
         (trayHost || root).append(trayNode);
       }
@@ -287,20 +307,56 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     bindOutside();
   }
 
+  /* ---- a required line refuses dismissal while blank or invalid ---- */
+  const blank = (node) => typeof node?.value === 'string' && node.value.trim() === '';
+  const objection = ({ row, node }) => {
+    if (!row.required) return '';
+    const message = typeof row.invalid === 'function' ? String(row.invalid(row, snapshot()) || '') : '';
+    return message || (blank(node) ? t('forms.required', 'Required') : '');
+  };
+  const refuse = () => {
+    for (const entry of lines) {
+      const message = objection(entry);
+      if (!message) continue;
+      entry.node.setAttribute?.('aria-invalid', 'true');
+      entry.note.textContent = message;
+      entry.line.dataset.invalid = 'false';
+      if (typeof entry.line.offsetWidth === 'number') void entry.line.offsetWidth; // restart the flash
+      entry.line.dataset.invalid = 'true';
+      entry.node.focus?.();
+      return true;
+    }
+    return false;
+  };
+  /** Try to close the open tray (or move to `next`); a required line may say no. */
+  const dismiss = (next = '') => {
+    if (open && refuse()) return false;
+    open = next;
+    filter = '';
+    revealed = null;
+    paint();
+    return true;
+  };
+
   /* ---- dismissal: Escape, and a press outside the utility ---- */
   const onEscape = (event) => {
-    if (event.key === 'Escape' && open) { event.preventDefault(); const key = open; open = ''; paint(); focusStone(key); }
+    if (event.key === 'Escape' && open) { event.preventDefault(); const key = open; if (dismiss()) focusStone(key); }
   };
   root.addEventListener('keydown', onEscape);
   const focusStone = (key) => { for (const node of root.children) { /* groups */ for (const inner of node.children || []) { for (const button of inner.children || []) if (button.dataset?.askKey === key) button.focus?.(); } } };
+  let anyKey = null;
   function bindOutside() {
     if (typeof document.addEventListener !== 'function') return;
     if (open && !outside) {
-      outside = (event) => { if (typeof root.contains === 'function' && (root.contains(event.target) || trayNode?.contains?.(event.target))) return; open = ''; paint(); };
+      outside = (event) => { if (typeof root.contains === 'function' && (root.contains(event.target) || trayNode?.contains?.(event.target))) return; dismiss(); };
+      anyKey = (event) => { if (event.key === 'Escape' && open && !(typeof root.contains === 'function' && (root.contains(event.target) || trayNode?.contains?.(event.target)))) onEscape(event); };
       document.addEventListener('pointerdown', outside);
+      document.addEventListener('keydown', anyKey);
     } else if (!open && outside) {
       document.removeEventListener('pointerdown', outside);
+      document.removeEventListener('keydown', anyKey);
       outside = null;
+      anyKey = null;
     }
   }
 
@@ -315,9 +371,9 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     },
     show(keys) { shown = Array.isArray(keys) ? new Set(keys) : null; paint(); },
     options(key, rows) { const field = byKey(key); if (!field) return; field.options = rows; paint(); },
-    open(key) { open = byKey(key) && !byKey(key).switch ? key : ''; filter = ''; paint(); },
-    close() { open = ''; paint(); },
+    open(key) { return dismiss(byKey(key) && !byKey(key).switch ? key : ''); },
+    close() { return dismiss(); },
     paint,
-    destroy() { open = ''; bindOutside(); trayNode?.remove?.(); trayNode = null; root.remove?.(); },
+    destroy() { open = ''; lines = []; bindOutside(); trayNode?.remove?.(); trayNode = null; root.remove?.(); },
   };
 }

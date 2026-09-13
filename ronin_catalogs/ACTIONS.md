@@ -244,25 +244,41 @@ its own control-check before you touch it (the roster reports the dial; it does 
 grant anything). Tagging is the OWNER's job in the Ronin UI, or a macro's at birth
 (`session-create`); do not re-tag other people's sessions to suit your task.
 
-## session-upsert — one session by name: read it, raise it, or change its facts
+## agent-check — read one live session by exact name
 `action_kind: mechanical` — run it, don't deliberate.
-> **Tool: `tejun-session-set <name> […]`** (TOOLS.md)
-The pair of `team-upsert`, keyed the same way. A bare LIVE name reads it; a name nobody
-holds is BORN through the one launch mechanism (`POST /api/session` — a second door onto
-`/api/launch`, never a second path); a live name with flags is UPDATED in what you name.
+> **Tool: `tejun-session-check <name>`** (TOOLS.md)
+Read the exact live session's Teams, lead designations, Control setting, and project root.
+An unused name reports `NO-SESSION` and changes nothing.
 ```bash
-tejun-session-set wg_review                                   # read: role, teams, 人, dial, root
-tejun-session-set wg_review --prompt "Review leg 3" --role review   # born onto YOUR team
-tejun-session-set wg_review --prompt "Review leg 3" --model fable  # "open a fable session"
-tejun-session-set wg_review --team other-team --lead          # a live one: add a team, make it 人
+tejun-session-check wg_review
+```
+
+## agent-create — explicitly create one Agent
+`action_kind: mechanical` — run it, don't deliberate.
+> **Tool: `tejun-session-create <name> […]`** (TOOLS.md)
+Birth a name nobody holds through the one launch mechanism (`POST /api/session` — a
+second door onto `/api/launch`, never a second path). An existing name is refused; creation
+never changes meaning based on whether the name is live.
+```bash
+tejun-session-create wg_review --prompt "Review leg 3"
+tejun-session-create wg_review --prompt "Review leg 3" --model fable
 ```
 With no `--team` a newborn joins the FIRST team you are on; on no team it is a rōnin.
 **Neither is a refusal, and you never create the team first** — the nag this removes is
 an agent flip-flopping between "create the team" and "add the member". One line, one
-verdict: `BORN …` / `UPDATED …` / one `REFUSED: <why>`. `--model <name>` picks a row of
+verdict: `BORN …` or one `REFUSED: <why>`. `--model <name>` picks a row of
 the provider catalog by its model id; an unknown name is refused with the names the box
-has. Birth-only flags (`--prompt`, `--model`,
-`--cmd`, `--mode`, `--mcp`, `--seed`) are refused by name on a live session.
+has.
+
+## agent-update — change one existing session
+`action_kind: mechanical` — run it, don't deliberate.
+> **Tool: `tejun-session-set <name> […]`** (TOOLS.md)
+Change only named mutable facts on a live session. The command refuses a missing name and
+never creates; its bare form points to `agent-check` rather than guessing intent.
+```bash
+tejun-session-set wg_review --team other-team --lead
+tejun-session-set wg_review --root lab
+```
 
 ## team-upsert — make a team, or change its facts
 `action_kind: mechanical` — run it, don't deliberate.
@@ -274,7 +290,7 @@ onto it (additive; a name not live is reported, the rest go through).
 tejun-team-set wipeboard-groups --objective "Groups on the wipeboard" --role development --root ronin-cowork
 tejun-team-set wipeboard-groups --add wg_lead,wg_review
 ```
-You rarely need this: `tejun-session-set` births onto your team with no team named. Come
+You rarely need this: `tejun-session-create` births onto your team with no team named. Come
 here to create a team, or to give one a brief worth inheriting. Membership is never
 stored on the roster — it is the sessions' tags, and `--add` writes those.
 
