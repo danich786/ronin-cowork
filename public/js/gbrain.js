@@ -150,8 +150,6 @@ export function buildGbrain(root, isShowing, askPersonalAssistant, options = {})
     };
     const wrap = make('section', 'setup-gbrain-compact');
     wrap.dataset.state = model.state;
-    if (options.firstRow) wrap.append(options.firstRow);
-
     const lockup = make('header', 'setup-gbrain-lockup');
     const glyph = make('i', 'setup-gbrain-glyph', '◇');
     glyph.setAttribute('aria-hidden', 'true');
@@ -214,7 +212,14 @@ export function buildGbrain(root, isShowing, askPersonalAssistant, options = {})
       installed.append(el);
     }
 
-    // 2. Which accounts are linked? Yes or no, per account, from gbrain's own list.
+    if (options.installationControls) {
+      const available = row(t('campaign_view.available', 'Available'));
+      available.append(options.installationControls.available);
+      const defaults = row(t('campaign_view.default_for_all_agents', 'Default for all Agents'));
+      defaults.append(options.installationControls.defaultForAll, options.installationControls.defaultNote);
+    }
+
+    // Which accounts are linked? Yes or no, per account, from gbrain's own list.
     if (model.installed) {
       const accounts = row(t('gbrain.setup_q_accounts', 'Accounts linked'));
       if (!model.accounts) accounts.append(make('p', 'setup-gbrain-line', t('gbrain.setup_unreadable', 'Could not read')));
@@ -231,6 +236,7 @@ export function buildGbrain(root, isShowing, askPersonalAssistant, options = {})
       }
     }
     wrap.append(answers);
+    if (options.installationControls) wrap.append(options.installationControls.notice);
 
     // The one next step.
     if (model.action && model.action.place === 'next') {

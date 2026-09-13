@@ -342,7 +342,7 @@ test('Services setup model keeps installation and registration as separate facts
   assert.deepEqual(new Set(cases.map(([, r, i, a]) => servicesSetupModel(r as never, i as never, a as never).tone)), new Set(['', 'warn', 'bad', 'ok']));
 });
 
-test('Setup gbrain answers three questions plainly with at most one action per state', async () => {
+test('Setup gbrain answers its measured facts plainly with at most one action per state', async () => {
   const { GBRAIN_SETUP_STATES, gbrainSetupModel, gbrainAccounts } = await import('../public/js/gbrain-setup-state.js');
   const snapshot = (over: Record<string, unknown> = {}) => ({
     ok: true, status: 200,
@@ -423,8 +423,9 @@ test('Setup gbrain keeps installation/default choice on Campaign Installations a
   assert.match(setup, /presetLaunchUrl\(result\.data \|\| \{\}, seatingPlan\('personal_assistant'/);
   assert.match(gbrain, /import \{ gbrainAssistantPrompt, gbrainSetupModel \} from '\.\/gbrain-setup-state\.js'/);
   assert.match(gbrain, /if \(!root\.querySelector\('\.setup-gbrain-compact'\)\) renderSetup\(undefined\)/);
-  assert.match(gbrain, /if \(options\.firstRow\) wrap\.append\(options\.firstRow\)/);
-  assert.match(setup, /firstRow: context\.installationFirstRow/);
+  assert.match(gbrain, /row\(t\('campaign_view\.available', 'Available'\)\)/);
+  assert.match(gbrain, /row\(t\('campaign_view\.default_for_all_agents', 'Default for all Agents'\)\)/);
+  assert.match(setup, /installationControls: context\.installationControls/);
   assert.match(gbrain, /const mine = \+\+reads;[\s\S]*?if \(mine === reads\) renderSetup\(result\)/);
   assert.match(gbrain, /if \(!setup\) root\.append\(head, privacy, search, integrations\)/);
   for (const question of ['gbrain.setup_q_installed', 'gbrain.setup_q_accounts']) assert.ok(gbrain.includes(question), question);

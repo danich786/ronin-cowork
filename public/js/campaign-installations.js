@@ -8,7 +8,6 @@ import { ask } from './ask.js';
 import { createStoneWorkSurface } from './stone-work-surface.js';
 import { createServicesSurface, createGbrainSurface } from './setup-surfaces.js';
 import { completeInstallationMap as completeMap } from './installation-map.js';
-import { applyFeatureProviderState, featureProviderState } from './feature-provider-installation.js';
 
 const INSTALLATION_ORDER = ['ronin_services', 'gbrain', 'trello', 'perplexity'];
 
@@ -29,10 +28,12 @@ export function createInstallationsSurface(campaign, context = {}) {
   let defaultBehaviours = [];
   let stoneSurface = null;
 
-  const providerState = (installation) => featureProviderState(installation, values, defaultBehaviours);
-  const stateWord = (installation) => installation.effect === 'provider'
-    ? ({ off: t('campaign_view.off', 'Off'), on: t('campaign_view.on', 'On'), all: t('campaign_view.shape_all', 'All') })[providerState(installation)]
-    : values[installation.name] ? t('campaign_view.on', 'On') : t('campaign_view.off', 'Off');
+  const available = (installation) => values[installation.name] === true;
+  const defaultForAll = (installation) => {
+    const provided = Array.isArray(installation.provides) ? installation.provides : [];
+    return provided.length > 0 && provided.every((name) => defaultBehaviours.includes(name));
+  };
+  const stateWord = (installation) => available(installation) ? t('campaign_view.on', 'On') : t('campaign_view.off', 'Off');
 
   const servicesReady = () => values.ronin_services === true && (installed?.services?.parts || []).length > 0;
   const gated = (name) => (name === 'trello' || name === 'perplexity') && !servicesReady();
@@ -57,55 +58,83 @@ export function createInstallationsSurface(campaign, context = {}) {
     }
   };
 
-  const saveProvider = async (installation, answer, notice) => {
+  const saveAvailability = async (installation, on, notice) => {
     const row = campaign();
     if (!row) return;
     notice.textContent = t('campaign.saving', 'saving…');
-    const { installations, defaults } = applyFeatureProviderState(
-      installation, answer, completeMap(catalog, row.config?.installations),
-      { ...(row.config?.defaults || {}), behaviours: defaultBehaviours },
-    );
-    const result = await saveCampaign(row.id, { config: { installations, defaults } });
+    const installations = { ...completeMap(catalog, row.config?.installations), [installation.name]: on };
+    const result = await saveCampaign(row.id, { config: { installations } });
     notice.textContent = result.ok ? t('settei.saved', 'saved') : result.message;
     notice.dataset.tone = result.ok ? 'success' : 'failed';
     if (result.ok) {
       values = installations;
-      defaultBehaviours = defaults.behaviours;
       refreshStoneMarks();
-      context.onInstallationChange?.(installation.name, answer !== 'off');
+      context.onInstallationChange?.(installation.name, on);
     }
     return result;
   };
 
-  const featureProviderChoice = (installation) => {
+  const saveDefault = async (installation, on, notice) => {
+    const row = campaign();
+    if (!row) return;
+    notice.textContent = t('campaign.saving', 'saving…');
+    const provided = new Set(Array.isArray(installation.provides) ? installation.provides : []);
+    const kept = defaultBehaviours.filter((name) => !provided.has(name));
+    const behaviours = on ? [...kept, ...provided] : kept;
+    const defaults = { ...(row.config?.defaults || {}), behaviours };
+    const result = await saveCampaign(row.id, { config: { defaults } });
+    notice.textContent = result.ok ? t('settei.saved', 'saved') : result.message;
+    notice.dataset.tone = result.ok ? 'success' : 'failed';
+    if (result.ok) defaultBehaviours = behaviours;
+    return result;
+  };
+
+  const featureProviderControls = (installation) => {
     const reason = gated(installation.name) ? t('campaign_view.services_required', 'Ronin Services required') : '';
     const notice = el('p', 'setup-notice');
-    const row = el('div', 'campaign-installation-choice');
-    const question = ask([{ group: t('campaign_view.available', 'Available'), fields: [{
-      key: 'installation', label: t('campaign_view.available', 'Available'), shape: 'square', expanded: true,
-      options: [
-        { v: 'off', l: t('campaign_view.off', 'Off'), off: reason },
-        { v: 'on', l: t('campaign_view.on', 'On'), off: reason },
-        { v: 'all', l: t('campaign_view.shape_all', 'All'), off: reason },
-      ],
+    const unavailable = el('p', 'setup-gbrain-hint', t('campaign_view.turn_available_on', 'turn Available on first'));
+    const availableQuestion = ask([{ fields: [{
+      key: 'available', label: t('campaign_view.available', 'Available'), switch: [t('campaign_view.on', 'On'), t('campaign_view.off', 'Off')],
     }] }], {
-      value: { installation: providerState(installation) },
+      className: 'campaign-installation-switch', value: { available: available(installation) },
       onChange: async (answer) => {
-        const before = providerState(installation);
-        const result = await saveProvider(installation, answer.installation, notice);
-        if (!result?.ok) question.set('installation', before);
+        const before = available(installation);
+        const result = await saveAvailability(installation, answer.available, notice);
+        if (!result?.ok) availableQuestion.set('available', before);
+        refreshGates();
       },
     });
-    row.append(question.el, notice);
-    return { el: row, destroy: () => question.destroy() };
+    const defaultQuestion = ask([{ fields: [{
+      key: 'defaultForAll', label: t('campaign_view.default_for_all_agents', 'Default for all Agents'), switch: [t('campaign_view.on', 'On'), t('campaign_view.off', 'Off')],
+    }] }], {
+      className: 'campaign-installation-switch', value: { defaultForAll: defaultForAll(installation) },
+      onChange: async (answer) => {
+        const before = defaultForAll(installation);
+        const result = await saveDefault(installation, answer.defaultForAll, notice);
+        if (!result?.ok) defaultQuestion.set('defaultForAll', before);
+      },
+    });
+    const refreshGates = () => {
+      const availableControl = availableQuestion.el.querySelector('[data-ask-key="available"]');
+      if (availableControl) { availableControl.disabled = Boolean(reason); availableControl.title = reason; }
+      const control = defaultQuestion.el.querySelector('[data-ask-key="defaultForAll"]');
+      const off = !available(installation) || Boolean(reason);
+      if (control) { control.disabled = off; control.title = reason || (off ? unavailable.textContent : ''); }
+      unavailable.hidden = !off || Boolean(reason);
+    };
+    refreshGates();
+    return {
+      available: availableQuestion.el, defaultForAll: defaultQuestion.el, defaultNote: unavailable, notice,
+      destroy: () => { availableQuestion.destroy(); defaultQuestion.destroy(); },
+    };
   };
 
   const renderDetail = (installation, host) => {
-    const choice = installation.effect === 'provider' ? featureProviderChoice(installation) : null;
+    const controls = installation.effect === 'provider' ? featureProviderControls(installation) : null;
     const sharedContext = {
       ...context,
       tenant: { ...(context.tenant || {}), campaign: campaign()?.id },
-      installationFirstRow: choice?.el || null,
+      installationControls: controls,
       onInstallationChange: (name, on) => {
         values = { ...values, [name]: on };
         refreshStoneMarks();
@@ -117,10 +146,20 @@ export function createInstallationsSurface(campaign, context = {}) {
     if (page) {
       host.append(page.el);
       void page.show?.();
-      return () => { choice?.destroy(); page.destroy?.(); };
+      return () => { controls?.destroy(); page.destroy?.(); };
     }
-    if (choice) host.append(choice.el);
-    return () => choice?.destroy();
+    if (controls) {
+      const rows = el('dl', 'setup-gbrain-answers campaign-installation-answers');
+      const controlRow = (label, control, note = null) => {
+        const item = el('div', 'setup-gbrain-answer');
+        const answer = el('dd'); answer.append(control); if (note) answer.append(note);
+        item.append(el('dt', '', label), answer); rows.append(item);
+      };
+      controlRow(t('campaign_view.available', 'Available'), controls.available);
+      controlRow(t('campaign_view.default_for_all_agents', 'Default for all Agents'), controls.defaultForAll, controls.defaultNote);
+      host.append(rows, controls.notice);
+    }
+    return () => controls?.destroy();
   };
 
   stoneSurface = createStoneWorkSurface({ items: [], className: 'campaign-installations-stones', renderDetail });
