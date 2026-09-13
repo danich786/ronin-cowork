@@ -20,8 +20,10 @@ Reach for the session tools when the question is about an Agent's existence rath
 | `session_restore` | create: restore one archived session | | `session_restore --help` |
 | `session_end` | end: preflight custody and end this Agent only when safe | | `session_end --help` |
 
-Creating a supporting Agent is the designated lead's authority and is taught by the Team
-lead bundle; it is not a universal tool.
+`session_fork` is universal, not lead-only: it is every Cowork Agent's ordinary
+context-inheriting fork and is priority teaching in `YOUR TOOLS`. `session_create` is the
+Team Lead's additional explicit roster/project-controlled creation surface; it does not
+replace universal fork.
 
 ## Lifecycle boundaries
 
