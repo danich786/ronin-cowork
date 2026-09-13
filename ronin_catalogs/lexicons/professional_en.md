@@ -1746,7 +1746,7 @@ The catalog entry goes. {dir} is not touched.
 - **team_config.no_roster:** This Team has no saved record.
 - **team_config.loading:** Loading Team Configuration…
 - **team_config.cowork_id:** Team ID
-- **team_config.title:** Readable title
+- **team_config.title:** Title
 - **team_config.kind:** Kind
 - **team_config.kind_coding:** Coding
 - **team_config.kind_work:** Work
@@ -1772,17 +1772,14 @@ The catalog entry goes. {dir} is not touched.
 - **team_config.worktrees_off:** Use the project checkout and its branches
 - **team_config.worktrees_help:** Worktrees give each Agent a separate working folder and branch, so their file changes do not collide. They run only when both the Agent and repo have Worktrees on, and use the managed hand-in and Team-lead merge process.
 - **team_config.no_description:** No description supplied.
-- **team_config.behaviours:** Behaviours
-- **team_config.behaviours_help:** One shelf:name book per line.
-- **team_config.required:** Require these behaviours for each new Agent
 - **team_config.provider:** Provider
 - **team_config.model:** Model
 - **team_config.reach:** Reach
 - **team_config.recruit:** Recruit
 - **team_config.output:** Output
-- **team_config.required_short:** Required
 - **team_config.runtime:** Runtime
-- **team_config.next_form:** These defaults land in the next Agent form that opens. Nothing live changes.
+- **team_config.agent_defaults:** New Agent defaults
+- **team_config.next_form:** What each new Agent on this Team starts from. Nothing live changes.
 - **team_config.saving:** Saving…
 - **team_config.saved:** Saved
 - **workspace.explorer:** Explorer
