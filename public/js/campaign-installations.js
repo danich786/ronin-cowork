@@ -77,15 +77,16 @@ export function createInstallationsSurface(campaign, context = {}) {
     return result;
   };
 
-  const featureProviderChoice = (installation, host) => {
+  const featureProviderChoice = (installation) => {
     const reason = gated(installation.name) ? t('campaign_view.services_required', 'Ronin Services required') : '';
     const notice = el('p', 'setup-notice');
-    const question = ask([{ fields: [{
-      key: 'installation', label: installation.label || installation.name,
+    const row = el('div', 'campaign-installation-choice');
+    const question = ask([{ group: t('campaign_view.available', 'Available'), fields: [{
+      key: 'installation', label: t('campaign_view.available', 'Available'), shape: 'square', expanded: true,
       options: [
-        { v: 'off', l: t('campaign_view.off', 'Off') },
-        { v: 'on', l: t('campaign_view.on', 'On') },
-        { v: 'all', l: t('campaign_view.shape_all', 'All') },
+        { v: 'off', l: t('campaign_view.off', 'Off'), off: reason },
+        { v: 'on', l: t('campaign_view.on', 'On'), off: reason },
+        { v: 'all', l: t('campaign_view.shape_all', 'All'), off: reason },
       ],
     }] }], {
       value: { installation: providerState(installation) },
@@ -95,16 +96,16 @@ export function createInstallationsSurface(campaign, context = {}) {
         if (!result?.ok) question.set('installation', before);
       },
     });
-    const control = question.el.querySelector('[data-ask-key="installation"]');
-    if (reason && control) { control.disabled = true; control.title = reason; }
-    host.append(question.el, notice);
+    row.append(question.el, notice);
+    return { el: row, destroy: () => question.destroy() };
   };
 
   const renderDetail = (installation, host) => {
-    if (installation.effect === 'provider') featureProviderChoice(installation, host);
+    const choice = installation.effect === 'provider' ? featureProviderChoice(installation) : null;
     const sharedContext = {
       ...context,
       tenant: { ...(context.tenant || {}), campaign: campaign()?.id },
+      installationFirstRow: choice?.el || null,
       onInstallationChange: (name, on) => {
         values = { ...values, [name]: on };
         refreshStoneMarks();
@@ -116,9 +117,10 @@ export function createInstallationsSurface(campaign, context = {}) {
     if (page) {
       host.append(page.el);
       void page.show?.();
-      return () => page.destroy?.();
+      return () => { choice?.destroy(); page.destroy?.(); };
     }
-    return null;
+    if (choice) host.append(choice.el);
+    return () => choice?.destroy();
   };
 
   stoneSurface = createStoneWorkSurface({ items: [], className: 'campaign-installations-stones', renderDetail });
