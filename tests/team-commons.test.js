@@ -23,6 +23,10 @@ test('Roster expands live readings and actions; Launch uses the paired workspace
   assert.match(view, /onOpen: \(member\) => putSession\(member\.name, oppositeSeat\(id\)\)/);
   assert.match(view, /reading: readingsOf/);
   assert.match(view, /configSignature\(team\) \+ JSON\.stringify\(members\.map\(\(member\) => readingsOf\(member\)\.lines\)\)/);
+  // The member rows follow the live readings; the Configuration tab follows the saved record alone,
+  // so a five-second status tick never throws away an edit in progress (owner, 2026-09-13).
+  assert.match(view, /const record = JSON\.stringify\(roster \|\| null\);/);
+  assert.match(view, /if \(!recordMoved\) continue;\s*\n\s*if \(!roster\) \{ renderTeamConfiguration/);
   assert.match(view, /onClose: \(member\) => retireSession\(member\.name/);
   assert.match(members, /actions: \[launch, rename, lead, eject, close\]/);
   assert.match(members, /classList\.add\('league-team-member-live'\)/);

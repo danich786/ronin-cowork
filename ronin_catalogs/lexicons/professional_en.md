@@ -1780,8 +1780,6 @@ The catalog entry goes. {dir} is not touched.
 - **where.checkouts:** works in {list}
 - **where.none:** no auto desk
 - **team_config.default:** Default
-- **team_config.references:** References
-- **team_config.references_help:** One URL or note per line.
 - **team_config.worktrees_mode:** Agent work mode
 - **team_config.worktrees_on:** Own worktree where the Workspace folder allows it
 - **team_config.worktrees_off:** Use the project checkout and its branches

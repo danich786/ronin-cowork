@@ -100,7 +100,7 @@ There is no lead control on a Tile, on the launch forms, or on the Configuration
 
 ### Durable Team record
 
-A `team_roster` is optional metadata: kind, title, purpose, references, project root,
+A `team_roster` is optional metadata: kind, title, purpose, project root,
 repositories and their branches, features, behaviours, and the Agent defaults. A tag-only
 Team is ordinary. When no durable record exists, Team Configuration says so rather than
 treating the Team as broken.
@@ -112,9 +112,10 @@ through ERABI (`ask()`, `docs/ui.md` § Asking a question) at the commons' loose
 **Kind** (squares with the shared glyphs), **Features** (one switch per feature an
 installation on this box provides — with none available the group still stands and says
 where the switch is), **Behaviours** (one three-way stone per behaviour: Off · On ·
-Required), and the Agent defaults as **Model**, **Mandate** and **Runtime**. The three text
-entries (Readable title, Purpose, References) are the kit's entries in one full-width column
-with the groups; ERABI takes no foreign DOM. **Save** PUTs the whole record to
+Required), and the Agent defaults as **Model**, **Mandate** and **Runtime**. The two text
+entries (Readable title, Purpose) are the kit's entries in one full-width column with the
+groups; ERABI takes no foreign DOM. It repaints only when the saved record changes — never
+on a member's status tick — so an edit in progress is not thrown away. **Save** PUTs the whole record to
 `/api/team-rosters/:name`; keys the tab does not draw are carried, the retired
 `agent_defaults.permissions` is not. `tests/team-configuration.test.js` is the floor;
 `scripts/smoke-ui.mjs` opens the tab and measures one stone.
