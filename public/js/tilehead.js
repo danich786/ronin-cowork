@@ -1,7 +1,6 @@
 /* part of the ronin-cowork client — see js/README.md */
 import { CONTROL_POSITIONS, makeDial, makeGauge, setInert } from './widgets.js';
 import { clampTip } from './shingo.js';
-import { buildTileMacros } from './tilemacros.js';
 import { buildTileMore } from './tilemore.js';
 import { buildTileDocs } from './tiledocs.js';
 import { buildTileMentions } from './tilementions.js';
@@ -65,17 +64,8 @@ const HEADER = () => {
   // the raw view comes back it belongs INSIDE the ladder panel, where the reader already
   // is, not as a second glyph competing with the first.
 
-  // ⚡ session_macros for THIS session: prefills the input you are typing in and stops.
-  // It never runs anything. The reference is the commons' macros tab, deliberately elsewhere.
-  { key: 'tmacBtn', needs: 'session',
-    // Normalised to the {el, …} shape every other widget returns, rather than teaching
-    // the loop a second convention for one control.
-    widget: (tile) => { const m = buildTileMacros(tile); return { el: m.btn, menu: m.menu }; },
-    help: t('macros.button_title', "Macros — drop one into this session's input"),
-    quiet: t('head.macros_quiet', 'Macros — no session in this tile yet') },
-
   // controls ended this row and the session name has to remain readable; at four tiles up
-  // there was not room for both. Three stay on top — ⛩ ⚡ メ — and the six that were
+  // there was not room for both. The remaining controls stay in メ.
   // left drop out of メ in one horizontal strip, unchanged. See tilemore.js for the
   // glyph's history (it was the Commons button here until ⛩ took that everywhere) and
   // for why this follows ⚡'s dismissal grammar rather than the retired `ui.popover`.

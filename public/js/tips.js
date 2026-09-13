@@ -240,7 +240,7 @@ export function installTips() {
       // `refreshTipStatus` rewrites its status line in place.
       //
       // Everything else OPENS something, and there the opposite is true: a box left up
-      // sits on top of the menu it just opened — measured, with ⚡'s macro list behind it.
+      // sits on top of the menu it just opened — measured against the other header menus.
       if (showing?.dataset.holdsHelp && showing.contains(e.target)) return;
       muted = e.target?.closest?.('[title], [data-tip]') || null;
       hide();

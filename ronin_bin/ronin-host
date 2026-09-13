@@ -19,7 +19,10 @@ EOF
 }
 
 case "${1:-}" in
-  -h|--help|'') usage; [ -n "${1:-}" ] || exit 2 ;;
+  -h|--help)
+    [ "$#" -eq 1 ] || { usage >&2; exit 2; }
+    usage ;;
+  '') usage; exit 2 ;;
   inspect)
     shift
     [ "$#" -le 1 ] || { usage >&2; exit 4; }

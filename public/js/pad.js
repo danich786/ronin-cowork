@@ -1,6 +1,5 @@
 /* part of the ronin-cowork client — see js/README.md */
 import { IS_TOUCH, S, WHEEL_DOWN, WHEEL_UP, tiles } from './state.js';
-import { request } from './request.js';
 import { toast } from './ui.js';
 import { t } from './lexicon.js';
 
@@ -19,7 +18,7 @@ export const PAD_CODE = /^F1[3-9]$|^F2[0-4]$/; // the ONLY codes the pad logic t
 // The bottom-right cluster is UNIVERSAL keys, written onto the device itself so
 // they work in any app, not just Ronin: Enter above Wispr, ⌥⌫ and ⌥↵ beside it,
 // Wispr push-to-talk (right ⌥) in the corner. Drawn as fixed widgets — the Mac
-// handles them, Ronin stays out of the way. The other 7 keys are dumb macro
+// handles them, Ronin stays out of the way. The other 7 keys are programmable
 // codes that only mean something once bound below.
 export const PAD_LAYOUT = [
   [{ w: 'enc' }, { k: 'F13' }, { k: 'F19' }, { w: 'joy' }],
@@ -84,14 +83,16 @@ export function PAD_KEYS() {
   };
 }
 
-// { chord: {macro, args, session, ask} | {key} } — session '' = active tile;
-// ask = pop a prompt for the args on every press (e.g. buildout)
+// { chord: {key} }
 export let padBinds = {};
 try {
   padBinds = JSON.parse(localStorage.getItem(LS_PAD) || '{}') || {};
 } catch (_) {
   padBinds = {};
 }
+// Macro bindings are unsupported data now that macros are gone. Retain only the
+// generic terminal and navigation bindings; do not translate removed entries.
+for (const chord of Object.keys(padBinds)) if (!padBinds[chord]?.key) delete padBinds[chord];
 // Glen's standing defaults, seeded wherever unbound (rebindable, at the price
 // that a cleared key returns to its default next load): the key above Wispr
 // (F22) is Enter, the key left of Wispr (F24) is ⌥↵ newline-without-send.
@@ -135,10 +136,7 @@ export function padChord(e) {
   return (e.ctrlKey ? 'C-' : '') + (e.altKey ? 'A-' : '') + (e.metaKey ? 'M-' : '') + (e.shiftKey ? 'S-' : '') + e.code;
 }
 
-// The outcome chip (macros must SHOW their result, not just perform) grew up into
-// the house toast — js/ui.js — because tile-scoped errors needed the same surface.
-
-/** Route a pad press: terminal key, next-tile, ask-for-args popup, or macro send. */
+/** Route a pad press to a terminal or navigation key. */
 export function firePadBinding(bind) {
   // While the session switcher is up it OWNS the pad: its own key lands the
   // highlighted session, up/down (however they're spelled on this pad — arrows,
@@ -206,27 +204,6 @@ export function firePadBinding(bind) {
     S.active.sendRaw(k.seq); // deliberately no toast: these fire often and show in the pane
     return;
   }
-  if (bind.ask) {
-    if (S.padAsk) S.padAsk.open(bind);
-    return;
-  }
-  firePadSend(bind.macro, bind.args, bind.session);
-}
-
-/** Fire a macro: same invocation + /send path as the home-panel macro rows. */
-export async function firePadSend(macro, args, session) {
-  const dest = session || (S.active && S.active.session) || '';
-  const inv = '+' + (args ? `${macro}: ${args}` : macro);
-  if (!dest) {
-    toast(`${inv} — no target: bind a session, or open one in the active tile`, false);
-    return;
-  }
-  const r = await request('/api/sessions/' + encodeURIComponent(dest) + '/send', {
-    method: 'POST',
-    json: { text: inv },
-  });
-  if (!r.ok) toast(`⚡ ${inv} → ${dest} ✗ ${r.message}`, false);
-  else toast(`⚡ ${inv} → ${dest} ${r.data.started ? '✓' : "— pane didn't react, check it"}`, !!r.data.started);
 }
 
 // Codes emitted by the encoder and joystick rather than by a key. They ARE

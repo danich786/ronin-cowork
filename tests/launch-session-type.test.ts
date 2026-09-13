@@ -129,7 +129,7 @@ test('a template token is provenance input only on a cowork birth', () => {
 
 test('the Mika door accepts words only and fixes every public birth input', () => {
   assert.deepEqual(mikaLaunchBody({
-    prompt: '+system_help:',
+    prompt: 'Help me with Ronin.',
     name: 'not-mika',
     session_role: 'MikaAssist',
     capExempt: false,
@@ -139,7 +139,7 @@ test('the Mika door accepts words only and fixes every public birth input', () =
     name: 'mika_agent',
     tags: ['ronin_helpers'],
     mandate: { reach: 'discuss', recruit: 'nobody', output: ['ideas'] },
-    prompt: '+system_help:',
+    prompt: 'Help me with Ronin.',
     launch_mode: 'configured',
   });
 });

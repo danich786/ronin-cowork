@@ -73,7 +73,6 @@ where a session is born now. `docs/ui.md` is the written contract those modules 
 | `tiledrop.js` | `isCoarse`, `makeDrop` — the coarse-pointer sheet primitives (the hoisted phone header is gone; the phone has its own shell) |
 | `phone.js` | THE MOBILE DOCUMENT's entry module — `mobile.html` boots it, never `main.js`: Teams → a Team (Agents \| Docs) → one Agent's tile, hash-routed (`#/t/…` `#/d/…` `#/s/…`); the server sends that document at `/m`, and at `/` to a phone |
 | `keysrow.js` | `buildKeysRow` — Esc/^C/Tab/arrows/⤓ docked on every coarse tile's composer |
-| `tilemacros.js` | `buildTileMacros` — the ⚡ button on a tile head; the `preview:` macros as teaching cards, prefills `+name: `, never runs |
 | `tilementions.js` | `buildTileMentions` — the @ button on a tile head; click or drag a live session name into the composer |
 | `tilemore.js` | DESKTOP ONLY — `buildTileMore`: メ on a tile head and the controls it drops in one strip; `fitDropToTile`, shared by every drop off that header |
 | `team-arrange.js` | `parseDraft`, `createArranger` — the team page's one controller: a draft (what changes; the rest stays) from a button or from an agent's `tejun-teampage`, run through the page's own verbs |

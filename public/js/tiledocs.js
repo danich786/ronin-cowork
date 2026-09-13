@@ -45,7 +45,7 @@ export function buildTileDocs(tile) {
     if (btn.getAttribute('aria-disabled') === 'true') return;
     const wasOpen = menu.classList.contains('open');
     closeTileMore();
-    document.querySelectorAll('.tmac.open, .tdocs.open').forEach((drop) => drop.classList.remove('open'));
+    document.querySelectorAll('.tdocs.open').forEach((drop) => drop.classList.remove('open'));
     if (wasOpen) return;
     render();
     menu.classList.add('open');

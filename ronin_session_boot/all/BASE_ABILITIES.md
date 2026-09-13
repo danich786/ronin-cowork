@@ -2,7 +2,7 @@
 
 **Fork versus spawn.** `+forkit:`, **fork it** and **new session** always mean Ronin's
 visible-session workflow: compile `tejun forkit`, write the handoff it asks for, launch with
-`tejun-fork`, report your understanding and stop until the owner says go. They never mean
+`session_fork`, report your understanding and stop until the owner says go. They never mean
 your CLI's internal sub-agent or a bare tmux session. **Spawn it** and **spawn an agent**
 mean the internal sub-agent. Delegation using neither vocabulary is your call and needs no
 extra confirmation.
@@ -42,7 +42,6 @@ read is recorded. Posts expire after 48 hours; lasting facts go in your work rec
 document or a commit.
 
 If a named tool is not on `PATH`, say so; do not reproduce its guarded job with raw tmux,
-Git or store access. Full procedures are the compiled macro and the rows of
-`ronin_catalogs/TOOLS.md` and `ronin_catalogs/ACTIONS.md`.
+Git or store access. Full teaching is in the applicable capability document and command help.
 To use an unfamiliar tool, run `<tool> --help` first, then run the command; current task
 details live with the tool instead of in this birth reading.
