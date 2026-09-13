@@ -155,7 +155,8 @@ test('the fourth Setup workbench registers real lane surfaces in ruled order', a
   assert.match(setup, /environment\.setupRuntime = runtime\.ok \? runtime\.data : \{ providers: \[\] \};[\s\S]*bench\.refreshSelector\(\);[\s\S]*const stored/);
   assert.doesNotMatch(setup, /SetupRequirement|requirementState|flashCycle/);
   assert.match(setup, /SETUP_SURFACE_TYPES\.providers, SETUP_SURFACE_TYPES\.register, SETUP_SURFACE_TYPES\.roots/);
-  assert.match(setup, /SETUP_SURFACE_TYPES\.services, SETUP_SURFACE_TYPES\.gbrain, SETUP_SURFACE_TYPES\.launchOwn/);
+  assert.match(setup, /SETUP_SURFACE_TYPES\.installations, SETUP_SURFACE_TYPES\.launchOwn/);
+  assert.doesNotMatch(setup, /SETUP_SURFACE_TYPES\.(?:services|gbrain)/);
   assert.doesNotMatch(setup, /SETUP_SURFACE_TYPES\.templates/);
   const providers = await source('js/provider-surface.js');
   assert.match(providers, /context\.workbench\?\.profile === 'setup'[\s\S]*\['workspace1', 'selector'\][\s\S]*\(activatedNow === 0\) !== context\.workbench\.arrangement\.state\(\)\.hidden\.includes\(slot\)[\s\S]*arrangement\.toggle\(slot\)/);

@@ -506,8 +506,6 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **settei.not_installed_tick:** not installed — tick to put it on the needed list
 - **settei.group_services:** services
 - **settei.ronin_services:** Ronin Services
-- **settei.use_gbrain:** use gbrain
-- **settei.use_gbrain_hint:** tick this if your agents use it
 - **settei.group_subscription:** subscription
 - **settei.subscription:** subscription
 - **settei.group_needed:** still needed

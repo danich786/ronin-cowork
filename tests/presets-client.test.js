@@ -133,9 +133,9 @@ test('every preset gates on a provider and named presets add their dependencies'
     assert.equal(presets.presetReadiness(row.handle, { activated_count: 0 }).surface, 'setup.providers');
   }
   assert.equal(presets.presetReadiness('bare_metal', { activated_count: 1 }).ready, true);
-  assert.equal(presets.presetReadiness('personal_assistant', { activated_count: 1, gbrain: { active: false } }).surface, 'setup.gbrain');
+  assert.equal(presets.presetReadiness('personal_assistant', { activated_count: 1, gbrain: { active: false } }).surface, 'setup.installations');
   assert.equal(presets.presetReadiness('personal_assistant', { activated_count: 1, gbrain: { active: true } }).ready, true);
-  assert.equal(presets.presetReadiness('morning_brief', { activated_count: 1, services: { active: false } }).surface, 'setup.services');
+  assert.equal(presets.presetReadiness('morning_brief', { activated_count: 1, services: { active: false } }).surface, 'setup.installations');
   assert.equal(presets.presetReadiness('morning_brief', { activated_count: 1, services: { active: true } }).ready, true);
 });
 

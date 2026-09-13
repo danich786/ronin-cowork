@@ -332,18 +332,6 @@ export function buildMachineSettings(root, isShowing) {
     group(t('settei.group_services', 'services'));
     body.appendChild(tickRow(observed.ronin.services.length > 0, 'service', '*', t('settei.ronin_services', 'Ronin Services'), ''));
     body.appendChild(tickRow(observed.ronin.services.includes('gbrain'), 'service', 'gbrain', 'gbrain', ''));
-    const gbNote = document.createElement('p'); gbNote.className = 'st-note'; gbNote.setAttribute('role', 'status');
-    gbNote.textContent = t('settei.use_gbrain_hint', 'tick this if your agents use it');
-    const gb = ask([{ group: '', fields: [{ key: 'enabled', label: t('settei.use_gbrain', 'use gbrain'), switch: [t('gbrain.on', 'on'), t('gbrain.off', 'off')] }] }], { value: { enabled: set.gbrain.enabled }, onChange: async (value) => {
-      gbNote.textContent = t('settei.saving', 'saving…');
-      const r = await request('/api/machine-settings', { method: 'PATCH', json: { family: 'gbrain', value: { enabled: value.enabled } } });
-      gbNote.textContent = r.ok ? t('settei.saved', 'saved') : r.message; gbNote.classList.toggle('bad', !r.ok);
-    } });
-    const gbRow = document.createElement('div');
-    gbRow.className = 'st-row';
-    gbRow.append(gb.el, gbNote);
-    body.appendChild(gbRow);
-
     /* the deal — Ronin Services the subscription, a different thing from the sockets above */
     group(t('settei.group_subscription', 'subscription'));
     const activation = set.services.activation ?? {};

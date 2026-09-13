@@ -77,7 +77,8 @@ test('registration recovery keeps consent separate and deletion removes local id
 
 test('Setup reuses canonical Campaign Templates only inside Launch Your Own', async () => {
   const source = await (await import('node:fs/promises')).readFile(new URL('../public/js/setup-surfaces.js', import.meta.url), 'utf8');
-  for (const id of ['setup.register', 'setup.roots', 'setup.services', 'setup.gbrain']) assert.match(source, new RegExp(id.replace('.', '\\.')));
+  for (const id of ['setup.register', 'setup.roots', 'setup.installations']) assert.match(source, new RegExp(id.replace('.', '\\.')));
+  assert.doesNotMatch(source, /setup\.services|setup\.gbrain/);
   // Model providers is the one surface Ronin Settings also seats; its type is that module's.
   assert.match(source, /providers: PROVIDER_SURFACE_TYPE/);
   assert.match(source, /templates: CAMPAIGN_TEMPLATES_TYPE/);
@@ -242,7 +243,7 @@ test('Services leads with identity, the beta, and benefits, then one measured st
   assert.match(route, /res\.status\(409\)\.json\(\{ error: \(error\.stderr \|\| error\.message\)/, 'the tool\'s refusal is answered in its own words');
   const index = await (await import('node:fs/promises')).readFile(new URL('../src/index.ts', import.meta.url), 'utf8');
   assert.match(index, /registerMachineRestart\(app\)/);
-  assert.match(source, /notifySummary\(SETUP_SURFACE_TYPES\.services, model\.summary/);
+  assert.doesNotMatch(source, /notifySummary\(SETUP_SURFACE_TYPES\.services/);
   assert.match(source, /if \(body\.isConnected\) void show\(\)/, 'polling stops when the surface leaves the workspace');
   assert.doesNotMatch(source, /Requires a confirmed registration|services_requires_short|services_register_enables|Registration confirmed · Services access not included|not activated|setup-services-account/);
   assert.doesNotMatch(source, /const state = el\('dl'|<dd>|'Yes' : 'No'/);
@@ -412,8 +413,8 @@ test('Setup gbrain keeps installation/default choice on Campaign Installations a
   ]);
   assert.match(setup, /presentation: 'setup'/);
   assert.match(setup, /setupRuntime\?\.gbrain|runtime\?\.gbrain/);
-  assert.match(setup, /onState: \(summary\) => notifySummary\(SETUP_SURFACE_TYPES\.gbrain, summary/);
-  assert.match(setup, /openServices: \(\) => context\.workbench\?\.place\(SETUP_SURFACE_TYPES\.services/);
+  assert.match(setup, /onState: \(\) => context\.workbench\?\.refreshSelector/);
+  assert.match(setup, /openServices: \(\) => context\.workbench\?\.place\(SETUP_SURFACE_TYPES\.installations/);
   assert.match(setup, /openProviders: \(\) => context\.workbench\?\.place\(SETUP_SURFACE_TYPES\.providers/);
   assert.doesNotMatch(setup, /agentsDefault/);
   // Start your first Personal Assistant is exactly the preset's launch: same plan, same route, same new tab.
@@ -431,6 +432,26 @@ test('Setup gbrain keeps installation/default choice on Campaign Installations a
   assert.match(gbrain, /root\.replaceChildren\(wrap\)/);
   for (const kept of ['renderPrivacy(r.data)', 'renderSearch(r.data)', 'renderIntegrations(r.data)', 'integrations.append(renderRemove())', 'renderLoad(r.data)']) assert.ok(gbrain.includes(kept), kept);
   assert.doesNotMatch(gbrain, /designedErrors|gb-notice|gb-setup|setup-gbrain-benefit|setup-gbrain-facts/);
+});
+
+test('Setup has one Installations card, Account has no gbrain tab, and Machine Settings has no gbrain switch', async () => {
+  const fs = await import('node:fs/promises');
+  const [surfaces, setupView, account, machine, installations] = await Promise.all([
+    fs.readFile(new URL('../public/js/setup-surfaces.js', import.meta.url), 'utf8'),
+    fs.readFile(new URL('../public/js/setup-view.js', import.meta.url), 'utf8'),
+    fs.readFile(new URL('../public/js/cowork-commons.js', import.meta.url), 'utf8'),
+    fs.readFile(new URL('../public/js/machine-settings.js', import.meta.url), 'utf8'),
+    fs.readFile(new URL('../public/js/campaign-installations.js', import.meta.url), 'utf8'),
+  ]);
+  assert.match(surfaces, /definition\(SETUP_SURFACE_TYPES\.installations, t\('campaign_view\.installations', 'Installations'\), createSetupInstallationsSurface\)/);
+  assert.match(surfaces, /createInstallationsSurface\(selected, context\)/);
+  assert.doesNotMatch(setupView, /SETUP_SURFACE_TYPES\.(?:services|gbrain)/);
+  assert.doesNotMatch(account, /id: 'gbrain'/);
+  assert.match(machine, /tickRow\(observed\.ronin\.services\.includes\('gbrain'\)/, 'the measured gbrain row remains');
+  assert.doesNotMatch(machine, /settei\.use_gbrain|family: 'gbrain'/);
+  assert.match(installations, /createServicesSurface\(sharedContext\)/);
+  assert.match(installations, /createGbrainSurface\(sharedContext\)/);
+  assert.match(installations, /stoneSurface\.select\('ronin_services'\)/);
 });
 
 test('legacy Services mutation entry points explicitly retire to registration', async () => {

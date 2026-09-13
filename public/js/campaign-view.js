@@ -92,7 +92,7 @@ function registerCampaignSurfaces() {
   profiles.define(PROFILE, [
     TERMINAL_TYPE,
     TYPES.identity, TYPES.roots, TYPES.defaults, TYPES.installations, TYPES.providers, TYPES.document,
-    SETUP_SURFACE_TYPES.register, SETUP_SURFACE_TYPES.services, SETUP_SURFACE_TYPES.gbrain,
+    SETUP_SURFACE_TYPES.register,
     SETUP_SURFACE_TYPES.launchOwn, TYPES.templates, TYPES.machine,
     ...(MULTIPLE_CAMPAIGNS_ENABLED ? [TYPES.create] : []),
     FEEDBACK_TYPE,

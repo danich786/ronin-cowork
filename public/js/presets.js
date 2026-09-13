@@ -146,8 +146,8 @@ export function presetReadiness(handle, runtime = {}) {
   const provider = Number(runtime.activated_count || 0) > 0;
   const activatable = firstActivatableProvider(runtime);
   if (!provider) return { ready: false, reason: 'A model provider is required before launching a preset.', surface: 'setup.providers', detail: { provider: activatable?.id || '' } };
-  if (handle === 'personal_assistant' && runtime.gbrain?.active !== true) return { ready: false, reason: 'Personal Assistant requires gbrain to be active.', surface: 'setup.gbrain', detail: {} };
-  if (handle === 'morning_brief' && runtime.services?.active !== true) return { ready: false, reason: 'Grokbot Morning Briefing requires Ronin Services to be active.', surface: 'setup.services', detail: {} };
+  if (handle === 'personal_assistant' && runtime.gbrain?.active !== true) return { ready: false, reason: 'Personal Assistant requires gbrain to be active.', surface: 'setup.installations', detail: {} };
+  if (handle === 'morning_brief' && runtime.services?.active !== true) return { ready: false, reason: 'Grokbot Morning Briefing requires Ronin Services to be active.', surface: 'setup.installations', detail: {} };
   return { ready: true, reason: '', surface: '', detail: {} };
 }
 export function seatingPlan(handle, receipt = {}, inputs = {}) {
