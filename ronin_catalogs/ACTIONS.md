@@ -238,22 +238,22 @@ grant anything). Tagging is the OWNER's job in the Ronin UI, or a macro's at bir
 
 ## agent-check — read one live session by exact name
 `action_kind: mechanical` — run it, don't deliberate.
-> **Tool: `tejun-session-check <name>`** (TOOLS.md)
+> **Tool: `session_check <name>`** (TOOLS.md)
 Read the exact live session's Teams, lead designations, Control setting, and project root.
 An unused name reports `NO-SESSION` and changes nothing.
 ```bash
-tejun-session-check wg_review
+session_check wg_review
 ```
 
 ## agent-create — explicitly create one Agent
 `action_kind: mechanical` — run it, don't deliberate.
-> **Tool: `tejun-session-create <name> […]`** (TOOLS.md)
+> **Tool: `session_create <name> […]`** (TOOLS.md)
 Birth a name nobody holds through the one launch mechanism (`POST /api/session` — a
 second door onto `/api/launch`, never a second path). An existing name is refused; creation
 never changes meaning based on whether the name is live.
 ```bash
-tejun-session-create wg_review --prompt "Review leg 3"
-tejun-session-create wg_review --prompt "Review leg 3" --model fable
+session_create wg_review --prompt "Review leg 3"
+session_create wg_review --prompt "Review leg 3" --model fable
 ```
 With no `--team` a newborn joins the FIRST team you are on; on no team it is a rōnin.
 **Neither is a refusal, and you never create the team first** — the nag this removes is
@@ -264,12 +264,12 @@ has.
 
 ## agent-update — change one existing session
 `action_kind: mechanical` — run it, don't deliberate.
-> **Tool: `tejun-session-set <name> […]`** (TOOLS.md)
+> **Tool: `session_set <name> […]`** (TOOLS.md)
 Change only named mutable facts on a live session. The command refuses a missing name and
 never creates; its bare form points to `agent-check` rather than guessing intent.
 ```bash
-tejun-session-set wg_review --team other-team --lead
-tejun-session-set wg_review --root lab
+session_set wg_review --team other-team --lead
+session_set wg_review --root lab
 ```
 
 ## team-upsert — make a team, or change its facts
@@ -282,7 +282,7 @@ onto it (additive; a name not live is reported, the rest go through).
 tejun-team-set wipeboard-groups --objective "Groups on the wipeboard" --role development --root ronin-cowork
 tejun-team-set wipeboard-groups --add wg_lead,wg_review
 ```
-You rarely need this: `tejun-session-create` births onto your team with no team named. Come
+You rarely need this: `session_create` births onto your team with no team named. Come
 here to create a team, or to give one a brief worth inheriting. Membership is never
 stored on the roster — it is the sessions' tags, and `--add` writes those.
 

@@ -47,8 +47,8 @@ Resolution order, the same in both readers:
 The two readers are `src/cli-http.ts`, which every TypeScript command (`tejun-desk`,
 `tejun-wipeboard`, `tejun-send`, `tejun-jikan`, promotion, recovery, bundle, auth) goes
 through, and `ronin_bin/ronin-url` with its sourced sibling `ronin_bin/ronin-http.sh`, which
-the zero-dependency shell tools (`tejun-fork`, `tejun-harakiri`, `tejun-session-check`,
-`tejun-session-create`, `tejun-session-set`,
+the zero-dependency shell tools (`tejun-fork`, `tejun-harakiri`, `session_check`,
+`session_create`, `session_set`,
 `tejun-team-set`, `tejun-teampage`, `mika`) go through. `ronin-url` prints one line —
 `RONIN_URL` when set, else the socket path — and `ronin_connect` turns that into the base
 `url` and the `RONIN_CURL` transport options a request is built from; a caller never knows

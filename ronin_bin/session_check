@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
-# tejun-session-check — read one live session by exact name; never creates or changes it.
+# session_check — read one live session by exact name; never creates or changes it.
 set -u
 case "${1-}" in
-  -h|--help) [ "$#" -eq 1 ] || { echo "tejun-session-check: --help takes no other arguments. Run tejun-session-check --help." >&2; exit 2; }
+  -h|--help) [ "$#" -eq 1 ] || { echo "session_check: --help takes no other arguments. Run session_check --help." >&2; exit 2; }
     cat <<'EOF'
-tejun-session-check — read one live Agent by exact name
+session_check — read one live Agent by exact name
 
 Usage:
-  tejun-session-check <name>
+  session_check <name>
 
 Reports the Agent's Teams, lead designations, Control setting, and project root.
 An unused name returns NO-SESSION and changes nothing. Related:
-tejun-session-create --help; tejun-session-set --help; tejun-team --help
+session_create --help; session_set --help; tejun-team --help
 EOF
     exit 0 ;;
 esac
 [ "$#" -eq 1 ] && [ -n "${1:-}" ] && [ "${1#-}" = "$1" ] || {
-  echo "usage: tejun-session-check <name>. Run tejun-session-check --help." >&2; exit 2;
+  echo "usage: session_check <name>. Run session_check --help." >&2; exit 2;
 }
 . "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"
 TOOL_DIR=$(dirname "$SELF")
