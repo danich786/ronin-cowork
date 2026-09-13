@@ -4,7 +4,7 @@
 **checkout**, as declared by that repository. Before your first write in a folder, read
 the page its arrangement names: `ronin_sops/worktree-root.md` for a worktree root, or
 `ronin_sops/checkout.md` for a checkout. Your birth brief names the arrangement of the
-root where you start; `tejun-desk open <repo>` names it for another root.
+root where you start; `worktree-desk open <repo>` names it for another root.
 
 **Your work record** is the owner's account of your task, progress, tracked documents,
 worktrees and team. `read_tegami` prints it. Change one field with one call:

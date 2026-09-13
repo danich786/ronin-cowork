@@ -28,7 +28,7 @@ import { capabilityTools, renderCapabilitiesOverview, resolveCapabilities, type 
 
 const WORKTREE_SOP = path.join(REPO_ROOT, 'ronin_sops', 'worktree-root.md');
 const CHECKOUT_SOP = path.join(REPO_ROOT, 'ronin_sops', 'checkout.md');
-const WORKTREE_TOOLS = ['tejun-desk', 'ronin-repo-init'] as const;
+const WORKTREE_TOOLS = ['worktree-desk'] as const;
 
 const CORE_CONTRIBUTION: ResolvedContribution = {
   name: 'cowork_agent', origin: 'stock', shadowed: false, label: 'Cowork Agent', blurb: '',

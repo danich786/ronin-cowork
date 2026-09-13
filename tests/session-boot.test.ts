@@ -169,8 +169,8 @@ test('core reading points to arrangement pages; system reading stays installatio
   assert.match(services, /Koshi\*\* is Ronin's assisted administrative behavior/);
   assert.match(services, /Voice\*\* turns the owner's speech into text/);
   assert.match(services, /Hotwords\*\* are the owner's dictation\s+glossary/);
-  assert.match(worktrees, /tejun-desk status --assignment/);
-  assert.match(worktrees, /tejun-desk hand-in/);
+  assert.match(worktrees, /worktree-desk status --assignment/);
+  assert.match(worktrees, /worktree-desk hand-in/);
   assert.match(worktrees, /session_end/);
   assert.match(worktrees, /CERTIFIED CLEAN/);
   assert.doesNotMatch(worktrees, /first full repository BYOIN/i);

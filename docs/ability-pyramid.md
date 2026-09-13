@@ -17,11 +17,11 @@ a file at the tier that teaches it.
    T2   │  SCOPED-TAUGHT │  same delivery, narrower audience — selected by the
         │                │  launch's own facts, never by the session.
         ├────────────────┤
-   T3   │  INDEXED       │  the catalogs — what you CAN do. Pulled by name;
-        │                │  tejun compiles live.
+   T3   │  INDEXED       │  the catalogs — what you CAN do. Selected capabilities
+        │                │  expose their actual tools.
         ├────────────────┤
-   T4   │  DELIVERED     │  the library — arrives inside a compile, mid-task,
-        │  MID-TASK      │  unasked.
+   T4   │  REFERENCE     │  the library — supporting pages named by current
+        │                │  capability teaching.
         ├────────────────┤
    T5   │  SOUGHT        │  the SOPs — fetched by a situation; the situation
         │                │  selects the reader.
@@ -96,9 +96,8 @@ house-wide body of knowledge.
 | When wondering… | Go to | Not |
 |---|---|---|
 | what a word means here | the house-words section of the birth README | guessing |
-| what a `+name:` means | `tejun <name>` — compile, execute, report | a remembered workflow |
 | whether a capability exists | the catalogs, via the map | improvising with tmux |
-| how to do a compiled step | it arrived in the compile | searching |
+| how to use a capability tool | its selected document, then `<tool> --help` | guessing |
 | anything about another session | dial first; `edges read <session> since` first, with the durable record authoritative; then `edges send` | pane capture only when there is no tape or live prompt state is unknowable, and report the fallback; raw `send-keys` |
 | how the house does a domain | the SOP shelf, by book | inventing a process |
 | what is true on this machine | run the named tool | any document |
