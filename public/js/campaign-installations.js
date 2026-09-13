@@ -80,12 +80,12 @@ export function createInstallationsSurface(campaign, context = {}) {
   const featureProviderChoice = (installation, host) => {
     const reason = gated(installation.name) ? t('campaign_view.services_required', 'Ronin Services required') : '';
     const notice = el('p', 'setup-notice');
-    const question = ask([{ fields: [{
-      key: 'installation', label: installation.label || installation.name,
+    const question = ask([{ group: t('campaign_view.available', 'Available'), fields: [{
+      key: 'installation', label: t('campaign_view.available', 'Available'), shape: 'square', expanded: true,
       options: [
-        { v: 'off', l: t('campaign_view.off', 'Off') },
-        { v: 'on', l: t('campaign_view.on', 'On') },
-        { v: 'all', l: t('campaign_view.shape_all', 'All') },
+        { v: 'off', l: t('campaign_view.off', 'Off'), off: reason },
+        { v: 'on', l: t('campaign_view.on', 'On'), off: reason },
+        { v: 'all', l: t('campaign_view.shape_all', 'All'), off: reason },
       ],
     }] }], {
       value: { installation: providerState(installation) },
@@ -95,13 +95,11 @@ export function createInstallationsSurface(campaign, context = {}) {
         if (!result?.ok) question.set('installation', before);
       },
     });
-    const control = question.el.querySelector('[data-ask-key="installation"]');
-    if (reason && control) { control.disabled = true; control.title = reason; }
     host.append(question.el, notice);
+    return () => question.destroy();
   };
 
   const renderDetail = (installation, host) => {
-    if (installation.effect === 'provider') featureProviderChoice(installation, host);
     const sharedContext = {
       ...context,
       tenant: { ...(context.tenant || {}), campaign: campaign()?.id },
@@ -113,12 +111,14 @@ export function createInstallationsSurface(campaign, context = {}) {
     const page = installation.id === 'ronin_services'
       ? createServicesSurface(sharedContext)
       : installation.id === 'gbrain' ? createGbrainSurface(sharedContext) : null;
+    const choiceHost = page?.el.querySelector('.setup-surface-body') || host;
+    const destroyChoice = installation.effect === 'provider' ? featureProviderChoice(installation, choiceHost) : null;
     if (page) {
       host.append(page.el);
       void page.show?.();
-      return () => page.destroy?.();
+      return () => { destroyChoice?.(); page.destroy?.(); };
     }
-    return null;
+    return destroyChoice;
   };
 
   stoneSurface = createStoneWorkSurface({ items: [], className: 'campaign-installations-stones', renderDetail });
