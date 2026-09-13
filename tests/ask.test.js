@@ -292,3 +292,38 @@ test('trayHost: the open tray is placed at the end of the consumer\'s row, not i
   assert.equal(row.children.filter((n) => n.className === 'ask-tray').length, 0, 'Escape inside the hosted tray closes it');
   assert.deepEqual(row.children.map((n) => n.className), ['name', 'ask'], 'the row is back to its controls');
 });
+
+test('a required line refuses dismissal while blank or invalid, announces why, and lets go once typed or once another answer is chosen', () => {
+  let name = '';
+  const form = ask([{ group: 'Team', fields: [{ key: 'team', label: 'Team', options: [
+    { v: 'none', l: 'No team' },
+    { v: 'new', l: 'New team', required: true, row: () => { const i = new FakeNode('input'); i.value = name; i.addEventListener('input', () => { name = i.value; }); return i; }, invalid: () => (/[^a-z0-9_-]/.test(name) ? 'Lowercase letters, digits, _ and - only.' : '') },
+  ] }] }], { value: { team: 'none' } });
+  stoneFor(form, 'team').click();
+  optNamed(form, 'New team').click();
+  const input = form.el.one('ask-line').one('ask-extra').children[1];
+  assert.equal(input.attributes['aria-required'], 'true');
+  form.el.fire('keydown', { key: 'Escape' });
+  assert.equal(form.el.dataset.open, 'team', 'Escape with a blank required line keeps the tray open');
+  assert.equal(input.attributes['aria-invalid'], 'true');
+  assert.equal(form.el.one('ask-validation').textContent, 'Required');
+  assert.equal(form.el.one('ask-line').dataset.invalid, 'true');
+  assert.ok(input.focused, 'and focuses the control');
+  stoneFor(form, 'team').click();
+  assert.equal(form.el.dataset.open, 'team', 'the stone cannot close it either');
+  assert.equal(form.close(), false, 'nor can close()');
+  input.value = 'Bad Name'; input.fire('input');
+  assert.equal(input.attributes['aria-invalid'], 'false', 'typing clears the mark');
+  form.el.fire('keydown', { key: 'Escape' });
+  assert.equal(form.el.dataset.open, 'team');
+  assert.equal(form.el.one('ask-validation').textContent, 'Lowercase letters, digits, _ and - only.', 'the consumer\'s validator speaks');
+  input.value = 'jobber-2'; input.fire('input');
+  form.el.fire('keydown', { key: 'Escape' });
+  assert.equal(form.el.all('ask-tray').length, 0, 'valid, it lets go');
+  stoneFor(form, 'team').click();
+  optNamed(form, 'New team').click();
+  form.el.one('ask-line').one('ask-extra').children[1].value = ''; name = '';
+  optNamed(form, 'No team').click();
+  assert.equal(form.el.all('ask-tray').length, 0, 'another layer-one answer dismisses even with the line blank: the requirement belongs to the answer');
+  assert.equal(form.value().team, 'none');
+});

@@ -590,6 +590,7 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **ask.find:** type to find
 - **ask.nothing:** Nothing to choose.
 - **ask.after:** Choose {field} first.
+- **forms.required:** Required
 - **forms.reason_not_on_machine:** not on this machine
 - **forms.reason_turned_off:** turned off
 - **forms.reason_not_listed:** not listed by your {cli} {client_version}
