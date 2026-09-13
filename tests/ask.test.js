@@ -346,6 +346,7 @@ test('an expanded question shows its option stones in the group with no reading 
   assert.equal(form.el.all('ask-stone').length, 0);
   assert.equal(form.el.all('ask-tray').length, 0);
   assert.deepEqual(form.el.all('ask-square').map((node) => node.one('ask-name').textContent), ['Off', 'On', 'All']);
+  assert.equal(form.el.all('ask-glyph').length, 0, 'glyphless squares leave the glyph slot empty instead of drawing a fallback dot');
   assert.equal(form.el.all('ask-square')[1].attributes['aria-selected'], 'true');
 
   form.el.all('ask-square')[2].click();
