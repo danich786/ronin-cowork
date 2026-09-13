@@ -439,25 +439,6 @@ It finds `gh` itself. Report the URL it prints. Under direct publishing there is
 line and no PR: this action does not apply.
 
 
-## land-manifest — ONE LINE. READ THIS TWICE.
-`action_kind: judgement` — this one needs your reasoning; no tool can do it for you.
-- **library:** documents
-Append a single pointer line to the project_repo's manifest — location per the
-documents SOP. **The manifest is an index, not a history.** Git commits and READMEs
-hold the story; this is the signpost that tells someone where to look.
-
-Format — exactly one line, nothing else:
-```
-YYYY-MM-DD · <what happened, ≤12 words> · <commit> or <path>
-```
-**Hard rules (agents pad; do not):**
-- ONE line per landed thing. Never two. Never a paragraph.
-- No sub-bullets, no "changes included", no rationale, no before/after, no lists of
-  files, no test results, no emoji decoration.
-- Do not explain HOW. If it needs explaining, it belongs in the README or the commit.
-- Never edit or "improve" earlier lines. Append only.
-If your line exceeds one screen-width, cut words until it doesn't.
-
 ## step-through — run a macro step by step, checking each one in
 `action_kind: mechanical` — run it, don't deliberate.
 > **Tool: `tejun-step`** (TOOLS.md). `start <macro>` → do the step →

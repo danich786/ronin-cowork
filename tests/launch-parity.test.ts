@@ -384,7 +384,7 @@ test('Mika house mechanics resolve explicitly', async () => {
   assert.match(mika.dir, /\/mika$/);
   assert.equal(mika.project_root, 'mika_home');
   assert.equal(mika.capExempt, true);
-  assert.equal(mika.routines.every((routine) => !routine.enabled), true);
+  assert.equal(mika.contributions.every((contribution) => !contribution.enabled), true);
   assert.equal(mika.ack, false);
   assert.equal(mika.opening, '{prompt}', 'nothing is typed at her beyond the request itself');
   // The launch prefixes "You are the Mika Assist." — with the posture that is the whole typed intro: two sentences.
@@ -404,6 +404,8 @@ test('a name alone resolves the ordinary Cowork Agent birth', async () => {
   assert.equal(born.session_type, 'cowork_agent');
   assert.equal(born.name, 'name_only');
   assert.equal(born.project_root, 'alpha', 'the existing top-active-root chain answers placement');
+  assert.ok(born.installations.length > 0, 'the receipt source carries every installation');
+  assert.ok(!born.installations.some((installation) => installation.name === 'cowork_agent'), 'the Cowork Agent is not an installation switch');
   assert.deepEqual(born.mandate, { reach: 'plan', recruit: 'propose agents', output: ['open'] });
   assert.equal(born.dial, 'write');
 });

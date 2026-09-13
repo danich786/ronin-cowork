@@ -1,9 +1,9 @@
-import type { FeatureRow, InstallationRow, RoutineRow } from './resource-adapters.js';
+import type { ContributionRow, FeatureRow, InstallationRow } from './resource-adapters.js';
 
 export type Switches = Record<string, boolean>;
 export type CascadeLayer = 'installation' | 'campaign' | 'team' | 'agent' | 'conditional';
 
-export interface ResolvedContribution extends RoutineRow {
+export interface ResolvedContribution extends ContributionRow {
   enabled: boolean;
   stated_by: CascadeLayer;
   required_by: string[];

@@ -7,20 +7,20 @@ import { promisify } from 'node:util';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import type { RoutineRow } from '../src/resource-adapters.js';
+import type { ContributionRow } from '../src/resource-adapters.js';
 import { projectRoutineTools } from '../src/routine-tools.js';
-import type { ResolvedRoutine } from '../src/routines.js';
+import type { ResolvedContribution } from '../src/instruction-cascade.js';
 
 const exec = promisify(execFile);
 const temp = await fs.mkdtemp(path.join(os.tmpdir(), 'ronin-routine-tools-'));
 process.env.RONIN_SESSION_COMMANDS_DIR = temp;
 process.env.RONIN_TOOLS_DIR = path.join(temp, 'own-tools');
 
-const routine = (name: string, enabled: boolean, tools: string[]): ResolvedRoutine => ({
+const routine = (name: string, enabled: boolean, tools: string[]): ResolvedContribution => ({
   name, label: name, blurb: '', origin: 'stock', shadowed: false,
   reading: [], sops: [], macros: [], actions: [], tools, mcp: [], parts: [], requires: [],
   enabled, stated_by: 'campaign', required_by: [],
-} satisfies RoutineRow & ResolvedRoutine);
+} satisfies ContributionRow & ResolvedContribution);
 
 test('birth PATH exposes enabled tools by name without inheriting a Ronin PATH', async () => {
   const projected = await projectRoutineTools('pathless', [
@@ -34,7 +34,7 @@ test('birth PATH exposes enabled tools by name without inheriting a Ronin PATH',
   assert.ok(projected.delivered.includes('shim/tmux'), 'the tmux guard is Routine floor');
 });
 
-test('a worktree-root conditional projects the desk kit without a Routine', async () => {
+test('a worktree-root conditional projects the desk kit without an installation', async () => {
   const projected = await projectRoutineTools('worktree-root', [], '/usr/bin:/bin', {
     extraTools: ['tejun-desk', 'ronin-repo-init'],
   });
