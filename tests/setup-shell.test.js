@@ -102,7 +102,8 @@ test('Cowork Team and Team Agent cards toggle between names-only and the full re
   assert.match(view, /\[campaign \? 'teamCardDensity' : 'agentCardDensity'\]: thinSelectorCards \? 'thin' : 'thick'/);
   assert.match(view, /let thinSelectorCards = true;/);
   assert.match(view, /context\.viewState\(viewKey\)\?\.\[campaign \? 'teamCardDensity' : 'agentCardDensity'\] !== 'thick'/);
-  assert.match(view, /thinSelectorCards \? \{\} : \{ summary: reading\.step, metadata: reading\.lines, mark:/);
+  assert.match(view, /mark: member\.team_lead \? '人' : null,[\s\S]*thinSelectorCards \? \{\} : \{ summary: reading\.step, metadata: reading\.lines \}/,
+    'the lead mark remains while names-only mode removes the rest of the reading');
   assert.match(view, /thinSelectorCards \? \{\} : \{ summary: item\.objective \|\| '' \}/);
   assert.match(view, /dataset\.lines = thinSelectorCards \? 'two' : 'one'/);
   assert.match(view, /host\.dataset\.selectorDensity = thinSelectorCards \? 'thin' : 'thick'/);
