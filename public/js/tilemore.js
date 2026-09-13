@@ -57,7 +57,7 @@ export function buildTileMore() {
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
     const wasOpen = menu.classList.contains('open');
-    // Every rival first. ⚡'s macro list and 📄's doc list anchor to the same corner of the
+    // Every rival first. The document list anchors to the same corner of the
     // same header, so two open at once is two panels on one spot; and a second tile's メ is
     // a drop describing a session you are no longer looking at.
     closeTileMore();

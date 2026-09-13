@@ -60,7 +60,7 @@ export class Tile {
     emptyLogo.alt = '';
     this.emptyMark.append(emptyLogo);
     this.body.append(this.emptyMark);
-    // Text dropped on the tile — an @mention or a doc reference — lands like a macro's.
+    // Text dropped on the tile — an @mention or a document reference — lands here.
     installTextDrops(this);
 
     // 🔓 THE UNLOCKED VIEW — mounted first, so the tape sits under the panel and the
@@ -298,7 +298,7 @@ export class Tile {
    * Every control on the header that depends on a session is decided HERE, together.
    * They were decided in four places before, which is how three of them ended up never
    * being decided at all: 🏷 📝 the mark and the dial went inert with no session while ⛩
-   * ⚡ 🗑 stayed lit, though a letter, a macro drop and a kill are every bit as
+   * 🗑 stayed lit, though a letter and a kill are every bit as
    * meaningless without one. The rule is now visible in one list instead of implied by
    * which functions happened to exist.
    *
@@ -369,7 +369,7 @@ export class Tile {
     if (this.term.mouseTracking()) for (let i = 0; i < 150; i++) this.sendRaw(WHEEL_DOWN);
   }
 
-  /** The composer's box, for the ⚡ macro prefill — null until the composer exists. */
+  /** The composer's box — null until the composer exists. */
   get composerTa() {
     return this.composer ? this.composer.ta : null;
   }
