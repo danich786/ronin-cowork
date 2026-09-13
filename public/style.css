@@ -1395,6 +1395,26 @@ body {
   color: var(--bad);
   border-color: var(--bad);
 }
+.tile-head button.window-control {
+  font-size: var(--text-4);
+  line-height: 1;
+}
+
+.tile-empty-mark {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.tile-empty-mark[hidden] { display: none; }
+.tile-empty-mark img {
+  width: clamp(3rem, 18%, 7rem);
+  height: auto;
+  opacity: 0.16;
+  filter: grayscale(1);
+}
+.tw-blank .tile-empty-mark { position: relative; min-height: 100%; }
 
 
 .tile-head {
