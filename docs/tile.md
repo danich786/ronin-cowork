@@ -490,7 +490,9 @@ holds it and raises the retire sheet instead (Archive · Delete · Hard Delete),
 × raises. Held before the locked/unlocked split, because the DVR rule would otherwise pass it
 straight through as a command key; and held only while the tile has a session, so an empty
 tile is unchanged. A held ^C repeats, and the sheet takes focus as it opens — `kill()` finds
-an existing `endsession-<index>` node and declines, so a repeat cannot stack a second sheet.
+an existing `endsession-<instance>` node and declines, so a repeat cannot stack a second sheet.
+The instance token is not the tile's display index: hosted tiles commonly share index `0`, and
+one Agent's open retirement boundary must not suppress another's.
 
 **Interrupting is still there**, by a route that cannot be a slip: the `^C` button on the keys
 row (`keysrow.js`) and a pad key bound to `int` (`pad.js`) both hand `\x03` to `sendRaw`, which

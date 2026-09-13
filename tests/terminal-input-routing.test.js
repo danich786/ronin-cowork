@@ -95,8 +95,12 @@ test('a typed ^C raises the retire sheet instead of reaching the pane', async ()
   assert.equal(INTERRUPT, '\x03');
   // Held before the mode split, so the DVR rule cannot pass it through as a command key.
   assert.match(tile, /if \(d === INTERRUPT && this\.session\) return void this\.kill\(\);\s*\n\s*return this\.locked \? this\.sendRaw\(d\) : this\.dvrInput\(d\);/);
-  // A held ^C repeats; one sheet per tile, never a stack.
-  assert.match(tile, /if \(document\.getElementById\(`endsession-\$\{this\.index\}`\)\) return;/);
+  // A held ^C repeats; one sheet per Tile instance, never a stack. Managed tiles can
+  // share display index 0, so the guard must not use `this.index` as its identity.
+  assert.match(tile, /this\.retirementId = `tile-\$\{\+\+nextRetirementId\}`/);
+  assert.match(tile, /if \(document\.getElementById\(`endsession-\$\{this\.retirementId\}`\)\) return;/);
+  assert.match(tile, /retireSession\(name, this\.retirementId/);
+  assert.doesNotMatch(tile, /endsession-\$\{this\.index\}/);
 });
 
 test('the deliberate interrupt routes past the guard and still reaches the pane', async () => {

@@ -27,9 +27,14 @@ const readableSession = (name) => {
     .map((part) => part[0]?.toUpperCase() + part.slice(1)).join(' ');
 };
 
+let nextRetirementId = 0;
+
 export class Tile {
   constructor(index, options = {}) {
     this.index = index;
+    // Hosted tiles commonly share the display index 0. Retirement identity belongs to
+    // this Tile instance so one open sheet never suppresses another tile's boundary.
+    this.retirementId = `tile-${++nextRetirementId}`;
     this.session = null;
     this.pending = ''; // UNLOCKED: locally-parked typed text (sent as one parcel on Enter)
     this.strip = null; // the thin bar showing this.pending over the tile
@@ -555,8 +560,8 @@ export class Tile {
     // ^C raises this too, and a held ^C repeats: the sheet takes focus as it opens, but
     // a repeat already queued can still reach xterm first. Dismissal removes the node
     // (session-retire.js), so finding one means this tile's sheet is up — never a stack.
-    if (document.getElementById(`endsession-${this.index}`)) return;
-    retireSession(name, this.index, async () => {
+    if (document.getElementById(`endsession-${this.retirementId}`)) return;
+    retireSession(name, this.retirementId, async () => {
       this.detach();
       await fetchSessions();
     });
