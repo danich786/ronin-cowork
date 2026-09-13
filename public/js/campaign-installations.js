@@ -77,9 +77,10 @@ export function createInstallationsSurface(campaign, context = {}) {
     return result;
   };
 
-  const featureProviderChoice = (installation, host) => {
+  const featureProviderChoice = (installation) => {
     const reason = gated(installation.name) ? t('campaign_view.services_required', 'Ronin Services required') : '';
     const notice = el('p', 'setup-notice');
+    const row = el('div', 'campaign-installation-choice');
     const question = ask([{ group: t('campaign_view.available', 'Available'), fields: [{
       key: 'installation', label: t('campaign_view.available', 'Available'), shape: 'square', expanded: true,
       options: [
@@ -95,14 +96,16 @@ export function createInstallationsSurface(campaign, context = {}) {
         if (!result?.ok) question.set('installation', before);
       },
     });
-    host.append(question.el, notice);
-    return () => question.destroy();
+    row.append(question.el, notice);
+    return { el: row, destroy: () => question.destroy() };
   };
 
   const renderDetail = (installation, host) => {
+    const choice = installation.effect === 'provider' ? featureProviderChoice(installation) : null;
     const sharedContext = {
       ...context,
       tenant: { ...(context.tenant || {}), campaign: campaign()?.id },
+      installationFirstRow: choice?.el || null,
       onInstallationChange: (name, on) => {
         values = { ...values, [name]: on };
         refreshStoneMarks();
@@ -111,14 +114,13 @@ export function createInstallationsSurface(campaign, context = {}) {
     const page = installation.id === 'ronin_services'
       ? createServicesSurface(sharedContext)
       : installation.id === 'gbrain' ? createGbrainSurface(sharedContext) : null;
-    const choiceHost = page?.el.querySelector('.setup-surface-body') || host;
-    const destroyChoice = installation.effect === 'provider' ? featureProviderChoice(installation, choiceHost) : null;
     if (page) {
       host.append(page.el);
       void page.show?.();
-      return () => { destroyChoice?.(); page.destroy?.(); };
+      return () => { choice?.destroy(); page.destroy?.(); };
     }
-    return destroyChoice;
+    if (choice) host.append(choice.el);
+    return () => choice?.destroy();
   };
 
   stoneSurface = createStoneWorkSurface({ items: [], className: 'campaign-installations-stones', renderDetail });

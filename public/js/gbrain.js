@@ -150,6 +150,7 @@ export function buildGbrain(root, isShowing, askPersonalAssistant, options = {})
     };
     const wrap = make('section', 'setup-gbrain-compact');
     wrap.dataset.state = model.state;
+    if (options.firstRow) wrap.append(options.firstRow);
 
     const lockup = make('header', 'setup-gbrain-lockup');
     const glyph = make('i', 'setup-gbrain-glyph', '◇');
