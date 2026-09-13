@@ -11,17 +11,6 @@ const COLUMNS = [
 ];
 const INDEX = Object.fromEntries(COLUMNS.map((column, index) => [column.key, index]));
 
-// Temporary concept fixtures: the route replaces these as soon as Cut 3 is present.
-const SAMPLE_PROJECTS = [
-  { id: 'virtual-kanban/5', title: 'Cross-team summary', objective: 'One read lists every team with its ideas and projects in flight.', holder: 'lead', stage: 'IDEAS', exit: 'none', status: 'yellow' },
-  { id: 'virtual-kanban/6', title: 'Trello adapter', objective: 'Push the board to a Trello board the owner attaches by API.', holder: 'lead', stage: 'IDEAS', exit: 'lead', status: 'green' },
-  { id: 'virtual-kanban/9', title: 'Board route and read tool', objective: 'One JSON per team from the roster and every work record.', holder: 'roster_cut', stage: 'PLANNING', exit: 'user', status: 'green' },
-  { id: 'virtual-kanban/7', title: 'Kanban tab', objective: 'Team commons renders the board as five columns.', holder: 'tab_cut', stage: 'BUILDING', exit: 'user', status: 'green' },
-  { id: 'virtual-kanban/11', title: 'Tile shows projects', objective: 'The tile shows the project at the marker.', holder: 'letter_cut', stage: 'BUILDING', exit: 'none', status: 'red' },
-  { id: 'virtual-kanban/12', title: 'Docs brought into line', objective: 'Work record docs teach projects, stages, exit and status.', holder: 'kanban_revive', stage: 'LANDING', exit: 'lead', status: 'green' },
-  { id: 'virtual-kanban/1', title: 'Ladder buildout document', objective: 'Projects, five stages, and the Team Kanban.', holder: 'kanban_revive', stage: 'DONE', exit: 'none', status: 'green' },
-];
-
 const node = (tag, cls, text) => {
   const out = document.createElement(tag);
   if (cls) out.className = cls;
@@ -175,9 +164,6 @@ export function createTeamKanban(options = {}) {
     if (result.ok && Array.isArray(result.data.projects)) {
       projects = result.data.projects.map(normalizedProject);
       notice.textContent = '';
-    } else if (result.status === 404) {
-      projects = SAMPLE_PROJECTS.map((project) => normalizedProject({ ...project, id: project.id.replace(/^virtual-kanban/, team) }));
-      notice.textContent = t('team_kanban.sample', 'Showing concept data until this Team’s Kanban route is available.');
     } else {
       projects = [];
       notice.textContent = result.message || t('team_kanban.failed', 'Could not load this Team Kanban.');
