@@ -498,7 +498,7 @@ the shape above is deliberate and every choice in it has its reason recorded eit
 or in `src/passkey.ts`'s head comment.
 
 
-## Asking a question — `ask()` is the one selector
+## Asking a question — ERABI, `ask()`, is the one selector
 
 Every place a form asks the owner to pick from a set of answers is drawn by
 `public/js/ask.js`, from a spec, and by nothing else. The ruling and the builder contract are
