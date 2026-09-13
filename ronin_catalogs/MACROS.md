@@ -136,14 +136,14 @@ PROPOSE it ("I'd like to fork X into its own session") and wait for the go-ahead
 Unannounced sessions are untrackable for the human until the UI reveals them. Spin the current conversation's active topic out into its own agent
 
 `name` is required, matching the settled launch contract. Every other launch input is
-optional. `tejun-fork` accepts instructions plus optional `team`, repeatable `behaviour`,
+optional. `session_fork` accepts instructions plus optional `team`, repeatable `behaviour`,
 `provider`, `model`, and `dial`. With no Team it inherits the
 origin session's first Team; with no Campaign override it inherits the origin's Campaign.
 No behaviour selection is valid. Control falls back to read-and-write. Provider-only selects that provider's configured preferred
 model, then its first launch-table entry; model-only resolves the named model; neither
 uses the Campaign's Agent defaults, then the install defaults.
 
-**Use `tejun-fork`; it uses the same launch contract as the ＋ New form.** Forks were
+**Use `session_fork`; it uses the same launch contract as the ＋ New form.** Forks were
 starting from a bare `tmux new-session` and then typing a CLI at it, which is a second,
 bespoke launch path — and it arrives with **zero Build Brief**: no reading list, no
 posture, no letter, and no birth reading. `session-launch` is the canonical pipeline, and the fork
@@ -175,7 +175,7 @@ State the resolved Team, Control and any selected behaviours in the report.
 |---|---|---|
 | 1 | read-letter | your OWN letter — its Campaign and first Team are the launch defaults |
 | 2 | write-handoff-doc | a wip handoff doc (location per the documents SOP) — distill THIS conversation's context on the topic: goal in the owner's words, constraints, verification, definition of done |
-| 3 | session-launch | `tejun-fork --name <name>` with only the other values the owner actually supplied; give it the handoff instruction when a handoff was written |
+| 3 | session-launch | `session_fork --name <name>` with only the other values the owner actually supplied; give it the handoff instruction when a handoff was written |
 | 4 | report-outcome | session name, resolved Team, Control and optional behaviours/model, handoff doc path, how to open it |
 
 **The prompt for step 4** — READ AND REPORT UNDERSTANDING FIRST, never "read this and
@@ -187,7 +187,7 @@ CLAUDE.md and CLAUDE.local.md conventions strictly."* Add, for planning topics, 
 eventual deliverable is: *"when the owner gives the go-ahead, the output is a wip build-out
 plan per the documents SOP — a plan, not code."*
 
-Do NOT type that prompt into the pane. It rides in through `tejun-fork` as part of the
+Do NOT type that prompt into the pane. It rides in through `session_fork` as part of the
 compiled Build Brief.
 
 **Afterwards the fork owns its own task.** Its selected behaviour books are birth reading,

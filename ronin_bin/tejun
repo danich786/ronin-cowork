@@ -21,7 +21,7 @@ Common starting points:
   teams         tejun-team --help, session_check --help,
                 session_create --help, session_set --help, tejun-team-set --help
   worktrees     tejun-desk --help
-  lifecycle     tejun-archive --help, tejun-rehydrate --help
+  lifecycle     session_archive --help, session_restore --help
 
 Compiling a macro prints instructions; it does not run its operational steps for you.
 Run a chosen tool's --help before using it. Related: tejun-step
