@@ -2,14 +2,12 @@ import { stat } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import type express from 'express';
 import { projectRootsOfSessions } from '../tmux.js';
-import { listMacros } from '../macros.js';
 import { listSkins } from '../skin-catalog.js';
 import { listLexicons, resolveLexicon } from '../lexicon-catalog.js';
 import { activeDeskProfileName, listDeskProfiles } from '../desk-profiles.js';
 import { initialCampaign } from '../campaigns.js';
 import { listSops } from '../resources.js';
 import { listWays } from '../resources.js';
-import { listActions } from '../actions.js';
 import { listSessionReadings } from '../session-readings.js';
 import { listAgentAvailability } from '../agents.js';
 import { dispatchInstall } from '../agent-install.js';
@@ -85,14 +83,6 @@ export function registerCatalogs(app: express.Express): void {
     }
   });
 
-  app.get('/api/actions', async (_req, res) => {
-    try {
-      res.json(await listActions());
-    } catch (e) {
-      res.status(500).json({ error: errMsg(e) });
-    }
-  });
-
   app.get('/api/sops', async (_req, res) => {
     try {
       res.json(await listSops());
@@ -112,14 +102,6 @@ export function registerCatalogs(app: express.Express): void {
   app.get('/api/skins', async (_req, res) => {
     try {
       res.json(await listSkins());
-    } catch (e) {
-      res.status(500).json({ error: errMsg(e) });
-    }
-  });
-
-  app.get('/api/macros', async (_req, res) => {
-    try {
-      res.json(await listMacros());
     } catch (e) {
       res.status(500).json({ error: errMsg(e) });
     }

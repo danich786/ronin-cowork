@@ -20,9 +20,9 @@ moved, restored or rebuilt and nobody knows what survived.
 |---|---|
 | `bin/ronin-doctor` | every machine finding, each naming its own remedy |
 | `GET /api/machine` | the live reading — memory, swap, load, cores, scope |
-| `ronin_bin/tejun-survey` | what this box IS: cores, RAM, swap, disks |
+| `ronin-host inspect` | what this box IS: cores, RAM, swap, disks |
 | the machine service's watch script | one report, by hand or on a schedule the owner chose — it ships with the service, not with cowork |
-| `tejun-account` · `bin/ronin-store --all` | who it runs as, where its stores resolve |
+| `ronin-host account` · `bin/ronin-store --all` | who it runs as, where its stores resolve |
 
 **Prefer the tool over doing it by hand.** Each encodes a check you would otherwise
 approximate, and `ronin-doctor` is the one that turns a reading into a finding with a remedy.

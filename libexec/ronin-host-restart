@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
-# tejun-machine-restart — restart RONIN on this machine. Nothing else, ever.
-#
-# Usage: tejun-machine-restart      — no arguments. You do not name a unit.
+# Internal implementation for `ronin-host restart`.
 #
 # WHY IT TAKES NO ARGUMENT, which is the whole of its safety. Two services run here and
 # they are one keystroke apart. `ronin` is the app: the browser grid, the API, the
@@ -26,7 +24,7 @@ set -u
 case "${1:-}" in
   '') ;;
   *) cat >&2 <<'EOF'
-REFUSED: tejun-machine-restart takes no arguments — it restarts Ronin, and only Ronin.
+REFUSED: ronin-host restart takes no arguments — it restarts Ronin, and only Ronin.
 There is deliberately no way to aim it at another service. If you believe something else
 on this box needs restarting, that is the owner's call, not yours: say what you saw and
 stop. Never hand-roll it with systemctl.
@@ -59,7 +57,7 @@ systemctl --user restart ronin.service || {
 }
 
 # Wait for it to come back rather than announcing an outcome we have not seen. Reporting
-# "restarted" while the unit is still flapping is the same failure tejun-harakiri warns
+# "restarted" while the unit is still flapping is the same failure session_end warns
 # about: never claim the ending you did not watch happen.
 state=""
 i=0

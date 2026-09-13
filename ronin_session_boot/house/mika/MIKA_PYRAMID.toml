@@ -11,8 +11,8 @@ label = "House procedures and situations"
 root = "ronin_sops"
 
 [[node]]
-id = "actions-tools-and-macros"
-label = "Supported actions, tools, macros, models, roles, routines, profiles, and templates"
+id = "capabilities-tools-and-models"
+label = "Supported capabilities, tools, models, roles, routines, profiles, and templates"
 root = "ronin_catalogs"
 
 [[node]]

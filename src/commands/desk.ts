@@ -137,12 +137,12 @@ async function main(): Promise<void> {
         for (const d of desks) out(row(d));
         if (session && !str(flags.get('team')) && !str(flags.get('repo'))) {
           // The caller's own desks: certify them. A birth desk — the one this shell lives
-          // in — is never "closable"; it is stay (parked) or go (tejun-harakiri), never
+          // in — is never "closable"; it is stay (parked) or go (session_end), never
           // closed under a live session (owner, 2026-09-09).
           const c = certifyDesks(desks, process.cwd());
           if (c.certified) {
             out('  CERTIFIED CLEAN: everything is on the line; ending this Agent loses nothing.');
-            if (c.standing.length) out(`  standing in ${c.standing.map(deskId).join(', ')}: stay parked for more work, or go with tejun-harakiri — the desk ends with you, never before you`);
+            if (c.standing.length) out(`  standing in ${c.standing.map(deskId).join(', ')}: stay parked for more work, or go with session_end — the desk ends with you, never before you`);
             if (c.closable.length) out(`  closable without ending you (you are not standing in them): ${c.closable.map(deskId).join(', ')}`);
           } else {
             for (const b of c.blocking) out(`  NOT CERTIFIED: ${deskId(b.desk)} — ${b.why}; commit and hand in before you park or go`);

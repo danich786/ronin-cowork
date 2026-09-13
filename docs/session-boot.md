@@ -102,7 +102,7 @@ per shell read, Claude Code 30,000 chars per Bash call and 25,000 tokens per Rea
 open a file in a first window of ~250 lines — which is why the contracts come first.
 
 Three universal shelf files and two generated fragments, compiled in reading order —
-the contracts first, the maps, the macro roster, the glossary last — and held to the
+the contracts first, then the maps and glossary — and held to the
 one-read budget (`PACKET_BUDGET` in `src/birth-readme.ts`) by `tests/session-boot.test.ts`
 on the real shelf:
 

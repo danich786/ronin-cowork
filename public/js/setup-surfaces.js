@@ -310,7 +310,7 @@ export function createServicesSurface(context) {
     const values = el('div', 'setup-services-benefits');
     for (const [heading, copy] of [
       [t('services_setup.transcripts', 'Readable transcripts'), t('services_setup.transcripts_copy', 'The terminal is recorded and shown as readable text, so Unlocked views scroll smoothly on a phone instead of waiting on a laggy Locked screen.')],
-      [t('services_setup.library', 'Template library'), t('services_setup.library_copy', 'Teams and Agents Ronin keeps and grows, with the procedures, macros, and tools they read, installed with one press.')],
+      [t('services_setup.library', 'Template library'), t('services_setup.library_copy', 'Teams and Agents Ronin keeps and grows, with the books and tools they use, installed with one press.')],
       [t('services_setup.records', 'Work records kept current'), t('services_setup.records_copy', 'A background assistant keeps every Agent’s work record current, so the roster and the tile say what each is doing.')],
       [t('services_setup.voice', 'Voice and memory'), t('services_setup.voice_copy', 'Hear a report read back, speak to an Agent from the tile, and keep what a session learns for the team.')],
     ]) {

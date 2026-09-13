@@ -10,10 +10,9 @@ Ronin sessions are disposable; the work is not. The method is to give every acti
 of work a small set of shared artifacts that Claude, Codex, or another agent can enter and
 leave without asking one provider to imitate another.
 
-Each stage below names the macro that performs it. The macro is the shared word — what the
-owner says and what you compile — and inside it only the actions that carry a rule worth
-knowing are named. The tools underneath belong to the actions and are not repeated here;
-they move, and a method that spelled them would move with them.
+Each stage below names the shared record or capability involved. Selected capability
+documents teach the concrete tools; this method keeps the durable cross-session choices
+without duplicating executable instructions.
 
 ## The lifecycle
 
@@ -162,18 +161,16 @@ artifact, finding, uncommitted change or commit not yet handed in must land inst
 Ronin owns the shared edges, not the agent's mind. Claude continues to follow the
 repository's `CLAUDE.md` and `CLAUDE.local.md`; Codex continues to follow `AGENTS.md`, its
 active plan, skills and native session conventions. Other providers keep their own
-equivalents. Provider-native memory, planning and delegation may help that session
+equivalents. Provider-native context, planning and delegation may help that session
 execute, and none of it is Ronin's to redesign — but none of it replaces the cross-session
 record above, because none of it is visible to anyone outside that session.
 
 When the two layers overlap:
 
 - repository instructions and the owner's current direction govern the implementation;
-- explicit Ronin macros are compiled and run as Ronin macros, never translated into a
-  similarly named native feature — `+forkit` is the standing example;
 - an ordinary request to delegate or plan may use the provider's native capability;
-- durable project truth goes to code, `docs/` or README; a reusable lesson may go through
-  Ronin's scoped memory tools; neither belongs only in a provider transcript.
+- durable project truth goes to code, `docs/`, README, or the Work Record's project
+  read/write tools; it does not belong only in a provider transcript.
 
 This keeps the protocol common without flattening Claude into Codex or Codex into Claude:
 each may reason in its own way, while either can recover the work from the same files,

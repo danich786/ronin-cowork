@@ -5,7 +5,7 @@ intervals do not overlap. Cron jobs are scheduled messages; they do not start an
 a Team.
 
 A **Request** is the plain message an Agent receives, exactly as if a person typed it to
-the Agent. A `+name:` macro is one optional kind of Request, never a requirement. **To** is
+the Agent. **To** is
 the Team lead by default or a named member. **When** may be once at a date and time, every
 day at a time, weekdays at a time, weekly on a day and time, or every N hours. Advanced
 accepts the house grammar. The form previews the next three runs. **Expires** is optional;

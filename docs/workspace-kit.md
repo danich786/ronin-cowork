@@ -69,7 +69,7 @@ Current load-bearing contracts:
   take consumer actions for their own header row (a tile head, a tab strip) — the Team
   page's C/T flip rides there, so no feature reaches into a Tile.
 - `createTerminalTileHost({ mode: 'full' | 'reduced' })` is the only terminal host. Full
-  mode preserves the genuine existing Tile—including header, Torii, macros, controls,
+  mode preserves the genuine existing Tile—including header, Torii, controls,
   terminal, tape and composer—unchanged.
 - `createChannelSurface({ services })` owns tabs and invocation. Services are
   `{ el, mount, enter, leave, destroy }`. Chat remains reserved and inert.

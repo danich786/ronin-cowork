@@ -216,8 +216,8 @@ async function closeDeskWithOptions(
     const who = blocking.length === 1 ? `session ${blocking[0]} is` : `sessions ${blocking.join(', ')} are`;
     // A session's birth desk ends with the session — its shell was opened inside the
     // worktree at launch and the harness keeps it there, so "leave" is not a thing it can
-    // do (owner, 2026-09-09: stay, or go with tejun-harakiri; never one without the other).
-    return { desk: st, action: 'kept', reason: `${who} running inside ${st.worktree}: a session's birth desk ends with the session — tejun-harakiri from inside it, or archive the session, then close` };
+    // do (owner, 2026-09-09: stay, or go with session_end; never one without the other).
+    return { desk: st, action: 'kept', reason: `${who} running inside ${st.worktree}: a session's birth desk ends with the session — session_end from inside it, or archive the session, then close` };
   }
   signal?.throwIfAborted();
   if (withSession && stopWithSession) await runtime.stop(withSession);

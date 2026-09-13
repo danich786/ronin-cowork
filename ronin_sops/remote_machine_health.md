@@ -31,14 +31,14 @@ same session, and including the numbers a person quotes you from yesterday.
 
 ```sh
 free -h                  # `available` is the number that matters, not `free`
-uptime                   # load, against the core count from tejun-survey
+uptime                   # load, against the core count from ronin-host inspect
 /usr/sbin/swapon --show  # empty output means no swap at all
 df -h /                  # room to work in
 ls /var/run/reboot-required   # exists = the package manager wants a reboot
 ps -eo pid,etime,rss,args --sort=-rss | head -20
 ```
 
-`tejun-survey` for what this box is and what space it has. `tejun-account` for who the
+`ronin-host inspect` for what this box is and what space it has. `ronin-host account` for who the
 install runs as. `bin/ronin-store --all` for where every store resolves — **never spell a
 store path by hand**. `bin/ronin-doctor` turns several of these into findings that name
 their own remedy. If those tools are not on PATH, Ronin Services is not installed here:
@@ -77,7 +77,7 @@ first: a real ceiling there is the truth about this process's world.
 ```
 
 `ronin-doctor` asks the same question every run and raises a finding when the answer is
-none; `tejun-survey` reports it beside the RAM. If you were sent here by either, this is
+none; `ronin-host inspect` reports it beside the RAM. If you were sent here by either, this is
 the section they meant.
 
 **What "none" means.** Swap is disk the kernel uses as overflow for memory. When RAM fills

@@ -57,11 +57,11 @@ export function buildTileMore() {
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
     const wasOpen = menu.classList.contains('open');
-    // Every rival first. ⚡'s macro list and 📄's doc list anchor to the same corner of the
+    // Every rival first. The document list anchors to the same corner of the
     // same header, so two open at once is two panels on one spot; and a second tile's メ is
     // a drop describing a session you are no longer looking at.
     closeTileMore();
-    document.querySelectorAll('.tmac.open, .tdocs.open').forEach((m) => m.classList.remove('open'));
+    document.querySelectorAll('.tdocs.open').forEach((m) => m.classList.remove('open'));
     if (wasOpen) return; // the click that closes is the click on メ itself
     menu.classList.add('open');
     btn.setAttribute('aria-expanded', 'true');

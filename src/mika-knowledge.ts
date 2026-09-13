@@ -145,7 +145,6 @@ async function resolvedEntries(nodes: MikaTaxonomyNode[], options: MikaKnowledge
       markdownFiles(ownerRoots[node.root] ?? ''),
     ]);
     const names = [...new Set([...stock.keys(), ...owner.keys()])]
-      .filter((name) => !(node.root === 'ronin_catalogs' && name === 'MIKA_MACROS.md'))
       // Her own house folder is read whole at birth, never indexed as a source.
       .filter((name) => !(node.root === 'ronin_session_boot' && name.startsWith('house/mika/')))
       .sort((a, b) => Buffer.from(a).compare(Buffer.from(b)));

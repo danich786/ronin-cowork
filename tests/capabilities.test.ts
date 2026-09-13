@@ -184,16 +184,16 @@ test('the folder is the catalog: an owner file shadows a stock name whole, a new
 
 test('the stock capability documents are well-formed and carry no retired vocabulary', async () => {
   const files = (await readdir(STOCK)).filter((name) => name.endsWith('.md') && name !== 'README.md').sort();
-  assert.deepEqual(files, ['edges.md', 'machine-settings.md', 'session.md', 'team-lead.md', 'work-record.md', 'worktree-desk.md']);
+  assert.deepEqual(files, ['edges.md', 'gbrain.md', 'machine-settings.md', 'perplexity.md', 'ronin-host.md', 'ronin-services.md', 'session.md', 'team-lead.md', 'trello.md', 'work-record.md', 'worktree-desk.md']);
   const rows = await withUserCatalogs(() => listCapabilities());
-  assert.deepEqual(rows.map((item) => item.name), ['edges', 'work-record', 'session', 'worktree-desk', 'machine-settings', 'team-lead'], 'ordered by `order`');
+  assert.deepEqual(rows.map((item) => item.name), ['edges', 'work-record', 'session', 'worktree-desk', 'machine-settings', 'team-lead', 'ronin-host', 'ronin-services', 'gbrain', 'trello', 'perplexity'], 'ordered by `order`');
   for (const item of rows) {
     const text = await readFile(item.file, 'utf8');
     assert.ok(item.label && item.blurb, `${item.name} has a label and a blurb`);
     assert.ok(CAPABILITY_CLASSES.includes(item.class), `${item.name} class`);
     assert.doesNotMatch(text, /tejun|MACROS\.md|ACTIONS\.md|\+\w+:/, `${item.name} teaches no retired name`);
     assert.doesNotMatch(text, /initial revision|revision-aware|revision counter is|reclaim|park a project|a verdict of|the decider/i, `${item.name} carries no retired project field`);
-    for (const requirement of item.requires) assert.equal(checkRequirement(requirement, { ...none, everything: false, arrangement: 'managed', installations: new Set(['x']), behaviours: new Set(['x']), connected: true, campaign: true, team: true, lead: true }), '', `${item.name} requires ${requirement}`);
+    for (const requirement of item.requires) assert.equal(checkRequirement(requirement, { ...none, everything: false, arrangement: 'managed', installations: new Set(['x', 'ronin_services']), behaviours: new Set(['x', 'ronin_host', 'gbrain', 'trello', 'perplexity']), connected: true, campaign: true, team: true, lead: true }), '', `${item.name} requires ${requirement}`);
     for (const tool of item.tools) assert.match(tool.name, /^[a-z][a-z0-9_-]*$/, `${item.name}: ${tool.command}`);
   }
   const by = Object.fromEntries(rows.map((item) => [item.name, item]));
@@ -203,6 +203,17 @@ test('the stock capability documents are well-formed and carry no retired vocabu
   assert.deepEqual(by['worktree-desk'].requires, ['arrangement:managed']);
   assert.deepEqual(by['machine-settings'].requires, ['campaign']);
   assert.deepEqual(by['team-lead'].requires, ['lead']);
+  assert.deepEqual(by['ronin-host'].requires, ['behaviour:ronin_host']);
+  assert.deepEqual(by['ronin-services'].requires, ['installation:ronin_services']);
+  assert.deepEqual(by.gbrain.requires, ['behaviour:gbrain']);
+  assert.deepEqual(by.trello.requires, ['behaviour:trello', 'connected']);
+  assert.deepEqual(by.perplexity.requires, ['behaviour:perplexity', 'connected']);
+  for (const name of ['gbrain', 'trello', 'perplexity']) assert.deepEqual(by[name].tools, []);
+  assert.deepEqual(by['ronin-services'].tools.map((tool) => tool.name), ['mika']);
+  assert.doesNotMatch(await readFile(by.gbrain.file, 'utf8'), /\bmemor(?:y|ies)\b|tejun-(?:recall|remember)/i,
+    'GBrain remains authority-only teaching with no retired memory vocabulary');
+  assert.deepEqual(by['ronin-host'].tools.map((tool) => tool.name), ['ronin-host']);
+  assert.equal(by['ronin-host'].tools[0]?.help, 'ronin-host --help');
   // Lead rulings, 2026-09-13: project create is first-class and a priority; session_create
   // is the lead's, never universal; session_check and session_set stay base.
   const priority = (name: string) => by[name].tools.filter((tool) => tool.priority).map((tool) => tool.command);
@@ -216,4 +227,21 @@ test('the stock capability documents are well-formed and carry no retired vocabu
   assert.match(await readFile(by['work-record'].file, 'utf8'), /refuses an ID that\s+already exists/);
   assert.match(await readFile(by['work-record'].file, 'utf8'), /`exit`[\s\S]*`none` · `agent` · `lead` · `user`[\s\S]*`status`[\s\S]*`green` · `yellow` · `red`/);
   assert.match(await readFile(by['team-lead'].file, 'utf8'), /Assign and return/);
+  const machine = await readFile(by['machine-settings'].file, 'utf8');
+  assert.match(machine, /canonical Campaign\/provider model\s+catalog used by the UI dropdowns/);
+  assert.doesNotMatch(machine, /gpt-|claude-|gemini-|sonnet|opus/i, 'the capability carries no maintained model IDs');
+});
+
+test('optional capabilities are absent until their individual predicates hold', async () => {
+  const rows = await withUserCatalogs(() => listCapabilities());
+  const bare = await resolveCapabilities({ ...none, campaign: true }, { rows, present: async () => true });
+  for (const name of ['ronin-host', 'ronin-services', 'gbrain', 'trello', 'perplexity']) {
+    assert.equal(bare.find((row) => row.name === name)?.selected, false);
+  }
+  const selected = await resolveCapabilities({ ...none, campaign: true, connected: true,
+    installations: new Set(['ronin_services']), behaviours: new Set(['ronin_host', 'gbrain', 'trello', 'perplexity']) },
+  { rows, present: async () => true });
+  for (const name of ['ronin-host', 'ronin-services', 'gbrain', 'trello', 'perplexity']) {
+    assert.equal(selected.find((row) => row.name === name)?.selected, true);
+  }
 });

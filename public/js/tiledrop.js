@@ -42,7 +42,7 @@ export function makeDrop(glyph, title, kind) {
       // bigger half of it and reads as part of the button.
       word.addEventListener('click', () => ctl.click());
       // CAPTURE phase, deliberately. ⚡ stops propagation in its own handler (it opens
-      // the .tmac menu against the same anchor), so a bubble-phase listener here would
+      // the other menus against the same anchor), so a bubble-phase listener here would
       // never run and the drop would sit ON TOP of the menu it just opened.
       if (mode === 'door') row.addEventListener('click', () => close(), true);
     }
@@ -54,8 +54,8 @@ export function makeDrop(glyph, title, kind) {
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
     const wasOpen = menu.classList.contains('open');
-    // header is hoisted, so it is a rival exactly as ⚡'s macro list is.
-    document.querySelectorAll('.tdrop.open, .tmac.open, .tdocs.open').forEach((m) => m.classList.remove('open'));
+    // header is hoisted, so it is a rival to the other header menus.
+    document.querySelectorAll('.tdrop.open, .tdocs.open').forEach((m) => m.classList.remove('open'));
     if (wasOpen) return;
     // A control that hides itself (no ladder up, no context reading) must not leave
     // its word stranded on a row with nothing to tap. CSS `:has()` does this too;

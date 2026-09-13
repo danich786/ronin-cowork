@@ -16,5 +16,5 @@ one case to stop and report on the Team wipeboard; do not create the missing bra
 worktree yourself.
 
 After the final hand-in, status must say `CERTIFIED CLEAN`: no unsaved files and every
-commit on the Team line. Stay parked unless told to end; `tejun-harakiri` closes all
+commit on the Team line. Stay parked unless told to end; `session_end` closes all
 certified desks and ends the Agent together.

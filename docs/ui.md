@@ -243,7 +243,7 @@ next to a predicate that stops it costing anything while its surface is hidden.
 |---|---|---|
 | session set (`S.sessions`) | `reconcileSessions` (`api.js`) — the only writer | boot fetch (`main.js`) · `/events` push (`events.js`, which also owns births/deaths/chips) · visibilitychange + bfcache `pageshow` (`layout.js`) · post-mutation `fetchSessions()` calls |
 | roster/status data (`homeData`) | `refreshHome` (`home.js`) — inflight-guarded, fault-keeping | 8s poll while a home pane is visible (`layout.js`) · visibilitychange · every `showHome` · post-mutation refreshes |
-| catalogs (macros, projects, presets, saved launches) | their `load*` in `home.js` | boot, and the two panes that edit them re-load after a write |
+| catalogs (projects, presets, saved launches) | their `load*` in `home.js` | boot, and the panes that edit them re-load after a write |
 | per-tile readings (ctx, tegami, control) | the tile's own `refresh*` | 30s poll for visible connected tiles (`layout.js`) · connect · post-write re-read |
 | pane data (wipeboard, docs list, roots, koshi, stats) | the pane module | its own gated poll (2s/2s/15s) or `enter()` — each owner is the file the surface lives in |
 | tile bytes | `TileWire` (`tilewire.js`) | the socket; reconnect/backoff lives there and nowhere else |
@@ -286,10 +286,9 @@ a `destroy()` owner at that moment, not speculatively.
   than being hand-rolled at the call site for the fourth time.
   **Weighed again the same day and still not restored.** メ on the tile header now drops
   the six controls that used to end the row (`public/js/tilemore.js`, docs/tile.md); it
-  follows ⚡'s grammar, and the reason is mechanical rather than taste. The drops that
-  hang off a tile header close each other with a `.open` **class** sweep — ⚡'s own, and
-  the phone's — while `popover()` hid with the `hidden` **attribute**, so a drop no sweep
-  can see would open on top of the macro menu six pixels to its left. Restoring the
+  follows the adjacent header-menu grammar, and the reason is mechanical rather than
+  taste. The drops that hang off a tile header close each other with a `.open` **class**
+  sweep, while `popover()` hid with the `hidden` **attribute**. Restoring the
   primitive for one of two adjacent header dropdowns and not the other would be a third
   convention, not a shared one. What that call site DOES carry is the half of `popover()`
   that was about access: `aria-haspopup` / `aria-expanded` on the opener, and focus back
@@ -402,8 +401,7 @@ words go and the width goes with them (a genuine shell change, so a `@media` que
   over the cards underneath (owner: *"its dumb to have the hover description covering the
   button description"*). Where the text is still worth keeping it moves to `aria-label`,
   never back to `title` — `tips.js` takes over any `title` it finds, so a title **is** a
-  pop-up here by definition. The macro invocation (`+name:`) lives there now; it stays off
-  the face by the earlier ruling and out of a box by this one.
+  pop-up here by definition.
 - **The Commons room tabs carry no hover help at all**. A tab's label
   already says what its room is, so a panel restating it in a sentence was cost with no
   reader — and it was landing over the strip it described. The registry's `hint` column

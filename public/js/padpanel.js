@@ -1,57 +1,10 @@
 /* part of the ronin-cowork client — see js/README.md */
-import { macroData } from './home.js';
-import { PAD_CONTROLS, PAD_KEYS, PAD_LAYOUT, PAD_WIDGETS, firePadSend, padBinds, savePadBinds } from './pad.js';
-import { field, sheet, toast } from './ui.js';
+import { PAD_CONTROLS, PAD_KEYS, PAD_LAYOUT, PAD_WIDGETS, padBinds, savePadBinds } from './pad.js';
+import { sheet, toast } from './ui.js';
 import { toClipboard } from './panels.js';
 import { S } from './state.js';
 import { WL_COMBOS, WL_ENCODER, WL_JOYSTICK, WL_RONIN_KEYMAP, wlConnect, wlDownload, wlWriteFile } from './weblink.js';
 import { t } from './lexicon.js';
-
-export function buildPadAsk() {
-  let cur = null; // the binding being asked about
-  const dlg = sheet({ id: 'padask', cls: 'pa-card', label: t('pad.ask_sheet', 'Macro arguments'), onClose: () => (cur = null) });
-  const label = document.createElement('code');
-  const inp = document.createElement('input');
-  inp.type = 'text';
-  inp.placeholder = t('pad.ask_placeholder', 'Enter sends · Esc cancels');
-  inp.autocapitalize = 'off';
-  inp.autocomplete = 'off';
-  inp.spellcheck = false;
-  // The placeholder tells you the KEYS, not what the box is for — so the box gets a
-  // real name of its own. ui.field is display:contents and its message line is
-  // :empty-hidden, so the row is the same two items it always was.
-  const inpField = field(inp, { label: t('pad.ask_label', 'macro arguments') });
-  dlg.card.append(label, inpField.el);
-
-  const open = (bind) => {
-    cur = bind;
-    label.textContent = '+' + bind.macro + ':';
-    inp.value = bind.args || '';
-    dlg.open();
-    // THE ONE SURFACE THAT OVERRIDES ui.sheet's "never focus a field on a coarse
-    // pointer". That rule protects sheets you must READ before typing — the iOS
-    // keyboard covers them. Here the sheet is nothing BUT the field: a pad press that
-    // pops a box you then have to tap to type in is a press wasted. select() so the
-    // remembered args are replaced by typing and kept by a bare ↵.
-    inp.focus();
-    inp.select();
-  };
-  inp.addEventListener('keydown', (e) => {
-    // Escape and Tab are the SHEET's — ui.sheet dismisses and contains them on the
-    // sheet root, which is the ancestor of this box, so those two alone are let out.
-    // Every other keystroke stops here: this prompt floats over a live terminal and
-    // over the document-level Escape listeners (the tile ⚡ menu, the touch drops, the
-    // help box), and a character meant for the args must reach none of them.
-    if (e.key === 'Escape' || e.key === 'Tab') return;
-    e.stopPropagation();
-    if (e.key !== 'Enter') return;
-    const b = cur;
-    const args = inp.value.trim();
-    dlg.close(); // closing first hands focus back to whatever the pad was pressed from
-    if (b) firePadSend(b.macro, args, b.session);
-  });
-  S.padAsk = { open, isOpen: dlg.isOpen };
-}
 
 export function buildPadPanel() {
   const dlg = sheet({
@@ -109,37 +62,15 @@ export function buildPadPanel() {
   const editTitle = document.createElement('b');
   const row1 = document.createElement('div');
   row1.className = 'pad-erow';
-  const macroSel = document.createElement('select');
-  const argsInp = document.createElement('input');
-  argsInp.type = 'text';
-  argsInp.placeholder = t('pad.args_placeholder', 'args (k=v …) — optional');
-  argsInp.autocapitalize = 'off';
-  argsInp.autocomplete = 'off';
-  argsInp.spellcheck = false;
-  row1.append(macroSel, argsInp);
+  const keySel = document.createElement('select');
+  row1.append(keySel);
   const row2 = document.createElement('div');
   row2.className = 'pad-erow';
-  const sessSel = document.createElement('select');
-  const askLbl = document.createElement('label');
-  askLbl.className = 'pad-asklbl';
-  const askChk = document.createElement('input');
-  askChk.type = 'checkbox';
-  askLbl.append(askChk, document.createTextNode(' ' + t('pad.ask_on_press', 'ask on press')));
-  askLbl.title = t('pad.ask_on_press_title', 'Every press pops a prompt for the args (e.g. buildout) — Enter fires');
   const saveBtn = document.createElement('button');
   saveBtn.textContent = t('pad.save', 'Save');
-  row2.append(sessSel, askLbl, saveBtn);
+  row2.append(saveBtn);
   edit.append(editTitle, row1, row2);
   dlg.card.appendChild(edit);
-
-  // Macro bindings use args/target/ask; ⌨ key bindings need none of them.
-  const syncEditor = () => {
-    const isMacro = macroSel.value && !macroSel.value.startsWith('key:');
-    argsInp.style.display = isMacro ? '' : 'none';
-    sessSel.style.display = isMacro ? '' : 'none';
-    askLbl.style.display = isMacro ? '' : 'none';
-  };
-  macroSel.addEventListener('change', syncEditor);
 
   let editing = null; // chord being edited
   const closeEditor = () => {
@@ -150,44 +81,23 @@ export function buildPadPanel() {
   const openEditor = (chord) => {
     editing = chord;
     editTitle.textContent = t('pad.key_title', 'key {chord}', { chord: pretty(chord) });
-    macroSel.innerHTML = '';
-    macroSel.add(new Option(t('pad.unbound', '— unbound —'), ''));
-    const gm = document.createElement('optgroup');
-    gm.label = t('pad.group_macros', '⚡ macros');
-    // An <option> holds no child element, so the provenance mark rides in the text
-    // (js/provenance.js keeps the glyphs; this is the one surface that cannot use it).
-    for (const m of macroData || [])
-      gm.appendChild(new Option(m.origin === 'user' ? `${m.shadowed ? '◈' : '◆'} ${m.name}` : m.name, m.name));
-    macroSel.appendChild(gm);
+    keySel.innerHTML = '';
+    keySel.add(new Option(t('pad.unbound', '— unbound —'), ''));
     const gk = document.createElement('optgroup');
     gk.label = t('pad.group_keys', '⌨ keys (to the active tile)');
     for (const [id, k] of Object.entries(PAD_KEYS())) gk.appendChild(new Option(k.label, 'key:' + id));
-    macroSel.appendChild(gk);
-    sessSel.innerHTML = '';
-    sessSel.add(new Option(t('pad.active_tile', '▸ active tile'), ''));
-    for (const s of S.sessions) sessSel.add(new Option(s.name, s.name));
+    keySel.appendChild(gk);
     const b = padBinds[chord];
-    const want = b ? (b.key ? 'key:' + b.key : b.macro) : '';
-    macroSel.value = [...macroSel.options].some((o) => o.value === want) ? want : '';
-    argsInp.value = (b && b.args) || '';
-    askChk.checked = !!(b && b.ask);
-    sessSel.value = b && [...sessSel.options].some((o) => o.value === b.session) ? b.session : '';
-    syncEditor();
+    const want = b?.key ? 'key:' + b.key : '';
+    keySel.value = [...keySel.options].some((o) => o.value === want) ? want : '';
     edit.classList.add('open');
     cells.forEach((c, k) => c.classList.toggle('editing', k === chord));
   };
   saveBtn.addEventListener('click', () => {
     if (!editing) return;
-    const v = macroSel.value;
+    const v = keySel.value;
     if (!v) delete padBinds[editing]; // "— unbound —" + Save clears the key
     else if (v.startsWith('key:')) padBinds[editing] = { key: v.slice(4) };
-    else
-      padBinds[editing] = {
-        macro: v,
-        args: argsInp.value.trim(),
-        session: sessSel.value,
-        ...(askChk.checked ? { ask: true } : {}),
-      };
     savePadBinds();
     renderCaps();
     closeEditor();
@@ -219,13 +129,11 @@ export function buildPadPanel() {
   const decorate = (btn, chord) => {
     const b = padBinds[chord];
     btn.classList.toggle('bound', !!b);
-    const cap = b ? (b.key ? (PAD_KEYS()[b.key] || { label: b.key }).label : b.macro + (b.ask ? '…' : '')) : '·';
+    const cap = b ? (PAD_KEYS()[b.key] || { label: b.key }).label : '·';
     btn.querySelector('b').textContent = cap;
     btn.title = !b
       ? t('pad.unbound_tip', 'unbound — tap to bind')
-      : b.key
-        ? cap + ' → ' + t('pad.active_tile_word', 'active tile')
-        : `+${b.macro}${b.ask ? ': ' + t('pad.asks_on_press', '(asks on press)') : b.args ? ': ' + b.args : ''} → ${b.session || t('pad.active_tile_word', 'active tile')}`;
+      : cap + ' → ' + t('pad.active_tile_word', 'active tile');
   };
   const renderCaps = () => {
     cells.forEach((btn, chord) => decorate(btn, chord));
@@ -234,7 +142,7 @@ export function buildPadPanel() {
     for (const [w, el] of widgets) {
       const mine = Object.keys(PAD_CONTROLS).filter((c) => PAD_CONTROLS[c] === w && padBinds[c]);
       if (!mine.length) continue;
-      const what = mine.map((c) => (PAD_KEYS()[padBinds[c].key] || { label: padBinds[c].macro || c }).label).join(' · ');
+      const what = mine.map((c) => (PAD_KEYS()[padBinds[c].key] || { label: c }).label).join(' · ');
       el.title = PAD_WIDGETS()[w][1] + ' — ' + what;
     }
     extraCells.clear();
@@ -476,7 +384,7 @@ export function buildPadPanel() {
     // Name what it's bound to, not just the code — makes "which direction did
     // that flick fire?" answerable by looking, without any guessing.
     const b = padBinds[chord];
-    const what = b ? (b.key ? (PAD_KEYS()[b.key] || {}).label : '⚡ ' + b.macro) : '';
+    const what = b ? (PAD_KEYS()[b.key] || {}).label : '';
     last.textContent = pretty(chord) + (what ? ' · ' + what : '');
     // Encoder/joystick codes light their widget; keys light their square.
     const btn = cells.get(chord) || extraCells.get(chord) || (PAD_CONTROLS[chord] && widgets.get(PAD_CONTROLS[chord]));
