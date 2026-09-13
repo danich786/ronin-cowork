@@ -6,6 +6,9 @@ import {
   PROJECT_STAGES,
   PROJECT_STATUSES,
 } from '../src/projects.js';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 
 const project = {
   id: 'virtual-kanban/7',
@@ -35,4 +38,25 @@ test('malformed projects are absent instead of becoming partial cards', () => {
   assert.equal(normalizeProject({ ...project, status: 'blue' }), null);
   assert.equal(normalizeProject({ ...project, ladder: [{ stage: 'BUILDING', legs: [{ title: 'x', done: 'yes' }] }] }), null);
   assert.equal(normalizeProject({ ...project, evidence: ['commit ok', 7] }), null);
+});
+
+test('the house places and returns whole projects and notices only after each rename', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ronin-project-move-'));
+  process.env.RONIN_SESSION_DIR = root;
+  const { moveTegamiProject } = await import(`../src/tegami.js?move=${Date.now()}`);
+  const dir = path.join(root, 'worker');
+  const file = path.join(dir, 'tegami.md');
+  await fs.mkdir(dir, { recursive: true });
+  await fs.writeFile(file, '# TEGAMI\n\n```json\n{"objective":"keep","projects":[],"ladder":[]}\n```\n');
+  const notices: string[] = [];
+  const notify = async (_session: string, text: string) => { notices.push(text); };
+
+  const placed = await moveTegamiProject({ direction: 'place', session: 'worker', project }, notify);
+  assert.deepEqual(placed, { project, projectsRemaining: 1 });
+  assert.deepEqual(notices, ['check your work record']);
+  assert.match(await fs.readFile(file, 'utf8'), /"objective": "keep"/);
+
+  const returned = await moveTegamiProject({ direction: 'return', session: 'worker', projectId: project.id }, notify);
+  assert.deepEqual(returned, { project, projectsRemaining: 0 });
+  assert.deepEqual(notices, ['check your work record', 'check your work record']);
 });
