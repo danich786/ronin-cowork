@@ -26,6 +26,7 @@ class FakeNode {
   set textContent(value) { this._text = String(value ?? ''); this.children = []; }
 }
 globalThis.Node = FakeNode;
+globalThis.HTMLElement = FakeNode; // the kit's createField accepts a control by instanceof
 globalThis.document = { createElement: (tag) => new FakeNode(tag), createDocumentFragment: () => new FakeNode('#fragment'), querySelector: () => null, head: { append() {} }, addEventListener() {}, removeEventListener() {} };
 globalThis.window = { matchMedia: () => ({ matches: false }), addEventListener() {}, removeEventListener() {}, location: { hash: '' } };
 
@@ -93,22 +94,28 @@ test('every question is an ERABI stone whose reading is the saved answer', async
   assert.equal(readingOf(form, 'launch_mode'), 'Dangerously');
 });
 
-test('the Team’s facts come first — ID, Title, Kind on the head line, then Purpose — and the defaults section follows', async () => {
+test('the tab is the launch forms’ format: step 1 Team (ID · Title · Kind, then Purpose), step 2 New Agent defaults', async () => {
   serve(seedWith(['ronin_host']));
   const host = new FakeNode('div');
   renderTeamConfiguration(host, roster);
   const form = await painted(host);
-  const head = form.one('tw-config-head');
-  assert.ok(head, 'the head line exists');
-  assert.equal(head.one('tw-config-reading').textContent, 'Team IDjobber');
-  assert.ok(head.one('tw-config-field').one('wk-field-control'), 'the title entry wears the kit’s control class');
-  assert.ok(head.all('ask-stone').some((node) => node.dataset.askKey === 'kind'), 'Kind is a stone on the head line');
-  const entries = form.all('tw-config-field').map((node) => [node.children[0].textContent, node.children[1].tagName, node.children[1].value]);
-  assert.deepEqual(entries, [['Title', 'INPUT', 'Jobber'], ['Purpose', 'TEXTAREA', 'Polish.']], 'title and purpose; no references — that field left the shape');
-  const section = form.one('tw-config-section');
-  assert.equal(section.one('tw-config-section-head').textContent, 'New Agent defaults');
-  assert.deepEqual(section.all('ask-group-head').map((node) => node.textContent), ['Where it works', 'Model', 'Mandate', 'Runtime'], 'everything under Purpose is a New Agent default');
-  assert.equal(form.children.indexOf(head) < form.children.indexOf(section), true, 'facts above defaults');
+  assert.deepEqual(form.all('fs-step').map((step) => step.one('fs-step-head').textContent), ['1Team', '2New Agent defaults'], 'two numbered steps, as New Agent and New Team draw theirs');
+  const identity = form.one('tw-config-identity');
+  assert.ok(identity, 'the identity line exists');
+  const labels = identity.all('wk-field-label').map((node) => node.textContent);
+  assert.deepEqual(labels, ['Team ID', 'Title'], 'the kit’s labelled fields, the same furniture as the forms');
+  assert.equal(identity.all('wk-field-control')[0].value, 'jobber');
+  assert.equal(identity.all('wk-field-control')[0].readOnly, true, 'the ID is read, not edited');
+  assert.equal(identity.all('wk-field-control')[1].value, 'Jobber');
+  assert.ok(identity.all('ask-stone').some((node) => node.dataset.askKey === 'kind'), 'Kind is a stone on the identity line');
+  assert.equal(form.all('ask').every((node) => node.dataset.density === 'tight'), true, 'the forms’ tight density');
+  const purpose = form.all('wk-field').find((node) => node.one('wk-field-label')?.textContent === 'Purpose');
+  assert.equal(purpose.one('wk-field-control').tagName, 'TEXTAREA');
+  assert.equal(purpose.one('wk-field-control').value, 'Polish.');
+  const defaults = form.all('fs-step')[1];
+  assert.match(defaults.one('fs-step-help').textContent, /each new Agent on this Team starts from/);
+  assert.deepEqual(defaults.all('ask-group-head').map((node) => node.textContent), ['Where it works', 'Model', 'Mandate', 'Launch mode'], 'everything under Purpose is a New Agent default');
+  assert.equal(form.all('wk-field-label').some((node) => /References/.test(node.textContent)), false, 'no references — that field left the shape');
   for (const node of form.walk()) {
     assert.notEqual(node.tagName, 'SELECT', 'no native select');
     assert.notEqual(node.type, 'checkbox', 'no checkbox');

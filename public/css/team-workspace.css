@@ -41,22 +41,14 @@
   .team-roster-detail .home-maxrow, .team-roster-detail .home-group-add { display: none; }
   .home-grp-actions.tile-head { min-height: 0; padding: 0; border: 0; background: transparent; flex-wrap: nowrap; }
   .tw-config { display: flex; flex-direction: column; gap: var(--space-10); padding: var(--space-6) var(--space-7); overflow-y: auto; }
-  /* one column, one rhythm: the head line, then the groups, each full width; nothing changes density after the first line */
-  .tw-config-form { display: flex; flex-direction: column; gap: var(--space-6); min-width: 0; }
-  .tw-config-head { display: flex; flex-wrap: wrap; gap: var(--space-4) var(--space-8); align-items: flex-start; }
-  .tw-config-head > .tw-config-reading { flex: 0 1 auto; }
-  .tw-config-head > .tw-config-field { flex: 1 1 calc(var(--space-12) * 5); min-width: 0; }
-  .tw-config-head > .ask { flex: 0 0 auto; } /* Kind's stone sits on the head line; its tray is hosted by the line and spans it */
-  .tw-config-field, .tw-config-reading { display: flex; flex-direction: column; gap: var(--space-2); color: var(--muted); }
-  /* the entries wear the kit's entry furniture — the same well, edge and radius as ERABI's line controls (ask.css .ask-extra input) */
-  .tw-config-field input, .tw-config-field textarea { width: 100%; box-sizing: border-box; border: var(--edge) solid var(--line-2); border-radius: var(--radius-xs); background: var(--well); color: var(--fg); padding: var(--space-3) var(--space-4); font: inherit; }
-  /* New Agent defaults: a ruled section under the Team's own facts */
-  .tw-config-section { display: grid; gap: var(--space-4); padding-top: var(--space-6); border-top: var(--edge) solid var(--line-2); }
-  .tw-config-section-head { margin: 0; color: var(--fg-strong); font-size: var(--form-key); font-weight: 650; }
-  .tw-config-section > .tw-config-note { margin-bottom: var(--space-2); }
-  .tw-config-field textarea { min-height: calc(var(--space-12) * 3); resize: vertical; }
-
-  .tw-config-reading output { color: var(--fg-strong); padding: var(--space-3) 0; }
+  /* The tab is drawn on the launch forms' furniture (launch-forms.css: .ntf-form, .fs-step, .wk-field);
+     only the identity line is its own: Team ID · Title · Kind, one height, the Kind tray hosted by the line. */
+  .tw-config-form { min-width: 0; }
+  .tw-config-identity { display: flex; flex-wrap: wrap; gap: var(--space-4) var(--space-6); align-items: flex-end; }
+  .tw-config-identity > .wk-field { flex: 1 1 calc(var(--space-12) * 2.5); min-width: 0; } /* the pair shares a line with Kind when the workspace is wide; at the commons’ own width Kind drops beneath, as on New Team */
+  .tw-config-identity > .wk-field > .wk-field-control { box-sizing: border-box; height: 40px; }
+  .tw-config-identity > .ask { flex: 0 0 auto; }
+  .tw-config-id { color: var(--muted); }
   .tw-config-actions { display: flex; justify-content: flex-end; align-items: center; gap: var(--space-4); }
   .tw-config-status, .tw-config-empty { color: var(--muted); }
   .tw-config-form > .ask { max-width: 100%; }
@@ -67,10 +59,9 @@
   .tw-worktrees-mode small { color: var(--muted); line-height: 1.4; }
 
   .tw-config, .league-team-edit-content { font-size: var(--form-input); }
-  .tw-config-field > span, .tw-config-reading > span, .tw-worktrees-mode b { font-size: var(--form-key); }
-  .tw-config-section-head { font-size: var(--form-key); }
-  .tw-config-field input, .tw-config-field textarea, .tw-config-field select, .tw-config-reading output, .tw-worktrees-mode strong, .tw-config-check span, .league-team-member-words strong, .league-team-add select, .tw-config-actions { font-size: var(--form-input); }
-  .tw-config-note, .tw-config-field small, .tw-worktrees-mode small, .tw-config-status, .league-team-member-words span, .league-team-empty { font-size: var(--form-note); }
+  .tw-worktrees-mode b { font-size: var(--form-key); }
+  .tw-worktrees-mode strong, .tw-config-check span, .league-team-member-words strong, .league-team-add select, .tw-config-actions { font-size: var(--form-input); }
+  .tw-config-note, .tw-worktrees-mode small, .tw-config-status, .league-team-member-words span, .league-team-empty { font-size: var(--form-note); }
   .tw-config-check { display: flex; align-items: center; gap: var(--space-3); color: var(--fg-strong); }
   .tw-config-check input { accent-color: var(--accent); }
 
