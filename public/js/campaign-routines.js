@@ -3,7 +3,7 @@
  * ROUTINES — installs and switches on one page (owner, 2026-09-03).
  *
  * The catalog supplies the rows; campaign_config owns the on/off answer. Ronin Services
- * is both an install and a Routine, so its row carries the install as well: what is on
+ * is both an install and a Installation, so its row carries the install as well: what is on
  * this machine, whether the box is activated, and the whole activation flow inline —
  * enter an email, send, and the row collapses to "waiting for your confirmation" with
  * resend and cancel; activated, it says so. No separate card, no separate surface, and
@@ -24,9 +24,9 @@ const el = (tag, cls, text) => {
 };
 const bucket = (value) => value && typeof value === 'object' && !Array.isArray(value) ? value : {};
 
-export function completeRoutineMap(catalog, stored) {
+export function completeInstallationMap(catalog, stored) {
   const current = bucket(stored);
-  return Object.fromEntries(catalog.map((routine) => [routine.name, current[routine.name] === true]));
+  return Object.fromEntries(catalog.map((installation) => [installation.name, current[installation.name] === true]));
 }
 
 /** What Ronin Services adds — the owner's list, not a closed one. */
@@ -42,9 +42,9 @@ function servicesSell() {
   ];
 }
 
-export function createRoutinesSurface(campaign) {
+export function createInstallationsSurface(campaign) {
   const { createSurface, createNotice } = WorkspaceKit.primitives;
-  const surface = createSurface({ label: t('campaign_view.routines', 'Routines and Installs'), className: 'cv-surface' });
+  const surface = createSurface({ label: t('campaign_view.installations', 'Installations'), className: 'cv-surface' });
   const body = el('div', 'cv-body');
   surface.content.append(body);
   let catalog = [];
@@ -52,13 +52,13 @@ export function createRoutinesSurface(campaign) {
   let activation = null;  // /api/services/activation — stage, masked email
   let timer = null;
 
-  const available = (routine) => (routine.mcp || []).every((name) => !Array.isArray(S.services) || S.services.includes(name));
+  const available = (installation) => (installation.mcp || []).every((name) => !Array.isArray(S.services) || S.services.includes(name));
   const save = async (name, on, notice) => {
     const row = campaign();
     if (!row) return;
-    const routines = { ...completeRoutineMap(catalog, row.config?.agent_defaults?.routines), [name]: on };
+    const installations = { ...completeInstallationMap(catalog, row.config?.installations), [name]: on };
     notice.set('info', t('campaign.saving', 'saving…'));
-    const result = await saveCampaign(row.id, { config: { agent_defaults: { ...bucket(row.config?.agent_defaults), routines } } });
+    const result = await saveCampaign(row.id, { config: { installations } });
     notice.set(result.ok ? 'success' : 'failed', result.ok ? t('settei.saved', 'saved') : result.message);
     if (result.ok) paint();
   };
@@ -86,7 +86,7 @@ export function createRoutinesSurface(campaign) {
     const parked = installed?.services?.parked || [];
     if (parked.length) block.append(el('p', 'cv-choice-why', t('campaign_view.svc_parked', 'Parked parts: {parts}.', {
       parts: parked.map((part) => {
-        const reason = String(part.reason || `${part.routine || 'Routine'} is off`)
+        const reason = String(part.reason || `${part.installation || 'Installation'} is off`)
           .replace(new RegExp(`^${part.name} is `, 'i'), '')
           .replace(/, to be refactored$/i, '');
         return `${part.name} — ${reason}`;
@@ -138,26 +138,29 @@ export function createRoutinesSurface(campaign) {
     const row = campaign();
     if (!row) return surface.setState('empty', t('campaign_view.none_selected', 'No Campaign selected.'));
     surface.setState(null, '');
-    const values = completeRoutineMap(catalog, row.config?.agent_defaults?.routines);
+    const values = completeInstallationMap(catalog, row.config?.installations);
     const notice = createNotice();
-    body.append(el('p', 'cv-note', t('campaign_view.routines_help', 'What is installed on this machine, and what new Cowork Agents start with. The switches seed new Teams; a Team may replace them, and New Agent shows the resolved answer. Nothing already running changes.')));
-    for (const routine of catalog) {
+    body.append(el('p', 'cv-note', t('campaign_view.installations_help', 'What is installed and switched on for this system. Feature providers make their features available; nothing already running changes.')));
+    for (const installation of catalog) {
       const line = el('div', 'cv-choice');
       const words = el('div', 'cv-choice-pick');
-      words.append(el('span', 'cv-choice-name', routine.label || routine.name), el('p', 'cv-choice-why', routine.blurb || t('campaign_view.routine_no_description', 'No description supplied.')));
-      if (routine.name === 'ronin_worktrees') words.append(el('p', 'cv-choice-why', t('campaign_view.worktrees_routine_help', 'Worktrees give each Agent a separate working folder and branch, so file changes do not collide. They run only when both the Agent and repo have Worktrees on, and use the managed hand-in and Team-lead merge process.')));
-      if (routine.name === 'ronin_services') words.append(installBlock(notice));
-      const controls = el('div', 'cv-routine-control');
+      words.append(el('span', 'cv-choice-name', installation.label || installation.name), el('p', 'cv-choice-why', installation.blurb || t('campaign_view.routine_no_description', 'No description supplied.')));
+      if (installation.name === 'ronin_worktrees') words.append(el('p', 'cv-choice-why', t('campaign_view.worktrees_routine_help', 'Worktrees give each Agent a separate working folder and branch, so file changes do not collide. They run only when both the Agent and repo have Worktrees on, and use the managed hand-in and Team-lead merge process.')));
+      if (installation.name === 'ronin_services') words.append(installBlock(notice));
+      const controls = el('div', 'cv-installation-control');
       // The pill is the INSTALL fact. For Services: installed (its parts are here) or not; activation is said in the row, not here.
-      const ok = routine.name === 'ronin_services' ? (installed?.services?.parts || []).length > 0 : available(routine);
-      const word = routine.name === 'ronin_services'
+      const requirementsMet = (installation.requires || []).every((name) => values[name] === true);
+      const ok = installation.name === 'ronin_services' ? (installed?.services?.parts || []).length > 0 : available(installation) && requirementsMet;
+      const word = installation.name === 'ronin_services'
         ? (ok ? (installed?.services?.activated ? t('campaign_view.svc_pill_activated', 'Installed · activated') : t('campaign_view.svc_pill_installed', 'Installed')) : t('campaign_view.svc_pill_absent', 'Not installed'))
         : (ok ? t('campaign_view.available', 'Available') : t('campaign_view.unavailable', 'Unavailable'));
       controls.append(el('span', ok ? 'cv-state cv-state-ok' : 'cv-state', word));
       const toggle = el('label', 'cv-switch');
-      const box = el('input'); box.type = 'checkbox'; box.checked = values[routine.name];
+      const box = el('input'); box.type = 'checkbox'; box.checked = values[installation.name];
+      box.disabled = !requirementsMet;
+      if (!requirementsMet) words.append(el('p', 'cv-choice-why', `${(installation.requires || []).map((name) => catalog.find((row) => row.name === name)?.label || name).join(', ')} required`));
       const state = el('span', null, box.checked ? t('campaign_view.on', 'On') : t('campaign_view.off', 'Off'));
-      box.addEventListener('change', () => { state.textContent = box.checked ? t('campaign_view.on', 'On') : t('campaign_view.off', 'Off'); void save(routine.name, box.checked, notice); });
+      box.addEventListener('change', () => { state.textContent = box.checked ? t('campaign_view.on', 'On') : t('campaign_view.off', 'Off'); void save(installation.name, box.checked, notice); });
       toggle.append(box, state); controls.append(toggle); line.append(words, controls); body.append(line);
     }
     body.append(notice.el);
@@ -177,11 +180,11 @@ export function createRoutinesSurface(campaign) {
 
   return {
     el: surface.el,
-    enter: () => void Promise.all([request('/api/routines'), readInstall()]).then(([result]) => { catalog = result.ok && Array.isArray(result.data) ? result.data : []; paint(); }),
+    enter: () => void Promise.all([request('/api/installations'), readInstall()]).then(([result]) => { catalog = result.ok && Array.isArray(result.data) ? result.data : []; paint(); }),
   };
 }
 
-export function routinesSummary(campaign) {
-  const values = bucket(campaign?.config?.agent_defaults?.routines);
+export function installationsSummary(campaign) {
+  const values = bucket(campaign?.config?.installations);
   return t('campaign_view.routines_n', '{n} on', { n: Object.values(values).filter((value) => value === true).length });
 }

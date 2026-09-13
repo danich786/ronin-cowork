@@ -1,0 +1,15 @@
+# Trello
+- **label:** Trello
+- **blurb:** Makes the Trello feature available when its connection exists.
+- **effect:** feature_provider
+- **provides:** trello
+- **reading:** —
+- **reading_off:** —
+- **sops:** —
+- **macros:** —
+- **actions:** —
+- **tools:** —
+- **parts:** —
+- **mcp:** —
+- **requires:** ronin_services
+- **order:** 30

@@ -3,15 +3,9 @@ import path from 'node:path';
 import { entryValue, isKeyLine } from './resources.js';
 import { storeDir } from './resources.js';
 import { teamAgentDefaults, type TeamAgentDefaults } from './agent-defaults.js';
-import { completeRoutineChoices } from './routines.js';
-
-async function completeRoutines(value: unknown): Promise<Record<string, boolean>> {
-  const { listRoutines } = await import('./resource-adapters.js');
-  return completeRoutineChoices(await listRoutines(), value);
-}
 
 export type TeamKind = 'open' | 'coding' | 'work' | 'personal' | 'household' | 'social' | 'school';
-export interface TeamBehaviours { books: string[]; required: boolean }
+export interface TeamBehaviours { selected: string[]; required: string[] }
 
 export interface TeamRoster {
   name: string;
@@ -26,7 +20,7 @@ export interface TeamRoster {
   wipeboard: string;
   state: 'active' | 'archived';
   references: string[];
-  routines: Record<string, boolean>;
+  features: string[];
   behaviours: TeamBehaviours;
   agent_defaults: TeamAgentDefaults;
 }
@@ -70,10 +64,6 @@ function parse(name: string, raw: string, campaign_id = ''): TeamRoster {
   const strings = (value: unknown, max: number): string[] => Array.isArray(value)
     ? value.map((entry) => typeof entry === 'string' ? entry.trim().slice(0, max) : '').filter(Boolean)
     : [];
-  const routineMap = json('routines');
-  const routines = routineMap && typeof routineMap === 'object' && !Array.isArray(routineMap)
-    ? Object.fromEntries(Object.entries(routineMap).filter(([, enabled]) => typeof enabled === 'boolean')) as Record<string, boolean>
-    : {};
   const behaviourValue = json('behaviours');
   const behaviourMap = behaviourValue && typeof behaviourValue === 'object' && !Array.isArray(behaviourValue)
     ? behaviourValue as Record<string, unknown> : {};
@@ -92,8 +82,8 @@ function parse(name: string, raw: string, campaign_id = ''): TeamRoster {
     wipeboard: get('wipeboard') || name,
     state: /^archived$/i.test(get('state')) ? 'archived' : 'active',
     references: strings(json('references'), 500),
-    routines,
-    behaviours: { books: strings(behaviourMap.books, 160), required: behaviourMap.required === true },
+    features: strings(json('features'), 64),
+    behaviours: { selected: strings(behaviourMap.selected, 160), required: strings(behaviourMap.required, 160) },
     agent_defaults: teamAgentDefaults(json('agent_defaults')),
   };
 }
@@ -171,14 +161,14 @@ export interface RosterEdit {
   wipeboard?: string;
   state?: 'active' | 'archived';
   references?: string[];
-  routines?: Record<string, boolean>;
+  features?: string[];
   behaviours?: TeamBehaviours;
   agent_defaults?: Partial<TeamAgentDefaults>;
 }
 
 const KEYS: (keyof RosterEdit)[] = [
   'title', 'kind', 'objective', 'project_root', 'repos', 'branch', 'branches', 'wipeboard', 'state',
-  'references', 'routines', 'behaviours', 'agent_defaults',
+  'references', 'features', 'behaviours', 'agent_defaults',
 ];
 
 function render(name: string, r: TeamRoster): string {
@@ -197,7 +187,7 @@ function render(name: string, r: TeamRoster): string {
     line('wipeboard', r.wipeboard || name),
     line('state', r.state),
     line('references', JSON.stringify(r.references)),
-    line('routines', JSON.stringify(r.routines)),
+    line('features', JSON.stringify(r.features)),
     line('behaviours', JSON.stringify(r.behaviours)),
     line('agent_defaults', JSON.stringify(r.agent_defaults)),
     '',
@@ -234,8 +224,8 @@ export async function createTeamRoster(name: string, edit: RosterEdit, campaign_
     wipeboard: edit.wipeboard || (await freeBoardToken(name, campaign_id)),
     state: edit.state ?? 'active',
     references: edit.references ?? [],
-    routines: await completeRoutines(edit.routines),
-    behaviours: edit.behaviours ?? { books: [], required: false },
+    features: edit.features ?? [],
+    behaviours: edit.behaviours ?? { selected: ['mandates'], required: [] },
     agent_defaults: teamAgentDefaults(edit.agent_defaults),
   };
   await mkdir(campaignDir(campaign_id), { recursive: true });
@@ -252,16 +242,14 @@ export async function writeTeamRoster(name: string, edit: RosterEdit, campaign_i
   const where = existing.campaign_id;
   let raw = await readFile(teamRosterFile(name, where), 'utf8');
   const lines = raw.split('\n');
-  const normalizedEdit: RosterEdit = edit.routines === undefined
-    ? edit
-    : { ...edit, routines: await completeRoutines(edit.routines) };
+  const normalizedEdit: RosterEdit = edit;
   const merged: TeamRoster = {
     ...existing,
     ...Object.fromEntries(KEYS.filter((k) => normalizedEdit[k] !== undefined).map((k) => [k, normalizedEdit[k]])),
   } as TeamRoster;
   for (const k of KEYS) {
     if (normalizedEdit[k] === undefined) continue;
-    const nested = ['references', 'routines', 'behaviours', 'agent_defaults'].includes(k);
+    const nested = ['references', 'features', 'behaviours', 'agent_defaults'].includes(k);
     const v = nested ? JSON.stringify(normalizedEdit[k])
       : k === 'repos' ? (normalizedEdit.repos ?? []).join(', ')
       : String(normalizedEdit[k] ?? '');

@@ -39,7 +39,7 @@ import {
   findDefinition,
   listAgentTemplates,
   listRoleFamilies,
-  listRoutines,
+  listRoutines, listInstallations, listFeatures,
   listSessionRoles,
   listTeamTemplates,
   writeRoleTasks,
@@ -322,6 +322,16 @@ export function registerCatalogs(app: express.Express): void {
     } catch (e) {
       res.status(500).json({ error: errMsg(e) });
     }
+  });
+
+  app.get('/api/installations', async (_req, res) => {
+    try { res.json(await listInstallations()); }
+    catch (e) { res.status(500).json({ error: errMsg(e) }); }
+  });
+
+  app.get('/api/features', async (_req, res) => {
+    try { res.json(await listFeatures()); }
+    catch (e) { res.status(500).json({ error: errMsg(e) }); }
   });
 
   const byKind = <T extends { kinds: string[] }>(rows: T[], raw: unknown): T[] => {

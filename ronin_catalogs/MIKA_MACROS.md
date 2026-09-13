@@ -94,20 +94,14 @@ piece of work that fits no hat. Never invent a task to fill the slot.
 | # | Action | With |
 |---|---|---|
 | 1 | propose-and-confirm | `role_family`, `session_role`, `project_root`, session_launch_spec, MCP on/off, the name you would give it. As a form, not prose |
-| 2 | session-create | On a yes: `POST /api/launch` does create, tag, dial, CLI and brief in one call (`gbrain_mode: disconnected` when the owner asked for no gbrain connection) |
+| 2 | session-create | On a yes: `POST /api/launch` creates the session with the confirmed features, tag, dial, CLI and brief in one call |
 | 3 | report-outcome | The name, and that it is in the grid |
 
 **Assisted mode only.** In manual mode what the owner typed IS the prompt, byte for byte.
 
-**MCP defaults to whatever the resolved launch profile says, and you never flip it on
-your own initiative.** The saved `gbrain_mode` cascades Campaign → Team → Agent. Propose
-**connected** only when the owner's sentence asked for the brain — "look it up", "remember
-this", "use gbrain" — and **disconnected** only when it asked for solitude: "without the
-brain", "no connectors", "offline", "work alone". Disconnected uses the provider's own
-`gbrain_disconnected:` tokens. On Anthropic that provider control disables all MCP for the
-launch (no shared memory, no connectors). A provider that declares none refuses a launch
-that ASKED for disconnected;
-report the refusal, do not work around it.
+**MCP follows features, and you never select one on your own initiative.** Propose the
+`gbrain` feature only when the owner's sentence asks for shared memory — "look it up",
+"remember this", or "use gbrain". Otherwise leave it unselected.
 
 ## system_config
 - **class:** mika_macro

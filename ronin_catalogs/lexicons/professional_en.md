@@ -71,7 +71,6 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **reach:** Reach
 - **recruit:** Recruit
 - **output:** Output
-- **routine_bundles:** Routine Bundles
 - **go:** Go
 - **save_template:** Save as template
 - **publish:** Publish
@@ -420,11 +419,6 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **launch_mode.configured_sub:** Ronin adds nothing to the command. The Agent starts with whatever its provider CLI already loads.
 - **launch_mode.live:** Dangerously
 - **launch_mode.live_sub:** Ronin appends that provider’s own bypass flag, so the Agent does not stop to ask.
-- **gbrain_mode.head:** gbrain connection
-- **gbrain_mode.connected:** Connected
-- **gbrain_mode.connected_sub:** Ronin adds nothing. The provider’s loaded MCP configuration stands.
-- **gbrain_mode.disconnected:** Disconnected
-- **gbrain_mode.disconnected_sub:** Ronin appends the provider’s gbrain-disconnect command. On Anthropic, this disables ALL MCP for that launch, not only gbrain.
 - **help.title:** Help
 - **help.card_summary:** What each step means, beside the step you are on.
 - **help.top_body:** The name is the only thing you must give, and it is also the tag every session carries, so it is lowercase and typeable — the field enforces that as you type. A Team’s title is written for you from the name and is yours to change. The kind says what this is for, and it narrows the templates below to the ones that suit it.

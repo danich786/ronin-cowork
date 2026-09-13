@@ -3,7 +3,6 @@ export type Recruit = 'open' | 'nobody' | 'propose agents' | 'staff agents';
 export type Output = 'open' | 'a plan' | 'ideas' | 'code' | 'an artifact' | 'the team' | 'no code';
 export type AgentDial = 'user' | 'read' | 'write';
 export type LaunchMode = 'configured' | 'live_dangerously';
-export type GbrainMode = 'connected' | 'disconnected';
 export interface Mandate { reach: Reach; recruit: Recruit; output: Output[] }
 
 export interface AgentDefaults {
@@ -12,14 +11,13 @@ export interface AgentDefaults {
   reach: Reach;
   recruit: Recruit;
   output: Output[];
-  routines: Record<string, boolean>;
+  features: string[];
   behaviours: string[];
   dial: AgentDial;
   launch_mode: LaunchMode;
-  gbrain_mode: GbrainMode;
 }
 
-export type TeamAgentDefaults = Omit<AgentDefaults, 'routines' | 'behaviours'>;
+export type TeamAgentDefaults = Omit<AgentDefaults, 'features' | 'behaviours'>;
 
 const text = (value: unknown, max = 120): string =>
   typeof value === 'string' ? value.trim().slice(0, max) : '';
@@ -32,16 +30,6 @@ const outputs = (value: unknown): Output[] => {
   const valid = values.filter((entry): entry is Output =>
     ['open', 'a plan', 'ideas', 'code', 'an artifact', 'the team', 'no code'].includes(entry as Output));
   return valid.length ? valid : ['open'];
-};
-
-const booleanMap = (value: unknown): Record<string, boolean> => {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
-  const out: Record<string, boolean> = {};
-  for (const [rawKey, enabled] of Object.entries(value)) {
-    const key = text(rawKey, 64);
-    if (key && typeof enabled === 'boolean') out[key] = enabled;
-  }
-  return out;
 };
 
 const books = (value: unknown): string[] => Array.isArray(value)
@@ -58,11 +46,10 @@ export function agentDefaults(value: unknown): AgentDefaults {
     reach: oneOf(input.reach, ['open', 'discuss', 'plan', 'execute'], 'plan'),
     recruit: oneOf(input.recruit, ['open', 'nobody', 'propose agents', 'staff agents'], 'propose agents'),
     output: outputs(input.output),
-    routines: booleanMap(input.routines),
-    behaviours: books(input.behaviours),
+    features: books(input.features),
+    behaviours: input.behaviours === undefined ? ['mandates'] : books(input.behaviours),
     dial: oneOf(input.dial, ['user', 'read', 'write'], 'write'),
     launch_mode: oneOf(input.launch_mode, ['configured', 'live_dangerously'], 'live_dangerously'),
-    gbrain_mode: oneOf(input.gbrain_mode, ['connected', 'disconnected'], 'disconnected'),
   };
 }
 
@@ -72,6 +59,6 @@ export function mandate(value: unknown): Mandate {
 }
 
 export function teamAgentDefaults(value: unknown): TeamAgentDefaults {
-  const { routines: _routines, behaviours: _behaviours, ...defaults } = agentDefaults(value);
+  const { features: _features, behaviours: _behaviours, ...defaults } = agentDefaults(value);
   return defaults;
 }

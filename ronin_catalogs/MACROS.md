@@ -199,57 +199,6 @@ must be shown, not just performed** — until the UI auto-splits the panel on fo
 how to open it in the grid. The owner talks to the new session DIRECTLY in its tile
 from here on — the origin session must not relay.
 
-## buildout
-- **class:** session_macro.workflow
-- **label:** Plan it before any code
-- **blurb:** Ask for the work written up as a plan first — what it is for, the steps it breaks into, how you will know it is finished. No code gets written: the agent hands you the document and waits while you read and change it.
-Plan a piece of work as a document the owner can read, edit and riff on — no code yet.
-"buildout: <what to build>".
-
-| # | Action | With |
-|---|---|---|
-| 1 | write-buildout-doc | a wip build-out doc (location per the documents SOP) — goal, legs, constraints, verification, done |
-| 2 | report-outcome | where the doc is and the legs proposed — then WAIT for the owner |
-
-Report: where the doc is, and the legs proposed. Then WAIT — the owner reviews and
-edits the doc before any cutting starts.
-
-## cutcode
-- **class:** session_macro.workflow
-- **label:** Build what the plan says
-- **blurb:** Point the agent at a plan you have already agreed and it builds from it — one step at a time, or all the way to the end. It works at its own desk, saves checkpoints privately, and hands finished work in to the team when a step is whole; it never opens a pull request or merges anything itself.
-Build from a buildout doc. "cutcode: <doc> leg" / "cutcode: <doc> finish"
-(add `live` if sequencing matters; default is `dev`).
-
-| # | Action | With |
-|---|---|---|
-| 1 | cut-code | scope `leg`\|`finish`, coordination `dev`\|`live`; work in your desks; commit privately; delete each completed item from the doc as you go |
-| 2 | report-outcome | what got cut, what remains in the doc, what was handed in and what is still private on the desk |
-
-Report: what got cut, what remains in the doc, what was handed in (`tejun-desk hand-in`,
-offered at each DONE leg — your call, never automatic) and what is still private on the
-desk. No PR: that is the release process's, from `dev`. On `leg`, stop and wait.
-
-## land
-- **class:** session_macro.workflow
-- **label:** Finish up, then close this session
-- **blurb:** Writes the work down where it will last — a README beside the code, every finished desk handed in and closed, one line in the index of finished work — and then ends the session for good.
-**Land YOURSELF.** No args: finish the work of THIS session, leave the record, end
-this session. The buildout doc you were working from is your own wip;
-if you truly can't tell what you were building, ask — don't guess.
-(Landing someone else's session would be a different macro — "land your neighbour" —
-which does not exist yet. Don't improvise it.)
-
-| # | Action | With |
-|---|---|---|
-| 1 | land-work | persistent README where the code lives; DELETE the wip buildout doc; hand in the assignment, then close every desk whose hand-in promotion has reached you; a desk still waiting on the review line stays open |
-| 2 | land-manifest | ONE line appended to the manifest (location per the documents SOP) — an index entry, not history |
-| 3 | report-outcome | README path, what was handed in and closed, manifest line — BEFORE you end |
-| 4 | harakiri | end this session — last act, after every finished desk is handed in, closed and reported |
-
-Report to the owner (before step 4): the README path, the hand-in receipts and closed
-desk, the manifest line. No PR is opened here: `dev → master` belongs to the release process.
-Sessions are disposable: nothing of value may live only in a pane.
 
 ## delete
 - **class:** session_macro.workflow

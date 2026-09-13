@@ -8,5 +8,5 @@
 - **mandate:** execute · nobody · open
 - **team_mode:** new
 - **behaviours:** ways:personal_assistant
-- **routines_on:** gbrain
+- **features:** gbrain
 - **routines_off:** ronin_worktrees

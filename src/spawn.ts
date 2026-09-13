@@ -9,7 +9,7 @@ import { agentSpec } from './agents.js';
 import { readAgentsSection, readDesksSection, readSetupSection } from './machine-state.js';
 import { offAt } from './provider-summary.js';
 import { storeDir } from './resources.js';
-import { findDefinition, listRoutines, routineReading } from './resource-adapters.js';
+import { findDefinition, listFeatures, listInstallations, routineReading } from './resource-adapters.js';
 import { isCreatableTeamName as isTeamName, readTeamRoster, teamRosterFile, type TeamRoster } from './team-rosters.js';
 import { resolveLaunchProfile, type Dial, type LaunchProfile, type StatedBy } from './launch-profile.js';
 import { readCampaign } from './campaigns.js';
@@ -17,12 +17,22 @@ import { primaryWorkLocation, renderDeskBlock, renderWorkLocations, resolveLaunc
 import type { ResolvedWorktreesRepository } from './worktrees-resolution.js';
 import type { Assignment } from './desks/schema.js';
 import { mandate, type LaunchMode, type Mandate } from './agent-defaults.js';
-import { resolveAgentRoutines, routineChoices, type ResolvedRoutine } from './routines.js';
+import type { ResolvedRoutine } from './routines.js';
+import { availableFeatures, resolveContributions } from './instruction-cascade.js';
 import { initialCampaignId } from './campaign-scope.js';
 import { resolveLaunchSeed } from './launch-seed.js';
 import { resolveBehaviourBooks, type DeliveredBehaviour } from './behaviours.js';
 import { templateProvenance } from './template-provenance.js';
 import { profileDir, resolveHouseSeatProfile, type HouseSeat } from './house-seats.js';
+
+const CORE_CONTRIBUTION: ResolvedRoutine = {
+  name: 'cowork_agent', origin: 'stock', shadowed: false, label: 'Cowork Agent', blurb: '',
+  reading: [], reading_off: [], sops: [],
+  macros: ['updateplan', 'show_file', 'forkit', 'team', 'wipeboard', 'tell', 'read', 'readwrite', 'evaluate', 'delete'],
+  actions: ['control-check', 'control-set', 'session-launch', 'read-letter', 'write-letter', 'list-doc', 'session-catchup', 'team-roster', 'session-upsert', 'team-upsert', 'team-page-read', 'team-page-draft', 'wipeboard-check', 'wipeboard-post', 'send-to-session', 'step-through', 'compile-macro', 'read-work-record', 'propose-and-confirm', 'report-outcome', 'harakiri', 'status-probe', 'schedule-request'],
+  tools: ['tejun', 'tejun-step', 'tejun-send', 'tejun-harakiri', 'tejun-archive', 'tejun-rehydrate', 'tejun-team', 'tejun-fork', 'tejun-session-set', 'tejun-team-set', 'tejun-wipeboard', 'tejun-teampage', 'tejun-peek', 'read_tegami', 'write_tegami', 'tejun-jikan', 'ronin-url'],
+  mcp: [], parts: [], enabled: true, stated_by: 'implicit_off', required_by: [],
+};
 
 export interface SpawnForm {
   session_type?: 'cowork_agent' | 'bare_metal_agent' | 'terminal';
@@ -36,14 +46,14 @@ export interface SpawnForm {
   campaign_id?: string;
   kind?: string;
   behaviours?: string[]; template?: string; // preset is validated provenance only, never reapplied
-  routines?: Record<string, boolean>;
+  features?: string[];
   prompt?: string;
   name?: string;
   dial?: Dial;
   project_root?: string;
   cmd?: string;
   launch_mode?: LaunchMode;
-  gbrain_mode?: 'connected' | 'disconnected';
+  
   tags?: string[];
   seed?: string[];
   inject?: string;
@@ -68,7 +78,6 @@ export interface Resolved {
   brief: string;
   agent: boolean;
   capExempt: boolean;
-  gbrain_mode: 'connected' | 'disconnected';
   launchAgent: string;
   launch_mode: LaunchMode;
   ack: boolean;
@@ -85,6 +94,7 @@ export interface Resolved {
   behaviours: DeliveredBehaviour[];
   kind: string;
   ignored: string[];
+  undelivered: string[];
   routines: ResolvedRoutine[];
   stated_by: Record<string, StatedBy[]>;
 }
@@ -199,13 +209,14 @@ export async function resolveForm(
   const coworkAgent = sessionType === 'cowork_agent';
   const bareMetalAgent = sessionType === 'bare_metal_agent';
   const campaignId = coworkAgent ? (form.campaign_id || await initialCampaignId()) : '';
-  const [taskDef, roots, launchSpecs, agentsSet, campaign, routineCatalog, desksSet] = await Promise.all([
+  const [taskDef, roots, launchSpecs, agentsSet, campaign, installationCatalog, featureCatalog, desksSet] = await Promise.all([
     findDefinition('session_roles', form.session_role ?? ''),
     listProjectRoots(),
     listSessionLaunchSpecs(),
     readAgentsSection(),
     coworkAgent ? readCampaign(campaignId) : null,
-    listRoutines(),
+    listInstallations(),
+    listFeatures(),
     readDesksSection(),
   ]);
   const preset = await templateProvenance(coworkAgent ? form : {});
@@ -227,8 +238,8 @@ export async function resolveForm(
         roster,
         roots,
         sessions: agentsSet.sessions as SessionsDefaults | undefined,
-        routines: routineCatalog,
-        desk: desksSet.new_project === 'none' ? 'none' : 'own',
+        installations: installationCatalog,
+        features: featureCatalog,
       })
     : null;
 
@@ -262,14 +273,13 @@ export async function resolveForm(
   }
 
   const agent = sessionType === 'terminal' ? false : bareMetalAgent ? true : profile.agent;
-  const routineAnswers = form.house_seat === 'mika'
-    ? Object.fromEntries(routineCatalog.map((routine) => [routine.name, false]))
-    : form.routines;
-  const routines = resolveAgentRoutines(
-    routineCatalog, campaign?.config.agent_defaults.routines,
-    roster?.routines, routineAnswers, agent,
-  );
-  const merged = mergeSessionDefaults(agentsSet.sessions as SessionsDefaults | undefined, campaign?.config.agent_defaults);
+  const available = campaign ? availableFeatures(installationCatalog, campaign.config.installations, featureCatalog) : [];
+  const cascade = campaign
+    ? resolveContributions(installationCatalog, campaign.config.installations, featureCatalog, available,
+        campaign.config.defaults.features, roster?.features, form.features)
+    : { contributions: [], selected: [], undelivered: [], feature_layer: 'campaign' as const };
+  const routines = (form.house_seat === 'mika' ? [] : [CORE_CONTRIBUTION, ...cascade.contributions]) as ResolvedRoutine[];
+  const merged = mergeSessionDefaults(agentsSet.sessions as SessionsDefaults | undefined, campaign?.config.defaults);
   const sessionsSet = merged.sessions;
   const chosen = resolveLaunchCommand({
     agent,
@@ -303,8 +313,7 @@ export async function resolveForm(
   const routineMcp = routines
     .filter((routine) => routine.enabled)
     .flatMap((routine) => routine.mcp);
-  const templateGbrain = preset.template?.routines_on.includes('gbrain') ? 'connected' as const : undefined;
-  const gbrainAnswer = form.gbrain_mode ?? templateGbrain ?? parentSeed?.seeds.gbrain_mode.value;
+  const gbrainAnswer = cascade.selected.includes('gbrain') ? 'connected' as const : 'disconnected' as const;
   const mcpWanted = profile.mcpAlways || routineMcp.length > 0
     ? true
     : gbrainAnswer === 'connected'
@@ -312,7 +321,7 @@ export async function resolveForm(
       : gbrainAnswer === 'disconnected'
         ? false
         : profile.mcpDefault;
-  const askedOff = agent && form.gbrain_mode === 'disconnected';
+  const askedOff = false;
   let mcpOffWanted = agent && !mcpWanted;
   if (askedOff && profile.mcpAlways) {
     throw new Error(
@@ -354,11 +363,9 @@ export async function resolveForm(
     ? profile.stated_by.agent
     : defaultMcpWasUndeliverable
       ? system
-      : form.gbrain_mode !== undefined
-        ? explicit
-        : templateGbrain !== undefined
-          ? preset.source ?? system
-          : parentSeed?.seeds.gbrain_mode.stated_by ?? profile.stated_by.mcpDefault;
+      : cascade.selected.includes('gbrain')
+        ? [{ layer: cascade.feature_layer, source: `${cascade.feature_layer} features` }]
+        : profile.stated_by.mcpDefault;
   const unique = (...groups: StatedBy[][]): StatedBy[] => {
     const seen = new Set<string>();
     return groups.flat().filter((item) => {
@@ -435,7 +442,6 @@ export async function resolveForm(
       : '',
     agent,
     capExempt: profile.capExempt,
-    gbrain_mode: mcpOffWanted ? 'disconnected' : 'connected',
     launchAgent: agent ? path.basename(cmd.trim().split(/\s+/)[0] ?? '') : '',
     launch_mode: launchMode,
     ack: profile.ack,
@@ -455,6 +461,7 @@ export async function resolveForm(
       ...resolvedBehaviours.ignored,
       ...preset.ignored,
     ],
+    undelivered: cascade.undelivered,
     routines,
     stated_by: {
       name: form.name ? explicit : system,
@@ -475,7 +482,6 @@ export async function resolveForm(
         profile.stated_by.opening, roster ? rosterSource : [], rootSource),
       agent: profile.stated_by.agent,
       capExempt: profile.stated_by.capExempt,
-      gbrain_mode: mcpSource,
       launchAgent: cmdSource,
       launch_mode: form.launch_mode !== undefined
         ? explicit
@@ -495,9 +501,7 @@ export async function resolveForm(
         ? (preset.behaviours ? preset.source! : explicit)
         : parentSeed?.seeds.behaviours.stated_by ?? system,
       kind: form.kind !== undefined ? explicit : parentSeed?.seeds.kind.stated_by ?? system,
-      routines: form.routines && Object.keys(routineChoices(form.routines)).length
-        ? explicit
-        : parentSeed?.routines.flatMap((routine) => routine.stated_by) ?? system,
+      routines: routines.flatMap((routine) => [{ layer: (['campaign', 'team', 'agent'].includes(routine.stated_by) ? routine.stated_by : 'installation') as StatedBy['layer'], source: `${routine.stated_by} contribution` }]),
     },
   };
 }

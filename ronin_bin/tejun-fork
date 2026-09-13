@@ -69,7 +69,9 @@ except Exception: d = {}
 if code == 200 and d.get("ok"):
     r = d.get("receipt") or {}
     team = r.get("team") or "rōnin"
-    print(f"BORN {d['name']} · team {team} · Control {r.get('dial', 'write')}")
+    ignored = ', '.join(r.get('ignored') or []) or 'none'
+    undelivered = ', '.join(r.get('undelivered') or []) or 'none'
+    print(f"BORN {d['name']} · team {team} · Control {r.get('dial', 'write')} · ignored: {ignored} · undelivered: {undelivered}")
     raise SystemExit(0)
 print(f"REFUSED: {d.get('error') or f'HTTP {code}'}", file=sys.stderr)
 raise SystemExit(4)

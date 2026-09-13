@@ -93,7 +93,7 @@ test('the real stock shelf compiles to one read: contracts first, glossary last,
   try {
     // The largest stock birth: every Routine on, MCP on.
     const boot = await bootFiles('', true, [
-      'routine/ronin_base/BASE_ABILITIES.md',
+      'all/BASE_ABILITIES.md',
       'routine/ronin_worktrees/WORKTREES.md',
       'routine/ronin_services/SERVICES_ABILITIES.md',
       'routine/ronin_host/HOST_ABILITIES.md',
@@ -142,7 +142,7 @@ test('the real stock shelf compiles to one read: contracts first, glossary last,
 test('Routine reading teaches only the selected capability; test policy stays with repository contributors', async () => {
   const repo = path.join(path.dirname(new URL(import.meta.url).pathname), '..');
   const [base, services, worktrees, machine] = await Promise.all([
-    readFile(path.join(repo, 'ronin_session_boot', 'routine', 'ronin_base', 'BASE_ABILITIES.md'), 'utf8'),
+    readFile(path.join(repo, 'ronin_session_boot', 'all', 'BASE_ABILITIES.md'), 'utf8'),
     readFile(path.join(repo, 'ronin_session_boot', 'routine', 'ronin_services', 'SERVICES_ABILITIES.md'), 'utf8'),
     readFile(path.join(repo, 'ronin_session_boot', 'routine', 'ronin_worktrees', 'WORKTREES.md'), 'utf8'),
     readFile(path.join(repo, 'ronin_session_boot', 'routine', 'ronin_host', 'HOST_ABILITIES.md'), 'utf8'),
@@ -332,15 +332,15 @@ test('the stock shelf, the owner shelf and generated fragments are teaching; the
   assert.equal(isShelfTeaching('/somewhere/else/ways/book.md'), false);
 });
 
-test('a Routine reads one way or the other: on delivers its page, off delivers the page that names the switch', async () => {
+test('a system installation reads one way or the other', async () => {
   const routines = [
     { enabled: true, reading: ['routine/a/ON.md'], reading_off: ['routine/a/OFF.md'] },
     { enabled: false, reading: ['routine/b/ON.md'], reading_off: ['routine/b/OFF.md'] },
   ];
   assert.deepEqual(routineReading(routines), ['routine/a/ON.md', 'routine/b/OFF.md']);
   const repo = path.join(path.dirname(new URL(import.meta.url).pathname), '..');
-  for (const name of ['ronin_base', 'ronin_host', 'ronin_services', 'ronin_worktrees']) {
-    const manifest = await readFile(path.join(repo, 'ronin_catalogs', 'routines', `${name}.md`), 'utf8');
+  for (const name of ['ronin_services']) {
+    const manifest = await readFile(path.join(repo, 'ronin_catalogs', 'installations', `${name}.md`), 'utf8');
     assert.match(manifest, new RegExp(`\\*\\*reading_off:\\*\\* routine/${name}/OFF\\.md`));
     const off = await readFile(path.join(repo, 'ronin_session_boot', 'routine', name, 'OFF.md'), 'utf8');
     assert.match(off, /working without/);

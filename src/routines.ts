@@ -41,23 +41,6 @@ export function resolveRoutines(
     }
     return { ...routine, enabled: false, stated_by: 'implicit_off' as const, required_by: [] as string[] };
   });
-  const byName = new Map(resolved.map((routine) => [routine.name, routine]));
-  let changed = true;
-  while (changed) {
-    changed = false;
-    for (const routine of resolved.filter((item) => item.enabled)) {
-      for (const dependencyName of routine.requires) {
-        const dependency = byName.get(dependencyName);
-        if (!dependency) continue; // catalog validation names the broken reference
-        if (!dependency.required_by.includes(routine.name)) dependency.required_by.push(routine.name);
-        if (!dependency.enabled) {
-          dependency.enabled = true;
-          dependency.stated_by = 'dependency';
-          changed = true;
-        }
-      }
-    }
-  }
   return resolved;
 }
 

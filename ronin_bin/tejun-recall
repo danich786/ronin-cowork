@@ -23,7 +23,7 @@ STORE="$("$RSTORE" memory)"
 ROOTS_MD="$("$RSTORE" catalogs)/PROJECT_ROOTS.md"
 # The brief is pasted into a pane as one message, so this bounds the memory section
 # only — posture, reading list and the opening ride on top. Measured against the real
-# store: a ronin cutcode session inlines ~2.1k. Over budget is a signal a memory has
+# store: a planning session inlines ~2.1k. Over budget is a signal a memory has
 # grown into a doc, not a reason to grow the number.
 BUDGET=2600
 MODE=paths

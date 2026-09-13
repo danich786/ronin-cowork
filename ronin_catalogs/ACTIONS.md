@@ -69,6 +69,8 @@ selects the top active root. `role_family` and `session_role` may each be blank,
 a real launch — but **an agent-launching fork must RESOLVE them deliberately rather than
 omit them by accident**. The receipt names what was actually resolved;
 read it back and report it.
+The `BORN` verdict prints both receipt lists: `ignored` input and requested features that
+were `undelivered` because their installation was unavailable.
 
 **THE MODEL — leave it out unless the owner named one.** Omit `cmd` and the launch is born
 on the owner's own session default (⚙ Configuration, `agents.sessions.default`); a
@@ -407,44 +409,6 @@ confirmation. Every other condition retains the message with its measured reason
 operator checks it mechanically, and the coworkspace exposes Try Again and owner-only
 Force. Never perform the queue or tmux steps separately.
 
-## write-buildout-doc
-`action_kind: judgement` — this one needs your reasoning; no tool can do it for you.
-- **library:** documents
-Draft the plan for a piece of work so the owner can read, edit and riff on it BEFORE
-any code is cut. **Agree the goal in plain language with the owner first**; only then
-write the plan.
-- Location: per the documents library page — inlined when this compiles. **Transient by
-  design**: it holds only what is still TO DO. No changelog, no "done" section, no
-  history (git holds history), and it is DELETED when the work lands.
-- Content: goal in the owner's words, the legs (ordered chunks that can each be
-  finished and reviewed), constraints/conventions, how to verify, definition of done.
-- **Then `list-doc` it**, before you hand it over — the owner is about to read it, and the
-  ▧ Docs tab is where they open it without you pasting a path.
-- Then STOP and hand it to the owner for review. Planning is not building.
-
-## cut-code
-`action_kind: judgement` — this one needs your reasoning; no tool can do it for you.
-Implement from a buildout doc. Two independent dials, both stated by the owner:
-- **Scope:** `leg` = finish ONE leg, report, stop (owner riffs between legs) ·
-  `finish` = work all legs to done without stopping.
-- **Coordination:** `dev` = no sequencing concerns, just build ·
-  `live` = other work/agents/services depend on this, so sequence deliberately and
-  say what must land in what order.
-Rules: **delete each item from the buildout doc as it is completed** (the doc shrinks
-to nothing; it is never a log). **Work in your assignment's desks** — the repo desks in
-your brief and on your letter (`repos[]`); never edit `dev` or a team line, which are
-funnel points. **Commit** coherent checkpoints privately as you go. At each DONE leg,
-**offer a hand-in** — `tejun-desk hand-in` when the work is coherent for the team; a leg
-may prompt it, never perform it for you, and it is not `git push`. Run no repository-wide verification at a
-commit or a hand-in. Reviewing the team line and promoting it is the lead's job; hand-in
-notifies the team lead itself. If the team has no lead, the
-hand-in tells you: “this didn't work for promotion: team <team> has no lead; ask the owner
-to mark one on the Team page.” A conflict at hand-in is still yours to
-resolve (`tejun-desk sync`, fix, hand in).
-If your brief lists no desk, none has been opened for you yet. For a managed repository,
-run `tejun-desk open <repo>` before your first write; `NO-DESK` from status means only that
-none is recorded for this session. For a direct repository, ordinary Git in its named
-checkout is correct. Verify per the doc, with scoped evidence, before reporting.
 
 ## open-pr
 `action_kind: mechanical` — run it, don't deliberate.
@@ -468,18 +432,6 @@ the receipt fenced, and creates the PR — or updates the one already open, neve
 It finds `gh` itself. Report the URL it prints. Under direct publishing there is no working
 line and no PR: this action does not apply.
 
-## land-work
-`action_kind: judgement` — this one needs your reasoning; no tool can do it for you.
-> **The finish line is the documents library page's three questions** — which wip docs does this
-> delete, did the facts change enough for a standing doc, is there a manifest line.
-Close out finished work so nothing transient survives.
-1. Write/refresh a **persistent README** where the code lives (not in wip/) —
-   what it is, how to run it, the decisions worth keeping.
-2. **Delete** the build-out doc — it has served its purpose (the documents library page's first landing question).
-3. **Close every finished desk explicitly.** Hand in the assignment (`tejun-desk hand-in
-   --assignment`), then close each finished desk. Hand-in does not close a desk, and the
-   live session remains ready at the project root for a later fresh desk. No desk (direct
-   publishing, shared checkout): commit and push the declared line instead.
 
 ## land-manifest — ONE LINE. READ THIS TWICE.
 `action_kind: judgement` — this one needs your reasoning; no tool can do it for you.

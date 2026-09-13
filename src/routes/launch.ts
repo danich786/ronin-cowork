@@ -16,12 +16,11 @@ import {
   setTags,
 } from '../tmux.js';
 import { launchArgv, newProviderSession } from '../agents.js';
-import { AtSessionMax, liveCount, readAgentsSection, readDesksSection, readMax, readOwner, writeMax, writeOwner } from '../machine-state.js';
+import { AtSessionMax, liveCount, readAgentsSection, readMax, readOwner, writeMax, writeOwner } from '../machine-state.js';
 import { resolveForm, type SpawnForm } from '../spawn.js';
 import { appendLaunchLedger, persistBirthReceipt } from '../launch-ledger.js';
 import { mandate } from '../agent-defaults.js';
 import { projectRoutineTools, type RoutineToolProjection } from '../routine-tools.js';
-import { routineChoices } from '../routines.js';
 import { classifyStatus, createActivityCache } from '../status.js';
 import { scanContext, scanModel } from '../ctx.js';
 
@@ -36,7 +35,7 @@ import { listProjectRoots } from '../project-roots.js';
 import { campaignResolver, initialCampaignId } from '../campaign-scope.js';
 import { readTeamRoster } from '../team-rosters.js';
 import { readCampaign } from '../campaigns.js';
-import { listRoutines } from '../resource-adapters.js';
+import { listFeatures, listInstallations } from '../resource-adapters.js';
 import { agentBinDir } from '../agent-install.js';
 import { resolveLaunchSeed } from '../launch-seed.js';
 import type { SessionsDefaults } from '../launch-command.js';
@@ -119,9 +118,9 @@ async function deskNote(r: { assignment?: unknown; routines?: Array<{ name: stri
 
 const LAUNCH_KEYS = new Set([
   'session_type', 'session_role', 'team', 'team_lead', 'instructions', 'prompt', 'name',
-  'dial', 'project_root', 'cmd', 'model', 'provider', 'mandate', 'campaign_id', 'gbrain_mode', 'launch_mode',
+  'dial', 'project_root', 'cmd', 'model', 'provider', 'mandate', 'campaign_id', 'launch_mode',
   'tags', 'seed', 'inject', 'reference', 'desk', 'repos',
-  'kind', 'behaviours', 'routines',
+  'kind', 'features', 'behaviours',
   'template',
 ]);
 const RETIRED_LAUNCH_KEYS = new Set([
@@ -157,7 +156,6 @@ export function acceptedLaunchBody(input: unknown): { body: Record<string, unkno
 
   if (body.dial !== undefined && body.dial !== 'user' && body.dial !== 'read' && body.dial !== 'write') drop('dial');
   if (body.desk !== undefined && body.desk !== 'own' && body.desk !== 'none') drop('desk');
-  if (body.gbrain_mode !== undefined && body.gbrain_mode !== 'connected' && body.gbrain_mode !== 'disconnected') drop('gbrain_mode');
   if (body.launch_mode !== undefined && body.launch_mode !== 'configured' && body.launch_mode !== 'live_dangerously') drop('launch_mode');
   if (body.repos !== undefined && (!Array.isArray(body.repos) || body.repos.some((r: unknown) => typeof r !== 'string'))) drop('repos');
   if (body.repos !== undefined && sessionType !== 'cowork_agent') drop('repos');
@@ -166,18 +164,14 @@ export function acceptedLaunchBody(input: unknown): { body: Record<string, unkno
   if (body.kind !== undefined && (typeof body.kind !== 'string' || !KINDS.has(body.kind.trim()))) drop('kind');
   if (body.kind !== undefined) body.kind = String(body.kind).trim();
   if (body.behaviours !== undefined && !Array.isArray(body.behaviours)) drop('behaviours');
-  if (body.routines !== undefined && (!body.routines || typeof body.routines !== 'object' || Array.isArray(body.routines))) drop('routines');
-  if (body.routines !== undefined) {
-    body.routines = Object.fromEntries(Object.entries(body.routines as Record<string, unknown>)
-      .filter(([name, value]) => /^[a-z0-9][a-z0-9_-]{0,63}$/.test(name) && typeof value === 'boolean'));
-  }
+  if (body.features !== undefined && !Array.isArray(body.features)) drop('features');
   if (body.template !== undefined && (typeof body.template !== 'string' || !/^[\w-]{1,64}$/.test(body.template.trim()))) drop('template');
   if (body.template !== undefined) body.template = String(body.template).trim();
 
   const inapplicable = sessionType === 'terminal'
-      ? ['provider', 'model', 'instructions', 'prompt', 'kind', 'mandate', 'behaviours', 'template', 'routines', 'sops', 'cmd', 'gbrain_mode', 'launch_mode', 'seed', 'inject', 'reference', 'session_role']
+      ? ['provider', 'model', 'instructions', 'prompt', 'kind', 'mandate', 'features', 'behaviours', 'template', 'sops', 'cmd', 'launch_mode', 'seed', 'inject', 'reference', 'session_role']
     : sessionType === 'bare_metal_agent'
-      ? ['kind', 'mandate', 'behaviours', 'template', 'routines', 'sops', 'seed', 'inject', 'reference', 'session_role', 'team_lead']
+      ? ['kind', 'mandate', 'features', 'behaviours', 'template', 'sops', 'seed', 'inject', 'reference', 'session_role', 'team_lead']
       : [];
   for (const key of inapplicable) drop(key);
   if (sessionType === 'bare_metal_agent' && body.desk === 'own') drop('desk');
@@ -198,7 +192,6 @@ export function mikaLaunchBody(input: unknown, selection?: Pick<MikaSelection, '
     prompt: typeof source.prompt === 'string' ? source.prompt : '',
     ...(selection ? { provider: selection.provider, model: selection.model } : {}),
     launch_mode: 'configured',
-    gbrain_mode: 'disconnected',
   };
 }
 
@@ -250,23 +243,23 @@ export function registerLaunch(app: express.Express): LaunchControl {
       if (team && !/^[a-z0-9][a-z0-9_-]{0,63}$/.test(team)) {
         return res.status(400).json({ error: `A team name is lowercase letters, digits, _ and -: "${team}".` });
       }
-      const [roster, allRoots, agents, routines, desks, resolveCampaign] = await Promise.all([
+      const [roster, allRoots, agents, installations, features, resolveCampaign] = await Promise.all([
         team ? readTeamRoster(team, campaign_id).then((found) => found ?? readTeamRoster(team, '')) : Promise.resolve(null),
         listProjectRoots(),
         readAgentsSection(),
-        listRoutines(),
-        readDesksSection(),
+        listInstallations(),
+        listFeatures(),
         campaignResolver(),
       ]);
       const roots = allRoots.filter((root) => resolveCampaign(root.campaign_id) === campaign_id);
       if (team && !roster) return res.status(404).json({ error: `Unknown Team "${team}" in Campaign "${campaign_id}".` });
-      const { resolved_routines: _resolved, ...seed } = resolveLaunchSeed({
+      const { resolved_contributions: _resolved, undelivered: _undelivered, ...seed } = resolveLaunchSeed({
         campaign,
         roster,
         roots,
         sessions: agents.sessions as SessionsDefaults | undefined,
-        routines,
-        desk: desks.new_project === 'none' ? 'none' : 'own',
+        installations,
+        features,
       });
       res.json(seed);
     } catch (e) {
@@ -333,11 +326,8 @@ export function registerLaunch(app: express.Express): LaunchControl {
       campaign_id: String(req.body?.campaign_id ?? '').trim() || undefined,
       kind: typeof req.body?.kind === 'string' ? req.body.kind : undefined,
       behaviours: Array.isArray(req.body?.behaviours) ? req.body.behaviours.map(String) : undefined,
-      routines: req.body?.routines && typeof req.body.routines === 'object' && !Array.isArray(req.body.routines)
-        ? routineChoices(req.body.routines)
-        : undefined,
+      features: Array.isArray(req.body?.features) ? req.body.features.map(String) : undefined,
       template: typeof req.body?.template === 'string' ? req.body.template : undefined,
-      gbrain_mode: req.body?.gbrain_mode === 'connected' || req.body?.gbrain_mode === 'disconnected' ? req.body.gbrain_mode : undefined,
       tags: Array.isArray(req.body?.tags) ? req.body.tags.map(String) : [],
       seed: Array.isArray(req.body?.seed) ? req.body.seed.map(String) : [],
       inject: String(req.body?.inject ?? '').trim() || undefined,
@@ -536,11 +526,11 @@ export function registerLaunch(app: express.Express): LaunchControl {
         cmd: resolved.cmd,
         dial: resolved.dial,
         tags: resolved.tags,
-        gbrain_mode: resolved.gbrain_mode,
         team_lead: !!form.team_lead && !!resolved.team,
         kind: resolved.kind,
         behaviours: resolved.behaviours,
         ignored: [...new Set([...accepted.ignored, ...resolved.ignored])].sort(),
+        undelivered: [...new Set(resolved.undelivered)].sort(),
         stated_by: resolved.stated_by,
         ...(resolved.session_type === 'cowork_agent'
           ? { boot: { state: 'open', brief: launch.parked ? 'parked' : 'argv' } }

@@ -4,7 +4,7 @@ import { STOCK_DIR, entryValue, isKeyLine, resolveFiles, type Origin } from './r
 import { storeDir } from './resources.js';
 
 export type DefinitionKind =
-  | 'role_families' | 'session_roles' | 'desk_profiles' | 'lexicons' | 'routines'
+  | 'role_families' | 'session_roles' | 'desk_profiles' | 'lexicons' | 'routines' | 'installations' | 'features'
   | 'templates/agents' | 'templates/teams';
 
 export interface Definition {
@@ -85,9 +85,6 @@ export interface SessionRoleRow extends Row {
   match: string[];
 }
 
-export const ROUTINE_BUNDLES = ['nothing', 'floor', 'base', 'worktrees', 'services'] as const;
-export type RoutineBundle = (typeof ROUTINE_BUNDLES)[number];
-
 export interface RoutineRow extends Pick<Row, 'name' | 'origin' | 'shadowed' | 'label' | 'blurb'> {
   reading: string[];
   reading_off: string[];
@@ -98,9 +95,15 @@ export interface RoutineRow extends Pick<Row, 'name' | 'origin' | 'shadowed' | '
   mcp: string[];
   /** Services parts this Routine runs inside the server; loaded only while its switch is on. */
   parts: string[];
-  requires: string[];
-  bundles: string[];
 }
+
+export interface InstallationRow extends RoutineRow {
+  effect: 'system' | 'feature_provider';
+  provides: string[];
+  requires: string[];
+}
+
+export interface FeatureRow extends RoutineRow { provider: string }
 
 function credit(v: string): { text: string; url: string } | undefined {
   const m = /^\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)$/.exec(v.trim());
@@ -150,10 +153,29 @@ export async function listRoutines(): Promise<RoutineRow[]> {
     tools: splitDefinitionList(d.get('tools')),
     mcp: splitDefinitionList(d.get('mcp')),
     parts: splitDefinitionList(d.get('parts')),
-    requires: splitDefinitionList(d.get('requires')),
-    bundles: splitDefinitionList(d.get('bundles')).filter((bundle) =>
-      (ROUTINE_BUNDLES as readonly string[]).includes(bundle)),
   }));
+}
+
+const contribution = (d: Definition): RoutineRow => ({
+  name: d.name, origin: d.origin, shadowed: d.shadowed,
+  label: d.get('label') || d.name, blurb: d.get('blurb'),
+  reading: splitDefinitionList(d.get('reading')), reading_off: splitDefinitionList(d.get('reading_off')),
+  sops: splitDefinitionList(d.get('sops')), macros: splitDefinitionList(d.get('macros')),
+  actions: splitDefinitionList(d.get('actions')), tools: splitDefinitionList(d.get('tools')),
+  mcp: splitDefinitionList(d.get('mcp')), parts: splitDefinitionList(d.get('parts')),
+});
+
+export async function listInstallations(): Promise<InstallationRow[]> {
+  return (await readDefinitions('installations')).map((d) => ({
+    ...contribution(d),
+    effect: d.get('effect') === 'system' ? 'system' : 'feature_provider',
+    provides: splitDefinitionList(d.get('provides')),
+    requires: splitDefinitionList(d.get('requires')),
+  }));
+}
+
+export async function listFeatures(): Promise<FeatureRow[]> {
+  return (await readDefinitions('features')).map((d) => ({ ...contribution(d), provider: d.get('provider') }));
 }
 
 const REACH = ['open', 'discuss', 'plan', 'execute'];
@@ -167,8 +189,7 @@ export interface TemplateBox extends Pick<Row, 'name' | 'origin' | 'shadowed' | 
   art: string;
   kinds: string[];
   behaviours: string[];
-  routines_on: string[];
-  routines_off: string[];
+  features: string[];
 }
 
 export interface AgentTemplateRow extends TemplateBox {
@@ -182,8 +203,7 @@ export interface TemplateAgentRow {
   instructions: string;
   mandate: TemplateMandate | null;
   team_lead: boolean;
-  routines_on: string[];
-  routines_off: string[];
+  features: string[];
 }
 
 export interface TeamTemplateRow extends TemplateBox {
@@ -207,8 +227,7 @@ const templateBox = (d: Definition): TemplateBox => ({
   art: d.get('art'),
   kinds: splitDefinitionList(d.get('kinds')).filter((kind) => TEMPLATE_KINDS.includes(kind)),
   behaviours: splitDefinitionList(d.get('behaviours')),
-  routines_on: splitDefinitionList(d.get('routines_on')),
-  routines_off: splitDefinitionList(d.get('routines_off')),
+  features: splitDefinitionList(d.get('features')),
 });
 
 export async function listAgentTemplates(): Promise<AgentTemplateRow[]> {
@@ -235,8 +254,7 @@ export function parseTemplateAgents(raw: string): TemplateAgentRow[] {
         instructions: entryValue(lines, 'instructions'),
         mandate: mandate ? templateMandate(mandate) : null,
         team_lead: /^yes$/i.test(entryValue(lines, 'team_lead')),
-        routines_on: splitDefinitionList(entryValue(lines, 'routines_on')),
-        routines_off: splitDefinitionList(entryValue(lines, 'routines_off')),
+        features: splitDefinitionList(entryValue(lines, 'features')),
       };
     })
     .filter((row) => row.name);

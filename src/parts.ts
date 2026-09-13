@@ -15,8 +15,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { RoutineRow } from './resource-adapters.js';
-import { routineChoices } from './routines.js';
+import type { InstallationRow } from './resource-adapters.js';
+import { switches } from './instruction-cascade.js';
 
 export const SERVICES_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), 'services');
 
@@ -44,7 +44,7 @@ export interface PartsPlan<T extends { name: string; parked?: string }> {
 }
 
 /** Which Routine claims each part; the first claim wins, in catalog order. */
-export function partClaims(routines: Pick<RoutineRow, 'name' | 'parts'>[]): Map<string, string> {
+export function partClaims(routines: Pick<InstallationRow, 'name' | 'parts'>[]): Map<string, string> {
   const claims = new Map<string, string>();
   for (const routine of routines) for (const part of routine.parts) if (!claims.has(part)) claims.set(part, routine.name);
   return claims;
@@ -53,11 +53,11 @@ export function partClaims(routines: Pick<RoutineRow, 'name' | 'parts'>[]): Map<
 /** The rule: a claimed part loads only while its Routine's switch is on; an unclaimed part always loads. */
 export function partsToLoad<T extends { name: string; parked?: string }>(
   parts: T[],
-  routines: Pick<RoutineRow, 'name' | 'parts'>[],
-  switches: unknown,
+  routines: Pick<InstallationRow, 'name' | 'parts'>[],
+  values: unknown,
 ): PartsPlan<T> {
   const claims = partClaims(routines);
-  const on = routineChoices(switches);
+  const on = switches(values);
   const plan: PartsPlan<T> = { load: [], parked: [] };
   for (const part of parts) {
     const routine = claims.get(part.name);

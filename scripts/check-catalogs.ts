@@ -6,6 +6,8 @@ import {
   listAgentTemplates,
   listRoleFamilies,
   listRoutines,
+  listInstallations,
+  listFeatures,
   listSessionRoles,
   listTeamTemplates,
   type DefinitionKind,
@@ -138,7 +140,6 @@ async function definitionsResolve(): Promise<void> {
 
 async function routinesResolve(): Promise<void> {
   const routines = await listRoutines();
-  const routineNames = new Set(routines.map((routine) => routine.name));
   const [macros, actionsRaw, toolsRaw] = await Promise.all([
     listMacros(),
     readFile(path.join(STOCK_DIR, 'ACTIONS.md'), 'utf8'),
@@ -152,15 +153,6 @@ async function routinesResolve(): Promise<void> {
   const owners = new Map<string, string>();
   for (const routine of routines.filter((x) => x.origin === 'stock')) {
     if (!routine.blurb.trim()) fail(`routines/${routine.name}.md: missing blurb`);
-    const def = await findDefinition('routines', routine.name);
-    const rawBundles = (def?.get('bundles') ?? '').split(',').map((s) => s.trim()).filter((s) => s && s !== '—');
-    for (const rung of rawBundles) {
-      if (!routine.bundles.includes(rung)) fail(`routines/${routine.name}.md: bundles names unknown rung "${rung}"`);
-    }
-    for (const dependency of routine.requires) {
-      if (!routineNames.has(dependency)) fail(`routines/${routine.name}.md: requires missing "${dependency}"`);
-      if (dependency === routine.name) fail(`routines/${routine.name}.md: requires itself`);
-    }
     for (const reading of [...routine.reading, ...routine.reading_off].filter((name) => name.startsWith('routine/'))) {
       try { await stat(path.join(REPO, 'ronin_session_boot', reading)); }
       catch { fail(`routines/${routine.name}.md: reading names missing "${reading}"`); }
@@ -183,17 +175,6 @@ async function routinesResolve(): Promise<void> {
       else owners.set(key, routine.name);
     }
   }
-  const visit = (name: string, path: string[]) => {
-    const at = path.indexOf(name);
-    if (at !== -1) {
-      fail(`routines: requires cycle ${[...path.slice(at), name].join(' -> ')}`);
-      return;
-    }
-    const routine = routines.find((item) => item.name === name);
-    if (!routine) return;
-    for (const dependency of routine.requires) visit(dependency, [...path, name]);
-  };
-  for (const routine of routines) visit(routine.name, []);
 }
 
 async function templateBoxResolves(
@@ -207,9 +188,6 @@ async function templateBoxResolves(
   for (const book of box.behaviours) {
     const resolved = await resolveBehaviourBooks([book]);
     if (!resolved.delivered.length) fail(`${at}: behaviour does not resolve "${book}"`);
-  }
-  for (const name of [...box.routines_on, ...box.routines_off]) {
-    if (!routineNames.has(name)) fail(`${at}: routines switch names missing routine "${name}"`);
   }
 }
 
@@ -254,6 +232,8 @@ await surfacingDefinitions('session_roles', listSessionRoles);
 await surfacingDefinitions('desk_profiles', listDeskProfiles);
 await surfacingDefinitions('lexicons', listLexicons);
 await surfacingDefinitions('routines', listRoutines);
+await surfacingDefinitions('installations', listInstallations);
+await surfacingDefinitions('features', listFeatures);
 await surfacingDefinitions('templates/agents', listAgentTemplates);
 await surfacingDefinitions('templates/teams', listTeamTemplates);
 await definitionsResolve();

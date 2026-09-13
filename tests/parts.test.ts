@@ -1,5 +1,5 @@
 /**
- * The parts rule: a Services part on disk runs only while the Routine that claims it is
+ * The parts rule: a Services part on disk runs only while the installation that claims it is
  * on for the Campaign; an unclaimed part always runs. Off is "as if not installed".
  */
 import test from 'node:test';
@@ -8,7 +8,7 @@ import { mkdtemp, mkdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { discoverParts, partClaims, partsToLoad } from '../src/parts.js';
-import { listRoutines } from '../src/resource-adapters.js';
+import { listInstallations } from '../src/resource-adapters.js';
 
 const routines = [
   { name: 'ronin_services', parts: ['counting', 'koe', 'koshi', 'koshi_weights', 'michi', 'rireki'] },
@@ -16,7 +16,7 @@ const routines = [
 ];
 const onDisk = ['counting', 'gbrain', 'koe', 'koshi', 'koshi_weights', 'machine', 'michi', 'rireki'].map((name) => ({ name }));
 
-test('Services off parks every part the Routine claims; unclaimed parts still load', () => {
+test('Services off parks every part the installation claims; unclaimed parts still load', () => {
   const plan = partsToLoad(onDisk, routines, { ronin_base: true, ronin_services: false });
   assert.deepEqual(plan.load.map((p) => p.name), ['gbrain', 'machine']);
   assert.deepEqual(plan.parked, ['counting', 'koe', 'koshi', 'koshi_weights', 'michi', 'rireki'].map((name) => ({ name, routine: 'ronin_services' })));
@@ -28,7 +28,7 @@ test('Services on loads everything on disk', () => {
   assert.deepEqual(plan.parked, []);
 });
 
-test('PARKED.md parks a part with its reason regardless of the Routine switch', async () => {
+test('PARKED.md parks a part with its reason regardless of the installation switch', async () => {
   const dir = await mkdtemp(path.join(tmpdir(), 'parts-parked-'));
   await mkdir(path.join(dir, 'rireki'));
   await writeFile(path.join(dir, 'rireki', 'register.ts'), '');
@@ -48,8 +48,8 @@ test('an absent or malformed switch map reads as off — the recorder never runs
   }
 });
 
-test('the stock Ronin Services Routine claims the recorder', async () => {
-  const claims = partClaims(await listRoutines());
+test('the stock Ronin Services installation claims the recorder', async () => {
+  const claims = partClaims(await listInstallations());
   assert.equal(claims.get('rireki'), 'ronin_services');
   assert.equal(claims.get('koshi'), 'ronin_services');
   assert.equal(claims.get('machine'), undefined, 'the Host part is unclaimed and always loads');

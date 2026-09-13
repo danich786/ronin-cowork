@@ -9,7 +9,7 @@ import { PROVIDER_SURFACE_TYPE, providerSurfaceDefinition } from './provider-sur
 import { createStoneWorkSurface } from './stone-work-surface.js';
 import { servicesSetupModel } from './services-setup-state.js';
 import { campaignById, campaigns, loadCampaigns, saveCampaign } from './campaigns.js';
-import { completeRoutineMap } from './campaign-routines.js';
+import { completeInstallationMap } from './campaign-routines.js';
 import { createEmbeddedNewTeamFormView } from './new-team-form.js';
 import { createEmbeddedNewAgentView } from './new-agent.js';
 import { HOUSE_PRESETS, buildLaunchPlan, initialControls, seatingPlan } from './presets.js';
@@ -351,12 +351,11 @@ function createServicesSurface(context) {
   const openRegister = () => context.workbench?.place(SETUP_SURFACE_TYPES.register, context.workspace || 'workspace2');
   /** The Routine switch for new Agents: the Campaign's own map, saved the way Routines and Installs saves it. */
   const switchServices = async (on) => {
-    const [catalog] = await Promise.all([request('/api/routines'), loadCampaigns()]);
+    const [catalog] = await Promise.all([request('/api/installations'), loadCampaigns()]);
     const row = campaignById(context.tenant?.campaign) || campaigns()[0];
     if (!row) return { ok: false, message: t('services_setup.no_campaign', 'No Campaign to switch it on for.') };
-    const defaults = row.config?.agent_defaults && typeof row.config.agent_defaults === 'object' ? row.config.agent_defaults : {};
-    const routines = { ...completeRoutineMap(catalog.ok && Array.isArray(catalog.data) ? catalog.data : [], defaults.routines), ronin_services: on };
-    return saveCampaign(row.id, { config: { agent_defaults: { ...defaults, routines } } });
+    const installations = { ...completeInstallationMap(catalog.ok && Array.isArray(catalog.data) ? catalog.data : [], row.config?.installations), ronin_services: on };
+    return saveCampaign(row.id, { config: { installations } });
   };
   /** Restart: ask, then read the restart off the machine — /api/installed's startedAt changes when Ronin is back.
    *  A refusal answers in the tool's own words; no answer means Ronin went down, which is the restart happening. */
@@ -443,16 +442,15 @@ function createGbrainSurface(context) {
       read: async () => {
         await loadCampaigns();
         const row = campaignById(context.tenant?.campaign) || campaigns()[0];
-        const routines = row?.config?.agent_defaults?.routines;
-        return routines && typeof routines === 'object' ? routines.gbrain === true : null;
+        const installations = row?.config?.installations;
+        return installations && typeof installations === 'object' ? installations.gbrain === true : null;
       },
       write: async (on) => {
-        const [catalog] = await Promise.all([request('/api/routines'), loadCampaigns()]);
+        const [catalog] = await Promise.all([request('/api/installations'), loadCampaigns()]);
         const row = campaignById(context.tenant?.campaign) || campaigns()[0];
         if (!row) return { ok: false, message: t('gbrain.setup_no_campaign', 'No Campaign to set a default for.') };
-        const defaults = row.config?.agent_defaults && typeof row.config.agent_defaults === 'object' ? row.config.agent_defaults : {};
-        const routines = { ...completeRoutineMap(catalog.ok && Array.isArray(catalog.data) ? catalog.data : [], defaults.routines), gbrain: on === true };
-        return saveCampaign(row.id, { config: { agent_defaults: { ...defaults, routines } } });
+        const installations = { ...completeInstallationMap(catalog.ok && Array.isArray(catalog.data) ? catalog.data : [], row.config?.installations), gbrain: on === true };
+        return saveCampaign(row.id, { config: { installations } });
       },
     },
     // Exactly the Personal Assistant preset's launch, single assistant, opened in a new tab.

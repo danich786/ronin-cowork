@@ -3,7 +3,7 @@ import type { Definition } from './resource-adapters.js';
 export type Dial = 'user' | 'read' | 'write';
 
 export type StatedLayer =
-  | 'install' | 'campaign' | 'team' | 'template' | 'launch'
+  | 'install' | 'installation' | 'campaign' | 'team' | 'agent' | 'conditional' | 'template' | 'launch'
   | 'system' | 'team_roster' | 'session_role' | 'explicit_launch' | 'house';
 export interface StatedBy {
   layer: StatedLayer;

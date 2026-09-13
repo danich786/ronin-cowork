@@ -1,0 +1,13 @@
+# Perplexity
+- **label:** Perplexity
+- **blurb:** Research with the connected Perplexity service.
+- **provider:** perplexity
+- **reading:** —
+- **reading_off:** —
+- **sops:** —
+- **macros:** —
+- **actions:** —
+- **tools:** —
+- **parts:** —
+- **mcp:** perplexity
+- **order:** 40

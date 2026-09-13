@@ -1,0 +1,13 @@
+# Trello
+- **label:** Trello
+- **blurb:** Work with the connected Trello service.
+- **provider:** trello
+- **reading:** —
+- **reading_off:** —
+- **sops:** —
+- **macros:** —
+- **actions:** —
+- **tools:** —
+- **parts:** —
+- **mcp:** trello
+- **order:** 30
