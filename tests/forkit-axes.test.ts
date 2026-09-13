@@ -46,7 +46,7 @@ test('forkit is still a previewed workflow macro the compiler can find', async (
 
 test('forkit launches through the one door, not by hand-rolling tmux', async () => {
   const text = await forkit();
-  assert.match(text, /`tejun-fork`/, 'the one agent-facing command uses the launch door');
+  assert.match(text, /`session_fork`/, 'the one agent-facing command uses the launch door');
   // The three steps the door replaces. Typing a CLI into a pane and waiting for its
   // prompt is what LAUNCH_READY retired, and it is also what skipped the letter.
   assert.doesNotMatch(text, /\|\s*session-create\s*\|/, 'session-create cannot stamp a role');
@@ -54,8 +54,8 @@ test('forkit launches through the one door, not by hand-rolling tmux', async () 
   assert.doesNotMatch(text, /\|\s*wait-ready\s*\|/, 'there is no prompt to wait for');
 });
 
-test('tejun-fork serializes repeatable behaviours and no role field', async () => {
-  const source = await readFile(new URL('../ronin_bin/tejun-fork', import.meta.url), 'utf8');
+test('session_fork serializes repeatable behaviours and no role field', async () => {
+  const source = await readFile(new URL('../ronin_bin/session_fork', import.meta.url), 'utf8');
   assert.match(source, /--behaviour\|--behavior/);
   assert.match(source, /b\["behaviours"\] = e\["BEHAVIOURS"\]\.splitlines\(\)/);
   assert.doesNotMatch(source, /session_role|session-role|\("session_role",/);
