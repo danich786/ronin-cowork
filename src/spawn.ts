@@ -321,7 +321,14 @@ export async function resolveForm(
   const contributionMcp = contributions
     .filter((contribution) => contribution.enabled)
     .flatMap((contribution) => contribution.mcp);
-  const gbrainAnswer = bareMetalAgent ? 'disconnected' as const : cascade.selected.includes('gbrain') ? 'connected' as const : undefined;
+  // Bare metal never receives Campaign or Team defaults. A Cowork Agent receives gbrain
+  // only when the behaviour is both available and selected; every other Agent launch
+  // explicitly disconnects the provider's globally configured gbrain.
+  const gbrainAnswer = bareMetalAgent
+    ? 'disconnected' as const
+    : agent
+      ? cascade.selected.includes('gbrain') ? 'connected' as const : 'disconnected' as const
+      : undefined;
   const mcpWanted = profile.mcpAlways || contributionMcp.length > 0
     ? true
     : gbrainAnswer === 'connected'
@@ -329,10 +336,8 @@ export async function resolveForm(
       : gbrainAnswer === 'disconnected'
         ? false
         : profile.mcpDefault;
-  const askedOff = bareMetalAgent;
-  // Behaviour silence is not a request to reconfigure the provider. An absent gbrain
-  // behaviour contributes neither connection material nor disconnect CLI flags.
-  let mcpOffWanted = bareMetalAgent;
+  const askedOff = gbrainAnswer === 'disconnected';
+  let mcpOffWanted = askedOff;
   if (askedOff && profile.mcpAlways) {
     throw new Error(
       'This Agent is born connected (`mcp: always`) — ' +
