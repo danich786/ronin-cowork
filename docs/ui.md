@@ -543,6 +543,16 @@ host.append(form.el);   // form.value() · form.set(key, v) or set({…}) · for
 | `after` | the field this depends on; the answer clears and the options are re-asked when it changes |
 | `row` | `(option, value) → node`: a control that belongs to a chosen option (a branch name, a new team's name), drawn under the group's stones whether the tray is open or closed, so an answer's own field never vanishes with the tray |
 
+**Shapes, as ruled.** Reach, recruit and output are icon-free rectangles (owner, 2026-09-13).
+A square with a glyph is used only where the glyph means something on its own — kind, and the
+Control positions — and the glyph comes from `glyphs.js`.
+
+**Beside a foreign control.** A form that wants one question next to a control that is not a
+question (New Agent's Name beside Team and Team lead) makes two `ask()` instances — the Team
+package, and the rest — and lays them out in its own flex row; both call the same `onChange`.
+Team and Team lead are one group in one instance, so they move below Name as a pair when the
+row narrows. The utility has no slot for foreign DOM and gains none.
+
 **What is not an `ask()`.** The stone work surface (`stone-work-surface.js`) is a page for
 browsing a collection whose item is the content — Presets, Workspace Folders, Model
 providers, Templates — and stays. Tabs, the Presets kind filter, the Control dial and the
