@@ -263,7 +263,7 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
   const extrasOf = (group) => {
     const extras = el('div', 'ask-extras');
     for (const field of group.fields) {
-      if (!visible(field)) continue;
+      if (!visible(field) || field.key === open) continue; // an open tray owns its chosen option's line; the group takes it on close
       const chosen = field.many ? state[field.key] : [state[field.key]];
       for (const v of chosen) {
         const row = rowFor(field, v);
@@ -314,14 +314,19 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
   };
   root.addEventListener('keydown', onEscape);
   const focusStone = (key) => { for (const node of root.children) { /* groups */ for (const inner of node.children || []) { for (const button of inner.children || []) if (button.dataset?.askKey === key) button.focus?.(); } } };
+  let anyKey = null;
   function bindOutside() {
     if (typeof document.addEventListener !== 'function') return;
     if (open && !outside) {
       outside = (event) => { if (typeof root.contains === 'function' && (root.contains(event.target) || trayNode?.contains?.(event.target))) return; open = ''; revealed = null; paint(); };
+      anyKey = (event) => { if (event.key === 'Escape' && open && !(typeof root.contains === 'function' && (root.contains(event.target) || trayNode?.contains?.(event.target)))) onEscape(event); };
       document.addEventListener('pointerdown', outside);
+      document.addEventListener('keydown', anyKey);
     } else if (!open && outside) {
       document.removeEventListener('pointerdown', outside);
+      document.removeEventListener('keydown', anyKey);
       outside = null;
+      anyKey = null;
     }
   }
 
