@@ -11,6 +11,9 @@ test('New Agent uses one ruled ask() spec after its three session types', async 
   assert.match(form, /const teamQuestions = ask\(\[/);
   assert.match(form, /trayHost: identityRow/);
   assert.match(form, /when: 'current', key: 'teamName'/);
+  assert.match(form, /new_agent\.team_none', 'No team \(rōnin\)'/);
+  assert.match(form, /row: \(\) => newTeamField\(\), required: true/);
+  assert.match(form, /invalid: \(\) => \(draft\.newTeam && !isValidTeamName\(draft\.newTeam\)/);
   assert.match(form, /new_team\.name_placeholder', 'lowercase, digits, - _'/);
   assert.doesNotMatch(form, /input\.placeholder = t\('new_agent\.team_new_blank'/);
   assert.match(form, /className: 'na-questions',[\s\S]*density: 'tight'/);
@@ -47,6 +50,13 @@ test('both workbench entrances use the canonical New Agent form with contextual 
   assert.match(cowork, /const newAgentBySeat = Object\.fromEntries[\s\S]*createNewAgentView\(WorkspaceKit, \{[\s\S]*team: \(\) =>/);
   assert.match(cowork, /connect: \(name\) => connectSession\(name, id\)/);
   assert.match(cowork, /'team\.add-agent': WB_TYPES\.newAgent/);
+});
+
+test('choosing New team requires a valid name before any session type can launch', async () => {
+  const form = await source('new-agent.js');
+  assert.match(form, /draft\.teamMode !== 'new' \|\| isValidTeamName\(chosenTeam\(\)\)/);
+  assert.match(form, /if \(draft\.teamMode === 'new'\) \{[\s\S]*if \(!isValidTeamName\(team\)\)/);
+  assert.doesNotMatch(form, /unnamed new team is no team|isCowork\(\) && team/);
 });
 
 test('Where it works keeps birthplace separate from optional additional workspaces', async () => {

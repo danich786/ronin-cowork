@@ -294,9 +294,10 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
   const teamQuestions = ask([
     { group: t('squad', 'Team'), fields: [
       { key: 'team', label: t('squad', 'Team'), options: [
-        { v: 'none', l: t('new_agent.team_none', 'No team — a rōnin'), sub: t('new_agent.team_none_sub', 'Ordinary, not a gap.') },
+        { v: 'none', l: t('new_agent.team_none', 'No team (rōnin)'), sub: t('new_agent.team_none_sub', 'Ordinary, not a gap.') },
         { v: 'current', l: t('new_agent.team_current', 'Current team'), sub: t('new_agent.team_current_sub', 'Choose from your teams.') },
-        { v: 'new', l: t('new_agent.team_new', 'New team'), sub: t('new_agent.team_new_sub', 'Created first, then this Agent is born into it.'), row: () => newTeamField() },
+        { v: 'new', l: t('new_agent.team_new', 'New team'), sub: t('new_agent.team_new_sub', 'Created first, then this Agent is born into it.'), row: () => newTeamField(), required: true,
+          invalid: () => (draft.newTeam && !isValidTeamName(draft.newTeam) ? t('new_team.name_invalid', 'Lowercase letters, digits, _ and - only.') : '') },
       ], then: [
         { when: 'current', key: 'teamName', label: t('new_agent.which_team', 'Which team'), options: teamRows },
       ] },
@@ -450,7 +451,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
   function paintActions() {
     // The button says what the press will DO: with the name blank there is no team to
     // create, so it must not promise one.
-    const ready = !!draft.name.trim();
+    const ready = !!draft.name.trim() && (draft.teamMode !== 'new' || isValidTeamName(chosenTeam()));
     start.setDisabled(!ready);
     if (ready) start.el.dataset.kind = 'primary';
     else delete start.el.dataset.kind;
@@ -469,9 +470,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     notice.set('info', t('add_agent.starting', 'Starting…'));
     // A NEW TEAM IS TWO IDEMPOTENT DOORS (§ 7.5): write the record, then launch into it.
     let team = chosenTeam();
-    // An unnamed new team is no team, not a refusal — see the field's own sentence.
-    if (draft.teamMode === 'new' && !team) team = '';
-    if (draft.teamMode === 'new' && isCowork() && team) {
+    if (draft.teamMode === 'new') {
       if (!isValidTeamName(team)) {
         if (launchTab) closeWorkspaceTab(launchTab);
         busy = false;
