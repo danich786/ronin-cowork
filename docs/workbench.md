@@ -34,7 +34,7 @@ not four layout systems.
 |---|---|
 | Campaign | Campaign settings and Campaign-level resources |
 | Teams collection | Teams, Agents, shared resources, and creation surfaces available in the selected Campaign context |
-| Team | that Team's Agents, Team commons, and launch surface |
+| Team | that Team's Agents, Commons, and launch surface |
 | Setup | pinned Presets plus Register, providers, roots, Services, gbrain, and Templates |
 
 Adding another tenant or profile adds no layout implementation. Adding another surface
@@ -94,7 +94,7 @@ same numbered place when you replace its surface.
 
 ## Short vocabulary check
 
-> The Team workbench's discovery column offers the Team commons surface. Opening it places
+> The Team workbench's discovery column offers the Commons surface. Opening it places
 > an independent rendered instance in the selected workspace.
 
 If *workspace* and *surface* could be swapped in a sentence without changing its meaning,

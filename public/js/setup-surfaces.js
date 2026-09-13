@@ -3,7 +3,8 @@ import { WorkspaceKit } from './workspace-kit.js';
 import { request } from './request.js';
 import { t } from './lexicon.js';
 import { buildGbrain } from './gbrain.js';
-import { buildProjectRoots } from './projectroots.js';
+import { createWorkspaceFoldersSurface } from './workspace-folders-surface.js';
+import { ask } from './ask.js';
 import { CAMPAIGN_TEMPLATES_TYPE, createTemplatesSurface } from './campaign-templates.js';
 import { PROVIDER_SURFACE_TYPE, providerSurfaceDefinition } from './provider-surface.js';
 import { createStoneWorkSurface } from './stone-work-surface.js';
@@ -64,54 +65,26 @@ function createRegisterSurface(context) {
   const checkRow = (label, box, className = '') => { const row = el('label', `setup-register-check ${className}`.trim()); row.append(box, el('span', '', label)); return row; };
   const choiceGroup = (name, label, choices, { multiple = false, explain = false } = {}) => {
     const value = input(name, 'hidden');
-    const selected = new Set();
-    /** One quiet explanation for the chosen answer, shown only once something is chosen. */
-    const explanation = explain ? el('p', 'setup-register-explain') : null;
-    if (explanation) { explanation.hidden = true; explanation.setAttribute('aria-live', 'polite'); }
-    const group = el('div', 'setup-register-choice-grid');
-    group.setAttribute('role', 'group'); group.setAttribute('aria-label', label); group.dataset.choices = String(choices.length);
-    for (const [key, text, description = ''] of choices) {
-      labels.set(key, text);
-      const button = el('button', 'setup-register-choice');
-      button.type = 'button'; button.dataset.value = key; button.setAttribute('aria-pressed', 'false');
-      button.append(el('strong', '', text));
-      if (description && !explanation) button.append(el('span', '', description));
-      button.addEventListener('click', () => {
-        if (multiple) {
-          if (selected.has(key)) selected.delete(key); else selected.add(key);
-          button.setAttribute('aria-pressed', String(selected.has(key)));
-          value.value = JSON.stringify([...selected]);
-        } else {
-          /* A second click on the chosen answer clears it; nothing here is mandatory. */
-          const chosen = value.value === key ? '' : key;
-          value.value = chosen;
-          for (const option of group.querySelectorAll('button')) option.setAttribute('aria-pressed', String(Boolean(chosen) && option === button));
-          if (explanation) { explanation.textContent = chosen ? description : ''; explanation.hidden = !chosen || !description; if (chosen) button.after(explanation); }
-        }
-      });
-      group.append(button);
-    }
-    const wrap = el('div', 'setup-field setup-register-bounded');
-    wrap.append(el('span', 'setup-register-question', label), group, value);
-    if (explanation) wrap.append(explanation);
-    return { value, wrap, values: () => multiple ? [...selected] : value.value };
+    for (const [key, text] of choices) labels.set(key, text);
+    let selected = multiple ? [] : '';
+    const listeners = [];
+    const question = ask([{ group: label, fields: [{ key: name, label, many: multiple, options: choices.map(([key, text, description = '']) => ({ v: key, l: text, sub: description })) }] }], {
+      value: { [name]: selected },
+      onChange: (next) => { selected = next[name]; value.value = multiple ? JSON.stringify(selected) : selected; for (const listener of listeners) listener(selected); },
+    });
+    question.el.classList.add('setup-register-bounded');
+    return { value, wrap: question.el, values: () => multiple ? [...selected] : selected, onChange: (listener) => listeners.push(listener) };
   };
   const checklistGroup = (name, label, choices) => {
-    const wrap = el('fieldset', 'setup-register-checklist');
-    wrap.append(el('legend', 'setup-register-question', label));
-    const boxes = [];
     const other = input(`${name}_other`); other.className = 'setup-register-other'; other.placeholder = t('setup_surface.something_else_prompt', 'Tell us'); other.hidden = true;
-    for (const [value, text] of choices) {
-      labels.set(value, text);
-      const box = input(name, 'checkbox'); box.value = value; boxes.push(box);
-      if (value === 'something_else') {
-        const row = el('div', 'setup-register-check-other');
-        box.addEventListener('change', () => { other.hidden = !box.checked; if (box.checked) other.focus(); });
-        row.append(checkRow(text, box), other);
-        wrap.append(row);
-      } else wrap.append(checkRow(text, box));
-    }
-    return { wrap, other, values: () => boxes.filter((box) => box.checked).map((box) => box.value) };
+    for (const [value, text] of choices) labels.set(value, text);
+    let selected = [];
+    const question = ask([{ group: label, fields: [{ key: name, label, many: true, options: choices.map(([value, text]) => ({ v: value, l: text })) }] }], {
+      value: { [name]: selected },
+      onChange: (next) => { selected = next[name]; other.hidden = !selected.includes('something_else'); if (!other.hidden) other.focus(); },
+    });
+    const wrap = el('div', 'setup-register-checklist'); wrap.append(question.el, other);
+    return { wrap, other, values: () => [...selected] };
   };
   const email = input('email', 'email'); email.placeholder = 'you@example.com'; email.autocomplete = 'email';
   const identityMode = choiceGroup('identity_mode', t('setup_surface.identity', 'How would you like to register?'), [
@@ -124,7 +97,7 @@ function createRegisterSurface(context) {
   ]);
   const kindOther = input('kind_other'); kindOther.className = 'setup-register-other'; kindOther.placeholder = t('setup_surface.something_else_prompt', 'Tell us'); kindOther.hidden = true;
   kind.wrap.append(kindOther);
-  for (const button of kind.wrap.querySelectorAll('button')) button.addEventListener('click', () => {
+  kind.onChange(() => {
     kindOther.hidden = kind.value.value !== 'other'; if (!kindOther.hidden) kindOther.focus();
   });
   const preferredFeature = choiceGroup('preferred_feature', t('setup_surface.preferred_feature', 'Which core Ronin feature do you prefer most?'), [
@@ -132,7 +105,6 @@ function createRegisterSurface(context) {
     ['multiple_providers', 'Multiple providers without lock-in', t('setup_surface.feature_multiple_providers', 'You keep your own accounts and your direct relationship with each model provider. Ronin never stands in between, everything runs on your machine, and how your agents work together is yours.')],
     ['team_coordination', 'Agents with team coordination skills', t('setup_surface.feature_team_coordination', 'Coordination is light reading an agent does to build its brief. Each launch brief carries a few simple tools so agents can message and coordinate with one another.')],
   ], { explain: true });
-  preferredFeature.wrap.querySelector('.setup-register-choice-grid').dataset.layout = 'rows';
   const reasons = checklistGroup('reasons', t('setup_surface.reasons', 'Which of these describes you best in terms of getting value from Ronin?'), [
     ['different_strengths', 'Different models have different strengths. I want to use the best one for each job.'],
     ['network_resilience', 'Sometimes one model provider is having network issues, so I want another available.'],
@@ -203,7 +175,7 @@ function createRegisterSurface(context) {
     declined.hidden = !declinedRegistration;
     email.required = emailRegistration && !declinedRegistration;
   };
-  for (const button of identityMode.wrap.querySelectorAll('button')) button.addEventListener('click', paintIdentityMode);
+  identityMode.onChange(paintIdentityMode);
   paintIdentityMode();
   form.append(welcome, about, fit, send, declined);
   const prefs = el('form', 'setup-form setup-preferences');
@@ -292,11 +264,11 @@ function createRegisterSurface(context) {
 }
 
 function createRootsSurface(context) {
-  const out = surface(t('setup_surface.roots', 'Workspace folders'));
-  // Mounted on the surface content itself, as Presets is, so the shared stone work surface
-  // owns the insets: a nested host would zero the content padding and get none of its own.
-  const room = buildProjectRoots(out.content, () => out.content.isConnected, () => context.tenant?.campaign || '', { presentation: 'stones' });
-  return { el: out.el, show: () => { room.enter(); notifySummary(SETUP_SURFACE_TYPES.roots, '2 folders + yours', context.workbench); } };
+  return createWorkspaceFoldersSurface({
+    campaignId: () => context.tenant?.campaign || '',
+    presentation: 'stones',
+    onShow: () => notifySummary(SETUP_SURFACE_TYPES.roots, '2 folders + yours', context.workbench),
+  });
 }
 
 /** The one Services mark file, read once and inlined so the R's stroke follows the app's data-theme, not only the OS scheme.

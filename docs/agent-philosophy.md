@@ -49,7 +49,6 @@ is the one place; these are the pieces.
 | *A finding, never an action* — doctor reads and names the remedy; it touches nothing | `bin/ronin-doctor`, "the box" |
 | *Never post to acknowledge* — the read cursor is the only acknowledgement on a wipeboard | [`wipeboards.md`](wipeboards.md) |
 | *Stay or go* — the desk an Agent lives in is parked or ends with the Agent; nobody asks it to leave | the Worktrees Routine, "Finish the assignment" |
-| *Structured by shared vocabulary, not forced through a shared workflow* — virtual Team Kanban projects independent Agent-owned records | [`work-record-integration.md`](work-record-integration.md) |
 | What Ronin will and will not do to the machine | [`how-ronin-protects-you.md`](how-ronin-protects-you.md) |
 
 When a new mechanism needs a sentence like these, write the sentence where the mechanism

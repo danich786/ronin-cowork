@@ -1,0 +1,95 @@
+/* ASK — the one selector utility (public/js/ask.js · ronin-lab SELECTORS.md).
+   Two fixed shapes and a fixed reading stone; nothing here stretches with the surface.
+   Extra width is white space to the right; less width stacks groups, then the fields in a group. */
+@layer app {
+
+  /* the sizes live on the instance AND on the tray, because a hosted tray sits outside its instance */
+  .ask, .ask-tray { --ask-w: 140px; --ask-h: 48px; --ask-sq: 85px; --ask-gap: var(--space-4); --ask-group-gap: var(--space-8); }
+  .ask { display: flex; flex-wrap: wrap; gap: var(--space-7) var(--ask-group-gap); align-items: flex-start; min-width: 0; font-size: var(--form-input); }
+  .ask-group { display: grid; gap: var(--space-3); max-width: 100%; }
+  /* type follows the kit's field furniture: a group head IS a field label (.wk-field-label), the
+     stone's own label is a description (.wk-field-description), the reading is control text. */
+  .ask-group-head { margin: 0; color: var(--fg-strong); font-size: var(--form-key); font-weight: 650; }
+  .ask-fields { display: flex; flex-wrap: wrap; gap: var(--ask-gap); }
+
+  /* the reading stone */
+  .ask-stone { position: relative; flex: 0 0 var(--ask-w); width: var(--ask-w); height: var(--ask-h); max-width: 100%; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden;
+    border: var(--edge) solid var(--line-2); border-left: var(--edge-2) solid var(--accent); border-radius: var(--radius-xs); background: var(--well); color: var(--fg);
+    padding: var(--space-3) var(--space-4); cursor: pointer; text-align: left; font: inherit; font-size: var(--form-input); }
+  .ask-stone:hover { border-color: var(--kaki); }
+  .ask-stone[aria-expanded='true'] { border-color: var(--kaki); border-left-color: var(--kaki); background: var(--raise); box-shadow: inset var(--edge-2) 0 var(--kaki); }
+  .ask-stone::after { content: '▾'; position: absolute; right: var(--space-4); bottom: var(--space-3); color: var(--accent); font-size: var(--text-2); }
+  .ask-switch::after, .ask-switch .ask-reading { content: none; }
+  .ask-label { display: block; overflow: hidden; color: var(--muted); font-size: var(--form-note); line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
+  .ask-reading { display: block; overflow: hidden; padding-right: var(--space-7); color: var(--fg-strong); font-size: var(--form-input); font-weight: 500; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
+  .ask-blank { color: var(--muted); font-weight: 400; }
+  .ask-fact { margin-left: var(--space-3); color: var(--accent); font-size: var(--form-note); font-style: normal; }
+
+  /* the switch: the same stone with a track */
+  .ask-switch { flex-direction: row; align-items: center; justify-content: space-between; gap: var(--space-3); }
+  .ask-switch .ask-words { display: grid; gap: var(--space-1); min-width: 0; }
+  .ask-switch .ask-reading { padding-right: 0; }
+  .ask-switch[aria-checked='false'] .ask-reading { color: var(--muted); font-weight: 400; }
+  .ask-track { position: relative; flex: none; width: 22px; height: 12px; border-radius: var(--radius-pill); background: var(--line-2); transition: background var(--motion-quick) var(--ease); }
+  .ask-track::after { content: ''; position: absolute; top: 2px; left: 2px; width: 8px; height: 8px; border-radius: var(--radius-round); background: var(--panel); transition: left var(--motion-quick) var(--ease); }
+  .ask-switch[aria-checked='true'] .ask-track { background: var(--kaki); }
+  .ask-switch[aria-checked='true'] .ask-track::after { left: 12px; }
+
+  /* the tray: inserted under the field's group, full width of the surface */
+  .ask-tray { flex-basis: 100%; width: 100%; grid-column: 1 / -1; box-sizing: border-box; display: grid; gap: var(--space-4); border: var(--edge) dashed var(--line-2); background: color-mix(in srgb, var(--panel) 60%, var(--bg-2)); padding: var(--space-5); }
+  .ask-filter { justify-self: start; width: calc(var(--ask-w) + var(--space-12)); max-width: 100%; border: var(--edge) solid var(--line-2); border-radius: var(--radius-xs); background: var(--well); color: var(--fg); padding: var(--space-3) var(--space-4); font: inherit; font-size: var(--form-note); }
+  .ask-options { display: flex; flex-wrap: wrap; gap: var(--ask-gap); }
+  .ask-empty { color: var(--dim); font-size: var(--form-note); }
+  /* the second layer: the nested question's stones under the first layer's, one hairline between */
+  .ask-layer { display: grid; gap: var(--space-3); border-top: var(--edge) dashed var(--line); padding-top: var(--space-4); }
+  .ask-layer-head { color: var(--muted); font-size: var(--form-note); }
+  .ask-line { gap: var(--space-2); }
+  .ask-line .ask-extra { grid-template-columns: var(--ask-w) minmax(0, 1fr); }
+  .ask-line .ask-extra input { max-width: none; width: 100%; }
+  .ask-line .ask-extra { grid-template-columns: var(--ask-w) minmax(0, 1fr); grid-template-areas: 'name control' '. note'; }
+  .ask-line .ask-extra-name { grid-area: name; }
+  .ask-line .ask-extra > :not(.ask-extra-name):not(.ask-validation) { grid-area: control; }
+  .ask-validation { grid-area: note; min-height: 0; color: var(--bad); font-size: var(--form-note); }
+  .ask-validation:empty { display: none; }
+  .ask-extra[data-required='true'] .ask-validation { display: block; min-height: 1.4em; } /* the note's line is reserved, so a refusal moves nothing */
+  .ask-line [aria-invalid='true'] { border-color: var(--bad); }
+  .ask-line[data-invalid='true'] { animation: ask-flash var(--motion-settle, 240ms) var(--ease) 2; }
+  @keyframes ask-flash { from { box-shadow: 0 0 0 3px color-mix(in srgb, var(--bad) 45%, transparent); } to { box-shadow: none; } }
+  @media (prefers-reduced-motion: reduce) { .ask-line[data-invalid='true'] { animation: none; } }
+
+  /* the two shapes, and never a third */
+  .ask-opt { display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; border: var(--edge) solid var(--line-2); border-left: var(--edge-2) solid var(--accent); border-radius: var(--radius-xs); background: var(--well); color: var(--fg-strong); cursor: pointer; text-align: left; font: inherit; }
+  .ask-square { flex: 0 0 var(--ask-sq); width: var(--ask-sq); height: var(--ask-sq); padding: var(--space-4) var(--space-5); }
+  .ask-rect { flex: 0 0 var(--ask-w); width: var(--ask-w); height: var(--ask-h); justify-content: center; padding: var(--space-3) var(--space-5); }
+  .ask-glyph { color: var(--accent); font-size: var(--text-8); font-style: normal; line-height: 1; }
+  .ask-name { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: break-word; font-size: var(--form-input); font-weight: 500; line-height: 1.2; }
+  .ask-square .ask-name { font-size: var(--form-note); }
+  .ask-word { overflow: hidden; color: var(--accent); font-size: var(--form-note); text-overflow: ellipsis; white-space: nowrap; }
+  .ask-opt:hover { border-color: var(--kaki); }
+  .ask-opt[aria-selected='true'] { border-color: var(--kaki); border-left-color: var(--kaki); background: var(--raise); color: var(--kaki-lift); box-shadow: inset var(--edge-2) 0 var(--kaki); }
+  .ask-opt[aria-disabled='true'] { opacity: .45; cursor: default; }
+  .ask-opt[aria-disabled='true']:hover { border-color: var(--line-2); }
+
+  /* the caption carries the sentence, the facts, and the reason a stone is greyed */
+  .ask-caption { margin: 0; min-height: 1.4em; color: var(--muted); font-size: var(--form-note); line-height: 1.4; }
+  .ask-caption b { color: var(--fg-strong); font-weight: 500; }
+  .ask-extra { display: grid; grid-template-columns: var(--ask-w) minmax(0, 1fr); gap: var(--space-4); align-items: center; font-size: var(--form-note); color: var(--fg); }
+  .ask-extra-name { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ask-extra input { min-width: 0; max-width: calc(var(--ask-w) * 2); border: var(--edge) solid var(--line-2); border-radius: var(--radius-xs); background: var(--well); color: var(--fg); padding: var(--space-2) var(--space-4); font: inherit; font-size: var(--form-note); }
+
+  /* tight: the launch forms' density. Less line spacing inside a group (head sits on its stones,
+     a 40 px stone, 6 px between stones), the same paragraph spacing between groups. Widths do not change. */
+  .ask[data-density='tight'], .ask-tray[data-density='tight'] { --ask-h: 40px; --ask-gap: var(--space-3); }
+  .ask[data-density='tight'] { gap: var(--space-5) var(--ask-group-gap); }
+  .ask[data-density='tight'] .ask-group { gap: var(--space-1); }
+  .ask[data-density='tight'] .ask-group-head { font-size: var(--form-note); font-weight: 600; color: var(--muted); }
+  .ask[data-density='tight'] .ask-stone { padding: var(--space-2) var(--space-4); }
+  .ask[data-density='tight'] .ask-label { font-size: var(--text-2); line-height: 1; }
+  .ask[data-density='tight'] .ask-reading { line-height: 1.2; }
+  .ask-tray[data-density='tight'] { gap: var(--space-3); padding: var(--space-4); }
+  .ask[data-density='tight'] .ask-extras { gap: var(--space-1); }
+
+  .ask-stone:focus-visible, .ask-opt:focus-visible, .ask-filter:focus-visible { outline: var(--edge-2) solid var(--kaki); outline-offset: 1px; }
+  @media (prefers-reduced-motion: reduce) { .ask-track, .ask-track::after { transition: none; } }
+
+}

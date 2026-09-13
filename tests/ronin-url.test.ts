@@ -99,6 +99,8 @@ test('every agent-facing API caller connects through the one library and carries
     'tejun-fork',
     'tejun-harakiri',
     'tejun-rehydrate',
+    'tejun-session-check',
+    'tejun-session-create',
     'tejun-session-set',
     'tejun-team-set',
     'tejun-teampage',

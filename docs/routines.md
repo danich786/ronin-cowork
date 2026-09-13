@@ -1,8 +1,8 @@
 # Routines — what a new Agent is equipped with
 
-A **Routine** is a named, switchable bundle of behaviours that work together: startup
-reading, discoverable SOPs, macros, actions, command-line tools and MCP connections. A
-Routine changes what a newly launched Agent is offered. Changing a switch never mutates
+A **Routine** is a named, switchable bundle of behaviours that work together:
+startup reading, discoverable SOPs, macros, actions, command-line tools and MCP connections.
+A Routine changes what a newly launched Agent is offered. Changing a switch never mutates
 an Agent already running.
 
 ## Four ways to work

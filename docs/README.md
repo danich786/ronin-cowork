@@ -36,9 +36,8 @@ Start with the root [`AGENTS.md`](../AGENTS.md), then use the relevant architect
 
 | Question | Route |
 |---|---|
-| How do I verify a repository change? | Run `npm run verify`; run Playwright suites explicitly when diagnosing the rendered UI. |
+| How do I verify or provisionally preview a repository change? | Run `npm run verify`; run Playwright suites explicitly when diagnosing the rendered UI; for one Team preview without publication, use [visual staging](../ronin_sops/ronin_methodology.md#visual-staging-one-disposable-team-preview). |
 | How does the server talk to tmux, start programs, and switch Services parts on and off? | [The tmux connection, the spawn broker, and parked parts](tmux-connection.md) |
-| What is the intended Team work-record and external-board synchronization boundary? | [Future Team work-record integration](work-record-integration.md) |
 
 ## Shelves
 
@@ -64,7 +63,7 @@ the current Cowork, a quick new session, the cowork commons, and the two-or-four
 layout. On a phone, choose the Cowork, choose the Agent, then use its full-screen tile.
 
 A terminal tile provides the live terminal, composer, output view, Control value, and work
-record. Team commons provides Docs, Wipeboard, Messages, and Team Configuration.
+record. Commons provides Roster, Docs, Wipeboard, Messages, Cron jobs, and Configuration.
 Cowork commons provides account, appearance, release, voice, Services, project-root, and
 archive controls. Campaign commons provides Campaign configuration, roots, Coworks,
 templates, and Routines.

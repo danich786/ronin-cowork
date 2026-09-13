@@ -2,7 +2,7 @@
 
 Ronin's internal system names are Japanese: **TEJUN · MICHI · TEGAMI · SHINGO · RIREKI ·
 OBOERU · TOMODACHI · SOROBAN · KOSHI · KOE · DAIKUSAN · KOTOBA · AGERU · JUSHO · BYOIN ·
-SETTEI · KYOKAI · SHIWAKE · KOKUGO · JIKAN**. You will meet them in tool names, files and documents.
+SETTEI · KYOKAI · SHIWAKE · KOKUGO · JIKAN · ERABI**. You will meet them in tool names, files and documents.
 They never reach the person you work for: use the plain word below. Only **Ronin** itself
 is a name a user learns. Everything not listed here is ordinary English and needs no gloss.
 
@@ -24,6 +24,7 @@ is a name a user learns. Everything not listed here is ordinary English and need
 | KOE | **Hotwords**<!--g:glossary.hotwords--> | Voice. The mic on a tile; Hotwords are the words dictation mishears. |
 | SETTEI | **Configuration**<!--g:glossary.configuration--> | The ⚙ tab. "Your settings" for what is in it. |
 | AGERU | **what gets sent**<!--g:glossary.packet--> · **where Ronin has connected**<!--g:glossary.egress_log--> | The one door out: a packet shown in full before it leaves, and the list of every outbound request. |
+| ERABI | — | The one selector utility: how a form asks a question — the reading stone, its tray, the two stone shapes, the caption, the switch (`ask()` in `public/js/ask.js`; ronin-lab `SELECTORS.md`). Internal machinery; the user sees a question, never the name. |
 | KOTOBA · KOKUGO · DAIKUSAN · JUSHO · BYOIN · KYOKAI · SHIWAKE | — | Internal machinery. There is no user word; do not translate or explain them. |
 
 ## The space
@@ -55,9 +56,9 @@ is a name a user learns. Everything not listed here is ordinary English and need
 | team | **Cowork**<!--g:glossary.team--> | A set of sessions working together. |
 | `team_roster` | **Cowork record**<!--g:glossary.team_roster--> | The team's record: kind, objective, kit, launch defaults. Members are read live. |
 | `team_lead` | **team lead · 人**<!--g:glossary.team_lead--> | Set by hand, never inferred from what a session does. |
-| `session_type` | **session type**<!--g:glossary.session_type--> | **Cowork Agent**<!--g:glossary.cowork_agent--> born with Ronin's floor · **bare-metal Agent**<!--g:glossary.bare_metal_agent--> a CLI started without it · **terminal**<!--g:glossary.terminal--> a shell with no agent. |
+| `session_type` | **session type**<!--g:glossary.session_type--> | **Cowork Agent**<!--g:glossary.cowork_agent--> born with everything Ronin provides on this box · **bare-metal Agent**<!--g:glossary.bare_metal_agent--> a CLI started without it · **terminal**<!--g:glossary.terminal--> a shell with no agent. |
 | `session_mandate` | **mandate**<!--g:glossary.mandate--> | **Reach**<!--g:glossary.reach--> how far an Agent goes · **Recruit**<!--g:glossary.recruit--> how it builds a Team · **Output**<!--g:glossary.output--> what it hands back. |
-| `ronin_service` | **Services**<!--g:glossary.services--> | A rented capability on top of open-source Ronin. Never module, plug-in, extension or applet. |
+| instruction cascade | **installation**<!--g:glossary.installation--> · **feature**<!--g:glossary.feature--> · **behaviour**<!--g:glossary.behaviour--> | A Campaign installation is a system switch: system joins every Cowork Agent; provider offers features. A feature adds a facility or taught practice. A behaviour is a short page for ordinary work; **Mandates** defaults on. System settings: **Installations**<!--g:glossary.installations--> and **Defaults**<!--g:glossary.defaults-->. **Services**<!--g:glossary.services-->: paid. |
 | `message_queue` | **message queue**<!--g:glossary.message_queue--> | Messages waiting to enter a live session. |
 | `project_root` | **project root**<!--g:glossary.project_root--> | A folder Ronin is allowed to work in. |
 | `desk_profile` | **desk profile**<!--g:glossary.desk_profile--> | The owner's standing defaults: skin, words, layout. |

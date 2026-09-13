@@ -1,9 +1,11 @@
 /* part of the ronin-cowork client — see js/README.md */
-/** Campaign Defaults. These values seed the next form; they never edit a live Agent. */
+/** Campaign Agent defaults. These values seed the next form; they never edit a live Agent. */
 import { t } from './lexicon.js';
 import { saveCampaign } from './campaigns.js';
 import { WorkspaceKit } from './workspace-kit.js';
-import { loadProviderCatalog, providerModelPair } from './form-steps.js';
+import { loadProviderCatalog, providerCatalog, modelAvailabilityFact } from './form-steps.js';
+import { ask } from './ask.js';
+import { ruledRows } from './glyphs.js';
 
 const el = (tag, cls, text) => { const out = document.createElement(tag); if (cls) out.className = cls; if (text != null) out.textContent = String(text); return out; };
 const bucket = (value) => value && typeof value === 'object' && !Array.isArray(value) ? value : {};
@@ -23,30 +25,6 @@ const labeled = (form, label, control, help = '') => {
   const row = el('label', 'cv-default-field'); row.append(el('span', 'cv-default-label', label), control);
   if (help) row.append(el('small', 'cv-from', help)); form.append(row); return control;
 };
-const selectOf = (values, selected) => {
-  const select = el('select', 'cv-input');
-  for (const value of values) select.add(new Option(optionLabel(value), value));
-  select.value = values.includes(selected) ? selected : values[0]; return select;
-};
-const multiSelectOf = (values, selected) => {
-  const chosen = list(selected).filter((value) => values.includes(value));
-  const details = el('details', 'cv-multi');
-  const summary = el('summary', 'cv-input');
-  const menu = el('div', 'cv-multi-menu');
-  const refresh = () => {
-    const labels = [...menu.querySelectorAll('input:checked')].map((input) => optionLabel(input.value));
-    summary.textContent = labels.join(', ') || optionLabel(values[0]);
-  };
-  for (const value of values) {
-    const input = el('input'); input.type = 'checkbox'; input.value = value; input.checked = chosen.includes(value);
-    input.addEventListener('change', refresh);
-    const option = el('label', 'cv-multi-option'); option.append(input, el('span', null, optionLabel(value))); menu.append(option);
-  }
-  details.append(summary, menu); refresh();
-  details.values = () => [...menu.querySelectorAll('input:checked')].map((input) => input.value);
-  return details;
-};
-
 export function createAgentDefaultsSurface(campaign) {
   const { createSurface, createNotice } = WorkspaceKit.primitives;
   const surface = createSurface({ label: t('campaign_view.defaults', 'Defaults'), className: 'cv-surface' });
@@ -60,21 +38,37 @@ export function createAgentDefaultsSurface(campaign) {
     const form = el('form', 'cv-defaults-form');
     const notice = createNotice();
     body.append(el('p', 'cv-note', t('campaign_view.defaults_help', 'These defaults land in the next Team or Agent form that opens. They remain editable there; nothing live changes.')));
-    // THE ONE PICKER (form-steps.js), in this form's own rows: the Campaign's provider
-    // and model, either standing alone, from the catalog it reads itself.
-    const picked = { provider: String(current.provider || ''), model: String(current.model || '') };
-    const pair = providerModelPair(
-      () => picked,
-      (provider, model) => { picked.provider = provider; picked.model = model; },
-      (label, control) => { const row = el('label', 'cv-default-field'); row.append(el('span', 'cv-default-label', label), control); return row; },
-      { classes: 'cv-input', blank: { provider: t('campaign_view.provider_default', 'Default provider'), model: t('campaign_view.model_default', 'Default model') }, labels: { provider: t('campaign_view.col_provider', 'Provider'), model: t('campaign_view.col_model', 'Preferred model') } },
-    );
-    form.append(pair.el);
-    const controls = {};
-  const fieldLabels = { reach: t('campaign_view.default_reach', 'Reach'), recruit: t('campaign_view.default_recruit', 'Recruit'), output: t('campaign_view.default_output', 'Output'), dial: t('campaign_view.default_dial', 'Control'), launch_mode: t('launch_mode.head', 'launch mode') };
-    for (const [name, values] of Object.entries(CHOICES)) {
-      controls[name] = labeled(form, fieldLabels[name], name === 'output' ? multiSelectOf(values, current.output) : selectOf(values, current[name]));
-    }
+    const catalog = providerCatalog().rows;
+    const providers = catalog.filter((row, index) => catalog.findIndex((other) => other.provider === row.provider) === index);
+    const reason = (providerRow) => providerRow.off
+      ? t('forms.reason_turned_off', 'turned off')
+      : providerRow.listed === false && providerRow.model_list_current
+        ? t('forms.reason_not_listed', 'not listed by your {cli} {client_version}', { cli: providerRow.cli_label || providerRow.cli, client_version: providerRow.model_list?.client_version || '' })
+        : t('forms.reason_not_on_machine', 'not on this machine');
+    let picked = {
+      provider: String(current.provider || ''), model: String(current.model || ''),
+      reach: current.reach || CHOICES.reach[0], recruit: current.recruit || CHOICES.recruit[0],
+      output: list(current.output), dial: current.dial || CHOICES.dial[0], launch_mode: current.launch_mode || CHOICES.launch_mode[0],
+    };
+    const questions = ask([
+      { group: t('new_agent.model_package', 'Model'), fields: [
+        { key: 'provider', label: t('campaign_view.col_provider', 'Provider'), blank: t('campaign_view.provider_default', 'Default provider'), options: providers.map((row) => ({ v: row.provider, l: row.provider_label, off: row.operational ? '' : reason(row) })) },
+        { key: 'model', label: t('campaign_view.col_model', 'Preferred model'), blank: t('campaign_view.model_default', 'Default model'), after: 'provider', options: (value) => catalog.filter((row) => row.provider === value.provider).map((row) => ({ v: row.model, l: row.model, word: row.tier, sub: modelAvailabilityFact(row), off: row.operational && row.listed !== false ? '' : reason(row) })) },
+      ] },
+      { group: t('mandate', 'Mandate'), fields: [
+        { key: 'reach', label: t('campaign_view.default_reach', 'Reach'), options: CHOICES.reach.map((value) => ({ v: value, l: optionLabel(value) })) },
+        { key: 'recruit', label: t('campaign_view.default_recruit', 'Recruit'), options: CHOICES.recruit.map((value) => ({ v: value, l: optionLabel(value) })) },
+        { key: 'output', label: t('campaign_view.default_output', 'Output'), many: true, options: CHOICES.output.map((value) => ({ v: value, l: optionLabel(value) })) },
+      ] },
+      { group: t('campaign_view.defaults_runtime', 'Runtime'), fields: [
+        { key: 'dial', label: t('campaign_view.default_dial', 'Control'), shape: 'square', options: ruledRows('dial', CHOICES.dial, optionLabel) },
+        { key: 'launch_mode', label: t('launch_mode.head', 'Launch mode'), options: [
+          { v: 'configured', l: optionLabel('configured'), sub: t('launch_mode.configured_sub', 'Ronin adds nothing to the command. The Agent starts with whatever its provider CLI already loads.') },
+          { v: 'live_dangerously', l: optionLabel('live_dangerously'), sub: t('launch_mode.live_sub', 'Ronin appends that provider’s own bypass flag, so the Agent does not stop to ask.') },
+        ] },
+      ] },
+    ], { value: picked, onChange: (value) => { picked = value; } });
+    form.append(questions.el);
     const features = el('textarea', 'cv-input'); features.value = list(current.features).join('\n');
     labeled(form, t('campaign_view.default_features', 'Features'), features, t('campaign_view.features_help', 'One feature name per line.'));
     const behaviours = el('textarea', 'cv-input'); behaviours.value = list(current.behaviours).join('\n');
@@ -83,7 +77,7 @@ export function createAgentDefaultsSurface(campaign) {
     const save = el('button', 'cv-save', t('panels.save', 'Save')); save.type = 'submit'; actions.append(notice.el, save); form.append(actions); body.append(form);
     form.addEventListener('submit', async (event) => {
       event.preventDefault(); save.disabled = true; notice.set('info', t('campaign.saving', 'saving…'));
-      const next = { ...current, provider: picked.provider, model: picked.model, reach: controls.reach.value, recruit: controls.recruit.value, output: controls.output.values(), dial: controls.dial.value, launch_mode: controls.launch_mode.value, features: features.value.split('\n').map((value) => value.trim()).filter(Boolean), behaviours: behaviours.value.split('\n').map((value) => value.trim()).filter(Boolean) };
+      const next = { ...current, ...picked, features: features.value.split('\n').map((value) => value.trim()).filter(Boolean), behaviours: behaviours.value.split('\n').map((value) => value.trim()).filter(Boolean) };
       const result = await saveCampaign(row.id, { config: { defaults: next } });
       notice.set(result.ok ? 'success' : 'failed', result.ok ? t('settei.saved', 'saved') : result.message); save.disabled = false;
       if (result.ok) paint();

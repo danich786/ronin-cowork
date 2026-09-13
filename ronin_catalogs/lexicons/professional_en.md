@@ -37,7 +37,9 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **add_agent.place:** place
 - **add_agent.still_asked:** still asked
 - **add_agent.none:** —
-- **routines:** Routines
+- **installations:** Installations
+- **features:** Features
+- **defaults:** Defaults
 - **campaign.name:** Campaign name
 - **campaign.name_placeholder:** Ronin Home
 - **campaign.description:** Description
@@ -63,6 +65,11 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **team_kit:** Shared toolkit
 - **loadout:** Tools and skills
 - **behaviours:** Behaviours
+- **glossary.installation:** installation
+- **glossary.feature:** feature
+- **glossary.behaviour:** behaviour
+- **glossary.installations:** Installations
+- **glossary.defaults:** Defaults
 - **mandate:** Mandate
 - **session_type:** Session type
 - **kind:** Kind
@@ -71,6 +78,8 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **reach:** Reach
 - **recruit:** Recruit
 - **output:** Output
+- **on:** On
+- **off:** Off
 - **go:** Go
 - **save_template:** Save as template
 - **publish:** Publish
@@ -83,6 +92,7 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **kind.work:** Work
 - **kind.social:** Events
 - **kind.school:** Learning
+- **kind.open:** Open
 
 ## desk — system.js (the ⚙ desk's own rooms: appearance, the updater, the account)
 - **desk.row_release:** Release & update
@@ -284,22 +294,22 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **campaign_view.templates_cast:** Cast
 - **campaign_view.templates_instructions:** Instructions
 - **campaign_view.templates_books:** Reads
-- **campaign_view.templates_download:** Download as a bundle
-- **campaign_view.templates_download_help:** This template, with your copies of the books and Routines it names, as one file you could put on a library.
+- **campaign_view.templates_download:** Download as a package
+- **campaign_view.templates_download_help:** This template, with your copies of the books and instructions it names, as one file you could put on a library.
 - **campaign_view.library:** On the Ronin library — not on your system yet
-- **campaign_view.library_help:** The shelf Ronin keeps and grows, a Ronin Services feature: a team, its people, and the books, macros and tools they read. Nothing is fetched until you press; everything a bundle holds is shown before anything is written; an installed one appears below, on your system.
+- **campaign_view.library_help:** The shelf Ronin keeps and grows, a Ronin Services feature: a team, its people, and the books, macros and tools they read. Nothing is fetched until you press; everything a package holds is shown before anything is written; an installed one appears below, on your system.
 - **campaign_view.library_show_all:** Show everything it holds
 - **campaign_view.library_hide_all:** Hide the contents
 - **campaign_view.library_check:** Check the library
 - **campaign_view.library_checking:** Asking Ronin HQ for the library…
-- **campaign_view.library_source:** {n} bundles on the library
-- **campaign_view.library_none:** The library lists no bundles yet.
+- **campaign_view.library_source:** {n} packages on the library
+- **campaign_view.library_none:** The library lists no packages yet.
 - **campaign_view.library_reading:** Reading {name} from the library…
-- **campaign_view.library_plan_help:** What installing this bundle writes into your stores, and what it leaves alone.
+- **campaign_view.library_plan_help:** What installing this package writes into your stores, and what it leaves alone.
 - **campaign_view.library_plan_store:** Shelf
 - **campaign_view.library_plan_item:** Item
 - **campaign_view.library_plan_verdict:** Outcome
-- **campaign_view.library_executables:** This bundle installs {n} executable tools onto your Agents’ PATH. Read them before you rely on them.
+- **campaign_view.library_executables:** This package installs {n} executable tools onto your Agents’ PATH. Read them before you rely on them.
 - **campaign_view.library_install:** Install
 - **campaign_view.library_install_n:** Install ({n})
 - **campaign_view.library_install_replace:** Install, replacing my {n}
@@ -310,12 +320,8 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **campaign_view.library_hold_teams:** teams
 - **campaign_view.library_hold_agent:** agent
 - **campaign_view.library_hold_agents:** agents
-- **campaign_view.library_hold_routine:** Routine
-- **campaign_view.library_hold_routines:** Routines
 - **campaign_view.library_hold_sop:** SOP
 - **campaign_view.library_hold_sops:** SOPs
-- **campaign_view.library_hold_way:** way of working
-- **campaign_view.library_hold_ways:** ways of working
 - **campaign_view.library_hold_page:** reference page
 - **campaign_view.library_hold_pages:** reference pages
 - **campaign_view.library_hold_macro:** macro
@@ -329,9 +335,12 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **campaign_view.verdict_replaces:** you already have your own — kept unless you say replace
 - **campaign_view.verdict_same_shipped:** already shipped — skipped
 - **campaign_view.verdict_same_yours:** already yours — skipped
-- **campaign_view.verdict_refused:** refused — a bundle never replaces one of Ronin’s tools
-- **campaign_view.routines:** Routines and Installs
-- **campaign_view.routines_help:** What is installed on this machine, and what new Cowork Agents start with. The switches seed new Teams; a Team may replace them, and New Agent shows the resolved answer. Nothing already running changes.
+- **campaign_view.verdict_refused:** refused — a package never replaces one of Ronin’s tools
+- **campaign_view.installations:** Installations
+- **campaign_view.installations_help:** System components installed on this machine. Each is on or off for the whole system; nothing already running changes.
+- **campaign_view.defaults:** Defaults
+- **campaign_view.default_features:** Features
+- **campaign_view.features_help:** Extra facilities and taught practices offered by installations. These answers land in the next Team or teamless Agent form.
 - **campaign_view.svc_activated:** Activated with Ronin HQ: the template library and the hosted parts are yours.
 - **campaign_view.svc_not_activated:** Not activated with Ronin HQ. Activation is optional and separate from the switch: it unlocks the hosted parts — the template library first — with an email and a confirmation.
 - **campaign_view.svc_off_running:** Off: none of it runs — no recording, no transcripts, tiles are Locked only. Files stay in place.
@@ -361,9 +370,6 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **campaign_view.sell_hotwords:** Hotwords — teach dictation the words it mishears, once, for every session.
 - **campaign_view.sell_memory:** Unified team memory — what a session learns is kept for the team and recalled at birth.
 - **campaign_view.sell_stats:** Usage history — what your sessions did, counted over time, never their content.
-- **campaign_view.worktrees_routine_help:** Worktrees give each Agent a separate working folder and branch, so file changes do not collide. They run only when both the Agent and repo have Worktrees on, and use the managed hand-in and Team-lead merge process.
-- **campaign_view.routines_n:** {n} on
-- **campaign_view.routine_no_description:** No description supplied.
 - **campaign_view.available:** Available
 - **campaign_view.unavailable:** Unavailable
 - **campaign_view.on:** On
@@ -424,15 +430,17 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **help.top_body:** The name is the only thing you must give, and it is also the tag every session carries, so it is lowercase and typeable — the field enforces that as you type. A Team’s title is written for you from the name and is yours to change. The kind says what this is for, and it narrows the templates below to the ones that suit it.
 - **help.template_body:** A template fills part of the form in and stops. Its answers become yours the moment they land — nothing stays linked, and you can change any of it. An Agent template is a loadout for one session; a Team template is a cast, and picking one lands its Agents as rows you can edit. Make your own fills nothing in, and going back to it empties what a template wrote.
 - **help.mandate_body:** How far this Agent goes before it checks in, whether it may build out a team, and what it hands back. Output takes as many answers as you mean — a plan AND the team AND no code — and nothing argues with a combination. Open leads every dial and means no requirement. None of it is enforced: the mandate is carried in the Agent’s letter and read by it, not imposed on it.
-- **help.loadout_body:** Three different things live here. LAUNCH MODE decides what Ronin appends to the command that starts this Agent. ROUTINES are the machinery it is born with — see below. BEHAVIOURS are the documents it is handed at birth.
+- **help.loadout_body:** Launch mode decides what Ronin appends to the command that starts this Agent. Features add facilities or taught practices; behaviours say how ordinary work should be done.
 - **help.agents:** Agents
 - **help.agents_body:** The Agents this Team is raised with. A row is short on purpose — a name and what that Agent does — and opens for its mandate when you want it. 人 marks the lead; this form offers one, though a running Team may gain more. Raising creates the Team and then births every named row, the lead last. A Team with no rows is ordinary and raises fine.
-- **help.routines:** What a Routine is
-- **help.routines_body:** A Routine is machinery, not advice: a bundle of tools, reading and coordination an Agent is BORN with, switched on or off for the whole session. Ronin Base gives it the ordinary macros, work record and messaging. Ronin Worktrees gives it a private branch and the hand-in path, so several Agents can work one repository without treading on each other. Ronin Services adds the durable recording, Koshi and voice. Ronin Host lets it look after the box itself. gbrain connects it to the shared memory. The Cowork floor is always on and cannot be turned off — it is what makes an Agent a Cowork Agent at all. On a Team you switch them; on an Agent they are shown with where each answer came from, because the Campaign and the Team have already settled them.
+- **help.installations:** What an Installation is
+- **help.installations_body:** An Installation is a system-level switch in the Campaign. A system installation joins every Cowork Agent; a feature-provider installation makes its features available for Teams and Agents to choose.
+- **help.features:** What a Feature is
+- **help.features_body:** A Feature is an extra facility or taught practice a Team or Agent adds. It is offered only while its provider is installed and on, and its instructions arrive only when it is chosen.
 - **help.behaviours:** What a Behaviour is
-- **help.behaviours_body:** A Behaviour is a DOCUMENT, and that is the whole of it — handed to the Agent at birth and read like any other instruction. Nothing is enforced by it. Two shelves: THE HOUSE is how this house goes about a domain — github, deploy, secrets, tmux_server and the rest — fetched when a situation calls for it. WAYS OF WORKING is how an Agent should approach the job: cut_code builds from an approved plan, chase_bug traces a fault to its cause before changing anything, check_work judges and reports without touching what it examines, draft_plan thinks it through and writes it down, quarter_back coordinates other sessions instead of doing the work. Hover any book for its own one-line description. Take as many as the job wants, or none.
+- **help.behaviours_body:** A Behaviour says how the owner wants ordinary work done. Each is one short page delivered at birth when selected; Mandates is on by default, and the rest are additions the owner may choose.
 - **help.type:** New session
-- **help.type_body:** Three kinds of thing can start here. A Cowork Agent is born into Ronin and gets the floor, its routines, its reading and its team. A bare-metal Agent is the provider’s own CLI and nothing else. A terminal is a pane with no agent in it at all. The choice decides which of the steps below exist — a terminal is asked three things because there are only three to ask.
+- **help.type_body:** Three kinds of thing can start here. A Cowork Agent is born with everything Ronin provides on this box. A bare-metal Agent is the provider’s own CLI and nothing else. A terminal is a shell with no agent. The choice decides which of the steps below exist — a terminal is asked three things because there are only three to ask.
 - **help.top:** Name & kind
 - **help.template:** Template
 - **help.objective:** Common instructions
@@ -551,14 +559,10 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **new_team.name_kind:** Name & kind
 - **new_team.name_placeholder:** lowercase, digits, - _
 - **new_team.objective_placeholder:** what this team is for
-- **new_team.floor:** Cowork floor
-- **new_team.floor_why:** The launch, campaign and team resolution, the shelf map, the birth receipt.
-- **new_team.floor_tag:** floor
 - **new_team.worktrees_mode:** Agent work mode
 - **new_team.worktrees_on:** Own worktree where the Workspace folder allows it
 - **new_team.worktrees_off:** Use the project checkout and its branches
 - **new_team.worktrees_help:** Worktrees give each Agent a separate working folder and branch, so their file changes do not collide. They run only when both the Agent and repo have Worktrees on, and use the managed hand-in and Team-lead merge process.
-- **new_team.kit_meta:** {routines} routines · {books} books
 - **new_team.lead_include:** Include a team lead
 - **new_team.lead_include_sub:** Raised with the team and briefed.
 - **new_team.lead_empty:** Open it empty
@@ -579,6 +583,18 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **forms.own_blurb:** Fresh and empty. Fill it in yourself.
 - **forms.library_note:** More on the Ronin library — Campaign → Templates → Check the library to see them and download the ones you want.
 - **forms.default:** default
+- **ask.none:** None
+- **ask.chosen:** {n} chosen
+- **ask.find:** type to find
+- **ask.nothing:** Nothing to choose.
+- **ask.after:** Choose {field} first.
+- **yes:** Yes
+- **no:** No
+- **forms.required:** Required
+- **forms.reason_not_on_machine:** not on this machine
+- **forms.reason_turned_off:** turned off
+- **forms.reason_not_listed:** not listed by your {cli} {client_version}
+- **forms.model_unlisted:** not listed by this CLI
 - **forms.provider_off:** {name} — not on this machine
 - **forms.model_word:** {model} · {tier}
 - **forms.model_off:** {model} · {tier} — not on this machine
@@ -594,6 +610,28 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **forms.campaign:** campaign
 - **forms.campaign_on:** campaign on
 - **forms.campaign_off:** campaign off
+
+## presets — Setup launch presets
+- **presets.tile_view:** Tile view
+- **presets.agents_side_by_side:** Agents run side by side
+- **presets.side_by_side:** Side by side
+- **presets.two_by_two:** Two by two
+- **presets.repeats:** Repeats
+- **presets.every_day:** Every day
+- **presets.day_of_week:** Day of the week
+- **presets.one_time:** One time
+- **presets.day:** Day
+- **presets.how_it_runs:** How it runs
+- **presets.single_assistant:** Single assistant
+- **presets.chief_of_staff:** Chief of Staff
+- **presets.evaluate:** Evaluate
+- **presets.evaluate_none:** Choose a folder
+- **presets.workspace_folder:** workspace folder
+- **presets.repository:** repository
+- **presets.folder:** folder
+- **presets.kept:** Kept
+- **presets.keep:** Keep
+- **presets.skip:** Skip
 - **forms.team_on:** team turns on
 - **forms.team_off:** team turns off
 - **forms.agent:** agent
@@ -601,12 +639,13 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 
 ## new_agent — new-agent.js (the drawn launch form, staged beside the ＋ New board)
 - **new_agent.title:** New Agent
+- **new_agent.model_package:** Model
 - **new_agent.card_summary:** Session type first — the drawn launch form.
 - **new_agent.new_session:** New session
 - **new_agent.type_cowork:** Cowork Agent
-- **new_agent.type_cowork_sub:** Born into Ronin: the floor, its routines, its reading and its team.
+- **new_agent.type_cowork_sub:** Born with everything Ronin provides on this box.
 - **new_agent.type_bare:** Bare-metal Agent
-- **new_agent.type_bare_sub:** The provider’s agent and nothing else — no floor, no routines, no reading.
+- **new_agent.type_bare_sub:** The provider’s agent and nothing else.
 - **new_agent.type_terminal:** Terminal
 - **new_agent.type_terminal_sub:** A raw tmux pane. No agent is launched and nothing is sent to it.
 - **new_agent.name_model_kind:** Name, model & kind
@@ -617,21 +656,20 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **new_agent.terminal_note:** A terminal takes no kind, no instructions, no mandate and no loadout.
 - **new_agent.bare_note:** A bare-metal Agent takes no kind, no mandate and no loadout.
 - **new_agent.instructions:** Instructions
+- **new_agent.model_package:** Model
 - **new_agent.team_existing:** An existing team
 - **new_agent.team_existing_sub:** Join it. Its answers land at birth.
-- **new_agent.team_none:** No team — a rōnin
+- **new_agent.team_none:** No team (rōnin)
 - **new_agent.team_none_sub:** Ordinary, not a gap.
-- **new_agent.team_new:** A new team
+- **new_agent.team_new:** New team
 - **new_agent.team_new_sub:** Created first, then this Agent is born into it.
+- **new_agent.team_current:** Current team
+- **new_agent.team_current_sub:** Choose from your teams.
+- **new_agent.which_team:** Which team
 - **new_agent.team_new_blank:** Blank makes no team — the Agent is a rōnin.
 - **new_agent.a_ronin:** a rōnin
-- **new_agent.loadout_meta:** {routines} routines · {books} books
-- **new_agent.shelf_house:** behaviours · the house
-- **new_agent.shelf_ways:** behaviours · ways of working
 - **new_agent.session:** session
 - **new_agent.created_first:** (created first)
-- **new_agent.routines_terminal:** agent: none — a pane
-- **new_agent.routines_bare:** no floor, no routines
 - **new_agent.blank_note:** A blank field is an answer, not a gap.
 - **new_agent.worktrees_mode:** Agent work mode
 - **new_agent.worktrees_on:** Own worktree where the Workspace folder allows it
@@ -674,12 +712,13 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **desks.parked_none:** none
 
 ## team — team-view.js (the Team page)
+- **team.lead:** Team lead
 - **team.flip_commons:** Show the Team commons in this workspace
 - **team.flip_terminal:** Show the terminal in this workspace
 - **team.workspace_1:** Workspace 1
 - **team.workspace_2:** Workspace 2
-- **team.commons_card:** Team commons
-- **team.commons_summary:** See Docs / Wipeboard / Messages / Team Configuration
+- **team.commons_card:** Commons
+- **team.commons_summary:** See Roster / Docs / Wipeboard / Messages / Configuration
 - **team.roster_of:** Roster
 - **team.workspace_blank:** Workspace
 - **team.workspace_empty:** empty
@@ -691,7 +730,7 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **team.count_2_title:** Two workspaces around the roster
 - **team.count_4_title:** Four workspaces, two by two
 - **team.roster_title:** Roster
-- **team.commons:** Team commons
+- **team.commons:** Commons
 - **team.arranged_by:** arranged by {from}
 - **team.attached:** attached
 - **team.add_member:** ＋ Add team member
@@ -906,7 +945,6 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **pad.close:** Close
 - **pad.args_placeholder:** args (k=v …) — optional
 - **pad.ask_on_press:** ask on press
-- **pad.ask_on_press_title:** Every press pops a prompt for the args (e.g. buildout) — Enter fires
 - **pad.save:** Save
 - **pad.key_title:** key {chord}
 - **pad.unbound:** — unbound —
@@ -1034,7 +1072,7 @@ The catalog entry goes. {dir} is not touched.
 - **roots.chip_shared_title:** No RONIN_REPO record: sessions use this checkout. Edit this root to declare its repository workflow.
 - **roots.worktrees_guide:** For Ronin Worktrees to run, both must be on: the repo needs Worktrees on, and the Agent needs Worktrees on. This page controls the repo.
 - **roots.state_worktrees:** Repo: Worktrees on. Agent must also have Worktrees on.
-- **roots.state_checkout:** This repository uses its checkout. That repository choice wins even if an Agent has the Ronin Worktrees Routine.
+- **roots.state_checkout:** This repository uses its checkout.
 - **roots.state_undeclared:** No repository profile is declared, so Agents use the checkout. Edit this root to allow Ronin Worktrees.
 
 ## docs — docs.js (the ▧ Docs tab)
@@ -1713,7 +1751,8 @@ The catalog entry goes. {dir} is not touched.
 - **workspace.channel_chat:** Chat
 - **workspace.channel_wipeboard:** Wipeboard
 - **workspace.channel_docs:** Docs
-- **workspace.channel_team_configuration:** Team Configuration
+- **workspace.channel_roster:** Roster
+- **workspace.channel_team_configuration:** Configuration
 - **workspace.channel_agent_message_queue:** Messages
 - **workspace.channel_cron_jobs:** Cron jobs
 - **team_config.no_roster:** This Team has no saved record.
@@ -1729,8 +1768,9 @@ The catalog entry goes. {dir} is not touched.
 - **team_config.kind_school:** School
 - **team_config.objective:** Purpose
 - **where.born_in:** Born in
-- **where.worktrees_on:** Worktrees are on (see Routines): a ticked repository opens a desk for each new Agent at birth; branches are Ronin's.
-- **where.worktrees_off:** Worktrees are off (see Routines): a ticked repository is where this Team works, on the branch you name, or as checked out.
+- **where.additional:** Additional workspaces
+- **where.worktrees_on:** A ticked worktree repository opens a desk for each new Agent at birth; branches are Ronin's.
+- **where.worktrees_off:** A ticked checkout repository is where this Team works, on the branch you name, or as checked out.
 - **where.col_repo:** Repository
 - **where.col_branch:** Branch
 - **where.label:** Where it works
@@ -1741,13 +1781,10 @@ The catalog entry goes. {dir} is not touched.
 - **team_config.default:** Default
 - **team_config.references:** References
 - **team_config.references_help:** One URL or note per line.
-- **team_config.routines:** Routines
-- **team_config.routines_help:** This complete on/off map is the Team’s own and is inherited by new Agents. It replaces the Campaign defaults; existing Agents do not change.
 - **team_config.worktrees_mode:** Agent work mode
 - **team_config.worktrees_on:** Own worktree where the Workspace folder allows it
 - **team_config.worktrees_off:** Use the project checkout and its branches
 - **team_config.worktrees_help:** Worktrees give each Agent a separate working folder and branch, so their file changes do not collide. They run only when both the Agent and repo have Worktrees on, and use the managed hand-in and Team-lead merge process.
-- **team_config.kit_floor_alone:** the floor alone — no Routine is on
 - **team_config.no_description:** No description supplied.
 - **team_config.behaviours:** Behaviours
 - **team_config.behaviours_help:** One shelf:name book per line.
@@ -1849,6 +1886,11 @@ The catalog entry goes. {dir} is not touched.
 - **league.make_team_lead:** Make Lead
 - **league.rename_agent:** Rename
 - **league.rename_agent_prompt:** Edit Agent title
+- **league.open_agent:** Open
+- **league.close_agent:** Close
+- **league.close_named_agent:** Close {name}
+- **league.no_current_step:** No current step
+- **league.no_current_description:** No current work description.
 - **league.remove_member:** Remove
 - **league.remove_named_member:** Remove {name} from this team
 - **league.choose_member:** Choose an Agent to add
@@ -1862,7 +1904,7 @@ The catalog entry goes. {dir} is not touched.
 - **customize.desk_profiles:** Desk profiles
 - **customize.desk_profiles_blurb:** Your standing defaults for the surfaces you work at — a skin, a lexicon, a campaign kind, a Team page arrangement. Choosing one is a setting, on the gear.
 - **customize.lexicons:** Lexicons
-- **customize.lexicons_blurb:** The words a surface uses — a wording or a language, one file each. Say only what changes; the rest falls through to the floor.
+- **customize.lexicons_blurb:** The words a surface uses — a wording or a language, one file each. Say only what changes; the rest uses the stock words.
 - **feedback.button:** Feedback
 - **feedback.title:** Feedback
 - **feedback.message:** What would you like to tell us?
