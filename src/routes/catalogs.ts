@@ -49,7 +49,7 @@ import { browseFolders, createFolder, withRegisteredRoots } from '../folder-brow
 
 const errMsg = (e: unknown) => String((e as Error)?.message ?? e).replaceAll(homedir(), '~');
 
-const ROOT_FIELDS: RootField[] = ['dir', 'memory', 'match', 'remit', 'docs', 'plans', 'campaign_id'];
+const ROOT_FIELDS: RootField[] = ['title', 'dir', 'memory', 'match', 'remit', 'docs', 'plans', 'campaign_id'];
 const bodyFields = (body: unknown) => {
   const out: Partial<Record<RootField, string>> = {};
   for (const k of ROOT_FIELDS) {
@@ -182,7 +182,7 @@ export function registerCatalogs(app: express.Express): void {
     const dir = String(req.query.dir ?? '').trim();
     if (!dir) return res.status(400).json({ error: 'A directory is required.' });
     try {
-      const facts = await repoFacts({ name: 'candidate', dir, remit: '', match: [], docs: [], plans: [], archived: false, campaign_id: '' });
+      const facts = await repoFacts({ name: 'candidate', title: '', dir, remit: '', match: [], docs: [], plans: [], archived: false, campaign_id: '' });
       const arrangement = facts.repo ? await readArrangement('candidate', facts.dir).catch(() => null) : null;
       res.json({
         ...facts,
@@ -204,14 +204,14 @@ export function registerCatalogs(app: express.Express): void {
 
   app.post('/api/project-roots', async (req, res) => {
     const name = String(req.body?.name ?? '').trim().toLowerCase();
-    if (!isValidRootName(name)) return res.status(400).json({ error: 'Handle: lowercase letters, digits, - and _.' });
+    if (!isValidRootName(name)) return res.status(400).json({ error: 'ID: lowercase letters, digits, - and _.' });
     const fields = bodyFields(req.body);
     if (!fields.dir) return res.status(400).json({ error: 'A directory is required.' });
     try {
       if ((await listProjectRoots()).some((r) => r.name === name)) {
         return res.status(409).json({ error: `"${name}" is already in the catalog.` });
       }
-      const facts = await repoFacts({ name, dir: fields.dir, remit: '', match: [], docs: [], plans: [], archived: false, campaign_id: '' });
+      const facts = await repoFacts({ name, title: fields.title ?? '', dir: fields.dir, remit: '', match: [], docs: [], plans: [], archived: false, campaign_id: '' });
       if (facts.repo && req.body?.confirmed !== true) return res.status(400).json({ error: 'Confirm the exact repository profile before adding this repository.' });
       if (facts.repo) {
         validateArrangementProfile(req.body?.profile);
@@ -230,7 +230,7 @@ export function registerCatalogs(app: express.Express): void {
 
   app.put('/api/project-roots/:name', async (req, res) => {
     const { name } = req.params;
-    if (!isValidRootName(name)) return res.status(400).json({ error: 'Invalid handle.' });
+    if (!isValidRootName(name)) return res.status(400).json({ error: 'Invalid ID.' });
     try {
       await upsertProjectRoot(name, bodyFields(req.body));
       res.json({ ok: true });
@@ -241,7 +241,7 @@ export function registerCatalogs(app: express.Express): void {
 
   app.put('/api/project-roots/:name/repo-profile', async (req, res) => {
     const { name } = req.params;
-    if (!isValidRootName(name)) return res.status(400).json({ error: 'Invalid handle.' });
+    if (!isValidRootName(name)) return res.status(400).json({ error: 'Invalid ID.' });
     if (req.body?.confirmed !== true) return res.status(400).json({ error: 'Confirm the exact repository profile before applying it.' });
     try {
       const root = (await listProjectRoots()).find((r) => r.name === name);
@@ -255,7 +255,7 @@ export function registerCatalogs(app: express.Express): void {
 
   app.delete('/api/project-roots/:name', async (req, res) => {
     const { name } = req.params;
-    if (!isValidRootName(name)) return res.status(400).json({ error: 'Invalid handle.' });
+    if (!isValidRootName(name)) return res.status(400).json({ error: 'Invalid ID.' });
     try {
       await removeProjectRoot(name);
       res.json({ ok: true });

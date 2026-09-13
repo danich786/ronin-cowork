@@ -22,6 +22,7 @@ async function readUserRoots(): Promise<string> {
 
 export interface ProjectRootInfo {
   name: string;
+  title: string;
   dir: string;
   match: string[];
   remit: string;
@@ -83,6 +84,7 @@ function parseRoots(raw: string): ProjectRootInfo[] {
     if (!dir) continue; // a project_root without a directory is not launchable
     roots.push({
       name,
+      title: field('title'),
       dir: expand(dir),
       match: field('match')
         .split(',')
@@ -105,7 +107,7 @@ const NEW_USER_FILE = `# PROJECT_ROOTS — your directories (user scope)
 > co-editor, not an owner.
 >
 > One \`## <handle>\` block per directory, with \`- **key:** value\` lines under it
-> (\`dir\`, \`memory\`, \`match\`, \`remit\`).
+> (\`title\`, \`dir\`, \`memory\`, \`match\`, \`remit\`).
 >
 > \`- **archived:** yes\` retires a root without losing it: it comes off the new-session
 > picker and stays on the ▣ Project root tab, where one button puts it back. Sessions
@@ -117,7 +119,7 @@ const NEW_USER_FILE = `# PROJECT_ROOTS — your directories (user scope)
 > \`MODEL_PROVIDERS.md\`, not here; your own copy of that file beside this one shadows it.
 `;
 
-const FIELD_ORDER = ['dir', 'memory', 'match', 'remit', 'docs', 'plans', 'archived', 'campaign_id'] as const;
+const FIELD_ORDER = ['title', 'dir', 'memory', 'match', 'remit', 'docs', 'plans', 'archived', 'campaign_id'] as const;
 export type RootField = (typeof FIELD_ORDER)[number];
 
 export const isValidRootName = (n: string) => /^[a-z0-9][a-z0-9_-]*$/.test(n) && n.length <= 32;

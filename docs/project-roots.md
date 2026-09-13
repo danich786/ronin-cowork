@@ -1,9 +1,11 @@
 # Project roots — include a project in Ronin
 
-A `project_root` is Ronin's handle for **where work happens**. It binds a short name to
-an existing directory, the project's remit and matching words, its session-boot shelf,
+A `project_root` is Ronin's stable ID for **where work happens**. It binds that ID to
+an optional display title, an existing directory, the project's remit and matching words,
+its session-boot shelf,
 and its memory keys. The new-session launcher, Admin Desk, session identity, and recall
-all resolve that one handle.
+all resolve that one ID. The title is presentation only: changing it never changes the ID,
+directory, session identity, or repository identity.
 
 ## Installed starting folders
 
@@ -28,7 +30,7 @@ cannot replace the owner's directories. It is part of the running Ronin installa
 not a second product catalog and should not be committed to `ronin-cowork`.
 
 The API and Admin Desk are co-editors of this markdown file. Use the API for ordinary changes
-because it validates the handle, directory, and resulting document atomically. Do not add an
+because it validates the ID, directory, and resulting document atomically. Do not add an
 owner directory to the shipped catalog.
 
 ## The invariant
@@ -61,7 +63,8 @@ kept out of the ordinary flow.
 Resolve these facts from the actual directory:
 
 ```text
-name    lowercase handle: letters, digits, - and _
+name    stable lowercase ID: letters, digits, - and _
+title   optional display title used only on human-facing surfaces
 dir     absolute directory path
 remit   one plain sentence saying what work belongs there
 match   words a person may use when asking to work there
@@ -86,6 +89,7 @@ Show the owner the exact values before writing. Example:
 
 ```markdown
 ## shiwake
+- **title:** Ronin HQ
 - **dir:** /home/glen3/dohyo/ronin-shiwake
 - **memory:** ronin, shiwake
 - **match:** shiwake, ronin-shiwake, hq, entitlement, tomodachi
@@ -104,6 +108,7 @@ Content-Type: application/json
 
 {
   "name": "shiwake",
+  "title": "Ronin HQ",
   "dir": "/home/glen3/dohyo/ronin-shiwake",
   "memory": "ronin, shiwake",
   "match": "shiwake, ronin-shiwake, hq, entitlement, tomodachi",
@@ -115,19 +120,19 @@ The Admin Desk's **▣ Project root** include action and MIKA's `+project_root` 
 endpoint. They are preferred human-facing paths. Editing the owner catalog by hand remains an
 emergency/advanced path, not a separate workflow.
 
-`409` means the handle already exists: inspect and use `PUT /api/project-roots/:name` only if
+`409` means the ID already exists: inspect and use `PUT /api/project-roots/:name` only if
 the owner intended to edit it. A validation refusal is an answer; do not bypass it by hand-editing.
 
 ### 4. Verify all four surfaces
 
 Inclusion is not complete until all of these agree:
 
-1. `GET /api/project-roots` contains the handle and directory; this is the launcher's live list.
+1. `GET /api/project-roots` contains the ID, title, and directory; this is the launcher's live list.
 2. `GET /api/project-roots/detail` reports `exists: true`. For a repository, its live `remote`
    and `branch` match git; these facts are read from disk and are never copied into the catalog.
 3. Admin Desk → **▣ Project root** shows the entry without an excluded/archived state.
 4. **＋ New** offers the project root; a test session launched with it starts in the recorded
-   directory and carries `@ronin-project_root=<handle>`.
+   directory and carries `@ronin-project_root=<id>`.
 
 If API verification succeeds but the browser is stale, reload the surface; do not create a
 duplicate entry.
@@ -270,10 +275,10 @@ must not become a filesystem deletion by assumption.
 ## Failure rules
 
 - Directory absent: stop; create/clone it or correct the path before inclusion.
-- Invalid handle: choose a valid lowercase handle; do not weaken validation.
+- Invalid ID: choose a valid lowercase ID; do not weaken validation.
 - Wrong git top level: choose the repository root rather than a nested directory.
 - Wrong/missing remote: repair repository identity before presenting it as a project repo.
-- Duplicate handle: inspect before editing; never silently replace another project.
+- Duplicate ID: inspect before editing; never silently replace another project.
 - Ronin API unavailable: report the service failure. Do not create a competing write path.
 - Browser does not show an API-verified root: diagnose the read/render path, not the catalog data.
 
