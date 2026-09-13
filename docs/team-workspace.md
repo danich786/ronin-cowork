@@ -105,15 +105,15 @@ Team is ordinary. When no durable record exists, Team Configuration says so rath
 treating the Team as broken.
 
 **Team Configuration** (`public/js/team-configuration.js`) is the commons tab that edits
-that record and nothing else — never membership or the lead. It has two parts (owner,
-2026-09-13). First the Team's own facts: one head line — **Team ID** (a reading), **Title**,
-**Kind** (squares with the shared glyphs) — then **Purpose**. Under them, ruled off,
-**New Agent defaults**: what the next Agent on this Team starts from, never the Team's own
-behaviour — **Where it works** (Born in · Additional workspaces, with a branch line for each
-checkout), **Model**, **Mandate** and **Runtime**. Features and behaviours are not asked on
-this tab; the record keeps whatever it has. Every selection is asked through ERABI (`ask()`,
-`docs/ui.md` § Asking a question) at the commons' loose density; the two text entries are the
-kit's, and ERABI takes no foreign DOM. The tab repaints only when the saved record changes —
+that record and nothing else — never membership or the lead. It is drawn in the same format
+as New Agent and New Team (owner, 2026-09-13): the launch forms' numbered steps
+(`createStep`), the kit's labelled fields (`createField`), and ERABI at the forms' tight
+density. **Step 1 · Team** — one line holding **Team ID** (read, not edited), **Title** and
+**Kind** (squares with the shared glyphs), then **Purpose**. **Step 2 · New Agent defaults**
+— what the next Agent on this Team starts from, never the Team's own behaviour: **Where it
+works** (Born in · Additional workspaces, with a branch line for each checkout), **Model**,
+**Mandate** and **Launch mode**. Features and behaviours are not asked on this tab; the
+record keeps whatever it has. ERABI takes no foreign DOM: the entries sit beside the stones. The tab repaints only when the saved record changes —
 never on a member's status tick or a session coming and going — so an edit in progress is
 not thrown away; the Coworks page's copy of the tab keeps the same rule. **Save** PUTs the whole record to
 `/api/team-rosters/:name`; keys the tab does not draw are carried, the retired
