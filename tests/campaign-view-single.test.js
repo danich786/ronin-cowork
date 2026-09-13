@@ -55,14 +55,13 @@ test('Settings carries Setup capabilities and starts with Mika beside an empty w
   assert.doesNotMatch(source, /const DEFAULT_VIEW/);
 });
 
-test('Campaign delegates Workspace folders assembly while retaining scope and future-root defaults', async () => {
+test('Campaign delegates Workspace folders assembly with scope and no future-root arrangement default', async () => {
   const [campaign, shared] = await Promise.all([
     readFile(new URL('../public/js/campaign-view.js', import.meta.url), 'utf8'),
     readFile(new URL('../public/js/workspace-folders-surface.js', import.meta.url), 'utf8'),
   ]);
   assert.match(campaign, /campaignId: \(\) => e\.selected\(\)\?\.id \|\| ''/);
   assert.match(campaign, /connected: \(host\) => e\.entered\(\) && host\.isConnected/);
-  assert.match(campaign, /worktreesDefault: true/);
-  assert.match(shared, /family: 'desks', value: \{ new_project: value \}/);
-  assert.match(shared, /result\.data\?\.set\?\.desks\?\.new_project === 'none'/);
+  assert.doesNotMatch(campaign, /worktreesDefault/);
+  assert.doesNotMatch(shared, /new_project|family: 'desks'/);
 });
