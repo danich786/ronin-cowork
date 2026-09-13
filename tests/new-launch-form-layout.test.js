@@ -176,6 +176,7 @@ test('New Team routes each selector region through ask() and leaves Templates br
   assert.match(form, /group: t\('behaviours', 'Behaviours'\)/);
   assert.match(form, /availableFeatures\(\)/);
   assert.match(form, /options: LAUNCH_MODES\(\)\.map/);
+  assert.match(form, /trayHost: kitHost/, 'launch mode opens below the full kit row without moving Features or Behaviours');
   assert.match(form, /many: true, options: shelfRows/);
   assert.equal((form.match(/density: 'tight'/g) || []).length, 2, 'both defaults regions use launch density');
   assert.match(form, /tierWord\(row\.tier\)/);
@@ -183,6 +184,14 @@ test('New Team routes each selector region through ask() and leaves Templates br
   assert.doesNotMatch(form, /forms\.provider_off|forms\.provider_turned_off|machine\?\.state|modelWord\([^)]*\)\.split/);
   assert.match(form, /templateTray\(offered\(\)/);
   assert.doesNotMatch(form, /kindTiles|providerModelPair|mandateSelect|dialRowMulti|wayTiles|bookShelves|createWhereItWorks|fs-routine/);
+  assert.doesNotMatch(form, /draft\.dial|value\('dial'\)/, 'New Team stores the fixed Control default without presenting or seeding a dial');
+});
+
+test('Team Configuration hides legacy Control and hosts Runtime trays below its full row', async () => {
+  const form = await source('team-configuration.js');
+  assert.doesNotMatch(form, /key: 'dial'|ruledRows\('dial'|team_config\.dial/);
+  assert.match(form, /trayHost: defaultsRow/);
+  assert.match(form, /dial: 'write'/);
 });
 
 test('New Team checks names only for a cast and opens partial Teams with exact recovery evidence', async () => {

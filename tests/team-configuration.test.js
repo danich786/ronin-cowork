@@ -82,8 +82,8 @@ test('every question is an ERABI stone whose reading is the saved answer', async
   renderTeamConfiguration(host, roster);
   const form = await painted(host);
   assert.deepEqual(form.all('ask-stone').map((node) => node.dataset.askKey), [
-    'root', 'repos', 'kind', 'ronin_host', 'mandates', 'buildout', 'provider', 'model', 'reach', 'recruit', 'output', 'dial', 'launch_mode',
-  ], 'the stones, in the tab’s order: only the available feature is asked');
+    'root', 'repos', 'kind', 'ronin_host', 'mandates', 'buildout', 'provider', 'model', 'reach', 'recruit', 'output', 'launch_mode',
+  ], 'the stones, in the tab’s order: only the available feature is asked, and no Control stone');
   assert.equal(readingOf(form, 'root'), 'Ronin Cowork', 'Born in reads the Workspace Folder’s title');
   assert.equal(readingOf(form, 'repos'), 'Ronin Services');
   assert.equal(readingOf(form, 'kind'), 'Coding');
@@ -148,6 +148,7 @@ test('Save sends the record: features, behaviours by state, agent defaults carri
   assert.equal(body.agent_defaults.note, 'carried', 'a key the tab does not draw is carried');
   assert.equal('permissions' in body.agent_defaults, false, 'the retired key is not rewritten');
   assert.equal(body.agent_defaults.model, 'gpt-5.6-sol');
+  assert.equal(body.agent_defaults.dial, 'write', 'the retired Control default is written as the one value every Agent starts with');
   assert.deepEqual(body.agent_defaults.output, ['open']);
   assert.ok(savedRoster, 'onSaved received the server’s roster');
   assert.equal(form.one('tw-config-status').textContent, 'Saved');

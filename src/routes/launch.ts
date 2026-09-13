@@ -37,7 +37,7 @@ import { readTeamRoster } from '../team-rosters.js';
 import { readCampaign } from '../campaigns.js';
 import { listFeatures, listInstallations } from '../resource-adapters.js';
 import { agentBinDir } from '../agent-install.js';
-import { resolveLaunchSeed } from '../launch-seed.js';
+import { resolveLaunchSeed, shownLaunchSeed } from '../launch-seed.js';
 import type { SessionsDefaults } from '../launch-command.js';
 import { compileBirthReadmeAt, describePacket, isShelfTeaching, readFirstSentence, type PacketReport } from '../birth-readme.js';
 import { rememberSessionKey, sessionDir as sessionRecordDir } from '../session-dir.js';
@@ -258,7 +258,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
         installations,
         features,
       });
-      res.json(seed);
+      res.json(shownLaunchSeed(seed));
     } catch (e) {
       res.status(500).json({ error: String((e as Error)?.message ?? e) });
     }

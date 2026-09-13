@@ -118,7 +118,7 @@ export function createCoworkView(options = {}) {
   const makeSeat = (id, label) => {
     const surface = createSurface({ label, className: 'tw-terminal', flush: true, header: false });
     const pool = createWarmTerminalPool({
-      createHost: (options) => createTerminalTileHost(options),
+      createHost: (options) => createTerminalTileHost({ ...options, onMinimize: () => emptySeat(id) }),
       container: surface.content,
       streamCap: 2,
     });
@@ -130,7 +130,13 @@ export function createCoworkView(options = {}) {
       else if (!seat.empty) {
         const blank = createSurface({ label: t('team.workspace_blank', 'Workspace'), className: 'tw-blank' });
         // The header already says Workspace; the body saying it again read as a stutter
-        blank.content.append(el('p', 'tw-blank-word', t('team.workspace_empty', 'empty')));
+        const mark = el('div', 'tile-empty-mark');
+        mark.setAttribute('aria-hidden', 'true');
+        const logo = el('img');
+        logo.src = 'brand/nin-mark.svg';
+        logo.alt = '';
+        mark.append(logo);
+        blank.content.append(mark);
         seat.empty = { el: blank.el, mount: () => {}, destroy: () => blank.el.remove() };
         seat.surface.content.append(seat.empty.el);
       } else if (!seat.empty.el.isConnected) seat.surface.content.append(seat.empty.el);

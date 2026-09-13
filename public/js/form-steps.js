@@ -81,9 +81,6 @@ export function mandateWord(value) {
     'an artifact': t('campaign_view.option_artifact', 'An artifact'),
     'no code': t('campaign_view.option_no_code', 'No code'),
     'the team': t('campaign_view.option_team', 'The Team'),
-    user: t('campaign_view.option_user', 'You only'),
-    read: t('campaign_view.option_read', 'Read'),
-    write: t('campaign_view.option_write', 'Read and write'),
   };
   return words[value] || value;
 }

@@ -67,10 +67,11 @@ decline a change that does not fit the product direction.
 
 ## 5. Maintainer integration
 
-A maintainer reviews the issue, scope, code, tests, and contributor evidence, then integrates
-accepted work into Ronin's `dev` line. Concurrent internal work is reconciled there. Ronin's
-normal team-promotion process supplies the full integration and BYOIN evidence required for
-the later `dev → master` release PR.
+A maintainer reviews the issue, scope, code, tests, and contributor evidence. They may assign
+accepted work to a Ronin Team or Agent to reconcile it with current `dev` and concurrent work,
+use provisional visual staging when applicable, then follow the ordinary
+[hand-in and Team Lead promotion](docs/worktrees.md#save-commit-hand-in-and-promotion) path to
+global `dev`. The later receipt-backed `dev → master` release PR remains maintainer-owned.
 
 Merging to `master` does not update an installed Ronin. Releases and installation remain
 separate deliberate acts described in [`docs/release.md`](docs/release.md).

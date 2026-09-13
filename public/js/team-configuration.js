@@ -28,7 +28,6 @@ const kindWord = (value) => ({
 const REACH = ['open', 'discuss', 'plan', 'execute'];
 const RECRUIT = ['open', 'nobody', 'propose agents', 'staff agents'];
 const OUTPUT = ['open', 'a plan', 'ideas', 'code', 'an artifact', 'the team'];
-const DIAL = ['user', 'read', 'write'];
 
 /** The provider and model rows as every ask() consumer reads them: the one catalog, reasons only. */
 const reason = (row) => (row.off
@@ -118,6 +117,7 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
       { v: 'configured', l: t('launch_mode.configured', 'Model provider configuration'), sub: t('launch_mode.configured_sub', 'Ronin adds nothing to the command. The Agent starts with whatever its provider CLI already loads.') },
       { v: 'live_dangerously', l: t('launch_mode.live', 'Dangerously'), sub: t('launch_mode.live_sub', 'Ronin appends that provider’s own bypass flag, so the Agent does not stop to ask.') },
     ];
+    const defaultsRow = el('div', 'tw-config-wide');
     const agentDefaults = ask([
       { group: t('new_agent.model_package', 'Model'), fields: [
         { key: 'provider', label: t('team_config.provider', 'Provider'), blank: t('team_config.default', 'Default'), options: providerRows },
@@ -129,15 +129,14 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
         { key: 'output', label: t('team_config.output', 'Output'), many: true, options: OUTPUT.map((v) => ({ v, l: mandateWord(v) })) },
       ] },
       { group: t('team_config.runtime', 'Runtime'), fields: [
-        { key: 'dial', label: t('team_config.dial', 'Control'), shape: 'square', options: ruledRows('dial', DIAL, mandateWord) },
         { key: 'launch_mode', label: t('launch_mode.head', 'launch mode'), options: launchModes },
       ] },
     ], { value: {
       provider: defaults.provider || '', model: defaults.model || '',
       reach: defaults.reach || 'open', recruit: defaults.recruit || 'open', output: [defaults.output || 'open'].flat().filter(Boolean),
-      dial: defaults.dial || 'write', launch_mode: defaults.launch_mode || 'live_dangerously',
-    } });
-    form.append(agentDefaults.el);
+      launch_mode: defaults.launch_mode || 'live_dangerously',
+    }, trayHost: defaultsRow });
+    defaultsRow.append(agentDefaults.el); form.append(defaultsRow);
     form.append(el('p', 'tw-config-note', t('team_config.next_form', 'These defaults land in the next Agent form that opens. Nothing live changes.')));
 
     const actions = el('div', 'tw-config-actions'); const status = el('span', 'tw-config-status');
@@ -157,7 +156,7 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
         // Spread what was read so a key this card does not draw is carried rather than
         // dropped — but NOT `permissions`, which is ruled out of agent_defaults entirely;
         // spreading it would rewrite a retired field on every save.
-        agent_defaults: { ...defaults, permissions: undefined, provider: picked.provider, model: picked.model, reach: picked.reach, recruit: picked.recruit, output: picked.output, dial: picked.dial, launch_mode: picked.launch_mode },
+        agent_defaults: { ...defaults, permissions: undefined, provider: picked.provider, model: picked.model, reach: picked.reach, recruit: picked.recruit, output: picked.output, dial: 'write', launch_mode: picked.launch_mode },
       } });
       status.textContent = saved.ok ? t('team_config.saved', 'Saved') : saved.message; if (saveAction) saveAction.setDisabled(false); else save.disabled = false; if (saved.ok) optionsArg.onSaved?.(saved.data.roster);
     });
