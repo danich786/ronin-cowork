@@ -1,11 +1,26 @@
 # ronin_bin — the agent-facing tools
 
-**Everything an agent types, and nothing else** — `tejun`, `tejun-step`, `tejun-send`,
-`tejun-peek`, `tejun-team`, `tejun-fork`, `session_check`, `session_create`,
-`session_set`, `tejun-team-set`, `tejun-wipeboard`,
-`tejun-harakiri`, `tejun-archive`, `tejun-rehydrate`, `tejun-recall`, `tejun-remember`, `tejun-rireki`, `tejun-desk`, `write_tegami`,
-`read_tegami`. `setup.sh` puts this
-directory on PATH, after `bin/shim` (the guards) and ahead of `bin/`.
+**Everything an agent types, and nothing else.** Which of these reach an Agent's PATH is
+decided at birth (`src/spawn.ts`, `src/routine-tools.ts`), never by this directory as a
+whole:
+
+- **every Cowork Agent** — `tejun`, `tejun-step`, `tejun-send`, `tejun-peek`, `tejun-team`,
+  `tejun-fork`, `session_check`, `session_set`, `tejun-team-set`, `tejun-wipeboard`,
+  `tejun-teampage`, `tejun-jikan`, `tejun-harakiri`, `tejun-archive`, `tejun-rehydrate`,
+  `read_tegami`, `write_tegami`, and `ronin-url`, the operator address the others source;
+- **the designated Team lead** — `session_create` (supporting-Agent creation is lead work;
+  it is on no delivery list until the lead-conditional capability projection lands);
+- **with a managed desk** — `tejun-desk`, `ronin-repo-init`;
+- **with the Ronin Host behaviour** — `tejun-survey`, `tejun-account`, `tejun-secrets`,
+  `tejun-machine-restart`;
+- **with the gbrain behaviour** — `tejun-recall`, `tejun-remember`;
+- **with Ronin Services** — `mika`; `lookup`, `owner_view` and `show` are hers alone.
+
+`tejun-rireki` has a row in `ronin_catalogs/TOOLS.md` but sits on no delivery list, so no
+Agent finds it by bare name while the recorder is being refactored. `ronin-desk-settle` (the
+lead's desk reconciler) and `ronin-team` (Team retirement) are house-side scripts kept here
+for `tool-path.sh`; they implement no catalogued action. `setup.sh` puts this directory on
+PATH, after `bin/shim` (the guards) and ahead of `bin/`.
 
 Use the wipeboard for team-wide messages and `tejun-send` for one session, with no board in between.
 
