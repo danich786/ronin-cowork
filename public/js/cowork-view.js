@@ -71,7 +71,7 @@ const currentWorkStep = (letter) => {
 const COMMONS = '@commons';
 const COWORK = '@cowork';
 const NEW = '@new';
-const WB_TYPES = Object.freeze({ commons: 'team.commons', cron: 'cowork.cron-jobs', desk: 'ronin.desk', document: 'document', terminal: 'session.terminal', roster: 'cowork.team-roster', newTeamForm: 'cowork.new-team-form', newAgent: 'session.new-agent', team: 'team.profile', archives: 'cowork.archives' });
+const WB_TYPES = Object.freeze({ commons: 'team.commons', kanban: 'team.kanban', cron: 'cowork.cron-jobs', desk: 'ronin.desk', document: 'document', terminal: 'session.terminal', roster: 'cowork.team-roster', newTeamForm: 'cowork.new-team-form', newAgent: 'session.new-agent', team: 'team.profile', archives: 'cowork.archives' });
 const WB_PROFILES = Object.freeze({ cowork: 'cowork', team: 'team' });
 
 function registerWorkbenchCatalog() {
@@ -80,6 +80,7 @@ function registerWorkbenchCatalog() {
   const { library, profiles } = WorkspaceKit.workbench;
   const add = (definition) => { if (!library.has(definition.type)) library.register(definition); };
   add({ type: WB_TYPES.commons, header: 'channels', className: 'wk-selector-utility', label: () => t('team.commons_card', 'Commons'), summary: () => t('team.commons_summary', 'See Roster / Docs / Wipeboard / Kanban / Configuration'), create: ({ workspace, environment }) => environment.teamCommons(workspace) });
+  add({ type: WB_TYPES.kanban, header: 'channels', className: 'wk-selector-utility', label: () => t('workspace.channel_kanban', 'Kanban'), summary: () => t('team_kanban.card_summary', 'The Team’s work, from Ideas through Done'), create: ({ workspace, environment }) => environment.teamKanban(workspace) });
   add({ type: WB_TYPES.desk, header: 'channels', label: () => t('cowork.commons', 'Ronin Desk'), create: ({ workspace, environment }) => environment.desk(workspace) });
   add({ type: WB_TYPES.terminal, header: 'terminal', className: 'wk-selector-entity', discover: (_tenant, environment) => environment.sessions(), create: ({ workspace, detail, environment }) => environment.terminal(workspace, detail) });
   add({ type: WB_TYPES.roster, header: 'surface', className: 'wk-selector-utility', label: () => t('league.team_roster', 'Team roster'), create: ({ workspace, environment }) => environment.roster(workspace) });
@@ -94,7 +95,7 @@ function registerWorkbenchCatalog() {
   add({ type: WB_TYPES.document, header: 'surface', label: () => t('docs.frame_title', 'Document'), discover: () => [], create: ({ detail, environment }) => environment.document(detail) });
   add({ type: WB_TYPES.team, header: 'surface', className: 'wk-selector-entity', discover: (_tenant, environment) => environment.teams(), create: ({ workspace, detail, environment }) => environment.team(workspace, detail) });
   profiles.define(WB_PROFILES.cowork, [WB_TYPES.roster, WB_TYPES.cron, WB_TYPES.team, WB_TYPES.newTeamForm, WB_TYPES.newAgent, WB_TYPES.archives, WB_TYPES.document, PRESETS_TYPE, FEEDBACK_TYPE]);
-  profiles.define(WB_PROFILES.team, [WB_TYPES.commons, WB_TYPES.terminal, WB_TYPES.newAgent, FEEDBACK_TYPE]);
+  profiles.define(WB_PROFILES.team, [WB_TYPES.commons, WB_TYPES.kanban, WB_TYPES.terminal, WB_TYPES.newAgent, FEEDBACK_TYPE]);
 }
 export function createCoworkView(options = {}) {
   registerWorkbenchCatalog();
@@ -278,6 +279,7 @@ export function createCoworkView(options = {}) {
   const environment = {
     feedback: (workspace) => createFeedbackSurface(() => bench.place(campaign ? WB_TYPES.roster : WB_TYPES.commons, workspace)),
     teamCommons: (id) => ({ el: teamCommons[id].el, show: (detail = {}) => { const item = teamCommons[id]; if (!detail.doc && !detail.tab) item.attendQueueOnOpen(); item.channels.enter(ctx); if (detail.doc) { item.channels.select('docs'); void item.docs.open(detail.doc); } else if (detail.tab) item.channels.select(detail.tab); } }),
+    teamKanban: (id) => ({ el: teamCommons[id].el, show: () => { const item = teamCommons[id]; item.channels.enter(ctx); item.channels.select('kanban'); } }),
     terminal: (id, detail) => ({ el: seats[id].surface.el, show: () => putSession(detail.key, id) }),
     roster: (id) => ({ el: teamRosterBySeat[id].el, show: () => teamRosterBySeat[id].render() }),
     cron: (id) => ({ el: cronBySeat[id].el, show: () => cronBySeat[id].room.enter() }),

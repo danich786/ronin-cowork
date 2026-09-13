@@ -82,6 +82,8 @@ export function createTeamKanban(options = {}) {
   let entered = false;
   let loading = null;
   let refreshTimer = 0;
+  let seat = null;
+  let visibility = null;
   const asked = new Map(); // id -> { stage, target }; never written to the project record
   const leadName = () => String(options.lead?.() || '');
   const holderName = (project) => project.holder === 'lead' ? leadName() : project.holder;
@@ -97,19 +99,18 @@ export function createTeamKanban(options = {}) {
       const cards = node('div', 'tk-cards');
       if (!columnProjects.length) cards.append(node('p', 'tk-empty', t('team_kanban.empty', 'nothing here')));
       for (const project of columnProjects) {
-        const card = node('article', 'tk-card');
+        const card = node('article', 'wk-card tk-card');
         card.draggable = true;
         card.dataset.project = project.id;
         if (project.stage !== 'DONE') card.dataset.status = project.status;
-        card.append(node('strong', 'tk-title', project.title), node('p', 'tk-outcome', project.objective));
-        const row = node('div', 'tk-card-row');
+        card.append(node('h4', 'wk-card-heading tk-title', project.title), node('p', 'wk-card-summary tk-outcome', project.objective));
+        const row = node('div', 'wk-card-meta tk-card-row');
         const chip = chipFor(project);
         if (chip) row.append(node('span', `tk-chip ${chip.cls}`, chip.text));
         const owner = holderName(project);
         if (owner) {
           const open = node('button', 'tk-owner', `@${owner}`);
           open.type = 'button';
-          open.title = t('team_kanban.open_owner', 'Open this Agent beside the commons');
           open.addEventListener('click', () => options.openOwner?.(owner));
           row.append(open);
         }
@@ -154,7 +155,7 @@ export function createTeamKanban(options = {}) {
   };
 
   const refresh = async () => {
-    if (!team || loading) return loading;
+    if (!team || loading || (seat && seat.hidden)) return loading;
     const requestedTeam = team;
     notice.textContent = t('team_kanban.loading', 'Loading Team Kanban…');
     loading = request(`/api/teams/${encodeURIComponent(requestedTeam)}/kanban`, { cache: 'no-store' });
@@ -165,7 +166,6 @@ export function createTeamKanban(options = {}) {
       projects = result.data.projects.map(normalizedProject);
       notice.textContent = '';
     } else {
-      projects = [];
       notice.textContent = result.message || t('team_kanban.failed', 'Could not load this Team Kanban.');
     }
     render();
@@ -173,7 +173,12 @@ export function createTeamKanban(options = {}) {
 
   return {
     el: root,
-    mount: () => {},
+    mount: (host) => {
+      seat = host;
+      visibility?.disconnect();
+      visibility = new MutationObserver(() => { if (entered && !seat.hidden) void refresh(); });
+      visibility.observe(seat, { attributes: true, attributeFilter: ['hidden'] });
+    },
     enter: () => {
       entered = true;
       window.clearInterval(refreshTimer);
@@ -181,7 +186,7 @@ export function createTeamKanban(options = {}) {
       void refresh();
     },
     leave: () => { entered = false; window.clearInterval(refreshTimer); refreshTimer = 0; },
-    destroy: () => { entered = false; window.clearInterval(refreshTimer); refreshTimer = 0; },
+    destroy: () => { entered = false; window.clearInterval(refreshTimer); refreshTimer = 0; visibility?.disconnect(); visibility = null; },
     setTeam: (name) => {
       const next = String(name || '');
       if (team === next) return;

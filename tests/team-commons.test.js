@@ -15,6 +15,14 @@ test('Commons opens on its separate Roster and keeps Configuration separate', as
   assert.doesNotMatch(view, /commons\.config\.replaceChildren\(members, config\)/);
 });
 
+test('Kanban has its own selector card and opens the Kanban commons tab', async () => {
+  const view = await source('public/js/cowork-view.js');
+  assert.match(view, /kanban: 'team\.kanban'/);
+  assert.match(view, /type: WB_TYPES\.kanban[\s\S]*label: \(\) => t\('workspace\.channel_kanban', 'Kanban'\)/);
+  assert.match(view, /WB_PROFILES\.team, \[WB_TYPES\.commons, WB_TYPES\.kanban,/);
+  assert.match(view, /teamKanban: \(id\)[\s\S]*item\.channels\.select\('kanban'\)/);
+});
+
 test('Roster expands live readings and actions; Launch uses the paired workspace and Close retires', async () => {
   const [view, members, retirement, css] = await Promise.all([
     source('public/js/cowork-view.js'), source('public/js/team-members.js'), source('public/js/session-retire.js'), source('public/css/team-workspace.css'),
