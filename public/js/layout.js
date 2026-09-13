@@ -2,7 +2,7 @@
 import { fetchSessions } from './api.js';
 import { guard } from './errors.js';
 import { refreshHome } from './home.js';
-import { buildSessionPicker } from './macros.js';
+import { buildSessionPicker } from './session-picker.js';
 import { PAD_CODE, firePadBinding, padBinds, padChord } from './pad.js';
 import { buildPadPanel } from './padpanel.js';
 import { buildNotePanel } from './panels.js';
@@ -101,7 +101,6 @@ export function build() {
 
   // Per-session note editor (📝 on each tile head) — works the same on desktop and touch.
   guard('note panel', buildNotePanel);
-  // Session macros (⚡ on each tile head) are the tile's own — built in
   // Commons is still the tile head's ⛩, the brand mark and ⌃⇧C; Mika is the `mika` tool
   // and the desk's own asks; the pad panel opens from a row on the ⚙ Admin Desk
   // (js/cowork-commons.js) and its physical keys never needed the button.

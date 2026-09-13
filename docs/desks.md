@@ -44,7 +44,7 @@ moment of asking (`deskStatus`). Nothing here is prose an agent maintains.
 ## The gate
 
 **`RONIN_REPO` in the repository is the one switch**. `desks=managed`
-gives a coding launch its desk, the contract in its brief, the desk actions and the tools;
+gives a coding launch its desk, the contract in its brief, and its capability-selected tools;
 `desks=none`, or no file, gives none of them and the session starts in the checkout. There
 is no install-wide switch. The Campaign's Ronin Worktrees choice defaults the file written for
 a new project root (`declareArrangement`, `src/desks/arrangement.ts`). For an existing root,

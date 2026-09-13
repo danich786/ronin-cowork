@@ -77,7 +77,7 @@ your store, shadows the template, and adds the book itself — `docs/templates.m
 ## Bundles
 
 A **template bundle** is a team template with copies of everything it names — agent boxes,
-behaviours and their macros, actions and tools — as one JSON document, for the
+behaviours and their supporting books and tools — as one JSON document, for the
 template library on ronincowork.com or a library of your own. Installing one lands every
 copy in your stores (never here); `bin/ronin-bundle` packs and installs by hand, and the
 Campaign page's Templates card does it from the library. The rules are in `docs/templates.md`.

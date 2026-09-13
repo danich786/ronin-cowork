@@ -4,6 +4,5 @@
 - **installation:** —
 - **reading:** routine/ronin_host/HOST_ABILITIES.md
 - **sops:** accounts, install, remote_machine_admin, remote_machine_health, tmux_server, vpn
-- **actions:** survey-machine, survey-secrets, survey-account, restart-ronin
-- **tools:** tejun-survey, tejun-account, tejun-secrets, tejun-machine-restart
+- **tools:** —
 - **order:** 90

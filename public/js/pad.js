@@ -90,8 +90,8 @@ try {
 } catch (_) {
   padBinds = {};
 }
-// Macro bindings are unsupported data now that macros are gone. Retain only the
-// generic terminal and navigation bindings; do not translate removed entries.
+// Retain only generic terminal and navigation bindings; older non-key records are
+// unsupported data and are not translated.
 for (const chord of Object.keys(padBinds)) if (!padBinds[chord]?.key) delete padBinds[chord];
 // Glen's standing defaults, seeded wherever unbound (rebindable, at the price
 // that a cleared key returns to its default next load): the key above Wispr

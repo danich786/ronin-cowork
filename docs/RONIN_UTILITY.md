@@ -57,7 +57,6 @@ Agent or Team → **New Project** on the landing · a quick session → **か Ne
 | **View Work Record** | the Agent's own account: repositories, current action, the ladder |
 | **Output** | which view this tile shows — **Locked** is the live terminal; the record-fed views (Terminal Mirror, Detailed, Condensed, Cherry Pick, Agent Summary) arrive with Ronin Services and are absent on the free build |
 | **@** | mention another session — picks a name into the message box |
-| **⚡** | this session's macros: pick one and `+name:` lands in the input for the owner to finish. A macro marked **⏎** is a `send:` macro — it is typed and sent at once, then rests 120 seconds on that tile |
 | **メ** | the drop: the rest of the head, in one strip — **⛽** context gauge (how full the session's context window is, read off its own status line; hidden until there is a reading) · **🎛** Control dial (**👤** owner only · **👁** outside agents may watch · **🤖** outside agents may type; only the owner turns it) · **📄** this Agent's tracked docs, opened over the tile · **📝** session note · **🗑** kill the session and its viewers |
 
 ## Locked and Unlocked

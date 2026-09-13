@@ -79,7 +79,7 @@ where a session is born now. `docs/ui.md` is the written contract those modules 
 | `team-members.js` | `buildTeamMembers`, `agentTitle`, `configSignature` — the member list shared by the Commons Roster tab and the league surfaces, and the changed-only fingerprint that keeps Configuration off the five-second clock |
 | `voice.js` | dictation: `makeClipRecorder` + `wireDictation` (the 🎤 on the tile's compose box) |
 | `panels.js` | `buildNotePanel` 📝 (on `ui.sheet`), `toClipboard` |
-| `macros.js` | `buildSessionPicker` — the pad key's session switcher (on `ui.sheet`) |
+| `session-picker.js` | `buildSessionPicker` — the pad key's session switcher (on `ui.sheet`) |
 | `pad.js` | keypad — bindings, chords, firing |
 | `padpanel.js` | keypad — the ▦ panel and ask-on-press (both on `ui.sheet`) |
 | `weblink.js` | keypad — WebHID programming of the device |

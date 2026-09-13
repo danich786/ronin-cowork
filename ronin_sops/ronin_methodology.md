@@ -10,10 +10,9 @@ Ronin sessions are disposable; the work is not. The method is to give every acti
 of work a small set of shared artifacts that Claude, Codex, or another agent can enter and
 leave without asking one provider to imitate another.
 
-Each stage below names the macro that performs it. The macro is the shared word — what the
-owner says and what you compile — and inside it only the actions that carry a rule worth
-knowing are named. The tools underneath belong to the actions and are not repeated here;
-they move, and a method that spelled them would move with them.
+Each stage below names the shared record or capability involved. Selected capability
+documents teach the concrete tools; this method keeps the durable cross-session choices
+without duplicating executable instructions.
 
 ## The lifecycle
 
@@ -169,8 +168,6 @@ record above, because none of it is visible to anyone outside that session.
 When the two layers overlap:
 
 - repository instructions and the owner's current direction govern the implementation;
-- explicit Ronin macros are compiled and run as Ronin macros, never translated into a
-  similarly named native feature — `+forkit` is the standing example;
 - an ordinary request to delegate or plan may use the provider's native capability;
 - durable project truth goes to code, `docs/` or README; a reusable lesson may go through
   Ronin's scoped memory tools; neither belongs only in a provider transcript.

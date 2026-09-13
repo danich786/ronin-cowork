@@ -290,7 +290,7 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **campaign_view.templates_download:** Download as a package
 - **campaign_view.templates_download_help:** This template, with your copies of the books and instructions it names, as one file you could put on a library.
 - **campaign_view.library:** On the Ronin library — not on your system yet
-- **campaign_view.library_help:** The shelf Ronin keeps and grows, provided by Ronin Services: a team, its people, and the books, macros and tools they read. Nothing is fetched until you press; everything a package holds is shown before anything is written; an installed one appears below, on your system.
+- **campaign_view.library_help:** The shelf Ronin keeps and grows, provided by Ronin Services: a team, its people, and the books and tools they use. Nothing is fetched until you press; everything a package holds is shown before anything is written; an installed one appears below, on your system.
 - **campaign_view.library_show_all:** Show everything it holds
 - **campaign_view.library_hide_all:** Hide the contents
 - **campaign_view.library_check:** Check the library
@@ -317,10 +317,6 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **campaign_view.library_hold_sops:** SOPs
 - **campaign_view.library_hold_page:** reference page
 - **campaign_view.library_hold_pages:** reference pages
-- **campaign_view.library_hold_macro:** macro
-- **campaign_view.library_hold_macros:** macros
-- **campaign_view.library_hold_action:** action
-- **campaign_view.library_hold_actions:** actions
 - **campaign_view.library_hold_tool:** tool
 - **campaign_view.library_hold_tools:** tools
 - **campaign_view.verdict_new:** new — will be added
@@ -354,7 +350,7 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **campaign_view.svc_expired:** That confirmation link expired. Ask for a fresh one.
 - **campaign_view.svc_ask:** To activate: the address the entitlement should go to, then confirm from the email.
 - **campaign_view.sell_head:** What Ronin Services adds
-- **campaign_view.sell_library:** The template library — teams and agents Ronin keeps and grows, with the procedures, macros and tools they read, installed with one press.
+- **campaign_view.sell_library:** The template library — teams and agents Ronin keeps and grows, with the books and tools they use, installed with one press.
 - **campaign_view.sell_assistant:** A background assistant that keeps every agent’s work record and instructions current, so the roster and the tile say what each agent is doing.
 - **campaign_view.sell_transcripts:** Readable transcripts are not in this beta; the recorder is off while it is refactored.
 - **campaign_view.sell_voice:** Text to voice, and voice in — hear a report read back; speak to an agent from the tile.
@@ -922,20 +918,14 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **koshi.saving:** saving…
 
 ## pad — padpanel.js (the ▦ Work Louder pad panel)
-- **pad.ask_sheet:** Macro arguments
-- **pad.ask_placeholder:** Enter sends · Esc cancels
-- **pad.ask_label:** macro arguments
 - **pad.sheet:** Work Louder pad
 - **pad.title:** ▦ Work Louder
 - **pad.press_key:** press a pad key…
 - **pad.capture:** ⊕ Capture
 - **pad.close:** Close
-- **pad.args_placeholder:** args (k=v …) — optional
-- **pad.ask_on_press:** ask on press
 - **pad.save:** Save
 - **pad.key_title:** key {chord}
 - **pad.unbound:** — unbound —
-- **pad.group_macros:** ⚡ macros
 - **pad.group_keys:** ⌨ keys (to the active tile)
 - **pad.active_tile:** ▸ active tile
 - **pad.press_to_capture:** press the pad key to capture…
@@ -1189,8 +1179,6 @@ The catalog entry goes. {dir} is not touched.
 - **stats.ladders_plans:** Work records & plans
 - **stats.n_live:** {n} live
 - **stats.surfaces:** Ronin surfaces
-- **stats.macro_runs:** {n} macro runs
-- **stats.macros:** Macros
 - **stats.ui:** UI
 - **stats.capabilities:** Capabilities
 - **stats.unreachable:** Stats could not be read.
@@ -1200,19 +1188,11 @@ The catalog entry goes. {dir} is not touched.
 - **customize.sec_behavior:** Behavior
 - **customize.sec_people:** People & work
 - **customize.sec_presentation:** Presentation
-- **customize.macros:** Macros
-- **customize.macros_what:** a workflow an agent runs when you type +name:
-- **customize.macros_blurb:** Saved instructions you would otherwise have typed to your agent.
 - **customize.sops:** SOPs
 - **customize.sops_read:** Read procedure
 - **customize.sops_blurb:** How this house goes about a domain — fetched by a situation, never pushed.
-- **customize.actions:** Actions
-- **customize.actions_read:** Read action
-- **customize.actions_what:** a primitive step macros are composed from
-- **customize.actions_blurb:** The cataloged procedures macros are made of.
 - **customize.tools:** Tools
-- **customize.tools_why:** TOOLS.md is a table, and the server has no table reader — the rule in docs/shadowing.md is implemented in ronin_bin/tejun and not in src/resources.ts (prerequisite P1).
-- **customize.tools_blurb:** The executables that implement actions. A markdown row cannot author one.
+- **customize.tools_blurb:** Agent-facing executables selected and taught by capability documents.
 - **customize.saved_launches:** Saved launches
 - **customize.saved_launches_blurb:** The launcher form, filled in ahead of time and named.
 - **customize.skins:** Skins
@@ -1430,7 +1410,7 @@ The catalog entry goes. {dir} is not touched.
 - **provenance.made:** made {path} — edit it, or tell an agent to
 - **provenance.exists:** yours is at {path}
 
-## switcher — macros.js (the session switcher)
+## switcher — session-picker.js
 - **switcher.sheet:** Session switcher
 - **switcher.hint:** ↑↓ move · same key (or ↵) opens it · Esc cancels
 - **switcher.title:** Switch tile {n}
@@ -1484,7 +1464,6 @@ The catalog entry goes. {dir} is not touched.
 - **head.output_help:** Output — live terminal or one of RIREKI’s unlocked views
 - **head.mention_help:** Mention another session — choose a name to add it to the message box
 - **head.mention_quiet:** Mentions — no session in this tile yet
-- **head.macros_quiet:** Macros — no session in this tile yet
 - **head.gauge_help:** Context gauge — how full this session's context window is, read off the pane's own status line. Hidden until there is a reading.
 - **head.dial_quiet:** Control dial — no session in this tile yet
 - **head.docs_help:** This Agent's tracked docs — open one over this tile
@@ -1525,7 +1504,6 @@ The catalog entry goes. {dir} is not touched.
 ## me — tiledrop.js (the メ sheet)
 - **me.status:** Status
 - **me.ladder:** Work record
-- **me.macros:** Macros
 - **me.mention:** Mention session
 - **me.groups:** Groups
 - **me.docs:** Docs
@@ -1533,7 +1511,7 @@ The catalog entry goes. {dir} is not touched.
 - **me.control:** Control
 - **me.kill:** Kill session
 - **me.output:** Output
-- **me.title:** This session — status, work record, macros, groups, docs, note, control
+- **me.title:** This session — status, work record, groups, docs, note, control
 
 ## keys — keysrow.js (the composer's keys row)
 - **keys.backspace:** Backspace
@@ -1553,7 +1531,7 @@ The catalog entry goes. {dir} is not touched.
 - **phone.agents:** Agents
 - **phone.docs:** Docs
 - **phone.back:** Back
-- **phone.me_title:** This Agent — work record, docs, macros, note, control, kill
+- **phone.me_title:** This Agent — work record, docs, note, control, kill
 
 ## new_team — new-team-launch.js (the transaction's own sentences)
 
@@ -1684,7 +1662,7 @@ The catalog entry goes. {dir} is not touched.
 - **team_jikan.new:** New job
 - **team_jikan.request:** Request
 - **team_jikan.request_placeholder:** Write the message the agent should receive
-- **team_jikan.request_help:** Plain words, exactly as if you typed them to the agent. A macro such as +name: is optional.
+- **team_jikan.request_help:** Plain words, exactly as if you typed them to the agent.
 - **team_jikan.to:** To
 - **team_jikan.team:** Team
 - **team_jikan.to_lead:** Team lead (default)
@@ -1823,7 +1801,6 @@ The catalog entry goes. {dir} is not touched.
 - **glossary.work_record:** work record
 - **glossary.memory:** memory
 - **glossary.stats:** Stats
-- **glossary.macros:** macros
 - **glossary.desk_profile:** desk profile
 - **glossary.session_type:** session type
 - **glossary.terminal:** terminal

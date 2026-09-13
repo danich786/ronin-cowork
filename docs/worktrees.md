@@ -24,7 +24,7 @@ One fact determines the result for each repository, its own `RONIN_REPO`:
 | `desks=managed` | a **worktree root**: the Agent's managed branch and worktree, commit, hand-in, the lead's promotion | `ronin_sops/worktree-root.md` |
 
 There is no Agent-side answer. The birth packet names the birth root's arrangement, and
-`tejun-desk open <repo>` names any other root's. The desk actions and tools are in an
+`tejun-desk open <repo>` names any other root's. The desk procedure and tools are in an
 Agent's command lookup only in a worktree root. Resolution is per repository, so one
 assignment may contain both a worktree root and a checkout.
 

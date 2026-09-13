@@ -45,14 +45,14 @@ Start with the root [`AGENTS.md`](../AGENTS.md), then use the relevant architect
 | Shelf | Contains |
 |---|---|
 | `ronin_session_boot/` | the reading assembled for a new session |
-| `ronin_catalogs/` | actions, tools, macros, project roots, definitions and presentation resources |
-| `ronin_library/` | pages compiled into action instructions |
+| `ronin_catalogs/` | tools, capabilities, project roots, definitions and presentation resources |
+| `ronin_library/` | supporting reference pages used by tools and capabilities |
 | `ronin_sops/` | situation-specific operating guidance |
 | `ronin_bin/` | executable tools listed in `ronin_catalogs/TOOLS.md` |
 
 The owner's stores shadow shipped resources file-for-file. `bin/ronin-store --all` lists
-their resolved locations. A macro is compiled with `tejun <name>`; a machine fact is
-measured with `tejun-survey`, `tejun-account`, or the relevant tool.
+their resolved locations. Capability documents name the selected tools; machine facts
+are measured with `ronin-host inspect`, `ronin-host account`, or the relevant tool.
 
 ## Coworkspace
 

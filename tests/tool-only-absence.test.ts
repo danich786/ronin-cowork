@@ -8,6 +8,7 @@ const retired = [
   'src/macros.ts',
   'src/actions.ts',
   'public/js/tilemacros.js',
+  'public/js/macros.js',
   'ronin_bin/tejun',
   'ronin_bin/tejun-step',
   'ronin_catalogs/MACROS.md',
@@ -15,7 +16,7 @@ const retired = [
   'ronin_catalogs/MIKA_MACROS.md',
 ];
 const shipped = ['src', 'public', 'scripts', 'ronin_bin', 'ronin_catalogs', 'ronin_library', 'ronin_session_boot', 'ronin_sops', 'docs'];
-const forbidden = /(?:\/api\/(?:macros|actions)\b|\btejun-step\b|\b(?:MIKA_)?(?:MACROS|ACTIONS)\.md\b|compile-macro)/;
+const forbidden = /(?:\/api\/(?:macros|actions)\b|\btejun-step\b|\b(?:MIKA_)?(?:MACROS|ACTIONS)\.md\b|compile-macro|\*\*(?:macros|actions):\*\*)/;
 
 async function* walk(dir: string): AsyncGenerator<string> {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
@@ -30,6 +31,7 @@ test('macro and action compilers, catalogs, routes, and UI are absent', async ()
   for (const relative of retired) {
     await assert.rejects(access(path.join(root, relative)), `${relative} must not exist, even as an alias`);
   }
+  await access(path.join(root, 'public/js/session-picker.js'));
 
   const offenders: string[] = [];
   for (const relative of shipped) {
@@ -39,4 +41,10 @@ test('macro and action compilers, catalogs, routes, and UI are absent', async ()
     }
   }
   assert.deepEqual(offenders, [], 'a shipped macro/action mechanism reference survives');
+});
+
+test('definition adapters expose no retired macro or action fields', async () => {
+  const adapters = await readFile(path.join(root, 'src/resource-adapters.ts'), 'utf8');
+  assert.doesNotMatch(adapters, /\b(?:macros|actions)\s*:/);
+  assert.doesNotMatch(adapters, /d\.get\(['"](?:macros|actions)['"]\)/);
 });

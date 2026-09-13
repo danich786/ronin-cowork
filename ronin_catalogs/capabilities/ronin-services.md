@@ -10,6 +10,11 @@ template library, or service-backed records. The installation switch, installed 
 activation, loaded and parked state, and restart-needed state remain distinct facts in
 Machine settings.
 
-This document grants the applicable teaching and authority. No general Agent tool is
-projected until a non-curated Services operation exists; Mika keeps her separately ruled
-propose-and-confirm surface.
+## Tools
+
+| Tool | Authority | Teach | Help |
+|---|---|---|---|
+| `mika` | ask: start or reach the constrained house assistant | priority | `mika` |
+
+Mika's own settings authority remains separately constrained by the Machine settings
+capability and her house-seat projection; this launcher does not broaden it.

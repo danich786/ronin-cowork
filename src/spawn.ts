@@ -33,8 +33,6 @@ const WORKTREE_TOOLS = ['tejun-desk', 'ronin-repo-init'] as const;
 const CORE_CONTRIBUTION: ResolvedContribution = {
   name: 'cowork_agent', origin: 'stock', shadowed: false, label: 'Cowork Agent', blurb: '',
   reading: [], reading_off: [], sops: [],
-  macros: [],
-  actions: [],
   tools: ['tejun-send', 'session_end', 'session_archive', 'session_restore', 'tejun-team', 'session_fork', 'session_check', 'session_set', 'tejun-team-set', 'tejun-wipeboard', 'tejun-teampage', 'tejun-peek', 'read_tegami', 'write_tegami', 'tejun-jikan', 'ronin-url'],
   mcp: [], parts: [], enabled: true, stated_by: 'conditional', required_by: [],
 };

@@ -83,8 +83,6 @@ export interface ContributionRow extends Pick<Row, 'name' | 'origin' | 'shadowed
   reading: string[];
   reading_off: string[];
   sops: string[];
-  macros: string[];
-  actions: string[];
   tools: string[];
   mcp: string[];
   /** Services parts this contribution runs inside the server; loaded only while its switch is on. */
@@ -120,8 +118,7 @@ const contribution = (d: Definition): ContributionRow => ({
   name: d.name, origin: d.origin, shadowed: d.shadowed,
   label: d.get('label') || d.name, blurb: d.get('blurb'),
   reading: splitDefinitionList(d.get('reading')), reading_off: splitDefinitionList(d.get('reading_off')),
-  sops: splitDefinitionList(d.get('sops')), macros: splitDefinitionList(d.get('macros')),
-  actions: splitDefinitionList(d.get('actions')), tools: splitDefinitionList(d.get('tools')),
+  sops: splitDefinitionList(d.get('sops')), tools: splitDefinitionList(d.get('tools')),
   mcp: splitDefinitionList(d.get('mcp')), parts: splitDefinitionList(d.get('parts')),
 });
 

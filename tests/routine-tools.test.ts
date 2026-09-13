@@ -18,7 +18,7 @@ process.env.RONIN_TOOLS_DIR = path.join(temp, 'own-tools');
 
 const routine = (name: string, enabled: boolean, tools: string[]): ResolvedContribution => ({
   name, label: name, blurb: '', origin: 'stock', shadowed: false,
-  reading: [], sops: [], macros: [], actions: [], tools, mcp: [], parts: [], requires: [],
+  reading: [], sops: [], tools, mcp: [], parts: [], requires: [],
   enabled, stated_by: 'campaign', required_by: [],
 } satisfies ContributionRow & ResolvedContribution);
 

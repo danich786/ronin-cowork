@@ -6,8 +6,6 @@
 - **reading:** —
 - **reading_off:** —
 - **sops:** —
-- **macros:** —
-- **actions:** —
 - **tools:** —
 - **parts:** —
 - **mcp:** —

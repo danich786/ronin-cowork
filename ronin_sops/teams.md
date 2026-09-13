@@ -34,8 +34,8 @@ sessions one at a time, as the work actually needs them — not a batch at birth
    you are on). That is the one launch mechanism through a second door (`POST
    /api/session`), so it is tagged into the team, reads the team_role's own reading
    shelf, and finds the objective in its brief exactly as a ＋ New launch would. The New
-   Session shelves determine the launch context. Use the `+forkit:` macro instead when the
-   new session should inherit your own context. **Do not create the team first, and do
+   Session shelves determine the launch context. Use `session_fork` instead when the new
+   session should inherit your own context. **Do not create the team first, and do
    not retry with a different shape** — the verdict is `BORN …` or one `REFUSED: <why>`
    (name taken, unknown model, box full); a session that lands as a rōnin still exists
    and the owner can drag it onto a team from the page.

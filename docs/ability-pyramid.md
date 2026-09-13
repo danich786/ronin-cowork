@@ -76,10 +76,9 @@ a tier.
 
 ## T3 — indexed. T4 — delivered. T5 — sought.
 
-The **catalogs** are complete and never pasted: a session reaches them because the map
-named the shelf, or a `+macro:` landed and the routing rule says compile
-(`tejun <name>`). The **library** needs no discovery at all — an action cites the page
-and the compile inlines it; a page only ever reached by browsing is an SOP on the wrong
+The **catalogs** are complete and never pasted: selected capability documents teach the
+tools an Agent receives. The **library** holds supporting reference pages consumed by
+those tools and capabilities; a page only ever reached by browsing is an SOP on the wrong
 shelf. The **SOPs** cost nothing until a situation arises; the map makes the shape of
 the question obvious ("how does this house do X?"), and the situation selects the
 reader. And facts about the machine live nowhere: they are **measured** by the tools,

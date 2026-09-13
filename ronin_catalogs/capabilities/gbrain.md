@@ -9,4 +9,12 @@ Reach for this bundle only when the launch resolver selected the gbrain behaviou
 facts still belong in the Work Record; the capability does not create a second project
 record or make credentials visible.
 
-The document is authority and boundary teaching until a non-retired gbrain tool exists.
+## Tools
+
+| Tool | Authority | Teach | Help |
+|---|---|---|---|
+| `tejun-recall` | read: project-scoped memories | priority | `tejun-recall --help` |
+| `tejun-remember` | write: one project-scoped memory | | `tejun-remember --help` |
+
+These are the only gbrain operations delivered to the Agent. They preserve the selected
+project scope and never expose service credentials.
