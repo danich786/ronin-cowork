@@ -9,14 +9,20 @@ Usage:
   team-lead roster read <team>
   team-lead roster write <team> [typed roster flags]
   team-lead project create <team> --title <text> --objective <text>
-  team-lead project read|list <team> [id]
+  team-lead project read <team> <id>
+  team-lead project list <team>
   team-lead project write <team> <id> --field <value> ...
-  team-lead project assign|return <team> <id> <session>
+  team-lead project assign <team> <id> <session>
+  team-lead project return <team> <id> <session>
   team-lead member status <team>
 All writes use canonical Team/project routes; member status is the settled Kanban view.
+Create a Team with roster write. Add membership or move an Agent with session_set; remove
+the old Team on that Team's page. Set or change that Team's lead with session_set.
+Read-only Team enumeration belongs to `edges team`. Related: session_create --help;
+session_set --help; edges --help
 EOF
 }
-case "${1:-}" in -h|--help) usage; exit 0;; esac
+case "${1:-}" in -h|--help) [ "$#" -eq 1 ] || { echo 'Run team-lead --help.' >&2; exit 2; }; usage; exit 0;; esac
 ronin_connect || exit $?
 request() {
   method=$1; path=$2; body=${3-}; args=(-sS -m 30 "${RONIN_CURL[@]+"${RONIN_CURL[@]}"}" -X "$method")

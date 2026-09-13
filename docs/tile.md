@@ -382,7 +382,7 @@ you can just close the commons and you're back in the session."* The Commons alr
 still streaming behind it, ✕ on the tab strip to come back.
 
 **It is not the file browser, and it is not a crack in that rule.** A doc is on this list for
-the one reason it is on the ▧ Docs tab: an agent ran `write_tegami --doc <path>`. All that is
+the one reason it is on the ▧ Docs tab: an agent ran `work-record document add <path>`. All that is
 different is the scope. Which is also why a session that has listed nothing gets a sentence
 saying so — the same sentence the tab uses for its own empty list, narrowed to one session —
 and never a fallback to the global list, which would rebuild the hunt inside the tile.

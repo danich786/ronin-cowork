@@ -24,9 +24,9 @@ const routine = (name: string, enabled: boolean, tools: string[]): ResolvedContr
 
 test('birth PATH exposes enabled tools by name without inheriting a Ronin PATH', async () => {
   const projected = await projectRoutineTools('pathless', [
-    routine('ronin_base', true, ['write_tegami', 'read_tegami', 'session_fork', 'ronin-url']),
+    routine('ronin_base', true, ['work-record', 'session_fork', 'ronin-url']),
   ], '/usr/bin:/bin');
-  for (const command of ['write_tegami', 'read_tegami', 'session_fork', 'ronin-url']) {
+  for (const command of ['work-record', 'session_fork', 'ronin-url']) {
     const found = await exec('/bin/sh', ['-c', `command -v ${command}`], { env: { PATH: projected.path } });
     assert.equal(found.stdout.trim(), path.join(projected.dir, command), command);
   }
@@ -49,7 +49,7 @@ test('missing enabled tools are visible and do not refuse projection', async () 
 
 /* A BORN SESSION RUNS ITS TOOLS THROUGH THESE SYMLINKS, so every ronin_bin tool that
  * locates the repository from its own path must resolve the link first (measured
- * 2026-09-02: the desk tool, `edges wipeboard`, `read_tegami`, `write_tegami`
+ * 2026-09-02: the desk tool, `edges wipeboard`, `work-record read`, `work-record update-record`
  * all failed from a projected session, and the guard shims had been fixed the day
  * before). Each is run exactly as a session would type it, with an invocation that stops
  * before it needs a tmux session, and must not report a path it could not reach.
@@ -59,9 +59,9 @@ test('missing enabled tools are visible and do not refuse projection', async () 
  * caller broken when it was looked up by name). So each caller is run through its
  * projected symlink with only `RONIN_URL` set, and must arrive at the operator it names. */
 const REACH_FAILURES = /Cannot find module|command not found|No such file or directory|NO-REPO/;
-const URL_CALLERS = ['session_archive', 'session_fork', 'session_end', 'session_restore', 'session_check', 'session_create', 'session_set', 'tejun-team-set', 'edges', 'mika'];
+const URL_CALLERS = ['session_archive', 'session_fork', 'session_end', 'session_restore', 'session_check', 'session_create', 'session_set', 'team-lead', 'edges', 'mika'];
 test('projected ronin_bin tools resolve the symlink and reach the repository and the operator', async (t) => {
-  const tools = [...new Set(['worktree-desk', 'edges', 'read_tegami', 'write_tegami', 'ronin-host', 'ronin-url', ...URL_CALLERS])];
+  const tools = [...new Set(['worktree-desk', 'edges', 'work-record', 'ronin-host', 'ronin-url', ...URL_CALLERS])];
   const projected = await projectRoutineTools('resolve', [routine('ronin_base', true, tools)]);
   for (const t of tools) assert.ok(projected.delivered.includes(t), `${t} projected`);
   const reached: string[] = [];
@@ -106,8 +106,8 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
     }
   };
   const helpTools = [
-    'read_tegami', 'write_tegami', 'worktree-desk', 'edges',
-    'tejun-team-set', 'session_check', 'session_create', 'session_set', 'session_archive', 'session_restore',
+    'work-record', 'worktree-desk', 'edges', 'team-lead',
+    'session_check', 'session_create', 'session_set', 'session_archive', 'session_restore',
     'session_end', 'session_fork',
   ];
   for (const command of helpTools) {
@@ -150,7 +150,7 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
     (await run(['session_check', '--help'])).out,
     (await run(['session_create', '--help'])).out,
     (await run(['session_set', '--help'])).out,
-    (await run(['tejun-team-set', '--help'])).out,
+    (await run(['team-lead', '--help'])).out,
   ].join('\n');
   assert.match(teamHelp, /creates? an Agent/i);
   assert.match(teamHelp, /Create a Team/i);
@@ -159,7 +159,7 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
   assert.match(teamHelp, /remove the old Team on that Team's page/i);
   assert.match(teamHelp, /sets? or changes? that Team's lead/i);
   assert.doesNotMatch(teamHelp, /session_fork --help/);
-  for (const args of [['edges', 'wipeboard'], ['edges', 'send'], ['read_tegami', '--session', 'nobody'], ['write_tegami', '--session', 'nobody', '--at', '1'], ['ronin-host', 'inspect'], ['ronin-host', 'account']]) {
+  for (const args of [['edges', 'wipeboard'], ['edges', 'send'], ['work-record', 'read', '--session', 'nobody'], ['work-record', 'update-record', '--session', 'nobody', '--at', '1'], ['ronin-host', 'inspect'], ['ronin-host', 'account']]) {
     const r = await run(args);
     assert.doesNotMatch(r.out, REACH_FAILURES, `${args.join(' ')}: ${r.out}`);
   }
@@ -173,7 +173,7 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
     [['session_check', 'reach'], '/api/sessions', {}],
     [['session_create', 'reach'], '/api/session', {}],
     [['session_set', 'reach', '--root', 'lab'], '/api/sessions', {}],
-    [['tejun-team-set', 'reach'], '/api/team', {}],
+    [['team-lead', 'roster', 'write', 'reach'], '/api/team', {}],
     // `mika` asks tmux first; a live Mika on the box must not turn this knock into a send.
     // (An existing empty dir: tmux falls back to /tmp when TMUX_TMPDIR is missing.)
     [['mika'], '/api/mika', { TMUX_TMPDIR: temp }],

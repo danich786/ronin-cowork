@@ -20,6 +20,7 @@ session commands retain supporting-Agent creation and membership authority.
 | `team-lead roster read` | read: one canonical Team roster | priority | `team-lead --help` |
 | `team-lead project create` | create: one roster-held project | priority | `team-lead --help` |
 | `team-lead project read` | read: one roster-held project | priority | `team-lead --help` |
+| `team-lead project list` | read: roster-held projects | priority | `team-lead --help` |
 | `team-lead project write` | write: one roster-held project's typed fields | priority | `team-lead --help` |
 | `team-lead project assign` | write: move a project whole to one Agent | priority | `team-lead --help` |
 | `team-lead project return` | write: move a project whole back from one Agent | priority | `team-lead --help` |

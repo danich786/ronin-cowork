@@ -33,7 +33,7 @@ const WORKTREE_TOOLS = ['worktree-desk'] as const;
 const CORE_CONTRIBUTION: ResolvedContribution = {
   name: 'cowork_agent', origin: 'stock', shadowed: false, label: 'Cowork Agent', blurb: '',
   reading: [], reading_off: [], sops: [],
-  tools: ['edges', 'session_end', 'session_archive', 'session_restore', 'session_fork', 'session_check', 'session_set', 'tejun-team-set', 'read_tegami', 'write_tegami', 'ronin-url'],
+  tools: ['edges', 'session_end', 'session_archive', 'session_restore', 'session_fork', 'session_check', 'session_set', 'work-record', 'ronin-url'],
   mcp: [], parts: [], enabled: true, stated_by: 'conditional', required_by: [],
 };
 

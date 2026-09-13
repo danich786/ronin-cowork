@@ -40,13 +40,13 @@ sessions one at a time, as the work actually needs them — not a batch at birth
    (name taken, unknown model, box full); a session that lands as a rōnin still exists
    and the owner can drag it onto a team from the page.
 3. **Or place an EXISTING session onto the team** — its tags are its membership
-   (`tejun-team-set <team> --add <name>`, `POST /api/sessions/<name>/tags`, or ask the
+   (`team-lead roster write <team> --add <name>`, `POST /api/sessions/<name>/tags`, or ask the
    owner from the tile). A session joining late is not re-briefed by ruling; hand it
    what it needs on the wipeboard.
 4. **A team of your own choosing** — `session_create <name> --team <new-team> --prompt …`
    raises into it. A team that exists only as its tag is an ordinary team; the session
    is born tagged onto it, told it is tag-only, and inherits no root or objective. Give
-   the team a roster when it has a brief worth inheriting — `tejun-team-set <team>
+   the team a roster when it has a brief worth inheriting — `team-lead roster write <team>
    --objective "…" --role <team_role> --root <project_root>` creates one, or updates the
    fields you name on one that exists. A simple creation inherits the current Campaign's
    Team defaults: Routines and kit, root/repositories/branch, and Agent launch defaults;
@@ -55,7 +55,7 @@ sessions one at a time, as the work actually needs them — not a batch at birth
    boring, typeable.
 
    For a Team created before this inheritance was available, the explicit one-time repair
-   is `tejun-team-set <team> --campaign-defaults`. It reapplies the current Campaign layer;
+   is `team-lead roster write <team> --campaign-defaults`. It reapplies the current Campaign layer;
    review the Campaign defaults first, then run it once. Ordinary updates never do this.
 
 ### Choose the desk source when assigning code work

@@ -60,7 +60,7 @@ source; the report is a way of reading them.
 
 ## What is never translated
 
-Anything an **agent** reads — the letter, the brief, the boot shelf, `write_tegami` —
+Anything an **agent** reads — the letter, the brief, the boot shelf, `work-record update-record` —
 stays in stock tokens: a session on a Home desk is still `DraftPlan` with
 `reach: plan`. The house's internal names (KOTOBA's list) are not keys. And a lexicon
 changes words, never structure: a surface that must be *shaped* differently per profile

@@ -5,10 +5,9 @@ decided at birth (`src/spawn.ts`, `src/routine-tools.ts`), never by this directo
 whole:
 
 - **every Cowork Agent** — `edges`, `session_fork`, `session_check`, `session_set`,
-  `tejun-team-set`, `session_end`, `session_archive`, `session_restore`,
-  `read_tegami`, `write_tegami`, and `ronin-url`, the operator address the others source;
-- **the designated Team lead** — `session_create` (supporting-Agent creation is lead work;
-  it is on no delivery list until the lead-conditional capability projection lands);
+  `session_end`, `session_archive`, `session_restore`, `work-record`, and `ronin-url`, the
+  operator address the others source;
+- **the designated Team lead** — `team-lead` and the additional explicit `session_create`;
 - **with a managed desk** — `worktree-desk`;
 - **with the Ronin Host behaviour** — `ronin-host` and its dynamically available `--help`;
 - **with the GBrain behaviour** — boundary teaching only; no callable GBrain tool yet;

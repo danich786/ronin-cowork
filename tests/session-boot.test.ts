@@ -159,7 +159,7 @@ test('core reading points to arrangement pages; system reading stays installatio
     readFile(path.join(repo, 'ronin_session_boot', 'routine', 'ronin_host', 'HOST_ABILITIES.md'), 'utf8'),
   ]);
 
-  assert.match(base, /read_tegami/);
+  assert.match(base, /work-record read/);
   assert.match(base, /edges wipeboard/);
   assert.match(base, /ronin_sops\/worktree-root\.md/);
   assert.match(base, /ronin_sops\/checkout\.md/);

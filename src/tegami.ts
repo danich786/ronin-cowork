@@ -76,12 +76,12 @@ function seedShell(
 > here is shown on the user's tile and on their session_roster for quick reference. Keep it true
 > and save it when it changes — a stale ladder is worse than none.
 >
-> At the end of a turn, consider updating it with \`write_tegami\`. Not keeping it current is
+> At the end of a turn, consider updating it with \`work-record update-record\`. Not keeping it current is
 > poor quality.
 >
 > YOUR **teams** block is DERIVED and not yours to write: one entry per team you are on —
 > the team's name and its objective, read live from the team rosters.
-> \`write_tegami\` regenerates it on every save and a tag change refreshes it, so reread
+> \`work-record update-record\` regenerates it on every save and a tag change refreshes it, so reread
 > your letter to see a team objective that moved. A session on no team is a rōnin, which
 > is an ordinary state and not a gap.
 >
@@ -97,20 +97,21 @@ function seedShell(
 > \`PLANNED\` · \`ACTIVE\` · \`DONE\`, **one ACTIVE at a time**. Add a gate wherever the work
 > genuinely stops and needs someone — that is how the owner knows you want them.
 >
-> YOUR **ladder_state** — \`write_tegami --on_tangent\` when you step off the ladder,
+> YOUR **ladder_state** — \`work-record update-record --on_tangent\` when you step off the ladder,
 > \`--on_track\` when you are back. Riffing, a side job, ten minutes in nobody's plan — all
 > normal, and your plan is not dead while you are away from it.
 >
 > YOUR DOCS — the buildouts, handoffs and plans this session is working on.
-> \`write_tegami --doc <path>\` puts one on your list, \`--undoc <path>\` takes it off.
+> \`work-record document add <path>\` puts one on your list; \`work-record document remove
+> <path>\` takes it off.
 > The owner opens them from the ▧ Docs tab in commons, so **a doc you did not list is a
 > doc they cannot reach without asking you for the path.**
 >
-> Your own words go in "objective" and "title". Read it with \`read_tegami\`. **Change one
-> field with one call**: \`write_tegami --objective "<sentence>"\` · \`--phase "<title>"\` ·
+> Your own words go in "objective" and "title". Read it with \`work-record read\`. **Change one
+> field with one call**: \`work-record update-record --objective "<sentence>"\` · \`--phase "<title>"\` ·
 > \`--leg N "<title>"\` · \`--done N.M\` · \`--gate "<what you wait for>"\` · \`--rung N\`,
 > \`--leg N.M\` to retitle · \`--drop N[.M]\` · \`--repo <repo>:<branch>\`. Verbs combine in one
-> call. \`write_tegami < block.json\` replaces the whole authored block. Where the file lives
+> call. \`work-record update-record < block.json\` replaces the whole authored block. Where the file lives
 > is Ronin's business.
 
 \`\`\`json

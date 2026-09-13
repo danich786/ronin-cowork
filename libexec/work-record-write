@@ -6,8 +6,8 @@
 #        work-record update-record --session <name> --at none         nothing to point at
 #        work-record update-record --on_tangent                       stepped off your ladder
 #        work-record update-record --on_track                         back on it
-#        work-record update-record --doc <path>                       list a doc you are working on
-#        work-record update-record --undoc <path>                     take it off the list
+#        work-record document add <path>                       list a doc you are working on
+#        work-record document remove <path>                     take it off the list
 #
 # FIELD VERBS — one field, your own session, no block. Each edits the current letter in
 # place and runs it through the same validator as a whole-block save, so the shape rules
@@ -94,7 +94,7 @@ Usage:
   work-record update-record --status N[.M] PLANNED|ACTIVE|DONE
   work-record update-record --done N[.M] | --active N[.M] | --drop N[.M]
   work-record update-record --repo <repo>:<branch> | --unrepo <repo>[:<branch>]
-  work-record update-record --doc <path> | --undoc <path>
+  work-record document add <path> | --undoc <path>
   work-record update-record --on_tangent | --on_track
   work-record update-record < work-record.json
 
@@ -709,8 +709,8 @@ NOT_YOURS = {
     "docs": "\"docs\" is not written in the block.\n"
             "  Your doc list has two verbs of its own, so that rewriting your ladder can\n"
             "  never drop it by forgetting to include it:\n"
-            "    work-record update-record --doc <path>      list a doc you are working on\n"
-            "    work-record update-record --undoc <path>    take it off the list\n"
+            "    work-record document add <path>      list a doc you are working on\n"
+            "    work-record document remove <path>    take it off the list\n"
             "  Drop \"docs\" from the block and save again; the list is carried through.",
 }
 extra = sorted(set(d) - ALLOWED)

@@ -114,7 +114,7 @@ through `libexec/ronin-house-send`, which enters the same durable inbound messag
 reviewing the team line
 and promoting it to `dev` is the lead's primary job, and the house telling the lead that
 its job is waiting is house machinery (the same footing as Koshi's marker and
-`write_tegami --at`), not an agent driving a session. Safe delivery never overwrites a
+`work-record update-record --at`), not an agent driving a session. Safe delivery never overwrites a
 human draft or presses Enter into a dialog; when it cannot deliver, the queue retains the
 notice visibly for mechanical retry and the hand-in output says which happened.
 

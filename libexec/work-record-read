@@ -25,7 +25,7 @@ help() {
 work-record read — read a session's work record
 
 Usage:
-  work-record read project read <id>
+  work-record project read <id>
   work-record read
   work-record read --json
   work-record read --rungs
