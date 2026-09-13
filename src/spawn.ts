@@ -35,7 +35,7 @@ const CORE_CONTRIBUTION: ResolvedContribution = {
   reading: [], reading_off: [], sops: [],
   macros: ['updateplan', 'show_file', 'forkit', 'team', 'wipeboard', 'tell', 'read', 'readwrite', 'evaluate', 'delete'],
   actions: ['control-check', 'control-set', 'session-launch', 'read-letter', 'write-letter', 'list-doc', 'session-catchup', 'team-roster', 'session-upsert', 'team-upsert', 'team-page-read', 'team-page-draft', 'wipeboard-check', 'wipeboard-post', 'send-to-session', 'step-through', 'compile-macro', 'read-work-record', 'propose-and-confirm', 'report-outcome', 'harakiri', 'status-probe', 'schedule-request'],
-  tools: ['tejun', 'tejun-step', 'tejun-send', 'tejun-harakiri', 'tejun-archive', 'tejun-rehydrate', 'tejun-team', 'tejun-fork', 'tejun-session-set', 'tejun-team-set', 'tejun-wipeboard', 'tejun-teampage', 'tejun-peek', 'read_tegami', 'write_tegami', 'tejun-jikan', 'ronin-url'],
+  tools: ['tejun', 'tejun-step', 'tejun-send', 'tejun-harakiri', 'tejun-archive', 'tejun-rehydrate', 'tejun-team', 'tejun-fork', 'session_check', 'session_set', 'tejun-team-set', 'tejun-wipeboard', 'tejun-teampage', 'tejun-peek', 'read_tegami', 'write_tegami', 'tejun-jikan', 'ronin-url'],
   mcp: [], parts: [], enabled: true, stated_by: 'conditional', required_by: [],
 };
 

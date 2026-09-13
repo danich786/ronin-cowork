@@ -27,7 +27,7 @@ function assertAllowed(url: URL): void {
 }
 
 export async function fetchLibrary<T>(pathname: string, token: string): Promise<{ status: number; body: T | null; text: string }> {
-  if (!token) throw new EgressRefused('the template library is a Ronin Services feature; this box holds no entitlement');
+  if (!token) throw new EgressRefused('the template library is provided by Ronin Services; this box holds no entitlement');
   const base = new URL(LIBRARY_BASE);
   const url = new URL(pathname, base);
   assertAllowed(url);

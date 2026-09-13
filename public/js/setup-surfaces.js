@@ -16,19 +16,19 @@ import { createEmbeddedNewAgentView } from './new-agent.js';
 import { HOUSE_PRESETS, buildLaunchPlan, initialControls, seatingPlan } from './presets.js';
 import { launchPresetPlan, presetLaunchUrl } from './preset-launch.js';
 import { closeWorkspaceTab, reserveWorkspaceTab } from './workspace.js';
+import { createInstallationsSurface } from './campaign-installations.js';
 
 // Model providers is the one surface two workbenches seat (provider-surface.js); its type
 // is that module's, and Ronin Settings registers the same definition.
 export const SETUP_SURFACE_TYPES = Object.freeze({
   register: 'setup.register', providers: PROVIDER_SURFACE_TYPE, roots: 'setup.roots',
-  services: 'setup.services', gbrain: 'setup.gbrain', templates: CAMPAIGN_TEMPLATES_TYPE, launchOwn: 'setup.launch-own',
+  installations: 'setup.installations', templates: CAMPAIGN_TEMPLATES_TYPE, launchOwn: 'setup.launch-own',
 });
 
 const summaries = new Map([
   [SETUP_SURFACE_TYPES.register, 'optional'],
   [SETUP_SURFACE_TYPES.roots, '2 folders'],
-  [SETUP_SURFACE_TYPES.services, 'not active'],
-  [SETUP_SURFACE_TYPES.gbrain, 'not installed'],
+  [SETUP_SURFACE_TYPES.installations, 'Ronin Services'],
   [SETUP_SURFACE_TYPES.launchOwn, 'template · team · agent'],
 ]);
 const el = (tag, cls = '', text = null) => { const out = document.createElement(tag); if (cls) out.className = cls; if (text != null) out.textContent = text; return out; };
@@ -100,11 +100,11 @@ function createRegisterSurface(context) {
   kind.onChange(() => {
     kindOther.hidden = kind.value.value !== 'other'; if (!kindOther.hidden) kindOther.focus();
   });
-  const preferredFeature = choiceGroup('preferred_feature', t('setup_surface.preferred_feature', 'Which core Ronin feature do you prefer most?'), [
+  const preferredFeature = choiceGroup('preferred_feature', t('setup_surface.preferred_feature', 'Which core Ronin capability do you prefer most?'), [
     ['remote_access', 'Work from anywhere', t('setup_surface.feature_remote_access', 'Ronin runs on your home machine or a virtual machine. You open it from a browser wherever you are, any time.')],
     ['multiple_providers', 'Multiple providers without lock-in', t('setup_surface.feature_multiple_providers', 'You keep your own accounts and your direct relationship with each model provider. Ronin never stands in between, everything runs on your machine, and how your agents work together is yours.')],
     ['team_coordination', 'Agents with team coordination skills', t('setup_surface.feature_team_coordination', 'Coordination is light reading an agent does to build its brief. Each launch brief carries a few simple tools so agents can message and coordinate with one another.')],
-  ], { explain: true, short: t('setup_surface.preferred_feature_short', 'Feature') });
+  ], { explain: true, short: t('setup_surface.preferred_feature_short', 'Capability') });
   const reasons = checklistGroup('reasons', t('setup_surface.reasons', 'Which of these describes you best in terms of getting value from Ronin?'), [
     ['different_strengths', 'Different models have different strengths. I want to use the best one for each job.'],
     ['network_resilience', 'Sometimes one model provider is having network issues, so I want another available.'],
@@ -390,7 +390,6 @@ export function createServicesSurface(context) {
     steps.dataset.count = String(model.steps.length);
     body.append(steps, notice);
     body.append(el('p', 'setup-fine setup-services-gate', t('services_setup.gate', 'The Grokbot Morning Briefing preset waits for Ronin Services to be active.')));
-    notifySummary(SETUP_SURFACE_TYPES.services, model.summary, context.workbench);
     // A confirmation or an install in flight: look again quietly while the surface is on screen.
     if (model.polling) timer = setTimeout(() => { if (body.isConnected) void show(); }, model.state === 'installing' || model.steps.some((item) => item.id === 'restart') ? 5000 : 15000);
   };
@@ -408,8 +407,8 @@ export function createGbrainSurface(context) {
       return runtime?.gbrain ? { ...runtime.gbrain, services: runtime.services || null, activated_count: Number(runtime.activated_count || 0) } : null;
     },
     // The selector card follows the measured state once it is read.
-    onState: (summary) => notifySummary(SETUP_SURFACE_TYPES.gbrain, summary, context.workbench),
-    openServices: () => context.workbench?.place(SETUP_SURFACE_TYPES.services, context.workspace || 'workspace2'),
+    onState: () => context.workbench?.refreshSelector?.(),
+    openServices: () => context.workbench?.place(SETUP_SURFACE_TYPES.installations, context.workspace || 'workspace2'),
     openProviders: () => context.workbench?.place(SETUP_SURFACE_TYPES.providers, context.workspace || 'workspace2'),
     // Exactly the Personal Assistant preset's launch, single assistant, opened in a new tab.
     startAssistant: async () => {
@@ -426,7 +425,7 @@ export function createGbrainSurface(context) {
   });
   return { el: out.el, show: () => {
     const status = context.environment?.setupRuntime?.gbrain;
-    notifySummary(SETUP_SURFACE_TYPES.gbrain, status?.active ? 'active' : status?.installed ? 'installed' : 'not installed', context.workbench);
+    context.workbench?.refreshSelector?.();
     room.enter?.();
   } };
 }
@@ -456,6 +455,12 @@ function createLaunchOwnSurface(context) {
   return { el: out.el, destroy: () => stones.destroy() };
 }
 
+function createSetupInstallationsSurface(context) {
+  const selected = () => campaignById(context.tenant?.campaign) || campaigns()[0] || null;
+  const page = createInstallationsSurface(selected, context);
+  return { el: page.el, show: async () => { await loadCampaigns(); await page.enter(); }, destroy: page.destroy };
+}
+
 export function setupSurfaceDefinitions() {
   const definition = (type, label, create, groupKey = '') => ({
     type, header: 'surface', label: () => label, summary: () => summaries.get(type), create: (context) => create(context),
@@ -465,8 +470,7 @@ export function setupSurfaceDefinitions() {
     definition(SETUP_SURFACE_TYPES.register, t('setup_surface.register', 'Register'), createRegisterSurface),
     providerSurfaceDefinition(),
     definition(SETUP_SURFACE_TYPES.roots, t('setup_surface.roots', 'Workspace folders'), createRootsSurface),
-    definition(SETUP_SURFACE_TYPES.services, t('settei.ronin_services', 'Ronin Services'), createServicesSurface),
-    definition(SETUP_SURFACE_TYPES.gbrain, t('pane.gbrain', 'gbrain'), createGbrainSurface),
+    definition(SETUP_SURFACE_TYPES.installations, t('campaign_view.installations', 'Installations'), createSetupInstallationsSurface),
     definition(SETUP_SURFACE_TYPES.launchOwn, t('setup_surface.launch_own', 'Launch your own'), createLaunchOwnSurface),
   ];
 }

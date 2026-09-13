@@ -290,7 +290,7 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **campaign_view.templates_download:** Download as a package
 - **campaign_view.templates_download_help:** This template, with your copies of the books and instructions it names, as one file you could put on a library.
 - **campaign_view.library:** On the Ronin library — not on your system yet
-- **campaign_view.library_help:** The shelf Ronin keeps and grows, a Ronin Services feature: a team, its people, and the books, macros and tools they read. Nothing is fetched until you press; everything a package holds is shown before anything is written; an installed one appears below, on your system.
+- **campaign_view.library_help:** The shelf Ronin keeps and grows, provided by Ronin Services: a team, its people, and the books, macros and tools they read. Nothing is fetched until you press; everything a package holds is shown before anything is written; an installed one appears below, on your system.
 - **campaign_view.library_show_all:** Show everything it holds
 - **campaign_view.library_hide_all:** Hide the contents
 - **campaign_view.library_check:** Check the library
@@ -506,8 +506,6 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **settei.not_installed_tick:** not installed — tick to put it on the needed list
 - **settei.group_services:** services
 - **settei.ronin_services:** Ronin Services
-- **settei.use_gbrain:** use gbrain
-- **settei.use_gbrain_hint:** tick this if your agents use it
 - **settei.group_subscription:** subscription
 - **settei.subscription:** subscription
 - **settei.group_needed:** still needed
@@ -575,7 +573,7 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **ask.answer:** Answer
 - **setup_surface.identity_short:** Register as
 - **setup_surface.kind_short:** You use Ronin for
-- **setup_surface.preferred_feature_short:** Feature
+- **setup_surface.preferred_feature_short:** Capability
 - **setup_surface.reasons_short:** Describes you
 - **setup_surface.run_location_short:** Install on
 - **ask.none:** None

@@ -12,7 +12,7 @@ test('Campaign Installations is the shared stone surface with the Setup Services
   assert.match(source, /v: 'off'.*campaign_view\.off/);
   assert.match(source, /v: 'on'.*campaign_view\.on/);
   assert.match(source, /v: 'all'.*campaign_view\.shape_all/);
-  assert.match(source, /installation\.effect === 'feature_provider'/);
+  assert.match(source, /installation\.effect === 'provider'/);
   assert.match(source, /saveCampaign\(row\.id, \{ config: \{ installations, defaults \} \}\)/);
   assert.doesNotMatch(source, /switch:/);
   assert.match(source, /stoneSurface\.select\('ronin_services'\)/);

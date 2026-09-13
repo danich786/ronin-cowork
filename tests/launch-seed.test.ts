@@ -9,7 +9,7 @@ import type { TeamRoster } from '../src/team-rosters.js';
 const contribution = { label: '', blurb: '', origin: 'stock', shadowed: false, reading: [], reading_off: [], sops: [], macros: [], actions: [], tools: [], mcp: [], parts: [] } as const;
 const installations: InstallationRow[] = [
   { ...contribution, name: 'ronin_services', effect: 'system', provides: [], requires: [], reading_off: ['routine/ronin_services/OFF.md'] },
-  { ...contribution, name: 'gbrain', effect: 'feature_provider', provides: ['gbrain'], requires: [] },
+  { ...contribution, name: 'gbrain', effect: 'provider', provides: ['gbrain'], requires: [] },
 ];
 const behaviours: BehaviourRow[] = [
   { ...contribution, name: 'gbrain', installation: 'gbrain', page: '/gbrain.md' },

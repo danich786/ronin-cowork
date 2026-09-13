@@ -53,7 +53,7 @@ async function fixture(sessions: unknown[] = []) {
 test('checking an unused name is GET-only and never creates it', async (t) => {
   const f = await fixture();
   t.after(f.close);
-  const result = await f.run('tejun-session-check', ['unused']);
+  const result = await f.run('session_check', ['unused']);
   assert.equal(result.code, 3);
   assert.match(result.output, /NO-SESSION/);
   assert.deepEqual(f.requests, [{ method: 'GET', url: '/api/sessions', body: '' }]);
@@ -62,7 +62,7 @@ test('checking an unused name is GET-only and never creates it', async (t) => {
 test('creation is an explicit command and uses the launch door', async (t) => {
   const f = await fixture();
   t.after(f.close);
-  const result = await f.run('tejun-session-create', ['unused', '--prompt', 'Review it']);
+  const result = await f.run('session_create', ['unused', '--prompt', 'Review it']);
   assert.equal(result.code, 0, result.output);
   assert.match(result.output, /BORN unused/);
   assert.equal(f.requests.length, 1);
@@ -72,9 +72,9 @@ test('creation is an explicit command and uses the launch door', async (t) => {
 test('updating a missing name refuses after its read and never creates it', async (t) => {
   const f = await fixture();
   t.after(f.close);
-  const result = await f.run('tejun-session-set', ['unused', '--root', 'lab']);
+  const result = await f.run('session_set', ['unused', '--root', 'lab']);
   assert.equal(result.code, 3);
-  assert.match(result.output, /NO-SESSION.*tejun-session-create/s);
+  assert.match(result.output, /NO-SESSION.*session_create/s);
   assert.deepEqual(f.requests, [{ method: 'GET', url: '/api/sessions', body: '' }]);
 });
 
@@ -82,10 +82,10 @@ test('value-taking flags refuse a missing value before making a request', async 
   const f = await fixture();
   t.after(f.close);
   for (const [tool, args] of [
-    ['tejun-session-create', ['unused', '--prompt']],
-    ['tejun-session-create', ['unused', '--team', '--lead']],
-    ['tejun-session-set', ['unused', '--team']],
-    ['tejun-session-set', ['unused', '--root', '--lead']],
+    ['session_create', ['unused', '--prompt']],
+    ['session_create', ['unused', '--team', '--lead']],
+    ['session_set', ['unused', '--team']],
+    ['session_set', ['unused', '--root', '--lead']],
   ] as const) {
     const result = await f.run(tool, [...args]);
     assert.equal(result.code, 2);
@@ -97,7 +97,7 @@ test('value-taking flags refuse a missing value before making a request', async 
 test('updating safely JSON-encodes accepted Team names and lead payloads', async (t) => {
   const f = await fixture([{ name: 'active', tags: [], leads: [], control: 'read' }]);
   t.after(f.close);
-  const result = await f.run('tejun-session-set', ['active', '--team', 'design-review_2', '--lead']);
+  const result = await f.run('session_set', ['active', '--team', 'design-review_2', '--lead']);
   assert.equal(result.code, 0, result.output);
   assert.match(result.output, /UPDATED active team=design-review_2 人=design-review_2/);
   assert.deepEqual(f.requests.map(({ method, url, body }) => ({ method, url, body: body ? JSON.parse(body) : null })), [

@@ -83,7 +83,7 @@ test('every question is an ERABI stone whose reading is the saved answer', async
   const form = await painted(host);
   assert.deepEqual(form.all('ask-stone').map((node) => node.dataset.askKey), [
     'kind', 'root', 'repos', 'provider', 'model', 'reach', 'recruit', 'output', 'launch_mode',
-  ], 'the stones in the tab’s order: Kind on the head line, then the New Agent defaults; no feature, behaviour or Control stone');
+  ], 'the stones in the tab’s order: Kind on the head line, then the New Agent defaults; no behaviour or Control stone');
   assert.equal(readingOf(form, 'root'), 'Ronin Cowork', 'Born in reads the Workspace Folder’s title');
   assert.equal(readingOf(form, 'repos'), 'Ronin Services');
   assert.equal(readingOf(form, 'kind'), 'Coding');

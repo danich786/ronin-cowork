@@ -1,7 +1,7 @@
 # gbrain
 - **label:** gbrain
 - **blurb:** Makes the gbrain behaviour available.
-- **effect:** feature_provider
+- **effect:** provider
 - **provides:** gbrain
 - **reading:** —
 - **reading_off:** —

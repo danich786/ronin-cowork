@@ -30,7 +30,7 @@ export function createInstallationsSurface(campaign, context = {}) {
   let stoneSurface = null;
 
   const providerState = (installation) => featureProviderState(installation, values, defaultBehaviours);
-  const stateWord = (installation) => installation.effect === 'feature_provider'
+  const stateWord = (installation) => installation.effect === 'provider'
     ? ({ off: t('campaign_view.off', 'Off'), on: t('campaign_view.on', 'On'), all: t('campaign_view.shape_all', 'All') })[providerState(installation)]
     : values[installation.name] ? t('campaign_view.on', 'On') : t('campaign_view.off', 'Off');
 
@@ -101,7 +101,7 @@ export function createInstallationsSurface(campaign, context = {}) {
   };
 
   const renderDetail = (installation, host) => {
-    if (installation.effect === 'feature_provider') featureProviderChoice(installation, host);
+    if (installation.effect === 'provider') featureProviderChoice(installation, host);
     const sharedContext = {
       ...context,
       tenant: { ...(context.tenant || {}), campaign: campaign()?.id },

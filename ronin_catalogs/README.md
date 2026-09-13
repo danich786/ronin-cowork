@@ -2,17 +2,17 @@
 
 Repository verification is `npm run verify`. Installed user customization is checked with `npm run byoin`.
 
-Entry point for the whole system: `../reading-list/TEJUN.md`. This file: the choreography for
+Entry point for the whole system: the TEJUN preamble of `MACROS.md`. This file: the choreography for
 extending the two catalogs that live here.
 
 > **Everything in this directory is SYSTEM SCOPE — an upgrade replaces it wholesale**
-> (`../DAIKUSAN.md`). Nothing here may list the_owner's own things.
+> (`docs/shadowing.md`). Nothing here may list the_owner's own things.
 >
 > That is why `PROJECT_ROOTS.md` here holds **only the project_root contract** and
 > `MODEL_PROVIDERS.md` holds **the stock provider catalog** (a copy in your catalogs store
 > shadows it whole). The directories a box actually works in are user scope and live outside every
 > repo, in the catalogs store — `bin/ronin-store catalogs` prints where, and it is resolved
-> per machine, never spelled by hand (`docs/stores.md`). Created by Ronin on first use, and
+> per machine, never spelled by hand (`bin/ronin-store --all` lists them). Created by Ronin on first use, and
 > untouched by any upgrade. Never add a `## <handle>` root block to the shipped file.
 
 ## Adding an ACTION (do this first — actions are the vocabulary)
@@ -27,7 +27,7 @@ extending the two catalogs that live here.
 4. Actions never reference macros. Compound actions may reference other actions.
 5. If the action gets performed often, give it a tool (`../ronin_bin/README.md`) and add a
    `> Tool:` pointer at the top of its section.
-6. Record the first real run in `../co-working/user_repo/wip/RECIPES.md` — evidence, not hypothesis.
+6. Record the first real run in the lab's `wip/handoffs/RECIPES.md` — evidence, not hypothesis.
 
 ## Adding a MACRO (only after its actions exist)
 
@@ -56,7 +56,7 @@ keys to strings with a `base:` to fall through to. Both shadow whole-file by nam
 ## Adding an INSTALLATION, a FEATURE, or a BEHAVIOUR
 
 `installations/<name>.md` is one machine installation: `effect` is `system` (its reading,
-tools and parts join every Cowork Agent birth) or `feature_provider` (it `provides`
+tools and parts join every Cowork Agent birth) or `provider` (it `provides`
 behaviours). `behaviours/<name>.md` is one selectable behaviour: its `installation`,
 reading, SOPs, macros, actions, tools and MCP connection. `behaviours/<name>.md` is one
 short page on how ordinary work is done. Each directory's `README.md` carries the exact
