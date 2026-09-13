@@ -23,10 +23,30 @@ function blockOf(text: string): Record<string, unknown> | null {
   } catch { return null; }
 }
 
-export async function projectsAtSessionKey(key: string): Promise<Project[]> {
+export async function projectsAtSessionKey(key: string, name = key): Promise<Project[]> {
   const text = await readFile(path.join(RIREKI_DIR, key, 'tegami.md'), 'utf8').catch(() => '');
-  const raw = blockOf(text)?.projects;
-  return Array.isArray(raw) ? raw.map(normalizeProject).filter((p): p is Project => p !== null) : [];
+  const block = blockOf(text);
+  const raw = block?.projects;
+  const authored = Array.isArray(raw) ? raw.map(normalizeProject).filter((p): p is Project => p !== null) : [];
+  if (authored.length || !Array.isArray(block?.ladder) || !block.ladder.length) return authored;
+  const legs = block.ladder.flatMap((value): { title: string; done: boolean }[] => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return [];
+    const rung = value as Record<string, unknown>;
+    if (typeof rung.gate === 'string') return [{ title: rung.gate, done: rung.status === 'DONE' }];
+    if (!Array.isArray(rung.legs)) return [];
+    return rung.legs.flatMap((entry): { title: string; done: boolean }[] => {
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return [];
+      const leg = entry as Record<string, unknown>;
+      const title = String(leg.title ?? leg.leg ?? '').trim();
+      return title ? [{ title, done: leg.status === 'DONE' }] : [];
+    });
+  });
+  const objective = String(block.objective ?? '');
+  return [{
+    id: `legacy:${name}`, title: objective || 'Work record', objective,
+    stage: 'BUILDING', exit: block.ladder.some((value) => value && typeof value === 'object' && !Array.isArray(value) && typeof (value as Record<string, unknown>).gate === 'string') ? 'user' : 'none',
+    status: 'yellow', ladder: [{ stage: 'BUILDING', ...(legs.length ? { legs } : {}) }], evidence: [],
+  }];
 }
 
 const evidenceCommits = (project: Project): string[] => project.evidence.flatMap((line) => {
@@ -96,7 +116,7 @@ export async function deriveTeamKanban(team: string, inputs?: {
   for (const session of sessions) {
     if (!session.tags.includes(team) || keys.has(session.key)) continue;
     keys.add(session.key);
-    for (const project of await projectsAtSessionKey(session.key)) {
+    for (const project of await projectsAtSessionKey(session.key, session.name)) {
       projects.push({ ...(await stageFromEvidence(project, session.name, evidence)), holder: session.name });
     }
   }
