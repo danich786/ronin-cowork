@@ -10,7 +10,7 @@
 # `--add` tags those live sessions onto the team — additive, never removing anyone;
 # a name that is not live is reported back, and the rest still go through.
 #
-# You rarely need this: a session is born onto your team by `tejun-session-set`, with no
+# You rarely need this: a session is born onto your team by `tejun-session-create`, with no
 # team named at all. Come here to create a team, or to give one a brief worth
 # inheriting (`--objective`, `--root`, `--repos`, `--branch`).
 #
@@ -32,7 +32,7 @@ Create a Team by naming one that has no record; otherwise only named fields chan
 the destination membership, then remove the old Team on that Team's page in the
 coworkspace. Set or change its lead with `tejun-session-set <agent> --team <team> --lead`.
 This writes the Team record and may change membership. Related: tejun-team --help;
-tejun-session-set --help
+tejun-session-create --help; tejun-session-set --help
 EOF
     exit 0 ;;
 esac

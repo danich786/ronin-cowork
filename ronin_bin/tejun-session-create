@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+# tejun-session-create — explicitly create one new Agent through the ordinary launch route.
+set -u
+case "${1-}" in
+  -h|--help) [ "$#" -eq 1 ] || { echo "tejun-session-create: --help takes no other arguments. Run tejun-session-create --help." >&2; exit 2; }
+    cat <<'EOF'
+tejun-session-create — create one new Agent
+
+Usage:
+  tejun-session-create <name> [--prompt <text>] [--team <team>] [--lead]
+                              [--root <path>] [--model <name>]
+                              [--mode manual|assisted] [--cmd <cli>]
+                              [--mcp on|off] [--tags a,b] [--seed p1,p2]
+
+Creation is always explicit. An existing name is refused rather than read or updated.
+With no --team, the new Agent joins the caller's first Team when there is one.
+Related: tejun-session-check --help; tejun-session-set --help; tejun-fork
+EOF
+    exit 0 ;;
+esac
+. "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"
+TOOL_DIR=$(dirname "$SELF")
+die() { printf '%s\n' "$1" >&2; exit "${2:-4}"; }
+NAME="${1:-}"
+[ -n "$NAME" ] && [ "${NAME#-}" = "$NAME" ] || die "usage: tejun-session-create <name> [options]. Run tejun-session-create --help." 2
+shift
+PROMPT="" TEAM="" LEAD="" ROOT="" MODE="" CMD="" MODEL="" MCP="" TAGS="" SEED=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --prompt) PROMPT="${2:-}"; shift 2 ;;
+    --team) TEAM="${2:-}"; shift 2 ;;
+    --lead) LEAD=1; shift ;;
+    --root|--project_root) ROOT="${2:-}"; shift 2 ;;
+    --mode) MODE="${2:-}"; shift 2 ;;
+    --cmd) CMD="${2:-}"; shift 2 ;;
+    --model) MODEL="${2:-}"; shift 2 ;;
+    --mcp) MCP="${2:-}"; shift 2 ;;
+    --tags) TAGS="${2:-}"; shift 2 ;;
+    --seed) SEED="${2:-}"; shift 2 ;;
+    *) die "BAD-ARG: $1. Run tejun-session-create --help." 2 ;;
+  esac
+done
+
+CALLER=$(ronin_session_me 2>/dev/null || true)
+body=$(NAME="$NAME" CALLER="$CALLER" PROMPT="$PROMPT" TEAM="$TEAM" LEAD="$LEAD" ROOT="$ROOT" \
+       MODE="$MODE" CMD="$CMD" MODEL="$MODEL" MCP="$MCP" TAGS="$TAGS" SEED="$SEED" python3 - <<'PY'
+import json, os
+e = os.environ
+b = {"name": e["NAME"]}
+if e["CALLER"]: b["caller"] = e["CALLER"]
+for k, v in (("prompt", "PROMPT"), ("team", "TEAM"), ("project_root", "ROOT"),
+             ("mode", "MODE"), ("cmd", "CMD"), ("model", "MODEL")):
+    if e[v]: b[k] = e[v]
+if e["LEAD"]: b["team_lead"] = True
+if e["MCP"]: b["mcp"] = e["MCP"].lower() in ("on", "true", "1", "yes")
+for k, v in (("tags", "TAGS"), ("seed", "SEED")):
+    if e[v]: b[k] = [t.strip() for t in e[v].split(",") if t.strip()]
+print(json.dumps(b))
+PY
+) || die "BAD-ARG: could not build the request" 2
+
+. "$TOOL_DIR/ronin-http.sh"
+ronin_connect || exit $?
+out=$(mktemp /tmp/tejun-session-create.XXXXXX) || exit 2
+code=$(curl -sS -m 60 "${RONIN_CURL[@]+"${RONIN_CURL[@]}"}" -o "$out" -w '%{http_code}' \
+       -H 'content-type: application/json' -X POST --data "$body" "$url/api/session" 2>/dev/null) \
+  || { rm -f "$out"; die "UNREACHABLE: Ronin did not answer at $url" 5; }
+python3 - "$code" "$out" <<'PY'
+import json, sys
+code, path = int(sys.argv[1]), sys.argv[2]
+try: d = json.load(open(path))
+except Exception: d = {}
+if code == 200 and d.get("ok"):
+    r = d.get("receipt") or {}
+    team = r.get("team") or ""
+    how = d.get("team_from", "none")
+    tail = f"on {team}" + (" (your team)" if how == "caller" else "") if team else "(rōnin)"
+    if r.get("team_lead"): tail += " as 人"
+    print(f"BORN {d.get('name')} {tail}")
+    raise SystemExit(0)
+print(f"REFUSED: {d.get('error') or f'HTTP {code}'}", file=sys.stderr)
+raise SystemExit(4)
+PY
+rc=$?
+rm -f "$out"
+exit $rc

@@ -52,7 +52,7 @@ test('missing enabled tools are visible and do not refuse projection', async () 
  * caller broken when it was looked up by name). So each caller is run through its
  * projected symlink with only `RONIN_URL` set, and must arrive at the operator it names. */
 const REACH_FAILURES = /Cannot find module|command not found|No such file or directory|NO-REPO/;
-const URL_CALLERS = ['tejun-archive', 'tejun-fork', 'tejun-harakiri', 'tejun-rehydrate', 'tejun-session-set', 'tejun-team-set', 'tejun-teampage', 'mika'];
+const URL_CALLERS = ['tejun-archive', 'tejun-fork', 'tejun-harakiri', 'tejun-rehydrate', 'tejun-session-check', 'tejun-session-create', 'tejun-session-set', 'tejun-team-set', 'tejun-teampage', 'mika'];
 test('projected ronin_bin tools resolve the symlink and reach the repository and the operator', async (t) => {
   const tools = ['tejun', 'tejun-desk', 'tejun-team', 'tejun-wipeboard', 'tejun-send', 'read_tegami', 'write_tegami', 'tejun-survey', 'tejun-account', 'ronin-url', ...URL_CALLERS];
   const projected = await projectRoutineTools('resolve', [routine('ronin_base', true, tools)]);
@@ -87,7 +87,7 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
   };
   const helpTools = [
     'tejun', 'read_tegami', 'write_tegami', 'tejun-desk', 'tejun-team',
-    'tejun-team-set', 'tejun-session-set', 'tejun-archive', 'tejun-rehydrate',
+    'tejun-team-set', 'tejun-session-check', 'tejun-session-create', 'tejun-session-set', 'tejun-archive', 'tejun-rehydrate',
     'tejun-harakiri',
   ];
   for (const command of helpTools) {
@@ -114,6 +114,8 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
 
   const teamHelp = [
     (await run(['tejun-team', '--help'])).out,
+    (await run(['tejun-session-check', '--help'])).out,
+    (await run(['tejun-session-create', '--help'])).out,
     (await run(['tejun-session-set', '--help'])).out,
     (await run(['tejun-team-set', '--help'])).out,
   ].join('\n');
@@ -143,7 +145,9 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
     [['tejun-archive', 'reach'], '/api/sessions/reach/archive', {}],
     [['tejun-harakiri'], '/api/harakiri', { TMUX_PANE: '%0' }],
     [['tejun-rehydrate', 'archive-id'], '/api/archived-sessions/archive-id/rehydrate', {}],
-    [['tejun-session-set', 'reach'], '/api/session', {}],
+    [['tejun-session-check', 'reach'], '/api/sessions', {}],
+    [['tejun-session-create', 'reach'], '/api/session', {}],
+    [['tejun-session-set', 'reach', '--root', 'lab'], '/api/sessions', {}],
     [['tejun-team-set', 'reach'], '/api/team', {}],
     // `mika` asks tmux first; a live Mika on the box must not turn this knock into a send.
     // (An existing empty dir: tmux falls back to /tmp when TMUX_TMPDIR is missing.)
