@@ -1,12 +1,22 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { definedTargets, moveMessage } from '../public/js/team-kanban.js';
+import { definedTargets, kanbanAvailability, moveMessage } from '../public/js/team-kanban.js';
 
 const project = (values = {}) => ({
   id: 'virtual-kanban/7', title: 'Kanban tab', objective: 'Render it.', holder: 'tab_cut',
   stage: 'BUILDING', exit: 'user', status: 'green', ...values,
 });
 const NOW = new Date('2026-09-13T13:02:00.000Z');
+
+test('availability comes from the installed part inventory, never a second flag', () => {
+  assert.deepEqual(kanbanAvailability({ services: { loaded: ['kanban'], parked: [] } }), { available: true, message: '' });
+  assert.deepEqual(kanbanAvailability({ services: { loaded: [], parked: [{ name: 'kanban', routine: 'ronin_services' }] } }), {
+    available: false, message: 'Ronin Services is off for this Campaign',
+  });
+  assert.deepEqual(kanbanAvailability({ services: { loaded: [], parked: [] } }), {
+    available: false, message: 'Ronin Services is not installed',
+  });
+});
 
 test('a green forward drop tells the holder the defined move without moving data', () => {
   const move = moveMessage(project(), 'LANDING', 'kanban_revive', NOW);
