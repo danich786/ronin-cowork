@@ -34,7 +34,7 @@ Copy `.env.example` to `.env` and edit; every value is optional with a sane defa
 ## The secrets rules
 
 - **Values live here and nowhere else.** Settei's env scan contributes a name and a
-  boolean to the record; `tejun-secrets` prints names and has *no flag to print values*;
+  boolean to the record; `ronin-host secrets` prints names and has *no flag to print values*;
   `ronin-doctor` never sources this file.
 - **A pane inherits the service's environment**, not the shell you typed in — when they
   disagree, the pane is what counts. How a credential is supplied and audited is

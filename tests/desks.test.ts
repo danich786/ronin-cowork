@@ -412,7 +412,7 @@ test('closeDesk keeps unresolved work named, closes only after hand-in, and reco
     stop: async () => assert.fail('plain close must not stop a session'),
   });
   assert.equal(occupied.action, 'kept');
-  assert.match(occupied.reason, /session wispr is running inside .*birth desk ends with the session — tejun-harakiri from inside it, or archive the session, then close/);
+  assert.match(occupied.reason, /session wispr is running inside .*birth desk ends with the session — session_end from inside it, or archive the session, then close/);
   // Certification (owner, 2026-09-09): everything on the line means ending loses nothing;
   // the desk the shell lives in is stay-or-go, never closable; another is closable.
   const status = await deskStatus((await readDesk('cowork', 'team/comp/wispr'))!, await arrangementOf('cowork'));

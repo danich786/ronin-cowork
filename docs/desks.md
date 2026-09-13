@@ -44,7 +44,7 @@ moment of asking (`deskStatus`). Nothing here is prose an agent maintains.
 ## The gate
 
 **`RONIN_REPO` in the repository is the one switch**. `desks=managed`
-gives a coding launch its desk, the contract in its brief, the desk actions and the tools;
+gives a coding launch its desk, the contract in its brief, and its capability-selected tools;
 `desks=none`, or no file, gives none of them and the session starts in the checkout. There
 is no install-wide switch. The Campaign's Ronin Worktrees choice defaults the file written for
 a new project root (`declareArrangement`, `src/desks/arrangement.ts`). For an existing root,
@@ -140,7 +140,7 @@ worktree it checks every live session's current directory. If a session is in th
 or below it, close keeps the desk and tells the caller to notify that session to leave,
 then retry. It does not message, relocate, stop, or retry for the caller. Otherwise the
 worktree, branch, and desk row are removed. `handoffDesk` changes explicit owners without
-moving work. `tejun-harakiri`, safe live-session Delete, and `--with-session` use the
+moving work. `session_end`, safe live-session Delete, and `--with-session` use the
 coordinated end: all assigned desks and ownership checks run first, clean Team-contained
 desks are removed, then the Agent is stopped. An ACCEPTED hand-in is immediately eligible
 when its clean tip is contained in the Team line; global-dev promotion and a second manual

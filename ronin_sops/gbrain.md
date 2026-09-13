@@ -45,9 +45,9 @@ installation is available. A running Agent never changes.
   on** — there is no per-session partition (a per-page `visibility` knob exists; use it
   for local-only facts). Never capture a secret, a credential, or another session's
   unpublished work. When in doubt, don't; TEGAMI is the place for your own working state.
-- **The brain is not OBOERU.** A lesson about how to work in this house goes through
-  `tejun-remember` (axis-matched, guaranteed recall at birth). The brain is world
-  knowledge — people, projects, meetings, facts. Different stores, different jobs.
+- **Project facts do not go here.** Read and write them through the Work Record's project
+  tools. GBrain remains a separately selected facility; do not represent Work Record
+  authority as a GBrain operation.
 
 ## Getting content in — integrations (email, calendar, voice, …)
 

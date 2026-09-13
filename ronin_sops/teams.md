@@ -34,8 +34,8 @@ sessions one at a time, as the work actually needs them — not a batch at birth
    you are on). That is the one launch mechanism through a second door (`POST
    /api/session`), so it is tagged into the team, reads the team_role's own reading
    shelf, and finds the objective in its brief exactly as a ＋ New launch would. The New
-   Session shelves determine the launch context. Use the `+forkit:` macro instead when the
-   new session should inherit your own context. **Do not create the team first, and do
+   Session shelves determine the launch context. Use `session_fork` instead when the new
+   session should inherit your own context. **Do not create the team first, and do
    not retry with a different shape** — the verdict is `BORN …` or one `REFUSED: <why>`
    (name taken, unknown model, box full); a session that lands as a rōnin still exists
    and the owner can drag it onto a team from the page.
@@ -85,8 +85,8 @@ where the desk hands in, grant permission, or add an approval step.
 - **Membership is nobody's fortress.** Anyone may move a session between teams — you,
   the owner, the session itself. Keep the roster's objective current instead of policing
   the edges; a changed objective reaches every member on their next letter reread.
-- **Choose whether an ending may return.** Archive a live session with `tejun-archive
+- **Choose whether an ending may return.** Archive a live session with `session_archive
   <session>` when its work may be resumed; use hard end/delete only when it should not
-  return. `tejun-rehydrate <archive-id>` restores an archived session through Ronin's
+  return. `session_restore <archive-id>` restores an archived session through Ronin's
   existing provider-resume and metadata-restoration path. These are operational choices,
   not confirmation gates.

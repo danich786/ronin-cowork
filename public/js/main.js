@@ -7,7 +7,7 @@ import { applyTheme } from './theme.js';
 import { restoreSkin } from './skins.js';
 import { activeProfile, loadDeskProfile } from './desk-profile.js';
 import { connectEvents } from './events.js';
-import { loadMacros, loadProjects, loadSavedLaunches, refreshHome } from './home.js';
+import { loadProjects, loadSavedLaunches, refreshHome } from './home.js';
 import { build } from './layout.js';
 import { S, tiles } from './state.js';
 import { installTips } from './tips.js';
@@ -122,7 +122,6 @@ export async function init() {
     if (!r.ok) showFailure(t('errors.no_session_list', 'could not load the session list'), new Error(r.message));
   }
   guard('session event stream', connectEvents); // births & deaths push over this
-  guard('load macros', loadMacros); // macro forms for the home panels
   guard('load projects', loadProjects); // PROJECT_ROOTS.md — WHERE a spawn happens
   guard('load saved launches', loadSavedLaunches); // SAVED_LAUNCHES.md — user scope, often empty
   guard('refresh home panels', refreshHome);

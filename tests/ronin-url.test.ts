@@ -92,17 +92,18 @@ test('every agent-facing API caller connects through the one library and carries
   });
   assert.deepEqual(callers.sort(), [
     'lookup',
+    'machine-settings',
     'mika',
     'owner_view',
+    'session_archive',
     'session_check',
     'session_create',
+    'session_end',
+    'session_fork',
+    'session_restore',
     'session_set',
     'show',
-    'tejun-archive',
-    'tejun-fork',
-    'tejun-harakiri',
     'tejun-kanban',
-    'tejun-rehydrate',
     'tejun-team-set',
     'tejun-teampage',
   ]);
@@ -149,8 +150,8 @@ test('a shell caller reaches the operator over its socket with no token and no P
   }
 });
 
-test('absolute tejun-fork invocation resolves its sibling with no Ronin PATH entries', () => {
-  const r = spawnSync(path.join(root, 'ronin_bin', 'tejun-fork'), ['--name', 'path-proof'], {
+test('absolute session_fork invocation resolves its sibling with no Ronin PATH entries', () => {
+  const r = spawnSync(path.join(root, 'ronin_bin', 'session_fork'), ['--name', 'path-proof'], {
     encoding: 'utf8',
     env: { PATH: '/usr/bin:/bin', RONIN_URL: 'http://127.0.0.1:9' },
   });

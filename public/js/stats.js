@@ -219,7 +219,7 @@ export function buildStats(root) {
       section(
         t('stats.sessions', 'Sessions'),
         t('stats.started', '{n} started', { n: s.started ?? 0 }),
-        sumOf(s.born) ? panel(t('stats.born', 'Born'), bars(s.born, ['assisted', 'manual', 'fork', 'macro', 'hand'])) : null,
+        sumOf(s.born) ? panel(t('stats.born', 'Born'), bars(s.born, ['assisted', 'manual', 'fork', 'hand'])) : null,
         sumOf(s.end) ? panel(t('stats.ended', 'Ended'), bars(s.end, ['harakiri', 'deleted', 'cold', 'archived'])) : null,
         sumOf(s.life) ? panel(t('stats.lifetime', 'Lifetime'), hist(s.life, ['<1h', '1-8h', '8h-1d', '1-7d', '>7d'])) : null,
         sumOf(s.ctx)
@@ -280,8 +280,6 @@ export function buildStats(root) {
     body.appendChild(
       section(
         t('stats.surfaces', 'Ronin surfaces'),
-        t('stats.macro_runs', '{n} macro runs', { n: sumOf(surf.macros) }),
-        sumOf(surf.macros) ? panel(t('stats.macros', 'Macros'), bars(surf.macros)) : null,
         sumOf(surf.tabs) || sumOf(surf.dials) ? panel(t('stats.ui', 'UI'), uiRows(surf)) : null,
         panel(t('stats.capabilities', 'Capabilities'), capGrid, true),
       ) || el('div'),

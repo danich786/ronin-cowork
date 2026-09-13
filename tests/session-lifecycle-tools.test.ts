@@ -30,9 +30,9 @@ test('named lifecycle tools reuse the live archive and rehydrate routes', async 
   const address = server.address() as AddressInfo;
   const env = { ...process.env, RONIN_URL: `http://127.0.0.1:${address.port}`, RONIN_CLI_TOKEN: 'test-token' };
 
-  const archived = await exec(path.join(root, 'ronin_bin', 'tejun-archive'), ['scribe'], { env });
+  const archived = await exec(path.join(root, 'ronin_bin', 'session_archive'), ['scribe'], { env });
   assert.equal(archived.stdout, 'ARCHIVED scribe as scribe-key — resumable\n');
-  const restored = await exec(path.join(root, 'ronin_bin', 'tejun-rehydrate'), ['scribe-key'], { env });
+  const restored = await exec(path.join(root, 'ronin_bin', 'session_restore'), ['scribe-key'], { env });
   assert.equal(restored.stdout, 'REHYDRATED scribe\n');
   assert.deepEqual(seen, [
     { method: 'POST', url: '/api/sessions/scribe/archive' },
@@ -52,15 +52,15 @@ test('lifecycle tools preserve route refusals and reject extra arguments', async
   const env = { ...process.env, RONIN_URL: `http://127.0.0.1:${address.port}` };
 
   await assert.rejects(
-    exec(path.join(root, 'ronin_bin', 'tejun-archive'), ['scribe'], { env }),
+    exec(path.join(root, 'ronin_bin', 'session_archive'), ['scribe'], { env }),
     (error: { code?: number; stderr?: string }) => error.code === 4 && /REFUSED: conversation cannot be resumed/.test(error.stderr ?? ''),
   );
   await assert.rejects(
-    exec(path.join(root, 'ronin_bin', 'tejun-rehydrate'), ['one', 'two'], { env }),
-    (error: { code?: number; stderr?: string }) => error.code === 2 && /usage: tejun-rehydrate/.test(error.stderr ?? ''),
+    exec(path.join(root, 'ronin_bin', 'session_restore'), ['one', 'two'], { env }),
+    (error: { code?: number; stderr?: string }) => error.code === 2 && /usage: session_restore/.test(error.stderr ?? ''),
   );
   await assert.rejects(
-    exec(path.join(root, 'ronin_bin', 'tejun-harakiri'), [], { env: { ...env, TMUX_PANE: '%7' } }),
+    exec(path.join(root, 'ronin_bin', 'session_end'), [], { env: { ...env, TMUX_PANE: '%7' } }),
     (error: { code?: number; stdout?: string; stderr?: string }) => error.code === 4
       && /conversation cannot be resumed/.test((error.stdout ?? '') + (error.stderr ?? '')),
   );

@@ -246,8 +246,8 @@ export function renderCapabilitiesOverview(rows: readonly ResolvedCapability[]):
   for (const row of selected) {
     const projected = new Set(row.delivered);
     const taught = row.tools.filter((tool) => projected.has(tool.name));
-    lines.push(`### ${row.label}`, '');
-    if (row.blurb) lines.push(row.blurb, '');
+    lines.push(`### ${row.label}`);
+    if (row.blurb) lines.push(row.blurb);
     if (taught.length) {
       const priority = taught.filter((tool) => tool.priority);
       if (priority.length) {

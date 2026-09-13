@@ -387,7 +387,7 @@ test('Mika house mechanics resolve explicitly', async () => {
   const mika = await resolveForm({
     house_seat: 'mika',
     name: 'mika_agent',
-    prompt: '+system_help:',
+    prompt: 'Help me with Ronin.',
   }, new Set());
   assert.equal(mika.name, 'mika_agent');
   assert.match(mika.dir, /\/mika$/);

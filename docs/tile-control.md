@@ -30,7 +30,7 @@ optionally with `&layout=1|2|4`.
 - The device still rules how many tiles *show*: a phone forces a single tile regardless
   (main.js), exactly as it does over stored state.
 
-This is the lever for opening Ronin onto a chosen working set. Any macro or doc can link a
+This is the lever for opening Ronin onto a chosen working set. Any document can link a
 working set this way.
 
 ## The ＋ button opens blank

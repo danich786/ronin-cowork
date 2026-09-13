@@ -1,10 +1,9 @@
 # gbrain
 - **label:** gbrain
-- **blurb:** Shared memory and coordination through the connected gbrain service.
+- **blurb:** Selected access and boundary teaching for the connected GBrain service.
 - **installation:** gbrain
 - **reading:** gbrain_connected/
 - **sops:** gbrain
-- **actions:** recall-memories, remember-lesson
-- **tools:** tejun-recall, tejun-remember
+- **tools:** —
 - **mcp:** gbrain
 - **order:** 110

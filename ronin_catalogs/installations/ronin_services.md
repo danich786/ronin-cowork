@@ -6,9 +6,7 @@
 - **reading:** routine/ronin_services/SERVICES_ABILITIES.md
 - **reading_off:** routine/ronin_services/OFF.md
 - **sops:** —
-- **macros:** —
-- **actions:** —
-- **tools:** mika
+- **tools:** —
 - **mcp:** —
 - **parts:** counting, koe, koshi, koshi_weights, michi, rireki
 - **requires:** —

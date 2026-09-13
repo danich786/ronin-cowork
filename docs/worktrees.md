@@ -24,7 +24,7 @@ One fact determines the result for each repository, its own `RONIN_REPO`:
 | `desks=managed` | a **worktree root**: the Agent's managed branch and worktree, commit, hand-in, the lead's promotion | `ronin_sops/worktree-root.md` |
 
 There is no Agent-side answer. The birth packet names the birth root's arrangement, and
-`tejun-desk open <repo>` names any other root's. The desk actions and tools are in an
+`tejun-desk open <repo>` names any other root's. The desk procedure and tools are in an
 Agent's command lookup only in a worktree root. Resolution is per repository, so one
 assignment may contain both a worktree root and a checkout.
 
@@ -140,7 +140,7 @@ completes, promotion posts the moved line on the team wipeboard and tells each s
 whose hand-in rode in, in its tile, which receipts are now on `dev` and that its desk is
 finished and certified clean. A desk is finished when that notice arrives, not when its
 hand-in is accepted — and finished means parked, or ended with its session by
-`tejun-harakiri`; it is never closed under a live session. An Agent's shell is opened
+`session_end`; it is never closed under a live session. An Agent's shell is opened
 inside its desk at launch and stays there, so the desk it stands in ends with it, never
 before it. `tejun-desk close` is for a desk nobody is standing in: a second repository's
 desk, or a desk whose session is already gone.
@@ -186,7 +186,7 @@ anyone changing the code below.
 - **The house closes what it opens.** `open` records what it creates; hand-in removes its
   candidate; promotion removes its own candidate and leaves the team line and desks as
   they are (the next hand-in carries the line current; a desk closes with its session by
-  `tejun-harakiri`, or by a lead once the session is gone). Close refuses when a live
+  `session_end`, or by a lead once the session is gone). Close refuses when a live
   session is still running inside the worktree and says why: a birth desk ends with its
   session; it does not move or message the session, and never asks it to leave. Team retirement settles the line; startup finishes an
   interrupted transaction from the ledger. No cleanup chores for Agents or the owner.

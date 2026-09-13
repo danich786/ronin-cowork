@@ -50,7 +50,7 @@ walk below says this box is in the broken state, report it and stop.
   perform from inside a session it is holding. There is no tool here that can reach it and
   no page here that spells the command, on purpose. **If what you actually need is Ronin
   restarted** — to pick up a code change, or to sweep leftover viewers — that is ordinary
-  and cheap and it has its own tool: `tejun-machine-restart`, which takes no argument and
+  and cheap and it has its own tool: `ronin-host restart`, which takes no argument and
   can restart nothing else.
 - **Never `pkill -f`.** The pattern matches your own shell, because your command line
   contains the word, and it matches any process whose path contains it. It has produced a
@@ -142,7 +142,7 @@ churn and **a steady pile is now worth reporting**: it means something orphaned 
 or a session ended outside Ronin. They are inert either way: they run nothing and cost a
 session structure each.
 
-**The remedy is to restart Ronin, not to kill them** — `tejun-machine-restart`. Ronin
+**The remedy is to restart Ronin, not to kill them** — `ronin-host restart`. Ronin
 sweeps every viewer at boot and at shutdown, and restarting Ronin does not touch the tmux
 server or any real session once step 1 is satisfied. Killing them by hand risks closing a live tile and gains nothing.
 

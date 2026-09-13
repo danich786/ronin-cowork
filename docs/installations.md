@@ -37,7 +37,8 @@ restart, and a running Agent never changes.
 Campaign defaults → Team → Agent carries one kind of choice: a **behaviour**. A behaviour
 can say how ordinary work should be done or add a facility and its taught practice. Its
 definition in `ronin_catalogs/behaviours/<name>.md` may name an installation and carry
-reading, SOPs, macros, actions, tools, and an MCP connection.
+reading, SOPs, tools, and an MCP connection. Capability documents conditionally select
+and teach executable authority.
 
 An installation-gated behaviour appears on forms only while its installation and every
 requirement are on. A launch request naming an unavailable behaviour is born without it;

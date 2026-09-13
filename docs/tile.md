@@ -41,7 +41,6 @@ same `needs` string, and both dim the control the same way.
 | ⛽ context gauge | — | always (hides when there is no reading) |
 | 🎛 control dial | — | always |
 | ⛩ commons | — | always (individual tabs gate: `koe` · `counting` · `koshi`) |
-| ⚡ macros | — | always |
 | メ the drop | — | always — it is a container, and it holds 🔒, which needs no session |
 | Output | rireki's stream handler | contains Locked only |
 | 🏷 groups | — | always |
@@ -231,68 +230,6 @@ has no route to its own letter at all. The header width won.
 The route is MICHI's and still serves — a client ceasing to be a consumer is not a reason to
 take an endpoint away. If the raw view returns, it belongs inside the ladder panel, where
 the reader already is, not as a second glyph competing with the first.
-
-### ⚡ Macros
-
-The fast path for `session_macros`. **It prefills and stops** — `+forkit: ` lands in the input
-you are typing in, mid sentence, and you add your own words. It never runs anything. The
-text it inserts is text you could have typed, so after a few uses you type it yourself,
-including from a pane or a phone where no menu exists. A menu that executed would hide the
-syntax forever.
-
-Where the text lands, in precedence order: the composer's textarea (touch) → the parked
-buffer (unlocked, shown in the strip) → `sendRaw` with no Enter (locked).
-
-A macro marked `send:` is the exception — it fires and presses Enter for you, marked with a
-`⏎` after its headline. Those carry a **120-second per-tile cooldown**, and a spent card
-says `sent — wait Ns before sending it again` in place of its description rather than
-silently swallowing an impatient second tap.
-
-**FOUR CARDS, AND THE DROP IS A TEACHING SURFACE.** It was
-every macro in the catalog, one `+name:` row each, the explanation on hover. The owner:
-*"I would rather have four macros and have larger buttons… These should be headlines, and
-the boxes are big enough that you can actually describe in them what that means, so people
-can then go, 'Oh, I see.'"* Three consequences, and none of them is cosmetic:
-
-- **Four, not thirteen.** A macro is on the drop only if its catalog entry says
-  `- **preview:** yes` (`ronin_catalogs/MACROS.md`, parsed in `src/macros.ts`). Opt-in,
-  because a dozen entries and a surface that holds four means opt-out would put every macro
-  written later on the button until somebody noticed. *"If we have too many, people just
-  don't get educated."* **Display only: every macro still runs**, typed or from the keypad,
-  and nothing is deleted.
-- **No `+name:` on the face.** The headline is the entry's `label:`, in plain words. The
-  invocation remains in its accessible label while visual hover help is disabled.
-- **The body copy is always visible**, from the entry's `blurb:`, never clamped and never
-  on hover. Confirmed directly by the owner, who also has a phone, where hover does not
-  exist. This is body copy inside the button and deliberately independent of `tips.js`.
-
-**TWO AUDIENCES, AND NO FALLBACK BETWEEN THEM.** *"We need to
-split out the description and the agent instruction into two different things because they
-don't overlap, and the macro should carry both."* A catalog entry is written twice:
-
-- the prose under the `## name` heading is the **agent's instruction** — served as
-  `instruction` on `/api/macros` (renamed from `description` the same day, because that name
-  is what invited a human surface to render it);
-- `label:` and `blurb:` are the **person's copy**, and the card renders those and only those.
-
-The card used to fall back to the instruction when an entry carried no blurb. That is gone:
-it would have greeted a person who tapped ⚡ to find out what `forkit` does with *"Owner-invoked
-only — never fork on your own initiative"* — a prohibition addressed to somebody else. Both
-halves are now required on **every** macro, previewed or not (`check-catalogs` fails a stock
-entry missing either), because the next surface is a library people browse to adopt macros
-from and copy written for four would have to be written again for thirteen.
-
-A macro of the **owner's own** can still reach the drop without a blurb — a user catalog file
-is theirs and no gate reaches it. That card is its label plus one quiet line saying the blurb
-is missing and where to add it. Never the instruction, and never a blank, which reads as broken.
-
-The card is the same shape as the launcher's kind buttons (`.ks-btn`) because it is the same
-job: picking a thing you may never have heard of by reading what it does.
-
-The reference — every macro, the ones not previewed included, with the full instruction —
-is `ronin_catalogs/MACROS.md`.
-
-Inert without a session: there is nothing to prefill.
 
 ### メ The drop — the rest of the header
 
@@ -671,7 +608,6 @@ today; it would cost something the day the dot becomes a button.
 | dial, gauge, job menu, `setInert` | `public/js/widgets.js` |
 | tooltip suppression and accessible labels | `public/js/tips.js` |
 | chip, ladder, letter | `public/js/shingo.js` |
-| ⚡ | `public/js/tilemacros.js` |
 | メ — the desktop drop | `public/js/tilemore.js` |
 | 📝 and 🏷 | `public/js/panels.js` |
 | the phone's one row | `public/js/tiledrop.js` |

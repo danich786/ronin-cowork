@@ -50,7 +50,7 @@ import { ensureRoninHelpersTeam, recordRoninHelperWelcome, roninHelperWelcomeSta
 
 const MIKA_SESSION = 'mika_agent' as const;
 /** Her three commands, projected first on PATH. */
-const MIKA_TOOLS = ['lookup', 'owner_view', 'show'] as const;
+const MIKA_TOOLS = ['lookup', 'owner_view', 'show', 'machine-settings', 'session_create'] as const;
 /** The rest of her PATH: a working shell and coreutils, and nothing of Ronin's own bin —
  *  the first Mika was born with ONLY her tools dir on PATH, so her CLI could not run a
  *  shell at all and reported her tools missing (2026-09-09). */
@@ -438,7 +438,12 @@ export function registerLaunch(app: express.Express): LaunchControl {
         // Told at birth, the way tmux tells every shell where its server is: the socket
         // this operator bound. A process that bound none (a dev run) says nothing, and the
         // newborn's tools use the default path.
-        env: birthEnv(routineTools?.path, boundOperatorSocket(), agentBinDir(), process.env.PATH ?? '', houseSeat === 'mika'),
+        env: houseSeat === 'mika'
+          ? {
+              ...(birthEnv(routineTools?.path, boundOperatorSocket(), agentBinDir(), process.env.PATH ?? '', true) ?? {}),
+              RONIN_MACHINE_SETTINGS_AUTHORITY: 'mika',
+            }
+          : birthEnv(routineTools?.path, boundOperatorSocket(), agentBinDir(), process.env.PATH ?? ''),
         control: resolved.agent ? 'user' : undefined,
         key: birthKey || undefined,
         // The Services switch as resolved for THIS Agent at birth (campaign < team < form):

@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# tejun-survey — what this machine has, measured now (TEJUN survey-machine).
-# Usage: tejun-survey [path]     path = the directory whose filesystem to measure
+# Internal implementation for `ronin-host inspect [path]`.
 #                                (default: the working directory)
 #
 # A machine's capacity is a FACT ABOUT A BOX ON A DAY. It is never written into a
@@ -125,7 +124,7 @@ df -Pk 2>/dev/null | awk 'NR > 1 && ($1 ~ /^\// || $1 ~ /:/ || $1 ~ /^\/\//) && 
 
 # What Ronin itself is holding. `ronin-store --all` says WHERE each store is; nothing
 # until now said how big one had grown, and the tapes are what quietly eat a disk.
-. "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"
+. "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/../ronin_bin/tool-path.sh"
 STORE="$(cd "$(dirname "$SELF")/../bin" && pwd)/ronin-store"
 [ -x "$STORE" ] || STORE=ronin-store
 echo

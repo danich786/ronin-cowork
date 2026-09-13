@@ -97,8 +97,6 @@ export function registerLibrary(app: express.Express): void {
         sops: list(req.query?.sops),
         ways: list(req.query?.ways),
         library: list(req.query?.library),
-        macros: list(req.query?.macros),
-        actions: list(req.query?.actions),
         tools: list(req.query?.tools),
       });
       const text = `${JSON.stringify(bundle, null, 2)}\n`;

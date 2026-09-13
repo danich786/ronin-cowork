@@ -3,8 +3,8 @@
 > Stock SOP. Your own copy in the sops store (`ronin-store sops` → `accounts.md`) replaces
 > this file whole — a default, not law.
 > **Voice: agent.** How the agent establishes and records who this install is for — not a walkthrough to relay.
-> **Tool: `tejun-account`** — the owner's name, the entitlement, the limits they set, and
-> what is still unanswered. Pair it with **`tejun-secrets`**, which answers which provider
+> **Tool: `ronin-host account`** — the owner's name, the entitlement, the limits they set, and
+> what is still unanswered. Pair it with **`ronin-host secrets`**, which answers which provider
 > credential is actually in force. Run both before asking the owner anything; half these
 > questions are already answered on disk.
 
@@ -22,7 +22,7 @@ the first conversation with a new install.
   configuration — and it lives in the config store, never in a repo and never in this
   file.
 - **What this install is entitled to.** A free cowork install runs alone and complete; a
-  services install additionally carries an entitlement. `tejun-account` says which this
+  services install additionally carries an entitlement. `ronin-host account` says which this
   box is.
 - **What they set for themselves.** Session limits and the like — their choices, not
   ours, and they survive an upgrade because of where they live.
@@ -48,5 +48,5 @@ holds no credential — not an API key, not a token, not a password. If somethin
 secret, it is not configuration and it is not here (`secrets.md`).
 
 And no fact about this box gets written into this file, or any other. Names, entitlements
-and limits are **measured** — `tejun-account` measures them, and a document that repeated
+and limits are **measured** — `ronin-host account` measures them, and a document that repeated
 them would be wrong the first time anything changed.
