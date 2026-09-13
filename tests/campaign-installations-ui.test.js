@@ -11,7 +11,7 @@ test('Campaign Installations is the shared stone surface with the Setup Services
   assert.match(source, /const question = ask\(/);
   assert.match(source, /group: t\('campaign_view\.available', 'Available'\)/);
   assert.match(source, /shape: 'square', expanded: true/);
-  assert.match(source, /page\?\.el\.querySelector\('\.setup-surface-body'\) \|\| host/);
+  assert.match(source, /installationFirstRow: choice\?\.el \|\| null/);
   assert.match(source, /v: 'off'.*campaign_view\.off/);
   assert.match(source, /v: 'on'.*campaign_view\.on/);
   assert.match(source, /v: 'all'.*campaign_view\.shape_all/);

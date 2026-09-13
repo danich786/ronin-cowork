@@ -6105,6 +6105,8 @@ button.wb-door:hover b {
 .setup-services-step-action[data-step='restart'] { border-color: var(--kaki); background: var(--kaki); color: var(--on-strong); font-weight: 600; }
 .setup-services-step-action[data-step='restart']:hover { filter: brightness(1.08); }
 .setup-services-notice:empty { display: none; }
+.campaign-installation-choice { display: grid; gap: var(--space-4); }
+.campaign-installation-choice .setup-notice:empty { display: none; }
 .setup-gbrain-compact { display: grid; align-content: start; width: min(100%, 44rem); margin: 0 auto; gap: var(--space-9); }
 .setup-gbrain-lockup { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-5); align-items: center; }
 .setup-gbrain-glyph { display: grid; place-items: center; width: 3.5rem; height: 3.5rem; color: var(--kaki); font-style: normal; font-size: var(--text-10); line-height: 1; }

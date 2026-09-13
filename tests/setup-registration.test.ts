@@ -423,6 +423,8 @@ test('Setup gbrain keeps installation/default choice on Campaign Installations a
   assert.match(setup, /presetLaunchUrl\(result\.data \|\| \{\}, seatingPlan\('personal_assistant'/);
   assert.match(gbrain, /import \{ gbrainAssistantPrompt, gbrainSetupModel \} from '\.\/gbrain-setup-state\.js'/);
   assert.match(gbrain, /if \(!root\.querySelector\('\.setup-gbrain-compact'\)\) renderSetup\(undefined\)/);
+  assert.match(gbrain, /if \(options\.firstRow\) wrap\.append\(options\.firstRow\)/);
+  assert.match(setup, /firstRow: context\.installationFirstRow/);
   assert.match(gbrain, /const mine = \+\+reads;[\s\S]*?if \(mine === reads\) renderSetup\(result\)/);
   assert.match(gbrain, /if \(!setup\) root\.append\(head, privacy, search, integrations\)/);
   for (const question of ['gbrain.setup_q_installed', 'gbrain.setup_q_accounts']) assert.ok(gbrain.includes(question), question);
