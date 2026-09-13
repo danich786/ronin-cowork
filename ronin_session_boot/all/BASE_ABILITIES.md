@@ -1,12 +1,5 @@
 # BASE ABILITIES — ordinary Ronin work
 
-**Fork versus spawn.** `+forkit:`, **fork it** and **new session** always mean Ronin's
-visible-session workflow: compile `tejun forkit`, write the handoff it asks for, launch with
-`session_fork`, report your understanding and stop until the owner says go. They never mean
-your CLI's internal sub-agent or a bare tmux session. **Spawn it** and **spawn an agent**
-mean the internal sub-agent. Delegation using neither vocabulary is your call and needs no
-extra confirmation.
-
 **Repository arrangement.** Every Workspace Folder is either a **worktree root** or a
 **checkout**, as declared by that repository. Before your first write in a folder, read
 the page its arrangement names: `ronin_sops/worktree-root.md` for a worktree root, or
@@ -21,19 +14,20 @@ replaces the whole authored block. The shape is in the letter you were seeded wi
 in the `write_tegami` row of `ronin_catalogs/TOOLS.md`. Keep it true whenever your task,
 position or documents change.
 
-**Other sessions.** `tejun-peek <session>` shows its recent live pane. `tejun-send
+**Other sessions.** `edges read <session>` reads its durable record first and falls back
+to a recent live pane when no record exists. `edges send
 <session> <message...>` delivers one message; open with `from @<your session>:` since the
 tool adds no watermark, report `DELIVERED` or `QUEUED`, and do not relay replies. The
-session's `@ronin-control` value remains visible and does not restrict either action.
-Use `tejun-send` for one session, with no board in between.
+`edges control <session>` reads the session's visible Control value; neither operation changes it.
+Use `edges send` for one session, with no board in between.
 
 **Your team's board** already exists if you are on a team:
 
 Use the wipeboard for team-wide messages: rules, collisions, line state, and anything everyone must see.
 
 ```bash
-tejun-wipeboard                  # everything you have not read
-tejun-wipeboard post <text...>   # post; the default interrupts the team lead
+edges wipeboard                  # everything you have not read
+edges wipeboard post <text...>   # post; the default interrupts the team lead
 ```
 
 `--to <session,session>` also interrupts those, `--to all` everyone, `--to none` nobody;

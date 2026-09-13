@@ -200,7 +200,7 @@ async function main(): Promise<void> {
           if (receipt.result === 'accepted' && tidy.desk) {
             out(`  desk is ${tidy.desk.ahead === 0 ? 'level with the line' : `${tidy.desk.ahead} commit(s) ahead of the line`}`);
             out(tidy.unsaved_files.length ? `  not handed in: ${tidy.unsaved_files.join(', ')}` : '  no unsaved or untracked files');
-            out(`  NEXT: line moved; run tejun-desk status ${deskId(d)}; if it reports a dev update, run tejun-desk sync ${deskId(d)}; contact the lead with tejun-send <lead>`);
+            out(`  NEXT: line moved; run tejun-desk status ${deskId(d)}; if it reports a dev update, run tejun-desk sync ${deskId(d)}; contact the lead with edges send <lead>`);
           }
           if (receipt.result !== 'accepted') worst = 4;
           // The tool finds the lead and tells them (owner, 2026-09-05: the session neither

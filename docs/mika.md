@@ -106,12 +106,12 @@ name that already exists.
 
 A koshi ignores the dial because it is house machinery in the recorder's category — it
 reads panes nobody talks to. **Mika is a session you converse with**, so reaching her is an
-ordinary send: `ronin_bin/mika` hands off to `tejun-send`, and her Control value is shown like any
+ordinary send: `ronin_bin/mika` hands off to `edges send`, and her Control value is shown like any
 other session's. At 👤 the request is refused and says so.
 
 A house agent that cannot be silenced by the dial is a house agent that cannot be silenced.
 
-**And it will not type over your draft.** `tejun-send` puts the request into the durable
+**And it will not type over your draft.** `edges send` puts the request into the durable
 message queue; safe delivery waits while real unsubmitted text sits at her prompt. Mika is
 the session you are most likely to be mid-sentence in, which makes her the last one that
 should ever be written to blind. The owner can see the retained request under Messages.
@@ -155,7 +155,7 @@ Plus four one-line edits on the launch path so `cap:` is read, carried and honou
 (`catalog.ts`, `spawn.ts`, `routes/launch.ts`, `tmux.ts`).
 
 **No new endpoint, and no new kind of thing.** She is born through `/api/launch` like every
-session, and reached with `tejun-send`, the tool every agent already uses to reach any
+session, and reached with `edges send`, the tool every agent already uses to reach any
 session.
 
 ## Not built, deliberately

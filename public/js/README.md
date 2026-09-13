@@ -75,7 +75,7 @@ where a session is born now. `docs/ui.md` is the written contract those modules 
 | `keysrow.js` | `buildKeysRow` — Esc/^C/Tab/arrows/⤓ docked on every coarse tile's composer |
 | `tilementions.js` | `buildTileMentions` — the @ button on a tile head; click or drag a live session name into the composer |
 | `tilemore.js` | DESKTOP ONLY — `buildTileMore`: メ on a tile head and the controls it drops in one strip; `fitDropToTile`, shared by every drop off that header |
-| `team-arrange.js` | `parseDraft`, `createArranger` — the team page's one controller: a draft (what changes; the rest stays) from a button or from an agent's `tejun-teampage`, run through the page's own verbs |
+| `team-arrange.js` | `parseDraft`, `createArranger` — the team page's one controller: a draft (what changes; the rest stays) from a button or from an agent's `edges page`, run through the page's own verbs |
 | `team-kanban.js` | `createTeamKanban` — the Team Kanban read: five responsive columns from the team's derived project JSON; a drop sends one move request and writes no project data |
 | `team-members.js` | `buildTeamMembers`, `agentTitle`, `configSignature` — the member list shared by the Commons Roster tab and the league surfaces, and the changed-only fingerprint that keeps Configuration off the five-second clock |
 | `voice.js` | dictation: `makeClipRecorder` + `wireDictation` (the 🎤 on the tile's compose box) |

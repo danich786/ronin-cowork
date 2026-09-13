@@ -1,6 +1,6 @@
 # Message queue
 
-`tejun-send` calls the operator's HTTP message surface and prints its delivery reply.
+`edges send` calls the operator's HTTP message surface and prints its delivery reply.
 
 ## TL;DR
 

@@ -49,7 +49,7 @@ test('missing enabled tools are visible and do not refuse projection', async () 
 
 /* A BORN SESSION RUNS ITS TOOLS THROUGH THESE SYMLINKS, so every ronin_bin tool that
  * locates the repository from its own path must resolve the link first (measured
- * 2026-09-02: `tejun-desk`, `tejun-wipeboard`, `read_tegami`, `write_tegami`
+ * 2026-09-02: `tejun-desk`, `edges wipeboard`, `read_tegami`, `write_tegami`
  * all failed from a projected session, and the guard shims had been fixed the day
  * before). Each is run exactly as a session would type it, with an invocation that stops
  * before it needs a tmux session, and must not report a path it could not reach.
@@ -59,9 +59,9 @@ test('missing enabled tools are visible and do not refuse projection', async () 
  * caller broken when it was looked up by name). So each caller is run through its
  * projected symlink with only `RONIN_URL` set, and must arrive at the operator it names. */
 const REACH_FAILURES = /Cannot find module|command not found|No such file or directory|NO-REPO/;
-const URL_CALLERS = ['session_archive', 'session_fork', 'session_end', 'session_restore', 'session_check', 'session_create', 'session_set', 'tejun-team-set', 'tejun-teampage', 'mika'];
+const URL_CALLERS = ['session_archive', 'session_fork', 'session_end', 'session_restore', 'session_check', 'session_create', 'session_set', 'tejun-team-set', 'edges', 'mika'];
 test('projected ronin_bin tools resolve the symlink and reach the repository and the operator', async (t) => {
-  const tools = ['tejun-desk', 'tejun-team', 'tejun-wipeboard', 'tejun-send', 'read_tegami', 'write_tegami', 'ronin-host', 'ronin-url', ...URL_CALLERS];
+  const tools = [...new Set(['tejun-desk', 'edges', 'read_tegami', 'write_tegami', 'ronin-host', 'ronin-url', ...URL_CALLERS])];
   const projected = await projectRoutineTools('resolve', [routine('ronin_base', true, tools)]);
   for (const t of tools) assert.ok(projected.delivered.includes(t), `${t} projected`);
   const reached: string[] = [];
@@ -106,7 +106,7 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
     }
   };
   const helpTools = [
-    'read_tegami', 'write_tegami', 'tejun-desk', 'tejun-team',
+    'read_tegami', 'write_tegami', 'tejun-desk', 'edges',
     'tejun-team-set', 'session_check', 'session_create', 'session_set', 'session_archive', 'session_restore',
     'session_end', 'session_fork',
   ];
@@ -146,7 +146,7 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
   assert.match(deskHelp, /None performs Git push/);
 
   const teamHelp = [
-    (await run(['tejun-team', '--help'])).out,
+    (await run(['edges', 'team', '--help'])).out,
     (await run(['session_check', '--help'])).out,
     (await run(['session_create', '--help'])).out,
     (await run(['session_set', '--help'])).out,
@@ -159,7 +159,7 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
   assert.match(teamHelp, /remove the old Team on that Team's page/i);
   assert.match(teamHelp, /sets? or changes? that Team's lead/i);
   assert.doesNotMatch(teamHelp, /session_fork --help/);
-  for (const args of [['tejun-wipeboard'], ['tejun-send'], ['read_tegami', '--session', 'nobody'], ['write_tegami', '--session', 'nobody', '--at', '1'], ['ronin-host', 'inspect'], ['ronin-host', 'account']]) {
+  for (const args of [['edges', 'wipeboard'], ['edges', 'send'], ['read_tegami', '--session', 'nobody'], ['write_tegami', '--session', 'nobody', '--at', '1'], ['ronin-host', 'inspect'], ['ronin-host', 'account']]) {
     const r = await run(args);
     assert.doesNotMatch(r.out, REACH_FAILURES, `${args.join(' ')}: ${r.out}`);
   }
@@ -184,9 +184,9 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
     assert.doesNotMatch(r.out, REACH_FAILURES, `${args.join(' ')}: ${r.out}`);
     assert.ok(reached.includes(door), `${args.join(' ')} reached ${door}; saw ${JSON.stringify(reached)}: ${r.out}`);
   }
-  // tejun-teampage needs a live pane before it asks for the address; through the symlink
+  // edges page needs a live pane before it asks for the address; through the symlink
   // it must still reach its own refusal, not a missing helper.
-  const page = await run(['tejun-teampage']);
+  const page = await run(['edges', 'page']);
   assert.doesNotMatch(page.out, REACH_FAILURES, page.out);
   assert.match(page.out, /NO-SESSION/, page.out);
 });

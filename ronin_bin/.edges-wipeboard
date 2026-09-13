@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# tejun-wipeboard — THE ONE ACTION: what you have not read, on every wipeboard you are on.
-# Use the wipeboard for team-wide messages; use tejun-send for one session, with no board in between.
+# edges wipeboard — THE ONE ACTION: what you have not read, on every wipeboard you are on.
+# Use the wipeboard for team-wide messages; use edges send for one session, with no board in between.
 #
-# Usage: tejun-wipeboard                              everything unread, then it is read
-#        tejun-wipeboard boards                       which wipeboards exist
-#        tejun-wipeboard <wipeboard>                  the brief + what it still holds
-#        tejun-wipeboard <wipeboard> read [n]         the last n, explicitly
-#        tejun-wipeboard <wipeboard> find <text…>     search what it still holds
-#        tejun-wipeboard <wipeboard> post [--to a,b|none] [--session s] <text…>
-#        tejun-wipeboard --session <s> …             who is typing, when $TMUX is unset
+# Usage: edges wipeboard                              everything unread, then it is read
+#        edges wipeboard boards                       which wipeboards exist
+#        edges wipeboard <wipeboard>                  the brief + what it still holds
+#        edges wipeboard <wipeboard> read [n]         the last n, explicitly
+#        edges wipeboard <wipeboard> find <text…>     search what it still holds
+#        edges wipeboard <wipeboard> post [--to a,b|none] [--session s] <text…>
+#        edges wipeboard --session <s> …             who is typing, when $TMUX is unset
 #
 # A WIPEBOARD IS A TRANSPORT, NOT A RECORD (owner, 2026-08-23). Posts are delivered and
 # then reaped — when every reader they were for has read them, or when they age out. It

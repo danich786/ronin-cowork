@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# tejun-team — resolve a team name to its sessions (TEJUN team-roster).
-# Usage: tejun-team [team]          no arg = list every team in play
+# edges team — resolve a team name to its sessions (TEJUN team-roster).
+# Usage: edges team [team]          no arg = list every team in play
 #
 # A "team" (KOTOBA: session_team) is just the sessions carrying the same tag in
 # @ronin-tags — there is no team object to create or clean up, and a tag dies with its
@@ -9,13 +9,13 @@
 # and never tags anything.
 set -u
 case "${1-}" in
-  -h|--help) [ "$#" -eq 1 ] || { echo "tejun-team: --help takes no other arguments. Run tejun-team --help." >&2; exit 2; }
+  -h|--help) [ "$#" -eq 1 ] || { echo "edges team: --help takes no other arguments. Run edges team --help." >&2; exit 2; }
     cat <<'EOF'
-tejun-team — list Teams or the current members of one Team
+edges team — list Teams or the current members of one Team
 
 Usage:
-  tejun-team
-  tejun-team <team>
+  edges team
+  edges team <team>
 
 Use the bare form to discover Teams, then name one before coordinating its members.
 This is a live, read-only tmux roster; it changes no membership or Control setting.
@@ -27,7 +27,7 @@ session_create --help; session_set --help; tejun-team-set --help
 EOF
     exit 0 ;;
 esac
-[ "$#" -le 1 ] || { echo "tejun-team: too many arguments. Run tejun-team --help." >&2; exit 2; }
+[ "$#" -le 1 ] || { echo "edges team: too many arguments. Run edges team --help." >&2; exit 2; }
 
 VIEWER_PREFIX="grid_"   # browser viewer sessions — never on a team
 
@@ -99,4 +99,4 @@ while IFS=$SEP read -r name tags dial leads; do
   printf '%-24s %-8s %s\n' "$name" "${dial:-write}" '-'
 done < <(roster)
 
-[ "$found" = 1 ] || { echo "NO-TEAM: nothing is tagged '$G' — run 'tejun-team' to see the teams that exist"; exit 3; }
+[ "$found" = 1 ] || { echo "NO-TEAM: nothing is tagged '$G' — run 'edges team' to see the teams that exist"; exit 3; }

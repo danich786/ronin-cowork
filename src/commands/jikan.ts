@@ -1,10 +1,10 @@
 import { addJob, listJobs, nextRun, parseWhen, removeJob, setJob } from '../jikan.js';
 import { tmux } from '../tmux-client.js';
 
-const USAGE = `usage: tejun-jikan [--team t]
-       tejun-jikan add --when "<timing>" --kind one-off|recurring [--expires <date-time>] [--to lead|<session>] [--team t] <request...>
-       tejun-jikan pause|resume|now|remove <id> [--team t]
-       tejun-jikan when "<timing>"
+const USAGE = `usage: edges schedule [--team t]
+       edges schedule add --when "<timing>" --kind one-off|recurring [--expires <date-time>] [--to lead|<session>] [--team t] <request...>
+       edges schedule pause|resume|now|remove <id> [--team t]
+       edges schedule when "<timing>"
 timing: once 2026-09-04 08:00 · daily 08:00 · weekdays 08:00 · weekly mon 08:00 · monthly 1 09:00 · hourly · every 30m · 0 8 * * 1-5`;
 
 async function whoami(): Promise<{ name: string; teams: string[] }> {

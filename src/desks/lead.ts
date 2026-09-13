@@ -112,7 +112,7 @@ export async function notifyLeads(n: LeadNotice): Promise<Delivery[]> {
 
 async function wipeboard(team: string, msg: string, to: string): Promise<string> {
   try {
-    const { stdout } = await brokerExecFile(path.join(REPO, 'ronin_bin', 'tejun-wipeboard'), [team, 'post', '--to', to, msg]);
+    const { stdout } = await brokerExecFile(path.join(REPO, 'ronin_bin', 'edges'), ['wipeboard', team, 'post', '--to', to, msg]);
     return stdout.trim().split('\n')[0] ?? 'posted';
   } catch (e) {
     const err = e as { stdout?: string; message?: string };

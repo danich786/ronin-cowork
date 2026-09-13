@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# tejun-teampage — read the team page your team is showing, or hand it a draft.
+# edges teampage — read the team page your team is showing, or hand it a draft.
 #
-# Usage: tejun-teampage                          the view: which workspace shows what, which
+# Usage: edges teampage                          the view: which workspace shows what, which
 #                                                one the owner is typing in, which shows YOU
-#        tejun-teampage <key=value ...>          a draft — only what you name changes
-#        tejun-teampage --team <team> ...        on several teams, say which
+#        edges teampage <key=value ...>          a draft — only what you name changes
+#        edges teampage --team <team> ...        on several teams, say which
 #
 # The draft's words (team-arrange.js is the one parser):
 #   workspace1=<session>|me           a session's tile there
@@ -19,7 +19,7 @@
 #   order=workspace2,roster,workspace1     hidden=roster    shown=roster    hidden=none
 #
 # "Show the owner the document I am working on", from workspace 2:
-#   tejun-teampage workspace1=commons:docs:wip/handoffs/THIS.md
+#   edges teampage workspace1=commons:docs:wip/handoffs/THIS.md
 #
 # What you omit stays as it is. Read the view first (the bare form): it tells you which
 # workspace you are in, so you know which one the owner is looking at. You are free to
@@ -38,7 +38,7 @@ die() { printf '%s\n' "$*" >&2; exit "${2:-3}"; }
 # never guessed: ronin_session_me in tool-path.sh, the same resolver as write_tegami.
 
 TEAM=""
-if [ "${1:-}" = "--team" ]; then TEAM="${2:-}"; shift 2 || die "usage: tejun-teampage --team <team> ..." 2; fi
+if [ "${1:-}" = "--team" ]; then TEAM="${2:-}"; shift 2 || die "usage: edges teampage --team <team> ..." 2; fi
 
 ME=$(ronin_session_me) || die "NO-SESSION: cannot tell which session this is — TMUX_PANE and \$TMUX are both unset, and this was not run through a session's own command directory." 3
 if [ -z "$TEAM" ]; then
@@ -88,8 +88,8 @@ fi
 # THE DRAFT — every remaining argument is one key=value.
 tokens=$(python3 -c 'import sys, json; print(json.dumps(sys.argv[1:]))' "$@")
 body=$(python3 -c 'import sys, json; print(json.dumps({"from": sys.argv[1], "tokens": json.loads(sys.argv[2])}))' "$ME" "$tokens")
-code=$(api -o /tmp/tejun-teampage.$$ -w '%{http_code}' -H 'content-type: application/json' -X POST --data "$body" "$url/api/teams/$(q "$TEAM")/page") || { rm -f /tmp/tejun-teampage.$$; die "UNREACHABLE: Ronin did not answer at $url" 5; }
-out=$(cat /tmp/tejun-teampage.$$ 2>/dev/null); rm -f /tmp/tejun-teampage.$$
+code=$(api -o /tmp/edges teampage.$$ -w '%{http_code}' -H 'content-type: application/json' -X POST --data "$body" "$url/api/teams/$(q "$TEAM")/page") || { rm -f /tmp/edges teampage.$$; die "UNREACHABLE: Ronin did not answer at $url" 5; }
+out=$(cat /tmp/edges teampage.$$ 2>/dev/null); rm -f /tmp/edges teampage.$$
 msg=$(printf '%s' "$out" | python3 -c 'import sys,json
 try: d=json.load(sys.stdin)
 except Exception: d={}
