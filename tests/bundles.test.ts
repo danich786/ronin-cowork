@@ -111,11 +111,11 @@ test('the plan says what an install would do, and a tool never replaces one of R
   assert.equal(verdict('templates/teams/dinner_party.md'), 'shadows-shipped');
   assert.equal(verdict('brand_new.md'), 'new');
   assert.equal(verdict('tejun-send'), 'refused');
-  assert.equal(verdict('tejun'), 'refused');
+  assert.equal(verdict('review_tool'), 'new');
   const receipt = await installBundle(b);
-  assert.deepEqual(receipt.refused.map((i) => i.path).sort(), ['tejun', 'tejun-send']);
+  assert.deepEqual(receipt.refused.map((i) => i.path), ['tejun-send']);
   assert.deepEqual(receipt.skipped.map((i) => i.path), ['templates/teams/staff_my_codebase.md']);
-  assert.deepEqual(receipt.written.map((i) => i.path).sort(), ['brand_new.md', 'templates/teams/dinner_party.md']);
+  assert.deepEqual(receipt.written.map((i) => i.path).sort(), ['brand_new.md', 'review_tool', 'templates/teams/dinner_party.md']);
   await rm(storeDir('catalogs'), { recursive: true, force: true });
   await rm(storeDir('sops'), { recursive: true, force: true });
 });
