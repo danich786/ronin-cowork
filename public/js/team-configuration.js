@@ -1,20 +1,25 @@
 /* Editable reading of one complete durable team_roster. Membership is intentionally absent.
- * THE SAME FORMAT AS NEW AGENT AND NEW TEAM (owner, 2026-09-13): the launch forms' numbered
- * steps (createStep), the kit's labelled fields (createField) and ERABI at the forms' tight
- * density. Step 1 · Team — Team ID, Title and Kind on one line, then Purpose. Step 2 · New
- * Agent defaults — Where it works, Model, Mandate, Runtime: what the next Agent starts from,
- * never the Team's own behaviour. Features and behaviours are not asked here. */
+ * Two parts (owner, 2026-09-13): the Team's own facts — Team ID, Title and Kind on one head
+ * line, then Purpose — and, under them, NEW AGENT DEFAULTS: Where it works, Model, Mandate
+ * and Runtime, what the next Agent starts from, never the Team's own behaviour. Features and
+ * behaviours are not asked here. Every question is asked through ERABI (ask.js) at the commons'
+ * loose density; the text entries (title, purpose) are the kit's — the utility takes no foreign DOM. */
 import { t } from './lexicon.js';
 import { request } from './request.js';
 import { ask } from './ask.js';
 import { ruledRows } from './glyphs.js';
-import { createStep, loadProviderCatalog, mandateWord, modelAvailabilityFact, providerCatalog, tierWord } from './form-steps.js';
-import { WorkspacePrimitives } from './workspace-primitives.js';
+import { loadProviderCatalog, mandateWord, modelAvailabilityFact, providerCatalog, tierWord } from './form-steps.js';
 
 const el = (tag, cls, text) => { const node = document.createElement(tag); if (cls) node.className = cls; if (text != null) node.textContent = String(text); return node; };
 const bucket = (value) => value && typeof value === 'object' && !Array.isArray(value) ? value : {};
 const list = (value) => Array.isArray(value) ? value : [];
 
+const field = (form, label, name, value, kind = 'input', help = '') => {
+  const row = el('label', 'tw-config-field'); row.append(el('span', null, label));
+  const input = document.createElement(kind); input.classList.add('wk-field-control'); input.name = name; input.value = value || ''; row.append(input);
+  if (help) row.append(el('small', null, help)); form.append(row); return input;
+};
+const reading = (form, label, value, empty) => { const row = el('div', 'tw-config-reading'); row.append(el('span', null, label), el('output', null, value || empty)); form.append(row); };
 const kindWord = (value) => ({
   open: t('campaign_view.option_open', 'Open'), coding: t('team_config.kind_coding', 'Coding'), work: t('team_config.kind_work', 'Work'), personal: t('team_config.kind_personal', 'Personal'),
   household: t('team_config.kind_household', 'Household'), social: t('team_config.kind_social', 'Social'), school: t('team_config.kind_school', 'School'),
@@ -41,7 +46,6 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
   host.replaceChildren();
   if (!roster?.durable) { host.append(el('p', 'tw-config-empty', t('team_config.no_roster', 'This Team has no saved record.'))); return; }
   const loading = el('p', 'tw-config-empty', t('team_config.loading', 'Loading Team Configuration…')); host.append(loading);
-  const { createField } = WorkspacePrimitives;
 
   // The form is painted even into a host that is not in the document: the caller renders
   // only on real change now, so a commons waiting off-screen must receive its form here —
@@ -50,25 +54,21 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
   void Promise.all([loadProviderCatalog(), request('/api/project-roots/detail')]).then(([, rootResult]) => {
     const roots = rootResult.ok && Array.isArray(rootResult.data?.roots) ? rootResult.data.roots.filter((root) => !root.archived) : [];
     const defaults = bucket(roster.agent_defaults);
-    const form = el('form', 'ntf-form tw-config-form');
+    const form = el('form', 'tw-config-form');
 
-    /* ---- step 1 · Team: ID, Title and Kind on one line, then Purpose — the New Team form's own head ---- */
-    const stepTeam = createStep({ n: 1, key: 'team', title: t('team_config.team_step', 'Team') });
-    const idInput = el('input', 'tw-config-id'); idInput.type = 'text'; idInput.name = 'name'; idInput.value = roster.name; idInput.readOnly = true; idInput.tabIndex = -1;
-    const title = el('input'); title.type = 'text'; title.name = 'title'; title.spellcheck = false; title.value = roster.title || '';
-    const identity = el('div', 'tw-config-identity');
+    /* ---- the Team's own facts: one head line (ID · Title · Kind), then Purpose ---- */
+    const head = el('div', 'tw-config-head'); reading(head, t('team_config.cowork_id', 'Team ID'), roster.name, t('settei.none_set', '— none set —'));
+    const title = field(head, t('team_config.title', 'Title'), 'title', roster.title);
     const kind = ask([{ group: t('team_config.kind', 'Kind'), fields: [
       { key: 'kind', label: t('team_config.kind', 'Kind'), shape: 'square', options: ruledRows('kind', ['open', 'coding', 'work', 'personal', 'household', 'social', 'school'], kindWord) },
-    ] }], { value: { kind: roster.kind || 'open' }, density: 'tight', trayHost: identity });
-    identity.append(createField({ label: t('team_config.cowork_id', 'Team ID'), control: idInput }).el, createField({ label: t('team_config.title', 'Title'), control: title }).el, kind.el);
-    const objective = el('textarea'); objective.name = 'objective'; objective.rows = 3; objective.value = roster.objective || '';
-    objective.placeholder = t('new_team.objective_placeholder', 'what this team is for');
-    stepTeam.body.append(identity, createField({ label: t('team_config.objective', 'Purpose'), control: objective }).el);
-    form.append(stepTeam.el);
+    ] }], { value: { kind: roster.kind || 'open' }, trayHost: head });
+    head.append(kind.el); form.append(head);
+    const objective = field(form, t('team_config.objective', 'Purpose'), 'objective', roster.objective, 'textarea');
 
-    /* ---- step 2 · New Agent defaults: what the next Agent starts from, never the Team's own behaviour ---- */
-    const stepDefaults = createStep({ n: 2, key: 'defaults', title: t('team_config.agent_defaults', 'New Agent defaults') });
-    stepDefaults.body.append(el('p', 'fs-step-help', t('team_config.next_form', 'What each new Agent on this Team starts from. Nothing live changes.')));
+    /* ---- New Agent defaults: everything below Purpose is what the next Agent starts from, never the Team's own behaviour ---- */
+    const section = el('section', 'tw-config-section');
+    section.append(el('h4', 'tw-config-section-head', t('team_config.agent_defaults', 'New Agent defaults')));
+    section.append(el('p', 'tw-config-note', t('team_config.next_form', 'What each new Agent on this Team starts from. Nothing live changes.')));
     const branches = { ...bucket(roster.branches) };
     const rootWasDesk = list(roster.repos).includes(roster.project_root); // a birthplace that is also a desk stays one
     const worktrees = (name) => roots.find((root) => root.name === name)?.repo_profile?.worktrees === 'enabled';
@@ -99,16 +99,16 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
         { key: 'recruit', label: t('team_config.recruit', 'Recruit'), options: RECRUIT.map((v) => ({ v, l: mandateWord(v) })) },
         { key: 'output', label: t('team_config.output', 'Output'), many: true, options: OUTPUT.map((v) => ({ v, l: mandateWord(v) })) },
       ] },
-      { group: t('launch_mode.head', 'Launch mode'), fields: [
-        { key: 'launch_mode', label: t('launch_mode.head', 'Launch mode'), options: launchModes },
+      { group: t('team_config.runtime', 'Runtime'), fields: [
+        { key: 'launch_mode', label: t('launch_mode.head', 'launch mode'), options: launchModes },
       ] },
     ], { value: {
       root: roster.project_root || '', repos: list(roster.repos).filter((name) => name !== roster.project_root),
       provider: defaults.provider || '', model: defaults.model || '',
       reach: defaults.reach || 'open', recruit: defaults.recruit || 'open', output: [defaults.output || 'open'].flat().filter(Boolean),
       launch_mode: defaults.launch_mode || 'configured',
-    }, density: 'tight', trayHost: defaultsRow });
-    defaultsRow.append(agentDefaults.el); stepDefaults.body.append(defaultsRow); form.append(stepDefaults.el);
+    }, trayHost: defaultsRow });
+    defaultsRow.append(agentDefaults.el); section.append(defaultsRow); form.append(section);
 
     const actions = el('div', 'tw-config-actions'); const status = el('span', 'tw-config-status');
     const saveAction = optionsArg.createAction?.({ label: t('panels.save', 'Save'), size: 'compact' }); const save = saveAction?.el || el('button', null, t('panels.save', 'Save')); save.type = 'submit'; actions.append(status, save); form.append(actions); host.replaceChildren(form);
@@ -116,7 +116,7 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
       event.preventDefault(); if (saveAction) saveAction.setDisabled(true); else save.disabled = true; status.textContent = t('team_config.saving', 'Saving…');
       const picked = agentDefaults.value();
       const repos = rootWasDesk && picked.root && picked.root === roster.project_root ? [picked.root, ...picked.repos.filter((name) => name !== picked.root)] : picked.repos.filter((name) => name !== picked.root);
-      // Features and behaviours are not asked here (owner, 2026-09-13): the keys are not sent, so the store carries them as they are.
+      // Behaviours are not asked here (owner, 2026-09-13): the key is not sent, so the store carries it as it is.
       const saved = await request(`/api/team-rosters/${encodeURIComponent(roster.name)}`, { method: 'PUT', json: {
         title: title.value, kind: kind.value().kind, objective: objective.value, project_root: picked.root, repos,
         branches: Object.fromEntries(repos.filter((name) => !worktrees(name) && branches[name]).map((name) => [name, branches[name]])),

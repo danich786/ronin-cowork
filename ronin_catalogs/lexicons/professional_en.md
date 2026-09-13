@@ -1776,7 +1776,6 @@ The catalog entry goes. {dir} is not touched.
 - **team_config.recruit:** Recruit
 - **team_config.output:** Output
 - **team_config.runtime:** Runtime
-- **team_config.team_step:** Team
 - **team_config.agent_defaults:** New Agent defaults
 - **team_config.next_form:** What each new Agent on this Team starts from. Nothing live changes.
 - **team_config.saving:** Saving…

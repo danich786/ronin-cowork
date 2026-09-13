@@ -142,8 +142,8 @@ async function checkDom(page, label) {
   else ok(`${label}: no failure banner`);
 }
 
-/* The Team commons' Configuration tab: the questions are ERABI stones (140 wide, the forms' tight
-   40 px, the tray under the group) or, with no saved record, the tab says so. Read-only: nothing is saved. */
+/* The Team commons' Configuration tab: the questions are ERABI stones (140 × 48, the tray under
+   the group) or, with no saved record, the tab says so. Read-only: nothing is saved. */
 async function checkTeamConfiguration(page, label) {
   const card = page.locator('.wk-card').filter({ hasText: /^Commons$/ }).first();
   if (!(await card.count())) { console.log(`  SKIP — ${label}: no Commons card on this Team page`); return; }
@@ -169,8 +169,8 @@ async function checkTeamConfiguration(page, label) {
   });
   if (!state.shown) { bad(`${label}: the Configuration tab did not show`); return; }
   if (state.stone) {
-    if (state.stone[0] === 140 && (state.stone[1] === 40 || state.stone[1] === 48)) ok(`${label}: Configuration asks through ERABI — a 140 × ${state.stone[1]} reading stone`);
-    else bad(`${label}: Configuration's reading stone is ${state.stone.join(' × ')}, wanted 140 × 40 (the forms' tight stone) or 140 × 48`);
+    if (state.stone[0] === 140 && state.stone[1] === 48) ok(`${label}: Configuration asks through ERABI — a 140 × 48 reading stone`);
+    else bad(`${label}: Configuration's reading stone is ${state.stone.join(' × ')}, wanted 140 × 48`);
     if (state.tray && state.under) ok(`${label}: the tray opens under the stone's group`);
     else bad(`${label}: the tray did not open under the group (tray=${state.tray}, under=${state.under})`);
   } else if (state.empty) ok(`${label}: Configuration says the Team has no saved record`);
