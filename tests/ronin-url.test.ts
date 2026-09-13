@@ -92,6 +92,7 @@ test('every agent-facing API caller connects through the one library and carries
   });
   assert.deepEqual(callers.sort(), [
     'lookup',
+    'machine-settings',
     'mika',
     'owner_view',
     'session_check',

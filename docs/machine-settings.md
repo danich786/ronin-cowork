@@ -40,6 +40,24 @@ document. The browser uses `public/js/machine-settings.js`; the setup and standi
 interpret the schema through `public/js/machine-settings-schema.js`; the schema names no
 routes.
 
+Agents use `machine-settings`. Its composed read joins this secret-free record with the
+selected Campaign, installation catalog, observed installed state, provider catalog, and
+Workspace Folder detail. It keeps catalogued, observed, Campaign-on, and new-Team-default
+states separate. When `--campaign` is omitted it resolves `RONIN_SESSION` by exact name and
+uses that session's Campaign; it never substitutes the initial Campaign.
+
+Writes go through the existing named routes: typed Machine Settings families,
+`PUT /api/campaigns/:id`, and the named Workspace Folder routes. The command does not use
+the legacy `campaigns` or `record-section` Machine Settings families and exposes no generic
+document patch or store write. Observed, status, needed, schema, provider measurements, and
+repository facts remain read-only.
+
+Available session models come dynamically from the canonical Campaign/provider model
+catalog used by the UI dropdowns. Neither this page nor the capability document carries a
+model list. `session_create --help` renders current provider/model choices and defaults from
+that shared source, so installation and configuration changes require no doc or code-list
+maintenance.
+
 Runtime environment variables override server values for the running process. They are
 not written into the document.
 
