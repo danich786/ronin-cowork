@@ -334,3 +334,22 @@ test('a stone never repeats its group head: the head carries the question, the s
   assert.equal(form.el.one('ask-group-head').textContent, 'Where will you install Ronin?');
   assert.equal(stoneFor(form, 'where').one('ask-label').textContent, 'Answer');
 });
+
+test('an expanded question shows its option stones in the group with no reading stone or tray', () => {
+  let changed = null;
+  const form = ask([{ group: 'Available', fields: [{
+    key: 'available', label: 'Available', shape: 'square', expanded: true,
+    options: [{ v: 'off', l: 'Off' }, { v: 'on', l: 'On' }, { v: 'all', l: 'All' }],
+  }] }], { value: { available: 'on' }, onChange: (value) => { changed = value; } });
+
+  assert.equal(form.el.one('ask-group-head').textContent, 'Available');
+  assert.equal(form.el.all('ask-stone').length, 0);
+  assert.equal(form.el.all('ask-tray').length, 0);
+  assert.deepEqual(form.el.all('ask-square').map((node) => node.one('ask-name').textContent), ['Off', 'On', 'All']);
+  assert.equal(form.el.all('ask-square')[1].attributes['aria-selected'], 'true');
+
+  form.el.all('ask-square')[2].click();
+  assert.deepEqual(changed, { available: 'all' });
+  assert.equal(form.el.all('ask-tray').length, 0);
+  assert.equal(form.el.all('ask-square')[2].attributes['aria-selected'], 'true');
+});
