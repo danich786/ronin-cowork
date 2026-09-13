@@ -20,6 +20,7 @@ const LIFECYCLE = ['session_fork', 'session_end', 'session_archive', 'session_re
 const RETIRED = [
   'tejun-session-check', 'tejun-session-create', 'tejun-session-set',
   'tejun-fork', 'tejun-harakiri', 'tejun-archive', 'tejun-rehydrate',
+  'tejun-kanban',
 ];
 const SHIPPED = ['ronin_bin', 'ronin_catalogs', 'ronin_session_boot', 'ronin_sops', 'ronin_library', 'docs', 'src', 'public', 'scripts', 'tests', 'bin', 'libexec'];
 
@@ -47,7 +48,7 @@ test('the retired session command files do not exist and no shipped surface name
   for (const name of RETIRED) {
     await assert.rejects(access(path.join(root, 'ronin_bin', name)), `${name} must not exist, even as an alias`);
   }
-  const pattern = /tejun-(?:session-(?:check|create|set)|fork|harakiri|archive|rehydrate)\b/;
+  const pattern = /tejun-(?:session-(?:check|create|set)|fork|harakiri|archive|rehydrate|kanban)\b/;
   const offenders: string[] = [];
   for (const dir of SHIPPED) {
     const full = path.join(root, dir);
