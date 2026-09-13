@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -u -o pipefail
-SELF="$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")"
-ROOT="$(cd "$(dirname "$SELF")/.." && pwd)"
-. "$ROOT/ronin_bin/ronin-http.sh"
+. "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"
+TOOL_DIR=$(dirname "$SELF")
+ROOT="$(cd "$TOOL_DIR/.." && pwd)"
 die() { echo "$1" >&2; exit "${2:-4}"; }
 usage() { cat <<'EOF'
 Usage:
@@ -16,13 +16,15 @@ Usage:
   team-lead project return <team> <id> <session>
   team-lead member status <team>
 All writes use canonical Team/project routes; member status is the settled Kanban view.
-Create a Team with roster write. Add membership or move an Agent with session_set; remove
-the old Team on that Team's page. Set or change that Team's lead with session_set.
+Create a Team with roster write. Add membership or move an Agent with session_set.
+For a true move, remove the old Team on that Team's page. Set or change that Team's lead
+with session_set.
 Read-only Team enumeration belongs to `edges team`. Related: session_create --help;
 session_set --help; edges --help
 EOF
 }
 case "${1:-}" in -h|--help) [ "$#" -eq 1 ] || { echo 'Run team-lead --help.' >&2; exit 2; }; usage; exit 0;; esac
+. "$TOOL_DIR/ronin-http.sh"
 ronin_connect || exit $?
 request() {
   method=$1; path=$2; body=${3-}; args=(-sS -m 30 "${RONIN_CURL[@]+"${RONIN_CURL[@]}"}" -X "$method")

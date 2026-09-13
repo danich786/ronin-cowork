@@ -167,7 +167,7 @@ key_of() {
 # letters one way and the tape the other. See docs/stores.md.
 . "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/../ronin_bin/tool-path.sh"
 RONIN_TOOL_INVOKED=${WORK_RECORD_INVOKED:-$RONIN_TOOL_INVOKED}
-TOOL_DIR=$(dirname "$SELF")
+TOOL_DIR="$(cd "$(dirname "$SELF")/../ronin_bin" && pwd)"
 STORE="$(cd "$(dirname "$SELF")/../bin" && pwd)/ronin-store"
 [ -x "$STORE" ] || STORE=ronin-store
 SESSION_STORE="$("$STORE" session)"

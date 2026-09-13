@@ -6,11 +6,16 @@ export WORK_RECORD_INVOKED="${BASH_SOURCE[0]}"
 usage() { cat <<'EOF'
 Usage:
   work-record read [--json|--rungs] [--session <name>]
-  work-record update-record <write options...>
+  work-record update-record --objective <text>
+  work-record update-record --phase <title> | --gate <text>
+  work-record update-record --leg N <title> | --leg N.M <title>
+  work-record update-record --status N[.M] PLANNED|ACTIVE|DONE
+  work-record update-record --done N[.M] | --active N[.M] | --drop N[.M]
+  work-record update-record --repo <repo>:<branch> | --unrepo <repo>[:<branch>]
   work-record document add <path>
   work-record document remove <path>
   work-record document list
-  work-record project create <options...>
+  work-record project create --team <team> --title <text> --objective <text> [--stage <stage>]
   work-record project read <id>
   work-record project write <id> <options...>
   work-record project list
@@ -43,5 +48,6 @@ case "${1:-}" in
       read) read_impl project read "$@" ;;
       list) [ "$#" -eq 0 ] || { usage >&2; exit 2; }; list_field projects ;;
       *) usage >&2; exit 2;; esac ;;
+  -*) write_impl "$@" ;;
   *) usage >&2; exit 2;;
 esac

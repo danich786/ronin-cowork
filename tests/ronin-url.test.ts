@@ -91,6 +91,7 @@ test('every agent-facing API caller connects through the one library and carries
     return /\bcurl\b/.test(body);
   });
   assert.deepEqual(callers.sort(), [
+    '.edges-page',
     'lookup',
     'machine-settings',
     'mika',
@@ -104,7 +105,6 @@ test('every agent-facing API caller connects through the one library and carries
     'session_set',
     'show',
     'team-lead',
-    '.edges-page',
   ]);
   for (const name of callers) {
     const body = readFileSync(path.join(bin, name), 'utf8');

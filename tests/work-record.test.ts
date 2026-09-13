@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -170,7 +170,7 @@ test('the invocation path names the session when tmux does not, and never a gues
   const projected = (session: string, name: string) => {
     mkdirSync(path.join(f.dir, 'session-commands', session), { recursive: true });
     const link = path.join(f.dir, 'session-commands', session, name);
-    symlinkSync(path.join(root, 'ronin_bin', name), link);
+    if (!existsSync(link)) symlinkSync(path.join(root, 'ronin_bin', name), link);
     return link;
   };
   const refused = (bin: string, args: string[]) => {
