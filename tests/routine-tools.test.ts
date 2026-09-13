@@ -65,11 +65,24 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
   const projected = await projectRoutineTools('resolve', [routine('ronin_base', true, tools)]);
   for (const t of tools) assert.ok(projected.delivered.includes(t), `${t} projected`);
   const reached: string[] = [];
+  const helpFacts = { provider: `provider-${process.pid}`, cli: `cli-${process.pid}`, model: `model-${process.pid}` };
   const operator = createServer((req, res) => {
     reached.push(req.url ?? '');
     res.setHeader('content-type', 'application/json');
     if (req.url === '/api/harakiri') { res.statusCode = 404; res.end('{}'); return; } // 200 makes the tool wait 15s to die
     if (req.url === '/api/sessions') { res.end('[]'); return; }
+    if (req.url === '/api/provider-catalog') {
+      res.end(JSON.stringify({ providers: [{ provider: helpFacts.provider, cli: helpFacts.cli, models: [{ model: helpFacts.model }] }] }));
+      return;
+    }
+    if (req.url === '/api/setup/runtime') {
+      res.end(JSON.stringify({ providers: [{ id: helpFacts.cli, installed: true, activated: true }] }));
+      return;
+    }
+    if (req.url === '/api/launch-seed') {
+      res.end(JSON.stringify({ seeds: { provider: { value: helpFacts.provider }, model: { value: helpFacts.model } } }));
+      return;
+    }
     res.end(JSON.stringify({ stdout: req.url === '/api/cli/desk' ? 'usage: tejun-desk\n' : '', stderr: '', exit: 0 }));
   });
   await new Promise<void>((resolve) => operator.listen(0, '127.0.0.1', resolve));
@@ -95,7 +108,7 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
   const helpTools = [
     'read_tegami', 'write_tegami', 'tejun-desk', 'tejun-team',
     'tejun-team-set', 'session_check', 'session_create', 'session_set', 'session_archive', 'session_restore',
-    'session_end',
+    'session_end', 'session_fork',
   ];
   for (const command of helpTools) {
     for (const flag of ['-h', '--help']) {
@@ -105,7 +118,12 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
       assert.match(help.out, new RegExp(command.replace('_', '.')), `${command} identifies itself`);
       assert.match(help.out, /Usage:/, `${command} gives syntax`);
       assert.match(help.out, /Related:/, `${command} names related discovery`);
-      assert.equal(reached.length, 0, `${command} help never contacts the operator`);
+      if (command === 'session_create') {
+        assert.deepEqual(reached, ['/api/provider-catalog', '/api/setup/runtime', '/api/launch-seed']);
+        assert.match(help.out, new RegExp(`${helpFacts.provider}/${helpFacts.model}`));
+      } else {
+        assert.equal(reached.length, 0, `${command} help never contacts the operator`);
+      }
     }
     const invalidHelp = await run([command, '--help', 'extra']);
     assert.notEqual(invalidHelp.code, 0, `${command} refuses surplus help arguments`);

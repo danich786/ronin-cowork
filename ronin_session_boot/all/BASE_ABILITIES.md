@@ -2,7 +2,7 @@
 
 **Fork versus spawn.** `+forkit:`, **fork it** and **new session** always mean Ronin's
 visible-session workflow: compile `tejun forkit`, write the handoff it asks for, launch with
-`tejun-fork`, report your understanding and stop until the owner says go. They never mean
+`session_fork`, report your understanding and stop until the owner says go. They never mean
 your CLI's internal sub-agent or a bare tmux session. **Spawn it** and **spawn an agent**
 mean the internal sub-agent. Delegation using neither vocabulary is your call and needs no
 extra confirmation.

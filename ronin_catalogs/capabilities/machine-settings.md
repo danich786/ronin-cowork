@@ -21,6 +21,10 @@ Reach for the settings tool when the owner asks what this box has, what the Camp
 | `machine-settings project-root` | read/write/create: named fields, archive, exclude | | `machine-settings --help` |
 | `machine-settings provider` | read/write: providers and the default model | | `machine-settings --help` |
 | `machine-settings machine` | read/write: name, location, monitor | | `machine-settings --help` |
+| `machine-settings owner` | read/write: display name only | | `machine-settings --help` |
+| `machine-settings session-defaults` | read/write: session maximum, desk profile, Mika level | | `machine-settings --help` |
+| `machine-settings messages` | read/write: delivery timeout | | `machine-settings --help` |
+| `machine-settings requirements` | read/write: wanted choices; needed is read-only | | `machine-settings --help` |
 
 Bare `read` is the priority: one composed, secret-free answer that keeps four states
 visibly apart — **catalogued** (definitions Ronin knows), **installed** (what a runtime
@@ -40,3 +44,15 @@ title and directory may change, the ID does not. Archive keeps the catalog entry
 it from launch choices; exclude removes only the entry and never deletes a directory or
 hosted repository. Creation and repository-profile changes keep their inspection and
 explicit confirmation steps.
+
+Available session models are read dynamically from the canonical Campaign/provider model
+catalog used by the UI dropdowns. This document carries no model list: installation and
+configuration changes must appear without maintaining a second inventory.
+`session_create --help` renders the current provider/model choices and defaults from that
+same source.
+
+Mika receives the same read operations plus `session_create` as a separate grant. Her
+settings writes are mechanically two-step: `machine-settings --propose ...` prints the
+exact canonical method, path, payload, and confirmation token; only after the owner confirms
+that proposal may she repeat it with `--confirmed <token>`. Her mode refuses Workspace
+Folder exclusion, credentials, generic families, and unlisted writers.
