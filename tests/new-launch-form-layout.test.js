@@ -76,6 +76,7 @@ test('the old New Agent selector implementation and CSS are deleted', async () =
   assert.doesNotMatch(parts, /providerModelStones/);
   assert.doesNotMatch(where, /o\.stones|na-workspace-stone|na-choice-stone/);
   assert.doesNotMatch(css, /na-choice-stone|na-stone|na-mandate-grid|na-model-picker|na-workspace-stone/);
+  assert.match(css, /\.na-surface :is\(\.wk-field, \.ask\)\[hidden\] \{ display: none; \}/);
 });
 
 test('New Team folds Kind and template choice into one optional first section', async () => {
