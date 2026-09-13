@@ -155,7 +155,7 @@ export function createCoworkView(options = {}) {
   const liveSeats = () => bench?.visibleIds() || [];
 
   const rosterNote = el('span', 'tw-roster-note');
-  let thinSelectorCards = false;
+  let thinSelectorCards = true;
   const densityToggle = createAction({ label: '', size: 'compact', className: 'tw-agent-density' });
   const densityLines = el('span', 'tw-agent-density-lines');
   densityLines.append(el('i'), el('i'));
@@ -727,7 +727,7 @@ export function createCoworkView(options = {}) {
       stopMessageAttention = watchMessageQueueAttention();
       for (const seat of Object.values(seats)) seat.pool.destroyAll();
       team = campaign ? '' : context.param || context.state?.team || '';
-      thinSelectorCards = context.viewState(viewKey)?.[campaign ? 'teamCardDensity' : 'agentCardDensity'] === 'thin';
+      thinSelectorCards = context.viewState(viewKey)?.[campaign ? 'teamCardDensity' : 'agentCardDensity'] !== 'thick';
       paintDensityToggle();
       setBarLabel();
       const typed = teamWorkspaceState(context.state, context.viewState(viewKey), bench.declaration);
