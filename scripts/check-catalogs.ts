@@ -86,7 +86,13 @@ async function surfacingDefinitions(
   kind: DefinitionKind,
   served: () => Promise<{ name: string }[]>,
 ): Promise<void> {
-  const want = (await readdir(path.join(STOCK_DIR, kind)))
+  let files: string[] = [];
+  try {
+    files = await readdir(path.join(STOCK_DIR, kind));
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
+  }
+  const want = files
     .filter((f) => f.endsWith('.md') && f !== 'README.md')
     .map((f) => f.replace(/\.md$/, ''));
   const got = new Set((await served()).map((e) => e.name));
