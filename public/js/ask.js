@@ -280,6 +280,7 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
       const opened = drawn.find((field) => field.key === open && !field.switch);
       if (opened) {
         trayNode = tray(opened);
+        trayNode.dataset.density = root.dataset.density;
         trayNode.addEventListener('keydown', onEscape);
         (trayHost || root).append(trayNode);
       }

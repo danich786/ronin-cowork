@@ -3,8 +3,9 @@
    Extra width is white space to the right; less width stacks groups, then the fields in a group. */
 @layer app {
 
-  .ask { --ask-w: 140px; --ask-h: 48px; --ask-sq: 85px; --ask-gap: var(--space-4); --ask-group-gap: var(--space-8);
-    display: flex; flex-wrap: wrap; gap: var(--space-7) var(--ask-group-gap); align-items: flex-start; min-width: 0; font-size: var(--form-input); }
+  /* the sizes live on the instance AND on the tray, because a hosted tray sits outside its instance */
+  .ask, .ask-tray { --ask-w: 140px; --ask-h: 48px; --ask-sq: 85px; --ask-gap: var(--space-4); --ask-group-gap: var(--space-8); }
+  .ask { display: flex; flex-wrap: wrap; gap: var(--space-7) var(--ask-group-gap); align-items: flex-start; min-width: 0; font-size: var(--form-input); }
   .ask-group { display: grid; gap: var(--space-3); max-width: 100%; }
   /* type follows the kit's field furniture: a group head IS a field label (.wk-field-label), the
      stone's own label is a description (.wk-field-description), the reading is control text. */
@@ -66,13 +67,14 @@
 
   /* tight: the launch forms' density. Less line spacing inside a group (head sits on its stones,
      a 40 px stone, 6 px between stones), the same paragraph spacing between groups. Widths do not change. */
-  .ask[data-density='tight'] { --ask-h: 40px; --ask-gap: var(--space-3); gap: var(--space-5) var(--ask-group-gap); }
+  .ask[data-density='tight'], .ask-tray[data-density='tight'] { --ask-h: 40px; --ask-gap: var(--space-3); }
+  .ask[data-density='tight'] { gap: var(--space-5) var(--ask-group-gap); }
   .ask[data-density='tight'] .ask-group { gap: var(--space-1); }
   .ask[data-density='tight'] .ask-group-head { font-size: var(--form-note); font-weight: 600; color: var(--muted); }
   .ask[data-density='tight'] .ask-stone { padding: var(--space-2) var(--space-4); }
   .ask[data-density='tight'] .ask-label { font-size: var(--text-2); line-height: 1; }
   .ask[data-density='tight'] .ask-reading { line-height: 1.2; }
-  .ask[data-density='tight'] .ask-tray { gap: var(--space-3); padding: var(--space-4); }
+  .ask-tray[data-density='tight'] { gap: var(--space-3); padding: var(--space-4); }
   .ask[data-density='tight'] .ask-extras { gap: var(--space-1); }
 
   .ask-stone:focus-visible, .ask-opt:focus-visible, .ask-filter:focus-visible { outline: var(--edge-2) solid var(--kaki); outline-offset: 1px; }

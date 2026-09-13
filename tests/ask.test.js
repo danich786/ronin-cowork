@@ -271,6 +271,7 @@ test('trayHost: the open tray is placed at the end of the consumer\'s row, not i
   stoneFor(form, 'team').click();
   assert.equal(form.el.all('ask-tray').length, 0, 'not inside the instance');
   assert.equal(row.children.at(-1).className, 'ask-tray', 'at the end of the row');
+  assert.equal(row.children.at(-1).dataset.density, 'loose', 'a hosted tray carries the instance\'s density, since it sits outside it');
   row.children.at(-1).all('ask-opt').find((o) => o.one('ask-name').textContent === 'Current team').click();
   assert.equal(row.children.filter((n) => n.className === 'ask-tray').length, 1, 'one tray after a repaint, not two');
   assert.ok(row.children.at(-1).one('ask-layer'), 'the second layer rides in it');
