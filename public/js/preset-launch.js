@@ -136,8 +136,6 @@ export async function launchPresetPlan(plan = {}, send) {
       instructions: [row.instructions ?? base.instructions ?? '', plan.user_message].filter(Boolean).filter((line, at, all) => all.indexOf(line) === at).join('\n\n'),
       mandate: row.mandate || base.mandate,
       team_lead: row.team_lead === true || (row.team_lead === undefined && base.team_lead === true),
-      routines_on: [...(base.routines_on || [])],
-      routines_off: [...(base.routines_off || [])],
       ...chosen,
     };
   });

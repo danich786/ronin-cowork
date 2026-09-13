@@ -62,7 +62,8 @@ test('launch actions reuse the nin mark, never the Team Roster torii, and open t
   // An Agent added from inside a Team workbench takes the workspace its form is on, in
   // this tab (Glen, 2026-09-08); the launch mark is the same.
   assert.match(add, /launch: true/);
-  assert.match(add, /if \(!deskNote && !leadNote\) connect\?\.\(born\);/);
+  assert.match(add, /if \(!deskNote\) connect\?\.\(born\);/);
+  assert.doesNotMatch(add, /leadNote|team_lead|leadership/);
   assert.doesNotMatch(add, /openWorkspaceTab|reserveWorkspaceTab/);
 });
 

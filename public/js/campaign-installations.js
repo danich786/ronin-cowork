@@ -185,5 +185,5 @@ export function createInstallationsSurface(campaign) {
 
 export function installationsSummary(campaign) {
   const values = bucket(campaign?.config?.installations);
-  return t('campaign_view.routines_n', '{n} on', { n: Object.values(values).filter((value) => value === true).length });
+  return t('campaign_view.installations_n', '{n} on', { n: Object.values(values).filter((value) => value === true).length });
 }

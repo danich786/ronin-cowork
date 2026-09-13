@@ -123,9 +123,6 @@ const LAUNCH_KEYS = new Set([
   'kind', 'features', 'behaviours',
   'template',
 ]);
-const RETIRED_LAUNCH_KEYS = new Set([
-  'session_role', 'role_family', 'family_role', 'session_task', 'team_role', 'campaign_kind', 'lifecycle', 'permissions', 'mcp',
-]);
 const RETURNED_LAUNCH_KEYS = new Set([
   'assignment', 'work_locations', 'posture', 'opening', 'ack', 'capExempt', 'launchAgent', 'stated_by', 'birth_reading',
 ]);
@@ -144,7 +141,7 @@ export function acceptedLaunchBody(input: unknown): { body: Record<string, unkno
   };
 
   for (const key of Object.keys(body)) {
-    if (!LAUNCH_KEYS.has(key) || RETIRED_LAUNCH_KEYS.has(key) || RETURNED_LAUNCH_KEYS.has(key)) drop(key);
+    if (!LAUNCH_KEYS.has(key) || RETURNED_LAUNCH_KEYS.has(key)) drop(key);
   }
 
   const statedType = typeof body.session_type === 'string' ? body.session_type.trim() : body.session_type;

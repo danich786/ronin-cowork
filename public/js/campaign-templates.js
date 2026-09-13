@@ -28,7 +28,6 @@ function holdsWords(holds) {
   const word = {
     teams: (n) => (n === 1 ? t('campaign_view.library_hold_team', 'team') : t('campaign_view.library_hold_teams', 'teams')),
     agents: (n) => (n === 1 ? t('campaign_view.library_hold_agent', 'agent') : t('campaign_view.library_hold_agents', 'agents')),
-    routines: (n) => (n === 1 ? t('campaign_view.library_hold_routine', 'Routine') : t('campaign_view.library_hold_routines', 'Routines')),
     sops: (n) => (n === 1 ? t('campaign_view.library_hold_sop', 'SOP') : t('campaign_view.library_hold_sops', 'SOPs')),
     ways: (n) => (n === 1 ? t('campaign_view.library_hold_way', 'behaviour') : t('campaign_view.library_hold_ways', 'behaviours')),
     library: (n) => (n === 1 ? t('campaign_view.library_hold_page', 'reference page') : t('campaign_view.library_hold_pages', 'reference pages')),

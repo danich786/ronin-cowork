@@ -39,6 +39,7 @@ test('Team complete lists replace campaign defaults and carry team provenance', 
   assert.equal(seed.seeds.features.stated_by[0]?.layer, 'team');
   assert.equal(seed.seeds.project_root.stated_by[0]?.layer, 'conditional');
   assert.equal(seed.behaviours[0]?.required, true);
+  assert.deepEqual(seed.seeds.behaviours.value, ['mandates']);
 });
 
 test('unavailable requested features are reported, never refused', () => {

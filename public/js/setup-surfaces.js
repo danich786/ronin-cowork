@@ -10,7 +10,7 @@ import { PROVIDER_SURFACE_TYPE, providerSurfaceDefinition } from './provider-sur
 import { createStoneWorkSurface } from './stone-work-surface.js';
 import { servicesSetupModel } from './services-setup-state.js';
 import { campaignById, campaigns, loadCampaigns, saveCampaign } from './campaigns.js';
-import { completeInstallationMap } from './campaign-routines.js';
+import { completeInstallationMap } from './campaign-installations.js';
 import { createEmbeddedNewTeamFormView } from './new-team-form.js';
 import { createEmbeddedNewAgentView } from './new-agent.js';
 import { HOUSE_PRESETS, buildLaunchPlan, initialControls, seatingPlan } from './presets.js';

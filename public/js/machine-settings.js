@@ -373,7 +373,12 @@ export function buildMachineSettings(root, isShowing) {
           go.disabled = true;
           const r = await request('/api/launch', {
             method: 'POST',
-            json: { behaviours: schema.seat.behaviours, name: schema.seat.name, prompt: schema.seat.prompt },
+            json: {
+              behaviours: schema.seat.behaviours,
+              name: schema.seat.name,
+              prompt: schema.seat.prompt,
+              seed: ['ronin_session_boot/house/atarashi/install.md'],
+            },
           });
           go.disabled = false;
           go.textContent = r.ok ? t('settei.setup_started', 'setup session started — see ⌂ Roster') : r.message || t('settei.setup_failed', 'could not start');
