@@ -32,9 +32,10 @@ const retired = [
   'ronin_bin/read_tegami',
   'ronin_bin/write_tegami',
   'ronin_bin/tejun-team-set',
+  'ronin_bin/tejun-kanban',
 ];
 const shipped = ['src', 'public', 'scripts', 'ronin_bin', 'ronin_catalogs', 'ronin_library', 'ronin_session_boot', 'ronin_sops', 'docs'];
-const forbidden = /(?:\/api\/(?:macros|actions)\b|\btejun-(?:step|desk|team-set)\b|\b(?:ronin-repo-init|read_tegami|write_tegami)\b|\b(?:MIKA_)?(?:MACROS|ACTIONS)\.md\b|compile-macro|\*\*(?:macros|actions):\*\*)/;
+const forbidden = /(?:\/api\/(?:macros|actions)\b|\btejun-(?:step|desk|team-set|kanban)\b|\b(?:ronin-repo-init|read_tegami|write_tegami)\b|\b(?:MIKA_)?(?:MACROS|ACTIONS)\.md\b|compile-macro|\*\*(?:macros|actions):\*\*)/;
 
 async function* walk(dir: string): AsyncGenerator<string> {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
