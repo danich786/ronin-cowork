@@ -8,7 +8,7 @@ import { t } from './lexicon.js';
 import { ask } from './ask.js';
 import { finalizeTeamName, isValidTeamName, sanitizeTeamName } from './new-team-draft.js';
 import {
-  createStep, el, kindTiles, loadProviderCatalog, mandateWord, providerCatalog, readingRows, tagRow, templateTray, tierWord, wayTiles, bookShelves,
+  createStep, el, kindTiles, loadProviderCatalog, mandateWord, providerCatalog, readingRows, tagRow, templateTray, tierWord, bookShelves,
 } from './form-steps.js';
 import { closeWorkspaceTab, openWorkspaceTab, reserveWorkspaceTab } from './workspace.js';
 
@@ -39,7 +39,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     type: 'cowork_agent', template: '', templateName: '',
     name: '', kind: 'coding', kindTouched: false, provider: '', model: '', instructions: '',
     teamMode: typeof team === 'function' && team() ? 'existing' : 'none', team: typeof team === 'function' ? team() : '', newTeam: '',
-    reach: 'open', recruit: 'open', output: ['open'], launchMode: 'live_dangerously',
+    reach: 'open', recruit: 'open', output: ['open'], launchMode: 'configured',
     features: [], books: [], root: '', repos: [],
     expanded: {},
   };
@@ -236,6 +236,12 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
   const teamRows = () => teams.map((row) => ({ v: row.name, l: String(row.title ?? '').trim() || row.name, sub: row.name }));
   const rootRows = () => roots.map((row) => ({ v: row.name, l: row.title || row.name, sub: row.title ? row.name : '' }));
   const mandateRows = (values) => values.map((value) => ({ v: value, l: mandateWord(value) }));
+  const launchModes = () => [
+    { v: 'configured', l: t('launch_mode.configured', 'Model provider configuration'),
+      sub: t('launch_mode.configured_sub', 'Ronin adds nothing to the command. The Agent starts with whatever its provider CLI already loads.') },
+    { v: 'live_dangerously', l: t('launch_mode.live', 'Dangerously'),
+      sub: t('launch_mode.live_sub', 'Ronin appends that provider’s own bypass flag, so the Agent does not stop to ask.') },
+  ];
   const newTeamField = () => {
     const input = el('input'); input.type = 'text'; input.spellcheck = false; input.autocapitalize = 'off'; input.value = draft.newTeam;
     input.placeholder = t('new_team.name_placeholder', 'lowercase, digits, - _');
@@ -251,6 +257,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     if ('provider' in value) { draft.provider = value.provider; draft.model = value.model; }
     if ('reach' in value) { draft.reach = value.reach; draft.recruit = value.recruit; draft.output = value.output; }
     if ('root' in value) { draft.root = value.root; draft.repos = [...value.repos]; }
+    if ('launchMode' in value) draft.launchMode = value.launchMode;
     if (key === 'provider' || key === 'model') touched.model = true;
     if (['reach', 'recruit', 'output'].includes(key)) touched.mandate = true;
     if (key === 'root') {
@@ -259,6 +266,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
       questions.set('repos', draft.repos);
     }
     if (key === 'repos') touched.repos = true;
+    if (key === 'launchMode') touched.launchMode = true;
     if (key === 'team' || key === 'teamName') {
       draft.teamMode = value.team === 'new' ? 'new' : value.team === 'none' ? 'none' : 'existing';
       draft.team = draft.teamMode === 'existing' ? value.teamName : '';
@@ -283,8 +291,11 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
       { key: 'root', label: t('where.born_in', 'Born in'), options: rootRows },
       { key: 'repos', label: t('where.additional', 'Additional workspaces'), many: true, after: 'root', options: (value) => rootRows().filter((row) => row.v !== value.root) },
     ] },
+    { group: t('launch_mode.head', 'Launch mode'), fields: [{
+      key: 'launchMode', label: t('launch_mode.head', 'Launch mode'), options: launchModes,
+    }] },
   ], {
-    value: { provider: draft.provider, model: draft.model, reach: draft.reach, recruit: draft.recruit, output: draft.output, root: draft.root, repos: draft.repos },
+    value: { provider: draft.provider, model: draft.model, reach: draft.reach, recruit: draft.recruit, output: draft.output, root: draft.root, repos: draft.repos, launchMode: draft.launchMode },
     className: 'na-questions',
     density: 'tight',
     onChange: onQuestionChange,
@@ -308,26 +319,13 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     onChange: onQuestionChange,
   });
   const syncQuestions = () => {
-    questions.set({ provider: draft.provider, model: draft.model, reach: draft.reach, recruit: draft.recruit, output: draft.output, root: draft.root, repos: draft.repos || [] });
+    questions.set({ provider: draft.provider, model: draft.model, reach: draft.reach, recruit: draft.recruit, output: draft.output, root: draft.root, repos: draft.repos || [], launchMode: draft.launchMode });
     teamQuestions.set({ team: teamChoice(), teamName: draft.team });
   };
   void loadProviderCatalog().then(() => questions.paint());
 
   /* ---- 7 · Loadout ---- */
   const stepLoadout = createStep({ n: 7, key: 'loadout', title: t('loadout', 'Tools and skills'), onToggle: () => toggle('loadout') });
-  const LAUNCH_MODES = () => [
-    { key: 'configured', label: t('launch_mode.configured', 'Model provider configuration'),
-      sub: t('launch_mode.configured_sub', 'Ronin adds nothing to the command. The Agent starts with whatever its provider CLI already loads.') },
-    { key: 'live_dangerously', label: t('launch_mode.live', 'Dangerously'),
-      sub: t('launch_mode.live_sub', 'Ronin appends that provider’s own bypass flag, so the Agent does not stop to ask.') },
-  ];
-  const modeHost = el('div');
-  const paintLaunchMode = () => {
-    modeHost.replaceChildren(
-      el('p', 'fs-head', t('launch_mode.head', 'launch mode')),
-      wayTiles(LAUNCH_MODES(), draft.launchMode, (key) => { draft.launchMode = key; touched.launchMode = true; paintLaunchMode(); paintFoot(); }),
-    );
-  };
   const availableFeatures = () => (seed?.features || []).filter((row) => (seed?.available || []).includes(row.name));
   const shelvesHost = el('div');
   function paintShelves() {
@@ -341,7 +339,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
       paintFoot();
     }));
   }
-  stepLoadout.body.append(modeHost, shelvesHost);
+  stepLoadout.body.append(shelvesHost);
 
   /* ---- the plan: which steps exist for this type and door ---- */
   const steps = {
@@ -379,7 +377,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     }
     if (isCowork() && draft.features.length) rows.push([t('features', 'Features'), tagRow(draft.features.map((text) => ({ text, on: true })))]);
     if (isCowork() && draft.books.length) rows.push([t('behaviours', 'Behaviours'), tagRow(draft.books.map((text) => ({ text, on: true })))]);
-    rows.push([t('launch_mode.head', 'launch mode'), LAUNCH_MODES().find((row) => row.key === draft.launchMode)?.label || draft.launchMode]);
+    rows.push([t('launch_mode.head', 'launch mode'), launchModes().find((row) => row.v === draft.launchMode)?.l || draft.launchMode]);
     rows.push([t('add_agent.place', 'place'), draft.root]);
     if (hasAgent()) rows.push([t('forms.model', 'model'), draft.provider ? `${draft.provider}${draft.model ? ` / ${draft.model}` : ''}` : t('forms.default', 'default')]);
     return rows;
@@ -448,7 +446,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     const body = draft.type === 'terminal'
       ? { session_type: 'terminal', name, team }
       : draft.type === 'bare_metal_agent'
-        ? { session_type: 'bare_metal_agent', name, team, project_root: draft.root, instructions: draft.instructions.trim(), provider: draft.provider, model: draft.model }
+        ? { session_type: 'bare_metal_agent', name, team, project_root: draft.root, instructions: draft.instructions.trim(), provider: draft.provider, model: draft.model, launch_mode: draft.launchMode }
         : {
           session_type: 'cowork_agent', name, team, project_root: draft.root,
           instructions: draft.instructions.trim(), provider: draft.provider, model: draft.model,
@@ -548,7 +546,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     stepPayload.setNumber(order.length + 1);
     stepPayload.el.hidden = draft.type === 'terminal';
     stepTop.el.querySelector('h3').textContent = hasAgent() ? t('new_agent.agent_body', 'Agent') : t('new_agent.name_required_step', 'Name · required');
-    questions.show(draft.type === 'terminal' ? [] : draft.type === 'bare_metal_agent' ? ['provider', 'model', 'root', 'repos'] : null);
+    questions.show(draft.type === 'terminal' ? [] : draft.type === 'bare_metal_agent' ? ['provider', 'model', 'root', 'repos', 'launchMode'] : null);
     teamQuestions.show(isCowork() ? null : ['team']);
     teamQuestions.el.hidden = false;
     questions.el.hidden = draft.type === 'terminal';
@@ -559,7 +557,6 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     paintTray();
     syncQuestions();
     paintShelves();
-    paintLaunchMode();
     paintFolds();
     paintActions();
     paintFoot();

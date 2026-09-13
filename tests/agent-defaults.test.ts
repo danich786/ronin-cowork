@@ -6,7 +6,7 @@ test('agent_defaults validates every field in the complete record shape', () => 
   const cases = [
     ['blank gets the ruled stock values', undefined, {
       provider: '', model: '', reach: 'plan', recruit: 'propose agents', output: ['open'],
-      features: [], behaviours: ['mandates'], dial: 'write', launch_mode: 'live_dangerously',
+      features: [], behaviours: ['mandates'], dial: 'write', launch_mode: 'configured',
     }],
     ['every valid value survives', {
       provider: ' anthropic ', model: ' opus ', reach: 'execute', recruit: 'staff agents',
@@ -22,7 +22,7 @@ test('agent_defaults validates every field in the complete record shape', () => 
       behaviours: [null, ' ways:CheckWork '], dial: 'admin', launch_mode: 'unsafe', gbrain_mode: 'maybe',
     }, {
       provider: '', model: '', reach: 'plan', recruit: 'propose agents', output: ['open'],
-      features: [], behaviours: ['ways:CheckWork'], dial: 'write', launch_mode: 'live_dangerously',
+      features: [], behaviours: ['ways:CheckWork'], dial: 'write', launch_mode: 'configured',
     }],
   ] as const;
 

@@ -25,7 +25,7 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
     name: '', kind: 'open', objective: '',
     root: '', repos: [], branches: {},
     provider: '', model: '', reach: 'open', recruit: 'open', output: ['open'],
-    features: [], books: [], launchMode: 'live_dangerously',
+    features: [], books: [], launchMode: 'configured',
     // The Agents this Team is raised with.
     agents: [],
     expanded: {},

@@ -124,7 +124,7 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
     ], { value: {
       provider: defaults.provider || '', model: defaults.model || '',
       reach: defaults.reach || 'open', recruit: defaults.recruit || 'open', output: [defaults.output || 'open'].flat().filter(Boolean),
-      launch_mode: defaults.launch_mode || 'live_dangerously',
+      launch_mode: defaults.launch_mode || 'configured',
     }, trayHost: defaultsRow });
     defaultsRow.append(agentDefaults.el); form.append(defaultsRow);
     form.append(el('p', 'tw-config-note tw-config-wide', t('team_config.next_form', 'These defaults land in the next Agent form that opens. Nothing live changes.')));
