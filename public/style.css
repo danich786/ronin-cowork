@@ -1415,6 +1415,15 @@ body {
   filter: grayscale(1);
 }
 .tw-blank .tile-empty-mark { position: relative; min-height: 100%; }
+.wk-blank-surface {
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.wk-blank-surface > .wk-surface-header { display: none; }
+.wk-blank-surface > .wk-surface-content { position: relative; overflow: hidden; }
+.wk-surface-dismiss { font-size: var(--text-4); line-height: 1; }
 
 
 .tile-head {

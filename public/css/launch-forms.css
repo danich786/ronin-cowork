@@ -283,6 +283,7 @@
 
   .na-omitted { margin: 0; color: var(--dim); font-size: var(--form-note); }
   .na-omitted[hidden] { display: none; }
+  .na-surface :is(.wk-field, .ask)[hidden] { display: none; }
   .na-name-required > .wk-field-label { color: var(--accent); }
   .na-identity-row { display: flex; flex-wrap: wrap; gap: var(--space-4) var(--space-8); align-items: flex-end; }
   .na-identity-row > .na-name-required { flex: 1 1 calc(var(--space-12) * 8); min-width: 0; }

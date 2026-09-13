@@ -97,11 +97,7 @@ export function createLaunchView() {
     },
   };
 
-  const blank = (id) => {
-    const surface = createSurface({ label: id.replace('workspace', 'Workspace '), className: 'lv-blank' });
-    surface.content.append(node('p', 'cv-blank-word', t('team.workspace_blank', 'Workspace')));
-    return surface.el;
-  };
+  const blank = (id) => WorkspaceKit.primitives.createBlankSurface(id.replace('workspace', 'Workspace ')).el;
   const save = () => ctx?.patchViewState('launch', bench.snapshot());
   bench = WorkspaceKit.workbench.create({
     profile: PROFILE,

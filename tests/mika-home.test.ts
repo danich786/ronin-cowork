@@ -76,7 +76,8 @@ test('a ronin_helper start creates its ordinary Team idempotently', async () => 
 
 test('Mika joins her team without the wipeboard join notice', async () => {
   const launch = await readFile(new URL('../src/routes/launch.ts', import.meta.url), 'utf8');
-  assert.match(launch, /if \(houseSeat !== 'mika'\) await announceTeamChanges\(resolved\.name, \[\], resolved\.tags\)/);
+  assert.match(launch, /resolved\.session_type === 'cowork_agent' && houseSeat !== 'mika'/);
+  assert.match(launch, /await announceTeamChanges\(resolved\.name, \[\], resolved\.tags\)/);
 });
 
 test('a fresh helper launch creates its full Team roster before the tagged session birth', async () => {

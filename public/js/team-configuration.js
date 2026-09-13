@@ -2,7 +2,7 @@
  * Every question here is asked through ERABI (ask.js): Where it works, Kind, the Features
  * switches, one three-way pick per Behaviour (off · on · required), and the Agent defaults
  * (Model · Mandate · Runtime). Loose density: a commons page where the questions are the subject.
- * The text entries (title, purpose, references) are the kit's entries, not ERABI's: the utility
+ * The text entries (title, purpose) are the kit's entries, not ERABI's: the utility
  * takes no foreign DOM. The Features group is never silent — with nothing available it says why. */
 import { t } from './lexicon.js';
 import { request } from './request.js';
@@ -13,7 +13,6 @@ import { loadProviderCatalog, mandateWord, modelAvailabilityFact, providerCatalo
 const el = (tag, cls, text) => { const node = document.createElement(tag); if (cls) node.className = cls; if (text != null) node.textContent = String(text); return node; };
 const bucket = (value) => value && typeof value === 'object' && !Array.isArray(value) ? value : {};
 const list = (value) => Array.isArray(value) ? value : [];
-const lines = (value) => value.split('\n').map((entry) => entry.trim()).filter(Boolean);
 
 const field = (form, label, name, value, kind = 'input', help = '') => {
   const row = el('label', 'tw-config-field'); row.append(el('span', null, label));
@@ -86,7 +85,6 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
     ] }], { value: { kind: roster.kind || 'open' } });
     form.append(kind.el);
     const objective = field(form, t('team_config.objective', 'Purpose'), 'objective', roster.objective, 'textarea');
-    const references = field(form, t('team_config.references', 'References'), 'references', list(roster.references).join('\n'), 'textarea', t('team_config.references_help', 'One URL or note per line.'));
 
     /* ---- Features: one switch per feature this machine makes available ---- */
     const available = (seed?.features || []).filter((row) => (seed?.available || []).includes(row.name));
@@ -134,7 +132,7 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
     ], { value: {
       provider: defaults.provider || '', model: defaults.model || '',
       reach: defaults.reach || 'open', recruit: defaults.recruit || 'open', output: [defaults.output || 'open'].flat().filter(Boolean),
-      launch_mode: defaults.launch_mode || 'live_dangerously',
+      launch_mode: defaults.launch_mode || 'configured',
     }, trayHost: defaultsRow });
     defaultsRow.append(agentDefaults.el); form.append(defaultsRow);
     form.append(el('p', 'tw-config-note', t('team_config.next_form', 'These defaults land in the next Agent form that opens. Nothing live changes.')));
@@ -147,7 +145,7 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
       const repos = rootWasDesk && place.root && place.root === roster.project_root ? [place.root, ...place.repos.filter((name) => name !== place.root)] : place.repos.filter((name) => name !== place.root);
       const saved = await request(`/api/team-rosters/${encodeURIComponent(roster.name)}`, { method: 'PUT', json: {
         title: title.value, kind: kind.value().kind, objective: objective.value, project_root: place.root, repos,
-        branches: Object.fromEntries(repos.filter((name) => !worktrees(name) && branches[name]).map((name) => [name, branches[name]])), references: lines(references.value),
+        branches: Object.fromEntries(repos.filter((name) => !worktrees(name) && branches[name]).map((name) => [name, branches[name]])),
         features: available.filter((row) => featureOn[row.name] === true).map((row) => row.name),
         behaviours: {
           selected: ways.filter((row) => behaviourState[row.name] === 'on' || behaviourState[row.name] === 'required').map((row) => row.name),

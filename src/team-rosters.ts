@@ -19,7 +19,6 @@ export interface TeamRoster {
   branches: Record<string, string>;
   wipeboard: string;
   state: 'active' | 'archived';
-  references: string[];
   features: string[];
   behaviours: TeamBehaviours;
   agent_defaults: TeamAgentDefaults;
@@ -82,7 +81,6 @@ function parse(name: string, raw: string, campaign_id = ''): TeamRoster {
     branches: stringMap(json('branches')),
     wipeboard: get('wipeboard') || name,
     state: /^archived$/i.test(get('state')) ? 'archived' : 'active',
-    references: strings(json('references'), 500),
     features: settled ? strings(json('features'), 64) : [],
     behaviours: settled
       ? { selected: strings(behaviourMap.selected, 160), required: strings(behaviourMap.required, 160) }
@@ -163,7 +161,6 @@ export interface RosterEdit {
   branches?: Record<string, string>;
   wipeboard?: string;
   state?: 'active' | 'archived';
-  references?: string[];
   features?: string[];
   behaviours?: TeamBehaviours;
   agent_defaults?: Partial<TeamAgentDefaults>;
@@ -171,7 +168,7 @@ export interface RosterEdit {
 
 const KEYS: (keyof RosterEdit)[] = [
   'title', 'kind', 'objective', 'project_root', 'repos', 'branch', 'branches', 'wipeboard', 'state',
-  'references', 'features', 'behaviours', 'agent_defaults',
+  'features', 'behaviours', 'agent_defaults',
 ];
 
 function render(name: string, r: TeamRoster): string {
@@ -189,7 +186,6 @@ function render(name: string, r: TeamRoster): string {
     line('branches', JSON.stringify(r.branches)),
     line('wipeboard', r.wipeboard || name),
     line('state', r.state),
-    line('references', JSON.stringify(r.references)),
     line('features', JSON.stringify(r.features)),
     line('behaviours', JSON.stringify(r.behaviours)),
     line('agent_defaults', JSON.stringify(r.agent_defaults)),
@@ -226,7 +222,6 @@ export async function createTeamRoster(name: string, edit: RosterEdit, campaign_
     branches: edit.branches ?? {},
     wipeboard: edit.wipeboard || (await freeBoardToken(name, campaign_id)),
     state: edit.state ?? 'active',
-    references: edit.references ?? [],
     features: edit.features ?? [],
     behaviours: edit.behaviours ?? { selected: ['mandates'], required: [] },
     agent_defaults: teamAgentDefaults(edit.agent_defaults),
@@ -244,7 +239,8 @@ export async function writeTeamRoster(name: string, edit: RosterEdit, campaign_i
   if (!existing) throw new Error(`Team "${name}" has no roster. Create it first.`);
   const where = existing.campaign_id;
   let raw = await readFile(teamRosterFile(name, where), 'utf8');
-  const lines = raw.split('\n');
+  // `references` left the shape 2026-09-13 (never used); an old file's line goes on the next edit.
+  const lines = raw.split('\n').filter((l) => !/^-\s*\*\*references:\*\*/.test(l.trim()));
   const normalizedEdit: RosterEdit = edit;
   const merged: TeamRoster = {
     ...existing,
@@ -252,7 +248,7 @@ export async function writeTeamRoster(name: string, edit: RosterEdit, campaign_i
   } as TeamRoster;
   for (const k of KEYS) {
     if (normalizedEdit[k] === undefined) continue;
-    const nested = ['references', 'features', 'behaviours', 'agent_defaults'].includes(k);
+    const nested = ['features', 'behaviours', 'agent_defaults'].includes(k);
     const v = nested ? JSON.stringify(normalizedEdit[k])
       : k === 'repos' ? (normalizedEdit.repos ?? []).join(', ')
       : String(normalizedEdit[k] ?? '');

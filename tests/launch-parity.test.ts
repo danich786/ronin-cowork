@@ -88,7 +88,7 @@ await fs.writeFile(
   path.join(temp, 'team_rosters', 'scratchteam.md'),
   [
     '# scratchteam', '', '- **objective:** prove the parity', '- **project_root:** beta',
-    '- **agent_defaults:** {"provider":"","model":"","reach":"discuss","recruit":"nobody","output":"ideas","dial":"write","launch_mode":"live_dangerously","gbrain_mode":"disconnected"}',
+    '- **agent_defaults:** {"provider":"","model":"","reach":"discuss","recruit":"nobody","output":"ideas","dial":"write","launch_mode":"configured","gbrain_mode":"disconnected"}',
     '- **state:** active', '',
   ].join('\n'),
 );
@@ -169,6 +169,9 @@ test('bare_metal_agent resolves a real CLI without Ronin birth machinery', async
   assert.equal(bare.session_type, 'bare_metal_agent');
   assert.equal(bare.agent, true);
   assert.ok(bare.cmd, 'the provider CLI is resolved');
+  assert.doesNotMatch(bare.cmd, /dangerously/, 'bare metal uses provider configuration unless explicitly changed');
+  assert.match(bare.cmd, /--strict-mcp-config/, 'bare metal does not inherit Ronin gbrain');
+  assert.equal(bare.launch_mode, 'configured');
   assert.ok(bare.launchAgent, 'the launched provider is stamped');
   assert.equal(bare.brief, '', 'Ronin composes no brief');
   assert.deepEqual(bare.birth_reading, [], 'Ronin reads no boot shelf');
@@ -264,6 +267,12 @@ test('launch_mode preserves provider configuration or appends the declared bypas
   assert.equal(dangerous.cmd, 'claude --model opus --dangerously-skip-permissions');
   assert.equal(dangerous.launch_mode, 'live_dangerously');
 
+  const bareDangerous = await resolveForm(commonsForm({
+    session_type: 'bare_metal_agent', provider: 'openai', model: 'gpt-5.6-terra', launch_mode: 'live_dangerously',
+  }), new Set());
+  assert.match(bareDangerous.cmd, /--dangerously-bypass-approvals-and-sandbox/);
+  assert.match(bareDangerous.cmd, /mcp_servers\.gbrain\.enabled=false/);
+
   await assert.rejects(
     () => resolveForm(commonsForm({ cmd: 'custom-agent', launch_mode: 'live_dangerously' }), new Set()),
     /declares no `live_dangerously:` flag/,
@@ -321,7 +330,7 @@ test('stated_by carries the settled launch, Team, and Campaign layers', async ()
 
 test('server resolution returns profile and durable Team context without browser reconstruction', async () => {
   const resolved = await resolveForm(forkitForm(), new Set());
-  assert.equal(resolved.launch_mode, 'live_dangerously');
+  assert.equal(resolved.launch_mode, 'configured');
   assert.equal(resolved.team_objective, 'prove the parity');
   assert.equal(resolved.team_branch, '');
   assert.equal(resolved.team_wipeboard, 'scratchteam');

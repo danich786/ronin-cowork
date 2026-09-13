@@ -163,6 +163,19 @@ export function createWorkbench(options = {}) {
     return true;
   };
   const restoreDefault = (id) => placeNode(id, defaults[id]);
+  const dismiss = (id, expected = null) => {
+    const previous = holding(id);
+    // A completion callback belongs to the surface that received it. If that surface
+    // already handed the workspace to a newborn, it must not dismiss the replacement.
+    if (expected && previous !== expected) return true;
+    const value = previous ? [...instances.values()].find((candidate) => candidate.el === previous) : null;
+    if (value?.leave?.() === false) return false;
+    value?.hide?.();
+    if (!restoreDefault(id)) return false;
+    refreshSelector();
+    options.onPlacement?.(snapshot());
+    return true;
+  };
 
   const allowed = () => profile.types.flatMap((type) => {
     if (typeof options.selectorFilter === 'function' && !options.selectorFilter(type)) return [];
@@ -177,9 +190,12 @@ export function createWorkbench(options = {}) {
     const resource = String(detail.key || '');
     const key = `${id}\0${type}\0${resource}`;
     if (instances.has(key)) return instances.get(key);
-    const made = definition.create({ workspace: id, tenant, environment: options.environment, workbench: api, detail });
+    let owned = null;
+    const made = definition.create({ workspace: id, tenant, environment: options.environment, workbench: api, detail,
+      consumed: () => dismiss(id, owned) });
     const value = made instanceof Node ? { el: made } : made;
     if (!(value?.el instanceof Node)) throw new Error(`${type} did not create a workspace surface for ${id}`);
+    owned = value.el;
     const owner = instanceNodes.get(value.el);
     if (owner && owner !== id) throw new Error(`${type} reused a surface node from ${owner}`);
     value.el.dataset.workbenchSurface = type;
@@ -187,6 +203,22 @@ export function createWorkbench(options = {}) {
     instanceNodes.set(value.el, id);
     const required = definition.header === 'surface' ? '.wk-surface-header' : definition.header === 'channels' ? '.wk-channel-service-tabs' : null;
     if (required && !value.el.querySelector(`:scope > ${required}`)) throw new Error(`${type} did not use its ${definition.header} Workbench header`);
+    if (definition.header === 'terminal') {
+      value.el.querySelector('.tile-head .minimize')?.addEventListener('click', () => dismiss(id));
+    } else {
+      const host = definition.header === 'channels'
+        ? value.el.querySelector(':scope > .wk-channel-service-tabs')
+        : value.el.querySelector(':scope > .wk-surface-header .wk-surface-header-actions');
+      if (host) {
+        const title = t('workspace.close_surface', 'Close this work surface');
+        const dismissAction = WorkspacePrimitives.createAction({
+          label: '−', title,
+          size: 'compact', className: 'wk-surface-dismiss', action: () => dismiss(id),
+        });
+        dismissAction.el.setAttribute('aria-label', title);
+        host.append(dismissAction.el);
+      }
+    }
     instances.set(key, value);
     return value;
   };
@@ -255,7 +287,7 @@ export function createWorkbench(options = {}) {
     profile: profile.name, tenant, host: layout.host, el: layout.el, arrangement: layout.arrangement,
     selectorHeader: layout.headers.get('selector'), declaration, cells: Object.freeze(cells),
     ids: WORKBENCH_IDS, visibleIds, holding, selected: () => selected, count: () => count,
-    select, setCount, placeNode, restoreDefault, isDefault: (id) => holding(id) === defaults[id],
+    select, setCount, placeNode, restoreDefault, dismiss, isDefault: (id) => holding(id) === defaults[id],
     instance, place, typeAt, resourceAt, locations, snapshot, refreshSelector, enter, leave,
   };
   selectorTitle = api.selectorHeader?.title || null;

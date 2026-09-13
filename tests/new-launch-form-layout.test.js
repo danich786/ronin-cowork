@@ -31,10 +31,12 @@ test('New Agent uses one ruled ask() spec after its three session types', async 
   assert.doesNotMatch(form, /switch: \[[^\]]+\], word:/);
   assert.match(form, /group: t\('where\.label', 'Where it works'\)/);
   assert.match(form, /many: true, after: 'root'/);
-  assert.match(form, /questions\.show\(draft\.type === 'terminal' \? \[\] : draft\.type === 'bare_metal_agent' \? \['provider', 'model', 'root', 'repos'\] : null\)/);
+  assert.match(form, /questions\.show\(draft\.type === 'terminal' \? \[\] : draft\.type === 'bare_metal_agent' \? \['provider', 'model', 'root', 'repos', 'launchMode'\] : null\)/);
+  assert.match(form, /session_type: 'bare_metal_agent'[\s\S]*launch_mode: draft\.launchMode/);
   assert.match(form, /teamQuestions\.show\(isCowork\(\) \? null : \['team'\]\)/);
   assert.match(form, /questions\.el\.hidden = draft\.type === 'terminal'/);
   assert.match(form, /\? \{ session_type: 'terminal', name, team \}/);
+  assert.match(form, /if \(connect\) await connect\(born\)/, 'every successful birth awaits replacement of the launcher');
   assert.match(form, /stepPayload\.setNumber\(order\.length \+ 1\)/);
   assert.match(form, /key: 'payload'.*Payload/);
   assert.match(form, /identityRow\.append\(nameField, teamQuestions\.el\)/);
@@ -47,8 +49,9 @@ test('both workbench entrances use the canonical New Agent form with contextual 
   assert.doesNotMatch(cowork, /createAddAgentView/);
   assert.doesNotMatch(cowork, /WB_TYPES\.addAgent|addAgentBySeat|environment\.addAgent/);
   assert.match(cowork, /profiles\.define\(WB_PROFILES\.team, \[WB_TYPES\.commons, WB_TYPES\.terminal, WB_TYPES\.newAgent/);
-  assert.match(cowork, /const newAgentBySeat = Object\.fromEntries[\s\S]*createNewAgentView\(WorkspaceKit, \{[\s\S]*team: \(\) =>/);
-  assert.match(cowork, /connect: \(name\) => connectSession\(name, id\)/);
+  assert.match(cowork, /const newAgentBySeat = \{\};[\s\S]*newAgent: \(id, consumed\)[\s\S]*createNewAgentView\(WorkspaceKit, \{[\s\S]*consumed,[\s\S]*team: \(\) =>/);
+  assert.match(cowork, /connect: async \(name\) => \{\s*await fetchSessions\(\);\s*return connectSession\(name, id\)/);
+  assert.match(cowork, /const live = new Set\(S\.sessions\.map/, 'a newborn is not discarded against the slower home reading');
   assert.match(cowork, /'team\.add-agent': WB_TYPES\.newAgent/);
 });
 
@@ -77,6 +80,7 @@ test('the old New Agent selector implementation and CSS are deleted', async () =
   assert.doesNotMatch(parts, /providerModelStones/);
   await assert.rejects(source('where-it-works.js'), 'the details popover is gone: Where it works is two ERABI questions everywhere');
   assert.doesNotMatch(css, /na-choice-stone|na-stone|na-mandate-grid|na-model-picker|na-workspace-stone/);
+  assert.match(css, /\.na-surface :is\(\.wk-field, \.ask\)\[hidden\] \{ display: none; \}/);
 });
 
 test('New Team folds Kind and template choice into one optional first section', async () => {

@@ -722,6 +722,7 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **team.roster_of:** Roster
 - **team.workspace_blank:** Workspace
 - **team.workspace_empty:** empty
+- **workspace.close_surface:** Close this work surface
 - **team.new_session:** New session
 - **cowork.tab_roster:** Roster
 - **cowork.tab_archives:** Archived
@@ -1773,8 +1774,6 @@ The catalog entry goes. {dir} is not touched.
 - **where.checkouts:** works in {list}
 - **where.none:** no auto desk
 - **team_config.default:** Default
-- **team_config.references:** References
-- **team_config.references_help:** One URL or note per line.
 - **team_config.worktrees_mode:** Agent work mode
 - **team_config.worktrees_on:** Own worktree where the Workspace folder allows it
 - **team_config.worktrees_off:** Use the project checkout and its branches
