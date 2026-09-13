@@ -1,7 +1,7 @@
 // Team Configuration — the commons tab that asks a team's record through ERABI
 // (public/js/team-configuration.js · ronin-lab SELECTORS.md). Fake-DOM floor: every
-// question is a stone with the right reading, the Features group is never silent, the
-// text entries are the kit's, and Save sends the record the server expects.
+// question is a stone with the right reading, the Team's facts sit above the New Agent
+// defaults, features and behaviours are not asked, and Save sends the record the server expects.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -82,21 +82,18 @@ test('every question is an ERABI stone whose reading is the saved answer', async
   renderTeamConfiguration(host, roster);
   const form = await painted(host);
   assert.deepEqual(form.all('ask-stone').map((node) => node.dataset.askKey), [
-    'root', 'repos', 'kind', 'ronin_host', 'mandates', 'buildout', 'provider', 'model', 'reach', 'recruit', 'output', 'launch_mode',
-  ], 'the stones, in the tab’s order: only the available feature is asked, and no Control stone');
+    'kind', 'root', 'repos', 'provider', 'model', 'reach', 'recruit', 'output', 'launch_mode',
+  ], 'the stones in the tab’s order: Kind on the head line, then the New Agent defaults; no feature, behaviour or Control stone');
   assert.equal(readingOf(form, 'root'), 'Ronin Cowork', 'Born in reads the Workspace Folder’s title');
   assert.equal(readingOf(form, 'repos'), 'Ronin Services');
   assert.equal(readingOf(form, 'kind'), 'Coding');
-  assert.equal(stone(form, 'ronin_host').getAttribute('aria-checked'), 'true', 'a feature is a switch, on when the record lists it');
-  assert.equal(readingOf(form, 'mandates'), 'Required', 'a required behaviour reads Required');
-  assert.equal(readingOf(form, 'buildout'), 'On');
   assert.equal(readingOf(form, 'provider'), 'OpenAI');
   assert.equal(readingOf(form, 'model'), 'gpt-5.6-sol');
   assert.equal(readingOf(form, 'reach'), 'Plan');
   assert.equal(readingOf(form, 'launch_mode'), 'Dangerously');
 });
 
-test('the head is one line, the entries are the kit’s, and nothing else is hand-drawn', async () => {
+test('the Team’s facts come first — ID, Title, Kind on the head line, then Purpose — and the defaults section follows', async () => {
   serve(seedWith(['ronin_host']));
   const host = new FakeNode('div');
   renderTeamConfiguration(host, roster);
@@ -105,24 +102,27 @@ test('the head is one line, the entries are the kit’s, and nothing else is han
   assert.ok(head, 'the head line exists');
   assert.equal(head.one('tw-config-reading').textContent, 'Team IDjobber');
   assert.ok(head.one('tw-config-field').one('wk-field-control'), 'the title entry wears the kit’s control class');
+  assert.ok(head.all('ask-stone').some((node) => node.dataset.askKey === 'kind'), 'Kind is a stone on the head line');
   const entries = form.all('tw-config-field').map((node) => [node.children[0].textContent, node.children[1].tagName, node.children[1].value]);
-  assert.deepEqual(entries, [['Readable title', 'INPUT', 'Jobber'], ['Purpose', 'TEXTAREA', 'Polish.']], 'title and purpose, and no references — that field left the shape');
+  assert.deepEqual(entries, [['Title', 'INPUT', 'Jobber'], ['Purpose', 'TEXTAREA', 'Polish.']], 'title and purpose; no references — that field left the shape');
+  const section = form.one('tw-config-section');
+  assert.equal(section.one('tw-config-section-head').textContent, 'New Agent defaults');
+  assert.deepEqual(section.all('ask-group-head').map((node) => node.textContent), ['Where it works', 'Model', 'Mandate', 'Runtime'], 'everything under Purpose is a New Agent default');
+  assert.equal(form.children.indexOf(head) < form.children.indexOf(section), true, 'facts above defaults');
   for (const node of form.walk()) {
     assert.notEqual(node.tagName, 'SELECT', 'no native select');
     assert.notEqual(node.type, 'checkbox', 'no checkbox');
   }
 });
 
-test('the Features group is never silent: with nothing available it says where the switch is', async () => {
-  serve(seedWith([]));
+test('features and behaviours are not asked here, whatever the seed offers', async () => {
+  serve(seedWith(['ronin_host']));
   const host = new FakeNode('div');
   renderTeamConfiguration(host, roster);
   const form = await painted(host);
-  assert.equal(stone(form, 'ronin_host'), null, 'no feature stone when none is available');
-  const group = form.one('tw-config-group');
-  assert.ok(group, 'the group still stands');
-  assert.equal(group.one('tw-config-group-head').textContent, 'Features');
-  assert.match(group.one('tw-config-note').textContent, /No installation on this box offers a feature yet/);
+  assert.equal(form.all('ask-group-head').some((node) => /Features|Behaviours/.test(node.textContent)), false);
+  assert.equal(stone(form, 'ronin_host'), null);
+  assert.equal(stone(form, 'mandates'), null);
 });
 
 test('Save sends the record: features, behaviours by state, agent defaults carried without permissions', async () => {
@@ -132,7 +132,6 @@ test('Save sends the record: features, behaviours by state, agent defaults carri
   let savedRoster = null;
   renderTeamConfiguration(host, roster, { onSaved: (saved) => { savedRoster = saved; } });
   const form = await painted(host);
-  await stone(form, 'ronin_host').click(); // switch the feature off
   await form.fire('submit');
   for (let i = 0; i < 50 && !puts.length; i++) await new Promise((resolve) => setTimeout(resolve, 5));
   assert.equal(puts.length, 1, 'one PUT');
@@ -143,8 +142,8 @@ test('Save sends the record: features, behaviours by state, agent defaults carri
   assert.deepEqual(body.repos, ['ronin_services']);
   assert.deepEqual(body.branches, { ronin_services: 'dev' }, 'a checkout keeps its branch');
   assert.equal('references' in body, false, 'references is not sent');
-  assert.deepEqual(body.features, [], 'the switched-off feature is not listed');
-  assert.deepEqual(body.behaviours, { selected: ['mandates', 'buildout'], required: ['mandates'] });
+  assert.equal('features' in body, false, 'features are not sent, so the store carries them');
+  assert.equal('behaviours' in body, false, 'behaviours are not sent, so the store carries them');
   assert.equal(body.agent_defaults.note, 'carried', 'a key the tab does not draw is carried');
   assert.equal('permissions' in body.agent_defaults, false, 'the retired key is not rewritten');
   assert.equal(body.agent_defaults.model, 'gpt-5.6-sol');

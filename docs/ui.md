@@ -558,10 +558,9 @@ Team and Team lead are one group in one instance, so they move below Name as a p
 row narrows. The utility has no slot for foreign DOM and gains none.
 
 **The commons' Configuration tab** is the first commons consumer: a team's record asked at
-loose density, one full-width column — the head line (Team ID, Readable title), then the
-groups. Its text entries are the kit's, beside the stones, not inside them. A group whose
-list is empty is never silent: with no installation on, Features still stands and says where
-the switch is. Contract and file list: `docs/team-workspace.md` § Durable Team record.
+loose density, one full-width column — the head line (Team ID, Title, Kind), Purpose, then
+the New Agent defaults as groups. Its text entries are the kit's, beside the stones, not
+inside them. Contract and file list: `docs/team-workspace.md` § Durable Team record.
 
 **What is not an `ask()`.** The stone work surface (`stone-work-surface.js`) is a page for
 browsing a collection whose item is the content — Presets, Workspace Folders, Model

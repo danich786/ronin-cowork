@@ -564,23 +564,33 @@ export function createCoworkView(options = {}) {
     surface.content.classList.add('league-team-edit-content');
     // Same contract as renderConfig below: every publish lands here, so the surface only
     // rebuilds — and refetches the configuration's catalogs — when what it shows moved.
+    // The member rows follow the live signature; the configuration follows the saved record
+    // alone, so a session coming or going never repaints an edit in progress (owner, 2026-09-13).
     let seen = '';
+    let seenRecord = '';
+    let configNode = null;
     const render = () => {
       const signature = configSignature(name);
-      if (signature === seen) return;
-      seen = signature;
-      const holding = name === UNASSIGNED;
       const current = teamByName(name);
+      const record = JSON.stringify(current.durable ? current : null);
+      const rowsMoved = signature !== seen;
+      const recordMoved = record !== seenRecord;
+      if (!rowsMoved && !recordMoved) return;
+      seen = signature;
+      seenRecord = record;
+      const holding = name === UNASSIGNED;
       const roster = buildTeamMembers(name, { holding, onChanged: () => { surface.setState(); render(); }, onFailed: (message) => surface.setState('failed', message) });
       if (holding) { surface.content.replaceChildren(roster); return; }
-      const config = el('section', 'league-team-config');
-      config.append(el('h3', 'league-team-roster-title', t('workspace.channel_team_configuration', 'Team Configuration')));
-      const fields = el('div', null); config.append(fields);
-      renderTeamConfiguration(fields, { ...current, durable: true }, { createAction, onSaved: async () => {
-        await refreshTeams();
-        render();
-      } });
-      surface.content.replaceChildren(roster, config);
+      if (recordMoved || !configNode) {
+        configNode = el('section', 'league-team-config');
+        configNode.append(el('h3', 'league-team-roster-title', t('workspace.channel_team_configuration', 'Team Configuration')));
+        const fields = el('div', null); configNode.append(fields);
+        renderTeamConfiguration(fields, { ...current, durable: true }, { createAction, onSaved: async () => {
+          await refreshTeams();
+          render();
+        } });
+      }
+      surface.content.replaceChildren(roster, configNode);
     };
     render();
     const out = { el: surface.el, render }; leagueTeamSurfaces.set(cacheKey, out); return out;

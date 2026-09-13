@@ -27,6 +27,7 @@ test('Roster expands live readings and actions; Launch uses the paired workspace
   // so a five-second status tick never throws away an edit in progress (owner, 2026-09-13).
   assert.match(view, /const record = JSON\.stringify\(roster \|\| null\);/);
   assert.match(view, /if \(!recordMoved\) continue;\s*\n\s*if \(!roster\) \{ renderTeamConfiguration/);
+  assert.match(view, /if \(recordMoved \|\| !configNode\) \{/, 'the Coworks page’s copy of the tab keeps the same rule');
   assert.match(view, /onClose: \(member\) => retireSession\(member\.name/);
   assert.match(members, /actions: \[launch, rename, lead, eject, close\]/);
   assert.match(members, /classList\.add\('league-team-member-live'\)/);
