@@ -19,15 +19,18 @@ esac
 . "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"
 TOOL_DIR=$(dirname "$SELF")
 die() { printf '%s\n' "$1" >&2; exit "${2:-4}"; }
+need_value() {
+  [ "$#" -ge 2 ] && [ -n "$2" ] || die "BAD-ARG: $1 requires a value. Run tejun-session-set --help." 2
+}
 NAME="${1:-}"
 [ -n "$NAME" ] && [ "${NAME#-}" = "$NAME" ] || die "usage: tejun-session-set <name> [options]. Run tejun-session-set --help." 2
 shift
 TEAM="" LEAD="" ROOT=""
 while [ $# -gt 0 ]; do
   case "$1" in
-    --team) TEAM="${2:-}"; shift 2 ;;
+    --team) need_value "$@"; TEAM="$2"; shift 2 ;;
     --lead) LEAD=1; shift ;;
-    --root|--project_root) ROOT="${2:-}"; shift 2 ;;
+    --root|--project_root) need_value "$@"; ROOT="$2"; shift 2 ;;
     *) die "BAD-ARG: $1. Run tejun-session-set --help." 2 ;;
   esac
 done
@@ -49,7 +52,8 @@ did=""
 if [ -n "$TEAM" ]; then
   tags=$(printf '%s' "$live" | python3 -c 'import sys,json; print(",".join(json.load(sys.stdin).get("tags") or []))')
   case ",$tags," in *",$TEAM,"*) ;; *) tags="${tags:+$tags,}$TEAM" ;; esac
-  out=$(api -X POST --data "{\"tags\":\"$tags\"}" "$url/api/sessions/$NAME/tags") || die "UNREACHABLE: Ronin did not answer at $url" 5
+  body=$(TAGS="$tags" python3 -c 'import json,os; print(json.dumps({"tags": os.environ["TAGS"]}))')
+  out=$(api -X POST --data "$body" "$url/api/sessions/$NAME/tags") || die "UNREACHABLE: Ronin did not answer at $url" 5
   printf '%s' "$out" | grep -q '"ok":true' || die "REFUSED: $(printf '%s' "$out" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("error","?"))' 2>/dev/null)" 4
   did="$did team=$TEAM"
 fi
@@ -57,7 +61,8 @@ if [ -n "$LEAD" ]; then
   t="$TEAM"
   [ -n "$t" ] || t=$(printf '%s' "$live" | python3 -c 'import sys,json; t=json.load(sys.stdin).get("tags") or []; print(t[0] if t else "")')
   [ -n "$t" ] || die "REFUSED: --lead needs a team — \"$NAME\" is on none; say --team <team>" 4
-  out=$(api -X POST --data "{\"teams\":[\"$t\"]}" "$url/api/sessions/$NAME/team_lead") || die "UNREACHABLE: Ronin did not answer at $url" 5
+  body=$(TEAM="$t" python3 -c 'import json,os; print(json.dumps({"teams": [os.environ["TEAM"]]}))')
+  out=$(api -X POST --data "$body" "$url/api/sessions/$NAME/team_lead") || die "UNREACHABLE: Ronin did not answer at $url" 5
   printf '%s' "$out" | grep -q '"ok":true' || die "REFUSED: $(printf '%s' "$out" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("error","?"))' 2>/dev/null)" 4
   did="$did 人=$t"
 fi
