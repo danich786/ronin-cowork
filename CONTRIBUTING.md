@@ -74,4 +74,3 @@ the later `dev → master` release PR.
 
 Merging to `master` does not update an installed Ronin. Releases and installation remain
 separate deliberate acts described in [`docs/release.md`](docs/release.md).
-
