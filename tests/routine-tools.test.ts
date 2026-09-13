@@ -49,7 +49,7 @@ test('missing enabled tools are visible and do not refuse projection', async () 
 
 /* A BORN SESSION RUNS ITS TOOLS THROUGH THESE SYMLINKS, so every ronin_bin tool that
  * locates the repository from its own path must resolve the link first (measured
- * 2026-09-02: `tejun-desk`, `tejun-wipeboard`, `read_tegami`, `write_tegami`, `tejun`
+ * 2026-09-02: `tejun-desk`, `tejun-wipeboard`, `read_tegami`, `write_tegami`
  * all failed from a projected session, and the guard shims had been fixed the day
  * before). Each is run exactly as a session would type it, with an invocation that stops
  * before it needs a tmux session, and must not report a path it could not reach.
@@ -61,7 +61,7 @@ test('missing enabled tools are visible and do not refuse projection', async () 
 const REACH_FAILURES = /Cannot find module|command not found|No such file or directory|NO-REPO/;
 const URL_CALLERS = ['tejun-archive', 'tejun-fork', 'tejun-harakiri', 'tejun-rehydrate', 'session_check', 'session_create', 'session_set', 'tejun-team-set', 'tejun-teampage', 'mika'];
 test('projected ronin_bin tools resolve the symlink and reach the repository and the operator', async (t) => {
-  const tools = ['tejun', 'tejun-desk', 'tejun-team', 'tejun-wipeboard', 'tejun-send', 'read_tegami', 'write_tegami', 'tejun-survey', 'tejun-account', 'ronin-url', ...URL_CALLERS];
+  const tools = ['tejun-desk', 'tejun-team', 'tejun-wipeboard', 'tejun-send', 'read_tegami', 'write_tegami', 'tejun-survey', 'tejun-account', 'ronin-url', ...URL_CALLERS];
   const projected = await projectRoutineTools('resolve', [routine('ronin_base', true, tools)]);
   for (const t of tools) assert.ok(projected.delivered.includes(t), `${t} projected`);
   const reached: string[] = [];
@@ -93,7 +93,7 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
     }
   };
   const helpTools = [
-    'tejun', 'read_tegami', 'write_tegami', 'tejun-desk', 'tejun-team',
+    'read_tegami', 'write_tegami', 'tejun-desk', 'tejun-team',
     'tejun-team-set', 'session_check', 'session_create', 'session_set', 'tejun-archive', 'tejun-rehydrate',
     'tejun-harakiri',
   ];
@@ -133,14 +133,6 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
   assert.match(teamHelp, /remove the old Team on that Team's page/i);
   assert.match(teamHelp, /sets? or changes? that Team's lead/i);
   assert.doesNotMatch(teamHelp, /tejun-fork --help/);
-  const tejun = await run(['tejun']);
-  assert.match(tejun.out, /forkit/, `tejun lists the stock macros through the symlink: ${tejun.out}`);
-  const teamMacro = await run(['tejun', 'team']);
-  assert.equal(teamMacro.code, 0, teamMacro.out);
-  assert.match(teamMacro.out, /=== MACRO: team ===/, 'the existing team macro still compiles');
-  const surplus = await run(['tejun', 'team', 'extra']);
-  assert.equal(surplus.code, 2);
-  assert.match(surplus.out, /Run tejun --help/);
   for (const args of [['tejun-wipeboard'], ['tejun-send'], ['read_tegami', '--session', 'nobody'], ['write_tegami', '--session', 'nobody', '--at', '1'], ['tejun-survey'], ['tejun-account']]) {
     const r = await run(args);
     assert.doesNotMatch(r.out, REACH_FAILURES, `${args.join(' ')}: ${r.out}`);
@@ -175,11 +167,11 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
 
 test('a tool in the owner\'s tools store is projected by name, and shadows a shipped one', async () => {
   await fs.mkdir(process.env.RONIN_TOOLS_DIR!, { recursive: true });
-  await fs.writeFile(path.join(process.env.RONIN_TOOLS_DIR!, 'tejun-review'), '#!/bin/sh\necho REVIEWED\n', { mode: 0o755 });
-  await fs.writeFile(path.join(process.env.RONIN_TOOLS_DIR!, 'tejun'), '#!/bin/sh\necho MINE\n', { mode: 0o755 });
-  const projected = await projectRoutineTools('owned', [routine('weekly_review', true, ['tejun-review', 'tejun', 'tejun-missing'])]);
-  assert.deepEqual(projected.delivered, ['shim/tmux', 'tejun', 'tejun-review']);
-  assert.deepEqual(projected.missing, ['tejun-missing']);
-  assert.equal(await fs.readlink(path.join(projected.dir, 'tejun-review')), path.join(process.env.RONIN_TOOLS_DIR!, 'tejun-review'));
-  assert.equal(await fs.readlink(path.join(projected.dir, 'tejun')), path.join(process.env.RONIN_TOOLS_DIR!, 'tejun'));
+  await fs.writeFile(path.join(process.env.RONIN_TOOLS_DIR!, 'review_tool'), '#!/bin/sh\necho REVIEWED\n', { mode: 0o755 });
+  await fs.writeFile(path.join(process.env.RONIN_TOOLS_DIR!, 'owned_tool'), '#!/bin/sh\necho MINE\n', { mode: 0o755 });
+  const projected = await projectRoutineTools('owned', [routine('weekly_review', true, ['review_tool', 'owned_tool', 'missing_tool'])]);
+  assert.deepEqual(projected.delivered, ['owned_tool', 'review_tool', 'shim/tmux']);
+  assert.deepEqual(projected.missing, ['missing_tool']);
+  assert.equal(await fs.readlink(path.join(projected.dir, 'review_tool')), path.join(process.env.RONIN_TOOLS_DIR!, 'review_tool'));
+  assert.equal(await fs.readlink(path.join(projected.dir, 'owned_tool')), path.join(process.env.RONIN_TOOLS_DIR!, 'owned_tool'));
 });

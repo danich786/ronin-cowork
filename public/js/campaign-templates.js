@@ -257,7 +257,7 @@ export function createTemplatesSurface() {
   const libraryAbout = el('details');
   libraryAbout.append(
     el('summary', null, t('campaign_view.library_about', 'About the Ronin Library')),
-    el('p', 'cv-note', t('campaign_view.library_help', 'The shelf Ronin keeps and grows, provided by Ronin Services: a team, its people, and the books, macros and tools they read. Nothing is fetched until you press; everything a bundle holds is shown before anything is written.')),
+    el('p', 'cv-note', t('campaign_view.library_help', 'The shelf Ronin keeps and grows, provided by Ronin Services: a team, its people, and the books and tools they read. Nothing is fetched until you press; everything a bundle holds is shown before anything is written.')),
   );
   libraryRoom.append(
     el('span', 'cv-eyebrow', t('campaign_view.library', 'Ronin Library')),

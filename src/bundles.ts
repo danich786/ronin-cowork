@@ -110,7 +110,7 @@ function checkEntry(entry: BundleEntry): string | null {
   if (!TOKEN.test(entry.name) && !/^[\w-]{1,64}$/.test(entry.name)) return 'an entry is named by its token';
   if (entry.catalog === 'TOOLS.md') {
     const m = /^\|\s*`([^`]+)`\s*\|\s*[a-z-]+\s*\|\s*.+?\s*\|\s*$/.exec(entry.text.trim());
-    if (!m || m[1] !== entry.name) return 'a TOOLS row is `| `name` | action | usage |`, on one line';
+    if (!m || m[1] !== entry.name) return 'a TOOLS row names its executable in column one, on one line';
     return null;
   }
   if (entry.catalog === 'MODEL_PROVIDERS.md') {
@@ -315,7 +315,7 @@ async function writeWhole(target: string, text: string, executable: boolean): Pr
   await rename(tmp, target);
 }
 
-const TOOLS_HEAD = '| Tool | Implements (action) | Usage |\n|---|---|---|';
+const TOOLS_HEAD = '| Tool | Operation | Usage |\n|---|---|---|';
 
 function mergeEntry(raw: string, e: BundleEntry): string {
   const have = findEntry(raw, e.catalog, e.name);

@@ -136,7 +136,7 @@ test('an install lands in the owner\'s stores, reads back, and is idempotent', a
   const tool = await stat(path.join(storeDir('tools'), 'tejun-review'));
   assert.ok(tool.mode & 0o100, 'a bundled tool is executable');
   const tools = await readFile(path.join(storeDir('catalogs'), 'TOOLS.md'), 'utf8');
-  assert.match(tools, /^\| Tool \| Implements \(action\) \| Usage \|$/m);
+  assert.match(tools, /^\| Tool \| Operation \| Usage \|$/m);
   assert.match(tools, /^\| `tejun-review` \|/m);
 
   const again = await installBundle(bundle());
