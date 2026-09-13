@@ -200,7 +200,7 @@ test('a pack carries back out what the owner\'s copies hold, and reads as a bund
   const text = JSON.stringify(packed);
   const card = libraryCard(packed, text, 'bundles/weekly_review.json');
   assert.equal(card.sha256.length, 64);
-  assert.deepEqual(card.holds, { teams: 1, features: 1, sops: 1, tools: 2, ways: 1, macros: 1 });
+  assert.deepEqual(card.holds, { teams: 1, features: 1, sops: 1, tools: 2, ways: 2, macros: 1 });
   const index = parseLibraryIndex({ format: LIBRARY_FORMAT, bundles: [card, { name: 'evil', url: 'https://elsewhere.example/x.json' }, { name: 'up', url: '../x.json' }] });
   assert.deepEqual(index.bundles.map((c) => c.name), ['weekly_review'], 'a card pointing off the library is dropped');
   assert.throws(() => parseLibraryIndex({ format: 'nope' }), /not ronin-library\/1/);
