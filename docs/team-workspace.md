@@ -93,18 +93,31 @@ Membership is derived from each live session's `tags`. Team consumes
 does not read a roster `members` field. Membership is many-to-many and session-owned; a
 Team may exist from tags alone; removing a tag removes membership without killing the
 session. The **人** is a separate, hand-set designation (`leads`), set by the owner in three
-places, all through `POST /api/sessions/:name/team_lead`: **Team commons → Team
-Configuration**, where each member row carries **Make Lead** (the lead's reads *Team
-Lead*); the same member list on a team's profile on the Coworks page; and the **Make Team
-Lead** checkbox on **＋ Add team member**, which replaces the current lead when that Agent
-launches. There is no lead control on a Tile.
+places, all through `POST /api/sessions/:name/team_lead`: the member rows
+`team-members.js` draws — **Team commons → Roster**, where each row carries **Make Lead**
+(the lead's reads *Team Lead*), and the same rows on a team's profile on the Coworks page.
+There is no lead control on a Tile, on the launch forms, or on the Configuration tab.
 
 ### Durable Team record
 
-A `team_roster` is optional metadata: Team role, objective, project root, repositories,
-branch, wipeboard, and state. A tag-only Team is ordinary. When no durable record exists,
-Team Configuration says so rather than treating the Team as broken. Team Configuration is
-read-only.
+A `team_roster` is optional metadata: kind, title, purpose, references, project root,
+repositories and their branches, features, behaviours, and the Agent defaults. A tag-only
+Team is ordinary. When no durable record exists, Team Configuration says so rather than
+treating the Team as broken.
+
+**Team Configuration** (`public/js/team-configuration.js`) is the commons tab that edits
+that record and nothing else — never membership or the lead. Every selection is asked
+through ERABI (`ask()`, `docs/ui.md` § Asking a question) at the commons' loose density:
+**Where it works** (Born in · Additional workspaces, with a branch line for each checkout),
+**Kind** (squares with the shared glyphs), **Features** (one switch per feature an
+installation on this box provides — with none available the group still stands and says
+where the switch is), **Behaviours** (one three-way stone per behaviour: Off · On ·
+Required), and the Agent defaults as **Model**, **Mandate** and **Runtime**. The three text
+entries (Readable title, Purpose, References) are the kit's entries in one full-width column
+with the groups; ERABI takes no foreign DOM. **Save** PUTs the whole record to
+`/api/team-rosters/:name`; keys the tab does not draw are carried, the retired
+`agent_defaults.permissions` is not. `tests/team-configuration.test.js` is the floor;
+`scripts/smoke-ui.mjs` opens the tab and measures one stone.
 
 ## Owned files
 
@@ -114,11 +127,12 @@ read-only.
 - `public/js/team-terminal-pool.js` — one pool per workspace: warm, hot, cold, pinned,
   prewarm, cap. No renderer, cache, or socket engine.
 - `public/js/team-wipeboard.js` — the commons' roster-resolved wipeboard thread.
+- `public/js/team-configuration.js` — the Configuration tab: the record's questions as `ask()` specs, and Save.
 - `public/css/team-workspace.css` — roster header, cards, flip button, configuration.
 - `src/routes/team-page-api.ts` — the page's view and drafts; `src/ws/events.ts`
   `broadcastEvent`.
 - `ronin_bin/tejun-teampage` — the agent's tool.
-- `tests/team-terminal-pool.test.js`, `tests/team-arrange.test.js`.
+- `tests/team-terminal-pool.test.js`, `tests/team-arrange.test.js`, `tests/team-configuration.test.js`.
 - `docs/team-workspace.md` — this persistent implementation and resume contract.
 
 Shared seams touched for Team, by authorization: `public/js/terminal-tile-host.js`

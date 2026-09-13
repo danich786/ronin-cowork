@@ -1,7 +1,9 @@
 /* Editable reading of one complete durable team_roster. Membership is intentionally absent.
  * Every question here is asked through ERABI (ask.js): Where it works, Kind, the Features
  * switches, one three-way pick per Behaviour (off · on · required), and the Agent defaults
- * (Model · Mandate · Runtime). Loose density: a commons page where the questions are the subject. */
+ * (Model · Mandate · Runtime). Loose density: a commons page where the questions are the subject.
+ * The text entries (title, purpose, references) are the kit's entries, not ERABI's: the utility
+ * takes no foreign DOM. The Features group is never silent — with nothing available it says why. */
 import { t } from './lexicon.js';
 import { request } from './request.js';
 import { ask } from './ask.js';
@@ -56,8 +58,10 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
     const ways = wayResult.ok && Array.isArray(wayResult.data) ? wayResult.data : [];
     const roots = rootResult.ok && Array.isArray(rootResult.data?.roots) ? rootResult.data.roots.filter((root) => !root.archived) : [];
     const defaults = bucket(roster.agent_defaults); const behaviour = bucket(roster.behaviours);
-    const form = el('form', 'tw-config-form'); reading(form, t('team_config.cowork_id', 'Team ID'), roster.name, t('settei.none_set', '— none set —'));
-    const title = field(form, t('team_config.title', 'Readable title'), 'title', roster.title);
+    const form = el('form', 'tw-config-form');
+    /* ---- the head: one full-width line, the Team ID as a reading beside the title entry ---- */
+    const head = el('div', 'tw-config-head'); reading(head, t('team_config.cowork_id', 'Team ID'), roster.name, t('settei.none_set', '— none set —'));
+    const title = field(head, t('team_config.title', 'Readable title'), 'title', roster.title); form.append(head);
 
     /* ---- Where it works: born in, then the additional workspaces; a branch line per checkout ---- */
     const branches = { ...bucket(roster.branches) };
@@ -91,6 +95,11 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
       key: row.name, label: row.label || row.name, switch: [t('on', 'On'), t('off', 'Off')],
     })) }], { value: Object.fromEntries(available.map((row) => [row.name, list(roster.features).includes(row.name)])) });
     if (available.length) form.append(featureAsk.el);
+    else {
+      // The group is never silent: with no installation on, the head still stands and says where the switch is.
+      const none = el('div', 'tw-config-group'); none.append(el('h4', 'tw-config-group-head', t('features', 'Features')));
+      none.append(el('p', 'tw-config-note', t('team_config.no_features', 'No installation on this box offers a feature yet. Switch one on at the Campaign’s Installations.'))); form.append(none);
+    }
 
     /* ---- Behaviours: one three-way pick per way — off, on, or on and required for each new Agent ---- */
     const states = [
@@ -129,7 +138,7 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
       dial: defaults.dial || 'write', launch_mode: defaults.launch_mode || 'live_dangerously',
     } });
     form.append(agentDefaults.el);
-    form.append(el('p', 'tw-config-note tw-config-wide', t('team_config.next_form', 'These defaults land in the next Agent form that opens. Nothing live changes.')));
+    form.append(el('p', 'tw-config-note', t('team_config.next_form', 'These defaults land in the next Agent form that opens. Nothing live changes.')));
 
     const actions = el('div', 'tw-config-actions'); const status = el('span', 'tw-config-status');
     const saveAction = optionsArg.createAction?.({ label: t('panels.save', 'Save'), size: 'compact' }); const save = saveAction?.el || el('button', null, t('panels.save', 'Save')); save.type = 'submit'; actions.append(status, save); form.append(actions); host.replaceChildren(form);

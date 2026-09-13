@@ -142,6 +142,41 @@ async function checkDom(page, label) {
   else ok(`${label}: no failure banner`);
 }
 
+/* The Team commons' Configuration tab: the questions are ERABI stones (140 × 48, the tray under
+   the group) or, with no saved record, the tab says so. Read-only: nothing is saved. */
+async function checkTeamConfiguration(page, label) {
+  const card = page.locator('.wk-card').filter({ hasText: /^Commons$/ }).first();
+  if (!(await card.count())) { console.log(`  SKIP — ${label}: no Commons card on this Team page`); return; }
+  await card.click();
+  await page.waitForTimeout(800);
+  const tab = page.locator('button').filter({ hasText: /^(Configuration|Team Configuration)$/ }).first();
+  if (!(await tab.count())) { bad(`${label}: the Commons strip has no Configuration tab`); return; }
+  await tab.click();
+  await page.waitForTimeout(1500);
+  const state = await page.evaluate(() => {
+    const tab = document.querySelector('.tw-config');
+    if (!tab || !tab.getClientRects().length) return { shown: false };
+    const empty = tab.querySelector('.tw-config-empty');
+    const stone = tab.querySelector('.ask-stone:not(.ask-switch)');
+    if (!stone) return { shown: true, empty: (empty?.textContent || '').trim() };
+    const rect = stone.getBoundingClientRect();
+    stone.click();
+    const tray = document.querySelector('.ask-tray');
+    const group = stone.closest('.ask-group');
+    const under = !!(tray && group) && tray.getBoundingClientRect().top >= group.getBoundingClientRect().bottom - 1;
+    document.querySelector('.ask-stone[aria-expanded="true"]')?.click();
+    return { shown: true, stone: [Math.round(rect.width), Math.round(rect.height)], tray: !!tray, under };
+  });
+  if (!state.shown) { bad(`${label}: the Configuration tab did not show`); return; }
+  if (state.stone) {
+    if (state.stone[0] === 140 && state.stone[1] === 48) ok(`${label}: Configuration asks through ERABI — a 140 × 48 reading stone`);
+    else bad(`${label}: Configuration's reading stone is ${state.stone.join(' × ')}, wanted 140 × 48`);
+    if (state.tray && state.under) ok(`${label}: the tray opens under the stone's group`);
+    else bad(`${label}: the tray did not open under the group (tray=${state.tray}, under=${state.under})`);
+  } else if (state.empty) ok(`${label}: Configuration says the Team has no saved record`);
+  else bad(`${label}: Configuration painted neither stones nor its no-record line`);
+}
+
 async function checkCurrentWorkspace(page, label) {
   const state = await page.evaluate(() => {
     const head = document.querySelector('.tile-head');
@@ -804,6 +839,7 @@ async function runPass({ label, browser, contextOpts }) {
   else ok(`${label}: no failed requests`);
 
   await checkDom(page, label);
+  await checkTeamConfiguration(page, label);
   if (probeAvailable) {
     await attachProbe(page, label);
     const docsFocus = await page.evaluate(() => {

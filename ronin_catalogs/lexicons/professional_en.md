@@ -1757,6 +1757,7 @@ The catalog entry goes. {dir} is not touched.
 - **workspace.channel_agent_message_queue:** Messages
 - **workspace.channel_cron_jobs:** Cron jobs
 - **team_config.no_roster:** This Team has no saved record.
+- **team_config.no_features:** No installation on this box offers a feature yet. Switch one on at the Campaign’s Installations.
 - **team_config.loading:** Loading Team Configuration…
 - **team_config.cowork_id:** Team ID
 - **team_config.title:** Readable title
