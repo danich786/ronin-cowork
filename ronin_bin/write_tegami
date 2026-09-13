@@ -83,6 +83,8 @@ help() {
 write_tegami — update the current session's work record
 
 Usage:
+  write_tegami project create <id> --title <text> --objective <text> [--stage <stage>]
+  write_tegami project write <id> --title|--objective|--stage|--exit|--status|--evidence <value>
   write_tegami --objective <text>
   write_tegami --phase <title> | --gate <text>
   write_tegami --leg N <title> | --leg N.M <title>
@@ -165,6 +167,57 @@ STORE="$(cd "$(dirname "$SELF")/../bin" && pwd)/ronin-store"
 [ -x "$STORE" ] || STORE=ronin-store
 SESSION_STORE="$("$STORE" session)"
 
+if [ "${1-}" = project ]; then
+  shift; PROJECT_VERB=${1-}; shift || true
+  PROJECT_ID=${1-}; shift || true
+  [ "$PROJECT_VERB" = create ] || [ "$PROJECT_VERB" = write ] \
+    || die "write_tegami: project takes create or write."
+  [ -n "$PROJECT_ID" ] || die "write_tegami: project $PROJECT_VERB needs an id."
+  NAME=$(me) || exit 3
+  PFILE="$SESSION_STORE/$(key_of "$NAME")/tegami.md"
+  [ -f "$PFILE" ] || die "write_tegami: you have no letter yet."
+  python3 - "$PFILE" "$PROJECT_VERB" "$PROJECT_ID" "$@" <<'PROJECT' || exit 3
+import json, os, re, sys
+src, verb, project_id, *args = sys.argv[1:]
+text = open(src).read()
+m = re.search(r"```(?:json)?\s*\n([\s\S]*?)\n```", text)
+if not m: sys.exit("write_tegami: no json block in your letter")
+d = json.loads(m.group(1)); projects = d.setdefault("projects", [])
+if not isinstance(projects, list): sys.exit('write_tegami: "projects" must be a list.')
+found = next((p for p in projects if isinstance(p, dict) and p.get("id") == project_id), None)
+def pairs(words):
+    if len(words) % 2: sys.exit("write_tegami: project fields take one --field value pair.")
+    return [(words[i].removeprefix("--"), words[i+1]) for i in range(0, len(words), 2)]
+edits = pairs(args)
+if verb == "create":
+    if found: sys.exit("write_tegami: project %s already exists." % project_id)
+    vals = dict(edits)
+    if not vals.get("title") or "objective" not in vals:
+        sys.exit("write_tegami: project create needs --title and --objective.")
+    found = {"id": project_id, "title": vals["title"], "objective": vals["objective"],
+             "stage": vals.get("stage", "PLANNING"), "exit": vals.get("exit", "none"),
+             "status": vals.get("status", "yellow"), "ladder": [], "evidence": []}
+    projects.append(found)
+else:
+    if not found: sys.exit("write_tegami: no project %s." % project_id)
+    if len(edits) != 1: sys.exit("write_tegami: project write changes one field per call.")
+    key, value = edits[0]
+    if key not in ("title", "objective", "stage", "exit", "status", "evidence"):
+        sys.exit("write_tegami: project write field must be title, objective, stage, exit, status or evidence.")
+    if key == "evidence": found.setdefault("evidence", []).append(value)
+    else: found[key] = value
+stages={"IDEAS","PLANNING","BUILDING","LANDING","DONE"}; exits={"none","agent","lead","user"}; statuses={"green","yellow","red"}
+for p in projects:
+    if not isinstance(p,dict) or not all(isinstance(p.get(k),str) for k in ("id","title","objective")): sys.exit("write_tegami: invalid project shape.")
+    if p.get("stage") not in stages or p.get("exit") not in exits or p.get("status") not in statuses: sys.exit("write_tegami: invalid project stage, exit or status.")
+    if not isinstance(p.get("ladder"),list) or not isinstance(p.get("evidence"),list): sys.exit("write_tegami: invalid project ladder or evidence.")
+block=json.dumps(d, indent=2, ensure_ascii=False); tmp=src+".project"
+open(tmp,"w").write(text[:m.start(1)]+block+text[m.end(1):]); os.replace(tmp,src)
+print("write_tegami: project %s %s." % (project_id, "created" if verb == "create" else "updated"))
+PROJECT
+  exit 0
+fi
+
 TARGET=""; ACTIVE=""; STATE=""; DOCADD=""; DOCDEL=""
 # Field verbs collect here as "verb<US>arg<US>arg" and apply in order, after the parse.
 US=$(printf '\037'); EDITS=()
@@ -226,7 +279,7 @@ else:
 # "docs" is in this list for the same reason "at" is: this path rebuilds the whole block
 # from a fixed set of keys, so a key missing from it is a key this switch DELETES. A
 # session saying "back in ten minutes" must not lose its doc list to say it.
-block = json.dumps({k: d[k] for k in ("objective", "mandate", "teams", "repos", "ladder_state", "ladder", "docs", "at") if k in d},
+block = json.dumps({k: d[k] for k in ("objective", "mandate", "teams", "repos", "projects", "ladder_state", "ladder", "docs", "at") if k in d},
                    indent=2, ensure_ascii=False)
 tmp = src + ".sw"
 open(tmp, "w").write(text[:m.start(1)] + block + text[m.end(1):])
@@ -310,7 +363,7 @@ if docs:
 else:
     d.pop("docs", None)   # absent means empty; an empty list is a key that says nothing
 
-block = json.dumps({k: d[k] for k in ("objective", "mandate", "teams", "repos", "ladder_state", "ladder", "docs", "at") if k in d},
+block = json.dumps({k: d[k] for k in ("objective", "mandate", "teams", "repos", "projects", "ladder_state", "ladder", "docs", "at") if k in d},
                    indent=2, ensure_ascii=False)
 # Beside, then rename: the tab may read this file at any moment and a half-written block
 # reads as "no ladder" for exactly as long as the write takes.
@@ -408,7 +461,7 @@ if d.get("at"):
 
 # Titles, objective and role are copied through exactly as the agent left it — a monitor
 # that tidied a title would be authoring, which is not its job.
-block = json.dumps({k: d[k] for k in ("objective", "mandate", "teams", "repos", "side_road", "ladder", "docs", "at") if k in d},
+block = json.dumps({k: d[k] for k in ("objective", "mandate", "teams", "repos", "projects", "side_road", "ladder", "docs", "at") if k in d},
                    indent=2, ensure_ascii=False)
 open(tmp, "w").write(text[:m.start(1)] + block + text[m.end(1):])
 os.replace(tmp, src)
@@ -440,7 +493,7 @@ except Exception:
     d = {}
 if not isinstance(d, dict):
     d = {}
-out = {k: d[k] for k in ("objective", "mandate", "repos", "ladder_state", "ladder") if k in d}
+out = {k: d[k] for k in ("objective", "mandate", "repos", "projects", "ladder_state", "ladder") if k in d}
 ladder = out.setdefault("ladder", [])
 if not isinstance(ladder, list):
     sys.exit("write_tegami: the letter's ladder is not a list; fix it with a whole-block save.")
@@ -566,7 +619,7 @@ PREV=$(awk '/^```/{f=!f; if(f) next; else exit} f' "$FILE" 2>/dev/null)
 PREVF=$(mktemp); printf '%s' "${PREV:-{\}}" > "$PREVF"
 BLOCK=$(printf '%s' "$BODY" | python3 -c '
 import json, sys
-ALLOWED   = {"objective", "mandate", "repos", "ladder_state", "ladder"}
+ALLOWED   = {"objective", "mandate", "repos", "projects", "ladder_state", "ladder"}
 # What is happening to the ladder AS A WHOLE — not a rung. Absent means "on_track", so
 # nothing has to be migrated and the normal case costs nobody a keystroke.
 #
@@ -764,6 +817,11 @@ out = {"objective": d.get("objective", ""),
        "mandate": mandate,
        "teams": _teams,
        "repos": repos}
+_projects = d.get("projects", prev.get("projects", []))
+if not isinstance(_projects, list):
+    sys.exit("write_tegami: projects must be a list.")
+if _projects:
+    out["projects"] = _projects
 ls_ = (d.get("ladder_state") or "").strip().lower()
 if ls_ and ls_ != "on_track":
     out["ladder_state"] = ls_

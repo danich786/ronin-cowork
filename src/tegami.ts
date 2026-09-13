@@ -5,6 +5,10 @@ import { RIREKI_DIR, sessionKey } from './session-dir.js';
 import { readTeamRoster } from './team-rosters.js';
 import type { SessionInfo } from './tmux.js';
 import { mandate, type Mandate } from './agent-defaults.js';
+import { deliverMessage } from './message-queue.js';
+import { normalizeProject, type Project } from './projects.js';
+
+export type TegamiProject = Project;
 
 export interface TegamiCheckout {
   repo: string;
@@ -114,9 +118,74 @@ function seedShell(
   "mandate": ${JSON.stringify(sessionMandate)},
   "teams": ${JSON.stringify(teams)},
   "repos": ${JSON.stringify(repos.filter((checkout) => checkout.repo || checkout.branch))},${docs.length ? `\n  "docs": ${JSON.stringify(docs)},` : ''}
+  "projects": [],
   "ladder": [] }
 \`\`\`
 `;
+}
+
+function letterBlock(text: string): { match: RegExpMatchArray; body: Record<string, unknown> } | null {
+  const match = text.match(/```(?:json)?\s*\n([\s\S]*?)\n```/);
+  if (!match) return null;
+  try {
+    const body = JSON.parse(match[1]) as unknown;
+    return body && typeof body === 'object' && !Array.isArray(body)
+      ? { match, body: body as Record<string, unknown> }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+async function replaceLetterBlock(file: string, text: string, parsed: ReturnType<typeof letterBlock>, body: Record<string, unknown>): Promise<void> {
+  if (!parsed) throw new Error('work record has no valid JSON block');
+  const block = JSON.stringify(body, null, 2);
+  const start = parsed.match.index! + parsed.match[0].indexOf(parsed.match[1]);
+  const out = text.slice(0, start) + block + text.slice(start + parsed.match[1].length);
+  const tmp = `${file}.project.${process.pid}`;
+  await fs.writeFile(tmp, out, 'utf8');
+  await fs.rename(tmp, file);
+}
+
+export type MoveTegamiProjectInput =
+  | { direction: 'place'; session: string; project: Project }
+  | { direction: 'return'; session: string; projectId: string };
+
+export interface MoveTegamiProjectResult {
+  project: Project;
+  projectsRemaining: number;
+}
+
+/** The house's only cross-letter project write. Roster mutation stays with its caller. */
+export async function moveTegamiProject(
+  input: MoveTegamiProjectInput,
+  notify: (session: string, text: string) => Promise<unknown> = (session, text) => deliverMessage(session, text, 'house'),
+): Promise<MoveTegamiProjectResult> {
+  const file = tegamiPath(await sessionKey(input.session));
+  const text = await fs.readFile(file, 'utf8');
+  const parsed = letterBlock(text);
+  if (!parsed) throw new Error(`@${input.session} has no readable work record`);
+  const projects = Array.isArray(parsed.body.projects)
+    ? parsed.body.projects.map(normalizeProject)
+    : [];
+  if (projects.some((project) => project === null)) throw new Error(`@${input.session} has an invalid project in its work record`);
+  const valid = projects as Project[];
+  let project: Project;
+  if (input.direction === 'place') {
+    const normalized = normalizeProject(input.project);
+    if (!normalized) throw new Error(`project ${input.project?.id || '(no id)'} has an invalid shape`);
+    if (valid.some((item) => item.id === normalized.id)) throw new Error(`project ${normalized.id} is already in @${input.session}'s work record`);
+    project = normalized;
+    valid.push(project);
+  } else {
+    const at = valid.findIndex((item) => item.id === input.projectId);
+    if (at < 0) throw new Error(`project ${input.projectId} is not in @${input.session}'s work record`);
+    [project] = valid.splice(at, 1);
+  }
+  parsed.body.projects = valid;
+  await replaceLetterBlock(file, text, parsed, parsed.body);
+  await notify(input.session, 'check your work record');
+  return { project, projectsRemaining: valid.length };
 }
 
 export async function seedTegami(

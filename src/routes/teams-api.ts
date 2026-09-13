@@ -16,6 +16,9 @@ import { assertSameCampaignRoot, campaignFilter, campaignResolver, initialCampai
 import { retireTeam } from '../team-retire.js';
 import { readCampaign } from '../campaigns.js';
 import { teamAgentDefaults } from '../agent-defaults.js';
+import { assignTeamProject, returnTeamProject, writeTeamIdea } from '../team-projects.js';
+import { PROJECT_EXITS, PROJECT_STATUSES, normalizeProject, type Project } from '../projects.js';
+import { deriveTeamKanban } from '../team-kanban.js';
 
 const errMsg = (e: unknown): string => String((e as Error)?.message ?? e);
 
@@ -96,7 +99,77 @@ function editOf(body: unknown): RosterEdit {
   return edit;
 }
 
+function ideaEditOf(body: unknown): Partial<Project> {
+  const b = object(body);
+  const edit: Partial<Project> = {};
+  if (b.title !== undefined) edit.title = String(b.title).trim().slice(0, 200);
+  if (b.objective !== undefined) edit.objective = String(b.objective).trim().slice(0, 2000);
+  if (b.exit !== undefined) {
+    if (!PROJECT_EXITS.includes(b.exit as Project['exit'])) throw new Error(`exit is ${PROJECT_EXITS.join(', ')}.`);
+    edit.exit = b.exit as Project['exit'];
+  }
+  if (b.status !== undefined) {
+    if (!PROJECT_STATUSES.includes(b.status as Project['status'])) throw new Error(`status is ${PROJECT_STATUSES.join(', ')}.`);
+    edit.status = b.status as Project['status'];
+  }
+  if (b.ladder !== undefined) {
+    const shaped = normalizeProject({
+      id: '_', title: '_', objective: '', stage: 'IDEAS', exit: 'lead', status: 'yellow', ladder: b.ladder, evidence: [],
+    });
+    if (!shaped) throw new Error('ladder is not a valid project ladder.');
+    edit.ladder = shaped.ladder;
+  }
+  if (b.evidence !== undefined) edit.evidence = Array.isArray(b.evidence) ? b.evidence.map(String) : [];
+  return edit;
+}
+
 export function registerTeams(app: express.Express): void {
+  app.get('/api/teams/:team/kanban', async (req, res) => {
+    try {
+      const board = await deriveTeamKanban(req.params.team);
+      if (!board) return res.status(404).json({ error: `Team "${req.params.team}" has no roster.` });
+      res.json(board);
+    } catch (e) {
+      res.status(500).json({ error: errMsg(e) });
+    }
+  });
+
+  app.post('/api/team-rosters/:name/projects', async (req, res) => {
+    try {
+      res.json({ ok: true, ...(await writeTeamIdea(req.params.name, undefined, ideaEditOf(req.body))) });
+    } catch (e) {
+      res.status(400).json({ error: errMsg(e) });
+    }
+  });
+
+  app.put('/api/team-rosters/:name/projects/:id', async (req, res) => {
+    try {
+      res.json({ ok: true, ...(await writeTeamIdea(req.params.name, req.params.id, ideaEditOf(req.body))) });
+    } catch (e) {
+      res.status(400).json({ error: errMsg(e) });
+    }
+  });
+
+  app.post('/api/team-rosters/:name/projects/:id/assign', async (req, res) => {
+    try {
+      const session = String(req.body?.session ?? '').trim();
+      if (!session) throw new Error('assign needs a session.');
+      res.json({ ok: true, project: await assignTeamProject(req.params.name, req.params.id, session) });
+    } catch (e) {
+      res.status(400).json({ error: errMsg(e) });
+    }
+  });
+
+  app.post('/api/team-rosters/:name/projects/:id/return', async (req, res) => {
+    try {
+      const session = String(req.body?.session ?? '').trim();
+      if (!session) throw new Error('return needs a session.');
+      res.json({ ok: true, ...(await returnTeamProject(req.params.name, req.params.id, session)) });
+    } catch (e) {
+      res.status(400).json({ error: errMsg(e) });
+    }
+  });
+
   app.get('/api/team-rosters', async (req, res) => {
     try {
       const resolve = await campaignResolver();

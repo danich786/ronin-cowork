@@ -1,0 +1,109 @@
+import { normalizeProject, type Project } from './projects.js';
+import { readTeamRoster, writeTeamRoster } from './team-rosters.js';
+
+export type IdeaEdit = Partial<Pick<Project, 'title' | 'objective' | 'exit' | 'status' | 'ladder' | 'evidence'>>;
+
+const projectId = (team: string, stated: string): string => {
+  const value = stated.trim();
+  return value.includes('/') ? value : `${team}/${value}`;
+};
+
+export async function writeTeamIdea(team: string, statedId: string | undefined, edit: IdeaEdit): Promise<{
+  created: boolean;
+  project: Project;
+}> {
+  const roster = await readTeamRoster(team);
+  if (!roster) throw new Error(`Team "${team}" has no roster.`);
+  const created = !statedId;
+  const id = statedId ? projectId(team, statedId) : `${team}/${roster.next_project_id}`;
+  if (!id.startsWith(`${team}/`)) throw new Error(`Project "${id}" does not belong to Team "${team}".`);
+  const at = roster.projects.findIndex((project) => project.id === id);
+  if (created && at !== -1) throw new Error(`Project "${id}" already exists.`);
+  if (!created && at === -1) throw new Error(`Project "${id}" is not an idea in Team "${team}".`);
+  const prior = at === -1 ? {
+    id,
+    title: '',
+    objective: '',
+    stage: 'IDEAS' as const,
+    exit: 'lead' as const,
+    status: 'yellow' as const,
+    ladder: [{ stage: 'IDEAS' as const }],
+    evidence: [],
+  } : roster.projects[at];
+  const project = normalizeProject({ ...prior, ...edit, id, stage: 'IDEAS' });
+  if (!project) throw new Error('An idea needs a title and the complete project shape.');
+  const projects = [...roster.projects];
+  if (at === -1) projects.push(project); else projects[at] = project;
+  await writeTeamRoster(team, {
+    projects,
+    ...(created ? { next_project_id: roster.next_project_id + 1 } : {}),
+  });
+  return { created, project };
+}
+
+export async function removeTeamIdea(team: string, statedId: string): Promise<Project> {
+  const roster = await readTeamRoster(team);
+  if (!roster) throw new Error(`Team "${team}" has no roster.`);
+  const id = projectId(team, statedId);
+  const project = roster.projects.find((entry) => entry.id === id);
+  if (!project) throw new Error(`Project "${id}" is not an idea in Team "${team}".`);
+  await writeTeamRoster(team, { projects: roster.projects.filter((entry) => entry.id !== id) });
+  return project;
+}
+
+export async function restoreTeamIdea(team: string, value: Project): Promise<Project> {
+  const roster = await readTeamRoster(team);
+  if (!roster) throw new Error(`Team "${team}" has no roster.`);
+  if (roster.projects.some((entry) => entry.id === value.id)) throw new Error(`Project "${value.id}" already exists in the roster.`);
+  const project = normalizeProject({ ...value, stage: 'IDEAS' });
+  if (!project || !project.id.startsWith(`${team}/`)) throw new Error(`Project does not belong to Team "${team}".`);
+  await writeTeamRoster(team, { projects: [...roster.projects, project] });
+  return project;
+}
+
+export type ProjectMover = (input:
+  | { direction: 'place'; session: string; project: Project }
+  | { direction: 'return'; session: string; projectId: string }
+) => Promise<{ project: Project; projectsRemaining: number }>;
+
+const houseMove: ProjectMover = async (input) => {
+  const module = await import('./tegami.js') as unknown as { moveTegamiProject?: ProjectMover };
+  if (!module.moveTegamiProject) throw new Error('The whole-project Work Record move is not installed yet.');
+  return module.moveTegamiProject(input);
+};
+
+export async function assignTeamProject(team: string, statedId: string, session: string, move: ProjectMover = houseMove): Promise<Project> {
+  const roster = await readTeamRoster(team);
+  if (!roster) throw new Error(`Team "${team}" has no roster.`);
+  const id = projectId(team, statedId);
+  const at = roster.projects.findIndex((project) => project.id === id);
+  if (at < 0) throw new Error(`Project "${id}" is not an idea in Team "${team}".`);
+  const project = normalizeProject({ ...roster.projects[at], stage: 'PLANNING', exit: 'user', status: 'yellow' })!;
+  await move({ direction: 'place', session, project });
+  try {
+    await writeTeamRoster(team, { projects: roster.projects.filter((entry) => entry.id !== id) });
+  } catch (error) {
+    await move({ direction: 'return', session, projectId: id }).catch(() => undefined);
+    throw error;
+  }
+  return project;
+}
+
+export async function returnTeamProject(team: string, statedId: string, session: string, move: ProjectMover = houseMove): Promise<{
+  project: Project;
+  projectsRemaining: number;
+}> {
+  const roster = await readTeamRoster(team);
+  if (!roster) throw new Error(`Team "${team}" has no roster.`);
+  const id = projectId(team, statedId);
+  if (roster.projects.some((entry) => entry.id === id)) throw new Error(`Project "${id}" is already in the roster.`);
+  const moved = await move({ direction: 'return', session, projectId: id });
+  const project = normalizeProject({ ...moved.project, stage: 'IDEAS', exit: 'lead', status: 'yellow' })!;
+  try {
+    await writeTeamRoster(team, { projects: [...roster.projects, project] });
+  } catch (error) {
+    await move({ direction: 'place', session, project: moved.project }).catch(() => undefined);
+    throw error;
+  }
+  return { project, projectsRemaining: moved.projectsRemaining };
+}
