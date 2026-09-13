@@ -35,7 +35,7 @@
   .ask-switch[aria-checked='true'] .ask-track::after { left: 12px; }
 
   /* the tray: inserted under the field's group, full width of the surface */
-  .ask-tray { flex-basis: 100%; display: grid; gap: var(--space-4); border: var(--edge) dashed var(--line-2); background: color-mix(in srgb, var(--panel) 60%, var(--bg-2)); padding: var(--space-5); }
+  .ask-tray { flex-basis: 100%; width: 100%; grid-column: 1 / -1; box-sizing: border-box; display: grid; gap: var(--space-4); border: var(--edge) dashed var(--line-2); background: color-mix(in srgb, var(--panel) 60%, var(--bg-2)); padding: var(--space-5); }
   .ask-filter { justify-self: start; width: calc(var(--ask-w) + var(--space-12)); max-width: 100%; border: var(--edge) solid var(--line-2); border-radius: var(--radius-xs); background: var(--well); color: var(--fg); padding: var(--space-3) var(--space-4); font: inherit; font-size: var(--form-note); }
   .ask-options { display: flex; flex-wrap: wrap; gap: var(--ask-gap); }
   .ask-empty { color: var(--dim); font-size: var(--form-note); }
