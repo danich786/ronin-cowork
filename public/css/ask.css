@@ -39,6 +39,9 @@
   .ask-filter { justify-self: start; width: calc(var(--ask-w) + var(--space-12)); max-width: 100%; border: var(--edge) solid var(--line-2); border-radius: var(--radius-xs); background: var(--well); color: var(--fg); padding: var(--space-3) var(--space-4); font: inherit; font-size: var(--form-note); }
   .ask-options { display: flex; flex-wrap: wrap; gap: var(--ask-gap); }
   .ask-empty { color: var(--dim); font-size: var(--form-note); }
+  /* the second layer: the nested question's stones under the first layer's, one hairline between */
+  .ask-layer { display: grid; gap: var(--space-3); border-top: var(--edge) dashed var(--line); padding-top: var(--space-4); }
+  .ask-layer-head { color: var(--muted); font-size: var(--form-note); }
 
   /* the two shapes, and never a third */
   .ask-opt { display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; border: var(--edge) solid var(--line-2); border-left: var(--edge-2) solid var(--accent); border-radius: var(--radius-xs); background: var(--well); color: var(--fg-strong); cursor: pointer; text-align: left; font: inherit; }
