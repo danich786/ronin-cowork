@@ -26,7 +26,7 @@
 # write is not recomputed next turn.
 #
 # Nothing here knows how a session is made or how text reaches a pane — Ronin does both,
-# through the same endpoints the UI uses. Same rule as tejun-harakiri: one implementation
+# through the same endpoints the UI uses. Same rule as session_end: one implementation
 # of the dangerous thing, never a second copy in bash that drifts from it.
 set -u
 . "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"

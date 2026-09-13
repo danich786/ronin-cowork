@@ -52,7 +52,7 @@ export async function announcePromotion(r: PromotionReceipt, primary: string, fx
     for (const session of repo.sessions) if (!per.has(session)) per.set(session, [`${repo.repo} → ${repo.target}@${repo.candidate.slice(0, 7)}`]);
   }
   for (const [session, items] of per) {
-    const text = `from promotion: your hand-in is on ${r.repos[0]?.target ?? 'dev'} — ${items.join('; ')} [${r.id}]. Your desk is finished and certified clean: stay parked for more work, or go with tejun-harakiri — the desk ends with you, never before you.`;
+    const text = `from promotion: your hand-in is on ${r.repos[0]?.target ?? 'dev'} — ${items.join('; ')} [${r.id}]. Your desk is finished and certified clean: stay parked for more work, or go with session_end — the desk ends with you, never before you.`;
     try {
       log(`  told  ${session}: ${await fx.tell(session, text)}`);
     } catch (e) {

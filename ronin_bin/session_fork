@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# tejun-fork — launch one visible Ronin Agent. Every input is optional.
-# Usage: tejun-fork [instructions] --name n [--team t] [--behaviour ways:book]…
+# session_fork — launch one visible Ronin Agent. Every input is optional.
+# Usage: session_fork [instructions] --name n [--team t] [--behaviour ways:book]…
 #                   [--provider p] [--model m] [--dial user|read|write]
 set -u
 . "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"
@@ -20,6 +20,24 @@ me() {
       awk -F '\t' -v i="\$$sid" '$1==i && $2 !~ /^grid_/ {print $2; exit}'
   fi
 }
+
+case "${1:-}" in
+  -h|--help)
+    [ "$#" -eq 1 ] || die "--help takes no other arguments. Run session_fork --help." 2
+    cat <<'EOF'
+session_fork — launch one visible Ronin Agent with inherited context
+
+Usage:
+  session_fork [instructions] --name <name> [--team <team>]
+               [--behaviour ways:<book>]… [--provider <provider>]
+               [--model <model>] [--dial user|read|write]
+
+Every input except --name is optional. Omitted launch choices inherit through the
+ordinary Campaign, Team, and installation launch resolver.
+Related: session_create --help; session_check --help
+EOF
+    exit 0 ;;
+esac
 
 PROMPT="" NAME="" TEAM="" BEHAVIOURS="" PROVIDER="" MODEL="" DIAL=""
 while [ $# -gt 0 ]; do
@@ -56,7 +74,7 @@ PY
 ) || die 'could not compose launch request' 2
 . "$TOOL_DIR/ronin-http.sh"
 ronin_connect || exit $?
-OUT=$(mktemp /tmp/tejun-fork.XXXXXX) || exit 2
+OUT=$(mktemp /tmp/session_fork.XXXXXX) || exit 2
 CODE=$(curl -sS -m 120 "${RONIN_CURL[@]+"${RONIN_CURL[@]}"}" -o "$OUT" -w '%{http_code}' \
   -H 'content-type: application/json' -X POST --data "$BODY" "$url/api/session") || {
   rm -f "$OUT"; die "Ronin did not answer at $url" 5;

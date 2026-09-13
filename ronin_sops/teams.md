@@ -85,8 +85,8 @@ where the desk hands in, grant permission, or add an approval step.
 - **Membership is nobody's fortress.** Anyone may move a session between teams — you,
   the owner, the session itself. Keep the roster's objective current instead of policing
   the edges; a changed objective reaches every member on their next letter reread.
-- **Choose whether an ending may return.** Archive a live session with `tejun-archive
+- **Choose whether an ending may return.** Archive a live session with `session_archive
   <session>` when its work may be resumed; use hard end/delete only when it should not
-  return. `tejun-rehydrate <archive-id>` restores an archived session through Ronin's
+  return. `session_restore <archive-id>` restores an archived session through Ronin's
   existing provider-resume and metadata-restoration path. These are operational choices,
   not confirmation gates.

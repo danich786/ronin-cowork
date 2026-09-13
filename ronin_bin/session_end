@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# tejun-harakiri — end YOUR OWN session. The last act of `land` / `delete`.
+# session_end — end YOUR OWN session. The last act of `land` / `delete`.
 #
-# Usage: tejun-harakiri        — no arguments. You do not name a session.
+# Usage: session_end        — no arguments. You do not name a session.
 #
 # This is a HANDOFF, not a procedure. It tells Ronin which pane it is standing in and
 # stops there. Ronin resolves that pane to its real session, checks the dial and ends it
@@ -18,10 +18,10 @@ TOOL_DIR=$(dirname "$SELF")
 
 help() {
   cat <<'EOF'
-tejun-harakiri — end this Agent and its desks together: the one way to go
+session_end — end this Agent and its desks together: the one way to go
 
 Usage:
-  tejun-harakiri
+  session_end
 
 Ronin checks every assigned managed desk first. Clean desks whose tips are already
 contained in their Team lines close automatically, including immediately after an
@@ -39,7 +39,7 @@ case "${1:-}" in
 REFUSED: harakiri takes no session name — it ends the session you are in.
 Ending a DIFFERENT session is a separate, deliberate act (see ronin_catalogs/ACTIONS.md,
 "ending someone else's session"): ask the owner, or use the trash button in Ronin.
-Run tejun-harakiri --help.
+Run session_end --help.
 EOF
       exit 4 ;;
 esac
@@ -70,7 +70,7 @@ case "$body" in
   401) echo "STUCK: Ronin rejected the request (auth on). Set RONIN_AUTH=user:pass." >&2; exit 5 ;;
   403) echo "DENIED: owner-controlled session (dial 👤); ask the owner to end it." >&2; exit 4 ;;
   404) echo "STUCK: Ronin does not see pane $pane in any session." >&2; exit 5 ;;
-  409) echo "REFUSED: Ronin kept this Agent and its desks open. Complete every NEXT action below, then run tejun-harakiri again." >&2
+  409) echo "REFUSED: Ronin kept this Agent and its desks open. Complete every NEXT action below, then run session_end again." >&2
        cat "$response_file" >&2
        echo >&2
        exit 4 ;;

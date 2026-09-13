@@ -81,7 +81,7 @@ const shutdownSlots = new ShutdownSlots();
 async function openDeskRefusal(name: string): Promise<string> {
   const desks = (await listDesks()).filter((desk) => desk.state === 'open' && (desk.owners?.length ? desk.owners : [desk.session]).includes(name));
   return desks.length
-    ? `Session "${name}" owns open desk${desks.length === 1 ? '' : 's'} ${desks.map((desk) => `${desk.repo}:${desk.branch}`).join(', ')}. Archive leaves managed-desk custody unchanged; run tejun-harakiri or Shut down Agent after closeout instead.`
+    ? `Session "${name}" owns open desk${desks.length === 1 ? '' : 's'} ${desks.map((desk) => `${desk.repo}:${desk.branch}`).join(', ')}. Archive leaves managed-desk custody unchanged; run session_end or Shut down Agent after closeout instead.`
     : '';
 }
 
@@ -96,7 +96,7 @@ async function performAgentShutdown(name: string, progress: (value: ShutdownProg
 }
 
 async function notifyShutdownBlockers(name: string, error: ShutdownRefused): Promise<void> {
-  const queued = await enqueueMessage(name, `Ronin could not close this Agent because assigned desk work needs closeout.\n${error.message}\nRun tejun-harakiri again after completing the named NEXT actions.`, 'house');
+  const queued = await enqueueMessage(name, `Ronin could not close this Agent because assigned desk work needs closeout.\n${error.message}\nRun session_end again after completing the named NEXT actions.`, 'house');
   await attemptMessage(queued.id, 'safe').catch(() => null);
 }
 

@@ -9,7 +9,7 @@ import path from 'node:path';
 const exec = promisify(execFile);
 const root = path.resolve(import.meta.dirname, '..');
 
-async function fixture(sessions: unknown[] = []) {
+async function fixture(sessions: unknown[] = [], modelFacts?: { provider: string; cli: string; model: string }) {
   const requests: Array<{ method: string; url: string; body: string }> = [];
   const server = createServer((req, res) => {
     let body = '';
@@ -20,6 +20,21 @@ async function fixture(sessions: unknown[] = []) {
       res.setHeader('content-type', 'application/json');
       if (req.method === 'GET' && req.url === '/api/sessions') {
         res.end(JSON.stringify(sessions));
+        return;
+      }
+      if (req.method === 'GET' && req.url === '/api/provider-catalog') {
+        const facts = modelFacts ?? { provider: 'fixture-provider', cli: 'fixture-cli', model: `fixture-model-${process.pid}` };
+        res.end(JSON.stringify({ origin: 'user', updated: 'fixture-date', providers: [{ provider: facts.provider, cli: facts.cli, label: 'Fixture Provider', models: [{ model: facts.model, tier: 'fixture-tier' }] }] }));
+        return;
+      }
+      if (req.method === 'GET' && req.url === '/api/setup/runtime') {
+        const facts = modelFacts ?? { provider: 'fixture-provider', cli: 'fixture-cli', model: `fixture-model-${process.pid}` };
+        res.end(JSON.stringify({ providers: [{ id: facts.cli, installed: true, signed_in: true, activated: true }] }));
+        return;
+      }
+      if (req.method === 'GET' && req.url === '/api/launch-seed') {
+        const facts = modelFacts ?? { provider: 'fixture-provider', cli: 'fixture-cli', model: `fixture-model-${process.pid}` };
+        res.end(JSON.stringify({ seeds: { provider: { value: facts.provider, stated_by: [{ source: 'fixture Campaign default' }] }, model: { value: facts.model, stated_by: [{ source: 'fixture Campaign default' }] } } }));
         return;
       }
       if (req.method === 'POST' && req.url === '/api/session') {
@@ -67,6 +82,47 @@ test('creation is an explicit command and uses the launch door', async (t) => {
   assert.match(result.output, /BORN unused/);
   assert.equal(f.requests.length, 1);
   assert.deepEqual({ method: f.requests[0].method, url: f.requests[0].url }, { method: 'POST', url: '/api/session' });
+});
+
+test('creation help renders current catalog choices, availability, and Campaign defaults', async (t) => {
+  const facts = { provider: `provider-${process.pid}`, cli: `cli-${process.pid}`, model: `model-${process.pid}` };
+  const f = await fixture([], facts);
+  t.after(f.close);
+  const result = await f.run('session_create', ['--help']);
+  assert.equal(result.code, 0, result.output);
+  assert.match(result.output, new RegExp(`${facts.provider} \\(Fixture Provider\\) — available`));
+  assert.match(result.output, new RegExp(`${facts.model} · fixture-tier — available`));
+  assert.match(result.output, new RegExp(`Current launch default: ${facts.provider}/${facts.model} — fixture Campaign default`));
+  assert.deepEqual(f.requests.map(({ method, url }) => `${method} ${url}`), [
+    'GET /api/provider-catalog', 'GET /api/setup/runtime', 'GET /api/launch-seed',
+  ]);
+});
+
+test('creation validates one catalog pair and forwards the selected provider and model unchanged', async (t) => {
+  const facts = { provider: `provider-${process.pid}`, cli: `cli-${process.pid}`, model: `model-${process.pid}` };
+  const f = await fixture([], facts);
+  t.after(f.close);
+  const result = await f.run('session_create', ['unused', '--provider', facts.provider, '--model', facts.model]);
+  assert.equal(result.code, 0, result.output);
+  assert.deepEqual(f.requests.map(({ method, url }) => `${method} ${url}`), [
+    'GET /api/provider-catalog', 'POST /api/session',
+  ]);
+  const body = JSON.parse(f.requests[1]!.body);
+  assert.equal(body.name, 'unused');
+  assert.equal(body.provider, facts.provider);
+  assert.equal(body.model, facts.model);
+});
+
+test('creation reports invalid model choices from the current catalog response', async (t) => {
+  const facts = { provider: `provider-${process.pid}`, cli: `cli-${process.pid}`, model: `model-${process.pid}` };
+  const f = await fixture([], facts);
+  t.after(f.close);
+  const missing = `missing-${process.pid}`;
+  const result = await f.run('session_create', ['unused', '--provider', facts.provider, '--model', missing]);
+  assert.equal(result.code, 4);
+  assert.match(result.output, new RegExp(`BAD-MODEL: ${facts.provider}/${missing}`));
+  assert.match(result.output, new RegExp(`Available: ${facts.provider}/${facts.model}`));
+  assert.deepEqual(f.requests.map(({ method, url }) => `${method} ${url}`), ['GET /api/provider-catalog']);
 });
 
 test('updating a missing name refuses after its read and never creates it', async (t) => {
