@@ -49,6 +49,13 @@ test('both workbench entrances use the canonical New Agent form with contextual 
   assert.match(cowork, /'team\.add-agent': WB_TYPES\.newAgent/);
 });
 
+test('choosing New team requires a valid name before any session type can launch', async () => {
+  const form = await source('new-agent.js');
+  assert.match(form, /draft\.teamMode !== 'new' \|\| isValidTeamName\(chosenTeam\(\)\)/);
+  assert.match(form, /if \(draft\.teamMode === 'new'\) \{[\s\S]*if \(!isValidTeamName\(team\)\)/);
+  assert.doesNotMatch(form, /unnamed new team is no team|isCowork\(\) && team/);
+});
+
 test('Where it works keeps birthplace separate from optional additional workspaces', async () => {
   const form = await source('new-agent.js');
   assert.match(form, /request\('\/api\/project-roots\/detail'\)/);

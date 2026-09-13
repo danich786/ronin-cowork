@@ -450,7 +450,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
   function paintActions() {
     // The button says what the press will DO: with the name blank there is no team to
     // create, so it must not promise one.
-    const ready = !!draft.name.trim();
+    const ready = !!draft.name.trim() && (draft.teamMode !== 'new' || isValidTeamName(chosenTeam()));
     start.setDisabled(!ready);
     if (ready) start.el.dataset.kind = 'primary';
     else delete start.el.dataset.kind;
@@ -469,9 +469,7 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     notice.set('info', t('add_agent.starting', 'Starting…'));
     // A NEW TEAM IS TWO IDEMPOTENT DOORS (§ 7.5): write the record, then launch into it.
     let team = chosenTeam();
-    // An unnamed new team is no team, not a refusal — see the field's own sentence.
-    if (draft.teamMode === 'new' && !team) team = '';
-    if (draft.teamMode === 'new' && isCowork() && team) {
+    if (draft.teamMode === 'new') {
       if (!isValidTeamName(team)) {
         if (launchTab) closeWorkspaceTab(launchTab);
         busy = false;
