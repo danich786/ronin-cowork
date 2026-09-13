@@ -30,6 +30,7 @@ Usage:
   worktree-desk hand-in [<repo[:branch]>] [--assignment]
   worktree-desk close [<repo[:branch]>] [--with-session]
   worktree-desk receipts [<repo>] [--line | --id <receipt-id>]
+  worktree-desk reply <repo> <receipt-id> <message…>
   worktree-desk handoff <repo[:branch]> --to <session[,session]>
   worktree-desk discard <repo[:branch]> --confirm "DISCARD repo:branch"
   worktree-desk repository-init <existing-project-root>

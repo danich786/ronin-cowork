@@ -38,5 +38,11 @@ hand. `discard` is the one destructive form and requires the exact confirmation 
 `repository-init` runs local `git init` only, in an existing Workspace Folder; it never
 creates the folder, a remote, or a hosted repository.
 
+The table is the executable contract. All ten rows are subcommands of the single
+`worktree-desk` executable and appear in its help. `status`, `sync`, `hand-in`, `open`,
+`close`, `receipts`, `reply`, `handoff`, and `discard` retain the guarded desk lifecycle;
+`repository-init` is the repository operation. No second desk or repository initializer
+is projected.
+
 After the final hand-in, `status` must say `CERTIFIED CLEAN`: no unsaved files and every
 commit on the Team line. Stay parked unless told to end.
