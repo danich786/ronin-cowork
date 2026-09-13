@@ -8,40 +8,21 @@ test('Campaign Installations is the shared stone surface with the Setup Services
   assert.match(source, /\['ronin_services', 'gbrain', 'trello', 'perplexity'\]/);
   assert.match(source, /createServicesSurface\(sharedContext\)/);
   assert.match(source, /createGbrainSurface\(sharedContext\)/);
-  assert.match(source, /const question = ask\(/);
-  assert.match(source, /group: t\('campaign_view\.available', 'Available'\)/);
-  assert.match(source, /shape: 'square', expanded: true/);
-  assert.match(source, /installationFirstRow: choice\?\.el \|\| null/);
-  assert.match(source, /v: 'off'.*campaign_view\.off/);
-  assert.match(source, /v: 'on'.*campaign_view\.on/);
-  assert.match(source, /v: 'all'.*campaign_view\.shape_all/);
+  assert.match(source, /key: 'available'.*switch: \[t\('campaign_view\.on', 'On'\), t\('campaign_view\.off', 'Off'\)\]/);
+  assert.match(source, /key: 'defaultForAll'.*switch: \[t\('campaign_view\.on', 'On'\), t\('campaign_view\.off', 'Off'\)\]/);
+  assert.match(source, /turn Available on first/);
+  assert.match(source, /control\.disabled = off/);
+  assert.match(source, /availableControl\.disabled = Boolean\(reason\)/);
+  assert.match(source, /installationControls: controls/);
   assert.match(source, /installation\.effect === 'provider'/);
-  assert.match(source, /saveCampaign\(row\.id, \{ config: \{ installations, defaults \} \}\)/);
-  assert.doesNotMatch(source, /switch:/);
+  assert.match(source, /saveCampaign\(row\.id, \{ config: \{ installations \} \}\)/);
+  assert.match(source, /saveCampaign\(row\.id, \{ config: \{ defaults \} \}\)/);
+  assert.doesNotMatch(source, /shape: 'square'|shape_all|answer === 'all'/);
   assert.match(source, /stoneSurface\.select\('ronin_services'\)/);
   assert.match(source, /Ronin Services required/);
   assert.match(source, /name === 'trello' \|\| name === 'perplexity'/);
   assert.match(source, /values\.ronin_services === true.*installed\?\.services\?\.parts/);
   assert.doesNotMatch(source, /servicesSell|installBlock|cv-choice|type = 'checkbox'|Available to Teams and Agents/);
-});
-
-test('provider Off, On, and All project onto installation and Campaign behaviour defaults', async () => {
-  const { applyFeatureProviderState, featureProviderState } = await import('../public/js/feature-provider-installation.js');
-  const gbrain = { name: 'gbrain', provides: ['gbrain'] };
-  const base = { provider: 'openai', behaviours: ['ronin_host', 'gbrain'] };
-
-  assert.equal(featureProviderState(gbrain, { gbrain: false }, base.behaviours), 'off');
-  assert.equal(featureProviderState(gbrain, { gbrain: true }, ['ronin_host']), 'on');
-  assert.equal(featureProviderState(gbrain, { gbrain: true }, base.behaviours), 'all');
-  assert.deepEqual(applyFeatureProviderState(gbrain, 'off', { gbrain: true }, base), {
-    installations: { gbrain: false }, defaults: { provider: 'openai', behaviours: ['ronin_host'] },
-  });
-  assert.deepEqual(applyFeatureProviderState(gbrain, 'on', { gbrain: false }, base), {
-    installations: { gbrain: true }, defaults: { provider: 'openai', behaviours: ['ronin_host'] },
-  });
-  assert.deepEqual(applyFeatureProviderState(gbrain, 'all', { gbrain: false }, { ...base, behaviours: ['ronin_host'] }), {
-    installations: { gbrain: true }, defaults: { provider: 'openai', behaviours: ['ronin_host', 'gbrain'] },
-  });
 });
 
 test('the Campaign imports the exact exported Setup page builders', async () => {
