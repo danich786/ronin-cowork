@@ -206,7 +206,7 @@ export function createCoworkView(options = {}) {
     const config = el('div', 'tw-config');
     const kanban = createTeamKanban({
       lead: () => lead(),
-      openOwner: (name) => connectSession(name, oppositeSeat(id)),
+      openOwner: (name) => arrange({ [oppositeSeat(id)]: { session: name } }),
     });
     const messages = el('div', 'tw-messages');
     const messageLabel = t('workspace.channel_agent_message_queue', 'Messages');

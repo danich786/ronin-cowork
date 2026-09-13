@@ -20,6 +20,7 @@ test('Roster expands live readings and actions; Launch uses the paired workspace
     source('public/js/cowork-view.js'), source('public/js/team-members.js'), source('public/js/session-retire.js'), source('public/css/team-workspace.css'),
   ]);
   assert.match(view, /workspace1: 'workspace2', workspace2: 'workspace1', workspace3: 'workspace4', workspace4: 'workspace3'/);
+  assert.match(view, /openOwner: \(name\) => arrange\(\{ \[oppositeSeat\(id\)\]: \{ session: name \} \}\)/);
   assert.match(view, /onOpen: \(member\) => putSession\(member\.name, oppositeSeat\(id\)\)/);
   assert.match(view, /reading: readingsOf/);
   assert.match(view, /configSignature\(team\) \+ JSON\.stringify\(members\.map\(\(member\) => readingsOf\(member\)\.lines\)\)/);
