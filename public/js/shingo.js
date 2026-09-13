@@ -63,6 +63,54 @@ export function buildLadder(letter, deskEntry = null) {
     return el;
   };
 
+  // Projects are the work record now. `project` is the one selected by the position
+  // marker; the remaining project titles are kept beside it, one tap away.
+  if (letter.project) {
+    const current = letter.project;
+    const project = section(current.title, 'sl-project');
+    const objective = document.createElement('p');
+    objective.textContent = current.objective;
+    project.appendChild(objective);
+    const state = document.createElement('p');
+    state.className = 'sl-action';
+    state.textContent = [current.stage, current.status, current.exit !== 'none' ? `exit: ${current.exit}` : ''].filter(Boolean).join(' · ');
+    project.appendChild(state);
+    for (const rung of current.ladder || []) {
+      const heading = document.createElement('strong');
+      heading.className = 'sl-project-stage';
+      heading.textContent = rung.stage;
+      project.appendChild(heading);
+      for (const leg of rung.legs || []) {
+        const line = document.createElement('p');
+        line.className = 'sl-project-leg';
+        line.textContent = `${leg.done ? '✓' : '□'} ${leg.title}`;
+        project.appendChild(line);
+      }
+    }
+    for (const evidence of current.evidence || []) {
+      const line = document.createElement('p');
+      line.className = 'sl-project-evidence';
+      line.textContent = evidence;
+      project.appendChild(line);
+    }
+    const others = (letter.projects || []).filter((item) => item.id !== current.id);
+    if (others.length) {
+      const switcher = document.createElement('div');
+      switcher.className = 'sl-projects-other';
+      for (const item of others) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = item.title;
+        button.addEventListener('click', () => {
+          letter.project = item;
+          box.replaceWith(buildLadder(letter, deskEntry));
+        });
+        switcher.appendChild(button);
+      }
+      project.appendChild(switcher);
+    }
+  }
+
   const firstOpen = letter.ladder?.find((rung) => rung.status !== 'DONE' || rung.legs?.some((leg) => leg.status !== 'DONE'));
   const summaryText = letter.chip?.text || (firstOpen?.gate !== undefined ? '⛩ ' + t('ladder.gate', 'GATE') : firstOpen?.phase || '');
   if (summaryText) {
@@ -153,7 +201,7 @@ export function buildLadder(letter, deskEntry = null) {
   // Checkout facts remain useful before the session has drawn a ladder. The branch and
   // repo header buttons open this panel, so returning early above would make both buttons
   // open a panel that hid the very values they name.
-  if (!letter.ladder?.length) {
+  if (!letter.ladder?.length && !letter.project) {
     const empty = document.createElement('div');
     empty.className = 'sl-empty';
     empty.textContent = t('ladder.none', 'no work record yet');
@@ -161,6 +209,7 @@ export function buildLadder(letter, deskEntry = null) {
     return box;
   }
 
+  if (!letter.ladder?.length) return box;
   const progress = section(t('ladder.progress', 'Progress'), 'sl-progress');
 
   /**

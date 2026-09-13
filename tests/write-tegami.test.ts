@@ -33,7 +33,7 @@ function fixture(): { dir: string; env: NodeJS.ProcessEnv; letter: string } {
   return { dir, env, letter: path.join(dir, 'sessions', 'probe-key', 'tegami.md') };
 }
 
-type Block = { objective: string; repos: Array<{ repo: string; branch: string }>; ladder: Array<Record<string, unknown>>; docs?: string[]; at?: unknown };
+type Block = { objective: string; repos: Array<{ repo: string; branch: string }>; ladder: Array<Record<string, unknown>>; projects?: Array<Record<string, unknown>>; docs?: string[]; at?: unknown };
 const block = (letter: string): Block => {
   const m = /```json\n([\s\S]*?)\n```/.exec(readFileSync(letter, 'utf8'));
   assert.ok(m, 'the letter has a json block');
@@ -120,6 +120,23 @@ test('a field verb on a session with no letter yet starts one', (t) => {
   const b = block(f.letter);
   assert.equal(b.objective, 'first words');
   assert.deepEqual(b.ladder, [{ gate: 'go', status: 'PLANNED' }]);
+});
+
+test('project create, read and one-field write use the existing letter tools', (t) => {
+  const f = fixture();
+  t.after(() => rmSync(f.dir, { recursive: true, force: true }));
+  run(f.env, [], JSON.stringify({ objective: 'session', ladder: [] }));
+  run(f.env, ['project', 'create', 'team/1', '--title', 'First', '--objective', 'Ship it']);
+  let p = block(f.letter).projects?.[0];
+  assert.deepEqual(p, { id: 'team/1', title: 'First', objective: 'Ship it', stage: 'PLANNING', exit: 'none', status: 'yellow', ladder: [], evidence: [] });
+
+  run(f.env, ['project', 'write', 'team/1', '--status', 'green']);
+  p = block(f.letter).projects?.[0];
+  assert.equal(p?.status, 'green');
+  assert.equal(p?.title, 'First', 'an unrelated project field survives');
+
+  const read = execFileSync(path.join(root, 'ronin_bin', 'read_tegami'), ['project', 'read', 'team/1'], { encoding: 'utf8', env: f.env });
+  assert.equal((JSON.parse(read) as Record<string, unknown>).objective, 'Ship it');
 });
 
 /* A born session reaches its tools through its own command directory,
