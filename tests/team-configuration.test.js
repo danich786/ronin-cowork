@@ -1,7 +1,7 @@
 // Team Configuration — the commons tab that asks a team's record through ERABI
 // (public/js/team-configuration.js · ronin-lab SELECTORS.md). Fake-DOM floor: every
 // question is a stone with the right reading, the Team's facts sit above the New Agent
-// defaults, features and behaviours are not asked, and Save sends the record the server expects.
+// defaults, behaviours are not asked, and Save sends the record the server expects.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -42,7 +42,7 @@ const roots = { roots: [
   { name: 'ronin_cowork', title: 'Ronin Cowork', repo_profile: { worktrees: 'enabled' } },
   { name: 'ronin_services', title: 'Ronin Services', repo_profile: { worktrees: 'disabled' } },
 ] };
-const seedWith = (available) => ({ features: [{ name: 'ronin_host', label: 'Ronin Host' }, { name: 'trello', label: 'Trello' }], behaviours: [], available });
+const seedWith = (available) => ({ behaviours: [{ name: 'ronin_host', label: 'Ronin Host' }, { name: 'trello', label: 'Trello' }], available });
 
 const puts = [];
 const serve = (seed) => {
@@ -60,7 +60,7 @@ const serve = (seed) => {
 
 const roster = {
   durable: true, name: 'jobber', title: 'Jobber', kind: 'coding', objective: 'Polish.',
-  project_root: 'ronin_cowork', repos: ['ronin_services'], branches: { ronin_services: 'dev' }, features: ['ronin_host'],
+  project_root: 'ronin_cowork', repos: ['ronin_services'], branches: { ronin_services: 'dev' },
   behaviours: { selected: ['mandates', 'buildout'], required: ['mandates'] },
   agent_defaults: { provider: 'openai', model: 'gpt-5.6-sol', reach: 'plan', recruit: 'propose agents', output: 'open', dial: 'write', launch_mode: 'live_dangerously', permissions: 'retired', note: 'carried' },
 };
@@ -115,17 +115,17 @@ test('the Team’s facts come first — ID, Title, Kind on the head line, then P
   }
 });
 
-test('features and behaviours are not asked here, whatever the seed offers', async () => {
+test('behaviours are not asked here, whatever the seed offers', async () => {
   serve(seedWith(['ronin_host']));
   const host = new FakeNode('div');
   renderTeamConfiguration(host, roster);
   const form = await painted(host);
-  assert.equal(form.all('ask-group-head').some((node) => /Features|Behaviours/.test(node.textContent)), false);
+  assert.equal(form.all('ask-group-head').some((node) => /Behaviours/.test(node.textContent)), false);
   assert.equal(stone(form, 'ronin_host'), null);
   assert.equal(stone(form, 'mandates'), null);
 });
 
-test('Save sends the record: features, behaviours by state, agent defaults carried without permissions', async () => {
+test('Save leaves behaviours untouched and carries agent defaults without permissions', async () => {
   serve(seedWith(['ronin_host']));
   puts.length = 0;
   const host = new FakeNode('div');
@@ -142,7 +142,6 @@ test('Save sends the record: features, behaviours by state, agent defaults carri
   assert.deepEqual(body.repos, ['ronin_services']);
   assert.deepEqual(body.branches, { ronin_services: 'dev' }, 'a checkout keeps its branch');
   assert.equal('references' in body, false, 'references is not sent');
-  assert.equal('features' in body, false, 'features are not sent, so the store carries them');
   assert.equal('behaviours' in body, false, 'behaviours are not sent, so the store carries them');
   assert.equal(body.agent_defaults.note, 'carried', 'a key the tab does not draw is carried');
   assert.equal('permissions' in body.agent_defaults, false, 'the retired key is not rewritten');

@@ -1,7 +1,7 @@
 # Ronin Team
 - **label:** Ronin Team
 - **art:** 人人
-- **blurb:** Launch a Team Lead and two agents with Ronin's full team features.
+- **blurb:** Launch a Team Lead and two agents with Ronin's full Team coordination.
 - **order:** 2
 - **kinds:** coding, work, personal, household, social, school
 - **objective:** Work together on the owner's request as a coordinated Ronin Team.

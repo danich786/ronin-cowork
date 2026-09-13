@@ -22,22 +22,22 @@ test('Campaign Installations is the shared stone surface with the Setup Services
   assert.doesNotMatch(source, /servicesSell|installBlock|cv-choice|type = 'checkbox'|Available to Teams and Agents/);
 });
 
-test('feature-provider Off, On, and All project onto installation and Campaign defaults records', async () => {
+test('provider Off, On, and All project onto installation and Campaign behaviour defaults', async () => {
   const { applyFeatureProviderState, featureProviderState } = await import('../public/js/feature-provider-installation.js');
   const gbrain = { name: 'gbrain', provides: ['gbrain'] };
-  const base = { provider: 'openai', features: ['ronin_host', 'gbrain'] };
+  const base = { provider: 'openai', behaviours: ['ronin_host', 'gbrain'] };
 
-  assert.equal(featureProviderState(gbrain, { gbrain: false }, base.features), 'off');
+  assert.equal(featureProviderState(gbrain, { gbrain: false }, base.behaviours), 'off');
   assert.equal(featureProviderState(gbrain, { gbrain: true }, ['ronin_host']), 'on');
-  assert.equal(featureProviderState(gbrain, { gbrain: true }, base.features), 'all');
+  assert.equal(featureProviderState(gbrain, { gbrain: true }, base.behaviours), 'all');
   assert.deepEqual(applyFeatureProviderState(gbrain, 'off', { gbrain: true }, base), {
-    installations: { gbrain: false }, defaults: { provider: 'openai', features: ['ronin_host'] },
+    installations: { gbrain: false }, defaults: { provider: 'openai', behaviours: ['ronin_host'] },
   });
   assert.deepEqual(applyFeatureProviderState(gbrain, 'on', { gbrain: false }, base), {
-    installations: { gbrain: true }, defaults: { provider: 'openai', features: ['ronin_host'] },
+    installations: { gbrain: true }, defaults: { provider: 'openai', behaviours: ['ronin_host'] },
   });
-  assert.deepEqual(applyFeatureProviderState(gbrain, 'all', { gbrain: false }, { ...base, features: ['ronin_host'] }), {
-    installations: { gbrain: true }, defaults: { provider: 'openai', features: ['ronin_host', 'gbrain'] },
+  assert.deepEqual(applyFeatureProviderState(gbrain, 'all', { gbrain: false }, { ...base, behaviours: ['ronin_host'] }), {
+    installations: { gbrain: true }, defaults: { provider: 'openai', behaviours: ['ronin_host', 'gbrain'] },
   });
 });
 

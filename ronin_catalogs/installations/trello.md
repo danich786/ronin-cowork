@@ -1,6 +1,6 @@
 # Trello
 - **label:** Trello
-- **blurb:** Makes the Trello feature available when its connection exists.
+- **blurb:** Makes the Trello behaviour available when its connection exists.
 - **effect:** feature_provider
 - **provides:** trello
 - **reading:** —

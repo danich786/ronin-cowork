@@ -7,4 +7,4 @@
 - **brief:** Be my personal assistant — questions, facts, drafting, and the day's work as it comes.
 - **mandate:** execute · nobody · open
 - **team_mode:** new
-- **features:** gbrain
+- **behaviours:** gbrain

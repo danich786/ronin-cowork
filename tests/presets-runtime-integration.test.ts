@@ -52,7 +52,7 @@ test('Develop Project launch aggregates real managed work-location facts', async
     }
     throw new Error(`unexpected ${url}`);
   };
-  const result = await launchPresetPlan({ template: { shelf: 'teams', name: 'develop_new_project' }, inputs: { root: 'ronin_project_1', features: ['frontend', 'backend'] } }, send);
+  const result = await launchPresetPlan({ template: { shelf: 'teams', name: 'develop_new_project' }, inputs: { root: 'ronin_project_1', workstreams: ['frontend', 'backend'] } }, send);
   assert.equal(result.ok, true);
   assert.equal(result.data.receipts.length, 2);
   assert.ok(result.data.receipts.every((receipt: any) => receipt.project_root === 'ronin_project_1'));

@@ -33,6 +33,7 @@ import { readyMika } from './mika-ready.js';
 import { createMikaHelpPanel } from './mika.js';
 import { coworkWorkbenchIdentity, createCampaignIdentity, orderCoworkTeams } from './campaign.js';
 import { retireSession } from './session-retire.js';
+import { installBehaviourReader } from './behaviour-reader.js';
 
 const el = (tag, cls, text) => {
   const out = document.createElement(tag);
@@ -334,6 +335,7 @@ export function createCoworkView(options = {}) {
     onSelect: markSelected,
     onStateChange: () => remember(), onPlacement: () => remember(),
   });
+  installBehaviourReader(bench, WB_TYPES.document);
   rosterTitle = bench.selectorHeader?.title ?? null;
   if (campaign) {
     const selector = bench.host.querySelector('.wk-workbench-selector');

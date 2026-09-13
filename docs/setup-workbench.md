@@ -177,7 +177,7 @@ Personal Assistant**, the same launch the preset makes. What gbrain is lives in
 Three stones for anything the presets do not cover:
 
 - **Agent** opens the ordinary New Agent form here: name, kind, provider and model,
-  instructions, mandate, and its features and behaviours.
+  instructions, mandate, and its behaviours.
 - **Team** opens the ordinary New Team form here: the team, its agents, and where it
   works.
 - **Template** opens Templates: what is on your system, shipped with Ronin, installed, or

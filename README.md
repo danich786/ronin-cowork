@@ -5,7 +5,7 @@ around the Agents, accounts, tools, and documents you already use.
 
 Claude and Codex can run side by side, each in its own worktree. Ronin gives their live
 terminal sessions one browser surface on a machine you control; you choose how independently
-or closely they work through the features and behaviours you give them.
+or closely they work through the behaviours you give them.
 
 If Ronin looks cool to you, [give us a star](https://github.com/ronincowork/ronin-cowork)—it
 helps other people find it.
@@ -45,7 +45,7 @@ your code or conversations. Declining sends nothing.
 ## Coordinate when useful
 
 Agents can remain independent or use optional Team coordination. Direct messages, the team
-wipeboard, shared documents, and selected features support closer work without turning a
+wipeboard, shared documents, and selected behaviours support closer work without turning a
 working convention into an access-control boundary.
 
 ```text
@@ -63,9 +63,9 @@ independent Agent ── choose what helps ── Team coordination
 | **Terminal** | A shell in an always-on tmux terminal. Nothing from Ronin. |
 | **Bare-metal Agent** | Claude, Codex, or another provider CLI in an always-on tmux terminal. No Ronin reading list, work record, or receipt. |
 | **Cowork Agent** | The same CLI born through Ronin: a work record, Macros, documents, messaging, and session coordination; in a repository declared for Worktrees, a private branch and worktree with hand-in and the Team lead's promotion, so parallel Agents avoid file collisions ([how it decides](docs/worktrees.md)). |
-| **Installations** | What is on the machine, switched on or off in System settings. Ronin Services joins every Cowork Agent when it is on; gbrain, Trello and Perplexity make features a Team or Agent can add ([installations, features, and behaviours](docs/installations.md)). |
+| **Installations** | What is on the machine, switched on or off in System settings. Ronin Services joins every Cowork Agent when it is on; gbrain, Trello and Perplexity make behaviours a Team or Agent can add ([installations and behaviours](docs/installations.md)). |
 
-[See how session types, installations and features fit together.](https://ronincowork.com/explainers/cowork-and-services/)
+[See how session types, installations and behaviours fit together.](https://ronincowork.com/explainers/cowork-and-services/)
 
 ## Start with your question
 

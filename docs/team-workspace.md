@@ -101,7 +101,7 @@ There is no lead control on a Tile, on the launch forms, or on the Configuration
 ### Durable Team record
 
 A `team_roster` is optional metadata: kind, title, purpose, project root,
-repositories and their branches, features, behaviours, and the Agent defaults. A tag-only
+repositories and their branches, behaviours, and the Agent defaults. A tag-only
 Team is ordinary. When no durable record exists, Team Configuration says so rather than
 treating the Team as broken.
 

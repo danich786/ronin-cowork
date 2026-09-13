@@ -20,7 +20,7 @@ await fs.writeFile(path.join(process.env.RONIN_CONFIG_DIR, 'machine_settings.jso
         installations: {},
         defaults: {
           provider: 'openai', model: 'gpt-test', reach: 'execute', recruit: 'nobody', output: ['code'],
-          features: ['gbrain'], behaviours: ['mandates'], dial: 'read', launch_mode: 'configured',
+          behaviours: ['gbrain', 'mandates'], dial: 'read', launch_mode: 'configured',
         },
         cowork_defaults: { project_root: 'ronin_cowork', repos: ['ronin_cowork'], branch: 'dev' },
       },
@@ -48,8 +48,7 @@ test('POST /api/team-rosters creates a Team from its name alone', async () => {
   assert.equal(body.roster.project_root, 'ronin_cowork');
   assert.deepEqual(body.roster.repos, ['ronin_cowork']);
   assert.equal(body.roster.branch, 'dev');
-  assert.deepEqual(body.roster.features, ['gbrain']);
-  assert.deepEqual(body.roster.behaviours, { selected: ['mandates'], required: [] });
+  assert.deepEqual(body.roster.behaviours, { selected: ['gbrain', 'mandates'], required: [] });
   assert.deepEqual(body.roster.agent_defaults, {
     provider: 'openai', model: 'gpt-test', reach: 'execute', recruit: 'nobody', output: ['code'],
     dial: 'read', launch_mode: 'configured',
@@ -66,7 +65,7 @@ test('PUT /api/team creates with Campaign defaults, then omission on update pres
   assert.equal(first.roster.project_root, 'ronin_cowork');
   assert.deepEqual(first.roster.repos, ['ronin_cowork']);
   assert.equal(first.roster.branch, 'dev');
-  assert.deepEqual(first.roster.features, ['gbrain']);
+  assert.deepEqual(first.roster.behaviours.selected, ['gbrain', 'mandates']);
   assert.equal(first.roster.agent_defaults.model, 'gpt-test');
 
   const updated = await fetch(`${base}/api/team`, {
@@ -79,31 +78,31 @@ test('PUT /api/team creates with Campaign defaults, then omission on update pres
   assert.equal(second.roster.project_root, 'ronin_cowork');
   assert.deepEqual(second.roster.repos, ['ronin_cowork']);
   assert.equal(second.roster.branch, 'dev');
-  assert.deepEqual(second.roster.features, ['gbrain']);
+  assert.deepEqual(second.roster.behaviours.selected, ['gbrain', 'mandates']);
   assert.equal(second.roster.agent_defaults.model, 'gpt-test');
 });
 
 test('PUT /api/team reapplies Campaign defaults to an existing Team only when explicitly requested', async () => {
   const response = await fetch(`${base}/api/team`, {
     method: 'PUT', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ name: 'tool_team', campaign_defaults: true, features: ['ronin_host'] }),
+    body: JSON.stringify({ name: 'tool_team', campaign_defaults: true, behaviours: { selected: ['ronin_host'], required: [] } }),
   });
   assert.equal(response.status, 200);
   const body = await response.json() as { created: boolean; roster: Record<string, any> };
   assert.equal(body.created, false);
-  assert.deepEqual(body.roster.features, ['ronin_host'], 'an explicit choice remains final');
+  assert.deepEqual(body.roster.behaviours.selected, ['ronin_host'], 'an explicit choice remains final');
   assert.equal(body.roster.agent_defaults.model, 'gpt-test');
 });
 
 test('POST /api/team-rosters overlays explicit choices on Campaign defaults', async () => {
   const response = await fetch(`${base}/api/team-rosters`, {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({
-      name: 'overlaid', features: ['ronin_host'], agent_defaults: { reach: 'discuss' },
+      name: 'overlaid', behaviours: { selected: ['ronin_host'], required: [] }, agent_defaults: { reach: 'discuss' },
     }),
   });
   assert.equal(response.status, 200);
   const body = await response.json() as { roster: Record<string, any> };
-  assert.deepEqual(body.roster.features, ['ronin_host']);
+  assert.deepEqual(body.roster.behaviours.selected, ['ronin_host']);
   assert.equal(body.roster.agent_defaults.reach, 'discuss');
   assert.equal(body.roster.agent_defaults.model, 'gpt-test');
 });

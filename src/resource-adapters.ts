@@ -4,7 +4,7 @@ import { STOCK_DIR, entryValue, isKeyLine, resolveFiles, type Origin } from './r
 import { storeDir } from './resources.js';
 
 export type DefinitionKind =
-  | 'desk_profiles' | 'lexicons' | 'installations' | 'features'
+  | 'desk_profiles' | 'lexicons' | 'installations' | 'behaviours'
   | 'templates/agents' | 'templates/teams';
 
 export interface Definition {
@@ -25,7 +25,7 @@ export async function readDefinitions(kind: DefinitionKind): Promise<Definition[
   const merged = new Map<string, Definition>();
   for (const file of await resolveFiles({
     stock: path.join(STOCK_DIR, kind),
-    user: path.join(storeDir('catalogs'), kind),
+    user: kind === 'behaviours' ? storeDir('ways') : path.join(storeDir('catalogs'), kind),
     include: isDefinitionFile,
     symlinks: true,
   })) {
@@ -94,7 +94,7 @@ export interface InstallationRow extends ContributionRow {
   requires: string[];
 }
 
-export interface FeatureRow extends ContributionRow { provider: string }
+export interface BehaviourRow extends ContributionRow { installation: string; page: string }
 
 function credit(v: string): { text: string; url: string } | undefined {
   const m = /^\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)$/.exec(v.trim());
@@ -131,10 +131,10 @@ export async function listInstallations(): Promise<InstallationRow[]> {
   }));
 }
 
-export async function listFeatures(): Promise<FeatureRow[]> {
-  return (await readDefinitions('features')).map((d) => {
-    const provider = d.get('provider').trim();
-    return { ...contribution(d), provider: /^[\u2013\u2014-]$/.test(provider) ? '' : provider };
+export async function listBehaviours(): Promise<BehaviourRow[]> {
+  return (await readDefinitions('behaviours')).map((d) => {
+    const installation = d.get('installation').trim();
+    return { ...contribution(d), installation: /^[\u2013\u2014-]$/.test(installation) ? '' : installation, page: d.file };
   });
 }
 
@@ -149,7 +149,6 @@ export interface TemplateBox extends Pick<Row, 'name' | 'origin' | 'shadowed' | 
   art: string;
   kinds: string[];
   behaviours: string[];
-  features: string[];
 }
 
 export interface AgentTemplateRow extends TemplateBox {
@@ -163,7 +162,7 @@ export interface TemplateAgentRow {
   instructions: string;
   mandate: TemplateMandate | null;
   team_lead: boolean;
-  features: string[];
+  behaviours: string[];
 }
 
 export interface TeamTemplateRow extends TemplateBox {
@@ -187,7 +186,6 @@ const templateBox = (d: Definition): TemplateBox => ({
   art: d.get('art'),
   kinds: splitDefinitionList(d.get('kinds')).filter((kind) => TEMPLATE_KINDS.includes(kind)),
   behaviours: splitDefinitionList(d.get('behaviours')),
-  features: splitDefinitionList(d.get('features')),
 });
 
 export async function listAgentTemplates(): Promise<AgentTemplateRow[]> {
@@ -214,7 +212,7 @@ export function parseTemplateAgents(raw: string): TemplateAgentRow[] {
         instructions: entryValue(lines, 'instructions'),
         mandate: mandate ? templateMandate(mandate) : null,
         team_lead: /^yes$/i.test(entryValue(lines, 'team_lead')),
-        features: splitDefinitionList(entryValue(lines, 'features')),
+        behaviours: splitDefinitionList(entryValue(lines, 'behaviours')),
       };
     })
     .filter((row) => row.name);

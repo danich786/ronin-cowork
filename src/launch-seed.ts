@@ -1,22 +1,21 @@
 import type { CampaignConfig } from './campaigns.js';
-import type { FeatureRow, InstallationRow } from './resource-adapters.js';
+import type { BehaviourRow, InstallationRow } from './resource-adapters.js';
 import type { SessionsDefaults } from './launch-command.js';
 import type { StatedBy } from './launch-profile.js';
 import type { ProjectRootInfo } from './project-roots.js';
-import { availableFeatures, resolveContributions, type ResolvedContribution } from './instruction-cascade.js';
+import { availableBehaviours, resolveContributions, type ResolvedContribution } from './instruction-cascade.js';
 import { teamRosterFile, type TeamRoster } from './team-rosters.js';
 
-export type SeedField = 'kind' | 'project_root' | 'branch' | 'provider' | 'model' | 'reach' | 'recruit' | 'output' | 'dial' | 'launch_mode' | 'features' | 'behaviours';
+export type SeedField = 'kind' | 'project_root' | 'branch' | 'provider' | 'model' | 'reach' | 'recruit' | 'output' | 'dial' | 'launch_mode' | 'behaviours';
 export interface SeedValue<T = unknown> { value: T; stated_by: StatedBy[] }
 export interface LaunchSeed {
   campaign_id: string; seeds: Record<SeedField, SeedValue>;
-  features: Array<{ name: string; label: string; blurb: string; on: boolean; stated_by: StatedBy[] }>;
-  behaviours: Array<{ name: string; on: boolean; required: boolean; stated_by: StatedBy[] }>;
+  behaviours: Array<{ name: string; label: string; blurb: string; reading: string; on: boolean; required: boolean; available: boolean; stated_by: StatedBy[] }>;
   available: string[]; still_asked: Array<'session_type' | 'name' | 'instructions'>;
 }
 export interface LaunchSeedSources {
   campaign: CampaignConfig; roster: TeamRoster | null; roots: ProjectRootInfo[];
-  sessions: SessionsDefaults | undefined; installations: InstallationRow[]; features: FeatureRow[];
+  sessions: SessionsDefaults | undefined; installations: InstallationRow[]; behaviours: BehaviourRow[];
 }
 export function shownLaunchSeed(seed: LaunchSeed): Omit<LaunchSeed, 'seeds'> & { seeds: Omit<LaunchSeed['seeds'], 'dial'> } {
   const { dial: _dial, ...seeds } = seed.seeds;
@@ -31,23 +30,21 @@ export function resolveLaunchSeed(s: LaunchSeedSources): LaunchSeed & { resolved
   const c = s.campaign.config.defaults;
   const t = s.roster;
   const campaignSettled = Object.prototype.hasOwnProperty.call(s.campaign.config, 'installations');
-  const teamSettled = !!t && Object.prototype.hasOwnProperty.call(t, 'features');
-  const campaignFeatures = campaignSettled ? c.features : [];
+  const teamSettled = !!t && Object.prototype.hasOwnProperty.call(t, 'behaviours');
   const campaignBehaviours = campaignSettled ? c.behaviours : ['mandates'];
   const a = t ? { ...c, ...t.agent_defaults } : c;
   const teamSource = t ? teamBy(t) : null;
   const source = (field: string): StatedBy[] => teamSource ?? campaignBy(s.campaign.id, `defaults.${field}`);
   const root = t?.project_root || s.roots.find((item) => !item.archived)?.name || '';
-  const available = availableFeatures(s.installations, s.campaign.config.installations, s.features);
+  const available = availableBehaviours(s.installations, s.campaign.config.installations, s.behaviours);
+  const selectedBehaviours = t ? (teamSettled ? t.behaviours.selected : ['mandates']) : campaignBehaviours;
+  const required = new Set(teamSettled ? t?.behaviours.required ?? [] : []);
   const cascade = resolveContributions(
-    s.installations, s.campaign.config.installations, s.features, available,
-    campaignFeatures, t ? (teamSettled ? t.features : []) : undefined,
+    s.installations, s.campaign.config.installations, s.behaviours, available,
+    campaignBehaviours, t ? [...new Set([...selectedBehaviours, ...required])] : undefined,
   );
   const pair = c.provider && c.model ? c : s.sessions?.default;
   const pairSource = c.provider && c.model ? campaignBy(s.campaign.id, 'defaults.provider/model') : installation('Model providers');
-  const featureSource = t ? teamBy(t) : campaignBy(s.campaign.id, 'defaults.features');
-  const selectedBehaviours = t ? (teamSettled ? t.behaviours.selected : ['mandates']) : campaignBehaviours;
-  const required = new Set(teamSettled ? t?.behaviours.required ?? [] : []);
   const behaviourSource = t ? teamBy(t) : campaignBy(s.campaign.id, 'defaults.behaviours');
   return {
     campaign_id: s.campaign.id,
@@ -59,10 +56,9 @@ export function resolveLaunchSeed(s: LaunchSeedSources): LaunchSeed & { resolved
       reach: { value: a.reach, stated_by: source('reach') }, recruit: { value: a.recruit, stated_by: source('recruit') },
       output: { value: a.output, stated_by: source('output') }, dial: { value: a.dial, stated_by: source('dial') },
       launch_mode: { value: a.launch_mode, stated_by: source('launch_mode') },
-      features: { value: cascade.selected, stated_by: featureSource }, behaviours: { value: [...new Set([...selectedBehaviours, ...required])], stated_by: behaviourSource },
+      behaviours: { value: cascade.selected, stated_by: behaviourSource },
     },
-    features: s.features.map((row) => ({ name: row.name, label: row.label, blurb: row.blurb, on: cascade.selected.includes(row.name), stated_by: featureSource })),
-    behaviours: [...new Set([...selectedBehaviours, ...required])].map((name) => ({ name, on: selectedBehaviours.includes(name) || required.has(name), required: required.has(name), stated_by: behaviourSource })),
+    behaviours: s.behaviours.map((row) => ({ name: row.name, label: row.label, blurb: row.blurb, reading: row.page, on: cascade.selected.includes(row.name), required: required.has(row.name), available: available.includes(row.name), stated_by: behaviourSource })),
     available, still_asked: ['session_type', 'name', 'instructions'],
     resolved_contributions: cascade.contributions, undelivered: cascade.undelivered,
   };

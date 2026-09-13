@@ -116,7 +116,7 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
       event.preventDefault(); if (saveAction) saveAction.setDisabled(true); else save.disabled = true; status.textContent = t('team_config.saving', 'Saving…');
       const picked = agentDefaults.value();
       const repos = rootWasDesk && picked.root && picked.root === roster.project_root ? [picked.root, ...picked.repos.filter((name) => name !== picked.root)] : picked.repos.filter((name) => name !== picked.root);
-      // Features and behaviours are not asked here (owner, 2026-09-13): the keys are not sent, so the store carries them as they are.
+      // Behaviours are not asked here (owner, 2026-09-13): the key is not sent, so the store carries it as it is.
       const saved = await request(`/api/team-rosters/${encodeURIComponent(roster.name)}`, { method: 'PUT', json: {
         title: title.value, kind: kind.value().kind, objective: objective.value, project_root: picked.root, repos,
         branches: Object.fromEntries(repos.filter((name) => !worktrees(name) && branches[name]).map((name) => [name, branches[name]])),

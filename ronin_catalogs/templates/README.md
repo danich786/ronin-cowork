@@ -30,7 +30,6 @@ form's, not a file here: a template that filled nothing in would collapse nothin
 | `order` | tray order; unordered boxes follow, by label |
 | `kinds` | which kinds bring this box forward — `open` on the form shows every template |
 | `behaviours` | `<shelf>:<name>` book addresses laid into the tray, e.g. `sops:teams, ways:write_it_down` |
-| `features` | Features this template selects — exactly the fields it carries, nothing else moves |
 
 ## The agent shelf's own fields
 
@@ -49,7 +48,7 @@ form's, not a file here: a template that filled nothing in would collapse nothin
 
 Each cast row carries `instructions:`, optionally `mandate:`, and `team_lead: yes` on
 exactly one row — the lead is just one of the agents, marked. A row may also carry its
-own `features:` over the team's map — the agent layer of the
+own `behaviours:` over the team's map — the agent layer of the
 cascade, so a template can say "this lane, gbrain off" while the team keeps it on. A row is the same object
 the New Team form's agent line produces and the team loader launches; every row stays
 editable and deletable on the form before the raise.
@@ -78,7 +77,7 @@ your store, shadows the template, and adds the book itself — `docs/templates.m
 ## Bundles
 
 A **template bundle** is a team template with copies of everything it names — agent boxes,
-behaviours, features and their macros, actions and tools — as one JSON document, for the
+behaviours and their macros, actions and tools — as one JSON document, for the
 template library on ronincowork.com or a library of your own. Installing one lands every
 copy in your stores (never here); `bin/ronin-bundle` packs and installs by hand, and the
 Campaign page's Templates card does it from the library. The rules are in `docs/templates.md`.

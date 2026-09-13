@@ -7,7 +7,7 @@
  *
  * WHY IT IS NOT NEW AGENT. You are already in the Team, so the Team has answered most of
  * the form: its name, its project_root, and — once the cascade records exist — its
- * features, behaviours and its Agent defaults. This surface asks only what is
+ * behaviours and its Agent defaults. This surface asks only what is
  * genuinely this one Agent's, and states the rest at the foot where it cannot be edited.
  * The drawn contract is ronin-lab `concepts/add-agent-to-team.html`; the object shape is
  * `wip/buildouts/NEW_AGENT.md` § 7.3 and § 7.4.
@@ -19,7 +19,7 @@
  *   - no shelf of roles standing between the press and the form.
  *
  * WHERE THE ANSWERS COME FROM. `GET /api/launch-seed?team=<name>` — the frozen contract
- * at `CASCADE.md` § 5.1: per-field `{ value, stated_by }`, available features, and the
+ * at `CASCADE.md` § 5.1: per-field `{ value, stated_by }`, available behaviours, and the
  * `still_asked` residue. The forms never reconstruct the cascade client-side, and the
  * door serves this surface and New Agent identically (the quick launch just always
  * passes `team`). **The door is frozen but not yet built**, so a 404 is an ordinary
@@ -29,7 +29,8 @@
 import { projectData } from './home.js';
 import { request } from './request.js';
 import { t } from './lexicon.js';
-import { bookShelves, dialRow, dialRowMulti, loadProviderCatalog, providerModelPair } from './form-steps.js';
+import { ask } from './ask.js';
+import { dialRow, dialRowMulti, loadProviderCatalog, providerModelPair } from './form-steps.js';
 
 const REACH = ['open', 'discuss', 'plan', 'execute'];
 const RECRUIT = ['open', 'nobody', 'propose agents', 'staff agents'];
@@ -46,12 +47,11 @@ export function createAddAgentView(kit, { team, roster, connect, fullLaunch } = 
   const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
 
   const draft = {
-    name: '', instruction: '', provider: '', model: '', template: '', features: [], behaviours: [],
+    name: '', instruction: '', provider: '', model: '', template: '', behaviours: [],
     reach: 'open', recruit: 'open', output: ['open'],
   };
   let busy = false;
   let templates = [];
-  let ways = [];
   /** The seed door's answer, or null while it does not exist yet. */
   let seed = null;
   const seeded = (field) => seed?.seeds?.[field]?.value ?? '';
@@ -109,8 +109,6 @@ export function createAddAgentView(kit, { team, roster, connect, fullLaunch } = 
     draft.instruction = '';
     instruction.value = '';
     draft.behaviours = Array.isArray(value('behaviours')) ? [...value('behaviours')] : [];
-    draft.features = Array.isArray(value('features'))
-      ? value('features').filter((name) => (seed?.available || []).includes(name)) : [];
     draft.reach = value('reach') || 'open';
     draft.recruit = value('recruit') || 'open';
     draft.output = [value('output') || 'open'].flat().filter(Boolean);
@@ -128,7 +126,6 @@ export function createAddAgentView(kit, { team, roster, connect, fullLaunch } = 
         draft.output = [row.mandate.output].flat().filter(Boolean);
       }
       if (row.behaviours.length) draft.behaviours = [...row.behaviours];
-      if (row.features.length) draft.features = row.features.filter((name) => (seed?.available || []).includes(name));
     }
     paintMandate();
   }
@@ -167,15 +164,15 @@ export function createAddAgentView(kit, { team, roster, connect, fullLaunch } = 
 
   const cascadeHost = el('div', 'aa-cascade');
   function paintCascade() {
-    const available = (seed?.features || []).filter((row) => (seed?.available || []).includes(row.name));
-    cascadeHost.replaceChildren(bookShelves([
-      { head: t('features', 'Features'), prefix: '', rows: available },
-      { head: t('behaviours', 'Behaviours'), prefix: '', rows: ways.map((row) => ({ ...row, required: seed?.behaviours?.find((item) => item.name === row.name)?.required === true })) },
-    ], [...draft.features, ...draft.behaviours], (name, on) => {
-      if (available.some((row) => row.name === name)) draft.features = on ? [...draft.features, name] : draft.features.filter((entry) => entry !== name);
-      else draft.behaviours = on ? [...draft.behaviours, name] : draft.behaviours.filter((entry) => entry !== name);
-      paintCascade();
-    }));
+    const available = (seed?.behaviours || []).filter((row) => row.available === true);
+    const picker = ask([{ group: t('behaviours', 'Behaviours'), fields: [{
+      key: 'behaviours', label: t('behaviours', 'Behaviours'), many: true, shape: 'tall',
+      options: available.map((row) => ({ v: row.name, l: row.label || row.name, sub: row.blurb || '', read: row.reading,
+        off: row.required ? t('team_config.required', 'Required for each new Agent') : '' })),
+    }] }], { value: { behaviours: draft.behaviours }, density: 'tight', onChange: (value) => {
+      draft.behaviours = [...value.behaviours];
+    } });
+    cascadeHost.replaceChildren(picker.el);
   }
 
   /* ---- what the Team fixed: at the FOOT, because none of it is changeable here ---- */
@@ -222,7 +219,6 @@ export function createAddAgentView(kit, { team, roster, connect, fullLaunch } = 
       json: {
         session_type: 'cowork_agent',
         behaviours: [...draft.behaviours],
-        features: [...draft.features],
         team: teamName(),
         instructions: draft.instruction.trim(),
         name: draft.name.trim(),
@@ -290,14 +286,12 @@ export function createAddAgentView(kit, { team, roster, connect, fullLaunch } = 
       paintFixed();
       // A 404 is ordinary: the door is frozen, not built. Everything above already
       // painted from what exists, so a missing door costs the seeds and nothing else.
-      const [answer, tray, wayRows] = await Promise.all([
+      const [answer, tray] = await Promise.all([
         request(`/api/launch-seed?team=${encodeURIComponent(teamName())}`),
         request('/api/templates/agents'),
-        request('/api/ways'),
         loadProviderCatalog(),
       ]);
       templates = tray.ok && Array.isArray(tray.data) ? tray.data : [];
-      ways = wayRows.ok && Array.isArray(wayRows.data) ? wayRows.data : [];
       if (!answer.ok) { pair.paint(); return; }
       seed = answer.data || null;
       if (!draft.provider) draft.provider = seeded('provider');

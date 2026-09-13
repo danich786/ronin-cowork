@@ -63,7 +63,7 @@ const STORES: readonly BundleStore[] = ['catalogs', 'sops', 'ways', 'library', '
 const CATALOGS: readonly BundleCatalog[] = ['MACROS.md', 'ACTIONS.md', 'TOOLS.md', 'MODEL_PROVIDERS.md'];
 /** A provider section's id: `- **provider:** \`openai\`` — the key it merges by, since its heading is a vendor's name. */
 const providerIdOf = (section: string): string => /^-\s*\*\*provider:\*\*\s*`([^`]+)`\s*$/m.exec(section)?.[1]?.trim() ?? '';
-const CATALOG_DIRS = ['templates/agents', 'templates/teams', 'features', 'behaviours', 'desk_profiles', 'lexicons'];
+const CATALOG_DIRS = ['templates/agents', 'templates/teams', 'behaviours', 'desk_profiles', 'lexicons'];
 const KINDS = ['coding', 'work', 'personal', 'household', 'social', 'school'];
 const GUARDS = ['tmux', 'systemctl', 'git'];
 
@@ -391,26 +391,24 @@ export async function packBundle(req: PackRequest): Promise<Bundle> {
   };
   await addFile('catalogs', `templates/teams/${team.name}.md`, team.file);
   const books = new Set(team.get('behaviours').split(',').map((b) => b.trim()).filter(Boolean));
-  const featureNames = new Set(team.get('features').split(',').map((b) => b.trim()).filter(Boolean));
   for (const name of req.agents ?? []) {
     const agent = await findDefinition('templates/agents', name);
     if (!agent) throw new Error(`"${name}" is not an agent template on this box.`);
     await addFile('catalogs', `templates/agents/${agent.name}.md`, agent.file);
     for (const b of agent.get('behaviours').split(',')) if (b.trim()) books.add(b.trim());
-    for (const feature of agent.get('features').split(',')) if (feature.trim()) featureNames.add(feature.trim());
   }
   for (const s of req.sops ?? []) books.add(`sops:${s}`);
   for (const w of req.ways ?? []) books.add(`ways:${w}`);
   const macroNames = new Set(req.macros ?? []);
   const actionNames = new Set(req.actions ?? []);
   const toolNames = new Set(req.tools ?? []);
-  for (const feature of await readDefinitions('features')) {
-    if (!featureNames.has(feature.name) || feature.origin !== 'user') continue;
-    await addFile('catalogs', `features/${feature.name}.md`, feature.file);
-    for (const s of feature.get('sops').split(',')) if (s.trim() && s.trim() !== '—') books.add(`sops:${s.trim()}`);
-    for (const m of feature.get('macros').split(',')) if (m.trim() && m.trim() !== '—') macroNames.add(m.trim());
-    for (const a of feature.get('actions').split(',')) if (a.trim() && a.trim() !== '—') actionNames.add(a.trim());
-    for (const t of feature.get('tools').split(',')) if (t.trim() && t.trim() !== '—') toolNames.add(t.trim());
+  for (const behaviour of await readDefinitions('behaviours')) {
+    if (!books.has(behaviour.name)) continue;
+    if (behaviour.origin === 'user') await addFile('ways', `${behaviour.name}.md`, behaviour.file);
+    for (const s of behaviour.get('sops').split(',')) if (s.trim() && s.trim() !== '—') books.add(`sops:${s.trim()}`);
+    for (const m of behaviour.get('macros').split(',')) if (m.trim() && m.trim() !== '—') macroNames.add(m.trim());
+    for (const a of behaviour.get('actions').split(',')) if (a.trim() && a.trim() !== '—') actionNames.add(a.trim());
+    for (const t of behaviour.get('tools').split(',')) if (t.trim() && t.trim() !== '—') toolNames.add(t.trim());
   }
   for (const book of books) {
     const match = /^sops:([a-z0-9][a-z0-9_-]*)$/.exec(book);

@@ -12,9 +12,9 @@ same name replaces ours whole; a new name sits beside it.
 | | read by |
 |---|---|
 | `all/` | every session, always |
-| `<service>_connected/` | only when a chosen feature declares it and the connection is on |
+| `<service>_connected/` | only when a chosen behaviour declares it and the connection is on |
 | `root/<project_root>/` | only sessions working in that directory |
-| `routine/<name>/FILE.md` | when an installation's or a feature's definition declares the file: `reading:` if it is on, `reading_off:` if it is off |
+| `routine/<name>/FILE.md` | when an installation's or a behaviour's definition declares the file: `reading:` if it is on, `reading_off:` if it is off |
 
 A session receives every applicable level compiled into one per-session `README.md`:
 Ronin's teaching inlined, your `root/` documents listed by title and path.
@@ -49,7 +49,7 @@ table was shelved as vocabulary; nothing objected, because no test read the real
   macro section from the resolved `MACROS.md` catalog (`preview: yes`) and includes it in
   the compiled README.
 
-Abilities are selected by installation and feature definitions. Repository test protocols stay in repository
+Abilities are selected by installation and behaviour definitions. Repository test protocols stay in repository
 developer instructions and are never ordinary user birth reading.
 
 See `docs/session-boot.md`.

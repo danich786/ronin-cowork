@@ -17,9 +17,10 @@ test('Campaign defaults use ask() and Output keeps multi-select semantics', asyn
   }
   assert.doesNotMatch(source, /ruledRows\('(reach|recruit|output)'/, 'mandates are icon-free rectangles');
   assert.doesNotMatch(source, /key: 'dial'|ruledRows\('dial'|default_dial/, 'the legacy Control default has no surface');
-  assert.match(source, /key: 'features'.*many: true/);
+  assert.doesNotMatch(source, /key: 'features'/);
   assert.match(source, /key: 'behaviours'.*many: true/);
-  assert.match(source, /request\('\/api\/ways'\)/);
+  assert.match(source, /request\(`\/api\/launch-seed/);
+  assert.match(source, /shape: 'tall'/);
   assert.doesNotMatch(source, /textarea/);
   assert.match(source, /const next = \{ \.\.\.current, \.\.\.picked, dial: 'write',/);
   assert.match(source, /trayHost: questionsRow/, 'the launch-mode tray drops below the row, so neighbouring groups stay anchored');

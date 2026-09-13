@@ -68,7 +68,7 @@ Launch facts select the levels:
 
 The toggle governs both halves of a connection: launched
 off, a session gets neither a service's tools nor a word about them. These levels add up
-rather than override: root, connection, installations and features are fixed
+rather than override: root, connection, installations and behaviours are fixed
 at birth and compiled into one README. Work-specific reading is selected separately
 as `behaviours`; the behaviours that are on join that same birth reading once and are not a
 mutable shelf axis. A T2 file that would help every session is mis-shelved and belongs up
@@ -89,7 +89,7 @@ every time.
 
 A session receives the pyramid instantiated for its installation, Campaign, Team, launch
 choices, and conditional facts. T1 never differs; T2 carries enabled installation
-contributions, selected features and behaviours, and conditional reading; T3–T5 are one
+contributions, selected behaviours, and conditional reading; T3–T5 are one
 house-wide body of knowledge.
 
 ## The routing table

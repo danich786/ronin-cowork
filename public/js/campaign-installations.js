@@ -26,10 +26,10 @@ export function createInstallationsSurface(campaign, context = {}) {
   let catalog = [];
   let installed = null;
   let values = {};
-  let defaultFeatures = [];
+  let defaultBehaviours = [];
   let stoneSurface = null;
 
-  const providerState = (installation) => featureProviderState(installation, values, defaultFeatures);
+  const providerState = (installation) => featureProviderState(installation, values, defaultBehaviours);
   const stateWord = (installation) => installation.effect === 'feature_provider'
     ? ({ off: t('campaign_view.off', 'Off'), on: t('campaign_view.on', 'On'), all: t('campaign_view.shape_all', 'All') })[providerState(installation)]
     : values[installation.name] ? t('campaign_view.on', 'On') : t('campaign_view.off', 'Off');
@@ -61,16 +61,16 @@ export function createInstallationsSurface(campaign, context = {}) {
     const row = campaign();
     if (!row) return;
     notice.textContent = t('campaign.saving', 'saving…');
-    const currentInstallations = completeMap(catalog, row.config?.installations);
     const { installations, defaults } = applyFeatureProviderState(
-      installation, answer, currentInstallations, { ...(row.config?.defaults || {}), features: defaultFeatures },
+      installation, answer, completeMap(catalog, row.config?.installations),
+      { ...(row.config?.defaults || {}), behaviours: defaultBehaviours },
     );
     const result = await saveCampaign(row.id, { config: { installations, defaults } });
     notice.textContent = result.ok ? t('settei.saved', 'saved') : result.message;
     notice.dataset.tone = result.ok ? 'success' : 'failed';
     if (result.ok) {
       values = installations;
-      defaultFeatures = defaults.features;
+      defaultBehaviours = defaults.behaviours;
       refreshStoneMarks();
       context.onInstallationChange?.(installation.name, answer !== 'off');
     }
@@ -133,7 +133,7 @@ export function createInstallationsSurface(campaign, context = {}) {
     catalog = INSTALLATION_ORDER.map((name) => rows.find((row) => row.name === name)).filter(Boolean);
     installed = installedResult.ok ? installedResult.data : null;
     values = completeMap(catalog, campaign()?.config?.installations);
-    defaultFeatures = Array.isArray(campaign()?.config?.defaults?.features) ? [...campaign().config.defaults.features] : [];
+    defaultBehaviours = Array.isArray(campaign()?.config?.defaults?.behaviours) ? [...campaign().config.defaults.behaviours] : [];
     stoneSurface.setItems(catalog.map(itemFor));
     stoneSurface.select('ronin_services');
   };

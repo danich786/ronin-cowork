@@ -95,7 +95,7 @@ const settings = (v: unknown): CampaignSettings => {
   const settled = Object.prototype.hasOwnProperty.call(c, 'installations');
   return {
     installations: booleanMap(c.installations),
-    defaults: agentDefaults(settled ? defaults : { ...defaults, features: undefined, behaviours: undefined }),
+    defaults: agentDefaults(settled ? defaults : { ...defaults, behaviours: undefined }),
     cowork_defaults: bucket(c.cowork_defaults),
     template_defaults: bucket(c.template_defaults),
   };

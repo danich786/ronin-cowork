@@ -60,7 +60,7 @@ absent.
 | piece | what | where |
 |---|---|---|
 | **the toggle** | New Agent: **gbrain on** (the CLI's own config applies) / **gbrain off** (no MCP servers at all, every other connector included). The label says gbrain by the owner's ruling. Per launch; relaunch to change. The Codex exception is recorded below | `src/spawn.ts` |
-| **gbrain feature** | Available only while its provider installation is on. Campaign default, Team, then Agent chooses it; a selected feature contributes its connection material at birth | `ronin_catalogs/features/gbrain.md` · `src/spawn.ts` |
+| **gbrain behaviour** | Available only while its provider installation is on. Campaign default, Team, then Agent chooses it; a selected behaviour contributes its connection material at birth | `ronin_catalogs/behaviours/gbrain.md` · `src/spawn.ts` |
 | **`gbrain_disconnected:`** | the provider catalog's key holding a provider's declared tokens for `gbrain_mode: disconnected`. A launch that asks for disconnected and finds none declared is refused; a profile merely defaulting disconnected degrades to connected and the receipt says so. OpenAI disables gbrain specifically. Anthropic's coarse token disables **ALL MCP** for that launch | `ronin_catalogs/MODEL_PROVIDERS.md` · `src/model-providers.ts` |
 
 ### Review finding — connected is not provisioned, and off is not yet proved

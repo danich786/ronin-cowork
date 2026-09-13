@@ -176,12 +176,11 @@ test('New Team routes each selector region through ask() and leaves Templates br
   assert.match(form, /after: 'provider'/);
   assert.match(form, /after: 'root'/);
   assert.match(form, /row: branchField/);
-  assert.match(form, /group: t\('features', 'Features'\)/);
   assert.match(form, /group: t\('behaviours', 'Behaviours'\)/);
-  assert.match(form, /availableFeatures\(\)/);
+  assert.doesNotMatch(form, /availableFeatures|group: t\('features'/);
   assert.match(form, /options: LAUNCH_MODES\(\)\.map/);
-  assert.match(form, /trayHost: kitHost/, 'launch mode opens below the full kit row without moving Features or Behaviours');
-  assert.match(form, /many: true, options: shelfRows/);
+  assert.match(form, /trayHost: kitHost/, 'launch mode opens below the full kit row without moving Behaviours');
+  assert.match(form, /many: true, shape: 'tall', options: shelfRows/);
   assert.equal((form.match(/density: 'tight'/g) || []).length, 2, 'both defaults regions use launch density');
   assert.match(form, /tierWord\(row\.tier\)/);
   assert.match(form, /forms\.reason_not_listed/);

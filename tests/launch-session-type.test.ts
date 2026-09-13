@@ -97,19 +97,6 @@ test('cowork kind and behaviours survive body acceptance while unusable shapes a
   assert.deepEqual(ignored.ignored, ['behaviours', 'kind']);
 });
 
-test('cowork accepts feature choices and rejects malformed shapes', () => {
-  const accepted = acceptedLaunchBody({
-    name: 'proof',
-    features: ['gbrain', 'ronin_host'],
-  });
-  assert.deepEqual(accepted.body.features, ['gbrain', 'ronin_host']);
-  assert.deepEqual(accepted.ignored, []);
-
-  const malformed = acceptedLaunchBody({ name: 'proof', features: { gbrain: true } });
-  assert.equal(malformed.body.features, undefined);
-  assert.deepEqual(malformed.ignored, ['features']);
-});
-
 test('settled launch enums are accepted and their retired keys are receipt-only', () => {
   const accepted = acceptedLaunchBody({ name: 'proof', launch_mode: 'configured' });
   assert.equal(accepted.body.launch_mode, 'configured');
@@ -176,7 +163,7 @@ test('the in-Team Agent form sends template behaviours and mandate, never a laun
   assert.match(source, /draft\.recruit = row\.mandate\.recruit/);
   assert.match(source, /draft\.output = \[row\.mandate\.output\]\.flat\(\)\.filter\(Boolean\)/);
   assert.match(source, /behaviours:\s*\[\.\.\.draft\.behaviours\]/);
-  assert.match(source, /features:\s*\[\.\.\.draft\.features\]/);
+  assert.doesNotMatch(source, /features/);
   assert.doesNotMatch(source, /team_lead|routines|worktrees|leadership/);
   assert.match(source, /mandate:\s*\{ reach: draft\.reach, recruit: draft\.recruit, output: \[\.\.\.draft\.output\] \}/);
   assert.doesNotMatch(source, /session_role\s*:/);

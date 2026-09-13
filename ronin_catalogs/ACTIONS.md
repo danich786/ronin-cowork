@@ -61,7 +61,7 @@ curl -sS -X POST http://127.0.0.1:${PORT:-4810}/api/launch \
 
 `name` is required. Omitting `project_root` selects the top active root. The receipt names what was actually resolved;
 read it back and report it.
-The `BORN` verdict prints both receipt lists: `ignored` input and requested features that
+The `BORN` verdict prints both receipt lists: `ignored` input and requested behaviours that
 were `undelivered` because their installation was unavailable.
 
 **THE MODEL — leave it out unless the owner named one.** Omit `cmd` and the launch is born
@@ -78,13 +78,13 @@ never a command you composed — a hand-typed command matches no table row, so t
 cannot honor an MCP-off choice for it.
 
 **IT DELIVERS THE WHOLE BUILD BRIEF, which is the other half of why this is the door.** A
-launch composes the core reading, enabled installation contributions, selected features
-and behaviours, Team and conditional reading, plus your prompt. A
+launch composes the core reading, enabled installation contributions, selected
+behaviours, Team and conditional reading, plus your prompt. A
 session made with `tmux new-session` gets NONE of that: no reading list, no posture, no
 letter, ever.
 
-The response carries a receipt with session type, Team, project root, mandate, behaviours,
-features, dial, and command. A launch that refuses answers 400 with the reason written for the owner (an
+The response carries a receipt with session type, Team, project root, mandate,
+behaviours, dial, and command. A launch that refuses answers 400 with the reason written for the owner (an
 unknown axis, a locked `mcp:` contradicted, an agentless launch handed a command); report
 the reason, do not retry around it.
 

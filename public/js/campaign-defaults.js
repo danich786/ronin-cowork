@@ -25,7 +25,7 @@ export function createAgentDefaultsSurface(campaign) {
   const surface = createSurface({ label: t('campaign_view.defaults', 'Defaults'), className: 'cv-surface' });
   const body = el('div', 'cv-body'); surface.content.append(body);
 
-  function paint(seed = null, ways = []) {
+  function paint(seed = null) {
     const row = campaign(); body.replaceChildren();
     if (!row) return surface.setState('empty', t('campaign_view.none_selected', 'No Campaign selected.'));
     surface.setState(null, '');
@@ -42,12 +42,12 @@ export function createAgentDefaultsSurface(campaign) {
         ? t('forms.reason_not_listed', 'not listed by your {cli} {client_version}', { cli: providerRow.cli_label || providerRow.cli, client_version: providerRow.model_list?.client_version || '' })
         : t('forms.reason_not_on_machine', 'not on this machine');
     const availableNames = new Set(list(seed?.available));
-    const availableFeatures = list(seed?.features).filter((feature) => availableNames.has(feature.name));
+    const availableBehaviours = list(seed?.behaviours).filter((behaviour) => availableNames.has(behaviour.name));
     let picked = {
       provider: String(current.provider || ''), model: String(current.model || ''),
       reach: current.reach || CHOICES.reach[0], recruit: current.recruit || CHOICES.recruit[0],
       output: list(current.output), launch_mode: current.launch_mode || CHOICES.launch_mode[0],
-      features: list(current.features), behaviours: list(current.behaviours),
+      behaviours: list(current.behaviours),
     };
     const questions = ask([
       { group: t('new_agent.model_package', 'Model'), fields: [
@@ -65,13 +65,9 @@ export function createAgentDefaultsSurface(campaign) {
           { v: 'live_dangerously', l: optionLabel('live_dangerously'), sub: t('launch_mode.live_sub', 'Ronin appends that provider’s own bypass flag, so the Agent does not stop to ask.') },
         ] },
       ] },
-      { group: t('campaign_view.default_features', 'Features'), fields: [{
-        key: 'features', label: t('campaign_view.default_features', 'Features'), many: true,
-        options: availableFeatures.map((feature) => ({ v: feature.name, l: feature.label || feature.name, sub: feature.blurb || '' })),
-      }] },
       { group: t('campaign_view.default_behaviours', 'Behaviours'), fields: [{
-        key: 'behaviours', label: t('campaign_view.default_behaviours', 'Behaviours'), many: true,
-        options: ways.map((way) => ({ v: way.name, l: way.label || way.name, sub: way.blurb || '' })),
+        key: 'behaviours', label: t('campaign_view.default_behaviours', 'Behaviours'), many: true, shape: 'tall',
+        options: availableBehaviours.map((row) => ({ v: row.name, l: row.label || row.name, sub: row.blurb || '', read: row.reading })),
       }] },
     ], { value: picked, trayHost: questionsRow, onChange: (value) => { picked = value; } });
     questionsRow.append(questions.el); form.append(questionsRow);
@@ -79,21 +75,17 @@ export function createAgentDefaultsSurface(campaign) {
     const save = el('button', 'cv-save', t('panels.save', 'Save')); save.type = 'submit'; actions.append(notice.el, save); form.append(actions); body.append(form);
     form.addEventListener('submit', async (event) => {
       event.preventDefault(); save.disabled = true; notice.set('info', t('campaign.saving', 'saving…'));
-      const next = { ...current, ...picked, dial: 'write', features: list(picked.features), behaviours: list(picked.behaviours) };
+      const next = { ...current, ...picked, dial: 'write', behaviours: list(picked.behaviours) };
       const result = await saveCampaign(row.id, { config: { defaults: next } });
       notice.set(result.ok ? 'success' : 'failed', result.ok ? t('settei.saved', 'saved') : result.message); save.disabled = false;
-      if (result.ok) paint(seed, ways);
+      if (result.ok) paint(seed);
     });
   }
 
   return { el: surface.el, enter: () => void Promise.all([
     loadProviderCatalog(),
     request(`/api/launch-seed?campaign_id=${encodeURIComponent(campaign()?.id || '')}`),
-    request('/api/ways'),
-  ]).then(([, seedResult, wayResult]) => paint(
-    seedResult.ok ? seedResult.data : null,
-    wayResult.ok && Array.isArray(wayResult.data) ? wayResult.data : [],
-  )) };
+  ]).then(([, seedResult]) => paint(seedResult.ok ? seedResult.data : null)) };
 }
 
 export function defaultsSummary(campaign) {

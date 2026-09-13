@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Set the two Claude Code settings two Ronin features do not work without.
+"""Set the two Claude Code settings two Ronin behaviours do not work without.
 
     python3 hostside/claude-settings.py            # set them, report what it did
     python3 hostside/claude-settings.py --check    # report only, exit 1 if unset

@@ -1,109 +1,84 @@
-# Installations, features, and behaviours — what a new Agent is equipped with
+# Installations and behaviours — what a new Agent is equipped with
 
 Ronin settles what is installed on the machine before it asks how one Agent should
-behave. That order keeps machine facts off the Team and Agent forms and leaves only real
-choices there.
+behave. Machine facts stay off Team and Agent forms; behaviours are the one kind of
+addition chosen there.
 
 ## Three session types
 
 | Session type | What starts | What Ronin adds |
 |---|---|---|
 | Terminal | A shell, no Agent CLI. | Nothing. |
-| Bare-metal Agent | The provider CLI directly in the tmux session. | Nothing: no reading, no work record, no desk, no receipt. |
-| Cowork Agent | The provider CLI through the unified birth transaction. | Everything Ronin is on this box: identity, the work record, the base reading, macros, actions, tools, messaging, the shelf map, the birth receipt, and every system installation that is on. |
+| Bare-metal Agent | The provider CLI directly in the tmux session. | Nothing: no reading, work record, desk, or receipt. |
+| Cowork Agent | The provider CLI through the unified birth transaction. | Everything Ronin is on this box: identity, work record, base reading, commands, the birth receipt, and every enabled system installation. |
 
-A Cowork Agent is one thing. There is no separate floor, no base switch, and no Cowork
-Agent with everything off; bare metal is the way to have none of it.
+A Cowork Agent is one thing. There is no floor or base switch; bare metal is the way to
+have none of Ronin.
 
 ## System settings: installations and defaults
-
-The Campaign holds two cards.
 
 | Card | Holds | Reaches |
 |---|---|---|
 | **Installations** | each installed component, on or off | the whole machine; never a Team or Agent question |
-| **Defaults** | the features and behaviours a new Team starts from | the next New Team form, and a teamless Agent's form directly; existing Teams are untouched |
+| **Defaults** | the behaviours a new Team starts from | the next New Team form and a teamless Agent form; existing Teams are untouched |
 
-An installation declares one of two effects in its own definition
-(`ronin_catalogs/installations/<name>.md`):
+An installation definition (`ronin_catalogs/installations/<name>.md`) has one of two
+effects. A `system` installation contributes its reading, tools, server parts, and
+connections to every Cowork Agent when on, and its `reading_off` page when off. A
+`feature_provider` installation makes its named behaviours available to choose. The
+effect name is implementation vocabulary; the owner still sees an Installation.
 
-| Effect | When on | Examples |
-|---|---|---|
-| **system** | its reading, tools, server parts and connections join every Cowork Agent birth; nothing downstream can decline it. When off, the birth carries its `reading_off` page instead: what the owner is working without, and where the switch is | Ronin Services |
-| **feature provider** | it makes one or more features selectable; nothing reaches an Agent until a Team or Agent chooses | gbrain, Trello, Perplexity |
+An installation may require another. Unmet requirements grey it out and name the
+requirement. Turning one off changes the next birth; server parts follow at Ronin
+restart, and a running Agent never changes.
 
-An installation may require another. One whose requirement is not met is shown greyed
-with the requirement named (Trello and Perplexity read *Ronin Services required*).
-Turning an installation off removes its contribution or its features from the next
-birth; server parts follow the switch at Ronin restart; a running Agent never changes.
+## The cascade: behaviours
 
-## The cascade: features and behaviours
+Campaign defaults → Team → Agent carries one kind of choice: a **behaviour**. A behaviour
+can say how ordinary work should be done or add a facility and its taught practice. Its
+definition in `ronin_catalogs/behaviours/<name>.md` may name an installation and carry
+reading, SOPs, macros, actions, tools, and an MCP connection.
 
-Two things cascade, Campaign defaults → Team → Agent. A default lands in the next form
-already filled in and can be changed there; there is no inherit control and no
-reach-down; a template clobbers only the fields it carries.
+An installation-gated behaviour appears on forms only while its installation and every
+requirement are on. A launch request naming an unavailable behaviour is born without it;
+the birth receipt names it as undelivered and birth still succeeds. Providerless
+behaviours are always on offer.
 
-| Kind | The question | Where it is defined |
-|---|---|---|
-| **Feature** | What extra facility or taught practice does this Agent have? | `ronin_catalogs/features/<name>.md`: its provider installation (blank for a prompt-only feature), reading, SOPs, macros, actions, tools, MCP connection |
-| **Behaviour** | How does the owner want otherwise ordinary work done? | `ronin_catalogs/behaviours/<name>.md`, one short page each; the owner's `ways` store shadows a stock page whole |
+The stock shelf includes `mandates` (on by default), `buildout`, `recruit`,
+`write_it_down`, `more_checkpoints`, `report_before_fixing`, `visual_staging`,
+`ronin_host`, `gbrain`, `trello`, and `perplexity`. A Team's required behaviours cannot
+be removed on an Agent form. Every form uses the same tall, wrapping behaviour stone;
+its separate read glyph opens the definition page without changing the choice.
 
-**The installations decide what is on offer.** A feature is on the Team and Agent forms
-only while its provider is installed and on; otherwise it is absent and cannot be chosen.
-That is a browser rule: the launch seed (`GET /api/launch-seed`) lists `available`, and
-the forms render from it. The server refuses nothing. A launch body naming a feature
-that is not on offer, or one whose live service cannot be reached at birth, is born
-without it; the receipt names it under `undelivered`, and the caller sees it on the
-`BORN` line of `tejun-fork`.
-
-Stock features: `gbrain` (provider: the gbrain installation) and `ronin_host`, a
-system-admin toolkit with no provider: the machine SOPs, `tejun-survey`, `tejun-account`,
-`tejun-secrets` and `tejun-machine-restart`. An Agent without Ronin Host is refused by
-the guard shims when it reaches for `systemctl`.
-
-Stock behaviours: `mandates` (on by default: one page, one line per reach, recruit and
-output value, naming the behaviour that holds the how), `buildout`, `recruit`,
-`write_it_down`, `more_checkpoints`, `report_before_fixing`, `visual_staging` (the Team
-preview procedure, `ronin_sops/visual_staging.md`; an Agent given it tells the Team and the
-lead to read that page). On means delivered at birth;
-off means not delivered; the shelf is readable either way, so the mandates page can
-point at a behaviour that is off. A Team's *required* behaviours cannot be removed on an
-Agent form.
+There is no inherit control and no reach-down. A Campaign default fills the next form;
+a Team saves complete selected and required lists; an Agent launch may supply its own
+complete list. A template clobbers only the fields it carries.
 
 ## Conditional instructions
 
-Some reading follows a fact set elsewhere. Nobody chooses it and no form shows it.
-
-| Fact | Set where | How it reaches the Agent |
-|---|---|---|
-| the session is the Team lead | the roster, by hand | decided at birth: the lead reading (`ronin_sops/teams.md`) is in the packet or not |
-| the session is on a Team | the launch | decided at birth: the Team's objective in its work record; its wipeboard |
-| the Workspace Folder is a worktree root or a checkout | the folder's `RONIN_REPO` | pointed at: the base reading says a repository is one or the other and names the page for each (`ronin_sops/worktree-root.md`, `ronin_sops/checkout.md`); the packet names the birth root's arrangement; `tejun-desk open` names any other root's. The desk actions and tools are in the Agent's command lookup only in a worktree root |
+Some reading follows a fact set elsewhere and is never a picker: Team lead status, Team
+membership, and whether the Workspace Folder's `RONIN_REPO` declares a worktree root or
+a checkout. The birth packet points at the relevant Team and repository pages.
 
 ## Resolution
 
-One resolver, once per birth, before the Agent process exists:
+One resolver runs before the Agent process exists:
 
-1. **Installations.** Each system installation contributes its on-page or its off-page.
-   Each feature provider that is on makes its features available.
-2. **Campaign defaults.** A teamless Agent reads these directly.
-3. **Team.** Its complete lists, as saved.
-4. **Agent.** Its sparse overrides from the launch body.
-5. **Conditionals.** Root arrangement, lead flag, Team membership.
-6. **One birth packet**, with `stated_by` naming the layer that answered every fact:
+1. Installations contribute system material and decide which behaviours are available.
+2. Campaign defaults answer for a teamless Agent.
+3. A Team's complete selected and required behaviour lists answer for its Agents.
+4. An Agent's launch list, when present, answers for that Agent.
+5. Root arrangement, lead status, and Team membership add conditional reading.
+6. One packet and receipt record the result, with `stated_by` naming
    `installation · campaign · team · agent · conditional`.
 
-The same result feeds every delivery: the compiled birth README, the macro roster, the
-per-session command directory, MCP connections, and the receipt, which records what was
-enabled, why, and what was delivered. An unavailable feature never blocks a birth.
+The same result feeds the birth README, command directory, MCP connections, and receipt.
 
 ## Catalog authority
 
-Definitions live in `ronin_catalogs/installations/`, `ronin_catalogs/features/` and
-`ronin_catalogs/behaviours/`, one Markdown file per name; each directory's `README.md`
-carries the format. The owner's catalog store shadows a stock definition whole. Campaign
-and Team records hold only on/off maps and name lists; nothing about membership is copied
-into them.
+Definitions live in `ronin_catalogs/installations/` and `ronin_catalogs/behaviours/`, one
+Markdown file per name; each directory's README carries the format. The owner's stores
+shadow a stock definition whole. Campaign and Team records hold only switches and names.
 
 A definition is enablement, not a security boundary. Off means Ronin does not teach,
-offer or place a tool in the Agent's normal command lookup.
+offer, or place its tools in the Agent's normal command lookup.

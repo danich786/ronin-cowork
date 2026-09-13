@@ -19,7 +19,6 @@ export interface TeamRoster {
   branches: Record<string, string>;
   wipeboard: string;
   state: 'active' | 'archived';
-  features: string[];
   behaviours: TeamBehaviours;
   agent_defaults: TeamAgentDefaults;
 }
@@ -66,7 +65,7 @@ function parse(name: string, raw: string, campaign_id = ''): TeamRoster {
   const behaviourValue = json('behaviours');
   const behaviourMap = behaviourValue && typeof behaviourValue === 'object' && !Array.isArray(behaviourValue)
     ? behaviourValue as Record<string, unknown> : {};
-  const settled = lines.some((line) => /^\s*-\s*\*\*features:\*\*/i.test(line));
+  const settled = lines.some((line) => /^\s*-\s*\*\*behaviours:\*\*/i.test(line));
   const kind = get('kind');
   return {
     name,
@@ -81,7 +80,6 @@ function parse(name: string, raw: string, campaign_id = ''): TeamRoster {
     branches: stringMap(json('branches')),
     wipeboard: get('wipeboard') || name,
     state: /^archived$/i.test(get('state')) ? 'archived' : 'active',
-    features: settled ? strings(json('features'), 64) : [],
     behaviours: settled
       ? { selected: strings(behaviourMap.selected, 160), required: strings(behaviourMap.required, 160) }
       : { selected: ['mandates'], required: [] },
@@ -161,14 +159,13 @@ export interface RosterEdit {
   branches?: Record<string, string>;
   wipeboard?: string;
   state?: 'active' | 'archived';
-  features?: string[];
   behaviours?: TeamBehaviours;
   agent_defaults?: Partial<TeamAgentDefaults>;
 }
 
 const KEYS: (keyof RosterEdit)[] = [
   'title', 'kind', 'objective', 'project_root', 'repos', 'branch', 'branches', 'wipeboard', 'state',
-  'features', 'behaviours', 'agent_defaults',
+  'behaviours', 'agent_defaults',
 ];
 
 function render(name: string, r: TeamRoster): string {
@@ -186,7 +183,6 @@ function render(name: string, r: TeamRoster): string {
     line('branches', JSON.stringify(r.branches)),
     line('wipeboard', r.wipeboard || name),
     line('state', r.state),
-    line('features', JSON.stringify(r.features)),
     line('behaviours', JSON.stringify(r.behaviours)),
     line('agent_defaults', JSON.stringify(r.agent_defaults)),
     '',
@@ -222,7 +218,6 @@ export async function createTeamRoster(name: string, edit: RosterEdit, campaign_
     branches: edit.branches ?? {},
     wipeboard: edit.wipeboard || (await freeBoardToken(name, campaign_id)),
     state: edit.state ?? 'active',
-    features: edit.features ?? [],
     behaviours: edit.behaviours ?? { selected: ['mandates'], required: [] },
     agent_defaults: teamAgentDefaults(edit.agent_defaults),
   };
@@ -248,7 +243,7 @@ export async function writeTeamRoster(name: string, edit: RosterEdit, campaign_i
   } as TeamRoster;
   for (const k of KEYS) {
     if (normalizedEdit[k] === undefined) continue;
-    const nested = ['features', 'behaviours', 'agent_defaults'].includes(k);
+    const nested = ['behaviours', 'agent_defaults'].includes(k);
     const v = nested ? JSON.stringify(normalizedEdit[k])
       : k === 'repos' ? (normalizedEdit.repos ?? []).join(', ')
       : String(normalizedEdit[k] ?? '');

@@ -6,9 +6,11 @@ import { createLaunchHelpView } from './launch-help.js';
 import { refreshTeams } from './team-controller.js';
 import { t } from './lexicon.js';
 import { createFeedbackSurface, FEEDBACK_TYPE, registerFeedbackSurface } from './feedback.js';
+import { createDocumentWorkspaceAdapter } from './docs.js';
+import { installBehaviourReader } from './behaviour-reader.js';
 
 const PROFILE = 'launch';
-const TYPES = Object.freeze({ team: 'launch.team', agent: 'launch.agent', help: 'launch.help' });
+const TYPES = Object.freeze({ team: 'launch.team', agent: 'launch.agent', help: 'launch.help', document: 'document' });
 const node = (tag, cls, text) => { const out = document.createElement(tag); if (cls) out.className = cls; if (text != null) out.textContent = text; return out; };
 
 /** Pure entry decision: Customize wins; a generic preload is one-shot behind it. */
@@ -43,6 +45,7 @@ function registerLaunchSurfaces() {
     summary: () => t('launch.new_team_summary', 'Define a Team, then launch its Agents.'),
     create: ({ environment, workspace }) => environment.team(workspace),
   });
+  add({ type: TYPES.document, header: 'surface', label: () => t('docs.frame_title', 'Document'), discover: () => [], create: ({ detail, environment }) => environment.document(detail) });
   add({
     type: TYPES.agent,
     header: 'surface',
@@ -60,7 +63,7 @@ function registerLaunchSurfaces() {
     variant: 'dotted',
     create: ({ environment, workspace }) => environment.help(workspace),
   });
-  profiles.define(PROFILE, [TYPES.team, TYPES.agent, TYPES.help, FEEDBACK_TYPE]);
+  profiles.define(PROFILE, [TYPES.team, TYPES.agent, TYPES.help, TYPES.document, FEEDBACK_TYPE]);
 }
 
 export function createLaunchView() {
@@ -95,6 +98,7 @@ export function createLaunchView() {
       if (!helpBySeat[workspace]) helpBySeat[workspace] = createLaunchHelpView(WorkspaceKit, { bench });
       return helpBySeat[workspace];
     },
+    document: (detail = {}) => createDocumentWorkspaceAdapter({ root: detail.root, path: detail.path || detail.key }),
   };
 
   const blank = (id) => WorkspaceKit.primitives.createBlankSurface(id.replace('workspace', 'Workspace ')).el;
@@ -110,6 +114,7 @@ export function createLaunchView() {
     onStateChange: save,
     onPlacement: save,
   });
+  installBehaviourReader(bench, TYPES.document);
 
   return {
     el: bench.host,

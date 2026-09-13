@@ -1,6 +1,6 @@
 # gbrain
 - **label:** gbrain
-- **blurb:** Makes shared gbrain memory available as a feature.
+- **blurb:** Makes the gbrain behaviour available.
 - **effect:** feature_provider
 - **provides:** gbrain
 - **reading:** —

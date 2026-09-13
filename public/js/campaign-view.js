@@ -21,13 +21,15 @@ import { readyMika } from './mika-ready.js';
 import { createMikaHelpPanel, createMikaTilePool } from './mika.js';
 import { toast } from './ui.js';
 import { openLaunchForm, openTemplateLaunchForm } from './workspace.js';
+import { createDocumentWorkspaceAdapter } from './docs.js';
+import { installBehaviourReader } from './behaviour-reader.js';
 
 const PROFILE = 'campaign';
 const MIKA_SESSION = 'mika_agent';
 const TERMINAL_TYPE = 'session.terminal';
 // the machine's own half — account, health — is the Admin Desk's.
 // defaults · Project roots lead, and they are the four the page opens on.
-const TYPES = Object.freeze({ machine: 'campaign.machine', templates: CAMPAIGN_TEMPLATES_TYPE, defaults: 'campaign.defaults', roots: 'campaign.project-roots', identity: 'campaign.identity', installations: 'campaign.installations', providers: PROVIDER_SURFACE_TYPE, profile: 'campaign.desk-profile', create: 'campaign.new' });
+const TYPES = Object.freeze({ machine: 'campaign.machine', templates: CAMPAIGN_TEMPLATES_TYPE, defaults: 'campaign.defaults', roots: 'campaign.project-roots', identity: 'campaign.identity', installations: 'campaign.installations', providers: PROVIDER_SURFACE_TYPE, profile: 'campaign.desk-profile', create: 'campaign.new', document: 'document' });
 /** The machine's tabs of the cowork commons — everything about this install that is not already a surface here. */
 const MACHINE_TABS = Object.freeze(['themes', 'account', 'archives', 'messages', 'help', 'keypad', 'health']);
 const LEGACY = Object.freeze({ '@campaign': TYPES.identity, '@profile': TYPES.profile, '@roots': TYPES.roots, '@templates': TYPES.templates, 'campaign.team-templates': TYPES.templates, 'campaign.session-roles': TYPES.templates, '@new-campaign': TYPES.create });
@@ -73,6 +75,7 @@ function registerCampaignSurfaces() {
     connected: (host) => e.entered() && host.isConnected,
   }) });
   add({ type: TYPES.defaults, header: 'surface', label: () => t('campaign_view.agent_defaults', 'Team and Agent defaults'), summary: (_tenant, e) => currently.defaults(e), create: ({ environment: e }) => { const surface = createAgentDefaultsSurface(e.selected); return e.progressive({ el: surface.el, show: () => surface.enter() }); } });
+  add({ type: TYPES.document, header: 'surface', label: () => t('docs.frame_title', 'Document'), discover: () => [], create: ({ detail, environment: e }) => e.document(detail) });
   // CONTROL_BUNDLES build-out for the bundle model behind it.
   add({ type: TYPES.installations, header: 'surface', label: () => t('campaign_view.installations', 'Installations'), summary: (_tenant, e) => installationsSummary(e.selected()), create: (context) => { const surface = createInstallationsSurface(context.environment.selected, context); return context.environment.progressive({ el: surface.el, show: () => surface.enter(), destroy: () => surface.destroy() }); } });
   add(providerSurfaceDefinition()); // Model providers — the one surface Ronin Setup also seats; provider-surface.js
@@ -88,7 +91,7 @@ function registerCampaignSurfaces() {
   // its beta card is hidden from discovery. Themes now have their stable home in Ronin Desk.
   profiles.define(PROFILE, [
     TERMINAL_TYPE,
-    TYPES.identity, TYPES.roots, TYPES.defaults, TYPES.installations, TYPES.providers,
+    TYPES.identity, TYPES.roots, TYPES.defaults, TYPES.installations, TYPES.providers, TYPES.document,
     SETUP_SURFACE_TYPES.register, SETUP_SURFACE_TYPES.services, SETUP_SURFACE_TYPES.gbrain,
     SETUP_SURFACE_TYPES.launchOwn, TYPES.templates, TYPES.machine,
     ...(MULTIPLE_CAMPAIGNS_ENABLED ? [TYPES.create] : []),
@@ -148,6 +151,7 @@ export function createCampaignView() {
     showNewSession: (prompt) => { ctx?.patchViewState('launch', { prompt: String(prompt || '') }); ctx?.navigate('launch'); },
     openLaunchForm: ({ kind, seed = {} } = {}) => openLaunchForm(ctx, { kind, seed }),
     openTemplateLaunchForm: () => openTemplateLaunchForm(ctx),
+    document: (detail = {}) => createDocumentWorkspaceAdapter({ root: detail.root, path: detail.path || detail.key }),
     sessions: () => [{
       key: MIKA_SESSION,
       label: 'Mika',
@@ -189,6 +193,7 @@ export function createCampaignView() {
   let helpPanel = null;
   bench = WorkspaceKit.workbench.create({ profile: PROFILE, tenant: { kind: 'campaign', selected }, environment, defaultNode: blank, label: t('campaign.settings_short_title', 'Settings'), title: () => helpPanel?.isOpen() ? t('mika.header', 'Mika, your helpful assistant') : t('campaign.settings_short_title', 'Settings'), actions: [densityToggle, mikaHelp], shapeControl: document.getElementById('shapecycle'), onStateChange: save, onPlacement: save });
   paintDensityToggle();
+  installBehaviourReader(bench, TYPES.document);
   helpPanel = createMikaHelpPanel({
     selector: bench.host.querySelector('.wk-workbench-selector'), header: bench.selectorHeader,
     refreshHeader: () => bench.refreshSelector(), createAction: WorkspaceKit.primitives.createAction,
