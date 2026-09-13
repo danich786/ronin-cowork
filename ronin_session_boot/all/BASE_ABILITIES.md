@@ -1,5 +1,9 @@
 # BASE ABILITIES — ordinary Ronin work
 
+**Fork versus spawn.** “Fork it” and “new session” mean launch a visible Ronin Agent
+through `session_fork`. “Spawn an agent” means create a CLI-internal sub-agent instead;
+it does not create a visible Ronin session. Keep those two kinds of delegation distinct.
+
 **Repository arrangement.** Every Workspace Folder is either a **worktree root** or a
 **checkout**, as declared by that repository. Before your first write in a folder, read
 the page its arrangement names: `ronin_sops/worktree-root.md` for a worktree root, or
