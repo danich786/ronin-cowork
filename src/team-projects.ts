@@ -1,5 +1,6 @@
 import { normalizeProject, type Project } from './projects.js';
 import { readTeamRoster, writeTeamRoster } from './team-rosters.js';
+import { moveTegamiProject } from './tegami.js';
 
 export type IdeaEdit = Partial<Pick<Project, 'title' | 'objective' | 'exit' | 'status' | 'ladder' | 'evidence'>>;
 
@@ -66,11 +67,7 @@ export type ProjectMover = (input:
   | { direction: 'return'; session: string; projectId: string }
 ) => Promise<{ project: Project; projectsRemaining: number }>;
 
-const houseMove: ProjectMover = async (input) => {
-  const module = await import('./tegami.js') as unknown as { moveTegamiProject?: ProjectMover };
-  if (!module.moveTegamiProject) throw new Error('The whole-project Work Record move is not installed yet.');
-  return module.moveTegamiProject(input);
-};
+const houseMove: ProjectMover = moveTegamiProject;
 
 export async function assignTeamProject(team: string, statedId: string, session: string, move: ProjectMover = houseMove): Promise<Project> {
   const roster = await readTeamRoster(team);

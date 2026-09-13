@@ -101,6 +101,7 @@ test('every agent-facing API caller connects through the one library and carries
     'tejun-archive',
     'tejun-fork',
     'tejun-harakiri',
+    'tejun-kanban',
     'tejun-rehydrate',
     'tejun-team-set',
     'tejun-teampage',
