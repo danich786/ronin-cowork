@@ -29,7 +29,7 @@ codebase is genuinely one service, one specialist is a correct answer, not a fai
 Record the plan on your work record first, then raise the sessions one at a time:
 
 ```bash
-tejun-session-set <service_name> --prompt "<its brief>"
+tejun-session-create <service_name> --prompt "<its brief>"
 ```
 
 Name no team — each newborn joins YOUR team. Every brief carries the same three
