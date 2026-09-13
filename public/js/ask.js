@@ -4,7 +4,7 @@
  * owner's ruling 2026-09-12). A consumer writes a spec; this module draws it. Nothing spatial
  * is the consumer's: not the width, not the wrapping, not the shape, not what opens.
  *
- *   ask([{ group, fields: [{ key, label, options, blank?, many?, switch?, shape?, expanded?, after?, row?, word?, then? }] }],
+ *   ask([{ group, fields: [{ key, label, options, blank?, many?, switch?, shape?, after?, row?, word?, then? }] }],
  *       { value, onChange, density, trayHost })  →  { el, value(), set(key, v) | set({...}), options(key, rows), show(keys|null), open(key), close(), destroy() }
  *
  * A field is a READING STONE (140 × 48: label over answer). Click it and a TRAY opens under
@@ -12,9 +12,7 @@
  * a ruled word) or the RECTANGLE (140 × 48, a name and one short word). A stone carries a
  * name, never a sentence: the CAPTION line under the tray carries the sentence, the facts,
  * and the reason a stone is greyed. A SWITCH is the reading stone with a track; it flips and
- * opens nothing. An EXPANDED field puts those option stones directly beneath the group head;
- * it has no reading stone and no tray. GROUPS keep together and stack as a group. Names break
- * at their joints.
+ * opens nothing. GROUPS keep together and stack as a group. Names break at their joints.
  *
  * An option row is `{ v, l, sub?, off?, glyph?, word? }`: `sub` reads in the caption, `off`
  * is the reason the stone is greyed (disabled, never hidden), `glyph` sits on a square,
@@ -134,7 +132,7 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
       state[field.key] = row.v;
       const reveals = childrenOf(field).some((child) => String(child.when) === String(row.v)) || typeof row.row === 'function' || typeof field.row === 'function';
       revealed = reveals ? row.v : null;
-      if (!reveals && !field.expanded) open = '';
+      if (!reveals) open = '';
     }
     changed(field.key);
     paint();
@@ -314,16 +312,7 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
       const box = el('div', 'ask-group');
       if (group.label) box.append(el('h4', 'ask-group-head', group.label));
       const row = el('div', 'ask-fields');
-      for (const field of drawn) {
-        if (!field.expanded) { row.append(stone(field)); continue; }
-        const options = el('div', 'ask-options ask-expanded');
-        options.dataset.askKey = field.key;
-        options.setAttribute('role', 'listbox');
-        options.setAttribute('aria-label', field.label || group.label);
-        if (field.many) options.setAttribute('aria-multiselectable', 'true');
-        for (const option of rowsOf(field)) options.append(optionStone(field, option));
-        row.append(options);
-      }
+      for (const field of drawn) row.append(stone(field));
       box.append(row);
       root.append(box);
       const opened = drawn.find((field) => field.key === open && !field.switch);

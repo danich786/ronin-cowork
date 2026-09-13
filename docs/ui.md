@@ -509,9 +509,7 @@ ronin-lab `SELECTORS.md` (owner, 2026-09-12); the live benches that led to it ar
 **tray** of stones under its group in one of two fixed shapes: the **square** (85 px, a glyph
 and a ruled word) or the **rectangle** (140 × 48, a name and one short word). A stone carries
 a name, never a sentence; the **caption** line under the tray carries the sentence, the
-facts, and the reason a stone is greyed. A **switch** is the reading stone with a track. An
-**expanded** field puts its option stones directly beneath the group head, with no reading
-stone and no tray. Fields
+facts, and the reason a stone is greyed. A **switch** is the reading stone with a track. Fields
 sit in named **groups** that keep together and stack as a group; nothing stretches with the
 surface. Names break at their joints (`_` `-` `.`), never mid-word.
 
@@ -540,7 +538,6 @@ host.append(form.el);   // form.value() · form.set(key, v) or set({…}) · for
 | `blank` | the empty answer's word, drawn as a stone; omit it and there is no blank |
 | `many` | any-of: the tray stays open; the reading says the names or "n chosen" |
 | `switch` | `[onWord, offWord]`: the field is a switch and opens nothing |
-| `expanded` | `true` when the options are the page's first row: draw them directly beneath the group head, with the selected stone marked and no reading stone or tray |
 | `shape` | `square` for a ruled word with a glyph, `rect` (default) for a name; the glyph comes from `glyphs.js` (`ruledRows(axis, values, word)`), never an inline list, so one word wears one face product-wide |
 | `density` | on the call: `'tight'` for the launch forms (less line spacing inside a group, a 40 px stone; the questions are optional and stay out of the owner's face), `'loose'` (default) for the commons where the question is the page's subject; widths never change |
 | `show(keys)` | on the returned form: draw only these fields (a session type decides which questions exist — a Terminal asks only where it is born); `show(null)` draws all; hidden answers are kept, not cleared |
