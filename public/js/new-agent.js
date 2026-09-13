@@ -32,7 +32,7 @@ export function templateEntryPlan({ currentKind, kindTouched = false, templates 
   return { kind, template: row.name };
 }
 
-export function createNewAgentView(kit, { connect = null, embedded = false, team = null } = {}) {
+export function createNewAgentView(kit, { connect = null, consumed = null, embedded = false, team = null } = {}) {
   const { createSurface, createAction, createActionBar, createField, createNotice } = kit.primitives;
 
   const freshDraft = () => {
@@ -487,11 +487,12 @@ export function createNewAgentView(kit, { connect = null, embedded = false, team
     const deskNote = result.data?.receipt?.desk_note || '';
     if (deskNote) notice.set('warning', t('add_agent.started_note', 'Started {name} — {note}', { name: born, note: deskNote }));
     else notice.set('success', t('add_agent.started', 'Started {name}', { name: born }));
-    // A successful launch consumes this form. Await the handover because a provider
-    // Agent can take longer to enter the observable session set than a plain shell.
-    if (connect) await connect(born);
+    // A successful launch consumes the temporary form before the newborn takes its
+    // workspace. Dismissing after connect would dismiss the newborn that replaced it.
     clearAfterLaunch();
-    if (!connect) openWorkspaceTab(team ? 'team' : 'cowork', team, launchTab);
+    await consumed?.();
+    if (connect) await connect(born);
+    else openWorkspaceTab(team ? 'team' : 'cowork', team, launchTab);
   }
 
   async function doSave() {

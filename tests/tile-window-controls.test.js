@@ -13,7 +13,7 @@ test('the tile corner exposes minimize and retirement through the existing Tile 
   assert.ok(head.indexOf("key: 'killBtn'") < head.indexOf("key: 'minimizeBtn'"), 'close precedes minimize like the window controls it follows');
   assert.doesNotMatch(head, /text: '🗑'/);
   assert.match(tile, /if \(this\.onMinimize\) this\.onMinimize\(this\);\s*else this\.detach\(\)/);
-  assert.match(tile, /retireSession\(name, this\.index/);
+  assert.match(tile, /retireSession\(name, this\.retirementId/);
 });
 
 test('managed workspaces empty their seat and both empty views use the subdued Ronin mark', async () => {

@@ -86,8 +86,8 @@ function registerWorkbenchCatalog() {
   // the ＋ New board are gone from this bench and from the repository; a workspace that
   // remembers one resolves to its replacement through `legacyTypes`.
   // Drawn contracts: ronin-lab `concepts/new-team.html` and `concepts/new-agent-condensed.html`.
-  add({ type: WB_TYPES.newTeamForm, header: 'surface', className: 'wk-selector-utility wk-selector-group-after', label: () => t('new_team.title', 'New Team'), summary: () => t('new_team.card_summary', 'Template · kit · lead — the drawn form.'), variant: 'dotted', create: ({ workspace, environment }) => environment.newTeamForm(workspace) });
-  add({ type: WB_TYPES.newAgent, header: 'surface', className: 'wk-selector-utility', label: () => t('new_agent.title', 'New Agent'), summary: () => t('new_agent.card_summary', 'Session type first — the drawn launch form.'), variant: 'dotted', create: ({ workspace, environment }) => environment.newAgent(workspace) });
+  add({ type: WB_TYPES.newTeamForm, header: 'surface', className: 'wk-selector-utility wk-selector-group-after', label: () => t('new_team.title', 'New Team'), summary: () => t('new_team.card_summary', 'Template · kit · lead — the drawn form.'), variant: 'dotted', create: ({ workspace, environment, consumed }) => environment.newTeamForm(workspace, consumed) });
+  add({ type: WB_TYPES.newAgent, header: 'surface', className: 'wk-selector-utility', label: () => t('new_agent.title', 'New Agent'), summary: () => t('new_agent.card_summary', 'Session type first — the drawn launch form.'), variant: 'dotted', create: ({ workspace, environment, consumed }) => environment.newAgent(workspace, consumed) });
   add({ type: WB_TYPES.archives, header: 'surface', className: 'wk-selector-utility', label: () => t('archives.card', 'Rehydrate Archived'), variant: 'dotted', create: ({ workspace, environment }) => environment.archives(workspace) });
   add({ type: WB_TYPES.document, header: 'surface', label: () => t('docs.frame_title', 'Document'), discover: () => [], create: ({ detail, environment }) => environment.document(detail) });
   add({ type: WB_TYPES.team, header: 'surface', className: 'wk-selector-entity', discover: (_tenant, environment) => environment.teams(), create: ({ workspace, detail, environment }) => environment.team(workspace, detail) });
@@ -249,23 +249,10 @@ export function createCoworkView(options = {}) {
   });
   // its roster exists, so the form that made it hands the workspace over to it and goes
   // back to empty. Staffing happens from inside the Team, through Add Agent.
-  const newTeamFormBySeat = campaign ? Object.fromEntries(Object.keys(seats).map((id) => {
-    const view = createNewTeamFormView(WorkspaceKit, { created: async () => { await refreshTeams(); bench.refreshSelector(); } });
-    return [id, { el: view.el, enter: () => view.enter() }];
-  })) : {};
+  const newTeamFormBySeat = {};
   // One canonical New Agent surface per seat. Team context changes only the initial Team
   // answer; the form, session-type choices and launch path are otherwise identical.
-  const newAgentBySeat = Object.fromEntries(Object.keys(seats).map((id) => {
-    const view = createNewAgentView(WorkspaceKit, {
-      team: () => (campaign || team === UNASSIGNED ? '' : team),
-      connect: async (name) => {
-        await fetchSessions();
-        return connectSession(name, id);
-      },
-    });
-    // The detail rides through: `S.showNewSession(prompt)` seeds the form's Instructions.
-    return [id, { el: view.el, enter: (detail) => view.enter(detail) }];
-  }));
+  const newAgentBySeat = {};
   // carried Campaign identity, Project roots and Templates behind a tab strip here; those
   // are Campaign-level and are now surfaces of Campaign Manage (js/campaign-view.js).
   // The Team roster stayed — a Cowork is not Campaign configuration — and is its own
@@ -287,8 +274,28 @@ export function createCoworkView(options = {}) {
     terminal: (id, detail) => ({ el: seats[id].surface.el, show: () => putSession(detail.key, id) }),
     roster: (id) => ({ el: teamRosterBySeat[id].el, show: () => teamRosterBySeat[id].render() }),
     cron: (id) => ({ el: cronBySeat[id].el, show: () => cronBySeat[id].room.enter() }),
-    newTeamForm: (id) => ({ el: newTeamFormBySeat[id].el, show: () => void newTeamFormBySeat[id].enter() }),
-    newAgent: (id) => ({ el: newAgentBySeat[id].el, show: (detail) => void newAgentBySeat[id].enter(detail) }),
+    newTeamForm: (id, consumed) => {
+      if (!newTeamFormBySeat[id]) {
+        const view = createNewTeamFormView(WorkspaceKit, { consumed, created: async () => { await refreshTeams(); bench.refreshSelector(); } });
+        newTeamFormBySeat[id] = { el: view.el, enter: () => view.enter() };
+      }
+      return { el: newTeamFormBySeat[id].el, show: () => void newTeamFormBySeat[id].enter() };
+    },
+    newAgent: (id, consumed) => {
+      if (!newAgentBySeat[id]) {
+        const view = createNewAgentView(WorkspaceKit, {
+          consumed,
+          team: () => (campaign || team === UNASSIGNED ? '' : team),
+          connect: async (name) => {
+            await fetchSessions();
+            return connectSession(name, id);
+          },
+        });
+        newAgentBySeat[id] = { el: view.el, enter: (detail) => view.enter(detail) };
+      }
+      // The detail rides through: `S.showNewSession(prompt)` seeds the form's Instructions.
+      return { el: newAgentBySeat[id].el, show: (detail) => void newAgentBySeat[id].enter(detail) };
+    },
     presets: (id) => createPresetsSurface({ environment: {
       customize: ({ template, user_message } = {}) => openWorkspaceStateTab(ctx, 'launch', { customize: { template, user_message: String(user_message || '') } }),
       launch: launchPresetPlan,
