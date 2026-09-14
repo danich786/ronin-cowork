@@ -24,6 +24,7 @@ import {
   createSession,
   sessionRuntime,
   setLaunchStamp,
+  setSessionIdentity,
   setProviderSessionId,
   setSessionKey,
   setSessionTitle,
@@ -159,6 +160,7 @@ export function registerSessions(app: express.Express): void {
       if (!provider) return res.status(409).json({ error: `Could not identify a resumable ${runtime.agent || 'agent'} conversation.` });
       const archived: ArchivedSession = {
         version: 1, id: key, name, key, archived_at: new Date().toISOString(), cwd: runtime.cwd,
+        identity: (await listSessions()).find((s) => s.name === name)?.identity,
         agent: provider.agent, provider_session_id: provider.id, tags: await getTags(name), leads: await getLeads(name),
         wipeboards: await getWipeboards(name), note: await getNote(name), control: await getControl(name), project_root: await getProjectRoot(name),
       };
@@ -192,6 +194,7 @@ export function registerSessions(app: express.Express): void {
         await setNote(archived.name, archived.note);
         await setProjectRoot(archived.name, archived.project_root);
         await setLaunchStamp(archived.name, archived.agent);
+        if (archived.identity) await setSessionIdentity(archived.name, archived.identity);
         await setProviderSessionId(archived.name, archived.provider_session_id);
         await setControl(archived.name, archived.control);
         await writeTeams(archived.name, archived.tags);

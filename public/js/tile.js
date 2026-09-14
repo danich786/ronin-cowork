@@ -11,7 +11,7 @@ import { installTextDrops } from './tiledroptext.js';
 import { dvrStep } from './dvr.js';
 import { TapeView } from './tapeview.js';
 import { TermView } from './termview.js';
-import { INTERRUPT } from './terminal-input.js';
+import { installTileControls, runTerminalAction } from './terminal-controls.js';
 import { TileWire } from './tilewire.js';
 import { buildComposer } from './composer.js';
 import { sendComposerMessage } from './composer-rules.js';
@@ -83,18 +83,15 @@ export class Tile {
     this.term = new TermView(this.body, {
       // Locked: key-for-key to the host (the mirror, unchanged). Unlocked: DVR input rules.
       onUserData: (d) => {
-        // ^C is the one keystroke that never reaches the pane: it ends the Agent and
-        // its session outright, so it asks first (terminal-input.js). Both modes, since
-        // the DVR rule would pass it straight through as a command key.
-        if (d === INTERRUPT && this.session) return void this.kill();
         return this.locked ? this.sendRaw(d) : this.dvrInput(d);
       },
       onProtocolData: (d) => this.wire.sendTerminalReply(d),
       onResize: ({ cols, rows }) => this.wire.send({ t: 'r', c: cols, r: rows }),
       onSelection: (s) => {
-        S.lastSelection = s;
+        this.lastSelection = s;
       },
     });
+    installTileControls(this);
     this.docView = buildTileDocView(this);
     this.body.append(this.docView.el);
 
@@ -426,7 +423,6 @@ export class Tile {
     this.locked = this.output === 'locked';
     S.output = this.output;
     S.locked = this.locked;
-    this.pending = '';
     this.renderPending();
     this.syncOutput();
     if (this.tape) this.tape.setMode(this.output);
@@ -509,6 +505,8 @@ export class Tile {
     this.composer.show(on);
   }
 
+  controlAction(action, target) { return runTerminalAction(this, action, target); }
+
   /** The thin bar showing parked text (visible only when something is parked). */
   renderPending() {
     if (!this.strip) {
@@ -567,7 +565,9 @@ export class Tile {
   }
 
   connect(session) {
+    if (this.session !== session) { this.lastSelection = ''; this.pending = ''; this.renderPending(); }
     this.session = session;
+    this.sessionKey = S.sessions.find((row) => row.name === session)?.key;
     this.syncEmpty();
     // The Services answer is per session. A tile that held an unlocked view for one Agent
     // and now shows one born with Services off comes down to Locked before the wire opens

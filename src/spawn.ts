@@ -79,6 +79,7 @@ export interface Resolved {
   agent: boolean;
   capExempt: boolean;
   launchAgent: string;
+  identity?: import('./tmux.js').SessionIdentity;
   launch_mode: LaunchMode;
   ack: boolean;
   opening: string;
@@ -480,7 +481,8 @@ export async function resolveForm(
       : '',
     agent,
     capExempt: profile.capExempt,
-    launchAgent: agent ? path.basename(cmd.trim().split(/\s+/)[0] ?? '') : '',
+    launchAgent: agent ? spec?.cli || path.basename(cmd.trim().split(/\s+/)[0] ?? '') : '',
+    identity: { sessionType, cli: agent ? spec?.cli || path.basename(cmd.trim().split(/\s+/)[0] ?? '') : '', provider: spec?.provider || '', model: spec?.model || '' },
     launch_mode: launchMode,
     ack: profile.ack,
     opening: profile.opening,

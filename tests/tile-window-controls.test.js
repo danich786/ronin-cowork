@@ -6,7 +6,7 @@ const read = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
 test('the tile corner exposes minimize and retirement through the existing Tile boundaries', async () => {
   const [head, tile] = await Promise.all([read('public/js/tilehead.js'), read('public/js/tile.js')]);
-  assert.match(head, /key: 'killBtn',[^\n]+text: '×'/);
+  assert.match(head, /key: 'killBtn',[^\n]+text: 'Close'/);
   assert.match(head, /on: \(tile\) => tile\.kill\(\)/);
   assert.match(head, /key: 'minimizeBtn',[^\n]+text: '−'/);
   assert.match(head, /on: \(tile\) => tile\.minimize\(\)/);

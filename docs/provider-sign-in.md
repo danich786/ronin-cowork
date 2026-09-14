@@ -1,5 +1,7 @@
 # Provider sign-in — establish one Agent without exposing credentials
 
+Related reference: [Agent controls and integration](agents/README.md).
+
 The goal is one usable provider, not every integration. The owner chooses the account and
 billing arrangement and performs credential-bearing authorization. An Agent may inspect
 safe status, explain consequences, run a login command with approval, and verify the result;
@@ -45,45 +47,11 @@ that would win in the shell it checks and never prints its value; the spawned ti
 inherit a different service environment. Resolve a conflict with the owner rather than
 dismissing the CLI warning.
 
-## Codex / OpenAI
+## CLI-specific sign-in
 
-Codex has a safe status command:
-
-```bash
-codex login status
-```
-
-If it already reports the arrangement the owner chose, change nothing. This command proves
-only the login arrangement it reports. This repository does not establish whether an
-OpenAI environment variable could take precedence in the launched Codex process; inspect
-relevant variable names without values and report that precedence as **unknown** unless
-separate current evidence settles it. For a ChatGPT subscription on a remote machine, the
-supported device flow is:
-
-```bash
-codex login --device-auth
-codex login status
-```
-
-The owner opens the URL, enters the displayed one-time code, and authorizes in their own
-browser. Success for this route is `Logged in using ChatGPT`. Plain `codex login` is also
-valid when its browser callback can return on the same machine.
-
-API-key login is a separate billing choice. Use it only when the owner explicitly chooses
-API billing. `codex login --with-api-key` reads standard input; the owner must supply it
-directly, outside chat, documentation, wipeboards, shell history, and recorded tiles.
-
-## Claude Code / Anthropic
-
-Use Claude Code's own current login/status surface and follow the interactive instructions
-it displays. This repository does not carry a provider-neutral command that proves Claude
-subscription versus API billing, so do not translate “CLI installed” into “signed in.”
-
-Before launch, use `ronin-host secrets` to check whether `ANTHROPIC_API_KEY` or
-`ANTHROPIC_AUTH_TOKEN` is in force without revealing its value. Those variables outrank an
-OAuth/default profile and can silently move work to per-token billing. If the safe evidence
-cannot distinguish the active account, report **unknown** and let the first interactive
-launch request owner-controlled authorization.
+Use the maintained [Codex](agents/codex.md#sign-in-particulars) or
+[Claude Code](agents/claude.md#sign-in-particulars) integration page for exact CLI
+mechanics. This page owns the shared owner handoff and credential-handling rules.
 
 ## Other Agent CLIs
 

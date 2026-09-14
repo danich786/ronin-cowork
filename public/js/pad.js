@@ -41,25 +41,24 @@ export function PAD_WIDGETS() {
   };
 }
 
-// ⌨ key bindings: a pad key can also press a terminal key in the ACTIVE tile —
-// the keys that drive claude (Esc, Tab, ⇧Tab, Enter, arrows, ^C), same sequences
-// as the top-bar and touch-keypad buttons. 'nexttile' is the odd one out: it
-// cycles which tile is active instead of sending anything.
-// The table is a function so the labels read the lexicon at the time a person sees them
-// (the module is evaluated before the lexicon loads); the sequences never change.
+// Navigation keys remain raw. Stop/Clear/Close/Copy use the Tile's shared intents.
+// Existing interrupt pad assignments now invoke Stop instead of writing Ctrl-C.
 export function PAD_KEYS() {
   return {
   enter: { label: t('pad.key_enter', '↵ Enter'), seq: '\r' },
   aenter: { label: t('pad.key_newline', '⌥↵ Newline'), seq: '\x1b\r' }, // line break WITHOUT sending (claude)
   adel: { label: t('pad.key_delete_word', '⌥⌫ Delete word'), seq: '\x1b\x7f' }, // backward-kill-word
-  esc: { label: t('pad.key_esc', '⎋ Esc'), seq: '\x1b' },
+  esc: { label: 'Stop', intent: 'stop' },
   tab: { label: t('pad.key_tab', '⇥ Tab'), seq: '\t' },
   stab: { label: t('pad.key_shift_tab', '⇧⇥ Shift-Tab'), seq: '\x1b[Z' },
   up: { label: t('pad.key_up', '↑ Up'), seq: '\x1b[A' },
   down: { label: t('pad.key_down', '↓ Down'), seq: '\x1b[B' },
   left: { label: t('pad.key_left', '← Left'), seq: '\x1b[D' },
   right: { label: t('pad.key_right', '→ Right'), seq: '\x1b[C' },
-  int: { label: t('pad.key_interrupt', '^C Interrupt'), seq: '\x03' },
+  int: { label: 'Stop', intent: 'stop' },
+  clear: { label: 'Clear', intent: 'clear' },
+  close: { label: 'Close', intent: 'close' },
+  copy: { label: 'Copy', intent: 'copy' },
   nexttile: { label: t('pad.key_next_tile', '⇄ Next tile') },
   // Press once = the switcher opens over the active tile; arrows (or the same key's
   // scroll neighbours) walk the list; press it AGAIN and that session lands in the
@@ -201,6 +200,7 @@ export function firePadBinding(bind) {
       toast(k.label + ' — no active tile', false);
       return;
     }
+    if (k.intent) return void S.active.controlAction(k.intent);
     S.active.sendRaw(k.seq); // deliberately no toast: these fire often and show in the pane
     return;
   }
