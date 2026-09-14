@@ -109,7 +109,7 @@ const capabilitySettings = (raw: Record<string, boolean>): Record<string, boolea
   out.voice_hotwords = explicit('voice_hotwords', false);
   out.usage_stats = explicit('usage_stats', raw.counting === true);
   out.project_coordinator = explicit('project_coordinator', raw.koshi === true);
-  out.local_weights = explicit('local_weights', raw.koshi_weights === true);
+  out.local_weights = explicit('local_weights', false);
   return out;
 };
 
@@ -118,7 +118,7 @@ const serviceSettings = (v: unknown): { parts: Record<string, boolean> } => {
   return {
     parts: Object.prototype.hasOwnProperty.call(value, 'parts')
       ? capabilitySettings(booleanMap(value.parts))
-      : { ...emptyServiceCapabilities(), task_manager: true, usage_stats: true, project_coordinator: true, local_weights: true },
+      : { ...emptyServiceCapabilities(), task_manager: true, usage_stats: true, project_coordinator: true },
   };
 };
 

@@ -31,10 +31,12 @@ test('a pre-installation-cascade campaign gets stock defaults without a rewrite'
   const old = JSON.stringify({ campaigns: { home_machine: {
     id: 'home_machine', title: 'Ronin Home', desk: {}, config: {
       defaults: { behaviours: [] },
-      services: { parts: { michi: true, kanban: false, rireki: true, koe: true } },
+      services: { parts: { michi: true, kanban: false, rireki: true, koe: true, koshi_weights: true } },
     },
   }, kanban_only: {
     id: 'kanban_only', title: 'Kanban only', desk: {}, config: { services: { parts: { kanban: true } } },
+  }, no_capabilities: {
+    id: 'no_capabilities', title: 'Legacy defaults', desk: {}, config: {},
   } } }, null, 2) + '\n';
   await fs.writeFile(file, old, 'utf8');
   const campaign = await readCampaign('home_machine');
@@ -43,6 +45,8 @@ test('a pre-installation-cascade campaign gets stock defaults without a rewrite'
   assert.equal(campaign?.config.services.parts.task_manager, true, 'either legacy half enables the indivisible Task manager');
   assert.equal(campaign?.config.services.parts.voice_hotwords, false, 'legacy voice never opts into the capability');
   assert.equal(campaign?.config.services.parts.terminal_transcript, false, 'legacy recording never opts into the capability');
+  assert.equal(campaign?.config.services.parts.local_weights, false, 'legacy weights do not opt into Local weights');
+  assert.equal((await readCampaign('no_capabilities'))?.config.services.parts.local_weights, false, 'implicit legacy defaults keep Local weights off');
   assert.equal((await readCampaign('kanban_only'))?.config.services.parts.task_manager, true, 'the other legacy half also enables Task manager');
   assert.equal(await fs.readFile(file, 'utf8'), old, 'reading the old shape does not migrate it');
   await fs.writeFile(file, JSON.stringify({ campaigns: {} }, null, 2) + '\n', 'utf8');
