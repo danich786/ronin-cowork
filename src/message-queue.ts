@@ -1,11 +1,10 @@
 import fs, { type FileHandle } from 'node:fs/promises';
 import path from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { storeDir } from './resources.js';
 import { listSessions } from './tmux.js';
 import { deliverForce, deliverSafe } from './send.js';
 import { onClock } from './jikan.js';
-import { readMachineSettingsSection } from './machine-settings.js';
 
 export type MessageState = 'pending' | 'stuck' | 'failed' | 'target_missing';
 export type MessageSource = 'tell' | 'wipeboard_notice' | 'owner' | 'house' | 'jikan';
@@ -28,21 +27,9 @@ export interface QueuedMessage {
 }
 
 const DIR = storeDir('message_queue');
-/** Polite for this long, then force: the default when the owner has not chosen. */
-export const AUTO_FORCE_DEFAULT_S = 120;
+/** A fixed deadline from acceptance; continued typing never resets it. */
+export const AUTO_FORCE_AFTER_MS = 120_000;
 
-/** The stored value → milliseconds. Absent means the default; an explicit 0 means never. */
-export const autoForceMsFrom = (value: unknown): number => {
-  if (value === undefined || value === null || value === '') return AUTO_FORCE_DEFAULT_S * 1_000;
-  const seconds = Number(value);
-  return Number.isFinite(seconds) && seconds > 0 ? Math.floor(seconds) * 1_000 : 0;
-};
-
-/** The owner's standing choice: force a retained message this old, once. */
-export async function readAutoForceAfterMs(): Promise<number> {
-  const section = await readMachineSettingsSection<{ auto_force_after_s?: unknown }>('messages', {});
-  return autoForceMsFrom(section.auto_force_after_s);
-}
 export const MESSAGE_TTL_MS = 60 * 60 * 1_000;
 export const TELL_TTL_MS = 30 * 60 * 1_000;
 export const WIPEBOARD_NOTICE_TTL_MS = 10 * 60 * 1_000;
@@ -52,6 +39,19 @@ const file = (id: string) => path.join(DIR, `${id}.json`);
 const lockFile = (id: string) => path.join(DIR, `${id}.lock`);
 const cancelFile = (id: string) => path.join(DIR, `${id}.cancel`);
 const validId = (id: string) => /^[a-f0-9-]{36}$/.test(id);
+
+async function clearAbandonedLock(file: string): Promise<void> {
+  try {
+    const pid = Number((await fs.readFile(file, 'utf8')).split('\n')[0]);
+    if (pid > 0) {
+      try { process.kill(pid, 0); return; }
+      catch (e) { if ((e as NodeJS.ErrnoException).code !== 'ESRCH') return; }
+    } else if (Date.now() - (await fs.stat(file)).mtimeMs < 60_000) {
+      return; // a writer may still be filling a freshly created lock
+    }
+    await fs.unlink(file);
+  } catch { /* another worker already released it */ }
+}
 
 async function write(item: QueuedMessage): Promise<void> {
   await fs.mkdir(DIR, { recursive: true });
@@ -112,7 +112,7 @@ export async function enqueueMessage(target: string, text: string, source: Messa
 
 export async function deliverMessage(target: string, text: string, source: MessageSource, from?: string): Promise<QueuedMessage | null> {
   const item = await enqueueMessage(target, text, source, from);
-  return attemptMessage(item.id, 'safe');
+  return attemptMessage(item.id, source === 'owner' ? 'force' : 'safe');
 }
 
 export class MessageRefused extends Error {
@@ -186,6 +186,7 @@ export async function attemptMessage(
   id: string,
   mode: 'safe' | 'force' = 'safe',
   delivery: Delivery = { safe: deliverSafe, force: deliverForce },
+  autoForcedAt?: string,
 ): Promise<QueuedMessage | null> {
   if (!validId(id)) return null;
   if (active.has(id)) {
@@ -193,6 +194,8 @@ export async function attemptMessage(
   }
   active.add(id);
   let lock: FileHandle | null = null;
+  let targetLock: FileHandle | null = null;
+  let targetLockPath = '';
   try {
     await fs.mkdir(DIR, { recursive: true });
     try {
@@ -200,10 +203,7 @@ export async function attemptMessage(
       await lock.writeFile(`${process.pid}\n${Date.now()}\n`);
     } catch (e) {
       if ((e as NodeJS.ErrnoException).code !== 'EEXIST') throw e;
-      try {
-        const age = Date.now() - (await fs.stat(lockFile(id))).mtimeMs;
-        if (age > 15_000) { await fs.unlink(lockFile(id)); return attemptMessage(id, mode, delivery); }
-      } catch { /* it cleared between checks */ }
+      await clearAbandonedLock(lockFile(id));
       try { return JSON.parse(await fs.readFile(file(id), 'utf8')) as QueuedMessage; } catch { return null; }
     }
     let item: QueuedMessage;
@@ -236,7 +236,22 @@ export async function attemptMessage(
     if (mode === 'safe' && targetSession.control !== 'write') {
       return retain('stuck', `the target Control setting is '${targetSession.control}'`);
     }
+    // CLI workers and the server share this lock: one complete message per target.
+    targetLockPath = path.join(DIR, `target-${createHash('sha256').update(item.target_key).digest('hex')}.lock`);
     try {
+      targetLock = await fs.open(targetLockPath, 'wx');
+      await targetLock.writeFile(String(process.pid));
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code !== 'EEXIST') throw e;
+      await clearAbandonedLock(targetLockPath);
+      return retain('stuck', 'another message is being sent to this Agent');
+    }
+    try {
+      if (autoForcedAt) {
+        if (item.auto_forced_at) return item;
+        item.auto_forced_at = autoForcedAt;
+        await write(item);
+      }
       if (mode === 'force') countAttempt();
       const result = mode === 'force'
         ? await delivery.force(item.target, item.text)
@@ -247,6 +262,8 @@ export async function attemptMessage(
       return retain(mode === 'force' || attempted ? 'failed' : 'stuck', String((e as Error).message ?? e));
     }
   } finally {
+    await targetLock?.close().catch(() => {});
+    if (targetLock) await fs.unlink(targetLockPath).catch(() => {});
     await lock?.close().catch(() => {});
     if (lock) await fs.unlink(lockFile(id)).catch(() => {});
     active.delete(id);
@@ -257,41 +274,32 @@ export async function attemptMessage(
 
 export interface SweepOptions {
   now?: number;
-  /** Override of the owner's setting, for tests; undefined reads the machine document. */
-  autoForceAfterMs?: number;
   delivery?: Delivery;
 }
 
-const autoForceDue = (item: QueuedMessage, afterMs: number, now: number): boolean => afterMs > 0
-  && !item.auto_forced_at
-  && (item.state === 'stuck' || item.state === 'failed')
-  && now - Date.parse(item.created_at) >= afterMs;
-
-async function stamp(id: string, field: 'auto_forced_at', at: string): Promise<boolean> {
-  try {
-    const item = JSON.parse(await fs.readFile(file(id), 'utf8')) as QueuedMessage;
-    item[field] = at;
-    item.updated_at = at;
-    await write(item);
-    return true;
-  } catch { return false; }
-}
-
-/** One sweep: safe attempts for what is retryable, and — when the owner has switched it
- *  on — one force for anything retained longer than their delay, exactly as if they had
- *  pressed Force on that card. A message is auto-forced once; a failed force stays visible
- *  with its reason and the time, and only a manual press tries again. */
+/** Retry every two seconds. At two minutes, bypass preflight once. Owner messages
+ * bypass it from the start. Different Agents need not wait for each other's sends. */
 export async function processMessageQueue(options: SweepOptions = {}): Promise<void> {
   const now = options.now ?? Date.now();
-  const afterMs = options.autoForceAfterMs ?? await readAutoForceAfterMs();
+  const targets = new Map<string, QueuedMessage[]>();
   for (const item of await listQueuedMessages(now)) {
-    if (autoForceDue(item, afterMs, now)) {
-      // Stamp before the force so the one heads-up fires once, whether or not it lands.
-      if (await stamp(item.id, 'auto_forced_at', new Date(now).toISOString())) await attemptMessage(item.id, 'force', options.delivery);
-      continue;
-    }
-    if (item.state !== 'failed' && item.state !== 'target_missing') await attemptMessage(item.id, 'safe', options.delivery);
+    const lane = targets.get(item.target_key) ?? [];
+    lane.push(item);
+    targets.set(item.target_key, lane);
   }
+  await Promise.all([...targets.values()].map(async (lane) => {
+    // Wipeboard posts remain available on read; their interruption copies come last.
+    lane.sort((a, b) => Number(a.source === 'wipeboard_notice') - Number(b.source === 'wipeboard_notice'));
+    for (const item of lane) {
+      if (item.state === 'target_missing') continue;
+      const overdue = !item.auto_forced_at && now - Date.parse(item.created_at) >= AUTO_FORCE_AFTER_MS;
+      if (overdue) {
+        await attemptMessage(item.id, 'force', options.delivery, new Date(now).toISOString());
+      } else if (item.state !== 'failed') {
+        await attemptMessage(item.id, item.source === 'owner' ? 'force' : 'safe', options.delivery);
+      }
+    }
+  }));
 }
 
 export function startMessageQueue(): () => void {

@@ -80,8 +80,8 @@ paste. They arrive with Ronin Services; a locked tile is not "broken" when they 
 - **Pasting** goes into **the composer**, the box under the tile: Enter sends, Shift+Enter
   (Option+Enter on a Mac) makes a new line, the mic dictates into it, ✕ clears it. It is
   separate from the terminal's own input: a message reaches the session even when the tile
-  is scrolled up, and the box clears only once the session has taken it; otherwise the text
-  stays with the reason above it, never sent twice. On touch, the **Keys** row beside it
+  is scrolled up, and the box clears only once Ronin has accepted it; otherwise the text
+  stays with the reason above it. On touch, the **Keys** row beside it
   sends what a keyboard would — Esc · ^C · ⌫ · ^U · ⇧Tab · the arrows — straight through.
 
 ## Feedback

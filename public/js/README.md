@@ -67,7 +67,7 @@ where a session is born now. `docs/ui.md` is the written contract those modules 
 | `termview.js` | the 🔒 view — the untouched `tmux attach` xterm mirror, and touch drag-scroll |
 | `tilewire.js` | `TileWire` — the tile's socket: reconnect, the protocol split (keystroke · message · protocol reply), the drop rule, the message answered by id |
 | `composer.js` | `buildComposer` — the tile's text entry (unlocked, and every coarse tile), its mic and its keyboard lift; clears only on the host's answer |
-| `composer-rules.js` | `settleComposer` — the composer's send rule, pure (tested: `tests/composer-parcel.test.js`) |
+| `composer-rules.js` | `sendComposerMessage`, `settleComposer` — HTTP message send and box settlement (tested: `tests/composer-parcel.test.js`) |
 | `dvr.js` | `dvrStep` — the unlocked input rule, pure (tested: `tests/dvr.test.js`) |
 | `ansi.js` | `ANSI_RE` — its own module so the tape's pure logic loads outside a browser |
 | `tiledrop.js` | `isCoarse`, `makeDrop` — the coarse-pointer sheet primitives (the hoisted phone header is gone; the phone has its own shell) |

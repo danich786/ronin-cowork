@@ -356,7 +356,10 @@ export function createCoworkView(options = {}) {
     actions: [densityToggle.el, rosterNote, mikaHelp], shapeControl: shapeBtn, deferSelector: true,
     installDrop: (cell, id) => acceptSessionDrops(cell, () => id, (name, at) => arrange({ [at]: { session: name } })),
     onSelect: markSelected,
-    onStateChange: () => remember(), onPlacement: () => remember(),
+    onStateChange: () => remember(), onPlacement: (_snapshot, change) => {
+      if (change?.dismissed) remembered[change.dismissed] = DISMISSED_WORKSPACE;
+      remember();
+    },
   });
   updateKanbanAvailability = (next) => {
     kanbanGate = next?.available === true
@@ -433,7 +436,8 @@ export function createCoworkView(options = {}) {
   const remember = () => {
     const snapshot = bench?.snapshot();
     const seatState = Object.fromEntries(Object.keys(seats).map((id) => [id,
-      surfaceIn(id) ? snapshot?.seats?.[id] : seats[id].pool.active || DISMISSED_WORKSPACE]));
+      (surfaceIn(id) ? snapshot?.seats?.[id] : seats[id].pool.active) || remembered[id]
+    ]).filter(([, value]) => value));
     remembered = { ...seatState };
     ctx?.patchViewState(viewKey, { ...snapshot, [campaign ? 'teamCardDensity' : 'agentCardDensity']: thinSelectorCards ? 'thin' : 'thick', seats: seatState });
     reportView();
@@ -458,6 +462,7 @@ export function createCoworkView(options = {}) {
   };
   /** The seat back, with nothing in it: its tiles go; the lead comes back warm on the next paint. */
   const emptySeat = (id) => {
+    remembered[id] = DISMISSED_WORKSPACE;
     bench.restoreDefault(id);
     delete seats[id].surface.el.dataset.workbenchSurface;
     delete seats[id].surface.el.dataset.workbenchResource;

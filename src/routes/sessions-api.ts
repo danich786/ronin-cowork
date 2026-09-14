@@ -563,7 +563,7 @@ export function registerSessions(app: express.Express): void {
       const expanded = await expandLookup(raw);
       const text = expanded ?? raw;
       const item = await enqueueMessage(name, text, 'owner');
-      const retained = await attemptMessage(item.id, 'safe');
+      const retained = await attemptMessage(item.id, 'force');
       res.json({ ok: true, control, expanded: expanded != null, queued: retained !== null, started: retained === null, message: retained });
     } catch (e) {
       if (e instanceof MessageRefused) return res.status(404).json({ error: e.message, code: 'target_missing' });

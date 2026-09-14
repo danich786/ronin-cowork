@@ -14,6 +14,7 @@ import { TermView } from './termview.js';
 import { INTERRUPT } from './terminal-input.js';
 import { TileWire } from './tilewire.js';
 import { buildComposer } from './composer.js';
+import { sendComposerMessage } from './composer-rules.js';
 import { buildKeysRow } from './keysrow.js';
 import { buildTileDocView } from './tile-doc-view.js';
 import { isCoarse } from './tiledrop.js';
@@ -332,14 +333,9 @@ export class Tile {
     return this.wire.sendInput(d);
   }
 
-  /**
-   * A composer message. On the mirror it is its own frame: the host leaves a scrolled-back
-   * view, types it, and answers by id — the answer is what the composer clears on. The tape
-   * socket belongs to the record service and takes it as input with no answer to wait for.
-   */
-  sendParcel(text) {
-    if (this.locked) return this.wire.sendParcel(text);
-    return Promise.resolve({ ok: this.sendRaw(text), why: 'not connected' });
+  /** Ronin's box uses the same message sender in Locked and Unlocked views. */
+  sendMessage(text) {
+    return sendComposerMessage(this.session, text);
   }
 
   /** Housekeeping down the same socket (the ⤓ key's `{t:'bottom'}`). Quiet by design. */
@@ -496,7 +492,7 @@ export class Tile {
         clearOverlays: () => this.clearOverlays(),
         connected: () => this.wire.connected(),
         send: (text) => this.sendRaw(text),
-        sendParcel: (text) => this.sendParcel(text),
+        sendMessage: (text) => this.sendMessage(text),
         scrollToBottom: () => this.jumpLatest(),
       });
       // Coarse pointer: the software keyboard has no Esc, Ctrl, Tab or arrows, so the
