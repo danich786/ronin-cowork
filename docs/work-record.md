@@ -89,16 +89,17 @@ move is the approval: assignment changes an idea to `PLANNING` and places it in 
 Agent's record; return places it back in the roster as `IDEAS`. Never copy a project
 between the two holders.
 
-A lead may raise a supporting Agent for a roster-held project:
+A supporting Agent and a project assignment are two operations owned by their respective
+tools:
 
 ```text
-session_create board_reader --project virtual-kanban/6
+session_create board_reader --prompt "Take virtual-kanban/6 and read its work record."
+team-lead project assign virtual-kanban virtual-kanban/6 board_reader
 ```
 
-The newborn's brief names the project and tells the Agent to check the work record. Only
-after birth succeeds does the lead operation place the whole project. If placement fails,
-the command reports a partial result: the Agent exists, the roster still holds the
-project, and no message claims it was installed.
+`session_create` creates the session and carries its explicit prompt; `team-lead project
+assign` moves the roster-held project. Lead designation belongs to `session_set`, never
+session creation.
 
 ## Session context
 

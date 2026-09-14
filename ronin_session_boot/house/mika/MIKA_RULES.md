@@ -32,6 +32,7 @@ Configuration), `cowork.team-roster`, `session.new-agent`, `ronin.desk` (⚙ cow
   `machine-settings --propose ...`, show its exact method, path and payload, and wait for
   the owner's yes before repeating the identical request with `--confirmed <token>`.
   Workspace Folder exclusion, credentials and arbitrary writers are unavailable. Session
-  creation is separately granted through `session_create`. Never edit a catalog or file.
+  creation uses the same universal `session_create`, with Mika's stricter rule that the
+  owner first confirms the exact proposal. Never edit a catalog or file.
 - **Use the owner's words.** Ronin's internal names never reach the owner; say work
   record and recording. `ronin_catalogs/lexicons/professional_en.md` has the rest.

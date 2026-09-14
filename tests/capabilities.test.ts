@@ -5,6 +5,7 @@ import path from 'node:path';
 import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import {
   CAPABILITY_CLASSES,
+  availabilityReason,
   capabilityTools,
   checkRequirement,
   listCapabilities,
@@ -24,8 +25,8 @@ const none: CapabilityFacts = {
 };
 const everything = (tool: string) => Promise.resolve(tool !== 'absent_tool');
 
-const row = (name: string, requires: string[], tools = ''): CapabilityRow => ({
-  name, origin: 'stock', shadowed: false, file: `/shelf/${name}.md`, label: name, blurb: `${name}?`, class: 'cowork',
+const row = (name: string, requires: string[], tools = '', klass: CapabilityRow['class'] = 'cowork'): CapabilityRow => ({
+  name, origin: 'stock', shadowed: false, file: `/shelf/${name}.md`, label: name, blurb: `${name}?`, class: klass,
   tools: parseToolsTable(`# x\n\n## Tools\n\n| Tool | Authority | Teach | Help |\n|---|---|---|---|\n${tools}`),
   requires,
 });
@@ -83,12 +84,12 @@ test('the tools table names actual tools: executable, operation, authority, prio
   assert.deepEqual(parseToolsTable('# Tools heading, no table\n\n## Tools\n\nnone\n'), []);
 });
 
-test('selection is a predicate over launch facts; projection is what exists on the box; a toolless bundle is still selected', async () => {
+test('work context selects knowledge while Cowork tools stay available and feature tools follow enablement', async () => {
   const rows = [
     row('edges', [], '| `edges send` | write | priority | `edges --help` |\n| `edges read` | read | priority | |\n'),
     row('worktree-desk', ['arrangement:managed'], '| `worktree-desk status` | read | priority | |\n'),
     row('team-lead', ['lead'], '| `session_create` | create | priority | |\n| `absent_tool` | write | priority | |\n'),
-    row('host', ['behaviour:ronin_host'], '| `host_survey` | read | priority | |\n'),
+    row('host', ['behaviour:ronin_host', 'lead'], '| `host_survey` | read | priority | |\n', 'feature'),
     row('authority-only', ['team']),
   ];
   const bare = await resolveCapabilities({ ...none, arrangement: 'checkout' }, { rows, present: everything });
@@ -99,10 +100,14 @@ test('selection is a predicate over launch facts; projection is what exists on t
     ['host', false, 'behaviour ronin_host is not selected'],
     ['authority-only', false, 'not on a Team'],
   ]);
-  assert.deepEqual(capabilityTools(bare), ['edges']);
-  // A bundle that was not selected has nothing projected and nothing missing: it was never looked for.
-  assert.deepEqual(bare[1].delivered, []);
+  assert.deepEqual(capabilityTools(bare), ['edges', 'worktree-desk', 'session_create']);
+  assert.deepEqual(bare[1].delivered, ['worktree-desk'], 'arrangement changes teaching, not Cowork tool availability');
   assert.deepEqual(bare[1].missing, []);
+  assert.deepEqual(bare[2].delivered, ['session_create'], 'lead status changes teaching, not Cowork tool availability');
+  assert.deepEqual(bare[2].missing, ['absent_tool']);
+  assert.deepEqual(bare[3].delivered, [], 'a disabled feature does not project its tool');
+  assert.match(availabilityReason(rows[3]!, { ...none, lead: true }), /behaviour ronin_host is not selected/,
+    'work context cannot substitute for feature enablement');
 
   const lead = await resolveCapabilities(
     { arrangement: 'managed', installations: new Set(), behaviours: new Set(['ronin_host']), connected: true, campaign: true, team: true, lead: true },
@@ -116,9 +121,15 @@ test('selection is a predicate over launch facts; projection is what exists on t
   const authorityOnly = lead.find((item) => item.name === 'authority-only')!;
   assert.equal(authorityOnly.selected, true);
   assert.deepEqual(authorityOnly.tools, []);
+
+  const nonLeadWithHost = await resolveCapabilities(
+    { ...none, behaviours: new Set(['ronin_host']) }, { rows, present: everything },
+  );
+  assert.deepEqual(nonLeadWithHost.find((item) => item.name === 'host')?.delivered, ['host_survey'],
+    'lead changes feature teaching but does not withhold an enabled feature tool');
 });
 
-test('the overview is derived from the selected files: lesson, title, blurb, projected priority tools, help route, full document', async () => {
+test('the overview is derived from selected knowledge, independent of universally available Cowork tools', async () => {
   const rows = [
     row('edges', [], '| `edges send` | write: one message | priority | `edges --help` |\n| `edges page` | read/write | | `edges --help` |\n'),
     row('team-lead', ['lead'], '| `session_create` | create | priority | |\n| `absent_tool` | write | priority | |\n'),
@@ -135,6 +146,8 @@ test('the overview is derived from the selected files: lesson, title, blurb, pro
   const onlyAt = text.indexOf('### authority-only');
   assert.ok(edgesAt >= 0 && leadAt > edgesAt && onlyAt > leadAt, 'selected bundles in folder order');
   assert.doesNotMatch(text, /### worktree-desk/, 'an unselected bundle is not in the lesson');
+  assert.ok(resolved.find((item) => item.name === 'worktree-desk')?.delivered.includes('worktree-desk'),
+    'the unselected work-context document does not withhold its Cowork tool');
   const edges = text.slice(edgesAt, leadAt);
   assert.match(edges, /edges\?/, 'the blurb');
   assert.match(edges, /- \*\*Priority:\*\* `edges send` \(write\)/, "the authority is its first word; the clause stays in the document");
@@ -214,20 +227,21 @@ test('the stock capability documents are well-formed and carry no retired vocabu
     'GBrain remains authority-only teaching with no retired memory vocabulary');
   assert.deepEqual(by['ronin-host'].tools.map((tool) => tool.name), ['ronin-host']);
   assert.equal(by['ronin-host'].tools[0]?.help, 'ronin-host --help');
-  // Lead rulings, 2026-09-13: project create is first-class and a priority; session_create
-  // is the lead's, never universal; session_check and session_set stay base.
+  // Project create is first-class and priority. Session creation is universal; the lead
+  // bundle teaches visible delegation but does not duplicate the Session tool row.
   const priority = (name: string) => by[name].tools.filter((tool) => tool.priority).map((tool) => tool.command);
   assert.deepEqual(priority('work-record'), ['work-record update_record', 'work-record document add', 'work-record project create', 'work-record project read', 'work-record project write']);
   assert.deepEqual(priority('edges'), ['edges send', 'edges wipeboard', 'edges read', 'edges team']);
   assert.deepEqual(priority('worktree-desk'), ['worktree-desk status', 'worktree-desk sync', 'worktree-desk hand-in']);
-  assert.deepEqual(priority('session'), ['session_check', 'session_fork']);
+  assert.deepEqual(priority('session'), ['session_check', 'session_create']);
   assert.ok(by.session.tools.some((tool) => tool.name === 'session_set'));
-  assert.ok(!by.session.tools.some((tool) => tool.name === 'session_create'), 'session_create is not universal');
+  assert.ok(!by.session.tools.some((tool) => tool.name === 'session_fork'), 'the retired fork command is not catalogued');
   assert.deepEqual(priority('team-lead'), [
-    'session_create', 'team-lead roster read', 'team-lead project create',
+    'team-lead roster read', 'team-lead project create',
     'team-lead project read', 'team-lead project list', 'team-lead project write',
     'team-lead project assign', 'team-lead project return', 'team-lead member status',
   ]);
+  assert.ok(!by['team-lead'].tools.some((tool) => tool.name === 'session_create'), 'Team Lead does not duplicate the universal creation row');
   assert.match(await readFile(by['work-record'].file, 'utf8'), /Team roster issues its ID/);
   assert.match(await readFile(by['work-record'].file, 'utf8'), /Agents never choose or reuse IDs/);
   assert.match(await readFile(by['work-record'].file, 'utf8'), /`exit`[\s\S]*`none` · `agent` · `lead` · `user`[\s\S]*`status`[\s\S]*`green` · `yellow` · `red`/);

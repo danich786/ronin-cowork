@@ -118,7 +118,7 @@ async function deskNote(r: { assignment?: unknown; project_root?: string; agent?
 
 const LAUNCH_KEYS = new Set([
   'session_type', 'team', 'team_lead', 'instructions', 'prompt', 'name',
-  'dial', 'project_root', 'cmd', 'model', 'provider', 'mandate', 'campaign_id', 'launch_mode',
+  'project_root', 'cmd', 'model', 'provider', 'mandate', 'campaign_id', 'launch_mode',
   'tags', 'seed', 'inject', 'reference', 'desk', 'repos',
   'kind', 'behaviours',
   'template',
@@ -151,7 +151,6 @@ export function acceptedLaunchBody(input: unknown): { body: Record<string, unkno
   if (body.session_type !== undefined && sessionType !== statedType) ignored.add('session_type');
   body.session_type = sessionType;
 
-  if (body.dial !== undefined && body.dial !== 'user' && body.dial !== 'read' && body.dial !== 'write') drop('dial');
   if (body.desk !== undefined && body.desk !== 'own' && body.desk !== 'none') drop('desk');
   if (body.launch_mode !== undefined && body.launch_mode !== 'configured' && body.launch_mode !== 'live_dangerously') drop('launch_mode');
   if (body.repos !== undefined && (!Array.isArray(body.repos) || body.repos.some((r: unknown) => typeof r !== 'string'))) drop('repos');
@@ -306,7 +305,6 @@ export function registerLaunch(app: express.Express): LaunchControl {
       team_lead: req.body?.team_lead === true,
       prompt: String(req.body?.instructions ?? req.body?.prompt ?? '').trim(),
       name,
-      dial: req.body?.dial === 'user' || req.body?.dial === 'read' || req.body?.dial === 'write' ? req.body.dial : undefined,
       project_root: String(req.body?.project_root ?? '').trim() || undefined,
       cmd: String(req.body?.cmd ?? '').trim() || undefined,
       model: String(req.body?.model ?? '').trim() || undefined,
@@ -428,7 +426,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
             houseSeat === 'mika' ? MIKA_PARENT_PATH : undefined,
             houseSeat === 'mika'
               ? { includeTmux: false, extraTools: [...MIKA_TOOLS] }
-              : { extraTools: [...resolved.conditional_tools, ...resolved.capability_tools] },
+              : { extraTools: resolved.capability_tools },
           )
         : null;
       const campaignId = resolved.session_type === 'bare_metal_agent'
