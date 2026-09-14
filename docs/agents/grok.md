@@ -12,21 +12,10 @@ Services' gbrain scripts do not implement Grok MCP registration.
 Stop sends one Ctrl+C. Current upstream documentation says Escape does not cancel a
 running turn. Ctrl+C can clear a concurrent draft first, and pressing again while
 cancelling can escalate to quit. Ronin sends the owner's request once, without screen
-classification or automatic repetition. Clear uses line-editing keys and never Ctrl+C;
-browser drafts clear entirely locally. CLI multiline drafts clear the current line.
+classification or automatic repetition. Whole-draft CLI Clear is unverified and its adapter is disabled;
+browser drafts clear entirely locally.
 Native key customization and menus retain provider-specific behavior.
 
-## Owning definitions and consumers
-
-- `src/agents.ts`: this CLI's commands, availability, input/Stop/Clear and resume adapter.
-- [Provider catalog](../../ronin_catalogs/MODEL_PROVIDERS.md): models, launch rows and additive mode flags.
-- `src/spawn.ts` and `src/routes/launch.ts`: resolve the catalog and persist launch identity.
-- `src/tmux.ts`, `src/session-archive.ts`, `src/routes/sessions-api.ts`: live identity and archive/resume.
-- `src/terminal-controls.ts`: dispatch the intent using persisted CLI identity.
-- [Terminal controls](../terminal-controls.md): all browser shortcuts and customization.
-- [Provider contract](../model-providers.md): shared extension and owner-overlay rules.
-- Tests: `tests/terminal-controls.test.ts`, `tests/model-providers.test.ts`,
-  `tests/agent-prompts.test.ts`, and archive lifecycle tests. These do not certify
-  a live CLI journey unless that journey is explicitly named above.
+Shared [code ownership and test boundaries](README.md#code-ownership) apply to this CLI.
 
 [Upstream reference](https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/03-keyboard-shortcuts.md). Update the evidence/version when changing this integration.

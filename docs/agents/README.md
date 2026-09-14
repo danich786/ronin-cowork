@@ -26,3 +26,14 @@ requires a separate versioned interface, not a second local command registry.
 When a CLI changes: update its owning definition, this integration page's explanation
 and tested version, and the focused behavior tests together. Unsupported behavior stays
 explicit. Authentication SOPs express owner policy and link here for CLI mechanics.
+
+## Code ownership
+
+- `src/agents.ts`: executable CLI commands and control adapters.
+- `src/spawn.ts`, `src/routes/launch.ts`: resolve catalog entries and persist launch identity.
+- `src/tmux.ts`, `src/session-archive.ts`, `src/routes/sessions-api.ts`: live identity and archive/resume.
+- `src/terminal-controls.ts`: dispatch using persisted CLI identity; no screen detection.
+- [Provider contract](../model-providers.md): extension and owner-overlay rules.
+- Tests: `tests/terminal-controls.test.ts`, `tests/model-providers.test.ts`,
+  `tests/agent-prompts.test.ts`, and archive lifecycle tests. These check Ronin;
+  they do not certify a live CLI journey unless that journey is explicitly documented.

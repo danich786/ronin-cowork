@@ -457,8 +457,8 @@ Retained server messages remain visible in Messages. See [message delivery](mess
 ### Copying out
 
 [Terminal controls](terminal-controls.md#copy-while-locked) owns Copy, native selection,
-per-Tile selection retention and the locked/mobile snapshot. `TermView` keeps the
-xterm selection bridge; `terminal-controls.js` owns the shared action.
+per-Tile selection retention and the locked/mobile snapshot. `public/js/layout.js` keeps the
+xterm clipboard bridge; `terminal-controls.js` owns the shared action.
 
 ### Pasting in
 
@@ -496,8 +496,8 @@ the head's own controls (Work record, Docs, session picker, Output where Service
 Control, Close), **relocated, not cloned**, so every handler and live widget keeps its owner.
 
 The navigation row (`public/js/keysrow.js`) supplies Backspace, Tab, Shift-Tab,
-arrows and Jump to latest. Stop, Clear, Close and Copy use the same action row and
-[Hints](terminal-controls.md) as desktop. No raw interrupt/clear aliases remain in
+arrows and Jump to latest. Stop, Clear, Close and Copy have mobile action buttons. Desktop uses shortcuts and
+[Hints](terminal-controls.md). No raw interrupt/clear aliases remain in
 this row. The composer remains available on locked coarse Tiles without Services.
 
 The one-row hoisted phone header, the keys drawer, the ニ sheet and the header's

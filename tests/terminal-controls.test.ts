@@ -45,11 +45,9 @@ test('bad, duplicate, browser and typing chords are rejected', () => {
   assert.deepEqual(validateBindings(CONTROL_DEFAULTS), CONTROL_DEFAULTS);
 });
 
-test('Clear adapters contain only editing keys, never interrupt, exit, Enter or slash commands', () => {
+test('unverified CLI Clear refuses instead of guessing editing or interrupt keys', () => {
   for (const cli of ['codex', 'claude', 'gemini', 'grok', 'hermes']) {
-    const keys = agentControlKeys(cli, 'clear');
-    assert.ok(keys.length);
-    assert.ok(keys.every((key) => ['C-u', 'C-k'].includes(key)), cli);
+    assert.throws(() => agentControlKeys(cli, 'clear'), /No clear binding/);
   }
   assert.deepEqual(agentControlKeys('codex', 'stop'), ['Escape']);
   assert.deepEqual(agentControlKeys('grok', 'stop'), ['C-c']);

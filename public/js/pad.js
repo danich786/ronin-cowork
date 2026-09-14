@@ -41,7 +41,7 @@ export function PAD_WIDGETS() {
   };
 }
 
-// Navigation keys remain raw. Stop/Clear/Close/Copy use the Tile's shared intents.
+// Navigation keys remain raw. Existing interrupt assignments use shared Stop.
 // Existing interrupt pad assignments now invoke Stop instead of writing Ctrl-C.
 export function PAD_KEYS() {
   return {
@@ -56,9 +56,6 @@ export function PAD_KEYS() {
   left: { label: t('pad.key_left', '← Left'), seq: '\x1b[D' },
   right: { label: t('pad.key_right', '→ Right'), seq: '\x1b[C' },
   int: { label: 'Stop', intent: 'stop' },
-  clear: { label: 'Clear', intent: 'clear' },
-  close: { label: 'Close', intent: 'close' },
-  copy: { label: 'Copy', intent: 'copy' },
   nexttile: { label: t('pad.key_next_tile', '⇄ Next tile') },
   // Press once = the switcher opens over the active tile; arrows (or the same key's
   // scroll neighbours) walk the list; press it AGAIN and that session lands in the

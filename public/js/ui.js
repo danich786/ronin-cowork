@@ -52,6 +52,7 @@ export function sheet(spec) {
   const close = () => {
     if (!isOpen()) return;
     el.classList.remove('open');
+    document.removeEventListener('keydown', outsideEscape);
     // drop keyboard focus on <body>, and the next Tab started the page over. The guard
     // is only about not YANKING focus off something the owner deliberately moved to
     // while the sheet was up; where it goes when it IS ours to give back is `restore`'s
@@ -63,6 +64,7 @@ export function sheet(spec) {
   const open = () => {
     opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     el.classList.add('open');
+    document.addEventListener('keydown', outsideEscape);
     // Focus enters the dialog: the first field if there is one, else the card itself.
     // Touch is the exception — focusing an input summons the iOS keyboard before the
     // owner has read what opened, so there the card takes it without raising anything.
@@ -115,9 +117,9 @@ export function sheet(spec) {
   });
   // A sheet opened by pointer never had focus inside it — the document listener is
   // what lets Escape still close it.
-  document.addEventListener('keydown', (e) => {
+  const outsideEscape = (e) => {
     if (e.key === 'Escape' && !e.defaultPrevented && isOpen() && !el.contains(document.activeElement)) { e.preventDefault(); e.stopImmediatePropagation(); close(); }
-  });
+  };
 
   return { el, card, open, close, isOpen };
 }

@@ -193,8 +193,8 @@ export function registerSessions(app: express.Express): void {
         await setWipeboards(archived.name, archived.wipeboards);
         await setNote(archived.name, archived.note);
         await setProjectRoot(archived.name, archived.project_root);
-        await setLaunchStamp(archived.name, archived.agent);
         if (archived.identity) await setSessionIdentity(archived.name, archived.identity);
+        else await setLaunchStamp(archived.name, archived.agent);
         await setProviderSessionId(archived.name, archived.provider_session_id);
         await setControl(archived.name, archived.control);
         await writeTeams(archived.name, archived.tags);

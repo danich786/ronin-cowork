@@ -1,11 +1,11 @@
 /* Ronin owns the gesture; the server's CLI registry owns the command. */
 import { request } from './request.js';
 import { sheet, toast } from './ui.js';
-import { S, SELECT_MOD, IS_TOUCH, IS_MAC } from './state.js';
+import { S, SELECT_MOD, IS_MAC } from './state.js';
 
 const actions = ['copy', 'clear', 'close', 'stop'];
 const shortcutActions = ['clear', 'close', 'stop'];
-const selectionHint = IS_TOUCH ? 'Tap Copy to select text' : `${SELECT_MOD}-drag to select`;
+const selectionHint = () => document.getElementById('phone') ? 'Tap Copy to select text' : `${SELECT_MOD}-drag to select`;
 const labels = { copy: 'Copy', clear: 'Clear', close: 'Close', stop: 'Stop' };
 const meanings = { copy: 'Drag to select, then use your normal browser Copy command.', clear: 'Clear unsent input. Never close the session.', close: 'Retire this Agent through confirmation.', stop: 'Interrupt the Agent now; keep its session.' };
 let config = null;
@@ -16,7 +16,7 @@ const preference = (key, value) => {
 };
 function describeAction(node) {
   const action = node.dataset.terminalAction;
-  if (action === 'copy') { node.title = `${selectionHint}. ${meanings.copy}`; return; }
+  if (action === 'copy') { node.title = `${selectionHint()}. ${meanings.copy}`; return; }
   if (!config) return;
   node.title = `${labels[action]} — ${config.bindings[action]}. ${meanings[action]}`;
   node.setAttribute('aria-keyshortcuts', config.bindings[action].replace('Ctrl', 'Control'));
@@ -92,6 +92,7 @@ export function installTileControls(tile) {
     e.stopImmediatePropagation();
     if (!e.repeat) void tile.controlAction(action, composer ? 'composer' : 'terminal');
   }, true);
+  if (!document.getElementById('phone')) return;
   const row = document.createElement('div');
   row.className = 'terminal-actions';
   row.setAttribute('role', 'group');
@@ -172,7 +173,7 @@ export function flashControlHints() {
     card.animate(frames, { duration: 2500, easing: 'ease-out', id: 'selection-hint' });
   }
 }
-export function buildControlHints(getTile = () => S.active) {
+export function buildControlHints() {
   initialize();
   const card = document.createElement('details');
   card.className = 'terminal-hints wk-card';
@@ -182,16 +183,16 @@ export function buildControlHints(getTile = () => S.active) {
   card.addEventListener('toggle', () => preference('ronin.hints.collapsed', card.open ? 'no' : 'yes'));
   for (const action of actions) {
     const row = document.createElement('div'); row.className = 'terminal-hint-row';
-    const button = actionButton(action, () => { const tile = getTile(); if (tile) return tile.controlAction(action); toast('Choose an Agent first.', false); });
-    const key = document.createElement('kbd');
-    if (action === 'copy') key.textContent = selectionHint;
+    const label = document.createElement('strong'); label.textContent = labels[action];
+    const key = document.createElement('span');
+    if (action === 'copy') key.textContent = selectionHint();
     else { key.dataset.controlKey = action; key.textContent = config?.bindings[action] || '…'; }
-    const help = document.createElement('small'); help.textContent = meanings[action];
-    row.append(button, key, help); card.append(row);
+    row.append(label, key); card.append(row);
   }
   const edit = document.createElement('button'); edit.type = 'button'; edit.textContent = 'Customize shortcuts'; edit.onclick = () => void openTerminalControlSettings();
   const help = document.createElement('a'); help.href = '/api/terminal-controls/help'; help.target = '_blank'; help.rel = 'noopener'; help.textContent = 'Help';
-  card.append(edit, help);
+  const footer = document.createElement('div'); footer.className = 'terminal-hints-footer';
+  footer.append(edit, help); card.append(footer);
   return card;
 }
 export async function openTerminalControlSettings() {

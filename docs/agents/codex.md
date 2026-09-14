@@ -13,9 +13,9 @@ MCP servers remain enabled. Configuration overrides merge; an empty server objec
 not a reliable global disable. Dangerously adds the catalog's approval/sandbox bypass
 flag for this launch; configured mode leaves the command unchanged.
 
-Stop sends Escape. Native popups and some slash-input states can consume it. Clear
-uses line-editing keys, never Codex's Ctrl+C: Ctrl+C can clear a draft, interrupt work,
-or exit an idle CLI. Whole browser drafts clear locally.
+Stop sends Escape. Native popups and some slash-input states can consume it. Whole-draft CLI Clear is unverified and its adapter is disabled. Codex's Ctrl+C
+can clear a draft, interrupt work, or exit an idle CLI, so it is not a safe generic
+Clear mapping. Whole browser drafts clear locally.
 
 Services' `gbrain/setup.sh`, `uninstall.sh`, and `doctor.sh` own gbrain registration,
 removal and checks. The setup uses the Codex MCP command and token environment reference.
@@ -50,17 +50,6 @@ API billing. `codex login --with-api-key` reads standard input; the owner must s
 directly, outside chat, documentation, wipeboards, shell history, and recorded tiles.
 
 
-## Owning definitions and consumers
-
-- `src/agents.ts`: this CLI's commands, availability, input/Stop/Clear and resume adapter.
-- [Provider catalog](../../ronin_catalogs/MODEL_PROVIDERS.md): models, launch rows and additive mode flags.
-- `src/spawn.ts` and `src/routes/launch.ts`: resolve the catalog and persist launch identity.
-- `src/tmux.ts`, `src/session-archive.ts`, `src/routes/sessions-api.ts`: live identity and archive/resume.
-- `src/terminal-controls.ts`: dispatch the intent using persisted CLI identity.
-- [Terminal controls](../terminal-controls.md): all browser shortcuts and customization.
-- [Provider contract](../model-providers.md): shared extension and owner-overlay rules.
-- Tests: `tests/terminal-controls.test.ts`, `tests/model-providers.test.ts`,
-  `tests/agent-prompts.test.ts`, and archive lifecycle tests. These do not certify
-  a live CLI journey unless that journey is explicitly named above.
+Shared [code ownership and test boundaries](README.md#code-ownership) apply to this CLI.
 
 [Upstream reference](https://github.com/openai/codex/tree/rust-v0.153.4/codex-rs/tui/src). Update the evidence/version when changing this integration.

@@ -12,7 +12,7 @@ export function buildKeysRow(hooks) {
   row.setAttribute('role', 'group');
   row.setAttribute('aria-label', t('bar.keys', 'Keys'));
 
-  // Face · tooltip · what it sends. Faces that are glyphs (^C, ⤓, the arrows) are
+  // Face · tooltip · what it sends. Faces that are glyphs (⤓, the arrows) are
   // values, not words; the worded faces go through the lexicon like everything else.
   const keys = () => [
     ['⌫', t('keys.backspace', 'Backspace'), '\x7f'],

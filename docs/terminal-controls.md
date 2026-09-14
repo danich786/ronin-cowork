@@ -6,15 +6,15 @@ your browser shortcuts. These controls work on desktop and mobile, locked or unl
 | Action | Default shortcut | What happens |
 |---|---|---|
 | Copy | Native Cmd+C on Mac / Ctrl+C elsewhere | Option-drag on Mac (Shift-drag elsewhere) to select, then copy normally. Mobile Copy opens selectable terminal text. |
-| Clear | Ctrl+Shift+Backspace | Clear the focused unsent browser message or locally parked input. At a CLI prompt, send its registered editing keys. Never interrupt or exit. |
+| Clear | Ctrl+Shift+Backspace | Clear the focused unsent browser message or locally parked input. CLI-draft Clear is currently unsupported; no guessed keys are sent. |
 | Close | Ctrl+Shift+X | Open the existing retirement sheet. Nothing is retired until you choose an action. |
 | Stop | Escape | Send the CLI's interrupt immediately. No busy-screen check, typing grace, or automatic retry. |
 
 **Hints** is pinned below the selector's scrolling cards, expanded on first use. Collapse
 it if desired; its saved expansion state is independent of the roster. A failed locked-terminal
 selection attempt expands Hints and flashes it orange, instead of showing a popup. Mobile puts the
-same card below its terminal. All four buttons also stay
-on the Tile, including while the mobile keyboard is open. Keyboard users can Tab to a
+same card below its terminal. The four action buttons appear only on mobile Tiles, including while the keyboard is
+open. Desktop Hints shows bold labels and shortcuts, without action buttons or descriptions. Keyboard users can Tab to a
 button and activate it with Enter or Space.
 
 ## Change your shortcuts
@@ -44,12 +44,10 @@ open Ronin sheet/menu first. No shortcut leaks through that sheet into the Agent
 ## Clear and Stop are different
 
 Clear removes the browser's entire unsent draft when that is the focused input. It
-never recalls a message already accepted by the delivery queue. At a CLI input it sends
-Ctrl+U then Ctrl+K: delete left and right of the cursor on the current logical line.
-For multiline CLI drafts this is a line edit, not a conversation reset or a guaranteed
-whole-buffer clear. Use the browser composer for a whole-draft Clear. Provider remapped
-editing keys or special menus may behave differently; see the CLI's integration page.
-Clear never falls back to Ctrl+C, Ctrl+D, Escape, `/clear`, or Enter.
+never recalls a message already accepted by the delivery queue. Whole-draft CLI Clear
+is not yet verified for the supported CLIs, so those adapters refuse the action. The
+previous Ctrl+U/Ctrl+K mapping was removed: tests proved which bytes Ronin sent, not
+what each CLI cleared. Clear never falls back to interrupt, exit, or submission keys.
 
 Stop sends the registered interrupt once. It does not wait for the CLI to look idle or
 confirm that a tool stopped. A CLI may consume it in an open menu, or stop a tool at its

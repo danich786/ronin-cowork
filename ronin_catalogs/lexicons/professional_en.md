@@ -963,14 +963,12 @@ The pad's current config downloads as a backup first.
 - **pad.key_enter:** ↵ Enter
 - **pad.key_newline:** ⌥↵ Newline
 - **pad.key_delete_word:** ⌥⌫ Delete word
-- **pad.key_esc:** ⎋ Esc
 - **pad.key_tab:** ⇥ Tab
 - **pad.key_shift_tab:** ⇧⇥ Shift-Tab
 - **pad.key_up:** ↑ Up
 - **pad.key_down:** ↓ Down
 - **pad.key_left:** ← Left
 - **pad.key_right:** → Right
-- **pad.key_interrupt:** ^C Interrupt
 - **pad.key_next_tile:** ⇄ Next tile
 - **pad.key_session_switcher:** ⌸ Session switcher
 - **pad.key_commons:** ⌂ Commons
@@ -1514,10 +1512,8 @@ The catalog entry goes. {dir} is not touched.
 
 ## keys — keysrow.js (the composer's keys row)
 - **keys.backspace:** Backspace
-- **keys.clear_line_title:** Ctrl-U — clear the input line
 
 ## composer — the ✕ clear
-- **composer.clear_title:** Clear this box
 
 ## phone — phone.js (the mobile document: Teams, a Team's Agents | Docs, one Agent's tile)
 - **phone.coworks:** Teams
@@ -1763,8 +1759,6 @@ The catalog entry goes. {dir} is not touched.
 - **bar.league_title:** Open League in a new browser tab
 - **bar.newtab_title:** Open a second Ronin in a new browser tab
 - **bar.new_title:** ⌃⇧N — start a new session: pick what it is for, where it works and who it is
-- **keys.esc:** Esc
-- **keys.interrupt_title:** Ctrl-C (interrupt)
 - **keys.latest_title:** Jump to latest output
 - **keys.more:** More keys
 - **keys.enter:** Enter

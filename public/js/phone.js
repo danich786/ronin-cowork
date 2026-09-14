@@ -266,7 +266,7 @@ export async function buildPhone() {
     main.replaceChildren(term);
     const tile = host.mount(session);
     stageTile = tile;
-    term.append(buildControlHints(() => tile));
+    term.append(buildControlHints());
 
     sheet = makeDrop('メ', t('phone.me_title', 'This Agent — work record, docs, note, control, kill'), 'me');
     const node = (key) => tile[key]?.el ?? tile[key];

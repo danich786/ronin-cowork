@@ -6565,14 +6565,16 @@ html[data-screen='inside'] #phone .ph-bar .ph-title[data-boot='inside'] { displa
   margin: var(--space-4);
 }
 
-/* Shared Agent controls, including locked touch Tiles. */
+/* Mobile Agent buttons; desktop uses the shared shortcuts. */
 .terminal-actions { display: flex; flex: 0 0 auto; gap: var(--space-2); padding: var(--space-2); }
-.terminal-actions button { flex: 1; min-height: 36px; }
-.terminal-hints { flex: 0 0 auto; margin: var(--space-3); padding: var(--space-3); }
-.terminal-hints summary { cursor: pointer; font-weight: 600; }
+.terminal-actions button { flex: 1; min-height: 44px; font: inherit; }
+.terminal-hints { flex: 0 0 auto; margin: var(--space-3); padding: var(--space-4); font-family: var(--font-ui); font-size: var(--text-3); line-height: 1.5; }
+.terminal-hints summary { cursor: pointer; color: var(--fg-strong); font-size: var(--text-5); font-weight: 600; }
 .terminal-hint-row { display: grid; grid-template-columns: 1fr auto; gap: var(--space-2); margin-top: var(--space-2); }
-.terminal-hint-row small { grid-column: 1 / -1; }
-.terminal-hint-row kbd { align-self: center; font-size: var(--text-2); }
+.terminal-hint-row strong { font-weight: 700; color: var(--fg-strong); }
+.terminal-hint-row span { text-align: right; }
+.terminal-hints-footer { display: flex; align-items: center; gap: var(--space-5); margin-top: var(--space-4); }
+.terminal-hints-footer button, .terminal-hints-footer a { border: 0; border-radius: 0; background: none; padding: 0; color: var(--accent); font: inherit; text-decoration: underline; cursor: pointer; }
 .terminal-control-field { display: flex; justify-content: space-between; gap: var(--space-4); margin-block: var(--space-3); }
 .terminal-copy-text { width: 100%; height: 50dvh; resize: vertical; font-family: var(--font-mono); white-space: pre; }
 .ph-term > .terminal-hints { max-height: 35dvh; overflow-y: auto; }

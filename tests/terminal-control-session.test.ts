@@ -25,6 +25,9 @@ test('live sessions carry launch identity and a stale Tile cannot send a control
       const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ intent: 'stop', key: 'wrong-birth' }) });
       assert.equal(r.status, 409);
       assert.match((await r.json()).error, /session changed/);
+      const clear = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ intent: 'clear', key: found?.key }) });
+      assert.equal(clear.status, 422);
+      assert.match((await clear.json()).error, /No clear binding/);
       assert.equal((await rig.run('list-sessions', '-F', '#{session_name}')).includes('agent'), true);
     } finally { await new Promise<void>((r) => server.close(() => r())); }
   } finally { await closeTestServer(name); }

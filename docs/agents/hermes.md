@@ -13,22 +13,10 @@ neither Dangerously nor disconnected mode. Services' gbrain scripts do not imple
 Hermes MCP registration; there is no implied provisioning from an on/off control.
 
 Stop sends one Ctrl+C. Hermes documents interruption and force exit on a second press
-within two seconds. Ronin never automatically repeats it. Clear sends line-editing keys,
-never an interrupt/exit command; its CLI multiline behavior requires installed testing.
+within two seconds. Ronin never automatically repeats it. Whole-draft CLI Clear is unverified and its adapter is disabled.
 The browser composer always supports whole-draft Clear. Unknown native keymaps require
 updating this adapter, not changes to browser shortcuts.
 
-## Owning definitions and consumers
-
-- `src/agents.ts`: this CLI's commands, availability, input/Stop/Clear and resume adapter.
-- [Provider catalog](../../ronin_catalogs/MODEL_PROVIDERS.md): models, launch rows and additive mode flags.
-- `src/spawn.ts` and `src/routes/launch.ts`: resolve the catalog and persist launch identity.
-- `src/tmux.ts`, `src/session-archive.ts`, `src/routes/sessions-api.ts`: live identity and archive/resume.
-- `src/terminal-controls.ts`: dispatch the intent using persisted CLI identity.
-- [Terminal controls](../terminal-controls.md): all browser shortcuts and customization.
-- [Provider contract](../model-providers.md): shared extension and owner-overlay rules.
-- Tests: `tests/terminal-controls.test.ts`, `tests/model-providers.test.ts`,
-  `tests/agent-prompts.test.ts`, and archive lifecycle tests. These do not certify
-  a live CLI journey unless that journey is explicitly named above.
+Shared [code ownership and test boundaries](README.md#code-ownership) apply to this CLI.
 
 [Upstream reference](https://hermes-agent.nousresearch.com/docs/user-guide/cli). Update the evidence/version when changing this integration.
