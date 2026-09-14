@@ -5,7 +5,7 @@
  * is the consumer's: not the width, not the wrapping, not the shape, not what opens.
  *
  *   ask([{ group, fields: [{ key, label, options, blank?, many?, switch?, shape?, after?, row?, word?, then? }] }],
- *       { value, onChange, density, trayHost })  →  { el, value(), set(key, v) | set({...}), options(key, rows), show(keys|null), open(key), close(), destroy() }
+ *       { value, onChange, density, trayHost })  →  { el, value(), set(key, v) | set({...}), options(key, rows), disable(key, reason), show(keys|null), open(key), close(), destroy() }
  *
  * A field is a READING STONE (140 × 48: label over answer). Click it and a TRAY opens under
  * its group, holding option stones in one of two fixed shapes — the SQUARE (85, a glyph and
@@ -175,6 +175,13 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     return b;
   };
 
+  // Switches use the same plain disabled reason as option rows.
+  const switchAvailability = (button, field) => {
+    button.disabled = Boolean(field.off);
+    button.setAttribute('aria-disabled', String(button.disabled));
+    button.title = field.off || '';
+  };
+
   // A switch has no tray to redraw. Keep its node and keyboard focus on changes.
   const refreshSwitch = (button, field) => {
     button.setAttribute('aria-checked', String(Boolean(state[field.key])));
@@ -189,6 +196,7 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
       const on = Boolean(state[field.key]);
       button.className += ' ask-switch';
       button.setAttribute('role', 'switch');
+      switchAvailability(button, field);
       button.setAttribute('aria-checked', String(on));
       const words = el('span', 'ask-words');
       words.append(el('small', 'ask-label', field.label), reading(field));
@@ -403,6 +411,15 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
           if (Object.hasOwn(patch, field.key)) refreshSwitch(button, field);
         }
       } else paint();
+    },
+    /** Set a switch's disabled reason without replacing its node. Empty means enabled. */
+    disable(key, reason = '') {
+      const field = byKey(key);
+      if (!field?.switch) return;
+      field.off = reason;
+      for (const button of root.querySelectorAll('.ask-switch')) {
+        if (button.dataset.askKey === key) switchAvailability(button, field);
+      }
     },
     show(keys) { shown = Array.isArray(keys) ? new Set(keys) : null; paint(); },
     options(key, rows) { const field = byKey(key); if (!field) return; field.options = rows; paint(); },
