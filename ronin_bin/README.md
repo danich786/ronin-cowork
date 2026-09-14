@@ -11,8 +11,9 @@ whole:
 - **with a managed desk** — `worktree-desk`;
 - **with the Ronin Host behaviour** — `ronin-host` and its dynamically available `--help`;
 - **with the GBrain behaviour** — boundary teaching only; no callable GBrain tool yet;
-- **with Ronin Services** — `mika`; `lookup`, `owner_view`, `show`, constrained
-  `machine-settings` are hers alone; visible delegation remains universal `session_create`.
+- **with Ronin Services** — `mika`, `lookup`, `owner_view`, and `show`; Mika's Build Brief
+  emphasizes their house-assistant workflows. `machine-settings` and visible delegation
+  remain universal Core/Cowork tools.
 
 `ronin-desk-settle` (the lead's desk reconciler) and `ronin-team` (Team retirement) are house-side scripts kept here
 for `tool-path.sh`; they implement no catalogued action. `setup.sh` puts this directory on

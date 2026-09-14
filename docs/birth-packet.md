@@ -36,7 +36,7 @@ that would break one read fails that test, not a newborn.
 3. **The owner's root shelf**, as cards: title, first sentence, path. Never pasted in.
 4. **YOUR TOOLS**, generated at birth from the capability documents selected for this
    Agent (`ronin_catalogs/capabilities/`): one entry per bundle — the question it answers,
-   the priority tools that exist on this box with their authority, `--help`, and the path
+   the priority tools that exist on this box with their job, `--help`, and the path
    of the full document. Only what the launch facts select and only tools the box has.
 5. **KOTOBA_GLOSSARY**, last: the house names and the plain word to say for each, rendered
    with the owner's desk words. Reference, and the least costly thing to miss.
