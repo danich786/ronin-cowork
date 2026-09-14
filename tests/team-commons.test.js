@@ -15,14 +15,16 @@ test('Commons opens on its separate Roster and keeps Configuration separate', as
   assert.doesNotMatch(view, /commons\.config\.replaceChildren\(members, config\)/);
 });
 
-test('Kanban has its own selector card and opens the Kanban commons tab', async () => {
+test('Task Manager is offered only when available and its Commons tab stays present', async () => {
   const view = await source('public/js/cowork-view.js');
   assert.match(view, /kanban: 'team\.kanban'/);
-  assert.match(view, /type: WB_TYPES\.kanban[\s\S]*environment\.kanbanOffer\(\)/);
+  assert.match(view, /type: WB_TYPES\.kanban[\s\S]*environment\.kanbanOffers\(\)/);
   assert.match(view, /WB_PROFILES\.team, \[WB_TYPES\.commons, WB_TYPES\.kanban,/);
   assert.match(view, /request\('\/api\/installed'/);
-  assert.match(view, /commons\.kanbanTab\.disabled = !kanbanGate\.available/);
-  assert.match(view, /item\.channels\.select\(kanbanGate\.available \? 'kanban' : 'roster'\)/);
+  assert.match(view, /kanbanOffers: \(\) => kanbanGate\.available \? \[\{/);
+  assert.match(view, /commons\.kanbanTab\.disabled = false/);
+  assert.match(view, /item\.channels\.select\('kanban'\)/);
+  assert.match(view, /workspace\.channel_task_manager', 'Task Manager'/);
 });
 
 test('Roster expands live readings and actions; Launch uses the paired workspace and Close retires', async () => {

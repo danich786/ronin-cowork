@@ -56,6 +56,7 @@
     height: 100%; min-height: 0; overflow: auto; background: var(--bg-2); container: team-kanban / inline-size;
   }
   .tk-topline { display: flex; align-items: center; gap: var(--space-6); min-height: var(--tk-notice-line); padding: var(--space-4) var(--space-5) 0; }
+  .tk-topline[hidden] { display: none; }
   .tk-controls { display: flex; flex: none; align-items: center; gap: var(--space-2); }
   .tk-refresh, .tk-fold { display: grid; width: var(--tk-control-size); height: var(--tk-control-size); place-items: center; border: var(--edge) solid var(--line); border-radius: 0; padding: 0; background: transparent; color: var(--muted); }
   .tk-refresh:hover, .tk-fold:hover { border-color: var(--accent); color: var(--fg); }
@@ -67,6 +68,7 @@
   .tk-dot.red { background: var(--kanban-red); }
   .tk-notice { flex: 1 1 auto; min-width: 0; margin: 0; color: var(--muted); font-size: var(--text-3); }
   .tk-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(var(--tk-column-min), 1fr)); gap: var(--space-4); min-width: 0; padding: var(--space-4) var(--space-5) var(--space-5); }
+  .tk-unavailable { margin: 0; color: var(--muted); }
   .tk-column { display: flex; height: var(--tk-column-height); min-width: 0; flex-direction: column; border: var(--edge) solid var(--line); background: var(--well); transition: border-color var(--motion-quick) var(--ease), background var(--motion-quick) var(--ease); }
   .tk-column > h3 { box-sizing: border-box; display: grid; height: var(--tk-column-head); flex: none; gap: var(--space-1); margin: 0; border-bottom: var(--edge) solid var(--line); padding: var(--space-3) var(--space-4); color: var(--muted); font-size: var(--text-3); font-weight: 650; letter-spacing: var(--tk-heading-track); text-transform: uppercase; }
   .tk-column-worker { color: var(--dim); font-size: var(--text-2); font-weight: 500; letter-spacing: 0; text-transform: none; }
