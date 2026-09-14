@@ -10,7 +10,7 @@ test('Workbench owns one non-destructive dismissal boundary for every surface he
   assert.match(workbench, /if \(expected && previous !== expected\) return true;/);
   assert.match(workbench, /if \(value\?\.leave\?\.\(\) === false\) return false;/);
   assert.match(workbench, /if \(!restoreDefault\(id\)\) return false;/);
-  assert.match(workbench, /refreshSelector\(\);\s*options\.onPlacement\?\.\(snapshot\(\)\);/);
+  assert.match(workbench, /refreshSelector\(\);\s*options\.onPlacement\?\.\(snapshot\(\), \{ dismissed: id \}\);/);
   assert.match(workbench, /consumed: \(\) => dismiss\(id, owned\)/);
   assert.match(workbench, /className: 'wk-surface-dismiss', action: \(\) => dismiss\(id\)/);
   assert.doesNotMatch(workbench, /const dismiss = WorkspacePrimitives\.createAction/);
