@@ -16,7 +16,7 @@ test('Codex ready row is recognized and its dim suggestion is not owner text', (
   assert.deepEqual(parsePrompt(escaped), { found: true, text: null, menu: false });
 });
 
-test('Codex pending text is readable for submit verification', () => {
+test('Codex pending text is readable for preflight', () => {
   assert.deepEqual(parsePrompt('› Build the startup brief\n'), {
     found: true,
     text: 'Build the startup brief',
@@ -38,9 +38,10 @@ test('Claude prompt remains visible beneath a six-row status footer', () => {
   assert.deepEqual(parsePrompt(screen), { found: true, text: null, menu: false });
 });
 
-test('busy cue outranks a historical prompt in the visible tail', () => {
-  const screen = '❯ old submitted prompt\n\n✻ Cerebrating…';
-  assert.deepEqual(parsePrompt(screen), { found: false, text: null, menu: false });
+test('busy status does not erase a possible draft from preflight', () => {
+  const screen = '❯ owner still typing\n\n✻ Cerebrating…';
+  assert.equal(classifyStatus(screen), 'thinking');
+  assert.deepEqual(parsePrompt(screen), { found: true, text: 'owner still typing', menu: false });
 });
 
 /* ---- LAUNCH_READY: the vendor screen table, which now serves the ROSTER alone ----

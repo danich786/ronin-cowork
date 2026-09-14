@@ -1,117 +1,72 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { deliverSafe, draftAtPrompt, parsePrompt, type PaneIO } from '../src/send.js';
+import { deliverSafe, deliverForce, parsePrompt, type PaneIO } from '../src/send.js';
 
-/* A TALL DRAFT IS STILL A DRAFT. Measured 2026-09-02: a tell long enough to wrap a dozen
- * rows was typed into a Codex tile, read as "not visible" (its prompt row sat above the
- * fifteen-row window), and left at the prompt without Enter — where every retry then
- * refused it, forever. The policy below is exercised against a fake pane so the whole
- * decision runs without tmux. */
-
-const FOOTER = ['────────────────────────', '  ctx 26% · Fable', '  auto mode on', '  Update installed', '  new task? /clear', '  /rc'];
-const MESSAGE = 'from @worktree_audit: ' + 'the audit is on the team line and the floor repair is with it; '.repeat(14) + 'three notes follow.';
-
-/** A pane painting `draft` at the prompt, wrapped at 80 columns with continuation indent. */
-function screen(draft: string | null, above: string[] = ['assistant finished']): string {
-  const rows = [...above];
-  if (draft === null) rows.push('\x1b[39m❯ \x1b[2mTry another task\x1b[0m');
-  else {
-    const chunks = draft.match(/.{1,78}/g) ?? [];
-    rows.push(`❯ ${chunks[0]}`, ...chunks.slice(1).map((c) => `  ${c}`));
-  }
-  return [...rows, ...FOOTER, '', '', ''].join('\n');
-}
-
-test('a wrapped draft taller than the prompt window is still recognised as this message', () => {
-  const tall = screen(MESSAGE);
-  assert.ok(tall.split('\n').length > 15, 'the fixture is taller than the scan window');
-  assert.equal(parsePrompt(tall).found, false, 'the prompt-row read cannot see it — that is the blind spot');
-  assert.equal(draftAtPrompt(tall, MESSAGE), true);
-  assert.equal(draftAtPrompt(screen(null), MESSAGE), false, 'an empty prompt holds no draft');
-  assert.equal(draftAtPrompt(screen('someone else is typing here'), MESSAGE), false);
-});
-
-test('a submitted copy in the transcript is not a draft at the prompt', () => {
-  const echoed = screen(null, ['> ' + MESSAGE, 'assistant: noted']);
-  assert.equal(draftAtPrompt(echoed, MESSAGE), false);
-  assert.equal(draftAtPrompt(`❯ 1. Yes, proceed\n  2. No\n${MESSAGE}`, MESSAGE), false, 'a dialog is never a draft');
-});
-
-function fakePane(reads: string[]): PaneIO & { typed: string[]; enters: number } {
-  const io = {
-    typed: [] as string[], enters: 0,
-    read: async () => reads.length > 1 ? reads.shift()! : reads[0]!,
-    type: async (t: string) => { io.typed.push(t); },
-    enter: async () => { io.enters += 1; },
-    wait: async () => {},
+function pane(screen: string) {
+  const calls: string[] = [];
+  const io: PaneIO = {
+    read: async () => { calls.push('read'); return screen; },
+    type: async (text) => { calls.push(`type:${text}`); },
+    wait: async (ms) => { calls.push(`wait:${ms}`); },
+    enter: async () => { calls.push('Enter'); },
   };
-  return io;
+  return { io, calls };
 }
 
-test('a tall draft gets its Enter instead of being left at the prompt', async () => {
-  const io = fakePane([screen(null), screen(MESSAGE), screen(null)]);
-  const r = await deliverSafe('tile', MESSAGE, undefined, io);
-  assert.equal(r.delivered, true, r.reason);
-  assert.deepEqual(io.typed, [MESSAGE]);
-  assert.equal(io.enters, 1);
+test('safe delivery checks once, then types and sends one separate Enter', async () => {
+  const { io, calls } = pane('❯');
+  let attempts = 0;
+  assert.equal((await deliverSafe('agent', 'hello', () => attempts++, io)).delivered, true);
+  assert.deepEqual(calls, ['read', 'type:hello', 'wait:300', 'Enter']);
+  assert.equal(attempts, 1);
 });
 
-test('a stranded copy of this message is submitted, never typed again and never refused', async () => {
-  const io = fakePane([screen(MESSAGE), screen(null)]);
-  const r = await deliverSafe('tile', MESSAGE, undefined, io);
-  assert.equal(r.delivered, true, r.reason);
-  assert.deepEqual(io.typed, [], 'no second copy');
-  assert.equal(io.enters, 1);
+test('a draft or menu holds before typing, including while the Agent is thinking', async () => {
+  for (const screen of ['❯ unfinished', '❯ unfinished\n✻ Cerebrating… (12s)', '❯ 1. Confirm', '❯ 1. Confirm\n✻ Cerebrating… (12s)']) {
+    const { io, calls } = pane(screen);
+    const result = await deliverSafe('agent', 'hello', () => assert.fail('not attempted'), io);
+    assert.equal(result.delivered, false);
+    assert.deepEqual(calls, ['read']);
+  }
 });
 
-test('text the pane never showed anywhere is reported lost, not delivered', async () => {
-  const io = fakePane([screen(null), screen(null)]);
-  const r = await deliverSafe('tile', MESSAGE, undefined, io);
-  assert.equal(r.delivered, false);
-  assert.equal(r.submitted, true, 'no automatic second copy');
-  assert.match(r.reason, /never appeared/);
-  assert.equal(io.enters, 1, 'Enter at an empty prompt is harmless');
+test('a tall foreign draft is found above the former fifteen-row limit', () => {
+  assert.equal(parsePrompt('❯ unfinished\n' + '  continuation\n'.repeat(20)).text, 'unfinished');
 });
 
-/* THE OWNER'S RULING, 2026-09-02: an Agent mid-thought still gets the message. The CLIs
- * queue input typed while they work; the old "recognised empty prompt" precondition held
- * fifteen messages at zero attempts. Only a dialog or somebody's draft holds a send. */
-test('a thinking Agent still receives the message', async () => {
-  const thinking = ['assistant is working', '✻ Cerebrating… (12s)'];
-  const io = fakePane([
-    screen(null, thinking),
-    screen(MESSAGE, thinking),
-    screen(null, [...thinking, '> ' + MESSAGE]),
-  ]);
-  assert.equal(parsePrompt(screen(null, thinking)).found, false, 'the prompt read calls this busy');
-  const r = await deliverSafe('tile', MESSAGE, undefined, io);
-  assert.equal(r.delivered, true, r.reason);
-  assert.deepEqual(io.typed, [MESSAGE]);
-  assert.equal(io.enters, 1);
+test('matching text is still a draft, never permission to submit somebody else’s input', async () => {
+  const { io, calls } = pane('❯ hello');
+  assert.equal((await deliverSafe('agent', 'hello', undefined, io)).delivered, false);
+  assert.deepEqual(calls, ['read']);
 });
 
-test('a dialog still holds the message', async () => {
-  const io = fakePane(['❯ 1. Yes, I trust this folder\n  2. No']);
-  const r = await deliverSafe('tile', MESSAGE, undefined, io);
-  assert.equal(r.delivered, false);
-  assert.match(r.reason, /dialog is open/);
-  assert.deepEqual(io.typed, []);
+test('once text is inserted, a changed screen cannot abandon Enter', async () => {
+  const { io, calls } = pane('❯');
+  io.type = async () => {
+    calls.push('type');
+    io.read = async () => { throw new Error('must not inspect a dialog after typing'); };
+  };
+  assert.equal((await deliverSafe('agent', 'hello', undefined, io)).delivered, true);
+  assert.deepEqual(calls, ['read', 'type', 'wait:300', 'Enter']);
 });
 
-test("somebody else's draft is left alone", async () => {
-  const io = fakePane([screen('my own words, mid-thought')]);
-  const r = await deliverSafe('tile', MESSAGE, undefined, io);
-  assert.equal(r.delivered, false);
-  assert.match(r.reason, /unsubmitted text is already at the prompt/);
-  assert.deepEqual(io.typed, []);
-  assert.equal(io.enters, 0);
+test('force and composer delivery never read the screen; multiline text stays one write', async () => {
+  const { io, calls } = pane('❯ someone is typing');
+  io.read = async () => { throw new Error('no preflight'); };
+  assert.equal((await deliverForce('agent', 'one\ntwo', io)).delivered, true);
+  assert.deepEqual(calls, ['type:one\ntwo', 'wait:300', 'Enter']);
 });
 
-test('a draft that survives Enter is retried and then honestly retained', async () => {
-  const io = fakePane([screen(null), screen(MESSAGE)]);
-  const r = await deliverSafe('tile', MESSAGE, undefined, io);
-  assert.equal(r.delivered, false);
-  assert.equal(r.submitted, true);
-  assert.match(r.reason, /remains at the prompt/);
-  assert.equal(io.enters, 4, 'one Enter plus three retries');
+test('unknown and busy empty screens do not prevent delivery', async () => {
+  for (const screen of ['unknown', '❯\n✻ Cerebrating… (12s)']) {
+    const { io, calls } = pane(screen);
+    assert.equal((await deliverSafe('agent', 'hello', undefined, io)).delivered, true);
+    assert.equal(calls.at(-1), 'Enter');
+  }
+});
+
+test('a transport error remains an error, not a claim of delivery', async () => {
+  const { io } = pane('❯');
+  io.enter = async () => { throw new Error('tmux disconnected'); };
+  await assert.rejects(deliverForce('agent', 'hello', io), /tmux disconnected/);
 });

@@ -173,7 +173,7 @@ export function createWorkbench(options = {}) {
     value?.hide?.();
     if (!restoreDefault(id)) return false;
     refreshSelector();
-    options.onPlacement?.(snapshot());
+    options.onPlacement?.(snapshot(), { dismissed: id });
     return true;
   };
 

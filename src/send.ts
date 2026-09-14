@@ -1,6 +1,5 @@
 import { exactPane } from './tmux.js';
 import { tmux } from './tmux-client.js';
-import { classifyStatus } from './status.js';
 
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
@@ -12,11 +11,9 @@ export interface PromptRead {
 
 export function parsePrompt(raw: string): PromptRead {
   const cannotTell: PromptRead = { found: false, text: null, menu: false };
-  if (classifyStatus(raw) === 'thinking') return cannotTell;
   const lines = raw.split('\n');
   while (lines.length && lines[lines.length - 1].trim() === '') lines.pop();
   const line = lines
-    .slice(-15)
     .filter((l) => /[❯›]/.test(l))
     .pop();
   if (line === undefined) return cannotTell;
@@ -39,27 +36,6 @@ export interface DeliveryResult {
   submitted: boolean;
 }
 
-const SGR = /\x1b\[[0-9;]*m/g;
-const squash = (s: string): string => s.replace(SGR, '').replace(/\s+/g, '');
-const FINGERPRINT = 48;
-export const fingerprintOf = (text: string): string => squash(text).slice(-FINGERPRINT);
-
-export function draftAtPrompt(raw: string, text: string): boolean {
-  const fp = fingerprintOf(text);
-  if (!fp) return false;
-  const lines = raw.split('\n');
-  let at = -1;
-  for (let i = lines.length - 1; i >= 0; i--) {
-    const bare = lines[i].replace(SGR, '').replace(/ /g, ' ');
-    if (!/[❯›]/.test(bare)) continue;
-    if (/[❯›]\s*\d+\.\s/.test(bare)) return false;
-    at = i;
-    break;
-  }
-  if (at < 0) return false;
-  return squash(lines.slice(at).join('\n')).includes(fp);
-}
-
 export interface PaneIO {
   read(): Promise<string>;
   type(text: string): Promise<void>;
@@ -67,8 +43,11 @@ export interface PaneIO {
   wait(ms: number): Promise<void>;
 }
 
-const typeText = (name: string, text: string) =>
-  tmux.run(['send-keys', '-t', exactPane(name), '-l', '--', text]);
+const typeText = async (name: string, text: string) => {
+  // A complete message leaves tmux copy mode before typing, including composer sends.
+  await tmux.run(['send-keys', '-t', exactPane(name), '-X', 'cancel']).catch(() => {});
+  await tmux.run(['send-keys', '-t', exactPane(name), '-l', '--', text]);
+};
 const pressEnter = (name: string) => tmux.run(['send-keys', '-t', exactPane(name), 'Enter']);
 const paneIO = (name: string): PaneIO => ({
   read: () => capturePane(name),
@@ -77,54 +56,22 @@ const paneIO = (name: string): PaneIO => ({
   wait: sleep,
 });
 
+/** All safety decisions precede typing. Once started, every message ends with Enter. */
 export async function deliverSafe(name: string, text: string, onAttempt?: () => void, io: PaneIO = paneIO(name)): Promise<DeliveryResult> {
-  let raw = await io.read();
-  const before = parsePrompt(raw);
-  let typedText: string | null;
-  let unseen = false;
-  if (draftAtPrompt(raw, text)) {
-    typedText = before.text;
-  } else {
-    if (before.menu) return { delivered: false, submitted: false, reason: 'dialog is open' };
-    if (before.text) return { delivered: false, submitted: false, reason: 'unsubmitted text is already at the prompt' };
-    onAttempt?.();
-    await io.type(text);
-    await io.wait(350);
-    raw = await io.read();
-    const typed = parsePrompt(raw);
-    if (typed.menu) return { delivered: false, submitted: false, reason: 'dialog opened before submit' };
-    typedText = typed.text;
-    unseen = !typed.text && !squash(raw).includes(fingerprintOf(text));
-  }
-  await io.enter();
-  for (let i = 0; i < 3; i++) {
-    await io.wait(700);
-    raw = await io.read();
-    const now = parsePrompt(raw);
-    if (now.menu) return { delivered: false, submitted: true, reason: 'dialog opened while submitting' };
-    const pending = draftAtPrompt(raw, text) || (typedText !== null && now.text === typedText);
-    if (!pending) {
-      if (unseen && !squash(raw).includes(fingerprintOf(text))) return { delivered: false, submitted: true, reason: 'the text never appeared in the pane' };
-      if (!now.found || now.text === null) return { delivered: true, submitted: true, reason: 'delivered' };
-      return { delivered: false, submitted: true, reason: 'The prompt changed before delivery could be confirmed. Automatic retries stopped to avoid sending a duplicate.' };
-    }
-    await io.enter();
-  }
-  return { delivered: false, submitted: true, reason: 'text remains at the prompt after Enter retries' };
+  const before = parsePrompt(await io.read());
+  if (before.menu) return { delivered: false, submitted: false, reason: 'dialog is open' };
+  if (before.text) return { delivered: false, submitted: false, reason: 'unsubmitted text is already at the prompt' };
+  onAttempt?.();
+  return deliverForce(name, text, io);
 }
 
-export async function deliverForce(name: string, text: string, timeoutMs = 10_000, io: PaneIO = paneIO(name)): Promise<DeliveryResult> {
+/** Composer sends and the two-minute override use this same text-then-Enter operation.
+ * The short pause lets the CLI finish accepting pasted text. No screen reads or retries. */
+export async function deliverForce(name: string, text: string, io: PaneIO = paneIO(name)): Promise<DeliveryResult> {
   await io.type(text);
   await io.wait(300);
-  const deadline = Date.now() + timeoutMs;
-  do {
-    await io.enter();
-    await io.wait(800);
-    const raw = await io.read();
-    const now = parsePrompt(raw);
-    if (!draftAtPrompt(raw, text) && (!now.found || (!now.menu && now.text === null))) return { delivered: true, submitted: true, reason: 'delivered by Force' };
-  } while (Date.now() < deadline);
-  return { delivered: false, submitted: true, reason: 'Force could not observe delivery within 10 seconds' };
+  await io.enter();
+  return { delivered: true, submitted: true, reason: 'text and Enter sent' };
 }
 
 async function capturePane(name: string): Promise<string> {
