@@ -2,7 +2,7 @@
 /** RONIN HOME — the quiet root arrival and three direct doors out of it. */
 import { t } from './lexicon.js';
 import { request } from './request.js';
-import { createReleaseUpdateController, packageReading, releaseIdentity } from './release-update-controller.js';
+import { createReleaseUpdateController, packageReading } from './release-update-controller.js';
 
 const el = (tag, cls, text) => {
   const out = document.createElement(tag);
@@ -46,11 +46,12 @@ export function createCampaignHome() {
   const frame = el('div', 'ch-frame');
   const doors = el('div', 'ch-doors');
   const release = el('div', 'ch-release');
-  const version = el('span', 'ch-version', 'Version unavailable');
   const check = el('button', 'ch-update', t('campaign_home.check_updates', 'Check for updates'));
   const answer = el('span', 'ch-update-answer');
   check.type = 'button';
   const readings = el('div', 'ch-update-readings');
+  readings.hidden = true;
+  answer.hidden = true;
   const controls = {};
   for (const pkg of ['cowork', 'services']) {
     const line = el('div', 'ch-update-package');
@@ -65,7 +66,7 @@ export function createCampaignHome() {
   }
   answer.setAttribute('aria-live', 'polite');
   readings.setAttribute('aria-live', 'polite');
-  release.append(version, check, readings, answer);
+  release.append(readings, answer, check);
   frame.append(doors);
   root.append(frame, release);
 
@@ -100,18 +101,21 @@ export function createCampaignHome() {
   }
 
   const updates = createReleaseUpdateController({ onChange: state => {
-    version.textContent = releaseIdentity(state.version);
     check.setAttribute('aria-disabled', String(state.busy));
     answer.textContent = state.message;
+    answer.hidden = !state.message;
+    readings.hidden = !state.facts;
     answer.dataset.state = state.bad ? 'failed' : '';
     for (const pkg of ['cowork', 'services']) {
       const fact = packageReading(state.facts?.[pkg]);
       const { text, update } = controls[pkg];
-      text.textContent = `Ronin ${pkg === 'cowork' ? 'Cowork' : 'Services'} — ${state.facts ? fact.text : 'Not checked'}`;
+      const installed = state.facts?.[pkg]?.installed || (pkg === 'cowork' ? state.version?.release : null);
+      const detail = state.canUpdate ? fact.text : (fact.available ? `${state.facts[pkg].latest} available · This installation cannot be updated here.` : fact.text);
+      text.textContent = `Ronin ${pkg === 'cowork' ? 'Cowork' : 'Services'} — ${installed && (fact.state === 'unknown' || (!state.canUpdate && fact.available)) ? `Installed ${installed} · ` : ''}${detail}`;
       text.dataset.state = fact.state;
-      update.hidden = !fact.available;
+      update.hidden = !fact.available || !state.canUpdate;
       update.disabled = !state.canUpdate || state.busy;
-      update.title = !state.canUpdate ? (state.version?.commit ? 'Dev checkout — release updating is disabled' : 'Version unavailable') : '';
+      update.title = '';
     }
   }});
   check.addEventListener('click', () => void updates.check());
@@ -124,7 +128,6 @@ export function createCampaignHome() {
       ctx = context;
       entered = true;
       document.body.classList.add('ronin-home-active');
-      void updates.identify();
       paintDoors();
       void request('/api/setup/runtime', { cache: 'no-store' }).then((result) => {
         if (!entered) return;
