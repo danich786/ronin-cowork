@@ -8,7 +8,7 @@ import {
   sessionDir,
   sessionExists,
   setControl,
-  setLaunchStamp,
+  setSessionIdentity,
   setLeads,
   setProviderSessionId,
   setCampaign,
@@ -460,6 +460,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
         strictCwd: houseSeat === 'mika',
       });
       runtimeBorn = true;
+      await setSessionIdentity(resolved.name, resolved.identity || { sessionType: resolved.session_type, cli: resolved.launchAgent, provider: '', model: '' });
       if (birthKey) rememberSessionKey(resolved.name, birthKey);
       if (resolved.tags.length) {
         await setTags(resolved.name, resolved.tags);
@@ -474,7 +475,6 @@ export function registerLaunch(app: express.Express): LaunchControl {
       if (form.team_lead && resolved.team) await setLeads(resolved.name, [resolved.team]);
       if (resolved.project_root && resolved.session_type !== 'bare_metal_agent') await setProjectRoot(resolved.name, resolved.project_root);
       await setCampaign(resolved.name, campaignId);
-      await setLaunchStamp(resolved.name, resolved.launchAgent);
       if (providerSession.id) await setProviderSessionId(resolved.name, providerSession.id);
       if (resolved.session_type === 'cowork_agent') {
         await seedTegami(
@@ -510,6 +510,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
         ok: true,
         name: resolved.name,
         session_type: resolved.session_type,
+        identity: resolved.identity,
         dir: resolved.dir,
         cmd: resolved.cmd,
         tags: resolved.tags,
@@ -519,6 +520,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
     } else {
       const receipt = {
         session_type: resolved.session_type,
+        identity: resolved.identity,
         team: resolved.team,
         project_root: resolved.project_root,
         dir: resolved.dir,

@@ -11,7 +11,7 @@ import { rootDir } from './resources.js';
 import { runCommand } from './send.js';
 import { execFile as run } from './spawn-broker.js';
 import { collectBirthLines } from './sockets.js';
-import { createSession, killSessionTree, sessionExists, setLaunchStamp, setTags } from './tmux.js';
+import { createSession, killSessionTree, sessionExists, setSessionIdentity, setTags } from './tmux.js';
 import { addJob, isValidTeam, listJobs, type Job } from './jikan.js';
 import type { InstalledAnswer } from './routes/installed-api.js';
 
@@ -147,7 +147,7 @@ const defaultSessionOps: ProviderSessionOps = {
     await createSession(name, rootDir('user'), { agent: true, argv: launch.argv });
     void collectBirthLines(name, true);
     await setTags(name, [PROVIDER_SETUP_TEAM]);
-    await setLaunchStamp(name, spec.id);
+    await setSessionIdentity(name, { sessionType: 'provider_setup', cli: spec.id, provider: '', model: '' });
   },
   async openUpdate(provider, name) {
     const spec = AGENTS.find((agent) => agent.id === provider);

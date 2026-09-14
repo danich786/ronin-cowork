@@ -100,7 +100,7 @@ export async function readMachineSettingsSection<T>(key: string, fallback: T): P
 
 export const readMachineSettingsDocument = (): Promise<Record<string, unknown>> => readDocument();
 
-async function updateDocument(
+export async function updateDocument(
   mutate: (document: Record<string, unknown>) => void | Promise<void>,
 ): Promise<void> {
   const operation = writeQueue.then(async () => {

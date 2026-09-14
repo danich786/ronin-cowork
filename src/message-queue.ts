@@ -306,3 +306,22 @@ export function startMessageQueue(): () => void {
   void processMessageQueue();
   return onClock('message_queue', 2_000, () => processMessageQueue());
 }
+
+/** Controls wait only for an in-progress paste+Enter, never for typing grace. */
+export async function withMessageTarget<T>(key: string, action: () => Promise<T>): Promise<T> {
+  await fs.mkdir(DIR, { recursive: true });
+  const target = path.join(DIR, `target-${createHash('sha256').update(key).digest('hex')}.lock`);
+  const until = Date.now() + 2_000;
+  let handle: FileHandle;
+  for (;;) {
+    try { handle = await fs.open(target, 'wx'); break; }
+    catch (e) {
+      if ((e as NodeJS.ErrnoException).code !== 'EEXIST') throw e;
+      await clearAbandonedLock(target);
+      if (Date.now() >= until) throw new Error('A terminal write is still in progress. Try the control again.');
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+  }
+  try { await handle.writeFile(String(process.pid)); return await action(); }
+  finally { await handle.close(); await fs.unlink(target).catch(() => {}); }
+}

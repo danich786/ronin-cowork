@@ -1,3 +1,4 @@
+import { buildControlHints } from './terminal-controls.js';
 /* part of the ronin-cowork client — see js/README.md */
 /**
  * THE MOBILE DOCUMENT'S ENTRY MODULE. `mobile.html` holds the bar and an empty main; this
@@ -265,6 +266,7 @@ export async function buildPhone() {
     main.replaceChildren(term);
     const tile = host.mount(session);
     stageTile = tile;
+    term.append(buildControlHints(() => tile));
 
     sheet = makeDrop('メ', t('phone.me_title', 'This Agent — work record, docs, note, control, kill'), 'me');
     const node = (key) => tile[key]?.el ?? tile[key];
@@ -274,7 +276,7 @@ export async function buildPhone() {
     if (!tile.servicesOff()) sheet.addRow(node('outputEl'), t('me.output', 'Output'), 'stay');
     sheet.addRow(node('noteBtn'), t('me.note', 'Note'));
     sheet.addRow(node('dial'), t('me.control', 'Control'), 'stay');
-    sheet.addRow(node('killBtn'), t('me.kill', 'Kill session'));
+    sheet.addRow(node('killBtn'), 'Close');
 
     // The 📄 menu hangs off the hidden tile head; here it hangs off the bar.
     bar.replaceChildren(...barContent(

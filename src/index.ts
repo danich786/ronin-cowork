@@ -46,6 +46,7 @@ import { registerJikan, startHouseJikan } from './routes/jikan-api.js';
 import { registerInstalled } from './routes/installed-api.js';
 import { registerVersion } from './routes/version.js';
 import { registerWipeboards } from './routes/wipeboards-api.js';
+import { registerTerminalControls } from './terminal-controls.js';
 import { registerMessages } from './routes/messages-api.js';
 import { registerCli } from './routes/cli-api.js';
 import { startMessageQueue } from './message-queue.js';
@@ -280,6 +281,7 @@ void resumeInstallWatch();
 
 registerSessions(app); // per-session: kill/harakiri, meta, dials, ctx, tegami, send — src/routes/sessions-api.ts
 registerWipeboards(app); // /api/wipeboards* — src/routes/wipeboards-api.ts
+registerTerminalControls(app);
 registerMessages(app); // /api/messages* — durable inbound session delivery
 registerCli(app); // /api/cli/:tool — command-line faces of operator verbs
 startMessageQueue();

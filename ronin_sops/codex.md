@@ -1,5 +1,7 @@
 # codex — the account that pays for a Ronin coding session
 
+Related reference: [Agent controls and integration](../docs/agents/codex.md).
+
 > Stock SOP. Your own copy in the sops store (`ronin-store sops` → `codex.md`) replaces
 > this file whole — a default, not law.
 > **Voice: agent.** How the agent sets the account that pays for a session — not a walkthrough to relay.
@@ -22,17 +24,9 @@ interactive Ronin tile should use API billing.
 
 ## Signing in to the owner's ChatGPT account
 
-The reliable Ronin path is device authorization:
-
-1. Run `codex login --device-auth`.
-2. Relay the URL and one-time code it prints to the owner. They open the URL, sign in to
-   the intended ChatGPT account, and enter that code themselves.
-3. Run `codex login status`; done means it says `Logged in using ChatGPT`.
-
-Do not tell someone to find a Codex option inside the ordinary ChatGPT chat interface.
-There is none: authorization happens on the separate page the login command supplies.
-Plain `codex login` is fine when its browser callback opens and returns on the same
-machine; use device authorization when that is not frictionless.
+Follow the [Codex integration page's sign-in procedure](../docs/agents/codex.md#sign-in-particulars).
+That is the maintained home for CLI syntax and callback/device-flow details. This SOP
+owns the billing choice, not a second copy of those commands.
 
 ## API keys are the exception
 

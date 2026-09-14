@@ -3,12 +3,12 @@
 > **This file is stock, and an upgrade replaces it.** It is the one record of every model
 > provider Ronin offers and every model each provides, whether or not this machine has
 > the provider installed. Every picker, every launch and every provider fact on screen
-> reads from here or from the Campaign's measured provider summary; no other file names
-> a provider or a model. Nothing in here executes.
+> reads from here or from the Campaign's measured provider summary; other documents link here instead of maintaining
+> another provider/model inventory. Nothing in here executes.
 >
 > **To keep names fresh without a code release,** copy this file to your catalogs store
-> (`$(ronin-store catalogs)/MODEL_PROVIDERS.md`) and edit it there. A copy in the store
-> wins over this one whole, file for file; an upgrade never touches it.
+> (`$(ronin-store catalogs)/MODEL_PROVIDERS.md`) and edit it there. Each provider section in the owner copy
+> replaces that provider section; other shipped providers keep receiving updates; an upgrade never touches it.
 
 - **updated:** 2026-09-09
 
@@ -35,7 +35,7 @@ One `### <Vendor label>` section per provider. Its fields:
 |---|---|
 | `provider` | the vendor id a launch names (`anthropic`, `openai`, …) and the key of `agents.sessions.by_provider` |
 | `cli` | the id of the CLI that serves it in `src/agents.ts` (`claude`, `codex`, …) — the join between this catalog and what the machine measures |
-| `gbrain_disconnected` | the CLI's flag that launches with zero MCP servers; a provider without one cannot launch disconnected |
+| `gbrain_disconnected` | the CLI's disconnected-launch flag; scope varies by CLI (see docs/agents), and absence refuses explicit disconnected launches |
 | `live_dangerously` | the CLI's additive flag for the Dangerously launch mode; a provider without one refuses that mode |
 
 Then one table, one row per model, **in the order the picker offers them**:

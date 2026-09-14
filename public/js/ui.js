@@ -95,6 +95,7 @@ export function sheet(spec) {
   // Escape closes; Tab stays inside while the sheet is modal.
   el.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
+      e.preventDefault();
       e.stopPropagation();
       close();
       return;
@@ -115,7 +116,7 @@ export function sheet(spec) {
   // A sheet opened by pointer never had focus inside it — the document listener is
   // what lets Escape still close it.
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && isOpen() && !el.contains(document.activeElement)) close();
+    if (e.key === 'Escape' && !e.defaultPrevented && isOpen() && !el.contains(document.activeElement)) { e.preventDefault(); e.stopImmediatePropagation(); close(); }
   });
 
   return { el, card, open, close, isOpen };
