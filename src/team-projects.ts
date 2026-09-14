@@ -44,6 +44,7 @@ export async function writeTeamIdea(team: string, statedId: string | undefined, 
     stage: 'IDEAS' as const,
     exit: 'lead' as const,
     status: 'yellow' as const,
+    disposition: 'active' as const,
     ladder: [{ stage: 'IDEAS' as const }],
     evidence: [],
   } : roster.projects[at];
@@ -113,6 +114,19 @@ export async function assignTeamProject(team: string, statedId: string, session:
     await move({ direction: 'return', session, projectId: id }).catch(() => undefined);
     throw error;
   }
+  return project;
+}
+
+export async function setTeamProjectDisposition(team: string, statedId: string, disposition: Project['disposition']): Promise<Project> {
+  const roster = await readTeamRoster(team);
+  if (!roster) throw new Error(`Team "${team}" has no roster.`);
+  const id = projectId(team, statedId);
+  const at = roster.projects.findIndex((project) => project.id === id);
+  if (at < 0) throw new Error(`Project "${id}" is not held by Team "${team}".`);
+  const project = normalizeProject({ ...roster.projects[at], disposition })!;
+  const projects = [...roster.projects];
+  projects[at] = project;
+  await writeTeamRoster(team, { projects });
   return project;
 }
 

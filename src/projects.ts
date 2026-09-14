@@ -1,10 +1,12 @@
 export const PROJECT_STAGES = ['IDEAS', 'PLANNING', 'BUILDING', 'LANDING', 'DONE'] as const;
 export const PROJECT_EXITS = ['none', 'agent', 'lead', 'user'] as const;
 export const PROJECT_STATUSES = ['green', 'yellow', 'red'] as const;
+export const PROJECT_DISPOSITIONS = ['active', 'backlog'] as const;
 
 export type ProjectStage = typeof PROJECT_STAGES[number];
 export type ProjectExit = typeof PROJECT_EXITS[number];
 export type ProjectStatus = typeof PROJECT_STATUSES[number];
+export type ProjectDisposition = typeof PROJECT_DISPOSITIONS[number];
 
 export interface ProjectLeg {
   title: string;
@@ -24,6 +26,7 @@ export interface Project {
   stage: ProjectStage;
   exit: ProjectExit;
   status: ProjectStatus;
+  disposition: ProjectDisposition;
   ladder: ProjectLadderStage[];
   evidence: string[];
 }
@@ -45,6 +48,7 @@ export function normalizeProject(value: unknown): Project | null {
   if (!member(PROJECT_STAGES, raw.stage)) return null;
   if (!member(PROJECT_EXITS, raw.exit)) return null;
   if (!member(PROJECT_STATUSES, raw.status)) return null;
+  if (raw.disposition !== undefined && !member(PROJECT_DISPOSITIONS, raw.disposition)) return null;
   if (!Array.isArray(raw.ladder) || !Array.isArray(raw.evidence)) return null;
 
   const ladder: ProjectLadderStage[] = [];
@@ -76,6 +80,7 @@ export function normalizeProject(value: unknown): Project | null {
     stage: raw.stage,
     exit: raw.exit,
     status: raw.status,
+    disposition: raw.disposition ?? 'active',
     ladder,
     evidence: [...raw.evidence],
   };

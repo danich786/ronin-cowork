@@ -23,7 +23,7 @@ const {
   readTeamRoster,
   writeTeamRoster,
 } = await import('../src/team-rosters.js');
-const { assignTeamProject, issueTeamProjectId, returnTeamProject, writeTeamIdea } = await import('../src/team-projects.js');
+const { assignTeamProject, issueTeamProjectId, returnTeamProject, setTeamProjectDisposition, writeTeamIdea } = await import('../src/team-projects.js');
 test('create → read → list: a zero-member team is a real, openable record', async () => {
   const r = await createTeamRoster('alpha', {
     kind: 'coding',
@@ -54,6 +54,7 @@ test('ideas live in the roster and its monotonic id issuer is the only id source
   assert.equal(first.project.stage, 'IDEAS');
   assert.equal(first.project.exit, 'lead');
   assert.equal(first.project.status, 'yellow');
+  assert.equal(first.project.disposition, 'active');
   const edited = await writeTeamIdea('alpha', '1', { status: 'green', exit: 'user' });
   assert.equal(edited.created, false);
   assert.equal(edited.project.status, 'green');
@@ -62,6 +63,14 @@ test('ideas live in the roster and its monotonic id issuer is the only id source
   const roster = await readTeamRoster('alpha');
   assert.equal(roster?.next_project_id, 3);
   assert.deepEqual(roster?.projects.map((p) => p.id), ['alpha/1', 'alpha/2']);
+});
+
+test('a roster holder backlogs and resumes without changing project state', async () => {
+  const before = (await readTeamRoster('alpha'))!.projects[1]!;
+  const backlogged = await setTeamProjectDisposition('alpha', before.id, 'backlog');
+  assert.deepEqual(backlogged, { ...before, disposition: 'backlog' });
+  const resumed = await setTeamProjectDisposition('alpha', before.id, 'active');
+  assert.deepEqual(resumed, before);
 });
 
 test('an Agent project reserves its id without creating a roster idea', async () => {
@@ -77,6 +86,7 @@ test('an Agent project reserves its id without creating a roster idea', async ()
 test('assign and return move one whole project across the roster boundary', async () => {
   const held: Project[] = [];
   const firstProject = (await readTeamRoster('alpha'))!.projects[0];
+  await setTeamProjectDisposition('alpha', firstProject.id, 'backlog');
   const move = async (input: { direction: 'place'; session: string; project: Project } | { direction: 'return'; session: string; projectId: string }) => {
     if (input.direction === 'place') {
       held.push(input.project);
@@ -90,12 +100,14 @@ test('assign and return move one whole project across the roster boundary', asyn
   const assigned = await assignTeamProject('alpha', '1', 'worker', move);
   assert.deepEqual(held, [assigned]);
   assert.equal(assigned.stage, 'PLANNING');
+  assert.equal(assigned.disposition, 'backlog', 'assignment preserves authored disposition');
   assert.equal((await readTeamRoster('alpha'))?.projects.some((p) => p.id === assigned.id), false);
   const returned = await returnTeamProject('alpha', '1', 'worker', move);
   assert.equal(returned.projectsRemaining, 0);
   assert.equal(returned.project.stage, 'IDEAS');
   assert.equal(returned.project.exit, 'lead');
   assert.equal(returned.project.status, 'yellow');
+  assert.equal(returned.project.disposition, 'backlog', 'return preserves authored disposition');
   assert.equal((await readTeamRoster('alpha'))?.projects.some((p) => p.id === assigned.id), true);
 });
 

@@ -21,6 +21,7 @@ the same work. A project is one complete object:
   "stage": "BUILDING",
   "exit": "agent",
   "status": "yellow",
+  "disposition": "active",
   "ladder": [
     { "stage": "BUILDING", "legs": [
       { "title": "Roster issued the stable ID", "done": true },
@@ -43,6 +44,15 @@ work-record project create --team virtual-kanban \
 
 Issuing an ID advances the roster counter before the project is written. If the later write fails, create a new
 project; a gap is harmless, while reusing an issued identity is not.
+
+Every Agent may take an assignment. When work arrives without a Project, create it through
+this roster-issued-ID path, then read the stable ID returned by the acknowledgement and use
+the lifecycle verbs. Never choose an ID by hand or create a duplicate project object.
+
+The same Project has three working entrances: the Team Lead creates and assigns it; its Agent
+hands the whole object back with `work-record project return <id>`; or the Agent creates it
+through the roster-issued sequence when assigned work arrived without one. Return is custody
+back to active Team-held Ideas, not backlog, and never makes a second object.
 
 `project create` is creation, never an upsert. It writes the complete starting shape into
 the calling Agent's own record and refuses an existing ID. An Agent can write only a
@@ -81,6 +91,32 @@ work-record project write virtual-kanban/6 --status green
 work-record project write virtual-kanban/6 --leg BUILDING.2 done
 work-record project write virtual-kanban/6 --evidence "commit 0123456789"
 ```
+
+Prefer the lifecycle verbs when they express the whole intent:
+
+```text
+work-record project working virtual-kanban/6
+work-record project ready virtual-kanban/6 --for user
+work-record project stuck virtual-kanban/6
+work-record project blocked virtual-kanban/6 --on lead
+work-record project advance virtual-kanban/6 --to LANDING
+work-record project backlog virtual-kanban/6
+work-record project resume virtual-kanban/6
+```
+
+`working` writes yellow and `exit: agent`; `ready` writes green and the actor named by
+`--for`; `stuck` writes red while leaving the next move with the Agent; `blocked` writes
+red and names the actor required by `--on`. `advance` writes only `stage`, preserving
+`status` and `exit` so the Agent states the new condition explicitly. The field-level
+`project write` remains available; these intent operations are not aliases or automatic
+workflow. Every successful lifecycle acknowledgement ends, “Remember to update your
+project.”
+
+`backlog` changes only the durable project disposition to `backlog`; the project and its
+holder stay put, its stage, flags, ladder and evidence survive, and it leaves active focus.
+`resume` changes only disposition to `active` and never guesses a stage or steals focus.
+Missing disposition reads as active for compatibility. Ideas is active concept work, not
+backlog, and `return` means a whole-project move back to Team-held Ideas.
 
 ## Whole-project moves
 

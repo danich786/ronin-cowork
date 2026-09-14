@@ -14,6 +14,8 @@ Usage:
   team-lead project write <team> <id> --field <value> ...
   team-lead project assign <team> <id> <session>
   team-lead project return <team> <id> <session>
+  team-lead project backlog <team> <id>
+  team-lead project resume <team> <id>
   team-lead member status <team>
 All writes use canonical Team/project routes; member status is the settled Kanban view.
 Create a Team with roster write. Add membership or move an Agent with session_set.
@@ -46,6 +48,7 @@ case "$area:$verb" in
   project:create) [ "$#" -ge 3 ] || die 'BAD-ARG: project create needs team and fields' 2; team=$1; shift; body=$(json_fields "$@"); request POST "/api/team-rosters/$team/projects" "$body" ;;
   project:write) [ "$#" -ge 4 ] || die 'BAD-ARG: project write needs team, id and fields' 2; team=$1; id=${2#"$team/"}; shift 2; body=$(json_fields "$@"); request PUT "/api/team-rosters/$team/projects/$id" "$body" ;;
   project:assign|project:return) [ "$#" -eq 3 ] || die "BAD-ARG: project $verb needs team, id and session" 2; team=$1; id=${2#"$team/"}; body=$(python3 -c 'import json,sys; print(json.dumps({"session":sys.argv[1]}))' "$3"); request POST "/api/team-rosters/$team/projects/$id/$verb" "$body" ;;
+  project:backlog|project:resume) [ "$#" -eq 2 ] || die "BAD-ARG: project $verb needs team and id" 2; team=$1; id=${2#"$team/"}; request POST "/api/team-rosters/$team/projects/$id/$verb" ;;
   member:status) [ "$#" -eq 1 ] || die 'BAD-ARG: member status needs team' 2; request GET "/api/teams/$1/kanban" ;;
   *) usage >&2; exit 2;;
 esac

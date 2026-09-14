@@ -17,6 +17,7 @@ const project = {
   stage: 'BUILDING',
   exit: 'user',
   status: 'green',
+  disposition: 'active',
   ladder: [
     { stage: 'PLANNING', legs: [{ title: 'Plan agreed', done: true }] },
     { stage: 'LANDING' },
@@ -30,6 +31,12 @@ test('the canonical project shape keeps every authored field and has no owner ma
   assert.deepEqual(PROJECT_EXITS, ['none', 'agent', 'lead', 'user']);
   assert.deepEqual(PROJECT_STATUSES, ['green', 'yellow', 'red']);
   assert.equal('owner' in normalizeProject(project)!, false);
+});
+
+test('a legacy project without disposition reads active and a stated invalid disposition is absent', () => {
+  const { disposition: _omitted, ...legacy } = project;
+  assert.equal(normalizeProject(legacy)?.disposition, 'active');
+  assert.equal(normalizeProject({ ...project, disposition: 'parked' }), null);
 });
 
 test('malformed projects are absent instead of becoming partial cards', () => {

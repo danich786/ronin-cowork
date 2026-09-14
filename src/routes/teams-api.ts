@@ -16,7 +16,7 @@ import { assertSameCampaignRoot, campaignFilter, campaignResolver, initialCampai
 import { retireTeam } from '../team-retire.js';
 import { readCampaign } from '../campaigns.js';
 import { teamAgentDefaults } from '../agent-defaults.js';
-import { assignTeamProject, issueTeamProjectId, returnTeamProject, writeTeamIdea } from '../team-projects.js';
+import { assignTeamProject, issueTeamProjectId, returnTeamProject, setTeamProjectDisposition, writeTeamIdea } from '../team-projects.js';
 import { PROJECT_EXITS, PROJECT_STATUSES, normalizeProject, type Project } from '../projects.js';
 
 const errMsg = (e: unknown): string => String((e as Error)?.message ?? e);
@@ -125,7 +125,8 @@ function ideaEditOf(body: unknown): Partial<Project> {
 export function registerTeams(app: express.Express): void {
   app.post('/api/team-rosters/:name/projects', async (req, res) => {
     try {
-      res.json({ ok: true, ...(await writeTeamIdea(req.params.name, undefined, ideaEditOf(req.body))) });
+      const result = await writeTeamIdea(req.params.name, undefined, ideaEditOf(req.body));
+      res.json({ ok: true, ...result, acknowledgement: `Project ${result.project.id} created with stable id ${result.project.id}. Next: team-lead project read ${req.params.name} ${result.project.id}. Remember to update your project.` });
     } catch (e) {
       res.status(400).json({ error: errMsg(e) });
     }
@@ -151,7 +152,8 @@ export function registerTeams(app: express.Express): void {
     try {
       const session = String(req.body?.session ?? '').trim();
       if (!session) throw new Error('assign needs a session.');
-      res.json({ ok: true, project: await assignTeamProject(req.params.name, req.params.id, session) });
+      const project = await assignTeamProject(req.params.name, req.params.id, session);
+      res.json({ ok: true, project, acknowledgement: `Project ${project.id} is now in your work record. Run work-record project read ${project.id}, then update it.` });
     } catch (e) {
       res.status(400).json({ error: errMsg(e) });
     }
@@ -161,7 +163,26 @@ export function registerTeams(app: express.Express): void {
     try {
       const session = String(req.body?.session ?? '').trim();
       if (!session) throw new Error('return needs a session.');
-      res.json({ ok: true, ...(await returnTeamProject(req.params.name, req.params.id, session)) });
+      const result = await returnTeamProject(req.params.name, req.params.id, session);
+      res.json({ ok: true, ...result, acknowledgement: `Project ${result.project.id} returned whole to Team ${req.params.name} Ideas; holder: lead. Remember to update your project.` });
+    } catch (e) {
+      res.status(400).json({ error: errMsg(e) });
+    }
+  });
+
+  app.post('/api/team-rosters/:name/projects/:id/backlog', async (req, res) => {
+    try {
+      const project = await setTeamProjectDisposition(req.params.name, req.params.id, 'backlog');
+      res.json({ ok: true, project, acknowledgement: `Project ${project.id} is now off the active table; disposition: backlog; holder: lead; focus: unchanged. Remember to update your project.` });
+    } catch (e) {
+      res.status(400).json({ error: errMsg(e) });
+    }
+  });
+
+  app.post('/api/team-rosters/:name/projects/:id/resume', async (req, res) => {
+    try {
+      const project = await setTeamProjectDisposition(req.params.name, req.params.id, 'active');
+      res.json({ ok: true, project, acknowledgement: `Project ${project.id} returned to the active table at ${project.stage}; disposition: active; holder: lead; focus unchanged: none. Remember to update your project.` });
     } catch (e) {
       res.status(400).json({ error: errMsg(e) });
     }
