@@ -205,7 +205,7 @@ async function main(): Promise<void> {
           for (const n of notices) if (n.kind !== 'adopted' || n.desk === d.branch) out(noticeLine(n));
           if (receipt.result === 'accepted' && tidy.desk) {
             out(projectId
-              ? `  Code handed in for Project ${projectId}. Project state is unchanged. Next: work-record project advance ${projectId} --to LANDING. Remember to update your project.`
+              ? `  Code handed in for Project ${projectId}. Project state is unchanged. Next: work-record project advance ${projectId} --to LANDING.`
               : '  Code handed in. No Project was associated; Project state is unchanged. Remember to update your project.');
             out(`  desk is ${tidy.desk.ahead === 0 ? 'level with the line' : `${tidy.desk.ahead} commit(s) ahead of the line`}`);
             out(tidy.unsaved_files.length ? `  not handed in: ${tidy.unsaved_files.join(', ')}` : '  no unsaved or untracked files');
