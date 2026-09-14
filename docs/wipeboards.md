@@ -101,8 +101,8 @@ Address a post to whoever has to act on it; leave it open only when everyone has
 The notice a post fires is **a pointer, never a copy**: one line naming the wipeboard and
 the poster, telling the reader to run the one action. It carries no path, and never asks
 for a reply. It uses the same durable delivery queue as `edges send`: the notice is
-submitted now or remains visible for another attempt. Control stays stored and visible;
-it does not restrict delivery. A member that was not notified still gets the post on its
+submitted now or remains visible for another attempt. Control and a recognized draft or dialog hold the interruption before typing; after two
+minutes the queue sends it regardless. Wipeboard interruptions have the lowest sweep priority. A member that was not notified still gets the post on its
 next check.
 
 ## The layout

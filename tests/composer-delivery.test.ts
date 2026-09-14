@@ -1,0 +1,49 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import express from 'express';
+import { openTestServer, closeTestServer } from './helpers/testserver.js';
+
+test('one Ronin box request leaves copy mode and sends text plus Enter despite a restrictive Control setting', async (t) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ronin-composer-delivery-'));
+  const server = await openTestServer('composer_delivery', { onPath: true });
+  const previous = process.env.RONIN_MESSAGE_QUEUE_DIR;
+  process.env.RONIN_MESSAGE_QUEUE_DIR = root;
+  t.after(async () => {
+    await closeTestServer(server);
+    await fs.rm(root, { recursive: true, force: true });
+    if (previous === undefined) delete process.env.RONIN_MESSAGE_QUEUE_DIR;
+    else process.env.RONIN_MESSAGE_QUEUE_DIR = previous;
+  });
+  const prompt = 'printf "› \\033[2mAsk\\033[0m"; while IFS= read -r line; do printf "\\nSUBMITTED:%s\\n› \\033[2mAsk\\033[0m" "$line"; done';
+  await server.run('new-session', '-d', '-s', 'composer_target', '/bin/bash', '-c', prompt);
+  const { setControl } = await import('../src/tmux.js');
+  await setControl('composer_target', 'read');
+  await server.run('copy-mode', '-t', '=composer_target:');
+  const app = express();
+  app.use(express.json());
+  const { registerMessages } = await import('../src/routes/messages-api.js');
+  registerMessages(app);
+  const listener = app.listen(0, '127.0.0.1');
+  t.after(() => new Promise<void>((resolve, reject) => listener.close((error) => error ? reject(error) : resolve())));
+  await new Promise<void>((resolve) => listener.once('listening', resolve));
+  const address = listener.address() as { port: number };
+  const reply = await fetch(`http://127.0.0.1:${address.port}/api/messages`, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ target: 'composer_target', text: 'one press' }),
+  });
+  assert.equal(reply.status, 200);
+  assert.equal((await reply.json()).delivered, true);
+  // The app may paint just after send-keys completes. This is test observation, not
+  // production delivery logic: production always ends after the separate Enter.
+  let screen = '';
+  for (let i = 0; i < 20; i++) {
+    screen = await server.run('capture-pane', '-p', '-t', '=composer_target:');
+    if (screen.includes('SUBMITTED:one press')) break;
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+  assert.equal(screen.match(/SUBMITTED:one press/g)?.length, 1, screen);
+  assert.equal((await fetch(`http://127.0.0.1:${address.port}/api/messages`).then((r) => r.json())).messages.length, 0);
+});
