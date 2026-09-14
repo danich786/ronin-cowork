@@ -2,7 +2,7 @@
 
 **Fork versus spawn.** Fork words mean `session_create --prompt <purpose>`. The newborn
 resolves Campaign/Team and reads its own packet, not this conversation; there is no dial
-option and the caller is unchanged. “Spawn” is CLI-internal and needs owner permission.
+option and the caller is unchanged. “Spawn” is CLI-internal; the owner requires permission before spawning.
 
 **Vocabulary:** **Fork it** / **New Agent** `session_create`; **Tell** `edges send`; **Wipeboard** `edges wipeboard`; **Show docs** `work-record document list` then read;
 **Update work record** `work-record update_record`; **New Team** `team-lead roster write`; **Hand in** `worktree-desk hand-in`; **Promote** lead review then `bin/ronin-promote <team>`; **Close session** `session_end`.
