@@ -214,7 +214,10 @@ export function createTeamKanban(options = {}) {
     if (!move.target) { notice.textContent = t('team_kanban.no_target', 'This project has no live holder to ask.'); return; }
     notice.textContent = t('team_kanban.sending', 'Sending move request to @{name}…', { name: move.target });
     const result = await request('/api/messages', { method: 'POST', json: { target: move.target, text: move.text } });
-    if (!result.ok) { notice.textContent = result.message; return; }
+    if (!result.ok) {
+      notice.textContent = t('team_kanban.send_failed', 'The move request could not be sent.');
+      return;
+    }
     asked.set(project.id, { stage: project.stage, target: move.target });
     notice.textContent = result.data.delivered
       ? t('team_kanban.delivered', 'Move request delivered to @{name}. The card moves when its record moves.', { name: move.target })

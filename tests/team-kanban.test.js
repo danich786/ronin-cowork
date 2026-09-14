@@ -72,3 +72,8 @@ test('the board stays square, fixed, manually refreshed, and free of pills and e
   assert.match(moduleSource, /tk-refresh/);
   assert.match(moduleSource, /tw-agent-density-lines/);
 });
+
+test('a failed move request uses house copy rather than the raw response message', () => {
+  assert.match(moduleSource, /team_kanban\.send_failed', 'The move request could not be sent\.'/);
+  assert.doesNotMatch(moduleSource, /notice\.textContent\s*=\s*result\.message/);
+});
