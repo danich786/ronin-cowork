@@ -46,6 +46,7 @@ export const S = {
   // koe | gbrain), or null when the operator predates the field. A surface owned by a service
   // not on the roster is drawn opaque-and-inert and never fetched (sockets.ts's rule).
   services: null,
+  installedServices: null, // /api/installed services: disk/loaded/parked explains optional-part absence
   lastSelection: '', // last non-empty terminal selection (see below)
   sessPicker: null, // pad-key session switcher { open, close, isOpen, move, commit }
   workspace: null, // AppShell runtime; the one writer for destination/workspace state
@@ -71,6 +72,8 @@ const PANE_SERVICE = { hotwords: 'koe', stats: 'counting', koshi: 'koshi', gbrai
  * function, and the pane map is now only a lookup table.
  */
 export const serviceMissing = (svc) => !!svc && Array.isArray(S.services) && !S.services.includes(svc);
+export const serviceParked = (svc) => Array.isArray(S.installedServices?.parked)
+  ? S.installedServices.parked.find((part) => part?.name === svc) || null : null;
 
 /** Is the service that owns this commons PANE absent? A pane not listed is core. */
 export const serviceOff = (pane) => serviceMissing(PANE_SERVICE[pane]);

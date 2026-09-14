@@ -248,10 +248,12 @@ const services: ServiceRegistration[] = [];
 // The parts on disk are the install; the Campaign's Routine switches say which of them run.
 // A part claimed by a Routine that is off is parked: not imported, no timers, no routes,
 // no recorder — as if not installed, files in place (src/parts.ts). Read once, at start.
+const startupCampaign = await initialCampaign().catch(() => null);
 const plan = partsToLoad(
   discoverParts(),
   await listInstallations().catch(() => []),
-  (await initialCampaign().catch(() => null))?.config?.installations ?? {},
+  startupCampaign?.config?.installations ?? {},
+  startupCampaign?.config?.services?.parts ?? {},
 );
 for (const parked of plan.parked) {
   console.log(`[services] ${parked.name} is parked: ${parked.reason ?? `${parked.installation} is off for this Campaign (restart after switching it on)`}`);

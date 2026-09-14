@@ -20,7 +20,7 @@ is a name a user learns. Everything not listed here is ordinary English and need
 | OBOERU | **memory**<!--g:glossary.memory--> | Notes that outlive the session that wrote them. |
 | TOMODACHI · SOROBAN | **Stats**<!--g:glossary.stats--> | Counts of what sessions did, never content. |
 | KOSHI | Koshi | Ronin's own helper agents. The name is on screen as it stands. |
-| KOE | **Hotwords**<!--g:glossary.hotwords--> | Voice. The mic on a tile; Hotwords are the words dictation mishears. |
+| KOE | **Koe** · **Hotwords**<!--g:glossary.hotwords--> | Koe is the Campaign component for voice. The mic is voice; Hotwords are the words dictation mishears. |
 | SETTEI | **Configuration**<!--g:glossary.configuration--> | The ⚙ tab. "Your settings" for what is in it. |
 | AGERU | **what gets sent**<!--g:glossary.packet--> · **where Ronin has connected**<!--g:glossary.egress_log--> | The one door out: a packet shown in full before it leaves, and the list of every outbound request. |
 | ERABI | — | The one selector utility: how a form asks a question — the reading stone, its tray, the two stone shapes, the caption, the switch (`ask()` in `public/js/ask.js`; ronin-lab `SELECTORS.md`). Internal machinery; the user sees a question, never the name. |

@@ -35,6 +35,9 @@ test('a pre-installation-cascade campaign gets stock defaults without a rewrite'
   const campaign = await readCampaign('home_machine');
   assert.equal('features' in (campaign?.config.defaults ?? {}), false);
   assert.deepEqual(campaign?.config.defaults.behaviours, ['mandates']);
+  assert.equal(campaign?.config.services.parts.kanban, undefined, 'a newly claimed part defaults off');
+  assert.equal(campaign?.config.services.parts.koe, true, 'a pre-component part keeps its legacy state');
+  assert.equal(campaign?.config.services.parts.rireki, true, 'the legacy transcript choice is preserved');
   assert.equal(await fs.readFile(file, 'utf8'), old, 'reading the old shape does not migrate it');
   await fs.writeFile(file, JSON.stringify({ campaigns: {} }, null, 2) + '\n', 'utf8');
 });
@@ -46,12 +49,17 @@ test('campaigns share the machine configuration document', async () => {
     description: 'First body of work',
     config: { cowork_defaults: { arrangement: 'two' } },
   });
+  assert.deepEqual(created.config.services.parts, {}, 'new Campaigns make the empty component selection explicit');
   assert.equal((await readCampaign('alpha'))?.title, 'Alpha');
 
   await writeCampaign('alpha', { description: 'Current body of work' });
   const edited = await readCampaign('alpha');
   assert.equal(edited?.description, 'Current body of work');
   assert.deepEqual(edited?.config.cowork_defaults, { arrangement: 'two' });
+  await writeCampaign('alpha', { config: { services: { parts: { kanban: true, koe: false, future_part: true } } } });
+  assert.deepEqual((await readCampaign('alpha'))?.config.services.parts, {
+    kanban: true, koe: false, future_part: true,
+  });
   assert.equal(edited?.created_at, created.created_at);
 
   const document = JSON.parse(

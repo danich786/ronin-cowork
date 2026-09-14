@@ -17,7 +17,7 @@ import { readState } from '../activation/state.js';
 import { initialCampaign } from '../campaigns.js';
 import { listInstallations } from '../resource-adapters.js';
 import { switches } from '../instruction-cascade.js';
-import { listParkedServices, listServices } from '../sockets.js';
+import { listParkedServices, listServiceFailures, listServices } from '../sockets.js';
 import { discoverParts, partClaims } from '../parts.js';
 import { roninIdentity } from './version.js';
 
@@ -39,6 +39,7 @@ export interface InstalledAnswer {
     stage: string;
     /** The Campaign's default switch for the Ronin Services Routine. */
     switched_on: boolean;
+    desired: Record<string, boolean>;
   };
   /** Every Routine, with the Campaign's default switch — switches, not installs. */
   installations: { name: string; label: string; blurb: string; on: boolean; available: boolean; requires: string[] }[];
@@ -48,16 +49,22 @@ export async function installedAnswer(): Promise<InstalledAnswer> {
   const [state, entitled, campaign, installations] = await Promise.all([readState().catch(() => null), isEntitled().catch(() => false), initialCampaign().catch(() => null), listInstallations()]);
   const map = switches(campaign?.config?.installations ?? {});
   const loaded = listServices();
-  const parked = listParkedServices();
+  const parkedByName = new Map(listParkedServices().map((part) => [part.name, part]));
+  for (const failure of listServiceFailures()) parkedByName.set(failure.name, failure);
+  const parked = [...parkedByName.values()];
   const parts = [...new Set([...discoverParts().map((part) => part.name), ...loaded, ...parked.map((part) => part.name)])].sort();
   const claims = partClaims(installations);
   const switchedOn = map.ronin_services === true;
+  const desired = campaign?.config?.services?.parts ?? {};
   // The running copy read the switch at start; if the switch moved since, only a restart honours it.
-  const permanentlyParked = new Set(parked.filter((part) => part.reason).map((part) => part.name));
-  const restartNeeded = parts.some((part) => !permanentlyParked.has(part) && claims.get(part) === 'ronin_services' && (switchedOn ? !loaded.includes(part) : loaded.includes(part)));
+  const permanentlyParked = new Set(parked
+    .filter((part) => part.reason && !['master_off', 'component_off'].includes(part.reason))
+    .map((part) => part.name));
+  const restartNeeded = parts.some((part) => !permanentlyParked.has(part) && claims.get(part) === 'ronin_services'
+    && (switchedOn && desired[part] === true ? !loaded.includes(part) : loaded.includes(part)));
   return {
     cowork: roninIdentity(),
-    services: { parts, loaded, parked, installed: parts.length > 0, activated: entitled, stage: state?.stage ?? 'not_requested', switched_on: switchedOn, restart_needed: restartNeeded },
+    services: { parts, loaded, parked, desired, installed: parts.length > 0, activated: entitled, stage: state?.stage ?? 'not_requested', switched_on: switchedOn, restart_needed: restartNeeded },
     installations: installations.map((r) => ({ name: r.name, label: r.label, blurb: r.blurb, on: map[r.name] === true, available: r.requires.every((name) => map[name] === true), requires: r.requires })),
   };
 }

@@ -431,6 +431,10 @@ export function registerLaunch(app: express.Express): LaunchControl {
               : { extraTools: [...resolved.conditional_tools, ...resolved.capability_tools] },
           )
         : null;
+      const campaignId = resolved.session_type === 'bare_metal_agent'
+        ? (form.campaign_id || await initialCampaignId())
+        : await birthCampaign(resolved.team, form.campaign_id);
+      const transcriptOn = (await readCampaign(campaignId))?.config.services.parts.rireki === true;
       await createSession(resolved.name, resolved.dir, {
         agent: resolved.agent,
         exempt: resolved.capExempt,
@@ -450,7 +454,9 @@ export function registerLaunch(app: express.Express): LaunchControl {
         // off means RIREKI never records it. Set here and never again — nothing cascades
         // onto a running session (owner, 2026-09-04). A terminal has no Routines and keeps
         // the recorder's own default.
-        rireki: resolved.contributions.length ? resolved.contributions.some((contribution) => contribution.name === 'ronin_services' && contribution.enabled) : undefined,
+        rireki: resolved.contributions.length
+          ? resolved.contributions.some((contribution) => contribution.name === 'ronin_services' && contribution.enabled) && transcriptOn
+          : undefined,
         strictCwd: houseSeat === 'mika',
       });
       runtimeBorn = true;
@@ -467,9 +473,6 @@ export function registerLaunch(app: express.Express): LaunchControl {
       }
       if (form.team_lead && resolved.team) await setLeads(resolved.name, [resolved.team]);
       if (resolved.project_root && resolved.session_type !== 'bare_metal_agent') await setProjectRoot(resolved.name, resolved.project_root);
-      const campaignId = resolved.session_type === 'bare_metal_agent'
-        ? (form.campaign_id || await initialCampaignId())
-        : await birthCampaign(resolved.team, form.campaign_id);
       await setCampaign(resolved.name, campaignId);
       await setLaunchStamp(resolved.name, resolved.launchAgent);
       if (providerSession.id) await setProviderSessionId(resolved.name, providerSession.id);

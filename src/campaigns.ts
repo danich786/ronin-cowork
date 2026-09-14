@@ -12,6 +12,7 @@ async function writeCampaigns(campaigns: Record<string, unknown>): Promise<void>
 
 export interface CampaignSettings {
   installations: Record<string, boolean>;
+  services: { parts: Record<string, boolean> };
   defaults: AgentDefaults;
   cowork_defaults: Record<string, unknown>;
   template_defaults: Record<string, unknown>;
@@ -50,6 +51,7 @@ export interface CampaignEdit {
   state?: CampaignState;
   config?: {
     installations?: Record<string, boolean>;
+    services?: { parts?: Record<string, boolean> };
     defaults?: Partial<AgentDefaults>;
     cowork_defaults?: Record<string, unknown>;
     template_defaults?: Record<string, unknown>;
@@ -89,12 +91,26 @@ const DESK_VALUE_MAX = 120;
 const bucket = (v: unknown): Record<string, unknown> =>
   v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
 
+/** Parts that existed before component routing. A missing legacy map preserves them;
+ * newly claimed parts are deliberately absent and therefore off. */
+export const LEGACY_SERVICE_PARTS = Object.freeze(['counting', 'koe', 'koshi', 'koshi_weights', 'michi', 'rireki']);
+
+const serviceSettings = (v: unknown): { parts: Record<string, boolean> } => {
+  const value = bucket(v);
+  return {
+    parts: Object.prototype.hasOwnProperty.call(value, 'parts')
+      ? booleanMap(value.parts)
+      : Object.fromEntries(LEGACY_SERVICE_PARTS.map((name) => [name, true])),
+  };
+};
+
 const settings = (v: unknown): CampaignSettings => {
   const c = bucket(v);
   const defaults = bucket(c.defaults);
   const settled = Object.prototype.hasOwnProperty.call(c, 'installations');
   return {
     installations: booleanMap(c.installations),
+    services: serviceSettings(c.services),
     defaults: agentDefaults(settled ? defaults : { ...defaults, behaviours: undefined }),
     cowork_defaults: bucket(c.cowork_defaults),
     template_defaults: bucket(c.template_defaults),
@@ -236,6 +252,7 @@ export async function createCampaign(edit: CampaignEdit & { id?: string }): Prom
     providers: null,
     config: {
       ...settings(edit.config),
+      services: { parts: {} },
       installations: await completeInstallations(settings(edit.config).installations),
       defaults: await completeAgentDefaults(settings(edit.config).defaults),
     },
@@ -260,6 +277,8 @@ export async function writeCampaign(id: string, edit: CampaignEdit): Promise<Cam
           config: {
             installations: edit.config.installations === undefined
               ? existing.config.installations : await completeInstallations(edit.config.installations),
+            services: edit.config.services === undefined
+              ? existing.config.services : serviceSettings(edit.config.services),
             defaults: edit.config.defaults === undefined
               ? existing.config.defaults : await completeAgentDefaults(edit.config.defaults),
             cowork_defaults: edit.config.cowork_defaults === undefined

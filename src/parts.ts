@@ -55,14 +55,17 @@ export function partsToLoad<T extends { name: string; parked?: string }>(
   parts: T[],
   installations: Pick<InstallationRow, 'name' | 'parts'>[],
   values: unknown,
+  selectedParts: unknown,
 ): PartsPlan<T> {
   const claims = partClaims(installations);
   const on = switches(values);
+  const selected = switches(selectedParts);
   const plan: PartsPlan<T> = { load: [], parked: [] };
   for (const part of parts) {
     const installation = claims.get(part.name);
     if (part.parked) plan.parked.push({ name: part.name, reason: part.parked });
-    else if (installation && on[installation] !== true) plan.parked.push({ name: part.name, installation });
+    else if (installation && on[installation] !== true) plan.parked.push({ name: part.name, installation, reason: 'master_off' });
+    else if (installation && selected[part.name] !== true) plan.parked.push({ name: part.name, installation, reason: 'component_off' });
     else plan.load.push(part);
   }
   return plan;
