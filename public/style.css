@@ -4664,9 +4664,7 @@ button.wb-door:hover b {
 }
 
 .tile.tape-on .tape {
-  --tape-clearance: 52px;
-
-  padding-bottom: var(--tape-clearance);
+  bottom: var(--composer-clearance, 0px);
 }
 @media (pointer: coarse) {
 
@@ -6243,15 +6241,10 @@ button.wk-card { cursor: pointer; font-family: var(--font-ui); }
   color: var(--on-strong);
 }
 
-.tile.keys-on.tape-on .tape {
-  --tape-clearance: 104px;
-}
-
 .tile.keys-on:not(.tape-on) .tile-body {
-
-  --composer-ground: 104px;
-
-  padding-bottom: var(--composer-ground);
+  /* FitAddon reads computed height: give it the content area, excluding controls. */
+  box-sizing: content-box;
+  padding-bottom: var(--composer-clearance, 0px);
 }
 
 

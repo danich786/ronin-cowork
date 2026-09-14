@@ -33,6 +33,7 @@ window.raw = [];
 const el = document.querySelector('#target');
 const tile = { el, body: el.querySelector('.body'), session: 'fixture', sessionKey: 'birth', retirementId: 'fixture', pending: '', renderPending(){}, kill(){retireSession(this.session,this.retirementId,()=>{})}, controlAction(a,t){return runTerminalAction(this,a,t)} };
 tile.term = new TermView(tile.body,{onUserData:d=>raw.push(d),onProtocolData(){},onResize(){},onSelection:s=>tile.lastSelection=s});
+new ResizeObserver(()=>tile.term.fit(false)).observe(tile.body);
 installTileControls(tile);
 tile.term.wireCopyHint({isLocked:()=>true,overHome:()=>false});
 tile.composer = buildComposer(tile.body,{activate(){},clearOverlays(){},connected:()=>true,send:d=>raw.push(d),sendMessage:async()=>({ok:true}),scrollToBottom(){}});
@@ -61,6 +62,43 @@ try {
       await page.goto(`http://127.0.0.1:${server.address().port}/${mobile ? '?mobile=1' : ''}`);
       await page.waitForFunction(()=>window.ready);
       assert.equal(await page.locator('.terminal-hints').count(),mobile ? 0 : 1);
+      if (mobile) {
+        const assertOutputAboveControls = async () => {
+          await page.waitForFunction(() => {
+            const screen = tile.body.querySelector('.xterm-screen').getBoundingClientRect();
+            const controls = tile.composer.el.getBoundingClientRect();
+            return screen.height > 0 && screen.bottom <= controls.top + 1;
+          }, null, { timeout: 5000 });
+        };
+        await assertOutputAboveControls();
+        await page.locator('.composer textarea').fill('one\ntwo\nthree\nfour\nfive');
+        await assertOutputAboveControls();
+        // Emulate iOS visual-viewport keyboard coverage without changing layout height.
+        await page.evaluate(() => {
+          Object.defineProperty(visualViewport, 'height', { configurable:true, value:innerHeight - 100 });
+          visualViewport.dispatchEvent(new Event('resize'));
+        });
+        await assertOutputAboveControls();
+        await page.evaluate(() => {
+          tile.el.classList.add('tape-on');
+          const tape = document.createElement('div'); tape.className = 'tape';
+          tape.innerHTML = '<div style="height:1200px"></div><div id="last-output">Last Agent message</div>';
+          tile.body.append(tape);
+        });
+        await page.waitForFunction(() => {
+          const tape=tile.body.querySelector('.tape'); tape.scrollTop=tape.scrollHeight;
+          return tape.querySelector('#last-output').getBoundingClientRect().bottom <= tile.composer.el.getBoundingClientRect().top;
+        });
+        await page.evaluate(() => {
+          tile.el.classList.remove('tape-on');
+          tile.body.querySelector('.tape').remove();
+          delete visualViewport.height;
+          visualViewport.dispatchEvent(new Event('resize'));
+        });
+        await page.locator('.composer textarea').fill('');
+        await assertOutputAboveControls();
+      }
+
       if (!mobile) {
       assert.equal(await page.locator('.terminal-hints').getAttribute('open'), '');
       const before = await page.locator('.terminal-hints').boundingBox();
@@ -163,7 +201,7 @@ try {
       if (!mobile) assert.equal(await page.locator('[data-control-key="close"]').textContent(),'Ctrl+X');
       await page.locator(mobile ? '.composer' : '.terminal-hints').screenshot({path:`/tmp/hints-polish-${profile}.png`});
       assert.deepEqual(errors,[]);
-      console.log(`${profile}: controls, draft, Copy snapshot, Hints pinning and remapping passed`);
+      console.log(`${profile}: controls, draft, Copy snapshot, Hints, mobile output clearance and remapping passed`);
     } finally { await browser.close(); }
   }
 } finally { await new Promise(r=>server.close(r)); }

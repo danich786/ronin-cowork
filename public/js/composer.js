@@ -12,7 +12,7 @@ import { settleComposer } from './composer-rules.js';
  *          scrollToBottom: () => void}} hooks
  *   `send` is a command key, fire-and-forget. `sendMessage` is a message: it resolves to the
  *   host's answer, and the box clears on nothing else.
- * @returns {{el: HTMLElement, ta: HTMLTextAreaElement, show: (on: boolean) => void}}
+ * @returns {{el: HTMLElement, ta: HTMLTextAreaElement, show: (on: boolean) => void, dispose: () => void}}
  */
 export function buildComposer(body, hooks) {
   const wrap = document.createElement('div');
@@ -123,10 +123,18 @@ export function buildComposer(body, hooks) {
    * replaces learned the same lesson. `visualViewport` is the only thing that knows
    * how much is covered.
    */
+  // Reserve the actual overlay, including a growing draft and the phone keyboard.
+  const reserve = () => {
+    const height = wrap.getBoundingClientRect().height;
+    body.style.setProperty('--composer-clearance', (height ? height + (parseFloat(wrap.style.bottom) || 0) : 0) + 'px');
+  };
+  const size = new ResizeObserver(reserve);
+  size.observe(wrap);
   const lift = () => {
     const vv = window.visualViewport;
     const kb = vv ? Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)) : 0;
     wrap.style.bottom = kb + 'px';
+    reserve();
   };
   if (IS_TOUCH) {
     ta.setAttribute('enterkeyhint', 'send');
@@ -134,6 +142,7 @@ export function buildComposer(body, hooks) {
     ta.addEventListener('focus', lift);
     ta.addEventListener('blur', () => {
       wrap.style.bottom = '0px';
+      reserve();
     });
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', lift);
@@ -176,8 +185,14 @@ export function buildComposer(body, hooks) {
     el: wrap,
     ta,
     clear: clearBox,
+    dispose() {
+      size.disconnect();
+      window.visualViewport?.removeEventListener('resize', lift);
+      window.visualViewport?.removeEventListener('scroll', lift);
+    },
     show(on) {
       wrap.classList.toggle('show', !!on);
+      reserve();
     },
   };
 }

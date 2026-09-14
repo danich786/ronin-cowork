@@ -51,6 +51,7 @@ export function createTerminalTileHost(options = {}) {
     if (!tile) return;
     tile.wire?.close();
     tile.ro?.disconnect();
+    tile.composer?.dispose();
     if (tile.kakiTimer) clearInterval(tile.kakiTimer);
     tile.el.remove();
     const at = tiles.indexOf(tile);

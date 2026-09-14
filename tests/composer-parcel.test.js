@@ -36,6 +36,8 @@ test('accepted queued text belongs to the server; a refused or unreachable send 
 test('mobile box Enter sends once even with the terminal socket down; edits during send survive', async (t) => {
   const oldWindow = globalThis.window;
   const oldDocument = globalThis.document;
+  const oldResizeObserver = globalThis.ResizeObserver;
+  globalThis.ResizeObserver = class { observe() {} };
   globalThis.window = { matchMedia: () => ({ matches: true }) };
   class Element {
     constructor() {
@@ -52,7 +54,7 @@ test('mobile box Enter sends once even with the terminal socket down; edits duri
     addEventListener(name, handler) { this.events[name] = handler; }
   }
   globalThis.document = { createElement: () => new Element() };
-  t.after(() => { globalThis.window = oldWindow; globalThis.document = oldDocument; });
+  t.after(() => { globalThis.window = oldWindow; globalThis.document = oldDocument; globalThis.ResizeObserver = oldResizeObserver; });
   const { buildComposer } = await import('../public/js/composer.js');
   const sent = [];
   let finish;

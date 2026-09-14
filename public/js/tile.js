@@ -590,9 +590,8 @@ export class Tile {
     this.tape.reset(this.tapeMode);
     // Coarse pointer: the composer (and its keys row) is the ONLY input path — a tap
     // never focuses xterm on touch, so a locked mirror without it cannot be typed into
-    // at all. It rides both modes there: overlaying the tape as ever, in normal flow
-    // under the mirror (style.css .keys-on rules) so the CLI's own input line is never
-    // covered. Desktop keeps the old rule: tape mode only.
+    // at all. Both views reserve the composer's measured height and keyboard lift
+    // so the CLI's own input line and the transcript's last message stay visible. Desktop keeps the old rule: tape mode only.
     this.setComposer(this.tapeMode || isCoarse());
     this.el.classList.toggle('tape-on', this.tapeMode);
     this.setDot('wait');
