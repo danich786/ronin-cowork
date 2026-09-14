@@ -35,7 +35,7 @@ Provider output sequences are separate: edit `stop_keys` or `clear_keys` in the 
 Native Copy, Cut, Paste, Select All and Undo remain browser operations in ordinary text
 fields, including the Ronin composer. Copy has no Ronin shortcut or remapping field. With terminal text selected, native
 Cmd+C / Ctrl+C copies it. Terminal Ctrl+C is intercepted so it cannot quit the Agent; without a native Copy
-selection it points you to Stop or Close. Close uses Ctrl+Shift+X. Escape dismisses an
+selection it sends nothing. Close uses Ctrl+Shift+X. Escape dismisses an
 open Ronin sheet/menu first. No shortcut leaks through that sheet into the Agent.
 
 ## Clear and Stop are different
@@ -51,7 +51,7 @@ Unknown CLIs have no guessed control sequence.
 Stop sends the registered interrupt once. It does not wait for the CLI to look idle or
 confirm that a tool stopped. A CLI may consume it in an open menu, or stop a tool at its
 own cancellation boundary. Repeated deliberate presses have the CLI's native semantics;
-Ronin does not repeat held keys or retry after a network failure. Successful Stop is
+Ronin does not repeat held keys or retry after a network failure. Successful control actions are
 silent; a failed request reports the error.
 
 ## Copy while locked
