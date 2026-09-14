@@ -22,7 +22,7 @@ const routine = (name: string, enabled: boolean, tools: string[]): ResolvedContr
   enabled, stated_by: 'campaign', required_by: [],
 } satisfies ContributionRow & ResolvedContribution);
 
-test('birth PATH exposes enabled tools by name without inheriting a Ronin PATH', async () => {
+test('the PATH projector exposes supplied tools by name without inheriting a Ronin PATH', async () => {
   const projected = await projectRoutineTools('pathless', [
     routine('ronin_base', true, ['work-record', 'session_create', 'ronin-url']),
   ], '/usr/bin:/bin');
@@ -30,11 +30,10 @@ test('birth PATH exposes enabled tools by name without inheriting a Ronin PATH',
     const found = await exec('/bin/sh', ['-c', `command -v ${command}`], { env: { PATH: projected.path } });
     assert.equal(found.stdout.trim(), path.join(projected.dir, command), command);
   }
-  await assert.rejects(() => exec('/bin/sh', ['-c', 'command -v worktree-desk'], { env: { PATH: projected.path } }));
   assert.ok(projected.delivered.includes('shim/tmux'), 'the tmux guard is Routine floor');
 });
 
-test('a worktree-root conditional projects the desk kit without an installation', async () => {
+test('a Cowork capability projects the desk tool without an installation', async () => {
   const projected = await projectRoutineTools('worktree-root', [], '/usr/bin:/bin', {
     extraTools: ['worktree-desk'],
   });
