@@ -5,13 +5,13 @@
  *
  * This module was always the de-facto repository (`homeData`, `projectData`, an
  * inflight guard); it is now the declared one. Every reader —
- * the roster, the launcher, the tile pickers, the ⚡ menus — renders from these
+ * the roster, the launcher, and the tile pickers — renders from these
  * caches, and every refresh path (boot, visibility, bfcache, the 8s poll, a
  * mutation's follow-up) lands here rather than fetching its own copy.
  *
  * A failed refresh keeps the LAST GOOD data and records the fault (`homeFault`)
  * instead of swallowing it: stale-and-labelled beats empty-and-silent, and the
- * roster draws the label (js/roster.js). The catalogs (macros, projects, presets,
+ * roster draws the label (js/roster.js). The catalogs (projects, presets,
  * saved launches) stay best-effort — they change when the owner changes them, and
  * the next successful load heals them without a banner.
  */
@@ -21,9 +21,6 @@ import { tiles } from './state.js';
 import { t } from './lexicon.js';
 
 export let homeData = null; // session list enriched with status + ctx
-// `instruction` is the AGENT's prose and `label`/`blurb` are the PERSON's copy — two
-// readers, two fields, and no client surface may render the first (src/macros.ts).
-export let macroData = null; // [{name, instruction, label, blurb, params:[{name, hint}]}]
 export let homeInflight = false;
 /** Why the roster might be stale: the last /api/home failure's message, or null. */
 export let homeFault = null;
@@ -42,7 +39,7 @@ export async function refreshHome() {
   tiles.forEach((tile) => tile.renderHome?.());
 }
 
-export let projectData = null; // /api/project-roots: [{name, dir, read[], provider, model, match[], remit, cmd}]
+export let projectData = null; // /api/project-roots: [{name, title, dir, match[], remit, docs[], plans[]}]
 // The provider catalog is not cached here: form-steps.js reads it for the one picker and
 // the Campaign's Model providers surface, fresh on every surface entry.
 
@@ -55,52 +52,6 @@ export async function loadProjects() {
   if (r.ok && Array.isArray(r.data)) projectData = r.data;
   tiles.forEach((tile) => tile.renderHome?.());
   for (const listener of projectListeners) { try { listener(projectData); } catch (error) { console.error(error); } }
-}
-
-export let familyData = null; // /api/role-families — the shelves
-export let roleData = null; // /api/session-roles — the buttons
-
-export async function loadPresets() {
-  const paint = () => tiles.forEach((tile) => tile.renderHome?.());
-  await Promise.allSettled([
-    request('/api/role-families').then((r) => { if (r.ok && Array.isArray(r.data)) familyData = r.data; paint(); }),
-    request('/api/session-roles').then((r) => { if (r.ok && Array.isArray(r.data)) roleData = r.data; paint(); }),
-  ]);
-}
-
-/**
- * The mark a session wears wherever sessions are listed — the ⌂ Roster, the tile header's
- * picker, the ⚡ macro targets. This is what replaced the hand-set 人: it says what the
- * session is DOING rather than who outranks whom.
- *
- * **IT IS THE TASK, NEVER THE ROLE.** The two axes are drawn differently on purpose: the
- * task changes as the work moves, so it is the live mark; the role is stable context and
- * belongs in the session's details, where it does not compete with a mark that moves. A
- * session with a role and no task shows no mark, and that is correct — it has not said
- * what it is doing.
- *
- * **It comes off the LETTER, and it is on every session list.** `session_role` is a field
- * of the session's own TEGAMI, filled mechanically at birth with the button the owner
- * pressed and changed by the session itself with `write_tegami` — "a session that
- * finishes planning and starts building has changed task, not become a new session". The
- * server reads it back onto every list it serves (`src/tegami.ts`, `withAxes`), so the
- * roster, the tile header and the ⚡ targets cannot disagree, and no second copy exists
- * anywhere to drift from the file.
- *
- * The axis half of the letter is COWORK's — a session has a task whether or not it ever
- * puts a ladder up — so this works on a build with no michi, where `s.tegami` and the
- * SHINGO chip are absent entirely.
- *
- * '' whenever nobody has said, and callers draw nothing rather than guessing.
- */
-export const taskIcon = (s) =>
-  (s?.session_role && (roleData || []).find((k) => k.name === s.session_role)?.icon) || '';
-
-
-export async function loadMacros() {
-  const r = await request('/api/macros');
-  if (r.ok && Array.isArray(r.data)) macroData = r.data;
-  tiles.forEach((tile) => tile.renderHome?.());
 }
 
 /** /api/saved-launches — the launcher form, filled in ahead of time and named.

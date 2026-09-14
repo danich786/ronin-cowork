@@ -14,6 +14,7 @@ import { arrangementOf } from '../desks/arrangement.js';
 import { randomUUID } from 'node:crypto';
 import { withManagedTransaction } from '../desks/lifecycle-ledger.js';
 import { shutdownAgent, ShutdownRefused } from '../desks/session-shutdown.js';
+import { readTegami } from '../tegami-read.js';
 
 const out = (s = '') => process.stdout.write(s + '\n');
 function die(verdict: string, code: number): never {
@@ -62,16 +63,16 @@ function parse(argv: string[]): Args {
 
 const str = (v: string | true | undefined): string => (typeof v === 'string' ? v : '');
 
-const USAGE = `usage: tejun-desk status [<repo[:branch]>] [--session s | --team t | --repo r]
-       tejun-desk open <repo[:branch]> [--team t] [--session s] [--source dev|team]
-       tejun-desk assign <repo[:branch]> --session s --team t [--source dev|team]
-       tejun-desk hand-in [<repo[:branch]>] [--assignment]
-       tejun-desk sync [<repo[:branch]>]
-       tejun-desk close [<repo[:branch]>] [--with-session]
-       tejun-desk handoff <repo[:branch]> --to <session[,session]>
-       tejun-desk discard <repo[:branch]> --confirm "DISCARD repo:branch"
-       tejun-desk reply <repo> <receipt id> <message…>
-       tejun-desk receipts [<repo>] [--line [--accepted | --since <line sha>] | --id <receipt id>]`;
+const USAGE = `usage: worktree-desk status [<repo[:branch]>] [--session s | --team t | --repo r]
+       worktree-desk open <repo[:branch]> [--team t] [--session s] [--source dev|team]
+       worktree-desk assign <repo[:branch]> --session s --team t [--source dev|team]
+       worktree-desk hand-in [<repo[:branch]>] [--assignment] [--project <team/id>]
+       worktree-desk sync [<repo[:branch]>]
+       worktree-desk close [<repo[:branch]>] [--with-session]
+       worktree-desk handoff <repo[:branch]> --to <session[,session]>
+       worktree-desk discard <repo[:branch]> --confirm "DISCARD repo:branch"
+       worktree-desk reply <repo> <receipt id> <message…>
+       worktree-desk receipts [<repo>] [--line [--accepted | --since <line sha>] | --id <receipt id>]`;
 
 function row(d: DeskStatus): string {
   const bits = [
@@ -113,7 +114,7 @@ async function mine(session: string, value: string): Promise<DeskStatus[]> {
 async function pickOne(session: string, value: string, verb: string): Promise<DeskStatus> {
   const desks = await mine(session, value);
   if (!desks.length) die(value ? `NO-DESK: ${session} has no open desk matching ${value}` : `NO-DESK: ${session} has no open desk`, 3);
-  if (desks.length > 1) die(`WHICH-DESK: ${session} has ${desks.map((d) => deskId(d)).join(', ')} — name repo:branch (tejun-desk ${verb} <repo:branch>)`, 2);
+  if (desks.length > 1) die(`WHICH-DESK: ${session} has ${desks.map((d) => deskId(d)).join(', ')} — name repo:branch (worktree-desk ${verb} <repo:branch>)`, 2);
   return desks[0]!;
 }
 
@@ -137,12 +138,12 @@ async function main(): Promise<void> {
         for (const d of desks) out(row(d));
         if (session && !str(flags.get('team')) && !str(flags.get('repo'))) {
           // The caller's own desks: certify them. A birth desk — the one this shell lives
-          // in — is never "closable"; it is stay (parked) or go (tejun-harakiri), never
+          // in — is never "closable"; it is stay (parked) or go (session_end), never
           // closed under a live session (owner, 2026-09-09).
           const c = certifyDesks(desks, process.cwd());
           if (c.certified) {
             out('  CERTIFIED CLEAN: everything is on the line; ending this Agent loses nothing.');
-            if (c.standing.length) out(`  standing in ${c.standing.map(deskId).join(', ')}: stay parked for more work, or go with tejun-harakiri — the desk ends with you, never before you`);
+            if (c.standing.length) out(`  standing in ${c.standing.map(deskId).join(', ')}: stay parked for more work, or go with session_end — the desk ends with you, never before you`);
             if (c.closable.length) out(`  closable without ending you (you are not standing in them): ${c.closable.map(deskId).join(', ')}`);
           } else {
             for (const b of c.blocking) out(`  NOT CERTIFIED: ${deskId(b.desk)} — ${b.why}; commit and hand in before you park or go`);
@@ -164,7 +165,7 @@ async function main(): Promise<void> {
         if (!selector.repo) die(USAGE, 2);
         if (!session) die('NO-SESSION: not inside a session and no --session', 3);
         const team = str(flags.get('team')) || (await myTeams(session))[0] || '';
-        if (verb === 'assign' && (!str(flags.get('session')) || !str(flags.get('team')))) die('usage: tejun-desk assign <repo[:branch]> --session s --team t [--source dev|team]', 2);
+        if (verb === 'assign' && (!str(flags.get('session')) || !str(flags.get('team')))) die('usage: worktree-desk assign <repo[:branch]> --session s --team t [--source dev|team]', 2);
         const requestedSource = str(flags.get('source'));
         if (requestedSource && !['dev', 'team'].includes(requestedSource)) die("SOURCE: choose 'dev' or 'team'", 2);
         if (requestedSource === 'team' && !team) die('SOURCE: team requires --team or Team membership', 2);
@@ -181,7 +182,7 @@ async function main(): Promise<void> {
         // with the verb, rather than let OPENED read as "yours again".
         const owners = d.owners?.length ? d.owners : [d.session];
         if (owners.includes(session)) out(`  custody: ${owners.join(', ')}`);
-        else out(`  custody: ${owners.join(', ')} — not yours: sync, hand-in and close answer NO-DESK for ${session} until a holder runs  tejun-desk handoff ${deskId(d)} --to ${session}`);
+        else out(`  custody: ${owners.join(', ')} — not yours: sync, hand-in and close answer NO-DESK for ${session} until a holder runs worktree-desk handoff ${deskId(d)} --to ${session}`);
         return;
       }
       case 'hand-in': {
@@ -191,16 +192,24 @@ async function main(): Promise<void> {
           targets = await mine(session, positional[0] ?? '');
           if (!targets.length) die(`NO-DESK: ${session} has no open desk`, 3);
         } else targets = [await pickOne(session, positional[0] ?? '', 'hand-in')];
+        const projectId = str(flags.get('project'));
+        if (projectId) {
+          const record = await readTegami(session);
+          if (!record?.projects.some((project) => project.id === projectId)) die(`NO-PROJECT: ${projectId} is not in ${session}'s work record`, 3);
+        }
         let worst = 0;
-        const outcomes = flags.get('assignment') ? await handInAssignment({ desks: targets }) : [await handIn(targets[0]!.repo, targets[0]!.branch)];
+        const outcomes = flags.get('assignment') ? await handInAssignment({ desks: targets, projectId }) : [await handIn(targets[0]!.repo, targets[0]!.branch, { projectId })];
         for (const [i, { receipt, notices, tidy }] of outcomes.entries()) {
           const d = targets[i]!;
           out(`${receipt.result.toUpperCase()} ${deskId(d)} → ${d.line}${receipt.result === 'accepted' ? ` now ${receipt.line_sha.slice(0, 10)}` : ''}${receipt.reason ? ` — ${receipt.reason}` : ''}${receipt.conflict_files.length ? ` — files: ${receipt.conflict_files.join(', ')}` : ''}  [${receipt.id}]`);
           for (const n of notices) if (n.kind !== 'adopted' || n.desk === d.branch) out(noticeLine(n));
           if (receipt.result === 'accepted' && tidy.desk) {
+            out(projectId
+              ? `  Code handed in for Project ${projectId}. Project state is unchanged. Next: work-record project advance ${projectId} --to LANDING.`
+              : '  Code handed in. No Project was associated; Project state is unchanged.');
             out(`  desk is ${tidy.desk.ahead === 0 ? 'level with the line' : `${tidy.desk.ahead} commit(s) ahead of the line`}`);
             out(tidy.unsaved_files.length ? `  not handed in: ${tidy.unsaved_files.join(', ')}` : '  no unsaved or untracked files');
-            out(`  NEXT: line moved; run tejun-desk status ${deskId(d)}; if it reports a dev update, run tejun-desk sync ${deskId(d)}; contact the lead with tejun-send <lead>`);
+            out(`  NEXT: line moved; run worktree-desk status ${deskId(d)}; if it reports a dev update, run worktree-desk sync ${deskId(d)}; contact the lead with edges send <lead>`);
           }
           if (receipt.result !== 'accepted') worst = 4;
           // The tool finds the lead and tells them (owner, 2026-09-05: the session neither
@@ -209,10 +218,11 @@ async function main(): Promise<void> {
           const team = teamOfLine(d.line);
           const outcome = receipt.result === 'accepted' ? 'accepted' : receipt.result === 'conflict' ? 'conflict' : null;
           if (team && outcome) {
-            for (const dlv of await notifyLeads({ team, line: d.line, session, receiptId: receipt.id, result: outcome, lineSha: receipt.line_sha, files: receipt.conflict_files })) {
+            for (const dlv of await notifyLeads({ team, line: d.line, session, receiptId: receipt.id, result: outcome, lineSha: receipt.line_sha, files: receipt.conflict_files, projectId: receipt.project_id })) {
               out(dlv.how === 'self' ? `  ${dlv.detail}` : `  lead ${dlv.to}: ${dlv.how === 'house-send' ? 'told' : 'not reachable at the tile — posted on the team wipeboard'} — ${dlv.detail}`);
             }
           }
+          if (receipt.result === 'accepted') out('Remember to update your project.');
         }
         process.exit(worst);
       }
@@ -286,7 +296,7 @@ async function main(): Promise<void> {
       case 'reply': {
         const [repo, id, ...words] = positional;
         const message = words.join(' ').trim();
-        if (!repo || !id || !message) die('usage: tejun-desk reply <repo> <receipt id> <message…>', 2);
+        if (!repo || !id || !message) die('usage: worktree-desk reply <repo> <receipt id> <message…>', 2);
         if (!session) die('NO-SESSION: not inside a session and no --session', 3);
         const receipt = await receiptById(repo, id);
         if (!receipt) die(`NONE: no receipt ${id} on ${repo}`, 3);
@@ -305,7 +315,7 @@ async function main(): Promise<void> {
         const repo = positional[0] ?? '';
         let rows: HandInReceipt[] = [];
         if (str(flags.get('id'))) {
-          if (!repo) die('usage: tejun-desk receipts <repo> --id <receipt id>', 2);
+          if (!repo) die('usage: worktree-desk receipts <repo> --id <receipt id>', 2);
           const r = await receiptById(repo, str(flags.get('id')));
           if (!r) die(`NONE: no receipt ${str(flags.get('id'))} on ${repo}`, 3);
           out(receiptLine(r));

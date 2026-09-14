@@ -10,7 +10,7 @@ export function registerMessages(app: Express): void {
     if (!isValidName(target) || !text.trim()) return res.status(400).json({ error: 'A valid target and message are required.' });
     try {
       const item = await enqueueMessage(target, text, 'owner');
-      const retained = await attemptMessage(item.id, 'safe');
+      const retained = await attemptMessage(item.id, 'force');
       res.json({ ok: true, delivered: retained === null, message: retained });
     } catch (error) {
       if (error instanceof MessageRefused) return res.status(404).json({ error: error.message, code: 'target_missing' });

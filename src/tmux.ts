@@ -7,6 +7,13 @@ export type { Control } from './session-args.js';
 import type { Control } from './session-args.js';
 import { tmux } from './tmux-client.js';
 
+export interface SessionIdentity {
+  sessionType: string;
+  cli: string;
+  provider: string;
+  model: string;
+}
+
 export interface SessionInfo {
   name: string;
   title: string;
@@ -19,6 +26,7 @@ export interface SessionInfo {
   control: Control;
   key: string;
   agent: string;
+  identity?: SessionIdentity;
   campaign_id: string;
   activity: number;
   /** RIREKI's dial: false when the session was born with Ronin Services off — no tape, no unlocked views. */
@@ -71,13 +79,13 @@ export async function listSessions(): Promise<SessionInfo[]> {
     const stdout = await tmux.run([
       'list-sessions',
       '-F',
-      `#{session_name}\t#{${TITLE_OPT}}\t#{session_windows}\t#{?session_attached,1,0}\t#{session_created}\t#{?${NOTE_OPT},1,0}\t#{${TAGS_OPT}}\t#{${LEAD_OPT}}\t#{@ronin-control}\t#{@ronin-key}\t#{${AGENT_OPT}}\t#{${CAMPAIGN_OPT}}\t#{${RIREKI_OPT}}\t#{window_activity}`,
+      `#{session_name}\t#{${TITLE_OPT}}\t#{session_windows}\t#{?session_attached,1,0}\t#{session_created}\t#{?${NOTE_OPT},1,0}\t#{${TAGS_OPT}}\t#{${LEAD_OPT}}\t#{@ronin-control}\t#{@ronin-key}\t#{${AGENT_OPT}}\t#{${CAMPAIGN_OPT}}\t#{${RIREKI_OPT}}\t#{window_activity}\t#{@ronin-identity}`,
     ]);
     return stdout
       .split('\n')
       .filter(Boolean)
       .map((line) => {
-        const [name, title, windows, attached, created, hasNote, tags, leads, control, key, agent, campaign, rireki, activity] = line.split('\t');
+        const [name, title, windows, attached, created, hasNote, tags, leads, control, key, agent, campaign, rireki, activity, identity] = line.split('\t');
         return {
           name,
           title: title?.trim() || '',
@@ -90,6 +98,7 @@ export async function listSessions(): Promise<SessionInfo[]> {
           control: control === 'user' || control === 'read' ? (control as Control) : 'write',
           key: key?.trim() || `${name}-${Number(created) || 0}`,
           agent: agent?.trim() || '',
+          identity: parseSessionIdentity(identity),
           campaign_id: campaign?.trim() || '',
           rireki: rireki?.trim() !== 'off',
           activity: Number(activity) || 0,
@@ -406,4 +415,17 @@ export async function setControl(name: string, control: Control): Promise<void> 
   await tmux.run(['set-option', '-t', exactPane(name), CONTROL_OPT, control]);
 }
 
-export { applyTileInput, capturePane, cleanupViewers, createViewer, deliverParcel, jumpToBottom, paneMouseState, parcelInputActions, sendRawKeys, tileInputAction } from './viewer.js';
+export { applyTileInput, capturePane, cleanupViewers, createViewer, jumpToBottom, paneMouseState, sendRawKeys, tileInputAction } from './viewer.js';
+
+/** Launch metadata, never inferred from the terminal screen or a model label. */
+export function parseSessionIdentity(raw: string | undefined): SessionIdentity | undefined {
+  try {
+    const value = JSON.parse(raw || 'null');
+    if (value && ['sessionType', 'cli', 'provider', 'model'].every((key) => typeof value[key] === 'string')) return value;
+  } catch {}
+  return undefined;
+}
+export async function setSessionIdentity(name: string, identity: SessionIdentity): Promise<void> {
+  await tmux.run(['set-option', '-t', exactPane(name), '@ronin-identity', JSON.stringify(identity)]);
+  await setLaunchStamp(name, identity.cli);
+}

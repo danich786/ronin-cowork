@@ -88,6 +88,26 @@ export function noteServiceFailure(name: string, reason: string): void {
 export function listServiceFailures(): { name: string; reason: string }[] {
   return [...serviceFailures].map(([name, reason]) => ({ name, reason }));
 }
+let serviceCapabilityPlan: { name: string; parts: string[] }[] = [];
+export function noteServiceCapabilityPlan(plan: { name: string; parts: string[] }[]): void {
+  serviceCapabilityPlan = plan.map((capability) => ({ name: capability.name, parts: [...capability.parts] }));
+}
+/** Capability-keyed runtime truth derived from the already-expanded startup plan. */
+export function listServiceCapabilities(): { known: string[]; running: string[]; partial: string[]; parked: { name: string; reason: string }[] } {
+  const loaded = new Set(serviceNames);
+  const parked = new Map([...parkedServices].map(([name, detail]) => [name, detail.reason]));
+  for (const [name, reason] of serviceFailures) parked.set(name, reason);
+  return {
+    known: serviceCapabilityPlan.map(({ name }) => name),
+    running: serviceCapabilityPlan.filter(({ parts }) => parts.every((part) => loaded.has(part))).map(({ name }) => name),
+    partial: serviceCapabilityPlan.filter(({ parts }) => parts.some((part) => loaded.has(part)) && !parts.every((part) => loaded.has(part))).map(({ name }) => name),
+    parked: serviceCapabilityPlan.flatMap(({ name, parts }) => {
+      const reason = parts.map((part) => parked.get(part))
+        .find((value) => value && !['master_off', 'component_off'].includes(value));
+      return reason ? [{ name, reason }] : [];
+    }),
+  };
+}
 export async function collectRowFields(session: string): Promise<RowFields> {
   const out: RowFields = {};
   for (const cb of rowContribs) {

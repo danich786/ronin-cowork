@@ -3,7 +3,7 @@
 > Stock SOP. Your own copy in the sops store (`ronin-store sops` → `data.md`) replaces
 > this file whole — a default, not law.
 > **Voice: relay.** Written for the agent to walk a person through, not to follow itself.
-> **Tool: `tejun-survey [path]`** — cores, RAM, disk free where the work is, and every
+> **Tool: `ronin-host inspect [path]`** — cores, RAM, disk free where the work is, and every
 > store with its size. Run it before advising; the numbers are never in this file.
 
 This covers **how a project connects to its data** — what the options are, how to choose
@@ -24,7 +24,7 @@ what the data *is*, measure what the box has, and both answers follow.
 
 ## Then measure
 
-`tejun-survey` on the directory the data would land in. What matters is not the free
+`ronin-host inspect` on the directory the data would land in. What matters is not the free
 figure but the **ratio** — what fraction of that disk is this, and what is already living
 on it? A working box also carries the session tapes, every checkout and every
 `node_modules`, and those grow without anyone deciding they should.

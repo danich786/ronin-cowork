@@ -15,7 +15,7 @@ import { request } from './request.js';
 import { guard, showFailure } from './errors.js';
 import { connectEvents, sessionsHandlers } from './events.js';
 import { membersOfTeam, refreshTeams, subscribe, teamByName, teamsFromState, UNASSIGNED, unassignedSessions } from './team-controller.js';
-import { loadMacros, loadProjects, projectData, refreshHome } from './home.js';
+import { loadProjects, projectData, refreshHome } from './home.js';
 import { buildDocs } from './docs.js';
 import { createTerminalTileHost } from './terminal-tile-host.js';
 import { makeDrop } from './tiledrop.js';
@@ -65,9 +65,9 @@ export async function buildPhone() {
   const main = root.querySelector('.ph-main');
   // The mark is in the document's own markup; tapping it is the way to the Teams list.
   const brand = bar.querySelector('.brand');
-  const feedbackAction = WorkspaceKit.primitives.createAction({ label: t('feedback.button', 'Feedback'), size: 'compact', className: 'fb-bar-action' });
-  feedbackAction.el.addEventListener('click', () => { location.hash = '#/feedback'; });
-  const barContent = (...items) => [...items, feedbackAction.el];
+  const feedbackAction = el('button', '', t('feedback.button', 'Feedback'));
+  feedbackAction.type = 'button';
+  feedbackAction.addEventListener('click', () => { location.hash = '#/feedback'; });
   const feedback = createFeedbackSurface(() => { location.hash = '#/'; });
 
   const backLink = (href) => {
@@ -76,19 +76,19 @@ export async function buildPhone() {
     back.title = t('phone.back', 'Back');
     return back;
   };
-  const teamsBar = () => bar.replaceChildren(...barContent(brand, el('span', 'ph-title', t('phone.coworks', 'Teams'))));
-  const teamBar = (team) => bar.replaceChildren(...barContent(
+  const teamsBar = () => bar.replaceChildren(brand, el('span', 'ph-title', t('phone.coworks', 'Teams')));
+  const teamBar = (team) => bar.replaceChildren(
     backLink('#/'),
     el('span', 'ph-title', teamLabel({ ...teamByName(team), name: team })),
-  ));
+  );
   // The document painted a bar for this address before any script ran (mobile.html);
   // the script's first act is to paint the same bar with its live pieces, so a stalled
   // server never shows a bare strip and nothing changes shape when the readings land.
   let route = routeFromHash();
   if (route.screen === 'teams') teamsBar();
-  else if (route.screen === 'feedback') bar.replaceChildren(...barContent(backLink('#/'), el('span', 'ph-title', t('feedback.title', 'Feedback'))));
-  else if (route.screen === 'terminal') bar.replaceChildren(...barContent(backLink(teamHash(route.team)), el('span', 'ph-title', readable(route.session))));
-  else bar.replaceChildren(...barContent(backLink('#/'), el('span', 'ph-title', '')));
+  else if (route.screen === 'feedback') bar.replaceChildren(backLink('#/'), el('span', 'ph-title', t('feedback.title', 'Feedback')));
+  else if (route.screen === 'terminal') bar.replaceChildren(backLink(teamHash(route.team)), el('span', 'ph-title', readable(route.session)));
+  else bar.replaceChildren(backLink('#/'), el('span', 'ph-title', ''));
 
   let agentsPainted = ''; // what the Agents screen last drew — identical readings skip the repaint
   let host = null; // the one terminal host, alive only on the terminal screen
@@ -179,7 +179,6 @@ export async function buildPhone() {
         method: 'POST',
         json: {
           session_type: 'cowork_agent',
-          behaviours: [],
           team: team === UNASSIGNED ? '' : team,
           instructions: words.value.trim(),
           name: name.value.trim(),
@@ -215,7 +214,7 @@ export async function buildPhone() {
     if (main.querySelector('.ph-launch-form:not([hidden])')) return;
     // And never repaint what has not moved: rebuilding identical cards detaches the node
     // under a finger mid-tap — a tap that does nothing.
-    const signature = [team, teamLabel({ ...teamByName(team), name: team })].concat(membersOfTeam(team).map((member) => [member.name, member.title, member.team_lead].join('|'))).join('\n');
+    const signature = [team, teamLabel({ ...teamByName(team), name: team })].concat(membersOfTeam(team).map((member) => [member.name, member.title].join('|'))).join('\n');
     if (signature === agentsPainted) return;
     agentsPainted = signature;
     teamBar(team);
@@ -224,7 +223,7 @@ export async function buildPhone() {
       const card = el('a', 'ph-card');
       card.href = sessionHash(team, member.name);
       const line = el('div', 'ph-card-line');
-      line.append(el('span', 'ph-card-name', (member.team_lead ? '人 ' : '') + agentLabel(member)));
+      line.append(el('span', 'ph-card-name', agentLabel(member)));
       card.append(line);
       list.append(card);
     }
@@ -266,27 +265,26 @@ export async function buildPhone() {
     main.replaceChildren(term);
     const tile = host.mount(session);
     stageTile = tile;
+    tile.composer?.el.querySelector('.keysrow')?.append(feedbackAction);
 
-    sheet = makeDrop('メ', t('phone.me_title', 'This Agent — work record, docs, macros, note, control, kill'), 'me');
+    sheet = makeDrop('メ', t('phone.me_title', 'This Agent — work record, docs, note, control, kill'), 'me');
     const node = (key) => tile[key]?.el ?? tile[key];
     sheet.addRow(node('workRecordBtn'), t('me.ladder', 'Work record'));
     sheet.addRow(node('docsBtn'), t('me.docs', 'Docs'));
-    sheet.addRow(node('tmacBtn'), t('me.macros', 'Macros'));
     // No Services, no choice: the Output row only exists where an unlocked view does.
     if (!tile.servicesOff()) sheet.addRow(node('outputEl'), t('me.output', 'Output'), 'stay');
     sheet.addRow(node('noteBtn'), t('me.note', 'Note'));
     sheet.addRow(node('dial'), t('me.control', 'Control'), 'stay');
-    sheet.addRow(node('killBtn'), t('me.kill', 'Kill session'));
+    sheet.addRow(node('killBtn'), 'Close');
 
-    // The 📄 and ⚡ menus hang off the hidden tile head; here they hang off the bar.
-    bar.replaceChildren(...barContent(
+    // The 📄 menu hangs off the hidden tile head; here it hangs off the bar.
+    bar.replaceChildren(
       backLink(teamHash(team)),
       el('span', 'ph-title', agentLabel(S.sessions.find((row) => row.name === session) || { name: session })),
       sheet.btn,
       sheet.menu,
       tile.docsBtn.menu,
-      tile.tmacBtn.menu,
-    ));
+    );
   };
   const closeTerminal = () => {
     sheet?.close();
@@ -298,7 +296,7 @@ export async function buildPhone() {
   };
 
   const paintFeedback = () => {
-    bar.replaceChildren(...barContent(backLink('#/'), el('span', 'ph-title', t('feedback.title', 'Feedback'))));
+    bar.replaceChildren(backLink('#/'), el('span', 'ph-title', t('feedback.title', 'Feedback')));
     main.replaceChildren(feedback.el);
     feedback.show?.();
   };
@@ -350,13 +348,14 @@ export async function buildPhone() {
   // Ask the operator which optional surfaces are plugged in BEFORE a tile is born, the
   // way main.js does: `stream:false` means the 🔓 views are off and every tile is 🔒.
   {
-    const v = await request('/api/version');
+    const [v, installed] = await Promise.all([request('/api/version'), request('/api/installed', { cache: 'no-store' })]);
     if (v.ok && v.data.stream === false) {
       S.streamOff = true;
       S.locked = true;
       S.output = 'locked';
     }
     if (v.ok && Array.isArray(v.data.services)) S.services = v.data.services;
+    if (installed.ok) S.installedServices = installed.data?.services || null;
   }
   // A tile address mounts its tile now: the terminal attaches by name and needs no list.
   if (route.screen === 'terminal') guard('phone paint', render);
@@ -364,7 +363,6 @@ export async function buildPhone() {
   guard('session event stream', connectEvents);
   await refreshTeams();
   guard('load projects', loadProjects); // the launch card's project_root fallback
-  guard('load macros', loadMacros); // the メ sheet's Macros row reads the same catalog the desktop ⚡ does
   guard('phone paint', render);
 }
 

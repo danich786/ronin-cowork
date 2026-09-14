@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { launchTeamAgents } from '../public/js/team-loader.js';
 
-test('the Team loader finishes ordinary rows serially and the lead last', async () => {
+test('the Team loader finishes rows serially without hidden cascade fields', async () => {
   const calls = [];
   let inFlight = 0;
   const request = async (url, options) => {
@@ -15,19 +15,25 @@ test('the Team loader finishes ordinary rows serially and the lead last', async 
   };
 
   const outcomes = await launchTeamAgents(request, 'dinner', [
-    { name: 'cook', instructions: 'cook', mandate: { reach: 'execute', recruit: 'open', output: ['an artifact'] }, team_lead: false },
-    { name: 'host', instructions: 'host', mandate: { reach: 'execute', recruit: 'staff agents', output: ['the team'] }, team_lead: true },
-    { name: 'music', instructions: 'music', mandate: { reach: 'execute', recruit: 'open', output: ['ideas'] }, team_lead: false, routines_off: ['gbrain'], routines_on: ['ronin_worktrees'] },
+    { name: 'cook', instructions: 'cook', mandate: { reach: 'execute', recruit: 'open', output: ['an artifact'] }, provider: 'openai', model: 'gpt-5' },
+    { name: 'host', instructions: 'host', mandate: { reach: 'execute', recruit: 'staff agents', output: ['the team'] } },
+    { name: 'music', instructions: 'music', mandate: { reach: 'execute', recruit: 'open', output: ['ideas'] } },
   ]);
 
-  assert.deepEqual(calls.map((call) => call.body.name), ['cook', 'music', 'host']);
+  assert.deepEqual(calls.map((call) => call.body.name), ['cook', 'host', 'music']);
+  assert.deepEqual(calls[0].body, {
+    session_type: 'cowork_agent', team: 'dinner', team_lead: false,
+    name: 'cook', instructions: 'cook',
+    mandate: { reach: 'execute', recruit: 'open', output: ['an artifact'] },
+    provider: 'openai', model: 'gpt-5',
+  }, 'the confirmed Agent mandate and model choice reach /api/launch');
   assert.equal(outcomes.length, 3);
-  assert.deepEqual(calls[2].body, {
-    session_type: 'cowork_agent', team: 'dinner', team_lead: true,
+  assert.deepEqual(calls[1].body, {
+    session_type: 'cowork_agent', team: 'dinner', team_lead: false,
     name: 'host', instructions: 'host',
     mandate: { reach: 'execute', recruit: 'staff agents', output: ['the team'] },
-  }, 'a row with no switches of its own sends no routines and inherits the team map');
-  assert.deepEqual(calls[1].body.routines, { gbrain: false, ronin_worktrees: true }, 'a row\'s own switches ride as the agent layer');
+  }, 'a row carries only its ordinary launch answers');
+  assert.equal('routines' in calls[2].body, false);
 });
 
 test('one refused launch does not stop the other rows', async () => {
@@ -37,8 +43,8 @@ test('one refused launch does not stop the other rows', async () => {
     return { ok: options.json.name !== 'refused' };
   };
   const outcomes = await launchTeamAgents(request, 'dinner', [
-    { name: 'refused', instructions: 'one', mandate: {}, team_lead: false },
-    { name: 'born', instructions: 'two', mandate: {}, team_lead: false },
+    { name: 'refused', instructions: 'one', mandate: {} },
+    { name: 'born', instructions: 'two', mandate: {} },
   ]);
   assert.deepEqual(names, ['refused', 'born']);
   assert.deepEqual(outcomes.map(({ result }) => result.ok), [false, true]);
@@ -49,7 +55,7 @@ test('a bare-metal row is placement, not birth material', async () => {
   const request = async (url, options) => { calls.push({ url, body: options.json }); return { ok: true }; };
   await launchTeamAgents(request, 'metal', [
     { session_type: 'bare_metal_agent', name: 'one', project_root: 'ronin_lab', instructions: 'Go.', provider: 'anthropic', model: 'opus' },
-    { name: 'lead', instructions: 'lead', mandate: { reach: 'execute', recruit: 'nobody', output: ['open'] }, team_lead: true },
+    { name: 'agent', instructions: 'work', mandate: { reach: 'execute', recruit: 'nobody', output: ['open'] } },
   ]);
   assert.deepEqual(calls[0].body, { session_type: 'bare_metal_agent', team: 'metal', name: 'one', project_root: 'ronin_lab', instructions: 'Go.', provider: 'anthropic', model: 'opus' });
   assert.equal(calls[1].body.session_type, 'cowork_agent');

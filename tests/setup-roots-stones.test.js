@@ -4,19 +4,23 @@ import { readFile } from 'node:fs/promises';
 
 const source = async (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
-test('Setup opts into roots stones while Campaign keeps the existing project-root surface', async () => {
-  const [setup, campaign] = await Promise.all([
+test('Setup opts into roots stones while Campaign keeps the arrangement-default-free root surface', async () => {
+  const [setup, campaign, shared] = await Promise.all([
     source('public/js/setup-surfaces.js'),
     source('public/js/campaign-view.js'),
+    source('public/js/workspace-folders-surface.js'),
   ]);
-  assert.match(setup, /buildProjectRoots\([^;]+\{ presentation: 'stones' \}\)/);
+  assert.match(setup, /createWorkspaceFoldersSurface\(\{[\s\S]*presentation: 'stones'/);
   assert.doesNotMatch(campaign, /presentation: 'stones'/);
+  assert.match(campaign, /createWorkspaceFoldersSurface\(\{/);
+  assert.doesNotMatch(campaign, /worktreesDefault/);
+  assert.match(shared, /buildProjectRoots\([\s\S]*presentation \? \{ presentation \} : \{\}/);
 });
 
 test('Setup mounts the roots stones on the surface content so the shared insets apply', async () => {
-  const setup = await source('public/js/setup-surfaces.js');
-  assert.match(setup, /buildProjectRoots\(out\.content, \(\) => out\.content\.isConnected,[^;]+\{ presentation: 'stones' \}\)/);
-  assert.doesNotMatch(setup, /'desk-pane desk-proj show'\); out\.content\.append\(host\);\s*const room = buildProjectRoots\(host/, 'a nested host zeroes the content padding and gets none of its own');
+  const shared = await source('public/js/workspace-folders-surface.js');
+  assert.match(shared, /presentation === 'stones'\s*\? surface\.content\s*: el\('div', 'desk-pane desk-proj show'\)/);
+  assert.match(shared, /connected\?\.\(rootHost\) \?\? rootHost\.isConnected/);
 });
 
 test('roots adapt the real project-root detail and Add form to the shared stone work surface', async () => {
@@ -52,7 +56,8 @@ test('the selected folder is one page: a head line with every action, then Summa
   assert.match(detail, /if \(editing === r\.name\) \{\s*const f = form\(r\);[\s\S]*?d\.append\(f\);\s*return d;\s*\}/, 'Edit swaps the facts for the real form under the same head');
   assert.match(detail, /go\.append\(edit, shelve, drop\)/, 'Edit, Archive and Exclude share the head line');
   assert.match(detail, /go\.append\(f\.querySelector\('\.pr-frow'\)\)/, 'Save and Cancel stand where Edit stood');
-  assert.match(detail, /make\('h3', 'pr-detail-name', r\.name\)/, 'the head is the handle');
+  assert.match(detail, /make\('h3', 'pr-detail-name', r\.title \|\| r\.name\)/, 'the head uses the display title with the stable ID as fallback');
+  assert.match(detail, /t\('roots\.fact_id', 'ID'\), r\.name/, 'the detail keeps the stable ID visible');
   const order = ["t('roots.edit_folder', 'Edit')", "t('roots.summary', 'Summary')", "t('roots.section_folder', 'Folder')", "t('roots.section_repository', 'Repository')"]
     .map((needle) => detail.indexOf(needle));
   assert.ok(order.every((at) => at >= 0), 'every section is present');
@@ -72,6 +77,7 @@ test('the Setup form keeps the real fields and reads as sections, while Campaign
   assert.match(roots, /document\.createElement\(stones \? 'section' : 'fieldset'\)/);
   assert.match(roots, /document\.createElement\(stones \? 'h3' : 'legend'\)/);
   assert.match(roots, /if \(stones && !creating\) handleInput\.closest\('label'\)\.hidden = true/);
+  assert.match(roots, /t\('roots\.f_title', 'display title'\)/);
   assert.match(roots, /stones \? t\('roots\.save_folder', 'Save'\) : t\('roots\.save', 'save'\)/);
   assert.match(roots, /stones \? t\('roots\.cancel_folder', 'Cancel'\) : t\('roots\.cancel', 'cancel'\)/);
   assert.match(roots, /acts\.append\(edit, shelve, drop\)/, 'the Campaign block keeps edit, archive, exclude inline');

@@ -1,0 +1,13 @@
+# Perplexity
+- **label:** Perplexity
+- **blurb:** Makes the Perplexity research behaviour available when its connection exists.
+- **effect:** provider
+- **provides:** perplexity
+- **reading:** —
+- **reading_off:** —
+- **sops:** —
+- **tools:** —
+- **parts:** —
+- **mcp:** —
+- **requires:** ronin_services
+- **order:** 40

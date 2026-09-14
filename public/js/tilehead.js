@@ -1,7 +1,6 @@
 /* part of the ronin-cowork client — see js/README.md */
 import { CONTROL_POSITIONS, makeDial, makeGauge, setInert } from './widgets.js';
 import { clampTip } from './shingo.js';
-import { buildTileMacros } from './tilemacros.js';
 import { buildTileMore } from './tilemore.js';
 import { buildTileDocs } from './tiledocs.js';
 import { buildTileMentions } from './tilementions.js';
@@ -65,17 +64,8 @@ const HEADER = () => {
   // the raw view comes back it belongs INSIDE the ladder panel, where the reader already
   // is, not as a second glyph competing with the first.
 
-  // ⚡ session_macros for THIS session: prefills the input you are typing in and stops.
-  // It never runs anything. The reference is the commons' macros tab, deliberately elsewhere.
-  { key: 'tmacBtn', needs: 'session',
-    // Normalised to the {el, …} shape every other widget returns, rather than teaching
-    // the loop a second convention for one control.
-    widget: (tile) => { const m = buildTileMacros(tile); return { el: m.btn, menu: m.menu }; },
-    help: t('macros.button_title', "Macros — drop one into this session's input"),
-    quiet: t('head.macros_quiet', 'Macros — no session in this tile yet') },
-
   // controls ended this row and the session name has to remain readable; at four tiles up
-  // there was not room for both. Three stay on top — ⛩ ⚡ メ — and the six that were
+  // there was not room for both. The remaining controls stay in メ.
   // left drop out of メ in one horizontal strip, unchanged. See tilemore.js for the
   // glyph's history (it was the Commons button here until ⛩ took that everywhere) and
   // for why this follows ⚡'s dismissal grammar rather than the retired `ui.popover`.
@@ -86,6 +76,20 @@ const HEADER = () => {
     // No hover help: the fixed help box covered the drop this button exists to reveal.
     // メ explains itself by opening; every control inside carries its own words.
     widget: () => buildTileMore() },
+
+  // Window acts sit at the outside edge. The session picker and メ remain beside them, but these
+  // two familiar marks get the corner: minus stops viewing; times opens the existing
+  // retirement sheet. Killing is not reimplemented here (and the Close shortcut
+  // path can land on the same Tile.kill boundary).
+  { key: 'killBtn', cls: 'window-control kill', text: '×', needs: 'session',
+    help: t('head.kill_help', 'Delete or archive this Agent'),
+    quiet: t('head.kill_quiet', 'Delete or archive Agent — no Agent in this workspace'),
+    on: (tile) => tile.kill() },
+
+  { key: 'minimizeBtn', cls: 'window-control minimize', text: '−', needs: 'session',
+    help: t('head.minimize_help', 'Close this view — the Agent keeps running'),
+    quiet: t('head.minimize_quiet', 'Close view — no Agent in this workspace'),
+    on: (tile) => tile.minimize() },
 
   // Hidden until there is a reading — a plain shell pane has no context, and that is fine.
   //
@@ -125,11 +129,6 @@ const HEADER = () => {
       el.classList.toggle('has-note', has);
       return has ? t('head.note_has', 'Session note (has notes)') : t('head.note_empty', 'Session note (empty)');
     } },
-
-  { key: 'killBtn', cls: 'kill', text: '🗑', drop: true, needs: 'session',
-    help: t('head.kill_help', 'Kill session (ends it + its viewers)'),
-    quiet: t('head.kill_quiet', 'Kill session — no session in this tile yet'),
-    on: (tile) => tile.kill() },
 
   ];
   return rows;

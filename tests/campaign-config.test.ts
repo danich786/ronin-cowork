@@ -26,6 +26,32 @@ test('campaign ids remain safe stable tokens', () => {
   }
 });
 
+test('a pre-installation-cascade campaign gets stock defaults without a rewrite', async () => {
+  const file = path.join(root, 'machine_settings.json');
+  const old = JSON.stringify({ campaigns: { home_machine: {
+    id: 'home_machine', title: 'Ronin Home', desk: {}, config: {
+      defaults: { behaviours: [] },
+      services: { parts: { michi: true, kanban: false, rireki: true, koe: true, koshi_weights: true } },
+    },
+  }, kanban_only: {
+    id: 'kanban_only', title: 'Kanban only', desk: {}, config: { services: { parts: { kanban: true } } },
+  }, no_capabilities: {
+    id: 'no_capabilities', title: 'Legacy defaults', desk: {}, config: {},
+  } } }, null, 2) + '\n';
+  await fs.writeFile(file, old, 'utf8');
+  const campaign = await readCampaign('home_machine');
+  assert.equal('features' in (campaign?.config.defaults ?? {}), false);
+  assert.deepEqual(campaign?.config.defaults.behaviours, ['mandates']);
+  assert.equal(campaign?.config.services.parts.task_manager, true, 'either legacy half enables the indivisible Task manager');
+  assert.equal(campaign?.config.services.parts.voice_hotwords, false, 'legacy voice never opts into the capability');
+  assert.equal(campaign?.config.services.parts.terminal_transcript, false, 'legacy recording never opts into the capability');
+  assert.equal(campaign?.config.services.parts.local_weights, false, 'legacy weights do not opt into Local weights');
+  assert.equal((await readCampaign('no_capabilities'))?.config.services.parts.local_weights, false, 'implicit legacy defaults keep Local weights off');
+  assert.equal((await readCampaign('kanban_only'))?.config.services.parts.task_manager, true, 'the other legacy half also enables Task manager');
+  assert.equal(await fs.readFile(file, 'utf8'), old, 'reading the old shape does not migrate it');
+  await fs.writeFile(file, JSON.stringify({ campaigns: {} }, null, 2) + '\n', 'utf8');
+});
+
 test('campaigns share the machine configuration document', async () => {
   const created = await createCampaign({
     id: 'alpha',
@@ -33,12 +59,42 @@ test('campaigns share the machine configuration document', async () => {
     description: 'First body of work',
     config: { cowork_defaults: { arrangement: 'two' } },
   });
+  assert.deepEqual(created.config.services.parts, {
+    task_manager: false,
+    terminal_transcript: false,
+    voice_hotwords: false,
+    usage_stats: false,
+    project_coordinator: false,
+    local_weights: false,
+  }, 'new Campaigns make all six capability defaults explicitly off');
   assert.equal((await readCampaign('alpha'))?.title, 'Alpha');
 
   await writeCampaign('alpha', { description: 'Current body of work' });
   const edited = await readCampaign('alpha');
   assert.equal(edited?.description, 'Current body of work');
   assert.deepEqual(edited?.config.cowork_defaults, { arrangement: 'two' });
+  await writeCampaign('alpha', { config: { services: { parts: { task_manager: true, voice_hotwords: false, future_capability: true } } } });
+  assert.deepEqual((await readCampaign('alpha'))?.config.services.parts, {
+    future_capability: true,
+    task_manager: true,
+    terminal_transcript: false,
+    voice_hotwords: false,
+    usage_stats: false,
+    project_coordinator: false,
+    local_weights: false,
+  });
+  await writeCampaign('alpha', { config: { services: { parts: {
+    michi: true, rireki: true, task_manager: false, usage_stats: true, future_capability: true,
+  } } } });
+  assert.deepEqual((await readCampaign('alpha'))?.config.services.parts, {
+    future_capability: true,
+    task_manager: false,
+    terminal_transcript: false,
+    voice_hotwords: false,
+    usage_stats: true,
+    project_coordinator: false,
+    local_weights: false,
+  }, 'an explicit mixed map drops raw ids, completes all six, and preserves only unknown keys');
   assert.equal(edited?.created_at, created.created_at);
 
   const document = JSON.parse(

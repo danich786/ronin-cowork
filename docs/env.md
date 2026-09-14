@@ -20,7 +20,7 @@ Copy `.env.example` to `.env` and edit; every value is optional with a sane defa
 
 | Variable | Default | What it does |
 |---|---|---|
-| `PORT` | `3006` | the port the operator listens on |
+| `PORT` | `4810` | the port the operator listens on; a fresh install records `3776` instead if `4810` is already in use |
 | `BIND` | the tailnet IP (`tailscale ip -4`) | bind address. Unset = tailnet-only, the recommended deployment; `127.0.0.1` = local only; `0.0.0.0` = all interfaces — with no auth the server **refuses to start** that way |
 | `GRID_USER` · `GRID_PASS` | unset | HTTP Basic gate, both required to enable. The owner's browser login is separate (`bin/ronin-passwd`); either satisfies the gate |
 | `RONIN_ALLOWED_ORIGINS` | unset | extra hostnames a browser may open a websocket from — only needed behind a non-Tailscale reverse proxy that rewrites `Host` |
@@ -34,7 +34,7 @@ Copy `.env.example` to `.env` and edit; every value is optional with a sane defa
 ## The secrets rules
 
 - **Values live here and nowhere else.** Settei's env scan contributes a name and a
-  boolean to the record; `tejun-secrets` prints names and has *no flag to print values*;
+  boolean to the record; `ronin-host secrets` prints names and has *no flag to print values*;
   `ronin-doctor` never sources this file.
 - **A pane inherits the service's environment**, not the shell you typed in — when they
   disagree, the pane is what counts. How a credential is supplied and audited is

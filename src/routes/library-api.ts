@@ -20,7 +20,7 @@ const errMsg = (e: unknown) => String((e as Error)?.message ?? e).replaceAll(hom
 const TOKEN = /^[a-z0-9][a-z0-9_-]{0,63}$/;
 
 /** No entitlement, no shelf — said in the three facts' own words (src/routes/installed-api.ts), never "off". */
-class ServicesOff extends Error { constructor(status: string) { super(`The template library is a Ronin Services feature. ${status} The handful of templates that ship inside Ronin stay yours either way.`); this.name = 'ServicesOff'; } }
+class ServicesOff extends Error { constructor(status: string) { super(`The template library is provided by Ronin Services. ${status} The handful of templates that ship inside Ronin stay yours either way.`); this.name = 'ServicesOff'; } }
 async function token(): Promise<string> {
   const held = await getEntitlementToken();
   if (!held) throw new ServicesOff(await servicesStatusSentence());
@@ -97,8 +97,6 @@ export function registerLibrary(app: express.Express): void {
         sops: list(req.query?.sops),
         ways: list(req.query?.ways),
         library: list(req.query?.library),
-        macros: list(req.query?.macros),
-        actions: list(req.query?.actions),
         tools: list(req.query?.tools),
       });
       const text = `${JSON.stringify(bundle, null, 2)}\n`;

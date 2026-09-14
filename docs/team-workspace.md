@@ -12,7 +12,7 @@ rulings, the measurements, the traps — is `wip/buildouts/TEAM_WORKBENCH.md`.
 ## Purpose and non-goals
 
 `#/team/:name` is the Team workbench: **two workspaces around the Team roster.** Each
-workspace holds exactly one thing — a member's full terminal Tile, or the Team commons
+workspace holds exactly one thing — a member's full terminal Tile, or the Commons
 (chat · wipeboard · docs · configuration) — and trades between them with one button in
 its header row: **C** on a Tile's head, **T** on the commons' tab strip. The three
 columns are shown, hidden and reordered from a small **layout map** in the app bar.
@@ -25,7 +25,7 @@ workspace shell, or control system. Specifically:
 - never create another transport, composer, output selector, or terminal lifecycle;
 - never infer membership from a durable roster — membership is live and session-owned;
 - never improvise a Chat protocol — Chat is reserved, empty, and inert;
-- never make Team Configuration authoritative for membership or leadership;
+- never make Configuration authoritative for membership or leadership; those live in Roster;
 - never move Kit layout, splitter, responsive, or persistence behavior into Team;
 - never replace or narrow the existing Sessions destination.
 
@@ -50,7 +50,7 @@ one on leave so no transport survives outside the entered destination.
    designated lead) left, the commons right. A remembered member the roster no longer has
    is waited for while the roster is still arriving, then let go.
 6. The roster renders one card per member and a `＋ Add Agent to Team` card. A card
-   is a **reading**: session role, 人, SHINGO chip, status (ready · thinking · awaiting
+   is a **reading**: Agent title, 人, SHINGO chip, status (ready · thinking · awaiting
    input), model, ⛽ context, attached — read off `/api/home`'s row on entry and every 5s.
 7. **Click a card** and its Tile goes into the workspace last touched (the one carrying
    the Sessions grid's `.tile.active` highlight); **drag a card** onto a workspace and it
@@ -70,13 +70,12 @@ this tab is for" — since three tabs on one team read the same. Named, the tab 
 `<name> · <team>`; empty means the default, `<team>`.
 Persistence is per browser tab (sessionStorage); one tab is one team.
 
-## The page takes instructions (`tejun-teampage`)
+## The page takes instructions (`edges page`)
 
 Everything that changes the page goes through one controller, `arrange(draft)` in
 `cowork-view.js`, built by `createArranger` (`team-arrange.js`). The C/T buttons and the
-roster cards call it — and so does a **draft** an agent hands in with `tejun-teampage`
-(`ronin_bin/`, catalogued in `ronin_catalogs/TOOLS.md`; actions `team-page-read` and
-`team-page-draft` in `ACTIONS.md`). The tool's bare form prints the view (the roster;
+roster cards call it — and so does a **draft** an agent hands in with `edges page`
+(`ronin_bin/`, catalogued in `ronin_catalogs/TOOLS.md`). The tool's bare form prints the view (the roster;
 each tab on the team; which workspace the owner is typing in; which shows the agent;
 what each holds); its other form takes `key=value` words naming only what should
 change. The wire is `src/routes/team-page-api.ts`: tabs report their view (`PUT`),
@@ -93,18 +92,33 @@ Membership is derived from each live session's `tags`. Team consumes
 does not read a roster `members` field. Membership is many-to-many and session-owned; a
 Team may exist from tags alone; removing a tag removes membership without killing the
 session. The **人** is a separate, hand-set designation (`leads`), set by the owner in three
-places, all through `POST /api/sessions/:name/team_lead`: **Team commons → Team
-Configuration**, where each member row carries **Make Lead** (the lead's reads *Team
-Lead*); the same member list on a team's profile on the Coworks page; and the **Make Team
-Lead** checkbox on **＋ Add team member**, which replaces the current lead when that Agent
-launches. There is no lead control on a Tile.
+places, all through `POST /api/sessions/:name/team_lead`: the member rows
+`team-members.js` draws — **Team commons → Roster**, where each row carries **Make Lead**
+(the lead's reads *Team Lead*), and the same rows on a team's profile on the Coworks page.
+There is no lead control on a Tile, on the launch forms, or on the Configuration tab.
 
 ### Durable Team record
 
-A `team_roster` is optional metadata: Team role, objective, project root, repositories,
-branch, wipeboard, and state. A tag-only Team is ordinary. When no durable record exists,
-Team Configuration says so rather than treating the Team as broken. Team Configuration is
-read-only.
+A `team_roster` is optional metadata: kind, title, purpose, project root,
+repositories and their branches, behaviours, and the Agent defaults. A tag-only
+Team is ordinary. When no durable record exists, Team Configuration says so rather than
+treating the Team as broken.
+
+**Team Configuration** (`public/js/team-configuration.js`) is the commons tab that edits
+that record and nothing else — never membership or the lead. It is drawn in the same format
+as New Agent and New Team (owner, 2026-09-13): the launch forms' numbered steps
+(`createStep`), the kit's labelled fields (`createField`), and ERABI at the forms' tight
+density. **Step 1 · Team** — one line holding **Team ID** (read, not edited), **Title** and
+**Kind** (squares with the shared glyphs), then **Purpose**. **Step 2 · New Agent defaults**
+— what the next Agent on this Team starts from, never the Team's own behaviour: **Where it
+works** (Born in · Additional workspaces, with a branch line for each checkout), **Model**,
+**Mandate** and **Launch mode**. Features and behaviours are not asked on this tab; the
+record keeps whatever it has. ERABI takes no foreign DOM: the entries sit beside the stones. The tab repaints only when the saved record changes —
+never on a member's status tick or a session coming and going — so an edit in progress is
+not thrown away; the Coworks page's copy of the tab keeps the same rule. **Save** PUTs the whole record to
+`/api/team-rosters/:name`; keys the tab does not draw are carried, the retired
+`agent_defaults.permissions` is not. `tests/team-configuration.test.js` is the floor;
+`scripts/smoke-ui.mjs` opens the tab and measures one stone.
 
 ## Owned files
 
@@ -114,11 +128,12 @@ read-only.
 - `public/js/team-terminal-pool.js` — one pool per workspace: warm, hot, cold, pinned,
   prewarm, cap. No renderer, cache, or socket engine.
 - `public/js/team-wipeboard.js` — the commons' roster-resolved wipeboard thread.
+- `public/js/team-configuration.js` — the Configuration tab: the record's questions as `ask()` specs, and Save.
 - `public/css/team-workspace.css` — roster header, cards, flip button, configuration.
 - `src/routes/team-page-api.ts` — the page's view and drafts; `src/ws/events.ts`
   `broadcastEvent`.
-- `ronin_bin/tejun-teampage` — the agent's tool.
-- `tests/team-terminal-pool.test.js`, `tests/team-arrange.test.js`.
+- `ronin_bin/edges page` — the agent's tool.
+- `tests/team-terminal-pool.test.js`, `tests/team-arrange.test.js`, `tests/team-configuration.test.js`.
 - `docs/team-workspace.md` — this persistent implementation and resume contract.
 
 Shared seams touched for Team, by authorization: `public/js/terminal-tile-host.js`
@@ -185,7 +200,7 @@ from what the tab remembered.
 - **Messages** — inbound session messages that have not delivered yet; safe
   retries, owner-only Force, and Dismiss share the durable queue described in
   `docs/message-queue.md`.
-- **Team Configuration** — a compact editor for the durable `team_roster`: its stable
+- **Configuration** — a compact editor for the durable `team_roster`: its stable
   Cowork ID as a reading, plus editable readable title, purpose and launch defaults. Membership remains on
   Agents and is deliberately absent from this form.
 
@@ -202,7 +217,7 @@ readable and every control — C included — stays reachable at the workspace f
 
 the layout map · `dfc627f`/`8d1758b`/`085426b` discrete workspaces, C/T, KISS ·
 `08c6813` end-to-end review · `272428c` roster readings · `4b42d44` 人 from the tile,
-keyboard · `5acb840` `tejun-teampage` · `a6819eb` the roster in its view · `041206a`
+keyboard · `5acb840` `edges page` · `a6819eb` the roster in its view · `041206a`
 `+show_file` on the team page · `02f288b` live membership seats and unseats ·
 `7c5c619` the head row and Team Configuration finished on measurement.
 
@@ -227,11 +242,11 @@ The designated integrator runs one BYOIN mode on the release candidate; a SKIP i
 - There is no Team-scoped 1/2/4 mode. Sessions retains its separate raw grid.
 - The hosted Tile keeps its global picker; switching it to a non-member is existing Tile
   behavior.
-- `src/` changes need `tejun-machine-restart` (`tsx`, no watch); `public/` is live.
+- `src/` changes need `ronin-host restart` (`tsx`, no watch); `public/` is live.
 
 ## Exact resume checklist
 
-1. Work at your repo desk (`ronin_session_boot/routine/ronin_worktrees/WORKTREES.md`); never act on
+1. Work at your repo desk (`ronin_sops/worktree-root.md`); never act on
    `master` without a fresh owner instruction.
 2. Read `wip/buildouts/TEAM_WORKBENCH.md` (HANDOFF first), this file, and `docs/workspace-kit.md`.
 3. Inspect `git status`; in a shared checkout, preserve unrelated changes.
@@ -254,6 +269,6 @@ The designated integrator runs one BYOIN mode on the release candidate; a SKIP i
 4. Click a card: its Tile lands in the highlighted workspace; drag a card onto the other:
    it lands there; the same session in both.
 5. C on a Tile: the commons trades in; T: the terminal trades back with its session.
-6. From a member's shell: `tejun-teampage` prints the view; a draft moves the page and the
+6. From a member's shell: `edges page` prints the view; a draft moves the page and the
    roster header says who.
 7. Open Sessions and exercise raw 1/2/4 layouts; confirm exactly four Tiles.

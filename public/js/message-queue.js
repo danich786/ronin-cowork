@@ -58,8 +58,6 @@ export const forceableIds = (messages, selected) => messages
   .filter((message) => selected.has(message.id) && message.state !== 'target_missing')
   .map((message) => message.id);
 
-export const AUTO_FORCE_SECONDS = 120;
-
 /** Watch independently of the queue tab; flash once when each retained problem appears. */
 export function watchMessageQueueAttention() {
   const poll = async () => {
@@ -80,57 +78,19 @@ export function watchMessageQueueAttention() {
 }
 
 export function buildMessageQueue(host, onCount = () => {}) {
-  const note = el('p', 'mq-note', t('messages.note', 'This is every retained message on this Ronin machine. Try Again is gentle; Force gives it one determined shove. 😉'));
+  const note = el('p', 'mq-note', t('messages.note', 'Messages retry every two seconds and send without preflight after two minutes. Force sends now.'));
   // Two groups. Left: choose and force. Right: dismiss. Nothing in between.
   const tools = el('div', 'mq-tools');
   const left = el('div', 'mq-tools-group');
   const right = el('div', 'mq-tools-group mq-tools-right');
   const selectAll = el('button', 'cc-btn', t('messages.select_all', 'Select All'));
   const forceSelected = el('button', 'cc-btn mq-force', t('messages.force_selected', 'Force Selected'));
-  const autoForce = el('button', 'cc-btn mq-autoforce', t('messages.auto_force_off', 'Auto-force after 2 min: off'));
   const dismissSelected = el('button', 'cc-btn', t('messages.dismiss_selected', 'Dismiss Selected'));
   const dismissAll = el('button', 'cc-btn mq-dismiss-all', t('messages.dismiss_all', 'Dismiss All'));
-  selectAll.type = forceSelected.type = autoForce.type = dismissSelected.type = dismissAll.type = 'button';
-  autoForce.setAttribute('aria-pressed', 'false');
-  left.append(selectAll, forceSelected, autoForce);
+  selectAll.type = forceSelected.type = dismissSelected.type = dismissAll.type = 'button';
+  left.append(selectAll, forceSelected);
   right.append(dismissSelected, dismissAll);
   tools.append(left, right);
-  let autoForceSeconds = AUTO_FORCE_SECONDS;
-  const paintAutoForce = () => {
-    const on = autoForceSeconds > 0;
-    autoForce.textContent = on
-      ? t('messages.auto_force_on', 'Auto-force after {minutes} min: on', { minutes: Math.max(1, Math.round(autoForceSeconds / 60)) })
-      : t('messages.auto_force_off', 'Auto-force after 2 min: off');
-    autoForce.setAttribute('aria-pressed', String(on));
-    autoForce.setAttribute('data-on', String(on));
-  };
-  const loadAutoForce = async () => {
-    try {
-      const response = await fetch('/api/machine-settings');
-      const body = await response.json();
-      autoForceSeconds = Number(body?.set?.messages?.auto_force_after_s ?? AUTO_FORCE_SECONDS) || 0;
-    } catch { autoForceSeconds = AUTO_FORCE_SECONDS; }
-    paintAutoForce();
-  };
-  autoForce.addEventListener('click', async () => {
-    const next = autoForceSeconds > 0 ? 0 : AUTO_FORCE_SECONDS;
-    autoForce.disabled = true;
-    try {
-      const response = await fetch('/api/machine-settings', {
-        method: 'PATCH', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ family: 'messages', value: { auto_force_after_s: next } }),
-      });
-      const body = await response.json();
-      if (!response.ok || body.ok === false) throw new Error(body.error || response.statusText);
-      autoForceSeconds = Number(body.auto_force_after_s ?? next) || 0;
-      paintAutoForce();
-      toast(autoForceSeconds > 0
-        ? t('messages.auto_force_set', 'Stuck messages are forced after {minutes} minutes.', { minutes: Math.round(autoForceSeconds / 60) })
-        : t('messages.auto_force_cleared', 'Stuck messages wait for you.'));
-    } catch (e) {
-      toast(t('messages.action_failed', 'Message action failed — {reason}', { reason: e.message }), false);
-    } finally { autoForce.disabled = false; }
-  });
   const board = el('div', 'mq-board');
   const empty = el('p', 'mq-empty', t('messages.empty', 'No messages are waiting.'));
   const reconnecting = status('mq-reconnecting');
@@ -296,7 +256,6 @@ export function buildMessageQueue(host, onCount = () => {}) {
   };
   let timer = null;
   const enter = () => {
-    void loadAutoForce();
     void render();
     if (!timer) timer = setInterval(() => void render(), 2_000);
   };

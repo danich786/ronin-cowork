@@ -2,6 +2,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { sessionDir, sessionKey } from './session-dir.js';
 import { tegamiPath } from './tegami.js';
+import { normalizeProject, type Project } from './projects.js';
 
 const ON_TRACK = 'on_track';
 
@@ -21,11 +22,12 @@ export interface Rung {
 export interface Tegami {
   objective: string;
   repos: { repo: string; branch: string }[];
-  at: { rung: number; leg?: number } | null;
-  session_role: string;
+  at: { project?: string; rung?: number; leg?: number } | null;
   teams: { team: string; team_role: string; objective: string }[];
   ladder_state: string;
   ladder: Rung[];
+  projects: Project[];
+  project: Project | null;
   docs: string[];
   chip: { text: string; gate: boolean };
   quietMs: number;
@@ -76,13 +78,14 @@ function normalise(raw: unknown): Rung[] {
   return out;
 }
 
-function readAt(v: unknown): { rung: number; leg?: number } | null {
+function readAt(v: unknown): { project?: string; rung?: number; leg?: number } | null {
   if (!v || typeof v !== 'object') return null;
   const o = v as Record<string, unknown>;
-  if (!Number.isInteger(o.rung)) return null;
-  return Number.isInteger(o.leg)
-    ? { rung: o.rung as number, leg: o.leg as number }
-    : { rung: o.rung as number };
+  const out: { project?: string; rung?: number; leg?: number } = {};
+  if (typeof o.project === 'string' && o.project) out.project = o.project;
+  if (Number.isInteger(o.rung)) out.rung = o.rung as number;
+  if (Number.isInteger(o.leg)) out.leg = o.leg as number;
+  return Object.keys(out).length ? out : null;
 }
 
 async function readDocs(v: unknown): Promise<string[]> {
@@ -94,13 +97,13 @@ async function readDocs(v: unknown): Promise<string[]> {
 
 function chipFor(
   ladder: Rung[],
-  at: { rung: number; leg?: number } | null,
+  at: { project?: string; rung?: number; leg?: number } | null,
   state: string,
 ): { text: string; gate: boolean } {
   if (state) return { text: `↳ ${state.replace(/_/g, ' ')}`, gate: false };
   if (!ladder.length) return { text: '—', gate: false };
 
-  if (at && at.rung >= 1 && at.rung <= ladder.length) {
+  if (at && at.rung !== undefined && at.rung >= 1 && at.rung <= ladder.length) {
     const r = ladder[at.rung - 1];
     if (r.gate !== undefined) return { text: '⛩ GATE', gate: true };
     const legs = r.legs || [];
@@ -139,6 +142,29 @@ export async function readTegami(name: string): Promise<Tegami | null> {
     const b = block as Record<string, unknown>;
     const at = readAt(b.at);
     const ladder = normalise(b.ladder);
+    const authoredProjects = Array.isArray(b.projects)
+      ? b.projects.flatMap((value) => {
+          const project = normalizeProject(value);
+          return project ? [project] : [];
+        })
+      : [];
+    const legacyProject: Project | null = authoredProjects.length || !ladder.length ? null : {
+      id: `legacy:${name}`,
+      title: String(b.objective ?? '') || 'Work record',
+      objective: String(b.objective ?? ''),
+      stage: 'BUILDING',
+      exit: ladder.some((rung) => rung.gate !== undefined) ? 'user' : 'none',
+      status: 'yellow',
+      ladder: [{
+        stage: 'BUILDING',
+        legs: ladder.flatMap((rung) => rung.gate !== undefined
+          ? [{ title: rung.gate, done: rung.status === 'DONE' }]
+          : (rung.legs || []).map((leg) => ({ title: leg.title, done: leg.status === 'DONE' }))),
+      }],
+      evidence: [],
+    };
+    const projects = legacyProject ? [legacyProject] : authoredProjects;
+    const project = projects.find((item) => item.id === at?.project) ?? projects[0] ?? null;
     const state = String(b.ladder_state ?? '').trim().toLowerCase();
     const off = state && state !== ON_TRACK ? state : '';
     return {
@@ -152,7 +178,6 @@ export async function readTegami(name: string): Promise<Tegami | null> {
               : [];
           })
         : [],
-      session_role: String(b.session_role ?? ''),
       teams: Array.isArray(b.teams)
         ? b.teams.flatMap((x) => {
             if (!x || typeof x !== 'object') return [];
@@ -165,6 +190,8 @@ export async function readTegami(name: string): Promise<Tegami | null> {
       ladder_state: off,
       at,
       ladder,
+      projects,
+      project,
       docs: await readDocs([path.join(sessionDir(key), 'README.md'), ...(Array.isArray(b.docs) ? b.docs : [])]),
       chip: chipFor(ladder, at, off),
       quietMs: Date.now() - stat.mtimeMs,

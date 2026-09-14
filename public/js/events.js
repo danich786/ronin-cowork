@@ -99,4 +99,4 @@ export function openSessionSomewhere(name) {
  * The selectors below still say "home" (they predate the name) — new code should
  * say commons; renaming them is a single tidy-up pass, not a piecemeal one.
  */
-// Shared data: one /api/home fetch feeds every visible panel; macros load once.
+// Shared data: one /api/home fetch feeds every visible panel.

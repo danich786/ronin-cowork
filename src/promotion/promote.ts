@@ -38,21 +38,30 @@ const promotedLine = (r: PromotionReceipt): string =>
  *  originator itself; nobody waits for it to percolate). */
 export async function announcePromotion(r: PromotionReceipt, primary: string, fx: Effects, log: (line: string) => void): Promise<void> {
   if (r.kind !== 'team_promotion') return;
-  await fx.notify(primary, r.team, `from promotion: ${r.id} is COMPLETE — ${promotedLine(r)}; ${r.restart ? 'restart and health passed' : 'no restart requested'}. Every desk: tejun-desk status says whether you are behind ${r.repos[0]?.target ?? 'dev'}; each contributor has been told its desk is on ${r.repos[0]?.target ?? 'dev'}.`);
+  const associated: Array<{ id: string; session: string }> = [];
+  for (const repo of r.repos) for (const id of repo.hand_in_receipts) {
+    const receipt = id.startsWith('hi_') ? await receiptById(repo.repo, id).catch(() => null) : null;
+    if (receipt?.project_id && !associated.some((item) => item.id === receipt.project_id)) associated.push({ id: receipt.project_id, session: receipt.session });
+  }
+  const projectNext = associated.map(({ id, session }) => ` Project ${id} state is unchanged; next: edges send ${session} "Promotion landed for Project ${id}. Run work-record project done ${id}."`).join('');
+  await fx.notify(primary, r.team, `from promotion: ${r.id} is COMPLETE — ${promotedLine(r)}; ${r.restart ? 'restart and health passed' : 'no restart requested'}.${projectNext} Every desk: worktree-desk status says whether you are behind ${r.repos[0]?.target ?? 'dev'}; each contributor has been told its desk is on ${r.repos[0]?.target ?? 'dev'}.`);
   if (!fx.tell) return;
   const per = new Map<string, string[]>();
+  const projects = new Map<string, Set<string>>();
   for (const repo of r.repos) {
     for (const id of repo.hand_in_receipts) {
       const receipt = id.startsWith('hi_') ? await receiptById(repo.repo, id).catch(() => null) : null;
       const session = receipt?.session;
       if (!session) continue;
+      if (receipt.project_id) projects.set(session, new Set([...(projects.get(session) ?? []), receipt.project_id]));
       const what = `${id}${receipt?.desk ? ` (${repo.repo}:${receipt.desk})` : ''} → ${repo.target}@${repo.candidate.slice(0, 7)}`;
       per.set(session, [...(per.get(session) ?? []), what]);
     }
     for (const session of repo.sessions) if (!per.has(session)) per.set(session, [`${repo.repo} → ${repo.target}@${repo.candidate.slice(0, 7)}`]);
   }
   for (const [session, items] of per) {
-    const text = `from promotion: your hand-in is on ${r.repos[0]?.target ?? 'dev'} — ${items.join('; ')} [${r.id}]. Your desk is finished and certified clean: stay parked for more work, or go with tejun-harakiri — the desk ends with you, never before you.`;
+    const next = [...(projects.get(session) ?? [])].map((id) => ` Project ${id} state is unchanged. Next: work-record project done ${id}.`).join('');
+    const text = `from promotion: your hand-in is on ${r.repos[0]?.target ?? 'dev'} — ${items.join('; ')} [${r.id}].${next} Your desk is finished and certified clean: stay parked for more work, or go with session_end — the desk ends with you, never before you.`;
     try {
       log(`  told  ${session}: ${await fx.tell(session, text)}`);
     } catch (e) {

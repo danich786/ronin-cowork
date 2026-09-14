@@ -27,7 +27,9 @@
     "verify": "tsc --noEmit && node scripts/check-tests.mjs",
     "verify:staging": "node scripts/smoke-ui.mjs --staging",
     "check:tips": "node scripts/check-tips.mjs",
-    "kokugo:table": "node scripts/kokugo-table.mjs"
+    "kokugo:table": "node scripts/kokugo-table.mjs",
+    "prestart": "tsx scripts/prepare-dev-services.ts",
+    "predev": "tsx scripts/prepare-dev-services.ts"
   },
   "dependencies": {
     "@lydell/node-pty": "1.2.0-beta.12",

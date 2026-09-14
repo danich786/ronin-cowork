@@ -3,7 +3,8 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { storeDir } from './resources.js';
 import type { Origin } from './resources.js';
-import { renderGlossary, renderSessionMacrosReading } from './birth-readme.js';
+import { renderGlossary } from './birth-readme.js';
+import { CAPABILITIES_READING, renderCapabilitiesOverview, resolveCapabilities } from './capabilities.js';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const STOCK = path.join(ROOT, 'ronin_session_boot');
@@ -45,7 +46,7 @@ async function levelDirs(base: string, origin: Origin): Promise<LevelDir[]> {
     }
   };
   await add('all', path.join(base, 'all'));
-  for (const prefix of ['root', 'role', 'routine']) {
+  for (const prefix of ['root', 'routine', 'house']) {
     for (const item of await realDirectories(path.join(base, prefix), prefix)) out.push({ ...item, origin });
   }
   let top;
@@ -96,11 +97,17 @@ export async function listSessionReadings(): Promise<SessionReadingRow[]> {
       rows.set(row.name, { ...row, shadowed: row.origin === 'user' && prior?.origin === 'stock' });
     }
   }
-  rows.set('all/SESSION_MACROS.md', {
-    name: 'all/SESSION_MACROS.md',
-    label: 'SESSION_MACROS.md',
-    blurb: 'all · generated from the live macro catalog',
-    content: await renderSessionMacrosReading(),
+  // The tool overview as the fullest birth would render it: every capability document in
+  // the folder as if selected, so the listing shows what each bundle teaches. A real birth
+  // selects by its own launch facts and names only the tools it projected.
+  rows.set(`all/${CAPABILITIES_READING}`, {
+    name: `all/${CAPABILITIES_READING}`,
+    label: CAPABILITIES_READING,
+    blurb: 'all · generated at birth from the selected capability documents',
+    content: renderCapabilitiesOverview(await resolveCapabilities({
+      arrangement: 'managed', installations: new Set(), behaviours: new Set(),
+      connected: true, campaign: true, team: true, lead: true, everything: true,
+    })),
     level: 'all',
     origin: 'stock',
     shadowed: false,

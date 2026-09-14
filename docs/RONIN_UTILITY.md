@@ -31,7 +31,7 @@ arrangement per page. The three scopes differ only in what the column offers:
 
 | Workbench | Address | The column lists |
 |---|---|---|
-| **Campaign discovery workbench** | Machine Settings | the Campaign's own surfaces: configuration, project roots, Team roster, templates, Routines and Installs, Model providers |
+| **Campaign discovery workbench** | Machine Settings | the Campaign's own surfaces: configuration, project roots, Team roster, templates, Installations, Defaults, Model providers |
 | **Cowork workbench** | Coworks | every Team in the Cowork, then the sessions on no team |
 | **Team workbench** | a Team's page (`#/team/<name>`) | this Team's commons card and its members |
 | **Setup workbench** | Machine Settings / Ronin Setup | Presets pinned in workspace 1; Register, providers, folders, Services, gbrain, and Templates select into workspace 2 |
@@ -39,14 +39,14 @@ arrangement per page. The three scopes differ only in what the column offers:
 | Surface | What it is for |
 |---|---|
 | **terminal tile** | one Agent: its live terminal, composer, Output selector, Control dial, work record |
-| **team commons** | this team: **Docs** (what agents listed, plans, docs by project root) · **Wipeboard** · **Messages** · **Team Configuration** (the team's Routines, kit, launch defaults) |
+| **Commons** | this team: **Roster** (members, membership, and Agent actions) · **Docs** (what agents listed, plans, docs by project root) · **Wipeboard** · **Messages** · **Cron jobs** · **Configuration** (the team's behaviours and launch defaults) |
 | **cowork commons** (⚙) | this install and owner: usage stats · **Account** (Configuration · Appearance · Release & update · Hotwords · Koshi · gbrain · Log out) · Desk profile · Project roots · Archived · Help desk · Keypad |
-| **campaign commons** | the Campaign: Campaign · Project roots · Team roster · Templates · **Routines and Installs** (what is on the machine, and the switchboard that fills new teams) · **Model providers** (the same surface Ronin Setup opens: every provider and model Ronin offers — tier, cost, good at, not good at — and, per provider, install, sign-in and activation here) |
+| **campaign commons** | the Campaign: Campaign · Project roots · Team roster · Templates · **Installations** (what is on the machine, on or off) · **Defaults** (the behaviours new teams start from) · **Model providers** (the same surface Ronin Setup opens: every provider and model Ronin offers — tier, cost, good at, not good at — and, per provider, install, sign-in and activation here) |
 | **new session** | the launcher, placed by か New or ＋ Add team member; the newborn lands in that workspace |
 
 **Where to send the owner:** teams → the **Coworks** door · settings, account, look, updates
-→ **⚙ → Account** · which Routines a team runs → **Team Configuration**; for new teams, the
-Campaign's **Routines and Installs** · which models exist, what they cost and which this box can launch → the Campaign's **Model providers** · project roots and templates → the campaign commons · a fuller new
+→ **⚙ → Account** · which behaviours a team has → **Commons → Configuration**; for new teams, the
+Campaign's **Defaults** · which models exist, what they cost and which this box can launch → the Campaign's **Model providers** · project roots and templates → the campaign commons · a fuller new
 Agent or Team → **New Project** on the landing · a quick session → **か New**.
 
 ## The tile head — the buttons, left to right
@@ -57,7 +57,6 @@ Agent or Team → **New Project** on the landing · a quick session → **か Ne
 | **View Work Record** | the Agent's own account: repositories, current action, the ladder |
 | **Output** | which view this tile shows — **Locked** is the live terminal; the record-fed views (Terminal Mirror, Detailed, Condensed, Cherry Pick, Agent Summary) arrive with Ronin Services and are absent on the free build |
 | **@** | mention another session — picks a name into the message box |
-| **⚡** | this session's macros: pick one and `+name:` lands in the input for the owner to finish. A macro marked **⏎** is a `send:` macro — it is typed and sent at once, then rests 120 seconds on that tile |
 | **メ** | the drop: the rest of the head, in one strip — **⛽** context gauge (how full the session's context window is, read off its own status line; hidden until there is a reading) · **🎛** Control dial (**👤** owner only · **👁** outside agents may watch · **🤖** outside agents may type; only the owner turns it) · **📄** this Agent's tracked docs, opened over the tile · **📝** session note · **🗑** kill the session and its viewers |
 
 ## Locked and Unlocked
@@ -81,8 +80,8 @@ paste. They arrive with Ronin Services; a locked tile is not "broken" when they 
 - **Pasting** goes into **the composer**, the box under the tile: Enter sends, Shift+Enter
   (Option+Enter on a Mac) makes a new line, the mic dictates into it, ✕ clears it. It is
   separate from the terminal's own input: a message reaches the session even when the tile
-  is scrolled up, and the box clears only once the session has taken it; otherwise the text
-  stays with the reason above it, never sent twice. On touch, the **Keys** row beside it
+  is scrolled up, and the box clears only once Ronin has accepted it; otherwise the text
+  stays with the reason above it. On touch, the **Keys** row beside it
   sends what a keyboard would — Esc · ^C · ⌫ · ^U · ⇧Tab · the arrows — straight through.
 
 ## Feedback

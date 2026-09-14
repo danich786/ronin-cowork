@@ -171,41 +171,157 @@ Use one of these recovery paths with the owner's approval:
 
 ## 4. Create the ordinary Ronin account
 
-Root is bootstrap and recovery only. Ask the owner for the Unix account name, update the
-base system, create that account, grant sudo, and copy root's authorized keys to it:
+Root is bootstrap and recovery only. Ask the owner for the Unix account name and update
+the base system first:
 
 ```bash
 apt update
 apt upgrade -y
+```
+
+If the upgrade requires a reboot, keep provider-console recovery available, reboot, and
+prove root SSH access again before making any other change.
+
+For a new account only, create it, grant sudo, and install root's authorized-key file
+with the correct ownership and modes:
+
+```bash
 adduser <account>
 usermod -aG sudo <account>
 install -d -m 700 -o <account> -g <account> /home/<account>/.ssh
 install -m 600 -o <account> -g <account> /root/.ssh/authorized_keys /home/<account>/.ssh/authorized_keys
 ```
 
-`adduser` asks the owner to set a password. Do not invent, retain, or repeat it. Keep the
-first root connection open while testing a new terminal:
+`adduser` asks the owner to set a password. Do not invent, retain, or repeat it.
+
+For an existing account, do **not** run that block: replacing `authorized_keys` can remove
+access the owner already relies on. Inspect the account, home, sudo membership, and key
+fingerprints without printing key material:
 
 ```bash
-ssh -i <private-key-path> <account>@<server-ip>
-whoami
-sudo -v
+id <account>
+getent passwd <account>
+stat -c '%U:%G %a %n' /home/<account> /home/<account>/.ssh /home/<account>/.ssh/authorized_keys
+getent group sudo
+ssh-keygen -lf /home/<account>/.ssh/authorized_keys
+ssh-keygen -lf /root/.ssh/authorized_keys
 ```
 
-Continue only after direct key login and sudo both work. All agent authentication, tmux
-sessions, and Ronin files belong to this ordinary account—not root.
+The selected key file must contain only the public `.pub` key the owner chose. Transfer
+that public file from the owner's computer to a named temporary path on the VM, or use a
+VM-side file whose fingerprint the owner has positively matched. Compare its fingerprint
+with the source fingerprint before using it; do not treat root's whole `authorized_keys`
+file as one selected key because it may contain several keys.
+
+If the fingerprints show that the selected public key is missing, append only its nonblank
+public-key lines without replacing any existing entries. Establish safe ownership and
+mode before the first append so an interrupted command cannot leave SSH rejecting the
+account:
+
+```bash
+install -d -m 700 -o <account> -g <account> /home/<account>/.ssh
+touch /home/<account>/.ssh/authorized_keys
+chown <account>:<account> /home/<account>/.ssh/authorized_keys
+chmod 600 /home/<account>/.ssh/authorized_keys
+ssh-keygen -lf <selected-public-key-file>   # owner compares with the source fingerprint
+while IFS= read -r key; do
+  [ -n "$key" ] || continue
+  grep -qxF "$key" /home/<account>/.ssh/authorized_keys || printf '%s\n' "$key" >> /home/<account>/.ssh/authorized_keys
+done < <selected-public-key-file>
+ssh-keygen -lf /home/<account>/.ssh/authorized_keys
+```
+
+`<selected-public-key-file>` must contain public-key lines only. Never print or copy a
+private key.
+
+Keep the first root connection and provider-console recovery available while testing a
+new terminal. Before connecting through a local SSH alias, show what it resolves to:
+
+```bash
+ssh -G <public-alias> | sed -n '/^user /p;/^hostname /p'
+```
+
+Require `user` to equal `<account>` and `hostname` to equal the recorded public address.
+Then test the account and sudo:
+
+```bash
+ssh <public-alias>
+whoami
+sudo whoami
+```
+
+Continue only after direct key login prints `<account>` and `sudo whoami` prints `root`.
+All agent authentication, tmux sessions, and Ronin files belong to this ordinary
+account—not root.
+
+Enable linger so Ronin's user services survive logout:
+
+```bash
+sudo loginctl enable-linger <account>
+loginctl show-user <account> --property=Linger --value   # expect: yes
+```
+
+Cloud images commonly have no swap. Check first. Empty `swapon --show` output proves only
+that no swap is active, so also require that `/swapfile` does not exist and `/etc/fstab`
+has no `/swapfile` entry. If either guard fails, stop and inspect instead of overwriting or
+duplicating it. Only after all three checks pass, create the documented 4 GB swapfile and
+make it survive reboot:
+
+```bash
+swapon --show
+test ! -e /swapfile
+! grep -Eq '^[[:space:]]*/swapfile[[:space:]]' /etc/fstab
+sudo bash -c 'fallocate -l 4G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile && echo "/swapfile none swap sw 0 0" >> /etc/fstab'
+swapon --show   # expect: /swapfile
+grep -Ec '^[[:space:]]*/swapfile[[:space:]]' /etc/fstab   # expect: 1
+```
 
 ## 5. Establish private access
 
 Install Tailscale on the owner's computer and the VM using the current
-[official instructions](https://tailscale.com/kb/1347/installation). The owner signs both
-devices into the same tailnet. Prove the route from the owner's computer before relying on
-it:
+[official instructions](https://tailscale.com/kb/1347/installation). Install and sign in
+on the owner's computer first. Confirm it is the intended tailnet and ask whether its
+devices and users are all intended to reach Ronin: by default Ronin has no password, so
+the tailnet and its access rules are the security boundary.
+
+With the owner's approval, run the current official Linux convenience installer on the
+VM, then sign it into that same tailnet with the chosen hostname. Re-check the linked
+official instructions rather than assuming this embedded command remains current:
+
+```bash
+curl -fsSL https://tailscale.com/install.sh | sh
+tailscale up --hostname=<vm-name>
+tailscale ip -4   # require an address before running Ronin setup.sh
+```
+
+The owner opens the login URL printed by `tailscale up` and authorizes the VM. On the
+owner's computer, obtain the VM's exact device name and MagicDNS FQDN from Tailscale; do
+not construct or guess it. Prove the private route and require a successful direct path
+with latency plausible for the chosen region:
 
 ```bash
 tailscale status
-tailscale ping <vm-tailnet-name-or-ip>
+tailscale ping <exact-vm-magicdns-fqdn>
+ssh -G -l <account> <exact-vm-magicdns-fqdn> | sed -n '/^user /p;/^hostname /p'
+ssh -o HostName=<exact-vm-magicdns-fqdn> <account>@<exact-vm-magicdns-fqdn>
 ```
+
+An existing SSH `Host` alias with an explicit `HostName` overrides DNS, even when the
+command includes `<account>@`. The FQDN command above is therefore the end-to-end
+MagicDNS proof only after `ssh -G` reports `<account>` and leaves `hostname` equal to the
+exact FQDN; the explicit `-o HostName` prevents a matching wildcard from redirecting the
+test. After it succeeds, add a separate private alias rather than changing the public
+recovery alias:
+
+```sshconfig
+Host <vm-name>-tailnet
+    HostName <exact-vm-magicdns-fqdn>
+    User <account>
+```
+
+Keep the public-address alias and provider-console recovery available until both the
+public SSH and tailnet SSH proofs pass and any later firewall changes are themselves
+verified.
 
 Do not open Ronin's application port to the public internet. Keep provider-console and
 public-SSH recovery working until the owner has accepted the Tailscale path. Firewall
@@ -236,6 +352,8 @@ Before handing the VM to the Ronin installer, report:
 - Ubuntu version and hostname;
 - ordinary account name;
 - successful direct SSH and sudo checks;
+- linger enabled and verified as `yes`;
+- swap present, including whether the 4 GB swapfile was created;
 - successful Tailscale reachability check;
 - provider-console recovery location;
 - agent CLI available on the VM.

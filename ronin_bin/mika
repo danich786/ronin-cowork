@@ -1,51 +1,23 @@
 #!/usr/bin/env bash
 # mika — hand a request to the house assistant. Spawn her if she is not up.
 #
-# Usage: mika <job> [request...]     job = system_help | project_root | new_session |
-#                                          system_config | session_boot
-#        mika "<request...>"         no job named -> system_help, which is her default
+# Usage: mika "<request...>"         ask the house assistant in plain words
 #        mika                        just get her up (or tell you she already is)
 #
-# ALIASES: `include` and `exclude` both mean `project_root`. They are what the owner
-# actually says and what the ▣ tab's button is labelled, and a router that only answers
-# to the catalog's own spelling makes the owner learn a second name for one act.
-#
-# THE ONE ROUTING PATH, and deliberately the only one. An invocation from this file's
-# catalog (ronin_catalogs/MIKA_MACROS.md) may be typed anywhere — the phone compose bar,
-# a pad key, or straight into a pane on a Mac where Ronin cannot see it. Rather than one
-# mechanism for the paths Ronin watches and a fallback for the ones it does not, there is
-# this: correct everywhere, including in a pane. Interception at send time would be pure
-# speed and can be added later without changing anything here.
-#
-# IF YOU ARE AN AGENT AND A `+project_root:` LANDS IN YOUR PANE: you do not perform it.
-# Run this, say where it went, and get on with your own work. That is what stops one
-# catalog being edited by nine agents with nine ideas about it.
+# THE ONE ROUTING PATH, and deliberately the only one. A request may be typed in any
+# projected shell. Mika receives plain language and uses only her constrained tools.
 #
 # SHE IS A SINGLETON. One session named `mika_agent`; the second request finds the first. Two
 # of her editing PROJECT_ROOTS.md is a real bug, and unlike a ladder marker a catalog
 # write is not recomputed next turn.
 #
 # Nothing here knows how a session is made or how text reaches a pane — Ronin does both,
-# through the same endpoints the UI uses. Same rule as tejun-harakiri: one implementation
+# through the same endpoints the UI uses. Same rule as session_end: one implementation
 # of the dangerous thing, never a second copy in bash that drifts from it.
 set -u
 . "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"
 TOOL_DIR=$(dirname "$SELF")
 
-JOBS="system_help project_root new_session system_config session_boot"
-
-job="${1:-system_help}"
-# The words the owner uses for the project_root job, mapped before the lookup.
-case "$job" in
-  include|exclude|include:|exclude:) job=project_root ;;
-  shelve|shelf|boot)                 job=session_boot ;;
-esac
-case " $JOBS " in
-  *" $job "*) shift || true ;;
-  # No job named: the whole line is a question, and questions are system_help. Her
-  # default is help, not a refusal — see MIKA_MACROS.md.
-  *) job="system_help" ;;
-esac
 request="$*"
 
 . "$TOOL_DIR/ronin-http.sh"
@@ -57,11 +29,10 @@ api() { curl -sS -m 20 "${RONIN_CURL[@]+"${RONIN_CURL[@]}"}" "$@" 2>/dev/null; }
 # JSON string escaping, for a request that will contain quotes and newlines.
 esc() { printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/\t/\\t/g' | awk '{printf "%s%s", sep, $0; sep="\\n"}'; }
 
-# What she is being asked, as she will read it. The job name is carried in the text
-# rather than as a field: her catalog is what turns it into work, so the invocation IS
-# the message, and it reads the same whether she was just born or has been up an hour.
-msg="+${job}: ${request}"
-[ -n "$request" ] || msg="+${job}:"
+# The invocation is the message, and it reads the same whether she was just born or has
+# been up an hour. Her selected tools, not a vocabulary prefix, determine her authority.
+msg="$request"
+[ -n "$msg" ] || msg="Help me with Ronin."
 
 # Is she up? Ask tmux, not Ronin — she is reachable whether or not Ronin is running, and
 # the send below goes to the pane either way.
@@ -73,7 +44,7 @@ if tmux has-session -t mika_agent 2>/dev/null; then
   # suggested reply at the prompt — the kind you press Tab to accept — in dim text, and
   # there is almost always one sitting there. A check that could not tell dim from typed
   # would refuse every send forever.
-  exec "$TOOL_DIR/tejun-send" mika_agent "$msg"
+  exec "$TOOL_DIR/edges" send mika_agent "$msg"
 fi
 
 # Not up. Her dedicated server door owns the house-only birth mechanics.

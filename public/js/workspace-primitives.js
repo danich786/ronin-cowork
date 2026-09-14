@@ -45,6 +45,19 @@ function createSurface(options = {}) {
   return { el, header, content, controls, collapse, setState: (kind, message) => setSurfaceState(el, kind, message) };
 }
 
+/** The one thing behind every Workbench surface: a quiet place, not another workflow. */
+function createBlankSurface(label = t('team.workspace_blank', 'Workspace')) {
+  const surface = createSurface({ label, className: 'wk-blank-surface' });
+  const mark = node('div', 'tile-empty-mark');
+  mark.setAttribute('aria-hidden', 'true');
+  const logo = node('img');
+  logo.src = 'brand/nin-mark.svg';
+  logo.alt = '';
+  mark.append(logo);
+  surface.content.append(mark);
+  return surface;
+}
+
 export function createSurfaceHeader(options = {}) {
   const el = node('header', 'wk-surface-header');
   const title = node('span', 'wk-surface-header-title', options.label ?? '');
@@ -147,6 +160,7 @@ function createChannelSurface(options = {}) {
     chat: t('workspace.channel_chat', 'Chat'),
     wipeboard: t('workspace.channel_wipeboard', 'Wipeboard'),
     docs: t('workspace.channel_docs', 'Docs'),
+    kanban: t('workspace.channel_task_manager', 'Task Manager'),
     'team-configuration': t('workspace.channel_team_configuration', 'Team Configuration'),
   });
   const channels = Array.isArray(options.channels) && options.channels.length
@@ -469,6 +483,7 @@ export const WorkspacePrimitives = Object.freeze({
   createTabName,
   setSurfaceState,
   createSurface,
+  createBlankSurface,
   createSurfaceHeader,
   createCard,
   createAction,

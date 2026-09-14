@@ -17,10 +17,10 @@ await fs.writeFile(path.join(process.env.RONIN_CONFIG_DIR, 'machine_settings.jso
     home_machine: {
       title: 'Home', state: 'active', created_at: '2026-01-01T00:00:00.000Z',
       config: {
-        agent_defaults: {
+        installations: {},
+        defaults: {
           provider: 'openai', model: 'gpt-test', reach: 'execute', recruit: 'nobody', output: ['code'],
-          routines: { ronin_base: true, ronin_worktrees: true, ronin_services: false },
-          behaviours: ['ways:careful'], dial: 'read', launch_mode: 'configured', gbrain_mode: 'disconnected',
+          behaviours: ['gbrain', 'mandates'], dial: 'read', launch_mode: 'configured',
         },
         cowork_defaults: { project_root: 'ronin_cowork', repos: ['ronin_cowork'], branch: 'dev' },
       },
@@ -28,10 +28,12 @@ await fs.writeFile(path.join(process.env.RONIN_CONFIG_DIR, 'machine_settings.jso
   },
 }));
 const { registerTeams } = await import('../src/routes/teams-api.js');
+const { registerLaunch } = await import('../src/routes/launch.js');
 
 const app = express();
 app.use(express.json());
 registerTeams(app);
+registerLaunch(app);
 const server: Server = createServer(app);
 await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
 const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
@@ -48,12 +50,10 @@ test('POST /api/team-rosters creates a Team from its name alone', async () => {
   assert.equal(body.roster.project_root, 'ronin_cowork');
   assert.deepEqual(body.roster.repos, ['ronin_cowork']);
   assert.equal(body.roster.branch, 'dev');
-  assert.equal((body.roster.routines as Record<string, boolean>).ronin_base, true);
-  assert.equal((body.roster.routines as Record<string, boolean>).ronin_worktrees, true);
-  assert.deepEqual(body.roster.behaviours, { books: ['ways:careful'], required: false });
+  assert.deepEqual(body.roster.behaviours, { selected: ['gbrain', 'mandates'], required: [] });
   assert.deepEqual(body.roster.agent_defaults, {
     provider: 'openai', model: 'gpt-test', reach: 'execute', recruit: 'nobody', output: ['code'],
-    dial: 'read', launch_mode: 'configured', gbrain_mode: 'disconnected',
+    dial: 'read', launch_mode: 'configured',
   });
 });
 
@@ -67,7 +67,7 @@ test('PUT /api/team creates with Campaign defaults, then omission on update pres
   assert.equal(first.roster.project_root, 'ronin_cowork');
   assert.deepEqual(first.roster.repos, ['ronin_cowork']);
   assert.equal(first.roster.branch, 'dev');
-  assert.equal(first.roster.routines.ronin_base, true);
+  assert.deepEqual(first.roster.behaviours.selected, ['gbrain', 'mandates']);
   assert.equal(first.roster.agent_defaults.model, 'gpt-test');
 
   const updated = await fetch(`${base}/api/team`, {
@@ -80,36 +80,53 @@ test('PUT /api/team creates with Campaign defaults, then omission on update pres
   assert.equal(second.roster.project_root, 'ronin_cowork');
   assert.deepEqual(second.roster.repos, ['ronin_cowork']);
   assert.equal(second.roster.branch, 'dev');
-  assert.equal(second.roster.routines.ronin_base, true);
+  assert.deepEqual(second.roster.behaviours.selected, ['gbrain', 'mandates']);
   assert.equal(second.roster.agent_defaults.model, 'gpt-test');
 });
 
 test('PUT /api/team reapplies Campaign defaults to an existing Team only when explicitly requested', async () => {
   const response = await fetch(`${base}/api/team`, {
     method: 'PUT', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ name: 'tool_team', campaign_defaults: true, routines: { ronin_services: true } }),
+    body: JSON.stringify({ name: 'tool_team', campaign_defaults: true, behaviours: { selected: ['ronin_host'], required: [] } }),
   });
   assert.equal(response.status, 200);
   const body = await response.json() as { created: boolean; roster: Record<string, any> };
   assert.equal(body.created, false);
-  assert.equal(body.roster.routines.ronin_base, true);
-  assert.equal(body.roster.routines.ronin_worktrees, true);
-  assert.equal(body.roster.routines.ronin_services, true, 'an explicit override remains final');
+  assert.deepEqual(body.roster.behaviours.selected, ['ronin_host'], 'an explicit choice remains final');
   assert.equal(body.roster.agent_defaults.model, 'gpt-test');
 });
 
 test('POST /api/team-rosters overlays explicit choices on Campaign defaults', async () => {
   const response = await fetch(`${base}/api/team-rosters`, {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({
-      name: 'overlaid', routines: { ronin_worktrees: false }, agent_defaults: { reach: 'discuss' },
+      name: 'overlaid', behaviours: { selected: ['ronin_host'], required: [] }, agent_defaults: { reach: 'discuss' },
     }),
   });
   assert.equal(response.status, 200);
   const body = await response.json() as { roster: Record<string, any> };
-  assert.equal(body.roster.routines.ronin_base, true);
-  assert.equal(body.roster.routines.ronin_worktrees, false);
+  assert.deepEqual(body.roster.behaviours.selected, ['ronin_host']);
   assert.equal(body.roster.agent_defaults.reach, 'discuss');
   assert.equal(body.roster.agent_defaults.model, 'gpt-test');
+});
+
+test('the seed door reads this Team\'s pre-cut behaviour shape as stock Mandates', async () => {
+  const file = path.join(process.env.RONIN_TEAM_ROSTERS_DIR!, 'home_machine', 'installation-cascade.md');
+  await fs.mkdir(path.dirname(file), { recursive: true });
+  const raw = [
+    '# installation-cascade',
+    '- **title:** Installation Cascade',
+    '- **kind:** coding',
+    '- **behaviours:** {"books":[],"required":false}',
+    '- **agent_defaults:** {}',
+    '',
+  ].join('\n');
+  await fs.writeFile(file, raw, 'utf8');
+  const response = await fetch(`${base}/api/launch-seed?team=installation-cascade`);
+  assert.equal(response.status, 200);
+  const seed = await response.json() as { seeds: { behaviours: { value: string[] } }; behaviours: Array<{ name: string; on: boolean }> };
+  assert.deepEqual(seed.seeds.behaviours.value, ['mandates']);
+  assert.equal(seed.behaviours.find((row) => row.name === 'mandates')?.on, true);
+  assert.equal(await fs.readFile(file, 'utf8'), raw, 'the seed read performs no migration');
 });
 
 test.after(async () => {

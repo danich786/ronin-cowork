@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { setupDefaultView } from '../public/js/campaign-home.js';
 import { workspaceHeaderScope } from '../public/js/workspace-header.js';
+import { WORKSPACE_STATE_KEY, seedReservedWorkspaceTab } from '../public/js/workspace.js';
 
 const source = async (path) => readFile(new URL(`../public/${path}`, import.meta.url), 'utf8');
 
@@ -30,8 +31,8 @@ test('Setup and Settings share the machine-settings island without a right heade
   assert.doesNotMatch(html, /id="viewname"/);
   assert.match(main, /nameSlot: document\.getElementById\('viewplace'\)/);
   assert.match(header, /workspace\.navigate\(setup \? 'campaign' : 'setup'\)/);
-  assert.match(header, /Ronin Setup/);
-  assert.match(header, /Ronin Settings/);
+  assert.match(header, /'Setup'/);
+  assert.match(header, /'Settings'/);
 });
 
 test('phone Setup workspaces keep one common viewport height for stone rail scrolling', async () => {
@@ -61,8 +62,26 @@ test('launch actions reuse the nin mark, never the Team Roster torii, and open t
   // An Agent added from inside a Team workbench takes the workspace its form is on, in
   // this tab (Glen, 2026-09-08); the launch mark is the same.
   assert.match(add, /launch: true/);
-  assert.match(add, /if \(!deskNote && !leadNote\) connect\?\.\(born\);/);
+  assert.match(add, /if \(!deskNote\) connect\?\.\(born\);/);
+  assert.doesNotMatch(add, /leadNote|team_lead|leadership/);
   assert.doesNotMatch(add, /openWorkspaceTab|reserveWorkspaceTab/);
+});
+
+test('a newly raised Team tab drops the opener tab name before navigation', async () => {
+  const stored = new Map([[WORKSPACE_STATE_KEY, JSON.stringify({
+    version: 3,
+    views: { team: { tabName: 'dynamic island provider', count: 2 } },
+  })]]);
+  const tab = { sessionStorage: {
+    getItem: (key) => stored.get(key) ?? null,
+    setItem: (key, value) => stored.set(key, value),
+  } };
+
+  assert.equal(seedReservedWorkspaceTab(tab, 'team', { tabName: '' }), true);
+  assert.deepEqual(JSON.parse(stored.get(WORKSPACE_STATE_KEY)).views.team, { tabName: '', count: 2 });
+
+  const form = await source('js/new-team-form.js');
+  assert.match(form, /seedReservedWorkspaceTab\(launchTab, 'team', \{ tabName: '' \}\);\s*openWorkspaceTab\('team', name, launchTab\);/);
 });
 
 test('edited Cowork and Team workbench labels become the exact tab title', async () => {
@@ -71,8 +90,41 @@ test('edited Cowork and Team workbench labels become the exact tab title', async
   ]);
   assert.match(cowork, /return name \? \{ bare: name \} : fallback/);
   assert.match(cowork, /patchViewState\(viewKey, \{ tabName:/);
-  assert.match(cowork, /get: \(\) => ctx\?\.viewState\(viewKey\)\?\.tabName[\s\S]*campaign \? t\('campaign\.coworks', 'Teams'\) : readableTeam\(team\)/);
+  assert.match(cowork, /get: \(\) => ctx\?\.viewState\(viewKey\)\?\.tabName[\s\S]*campaign \? coworkIdentity\.tabLabel : readableTeam\(team\)/);
   assert.match(kit, /\.ui-bar-place \.wk-tab-name \{[^}]*background: transparent;[^}]*color: inherit;/);
+});
+
+test('Cowork Team and Team Agent cards toggle between names-only and the full reading', async () => {
+  const [view, css] = await Promise.all([
+    readFile(new URL('../public/js/cowork-view.js', import.meta.url), 'utf8'),
+    readFile(new URL('../public/css/team-workspace.css', import.meta.url), 'utf8'),
+  ]);
+  assert.match(view, /\[campaign \? 'teamCardDensity' : 'agentCardDensity'\]: thinSelectorCards \? 'thin' : 'thick'/);
+  assert.match(view, /let thinSelectorCards = true;/);
+  assert.match(view, /context\.viewState\(viewKey\)\?\.\[campaign \? 'teamCardDensity' : 'agentCardDensity'\] !== 'thick'/);
+  assert.match(view, /mark: member\.team_lead \? '人' : null,[\s\S]*thinSelectorCards \? \{\} : \{ summary: reading\.step, metadata: reading\.lines \}/,
+    'the lead mark remains while names-only mode removes the rest of the reading');
+  assert.match(view, /thinSelectorCards \? \{\} : \{ summary: item\.objective \|\| '' \}/);
+  assert.match(view, /dataset\.lines = thinSelectorCards \? 'two' : 'one'/);
+  assert.match(view, /host\.dataset\.selectorDensity = thinSelectorCards \? 'thin' : 'thick'/);
+  assert.match(view, /actions: \[densityToggle\.el, rosterNote, mikaHelp\]/);
+  assert.match(css, /\.selector-card-thin\s*\{[^}]*padding:/s);
+  assert.match(css, /\.wk-workbench-host\[data-selector-density='thin'\] \.wk-workbench-selector-cards > \.wk-card \.wk-card-summary/);
+});
+
+test('Campaign Settings and Setup selectors default to names-only and remember expansion', async () => {
+  const [campaign, setup] = await Promise.all([
+    source('js/campaign-view.js'), source('js/setup-view.js'),
+  ]);
+  for (const view of [campaign, setup]) {
+    assert.match(view, /let thinSelectorCards = true;/);
+    assert.match(view, /selectorDensity: thinSelectorCards \? 'thin' : 'thick'/);
+    assert.match(view, /thinSelectorCards = stored\.selectorDensity !== 'thick'/);
+    assert.match(view, /host\.dataset\.selectorDensity = thinSelectorCards \? 'thin' : 'thick'/);
+  }
+  assert.match(campaign, /actions: \[densityToggle, mikaHelp\]/);
+  assert.match(setup, /actions: \[mikaHelp\]/);
+  assert.match(setup, /barActions: \[densityToggle, surfaceToggle, themeToggle\]/);
 });
 
 test('the existing workbench can pin a Setup workspace and aim selector cards at the selected work surface', async () => {
@@ -119,7 +171,8 @@ test('the fourth Setup workbench registers real lane surfaces in ruled order', a
   assert.match(setup, /environment\.setupRuntime = runtime\.ok \? runtime\.data : \{ providers: \[\] \};[\s\S]*bench\.refreshSelector\(\);[\s\S]*const stored/);
   assert.doesNotMatch(setup, /SetupRequirement|requirementState|flashCycle/);
   assert.match(setup, /SETUP_SURFACE_TYPES\.providers, SETUP_SURFACE_TYPES\.register, SETUP_SURFACE_TYPES\.roots/);
-  assert.match(setup, /SETUP_SURFACE_TYPES\.services, SETUP_SURFACE_TYPES\.gbrain, SETUP_SURFACE_TYPES\.launchOwn/);
+  assert.match(setup, /SETUP_SURFACE_TYPES\.installations, SETUP_SURFACE_TYPES\.launchOwn/);
+  assert.doesNotMatch(setup, /SETUP_SURFACE_TYPES\.(?:services|gbrain)/);
   assert.doesNotMatch(setup, /SETUP_SURFACE_TYPES\.templates/);
   const providers = await source('js/provider-surface.js');
   assert.match(providers, /context\.workbench\?\.profile === 'setup'[\s\S]*\['workspace1', 'selector'\][\s\S]*\(activatedNow === 0\) !== context\.workbench\.arrangement\.state\(\)\.hidden\.includes\(slot\)[\s\S]*arrangement\.toggle\(slot\)/);
@@ -140,7 +193,7 @@ test('Setup adds only Help to its selector header and keeps appearance in the to
   assert.match(setup, /actions: \[mikaHelp\]/);
   // Light/dark is a bar action: built by Setup, seated by the ViewHost in the bar's one
   // actions slot at the right, pinning the device theme through theme.js and nothing else.
-  assert.match(setup, /barActions: \[surfaceToggle, themeToggle\]/);
+  assert.match(setup, /barActions: \[densityToggle, surfaceToggle, themeToggle\]/);
   assert.match(setup, /barButton\('setup-theme-toggle'\)/);
   assert.match(setup, /barButton\('setup-surface-toggle'\)/);
   assert.match(setup, /saveCampaign\(id, \{ desk: \{ \[field\]: /);

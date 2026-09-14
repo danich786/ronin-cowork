@@ -243,7 +243,7 @@ next to a predicate that stops it costing anything while its surface is hidden.
 |---|---|---|
 | session set (`S.sessions`) | `reconcileSessions` (`api.js`) — the only writer | boot fetch (`main.js`) · `/events` push (`events.js`, which also owns births/deaths/chips) · visibilitychange + bfcache `pageshow` (`layout.js`) · post-mutation `fetchSessions()` calls |
 | roster/status data (`homeData`) | `refreshHome` (`home.js`) — inflight-guarded, fault-keeping | 8s poll while a home pane is visible (`layout.js`) · visibilitychange · every `showHome` · post-mutation refreshes |
-| catalogs (macros, projects, presets, saved launches) | their `load*` in `home.js` | boot, and the two panes that edit them re-load after a write |
+| catalogs (projects, presets, saved launches) | their `load*` in `home.js` | boot, and the panes that edit them re-load after a write |
 | per-tile readings (ctx, tegami, control) | the tile's own `refresh*` | 30s poll for visible connected tiles (`layout.js`) · connect · post-write re-read |
 | pane data (wipeboard, docs list, roots, koshi, stats) | the pane module | its own gated poll (2s/2s/15s) or `enter()` — each owner is the file the surface lives in |
 | tile bytes | `TileWire` (`tilewire.js`) | the socket; reconnect/backoff lives there and nowhere else |
@@ -286,10 +286,9 @@ a `destroy()` owner at that moment, not speculatively.
   than being hand-rolled at the call site for the fourth time.
   **Weighed again the same day and still not restored.** メ on the tile header now drops
   the six controls that used to end the row (`public/js/tilemore.js`, docs/tile.md); it
-  follows ⚡'s grammar, and the reason is mechanical rather than taste. The drops that
-  hang off a tile header close each other with a `.open` **class** sweep — ⚡'s own, and
-  the phone's — while `popover()` hid with the `hidden` **attribute**, so a drop no sweep
-  can see would open on top of the macro menu six pixels to its left. Restoring the
+  follows the adjacent header-menu grammar, and the reason is mechanical rather than
+  taste. The drops that hang off a tile header close each other with a `.open` **class**
+  sweep, while `popover()` hid with the `hidden` **attribute**. Restoring the
   primitive for one of two adjacent header dropdowns and not the other would be a third
   convention, not a shared one. What that call site DOES carry is the half of `popover()`
   that was about access: `aria-haspopup` / `aria-expanded` on the opener, and focus back
@@ -402,8 +401,7 @@ words go and the width goes with them (a genuine shell change, so a `@media` que
   over the cards underneath (owner: *"its dumb to have the hover description covering the
   button description"*). Where the text is still worth keeping it moves to `aria-label`,
   never back to `title` — `tips.js` takes over any `title` it finds, so a title **is** a
-  pop-up here by definition. The macro invocation (`+name:`) lives there now; it stays off
-  the face by the earlier ruling and out of a box by this one.
+  pop-up here by definition.
 - **The Commons room tabs carry no hover help at all**. A tab's label
   already says what its room is, so a panel restating it in a sentence was cost with no
   reader — and it was landing over the strip it described. The registry's `hint` column
@@ -496,3 +494,79 @@ unfinished — it is finished and unproven, which is a different thing. The gap 
 restart and one press, not more code. If that first attempt fails, fix what it shows you;
 the shape above is deliberate and every choice in it has its reason recorded either here
 or in `src/passkey.ts`'s head comment.
+
+
+## Asking a question — ERABI, `ask()`, is the one selector
+
+Every place a form asks the owner to pick from a set of answers is drawn by
+`public/js/ask.js`, from a spec, and by nothing else. The ruling and the builder contract are
+ronin-lab `SELECTORS.md` (owner, 2026-09-12); the live benches that led to it are the lab's
+`concepts/selectors.html`. This is the minute an agent needs before adding a question.
+
+**The rule.** A field is a **reading stone** — 140 × 48 px, label over answer — that opens a
+**tray** of stones under its group in one of two fixed shapes: the **square** (85 px, a glyph
+and a ruled word) or the **rectangle** (140 × 48, a name and one short word). A stone carries
+a name, never a sentence; the **caption** line under the tray carries the sentence, the
+facts, and the reason a stone is greyed. A **switch** is the reading stone with a track. Fields
+sit in named **groups** that keep together and stack as a group; nothing stretches with the
+surface. Names break at their joints (`_` `-` `.`), never mid-word.
+
+```js
+import { ask } from './ask.js';
+const form = ask([
+  { group: t('new_agent.model_package', 'Model'), fields: [
+    { key: 'provider', label: t('forms.provider', 'model provider'), blank: t('forms.default', 'default'), options: () => providerRows() },
+    { key: 'model', label: t('forms.model', 'model'), blank: t('forms.default', 'default'), after: 'provider', options: (v) => modelRows(v.provider) },
+  ] },
+  { group: t('mandate', 'Mandate'), fields: [
+    { key: 'reach', label: t('reach', 'Reach'), shape: 'square', options: REACH_ROWS },
+    { key: 'output', label: t('output', 'Output'), shape: 'square', many: true, options: OUTPUT_ROWS },
+  ] },
+  { group: t('squad', 'Team'), fields: [{ key: 'lead', label: t('team.lead', 'Team lead'), switch: [t('yes', 'Yes'), t('no', 'No')] }] },
+], { value: draft, onChange: (value, key) => { Object.assign(draft, value); paintFoot(); } });
+host.append(form.el);   // form.value() · form.set(key, v) or set({…}) · form.options(key, rows) · form.show([keys]) or show(null) · form.open(key) · form.close()
+```
+
+| Spec key | Meaning |
+|---|---|
+| `group` · `fields` | a named group and the fields it keeps together |
+| — | a stone never repeats its group head: the head carries the question (a sentence), the stone's label a noun ("Register as", "Feature"); a field whose label equals its head is drawn with the label "Answer" |
+| `key` · `label` | the answer's name in the value; the label over the stone, through `t()` |
+| `options` | rows `{ v, l, sub?, off?, glyph?, word? }` or a function of the current value — `sub` reads in the caption, `off` is why the stone is greyed (disabled, never hidden), `glyph` sits on a square, `word` is the rectangle's short line (tier, worktree) |
+| `blank` | the empty answer's word, drawn as a stone; omit it and there is no blank |
+| `many` | any-of: the tray stays open; the reading says the names or "n chosen" |
+| `switch` | `[onWord, offWord]`: the field is a switch and opens nothing |
+| `shape` | `square` for a ruled word with a glyph, `rect` (default) for a name; the glyph comes from `glyphs.js` (`ruledRows(axis, values, word)`), never an inline list, so one word wears one face product-wide |
+| `density` | on the call: `'tight'` for the launch forms (less line spacing inside a group, a 40 px stone; the questions are optional and stay out of the owner's face), `'loose'` (default) for the commons where the question is the page's subject; widths never change |
+| `show(keys)` | on the returned form: draw only these fields (a session type decides which questions exist — a Terminal asks only where it is born); `show(null)` draws all; hidden answers are kept, not cleared |
+| `trayHost` | on the call: a wrapping row the consumer owns (flex-wrap or grid) holding this instance beside other controls; the open tray is placed at the end of that row so it spans the row's full width — a Team question on the right of Name still opens across the whole workspace |
+| `required` · `invalid` | on an option beside its `row`: `required: true` makes the line refuse every dismissal of its tray (the stone, a press outside, Escape, `close()`) while the control is blank; `invalid: (option, value) → '' \| message` adds the consumer's own rule. Refused, the tray stays open, the control is focused and marked `aria-invalid`, and the message (default `t('forms.required')`) is announced in the line's live text; typing clears it. Choosing another layer-one answer still dismisses: the requirement belongs to the answer, not the tray |
+| `then` | a second layer: `[{ when, key, label, options, many?, blank? }]` — nested questions, each revealed by the parent answer named in `when`; picking that answer keeps the tray open and draws the nested stones beneath the first layer, answering them closes it, the reading says the nested answer, and any other parent answer clears it. A nested question is a field in `value()`, `set()` and `onChange`, never a stone of its own. An option may also carry its own `row` (a control shown under the group when it is chosen) |
+| `after` | the field this depends on; the answer clears and the options are re-asked when it changes |
+| `row` | `(option, value) → node`: a control that belongs to a chosen option (a branch name, a new team's name), drawn as a full-width line in the tray beneath the stones — for a one-of after the click that chose it, for a many for every chosen option while the tray is open. A group holds stones and nothing else, so its geometry never changes; the consumer keeps the typed value and rebinds it when `row()` is asked again |
+
+**Shapes, as ruled.** Reach, recruit and output are icon-free rectangles (owner, 2026-09-13).
+A square with a glyph is used only where the glyph means something on its own — kind, and the
+Control positions — and the glyph comes from `glyphs.js`.
+
+**Beside a foreign control.** A form that wants one question next to a control that is not a
+question (New Agent's Name beside Team and Team lead) makes two `ask()` instances — the Team
+package, and the rest — and lays them out in its own flex row; both call the same `onChange`.
+Team and Team lead are one group in one instance, so they move below Name as a pair when the
+row narrows. The utility has no slot for foreign DOM and gains none.
+
+**The commons' Configuration tab** is the first commons consumer, drawn in the launch forms'
+own format: two numbered steps — Team (ID · Title · Kind, then Purpose) and New Agent
+defaults (the groups) — at the forms' tight density. Its text entries are the kit's, beside
+the stones, not inside them. Contract and file list: `docs/team-workspace.md` § Durable Team record.
+
+**What is not an `ask()`.** The stone work surface (`stone-work-surface.js`) is a page for
+browsing a collection whose item is the content — Presets, Workspace Folders, Model
+providers, Templates — and stays. Tabs, the Presets kind filter, the Control dial and the
+2 ⇄ 4 button are not selections from a list. The tile head's Output and @ selects move to
+`ask()` in a later wave that honours the head's own `.open` sweep.
+
+**What enforces it.** `tests/ask.test.js` is the unit floor. The consumer guard — failing a
+hand-drawn `select`, `Option`, checkbox or `aria-pressed` row outside `ask.js`, the tile head
+and the stone work surface — lands with the launch-form migration, once those forms no
+longer draw their own (the first consumer is New Agent).

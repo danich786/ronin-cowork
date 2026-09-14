@@ -19,7 +19,7 @@ test('Mika home is a private stable store outside project-root selection', async
   assert.equal((await stat(mikaStartHerePath())).mode & 0o777, 0o444);
   const starter = await readFile(mikaStartHerePath(), 'utf8');
   assert.match(starter, /What do you want to do with Ronin—build software, get assistance, do research, coordinate a team, or something else\?/);
-  assert.match(starter, /one-time Setup task, not a change to your general Ronin-helper role/);
+  assert.match(starter, /one-time Setup task/);
   for (const id of ['bare_metal', 'ronin_team', 'staff_my_codebase', 'develop_new_project', 'personal_assistant', 'health_and_fitness', 'morning_brief', 'agent_editable_doc']) assert.match(starter, new RegExp(`\\b${id}\\b`));
   delete process.env.RONIN_MIKA_HOME_DIR;
 });
@@ -76,7 +76,8 @@ test('a ronin_helper start creates its ordinary Team idempotently', async () => 
 
 test('Mika joins her team without the wipeboard join notice', async () => {
   const launch = await readFile(new URL('../src/routes/launch.ts', import.meta.url), 'utf8');
-  assert.match(launch, /if \(houseSeat !== 'mika'\) await announceTeamChanges\(resolved\.name, \[\], resolved\.tags\)/);
+  assert.match(launch, /resolved\.session_type === 'cowork_agent' && houseSeat !== 'mika'/);
+  assert.match(launch, /await announceTeamChanges\(resolved\.name, \[\], resolved\.tags\)/);
 });
 
 test('a fresh helper launch creates its full Team roster before the tagged session birth', async () => {
@@ -115,27 +116,31 @@ test('Mika birth stays visible through the ordinary session Docs record', async 
   assert.match(tegami, /path\.join\(sessionDir\(key\), 'README\.md'\)/);
 });
 
-test('fresh Mika projection exposes exactly lookup, owner_view, and show', async () => {
+test('fresh Mika projection adds constrained settings and separately granted session creation', async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'ronin-mika-tools-'));
   process.env.RONIN_SESSION_COMMANDS_DIR = path.join(root, 'commands');
   const projected = await projectRoutineTools('mika', [], '/usr/local/bin:/usr/bin:/bin', {
     includeTmux: false,
-    extraTools: ['lookup', 'owner_view', 'show'],
+    extraTools: ['lookup', 'owner_view', 'show', 'machine-settings', 'session_create'],
   });
-  assert.deepEqual((await readdir(projected.dir)).sort(), ['lookup', 'owner_view', 'show']);
-  assert.deepEqual(projected.delivered.sort(), ['lookup', 'owner_view', 'show']);
+  assert.deepEqual((await readdir(projected.dir)).sort(), ['lookup', 'machine-settings', 'owner_view', 'session_create', 'show']);
+  assert.deepEqual(projected.delivered.sort(), ['lookup', 'machine-settings', 'owner_view', 'session_create', 'show']);
   assert.deepEqual(projected.missing, []);
   assert.equal(projected.path, `${projected.dir}:/usr/local/bin:/usr/bin:/bin`, 'her tools first, then a shell she can actually run; nothing of Ronin\'s own bin');
   delete process.env.RONIN_SESSION_COMMANDS_DIR;
 });
 
-test('the cold launch projects exactly her three tools over a working system PATH', async () => {
+test('the cold launch projects exactly her five constrained tools with settings authority', async () => {
   const launch = await readFile(new URL('../src/routes/launch.ts', import.meta.url), 'utf8');
-  assert.match(launch, /const MIKA_TOOLS = \['lookup', 'owner_view', 'show'\] as const/);
+  const declaration = launch.match(/const MIKA_TOOLS = \[([^\]]+)\] as const/);
+  assert.ok(declaration, 'Mika has one explicit projected-tool set');
+  assert.deepEqual([...declaration[1].matchAll(/'([^']+)'/g)].map((match) => match[1]),
+    ['lookup', 'owner_view', 'show', 'machine-settings', 'session_create']);
   assert.match(launch, /const MIKA_PARENT_PATH = '\/usr\/local\/bin:\/usr\/bin:\/bin'/);
   assert.match(launch, /houseSeat === 'mika' \? MIKA_PARENT_PATH : undefined/);
   assert.match(launch, /includeTmux: false, extraTools: \[\.\.\.MIKA_TOOLS\]/);
-  assert.match(launch, /houseSeat === 'mika'\),/);
+  assert.match(launch, /env: houseSeat === 'mika'[\s\S]*RONIN_MACHINE_SETTINGS_AUTHORITY: 'mika',[\s\S]*: birthEnv/,
+    'only the Mika house-seat launch receives typed settings proposal authority');
 });
 
 test("the owner's tips come from their session-boot shadow when one exists, else the shipped file", async () => {

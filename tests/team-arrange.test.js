@@ -21,6 +21,7 @@ test('columns: order, hidden, shown, roster=hidden, hidden=none', () => {
   assert.deepEqual(parseDraft(['hidden=roster,workspace2']).draft, { hidden: ['roster', 'workspace2'] });
   assert.deepEqual(parseDraft(['hidden=none']).draft, { shown: ['workspace1', 'roster', 'workspace2'] });
   assert.deepEqual(parseDraft(['workspace1=commons:config']).draft.workspace1, { commons: true, tab: 'team-configuration', doc: '' });
+  assert.deepEqual(parseDraft(['workspace2=commons:kanban']).draft.workspace2, { commons: true, tab: 'kanban', doc: '' });
   assert.deepEqual(parseDraft(['workspace1=terminal', 'workspace2=empty']).draft, { workspace1: { terminal: true }, workspace2: { empty: true } });
 });
 

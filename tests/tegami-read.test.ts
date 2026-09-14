@@ -34,7 +34,6 @@ test('a missing letter reads as null, not an error', async () => {
 test('the seeded newborn shape parses: gate active, chip says held', async () => {
   await writeLetter('tegami-read-born', `{
     "objective": "prove the reader",
-    "session_role": "CheckWork",
     "teams": [],
     "ladder": [
       { "gate": "go / no-go — read the brief, report back, wait", "status": "ACTIVE" }
@@ -43,7 +42,6 @@ test('the seeded newborn shape parses: gate active, chip says held', async () =>
   assert.ok(t);
   assert.equal(t.chip.text, '⛩ GATE');
   assert.equal(t.chip.gate, true);
-  assert.equal(t.session_role, 'CheckWork');
 });
 
 test('the pointer wins over inference, and legs render as position not score', async () => {
@@ -106,4 +104,27 @@ test('an unfenced bare object still parses — an agent that drops the fence kee
   assert.equal(t.objective, 'no fence');
   assert.equal(t.ladder.length, 1, 'a loose leg folds into an implicit phase');
   assert.equal(t.ladder[0].legs?.[0].title, 'loose leg');
+});
+
+test("today's bare ladder reads as one Building project without rewriting the letter", async () => {
+  await writeLetter('tegami-read-legacy-project', `{
+    "objective": "keep old work visible",
+    "ladder": [ { "gate": "review", "status": "ACTIVE" } ] }`);
+  const t = await readTegami('tegami-read-legacy-project');
+  assert.ok(t);
+  assert.equal(t.projects.length, 1);
+  assert.deepEqual(t.project, {
+    id: 'legacy:tegami-read-legacy-project', title: 'keep old work visible', objective: 'keep old work visible',
+    stage: 'BUILDING', exit: 'user', status: 'yellow',
+    ladder: [{ stage: 'BUILDING', legs: [{ title: 'review', done: false }] }], evidence: [],
+  });
+});
+
+test('the project named by the position marker is the tile project', async () => {
+  const one = JSON.stringify({ id: 'team/1', title: 'one', objective: '', stage: 'PLANNING', exit: 'user', status: 'yellow', ladder: [], evidence: [] });
+  const two = JSON.stringify({ id: 'team/2', title: 'two', objective: '', stage: 'BUILDING', exit: 'agent', status: 'green', ladder: [], evidence: [] });
+  await writeLetter('tegami-read-project-at', `{ "at": { "project": "team/2" }, "projects": [${one},${two}], "ladder": [] }`);
+  const t = await readTegami('tegami-read-project-at');
+  assert.ok(t);
+  assert.equal(t.project?.id, 'team/2');
 });

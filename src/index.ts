@@ -46,6 +46,7 @@ import { registerJikan, startHouseJikan } from './routes/jikan-api.js';
 import { registerInstalled } from './routes/installed-api.js';
 import { registerVersion } from './routes/version.js';
 import { registerWipeboards } from './routes/wipeboards-api.js';
+import { registerTerminalControls } from './terminal-controls.js';
 import { registerMessages } from './routes/messages-api.js';
 import { registerCli } from './routes/cli-api.js';
 import { startMessageQueue } from './message-queue.js';
@@ -56,10 +57,10 @@ import { handlePty } from './ws/pty.js';
 import { originAllowed, allowedOrigins } from './ws/origin.js';
 import { DocumentPathError, legacyDocumentPath, readDocumentFile, saveDocumentFile } from './document-file.js';
 import { checkTmuxServerCgroup } from './host-guard.js';
-import { sockets, startBootHooks, stopBootHooks, mountServiceRoutes, noteService, noteServiceFailure, noteServiceParked } from './sockets.js';
+import { sockets, startBootHooks, stopBootHooks, mountServiceRoutes, noteService, noteServiceCapabilityPlan, noteServiceFailure, noteServiceParked } from './sockets.js';
 import { discoverParts, partsToLoad } from './parts.js';
 import { initialCampaign } from './campaigns.js';
-import { listRoutines } from './resource-adapters.js';
+import { listInstallations } from './resource-adapters.js';
 import type { ServiceRegistration } from './sockets-contract.js';
 import { resourceRequestCache } from './resources.js';
 import { compressResponse } from './http-performance.js';
@@ -217,14 +218,14 @@ app.get('/api/health', (_req, res) =>
 registerPasskeyManage(app); // /api/passkey/{list,register-options,register,remove} — BEHIND the gate on purpose
 registerLaunch(app); // /api/launch (both variants), /api/sessions, /api/home, session-max, owner — src/routes/launch.ts
 registerMikaContext(app); // /api/mika/context/:tab — tiny tab-scoped owner_view/show seam
-registerCatalogs(app); // /api/macros, /api/hotwords*, /api/project-roots*, /api/provider-catalog, /api/role-families*, /api/session-roles, /api/team-roles, /api/launch-profile — src/routes/catalogs.ts
+registerCatalogs(app); // catalogs and configuration resources — src/routes/catalogs.ts
 registerDocs(app); // /api/docs?shelf=plans|docs — the ▧ Docs tab's shelves — src/routes/docs-api.ts
 registerTeams(app); // /api/team-rosters* — the durable half of every team — src/routes/teams-api.ts
 registerDesks(app); // /api/sessions/:name/desks, /api/teams/:name/desks — derived desk state, the control surface's visible half — src/routes/desks-api.ts
 registerTeamPage(app); // /api/teams/:team/page — the team page's view, and drafts an agent hands it — src/routes/team-page-api.ts
 registerVersion(app); // /api/version — release string, or the commit this process started from — src/routes/version.ts
 registerUpdate(app); // /api/update/* — the ⚙ gear's check + run, press-only — src/routes/update-api.ts
-registerMachineRestart(app); // /api/machine/restart — the Setup Services Restart press; answers, then runs tejun-machine-restart — src/routes/machine-restart-api.ts
+registerMachineRestart(app); // /api/machine/restart — the Setup Services Restart press; answers, then runs ronin-host restart — src/routes/machine-restart-api.ts
 registerLibrary(app); // /api/library* — the template library: index and bundles off the site on a press, install into the owner's stores — src/routes/library-api.ts
 registerMachineSettings(app); // /api/machine-settings — the install record, and writes BY NAME only — src/routes/machine-settings-api.ts
 registerCampaigns(app); // /api/campaigns* — the durable record of each body of work — src/routes/campaigns-api.ts
@@ -248,14 +249,17 @@ const services: ServiceRegistration[] = [];
 // The parts on disk are the install; the Campaign's Routine switches say which of them run.
 // A part claimed by a Routine that is off is parked: not imported, no timers, no routes,
 // no recorder — as if not installed, files in place (src/parts.ts). Read once, at start.
+const startupCampaign = await initialCampaign().catch(() => null);
 const plan = partsToLoad(
   discoverParts(),
-  await listRoutines().catch(() => []),
-  (await initialCampaign().catch(() => null))?.config?.agent_defaults?.routines ?? {},
+  await listInstallations().catch(() => []),
+  startupCampaign?.config?.installations ?? {},
+  startupCampaign?.config?.services?.parts ?? {},
 );
+noteServiceCapabilityPlan(plan.capabilities);
 for (const parked of plan.parked) {
-  console.log(`[services] ${parked.name} is parked: ${parked.reason ?? `${parked.routine} is off for this Campaign (restart after switching it on)`}`);
-  noteServiceParked(parked.name, parked.routine, parked.reason);
+  console.log(`[services] ${parked.name} is parked: ${parked.reason ?? `${parked.installation} is off for this Campaign (restart after switching it on)`}`);
+  noteServiceParked(parked.name, parked.installation, parked.reason);
 }
 for (const { name: dir, entry } of plan.load) {
   try {
@@ -277,6 +281,7 @@ void resumeInstallWatch();
 
 registerSessions(app); // per-session: kill/harakiri, meta, dials, ctx, tegami, send — src/routes/sessions-api.ts
 registerWipeboards(app); // /api/wipeboards* — src/routes/wipeboards-api.ts
+registerTerminalControls(app);
 registerMessages(app); // /api/messages* — durable inbound session delivery
 registerCli(app); // /api/cli/:tool — command-line faces of operator verbs
 startMessageQueue();

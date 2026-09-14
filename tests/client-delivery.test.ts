@@ -18,4 +18,5 @@ test('the complete main module graph is preloaded', () => {
   };
   visit('js/main.js');
   assert.equal(preloads.size, seen.size, 'index.html has stale modulepreloads');
+  assert.deepEqual([...preloads], [...seen].sort(), 'modulepreloads follow the canonical generated inventory order');
 });

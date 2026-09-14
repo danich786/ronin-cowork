@@ -1,43 +1,37 @@
 /* part of the ronin-cowork client — see js/README.md */
 import { request } from './request.js';
 import { t } from './lexicon.js';
-import { createWhereItWorks } from './where-it-works.js';
+import { ask } from './ask.js';
+import { ruledRows } from './glyphs.js';
 import { finalizeTeamName, isValidTeamName, sanitizeTeamName } from './new-team-draft.js';
 import { conflictingAgentNames } from './new-team-check.js';
 import { agentPicks, agentRow, createAgentRows } from './team-agents.js';
 import { launchTeamAgents } from './team-loader.js';
 import {
-  createStep, dialRowMulti, el, kindTiles, mandateSelect, providerModelPair, readingRows, tagRow, templateTray, wayTiles, bookShelves,
+  createStep, el, mandateWord, providerCatalog, readingRows, tagRow, templateTray, tierWord,
 } from './form-steps.js';
-import { closeWorkspaceTab, openWorkspaceTab, reserveWorkspaceTab } from './workspace.js';
+import { closeWorkspaceTab, openWorkspaceTab, reserveWorkspaceTab, seedReservedWorkspaceTab } from './workspace.js';
 
 const REACH = ['open', 'discuss', 'plan', 'execute'];
 const RECRUIT = ['open', 'nobody', 'propose agents', 'staff agents'];
 const OUTPUT = ['open', 'a plan', 'ideas', 'code', 'an artifact', 'the team', 'no code'];
-const DIALS = ['user', 'read', 'write'];
 const KINDS = ['coding', 'work', 'personal', 'household', 'social', 'school'];
 
-export function createNewTeamFormView(kit, { created = null, embedded = false } = {}) {
+export function createNewTeamFormView(kit, { created = null, consumed = null, embedded = false } = {}) {
   const { createSurface, createAction, createActionBar, createField, createNotice } = kit.primitives;
 
   const draft = {
     template: '', templateName: '', title: '',
-    name: '', kind: 'coding', objective: '',
+    name: '', kind: 'open', objective: '',
     root: '', repos: [], branches: {},
     provider: '', model: '', reach: 'open', recruit: 'open', output: ['open'],
-    dial: 'write',
-    routines: {}, books: [], launchMode: 'live_dangerously',
-    // The Agents this Team is raised with; the lead is a mark on one of them, not a seat.
+    books: [], launchMode: 'configured',
+    // The Agents this Team is raised with.
     agents: [],
     expanded: {},
   };
   let seed = null;          // the campaign's answers, once the door has spoken
-  let seedRoutines = {};    // the map as it landed — provenance's baseline
-  let handRoutines = new Set();
   let templates = [];
-  let routineRows = [];
-  let sops = [];
-  let ways = [];
   let roots = [];
   let snapshot = '';        // what the applied template wrote, for the dirty test
   let busy = false;
@@ -65,12 +59,29 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
 
   const templateRow = () => templates.find((row) => row.name === draft.template) || null;
   const offered = () => (draft.kind === 'open' ? templates : templates.filter((row) => row.kinds.includes(draft.kind)));
-  const routineOn = (name) => draft.routines[name] === true;
-  const onNames = () => routineRows.filter((row) => routineOn(row.name)).map((row) => row.name);
+  const availableBehaviours = () => (seed?.behaviours || []).filter((row) => row.available === true);
+  const providerRows = () => providerCatalog().rows
+    .filter((row, at, all) => all.findIndex((other) => other.provider === row.provider) === at)
+    .map((row) => {
+      const unavailable = row.operational ? '' : row.off
+        ? t('forms.reason_turned_off', 'turned off')
+        : t('forms.reason_not_on_machine', 'not on this machine');
+      return { v: row.provider, l: row.cli_label || row.provider_label || row.provider, off: unavailable || undefined };
+    });
+  const modelRows = (provider) => providerCatalog().rows.filter((row) => row.provider === provider).map((row) => ({
+    v: row.model, l: row.model, word: tierWord(row.tier), sub: row.cost || '',
+    off: !row.operational
+      ? (row.off ? t('forms.reason_turned_off', 'turned off') : t('forms.reason_not_on_machine', 'not on this machine'))
+      : row.model_list_current && row.listed === false
+        ? t('forms.reason_not_listed', 'not listed by your {cli} {client_version}', {
+          cli: row.cli_label || row.cli, client_version: row.model_list?.client_version || row.model_list_installed || '',
+        })
+        : undefined,
+  }));
 
   /** What a template authors, as one string — the dirty test compares against it. */
   const authored = () => JSON.stringify({
-    objective: draft.objective, books: [...draft.books].sort(), routines: draft.routines,
+    objective: draft.objective, books: [...draft.books].sort(),
     mandate: [draft.reach, draft.recruit, ...draft.output], agents: draft.agents,
   });
 
@@ -85,8 +96,7 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
     if (!row) {
       draft.objective = '';
       objectiveInput.value = '';
-      draft.books = [];
-      draft.routines = { ...seedRoutines };
+      draft.books = [...(seed?.seeds?.behaviours?.value || [])].filter((name) => (seed?.available || []).includes(name));
       draft.agents = [];
       for (const key of ['reach', 'recruit']) draft[key] = seed?.seeds?.[key]?.value || 'open';
       draft.output = [seed?.seeds?.output?.value || 'open'].flat().filter(Boolean);
@@ -96,20 +106,16 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
     }
     if (row.objective) { draft.objective = row.objective; objectiveInput.value = row.objective; }
     if (row.behaviours.length) draft.books = [...row.behaviours];
-    for (const on of row.routines_on) if (on in draft.routines) draft.routines[on] = true;
-    for (const off of row.routines_off) if (off in draft.routines) draft.routines[off] = false;
     if (row.mandate) { draft.reach = row.mandate.reach; draft.recruit = row.mandate.recruit; draft.output = [row.mandate.output].flat().filter(Boolean); }
     // carries `agents[]` in exactly the ruled wire shape `agentPicks()` produces, so it
     // reads straight into the editor — instructions becomes the row's assignment and
-    // team_lead its mark, which is the same translation `agentPicks` does on the way out.
     // The old lead_brief/lead_mandate pair is gone: a lead is one marked row.
     draft.agents = (Array.isArray(row.agents) ? row.agents : []).map((pick) => ({
       ...agentRow(),
       name: pick.name || '',
       assignment: pick.instructions || '',
-      lead: pick.team_lead === true,
-      routinesOn: Array.isArray(pick.routines_on) ? [...pick.routines_on] : [],
-      routinesOff: Array.isArray(pick.routines_off) ? [...pick.routines_off] : [],
+      provider: pick.provider || '',
+      model: pick.model || '',
       ...(pick.mandate ? {
         reach: pick.mandate.reach,
         recruit: pick.mandate.recruit,
@@ -121,29 +127,35 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
   }
   const templateDirty = () => !!templateRow() && authored() !== snapshot;
 
-  /* ---- step 2 · Template is optional and opens only when asked for. ---- */
-  const stepTemplate = createStep({ n: 2, key: 'template', title: t('new_team.template_optional', 'Template · optional'), onToggle: () => {
+  /* ---- step 1 · Templates are optional; Kind exists only inside this choice. ---- */
+  const stepTemplate = createStep({ n: 1, key: 'template', title: t('new_team.templates_optional', 'Templates · optional'), onToggle: () => {
     templateOpen = !templateOpen;
     paintFolds();
   } });
-  function paintTray() {
-    stepTemplate.body.replaceChildren(templateTray(offered(), draft.template, (name) => applyTemplate(name), { includeOwn: false }));
-  }
-
-  /* ---- step 1 · Kind ---- */
-  const stepKind = createStep({ n: 1, key: 'kind', title: t('kind', 'Kind') });
   const kindHost = el('div');
-  function paintKinds() {
-    kindHost.replaceChildren(kindTiles(draft.kind, (key) => {
-      draft.kind = key;
-      if (draft.template && !offered().some((row) => row.name === draft.template)) { draft.template = ''; snapshot = ''; }
-      paint();
-    }));
+  const trayHost = el('div');
+  stepTemplate.body.append(kindHost, trayHost);
+  function paintTray() {
+    trayHost.replaceChildren(templateTray(offered(), draft.template, (name) => applyTemplate(name), { includeOwn: false }));
   }
-  stepKind.body.append(kindHost);
-
-  /* ---- step 3 · Name & instructions ---- */
-  const stepTop = createStep({ n: 3, key: 'top', title: t('new_team.name_instructions', 'Name & instructions') });
+  const kindQuestions = ask([{ group: t('kind', 'Kind'), fields: [{
+    key: 'kind', label: t('kind', 'Kind'), shape: 'square',
+    options: ruledRows('kind', ['open', ...KINDS], (key) => t(`kind.${key}`, key === 'open' ? 'Open' : key)),
+  }] }], {
+    value: { kind: draft.kind },
+    className: 'ntf-kind-questions',
+    onChange: (value) => {
+      draft.kind = value.kind;
+      if (draft.template && !offered().some((row) => row.name === draft.template)) { draft.template = ''; snapshot = ''; }
+      paintTray(); paintFoot(); paintActions();
+    },
+  });
+  function paintKinds() {
+    kindQuestions.set('kind', draft.kind);
+    kindHost.replaceChildren(kindQuestions.el);
+  }
+  /* ---- step 2 · Name & instructions ---- */
+  const stepTop = createStep({ n: 2, key: 'top', title: t('new_team.name_instructions', 'Name & instructions') });
   const nameInput = el('input');
   nameInput.type = 'text';
   nameInput.autocapitalize = 'off';
@@ -208,19 +220,50 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
 
   /* ---- step 4 · Where ---- */
   const stepWhere = createStep({ n: 5, key: 'where', title: t('new_team.who_where', 'Who and where') });
-  const pair = providerModelPair(
-    () => ({ provider: draft.provider, model: draft.model }),
-    (provider, model) => { draft.provider = provider; draft.model = model; paintFoot(); },
-    (label, control) => createField({ label, control }).el,
-  );
-  // a Branch column only when Worktrees is off. The single team branch field is gone.
-  const where = createWhereItWorks({ rootDefaultLabel: t('new_team.root_default', '— the box’s default —'), onChange: () => { draft.root = where.root; draft.repos = where.repos(); draft.branches = where.branches(); paintFoot(); } });
-  const wherePair = el('div', 'fs-pair');
-  wherePair.append(createField({ label: t('where.label', 'Where it works'), control: where.el }).el);
-  // no one ever even sees the fucking name." The store already defaults it to the team's
-  // own token, so the form asks nothing and sends nothing.
-  stepWhere.body.append(pair.el, wherePair);
-  function paintRoots() { where.setRoots(roots); where.root = draft.root; where.setRepos(draft.repos, draft.branches); draft.root = where.root; }
+  const rootRows = (additional = false) => roots.filter((row) => !additional || row.repo !== false).map((row) => ({
+    v: row.name, l: row.name,
+  }));
+  const branchField = (option) => {
+    const input = el('input', 'wk-field-control'); input.type = 'text'; input.spellcheck = false;
+    input.value = draft.branches[option.v] || ''; input.placeholder = t('where.branch', 'Branch');
+    input.addEventListener('input', () => {
+      const branch = input.value.trim();
+      if (branch) draft.branches[option.v] = branch; else delete draft.branches[option.v];
+      paintFoot();
+    });
+    return input;
+  };
+  const whereQuestions = ask([
+    { group: t('new_agent.model_package', 'Model'), fields: [
+      { key: 'provider', label: t('forms.provider', 'Model provider'), blank: t('forms.default', 'Default'), options: providerRows },
+      { key: 'model', label: t('forms.model', 'Model'), blank: t('forms.default', 'Default'), after: 'provider', options: (value) => modelRows(value.provider) },
+    ] },
+    { group: t('where.label', 'Where it works'), fields: [
+      { key: 'root', label: t('where.born_in', 'Born in'), blank: t('new_team.root_default', 'The box’s default'), options: () => rootRows() },
+      { key: 'repos', label: t('where.additional', 'Additional workspaces'), many: true, after: 'root',
+        options: (value) => rootRows(true).filter((row) => row.v !== value.root), row: branchField },
+    ] },
+  ], {
+    value: { provider: draft.provider, model: draft.model, root: draft.root, repos: draft.repos },
+    className: 'ntf-where-questions',
+    density: 'tight',
+    onChange: (value) => {
+      draft.provider = value.provider; draft.model = value.model; draft.root = value.root;
+      draft.repos = value.repos.filter((name) => name !== value.root);
+      for (const name of Object.keys(draft.branches)) if (!draft.repos.includes(name)) delete draft.branches[name];
+      paintFoot();
+    },
+  });
+  stepWhere.body.append(whereQuestions.el);
+  function paintRoots() {
+    whereQuestions.set('provider', draft.provider); whereQuestions.set('model', draft.model);
+    whereQuestions.set('root', draft.root); whereQuestions.set('repos', draft.repos);
+  }
+  const whereSummary = () => t('where.summary', 'born in {root} · {repos}', {
+    root: draft.root || t('team_config.default', 'Default'),
+    repos: draft.repos.length ? t('where.roots', 'also in {list}', { list: draft.repos.join(', ') })
+      : t('where.none', 'no auto desk'),
+  });
 
   /* ---- step 5 · Team kit ---- */
   const stepKit = createStep({ n: 6, key: 'kit', title: t('team_kit', 'Shared toolkit') });
@@ -243,80 +286,50 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
     { key: 'live_dangerously', label: t('launch_mode.live', 'Dangerously'),
       sub: t('launch_mode.live_sub', 'Ronin appends that provider’s own bypass flag, so the Agent does not stop to ask.') },
   ];
-  const modeHost = el('div');
-  const paintLaunchMode = () => {
-    modeHost.replaceChildren(
-      el('p', 'fs-head', t('launch_mode.head', 'launch mode')),
-      wayTiles(LAUNCH_MODES(), draft.launchMode, (key) => { draft.launchMode = key; paintLaunchMode(); paintFoot(); }),
-    );
-  };
-  const gbrainMode = () => (routineOn('gbrain') ? 'connected' : 'disconnected');
-  const routinesHead = el('p', 'fs-head', t('routines', 'Routines'));
-  const worktreesMode = el('div', 'fs-worktrees-mode');
-  const routinesHost = el('div');
-  function paintRoutines() {
-    routinesHost.replaceChildren();
-    const worktreesOn = routineOn('ronin_worktrees');
-    where.setWorktrees(worktreesOn);
-    worktreesMode.replaceChildren(
-      el('b', null, t('new_team.worktrees_mode', 'Agent work mode')),
-      el('strong', null, worktreesOn
-        ? t('new_team.worktrees_on', 'Own worktree where the Workspace folder allows it')
-        : t('new_team.worktrees_off', 'Use the project checkout and its branches')),
-      el('small', null, t('new_team.worktrees_help', 'Worktrees give each Agent a separate working folder and branch, so their file changes do not collide. They run only when both the Agent and repo have Worktrees on, and use the managed hand-in and Team-lead merge process.')),
-    );
-    const row = (label, blurb, on, prov, act) => {
-      const line = el(act ? 'button' : 'div', 'fs-routine');
-      if (act) { line.type = 'button'; line.addEventListener('click', act); }
-      line.dataset.on = String(on);
-      const words = el('div');
-      words.append(el('b', null, label), el('small', null, blurb));
-      line.append(el('span', 'fs-mark', on ? '✓' : ''), words, el('span', 'fs-prov', prov));
-      routinesHost.append(line);
-    };
-    row(
-      t('new_team.floor', 'Cowork floor'),
-      t('new_team.floor_why', 'The launch, campaign and team resolution, the shelf map, the birth receipt.'),
-      true, t('forms.always', 'always'), null,
-    );
-    for (const routine of routineRows) {
-      const on = routineOn(routine.name);
-      const prov = handRoutines.has(routine.name)
-        ? (on ? t('forms.team_on', 'team turns on') : t('forms.team_off', 'team turns off'))
-        : (on ? t('forms.campaign_on', 'campaign on') : t('forms.campaign_off', 'campaign off'));
-      row(routine.label, routine.blurb, on, prov, () => {
-        draft.routines[routine.name] = !on;
-        if (draft.routines[routine.name] === (seedRoutines[routine.name] === true)) handRoutines.delete(routine.name);
-        else handRoutines.add(routine.name);
-        paintRoutines();
-        paintFoot();
+  const kitHost = el('div');
+  let kitQuestions = null;
+  let kitSignature = '';
+  function paintKitQuestions() {
+    const signature = JSON.stringify(availableBehaviours().map((row) => row.name));
+    if (signature !== kitSignature) {
+      kitQuestions?.destroy();
+      const shelfRows = (rows) => rows.map((row) => ({ v: row.name, l: row.label || row.name, sub: row.blurb || '', read: row.reading }));
+      kitQuestions = ask([
+        { group: t('launch_mode.head', 'Launch mode'), fields: [{
+          key: 'launchMode', label: t('launch_mode.head', 'Launch mode'),
+          options: LAUNCH_MODES().map((row) => ({ v: row.key, l: row.label, sub: row.sub })),
+        }] },
+        { group: t('behaviours', 'Behaviours'), fields: [{
+          key: 'books', label: t('behaviours', 'Behaviours'), many: true, shape: 'tall', options: shelfRows(availableBehaviours()),
+        }] },
+      ], {
+        value: {
+          launchMode: draft.launchMode,
+          books: [...draft.books],
+        },
+        className: 'ntf-kit-questions',
+        density: 'tight',
+        trayHost: kitHost,
+        onChange: (value, key) => {
+          draft.launchMode = value.launchMode;
+          draft.books = [...value.books];
+          paintKitQuestions(); whereQuestions.paint(); paintFoot();
+        },
       });
+      kitSignature = signature;
+      kitHost.replaceChildren(kitQuestions.el);
     }
+    kitQuestions.set('launchMode', draft.launchMode);
+    kitQuestions.set('books', [...draft.books]);
   }
-  const booksHost = el('div');
-  function paintBooks() {
-    // here, and you can just choose it the same as you could in the agent form"). The same
-    // two shelves New Agent offers, the same `<shelf>:<name>` addresses, one implementation
-    // in form-steps.js. A team's books land in the next Agent form like every other default
-    // and the hand has the last word — there is no required/offered switch any more.
-    booksHost.replaceChildren(bookShelves([
-      { head: t('new_agent.shelf_house', 'behaviours · the house'), prefix: 'sops', rows: sops },
-      { head: t('new_agent.shelf_ways', 'behaviours · ways of working'), prefix: 'ways', rows: ways },
-    ], draft.books, (address, on) => {
-      draft.books = on ? [...draft.books, address] : draft.books.filter((book) => book !== address);
-      paintBooks();
-      paintFoot();
-    }));
-  }
-  // No bare Behaviours heading: the two shelves head themselves.
-  stepKit.body.append(modeHost, routinesHead, worktreesMode, routinesHost, booksHost);
+  stepKit.body.append(kitHost);
 
   /* ---- step 6 · Team lead ---- */
   /* ---- step 4 · the team's own agents (js/team-agents.js) ---- */
   const agents = createAgentRows({
-    n: 4, key: 'lead',
+    n: 3, key: 'lead',
     rows: () => draft.agents,
-    leadAssignment: () => draft.objective,
+    createAction, createActionBar,
     changed: () => paintFoot(),
     onToggle: () => toggle('lead'),
   });
@@ -324,7 +337,7 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
 
   /* ---- the collapse rules: a template's answers fold; the header opens them ---- */
   const FOLDS = ['lead'];
-  const steps = { kind: stepKind, template: stepTemplate, top: stepTop, lead: stepLead, defaults: null, where: stepWhere, kit: stepKit };
+  const steps = { template: stepTemplate, top: stepTop, lead: stepLead, defaults: null, where: stepWhere, kit: stepKit };
   function toggle(key) {
     if (draft.expanded[key]) delete draft.expanded[key];
     else draft.expanded[key] = true;
@@ -333,7 +346,7 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
   // template first offered all fifteen tiles and then quietly dropped the pick when a
   // later kind excluded it. New Agent already asked in this order; the two forms agree.
   // One list, read by the form's numbering AND by the Launch selector's outline.
-  const plan = () => ['kind', 'template', 'top', 'lead', 'defaults', 'where', 'kit'];
+  const plan = () => ['template', 'top', 'lead', 'defaults', 'where', 'kit'];
   const meta = {
     lead: () => t('new_team.agents_meta', '{n} agents', { n: draft.agents.length }),
   };
@@ -353,20 +366,18 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
     foot.append(readingRows([
       [t('add_agent.team', 'team'), name],
       [t('team.objective', 'Objective'), draft.objective],
-      [t('add_agent.place', 'place'), where.summary()],
+      [t('add_agent.place', 'place'), whereSummary()],
       [t('new_team.agents', 'Agents'), draft.agents.some((row) => row.name)
-        ? tagRow(draft.agents.filter((row) => row.name).map((row) => ({ text: row.lead ? `人 ${row.name}` : row.name, on: true })))
+        ? tagRow(draft.agents.filter((row) => row.name).map((row) => ({ text: row.name, on: true })))
         : ''],
       [t('new_team.members', 'members'), (() => { const em = el('em', null, t('new_team.members_note', 'derived from live tags — never stored here')); return em; })()],
     ]));
     foot.append(el('p', 'fs-head', t('new_team.inherits', 'an agent born here inherits')));
     foot.append(readingRows([
       [t('kind', 'Kind'), draft.kind],
-      [t('routines', 'Routines'), tagRow([{ text: t('new_team.floor_tag', 'floor'), on: true }, ...onNames().map((text) => ({ text, on: true }))])],
       [t('behaviours', 'Behaviours'), draft.books.length ? tagRow(draft.books.map((text) => ({ text, on: true }))) : ''],
       [t('forms.model', 'model'), draft.provider ? `${draft.provider}${draft.model ? ` / ${draft.model}` : ''}` : t('forms.default', 'default')],
       [t('launch_mode.head', 'launch mode'), LAUNCH_MODES().find((row) => row.key === draft.launchMode)?.label || draft.launchMode],
-      [t('gbrain_mode.head', 'gbrain connection'), gbrainMode() === 'connected' ? t('gbrain_mode.connected', 'Connected') : t('gbrain_mode.disconnected', 'Disconnected')],
       [t('mandate', 'Mandate'), `${draft.reach} · ${draft.recruit} · ${draft.output.join(', ')}`],
       [t('add_agent.still_asked', 'still asked'), tagRow([
         t('session_type', 'Session type'), t('add_agent.name', 'name'), t('add_agent.instruction', 'instruction'),
@@ -413,12 +424,11 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
     project_root: draft.root,
     repos: draft.repos,
     branches: draft.branches,
-    routines: { ...draft.routines },
-    behaviours: { books: [...draft.books] },
+    behaviours: { selected: [...draft.books], required: [] },
     agent_defaults: {
       provider: draft.provider, model: draft.model,
       reach: draft.reach, recruit: draft.recruit, output: draft.output,
-      dial: draft.dial, launch_mode: draft.launchMode, gbrain_mode: gbrainMode(),
+      dial: 'write', launch_mode: draft.launchMode,
     },
   });
 
@@ -431,36 +441,37 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
     const launchTab = reserveWorkspaceTab();
     busy = true;
     raise.setDisabled(true);
-    notice.set('info', t('new_team.checking_names', 'Checking Agent names…'));
     const picks = agentPicks(draft.agents);
     // CHECK BEFORE THE FIRST WRITE. The launch door rightly refuses an explicit name
     // collision, but discovering one after POST /api/team-rosters leaves a Team with only
     // part of the cast. The form knows the whole proposed cast, so its gate checks both
     // the live set and duplicates inside the form before it creates anything.
-    const live = await request('/api/sessions', { cache: 'no-store' });
-    if (!live.ok) {
-      closeWorkspaceTab(launchTab);
-      busy = false;
-      raise.setDisabled(false);
-      return notice.set('failed', t('new_team.name_check_failed', 'Agent names could not be checked, so nothing was created. {reason}', {
-        reason: live.message,
-      }));
-    }
-    const conflicts = conflictingAgentNames(picks, Array.isArray(live.data) ? live.data : []);
-    if (conflicts.length) {
-      closeWorkspaceTab(launchTab);
-      busy = false;
-      raise.setDisabled(false);
-      return notice.set('failed', t('new_team.agent_name_taken', 'Nothing was created. Choose another name for: {names}.', {
-        names: conflicts.join(', '),
-      }));
+    if (picks.length) {
+      notice.set('info', t('new_team.checking_names', 'Checking Agent names…'));
+      const live = await request('/api/sessions', { cache: 'no-store' });
+      if (!live.ok) {
+        closeWorkspaceTab(launchTab);
+        busy = false;
+        raise.setDisabled(false);
+        return notice.set('failed', t('new_team.name_check_failed', 'Agent names could not be checked, so nothing was created. {reason}', {
+          reason: live.message,
+        }));
+      }
+      const conflicts = conflictingAgentNames(picks, Array.isArray(live.data) ? live.data : []);
+      if (conflicts.length) {
+        closeWorkspaceTab(launchTab);
+        busy = false;
+        raise.setDisabled(false);
+        return notice.set('failed', t('new_team.agent_name_taken', 'Nothing was created. Choose another name for: {names}.', {
+          names: conflicts.join(', '),
+        }));
+      }
     }
     notice.set('info', t('new_team.raising', 'Raising the team…'));
     // THE LOADER OWNS THE CAST (@team_loader, agreed on the board): one call creates the
     // record and, only if that succeeded, sends every picked row through the launch door.
     //
     // `agentPicks` is where the screen's words become the route's: a row says assignment
-    // and lead, the wire says instructions and team_lead (lead's P0 ruling).
     // THE CANONICAL ROSTER DOOR STAYS HERE and is the duplicate-submit gate: only the
     // request that creates the Team reaches the staffing handoff, so pressing Raise twice
     // cannot birth the cast twice (@team_loader's refinement, taken).
@@ -473,31 +484,38 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
     }
     // Then the cast, through the loader: births are awaited in order because every one
     // updates this Team's membership record. `agentPicks` is where the screen's words
-    // become the route's — a row says assignment and lead, the wire says instructions
-    // and team_lead.
+    // become the route's — a row says assignment and the wire says instructions.
     const outcomes = await launchTeamAgents(request, name, picks);
     const refused = outcomes.filter(({ result }) => !result?.ok);
     busy = false;
     raise.setDisabled(false);
     if (refused.length) {
-      closeWorkspaceTab(launchTab);
-      return notice.set('failed', t('new_team.staffing_failed', 'Team created, but {failed} of {total} Agents could not be launched: {names}. Open the Team and add them there.', {
+      const born = outcomes.filter(({ result }) => result?.ok).map(({ row }) => row.name);
+      notice.set('failed', t('new_team.staffing_failed', 'Team created. Launched {launched} of {total} Agents: {born}. Failed: {names}. The Team is open; add the failed Agents there.', {
+        launched: born.length,
         failed: refused.length,
         total: outcomes.length,
+        born: born.length ? born.join(', ') : t('forms.none', 'none'),
         names: refused.map(({ row }) => row.name).join(', '),
       }));
+      seedReservedWorkspaceTab(launchTab, 'team', { tabName: '' });
+      openWorkspaceTab('team', name, launchTab);
+      return;
     }
     notice.set('', '');
     reset();
-    await created?.(name);
+    // The reserved tab cloned the opener's sessionStorage when it was opened. A Team tab
+    // name belongs to that older tab, not to the Team born here; clear it so the new page
+    // falls back to the roster title (and ultimately the Team name).
+    seedReservedWorkspaceTab(launchTab, 'team', { tabName: '' });
     openWorkspaceTab('team', name, launchTab);
+    await created?.(name);
+    await consumed?.();
   }
 
   async function doSave() {
     const token = draft.templateName.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_');
     if (!token) return;
-    const routinesOn = routineRows.filter((row) => routineOn(row.name) && seedRoutines[row.name] !== true).map((row) => row.name);
-    const routinesOff = routineRows.filter((row) => !routineOn(row.name) && seedRoutines[row.name] === true).map((row) => row.name);
     // THE TEAM SHELF: a cast, not a loadout. Save-as-new only, per shelf.
     const result = await request('/api/templates/teams', {
       method: 'POST',
@@ -510,8 +528,6 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
         objective: draft.objective.trim(),
         mandate: `${draft.reach} · ${draft.recruit} · ${draft.output.join(', ')}`,
         behaviours: draft.books,
-        routines_on: routinesOn,
-        routines_off: routinesOff,
         // The same rows the loader launches — one shape, produced in one place.
         agents: agentPicks(draft.agents),
       },
@@ -534,7 +550,6 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
     draft.agents = [];
     draft.expanded = {};
     snapshot = '';
-    handRoutines = new Set();
     nameInput.value = '';
     titleInput.value = '';
     titleTouched = false;
@@ -550,17 +565,13 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
     draft.root = value('project_root') || '';
     draft.provider = value('provider') || '';
     draft.model = value('model') || '';
-    for (const key of ['reach', 'recruit', 'dial']) {
+    for (const key of ['reach', 'recruit']) {
       if (value(key)) draft[key] = value(key);
     }
     if (value('output')) draft.output = [value('output')].flat().filter(Boolean);
-    // § 7.2 is { provider, model, reach, recruit, output, dial, launch_mode }. Named on its
-    // own because the seed's key is snake and the draft's is camel — folding it into the
-    // loop above would have written `draft.launch_mode` and seeded nothing, forever.
+    // launch_mode is named on its own because the seed's key is snake and the draft's is camel.
     if (value('launch_mode')) draft.launchMode = value('launch_mode');
     draft.books = Array.isArray(value('behaviours')) ? [...value('behaviours')] : [];
-    seedRoutines = Object.fromEntries((seed.routines || []).map((row) => [row.name, row.on]));
-    draft.routines = { ...seedRoutines };
     paintRoots();
   }
 
@@ -574,11 +585,8 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
     paintKinds();
     paintName();
     paintRoots();
-    pair.paint();
     agents.paint();
-    paintRoutines();
-    paintLaunchMode();
-    paintBooks();
+    paintKitQuestions();
     paintFolds();
     paintActions();
     paintFoot();
@@ -602,25 +610,19 @@ export function createNewTeamFormView(kit, { created = null, embedded = false } 
   } });
   stepPayload.body.append(foot, saveRow.el);
   stepPayload.setCollapsed(true, t('forms.payload_summary', 'Review what Launch will create'), true);
-  form.append(stepKind.el, stepTemplate.el, stepTop.el, stepLead.el, stepDefaults.el, stepWhere.el, stepKit.el, stepPayload.el);
+  form.append(stepTemplate.el, stepTop.el, stepLead.el, stepDefaults.el, stepWhere.el, stepKit.el, stepPayload.el);
   surface.content.append(form, notice.el);
 
   return {
     el: embedded ? surface.content : surface.el,
     enter: async (detail = {}) => {
       paint();
-      const [seeded, tray, catalog, rootRows, sopRows, wayRows] = await Promise.all([
+      const [seeded, tray, rootRows] = await Promise.all([
         request('/api/launch-seed'),
         request('/api/templates/teams'),
-        request('/api/routines'),
         request('/api/project-roots'),
-        request('/api/sops'),
-        request('/api/ways'),
       ]);
-      sops = sopRows.ok && Array.isArray(sopRows.data) ? sopRows.data : [];
-      ways = wayRows.ok && Array.isArray(wayRows.data) ? wayRows.data : [];
       templates = tray.ok && Array.isArray(tray.data) ? tray.data : [];
-      routineRows = catalog.ok && Array.isArray(catalog.data) ? catalog.data : [];
       roots = rootRows.ok && Array.isArray(rootRows.data) ? rootRows.data : [];
       if (seeded.ok) seed = seeded.data;
       // The seed lands only while the form is untouched — re-entering an open draft

@@ -6,13 +6,14 @@ import { t } from './lexicon.js';
 import { WorkspaceKit } from './workspace-kit.js';
 import { createFolderPicker } from './folder-picker.js';
 import { createStoneWorkSurface } from './stone-work-surface.js';
+import { ask } from './ask.js';
 
 export function buildProjectRoots(root, isShowing, campaignId = () => '', options = {}) {
   const { createAction } = WorkspaceKit.primitives;
-  const NEW = '\0new'; // `editing` when the add card's form is open — no root has this handle
+  const NEW = '\0new'; // `editing` when the add card's form is open — no root has this ID
   const stones = options.presentation === 'stones';
   let data = null; // { roots: [...], untagged: n }
-  let editing = null; // handle of the block whose form is open
+  let editing = null; // ID of the block whose form is open
 
   const head = document.createElement('div');
   head.className = 'pr-head';
@@ -103,7 +104,7 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
   }
 
   /* -- the form: EDIT on a block that exists, ADD inside the card at the end (`creating`),
-   * where the handle is the one field typed this once. -- */
+   * where the ID is the one field typed this once. -- */
   function form(existing, creating = false) {
     const f = document.createElement('div');
     f.className = 'pr-form';
@@ -139,11 +140,12 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
       host.appendChild(wrap);
       return i;
     };
-    // The handle is shown, never edited: renaming is a catalog edit by hand, not a form
-    // field. It is here because a block with no name on it is unreadable.
-    const handleInput = mk(t('roots.f_handle', 'handle'), 'name', existing.name, t('roots.f_handle_hint', 'The short name — this IS the shortcut'), 'ronin');
+    // The ID is shown, never edited: changing identity is a catalog operation, not a form
+    // field. The independent display title is ordinary editable presentation.
+    const handleInput = mk(t('roots.f_handle', 'ID'), 'name', existing.name, t('roots.f_handle_hint', 'The stable ID used by sessions and tools.'), 'ronin');
     handleInput.disabled = !creating;
     if (stones && !creating) handleInput.closest('label').hidden = true; // the detail head already says it
+    mk(t('roots.f_title', 'display title'), 'title', existing.title, t('roots.f_title_hint', 'The name shown on screen. Changing it never changes the ID or directory.'), t('roots.f_title_placeholder', 'optional'));
     const dirInput = mk(t('roots.f_directory', 'directory'), 'dir', existing.dir, t('roots.f_directory_hint', 'Where the Agent starts and discovers project instructions.'), '');
     if (creating) {
       dirInput.closest('label').hidden = true;
@@ -166,11 +168,11 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
     mk(t('roots.f_docs', 'docs'), 'docs', (existing.docs || []).join(', '), t('roots.f_docs_hint', 'Where this root keeps its documentation — directories or files, relative to the directory'), 'docs, README.md');
     mk(t('roots.f_plans', 'plans'), 'plans', (existing.plans || []).join(', '), t('roots.f_plans_hint', 'Where this root keeps its build-out plans'), 'wip/buildouts, wip/handoffs');
 
-    // Existing repositories expose the complete checked-in profile. Mode describes how
-    // accepted work publishes; Worktrees is a separate, additive choice.
+    // Existing repositories expose the complete checked-in profile. The repository alone
+    // declares whether it is a worktree root or a checkout.
     let profileFields = null;
     if (creating || existing.facts?.repo) {
-      const seedWorktrees = creating ? (data?.new_project_worktrees || 'enabled') : (existing.repo_profile?.worktrees || 'disabled');
+      const seedWorktrees = existing.repo_profile?.worktrees || 'disabled';
       const before = {
         mode: existing.repo_profile?.mode || 'direct',
         working: existing.arrangement?.source === 'absent' ? '' : (existing.arrangement?.working || ''),
@@ -179,23 +181,28 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
       };
       const repoFields = group(stones ? t('roots.section_repository', 'Repository') : t('roots.group_repository', 'Advanced repository workflow'), t('roots.group_repository_help', 'Optional Git publishing and Worktrees choices. An ordinary folder needs none of these.'));
       repoFields.classList.add('pr-group-advanced');
-      const pick = (label, value, options, hint, host = repoFields) => {
-        const wrap = document.createElement('label'); wrap.className = 'pr-f';
-        const l = document.createElement('span'); l.textContent = label; l.title = hint;
-        const select = document.createElement('select');
-        for (const [v, text] of options) { const o = document.createElement('option'); o.value = v; o.textContent = text; select.append(o); }
-        select.value = value; wrap.append(l, select); host.append(wrap); return select;
-      };
       const initialMode = creating ? (seedWorktrees === 'enabled' ? 'reviewed' : 'direct') : before.mode;
-      const mode = pick(t('roots.f_mode', 'publishing'), initialMode, [['reviewed', t('roots.mode_reviewed', 'reviewed release')], ['direct', t('roots.mode_direct', 'direct publishing')]], t('roots.f_mode_hint', 'Reviewed uses a working branch and a final PR to stable. Direct publishes on stable itself.'));
+      let repositoryAnswers = { mode: initialMode, worktrees: creating ? seedWorktrees : before.worktrees };
+      let syncProfile = () => {};
+      const repositoryQuestions = ask([{ group: '', fields: [
+        { key: 'mode', label: t('roots.f_mode', 'publishing'), options: [['reviewed', t('roots.mode_reviewed', 'reviewed release')], ['direct', t('roots.mode_direct', 'direct publishing')]].map(([v, l]) => ({ v, l })) },
+        { key: 'worktrees', label: t('roots.f_worktrees', 'Arrangement'), options: [['enabled', t('roots.worktrees_enabled', 'Worktree root')], ['disabled', t('roots.worktrees_disabled', 'Checkout')]].map(([v, l]) => ({ v, l })) },
+      ] }], { value: repositoryAnswers, onChange: (value) => { repositoryAnswers = value; syncProfile(); } });
+      repoFields.append(repositoryQuestions.el);
+      const adapter = (key) => ({
+        get value() { return repositoryAnswers[key]; },
+        set value(value) { repositoryAnswers[key] = value; repositoryQuestions.set(key, value); },
+        addEventListener() {},
+      });
+      const mode = adapter('mode');
       const working = mk(t('roots.f_working', 'working'), 'repo-working', before.working || 'dev', t('roots.f_working_hint', 'The integration branch for reviewed work. You choose its name.'), 'dev', repoFields);
       const stable = mk(t('roots.f_stable', 'stable'), 'repo-stable', before.stable || existing.facts?.repo?.branch || 'main', t('roots.f_stable_hint', 'The published branch. You choose its name.'), 'main', repoFields);
       working.removeAttribute('data-key'); stable.removeAttribute('data-key');
-      const worktrees = pick(t('roots.f_worktrees', 'Worktrees'), creating ? seedWorktrees : before.worktrees, [['enabled', t('roots.worktrees_enabled', 'Use Ronin Worktrees')], ['disabled', t('roots.worktrees_disabled', 'Use the checkout')]], t('roots.f_worktrees_hint', 'Worktrees keep each Agent’s file changes in a separate working folder and branch. Both the Agent and repo must have Worktrees on.'));
+      const worktrees = adapter('worktrees');
       const preview = document.createElement('p');
       preview.className = 'pr-flow';
       repoFields.append(preview);
-      const syncProfile = () => {
+      syncProfile = () => {
         working.closest('label').hidden = mode.value !== 'reviewed';
         const branchFlow = mode.value === 'reviewed'
           ? t('roots.flow_reviewed', '{working} → review → {stable}', { working: working.value.trim() || '—', stable: stable.value.trim() || '—' })
@@ -205,7 +212,7 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
           : t('roots.flow_checkout', 'Every Agent uses this checkout, even when the Agent has Worktrees on.');
         preview.textContent = t('roots.flow_preview', 'Flow: {branches}. {worktrees} Saving this profile does not create, move, or rename branches.', { branches: branchFlow, worktrees: worktreesFlow });
       };
-      for (const control of [mode, working, stable, worktrees]) control.addEventListener('input', syncProfile);
+      for (const control of [working, stable]) control.addEventListener('input', syncProfile);
       syncProfile();
       profileFields = { before, mode, working, stable, worktrees };
       if (creating) dirInput.addEventListener('change', async () => {
@@ -244,7 +251,7 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
         body[i.dataset.key] = i.value.trim();
       });
       const name = creating ? body.name : existing.name;
-      delete body.name; // on an edit the heading IS the handle; on an add it rides the body
+      delete body.name; // on an edit the route already carries the ID; on an add it rides the body
       let proposedProfile = null;
       if (profileFields) {
         let creationIsRepo = true;
@@ -315,7 +322,7 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
     const top = document.createElement('div');
     top.className = 'pr-top';
     const h = document.createElement('b');
-    h.textContent = r.name; // the ## heading IS the handle — no second name
+    h.textContent = r.title || r.name;
     const dir = document.createElement('span');
     dir.className = 'pr-dir';
     dir.textContent = r.dir;
@@ -461,7 +468,7 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
     // every action on one line, one measured line under it. Nothing else interacts below.
     const head = make('header', 'pr-detail-head');
     const heading = make('div', 'pr-detail-heading');
-    heading.append(make('h3', 'pr-detail-name', r.name)); // the head IS the handle — no second name
+    heading.append(make('h3', 'pr-detail-name', r.title || r.name));
     const go = make('div', 'pr-detail-go');
     heading.append(go);
     const words = [r.archived ? t('roots.chip_archived', 'Archived') : !exists ? t('roots.stone_missing', 'Folder missing') : t('roots.stone_ready', 'Ready')];
@@ -492,6 +499,7 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
     d.append(section(t('roots.summary', 'Summary'), summary));
 
     const folder = section(t('roots.section_folder', 'Folder'), facts([
+      [t('roots.fact_id', 'ID'), r.name],
       [t('roots.fact_directory', 'Directory'), r.dir, { tone: exists ? '' : 'bad' }],
       [t('roots.fact_docs', 'Docs'), (r.docs || []).join(', ')],
       [t('roots.fact_plans', 'Plans'), (r.plans || []).join(', ')],
@@ -551,7 +559,7 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
       attrs: { title: t('roots.keep_hint', 'Keep a folder on this machine for Teams and Agents to start in.') },
     }, ...roots.map((r) => ({
       id: r.name,
-      label: r.name,
+      label: r.title || r.name,
       state: r.archived
         ? t('roots.chip_archived', 'Archived')
         : !r.facts?.exists
@@ -583,7 +591,7 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
       lede.dataset.tone = 'muted';
       lede.textContent = t('roots.keep_lede', 'Keep a folder on this machine for Teams and Agents to start in; a folder not kept is simply left alone.');
       head.append(heading, lede);
-      const f = form({ name: '', dir: '', remit: '', match: [], docs: [], plans: [] }, true);
+      const f = form({ name: '', title: '', dir: '', remit: '', match: [], docs: [], plans: [] }, true);
       go.append(f.querySelector('.pr-frow')); // Add and Cancel on the head line
       d.append(head, f);
       return d;
@@ -596,7 +604,7 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
       const h = document.createElement('b');
       h.textContent = t('roots.add', '＋ Add workspace folder');
       top.append(h);
-      b.append(top, form({ name: '', dir: '', remit: '', match: [], docs: [], plans: [] }, true));
+      b.append(top, form({ name: '', title: '', dir: '', remit: '', match: [], docs: [], plans: [] }, true));
       return b;
     }
     return b;

@@ -1,7 +1,17 @@
 # Ronin documentation — start with the question
 
-These are operational routes for a user or an Agent working on the user's behalf. Builder
-contracts remain available, but they are not prerequisites for installing or using Ronin.
+## Terminal controls
+
+|Input|Codex|Claude|Gemini|Grok|Hermes|
+|---|---|---|---|---|---|
+|Escape — Stop|Escape|Escape|Ctrl+C|Ctrl+C|Ctrl+C|
+|Ctrl+Shift+Backspace — Clear|Ctrl+C|Escape|Ctrl+C|Ctrl+C|Ctrl+C|
+|Ctrl+Shift+X — Close|Confirm|Confirm|Confirm|Confirm|Confirm|
+|Ctrl+C|Blocked|Blocked|Blocked|Blocked|Blocked|
+
+Clear: entire draft. Confirm: Ronin dialog. Copy:
+Option-drag, Cmd+C (Mac); Shift-drag, Ctrl+C (Windows/Linux).
+[Controls](terminal-controls.md); [Agents](agents/README.md).
 
 ## Before Ronin is running
 
@@ -21,6 +31,11 @@ contracts remain available, but they are not prerequisites for installing or usi
 | Why are Teams or New Project unavailable? | [Ronin Setup](setup-workbench.md#activate-a-provider) |
 | How do I add or change a Workspace Folder? | [Workspace folders](project-roots.md) |
 | How do parallel Agents avoid colliding in the same files? | [Ronin Worktrees](worktrees.md) |
+| What is installed, what a Team or Agent can add, and how a new Agent is equipped? | [Installations and behaviours](installations.md) |
+| How should an Agent plan and maintain its work record? | [Keep a useful work record](work-record.md) |
+| How does a Team's five-stage Kanban derive projects and Landing? | [Team Kanban](team-kanban.md) |
+| How do I Stop, Clear, Close or Copy, and change shortcuts? | [Terminal controls](terminal-controls.md) |
+| Where are each Agent CLI's integration particulars? | [Agent integrations](agents/README.md) |
 | How do session Control settings work? | [Session Control](session-control-dials.md) |
 | What does a new Agent read at birth, and why does it fit one read? | [The birth packet](birth-packet.md) |
 | What does Ronin let an Agent do, and what does it only tell it? | [The Agent's philosophy: a gas pedal and a brake pedal](agent-philosophy.md) |
@@ -32,12 +47,11 @@ contracts remain available, but they are not prerequisites for installing or usi
 
 ## If you are changing Ronin itself
 
-Start with the root [`AGENTS.md`](../AGENTS.md), then use the relevant architecture or
-implementation contract.
+Start with the root [`AGENTS.md`](../AGENTS.md), then use the relevant architecture or implementation contract.
 
 | Question | Route |
 |---|---|
-| How do I verify a repository change? | Run `npm run verify`; run Playwright suites explicitly when diagnosing the rendered UI. |
+| How do I verify or provisionally preview a repository change? | Run `npm run verify`; run Playwright suites explicitly when diagnosing the rendered UI; for one Team preview without publication, use [visual staging](../ronin_sops/ronin_methodology.md#visual-staging-one-disposable-team-preview). |
 | How does the server talk to tmux, start programs, and switch Services parts on and off? | [The tmux connection, the spawn broker, and parked parts](tmux-connection.md) |
 
 ## Shelves
@@ -45,14 +59,14 @@ implementation contract.
 | Shelf | Contains |
 |---|---|
 | `ronin_session_boot/` | the reading assembled for a new session |
-| `ronin_catalogs/` | actions, tools, macros, project roots, definitions and presentation resources |
-| `ronin_library/` | pages compiled into action instructions |
+| `ronin_catalogs/` | tools, capabilities, project roots, definitions and presentation resources |
+| `ronin_library/` | supporting reference pages used by tools and capabilities |
 | `ronin_sops/` | situation-specific operating guidance |
 | `ronin_bin/` | executable tools listed in `ronin_catalogs/TOOLS.md` |
 
 The owner's stores shadow shipped resources file-for-file. `bin/ronin-store --all` lists
-their resolved locations. A macro is compiled with `tejun <name>`; a machine fact is
-measured with `tejun-survey`, `tejun-account`, or the relevant tool.
+their resolved locations. Capability documents name the selected tools; machine facts
+are measured with `ronin-host inspect`, `ronin-host account`, or the relevant tool.
 
 ## Coworkspace
 
@@ -64,7 +78,7 @@ the current Cowork, a quick new session, the cowork commons, and the two-or-four
 layout. On a phone, choose the Cowork, choose the Agent, then use its full-screen tile.
 
 A terminal tile provides the live terminal, composer, output view, Control value, and work
-record. Team commons provides Docs, Wipeboard, Messages, and Team Configuration.
+record. Commons provides Roster, Docs, Wipeboard, Messages, Cron jobs, and Configuration.
 Cowork commons provides account, appearance, release, voice, Services, project-root, and
 archive controls. Campaign commons provides Campaign configuration, roots, Coworks,
-templates, and Routines.
+templates, installations, and defaults.

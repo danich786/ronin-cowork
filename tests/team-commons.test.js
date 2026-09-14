@@ -1,0 +1,55 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+
+const source = async (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
+
+test('Commons opens on its separate Roster and keeps Configuration separate', async () => {
+  const view = await source('public/js/cowork-view.js');
+  assert.match(view, /label: t\('team\.commons', 'Commons'\)/);
+  assert.match(view, /channels: \[\s*\{ id: 'roster'/);
+  assert.match(view, /selected: 'roster'/);
+  assert.match(view, /services: \{ roster: service\(roster\)[\s\S]*'team-configuration': service\(config\)/);
+  assert.match(view, /commons\.roster\.replaceChildren\(members\)/);
+  assert.match(view, /commons\.config\.replaceChildren\(config\)/);
+  assert.doesNotMatch(view, /commons\.config\.replaceChildren\(members, config\)/);
+});
+
+test('Task Manager is offered only when available and its Commons tab stays present', async () => {
+  const view = await source('public/js/cowork-view.js');
+  assert.match(view, /kanban: 'team\.kanban'/);
+  assert.match(view, /type: WB_TYPES\.kanban[\s\S]*environment\.kanbanOffers\(\)/);
+  assert.match(view, /WB_PROFILES\.team, \[WB_TYPES\.commons, WB_TYPES\.kanban,/);
+  assert.match(view, /request\('\/api\/installed'/);
+  assert.match(view, /kanbanOffers: \(\) => kanbanGate\.available \? \[\{/);
+  assert.match(view, /commons\.kanbanTab\.disabled = false/);
+  assert.match(view, /item\.channels\.select\('kanban'\)/);
+  assert.match(view, /workspace\.channel_task_manager', 'Task Manager'/);
+});
+
+test('Roster expands live readings and actions; Launch uses the paired workspace and Close retires', async () => {
+  const [view, members, retirement, css] = await Promise.all([
+    source('public/js/cowork-view.js'), source('public/js/team-members.js'), source('public/js/session-retire.js'), source('public/css/team-workspace.css'),
+  ]);
+  assert.match(view, /workspace1: 'workspace2', workspace2: 'workspace1', workspace3: 'workspace4', workspace4: 'workspace3'/);
+  assert.match(view, /openOwner: \(name\) => arrange\(\{ \[oppositeSeat\(id\)\]: \{ session: name \} \}\)/);
+  assert.match(view, /onOpen: \(member\) => putSession\(member\.name, oppositeSeat\(id\)\)/);
+  assert.match(view, /reading: readingsOf/);
+  assert.match(view, /configSignature\(team\) \+ JSON\.stringify\(members\.map\(\(member\) => readingsOf\(member\)\.lines\)\)/);
+  // The member rows follow the live readings; the Configuration tab follows the saved record alone,
+  // so a five-second status tick never throws away an edit in progress (owner, 2026-09-13).
+  assert.match(view, /const record = JSON\.stringify\(roster \|\| null\);/);
+  assert.match(view, /if \(!recordMoved\) continue;\s*\n\s*if \(!roster\) \{ renderTeamConfiguration/);
+  assert.match(view, /if \(recordMoved \|\| !configNode\) \{/, 'the Coworks page’s copy of the tab keeps the same rule');
+  assert.match(view, /onClose: \(member\) => retireSession\(member\.name/);
+  assert.match(members, /actions: \[launch, rename, lead, eject, close\]/);
+  assert.match(members, /classList\.add\('league-team-member-live'\)/);
+  assert.match(members, /league-team-member-disclosure', '⌄'/);
+  assert.match(members, /label: t\('league\.launch_agent', 'Launch'\)/);
+  assert.match(css, /\.league-team-member-detail\[hidden\] \{ display: none; \}/);
+  assert.match(members, /toggle\.setAttribute\('aria-expanded', 'false'\)/);
+  assert.match(members, /toggle\.setAttribute\('aria-controls', detail\.id\)/);
+  assert.match(members, /if \(reading\.description\) detail\.append/);
+  assert.match(css, /\.league-team-member-actions \{[^}]*flex-wrap: wrap;[^}]*justify-content: flex-end;/);
+  for (const label of ['Archive', 'Delete', 'Hard Delete']) assert.match(retirement, new RegExp(`'${label}'`));
+});

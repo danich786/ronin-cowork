@@ -10,6 +10,11 @@ export const SERVICES_SETUP_STATES = Object.freeze([
   'entitled', 'installing', 'install_failed', 'switched_off', 'restart_needed', 'active',
 ]);
 
+/** Pure capability word: installed facts already hide every implementation-part detail. */
+export function serviceCapabilityWord({ wanted, running, disagrees, parked }) {
+  return parked ? 'Parked' : disagrees ? 'Restart' : running ? 'Running' : wanted ? 'Restart' : 'Off';
+}
+
 const step = (id, caption, label, { done = false, enabled = true, act = null, title = '' } = {}) => ({ id, caption, label, done, enabled, act, title });
 
 /** Where the registration stands: its state, tone words, and the Register step. */
@@ -69,7 +74,7 @@ export function servicesSetupModel(registration, installed, activation = null) {
   const on = facts.switched_on === true;
   const reg = registrationRow(registration, record);
   const installCaption = t('services_setup.step_install', 'Install');
-  const switchCaption = t('services_setup.step_switch', 'Switch');
+  const switchCaption = t('services_setup.step_switch_on', 'Switch on');
   const installing = !parts && entitled && stage === 'installing';
   const installFailed = !parts && entitled && stage === 'error' && record.error_at_stage === 'installing';
 
@@ -80,10 +85,10 @@ export function servicesSetupModel(registration, installed, activation = null) {
   // The switch is a toggle, never Done: it drives the Campaign's choice and cascades to new teams and Agents.
   const switchStep = on ? { ...step('switch', switchCaption, t('services_setup.turn_off', 'Turn off'), { act: 'switch_off' }), pressed: true }
     : { ...step('switch', switchCaption, t('services_setup.turn_on', 'Turn on'), { act: 'switch_on', enabled: parts, title: parts ? '' : t('services_setup.install_first', 'Install first') }), pressed: false };
-  // A moved switch waits on a restart of Ronin; the Restart control appears only then, and the surface watches for it.
+  // A moved switch waits on a restart of Ronin; the Restart control appears only then. A selection does not start polling.
   const restartStep = parts && facts.restart_needed ? step('restart', t('services_setup.step_restart', 'Restart'), t('services_setup.restart', 'Restart'), { act: 'restart' }) : null;
   const steps = [reg.step, installStep, switchStep, ...(restartStep ? [restartStep] : [])];
-  const model = (state, tone, status, next, polling = false) => ({ state, tone, status, next, steps, polling: polling || facts.restart_needed === true, summary: '' });
+  const model = (state, tone, status, next, polling = false) => ({ state, tone, status, next, steps, polling, summary: '' });
 
   if (!parts) {
     if (installing) {

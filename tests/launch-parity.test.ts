@@ -53,7 +53,7 @@ process.env.RONIN_SESSION_BOOT_DIR = path.join(temp, 'shelf');
 process.env.RONIN_SESSION_BOOT_CACHE_DIR = path.join(temp, 'generated');
 process.env.RONIN_CONFIG_DIR = path.join(temp, 'config');
 // The owner's own session default, because since 2026-08-29 it is the ONLY thing under an
-// explicit pick — no session_role biases the model any more, so a launch that names
+// explicit pick — no role axis biases the model, so a launch that names
 // nothing must land here for both callers alike.
 await fs.mkdir(path.join(temp, 'config'), { recursive: true });
 await fs.writeFile(
@@ -64,18 +64,22 @@ await fs.writeFile(
       home_machine: {
         title: 'Ronin Home',
         state: 'active',
-        config: { agent_defaults: { dial: 'write' } },
+        config: { installations: { gbrain: false }, defaults: { dial: 'write' } },
+      },
+      gbrain_connected: {
+        title: 'Gbrain connected',
+        state: 'archived',
+        config: { installations: { gbrain: true }, defaults: { behaviours: ['gbrain'], dial: 'write' } },
       },
     },
   }),
 );
 process.env.RONIN_LEDGER_DIR = path.join(temp, 'ledger');
 
-// A book on each level, so the reading list has something to be identical ABOUT.
+// A book on each core level, so the reading list has something to be identical ABOUT.
 for (const [level, name, book] of [
   ['all', '', 'ALL_BOOK.md'],
   ['root', 'alpha', 'ROOT_BOOK.md'],
-  ['role', 'DraftPlan', 'ROLE_BOOK.md'],
 ] as const) {
   const dir = path.join(temp, 'shelf', level, name);
   await fs.mkdir(dir, { recursive: true });
@@ -89,7 +93,7 @@ await fs.writeFile(
   path.join(temp, 'team_rosters', 'scratchteam.md'),
   [
     '# scratchteam', '', '- **objective:** prove the parity', '- **project_root:** beta',
-    '- **agent_defaults:** {"provider":"","model":"","reach":"discuss","recruit":"nobody","output":"ideas","dial":"write","launch_mode":"live_dangerously","gbrain_mode":"disconnected"}',
+    '- **agent_defaults:** {"provider":"","model":"","reach":"discuss","recruit":"nobody","output":"ideas","dial":"write","launch_mode":"configured","gbrain_mode":"disconnected"}',
     '- **state:** active', '',
   ].join('\n'),
 );
@@ -100,7 +104,7 @@ type SpawnForm = import('../src/spawn.js').SpawnForm;
 
 /** What the ＋ New form posts: the axes, the picks, and the owner's words. */
 const commonsForm = (over: Partial<SpawnForm> = {}): SpawnForm => ({
-  session_role: 'DraftPlan',
+  campaign_id: 'home_machine',
   project_root: 'alpha',
   prompt: 'Work out the shape of the thing.',
   ...over,
@@ -116,7 +120,6 @@ const forkitForm = (over: Partial<SpawnForm> = {}): SpawnForm =>
 
 /** Everything the mechanism decides. A caller may pick these; it may never compute them. */
 const mechanism = (r: Awaited<ReturnType<typeof resolveForm>>) => ({
-  session_role: r.session_role,
   project_root: r.project_root,
   dir: r.dir,
   cmd: r.cmd,
@@ -147,15 +150,14 @@ test('equivalent specs from Commons and forkit resolve to the same launch', asyn
   assert.deepEqual(mechanism(fromForkit), mechanism(fromCommons));
 });
 
-test('session_type is the only birth-path key, and blank session_role is an ordinary cowork Agent', async () => {
-  const cowork = await resolveForm(commonsForm({ session_type: 'cowork_agent', session_role: '' }), new Set());
+test('session_type is the only birth-path key', async () => {
+  const cowork = await resolveForm(commonsForm({ session_type: 'cowork_agent' }), new Set());
   assert.equal(cowork.session_type, 'cowork_agent');
-  assert.equal(cowork.session_role, '');
   assert.equal(cowork.agent, true);
   assert.ok(cowork.brief, 'a cowork Agent receives the Ronin birth brief');
   assert.ok(cowork.birth_reading.length, 'a cowork Agent receives the boot shelf');
 
-  const terminal = await resolveForm(commonsForm({ session_type: 'terminal', session_role: '' }), new Set());
+  const terminal = await resolveForm(commonsForm({ session_type: 'terminal' }), new Set());
   assert.equal(terminal.session_type, 'terminal');
   assert.equal(terminal.agent, false);
   assert.equal(terminal.brief, '');
@@ -166,7 +168,6 @@ test('session_type is the only birth-path key, and blank session_role is an ordi
 test('bare_metal_agent resolves a real CLI without Ronin birth machinery', async () => {
   const bare = await resolveForm(commonsForm({
     session_type: 'bare_metal_agent',
-    session_role: '',
     name: 'bare-proof',
     provider: 'anthropic',
     team: 'scratchteam',
@@ -174,12 +175,49 @@ test('bare_metal_agent resolves a real CLI without Ronin birth machinery', async
   assert.equal(bare.session_type, 'bare_metal_agent');
   assert.equal(bare.agent, true);
   assert.ok(bare.cmd, 'the provider CLI is resolved');
+  assert.doesNotMatch(bare.cmd, /dangerously/, 'bare metal uses provider configuration unless explicitly changed');
+  assert.match(bare.cmd, /--strict-mcp-config/, 'bare metal does not inherit Ronin gbrain');
+  assert.equal(bare.launch_mode, 'configured');
   assert.ok(bare.launchAgent, 'the launched provider is stamped');
   assert.equal(bare.brief, '', 'Ronin composes no brief');
   assert.deepEqual(bare.birth_reading, [], 'Ronin reads no boot shelf');
+  assert.deepEqual(bare.behaviours, [], 'Campaign and Team behaviour defaults never reach bare metal');
   assert.equal(bare.assignment, null, 'Ronin opens no managed repository desk');
   assert.deepEqual(bare.tags, ['scratchteam'], 'Team is only an addressing tag');
   assert.equal(bare.team_objective, '', 'the Team roster does not resolve into the launch');
+});
+
+test('a Cowork Agent disconnects globally configured gbrain when its installation is off', async () => {
+  const cowork = await resolveForm(commonsForm({
+    session_type: 'cowork_agent',
+    name: 'gbrain-off-proof',
+    provider: 'openai',
+    model: 'gpt-5.6-terra',
+  }), new Set());
+  const gbrain = cowork.installations.find((installation) => installation.name === 'gbrain');
+
+  assert.equal(gbrain?.enabled, false, 'the receipt source says the gbrain installation is off');
+  assert.match(cowork.cmd, /-c mcp_servers\.gbrain\.enabled=false/,
+    'the resolved command enforces the same disconnected truth at provider startup');
+  assert.ok(!cowork.behaviours.some((behaviour) => behaviour.book === 'gbrain'),
+    'no gbrain behaviour is delivered while its installation is off');
+});
+
+test('a Cowork Agent preserves provider configuration when gbrain is available and selected', async () => {
+  const cowork = await resolveForm(commonsForm({
+    session_type: 'cowork_agent',
+    campaign_id: 'gbrain_connected',
+    name: 'gbrain-on-proof',
+    provider: 'openai',
+    model: 'gpt-5.6-terra',
+  }), new Set());
+  const gbrain = cowork.installations.find((installation) => installation.name === 'gbrain');
+
+  assert.equal(gbrain?.enabled, true, 'the receipt source says the gbrain installation is on');
+  assert.doesNotMatch(cowork.cmd, /mcp_servers\.gbrain\.enabled=false/,
+    'the selected connected behaviour leaves the provider gbrain configuration available');
+  assert.ok(cowork.behaviours.some((behaviour) => behaviour.book === 'gbrain'),
+    'the selected gbrain behaviour is delivered');
 });
 
 test('and to the same role-free reading list — all + root, compiled once', async () => {
@@ -254,63 +292,33 @@ test('the model cascade is the mechanism\'s: blank inherits, explicit wins, iden
   assert.equal(f2.cmd, c2.cmd, 'and both callers get the identical resolved command');
 });
 
-test("an agent template's routines_on gbrain delivers as gbrain_mode connected, explicit hand still winning", async () => {
-  const fromTemplate = await resolveForm(commonsForm({
-    provider: 'anthropic', model: 'opus', template: 'personal_assistant',
-  }), new Set());
-  assert.equal(fromTemplate.gbrain_mode, 'connected', "the template's gbrain reaches the launch");
-  assert.deepEqual(fromTemplate.stated_by.gbrain_mode, [{ layer: 'template', source: 'personal_assistant' }]);
-
-  const overruled = await resolveForm(commonsForm({
-    provider: 'anthropic', model: 'opus', template: 'personal_assistant', gbrain_mode: 'disconnected',
-  }), new Set());
-  assert.equal(overruled.gbrain_mode, 'disconnected', 'an explicit launch answer beats the template');
-  assert.deepEqual(overruled.stated_by.gbrain_mode, [{ layer: 'launch', source: 'launch request' }]);
-});
 
 test('launch_mode preserves provider configuration or appends the declared bypass flag', async () => {
   const configured = await resolveForm(commonsForm({
-    provider: 'anthropic', model: 'opus', launch_mode: 'configured', gbrain_mode: 'connected',
+    provider: 'anthropic', model: 'opus', launch_mode: 'configured',
   }), new Set());
-  assert.equal(configured.cmd, 'claude --model opus');
+  assert.equal(configured.cmd, 'claude --model opus --strict-mcp-config');
   assert.equal(configured.launch_mode, 'configured');
   assert.deepEqual(configured.stated_by.launch_mode, [{ layer: 'launch', source: 'launch request' }]);
 
   const dangerous = await resolveForm(commonsForm({
-    provider: 'anthropic', model: 'opus', launch_mode: 'live_dangerously', gbrain_mode: 'connected',
+    provider: 'anthropic', model: 'opus', launch_mode: 'live_dangerously',
   }), new Set());
-  assert.equal(dangerous.cmd, 'claude --model opus --dangerously-skip-permissions');
+  assert.equal(dangerous.cmd, 'claude --model opus --dangerously-skip-permissions --strict-mcp-config');
   assert.equal(dangerous.launch_mode, 'live_dangerously');
 
+  const bareDangerous = await resolveForm(commonsForm({
+    session_type: 'bare_metal_agent', provider: 'openai', model: 'gpt-5.6-terra', launch_mode: 'live_dangerously',
+  }), new Set());
+  assert.match(bareDangerous.cmd, /--dangerously-bypass-approvals-and-sandbox/);
+  assert.match(bareDangerous.cmd, /mcp_servers\.gbrain\.enabled=false/);
+
   await assert.rejects(
-    () => resolveForm(commonsForm({ cmd: 'custom-agent', launch_mode: 'live_dangerously', gbrain_mode: 'connected' }), new Set()),
+    () => resolveForm(commonsForm({ cmd: 'custom-agent', launch_mode: 'live_dangerously' }), new Set()),
     /declares no `live_dangerously:` flag/,
   );
 });
 
-test('gbrain_mode preserves provider configuration or appends its declared disconnect tokens', async () => {
-  const connected = await resolveForm(commonsForm({
-    provider: 'openai', model: 'gpt-5.6-terra', launch_mode: 'configured', gbrain_mode: 'connected',
-  }), new Set());
-  assert.equal(connected.cmd, 'codex --model gpt-5.6-terra');
-  assert.equal(connected.gbrain_mode, 'connected');
-
-  const codexDisconnected = await resolveForm(commonsForm({
-    provider: 'openai', model: 'gpt-5.6-terra', launch_mode: 'configured', gbrain_mode: 'disconnected',
-  }), new Set());
-  assert.equal(codexDisconnected.cmd, 'codex --model gpt-5.6-terra -c mcp_servers.gbrain.enabled=false');
-  assert.equal(codexDisconnected.gbrain_mode, 'disconnected');
-
-  const claudeDisconnected = await resolveForm(commonsForm({
-    provider: 'anthropic', model: 'opus', launch_mode: 'configured', gbrain_mode: 'disconnected',
-  }), new Set());
-  assert.equal(claudeDisconnected.cmd, 'claude --model opus --strict-mcp-config');
-
-  await assert.rejects(
-    () => resolveForm(commonsForm({ cmd: 'custom-agent', launch_mode: 'configured', gbrain_mode: 'disconnected' }), new Set()),
-    /declares no `gbrain_disconnected:` tokens/,
-  );
-});
 
 test('mandate defaults are complete, Team seeds them, and the explicit launch wins', async () => {
   const stock = await resolveForm(commonsForm(), new Set());
@@ -340,14 +348,13 @@ test('a ronin launch is legal, and so is a launch onto a tag-only team', async (
   await assert.rejects(() => resolveForm(commonsForm({ team: 'Ghosts!' }), new Set()), /team name/);
 });
 
-test('stated_by carries the settled launch, Team, role, and Campaign layers', async () => {
+test('stated_by carries the settled launch, Team, and Campaign layers', async () => {
   const explicit = await resolveForm(commonsForm({
     name: 'attribution-proof',
     project_root: 'beta',
     cmd: 'claude --model haiku',
-    gbrain_mode: 'connected',
   }), new Set());
-  for (const key of ['name', 'project_root', 'cmd', 'gbrain_mode', 'session_role']) {
+  for (const key of ['name', 'project_root', 'cmd']) {
     assert.deepEqual(explicit.stated_by[key], [{ layer: 'launch', source: 'launch request' }], key);
   }
 
@@ -355,28 +362,14 @@ test('stated_by carries the settled launch, Team, role, and Campaign layers', as
   assert.equal(inherited.stated_by.project_root[0]?.layer, 'team_roster');
   assert.match(inherited.stated_by.project_root[0]?.source ?? '', /team_rosters\/scratchteam\.md$/);
 
-  const campaign = await resolveForm(commonsForm({ session_role: '' }), new Set());
-  assert.equal(campaign.stated_by.dial[0]?.layer, 'campaign');
-  assert.match(campaign.stated_by.dial[0]?.source ?? '', /agent_defaults\.dial/);
+  const campaign = await resolveForm(commonsForm(), new Set());
+  assert.deepEqual(campaign.stated_by.dial, [{ layer: 'system', source: 'src/spawn.ts' }]);
 });
 
-test('a sparse Agent Routine choice overrides its parent only for that birth', async () => {
-  const inherited = await resolveForm(forkitForm(), new Set());
-  const parentWorktrees = inherited.routines.find((routine) => routine.name === 'ronin_worktrees');
-  assert.ok(parentWorktrees, 'the Worktrees Routine is in the launch catalog');
-
-  const overridden = await resolveForm(forkitForm({
-    routines: { ronin_worktrees: !parentWorktrees!.enabled },
-  }), new Set());
-  const agentWorktrees = overridden.routines.find((routine) => routine.name === 'ronin_worktrees');
-  assert.equal(agentWorktrees?.enabled, !parentWorktrees!.enabled);
-  assert.equal(agentWorktrees?.stated_by, 'agent');
-  assert.deepEqual(overridden.stated_by.routines, [{ layer: 'launch', source: 'launch request' }]);
-});
 
 test('server resolution returns profile and durable Team context without browser reconstruction', async () => {
   const resolved = await resolveForm(forkitForm(), new Set());
-  assert.equal(resolved.launch_mode, 'live_dangerously');
+  assert.equal(resolved.launch_mode, 'configured');
   assert.equal(resolved.team_objective, 'prove the parity');
   assert.equal(resolved.team_branch, '');
   assert.equal(resolved.team_wipeboard, 'scratchteam');
@@ -408,37 +401,7 @@ test('the birth prompt carries mandate choices inherited from the Team', async (
   assert.match(inherited.brief, /Output: ideas/);
 });
 
-test('a stock task board keeps a stated order, and OpenShell is never in the middle of it', async () => {
-  // REGRESSION, 2026-08-22. The combined catalog had FILE order; a directory has none, so
-  // `order:` is the replacement — and it shipped unpopulated, which sorted the board
-  // alphabetically and moved `open shell` from the end into the middle of the loose tail.
-  // The one button that hands you a bare shell landing where a habitual click goes is how
-  // "New session dumps me to a shell" happens without a single line of launch code being
-  // wrong. Order is a launch fact, not decoration.
-  const { listSessionRoles } = await import('../src/resource-adapters.js');
-  const tasks = await listSessionRoles();
-  const names = tasks.map((t) => t.name);
-  assert.deepEqual(names, [
-    'RiffOnIt', 'DraftPlan', 'CutCode', 'ChaseBug', 'CheckWork', 'QuarterBack',
-    'OddJob', 'Atarashi', 'PersonalAssistant', 'OpenShell', 'MikaAssist',
-  ]);
-  // OpenShell sits in the `extra` family and near the end — what matters is that it is
-  // not among the buttons that start work, which is where alphabetical order had put it.
-  assert.ok(names.indexOf('OpenShell') > names.indexOf('CheckWork'));
-});
-
-test('every stock definition states its order, so no board is sorted by accident', async () => {
-  const { readDefinitions } = await import('../src/resource-adapters.js');
-  for (const kind of ['role_families', 'session_roles'] as const) {
-    for (const d of await readDefinitions(kind)) {
-      if (d.origin !== 'stock') continue; // the owner's own may take the unordered tail
-      assert.ok(d.has('order'), `${kind}/${d.name}.md ships without \`order:\` — the board would sort itself`);
-      assert.ok(Number.isFinite(Number(d.get('order'))), `${kind}/${d.name}.md has a non-numeric order`);
-    }
-  }
-});
-
-test('an ordinary assisted launch starts an agent with its axis and the full brief', async () => {
+test('an ordinary assisted launch starts an agent with the full brief', async () => {
   // THE RELEASE-BLOCKER SHAPE, asserted end to end at the mechanism: what an ordinary
   // Commons click resolves to must be an AGENT launch, on nonblank axes, carrying the
   // compiled reading list. A launch that quietly resolved agentless, or lost an axis on
@@ -448,47 +411,28 @@ test('an ordinary assisted launch starts an agent with its axis and the full bri
   assert.equal(r.agent, true, 'an ordinary launch starts a CLI');
   assert.ok(r.cmd, 'and has a command to start');
   assert.ok(r.launchAgent, 'and stamps which CLI it started');
-  assert.equal(r.session_role, 'DraftPlan');
   assert.ok(r.project_root, 'a session is always born somewhere');
   assert.match(r.brief, /Read first:/, 'the Build Brief carries its reading list');
   assert.ok(reading(r.brief).length >= 3, 'the levels, not a bare prompt');
 });
 
-test('QuarterBack is a session_role, pinned as the developer family\'s default lead', async () => {
-  // R33: coordinating is work a session moves into and out of. R35 adds the pin: the
-  // developer family suggests QuarterBack first when a team is built from its shelf —
-  // a default, never the team_lead designation, which is the owner's hand on a live
-  // session and may land on the secretary instead.
-  const { listSessionRoles, listRoleFamilies } = await import('../src/resource-adapters.js');
-  const tasks = await listSessionRoles();
-  const roles = await listRoleFamilies();
-
-  assert.ok(tasks.some((t) => t.name === 'QuarterBack'), 'QuarterBack is a session_role');
-  assert.ok(!roles.some((r) => r.name === 'quarterback'), 'and not a family');
-
-  const developer = roles.find((r) => r.name === 'developer');
-  assert.ok(developer, 'developer is the shelf it sits on');
-  assert.equal(developer!.default_lead_role, 'QuarterBack');
-  assert.equal(developer!.session_roles[0], 'QuarterBack', 'the pin presents it first');
-
-  const qb = await resolveForm(commonsForm({ session_role: 'QuarterBack', team: 'builders', team_lead: true }), new Set());
-  assert.equal(qb.session_role, 'QuarterBack');
-  assert.equal(qb.dial, 'write', 'the Campaign dial lands after the presentation-only role pin');
-  assert.match(qb.brief, /teams\.md/, 'the explicit team_lead designation carries the lead reading');
+test('team_lead is explicit and carries the lead reading', async () => {
+  const lead = await resolveForm(commonsForm({ team: 'builders', team_lead: true }), new Set());
+  assert.equal(lead.dial, 'read');
+  assert.match(lead.brief, /teams\.md/);
 });
 
-test('Mika house mechanics resolve without a session_role', async () => {
+test('Mika house mechanics resolve explicitly', async () => {
   const mika = await resolveForm({
     house_seat: 'mika',
     name: 'mika_agent',
-    prompt: '+system_help:',
+    prompt: 'Help me with Ronin.',
   }, new Set());
-  assert.equal(mika.session_role, '');
   assert.equal(mika.name, 'mika_agent');
   assert.match(mika.dir, /\/mika$/);
   assert.equal(mika.project_root, 'mika_home');
   assert.equal(mika.capExempt, true);
-  assert.equal(mika.routines.every((routine) => !routine.enabled), true);
+  assert.equal(mika.contributions.every((contribution) => !contribution.enabled), true);
   assert.equal(mika.ack, false);
   assert.equal(mika.opening, '{prompt}', 'nothing is typed at her beyond the request itself');
   // The launch prefixes "You are the Mika Assist." — with the posture that is the whole typed intro: two sentences.
@@ -508,22 +452,23 @@ test('a name alone resolves the ordinary Cowork Agent birth', async () => {
   assert.equal(born.session_type, 'cowork_agent');
   assert.equal(born.name, 'name_only');
   assert.equal(born.project_root, 'alpha', 'the existing top-active-root chain answers placement');
+  assert.ok(born.installations.length > 0, 'the receipt source carries every installation');
+  assert.ok(!born.installations.some((installation) => installation.name === 'cowork_agent'), 'the Cowork Agent is not an installation switch');
   assert.deepEqual(born.mandate, { reach: 'plan', recruit: 'propose agents', output: ['open'] });
-  assert.equal(born.dial, 'write');
+  assert.equal(born.dial, 'read');
 });
 
-test('kind and behaviours resolve at birth, with unusable books ignored rather than refused', async () => {
+test('kind and behaviours resolve at birth, with unusable books reported as undelivered', async () => {
   const born = await resolveForm(commonsForm({
     kind: 'coding',
-    behaviours: ['sops:github', 'ways:cut_code', 'ways:not_there'],
+    behaviours: ['mandates', 'write_it_down', 'ways:not_there'],
   }), new Set());
   assert.equal(born.kind, 'coding');
-  assert.deepEqual(born.behaviours.map((row) => row.book), ['sops:github', 'ways:cut_code']);
-  assert.ok(born.birth_reading.some((file) => file.endsWith('/ronin_sops/github.md')));
-  assert.ok(born.birth_reading.some((file) => file.endsWith('/session_roles/CutCode.md')));
-  assert.match(born.brief, /ronin_sops\/github\.md/);
-  assert.match(born.brief, /session_roles\/CutCode\.md/);
-  assert.deepEqual(born.ignored, ['behaviours[ways:not_there]']);
+  assert.deepEqual(born.behaviours.map((row) => row.book), ['mandates', 'write_it_down']);
+  assert.ok(born.birth_reading.some((file) => file.endsWith('/behaviours/mandates.md')));
+  assert.ok(born.birth_reading.some((file) => file.endsWith('/behaviours/write_it_down.md')));
+  assert.deepEqual(born.ignored, []);
+  assert.deepEqual(born.undelivered, ['ways:not_there']);
   assert.equal(born.stated_by.kind[0]?.layer, 'launch');
   assert.equal(born.stated_by.behaviours[0]?.layer, 'launch');
 });
@@ -533,7 +478,7 @@ test('a selected template names unchanged preset values without reapplying edite
     template: 'office_manager',
     prompt: 'Be my office manager — handle the daily grind: inbox, calendar, paperwork.',
     mandate: { reach: 'execute', recruit: 'nobody', output: 'open' },
-    behaviours: ['sops:accounts'],
+    behaviours: ['write_it_down'],
   }), new Set());
   assert.deepEqual(preset.stated_by.template, [{ layer: 'template', source: 'office_manager' }]);
   assert.equal(preset.stated_by.brief[0]?.layer, 'template');

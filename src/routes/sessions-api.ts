@@ -24,6 +24,7 @@ import {
   createSession,
   sessionRuntime,
   setLaunchStamp,
+  setSessionIdentity,
   setProviderSessionId,
   setSessionKey,
   setSessionTitle,
@@ -81,7 +82,7 @@ const shutdownSlots = new ShutdownSlots();
 async function openDeskRefusal(name: string): Promise<string> {
   const desks = (await listDesks()).filter((desk) => desk.state === 'open' && (desk.owners?.length ? desk.owners : [desk.session]).includes(name));
   return desks.length
-    ? `Session "${name}" owns open desk${desks.length === 1 ? '' : 's'} ${desks.map((desk) => `${desk.repo}:${desk.branch}`).join(', ')}. Archive leaves managed-desk custody unchanged; run tejun-harakiri or Shut down Agent after closeout instead.`
+    ? `Session "${name}" owns open desk${desks.length === 1 ? '' : 's'} ${desks.map((desk) => `${desk.repo}:${desk.branch}`).join(', ')}. Archive leaves managed-desk custody unchanged; run session_end or Shut down Agent after closeout instead.`
     : '';
 }
 
@@ -96,7 +97,7 @@ async function performAgentShutdown(name: string, progress: (value: ShutdownProg
 }
 
 async function notifyShutdownBlockers(name: string, error: ShutdownRefused): Promise<void> {
-  const queued = await enqueueMessage(name, `Ronin could not close this Agent because assigned desk work needs closeout.\n${error.message}\nRun tejun-harakiri again after completing the named NEXT actions.`, 'house');
+  const queued = await enqueueMessage(name, `Ronin could not close this Agent because assigned desk work needs closeout.\n${error.message}\nRun session_end again after completing the named NEXT actions.`, 'house');
   await attemptMessage(queued.id, 'safe').catch(() => null);
 }
 
@@ -159,6 +160,7 @@ export function registerSessions(app: express.Express): void {
       if (!provider) return res.status(409).json({ error: `Could not identify a resumable ${runtime.agent || 'agent'} conversation.` });
       const archived: ArchivedSession = {
         version: 1, id: key, name, key, archived_at: new Date().toISOString(), cwd: runtime.cwd,
+        identity: (await listSessions()).find((s) => s.name === name)?.identity,
         agent: provider.agent, provider_session_id: provider.id, tags: await getTags(name), leads: await getLeads(name),
         wipeboards: await getWipeboards(name), note: await getNote(name), control: await getControl(name), project_root: await getProjectRoot(name),
       };
@@ -191,7 +193,8 @@ export function registerSessions(app: express.Express): void {
         await setWipeboards(archived.name, archived.wipeboards);
         await setNote(archived.name, archived.note);
         await setProjectRoot(archived.name, archived.project_root);
-        await setLaunchStamp(archived.name, archived.agent);
+        if (archived.identity) await setSessionIdentity(archived.name, archived.identity);
+        else await setLaunchStamp(archived.name, archived.agent);
         await setProviderSessionId(archived.name, archived.provider_session_id);
         await setControl(archived.name, archived.control);
         await writeTeams(archived.name, archived.tags);
@@ -429,7 +432,7 @@ export function registerSessions(app: express.Express): void {
     }
   });
 
-  for (const retired of ['session_job', 'family_role', 'session_task', 'session_role', 'role_family', 'team_role', 'campaign_kind', 'lifecycle']) {
+  for (const retired of ['session_job', 'family_role', 'session_task', 'role_family', 'team_role', 'campaign_kind', 'lifecycle']) {
     app.all(`/api/sessions/:name/${retired}`, (req, res) => {
       res.status(410).json({
         error:
@@ -563,7 +566,7 @@ export function registerSessions(app: express.Express): void {
       const expanded = await expandLookup(raw);
       const text = expanded ?? raw;
       const item = await enqueueMessage(name, text, 'owner');
-      const retained = await attemptMessage(item.id, 'safe');
+      const retained = await attemptMessage(item.id, 'force');
       res.json({ ok: true, control, expanded: expanded != null, queued: retained !== null, started: retained === null, message: retained });
     } catch (e) {
       if (e instanceof MessageRefused) return res.status(404).json({ error: e.message, code: 'target_missing' });

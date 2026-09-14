@@ -2,9 +2,9 @@
 import { fetchSessions } from './api.js';
 import { guard } from './errors.js';
 import { refreshHome } from './home.js';
-import { buildSessionPicker } from './macros.js';
+import { buildSessionPicker } from './session-picker.js';
 import { PAD_CODE, firePadBinding, padBinds, padChord } from './pad.js';
-import { buildPadAsk, buildPadPanel } from './padpanel.js';
+import { buildPadPanel } from './padpanel.js';
 import { buildNotePanel } from './panels.js';
 import { IS_TOUCH, S, tiles } from './state.js';
 import { isCoarse } from './tiledrop.js';
@@ -101,19 +101,15 @@ export function build() {
 
   // Per-session note editor (📝 on each tile head) — works the same on desktop and touch.
   guard('note panel', buildNotePanel);
-  // Session macros (⚡ on each tile head) are the tile's own — built in
-  // tilemacros.js by Tile itself; nothing to wire here.
-
   // Commons is still the tile head's ⛩, the brand mark and ⌃⇧C; Mika is the `mika` tool
   // and the desk's own asks; the pad panel opens from a row on the ⚙ Admin Desk
   // (js/cowork-commons.js) and its physical keys never needed the button.
   // Work Louder pad — both surfaces (owner override). The
-  // physical pad fires bound macros whether or not the panel is open.
+  // physical pad fires bound terminal/navigation keys whether or not the panel is open.
   // Session switcher — the pad key's list (also usable with plain ↑↓/↵ once open).
   guard('session picker', buildSessionPicker);
 
   guard('pad panel', buildPadPanel);
-  guard('pad ask', buildPadAsk);
   // The takeover listener: capture-phase so pad keycodes never reach xterm/tmux.
   // It only ever touches F13–F24, chords Glen explicitly bound, or (while the
   // panel's ⊕ Capture is armed) the one key being captured — every other key on
@@ -137,12 +133,6 @@ export function build() {
       const bind = padBinds[chord];
       if (!isPadKey && !bind) return;
       if (S.padPanel) S.padPanel.hit(chord);
-      if (S.padAsk && S.padAsk.isOpen()) {
-        // A prompt is up — pad keys pause so a stray press can't fire mid-typing.
-        e.preventDefault();
-        e.stopPropagation();
-        return;
-      }
       if (!bind && !(S.padPanel && S.padPanel.isOpen())) return;
       e.preventDefault();
       e.stopPropagation();
@@ -152,20 +142,10 @@ export function build() {
   );
 
   if (IS_TOUCH) {
-    // COPY MODE IS GONE. It existed because the only tape-less surface was an xterm
-    // CANVAS, which cannot be touch-selected — so the visible text was copied into a
-    // <textarea> panel to select out of. The unlocked tile renders a real div of text
-    // and touch is always unlocked, so long-press → Copy works on the transcript
-    // itself. On desktop the mirror still answers to modifier+drag + ⌘C (Option on a Mac,
-    // Shift elsewhere — SELECT_MOD in js/state.js).
-
-    // The keys the iOS keyboard can't send (Esc, ^C, Tab/⇧Tab, arrows) ride every
-    // coarse tile's composer now — js/keysrow.js, zero taps away — so the bar keeps
-    // no keypad, no keys drawer and no ニ sheet. What is left to do here is trim the
-    // desktop chrome off the bar.
+    // Locked touch copying is provided by the shared Copy action's text snapshot.
     guard('touch bar', trimBarForTouch);
   } else {
-    // Copy = hold the force-selection modifier and drag, then ⌘C / Ctrl-C. The modifier
+    // Copy = hold the force-selection modifier and drag, then native ⌘C / Ctrl+C. The modifier
     // is Option on a Mac and SHIFT everywhere else — xterm's own rule, mirrored in
     // Windows and Linux with nothing. Either way it forces a native selection over a
     // mouse-grabbing app or tmux mouse mode. The old Copy Mode toggle is retired — one
@@ -179,8 +159,8 @@ export function build() {
       // ordinary field) even though the browser had a perfectly good native selection.
       const fromTerminal = e.target instanceof Element && e.target.closest('.xterm');
       if (!fromTerminal) return;
-      const live = S.active && S.active.term.getSelection ? S.active.term.getSelection() : '';
-      const sel = live || S.lastSelection;
+      const owner = tiles.find((tile) => tile.el.contains(e.target));
+      const sel = owner?.term.getSelection() || owner?.lastSelection;
       // Only hijack ⌘C when the terminal actually has a selection; otherwise let the
       // browser copy normally. Works whether the selection came from Copy Mode (mouse
       // off) or a modifier+drag over a mouse-grabbing app.

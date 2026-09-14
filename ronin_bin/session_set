@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# session_set — change named facts on one existing live session; never creates it.
+set -u
+case "${1-}" in
+  -h|--help) [ "$#" -eq 1 ] || { echo "session_set: --help takes no other arguments. Run session_set --help." >&2; exit 2; }
+    cat <<'EOF'
+session_set — update one existing live Agent
+
+Usage:
+  session_set <name> [--team <team>] [--lead] [--root <path>]
+
+Only the named facts change. A missing Agent is refused and never created; use
+session_create for a birth. The bare form is refused; use session_check
+for a read. Related: session_check --help; session_create --help;
+team-lead --help
+EOF
+    exit 0 ;;
+esac
+. "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"
+TOOL_DIR=$(dirname "$SELF")
+die() { printf '%s\n' "$1" >&2; exit "${2:-4}"; }
+need_value() {
+  [ "$#" -ge 2 ] && [ -n "$2" ] && [ "${2#-}" = "$2" ] \
+    || die "BAD-ARG: $1 requires a value. Run session_set --help." 2
+}
+NAME="${1:-}"
+[ -n "$NAME" ] && [ "${NAME#-}" = "$NAME" ] || die "usage: session_set <name> [options]. Run session_set --help." 2
+shift
+TEAM="" LEAD="" ROOT=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --team) need_value "$@"; TEAM="$2"; shift 2 ;;
+    --lead) LEAD=1; shift ;;
+    --root|--project_root) need_value "$@"; ROOT="$2"; shift 2 ;;
+    *) die "BAD-ARG: $1. Run session_set --help." 2 ;;
+  esac
+done
+[ -n "$TEAM$LEAD$ROOT" ] || die "REFUSED: no update named — use session_check \"$NAME\" to read it" 4
+
+. "$TOOL_DIR/ronin-http.sh"
+ronin_connect || exit $?
+api() { curl -sS -m 60 "${RONIN_CURL[@]+"${RONIN_CURL[@]}"}" -H 'content-type: application/json' "$@" 2>/dev/null; }
+roster=$(api "$url/api/sessions") || die "UNREACHABLE: Ronin did not answer at $url" 5
+live=$(printf '%s' "$roster" | NAME="$NAME" python3 -c '
+import json, os, sys
+for s in json.load(sys.stdin):
+    if s.get("name") == os.environ["NAME"]:
+        print(json.dumps(s)); break
+' 2>/dev/null || true)
+[ -n "$live" ] || die "NO-SESSION: no live session named \"$NAME\" — use session_create to create it" 3
+
+did=""
+if [ -n "$TEAM" ]; then
+  tags=$(printf '%s' "$live" | python3 -c 'import sys,json; print(",".join(json.load(sys.stdin).get("tags") or []))')
+  case ",$tags," in *",$TEAM,"*) ;; *) tags="${tags:+$tags,}$TEAM" ;; esac
+  body=$(TAGS="$tags" python3 -c 'import json,os; print(json.dumps({"tags": os.environ["TAGS"]}))')
+  out=$(api -X POST --data "$body" "$url/api/sessions/$NAME/tags") || die "UNREACHABLE: Ronin did not answer at $url" 5
+  printf '%s' "$out" | grep -q '"ok":true' || die "REFUSED: $(printf '%s' "$out" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("error","?"))' 2>/dev/null)" 4
+  did="$did team=$TEAM"
+fi
+if [ -n "$LEAD" ]; then
+  t="$TEAM"
+  [ -n "$t" ] || t=$(printf '%s' "$live" | python3 -c 'import sys,json; t=json.load(sys.stdin).get("tags") or []; print(t[0] if t else "")')
+  [ -n "$t" ] || die "REFUSED: --lead needs a team — \"$NAME\" is on none; say --team <team>" 4
+  body=$(TEAM="$t" python3 -c 'import json,os; print(json.dumps({"teams": [os.environ["TEAM"]]}))')
+  out=$(api -X POST --data "$body" "$url/api/sessions/$NAME/team_lead") || die "UNREACHABLE: Ronin did not answer at $url" 5
+  printf '%s' "$out" | grep -q '"ok":true' || die "REFUSED: $(printf '%s' "$out" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("error","?"))' 2>/dev/null)" 4
+  did="$did 人=$t"
+fi
+if [ -n "$ROOT" ]; then
+  body=$(ROOT="$ROOT" python3 -c 'import json,os; print(json.dumps({"project_root": os.environ["ROOT"]}))')
+  out=$(api -X POST --data "$body" "$url/api/sessions/$NAME/project-root") || die "UNREACHABLE: Ronin did not answer at $url" 5
+  printf '%s' "$out" | grep -q '"ok":true' || die "REFUSED: $(printf '%s' "$out" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("error","?"))' 2>/dev/null)" 4
+  did="$did root=$ROOT"
+fi
+echo "UPDATED $NAME$did"

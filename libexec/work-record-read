@@ -1,0 +1,203 @@
+#!/usr/bin/env bash
+# Internal read implementation for `work-record`.
+# Usage: work-record read                      your letter, teaching lines and all
+#        work-record read --json               just the block, for a machine
+#        work-record read --rungs              the markable positions, numbered
+#        work-record read --session <name> …   another session (dial 👁 read or 🤖 write)
+#
+# --rungs prints the positions a marker can point at, AS THEY SIT IN THE LETTER: a gate
+# is rung N, a leg is N.M. Deliberately not an index into a flattened list — that number
+# is invisible to a human reading the file, and `at` has to be checkable by eye.
+# `work-record update_record --at` takes exactly one of these.
+#
+# NO ARGUMENTS, BY DESIGN. You do not name a session and you do not learn a path: the
+# tool knows which pane it is running in, and where the file lives is Ronin's business.
+# Both facts have already moved once. An agent that memorised either would keep using it
+# afterwards, which is how a wrong path becomes a wrong ladder becomes a tile that lies —
+# and coordinators had begun pasting shell incantations to derive session keys by hand.
+#
+# Read-only. `work-record update_record` is the other half, and there is no third tool.
+set -u
+
+die() { printf '%s\n' "$*" >&2; exit 3; }
+help() {
+  cat <<'EOF'
+work-record read — read a session's work record
+
+Usage:
+  work-record project read <id>
+  work-record read
+  work-record read --json
+  work-record read --rungs
+  work-record read --session <name> [--json|--rungs]
+
+Common tasks:
+  Use the bare form for the complete record, --json for its data block, and
+  --rungs for positions accepted by work-record update_record --session <name> --at N[.M].
+
+This tool reads records; it does not author progress. Reading may refresh the
+machine-owned Team summary in the record. Related: work-record update_record --help
+EOF
+}
+case "${1-}" in
+  -h|--help) [ "$#" -eq 1 ] || die "work-record read: --help takes no other arguments. Run work-record read --help."; help; exit 0 ;;
+esac
+
+# WHICH SESSION AM I — and it must NEVER guess.
+#
+# This function had a fallback that silently wrote one session's ladder into another's
+# letter, destroying it. `tmux display-message -p -t "$TMUX_PANE"` looks safe until
+# TMUX_PANE is EMPTY — which it is in some agents' tool shells — because `-t ""` does not
+# fail. It answers for the ATTACHED CLIENT: whichever tile the owner happens to have
+# focused in the browser at that instant. Writes followed the owner's mouse. The only
+# symptom was one line of output nobody reads, and a letter was lost.
+#
+# Three sources, each authoritative, none the attached client — resolved by the one
+# ronin_session_me in tool-path.sh, shared with every tool that acts on its own letter:
+#   TMUX_PANE  the pane this shell runs in -> its window -> the non-viewer session holding it
+#   $TMUX      socket,pid,SESSION_ID — set for any process started inside a session
+#   the path   <session-commands>/<session>/<tool>, the directory a born session reaches
+#              its tools through — for the tool shells that are not inside tmux at all
+# If none answers, DIE. A tool that cannot tell whose letter it is has exactly one
+# correct behaviour, and it is not "pick the one on screen".
+me() {
+  ronin_session_me && return 0
+  die "work-record read: cannot tell which session this is — TMUX_PANE and \$TMUX are both unset, and this
+  was not run through a session's own command directory.
+  Refusing rather than guessing: this used to fall back to the focused tile and wrote one
+  session's ladder into another's letter. Pin the pane and retry:
+    TMUX_PANE=\$(tmux list-panes -t <your-session> -F '#{pane_id}' | head -1) work-record read ..."
+}
+
+# <name> -> the session KEY, by EXACT name.
+#
+# Not `display-message -t <name>`: that prefix-matches (so `tegami` could answer for
+# `tegami_probe`), and the `=name` exact-match form returns EMPTY on this tmux — which
+# does not fail, it just yields a wrong path. One list, one exact match, no guessing.
+#
+# Prefers the stamped @ronin-key so a rename cannot change the answer; falls back to
+# <name>-<created>, which the recorder derives identically with no Ronin involved.
+key_of() {
+  local row stamped created
+  row=$(tmux list-sessions -F '#{session_name}	#{@ronin-key}	#{session_created}' 2>/dev/null \
+        | awk -F'	' -v n="$1" '$1==n {print; exit}')
+  [ -n "$row" ] || die "work-record read: no such session: $1"
+  stamped=$(printf '%s' "$row" | cut -f2)
+  created=$(printf '%s' "$row" | cut -f3)
+  if   [ -n "${stamped// /}" ]; then printf '%s\n' "$stamped"
+  elif [ -n "${created// /}" ]; then printf '%s\n' "$1-$created"
+  else printf '%s\n' "$1"; fi
+}
+
+MODE=block
+TARGET=""
+PROJECT_ID=""
+if [ "${1-}" = project ]; then
+  [ "${2-}" = read ] && [ -n "${3-}" ] && [ "$#" -eq 3 ] \
+    || die "work-record read: use project read <id>."
+  MODE=project; PROJECT_ID=$3; shift 3
+fi
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --json)    MODE=json ;;
+    --rungs)   MODE=rungs ;;
+    --session) shift; TARGET=${1-} ;;
+    *) die "work-record read: unknown argument: $1. Run work-record read --help." ;;
+  esac
+  shift
+done
+
+. "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/../ronin_bin/tool-path.sh"
+RONIN_TOOL_INVOKED=${WORK_RECORD_INVOKED:-$RONIN_TOOL_INVOKED}
+if [ -n "$TARGET" ]; then
+  NAME=$TARGET
+else
+  NAME=$(me) || exit 3
+fi
+# Where the session record lives on THIS machine — asked, never spelled. See docs/stores.md.
+STORE="$(cd "$(dirname "$SELF")/../bin" && pwd)/ronin-store"
+[ -x "$STORE" ] || STORE=ronin-store
+FILE="$("$STORE" session)/$(key_of "$NAME")/tegami.md"
+[ -f "$FILE" ] || die "work-record read: @$NAME has no letter yet — Ronin seeds one within a minute."
+
+# READ-REPAIR THE TEAMS BLOCK (R35). The letter's "teams" key is machinery-derived —
+# team name, team_role, objective per team — and a reread is exactly the moment the
+# owner said a fresh team objective should arrive. So the derivation happens here too:
+# tags + rosters in, and when the stored value differs the file is quietly brought
+# current before it is shown. Failure is silence; a read must never break on a repair.
+TEAM_TAGS=$(tmux list-sessions -F '#{session_name}	#{@ronin-tags}' 2>/dev/null   | awk -F'	' -v n="$NAME" '$1==n {print $2; exit}')
+python3 - "$FILE" "$("$STORE" team_rosters 2>/dev/null || true)" "$TEAM_TAGS" <<'REPAIR' 2>/dev/null || true
+import json, os, re, sys
+src, roster_dir, raw = sys.argv[1], sys.argv[2], sys.argv[3]
+teams = []
+for team in [t.strip() for t in raw.split(",") if t.strip()]:
+    entry = {"team": team, "team_role": "", "objective": ""}
+    try:
+        text = open(os.path.join(roster_dir, team + ".md")).read()
+        for key in ("team_role", "objective"):
+            m = re.search(r"^-\s*\*\*%s:\*\*\s*(.*)$" % key, text, re.M)
+            if m and m.group(1).strip() not in ("", "—", "-"):
+                entry[key] = m.group(1).strip()
+    except OSError:
+        pass
+    teams.append(entry)
+text = open(src).read()
+m = re.search(r"```(?:json)?\s*\n([\s\S]*?)\n```", text)
+if not m:
+    sys.exit(0)
+d = json.loads(m.group(1))
+if d.get("teams") == teams:
+    sys.exit(0)
+d["teams"] = teams
+order = ("objective", "mandate", "teams", "repos", "projects", "ladder_state", "ladder", "docs", "at")
+block = json.dumps({k: d[k] for k in order if k in d}, indent=2, ensure_ascii=False)
+extra = {k: v for k, v in d.items() if k not in order}
+if extra:
+    sys.exit(0)  # keys this tool does not know: repairing would drop them, so leave it
+tmp = src + ".teams"
+open(tmp, "w").write(text[:m.start(1)] + block + text[m.end(1):])
+os.replace(tmp, src)
+REPAIR
+
+if [ "$MODE" = project ]; then
+  awk '/^```/{f=!f; if(f) next; else exit} f' "$FILE" | python3 -c '
+import json, sys
+d=json.load(sys.stdin); want=sys.argv[1]
+p=next((p for p in (d.get("projects") or []) if isinstance(p,dict) and p.get("id")==want),None)
+if p is None: sys.exit("work-record read: no project %s." % want)
+print(json.dumps(p, indent=2, ensure_ascii=False))
+' "$PROJECT_ID"
+elif [ "$MODE" = rungs ]; then
+  # The flat, numbered list of markable positions. A phase is a grouping, not a place to
+  # stand, so it is shown for context but never numbered.
+  awk '/^```/{f=!f; if(f) next; else exit} f' "$FILE" | python3 -c '
+import json, sys
+try: d = json.load(sys.stdin)
+except Exception: sys.exit("work-record read: block does not parse")
+at = d.get("at")
+at = at if isinstance(at, dict) else {}   # any other shape is not a pointer
+ar, al = at.get("rung"), at.get("leg")
+n = 0
+for ri, r in enumerate(d.get("ladder") or [], 1):
+    if "gate" in r:
+        here = "<-- at" if ar == ri and al is None else ""
+        print("%-7s GATE  %s   [%s] %s" % (ri, r.get("gate", ""), r.get("status", ""), here))
+        n += 1
+    else:
+        print("%-7s phase %s" % (ri, r.get("phase", "")))
+        for li, leg in enumerate(r.get("legs") or [], 1):
+            here = "<-- at" if ar == ri and al == li else ""
+            print("%-7s leg   %s   [%s] %s"
+                  % ("%d.%d" % (ri, li), leg.get("title", ""), leg.get("status", "PLANNED"), here))
+            n += 1
+if not n:
+    print("(no markable rungs)")
+'
+elif [ "$MODE" = json ]; then
+  # The one fenced block and nothing else: the markdown teaches a human, the json is the
+  # payload. If the fence was dropped, hand back the whole file rather than nothing.
+  BLOCK=$(awk '/^```/{f=!f; if(f) next; else exit} f' "$FILE")
+  [ -n "${BLOCK// /}" ] && printf '%s\n' "$BLOCK" || cat "$FILE"
+else
+  cat "$FILE"
+fi

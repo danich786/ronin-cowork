@@ -136,9 +136,7 @@ export function buildGbrain(root, isShowing, askPersonalAssistant, options = {})
   let polling = null;
   const stopPolling = () => { if (polling) { clearInterval(polling); polling = null; } };
 
-  // THE SETUP WORK SURFACE: three questions, plain answers, one control each.
-  // Installed? Available to Agents? Which accounts are linked? Then the one next step.
-  let agentsDefault = null;
+  // THE SETUP WORK SURFACE: the measured installation and linked accounts, then one next step.
   const renderSetup = (result) => {
     const model = gbrainSetupModel(result, options.availability?.());
     if (model.summary) options.onState?.(model.summary, model);
@@ -152,7 +150,6 @@ export function buildGbrain(root, isShowing, askPersonalAssistant, options = {})
     };
     const wrap = make('section', 'setup-gbrain-compact');
     wrap.dataset.state = model.state;
-
     const lockup = make('header', 'setup-gbrain-lockup');
     const glyph = make('i', 'setup-gbrain-glyph', '◇');
     glyph.setAttribute('aria-hidden', 'true');
@@ -215,36 +212,14 @@ export function buildGbrain(root, isShowing, askPersonalAssistant, options = {})
       installed.append(el);
     }
 
-    // 2. Available to Agents? The Campaign's own gbrain Routine: on for every new Agent, or
-    //    only where a team or a launch turns it on.
-    if (model.installed && options.agentsDefault) {
-      const agents = row(t('gbrain.setup_q_agents', 'Available to Agents'));
-      const group = make('div', 'setup-gbrain-choice');
-      group.setAttribute('role', 'group');
-      group.setAttribute('aria-label', t('gbrain.setup_q_agents', 'Available to Agents'));
-      const choices = [[true, t('gbrain.setup_agents_all', 'Default for all Agents')], [false, t('gbrain.setup_agents_selected', 'Only selected Agents')]];
-      const paintChoice = () => { for (const el of group.children) el.setAttribute('aria-pressed', String(agentsDefault !== null && (el.dataset.on === 'true') === agentsDefault)); };
-      for (const [on, label] of choices) {
-        const el = make('button', 'setup-gbrain-option', label);
-        el.type = 'button';
-        el.dataset.on = String(on);
-        el.addEventListener('click', async () => {
-          for (const each of group.children) each.disabled = true;
-          const saved = await options.agentsDefault.write(on);
-          agentsDefault = saved?.ok ? on : agentsDefault;
-          for (const each of group.children) each.disabled = false;
-          paintChoice();
-          note.textContent = saved?.ok ? '' : (saved?.message || t('gbrain.setup_agents_save_failed', 'Could not save.'));
-        });
-        group.append(el);
-      }
-      const note = make('p', 'setup-gbrain-hint', t('gbrain.setup_agents_hint', 'Selected Agents get it in Team Configuration or on the New Agent form.'));
-      agents.append(group, note);
-      paintChoice();
-      if (agentsDefault === null) void Promise.resolve(options.agentsDefault.read()).then((value) => { agentsDefault = value; paintChoice(); });
+    if (options.installationControls) {
+      const available = row(t('campaign_view.available', 'Available'));
+      available.append(options.installationControls.available);
+      const defaults = row(t('campaign_view.default_for_all_agents', 'Default for all Agents'));
+      defaults.append(options.installationControls.defaultForAll, options.installationControls.defaultNote);
     }
 
-    // 3. Which accounts are linked? Yes or no, per account, from gbrain's own list.
+    // Which accounts are linked? Yes or no, per account, from gbrain's own list.
     if (model.installed) {
       const accounts = row(t('gbrain.setup_q_accounts', 'Accounts linked'));
       if (!model.accounts) accounts.append(make('p', 'setup-gbrain-line', t('gbrain.setup_unreadable', 'Could not read')));
@@ -261,6 +236,7 @@ export function buildGbrain(root, isShowing, askPersonalAssistant, options = {})
       }
     }
     wrap.append(answers);
+    if (options.installationControls) wrap.append(options.installationControls.notice);
 
     // The one next step.
     if (model.action && model.action.place === 'next') {

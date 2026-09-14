@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
 import { terminalInputRouter, terminalOwnsTarget, wireTerminalInput } from '../public/js/terminal-input.js';
 import { TileWire } from '../public/js/tilewire.js';
 import { tileInputAction } from '../src/viewer.ts';
@@ -87,4 +88,13 @@ test('mouse release passes through copy mode while typing remains quiet', () => 
   const scrolled = { inMode: true, appWantsMouse: false };
   assert.equal(tileInputAction(scrolled, '\x1b[<0;2;1m'), 'write');
   assert.equal(tileInputAction(scrolled, 'hello'), 'drop');
+});
+
+test('terminal actions are routed before bytes; the pad uses the same intents', async () => {
+  const [tile, keys, pad] = await Promise.all(['tile.js', 'keysrow.js', 'pad.js'].map((name) => fs.readFile(new URL('../public/js/' + name, import.meta.url), 'utf8')));
+  assert.match(tile, /installTileControls\(this\)/);
+  assert.doesNotMatch(tile, /d === INTERRUPT/);
+  assert.doesNotMatch(keys, /\\x03/);
+  assert.match(pad, /intent: 'stop'/);
+  assert.match(pad, /controlAction\(k.intent\)/);
 });

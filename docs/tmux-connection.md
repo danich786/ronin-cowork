@@ -3,11 +3,6 @@
 How this server talks to the tmux server, why it no longer starts a process per question,
 and how the Services parts are switched on and off. Written 2026-09-04, the day it landed.
 
-For the broader plan, read [tmux: reliable sessions and usable recorded work](tmux-content-strategy.md).
-It develops two parallel tracks: hosting and session lifecycle across VMs, local servers,
-and Macs; and recording for readable transcripts, agent catch-up, and Ronin-Koe.
-This page documents the existing connection implementation, not completion of those tracks.
-
 ## The problem it solved
 
 Every question to tmux — list sessions, capture a pane, read an option — used to start a
@@ -32,7 +27,7 @@ in `src/tmux-client.ts` is the server's single door to tmux:
   place. It resolves with stdout, rejects with the `%error` text. One command is in flight
   at a time; replies are matched by their frame number.
 - A timed-out command tears the connection down and the client reconnects with backoff.
-  While it is down, `run` falls back to `execFile('tmux', …)` so nothing stops, and
+  While it is down, `run` falls back to `execFile('tmux', …)` to keep commands available, and
   `state()` says `fallback`.
 - The connection is to the tmux server the environment names **at the time of the call**
   (`TMUX`, `TMUX_TMPDIR`), as `execFile` was; a change reopens the connection.
@@ -50,8 +45,9 @@ in `src/tmux-client.ts` is the server's single door to tmux:
 
 **The rule:** no `execFile('tmux', …)` or `spawn('tmux', …)` in `src/` outside the client
 and the pty attach paths (`src/ws/pty.ts`, `src/viewer.ts`). `tests/tmux.test.ts` refuses
-it. A tile's Locked view is still a real `tmux attach` through a pty; that is Faucet A and
-is not on the connection yet.
+it. A tile's Locked view is still a real `tmux attach` through a pty; that is Faucet A,
+a separate transport. Whether to replace it is an open Track A comparison, not a
+prerequisite for the proposed Unlocked recording path.
 
 ## The spawn broker: `src/spawn-broker.ts`
 
@@ -76,18 +72,17 @@ last status, ctx and model.
 The Services parts live under `src/services/` (a placed copy; see the services repo's
 `bin/dev-sync`). Whether a part **runs** is decided at start by `src/parts.ts`:
 
-- A Routine claims the parts it runs — `- **parts:** …` in
-  `ronin_catalogs/routines/<name>.md`; Ronin Services claims `counting, koe, koshi,
-  koshi_weights, michi, rireki`. A claimed part loads only while that Routine is on for
-  the Campaign. Off means the part is never imported: no timers, no routes, no recorder,
+- An installation claims the parts it runs — `- **parts:** …` in
+  `ronin_catalogs/installations/<name>.md`; Ronin Services claims `counting, koe, koshi,
+  koshi_weights, michi, rireki`. A claimed part loads only while that installation is on. Off means the part is never imported: no timers, no routes, no recorder,
   and `/api/version` reports `stream: false`, so every tile is Locked.
 - A part can declare itself parked with a `PARKED.md` in its folder whose first line is
   the reason. It is parked regardless of any switch. The recorder (`rireki`) is parked
   this way for the whole Services beta.
-- A part no Routine claims (`machine`, `gbrain`) always loads.
+- A part no installation claims (`machine`, `gbrain`) always loads.
 - The switch is read once at start. `/api/installed` reports `parts` (on disk), `loaded`,
-  `parked` (with `routine` or `reason`) and `restart_needed`; the Routines and Installs
-  page's Services row says when the switch and the running copy disagree.
+  `parked` (with `installation` or `reason`) and `restart_needed`; the Installations
+  card's Services row says when the switch and the running copy disagree.
 
 ## Measuring it
 
@@ -97,10 +92,39 @@ per endpoint), `refresh-probe.mjs` and `team-probe.mjs` (repeated browser reload
 surface states, long tasks and errors). Open the inspector on the live server with
 `kill -USR1 <pid>`; the port is localhost-only and closes with the process.
 
-## What is not done
+## Remaining work recorded on September 4
 
 The tiles still refetch control, ctx and work record on every pushed session list; the
 `/api/session-max` and `/api/messages` endpoints still work per call; the roster's
 git-derived desk fields are not yet cached by record time; the services repo's own tmux
 calls are not on the connection (its parts are parked); and the tiles themselves do not
-ride the connection. The build-out and its measurements live in the lab.
+ride the connection. These are the dated implementation gaps from this report; reconcile
+them against current code before assigning fixes. The consolidated plan carries the
+forward workstreams. The build-out and its measurements live in the lab.
+
+## Global-dev Services placement
+
+`npm start` and `npm run dev` prepare the global development runtime before starting
+Ronin. Their `prestart`/`predev` command calls `scripts/prepare-dev-services.ts`, whose
+resolver is `src/dev-services.ts`. It reads the registered `ronin_cowork` and
+`ronin_services` Workspace Folders and each repository's declared working branch.
+Only the mounted Cowork global working checkout receives automatic placement; a
+private desk, candidate, preview, or `VERSION`-stamped release does not.
+
+For global dev, preparation calls the Services working checkout's existing
+`bin/dev-sync <cowork-working-checkout>`. The source must be at its working tip with
+no uncommitted runtime changes. A missing mounted Services working branch or failed
+placement stops startup with the reason, before the Services loader runs. The log
+names the source checkout, revision, and target. With no registered Services source,
+preparation skips placement; it does not install or remove a package.
+
+Promotion still advances the repository working lines and requests its ordinary
+restart. The operator units already use `npm start`, so that restart now prepares
+Services too. A later manual start or restart uses the same preparation. `npm run dev`
+prepares once before starting its watcher; restart that command after promoting
+Services to refresh its placed runtime. Direct `tsx src/index.ts` bypasses the npm
+startup pipeline and is not the global-dev start command.
+
+This is development synchronization, separate from `bin/ronin-update --services`:
+installed releases keep their artifact store, placement, and carry-forward update
+flow. Neither operation changes which capabilities the Campaign has enabled.

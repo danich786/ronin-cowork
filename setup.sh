@@ -85,6 +85,7 @@ fi
 # --- .env ---
 if [ ! -f .env ]; then
   cp .env.example .env
+  ronin_record_install_port "$REPO_DIR" "${RONIN_PREFLIGHT_PORT:-4810}"
   echo "==> created .env from .env.example (edit if you want auth / a different port)"
 fi
 # 600 OUTSIDE the create block, so a re-run repairs a box that installed before this line
@@ -129,9 +130,9 @@ OS="$(uname -s)"   # also used by the autostart section below
 
 # --- PATH: bin/shim (the tmux server wall), ronin_bin (agent tools), bin (house scripts) ---
 #   <repo>/bin/shim  bin/shim/tmux makes kill-server unavailable.
-#   <repo>/ronin_bin the agent-facing tools (tejun*) — what the catalogs tell agents to
-#                    type by bare name. Off PATH they only work from the repo root, which
-#                    no agent can rely on.
+#   <repo>/ronin_bin the Agent-facing capability tools — selected documents tell Agents
+#                    which bare names they receive. Off PATH they only work from the repo
+#                    root, which no Agent can rely on.
 #   <repo>/bin       the owner's own commands (ronin-byoin, ronin-doctor, ronin-deploy,
 #                    ronin-store, ronin-uninstall, ronin-export, bench) — typed by a
 #                    person, so they are on PATH too. Not libexec/: nobody types those.
@@ -286,7 +287,7 @@ else
     BLOCK_NOTE="# bin/shim is already prepended earlier in this file (or in a sibling rc); the"$'\n'"# \${PATH#…} strip keeps ONE shim entry and puts the tool dirs directly behind it."
     echo "    bin/shim already on PATH via $SHIM_AT:"
     echo "      $SHIM_HIT"
-    echo "    adding $RBIN_DIR (tejun*) and $BIN_DIR (write_tegami, read_tegami, koshi) behind it."
+    echo "    adding $RBIN_DIR (Agent tools) and $BIN_DIR (house tools) behind it."
   elif [ -n "$TOOLS_AT" ]; then
     PATH_LINE="$PATH_LINE_SHIM"; PATH_ADDS="$SHIM_DIR"
     BLOCK_NOTE="# the tool dirs are already on PATH via $TOOLS_AT; prepending the shim puts it ahead of them too."
@@ -312,8 +313,8 @@ else
       printf '\n%s\n' "$SHIM_BEGIN"
       printf '%s\n' "# bin/shim/tmux makes tmux kill-server unavailable. It is INERT unless this"
       printf '%s\n' "# directory comes before /usr/bin, which is why it is PREPENDED and stays FIRST."
-      printf '%s\n' "# ronin_bin holds the agent-facing tools (tejun*) and bin the house's own scripts"
-      printf '%s\n' "# (write_tegami, read_tegami, koshi) — all typed by bare name, so both stay on PATH."
+      printf '%s\n' "# ronin_bin holds Agent-facing tools and bin holds the house's own scripts"
+      printf '%s\n' "# (including koshi) — all typed by bare name, so both stay on PATH."
       printf '%s\n' "#  Safe to delete this block."
       [ -z "$3" ] || printf '%s\n' "$3"
       printf '%s\n' "$2"
@@ -361,8 +362,8 @@ else
   ronin_say "    NOTE: rc files are read at shell START — this shell and every session already"
   ronin_say "    open keep the old PATH. For the current shell, run:"
   ronin_say "      $PATH_LINE_BOTH"
-  ronin_say "    Check any shell with:  command -v tmux write_tegami"
-  ronin_say "      -> $SHIM_DIR/tmux  and  $BIN_DIR/write_tegami"
+  ronin_say "    Check any shell with:  command -v tmux work-record"
+  ronin_say "      -> $SHIM_DIR/tmux  and  $RBIN_DIR/work-record"
 fi
 
 # --- PATH: where an agent Ronin installs lands ---

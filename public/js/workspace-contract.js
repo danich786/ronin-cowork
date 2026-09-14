@@ -7,6 +7,11 @@ export const WORKSPACE_DESTINATIONS = Object.freeze([
 const destinationSet = new Set(WORKSPACE_DESTINATIONS);
 const text = (value) => typeof value === 'string' ? value : '';
 
+// Persisted seat value for an intentional blank. Absence still means an uninitialized
+// workspace whose owning view may seed a default on first entry.
+export const DISMISSED_WORKSPACE = '@empty';
+export const workspaceMaySeedDefault = (remembered) => remembered !== DISMISSED_WORKSPACE;
+
 export function workspaceTarget(view, param = '') {
   if (!destinationSet.has(view)) throw new Error(`Unknown workspace destination: ${view}`);
   return Object.freeze({ view, param: text(param) });

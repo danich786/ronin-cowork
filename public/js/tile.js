@@ -3,7 +3,7 @@ import { fetchSessions, setSessionTitle } from './api.js';
 import { request } from './request.js';
 import { toast } from './ui.js';
 import { retireSession } from './session-retire.js';
-import { IS_TOUCH, S, saveState, serviceMissing, tiles, WHEEL_DOWN } from './state.js';
+import { IS_TOUCH, S, saveState, serviceMissing, serviceParked, tiles, WHEEL_DOWN } from './state.js';
 import { guard } from './errors.js';
 import { buildLadder } from './shingo.js';
 import { buildTileHead, syncTileHead } from './tilehead.js';
@@ -11,8 +11,10 @@ import { installTextDrops } from './tiledroptext.js';
 import { dvrStep } from './dvr.js';
 import { TapeView } from './tapeview.js';
 import { TermView } from './termview.js';
+import { installTileControls, runTerminalAction, buildMobileControlButtons } from './terminal-controls.js';
 import { TileWire } from './tilewire.js';
 import { buildComposer } from './composer.js';
+import { sendComposerMessage } from './composer-rules.js';
 import { buildKeysRow } from './keysrow.js';
 import { buildTileDocView } from './tile-doc-view.js';
 import { isCoarse } from './tiledrop.js';
@@ -26,9 +28,14 @@ const readableSession = (name) => {
     .map((part) => part[0]?.toUpperCase() + part.slice(1)).join(' ');
 };
 
+let nextRetirementId = 0;
+
 export class Tile {
-  constructor(index) {
+  constructor(index, options = {}) {
     this.index = index;
+    // Hosted tiles commonly share the display index 0. Retirement identity belongs to
+    // this Tile instance so one open sheet never suppresses another tile's boundary.
+    this.retirementId = `tile-${++nextRetirementId}`;
     this.session = null;
     this.pending = ''; // UNLOCKED: locally-parked typed text (sent as one parcel on Enter)
     this.strip = null; // the thin bar showing this.pending over the tile
@@ -45,7 +52,16 @@ export class Tile {
     // references rather than re-queried: on touch these nodes are RELOCATED into the app
     // bar (js/tiledrop.js), and a later `querySelector` on the tile would find nothing.
     Object.assign(this, buildTileHead(this));
-    // Text dropped on the tile — an @mention or a doc reference — lands like a macro's.
+    this.onMinimize = typeof options.onMinimize === 'function' ? options.onMinimize : null;
+    this.emptyMark = document.createElement('div');
+    this.emptyMark.className = 'tile-empty-mark';
+    this.emptyMark.setAttribute('aria-hidden', 'true');
+    const emptyLogo = document.createElement('img');
+    emptyLogo.src = 'brand/nin-mark.svg';
+    emptyLogo.alt = '';
+    this.emptyMark.append(emptyLogo);
+    this.body.append(this.emptyMark);
+    // Text dropped on the tile — an @mention or a document reference — lands here.
     installTextDrops(this);
 
     // 🔓 THE UNLOCKED VIEW — mounted first, so the tape sits under the panel and the
@@ -66,13 +82,16 @@ export class Tile {
     // 🔒 THE LOCKED VIEW — xterm, opened into the body after the panel, as before.
     this.term = new TermView(this.body, {
       // Locked: key-for-key to the host (the mirror, unchanged). Unlocked: DVR input rules.
-      onUserData: (d) => (this.locked ? this.sendRaw(d) : this.dvrInput(d)),
+      onUserData: (d) => {
+        return this.locked ? this.sendRaw(d) : this.dvrInput(d);
+      },
       onProtocolData: (d) => this.wire.sendTerminalReply(d),
       onResize: ({ cols, rows }) => this.wire.send({ t: 'r', c: cols, r: rows }),
       onSelection: (s) => {
-        S.lastSelection = s;
+        this.lastSelection = s;
       },
     });
+    installTileControls(this);
     this.docView = buildTileDocView(this);
     this.body.append(this.docView.el);
 
@@ -222,7 +241,7 @@ export class Tile {
   clearOverlays() {
     this.closeLadder();
     document
-      .querySelectorAll('.tdrop.open, .tmac.open')
+      .querySelectorAll('.tdrop.open')
       .forEach((m) => m.classList.remove('open'));
   }
 
@@ -267,19 +286,6 @@ export class Tile {
     this.refreshControl(true);
   }
 
-  /** 🏷 shows how many groups this session is in — the label an agent can address it by. */
-  /**
-   * Set what this session is doing, by hand — `session_role` in its TEGAMI, the same
-   * field the agent maintains with `write_tegami`. The owner is the other writer, for an
-   * agent that has not re-marked itself; the dial and permissions are untouched.
-   *
-   * NOT JUST A RE-LABEL: the server hands it to the task observer, which delivers the
-   * new task's reading into the session exactly once (src/role-watch.ts), whoever
-   * authored it. THE SESSION_ROLE ONLY — teams have their own controls.
-   *
-   * The list is updated locally before the ws poll gets there, so the mark moves under
-   * your finger; the poll then confirms it, and would correct it if the write lost a race.
-   */
   openNote() {
     if (S.notePanel) S.notePanel.open(this.session);
   }
@@ -290,7 +296,7 @@ export class Tile {
    * Every control on the header that depends on a session is decided HERE, together.
    * They were decided in four places before, which is how three of them ended up never
    * being decided at all: 🏷 📝 the mark and the dial went inert with no session while ⛩
-   * ⚡ 🗑 stayed lit, though a letter, a macro drop and a kill are every bit as
+   * 🗑 stayed lit, though a letter and a kill are every bit as
    * meaningless without one. The rule is now visible in one list instead of implied by
    * which functions happened to exist.
    *
@@ -324,14 +330,9 @@ export class Tile {
     return this.wire.sendInput(d);
   }
 
-  /**
-   * A composer message. On the mirror it is its own frame: the host leaves a scrolled-back
-   * view, types it, and answers by id — the answer is what the composer clears on. The tape
-   * socket belongs to the record service and takes it as input with no answer to wait for.
-   */
-  sendParcel(text) {
-    if (this.locked) return this.wire.sendParcel(text);
-    return Promise.resolve({ ok: this.sendRaw(text), why: 'not connected' });
+  /** Ronin's box uses the same message sender in Locked and Unlocked views. */
+  sendMessage(text) {
+    return sendComposerMessage(this.session, text);
   }
 
   /** Housekeeping down the same socket (the ⤓ key's `{t:'bottom'}`). Quiet by design. */
@@ -361,7 +362,7 @@ export class Tile {
     if (this.term.mouseTracking()) for (let i = 0; i < 150; i++) this.sendRaw(WHEEL_DOWN);
   }
 
-  /** The composer's box, for the ⚡ macro prefill — null until the composer exists. */
+  /** The composer's box — null until the composer exists. */
   get composerTa() {
     return this.composer ? this.composer.ta : null;
   }
@@ -422,7 +423,6 @@ export class Tile {
     this.locked = this.output === 'locked';
     S.output = this.output;
     S.locked = this.locked;
-    this.pending = '';
     this.renderPending();
     this.syncOutput();
     if (this.tape) this.tape.setMode(this.output);
@@ -460,8 +460,11 @@ export class Tile {
     sel.hidden = off;
     for (const option of [...sel.options])
       if ((S.streamOff && option.value !== 'locked') || (option.value === 'agent_summary' && serviceMissing('koshi'))) option.remove();
+    const transcriptPark = serviceParked('rireki');
     sel.title = S.streamOff
-      ? t('output.title_locked', 'Output — Locked only. Ronin Services is not installed.')
+      ? transcriptPark
+        ? t('output.title_campaign_off', 'Output — Locked only. Ronin Services is off for this Campaign.')
+        : t('output.title_locked', 'Output — Locked only. Ronin Services is not installed.')
       : off ? t('output.title_off', 'Output — Locked only. Ronin Services is off for this Agent.')
       : t('output.title_choose', 'Output — choose the live terminal or a RIREKI view');
   }
@@ -485,7 +488,7 @@ export class Tile {
         clearOverlays: () => this.clearOverlays(),
         connected: () => this.wire.connected(),
         send: (text) => this.sendRaw(text),
-        sendParcel: (text) => this.sendParcel(text),
+        sendMessage: (text) => this.sendMessage(text),
         scrollToBottom: () => this.jumpLatest(),
       });
       // Coarse pointer: the software keyboard has no Esc, Ctrl, Tab or arrows, so the
@@ -493,6 +496,7 @@ export class Tile {
       // acting on THIS tile's session rather than "the active tile" (keysrow.js).
       if (isCoarse()) {
         this.composer.el.prepend(buildKeysRow({
+          controls: document.getElementById('phone') ? buildMobileControlButtons(this) : [],
           sendRaw: (d) => this.sendRaw(d),
           latest: () => this.jumpLatest(),
         }).el);
@@ -501,6 +505,8 @@ export class Tile {
     }
     this.composer.show(on);
   }
+
+  controlAction(action, target) { return runTerminalAction(this, action, target); }
 
   /** The thin bar showing parked text (visible only when something is parked). */
   renderPending() {
@@ -529,21 +535,41 @@ export class Tile {
     this.closeLadder();
     this.setDot('off');
     this.term.reset();
+    this.syncEmpty();
     saveState();
+  }
+
+  /** Stop viewing without touching the Agent. A managed workbench empties its whole
+   *  seat; an ordinary tile simply detaches its transport. */
+  minimize() {
+    if (!this.session) return;
+    if (this.onMinimize) this.onMinimize(this);
+    else this.detach();
+  }
+
+  syncEmpty() {
+    if (this.emptyMark) this.emptyMark.hidden = !!this.session;
   }
 
   /** Destroy the tmux session on the host (root + its grid_* viewers), then detach. */
   async kill() {
     const name = this.session;
     if (!name) return;
-    retireSession(name, this.index, async () => {
+    // ^C raises this too, and a held ^C repeats: the sheet takes focus as it opens, but
+    // a repeat already queued can still reach xterm first. Dismissal removes the node
+    // (session-retire.js), so finding one means this tile's sheet is up — never a stack.
+    if (document.getElementById(`endsession-${this.retirementId}`)) return;
+    retireSession(name, this.retirementId, async () => {
       this.detach();
       await fetchSessions();
     });
   }
 
   connect(session) {
+    if (this.session !== session) { this.lastSelection = ''; this.pending = ''; this.renderPending(); }
     this.session = session;
+    this.sessionKey = S.sessions.find((row) => row.name === session)?.key;
+    this.syncEmpty();
     // The Services answer is per session. A tile that held an unlocked view for one Agent
     // and now shows one born with Services off comes down to Locked before the wire opens
     // — set directly, not through setOutput, which would reopen the wire mid-connect.
@@ -564,9 +590,8 @@ export class Tile {
     this.tape.reset(this.tapeMode);
     // Coarse pointer: the composer (and its keys row) is the ONLY input path — a tap
     // never focuses xterm on touch, so a locked mirror without it cannot be typed into
-    // at all. It rides both modes there: overlaying the tape as ever, in normal flow
-    // under the mirror (style.css .keys-on rules) so the CLI's own input line is never
-    // covered. Desktop keeps the old rule: tape mode only.
+    // at all. Both views reserve the composer's measured height and keyboard lift
+    // so the CLI's own input line and the transcript's last message stay visible. Desktop keeps the old rule: tape mode only.
     this.setComposer(this.tapeMode || isCoarse());
     this.el.classList.toggle('tape-on', this.tapeMode);
     this.setDot('wait');

@@ -1,0 +1,13 @@
+# gbrain
+- **label:** gbrain
+- **blurb:** Makes the gbrain behaviour available.
+- **effect:** provider
+- **provides:** gbrain
+- **reading:** —
+- **reading_off:** —
+- **sops:** —
+- **tools:** —
+- **parts:** —
+- **mcp:** —
+- **requires:** —
+- **order:** 20

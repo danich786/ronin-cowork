@@ -16,6 +16,8 @@ import { assertSameCampaignRoot, campaignFilter, campaignResolver, initialCampai
 import { retireTeam } from '../team-retire.js';
 import { readCampaign } from '../campaigns.js';
 import { teamAgentDefaults } from '../agent-defaults.js';
+import { assignTeamProject, issueTeamProjectId, moveTeamProject, returnTeamProject, writeTeamIdea, type TeamProjectArea } from '../team-projects.js';
+import { PROJECT_EXITS, PROJECT_STATUSES, normalizeProject, type Project } from '../projects.js';
 
 const errMsg = (e: unknown): string => String((e as Error)?.message ?? e);
 
@@ -32,7 +34,7 @@ const object = (value: unknown): Record<string, unknown> =>
 async function creationEdit(campaign_id: string, stated: RosterEdit): Promise<RosterEdit> {
   const campaign = await readCampaign(campaign_id);
   if (!campaign) throw new Error(`Unknown Campaign: ${campaign_id || '(none)'}.`);
-  const inherited = campaign.config.agent_defaults;
+  const inherited = campaign.config.defaults;
   const cowork = object(campaign.config.cowork_defaults);
   const edit: RosterEdit = {
     ...(typeof cowork.kind === 'string' ? { kind: cowork.kind as RosterEdit['kind'] } : {}),
@@ -41,8 +43,7 @@ async function creationEdit(campaign_id: string, stated: RosterEdit): Promise<Ro
     ...(typeof cowork.branch === 'string' ? { branch: cowork.branch } : {}),
     ...(object(cowork.branches) ? { branches: Object.fromEntries(Object.entries(object(cowork.branches)).map(([k, v]) => [k, String(v)])) } : {}),
     ...stated,
-    routines: { ...inherited.routines, ...(stated.routines ?? {}) },
-    behaviours: stated.behaviours ?? { books: [...inherited.behaviours], required: false },
+    behaviours: stated.behaviours ?? { selected: [...inherited.behaviours], required: [] },
     agent_defaults: { ...teamAgentDefaults(inherited), ...(stated.agent_defaults ?? {}) },
   };
   await assertSameCampaignRoot(campaign_id, edit.project_root ?? '');
@@ -77,16 +78,12 @@ function editOf(body: unknown): RosterEdit {
     ? Object.fromEntries(Object.entries(b.branches as Record<string, unknown>)
         .map(([repo, branch]) => [repo.trim().slice(0, 128), String(branch ?? '').trim().slice(0, 128)])
         .filter(([repo, branch]) => repo && branch)) : {};
-  if (b.references !== undefined) edit.references = Array.isArray(b.references)
-    ? b.references.map(String).map((v) => v.trim().slice(0, 500)).filter(Boolean) : [];
-  if (b.routines !== undefined) edit.routines = b.routines && typeof b.routines === 'object' && !Array.isArray(b.routines)
-    ? Object.fromEntries(Object.entries(b.routines).filter(([, value]) => typeof value === 'boolean')) : {};
   if (b.behaviours !== undefined) {
     const value = b.behaviours && typeof b.behaviours === 'object' && !Array.isArray(b.behaviours)
       ? b.behaviours as Record<string, unknown> : {};
     edit.behaviours = {
-      books: Array.isArray(value.books) ? value.books.map(String).map((v) => v.trim().slice(0, 160)).filter(Boolean) : [],
-      required: value.required === true,
+      selected: Array.isArray(value.selected) ? value.selected.map(String).map((v) => v.trim().slice(0, 160)).filter(Boolean) : [],
+      required: Array.isArray(value.required) ? value.required.map(String).map((v) => v.trim().slice(0, 160)).filter(Boolean) : [],
     };
   }
   if (b.agent_defaults !== undefined) edit.agent_defaults = b.agent_defaults && typeof b.agent_defaults === 'object' && !Array.isArray(b.agent_defaults)
@@ -101,7 +98,105 @@ function editOf(body: unknown): RosterEdit {
   return edit;
 }
 
+function ideaEditOf(body: unknown): Partial<Project> {
+  const b = object(body);
+  const edit: Partial<Project> = {};
+  if (b.title !== undefined) edit.title = String(b.title).trim().slice(0, 200);
+  if (b.objective !== undefined) edit.objective = String(b.objective).trim().slice(0, 2000);
+  if (b.exit !== undefined) {
+    if (!PROJECT_EXITS.includes(b.exit as Project['exit'])) throw new Error(`exit is ${PROJECT_EXITS.join(', ')}.`);
+    edit.exit = b.exit as Project['exit'];
+  }
+  if (b.status !== undefined) {
+    if (!PROJECT_STATUSES.includes(b.status as Project['status'])) throw new Error(`status is ${PROJECT_STATUSES.join(', ')}.`);
+    edit.status = b.status as Project['status'];
+  }
+  if (b.ladder !== undefined) {
+    const shaped = normalizeProject({
+      id: '_', title: '_', objective: '', stage: 'IDEAS', exit: 'lead', status: 'yellow', ladder: b.ladder, evidence: [],
+    });
+    if (!shaped) throw new Error('ladder is not a valid project ladder.');
+    edit.ladder = shaped.ladder;
+  }
+  if (b.evidence !== undefined) edit.evidence = Array.isArray(b.evidence) ? b.evidence.map(String) : [];
+  return edit;
+}
+
 export function registerTeams(app: express.Express): void {
+  app.post('/api/team-rosters/:name/projects', async (req, res) => {
+    try {
+      const result = await writeTeamIdea(req.params.name, undefined, ideaEditOf(req.body));
+      res.json({ ok: true, ...result, acknowledgement: `Project ${result.project.id} created with stable id ${result.project.id}. Next: team-lead project read ${req.params.name} ${result.project.id}. Remember to update your project.` });
+    } catch (e) {
+      res.status(400).json({ error: errMsg(e) });
+    }
+  });
+
+  app.post('/api/team-rosters/:name/projects/issue', async (req, res) => {
+    try {
+      res.json({ ok: true, id: await issueTeamProjectId(req.params.name) });
+    } catch (e) {
+      res.status(400).json({ error: errMsg(e) });
+    }
+  });
+
+  app.put('/api/team-rosters/:name/projects/:id', async (req, res) => {
+    try {
+      res.json({ ok: true, ...(await writeTeamIdea(req.params.name, req.params.id, ideaEditOf(req.body))) });
+    } catch (e) {
+      res.status(400).json({ error: errMsg(e) });
+    }
+  });
+
+  app.post('/api/team-rosters/:name/projects/:id/assign', async (req, res) => {
+    try {
+      const session = String(req.body?.session ?? '').trim();
+      if (!session) throw new Error('assign needs a session.');
+      const project = await assignTeamProject(req.params.name, req.params.id, session);
+      res.json({ ok: true, project, acknowledgement: `Project ${project.id} moved whole from Team ${req.params.name} Inbox to ${session}. Run work-record project read ${project.id}, then update it.` });
+    } catch (e) {
+      res.status(400).json({ error: errMsg(e) });
+    }
+  });
+
+  app.post('/api/team-rosters/:name/projects/:id/return', async (req, res) => {
+    try {
+      const session = String(req.body?.session ?? '').trim();
+      if (!session) throw new Error('return needs a session.');
+      const area = String(req.body?.area ?? 'inbox').toLowerCase() as TeamProjectArea;
+      if (!['inbox', 'done', 'backlog'].includes(area)) throw new Error('return area must be inbox, done or backlog.');
+      const result = await returnTeamProject(req.params.name, req.params.id, session, area);
+      res.json({ ok: true, ...result, area, acknowledgement: `Project ${result.project.id} moved whole to Team ${req.params.name} ${area[0]!.toUpperCase() + area.slice(1)}; holder: Team ${req.params.name}; focus: ${result.focus ?? 'none'}. Remember to update your project.` });
+    } catch (e) {
+      res.status(400).json({ error: errMsg(e) });
+    }
+  });
+
+  app.post('/api/team-rosters/:name/projects/:id/backlog', async (req, res) => {
+    try {
+      const { project, from } = await moveTeamProject(req.params.name, req.params.id, 'backlog');
+      res.json({ ok: true, project, area: 'backlog', acknowledgement: `Project ${project.id} moved whole from Team ${req.params.name} ${from} to Backlog. Remember to update your project.` });
+    } catch (e) {
+      res.status(400).json({ error: errMsg(e) });
+    }
+  });
+
+  app.post('/api/team-rosters/:name/projects/:id/restore', async (req, res) => {
+    try {
+      const { project, from } = await moveTeamProject(req.params.name, req.params.id, 'inbox');
+      res.json({ ok: true, project, area: 'inbox', acknowledgement: `Project ${project.id} restored from Team ${req.params.name} ${from} to Inbox; next: team-lead project assign ${req.params.name} ${project.id} <session>. Remember to update your project.` });
+    } catch (e) {
+      res.status(400).json({ error: errMsg(e) });
+    }
+  });
+
+  app.post('/api/team-rosters/:name/projects/:id/done', async (req, res) => {
+    try {
+      const { project, from } = await moveTeamProject(req.params.name, req.params.id, 'done');
+      res.json({ ok: true, project, area: 'done', acknowledgement: `Project ${project.id} moved whole from Team ${req.params.name} ${from} to Done. Remember to update your project.` });
+    } catch (e) { res.status(400).json({ error: errMsg(e) }); }
+  });
+
   app.get('/api/team-rosters', async (req, res) => {
     try {
       const resolve = await campaignResolver();
@@ -141,12 +236,7 @@ export function registerTeams(app: express.Express): void {
         const { listAgentTemplates } = await import('../resource-adapters.js');
         const box = (await listAgentTemplates()).find((row) => row.name === token);
         if (!box) template = { source: token, ignored: 'not an agent template on this box' };
-        else {
-          const routines = edit.routines ??= {};
-          for (const on of box.routines_on) routines[on] = true;
-          for (const off of box.routines_off) routines[off] = false;
-          template = { source: token, routines_on: box.routines_on, routines_off: box.routines_off };
-        }
+        else template = { source: token };
       }
       const roster = await createTeamRoster(name, edit, campaign_id);
       count('team.create');

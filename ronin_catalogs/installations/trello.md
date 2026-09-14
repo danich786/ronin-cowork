@@ -1,0 +1,13 @@
+# Trello
+- **label:** Trello
+- **blurb:** Makes the Trello behaviour available when its connection exists.
+- **effect:** provider
+- **provides:** trello
+- **reading:** —
+- **reading_off:** —
+- **sops:** —
+- **tools:** —
+- **parts:** —
+- **mcp:** —
+- **requires:** ronin_services
+- **order:** 30

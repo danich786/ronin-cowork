@@ -20,20 +20,24 @@ first window of about 250 lines. Measured on this box, 2026-09-04:
 So the compiled packet is held to a **budget**: `PACKET_BUDGET` in `src/birth-readme.ts`,
 30,000 bytes and 450 lines. Bytes are the hard cap, the smallest single read among the
 providers. Lines are the habit: the fullest stock birth compiles to about 425 lines with
-the Routine contracts inside the first 250. `tests/session-boot.test.ts` compiles the real
-stock shelf at its fullest, every Routine on, and holds it to the budget; a shelf addition
+the contracts inside the first 250. `tests/session-boot.test.ts` compiles the real
+stock shelf at its fullest, every installation and feature on, and holds it to the budget; a shelf addition
 that would break one read fails that test, not a newborn.
 
 ## What is in it, in order
 
-1. **The Routine contracts** — BASE ABILITIES (fork versus spawn, the work record, the
-   wipeboard), WORKTREES (the desk, hand-in, never `git push`), and each Routine's on-page
-   or its off-page saying what the Agent is working without.
+1. **The contracts** — BASE ABILITIES (fork versus spawn, the work record, the
+   wipeboard, and the pointer to the repository arrangement page: worktree root or
+   checkout), then each system installation's on-page or its off-page saying what the
+   Agent is working without, and each chosen feature's page.
 2. **The maps** — `docs/README.md`, the question-first index, and `docs/RONIN_UTILITY.md`,
    the coworkspace for an Agent: pages, workbenches, surfaces, the tile head, Locked and
    Unlocked, copy and paste.
 3. **The owner's root shelf**, as cards: title, first sentence, path. Never pasted in.
-4. **SESSION_MACROS**, generated at birth from the live macro catalog.
+4. **YOUR TOOLS**, generated at birth from the capability documents selected for this
+   Agent (`ronin_catalogs/capabilities/`): one entry per bundle — the question it answers,
+   the priority tools that exist on this box with their job, `--help`, and the path
+   of the full document. Only what the launch facts select and only tools the box has.
 5. **KOTOBA_GLOSSARY**, last: the house names and the plain word to say for each, rendered
    with the owner's desk words. Reference, and the least costly thing to miss.
 
@@ -60,9 +64,11 @@ last line — that is what arrived, on the tape, in the Agent's own words.
 
 Put the file on the shelf (`docs/session-boot.md` says where each level reaches) and run
 the session-boot tests. If the real-shelf test fails, the packet no longer fits one read:
-shorten the file, make it a card instead of inline reading, or move it to a Routine so only
-the Agents who need it pay for it. Do not raise the budget to make room; it is the
-provider's cap, not ours.
+shorten the file, make it a card instead of inline reading, or move it to a feature so only
+the Agents who choose it pay for it. Do not raise the budget to make room; it is the
+provider's cap, not ours. A new capability document costs the packet one overview entry
+(about 350 bytes), and only for the Agents whose launch facts select it; its full text
+never enters the packet.
 
 ## Why this page exists
 
@@ -70,5 +76,5 @@ On 2026-09-03 a sweep commit re-pointed the shelf's vocabulary entry at the 105 
 table. The packet became 121 KB and 2,150 lines, with every contract after line 1,997.
 Nothing measured the real shelf, so nothing objected. The next day a newborn read its first
 240 lines, never reached fork-versus-spawn, and used an internal sub-agent where the owner
-had asked for a visible Ronin fork. The packet is now 27 KB, and the test above is what
+had asked for a visible Ronin Agent through `session_create`. The packet is now 27 KB, and the test above is what
 would have refused the swap.

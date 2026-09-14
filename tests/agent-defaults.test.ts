@@ -6,23 +6,22 @@ test('agent_defaults validates every field in the complete record shape', () => 
   const cases = [
     ['blank gets the ruled stock values', undefined, {
       provider: '', model: '', reach: 'plan', recruit: 'propose agents', output: ['open'],
-      routines: {}, behaviours: [], dial: 'write', launch_mode: 'live_dangerously', gbrain_mode: 'disconnected',
+      behaviours: ['mandates'], dial: 'write', launch_mode: 'configured',
     }],
     ['every valid value survives', {
-      provider: ' anthropic ', model: ' opus ', reach: 'execute', recruit: 'staff agents',
-      output: ['code', 'no code'], routines: { base: true, control: false },
-      behaviours: [' ways:CutCode ', 'ronin_sops:github'], dial: 'read', launch_mode: 'configured', gbrain_mode: 'connected',
+      provider: ' anthropic ', model: ' opus ', reach: 'execute', recruit: 'staff agents', output: ['code', 'no code'],
+      behaviours: [' ways:CutCode ', 'ronin_sops:github'], dial: 'read', launch_mode: 'configured',
     }, {
       provider: 'anthropic', model: 'opus', reach: 'execute', recruit: 'staff agents',
-      output: ['code', 'no code'], routines: { base: true, control: false },
-      behaviours: ['ways:CutCode', 'ronin_sops:github'], dial: 'read', launch_mode: 'configured', gbrain_mode: 'connected',
+      output: ['code', 'no code'],
+      behaviours: ['ways:CutCode', 'ronin_sops:github'], dial: 'read', launch_mode: 'configured',
     }],
     ['bad hand edits fall back field by field', {
       reach: 'run', recruit: 'propose', output: 'report', routines: { base: 'yes', control: true },
       behaviours: [null, ' ways:CheckWork '], dial: 'admin', launch_mode: 'unsafe', gbrain_mode: 'maybe',
     }, {
       provider: '', model: '', reach: 'plan', recruit: 'propose agents', output: ['open'],
-      routines: { control: true }, behaviours: ['ways:CheckWork'], dial: 'write', launch_mode: 'live_dangerously', gbrain_mode: 'disconnected',
+      behaviours: ['ways:CheckWork'], dial: 'write', launch_mode: 'configured',
     }],
   ] as const;
 

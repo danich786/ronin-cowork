@@ -1,7 +1,7 @@
 import { readMachineSettingsSection, writeMachineSettings } from './machine-settings.js';
 import { agentDefaults, type AgentDefaults } from './agent-defaults.js';
-import { completeRoutineChoices } from './routines.js';
 import { parseProviderSummary, type ProviderSummary } from './model-providers.js';
+import { SERVICE_CAPABILITY_PARTS } from './parts.js';
 
 async function readCampaigns(): Promise<Record<string, unknown>> {
   return readMachineSettingsSection<Record<string, unknown>>('campaigns', {});
@@ -12,7 +12,9 @@ async function writeCampaigns(campaigns: Record<string, unknown>): Promise<void>
 }
 
 export interface CampaignSettings {
-  agent_defaults: AgentDefaults;
+  installations: Record<string, boolean>;
+  services: { parts: Record<string, boolean> };
+  defaults: AgentDefaults;
   cowork_defaults: Record<string, unknown>;
   template_defaults: Record<string, unknown>;
 }
@@ -49,7 +51,9 @@ export interface CampaignEdit {
   desk?: Partial<CampaignDeskSettings>;
   state?: CampaignState;
   config?: {
-    agent_defaults?: Partial<AgentDefaults>;
+    installations?: Record<string, boolean>;
+    services?: { parts?: Record<string, boolean> };
+    defaults?: Partial<AgentDefaults>;
     cowork_defaults?: Record<string, unknown>;
     template_defaults?: Record<string, unknown>;
   };
@@ -88,14 +92,52 @@ const DESK_VALUE_MAX = 120;
 const bucket = (v: unknown): Record<string, unknown> =>
   v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
 
+const emptyServiceCapabilities = (): Record<string, boolean> =>
+  Object.fromEntries(Object.keys(SERVICE_CAPABILITY_PARTS).map((name) => [name, false]));
+
+const capabilitySettings = (raw: Record<string, boolean>): Record<string, boolean> => {
+  const capabilityKeys = new Set(Object.keys(SERVICE_CAPABILITY_PARTS));
+  const knownParts = new Set<string>(Object.values(SERVICE_CAPABILITY_PARTS).flat());
+  const out = Object.fromEntries(Object.entries(raw)
+    .filter(([key]) => !knownParts.has(key) && !capabilityKeys.has(key)));
+  const explicit = (name: string, fallback: boolean): boolean =>
+    Object.prototype.hasOwnProperty.call(raw, name) ? raw[name] === true : fallback;
+  // Explicit capability choices win. Otherwise either legacy half selects the indivisible
+  // Task manager; historical recorder and voice state never imply those safe-off choices.
+  out.task_manager = explicit('task_manager', raw.michi === true || raw.kanban === true);
+  out.terminal_transcript = explicit('terminal_transcript', false);
+  out.voice_hotwords = explicit('voice_hotwords', false);
+  out.usage_stats = explicit('usage_stats', raw.counting === true);
+  out.project_coordinator = explicit('project_coordinator', raw.koshi === true);
+  out.local_weights = explicit('local_weights', false);
+  return out;
+};
+
+const serviceSettings = (v: unknown): { parts: Record<string, boolean> } => {
+  const value = bucket(v);
+  return {
+    parts: Object.prototype.hasOwnProperty.call(value, 'parts')
+      ? capabilitySettings(booleanMap(value.parts))
+      : { ...emptyServiceCapabilities(), task_manager: true, usage_stats: true, project_coordinator: true },
+  };
+};
+
 const settings = (v: unknown): CampaignSettings => {
   const c = bucket(v);
+  const defaults = bucket(c.defaults);
+  const settled = Object.prototype.hasOwnProperty.call(c, 'installations');
   return {
-    agent_defaults: agentDefaults(c.agent_defaults),
+    installations: booleanMap(c.installations),
+    services: serviceSettings(c.services),
+    defaults: agentDefaults(settled ? defaults : { ...defaults, behaviours: undefined }),
     cowork_defaults: bucket(c.cowork_defaults),
     template_defaults: bucket(c.template_defaults),
   };
 };
+
+const booleanMap = (value: unknown): Record<string, boolean> => Object.fromEntries(
+  Object.entries(bucket(value)).filter((entry): entry is [string, boolean] => typeof entry[1] === 'boolean'),
+);
 
 const stringList = (v: unknown): string[] => Array.isArray(v)
   ? v.map((x) => str(x, DESK_VALUE_MAX)).filter(Boolean)
@@ -167,14 +209,13 @@ async function writeRecord(c: CampaignConfig): Promise<CampaignConfig> {
 }
 
 async function completeAgentDefaults(value: unknown): Promise<AgentDefaults> {
-  const defaults = agentDefaults(value);
-  const { listRoutines } = await import('./resource-adapters.js');
-  const catalog = await listRoutines();
-  const stated = defaults.routines && Object.keys(defaults.routines).length > 0;
-  defaults.routines = stated
-    ? completeRoutineChoices(catalog, defaults.routines)
-    : Object.fromEntries(catalog.map((row) => [row.name, row.bundles.includes('base')]));
-  return defaults;
+  return agentDefaults(value);
+}
+
+async function completeInstallations(value: unknown): Promise<Record<string, boolean>> {
+  const { listInstallations } = await import('./resource-adapters.js');
+  const choices = booleanMap(value);
+  return Object.fromEntries((await listInstallations()).map((row) => [row.name, choices[row.name] ?? false]));
 }
 
 export async function readCampaign(id: string): Promise<CampaignConfig | null> {
@@ -186,14 +227,6 @@ export async function readCampaign(id: string): Promise<CampaignConfig | null> {
     const parsed = parse(id, raw);
     if (!parsed) return null;
     const doc = JSON.parse(raw) as Record<string, unknown>;
-    const config = bucket(doc.config);
-    const defaults = bucket(config.agent_defaults);
-    if (!Object.prototype.hasOwnProperty.call(defaults, 'routines')) {
-      const { listRoutines } = await import('./resource-adapters.js');
-      parsed.config.agent_defaults.routines = Object.fromEntries(
-        (await listRoutines()).map((row) => [row.name, row.bundles.includes('base')]));
-      await writeRecord(parsed);
-    }
     if (!Object.prototype.hasOwnProperty.call(doc, 'desk')) {
       parsed.desk = await settingsFromTemplate(parsed.desk_profile);
       await writeRecord(parsed);
@@ -237,7 +270,9 @@ export async function createCampaign(edit: CampaignEdit & { id?: string }): Prom
     providers: null,
     config: {
       ...settings(edit.config),
-      agent_defaults: await completeAgentDefaults(settings(edit.config).agent_defaults),
+      services: { parts: emptyServiceCapabilities() },
+      installations: await completeInstallations(settings(edit.config).installations),
+      defaults: await completeAgentDefaults(settings(edit.config).defaults),
     },
   });
 }
@@ -258,8 +293,12 @@ export async function writeCampaign(id: string, edit: CampaignEdit): Promise<Cam
     ...(edit.config !== undefined
       ? {
           config: {
-            agent_defaults: edit.config.agent_defaults === undefined
-              ? existing.config.agent_defaults : await completeAgentDefaults(edit.config.agent_defaults),
+            installations: edit.config.installations === undefined
+              ? existing.config.installations : await completeInstallations(edit.config.installations),
+            services: edit.config.services === undefined
+              ? existing.config.services : serviceSettings(edit.config.services),
+            defaults: edit.config.defaults === undefined
+              ? existing.config.defaults : await completeAgentDefaults(edit.config.defaults),
             cowork_defaults: edit.config.cowork_defaults === undefined
               ? existing.config.cowork_defaults : bucket(edit.config.cowork_defaults),
             template_defaults: edit.config.template_defaults === undefined

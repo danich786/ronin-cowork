@@ -163,10 +163,10 @@ preset waits for Services to be active. The activation flow itself is in
 
 ## gbrain
 
-gbrain is the memory the Personal Assistant runs on. The surface is three questions with
-measured answers and one control each: **Installed** (with **Load gbrain**, or the one
-step the state calls for), **Available to Agents** (default for all Agents, or only
-selected ones), and **Accounts linked** (one row per account gbrain can link; the
+gbrain is the memory the Personal Assistant runs on. Its page shows four rows:
+**Installed** (with **Load gbrain**, or the one step the state calls for), **Available**
+(an On/Off installation switch), **Default for all Agents** (an On/Off Campaign default,
+disabled with “turn Available on first” while availability is off), and **Accounts linked** (one row per account gbrain can link; the
 Personal Assistant links one when asked, with your approval). Under them sits the next
 step: **Open Model providers** if none is activated yet, otherwise **Start your first
 Personal Assistant**, the same launch the preset makes. What gbrain is lives in
@@ -177,7 +177,7 @@ Personal Assistant**, the same launch the preset makes. What gbrain is lives in
 Three stones for anything the presets do not cover:
 
 - **Agent** opens the ordinary New Agent form here: name, kind, provider and model,
-  instructions, mandate, and the Routines it runs with.
+  instructions, mandate, and its behaviours.
 - **Team** opens the ordinary New Team form here: the team, its agents, and where it
   works.
 - **Template** opens Templates: what is on your system, shipped with Ronin, installed, or

@@ -1,0 +1,173 @@
+#!/usr/bin/env bash
+# session_create — explicitly create one new Agent through the ordinary launch route.
+set -u
+. "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"
+TOOL_DIR=$(dirname "$SELF")
+die() { printf '%s\n' "$1" >&2; exit "${2:-4}"; }
+
+catalog_read() {
+  local endpoint=$1 destination=$2 code
+  code=$(curl -sS -m 60 "${RONIN_CURL[@]+"${RONIN_CURL[@]}"}" -o "$destination" -w '%{http_code}' "$url$endpoint" 2>/dev/null) \
+    || die "UNREACHABLE: Ronin did not answer at $url" 5
+  [ "$code" = 200 ] || {
+    local reason
+    reason=$(python3 - "$code" "$destination" <<'PY'
+import json, sys
+try: data = json.load(open(sys.argv[2]))
+except Exception: data = {}
+print(data.get("error") or f"HTTP {sys.argv[1]}")
+PY
+)
+    die "REFUSED: $reason" 4
+  }
+}
+
+dynamic_help() {
+  . "$TOOL_DIR/ronin-http.sh"
+  ronin_connect || exit $?
+  local catalog runtime seed
+  catalog=$(mktemp /tmp/session_create-catalog.XXXXXX) || exit 2
+  runtime=$(mktemp /tmp/session_create-runtime.XXXXXX) || { rm -f "$catalog"; exit 2; }
+  seed=$(mktemp /tmp/session_create-seed.XXXXXX) || { rm -f "$catalog" "$runtime"; exit 2; }
+  trap "rm -f '$catalog' '$runtime' '$seed'" EXIT
+  catalog_read /api/provider-catalog "$catalog"
+  catalog_read /api/setup/runtime "$runtime"
+  catalog_read /api/launch-seed "$seed"
+  cat <<'EOF'
+session_create — create one new Agent
+
+Usage:
+  session_create <name> [--prompt <text>] [--team <team>]
+                        [--root <path>] [--provider <provider>] [--model <model>]
+                        [--behaviour ways:<book>]…
+                        [--mode manual|assisted] [--cmd <cli>]
+                        [--mcp on|off] [--tags a,b] [--seed p1,p2]
+
+Creation is always explicit. An existing name is refused rather than read or updated.
+With no --team, the new Agent joins the caller's first Team when there is one.
+Choose a current pair in one call: session_create <name> --provider <provider> --model <model>.
+The choices, availability, and defaults below are read now from the same canonical
+Campaign/provider sources as Ronin's model dropdowns; this tool keeps no model list.
+Related: session_check --help; session_set --help
+EOF
+  python3 - "$catalog" "$runtime" "$seed" <<'PY'
+import json, sys
+catalog, runtime, seed = (json.load(open(path)) for path in sys.argv[1:])
+machine = {str(row.get("id", "")): row for row in runtime.get("providers", []) if isinstance(row, dict)}
+print("\nCurrent provider/model choices:")
+for provider in catalog.get("providers", []):
+    if not isinstance(provider, dict): continue
+    provider_id, cli = str(provider.get("provider", "")), str(provider.get("cli", ""))
+    observed = machine.get(cli, {})
+    if observed.get("off"): availability = "turned off"
+    elif not observed.get("installed"): availability = "not on this machine"
+    elif not observed.get("activated"): availability = "not activated"
+    else: availability = "available"
+    print(f"  {provider_id} ({provider.get('label') or provider_id}) — {availability}")
+    for row in provider.get("models", []):
+        if isinstance(row, dict) and row.get("model"):
+            tier = f" · {row.get('tier')}" if row.get("tier") else ""
+            print(f"    {row['model']}{tier} — {availability}")
+seeds = seed.get("seeds", {}) if isinstance(seed, dict) else {}
+provider = seeds.get("provider", {}) if isinstance(seeds, dict) else {}
+model = seeds.get("model", {}) if isinstance(seeds, dict) else {}
+pv = provider.get("value", "") if isinstance(provider, dict) else ""
+mv = model.get("value", "") if isinstance(model, dict) else ""
+source = provider.get("stated_by", []) if isinstance(provider, dict) else []
+where = ", ".join(str(row.get("source", "")) for row in source if isinstance(row, dict) and row.get("source"))
+print(f"\nCurrent launch default: {pv + '/' + mv if pv and mv else 'provider/model inherited at launch'}" + (f" — {where}" if where else ""))
+PY
+}
+
+case "${1-}" in
+  -h|--help) [ "$#" -eq 1 ] || die "session_create: --help takes no other arguments. Run session_create --help." 2
+    dynamic_help
+    exit 0 ;;
+esac
+need_value() {
+  [ "$#" -ge 2 ] && [ -n "$2" ] && [ "${2#-}" = "$2" ] \
+    || die "BAD-ARG: $1 requires a value. Run session_create --help." 2
+}
+NAME="${1:-}"
+[ -n "$NAME" ] && [ "${NAME#-}" = "$NAME" ] || die "usage: session_create <name> [options]. Run session_create --help." 2
+shift
+PROMPT="" TEAM="" ROOT="" PROVIDER="" MODE="" CMD="" MODEL="" MCP="" TAGS="" SEED="" BEHAVIOURS=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --prompt) need_value "$@"; PROMPT="$2"; shift 2 ;;
+    --team) need_value "$@"; TEAM="$2"; shift 2 ;;
+    --root|--project_root) need_value "$@"; ROOT="$2"; shift 2 ;;
+    --provider) need_value "$@"; PROVIDER="$2"; shift 2 ;;
+    --behaviour|--behavior) need_value "$@"; BEHAVIOURS="${BEHAVIOURS}${BEHAVIOURS:+
+}$2"; shift 2 ;;
+    --mode) need_value "$@"; MODE="$2"; shift 2 ;;
+    --cmd) need_value "$@"; CMD="$2"; shift 2 ;;
+    --model) need_value "$@"; MODEL="$2"; shift 2 ;;
+    --mcp) need_value "$@"; MCP="$2"; shift 2 ;;
+    --tags) need_value "$@"; TAGS="$2"; shift 2 ;;
+    --seed) need_value "$@"; SEED="$2"; shift 2 ;;
+    *) die "BAD-ARG: $1. Run session_create --help." 2 ;;
+  esac
+done
+
+. "$TOOL_DIR/ronin-http.sh"
+ronin_connect || exit $?
+if [ -n "$MODEL" ]; then
+  catalog=$(mktemp /tmp/session_create-catalog.XXXXXX) || exit 2
+  trap "rm -f '$catalog'" EXIT
+  catalog_read /api/provider-catalog "$catalog"
+  validation=$(python3 - "$catalog" "$PROVIDER" "$MODEL" <<'PY'
+import json, sys
+catalog, wanted_provider, wanted_model = json.load(open(sys.argv[1])), sys.argv[2], sys.argv[3]
+pairs = [(str(p.get("provider", "")), str(m.get("model", "")))
+         for p in catalog.get("providers", []) if isinstance(p, dict)
+         for m in p.get("models", []) if isinstance(m, dict) and m.get("model")]
+if (wanted_provider and (wanted_provider, wanted_model) not in pairs) or (not wanted_provider and wanted_model not in [m for _, m in pairs]):
+    choices = ", ".join(f"{p}/{m}" for p, m in pairs) or "none"
+    print(f"BAD-MODEL: {wanted_provider + '/' if wanted_provider else ''}{wanted_model} is not in the current provider catalog. Available: {choices}")
+    raise SystemExit(4)
+PY
+) || { rc=$?; die "$validation" "$rc"; }
+fi
+
+CALLER=$(ronin_session_me 2>/dev/null || true)
+body=$(NAME="$NAME" CALLER="$CALLER" PROMPT="$PROMPT" TEAM="$TEAM" ROOT="$ROOT" \
+       PROVIDER="$PROVIDER" MODE="$MODE" CMD="$CMD" MODEL="$MODEL" MCP="$MCP" TAGS="$TAGS" SEED="$SEED" BEHAVIOURS="$BEHAVIOURS" python3 - <<'PY'
+import json, os
+e = os.environ
+b = {"name": e["NAME"]}
+if e["CALLER"]: b["caller"] = e["CALLER"]
+for k, v in (("prompt", "PROMPT"), ("team", "TEAM"), ("project_root", "ROOT"),
+             ("provider", "PROVIDER"), ("mode", "MODE"), ("cmd", "CMD"), ("model", "MODEL")):
+    if e[v]: b[k] = e[v]
+if e["MCP"]: b["mcp"] = e["MCP"].lower() in ("on", "true", "1", "yes")
+for k, v in (("tags", "TAGS"), ("seed", "SEED")):
+    if e[v]: b[k] = [t.strip() for t in e[v].split(",") if t.strip()]
+if e["BEHAVIOURS"]: b["behaviours"] = e["BEHAVIOURS"].splitlines()
+print(json.dumps(b))
+PY
+) || die "BAD-ARG: could not build the request" 2
+
+out=$(mktemp /tmp/session_create.XXXXXX) || exit 2
+code=$(curl -sS -m 60 "${RONIN_CURL[@]+"${RONIN_CURL[@]}"}" -o "$out" -w '%{http_code}' \
+       -H 'content-type: application/json' -X POST --data "$body" "$url/api/session" 2>/dev/null) \
+  || { rm -f "$out"; die "UNREACHABLE: Ronin did not answer at $url" 5; }
+python3 - "$code" "$out" <<'PY'
+import json, sys
+code, path = int(sys.argv[1]), sys.argv[2]
+try: d = json.load(open(path))
+except Exception: d = {}
+if code == 200 and d.get("ok"):
+    r = d.get("receipt") or {}
+    team = r.get("team") or ""
+    how = d.get("team_from", "none")
+    tail = f"on {team}" + (" (your team)" if how == "caller" else "") if team else "(rōnin)"
+    if r.get("team_lead"): tail += " as 人"
+    print(f"BORN {d.get('name')} {tail}")
+    raise SystemExit(0)
+print(f"REFUSED: {d.get('error') or f'HTTP {code}'}", file=sys.stderr)
+raise SystemExit(4)
+PY
+rc=$?
+rm -f "$out"
+exit "$rc"

@@ -30,7 +30,7 @@ the_owner can already log in.
 ## The parts that bite
 
 - **Secrets are configuration, not code.** They live in the host's environment, never in
-  the repo — `secrets.md` is the whole of it, and `tejun-secrets` tells you where you
+  the repo — `secrets.md` is the whole of it, and `ronin-host secrets` tells you where you
   stand before you start.
 - **The build command and the start command are two different things**, and a host asking
   for both is asking a real question.

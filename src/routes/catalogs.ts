@@ -2,14 +2,12 @@ import { stat } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import type express from 'express';
 import { projectRootsOfSessions } from '../tmux.js';
-import { listMacros } from '../macros.js';
 import { listSkins } from '../skin-catalog.js';
 import { listLexicons, resolveLexicon } from '../lexicon-catalog.js';
 import { activeDeskProfileName, listDeskProfiles } from '../desk-profiles.js';
 import { initialCampaign } from '../campaigns.js';
 import { listSops } from '../resources.js';
 import { listWays } from '../resources.js';
-import { listActions } from '../actions.js';
 import { listSessionReadings } from '../session-readings.js';
 import { listAgentAvailability } from '../agents.js';
 import { dispatchInstall } from '../agent-install.js';
@@ -25,7 +23,6 @@ import {
 } from '../project-roots.js';
 import { campaignResolver, machineCampaignId } from '../campaign-scope.js';
 import { arrangementProfile, assertArrangementProfileCurrent, readArrangement, setArrangementProfile, validateArrangementProfile } from '../desks/arrangement.js';
-import { readDesksSection } from '../machine-state.js';
 import {
   listSavedLaunches,
   saveLaunch,
@@ -36,21 +33,16 @@ import {
   savedLaunchFields,
 } from '../resources.js';
 import {
-  findDefinition,
   listAgentTemplates,
-  listRoleFamilies,
-  listRoutines,
-  listSessionRoles,
+  listInstallations,
   listTeamTemplates,
-  writeRoleTasks,
 } from '../resource-adapters.js';
 import { removeUserTemplate, saveAgentTemplate, saveTeamTemplate } from '../templates.js';
-import { resolveLaunchProfile } from '../launch-profile.js';
 import { browseFolders, createFolder, withRegisteredRoots } from '../folder-browser.js';
 
 const errMsg = (e: unknown) => String((e as Error)?.message ?? e).replaceAll(homedir(), '~');
 
-const ROOT_FIELDS: RootField[] = ['dir', 'memory', 'match', 'remit', 'docs', 'plans', 'campaign_id'];
+const ROOT_FIELDS: RootField[] = ['title', 'dir', 'memory', 'match', 'remit', 'docs', 'plans', 'campaign_id'];
 const bodyFields = (body: unknown) => {
   const out: Partial<Record<RootField, string>> = {};
   for (const k of ROOT_FIELDS) {
@@ -91,14 +83,6 @@ export function registerCatalogs(app: express.Express): void {
     }
   });
 
-  app.get('/api/actions', async (_req, res) => {
-    try {
-      res.json(await listActions());
-    } catch (e) {
-      res.status(500).json({ error: errMsg(e) });
-    }
-  });
-
   app.get('/api/sops', async (_req, res) => {
     try {
       res.json(await listSops());
@@ -118,14 +102,6 @@ export function registerCatalogs(app: express.Express): void {
   app.get('/api/skins', async (_req, res) => {
     try {
       res.json(await listSkins());
-    } catch (e) {
-      res.status(500).json({ error: errMsg(e) });
-    }
-  });
-
-  app.get('/api/macros', async (_req, res) => {
-    try {
-      res.json(await listMacros());
     } catch (e) {
       res.status(500).json({ error: errMsg(e) });
     }
@@ -173,7 +149,6 @@ export function registerCatalogs(app: express.Express): void {
           sessions: counts[r.name] ?? 0,
         })),
         untagged,
-        new_project_worktrees: (await readDesksSection()).new_project === 'none' ? 'disabled' : 'enabled',
       });
     } catch (e) {
       res.status(500).json({ error: errMsg(e) });
@@ -184,13 +159,12 @@ export function registerCatalogs(app: express.Express): void {
     const dir = String(req.query.dir ?? '').trim();
     if (!dir) return res.status(400).json({ error: 'A directory is required.' });
     try {
-      const facts = await repoFacts({ name: 'candidate', dir, remit: '', match: [], docs: [], plans: [], archived: false, campaign_id: '' });
+      const facts = await repoFacts({ name: 'candidate', title: '', dir, remit: '', match: [], docs: [], plans: [], archived: false, campaign_id: '' });
       const arrangement = facts.repo ? await readArrangement('candidate', facts.dir).catch(() => null) : null;
       res.json({
         ...facts,
         arrangement,
         repo_profile: arrangement ? arrangementProfile(arrangement) : null,
-        new_project_worktrees: (await readDesksSection()).new_project === 'none' ? 'disabled' : 'enabled',
       });
     } catch (e) {
       res.status(500).json({ error: errMsg(e) });
@@ -207,20 +181,20 @@ export function registerCatalogs(app: express.Express): void {
 
   app.post('/api/project-roots', async (req, res) => {
     const name = String(req.body?.name ?? '').trim().toLowerCase();
-    if (!isValidRootName(name)) return res.status(400).json({ error: 'Handle: lowercase letters, digits, - and _.' });
+    if (!isValidRootName(name)) return res.status(400).json({ error: 'ID: lowercase letters, digits, - and _.' });
     const fields = bodyFields(req.body);
     if (!fields.dir) return res.status(400).json({ error: 'A directory is required.' });
     try {
       if ((await listProjectRoots()).some((r) => r.name === name)) {
         return res.status(409).json({ error: `"${name}" is already in the catalog.` });
       }
-      const facts = await repoFacts({ name, dir: fields.dir, remit: '', match: [], docs: [], plans: [], archived: false, campaign_id: '' });
+      const facts = await repoFacts({ name, title: fields.title ?? '', dir: fields.dir, remit: '', match: [], docs: [], plans: [], archived: false, campaign_id: '' });
       if (facts.repo && req.body?.confirmed !== true) return res.status(400).json({ error: 'Confirm the exact repository profile before adding this repository.' });
       if (facts.repo) {
         validateArrangementProfile(req.body?.profile);
         await assertArrangementProfileCurrent(facts.dir, req.body?.before);
       }
-      await upsertProjectRoot(name, fields, { declareArrangement: false });
+      await upsertProjectRoot(name, fields);
       const root = (await listProjectRoots()).find((r) => r.name === name);
       const arrangement = root && facts.repo
         ? await setArrangementProfile(root.dir, req.body?.profile, req.body?.before)
@@ -233,7 +207,7 @@ export function registerCatalogs(app: express.Express): void {
 
   app.put('/api/project-roots/:name', async (req, res) => {
     const { name } = req.params;
-    if (!isValidRootName(name)) return res.status(400).json({ error: 'Invalid handle.' });
+    if (!isValidRootName(name)) return res.status(400).json({ error: 'Invalid ID.' });
     try {
       await upsertProjectRoot(name, bodyFields(req.body));
       res.json({ ok: true });
@@ -244,7 +218,7 @@ export function registerCatalogs(app: express.Express): void {
 
   app.put('/api/project-roots/:name/repo-profile', async (req, res) => {
     const { name } = req.params;
-    if (!isValidRootName(name)) return res.status(400).json({ error: 'Invalid handle.' });
+    if (!isValidRootName(name)) return res.status(400).json({ error: 'Invalid ID.' });
     if (req.body?.confirmed !== true) return res.status(400).json({ error: 'Confirm the exact repository profile before applying it.' });
     try {
       const root = (await listProjectRoots()).find((r) => r.name === name);
@@ -258,7 +232,7 @@ export function registerCatalogs(app: express.Express): void {
 
   app.delete('/api/project-roots/:name', async (req, res) => {
     const { name } = req.params;
-    if (!isValidRootName(name)) return res.status(400).json({ error: 'Invalid handle.' });
+    if (!isValidRootName(name)) return res.status(400).json({ error: 'Invalid ID.' });
     try {
       await removeProjectRoot(name);
       res.json({ ok: true });
@@ -300,28 +274,9 @@ export function registerCatalogs(app: express.Express): void {
     }
   });
 
-  app.get('/api/role-families', async (_req, res) => {
-    try {
-      res.json(await listRoleFamilies());
-    } catch (e) {
-      res.status(500).json({ error: errMsg(e) });
-    }
-  });
-
-  app.get('/api/session-roles', async (_req, res) => {
-    try {
-      res.json(await listSessionRoles());
-    } catch (e) {
-      res.status(500).json({ error: errMsg(e) });
-    }
-  });
-
-  app.get('/api/routines', async (_req, res) => {
-    try {
-      res.json(await listRoutines());
-    } catch (e) {
-      res.status(500).json({ error: errMsg(e) });
-    }
+  app.get('/api/installations', async (_req, res) => {
+    try { res.json(await listInstallations()); }
+    catch (e) { res.status(500).json({ error: errMsg(e) }); }
   });
 
   const byKind = <T extends { kinds: string[] }>(rows: T[], raw: unknown): T[] => {
@@ -393,32 +348,6 @@ export function registerCatalogs(app: express.Express): void {
       res.json(lex);
     } catch (e) {
       res.status(500).json({ error: errMsg(e) });
-    }
-  });
-
-  app.put('/api/role-families/:name/session_roles', async (req, res) => {
-    const list = req.body?.session_roles;
-    if (!Array.isArray(list)) return res.status(400).json({ error: 'Send { session_roles: [...] }.' });
-    try {
-      res.json({ ok: true, session_roles: await writeRoleTasks(req.params.name, list as string[]) });
-    } catch (e) {
-      res.status(400).json({ error: errMsg(e) });
-    }
-  });
-
-  app.get('/api/launch-profile', async (req, res) => {
-    if (req.query?.role_family !== undefined) {
-      return res.status(400).json({
-        error: 'role_family is retired — a launch profile is resolved from the session_role alone.',
-      });
-    }
-    const task = String(req.query?.session_role ?? '').trim();
-    try {
-      const taskDef = await findDefinition('session_roles', task);
-      if (task && !taskDef) return res.status(404).json({ error: `Unknown session_role "${task}".` });
-      res.json(resolveLaunchProfile(taskDef));
-    } catch (e) {
-      res.status(400).json({ error: errMsg(e) });
     }
   });
 

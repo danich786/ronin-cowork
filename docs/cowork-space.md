@@ -34,7 +34,7 @@ matters—never “two-workspace Campaign surface.”
 **Two shapes**: **2** — workspace 1 · selector column · workspace 2, as
 drawn; and **4** — a 2×2 of workspaces with the selector column left, centre or right. A
 workspace column is a STACK: workspace 3 sits under 1, workspace 4 under 2, and the count
-(the bar's **2 ⇄ 4** button, in the seat the grid count had — one button wearing the count, clicked to alternate — or `count=4` from `tejun-teampage`)
+(the bar's **2 ⇄ 4** button, in the seat the grid count had — one button wearing the count, clicked to alternate — or `count=4` from `edges page`)
 shows or hides the lower cells. The selector's place is the same `order` in both shapes.
 There is no one-workspace shape.
 
@@ -66,7 +66,7 @@ Rules that make them peers:
   any workspace clobbers what is there — session, commons, launcher, anything to come.
   Nothing per surface: `cowork-view.js` keeps ONE registry (`SURFACES`: token · element ·
   show) and a new surface is one entry in it — the cells, the memory, the view report and
-  `tejun-teampage`'s words all read the table.
+  `edges page`'s words all read the table.
 - **One surface per workspace, one head per surface.** A surface never draws over another;
   trading is `place()`. The old `admin_desk` overlay is the one exception and it is going.
 - **Every head is one depth** — `--row-head` (41px). The tile head wraps rather than clips
@@ -125,7 +125,7 @@ There is no Campaign picker, default star, archive action or New Campaign footer
 
 The live owner is `public/js/campaign-home.js`.
 
-The Campaign page shows the Campaign's editable identity, desk profile, routines,
+The Campaign page shows the Campaign's editable identity, desk profile, installations,
 defaults and templates. With `MULTIPLE_CAMPAIGNS_ENABLED` off, the client does not render
 controls that add, select, default, archive or delete Campaigns. The Campaign API remains
 available. The fixed Campaign id is not rendered; its title, description and all other

@@ -209,17 +209,30 @@ ronin_preflight_port() { # repo, node
   if command -v systemctl >/dev/null 2>&1 && systemctl --user is-active --quiet ronin.service 2>/dev/null; then
     return 0 # the runtime handler is authoritative during a controlled upgrade restart
   fi
-  port_error=""
-  if port_error=$("$node" -e '
-    const fs=require("fs"),net=require("net"); let p=3006,b=process.env.RONIN_PREFLIGHT_BIND||"127.0.0.1";
-    try { for(const raw of fs.readFileSync(process.argv[1],"utf8").split(/\r?\n/)){ const m=raw.match(/^\s*(PORT|BIND)\s*=\s*(.*?)\s*$/); if(!m)continue; let v=m[2]; const q=v.charCodeAt(0); if((q===34||q===39)&&v.charCodeAt(v.length-1)===q)v=v.slice(1,-1); if(m[1]==="PORT")p=Number(v); else if(v)b=v; } } catch{}
+  port_result=""
+  if port_result=$("$node" -e '
+    const fs=require("fs"),net=require("net"); let p=4810,b=process.env.RONIN_PREFLIGHT_BIND||"127.0.0.1",explicit=false;
+    try { for(const raw of fs.readFileSync(process.argv[1],"utf8").split(/\r?\n/)){ const m=raw.match(/^\s*(PORT|BIND)\s*=\s*(.*?)\s*$/); if(!m)continue; let v=m[2]; const q=v.charCodeAt(0); if((q===34||q===39)&&v.charCodeAt(v.length-1)===q)v=v.slice(1,-1); if(m[1]==="PORT"){p=Number(v);explicit=true;} else if(v)b=v; } } catch{}
     if(!Number.isInteger(p)||p<1||p>65535){console.error(`PORT=${p} is invalid — set a port from 1 to 65535 in .env.`);process.exit(78)}
-    const s=net.createServer(); s.once("error",e=>{if(e.code==="EADDRINUSE"){console.error(`${b}:${p} is already in use — set PORT or BIND in .env before installing Ronin.`);process.exit(78)} throw e}); s.listen(p,b,()=>s.close());
+    const probe=(port)=>new Promise((resolve,reject)=>{const s=net.createServer();s.once("error",reject);s.listen(port,b,()=>s.close(()=>resolve()));});
+    (async()=>{try{await probe(p);console.log(p)}catch(e){if(e.code!=="EADDRINUSE")throw e;if(explicit){console.error(`${b}:${p} is already in use — set PORT or BIND in .env before installing Ronin.`);process.exit(78)}try{await probe(3776);console.log(3776)}catch(f){if(f.code!=="EADDRINUSE")throw f;console.error(`${b}:4810 and fallback ${b}:3776 are already in use — set PORT or BIND in .env before installing Ronin.`);process.exit(78)}}})().catch(e=>{console.error(e);process.exit(1)});
   ' "$repo/.env" 2>&1); then
+    RONIN_PREFLIGHT_PORT="$port_result"
+    if [ "$RONIN_PREFLIGHT_PORT" = 3776 ]; then
+      ronin_say "    PORT: 4810 is already in use; selected fallback 3776 for this fresh install."
+    fi
     return 0
   else
     port_rc=$?
-    [ -z "$port_error" ] || ronin_refuse "$port_error"
+    [ -z "$port_result" ] || ronin_refuse "$port_result"
     return "$port_rc"
   fi
+}
+
+ronin_record_install_port() { # repo, selected port; fresh .env only
+  repo=$1 selected=$2
+  [ "$selected" = 3776 ] || return 0
+  port_tmp="$repo/.env.ronin-port.$$"
+  awk '{ if ($0 ~ /^PORT=/) print "PORT=3776"; else print }' "$repo/.env" > "$port_tmp"
+  mv "$port_tmp" "$repo/.env"
 }

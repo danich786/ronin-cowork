@@ -2,6 +2,7 @@
 /** RONIN HOME — the quiet root arrival and three direct doors out of it. */
 import { t } from './lexicon.js';
 import { request } from './request.js';
+import { createReleaseUpdateController, packageReading, releaseIdentity } from './release-update-controller.js';
 
 const el = (tag, cls, text) => {
   const out = document.createElement(tag);
@@ -45,11 +46,26 @@ export function createCampaignHome() {
   const frame = el('div', 'ch-frame');
   const doors = el('div', 'ch-doors');
   const release = el('div', 'ch-release');
-  const version = el('span', 'ch-version', t('campaign_home.version', 'v1.3'));
+  const version = el('span', 'ch-version', 'Version unavailable');
   const check = el('button', 'ch-update', t('campaign_home.check_updates', 'Check for updates'));
   const answer = el('span', 'ch-update-answer');
   check.type = 'button';
-  release.append(version, check, answer);
+  const readings = el('div', 'ch-update-readings');
+  const controls = {};
+  for (const pkg of ['cowork', 'services']) {
+    const line = el('div', 'ch-update-package');
+    const text = el('span', 'ch-update-reading');
+    const update = el('button', 'ch-update', `Update ${pkg === 'cowork' ? 'Cowork' : 'Services'}`);
+    update.type = 'button';
+    update.hidden = true;
+    update.addEventListener('click', () => void updates.run(pkg));
+    line.append(text, update);
+    readings.append(line);
+    controls[pkg] = { text, update };
+  }
+  answer.setAttribute('aria-live', 'polite');
+  readings.setAttribute('aria-live', 'polite');
+  release.append(version, check, readings, answer);
   frame.append(doors);
   root.append(frame, release);
 
@@ -83,27 +99,22 @@ export function createCampaignHome() {
     }
   }
 
-  const checkUpdates = async () => {
-    check.disabled = true;
-    answer.dataset.state = 'working';
-    answer.textContent = t('campaign_home.checking', 'Checking…');
-    const result = await request('/api/update/check', { cache: 'no-store' });
-    if (!entered) return;
-    if (!result.ok) {
-      answer.dataset.state = 'failed';
-      answer.textContent = result.status === 404
-        ? t('campaign_home.check_unavailable', 'Available after the next restart')
-        : result.message;
-    } else if (!result.data.latest || result.data.upToDate) {
-      answer.dataset.state = 'ready';
-      answer.textContent = t('campaign_home.up_to_date', 'Up to date');
-    } else {
-      answer.dataset.state = 'available';
-      answer.textContent = t('campaign_home.update_available', '{version} available', { version: result.data.latest });
+  const updates = createReleaseUpdateController({ onChange: state => {
+    version.textContent = releaseIdentity(state.version);
+    check.setAttribute('aria-disabled', String(state.busy));
+    answer.textContent = state.message;
+    answer.dataset.state = state.bad ? 'failed' : '';
+    for (const pkg of ['cowork', 'services']) {
+      const fact = packageReading(state.facts?.[pkg]);
+      const { text, update } = controls[pkg];
+      text.textContent = `Ronin ${pkg === 'cowork' ? 'Cowork' : 'Services'} — ${state.facts ? fact.text : 'Not checked'}`;
+      text.dataset.state = fact.state;
+      update.hidden = !fact.available;
+      update.disabled = !state.canUpdate || state.busy;
+      update.title = !state.canUpdate ? (state.version?.commit ? 'Dev checkout — release updating is disabled' : 'Version unavailable') : '';
     }
-    check.disabled = false;
-  };
-  check.addEventListener('click', () => void checkUpdates());
+  }});
+  check.addEventListener('click', () => void updates.check());
 
   return {
     el: root,
@@ -113,9 +124,7 @@ export function createCampaignHome() {
       ctx = context;
       entered = true;
       document.body.classList.add('ronin-home-active');
-      answer.textContent = '';
-      delete answer.dataset.state;
-      check.disabled = false;
+      void updates.identify();
       paintDoors();
       void request('/api/setup/runtime', { cache: 'no-store' }).then((result) => {
         if (!entered) return;

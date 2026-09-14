@@ -2,21 +2,21 @@
  * SERVICES PARTS — what is on disk, and which of it this server runs.
  *
  * A part is a directory under `src/services/` with a `register` entry. Parts arrive with
- * Ronin (they are the install); whether one RUNS is the owner's switch: a Routine claims
- * the parts it runs (`parts:` in `ronin_catalogs/routines/<name>.md`), and a claimed part
- * loads only while that Routine is on for the Campaign. Off is "as if not installed" —
+ * Ronin (they are the install); whether one RUNS is the owner's switch: an installation
+ * claims the parts it runs, and a claimed part loads only while that installation is on
+ * for the Campaign. Off is "as if not installed" —
  * no timers, no routes, no recorder — with the files left in place (owner, 2026-09-04:
  * the recorder ran for a Campaign whose Services switch was off, and its per-tile ticks
  * were the bulk of the server's process spawning). An unclaimed part always loads.
  *
- * The switch is read once, at start. A change on the Routines page takes effect at the
+ * The switch is read once, at start. A change on the Installations card takes effect at the
  * next restart; `/api/installed` says so, and the Services row shows it.
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { RoutineRow } from './resource-adapters.js';
-import { routineChoices } from './routines.js';
+import type { InstallationRow } from './resource-adapters.js';
+import { switches } from './instruction-cascade.js';
 
 export const SERVICES_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), 'services');
 
@@ -39,30 +39,52 @@ export function discoverParts(dir = SERVICES_DIR): PartOnDisk[] {
 
 export interface PartsPlan<T extends { name: string; parked?: string }> {
   load: T[];
-  /** Self-declared parked, or claimed by a Routine whose switch is off: on disk, not run. */
-  parked: { name: string; routine?: string; reason?: string }[];
+  /** Self-declared parked, or claimed by an installation whose switch is off: on disk, not run. */
+  parked: { name: string; installation?: string; reason?: string }[];
+  capabilities: { name: string; parts: string[] }[];
 }
 
-/** Which Routine claims each part; the first claim wins, in catalog order. */
-export function partClaims(routines: Pick<RoutineRow, 'name' | 'parts'>[]): Map<string, string> {
+/** The server-only expansion from saved capability choices to implementation parts.
+ * Parts carry no switches of their own and this module never imports the UI catalog. */
+export const SERVICE_CAPABILITY_PARTS = Object.freeze({
+  task_manager: ['michi', 'kanban'],
+  terminal_transcript: ['rireki'],
+  voice_hotwords: ['koe'],
+  usage_stats: ['counting'],
+  project_coordinator: ['koshi'],
+  local_weights: ['koshi_weights'],
+} as const);
+
+/** Which installation claims each part; the first claim wins, in catalog order. */
+export function partClaims(installations: Pick<InstallationRow, 'name' | 'parts'>[]): Map<string, string> {
   const claims = new Map<string, string>();
-  for (const routine of routines) for (const part of routine.parts) if (!claims.has(part)) claims.set(part, routine.name);
+  for (const installation of installations) for (const part of installation.parts) if (!claims.has(part)) claims.set(part, installation.name);
   return claims;
 }
 
-/** The rule: a claimed part loads only while its Routine's switch is on; an unclaimed part always loads. */
+/** The rule: a claimed part loads only while its installation switch is on; an unclaimed part always loads. */
 export function partsToLoad<T extends { name: string; parked?: string }>(
   parts: T[],
-  routines: Pick<RoutineRow, 'name' | 'parts'>[],
-  switches: unknown,
+  installations: Pick<InstallationRow, 'name' | 'parts'>[],
+  values: unknown,
+  selectedParts: unknown,
 ): PartsPlan<T> {
-  const claims = partClaims(routines);
-  const on = routineChoices(switches);
-  const plan: PartsPlan<T> = { load: [], parked: [] };
+  const claims = partClaims(installations);
+  const on = switches(values);
+  const selected = switches(selectedParts);
+  // This is the sole capability-to-part expansion. Downstream runtime reporting consumes
+  // this startup plan; neither routes nor browser code repeat the implementation map.
+  const capabilities = Object.entries(SERVICE_CAPABILITY_PARTS)
+    .map(([name, names]) => ({ name, parts: [...names] }));
+  const selectedPart = new Set<string>(capabilities
+    .filter(({ name }) => selected[name] === true)
+    .flatMap(({ parts: names }) => names));
+  const plan: PartsPlan<T> = { load: [], parked: [], capabilities };
   for (const part of parts) {
-    const routine = claims.get(part.name);
+    const installation = claims.get(part.name);
     if (part.parked) plan.parked.push({ name: part.name, reason: part.parked });
-    else if (routine && on[routine] !== true) plan.parked.push({ name: part.name, routine });
+    else if (installation && on[installation] !== true) plan.parked.push({ name: part.name, installation, reason: 'master_off' });
+    else if (installation && !selectedPart.has(part.name)) plan.parked.push({ name: part.name, installation, reason: 'component_off' });
     else plan.load.push(part);
   }
   return plan;

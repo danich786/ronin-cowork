@@ -8,11 +8,11 @@ import { settleComposer } from './composer-rules.js';
  * @param {HTMLElement} body
  * @param {{activate: () => void, clearOverlays: () => void, connected: () => boolean,
  *          send: (text: string) => boolean,
- *          sendParcel: (text: string) => Promise<{ok: boolean, why?: string}>,
+ *          sendMessage: (text: string) => Promise<{ok: boolean, why?: string}>,
  *          scrollToBottom: () => void}} hooks
- *   `send` is a command key, fire-and-forget. `sendParcel` is a message: it resolves to the
+ *   `send` is a command key, fire-and-forget. `sendMessage` is a message: it resolves to the
  *   host's answer, and the box clears on nothing else.
- * @returns {{el: HTMLElement, ta: HTMLTextAreaElement, show: (on: boolean) => void}}
+ * @returns {{el: HTMLElement, ta: HTMLTextAreaElement, show: (on: boolean) => void, dispose: () => void}}
  */
 export function buildComposer(body, hooks) {
   const wrap = document.createElement('div');
@@ -34,15 +34,6 @@ export function buildComposer(body, hooks) {
     mic.textContent = '🎤';
     mic.title = t('composer.mic_title', 'Dictate into this box — tap again to stop, then ↵ to send');
   }
-  // ✕ — clear THIS box. The composer is Ronin's own dialog, so one key clears it for
-  // every provider (Esc does the same from a hardware keyboard); the keys the AGENT's
-  // in-pane box needs are the keys row's business. Visible only while there is
-  // something to clear — a dead button is worse than none.
-  const clear = document.createElement('button');
-  clear.className = 'cclear';
-  clear.type = 'button';
-  clear.textContent = '✕';
-  clear.title = t('composer.clear_title', 'Clear this box');
   const btn = document.createElement('button');
   btn.className = 'csend';
   btn.textContent = '↵';
@@ -51,15 +42,13 @@ export function buildComposer(body, hooks) {
   const why = document.createElement('p');
   why.className = 'cwhy';
   why.setAttribute('role', 'status');
-  wrap.append(...[why, ta, clear, mic, btn].filter(Boolean));
+  wrap.append(...[why, ta, mic, btn].filter(Boolean));
   body.appendChild(wrap);
 
   const state = { dictation: null, queued: false, inflight: false };
   // The wire's own words for a send that did not get through, in the owner's language.
   const reasons = {
     'not connected': () => t('composer.why_not_connected', 'the tile is not connected'),
-    disconnected: () => t('composer.why_disconnected', 'the connection dropped before the session confirmed it'),
-    unconfirmed: () => t('composer.why_unconfirmed', 'the session did not confirm it — check the tile before sending again'),
     refused: () => t('composer.why_refused', 'the session refused it'),
   };
   const hold = (reason) => {
@@ -78,8 +67,6 @@ export function buildComposer(body, hooks) {
   const grow = () => {
     ta.style.height = 'auto';
     ta.style.height = Math.min(ta.scrollHeight, 160) + 'px';
-    // ✕ shows exactly while there is something to clear.
-    wrap.classList.toggle('hastext', !!ta.value);
   };
   const clearBox = () => {
     if (S.dictation) S.dictation.stop();
@@ -88,7 +75,6 @@ export function buildComposer(body, hooks) {
     hold(null);
     ta.focus();
   };
-  clear.addEventListener('click', clearBox);
   const submit = () => {
     // Stop listening BEFORE reading the box: iOS keeps the recognizer running a
     // beat after you stop talking, and a trailing result would refill a box we
@@ -104,39 +90,18 @@ export function buildComposer(body, hooks) {
     // One message in flight at a time: a second Enter while the host is still answering
     // would send the same text twice.
     if (state.inflight) return;
-    // A send into a closed socket vanishes. Losing the message AND clearing the box
-    // made a dictated message silently disappear. Keep the text, say so, and let the
-    // auto-reconnect bring the socket back.
-    if (!hooks.connected()) {
-      hold('not connected');
-      return;
-    }
     const text = ta.value;
     if (!text.trim()) {
-      // Bare Enter with an empty box is a COMMAND key, exactly as the dvr rule has it.
-      // It is also the recovery path: if a previous send's Enter was swallowed by
-      // the TUI's paste handling, the text is sitting in the pane's own box and
-      // THIS is the keypress that submits it. An empty-box Enter must never be a
-      // no-op.
+      // An empty box sends a command key directly to the terminal.
+      if (!hooks.connected()) { hold('not connected'); return; }
       hooks.send('\r');
       return;
     }
-    // ONE atomic send, Enter glued on. The old shape — text now, \r on a 40ms
-    // timer — left a gap iOS could fall into: the text landed in the pane's box
-    // and the timer's \r never followed, so a dictated message sat there sent but
-    // never submitted. Measured on a real Claude pane: text+\r in a single
-    // send-keys burst submits correctly, single-line and multi-line both, so the
-    // split buys nothing on this path and the timer was pure fragility.
-    //
-    // The parcel is its own frame, not a keystroke: the host leaves a scrolled-back view
-    // for it and answers by id. The box clears on that answer and on nothing else — a
-    // message the host did not confirm stays here with the reason (composer-rules.js).
-    // It used to clear as soon as the socket was open, and a phone that had dragged the
-    // pane into copy mode watched its text vanish while the host discarded it.
+    // The server owns text + Enter. The terminal socket is only for direct keys.
     state.inflight = true;
     wrap.classList.add('sending');
     hold(null);
-    hooks.sendParcel(text + '\r').then((outcome) => {
+    hooks.sendMessage(text).then((outcome) => {
       state.inflight = false;
       wrap.classList.remove('sending');
       const verdict = settleComposer(outcome, text, ta.value);
@@ -158,10 +123,18 @@ export function buildComposer(body, hooks) {
    * replaces learned the same lesson. `visualViewport` is the only thing that knows
    * how much is covered.
    */
+  // Reserve the actual overlay, including a growing draft and the phone keyboard.
+  const reserve = () => {
+    const height = wrap.getBoundingClientRect().height;
+    body.style.setProperty('--composer-clearance', (height ? height + (parseFloat(wrap.style.bottom) || 0) : 0) + 'px');
+  };
+  const size = new ResizeObserver(reserve);
+  size.observe(wrap);
   const lift = () => {
     const vv = window.visualViewport;
     const kb = vv ? Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)) : 0;
     wrap.style.bottom = kb + 'px';
+    reserve();
   };
   if (IS_TOUCH) {
     ta.setAttribute('enterkeyhint', 'send');
@@ -169,6 +142,7 @@ export function buildComposer(body, hooks) {
     ta.addEventListener('focus', lift);
     ta.addEventListener('blur', () => {
       wrap.style.bottom = '0px';
+      reserve();
     });
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', lift);
@@ -194,16 +168,7 @@ export function buildComposer(body, hooks) {
     if (IS_TOUCH) hooks.clearOverlays();
   });
   ta.addEventListener('keydown', (e) => {
-    // Esc clears OUR box, uniformly — whichever provider is in the pane, this box is
-    // Ronin's. An already-empty box passes Esc through as a command key, exactly the
-    // bare-Enter rule: reaching for Esc with nothing parked means the pane's dialog.
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      if (ta.value) clearBox();
-      else hooks.send('\x1b');
-      return;
-    }
-    if (e.key !== 'Enter') return;
+    if (e.key !== 'Enter' || e.isComposing) return;
     if (e.shiftKey) return; // the browser inserts this one itself
     if (e.altKey || e.metaKey || e.ctrlKey) {
       e.preventDefault();
@@ -219,8 +184,15 @@ export function buildComposer(body, hooks) {
   return {
     el: wrap,
     ta,
+    clear: clearBox,
+    dispose() {
+      size.disconnect();
+      window.visualViewport?.removeEventListener('resize', lift);
+      window.visualViewport?.removeEventListener('scroll', lift);
+    },
     show(on) {
       wrap.classList.toggle('show', !!on);
+      reserve();
     },
   };
 }

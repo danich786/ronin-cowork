@@ -15,10 +15,10 @@ import { homedir } from 'node:os';
 import { isEntitled } from '../activation/flow.js';
 import { readState } from '../activation/state.js';
 import { initialCampaign } from '../campaigns.js';
-import { listRoutines } from '../resource-adapters.js';
-import { routineChoices } from '../routines.js';
-import { listParkedServices, listServices } from '../sockets.js';
-import { discoverParts, partClaims } from '../parts.js';
+import { listInstallations } from '../resource-adapters.js';
+import { switches } from '../instruction-cascade.js';
+import { listParkedServices, listServiceCapabilities, listServiceFailures, listServices } from '../sockets.js';
+import { discoverParts } from '../parts.js';
 import { roninIdentity } from './version.js';
 
 const errMsg = (e: unknown) => String((e as Error)?.message ?? e).replaceAll(homedir(), '~');
@@ -39,26 +39,38 @@ export interface InstalledAnswer {
     stage: string;
     /** The Campaign's default switch for the Ronin Services Routine. */
     switched_on: boolean;
+    desired: Record<string, boolean>;
+    capabilities: { desired: Record<string, boolean>; running: string[]; disagrees: string[]; parked: { name: string; reason: string }[] };
   };
   /** Every Routine, with the Campaign's default switch — switches, not installs. */
-  routines: { name: string; label: string; blurb: string; on: boolean }[];
+  installations: { name: string; label: string; blurb: string; on: boolean; available: boolean; requires: string[] }[];
 }
 
 export async function installedAnswer(): Promise<InstalledAnswer> {
-  const [state, entitled, campaign, routines] = await Promise.all([readState().catch(() => null), isEntitled().catch(() => false), initialCampaign().catch(() => null), listRoutines()]);
-  const map = routineChoices(campaign?.config?.agent_defaults?.routines ?? {});
+  const [state, entitled, campaign, installations] = await Promise.all([readState().catch(() => null), isEntitled().catch(() => false), initialCampaign().catch(() => null), listInstallations()]);
+  const map = switches(campaign?.config?.installations ?? {});
   const loaded = listServices();
-  const parked = listParkedServices();
+  const parkedByName = new Map(listParkedServices().map((part) => [part.name, part]));
+  for (const failure of listServiceFailures()) parkedByName.set(failure.name, failure);
+  const parked = [...parkedByName.values()];
   const parts = [...new Set([...discoverParts().map((part) => part.name), ...loaded, ...parked.map((part) => part.name)])].sort();
-  const claims = partClaims(routines);
   const switchedOn = map.ronin_services === true;
-  // The running copy read the switch at start; if the switch moved since, only a restart honours it.
-  const permanentlyParked = new Set(parked.filter((part) => part.reason).map((part) => part.name));
-  const restartNeeded = parts.some((part) => !permanentlyParked.has(part) && claims.get(part) === 'ronin_services' && (switchedOn ? !loaded.includes(part) : loaded.includes(part)));
+  const desired = campaign?.config?.services?.parts ?? {};
+  const runtime = listServiceCapabilities();
+  const runningCapabilities = new Set(runtime.running);
+  const partialCapabilities = new Set(runtime.partial);
+  const permanentlyParked = new Set(runtime.parked.map((capability) => capability.name));
+  const disagrees = runtime.known.filter((name) => desired[name] === true
+    ? !runningCapabilities.has(name)
+    : runningCapabilities.has(name) || partialCapabilities.has(name));
+  const capabilities = { desired, running: runtime.running, disagrees, parked: runtime.parked };
+  const restartNeeded = runtime.known.some((name) => !permanentlyParked.has(name) && (switchedOn
+    ? disagrees.includes(name)
+    : runningCapabilities.has(name) || partialCapabilities.has(name)));
   return {
     cowork: roninIdentity(),
-    services: { parts, loaded, parked, installed: parts.length > 0, activated: entitled, stage: state?.stage ?? 'not_requested', switched_on: switchedOn, restart_needed: restartNeeded },
-    routines: routines.map((r) => ({ name: r.name, label: r.label, blurb: r.blurb, on: map[r.name] === true })),
+    services: { parts, loaded, parked, desired, capabilities, installed: parts.length > 0, activated: entitled, stage: state?.stage ?? 'not_requested', switched_on: switchedOn, restart_needed: restartNeeded },
+    installations: installations.map((r) => ({ name: r.name, label: r.label, blurb: r.blurb, on: map[r.name] === true, available: r.requires.every((name) => map[name] === true), requires: r.requires })),
   };
 }
 

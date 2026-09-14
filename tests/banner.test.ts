@@ -18,7 +18,7 @@ const lib = path.resolve('libexec/ronin-banner.sh');
  * `tailscale serve status` prints a public URL and its target beneath it, so a mapping
  * only belongs to Ronin if the target names Ronin's port.
  */
-function box(serveStatus: string, port = '3006') {
+function box(serveStatus: string, port = '4810') {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ronin-banner-'));
   fs.writeFileSync(path.join(dir, 'tailscale'), `#!/bin/sh\ncat <<'EOF'\n${serveStatus}\nEOF\n`, { mode: 0o755 });
   fs.writeFileSync(path.join(dir, '.env'), `PORT=${port}\n`);
@@ -32,25 +32,25 @@ function call(dir: string, fn: string, ...args: string[]) {
   }).trim();
 }
 
-const OURS = ['https://box.tailnet.ts.net:8443/', '|-- proxy http://100.72.224.3:3006'].join('\n');
+const OURS = ['https://box.tailnet.ts.net:8443/', '|-- proxy http://100.72.224.3:4810'].join('\n');
 const FOREIGN = ['https://box.tailnet.ts.net:9000/', '|-- proxy http://100.72.224.3:8080'].join('\n');
 
 test('a serve mapping onto our port is the address to print', () => {
-  assert.equal(call(box(OURS), 'ronin_served_url', '3006'), 'https://box.tailnet.ts.net:8443');
+  assert.equal(call(box(OURS), 'ronin_served_url', '4810'), 'https://box.tailnet.ts.net:8443');
 });
 
 test('a serve mapping onto someone else\'s port is NOT our door', () => {
   // The regression that matters: `grep https:// | head -1` would hand a stranger
   // whatever else they serve on that tailnet and call it the way in to Ronin.
-  assert.equal(call(box(FOREIGN), 'ronin_served_url', '3006'), '');
+  assert.equal(call(box(FOREIGN), 'ronin_served_url', '4810'), '');
 });
 
 test('ours is found even when another mapping is listed first', () => {
-  assert.equal(call(box(`${FOREIGN}\n${OURS}`), 'ronin_served_url', '3006'), 'https://box.tailnet.ts.net:8443');
+  assert.equal(call(box(`${FOREIGN}\n${OURS}`), 'ronin_served_url', '4810'), 'https://box.tailnet.ts.net:8443');
 });
 
 test('no serve mapping at all means no HTTPS claim', () => {
-  assert.equal(call(box(''), 'ronin_served_url', '3006'), '');
+  assert.equal(call(box(''), 'ronin_served_url', '4810'), '');
 });
 
 test('the port comes from .env, because .env is where an operator is told to change it', () => {
@@ -59,7 +59,7 @@ test('the port comes from .env, because .env is where an operator is told to cha
 });
 
 test('a root with no .env still answers with the documented default', () => {
-  assert.equal(call(box(''), 'ronin_port', fs.mkdtempSync(path.join(os.tmpdir(), 'ronin-bare-'))), '3006');
+  assert.equal(call(box(''), 'ronin_port', fs.mkdtempSync(path.join(os.tmpdir(), 'ronin-bare-'))), '4810');
 });
 
 test('without a served mapping the address falls back to one that answers now', () => {
@@ -75,11 +75,11 @@ test('without a served mapping the address falls back to one that answers now', 
 
 test('the banner draws the url it is given, inside a frame that closes', () => {
   const dir = box('');
-  const out = execFileSync('bash', ['-c', `. "${lib}"; ronin_banner "${dir}" "http://box:3006"`], {
+  const out = execFileSync('bash', ['-c', `. "${lib}"; ronin_banner "${dir}" "http://box:4810"`], {
     env: { PATH: `${dir}:/usr/bin:/bin` },
     encoding: 'utf8',
   });
-  assert.match(out, /http:\/\/box:3006/);
+  assert.match(out, /http:\/\/box:4810/);
   const [top, bottom] = [out.split('\n').find((l) => l.includes('╭'))!, out.split('\n').find((l) => l.includes('╰'))!];
   // 人 is double-width; a frame that does not measure it is a frame with a ragged edge.
   assert.equal([...top].length, [...bottom].length);
@@ -98,16 +98,16 @@ function tailnetBox(ip: string, env: string) {
 }
 
 test('ronin_bind prefers the address recorded in .env over the tailscale probe', () => {
-  const probe = tailnetBox('100.72.224.3', 'PORT=3006\n');
+  const probe = tailnetBox('100.72.224.3', 'PORT=4810\n');
   assert.equal(call(probe, 'ronin_bind_full', probe), '100.72.224.3 tailscale', 'unrecorded: the probe is what it would have said');
-  const recorded = tailnetBox('100.72.224.3', 'PORT=3006\nBIND=10.9.8.7\n');
+  const recorded = tailnetBox('100.72.224.3', 'PORT=4810\nBIND=10.9.8.7\n');
   assert.equal(call(recorded, 'ronin_bind_full', recorded), '10.9.8.7 env');
-  const bare = tailnetBox('', 'PORT=3006\n');
+  const bare = tailnetBox('', 'PORT=4810\n');
   assert.equal(call(bare, 'ronin_bind_full', bare), '127.0.0.1 loopback');
 });
 
 test('a hand-set BIND is left byte-identical by setup, however often it reruns', () => {
-  const env = '# mine\nPORT=3006\nBIND=0.0.0.0   # behind my proxy\nGRID_USER=me\n';
+  const env = '# mine\nPORT=4810\nBIND=0.0.0.0   # behind my proxy\nGRID_USER=me\n';
   const dir = tailnetBox('100.72.224.3', env);
   const out = call(dir, 'ronin_record_bind', dir);
   assert.match(out, /BIND: 0\.0\.0\.0 .*left as it is/);
@@ -115,7 +115,7 @@ test('a hand-set BIND is left byte-identical by setup, however often it reruns',
 });
 
 test('an unrecorded .env gets the resolved address once; a rerun does not add a second', () => {
-  const env = 'PORT=3006\n#BIND=100.x.y.z\n';
+  const env = 'PORT=4810\n#BIND=100.x.y.z\n';
   const dir = tailnetBox('100.72.224.3', env);
   assert.match(call(dir, 'ronin_record_bind', dir), /recorded 100\.72\.224\.3 in \.env/);
   const once = fs.readFileSync(path.join(dir, '.env'), 'utf8');

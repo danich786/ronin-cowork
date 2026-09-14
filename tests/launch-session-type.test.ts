@@ -59,6 +59,16 @@ test('terminal ignores Agent-only fields and notes each one for the receipt', ()
   }
 });
 
+test('a Team terminal receives membership metadata but no injected Team notice', async () => {
+  const source = await fs.readFile(new URL('../src/routes/launch.ts', import.meta.url), 'utf8');
+  assert.match(source, /await setTags\(resolved\.name, resolved\.tags\)/, 'the terminal keeps its Team tag');
+  assert.match(
+    source,
+    /if \(resolved\.session_type === 'cowork_agent' && houseSeat !== 'mika'\) \{\s*await announceTeamChanges/,
+    'only a Cowork Agent receives prose in its pane after joining a Team',
+  );
+});
+
 test('bare-metal Agent ignores Ronin-only fields and a managed desk', () => {
   for (const [key, value] of [['mandate', {}], ['behaviours', []], ['routines', {}], ['seed', []], ['desk', 'own']] as const) {
     const result = acceptedLaunchBody({ session_type: 'bare_metal_agent', name: 'proof', project_root: 'home', [key]: value });
@@ -75,6 +85,15 @@ test('unknown, retired, invalid, and server-owned fields are ignored and noted t
   assert.deepEqual(result.ignored, ['dial', 'lifecycle', 'mystery', 'stated_by']);
 });
 
+test('dial input is always ignored and launch writes Control only to the resolved newborn', async () => {
+  const accepted = acceptedLaunchBody({ name: 'proof', dial: 'write' });
+  assert.equal(accepted.body.dial, undefined);
+  assert.deepEqual(accepted.ignored, ['dial']);
+  const source = await fs.readFile(new URL('../src/routes/launch.ts', import.meta.url), 'utf8');
+  assert.match(source, /setControl\(resolved\.name, resolved\.dial\)/);
+  assert.doesNotMatch(source, /setControl\(caller/);
+});
+
 test('cowork kind and behaviours survive body acceptance while unusable shapes are ignored', () => {
   const accepted = acceptedLaunchBody({ name: 'proof', kind: 'coding', behaviours: ['sops:github'] });
   assert.equal(accepted.body.kind, 'coding');
@@ -87,23 +106,9 @@ test('cowork kind and behaviours survive body acceptance while unusable shapes a
   assert.deepEqual(ignored.ignored, ['behaviours', 'kind']);
 });
 
-test('cowork accepts a partial Agent Routine override and filters malformed choices', () => {
-  const accepted = acceptedLaunchBody({
-    name: 'proof',
-    routines: { ronin_worktrees: false, gbrain: true, malformed: 'yes', '../bad': true },
-  });
-  assert.deepEqual(accepted.body.routines, { ronin_worktrees: false, gbrain: true });
-  assert.deepEqual(accepted.ignored, []);
-
-  const malformed = acceptedLaunchBody({ name: 'proof', routines: ['ronin_worktrees'] });
-  assert.equal(malformed.body.routines, undefined);
-  assert.deepEqual(malformed.ignored, ['routines']);
-});
-
 test('settled launch enums are accepted and their retired keys are receipt-only', () => {
-  const accepted = acceptedLaunchBody({ name: 'proof', launch_mode: 'configured', gbrain_mode: 'connected' });
+  const accepted = acceptedLaunchBody({ name: 'proof', launch_mode: 'configured' });
   assert.equal(accepted.body.launch_mode, 'configured');
-  assert.equal(accepted.body.gbrain_mode, 'connected');
 
   const malformed = acceptedLaunchBody({ name: 'proof', launch_mode: 'safe', gbrain_mode: 'maybe', permissions: 'bypass', mcp: false });
   assert.equal(malformed.body.launch_mode, undefined);
@@ -133,7 +138,7 @@ test('a template token is provenance input only on a cowork birth', () => {
 
 test('the Mika door accepts words only and fixes every public birth input', () => {
   assert.deepEqual(mikaLaunchBody({
-    prompt: '+system_help:',
+    prompt: 'Help me with Ronin.',
     name: 'not-mika',
     session_role: 'MikaAssist',
     capExempt: false,
@@ -143,9 +148,8 @@ test('the Mika door accepts words only and fixes every public birth input', () =
     name: 'mika_agent',
     tags: ['ronin_helpers'],
     mandate: { reach: 'discuss', recruit: 'nobody', output: ['ideas'] },
-    prompt: '+system_help:',
+    prompt: 'Help me with Ronin.',
     launch_mode: 'configured',
-    gbrain_mode: 'disconnected',
   });
 });
 
@@ -168,7 +172,8 @@ test('the in-Team Agent form sends template behaviours and mandate, never a laun
   assert.match(source, /draft\.recruit = row\.mandate\.recruit/);
   assert.match(source, /draft\.output = \[row\.mandate\.output\]\.flat\(\)\.filter\(Boolean\)/);
   assert.match(source, /behaviours:\s*\[\.\.\.draft\.behaviours\]/);
-  assert.match(source, /team_lead:\s*draft\.teamLead/);
+  assert.doesNotMatch(source, /features/);
+  assert.doesNotMatch(source, /team_lead|routines|worktrees|leadership/);
   assert.match(source, /mandate:\s*\{ reach: draft\.reach, recruit: draft\.recruit, output: \[\.\.\.draft\.output\] \}/);
   assert.doesNotMatch(source, /session_role\s*:/);
 });

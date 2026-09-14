@@ -22,7 +22,7 @@ export function createTeamJikan(options = {}) {
   const form = el('form', 'tj-form'); form.hidden = true;
   const formHead = el('div', 'tj-form-head'); const title = el('h3', 'tj-form-title', t('team_jikan.new', 'New job')); const close = el('button', 'wk-action tj-close', t('team_jikan.close', 'Close')); close.type = 'button'; formHead.append(title, close);
   const requestControl = el('textarea', 'tj-control tj-request-input'); requestControl.rows = 3; requestControl.maxLength = 2000; requestControl.placeholder = t('team_jikan.request_placeholder', 'Write the message the agent should receive');
-  const requestField = field(requestControl, { label: t('team_jikan.request', 'Request'), sr: false }); requestField.say(t('team_jikan.request_help', 'Plain words, exactly as if you typed them to the agent. A macro such as +name: is optional.'));
+  const requestField = field(requestControl, { label: t('team_jikan.request', 'Request'), sr: false }); requestField.say(t('team_jikan.request_help', 'Plain words, exactly as if you typed them to the agent.'));
   const toControl = el('select', 'tj-control'); const toField = field(toControl, { label: t('team_jikan.to', 'To'), sr: false });
   const formTeamControl = el('select', 'tj-control tj-form-team'); const formTeamField = field(formTeamControl, { label: t('team_jikan.team', 'Team'), sr: false }); formTeamField.el.hidden = !universal;
   const choice = el('select', 'tj-control'); [['once','Once at a date and time'],['daily','Every day at'],['weekdays','Weekdays at'],['weekly','Weekly on a day at'],['every','Every N hours']].forEach(([v,n]) => choice.add(new Option(n,v)));

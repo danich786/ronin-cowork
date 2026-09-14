@@ -38,9 +38,12 @@ where a session is born now. `docs/ui.md` is the written contract those modules 
 | `errors.js` | `showFailure`, `guard`, `deadTile` — the containment layer |
 | `request.js` | the ONE transport contract — every JSON call's "what happened" |
 | `ui.js` | the primitives: sheet, toast, field, status, button, tabs (docs/ui.md) |
+| `terminal-controls.js` | Copy, Clear, Close, Stop: shared interception, mobile buttons, and Hints (docs/terminal-controls.md) |
 | `theme.js` | dark/light: the saved choice, `termTheme()` read off the CSS tokens, the flip |
 | `api.js` | the `/api/sessions` calls |
 | `widgets.js` | `makeDial`, `makeGauge`, `setInert`, the job menu |
+| `glyphs.js` | THE RULED GLYPHS — one face per ruled word (reach, recruit, output, dial, kind) for ask()'s squares; `glyph(axis, value)`, `ruledRows(axis, values, word)` |
+| `ask.js` | ERABI, THE ONE SELECTOR UTILITY — `ask(spec)`: reading stones, the tray, the two shapes, switches, groups (ronin-lab `SELECTORS.md`; docs/ui.md § Asking a question) |
 | `events.js` | the `/events` socket, birth/death chips, `openSessionSomewhere` |
 | `home.js` | THE DATA CACHE — `refreshHome` + the catalog loaders, `homeFault` (the provider catalog is form-steps.js's) |
 | `form-steps.js` | the drawn form idiom, and THE ONE PICKER — `providerModelPair`, `loadProviderCatalog`, `orderedCatalog` |
@@ -65,20 +68,20 @@ where a session is born now. `docs/ui.md` is the written contract those modules 
 | `termview.js` | the 🔒 view — the untouched `tmux attach` xterm mirror, and touch drag-scroll |
 | `tilewire.js` | `TileWire` — the tile's socket: reconnect, the protocol split (keystroke · message · protocol reply), the drop rule, the message answered by id |
 | `composer.js` | `buildComposer` — the tile's text entry (unlocked, and every coarse tile), its mic and its keyboard lift; clears only on the host's answer |
-| `composer-rules.js` | `settleComposer` — the composer's send rule, pure (tested: `tests/composer-parcel.test.js`) |
+| `composer-rules.js` | `sendComposerMessage`, `settleComposer` — HTTP message send and box settlement (tested: `tests/composer-parcel.test.js`) |
 | `dvr.js` | `dvrStep` — the unlocked input rule, pure (tested: `tests/dvr.test.js`) |
 | `ansi.js` | `ANSI_RE` — its own module so the tape's pure logic loads outside a browser |
 | `tiledrop.js` | `isCoarse`, `makeDrop` — the coarse-pointer sheet primitives (the hoisted phone header is gone; the phone has its own shell) |
 | `phone.js` | THE MOBILE DOCUMENT's entry module — `mobile.html` boots it, never `main.js`: Teams → a Team (Agents \| Docs) → one Agent's tile, hash-routed (`#/t/…` `#/d/…` `#/s/…`); the server sends that document at `/m`, and at `/` to a phone |
 | `keysrow.js` | `buildKeysRow` — Esc/^C/Tab/arrows/⤓ docked on every coarse tile's composer |
-| `tilemacros.js` | `buildTileMacros` — the ⚡ button on a tile head; the `preview:` macros as teaching cards, prefills `+name: `, never runs |
 | `tilementions.js` | `buildTileMentions` — the @ button on a tile head; click or drag a live session name into the composer |
 | `tilemore.js` | DESKTOP ONLY — `buildTileMore`: メ on a tile head and the controls it drops in one strip; `fitDropToTile`, shared by every drop off that header |
-| `team-arrange.js` | `parseDraft`, `createArranger` — the team page's one controller: a draft (what changes; the rest stays) from a button or from an agent's `tejun-teampage`, run through the page's own verbs |
-| `team-members.js` | `buildTeamMembers`, `agentTitle`, `configSignature` — the member list shared by the commons configuration tab and the league surfaces, and the changed-only fingerprint that keeps the configuration off the five-second clock |
+| `team-arrange.js` | `parseDraft`, `createArranger` — the team page's one controller: a draft (what changes; the rest stays) from a button or from an agent's `edges page`, run through the page's own verbs |
+| `team-kanban.js` | `createTeamKanban` — the Team Kanban read: five responsive columns from the team's derived project JSON; a drop sends one move request and writes no project data |
+| `team-members.js` | `buildTeamMembers`, `agentTitle`, `configSignature` — the member list shared by the Commons Roster tab and the league surfaces, and the changed-only fingerprint that keeps Configuration off the five-second clock |
 | `voice.js` | dictation: `makeClipRecorder` + `wireDictation` (the 🎤 on the tile's compose box) |
 | `panels.js` | `buildNotePanel` 📝 (on `ui.sheet`), `toClipboard` |
-| `macros.js` | `buildSessionPicker` — the pad key's session switcher (on `ui.sheet`) |
+| `session-picker.js` | `buildSessionPicker` — the pad key's session switcher (on `ui.sheet`) |
 | `pad.js` | keypad — bindings, chords, firing |
 | `padpanel.js` | keypad — the ▦ panel and ask-on-press (both on `ui.sheet`) |
 | `weblink.js` | keypad — WebHID programming of the device |
@@ -150,12 +153,17 @@ What works with no browser at all:
 npm run check:modules   # cycles, orphans, unresolved imports — structure only
 node --check public/js/*.js   # parse
 npx tsc --noEmit        # server types
-npm run stage           # copy this client to public-staging/, served at /staging/
+npm run stage           # low-level copy of this client to public-staging/
 ```
 
-`npm run stage` is therefore the real tool here: it puts a candidate at `/staging/` against
-the same server and sessions so **Glen** can look at it on his Mac and iPhone while his
-working UI stays up. That human look is currently the only render check that exists.
+`npm run stage` only copies static client files for the server's `/staging/` route. It can
+still be useful for one local client check, but it is not the preferred multi-Agent Team
+review process and does not establish which aggregate repository commit is running.
+
+For a Team visual review, use the two-lane [visual-staging SOP](../../ronin_sops/ronin_methodology.md#visual-staging-one-disposable-team-preview):
+Agents offer exact private commits provisionally, the lead serially composes one disposable
+staging worktree and separate preview process, and finished work later uses ordinary Worktrees
+hand-in. The preview's `/api/version` identifies the aggregate commit actually on display.
 
 The phone surface is the one that matters most for a client change: its compact Output
 selector can choose the live terminal or any record-fed view supplied by Ronin Services.

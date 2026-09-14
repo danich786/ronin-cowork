@@ -1,4 +1,6 @@
+import { readFileSync } from 'node:fs';
 import { access } from 'node:fs/promises';
+import { parse } from 'dotenv';
 import path from 'node:path';
 import { execFile as execFileP } from '../spawn-broker.js';
 import { tailnetIp } from '../machine-settings.js';
@@ -35,10 +37,12 @@ export interface HealthOptions {
   dir: string;
 }
 
-export function defaultUrl(): string {
-  const port = process.env.PORT ?? '3006';
-  const host = process.env.BIND?.trim() || tailnetIp();
-  return process.env.RONIN_GATE_URL ?? `http://${host}:${port}/`;
+export function defaultUrl(dir: string, env: NodeJS.ProcessEnv = process.env): string {
+  let installed: Record<string, string> = {};
+  try { installed = parse(readFileSync(path.join(dir, '.env'))); } catch { /* no installed configuration */ }
+  const port = env.PORT ?? installed.PORT ?? '4810';
+  const host = env.BIND?.trim() || installed.BIND?.trim() || tailnetIp();
+  return env.RONIN_GATE_URL ?? installed.RONIN_GATE_URL ?? `http://${host}:${port}/`;
 }
 
 async function waitForHealth(url: string, waitMs: number): Promise<GateResult> {
@@ -80,7 +84,7 @@ async function renderCheck(dir: string, url: string): Promise<GateResult> {
 }
 
 export async function healthCheck(opts: HealthOptions): Promise<HealthResult> {
-  const url = opts.url ?? defaultUrl();
+  const url = opts.url ?? defaultUrl(opts.dir);
   const checks: GateResult[] = [];
   const up = await waitForHealth(url, opts.waitMs ?? 40_000);
   checks.push(up);
@@ -89,9 +93,9 @@ export async function healthCheck(opts: HealthOptions): Promise<HealthResult> {
 }
 
 export async function notifyTeam(repoDir: string, team: string, text: string): Promise<string> {
-  const tool = path.join(repoDir, 'ronin_bin', 'tejun-wipeboard');
+  const tool = path.join(repoDir, 'ronin_bin', 'edges');
   try {
-    const r = await execFileP(tool, [team, 'post', text], { env: envWithoutGitLocation(), timeout: 15_000 });
+    const r = await execFileP(tool, ['wipeboard', team, 'post', text], { env: envWithoutGitLocation(), timeout: 15_000 });
     return r.stdout.trim().split('\n')[0] ?? 'posted';
   } catch (e) {
     return `notice not delivered: ${String((e as Error).message ?? e).split('\n')[0]}`;

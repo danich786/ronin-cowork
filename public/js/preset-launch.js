@@ -90,8 +90,6 @@ export async function launchPresetPlan(plan = {}, send) {
     const team = `bare_metal_${code}`;
     const made = await ask('/api/team-rosters', { method: 'POST', json: {
       name: team, title: `Bare Metal ${code}`, objective: plan.user_message || template.objective || '', project_root: plan.inputs?.root || 'ronin_lab', template: template.name,
-      // A bare-metal team launches bare: no Ronin base, no worktrees, whatever the Campaign cascades.
-      routines: { ronin_base: false, ronin_worktrees: false },
     } });
     if (!made.ok) return made;
     const picks = (plan.inputs?.sessions || []).map((row) => ({
@@ -122,7 +120,7 @@ export async function launchPresetPlan(plan = {}, send) {
       : plan.template.name === 'morning_brief'
         ? (plan.inputs?.roles || template.agents || []).map((row) => ({ ...row, instructions: [row.ask || row.instructions, plan.user_message].filter(Boolean).join('\n\n') }))
       : plan.template.name === 'develop_new_project'
-        ? (plan.inputs?.features || []).map((row) => ({ ...(typeof row === 'string' ? { name: row } : row), instructions: plan.user_message }))
+        ? (plan.inputs?.workstreams || []).map((row) => ({ ...(typeof row === 'string' ? { name: row } : row), instructions: plan.user_message }))
         : (template.agents || []);
   // THE TEMPLATE IS THE TEMPLATE. Each row is one of the stored template's agents — its
   // instructions, mandate, lead mark and Routine switches — and goes through the same
@@ -138,8 +136,6 @@ export async function launchPresetPlan(plan = {}, send) {
       instructions: [row.instructions ?? base.instructions ?? '', plan.user_message].filter(Boolean).filter((line, at, all) => all.indexOf(line) === at).join('\n\n'),
       mandate: row.mandate || base.mandate,
       team_lead: row.team_lead === true || (row.team_lead === undefined && base.team_lead === true),
-      routines_on: [...(base.routines_on || [])],
-      routines_off: [...(base.routines_off || [])],
       ...chosen,
     };
   });

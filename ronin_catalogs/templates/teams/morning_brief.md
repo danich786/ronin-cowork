@@ -5,7 +5,6 @@
 - **order:** 10
 - **kinds:** work
 - **objective:** Every morning, one page on the topic the owner named: what moved since yesterday, what is waiting on the owner, and what today holds — from documents and records, never from memory.
-- **routines_off:** ronin_worktrees
 
 The rock-bottom work team: two people and a page. Grow it from the Ronin library —
 Chief of Staff is this with a lane for every part of the week.

@@ -16,8 +16,8 @@ const { fetchLibrary, EgressRefused, LIBRARY_BASE } = await import('../src/activ
 
 test('a bundle url cannot leave the library, and no token means no call', async () => {
   assert.equal(LIBRARY_BASE, 'https://hq.ronincowork.com/library/');
-  // A Services feature: without an entitlement the read is refused before any socket opens.
-  await assert.rejects(fetchLibrary('index.json', ''), (e: unknown) => e instanceof EgressRefused && /Ronin Services feature/.test((e as Error).message));
+  // A Services capability: without an entitlement the read is refused before any socket opens.
+  await assert.rejects(fetchLibrary('index.json', ''), (e: unknown) => e instanceof EgressRefused && /provided by Ronin Services/.test((e as Error).message));
   // Off the allowlist entirely: refused as any host would be.
   await assert.rejects(fetchLibrary('https://evil.example/index.json', 't'), (e: unknown) => e instanceof EgressRefused && /not the allowlisted Ronin host/.test((e as Error).message));
   // On the host but not under the library: the door is shared, the shelf is not.

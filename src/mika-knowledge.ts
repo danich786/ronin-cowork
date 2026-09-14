@@ -7,7 +7,7 @@ import { storeDir } from './resources.js';
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 // 23 KB leaves room in the 30 KB one-read packet for her rules, the owner's tips and the
 // Setup walkthrough beside the index.
-export const MIKA_INDEX_BUDGET = { bytes: 23_000, lines: 400, previewBytes: 160, minimumPreviewBytes: 24 } as const;
+export const MIKA_INDEX_BUDGET = { bytes: 23_200, lines: 402, previewBytes: 160, minimumPreviewBytes: 24 } as const;
 export const MIKA_TAXONOMY = path.join(ROOT, 'ronin_session_boot', 'house', 'mika', 'MIKA_PYRAMID.toml');
 const INDEX_NAME = 'MIKA_SOURCE_INDEX.md';
 const MANIFEST_NAME = 'mika-source-manifest.json';
@@ -145,7 +145,6 @@ async function resolvedEntries(nodes: MikaTaxonomyNode[], options: MikaKnowledge
       markdownFiles(ownerRoots[node.root] ?? ''),
     ]);
     const names = [...new Set([...stock.keys(), ...owner.keys()])]
-      .filter((name) => !(node.root === 'ronin_catalogs' && name === 'MIKA_MACROS.md'))
       // Her own house folder is read whole at birth, never indexed as a source.
       .filter((name) => !(node.root === 'ronin_session_boot' && name.startsWith('house/mika/')))
       .sort((a, b) => Buffer.from(a).compare(Buffer.from(b)));
@@ -180,7 +179,7 @@ function renderIndex(nodes: MikaTaxonomyNode[], entries: Array<MikaSourceEntry &
   for (const node of nodes) {
     lines.push('', `## ${node.label}`);
     for (const entry of entries.filter((row) => row.node === node.id)) {
-      lines.push(`- \`${entry.id}\` · **${entry.title.replace(/[*`]/g, '')}** · \`${entry.ref}\``);
+      lines.push(`- **${entry.title.replace(/[*`]/g, '')}** · \`${entry.ref}\``);
       lines.push(`  ${capUtf8(entry.fullPreview ?? entry.preview, previewBytes)}`);
     }
   }

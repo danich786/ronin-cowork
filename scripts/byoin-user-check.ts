@@ -16,9 +16,7 @@ const exists = async (p: string) => !!(await stat(p).catch(() => null));
 const mdFiles = async (dir: string): Promise<string[]> =>
   (await readdir(dir).catch(() => [] as string[])).filter((f) => f.endsWith('.md'));
 
-const REQUIRED: Record<string, { keys: string[]; unless?: (e: { get: (k: string) => string }) => boolean }> = {
-  'MACROS.md': { keys: ['label', 'blurb'] },
-};
+const REQUIRED: Record<string, { keys: string[]; unless?: (e: { get: (k: string) => string }) => boolean }> = {};
 
 async function checkCatalogFile(dir: string, file: string, label: string): Promise<void> {
   looked++;
@@ -51,7 +49,7 @@ async function checkCatalogFile(dir: string, file: string, label: string): Promi
 
 async function checkDefinitionsSurface(catalogsDir: string): Promise<void> {
   const kinds: DefinitionKind[] = [
-    'routines', 'lexicons', 'desk_profiles', 'templates/agents', 'templates/teams',
+    'lexicons', 'desk_profiles', 'templates/agents', 'templates/teams',
   ];
   for (const kind of kinds) {
     const dir = path.join(catalogsDir, kind);

@@ -4,7 +4,8 @@ import { button, field, status } from './ui.js';
 import { pm, getPath, currentOf, optionsOf, pickerProvider, toRequest } from './machine-settings-schema.js';
 import { servicesCard } from './services-card.js';
 import { t } from './lexicon.js';
-import { loadProviderCatalog, providerModelPair } from './form-steps.js';
+import { loadProviderCatalog, providerCatalog, modelAvailabilityFact } from './form-steps.js';
+import { ask } from './ask.js';
 
 /* ---------- ⚙ CONFIGURATION — what this install IS, in one room ----------
  *
@@ -128,11 +129,27 @@ export function buildMachineSettings(root, isShowing) {
     const picked = fixed
       ? { provider: fixed, model: String(stored ?? '') }
       : { provider: String(stored?.provider || ''), model: String(stored?.model || '') };
-    let say = () => {};
-    const pair = providerModelPair(
-      () => picked,
-      async (provider, model) => {
-        picked.provider = provider; picked.model = model;
+    const row = document.createElement('div'); row.className = 'st-row';
+    const note = document.createElement('p'); note.className = 'st-note'; note.setAttribute('role', 'status');
+    if (f.aside) note.textContent = f.aside;
+    const catalog = providerCatalog().rows;
+    const providers = catalog.filter((item, index) => catalog.findIndex((other) => other.provider === item.provider) === index);
+    const reason = (item) => item.off
+      ? t('forms.reason_turned_off', 'turned off')
+      : item.listed === false && item.model_list_current
+        ? t('forms.reason_not_listed', 'not listed by your {cli} {client_version}', { cli: item.cli_label || item.cli, client_version: item.model_list?.client_version || '' })
+        : t('forms.reason_not_on_machine', 'not on this machine');
+    const fields = fixed ? [
+      { key: 'model', label: f.short ?? f.label, blank: t('settei.none_set', '— none set —'), options: catalog.filter((item) => item.provider === fixed).map((item) => ({ v: item.model, l: item.model, word: item.tier, sub: modelAvailabilityFact(item), off: item.operational && item.listed !== false ? '' : reason(item) })) },
+    ] : [
+      { key: 'provider', label: t('forms.provider', 'Model provider'), blank: t('settei.none_set', '— none set —'), options: providers.map((item) => ({ v: item.provider, l: item.provider_label, off: item.operational ? '' : reason(item) })) },
+      { key: 'model', label: t('forms.model', 'Model'), blank: t('settei.none_set', '— none set —'), after: 'provider', options: (value) => catalog.filter((item) => item.provider === value.provider).map((item) => ({ v: item.model, l: item.model, word: item.tier, sub: modelAvailabilityFact(item), off: item.operational && item.listed !== false ? '' : reason(item) })) },
+    ];
+    const pair = ask([{ group: fixed ? '' : t('new_agent.model_package', 'Model'), fields }], {
+      value: picked,
+      onChange: async (value) => {
+        picked = { provider: fixed || value.provider || '', model: value.model || '' };
+        const { provider, model } = picked;
         if (!fixed && provider && !model) return say(t('settei.pick_model', 'choose a model to save'));
         say(t('settei.saving', 'saving…'));
         const req = toRequest(rec.schema, f, fixed ? model : (model ? pm(picked) : ''));
@@ -141,17 +158,9 @@ export function buildMachineSettings(root, isShowing) {
         say(t('settei.saved', 'saved'));
         await load({ quiet: true });
       },
-      (label, control) => { control.setAttribute('aria-label', label); return control; },
-      { fixed, classes: 'st-inp', blank: { provider: t('settei.none_set', '— none set —'), model: t('settei.none_set', '— none set —') } },
-    );
-    const row = document.createElement('div');
-    row.className = 'st-row';
-    const shown = field(pair.el, { label: f.short ?? f.label, sr: false });
-    shown.el.classList.add('st-field');
-    say = shown.say;
-    const notes = [f.aside].filter(Boolean);
-    if (notes.length) shown.say(notes.join(' · '));
-    row.appendChild(shown.el);
+    });
+    const say = (message, bad = false) => { note.textContent = message; note.classList.toggle('bad', bad); };
+    row.append(pair.el, note);
     return row;
   };
 
@@ -161,18 +170,26 @@ export function buildMachineSettings(root, isShowing) {
     if (picker) return pickerRow(f, picker);
     const cur = currentOf(f, { record: rec });
     const ctx = { record: rec, deskProfiles };
-    let control;
     if (f.kind === 'select') {
-      control = document.createElement('select');
-      control.className = 'st-inp';
-      control.add(new Option(t('settei.none_set', '— none set —'), ''));
-      for (const o of optionsOf(f, ctx)) control.add(new Option(o.label, o.value));
-      control.value = cur;
-    } else if (f.kind === 'number') {
-      control = input(cur, { type: 'number', cls: 'st-num', min: f.min });
-    } else {
-      control = input(cur, { max: 120, placeholder: f.fallback ? String(getPath(rec, f.fallback) ?? '') : f.placeholder });
+      const row = document.createElement('div'); row.className = 'st-row';
+      const notes = document.createElement('p'); notes.className = 'st-note'; notes.setAttribute('role', 'status');
+      const baseNote = [f.note ? String(getPath(rec, f.note) ?? '') : '', cur === '' && f.fallback ? t('settei.unset_using', 'unset — using {value}', { value: getPath(rec, f.fallback) ?? '' }) : '', f.aside || ''].filter(Boolean).join(' · ');
+      notes.textContent = baseNote;
+      const question = ask([{ group: '', fields: [{ key: f.id, label: f.short ?? f.label, blank: t('settei.none_set', '— none set —'), options: optionsOf(f, ctx).map((o) => ({ v: o.value, l: o.label })) }] }], {
+        value: { [f.id]: cur },
+        onChange: async (value) => {
+          notes.textContent = t('settei.saving', 'saving…');
+          const req = toRequest(rec.schema, f, value[f.id]);
+          const result = await request(req.route, { method: req.method, json: req.json });
+          if (!result.ok) { notes.textContent = result.message; notes.classList.add('bad'); return; }
+          notes.classList.remove('bad'); notes.textContent = t('settei.saved', 'saved'); await load({ quiet: true });
+        },
+      });
+      row.append(question.el, notes); return row;
     }
+    const control = f.kind === 'number'
+      ? input(cur, { type: 'number', cls: 'st-num', min: f.min })
+      : input(cur, { max: 120, placeholder: f.fallback ? String(getPath(rec, f.fallback) ?? '') : f.placeholder });
     const notes = [];
     if (f.note) notes.push(String(getPath(rec, f.note) ?? ''));
     // A fallback in force is visible — a default is never passed off as an answer.
@@ -222,15 +239,11 @@ export function buildMachineSettings(root, isShowing) {
     group(t('settei.group_capacity', 'capacity'));
     for (const row of fieldsIn((f) => f.lands?.family === 'session-max')) body.appendChild(row);
 
-    /* messages — the same leaf the Messages tab's switch sets */
-    group(t('settei.group_messages', 'messages'));
-    for (const row of fieldsIn((f) => f.lands?.family === 'messages')) body.appendChild(row);
-
     /* projects — shown, never edited here */
     group(t('settei.group_projects', 'projects · {n}', { n: set.projects.length }));
     for (const p of set.projects) {
       const health = st.projects.find((x) => x.name === p.name);
-      body.appendChild(obsRow(p.name, p.remit || p.dir,
+      body.appendChild(obsRow(p.title || p.name, p.remit || p.dir,
         health?.dir === 'missing' ? ' ' + t('settei.dir_gone', '✕ {dir} is gone', { dir: p.dir }) : health?.repo ? ` ${health.repo}` : ''));
     }
     const link = document.createElement('div');
@@ -315,24 +328,6 @@ export function buildMachineSettings(root, isShowing) {
     group(t('settei.group_services', 'services'));
     body.appendChild(tickRow(observed.ronin.services.length > 0, 'service', '*', t('settei.ronin_services', 'Ronin Services'), ''));
     body.appendChild(tickRow(observed.ronin.services.includes('gbrain'), 'service', 'gbrain', 'gbrain', ''));
-    const gb = document.createElement('input');
-    gb.type = 'checkbox';
-    gb.className = 'st-check';
-    gb.checked = set.gbrain.enabled;
-    const gbField = field(gb, { label: t('settei.use_gbrain', 'use gbrain'), sr: false });
-    gbField.el.classList.add('st-field');
-    // The installed FACT is the row above; this tick is the CHOICE.
-    gbField.say(t('settei.use_gbrain_hint', 'tick this if your agents use it'));
-    gb.addEventListener('change', async () => {
-      gbField.say(t('settei.saving', 'saving…'));
-      const r = await request('/api/machine-settings', { method: 'PATCH', json: { family: 'gbrain', value: { enabled: gb.checked } } });
-      gbField.say(r.ok ? t('settei.saved', 'saved') : r.message, !r.ok);
-    });
-    const gbRow = document.createElement('div');
-    gbRow.className = 'st-row';
-    gbRow.appendChild(gbField.el);
-    body.appendChild(gbRow);
-
     /* the deal — Ronin Services the subscription, a different thing from the sockets above */
     group(t('settei.group_subscription', 'subscription'));
     const activation = set.services.activation ?? {};
@@ -362,7 +357,12 @@ export function buildMachineSettings(root, isShowing) {
           go.disabled = true;
           const r = await request('/api/launch', {
             method: 'POST',
-            json: { behaviours: schema.seat.behaviours, name: schema.seat.name, prompt: schema.seat.prompt },
+            json: {
+              behaviours: schema.seat.behaviours,
+              name: schema.seat.name,
+              prompt: schema.seat.prompt,
+              seed: ['ronin_session_boot/house/atarashi/install.md'],
+            },
           });
           go.disabled = false;
           go.textContent = r.ok ? t('settei.setup_started', 'setup session started — see ⌂ Roster') : r.message || t('settei.setup_failed', 'could not start');

@@ -1,8 +1,8 @@
 # Desks — the state and hand-in floor
 
-The HTTP desk surface owns these mechanics. `tejun-desk` calls it and prints its reply.
+The HTTP desk surface owns these mechanics. `worktree-desk` calls it and prints its reply.
 What a session is told is
-`ronin_session_boot/routine/ronin_worktrees/WORKTREES.md`. This page is the tool-side reference:
+`ronin_sops/worktree-root.md`. This page is the tool-side reference:
 what is recorded where, what each operation does to git, and what it refuses.
 
 > The current model is `docs/worktrees.md`.
@@ -44,7 +44,7 @@ moment of asking (`deskStatus`). Nothing here is prose an agent maintains.
 ## The gate
 
 **`RONIN_REPO` in the repository is the one switch**. `desks=managed`
-gives a coding launch its desk, the contract in its brief, the desk actions and the tools;
+gives a coding launch its desk, the contract in its brief, and its capability-selected tools;
 `desks=none`, or no file, gives none of them and the session starts in the checkout. There
 is no install-wide switch. The Campaign's Ronin Worktrees choice defaults the file written for
 a new project root (`declareArrangement`, `src/desks/arrangement.ts`). For an existing root,
@@ -59,10 +59,10 @@ migration or running-Agent reconciliation. A coding launch that gets no desk say
 `openDesk({repo, session, team, source})` keeps `source` optional: omitted or `dev` uses
 the working line, while `team` uses the Team's local review line. The ref is resolved to an
 exact commit before create/adopt, recorded independently of the unchanged hand-in line, and
-never moves global development. `tejun-desk assign` is the lead-facing CLI over this same
+never moves global development. `worktree-desk assign` is the lead-facing CLI over this same
 function for a named session; it adds no authorization layer. The operation is refused when the repository is `direct`, has no
 `RONIN_REPO`, or sits in a Syncthing share whose `.stignore` does not exclude `.git`;
-refused when the requested branch is a funnel point. An explicit `tejun-desk open <repo>`
+refused when the requested branch is a funnel point. An explicit `worktree-desk open <repo>`
 does not require that repository to already appear on the team's roster. Any Agent can
 name any managed repository; the roster only determines which desks birth opens
 automatically. Otherwise: the team line is created
@@ -114,9 +114,15 @@ through `libexec/ronin-house-send`, which enters the same durable inbound messag
 reviewing the team line
 and promoting it to `dev` is the lead's primary job, and the house telling the lead that
 its job is waiting is house machinery (the same footing as Koshi's marker and
-`write_tegami --at`), not an agent driving a session. Safe delivery never overwrites a
+`work-record update_record --at`), not an agent driving a session. Safe delivery never overwrites a
 human draft or presses Enter into a dialog; when it cannot deliver, the queue retains the
 notice visibly for mechanical retry and the hand-in output says which happened.
+
+`worktree-desk hand-in <desk> --project <id>` records an explicit canonical Project ID on
+an accepted receipt. Acceptance says code was handed in, Project state is unchanged, and
+prints the exact `work-record project advance <id> --to LANDING` command. Promotion uses
+only that receipt association to prompt the holder to move the Project to Done. Neither
+acknowledgement mutates Project state; conflicts and refusals never claim success.
 
 **No lead set: the handing-in session holds the job**. The hand-in
 prints `YOU ARE THE LEAD FOR THIS ONE` with the words: review the line, promote when
@@ -140,13 +146,13 @@ worktree it checks every live session's current directory. If a session is in th
 or below it, close keeps the desk and tells the caller to notify that session to leave,
 then retry. It does not message, relocate, stop, or retry for the caller. Otherwise the
 worktree, branch, and desk row are removed. `handoffDesk` changes explicit owners without
-moving work. `tejun-harakiri`, safe live-session Delete, and `--with-session` use the
+moving work. `session_end`, safe live-session Delete, and `--with-session` use the
 coordinated end: all assigned desks and ownership checks run first, clean Team-contained
 desks are removed, then the Agent is stopped. An ACCEPTED hand-in is immediately eligible
 when its clean tip is contained in the Team line; global-dev promotion and a second manual
 close are not prerequisites. Any dirty, unique, pending/rejected, shared, unmounted, or
 occupied desk refuses the whole preflight and messages the Agent with exact next actions.
-`tejun-desk close <repo:branch> --with-session` validates that named desk, then uses the
+`worktree-desk close <repo:branch> --with-session` validates that named desk, then uses the
 same all-assigned-desks transaction so it cannot strand another desk.
 Archive remains resumable and refuses open desk custody. Owner-confirmed Hard Delete is a
 separate destructive transaction: it preserves quarantine/receipt evidence, then removes

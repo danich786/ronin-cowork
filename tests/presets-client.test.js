@@ -23,11 +23,11 @@ class FakeNode {
   }
   *walk() { for (const child of this.children) { if (!(child instanceof FakeNode)) continue; yield child; yield* child.walk(); } }
   get options() { return this.children.filter((node) => node.tagName === 'OPTION'); }
-  get textContent() { return this._text + this.children.map((node) => node?.textContent || '').join(''); }
+  get textContent() { return this._text + this.children.map((node) => typeof node === 'string' ? node : node?.textContent || '').join(''); }
   set textContent(value) { this._text = String(value || ''); this.children = []; }
 }
 globalThis.Node = FakeNode;
-globalThis.document = { createElement: (tag) => new FakeNode(tag), createElementNS: (_ns, tag) => new FakeNode(tag), querySelector: () => null, head: { append() {} } };
+globalThis.document = { createElement: (tag) => new FakeNode(tag), createElementNS: (_ns, tag) => new FakeNode(tag), createDocumentFragment: () => new FakeNode(), querySelector: () => null, head: { append() {} } };
 globalThis.window = { matchMedia: () => ({ matches: false }), addEventListener() {}, removeEventListener() {} };
 
 const presets = await import('../public/js/presets.js');
@@ -72,7 +72,7 @@ test('the approved resting-stone lines are verbatim and every stone has a glyph'
     ['bare_metal', 'Choose a provider and model for each native session, or leave it at Default.'],
     ['ronin_team', 'Launch a Team Lead and open Team Configuration beside the team.'],
     ['staff_my_codebase', 'Point a team at a codebase and get its read on the stack.'],
-    ['develop_new_project', 'A lead plus feature agents, each in its own worktree.'],
+    ['develop_new_project', 'A lead plus workstream agents, each in its own worktree.'],
     ['personal_assistant', 'One assistant that remembers. Alone, or a lead that hires help.'],
     ['health_and_fitness', 'Head coach, nutritionist, race guide. Drop or add roles.'],
     ['morning_brief', 'Grok writes you a briefing on a schedule you set.'],
@@ -133,9 +133,9 @@ test('every preset gates on a provider and named presets add their dependencies'
     assert.equal(presets.presetReadiness(row.handle, { activated_count: 0 }).surface, 'setup.providers');
   }
   assert.equal(presets.presetReadiness('bare_metal', { activated_count: 1 }).ready, true);
-  assert.equal(presets.presetReadiness('personal_assistant', { activated_count: 1, gbrain: { active: false } }).surface, 'setup.gbrain');
+  assert.equal(presets.presetReadiness('personal_assistant', { activated_count: 1, gbrain: { active: false } }).surface, 'setup.installations');
   assert.equal(presets.presetReadiness('personal_assistant', { activated_count: 1, gbrain: { active: true } }).ready, true);
-  assert.equal(presets.presetReadiness('morning_brief', { activated_count: 1, services: { active: false } }).surface, 'setup.services');
+  assert.equal(presets.presetReadiness('morning_brief', { activated_count: 1, services: { active: false } }).surface, 'setup.installations');
   assert.equal(presets.presetReadiness('morning_brief', { activated_count: 1, services: { active: true } }).ready, true);
 });
 
@@ -197,7 +197,7 @@ test('the selected preset entry keeps its message in the framed panel and offers
   nodes.filter((node) => node.tagName === 'BUTTON' && String(node.className).includes('sws-stone'))[4].click();
   nodes = [...surface.el.walk()];
   assert.ok(nodes.find((node) => String(node.className).includes('sp-choice-panel')));
-  assert.ok(nodes.find((node) => String(node.className).includes('sp-select') && node.textContent === 'select'));
+  assert.ok(nodes.find((node) => String(node.className).includes('ask-stone') && node.textContent.includes('Single assistant')));
   assert.ok(nodes.find((node) => node.tagName === 'TEXTAREA'));
   const customize = nodes.find((node) => node.tagName === 'BUTTON' && node.textContent === 'Customize this');
   assert.equal(customize, undefined);
@@ -209,7 +209,7 @@ test('Bare Metal keeps two real tile layouts, compact rows, separated sections, 
     readFile(new URL('../public/js/presets.js', import.meta.url), 'utf8'),
     readFile(new URL('../public/css/launch-forms.css', import.meta.url), 'utf8'),
   ]);
-  assert.match(source, /for \(const count of \[2, 4\]\)/);
+  assert.match(source, /key: 'tiles'.*v: 2.*v: 4/);
   assert.doesNotMatch(source, /Customize this|\[1, 2, 4\]/);
   assert.match(css, /\.sp-choice-panel \{[^}]*font-size: var\(--text-5\)/);
   assert.match(source, /const wrap = el\('label', 'sp-field sp-section'\)/);
@@ -227,17 +227,16 @@ test('Personal Assistant hides the whole Recruit section until Chief of Staff is
   const source = await readFile(new URL('../public/js/presets.js', import.meta.url), 'utf8');
   assert.match(source, /const recruit = field\('Recruit', specialists\)/);
   assert.match(source, /recruit\.hidden = state\.assistant_mode !== 'recruit'/);
-  assert.match(source, /\['single', 'Single assistant'\], \['recruit', 'Chief of Staff'\]/);
-  assert.match(source, /el\('button', 'sp-mode-choice', label\)/);
+  assert.match(source, /key: 'assistant_mode'.*Single assistant.*Chief of Staff/);
   assert.doesNotMatch(source, /specialists\.hidden =/);
 });
 
 test('Morning Brief asks only for what each cadence needs and expands role instructions while editing', async () => {
   const source = await readFile(new URL('../public/js/presets.js', import.meta.url), 'utf8');
-  assert.match(source, /option\('daily', 'Every day'\), option\('weekly', 'Day of the week'\), option\('once', 'One time'\)/);
-  assert.match(source, /weekdayField\.hidden = cadence !== 'weekly'/);
+  assert.match(source, /key: 'cadence'.*Every day.*Day of the week.*One time/);
+  assert.match(source, /key: 'weekday'.*after: 'cadence'/);
   assert.match(source, /dateField\.hidden = cadence !== 'once'/);
-  assert.match(source, /`weekly \$\{weekday\.value\} \$\{time\.value\}`/);
+  assert.match(source, /`weekly \$\{timingValue\.weekday\} \$\{time\.value\}`/);
   assert.match(source, /ask\.rows = 3; line\.dataset\.editing = 'true'/);
   assert.match(source, /ask\.rows = 1; delete line\.dataset\.editing/);
 });
@@ -282,6 +281,7 @@ test('Ronin Team and Agent + Editable Doc ask Where from the one list of workspa
     { name: 'ronin_lab', label: 'Ronin Lab' }, { name: 'ronin_project_1', label: 'Ronin Project 1' }, { name: 'site', label: 'site' }, { name: 'shiwake', label: 'shiwake' },
   ]);
   assert.deepEqual(presets.rootChoices(runtime, { trackedRoots: () => [{ name: 'site' }] }), [{ name: 'site', label: 'site' }], 'an excluded seeded folder is no choice');
+  assert.deepEqual(presets.rootChoices({}, { trackedRoots: () => [{ name: 'site', title: 'Ronin Site' }] }), [{ name: 'site', label: 'Ronin Site' }], 'a title changes presentation without changing the root ID');
   assert.deepEqual(presets.rootChoices(runtime, {}), runtime.roots.map(({ name, label }) => ({ name, label })));
 });
 
@@ -298,22 +298,28 @@ test('Where lists every tracked workspace folder and refills in place when one i
   await surface.enter();
   const stones = [...surface.el.walk()].filter((node) => node.tagName === 'BUTTON' && String(node.className).includes('sws-stone'));
   stones[1].click(); // Ronin Team
-  const select = [...surface.el.walk()].find((node) => node.tagName === 'SELECT');
-  assert.deepEqual(select.options.map((row) => [row.value, row.textContent]), [['ronin_lab', 'Ronin Lab'], ['ronin_project_1', 'Ronin Project 1'], ['site', 'site']]);
-  assert.equal(select.value, 'ronin_lab', 'Ronin Lab by default');
-  select.value = 'site'; for (const callback of select.listeners.change) callback();
+  let reading = [...surface.el.walk()].find((node) => node.dataset.askKey === 'root');
+  assert.ok(reading.textContent.includes('Ronin Lab'), 'Ronin Lab by default');
+  reading.click();
+  let options = [...surface.el.walk()].filter((node) => String(node.className).split(' ').includes('ask-opt'));
+  assert.deepEqual(options.map((row) => row.textContent), ['Ronin Lab', 'Ronin Project 1', 'site']);
+  options[2].click();
   tracked = [...tracked, { name: 'shiwake' }];
   listener();
-  assert.deepEqual(select.options.map((row) => row.value), ['ronin_lab', 'ronin_project_1', 'site', 'shiwake'], 'the kept folder is a choice at once');
-  assert.equal(select.value, 'site', 'the choice survives the refill');
+  reading = [...surface.el.walk()].find((node) => node.dataset.askKey === 'root');
+  assert.ok(reading.textContent.includes('site'), 'the choice survives the refill');
+  reading.click(); options = [...surface.el.walk()].filter((node) => String(node.className).split(' ').includes('ask-opt'));
+  assert.deepEqual(options.map((row) => row.textContent), ['Ronin Lab', 'Ronin Project 1', 'site', 'shiwake'], 'the kept folder is a choice at once');
   assert.ok([...surface.el.walk()].some((node) => node.tagName === 'BUTTON' && node.textContent === '＋ workspace folder'), 'the door to keep another folder sits beside Where');
 });
 
 test('Code Stack Eval keeps ticked folders on Apply and evaluates the chosen one', async () => {
   const source = await readFile(new URL('../public/js/presets.js', import.meta.url), 'utf8');
   assert.doesNotMatch(source, /createFolderPicker|Show hidden folders|GitHub repo · remote evaluation pending/);
-  assert.match(source, /tick\.checked = Boolean\(folder\.registered_root\) \|\| state\.pending\.includes\(folder\.dir\)/);
-  assert.match(source, /state\.root_dir = folder\.dir; state\.root = folder\.registered_root\?\.name \|\| '';\n\s+if \(!folder\.registered_root\) state\.pending = /);
+  assert.match(source, /key: 'keep'.*switch:/, 'an unkept folder uses the canonical switch');
+  assert.match(source, /key: 'folder'.*options: folders\.map/, 'one canonical pick chooses the evaluation folder');
+  assert.match(source, /state\.root_dir = folder\.dir; state\.root = folder\.registered_root\?\.name \|\| '';/);
+  assert.match(source, /if \(!folder\.registered_root\) state\.pending = /);
   assert.match(source, /request\('\/api\/project-roots', \{ method: 'POST', json: \{ name, dir: folder\.dir, \.\.\.\(profile \? \{ before, profile, confirmed: true \} : \{\}\) \} \}\)/);
   assert.match(source, /if \(state\.root_dir === dir\) state\.root = made\.name/);
   assert.match(source, /environment\?\.navigateToSurface\?\.\('setup\.roots'\)/);
@@ -349,7 +355,7 @@ test('a stone gate reads the runtime the Setup view keeps current, and the held 
   assert.match(css, /\.sp-warning \{ margin: var\(--space-6\) 0 var\(--space-7\);[^}]*padding: var\(--space-3\) var\(--space-5\);[^}]*font-size: var\(--text-5\); line-height: 1\.6; \}/);
 });
 
-test('a row picks its provider and model with the one picker, the New Agent form\'s own choices', async () => {
+test('a row asks for provider and dependent model from the shared catalog', async () => {
   // The picker reads the catalog and the machine's summary itself; this is the one fetch it makes.
   const catalog = { origin: 'stock', updated: '2026-09-08', providers: [{ provider: 'anthropic', cli: 'claude', label: 'Anthropic', models: [{ model: 'opus', tier: 'frontier', good_at: 'hard work', cmd: 'claude --model opus' }] }, { provider: 'openai', cli: 'codex', label: 'OpenAI', models: [{ model: 'gpt-5.6-sol', tier: 'frontier', good_at: 'the hardest coding', cmd: 'codex --model gpt-5.6-sol' }] }] };
   const machine = { measured_at: '2026-09-08T11:00:00.000Z', providers: [{ id: 'codex', label: 'Codex', from: 'OpenAI', installed: true, signed_in: true, activated: true }, { id: 'claude', label: 'Claude Code', from: 'Anthropic', installed: false, signed_in: false, activated: false }] };
@@ -364,13 +370,16 @@ test('a row picks its provider and model with the one picker, the New Agent form
   nodes = [...surface.el.walk()];
   const rows = nodes.filter((node) => String(node.className).split(' ').includes('sp-row'));
   assert.equal(rows.length, 3, 'Bare Metal starts with three rows');
-  const selects = [...rows[0].walk()].filter((node) => node.tagName === 'SELECT');
-  assert.equal(selects.length, 2, 'a provider select and a model select, no cycle buttons');
-  assert.deepEqual(selects[0].options.map((option) => [option.textContent, option.value, option.disabled]), [['Default provider', '', false], ['OpenAI', 'openai', false], ['Anthropic — not on this machine', 'anthropic', true]]);
-  assert.equal(selects[0].attributes['aria-label'], 'model provider 1');
-  assert.equal(selects[1].disabled, true, 'no provider named: the model waits');
-  selects[0].value = 'openai'; for (const callback of selects[0].listeners.change) callback();
-  assert.deepEqual(selects[1].options.map((option) => option.textContent), ['Default model', 'gpt-5.6-sol · frontier']);
+  let provider = [...rows[0].walk()].find((node) => node.dataset.askKey === 'provider');
+  let model = [...rows[0].walk()].find((node) => node.dataset.askKey === 'model');
+  assert.ok(provider && model, 'one provider reading and one dependent model reading');
+  provider.click();
+  let options = [...rows[0].walk()].filter((node) => String(node.className).split(' ').includes('ask-opt'));
+  assert.deepEqual(options.map((option) => [option.textContent, option.attributes['aria-disabled']]), [['Default provider', undefined], ['OpenAI', undefined], ['Anthropic', 'true']]);
+  options[1].click();
+  model = [...rows[0].walk()].find((node) => node.dataset.askKey === 'model'); model.click();
+  options = [...rows[0].walk()].filter((node) => String(node.className).split(' ').includes('ask-opt'));
+  assert.deepEqual(options.map((option) => option.textContent), ['Default model', 'gpt-5.6-solfrontier']);
   assert.doesNotMatch(await readFile(new URL('../public/js/presets.js', import.meta.url), 'utf8'), /launchTable|sp-cycle/);
 });
 

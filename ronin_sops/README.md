@@ -15,18 +15,17 @@ prescriptive. **The difference is who fetches it:**
 | | fetched by | arrives | written for |
 |---|---|---|---|
 | **`ronin_sops/`** | the **situation** — nothing names it until one arises | when someone goes looking | whoever the SOP's own `Voice:` header names — a person (relay) or the agent itself (§ Voice, below) |
-| **`ronin_library/`** | the **machinery** — an action names it, `ronin_bin/tejun` inlines it at compile | mid-task, unasked | the agent, mid-step |
+| **`ronin_library/`** | a tool or capability-specific instruction names it | mid-task, when needed | the agent doing the work |
 
-**An action never leads to an SOP.** An SOP may point at an action — its `> Tool:` header
-does — and the arrow runs that way only. The test when you are
-unsure: **if you can name the action that would cite it, it is library.** If the only
-answer is "someone would look it up when the topic came up", it is an SOP.
+An SOP may point at a tool, but a tool does not turn an SOP into compiled instructions.
+The test when you are unsure: if an executable needs the material while it works, it is
+library. If someone would look it up when the topic came up, it is an SOP.
 
 **Cut what is blindingly obvious.** The test is not length — it is whether a competent
 agent already knows the step. If a procedure has ten steps and eight of them are obvious,
 write the two. An SOP is not there to replace the agent's judgment with a checklist; it is
 there to say **which of several workable ways this house picks**, and to point at the
-actions that do the work. Length is a symptom: a file that keeps growing is usually one
+tools that do the work. Length is a symptom: a file that keeps growing is usually one
 that has started explaining rather than deciding.
 
 The obvious step and the house preference can look alike, so the discriminator is: could
@@ -40,10 +39,10 @@ are resolved (`bin/ronin-doctor`, `bin/ronin-store --all`), never written down. 
 fact about a box is wrong the day the box changes, and nobody notices.
 
 **Where a domain has a measurable, name the tool — at the top.** An SOP carries a
-`> Tool:` line in its header, the same form `ronin_catalogs/ACTIONS.md` uses, so the eye
-finds it in the same place everywhere. `data.md` names `tejun-survey`; `secrets.md` names
-`tejun-secrets`; `github.md` names nothing, because git is git. The pointer is always to a
-**cataloged action's tool**, never a loose script.
+`> Tool:` line in its header so the eye
+finds it in the same place everywhere. `data.md` names `ronin-host inspect`; `secrets.md`
+names `ronin-host secrets`; repository arrangement pages name nothing, because git is git. The pointer is always to a
+**cataloged tool**, never a loose script.
 
 This is the shelf's sharpest edge, and it is not really about discovery. **A capable agent
 will reason well about a domain and skip the step of finding out what is actually true
@@ -68,8 +67,8 @@ An SOP declares its voice in its header, because the two failure modes are oppos
 Judge the voice by who acts in the body, not by what the header of the file beside it
 happened to say. The line was boilerplate on ten of these before the shelf was audited on
 
-A rule an *action* cites is neither: `documents.md` sits in `ronin_library/` because the
-machinery fetches it and a compile inlines it, so no situation ever has to go looking.
+A rule an executable consumes is neither: `documents.md` sits in `ronin_library/`
+because the machinery fetches it directly, so no situation ever has to go looking.
 
 **Who they are for.** The_owner may know an area cold or may never have had a repo.
 Nothing here is pushed at either of them — an SOP costs nothing until a situation calls
@@ -80,8 +79,8 @@ is no other.
 
 **One route, and it never pastes an SOP at a session that did not ask.** An SOP is
 **found by name**: `docs/README.md` says the shelf is there, and every session is handed
-that map at birth through `ronin_session_boot/all/`. Nothing else fetches one — no macro
-compile, no action, no boot paste of the SOPs themselves.
+that map at birth through `ronin_session_boot/all/`. Nothing else fetches one, and the SOPs
+themselves are not pasted at birth.
 
 That is the point, not a gap. A shelf that arrived unasked would be pushing a GitHub
 walkthrough at someone who has used git for fifteen years, every session, forever.
@@ -94,4 +93,4 @@ store. Redefining one is how your sessions inherit *your* process instead of our
 **Deliberately near-empty.** Stock SOPs are screened in one at a time, exactly like the
 library. The stock roster and the situation that selects each book live in
 `docs/README.md`; `ronin_methodology.md` is the shared session-to-session method, while
-`github.md` remains the source-control walkthrough for ordinary owner projects.
+`worktree-root.md` and `checkout.md` are the two repository-arrangement guides. `visual_staging.md` is the Team preview procedure, given to an Agent by the `visual_staging` behaviour.

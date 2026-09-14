@@ -1,5 +1,5 @@
-/* Pure Setup presentation for gbrain: three questions with plain answers. Is it installed?
- * Is it available to Agents? Which accounts are linked? Browser-free; gbrain.js paints it. */
+/* Pure Setup presentation for gbrain's measured facts: is it installed, and which accounts
+ * are linked? Campaign availability/default switches are rendered beside these facts. */
 import { t } from './lexicon.js';
 
 export const GBRAIN_SETUP_STATES = Object.freeze([

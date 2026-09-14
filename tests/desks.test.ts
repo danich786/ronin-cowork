@@ -181,7 +181,7 @@ test('openDesk: an explicit team source is resolved once, recorded exactly, and 
   assert.equal(sh(cowork, ['rev-parse', 'dev']), devBefore);
 });
 
-test('tejun-desk assign gives the lead the same observable source choice for a named session', async () => {
+test('worktree-desk assign gives the lead the same observable source choice for a named session', async () => {
   const exact = sh(cowork, ['rev-parse', 'team/comp/dev']);
   const output = execFileSync(process.execPath, [
     '--import', 'tsx', path.resolve('src/commands/desk.ts'),
@@ -228,6 +228,21 @@ test('accepted hand-ins discover an explicit managed repo outside the team roste
   assert.deepEqual(await acceptedLinesForTeam('comp'), [{ repo: 'services', line: 'team/comp/dev' }]);
 });
 
+test('an accepted worktree-desk hand-in ends with one project-update reminder', async () => {
+  const desk = await openDesk({ repo: 'cowork', session: 'reminder', team: 'comp' });
+  await commitFile(desk.worktree, 'reminder.txt', 'hand this in\n');
+  const output = execFileSync(process.execPath, [
+    '--import', 'tsx', path.resolve('src/commands/desk.ts'), 'hand-in', 'cowork',
+  ], {
+    cwd: path.resolve('.'),
+    env: { ...process.env, RONIN_SESSION: 'reminder', RONIN_TEAMS: 'comp' },
+  }).toString();
+  const reminder = 'Remember to update your project.';
+  assert.equal(output.split(reminder).length - 1, 1);
+  assert.ok(output.indexOf('ACCEPTED cowork:team/comp/reminder') < output.indexOf(reminder));
+  assert.equal(output.trimEnd().split('\n').at(-1), reminder);
+});
+
 test('openDesk reports restrictive inputs and proceeds with a private branch', async () => {
   for (const branch of ['dev', 'team/comp/dev', 'master']) {
     const desk = await openDesk({ repo: 'cowork', session: `x-${branch.replaceAll('/', '-')}`, team: 'comp', branch });
@@ -255,8 +270,9 @@ test('handIn: the line advances by compare-and-swap to the candidate, its worktr
   const before = sh(cowork, ['rev-parse', 'team/comp/dev']);
   await fs.writeFile(path.join(deskWorktree('cowork', 'team/comp/fable'), 'loose-one.txt'), 'one\n');
   await fs.writeFile(path.join(deskWorktree('cowork', 'team/comp/fable'), 'loose-two.txt'), 'two\n');
-  const { receipt, notices, tidy } = await handIn('cowork', 'team/comp/fable');
+  const { receipt, notices, tidy } = await handIn('cowork', 'team/comp/fable', { projectId: 'comp/11' });
   assert.equal(receipt.result, 'accepted', receipt.reason);
+  assert.equal(receipt.project_id, 'comp/11');
   assert.equal(receipt.expected_old, before);
   const after = sh(cowork, ['rev-parse', 'team/comp/dev']);
   assert.equal(receipt.line_sha, after);
@@ -412,7 +428,7 @@ test('closeDesk keeps unresolved work named, closes only after hand-in, and reco
     stop: async () => assert.fail('plain close must not stop a session'),
   });
   assert.equal(occupied.action, 'kept');
-  assert.match(occupied.reason, /session wispr is running inside .*birth desk ends with the session — tejun-harakiri from inside it, or archive the session, then close/);
+  assert.match(occupied.reason, /session wispr is running inside .*birth desk ends with the session — session_end from inside it, or archive the session, then close/);
   // Certification (owner, 2026-09-09): everything on the line means ending loses nothing;
   // the desk the shell lives in is stay-or-go, never closable; another is closable.
   const status = await deskStatus((await readDesk('cowork', 'team/comp/wispr'))!, await arrangementOf('cowork'));

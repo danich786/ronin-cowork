@@ -1,6 +1,5 @@
 /* part of the ronin-cowork client — see js/README.md */
 import { IS_TOUCH, S, WHEEL_DOWN, WHEEL_UP, tiles } from './state.js';
-import { request } from './request.js';
 import { toast } from './ui.js';
 import { t } from './lexicon.js';
 
@@ -19,7 +18,7 @@ export const PAD_CODE = /^F1[3-9]$|^F2[0-4]$/; // the ONLY codes the pad logic t
 // The bottom-right cluster is UNIVERSAL keys, written onto the device itself so
 // they work in any app, not just Ronin: Enter above Wispr, ⌥⌫ and ⌥↵ beside it,
 // Wispr push-to-talk (right ⌥) in the corner. Drawn as fixed widgets — the Mac
-// handles them, Ronin stays out of the way. The other 7 keys are dumb macro
+// handles them, Ronin stays out of the way. The other 7 keys are programmable
 // codes that only mean something once bound below.
 export const PAD_LAYOUT = [
   [{ w: 'enc' }, { k: 'F13' }, { k: 'F19' }, { w: 'joy' }],
@@ -42,25 +41,21 @@ export function PAD_WIDGETS() {
   };
 }
 
-// ⌨ key bindings: a pad key can also press a terminal key in the ACTIVE tile —
-// the keys that drive claude (Esc, Tab, ⇧Tab, Enter, arrows, ^C), same sequences
-// as the top-bar and touch-keypad buttons. 'nexttile' is the odd one out: it
-// cycles which tile is active instead of sending anything.
-// The table is a function so the labels read the lexicon at the time a person sees them
-// (the module is evaluated before the lexicon loads); the sequences never change.
+// Navigation keys remain raw. Existing interrupt assignments use shared Stop.
+// Existing interrupt pad assignments now invoke Stop instead of writing Ctrl-C.
 export function PAD_KEYS() {
   return {
   enter: { label: t('pad.key_enter', '↵ Enter'), seq: '\r' },
   aenter: { label: t('pad.key_newline', '⌥↵ Newline'), seq: '\x1b\r' }, // line break WITHOUT sending (claude)
   adel: { label: t('pad.key_delete_word', '⌥⌫ Delete word'), seq: '\x1b\x7f' }, // backward-kill-word
-  esc: { label: t('pad.key_esc', '⎋ Esc'), seq: '\x1b' },
+  esc: { label: 'Stop', intent: 'stop' },
   tab: { label: t('pad.key_tab', '⇥ Tab'), seq: '\t' },
   stab: { label: t('pad.key_shift_tab', '⇧⇥ Shift-Tab'), seq: '\x1b[Z' },
   up: { label: t('pad.key_up', '↑ Up'), seq: '\x1b[A' },
   down: { label: t('pad.key_down', '↓ Down'), seq: '\x1b[B' },
   left: { label: t('pad.key_left', '← Left'), seq: '\x1b[D' },
   right: { label: t('pad.key_right', '→ Right'), seq: '\x1b[C' },
-  int: { label: t('pad.key_interrupt', '^C Interrupt'), seq: '\x03' },
+  int: { label: 'Stop', intent: 'stop' },
   nexttile: { label: t('pad.key_next_tile', '⇄ Next tile') },
   // Press once = the switcher opens over the active tile; arrows (or the same key's
   // scroll neighbours) walk the list; press it AGAIN and that session lands in the
@@ -84,14 +79,16 @@ export function PAD_KEYS() {
   };
 }
 
-// { chord: {macro, args, session, ask} | {key} } — session '' = active tile;
-// ask = pop a prompt for the args on every press (e.g. buildout)
+// { chord: {key} }
 export let padBinds = {};
 try {
   padBinds = JSON.parse(localStorage.getItem(LS_PAD) || '{}') || {};
 } catch (_) {
   padBinds = {};
 }
+// Retain only generic terminal and navigation bindings; older non-key records are
+// unsupported data and are not translated.
+for (const chord of Object.keys(padBinds)) if (!padBinds[chord]?.key) delete padBinds[chord];
 // Glen's standing defaults, seeded wherever unbound (rebindable, at the price
 // that a cleared key returns to its default next load): the key above Wispr
 // (F22) is Enter, the key left of Wispr (F24) is ⌥↵ newline-without-send.
@@ -135,10 +132,7 @@ export function padChord(e) {
   return (e.ctrlKey ? 'C-' : '') + (e.altKey ? 'A-' : '') + (e.metaKey ? 'M-' : '') + (e.shiftKey ? 'S-' : '') + e.code;
 }
 
-// The outcome chip (macros must SHOW their result, not just perform) grew up into
-// the house toast — js/ui.js — because tile-scoped errors needed the same surface.
-
-/** Route a pad press: terminal key, next-tile, ask-for-args popup, or macro send. */
+/** Route a pad press to a terminal or navigation key. */
 export function firePadBinding(bind) {
   // While the session switcher is up it OWNS the pad: its own key lands the
   // highlighted session, up/down (however they're spelled on this pad — arrows,
@@ -203,30 +197,10 @@ export function firePadBinding(bind) {
       toast(k.label + ' — no active tile', false);
       return;
     }
+    if (k.intent) return void S.active.controlAction(k.intent);
     S.active.sendRaw(k.seq); // deliberately no toast: these fire often and show in the pane
     return;
   }
-  if (bind.ask) {
-    if (S.padAsk) S.padAsk.open(bind);
-    return;
-  }
-  firePadSend(bind.macro, bind.args, bind.session);
-}
-
-/** Fire a macro: same invocation + /send path as the home-panel macro rows. */
-export async function firePadSend(macro, args, session) {
-  const dest = session || (S.active && S.active.session) || '';
-  const inv = '+' + (args ? `${macro}: ${args}` : macro);
-  if (!dest) {
-    toast(`${inv} — no target: bind a session, or open one in the active tile`, false);
-    return;
-  }
-  const r = await request('/api/sessions/' + encodeURIComponent(dest) + '/send', {
-    method: 'POST',
-    json: { text: inv },
-  });
-  if (!r.ok) toast(`⚡ ${inv} → ${dest} ✗ ${r.message}`, false);
-  else toast(`⚡ ${inv} → ${dest} ${r.data.started ? '✓' : "— pane didn't react, check it"}`, !!r.data.started);
 }
 
 // Codes emitted by the encoder and joystick rather than by a key. They ARE

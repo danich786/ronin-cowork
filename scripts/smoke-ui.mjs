@@ -142,6 +142,58 @@ async function checkDom(page, label) {
   else ok(`${label}: no failure banner`);
 }
 
+/* The Team commons' Configuration tab: the questions are ERABI stones (140 wide, the forms' tight
+   40 px, the tray under the group) or, with no saved record, the tab says so. Read-only, and on a
+   page of its own: placing the Commons on the gate's page would unseat the probe it just seated. */
+async function checkTeamConfiguration(gatePage, label) {
+  const page = await gatePage.context().newPage();
+  try {
+    // The first saved Team, so the stones are measured on a real record; a box with none gets the no-record line.
+    let team = '%20unassigned';
+    try {
+      const rosters = await (await page.request.get(URL_.replace(/#.*$/, '') + 'api/team-rosters')).json();
+      const first = Array.isArray(rosters) ? rosters.find((row) => row?.name && row.state !== 'archived') : null;
+      if (first) team = encodeURIComponent(first.name);
+    } catch { /* no rosters route, or none saved: the unassigned page still shows the tab */ }
+    await page.goto(URL_.replace(/#.*$/, '') + `#/team/${team}`, { waitUntil: 'networkidle', timeout: 30_000 });
+    await page.waitForTimeout(2000);
+    // The card's text carries its summary too, so match the label alone.
+    const card = page.locator('.wk-card').filter({ has: page.getByText('Commons', { exact: true }) }).first();
+    if (!(await card.count())) { console.log(`  SKIP — ${label}: no Commons card on this Team page`); return; }
+    await card.click();
+    await page.waitForTimeout(1000);
+    const tab = page.locator('button').filter({ hasText: /^(Configuration|Team Configuration)$/ }).first();
+    if (!(await tab.count())) { bad(`${label}: the Commons strip has no Configuration tab`); return; }
+    await tab.click();
+    await page.waitForTimeout(1500);
+    const state = await page.evaluate(() => {
+      // Several commons instances may exist (one per workspace); the shown one is the one with a box.
+      const tab = [...document.querySelectorAll('.tw-config')].find((node) => node.getClientRects().length);
+      if (!tab) return { shown: false };
+      const empty = tab.querySelector('.tw-config-empty');
+      const stone = tab.querySelector('.ask-stone:not(.ask-switch)');
+      if (!stone) return { shown: true, empty: (empty?.textContent || '').trim() };
+      const rect = stone.getBoundingClientRect();
+      stone.click();
+      const tray = document.querySelector('.ask-tray');
+      const group = stone.closest('.ask-group');
+      const under = !!(tray && group) && tray.getBoundingClientRect().top >= group.getBoundingClientRect().bottom - 1;
+      document.querySelector('.ask-stone[aria-expanded="true"]')?.click();
+      return { shown: true, stone: [Math.round(rect.width), Math.round(rect.height)], tray: !!tray, under };
+    });
+    if (!state.shown) { bad(`${label}: the Configuration tab did not show`); return; }
+    if (state.stone) {
+      if (state.stone[0] === 140 && (state.stone[1] === 40 || state.stone[1] === 48)) ok(`${label}: Configuration asks through ERABI — a 140 × ${state.stone[1]} reading stone`);
+      else bad(`${label}: Configuration's reading stone is ${state.stone.join(' × ')}, wanted 140 × 40 (the forms' tight stone) or 140 × 48`);
+      if (state.tray && state.under) ok(`${label}: the tray opens under the stone's group`);
+      else bad(`${label}: the tray did not open under the group (tray=${state.tray}, under=${state.under})`);
+    } else if (state.empty) ok(`${label}: Configuration says the Team has no saved record`);
+    else bad(`${label}: Configuration painted neither stones nor its no-record line`);
+  } finally {
+    await page.close().catch(() => {});
+  }
+}
+
 async function checkCurrentWorkspace(page, label) {
   const state = await page.evaluate(() => {
     const head = document.querySelector('.tile-head');
@@ -492,11 +544,22 @@ async function checkJourneys(page, label, jsErrors) {
   if (!noteAfter.open && noteAfter.focusBack) ok(`${label}: Escape closes the sheet and returns focus to 📝`);
   else bad(`${label}: sheet close broken — open=${noteAfter.open} focusReturned=${noteAfter.focusBack}`);
 
+  const cascadeForms = await page.evaluate(async () => {
+    const [agent, team, add, config] = await Promise.all(
+      ['new-agent.js', 'new-team-form.js', 'add-agent.js', 'team-configuration.js']
+        .map((name) => fetch(`js/${name}`).then((response) => response.text())),
+    );
+    return [agent, team, add, config].every((source) => !source.includes("t('features', 'Features')") && source.includes("t('behaviours', 'Behaviours')"))
+      && [agent, team, add, config].every((source) => !/routines|routine_bundles/.test(source));
+  });
+  if (cascadeForms) ok(`${label}: New Team, New Agent, Add Agent and Team Configuration expose only Behaviours`);
+  else bad(`${label}: an installation-cascade form still exposes a retired section`);
+
   await page.keyboard.press('Control+Shift+KeyN');
   await page.waitForTimeout(300);
   const kindBtn = page.locator('.tile.active .ks-btn').first();
   if ((await kindBtn.count()) === 0) {
-    console.log('  note — no session_roles in the catalog; the launch-validation journey skipped');
+    console.log('  note — no launch choices are available; the launch-validation journey skipped');
   } else {
     let launched = false;
     const sniff = (req) => {
@@ -549,8 +612,8 @@ async function checkJourneys(page, label, jsErrors) {
       const sent = await page.evaluate(() => {
         try { return JSON.parse(window.__launchBody ?? 'null'); } catch { return 'unparseable'; }
       });
-      if (sent && sent !== 'unparseable' && sent.session_role && sent.project_root) {
-        ok(`${label}: an ordinary launch names its axis on the wire (session_role="${sent.session_role}")`);
+      if (sent && sent !== 'unparseable' && sent.project_root && !('session_role' in sent)) {
+        ok(`${label}: an ordinary launch names its project root and carries no role axis`);
       } else {
         bad(`${label}: launch payload lost its axis — a body naming none is born a bare shell. Sent: ${JSON.stringify(sent)}`);
       }
@@ -793,6 +856,7 @@ async function runPass({ label, browser, contextOpts }) {
   else ok(`${label}: no failed requests`);
 
   await checkDom(page, label);
+  await checkTeamConfiguration(page, label);
   if (probeAvailable) {
     await attachProbe(page, label);
     const docsFocus = await page.evaluate(() => {

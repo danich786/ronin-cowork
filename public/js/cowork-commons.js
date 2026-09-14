@@ -3,7 +3,6 @@ import { WorkspaceKit } from './workspace-kit.js';
 import { buildProjectRoots } from './projectroots.js';
 import { buildHotwords } from './hotwords.js';
 import { buildKoshi } from './koshi.js';
-import { buildGbrain } from './gbrain.js';
 import { buildMachineSettings } from './machine-settings.js';
 import { buildStats } from './stats.js';
 import { buildSystemPanel } from './system.js';
@@ -114,7 +113,6 @@ export function coworkCommons(options = {}) {
     { id: 'release', label: t('desk.row_release', 'Release & update'), glyph: '↑', build: (host) => { host.append(appBox(app.release)); return app; } },
     { id: 'hotwords', label: t('pane.hotwords', 'Hotwords'), glyph: '▥', build: (host) => buildHotwords(host, showing('account')) },
     { id: 'koshi', label: t('pane.koshi', 'Koshi'), glyph: '目', build: (host) => buildKoshi(host, showing('account')) },
-    { id: 'gbrain', label: t('pane.gbrain', 'gbrain'), glyph: '◇', build: (host) => buildGbrain(host, showing('account'), (prompt) => S.showNewSession?.(prompt)) },
     { id: 'account', label: t('desk.log_out', 'Log out'), glyph: '⏻', build: (host) => { host.append(appBox(app.account)); return app; } },
   ];
   const nav = node('div', 'desk-nav');

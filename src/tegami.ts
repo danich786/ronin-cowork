@@ -5,6 +5,10 @@ import { RIREKI_DIR, sessionKey } from './session-dir.js';
 import { readTeamRoster } from './team-rosters.js';
 import type { SessionInfo } from './tmux.js';
 import { mandate, type Mandate } from './agent-defaults.js';
+import { deliverMessage } from './message-queue.js';
+import { normalizeProject, type Project } from './projects.js';
+
+export type TegamiProject = Project;
 
 export interface TegamiCheckout {
   repo: string;
@@ -72,12 +76,12 @@ function seedShell(
 > here is shown on the user's tile and on their session_roster for quick reference. Keep it true
 > and save it when it changes — a stale ladder is worse than none.
 >
-> At the end of a turn, consider updating it with \`write_tegami\`. Not keeping it current is
+> At the end of a turn, consider updating it with \`work-record update_record\`. Not keeping it current is
 > poor quality.
 >
 > YOUR **teams** block is DERIVED and not yours to write: one entry per team you are on —
 > the team's name and its objective, read live from the team rosters.
-> \`write_tegami\` regenerates it on every save and a tag change refreshes it, so reread
+> \`work-record update_record\` regenerates it on every save and a tag change refreshes it, so reread
 > your letter to see a team objective that moved. A session on no team is a rōnin, which
 > is an ordinary state and not a gap.
 >
@@ -93,20 +97,21 @@ function seedShell(
 > \`PLANNED\` · \`ACTIVE\` · \`DONE\`, **one ACTIVE at a time**. Add a gate wherever the work
 > genuinely stops and needs someone — that is how the owner knows you want them.
 >
-> YOUR **ladder_state** — \`write_tegami --on_tangent\` when you step off the ladder,
+> YOUR **ladder_state** — \`work-record update_record --on_tangent\` when you step off the ladder,
 > \`--on_track\` when you are back. Riffing, a side job, ten minutes in nobody's plan — all
 > normal, and your plan is not dead while you are away from it.
 >
 > YOUR DOCS — the buildouts, handoffs and plans this session is working on.
-> \`write_tegami --doc <path>\` puts one on your list, \`--undoc <path>\` takes it off.
+> \`work-record document add <path>\` puts one on your list; \`work-record document remove
+> <path>\` takes it off.
 > The owner opens them from the ▧ Docs tab in commons, so **a doc you did not list is a
 > doc they cannot reach without asking you for the path.**
 >
-> Your own words go in "objective" and "title". Read it with \`read_tegami\`. **Change one
-> field with one call**: \`write_tegami --objective "<sentence>"\` · \`--phase "<title>"\` ·
+> Your own words go in "objective" and "title". Read it with \`work-record read\`. **Change one
+> field with one call**: \`work-record update_record --objective "<sentence>"\` · \`--phase "<title>"\` ·
 > \`--leg N "<title>"\` · \`--done N.M\` · \`--gate "<what you wait for>"\` · \`--rung N\`,
 > \`--leg N.M\` to retitle · \`--drop N[.M]\` · \`--repo <repo>:<branch>\`. Verbs combine in one
-> call. \`write_tegami < block.json\` replaces the whole authored block. Where the file lives
+> call. \`work-record update_record < block.json\` replaces the whole authored block. Where the file lives
 > is Ronin's business.
 
 \`\`\`json
@@ -114,9 +119,80 @@ function seedShell(
   "mandate": ${JSON.stringify(sessionMandate)},
   "teams": ${JSON.stringify(teams)},
   "repos": ${JSON.stringify(repos.filter((checkout) => checkout.repo || checkout.branch))},${docs.length ? `\n  "docs": ${JSON.stringify(docs)},` : ''}
+  "projects": [],
   "ladder": [] }
 \`\`\`
 `;
+}
+
+function letterBlock(text: string): { match: RegExpMatchArray; body: Record<string, unknown> } | null {
+  const match = text.match(/```(?:json)?\s*\n([\s\S]*?)\n```/);
+  if (!match) return null;
+  try {
+    const body = JSON.parse(match[1]) as unknown;
+    return body && typeof body === 'object' && !Array.isArray(body)
+      ? { match, body: body as Record<string, unknown> }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+async function replaceLetterBlock(file: string, text: string, parsed: ReturnType<typeof letterBlock>, body: Record<string, unknown>): Promise<void> {
+  if (!parsed) throw new Error('work record has no valid JSON block');
+  const block = JSON.stringify(body, null, 2);
+  const start = parsed.match.index! + parsed.match[0].indexOf(parsed.match[1]);
+  const out = text.slice(0, start) + block + text.slice(start + parsed.match[1].length);
+  const tmp = `${file}.project.${process.pid}`;
+  await fs.writeFile(tmp, out, 'utf8');
+  await fs.rename(tmp, file);
+}
+
+export type MoveTegamiProjectInput =
+  | { direction: 'place'; session: string; project: Project }
+  | { direction: 'return'; session: string; projectId: string };
+
+export interface MoveTegamiProjectResult {
+  project: Project;
+  projectsRemaining: number;
+  focus: string;
+}
+
+/** The house's only cross-letter project write. Roster mutation stays with its caller. */
+export async function moveTegamiProject(
+  input: MoveTegamiProjectInput,
+  notify: (session: string, text: string) => Promise<unknown> = (session, text) => deliverMessage(session, text, 'house'),
+): Promise<MoveTegamiProjectResult> {
+  const file = tegamiPath(await sessionKey(input.session));
+  const text = await fs.readFile(file, 'utf8');
+  const parsed = letterBlock(text);
+  if (!parsed) throw new Error(`@${input.session} has no readable work record`);
+  const projects = Array.isArray(parsed.body.projects)
+    ? parsed.body.projects.map(normalizeProject)
+    : [];
+  if (projects.some((project) => project === null)) throw new Error(`@${input.session} has an invalid project in its work record`);
+  const valid = projects as Project[];
+  let project: Project;
+  if (input.direction === 'place') {
+    const normalized = normalizeProject(input.project);
+    if (!normalized) throw new Error(`project ${input.project?.id || '(no id)'} has an invalid shape`);
+    if (valid.some((item) => item.id === normalized.id)) throw new Error(`project ${normalized.id} is already in @${input.session}'s work record`);
+    project = normalized;
+    valid.push(project);
+  } else {
+    const at = valid.findIndex((item) => item.id === input.projectId);
+    if (at < 0) throw new Error(`project ${input.projectId} is not in @${input.session}'s work record`);
+    [project] = valid.splice(at, 1);
+    if (parsed.body.at && typeof parsed.body.at === 'object' && !Array.isArray(parsed.body.at)
+        && (parsed.body.at as Record<string, unknown>).project === project.id) {
+      if (valid[0]) parsed.body.at = { project: valid[0].id };
+      else delete parsed.body.at;
+    }
+  }
+  parsed.body.projects = valid;
+  await replaceLetterBlock(file, text, parsed, parsed.body);
+  await notify(input.session, 'check your work record');
+  return { project, projectsRemaining: valid.length, focus: valid[0]?.id ?? 'none' };
 }
 
 export async function seedTegami(

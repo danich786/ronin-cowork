@@ -9,28 +9,24 @@ Three keys carry the whole idea:
 
 - **What it does:** isolated working folders and branches keep parallel Agents from
   colliding in the same files.
-- **When it works:** both sides must say yes — the repository's Project Root enables
-  Worktrees, and the Agent carries the Worktrees Routine.
+- **When it works:** the repository's Project Root declares Worktrees (`desks=managed` in
+  `RONIN_REPO`). The Agent needs no switch; it is told the folder is a worktree root.
 - **The tradeoff:** work leaves the private worktree through the managed path — commit,
   hand-in, and the Team lead's merge — rather than landing directly on the shared branch.
 
 ## Resolution model
 
-Two facts determine the result for each repository:
+One fact determines the result for each repository, its own `RONIN_REPO`:
 
-| Agent carries Ronin Worktrees | Repository enables Worktrees | Result |
+| The Workspace Folder declares | Result | The page the Agent is pointed at |
 |---|---|---|
-| no | no | Use the repository checkout and ordinary Git. |
-| no | yes | Use the checkout; repository metadata remains passive for this Agent. |
-| yes | no | Use the checkout; the Agent's capability does not override the repository. |
-| yes | yes | Use the Agent's managed branch and worktree. |
+| `desks=none`, or no `RONIN_REPO` | a **checkout**: work on the repository's working line with ordinary Git; announce files; no hand-in | `ronin_sops/checkout.md` |
+| `desks=managed` | a **worktree root**: the Agent's managed branch and worktree, commit, hand-in, the lead's promotion | `ronin_sops/worktree-root.md` |
 
-The Agent capability is a cascade: the Campaign supplies the default, a saved Team owns a
-complete override, and the New Agent form may override individual Routine answers for that
-Agent. The resolved `ronin_worktrees` answer is fixed at birth. Repository applicability
-comes independently from each Project Root's `RONIN_REPO`; changing an Agent answer never
-changes a repository profile. Resolution is per repository, so one assignment may contain
-both managed worktrees and direct checkouts.
+There is no Agent-side answer. The birth packet names the birth root's arrangement, and
+`worktree-desk open <repo>` names any other root's. The desk procedure and tools are in an
+Agent's command lookup only in a worktree root. Resolution is per repository, so one
+assignment may contain both a worktree root and a checkout.
 
 `src/worktrees-resolution.ts` owns the pure 2×2 decision. Its input contains the resolved
 Agent capability, normalized repository applicability, checkout location, branch profile,
@@ -75,7 +71,7 @@ answer as `worktrees: enabled|disabled`. Other consumers must not compare `desks
 
 A managed launch never silently falls back to a shared funnel checkout when opening its
 worktree fails. The launch is refused with the reason. Direct repositories remain direct
-and are not represented as missing desks. The Agent does not ask `tejun-desk` to decide
+and are not represented as missing desks. The Agent does not ask `worktree-desk` to decide
 again; the 2×2 result is already in its brief.
 
 An assignment can span several repositories. A desk is the repository-specific internal
@@ -117,11 +113,25 @@ resulting line, and contributing session.
 
 A hand-in moves the line and nothing else: no desk, the handing-in one included, is
 merged or rewritten by it. A desk takes in accepted work only when its session runs
-`tejun-desk sync`, which merges local `dev`; the team line is never merged into a desk.
+`worktree-desk sync`, which merges local `dev`; the team line is never merged into a desk.
 After `ACCEPTED` the desk is level with the line because its tip is a parent of the line's
 new merge commit, not because the desk moved. The tool then tells the team lead itself,
 in the lead's tile (or on the team wipeboard when the tile cannot take it); a team with no
 lead gets one sentence back saying nobody was told.
+
+### Provisional visual staging is a separate lane
+
+Before ordinary hand-in, an Agent may commit a coherent private candidate and send the Team
+lead its Agent, repository, exact commit, intended surfaces, and supersedes information. This
+“provisional visual hand-in” is communication, not a first-class tool verb, hand-in receipt,
+approval, or promotion. The private branch remains the source.
+
+The lead serially composes exact provisional commits in one dedicated disposable staging
+branch/worktree and serves that worktree on a separate preview port. Agents do not edit it
+concurrently. Rejection changes or rebuilds only the disposable composition; it never deletes
+the Agent's private commit. Visual approval publishes nothing. Finished work still reaches the
+Team line through ordinary `worktree-desk hand-in`, then lead review and promotion. See the concise
+[visual-staging SOP](../ronin_sops/ronin_methodology.md#visual-staging-one-disposable-team-preview).
 
 Team promotion builds the combined candidate, advances `dev` by compare-and-swap,
 restarts the live service, and performs deployment health checks. Failed post-restart
@@ -130,9 +140,9 @@ completes, promotion posts the moved line on the team wipeboard and tells each s
 whose hand-in rode in, in its tile, which receipts are now on `dev` and that its desk is
 finished and certified clean. A desk is finished when that notice arrives, not when its
 hand-in is accepted — and finished means parked, or ended with its session by
-`tejun-harakiri`; it is never closed under a live session. An Agent's shell is opened
+`session_end`; it is never closed under a live session. An Agent's shell is opened
 inside its desk at launch and stays there, so the desk it stands in ends with it, never
-before it. `tejun-desk close` is for a desk nobody is standing in: a second repository's
+before it. `worktree-desk close` is for a desk nobody is standing in: a second repository's
 desk, or a desk whose session is already gone.
 
 ## Desk lifecycle and recovery
@@ -142,8 +152,8 @@ explicitly discard repository desks. A branch without a mounted worktree is repr
 parked recovery state. The registry and receipts keep that state visible; no lifecycle
 operation silently deletes an unintegrated branch or user files.
 
-Use `tejun-desk status --assignment` to inspect the current assignment and `tejun-desk
-receipts` to inspect publication history. `tejun-desk discard --yes` is the explicit path
+Use `worktree-desk status --assignment` to inspect the current assignment and `worktree-desk
+receipts` to inspect publication history. `worktree-desk discard --confirm "DISCARD repo:branch"` is the explicit path
 that abandons an unintegrated desk. Funnel recovery is separate: dirty integration
 worktrees are preserved to named recovery refs and receipts before cleanup.
 
@@ -163,7 +173,7 @@ anyone changing the code below.
   every promotion, deleted when the team retires, never on a timer. Desk branches are
   private checkpoints. Candidates are throwaway. Each has an owner, a recorded base, and a
   place it hands in to.
-- **An Agent reads the current command surface from `tejun-desk --help`.** Get a worktree (`open`, defaulting to local `dev`; an
+- **An Agent reads the current command surface from `worktree-desk --help`.** Get a worktree (`open`, defaulting to local `dev`; an
   explicit `--source team` joins an already-moving Team from the exact current local team-line
   revision), update it (`sync`, merges local `dev`; `status` reports lag, and 20 commits
   behind is a notification, not a block), hand it in (`hand-in`; the candidate is built from
@@ -176,7 +186,7 @@ anyone changing the code below.
 - **The house closes what it opens.** `open` records what it creates; hand-in removes its
   candidate; promotion removes its own candidate and leaves the team line and desks as
   they are (the next hand-in carries the line current; a desk closes with its session by
-  `tejun-harakiri`, or by a lead once the session is gone). Close refuses when a live
+  `session_end`, or by a lead once the session is gone). Close refuses when a live
   session is still running inside the worktree and says why: a birth desk ends with its
   session; it does not move or message the session, and never asks it to leave. Team retirement settles the line; startup finishes an
   interrupted transaction from the ledger. No cleanup chores for Agents or the owner.

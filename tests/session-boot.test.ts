@@ -6,32 +6,41 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { PACKET_BUDGET, bootFiles, compileBirthReadmeAt, describePacket, isShelfTeaching, packetEndLine, readFirstSentence } from '../src/birth-readme.js';
 import { storeDir } from '../src/resources.js';
 import { buildBrief, type SpawnForm } from '../src/spawn.js';
-import { routineReading } from '../src/resource-adapters.js';
+import { contributionReading } from '../src/resource-adapters.js';
 import type { LaunchProfile } from '../src/launch-profile.js';
-import { listMacros } from '../src/macros.js';
+import { CAPABILITIES_READING, renderCapabilitiesOverview, resolveCapabilities } from '../src/capabilities.js';
 
-test('every assisted session is handed the session macro routing guide', async () => {
+/** The fullest overview: every stock capability document selected, every listed tool present. */
+const fullOverview = async (): Promise<string> => renderCapabilitiesOverview(await resolveCapabilities(
+  { arrangement: 'managed', installations: new Set(), behaviours: new Set(), connected: true, campaign: true, team: true, lead: true, everything: true },
+  { present: async () => true },
+));
+
+test('every assisted session is handed the tool overview built from its selected capability documents', async () => {
   const temp = await mkdtemp(path.join(os.tmpdir(), 'ronin-session-boot-test-'));
   const oldCache = process.env.RONIN_SESSION_BOOT_CACHE_DIR;
   const oldCatalogs = process.env.RONIN_CATALOGS_DIR;
   process.env.RONIN_SESSION_BOOT_CACHE_DIR = path.join(temp, 'generated');
   process.env.RONIN_CATALOGS_DIR = path.join(temp, 'catalogs');
   try {
-    const boot = await bootFiles('', false);
-    const macroGuide = boot.find((file) => path.basename(file) === 'SESSION_MACROS.md');
-    assert.ok(macroGuide, 'the universal boot shelf should contain SESSION_MACROS.md');
-    assert.equal(macroGuide, path.join(temp, 'generated', 'SESSION_MACROS.md'));
-    const guide = await readFile(macroGuide, 'utf8');
-    // The guide teaches compile-first and carries the live roster; the fork/spawn routing
-    // rule is Ronin Base's teaching, asserted on BASE_ABILITIES below, and is not repeated here.
-    assert.match(guide, /compile it first — `tejun <name>`/);
-    assert.doesNotMatch(guide, /spawn an agent/i);
-    const active = (await listMacros()).filter((macro) => macro.preview);
-    assert.ok(active.length, 'the stock catalog should preview at least one session macro');
-    for (const macro of active) assert.match(guide, new RegExp(`\\+${macro.name}:`));
+    const overview = await fullOverview();
+    const boot = await bootFiles('', false, [], overview);
+    const lesson = boot.find((file) => path.basename(file) === CAPABILITIES_READING);
+    assert.ok(lesson, `the boot shelf should carry ${CAPABILITIES_READING}`);
+    assert.equal(lesson, path.join(temp, 'generated', CAPABILITIES_READING));
+    const text = await readFile(lesson, 'utf8');
+    assert.equal(text, overview, 'the fragment is the rendered overview, byte for byte');
+    // The lesson is derived from the folder: every stock bundle, its priority tools, its help route.
+    for (const label of ['Edges', 'Work Record', 'Session', 'Worktree desk', 'Machine settings', 'Team lead']) {
+      assert.match(text, new RegExp(`^### ${label}$`, 'm'));
+    }
+    assert.match(text, /`work-record project create`/);
+    assert.match(text, /`session_check --help`/);
+    assert.doesNotMatch(text, /tejun|\+\w+:|MACROS/, 'no retired vocabulary reaches a newborn');
+    // The fork/spawn routing rule is Ronin Base's teaching, asserted on BASE_ABILITIES below.
+    assert.doesNotMatch(text, /spawn an agent/i);
 
     const profile = {
-      session_role: 'CheckWork',
       label: 'Checker',
       posture: [],
       opening: '{prompt}',
@@ -39,12 +48,14 @@ test('every assisted session is handed the session macro routing guide', async (
       agent: true,
     } as LaunchProfile;
     const form: SpawnForm = {
-      session_role: profile.session_role,
       prompt: 'Review the installer.',
     };
 
     const brief = buildBrief(profile, undefined, form, undefined, boot);
-    assert.match(brief, /Read first: .*SESSION_MACROS\.md/);
+    assert.match(brief, new RegExp(`Read first: .*${CAPABILITIES_READING}`));
+    // No overview, no fragment: a birth that resolved no capabilities hands over none.
+    const bare = await bootFiles('', false, []);
+    assert.ok(!bare.some((file) => path.basename(file) === CAPABILITIES_READING));
   } finally {
     if (oldCache === undefined) delete process.env.RONIN_SESSION_BOOT_CACHE_DIR;
     else process.env.RONIN_SESSION_BOOT_CACHE_DIR = oldCache;
@@ -91,13 +102,13 @@ test('the real stock shelf compiles to one read: contracts first, glossary last,
   process.env.RONIN_SESSION_BOOT_CACHE_DIR = path.join(temp, 'generated');
   process.env.RONIN_SESSION_BOOT_DIR = path.join(temp, 'shelf');
   try {
-    // The largest stock birth: every Routine on, MCP on.
+    // The largest stock birth: every Routine on, MCP on, every capability bundle selected
+    // with every listed tool present.
     const boot = await bootFiles('', true, [
-      'routine/ronin_base/BASE_ABILITIES.md',
-      'routine/ronin_worktrees/WORKTREES.md',
+      'all/BASE_ABILITIES.md',
       'routine/ronin_services/SERVICES_ABILITIES.md',
       'routine/ronin_host/HOST_ABILITIES.md',
-    ], undefined, 'newborn');
+    ], await fullOverview(), 'newborn');
     const target = await compileBirthReadmeAt(path.join(temp, 'session'), boot, 'newborn', isShelfTeaching);
     const text = await readFile(target, 'utf8');
     const bytes = Buffer.byteLength(text, 'utf8');
@@ -108,16 +119,18 @@ test('the real stock shelf compiles to one read: contracts first, glossary last,
 
     const at = (re: RegExp) => { const i = text.search(re); assert.ok(i >= 0, `${re} is in the packet`); return i; };
     const contracts = at(/^## BASE ABILITIES/m);
-    const desk = at(/^## RONIN WORKTREES/m);
     const map = at(/^## Ronin documentation/m);
     const glossary = at(/^## KOTOBA_GLOSSARY/m);
-    assert.ok(contracts < map && desk < map, 'the Routine contracts come before the documentation map');
-    assert.ok(glossary > at(/^## SESSION_MACROS/m), 'the glossary is last');
+    assert.ok(contracts < map, 'the core contract comes before the documentation map');
+    assert.ok(glossary > at(/^## YOUR TOOLS/m), 'the glossary is last');
+    assert.ok(at(/^## YOUR TOOLS/m) > map, 'the tool overview follows the maps');
     assert.equal(text.lastIndexOf('\n## '), text.lastIndexOf('\n## KOTOBA_GLOSSARY'), 'nothing follows the glossary');
     // The two rules a newborn most often breaks sit inside the first window it opens.
     const firstWindow = text.split('\n').slice(0, 250).join('\n');
     assert.match(firstWindow, /Fork versus spawn/);
-    assert.match(firstWindow, /Never `git push`/);
+    assert.match(firstWindow, /session_create/);
+    assert.match(firstWindow, /owner requires permission before spawning/);
+    assert.match(firstWindow, /ronin_sops\/worktree-root\.md/);
     // The glossary arrived rendered: markers gone, header rewritten.
     assert.doesNotMatch(text, /<!--g:/);
     assert.match(text, /Rendered for/);
@@ -139,40 +152,36 @@ test('the real stock shelf compiles to one read: contracts first, glossary last,
   }
 });
 
-test('Routine reading teaches only the selected capability; test policy stays with repository contributors', async () => {
+test('core reading points to arrangement pages; system reading stays installation-selected', async () => {
   const repo = path.join(path.dirname(new URL(import.meta.url).pathname), '..');
   const [base, services, worktrees, machine] = await Promise.all([
-    readFile(path.join(repo, 'ronin_session_boot', 'routine', 'ronin_base', 'BASE_ABILITIES.md'), 'utf8'),
+    readFile(path.join(repo, 'ronin_session_boot', 'all', 'BASE_ABILITIES.md'), 'utf8'),
     readFile(path.join(repo, 'ronin_session_boot', 'routine', 'ronin_services', 'SERVICES_ABILITIES.md'), 'utf8'),
-    readFile(path.join(repo, 'ronin_session_boot', 'routine', 'ronin_worktrees', 'WORKTREES.md'), 'utf8'),
+    readFile(path.join(repo, 'ronin_sops', 'worktree-root.md'), 'utf8'),
     readFile(path.join(repo, 'ronin_session_boot', 'routine', 'ronin_host', 'HOST_ABILITIES.md'), 'utf8'),
   ]);
 
-  assert.match(base, /tejun forkit/);
-  assert.match(base, /fork it[\s\S]*new session[\s\S]*visible-session/i);
-  assert.match(base, /spawn it[\s\S]*spawn an agent[\s\S]*internal sub-agent/i);
-  assert.match(base, /neither vocabulary/i);
-  assert.match(base, /read_tegami/);
-  assert.match(base, /tejun-wipeboard/);
-  assert.doesNotMatch(base, /tejun-rireki/);
+  assert.match(base, /work-record read/);
+  assert.match(base, /edges wipeboard/);
+  assert.match(base, /ronin_sops\/worktree-root\.md/);
+  assert.match(base, /ronin_sops\/checkout\.md/);
+  assert.match(base, /edges read/);
   assert.match(services, /Readable transcripts are not in this beta/);
-  assert.match(services, /there is no durable tape and no `tejun-rireki`/);
-  assert.match(services, /Read another live session with\s+`tejun-peek`/);
+  assert.match(services, /`edges read` falls back/);
   assert.match(services, /Koshi\*\* is Ronin's assisted administrative behavior/);
   assert.match(services, /Voice\*\* turns the owner's speech into text/);
   assert.match(services, /Hotwords\*\* are the owner's dictation\s+glossary/);
-  assert.match(worktrees, /tejun-desk status --assignment/);
-  assert.match(worktrees, /tejun-desk hand-in/);
-  assert.match(worktrees, /tejun-harakiri/);
-  assert.match(worktrees, /ACCEPTED.*hand-in is enough/);
+  assert.match(worktrees, /worktree-desk status --assignment/);
+  assert.match(worktrees, /worktree-desk hand-in/);
+  assert.match(worktrees, /session_end/);
+  assert.match(worktrees, /CERTIFIED CLEAN/);
   assert.doesNotMatch(worktrees, /first full repository BYOIN/i);
-  assert.match(machine, /tejun-survey/);
+  assert.match(machine, /ronin-host inspect/);
   assert.match(machine, /bin\/ronin-store --all/);
 });
 
 test('a referenced session is caught up on through the tape, pane peek as fallback', () => {
   const profile = {
-    session_role: 'CheckWork',
     label: 'Checker',
     posture: [],
     opening: '{prompt}',
@@ -180,17 +189,14 @@ test('a referenced session is caught up on through the tape, pane peek as fallba
     agent: true,
   } as LaunchProfile;
   const form: SpawnForm = {
-    session_role: profile.session_role,
     prompt: 'Review the login work.',
     reference: 'login_fix',
   };
 
   const brief = buildBrief(profile, undefined, form, '/home/x/repo', []);
-  assert.match(brief, /tejun-rireki login_fix since/);
-  assert.match(brief, /tejun-peek login_fix.*if it has no tape/);
-  assert.match(brief, /control-check before touching it/);
-  // The tape comes first: the fallback is parenthetical, never the lead.
-  assert.ok(brief.indexOf('tejun-rireki') < brief.indexOf('tejun-peek'));
+  assert.match(brief, /edges read login_fix/);
+  assert.match(brief, /durable record first.*falls back to the live view/);
+  assert.match(brief, /edges control login_fix/);
 });
 
 test('a service-signed *_connected level rides the MCP toggle', async () => {
@@ -224,7 +230,7 @@ test('a service-signed *_connected level rides the MCP toggle', async () => {
   }
 });
 
-test('only enabled Routine levels contribute startup reading', async () => {
+test('only enabled installation contributions add startup reading', async () => {
   const temp = await mkdtemp(path.join(os.tmpdir(), 'ronin-session-boot-test-'));
   const oldShelf = process.env.RONIN_SESSION_BOOT_DIR;
   const oldCache = process.env.RONIN_SESSION_BOOT_CACHE_DIR;
@@ -251,31 +257,14 @@ test('only enabled Routine levels contribute startup reading', async () => {
   }
 });
 
-test('generated macro reading contains only the effective Routine macros', async () => {
-  const temp = await mkdtemp(path.join(os.tmpdir(), 'ronin-session-boot-test-'));
-  const oldCache = process.env.RONIN_SESSION_BOOT_CACHE_DIR;
-  process.env.RONIN_SESSION_BOOT_CACHE_DIR = path.join(temp, 'generated');
-  try {
-    const boot = await bootFiles('', false, [], new Set(['forkit']));
-    const guide = await readFile(boot.find((file) => path.basename(file) === 'SESSION_MACROS.md')!, 'utf8');
-    assert.match(guide, /\+forkit:/);
-    assert.doesNotMatch(guide, /\+cutcode:/, 'a Control macro is not taught by Base alone');
-  } finally {
-    if (oldCache === undefined) delete process.env.RONIN_SESSION_BOOT_CACHE_DIR;
-    else process.env.RONIN_SESSION_BOOT_CACHE_DIR = oldCache;
-    await rm(temp, { recursive: true, force: true });
-  }
-});
-
 test('startup reading is never stripped when instructions are present', () => {
-  const profile = { session_role: 'OpenShell', posture: [] } as unknown as LaunchProfile;
+  const profile = { posture: [] } as unknown as LaunchProfile;
   const form: SpawnForm = {
-    session_role: profile.session_role,
     prompt: '  owner text only  ',
   };
 
-  const brief = buildBrief(profile, undefined, form, undefined, ['/stock/SESSION_MACROS.md']);
-  assert.match(brief, /Read first: \/stock\/SESSION_MACROS\.md\./);
+  const brief = buildBrief(profile, undefined, form, undefined, ['/stock/CAPABILITIES.md']);
+  assert.match(brief, /Read first: \/stock\/CAPABILITIES\.md\./);
 });
 
 test('resolved sources compile into one session README: teaching inlined once, reference listed by title and path', async () => {
@@ -332,15 +321,15 @@ test('the stock shelf, the owner shelf and generated fragments are teaching; the
   assert.equal(isShelfTeaching('/somewhere/else/ways/book.md'), false);
 });
 
-test('a Routine reads one way or the other: on delivers its page, off delivers the page that names the switch', async () => {
+test('a system installation reads one way or the other', async () => {
   const routines = [
     { enabled: true, reading: ['routine/a/ON.md'], reading_off: ['routine/a/OFF.md'] },
     { enabled: false, reading: ['routine/b/ON.md'], reading_off: ['routine/b/OFF.md'] },
   ];
-  assert.deepEqual(routineReading(routines), ['routine/a/ON.md', 'routine/b/OFF.md']);
+  assert.deepEqual(contributionReading(routines), ['routine/a/ON.md', 'routine/b/OFF.md']);
   const repo = path.join(path.dirname(new URL(import.meta.url).pathname), '..');
-  for (const name of ['ronin_base', 'ronin_host', 'ronin_services', 'ronin_worktrees']) {
-    const manifest = await readFile(path.join(repo, 'ronin_catalogs', 'routines', `${name}.md`), 'utf8');
+  for (const name of ['ronin_services']) {
+    const manifest = await readFile(path.join(repo, 'ronin_catalogs', 'installations', `${name}.md`), 'utf8');
     assert.match(manifest, new RegExp(`\\*\\*reading_off:\\*\\* routine/${name}/OFF\\.md`));
     const off = await readFile(path.join(repo, 'ronin_session_boot', 'routine', name, 'OFF.md'), 'utf8');
     assert.match(off, /working without/);

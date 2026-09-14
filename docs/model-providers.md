@@ -1,7 +1,7 @@
 # Model providers
 
 Ronin launches agents from **one provider catalog**: `ronin_catalogs/MODEL_PROVIDERS.md`.
-It is the only place a provider or a model is named. Every picker, every launch and every
+It owns the provider/model inventory. Every picker, every launch and every
 provider fact on screen reads from it, or from the Campaign's **measured provider
 summary**, which says what this machine has and when that was measured.
 
@@ -19,6 +19,10 @@ Provider setup has three records with deliberately different contents:
 Account identity is handled by `ronin_sops/accounts.md`. Secret values never cross into
 this document or the catalog.
 
+For CLI-specific particulars and exact code ownership, use the
+[Agent integration pages](agents/README.md). Browser shortcuts belong only to
+[Terminal controls](terminal-controls.md).
+
 ## The catalog
 
 The file's header carries one field of its own:
@@ -33,7 +37,7 @@ Then one `### <Vendor>` section per provider. The section's fields:
 |---|---|
 | `provider` | the vendor id a launch names (`anthropic`, `openai`, `google`, `xai`, `nous`) and the key of `agents.sessions.by_provider` |
 | `cli` | the id of the CLI that serves it in `src/agents.ts` (`claude`, `codex`, `gemini`, `grok`, `hermes`) |
-| `gbrain_disconnected` | the CLI's flag for a launch with no MCP servers; a provider without one cannot launch disconnected |
+| `gbrain_disconnected` | the CLI's disconnected-launch flag; its scope is provider-specific (Codex disables named gbrain only), and an undeclared flag refuses an explicit disconnected launch |
 | `live_dangerously` | the CLI's additive flag for the Dangerously launch mode; a provider without one refuses that mode |
 
 The `provider` and `cli` fields are the join between the two things Ronin knows about a
@@ -107,28 +111,11 @@ CLI facts only — the vendor's name and its models are the catalog's. Each row 
 | `operations.session.resume` | Arguments before the provider conversation UUID. |
 | `operations.session.discovery` | The exact identity-discovery adapter, or `unsupported`. |
 
-Current verified lifecycle syntax:
-
-| Agent CLI | New conversation identity | Resume | Archive support |
-|---|---|---|---|
-| Claude Code | `claude --session-id <uuid> …` | `claude --resume <uuid>` | yes; exact legacy fallback also exists |
-| Codex | discovered from matching open rollout + writer-lock FDs | `codex resume <uuid>` | yes |
-| Gemini CLI | CLI-managed UUID | `gemini --resume <uuid>` | command verified; identity discovery not yet integrated, so no |
-| Grok Build | not verified | not verified | no |
-| Hermes | not verified | not verified | no |
-
-Upstream command references used for these rows: [Claude CLI and update reference](https://code.claude.com/docs/en/cli-reference),
-[Codex CLI repository](https://github.com/openai/codex), [Gemini CLI reference](https://github.com/google-gemini/gemini-cli/blob/main/docs/cli/cli-reference.md),
-[Grok Build overview](https://docs.x.ai/build/overview)
-and [Hermes CLI reference](https://github.com/NousResearch/hermes-agent/blob/main/website/docs/reference/cli-commands.md).
-They are evidence for maintainers; they are not runtime inputs. Runtime consumers read
-`AGENTS[].operations` only.
-
-“Not verified” and `discovery: unsupported` are executable behavior: archive refuses before
-stopping tmux. Adding support means verifying the installed CLI's own help, locating its
-exact current-session identity without ambiguity, and proving a real resume journey; then
-change its one registry row and this table together. Do not infer syntax from another
-provider.
+Current lifecycle particulars and verification limits live in the
+[Agent integration pages](agents/README.md), one page per CLI. Read the CLI's registry
+row for executable syntax. A declared resume command does not imply implemented identity
+discovery: `discovery: unsupported` makes archive refuse before stopping tmux. Adding
+support requires proof of exact conversation identity and a real resume journey.
 
 ## The measured summary
 
@@ -208,7 +195,7 @@ MODEL_PROVIDERS.md row
 
 Every place the product asks *which provider, and which model* is one control:
 `providerModelPair` in `public/js/form-steps.js`. New Agent, New Team, Add Agent to Team,
-the Campaign's Agent defaults, Team Configuration, ⚙ Configuration (the general default,
+the Campaign's Team and Agent defaults, Team Configuration, ⚙ Configuration (the general default,
 each provider's preferred model, and Mika's row), cowork setup and the Presets rows all call
 it; none keeps a list, a join or a vendor's name of its own. The picker reads the catalog
 itself (`GET /api/provider-catalog`: its origin, its `updated` date, and one entry per

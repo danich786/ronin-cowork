@@ -17,7 +17,7 @@ The provider and tmux do different halves of the job:
    forms are `codex resume <uuid>` and `claude --resume <uuid>`.
 5. The provider CLI loads its own conversation history. Ronin restores the session key,
    teams, leads, wipeboards, note, project root, control dial, agent stamp, provider UUID,
-   and session role. Only then is the archive manifest removed.
+   and session type. Only then is the archive manifest removed.
 
 So this is not tmux serialization and it is not a suspended process. tmux is genuinely
 stopped; provider-native conversation resume is what makes the later process continuous.
@@ -83,8 +83,8 @@ its location with `bin/ronin-store archived_sessions`; never spell the path in c
 
 The browser calls these routes through `public/js/api.js`. Archived rows never enter
 `S.sessions`, so they cannot appear in live pickers or consume the configured session max.
-Agents and team leads use those same routes through `tejun-archive <session>` and
-`tejun-rehydrate <archive-id>`; the tools add no lifecycle or store of their own.
+Agents and team leads use those same routes through `session_archive <session>` and
+`session_restore <archive-id>`; the tools add no lifecycle or store of their own.
 
 ## Provider identity
 

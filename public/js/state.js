@@ -35,7 +35,6 @@ export const S = {
   dictation: null, // the ONE mic currently listening { listening, stop } — see voice.js
   notePanel: null, // shared per-session note editor { open(session), close } — all devices
   padPanel: null, // Work Louder pad panel { open, close, isOpen, hit } — all devices (owner override)
-  padAsk: null, // ask-on-press prompt for pad macros { open(bind), isOpen }
   locked: !IS_TOUCH, // DEFAULT for a NEW tile only — the switch itself is per-tile now
   output: IS_TOUCH ? 'terminal_mirror' : 'locked',
   // THE SWITCH, service half: true when the operator reports no 🔓 stream handler
@@ -47,7 +46,7 @@ export const S = {
   // koe | gbrain), or null when the operator predates the field. A surface owned by a service
   // not on the roster is drawn opaque-and-inert and never fetched (sockets.ts's rule).
   services: null,
-  lastSelection: '', // last non-empty terminal selection (see below)
+  installedServices: null, // /api/installed services: disk/loaded/parked explains optional-part absence
   sessPicker: null, // pad-key session switcher { open, close, isOpen, move, commit }
   workspace: null, // AppShell runtime; the one writer for destination/workspace state
   refreshWorkspaceHeader: null, // breadcrumb repaint after Campaign selection changes
@@ -72,6 +71,8 @@ const PANE_SERVICE = { hotwords: 'koe', stats: 'counting', koshi: 'koshi', gbrai
  * function, and the pane map is now only a lookup table.
  */
 export const serviceMissing = (svc) => !!svc && Array.isArray(S.services) && !S.services.includes(svc);
+export const serviceParked = (svc) => Array.isArray(S.installedServices?.parked)
+  ? S.installedServices.parked.find((part) => part?.name === svc) || null : null;
 
 /** Is the service that owns this commons PANE absent? A pane not listed is core. */
 export const serviceOff = (pane) => serviceMissing(PANE_SERVICE[pane]);
@@ -92,9 +93,6 @@ export const tiles = [];
 // four at once — a surprise and a reconnect storm, when you only ever mean the pane you
 // are looking at. Each Tile owns `this.locked`; the header button acts on the active
 // tile and mirrors its state, and each tile head carries the same switch.
-// lastSelection: kept so a live-TUI redraw that clears the on-screen highlight
-// can't lose the text before ⌘C reads it.
-
 // THE TERMINAL PALETTE LIVED HERE as a THEME literal — the same sixteen colours the
 // stylesheet also spelled, in a second language, and the two drifted (TOKENS' D2).
 // It is now `--term-*` tokens in style.css, read back by js/theme.js `termTheme()`:

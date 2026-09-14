@@ -2,8 +2,7 @@
 
 > **The law is `DAIKUSAN.md`**: *edit nothing shipped — put a file with the same name in
 > your catalog directory and it wins.* This is that law, built. One statement, three
-> implementations (`src/resources.ts`, `ronin_bin/tejun`, `ronin_bin/tejun-step`), and this page is the
-> statement all three obey.
+> implementation (`src/resources.ts`), and this page is the statement it obeys.
 
 ## The rule
 
@@ -38,10 +37,7 @@ file happens to define every stock name.
 
 | Catalog | Shape | Rule |
 |---|---|---|
-| `role_families/` | one file per role | whole-definition, by filename |
-| `session_roles/` | one file per task | whole-definition, by filename |
-| `MACROS.md` | `## name` blocks | entry-merge |
-| `ACTIONS.md` | `## name` blocks | entry-merge |
+| `behaviours/` with the owner's `ways/` store | one Markdown page per behaviour | whole-file, by filename |
 | `TOOLS.md` | a table | same rule, keyed on the tool name in column 1 |
 | `SKINS.md` | `## name` blocks | entry-merge. A skin is a set of design tokens and nothing else — no selector, so the worst a bad one does is look bad |
 | `HOTWORDS.md` | a flat list under `## Terms` | **copy-on-write, not a merge** — see below |
@@ -54,8 +50,6 @@ file happens to define every stock name.
   no shipped version to win over.
 - **Your `PROJECT_ROOTS.md`** — already user scope. The shipped file keeps only the
   project_root contract; the providers and models it once carried are `MODEL_PROVIDERS.md`.
-- **`workspace_macro`** — machinery in `src/spawn.ts`, not a catalog. A markdown file
-  cannot author machinery.
 
 **`HOTWORDS.md` is the deliberate exception.** Both halves hold the same kind of thing —
 words — so a merge would have to answer *"the owner deleted a stock term; does an upgrade
@@ -94,14 +88,11 @@ running operator only when the owner restarts (`docs/repo-to-operator.md`). Chan
   reach you, by design. That is the trade for owning it, and the `origin` mark is how a
   surface can tell you so.
 
-## Three implementations, one statement
+## One implementation, one statement
 
-`src/resources.ts` holds the rule for the server; `ronin_bin/tejun` and `ronin_bin/tejun-step` are
-Python and cannot import it, so they implement the same statement — this page — rather
-than sharing the code. If the two ever disagree, this page is what they are both wrong
-about, and it is the thing to fix first.
+`src/resources.ts` holds the rule for the server. If it disagrees with this page, this page
+is the contract to fix first.
 
-Customisation is **install-level, never repo-level** (`DAIKUSAN.md`): actions and macros
-tell agents what to do, so sourcing them from whatever tree you happen to be standing in
-would let a cloned repo define your agent's behaviour. That is a security boundary, not a
-preference.
+Customisation is **install-level, never repo-level** (`DAIKUSAN.md`). Sourcing authored
+Agent resources from an arbitrary checkout would let a cloned repository redefine the
+Agent's installation. That is a security boundary, not a preference.

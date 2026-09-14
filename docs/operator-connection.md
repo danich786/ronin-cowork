@@ -44,11 +44,12 @@ Resolution order, the same in both readers:
 3. **the default path** — `<data root>/run/ronin.sock`, for a tool with no session at all:
    a cron job, a shell over SSH, the owner at a prompt.
 
-The two readers are `src/cli-http.ts`, which every TypeScript command (`tejun-desk`,
-`tejun-wipeboard`, `tejun-send`, `tejun-jikan`, promotion, recovery, bundle, auth) goes
+The two readers are `src/cli-http.ts`, which every TypeScript command (`worktree-desk`,
+`edges wipeboard`, `edges send`, `edges schedule`, promotion, recovery, bundle, auth) goes
 through, and `ronin_bin/ronin-url` with its sourced sibling `ronin_bin/ronin-http.sh`, which
-the zero-dependency shell tools (`tejun-fork`, `tejun-harakiri`, `tejun-session-set`,
-`tejun-team-set`, `tejun-teampage`, `mika`) go through. `ronin-url` prints one line —
+the zero-dependency shell tools (`session_create`, `session_end`, `session_check`,
+`session_set`,
+`team-lead roster write`, `edges page`, `mika`) go through. `ronin-url` prints one line —
 `RONIN_URL` when set, else the socket path — and `ronin_connect` turns that into the base
 `url` and the `RONIN_CURL` transport options a request is built from; a caller never knows
 which it got. Wrappers locate those siblings from their own resolved file path, including
@@ -74,15 +75,15 @@ address. The socket answers a different question, *where do I send a command*, a
 added beside the HTTP listener, never instead of it.
 
 Command discovery is fixed separately at Agent birth. The launch route resolves that Agent's
-enabled Routines, projects only their entitled commands as symlinks into that Agent's own
+installations, behaviours and root arrangement, projects only the entitled commands as symlinks into that Agent's own
 directory of the session-commands store, and prepends that directory — then Ronin's own install bin dir, `~/.local/bin`, where Install
 and Update put a CLI, so that a CLI named inside a tile is the one Ronin installed and not an
 older system copy — to the environment given directly to tmux and the Agent process. Ordinary non-interactive descendants inherit
 it; they do not source `.bashrc`, `.profile`, or another owner shell file. That directory's
-name is also how `read_tegami`, `write_tegami` and `tejun-teampage` learn which session they
+name is also how `work-record read`, `work-record update_record` and `edges page` learn which session they
 act for when the calling shell is not inside tmux and carries neither `TMUX_PANE` nor
 `$TMUX`; the name is accepted only when it is a live session. An Agent born with Ronin Base
-off therefore does not receive Base commands such as `write_tegami`, `tejun-fork`, or
+off therefore does not receive Base commands such as `work-record update_record`, `session_create`, or
 `ronin-url`. Changing a Team or Campaign default later does not mutate a running Agent's
 birth environment; recreate that Agent to give it the newly enabled tools.
 

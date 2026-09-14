@@ -77,7 +77,8 @@ test('registration recovery keeps consent separate and deletion removes local id
 
 test('Setup reuses canonical Campaign Templates only inside Launch Your Own', async () => {
   const source = await (await import('node:fs/promises')).readFile(new URL('../public/js/setup-surfaces.js', import.meta.url), 'utf8');
-  for (const id of ['setup.register', 'setup.roots', 'setup.services', 'setup.gbrain']) assert.match(source, new RegExp(id.replace('.', '\\.')));
+  for (const id of ['setup.register', 'setup.roots', 'setup.installations']) assert.match(source, new RegExp(id.replace('.', '\\.')));
+  assert.doesNotMatch(source, /setup\.services|setup\.gbrain/);
   // Model providers is the one surface Ronin Settings also seats; its type is that module's.
   assert.match(source, /providers: PROVIDER_SURFACE_TYPE/);
   assert.match(source, /templates: CAMPAIGN_TEMPLATES_TYPE/);
@@ -134,22 +135,24 @@ test('Register presents one open profile flow with card choices and anonymous de
   const source = await (await import('node:fs/promises')).readFile(new URL('../public/js/setup-surfaces.js', import.meta.url), 'utf8');
   for (const name of ['email', 'own_words']) assert.match(source, new RegExp(`name = '${name}'|input\\('${name}'`));
   for (const name of ['identity_mode', 'kind', 'preferred_feature', 'run_location']) assert.match(source, new RegExp(`choiceGroup\\('${name}'`));
-  assert.match(source, /checklistGroup\('reasons'/);
+  assert.match(source, /const question = ask\(/);
+  assert.equal((source.match(/exposed: true/g) || []).length, 1, 'Register exposes its short choice selectors through ERABI');
+  assert.match(source, /key: name, label: short \|\| t\('ask\.answer', 'Answer'\), many: multiple, options:/, 'the head carries the question; the stone carries a short noun, never the question again');
+  assert.match(source, /el\('fieldset', 'setup-register-checklist'\)/, 'long reasons are plain check rows outside ERABI');
+  for (const key of ['identity_short', 'kind_short', 'preferred_feature_short', 'reasons_short', 'run_location_short']) assert.match(source, new RegExp(`short: t\\('setup_surface\\.${key}'`), `${key} names the stone`);
+  assert.doesNotMatch(source, /glyph: '·'/, 'unruled Register answers are rectangles without placeholder glyphs');
   assert.match(source, /reasons\.other\.value/);
   assert.match(source, /kind_other: kindOther\.value/);
+  assert.doesNotMatch(source, /kind\.wrap\.append\(kindOther\)/, 'the conditional input stays outside ERABI repaint ownership');
+  assert.match(source, /preferredFeature\.wrap, reasons\.wrap, kind\.wrap, kindOther,/);
   assert.doesNotMatch(source, /Who is using Ronin\?|\['individual', 'Just me'\]|\['team', 'A team'\]|\['builder', 'Builder'\]|\['exploring', 'Exploring'\]/);
   assert.match(source, /Welcome to Ronin/);
   assert.match(source, /setup-register-group/);
-  assert.match(source, /setup-register-choice-grid/);
-  assert.match(source, /aria-pressed/);
+  assert.match(source, /setup-register-bounded/);
   const css = await (await import('node:fs/promises')).readFile(new URL('../public/style.css', import.meta.url), 'utf8');
-  assert.match(source, /group\.dataset\.choices = String\(choices\.length\)/, 'choice grids know their count so four choices sit two by two');
-  assert.match(source, /\{ explain: true \}/, 'the core-feature question explains the chosen answer');
-  assert.match(source, /explanation\.textContent = chosen \? description : ''; explanation\.hidden = !chosen \|\| !description; if \(chosen\) button\.after\(explanation\)/, 'the explanation drops out right under the chosen row');
+  assert.match(source, /sub: description/, 'the core-capability explanation is the ask caption');
   assert.match(source, /Which of these describes you best in terms of getting value from Ronin\?/);
   assert.doesNotMatch(source, /Which of these things Ronin does would you appreciate most\?/);
-  assert.match(css, /\.setup-register-choice-grid\[data-layout='rows'\] > \.setup-register-explain \{ grid-column: 2; align-self: start;/, 'the explanation sits beside its own row when the surface is wide');
-  assert.doesNotMatch(css, /setup-register-explain \{ grid-column: 2; grid-row/, 'the explanation follows the chosen row, not the top of the list');
   assert.doesNotMatch(source, /setup-register-half/, 'About you stacks its questions at every width');
   assert.doesNotMatch(css, /@container setup-register[^}]*\.setup-register-group \{ grid-template-columns: repeat\(2/, 'groups never split into two columns');
   assert.match(css, /\.setup-register-group > :not\(h3\) \+ :not\(h3\) \{ margin-top: var\(--space-6\); \}/, 'questions breathe more than the lines inside them');
@@ -170,9 +173,6 @@ test('Register presents one open profile flow with card choices and anonymous de
   assert.match(css, /@container setup-register \(min-width: 40rem\)/);
   assert.match(css, /\.setup-register-group \{[^}]*border-top: var\(--edge-2\) solid var\(--kaki\)/, 'groups open with a kaki rule');
   assert.doesNotMatch(css, /\.setup-register-group \{[^}]*(?:border: var\(--edge\)|background: var\(--panel\))/, 'groups are not boxes');
-  assert.doesNotMatch(css, /\.setup-register-choice \{[^}]*aspect-ratio/, 'choices are fluid rectangles, not fixed squares');
-  assert.match(css, /\.setup-register-choice-grid\[data-choices='4'\]/);
-  assert.match(css, /\.setup-register-explain \{/);
   for (const label of ['With email', 'Anonymous', 'No thank you', 'Work from anywhere', 'Multiple providers without lock-in', 'Agents with team coordination skills']) assert.match(source, new RegExp(label));
   for (const message of ['Different models have different strengths', 'network issues', 'New models keep arriving', 'locked into one provider', 'runs out of tokens', 'hidden sub-agents', 'Something else']) assert.match(source, new RegExp(message));
   for (const place of ['Virtual machine', 'Personal server', 'Personal computer']) assert.match(source, new RegExp(place));
@@ -180,8 +180,7 @@ test('Register presents one open profile flow with card choices and anonymous de
   assert.doesNotMatch(source, /Where will you run Ronin\?|Where Ronin fits/);
   for (const kind of ['Which of these are you most likely to use?', 'Build software', 'Life assistants', 'Research and writing']) assert.match(source, new RegExp(kind.replace('?', '\\?')));
   assert.match(source, /about\.append\([\s\S]*?identityMode\.wrap, emailField, runLocation\.wrap\)/, 'where Ronin will live belongs to About you');
-  assert.ok(source.indexOf('runLocation.wrap') < source.indexOf('preferredFeature.wrap, reasons.wrap'), 'machine location comes before feature preference');
-  assert.match(source, /const chosen = value\.value === key \? '' : key;/, 'a second click clears a single choice');
+  assert.ok(source.indexOf('runLocation.wrap') < source.indexOf('preferredFeature.wrap, reasons.wrap'), 'machine location comes before capability preference');
   assert.doesNotMatch(source, /Your starting theme|theme\.wrap/);
   assert.doesNotMatch(source, /What would make Ronin useful to you\?|Anything else\? \(optional\)/);
   assert.match(source, /setup_surface\.own_words', 'Anything else'/);
@@ -208,19 +207,16 @@ test('anonymous Register delivery uses the durable Ronin message path and never 
   assert.match(source, /if \(anonymous\)[\s\S]*?return;[\s\S]*?await request\(str\(body\.email\)\)/);
 });
 
-test('Services leads with identity, the beta, and benefits, then one measured status and the three same-shape steps', async () => {
+test('Services retains registration, installation, master, and explicit restart authority', async () => {
   const source = await (await import('node:fs/promises')).readFile(new URL('../public/js/setup-surfaces.js', import.meta.url), 'utf8');
   assert.match(source, /import \{ servicesSetupModel \} from '\.\/services-setup-state\.js'/);
   assert.match(source, /import \{ campaignById, campaigns, loadCampaigns, saveCampaign \} from '\.\/campaigns\.js'/);
-  assert.match(source, /import \{ completeRoutineMap \} from '\.\/campaign-routines\.js'/);
+  assert.match(source, /import \{ completeInstallationMap \} from '\.\/installation-map\.js'/);
   assert.match(source, /setup-services-mark/);
   assert.match(source, /mark\.src = 'brand\/services-mark\.svg'/);
   assert.match(source, /fetch\('brand\/services-mark\.svg'\)/, 'the one mark file is inlined so the R follows data-theme');
   assert.match(source, /host\.innerHTML = markup;\n\s*host\.querySelector\('svg'\)\?\.setAttribute\('aria-hidden', 'true'\)/);
   assert.doesNotMatch(source, /rs-r|M31 6h58/, 'no second copy of the mark lives in the surface');
-  const order = ['setup-services-lockup', 'services_setup.beta', 'services_setup.transcripts', 'services_setup.library', 'setup-services-status', 'setup-services-steps', 'services_setup.gate'];
-  for (let i = 1; i < order.length; i += 1) assert.ok(source.indexOf(order[i - 1]) < source.indexOf(order[i]), `${order[i - 1]} precedes ${order[i]}`);
-  for (const key of ['services_setup.beta_copy', 'services_setup.transcripts_copy', 'services_setup.records', 'services_setup.voice']) assert.match(source, new RegExp(key.replace('.', '\\.')));
   assert.match(source, /request\('\/api\/setup\/registration', \{ cache: 'no-store' \}\)/);
   assert.match(source, /request\('\/api\/installed', \{ cache: 'no-store' \}\)/);
   assert.match(source, /request\('\/api\/services\/activation', \{ cache: 'no-store' \}\)/);
@@ -229,10 +225,10 @@ test('Services leads with identity, the beta, and benefits, then one measured st
   assert.match(source, /if \(item\.act === 'register'\) \{ openRegister\(\); return; \}/);
   assert.match(source, /workbench\?\.place\(SETUP_SURFACE_TYPES\.register/);
   assert.match(source, /item\.act === 'install' \? '\/api\/services\/install' : '\/api\/services\/activation\/poll'/);
-  // The On step is the Campaign's own Routine switch, saved the way Routines and Installs saves it.
-  assert.match(source, /request\('\/api\/routines'\)/);
+  // The On step is the Campaign's own installation switch.
+  assert.match(source, /request\('\/api\/installations'\)/);
   assert.match(source, /ronin_services: on/);
-  assert.match(source, /saveCampaign\(row\.id, \{ config: \{ agent_defaults: \{ \.\.\.defaults, routines \} \} \}\)/);
+  assert.match(source, /saveCampaign\(row\.id, \{ config: \{ installations \} \}\)/);
   assert.match(source, /setAttribute\('aria-pressed', String\(item\.pressed === true\)\)/);
   // Restart: the one sanctioned tool behind one route; the browser asks, then reads the restart off startedAt changing.
   assert.match(source, /if \(item\.act === 'restart'\) \{ await restartRonin\(state, startedAt\); return; \}/);
@@ -241,13 +237,14 @@ test('Services leads with identity, the beta, and benefits, then one measured st
   assert.match(source, /probe\.data\.cowork\.startedAt !== startedAt\) break;/, 'the restart is read off the machine, not assumed');
   assert.match(source, /installed\.kind === 'network' && body\.dataset\.state\) \{ timer = setTimeout/, 'a server down for a moment does not repaint the surface as Not installed');
   const route = await (await import('node:fs/promises')).readFile(new URL('../src/routes/machine-restart-api.ts', import.meta.url), 'utf8');
-  assert.match(route, /join\(REPO_ROOT, 'ronin_bin', 'tejun-machine-restart'\)/, 'the route runs the sanctioned tool and names no unit');
+  assert.match(route, /join\(REPO_ROOT, 'ronin_bin', 'ronin-host'\)/, 'the route runs the sanctioned tool and names no unit');
+  assert.match(route, /execFile\(RESTART_TOOL, \['restart'\]/, 'the route selects only the fixed restart subcommand');
   assert.doesNotMatch(route, /execFile\(['"]systemctl|ronin\.service/, 'the route invokes no systemctl and names no unit; only the tool does');
   assert.match(route, /if \(!process\.env\.INVOCATION_ID\) \{\n\s*res\.status\(409\)/, 'a copy that is not the installed service refuses rather than restarting the wrong Ronin');
   assert.match(route, /res\.status\(409\)\.json\(\{ error: \(error\.stderr \|\| error\.message\)/, 'the tool\'s refusal is answered in its own words');
   const index = await (await import('node:fs/promises')).readFile(new URL('../src/index.ts', import.meta.url), 'utf8');
   assert.match(index, /registerMachineRestart\(app\)/);
-  assert.match(source, /notifySummary\(SETUP_SURFACE_TYPES\.services, model\.summary/);
+  assert.doesNotMatch(source, /notifySummary\(SETUP_SURFACE_TYPES\.services/);
   assert.match(source, /if \(body\.isConnected\) void show\(\)/, 'polling stops when the surface leaves the workspace');
   assert.doesNotMatch(source, /Requires a confirmed registration|services_requires_short|services_register_enables|Registration confirmed · Services access not included|not activated|setup-services-account/);
   assert.doesNotMatch(source, /const state = el\('dl'|<dd>|'Yes' : 'No'/);
@@ -299,7 +296,7 @@ test('Services setup model keeps installation and registration as separate facts
     ['installing', entitled(), inst(), act('installing'), 'installing', 'Installing Services…', 'register:Done:done install:Installing…:off switch:Turn on:off', true],
     ['install_failed', entitled(), inst(), act('error', { error_at_stage: 'installing', error_message: 'the installer did not start' }), 'install failed', 'Install did not finish', 'register:Done:done install:Try again:install switch:Turn on:off', false],
     ['switched_off', reg('optional'), here(), act('not_requested'), 'switched off', 'Installed · switched off', 'register:Register:register install:Done:done switch:Turn on:switch_on', false],
-    ['restart_needed', reg('optional'), here({ switched_on: true, restart_needed: true }), act('not_requested'), 'restart needed', 'Switched on · not yet running', 'register:Register:register install:Done:done switch:Turn off:switch_off restart:Restart:restart', true],
+    ['restart_needed', reg('optional'), here({ switched_on: true, restart_needed: true }), act('not_requested'), 'restart needed', 'Switched on · not yet running', 'register:Register:register install:Done:done switch:Turn off:switch_off restart:Restart:restart', false],
     ['active', entitled(), here({ switched_on: true }), act('installed'), 'active', 'Active on this Cowork', 'register:Done:done install:Done:done switch:Turn off:switch_off', false],
   ];
   assert.deepEqual(cases.map(([state]) => state).sort(), [...SERVICES_SETUP_STATES].sort());
@@ -331,7 +328,7 @@ test('Services setup model keeps installation and registration as separate facts
   assert.match(servicesSetupModel(reg('optional'), here({ switched_on: true, restart_needed: true }), act('not_requested')).next, /Press Restart, or ask any of your Agents to restart Ronin/);
   const offButRunning = servicesSetupModel(reg('optional'), here({ restart_needed: true }), act('not_requested'));
   assert.equal(offButRunning.steps[3]?.act, 'restart', 'switching off also waits on a restart, so Restart is offered');
-  assert.equal(offButRunning.polling, true, 'the surface watches for the restart an Agent may do instead');
+  assert.equal(offButRunning.polling, false, 'restart disagreement waits for an explicit restart without polling');
   assert.equal(liveOn.steps[1].enabled, false, 'Done install has nothing to press');
   assert.equal(servicesSetupModel(reg('optional'), inst(), act('not_requested')).steps[1].enabled, false, 'the hosted install waits for the entitlement the API demands');
   assert.equal(servicesSetupModel(reg('optional'), inst(), act('not_requested')).steps[2].enabled, false, 'nothing to switch on before parts are installed');
@@ -346,7 +343,7 @@ test('Services setup model keeps installation and registration as separate facts
   assert.deepEqual(new Set(cases.map(([, r, i, a]) => servicesSetupModel(r as never, i as never, a as never).tone)), new Set(['', 'warn', 'bad', 'ok']));
 });
 
-test('Setup gbrain answers three questions plainly with at most one action per state', async () => {
+test('Setup gbrain answers its measured facts plainly with at most one action per state', async () => {
   const { GBRAIN_SETUP_STATES, gbrainSetupModel, gbrainAccounts } = await import('../public/js/gbrain-setup-state.js');
   const snapshot = (over: Record<string, unknown> = {}) => ({
     ok: true, status: 200,
@@ -410,34 +407,55 @@ test('Setup gbrain answers three questions plainly with at most one action per s
   assert.deepEqual(gbrainSetupModel(snapshot({ installed: false, install: { state: 'failed', op: 'install', log: ['step 3 failed'] } })).log, ['step 3 failed']);
 });
 
-test('Setup gbrain paints the three questions, switches the Campaign gbrain Routine, and keeps the commons dashboard on its default', async () => {
+test('Setup gbrain keeps installation/default choice on Campaign Installations and keeps the commons dashboard on its default', async () => {
   const [setup, gbrain] = await Promise.all([
     (await import('node:fs/promises')).readFile(new URL('../public/js/setup-surfaces.js', import.meta.url), 'utf8'),
     (await import('node:fs/promises')).readFile(new URL('../public/js/gbrain.js', import.meta.url), 'utf8'),
   ]);
   assert.match(setup, /presentation: 'setup'/);
   assert.match(setup, /setupRuntime\?\.gbrain|runtime\?\.gbrain/);
-  assert.match(setup, /onState: \(summary\) => notifySummary\(SETUP_SURFACE_TYPES\.gbrain, summary/);
-  assert.match(setup, /openServices: \(\) => context\.workbench\?\.place\(SETUP_SURFACE_TYPES\.services/);
+  assert.match(setup, /onState: \(\) => context\.workbench\?\.refreshSelector/);
+  assert.match(setup, /openServices: \(\) => context\.workbench\?\.place\(SETUP_SURFACE_TYPES\.installations/);
   assert.match(setup, /openProviders: \(\) => context\.workbench\?\.place\(SETUP_SURFACE_TYPES\.providers/);
-  // Available to Agents is the Campaign's own gbrain Routine, saved the way Routines and Installs saves it.
-  assert.match(setup, /routines\.gbrain === true/);
-  assert.match(setup, /completeRoutineMap\([\s\S]*?defaults\.routines\), gbrain: on === true \}/);
-  assert.match(setup, /saveCampaign\(row\.id, \{ config: \{ agent_defaults: \{ \.\.\.defaults, routines \} \} \}\)/);
+  assert.doesNotMatch(setup, /agentsDefault/);
   // Start your first Personal Assistant is exactly the preset's launch: same plan, same route, same new tab.
   assert.match(setup, /launchPresetPlan\(buildLaunchPlan\(slot, '', controls\)\)/);
   assert.match(setup, /HOUSE_PRESETS\.find\(\(row\) => row\.handle === 'personal_assistant'\)/);
   assert.match(setup, /presetLaunchUrl\(result\.data \|\| \{\}, seatingPlan\('personal_assistant'/);
   assert.match(gbrain, /import \{ gbrainAssistantPrompt, gbrainSetupModel \} from '\.\/gbrain-setup-state\.js'/);
   assert.match(gbrain, /if \(!root\.querySelector\('\.setup-gbrain-compact'\)\) renderSetup\(undefined\)/);
+  assert.match(gbrain, /row\(t\('campaign_view\.available', 'Available'\)\)/);
+  assert.match(gbrain, /row\(t\('campaign_view\.default_for_all_agents', 'Default for all Agents'\)\)/);
+  assert.match(setup, /installationControls: context\.installationControls/);
   assert.match(gbrain, /const mine = \+\+reads;[\s\S]*?if \(mine === reads\) renderSetup\(result\)/);
   assert.match(gbrain, /if \(!setup\) root\.append\(head, privacy, search, integrations\)/);
-  for (const question of ['gbrain.setup_q_installed', 'gbrain.setup_q_agents', 'gbrain.setup_q_accounts']) assert.ok(gbrain.includes(question), question);
+  for (const question of ['gbrain.setup_q_installed', 'gbrain.setup_q_accounts']) assert.ok(gbrain.includes(question), question);
+  assert.doesNotMatch(gbrain, /gbrain\.setup_q_agents|gbrain\.setup_agents_/);
   assert.match(gbrain, /setAttribute\('aria-live', 'polite'\)/);
   assert.match(gbrain, /request\('\/api\/gbrain\/install', \{ method: 'POST', json: \{\} \}\)/);
   assert.match(gbrain, /root\.replaceChildren\(wrap\)/);
   for (const kept of ['renderPrivacy(r.data)', 'renderSearch(r.data)', 'renderIntegrations(r.data)', 'integrations.append(renderRemove())', 'renderLoad(r.data)']) assert.ok(gbrain.includes(kept), kept);
   assert.doesNotMatch(gbrain, /designedErrors|gb-notice|gb-setup|setup-gbrain-benefit|setup-gbrain-facts/);
+});
+
+test('Setup has one Installations card, Account has no gbrain tab, and Machine Settings has no gbrain switch', async () => {
+  const fs = await import('node:fs/promises');
+  const [surfaces, setupView, account, machine, installations] = await Promise.all([
+    fs.readFile(new URL('../public/js/setup-surfaces.js', import.meta.url), 'utf8'),
+    fs.readFile(new URL('../public/js/setup-view.js', import.meta.url), 'utf8'),
+    fs.readFile(new URL('../public/js/cowork-commons.js', import.meta.url), 'utf8'),
+    fs.readFile(new URL('../public/js/machine-settings.js', import.meta.url), 'utf8'),
+    fs.readFile(new URL('../public/js/campaign-installations.js', import.meta.url), 'utf8'),
+  ]);
+  assert.match(surfaces, /definition\(SETUP_SURFACE_TYPES\.installations, t\('campaign_view\.installations', 'Installations'\), createSetupInstallationsSurface\)/);
+  assert.match(surfaces, /createInstallationsSurface\(selected, context\)/);
+  assert.doesNotMatch(setupView, /SETUP_SURFACE_TYPES\.(?:services|gbrain)/);
+  assert.doesNotMatch(account, /id: 'gbrain'/);
+  assert.match(machine, /tickRow\(observed\.ronin\.services\.includes\('gbrain'\)/, 'the measured gbrain row remains');
+  assert.doesNotMatch(machine, /settei\.use_gbrain|family: 'gbrain'/);
+  assert.match(installations, /createServicesSurface\(sharedContext\)/);
+  assert.match(installations, /createGbrainSurface\(sharedContext\)/);
+  assert.match(installations, /stoneSurface\.select\('ronin_services'\)/);
 });
 
 test('legacy Services mutation entry points explicitly retire to registration', async () => {
@@ -474,7 +492,7 @@ test('retired Services mutation handlers return 410 while registration routes re
 
 test('all browser mutation callers use registration; Services activation is read/poll/install only', async () => {
   const fs = await import('node:fs/promises');
-  for (const file of ['services-card.js', 'services-activation.js', 'campaign-routines.js']) {
+  for (const file of ['services-card.js', 'services-activation.js', 'campaign-installations.js']) {
     const source = await fs.readFile(new URL(`../public/js/${file}`, import.meta.url), 'utf8');
     assert.doesNotMatch(source, /['"]\/api\/services\/activation(?:\/resend|\/address)?['"][\s\S]{0,80}(?:method:\s*['"](?:POST|DELETE)|,\s*['"]DELETE)/, file);
   }

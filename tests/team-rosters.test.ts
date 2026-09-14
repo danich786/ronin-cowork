@@ -11,12 +11,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import type { Project } from '../src/projects.js';
 
 const temp = await fs.mkdtemp(path.join(os.tmpdir(), 'ronin-rosters-test-'));
 process.env.RONIN_TEAM_ROSTERS_DIR = temp;
-const ROUTINES_OFF = {
-  ronin_base: false, ronin_worktrees: false, ronin_services: false, ronin_host: false, gbrain: false,
-};
 
 const {
   createTeamRoster,
@@ -25,41 +23,98 @@ const {
   readTeamRoster,
   writeTeamRoster,
 } = await import('../src/team-rosters.js');
+const { assignTeamProject, issueTeamProjectId, moveTeamProject, returnTeamProject, writeTeamIdea } = await import('../src/team-projects.js');
 test('create → read → list: a zero-member team is a real, openable record', async () => {
   const r = await createTeamRoster('alpha', {
     kind: 'coding',
     objective: 'ship the teams cut',
     project_root: 'ronin-cowork',
     branch: 'dev',
-    references: ['https://example.test/spec', 'Owner note'],
-    routines: { ronin_base: true, ronin_worktrees: false },
-    behaviours: { books: ['ways:CutCode'], required: true },
+    behaviours: { selected: ['mandates'], required: ['mandates'] },
     agent_defaults: {
       provider: 'anthropic', model: 'opus', reach: 'execute', recruit: 'nobody',
-      output: 'code', dial: 'read', launch_mode: 'configured', gbrain_mode: 'connected',
+      output: 'code', dial: 'read', launch_mode: 'configured',
     },
   });
   assert.equal(r.kind, 'coding');
   assert.equal(r.title, 'Alpha');
   assert.equal(r.wipeboard, 'alpha', 'the board defaults to the team’s own token');
   assert.equal(r.state, 'active');
-  assert.deepEqual(r.routines, { ...ROUTINES_OFF, ronin_base: true });
+  assert.deepEqual(r.projects, []);
+  assert.equal(r.next_project_id, 1);
 
   const back = await readTeamRoster('alpha');
   assert.deepEqual(back, r);
   assert.equal((await listTeamRosters()).length, 1, 'listed with zero live members');
 });
 
+test('ideas live in the roster and its monotonic id issuer is the only id source', async () => {
+  const first = await writeTeamIdea('alpha', undefined, { title: 'Board read', objective: 'Return one JSON board.' });
+  assert.equal(first.project.id, 'alpha/1');
+  assert.equal(first.project.stage, 'IDEAS');
+  assert.equal(first.project.exit, 'lead');
+  assert.equal(first.project.status, 'yellow');
+  const edited = await writeTeamIdea('alpha', '1', { status: 'green', exit: 'user' });
+  assert.equal(edited.created, false);
+  assert.equal(edited.project.status, 'green');
+  const second = await writeTeamIdea('alpha', undefined, { title: 'Thin verbs', objective: 'Keep names replaceable.' });
+  assert.equal(second.project.id, 'alpha/2');
+  const roster = await readTeamRoster('alpha');
+  assert.equal(roster?.next_project_id, 3);
+  assert.deepEqual(roster?.projects.map((p) => p.id), ['alpha/1', 'alpha/2']);
+});
+
+test('a roster holder moves among Inbox, Backlog and Done without changing project state', async () => {
+  const before = (await readTeamRoster('alpha'))!.projects[1]!;
+  assert.deepEqual((await moveTeamProject('alpha', before.id, 'backlog')).project, before);
+  assert.deepEqual((await readTeamRoster('alpha'))!.backlog_projects, [before]);
+  assert.deepEqual((await moveTeamProject('alpha', before.id, 'done')).project, before);
+  assert.deepEqual((await moveTeamProject('alpha', before.id, 'inbox')).project, before);
+});
+
+test('an Agent project reserves its id without creating a roster idea', async () => {
+  const id = await issueTeamProjectId('alpha');
+  assert.equal(id, 'alpha/3');
+  const concurrent = await Promise.all([issueTeamProjectId('alpha'), issueTeamProjectId('alpha')]);
+  assert.deepEqual(concurrent, ['alpha/4', 'alpha/5'], 'concurrent issuers cannot observe the same counter');
+  const roster = await readTeamRoster('alpha');
+  assert.equal(roster?.next_project_id, 6);
+  assert.equal(roster?.projects.some((project) => project.id === id), false);
+});
+
+test('assign and return move one whole project across the roster boundary', async () => {
+  const held: Project[] = [];
+  const firstProject = (await readTeamRoster('alpha'))!.projects[0];
+  const move = async (input: { direction: 'place'; session: string; project: Project } | { direction: 'return'; session: string; projectId: string }) => {
+    if (input.direction === 'place') {
+      held.push(input.project);
+      return { project: input.project, projectsRemaining: held.length };
+    }
+    const at = held.findIndex((project) => project.id === input.projectId);
+    assert.notEqual(at, -1);
+    const [project] = held.splice(at, 1);
+    return { project, projectsRemaining: held.length };
+  };
+  const assigned = await assignTeamProject('alpha', '1', 'worker', move);
+  assert.deepEqual(held, [assigned]);
+  assert.equal(assigned.stage, 'IDEAS', 'assignment does not mutate authored stage');
+  assert.equal((await readTeamRoster('alpha'))?.projects.some((p) => p.id === assigned.id), false);
+  const returned = await returnTeamProject('alpha', '1', 'worker', 'inbox', move);
+  assert.equal(returned.projectsRemaining, 0);
+  assert.equal(returned.project.stage, assigned.stage, 'return preserves authored stage');
+  assert.equal(returned.project.exit, assigned.exit);
+  assert.equal(returned.project.status, assigned.status);
+  assert.equal((await readTeamRoster('alpha'))?.projects.some((p) => p.id === assigned.id), true);
+});
+
 test('the settled nested shapes round-trip, and an edit touches only what it states', async () => {
-  const r = await writeTeamRoster('alpha', { title: 'Alpha Platform', routines: { base: false, control: true } });
+  const r = await writeTeamRoster('alpha', { title: 'Alpha Platform' });
   assert.equal(r.title, 'Alpha Platform');
   assert.equal(r.objective, 'ship the teams cut', 'unstated fields survive');
-  assert.deepEqual(r.references, ['https://example.test/spec', 'Owner note']);
-  assert.deepEqual(r.routines, ROUTINES_OFF);
-  assert.deepEqual(r.behaviours, { books: ['ways:CutCode'], required: true });
+  assert.deepEqual(r.behaviours, { selected: ['mandates'], required: ['mandates'] });
   assert.deepEqual(r.agent_defaults, {
     provider: 'anthropic', model: 'opus', reach: 'execute', recruit: 'nobody',
-    output: ['code'], dial: 'read', launch_mode: 'configured', gbrain_mode: 'connected',
+    output: ['code'], dial: 'read', launch_mode: 'configured',
   });
 });
 
@@ -73,13 +128,29 @@ test('a blank field is written as "—" and reads back as the blank it stands fo
   const r = await writeTeamRoster('bare', { branch: 'dev' });
   assert.equal(r.project_root, '', 'an untouched blank stays blank after an edit');
   assert.equal(r.kind, 'open');
-  assert.deepEqual(r.references, []);
-  assert.deepEqual(r.routines, ROUTINES_OFF);
-  assert.deepEqual(r.behaviours, { books: [], required: false });
+  assert.deepEqual(r.behaviours, { selected: ['mandates'], required: [] });
   assert.equal(r.branch, 'dev');
   const cleared = await writeTeamRoster('bare', { objective: '' });
   assert.equal(cleared.objective, '', 'clearing a field is blank on read-back, not "—"');
   await deleteTeamRoster('bare');
+});
+
+test('an old behaviour shape reads stock Mandates and is not rewritten', async () => {
+  const file = path.join(temp, 'home_machine', 'old_shape.md');
+  await fs.mkdir(path.dirname(file), { recursive: true });
+  const raw = '# old_shape\n- **title:** Old Shape\n- **behaviours:** {"books":[],"required":false}\n';
+  await fs.writeFile(file, raw, 'utf8');
+  const roster = await readTeamRoster('old_shape', 'home_machine');
+  assert.deepEqual(roster?.behaviours, { selected: ['mandates'], required: [] });
+  assert.equal(await fs.readFile(file, 'utf8'), raw, 'reading the old shape does not migrate it');
+});
+
+test('a settled roster honours an explicit empty behaviour list', async () => {
+  const roster = await createTeamRoster('explicit_empty', {
+    behaviours: { selected: [], required: [] },
+  }, 'home_machine');
+  assert.deepEqual(roster.behaviours, { selected: [], required: [] });
+  assert.deepEqual((await readTeamRoster('explicit_empty', 'home_machine'))?.behaviours, { selected: [], required: [] });
 });
 
 test('creating over an existing roster is refused — editing is a different intent', async () => {

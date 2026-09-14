@@ -20,7 +20,7 @@ const TERMINAL_TYPE = 'session.terminal';
 // The selector's fixed order. Model providers comes first because it is the first job.
 const ORDER = Object.freeze([
   SETUP_SURFACE_TYPES.providers, SETUP_SURFACE_TYPES.register, SETUP_SURFACE_TYPES.roots,
-  SETUP_SURFACE_TYPES.services, SETUP_SURFACE_TYPES.gbrain, SETUP_SURFACE_TYPES.launchOwn,
+  SETUP_SURFACE_TYPES.installations, SETUP_SURFACE_TYPES.launchOwn,
 ]);
 // THE SAME SHAPE AS THE TEAM PAGE: workspace 1, the selector, workspace 2. Presets is
 // pinned in workspace 1 and takes the widest column; the setup work sits compact in
@@ -96,12 +96,7 @@ export function createSetupView() {
     paintAppearance();
   });
   paintAppearance();
-  const blank = (id) => {
-    const surface = createSurface({ label: id.replace('workspace', 'Workspace '), className: 'cv-blank' });
-    const word = document.createElement('p'); word.className = 'cv-blank-word'; word.textContent = t('team.workspace_blank', 'Workspace');
-    surface.content.append(word);
-    return surface.el;
-  };
+  const blank = (id) => WorkspaceKit.primitives.createBlankSurface(id.replace('workspace', 'Workspace ')).el;
   const presetEnvironment = () => ({
     customize: ({ template, user_message } = {}) => openWorkspaceStateTab(ctx, 'launch', { customize: { template, user_message: String(user_message || '') } }),
     launch: launchPresetPlan,
@@ -160,7 +155,21 @@ export function createSetupView() {
   };
   // viewportMode was the retired presentation toggle's memory; writing undefined drops
   // it from a stored visit so nobody stays in the stack it forced.
-  const save = () => ctx?.patchViewState('setup', { ...bench.snapshot(), viewportMode: undefined });
+  let thinSelectorCards = true;
+  const save = () => ctx?.patchViewState('setup', { ...bench.snapshot(), viewportMode: undefined, selectorDensity: thinSelectorCards ? 'thin' : 'thick' });
+  const densityToggle = barButton('tw-agent-density');
+  const densityLines = document.createElement('span');
+  densityLines.className = 'tw-agent-density-lines';
+  densityLines.append(document.createElement('i'), document.createElement('i'));
+  densityToggle.replaceChildren(densityLines);
+  const paintDensityToggle = () => {
+    if (bench?.host) bench.host.dataset.selectorDensity = thinSelectorCards ? 'thin' : 'thick';
+    densityToggle.dataset.lines = thinSelectorCards ? 'two' : 'one';
+    densityToggle.title = thinSelectorCards ? 'Show full Setup cards' : 'Show Setup names only';
+    densityToggle.setAttribute('aria-label', densityToggle.title);
+    densityToggle.setAttribute('aria-pressed', String(thinSelectorCards));
+  };
+  densityToggle.addEventListener('click', () => { thinSelectorCards = !thinSelectorCards; paintDensityToggle(); save(); });
   bench = WorkspaceKit.workbench.create({
     profile: PROFILE,
     tenant: { kind: 'setup' },
@@ -176,6 +185,7 @@ export function createSetupView() {
     onStateChange: save,
     onPlacement: save,
   });
+  paintDensityToggle();
   // ミ Help: Mika takes over the selector column with her ordinary tile borrowed in;
   // Close hands it back. The same panel serves every workbench (mika.js).
   helpPanel = createMikaHelpPanel({
@@ -203,7 +213,7 @@ export function createSetupView() {
     glyph: '人',
     hideFeedback: true,
     hideShapeControl: true,
-    barActions: [surfaceToggle, themeToggle],
+    barActions: [densityToggle, surfaceToggle, themeToggle],
     title: () => t('setup.title', 'Ronin Setup'),
     mount: (_host, context) => { ctx = context; },
     enter: async (context) => {
@@ -220,6 +230,8 @@ export function createSetupView() {
       bench.refreshSelector();
       mikaHelp.el.disabled = !operational();
       const stored = context.viewState('setup') || {};
+      thinSelectorCards = stored.selectorDensity !== 'thick';
+      paintDensityToggle();
       // The Campaign's record is not read at boot on this page; fetch it once so the
       // light/dark icon shows the configured theme, not a guess.
       if (!campaigns().length) void loadCampaigns().then(paintAppearance);

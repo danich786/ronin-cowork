@@ -25,7 +25,7 @@ test('the shipped agent shelf surfaces loadouts, and no team answers', async () 
   assert.equal(assistant?.label, 'Personal Assistant');
   assert.deepEqual(assistant?.mandate, { reach: 'execute', recruit: 'nobody', output: ['open'] });
   assert.equal(assistant?.team_mode, 'new', 'the assistant is born into its own team');
-  assert.deepEqual(assistant?.routines_on, ['gbrain']);
+  assert.deepEqual(assistant?.behaviours, ['gbrain']);
   const sysadmin = rows.find((row) => row.name === 'system_administrator');
   assert.deepEqual(sysadmin?.mandate, { reach: 'execute', recruit: 'nobody', output: ['open'] });
   // Tray order is the stated order:, so the assistant leads the shelf — and every box
@@ -69,11 +69,11 @@ test('a cast parses from the section format, row keys never leaking top-level', 
   const rows = parseTemplateAgents([
     '# Box', '- **objective:** o', '', '## agents', '',
     '### one', '- **team_lead:** yes', '- **instructions:** Lead.', '- **mandate:** open · nobody · open', '',
-    '### two', '- **instructions:** Work.', '- **routines_off:** gbrain', '- **routines_on:** ronin_worktrees, gbrain',
+    '### two', '- **instructions:** Work.', '- **behaviours:** ronin_worktrees, gbrain',
   ].join('\n'));
   assert.deepEqual(rows, [
-    { name: 'one', instructions: 'Lead.', mandate: { reach: 'open', recruit: 'nobody', output: ['open'] }, team_lead: true, routines_on: [], routines_off: [] },
-    { name: 'two', instructions: 'Work.', mandate: null, team_lead: false, routines_on: ['ronin_worktrees', 'gbrain'], routines_off: ['gbrain'] },
+    { name: 'one', instructions: 'Lead.', mandate: { reach: 'open', recruit: 'nobody', output: ['open'] }, team_lead: true, behaviours: [] },
+    { name: 'two', instructions: 'Work.', mandate: null, team_lead: false, behaviours: ['ronin_worktrees', 'gbrain'] },
   ]);
   assert.deepEqual(parseTemplateAgents('# Box\n- **objective:** o\n'), [], 'no agents heading, no rows');
 });

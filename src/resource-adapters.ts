@@ -1,10 +1,10 @@
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { STOCK_DIR, entryValue, isKeyLine, resolveFiles, type Origin } from './resources.js';
 import { storeDir } from './resources.js';
 
 export type DefinitionKind =
-  | 'role_families' | 'session_roles' | 'desk_profiles' | 'lexicons' | 'routines'
+  | 'desk_profiles' | 'lexicons' | 'installations' | 'behaviours' | 'capabilities'
   | 'templates/agents' | 'templates/teams';
 
 export interface Definition {
@@ -12,6 +12,8 @@ export interface Definition {
   origin: Origin;
   shadowed: boolean;
   file: string;
+  /** The whole file, for definitions whose body carries structure beyond the key lines. */
+  text: string;
   get: (key: string) => string;
   has: (key: string) => boolean;
 }
@@ -25,7 +27,7 @@ export async function readDefinitions(kind: DefinitionKind): Promise<Definition[
   const merged = new Map<string, Definition>();
   for (const file of await resolveFiles({
     stock: path.join(STOCK_DIR, kind),
-    user: path.join(storeDir('catalogs'), kind),
+    user: kind === 'behaviours' ? storeDir('ways') : path.join(storeDir('catalogs'), kind),
     include: isDefinitionFile,
     symlinks: true,
   })) {
@@ -39,6 +41,7 @@ export async function readDefinitions(kind: DefinitionKind): Promise<Definition[
       origin: file.origin,
       shadowed: file.shadowed,
       file: file.path,
+      text: file.text,
       get: (key: string) => entryValue(lines, key),
       has: (key: string) => entryValue(lines, key) !== '',
     });
@@ -76,31 +79,23 @@ interface Row {
   credit?: { text: string; url: string };
 }
 
-export interface RoleFamilyRow extends Row {
-  session_roles: string[];
-  default_lead_role: string;
-}
-
-export interface SessionRoleRow extends Row {
-  match: string[];
-}
-
-export const ROUTINE_BUNDLES = ['nothing', 'floor', 'base', 'worktrees', 'services'] as const;
-export type RoutineBundle = (typeof ROUTINE_BUNDLES)[number];
-
-export interface RoutineRow extends Pick<Row, 'name' | 'origin' | 'shadowed' | 'label' | 'blurb'> {
+export interface ContributionRow extends Pick<Row, 'name' | 'origin' | 'shadowed' | 'label' | 'blurb'> {
   reading: string[];
   reading_off: string[];
   sops: string[];
-  macros: string[];
-  actions: string[];
   tools: string[];
   mcp: string[];
-  /** Services parts this Routine runs inside the server; loaded only while its switch is on. */
+  /** Services parts this contribution runs inside the server; loaded only while its switch is on. */
   parts: string[];
-  requires: string[];
-  bundles: string[];
 }
+
+export interface InstallationRow extends ContributionRow {
+  effect: 'system' | 'provider';
+  provides: string[];
+  requires: string[];
+}
+
+export interface BehaviourRow extends ContributionRow { installation: string; page: string }
 
 function credit(v: string): { text: string; url: string } | undefined {
   const m = /^\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)$/.exec(v.trim());
@@ -119,41 +114,28 @@ const row = (d: Definition): Row => ({
   credit: credit(d.get('credit')),
 });
 
-export async function listRoleFamilies(): Promise<RoleFamilyRow[]> {
-  return (await readDefinitions('role_families')).map((d) => {
-    const roles = splitDefinitionList(d.get('session_roles'));
-    const lead = d.get('default_lead_role').trim();
-    const pinned = lead && roles.includes(lead) ? [lead, ...roles.filter((r) => r !== lead)] : roles;
-    return { ...row(d), session_roles: pinned, default_lead_role: lead };
-  });
-}
+const contribution = (d: Definition): ContributionRow => ({
+  name: d.name, origin: d.origin, shadowed: d.shadowed,
+  label: d.get('label') || d.name, blurb: d.get('blurb'),
+  reading: splitDefinitionList(d.get('reading')), reading_off: splitDefinitionList(d.get('reading_off')),
+  sops: splitDefinitionList(d.get('sops')), tools: splitDefinitionList(d.get('tools')),
+  mcp: splitDefinitionList(d.get('mcp')), parts: splitDefinitionList(d.get('parts')),
+});
 
-export async function listSessionRoles(): Promise<SessionRoleRow[]> {
-  return (await readDefinitions('session_roles')).map((d) => ({
-    ...row(d),
-    match: splitDefinitionList(d.get('match')),
-  }));
-}
-
-export async function listRoutines(): Promise<RoutineRow[]> {
-  return (await readDefinitions('routines')).map((d) => ({
-    name: d.name,
-    origin: d.origin,
-    shadowed: d.shadowed,
-    label: d.get('label') || d.name,
-    blurb: d.get('blurb'),
-    reading: splitDefinitionList(d.get('reading')),
-    reading_off: splitDefinitionList(d.get('reading_off')),
-    sops: splitDefinitionList(d.get('sops')),
-    macros: splitDefinitionList(d.get('macros')),
-    actions: splitDefinitionList(d.get('actions')),
-    tools: splitDefinitionList(d.get('tools')),
-    mcp: splitDefinitionList(d.get('mcp')),
-    parts: splitDefinitionList(d.get('parts')),
+export async function listInstallations(): Promise<InstallationRow[]> {
+  return (await readDefinitions('installations')).map((d) => ({
+    ...contribution(d),
+    effect: d.get('effect') === 'system' ? 'system' : 'provider',
+    provides: splitDefinitionList(d.get('provides')),
     requires: splitDefinitionList(d.get('requires')),
-    bundles: splitDefinitionList(d.get('bundles')).filter((bundle) =>
-      (ROUTINE_BUNDLES as readonly string[]).includes(bundle)),
   }));
+}
+
+export async function listBehaviours(): Promise<BehaviourRow[]> {
+  return (await readDefinitions('behaviours')).map((d) => {
+    const installation = d.get('installation').trim();
+    return { ...contribution(d), installation: /^[\u2013\u2014-]$/.test(installation) ? '' : installation, page: d.file };
+  });
 }
 
 const REACH = ['open', 'discuss', 'plan', 'execute'];
@@ -167,8 +149,6 @@ export interface TemplateBox extends Pick<Row, 'name' | 'origin' | 'shadowed' | 
   art: string;
   kinds: string[];
   behaviours: string[];
-  routines_on: string[];
-  routines_off: string[];
 }
 
 export interface AgentTemplateRow extends TemplateBox {
@@ -182,8 +162,7 @@ export interface TemplateAgentRow {
   instructions: string;
   mandate: TemplateMandate | null;
   team_lead: boolean;
-  routines_on: string[];
-  routines_off: string[];
+  behaviours: string[];
 }
 
 export interface TeamTemplateRow extends TemplateBox {
@@ -207,8 +186,6 @@ const templateBox = (d: Definition): TemplateBox => ({
   art: d.get('art'),
   kinds: splitDefinitionList(d.get('kinds')).filter((kind) => TEMPLATE_KINDS.includes(kind)),
   behaviours: splitDefinitionList(d.get('behaviours')),
-  routines_on: splitDefinitionList(d.get('routines_on')),
-  routines_off: splitDefinitionList(d.get('routines_off')),
 });
 
 export async function listAgentTemplates(): Promise<AgentTemplateRow[]> {
@@ -235,8 +212,7 @@ export function parseTemplateAgents(raw: string): TemplateAgentRow[] {
         instructions: entryValue(lines, 'instructions'),
         mandate: mandate ? templateMandate(mandate) : null,
         team_lead: /^yes$/i.test(entryValue(lines, 'team_lead')),
-        routines_on: splitDefinitionList(entryValue(lines, 'routines_on')),
-        routines_off: splitDefinitionList(entryValue(lines, 'routines_off')),
+        behaviours: splitDefinitionList(entryValue(lines, 'behaviours')),
       };
     })
     .filter((row) => row.name);
@@ -260,46 +236,6 @@ export async function listTeamTemplates(): Promise<TeamTemplateRow[]> {
   return rows;
 }
 
-const isValidToken = (s: string): boolean => /^[\w-]{1,64}$/.test(s);
-
-export async function writeRoleTasks(role: string, tasks: string[]): Promise<string[]> {
-  const def = await findDefinition('role_families', role);
-  if (!def) throw new Error(`"${role}" is not a role_family on this box.`);
-  const clean = [...new Set(tasks.map((t) => String(t).trim()).filter(Boolean))];
-  for (const t of clean) if (!isValidToken(t)) throw new Error(`"${t}" is not a session_role name.`);
-  const lead = def.get('default_lead_role').trim();
-  if (lead && !clean.includes(lead)) {
-    throw new Error(
-      `"${lead}" is ${role}'s default_lead_role — it stays pinned on this shelf. ` +
-        `Clear the \`default_lead_role:\` line in ${def.file} first if you mean to remove it.`,
-    );
-  }
-  if (clean.length > 64) throw new Error(`A role may shelve at most 64 tasks; "${role}" was given ${clean.length}.`);
-  const known = new Set((await readDefinitions('session_roles')).map((d) => d.name));
-  for (const t of clean) if (!known.has(t)) throw new Error(`"${t}" is not a session_role on this box.`);
-
-  const raw = await readFile(def.file, 'utf8');
-  const line = `- **session_roles:** ${clean.length ? clean.join(', ') : '—'}`;
-  const lines = raw.split('\n');
-  const at = lines.findIndex((l) => /^-\s*\*\*session_roles:\*\*/i.test(l.trim()));
-  if (at === -1) {
-    let last = -1;
-    for (let i = 0; i < lines.length; i++) if (isKeyLine(lines[i])) last = i;
-    lines.splice(last + 1, 0, line);
-  } else lines[at] = line;
-
-  const dir = path.join(storeDir('catalogs'), 'role_families');
-  const target = path.join(dir, `${role}.md`);
-  await mkdir(dir, { recursive: true });
-  const tmp = `${target}.tmp-${process.pid}`;
-  await writeFile(tmp, lines.join('\n'), 'utf8');
-  await rename(tmp, target);
-
-  const back = await findDefinition('role_families', role);
-  if (!back) throw new Error(`Refused: "${role}" does not read back after the edit.`);
-  return splitDefinitionList(back.get('session_roles'));
-}
-
-export const routineReading = (
-  routines: readonly { enabled: boolean; reading: string[]; reading_off: string[] }[],
-): string[] => routines.flatMap((routine) => routine.enabled ? routine.reading : routine.reading_off);
+export const contributionReading = (
+  contributions: readonly { enabled: boolean; reading: string[]; reading_off: string[] }[],
+): string[] => contributions.flatMap((contribution) => contribution.enabled ? contribution.reading : contribution.reading_off);

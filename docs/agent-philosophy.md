@@ -16,7 +16,7 @@
    desks together; it does not ask whether the Agent is sure.
 3. **An acknowledgement, every time.** What happened, who holds what, and the verb that
    gets the rest: `ACCEPTED … now <sha>`, `KEPT … <why>`, `custody: <holder> — not yours:
-   … tejun-desk handoff …`. Failure is said in the tool's own words, never hidden behind
+   … worktree-desk handoff …`. Failure is said in the tool's own words, never hidden behind
    a green line. When the box is the authority, it is *measured, never asked*.
 4. **The Agent chooses.** Gas and brake are both under its foot. It may reopen a desk
    and forget to ask for custody, park forever, or end itself on a whim. Those are its
@@ -32,7 +32,7 @@ name, an occupied port — and then it says why and what to do next. Everything 
 disclosure. *Honey, not sticks.*
 
 The house keeps one brake of its own: nothing is discarded silently. The one destructive
-verb, `tejun-desk discard`, wants the exact confirmation it prints; everything else keeps
+verb, `worktree-desk discard`, wants the exact confirmation it prints; everything else keeps
 the Agent's work and returns the next action.
 
 ## Where this already lives
@@ -48,7 +48,7 @@ is the one place; these are the pieces.
 | *Offered, never done* — setup detects a missing linger or swap and hands over the line; it holds no root | `setup.sh`, the closing paste |
 | *A finding, never an action* — doctor reads and names the remedy; it touches nothing | `bin/ronin-doctor`, "the box" |
 | *Never post to acknowledge* — the read cursor is the only acknowledgement on a wipeboard | [`wipeboards.md`](wipeboards.md) |
-| *Stay or go* — the desk an Agent lives in is parked or ends with the Agent; nobody asks it to leave | the Worktrees Routine, "Finish the assignment" |
+| *Stay or go* — the desk an Agent lives in is parked or ends with the Agent; nobody asks it to leave | `ronin_sops/worktree-root.md`, "Finish the assignment" |
 | What Ronin will and will not do to the machine | [`how-ronin-protects-you.md`](how-ronin-protects-you.md) |
 
 When a new mechanism needs a sentence like these, write the sentence where the mechanism

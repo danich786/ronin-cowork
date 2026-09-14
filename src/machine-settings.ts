@@ -4,7 +4,6 @@ import { access, mkdir, readdir, rename, stat, writeFile } from 'node:fs/promise
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { MACHINE_SETTINGS_SCHEMA, providerModelFields, type ProviderModelField } from './machine-settings-schema.js';
-import { repositoryNeeds } from './repository-needs.js';
 import { secureUrl } from './passkey.js';
 import { listServices } from './sockets.js';
 import { CONTRACT_V } from './sockets-contract.js';
@@ -101,7 +100,7 @@ export async function readMachineSettingsSection<T>(key: string, fallback: T): P
 
 export const readMachineSettingsDocument = (): Promise<Record<string, unknown>> => readDocument();
 
-async function updateDocument(
+export async function updateDocument(
   mutate: (document: Record<string, unknown>) => void | Promise<void>,
 ): Promise<void> {
   const operation = writeQueue.then(async () => {
@@ -173,31 +172,12 @@ async function writeOwner(name: string): Promise<string> {
 const readMachineSection = () => readSection<Record<string, unknown>>('machine', {});
 const readAgentsSection = () => readSection<Record<string, unknown>>('agents', {});
 const readSetupSection = () => readSection<Record<string, unknown>>('setup', {});
-async function readDesksSection(): Promise<{ new_project: 'managed' | 'none' }> {
-  const value = await readSection<{ new_project?: unknown }>('desks', {});
-  return { new_project: value.new_project === 'none' ? 'none' : 'managed' };
-}
 const writeMachineSection = (value: Record<string, unknown>) =>
   updateSection('machine', (current) => ({ ...current, ...value }));
 const writeAgentsSection = (value: Record<string, unknown>) =>
   updateDocument((document) => { document.agents = value; });
 const writeGbrainSection = (value: Record<string, unknown>) =>
   updateDocument((document) => { document.gbrain = value; });
-const writeDesksSection = (value: { new_project?: string }) =>
-  updateSection('desks', (current) => ({
-    ...current,
-    ...(value.new_project === undefined ? {} : {
-      new_project: value.new_project === 'none' ? 'none' : 'managed',
-    }),
-  }));
-const writeMessagesSection = (value: { auto_force_after_s?: number }) =>
-  updateDocument((document) => {
-    const messages = ((document.messages ?? {}) as Record<string, unknown>) || {};
-    document.messages = {
-      ...messages,
-      ...(value.auto_force_after_s !== undefined ? { auto_force_after_s: value.auto_force_after_s } : {}),
-    };
-  });
 const writeWantedSection = (wanted: Array<{ kind: string; name: string }>) =>
   updateDocument((document) => { document.wanted = wanted; });
 async function liveCount(): Promise<number> {
@@ -234,7 +214,7 @@ const resolvedBind = resolveBind();
 export const bindSource: BindSource = resolvedBind.source;
 
 export const config = {
-  port: Number(process.env.PORT ?? 3006),
+  port: Number(process.env.PORT ?? 4810),
   bind: resolvedBind.bind,
   user: process.env.GRID_USER ?? '',
   pass: process.env.GRID_PASS ?? '',
@@ -259,6 +239,7 @@ const TAILNET_IP = tailnetIp();
 
 export interface MachineSettingsProject {
   name: string;
+  title: string;
   dir: string;
   remit: string;
 }
@@ -423,14 +404,6 @@ const publicJobs = async (value: unknown): Promise<Record<string, unknown>> => {
   return jobs;
 };
 
-/** Absent = the queue's default (120); 0 = never; anything else is whole seconds. */
-const AUTO_FORCE_DEFAULT_S = 120;
-const autoForceSeconds = (v: unknown): number => {
-  if (v === undefined || v === null || v === '') return AUTO_FORCE_DEFAULT_S;
-  const n = Number(v);
-  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
-};
-
 async function readSet(): Promise<Record<string, unknown>> {
   const owner = await readSection<Record<string, unknown>>('owner', {});
   const machine = await readMachineSection();
@@ -446,6 +419,7 @@ async function readSet(): Promise<Record<string, unknown>> {
 
   const projects: MachineSettingsProject[] = roots.map((r) => ({
     name: r.name,
+    title: r.title,
     dir: r.dir,
     remit: r.remit,
   }));
@@ -460,14 +434,12 @@ async function readSet(): Promise<Record<string, unknown>> {
       where: typedStr(machine.where),
     },
     sessions: { max: await readMax() },
-    messages: { auto_force_after_s: autoForceSeconds((await readSection<Record<string, unknown>>('messages', {})).auto_force_after_s) },
     projects,
     agents: { sessions: sessionDefaults(agents.sessions), jobs: await publicJobs(agents.jobs) },
     gbrain: { enabled: gbrain.enabled === true },
     koshi,
     wipeboard,
     desk: { profile: typedStr(campaignRecord?.desk_profile) },
-    desks: { new_project: typedStr((await readDesksSection()).new_project) },
     wanted: (await readSection<Array<{ kind?: unknown; name?: unknown }>>('wanted', []))
       .filter((w) => typeof w?.kind === 'string' && typeof w?.name === 'string')
       .map((w) => ({ kind: w.kind as string, name: w.name as string })),
@@ -727,7 +699,6 @@ export async function readMachineSettings(): Promise<MachineSettingsRecord> {
   const observed = await cachedObserved(jobKeyNames);
   const status = await computeStatus(set, observed);
   const needed = computeNeeded(set, observed);
-  needed.push(...repositoryNeeds(set, status));
   if (!(await listProjectRoots()).some((root) => !root.archived)) {
     needed.push({
       leaf: 'workspace_folder',
@@ -774,16 +745,7 @@ export const MACHINE_SETTINGS_WRITERS = {
     await writeDeskSection({ profile: editString(body.profile) ?? '' });
     return { ok: true };
   },
-  desks: async (body) => {
-    await writeDesksSection({ new_project: editString(body.new_project) ?? 'managed' });
-    return { ok: true };
-  },
   'session-max': async (body) => ({ max: await writeMax(Number(body.max)) }),
-  messages: async (body) => {
-    const seconds = autoForceSeconds(body.auto_force_after_s);
-    await writeMessagesSection({ auto_force_after_s: seconds });
-    return { ok: true, auto_force_after_s: seconds };
-  },
   gbrain: async (body) => {
     await writeGbrainSection({ enabled: body.enabled === true });
     return { ok: true };

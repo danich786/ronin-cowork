@@ -60,9 +60,8 @@ absent.
 | piece | what | where |
 |---|---|---|
 | **the toggle** | New Agent: **gbrain on** (the CLI's own config applies) / **gbrain off** (no MCP servers at all, every other connector included). The label says gbrain by the owner's ruling. Per launch; relaunch to change. The Codex exception is recorded below | `src/spawn.ts` |
-| **`mcp:` (the cascading key)** | **which way the toggle opens for a resolved launch — off for every ordinary one**: the brain is something the owner turns ON for the launch that wants it. `on` opens it on; `always` opens it on and withdraws the choice (the `PersonalAssistant` session_role carries the lock). It is the definition's own key, resolved against the system default. A default, not a lock — the form and an explicit `mcp:` in the launch body both override it; only `always` refuses | `ronin_catalogs/session_roles/` · `src/launch-profile.ts` · `src/spawn.ts` |
+| **gbrain behaviour** | Available only while its provider installation is on. Campaign default, Team, then Agent chooses it; a selected behaviour contributes its connection material at birth | `ronin_catalogs/behaviours/gbrain.md` · `src/spawn.ts` |
 | **`gbrain_disconnected:`** | the provider catalog's key holding a provider's declared tokens for `gbrain_mode: disconnected`. A launch that asks for disconnected and finds none declared is refused; a profile merely defaulting disconnected degrades to connected and the receipt says so. OpenAI disables gbrain specifically. Anthropic's coarse token disables **ALL MCP** for that launch | `ronin_catalogs/MODEL_PROVIDERS.md` · `src/model-providers.ts` |
-| **`credit:`** | a definition key — one markdown link, text and href — rendered on the opened launch form as a real anchor (*powered by gbrain ↗*). The credit is the FACE's — the `session_role`'s own, with the shelf's as presentation fallback. Never inside the kind button: an anchor in a button is nested-interactive, which the axe gate fails | `ronin_catalogs/session_roles/` · `src/resource-adapters.ts` |
 
 ### Review finding — connected is not provisioned, and off is not yet proved
 
@@ -86,13 +85,10 @@ One more boundary is deliberate: this is per-session *access*, not per-session d
 session launched with MCP on reaches the same gbrain corpus, and gbrain has no Ronin session
 partition. A capture from one connected session can be recalled by another.
 
-## 🎩 PersonalAssistant — the kind that names it
+## Agents that use gbrain
 
-The owner's own assistant (`ronin_catalogs/session_roles/PersonalAssistant.md`): brain-first — search gbrain
-before answering, capture what the owner asks to keep, one confirmation per anything that
-opens an outside connection. **It credits gbrain by name and link, by the owner's ruling.**
-On an install without gbrain it still launches and degrades to a plain assistant — the
-posture itself says how.
+An Agent receives gbrain only when the feature is available and selected. Without that
+choice, it receives no gbrain teaching or working-without page.
 
 What such a session knows at birth is shelf content, not catalog text. An overview is not
 an operating protocol: the job shelf must point first to gbrain's live installed skill
@@ -162,10 +158,11 @@ has been connected.
 ### In Ronin Setup
 
 The Setup workbench's gbrain selector opens the same tab in its Setup presentation
-(`buildGbrain(..., { presentation: 'setup' })`): three questions with measured answers,
-Installed, Available to Agents, and Accounts linked, then the one next step, all chosen by
-`public/js/gbrain-setup-state.js` from the same `GET /api/gbrain` snapshot. Available to
-Agents is the Campaign's gbrain Routine; Accounts linked is the integrations list, one
+(`buildGbrain(..., { presentation: 'setup' })`): four rows, then the one next step.
+Installed and Accounts linked are measured through `public/js/gbrain-setup-state.js` from
+the same `GET /api/gbrain` snapshot. Available switches the gbrain installation on the
+Campaign's Installations card; Default for all Agents separately controls whether gbrain is
+in the Campaign's default behaviours and is unavailable until Available is on. Accounts linked is the integrations list, one
 Linked or Not linked per account. `docs/setup-workbench.md` has the table.
 
 ### Where connection credentials live
