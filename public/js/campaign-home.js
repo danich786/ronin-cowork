@@ -109,9 +109,9 @@ export function createCampaignHome() {
     for (const pkg of ['cowork', 'services']) {
       const fact = packageReading(state.facts?.[pkg]);
       const { text, update } = controls[pkg];
-      const installed = state.facts?.[pkg]?.installed || (pkg === 'cowork' ? state.version?.release : null);
+      const installed = state.facts?.[pkg]?.installed;
       const detail = state.canUpdate ? fact.text : (fact.available ? `${state.facts[pkg].latest} available · This installation cannot be updated here.` : fact.text);
-      text.textContent = `Ronin ${pkg === 'cowork' ? 'Cowork' : 'Services'} — ${installed && (fact.state === 'unknown' || (!state.canUpdate && fact.available)) ? `Installed ${installed} · ` : ''}${detail}`;
+      text.textContent = `Ronin ${pkg === 'cowork' ? 'Cowork' : 'Services'} — ${installed && !state.canUpdate && fact.available ? `Installed ${installed} · ` : ''}${detail}`;
       text.dataset.state = fact.state;
       update.hidden = !fact.available || !state.canUpdate;
       update.disabled = !state.canUpdate || state.busy;

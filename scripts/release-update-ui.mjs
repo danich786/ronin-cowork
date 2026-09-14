@@ -37,7 +37,7 @@ try{
   await page.keyboard.press('Enter');
   await page.waitForFunction(()=>document.querySelector('.ch-update-reading').textContent.includes('v2.3.1'));
   assert.equal(await page.evaluate(()=>document.activeElement===window.check&&document.querySelector('.ch-release')===window.original),true);
-  assert.match(await page.locator('.ch-update-reading').nth(1).textContent(),/No release information/);
+  assert.match(await page.locator('.ch-update-reading').nth(1).textContent(),/Installed version unavailable · Update status unavailable/);
   assert.equal(await page.evaluate(()=>document.querySelector('.ch-release').scrollWidth<=document.querySelector('.ch-release').clientWidth),true);
   await page.screenshot({path:`/tmp/project17-home-${width}.png`,fullPage:true});
  }
@@ -49,6 +49,17 @@ try{
  await page.getByRole('button',{name:'Update Services',exact:true}).click();
  await page.waitForFunction(()=>document.querySelector('.ch-update-answer').textContent.includes('Fixture'));
  assert.equal(calls.filter(([u])=>u==='/api/update/run').at(-1)[1].package,'services');
+ const known = facts;
+ facts={installed:null,latest:'v9',upToDate:false,services:{installed:null,latest:'s9',upToDate:true}};
+ await page.locator('.ch-release > button').click();
+ await page.waitForFunction(()=>[...document.querySelectorAll('.ch-update-reading')].every(e=>e.textContent.includes('Installed version unavailable · Update status unavailable')));
+ assert.equal(await page.getByRole('button',{name:'Update Cowork',exact:true}).isVisible(),false);
+ assert.equal(await page.getByRole('button',{name:'Update Services',exact:true}).isVisible(),false);
+ for(const width of [320,900]) {
+  await page.setViewportSize({width,height:850});
+  await page.screenshot({path:`/tmp/project17-unknown-${width}.png`,fullPage:true});
+ }
+ facts=known;
  identity={release:null,commit:'deadbeef'};
  await page.locator('.ch-release > button').click();
  await page.waitForFunction(()=>document.querySelector('.ch-release').textContent.includes('cannot be updated here'));
