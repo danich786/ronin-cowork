@@ -24,7 +24,7 @@ One fact determines the result for each repository, its own `RONIN_REPO`:
 | `desks=managed` | a **worktree root**: the Agent's managed branch and worktree, commit, hand-in, the lead's promotion | `ronin_sops/worktree-root.md` |
 
 There is no Agent-side answer. The birth packet names the birth root's arrangement, and
-`tejun-desk open <repo>` names any other root's. The desk procedure and tools are in an
+`worktree-desk open <repo>` names any other root's. The desk procedure and tools are in an
 Agent's command lookup only in a worktree root. Resolution is per repository, so one
 assignment may contain both a worktree root and a checkout.
 
@@ -71,7 +71,7 @@ answer as `worktrees: enabled|disabled`. Other consumers must not compare `desks
 
 A managed launch never silently falls back to a shared funnel checkout when opening its
 worktree fails. The launch is refused with the reason. Direct repositories remain direct
-and are not represented as missing desks. The Agent does not ask `tejun-desk` to decide
+and are not represented as missing desks. The Agent does not ask `worktree-desk` to decide
 again; the 2×2 result is already in its brief.
 
 An assignment can span several repositories. A desk is the repository-specific internal
@@ -113,7 +113,7 @@ resulting line, and contributing session.
 
 A hand-in moves the line and nothing else: no desk, the handing-in one included, is
 merged or rewritten by it. A desk takes in accepted work only when its session runs
-`tejun-desk sync`, which merges local `dev`; the team line is never merged into a desk.
+`worktree-desk sync`, which merges local `dev`; the team line is never merged into a desk.
 After `ACCEPTED` the desk is level with the line because its tip is a parent of the line's
 new merge commit, not because the desk moved. The tool then tells the team lead itself,
 in the lead's tile (or on the team wipeboard when the tile cannot take it); a team with no
@@ -123,14 +123,14 @@ lead gets one sentence back saying nobody was told.
 
 Before ordinary hand-in, an Agent may commit a coherent private candidate and send the Team
 lead its Agent, repository, exact commit, intended surfaces, and supersedes information. This
-“provisional visual hand-in” is communication, not a first-class Tejun verb, hand-in receipt,
+“provisional visual hand-in” is communication, not a first-class tool verb, hand-in receipt,
 approval, or promotion. The private branch remains the source.
 
 The lead serially composes exact provisional commits in one dedicated disposable staging
 branch/worktree and serves that worktree on a separate preview port. Agents do not edit it
 concurrently. Rejection changes or rebuilds only the disposable composition; it never deletes
 the Agent's private commit. Visual approval publishes nothing. Finished work still reaches the
-Team line through ordinary `tejun-desk hand-in`, then lead review and promotion. See the concise
+Team line through ordinary `worktree-desk hand-in`, then lead review and promotion. See the concise
 [visual-staging SOP](../ronin_sops/ronin_methodology.md#visual-staging-one-disposable-team-preview).
 
 Team promotion builds the combined candidate, advances `dev` by compare-and-swap,
@@ -142,7 +142,7 @@ finished and certified clean. A desk is finished when that notice arrives, not w
 hand-in is accepted — and finished means parked, or ended with its session by
 `session_end`; it is never closed under a live session. An Agent's shell is opened
 inside its desk at launch and stays there, so the desk it stands in ends with it, never
-before it. `tejun-desk close` is for a desk nobody is standing in: a second repository's
+before it. `worktree-desk close` is for a desk nobody is standing in: a second repository's
 desk, or a desk whose session is already gone.
 
 ## Desk lifecycle and recovery
@@ -152,8 +152,8 @@ explicitly discard repository desks. A branch without a mounted worktree is repr
 parked recovery state. The registry and receipts keep that state visible; no lifecycle
 operation silently deletes an unintegrated branch or user files.
 
-Use `tejun-desk status --assignment` to inspect the current assignment and `tejun-desk
-receipts` to inspect publication history. `tejun-desk discard --yes` is the explicit path
+Use `worktree-desk status --assignment` to inspect the current assignment and `worktree-desk
+receipts` to inspect publication history. `worktree-desk discard --confirm "DISCARD repo:branch"` is the explicit path
 that abandons an unintegrated desk. Funnel recovery is separate: dirty integration
 worktrees are preserved to named recovery refs and receipts before cleanup.
 
@@ -173,7 +173,7 @@ anyone changing the code below.
   every promotion, deleted when the team retires, never on a timer. Desk branches are
   private checkpoints. Candidates are throwaway. Each has an owner, a recorded base, and a
   place it hands in to.
-- **An Agent reads the current command surface from `tejun-desk --help`.** Get a worktree (`open`, defaulting to local `dev`; an
+- **An Agent reads the current command surface from `worktree-desk --help`.** Get a worktree (`open`, defaulting to local `dev`; an
   explicit `--source team` joins an already-moving Team from the exact current local team-line
   revision), update it (`sync`, merges local `dev`; `status` reports lag, and 20 commits
   behind is a notification, not a block), hand it in (`hand-in`; the candidate is built from

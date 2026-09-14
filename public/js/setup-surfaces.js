@@ -9,6 +9,7 @@ import { CAMPAIGN_TEMPLATES_TYPE, createTemplatesSurface } from './campaign-temp
 import { PROVIDER_SURFACE_TYPE, providerSurfaceDefinition } from './provider-surface.js';
 import { createStoneWorkSurface } from './stone-work-surface.js';
 import { servicesSetupModel } from './services-setup-state.js';
+import { serviceCapabilityWord } from './services-setup-state.js';
 import { campaignById, campaigns, loadCampaigns, saveCampaign } from './campaigns.js';
 import { completeInstallationMap } from './installation-map.js';
 import { createEmbeddedNewTeamFormView } from './new-team-form.js';
@@ -38,6 +39,32 @@ const action = (label, kind, onClick) => {
   const made = WorkspaceKit.primitives.createAction({ label, kind, action: onClick });
   return made.el ?? made;
 };
+
+export const SERVICE_COMPONENTS = Object.freeze([
+  { id: 'task_manager', label: 'Task manager', needs: 'Adds a shared project board and quick summaries of active work.' },
+  { id: 'terminal_transcript', label: 'Terminal transcript', needs: 'Records terminal activity for transcript views and downstream summaries.' },
+  { id: 'voice_hotwords', label: 'Voice & Hotwords', needs: 'Adds voice tools and corrections for words dictation commonly mishears.' },
+  { id: 'usage_stats', label: 'Usage stats', needs: 'Keeps local usage counts without storing transcript content.' },
+  { id: 'project_coordinator', label: 'Project coordinator', needs: 'Watches active projects and prompts Agents to keep status and summaries current.' },
+  { id: 'local_weights', label: 'Local weights', needs: 'Provides locally stored model weights for features that need them.' },
+]);
+
+export function serviceComponentRows(installed, masterOn) {
+  const services = installed?.services || {};
+  const desired = services.capabilities?.desired || {};
+  const running = new Set(Array.isArray(services.capabilities?.running) ? services.capabilities.running : []);
+  const disagrees = new Set(Array.isArray(services.capabilities?.disagrees) ? services.capabilities.disagrees : []);
+  const parked = new Map((Array.isArray(services.capabilities?.parked) ? services.capabilities.parked : []).map((item) => [item.name, item]));
+  return SERVICE_COMPONENTS.map((component) => {
+    const park = parked.get(component.id);
+    const permanent = !!park;
+    const wanted = desired[component.id] === true;
+    const isRunning = running.has(component.id);
+    const word = serviceCapabilityWord({ wanted, running: isRunning, disagrees: disagrees.has(component.id), parked: permanent });
+    const off = permanent ? park.reason : !masterOn ? 'Turn on Running services first' : '';
+    return { v: component.id, l: component.label, sub: component.needs, word, ...(off ? { off } : {}) };
+  });
+}
 
 /** The only furniture shared by Services and gbrain. */
 export function setupExplainer({ usedFor, requires, use }) {
@@ -331,6 +358,14 @@ export function createServicesSurface(context) {
     if (result.ok) context.onInstallationChange?.('ronin_services', on);
     return result;
   };
+  const switchComponents = async (selected) => {
+    const row = campaignById(context.tenant?.campaign) || campaigns()[0];
+    if (!row) return { ok: false, message: t('services_setup.no_campaign', 'No Campaign to configure.') };
+    const chosen = new Set(selected);
+    const capabilities = { ...(row.config?.services?.parts || {}) };
+    for (const component of SERVICE_COMPONENTS) capabilities[component.id] = chosen.has(component.id);
+    return saveCampaign(row.id, { config: { services: { parts: capabilities } } });
+  };
   /** Restart: ask, then read the restart off the machine — /api/installed's startedAt changes when Ronin is back.
    *  A refusal answers in the tool's own words; no answer means Ronin went down, which is the restart happening. */
   const restartRonin = async (state, startedAt) => {
@@ -352,6 +387,7 @@ export function createServicesSurface(context) {
       request('/api/setup/registration', { cache: 'no-store' }),
       request('/api/installed', { cache: 'no-store' }),
       request('/api/services/activation', { cache: 'no-store' }),
+      loadCampaigns(),
     ]);
     // Ronin is down or unreachable for a moment (a restart in flight): keep what is painted and look again shortly.
     if (!installed.ok && installed.kind === 'network' && body.dataset.state) { timer = setTimeout(() => { if (body.isConnected) void show(); }, 3000); return; }
@@ -388,7 +424,35 @@ export function createServicesSurface(context) {
       steps.append(wrap);
     }
     steps.dataset.count = String(model.steps.length);
-    body.append(steps, notice);
+    body.append(steps);
+    if (installed.ok) {
+      const campaign = campaignById(context.tenant?.campaign) || campaigns()[0];
+      const desired = campaign?.config?.services?.parts || {};
+      const selected = SERVICE_COMPONENTS.filter((component) => desired[component.id] === true).map((component) => component.id);
+      let componentQuestion = null;
+      componentQuestion = ask([{ group: t('services_setup.components', 'Components'), fields: [{
+        key: 'parts', label: t('services_setup.enabled_components', 'Enabled components'), many: true,
+        options: () => serviceComponentRows(installed.data, installed.data?.services?.switched_on === true),
+      }] }], {
+        value: { parts: selected },
+        onChange: async (answer) => {
+          const before = selected;
+          notice.textContent = t('campaign.saving', 'saving…');
+          const result = await switchComponents(answer.parts);
+          if (!result.ok) { componentQuestion.set('parts', before); notice.textContent = result.message; notice.classList.add('bad'); return; }
+          said = t('settei.saved', 'saved');
+          await show();
+        },
+      });
+      componentQuestion.el.classList.add('setup-services-components');
+      const reading = componentQuestion.el.querySelector('[data-ask-key="parts"]');
+      if (reading) {
+        reading.disabled = installed.data?.services?.switched_on !== true;
+        reading.title = reading.disabled ? t('services_setup.components_master_off', 'Turn on Running services first') : '';
+      }
+      body.append(componentQuestion.el);
+    }
+    body.append(notice);
     body.append(el('p', 'setup-fine setup-services-gate', t('services_setup.gate', 'The Grokbot Morning Briefing preset waits for Ronin Services to be active.')));
     // A confirmation or an install in flight: look again quietly while the surface is on screen.
     if (model.polling) timer = setTimeout(() => { if (body.isConnected) void show(); }, model.state === 'installing' || model.steps.some((item) => item.id === 'restart') ? 5000 : 15000);

@@ -3,7 +3,7 @@ import { fetchSessions, setSessionTitle } from './api.js';
 import { request } from './request.js';
 import { toast } from './ui.js';
 import { retireSession } from './session-retire.js';
-import { IS_TOUCH, S, saveState, serviceMissing, tiles, WHEEL_DOWN } from './state.js';
+import { IS_TOUCH, S, saveState, serviceMissing, serviceParked, tiles, WHEEL_DOWN } from './state.js';
 import { guard } from './errors.js';
 import { buildLadder } from './shingo.js';
 import { buildTileHead, syncTileHead } from './tilehead.js';
@@ -468,8 +468,11 @@ export class Tile {
     sel.hidden = off;
     for (const option of [...sel.options])
       if ((S.streamOff && option.value !== 'locked') || (option.value === 'agent_summary' && serviceMissing('koshi'))) option.remove();
+    const transcriptPark = serviceParked('rireki');
     sel.title = S.streamOff
-      ? t('output.title_locked', 'Output — Locked only. Ronin Services is not installed.')
+      ? transcriptPark
+        ? t('output.title_campaign_off', 'Output — Locked only. Ronin Services is off for this Campaign.')
+        : t('output.title_locked', 'Output — Locked only. Ronin Services is not installed.')
       : off ? t('output.title_off', 'Output — Locked only. Ronin Services is off for this Agent.')
       : t('output.title_choose', 'Output — choose the live terminal or a RIREKI view');
   }

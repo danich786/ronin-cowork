@@ -34,7 +34,7 @@ import { createMikaHelpPanel } from './mika.js';
 import { coworkWorkbenchIdentity, createCampaignIdentity, orderCoworkTeams } from './campaign.js';
 import { retireSession } from './session-retire.js';
 import { installBehaviourReader } from './behaviour-reader.js';
-import { createTeamKanban } from './team-kanban.js';
+import { createTeamKanban, kanbanAvailability, KANBAN_NOT_INSTALLED } from './team-kanban.js';
 
 const el = (tag, cls, text) => {
   const out = document.createElement(tag);
@@ -80,7 +80,7 @@ function registerWorkbenchCatalog() {
   const { library, profiles } = WorkspaceKit.workbench;
   const add = (definition) => { if (!library.has(definition.type)) library.register(definition); };
   add({ type: WB_TYPES.commons, header: 'channels', className: 'wk-selector-utility', label: () => t('team.commons_card', 'Commons'), summary: () => t('team.commons_summary', 'See Roster / Docs / Wipeboard / Kanban / Configuration'), create: ({ workspace, environment }) => environment.teamCommons(workspace) });
-  add({ type: WB_TYPES.kanban, header: 'channels', className: 'wk-selector-utility', label: () => t('workspace.channel_kanban', 'Kanban'), summary: () => t('team_kanban.card_summary', 'The Team’s work, from Ideas through Done'), create: ({ workspace, environment }) => environment.teamKanban(workspace) });
+  add({ type: WB_TYPES.kanban, header: 'channels', className: 'wk-selector-utility', discover: (_tenant, environment) => [environment.kanbanOffer()], create: ({ workspace, environment }) => environment.teamKanban(workspace) });
   add({ type: WB_TYPES.desk, header: 'channels', label: () => t('cowork.commons', 'Ronin Desk'), create: ({ workspace, environment }) => environment.desk(workspace) });
   add({ type: WB_TYPES.terminal, header: 'terminal', className: 'wk-selector-entity', discover: (_tenant, environment) => environment.sessions(), create: ({ workspace, detail, environment }) => environment.terminal(workspace, detail) });
   add({ type: WB_TYPES.roster, header: 'surface', className: 'wk-selector-utility', label: () => t('league.team_roster', 'Team roster'), create: ({ workspace, environment }) => environment.roster(workspace) });
@@ -104,7 +104,7 @@ export function createCoworkView(options = {}) {
   const coworkIdentity = coworkWorkbenchIdentity(t('campaign.coworks', 'Teams'));
   const { createSurface, createChannelSurface, createAction } = WorkspaceKit.primitives;
   const { createTerminalTileHost } = WorkspaceKit.adapters;
-  const { DISMISSED_WORKSPACE, rememberedWorkspaceSeat, teamWorkspaceState, workspaceMaySeedDefault } = WorkspaceKit.contract;
+  const { DISMISSED_WORKSPACE, teamWorkspaceState, workspaceMaySeedDefault } = WorkspaceKit.contract;
   const root = el('main', 'tw-view');
   root.dataset.coworkKind = campaign ? coworkIdentity.kind : 'team';
   let ctx = null;
@@ -113,6 +113,8 @@ export function createCoworkView(options = {}) {
   let loaded = ''; // the team whose roster reading is currently drawn
   let unsubscribe = null;
   let entered = false;
+  let kanbanGate = { available: false, message: KANBAN_NOT_INSTALLED };
+  let updateKanbanAvailability = () => {};
   let lastSeat = 'workspace1'; // the workspace last touched — where the next card lands
   const readableTeam = (name) => String(teamByName(name)?.title ?? '').trim() || name;
   const setBarLabel = () => S.refreshWorkspaceHeader?.();
@@ -208,6 +210,7 @@ export function createCoworkView(options = {}) {
     const kanban = createTeamKanban({
       lead: () => lead(),
       openOwner: (name) => arrange({ [oppositeSeat(id)]: { session: name } }),
+      unavailable: (message) => updateKanbanAvailability({ available: false, message }),
     });
     const messages = el('div', 'tw-messages');
     const messageLabel = t('workspace.channel_agent_message_queue', 'Messages');
@@ -239,11 +242,12 @@ export function createCoworkView(options = {}) {
       services: { roster: service(roster), wipeboard, docs: docsService, 'agent-message-queue': { el: messages, mount: () => {}, enter: messageQueue.enter, leave: messageQueue.leave, destroy: messageQueue.destroy }, 'cron-jobs': jikan, kanban, 'team-configuration': service(config) },
     });
     messageTab = channels.tabs.querySelector('[data-service="agent-message-queue"]');
+    const kanbanTab = channels.tabs.querySelector('[data-service="kanban"]');
     channels.tabs.addEventListener('click', () => { chooseQueueOnOpen = false; });
     paintMessageAttention();
     channels.el.dataset.workbenchSurface = COMMONS;
     return {
-      el: channels.el, channels, wipeboard, jikan, kanban, docs, roster, config, messageQueue,
+      el: channels.el, channels, wipeboard, jikan, kanban, kanbanTab, docs, roster, config, messageQueue,
       attendQueueOnOpen: () => {
         chooseQueueOnOpen = true;
         if (retainedCount > 0) paintMessageAttention();
@@ -279,7 +283,17 @@ export function createCoworkView(options = {}) {
   const environment = {
     feedback: (workspace) => createFeedbackSurface(() => bench.place(campaign ? WB_TYPES.roster : WB_TYPES.commons, workspace)),
     teamCommons: (id) => ({ el: teamCommons[id].el, show: (detail = {}) => { const item = teamCommons[id]; if (!detail.doc && !detail.tab) item.attendQueueOnOpen(); item.channels.enter(ctx); if (detail.doc) { item.channels.select('docs'); void item.docs.open(detail.doc); } else if (detail.tab) item.channels.select(detail.tab); } }),
-    teamKanban: (id) => ({ el: teamCommons[id].el, show: () => { const item = teamCommons[id]; item.channels.enter(ctx); item.channels.select('kanban'); } }),
+    kanbanOffer: () => ({
+      label: t('workspace.channel_kanban', 'Kanban'),
+      summary: kanbanGate.available ? t('team_kanban.card_summary', 'The Team’s work, from Ideas through Done') : kanbanGate.message,
+      className: kanbanGate.available ? '' : 'wk-selector-unavailable',
+      ...(kanbanGate.available ? {} : { action: () => {} }),
+    }),
+    teamKanban: (id) => ({ el: teamCommons[id].el, show: () => {
+      const item = teamCommons[id];
+      item.channels.enter(ctx);
+      item.channels.select(kanbanGate.available ? 'kanban' : 'roster');
+    } }),
     terminal: (id, detail) => ({ el: seats[id].surface.el, show: () => putSession(detail.key, id) }),
     roster: (id) => ({ el: teamRosterBySeat[id].el, show: () => teamRosterBySeat[id].render() }),
     cron: (id) => ({ el: cronBySeat[id].el, show: () => cronBySeat[id].room.enter() }),
@@ -342,12 +356,27 @@ export function createCoworkView(options = {}) {
     actions: [densityToggle.el, rosterNote, mikaHelp], shapeControl: shapeBtn, deferSelector: true,
     installDrop: (cell, id) => acceptSessionDrops(cell, () => id, (name, at) => arrange({ [at]: { session: name } })),
     onSelect: markSelected,
-    onStateChange: () => remember(), onPlacement: (snapshot) => {
-      const dismissed = Object.keys(seats).filter((id) => !snapshot?.seats?.[id]
-        && WorkspaceKit.workbench.library.has(surfaceRequest(remembered[id]).type));
-      remember(dismissed);
+    onStateChange: () => remember(), onPlacement: (_snapshot, change) => {
+      if (change?.dismissed) remembered[change.dismissed] = DISMISSED_WORKSPACE;
+      remember();
     },
   });
+  updateKanbanAvailability = (next) => {
+    kanbanGate = next?.available === true
+      ? { available: true, message: '' }
+      : { available: false, message: String(next?.message || KANBAN_NOT_INSTALLED) };
+    for (const commons of Object.values(teamCommons)) {
+      commons.kanban.setAvailability(kanbanGate);
+      commons.kanbanTab.disabled = !kanbanGate.available;
+      commons.kanbanTab.title = kanbanGate.message;
+    }
+    bench.refreshSelector();
+  };
+  updateKanbanAvailability(kanbanGate);
+  const readKanbanAvailability = async () => {
+    const result = await request('/api/installed', { cache: 'no-store' });
+    updateKanbanAvailability(result.ok ? kanbanAvailability(result.data) : { available: false, message: KANBAN_NOT_INSTALLED });
+  };
   installBehaviourReader(bench, WB_TYPES.document);
   rosterTitle = bench.selectorHeader?.title ?? null;
   if (campaign) {
@@ -404,15 +433,11 @@ export function createCoworkView(options = {}) {
    *  keeps its tiles while it is out. One trade for every surface, present and future. */
   const putSurface = (token, id, tab = '', doc = '') => { const request = surfaceRequest(token); return bench?.place(request.type, id, { ...request.detail, tab, doc }) || false; };
   const isShown = (name) => Object.values(seats).some((seat) => seat.pool.active === name && !surfaceIn(seat.id));
-  const remember = (dismissed = []) => {
+  const remember = () => {
     const snapshot = bench?.snapshot();
     const seatState = Object.fromEntries(Object.keys(seats).map((id) => [id,
-      rememberedWorkspaceSeat({
-        surface: surfaceIn(id) ? snapshot?.seats?.[id] : '',
-        session: seats[id].pool.active,
-        remembered: remembered[id],
-        dismissed: dismissed.includes(id),
-      })]).filter(([, value]) => value));
+      (surfaceIn(id) ? snapshot?.seats?.[id] : seats[id].pool.active) || remembered[id]
+    ]).filter(([, value]) => value));
     remembered = { ...seatState };
     ctx?.patchViewState(viewKey, { ...snapshot, [campaign ? 'teamCardDensity' : 'agentCardDensity']: thinSelectorCards ? 'thin' : 'thick', seats: seatState });
     reportView();
@@ -422,7 +447,7 @@ export function createCoworkView(options = {}) {
 
   const putCommons = (id, tab = '', doc = '') => putSurface(COMMONS, id, tab, doc);
   const putCowork = (id, tab = '') => putSurface(COWORK, id, tab);
-  // `tejun-teampage … workspace1=new` still says "the door work starts at"; that door is
+  // `edges page … workspace1=new` still says "the door work starts at"; that door is
   // the drawn New Agent now (TOOLS.md's `new` word is unchanged for the owner).
   const putNew = (id) => putSurface(WB_TYPES.newAgent, id);
   const setCount = (n) => bench.setCount(n);
@@ -437,6 +462,7 @@ export function createCoworkView(options = {}) {
   };
   /** The seat back, with nothing in it: its tiles go; the lead comes back warm on the next paint. */
   const emptySeat = (id) => {
+    remembered[id] = DISMISSED_WORKSPACE;
     bench.restoreDefault(id);
     delete seats[id].surface.el.dataset.workbenchSurface;
     delete seats[id].surface.el.dataset.workbenchResource;
@@ -444,7 +470,7 @@ export function createCoworkView(options = {}) {
     ensureLeadHot(membersOfTeam(team));
     touch(id);
     paintSeats();
-    remember([id]);
+    remember();
   };
   /** Terminal in: the seat's surface comes back as it was; a seat that never showed
    *  anyone gets the lead. */
@@ -480,7 +506,7 @@ export function createCoworkView(options = {}) {
 
   /* ---------- one controller, two callers ---------- */
   // Everything that changes this page goes through arrange(): the C/T buttons and the
-  // roster cards call it, and so does a draft an agent hands in with tejun-teampage
+  // roster cards call it, and so does a draft an agent hands in with edges page
   const arranger = createArranger({
     showColumn: (name) => { name = name === 'roster' ? 'selector' : name; if (bench.arrangement.state().hidden.includes(name)) bench.arrangement.toggle(name); },
     hideColumn: (name) => { name = name === 'roster' ? 'selector' : name; if (!bench.arrangement.state().hidden.includes(name)) bench.arrangement.toggle(name); },
@@ -500,7 +526,7 @@ export function createCoworkView(options = {}) {
     reportView();
     return did;
   };
-  /** What this tab shows — reported to Ronin so an agent can read it (tejun-teampage). */
+  /** What this tab shows — reported to Ronin so an agent can read it (edges page). */
   const TAB = (() => {
     try {
       let id = sessionStorage.getItem('ronin.team.tab');
@@ -789,6 +815,7 @@ export function createCoworkView(options = {}) {
     enter: (context) => {
       ctx = context;
       entered = true;
+      void readKanbanAvailability();
       seenConfig = ''; // a fresh entry always paints the configuration once
       stopMessageAttention?.();
       stopMessageAttention = watchMessageQueueAttention();

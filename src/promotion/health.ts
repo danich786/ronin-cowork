@@ -93,9 +93,9 @@ export async function healthCheck(opts: HealthOptions): Promise<HealthResult> {
 }
 
 export async function notifyTeam(repoDir: string, team: string, text: string): Promise<string> {
-  const tool = path.join(repoDir, 'ronin_bin', 'tejun-wipeboard');
+  const tool = path.join(repoDir, 'ronin_bin', 'edges');
   try {
-    const r = await execFileP(tool, [team, 'post', text], { env: envWithoutGitLocation(), timeout: 15_000 });
+    const r = await execFileP(tool, ['wipeboard', team, 'post', text], { env: envWithoutGitLocation(), timeout: 15_000 });
     return r.stdout.trim().split('\n')[0] ?? 'posted';
   } catch (e) {
     return `notice not delivered: ${String((e as Error).message ?? e).split('\n')[0]}`;

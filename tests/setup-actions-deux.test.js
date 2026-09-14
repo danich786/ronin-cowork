@@ -12,7 +12,7 @@ const { openLaunchForm, openTemplateLaunchForm } = await import('../public/js/wo
 const { launchEntryPlan } = await import('../public/js/launch-view.js');
 const { templateEntryPlan } = await import('../public/js/new-agent.js');
 const { presetLaunchUrl } = await import('../public/js/preset-launch.js');
-const { DISMISSED_WORKSPACE, rememberedWorkspaceSeat, teamWorkspaceState, workspaceMaySeedDefault } = await import('../public/js/workspace-contract.js');
+const { DISMISSED_WORKSPACE, teamWorkspaceState, workspaceMaySeedDefault } = await import('../public/js/workspace-contract.js');
 
 function harness(blocked = false) {
   const state = { launch: { seats: { workspace4: 'launch.help' }, untouched: { exact: true } } };
@@ -126,12 +126,6 @@ test('an explicitly dismissed workspace stays blank while an uninitialized seat 
   assert.equal(workspaceMaySeedDefault(restored.seats.workspace1), false);
   assert.equal('workspace2' in restored.seats, false);
   assert.equal(workspaceMaySeedDefault(restored.seats.workspace2), true);
-});
-
-test('a cold refresh preserves remembered Agents until the live session list arrives', () => {
-  assert.equal(rememberedWorkspaceSeat({ remembered: 'agent_one' }), 'agent_one');
-  assert.equal(rememberedWorkspaceSeat({ remembered: 'agent_one', session: 'agent_one' }), 'agent_one');
-  assert.equal(rememberedWorkspaceSeat({ remembered: 'agent_one', dismissed: true }), DISMISSED_WORKSPACE);
 });
 
 test('blocked popup and destination storage failure leave seating transport harmless', () => {

@@ -20,8 +20,14 @@ const LIFECYCLE = ['session_fork', 'session_end', 'session_archive', 'session_re
 const RETIRED = [
   'tejun-session-check', 'tejun-session-create', 'tejun-session-set',
   'tejun-fork', 'tejun-harakiri', 'tejun-archive', 'tejun-rehydrate',
+  'tejun-kanban',
 ];
 const SHIPPED = ['ronin_bin', 'ronin_catalogs', 'ronin_session_boot', 'ronin_sops', 'ronin_library', 'docs', 'src', 'public', 'scripts', 'tests', 'bin', 'libexec'];
+const ABSENCE_FIXTURES = new Set([
+  path.join(root, 'tests', 'session-names.test.ts'),
+  path.join(root, 'tests', 'tool-bundle-dispatchers.test.ts'),
+  path.join(root, 'tests', 'tool-only-absence.test.ts'),
+]);
 
 async function* walk(dir: string): AsyncGenerator<string> {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
@@ -47,13 +53,13 @@ test('the retired session command files do not exist and no shipped surface name
   for (const name of RETIRED) {
     await assert.rejects(access(path.join(root, 'ronin_bin', name)), `${name} must not exist, even as an alias`);
   }
-  const pattern = /tejun-(?:session-(?:check|create|set)|fork|harakiri|archive|rehydrate)\b/;
+  const pattern = /tejun-(?:session-(?:check|create|set)|fork|harakiri|archive|rehydrate|kanban)\b/;
   const offenders: string[] = [];
   for (const dir of SHIPPED) {
     const full = path.join(root, dir);
     try { await access(full); } catch { continue; }
     for await (const file of walk(full)) {
-      if (file === path.join(root, 'tests', 'session-names.test.ts')) continue;
+      if (ABSENCE_FIXTURES.has(file)) continue;
       if (/\.(png|jpg|jpeg|gif|woff2?|ttf|ico|wasm)$/i.test(file)) continue;
       const text = await readFile(file, 'utf8');
       if (pattern.test(text)) offenders.push(path.relative(root, file));

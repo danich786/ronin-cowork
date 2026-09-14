@@ -91,6 +91,7 @@ test('every agent-facing API caller connects through the one library and carries
     return /\bcurl\b/.test(body);
   });
   assert.deepEqual(callers.sort(), [
+    '.edges-page',
     'lookup',
     'machine-settings',
     'mika',
@@ -103,9 +104,7 @@ test('every agent-facing API caller connects through the one library and carries
     'session_restore',
     'session_set',
     'show',
-    'tejun-kanban',
-    'tejun-team-set',
-    'tejun-teampage',
+    'team-lead',
   ]);
   for (const name of callers) {
     const body = readFileSync(path.join(bin, name), 'utf8');
@@ -136,13 +135,13 @@ test('a shell caller reaches the operator over its socket with no token and no P
   try {
     // Asynchronous on purpose: the fake operator answers on this event loop.
     const r = await new Promise<{ stdout: string; stderr: string }>((resolve) => {
-      execFile(path.join(root, 'ronin_bin', 'tejun-team-set'), ['reach'], {
+      execFile(path.join(root, 'ronin_bin', 'team-lead'), ['member', 'status', 'reach'], {
         encoding: 'utf8',
         env: { PATH: '/usr/bin:/bin', HOME: f.dir, RONIN_DATA_ROOT: f.dir },
       }, (_error, stdout, stderr) => resolve({ stdout, stderr }));
     });
     assert.doesNotMatch(r.stderr, /command not found|No such file/);
-    assert.ok(hits.some((h) => h.startsWith('/api/')), `reached the operator over the socket; saw ${JSON.stringify(hits)}: ${r.stdout}${r.stderr}`);
+    assert.ok(hits.includes('/api/teams/reach/kanban'), `reached Team member status over the socket; saw ${JSON.stringify(hits)}: ${r.stdout}${r.stderr}`);
     assert.deepEqual(authorization, hits.map(() => undefined), 'a socket peer carries no bearer and no Basic');
   } finally {
     server.close();

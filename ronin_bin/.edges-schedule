@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# tejun-jikan — your team's Cron jobs: what is scheduled, and scheduling one.
+# edges schedule — your team's Cron jobs: what is scheduled, and scheduling one.
 #
-# Usage: tejun-jikan                                       the team's jobs, one per line
-#        tejun-jikan add --when "<timing>" --kind one-off|recurring [--expires <date-time>] [--to lead|<session>] <request...>
-#        tejun-jikan pause <id> | resume <id> | now <id> | remove <id>    now = due at the next tick
-#        tejun-jikan when "<timing>"                       prove timing words: the next three moments
+# Usage: edges schedule                                       the team's jobs, one per line
+#        edges schedule add --when "<timing>" --kind one-off|recurring [--expires <date-time>] [--to lead|<session>] <request...>
+#        edges schedule pause <id> | resume <id> | now <id> | remove <id>    now = due at the next tick
+#        edges schedule when "<timing>"                       prove timing words: the next three moments
 #        --team <t> when this session is on several teams, or none
 #
 # Timing: once 2026-09-04 08:00 · daily 08:00 · weekdays 08:00 · weekly mon 08:00 ·

@@ -8,4 +8,4 @@
 Only a selected, connected Perplexity grants this bundle. Cite its evidence; it grants no
 settings, lead, or host authority.
 
-The document is authority and boundary teaching until a callable Perplexity tool is projected.
+**TBD capability:** this is authority and boundary teaching; no callable Perplexity tool ships yet.

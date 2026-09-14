@@ -7,15 +7,15 @@ two disagree, because they come from watching real sessions.
 Owner: write bullets here as you meet them. Ronin reads this file into Mika's README at
 her next birth, and it is on her Docs list, so it opens from her tile.
 
-- **An agent's Docs tab is empty.** The agent did not list its documents (`write_tegami
-  --doc`). That is the agent's lapse, not the owner's. Tell the owner to type
+- **An agent's Docs tab is empty.** The agent did not list its documents (`work-record
+  document add`). That is the agent's lapse, not the owner's. Tell the owner to type
   `+show_file:` at that agent, which makes it list what it has open.
 - **Nudge agents to keep their work record current — the wink-wink.** Agents must update
   both their ladder and their tracked documents regularly, and they forget. When an owner is
   puzzled by an agent's tile, the useful prompt is often: "ask the agent to update its work
-  record (`write_tegami`: its phase, legs, and `--doc` for every document it is working on)."
+  record (`work-record update_record` for phase and legs; `work-record document add` for documents)."
   Say it plainly; it is the agent's job, and the owner prompting it is normal.
-- **A work record looks stale.** Agents are lazy about `write_tegami`. The tile's View
+- **A work record looks stale.** Agents are lazy about `work-record update_record`. The tile's View
   Work Record shows what the agent last wrote, not what it is doing; the live terminal is
   the truth. Suggest asking the agent to update its work record.
 - **"Where is the document the agent was working on?"** Look at the agent's own Docs

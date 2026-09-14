@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-/* The field verbs of write_tegami: one field, one call, no block. Each edits the current
+/* The field verbs of work-record: one field, one call, no block. Each edits the current
  * letter and runs it through the same validator as a whole-block save, so "at", "docs"
  * and "teams" are carried through and the shape rules hold. The tool learns which session
  * it is from tmux; a fake tmux on PATH answers for a session called "probe", and the
@@ -13,10 +13,10 @@ import path from 'node:path';
  * real letter or the live server. */
 
 const root = path.resolve(import.meta.dirname, '..');
-const tool = path.join(root, 'ronin_bin', 'write_tegami');
+const tool = path.join(root, 'ronin_bin', 'work-record');
 
 function fixture(): { dir: string; env: NodeJS.ProcessEnv; letter: string } {
-  const dir = mkdtempSync(path.join(tmpdir(), 'write-tegami-'));
+  const dir = mkdtempSync(path.join(tmpdir(), 'work-record-'));
   mkdirSync(path.join(dir, 'sessions'));
   writeFileSync(path.join(dir, 'tmux'), [
     '#!/bin/sh',
@@ -45,22 +45,30 @@ const block = (letter: string): Block => {
   return JSON.parse(m[1]) as Block;
 };
 const run = (env: NodeJS.ProcessEnv, args: string[], input?: string) =>
-  execFileSync(tool, args, { encoding: 'utf8', env, input, stdio: ['pipe', 'pipe', 'pipe'] });
+  execFileSync(tool,
+    args[0] === 'project' ? args
+      : args[0] === '--doc' ? ['document', 'add', args[1]]
+        : args[0] === '--undoc' ? ['document', 'remove', args[1]]
+          : ['update_record', ...args],
+    { encoding: 'utf8', env, input, stdio: ['pipe', 'pipe', 'pipe'] });
 
 test('help is side-effect-free, actionable, and separates lead positioning', () => {
   for (const flag of ['--help', '-h']) {
     const r = spawnSync(tool, [flag], { encoding: 'utf8', env: { ...process.env, TMUX: '', TMUX_PANE: '' } });
     assert.equal(r.status, 0, r.stderr);
-    assert.match(r.stdout, /--doc <path>/);
+    assert.match(r.stdout, /document add/);
     assert.match(r.stdout, /--objective <text>/);
     assert.match(r.stdout, /--phase <title>/);
     assert.match(r.stdout, /--leg N <title>/);
     assert.match(r.stdout, /--status N\[\.M\] PLANNED\|ACTIVE\|DONE/);
     assert.match(r.stdout, /--repo <repo>:<branch>/);
-    assert.match(r.stdout, /Lead position \(separate form/);
+    assert.match(r.stdout, /Lead positioning is a separate form/);
     assert.match(r.stdout, /--session <name> --at N\[\.M\]/);
     assert.doesNotMatch(r.stderr, /cannot tell which session/);
   }
+  const direct = spawnSync(tool, ['--objective', 'not an alias'], { encoding: 'utf8', env: { ...process.env, TMUX: '', TMUX_PANE: '' } });
+  assert.equal(direct.status, 2);
+  assert.match(direct.stderr, /work-record update_record --objective <text>/);
 });
 
 test('field verbs edit one field each and carry the pointer and the doc list through', (t) => {
@@ -105,7 +113,7 @@ test('field verbs refuse a wrong position, a wrong status, a missing value, and 
   t.after(() => rmSync(f.dir, { recursive: true, force: true }));
   run(f.env, [], JSON.stringify({ objective: 'start', ladder: [{ gate: 'go', status: 'ACTIVE' }, { phase: 'one', legs: [{ title: 'a' }] }] }));
   const refuse = (args: string[]) => {
-    const r = spawnSync(tool, args, { encoding: 'utf8', env: f.env });
+    const r = spawnSync(tool, ['update_record', ...args], { encoding: 'utf8', env: f.env });
     assert.equal(r.status, 3, args.join(' '));
     return r.stderr;
   };
@@ -146,7 +154,7 @@ test('project create, read and one-field write use the existing letter tools', (
   p = block(f.letter).projects?.[0];
   assert.deepEqual(p?.ladder, [{ stage: 'PLANNING' }, { stage: 'BUILDING', legs: [{ title: 'Implement it', done: true }] }]);
 
-  const read = execFileSync(path.join(root, 'ronin_bin', 'read_tegami'), ['project', 'read', 'team/1'], { encoding: 'utf8', env: f.env });
+  const read = execFileSync(path.join(root, 'ronin_bin', 'work-record'), ['project', 'read', 'team/1'], { encoding: 'utf8', env: f.env });
   assert.equal((JSON.parse(read) as Record<string, unknown>).objective, 'Ship it');
 });
 
@@ -161,11 +169,11 @@ test('the invocation path names the session when tmux does not, and never a gues
   t.after(() => rmSync(f.dir, { recursive: true, force: true }));
   const noTmux = { ...f.env };
   delete noTmux.TMUX_PANE; delete noTmux.TMUX;
-  const reader = path.join(root, 'ronin_bin', 'read_tegami');
+  const reader = path.join(root, 'ronin_bin', 'work-record');
   const projected = (session: string, name: string) => {
     mkdirSync(path.join(f.dir, 'session-commands', session), { recursive: true });
     const link = path.join(f.dir, 'session-commands', session, name);
-    symlinkSync(path.join(root, 'ronin_bin', name), link);
+    if (!existsSync(link)) symlinkSync(path.join(root, 'ronin_bin', name), link);
     return link;
   };
   const refused = (bin: string, args: string[]) => {
@@ -173,13 +181,13 @@ test('the invocation path names the session when tmux does not, and never a gues
     assert.equal(r.status, 3, `${bin} ${args.join(' ')} refused`);
     assert.match(r.stderr, /cannot tell which session/);
   };
-  refused(tool, ['--objective', 'by its real path']);
-  refused(projected('nobody', 'write_tegami'), ['--objective', 'through a directory naming no session']);
+  refused(tool, ['update_record', '--objective', 'by its real path']);
+  refused(projected('nobody', 'work-record'), ['update_record', '--objective', 'through a directory naming no session']);
   assert.deepEqual(readdirSync(path.join(f.dir, 'sessions')), [], 'a refusal writes nothing — not even a stray record at the store root');
 
-  execFileSync(projected('probe', 'write_tegami'), ['--objective', 'through my own directory', '--gate', 'go'], { encoding: 'utf8', env: noTmux, stdio: ['pipe', 'pipe', 'pipe'] });
+  execFileSync(projected('probe', 'work-record'), ['update_record', '--objective', 'through my own directory', '--gate', 'go'], { encoding: 'utf8', env: noTmux, stdio: ['pipe', 'pipe', 'pipe'] });
   assert.equal(block(f.letter).objective, 'through my own directory');
-  const read = execFileSync(projected('probe', 'read_tegami'), ['--json'], { encoding: 'utf8', env: noTmux, stdio: ['pipe', 'pipe', 'pipe'] });
+  const read = execFileSync(projected('probe', 'work-record'), ['read', '--json'], { encoding: 'utf8', env: noTmux, stdio: ['pipe', 'pipe', 'pipe'] });
   assert.equal((JSON.parse(read) as Block).objective, 'through my own directory');
-  refused(reader, ['--json']);
+  refused(reader, ['read', '--json']);
 });

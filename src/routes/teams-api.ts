@@ -18,7 +18,6 @@ import { readCampaign } from '../campaigns.js';
 import { teamAgentDefaults } from '../agent-defaults.js';
 import { assignTeamProject, issueTeamProjectId, returnTeamProject, writeTeamIdea } from '../team-projects.js';
 import { PROJECT_EXITS, PROJECT_STATUSES, normalizeProject, type Project } from '../projects.js';
-import { deriveTeamKanban } from '../team-kanban.js';
 
 const errMsg = (e: unknown): string => String((e as Error)?.message ?? e);
 
@@ -124,16 +123,6 @@ function ideaEditOf(body: unknown): Partial<Project> {
 }
 
 export function registerTeams(app: express.Express): void {
-  app.get('/api/teams/:team/kanban', async (req, res) => {
-    try {
-      const board = await deriveTeamKanban(req.params.team);
-      if (!board) return res.status(404).json({ error: `Team "${req.params.team}" has no roster.` });
-      res.json(board);
-    } catch (e) {
-      res.status(500).json({ error: errMsg(e) });
-    }
-  });
-
   app.post('/api/team-rosters/:name/projects', async (req, res) => {
     try {
       res.json({ ok: true, ...(await writeTeamIdea(req.params.name, undefined, ideaEditOf(req.body))) });

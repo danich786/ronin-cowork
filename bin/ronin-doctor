@@ -502,12 +502,12 @@ fi
 # So ask a shell that has no history: a clean login shell, which is also the kind whose
 # answer the rc fix of 2026-08-13 was actually about (~/.bashrc returns early when
 # non-interactive, so the block also lives in ~/.profile — see setup.sh).
-if command -v write_tegami >/dev/null 2>&1; then
+if command -v work-record >/dev/null 2>&1; then
   ok "bin/ tools reachable by bare name"
-elif env -i HOME="$HOME" TERM="${TERM:-dumb}" bash -lc 'command -v write_tegami' >/dev/null 2>&1; then
+elif env -i HOME="$HOME" TERM="${TERM:-dumb}" bash -lc 'command -v work-record' >/dev/null 2>&1; then
   note "bin/ is not on THIS shell's PATH, but a fresh login shell has it — expected on the pane that ran setup. New sessions are fine; nothing to fix"
 else
-  find_ "bin/ is not on PATH, and a fresh login shell does not get it either — write_tegami, tejun* and koshi only work from the repo root; re-run ./setup.sh"
+  find_ "Agent tools are not on PATH, and a fresh login shell does not get them either — re-run ./setup.sh"
 fi
 
 # tmux server ownership — the single most expensive thing to get wrong: a server in

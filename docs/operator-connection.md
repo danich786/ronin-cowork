@@ -44,12 +44,12 @@ Resolution order, the same in both readers:
 3. **the default path** — `<data root>/run/ronin.sock`, for a tool with no session at all:
    a cron job, a shell over SSH, the owner at a prompt.
 
-The two readers are `src/cli-http.ts`, which every TypeScript command (`tejun-desk`,
-`tejun-wipeboard`, `tejun-send`, `tejun-jikan`, promotion, recovery, bundle, auth) goes
+The two readers are `src/cli-http.ts`, which every TypeScript command (`worktree-desk`,
+`edges wipeboard`, `edges send`, `edges schedule`, promotion, recovery, bundle, auth) goes
 through, and `ronin_bin/ronin-url` with its sourced sibling `ronin_bin/ronin-http.sh`, which
 the zero-dependency shell tools (`session_fork`, `session_end`, `session_check`,
 `session_create`, `session_set`,
-`tejun-team-set`, `tejun-teampage`, `mika`) go through. `ronin-url` prints one line —
+`team-lead roster write`, `edges page`, `mika`) go through. `ronin-url` prints one line —
 `RONIN_URL` when set, else the socket path — and `ronin_connect` turns that into the base
 `url` and the `RONIN_CURL` transport options a request is built from; a caller never knows
 which it got. Wrappers locate those siblings from their own resolved file path, including
@@ -80,10 +80,10 @@ directory of the session-commands store, and prepends that directory — then Ro
 and Update put a CLI, so that a CLI named inside a tile is the one Ronin installed and not an
 older system copy — to the environment given directly to tmux and the Agent process. Ordinary non-interactive descendants inherit
 it; they do not source `.bashrc`, `.profile`, or another owner shell file. That directory's
-name is also how `read_tegami`, `write_tegami` and `tejun-teampage` learn which session they
+name is also how `work-record read`, `work-record update_record` and `edges page` learn which session they
 act for when the calling shell is not inside tmux and carries neither `TMUX_PANE` nor
 `$TMUX`; the name is accepted only when it is a live session. An Agent born with Ronin Base
-off therefore does not receive Base commands such as `write_tegami`, `session_fork`, or
+off therefore does not receive Base commands such as `work-record update_record`, `session_fork`, or
 `ronin-url`. Changing a Team or Campaign default later does not mutate a running Agent's
 birth environment; recreate that Agent to give it the newly enabled tools.
 

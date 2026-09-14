@@ -60,7 +60,7 @@ export async function handIn(repo: string, branch: string, opts: { maxRetries?: 
           const holdsWorking = await isAncestor(a.dir, `refs/heads/${a.working}`, tip);
           if (!holdsLine || !holdsWorking) {
             return appendReceipt(receipt({ result: 'conflict', source_tip: tip, expected_old: old,
-              reason: `accepted team delta conflicts with current ${a.working} — resolve it on a desk cut from ${line.branch} (tejun-desk open <repo:branch> --source team), sync that desk with ${a.working} (tejun-desk sync), commit the resolution, and hand that desk in`,
+              reason: `accepted team delta conflicts with current ${a.working} — resolve it on a desk cut from ${line.branch} (worktree-desk open <repo:branch> --source team), sync that desk with ${a.working} (worktree-desk sync), commit the resolution, and hand that desk in`,
               conflict_files: accepted.conflicts }));
           }
           cand = await freshCandidate(a, line.branch, working);

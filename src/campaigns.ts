@@ -1,6 +1,7 @@
 import { readMachineSettingsSection, writeMachineSettings } from './machine-settings.js';
 import { agentDefaults, type AgentDefaults } from './agent-defaults.js';
 import { parseProviderSummary, type ProviderSummary } from './model-providers.js';
+import { SERVICE_CAPABILITY_PARTS } from './parts.js';
 
 async function readCampaigns(): Promise<Record<string, unknown>> {
   return readMachineSettingsSection<Record<string, unknown>>('campaigns', {});
@@ -12,6 +13,7 @@ async function writeCampaigns(campaigns: Record<string, unknown>): Promise<void>
 
 export interface CampaignSettings {
   installations: Record<string, boolean>;
+  services: { parts: Record<string, boolean> };
   defaults: AgentDefaults;
   cowork_defaults: Record<string, unknown>;
   template_defaults: Record<string, unknown>;
@@ -50,6 +52,7 @@ export interface CampaignEdit {
   state?: CampaignState;
   config?: {
     installations?: Record<string, boolean>;
+    services?: { parts?: Record<string, boolean> };
     defaults?: Partial<AgentDefaults>;
     cowork_defaults?: Record<string, unknown>;
     template_defaults?: Record<string, unknown>;
@@ -89,12 +92,43 @@ const DESK_VALUE_MAX = 120;
 const bucket = (v: unknown): Record<string, unknown> =>
   v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
 
+const emptyServiceCapabilities = (): Record<string, boolean> =>
+  Object.fromEntries(Object.keys(SERVICE_CAPABILITY_PARTS).map((name) => [name, false]));
+
+const capabilitySettings = (raw: Record<string, boolean>): Record<string, boolean> => {
+  const capabilityKeys = new Set(Object.keys(SERVICE_CAPABILITY_PARTS));
+  const knownParts = new Set<string>(Object.values(SERVICE_CAPABILITY_PARTS).flat());
+  const out = Object.fromEntries(Object.entries(raw)
+    .filter(([key]) => !knownParts.has(key) && !capabilityKeys.has(key)));
+  const explicit = (name: string, fallback: boolean): boolean =>
+    Object.prototype.hasOwnProperty.call(raw, name) ? raw[name] === true : fallback;
+  // Explicit capability choices win. Otherwise either legacy half selects the indivisible
+  // Task manager; historical recorder and voice state never imply those safe-off choices.
+  out.task_manager = explicit('task_manager', raw.michi === true || raw.kanban === true);
+  out.terminal_transcript = explicit('terminal_transcript', false);
+  out.voice_hotwords = explicit('voice_hotwords', false);
+  out.usage_stats = explicit('usage_stats', raw.counting === true);
+  out.project_coordinator = explicit('project_coordinator', raw.koshi === true);
+  out.local_weights = explicit('local_weights', raw.koshi_weights === true);
+  return out;
+};
+
+const serviceSettings = (v: unknown): { parts: Record<string, boolean> } => {
+  const value = bucket(v);
+  return {
+    parts: Object.prototype.hasOwnProperty.call(value, 'parts')
+      ? capabilitySettings(booleanMap(value.parts))
+      : { ...emptyServiceCapabilities(), task_manager: true, usage_stats: true, project_coordinator: true, local_weights: true },
+  };
+};
+
 const settings = (v: unknown): CampaignSettings => {
   const c = bucket(v);
   const defaults = bucket(c.defaults);
   const settled = Object.prototype.hasOwnProperty.call(c, 'installations');
   return {
     installations: booleanMap(c.installations),
+    services: serviceSettings(c.services),
     defaults: agentDefaults(settled ? defaults : { ...defaults, behaviours: undefined }),
     cowork_defaults: bucket(c.cowork_defaults),
     template_defaults: bucket(c.template_defaults),
@@ -236,6 +270,7 @@ export async function createCampaign(edit: CampaignEdit & { id?: string }): Prom
     providers: null,
     config: {
       ...settings(edit.config),
+      services: { parts: emptyServiceCapabilities() },
       installations: await completeInstallations(settings(edit.config).installations),
       defaults: await completeAgentDefaults(settings(edit.config).defaults),
     },
@@ -260,6 +295,8 @@ export async function writeCampaign(id: string, edit: CampaignEdit): Promise<Cam
           config: {
             installations: edit.config.installations === undefined
               ? existing.config.installations : await completeInstallations(edit.config.installations),
+            services: edit.config.services === undefined
+              ? existing.config.services : serviceSettings(edit.config.services),
             defaults: edit.config.defaults === undefined
               ? existing.config.defaults : await completeAgentDefaults(edit.config.defaults),
             cowork_defaults: edit.config.cowork_defaults === undefined

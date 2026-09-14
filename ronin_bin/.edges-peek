@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# tejun-peek — read a session's recent output in one call (TEJUN session-catchup).
-# Usage: tejun-peek <session> [lines=60]
+# edges read — read a session's recent output in one call.
+# Usage: edges read <session> [lines=60]
 set -u
-[ $# -ge 1 ] || { echo "usage: tejun-peek <session> [lines]" >&2; exit 2; }
+[ $# -ge 1 ] || { echo "usage: edges read <session> [lines]" >&2; exit 2; }
 S="$1"; N="${2:-60}"
 
 tmux has-session -t "$S" 2>/dev/null || { echo "NO-SESSION: '$S' does not exist"; exit 3; }

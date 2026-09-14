@@ -7,6 +7,8 @@
 
 Reach for the settings tool when the owner asks what this box has, what the Campaign has switched on, what a new Team starts from, which providers and models exist, or which Workspace Folders Ronin may work in — and when they ask you to change one of those. It is independent of Ronin Host: the host's own operations (survey, accounts, secrets, restart) are the Host bundle's, not these.
 
+**Live tool:** every operation below is a typed subcommand of the shipped `machine-settings` executable.
+
 ## Tools
 
 | Tool | Authority | Teach | Help |
@@ -15,7 +17,8 @@ Reach for the settings tool when the owner asks what this box has, what the Camp
 | `machine-settings campaign read` | read: the selected Campaign | priority | `machine-settings --help` |
 | `machine-settings defaults read` | read: what a new Team starts from | priority | `machine-settings --help` |
 | `machine-settings project-root list` | read: the Workspace Folders | priority | `machine-settings --help` |
-| `machine-settings campaign write` | write: title, description, archive | | `machine-settings --help` |
+| `machine-settings campaign write` | write: title or description | | `machine-settings --help` |
+| `machine-settings campaign archive` | write: archive the selected Campaign | | `machine-settings --help` |
 | `machine-settings installations` | read/write: the catalog, proven state, and the Campaign's switches | | `machine-settings --help` |
 | `machine-settings defaults write` | write: the typed default fields | | `machine-settings --help` |
 | `machine-settings project-root` | read/write/create: named fields, archive, exclude | | `machine-settings --help` |
