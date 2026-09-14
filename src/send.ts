@@ -44,21 +44,24 @@ export interface PaneIO {
   wait(ms: number): Promise<void>;
 }
 
-const typeText = async (name: string, text: string) => {
-  // A complete message leaves tmux copy mode before typing, including composer sends.
-  await tmux.run(['send-keys', '-t', exactPane(name), '-X', 'cancel']).catch(() => {});
-  // Mark the paste boundary when the CLI requests bracketed paste. Raw send-keys
-  // makes Codex infer a typing burst and can turn the following Enter into a newline.
+const pasteToPane = async (name: string, text: string, bracketed: boolean) => {
   const buffer = `ronin-message-${randomUUID()}`;
   await tmux.run(['set-buffer', '-b', buffer, '--', text]);
   try {
-    await tmux.run(['paste-buffer', '-d', '-p', '-r', '-b', buffer, '-t', exactPane(name)]);
+    await tmux.run(['paste-buffer', '-d', ...(bracketed ? ['-p'] : []), '-r', '-b', buffer, '-t', exactPane(name)]);
   } catch (error) {
     await tmux.run(['delete-buffer', '-b', buffer]).catch(() => {});
     throw error;
   }
 };
-const pressEnter = (name: string) => tmux.run(['send-keys', '-t', exactPane(name), 'Enter']);
+const typeText = async (name: string, text: string) => {
+  await tmux.run(['send-keys', '-t', exactPane(name), '-X', 'cancel']).catch(() => {});
+  // Explicit paste boundaries prevent a CLI from treating Enter as pasted text.
+  await pasteToPane(name, text, true);
+};
+// Send the Enter byte directly to the pane. send-keys routes through tmux copy
+// mode, which a viewer can reopen during the pause and consume this key instead.
+const pressEnter = (name: string) => pasteToPane(name, '\r', false);
 const paneIO = (name: string): PaneIO => ({
   read: () => capturePane(name),
   type: (text) => typeText(name, text).then(() => undefined),
