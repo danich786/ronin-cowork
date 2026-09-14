@@ -28,8 +28,6 @@ import { capabilityTools, renderCapabilitiesOverview, resolveCapabilities, type 
 
 const WORKTREE_SOP = path.join(REPO_ROOT, 'ronin_sops', 'worktree-root.md');
 const CHECKOUT_SOP = path.join(REPO_ROOT, 'ronin_sops', 'checkout.md');
-const WORKTREE_TOOLS = ['worktree-desk'] as const;
-
 const CORE_CONTRIBUTION: ResolvedContribution = {
   name: 'cowork_agent', origin: 'stock', shadowed: false, label: 'Cowork Agent', blurb: '',
   reading: [], reading_off: [], sops: [],
@@ -96,10 +94,9 @@ export interface Resolved {
   undelivered: string[];
   contributions: ResolvedContribution[];
   installations: ResolvedInstallation[];
-  conditional_tools: string[];
   /** Every capability document, selected or not, with the reason and the tools found. */
   capabilities: ResolvedCapability[];
-  /** The selected bundles' tools that exist on this box; projected onto PATH at birth. */
+  /** Every installed Cowork tool plus enabled feature tools, projected onto PATH at birth. */
   capability_tools: string[];
   stated_by: Record<string, StatedBy[]>;
 }
@@ -411,8 +408,9 @@ export async function resolveForm(
   const resolvedBehaviours = coworkAgent && agent
     ? await resolveBehaviourBooks(cascade.selected)
     : { delivered: [], ignored: [] };
-  // CAPABILITY BUNDLES: the folder decides what exists, the facts decide what is selected,
-  // the box decides what is projected. Mika keeps her own curated toolset.
+  // CAPABILITY BUNDLES: the folder decides what exists, and facts select the knowledge.
+  // Installed Cowork tools remain universal; feature facts decide feature projection.
+  // Mika keeps her own curated toolset.
   const capabilities = coworkAgent && agent && form.house_seat !== 'mika'
     ? await resolveCapabilities({
         arrangement: managedDesk ? 'managed' : worktrees.repositories.length ? 'checkout' : 'none',
@@ -501,7 +499,6 @@ export async function resolveForm(
     undelivered: cascade.undelivered,
     contributions,
     installations,
-    conditional_tools: managedDesk ? [...WORKTREE_TOOLS] : [],
     capabilities,
     capability_tools: capabilityTools(capabilities),
     stated_by: {

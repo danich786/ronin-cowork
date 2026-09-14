@@ -13,15 +13,15 @@ import type { Origin } from './resources.js';
  * the actual tools with their authority, whether they are taught at birth, and their help
  * route, then the full teaching. Nothing here knows a bundle by name: the folder is the
  * catalog, so Ronin Host, Ronin Services, gbrain, Trello, Perplexity and any later add-on
- * are one more file each, gated by their own `requires:` line.
+ * are one more file each, selected for teaching by their own `requires:` line.
  *
  * A bundle is a document grouping, not an executable (lead ruling, 2026-09-13). It lists
  * the actual tools that answer its question — several, one, or none — and a tool may be
  * surfaced by more than one bundle without being renamed to either. A bundle with no tool
  * is teaching plus authority: still selected, still on the newborn's shelf. Selection is a
- * predicate over launch facts; projection is whichever listed tools exist on this box; the
- * birth lesson names only tools it projected, so it never advertises a command the Agent
- * cannot invoke.
+ * predicate over launch facts and controls knowledge only. Every installed Cowork tool is
+ * callable by every Cowork Agent; feature and integration tools are projected only when
+ * their document is selected. The birth lesson names only selected knowledge.
  */
 
 export type CapabilityClass = 'cowork' | 'feature' | 'integration';
@@ -78,9 +78,9 @@ export interface ResolvedCapability extends CapabilityRow {
   selected: boolean;
   /** Empty when selected; otherwise the first requirement that did not hold. */
   reason: string;
-  /** Listed executables that exist on this box and were projected. */
+  /** Listed executables that exist on this box and are available to this Agent. */
   delivered: string[];
-  /** Listed executables that do not exist on this box; never taught. */
+  /** Executables eligible for delivery but absent from this box; never taught. */
   missing: string[];
 }
 
@@ -182,6 +182,15 @@ export function selectionReason(row: Pick<CapabilityRow, 'requires'>, facts: Cap
   return '';
 }
 
+const knowledgeOnlyRequirement = (requirement: string): boolean =>
+  ['arrangement', 'campaign', 'team', 'lead'].includes(requirement.split(':', 1)[0]?.trim() ?? '');
+
+/** Feature enablement may control delivery; role and work context only control teaching. */
+export function availabilityReason(row: Pick<CapabilityRow, 'class' | 'requires'>, facts: CapabilityFacts): string {
+  if (row.class === 'cowork') return '';
+  return selectionReason({ requires: row.requires.filter((requirement) => !knowledgeOnlyRequirement(requirement)) }, facts);
+}
+
 /** Where a projected tool comes from: the owner's tools store first, then the shipped shelf. */
 export async function toolPresent(name: string): Promise<boolean> {
   if (!/^[a-z0-9][a-z0-9_.-]*$/i.test(name)) return false;
@@ -205,7 +214,9 @@ export async function resolveCapabilities(
     const reason = selectionReason(row, facts);
     const delivered: string[] = [];
     const missing: string[] = [];
-    if (!reason) {
+    // Role and work-context requirements choose teaching, never command availability.
+    // Feature and integration enablement requirements still govern their delivery.
+    if (!availabilityReason(row, facts)) {
       for (const name of [...new Set(row.tools.map((tool) => tool.name))]) (await present(name) ? delivered : missing).push(name);
     }
     out.push({ ...row, selected: !reason, reason, delivered, missing });
@@ -216,9 +227,9 @@ export async function resolveCapabilities(
 export const selectedCapabilities = (rows: readonly ResolvedCapability[]): ResolvedCapability[] =>
   rows.filter((row) => row.selected);
 
-/** The tools a birth projects onto PATH: every delivered tool of every selected bundle, once. */
+/** The tools a birth projects onto PATH: all Cowork tools and enabled feature tools, once. */
 export const capabilityTools = (rows: readonly ResolvedCapability[]): string[] =>
-  [...new Set(selectedCapabilities(rows).flatMap((row) => row.delivered))];
+  [...new Set(rows.flatMap((row) => row.delivered))];
 
 export const CAPABILITIES_READING = 'CAPABILITIES.md';
 

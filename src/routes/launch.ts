@@ -426,7 +426,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
             houseSeat === 'mika' ? MIKA_PARENT_PATH : undefined,
             houseSeat === 'mika'
               ? { includeTmux: false, extraTools: [...MIKA_TOOLS] }
-              : { extraTools: [...resolved.conditional_tools, ...resolved.capability_tools] },
+              : { extraTools: resolved.capability_tools },
           )
         : null;
       const campaignId = resolved.session_type === 'bare_metal_agent'
