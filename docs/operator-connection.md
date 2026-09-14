@@ -47,8 +47,8 @@ Resolution order, the same in both readers:
 The two readers are `src/cli-http.ts`, which every TypeScript command (`worktree-desk`,
 `edges wipeboard`, `edges send`, `edges schedule`, promotion, recovery, bundle, auth) goes
 through, and `ronin_bin/ronin-url` with its sourced sibling `ronin_bin/ronin-http.sh`, which
-the zero-dependency shell tools (`session_fork`, `session_end`, `session_check`,
-`session_create`, `session_set`,
+the zero-dependency shell tools (`session_create`, `session_end`, `session_check`,
+`session_set`,
 `team-lead roster write`, `edges page`, `mika`) go through. `ronin-url` prints one line —
 `RONIN_URL` when set, else the socket path — and `ronin_connect` turns that into the base
 `url` and the `RONIN_CURL` transport options a request is built from; a caller never knows
@@ -83,7 +83,7 @@ it; they do not source `.bashrc`, `.profile`, or another owner shell file. That 
 name is also how `work-record read`, `work-record update_record` and `edges page` learn which session they
 act for when the calling shell is not inside tmux and carries neither `TMUX_PANE` nor
 `$TMUX`; the name is accepted only when it is a live session. An Agent born with Ronin Base
-off therefore does not receive Base commands such as `work-record update_record`, `session_fork`, or
+off therefore does not receive Base commands such as `work-record update_record`, `session_create`, or
 `ronin-url`. Changing a Team or Campaign default later does not mutate a running Agent's
 birth environment; recreate that Agent to give it the newly enabled tools.
 

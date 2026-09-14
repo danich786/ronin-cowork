@@ -44,21 +44,19 @@ The exact document contract lives in `ronin_library/documents.md`.
 
 ### 3. Coordinate through shared edges
 
-**`+forkit` — give the work its own session.** Delegating inside a session is the
-provider's own business and it is good at it: a native subagent is this session's
-execution, invisible to everyone else, and it dies with the answer it hands back. Ronin
-has no opinion on when you use one. A fork is a different request, and it is the one thing
-here that no provider has natively — it opens a **Ronin session**: on the roster, its own
-tile, its own ladder, its own life, addressable by name long after this conversation ends.
-Spawning a subagent therefore does not answer a request to fork, and saying it did is the
-failure this rule exists for — nothing appeared for anyone to watch, message, or land.
+**Visible delegation — give the work its own session.** “Fork”, “fork it”, “launch”, and
+“new session” all mean `session_create`: a **Ronin session** on the roster, with its own
+tile, ladder, and life, addressable by name after this conversation ends. “Spawn” means a
+CLI-internal sub-agent, invisible to the coworkspace and ending with its answer. Neither
+form is taken on initiative; both require the owner's permission.
 
-Fork when the work has a track of its own: it will outlive this conversation; someone will
+Create a visible session when the work has a track of its own: it will outlive this conversation; someone will
 want to look in on it or send it something; it deserves its own ladder rather than a rung
-on yours; or carrying it here would pull this session off its objective. The handoff is
-written first (`write-handoff-doc`), because a fork opens by proving it understood the
-brief and then waiting, not by working. **Never fork on your own initiative** — propose
-it and wait for the go-ahead.
+on yours; or carrying it here would pull this session off its objective. After permission,
+write the handoff and pass its purpose explicitly with `session_create <name> --prompt`.
+The
+newborn receives resolved Campaign/Team context—not this conversation—reads its own birth
+packet, and leaves the caller unchanged. The command has no dial option.
 
 **`+tell` — one message to one session.** `send-to-session` carries the rules: the dial on
 the **target** governs, not yours; a refusal is an answer, never retried and never worked

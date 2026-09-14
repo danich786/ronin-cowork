@@ -32,8 +32,9 @@ still a form. **The per-root edit form stays** — changing one field of a block
 exists is a different and much cheaper act.
 
 Mika receives plain-language requests. Her authority comes from her selected tools:
-`lookup`, `owner_view`, `show`, constrained `machine-settings`, and separately granted
-`session_create`. There is no command vocabulary or hidden instruction catalog.
+`lookup`, `owner_view`, `show`, constrained `machine-settings`, and the same universal
+`session_create` under her stricter exact-proposal confirmation rule. There is no second
+command model, command vocabulary, or hidden instruction catalog.
 
 ## The one rule — propose, never write
 

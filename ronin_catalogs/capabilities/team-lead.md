@@ -9,14 +9,14 @@ Reach for this because you are the designated Team lead. Every Agent keeps its p
 work record; you additionally own the Team roster and the projects it holds.
 `ronin_sops/teams.md` is the procedure.
 
-**Live tools:** the shipped `team-lead` dispatcher owns Team records and projects; the
-session commands retain supporting-Agent creation and membership authority.
+**Live tools:** the shipped `team-lead` dispatcher owns Team records and projects.
+Universal `session_create` is the default visible-delegation path for a lead, not a tool
+owned or duplicated by this conditional bundle.
 
 ## Tools
 
 | Tool | Authority | Teach | Help |
 |---|---|---|---|
-| `session_create` | create: one supporting Agent, optionally for a roster-held project, through the ordinary launch resolver; refuses an existing name | priority | `session_create --help` |
 | `team-lead roster read` | read: one canonical Team roster | priority | `team-lead --help` |
 | `team-lead project create` | create: one roster-held project | priority | `team-lead --help` |
 | `team-lead project read` | read: one roster-held project | priority | `team-lead --help` |
@@ -40,11 +40,16 @@ not duplicate them. Read-only Team enumeration belongs to `edges team`.
 | Team project create, read, write | projects the Team holds before they are assigned; lead ideas live in the Team roster, not in a separate file or pool |
 | Assign and return | the two lead moves: assign a held project whole to one Agent; take one back from an Agent's record. A project is one canonical object and is never copied |
 | Member and project status | each member's work record and each project's two flags — `exit` (none · agent · lead · user) and `status` (green · yellow · red) — as the Team Kanban projects them at read time |
-| Supporting-Agent configuration | explicitly create through `session_create`, then inspect and configure Team, lead, or project-root state through `session_check` and `session_set` |
+| Supporting-Agent configuration | delegate visibly with universal `session_create`, then inspect and configure Team, lead, or project-root state through `session_check` and `session_set` |
 | Team broadcasts | the wipeboard for everything the whole Team must see; one-on-one goes directly to the session |
 
 The move is the approval: there is no verdict, decider, revision counter, or history on a
 project. Parking a project for a future common pool is outside this bundle.
+
+For a lead, universal `session_create` is the default way to delegate visible work. The
+guarded `--project` form assigns a roster-held project after birth, and guarded `--lead`
+may designate the newborn as a lead; those privileges come from lead authority, not from
+a duplicate command grant in this bundle.
 
 `session_create <name> --project <team/id>` composes two existing operations. Its brief
 names the project, birth happens through the ordinary resolver, and only then is the whole
