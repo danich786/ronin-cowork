@@ -79,8 +79,8 @@ function registerWorkbenchCatalog() {
   registerPresetsSurface();
   const { library, profiles } = WorkspaceKit.workbench;
   const add = (definition) => { if (!library.has(definition.type)) library.register(definition); };
-  add({ type: WB_TYPES.commons, header: 'channels', className: 'wk-selector-utility', label: () => t('team.commons_card', 'Commons'), summary: () => t('team.commons_summary', 'See Roster / Docs / Wipeboard / Kanban / Configuration'), create: ({ workspace, environment }) => environment.teamCommons(workspace) });
-  add({ type: WB_TYPES.kanban, header: 'channels', className: 'wk-selector-utility', discover: (_tenant, environment) => [environment.kanbanOffer()], create: ({ workspace, environment }) => environment.teamKanban(workspace) });
+  add({ type: WB_TYPES.commons, header: 'channels', className: 'wk-selector-utility', label: () => t('team.commons_card', 'Commons'), summary: () => t('team.commons_summary', 'See Roster / Docs / Wipeboard / Task Manager / Configuration'), create: ({ workspace, environment }) => environment.teamCommons(workspace) });
+  add({ type: WB_TYPES.kanban, header: 'channels', className: 'wk-selector-utility', discover: (_tenant, environment) => environment.kanbanOffers(), create: ({ workspace, environment }) => environment.teamKanban(workspace) });
   add({ type: WB_TYPES.desk, header: 'channels', label: () => t('cowork.commons', 'Ronin Desk'), create: ({ workspace, environment }) => environment.desk(workspace) });
   add({ type: WB_TYPES.terminal, header: 'terminal', className: 'wk-selector-entity', discover: (_tenant, environment) => environment.sessions(), create: ({ workspace, detail, environment }) => environment.terminal(workspace, detail) });
   add({ type: WB_TYPES.roster, header: 'surface', className: 'wk-selector-utility', label: () => t('league.team_roster', 'Team roster'), create: ({ workspace, environment }) => environment.roster(workspace) });
@@ -234,7 +234,7 @@ export function createCoworkView(options = {}) {
         { id: 'docs', label: t('workspace.channel_docs', 'Docs') },
         { id: 'wipeboard', label: t('workspace.channel_wipeboard', 'Wipeboard') },
         { id: 'agent-message-queue', label: messageLabel },
-        { id: 'kanban', label: t('workspace.channel_kanban', 'Kanban') },
+        { id: 'kanban', label: t('workspace.channel_task_manager', 'Task Manager') },
         { id: 'cron-jobs', label: t('workspace.channel_cron_jobs', 'Cron jobs') },
         { id: 'team-configuration', label: t('workspace.channel_team_configuration', 'Configuration') },
       ],
@@ -283,16 +283,14 @@ export function createCoworkView(options = {}) {
   const environment = {
     feedback: (workspace) => createFeedbackSurface(() => bench.place(campaign ? WB_TYPES.roster : WB_TYPES.commons, workspace)),
     teamCommons: (id) => ({ el: teamCommons[id].el, show: (detail = {}) => { const item = teamCommons[id]; if (!detail.doc && !detail.tab) item.attendQueueOnOpen(); item.channels.enter(ctx); if (detail.doc) { item.channels.select('docs'); void item.docs.open(detail.doc); } else if (detail.tab) item.channels.select(detail.tab); } }),
-    kanbanOffer: () => ({
-      label: t('workspace.channel_kanban', 'Kanban'),
-      summary: kanbanGate.available ? t('team_kanban.card_summary', 'The Team’s work, from Ideas through Done') : kanbanGate.message,
-      className: kanbanGate.available ? '' : 'wk-selector-unavailable',
-      ...(kanbanGate.available ? {} : { action: () => {} }),
-    }),
+    kanbanOffers: () => kanbanGate.available ? [{
+      label: t('workspace.channel_task_manager', 'Task Manager'),
+      summary: t('team_kanban.card_summary', 'The Team’s work, from Ideas through Done'),
+    }] : [],
     teamKanban: (id) => ({ el: teamCommons[id].el, show: () => {
       const item = teamCommons[id];
       item.channels.enter(ctx);
-      item.channels.select(kanbanGate.available ? 'kanban' : 'roster');
+      item.channels.select('kanban');
     } }),
     terminal: (id, detail) => ({ el: seats[id].surface.el, show: () => putSession(detail.key, id) }),
     roster: (id) => ({ el: teamRosterBySeat[id].el, show: () => teamRosterBySeat[id].render() }),
@@ -367,8 +365,8 @@ export function createCoworkView(options = {}) {
       : { available: false, message: String(next?.message || KANBAN_NOT_INSTALLED) };
     for (const commons of Object.values(teamCommons)) {
       commons.kanban.setAvailability(kanbanGate);
-      commons.kanbanTab.disabled = !kanbanGate.available;
-      commons.kanbanTab.title = kanbanGate.message;
+      commons.kanbanTab.disabled = false;
+      commons.kanbanTab.title = '';
     }
     bench.refreshSelector();
   };

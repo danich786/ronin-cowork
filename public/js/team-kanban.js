@@ -10,11 +10,16 @@ const COLUMNS = [
   { key: 'DONE', label: 'Done', worker: '' },
 ];
 const INDEX = Object.fromEntries(COLUMNS.map((column, index) => [column.key, index]));
-export const KANBAN_NOT_INSTALLED = 'Ronin Services is not installed';
-export const KANBAN_CAMPAIGN_OFF = 'Ronin Services is off for this Campaign';
+export const KANBAN_NOT_INSTALLED = 'Unavailable.';
+export const KANBAN_CAMPAIGN_OFF = 'Unavailable.';
 
 export function kanbanAvailability(installed) {
   const services = installed?.services || {};
+  const capabilities = services.capabilities;
+  if (capabilities?.desired && Array.isArray(capabilities.running)) {
+    const available = capabilities.desired.task_manager === true && capabilities.running.includes('task_manager');
+    return { available, message: available ? '' : KANBAN_CAMPAIGN_OFF };
+  }
   if (Array.isArray(services.loaded) && services.loaded.includes('kanban')) return { available: true, message: '' };
   const parked = Array.isArray(services.parked) && services.parked.some((part) => part?.name === 'kanban');
   return { available: false, message: parked ? KANBAN_CAMPAIGN_OFF : KANBAN_NOT_INSTALLED };
@@ -61,7 +66,7 @@ export function moveMessage(project, toStage, leadName, now = new Date()) {
   const holder = project.holder === 'lead' ? leadName : project.holder;
   const n = project.id.split('/').at(-1);
   const at = now.toISOString().slice(0, 16) + 'Z';
-  const head = `from @kanban (the Team Kanban, moved by the user at ${at}):`;
+  const head = `from @kanban (the Team Task Manager, moved by the user at ${at}):`;
   const line = `MOVE ${project.id} "${project.title}" from ${stageLabel(project.stage)} (${project.status}, exit: ${project.exit}) to ${stageLabel(toStage)}`;
   const byNote = project.exit !== 'user' && project.exit !== 'none' ? ` (exit named the ${project.exit}; the user dragged it)` : '';
   const result = (target, meaning, next) => ({ target, text: `${head}\n${line}\n  meaning: ${meaning}\n  next: ${next}` });
@@ -94,7 +99,7 @@ export function createTeamKanban(options = {}) {
   const controls = node('div', 'tk-controls');
   const refreshButton = node('button', 'tk-refresh', '↻');
   refreshButton.type = 'button';
-  refreshButton.setAttribute('aria-label', 'Refresh Team Kanban');
+  refreshButton.setAttribute('aria-label', 'Refresh Task Manager');
   const foldButton = node('button', 'tw-agent-density tk-fold');
   foldButton.type = 'button';
   const foldLines = node('span', 'tw-agent-density-lines');
@@ -126,6 +131,11 @@ export function createTeamKanban(options = {}) {
 
   const render = () => {
     board.replaceChildren();
+    topline.hidden = !availability.available;
+    if (!availability.available) {
+      board.append(node('p', 'tk-unavailable', KANBAN_NOT_INSTALLED));
+      return;
+    }
     for (const column of COLUMNS) {
       const columnProjects = projects.filter((project) => project.stage === column.key);
       const section = node('section', 'tk-column');
@@ -234,7 +244,7 @@ export function createTeamKanban(options = {}) {
       return;
     }
     const requestedTeam = team;
-    notice.textContent = t('team_kanban.loading', 'Loading Team Kanban…');
+    notice.textContent = t('team_kanban.loading', 'Loading Task Manager…');
     loading = request(`/api/teams/${encodeURIComponent(requestedTeam)}/kanban`, { cache: 'no-store' });
     const result = await loading;
     loading = null;
@@ -248,7 +258,7 @@ export function createTeamKanban(options = {}) {
       notice.textContent = availability.message;
       options.unavailable?.(availability.message);
     } else {
-      notice.textContent = t('team_kanban.failed', 'Could not load this Team Kanban.');
+      notice.textContent = t('team_kanban.failed', 'Could not load Task Manager.');
     }
     render();
   };

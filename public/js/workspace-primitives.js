@@ -160,7 +160,7 @@ function createChannelSurface(options = {}) {
     chat: t('workspace.channel_chat', 'Chat'),
     wipeboard: t('workspace.channel_wipeboard', 'Wipeboard'),
     docs: t('workspace.channel_docs', 'Docs'),
-    kanban: t('workspace.channel_kanban', 'Kanban'),
+    kanban: t('workspace.channel_task_manager', 'Task Manager'),
     'team-configuration': t('workspace.channel_team_configuration', 'Team Configuration'),
   });
   const channels = Array.isArray(options.channels) && options.channels.length

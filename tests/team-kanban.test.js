@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { definedTargets, kanbanAvailability, moveMessage, waitingOn } from '../public/js/team-kanban.js';
+import { definedTargets, kanbanAvailability, KANBAN_NOT_INSTALLED, moveMessage, waitingOn } from '../public/js/team-kanban.js';
 
 const project = (values = {}) => ({
   id: 'virtual-kanban/7', title: 'Kanban tab', objective: 'Render it.', holder: 'tab_cut',
@@ -12,19 +12,22 @@ const moduleSource = readFileSync(new URL('../public/js/team-kanban.js', import.
 const workspaceCss = readFileSync(new URL('../public/css/team-workspace.css', import.meta.url), 'utf8');
 
 test('availability comes from the installed part inventory, never a second flag', () => {
+  assert.deepEqual(kanbanAvailability({ services: { capabilities: { desired: { task_manager: true }, running: ['task_manager'] }, loaded: [] } }), { available: true, message: '' });
+  assert.deepEqual(kanbanAvailability({ services: { capabilities: { desired: { task_manager: false }, running: ['task_manager'] }, loaded: ['kanban'] } }), { available: false, message: 'Unavailable.' });
+  assert.deepEqual(kanbanAvailability({ services: { capabilities: { desired: { task_manager: true }, running: [] }, loaded: ['kanban'] } }), { available: false, message: 'Unavailable.' });
   assert.deepEqual(kanbanAvailability({ services: { loaded: ['kanban'], parked: [] } }), { available: true, message: '' });
   assert.deepEqual(kanbanAvailability({ services: { loaded: [], parked: [{ name: 'kanban', routine: 'ronin_services' }] } }), {
-    available: false, message: 'Ronin Services is off for this Campaign',
+    available: false, message: 'Unavailable.',
   });
   assert.deepEqual(kanbanAvailability({ services: { loaded: [], parked: [] } }), {
-    available: false, message: 'Ronin Services is not installed',
+    available: false, message: 'Unavailable.',
   });
 });
 
 test('a green forward drop tells the holder the defined move without moving data', () => {
   const move = moveMessage(project(), 'LANDING', 'kanban_revive', NOW);
   assert.equal(move.target, 'tab_cut');
-  assert.match(move.text, /^from @kanban \(the Team Kanban, moved by the user at 2026-09-13T13:02Z\):/);
+  assert.match(move.text, /^from @kanban \(the Team Task Manager, moved by the user at 2026-09-13T13:02Z\):/);
   assert.match(move.text, /MOVE virtual-kanban\/7 "Kanban tab" from Building \(green, exit: user\) to Landing/);
   assert.match(move.text, /meaning: show approved; hand in\./);
   assert.match(move.text, /next: worktree-desk hand-in, then work-record project write 7 --stage LANDING/);
@@ -84,4 +87,11 @@ test('card expansion and owner opening are sibling controls, never nested intera
 test('a failed move request uses house copy rather than the raw response message', () => {
   assert.match(moduleSource, /team_kanban\.send_failed', 'The move request could not be sent\.'/);
   assert.doesNotMatch(moduleSource, /notice\.textContent\s*=\s*result\.message/);
+});
+
+test('an unavailable Commons tab contains only the house state', () => {
+  assert.match(moduleSource, /topline\.hidden = !availability\.available/);
+  assert.match(workspaceCss, /\.tk-topline\[hidden\] \{ display: none; \}/);
+  assert.match(moduleSource, /if \(!availability\.available\) \{\s*board\.append\(node\('p', 'tk-unavailable', KANBAN_NOT_INSTALLED\)\);\s*return;/);
+  assert.equal(KANBAN_NOT_INSTALLED, 'Unavailable.');
 });
