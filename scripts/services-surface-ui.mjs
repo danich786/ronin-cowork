@@ -64,15 +64,31 @@ await page.evaluate(async () => {
 try {
   const switches = page.getByRole('switch');
   assert.equal(await switches.count(),6);
+  assert.equal(await page.locator('.setup-services-step').count(), 4);
+  assert.equal(await page.locator('[data-step="restart"]').isVisible(), true);
+  assert.equal(await page.locator('[data-step="restart"]').isDisabled(), true);
   for (const width of [900, 600, 390, 320]) {
-    await page.setViewportSize({width,height:1000});
+    await page.setViewportSize({width,height:1800});
+    await page.locator('main').evaluate(node => node.style.height = 'auto');
     await page.screenshot({path:`/tmp/services-surface-${width}.png`,fullPage:true});
+    await page.locator('main').evaluate(node => node.style.height = '700px');
     const overflow = await page.locator('.setup-services-benefit').evaluateAll(rows=>rows.some(row=>row.scrollWidth>row.clientWidth || [...row.querySelectorAll('h3,p')].some(n=>n.scrollWidth>n.clientWidth)));
     assert.equal(overflow,false,`rows fit at ${width}px`);
+    assert.equal(await page.locator('.setup-services-steps').evaluate(node => node.scrollWidth <= node.clientWidth), true);
+    assert.equal(await page.locator('.setup-services-feature-status').evaluateAll(nodes => nodes.every(node => node.textContent === '')), true);
+    if (width <= 390) {
+      assert.equal(await page.locator('.setup-services-benefit').evaluateAll(rows => rows.every(row => {
+        const title = row.querySelector('h3').getBoundingClientRect();
+        const caption = row.querySelector('p').getBoundingClientRect();
+        return title.left === caption.left && title.bottom <= caption.top;
+      })), true, 'narrow titles sit above their captions');
+    }
   }
   await page.setViewportSize({width:900,height:850});
+  await switches.first().focus();
   await page.evaluate(()=>{
     window.originalRows=[...document.querySelectorAll('.setup-services-benefit')];
+    window.originalRestart=document.querySelector('[data-step="restart"]');
     window.originalSwitches=[...document.querySelectorAll('[role="switch"]')];
     window.timerCalls=[];
     const timeout=window.setTimeout;
@@ -84,7 +100,7 @@ try {
   const before = calls.length;
   await switches.first().focus();
   await page.keyboard.press('Space');
-  await page.waitForFunction(()=>document.querySelector('.setup-services-notice').textContent==='saved' && document.querySelector('[data-step="restart"]'));
+  await page.waitForFunction(()=>document.querySelector('.setup-services-notice').textContent==='saved' && !document.querySelector('[data-step="restart"]').disabled);
   assert.deepEqual(calls.slice(before),['/api/campaigns/test','/api/campaigns','/api/installed']);
   assert.equal(desired.terminal_transcript,false);
   assert.equal(desired.voice_hotwords,false);
@@ -94,8 +110,9 @@ try {
   assert.equal(await page.evaluate(()=>document.querySelector('main').scrollTop===originalScroll && originalRows[0].getBoundingClientRect().top===originalTop),true);
   assert.equal(await page.evaluate(()=>timerCalls.some(ms=>ms===5000||ms===15000)),false);
   await page.keyboard.press('Space');
-  await page.waitForFunction(()=>document.querySelector('[data-step="restart"]').parentElement.hidden);
+  await page.waitForFunction(()=>document.querySelector('[data-step="restart"]').disabled);
   assert.equal(await switches.first().getAttribute('aria-checked'),'false');
+  assert.equal(await page.evaluate(() => originalRestart === document.querySelector('[data-step="restart"]')), true);
   fail = true;
   await switches.nth(3).click();
   await page.waitForFunction(()=>document.querySelector('.setup-services-notice').classList.contains('bad'));

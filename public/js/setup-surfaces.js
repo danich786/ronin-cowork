@@ -309,7 +309,7 @@ async function inlineServicesMark(host) {
   host.querySelector('svg')?.setAttribute('aria-hidden', 'true');
 }
 
-/** Ronin Services: lifecycle first, six persistent feature controls, then context. */
+/** Ronin Services: beta intro, stable lifecycle, then six persistent feature controls. */
 export function createServicesSurface(context) {
   const out = surface(t('settei.ronin_services', 'Ronin Services'));
   const body = el('div', 'setup-surface-body setup-services-compact'); out.content.append(body);
@@ -384,14 +384,14 @@ export function createServicesSurface(context) {
     const model = servicesSetupModel(registration, installed, activation);
     const startedAt = installed.ok ? installed.data?.cowork?.startedAt || '' : '';
     const intro = explain();
-    body.replaceChildren();
+    body.replaceChildren(intro);
     body.dataset.state = model.state;
     const state = el('section', 'setup-services-status');
     state.dataset.tone = model.tone;
     state.setAttribute('aria-live', 'polite');
     state.append(el('p', 'setup-services-status-line', model.status), el('p', 'setup-services-next', model.next));
 
-    // Register · Install · Switch — three controls in one shape; the first two read Done once they are, the switch toggles.
+    // Four permanent slots; Restart stays inactive until the installed facts require it.
     const steps = el('div', 'setup-services-steps');
     steps.setAttribute('aria-label', 'Ronin Services beta');
     steps.addEventListener('click', (event) => {
@@ -402,9 +402,17 @@ export function createServicesSurface(context) {
     let saving = false;
     const stepNodes = new Map();
     const paintSteps = (nextModel) => {
-      for (const item of nextModel.steps) {
+      const lifecycle = [...nextModel.steps];
+      if (!lifecycle.some((item) => item.id === 'restart')) lifecycle.push({
+        id: 'restart', caption: t('services_setup.step_restart', 'Restart'),
+        label: t('services_setup.restart', 'Restart'), act: 'restart', enabled: false,
+      });
+      for (const item of lifecycle) {
         const existing = stepNodes.get(item.id);
-        if (existing) { existing.hidden = false; continue; }
+        if (existing) {
+          existing.querySelector('button').disabled = !item.enabled || !item.act;
+          continue;
+        }
         const wrap = el('div', 'setup-services-step');
         const button = action(item.label, '', async () => {
           if (item.act === 'register') { openRegister(); return; }
@@ -424,10 +432,6 @@ export function createServicesSurface(context) {
         steps.append(wrap);
         stepNodes.set(item.id, wrap);
       }
-      if (!nextModel.steps.some((item) => item.id === 'restart')) {
-        const restart = stepNodes.get('restart');
-        if (restart) restart.hidden = true;
-      }
     };
     paintSteps(model);
     body.append(steps);
@@ -444,7 +448,7 @@ export function createServicesSurface(context) {
         control.button.disabled = !!row.off || !installed.ok;
         control.button.setAttribute('aria-disabled', String(saving || control.button.disabled));
         control.button.title = row.off || '';
-        control.status.textContent = row.off || row.word;
+        control.status.textContent = !installed.ok ? 'Services unavailable' : row.off || (['Restart', 'Parked'].includes(row.word) ? row.word : '');
       }
     };
     for (const component of SERVICE_COMPONENTS) {
@@ -503,7 +507,7 @@ export function createServicesSurface(context) {
       values.append(item);
     }
     updateControls();
-    body.append(values, notice, state, intro);
+    body.append(values, notice, state);
     body.append(el('p', 'setup-fine', 'Template Library offers ready-made Teams and Agents with their books and tools. It has no separate Services switch.'));
     body.append(el('p', 'setup-fine setup-services-gate', t('services_setup.gate', 'The Grokbot Morning Briefing preset waits for Ronin Services to be active.')));
     // A confirmation or an install in flight: look again quietly while the surface is on screen.
