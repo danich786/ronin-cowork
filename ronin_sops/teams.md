@@ -74,6 +74,14 @@ where the desk hands in, grant permission, or add an approval step.
 
 ## Running it
 
+Project work has three entrances: create in Team Inbox and assign it; accept the same
+Project back from an Agent into Inbox, Done, or Backlog; or let any Agent create the one
+canonical Project through `work-record project create` when work arrived without one.
+IDs always come from the roster issuer. `team-lead project list|read` shows Inbox, Done,
+and Backlog; `assign` moves Inbox to an Agent, `restore` moves Done or Backlog to Inbox,
+and `backlog|done` move Team-held Projects between areas. This is contextual teaching,
+not a permission layer; the tools are universally available.
+
 - **Catch up through the tape** — `edges read <member> since` — before touching any
   member; the durable record is authoritative. `edges read` only when there is no tape.
 - **Control is visible context.** Every member keeps its stored dial, and it does not

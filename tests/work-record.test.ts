@@ -30,7 +30,7 @@ function fixture(): { dir: string; env: NodeJS.ProcessEnv; letter: string } {
   ].join('\n'), { mode: 0o755 });
   writeFileSync(path.join(dir, 'curl'), [
     '#!/bin/sh',
-    "case \"$*\" in *'/api/team-rosters/team/projects/issue'*) printf '{\"ok\":true,\"id\":\"team/1\"}';; *'/api/team-rosters/team/projects/1/return'*) printf '{\"ok\":true,\"project\":{\"id\":\"team/1\"}}';; *) exit 1;; esac",
+    "case \"$*\" in *'/api/team-rosters/team/projects/issue'*) printf '{\"ok\":true,\"id\":\"team/1\"}';; *'/api/team-rosters/team/projects/1/return'*) case \"$*\" in *backlog*) a=backlog;; *done*) a=done;; *) a=inbox;; esac; printf '{\"ok\":true,\"project\":{\"id\":\"team/1\"},\"area\":\"%s\",\"focus\":\"none\"}' \"$a\";; *) exit 1;; esac",
     '',
   ].join('\n'), { mode: 0o755 });
   const env: NodeJS.ProcessEnv = { ...process.env, PATH: `${dir}:${process.env.PATH ?? ''}`, TMUX_PANE: '%1', RONIN_SESSION_DIR: path.join(dir, 'sessions') };
@@ -141,7 +141,7 @@ test('project create, read and one-field write use the existing letter tools', (
   run(f.env, [], JSON.stringify({ objective: 'session', ladder: [] }));
   run({ ...f.env, RONIN_URL: 'http://operator.test' }, ['project', 'create', '--team', 'team', '--title', 'First', '--objective', 'Ship it']);
   let p = block(f.letter).projects?.[0];
-  assert.deepEqual(p, { id: 'team/1', title: 'First', objective: 'Ship it', stage: 'PLANNING', exit: 'none', status: 'yellow', ladder: [], evidence: [], disposition: 'active' });
+  assert.deepEqual(p, { id: 'team/1', title: 'First', objective: 'Ship it', stage: 'PLANNING', exit: 'none', status: 'yellow', ladder: [], evidence: [] });
 
   run(f.env, ['project', 'write', 'team/1', '--status', 'green']);
   p = block(f.letter).projects?.[0];
@@ -158,7 +158,7 @@ test('project create, read and one-field write use the existing letter tools', (
   assert.equal((JSON.parse(read) as Record<string, unknown>).objective, 'Ship it');
 
   const returned = run({ ...f.env, RONIN_URL: 'http://operator.test' }, ['project', 'return', 'team/1']);
-  assert.match(returned, /returned whole to Team team Ideas; holder: lead; next: team-lead project read team team\/1.*Remember to update your project/);
+  assert.match(returned, /moved whole to Team team Inbox; holder: Team team; focus: none; next: team-lead project assign team team\/1 <session>.*Remember to update your project/);
 });
 
 test('project lifecycle verbs state intent explicitly and preserve unrelated fields', (t) => {
@@ -179,14 +179,6 @@ test('project lifecycle verbs state intent explicitly and preserve unrelated fie
   const p = block(f.letter).projects?.[0];
   assert.deepEqual(p?.ladder, [{ stage: 'PLANNING' }]);
   assert.deepEqual(p?.evidence, ['commit abc']);
-
-  const focused = block(f.letter);
-  writeFileSync(f.letter, `# TEGAMI — probe\n\n\`\`\`json\n${JSON.stringify({ ...focused, at: { project: 'team/1' } }, null, 2)}\n\`\`\`\n`);
-  assert.match(invoke(['backlog', 'team/1']), /disposition: backlog; holder: probe; focus: cleared.*Remember to update your project/);
-  assert.equal(block(f.letter).projects?.[0]?.disposition, 'backlog');
-  assert.equal(block(f.letter).at, undefined);
-  assert.match(invoke(['resume', 'team/1']), /returned to the active table at BUILDING; disposition: active; holder: probe/);
-  assert.equal(block(f.letter).projects?.[0]?.disposition, 'active');
 
   const before = readFileSync(f.letter, 'utf8');
   const bad = spawnSync(tool, ['project', 'ready', 'team/1', '--for', 'agent'], { encoding: 'utf8', env: f.env });

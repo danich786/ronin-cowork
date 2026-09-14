@@ -25,7 +25,7 @@ async function freshCandidate(a: RepoArrangement, line: string, sha: string): Pr
   return wt;
 }
 
-export async function handIn(repo: string, branch: string, opts: { maxRetries?: number } = {}): Promise<HandInOutcome> {
+export async function handIn(repo: string, branch: string, opts: { maxRetries?: number; projectId?: string } = {}): Promise<HandInOutcome> {
   const rec = await readDesk(repo, branch);
   if (!rec) throw new Error(`no desk recorded for ${repo}:${branch}`);
   const a = await arrangementOf(repo);
@@ -33,7 +33,7 @@ export async function handIn(repo: string, branch: string, opts: { maxRetries?: 
   const at = () => new Date().toISOString();
   const receipt = (fields: Partial<HandInReceipt> & { result: HandInResult }): HandInReceipt => ({
     id: newReceiptId(), at: at(), repo, team: rec.team, line: line.branch, session: rec.session, desk: branch,
-    source_tip: '', expected_old: '', candidate: '', line_sha: '', conflict_files: [], reason: '', ...fields,
+    source_tip: '', expected_old: '', candidate: '', line_sha: '', conflict_files: [], reason: '', project_id: opts.projectId, ...fields,
   });
 
   const st = await deskStatus(rec, a);
@@ -110,8 +110,8 @@ export async function handIn(repo: string, branch: string, opts: { maxRetries?: 
   } };
 }
 
-export async function handInAssignment(assignment: { desks: Array<{ repo: string; branch: string }> }): Promise<HandInOutcome[]> {
+export async function handInAssignment(assignment: { desks: Array<{ repo: string; branch: string }>; projectId?: string }): Promise<HandInOutcome[]> {
   const out: HandInOutcome[] = [];
-  for (const d of assignment.desks) out.push(await handIn(d.repo, d.branch));
+  for (const d of assignment.desks) out.push(await handIn(d.repo, d.branch, { projectId: assignment.projectId }));
   return out;
 }

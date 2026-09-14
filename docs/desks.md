@@ -118,6 +118,12 @@ its job is waiting is house machinery (the same footing as Koshi's marker and
 human draft or presses Enter into a dialog; when it cannot deliver, the queue retains the
 notice visibly for mechanical retry and the hand-in output says which happened.
 
+`worktree-desk hand-in <desk> --project <id>` records an explicit canonical Project ID on
+an accepted receipt. Acceptance says code was handed in, Project state is unchanged, and
+prints the exact `work-record project advance <id> --to LANDING` command. Promotion uses
+only that receipt association to prompt the holder to move the Project to Done. Neither
+acknowledgement mutates Project state; conflicts and refusals never claim success.
+
 **No lead set: the handing-in session holds the job**. The hand-in
 prints `YOU ARE THE LEAD FOR THIS ONE` with the words: review the line, promote when
 coherent (`bin/ronin-promote <team>`); a conflict is yours to resolve at your desk. A

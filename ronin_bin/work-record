@@ -24,7 +24,7 @@ Usage:
   work-record project blocked <id> --on lead|user
   work-record project advance <id> --to PLANNING|BUILDING|LANDING|DONE
   work-record project backlog <id>
-  work-record project resume <id>
+  work-record project done <id>
   work-record project return <id>
   work-record project list
 Update fields include --objective, --phase, --gate, --leg, --status, --done, --active,
@@ -53,7 +53,7 @@ case "${1:-}" in
     verb=${2:-}; shift 2 || true
     case "$verb" in
       -h|--help) usage ;;
-      create|write|working|ready|stuck|blocked|advance|backlog|resume|return) write_impl project "$verb" "$@" ;;
+      create|write|working|ready|stuck|blocked|advance|backlog|done|return) write_impl project "$verb" "$@" ;;
       read) read_impl project read "$@" ;;
       list) [ "$#" -eq 0 ] || { usage >&2; exit 2; }; list_field projects ;;
       *) usage >&2; exit 2;; esac ;;
