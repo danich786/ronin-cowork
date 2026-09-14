@@ -75,7 +75,7 @@ try {
     const overflow = await page.locator('.setup-services-benefit').evaluateAll(rows=>rows.some(row=>row.scrollWidth>row.clientWidth || [...row.querySelectorAll('h3,p')].some(n=>n.scrollWidth>n.clientWidth)));
     assert.equal(overflow,false,`rows fit at ${width}px`);
     assert.equal(await page.locator('.setup-services-steps').evaluate(node => node.scrollWidth <= node.clientWidth), true);
-    assert.equal(await page.locator('.setup-services-feature-status').count(), 0);
+    assert.equal(await page.locator('.setup-services-feature-status').evaluateAll(nodes => nodes.every(node => !node.textContent)), true);
     if (width <= 390) {
       assert.equal(await page.locator('.setup-services-benefit').evaluateAll(rows => rows.every(row => {
         const title = row.querySelector('h3').getBoundingClientRect();
@@ -126,7 +126,7 @@ try {
   master = false;
   await page.evaluate(()=>surface.show());
   assert.equal(await switches.count(),6);
-  assert.equal(await switches.evaluateAll(nodes=>nodes.every(n=>n.disabled)),true);
+  assert.equal(await switches.evaluateAll(nodes=>nodes.every(n=>n.disabled && n.title === 'Turn on Running services first')),true);
   assert.equal(await switches.nth(3).getAttribute('aria-checked'),'true');
   master = true;
   parked = [
@@ -136,8 +136,10 @@ try {
   ];
   await page.evaluate(()=>surface.show());
   assert.equal(await switches.nth(1).isDisabled(),true);
-  assert.equal(await switches.nth(1).getAttribute('title'), null);
-  assert.equal(await page.locator('.setup-services-feature-status').count(), 0);
+  assert.equal(await switches.nth(1).getAttribute('title'), 'Currently unavailable');
+  assert.deepEqual(await page.locator('.setup-services-feature-status').allTextContents(), [
+    'Currently unavailable', 'Currently unavailable', '', 'Currently unavailable', '', '',
+  ]);
   const rendered = await page.locator('.setup-services-components').evaluate(node => node.outerHTML);
   assert.doesNotMatch(rendered, /RIREKI|resource-adapters|listSessionRoles|macros\.js|\/home\/|register\.ts/);
   for (const width of [320, 390, 600, 900]) {
