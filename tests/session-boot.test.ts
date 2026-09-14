@@ -128,6 +128,8 @@ test('the real stock shelf compiles to one read: contracts first, glossary last,
     // The two rules a newborn most often breaks sit inside the first window it opens.
     const firstWindow = text.split('\n').slice(0, 250).join('\n');
     assert.match(firstWindow, /Fork versus spawn/);
+    assert.match(firstWindow, /session_create/);
+    assert.match(firstWindow, /owner requires permission before spawning/);
     assert.match(firstWindow, /ronin_sops\/worktree-root\.md/);
     // The glossary arrived rendered: markers gone, header rewritten.
     assert.doesNotMatch(text, /<!--g:/);
