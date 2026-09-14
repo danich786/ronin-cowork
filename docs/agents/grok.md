@@ -1,5 +1,8 @@
 # Grok in Ronin
 
+- **stop_keys:** C-c
+- **clear_keys:** C-c
+
 CLI id: `grok`. Catalog provider: xAI. Reviewed 2026-09-14.
 Version: **1.0.24**. Installed version checked; current upstream guide reviewed, not claimed to match every installed-version menu.
 

@@ -30,13 +30,19 @@ export async function controlBindings(): Promise<ControlBindings> {
   if (bindings.close === 'Ctrl+C') bindings.close = CONTROL_DEFAULTS.close;
   try { return validateBindings(bindings); } catch { return { ...CONTROL_DEFAULTS }; }
 }
-export function agentControlKeys(cli: string, intent: 'stop' | 'clear'): readonly string[] {
-  const keys = agentSpec(cli)?.controls[intent];
-  if (!keys?.length) throw new Error(`No ${intent} binding is registered for ${cli || 'this terminal'}. Local Clear and Copy still work.`);
+/** The Agent document owns the sequence; entries use tmux key names in send order. */
+export async function agentControlKeys(cli: string, intent: 'stop' | 'clear'): Promise<readonly string[]> {
+  if (!agentSpec(cli)) throw new Error(`No ${intent} binding is registered for ${cli || 'this terminal'}.`);
+  const doc = await readFile(new URL(`../docs/agents/${cli}.md`, import.meta.url), 'utf8');
+  const field = doc.split('\n').find((line) => line.startsWith(`- **${intent}_keys:** `));
+  const keys = field?.split('** ')[1]?.trim().split(/\s+/);
+  if (!keys?.length || keys.some((key) => !/^[A-Za-z0-9][A-Za-z0-9+-]*$/.test(key))) {
+    throw new Error(`Missing or invalid ${intent}_keys in docs/agents/${cli}.md.`);
+  }
   return keys;
 }
+
 export function registerTerminalControls(app: Express): void {
-  app.get('/api/terminal-controls/help', async (_req, res) => res.type('text/plain').send(await readFile(new URL('../docs/terminal-controls.md', import.meta.url), 'utf8')));
   app.get('/api/terminal-controls', async (_req, res) => res.json({ bindings: await controlBindings(), defaults: CONTROL_DEFAULTS }));
   app.put('/api/terminal-controls', async (req, res) => {
     let bindings: ControlBindings;
@@ -51,7 +57,7 @@ export function registerTerminalControls(app: Express): void {
     const session = (await listSessions()).find((s) => s.name === req.params.name);
     if (!session || session.key !== req.body?.key) return res.status(409).json({ error: 'This Agent session changed. Reopen its Tile.' });
     let keys: readonly string[];
-    try { keys = agentControlKeys(session.identity?.cli || session.agent, intent); }
+    try { keys = await agentControlKeys(session.identity?.cli || session.agent, intent); }
     catch (e) { return res.status(422).json({ error: (e as Error).message }); }
     try {
       await withMessageTarget(session.key, async () => {

@@ -38,7 +38,7 @@ where a session is born now. `docs/ui.md` is the written contract those modules 
 | `errors.js` | `showFailure`, `guard`, `deadTile` — the containment layer |
 | `request.js` | the ONE transport contract — every JSON call's "what happened" |
 | `ui.js` | the primitives: sheet, toast, field, status, button, tabs (docs/ui.md) |
-| `terminal-controls.js` | Copy, Clear, Close, Stop: shared interception, buttons, Hints, and shortcut settings (docs/terminal-controls.md) |
+| `terminal-controls.js` | Copy, Clear, Close, Stop: shared interception, mobile buttons, and Hints (docs/terminal-controls.md) |
 | `theme.js` | dark/light: the saved choice, `termTheme()` read off the CSS tokens, the flip |
 | `api.js` | the `/api/sessions` calls |
 | `widgets.js` | `makeDial`, `makeGauge`, `setInert`, the job menu |

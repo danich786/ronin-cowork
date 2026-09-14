@@ -15,21 +15,22 @@ button and activate it with Enter or Space.
 
 ## Change your shortcuts
 
-Open **Hints → Customize shortcuts**. Edit the three bindings, then **Save**. For example,
-change Close from `Ctrl+Shift+X` to `Ctrl+X`. That changes the browser gesture for every CLI;
-it does not change the command Ronin sends to that CLI. Reset defaults fills the original
-bindings; Save applies them. Help opens this page.
+Ask your Agent to change a shortcut. There is no customization or Help button in Hints.
 
-Use `Ctrl+X`, `Alt+Shift+X`, `Meta+Shift+X`, `Escape`, or an available function key.
-Each action needs a different shortcut. Typing keys and common reserved browser commands
-are refused. If a pad binding already takes a shortcut, remove that binding in the pad
-panel first. OS/browser shortcuts cannot always be intercepted; test your choice before
-relying on it. Buttons remain available.
+For the Agent: the single saved map is `terminalControls.bindings` in
+`machine_settings.json` under `ronin-store config`. Read `GET /api/terminal-controls`,
+then update the three bindings together through `PUT /api/terminal-controls`:
 
-The one saved record is `terminalControls.bindings` in the owner's
-`machine_settings.json` in `ronin-store config`. Edit it through this validating panel;
-no shipped JavaScript needs changing. Other tabs update immediately; other devices read
-new settings on focus. A rejected save keeps the previous bindings.
+```json
+{"bindings":{"clear":"Ctrl+Shift+Backspace","close":"Ctrl+Shift+X","stop":"Escape"}}
+```
+
+The API validates chords and rejects duplicates and reserved browser keys. Retain the
+other bindings when changing one. Avoid chords assigned in the owner's pad. Browser
+clients reread the map when they regain focus or reload. Copy is never remapped here.
+
+Provider output sequences are separate: edit `stop_keys` or `clear_keys` in the relevant
+[Agent document](agents/README.md). Ronin reads those fields for each control request.
 
 Native Copy, Cut, Paste, Select All and Undo remain browser operations in ordinary text
 fields, including the Ronin composer. Copy has no Ronin shortcut or remapping field. With terminal text selected, native
@@ -72,8 +73,8 @@ hides the Tile and keeps the Agent running.
 ## Implementation ownership
 
 - `src/terminal-controls.ts`: default bindings, validation, settings API, intent dispatch.
-- `public/js/terminal-controls.js`: shortcut interception, buttons, Hints and editor.
-- `src/agents.ts`: CLI Stop/Clear command adapters; [Agent integration index](agents/README.md).
+- `public/js/terminal-controls.js`: shortcut interception, mobile buttons and Hints.
+- `docs/agents/*.md`: authoritative CLI Stop/Clear sequences; [Agent integration index](agents/README.md).
 - `src/tmux.ts`: persisted launch identity (`sessionType`, `cli`, `provider`, `model`).
 - `public/js/session-retire.js`: the existing Close confirmation and shutdown flow.
 

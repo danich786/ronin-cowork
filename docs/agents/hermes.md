@@ -1,5 +1,8 @@
 # Hermes in Ronin
 
+- **stop_keys:** C-c
+- **clear_keys:** C-c
+
 CLI id: `hermes`. Catalog provider: Nous Research and other inference providers. Reviewed 2026-09-14.
 Version: **not installed**. Documentation only; installed behavior is not certified.
 

@@ -15,7 +15,7 @@ Ronin sends the native key once; the CLI's current state determines its effect.
 Windows/Linux. Copy sends nothing to the Agent. Escape dismisses an open Ronin dialog
 first; Clear empties a focused Ronin text box locally.
 
-These are the default mappings as of 2026-09-14. [Shortcut settings and Hints](terminal-controls.md)
+These are the default mappings as of 2026-09-14. [Controls reference](terminal-controls.md)
 explain customization. [Agent integration pages](agents/README.md) record upstream sources;
 these mappings use documented native behavior, not a claim of live testing of every CLI.
 

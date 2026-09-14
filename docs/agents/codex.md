@@ -1,5 +1,8 @@
 # Codex in Ronin
 
+- **stop_keys:** Escape
+- **clear_keys:** C-c
+
 CLI id: `codex`. Catalog provider: OpenAI. Reviewed 2026-09-14.
 Version: **0.153.4**. Installed version and tagged upstream input source reviewed; no live turn interrupted.
 

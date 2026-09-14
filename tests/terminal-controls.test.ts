@@ -28,7 +28,6 @@ test('a remapped control has one persisted definition; invalid saves do not repl
     assert.deepEqual((await (await fetch(url)).json()).bindings, bindings);
     const stored = JSON.parse(await fs.readFile(path.join(temp, 'config/machine_settings.json'), 'utf8'));
     assert.deepEqual(stored.terminalControls.bindings, bindings);
-    assert.match(await (await fetch(url + '/help')).text(), /# Terminal controls/);
     stored.terminalControls.bindings.copy = 'Ctrl+Shift+C';
     await fs.writeFile(path.join(temp, 'config/machine_settings.json'), JSON.stringify(stored));
     assert.deepEqual((await (await fetch(url)).json()).bindings, bindings);
@@ -45,16 +44,16 @@ test('bad, duplicate, browser and typing chords are rejected', () => {
   assert.deepEqual(validateBindings(CONTROL_DEFAULTS), CONTROL_DEFAULTS);
 });
 
-test('Clear sends the owner-selected native adapter without classifying CLI state', () => {
-  assert.deepEqual(agentControlKeys('codex', 'clear'), ['C-c']);
-  assert.deepEqual(agentControlKeys('claude', 'clear'), ['Escape']);
+test('Clear reads the Agent document without classifying CLI state', async () => {
+  assert.deepEqual(await agentControlKeys('codex', 'clear'), ['C-c']);
+  assert.deepEqual(await agentControlKeys('claude', 'clear'), ['Escape']);
   for (const cli of ['gemini', 'grok', 'hermes']) {
-    assert.deepEqual(agentControlKeys(cli, 'clear'), ['C-c']);
+    assert.deepEqual(await agentControlKeys(cli, 'clear'), ['C-c']);
   }
-  assert.deepEqual(agentControlKeys('codex', 'stop'), ['Escape']);
-  assert.deepEqual(agentControlKeys('grok', 'stop'), ['C-c']);
-  assert.throws(() => agentControlKeys('bash', 'stop'), /No stop binding/);
-  assert.throws(() => agentControlKeys('', 'clear'), /No clear binding/);
+  assert.deepEqual(await agentControlKeys('codex', 'stop'), ['Escape']);
+  assert.deepEqual(await agentControlKeys('grok', 'stop'), ['C-c']);
+  await assert.rejects(() => agentControlKeys('bash', 'stop'), /No stop binding/);
+  await assert.rejects(() => agentControlKeys('', 'clear'), /No clear binding/);
 });
 
 test('session identity distinguishes CLI from inference provider and model', () => {

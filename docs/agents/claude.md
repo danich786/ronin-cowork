@@ -1,5 +1,8 @@
 # Claude Code in Ronin
 
+- **stop_keys:** Escape
+- **clear_keys:** Escape
+
 CLI id: `claude`. Catalog provider: Anthropic. Reviewed 2026-09-14.
 Version: **2.1.270**. Installed version checked; provider input documentation reviewed.
 

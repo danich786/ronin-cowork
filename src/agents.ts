@@ -26,7 +26,6 @@ export interface AgentOperations {
 export const AGENTS = [
   {
     id: 'claude',
-    controls: { stop: ['Escape'], clear: ['Escape'] },
     cmd: 'claude',
     label: 'Claude Code',
     operations: {
@@ -44,7 +43,6 @@ export const AGENTS = [
   },
   {
     id: 'codex',
-    controls: { stop: ['Escape'], clear: ['C-c'] },
     cmd: 'codex',
     label: 'Codex',
     operations: {
@@ -62,7 +60,6 @@ export const AGENTS = [
   },
   {
     id: 'gemini',
-    controls: { stop: ['C-c'], clear: ['C-c'] },
     cmd: 'gemini',
     label: 'Gemini CLI',
     operations: {
@@ -79,10 +76,9 @@ export const AGENTS = [
     screen: { busy: [], asking: ['●\\s*\\d+\\.\\s'], ready: [] },
   },
   // [cli] auto_update defaults true: https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/05-configuration.md
-  { id: 'grok', controls: { stop: ['C-c'], clear: ['C-c'] }, cmd: 'grok', label: 'Grok CLI', operations: { install: 'npm install -g @xai-official/grok', update: { shell: 'npm install -g @xai-official/grok@latest', argv: [] }, selfUpdates: true, version: ['--version'], session: { newIdFlag: '', resume: [], discovery: 'unsupported' } } as AgentOperations, parked: '', credentials: ['.grok/auth.json'], initial: 'positional' as InitialPrompt, screen: { busy: [], asking: [], ready: [] } },
+  { id: 'grok', cmd: 'grok', label: 'Grok CLI', operations: { install: 'npm install -g @xai-official/grok', update: { shell: 'npm install -g @xai-official/grok@latest', argv: [] }, selfUpdates: true, version: ['--version'], session: { newIdFlag: '', resume: [], discovery: 'unsupported' } } as AgentOperations, parked: '', credentials: ['.grok/auth.json'], initial: 'positional' as InitialPrompt, screen: { busy: [], asking: [], ready: [] } },
   {
     id: 'hermes',
-    controls: { stop: ['C-c'], clear: ['C-c'] },
     cmd: 'hermes',
     label: 'Hermes',
     operations: {

@@ -126,13 +126,15 @@ try {
       assert.match(await page.locator('.terminal-copy-text').inputValue(),/COPY SNAPSHOT CONTENT/);
       await page.locator('.ui-sheet.open button').filter({hasText:'Done'}).click();
       }
-      await page.getByRole('button',{name:'Customize shortcuts'}).click();
-      assert.equal(await page.getByRole('textbox',{name:'Copy shortcut',exact:true}).count(),0);
-      await page.getByRole('textbox',{name:'Close shortcut',exact:true}).fill('Ctrl+X');
-      await page.getByRole('button',{name:'Save',exact:true}).click();
-      await page.getByText('Saved for every Agent.',{exact:false}).waitFor();
+      assert.equal(await page.locator('.terminal-hints button, .terminal-hints a').count(),0);
+      await page.evaluate(async()=>{
+        const {loadTerminalControls}=await import('/js/terminal-controls.js');
+        const result=await (await fetch('/api/terminal-controls')).json();
+        result.bindings.close='Ctrl+X';
+        await fetch('/api/terminal-controls',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({bindings:result.bindings})});
+        await loadTerminalControls();
+      });
       assert.equal(await page.locator('[data-control-key="close"]').textContent(),'Ctrl+X');
-      await page.getByRole('button',{name:'Done',exact:true}).click();
       await page.locator('.terminal-hints').screenshot({path:`/tmp/hints-polish-${profile}.png`});
       assert.deepEqual(errors,[]);
       console.log(`${profile}: controls, draft, Copy snapshot, Hints pinning and remapping passed`);
