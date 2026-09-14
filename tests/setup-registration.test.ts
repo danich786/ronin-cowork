@@ -143,6 +143,8 @@ test('Register presents one open profile flow with card choices and anonymous de
   assert.doesNotMatch(source, /glyph: '·'/, 'unruled Register answers are rectangles without placeholder glyphs');
   assert.match(source, /reasons\.other\.value/);
   assert.match(source, /kind_other: kindOther\.value/);
+  assert.doesNotMatch(source, /kind\.wrap\.append\(kindOther\)/, 'the conditional input stays outside ERABI repaint ownership');
+  assert.match(source, /preferredFeature\.wrap, reasons\.wrap, kind\.wrap, kindOther,/);
   assert.doesNotMatch(source, /Who is using Ronin\?|\['individual', 'Just me'\]|\['team', 'A team'\]|\['builder', 'Builder'\]|\['exploring', 'Exploring'\]/);
   assert.match(source, /Welcome to Ronin/);
   assert.match(source, /setup-register-group/);

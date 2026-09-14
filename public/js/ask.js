@@ -127,7 +127,7 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     }
     onChange?.(snapshot(), key);
   };
-  const choose = (field, row) => {
+  const choose = (field, row, source = null) => {
     if (field.many) {
       const cur = state[field.key];
       state[field.key] = cur.includes(row.v) ? cur.filter((v) => v !== row.v) : [...cur, row.v];
@@ -138,8 +138,9 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
       if (!reveals && !exposed) open = '';
     }
     changed(field.key);
+    const restoreOptionFocus = !document.activeElement || document.activeElement === source;
     paint();
-    if (exposed) optionNodes.find((entry) => entry.field === field && String(entry.row.v) === String(row.v))?.node.focus();
+    if (exposed && restoreOptionFocus) optionNodes.find((entry) => entry.field === field && String(entry.row.v) === String(row.v))?.node.focus();
   };
 
   let optionNodes = [];
@@ -159,7 +160,7 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     if (field.shape === 'rect' && row.word) opt.append(el('small', 'ask-word', row.word));
     opt.addEventListener('mouseenter', () => say(row));
     opt.addEventListener('focus', () => say(row));
-    opt.addEventListener('click', () => { if (row.off) { say(row); return; } choose(field, row); });
+    opt.addEventListener('click', () => { if (row.off) { say(row); return; } choose(field, row, opt); });
     optionNodes.push({ field, row, node: opt });
     return opt;
   };

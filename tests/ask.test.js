@@ -27,6 +27,7 @@ globalThis.document = {
   createDocumentFragment: () => new FakeFragment(),
   querySelector: () => null,
   head: { append() {} },
+  activeElement: null,
 };
 
 const { ask, snake } = await import('../public/js/ask.js');
@@ -103,6 +104,18 @@ test('exposed mode draws option stones directly and preserves selection and keyb
   const selected = optNamed(form, 'Anonymous');
   form.el.fire('keydown', { key: 'Escape' });
   assert.equal(optNamed(form, 'Anonymous'), selected, 'Escape cannot collapse or replace an always-exposed selector');
+});
+
+test('an exposed choice does not steal focus from a conditional field revealed by its consumer', () => {
+  const conditional = new FakeNode('input');
+  const form = ask([{ group: 'Kind', fields: [{ key: 'kind', label: 'Kind', options: [
+    { v: 'software', l: 'Build software' }, { v: 'other', l: 'Something else' },
+  ] }] }], { exposed: true, onChange: (value) => { if (value.kind === 'other') { conditional.focus(); document.activeElement = conditional; } } });
+  const other = optNamed(form, 'Something else');
+  document.activeElement = other;
+  other.click();
+  assert.equal(document.activeElement, conditional);
+  assert.equal(optNamed(form, 'Something else').attributes['aria-selected'], 'true');
 });
 
 test('a dependent field clears and re-asks its options when its parent changes', () => {

@@ -115,7 +115,6 @@ function createRegisterSurface(context) {
     ['research_writing', 'Research and writing'], ['other', 'Something else'],
   ], { short: t('setup_surface.kind_short', 'You use Ronin for') });
   const kindOther = input('kind_other'); kindOther.className = 'setup-register-other'; kindOther.placeholder = t('setup_surface.something_else_prompt', 'Tell us'); kindOther.hidden = true;
-  kind.wrap.append(kindOther);
   kind.onChange(() => {
     kindOther.hidden = kind.value.value !== 'other'; if (!kindOther.hidden) kindOther.focus();
   });
@@ -156,7 +155,7 @@ function createRegisterSurface(context) {
   const ownField = field(t('setup_surface.own_words', 'Anything else'), own);
   ownField.classList.add('setup-register-full');
   fit.append(
-    el('h3', '', t('setup_surface.ronin_fit', 'What brings you here')), preferredFeature.wrap, reasons.wrap, kind.wrap,
+    el('h3', '', t('setup_surface.ronin_fit', 'What brings you here')), preferredFeature.wrap, reasons.wrap, kind.wrap, kindOther,
     ownField,
   );
   const consent = el('p', 'setup-fine setup-register-consent', t('setup_surface.consent_exact', 'Email registration sends a confirmation and can unlock Ronin Services. Anonymous registration sends these answers without contact details. Communication stays off unless you choose otherwise.'));
