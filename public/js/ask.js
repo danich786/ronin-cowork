@@ -175,6 +175,12 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     return b;
   };
 
+  // A switch has no tray to redraw. Keep its node and keyboard focus on changes.
+  const refreshSwitch = (button, field) => {
+    button.setAttribute('aria-checked', String(Boolean(state[field.key])));
+    button.querySelector('.ask-reading').replaceWith(reading(field));
+  };
+
   const stone = (field) => {
     const button = el('button', 'ask-stone');
     button.type = 'button';
@@ -187,7 +193,12 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
       const words = el('span', 'ask-words');
       words.append(el('small', 'ask-label', field.label), reading(field));
       button.append(words, el('span', 'ask-track'));
-      button.addEventListener('click', () => { state[field.key] = !state[field.key]; changed(field.key); paint(); });
+      button.addEventListener('click', () => {
+        state[field.key] = !state[field.key];
+        changed(field.key);
+        if (fields.length === 1) refreshSwitch(button, field);
+        else paint();
+      });
       return button;
     }
     button.setAttribute('aria-expanded', String(open === field.key));
@@ -386,7 +397,12 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     set(key, v) {
       const patch = key && typeof key === 'object' ? key : { [key]: v };
       for (const [name, next] of Object.entries(patch)) { const field = byKey(name); if (field) state[name] = field.switch ? Boolean(next) : field.many ? [...(next || [])] : (next ?? ''); }
-      paint();
+      if (fields.length === 1 && Object.keys(patch).every((name) => byKey(name)?.switch)) {
+        for (const button of root.querySelectorAll('.ask-switch')) {
+          const field = byKey(button.dataset.askKey);
+          if (Object.hasOwn(patch, field.key)) refreshSwitch(button, field);
+        }
+      } else paint();
     },
     show(keys) { shown = Array.isArray(keys) ? new Set(keys) : null; paint(); },
     options(key, rows) { const field = byKey(key); if (!field) return; field.options = rows; paint(); },

@@ -8,7 +8,7 @@ const launch = await readFile(new URL('../src/routes/launch.ts', import.meta.url
 const parts = await readFile(new URL('../src/parts.ts', import.meta.url), 'utf8');
 const { serviceCapabilityWord } = await import('../public/js/services-setup-state.js');
 
-test('the ask many-field owns all six owner-facing capabilities and exact captions', () => {
+test('Services owns all six owner-facing capabilities and exact captions', () => {
   for (const [id, label, caption] of [
     ['task_manager', 'Task manager', 'Adds a shared project board and quick summaries of active work.'],
     ['terminal_transcript', 'Terminal transcript', 'Records terminal activity for transcript views and downstream summaries.'],
@@ -20,7 +20,7 @@ test('the ask many-field owns all six owner-facing capabilities and exact captio
     assert.match(setup, new RegExp(`id: '${id}', label: '${label.replace('&', '\\&')}'.*needs: '${caption.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}'`));
   }
   assert.match(setup, /ask\(\[\{ group:/);
-  assert.match(setup, /many: true/);
+  assert.match(setup, /switch: \['On', 'Off'\]/);
   assert.match(setup, /Turn on Running services first/);
   assert.doesNotMatch(setup, /michi|kanban|rireki|koe|counting|koshi|koshi_weights/);
   assert.match(parts, /task_manager: \['michi', 'kanban'\]/);
@@ -43,4 +43,11 @@ test('either partial Task manager runtime direction says Restart without exposin
 test('new Agent transcript recording follows both the master and explicit capability choice', () => {
   assert.match(launch, /config\.services\.parts\.terminal_transcript === true/);
   assert.match(launch, /contribution\.enabled\) && transcriptOn/);
+});
+
+test('restart disagreement alone does not schedule surface polling', async () => {
+  const { servicesSetupModel } = await import('../public/js/services-setup-state.js');
+  const model = servicesSetupModel({ ok: true, data: { services_entitled: true } }, { ok: true, data: { services: { installed: true, switched_on: true, restart_needed: true } } });
+  assert.equal(model.polling, false);
+  assert.equal(model.steps.at(-1).act, 'restart');
 });
