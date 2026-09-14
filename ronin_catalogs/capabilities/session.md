@@ -30,15 +30,14 @@ explicit prompt, while the ordinary resolver selects Campaign and Team launch co
 There is no dial option; creation does not change the caller, and the newborn reads its
 own resolved birth packet and prompt.
 
-Every documented `session_create` option is available through this universal tool. A
-conditional capability may teach a role-specific use, but it does not authorize, expose,
-or withhold the command or any option.
+Every documented `session_create` form is universal. Capability selection changes only
+which workflow knowledge is taught.
 
 ## Lifecycle boundaries
 
-- **Create** is the common visible-delegation path: after owner permission, write or link
-  the handoff and give its exact purpose as `--prompt`. The canonical launch resolver
-  supplies only Campaign/Team context and reports `BORN` or `REFUSED`.
+- **Create** is the common visible-delegation path. Its `--prompt` gives the newborn's
+  exact purpose; the canonical launch resolver supplies only Campaign/Team context and
+  reports `BORN` or `REFUSED`.
 - **End** runs the custody preflight and ends this Agent only after every assigned desk is
   safe; nothing is discarded. **Archive** is distinct: it keeps the session resumable and
   leaves desk custody unchanged; **restore** brings one back.

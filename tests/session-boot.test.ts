@@ -130,7 +130,7 @@ test('the real stock shelf compiles to one read: contracts first, glossary last,
     assert.match(firstWindow, /Fork versus spawn/);
     assert.match(firstWindow, /session_create/);
     assert.doesNotMatch(firstWindow, /session_fork/);
-    assert.match(firstWindow, /Both forms require the owner's permission/);
+    assert.match(firstWindow, /owner requires permission before spawning/);
     assert.match(firstWindow, /ronin_sops\/worktree-root\.md/);
     // The glossary arrived rendered: markers gone, header rewritten.
     assert.doesNotMatch(text, /<!--g:/);
