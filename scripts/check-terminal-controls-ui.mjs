@@ -32,6 +32,7 @@ const el = document.querySelector('#target');
 const tile = { el, body: el.querySelector('.body'), session: 'fixture', sessionKey: 'birth', retirementId: 'fixture', pending: '', renderPending(){}, kill(){retireSession(this.session,this.retirementId,()=>{})}, controlAction(a,t){return runTerminalAction(this,a,t)} };
 tile.term = new TermView(tile.body,{onUserData:d=>raw.push(d),onProtocolData(){},onResize(){},onSelection:s=>tile.lastSelection=s});
 installTileControls(tile);
+tile.term.wireCopyHint({isLocked:()=>true,overHome:()=>false});
 tile.composer = buildComposer(tile.body,{activate(){},clearOverlays(){},connected:()=>true,send:d=>raw.push(d),sendMessage:async()=>({ok:true}),scrollToBottom(){}});
 Object.defineProperty(tile,'composerTa',{get:()=>tile.composer.ta});
 tile.composer.show(true);
@@ -82,6 +83,14 @@ try {
         assert.equal(await page.locator('.ui-sheet.open').count(),0);
         assert.deepEqual(await page.evaluate(()=>raw),[]);
         await page.evaluate(()=>{tile.term.term.clearSelection();tile.lastSelection=''});
+      }
+      if (!mobile) {
+        await page.locator('.terminal-hints summary').click();
+        await page.locator('.xterm-screen').evaluate(el=>el.dispatchEvent(new MouseEvent('mousedown',{bubbles:true,button:0,clientX:5,clientY:5})));
+        await page.evaluate(()=>window.dispatchEvent(new MouseEvent('mouseup',{clientX:40,clientY:40})));
+        assert.equal(await page.locator('.terminal-hints').getAttribute('open'),'');
+        assert.equal(await page.locator('.terminal-hints').evaluate(el=>el.getAnimations().some(a=>a.id==='selection-hint')),true);
+        assert.equal(await page.locator('.copyhint').count(),0);
       }
       await page.locator('.composer textarea').fill('unfinished\nsecond line');
       await page.locator('.terminal-actions button').filter({hasText:/^Clear$/}).click();

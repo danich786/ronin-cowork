@@ -160,6 +160,18 @@ async function copyTerminal(tile) {
   const done = document.createElement('button'); done.type = 'button'; done.textContent = 'Done'; done.onclick = () => dlg.close();
   dlg.card.append(note, text, copy, done); dlg.open();
 }
+export function flashControlHints() {
+  for (const card of document.querySelectorAll('.terminal-hints')) {
+    if (!card.getClientRects().length) continue;
+    card.open = true;
+    for (const animation of card.getAnimations()) if (animation.id === 'selection-hint') animation.cancel();
+    const orange = { outline: '2px solid var(--kaki)', boxShadow: '0 0 0 4px var(--kaki)' };
+    const quiet = { outline: '2px solid transparent', boxShadow: '0 0 0 0 transparent' };
+    const frames = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ? [orange, orange] : [orange, quiet, orange, quiet];
+    card.animate(frames, { duration: 2500, easing: 'ease-out', id: 'selection-hint' });
+  }
+}
 export function buildControlHints(getTile = () => S.active) {
   initialize();
   const card = document.createElement('details');
