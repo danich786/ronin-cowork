@@ -33,7 +33,7 @@ const WORKTREE_TOOLS = ['worktree-desk'] as const;
 const CORE_CONTRIBUTION: ResolvedContribution = {
   name: 'cowork_agent', origin: 'stock', shadowed: false, label: 'Cowork Agent', blurb: '',
   reading: [], reading_off: [], sops: [],
-  tools: ['edges', 'session_end', 'session_archive', 'session_restore', 'session_fork', 'session_check', 'session_set', 'work-record', 'ronin-url'],
+  tools: ['edges', 'session_create', 'session_end', 'session_archive', 'session_restore', 'session_check', 'session_set', 'work-record', 'ronin-url'],
   mcp: [], parts: [], enabled: true, stated_by: 'conditional', required_by: [],
 };
 
@@ -50,7 +50,6 @@ export interface SpawnForm {
   behaviours?: string[]; template?: string; // preset is validated provenance only, never reapplied
   prompt?: string;
   name?: string;
-  dial?: Dial;
   project_root?: string;
   cmd?: string;
   launch_mode?: LaunchMode;
@@ -461,7 +460,7 @@ export async function resolveForm(
       .filter(Boolean)
       .filter((t, i, a) => a.indexOf(t) === i)
       .slice(0, 16),
-    dial: form.dial ?? (parentSeed?.seeds.dial.value as Dial | undefined) ?? profile.dial,
+    dial: agent ? 'read' : profile.dial,
     mandate: resolvedMandate,
     team: form.team ?? '',
     project_root: root.name,
@@ -518,7 +517,7 @@ export async function resolveForm(
         : system),
       team: form.team ? explicit : system,
       project_root: rootSource,
-      dial: form.dial !== undefined ? explicit : parentSeed?.seeds.dial.stated_by ?? profile.stated_by.dial,
+      dial: system,
       brief: unique(preset.brief ? preset.source! : explicit,
         profile.stated_by.opening, roster ? rosterSource : [], rootSource),
       agent: profile.stated_by.agent,
