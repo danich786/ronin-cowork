@@ -23,7 +23,7 @@ Update fields include --objective, --phase, --gate, --leg, --status, --done, --a
 --drop, --repo, --unrepo, --on_tangent, and --on_track. A whole JSON record is accepted
 on stdin. Lead positioning is a separate form: update_record --session <name> --at N[.M].
 Document add replaces --doc; document remove replaces --undoc.
-Related: session_fork --help; team-lead --help
+Related: session_create --help; team-lead --help
 EOF
 }
 read_impl() { exec bash "$ROOT/libexec/work-record-read" "$@"; }

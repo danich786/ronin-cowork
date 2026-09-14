@@ -4,7 +4,7 @@
 visible Ronin Agent through `session_create`; give the newborn's purpose explicitly with
 `--prompt`. It receives resolved Campaign/Team context, not this conversation. There is no
 dial option: the caller is unchanged and the newborn reads its own birth packet. “Spawn”
-means a CLI-internal sub-agent instead. Both forms require the owner's permission.
+means a CLI-internal sub-agent instead, and the owner requires permission before spawning.
 
 **Repository arrangement.** Every Workspace Folder is either a **worktree root** or a
 **checkout**, as declared by that repository. Before your first write in a folder, read

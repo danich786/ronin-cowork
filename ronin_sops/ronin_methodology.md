@@ -47,14 +47,10 @@ The exact document contract lives in `ronin_library/documents.md`.
 **Visible delegation — give the work its own session.** “Fork”, “fork it”, “launch”, and
 “new session” all mean `session_create`: a **Ronin session** on the roster, with its own
 tile, ladder, and life, addressable by name after this conversation ends. “Spawn” means a
-CLI-internal sub-agent, invisible to the coworkspace and ending with its answer. Neither
-form is taken on initiative; both require the owner's permission.
+CLI-internal sub-agent, invisible to the coworkspace and ending with its answer; the owner
+requires permission before spawning.
 
-Create a visible session when the work has a track of its own: it will outlive this conversation; someone will
-want to look in on it or send it something; it deserves its own ladder rather than a rung
-on yours; or carrying it here would pull this session off its objective. After permission,
-write the handoff and pass its purpose explicitly with `session_create <name> --prompt`.
-The
+`session_create <name> --prompt` carries the visible session's explicit purpose. The
 newborn receives resolved Campaign/Team context—not this conversation—reads its own birth
 packet, and leaves the caller unchanged. The command has no dial option.
 

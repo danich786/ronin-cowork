@@ -47,9 +47,8 @@ The move is the approval: there is no verdict, decider, revision counter, or his
 project. Parking a project for a future common pool is outside this bundle.
 
 For a lead, universal `session_create` is the default way to delegate visible work. This
-conditional page teaches that use; it does not grant the command or any option. Project
-custody remains Team Project behavior: create the newborn with its explicit prompt, then
-move a roster-held project with `team-lead project assign`.
+conditional page adds lead-workflow knowledge. Project custody remains Team Project
+behavior: `team-lead project assign` moves a roster-held project to the newborn.
 
 Promotion is the lead's: hand-ins reach the Team line, and the lead moves the coherent Team
 line to `dev` once, on the owner's word. Never promote mid-refactor.
