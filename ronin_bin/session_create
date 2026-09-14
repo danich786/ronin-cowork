@@ -37,7 +37,7 @@ dynamic_help() {
 session_create — create one new Agent
 
 Usage:
-  session_create <name> [--prompt <text>] [--team <team>] [--project <id>] [--lead]
+  session_create <name> [--prompt <text>] [--team <team>]
                         [--root <path>] [--provider <provider>] [--model <model>]
                         [--behaviour ways:<book>]…
                         [--mode manual|assisted] [--cmd <cli>]
@@ -45,9 +45,6 @@ Usage:
 
 Creation is always explicit. An existing name is refused rather than read or updated.
 With no --team, the new Agent joins the caller's first Team when there is one.
---project raises the Agent for one roster-held project: the brief names the project,
-then the whole project moves into the newborn's work record. A failed move is reported
-as a partial result; it never claims the project was installed.
 Choose a current pair in one call: session_create <name> --provider <provider> --model <model>.
 The choices, availability, and defaults below are read now from the same canonical
 Campaign/provider sources as Ronin's model dropdowns; this tool keeps no model list.
