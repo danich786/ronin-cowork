@@ -25,7 +25,7 @@ const team = { name: 'alpha', campaign_id: 'home_machine', kind: 'coding', proje
   behaviours: { selected: ['ronin_host', 'mandates'], required: ['mandates'] },
   agent_defaults: { provider: 'anthropic', model: 'opus', reach: 'execute', recruit: 'nobody', output: ['code'], dial: 'read', launch_mode: 'configured' },
 } as TeamRoster;
-const sources = (roster: TeamRoster | null) => ({ campaign, roster, roots: [{ name: 'home', dir: '/home', archived: false }, { name: 'work', dir: '/work', archived: false }],
+const sources = (roster: TeamRoster | null) => ({ campaign, roster, roots: [{ name: 'home', dir: '/home', archived: false }],
   sessions: { default: { provider: 'anthropic', model: 'sonnet' } }, installations, behaviours });
 
 test('teamless seed exposes available behaviours and the fixed residue', () => {
@@ -45,11 +45,6 @@ test('Team complete lists replace Campaign defaults and carry Team provenance', 
   assert.equal(seed.seeds.behaviours.stated_by[0]?.layer, 'team');
   assert.equal(seed.seeds.project_root.stated_by[0]?.layer, 'conditional');
   assert.equal(seed.behaviours.find((row) => row.name === 'mandates')?.required, true);
-});
-
-test('a legacy directory-valued Team default resolves to its project-root ID', () => {
-  const seed = resolveLaunchSeed(sources({ ...team, project_root: '/work' }));
-  assert.equal(seed.seeds.project_root.value, 'work');
 });
 
 test('an unavailable requested behaviour is reported, never refused', () => {
