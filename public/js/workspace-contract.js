@@ -11,6 +11,8 @@ const text = (value) => typeof value === 'string' ? value : '';
 // workspace whose owning view may seed a default on first entry.
 export const DISMISSED_WORKSPACE = '@empty';
 export const workspaceMaySeedDefault = (remembered) => remembered !== DISMISSED_WORKSPACE;
+export const rememberedWorkspaceSeat = ({ surface = '', session = '', remembered, dismissed = false } = {}) =>
+  surface || session || (dismissed ? DISMISSED_WORKSPACE : remembered);
 
 export function workspaceTarget(view, param = '') {
   if (!destinationSet.has(view)) throw new Error(`Unknown workspace destination: ${view}`);

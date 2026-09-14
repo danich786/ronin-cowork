@@ -104,7 +104,7 @@ export function createCoworkView(options = {}) {
   const coworkIdentity = coworkWorkbenchIdentity(t('campaign.coworks', 'Teams'));
   const { createSurface, createChannelSurface, createAction } = WorkspaceKit.primitives;
   const { createTerminalTileHost } = WorkspaceKit.adapters;
-  const { DISMISSED_WORKSPACE, teamWorkspaceState, workspaceMaySeedDefault } = WorkspaceKit.contract;
+  const { DISMISSED_WORKSPACE, rememberedWorkspaceSeat, teamWorkspaceState, workspaceMaySeedDefault } = WorkspaceKit.contract;
   const root = el('main', 'tw-view');
   root.dataset.coworkKind = campaign ? coworkIdentity.kind : 'team';
   let ctx = null;
@@ -342,7 +342,11 @@ export function createCoworkView(options = {}) {
     actions: [densityToggle.el, rosterNote, mikaHelp], shapeControl: shapeBtn, deferSelector: true,
     installDrop: (cell, id) => acceptSessionDrops(cell, () => id, (name, at) => arrange({ [at]: { session: name } })),
     onSelect: markSelected,
-    onStateChange: () => remember(), onPlacement: () => remember(),
+    onStateChange: () => remember(), onPlacement: (snapshot) => {
+      const dismissed = Object.keys(seats).filter((id) => !snapshot?.seats?.[id]
+        && WorkspaceKit.workbench.library.has(surfaceRequest(remembered[id]).type));
+      remember(dismissed);
+    },
   });
   installBehaviourReader(bench, WB_TYPES.document);
   rosterTitle = bench.selectorHeader?.title ?? null;
@@ -400,10 +404,15 @@ export function createCoworkView(options = {}) {
    *  keeps its tiles while it is out. One trade for every surface, present and future. */
   const putSurface = (token, id, tab = '', doc = '') => { const request = surfaceRequest(token); return bench?.place(request.type, id, { ...request.detail, tab, doc }) || false; };
   const isShown = (name) => Object.values(seats).some((seat) => seat.pool.active === name && !surfaceIn(seat.id));
-  const remember = () => {
+  const remember = (dismissed = []) => {
     const snapshot = bench?.snapshot();
     const seatState = Object.fromEntries(Object.keys(seats).map((id) => [id,
-      surfaceIn(id) ? snapshot?.seats?.[id] : seats[id].pool.active || DISMISSED_WORKSPACE]));
+      rememberedWorkspaceSeat({
+        surface: surfaceIn(id) ? snapshot?.seats?.[id] : '',
+        session: seats[id].pool.active,
+        remembered: remembered[id],
+        dismissed: dismissed.includes(id),
+      })]).filter(([, value]) => value));
     remembered = { ...seatState };
     ctx?.patchViewState(viewKey, { ...snapshot, [campaign ? 'teamCardDensity' : 'agentCardDensity']: thinSelectorCards ? 'thin' : 'thick', seats: seatState });
     reportView();
@@ -435,7 +444,7 @@ export function createCoworkView(options = {}) {
     ensureLeadHot(membersOfTeam(team));
     touch(id);
     paintSeats();
-    remember();
+    remember([id]);
   };
   /** Terminal in: the seat's surface comes back as it was; a seat that never showed
    *  anyone gets the lead. */
