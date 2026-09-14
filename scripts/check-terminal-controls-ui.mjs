@@ -26,7 +26,7 @@ app.get('/', (_req, res) => res.type('html').send(`<!doctype html><html><head>
 import { TermView } from '/js/termview.js';
 import { buildComposer } from '/js/composer.js';
 import { buildKeysRow } from '/js/keysrow.js';
-import { installTileControls, runTerminalAction, buildControlHints, loadTerminalControls, buildMobileControlButtons } from '/js/terminal-controls.js';
+import { installTileControls, runTerminalAction, buildHints, loadTerminalControls, buildMobileControlButtons } from '/js/terminal-controls.js';
 import { retireSession } from '/js/session-retire.js';
 import { S, tiles } from '/js/state.js';
 window.raw = [];
@@ -43,7 +43,7 @@ if(document.getElementById('phone')) tile.composer.el.prepend(buildKeysRow({cont
 S.sessions=[{name:'fixture',key:'birth',agent:'codex'}];S.active=tile;tiles.push(tile);
 const cards=document.querySelector('.wk-workbench-selector-cards');
 for(let i=0;i<40;i++){const p=document.createElement('p');p.textContent='Agent '+i;cards.append(p)}
-if(!document.getElementById('phone')) document.querySelector('.selector').append(buildControlHints());
+if(!document.getElementById('phone')) document.querySelector('.selector').append(buildHints());
 await loadTerminalControls();tile.term.write('COPY SNAPSHOT CONTENT');
 window.tile=tile;window.ready=true;
 </script></body></html>`));
@@ -100,25 +100,32 @@ try {
       }
 
       if (!mobile) {
-      assert.equal(await page.locator('.terminal-hints').getAttribute('open'), '');
+      assert.equal(await page.locator('.session-control-hints').getAttribute('open'), '');
+      assert.equal(await page.locator('.agent-vocabulary-hints').getAttribute('open'), '');
+      assert.equal(await page.locator('.agent-vocabulary-hints .terminal-hint-row').count(), 10);
+      assert.match(await page.locator('.agent-vocabulary-hints').innerText(), /Fork it\s+Create a Ronin Agent for a topic/);
+      await page.locator('.agent-vocabulary-hints summary').click();
+      assert.equal(await page.locator('.session-control-hints').getAttribute('open'), '');
       const before = await page.locator('.terminal-hints').boundingBox();
       await page.locator('.wk-workbench-selector-cards').evaluate(el=>el.scrollTop=el.scrollHeight);
       assert.equal((await page.locator('.terminal-hints').boundingBox()).y,before.y);
-      await page.locator('.terminal-hints summary').click();
-      assert.equal(await page.locator('.terminal-hints').getAttribute('open'), null);
+      await page.locator('.session-control-hints summary').click();
+      assert.equal(await page.locator('.session-control-hints').getAttribute('open'), null);
       await page.waitForFunction(()=>localStorage.getItem('ronin.hints.collapsed')==='yes');
       await page.locator('.wk-workbench-selector-cards').evaluate(el=>el.hidden=true);
-      assert.equal(await page.locator('.terminal-hints').getAttribute('open'), null);
-      await page.locator('.terminal-hints summary').click();
-      assert.equal(await page.locator('.terminal-hints').getAttribute('open'), '');
+      assert.equal(await page.locator('.session-control-hints').getAttribute('open'), null);
+      await page.locator('.session-control-hints summary').click();
+      assert.equal(await page.locator('.session-control-hints').getAttribute('open'), '');
       assert.equal(await page.locator('.wk-workbench-selector-cards').evaluate(el=>el.hidden), true);
       await page.locator('.wk-workbench-selector-cards').evaluate(el=>el.hidden=false);
-      await page.locator('.terminal-hints summary').click();
+      await page.locator('.session-control-hints summary').click();
       await page.waitForFunction(()=>localStorage.getItem('ronin.hints.collapsed')==='yes');
       await page.reload();
       await page.waitForFunction(()=>window.ready);
-      assert.equal(await page.locator('.terminal-hints').getAttribute('open'), null);
-      await page.locator('.terminal-hints summary').click();
+      assert.equal(await page.locator('.session-control-hints').getAttribute('open'), null);
+      assert.equal(await page.locator('.agent-vocabulary-hints').getAttribute('open'), null);
+      await page.locator('.agent-vocabulary-hints summary').click();
+      await page.locator('.session-control-hints summary').click();
       assert.match(await page.locator('.terminal-hints').innerText(), mobile ? /Tap Copy to select text/ : mac ? /Option-drag to select/ : /Shift-drag to select/);
       }
       if (!mobile) {
@@ -129,22 +136,25 @@ try {
         await page.evaluate(()=>{tile.term.term.clearSelection();tile.lastSelection=''});
       }
       if (!mobile) {
-        await page.locator('.terminal-hints summary').click();
+        await page.locator('.agent-vocabulary-hints summary').click();
+        await page.locator('.session-control-hints summary').click();
         await page.locator('.xterm-screen').evaluate(el=>el.dispatchEvent(new MouseEvent('mousedown',{bubbles:true,button:0,clientX:5,clientY:5})));
         await page.evaluate(()=>window.dispatchEvent(new MouseEvent('mouseup',{clientX:40,clientY:40})));
-        assert.equal(await page.locator('.terminal-hints').getAttribute('open'),'');
-        assert.equal(await page.locator('.terminal-hints').evaluate(el=>el.getAnimations().some(a=>a.id==='selection-hint')),true);
+        assert.equal(await page.locator('.session-control-hints').getAttribute('open'),'');
+        assert.equal(await page.locator('.session-control-hints').evaluate(el=>el.getAnimations().some(a=>a.id==='selection-hint')),true);
         assert.equal(await page.locator('.copyhint').count(),0);
+        assert.equal(await page.locator('.agent-vocabulary-hints').getAttribute('open'),null);
       }
       await page.locator('.composer textarea').fill('unfinished\nsecond line');
       assert.equal(await page.locator('.terminal-actions').count(),0);
       assert.equal(await page.locator('.keysrow [data-terminal-action]').count(),mobile ? 4 : 0);
       if (!mobile) {
       assert.equal(await page.locator('.terminal-hint-row button, .terminal-hint-row small').count(),0);
-      assert.equal(await page.locator('.terminal-hint-row strong').count(),4);
-      assert.equal(await page.locator('.terminal-hints-subtitle').textContent(),'Session Controls');
+      assert.equal(await page.locator('.session-control-hints .terminal-hint-row strong').count(),4);
+      assert.equal(await page.locator('.session-control-hints summary').textContent(),'Session controls');
       const hintFonts = await page.locator('.terminal-hint-row span').evaluateAll(nodes=>nodes.map(el=>{const s=getComputedStyle(el);return s.fontFamily+' / '+s.fontSize}));
       assert.equal(new Set(hintFonts).size,1);
+      await page.locator('.agent-vocabulary-hints summary').click();
       for (const width of ['160px','120px']) {
         await page.locator('.selector').evaluate((el,w)=>el.style.width=w,width);
         assert.equal(await page.locator('.terminal-hints').evaluate(el=>el.scrollWidth<=el.clientWidth),true);
@@ -156,6 +166,7 @@ try {
         }),1);
       }
       await page.locator('.selector').evaluate(el=>el.style.width='320px');
+      assert.equal(await page.locator('.session-control-hints summary').evaluate(el=>el.getBoundingClientRect().bottom <= el.closest('.terminal-hints').getBoundingClientRect().bottom),true);
       assert.equal(await page.locator('.terminal-hint-row strong').first().evaluate(el=>getComputedStyle(el).fontWeight),'700');
       assert.equal(await page.locator('.terminal-hints').evaluate(el=>getComputedStyle(el).fontSize),await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--text-3').trim()));
       }
@@ -199,6 +210,10 @@ try {
         await loadTerminalControls();
       });
       if (!mobile) assert.equal(await page.locator('[data-control-key="close"]').textContent(),'Ctrl+X');
+      if (!mobile) {
+        await page.locator('.selector').evaluate(el=>el.style.height='750px');
+        await page.locator('.agent-vocabulary-hints').evaluate(el=>el.scrollTop=0);
+      }
       await page.locator(mobile ? '.composer' : '.terminal-hints').screenshot({path:`/tmp/hints-polish-${profile}.png`});
       assert.deepEqual(errors,[]);
       console.log(`${profile}: controls, draft, Copy snapshot, Hints, mobile output clearance and remapping passed`);
