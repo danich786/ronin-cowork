@@ -65,9 +65,9 @@ export async function buildPhone() {
   const main = root.querySelector('.ph-main');
   // The mark is in the document's own markup; tapping it is the way to the Teams list.
   const brand = bar.querySelector('.brand');
-  const feedbackAction = WorkspaceKit.primitives.createAction({ label: t('feedback.button', 'Feedback'), size: 'compact', className: 'fb-bar-action' });
-  feedbackAction.el.addEventListener('click', () => { location.hash = '#/feedback'; });
-  const barContent = (...items) => [...items, feedbackAction.el];
+  const feedbackAction = el('button', '', t('feedback.button', 'Feedback'));
+  feedbackAction.type = 'button';
+  feedbackAction.addEventListener('click', () => { location.hash = '#/feedback'; });
   const feedback = createFeedbackSurface(() => { location.hash = '#/'; });
 
   const backLink = (href) => {
@@ -76,19 +76,19 @@ export async function buildPhone() {
     back.title = t('phone.back', 'Back');
     return back;
   };
-  const teamsBar = () => bar.replaceChildren(...barContent(brand, el('span', 'ph-title', t('phone.coworks', 'Teams'))));
-  const teamBar = (team) => bar.replaceChildren(...barContent(
+  const teamsBar = () => bar.replaceChildren(brand, el('span', 'ph-title', t('phone.coworks', 'Teams')));
+  const teamBar = (team) => bar.replaceChildren(
     backLink('#/'),
     el('span', 'ph-title', teamLabel({ ...teamByName(team), name: team })),
-  ));
+  );
   // The document painted a bar for this address before any script ran (mobile.html);
   // the script's first act is to paint the same bar with its live pieces, so a stalled
   // server never shows a bare strip and nothing changes shape when the readings land.
   let route = routeFromHash();
   if (route.screen === 'teams') teamsBar();
-  else if (route.screen === 'feedback') bar.replaceChildren(...barContent(backLink('#/'), el('span', 'ph-title', t('feedback.title', 'Feedback'))));
-  else if (route.screen === 'terminal') bar.replaceChildren(...barContent(backLink(teamHash(route.team)), el('span', 'ph-title', readable(route.session))));
-  else bar.replaceChildren(...barContent(backLink('#/'), el('span', 'ph-title', '')));
+  else if (route.screen === 'feedback') bar.replaceChildren(backLink('#/'), el('span', 'ph-title', t('feedback.title', 'Feedback')));
+  else if (route.screen === 'terminal') bar.replaceChildren(backLink(teamHash(route.team)), el('span', 'ph-title', readable(route.session)));
+  else bar.replaceChildren(backLink('#/'), el('span', 'ph-title', ''));
 
   let agentsPainted = ''; // what the Agents screen last drew — identical readings skip the repaint
   let host = null; // the one terminal host, alive only on the terminal screen
@@ -265,6 +265,7 @@ export async function buildPhone() {
     main.replaceChildren(term);
     const tile = host.mount(session);
     stageTile = tile;
+    tile.composer?.el.querySelector('.keysrow')?.append(feedbackAction);
 
     sheet = makeDrop('メ', t('phone.me_title', 'This Agent — work record, docs, note, control, kill'), 'me');
     const node = (key) => tile[key]?.el ?? tile[key];
@@ -277,13 +278,13 @@ export async function buildPhone() {
     sheet.addRow(node('killBtn'), 'Close');
 
     // The 📄 menu hangs off the hidden tile head; here it hangs off the bar.
-    bar.replaceChildren(...barContent(
+    bar.replaceChildren(
       backLink(teamHash(team)),
       el('span', 'ph-title', agentLabel(S.sessions.find((row) => row.name === session) || { name: session })),
       sheet.btn,
       sheet.menu,
       tile.docsBtn.menu,
-    ));
+    );
   };
   const closeTerminal = () => {
     sheet?.close();
@@ -295,7 +296,7 @@ export async function buildPhone() {
   };
 
   const paintFeedback = () => {
-    bar.replaceChildren(...barContent(backLink('#/'), el('span', 'ph-title', t('feedback.title', 'Feedback'))));
+    bar.replaceChildren(backLink('#/'), el('span', 'ph-title', t('feedback.title', 'Feedback')));
     main.replaceChildren(feedback.el);
     feedback.show?.();
   };
