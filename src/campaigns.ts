@@ -97,17 +97,19 @@ const emptyServiceCapabilities = (): Record<string, boolean> =>
 
 const capabilitySettings = (raw: Record<string, boolean>): Record<string, boolean> => {
   const capabilityKeys = new Set(Object.keys(SERVICE_CAPABILITY_PARTS));
-  if ([...capabilityKeys].some((key) => Object.prototype.hasOwnProperty.call(raw, key))) return raw;
   const knownParts = new Set<string>(Object.values(SERVICE_CAPABILITY_PARTS).flat());
-  const out = { ...emptyServiceCapabilities(), ...Object.fromEntries(Object.entries(raw).filter(([key]) => !knownParts.has(key))) };
-  // Legacy work-record signaling stays on: either half selects the indivisible bundle.
-  out.task_manager = raw.michi === true || raw.kanban === true;
-  out.usage_stats = raw.counting === true;
-  out.project_coordinator = raw.koshi === true;
-  out.local_weights = raw.koshi_weights === true;
-  // Safety default: historical recorder/voice state never implicitly enables capabilities.
-  out.terminal_transcript = false;
-  out.voice_hotwords = false;
+  const out = Object.fromEntries(Object.entries(raw)
+    .filter(([key]) => !knownParts.has(key) && !capabilityKeys.has(key)));
+  const explicit = (name: string, fallback: boolean): boolean =>
+    Object.prototype.hasOwnProperty.call(raw, name) ? raw[name] === true : fallback;
+  // Explicit capability choices win. Otherwise either legacy half selects the indivisible
+  // Task manager; historical recorder and voice state never imply those safe-off choices.
+  out.task_manager = explicit('task_manager', raw.michi === true || raw.kanban === true);
+  out.terminal_transcript = explicit('terminal_transcript', false);
+  out.voice_hotwords = explicit('voice_hotwords', false);
+  out.usage_stats = explicit('usage_stats', raw.counting === true);
+  out.project_coordinator = explicit('project_coordinator', raw.koshi === true);
+  out.local_weights = explicit('local_weights', raw.koshi_weights === true);
   return out;
 };
 

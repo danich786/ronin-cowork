@@ -18,18 +18,20 @@ test('the ask many-field owns all six owner-facing capabilities and exact captio
   ]) {
     assert.match(setup, new RegExp(`id: '${id}', label: '${label.replace('&', '\\&')}'.*needs: '${caption.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}'`));
   }
-  assert.match(setup, /id: 'task_manager'.*parts: \['michi', 'kanban'\]/);
   assert.match(setup, /ask\(\[\{ group:/);
   assert.match(setup, /many: true/);
   assert.match(setup, /Turn on Running services first/);
+  assert.doesNotMatch(setup, /michi|kanban|rireki|koe|counting|koshi|koshi_weights/);
   assert.match(parts, /task_manager: \['michi', 'kanban'\]/);
+  assert.match(parts, /sole capability-to-part expansion/);
   assert.doesNotMatch(parts, /public\/js|setup-surfaces/);
 });
 
 test('installed truth distinguishes desired, running, parked, and restart state', () => {
   assert.match(installed, /desired: Record<string, boolean>/);
   assert.match(installed, /listServiceFailures\(\)/);
-  assert.match(installed, /\['master_off', 'component_off'\]/);
+  assert.match(installed, /capabilities = \{ desired, running: runtime\.running, parked: runtime\.parked \}/);
+  assert.doesNotMatch(installed, /servicePartSelected|SERVICE_CAPABILITY_PARTS/);
   assert.match(setup, /'Parked'.*'Restart'.*'Running'.*'Off'/s);
 });
 

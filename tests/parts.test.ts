@@ -27,6 +27,9 @@ test('Services on loads only selected claimed parts and never their siblings', (
   assert.deepEqual(plan.load.map((p) => p.name), ['gbrain', 'kanban', 'machine', 'michi']);
   assert.deepEqual(plan.parked.map(({ name, reason }) => ({ name, reason })),
     ['counting', 'koe', 'koshi', 'koshi_weights', 'rireki'].map((name) => ({ name, reason: 'component_off' })));
+  assert.deepEqual(plan.capabilities.find(({ name }) => name === 'task_manager'), {
+    name: 'task_manager', parts: ['michi', 'kanban'],
+  });
 });
 
 test('PARKED.md parks a part with its reason regardless of the installation switch', async () => {
@@ -36,10 +39,9 @@ test('PARKED.md parks a part with its reason regardless of the installation swit
   await writeFile(path.join(dir, 'rireki', 'PARKED.md'), 'RIREKI is off in this beta: not ready, to be refactored\n\nDetails.\n');
   const parts = discoverParts(dir);
   assert.equal(parts[0].parked, 'RIREKI is off in this beta: not ready, to be refactored');
-  assert.deepEqual(partsToLoad(parts, installations, { ronin_services: true }, { terminal_transcript: true }), {
-    load: [],
-    parked: [{ name: 'rireki', reason: 'RIREKI is off in this beta: not ready, to be refactored' }],
-  });
+  const plan = partsToLoad(parts, installations, { ronin_services: true }, { terminal_transcript: true });
+  assert.deepEqual(plan.load, []);
+  assert.deepEqual(plan.parked, [{ name: 'rireki', reason: 'RIREKI is off in this beta: not ready, to be refactored' }]);
 });
 
 test('an absent or malformed switch map reads as off — the recorder never runs by accident', () => {

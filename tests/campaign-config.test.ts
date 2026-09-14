@@ -33,6 +33,8 @@ test('a pre-installation-cascade campaign gets stock defaults without a rewrite'
       defaults: { behaviours: [] },
       services: { parts: { michi: true, kanban: false, rireki: true, koe: true } },
     },
+  }, kanban_only: {
+    id: 'kanban_only', title: 'Kanban only', desk: {}, config: { services: { parts: { kanban: true } } },
   } } }, null, 2) + '\n';
   await fs.writeFile(file, old, 'utf8');
   const campaign = await readCampaign('home_machine');
@@ -41,6 +43,7 @@ test('a pre-installation-cascade campaign gets stock defaults without a rewrite'
   assert.equal(campaign?.config.services.parts.task_manager, true, 'either legacy half enables the indivisible Task manager');
   assert.equal(campaign?.config.services.parts.voice_hotwords, false, 'legacy voice never opts into the capability');
   assert.equal(campaign?.config.services.parts.terminal_transcript, false, 'legacy recording never opts into the capability');
+  assert.equal((await readCampaign('kanban_only'))?.config.services.parts.task_manager, true, 'the other legacy half also enables Task manager');
   assert.equal(await fs.readFile(file, 'utf8'), old, 'reading the old shape does not migrate it');
   await fs.writeFile(file, JSON.stringify({ campaigns: {} }, null, 2) + '\n', 'utf8');
 });
@@ -68,8 +71,26 @@ test('campaigns share the machine configuration document', async () => {
   assert.deepEqual(edited?.config.cowork_defaults, { arrangement: 'two' });
   await writeCampaign('alpha', { config: { services: { parts: { task_manager: true, voice_hotwords: false, future_capability: true } } } });
   assert.deepEqual((await readCampaign('alpha'))?.config.services.parts, {
-    task_manager: true, voice_hotwords: false, future_capability: true,
+    future_capability: true,
+    task_manager: true,
+    terminal_transcript: false,
+    voice_hotwords: false,
+    usage_stats: false,
+    project_coordinator: false,
+    local_weights: false,
   });
+  await writeCampaign('alpha', { config: { services: { parts: {
+    michi: true, rireki: true, task_manager: false, usage_stats: true, future_capability: true,
+  } } } });
+  assert.deepEqual((await readCampaign('alpha'))?.config.services.parts, {
+    future_capability: true,
+    task_manager: false,
+    terminal_transcript: false,
+    voice_hotwords: false,
+    usage_stats: true,
+    project_coordinator: false,
+    local_weights: false,
+  }, 'an explicit mixed map drops raw ids, completes all six, and preserves only unknown keys');
   assert.equal(edited?.created_at, created.created_at);
 
   const document = JSON.parse(

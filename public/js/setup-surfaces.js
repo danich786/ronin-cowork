@@ -40,26 +40,25 @@ const action = (label, kind, onClick) => {
 };
 
 export const SERVICE_COMPONENTS = Object.freeze([
-  { id: 'task_manager', label: 'Task manager', parts: ['michi', 'kanban'], needs: 'Adds a shared project board and quick summaries of active work.' },
-  { id: 'terminal_transcript', label: 'Terminal transcript', parts: ['rireki'], needs: 'Records terminal activity for transcript views and downstream summaries.' },
-  { id: 'voice_hotwords', label: 'Voice & Hotwords', parts: ['koe'], needs: 'Adds voice tools and corrections for words dictation commonly mishears.' },
-  { id: 'usage_stats', label: 'Usage stats', parts: ['counting'], needs: 'Keeps local usage counts without storing transcript content.' },
-  { id: 'project_coordinator', label: 'Project coordinator', parts: ['koshi'], needs: 'Watches active projects and prompts Agents to keep status and summaries current.' },
-  { id: 'local_weights', label: 'Local weights', parts: ['koshi_weights'], needs: 'Provides locally stored model weights for features that need them.' },
+  { id: 'task_manager', label: 'Task manager', needs: 'Adds a shared project board and quick summaries of active work.' },
+  { id: 'terminal_transcript', label: 'Terminal transcript', needs: 'Records terminal activity for transcript views and downstream summaries.' },
+  { id: 'voice_hotwords', label: 'Voice & Hotwords', needs: 'Adds voice tools and corrections for words dictation commonly mishears.' },
+  { id: 'usage_stats', label: 'Usage stats', needs: 'Keeps local usage counts without storing transcript content.' },
+  { id: 'project_coordinator', label: 'Project coordinator', needs: 'Watches active projects and prompts Agents to keep status and summaries current.' },
+  { id: 'local_weights', label: 'Local weights', needs: 'Provides locally stored model weights for features that need them.' },
 ]);
 
 export function serviceComponentRows(installed, masterOn) {
   const services = installed?.services || {};
-  const desired = services.desired || {};
-  const loaded = new Set(Array.isArray(services.loaded) ? services.loaded : []);
-  const parked = new Map((Array.isArray(services.parked) ? services.parked : []).map((item) => [item.name, item]));
+  const desired = services.capabilities?.desired || {};
+  const running = new Set(Array.isArray(services.capabilities?.running) ? services.capabilities.running : []);
+  const parked = new Map((Array.isArray(services.capabilities?.parked) ? services.capabilities.parked : []).map((item) => [item.name, item]));
   return SERVICE_COMPONENTS.map((component) => {
-    const park = component.parts.map((part) => parked.get(part)).find((item) => item?.reason && !['master_off', 'component_off'].includes(item.reason));
+    const park = parked.get(component.id);
     const permanent = !!park;
     const wanted = desired[component.id] === true;
-    const running = component.parts.every((part) => loaded.has(part));
-    const disagrees = component.parts.some((part) => loaded.has(part) !== wanted);
-    const word = permanent ? 'Parked' : disagrees ? 'Restart' : running ? 'Running' : 'Off';
+    const isRunning = running.has(component.id);
+    const word = permanent ? 'Parked' : wanted !== isRunning ? 'Restart' : isRunning ? 'Running' : 'Off';
     const off = permanent ? park.reason : !masterOn ? 'Turn on Running services first' : '';
     return { v: component.id, l: component.label, sub: component.needs, word, ...(off ? { off } : {}) };
   });

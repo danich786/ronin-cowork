@@ -41,6 +41,7 @@ export interface PartsPlan<T extends { name: string; parked?: string }> {
   load: T[];
   /** Self-declared parked, or claimed by an installation whose switch is off: on disk, not run. */
   parked: { name: string; installation?: string; reason?: string }[];
+  capabilities: { name: string; parts: string[] }[];
 }
 
 /** The server-only expansion from saved capability choices to implementation parts.
@@ -53,13 +54,6 @@ export const SERVICE_CAPABILITY_PARTS = Object.freeze({
   project_coordinator: ['koshi'],
   local_weights: ['koshi_weights'],
 } as const);
-
-export function servicePartSelected(part: string, values: unknown): boolean {
-  const selected = switches(values);
-  const capability = Object.entries(SERVICE_CAPABILITY_PARTS)
-    .find(([, names]) => (names as readonly string[]).includes(part))?.[0];
-  return capability ? selected[capability] === true : false;
-}
 
 /** Which installation claims each part; the first claim wins, in catalog order. */
 export function partClaims(installations: Pick<InstallationRow, 'name' | 'parts'>[]): Map<string, string> {
@@ -77,12 +71,20 @@ export function partsToLoad<T extends { name: string; parked?: string }>(
 ): PartsPlan<T> {
   const claims = partClaims(installations);
   const on = switches(values);
-  const plan: PartsPlan<T> = { load: [], parked: [] };
+  const selected = switches(selectedParts);
+  // This is the sole capability-to-part expansion. Downstream runtime reporting consumes
+  // this startup plan; neither routes nor browser code repeat the implementation map.
+  const capabilities = Object.entries(SERVICE_CAPABILITY_PARTS)
+    .map(([name, names]) => ({ name, parts: [...names] }));
+  const selectedPart = new Set<string>(capabilities
+    .filter(({ name }) => selected[name] === true)
+    .flatMap(({ parts: names }) => names));
+  const plan: PartsPlan<T> = { load: [], parked: [], capabilities };
   for (const part of parts) {
     const installation = claims.get(part.name);
     if (part.parked) plan.parked.push({ name: part.name, reason: part.parked });
     else if (installation && on[installation] !== true) plan.parked.push({ name: part.name, installation, reason: 'master_off' });
-    else if (installation && !servicePartSelected(part.name, selectedParts)) plan.parked.push({ name: part.name, installation, reason: 'component_off' });
+    else if (installation && !selectedPart.has(part.name)) plan.parked.push({ name: part.name, installation, reason: 'component_off' });
     else plan.load.push(part);
   }
   return plan;
