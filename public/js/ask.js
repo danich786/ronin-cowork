@@ -5,7 +5,7 @@
  * is the consumer's: not the width, not the wrapping, not the shape, not what opens.
  *
  *   ask([{ group, fields: [{ key, label, options, blank?, many?, switch?, shape?, after?, row?, word?, then? }] }],
- *       { value, onChange, density, trayHost })  →  { el, value(), set(key, v) | set({...}), options(key, rows), show(keys|null), open(key), close(), destroy() }
+ *       { value, onChange, density, trayHost, exposed })  →  { el, value(), set(key, v) | set({...}), options(key, rows), disable(key, reason), show(keys|null), open(key), close(), destroy() }
  *
  * A field is a READING STONE (140 × 48: label over answer). Click it and a TRAY opens under
  * its group, holding option stones in one of two fixed shapes — the SQUARE (85, a glyph and
@@ -50,7 +50,9 @@
  * still opens across the whole workspace. `density: 'tight'` is the launch
  * forms' setting — less line spacing inside a group, the same paragraph spacing between groups,
  * a 40 px stone — for questions that are optional and must not be in the owner's face; 'loose'
- * (the default) is the commons' setting where a question is the page's subject.
+ * (the default) is the commons' setting where a question is the page's subject. `exposed: true`
+ * keeps a one-question selector's option stones visible without drawing the summary stone or a
+ * disclosure interaction; selection, captions and dependent rows remain ERABI's.
  */
 import { t } from './lexicon.js';
 
@@ -75,7 +77,7 @@ export function snake(text) {
 const FILTER_FROM = 12;
 let trayIds = 0;
 
-export function ask(groups = [], { value = {}, onChange = null, className = '', density = 'loose', trayHost = null } = {}) {
+export function ask(groups = [], { value = {}, onChange = null, className = '', density = 'loose', trayHost = null, exposed = false } = {}) {
   const spec = (Array.isArray(groups) ? groups : []).map((group) => {
     const label = group.group || group.label || '';
     // A stone never repeats its group head: the head carries the question, the stone a noun.
@@ -89,7 +91,7 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
   const byKey = (key) => fields.find((field) => field.key === key) || null;
   const state = {};
   for (const field of fields) state[field.key] = field.switch ? Boolean(value[field.key]) : field.many ? [...(value[field.key] || [])] : (value[field.key] ?? '');
-  let open = '';
+  let open = exposed ? fields.find((field) => !field.switch)?.key || '' : '';
   let filter = '';
   let outside = null;
   let shown = null;
@@ -100,6 +102,7 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
 
   const root = el('section', `ask ${className}`.trim());
   root.dataset.density = density === 'tight' ? 'tight' : 'loose';
+  root.dataset.exposed = String(exposed);
   const trayId = `ask-tray-${++trayIds}`;
 
   const rowsOf = (field) => {
@@ -124,7 +127,7 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     }
     onChange?.(snapshot(), key);
   };
-  const choose = (field, row) => {
+  const choose = (field, row, source = null) => {
     if (field.many) {
       const cur = state[field.key];
       state[field.key] = cur.includes(row.v) ? cur.filter((v) => v !== row.v) : [...cur, row.v];
@@ -132,16 +135,21 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
       state[field.key] = row.v;
       const reveals = childrenOf(field).some((child) => String(child.when) === String(row.v)) || typeof row.row === 'function' || typeof field.row === 'function';
       revealed = reveals ? row.v : null;
-      if (!reveals) open = '';
+      if (!reveals && !exposed) open = '';
     }
     changed(field.key);
+    const restoreOptionFocus = !document.activeElement || document.activeElement === source;
     paint();
+    if (exposed && restoreOptionFocus) optionNodes.find((entry) => entry.field === field && String(entry.row.v) === String(row.v))?.node.focus();
   };
+
+  let optionNodes = [];
 
   const optionStone = (field, row, say = () => {}) => {
     const opt = el('button', `ask-opt ask-${field.shape}`);
     opt.type = 'button';
     opt.setAttribute('role', 'option');
+    opt.dataset.askValue = String(row.v);
     const on = field.many ? state[field.key].includes(row.v) : String(state[field.key]) === String(row.v);
     opt.setAttribute('aria-selected', String(on));
     if (row.off) { opt.setAttribute('aria-disabled', 'true'); opt.title = row.off; }
@@ -152,7 +160,8 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     if (field.shape === 'rect' && row.word) opt.append(el('small', 'ask-word', row.word));
     opt.addEventListener('mouseenter', () => say(row));
     opt.addEventListener('focus', () => say(row));
-    opt.addEventListener('click', () => { if (row.off) { say(row); return; } choose(field, row); });
+    opt.addEventListener('click', () => { if (row.off) { say(row); return; } choose(field, row, opt); });
+    optionNodes.push({ field, row, node: opt });
     return opt;
   };
 
@@ -175,6 +184,13 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     return b;
   };
 
+  // Switches use the same plain disabled reason as option rows.
+  const switchAvailability = (button, field) => {
+    button.disabled = Boolean(field.off);
+    button.setAttribute('aria-disabled', String(button.disabled));
+    button.title = field.off || '';
+  };
+
   // A switch has no tray to redraw. Keep its node and keyboard focus on changes.
   const refreshSwitch = (button, field) => {
     button.setAttribute('aria-checked', String(Boolean(state[field.key])));
@@ -189,6 +205,7 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
       const on = Boolean(state[field.key]);
       button.className += ' ask-switch';
       button.setAttribute('role', 'switch');
+      switchAvailability(button, field);
       button.setAttribute('aria-checked', String(on));
       const words = el('span', 'ask-words');
       words.append(el('small', 'ask-label', field.label), reading(field));
@@ -314,6 +331,7 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
   /* ---- paint: groups, their stones, and the one open tray ---- */
   function paint() {
     root.replaceChildren();
+    optionNodes = [];
     if (trayNode) { trayNode.remove?.(); trayNode = null; }
     if (open && !fields.some((field) => field.key === open && visible(field))) open = '';
     root.dataset.open = open;
@@ -323,12 +341,16 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
       const box = el('div', 'ask-group');
       if (group.label) box.append(el('h4', 'ask-group-head', group.label));
       const row = el('div', 'ask-fields');
-      for (const field of drawn) row.append(stone(field));
-      box.append(row);
+      for (const field of drawn) if (!exposed || field.switch) row.append(stone(field));
+      if (row.children.length) box.append(row);
       root.append(box);
-      const opened = drawn.find((field) => field.key === open && !field.switch);
+      const opened = exposed
+        ? drawn.find((field) => !field.switch)
+        : drawn.find((field) => field.key === open && !field.switch);
       if (opened) {
+        open = opened.key;
         trayNode = tray(opened);
+        if (exposed) trayNode.className += ' ask-exposed';
         trayNode.dataset.density = root.dataset.density;
         trayNode.addEventListener('keydown', onEscape);
         (trayHost || root).append(trayNode);
@@ -360,6 +382,7 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
   };
   /** Try to close the open tray (or move to `next`); a required line may say no. */
   const dismiss = (next = '') => {
+    if (exposed) return true;
     if (open && refuse()) return false;
     open = next;
     filter = '';
@@ -370,13 +393,14 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
 
   /* ---- dismissal: Escape, and a press outside the utility ---- */
   const onEscape = (event) => {
-    if (event.key === 'Escape' && open) { event.preventDefault(); const key = open; if (dismiss()) focusStone(key); }
+    if (!exposed && event.key === 'Escape' && open) { event.preventDefault(); const key = open; if (dismiss()) focusStone(key); }
   };
   root.addEventListener('keydown', onEscape);
   const focusStone = (key) => { for (const node of root.children) { /* groups */ for (const inner of node.children || []) { for (const button of inner.children || []) if (button.dataset?.askKey === key) button.focus?.(); } } };
   let anyKey = null;
   function bindOutside() {
     if (typeof document.addEventListener !== 'function') return;
+    if (exposed) return;
     if (open && !outside) {
       outside = (event) => { if (typeof root.contains === 'function' && (root.contains(event.target) || trayNode?.contains?.(event.target))) return; dismiss(); };
       anyKey = (event) => { if (event.key === 'Escape' && open && !(typeof root.contains === 'function' && (root.contains(event.target) || trayNode?.contains?.(event.target)))) onEscape(event); };
@@ -403,6 +427,15 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
           if (Object.hasOwn(patch, field.key)) refreshSwitch(button, field);
         }
       } else paint();
+    },
+    /** Set a switch's disabled reason without replacing its node. Empty means enabled. */
+    disable(key, reason = '') {
+      const field = byKey(key);
+      if (!field?.switch) return;
+      field.off = reason;
+      for (const button of root.querySelectorAll('.ask-switch')) {
+        if (button.dataset.askKey === key) switchAvailability(button, field);
+      }
     },
     show(keys) { shown = Array.isArray(keys) ? new Set(keys) : null; paint(); },
     options(key, rows) { const field = byKey(key); if (!field) return; field.options = rows; paint(); },

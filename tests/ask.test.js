@@ -27,6 +27,7 @@ globalThis.document = {
   createDocumentFragment: () => new FakeFragment(),
   querySelector: () => null,
   head: { append() {} },
+  activeElement: null,
 };
 
 const { ask, snake } = await import('../public/js/ask.js');
@@ -86,6 +87,35 @@ test('a click opens one tray under the field\'s group; a one-of pick answers and
   assert.equal(form.el.all('ask-tray').length, 0, 'one-of closes on pick');
   assert.equal(stoneFor(form, 'provider').one('ask-reading').textContent, 'Claude Code');
   assert.deepEqual(changes.at(-1)[0], 'provider');
+});
+
+test('exposed mode draws option stones directly and preserves selection and keyboard focus', () => {
+  const form = ask([{ group: 'Register', fields: [{ key: 'mode', label: 'Register as', options: [
+    { v: 'email', l: 'With email' }, { v: 'anonymous', l: 'Anonymous' }, { v: 'no', l: 'No thank you' },
+  ] }] }], { value: { mode: '' }, exposed: true });
+  assert.equal(form.el.dataset.exposed, 'true');
+  assert.equal(form.el.all('ask-stone').length, 0, 'there is no summary stone');
+  assert.deepEqual(form.el.all('ask-opt').map((opt) => opt.one('ask-name').textContent), ['With email', 'Anonymous', 'No thank you']);
+  optNamed(form, 'Anonymous').click();
+  assert.equal(form.value().mode, 'anonymous');
+  assert.equal(optNamed(form, 'Anonymous').attributes['aria-selected'], 'true');
+  assert.equal(optNamed(form, 'Anonymous').focused, true, 'focus returns to the selected native button after repaint');
+  assert.equal(form.el.all('ask-tray').length, 1, 'the choices remain exposed after selection');
+  const selected = optNamed(form, 'Anonymous');
+  form.el.fire('keydown', { key: 'Escape' });
+  assert.equal(optNamed(form, 'Anonymous'), selected, 'Escape cannot collapse or replace an always-exposed selector');
+});
+
+test('an exposed choice does not steal focus from a conditional field revealed by its consumer', () => {
+  const conditional = new FakeNode('input');
+  const form = ask([{ group: 'Kind', fields: [{ key: 'kind', label: 'Kind', options: [
+    { v: 'software', l: 'Build software' }, { v: 'other', l: 'Something else' },
+  ] }] }], { exposed: true, onChange: (value) => { if (value.kind === 'other') { conditional.focus(); document.activeElement = conditional; } } });
+  const other = optNamed(form, 'Something else');
+  document.activeElement = other;
+  other.click();
+  assert.equal(document.activeElement, conditional);
+  assert.equal(optNamed(form, 'Something else').attributes['aria-selected'], 'true');
 });
 
 test('a dependent field clears and re-asks its options when its parent changes', () => {

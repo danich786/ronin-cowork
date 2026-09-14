@@ -9,7 +9,6 @@ import { CAMPAIGN_TEMPLATES_TYPE, createTemplatesSurface } from './campaign-temp
 import { PROVIDER_SURFACE_TYPE, providerSurfaceDefinition } from './provider-surface.js';
 import { createStoneWorkSurface } from './stone-work-surface.js';
 import { servicesSetupModel } from './services-setup-state.js';
-import { serviceCapabilityWord } from './services-setup-state.js';
 import { campaignById, campaigns, loadCampaigns, saveCampaign } from './campaigns.js';
 import { completeInstallationMap } from './installation-map.js';
 import { createEmbeddedNewTeamFormView } from './new-team-form.js';
@@ -50,20 +49,11 @@ export const SERVICE_COMPONENTS = Object.freeze([
 ]);
 
 export function serviceComponentRows(installed, masterOn) {
-  const services = installed?.services || {};
-  const desired = services.capabilities?.desired || {};
-  const running = new Set(Array.isArray(services.capabilities?.running) ? services.capabilities.running : []);
-  const disagrees = new Set(Array.isArray(services.capabilities?.disagrees) ? services.capabilities.disagrees : []);
-  const parked = new Map((Array.isArray(services.capabilities?.parked) ? services.capabilities.parked : []).map((item) => [item.name, item]));
-  return SERVICE_COMPONENTS.map((component) => {
-    const park = parked.get(component.id);
-    const permanent = !!park;
-    const wanted = desired[component.id] === true;
-    const isRunning = running.has(component.id);
-    const word = serviceCapabilityWord({ wanted, running: isRunning, disagrees: disagrees.has(component.id), parked: permanent });
-    const off = permanent ? park.reason : !masterOn ? 'Turn on Running services first' : '';
-    return { v: component.id, l: component.label, sub: component.needs, word, ...(off ? { off } : {}) };
-  });
+  const parked = new Set((installed?.services?.capabilities?.parked || []).map((item) => item.name));
+  return SERVICE_COMPONENTS.map((component) => ({
+    v: component.id,
+    off: parked.has(component.id) ? 'Currently unavailable' : !masterOn ? 'Turn on Running services first' : '',
+  }));
 }
 
 /** The only furniture shared by Services and gbrain. */
@@ -97,6 +87,7 @@ function createRegisterSurface(context) {
     const listeners = [];
     const question = ask([{ group: label, fields: [{ key: name, label: short || t('ask.answer', 'Answer'), many: multiple, options: choices.map(([key, text, description = '']) => ({ v: key, l: text, sub: description })) }] }], {
       value: { [name]: selected },
+      exposed: true,
       onChange: (next) => { selected = next[name]; value.value = multiple ? JSON.stringify(selected) : selected; for (const listener of listeners) listener(selected); },
     });
     question.el.classList.add('setup-register-bounded');
@@ -108,6 +99,7 @@ function createRegisterSurface(context) {
     let selected = [];
     const question = ask([{ group: label, fields: [{ key: name, label: short || t('ask.answer', 'Answer'), many: true, options: choices.map(([value, text]) => ({ v: value, l: text })) }] }], {
       value: { [name]: selected },
+      exposed: true,
       onChange: (next) => { selected = next[name]; other.hidden = !selected.includes('something_else'); if (!other.hidden) other.focus(); },
     });
     const wrap = el('div', 'setup-register-checklist'); wrap.append(question.el, other);
@@ -123,7 +115,6 @@ function createRegisterSurface(context) {
     ['research_writing', 'Research and writing'], ['other', 'Something else'],
   ], { short: t('setup_surface.kind_short', 'You use Ronin for') });
   const kindOther = input('kind_other'); kindOther.className = 'setup-register-other'; kindOther.placeholder = t('setup_surface.something_else_prompt', 'Tell us'); kindOther.hidden = true;
-  kind.wrap.append(kindOther);
   kind.onChange(() => {
     kindOther.hidden = kind.value.value !== 'other'; if (!kindOther.hidden) kindOther.focus();
   });
@@ -164,7 +155,7 @@ function createRegisterSurface(context) {
   const ownField = field(t('setup_surface.own_words', 'Anything else'), own);
   ownField.classList.add('setup-register-full');
   fit.append(
-    el('h3', '', t('setup_surface.ronin_fit', 'What brings you here')), preferredFeature.wrap, reasons.wrap, kind.wrap,
+    el('h3', '', t('setup_surface.ronin_fit', 'What brings you here')), preferredFeature.wrap, reasons.wrap, kind.wrap, kindOther,
     ownField,
   );
   const consent = el('p', 'setup-fine setup-register-consent', t('setup_surface.consent_exact', 'Email registration sends a confirmation and can unlock Ronin Services. Anonymous registration sends these answers without contact details. Communication stays off unless you choose otherwise.'));
@@ -445,10 +436,10 @@ export function createServicesSurface(context) {
       for (const row of serviceComponentRows(facts, facts?.services?.switched_on === true)) {
         const control = controls.get(row.v);
         if (control.question.value()[row.v] !== (desired[row.v] === true)) control.question.set(row.v, desired[row.v] === true);
-        control.button.disabled = !!row.off || !installed.ok;
+        const reason = row.off || (!installed.ok ? 'Currently unavailable' : '');
+        control.question.disable(row.v, reason);
         control.button.setAttribute('aria-disabled', String(saving || control.button.disabled));
-        control.button.title = row.off || '';
-        control.status.textContent = !installed.ok ? 'Services unavailable' : row.off || (['Restart', 'Parked'].includes(row.word) ? row.word : '');
+        control.status.textContent = reason;
       }
     };
     for (const component of SERVICE_COMPONENTS) {
@@ -473,7 +464,7 @@ export function createServicesSurface(context) {
           const result = await switchComponents(SERVICE_COMPONENTS.filter((row) => desired[row.id] === true).map((row) => row.id));
           if (!result.ok) {
             desired = before;
-            notice.textContent = result.message;
+            notice.textContent = 'Could not save this choice. Please try again.';
             notice.classList.add('bad');
           } else {
             notice.textContent = t('settei.saved', 'saved');
