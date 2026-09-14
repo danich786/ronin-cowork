@@ -23,6 +23,8 @@ export interface TeamRoster {
   behaviours: TeamBehaviours;
   agent_defaults: TeamAgentDefaults;
   projects: Project[];
+  done_projects: Project[];
+  backlog_projects: Project[];
   next_project_id: number;
 }
 
@@ -75,6 +77,10 @@ function parse(name: string, raw: string, campaign_id = ''): TeamRoster {
   const projects = Array.isArray(projectValue)
     ? projectValue.map(normalizeProject).filter((project): project is Project => project !== null)
     : [];
+  const projectList = (key: string): Project[] => {
+    const value = json(key);
+    return Array.isArray(value) ? value.map(normalizeProject).filter((project): project is Project => project !== null) : [];
+  };
   return {
     name,
     campaign_id: campaign_id || get('campaign_id'),
@@ -93,6 +99,8 @@ function parse(name: string, raw: string, campaign_id = ''): TeamRoster {
       : { selected: ['mandates'], required: [] },
     agent_defaults: teamAgentDefaults(json('agent_defaults')),
     projects,
+    done_projects: projectList('done_projects'),
+    backlog_projects: projectList('backlog_projects'),
     next_project_id: Math.max(1, Number.parseInt(get('next_project_id'), 10) || 1),
   };
 }
@@ -172,12 +180,14 @@ export interface RosterEdit {
   behaviours?: TeamBehaviours;
   agent_defaults?: Partial<TeamAgentDefaults>;
   projects?: Project[];
+  done_projects?: Project[];
+  backlog_projects?: Project[];
   next_project_id?: number;
 }
 
 const KEYS: (keyof RosterEdit)[] = [
   'title', 'kind', 'objective', 'project_root', 'repos', 'branch', 'branches', 'wipeboard', 'state',
-  'behaviours', 'agent_defaults', 'projects', 'next_project_id',
+  'behaviours', 'agent_defaults', 'projects', 'done_projects', 'backlog_projects', 'next_project_id',
 ];
 
 function render(name: string, r: TeamRoster): string {
@@ -198,6 +208,8 @@ function render(name: string, r: TeamRoster): string {
     line('behaviours', JSON.stringify(r.behaviours)),
     line('agent_defaults', JSON.stringify(r.agent_defaults)),
     line('projects', JSON.stringify(r.projects)),
+    line('done_projects', JSON.stringify(r.done_projects)),
+    line('backlog_projects', JSON.stringify(r.backlog_projects)),
     line('next_project_id', String(r.next_project_id)),
     '',
   ].join('\n');
@@ -235,6 +247,8 @@ export async function createTeamRoster(name: string, edit: RosterEdit, campaign_
     behaviours: edit.behaviours ?? { selected: ['mandates'], required: [] },
     agent_defaults: teamAgentDefaults(edit.agent_defaults),
     projects: edit.projects ?? [],
+    done_projects: edit.done_projects ?? [],
+    backlog_projects: edit.backlog_projects ?? [],
     next_project_id: edit.next_project_id ?? 1,
   };
   await mkdir(campaignDir(campaign_id), { recursive: true });
@@ -259,7 +273,7 @@ export async function writeTeamRoster(name: string, edit: RosterEdit, campaign_i
   } as TeamRoster;
   for (const k of KEYS) {
     if (normalizedEdit[k] === undefined) continue;
-    const nested = ['behaviours', 'agent_defaults', 'projects'].includes(k);
+    const nested = ['behaviours', 'agent_defaults', 'projects', 'done_projects', 'backlog_projects'].includes(k);
     const v = nested ? JSON.stringify(normalizedEdit[k])
       : k === 'repos' ? (normalizedEdit.repos ?? []).join(', ')
       : String(normalizedEdit[k] ?? '');

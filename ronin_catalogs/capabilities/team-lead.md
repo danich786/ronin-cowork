@@ -24,6 +24,9 @@ session commands retain supporting-Agent creation and membership authority.
 | `team-lead project write` | write: one roster-held project's typed fields | priority | `team-lead --help` |
 | `team-lead project assign` | write: move a project whole to one Agent | priority | `team-lead --help` |
 | `team-lead project return` | write: move a project whole back from one Agent | priority | `team-lead --help` |
+| `team-lead project backlog` | write: move a Team-held Project to Backlog | priority | `team-lead --help` |
+| `team-lead project done` | write: move a Team-held Project to Done | priority | `team-lead --help` |
+| `team-lead project restore` | write: restore Backlog or Done to Inbox | priority | `team-lead --help` |
 | `team-lead member status` | read: settled Team Kanban member/project shape | priority | `team-lead --help` |
 | `team-lead roster write` | write: typed Team roster fields | | `team-lead --help` |
 | `session_check` | read: one live session by exact name | | `session_check --help` |
@@ -44,7 +47,9 @@ not duplicate them. Read-only Team enumeration belongs to `edges team`.
 | Team broadcasts | the wipeboard for everything the whole Team must see; one-on-one goes directly to the session |
 
 The move is the approval: there is no verdict, decider, revision counter, or history on a
-project. Parking a project for a future common pool is outside this bundle.
+project. The roster has Inbox, Done, and Backlog. Assignment moves Inbox to an Agent;
+restore moves Done or Backlog to Inbox. Backlog and Done move the same Team-held object
+between roster areas without rewriting its authored state.
 
 `session_create <name> --project <team/id>` composes two existing operations. Its brief
 names the project, birth happens through the ordinary resolver, and only then is the whole
