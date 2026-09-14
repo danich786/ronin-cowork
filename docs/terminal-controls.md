@@ -6,7 +6,7 @@ your browser shortcuts. These controls work on desktop and mobile, locked or unl
 The complete default [input → CLI mapping table](README.md#terminal-controls) is at the
 top of the documentation README. Clear means the entire unsubmitted input box.
 
-**Hints** is pinned below the selector's scrolling cards, expanded on first use. Collapse
+**Hints — Session Controls** is pinned below the selector's scrolling cards, expanded on first use. Collapse
 it if desired; its saved expansion state is independent of the roster. A failed locked-terminal
 selection attempt expands Hints and flashes it orange, instead of showing a popup. Mobile puts the
 same card below its terminal. The four action buttons appear only on mobile Tiles, including while the keyboard is
@@ -51,8 +51,8 @@ Unknown CLIs have no guessed control sequence.
 Stop sends the registered interrupt once. It does not wait for the CLI to look idle or
 confirm that a tool stopped. A CLI may consume it in an open menu, or stop a tool at its
 own cancellation boundary. Repeated deliberate presses have the CLI's native semantics;
-Ronin does not repeat held keys or retry after a network failure. The feedback says
-“Stop sent”, not “all tools stopped”.
+Ronin does not repeat held keys or retry after a network failure. Successful Stop is
+silent; a failed request reports the error.
 
 ## Copy while locked
 

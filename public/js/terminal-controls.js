@@ -123,7 +123,7 @@ export async function runTerminalAction(tile, action, target) {
   }
   const session = S.sessions.find((row) => row.name === tile.session);
   const r = await request(`/api/sessions/${encodeURIComponent(tile.session)}/control-action`, { method: 'POST', json: { intent: action, key: tile.sessionKey || session?.key } });
-  toast(r.ok ? r.data.message : r.message, r.ok);
+  if (action !== 'stop' || !r.ok) toast(r.ok ? r.data.message : r.message, r.ok);
 }
 export function terminalSnapshot(tile) {
   if (tile.tapeMode) return tile.tape?.el?.innerText || tile.body.innerText || '';
@@ -175,7 +175,8 @@ export function buildControlHints() {
   card.className = 'terminal-hints wk-card';
   card.open = preference('ronin.hints.collapsed') !== 'yes';
   const title = document.createElement('summary'); title.textContent = 'Hints';
-  card.append(title);
+  const subtitle = document.createElement('span'); subtitle.className = 'terminal-hints-subtitle'; subtitle.textContent = 'Session Controls';
+  title.append(subtitle); card.append(title);
   card.addEventListener('toggle', () => preference('ronin.hints.collapsed', card.open ? 'no' : 'yes'));
   for (const action of actions) {
     const row = document.createElement('div'); row.className = 'terminal-hint-row';
