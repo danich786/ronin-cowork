@@ -1,11 +1,13 @@
 /* Ronin owns the gesture; the server's CLI registry owns the command. */
 import { request } from './request.js';
 import { sheet, toast } from './ui.js';
-import { S } from './state.js';
+import { S, SELECT_MOD, IS_TOUCH, IS_MAC } from './state.js';
 
 const actions = ['copy', 'clear', 'close', 'stop'];
+const shortcutActions = ['clear', 'close', 'stop'];
+const selectionHint = IS_TOUCH ? 'Tap Copy to select text' : `${SELECT_MOD}-drag to select`;
 const labels = { copy: 'Copy', clear: 'Clear', close: 'Close', stop: 'Stop' };
-const meanings = { copy: 'Select and copy terminal text.', clear: 'Clear unsent input. Never close the session.', close: 'Retire this Agent through confirmation.', stop: 'Interrupt the Agent now; keep its session.' };
+const meanings = { copy: 'Drag to select, then use your normal browser Copy command.', clear: 'Clear unsent input. Never close the session.', close: 'Retire this Agent through confirmation.', stop: 'Interrupt the Agent now; keep its session.' };
 let config = null;
 let loading = null;
 let channel = null;
@@ -13,8 +15,9 @@ const preference = (key, value) => {
   try { if (value === undefined) return localStorage.getItem(key); localStorage.setItem(key, value); } catch {}
 };
 function describeAction(node) {
-  if (!config) return;
   const action = node.dataset.terminalAction;
+  if (action === 'copy') { node.title = `${selectionHint}. ${meanings.copy}`; return; }
+  if (!config) return;
   node.title = `${labels[action]} — ${config.bindings[action]}. ${meanings[action]}`;
   node.setAttribute('aria-keyshortcuts', config.bindings[action].replace('Ctrl', 'Control'));
 }
@@ -42,7 +45,7 @@ export function controlChord(e) {
 }
 export function matchedControl(e, bindings) {
   if (e.isComposing || e.altGraphKey || e.getModifierState?.('AltGraph')) return null;
-  return actions.find((action) => bindings?.[action] === controlChord(e)) || null;
+  return shortcutActions.find((action) => bindings?.[action] === controlChord(e)) || null;
 }
 export function installTileControls(tile) {
   initialize();
@@ -52,6 +55,19 @@ export function installTileControls(tile) {
   });
   tile.el.addEventListener('keydown', (e) => {
     if (e.defaultPrevented) return;
+    // Preserve native Copy with a selection; prevent xterm from sending Ctrl+C.
+    if (e.key.toLowerCase() === 'c' && (IS_MAC ? e.metaKey : e.ctrlKey) && !e.shiftKey && !e.altKey
+        && e.target.closest?.('.xterm')
+        && (tile.term.getSelection() || tile.lastSelection)) {
+      e.stopImmediatePropagation(); return;
+    }
+    // Ctrl+C must never reach an Agent, including before settings load or inside menus.
+    if (e.key.toLowerCase() === 'c' && e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey
+        && (e.target.closest?.('.xterm') || e.target === tile.body)) {
+      e.preventDefault(); e.stopImmediatePropagation();
+      if (!e.repeat) toast('Use Stop or Close in Ronin. Ctrl+C is not sent to the Agent.');
+      return;
+    }
     const overlay = document.querySelector('.ui-sheet.open .ui-card');
     const drop = document.querySelector('.tdrop.open');
     if (overlay || drop) {
@@ -144,6 +160,18 @@ async function copyTerminal(tile) {
   const done = document.createElement('button'); done.type = 'button'; done.textContent = 'Done'; done.onclick = () => dlg.close();
   dlg.card.append(note, text, copy, done); dlg.open();
 }
+export function flashControlHints() {
+  for (const card of document.querySelectorAll('.terminal-hints')) {
+    if (!card.getClientRects().length) continue;
+    card.open = true;
+    for (const animation of card.getAnimations()) if (animation.id === 'selection-hint') animation.cancel();
+    const orange = { outline: '2px solid var(--kaki)', boxShadow: '0 0 0 4px var(--kaki)' };
+    const quiet = { outline: '2px solid transparent', boxShadow: '0 0 0 0 transparent' };
+    const frames = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ? [orange, orange] : [orange, quiet, orange, quiet];
+    card.animate(frames, { duration: 2500, easing: 'ease-out', id: 'selection-hint' });
+  }
+}
 export function buildControlHints(getTile = () => S.active) {
   initialize();
   const card = document.createElement('details');
@@ -155,7 +183,9 @@ export function buildControlHints(getTile = () => S.active) {
   for (const action of actions) {
     const row = document.createElement('div'); row.className = 'terminal-hint-row';
     const button = actionButton(action, () => { const tile = getTile(); if (tile) return tile.controlAction(action); toast('Choose an Agent first.', false); });
-    const key = document.createElement('kbd'); key.dataset.controlKey = action; key.textContent = config?.bindings[action] || '…';
+    const key = document.createElement('kbd');
+    if (action === 'copy') key.textContent = selectionHint;
+    else { key.dataset.controlKey = action; key.textContent = config?.bindings[action] || '…'; }
     const help = document.createElement('small'); help.textContent = meanings[action];
     row.append(button, key, help); card.append(row);
   }
@@ -173,7 +203,7 @@ export async function openTerminalControlSettings() {
   const help = document.createElement('p'); help.textContent = 'One shortcut map for every Ronin browser and Agent. Enter a chord such as Ctrl+X or Escape. Browser text fields keep native Copy, Cut and Undo.';
   const fields = {};
   dlg.card.append(title, help);
-  for (const action of actions) {
+  for (const action of shortcutActions) {
     const label = document.createElement('label'); label.className = 'terminal-control-field'; label.textContent = labels[action];
     const input = document.createElement('input'); input.value = config.bindings[action]; input.setAttribute('aria-label', `${labels[action]} shortcut`);
     fields[action] = input; label.append(input); dlg.card.append(label);
@@ -182,7 +212,7 @@ export async function openTerminalControlSettings() {
   const save = document.createElement('button'); save.type = 'button'; save.textContent = 'Save';
   save.onclick = async () => {
     save.disabled = true;
-    const bindings = Object.fromEntries(actions.map((a) => [a, fields[a].value.trim()]));
+    const bindings = Object.fromEntries(shortcutActions.map((a) => [a, fields[a].value.trim()]));
     // Pad captures at document level; do not leave it silently overriding this map.
     const { padBinds, padChord } = await import('./pad.js');
     for (const chord of Object.values(bindings)) {
@@ -197,7 +227,7 @@ export async function openTerminalControlSettings() {
     if (!result.ok) { status.textContent = result.message; return; }
     publish(result.data); channel?.postMessage('changed'); status.textContent = 'Saved for every Agent. Other devices refresh on focus.';
   };
-  const reset = document.createElement('button'); reset.type = 'button'; reset.textContent = 'Reset defaults'; reset.onclick = () => { for (const a of actions) fields[a].value = config.defaults[a]; status.textContent = 'Press Save to apply defaults.'; };
+  const reset = document.createElement('button'); reset.type = 'button'; reset.textContent = 'Reset defaults'; reset.onclick = () => { for (const a of shortcutActions) fields[a].value = config.defaults[a]; status.textContent = 'Press Save to apply defaults.'; };
   const done = document.createElement('button'); done.type = 'button'; done.textContent = 'Done'; done.onclick = () => dlg.close();
   dlg.card.append(status, save, reset, done); dlg.open();
 }

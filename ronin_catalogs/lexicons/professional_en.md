@@ -1439,7 +1439,6 @@ The catalog entry goes. {dir} is not touched.
 ## bar — viewport.js (the layout button)
 
 ## term — termview.js (the copy hint)
-- **term.copy_hint:** Trying to copy? Hold {mod} while you drag, then ⌘C.
 
 ## gauge — ramrpm.js (the RAM gauge)
 - **gauge.no_swap:** no swap

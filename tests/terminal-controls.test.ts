@@ -29,11 +29,18 @@ test('a remapped control has one persisted definition; invalid saves do not repl
     const stored = JSON.parse(await fs.readFile(path.join(temp, 'config/machine_settings.json'), 'utf8'));
     assert.deepEqual(stored.terminalControls.bindings, bindings);
     assert.match(await (await fetch(url + '/help')).text(), /# Terminal controls/);
+    stored.terminalControls.bindings.copy = 'Ctrl+Shift+C';
+    await fs.writeFile(path.join(temp, 'config/machine_settings.json'), JSON.stringify(stored));
+    assert.deepEqual((await (await fetch(url)).json()).bindings, bindings);
+    stored.terminalControls.bindings.close = 'Ctrl+C';
+    await fs.writeFile(path.join(temp, 'config/machine_settings.json'), JSON.stringify(stored));
+    assert.deepEqual((await (await fetch(url)).json()).bindings, CONTROL_DEFAULTS);
+
   } finally { await new Promise<void>((resolve) => server.close(() => resolve())); }
 });
 
 test('bad, duplicate, browser and typing chords are rejected', () => {
-  for (const close of ['C', 'Enter', 'Ctrl+W', 'Meta+C', 'Ctrl++C', 'Escape']) assert.throws(() => validateBindings({ ...CONTROL_DEFAULTS, close }));
+  for (const close of ['C', 'Enter', 'Ctrl+C', 'Ctrl+W', 'Meta+C', 'Ctrl++C', 'Escape']) assert.throws(() => validateBindings({ ...CONTROL_DEFAULTS, close }));
   assert.throws(() => validateBindings({ stop: 'Escape' }));
   assert.deepEqual(validateBindings(CONTROL_DEFAULTS), CONTROL_DEFAULTS);
 });
