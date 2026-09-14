@@ -213,7 +213,7 @@ async function main(): Promise<void> {
               out(dlv.how === 'self' ? `  ${dlv.detail}` : `  lead ${dlv.to}: ${dlv.how === 'house-send' ? 'told' : 'not reachable at the tile — posted on the team wipeboard'} — ${dlv.detail}`);
             }
           }
-          if (receipt.result === 'accepted') out('Code handed in. Remember to update your project.');
+          if (receipt.result === 'accepted') out('Remember to update your project.');
         }
         process.exit(worst);
       }

@@ -237,7 +237,7 @@ test('an accepted worktree-desk hand-in ends with one project-update reminder', 
     cwd: path.resolve('.'),
     env: { ...process.env, RONIN_SESSION: 'reminder', RONIN_TEAMS: 'comp' },
   }).toString();
-  const reminder = 'Code handed in. Remember to update your project.';
+  const reminder = 'Remember to update your project.';
   assert.equal(output.split(reminder).length - 1, 1);
   assert.ok(output.indexOf('ACCEPTED cowork:team/comp/reminder') < output.indexOf(reminder));
   assert.equal(output.trimEnd().split('\n').at(-1), reminder);
