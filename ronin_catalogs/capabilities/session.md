@@ -7,9 +7,11 @@
 
 Reach for the session tools when the question is about an Agent's existence rather than
 its work: inspect a name, launch a visible Ronin Agent, change Team or lead designation,
-archive and restore, or end yourself safely. **Fork**, **fork it**, **launch**, and **new
-session** mean `session_create`; **spawn** means a CLI-internal sub-agent and requires the
-owner's permission.
+archive and restore, or end yourself safely. **Fork**, **fork it**, **launch**, **new
+Agent**, and **new session** all mean `session_create`: create a visible Ronin Agent
+for a particular topic, with that topic supplied in its prompt. Never interpret these
+phrases as permission to spawn a sub-agent inside your CLI. CLI-internal **spawn** is
+a separate action and requires the owner's explicit permission.
 
 **Live tools:** every command in the table below ships in `ronin_bin/`.
 
