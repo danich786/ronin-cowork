@@ -142,11 +142,12 @@ export function createTeamKanban(options = {}) {
         card.dataset.project = project.id;
         const isOpen = allOpen || openCards.has(project.id);
         card.classList.toggle('open', isOpen);
-        card.tabIndex = 0;
-        card.setAttribute('role', 'button');
-        card.setAttribute('aria-expanded', String(isOpen));
         if (project.stage !== 'DONE') card.dataset.status = project.status;
-        card.append(node('h4', 'wk-card-heading tk-title', project.title));
+        const toggle = node('button', 'tk-card-toggle');
+        toggle.type = 'button';
+        toggle.setAttribute('aria-expanded', String(isOpen));
+        toggle.append(node('span', 'wk-card-heading tk-title', project.title));
+        card.append(toggle);
         const details = node('div', 'tk-details');
         details.append(node('p', 'wk-card-summary tk-outcome', project.objective));
         if (project.evidence.length) details.append(node('p', 'tk-evidence', project.evidence.join(' · ')));
@@ -170,10 +171,9 @@ export function createTeamKanban(options = {}) {
           allOpen = projects.length > 0 && projects.every((item) => openCards.has(item.id));
           paintFold(); render();
         };
-        card.addEventListener('click', toggleOpen);
-        card.addEventListener('keydown', (event) => {
-          if (event.target !== card || !['Enter', ' '].includes(event.key)) return;
-          event.preventDefault(); toggleOpen();
+        toggle.addEventListener('click', toggleOpen);
+        card.addEventListener('click', (event) => {
+          if (!event.target.closest('button')) toggleOpen();
         });
         card.addEventListener('dragstart', (event) => {
           event.dataTransfer?.setData('text/plain', project.id);

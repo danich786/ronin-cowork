@@ -67,10 +67,18 @@ test('the board stays square, fixed, manually refreshed, and free of pills and e
   assert.match(kanbanCss, /--tk-column-min:\s*230px/);
   assert.match(kanbanCss, /--tk-card-closed:\s*64px/);
   assert.match(kanbanCss, /--tk-card-open:\s*168px/);
-  assert.match(kanbanCss, /-webkit-line-clamp:\s*2/);
+  assert.doesNotMatch(kanbanCss, /line-clamp|-webkit-box/);
+  assert.match(kanbanCss, /max-height:\s*calc\(var\(--tk-outcome-line\) \* 2\)/);
   assert.doesNotMatch(moduleSource, /setInterval|MutationObserver|tk-count|tk-chip/);
   assert.match(moduleSource, /tk-refresh/);
   assert.match(moduleSource, /tw-agent-density-lines/);
+});
+
+test('card expansion and owner opening are sibling controls, never nested interactions', () => {
+  assert.match(moduleSource, /node\('button', 'tk-card-toggle'\)/);
+  assert.doesNotMatch(moduleSource, /card\.setAttribute\('role', 'button'\)|card\.tabIndex/);
+  assert.match(moduleSource, /toggle\.setAttribute\('aria-expanded'/);
+  assert.match(moduleSource, /if \(!event\.target\.closest\('button'\)\) toggleOpen\(\)/);
 });
 
 test('a failed move request uses house copy rather than the raw response message', () => {
