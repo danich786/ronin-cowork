@@ -89,6 +89,19 @@ test('the universal shelf carries vocabulary and navigation, not optional abilit
   }
 });
 
+test('every selector phrase has an exact meaning in the universal Agent reading', async () => {
+  const selector = await readFile(path.resolve('public/js/terminal-controls.js'), 'utf8');
+  const base = await readFile(path.resolve('ronin_session_boot/all/BASE_ABILITIES.md'), 'utf8');
+  const block = selector.match(/const vocabulary = section\('Agent vocabulary'[\s\S]*?for \(const \[term, description\] of \[([\s\S]*?)\]\) \{/);
+  assert.ok(block, 'the selector should expose one Agent vocabulary list');
+  const terms = [...block[1]!.matchAll(/\['([^']+)',\s*'[^']+'\]/g)].map((match) => match[1]!);
+  assert.ok(terms.length, 'the selector should expose Agent vocabulary terms');
+  for (const term of terms) assert.match(base, new RegExp(`\\*\\*${term.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}\\*\\*`), `${term} needs an exact universal meaning`);
+  for (const command of ['session_create', 'edges send', 'edges wipeboard', 'work-record document list', 'work-record update_record', 'team-lead roster write', 'worktree-desk hand-in', 'bin/ronin-promote <team>', 'session_end']) {
+    assert.match(base, new RegExp(command.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')), `${command} needs to be named in the vocabulary contract`);
+  }
+});
+
 test('the real stock shelf compiles to one read: contracts first, glossary last, under the one-read budget', async () => {
   // Every CLI a newborn may be caps a single read (Codex ~10k tokens of shell output;
   // Claude Code 30,000 chars per Bash call, 25,000 tokens per Read) and both models open a

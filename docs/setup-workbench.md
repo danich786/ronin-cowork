@@ -137,8 +137,9 @@ choices are separate, and **No communication** is one of them.
 A workspace folder is a folder Ronin keeps for Teams and Agents to start in. A new
 installation makes two inside Ronin: **Ronin Lab** for ideas, assistants, research and
 pre-project work, and **Ronin Project 1** for project work, prepared for worktrees. Each
-is a Git repository with a README and a first commit. Neither replaces or renames any
-folder of yours.
+uses its lowercase ID (`ronin_lab`, `ronin_project_1`) as the starting directory name and
+is a Git repository with a README and a first commit. Workspaces the owner adds are separate,
+named entries; they do not replace either built-in.
 
 The surface shows the folders as stones, with **Add A Workspace** first. Adding one is a
 keep-or-ignore decision: browse, and **Keep** the folder you want. Folders with a

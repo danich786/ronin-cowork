@@ -224,7 +224,7 @@ export async function setupRuntimeAnswer(
     };
   }));
   const activated_count = providers.filter((provider) => provider.activated).length;
-  const roots = INSTALLED_ROOTS.map((root) => ({ ...root, dir: path.join(rootDir('user'), root.label) }));
+  const roots = INSTALLED_ROOTS.map((root) => ({ ...root, dir: path.join(rootDir('user'), root.name) }));
   return {
     providers,
     activated_count,
@@ -378,7 +378,7 @@ export async function ensureInstalledRoots(): Promise<Array<{ name: string; labe
   const installed = [];
   const known = await peekProjectRoots();
   for (const root of INSTALLED_ROOTS) {
-    const dir = path.join(rootDir('user'), root.label);
+    const dir = path.join(rootDir('user'), root.name);
     await ensureRepository(dir, root.label, root.managed);
     // Register once. A runtime read runs this on every call; rewriting an unchanged
     // catalog each time is what let concurrent reads collide.

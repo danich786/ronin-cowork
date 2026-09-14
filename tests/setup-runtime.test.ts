@@ -241,10 +241,15 @@ test('Done records completion and closes; Close before completion only closes', 
 });
 
 test('installed roots are distinct registered repositories with READMEs and first commits', async () => {
+  const answer = await runtime.setupRuntimeAnswer({}, await measured({}, []), { exists: async () => false }, undefined, catalog);
+  assert.deepEqual(answer.roots.map((root) => root.dir), [
+    path.join(process.env.RONIN_USER_ROOT!, 'ronin_lab'),
+    path.join(process.env.RONIN_USER_ROOT!, 'ronin_project_1'),
+  ]);
   const made = await runtime.ensureInstalledRoots();
   assert.deepEqual(made.map((root) => root.dir), [
-    path.join(process.env.RONIN_USER_ROOT!, 'Ronin Lab'),
-    path.join(process.env.RONIN_USER_ROOT!, 'Ronin Project 1'),
+    path.join(process.env.RONIN_USER_ROOT!, 'ronin_lab'),
+    path.join(process.env.RONIN_USER_ROOT!, 'ronin_project_1'),
   ]);
   for (const root of made) {
     await access(path.join(root.dir, 'README.md'));

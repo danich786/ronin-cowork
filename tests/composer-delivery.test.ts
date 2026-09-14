@@ -47,3 +47,37 @@ test('one Ronin box request leaves copy mode and sends text plus Enter despite a
   assert.equal(screen.match(/SUBMITTED:one press/g)?.length, 1, screen);
   assert.equal((await fetch(`http://127.0.0.1:${address.port}/api/messages`).then((r) => r.json())).messages.length, 0);
 });
+
+test('complete messages preserve paste boundaries and one final Enter even when the reader is delayed', async (t) => {
+  const server = await openTestServer('composer_paste_boundary', { onPath: true });
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ronin-paste-boundary-'));
+  t.after(async () => { await closeTestServer(server); await fs.rm(root, { recursive: true, force: true }); });
+  const output = path.join(root, 'input');
+  const reader = `
+    const fs = require('node:fs');
+    process.stdin.setRawMode(true);
+    process.stdout.write('\x1b[?2004hREADY');
+    process.stdin.on('data', data => fs.appendFileSync(${JSON.stringify(output)}, data));
+  `;
+  await server.run('new-session', '-d', '-s', 'paste_target', process.execPath, '-e', reader);
+  for (let i = 0; i < 50; i++) {
+    if ((await server.run('capture-pane', '-p', '-t', '=paste_target:')).includes('READY')) break;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+  assert.match(await server.run('capture-pane', '-p', '-t', '=paste_target:'), /READY/);
+  const pid = Number(await server.run('display-message', '-p', '-t', '=paste_target:', '#{pane_pid}'));
+  // Both writes can be waiting in the PTY when an Agent resumes processing input.
+  process.kill(pid, 'SIGSTOP');
+  const { deliverForce } = await import('../src/send.js');
+  const text = "first line\nsecond line — 日本語 'quoted'";
+  try { assert.equal((await deliverForce('paste_target', text)).delivered, true); }
+  finally { process.kill(pid, 'SIGCONT'); }
+  let received = '';
+  for (let i = 0; i < 50; i++) {
+    received = await fs.readFile(output, 'utf8').catch(() => '');
+    if (received.endsWith('\r')) break;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+  assert.equal(received, `\x1b[200~${text}\x1b[201~\r`);
+  assert.equal(await server.run('list-buffers', '-F', '#{buffer_name}'), '');
+});
