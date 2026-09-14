@@ -38,7 +38,7 @@ Campaign defaults → Team → Agent carries one kind of choice: a **behaviour**
 can say how ordinary work should be done or add a facility and its taught practice. Its
 definition in `ronin_catalogs/behaviours/<name>.md` may name an installation and carry
 reading, SOPs, tools, and an MCP connection. Capability documents conditionally select
-and teach executable authority.
+knowledge, emphasis, and tool-job teaching for the Build Brief.
 
 An installation-gated behaviour appears on forms only while its installation and every
 requirement are on. A launch request naming an unavailable behaviour is born without it;
@@ -57,11 +57,15 @@ complete list. A template clobbers only the fields it carries.
 
 ## Capability bundles: the tools an Agent is taught
 
+A capability bundle is a knowledge layer, not an authority layer. Selection changes what
+the Build Brief teaches and emphasizes for that Agent; it does not grant, withhold,
+authorize, or forbid an installed tool or its help.
+
 The commands an Agent is taught are grouped into **capability bundles**, one authored
 Markdown document each in `ronin_catalogs/capabilities/` (the owner's catalogs store
 shadows a name whole and adds new ones). A bundle is a document grouping, not an
 executable: it answers one question, lists the actual tools that answer it in a `## Tools`
-table — each with its authority, whether it is taught at birth, and its help route — and
+table — each with its job, whether it is emphasized at birth, and its help route — and
 carries the teaching around them. A bundle may list several tools, one, or none; a tool may
 be surfaced by more than one bundle.
 
@@ -103,12 +107,12 @@ One resolver runs before the Agent process exists:
 
 The same result feeds the birth README, command directory, MCP connections, and receipt.
 
-## Catalog authority
+## Catalog definitions
 
 Definitions live in `ronin_catalogs/installations/` and `ronin_catalogs/behaviours/`, one
 Markdown file per name; each directory's README carries the format. The owner's stores
 shadow a stock definition whole. Campaign and Team records hold only switches and names.
 
-A definition is enablement, not a security boundary. An off feature is not taught, offered,
-or placed in normal command lookup. Role and work-context facts change teaching only and
-never withhold an installed Cowork tool.
+A definition records enablement; it is not a security boundary. An off feature is not
+taught, offered, or placed in normal command lookup. Role and work-context facts change
+teaching only and do not change an installed Cowork tool or its help.
