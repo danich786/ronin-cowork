@@ -6,7 +6,7 @@ import path from 'node:path';
 import express from 'express';
 import { openTestServer, closeTestServer } from './helpers/testserver.js';
 
-test('one Ronin box request leaves copy mode and sends text plus Enter despite a restrictive Control setting', async (t) => {
+test('one Ronin box request submits even if copy mode reopens after the paste', async (t) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ronin-composer-delivery-'));
   const server = await openTestServer('composer_delivery', { onPath: true });
   const previous = process.env.RONIN_MESSAGE_QUEUE_DIR;
@@ -22,6 +22,16 @@ test('one Ronin box request leaves copy mode and sends text plus Enter despite a
   const { setControl } = await import('../src/tmux.js');
   await setControl('composer_target', 'read');
   await server.run('copy-mode', '-t', '=composer_target:');
+  const { tmux } = await import('../src/tmux-client.js');
+  await tmux.connect();
+  const run = tmux.run;
+  t.after(() => { tmux.run = run; });
+  // Another browser can scroll the shared pane during the paste-to-Enter pause.
+  tmux.run = async (args, options) => {
+    const result = await run.call(tmux, args, options);
+    if (args[0] === 'paste-buffer' && args.includes('-p')) await server.run('copy-mode', '-t', '=composer_target:');
+    return result;
+  };
   const app = express();
   app.use(express.json());
   const { registerMessages } = await import('../src/routes/messages-api.js');
@@ -46,6 +56,8 @@ test('one Ronin box request leaves copy mode and sends text plus Enter despite a
   }
   assert.equal(screen.match(/SUBMITTED:one press/g)?.length, 1, screen);
   assert.equal((await fetch(`http://127.0.0.1:${address.port}/api/messages`).then((r) => r.json())).messages.length, 0);
+  assert.equal(tmux.state(), 'up');
+  assert.equal(await server.run('display-message', '-p', '-t', '=composer_target:', '#{pane_in_mode}'), '1');
 });
 
 test('complete messages preserve paste boundaries and one final Enter even when the reader is delayed', async (t) => {
