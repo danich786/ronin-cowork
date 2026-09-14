@@ -109,6 +109,7 @@ export interface HandInReceipt {
   line_sha: string;
   conflict_files: string[];
   reason: string;
+  project_id?: string;
 }
 
 export interface ChangeSetRepo {
