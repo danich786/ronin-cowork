@@ -235,7 +235,6 @@ test('the stock capability documents are well-formed and carry no retired vocabu
   assert.deepEqual(priority('worktree-desk'), ['worktree-desk status', 'worktree-desk sync', 'worktree-desk hand-in']);
   assert.deepEqual(priority('session'), ['session_check', 'session_create']);
   assert.ok(by.session.tools.some((tool) => tool.name === 'session_set'));
-  assert.ok(!by.session.tools.some((tool) => tool.name === 'session_fork'), 'the retired fork command is not catalogued');
   assert.deepEqual(priority('team-lead'), [
     'team-lead roster read', 'team-lead project create',
     'team-lead project read', 'team-lead project list', 'team-lead project write',

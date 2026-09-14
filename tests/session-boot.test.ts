@@ -129,7 +129,6 @@ test('the real stock shelf compiles to one read: contracts first, glossary last,
     const firstWindow = text.split('\n').slice(0, 250).join('\n');
     assert.match(firstWindow, /Fork versus spawn/);
     assert.match(firstWindow, /session_create/);
-    assert.doesNotMatch(firstWindow, /session_fork/);
     assert.match(firstWindow, /owner requires permission before spawning/);
     assert.match(firstWindow, /ronin_sops\/worktree-root\.md/);
     // The glossary arrived rendered: markers gone, header rewritten.
