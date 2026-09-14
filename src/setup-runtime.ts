@@ -224,7 +224,7 @@ export async function setupRuntimeAnswer(
     };
   }));
   const activated_count = providers.filter((provider) => provider.activated).length;
-  const roots = INSTALLED_ROOTS.map((root) => ({ ...root, dir: path.join(rootDir('user'), root.label) }));
+  const roots = INSTALLED_ROOTS.map((root) => ({ ...root, dir: path.join(rootDir('user'), root.name) }));
   return {
     providers,
     activated_count,
