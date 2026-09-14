@@ -9,6 +9,7 @@ import { CAMPAIGN_TEMPLATES_TYPE, createTemplatesSurface } from './campaign-temp
 import { PROVIDER_SURFACE_TYPE, providerSurfaceDefinition } from './provider-surface.js';
 import { createStoneWorkSurface } from './stone-work-surface.js';
 import { servicesSetupModel } from './services-setup-state.js';
+import { serviceCapabilityWord } from './services-setup-state.js';
 import { campaignById, campaigns, loadCampaigns, saveCampaign } from './campaigns.js';
 import { completeInstallationMap } from './installation-map.js';
 import { createEmbeddedNewTeamFormView } from './new-team-form.js';
@@ -52,13 +53,14 @@ export function serviceComponentRows(installed, masterOn) {
   const services = installed?.services || {};
   const desired = services.capabilities?.desired || {};
   const running = new Set(Array.isArray(services.capabilities?.running) ? services.capabilities.running : []);
+  const disagrees = new Set(Array.isArray(services.capabilities?.disagrees) ? services.capabilities.disagrees : []);
   const parked = new Map((Array.isArray(services.capabilities?.parked) ? services.capabilities.parked : []).map((item) => [item.name, item]));
   return SERVICE_COMPONENTS.map((component) => {
     const park = parked.get(component.id);
     const permanent = !!park;
     const wanted = desired[component.id] === true;
     const isRunning = running.has(component.id);
-    const word = permanent ? 'Parked' : wanted !== isRunning ? 'Restart' : isRunning ? 'Running' : 'Off';
+    const word = serviceCapabilityWord({ wanted, running: isRunning, disagrees: disagrees.has(component.id), parked: permanent });
     const off = permanent ? park.reason : !masterOn ? 'Turn on Running services first' : '';
     return { v: component.id, l: component.label, sub: component.needs, word, ...(off ? { off } : {}) };
   });

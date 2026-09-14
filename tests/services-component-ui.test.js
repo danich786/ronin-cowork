@@ -6,6 +6,7 @@ const setup = await readFile(new URL('../public/js/setup-surfaces.js', import.me
 const installed = await readFile(new URL('../src/routes/installed-api.ts', import.meta.url), 'utf8');
 const launch = await readFile(new URL('../src/routes/launch.ts', import.meta.url), 'utf8');
 const parts = await readFile(new URL('../src/parts.ts', import.meta.url), 'utf8');
+const { serviceCapabilityWord } = await import('../public/js/services-setup-state.js');
 
 test('the ask many-field owns all six owner-facing capabilities and exact captions', () => {
   for (const [id, label, caption] of [
@@ -30,9 +31,13 @@ test('the ask many-field owns all six owner-facing capabilities and exact captio
 test('installed truth distinguishes desired, running, parked, and restart state', () => {
   assert.match(installed, /desired: Record<string, boolean>/);
   assert.match(installed, /listServiceFailures\(\)/);
-  assert.match(installed, /capabilities = \{ desired, running: runtime\.running, parked: runtime\.parked \}/);
+  assert.match(installed, /capabilities = \{ desired, running: runtime\.running, disagrees, parked: runtime\.parked \}/);
   assert.doesNotMatch(installed, /servicePartSelected|SERVICE_CAPABILITY_PARTS/);
-  assert.match(setup, /'Parked'.*'Restart'.*'Running'.*'Off'/s);
+});
+
+test('either partial Task manager runtime direction says Restart without exposing parts', () => {
+  assert.equal(serviceCapabilityWord({ wanted: false, running: false, disagrees: true, parked: false }), 'Restart');
+  assert.equal(serviceCapabilityWord({ wanted: true, running: false, disagrees: true, parked: false }), 'Restart');
 });
 
 test('new Agent transcript recording follows both the master and explicit capability choice', () => {

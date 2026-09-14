@@ -10,6 +10,11 @@ export const SERVICES_SETUP_STATES = Object.freeze([
   'entitled', 'installing', 'install_failed', 'switched_off', 'restart_needed', 'active',
 ]);
 
+/** Pure capability word: installed facts already hide every implementation-part detail. */
+export function serviceCapabilityWord({ wanted, running, disagrees, parked }) {
+  return parked ? 'Parked' : disagrees ? 'Restart' : running ? 'Running' : wanted ? 'Restart' : 'Off';
+}
+
 const step = (id, caption, label, { done = false, enabled = true, act = null, title = '' } = {}) => ({ id, caption, label, done, enabled, act, title });
 
 /** Where the registration stands: its state, tone words, and the Register step. */

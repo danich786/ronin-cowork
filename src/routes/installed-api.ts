@@ -40,7 +40,7 @@ export interface InstalledAnswer {
     /** The Campaign's default switch for the Ronin Services Routine. */
     switched_on: boolean;
     desired: Record<string, boolean>;
-    capabilities: { desired: Record<string, boolean>; running: string[]; parked: { name: string; reason: string }[] };
+    capabilities: { desired: Record<string, boolean>; running: string[]; disagrees: string[]; parked: { name: string; reason: string }[] };
   };
   /** Every Routine, with the Campaign's default switch — switches, not installs. */
   installations: { name: string; label: string; blurb: string; on: boolean; available: boolean; requires: string[] }[];
@@ -57,11 +57,16 @@ export async function installedAnswer(): Promise<InstalledAnswer> {
   const switchedOn = map.ronin_services === true;
   const desired = campaign?.config?.services?.parts ?? {};
   const runtime = listServiceCapabilities();
-  const capabilities = { desired, running: runtime.running, parked: runtime.parked };
   const runningCapabilities = new Set(runtime.running);
+  const partialCapabilities = new Set(runtime.partial);
   const permanentlyParked = new Set(runtime.parked.map((capability) => capability.name));
-  const restartNeeded = runtime.known.some((name) => !permanentlyParked.has(name)
-    && (switchedOn && desired[name] === true ? !runningCapabilities.has(name) : runningCapabilities.has(name)));
+  const disagrees = runtime.known.filter((name) => desired[name] === true
+    ? !runningCapabilities.has(name)
+    : runningCapabilities.has(name) || partialCapabilities.has(name));
+  const capabilities = { desired, running: runtime.running, disagrees, parked: runtime.parked };
+  const restartNeeded = runtime.known.some((name) => !permanentlyParked.has(name) && (switchedOn
+    ? disagrees.includes(name)
+    : runningCapabilities.has(name) || partialCapabilities.has(name)));
   return {
     cowork: roninIdentity(),
     services: { parts, loaded, parked, desired, capabilities, installed: parts.length > 0, activated: entitled, stage: state?.stage ?? 'not_requested', switched_on: switchedOn, restart_needed: restartNeeded },
