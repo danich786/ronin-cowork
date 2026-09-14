@@ -11,7 +11,8 @@ your browser shortcuts. These controls work on desktop and mobile, locked or unl
 | Stop | Escape | Send the CLI's interrupt immediately. No busy-screen check, typing grace, or automatic retry. |
 
 **Hints** is pinned below the selector's scrolling cards, expanded on first use. Collapse
-it if desired. Mobile puts the same card below its terminal. All four buttons also stay
+it if desired; its saved expansion state is independent of the roster. Mobile puts the
+same card below its terminal. All four buttons also stay
 on the Tile, including while the mobile keyboard is open. Keyboard users can Tab to a
 button and activate it with Enter or Space.
 

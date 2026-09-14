@@ -1,7 +1,7 @@
 /* Ronin owns the gesture; the server's CLI registry owns the command. */
 import { request } from './request.js';
 import { sheet, toast } from './ui.js';
-import { S, tiles } from './state.js';
+import { S } from './state.js';
 
 const actions = ['copy', 'clear', 'close', 'stop'];
 const labels = { copy: 'Copy', clear: 'Clear', close: 'Close', stop: 'Stop' };
@@ -12,13 +12,17 @@ let channel = null;
 const preference = (key, value) => {
   try { if (value === undefined) return localStorage.getItem(key); localStorage.setItem(key, value); } catch {}
 };
+function describeAction(node) {
+  if (!config) return;
+  const action = node.dataset.terminalAction;
+  node.title = `${labels[action]} — ${config.bindings[action]}. ${meanings[action]}`;
+  node.setAttribute('aria-keyshortcuts', config.bindings[action].replace('Ctrl', 'Control'));
+}
 function publish(data) {
   config = data;
   for (const node of document.querySelectorAll('[data-control-key]')) node.textContent = config.bindings[node.dataset.controlKey];
   for (const node of document.querySelectorAll('[data-terminal-action]')) {
-    const action = node.dataset.terminalAction;
-    node.title = `${labels[action]} — ${config.bindings[action]}. ${meanings[action]}`;
-    node.setAttribute('aria-keyshortcuts', config.bindings[action].replace('Ctrl', 'Control'));
+    describeAction(node);
   }
 }
 export function loadTerminalControls() {
@@ -55,6 +59,8 @@ export function installTileControls(tile) {
         e.preventDefault(); e.stopImmediatePropagation();
         if (overlay) overlay.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
         else drop.classList.remove('open');
+      } else if (matchedControl(e, config?.bindings)) {
+        e.preventDefault(); e.stopImmediatePropagation();
       }
       return;
     }
@@ -84,6 +90,7 @@ function actionButton(action, run) {
   button.textContent = labels[action];
   button.dataset.terminalAction = action;
   button.setAttribute('aria-label', labels[action]);
+  describeAction(button);
   button.addEventListener('pointerdown', (e) => e.preventDefault());
   button.addEventListener('click', () => void run());
   return button;

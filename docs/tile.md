@@ -429,7 +429,7 @@ with the session. No busy-screen classifier is consulted by a control.
 
 **Unlocked** is the DVR rule (`public/js/dvr.js`, pure and tested). Printable text — typed or
 pasted — **parks locally** and shows in a thin strip over the tile. Command keys (Esc, arrows,
-Tab, any control char bar the ^C held above) go straight through immediately. Enter sends the whole parcel
+Tab, and control characters not claimed by the shared controls) go straight through immediately. Enter sends the whole parcel
 as **one atomic write with the `\r` glued on**; a delayed `\r` on a timer is a message iOS can
 lose halfway. Backspace eats parked text first, and is a command key once the strip is empty.
 

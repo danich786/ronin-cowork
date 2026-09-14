@@ -57,6 +57,21 @@ try {
       const before = await page.locator('.terminal-hints').boundingBox();
       await page.locator('.wk-workbench-selector-cards').evaluate(el=>el.scrollTop=el.scrollHeight);
       assert.equal((await page.locator('.terminal-hints').boundingBox()).y,before.y);
+      await page.locator('.terminal-hints summary').click();
+      assert.equal(await page.locator('.terminal-hints').getAttribute('open'), null);
+      await page.waitForFunction(()=>localStorage.getItem('ronin.hints.collapsed')==='yes');
+      await page.locator('.wk-workbench-selector-cards').evaluate(el=>el.hidden=true);
+      assert.equal(await page.locator('.terminal-hints').getAttribute('open'), null);
+      await page.locator('.terminal-hints summary').click();
+      assert.equal(await page.locator('.terminal-hints').getAttribute('open'), '');
+      assert.equal(await page.locator('.wk-workbench-selector-cards').evaluate(el=>el.hidden), true);
+      await page.locator('.wk-workbench-selector-cards').evaluate(el=>el.hidden=false);
+      await page.locator('.terminal-hints summary').click();
+      await page.waitForFunction(()=>localStorage.getItem('ronin.hints.collapsed')==='yes');
+      await page.reload();
+      await page.waitForFunction(()=>window.ready);
+      assert.equal(await page.locator('.terminal-hints').getAttribute('open'), null);
+      await page.locator('.terminal-hints summary').click();
       await page.locator('.composer textarea').fill('unfinished\nsecond line');
       await page.locator('.terminal-actions button').filter({hasText:/^Clear$/}).click();
       assert.equal(await page.locator('.composer textarea').inputValue(),''); assert.equal(calls.length,0);
@@ -67,6 +82,9 @@ try {
       if (!mobile) {
         await page.evaluate(()=>tile.term.focus()); await page.keyboard.press('Control+c');
         await page.locator('.ui-sheet.open').waitFor();
+        await page.evaluate(()=>tile.term.focus()); await page.keyboard.press('Control+c');
+        assert.deepEqual(await page.evaluate(()=>raw),[]);
+        assert.equal(await page.locator('.ui-sheet.open').count(),1);
         const n=calls.length; await page.evaluate(()=>tile.term.focus()); await page.keyboard.press('Escape');
         assert.equal(await page.locator('.ui-sheet.open').count(),0);assert.equal(calls.length,n);
         await page.evaluate(()=>tile.term.focus());await page.keyboard.press('Escape');
