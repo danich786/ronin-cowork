@@ -20,6 +20,12 @@ Stop sends Escape. Clear sends Ctrl+C once, as selected by the owner. Ronin does
 inspect the CLI state first; native Ctrl+C may clear a draft, interrupt activity, or
 exit at an empty prompt. Whole browser drafts clear locally.
 
+Complete messages use the shared bracketed-paste transport before Enter. Codex's
+[`handle_paste`](https://github.com/openai/codex/blob/rust-v0.153.4/codex-rs/tui/src/bottom_pane/chat_composer.rs)
+clears paste-burst Enter suppression after an explicit paste; raw character bursts
+can instead treat Enter as a newline. This is terminal protocol handling, not a
+provider-specific shortcut or a second Enter.
+
 Services' `gbrain/setup.sh`, `uninstall.sh`, and `doctor.sh` own gbrain registration,
 removal and checks. The setup uses the Codex MCP command and token environment reference.
 There is no generic all-server on/off mechanism in this integration.

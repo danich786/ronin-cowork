@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { exactPane } from './tmux.js';
 import { tmux } from './tmux-client.js';
 
@@ -46,7 +47,16 @@ export interface PaneIO {
 const typeText = async (name: string, text: string) => {
   // A complete message leaves tmux copy mode before typing, including composer sends.
   await tmux.run(['send-keys', '-t', exactPane(name), '-X', 'cancel']).catch(() => {});
-  await tmux.run(['send-keys', '-t', exactPane(name), '-l', '--', text]);
+  // Mark the paste boundary when the CLI requests bracketed paste. Raw send-keys
+  // makes Codex infer a typing burst and can turn the following Enter into a newline.
+  const buffer = `ronin-message-${randomUUID()}`;
+  await tmux.run(['set-buffer', '-b', buffer, '--', text]);
+  try {
+    await tmux.run(['paste-buffer', '-d', '-p', '-r', '-b', buffer, '-t', exactPane(name)]);
+  } catch (error) {
+    await tmux.run(['delete-buffer', '-b', buffer]).catch(() => {});
+    throw error;
+  }
 };
 const pressEnter = (name: string) => tmux.run(['send-keys', '-t', exactPane(name), 'Enter']);
 const paneIO = (name: string): PaneIO => ({
