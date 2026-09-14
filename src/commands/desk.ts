@@ -206,7 +206,7 @@ async function main(): Promise<void> {
           if (receipt.result === 'accepted' && tidy.desk) {
             out(projectId
               ? `  Code handed in for Project ${projectId}. Project state is unchanged. Next: work-record project advance ${projectId} --to LANDING.`
-              : '  Code handed in. No Project was associated; Project state is unchanged. Remember to update your project.');
+              : '  Code handed in. No Project was associated; Project state is unchanged.');
             out(`  desk is ${tidy.desk.ahead === 0 ? 'level with the line' : `${tidy.desk.ahead} commit(s) ahead of the line`}`);
             out(tidy.unsaved_files.length ? `  not handed in: ${tidy.unsaved_files.join(', ')}` : '  no unsaved or untracked files');
             out(`  NEXT: line moved; run worktree-desk status ${deskId(d)}; if it reports a dev update, run worktree-desk sync ${deskId(d)}; contact the lead with edges send <lead>`);
