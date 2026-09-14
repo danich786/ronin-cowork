@@ -18,7 +18,7 @@ import type { Origin } from './resources.js';
  * A bundle is a document grouping, not an executable (lead ruling, 2026-09-13). It lists
  * the actual tools that answer its question — several, one, or none — and a tool may be
  * surfaced by more than one bundle without being renamed to either. A bundle with no tool
- * is teaching plus authority: still selected, still on the newborn's shelf. Selection is a
+ * is knowledge and teaching: still selected, still on the newborn's shelf. Selection is a
  * predicate over launch facts and controls knowledge only. Every installed Cowork tool is
  * callable by every Cowork Agent; feature and integration tools are projected only when
  * their document is selected. The birth lesson names only selected knowledge.
