@@ -1,5 +1,25 @@
 # Ronin documentation — start with the question
 
+## Terminal controls
+
+| Browser input | Codex receives | Claude receives | Gemini receives | Grok receives | Hermes receives |
+|---|---|---|---|---|---|
+| **Escape — Stop** | Escape | Escape | Ctrl+C | Ctrl+C | Ctrl+C |
+| **Ctrl+Shift+Backspace — Clear** | Ctrl+C | Escape | Ctrl+C | Ctrl+C | Ctrl+C |
+| **Ctrl+Shift+X — Close** | Ronin confirmation | Ronin confirmation | Ronin confirmation | Ronin confirmation | Ronin confirmation |
+| **Ctrl+C — protected** | Nothing | Nothing | Nothing | Nothing | Nothing |
+
+**Clear means the entire unsubmitted input box, not one line or conversation history.**
+Ronin sends the native key once; the CLI's current state determines its effect.
+**Copy stays native:** Option-drag then Cmd+C on Mac; Shift-drag then Ctrl+C on
+Windows/Linux. Copy sends nothing to the Agent. Escape dismisses an open Ronin dialog
+first; Clear empties a focused Ronin text box locally.
+
+These are the default mappings as of 2026-09-14. [Shortcut settings and Hints](terminal-controls.md)
+explain customization. [Agent integration pages](agents/README.md) record upstream sources;
+these mappings use documented native behavior, not a claim of live testing of every CLI.
+
+
 These are operational routes for a user or an Agent working on the user's behalf. Builder contracts remain available, but they are not prerequisites for installing or using Ronin.
 
 ## Before Ronin is running

@@ -9,12 +9,12 @@ The catalog currently declares neither Dangerously nor disconnected mode. Explic
 requests for undeclared modes are refused rather than borrowed from another CLI.
 Services' gbrain scripts do not implement Grok MCP registration.
 
-Stop sends one Ctrl+C. Current upstream documentation says Escape does not cancel a
-running turn. Ctrl+C can clear a concurrent draft first, and pressing again while
-cancelling can escalate to quit. Ronin sends the owner's request once, without screen
-classification or automatic repetition. Whole-draft CLI Clear is unverified and its adapter is disabled;
-browser drafts clear entirely locally.
-Native key customization and menus retain provider-specific behavior.
+Stop and Clear send Ctrl+C once. The upstream keyboard guide documents a single Ctrl+C
+clearing a nonempty draft. With an empty prompt it cancels activity and may escalate
+toward quit while cancelling. Escape also cancels in default mode; fullscreen Vim mode
+has different Escape behavior. Ronin uses the registered Ctrl+C mapping without checking
+those states. Browser drafts clear entirely locally.
+
 
 Shared [code ownership and test boundaries](README.md#code-ownership) apply to this CLI.
 

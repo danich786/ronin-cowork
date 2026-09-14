@@ -3,12 +3,8 @@
 Every Ronin browser Tile uses four actions. The CLI running inside it does not choose
 your browser shortcuts. These controls work on desktop and mobile, locked or unlocked.
 
-| Action | Default shortcut | What happens |
-|---|---|---|
-| Copy | Native Cmd+C on Mac / Ctrl+C elsewhere | Option-drag on Mac (Shift-drag elsewhere) to select, then copy normally. Mobile Copy opens selectable terminal text. |
-| Clear | Ctrl+Shift+Backspace | Clear the focused unsent browser message or locally parked input. CLI-draft Clear is currently unsupported; no guessed keys are sent. |
-| Close | Ctrl+Shift+X | Open the existing retirement sheet. Nothing is retired until you choose an action. |
-| Stop | Escape | Send the CLI's interrupt immediately. No busy-screen check, typing grace, or automatic retry. |
+The complete default [input → CLI mapping table](README.md#terminal-controls) is at the
+top of the documentation README. Clear means the entire unsubmitted input box.
 
 **Hints** is pinned below the selector's scrolling cards, expanded on first use. Collapse
 it if desired; its saved expansion state is independent of the roster. A failed locked-terminal
@@ -44,10 +40,12 @@ open Ronin sheet/menu first. No shortcut leaks through that sheet into the Agent
 ## Clear and Stop are different
 
 Clear removes the browser's entire unsent draft when that is the focused input. It
-never recalls a message already accepted by the delivery queue. Whole-draft CLI Clear
-is not yet verified for the supported CLIs, so those adapters refuse the action. The
-previous Ctrl+U/Ctrl+K mapping was removed: tests proved which bytes Ronin sent, not
-what each CLI cleared. Clear never falls back to interrupt, exit, or submission keys.
+never recalls a message already accepted by the delivery queue. At the CLI, Clear sends
+its registered native sequence once: Claude gets Escape; Codex, Gemini, Grok and Hermes
+get Ctrl+C. Ronin does
+not classify the screen or reinterpret the result. These keys retain the CLI's native
+behavior, including interrupting activity or handling an empty prompt differently.
+Unknown CLIs have no guessed control sequence.
 
 Stop sends the registered interrupt once. It does not wait for the CLI to look idle or
 confirm that a tool stopped. A CLI may consume it in an open menu, or stop a tool at its

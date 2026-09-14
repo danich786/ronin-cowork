@@ -13,9 +13,9 @@ MCP servers remain enabled. Configuration overrides merge; an empty server objec
 not a reliable global disable. Dangerously adds the catalog's approval/sandbox bypass
 flag for this launch; configured mode leaves the command unchanged.
 
-Stop sends Escape. Native popups and some slash-input states can consume it. Whole-draft CLI Clear is unverified and its adapter is disabled. Codex's Ctrl+C
-can clear a draft, interrupt work, or exit an idle CLI, so it is not a safe generic
-Clear mapping. Whole browser drafts clear locally.
+Stop sends Escape. Clear sends Ctrl+C once, as selected by the owner. Ronin does not
+inspect the CLI state first; native Ctrl+C may clear a draft, interrupt activity, or
+exit at an empty prompt. Whole browser drafts clear locally.
 
 Services' `gbrain/setup.sh`, `uninstall.sh`, and `doctor.sh` own gbrain registration,
 removal and checks. The setup uses the Codex MCP command and token environment reference.

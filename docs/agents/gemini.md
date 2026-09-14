@@ -11,11 +11,10 @@ The catalog declares a Dangerously option. It declares no disconnected-mode flag
 an explicit disconnected launch is refused. No Gemini MCP registration adapter is
 implemented in Services' gbrain setup. Do not treat connected as provisioned.
 
-Stop sends one Ctrl+C. Gemini handles cancellation itself and repeated Ctrl+C can exit;
-Ronin does not retry or repeat a held shortcut. Whole-draft CLI Clear is unverified and its adapter is disabled. Gemini's Ctrl+C
-clear/cancel/quit multiplexing is not a safe generic Clear mapping. Browser drafts
-clear entirely locally. Escape and menu behavior remain
-native inside CLI dialogs.
+Stop and Clear send Ctrl+C once. The official keyboard reference documents `edit.clear`
+as clearing all input text. The same key can interrupt a request or quit on empty input;
+Ronin leaves that native behavior to Gemini. Browser drafts clear entirely locally.
+
 
 Shared [code ownership and test boundaries](README.md#code-ownership) apply to this CLI.
 

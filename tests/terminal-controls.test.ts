@@ -45,9 +45,11 @@ test('bad, duplicate, browser and typing chords are rejected', () => {
   assert.deepEqual(validateBindings(CONTROL_DEFAULTS), CONTROL_DEFAULTS);
 });
 
-test('unverified CLI Clear refuses instead of guessing editing or interrupt keys', () => {
-  for (const cli of ['codex', 'claude', 'gemini', 'grok', 'hermes']) {
-    assert.throws(() => agentControlKeys(cli, 'clear'), /No clear binding/);
+test('Clear sends the owner-selected native adapter without classifying CLI state', () => {
+  assert.deepEqual(agentControlKeys('codex', 'clear'), ['C-c']);
+  assert.deepEqual(agentControlKeys('claude', 'clear'), ['Escape']);
+  for (const cli of ['gemini', 'grok', 'hermes']) {
+    assert.deepEqual(agentControlKeys(cli, 'clear'), ['C-c']);
   }
   assert.deepEqual(agentControlKeys('codex', 'stop'), ['Escape']);
   assert.deepEqual(agentControlKeys('grok', 'stop'), ['C-c']);

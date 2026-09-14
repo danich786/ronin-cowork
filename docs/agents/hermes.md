@@ -12,10 +12,12 @@ The initial brief is parked rather than positional. The catalog currently declar
 neither Dangerously nor disconnected mode. Services' gbrain scripts do not implement
 Hermes MCP registration; there is no implied provisioning from an on/off control.
 
-Stop sends one Ctrl+C. Hermes documents interruption and force exit on a second press
-within two seconds. Ronin never automatically repeats it. Whole-draft CLI Clear is unverified and its adapter is disabled.
-The browser composer always supports whole-draft Clear. Unknown native keymaps require
-updating this adapter, not changes to browser shortcuts.
+Stop and Clear send Ctrl+C once. The official [TUI README](https://github.com/NousResearch/hermes-agent/blob/main/ui-tui/README.md#main-chat-input)
+documents interruption during activity, clearing the current draft, and exit when nothing
+is pending. This mapping follows that documented TUI behavior; Hermes is not installed
+here. The classic CLI guide separately documents Ctrl+C interruption and double-press
+force exit. Ronin adds no state classification. Browser drafts clear entirely locally.
+
 
 Shared [code ownership and test boundaries](README.md#code-ownership) apply to this CLI.
 

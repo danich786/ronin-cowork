@@ -12,10 +12,9 @@ Dangerously and disconnected mode use the catalog's additive flags. Disconnected
 coarse: it excludes other MCP servers as well as gbrain. Connected means the CLI's own
 configuration applies; it does not install or authenticate a server.
 
-Stop sends Escape; Claude may consume it to dismiss a dialog or decline a permission
-request. Whole-draft CLI Clear is unverified and its adapter is disabled; the Ronin browser
-composer clears its whole draft locally.
-Vim/custom keybindings may alter native dialog behavior.
+Stop and Clear both send Escape once, as selected by the owner. The current CLI state
+determines whether it clears input, interrupts activity, or dismisses a dialog; Ronin
+does not classify that state. Whole browser drafts clear locally.
 
 `hostside/claude-settings.py` owns the narrow theme/status-line configuration merge;
 `hostside/statusline-ronin.sh` emits the context reading consumed by `src/ctx.ts`.

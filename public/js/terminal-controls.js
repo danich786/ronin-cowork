@@ -7,7 +7,7 @@ const actions = ['copy', 'clear', 'close', 'stop'];
 const shortcutActions = ['clear', 'close', 'stop'];
 const selectionHint = () => document.getElementById('phone') ? 'Tap Copy to select text' : `${SELECT_MOD}-drag to select`;
 const labels = { copy: 'Copy', clear: 'Clear', close: 'Close', stop: 'Stop' };
-const meanings = { copy: 'Drag to select, then use your normal browser Copy command.', clear: 'Clear unsent input. Never close the session.', close: 'Retire this Agent through confirmation.', stop: 'Interrupt the Agent now; keep its session.' };
+const meanings = { copy: 'Drag to select, then use your normal browser Copy command.', clear: 'Clear browser input or send the CLI’s native Clear key.', close: 'Retire this Agent through confirmation.', stop: 'Interrupt the Agent now; keep its session.' };
 let config = null;
 let loading = null;
 let channel = null;
