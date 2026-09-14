@@ -155,6 +155,7 @@ export type MoveTegamiProjectInput =
 export interface MoveTegamiProjectResult {
   project: Project;
   projectsRemaining: number;
+  focus: string;
 }
 
 /** The house's only cross-letter project write. Roster mutation stays with its caller. */
@@ -182,11 +183,16 @@ export async function moveTegamiProject(
     const at = valid.findIndex((item) => item.id === input.projectId);
     if (at < 0) throw new Error(`project ${input.projectId} is not in @${input.session}'s work record`);
     [project] = valid.splice(at, 1);
+    if (parsed.body.at && typeof parsed.body.at === 'object' && !Array.isArray(parsed.body.at)
+        && (parsed.body.at as Record<string, unknown>).project === project.id) {
+      if (valid[0]) parsed.body.at = { project: valid[0].id };
+      else delete parsed.body.at;
+    }
   }
   parsed.body.projects = valid;
   await replaceLetterBlock(file, text, parsed, parsed.body);
   await notify(input.session, 'check your work record');
-  return { project, projectsRemaining: valid.length };
+  return { project, projectsRemaining: valid.length, focus: valid[0]?.id ?? 'none' };
 }
 
 export async function seedTegami(

@@ -51,11 +51,12 @@ export interface LeadNotice {
   result: 'accepted' | 'conflict';
   lineSha?: string;
   files?: string[];
+  projectId?: string;
 }
 
 export function leadMessage(n: LeadNotice): string {
   if (n.result === 'accepted') {
-    return `hand-in ${n.receiptId} by ${n.session} is on ${n.line} (${(n.lineSha ?? '').slice(0, 10)}). Your job: review the team line and promote it to dev when it is coherent — bin/ronin-promote ${n.team}. worktree-desk receipts --line --accepted lists what it carries.`;
+    return `hand-in ${n.receiptId} by ${n.session} is on ${n.line} (${(n.lineSha ?? '').slice(0, 10)})${n.projectId ? ` for Project ${n.projectId}` : ''}. Your job: review the team line and promote it to dev when it is coherent — bin/ronin-promote ${n.team}. worktree-desk receipts --line --accepted lists what it carries.`;
   }
   return `hand-in ${n.receiptId} by ${n.session} CONFLICTS with ${n.line}${n.files?.length ? ` on ${n.files.join(', ')}` : ''}. Your job: adjudicate — the line is untouched; the desk is blocked until you rule.`;
 }
@@ -71,7 +72,7 @@ export async function houseSend(to: string, message: string): Promise<string> {
 }
 
 export function replyMessage(receiptId: string, lead: string, message: string): string {
-  return `lead reply on hand-in ${receiptId} from ${lead}: ${message}`;
+  return `lead reply on hand-in ${receiptId} from ${lead}: ${message}. Remember to update your project.`;
 }
 
 export async function replyToHandIn(input: {

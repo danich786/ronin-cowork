@@ -230,7 +230,7 @@ test('the stock capability documents are well-formed and carry no retired vocabu
   // Project create is first-class and priority. Session creation is universal; the lead
   // bundle teaches visible delegation but does not duplicate the Session tool row.
   const priority = (name: string) => by[name].tools.filter((tool) => tool.priority).map((tool) => tool.command);
-  assert.deepEqual(priority('work-record'), ['work-record update_record', 'work-record document add', 'work-record project create', 'work-record project read', 'work-record project write']);
+  assert.deepEqual(priority('work-record'), ['work-record update_record', 'work-record document add', 'work-record project create', 'work-record project read', 'work-record project write', 'work-record project return', 'work-record project backlog', 'work-record project done']);
   assert.deepEqual(priority('edges'), ['edges send', 'edges wipeboard', 'edges read', 'edges team']);
   assert.deepEqual(priority('worktree-desk'), ['worktree-desk status', 'worktree-desk sync', 'worktree-desk hand-in']);
   assert.deepEqual(priority('session'), ['session_check', 'session_create']);
@@ -239,7 +239,8 @@ test('the stock capability documents are well-formed and carry no retired vocabu
   assert.deepEqual(priority('team-lead'), [
     'team-lead roster read', 'team-lead project create',
     'team-lead project read', 'team-lead project list', 'team-lead project write',
-    'team-lead project assign', 'team-lead project return', 'team-lead member status',
+    'team-lead project assign', 'team-lead project return', 'team-lead project backlog',
+    'team-lead project done', 'team-lead project restore', 'team-lead member status',
   ]);
   assert.ok(!by['team-lead'].tools.some((tool) => tool.name === 'session_create'), 'Team Lead does not duplicate the universal creation row');
   assert.match(await readFile(by['work-record'].file, 'utf8'), /Team roster issues its ID/);

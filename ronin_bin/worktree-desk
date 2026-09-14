@@ -3,7 +3,7 @@
 #
 # Usage: worktree-desk status [--session s | --team t | --repo r]   per desk: clean/dirty · ahead · pending · blocked
 #        worktree-desk open <repo[:branch]> [--team t]              get a desk from current local dev
-#        worktree-desk hand-in [<repo[:branch]>] [--assignment]     hand your committed delta to the team line
+#        worktree-desk hand-in [<repo[:branch]>] [--assignment] [--project <id>]  hand your committed delta to the team line
 #        worktree-desk sync [<repo[:branch]>]                       update the desk from current local dev
 #        worktree-desk close [<repo[:branch]>]                      remove a clean desk whose tip is on its line
 #        worktree-desk repository-init <existing-project-root>      initialize a local repository
@@ -27,7 +27,7 @@ Usage:
   worktree-desk assign <repo[:branch]> --session <name> --team <team> [--source dev|team]
   worktree-desk status [<repo[:branch]>] [--assignment]
   worktree-desk sync [<repo[:branch]>]
-  worktree-desk hand-in [<repo[:branch]>] [--assignment]
+  worktree-desk hand-in [<repo[:branch]>] [--assignment] [--project <team/id>]
   worktree-desk close [<repo[:branch]>] [--with-session]
   worktree-desk receipts [<repo>] [--line | --id <receipt-id>]
   worktree-desk reply <repo> <receipt-id> <message…>

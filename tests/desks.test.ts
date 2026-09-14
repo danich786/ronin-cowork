@@ -270,8 +270,9 @@ test('handIn: the line advances by compare-and-swap to the candidate, its worktr
   const before = sh(cowork, ['rev-parse', 'team/comp/dev']);
   await fs.writeFile(path.join(deskWorktree('cowork', 'team/comp/fable'), 'loose-one.txt'), 'one\n');
   await fs.writeFile(path.join(deskWorktree('cowork', 'team/comp/fable'), 'loose-two.txt'), 'two\n');
-  const { receipt, notices, tidy } = await handIn('cowork', 'team/comp/fable');
+  const { receipt, notices, tidy } = await handIn('cowork', 'team/comp/fable', { projectId: 'comp/11' });
   assert.equal(receipt.result, 'accepted', receipt.reason);
+  assert.equal(receipt.project_id, 'comp/11');
   assert.equal(receipt.expected_old, before);
   const after = sh(cowork, ['rev-parse', 'team/comp/dev']);
   assert.equal(receipt.line_sha, after);
