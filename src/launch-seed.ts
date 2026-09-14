@@ -35,7 +35,10 @@ export function resolveLaunchSeed(s: LaunchSeedSources): LaunchSeed & { resolved
   const a = t ? { ...c, ...t.agent_defaults } : c;
   const teamSource = t ? teamBy(t) : null;
   const source = (field: string): StatedBy[] => teamSource ?? campaignBy(s.campaign.id, `defaults.${field}`);
-  const root = t?.project_root || s.roots.find((item) => !item.archived)?.name || '';
+  const requestedRoot = t?.project_root || '';
+  const root = requestedRoot
+    ? s.roots.find((item) => item.name === requestedRoot || item.dir === requestedRoot)?.name || requestedRoot
+    : s.roots.find((item) => !item.archived)?.name || '';
   const available = availableBehaviours(s.installations, s.campaign.config.installations, s.behaviours);
   const selectedBehaviours = t ? (teamSettled ? t.behaviours.selected : ['mandates']) : campaignBehaviours;
   const required = new Set(teamSettled ? t?.behaviours.required ?? [] : []);
