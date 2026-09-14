@@ -15,7 +15,7 @@ const defaults = { clear: 'Ctrl+Shift+Backspace', close: 'Ctrl+Shift+X', stop: '
 let calls = [];
 app.get('/api/terminal-controls', (_req, res) => res.json({ bindings, defaults }));
 app.put('/api/terminal-controls', (req, res) => { bindings = req.body.bindings; res.json({ bindings, defaults }); });
-app.post('/api/sessions/:name/control-action', (req, res) => { calls.push(req.body); res.json({ message: `${req.body.intent} sent` }); });
+app.post('/api/sessions/:name/control-action', (req, res) => { calls.push(req.body); res.json({ ok: true }); });
 app.get('/', (_req, res) => res.type('html').send(`<!doctype html><html><head>
 <link rel="stylesheet" href="/vendor/xterm.css"><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/workspace-kit.css">
 <style>body{display:block;padding:12px}#target{height:380px;display:flex;flex-direction:column}.body{flex:1;min-height:0}.selector{height:350px;width:320px}.tile{height:380px}</style>
@@ -96,15 +96,25 @@ try {
       assert.equal(await page.locator('.terminal-actions').count(), mobile ? 1 : 0);
       assert.equal(await page.locator('.terminal-hint-row button, .terminal-hint-row small').count(),0);
       assert.equal(await page.locator('.terminal-hint-row strong').count(),4);
+      assert.equal(await page.locator('.terminal-hints-subtitle').textContent(),'Session Controls');
+      const hintFonts = await page.locator('.terminal-hint-row span').evaluateAll(nodes=>nodes.map(el=>{const s=getComputedStyle(el);return s.fontFamily+' / '+s.fontSize}));
+      assert.equal(new Set(hintFonts).size,1);
+      await page.locator('.selector').evaluate(el=>el.style.width='160px');
+      assert.equal(await page.locator('.terminal-hints').evaluate(el=>el.scrollWidth<=el.clientWidth),true);
+      assert.equal(await page.locator('.terminal-hint-row span').evaluateAll(nodes=>nodes.every(el=>el.scrollWidth<=el.clientWidth)),true);
+      await page.locator('.selector').evaluate(el=>el.style.width='320px');
       assert.equal(await page.locator('.terminal-hint-row strong').first().evaluate(el=>getComputedStyle(el).fontWeight),'700');
       assert.equal(await page.locator('.terminal-hints').evaluate(el=>getComputedStyle(el).fontSize),await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--text-3').trim()));
       if (mobile) await page.locator('.terminal-actions button').filter({hasText:/^Clear$/}).click();
       else await page.locator('.composer textarea').press('Control+Shift+Backspace');
       assert.equal(await page.locator('.composer textarea').inputValue(),''); assert.equal(calls.length,0);
+      assert.equal(await page.locator('#toast.show').count(),0);
       await page.locator('.composer textarea').fill('keep me');
+      const stopResponse = page.waitForResponse(r=>r.url().endsWith('/control-action') && r.request().postDataJSON()?.intent==='stop');
       if (mobile) await page.locator('.terminal-actions button').filter({hasText:/^Stop$/}).click();
       else await page.locator('.composer textarea').press('Escape');
-      await page.waitForFunction(()=>document.body.innerText.includes('stop sent'));
+      await stopResponse;
+      assert.equal(await page.locator('#toast.show').count(),0);
       assert.equal(calls.at(-1).intent,'stop'); assert.equal(await page.locator('.composer textarea').inputValue(),'keep me');
       if (!mobile) {
         await page.evaluate(()=>tile.term.focus()); await page.keyboard.press('Control+c');

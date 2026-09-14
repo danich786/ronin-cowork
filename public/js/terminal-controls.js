@@ -61,7 +61,6 @@ export function installTileControls(tile) {
     if (e.key.toLowerCase() === 'c' && e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey
         && (e.target.closest?.('.xterm') || e.target === tile.body)) {
       e.preventDefault(); e.stopImmediatePropagation();
-      if (!e.repeat) toast('Use Stop or Close in Ronin. Ctrl+C is not sent to the Agent.');
       return;
     }
     const overlay = document.querySelector('.ui-sheet.open .ui-card');
@@ -117,13 +116,13 @@ export async function runTerminalAction(tile, action, target) {
     const composer = tile.composerTa;
     if (target === 'composer' || (target !== 'terminal' && composer && (document.activeElement === composer || composer.value))) {
       tile.composer.clear();
-      return toast('Unsent message cleared');
+      return;
     }
-    if (tile.pending) { tile.pending = ''; tile.renderPending(); return toast('Unsent input cleared'); }
+    if (tile.pending) { tile.pending = ''; tile.renderPending(); return; }
   }
   const session = S.sessions.find((row) => row.name === tile.session);
   const r = await request(`/api/sessions/${encodeURIComponent(tile.session)}/control-action`, { method: 'POST', json: { intent: action, key: tile.sessionKey || session?.key } });
-  toast(r.ok ? r.data.message : r.message, r.ok);
+  if (!r.ok) toast(r.message, false);
 }
 export function terminalSnapshot(tile) {
   if (tile.tapeMode) return tile.tape?.el?.innerText || tile.body.innerText || '';
@@ -140,7 +139,7 @@ async function copyTerminal(tile) {
   const native = window.getSelection?.();
   const local = native && tile.el.contains(native.anchorNode) ? native.toString() : '';
   const selected = local || tile.term.getSelection() || tile.lastSelection || '';
-  if (selected && await writeClipboard(selected)) return toast('Copied');
+  if (selected && await writeClipboard(selected)) return;
   const dlg = sheet({ id: `terminal-copy-${tile.retirementId}`, label: `Copy terminal text — ${tile.session || 'Tile'}`, onClose: () => dlg.el.remove() });
   const text = document.createElement('textarea');
   text.readOnly = true;
@@ -151,8 +150,7 @@ async function copyTerminal(tile) {
   note.textContent = 'Select text below. This snapshot stays still while the Agent continues.';
   const copy = actionButton('copy', async () => {
     const value = text.value.slice(text.selectionStart, text.selectionEnd) || text.value;
-    if (await writeClipboard(value)) toast('Copied');
-    else { text.focus(); if (text.selectionStart === text.selectionEnd) text.select(); toast('Use your browser’s Copy command on the selected text.'); }
+    if (!await writeClipboard(value)) { text.focus(); if (text.selectionStart === text.selectionEnd) text.select(); toast('Use your browser’s Copy command on the selected text.'); }
   });
   const done = document.createElement('button'); done.type = 'button'; done.textContent = 'Done'; done.onclick = () => dlg.close();
   dlg.card.append(note, text, copy, done); dlg.open();
@@ -175,7 +173,8 @@ export function buildControlHints() {
   card.className = 'terminal-hints wk-card';
   card.open = preference('ronin.hints.collapsed') !== 'yes';
   const title = document.createElement('summary'); title.textContent = 'Hints';
-  card.append(title);
+  const subtitle = document.createElement('span'); subtitle.className = 'terminal-hints-subtitle'; subtitle.textContent = 'Session Controls';
+  title.append(subtitle); card.append(title);
   card.addEventListener('toggle', () => preference('ronin.hints.collapsed', card.open ? 'no' : 'yes'));
   for (const action of actions) {
     const row = document.createElement('div'); row.className = 'terminal-hint-row';

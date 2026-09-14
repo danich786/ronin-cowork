@@ -64,7 +64,7 @@ export function registerTerminalControls(app: Express): void {
         await tmux.run(['send-keys', '-t', exactPane(session.name), '-X', 'cancel']).catch(() => {});
         await tmux.run(['send-keys', '-t', exactPane(session.name), ...keys]);
       });
-      res.json({ ok: true, message: intent === 'stop' ? 'Stop sent' : 'Clear sent to CLI input' });
+      res.json({ ok: true });
     } catch (e) { res.status(409).json({ error: (e as Error).message }); }
   });
 }
