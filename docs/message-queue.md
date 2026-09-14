@@ -11,7 +11,9 @@ There are two input paths:
 Delivery means **paste the text, pause 300 ms, press Enter**. A private tmux buffer
 uses `paste-buffer -p -r` to mark the paste boundary when the CLI requests bracketed
 paste and preserve embedded newlines. The buffer is deleted after use. Enter is sent
-separately, outside that boundary. Raw `send-keys -l` does not mark a paste; a pause
+separately, outside that boundary, as a carriage-return byte directly to the pane.
+It bypasses tmux key handling: a viewer reopening scroll/copy mode after the paste
+cannot consume the submission Enter. Raw `send-keys -l` does not mark a paste; a pause
 alone cannot prevent a busy CLI from treating the following Enter as pasted text. There are no screen checks between them, no
 fingerprints, no prompt-disappearance verification, and no repeated Enter loop.
 

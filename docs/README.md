@@ -21,7 +21,7 @@ Option-drag, Cmd+C (Mac); Shift-drag, Ctrl+C (Windows/Linux).
 | Is this machine suitable, or should the user rent one? | [Rent or prepare a machine](rent-a-machine.md) |
 | How do I install without disturbing existing tmux work? | [Install Ronin](install.md) |
 | How do I finish first use and launch one working Agent? | [Get started](get-started.md) and [Ronin Setup](setup-workbench.md) |
-| Which model providers and models does Ronin offer, what does this machine have, and how do I sign one in? | [Model providers](model-providers.md) and [Provider sign-in](provider-sign-in.md) |
+| Which providers are offered, installed, and ready to sign in? | [Model providers](model-providers.md) and [Provider sign-in](provider-sign-in.md) |
 
 ## Once the coworkspace is running
 
@@ -47,12 +47,12 @@ Option-drag, Cmd+C (Mac); Shift-drag, Ctrl+C (Windows/Linux).
 
 ## If you are changing Ronin itself
 
-Start with the root [`AGENTS.md`](../AGENTS.md), then use the relevant architecture or implementation contract.
+Start with [`AGENTS.md`](../AGENTS.md), then the relevant implementation contract.
 
 | Question | Route |
 |---|---|
-| How do I verify or provisionally preview a repository change? | Run `npm run verify`; run Playwright suites explicitly when diagnosing the rendered UI; for one Team preview without publication, use [visual staging](../ronin_sops/ronin_methodology.md#visual-staging-one-disposable-team-preview). |
-| How does the server talk to tmux, start programs, and switch Services parts on and off? | [The tmux connection, the spawn broker, and parked parts](tmux-connection.md) |
+| How do I check or preview a change? | Run `npm run verify`; use Playwright for UI diagnostics or [visual staging](../ronin_sops/ronin_methodology.md#visual-staging-one-disposable-team-preview). |
+| How does the server use tmux, start programs, and switch Services? | [The tmux connection, the spawn broker, and parked parts](tmux-connection.md) |
 
 ## Shelves
 
@@ -70,8 +70,8 @@ are measured with `ronin-host inspect`, `ronin-host account`, or the relevant to
 
 ## Coworkspace
 
-The Agent's page for this is [RONIN_UTILITY](RONIN_UTILITY.md): the pages, the three
-workbenches and their surfaces, the tile head's buttons, Locked and Unlocked, copy and paste.
+[RONIN_UTILITY](RONIN_UTILITY.md) covers workbenches, Tile controls, Locked/Unlocked,
+and copy/paste.
 
 The home page opens Machine Settings, Coworks, or New Project. The bar opens the Campaign,
 the current Cowork, a quick new session, the cowork commons, and the two-or-four workspace
