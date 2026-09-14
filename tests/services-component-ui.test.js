@@ -21,7 +21,6 @@ test('Services owns all six owner-facing capabilities and exact captions', () =>
   }
   assert.match(setup, /ask\(\[\{ group:/);
   assert.match(setup, /switch: \['On', 'Off'\]/);
-  assert.match(setup, /Turn on Running services first/);
   assert.doesNotMatch(setup, /michi|kanban|rireki|koe|counting|koshi|koshi_weights/);
   assert.match(parts, /task_manager: \['michi', 'kanban'\]/);
   assert.match(parts, /sole capability-to-part expansion/);

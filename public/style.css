@@ -5937,7 +5937,6 @@ button.wb-door:hover b {
 .setup-services-components .ask-fields { display: block; }
 .setup-services-components .ask { min-width: 0; }
 .setup-services-feature-copy { display: grid; gap: var(--space-1); }
-.setup-services-feature-status { min-height: 1.45em; color: var(--muted); font-size: var(--text-4); line-height: 1.45; }
 .setup-services-compact { container-type: inline-size; }
 @container (max-width: 32rem) {
   .setup-services-components .setup-services-benefit { grid-template-columns: 4.5rem minmax(0, 1fr); grid-template-areas: "switch title" "switch copy"; align-items: start; gap: var(--space-2) var(--space-4); }

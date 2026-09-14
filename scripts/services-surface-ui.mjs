@@ -75,7 +75,7 @@ try {
     const overflow = await page.locator('.setup-services-benefit').evaluateAll(rows=>rows.some(row=>row.scrollWidth>row.clientWidth || [...row.querySelectorAll('h3,p')].some(n=>n.scrollWidth>n.clientWidth)));
     assert.equal(overflow,false,`rows fit at ${width}px`);
     assert.equal(await page.locator('.setup-services-steps').evaluate(node => node.scrollWidth <= node.clientWidth), true);
-    assert.equal(await page.locator('.setup-services-feature-status').evaluateAll(nodes => nodes.every(node => node.textContent === '')), true);
+    assert.equal(await page.locator('.setup-services-feature-status').count(), 0);
     if (width <= 390) {
       assert.equal(await page.locator('.setup-services-benefit').evaluateAll(rows => rows.every(row => {
         const title = row.querySelector('h3').getBoundingClientRect();
@@ -129,10 +129,22 @@ try {
   assert.equal(await switches.evaluateAll(nodes=>nodes.every(n=>n.disabled)),true);
   assert.equal(await switches.nth(3).getAttribute('aria-checked'),'true');
   master = true;
-  parked = [{name:'terminal_transcript',reason:'Recorder refactor'}];
+  parked = [
+    { name: 'terminal_transcript', reason: 'RIREKI is off in this beta: not ready, to be refactored' },
+    { name: 'task_manager', reason: "The requested module '../../resource-adapters.js' does not provide an export named 'listSessionRoles'" },
+    { name: 'usage_stats', reason: "Cannot find module '/home/glen3/dohyo/ronin-cowork/src/macros.js' imported from /home/glen3/dohyo/ronin-cowork/src/services/counting/register.ts" },
+  ];
   await page.evaluate(()=>surface.show());
   assert.equal(await switches.nth(1).isDisabled(),true);
-  assert.equal(await switches.nth(1).getAttribute('title'),'Recorder refactor');
+  assert.equal(await switches.nth(1).getAttribute('title'), null);
+  assert.equal(await page.locator('.setup-services-feature-status').count(), 0);
+  const rendered = await page.locator('.setup-services-components').evaluate(node => node.outerHTML);
+  assert.doesNotMatch(rendered, /RIREKI|resource-adapters|listSessionRoles|macros\.js|\/home\/|register\.ts/);
+  for (const width of [320, 390, 600, 900]) {
+    await page.setViewportSize({ width, height: 1800 });
+    await page.locator('main').evaluate(node => node.style.height = 'auto');
+    await page.screenshot({ path: `/tmp/services-labels-${width}.png`, fullPage: true });
+  }
   console.log('PASS: six rows at 900/600/390/320px; stable DOM, focus, scroll, save rollback, master/parked gating, restart truth, no selection polling.');
 } finally {
   await browser.close();
