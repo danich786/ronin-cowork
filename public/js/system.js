@@ -6,6 +6,7 @@ import { followProfileSkin } from './skins.js';
 import { activeProfile, deskProfiles, loadDeskProfile, setDeskProfile } from './desk-profile.js';
 import { t } from './lexicon.js';
 import { S } from './state.js';
+import { createReleaseUpdateController, packageReading } from './release-update-controller.js';
 
 /* ---------- passkeys ----------
  * REGISTRATION LIVES BEHIND THE GATE AND THAT IS THE DESIGN, NOT AN ACCIDENT. You add a
@@ -214,13 +215,13 @@ export function buildSystemPanel() {
   const checkBtn = button(t('desk.check_updates', 'Check for updates'), {
     title: t('desk.check_updates_title', 'Ask the release feeds what the latest versions are — both packages, only when pressed'),
   });
-  const runBtn = button(t('desk.update', 'Update'), { cls: 'sys-run' });
+  const runBtn = button(t('release.update_cowork', 'Update Cowork'), { cls: 'sys-run' });
   runBtn.disabled = true;
   runBtn.hidden = true;
   // does it. Same updater underneath (--services): fetch, verify, CONTRACT CHECK
   // against the running cowork, into the store, into the tree, restart. It appears
   // only when the check names an installable services release.
-  const svcBtn = button(t('desk.install_services', 'Install services'), { cls: 'sys-run' });
+  const svcBtn = button(t('release.update_services', 'Update Services'), { cls: 'sys-run' });
   svcBtn.disabled = true;
   svcBtn.hidden = true;
   // LOG OUT — only drawn when a login exists (/api/health `login`), because a button
@@ -259,16 +260,22 @@ export function buildSystemPanel() {
   // The machine sits with the release block — both answer "what is this install running
   // on", and a person hunting either finds them together. group() drops a null child, so
   // an install without the machine service simply has one fewer row here.
-  const release = group(idBlock, row, msg.el, machineBlock);
+  const coworkReading = document.createElement('p');
+  const servicesReading = document.createElement('p');
+  const readings = group(coworkReading, servicesReading);
+  readings.setAttribute('aria-live', 'polite');
+  const release = group(idBlock, row, readings, msg.el, machineBlock);
   const account = group(outRow, passkeys.el);
 
   let version = null; // the operator's /api/version answer, fetched on open
-  let latest = null;
-  let svcLatest = null;
 
   const say = (text, bad) => msg.say(text, bad ? 'bad' : '');
 
+  let identityKey;
   const renderId = () => {
+    const key = JSON.stringify(version);
+    if (key === identityKey) return;
+    identityKey = key;
     idBlock.innerHTML = '';
     const name = document.createElement('div');
     name.className = 'sys-release';
@@ -293,111 +300,22 @@ export function buildSystemPanel() {
     idBlock.append(svc);
   };
 
-  const check = async () => {
-    checkBtn.disabled = true;
-    say(t('desk.asking_feed', 'asking the release feed…'));
-    const res = await request('/api/update/check');
-    if (!res.ok) {
-      say(res.status === 404 ? t('desk.updater_predate', 'this operator predates the updater — its next restart carries the routes') : res.message, true);
-      checkBtn.disabled = false;
-      return;
+  const updates = createReleaseUpdateController({ onChange: state => {
+    version = state.version;
+    renderId();
+    checkBtn.setAttribute('aria-disabled', String(state.busy));
+    for (const [pkg, control, reading] of [['cowork', runBtn, coworkReading], ['services', svcBtn, servicesReading]]) {
+      const fact = packageReading(state.facts?.[pkg]);
+      reading.textContent = `${pkg === 'cowork' ? 'Ronin Cowork' : 'Ronin Services'} — ${state.facts ? fact.text : 'Not checked'}`;
+      control.hidden = !fact.available;
+      control.disabled = !state.canUpdate || state.busy;
+      control.title = !state.canUpdate ? (state.version?.commit ? 'Dev checkout — release updating is disabled' : 'Version unavailable') : '';
     }
-    {
-      const d = res.data;
-      latest = d.latest;
-      const bits = [];
-      if (!d.latest) {
-        bits.push(t('desk.feed_no_release', 'the feed named no cowork release yet (a private repo needs gh auth on the host)'));
-      } else if (d.upToDate) {
-        bits.push(t('desk.cowork_up_to_date', '✓ cowork up to date — {installed}', { installed: d.installed }));
-      } else if (version && !version.release) {
-        bits.push(t('desk.cowork_checkout_latest', 'latest cowork release is {latest} — this box runs a checkout, so the button stays off', { latest: d.latest }));
-      } else {
-        runBtn.textContent = t('desk.update_to', 'Update to {latest}', { latest: d.latest });
-        runBtn.hidden = false;
-        runBtn.disabled = false;
-        bits.push(t('desk.cowork_available', 'cowork {latest} available (installed: {installed})', { latest: d.latest, installed: d.installed || t('desk.none', 'none') }));
-      }
-      // The services half of the same answer. The button is off on a checkout for
-      // the same reason the cowork one is: the updater manages installs, git
-      // manages source trees.
-      const s = d.services || {};
-      if (s.latest && !s.upToDate && version && version.release) {
-        svcLatest = s.latest;
-        svcBtn.textContent = s.installed ? t('desk.update_services_to', 'Update services to {latest}', { latest: s.latest }) : t('desk.install_services_v', 'Install services {latest}', { latest: s.latest });
-        svcBtn.hidden = false;
-        svcBtn.disabled = false;
-        bits.push(s.installed ? t('desk.services_available_installed', 'services {latest} available (installed: {installed})', { latest: s.latest, installed: s.installed }) : t('desk.services_available', 'services {latest} available', { latest: s.latest }));
-      } else if (s.latest && s.upToDate) {
-        bits.push(t('desk.services_up_to_date', '✓ services up to date — {installed}', { installed: s.installed }));
-      }
-      say(bits.join(' · '));
-    }
-    checkBtn.disabled = false;
-  };
-
-  /** After /run: the new operator answering a different release IS completion. */
-  const watch = async () => {
-    const was = version?.release;
-    for (let i = 0; i < 100; i++) {
-      await new Promise((ok) => setTimeout(ok, 3000));
-      const rv = await request('/api/version', { cache: 'no-store' });
-      // A failed read is the restart itself — keep polling.
-      if (rv.ok && rv.data.release && rv.data.release !== was) {
-        say(t('desk.updated_reloading', '✓ updated to {release} — reloading', { release: rv.data.release }));
-        setTimeout(() => location.reload(), 1200);
-        return;
-      }
-    }
-    say(t('desk.update_timeout', 'no new version answered after 5 minutes — journalctl --user -u "ronin-update-*" has the transcript'), true);
-    runBtn.disabled = false;
-  };
-
-  const run = async () => {
-    runBtn.disabled = true;
-    checkBtn.disabled = true;
-    say(t('desk.updating', 'updating to {latest} — fetch, verify, gate the candidate, swap. The page blinks at the swap; sessions are untouched…', { latest }));
-    const r = await request('/api/update/run', { method: 'POST' });
-    if (!r.ok) {
-      say(r.message, true);
-      runBtn.disabled = false;
-    } else watch();
-    checkBtn.disabled = false;
-  };
-
-  /** Services completion: the operator restarts (startedAt moves) and the roster
-   *  answers — a filled roster after a fresh start IS the install having landed. */
-  const watchSvc = async () => {
-    const was = version?.startedAt;
-    for (let i = 0; i < 100; i++) {
-      await new Promise((ok) => setTimeout(ok, 3000));
-      const rv = await request('/api/version', { cache: 'no-store' });
-      // A failed read is the restart itself — keep polling.
-      if (rv.ok && rv.data.startedAt !== was && (rv.data.services || []).length) {
-        say(t('desk.services_live_reloading', '✓ services live: {list} — reloading', { list: rv.data.services.join(' · ') }));
-        setTimeout(() => location.reload(), 1200);
-        return;
-      }
-    }
-    say(t('desk.services_timeout', 'services did not answer after 5 minutes — journalctl --user -u "ronin-update-*" has the transcript'), true);
-    svcBtn.disabled = false;
-  };
-
-  const runSvc = async () => {
-    svcBtn.disabled = true;
-    checkBtn.disabled = true;
-    say(t('desk.installing_services', 'installing services {latest} — fetch, verify, contract check, restart. The page blinks at the restart; sessions are untouched…', { latest: svcLatest }));
-    const r = await request('/api/update/run', { method: 'POST', json: { package: 'services' } });
-    if (!r.ok) {
-      say(r.message, true);
-      svcBtn.disabled = false;
-    } else watchSvc();
-    checkBtn.disabled = false;
-  };
-
-  checkBtn.addEventListener('click', check);
-  runBtn.addEventListener('click', run);
-  svcBtn.addEventListener('click', runSvc);
+    say(state.message, state.bad);
+  }});
+  checkBtn.addEventListener('click', () => void updates.check());
+  runBtn.addEventListener('click', () => void updates.run('cowork'));
+  svcBtn.addEventListener('click', () => void updates.run('services'));
 
   const enter = () => {
     // Re-read every time: a hand-edit to a profile file — or an upgrade that ships a new
@@ -405,9 +323,7 @@ export function buildSystemPanel() {
     void loadDeskProfile().then(paintProfiles, paintProfiles);
     say('');
     void (async () => {
-      const r = await request('/api/version', { cache: 'no-store' });
-      version = r.ok ? r.data : null;
-      renderId();
+      await updates.identify();
       const h = await request('/api/health', { cache: 'no-store' });
       // Both the logout button and the passkey block hang off the same fact: a login
       // exists on this install. Passkeys mint the SAME session cookie the password does
