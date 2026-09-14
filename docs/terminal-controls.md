@@ -5,9 +5,9 @@ your browser shortcuts. These controls work on desktop and mobile, locked or unl
 
 | Action | Default shortcut | What happens |
 |---|---|---|
-| Copy | Ctrl+Shift+C; native Cmd+C for desktop terminal selection | Copy selected text, or open a still, selectable snapshot of terminal output. |
+| Copy | Native Cmd+C on Mac / Ctrl+C elsewhere | Option-drag on Mac (Shift-drag elsewhere) to select, then copy normally. Mobile Copy opens selectable terminal text. |
 | Clear | Ctrl+Shift+Backspace | Clear the focused unsent browser message or locally parked input. At a CLI prompt, send its registered editing keys. Never interrupt or exit. |
-| Close | Ctrl+C in the terminal | Open the existing retirement sheet. Nothing is retired until you choose an action. |
+| Close | Ctrl+Shift+X | Open the existing retirement sheet. Nothing is retired until you choose an action. |
 | Stop | Escape | Send the CLI's interrupt immediately. No busy-screen check, typing grace, or automatic retry. |
 
 **Hints** is pinned below the selector's scrolling cards, expanded on first use. Collapse
@@ -18,8 +18,8 @@ button and activate it with Enter or Space.
 
 ## Change your shortcuts
 
-Open **Hints → Customize shortcuts**. Edit the four bindings, then **Save**. For example,
-change Close from `Ctrl+C` to `Ctrl+X`. That changes the browser gesture for every CLI;
+Open **Hints → Customize shortcuts**. Edit the three bindings, then **Save**. For example,
+change Close from `Ctrl+Shift+X` to `Ctrl+X`. That changes the browser gesture for every CLI;
 it does not change the command Ronin sends to that CLI. Reset defaults fills the original
 bindings; Save applies them. Help opens this page.
 
@@ -35,8 +35,9 @@ no shipped JavaScript needs changing. Other tabs update immediately; other devic
 new settings on focus. A rejected save keeps the previous bindings.
 
 Native Copy, Cut, Paste, Select All and Undo remain browser operations in ordinary text
-fields, including the Ronin composer. Terminal Ctrl+C belongs to Close; use the Copy
-button, Ctrl+Shift+C, or native Cmd+C to copy terminal selection. Escape dismisses an
+fields, including the Ronin composer. Copy has no Ronin shortcut or remapping field. With terminal text selected, native
+Cmd+C / Ctrl+C copies it. Terminal Ctrl+C is intercepted so it cannot quit the Agent; without a native Copy
+selection it points you to Stop or Close. Close uses Ctrl+Shift+X. Escape dismisses an
 open Ronin sheet/menu first. No shortcut leaks through that sheet into the Agent.
 
 ## Clear and Stop are different

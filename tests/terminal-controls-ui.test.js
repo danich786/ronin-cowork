@@ -9,6 +9,7 @@ test('remapping changes the gesture without changing the intent; IME is untouche
   const bindings = { stop: 'Escape', close: 'Ctrl+X', clear: 'Ctrl+Shift+Backspace', copy: 'Ctrl+Shift+C' };
   assert.equal(matchedControl(key('x', { ctrlKey: true }), bindings), 'close');
   assert.equal(matchedControl(key('c', { ctrlKey: true }), bindings), null);
+  assert.equal(matchedControl(key('c', { ctrlKey: true, shiftKey: true }), bindings), null);
   assert.equal(matchedControl(key('Escape', { isComposing: true }), bindings), null);
   assert.equal(matchedControl(key('Escape', { getModifierState: () => true }), bindings), null);
   assert.equal(controlChord(key('Backspace', { ctrlKey: true, shiftKey: true })), 'Ctrl+Shift+Backspace');

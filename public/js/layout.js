@@ -145,7 +145,7 @@ export function build() {
     // Locked touch copying is provided by the shared Copy action's text snapshot.
     guard('touch bar', trimBarForTouch);
   } else {
-    // Copy = hold the force-selection modifier and drag, then ⌘C / Ctrl+Shift+C or Copy. The modifier
+    // Copy = hold the force-selection modifier and drag, then native ⌘C / Ctrl+C. The modifier
     // is Option on a Mac and SHIFT everywhere else — xterm's own rule, mirrored in
     // Windows and Linux with nothing. Either way it forces a native selection over a
     // mouse-grabbing app or tmux mouse mode. The old Copy Mode toggle is retired — one

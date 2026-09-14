@@ -11,7 +11,7 @@ app.get('/vendor/xterm.js', (_req,res)=>res.sendFile(new URL('../node_modules/@x
 app.get('/vendor/addon-fit.js', (_req,res)=>res.sendFile(new URL('../node_modules/@xterm/addon-fit/lib/addon-fit.js',import.meta.url).pathname));
 app.get('/vendor/xterm.css', (_req,res)=>res.sendFile(new URL('../node_modules/@xterm/xterm/css/xterm.css',import.meta.url).pathname));
 let bindings;
-const defaults = { copy: 'Ctrl+Shift+C', clear: 'Ctrl+Shift+Backspace', close: 'Ctrl+C', stop: 'Escape' };
+const defaults = { clear: 'Ctrl+Shift+Backspace', close: 'Ctrl+Shift+X', stop: 'Escape' };
 let calls = [];
 app.get('/api/terminal-controls', (_req, res) => res.json({ bindings, defaults }));
 app.put('/api/terminal-controls', (req, res) => { bindings = req.body.bindings; res.json({ bindings, defaults }); });
@@ -45,11 +45,14 @@ window.tile=tile;window.ready=true;
 app.use(express.static(new URL('../public', import.meta.url).pathname));
 const server = createServer(app); await new Promise(r => server.listen(0, '127.0.0.1', r));
 try {
-  for (const mobile of [false, true]) {
+  for (const profile of ['desktop', 'mac', 'mobile touch']) {
+    const mobile = profile === 'mobile touch';
+    const mac = profile === 'mac';
     bindings = { ...defaults }; calls = [];
     const browser = await pw.chromium.launch({ headless: true });
     try {
       const context = await browser.newContext(mobile ? { ...pw.devices['Pixel 7'] } : { viewport: { width: 1200, height: 900 } });
+      if (mac) await context.addInitScript(() => Object.defineProperty(navigator, 'platform', { get: () => 'MacIntel' }));
       const page = await context.newPage(); const errors=[]; page.on('pageerror',e=>{errors.push(e.message);console.error(e.message)});
       await page.goto(`http://127.0.0.1:${server.address().port}`);
       await page.waitForFunction(()=>window.ready);
@@ -72,6 +75,14 @@ try {
       await page.waitForFunction(()=>window.ready);
       assert.equal(await page.locator('.terminal-hints').getAttribute('open'), null);
       await page.locator('.terminal-hints summary').click();
+      assert.match(await page.locator('.terminal-hints').innerText(), mobile ? /Tap Copy to select text/ : mac ? /Option-drag to select/ : /Shift-drag to select/);
+      if (!mobile) {
+        await page.evaluate(()=>{tile.term.term.select(0,0,4);tile.term.focus()});
+        await page.keyboard.press(mac ? 'Meta+c' : 'Control+c');
+        assert.equal(await page.locator('.ui-sheet.open').count(),0);
+        assert.deepEqual(await page.evaluate(()=>raw),[]);
+        await page.evaluate(()=>{tile.term.term.clearSelection();tile.lastSelection=''});
+      }
       await page.locator('.composer textarea').fill('unfinished\nsecond line');
       await page.locator('.terminal-actions button').filter({hasText:/^Clear$/}).click();
       assert.equal(await page.locator('.composer textarea').inputValue(),''); assert.equal(calls.length,0);
@@ -81,6 +92,9 @@ try {
       assert.equal(calls.at(-1).intent,'stop'); assert.equal(await page.locator('.composer textarea').inputValue(),'keep me');
       if (!mobile) {
         await page.evaluate(()=>tile.term.focus()); await page.keyboard.press('Control+c');
+        assert.equal(await page.locator('.ui-sheet.open').count(),0);
+        assert.deepEqual(await page.evaluate(()=>raw),[]);
+        await page.keyboard.press('Control+Shift+x');
         await page.locator('.ui-sheet.open').waitFor();
         await page.evaluate(()=>tile.term.focus()); await page.keyboard.press('Control+c');
         assert.deepEqual(await page.evaluate(()=>raw),[]);
@@ -95,13 +109,14 @@ try {
       assert.match(await page.locator('.terminal-copy-text').inputValue(),/COPY SNAPSHOT CONTENT/);
       await page.locator('.ui-sheet.open button').filter({hasText:'Done'}).click();
       await page.getByRole('button',{name:'Customize shortcuts'}).click();
+      assert.equal(await page.getByRole('textbox',{name:'Copy shortcut',exact:true}).count(),0);
       await page.getByRole('textbox',{name:'Close shortcut',exact:true}).fill('Ctrl+X');
       await page.getByRole('button',{name:'Save',exact:true}).click();
       await page.getByText('Saved for every Agent.',{exact:false}).waitFor();
       assert.equal(await page.locator('[data-control-key="close"]').textContent(),'Ctrl+X');
       await page.getByRole('button',{name:'Done',exact:true}).click();
       assert.deepEqual(errors,[]);
-      console.log(`${mobile?'mobile touch':'desktop'}: controls, draft, Copy snapshot, Hints pinning and remapping passed`);
+      console.log(`${profile}: controls, draft, Copy snapshot, Hints pinning and remapping passed`);
     } finally { await browser.close(); }
   }
 } finally { await new Promise(r=>server.close(r)); }
