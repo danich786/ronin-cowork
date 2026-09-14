@@ -14,6 +14,10 @@ Each stage below names the shared record or capability involved. Selected capabi
 documents teach the concrete tools; this method keeps the durable cross-session choices
 without duplicating executable instructions.
 
+A capability bundle is a knowledge layer, not an authority layer. Bundle selection changes
+what the Build Brief teaches and emphasizes; it never grants, withholds, authorizes, or
+forbids an installed tool or its `--help`.
+
 ## The lifecycle
 
 ### 1. Open the session in public
@@ -45,10 +49,10 @@ The exact document contract lives in `ronin_library/documents.md`.
 ### 3. Coordinate through shared edges
 
 **Visible delegation — give the work its own session.** “Fork”, “fork it”, “launch”, and
-“new session” all mean `session_create`: a **Ronin session** on the roster, with its own
-tile, ladder, and life, addressable by name after this conversation ends. “Spawn” means a
-CLI-internal sub-agent, invisible to the coworkspace and ending with its answer; the owner
-requires permission before spawning.
+“new session” all mean the universal `session_create` command: a **Ronin session** on the
+roster, with its own tile, ladder, and life, addressable by name after this conversation
+ends. “Spawn” alone means a CLI-internal sub-agent, invisible to the coworkspace and ending
+with its answer; explicitly ask the owner for permission before spawning it.
 
 `session_create <name> --prompt` carries the visible session's explicit purpose. The
 newborn receives resolved Campaign/Team context—not this conversation—reads its own birth
