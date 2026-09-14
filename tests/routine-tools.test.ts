@@ -22,24 +22,23 @@ const routine = (name: string, enabled: boolean, tools: string[]): ResolvedContr
   enabled, stated_by: 'campaign', required_by: [],
 } satisfies ContributionRow & ResolvedContribution);
 
-test('birth PATH exposes enabled tools by name without inheriting a Ronin PATH', async () => {
+test('the PATH projector exposes supplied tools by name without inheriting a Ronin PATH', async () => {
   const projected = await projectRoutineTools('pathless', [
-    routine('ronin_base', true, ['write_tegami', 'read_tegami', 'session_fork', 'ronin-url']),
+    routine('ronin_base', true, ['work-record', 'session_create', 'ronin-url']),
   ], '/usr/bin:/bin');
-  for (const command of ['write_tegami', 'read_tegami', 'session_fork', 'ronin-url']) {
+  for (const command of ['work-record', 'session_create', 'ronin-url']) {
     const found = await exec('/bin/sh', ['-c', `command -v ${command}`], { env: { PATH: projected.path } });
     assert.equal(found.stdout.trim(), path.join(projected.dir, command), command);
   }
-  await assert.rejects(() => exec('/bin/sh', ['-c', 'command -v tejun-desk'], { env: { PATH: projected.path } }));
   assert.ok(projected.delivered.includes('shim/tmux'), 'the tmux guard is Routine floor');
 });
 
-test('a worktree-root conditional projects the desk kit without an installation', async () => {
+test('a Cowork capability projects the desk tool without an installation', async () => {
   const projected = await projectRoutineTools('worktree-root', [], '/usr/bin:/bin', {
-    extraTools: ['tejun-desk', 'ronin-repo-init'],
+    extraTools: ['worktree-desk'],
   });
-  assert.ok(projected.delivered.includes('tejun-desk'));
-  assert.ok(projected.delivered.includes('ronin-repo-init'));
+  assert.ok(projected.delivered.includes('worktree-desk'));
+  assert.equal(projected.delivered.filter((tool) => tool === 'worktree-desk').length, 1);
 });
 
 test('missing enabled tools are visible and do not refuse projection', async () => {
@@ -49,7 +48,7 @@ test('missing enabled tools are visible and do not refuse projection', async () 
 
 /* A BORN SESSION RUNS ITS TOOLS THROUGH THESE SYMLINKS, so every ronin_bin tool that
  * locates the repository from its own path must resolve the link first (measured
- * 2026-09-02: `tejun-desk`, `tejun-wipeboard`, `read_tegami`, `write_tegami`
+ * 2026-09-02: the desk tool, `edges wipeboard`, `work-record read`, `work-record update_record`
  * all failed from a projected session, and the guard shims had been fixed the day
  * before). Each is run exactly as a session would type it, with an invocation that stops
  * before it needs a tmux session, and must not report a path it could not reach.
@@ -59,9 +58,9 @@ test('missing enabled tools are visible and do not refuse projection', async () 
  * caller broken when it was looked up by name). So each caller is run through its
  * projected symlink with only `RONIN_URL` set, and must arrive at the operator it names. */
 const REACH_FAILURES = /Cannot find module|command not found|No such file or directory|NO-REPO/;
-const URL_CALLERS = ['session_archive', 'session_fork', 'session_end', 'session_restore', 'session_check', 'session_create', 'session_set', 'tejun-team-set', 'tejun-teampage', 'mika'];
+const URL_CALLERS = ['session_archive', 'session_end', 'session_restore', 'session_check', 'session_create', 'session_set', 'team-lead', 'edges', 'mika'];
 test('projected ronin_bin tools resolve the symlink and reach the repository and the operator', async (t) => {
-  const tools = ['tejun-desk', 'tejun-team', 'tejun-wipeboard', 'tejun-send', 'read_tegami', 'write_tegami', 'ronin-host', 'ronin-url', ...URL_CALLERS];
+  const tools = [...new Set(['worktree-desk', 'edges', 'work-record', 'ronin-host', 'ronin-url', ...URL_CALLERS])];
   const projected = await projectRoutineTools('resolve', [routine('ronin_base', true, tools)]);
   for (const t of tools) assert.ok(projected.delivered.includes(t), `${t} projected`);
   const reached: string[] = [];
@@ -83,7 +82,7 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
       res.end(JSON.stringify({ seeds: { provider: { value: helpFacts.provider }, model: { value: helpFacts.model } } }));
       return;
     }
-    res.end(JSON.stringify({ stdout: req.url === '/api/cli/desk' ? 'usage: tejun-desk\n' : '', stderr: '', exit: 0 }));
+    res.end(JSON.stringify({ stdout: req.url === '/api/cli/desk' ? 'usage: worktree-desk\n' : '', stderr: '', exit: 0 }));
   });
   await new Promise<void>((resolve) => operator.listen(0, '127.0.0.1', resolve));
   t.after(() => operator.close());
@@ -106,9 +105,9 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
     }
   };
   const helpTools = [
-    'read_tegami', 'write_tegami', 'tejun-desk', 'tejun-team',
-    'tejun-team-set', 'session_check', 'session_create', 'session_set', 'session_archive', 'session_restore',
-    'session_end', 'session_fork',
+    'work-record', 'worktree-desk', 'edges', 'team-lead',
+    'session_check', 'session_create', 'session_set', 'session_archive', 'session_restore',
+    'session_end',
   ];
   for (const command of helpTools) {
     for (const flag of ['-h', '--help']) {
@@ -137,20 +136,20 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
   assert.match(hostHelp.out, /ronin-host secrets \[path\]/);
   assert.match(hostHelp.out, /ronin-host restart/);
   assert.equal(reached.length, 0, 'ronin-host help is local and reflects the projected command');
-  const deskHelp = (await run(['tejun-desk', '--help'])).out;
-  for (const task of ['open', 'assign', 'status', 'sync', 'hand-in', 'close', 'receipts', 'handoff', 'discard']) {
-    assert.match(deskHelp, new RegExp(`tejun-desk ${task}`), `desk help includes ${task}`);
+  const deskHelp = (await run(['worktree-desk', '--help'])).out;
+  for (const task of ['open', 'assign', 'status', 'sync', 'hand-in', 'close', 'receipts', 'reply', 'handoff', 'discard', 'repository-init']) {
+    assert.match(deskHelp, new RegExp(`worktree-desk ${task}`), `desk help includes ${task}`);
   }
   assert.match(deskHelp, /--source dev\|team/);
   assert.match(deskHelp, /only destructive form/);
   assert.match(deskHelp, /None performs Git push/);
 
   const teamHelp = [
-    (await run(['tejun-team', '--help'])).out,
+    (await run(['edges', 'team', '--help'])).out,
     (await run(['session_check', '--help'])).out,
     (await run(['session_create', '--help'])).out,
     (await run(['session_set', '--help'])).out,
-    (await run(['tejun-team-set', '--help'])).out,
+    (await run(['team-lead', '--help'])).out,
   ].join('\n');
   assert.match(teamHelp, /creates? an Agent/i);
   assert.match(teamHelp, /Create a Team/i);
@@ -158,22 +157,20 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
   assert.match(teamHelp, /move an Agent/i);
   assert.match(teamHelp, /remove the old Team on that Team's page/i);
   assert.match(teamHelp, /sets? or changes? that Team's lead/i);
-  assert.doesNotMatch(teamHelp, /session_fork --help/);
-  for (const args of [['tejun-wipeboard'], ['tejun-send'], ['read_tegami', '--session', 'nobody'], ['write_tegami', '--session', 'nobody', '--at', '1'], ['ronin-host', 'inspect'], ['ronin-host', 'account']]) {
+  for (const args of [['edges', 'wipeboard'], ['edges', 'send'], ['work-record', 'read', '--session', 'nobody'], ['work-record', 'update_record', '--session', 'nobody', '--at', '1'], ['ronin-host', 'inspect'], ['ronin-host', 'account']]) {
     const r = await run(args);
     assert.doesNotMatch(r.out, REACH_FAILURES, `${args.join(' ')}: ${r.out}`);
   }
   // Each caller, past its own argument check, must knock on the fake operator: the only
   // way there is `$TOOL_DIR/ronin-url` resolved from the real file behind the symlink.
   const knocks: Array<[string[], string, Record<string, string>]> = [
-    [['session_fork', '--name', 'reach'], '/api/session', {}],
     [['session_archive', 'reach'], '/api/sessions/reach/archive', {}],
     [['session_end'], '/api/harakiri', { TMUX_PANE: '%0' }],
     [['session_restore', 'archive-id'], '/api/archived-sessions/archive-id/rehydrate', {}],
     [['session_check', 'reach'], '/api/sessions', {}],
     [['session_create', 'reach'], '/api/session', {}],
     [['session_set', 'reach', '--root', 'lab'], '/api/sessions', {}],
-    [['tejun-team-set', 'reach'], '/api/team', {}],
+    [['team-lead', 'roster', 'write', 'reach'], '/api/team', {}],
     // `mika` asks tmux first; a live Mika on the box must not turn this knock into a send.
     // (An existing empty dir: tmux falls back to /tmp when TMUX_TMPDIR is missing.)
     [['mika'], '/api/mika', { TMUX_TMPDIR: temp }],
@@ -184,9 +181,9 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
     assert.doesNotMatch(r.out, REACH_FAILURES, `${args.join(' ')}: ${r.out}`);
     assert.ok(reached.includes(door), `${args.join(' ')} reached ${door}; saw ${JSON.stringify(reached)}: ${r.out}`);
   }
-  // tejun-teampage needs a live pane before it asks for the address; through the symlink
+  // edges page needs a live pane before it asks for the address; through the symlink
   // it must still reach its own refusal, not a missing helper.
-  const page = await run(['tejun-teampage']);
+  const page = await run(['edges', 'page']);
   assert.doesNotMatch(page.out, REACH_FAILURES, page.out);
   assert.match(page.out, /NO-SESSION/, page.out);
 });

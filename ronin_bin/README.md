@@ -4,25 +4,22 @@
 decided at birth (`src/spawn.ts`, `src/routine-tools.ts`), never by this directory as a
 whole:
 
-- **every Cowork Agent** — `tejun-send`, `tejun-peek`, `tejun-team`,
-  `session_fork`, `session_check`, `session_set`, `tejun-team-set`, `tejun-wipeboard`,
-  `tejun-teampage`, `tejun-jikan`, `session_end`, `session_archive`, `session_restore`,
-  `read_tegami`, `write_tegami`, and `ronin-url`, the operator address the others source;
-- **the designated Team lead** — `session_create` (supporting-Agent creation is lead work;
-  it is on no delivery list until the lead-conditional capability projection lands);
-- **with a managed desk** — `tejun-desk`, `ronin-repo-init`;
+- **every Cowork Agent** — `edges`, `session_create`, `session_check`, `session_set`,
+  `session_end`, `session_archive`, `session_restore`, `work-record`, and `ronin-url`, the
+  operator address the others source;
+- **the designated Team lead** — the additional conditional `team-lead` surface;
+- **with a managed desk** — `worktree-desk`;
 - **with the Ronin Host behaviour** — `ronin-host` and its dynamically available `--help`;
 - **with the GBrain behaviour** — boundary teaching only; no callable GBrain tool yet;
-- **with Ronin Services** — `mika`; `lookup`, `owner_view`, `show`, constrained
-  `machine-settings`, and separately granted `session_create` are hers alone.
+- **with Ronin Services** — `mika`, `lookup`, `owner_view`, and `show`; Mika's Build Brief
+  emphasizes their house-assistant workflows. `machine-settings` and visible delegation
+  remain universal Core/Cowork tools.
 
-`tejun-rireki` has a row in `ronin_catalogs/TOOLS.md` but sits on no delivery list, so no
-Agent finds it by bare name while the recorder is being refactored. `ronin-desk-settle` (the
-lead's desk reconciler) and `ronin-team` (Team retirement) are house-side scripts kept here
+`ronin-desk-settle` (the lead's desk reconciler) and `ronin-team` (Team retirement) are house-side scripts kept here
 for `tool-path.sh`; they implement no catalogued action. `setup.sh` puts this directory on
 PATH, after `bin/shim` (the guards) and ahead of `bin/`.
 
-Use the wipeboard for team-wide messages and `tejun-send` for one session, with no board in between.
+Use the wipeboard for team-wide messages and `edges send` for one session, with no board in between.
 
 **The shelf is defined by its audience, the catalog by its rule.** Anything an agent
 types by bare name belongs here — the letter tools included, which is why they moved
@@ -65,6 +62,6 @@ operation listed in `ronin_catalogs/TOOLS.md` and taught by a capability documen
    preference, not an access boundary.
 3. Zero-dependency bash (assume no jq; python3 exists if JSON is unavoidable).
 4. One-line outcomes make the result easy to read; warnings do not stop the action.
-5. Name: `tejun-<verb>`. Keep flags minimal; positional args.
+5. Name the task surface plainly. Keep flags minimal; positional args.
 6. Test against a scratch session (`tmux new-session -d -s ttest`) before
    committing; kill it after.

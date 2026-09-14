@@ -1,5 +1,7 @@
 # Customize Ronin — current operational README
 
+Related reference: [Agent controls and integration](terminal-controls.md).
+
 ## Status
 
 **Active product work on `dev`.** Retirement was cancelled by owner direction. This file

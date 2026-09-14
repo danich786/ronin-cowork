@@ -177,7 +177,7 @@ export async function closeAssignedDesks(
     const occupants = cwdRows.filter((row) => row.name !== session && isInside(desk.worktree, row.cwd)).map((row) => row.name);
     if (occupants.length) {
       reasons.push(`occupied by ${occupants.join(', ')}`);
-      actions.push(`run tejun-send ${occupants[0]} "Please leave ${desk.worktree}; session_end is waiting to close ${id(desk)}"`);
+      actions.push(`run edges send ${occupants[0]} "Please leave ${desk.worktree}; session_end is waiting to close ${id(desk)}"`);
     }
     if (reasons.length) blockers.push({ desk: id(desk), reasons, next_action: [...new Set(actions)].join(' THEN ') });
   }

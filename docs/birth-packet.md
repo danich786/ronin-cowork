@@ -36,7 +36,7 @@ that would break one read fails that test, not a newborn.
 3. **The owner's root shelf**, as cards: title, first sentence, path. Never pasted in.
 4. **YOUR TOOLS**, generated at birth from the capability documents selected for this
    Agent (`ronin_catalogs/capabilities/`): one entry per bundle — the question it answers,
-   the priority tools that exist on this box with their authority, `--help`, and the path
+   the priority tools that exist on this box with their job, `--help`, and the path
    of the full document. Only what the launch facts select and only tools the box has.
 5. **KOTOBA_GLOSSARY**, last: the house names and the plain word to say for each, rendered
    with the owner's desk words. Reference, and the least costly thing to miss.
@@ -76,5 +76,5 @@ On 2026-09-03 a sweep commit re-pointed the shelf's vocabulary entry at the 105 
 table. The packet became 121 KB and 2,150 lines, with every contract after line 1,997.
 Nothing measured the real shelf, so nothing objected. The next day a newborn read its first
 240 lines, never reached fork-versus-spawn, and used an internal sub-agent where the owner
-had asked for a visible Ronin fork. The packet is now 27 KB, and the test above is what
+had asked for a visible Ronin Agent through `session_create`. The packet is now 27 KB, and the test above is what
 would have refused the swap.

@@ -128,6 +128,8 @@ test('the real stock shelf compiles to one read: contracts first, glossary last,
     // The two rules a newborn most often breaks sit inside the first window it opens.
     const firstWindow = text.split('\n').slice(0, 250).join('\n');
     assert.match(firstWindow, /Fork versus spawn/);
+    assert.match(firstWindow, /session_create/);
+    assert.match(firstWindow, /owner requires permission before spawning/);
     assert.match(firstWindow, /ronin_sops\/worktree-root\.md/);
     // The glossary arrived rendered: markers gone, header rewritten.
     assert.doesNotMatch(text, /<!--g:/);
@@ -159,23 +161,18 @@ test('core reading points to arrangement pages; system reading stays installatio
     readFile(path.join(repo, 'ronin_session_boot', 'routine', 'ronin_host', 'HOST_ABILITIES.md'), 'utf8'),
   ]);
 
-  assert.match(base, /tejun forkit/);
-  assert.match(base, /fork it[\s\S]*new session[\s\S]*visible-session/i);
-  assert.match(base, /spawn it[\s\S]*spawn an agent[\s\S]*internal sub-agent/i);
-  assert.match(base, /neither vocabulary/i);
-  assert.match(base, /read_tegami/);
-  assert.match(base, /tejun-wipeboard/);
+  assert.match(base, /work-record read/);
+  assert.match(base, /edges wipeboard/);
   assert.match(base, /ronin_sops\/worktree-root\.md/);
   assert.match(base, /ronin_sops\/checkout\.md/);
-  assert.doesNotMatch(base, /tejun-rireki/);
+  assert.match(base, /edges read/);
   assert.match(services, /Readable transcripts are not in this beta/);
-  assert.match(services, /there is no durable tape and no `tejun-rireki`/);
-  assert.match(services, /Read another live session with\s+`tejun-peek`/);
+  assert.match(services, /`edges read` falls back/);
   assert.match(services, /Koshi\*\* is Ronin's assisted administrative behavior/);
   assert.match(services, /Voice\*\* turns the owner's speech into text/);
   assert.match(services, /Hotwords\*\* are the owner's dictation\s+glossary/);
-  assert.match(worktrees, /tejun-desk status --assignment/);
-  assert.match(worktrees, /tejun-desk hand-in/);
+  assert.match(worktrees, /worktree-desk status --assignment/);
+  assert.match(worktrees, /worktree-desk hand-in/);
   assert.match(worktrees, /session_end/);
   assert.match(worktrees, /CERTIFIED CLEAN/);
   assert.doesNotMatch(worktrees, /first full repository BYOIN/i);
@@ -197,11 +194,9 @@ test('a referenced session is caught up on through the tape, pane peek as fallba
   };
 
   const brief = buildBrief(profile, undefined, form, '/home/x/repo', []);
-  assert.match(brief, /tejun-rireki login_fix since/);
-  assert.match(brief, /tejun-peek login_fix.*if it has no tape/);
-  assert.match(brief, /control-check before touching it/);
-  // The tape comes first: the fallback is parenthetical, never the lead.
-  assert.ok(brief.indexOf('tejun-rireki') < brief.indexOf('tejun-peek'));
+  assert.match(brief, /edges read login_fix/);
+  assert.match(brief, /durable record first.*falls back to the live view/);
+  assert.match(brief, /edges control login_fix/);
 });
 
 test('a service-signed *_connected level rides the MCP toggle', async () => {

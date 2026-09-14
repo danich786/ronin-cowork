@@ -33,13 +33,14 @@ export async function init() {
   // that predates the field, or a failed fetch, reads as "on": unchanged behavior,
   // and an unreachable server is reported by the session-list step below.
   {
-    const v = await request('/api/version');
+    const [v, installed] = await Promise.all([request('/api/version'), request('/api/installed', { cache: 'no-store' })]);
     if (v.ok && v.data.stream === false) {
       S.streamOff = true;
       S.locked = true;
       S.output = 'locked';
     }
     if (v.ok && Array.isArray(v.data.services)) S.services = v.data.services;
+    if (installed.ok) S.installedServices = installed.data?.services || null;
     // A failed read means an old operator or an unreachable server — the first reads
     // as "everything on", the second is reported by the session-list step below.
   }

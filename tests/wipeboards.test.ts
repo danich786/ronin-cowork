@@ -342,7 +342,7 @@ test('every notice points at the one action and names no path to carry', () => {
     assert.ok(!/\breply\b|acknowledg/i.test(n), `a notice never asks for a reply: ${n}`);
   }
   for (const n of all.filter((x) => !/removed|left/.test(x))) {
-    assert.match(n, /Run: tejun-wipeboard/, 'the one action, bare');
+    assert.match(n, /Run: edges wipeboard/, 'the one action, bare');
   }
   assert.match(W.postNotice('crew', '@a'), /not the owner/, 'the watermark stays');
 });

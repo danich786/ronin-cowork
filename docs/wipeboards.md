@@ -12,9 +12,9 @@ it, or when it ages past the TTL. Nothing here is a record: RIREKI's tape holds 
 tile printed, and a decision worth keeping belongs in a session's TEGAMI, a `docs/` page,
 or a commit message.
 
-The operator's HTTP API is the wipeboard surface. `tejun-wipeboard` calls that surface
+The operator's HTTP API is the wipeboard surface. `edges wipeboard` calls that surface
 and prints its reply; it does not read or write wipeboard storage itself.
-Use the wipeboard for team-wide messages and `tejun-send` for one session, with no board in between.
+Use the wipeboard for team-wide messages and `edges send` for one session, with no board in between.
 Wipeboards live in the wipeboards **store** (user root, `bin/ronin-store wipeboards` —
 never a hand-spelled path), so one survives an uninstall and `rm -rf <repo>` cannot take
 it.
@@ -24,8 +24,8 @@ it.
 An agent's whole interface names no board:
 
 ```
-tejun-wipeboard                    everything you have not read, then it is read
-tejun-wipeboard post <text…>       say something on YOUR team's board
+edges wipeboard                    everything you have not read, then it is read
+edges wipeboard post <text…>       say something on YOUR team's board
 ```
 
 The tool works out which session is asking, which team it is on (the roster's wipeboard id
@@ -37,11 +37,11 @@ and a session on several Teams is told which first Team was selected.
 Everything else is explicit, secondary, and **moves no cursor**:
 
 ```
-tejun-wipeboard boards                       which boards exist, and whose each is
-tejun-wipeboard <board>                      the brief + what it still holds
-tejun-wipeboard <board> read [n]             the last n
-tejun-wipeboard <board> find <text…>         search what it still holds
-tejun-wipeboard <board> post [--to …] <text…>  the explicit-name case
+edges wipeboard boards                       which boards exist, and whose each is
+edges wipeboard <board>                      the brief + what it still holds
+edges wipeboard <board> read [n]             the last n
+edges wipeboard <board> find <text…>         search what it still holds
+edges wipeboard <board> post [--to …] <text…>  the explicit-name case
 ```
 
 Being pointed at a board is not an instruction to post on it.
@@ -100,9 +100,9 @@ Address a post to whoever has to act on it; leave it open only when everyone has
 
 The notice a post fires is **a pointer, never a copy**: one line naming the wipeboard and
 the poster, telling the reader to run the one action. It carries no path, and never asks
-for a reply. It uses the same durable delivery queue as `tejun-send`: the notice is
-submitted now or remains visible for another attempt. Control stays stored and visible;
-it does not restrict delivery. A member that was not notified still gets the post on its
+for a reply. It uses the same durable delivery queue as `edges send`: the notice is
+submitted now or remains visible for another attempt. Control and a recognized draft or dialog hold the interruption before typing; after two
+minutes the queue sends it regardless. Wipeboard interruptions have the lowest sweep priority. A member that was not notified still gets the post on its
 next check.
 
 ## The layout

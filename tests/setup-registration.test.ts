@@ -136,12 +136,15 @@ test('Register presents one open profile flow with card choices and anonymous de
   for (const name of ['email', 'own_words']) assert.match(source, new RegExp(`name = '${name}'|input\\('${name}'`));
   for (const name of ['identity_mode', 'kind', 'preferred_feature', 'run_location']) assert.match(source, new RegExp(`choiceGroup\\('${name}'`));
   assert.match(source, /const question = ask\(/);
+  assert.equal((source.match(/exposed: true/g) || []).length, 1, 'Register exposes its short choice selectors through ERABI');
   assert.match(source, /key: name, label: short \|\| t\('ask\.answer', 'Answer'\), many: multiple, options:/, 'the head carries the question; the stone carries a short noun, never the question again');
-  assert.match(source, /key: name, label: short \|\| t\('ask\.answer', 'Answer'\), many: true, options:/);
+  assert.match(source, /el\('fieldset', 'setup-register-checklist'\)/, 'long reasons are plain check rows outside ERABI');
   for (const key of ['identity_short', 'kind_short', 'preferred_feature_short', 'reasons_short', 'run_location_short']) assert.match(source, new RegExp(`short: t\\('setup_surface\\.${key}'`), `${key} names the stone`);
   assert.doesNotMatch(source, /glyph: '·'/, 'unruled Register answers are rectangles without placeholder glyphs');
   assert.match(source, /reasons\.other\.value/);
   assert.match(source, /kind_other: kindOther\.value/);
+  assert.doesNotMatch(source, /kind\.wrap\.append\(kindOther\)/, 'the conditional input stays outside ERABI repaint ownership');
+  assert.match(source, /preferredFeature\.wrap, reasons\.wrap, kind\.wrap, kindOther,/);
   assert.doesNotMatch(source, /Who is using Ronin\?|\['individual', 'Just me'\]|\['team', 'A team'\]|\['builder', 'Builder'\]|\['exploring', 'Exploring'\]/);
   assert.match(source, /Welcome to Ronin/);
   assert.match(source, /setup-register-group/);
@@ -204,7 +207,7 @@ test('anonymous Register delivery uses the durable Ronin message path and never 
   assert.match(source, /if \(anonymous\)[\s\S]*?return;[\s\S]*?await request\(str\(body\.email\)\)/);
 });
 
-test('Services leads with identity, the beta, and benefits, then one measured status and the three same-shape steps', async () => {
+test('Services retains registration, installation, master, and explicit restart authority', async () => {
   const source = await (await import('node:fs/promises')).readFile(new URL('../public/js/setup-surfaces.js', import.meta.url), 'utf8');
   assert.match(source, /import \{ servicesSetupModel \} from '\.\/services-setup-state\.js'/);
   assert.match(source, /import \{ campaignById, campaigns, loadCampaigns, saveCampaign \} from '\.\/campaigns\.js'/);
@@ -214,9 +217,6 @@ test('Services leads with identity, the beta, and benefits, then one measured st
   assert.match(source, /fetch\('brand\/services-mark\.svg'\)/, 'the one mark file is inlined so the R follows data-theme');
   assert.match(source, /host\.innerHTML = markup;\n\s*host\.querySelector\('svg'\)\?\.setAttribute\('aria-hidden', 'true'\)/);
   assert.doesNotMatch(source, /rs-r|M31 6h58/, 'no second copy of the mark lives in the surface');
-  const order = ['setup-services-lockup', 'services_setup.beta', 'services_setup.transcripts', 'services_setup.library', 'setup-services-status', 'setup-services-steps', 'services_setup.gate'];
-  for (let i = 1; i < order.length; i += 1) assert.ok(source.indexOf(order[i - 1]) < source.indexOf(order[i]), `${order[i - 1]} precedes ${order[i]}`);
-  for (const key of ['services_setup.beta_copy', 'services_setup.transcripts_copy', 'services_setup.records', 'services_setup.voice']) assert.match(source, new RegExp(key.replace('.', '\\.')));
   assert.match(source, /request\('\/api\/setup\/registration', \{ cache: 'no-store' \}\)/);
   assert.match(source, /request\('\/api\/installed', \{ cache: 'no-store' \}\)/);
   assert.match(source, /request\('\/api\/services\/activation', \{ cache: 'no-store' \}\)/);
@@ -296,7 +296,7 @@ test('Services setup model keeps installation and registration as separate facts
     ['installing', entitled(), inst(), act('installing'), 'installing', 'Installing Services…', 'register:Done:done install:Installing…:off switch:Turn on:off', true],
     ['install_failed', entitled(), inst(), act('error', { error_at_stage: 'installing', error_message: 'the installer did not start' }), 'install failed', 'Install did not finish', 'register:Done:done install:Try again:install switch:Turn on:off', false],
     ['switched_off', reg('optional'), here(), act('not_requested'), 'switched off', 'Installed · switched off', 'register:Register:register install:Done:done switch:Turn on:switch_on', false],
-    ['restart_needed', reg('optional'), here({ switched_on: true, restart_needed: true }), act('not_requested'), 'restart needed', 'Switched on · not yet running', 'register:Register:register install:Done:done switch:Turn off:switch_off restart:Restart:restart', true],
+    ['restart_needed', reg('optional'), here({ switched_on: true, restart_needed: true }), act('not_requested'), 'restart needed', 'Switched on · not yet running', 'register:Register:register install:Done:done switch:Turn off:switch_off restart:Restart:restart', false],
     ['active', entitled(), here({ switched_on: true }), act('installed'), 'active', 'Active on this Cowork', 'register:Done:done install:Done:done switch:Turn off:switch_off', false],
   ];
   assert.deepEqual(cases.map(([state]) => state).sort(), [...SERVICES_SETUP_STATES].sort());
@@ -328,7 +328,7 @@ test('Services setup model keeps installation and registration as separate facts
   assert.match(servicesSetupModel(reg('optional'), here({ switched_on: true, restart_needed: true }), act('not_requested')).next, /Press Restart, or ask any of your Agents to restart Ronin/);
   const offButRunning = servicesSetupModel(reg('optional'), here({ restart_needed: true }), act('not_requested'));
   assert.equal(offButRunning.steps[3]?.act, 'restart', 'switching off also waits on a restart, so Restart is offered');
-  assert.equal(offButRunning.polling, true, 'the surface watches for the restart an Agent may do instead');
+  assert.equal(offButRunning.polling, false, 'restart disagreement waits for an explicit restart without polling');
   assert.equal(liveOn.steps[1].enabled, false, 'Done install has nothing to press');
   assert.equal(servicesSetupModel(reg('optional'), inst(), act('not_requested')).steps[1].enabled, false, 'the hosted install waits for the entitlement the API demands');
   assert.equal(servicesSetupModel(reg('optional'), inst(), act('not_requested')).steps[2].enabled, false, 'nothing to switch on before parts are installed');

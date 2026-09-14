@@ -23,7 +23,7 @@ const {
   readTeamRoster,
   writeTeamRoster,
 } = await import('../src/team-rosters.js');
-const { assignTeamProject, issueTeamProjectId, returnTeamProject, writeTeamIdea } = await import('../src/team-projects.js');
+const { assignTeamProject, issueTeamProjectId, moveTeamProject, returnTeamProject, writeTeamIdea } = await import('../src/team-projects.js');
 test('create → read → list: a zero-member team is a real, openable record', async () => {
   const r = await createTeamRoster('alpha', {
     kind: 'coding',
@@ -64,6 +64,14 @@ test('ideas live in the roster and its monotonic id issuer is the only id source
   assert.deepEqual(roster?.projects.map((p) => p.id), ['alpha/1', 'alpha/2']);
 });
 
+test('a roster holder moves among Inbox, Backlog and Done without changing project state', async () => {
+  const before = (await readTeamRoster('alpha'))!.projects[1]!;
+  assert.deepEqual((await moveTeamProject('alpha', before.id, 'backlog')).project, before);
+  assert.deepEqual((await readTeamRoster('alpha'))!.backlog_projects, [before]);
+  assert.deepEqual((await moveTeamProject('alpha', before.id, 'done')).project, before);
+  assert.deepEqual((await moveTeamProject('alpha', before.id, 'inbox')).project, before);
+});
+
 test('an Agent project reserves its id without creating a roster idea', async () => {
   const id = await issueTeamProjectId('alpha');
   assert.equal(id, 'alpha/3');
@@ -89,13 +97,13 @@ test('assign and return move one whole project across the roster boundary', asyn
   };
   const assigned = await assignTeamProject('alpha', '1', 'worker', move);
   assert.deepEqual(held, [assigned]);
-  assert.equal(assigned.stage, 'PLANNING');
+  assert.equal(assigned.stage, 'IDEAS', 'assignment does not mutate authored stage');
   assert.equal((await readTeamRoster('alpha'))?.projects.some((p) => p.id === assigned.id), false);
-  const returned = await returnTeamProject('alpha', '1', 'worker', move);
+  const returned = await returnTeamProject('alpha', '1', 'worker', 'inbox', move);
   assert.equal(returned.projectsRemaining, 0);
-  assert.equal(returned.project.stage, 'IDEAS');
-  assert.equal(returned.project.exit, 'lead');
-  assert.equal(returned.project.status, 'yellow');
+  assert.equal(returned.project.stage, assigned.stage, 'return preserves authored stage');
+  assert.equal(returned.project.exit, assigned.exit);
+  assert.equal(returned.project.status, assigned.status);
   assert.equal((await readTeamRoster('alpha'))?.projects.some((p) => p.id === assigned.id), true);
 });
 

@@ -1547,85 +1547,6 @@ body {
 }
 
 
-.copyhint {
-  position: absolute;
-  top: 8px;
-  right: 10px;
-  z-index: 6;
-  max-width: calc(100% - 20px);
-  padding: var(--space-4) var(--space-6);
-  border-radius: var(--radius-sm);
-  background: var(--kaki-lift);
-  border: var(--edge) solid var(--kaki);
-  color: var(--bg);
-  font: 600 var(--text-3)/1.35 var(--font-ui);
-  pointer-events: none;
-  opacity: 0;
-}
-.copyhint.show {
-  animation: copyhint-in var(--motion-hint) var(--ease-out) forwards;
-}
-
-@keyframes copyhint-in {
-  0% {
-    opacity: 0;
-    transform: translateY(-6px) scale(0.94);
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--kaki-lift) 70%, transparent);
-  }
-  18% {
-    opacity: 1;
-    transform: none;
-  }
-  40% {
-    box-shadow: 0 0 0 9px transparent;
-  }
-  55% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--kaki-lift) 55%, transparent);
-  }
-  85%,
-  100% {
-    opacity: 1;
-    transform: none;
-    box-shadow: 0 0 0 9px transparent;
-  }
-}
-
-
-.tile-body.hinting::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  pointer-events: none;
-  border: var(--edge-2) solid transparent;
-  animation: copyhint-edge var(--motion-hint) var(--ease-out);
-}
-@keyframes copyhint-edge {
-  0%,
-  100% {
-    border-color: transparent;
-  }
-  18%,
-  55% {
-    border-color: var(--kaki-lift);
-  }
-  40% {
-    border-color: color-mix(in srgb, var(--kaki-lift) 25%, transparent);
-  }
-}
-
-
-@media (prefers-reduced-motion: reduce) {
-  .copyhint.show {
-    animation: none;
-    opacity: 1;
-  }
-  .tile-body.hinting::after {
-    animation: none;
-  }
-}
-
-
 @media (pointer: coarse) {
 
   .tile-head button,
@@ -4743,9 +4664,7 @@ button.wb-door:hover b {
 }
 
 .tile.tape-on .tape {
-  --tape-clearance: 52px;
-
-  padding-bottom: var(--tape-clearance);
+  bottom: var(--composer-clearance, 0px);
 }
 @media (pointer: coarse) {
 
@@ -5938,6 +5857,8 @@ button.wb-door:hover b {
 .setup-register-check { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-4); align-items: start; min-width: 0; padding: var(--space-1) 0; color: var(--fg); cursor: pointer; line-height: 1.4; }
 .setup-register-check span { min-width: 0; }
 .setup-register-check input[type='checkbox'] { width: 1.05rem; height: 1.05rem; margin: .15rem 0 0; accent-color: var(--kaki); cursor: pointer; }
+.setup-register-reasons input[type='checkbox'] { box-sizing: border-box; appearance: none; border: var(--edge) solid var(--line-2); border-radius: var(--radius-round); background: var(--well); }
+.setup-register-reasons input[type='checkbox']:checked { border-color: var(--kaki); background: var(--kaki); box-shadow: inset 0 0 0 var(--space-1) var(--well); }
 .setup-register-check-other { display: grid; gap: var(--space-3); }
 .setup-register-compact .setup-register-check-other > .setup-register-other { width: auto; margin-left: calc(1.05rem + var(--space-4)); }
 .setup-register-check-apart { margin-top: var(--space-5); border-top: var(--edge) solid var(--line); padding-top: var(--space-5); }
@@ -6000,15 +5921,32 @@ button.wb-door:hover b {
 .setup-services-status-line { color: var(--fg-strong); font-size: var(--text-7); font-weight: 650; }
 .setup-services-compact > .wk-action { justify-self: start; }
 .setup-services-gate { margin: 0; border-top: var(--edge) solid var(--line); padding-top: var(--space-5); }
-.setup-services-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); }
-.setup-services-steps[data-count='4'] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.setup-services-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-4); }
 .setup-services-step { display: grid; grid-template-rows: auto 1fr; gap: var(--space-2); min-width: 0; }
 .setup-services-step-caption { color: var(--muted-2); font-size: var(--text-5); }
 .setup-services-step-action { display: inline-flex; width: 100%; height: 100%; min-height: 2.25rem; align-items: center; justify-content: center; box-sizing: border-box; text-align: center; }
 .setup-services-step-action[data-done='true'] { color: var(--ok); border-color: var(--ok-2); }
 .setup-services-step-action[data-step='restart'] { border-color: var(--kaki); background: var(--kaki); color: var(--on-strong); font-weight: 600; }
-.setup-services-step-action[data-step='restart']:hover { filter: brightness(1.08); }
-.setup-services-notice:empty { display: none; }
+.setup-services-step-action[data-step='restart']:disabled { border-color: var(--line-2); background: var(--well); color: var(--muted); font-weight: 400; }
+.setup-services-step-action[data-step='restart']:enabled:hover { filter: brightness(1.08); }
+.setup-services-notice { min-height: 1.45em; margin: 0; }
+.setup-services-components { gap: 0; }
+.setup-services-components .setup-services-benefit { grid-template-columns: 5rem minmax(7rem, .8fr) minmax(0, 1.6fr); align-items: center; border-top: var(--edge) solid var(--line-2); gap: var(--space-4); padding: var(--space-5) 0; }
+.setup-services-components .ask-label { display: none; }
+.setup-services-components .ask-stone { width: 100%; min-width: 0; height: 2.25rem; padding: var(--space-3); }
+.setup-services-components .ask-fields { display: block; }
+.setup-services-components .ask { min-width: 0; }
+.setup-services-feature-status { min-height: 1.45em; color: var(--muted); font-size: var(--text-4); line-height: 1.45; }
+.setup-services-feature-copy { display: grid; gap: var(--space-1); }
+.setup-services-compact { container-type: inline-size; }
+@container (max-width: 32rem) {
+  .setup-services-components .setup-services-benefit { grid-template-columns: 4.5rem minmax(0, 1fr); grid-template-areas: "switch title" "switch copy"; align-items: start; gap: var(--space-2) var(--space-4); }
+  .setup-services-components .setup-services-benefit > .ask { grid-area: switch; }
+  .setup-services-components .setup-services-benefit > h3 { grid-area: title; }
+  .setup-services-components .setup-services-feature-copy { grid-area: copy; }
+  .setup-services-components .setup-services-benefit h3, .setup-services-components .setup-services-benefit p { font-size: var(--text-4); }
+  .setup-services-step-action { min-width: 0; padding-inline: var(--space-1); font-size: var(--text-5); }
+}
 .campaign-installation-switch .ask-label { display: none; }
 .campaign-installation-switch .ask-stone { height: 2.25rem; }
 .campaign-installation-switch + .setup-gbrain-hint { margin-top: calc(-1 * var(--space-2)); }
@@ -6122,7 +6060,6 @@ button.wb-door:hover b {
   .setup-explainer-body { grid-template-columns: 1fr; }
   .setup-surface-body { padding: var(--space-4); }
   .setup-services-benefit { grid-template-columns: 1fr; }
-  .setup-services-steps[data-count='4'] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .setup-gbrain-answer { grid-template-columns: 1fr; }
   .setup-explainer { margin: var(--space-4) var(--space-4) 0; }
 }
@@ -6259,7 +6196,6 @@ button.wk-card { cursor: pointer; font-family: var(--font-ui); }
 .mq-tools-group { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .mq-tools-right { margin-left: auto; }
 .mq-tools .mq-dismiss-all { border-color: var(--bad); }
-.mq-autoforce[data-on="true"] { border-color: var(--warn); background: var(--well); }
 .mq-card.mq-selected { outline: var(--space-1) solid var(--accent, var(--warn)); outline-offset: calc(-1 * var(--space-1)); background: var(--well); }
 .mq-board { display: grid; gap: var(--space-4); padding: var(--space-5); overflow: auto; }
 .mq-empty { color: var(--muted); margin: 0; }
@@ -6305,15 +6241,10 @@ button.wk-card { cursor: pointer; font-family: var(--font-ui); }
   color: var(--on-strong);
 }
 
-.tile.keys-on.tape-on .tape {
-  --tape-clearance: 104px;
-}
-
 .tile.keys-on:not(.tape-on) .tile-body {
-
-  --composer-ground: 104px;
-
-  padding-bottom: var(--composer-ground);
+  /* FitAddon reads computed height: give it the content area, excluding controls. */
+  box-sizing: content-box;
+  padding-bottom: var(--composer-clearance, 0px);
 }
 
 
@@ -6331,23 +6262,6 @@ button.wk-card { cursor: pointer; font-family: var(--font-ui); }
 .ch-door[data-unavailable='true']:focus-visible { opacity: .68; }
 .ch-gate { margin: var(--space-3) 0 0; color: var(--muted); font-size: var(--text-2); }
 .ph-launch-go[data-launch='true'] { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); }
-
-.tile:is(.tape-on, .keys-on) .composer .cclear {
-  display: none;
-  height: 30px;
-  min-width: 34px;
-  border: var(--edge) solid var(--line);
-  border-radius: var(--radius-md);
-  background: var(--panel);
-  color: var(--muted-2);
-  font-size: var(--text-5);
-  cursor: pointer;
-}
-.tile:is(.tape-on, .keys-on) .composer.hastext .cclear {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
 
 @media (pointer: coarse) {
 
@@ -6499,13 +6413,15 @@ button.wk-card { cursor: pointer; font-family: var(--font-ui); }
 
 #phone .ph-term {
   flex: 1;
+  flex-direction: column;
   min-height: 0;
   display: flex;
   position: relative;
 }
 #phone .wk-terminal-host {
   width: 100%;
-  height: 100%;
+  flex: 1 1 auto;
+  height: auto;
   min-width: 0;
   min-height: 0;
 }
@@ -6643,3 +6559,12 @@ html[data-screen='inside'] #phone .ph-bar .ph-title[data-boot='inside'] { displa
   min-height: 0;
   margin: var(--space-4);
 }
+
+/* Desktop selector reference. Mobile actions use the existing composer keys row. */
+.terminal-hints { flex: 0 0 auto; margin: var(--space-3); padding: var(--space-4); font-family: var(--font-ui); font-size: var(--text-3); line-height: 1.5; overflow-wrap: normal; }
+.terminal-hints summary { cursor: pointer; color: var(--fg-strong); font-size: var(--text-5); font-weight: 600; }
+.terminal-hints-subtitle { margin-inline-start: var(--space-3); font-size: var(--text-3); font-weight: 400; color: var(--muted); }
+.terminal-hint-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-2); margin-top: var(--space-2); }
+.terminal-hint-row strong { font-weight: 700; color: var(--fg-strong); }
+.terminal-hint-row span { flex: 1 1 min-content; min-width: min-content; max-width: 100%; overflow-wrap: normal; text-align: right; }
+.terminal-copy-text { width: 100%; height: 50dvh; resize: vertical; font-family: var(--font-mono); white-space: pre; }

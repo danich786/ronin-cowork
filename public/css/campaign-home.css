@@ -103,18 +103,29 @@
   }
 
   .ch-release {
-    position: absolute;
-    right: var(--space-8);
-    bottom: var(--space-7);
-    display: flex;
-    align-items: center;
+    width: 100%;
+    max-width: var(--ch-frame-w);
+    align-self: end;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: var(--space-4);
-    color: var(--dim);
-    font-size: var(--text-2);
+    padding-top: var(--space-7);
+    color: var(--muted);
+    font-size: var(--text-3);
+    overflow-wrap: anywhere;
+  }
+  .ch-update-readings, .ch-update-answer { grid-column: 1 / -1; }
+  .ch-update-answer { min-height: 3em; }
+  .ch-update-package { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-4); align-items: center; min-height: 3em; }
+  .ch-update-package .ch-update[hidden] { display: block; visibility: hidden; }
+  .ch-update-reading[data-state='available'] { color: var(--accent); }
+  @media (max-width: 420px) {
+    .ch-update-package { grid-template-columns: minmax(0, 1fr); gap: var(--space-2); min-height: 5em; }
+    .ch-update-package .ch-update { justify-self: start; }
   }
   .ch-update { padding: 0; border: 0; background: transparent; color: var(--muted); font: inherit; cursor: pointer; }
   .ch-update:hover, .ch-update:focus-visible { color: var(--fg-strong); }
-  .ch-update:disabled { cursor: wait; color: var(--dim); }
+  .ch-update:disabled, .ch-update[aria-disabled="true"] { cursor: default; color: var(--dim); }
   .ch-update-answer[data-state='failed'] { color: var(--bad); }
   .ch-update-answer[data-state='available'] { color: var(--accent); }
 

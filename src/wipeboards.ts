@@ -323,7 +323,7 @@ export async function reapBoard(name: string, opts: LifecycleOpts): Promise<bool
   return true;
 }
 
-export const checkLine = 'Run: tejun-wipeboard';
+export const checkLine = 'Run: edges wipeboard';
 
 export function postNotice(board: string, author: string): string {
   return (

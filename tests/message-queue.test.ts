@@ -130,17 +130,6 @@ test('bulk dismissal is exact-ID and preserves unread arrivals', async (t) => {
   await fs.rm(root, { recursive: true, force: true });
 });
 
-test('auto-force defaults to two minutes; an explicit 0 means never', async () => {
-  const queue = await import(`../src/message-queue.ts?autodefault=${Date.now()}`);
-  assert.equal(queue.autoForceMsFrom(undefined), 120_000);
-  assert.equal(queue.autoForceMsFrom(null), 120_000);
-  assert.equal(queue.autoForceMsFrom(''), 120_000);
-  assert.equal(queue.autoForceMsFrom(0), 0);
-  assert.equal(queue.autoForceMsFrom('0'), 0);
-  assert.equal(queue.autoForceMsFrom(120), 120_000);
-  assert.equal(queue.autoForceMsFrom('not a number'), 0);
-});
-
 test('bulk force is exact-ID, one pane at a time, and reports each outcome', async (t) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ronin-message-queue-bulkforce-'));
   process.env.RONIN_MESSAGE_QUEUE_DIR = root;
@@ -170,7 +159,7 @@ test('bulk force is exact-ID, one pane at a time, and reports each outcome', asy
   await fs.rm(root, { recursive: true, force: true });
 });
 
-test('auto-force fires once per retained message after the owner\'s delay, never before, never for a missing target', async (t) => {
+test('auto-force fires once per retained message after two minutes, never before, never for a missing target', async (t) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ronin-message-queue-autoforce-'));
   process.env.RONIN_MESSAGE_QUEUE_DIR = root;
   const queue = await import(`../src/message-queue.ts?autoforce=${Date.now()}`);
@@ -184,15 +173,13 @@ test('auto-force fires once per retained message after the owner\'s delay, never
     force: async () => { forced += 1; return { delivered: false, submitted: true, reason: 'pane never took it' }; },
   };
   const born = Date.parse(item.created_at);
-  // Off: the sweep only makes safe attempts, which the Control setting holds.
-  await queue.processMessageQueue({ now: born + 600_000, autoForceAfterMs: 0, delivery });
-  assert.equal(forced, 0);
-  // On, but younger than the delay: still held.
-  await queue.processMessageQueue({ now: born + 60_000, autoForceAfterMs: 120_000, delivery });
+
+  // Younger than the deadline: still held.
+  await queue.processMessageQueue({ now: born + 60_000, delivery });
   assert.equal(forced, 0);
   assert.equal((await queue.listQueuedMessages(born + 60_000))[0].auto_forced_at, undefined);
-  // On and old enough: forced once, stamped, and the failure stays on the card.
-  await queue.processMessageQueue({ now: born + 120_000, autoForceAfterMs: 120_000, delivery });
+  // At the fixed deadline: forced once, stamped, and the failure stays on the card.
+  await queue.processMessageQueue({ now: born + 120_000, delivery });
   assert.equal(forced, 1);
   const after = (await queue.listQueuedMessages(born + 120_000))[0];
   assert.equal(after.state, 'failed');
@@ -200,8 +187,8 @@ test('auto-force fires once per retained message after the owner\'s delay, never
   assert.equal(after.attempts, 1);
   assert.equal(after.auto_forced_at, new Date(born + 120_000).toISOString());
   // Later sweeps do not force it again; only a manual press would.
-  await queue.processMessageQueue({ now: born + 240_000, autoForceAfterMs: 120_000, delivery });
-  await queue.processMessageQueue({ now: born + 480_000, autoForceAfterMs: 120_000, delivery });
+  await queue.processMessageQueue({ now: born + 240_000, delivery });
+  await queue.processMessageQueue({ now: born + 480_000, delivery });
   assert.equal(forced, 1);
   await fs.rm(root, { recursive: true, force: true });
 });
@@ -256,4 +243,53 @@ test('manual and expired direct tells NACK once, but viewer senders and NACKs do
   assert.doesNotMatch(evidence, new RegExp(viewer.id));
   assert.doesNotMatch(evidence, new RegExp(nack.id));
   await fs.rm(root, { recursive: true, force: true });
+});
+
+test('messages to one target cannot interleave; an owner message waiting for the sender still bypasses preflight', async (t) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ronin-message-queue-owner-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  process.env.RONIN_MESSAGE_QUEUE_DIR = root;
+  const queue = await import(`../src/message-queue.ts?owner=${Date.now()}`);
+  const target = await liveTarget(t, 'queue_owner_target');
+  const first = await queue.enqueueMessage(target, 'first', 'owner');
+  const second = await queue.enqueueMessage(target, 'second', 'owner');
+  let release!: () => void;
+  let started!: () => void;
+  const held = new Promise<void>((resolve) => { release = resolve; });
+  const ready = new Promise<void>((resolve) => { started = resolve; });
+  const sent: string[] = [];
+  const delivery = {
+    safe: async () => { throw new Error('owner must bypass preflight'); },
+    force: async (_name: string, text: string) => {
+      sent.push(text);
+      if (text === 'first') { started(); await held; }
+      return { delivered: true, submitted: true, reason: 'sent' };
+    },
+  };
+  const attempt = queue.attemptMessage(first.id, 'force', delivery);
+  await ready;
+  const waiting = await queue.attemptMessage(second.id, 'force', delivery);
+  assert.equal(waiting?.state, 'stuck');
+  assert.deepEqual(sent, ['first']);
+  release();
+  await attempt;
+  await queue.processMessageQueue({ delivery });
+  assert.deepEqual(sent, ['first', 'second']);
+  assert.deepEqual(await queue.listQueuedMessages(), []);
+});
+
+test('wipeboard notices follow direct messages in a sweep', async (t) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ronin-message-queue-priority-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  process.env.RONIN_MESSAGE_QUEUE_DIR = root;
+  const queue = await import(`../src/message-queue.ts?priority=${Date.now()}`);
+  const target = await liveTarget(t, 'queue_priority_target');
+  await queue.enqueueMessage(target, 'board', 'wipeboard_notice');
+  await queue.enqueueMessage(target, 'tell', 'tell');
+  const sent: string[] = [];
+  await queue.processMessageQueue({ delivery: {
+    safe: async (_name: string, text: string) => { sent.push(text); return { delivered: true, submitted: true, reason: 'sent' }; },
+    force: async () => { throw new Error('not overdue'); },
+  } });
+  assert.deepEqual(sent, ['tell', 'board']);
 });

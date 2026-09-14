@@ -16,9 +16,8 @@ import { assertSameCampaignRoot, campaignFilter, campaignResolver, initialCampai
 import { retireTeam } from '../team-retire.js';
 import { readCampaign } from '../campaigns.js';
 import { teamAgentDefaults } from '../agent-defaults.js';
-import { assignTeamProject, issueTeamProjectId, returnTeamProject, writeTeamIdea } from '../team-projects.js';
+import { assignTeamProject, issueTeamProjectId, moveTeamProject, returnTeamProject, writeTeamIdea, type TeamProjectArea } from '../team-projects.js';
 import { PROJECT_EXITS, PROJECT_STATUSES, normalizeProject, type Project } from '../projects.js';
-import { deriveTeamKanban } from '../team-kanban.js';
 
 const errMsg = (e: unknown): string => String((e as Error)?.message ?? e);
 
@@ -124,19 +123,10 @@ function ideaEditOf(body: unknown): Partial<Project> {
 }
 
 export function registerTeams(app: express.Express): void {
-  app.get('/api/teams/:team/kanban', async (req, res) => {
-    try {
-      const board = await deriveTeamKanban(req.params.team);
-      if (!board) return res.status(404).json({ error: `Team "${req.params.team}" has no roster.` });
-      res.json(board);
-    } catch (e) {
-      res.status(500).json({ error: errMsg(e) });
-    }
-  });
-
   app.post('/api/team-rosters/:name/projects', async (req, res) => {
     try {
-      res.json({ ok: true, ...(await writeTeamIdea(req.params.name, undefined, ideaEditOf(req.body))) });
+      const result = await writeTeamIdea(req.params.name, undefined, ideaEditOf(req.body));
+      res.json({ ok: true, ...result, acknowledgement: `Project ${result.project.id} created with stable id ${result.project.id}. Next: team-lead project read ${req.params.name} ${result.project.id}. Remember to update your project.` });
     } catch (e) {
       res.status(400).json({ error: errMsg(e) });
     }
@@ -162,7 +152,8 @@ export function registerTeams(app: express.Express): void {
     try {
       const session = String(req.body?.session ?? '').trim();
       if (!session) throw new Error('assign needs a session.');
-      res.json({ ok: true, project: await assignTeamProject(req.params.name, req.params.id, session) });
+      const project = await assignTeamProject(req.params.name, req.params.id, session);
+      res.json({ ok: true, project, acknowledgement: `Project ${project.id} moved whole from Team ${req.params.name} Inbox to ${session}. Run work-record project read ${project.id}, then update it.` });
     } catch (e) {
       res.status(400).json({ error: errMsg(e) });
     }
@@ -172,10 +163,38 @@ export function registerTeams(app: express.Express): void {
     try {
       const session = String(req.body?.session ?? '').trim();
       if (!session) throw new Error('return needs a session.');
-      res.json({ ok: true, ...(await returnTeamProject(req.params.name, req.params.id, session)) });
+      const area = String(req.body?.area ?? 'inbox').toLowerCase() as TeamProjectArea;
+      if (!['inbox', 'done', 'backlog'].includes(area)) throw new Error('return area must be inbox, done or backlog.');
+      const result = await returnTeamProject(req.params.name, req.params.id, session, area);
+      res.json({ ok: true, ...result, area, acknowledgement: `Project ${result.project.id} moved whole to Team ${req.params.name} ${area[0]!.toUpperCase() + area.slice(1)}; holder: Team ${req.params.name}; focus: ${result.focus ?? 'none'}. Remember to update your project.` });
     } catch (e) {
       res.status(400).json({ error: errMsg(e) });
     }
+  });
+
+  app.post('/api/team-rosters/:name/projects/:id/backlog', async (req, res) => {
+    try {
+      const { project, from } = await moveTeamProject(req.params.name, req.params.id, 'backlog');
+      res.json({ ok: true, project, area: 'backlog', acknowledgement: `Project ${project.id} moved whole from Team ${req.params.name} ${from} to Backlog. Remember to update your project.` });
+    } catch (e) {
+      res.status(400).json({ error: errMsg(e) });
+    }
+  });
+
+  app.post('/api/team-rosters/:name/projects/:id/restore', async (req, res) => {
+    try {
+      const { project, from } = await moveTeamProject(req.params.name, req.params.id, 'inbox');
+      res.json({ ok: true, project, area: 'inbox', acknowledgement: `Project ${project.id} restored from Team ${req.params.name} ${from} to Inbox; next: team-lead project assign ${req.params.name} ${project.id} <session>. Remember to update your project.` });
+    } catch (e) {
+      res.status(400).json({ error: errMsg(e) });
+    }
+  });
+
+  app.post('/api/team-rosters/:name/projects/:id/done', async (req, res) => {
+    try {
+      const { project, from } = await moveTeamProject(req.params.name, req.params.id, 'done');
+      res.json({ ok: true, project, area: 'done', acknowledgement: `Project ${project.id} moved whole from Team ${req.params.name} ${from} to Done. Remember to update your project.` });
+    } catch (e) { res.status(400).json({ error: errMsg(e) }); }
   });
 
   app.get('/api/team-rosters', async (req, res) => {

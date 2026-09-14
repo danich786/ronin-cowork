@@ -100,7 +100,7 @@ export async function readMachineSettingsSection<T>(key: string, fallback: T): P
 
 export const readMachineSettingsDocument = (): Promise<Record<string, unknown>> => readDocument();
 
-async function updateDocument(
+export async function updateDocument(
   mutate: (document: Record<string, unknown>) => void | Promise<void>,
 ): Promise<void> {
   const operation = writeQueue.then(async () => {
@@ -178,14 +178,6 @@ const writeAgentsSection = (value: Record<string, unknown>) =>
   updateDocument((document) => { document.agents = value; });
 const writeGbrainSection = (value: Record<string, unknown>) =>
   updateDocument((document) => { document.gbrain = value; });
-const writeMessagesSection = (value: { auto_force_after_s?: number }) =>
-  updateDocument((document) => {
-    const messages = ((document.messages ?? {}) as Record<string, unknown>) || {};
-    document.messages = {
-      ...messages,
-      ...(value.auto_force_after_s !== undefined ? { auto_force_after_s: value.auto_force_after_s } : {}),
-    };
-  });
 const writeWantedSection = (wanted: Array<{ kind: string; name: string }>) =>
   updateDocument((document) => { document.wanted = wanted; });
 async function liveCount(): Promise<number> {
@@ -412,14 +404,6 @@ const publicJobs = async (value: unknown): Promise<Record<string, unknown>> => {
   return jobs;
 };
 
-/** Absent = the queue's default (120); 0 = never; anything else is whole seconds. */
-const AUTO_FORCE_DEFAULT_S = 120;
-const autoForceSeconds = (v: unknown): number => {
-  if (v === undefined || v === null || v === '') return AUTO_FORCE_DEFAULT_S;
-  const n = Number(v);
-  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
-};
-
 async function readSet(): Promise<Record<string, unknown>> {
   const owner = await readSection<Record<string, unknown>>('owner', {});
   const machine = await readMachineSection();
@@ -450,7 +434,6 @@ async function readSet(): Promise<Record<string, unknown>> {
       where: typedStr(machine.where),
     },
     sessions: { max: await readMax() },
-    messages: { auto_force_after_s: autoForceSeconds((await readSection<Record<string, unknown>>('messages', {})).auto_force_after_s) },
     projects,
     agents: { sessions: sessionDefaults(agents.sessions), jobs: await publicJobs(agents.jobs) },
     gbrain: { enabled: gbrain.enabled === true },
@@ -763,11 +746,6 @@ export const MACHINE_SETTINGS_WRITERS = {
     return { ok: true };
   },
   'session-max': async (body) => ({ max: await writeMax(Number(body.max)) }),
-  messages: async (body) => {
-    const seconds = autoForceSeconds(body.auto_force_after_s);
-    await writeMessagesSection({ auto_force_after_s: seconds });
-    return { ok: true, auto_force_after_s: seconds };
-  },
   gbrain: async (body) => {
     await writeGbrainSection({ enabled: body.enabled === true });
     return { ok: true };

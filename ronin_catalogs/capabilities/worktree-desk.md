@@ -5,7 +5,9 @@
 - **requires:** arrangement:managed
 - **order:** 40
 
-Reach for the desk tool because you hold a managed desk: a private branch and worktree leased to you. Compare its status with your brief before writing; sync adopts accepted `dev` changes; commit is a private checkpoint; hand-in admits committed work to the Team review line. None of these is Git push, and Git push belongs only to release work. Read `ronin_sops/worktree-root.md` before your first write.
+Reach for this bundle because you hold a managed desk: a private branch and worktree leased
+to you. Status, sync, commit, and hand-in are distinct; none is Git push. Read
+`ronin_sops/worktree-root.md` before the first write.
 
 ## Tools
 
@@ -22,9 +24,13 @@ Reach for the desk tool because you hold a managed desk: a private branch and wo
 | `worktree-desk discard` | destroy: exact confirmation required | | `worktree-desk --help` |
 | `worktree-desk repository-init` | create: local `git init` in an existing Workspace Folder | | `worktree-desk --help` |
 
-An ordinary contributor uses `status`, `sync`, and `hand-in`. Opening, handoff, receipts,
+An ordinary contributor needs status, sync, and hand-in. Opening, handoff, receipts,
 conflict replies, discard, and closing are in help and on the Worktrees page; assigning a
 desk to another Agent is the lead's.
+
+Add `--project <team/id>` to hand-in when the receipt belongs to one held Project. The
+accepted acknowledgement records the association and prints the exact LANDING command;
+it never changes Project state. A conflict or refusal prints no success movement.
 
 Hand-in constructs an isolated candidate and reports `ACCEPTED` with a receipt, or keeps
 the desk and records the evidence on a conflict; nothing is lost either way. Hand-in reaches
@@ -43,6 +49,11 @@ The table is the executable contract. All ten rows are subcommands of the single
 `close`, `receipts`, `reply`, `handoff`, and `discard` retain the guarded desk lifecycle;
 `repository-init` is the repository operation. No second desk or repository initializer
 is projected.
+
+Known workflow gap: `sync` reads the repository's current working line (`dev`) only. It
+does not provide an adopt-Team-line operation for ordered reconciliation of shared files.
+Until that operation exists, a lead must explicitly authorize the exact non-destructive
+Team-line merge; the Agent must not infer another ref or substitute a rebase.
 
 After the final hand-in, `status` must say `CERTIFIED CLEAN`: no unsaved files and every
 commit on the Team line. Stay parked unless told to end.

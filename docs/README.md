@@ -1,6 +1,17 @@
 # Ronin documentation — start with the question
 
-These are operational routes for a user or an Agent working on the user's behalf. Builder contracts remain available, but they are not prerequisites for installing or using Ronin.
+## Terminal controls
+
+|Input|Codex|Claude|Gemini|Grok|Hermes|
+|---|---|---|---|---|---|
+|Escape — Stop|Escape|Escape|Ctrl+C|Ctrl+C|Ctrl+C|
+|Ctrl+Shift+Backspace — Clear|Ctrl+C|Escape|Ctrl+C|Ctrl+C|Ctrl+C|
+|Ctrl+Shift+X — Close|Confirm|Confirm|Confirm|Confirm|Confirm|
+|Ctrl+C|Blocked|Blocked|Blocked|Blocked|Blocked|
+
+Clear: entire draft. Confirm: Ronin dialog. Copy:
+Option-drag, Cmd+C (Mac); Shift-drag, Ctrl+C (Windows/Linux).
+[Controls](terminal-controls.md); [Agents](agents/README.md).
 
 ## Before Ronin is running
 
@@ -23,6 +34,8 @@ These are operational routes for a user or an Agent working on the user's behalf
 | What is installed, what a Team or Agent can add, and how a new Agent is equipped? | [Installations and behaviours](installations.md) |
 | How should an Agent plan and maintain its work record? | [Keep a useful work record](work-record.md) |
 | How does a Team's five-stage Kanban derive projects and Landing? | [Team Kanban](team-kanban.md) |
+| How do I Stop, Clear, Close or Copy, and change shortcuts? | [Terminal controls](terminal-controls.md) |
+| Where are each Agent CLI's integration particulars? | [Agent integrations](agents/README.md) |
 | How do session Control settings work? | [Session Control](session-control-dials.md) |
 | What does a new Agent read at birth, and why does it fit one read? | [The birth packet](birth-packet.md) |
 | What does Ronin let an Agent do, and what does it only tell it? | [The Agent's philosophy: a gas pedal and a brake pedal](agent-philosophy.md) |

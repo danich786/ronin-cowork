@@ -8,7 +8,7 @@ import {
   sessionDir,
   sessionExists,
   setControl,
-  setLaunchStamp,
+  setSessionIdentity,
   setLeads,
   setProviderSessionId,
   setCampaign,
@@ -118,7 +118,7 @@ async function deskNote(r: { assignment?: unknown; project_root?: string; agent?
 
 const LAUNCH_KEYS = new Set([
   'session_type', 'team', 'team_lead', 'instructions', 'prompt', 'name',
-  'dial', 'project_root', 'cmd', 'model', 'provider', 'mandate', 'campaign_id', 'launch_mode',
+  'project_root', 'cmd', 'model', 'provider', 'mandate', 'campaign_id', 'launch_mode',
   'tags', 'seed', 'inject', 'reference', 'desk', 'repos',
   'kind', 'behaviours',
   'template',
@@ -151,7 +151,6 @@ export function acceptedLaunchBody(input: unknown): { body: Record<string, unkno
   if (body.session_type !== undefined && sessionType !== statedType) ignored.add('session_type');
   body.session_type = sessionType;
 
-  if (body.dial !== undefined && body.dial !== 'user' && body.dial !== 'read' && body.dial !== 'write') drop('dial');
   if (body.desk !== undefined && body.desk !== 'own' && body.desk !== 'none') drop('desk');
   if (body.launch_mode !== undefined && body.launch_mode !== 'configured' && body.launch_mode !== 'live_dangerously') drop('launch_mode');
   if (body.repos !== undefined && (!Array.isArray(body.repos) || body.repos.some((r: unknown) => typeof r !== 'string'))) drop('repos');
@@ -306,7 +305,6 @@ export function registerLaunch(app: express.Express): LaunchControl {
       team_lead: req.body?.team_lead === true,
       prompt: String(req.body?.instructions ?? req.body?.prompt ?? '').trim(),
       name,
-      dial: req.body?.dial === 'user' || req.body?.dial === 'read' || req.body?.dial === 'write' ? req.body.dial : undefined,
       project_root: String(req.body?.project_root ?? '').trim() || undefined,
       cmd: String(req.body?.cmd ?? '').trim() || undefined,
       model: String(req.body?.model ?? '').trim() || undefined,
@@ -428,9 +426,13 @@ export function registerLaunch(app: express.Express): LaunchControl {
             houseSeat === 'mika' ? MIKA_PARENT_PATH : undefined,
             houseSeat === 'mika'
               ? { includeTmux: false, extraTools: [...MIKA_TOOLS] }
-              : { extraTools: [...resolved.conditional_tools, ...resolved.capability_tools] },
+              : { extraTools: resolved.capability_tools },
           )
         : null;
+      const campaignId = resolved.session_type === 'bare_metal_agent'
+        ? (form.campaign_id || await initialCampaignId())
+        : await birthCampaign(resolved.team, form.campaign_id);
+      const transcriptOn = (await readCampaign(campaignId))?.config.services.parts.terminal_transcript === true;
       await createSession(resolved.name, resolved.dir, {
         agent: resolved.agent,
         exempt: resolved.capExempt,
@@ -444,16 +446,19 @@ export function registerLaunch(app: express.Express): LaunchControl {
               RONIN_MACHINE_SETTINGS_AUTHORITY: 'mika',
             }
           : birthEnv(routineTools?.path, boundOperatorSocket(), agentBinDir(), process.env.PATH ?? ''),
-        control: resolved.agent ? 'user' : undefined,
+        control: resolved.agent ? resolved.dial : undefined,
         key: birthKey || undefined,
         // The Services switch as resolved for THIS Agent at birth (campaign < team < form):
         // off means RIREKI never records it. Set here and never again — nothing cascades
         // onto a running session (owner, 2026-09-04). A terminal has no Routines and keeps
         // the recorder's own default.
-        rireki: resolved.contributions.length ? resolved.contributions.some((contribution) => contribution.name === 'ronin_services' && contribution.enabled) : undefined,
+        rireki: resolved.contributions.length
+          ? resolved.contributions.some((contribution) => contribution.name === 'ronin_services' && contribution.enabled) && transcriptOn
+          : undefined,
         strictCwd: houseSeat === 'mika',
       });
       runtimeBorn = true;
+      await setSessionIdentity(resolved.name, resolved.identity || { sessionType: resolved.session_type, cli: resolved.launchAgent, provider: '', model: '' });
       if (birthKey) rememberSessionKey(resolved.name, birthKey);
       if (resolved.tags.length) {
         await setTags(resolved.name, resolved.tags);
@@ -467,11 +472,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
       }
       if (form.team_lead && resolved.team) await setLeads(resolved.name, [resolved.team]);
       if (resolved.project_root && resolved.session_type !== 'bare_metal_agent') await setProjectRoot(resolved.name, resolved.project_root);
-      const campaignId = resolved.session_type === 'bare_metal_agent'
-        ? (form.campaign_id || await initialCampaignId())
-        : await birthCampaign(resolved.team, form.campaign_id);
       await setCampaign(resolved.name, campaignId);
-      await setLaunchStamp(resolved.name, resolved.launchAgent);
       if (providerSession.id) await setProviderSessionId(resolved.name, providerSession.id);
       if (resolved.session_type === 'cowork_agent') {
         await seedTegami(
@@ -507,6 +508,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
         ok: true,
         name: resolved.name,
         session_type: resolved.session_type,
+        identity: resolved.identity,
         dir: resolved.dir,
         cmd: resolved.cmd,
         tags: resolved.tags,
@@ -516,6 +518,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
     } else {
       const receipt = {
         session_type: resolved.session_type,
+        identity: resolved.identity,
         team: resolved.team,
         project_root: resolved.project_root,
         dir: resolved.dir,

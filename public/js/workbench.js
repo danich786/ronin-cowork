@@ -2,6 +2,7 @@
 /** The one sealed Workbench, its shared surface library and named discovery profiles. */
 import { createWorkbenchLayout } from './workspace-layouts.js';
 import { WorkspacePrimitives } from './workspace-primitives.js';
+import { buildControlHints } from './terminal-controls.js';
 import { t } from './lexicon.js';
 
 export const WORKBENCH_IDS = Object.freeze(['workspace1', 'workspace2', 'workspace3', 'workspace4']);
@@ -107,7 +108,7 @@ export function createWorkbench(options = {}) {
 
   const selector = node('div', 'wk-workbench-selector');
   const selectorCards = node('div', 'wk-workbench-selector-cards');
-  selector.append(selectorCards);
+  selector.append(selectorCards, buildControlHints());
   const declaration = { slots: [
     { name: 'workspace1', label: t('team.workspace_1', 'Workspace 1'), width: 40, composite: true },
     { name: 'selector', label: options.label || profile.name, width: 20, min: 6, compact: 176 },
@@ -173,7 +174,7 @@ export function createWorkbench(options = {}) {
     value?.hide?.();
     if (!restoreDefault(id)) return false;
     refreshSelector();
-    options.onPlacement?.(snapshot());
+    options.onPlacement?.(snapshot(), { dismissed: id });
     return true;
   };
 

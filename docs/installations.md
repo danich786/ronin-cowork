@@ -38,7 +38,7 @@ Campaign defaults → Team → Agent carries one kind of choice: a **behaviour**
 can say how ordinary work should be done or add a facility and its taught practice. Its
 definition in `ronin_catalogs/behaviours/<name>.md` may name an installation and carry
 reading, SOPs, tools, and an MCP connection. Capability documents conditionally select
-and teach executable authority.
+knowledge, emphasis, and tool-job teaching for the Build Brief.
 
 An installation-gated behaviour appears on forms only while its installation and every
 requirement are on. A launch request naming an unavailable behaviour is born without it;
@@ -57,25 +57,32 @@ complete list. A template clobbers only the fields it carries.
 
 ## Capability bundles: the tools an Agent is taught
 
+A capability bundle is a knowledge layer, not an authority layer. Selection changes what
+the Build Brief teaches and emphasizes for that Agent; it does not grant, withhold,
+authorize, or forbid an installed tool or its help.
+
 The commands an Agent is taught are grouped into **capability bundles**, one authored
 Markdown document each in `ronin_catalogs/capabilities/` (the owner's catalogs store
 shadows a name whole and adds new ones). A bundle is a document grouping, not an
 executable: it answers one question, lists the actual tools that answer it in a `## Tools`
-table — each with its authority, whether it is taught at birth, and its help route — and
+table — each with its job, whether it is emphasized at birth, and its help route — and
 carries the teaching around them. A bundle may list several tools, one, or none; a tool may
 be surfaced by more than one bundle.
 
-Each document's `requires:` line names the launch facts that select it: a system
+Each document's `requires:` line names the launch facts that select its teaching: a system
 installation being on, a behaviour being selected, a managed desk in the resolved
 assignment, MCP being connected, a Campaign, a Team, or the lead designation. The five
 Cowork bundles ship with Ronin; Ronin Host, Ronin Services, gbrain, Trello, Perplexity and
 future add-ons are one more file each, gated the same way. Nothing in the resolver knows a
 bundle by name.
 
-At birth the resolver selects the documents whose requirements hold, projects the listed
-tools that exist on this box onto the Agent's PATH, and the packet compiler renders one
-**YOUR TOOLS** overview from exactly those documents. A tool the box lacks is recorded in
-the receipt and never taught. The format is `ronin_catalogs/capabilities/README.md`.
+At birth the resolver selects the documents whose requirements hold and the packet compiler
+renders one **YOUR TOOLS** overview from exactly those documents. Selection by role or work
+context (`lead`, `team`, `campaign`, or `arrangement`) changes knowledge only: every shipped
+Cowork tool is on every Cowork Agent's PATH. Feature and integration tools are placed only
+when their installation, behaviour, or connection requirements hold; Ronin Host remains
+conditional. A tool the box lacks is recorded in the receipt and never taught. The format is
+`ronin_catalogs/capabilities/README.md`.
 
 ## Conditional instructions
 
@@ -92,19 +99,20 @@ One resolver runs before the Agent process exists:
 3. A Team's complete selected and required behaviour lists answer for its Agents.
 4. An Agent's launch list, when present, answers for that Agent.
 5. Root arrangement, lead status, and Team membership add conditional reading.
-6. The capability documents whose `requires:` hold are selected, and their tools that exist
-   on this box are projected; the receipt records every document with `selected`,
-   `reason`, `tools` and `missing`.
+6. The capability documents whose `requires:` hold are selected for teaching. All existing
+   Cowork tools and the tools of enabled feature/integration documents are projected; the
+   receipt records every document with `selected`, `reason`, `tools` and `missing`.
 7. One packet and receipt record the result, with `stated_by` naming
    `installation · campaign · team · agent · conditional`.
 
 The same result feeds the birth README, command directory, MCP connections, and receipt.
 
-## Catalog authority
+## Catalog definitions
 
 Definitions live in `ronin_catalogs/installations/` and `ronin_catalogs/behaviours/`, one
 Markdown file per name; each directory's README carries the format. The owner's stores
 shadow a stock definition whole. Campaign and Team records hold only switches and names.
 
-A definition is enablement, not a security boundary. Off means Ronin does not teach,
-offer, or place its tools in the Agent's normal command lookup.
+A definition records enablement; it is not a security boundary. An off feature is not
+taught, offered, or placed in normal command lookup. Role and work-context facts change
+teaching only and do not change an installed Cowork tool or its help.

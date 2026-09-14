@@ -46,6 +46,7 @@ import { registerJikan, startHouseJikan } from './routes/jikan-api.js';
 import { registerInstalled } from './routes/installed-api.js';
 import { registerVersion } from './routes/version.js';
 import { registerWipeboards } from './routes/wipeboards-api.js';
+import { registerTerminalControls } from './terminal-controls.js';
 import { registerMessages } from './routes/messages-api.js';
 import { registerCli } from './routes/cli-api.js';
 import { startMessageQueue } from './message-queue.js';
@@ -56,7 +57,7 @@ import { handlePty } from './ws/pty.js';
 import { originAllowed, allowedOrigins } from './ws/origin.js';
 import { DocumentPathError, legacyDocumentPath, readDocumentFile, saveDocumentFile } from './document-file.js';
 import { checkTmuxServerCgroup } from './host-guard.js';
-import { sockets, startBootHooks, stopBootHooks, mountServiceRoutes, noteService, noteServiceFailure, noteServiceParked } from './sockets.js';
+import { sockets, startBootHooks, stopBootHooks, mountServiceRoutes, noteService, noteServiceCapabilityPlan, noteServiceFailure, noteServiceParked } from './sockets.js';
 import { discoverParts, partsToLoad } from './parts.js';
 import { initialCampaign } from './campaigns.js';
 import { listInstallations } from './resource-adapters.js';
@@ -248,11 +249,14 @@ const services: ServiceRegistration[] = [];
 // The parts on disk are the install; the Campaign's Routine switches say which of them run.
 // A part claimed by a Routine that is off is parked: not imported, no timers, no routes,
 // no recorder — as if not installed, files in place (src/parts.ts). Read once, at start.
+const startupCampaign = await initialCampaign().catch(() => null);
 const plan = partsToLoad(
   discoverParts(),
   await listInstallations().catch(() => []),
-  (await initialCampaign().catch(() => null))?.config?.installations ?? {},
+  startupCampaign?.config?.installations ?? {},
+  startupCampaign?.config?.services?.parts ?? {},
 );
+noteServiceCapabilityPlan(plan.capabilities);
 for (const parked of plan.parked) {
   console.log(`[services] ${parked.name} is parked: ${parked.reason ?? `${parked.installation} is off for this Campaign (restart after switching it on)`}`);
   noteServiceParked(parked.name, parked.installation, parked.reason);
@@ -277,6 +281,7 @@ void resumeInstallWatch();
 
 registerSessions(app); // per-session: kill/harakiri, meta, dials, ctx, tegami, send — src/routes/sessions-api.ts
 registerWipeboards(app); // /api/wipeboards* — src/routes/wipeboards-api.ts
+registerTerminalControls(app);
 registerMessages(app); // /api/messages* — durable inbound session delivery
 registerCli(app); // /api/cli/:tool — command-line faces of operator verbs
 startMessageQueue();

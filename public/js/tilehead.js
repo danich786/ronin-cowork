@@ -79,7 +79,7 @@ const HEADER = () => {
 
   // Window acts sit at the outside edge. The session picker and メ remain beside them, but these
   // two familiar marks get the corner: minus stops viewing; times opens the existing
-  // retirement sheet. Killing is not reimplemented here (and the incoming Control-C
+  // retirement sheet. Killing is not reimplemented here (and the Close shortcut
   // path can land on the same Tile.kill boundary).
   { key: 'killBtn', cls: 'window-control kill', text: '×', needs: 'session',
     help: t('head.kill_help', 'Delete or archive this Agent'),

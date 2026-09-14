@@ -5,7 +5,9 @@
 - **requires:** —
 - **order:** 10
 
-Reach for the edge tools whenever the work crosses out of this session: a line for one other Agent, a post the whole Team must see, a look at what another session is doing, the Team roster, the Team page, or a scheduled request. Nothing here changes your own record; that is the Work Record bundle.
+Reach for this bundle whenever work crosses out of this session: one-to-one messaging,
+Team-wide posts, another session's recent view, rosters, Team pages, schedules, or visible
+Control. Nothing here changes your own record; that belongs to Work Record.
 
 ## Tools
 
@@ -13,7 +15,7 @@ Reach for the edge tools whenever the work crosses out of this session: a line f
 |---|---|---|---|
 | `edges send` | write: one message to one session | priority | `edges --help` |
 | `edges wipeboard` | read/write: the Team's board | priority | `edges --help` |
-| `edges read` | read: another session's recent live view | priority | `edges --help` |
+| `edges read` | read: another session's durable record, or live fallback | priority | `edges --help` |
 | `edges team` | read: a Team's sessions | priority | `edges --help` |
 | `edges page` | read/write: the Team page | | `edges --help` |
 | `edges schedule` | read/write: the Team's Cron jobs | | `edges --help` |
@@ -28,9 +30,9 @@ everyone must see. A bare post interrupts the lead; `--to` changes who is interr
 who may read. Never post to acknowledge — your read is recorded. Posts expire; lasting facts
 go in your work record, a document, or a commit.
 
-`edges read` shows another session's recent live view and reports it as partial. When a
-durable record returns, the same operation reads it first; there is no second command to
-learn.
+`edges read` reads another session's durable settled record first. Only when no record
+exists does it fall back to the recent live view, which is partial; there is no second
+command to learn.
 
 `edges control` reads a session's Control setting. Control is the owner's visible setting;
 no Agent operation raises another session's Control.

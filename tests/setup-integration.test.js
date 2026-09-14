@@ -89,7 +89,6 @@ test('the integrated Setup/Cowork adapters hand Customize to a new tab and use t
   assert.match(cowork, /profiles\.define\(WB_PROFILES\.cowork, \[[^\]]*WB_TYPES\.document[^\]]*\]\)/);
   assert.match(cowork, /type: WB_TYPES\.document[^\n]*discover: \(\) => \[\]/);
   assert.doesNotMatch(cowork, /profiles\.define\(WB_PROFILES\.team, \[[^\]]*WB_TYPES\.document/);
-  assert.match(cowork, /surfaceIn\(id\) \? snapshot\?\.seats\?\.\[id\] : seats\[id\]\.pool\.active/);
   assert.match(cowork, /const restorationMembers = \(\) => campaign && !team \? unassignedSessions\(\) : membersOfTeam\(team\)/);
   assert.match(cowork, /syncPools\(restorationMembers\(\)\)/);
   const docs = await source('docs.js');

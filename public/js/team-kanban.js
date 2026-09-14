@@ -3,13 +3,27 @@ import { request } from './request.js';
 import { t } from './lexicon.js';
 
 const COLUMNS = [
-  { key: 'IDEAS', label: 'Ideas' },
-  { key: 'PLANNING', label: 'Planning' },
-  { key: 'BUILDING', label: 'Building' },
-  { key: 'LANDING', label: 'Landing' },
-  { key: 'DONE', label: 'Done' },
+  { key: 'IDEAS', label: 'Ideas', worker: 'lead' },
+  { key: 'PLANNING', label: 'Planning', worker: 'Agent with the owner' },
+  { key: 'BUILDING', label: 'Building', worker: 'Agent' },
+  { key: 'LANDING', label: 'Landing', worker: 'lead, then user' },
+  { key: 'DONE', label: 'Done', worker: '' },
 ];
 const INDEX = Object.fromEntries(COLUMNS.map((column, index) => [column.key, index]));
+export const KANBAN_NOT_INSTALLED = 'Unavailable.';
+export const KANBAN_CAMPAIGN_OFF = 'Unavailable.';
+
+export function kanbanAvailability(installed) {
+  const services = installed?.services || {};
+  const capabilities = services.capabilities;
+  if (capabilities?.desired && Array.isArray(capabilities.running)) {
+    const available = capabilities.desired.task_manager === true && capabilities.running.includes('task_manager');
+    return { available, message: available ? '' : KANBAN_CAMPAIGN_OFF };
+  }
+  if (Array.isArray(services.loaded) && services.loaded.includes('kanban')) return { available: true, message: '' };
+  const parked = Array.isArray(services.parked) && services.parked.some((part) => part?.name === 'kanban');
+  return { available: false, message: parked ? KANBAN_CAMPAIGN_OFF : KANBAN_NOT_INSTALLED };
+}
 
 const node = (tag, cls, text) => {
   const out = document.createElement(tag);
@@ -23,18 +37,16 @@ const normalizedProject = (value) => ({
   id: String(value?.id || ''),
   title: String(value?.title || value?.id || 'Untitled project'),
   objective: String(value?.objective || ''),
+  evidence: Array.isArray(value?.evidence) ? value.evidence.map(String) : [],
   holder: String(value?.holder || 'lead'),
   stage: INDEX[value?.stage] == null ? 'IDEAS' : value.stage,
   exit: String(value?.exit || 'none'),
   status: ['green', 'yellow', 'red'].includes(value?.status) ? value.status : 'yellow',
 });
 
-const chipFor = (project) => {
-  if (project.stage === 'DONE') return null;
-  if (project.status === 'green') return { cls: 'green', text: project.exit === 'none' ? 'ready' : `ready: ${project.exit}` };
-  if (project.status === 'red') return { cls: 'red', text: 'blocked' };
-  return null;
-};
+export const waitingOn = (project) => project.stage !== 'DONE'
+  && project.status === 'green'
+  && ['lead', 'user'].includes(project.exit) ? project.exit : '';
 
 export function definedTargets(project) {
   const targets = new Set();
@@ -54,7 +66,7 @@ export function moveMessage(project, toStage, leadName, now = new Date()) {
   const holder = project.holder === 'lead' ? leadName : project.holder;
   const n = project.id.split('/').at(-1);
   const at = now.toISOString().slice(0, 16) + 'Z';
-  const head = `from @kanban (the Team Kanban, moved by the user at ${at}):`;
+  const head = `from @kanban (the Team Task Manager, moved by the user at ${at}):`;
   const line = `MOVE ${project.id} "${project.title}" from ${stageLabel(project.stage)} (${project.status}, exit: ${project.exit}) to ${stageLabel(toStage)}`;
   const byNote = project.exit !== 'user' && project.exit !== 'none' ? ` (exit named the ${project.exit}; the user dragged it)` : '';
   const result = (target, meaning, next) => ({ target, text: `${head}\n${line}\n  meaning: ${meaning}\n  next: ${next}` });
@@ -84,8 +96,18 @@ export function createTeamKanban(options = {}) {
   }
   const notice = node('p', 'tk-notice');
   notice.setAttribute('role', 'status');
+  const controls = node('div', 'tk-controls');
+  const refreshButton = node('button', 'tk-refresh', '↻');
+  refreshButton.type = 'button';
+  refreshButton.setAttribute('aria-label', 'Refresh Task Manager');
+  const foldButton = node('button', 'tw-agent-density tk-fold');
+  foldButton.type = 'button';
+  const foldLines = node('span', 'tw-agent-density-lines');
+  foldLines.append(node('i'), node('i'));
+  foldButton.append(foldLines);
+  controls.append(refreshButton, foldButton);
   const topline = node('div', 'tk-topline');
-  topline.append(notice, legend);
+  topline.append(controls, notice, legend);
   const board = node('div', 'tk-board');
   root.append(topline, board);
 
@@ -93,21 +115,34 @@ export function createTeamKanban(options = {}) {
   let projects = [];
   let entered = false;
   let loading = null;
-  let refreshTimer = 0;
   let seat = null;
-  let visibility = null;
+  let availability = { available: false, message: KANBAN_NOT_INSTALLED };
+  let allOpen = false;
+  const openCards = new Set();
   const asked = new Map(); // id -> { stage, target }; never written to the project record
   const leadName = () => String(options.lead?.() || '');
   const holderName = (project) => project.holder === 'lead' ? leadName() : project.holder;
 
+  const paintFold = () => {
+    foldButton.dataset.lines = allOpen ? 'one' : 'two';
+    foldButton.setAttribute('aria-pressed', String(allOpen));
+    foldButton.setAttribute('aria-label', allOpen ? 'Show card titles only' : 'Show full cards');
+  };
+
   const render = () => {
     board.replaceChildren();
+    topline.hidden = !availability.available;
+    if (!availability.available) {
+      board.append(node('p', 'tk-unavailable', KANBAN_NOT_INSTALLED));
+      return;
+    }
     for (const column of COLUMNS) {
       const columnProjects = projects.filter((project) => project.stage === column.key);
       const section = node('section', 'tk-column');
       section.dataset.stage = column.key;
       const heading = node('h3');
-      heading.append(document.createTextNode(column.label), node('span', 'tk-count', columnProjects.length));
+      heading.append(node('span', 'tk-column-title', column.label));
+      if (column.worker) heading.append(node('span', 'tk-column-worker', column.worker));
       const hint = node('p', 'tk-drop-hint');
       const cards = node('div', 'tk-cards');
       if (!columnProjects.length) cards.append(node('p', 'tk-empty', t('team_kanban.empty', 'nothing here')));
@@ -115,22 +150,41 @@ export function createTeamKanban(options = {}) {
         const card = node('article', 'wk-card tk-card');
         card.draggable = true;
         card.dataset.project = project.id;
+        const isOpen = allOpen || openCards.has(project.id);
+        card.classList.toggle('open', isOpen);
         if (project.stage !== 'DONE') card.dataset.status = project.status;
-        card.append(node('h4', 'wk-card-heading tk-title', project.title), node('p', 'wk-card-summary tk-outcome', project.objective));
+        const toggle = node('button', 'tk-card-toggle');
+        toggle.type = 'button';
+        toggle.setAttribute('aria-expanded', String(isOpen));
+        toggle.append(node('span', 'wk-card-heading tk-title', project.title));
+        card.append(toggle);
+        const details = node('div', 'tk-details');
+        details.append(node('p', 'wk-card-summary tk-outcome', project.objective));
+        if (project.evidence.length) details.append(node('p', 'tk-evidence', project.evidence.join(' · ')));
         const row = node('div', 'wk-card-meta tk-card-row');
-        const chip = chipFor(project);
-        if (chip) row.append(node('span', `tk-chip ${chip.cls}`, chip.text));
+        const wait = waitingOn(project);
+        if (wait) row.append(node('span', 'tk-waiting', wait));
         const owner = holderName(project);
         if (owner) {
           const open = node('button', 'tk-owner', `@${owner}`);
           open.type = 'button';
-          open.addEventListener('click', () => options.openOwner?.(owner));
+          open.addEventListener('click', (event) => { event.stopPropagation(); options.openOwner?.(owner); });
           row.append(open);
         }
         const pending = asked.get(project.id);
-        if (pending?.stage === project.stage) row.append(node('span', 'tk-chip asked', `asked @${pending.target}`));
+        if (pending?.stage === project.stage) row.append(node('span', 'tk-asked', `asked @${pending.target}`));
         else if (pending) asked.delete(project.id);
-        card.append(row);
+        card.append(details, row);
+        const toggleOpen = () => {
+          if (openCards.has(project.id)) openCards.delete(project.id);
+          else openCards.add(project.id);
+          allOpen = projects.length > 0 && projects.every((item) => openCards.has(item.id));
+          paintFold(); render();
+        };
+        toggle.addEventListener('click', toggleOpen);
+        card.addEventListener('click', (event) => {
+          if (!event.target.closest('button')) toggleOpen();
+        });
         card.addEventListener('dragstart', (event) => {
           event.dataTransfer?.setData('text/plain', project.id);
           card.classList.add('dragging'); board.classList.add('dragging');
@@ -170,7 +224,10 @@ export function createTeamKanban(options = {}) {
     if (!move.target) { notice.textContent = t('team_kanban.no_target', 'This project has no live holder to ask.'); return; }
     notice.textContent = t('team_kanban.sending', 'Sending move request to @{name}…', { name: move.target });
     const result = await request('/api/messages', { method: 'POST', json: { target: move.target, text: move.text } });
-    if (!result.ok) { notice.textContent = result.message; return; }
+    if (!result.ok) {
+      notice.textContent = t('team_kanban.send_failed', 'The move request could not be sent.');
+      return;
+    }
     asked.set(project.id, { stage: project.stage, target: move.target });
     notice.textContent = result.data.delivered
       ? t('team_kanban.delivered', 'Move request delivered to @{name}. The card moves when its record moves.', { name: move.target })
@@ -180,8 +237,14 @@ export function createTeamKanban(options = {}) {
 
   const refresh = async () => {
     if (!team || loading || (seat && seat.hidden)) return loading;
+    if (!availability.available) {
+      projects = [];
+      notice.textContent = availability.message;
+      render();
+      return;
+    }
     const requestedTeam = team;
-    notice.textContent = t('team_kanban.loading', 'Loading Team Kanban…');
+    notice.textContent = t('team_kanban.loading', 'Loading Task Manager…');
     loading = request(`/api/teams/${encodeURIComponent(requestedTeam)}/kanban`, { cache: 'no-store' });
     const result = await loading;
     loading = null;
@@ -189,33 +252,47 @@ export function createTeamKanban(options = {}) {
     if (result.ok && Array.isArray(result.data.projects)) {
       projects = result.data.projects.map(normalizedProject);
       notice.textContent = '';
+    } else if (result.status === 404) {
+      availability = { available: false, message: KANBAN_CAMPAIGN_OFF };
+      projects = [];
+      notice.textContent = availability.message;
+      options.unavailable?.(availability.message);
     } else {
-      notice.textContent = result.message || t('team_kanban.failed', 'Could not load this Team Kanban.');
+      notice.textContent = t('team_kanban.failed', 'Could not load Task Manager.');
     }
     render();
   };
 
+  refreshButton.addEventListener('click', () => void refresh());
+  foldButton.addEventListener('click', () => {
+    allOpen = !allOpen;
+    openCards.clear();
+    if (allOpen) for (const project of projects) openCards.add(project.id);
+    paintFold(); render();
+  });
+  paintFold();
+
   return {
     el: root,
-    mount: (host) => {
-      seat = host;
-      visibility?.disconnect();
-      visibility = new MutationObserver(() => { if (entered && !seat.hidden) void refresh(); });
-      visibility.observe(seat, { attributes: true, attributeFilter: ['hidden'] });
-    },
+    mount: (host) => { seat = host; },
     enter: () => {
       entered = true;
-      window.clearInterval(refreshTimer);
-      refreshTimer = window.setInterval(() => void refresh(), 5000);
       void refresh();
     },
-    leave: () => { entered = false; window.clearInterval(refreshTimer); refreshTimer = 0; },
-    destroy: () => { entered = false; window.clearInterval(refreshTimer); refreshTimer = 0; visibility?.disconnect(); visibility = null; },
+    leave: () => { entered = false; },
+    destroy: () => { entered = false; },
     setTeam: (name) => {
       const next = String(name || '');
       if (team === next) return;
-      team = next; projects = []; asked.clear(); render();
+      team = next; projects = []; asked.clear(); openCards.clear(); allOpen = false; paintFold(); render();
       if (entered) void refresh();
+    },
+    setAvailability: (next) => {
+      availability = next?.available === true
+        ? { available: true, message: '' }
+        : { available: false, message: String(next?.message || KANBAN_NOT_INSTALLED) };
+      if (!availability.available) { projects = []; notice.textContent = availability.message; render(); }
+      if (entered && availability.available) void refresh();
     },
     refresh,
   };

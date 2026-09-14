@@ -963,14 +963,12 @@ The pad's current config downloads as a backup first.
 - **pad.key_enter:** ↵ Enter
 - **pad.key_newline:** ⌥↵ Newline
 - **pad.key_delete_word:** ⌥⌫ Delete word
-- **pad.key_esc:** ⎋ Esc
 - **pad.key_tab:** ⇥ Tab
 - **pad.key_shift_tab:** ⇧⇥ Shift-Tab
 - **pad.key_up:** ↑ Up
 - **pad.key_down:** ↓ Down
 - **pad.key_left:** ← Left
 - **pad.key_right:** → Right
-- **pad.key_interrupt:** ^C Interrupt
 - **pad.key_next_tile:** ⇄ Next tile
 - **pad.key_session_switcher:** ⌸ Session switcher
 - **pad.key_commons:** ⌂ Commons
@@ -1117,7 +1115,7 @@ The catalog entry goes. {dir} is not touched.
 - **docs.loading:** loading…
 - **docs.saving:** saving…
 - **docs.saved:** saved
-- **docs.work_record_note:** Ask an agent to list a document with write_tegami --doc <path>. If a document is missing, ask the agent to update its work record.
+- **docs.work_record_note:** Ask an agent to list a document with work-record document add <path>. If a document is missing, ask the agent to update its work record.
 
 ## roots — the count line and chips
 - **roots.chip_archived:** archived
@@ -1439,7 +1437,6 @@ The catalog entry goes. {dir} is not touched.
 ## bar — viewport.js (the layout button)
 
 ## term — termview.js (the copy hint)
-- **term.copy_hint:** Trying to copy? Hold {mod} while you drag, then ⌘C.
 
 ## gauge — ramrpm.js (the RAM gauge)
 - **gauge.no_swap:** no swap
@@ -1515,10 +1512,8 @@ The catalog entry goes. {dir} is not touched.
 
 ## keys — keysrow.js (the composer's keys row)
 - **keys.backspace:** Backspace
-- **keys.clear_line_title:** Ctrl-U — clear the input line
 
 ## composer — the ✕ clear
-- **composer.clear_title:** Clear this box
 
 ## phone — phone.js (the mobile document: Teams, a Team's Agents | Docs, one Agent's tile)
 - **phone.coworks:** Teams
@@ -1544,7 +1539,7 @@ The catalog entry goes. {dir} is not touched.
 
 ## docs — the empty line and count
 - **docs.empty_team:** No tracked documents.
-- **docs.empty:** No session has listed a doc yet. An agent lists one with: write_tegami --doc <path>
+- **docs.empty:** No session has listed a doc yet. An agent lists one with: work-record document add <path>
 - **docs.count_one:** 1 doc
 - **docs.count_many:** {n} docs
 
@@ -1764,8 +1759,6 @@ The catalog entry goes. {dir} is not touched.
 - **bar.league_title:** Open League in a new browser tab
 - **bar.newtab_title:** Open a second Ronin in a new browser tab
 - **bar.new_title:** ⌃⇧N — start a new session: pick what it is for, where it works and who it is
-- **keys.esc:** Esc
-- **keys.interrupt_title:** Ctrl-C (interrupt)
 - **keys.latest_title:** Jump to latest output
 - **keys.more:** More keys
 - **keys.enter:** Enter

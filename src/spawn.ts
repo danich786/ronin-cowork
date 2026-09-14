@@ -28,12 +28,10 @@ import { capabilityTools, renderCapabilitiesOverview, resolveCapabilities, type 
 
 const WORKTREE_SOP = path.join(REPO_ROOT, 'ronin_sops', 'worktree-root.md');
 const CHECKOUT_SOP = path.join(REPO_ROOT, 'ronin_sops', 'checkout.md');
-const WORKTREE_TOOLS = ['tejun-desk', 'ronin-repo-init'] as const;
-
 const CORE_CONTRIBUTION: ResolvedContribution = {
   name: 'cowork_agent', origin: 'stock', shadowed: false, label: 'Cowork Agent', blurb: '',
   reading: [], reading_off: [], sops: [],
-  tools: ['tejun-send', 'session_end', 'session_archive', 'session_restore', 'tejun-team', 'session_fork', 'session_check', 'session_set', 'tejun-team-set', 'tejun-wipeboard', 'tejun-teampage', 'tejun-peek', 'read_tegami', 'write_tegami', 'tejun-jikan', 'ronin-url'],
+  tools: ['edges', 'session_create', 'session_end', 'session_archive', 'session_restore', 'session_check', 'session_set', 'work-record', 'ronin-url'],
   mcp: [], parts: [], enabled: true, stated_by: 'conditional', required_by: [],
 };
 
@@ -50,7 +48,6 @@ export interface SpawnForm {
   behaviours?: string[]; template?: string; // preset is validated provenance only, never reapplied
   prompt?: string;
   name?: string;
-  dial?: Dial;
   project_root?: string;
   cmd?: string;
   launch_mode?: LaunchMode;
@@ -79,6 +76,7 @@ export interface Resolved {
   agent: boolean;
   capExempt: boolean;
   launchAgent: string;
+  identity?: import('./tmux.js').SessionIdentity;
   launch_mode: LaunchMode;
   ack: boolean;
   opening: string;
@@ -97,10 +95,9 @@ export interface Resolved {
   undelivered: string[];
   contributions: ResolvedContribution[];
   installations: ResolvedInstallation[];
-  conditional_tools: string[];
   /** Every capability document, selected or not, with the reason and the tools found. */
   capabilities: ResolvedCapability[];
-  /** The selected bundles' tools that exist on this box; projected onto PATH at birth. */
+  /** Every installed Cowork tool plus enabled feature tools, projected onto PATH at birth. */
   capability_tools: string[];
   stated_by: Record<string, StatedBy[]>;
 }
@@ -127,12 +124,12 @@ export function buildBrief(
   if (roster) {
     const lines = [`Team: ${roster.name}`];
     if (roster.objective) lines.push(`Objective: ${roster.objective}`);
-    lines.push(`Wipeboard: ${roster.wipeboard} (tejun-wipeboard ${roster.wipeboard})`);
+    lines.push(`Wipeboard: ${roster.wipeboard} (edges wipeboard ${roster.wipeboard})`);
     parts.push(lines.join('\n'));
   } else if (form.team) {
     parts.push(
       `You are born onto team "${form.team}" — a tag-only team: its members are the sessions carrying its tag ` +
-        `(tejun-team ${form.team}), it has no durable roster, and its wipeboard is "${form.team}" (tejun-wipeboard ${form.team}).`,
+        `(edges team ${form.team}), it has no durable roster, and its wipeboard is "${form.team}" (edges wipeboard ${form.team}).`,
     );
   }
   // THE LAUNCH CONTRACT, IN THE PROMPT. These are suggestions the Agent reads, never
@@ -168,8 +165,8 @@ export function buildBrief(
     parts.push(
       `The session in question is @${form.reference}` +
         (referenceDir ? ` (working in ${referenceDir})` : '') +
-        `. Catch up on it with \`tejun-rireki ${form.reference} since\` ` +
-        `(\`tejun-peek ${form.reference}\` if it has no tape), and control-check before touching it.`,
+        `. Catch up on it with \`edges read ${form.reference}\`, which reads its durable record first ` +
+        `and falls back to the live view, then run \`edges control ${form.reference}\` before touching it.`,
     );
   }
   if (form.inject?.trim()) parts.push(form.inject.trim());
@@ -412,8 +409,9 @@ export async function resolveForm(
   const resolvedBehaviours = coworkAgent && agent
     ? await resolveBehaviourBooks(cascade.selected)
     : { delivered: [], ignored: [] };
-  // CAPABILITY BUNDLES: the folder decides what exists, the facts decide what is selected,
-  // the box decides what is projected. Mika keeps her own curated toolset.
+  // CAPABILITY BUNDLES: the folder decides what exists, and facts select the knowledge.
+  // Installed Cowork tools remain universal; feature facts decide feature projection.
+  // Mika keeps her own curated toolset.
   const capabilities = coworkAgent && agent && form.house_seat !== 'mika'
     ? await resolveCapabilities({
         arrangement: managedDesk ? 'managed' : worktrees.repositories.length ? 'checkout' : 'none',
@@ -461,7 +459,7 @@ export async function resolveForm(
       .filter(Boolean)
       .filter((t, i, a) => a.indexOf(t) === i)
       .slice(0, 16),
-    dial: form.dial ?? (parentSeed?.seeds.dial.value as Dial | undefined) ?? profile.dial,
+    dial: agent ? 'read' : profile.dial,
     mandate: resolvedMandate,
     team: form.team ?? '',
     project_root: root.name,
@@ -480,7 +478,8 @@ export async function resolveForm(
       : '',
     agent,
     capExempt: profile.capExempt,
-    launchAgent: agent ? path.basename(cmd.trim().split(/\s+/)[0] ?? '') : '',
+    launchAgent: agent ? spec?.cli || path.basename(cmd.trim().split(/\s+/)[0] ?? '') : '',
+    identity: { sessionType, cli: agent ? spec?.cli || path.basename(cmd.trim().split(/\s+/)[0] ?? '') : '', provider: spec?.provider || '', model: spec?.model || '' },
     launch_mode: launchMode,
     ack: profile.ack,
     opening: profile.opening,
@@ -502,7 +501,6 @@ export async function resolveForm(
     undelivered: cascade.undelivered,
     contributions,
     installations,
-    conditional_tools: managedDesk ? [...WORKTREE_TOOLS] : [],
     capabilities,
     capability_tools: capabilityTools(capabilities),
     stated_by: {
@@ -518,7 +516,7 @@ export async function resolveForm(
         : system),
       team: form.team ? explicit : system,
       project_root: rootSource,
-      dial: form.dial !== undefined ? explicit : parentSeed?.seeds.dial.stated_by ?? profile.stated_by.dial,
+      dial: system,
       brief: unique(preset.brief ? preset.source! : explicit,
         profile.stated_by.opening, roster ? rosterSource : [], rootSource),
       agent: profile.stated_by.agent,

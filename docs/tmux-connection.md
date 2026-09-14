@@ -101,3 +101,30 @@ calls are not on the connection (its parts are parked); and the tiles themselves
 ride the connection. These are the dated implementation gaps from this report; reconcile
 them against current code before assigning fixes. The consolidated plan carries the
 forward workstreams. The build-out and its measurements live in the lab.
+
+## Global-dev Services placement
+
+`npm start` and `npm run dev` prepare the global development runtime before starting
+Ronin. Their `prestart`/`predev` command calls `scripts/prepare-dev-services.ts`, whose
+resolver is `src/dev-services.ts`. It reads the registered `ronin_cowork` and
+`ronin_services` Workspace Folders and each repository's declared working branch.
+Only the mounted Cowork global working checkout receives automatic placement; a
+private desk, candidate, preview, or `VERSION`-stamped release does not.
+
+For global dev, preparation calls the Services working checkout's existing
+`bin/dev-sync <cowork-working-checkout>`. The source must be at its working tip with
+no uncommitted runtime changes. A missing mounted Services working branch or failed
+placement stops startup with the reason, before the Services loader runs. The log
+names the source checkout, revision, and target. With no registered Services source,
+preparation skips placement; it does not install or remove a package.
+
+Promotion still advances the repository working lines and requests its ordinary
+restart. The operator units already use `npm start`, so that restart now prepares
+Services too. A later manual start or restart uses the same preparation. `npm run dev`
+prepares once before starting its watcher; restart that command after promoting
+Services to refresh its placed runtime. Direct `tsx src/index.ts` bypasses the npm
+startup pipeline and is not the global-dev start command.
+
+This is development synchronization, separate from `bin/ronin-update --services`:
+installed releases keep their artifact store, placement, and carry-forward update
+flow. Neither operation changes which capabilities the Campaign has enabled.

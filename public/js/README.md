@@ -38,6 +38,7 @@ where a session is born now. `docs/ui.md` is the written contract those modules 
 | `errors.js` | `showFailure`, `guard`, `deadTile` — the containment layer |
 | `request.js` | the ONE transport contract — every JSON call's "what happened" |
 | `ui.js` | the primitives: sheet, toast, field, status, button, tabs (docs/ui.md) |
+| `terminal-controls.js` | Copy, Clear, Close, Stop: shared interception, mobile buttons, and Hints (docs/terminal-controls.md) |
 | `theme.js` | dark/light: the saved choice, `termTheme()` read off the CSS tokens, the flip |
 | `api.js` | the `/api/sessions` calls |
 | `widgets.js` | `makeDial`, `makeGauge`, `setInert`, the job menu |
@@ -67,7 +68,7 @@ where a session is born now. `docs/ui.md` is the written contract those modules 
 | `termview.js` | the 🔒 view — the untouched `tmux attach` xterm mirror, and touch drag-scroll |
 | `tilewire.js` | `TileWire` — the tile's socket: reconnect, the protocol split (keystroke · message · protocol reply), the drop rule, the message answered by id |
 | `composer.js` | `buildComposer` — the tile's text entry (unlocked, and every coarse tile), its mic and its keyboard lift; clears only on the host's answer |
-| `composer-rules.js` | `settleComposer` — the composer's send rule, pure (tested: `tests/composer-parcel.test.js`) |
+| `composer-rules.js` | `sendComposerMessage`, `settleComposer` — HTTP message send and box settlement (tested: `tests/composer-parcel.test.js`) |
 | `dvr.js` | `dvrStep` — the unlocked input rule, pure (tested: `tests/dvr.test.js`) |
 | `ansi.js` | `ANSI_RE` — its own module so the tape's pure logic loads outside a browser |
 | `tiledrop.js` | `isCoarse`, `makeDrop` — the coarse-pointer sheet primitives (the hoisted phone header is gone; the phone has its own shell) |
@@ -75,7 +76,7 @@ where a session is born now. `docs/ui.md` is the written contract those modules 
 | `keysrow.js` | `buildKeysRow` — Esc/^C/Tab/arrows/⤓ docked on every coarse tile's composer |
 | `tilementions.js` | `buildTileMentions` — the @ button on a tile head; click or drag a live session name into the composer |
 | `tilemore.js` | DESKTOP ONLY — `buildTileMore`: メ on a tile head and the controls it drops in one strip; `fitDropToTile`, shared by every drop off that header |
-| `team-arrange.js` | `parseDraft`, `createArranger` — the team page's one controller: a draft (what changes; the rest stays) from a button or from an agent's `tejun-teampage`, run through the page's own verbs |
+| `team-arrange.js` | `parseDraft`, `createArranger` — the team page's one controller: a draft (what changes; the rest stays) from a button or from an agent's `edges page`, run through the page's own verbs |
 | `team-kanban.js` | `createTeamKanban` — the Team Kanban read: five responsive columns from the team's derived project JSON; a drop sends one move request and writes no project data |
 | `team-members.js` | `buildTeamMembers`, `agentTitle`, `configSignature` — the member list shared by the Commons Roster tab and the league surfaces, and the changed-only fingerprint that keeps Configuration off the five-second clock |
 | `voice.js` | dictation: `makeClipRecorder` + `wireDictation` (the 🎤 on the tile's compose box) |

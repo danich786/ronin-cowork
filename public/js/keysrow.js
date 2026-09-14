@@ -2,7 +2,7 @@
 import { t } from './lexicon.js';
 
 /**
- * @param {{sendRaw: (seq: string) => void, latest: () => void}} hooks
+ * @param {{sendRaw: (seq: string) => void, latest: () => void, controls?: HTMLElement[]}} hooks
  *   sendRaw writes to this row's own session; latest jumps its view to the live end.
  * @returns {{el: HTMLElement}}
  */
@@ -11,18 +11,12 @@ export function buildKeysRow(hooks) {
   row.className = 'keysrow';
   row.setAttribute('role', 'group');
   row.setAttribute('aria-label', t('bar.keys', 'Keys'));
+  row.append(...(hooks.controls || []));
 
-  // Face · tooltip · what it sends. Faces that are glyphs (^C, ⤓, the arrows) are
+  // Face · tooltip · what it sends. Faces that are glyphs (⤓, the arrows) are
   // values, not words; the worded faces go through the lexicon like everything else.
   const keys = () => [
-    [t('keys.esc', 'Esc'), t('keys.esc', 'Esc'), '\x1b'],
-    ['^C', t('keys.interrupt_title', 'Ctrl-C (interrupt)'), '\x03'],
-    // The two line-clearing keys, because the agents disagree: Esc empties Claude's
-    // box, while readline-shaped composers (Codex among them) take ^U kill-line.
-    // Generic terminal keys, deliberately — a per-provider special key would be
-    // vendor knowledge the provider's own remappable keymap could invalidate.
     ['⌫', t('keys.backspace', 'Backspace'), '\x7f'],
-    ['^U', t('keys.clear_line_title', 'Ctrl-U — clear the input line'), '\x15'],
     [t('keys.tab', 'Tab'), t('keys.tab', 'Tab'), '\t'],
     [t('keys.shift_tab_face', '⇧Tab'), t('keys.shift_tab', 'Shift-Tab'), '\x1b[Z'],
     ['↑', t('keys.up', 'Up'), '\x1b[A'],

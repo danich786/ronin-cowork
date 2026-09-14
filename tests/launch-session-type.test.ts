@@ -85,6 +85,15 @@ test('unknown, retired, invalid, and server-owned fields are ignored and noted t
   assert.deepEqual(result.ignored, ['dial', 'lifecycle', 'mystery', 'stated_by']);
 });
 
+test('dial input is always ignored and launch writes Control only to the resolved newborn', async () => {
+  const accepted = acceptedLaunchBody({ name: 'proof', dial: 'write' });
+  assert.equal(accepted.body.dial, undefined);
+  assert.deepEqual(accepted.ignored, ['dial']);
+  const source = await fs.readFile(new URL('../src/routes/launch.ts', import.meta.url), 'utf8');
+  assert.match(source, /setControl\(resolved\.name, resolved\.dial\)/);
+  assert.doesNotMatch(source, /setControl\(caller/);
+});
+
 test('cowork kind and behaviours survive body acceptance while unusable shapes are ignored', () => {
   const accepted = acceptedLaunchBody({ name: 'proof', kind: 'coding', behaviours: ['sops:github'] });
   assert.equal(accepted.body.kind, 'coding');

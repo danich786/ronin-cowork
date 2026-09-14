@@ -76,12 +76,12 @@ function seedShell(
 > here is shown on the user's tile and on their session_roster for quick reference. Keep it true
 > and save it when it changes — a stale ladder is worse than none.
 >
-> At the end of a turn, consider updating it with \`write_tegami\`. Not keeping it current is
+> At the end of a turn, consider updating it with \`work-record update_record\`. Not keeping it current is
 > poor quality.
 >
 > YOUR **teams** block is DERIVED and not yours to write: one entry per team you are on —
 > the team's name and its objective, read live from the team rosters.
-> \`write_tegami\` regenerates it on every save and a tag change refreshes it, so reread
+> \`work-record update_record\` regenerates it on every save and a tag change refreshes it, so reread
 > your letter to see a team objective that moved. A session on no team is a rōnin, which
 > is an ordinary state and not a gap.
 >
@@ -97,20 +97,21 @@ function seedShell(
 > \`PLANNED\` · \`ACTIVE\` · \`DONE\`, **one ACTIVE at a time**. Add a gate wherever the work
 > genuinely stops and needs someone — that is how the owner knows you want them.
 >
-> YOUR **ladder_state** — \`write_tegami --on_tangent\` when you step off the ladder,
+> YOUR **ladder_state** — \`work-record update_record --on_tangent\` when you step off the ladder,
 > \`--on_track\` when you are back. Riffing, a side job, ten minutes in nobody's plan — all
 > normal, and your plan is not dead while you are away from it.
 >
 > YOUR DOCS — the buildouts, handoffs and plans this session is working on.
-> \`write_tegami --doc <path>\` puts one on your list, \`--undoc <path>\` takes it off.
+> \`work-record document add <path>\` puts one on your list; \`work-record document remove
+> <path>\` takes it off.
 > The owner opens them from the ▧ Docs tab in commons, so **a doc you did not list is a
 > doc they cannot reach without asking you for the path.**
 >
-> Your own words go in "objective" and "title". Read it with \`read_tegami\`. **Change one
-> field with one call**: \`write_tegami --objective "<sentence>"\` · \`--phase "<title>"\` ·
+> Your own words go in "objective" and "title". Read it with \`work-record read\`. **Change one
+> field with one call**: \`work-record update_record --objective "<sentence>"\` · \`--phase "<title>"\` ·
 > \`--leg N "<title>"\` · \`--done N.M\` · \`--gate "<what you wait for>"\` · \`--rung N\`,
 > \`--leg N.M\` to retitle · \`--drop N[.M]\` · \`--repo <repo>:<branch>\`. Verbs combine in one
-> call. \`write_tegami < block.json\` replaces the whole authored block. Where the file lives
+> call. \`work-record update_record < block.json\` replaces the whole authored block. Where the file lives
 > is Ronin's business.
 
 \`\`\`json
@@ -154,6 +155,7 @@ export type MoveTegamiProjectInput =
 export interface MoveTegamiProjectResult {
   project: Project;
   projectsRemaining: number;
+  focus: string;
 }
 
 /** The house's only cross-letter project write. Roster mutation stays with its caller. */
@@ -181,11 +183,16 @@ export async function moveTegamiProject(
     const at = valid.findIndex((item) => item.id === input.projectId);
     if (at < 0) throw new Error(`project ${input.projectId} is not in @${input.session}'s work record`);
     [project] = valid.splice(at, 1);
+    if (parsed.body.at && typeof parsed.body.at === 'object' && !Array.isArray(parsed.body.at)
+        && (parsed.body.at as Record<string, unknown>).project === project.id) {
+      if (valid[0]) parsed.body.at = { project: valid[0].id };
+      else delete parsed.body.at;
+    }
   }
   parsed.body.projects = valid;
   await replaceLetterBlock(file, text, parsed, parsed.body);
   await notify(input.session, 'check your work record');
-  return { project, projectsRemaining: valid.length };
+  return { project, projectsRemaining: valid.length, focus: valid[0]?.id ?? 'none' };
 }
 
 export async function seedTegami(

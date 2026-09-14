@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# edges — cross an Agent, Team, wipeboard, schedule, or visible-workspace boundary.
+set -u
+
+HERE=$(cd "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")" && pwd)
+
+usage() {
+  cat <<'EOF'
+edges — work across Agent and Team boundaries
+
+Usage:
+  edges send <session> <message...>
+  edges read [session [text|since|raw|scroll|voice] [argument...]]
+  edges team [team]
+  edges wipeboard [arguments...]
+  edges page [--team <team>] [key=value ...]
+  edges schedule [arguments...]
+  edges control <session>
+
+Bare `edges read <session> [lines]` reads the durable settled record first and
+falls back to the recent live pane only when no durable record exists. The
+advanced read modes expose the durable record directly. `edges control` is
+read-only. Run `edges <subcommand> --help` for a subcommand's details.
+Related: session_check --help; session_create --help; session_set --help.
+EOF
+}
+
+[ "$#" -gt 0 ] || { usage; exit 2; }
+if [ "$#" -eq 2 ] && { [ "$2" = "-h" ] || [ "$2" = "--help" ]; }; then
+  case "$1" in
+    send) echo "Usage: edges send <session> <message...>"; echo "Put one message through the durable delivery queue."; exit 0 ;;
+    wipeboard) echo "Usage: edges wipeboard [boards|post <text...>|<board> [read [n]|find <text...>|post <text...>]]"; echo "Read or post on Team wipeboards."; exit 0 ;;
+    page) echo "Usage: edges page [--team <team>] [key=value ...]"; echo "Read the Team page, or apply a draft containing only the named changes."; exit 0 ;;
+    schedule) echo "Usage: edges schedule [--team <team>] [add|pause|resume|now|remove|when] ..."; echo "Read or change the Team's scheduled requests."; exit 0 ;;
+  esac
+fi
+case "$1" in
+  -h|--help) [ "$#" -eq 1 ] || { echo "edges: --help takes no other arguments. Run edges --help." >&2; exit 2; }; usage ;;
+  send) shift; exec "$HERE/.edges-send" "$@" ;;
+  read) shift; exec "$HERE/.edges-read" "$@" ;;
+  team) shift; exec "$HERE/.edges-team" "$@" ;;
+  wipeboard) shift; exec "$HERE/.edges-wipeboard" "$@" ;;
+  page) shift; exec "$HERE/.edges-page" "$@" ;;
+  schedule) shift; exec "$HERE/.edges-schedule" "$@" ;;
+  control)
+    shift
+    case "${1-}" in -h|--help) [ "$#" -eq 1 ] || { echo "edges control: --help takes no other arguments. Run edges control --help." >&2; exit 2; }; echo "Usage: edges control <session>"; echo "Read one Agent's current Control setting; this changes nothing."; exit 0 ;; esac
+    [ "$#" -eq 1 ] || { echo "usage: edges control <session>" >&2; exit 2; }
+    tmux has-session -t "=$1" 2>/dev/null || { echo "NO-SESSION: no exact session named '$1'." >&2; exit 3; }
+    value=$(tmux show-options -qv -t "=$1" @ronin-control 2>/dev/null)
+    printf '%s\n' "${value:-write}"
+    ;;
+  *) echo "edges: unknown subcommand '$1'. Run edges --help." >&2; exit 2 ;;
+esac

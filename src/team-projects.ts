@@ -3,6 +3,14 @@ import { readTeamRoster, writeTeamRoster } from './team-rosters.js';
 import { moveTegamiProject } from './tegami.js';
 
 export type IdeaEdit = Partial<Pick<Project, 'title' | 'objective' | 'exit' | 'status' | 'ladder' | 'evidence'>>;
+export type TeamProjectArea = 'inbox' | 'done' | 'backlog';
+
+const areaProjects = (roster: Awaited<ReturnType<typeof readTeamRoster>>, area: TeamProjectArea): Project[] => {
+  if (!roster) return [];
+  return area === 'inbox' ? roster.projects : area === 'done' ? roster.done_projects : roster.backlog_projects;
+};
+const areaEdit = (area: TeamProjectArea, projects: Project[]) => area === 'inbox'
+  ? { projects } : area === 'done' ? { done_projects: projects } : { backlog_projects: projects };
 
 const projectId = (team: string, stated: string): string => {
   const value = stated.trim();
@@ -82,7 +90,7 @@ export async function restoreTeamIdea(team: string, value: Project): Promise<Pro
 export type ProjectMover = (input:
   | { direction: 'place'; session: string; project: Project }
   | { direction: 'return'; session: string; projectId: string }
-) => Promise<{ project: Project; projectsRemaining: number }>;
+) => Promise<{ project: Project; projectsRemaining: number; focus?: string }>;
 
 const houseMove: ProjectMover = moveTegamiProject;
 
@@ -105,7 +113,7 @@ export async function assignTeamProject(team: string, statedId: string, session:
   const id = projectId(team, statedId);
   const at = roster.projects.findIndex((project) => project.id === id);
   if (at < 0) throw new Error(`Project "${id}" is not an idea in Team "${team}".`);
-  const project = normalizeProject({ ...roster.projects[at], stage: 'PLANNING', exit: 'user', status: 'yellow' })!;
+  const project = roster.projects[at]!;
   await move({ direction: 'place', session, project });
   try {
     await writeTeamRoster(team, { projects: roster.projects.filter((entry) => entry.id !== id) });
@@ -116,21 +124,38 @@ export async function assignTeamProject(team: string, statedId: string, session:
   return project;
 }
 
-export async function returnTeamProject(team: string, statedId: string, session: string, move: ProjectMover = houseMove): Promise<{
+export async function moveTeamProject(team: string, statedId: string, to: TeamProjectArea): Promise<{ project: Project; from: TeamProjectArea }> {
+  const roster = await readTeamRoster(team);
+  if (!roster) throw new Error(`Team "${team}" has no roster.`);
+  const id = projectId(team, statedId);
+  const areas: TeamProjectArea[] = ['inbox', 'done', 'backlog'];
+  const from = areas.find((area) => areaProjects(roster, area).some((project) => project.id === id));
+  if (!from) throw new Error(`Project "${id}" is not held by Team "${team}".`);
+  if (from === to) return { project: areaProjects(roster, from).find((project) => project.id === id)!, from };
+  const project = areaProjects(roster, from).find((entry) => entry.id === id)!;
+  await writeTeamRoster(team, {
+    ...areaEdit(from, areaProjects(roster, from).filter((entry) => entry.id !== id)),
+    ...areaEdit(to, [...areaProjects(roster, to), project]),
+  });
+  return { project, from };
+}
+
+export async function returnTeamProject(team: string, statedId: string, session: string, area: TeamProjectArea = 'inbox', move: ProjectMover = houseMove): Promise<{
   project: Project;
   projectsRemaining: number;
+  focus?: string;
 }> {
   const roster = await readTeamRoster(team);
   if (!roster) throw new Error(`Team "${team}" has no roster.`);
   const id = projectId(team, statedId);
-  if (roster.projects.some((entry) => entry.id === id)) throw new Error(`Project "${id}" is already in the roster.`);
+  if (['inbox', 'done', 'backlog'].some((name) => areaProjects(roster, name as TeamProjectArea).some((entry) => entry.id === id))) throw new Error(`Project "${id}" is already in the roster.`);
   const moved = await move({ direction: 'return', session, projectId: id });
-  const project = normalizeProject({ ...moved.project, stage: 'IDEAS', exit: 'lead', status: 'yellow' })!;
+  const project = moved.project;
   try {
-    await writeTeamRoster(team, { projects: [...roster.projects, project] });
+    await writeTeamRoster(team, areaEdit(area, [...areaProjects(roster, area), project]));
   } catch (error) {
     await move({ direction: 'place', session, project: moved.project }).catch(() => undefined);
     throw error;
   }
-  return { project, projectsRemaining: moved.projectsRemaining };
+  return { project, projectsRemaining: moved.projectsRemaining, focus: moved.focus };
 }

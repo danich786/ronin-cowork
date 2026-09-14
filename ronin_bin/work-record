@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+set -u
+SELF="$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")"
+ROOT="$(cd "$(dirname "$SELF")/.." && pwd)"
+export WORK_RECORD_INVOKED="${BASH_SOURCE[0]}"
+usage() { cat <<'EOF'
+Usage:
+  work-record read [--json|--rungs] [--session <name>]
+  work-record update_record --objective <text>
+  work-record update_record --phase <title> | --gate <text>
+  work-record update_record --leg N <title> | --leg N.M <title>
+  work-record update_record --status N[.M] PLANNED|ACTIVE|DONE
+  work-record update_record --done N[.M] | --active N[.M] | --drop N[.M]
+  work-record update_record --repo <repo>:<branch> | --unrepo <repo>[:<branch>]
+  work-record document add <path>
+  work-record document remove <path>
+  work-record document list
+  work-record project create --team <team> --title <text> --objective <text> [--stage <stage>]
+  work-record project read <id>
+  work-record project write <id> <options...>
+  work-record project working <id>
+  work-record project ready <id> --for lead|user
+  work-record project stuck <id>
+  work-record project blocked <id> --on lead|user
+  work-record project advance <id> --to PLANNING|BUILDING|LANDING|DONE
+  work-record project backlog <id>
+  work-record project done <id>
+  work-record project return <id>
+  work-record project list
+Update fields include --objective, --phase, --gate, --leg, --status, --done, --active,
+--drop, --repo, --unrepo, --on_tangent, and --on_track. A whole JSON record is accepted
+on stdin. Lead positioning is a separate form: update_record --session <name> --at N[.M].
+Document add replaces --doc; document remove replaces --undoc.
+Related: session_create --help; team-lead --help
+EOF
+}
+read_impl() { exec bash "$ROOT/libexec/work-record-read" "$@"; }
+write_impl() { exec bash "$ROOT/libexec/work-record-write" "$@"; }
+list_field() {
+  bash "$ROOT/libexec/work-record-read" --json | python3 -c "import json,sys; print(json.dumps(json.load(sys.stdin).get('$1',[]),indent=2))"
+}
+case "${1:-}" in
+  -h|--help) [ "$#" -eq 1 ] || { echo 'Run work-record --help.' >&2; exit 2; }; usage ;;
+  read) shift; read_impl "$@" ;;
+  update_record) shift; case "${1:-}" in -h|--help) write_impl --help;; esac; write_impl "$@" ;;
+  document)
+    verb=${2:-}; case "$verb" in
+      add) [ "$#" -eq 3 ] || { usage >&2; exit 2; }; write_impl --doc "$3" ;;
+      remove) [ "$#" -eq 3 ] || { usage >&2; exit 2; }; write_impl --undoc "$3" ;;
+      list) [ "$#" -eq 2 ] || { usage >&2; exit 2; }; list_field docs ;;
+      *) usage >&2; exit 2;; esac ;;
+  project)
+    verb=${2:-}; shift 2 || true
+    case "$verb" in
+      -h|--help) usage ;;
+      create|write|working|ready|stuck|blocked|advance|backlog|done|return) write_impl project "$verb" "$@" ;;
+      read) read_impl project read "$@" ;;
+      list) [ "$#" -eq 0 ] || { usage >&2; exit 2; }; list_field projects ;;
+      *) usage >&2; exit 2;; esac ;;
+  *) usage >&2; exit 2;;
+esac
