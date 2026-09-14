@@ -43,6 +43,24 @@ export interface PartsPlan<T extends { name: string; parked?: string }> {
   parked: { name: string; installation?: string; reason?: string }[];
 }
 
+/** The server-only expansion from saved capability choices to implementation parts.
+ * Parts carry no switches of their own and this module never imports the UI catalog. */
+export const SERVICE_CAPABILITY_PARTS = Object.freeze({
+  task_manager: ['michi', 'kanban'],
+  terminal_transcript: ['rireki'],
+  voice_hotwords: ['koe'],
+  usage_stats: ['counting'],
+  project_coordinator: ['koshi'],
+  local_weights: ['koshi_weights'],
+} as const);
+
+export function servicePartSelected(part: string, values: unknown): boolean {
+  const selected = switches(values);
+  const capability = Object.entries(SERVICE_CAPABILITY_PARTS)
+    .find(([, names]) => (names as readonly string[]).includes(part))?.[0];
+  return capability ? selected[capability] === true : false;
+}
+
 /** Which installation claims each part; the first claim wins, in catalog order. */
 export function partClaims(installations: Pick<InstallationRow, 'name' | 'parts'>[]): Map<string, string> {
   const claims = new Map<string, string>();
@@ -59,13 +77,12 @@ export function partsToLoad<T extends { name: string; parked?: string }>(
 ): PartsPlan<T> {
   const claims = partClaims(installations);
   const on = switches(values);
-  const selected = switches(selectedParts);
   const plan: PartsPlan<T> = { load: [], parked: [] };
   for (const part of parts) {
     const installation = claims.get(part.name);
     if (part.parked) plan.parked.push({ name: part.name, reason: part.parked });
     else if (installation && on[installation] !== true) plan.parked.push({ name: part.name, installation, reason: 'master_off' });
-    else if (installation && selected[part.name] !== true) plan.parked.push({ name: part.name, installation, reason: 'component_off' });
+    else if (installation && !servicePartSelected(part.name, selectedParts)) plan.parked.push({ name: part.name, installation, reason: 'component_off' });
     else plan.load.push(part);
   }
   return plan;

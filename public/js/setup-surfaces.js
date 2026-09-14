@@ -40,9 +40,12 @@ const action = (label, kind, onClick) => {
 };
 
 export const SERVICE_COMPONENTS = Object.freeze([
-  { id: 'kanban', label: 'Kanban', needs: 'The Team Kanban for project work records.' },
-  { id: 'koe', label: 'Koe', needs: 'Voice and Hotwords.' },
-  { id: 'rireki', label: 'Terminal transcript', needs: 'Feeds Koshi and the Unlocked tile views.' },
+  { id: 'task_manager', label: 'Task manager', parts: ['michi', 'kanban'], needs: 'Adds a shared project board and quick summaries of active work.' },
+  { id: 'terminal_transcript', label: 'Terminal transcript', parts: ['rireki'], needs: 'Records terminal activity for transcript views and downstream summaries.' },
+  { id: 'voice_hotwords', label: 'Voice & Hotwords', parts: ['koe'], needs: 'Adds voice tools and corrections for words dictation commonly mishears.' },
+  { id: 'usage_stats', label: 'Usage stats', parts: ['counting'], needs: 'Keeps local usage counts without storing transcript content.' },
+  { id: 'project_coordinator', label: 'Project coordinator', parts: ['koshi'], needs: 'Watches active projects and prompts Agents to keep status and summaries current.' },
+  { id: 'local_weights', label: 'Local weights', parts: ['koshi_weights'], needs: 'Provides locally stored model weights for features that need them.' },
 ]);
 
 export function serviceComponentRows(installed, masterOn) {
@@ -51,11 +54,12 @@ export function serviceComponentRows(installed, masterOn) {
   const loaded = new Set(Array.isArray(services.loaded) ? services.loaded : []);
   const parked = new Map((Array.isArray(services.parked) ? services.parked : []).map((item) => [item.name, item]));
   return SERVICE_COMPONENTS.map((component) => {
-    const park = parked.get(component.id);
-    const permanent = park?.reason && !['master_off', 'component_off'].includes(park.reason);
+    const park = component.parts.map((part) => parked.get(part)).find((item) => item?.reason && !['master_off', 'component_off'].includes(item.reason));
+    const permanent = !!park;
     const wanted = desired[component.id] === true;
-    const running = loaded.has(component.id);
-    const word = permanent ? 'Parked' : wanted !== running ? 'Restart' : running ? 'Running' : 'Off';
+    const running = component.parts.every((part) => loaded.has(part));
+    const disagrees = component.parts.some((part) => loaded.has(part) !== wanted);
+    const word = permanent ? 'Parked' : disagrees ? 'Restart' : running ? 'Running' : 'Off';
     const off = permanent ? park.reason : !masterOn ? 'Turn on Running services first' : '';
     return { v: component.id, l: component.label, sub: component.needs, word, ...(off ? { off } : {}) };
   });
@@ -357,9 +361,9 @@ export function createServicesSurface(context) {
     const row = campaignById(context.tenant?.campaign) || campaigns()[0];
     if (!row) return { ok: false, message: t('services_setup.no_campaign', 'No Campaign to configure.') };
     const chosen = new Set(selected);
-    const parts = { ...(row.config?.services?.parts || {}) };
-    for (const component of SERVICE_COMPONENTS) parts[component.id] = chosen.has(component.id);
-    return saveCampaign(row.id, { config: { services: { parts } } });
+    const capabilities = { ...(row.config?.services?.parts || {}) };
+    for (const component of SERVICE_COMPONENTS) capabilities[component.id] = chosen.has(component.id);
+    return saveCampaign(row.id, { config: { services: { parts: capabilities } } });
   };
   /** Restart: ask, then read the restart off the machine — /api/installed's startedAt changes when Ronin is back.
    *  A refusal answers in the tool's own words; no answer means Ronin went down, which is the restart happening. */

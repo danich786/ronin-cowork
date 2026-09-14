@@ -1,6 +1,7 @@
 import { readMachineSettingsSection, writeMachineSettings } from './machine-settings.js';
 import { agentDefaults, type AgentDefaults } from './agent-defaults.js';
 import { parseProviderSummary, type ProviderSummary } from './model-providers.js';
+import { SERVICE_CAPABILITY_PARTS } from './parts.js';
 
 async function readCampaigns(): Promise<Record<string, unknown>> {
   return readMachineSettingsSection<Record<string, unknown>>('campaigns', {});
@@ -91,16 +92,31 @@ const DESK_VALUE_MAX = 120;
 const bucket = (v: unknown): Record<string, unknown> =>
   v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
 
-/** Parts that existed before component routing. A missing legacy map preserves them;
- * newly claimed parts are deliberately absent and therefore off. */
-export const LEGACY_SERVICE_PARTS = Object.freeze(['counting', 'koe', 'koshi', 'koshi_weights', 'michi', 'rireki']);
+const emptyServiceCapabilities = (): Record<string, boolean> =>
+  Object.fromEntries(Object.keys(SERVICE_CAPABILITY_PARTS).map((name) => [name, false]));
+
+const capabilitySettings = (raw: Record<string, boolean>): Record<string, boolean> => {
+  const capabilityKeys = new Set(Object.keys(SERVICE_CAPABILITY_PARTS));
+  if ([...capabilityKeys].some((key) => Object.prototype.hasOwnProperty.call(raw, key))) return raw;
+  const knownParts = new Set<string>(Object.values(SERVICE_CAPABILITY_PARTS).flat());
+  const out = { ...emptyServiceCapabilities(), ...Object.fromEntries(Object.entries(raw).filter(([key]) => !knownParts.has(key))) };
+  // Legacy work-record signaling stays on: either half selects the indivisible bundle.
+  out.task_manager = raw.michi === true || raw.kanban === true;
+  out.usage_stats = raw.counting === true;
+  out.project_coordinator = raw.koshi === true;
+  out.local_weights = raw.koshi_weights === true;
+  // Safety default: historical recorder/voice state never implicitly enables capabilities.
+  out.terminal_transcript = false;
+  out.voice_hotwords = false;
+  return out;
+};
 
 const serviceSettings = (v: unknown): { parts: Record<string, boolean> } => {
   const value = bucket(v);
   return {
     parts: Object.prototype.hasOwnProperty.call(value, 'parts')
-      ? booleanMap(value.parts)
-      : Object.fromEntries(LEGACY_SERVICE_PARTS.map((name) => [name, true])),
+      ? capabilitySettings(booleanMap(value.parts))
+      : { ...emptyServiceCapabilities(), task_manager: true, usage_stats: true, project_coordinator: true, local_weights: true },
   };
 };
 
@@ -252,7 +268,7 @@ export async function createCampaign(edit: CampaignEdit & { id?: string }): Prom
     providers: null,
     config: {
       ...settings(edit.config),
-      services: { parts: {} },
+      services: { parts: emptyServiceCapabilities() },
       installations: await completeInstallations(settings(edit.config).installations),
       defaults: await completeAgentDefaults(settings(edit.config).defaults),
     },

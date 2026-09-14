@@ -18,7 +18,7 @@ import { initialCampaign } from '../campaigns.js';
 import { listInstallations } from '../resource-adapters.js';
 import { switches } from '../instruction-cascade.js';
 import { listParkedServices, listServiceFailures, listServices } from '../sockets.js';
-import { discoverParts, partClaims } from '../parts.js';
+import { discoverParts, partClaims, servicePartSelected } from '../parts.js';
 import { roninIdentity } from './version.js';
 
 const errMsg = (e: unknown) => String((e as Error)?.message ?? e).replaceAll(homedir(), '~');
@@ -61,7 +61,7 @@ export async function installedAnswer(): Promise<InstalledAnswer> {
     .filter((part) => part.reason && !['master_off', 'component_off'].includes(part.reason))
     .map((part) => part.name));
   const restartNeeded = parts.some((part) => !permanentlyParked.has(part) && claims.get(part) === 'ronin_services'
-    && (switchedOn && desired[part] === true ? !loaded.includes(part) : loaded.includes(part)));
+    && (switchedOn && servicePartSelected(part, desired) ? !loaded.includes(part) : loaded.includes(part)));
   return {
     cowork: roninIdentity(),
     services: { parts, loaded, parked, desired, installed: parts.length > 0, activated: entitled, stage: state?.stage ?? 'not_requested', switched_on: switchedOn, restart_needed: restartNeeded },

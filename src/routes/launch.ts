@@ -434,7 +434,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
       const campaignId = resolved.session_type === 'bare_metal_agent'
         ? (form.campaign_id || await initialCampaignId())
         : await birthCampaign(resolved.team, form.campaign_id);
-      const transcriptOn = (await readCampaign(campaignId))?.config.services.parts.rireki === true;
+      const transcriptOn = (await readCampaign(campaignId))?.config.services.parts.terminal_transcript === true;
       await createSession(resolved.name, resolved.dir, {
         agent: resolved.agent,
         exempt: resolved.capExempt,
