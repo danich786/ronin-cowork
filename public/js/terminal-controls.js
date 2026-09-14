@@ -20,9 +20,16 @@ function describeAction(node) {
   node.title = `${labels[action]} — ${config.bindings[action]}. ${meanings[action]}`;
   node.setAttribute('aria-keyshortcuts', config.bindings[action].replace('Ctrl', 'Control'));
 }
+function setHintText(node, text) {
+  node.replaceChildren();
+  for (const chunk of text.split(/(?<=[+-])/)) {
+    node.append(document.createTextNode(chunk));
+    if (/[+-]$/.test(chunk)) node.append(document.createElement('wbr'));
+  }
+}
 function publish(data) {
   config = data;
-  for (const node of document.querySelectorAll('[data-control-key]')) node.textContent = config.bindings[node.dataset.controlKey];
+  for (const node of document.querySelectorAll('[data-control-key]')) setHintText(node, config.bindings[node.dataset.controlKey]);
   for (const node of document.querySelectorAll('[data-terminal-action]')) {
     describeAction(node);
   }
@@ -180,8 +187,8 @@ export function buildControlHints() {
     const row = document.createElement('div'); row.className = 'terminal-hint-row';
     const label = document.createElement('strong'); label.textContent = labels[action];
     const key = document.createElement('span');
-    if (action === 'copy') key.textContent = selectionHint();
-    else { key.dataset.controlKey = action; key.textContent = config?.bindings[action] || '…'; }
+    if (action !== 'copy') key.dataset.controlKey = action;
+    setHintText(key, action === 'copy' ? selectionHint() : config?.bindings[action] || '…');
     row.append(label, key); card.append(row);
   }
   return card;

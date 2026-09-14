@@ -99,9 +99,16 @@ try {
       assert.equal(await page.locator('.terminal-hints-subtitle').textContent(),'Session Controls');
       const hintFonts = await page.locator('.terminal-hint-row span').evaluateAll(nodes=>nodes.map(el=>{const s=getComputedStyle(el);return s.fontFamily+' / '+s.fontSize}));
       assert.equal(new Set(hintFonts).size,1);
-      await page.locator('.selector').evaluate(el=>el.style.width='160px');
-      assert.equal(await page.locator('.terminal-hints').evaluate(el=>el.scrollWidth<=el.clientWidth),true);
-      assert.equal(await page.locator('.terminal-hint-row span').evaluateAll(nodes=>nodes.every(el=>el.scrollWidth<=el.clientWidth)),true);
+      for (const width of ['160px','120px']) {
+        await page.locator('.selector').evaluate((el,w)=>el.style.width=w,width);
+        assert.equal(await page.locator('.terminal-hints').evaluate(el=>el.scrollWidth<=el.clientWidth),true);
+        assert.equal(await page.locator('.terminal-hint-row span').evaluateAll(nodes=>nodes.every(el=>el.scrollWidth<=el.clientWidth)),true);
+        assert.equal(await page.locator('[data-control-key="clear"]').evaluate(el=>{
+          const word=[...el.childNodes].find(n=>n.textContent==='Backspace');
+          const range=document.createRange();range.selectNodeContents(word);
+          return range.getClientRects().length;
+        }),1);
+      }
       await page.locator('.selector').evaluate(el=>el.style.width='320px');
       assert.equal(await page.locator('.terminal-hint-row strong').first().evaluate(el=>getComputedStyle(el).fontWeight),'700');
       assert.equal(await page.locator('.terminal-hints').evaluate(el=>getComputedStyle(el).fontSize),await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--text-3').trim()));
