@@ -8,9 +8,11 @@ There are two input paths:
 
 ## One send operation
 
-Delivery means **type the text, pause 300 ms, press Enter**. The pause lets the CLI
-finish accepting pasted text. Text and Enter are separate terminal commands, so Enter
-is not swallowed as part of a paste. There are no screen checks between them, no
+Delivery means **paste the text, pause 300 ms, press Enter**. A private tmux buffer
+uses `paste-buffer -p -r` to mark the paste boundary when the CLI requests bracketed
+paste and preserve embedded newlines. The buffer is deleted after use. Enter is sent
+separately, outside that boundary. Raw `send-keys -l` does not mark a paste; a pause
+alone cannot prevent a busy CLI from treating the following Enter as pasted text. There are no screen checks between them, no
 fingerprints, no prompt-disappearance verification, and no repeated Enter loop.
 
 Success means Ronin sent text and Enter, not that the Agent has processed the message.
