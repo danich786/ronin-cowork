@@ -1,4 +1,3 @@
-import { buildControlHints } from './terminal-controls.js';
 /* part of the ronin-cowork client — see js/README.md */
 /**
  * THE MOBILE DOCUMENT'S ENTRY MODULE. `mobile.html` holds the bar and an empty main; this
@@ -266,7 +265,6 @@ export async function buildPhone() {
     main.replaceChildren(term);
     const tile = host.mount(session);
     stageTile = tile;
-    term.append(buildControlHints());
 
     sheet = makeDrop('メ', t('phone.me_title', 'This Agent — work record, docs, note, control, kill'), 'me');
     const node = (key) => tile[key]?.el ?? tile[key];

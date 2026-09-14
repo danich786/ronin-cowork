@@ -11,7 +11,7 @@ import { installTextDrops } from './tiledroptext.js';
 import { dvrStep } from './dvr.js';
 import { TapeView } from './tapeview.js';
 import { TermView } from './termview.js';
-import { installTileControls, runTerminalAction } from './terminal-controls.js';
+import { installTileControls, runTerminalAction, buildMobileControlButtons } from './terminal-controls.js';
 import { TileWire } from './tilewire.js';
 import { buildComposer } from './composer.js';
 import { sendComposerMessage } from './composer-rules.js';
@@ -496,6 +496,7 @@ export class Tile {
       // acting on THIS tile's session rather than "the active tile" (keysrow.js).
       if (isCoarse()) {
         this.composer.el.prepend(buildKeysRow({
+          controls: document.getElementById('phone') ? buildMobileControlButtons(this) : [],
           sendRaw: (d) => this.sendRaw(d),
           latest: () => this.jumpLatest(),
         }).el);

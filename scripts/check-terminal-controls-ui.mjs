@@ -17,6 +17,7 @@ app.get('/api/terminal-controls', (_req, res) => res.json({ bindings, defaults }
 app.put('/api/terminal-controls', (req, res) => { bindings = req.body.bindings; res.json({ bindings, defaults }); });
 app.post('/api/sessions/:name/control-action', (req, res) => { calls.push(req.body); res.json({ ok: true }); });
 app.get('/', (_req, res) => res.type('html').send(`<!doctype html><html><head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="/vendor/xterm.css"><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/workspace-kit.css">
 <style>body{display:block;padding:12px}#target{height:380px;display:flex;flex-direction:column}.body{flex:1;min-height:0}.selector{height:350px;width:320px}.tile{height:380px}</style>
 </head><body ${_req.query.mobile ? 'id="phone"' : ''}><div id="target" class="tile keys-on"><div class="body tile-body"></div></div><div class="selector wk-workbench-selector"><div class="wk-workbench-selector-cards"></div></div>
@@ -24,7 +25,8 @@ app.get('/', (_req, res) => res.type('html').send(`<!doctype html><html><head>
 <script type="module">
 import { TermView } from '/js/termview.js';
 import { buildComposer } from '/js/composer.js';
-import { installTileControls, runTerminalAction, buildControlHints, loadTerminalControls } from '/js/terminal-controls.js';
+import { buildKeysRow } from '/js/keysrow.js';
+import { installTileControls, runTerminalAction, buildControlHints, loadTerminalControls, buildMobileControlButtons } from '/js/terminal-controls.js';
 import { retireSession } from '/js/session-retire.js';
 import { S, tiles } from '/js/state.js';
 window.raw = [];
@@ -36,10 +38,11 @@ tile.term.wireCopyHint({isLocked:()=>true,overHome:()=>false});
 tile.composer = buildComposer(tile.body,{activate(){},clearOverlays(){},connected:()=>true,send:d=>raw.push(d),sendMessage:async()=>({ok:true}),scrollToBottom(){}});
 Object.defineProperty(tile,'composerTa',{get:()=>tile.composer.ta});
 tile.composer.show(true);
+if(document.getElementById('phone')) tile.composer.el.prepend(buildKeysRow({controls:buildMobileControlButtons(tile),sendRaw:d=>raw.push(d),latest(){}}).el);
 S.sessions=[{name:'fixture',key:'birth',agent:'codex'}];S.active=tile;tiles.push(tile);
 const cards=document.querySelector('.wk-workbench-selector-cards');
 for(let i=0;i<40;i++){const p=document.createElement('p');p.textContent='Agent '+i;cards.append(p)}
-document.querySelector('.selector').append(buildControlHints(()=>tile));
+if(!document.getElementById('phone')) document.querySelector('.selector').append(buildControlHints());
 await loadTerminalControls();tile.term.write('COPY SNAPSHOT CONTENT');
 window.tile=tile;window.ready=true;
 </script></body></html>`));
@@ -57,6 +60,8 @@ try {
       const page = await context.newPage(); const errors=[]; page.on('pageerror',e=>{errors.push(e.message);console.error(e.message)});
       await page.goto(`http://127.0.0.1:${server.address().port}/${mobile ? '?mobile=1' : ''}`);
       await page.waitForFunction(()=>window.ready);
+      assert.equal(await page.locator('.terminal-hints').count(),mobile ? 0 : 1);
+      if (!mobile) {
       assert.equal(await page.locator('.terminal-hints').getAttribute('open'), '');
       const before = await page.locator('.terminal-hints').boundingBox();
       await page.locator('.wk-workbench-selector-cards').evaluate(el=>el.scrollTop=el.scrollHeight);
@@ -77,6 +82,7 @@ try {
       assert.equal(await page.locator('.terminal-hints').getAttribute('open'), null);
       await page.locator('.terminal-hints summary').click();
       assert.match(await page.locator('.terminal-hints').innerText(), mobile ? /Tap Copy to select text/ : mac ? /Option-drag to select/ : /Shift-drag to select/);
+      }
       if (!mobile) {
         await page.evaluate(()=>{tile.term.term.select(0,0,4);tile.term.focus()});
         await page.keyboard.press(mac ? 'Meta+c' : 'Control+c');
@@ -93,7 +99,9 @@ try {
         assert.equal(await page.locator('.copyhint').count(),0);
       }
       await page.locator('.composer textarea').fill('unfinished\nsecond line');
-      assert.equal(await page.locator('.terminal-actions').count(), mobile ? 1 : 0);
+      assert.equal(await page.locator('.terminal-actions').count(),0);
+      assert.equal(await page.locator('.keysrow [data-terminal-action]').count(),mobile ? 4 : 0);
+      if (!mobile) {
       assert.equal(await page.locator('.terminal-hint-row button, .terminal-hint-row small').count(),0);
       assert.equal(await page.locator('.terminal-hint-row strong').count(),4);
       assert.equal(await page.locator('.terminal-hints-subtitle').textContent(),'Session Controls');
@@ -112,13 +120,14 @@ try {
       await page.locator('.selector').evaluate(el=>el.style.width='320px');
       assert.equal(await page.locator('.terminal-hint-row strong').first().evaluate(el=>getComputedStyle(el).fontWeight),'700');
       assert.equal(await page.locator('.terminal-hints').evaluate(el=>getComputedStyle(el).fontSize),await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--text-3').trim()));
-      if (mobile) await page.locator('.terminal-actions button').filter({hasText:/^Clear$/}).click();
+      }
+      if (mobile) await page.locator('.keysrow [data-terminal-action]').filter({hasText:/^Clear$/}).click();
       else await page.locator('.composer textarea').press('Control+Shift+Backspace');
       assert.equal(await page.locator('.composer textarea').inputValue(),''); assert.equal(calls.length,0);
       assert.equal(await page.locator('#toast.show').count(),0);
       await page.locator('.composer textarea').fill('keep me');
       const stopResponse = page.waitForResponse(r=>r.url().endsWith('/control-action') && r.request().postDataJSON()?.intent==='stop');
-      if (mobile) await page.locator('.terminal-actions button').filter({hasText:/^Stop$/}).click();
+      if (mobile) await page.locator('.keysrow [data-terminal-action]').filter({hasText:/^Stop$/}).click();
       else await page.locator('.composer textarea').press('Escape');
       await stopResponse;
       assert.equal(await page.locator('#toast.show').count(),0);
@@ -139,7 +148,7 @@ try {
         assert.deepEqual(await page.evaluate(()=>raw),[]);
       }
       if (mobile) {
-      await page.locator('.terminal-actions button').filter({hasText:/^Copy$/}).click();
+      await page.locator('.keysrow [data-terminal-action]').filter({hasText:/^Copy$/}).click();
       assert.match(await page.locator('.terminal-copy-text').inputValue(),/COPY SNAPSHOT CONTENT/);
       await page.locator('.ui-sheet.open button').filter({hasText:'Done'}).click();
       }
@@ -151,8 +160,8 @@ try {
         await fetch('/api/terminal-controls',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({bindings:result.bindings})});
         await loadTerminalControls();
       });
-      assert.equal(await page.locator('[data-control-key="close"]').textContent(),'Ctrl+X');
-      await page.locator('.terminal-hints').screenshot({path:`/tmp/hints-polish-${profile}.png`});
+      if (!mobile) assert.equal(await page.locator('[data-control-key="close"]').textContent(),'Ctrl+X');
+      await page.locator(mobile ? '.composer' : '.terminal-hints').screenshot({path:`/tmp/hints-polish-${profile}.png`});
       assert.deepEqual(errors,[]);
       console.log(`${profile}: controls, draft, Copy snapshot, Hints pinning and remapping passed`);
     } finally { await browser.close(); }

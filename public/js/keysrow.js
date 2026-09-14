@@ -2,7 +2,7 @@
 import { t } from './lexicon.js';
 
 /**
- * @param {{sendRaw: (seq: string) => void, latest: () => void}} hooks
+ * @param {{sendRaw: (seq: string) => void, latest: () => void, controls?: HTMLElement[]}} hooks
  *   sendRaw writes to this row's own session; latest jumps its view to the live end.
  * @returns {{el: HTMLElement}}
  */
@@ -11,6 +11,7 @@ export function buildKeysRow(hooks) {
   row.className = 'keysrow';
   row.setAttribute('role', 'group');
   row.setAttribute('aria-label', t('bar.keys', 'Keys'));
+  row.append(...(hooks.controls || []));
 
   // Face · tooltip · what it sends. Faces that are glyphs (⤓, the arrows) are
   // values, not words; the worded faces go through the lexicon like everything else.

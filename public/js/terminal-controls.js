@@ -5,9 +5,9 @@ import { S, SELECT_MOD, IS_MAC } from './state.js';
 
 const actions = ['copy', 'clear', 'close', 'stop'];
 const shortcutActions = ['clear', 'close', 'stop'];
-const selectionHint = () => document.getElementById('phone') ? 'Tap Copy to select text' : `${SELECT_MOD}-drag to select`;
+const selectionHint = `${SELECT_MOD}-drag to select`;
 const labels = { copy: 'Copy', clear: 'Clear', close: 'Close', stop: 'Stop' };
-const meanings = { copy: 'Drag to select, then use your normal browser Copy command.', clear: 'Clear browser input or send the CLI’s native Clear key.', close: 'Retire this Agent through confirmation.', stop: 'Interrupt the Agent now; keep its session.' };
+const meanings = { clear: 'Clear browser input or send the CLI’s native Clear key.', close: 'Retire this Agent through confirmation.', stop: 'Interrupt the Agent now; keep its session.' };
 let config = null;
 let loading = null;
 const preference = (key, value) => {
@@ -15,7 +15,7 @@ const preference = (key, value) => {
 };
 function describeAction(node) {
   const action = node.dataset.terminalAction;
-  if (action === 'copy') { node.title = `${selectionHint()}. ${meanings.copy}`; return; }
+  if (action === 'copy') { node.title = 'Copy terminal text'; return; }
   if (!config) return;
   node.title = `${labels[action]} — ${config.bindings[action]}. ${meanings[action]}`;
   node.setAttribute('aria-keyshortcuts', config.bindings[action].replace('Ctrl', 'Control'));
@@ -94,15 +94,11 @@ export function installTileControls(tile) {
     e.stopImmediatePropagation();
     if (!e.repeat) void tile.controlAction(action, composer ? 'composer' : 'terminal');
   }, true);
-  if (!document.getElementById('phone')) return;
-  const row = document.createElement('div');
-  row.className = 'terminal-actions';
-  row.setAttribute('role', 'group');
-  row.setAttribute('aria-label', 'Agent controls');
-  for (const action of actions) row.append(actionButton(action, () => { tile.activate?.(); return tile.controlAction(action); }));
-  tile.el.append(row);
-  if (config) publish(config);
 }
+export function buildMobileControlButtons(tile) {
+  return actions.map((action) => actionButton(action, () => { tile.activate?.(); return tile.controlAction(action); }));
+}
+
 function actionButton(action, run) {
   const button = document.createElement('button');
   button.type = 'button';
@@ -188,7 +184,7 @@ export function buildControlHints() {
     const label = document.createElement('strong'); label.textContent = labels[action];
     const key = document.createElement('span');
     if (action !== 'copy') key.dataset.controlKey = action;
-    setHintText(key, action === 'copy' ? selectionHint() : config?.bindings[action] || '…');
+    setHintText(key, action === 'copy' ? selectionHint : config?.bindings[action] || '…');
     row.append(label, key); card.append(row);
   }
   return card;
