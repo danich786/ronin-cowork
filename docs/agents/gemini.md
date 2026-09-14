@@ -1,5 +1,8 @@
 # Gemini CLI in Ronin
 
+- **stop_keys:** C-c
+- **clear_keys:** C-c
+
 CLI id: `gemini`. Catalog provider: Google. Reviewed 2026-09-14.
 Version: **0.55.1**. Installed version and bundled cancellation code inspected; complete Ronin launch/resume journey remains unverified.
 

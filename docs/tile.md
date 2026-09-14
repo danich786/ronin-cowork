@@ -424,7 +424,7 @@ exactly as `tmux attach` always did.
 **Controls have one owner.** [Terminal controls](terminal-controls.md) defines Copy,
 Clear, Close and Stop, their configurable browser shortcuts, the pinned Hints card,
 and desktop/mobile behavior. `public/js/terminal-controls.js` intercepts gestures;
-`src/agents.ts` translates intents to native CLI commands. Provider identity is stored
+`src/terminal-controls.ts` reads native key sequences from `docs/agents/*.md`. Provider identity is stored
 with the session. No busy-screen classifier is consulted by a control.
 
 **Unlocked** is the DVR rule (`public/js/dvr.js`, pure and tested). Printable text — typed or

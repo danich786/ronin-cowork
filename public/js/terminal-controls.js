@@ -10,7 +10,6 @@ const labels = { copy: 'Copy', clear: 'Clear', close: 'Close', stop: 'Stop' };
 const meanings = { copy: 'Drag to select, then use your normal browser Copy command.', clear: 'Clear browser input or send the CLI’s native Clear key.', close: 'Retire this Agent through confirmation.', stop: 'Interrupt the Agent now; keep its session.' };
 let config = null;
 let loading = null;
-let channel = null;
 const preference = (key, value) => {
   try { if (value === undefined) return localStorage.getItem(key); localStorage.setItem(key, value); } catch {}
 };
@@ -34,10 +33,7 @@ export function loadTerminalControls() {
 }
 function initialize() {
   if (!config) void loadTerminalControls();
-  if (!channel && typeof window.BroadcastChannel !== 'undefined') {
-    channel = new window.BroadcastChannel('ronin-terminal-controls');
-    channel.onmessage = () => void loadTerminalControls();
-  }
+
 }
 export function controlChord(e) {
   const key = e.key.length === 1 ? e.key.toUpperCase() : e.key;
@@ -189,47 +185,6 @@ export function buildControlHints() {
     else { key.dataset.controlKey = action; key.textContent = config?.bindings[action] || '…'; }
     row.append(label, key); card.append(row);
   }
-  const edit = document.createElement('button'); edit.type = 'button'; edit.textContent = 'Customize shortcuts'; edit.onclick = () => void openTerminalControlSettings();
-  const help = document.createElement('a'); help.href = '/api/terminal-controls/help'; help.target = '_blank'; help.rel = 'noopener'; help.textContent = 'Help';
-  const footer = document.createElement('div'); footer.className = 'terminal-hints-footer';
-  footer.append(edit, help); card.append(footer);
   return card;
-}
-export async function openTerminalControlSettings() {
-  const r = await loadTerminalControls();
-  if (!r.ok) return toast(r.message, false);
-  if (document.getElementById('terminal-control-settings')) return;
-  const dlg = sheet({ id: 'terminal-control-settings', label: 'Terminal controls', onClose: () => dlg.el.remove() });
-  const title = document.createElement('h2'); title.textContent = 'Terminal controls';
-  const help = document.createElement('p'); help.textContent = 'One shortcut map for every Ronin browser and Agent. Enter a chord such as Ctrl+X or Escape. Browser text fields keep native Copy, Cut and Undo.';
-  const fields = {};
-  dlg.card.append(title, help);
-  for (const action of shortcutActions) {
-    const label = document.createElement('label'); label.className = 'terminal-control-field'; label.textContent = labels[action];
-    const input = document.createElement('input'); input.value = config.bindings[action]; input.setAttribute('aria-label', `${labels[action]} shortcut`);
-    fields[action] = input; label.append(input); dlg.card.append(label);
-  }
-  const status = document.createElement('p'); status.setAttribute('role', 'status');
-  const save = document.createElement('button'); save.type = 'button'; save.textContent = 'Save';
-  save.onclick = async () => {
-    save.disabled = true;
-    const bindings = Object.fromEntries(shortcutActions.map((a) => [a, fields[a].value.trim()]));
-    // Pad captures at document level; do not leave it silently overriding this map.
-    const { padBinds, padChord } = await import('./pad.js');
-    for (const chord of Object.values(bindings)) {
-      const parts = chord.split('+'); const key = parts.pop();
-      const code = /^[A-Z]$/.test(key) ? `Key${key}` : key;
-      if (padBinds[padChord({ code, key, ctrlKey: parts.includes('Ctrl'), altKey: parts.includes('Alt'), shiftKey: parts.includes('Shift'), metaKey: parts.includes('Meta') })]) {
-        status.textContent = `${chord} is assigned to the pad. Remove that pad binding first.`; save.disabled = false; return;
-      }
-    }
-    const result = await request('/api/terminal-controls', { method: 'PUT', json: { bindings } });
-    save.disabled = false;
-    if (!result.ok) { status.textContent = result.message; return; }
-    publish(result.data); channel?.postMessage('changed'); status.textContent = 'Saved for every Agent. Other devices refresh on focus.';
-  };
-  const reset = document.createElement('button'); reset.type = 'button'; reset.textContent = 'Reset defaults'; reset.onclick = () => { for (const a of shortcutActions) fields[a].value = config.defaults[a]; status.textContent = 'Press Save to apply defaults.'; };
-  const done = document.createElement('button'); done.type = 'button'; done.textContent = 'Done'; done.onclick = () => dlg.close();
-  dlg.card.append(status, save, reset, done); dlg.open();
 }
 if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('focus', () => { if (config) void loadTerminalControls(); });

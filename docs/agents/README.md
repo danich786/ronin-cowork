@@ -16,7 +16,10 @@ CLI. Models, prices, launch rows and owner overrides belong to the
 [provider catalog](../../ronin_catalogs/MODEL_PROVIDERS.md), parsed only by
 `src/model-providers.ts`. Do not copy model tables into these pages.
 
-`src/agents.ts` owns executable install/update/version/resume and control syntax.
+`src/agents.ts` owns executable install/update/version/resume syntax. Each Agent page
+owns its executable `stop_keys` and `clear_keys` fields. Ronin reads that page when an
+action is requested. Values are tmux key names (`C-c` means Ctrl+C); multiple keys are
+space-separated and sent in order. Change the Agent page to change its mapping.
 The catalog currently owns additive launch-mode and MCP-disconnect flags. Integration
 pages link those definitions rather than creating another executable command table.
 Services own service installation/removal; their provider-specific registration syntax
@@ -29,10 +32,10 @@ explicit. Authentication SOPs express owner policy and link here for CLI mechani
 
 ## Code ownership
 
-- `src/agents.ts`: executable CLI commands and control adapters.
+- `src/agents.ts`: executable CLI install/update/version/resume commands.
 - `src/spawn.ts`, `src/routes/launch.ts`: resolve catalog entries and persist launch identity.
 - `src/tmux.ts`, `src/session-archive.ts`, `src/routes/sessions-api.ts`: live identity and archive/resume.
-- `src/terminal-controls.ts`: dispatch using persisted CLI identity; no screen detection.
+- `src/terminal-controls.ts`: read the Agent document and dispatch using persisted CLI identity; no screen detection.
 - [Provider contract](../model-providers.md): extension and owner-overlay rules.
 - Tests: `tests/terminal-controls.test.ts`, `tests/model-providers.test.ts`,
   `tests/agent-prompts.test.ts`, and archive lifecycle tests. These check Ronin;
