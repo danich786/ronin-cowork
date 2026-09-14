@@ -93,17 +93,25 @@ function createRegisterSurface(context) {
     question.el.classList.add('setup-register-bounded');
     return { value, wrap: question.el, values: () => multiple ? [...selected] : selected, onChange: (listener) => listeners.push(listener) };
   };
-  const checklistGroup = (name, label, choices, { short = '' } = {}) => {
+  const checklistGroup = (name, label, choices) => {
     const other = input(`${name}_other`); other.className = 'setup-register-other'; other.placeholder = t('setup_surface.something_else_prompt', 'Tell us'); other.hidden = true;
+    const checks = [];
     for (const [value, text] of choices) labels.set(value, text);
-    let selected = [];
-    const question = ask([{ group: label, fields: [{ key: name, label: short || t('ask.answer', 'Answer'), many: true, options: choices.map(([value, text]) => ({ v: value, l: text })) }] }], {
-      value: { [name]: selected },
-      exposed: true,
-      onChange: (next) => { selected = next[name]; other.hidden = !selected.includes('something_else'); if (!other.hidden) other.focus(); },
-    });
-    const wrap = el('div', 'setup-register-checklist'); wrap.append(question.el, other);
-    return { wrap, other, values: () => [...selected] };
+    const wrap = el('fieldset', 'setup-register-checklist');
+    wrap.classList.add('setup-register-reasons');
+    wrap.append(el('legend', 'setup-register-question', label));
+    for (const [value, text] of choices) {
+      const box = input(name, 'checkbox');
+      box.value = value;
+      checks.push(box);
+      box.addEventListener('change', () => {
+        other.hidden = !checks.some((item) => item.value === 'something_else' && item.checked);
+        if (!other.hidden && box.value === 'something_else' && box.checked) other.focus();
+      });
+      wrap.append(checkRow(text, box));
+    }
+    wrap.append(other);
+    return { wrap, other, values: () => checks.filter((box) => box.checked).map((box) => box.value) };
   };
   const email = input('email', 'email'); email.placeholder = 'you@example.com'; email.autocomplete = 'email';
   const identityMode = choiceGroup('identity_mode', t('setup_surface.identity', 'How would you like to register?'), [
