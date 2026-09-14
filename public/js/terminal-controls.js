@@ -159,9 +159,10 @@ async function copyTerminal(tile) {
   dlg.card.append(note, text, copy, done); dlg.open();
 }
 export function flashControlHints() {
-  for (const card of document.querySelectorAll('.terminal-hints')) {
+  for (const card of document.querySelectorAll('.session-control-hints')) {
     if (!card.getClientRects().length) continue;
     card.open = true;
+    card.scrollIntoView({ block: 'nearest' });
     for (const animation of card.getAnimations()) if (animation.id === 'selection-hint') animation.cancel();
     const orange = { outline: '2px solid var(--kaki)', boxShadow: '0 0 0 4px var(--kaki)' };
     const quiet = { outline: '2px solid transparent', boxShadow: '0 0 0 0 transparent' };
@@ -170,23 +171,50 @@ export function flashControlHints() {
     card.animate(frames, { duration: 2500, easing: 'ease-out', id: 'selection-hint' });
   }
 }
-export function buildControlHints() {
+export function buildHints() {
   initialize();
-  const card = document.createElement('details');
-  card.className = 'terminal-hints wk-card';
-  card.open = preference('ronin.hints.collapsed') !== 'yes';
-  const title = document.createElement('summary'); title.textContent = 'Hints';
-  const subtitle = document.createElement('span'); subtitle.className = 'terminal-hints-subtitle'; subtitle.textContent = 'Session Controls';
-  title.append(subtitle); card.append(title);
-  card.addEventListener('toggle', () => preference('ronin.hints.collapsed', card.open ? 'no' : 'yes'));
+  const hints = document.createElement('section');
+  hints.className = 'terminal-hints';
+  hints.setAttribute('aria-label', 'Hints');
+  const title = document.createElement('h3'); title.textContent = 'Hints';
+  hints.append(title);
+  const section = (label, className, preferenceKey) => {
+    const card = document.createElement('details');
+    card.className = `${className} wk-card`;
+    card.open = preference(preferenceKey) !== 'yes';
+    const summary = document.createElement('summary'); summary.textContent = label;
+    card.append(summary);
+    card.addEventListener('toggle', () => preference(preferenceKey, card.open ? 'no' : 'yes'));
+    hints.append(card);
+    return card;
+  };
+  const vocabulary = section('Agent vocabulary', 'agent-vocabulary-hints', 'ronin.hints.vocabulary.collapsed');
+  for (const [term, description] of [
+    ['Fork it', 'Create a Ronin Agent for a topic.'],
+    ['Tell', 'Message another Agent.'],
+    ['Wipeboard', 'Share a note with the Team.'],
+    ['Show docs', 'Open a document to read.'],
+    ['Update work record', 'Record progress and next steps.'],
+    ['New Team', 'Group Agents around shared work.'],
+    ['New Agent', 'Start a fresh Agent session.'],
+    ['Hand in', 'Submit code for Team review.'],
+    ['Promote', 'Move reviewed code to global dev.'],
+    ['Close session', 'End the Agent safely.'],
+  ]) {
+    const row = document.createElement('div'); row.className = 'terminal-hint-row';
+    const label = document.createElement('strong'); label.textContent = term;
+    const meaning = document.createElement('span'); meaning.textContent = description;
+    row.append(label, meaning); vocabulary.append(row);
+  }
+  const controls = section('Session controls', 'session-control-hints', 'ronin.hints.collapsed');
   for (const action of actions) {
     const row = document.createElement('div'); row.className = 'terminal-hint-row';
     const label = document.createElement('strong'); label.textContent = labels[action];
     const key = document.createElement('span');
     if (action !== 'copy') key.dataset.controlKey = action;
     setHintText(key, action === 'copy' ? selectionHint : config?.bindings[action] || '…');
-    row.append(label, key); card.append(row);
+    row.append(label, key); controls.append(row);
   }
-  return card;
+  return hints;
 }
 if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('focus', () => { if (config) void loadTerminalControls(); });

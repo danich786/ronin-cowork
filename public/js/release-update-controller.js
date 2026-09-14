@@ -7,9 +7,10 @@ export function releaseIdentity(version) {
 }
 
 export function packageReading(fact) {
-  if (!fact?.latest) return { state: 'unknown', text: 'No release information available', available: false };
-  if (fact.upToDate === true) return { state: 'current', text: `Up to date · ${fact.installed || fact.latest}`, available: false };
-  return { state: 'available', text: `${fact.latest} available${fact.installed ? ` · installed ${fact.installed}` : ' · installed version unknown'}`, available: true };
+  if (!fact?.installed) return { state: 'unknown', text: 'Installed version unavailable · Update status unavailable', available: false };
+  if (!fact.latest || typeof fact.upToDate !== 'boolean') return { state: 'unknown', text: `Installed ${fact.installed} · Update status unavailable`, available: false };
+  if (fact.upToDate === true) return { state: 'current', text: `Up to date · ${fact.installed}`, available: false };
+  return { state: 'available', text: `${fact.latest} available · installed ${fact.installed}`, available: true };
 }
 
 export function createReleaseUpdateController({ onChange = () => {}, send = request,

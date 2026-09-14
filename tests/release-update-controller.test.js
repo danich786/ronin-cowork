@@ -7,8 +7,8 @@ test('identity and package facts stay honest and independent', () => {
   assert.equal(releaseIdentity({commit:'abc'}), 'Dev checkout · abc');
   assert.equal(releaseIdentity(null), 'Version unavailable');
   assert.equal(packageReading({latest:null,upToDate:true}).state,'unknown');
-  assert.equal(packageReading({latest:'v2',upToDate:true}).state,'current');
-  assert.equal(packageReading({latest:'v2',upToDate:false}).available,true);
+  assert.equal(packageReading({installed:'v2',latest:'v2',upToDate:true}).state,'current');
+  assert.equal(packageReading({installed:'v1',latest:'v2',upToDate:false}).available,true);
 });
 
 for (const pkg of ['cowork','services']) test(`${pkg} explicit update uses package and established completion watch`, async () => {
@@ -16,7 +16,7 @@ for (const pkg of ['cowork','services']) test(`${pkg} explicit update uses packa
   const controller=createReleaseUpdateController({onChange:s=>state=s, sleep:async()=>{},reload:()=>{reloaded=true;},send:async(url,opts)=>{
     calls.push([url,opts]);
     if(url==='/api/update/run') {ran=true; return {ok:true};}
-    if(url==='/api/update/check') return {ok:true,data:{latest:'v2',services:{latest:'s2'}}};
+    if(url==='/api/update/check') return {ok:true,data:{installed:'v1',latest:'v2',upToDate:false,services:{installed:'s1',latest:'s2',upToDate:false}}};
     return {ok:true,data:{release:ran?'v2':'v1',startedAt:ran?'later':'before',services:['task_manager']}};
   }});
   await controller.identify();
@@ -32,7 +32,7 @@ for (const pkg of ['cowork','services']) test(`${pkg} explicit update uses packa
 
 for(const identity of [null,{commit:'abc',release:null}]) test(`non-release identity cannot update: ${JSON.stringify(identity)}`,async()=>{
  const calls=[];let state;
- const c=createReleaseUpdateController({onChange:s=>state=s,send:async(url)=>{calls.push(url);return url==='/api/version'?{ok:!!identity,data:identity}:{ok:true,data:{latest:'v2',services:{latest:'s2'}}};}});
+ const c=createReleaseUpdateController({onChange:s=>state=s,send:async(url)=>{calls.push(url);return url==='/api/version'?{ok:!!identity,data:identity}:{ok:true,data:{installed:'v1',latest:'v2',upToDate:false,services:{installed:'s1',latest:'s2',upToDate:false}}};}});
  await c.check(); await c.run('cowork'); await c.run('services');
  assert.equal(state.canUpdate,false); assert.equal(calls.includes('/api/update/run'),false);
 });
@@ -43,4 +43,14 @@ test('failed recheck clears stale update offers; checks never start a watch',asy
  await c.check();assert.equal(packageReading(state.facts.services).state,'unknown');
  fails=true;await c.check();await c.run('cowork');assert.equal(state.facts,null);
  assert.deepEqual(calls,['/api/version','/api/update/check','/api/version','/api/update/check']);
+});
+
+test('missing installed version or comparison never enables an update', () => {
+  for (const upToDate of [true, false, undefined]) {
+    const reading = packageReading({ installed: null, latest: 'v9', upToDate });
+    assert.equal(reading.text, 'Installed version unavailable · Update status unavailable');
+    assert.equal(reading.available, false);
+    assert.equal(reading.state, 'unknown');
+  }
+  assert.equal(packageReading({ installed: 'v1', latest: 'v9' }).available, false);
 });

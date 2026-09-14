@@ -6,12 +6,17 @@ your browser shortcuts. These controls work on desktop and mobile, locked or unl
 The complete default [input → CLI mapping table](README.md#terminal-controls) is at the
 top of the documentation README. Clear means the entire unsubmitted input box.
 
-**Hints — Session Controls** is pinned below the selector's scrolling cards, expanded on first use. Collapse
-it if desired; its saved expansion state is independent of the roster. A failed locked-terminal
-selection attempt expands Hints and flashes it orange, instead of showing a popup. Mobile has no Hints card; its four action buttons use the
+**Hints** is pinned below the selector's scrolling cards. **Agent vocabulary** sits above
+**Session controls**; each starts expanded and saves its own collapsed state, independently
+of the roster. Vocabulary gives short phrases to use with an Agent, drawn from the
+[tool catalog](../ronin_catalogs/TOOLS.md). “Fork it” means create a new Agent for a
+particular topic; it does not copy the current conversation.
+
+A failed locked-terminal selection attempt expands Session controls and flashes it orange,
+instead of showing a popup. Mobile has no Hints card; its four action buttons use the
 existing composer keys row alongside the other terminal tools. The output area ends above the
-controls and entry box, including when the draft grows or the phone keyboard opens. Desktop Hints shows bold labels and shortcuts, without action buttons or descriptions. Keyboard users can Tab to a
-button and activate it with Enter or Space.
+controls and entry box, including when the draft grows or the phone keyboard opens.
+Desktop Hints uses bold labels and wrapping text, without action buttons or help links.
 
 ## Change your shortcuts
 
