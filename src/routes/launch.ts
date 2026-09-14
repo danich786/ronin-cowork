@@ -446,7 +446,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
               RONIN_MACHINE_SETTINGS_AUTHORITY: 'mika',
             }
           : birthEnv(routineTools?.path, boundOperatorSocket(), agentBinDir(), process.env.PATH ?? ''),
-        control: resolved.agent ? 'user' : undefined,
+        control: resolved.agent ? resolved.dial : undefined,
         key: birthKey || undefined,
         // The Services switch as resolved for THIS Agent at birth (campaign < team < form):
         // off means RIREKI never records it. Set here and never again — nothing cascades
