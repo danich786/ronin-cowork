@@ -51,7 +51,8 @@ export const SERVICE_COMPONENTS = Object.freeze([
 export function serviceComponentRows(installed, masterOn) {
   const parked = new Set((installed?.services?.capabilities?.parked || []).map((item) => item.name));
   return SERVICE_COMPONENTS.map((component) => ({
-    v: component.id, off: !masterOn || parked.has(component.id),
+    v: component.id,
+    off: parked.has(component.id) ? 'Currently unavailable' : !masterOn ? 'Turn on Running services first' : '',
   }));
 }
 
@@ -434,17 +435,20 @@ export function createServicesSurface(context) {
       for (const row of serviceComponentRows(facts, facts?.services?.switched_on === true)) {
         const control = controls.get(row.v);
         if (control.question.value()[row.v] !== (desired[row.v] === true)) control.question.set(row.v, desired[row.v] === true);
-        control.button.disabled = !!row.off || !installed.ok;
+        const reason = row.off || (!installed.ok ? 'Currently unavailable' : '');
+        control.question.disable(row.v, reason);
         control.button.setAttribute('aria-disabled', String(saving || control.button.disabled));
+        control.status.textContent = reason;
       }
     };
     for (const component of SERVICE_COMPONENTS) {
       const item = el('div', 'setup-services-benefit');
       const heading = el('h3', '', component.label);
       const copy = el('div', 'setup-services-feature-copy');
+      const status = el('span', 'setup-services-feature-status');
       const caption = el('p', '', component.needs);
       caption.id = `services-caption-${component.id}-${context.workspace || 'workspace2'}`;
-      copy.append(caption);
+      copy.append(caption, status);
       const question = ask([{ fields: [{ key: component.id, label: component.label, switch: ['On', 'Off'] }] }], {
         value: { [component.id]: desired[component.id] === true },
         onChange: async (answer) => {
@@ -488,7 +492,7 @@ export function createServicesSurface(context) {
       }, { capture: true });
       button.setAttribute('aria-label', component.label);
       button.setAttribute('aria-describedby', caption.id);
-      controls.set(component.id, { question, button });
+      controls.set(component.id, { question, button, status });
       item.append(question.el, heading, copy);
       values.append(item);
     }
