@@ -228,6 +228,21 @@ test('accepted hand-ins discover an explicit managed repo outside the team roste
   assert.deepEqual(await acceptedLinesForTeam('comp'), [{ repo: 'services', line: 'team/comp/dev' }]);
 });
 
+test('an accepted worktree-desk hand-in ends with one project-update reminder', async () => {
+  const desk = await openDesk({ repo: 'cowork', session: 'reminder', team: 'comp' });
+  await commitFile(desk.worktree, 'reminder.txt', 'hand this in\n');
+  const output = execFileSync(process.execPath, [
+    '--import', 'tsx', path.resolve('src/commands/desk.ts'), 'hand-in', 'cowork',
+  ], {
+    cwd: path.resolve('.'),
+    env: { ...process.env, RONIN_SESSION: 'reminder', RONIN_TEAMS: 'comp' },
+  }).toString();
+  const reminder = 'Code handed in. Remember to update your project.';
+  assert.equal(output.split(reminder).length - 1, 1);
+  assert.ok(output.indexOf('ACCEPTED cowork:team/comp/reminder') < output.indexOf(reminder));
+  assert.equal(output.trimEnd().split('\n').at(-1), reminder);
+});
+
 test('openDesk reports restrictive inputs and proceeds with a private branch', async () => {
   for (const branch of ['dev', 'team/comp/dev', 'master']) {
     const desk = await openDesk({ repo: 'cowork', session: `x-${branch.replaceAll('/', '-')}`, team: 'comp', branch });
