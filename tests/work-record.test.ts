@@ -30,7 +30,7 @@ function fixture(): { dir: string; env: NodeJS.ProcessEnv; letter: string } {
   ].join('\n'), { mode: 0o755 });
   writeFileSync(path.join(dir, 'curl'), [
     '#!/bin/sh',
-    "case \"$*\" in *'/api/team-rosters/team/projects/issue'*) printf '{\"ok\":true,\"id\":\"team/1\"}';; *) exit 1;; esac",
+    "case \"$*\" in *'/api/team-rosters/team/projects/issue'*) printf '{\"ok\":true,\"id\":\"team/1\"}';; *'/api/team-rosters/team/projects/1/return'*) printf '{\"ok\":true,\"project\":{\"id\":\"team/1\"}}';; *) exit 1;; esac",
     '',
   ].join('\n'), { mode: 0o755 });
   const env: NodeJS.ProcessEnv = { ...process.env, PATH: `${dir}:${process.env.PATH ?? ''}`, TMUX_PANE: '%1', RONIN_SESSION_DIR: path.join(dir, 'sessions') };
@@ -141,7 +141,7 @@ test('project create, read and one-field write use the existing letter tools', (
   run(f.env, [], JSON.stringify({ objective: 'session', ladder: [] }));
   run({ ...f.env, RONIN_URL: 'http://operator.test' }, ['project', 'create', '--team', 'team', '--title', 'First', '--objective', 'Ship it']);
   let p = block(f.letter).projects?.[0];
-  assert.deepEqual(p, { id: 'team/1', title: 'First', objective: 'Ship it', stage: 'PLANNING', exit: 'none', status: 'yellow', ladder: [], evidence: [] });
+  assert.deepEqual(p, { id: 'team/1', title: 'First', objective: 'Ship it', stage: 'PLANNING', exit: 'none', status: 'yellow', ladder: [], evidence: [], disposition: 'active' });
 
   run(f.env, ['project', 'write', 'team/1', '--status', 'green']);
   p = block(f.letter).projects?.[0];
@@ -156,6 +156,43 @@ test('project create, read and one-field write use the existing letter tools', (
 
   const read = execFileSync(path.join(root, 'ronin_bin', 'work-record'), ['project', 'read', 'team/1'], { encoding: 'utf8', env: f.env });
   assert.equal((JSON.parse(read) as Record<string, unknown>).objective, 'Ship it');
+
+  const returned = run({ ...f.env, RONIN_URL: 'http://operator.test' }, ['project', 'return', 'team/1']);
+  assert.match(returned, /returned whole to Team team Ideas; holder: lead; next: team-lead project read team team\/1.*Remember to update your project/);
+});
+
+test('project lifecycle verbs state intent explicitly and preserve unrelated fields', (t) => {
+  const f = fixture();
+  t.after(() => rmSync(f.dir, { recursive: true, force: true }));
+  run(f.env, [], JSON.stringify({ objective: 'session', projects: [{
+    id: 'team/1', title: 'First', objective: 'Ship it', stage: 'PLANNING', exit: 'user',
+    status: 'green', ladder: [{ stage: 'PLANNING' }], evidence: ['commit abc'],
+  }], ladder: [] }));
+
+  const invoke = (args: string[]) => run(f.env, ['project', ...args]);
+  assert.match(invoke(['working', 'team/1']).trim(), /changed: status=yellow, exit=agent.*preserved: stage=PLANNING.*holder: @probe.*Remember to update your project\.$/);
+  assert.deepEqual({ stage: block(f.letter).projects?.[0]?.stage, status: block(f.letter).projects?.[0]?.status, exit: block(f.letter).projects?.[0]?.exit }, { stage: 'PLANNING', status: 'yellow', exit: 'agent' });
+  assert.match(invoke(['ready', 'team/1', '--for', 'lead']), /status=green, exit=lead/);
+  assert.match(invoke(['stuck', 'team/1']), /status=red, exit=agent/);
+  assert.match(invoke(['blocked', 'team/1', '--on', 'user']), /changed: exit=user; preserved: stage=PLANNING, status=red/);
+  assert.match(invoke(['advance', 'team/1', '--to', 'BUILDING']), /changed: stage=BUILDING.*preserved: status=red, exit=user/);
+  const p = block(f.letter).projects?.[0];
+  assert.deepEqual(p?.ladder, [{ stage: 'PLANNING' }]);
+  assert.deepEqual(p?.evidence, ['commit abc']);
+
+  const focused = block(f.letter);
+  writeFileSync(f.letter, `# TEGAMI — probe\n\n\`\`\`json\n${JSON.stringify({ ...focused, at: { project: 'team/1' } }, null, 2)}\n\`\`\`\n`);
+  assert.match(invoke(['backlog', 'team/1']), /disposition: backlog; holder: probe; focus: cleared.*Remember to update your project/);
+  assert.equal(block(f.letter).projects?.[0]?.disposition, 'backlog');
+  assert.equal(block(f.letter).at, undefined);
+  assert.match(invoke(['resume', 'team/1']), /returned to the active table at BUILDING; disposition: active; holder: probe/);
+  assert.equal(block(f.letter).projects?.[0]?.disposition, 'active');
+
+  const before = readFileSync(f.letter, 'utf8');
+  const bad = spawnSync(tool, ['project', 'ready', 'team/1', '--for', 'agent'], { encoding: 'utf8', env: f.env });
+  assert.equal(bad.status, 3);
+  assert.match(bad.stderr, /--for lead\|user/);
+  assert.equal(readFileSync(f.letter, 'utf8'), before, 'invalid lifecycle intent leaves the letter untouched');
 });
 
 /* A born session reaches its tools through its own command directory,

@@ -44,7 +44,12 @@ not duplicate them. Read-only Team enumeration belongs to `edges team`.
 | Team broadcasts | the wipeboard for everything the whole Team must see; one-on-one goes directly to the session |
 
 The move is the approval: there is no verdict, decider, revision counter, or history on a
-project. Parking a project for a future common pool is outside this bundle.
+project. Backlog is a disposition on the same roster-held object, not another holder.
+
+A roster-held project can instead stay with the roster but leave the active table:
+`team-lead project backlog <team> <id>` changes only its disposition; `team-lead project
+resume <team> <id>` returns it at the same stage. Assignment and return preserve the
+disposition. These are holder writes, not custody moves.
 
 `session_create <name> --project <team/id>` composes two existing operations. Its brief
 names the project, birth happens through the ordinary resolver, and only then is the whole

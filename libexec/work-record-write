@@ -88,6 +88,14 @@ Usage:
   work-record project write <id> --ladder <json>
   work-record project write <id> --leg <STAGE> <title>
   work-record project write <id> --leg <STAGE.N> done|open
+  work-record project working <id>
+  work-record project ready <id> --for lead|user
+  work-record project stuck <id>
+  work-record project blocked <id> --on lead|user
+  work-record project advance <id> --to PLANNING|BUILDING|LANDING|DONE
+  work-record project backlog <id>
+  work-record project resume <id>
+  work-record project return <id>
   work-record update_record --objective <text>
   work-record update_record --phase <title> | --gate <text>
   work-record update_record --leg N <title> | --leg N.M <title>
@@ -102,6 +110,8 @@ Common tasks:
   --objective changes the objective. --phase and --gate append rungs.
   --leg N appends a leg; --leg N.M retitles it. Field updates may be combined.
   --doc lists a working document for the owner; --repo keeps a checkout row current.
+  Ideas and return are not backlog. `project backlog` keeps the same holder and stage but
+  takes the project off the active table; `project resume` returns it without guessing.
 
 Lead position (separate form; changes only another session's pointer):
   work-record update_record --session <name> --at N[.M]
@@ -174,8 +184,10 @@ SESSION_STORE="$("$STORE" session)"
 
 if [ "${1-}" = project ]; then
   shift; PROJECT_VERB=${1-}; shift || true
-  [ "$PROJECT_VERB" = create ] || [ "$PROJECT_VERB" = write ] \
-    || die "work-record update_record: project takes create or write."
+  case "$PROJECT_VERB" in
+    create|write|working|ready|stuck|blocked|advance|backlog|resume|return) ;;
+    *) die "work-record update_record: project takes create, write, working, ready, stuck, blocked, advance, backlog, resume or return." ;;
+  esac
   if [ "$PROJECT_VERB" = create ]; then
     PROJECT_TEAM=""
     CREATE_ARGS=()
@@ -198,14 +210,35 @@ if [ "${1-}" = project ]; then
     set -- "${CREATE_ARGS[@]}"
   else
     PROJECT_ID=${1-}; shift || true
-    [ -n "$PROJECT_ID" ] || die "work-record update_record: project write needs an id."
+    [ -n "$PROJECT_ID" ] || die "work-record update_record: project $PROJECT_VERB needs an id."
   fi
   NAME=$(me) || exit 3
+  if [ "$PROJECT_VERB" = return ]; then
+    [ "$#" -eq 0 ] || die "work-record update_record: project return takes only <id>."
+    PROJECT_TEAM=${PROJECT_ID%%/*}; PROJECT_NUMBER=${PROJECT_ID#*/}
+    [ "$PROJECT_TEAM" != "$PROJECT_ID" ] && [ -n "$PROJECT_TEAM" ] \
+      || die "work-record update_record: project return needs a canonical <team>/<number> id."
+    . "$TOOL_DIR/ronin-http.sh"
+    ronin_connect || exit $?
+    BODY=$(python3 -c 'import json,sys; print(json.dumps({"session":sys.argv[1]}))' "$NAME")
+    RESPONSE=$(curl -sS -m 15 "${RONIN_CURL[@]+"${RONIN_CURL[@]}"}" -H 'content-type: application/json' -X POST --data "$BODY" \
+      "$url/api/team-rosters/$PROJECT_TEAM/projects/$PROJECT_NUMBER/return") \
+      || die "work-record update_record: could not reach Ronin to return project $PROJECT_ID."
+    RESPONSE="$RESPONSE" python3 - "$PROJECT_ID" "$PROJECT_TEAM" <<'PY'
+import json, os, sys
+project_id, team = sys.argv[1:]
+try: data = json.loads(os.environ["RESPONSE"])
+except Exception: raise SystemExit("work-record update_record: Ronin returned an invalid project-return response.")
+if data.get("error"): raise SystemExit("work-record update_record: " + str(data["error"]))
+print(f"Project {project_id} returned whole to Team {team} Ideas; holder: lead; next: team-lead project read {team} {project_id}. Remember to update your project.")
+PY
+    exit $?
+  fi
   PFILE="$SESSION_STORE/$(key_of "$NAME")/tegami.md"
   [ -f "$PFILE" ] || die "work-record update_record: you have no letter yet."
-  python3 - "$PFILE" "$PROJECT_VERB" "$PROJECT_ID" "$@" <<'PROJECT' || exit 3
+  python3 - "$PFILE" "$PROJECT_VERB" "$PROJECT_ID" "$NAME" "$@" <<'PROJECT' || exit 3
 import json, os, re, sys
-src, verb, project_id, *args = sys.argv[1:]
+src, verb, project_id, holder, *args = sys.argv[1:]
 text = open(src).read()
 m = re.search(r"```(?:json)?\s*\n([\s\S]*?)\n```", text)
 if not m: sys.exit("work-record update_record: no json block in your letter")
@@ -229,10 +262,39 @@ if verb == "create":
     found = {"id": project_id, "title": vals["title"], "objective": vals["objective"],
              "stage": vals.get("stage", "PLANNING"), "exit": vals.get("exit", "none"),
              "status": vals.get("status", "yellow"), "ladder": [], "evidence": []}
+    found["disposition"] = "active"
     projects.append(found)
 else:
     if not found: sys.exit("work-record update_record: no project %s." % project_id)
-    if leg_edit:
+    found.setdefault("disposition", "active")
+    before = {k: found.get(k) for k in ("stage", "exit", "status")}
+    focus_changed = False
+    if verb == "working":
+        if args: sys.exit("work-record update_record: project working takes only <id>.")
+        found["status"], found["exit"] = "yellow", "agent"
+    elif verb == "ready":
+        if len(args) != 2 or args[0] != "--for" or args[1] not in ("lead", "user"):
+            sys.exit("work-record update_record: project ready takes <id> --for lead|user.")
+        found["status"], found["exit"] = "green", args[1]
+    elif verb == "stuck":
+        if args: sys.exit("work-record update_record: project stuck takes only <id>.")
+        found["status"], found["exit"] = "red", "agent"
+    elif verb == "blocked":
+        if len(args) != 2 or args[0] != "--on" or args[1] not in ("lead", "user"):
+            sys.exit("work-record update_record: project blocked takes <id> --on lead|user.")
+        found["status"], found["exit"] = "red", args[1]
+    elif verb == "advance":
+        if len(args) != 2 or args[0] != "--to" or args[1] not in ("PLANNING", "BUILDING", "LANDING", "DONE"):
+            sys.exit("work-record update_record: project advance takes <id> --to PLANNING|BUILDING|LANDING|DONE.")
+        found["stage"] = args[1]
+    elif verb in ("backlog", "resume"):
+        if args: sys.exit("work-record update_record: project %s takes only <id>." % verb)
+        before["disposition"] = found.get("disposition", "active")
+        found["disposition"] = "backlog" if verb == "backlog" else "active"
+        if verb == "backlog" and isinstance(d.get("at"), dict) and d["at"].get("project") == project_id:
+            d.pop("at", None)
+            focus_changed = True
+    elif leg_edit:
         where, value = leg_edit; stage, dot, index = where.partition(".")
         rung = next((r for r in found.get("ladder", []) if isinstance(r,dict) and r.get("stage") == stage), None)
         if rung is None:
@@ -259,6 +321,7 @@ stages={"IDEAS","PLANNING","BUILDING","LANDING","DONE"}; exits={"none","agent","
 for p in projects:
     if not isinstance(p,dict) or not all(isinstance(p.get(k),str) for k in ("id","title","objective")): sys.exit("work-record update_record: invalid project shape.")
     if p.get("stage") not in stages or p.get("exit") not in exits or p.get("status") not in statuses: sys.exit("work-record update_record: invalid project stage, exit or status.")
+    if p.get("disposition", "active") not in ("active", "backlog"): sys.exit("work-record update_record: invalid project disposition.")
     if not isinstance(p.get("ladder"),list) or not isinstance(p.get("evidence"),list): sys.exit("work-record update_record: invalid project ladder or evidence.")
     for rung in p["ladder"]:
         if not isinstance(rung,dict) or rung.get("stage") not in stages: sys.exit("work-record update_record: invalid project ladder stage.")
@@ -267,7 +330,23 @@ for p in projects:
             if not isinstance(leg,dict) or not isinstance(leg.get("title"),str) or ("done" in leg and not isinstance(leg["done"],bool)): sys.exit("work-record update_record: invalid project leg.")
 block=json.dumps(d, indent=2, ensure_ascii=False); tmp=src+".project"
 open(tmp,"w").write(text[:m.start(1)]+block+text[m.end(1):]); os.replace(tmp,src)
-print("work-record update_record: project %s %s." % (project_id, "created" if verb == "create" else "updated"))
+if verb in ("working", "ready", "stuck", "blocked", "advance"):
+    changed = ["%s=%s" % (k, found[k]) for k in ("stage", "status", "exit") if before[k] != found[k]]
+    preserved = ["%s=%s" % (k, found[k]) for k in ("stage", "status", "exit") if before[k] == found[k]]
+    next_cmd = "work-record project read %s" % project_id
+    print("Project %s updated; changed: %s; preserved: %s; holder: @%s; next: %s. Remember to update your project." %
+          (project_id, ", ".join(changed) or "none", ", ".join(preserved) or "none", holder, next_cmd))
+elif verb in ("backlog", "resume"):
+    focus = "cleared" if focus_changed else "unchanged"
+    if verb == "backlog":
+        print("Project %s is now off the active table; disposition: backlog; holder: %s; focus: %s. Remember to update your project." % (project_id, holder, focus))
+    else:
+        print("Project %s returned to the active table at %s; disposition: active; holder: %s; focus unchanged: %s. Remember to update your project." % (project_id, found["stage"], holder, (d.get("at") or {}).get("project", "none")))
+else:
+    if verb == "create":
+        print("Project %s created in your work record; stable id: %s; holder: %s; next: work-record project read %s. Remember to update your project." % (project_id, project_id, holder, project_id))
+    else:
+        print("work-record update_record: project %s updated." % project_id)
 PROJECT
   exit 0
 fi

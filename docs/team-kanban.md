@@ -13,6 +13,12 @@ Agent-authored creation. Bare legacy ladders remain readable by the work-record 
 do not become phantom board cards. See [work records and projects](work-record.md) for the
 canonical project shape, stages, ladder, exit, and status flags.
 
+Ideas is not backlog and return is not an off-table operation. Backlogged projects retain
+their holder and authored state, are excluded from the five active columns, and appear in
+the Task manager's separate backlog list. Team Kanban remains available only while Ronin
+Services is running and its Task manager/Kanban component is enabled. Free Cowork work
+records and project tools still read and write disposition without it.
+
 ## Landing is derived
 
 Planning and Building reflect the authored project. Landing and Done also use repository
