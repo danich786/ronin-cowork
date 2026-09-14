@@ -136,6 +136,7 @@ test('Register presents one open profile flow with card choices and anonymous de
   for (const name of ['email', 'own_words']) assert.match(source, new RegExp(`name = '${name}'|input\\('${name}'`));
   for (const name of ['identity_mode', 'kind', 'preferred_feature', 'run_location']) assert.match(source, new RegExp(`choiceGroup\\('${name}'`));
   assert.match(source, /const question = ask\(/);
+  assert.equal((source.match(/exposed: true/g) || []).length, 2, 'Register asks ERABI to expose both choice and checklist selectors');
   assert.match(source, /key: name, label: short \|\| t\('ask\.answer', 'Answer'\), many: multiple, options:/, 'the head carries the question; the stone carries a short noun, never the question again');
   assert.match(source, /key: name, label: short \|\| t\('ask\.answer', 'Answer'\), many: true, options:/);
   for (const key of ['identity_short', 'kind_short', 'preferred_feature_short', 'reasons_short', 'run_location_short']) assert.match(source, new RegExp(`short: t\\('setup_surface\\.${key}'`), `${key} names the stone`);
