@@ -14,15 +14,19 @@ Each stage below names the shared record or capability involved. Selected capabi
 documents teach the concrete tools; this method keeps the durable cross-session choices
 without duplicating executable instructions.
 
+A capability bundle is a knowledge layer, not an authority layer. Bundle selection changes
+what the Build Brief teaches and emphasizes; it never grants, withholds, authorizes, or
+forbids an installed tool or its `--help`.
+
 ## The lifecycle
 
 ### 1. Open the session in public
 
-Set the ladder (tegami) before work begins: one objective in the owner's words, a short
-ladder, one active rung, and the session job. Keep it current whenever the active rung or
-the shape of the work changes, and list every live working document (`list-doc`) so the
-owner can open it without asking you for a path. Tegami is the visible status of the
-session; it is not the plan, a transcript, or a second build-out document.
+Set the ladder with `work-record update_record`: one objective in the owner's words, a
+short ladder, one active rung, and the session job. Keep it current whenever the active
+rung or shape changes, and list every live document with `work-record document add` so the
+owner can open it without asking for a path. `work-record read` returns the visible status;
+the work record is not the plan, a transcript, or a second build-out document.
 
 A gate is how you ask for the owner. Put one wherever the work genuinely stops and needs a
 person, and wait at it — that is the mechanism, and it is better than a question in prose
@@ -44,23 +48,17 @@ The exact document contract lives in `ronin_library/documents.md`.
 
 ### 3. Coordinate through shared edges
 
-**`+forkit` — give the work its own session.** Delegating inside a session is the
-provider's own business and it is good at it: a native subagent is this session's
-execution, invisible to everyone else, and it dies with the answer it hands back. Ronin
-has no opinion on when you use one. A fork is a different request, and it is the one thing
-here that no provider has natively — it opens a **Ronin session**: on the roster, its own
-tile, its own ladder, its own life, addressable by name long after this conversation ends.
-Spawning a subagent therefore does not answer a request to fork, and saying it did is the
-failure this rule exists for — nothing appeared for anyone to watch, message, or land.
+**Visible delegation — give the work its own session.** “Fork”, “fork it”, “launch”, and
+“new session” all mean the universal `session_create` command: a **Ronin session** on the
+roster, with its own tile, ladder, and life, addressable by name after this conversation
+ends. “Spawn” alone means a CLI-internal sub-agent, invisible to the coworkspace and ending
+with its answer; explicitly ask the owner for permission before spawning it.
 
-Fork when the work has a track of its own: it will outlive this conversation; someone will
-want to look in on it or send it something; it deserves its own ladder rather than a rung
-on yours; or carrying it here would pull this session off its objective. The handoff is
-written first (`write-handoff-doc`), because a fork opens by proving it understood the
-brief and then waiting, not by working. **Never fork on your own initiative** — propose
-it and wait for the go-ahead.
+`session_create <name> --prompt` carries the visible session's explicit purpose. The
+newborn receives resolved Campaign/Team context—not this conversation—reads its own birth
+packet, and leaves the caller unchanged. The command has no dial option.
 
-**`+tell` — one message to one session.** `send-to-session` carries the rules: the dial on
+**`edges send` — one message to one session.** `edges send` carries the rules: the dial on
 the **target** governs, not yours; a refusal is an answer, never retried and never worked
 around; a person's unsent draft is never typed over; and the message opens by saying who
 it is from, or the other end answers the wrong person. It is one message and not a
@@ -68,25 +66,25 @@ conversation — the reply lands in that session's own tile, where the owner rea
 Relaying it back through here makes this session a switchboard and hides which agent
 said what.
 
-**`+wipeboard` — the group's shared thread.** Use it when several sessions are working one
+**`edges wipeboard` — the group's shared thread.** Use it when several sessions are working one
 problem and the record should be common rather than routed through the owner.
-`wipeboard-post` is append-only: read before posting so you answer what is there, never
+`edges wipeboard post` is append-only: read before posting so you answer what is there, never
 rewrite another agent's words, never edit the Brief, and never enrol anyone — membership
 is the owner's hand. A post notifies every other member, so it is heard rather than waited
 on — which is exactly why you never post merely to acknowledge. Five "got it"s is how a
 board turns into noise. A notice arriving in your own pane is the board speaking, not the
-owner. When you need one particular session to *act*, `+tell` it.
+owner. When you need one particular session to *act*, use `edges send`.
 
-**`+read` / `+readwrite` — catching up on another session.** Read its **transcript**, not
+**`edges read` — catching up on another session.** Read its **transcript**, not
 its pane. A pane is a window: it shows whatever happens to be on screen at the moment you
 looked, so an agent polling one is watching, not reading, and everything that scrolled is
 simply gone. The transcript is the record, and you take as much of it as the question
-needs. `read-letter` answers the other question — where that session is on its ladder, in
-its own words. `+read` needs the dial at read; `+readwrite` needs write; and an agent
-never flips a dial to get either.
+needs. `work-record read --session <name>` answers the other question—where that session
+is on its ladder, in its own words. `edges read` follows the target's Control value, and
+an Agent never changes that value to obtain a different result.
 
 The dial is checked before any of this, and it is checked on the session you are reaching
-for. Tegami answers *where that session is*; its transcript answers *what it has been
+for. The work record answers *where that session is*; its transcript answers *what it has been
 doing*; the build-out answers *what remains*; the wipeboard answers *what the group just
 learned*.
 
@@ -140,7 +138,8 @@ agent. A Ronin repository under the direct arrangement instead publishes to its 
 Finishing the work of a session, before it ends, leaves no essential knowledge in a pane
 or in `wip/`:
 
-- delete the work's build-out and handoff documents, and take them off the tegami list;
+- delete the work's build-out and handoff documents, and remove them with
+  `work-record document remove`;
 - write or update a state-as-is page in `docs/`, or the README beside the thing, saying
   what exists and how it works now;
 - add the single manifest pointer when the project uses a manifest — one line, an index

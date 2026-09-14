@@ -1,14 +1,10 @@
 /**
- * THE DESK KIT FOLLOWS THE ASSIGNMENT, NOT THE BIRTH ROOT. An Agent born in a checkout
+ * DESK KNOWLEDGE FOLLOWS THE ASSIGNMENT, BUT THE TOOL IS UNIVERSAL. An Agent born in a checkout
  * (a lab of documents) whose Team has ticked a managed repository is assigned a desk
  * there, and its brief says "Get, update, and hand in through worktree-desk". The command
- * projection must therefore carry `worktree-desk` for that Agent —
- * otherwise the brief names a tool the Agent cannot type (measured 2026-09-13 on three
- * Agents born in `lab` with a `ronin_cowork` desk: no desk tool on PATH).
- *
- * Fails today by design: `conditional_tools` in src/spawn.ts keys the desk kit on the
- * BIRTH root being the managed repository. The resolver hunk is bundle_brief's; this test
- * is the finding. Real git in a temp dir, every store redirected; no tmux, no socket.
+ * capability is selected as teaching there. The shipped `worktree-desk` executable is a
+ * Cowork tool and remains callable even when no managed desk selects that teaching.
+ * Real git in a temp dir, every store redirected; no tmux, no socket.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -76,12 +72,14 @@ test('an Agent born in a checkout with a managed desk is projected the desk kit'
   assert.deepEqual(resolved.assignment?.desks.map((desk) => desk.repo), ['cowork'], 'assigned one desk in the managed repository');
   assert.ok(resolved.work_locations.some((row) => row.repo === 'cowork' && row.mode === 'managed'), 'the desk is a managed location');
   assert.match(resolved.brief, /hand in through worktree-desk/, 'the brief tells the Agent to use the desk tool');
-  assert.ok(resolved.conditional_tools.includes('worktree-desk'), `the brief's desk tool is projected: ${JSON.stringify(resolved.conditional_tools)}`);
-  assert.equal(resolved.conditional_tools.filter((tool) => tool === 'worktree-desk').length, 1, 'one executable carries the whole desk kit');
+  assert.equal(resolved.capabilities.find((row) => row.name === 'worktree-desk')?.selected, true, 'managed work selects desk teaching');
+  assert.ok(resolved.capability_tools.includes('worktree-desk'), `the Cowork desk tool is projected: ${JSON.stringify(resolved.capability_tools)}`);
+  assert.equal(resolved.capability_tools.filter((tool) => tool === 'worktree-desk').length, 1, 'one executable carries the whole desk kit');
 });
 
-test('an Agent born in a checkout with no desk is projected no desk kit', async () => {
+test('an Agent born in a checkout with no desk still receives the Cowork desk tool without its teaching', async () => {
   const resolved = await resolveForm({ project_root: 'lab', prompt: 'Read the papers.' }, new Set());
   assert.equal(resolved.assignment, null);
-  assert.deepEqual(resolved.conditional_tools, []);
+  assert.equal(resolved.capabilities.find((row) => row.name === 'worktree-desk')?.selected, false, 'no managed work means no desk teaching');
+  assert.ok(resolved.capability_tools.includes('worktree-desk'), 'work context does not withhold an installed Cowork tool');
 });

@@ -100,7 +100,6 @@ test('every agent-facing API caller connects through the one library and carries
     'session_check',
     'session_create',
     'session_end',
-    'session_fork',
     'session_restore',
     'session_set',
     'show',
@@ -149,8 +148,8 @@ test('a shell caller reaches the operator over its socket with no token and no P
   }
 });
 
-test('absolute session_fork invocation resolves its sibling with no Ronin PATH entries', () => {
-  const r = spawnSync(path.join(root, 'ronin_bin', 'session_fork'), ['--name', 'path-proof'], {
+test('absolute session_create invocation resolves its sibling with no Ronin PATH entries', () => {
+  const r = spawnSync(path.join(root, 'ronin_bin', 'session_create'), ['path-proof'], {
     encoding: 'utf8',
     env: { PATH: '/usr/bin:/bin', RONIN_URL: 'http://127.0.0.1:9' },
   });
