@@ -87,6 +87,7 @@ function createRegisterSurface(context) {
     const listeners = [];
     const question = ask([{ group: label, fields: [{ key: name, label: short || t('ask.answer', 'Answer'), many: multiple, options: choices.map(([key, text, description = '']) => ({ v: key, l: text, sub: description })) }] }], {
       value: { [name]: selected },
+      exposed: true,
       onChange: (next) => { selected = next[name]; value.value = multiple ? JSON.stringify(selected) : selected; for (const listener of listeners) listener(selected); },
     });
     question.el.classList.add('setup-register-bounded');
@@ -98,6 +99,7 @@ function createRegisterSurface(context) {
     let selected = [];
     const question = ask([{ group: label, fields: [{ key: name, label: short || t('ask.answer', 'Answer'), many: true, options: choices.map(([value, text]) => ({ v: value, l: text })) }] }], {
       value: { [name]: selected },
+      exposed: true,
       onChange: (next) => { selected = next[name]; other.hidden = !selected.includes('something_else'); if (!other.hidden) other.focus(); },
     });
     const wrap = el('div', 'setup-register-checklist'); wrap.append(question.el, other);
