@@ -421,23 +421,15 @@ kill, and it used to stay lit and say nothing about why pressing it did nothing.
 **Locked** is key-for-key to the host: every keystroke round-trips to the tmux terminal
 exactly as `tmux attach` always did.
 
-**^C never reaches the pane.** Typed into a terminal it walks the agent out of its pane and
-takes the tmux session with it — an ending with no confirmation and no way back. So the tile
-holds it and raises the retire sheet instead (Archive · Delete · Hard Delete), the same sheet
-× raises. Held before the locked/unlocked split, because the DVR rule would otherwise pass it
-straight through as a command key; and held only while the tile has a session, so an empty
-tile is unchanged. A held ^C repeats, and the sheet takes focus as it opens — `kill()` finds
-an existing `endsession-<instance>` node and declines, so a repeat cannot stack a second sheet.
-The instance token is not the tile's display index: hosted tiles commonly share index `0`, and
-one Agent's open retirement boundary must not suppress another's.
-
-**Interrupting is still there**, by a route that cannot be a slip: the `^C` button on the keys
-row (`keysrow.js`) and a pad key bound to `int` (`pad.js`) both hand `\x03` to `sendRaw`, which
-is downstream of the guard.
+**Controls have one owner.** [Terminal controls](terminal-controls.md) defines Copy,
+Clear, Close and Stop, their configurable browser shortcuts, the pinned Hints card,
+and desktop/mobile behavior. `public/js/terminal-controls.js` intercepts gestures;
+`src/agents.ts` translates intents to native CLI commands. Provider identity is stored
+with the session. No busy-screen classifier is consulted by a control.
 
 **Unlocked** is the DVR rule (`public/js/dvr.js`, pure and tested). Printable text — typed or
 pasted — **parks locally** and shows in a thin strip over the tile. Command keys (Esc, arrows,
-Tab, any control char bar the ^C held above) go straight through immediately. Enter sends the whole parcel
+Tab, and control characters not claimed by the shared controls) go straight through immediately. Enter sends the whole parcel
 as **one atomic write with the `\r` glued on**; a delayed `\r` on a timer is a message iOS can
 lose halfway. Backspace eats parked text first, and is a command key once the strip is empty.
 
@@ -464,47 +456,9 @@ Retained server messages remain visible in Messages. See [message delivery](mess
 
 ### Copying out
 
-**Unlocked — just select it.** The transcript is a plain div. Native selection, native ⌘C,
-native find-in-page. This is the answer to "how do I copy from a tile", and it is why the
-lock tooltip says so in capitals.
-
-**Locked — hold the modifier, drag, then ⌘C / Ctrl-C.** And **the modifier is not the same
-key everywhere**:
-
-| Platform | Key |
-|---|---|
-| macOS | **⌥ Option** |
-| Windows · Linux · everything else | **⇧ Shift** |
-
-That is xterm's own rule, not ours (`SelectionService.shouldForceSelection`, 5.5.0):
-`isMac ? altKey && macOptionClickForcesSelection : shiftKey`. Ronin mirrors it in one place —
-`IS_MAC` / `SELECT_MOD` / `forcesSelection` in `public/js/state.js` — deliberately copied
-rather than improved, because a test that disagrees with xterm names the wrong key.
-
-**Why a plain drag looks like it worked and did not.** Every viewer session is created with
-tmux `mouse on` (`src/tmux.ts:511`). Without the modifier, the drag is forwarded as mouse
-escapes: tmux enters copy-mode, highlights under your cursor, and copies to the **paste
-buffer on the host**. The browser never saw a selection and your clipboard is untouched. You
-watched text highlight, so you press ⌘C and get whatever was there before.
-
-**The hint.** A real drag (>8px) in a locked tile that leaves `getSelection()` empty raises a
-one-line prompt naming the key — `wireCopyHint`, `public/js/termview.js`. Once per tile,
-re-arming after ten minutes. The test is *"they tried and got nothing"* rather than *"is
-mouse reporting on"*: it is the honest condition, and it catches causes we have not met yet.
-
-**The ⌘C itself.** xterm draws to a canvas, so the browser's native copy cannot see the
-selection; a `copy` listener (`public/js/layout.js`) feeds it the captured terminal text. The
-selection is **stashed the moment it is made** (`S.lastSelection`), because a streaming TUI
-repaint can clear the visible highlight before ⌘C fires. The hijack only engages when there
-is a selection, so an ordinary page copy still works.
-
-**HTTPS is not required for any of this**, and never was. The copy path is the `copy` event
-plus `clipboardData.setData()`, which is not secure-context gated. What does need a secure
-context: the 🎤 (`getUserMedia`), and `navigator.clipboard.writeText` in the keypad panel —
-which falls back to `execCommand` anyway. `setup.sh` used to say "HTTPS needed for clipboard";
-it was wrong, and it sent people looking for a certificate when the answer was a modifier key.
-
-The old Copy Mode toggle is retired. One way to copy, any pane, locked or unlocked.
+[Terminal controls](terminal-controls.md#copy-while-locked) owns Copy, native selection,
+per-Tile selection retention and the locked/mobile snapshot. `TermView` keeps the
+xterm selection bridge; `terminal-controls.js` owns the shared action.
 
 ### Pasting in
 
@@ -539,21 +493,12 @@ User-Agent and always at `/m` (`src/index.ts`). Three screens, one at a time: th
 list, a Team's **Agents | Docs**, and one Agent's tile. On the tile the head is hidden and
 the document's slim bar replaces it — ‹ back, the Agent's title, and one メ sheet holding
 the head's own controls (Work record, Docs, session picker, Output where Services allow, Note,
-Control, Kill), **relocated, not cloned**, so every handler and live widget keeps its owner.
+Control, Close), **relocated, not cloned**, so every handler and live widget keeps its owner.
 
-**The keys ride the composer on every coarse tile** — phone shell and iPad workbench
-alike (`public/js/keysrow.js`): Esc, ^C, ⌫, ^U, Tab, ⇧Tab, the arrows and ⤓, docked
-directly above the box they drive, lifting over the software keyboard with it. They act
-on that tile's own session, never "the active tile". The two clearing keys are there
-because the agents disagree about their own in-pane box — Esc empties Claude's, ^U
-(readline kill-line) empties a readline-shaped composer such as Codex's — and they are
-generic terminal keys on purpose: providers ship remappable keymaps, so a hardcoded
-per-provider key would be a guess with an expiry date. **Ronin's own box clears
-uniformly**: Esc from a hardware keyboard empties the composer (an already-empty box
-passes Esc through as a command key, the bare-Enter rule), and a ✕ appears on the box
-whenever it holds text. On a box with no tape service the composer
-(and the row) rides the locked mirror too on coarse tiles — it is the only input path a
-touch screen has — and the body's padding keeps the CLI's own input line clear of it.
+The navigation row (`public/js/keysrow.js`) supplies Backspace, Tab, Shift-Tab,
+arrows and Jump to latest. Stop, Clear, Close and Copy use the same action row and
+[Hints](terminal-controls.md) as desktop. No raw interrupt/clear aliases remain in
+this row. The composer remains available on locked coarse Tiles without Services.
 
 The one-row hoisted phone header, the keys drawer, the ニ sheet and the header's
 `.ctrls` keys are all retired with this; `tiledrop.js` keeps only `isCoarse` and

@@ -17,6 +17,7 @@ export interface ArchivedSession {
   archived_at: string;
   cwd: string;
   agent: ResumableProvider;
+  identity?: import('./tmux.js').SessionIdentity;
   provider_session_id: string;
   tags: string[];
   leads: string[];

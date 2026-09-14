@@ -1,6 +1,7 @@
 /* part of the ronin-cowork client — see js/README.md */
-import { IS_TOUCH, SELECT_MOD, WHEEL_DOWN, WHEEL_UP, forcesSelection } from './state.js';
+import { IS_TOUCH, WHEEL_DOWN, WHEEL_UP, forcesSelection } from './state.js';
 import { termFace, termTheme } from './theme.js';
+import { flashControlHints } from './terminal-controls.js';
 import { t } from './lexicon.js';
 import { terminalOwnsTarget, wireTerminalInput } from './terminal-input.js';
 
@@ -28,7 +29,7 @@ export class TermView {
       //
       // MAC ONLY, and that is xterm's option, not a choice of ours: its rule is
       // `isMac ? altKey && macOptionClickForcesSelection : shiftKey`, so off-Mac the key
-      // is Shift and no flag gates it. `wireCopyHint` below names whichever applies.
+      // is Shift and no flag gates it. the shared Hints card names whichever applies.
       macOptionClickForcesSelection: true,
     });
     this.fitAddon = new FitAddon.FitAddon();
@@ -119,17 +120,9 @@ export class TermView {
 
   wireCopyHint(hooks) {
     if (IS_TOUCH) return;
-    const REARM_MS = 10 * 60 * 1000;
     const MOVED_PX = 8; // below this it is a click, not an attempt to select
 
-    const hint = document.createElement('div');
-    hint.className = 'copyhint';
-    hint.textContent = t('term.copy_hint', 'Trying to copy? Hold {mod} while you drag, then ⌘C.', { mod: SELECT_MOD });
-    this.body.appendChild(hint);
-
     let from = null;
-    let shownAt = -Infinity;
-    let timer = null;
 
     this.body.addEventListener('mousedown', (e) => {
       from = null;
@@ -148,18 +141,7 @@ export class TermView {
       if (!start) return;
       if (Math.abs(e.clientX - start.x) < MOVED_PX && Math.abs(e.clientY - start.y) < MOVED_PX) return;
       if (this.getSelection()) return; // they got a selection — nothing went wrong
-      if (Date.now() - shownAt < REARM_MS) return;
-      shownAt = Date.now();
-      // TWO marks, because one in a corner is missable on a screen where something is
-      // always moving: the pill says the words, and the tile's own edge flashes kaki
-      // behind it so peripheral vision catches it even while you are reading elsewhere.
-      hint.classList.add('show');
-      this.body.classList.add('hinting');
-      clearTimeout(timer);
-      timer = setTimeout(() => {
-        hint.classList.remove('show');
-        this.body.classList.remove('hinting');
-      }, 5000);
+      flashControlHints();
     });
   }
 

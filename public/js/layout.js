@@ -142,20 +142,10 @@ export function build() {
   );
 
   if (IS_TOUCH) {
-    // COPY MODE IS GONE. It existed because the only tape-less surface was an xterm
-    // CANVAS, which cannot be touch-selected — so the visible text was copied into a
-    // <textarea> panel to select out of. The unlocked tile renders a real div of text
-    // and touch is always unlocked, so long-press → Copy works on the transcript
-    // itself. On desktop the mirror still answers to modifier+drag + ⌘C (Option on a Mac,
-    // Shift elsewhere — SELECT_MOD in js/state.js).
-
-    // The keys the iOS keyboard can't send (Esc, ^C, Tab/⇧Tab, arrows) ride every
-    // coarse tile's composer now — js/keysrow.js, zero taps away — so the bar keeps
-    // no keypad, no keys drawer and no ニ sheet. What is left to do here is trim the
-    // desktop chrome off the bar.
+    // Locked touch copying is provided by the shared Copy action's text snapshot.
     guard('touch bar', trimBarForTouch);
   } else {
-    // Copy = hold the force-selection modifier and drag, then ⌘C / Ctrl-C. The modifier
+    // Copy = hold the force-selection modifier and drag, then native ⌘C / Ctrl+C. The modifier
     // is Option on a Mac and SHIFT everywhere else — xterm's own rule, mirrored in
     // Windows and Linux with nothing. Either way it forces a native selection over a
     // mouse-grabbing app or tmux mouse mode. The old Copy Mode toggle is retired — one
@@ -169,8 +159,8 @@ export function build() {
       // ordinary field) even though the browser had a perfectly good native selection.
       const fromTerminal = e.target instanceof Element && e.target.closest('.xterm');
       if (!fromTerminal) return;
-      const live = S.active && S.active.term.getSelection ? S.active.term.getSelection() : '';
-      const sel = live || S.lastSelection;
+      const owner = tiles.find((tile) => tile.el.contains(e.target));
+      const sel = owner?.term.getSelection() || owner?.lastSelection;
       // Only hijack ⌘C when the terminal actually has a selection; otherwise let the
       // browser copy normally. Works whether the selection came from Copy Mode (mouse
       // off) or a modifier+drag over a mouse-grabbing app.

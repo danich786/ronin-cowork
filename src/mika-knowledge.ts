@@ -179,7 +179,7 @@ function renderIndex(nodes: MikaTaxonomyNode[], entries: Array<MikaSourceEntry &
   for (const node of nodes) {
     lines.push('', `## ${node.label}`);
     for (const entry of entries.filter((row) => row.node === node.id)) {
-      lines.push(`- \`${entry.id}\` · **${entry.title.replace(/[*`]/g, '')}** · \`${entry.ref}\``);
+      lines.push(`- **${entry.title.replace(/[*`]/g, '')}** · \`${entry.ref}\``);
       lines.push(`  ${capUtf8(entry.fullPreview ?? entry.preview, previewBytes)}`);
     }
   }
