@@ -17,7 +17,6 @@ const project = {
   stage: 'BUILDING',
   exit: 'user',
   status: 'green',
-  disposition: 'active',
   ladder: [
     { stage: 'PLANNING', legs: [{ title: 'Plan agreed', done: true }] },
     { stage: 'LANDING' },
@@ -31,12 +30,6 @@ test('the canonical project shape keeps every authored field and has no owner ma
   assert.deepEqual(PROJECT_EXITS, ['none', 'agent', 'lead', 'user']);
   assert.deepEqual(PROJECT_STATUSES, ['green', 'yellow', 'red']);
   assert.equal('owner' in normalizeProject(project)!, false);
-});
-
-test('a legacy project without disposition reads active and a stated invalid disposition is absent', () => {
-  const { disposition: _omitted, ...legacy } = project;
-  assert.equal(normalizeProject(legacy)?.disposition, 'active');
-  assert.equal(normalizeProject({ ...project, disposition: 'parked' }), null);
 });
 
 test('malformed projects are absent instead of becoming partial cards', () => {
@@ -59,11 +52,17 @@ test('the house places and returns whole projects and notices only after each re
   const notify = async (_session: string, text: string) => { notices.push(text); };
 
   const placed = await moveTegamiProject({ direction: 'place', session: 'worker', project }, notify);
-  assert.deepEqual(placed, { project, projectsRemaining: 1 });
+  assert.deepEqual(placed, { project, projectsRemaining: 1, focus: project.id });
   assert.deepEqual(notices, ['check your work record']);
   assert.match(await fs.readFile(file, 'utf8'), /"objective": "keep"/);
 
+  const other = { ...project, id: 'virtual-kanban/8', title: 'Next' };
+  await moveTegamiProject({ direction: 'place', session: 'worker', project: other }, notify);
+  const current = await fs.readFile(file, 'utf8');
+  await fs.writeFile(file, current.replace(/"ladder": \[\]/, `"at": {"project":"${project.id}","rung":2,"leg":1}, "ladder": []`));
   const returned = await moveTegamiProject({ direction: 'return', session: 'worker', projectId: project.id }, notify);
-  assert.deepEqual(returned, { project, projectsRemaining: 0 });
-  assert.deepEqual(notices, ['check your work record', 'check your work record']);
+  assert.deepEqual(returned, { project, projectsRemaining: 1, focus: other.id });
+  const body = JSON.parse((await fs.readFile(file, 'utf8')).match(/```json\n([\s\S]*?)\n```/)![1]);
+  assert.deepEqual(body.at, { project: other.id });
+  assert.deepEqual(notices, ['check your work record', 'check your work record', 'check your work record']);
 });

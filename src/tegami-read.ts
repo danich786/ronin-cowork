@@ -155,7 +155,6 @@ export async function readTegami(name: string): Promise<Tegami | null> {
       stage: 'BUILDING',
       exit: ladder.some((rung) => rung.gate !== undefined) ? 'user' : 'none',
       status: 'yellow',
-      disposition: 'active',
       ladder: [{
         stage: 'BUILDING',
         legs: ladder.flatMap((rung) => rung.gate !== undefined
@@ -165,8 +164,7 @@ export async function readTegami(name: string): Promise<Tegami | null> {
       evidence: [],
     };
     const projects = legacyProject ? [legacyProject] : authoredProjects;
-    const activeProjects = projects.filter((item) => item.disposition === 'active');
-    const project = activeProjects.find((item) => item.id === at?.project) ?? activeProjects[0] ?? null;
+    const project = projects.find((item) => item.id === at?.project) ?? projects[0] ?? null;
     const state = String(b.ladder_state ?? '').trim().toLowerCase();
     const off = state && state !== ON_TRACK ? state : '';
     return {

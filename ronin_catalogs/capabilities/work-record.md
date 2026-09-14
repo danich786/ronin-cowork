@@ -21,7 +21,9 @@ and held-project create/read/write.
 | `work-record project create` | create: one complete project with a Team-issued ID | priority | `work-record --help` |
 | `work-record project read` | read: one held project | priority | `work-record --help` |
 | `work-record project write` | write: one held project's typed fields | priority | `work-record --help` |
-| `work-record project return` | write: move one held project whole back to Team Ideas | priority | `work-record project --help` |
+| `work-record project return` | write: move one held project whole to Team Inbox | priority | `work-record project --help` |
+| `work-record project backlog` | write: move one held project whole to Team Backlog | priority | `work-record project --help` |
+| `work-record project done` | write: move one held project whole to Team Done | priority | `work-record project --help` |
 | `work-record read` | read: the current work record | | `work-record --help` |
 | `work-record document list` | read: listed documents | | `work-record --help` |
 | `work-record document remove` | write: remove Docs visibility | | `work-record --help` |
@@ -71,6 +73,6 @@ next move; `blocked <id> --on lead|user` means red and names who must act; `adva
 --to <stage>` changes only the stage. No verb advances a project because a receipt,
 message, drag, or acknowledgement appeared.
 
-`backlog <id>` takes a held project off the active table without moving its holder or
-changing its stage or flags; `resume <id>` returns it at the same stage. Ideas and return
-are not backlog.
+`return`, `backlog`, and `done` move one held Project whole to Team Inbox, Backlog, or Done.
+The Team can restore Backlog or Done to Inbox and assign Inbox to an Agent. These moves do
+not rewrite the Project's authored state.

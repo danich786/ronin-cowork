@@ -51,6 +51,6 @@ test('with no lead, the reply is one plain sentence', () => {
 test('a lead reply is visibly bound to its hand-in receipt', () => {
   assert.equal(
     replyMessage('hi_123', 'comps', 'split the oversized module and hand in again'),
-    'lead reply on hand-in hi_123 from comps: split the oversized module and hand in again',
+    'lead reply on hand-in hi_123 from comps: split the oversized module and hand in again. Remember to update your project.',
   );
 });
