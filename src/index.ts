@@ -56,7 +56,7 @@ import { handlePty } from './ws/pty.js';
 import { originAllowed, allowedOrigins } from './ws/origin.js';
 import { DocumentPathError, legacyDocumentPath, readDocumentFile, saveDocumentFile } from './document-file.js';
 import { checkTmuxServerCgroup } from './host-guard.js';
-import { sockets, startBootHooks, stopBootHooks, mountServiceRoutes, noteService, noteServiceFailure, noteServiceParked } from './sockets.js';
+import { sockets, startBootHooks, stopBootHooks, mountServiceRoutes, noteService, noteServiceCapabilityPlan, noteServiceFailure, noteServiceParked } from './sockets.js';
 import { discoverParts, partsToLoad } from './parts.js';
 import { initialCampaign } from './campaigns.js';
 import { listInstallations } from './resource-adapters.js';
@@ -255,6 +255,7 @@ const plan = partsToLoad(
   startupCampaign?.config?.installations ?? {},
   startupCampaign?.config?.services?.parts ?? {},
 );
+noteServiceCapabilityPlan(plan.capabilities);
 for (const parked of plan.parked) {
   console.log(`[services] ${parked.name} is parked: ${parked.reason ?? `${parked.installation} is off for this Campaign (restart after switching it on)`}`);
   noteServiceParked(parked.name, parked.installation, parked.reason);
