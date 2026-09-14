@@ -40,21 +40,16 @@ not duplicate them. Read-only Team enumeration belongs to `edges team`.
 | Team project create, read, write | projects the Team holds before they are assigned; lead ideas live in the Team roster, not in a separate file or pool |
 | Assign and return | the two lead moves: assign a held project whole to one Agent; take one back from an Agent's record. A project is one canonical object and is never copied |
 | Member and project status | each member's work record and each project's two flags — `exit` (none · agent · lead · user) and `status` (green · yellow · red) — as the Team Kanban projects them at read time |
-| Supporting-Agent configuration | delegate visibly with universal `session_create`, then inspect and configure Team, lead, or project-root state through `session_check` and `session_set` |
+| Supporting-Agent configuration | delegate visibly with universal `session_create`, then inspect and configure Team, lead, or project-root state through universal `session_check` and `session_set` |
 | Team broadcasts | the wipeboard for everything the whole Team must see; one-on-one goes directly to the session |
 
 The move is the approval: there is no verdict, decider, revision counter, or history on a
 project. Parking a project for a future common pool is outside this bundle.
 
-For a lead, universal `session_create` is the default way to delegate visible work. The
-guarded `--project` form assigns a roster-held project after birth, and guarded `--lead`
-may designate the newborn as a lead; those privileges come from lead authority, not from
-a duplicate command grant in this bundle.
-
-`session_create <name> --project <team/id>` composes two existing operations. Its brief
-names the project, birth happens through the ordinary resolver, and only then is the whole
-project assigned. If assignment fails after birth, it reports that partial result and does
-not claim the newborn holds the project.
+For a lead, universal `session_create` is the default way to delegate visible work. This
+conditional page teaches that use; it does not grant the command or any option. Project
+custody remains Team Project behavior: create the newborn with its explicit prompt, then
+move a roster-held project with `team-lead project assign`.
 
 Promotion is the lead's: hand-ins reach the Team line, and the lead moves the coherent Team
 line to `dev` once, on the owner's word. Never promote mid-refactor.

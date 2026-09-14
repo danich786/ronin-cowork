@@ -30,9 +30,9 @@ explicit prompt, while the ordinary resolver selects Campaign and Team launch co
 There is no dial option; creation does not change the caller, and the newborn reads its
 own resolved birth packet and prompt.
 
-Universal creation does not grant lead authority. The lead-conditional bundle documents
-the guarded `--project` and `--lead` forms; other Agents do not acquire them merely by
-receiving this command.
+Every documented `session_create` option is available through this universal tool. A
+conditional capability may teach a role-specific use, but it does not authorize, expose,
+or withhold the command or any option.
 
 ## Lifecycle boundaries
 
