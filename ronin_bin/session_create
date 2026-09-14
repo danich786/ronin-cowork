@@ -39,6 +39,7 @@ session_create — create one new Agent
 Usage:
   session_create <name> [--prompt <text>] [--team <team>] [--project <id>] [--lead]
                         [--root <path>] [--provider <provider>] [--model <model>]
+                        [--behaviour ways:<book>]…
                         [--mode manual|assisted] [--cmd <cli>]
                         [--mcp on|off] [--tags a,b] [--seed p1,p2]
 
@@ -50,7 +51,7 @@ as a partial result; it never claims the project was installed.
 Choose a current pair in one call: session_create <name> --provider <provider> --model <model>.
 The choices, availability, and defaults below are read now from the same canonical
 Campaign/provider sources as Ronin's model dropdowns; this tool keeps no model list.
-Related: session_check --help; session_set --help; session_fork
+Related: session_check --help; session_set --help
 EOF
   python3 - "$catalog" "$runtime" "$seed" <<'PY'
 import json, sys
@@ -93,7 +94,7 @@ need_value() {
 NAME="${1:-}"
 [ -n "$NAME" ] && [ "${NAME#-}" = "$NAME" ] || die "usage: session_create <name> [options]. Run session_create --help." 2
 shift
-PROMPT="" TEAM="" PROJECT="" LEAD="" ROOT="" PROVIDER="" MODE="" CMD="" MODEL="" MCP="" TAGS="" SEED=""
+PROMPT="" TEAM="" PROJECT="" LEAD="" ROOT="" PROVIDER="" MODE="" CMD="" MODEL="" MCP="" TAGS="" SEED="" BEHAVIOURS=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --prompt) need_value "$@"; PROMPT="$2"; shift 2 ;;
@@ -102,6 +103,8 @@ while [ $# -gt 0 ]; do
     --lead) LEAD=1; shift ;;
     --root|--project_root) need_value "$@"; ROOT="$2"; shift 2 ;;
     --provider) need_value "$@"; PROVIDER="$2"; shift 2 ;;
+    --behaviour|--behavior) need_value "$@"; BEHAVIOURS="${BEHAVIOURS}${BEHAVIOURS:+
+}$2"; shift 2 ;;
     --mode) need_value "$@"; MODE="$2"; shift 2 ;;
     --cmd) need_value "$@"; CMD="$2"; shift 2 ;;
     --model) need_value "$@"; MODEL="$2"; shift 2 ;;
@@ -156,7 +159,7 @@ fi
 
 CALLER=$(ronin_session_me 2>/dev/null || true)
 body=$(NAME="$NAME" CALLER="$CALLER" PROMPT="$PROMPT" TEAM="$TEAM" LEAD="$LEAD" ROOT="$ROOT" \
-       PROVIDER="$PROVIDER" MODE="$MODE" CMD="$CMD" MODEL="$MODEL" MCP="$MCP" TAGS="$TAGS" SEED="$SEED" python3 - <<'PY'
+       PROVIDER="$PROVIDER" MODE="$MODE" CMD="$CMD" MODEL="$MODEL" MCP="$MCP" TAGS="$TAGS" SEED="$SEED" BEHAVIOURS="$BEHAVIOURS" python3 - <<'PY'
 import json, os
 e = os.environ
 b = {"name": e["NAME"]}
@@ -168,6 +171,7 @@ if e["LEAD"]: b["team_lead"] = True
 if e["MCP"]: b["mcp"] = e["MCP"].lower() in ("on", "true", "1", "yes")
 for k, v in (("tags", "TAGS"), ("seed", "SEED")):
     if e[v]: b[k] = [t.strip() for t in e[v].split(",") if t.strip()]
+if e["BEHAVIOURS"]: b["behaviours"] = e["BEHAVIOURS"].splitlines()
 print(json.dumps(b))
 PY
 ) || die "BAD-ARG: could not build the request" 2

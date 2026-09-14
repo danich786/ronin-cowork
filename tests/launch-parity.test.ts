@@ -363,8 +363,7 @@ test('stated_by carries the settled launch, Team, and Campaign layers', async ()
   assert.match(inherited.stated_by.project_root[0]?.source ?? '', /team_rosters\/scratchteam\.md$/);
 
   const campaign = await resolveForm(commonsForm(), new Set());
-  assert.equal(campaign.stated_by.dial[0]?.layer, 'campaign');
-  assert.match(campaign.stated_by.dial[0]?.source ?? '', /defaults.dial/);
+  assert.deepEqual(campaign.stated_by.dial, [{ layer: 'system', source: 'src/spawn.ts' }]);
 });
 
 
@@ -419,7 +418,7 @@ test('an ordinary assisted launch starts an agent with the full brief', async ()
 
 test('team_lead is explicit and carries the lead reading', async () => {
   const lead = await resolveForm(commonsForm({ team: 'builders', team_lead: true }), new Set());
-  assert.equal(lead.dial, 'write');
+  assert.equal(lead.dial, 'read');
   assert.match(lead.brief, /teams\.md/);
 });
 
@@ -456,7 +455,7 @@ test('a name alone resolves the ordinary Cowork Agent birth', async () => {
   assert.ok(born.installations.length > 0, 'the receipt source carries every installation');
   assert.ok(!born.installations.some((installation) => installation.name === 'cowork_agent'), 'the Cowork Agent is not an installation switch');
   assert.deepEqual(born.mandate, { reach: 'plan', recruit: 'propose agents', output: ['open'] });
-  assert.equal(born.dial, 'write');
+  assert.equal(born.dial, 'read');
 });
 
 test('kind and behaviours resolve at birth, with unusable books reported as undelivered', async () => {

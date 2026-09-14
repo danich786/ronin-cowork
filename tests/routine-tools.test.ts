@@ -24,9 +24,9 @@ const routine = (name: string, enabled: boolean, tools: string[]): ResolvedContr
 
 test('birth PATH exposes enabled tools by name without inheriting a Ronin PATH', async () => {
   const projected = await projectRoutineTools('pathless', [
-    routine('ronin_base', true, ['work-record', 'session_fork', 'ronin-url']),
+    routine('ronin_base', true, ['work-record', 'session_create', 'ronin-url']),
   ], '/usr/bin:/bin');
-  for (const command of ['work-record', 'session_fork', 'ronin-url']) {
+  for (const command of ['work-record', 'session_create', 'ronin-url']) {
     const found = await exec('/bin/sh', ['-c', `command -v ${command}`], { env: { PATH: projected.path } });
     assert.equal(found.stdout.trim(), path.join(projected.dir, command), command);
   }
@@ -59,7 +59,7 @@ test('missing enabled tools are visible and do not refuse projection', async () 
  * caller broken when it was looked up by name). So each caller is run through its
  * projected symlink with only `RONIN_URL` set, and must arrive at the operator it names. */
 const REACH_FAILURES = /Cannot find module|command not found|No such file or directory|NO-REPO/;
-const URL_CALLERS = ['session_archive', 'session_fork', 'session_end', 'session_restore', 'session_check', 'session_create', 'session_set', 'team-lead', 'edges', 'mika'];
+const URL_CALLERS = ['session_archive', 'session_end', 'session_restore', 'session_check', 'session_create', 'session_set', 'team-lead', 'edges', 'mika'];
 test('projected ronin_bin tools resolve the symlink and reach the repository and the operator', async (t) => {
   const tools = [...new Set(['worktree-desk', 'edges', 'work-record', 'ronin-host', 'ronin-url', ...URL_CALLERS])];
   const projected = await projectRoutineTools('resolve', [routine('ronin_base', true, tools)]);
@@ -108,7 +108,7 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
   const helpTools = [
     'work-record', 'worktree-desk', 'edges', 'team-lead',
     'session_check', 'session_create', 'session_set', 'session_archive', 'session_restore',
-    'session_end', 'session_fork',
+    'session_end',
   ];
   for (const command of helpTools) {
     for (const flag of ['-h', '--help']) {
@@ -158,7 +158,6 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
   assert.match(teamHelp, /move an Agent/i);
   assert.match(teamHelp, /remove the old Team on that Team's page/i);
   assert.match(teamHelp, /sets? or changes? that Team's lead/i);
-  assert.doesNotMatch(teamHelp, /session_fork --help/);
   for (const args of [['edges', 'wipeboard'], ['edges', 'send'], ['work-record', 'read', '--session', 'nobody'], ['work-record', 'update_record', '--session', 'nobody', '--at', '1'], ['ronin-host', 'inspect'], ['ronin-host', 'account']]) {
     const r = await run(args);
     assert.doesNotMatch(r.out, REACH_FAILURES, `${args.join(' ')}: ${r.out}`);
@@ -166,7 +165,6 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
   // Each caller, past its own argument check, must knock on the fake operator: the only
   // way there is `$TOOL_DIR/ronin-url` resolved from the real file behind the symlink.
   const knocks: Array<[string[], string, Record<string, string>]> = [
-    [['session_fork', '--name', 'reach'], '/api/session', {}],
     [['session_archive', 'reach'], '/api/sessions/reach/archive', {}],
     [['session_end'], '/api/harakiri', { TMUX_PANE: '%0' }],
     [['session_restore', 'archive-id'], '/api/archived-sessions/archive-id/rehydrate', {}],

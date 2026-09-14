@@ -1,10 +1,8 @@
 /**
  * THE PUBLIC session_* FAMILY (ronin_bin): session_check, session_create, session_set,
- * session_fork, session_end, session_archive and session_restore are the Agent-typed names.
- * Inspection, self-management, and the four lifecycle commands reach every Cowork Agent
- * through the base contribution; creating a supporting Agent is Team Lead work, so
- * session_create is projected only by the lead-conditional capability (ruled 2026-09-13;
- * that projection is bundle_brief's), never by the base list. The tejun-session-* and old
+ * session_end, session_archive and session_restore are the Agent-typed names.
+ * Inspection, creation, self-management, and lifecycle commands reach every Cowork Agent
+ * through the base contribution. The tejun-session-* and old
  * lifecycle spellings they replaced are gone — no file, alias, or shipped reference — so
  * the old names cannot regrow through a copied example.
  * Pure filesystem reads; no tmux, no socket, no network.
@@ -16,8 +14,9 @@ import path from 'node:path';
 
 const root = path.resolve(import.meta.dirname, '..');
 const FAMILY = ['session_check', 'session_create', 'session_set'];
-const LIFECYCLE = ['session_fork', 'session_end', 'session_archive', 'session_restore'];
+const LIFECYCLE = ['session_end', 'session_archive', 'session_restore'];
 const RETIRED = [
+  'session_fork',
   'tejun-session-check', 'tejun-session-create', 'tejun-session-set',
   'tejun-fork', 'tejun-harakiri', 'tejun-archive', 'tejun-rehydrate',
   'tejun-kanban',
@@ -53,7 +52,7 @@ test('the retired session command files do not exist and no shipped surface name
   for (const name of RETIRED) {
     await assert.rejects(access(path.join(root, 'ronin_bin', name)), `${name} must not exist, even as an alias`);
   }
-  const pattern = /tejun-(?:session-(?:check|create|set)|fork|harakiri|archive|rehydrate|kanban)\b/;
+  const pattern = /(?:\bsession_fork\b|tejun-(?:session-(?:check|create|set)|fork|harakiri|archive|rehydrate|kanban)\b)/;
   const offenders: string[] = [];
   for (const dir of SHIPPED) {
     const full = path.join(root, dir);
@@ -68,14 +67,14 @@ test('the retired session command files do not exist and no shipped surface name
   assert.deepEqual(offenders, [], 'a retired name survives in a shipped file');
 });
 
-test('the base contribution projects inspection and self-management, never supporting-Agent creation', async () => {
+test('the base contribution projects the sole creation command with inspection and self-management', async () => {
   const spawn = await readFile(path.join(root, 'src', 'spawn.ts'), 'utf8');
   const base = /const CORE_CONTRIBUTION[\s\S]*?tools: \[([^\]]*)\]/.exec(spawn);
   assert.ok(base, 'the base contribution lists its tools in src/spawn.ts');
   const tools = [...base![1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
   for (const name of ['session_check', 'session_set']) assert.ok(tools.includes(name), `${name} is in the base tool list`);
   for (const name of LIFECYCLE) assert.ok(tools.includes(name), `${name} is in the base tool list`);
-  assert.ok(!tools.includes('session_create'), 'session_create is Team Lead conditional, not universal');
+  assert.ok(tools.includes('session_create'), 'session_create is the universal creation command');
   for (const name of RETIRED) assert.ok(!tools.includes(name), `${name} is not in the base tool list`);
 });
 
