@@ -178,10 +178,7 @@ export function createSetupView() {
     mikaPool.sync([MIKA_SESSION]);
     return bench?.place(TERMINAL_TYPE, 'workspace2', { key: MIKA_SESSION }) || false;
   };
-  // viewportMode was the retired presentation toggle's memory; writing undefined drops
-  // it from a stored visit so nobody stays in the stack it forced.
-  let thinSelectorCards = true;
-  const save = () => ctx?.patchViewState('setup', { ...bench.snapshot(), viewportMode: undefined, sceneOverride, selectorDensity: thinSelectorCards ? 'thin' : 'thick' });
+  const save = () => ctx?.patchViewState('setup', { ...bench.snapshot(), viewportMode: undefined, sceneOverride, selectorDensity: undefined });
   const sceneIndex = document.createElement('span');
   sceneIndex.className = 'setup-scene-index';
   sceneIndex.setAttribute('aria-label', t('setup.scenes', 'Setup scenes'));
@@ -204,19 +201,6 @@ export function createSetupView() {
     }
     sceneIndex.dataset.mode = sceneOverride === 0 ? 'auto' : 'manual';
   }
-  const densityToggle = barButton('tw-agent-density');
-  const densityLines = document.createElement('span');
-  densityLines.className = 'tw-agent-density-lines';
-  densityLines.append(document.createElement('i'), document.createElement('i'));
-  densityToggle.replaceChildren(densityLines);
-  const paintDensityToggle = () => {
-    if (bench?.host) bench.host.dataset.selectorDensity = thinSelectorCards ? 'thin' : 'thick';
-    densityToggle.dataset.lines = thinSelectorCards ? 'two' : 'one';
-    densityToggle.title = thinSelectorCards ? 'Show full Setup cards' : 'Show Setup names only';
-    densityToggle.setAttribute('aria-label', densityToggle.title);
-    densityToggle.setAttribute('aria-pressed', String(thinSelectorCards));
-  };
-  densityToggle.addEventListener('click', () => { thinSelectorCards = !thinSelectorCards; paintDensityToggle(); save(); });
   bench = WorkspaceKit.workbench.create({
     profile: PROFILE,
     tenant: { kind: 'setup' },
@@ -232,7 +216,7 @@ export function createSetupView() {
     onStateChange: save,
     onPlacement: save,
   });
-  paintDensityToggle();
+  bench.host.dataset.selectorDensity = 'thin';
   // ミ Help: Mika takes over the selector column with her ordinary tile borrowed in;
   // Close hands it back. The same panel serves every workbench (mika.js).
   helpPanel = createMikaHelpPanel({
@@ -260,7 +244,7 @@ export function createSetupView() {
     glyph: '人',
     hideFeedback: true,
     hideShapeControl: true,
-    barActions: [sceneIndex, densityToggle, surfaceToggle, themeToggle],
+    barActions: [sceneIndex, surfaceToggle, themeToggle],
     title: () => t('setup.title', 'Ronin Setup'),
     mount: (_host, context) => { ctx = context; },
     enter: async (context) => {
@@ -279,8 +263,6 @@ export function createSetupView() {
       const stored = context.viewState('setup') || {};
       sceneOverride = Number.isInteger(Number(stored.sceneOverride)) && Number(stored.sceneOverride) >= 1 && Number(stored.sceneOverride) <= SETUP_SCENES.length
         ? Number(stored.sceneOverride) : 0;
-      thinSelectorCards = stored.selectorDensity !== 'thick';
-      paintDensityToggle();
       // The Campaign's record is not read at boot on this page; fetch it once so the
       // light/dark icon shows the configured theme, not a guess.
       if (!campaigns().length) void loadCampaigns().then(paintAppearance);
