@@ -55,6 +55,9 @@ Start with [`AGENTS.md`](../AGENTS.md), then the relevant implementation contrac
 |---|---|
 | How do I check or preview a change? | Run `npm run verify`; use Playwright for UI diagnostics or [visual staging](../ronin_catalogs/behaviours/ronin_methodology.md#visual-staging-one-disposable-team-preview). |
 | How does the server use tmux, start programs, and switch Services? | [The tmux connection, the spawn broker, and parked parts](tmux-connection.md) |
+| Which code, UI, state, contracts, docs, and tests belong to the surface I am changing? | [Contributor map](contributor-map.md) |
+| Where does Ronin persist each kind of durable truth? | [Durable-state inventory](state-inventory.md) |
+| How does one objective become Agent work, evidence, review, and completion? | [Coordination trace](coordination-trace.md) |
 
 ## Shelves
 

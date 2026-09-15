@@ -56,8 +56,8 @@ test('the selected folder is one page: a head line with every action, then Summa
   assert.match(detail, /if \(editing === r\.name\) \{\s*const f = form\(r\);[\s\S]*?d\.append\(f\);\s*return d;\s*\}/, 'Edit swaps the facts for the real form under the same head');
   assert.match(detail, /go\.append\(edit, shelve, drop\)/, 'Edit, Archive and Exclude share the head line');
   assert.match(detail, /go\.append\(f\.querySelector\('\.pr-frow'\)\)/, 'Save and Cancel stand where Edit stood');
-  assert.match(detail, /make\('h3', 'pr-detail-name', r\.title \|\| r\.name\)/, 'the head uses the display title with the stable ID as fallback');
-  assert.match(detail, /t\('roots\.fact_id', 'ID'\), r\.name/, 'the detail keeps the stable ID visible');
+  assert.match(detail, /make\('h3', 'pr-detail-name', r\.title \|\| r\.name\)/, 'the head uses the display title with the Workspace Folder handle as fallback');
+  assert.match(detail, /t\('roots\.fact_handle', 'Workspace Folder handle'\), r\.name/, 'the detail keeps the Workspace Folder handle visible');
   const order = ["t('roots.edit_folder', 'Edit')", "t('roots.summary', 'Summary')", "t('roots.section_folder', 'Folder')", "t('roots.section_repository', 'Repository')"]
     .map((needle) => detail.indexOf(needle));
   assert.ok(order.every((at) => at >= 0), 'every section is present');
