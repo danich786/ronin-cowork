@@ -214,7 +214,11 @@ function createRegisterSurface(context) {
     declined.hidden = !declinedRegistration;
     email.required = emailRegistration && !declinedRegistration;
   };
-  identityMode.onChange(paintIdentityMode);
+  identityMode.onChange(() => {
+    paintIdentityMode();
+    const identity = identityMode.value.value === 'no_thanks' ? 'declined' : identityMode.value.value;
+    if (identity) void context.environment?.setIdentityChoice?.(identity);
+  });
   paintIdentityMode();
   form.append(welcome, route, registrationIntro, about, fit, send, declined);
   const prefs = el('form', 'setup-form setup-preferences');
