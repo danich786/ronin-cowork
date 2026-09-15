@@ -17,9 +17,9 @@ in [`docs/architecture/tool-surface.md`](../../docs/architecture/tool-surface.md
 
 The folder is the catalog. Ronin reads every definition here and in the owner's
 `<catalogs store>/capabilities/` (a file of the same name shadows the shipped one whole; a
-new name is added). Ronin Host, Ronin Services, gbrain, Trello, Perplexity and any later
-add-on are one file each, gated by their own `requires:` line; nothing in the resolver
-knows a bundle by name.
+new name is added). Every definition groups actual Agent tools and carries its own
+`requires:` facts; an installation or integration without Agent tools remains on its own
+shelf. Nothing in the resolver knows a capability by name.
 
 ## The definition
 
