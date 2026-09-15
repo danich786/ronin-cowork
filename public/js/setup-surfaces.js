@@ -220,6 +220,7 @@ function createRegisterSurface(context) {
     const emailRegistration = identityMode.value.value === 'email';
     const declinedRegistration = identityMode.value.value === 'no_thanks';
     emailField.hidden = !emailRegistration || declinedRegistration;
+    runLocation.wrap.hidden = declinedRegistration;
     fit.hidden = declinedRegistration;
     consent.hidden = declinedRegistration;
     registerAction.hidden = declinedRegistration;
