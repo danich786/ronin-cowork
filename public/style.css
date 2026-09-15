@@ -5898,6 +5898,7 @@ button.wb-door:hover b {
 .setup-registration-identity span { color: var(--muted-2); font-size: var(--text-5); line-height: 1.45; overflow-wrap: anywhere; }
 .setup-registration-identity:empty, .setup-registration-identity[hidden] { display: none; }
 .wk-surface-content:has(.setup-github-workspace) > .sws-header {
+  --sws-header-height: clamp(17rem, 32dvh, 20rem);
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-5);
