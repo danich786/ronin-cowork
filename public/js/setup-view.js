@@ -13,6 +13,7 @@ import { campaignById, campaigns, initialCampaignId, loadCampaigns, saveCampaign
 import { readyMika } from './mika-ready.js';
 import { createMikaHelpPanel, createMikaTilePool } from './mika.js';
 import { toast } from './ui.js';
+import { setupJourney } from './setup-journey.js';
 
 const PROFILE = 'setup';
 const MIKA_SESSION = 'mika_agent';
@@ -96,7 +97,16 @@ export function createSetupView() {
     paintAppearance();
   });
   paintAppearance();
-  const blank = (id) => WorkspaceKit.primitives.createBlankSurface(id.replace('workspace', 'Workspace ')).el;
+  const blank = (id) => {
+    const made = WorkspaceKit.primitives.createBlankSurface(id.replace('workspace', 'Workspace '));
+    if (id === 'workspace1') {
+      made.el.classList.add('setup-provider-quiet');
+      const instruction = document.createElement('p');
+      instruction.textContent = t('setup.provider_first', 'Connect a model provider with your own account. Ronin never sits between you and your provider.');
+      made.content.append(instruction);
+    }
+    return made.el;
+  };
   const presetEnvironment = () => ({
     customize: ({ template, user_message } = {}) => openWorkspaceStateTab(ctx, 'launch', { customize: { template, user_message: String(user_message || '') } }),
     launch: launchPresetPlan,
@@ -118,12 +128,30 @@ export function createSetupView() {
   });
   const mikaHelp = createAction({ label: t('mika.help', 'ミ Help'), size: 'compact' });
   let helpPanel = null;
+  let visibleTypes = new Set(ORDER);
+  const setArrangementHidden = (slot, hidden) => {
+    if (bench && hidden !== bench.arrangement.state().hidden.includes(slot)) bench.arrangement.toggle(slot);
+  };
+  const applyJourney = (runtime = environment.setupRuntime) => {
+    if (!bench) return;
+    const scene = setupJourney(runtime || {});
+    visibleTypes = new Set(scene.visibleTypes);
+    setArrangementHidden('workspace1', false);
+    setArrangementHidden('workspace2', false);
+    setArrangementHidden('selector', !scene.selector);
+    if (scene.seats.workspace1 === PRESETS_TYPE) bench.place(PRESETS_TYPE, 'workspace1');
+    else bench.restoreDefault('workspace1');
+    if (scene.seats.workspace2) bench.place(scene.seats.workspace2, 'workspace2');
+    bench.refreshSelector();
+    save();
+  };
   const environment = {
     presets: (workspace) => createPresetsSurface({ environment: presetEnvironment(), workspace }),
     showNewSession: (prompt) => { ctx?.patchViewState('launch', { prompt: String(prompt || '') }); ctx?.navigate('launch'); },
     openLaunchForm: ({ kind, seed = {} } = {}) => openLaunchForm(ctx, { kind, seed }),
     openTemplateLaunchForm: () => openTemplateLaunchForm(ctx),
     setupRuntime: null,
+    onSetupRuntime: (runtime) => { environment.setupRuntime = runtime; applyJourney(runtime); },
     // What the person uses Ronin for: one persisted preference shared by Register and Presets.
     kinds: createKindsPreference(globalThis.localStorage, (kinds) => request('/api/setup/preferences', { method: 'PATCH', json: { kinds } })),
     mountProviderSetupSession: providerSessions.mountProviderSetupSession,
@@ -177,10 +205,9 @@ export function createSetupView() {
     defaultNode: blank,
     label: t('setup.title', 'Ronin Setup'),
     title: () => helpPanel?.isOpen() ? t('mika.header', 'Mika, your helpful assistant') : t('setup.title', 'Ronin Setup'),
-    fixedWorkspaces: { workspace1: PRESETS_TYPE },
     selectorWorkspace: 'workspace2',
     selectorCurrent: true,
-    selectorFilter: (type) => type !== PRESETS_TYPE,
+    selectorFilter: (type) => type !== PRESETS_TYPE && visibleTypes.has(type),
     actions: [mikaHelp],
     onStateChange: save,
     onPlacement: save,
@@ -244,11 +271,16 @@ export function createSetupView() {
       const remembered = stored.seats?.workspace2;
       const held = typeof remembered === 'object' ? remembered.type : remembered;
       const detail = typeof remembered === 'object' && remembered.key ? { key: remembered.key, provider: remembered.key } : {};
-      bench.place(PRESETS_TYPE, 'workspace1');
-      bench.place(ORDER.includes(held) ? held : SETUP_SURFACE_TYPES.providers, 'workspace2', detail);
-      bench.select('workspace2');
-      bench.refreshSelector();
-      save();
+      const scene = setupJourney(environment.setupRuntime);
+      visibleTypes = new Set(scene.visibleTypes);
+      if (scene.id === 'provider') applyJourney(environment.setupRuntime);
+      else {
+        bench.place(PRESETS_TYPE, 'workspace1');
+        bench.place(ORDER.includes(held) ? held : SETUP_SURFACE_TYPES.providers, 'workspace2', detail);
+        bench.select('workspace2');
+        bench.refreshSelector();
+        save();
+      }
     },
     leave: () => bench.leave(),
     destroy: () => { helpPanel.destroy(); providerSessions.destroyAll(); mikaPool.destroyAll(); bench.leave(); ctx = null; },
