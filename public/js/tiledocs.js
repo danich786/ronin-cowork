@@ -1,6 +1,13 @@
 /* part of the ronin-cowork client — see js/README.md */
-import { closeTileMore, fitDropToTile } from './tilemore.js';
 import { t } from './lexicon.js';
+
+function fitDropToTile(anchor, menu) {
+  const head = anchor.closest('.tile-head');
+  const box = anchor.closest('.tile');
+  if (!head || !box) return;
+  const room = box.getBoundingClientRect().bottom - head.getBoundingClientRect().bottom - 8;
+  menu.style.maxHeight = `${Math.max(140, Math.round(room))}px`;
+}
 
 /** This Agent's tracked documents. The letter already holds the paths; opening one is
  * handed back to the Tile, which owns the in-place editor. */
@@ -44,7 +51,6 @@ export function buildTileDocs(tile) {
     event.stopPropagation();
     if (btn.getAttribute('aria-disabled') === 'true') return;
     const wasOpen = menu.classList.contains('open');
-    closeTileMore();
     document.querySelectorAll('.tdocs.open').forEach((drop) => drop.classList.remove('open'));
     if (wasOpen) return;
     render();

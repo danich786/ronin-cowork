@@ -267,14 +267,12 @@ export async function buildPhone() {
     stageTile = tile;
     tile.composer?.el.querySelector('.keysrow')?.append(feedbackAction);
 
-    sheet = makeDrop('メ', t('phone.me_title', 'This Agent — work record, docs, note, control, kill'), 'me');
+    sheet = makeDrop('メ', t('phone.me_title', 'This Agent — work record, docs, output, close'), 'me');
     const node = (key) => tile[key]?.el ?? tile[key];
     sheet.addRow(node('workRecordBtn'), t('me.ladder', 'Work record'));
     sheet.addRow(node('docsBtn'), t('me.docs', 'Docs'));
     // No Services, no choice: the Output row only exists where an unlocked view does.
     if (!tile.servicesOff()) sheet.addRow(node('outputEl'), t('me.output', 'Output'), 'stay');
-    sheet.addRow(node('noteBtn'), t('me.note', 'Note'));
-    sheet.addRow(node('dial'), t('me.control', 'Control'), 'stay');
     sheet.addRow(node('killBtn'), 'Close');
 
     // The 📄 menu hangs off the hidden tile head; here it hangs off the bar.
