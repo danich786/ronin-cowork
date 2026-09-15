@@ -23,10 +23,10 @@ export const INSTALLED_ROOTS = [
 
 export const SETUP_PREFERENCE_KINDS = ['build', 'life', 'research', 'other'] as const;
 export type SetupPreferenceKind = typeof SETUP_PREFERENCE_KINDS[number];
-export interface SetupPreferences { kinds: SetupPreferenceKind[]; providers: string[]; path_note: string; identity_choice: '' | 'email' | 'anonymous' | 'declined' }
+export interface SetupPreferences { kinds: SetupPreferenceKind[]; providers: string[]; path_note: string; identity_choice: '' | 'email' | 'anonymous' | 'declined'; bounty_opt_in: boolean }
 interface SetupSection {
   providers?: Record<string, { activated_at?: unknown; off_at?: unknown }>;
-  preferences?: { kinds?: unknown; providers?: unknown; path_note?: unknown; identity_choice?: unknown };
+  preferences?: { kinds?: unknown; providers?: unknown; path_note?: unknown; identity_choice?: unknown; bounty_opt_in?: unknown };
   [key: string]: unknown;
 }
 
@@ -116,21 +116,23 @@ export function setupPreferences(section: SetupSection): SetupPreferences {
     kinds: SETUP_PREFERENCE_KINDS.filter((kind) => selected.has(kind)), providers,
     path_note: typeof section.preferences?.path_note === 'string' ? section.preferences.path_note : '',
     identity_choice: identity === 'email' || identity === 'anonymous' || identity === 'declined' ? identity : '',
+    bounty_opt_in: section.preferences?.bounty_opt_in === true,
   };
 }
 
 export async function writeSetupPreferences(input: unknown): Promise<SetupPreferences> {
   const patch = Array.isArray(input) ? { kinds: input } : input;
   if (!patch || typeof patch !== 'object' || Array.isArray(patch)) throw new Error('Send Setup preferences.');
-  const update = patch as { kinds?: unknown; providers?: unknown; path_note?: unknown; identity_choice?: unknown };
-  if (update.kinds === undefined && update.providers === undefined && update.path_note === undefined && update.identity_choice === undefined) throw new Error('Send onboarding preferences.');
-  let written: SetupPreferences = { kinds: [], providers: [], path_note: '', identity_choice: '' };
+  const update = patch as { kinds?: unknown; providers?: unknown; path_note?: unknown; identity_choice?: unknown; bounty_opt_in?: unknown };
+  if (update.kinds === undefined && update.providers === undefined && update.path_note === undefined && update.identity_choice === undefined && update.bounty_opt_in === undefined) throw new Error('Send onboarding preferences.');
+  let written: SetupPreferences = { kinds: [], providers: [], path_note: '', identity_choice: '', bounty_opt_in: false };
   await updateSection<SetupSection>('setup', (setup) => {
     const current = setupPreferences(setup);
     const kinds = update.kinds === undefined ? current.kinds : update.kinds;
     const providers = update.providers === undefined ? current.providers : update.providers;
     const path_note = update.path_note === undefined ? current.path_note : update.path_note;
     const identity_choice = update.identity_choice === undefined ? current.identity_choice : update.identity_choice;
+    const bounty_opt_in = update.bounty_opt_in === undefined ? current.bounty_opt_in : update.bounty_opt_in;
     if (!Array.isArray(kinds) || kinds.some((kind) => typeof kind !== 'string' || !SETUP_PREFERENCE_KINDS.includes(kind as SetupPreferenceKind))) {
       throw new Error('Kinds are build, life, research, and other.');
     }
@@ -139,7 +141,8 @@ export async function writeSetupPreferences(input: unknown): Promise<SetupPrefer
     }
     if (typeof path_note !== 'string' || path_note.length > 2000) throw new Error('Path note must be text up to 2000 characters.');
     if (!['', 'email', 'anonymous', 'declined'].includes(String(identity_choice))) throw new Error('Identity choice must be email, anonymous, or declined.');
-    written = setupPreferences({ preferences: { kinds, providers, path_note, identity_choice } });
+    if (typeof bounty_opt_in !== 'boolean') throw new Error('Bounty opt-in must be true or false.');
+    written = setupPreferences({ preferences: { kinds, providers, path_note, identity_choice, bounty_opt_in } });
     return { ...setup, preferences: written };
   });
   return written;
@@ -351,6 +354,46 @@ async function exists(file: string): Promise<boolean> {
 
 async function git(dir: string, args: string[]): Promise<string> {
   return (await run('git', ['-C', dir, ...args], { timeout: 10_000 })).stdout.trim();
+}
+
+const GITHUB_SETUP_SESSION = 'setup_github';
+
+export async function githubSetupAnswer(): Promise<{ installed: boolean; authenticated: boolean; account: string; attachment: { type: 'session'; key: string; temporary: true } | null }> {
+  const installed = await run('gh', ['--version'], { timeout: 5_000 }).then(() => true, () => false);
+  const status = installed
+    ? await run('gh', ['auth', 'status', '--hostname', 'github.com'], { timeout: 8_000 }).then((result) => result.stderr || result.stdout, () => '')
+    : '';
+  const account = status.match(/account\s+([^\s(]+)/i)?.[1] || '';
+  const open = await sessionExists(GITHUB_SETUP_SESSION);
+  return { installed, authenticated: Boolean(status), account, attachment: open ? { type: 'session', key: GITHUB_SETUP_SESSION, temporary: true } : null };
+}
+
+export async function openGithubLogin(): Promise<Awaited<ReturnType<typeof githubSetupAnswer>>> {
+  if (!(await run('gh', ['--version'], { timeout: 5_000 }).then(() => true, () => false))) throw new Error('GitHub CLI is not installed on this machine.');
+  if (!(await sessionExists(GITHUB_SETUP_SESSION))) {
+    await createSession(GITHUB_SETUP_SESSION, os.homedir(), {
+      agent: false,
+      argv: ['gh', 'auth', 'login', '--hostname', 'github.com', '--git-protocol', 'https'],
+    });
+  }
+  return githubSetupAnswer();
+}
+
+export async function cloneGithubWorkspace(repository: unknown): Promise<{ name: string; dir: string }> {
+  const slug = typeof repository === 'string' ? repository.trim().replace(/^https:\/\/github\.com\//, '').replace(/\.git$/, '') : '';
+  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(slug)) throw new Error('Repository must be owner/name or a github.com URL.');
+  const status = await githubSetupAnswer();
+  if (!status.authenticated) throw new Error('Connect GitHub before cloning a repository.');
+  const base = slug.split('/')[1].toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-|-$/g, '');
+  if (!base) throw new Error('That repository does not make a valid workspace ID.');
+  const known = await peekProjectRoots();
+  let name = base;
+  for (let suffix = 2; known.some((root) => root.name === name); suffix++) name = `${base}-${suffix}`;
+  const dir = path.join(rootDir('user'), name);
+  if (await exists(dir)) throw new Error(`The destination ${dir} already exists.`);
+  await run('gh', ['repo', 'clone', slug, dir], { timeout: 120_000, maxBuffer: 1024 * 1024 });
+  await upsertProjectRoot(name, { title: slug.split('/')[1], dir, remit: `Work in ${slug}.`, match: slug, archived: '' }, { declareArrangement: false });
+  return { name, dir };
 }
 
 async function ensureRepository(dir: string, label: string, managed: boolean): Promise<void> {

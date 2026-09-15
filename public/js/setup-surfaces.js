@@ -22,13 +22,14 @@ import { createInstallationsSurface } from './campaign-installations.js';
 // is that module's, and Ronin Settings registers the same definition.
 export const SETUP_SURFACE_TYPES = Object.freeze({
   register: 'setup.register', providers: PROVIDER_SURFACE_TYPE, roots: 'setup.roots',
-  installations: 'setup.installations', templates: CAMPAIGN_TEMPLATES_TYPE, launchOwn: 'setup.launch-own',
+  installations: 'setup.installations', bounty: 'setup.bounty', templates: CAMPAIGN_TEMPLATES_TYPE, launchOwn: 'setup.launch-own',
 });
 
 const summaries = new Map([
   [SETUP_SURFACE_TYPES.register, 'optional'],
   [SETUP_SURFACE_TYPES.roots, '2 folders'],
   [SETUP_SURFACE_TYPES.installations, 'Ronin Services'],
+  [SETUP_SURFACE_TYPES.bounty, 'optional · separate opt-in'],
   [SETUP_SURFACE_TYPES.launchOwn, 'template · team · agent'],
 ]);
 const el = (tag, cls = '', text = null) => { const out = document.createElement(tag); if (cls) out.className = cls; if (text != null) out.textContent = text; return out; };
@@ -315,8 +316,48 @@ function createRootsSurface(context) {
   return createWorkspaceFoldersSurface({
     campaignId: () => context.tenant?.campaign || '',
     presentation: 'stones',
+    environment: context.environment,
+    workspace: context.workspace,
     onShow: () => notifySummary(SETUP_SURFACE_TYPES.roots, '2 folders + yours', context.workbench),
   });
+}
+
+function createBountySurface(context) {
+  const out = surface(t('setup_surface.bounty', 'Bounty Program'));
+  const body = el('div', 'setup-surface-body setup-bounty');
+  const intro = el('section', 'setup-bounty-intro');
+  intro.append(
+    el('span', 'setup-register-eyebrow', t('bounty.eyebrow', 'BUILD RONIN WITH US')),
+    el('h2', '', t('bounty.heading', 'Choose a bounty project')),
+    el('p', 'setup-lede', t('bounty.lede', 'Browse published projects, choose one you want to take on, and submit a proposal. Joining is always a separate choice.')),
+  );
+  const requirements = el('section', 'setup-bounty-requirements');
+  requirements.append(el('h3', '', t('bounty.requirements', 'Before you opt in')));
+  const list = el('ul', 'setup-bounty-requirement-list'); requirements.append(list);
+  const projects = el('section', 'setup-bounty-projects');
+  projects.append(el('h3', '', t('bounty.projects', 'Available bounty projects')), el('p', 'setup-fine', t('bounty.projects_note', 'The downloadable project list and proposal form will live here. You can inspect projects before opting in.')));
+  const join = action(t('bounty.join', 'Opt in to the Bounty Program'), 'primary', async () => {
+    const result = await request('/api/setup/preferences', { method: 'PATCH', json: { bounty_opt_in: true } });
+    notice.textContent = result.ok ? t('bounty.joined', 'Bounty Program opt-in saved on this machine.') : result.message;
+    if (result.ok) join.disabled = true;
+  });
+  const notice = el('p', 'setup-notice'); notice.setAttribute('role', 'status');
+  body.append(intro, requirements, projects, join, notice); out.content.append(body);
+  return { el: out.el, show: async () => {
+    const [registration, github] = await Promise.all([
+      request('/api/setup/registration', { cache: 'no-store' }), request('/api/setup/github', { cache: 'no-store' }),
+    ]);
+    const email = registration.ok && registration.data?.status === 'registered' && registration.data?.identity_mode === 'email';
+    const connected = github.ok && github.data?.authenticated === true;
+    const services = context.environment?.setupRuntime?.services?.active === true;
+    const rows = [
+      [email, t('bounty.email_ready', 'Email registration confirmed'), t('bounty.email_needed', 'Confirm an email registration')],
+      [connected, t('bounty.github_ready', 'GitHub connected'), t('bounty.github_needed', 'Connect GitHub in Workspace folders')],
+      [services, t('bounty.services_ready', 'Ronin Services active'), t('bounty.services_needed', 'Install and switch on Ronin Services')],
+    ];
+    list.replaceChildren(...rows.map(([ready, yes, no]) => el('li', ready ? 'ready' : 'locked', `${ready ? '✓' : '○'} ${ready ? yes : no}`)));
+    join.disabled = !rows.every(([ready]) => ready) || context.environment?.setupRuntime?.preferences?.bounty_opt_in === true;
+  } };
 }
 
 /** The one Services mark file, read once and inlined so the R's stroke follows the app's data-theme, not only the OS scheme.
@@ -613,6 +654,7 @@ export function setupSurfaceDefinitions() {
     providerSurfaceDefinition(),
     definition(SETUP_SURFACE_TYPES.roots, t('setup_surface.roots', 'Workspace folders'), createRootsSurface),
     definition(SETUP_SURFACE_TYPES.installations, t('campaign_view.installations', 'Installations'), createSetupInstallationsSurface),
+    definition(SETUP_SURFACE_TYPES.bounty, t('setup_surface.bounty', 'Bounty Program'), createBountySurface),
     definition(SETUP_SURFACE_TYPES.launchOwn, t('setup_surface.launch_own', 'Launch your own'), createLaunchOwnSurface),
   ];
 }

@@ -77,7 +77,7 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
       more.textContent = points.hidden ? t('roots.learn_more', 'Learn more') : t('roots.learn_less', 'Less');
     });
     intro.append(line, points);
-    stoneSurface.mount(root, { before: [intro, messages] });
+    stoneSurface.mount(root, { before: [...(options.before || []), intro, messages] });
   } else root.append(head, list);
 
   const say = (msg, bad) => {
