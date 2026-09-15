@@ -40,6 +40,7 @@ Option-drag, Cmd+C (Mac); Shift-drag, Ctrl+C (Windows/Linux).
 | How do session Control settings work? | [Session Control](session-control-dials.md) |
 | What does a new Agent read at birth, and why does it fit one read? | [The birth packet](birth-packet.md) |
 | What does Ronin let an Agent do, and what does it only tell it? | [The Agent's philosophy: a gas pedal and a brake pedal](agent-philosophy.md) |
+| What makes up an Agent's tools, guidance, boundaries, native teaching, and assignment? | [Agent composition](agent-composition.md) and the [Tool surface](tool-surface.md) |
 | How do I customize Ronin without editing shipped files? | [Customize](customize.md) and [shadowing](shadowing.md) |
 | What is a template, and how does my agent keep mine? | [Templates](templates.md) |
 | What has Ronin connected to? | [Services activation and the egress record](services-activation.md) |
