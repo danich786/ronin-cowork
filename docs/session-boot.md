@@ -119,7 +119,8 @@ on the real shelf:
   from the capability documents the launch resolver selected (`src/capabilities.ts`). One
   entry per selected bundle: its title, blurb, the priority tools that exist on this box with
   their authority, the `--help` route, and the path of the full document. A tool the box
-  lacks is never advertised; a bundle with no tool is taught as authority and its document.
+  lacks is never advertised. Knowledge without an actual tool belongs in an installation,
+  Behavior, or explanatory document rather than a capability.
   The generated copy is disposable data as an internal compiler fragment.
 
 Abilities belong to the Cowork Agent itself (`all/BASE_ABILITIES.md`), to a system

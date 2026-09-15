@@ -57,7 +57,7 @@ complete list. A template clobbers only the fields it carries.
 
 ## Capability bundles: the tools an Agent is taught
 
-A capability bundle is a knowledge layer, not an authority layer. Selection changes what
+A capability document is a teaching layer, not an authority layer. Selection changes what
 the Build Brief teaches and emphasizes for that Agent; it does not grant, withhold,
 authorize, or forbid an installed tool or its help.
 
@@ -66,7 +66,7 @@ Markdown document each in `ronin_catalogs/capabilities/` (the owner's catalogs s
 shadows a name whole and adds new ones). A bundle is a document grouping, not an
 executable: it answers one question, lists the actual tools that answer it in a `## Tools`
 table — each with its job, whether it is emphasized at birth, and its help route — and
-carries the teaching around them. A bundle may list several tools, one, or none; a tool may
+carries the teaching around them. A capability lists one or more actual tools; a tool may
 be surfaced by more than one bundle.
 
 Each document's `requires:` line names the launch facts that select its teaching: a system

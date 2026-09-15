@@ -17,7 +17,7 @@ Each stage below names the shared record or capability involved. Selected capabi
 documents teach the concrete tools; this method keeps the durable cross-session choices
 without duplicating executable instructions.
 
-A capability bundle is a knowledge layer, not an authority layer. Bundle selection changes
+A capability document is a teaching layer, not an authority layer. Capability selection changes
 what the Build Brief teaches and emphasizes; it never grants, withholds, authorizes, or
 forbids an installed tool or its `--help`.
 
