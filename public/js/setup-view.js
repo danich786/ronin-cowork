@@ -99,12 +99,6 @@ export function createSetupView() {
   paintAppearance();
   const blank = (id) => {
     const made = WorkspaceKit.primitives.createBlankSurface(id.replace('workspace', 'Workspace '));
-    if (id === 'workspace1') {
-      made.el.classList.add('setup-provider-quiet');
-      const instruction = document.createElement('p');
-      instruction.textContent = t('setup.provider_first', 'Connect a model provider with your own account. Ronin never sits between you and your provider.');
-      made.content.append(instruction);
-    }
     return made.el;
   };
   const presetEnvironment = () => ({
