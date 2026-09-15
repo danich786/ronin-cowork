@@ -124,7 +124,7 @@ test('Campaign Settings and Setup selectors default to names-only and remember e
   }
   assert.match(campaign, /actions: \[densityToggle, mikaHelp\]/);
   assert.match(setup, /actions: \[mikaHelp\]/);
-  assert.match(setup, /barActions: \[densityToggle, surfaceToggle, themeToggle\]/);
+  assert.match(setup, /barActions: \[sceneIndex, densityToggle, surfaceToggle, themeToggle\]/);
 });
 
 test('the existing workbench can pin a Setup workspace and aim selector cards at the selected work surface', async () => {
@@ -148,15 +148,15 @@ test('the fourth Setup workbench registers real surfaces and lets the journey pr
   // The Team page's own shape remains available, but the journey—not a permanently
   // pinned workspace—decides whether Presets or the quiet surface occupies workspace 1.
   assert.doesNotMatch(setup, /fixedWorkspaces: \{ workspace1: PRESETS_TYPE \}/);
-  assert.match(setup, /const scene = setupJourney\(runtime \|\| \{\}\)/);
+  assert.match(setup, /const scene = setupJourney\(runtime \|\| \{\}, sceneOverride\)/);
   assert.match(setup, /bench\.restoreDefault\('workspace1'\)/);
   assert.match(setup, /setArrangementHidden\('selector', !scene\.selector\)/);
   assert.match(setup, /selectorWorkspace: 'workspace2'/);
   assert.match(setup, /selectorCurrent: true/);
   assert.doesNotMatch(setup, /arrangement\.move\('selector', 0\)/);
   assert.match(setup, /order: Object\.freeze\(\['workspace1', 'selector', 'workspace2'\]\)/);
-  assert.match(setup, /scene\.seats\.workspace1 === PRESETS_TYPE/);
-  assert.match(setup, /SETUP_SURFACE_TYPES\.providers, 'workspace2', detail\)/);
+  assert.match(setup, /scene\.seats\.workspace1\) bench\.place\(scene\.seats\.workspace1, 'workspace1'\)/);
+  assert.match(setup, /scene\.seats\.workspace2\) bench\.place\(scene\.seats\.workspace2, 'workspace2'\)/);
   assert.match(setup, /hideFeedback: true/);
   assert.match(setup, /hideShapeControl: true/);
   // Provider sign-in and the ordinary Mika agent each reuse their existing tile hosts.
@@ -197,7 +197,10 @@ test('Setup adds only Help to its selector header and keeps appearance in the to
   assert.match(setup, /actions: \[mikaHelp\]/);
   // Light/dark is a bar action: built by Setup, seated by the ViewHost in the bar's one
   // actions slot at the right, pinning the device theme through theme.js and nothing else.
-  assert.match(setup, /barActions: \[densityToggle, surfaceToggle, themeToggle\]/);
+  assert.match(setup, /barActions: \[sceneIndex, densityToggle, surfaceToggle, themeToggle\]/);
+  assert.match(setup, /addSceneButton\(0, t\('setup\.scene_auto'/);
+  assert.match(setup, /for \(const scene of SETUP_SCENES\) addSceneButton/);
+  assert.match(setup, /sceneOverride, selectorDensity/);
   assert.match(setup, /barButton\('setup-theme-toggle'\)/);
   assert.match(setup, /barButton\('setup-surface-toggle'\)/);
   assert.match(setup, /saveCampaign\(id, \{ desk: \{ \[field\]: /);

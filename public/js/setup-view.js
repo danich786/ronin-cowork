@@ -13,7 +13,7 @@ import { campaignById, campaigns, initialCampaignId, loadCampaigns, saveCampaign
 import { readyMika } from './mika-ready.js';
 import { createMikaHelpPanel, createMikaTilePool } from './mika.js';
 import { toast } from './ui.js';
-import { setupJourney } from './setup-journey.js';
+import { SETUP_SCENES, setupJourney } from './setup-journey.js';
 
 const PROFILE = 'setup';
 const MIKA_SESSION = 'mika_agent';
@@ -128,21 +128,24 @@ export function createSetupView() {
   });
   const mikaHelp = createAction({ label: t('mika.help', 'ミ Help'), size: 'compact' });
   let helpPanel = null;
+  let sceneOverride = 0;
   let visibleTypes = new Set(ORDER);
   const setArrangementHidden = (slot, hidden) => {
     if (bench && hidden !== bench.arrangement.state().hidden.includes(slot)) bench.arrangement.toggle(slot);
   };
   const applyJourney = (runtime = environment.setupRuntime) => {
     if (!bench) return;
-    const scene = setupJourney(runtime || {});
+    const scene = setupJourney(runtime || {}, sceneOverride);
     visibleTypes = new Set(scene.visibleTypes);
     setArrangementHidden('workspace1', false);
     setArrangementHidden('workspace2', false);
     setArrangementHidden('selector', !scene.selector);
-    if (scene.seats.workspace1 === PRESETS_TYPE) bench.place(PRESETS_TYPE, 'workspace1');
+    if (scene.seats.workspace1) bench.place(scene.seats.workspace1, 'workspace1');
     else bench.restoreDefault('workspace1');
     if (scene.seats.workspace2) bench.place(scene.seats.workspace2, 'workspace2');
+    else bench.restoreDefault('workspace2');
     bench.refreshSelector();
+    paintSceneIndex();
     save();
   };
   const environment = {
@@ -184,7 +187,29 @@ export function createSetupView() {
   // viewportMode was the retired presentation toggle's memory; writing undefined drops
   // it from a stored visit so nobody stays in the stack it forced.
   let thinSelectorCards = true;
-  const save = () => ctx?.patchViewState('setup', { ...bench.snapshot(), viewportMode: undefined, selectorDensity: thinSelectorCards ? 'thin' : 'thick' });
+  const save = () => ctx?.patchViewState('setup', { ...bench.snapshot(), viewportMode: undefined, sceneOverride, selectorDensity: thinSelectorCards ? 'thin' : 'thick' });
+  const sceneIndex = document.createElement('span');
+  sceneIndex.className = 'setup-scene-index';
+  sceneIndex.setAttribute('aria-label', t('setup.scenes', 'Setup scenes'));
+  const sceneButtons = [];
+  const addSceneButton = (number, label, title) => {
+    const button = barButton('setup-scene-button');
+    button.textContent = label;
+    button.title = title;
+    button.addEventListener('click', () => { sceneOverride = number; applyJourney(); });
+    sceneButtons.push({ button, number });
+    sceneIndex.append(button);
+  };
+  addSceneButton(0, t('setup.scene_auto', 'Auto'), t('setup.scene_auto_title', 'Follow onboarding progress'));
+  for (const scene of SETUP_SCENES) addSceneButton(scene.number, String(scene.number), `${scene.number}. ${scene.label}`);
+  function paintSceneIndex() {
+    const active = setupJourney(environment.setupRuntime || {}, sceneOverride).number;
+    for (const { button, number } of sceneButtons) {
+      button.setAttribute('aria-pressed', String(number === sceneOverride));
+      button.dataset.current = String(number !== 0 && number === active);
+    }
+    sceneIndex.dataset.mode = sceneOverride === 0 ? 'auto' : 'manual';
+  }
   const densityToggle = barButton('tw-agent-density');
   const densityLines = document.createElement('span');
   densityLines.className = 'tw-agent-density-lines';
@@ -240,7 +265,7 @@ export function createSetupView() {
     glyph: '人',
     hideFeedback: true,
     hideShapeControl: true,
-    barActions: [densityToggle, surfaceToggle, themeToggle],
+    barActions: [sceneIndex, densityToggle, surfaceToggle, themeToggle],
     title: () => t('setup.title', 'Ronin Setup'),
     mount: (_host, context) => { ctx = context; },
     enter: async (context) => {
@@ -257,6 +282,8 @@ export function createSetupView() {
       bench.refreshSelector();
       mikaHelp.el.disabled = !operational();
       const stored = context.viewState('setup') || {};
+      sceneOverride = Number.isInteger(Number(stored.sceneOverride)) && Number(stored.sceneOverride) >= 1 && Number(stored.sceneOverride) <= SETUP_SCENES.length
+        ? Number(stored.sceneOverride) : 0;
       thinSelectorCards = stored.selectorDensity !== 'thick';
       paintDensityToggle();
       // The Campaign's record is not read at boot on this page; fetch it once so the
@@ -268,19 +295,7 @@ export function createSetupView() {
       const widths = sameOrder(stored.arrangement?.order, DEFAULT_ARRANGEMENT.order) ? stored.arrangement.widths : DEFAULT_ARRANGEMENT.widths;
       bench.enter({ ...stored, count: 2, arrangement: { ...DEFAULT_ARRANGEMENT, widths } });
       bench.setCount(2);
-      const remembered = stored.seats?.workspace2;
-      const held = typeof remembered === 'object' ? remembered.type : remembered;
-      const detail = typeof remembered === 'object' && remembered.key ? { key: remembered.key, provider: remembered.key } : {};
-      const scene = setupJourney(environment.setupRuntime);
-      visibleTypes = new Set(scene.visibleTypes);
-      if (scene.id === 'provider') applyJourney(environment.setupRuntime);
-      else {
-        bench.place(PRESETS_TYPE, 'workspace1');
-        bench.place(ORDER.includes(held) ? held : SETUP_SURFACE_TYPES.providers, 'workspace2', detail);
-        bench.select('workspace2');
-        bench.refreshSelector();
-        save();
-      }
+      applyJourney(environment.setupRuntime);
     },
     leave: () => bench.leave(),
     destroy: () => { helpPanel.destroy(); providerSessions.destroyAll(); mikaPool.destroyAll(); bench.leave(); ctx = null; },

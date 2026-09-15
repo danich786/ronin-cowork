@@ -85,8 +85,6 @@ export interface SetupRuntimeAnswer {
   gbrain: { installed: boolean; active: boolean };
   services: { installed: boolean; activated: boolean; switched_on: boolean; active: boolean };
   preferences: SetupPreferences;
-  /** Explicit visual-review scene; absent during ordinary operation. */
-  preview_scene?: number;
 }
 
 export interface ProviderSessionOps {
@@ -227,7 +225,6 @@ export async function setupRuntimeAnswer(
   }));
   const activated_count = providers.filter((provider) => provider.activated).length;
   const roots = INSTALLED_ROOTS.map((root) => ({ ...root, dir: path.join(rootDir('user'), root.name) }));
-  const previewScene = Number.parseInt(String(process.env.RONIN_SETUP_PREVIEW_SCENE || ''), 10);
   return {
     providers,
     activated_count,
@@ -245,7 +242,6 @@ export async function setupRuntimeAnswer(
       active: Boolean(installed?.services.installed && installed.services.activated && installed.services.switched_on && installed.services.loaded.length),
     },
     preferences: setupPreferences(section),
-    ...([1, 2, 3, 4, 5, 6, 7].includes(previewScene) ? { preview_scene: previewScene } : {}),
   };
 }
 

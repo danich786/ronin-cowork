@@ -333,18 +333,4 @@ test('Setup kinds are canonical runtime facts and persist without replacing setu
   await assert.rejects(runtime.writeSetupPreferences({ providers: ['bad provider'] }), /provider IDs/);
 });
 
-test('an explicit visual-review scene is projected without changing machine facts', async () => {
-  const previous = process.env.RONIN_SETUP_PREVIEW_SCENE;
-  process.env.RONIN_SETUP_PREVIEW_SCENE = '1';
-  try {
-    const section = {};
-    const answer = await runtime.setupRuntimeAnswer(section, await measured(section, []), { exists: nobody }, undefined, catalog);
-    assert.equal(answer.preview_scene, 1);
-    assert.equal(answer.activated_count, 0);
-  } finally {
-    if (previous === undefined) delete process.env.RONIN_SETUP_PREVIEW_SCENE;
-    else process.env.RONIN_SETUP_PREVIEW_SCENE = previous;
-  }
-});
-
 test.after(async () => { await rm(box, { recursive: true, force: true }); });

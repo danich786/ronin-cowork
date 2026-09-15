@@ -721,6 +721,10 @@ body {
 #bar .bar-toggle { width: 30px; padding: 0; justify-content: center; font-size: var(--text-5); line-height: 1; }
 #bar .bar-toggle[aria-pressed='true'] { color: var(--fg); }
 #bar .setup-surface-toggle { border-color: transparent; font-size: var(--text-4); }
+#bar .setup-scene-index { display: inline-flex; align-items: center; gap: 2px; }
+#bar .setup-scene-button { min-width: 28px; padding: 0 var(--space-3); justify-content: center; }
+#bar .setup-scene-button[aria-pressed='true'] { color: var(--fg); border-color: var(--accent); }
+#bar .setup-scene-button[data-current='true'] { box-shadow: inset 0 -2px 0 var(--accent); }
 
 
 #notesheet .ns-card {
