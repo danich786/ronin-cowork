@@ -2,7 +2,7 @@ export const SETUP_SCENES = Object.freeze({ provider: 'provider', legacy: 'legac
 
 /** Pure projection: machine and onboarding facts decide the Setup furniture. */
 export function setupJourney(runtime = {}) {
-  if (Number(runtime?.activated_count || 0) === 0) return Object.freeze({
+  if (Number(runtime?.preview_scene || 0) === 1 || Number(runtime?.activated_count || 0) === 0) return Object.freeze({
     id: SETUP_SCENES.provider,
     selector: false,
     visibleTypes: Object.freeze(['setup.providers']),

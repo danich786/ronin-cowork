@@ -15,3 +15,9 @@ test('a ready provider exits Scene 1 without encoding later route decisions', ()
   assert.equal(scene.selector, true);
   assert.equal(scene.seats.workspace1, 'setup.presets');
 });
+
+test('visual staging can pin Scene 1 without changing real provider facts', () => {
+  const scene = setupJourney({ activated_count: 2, preview_scene: 1 });
+  assert.equal(scene.id, 'provider');
+  assert.equal(scene.selector, false);
+});
