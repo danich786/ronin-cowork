@@ -24,3 +24,20 @@ questions across all seven.
    `bin/verify --cowork /path/to/the/matching/ronin-cowork` from the Services desk.
 
 Avoid a directory-wide tour. The owning document should answer which file comes next.
+
+## Trace a visible behavior change
+
+For the affected rows, record this chain in the change description. Use **not affected**
+when a seam genuinely does not move; silence makes the boundary impossible to review.
+
+1. **UI module:** where the owner discovers, operates, recovers, or removes the behavior.
+2. **API:** the same-origin route and request/response contract used by that UI or tool.
+3. **Durable store:** the one authority, its projection, and its migration/removal boundary.
+4. **Service part:** the canonical `ronin_services` part and manifest row, or core Cowork.
+5. **Composition rule:** how the behavior reaches an Agent and appears in its birth receipt.
+6. **Tool contract:** the executable authority; a UI remains its client, not a second writer.
+7. **Documentation:** the owning contract plus user or Agent teaching that changes with it.
+8. **Tests:** focused seam tests, then only the cross-surface journey the behavior requires.
+
+If two entries claim the same truth, or no entry can name its writer, the seam is the work:
+settle the authority before extending the behavior.
