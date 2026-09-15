@@ -68,8 +68,26 @@ function githubWorkspaceSetup(environment, workspace, onCloned) {
   const outcome = document.createElement('p'); outcome.className = 'setup-fine'; outcome.setAttribute('role', 'status');
   clone.append(label, cloneButton, outcome);
   const terminal = document.createElement('div'); terminal.className = 'setup-github-terminal'; terminal.hidden = true;
-  box.append(heading, lede, state, actions, terminal, clone);
+  const terminalActions = document.createElement('div'); terminalActions.className = 'setup-github-terminal-actions'; terminalActions.hidden = true;
+  const done = document.createElement('button'); done.type = 'button'; done.textContent = t('roots.github_done', 'Done');
+  const close = document.createElement('button'); close.type = 'button'; close.textContent = t('roots.github_close', 'Close');
+  terminalActions.append(done, close);
+  box.append(heading, lede, state, actions, terminal, terminalActions, clone);
   let authenticated = false;
+  let mounted = null;
+  let authenticationWatch = 0;
+  const stopWatching = () => { if (authenticationWatch) window.clearInterval(authenticationWatch); authenticationWatch = 0; };
+  const dismissLogin = async () => {
+    stopWatching();
+    mounted?.park?.();
+    mounted?.destroy?.();
+    mounted = null;
+    terminal.hidden = true;
+    terminalActions.hidden = true;
+    const result = await request('/api/setup/github/close', { method: 'POST' });
+    if (result.ok) paint(result.data);
+    else outcome.textContent = result.message;
+  };
   const paint = (github = {}) => {
     authenticated = github.authenticated === true;
     state.textContent = !github.installed ? t('roots.github_missing', 'GitHub CLI is not installed.')
@@ -87,9 +105,29 @@ function githubWorkspaceSetup(environment, workspace, onCloned) {
     paint(result.data);
     if (result.data?.attachment?.key && environment?.mountProviderSetupSession) {
       terminal.hidden = false;
-      environment.mountProviderSetupSession({ host: terminal, provider: 'github', session: result.data.attachment.key, workspace });
+      terminalActions.hidden = false;
+      mounted?.destroy?.();
+      mounted = environment.mountProviderSetupSession({
+        host: terminal,
+        provider: 'github',
+        session: result.data.attachment.key,
+        workspace,
+        onClosed: () => { terminal.hidden = true; terminalActions.hidden = true; void show(); },
+      });
+      stopWatching();
+      authenticationWatch = window.setInterval(async () => {
+        const status = await request('/api/setup/github', { cache: 'no-store' });
+        if (status.ok && status.data?.authenticated) await dismissLogin();
+      }, 1500);
     }
   });
+  done.addEventListener('click', async () => {
+    const result = await request('/api/setup/github', { cache: 'no-store' });
+    if (!result.ok) { outcome.textContent = result.message; return; }
+    if (!result.data?.authenticated) { outcome.textContent = t('roots.github_waiting', 'Finish GitHub authentication in the window first.'); return; }
+    await dismissLogin();
+  });
+  close.addEventListener('click', () => { void dismissLogin(); });
   cloneButton.addEventListener('click', async () => {
     cloneButton.disabled = true; outcome.textContent = t('roots.github_cloning', 'Cloning repository…');
     const result = await request('/api/setup/github/clone', { method: 'POST', json: { repository: repository.value.trim() } });

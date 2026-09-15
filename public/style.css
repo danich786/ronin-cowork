@@ -5918,6 +5918,8 @@ button.wb-door:hover b {
 .setup-github-clone input { min-height: 34px; padding: 0 var(--space-4); border: var(--edge) solid var(--line); background: var(--panel); color: var(--fg); }
 .setup-github-terminal[hidden] { display: none; }
 .setup-github-terminal { min-height: 18rem; margin-top: var(--space-4); }
+.setup-github-terminal-actions { display: flex; gap: var(--space-3); margin-top: var(--space-3); }
+.setup-github-terminal-actions[hidden] { display: none; }
 .setup-bounty { display: grid; gap: var(--space-7); padding: var(--space-7); }
 .setup-bounty-intro, .setup-bounty-requirements, .setup-bounty-projects { display: grid; gap: var(--space-3); }
 .setup-bounty h3 { margin: 0; }

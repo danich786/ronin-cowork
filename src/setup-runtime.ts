@@ -379,6 +379,11 @@ export async function openGithubLogin(): Promise<Awaited<ReturnType<typeof githu
   return githubSetupAnswer();
 }
 
+export async function closeGithubLogin(): Promise<Awaited<ReturnType<typeof githubSetupAnswer>>> {
+  if (await sessionExists(GITHUB_SETUP_SESSION)) await killSessionTree(GITHUB_SETUP_SESSION);
+  return githubSetupAnswer();
+}
+
 export async function cloneGithubWorkspace(repository: unknown): Promise<{ name: string; dir: string }> {
   const slug = typeof repository === 'string' ? repository.trim().replace(/^https:\/\/github\.com\//, '').replace(/\.git$/, '') : '';
   if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(slug)) throw new Error('Repository must be owner/name or a github.com URL.');
