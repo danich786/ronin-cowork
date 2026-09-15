@@ -140,19 +140,22 @@ test('the existing workbench can pin a Setup workspace and aim selector cards at
   assert.match(workbench, /cell\.addEventListener\('pointerdown',[\s\S]*select\(id\);[\s\S]*}, true\)/);
 });
 
-test('the fourth Setup workbench registers real lane surfaces in ruled order', async () => {
+test('the fourth Setup workbench registers real surfaces and lets the journey project its seats', async () => {
   const [setup, main, cowork] = await Promise.all([
     source('js/setup-view.js'), source('js/main.js'), source('js/cowork-view.js'),
   ]);
   assert.match(setup, /registerSetupSurfaces\(\);[\s\S]*registerPresetsSurface\(\);/);
-  // The Team page's own shape: workspace 1 · selector · workspace 2. Presets is pinned in
-  // workspace 1 (the widest column); the selector aims at workspace 2.
-  assert.match(setup, /fixedWorkspaces: \{ workspace1: PRESETS_TYPE \}/);
+  // The Team page's own shape remains available, but the journey—not a permanently
+  // pinned workspace—decides whether Presets or the quiet surface occupies workspace 1.
+  assert.doesNotMatch(setup, /fixedWorkspaces: \{ workspace1: PRESETS_TYPE \}/);
+  assert.match(setup, /const scene = setupJourney\(runtime \|\| \{\}\)/);
+  assert.match(setup, /bench\.restoreDefault\('workspace1'\)/);
+  assert.match(setup, /setArrangementHidden\('selector', !scene\.selector\)/);
   assert.match(setup, /selectorWorkspace: 'workspace2'/);
   assert.match(setup, /selectorCurrent: true/);
   assert.doesNotMatch(setup, /arrangement\.move\('selector', 0\)/);
   assert.match(setup, /order: Object\.freeze\(\['workspace1', 'selector', 'workspace2'\]\)/);
-  assert.match(setup, /bench\.place\(PRESETS_TYPE, 'workspace1'\)/);
+  assert.match(setup, /scene\.seats\.workspace1 === PRESETS_TYPE/);
   assert.match(setup, /SETUP_SURFACE_TYPES\.providers, 'workspace2', detail\)/);
   assert.match(setup, /hideFeedback: true/);
   assert.match(setup, /hideShapeControl: true/);
@@ -175,7 +178,8 @@ test('the fourth Setup workbench registers real lane surfaces in ruled order', a
   assert.doesNotMatch(setup, /SETUP_SURFACE_TYPES\.(?:services|gbrain)/);
   assert.doesNotMatch(setup, /SETUP_SURFACE_TYPES\.templates/);
   const providers = await source('js/provider-surface.js');
-  assert.match(providers, /context\.workbench\?\.profile === 'setup'[\s\S]*\['workspace1', 'selector'\][\s\S]*\(activatedNow === 0\) !== context\.workbench\.arrangement\.state\(\)\.hidden\.includes\(slot\)[\s\S]*arrangement\.toggle\(slot\)/);
+  assert.match(providers, /context\.environment\.onSetupRuntime\?\.\(runtime\)/,
+    'provider measurements report facts to the journey instead of moving Setup furniture themselves');
   assert.match(main, /workspace\.register\('setup', createSetupView\(\)\)/);
   assert.match(cowork, /PRESETS_TYPE/);
 });
