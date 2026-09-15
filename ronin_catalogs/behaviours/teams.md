@@ -51,7 +51,7 @@ sessions one at a time, as the work actually needs them — not a batch at birth
    raises into it. A team that exists only as its tag is an ordinary team; the session
    is born tagged onto it, told it is tag-only, and inherits no root or objective. Give
    the team a roster when it has a brief worth inheriting — `team roster write <team>
-   --objective "…" --role <team_role> --root <project_root>` creates one, or updates the
+   --objective "…" --role <team_role> --root <workspace-folder-handle>` creates one, or updates the
    fields you name on one that exists. A simple creation inherits the current Campaign's
    Team defaults: Routines and kit, root/repositories/branch, and Agent launch defaults;
    explicitly named fields override those values. On an existing Team, omitted fields are

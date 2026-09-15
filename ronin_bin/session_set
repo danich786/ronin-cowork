@@ -7,12 +7,16 @@ case "${1-}" in
 session_set — update one existing live Agent
 
 Usage:
-  session_set <name> [--team <team>] [--lead] [--root <path>]
+  session_set <name> [--team <team>] [--lead]
+                     [--root <workspace-folder-handle>]
 
 Only the named facts change. A missing Agent is refused and never created; use
 session_create for a birth. The bare form is refused; use session_check
 for a read. Related: session_check --help; session_create --help;
 team --help
+
+--root selects a registered Workspace Folder by its handle (for example, ronin_lab),
+not by its filesystem path. Use `machine-settings project-root list` to read the handles.
 EOF
     exit 0 ;;
 esac
