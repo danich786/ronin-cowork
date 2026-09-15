@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+. "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/tool-count.sh" worktree-desk "$@"
 # worktree-desk — your managed worktrees: get, update, hand in, close, and inspect status.
 #
 # Usage: worktree-desk status [--session s | --team t | --repo r]   per desk: clean/dirty · ahead · pending · blocked

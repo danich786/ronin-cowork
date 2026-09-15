@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+. "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/tool-count.sh" edges "$@"
 # edges — cross an Agent, Team, wipeboard, schedule, or visible-workspace boundary.
 set -u
 

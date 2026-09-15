@@ -48,6 +48,7 @@ import { registerVersion } from './routes/version.js';
 import { registerWipeboards } from './routes/wipeboards-api.js';
 import { registerTerminalControls } from './terminal-controls.js';
 import { registerMessages } from './routes/messages-api.js';
+import { countBrowserTool } from './tool-call-api.js';
 import { registerCli } from './routes/cli-api.js';
 import { startMessageQueue } from './message-queue.js';
 import { seedHouseBoard } from './wipeboards.js';
@@ -62,7 +63,7 @@ import { discoverParts, partsToLoad } from './parts.js';
 import { initialCampaign } from './campaigns.js';
 import { listInstallations } from './resource-adapters.js';
 import type { ServiceRegistration } from './sockets-contract.js';
-import { resourceRequestCache } from './resources.js';
+import { resourceRequestCache, storeDir } from './resources.js';
 import { compressResponse } from './http-performance.js';
 import { roninIdentity } from './routes/version.js';
 import { startSpawnBroker, stopSpawnBroker } from './spawn-broker.js';
@@ -218,6 +219,7 @@ app.get('/api/health', (_req, res) =>
 );
 
 registerPasskeyManage(app); // /api/passkey/{list,register-options,register,remove} — BEHIND the gate on purpose
+app.use(countBrowserTool);
 registerLaunch(app); // /api/launch (both variants), /api/sessions, /api/home, session-max, owner — src/routes/launch.ts
 registerMikaContext(app); // /api/mika/context/:tab — tiny tab-scoped owner_view/show seam
 registerCatalogs(app); // catalogs and configuration resources — src/routes/catalogs.ts
@@ -273,6 +275,9 @@ for (const { name: dir, entry } of plan.load) {
     noteServiceFailure(dir, (e as Error).message);
   }
 }
+// Tool-count command hook is registered only by an active entitled Services module.
+try { fs.rmSync(path.join(storeDir('telemetry'), 'tool-count-hook'), { force: true }); }
+catch { /* Optional counting must never prevent startup. */ }
 for (const s of services) {
   noteService(s.name); // the roster /api/version reports, so the client's SWITCH knows
   s.register(sockets);

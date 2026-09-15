@@ -9,8 +9,9 @@ contracts or make a contributor follow the installation journey.
   stay through its handoff to Ronin Setup, provider sign-in, and one working Agent.
 - Working inside an existing coworkspace: use the question-first
   [`docs/README.md`](docs/README.md).
-- Developing this repository: run `npm run verify` for the TypeScript and behavior-test
-  verdict. Playwright suites are explicit diagnostic commands.
+- Developing this repository: start with the [contributor map](docs/contributor-map.md)
+  for code ownership and [KOTOBA](KOTOBA.md) for vocabulary. Run `npm run verify` for the
+  TypeScript and behavior-test verdict. Playwright suites are explicit diagnostic commands.
 - Talking to tmux from the server: every call goes through the control-mode client
   (`src/tmux-client.ts`); programs that are not tmux start through the spawn broker
   (`src/spawn-broker.ts`). [`docs/architecture/tmux-connection.md`](docs/architecture/tmux-connection.md) says why

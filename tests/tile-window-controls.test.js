@@ -36,6 +36,9 @@ test('managed workspaces empty their seat and both empty views use the subdued R
     read('public/js/tile.js'), read('public/style.css'),
   ]);
   assert.match(cowork, /onMinimize: \(\) => emptySeat\(id\)/);
+  const emptySeat = cowork.slice(cowork.indexOf('const emptySeat ='), cowork.indexOf('const putTerminal ='));
+  assert.ok(emptySeat.indexOf('pool.destroyAll()') < emptySeat.indexOf('remembered[id] = DISMISSED_WORKSPACE'));
+  assert.ok(emptySeat.indexOf('remembered[id] = DISMISSED_WORKSPACE') < emptySeat.indexOf('bench.restoreDefault(id)'));
   assert.match(host, /new Tile\([^\n]+onMinimize: options\.onMinimize/);
   assert.match(tile, /emptyLogo\.src = 'brand\/nin-mark\.svg'/);
   assert.match(cowork, /logo\.src = '/);

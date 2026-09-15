@@ -45,7 +45,7 @@ async function overHttp(target: { url: string; token: string }, route: string, p
 
 export async function cliRequest(tool: string, args = process.argv.slice(2), input?: string): Promise<CliReply> {
   const target = operatorTarget();
-  const payload = JSON.stringify({ args, input, session: process.env.RONIN_SESSION ?? '', pane: process.env.TMUX_PANE ?? '' });
+  const payload = JSON.stringify({ args, input, counted: process.env.RONIN_TOOL_COUNTED === '1', session: process.env.RONIN_SESSION ?? '', pane: process.env.TMUX_PANE ?? '' });
   const route = `/api/cli/${tool}`;
   const raw = target.kind === 'socket' ? await overSocket(target.path, route, payload) : await overHttp(target, route, payload);
   let body: CliReply & { error?: string };
