@@ -63,7 +63,7 @@ where a session is born now. `docs/architecture/ui.md` is the written contract t
 | `system.js` | `buildSystem` — ⚙ System: release identity, updates, appearance, log out |
 | `shingo.js` | SHINGO 信号 — the expanded work-record reading and its age helpers |
 | `tile.js` | `class Tile` — one cell of the coworkspace: a header, a mount point, and the view it composes |
-| `tilehead.js` | `buildTileHead` — the cell's chrome, one table and a loop: name, work-record door, output, ⛩ ⚡ メ, and the メ drops |
+| `tilehead.js` | `buildTileHead` — the cell's chrome, one table and a loop: name, Work Record, output, mentions, Docs, status, and window controls |
 | `output.js` | the six Output names and the per-tile selector |
 | `tapeview.js` | **RIREKI's client render** — the 🔓 view: transcript, folds, live frame, scroll anchoring, paging |
 | `tapefold.js` | `groupRecs` — the fold rule, pure (tested: `tests/tape-fold.test.js`) |
@@ -77,7 +77,6 @@ where a session is born now. `docs/architecture/ui.md` is the written contract t
 | `phone.js` | THE MOBILE DOCUMENT's entry module — `mobile.html` boots it, never `main.js`: Teams → a Team (Agents \| Docs) → one Agent's tile, hash-routed (`#/t/…` `#/d/…` `#/s/…`); the server sends that document at `/m`, and at `/` to a phone |
 | `keysrow.js` | `buildKeysRow` — Esc/^C/Tab/arrows/⤓ docked on every coarse tile's composer |
 | `tilementions.js` | `buildTileMentions` — the @ button on a tile head; click or drag a live session name into the composer |
-| `tilemore.js` | DESKTOP ONLY — `buildTileMore`: メ on a tile head and the controls it drops in one strip; `fitDropToTile`, shared by every drop off that header |
 | `team-arrange.js` | `parseDraft`, `createArranger` — the team page's one controller: a draft (what changes; the rest stays) from a button or from an agent's `edges page`, run through the page's own verbs |
 | `team-kanban.js` | `createTeamKanban` — the Team Kanban read: five responsive columns from the team's derived project JSON; a drop sends one move request and writes no project data |
 | `team-members.js` | `buildTeamMembers`, `agentTitle`, `configSignature` — the member list shared by the Commons Roster tab and the league surfaces, and the changed-only fingerprint that keeps Configuration off the five-second clock |
