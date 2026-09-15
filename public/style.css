@@ -5937,6 +5937,10 @@ button.wb-door:hover b {
 .wk-workbench-host [data-workbench-offer-type][data-scene-relevant='false'] { opacity: .48; }
 .wk-workbench-host [data-workbench-offer-type][data-scene-relevant='true'] .wk-card-heading { font-weight: 750; }
 .wk-workbench-host [data-registration-locked='true'] .wk-card-heading::after { content: '  🔒'; font-size: .8em; }
+.wk-workbench-host[data-workbench-profile='setup2'] [data-step-state='complete'] { opacity: 1; }
+.wk-workbench-host[data-workbench-profile='setup2'] [data-step-state='complete'] .wk-card-heading { font-weight: 500; }
+.wk-workbench-host[data-workbench-profile='setup2'] [data-step-state='current'] { opacity: 1; outline: var(--edge-2) solid var(--kaki); outline-offset: calc(-1 * var(--edge-2)); }
+.wk-workbench-host[data-workbench-profile='setup2'] [data-step-state='upcoming'] { opacity: .48; }
 .setup-preferences-wrap[hidden], .setup-register-options[hidden] { display: none; }
 .setup-preferences { display: grid; gap: 0; padding: 0; border: 0; }
 .setup-preferences > .wk-action { justify-self: start; margin-top: var(--space-6); }

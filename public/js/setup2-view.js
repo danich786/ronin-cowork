@@ -58,7 +58,10 @@ export function createSetup2View() {
       button.dataset.current = String(number > 0 && number === active.number);
     }
     for (const card of bench?.host.querySelectorAll('[data-workbench-offer-type]') || []) {
-      card.dataset.sceneRelevant = String(card.dataset.workbenchOfferType === active.type);
+      delete card.dataset.sceneRelevant;
+      const position = ORDER.indexOf(card.dataset.workbenchOfferType);
+      card.dataset.stepState = position < active.number - 1 ? 'complete'
+        : position === active.number - 1 ? 'current' : 'upcoming';
     }
   };
   const open = (number) => {
