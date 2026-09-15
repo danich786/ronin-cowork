@@ -6,9 +6,9 @@
 - **order:** 10
 - **scope:** floor
 
-Every Cowork Agent receives this behaviour. It is discoverable in the behaviour catalog,
-but it is not a selectable Campaign, Team, template, or New Agent option.
+Every Cowork Agent receives this floor behaviour. It remains cataloged and editable, but
+is never a Campaign, Team, template, or New Agent selection.
 
-- **Reach `open`:** Follow the request wherever it leads. `discuss` returns discussion only; `plan` produces a plan and uses the `buildout` behaviour for its house form; `execute` carries the agreed work through.
-- **Recruit `open`:** Recruit as useful. `nobody` works alone; `propose agents` proposes a team and waits; `staff agents` may recruit and uses the `recruit` behaviour for its house form.
-- **Output `open`:** Return the useful outcome. `code` follows the repository arrangement page; the other values return exactly the named plan, ideas, artifact, team, or no code.
+- **Reach `open`:** Follow the request. `discuss` discusses only; `plan` plans using `buildout`; `execute` completes agreed work.
+- **Recruit `open`:** Recruit as useful. `nobody` works alone; `propose agents` proposes and waits; `staff agents` may recruit using `recruit`.
+- **Output `open`:** Return the useful outcome. `code` follows the repository arrangement; otherwise return the named output.
