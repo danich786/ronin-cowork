@@ -338,9 +338,9 @@ function createBountySurface(context) {
   projects.append(el('h3', '', t('bounty.projects', 'Available bounty projects')), el('p', 'setup-fine', t('bounty.projects_note', 'Project briefs are public. Registration is required only to open a proposal and apply.')));
   const projectGrid = el('div', 'setup-bounty-project-grid');
   for (const [name, description] of [
-    [t('bounty.project_onboarding', 'Onboarding and first-run'), t('bounty.project_onboarding_note', 'Make installation, provider sign-in, and the first useful Ronin session easier to understand.')],
-    [t('bounty.project_providers', 'Provider integrations'), t('bounty.project_providers_note', 'Improve authentication, model discovery, reliability, and provider-specific setup.')],
-    [t('bounty.project_workspaces', 'Workspace and team tooling'), t('bounty.project_workspaces_note', 'Build clearer repository, worktree, team coordination, and hand-in workflows.')],
+    [t('bounty.project_onboarding', 'Adaptive onboarding scenes'), t('bounty.project_onboarding_note', 'Deliver a clear first-run route that responds to a person’s intended use without hiding alternate paths.')],
+    [t('bounty.project_providers', 'Provider sign-in recovery'), t('bounty.project_providers_note', 'Improve authentication windows, completion detection, and recovery when a provider sign-in is interrupted.')],
+    [t('bounty.project_workspaces', 'Repository and worktree setup'), t('bounty.project_workspaces_note', 'Design the guided GitHub clone, repository arrangement, worktree, and hand-in experience for a new workspace.')],
   ]) {
     const card = el('article', 'setup-bounty-project');
     card.append(el('h4', '', name), el('p', '', description), el('span', 'setup-fine', t('bounty.public_brief', 'Public brief · 🔒 Apply after registration')));
@@ -352,6 +352,7 @@ function createBountySurface(context) {
     notice.textContent = result.ok ? t('bounty.joined', 'Bounty Program opt-in saved on this machine.') : result.message;
     if (result.ok) join.disabled = true;
   });
+  join.disabled = true;
   const notice = el('p', 'setup-notice'); notice.setAttribute('role', 'status');
   body.append(intro, requirements, projects, join, notice); out.content.append(body);
   return { el: out.el, show: async () => {
