@@ -44,11 +44,6 @@ const HEADER = () => {
   { key: 'outputEl', widget: (tile) => makeOutput(tile),
     help: t('head.output_help', 'Output — live terminal or one of RIREKI’s unlocked views') },
 
-  { key: 'mentionBtn', needs: 'session',
-    widget: (tile) => buildTileMentions(tile),
-    help: t('head.mention_help', 'Mention another session — choose a name to add it to the message box'),
-    quiet: t('head.mention_quiet', 'Mentions — no session in this tile yet') },
-
   // below was put to him). It opened `/tegami/raw` — the letter verbatim — and it was the
   // only client route to that endpoint. The objection: the shingo chip opens the PARSED
   // ladder, not the file, and shingo.js hides the chip entirely when there is no ladder,
@@ -56,20 +51,6 @@ const HEADER = () => {
   // owner's call is that the button costs more header width than that case is worth. If
   // the raw view comes back it belongs INSIDE the ladder panel, where the reader already
   // is, not as a second glyph competing with the first.
-
-  // Window acts sit at the outside edge. The session controls remain beside them, but these
-  // two familiar marks get the corner: minus stops viewing; times opens the existing
-  // retirement sheet. Killing is not reimplemented here (and the Close shortcut
-  // path can land on the same Tile.kill boundary).
-  { key: 'killBtn', cls: 'window-control kill', text: '×', needs: 'session',
-    help: t('head.kill_help', 'Delete or archive this Agent'),
-    quiet: t('head.kill_quiet', 'Delete or archive Agent — no Agent in this workspace'),
-    on: (tile) => tile.kill() },
-
-  { key: 'minimizeBtn', cls: 'window-control minimize', text: '−', needs: 'session',
-    help: t('head.minimize_help', 'Close this view — the Agent keeps running'),
-    quiet: t('head.minimize_quiet', 'Close view — no Agent in this workspace'),
-    on: (tile) => tile.minimize() },
 
   // Hidden until there is a reading — a plain shell pane has no context, and that is fine.
   //
@@ -82,6 +63,11 @@ const HEADER = () => {
     widget: () => makeGauge('ctx'),
     help: t('head.gauge_help', "Context gauge — how full this session's context window is, read off the pane's own status line. Hidden until there is a reading.") },
 
+  { key: 'mentionBtn', needs: 'session',
+    widget: (tile) => buildTileMentions(tile),
+    help: t('head.mention_help', 'Mention another session — choose a name to add it to the message box'),
+    quiet: t('head.mention_quiet', 'Mentions — no session in this tile yet') },
+
   { key: 'docsBtn', needs: 'session',
     widget: (tile) => buildTileDocs(tile),
     help: t('head.docs_help', "This Agent's tracked docs — open one over this tile"),
@@ -93,6 +79,18 @@ const HEADER = () => {
         ? t('head.docs_read', 'Docs — {n} tracked by this Agent. Open one over this tile.', { n })
         : t('head.docs_none', 'Docs — this Agent is tracking none yet.');
     } },
+
+  // Window acts terminate the header at its outside edge: times opens the existing
+  // retirement sheet and minus stops viewing. Killing is not reimplemented here.
+  { key: 'killBtn', cls: 'window-control kill', text: '×', needs: 'session',
+    help: t('head.kill_help', 'Delete or archive this Agent'),
+    quiet: t('head.kill_quiet', 'Delete or archive Agent — no Agent in this workspace'),
+    on: (tile) => tile.kill() },
+
+  { key: 'minimizeBtn', cls: 'window-control minimize', text: '−', needs: 'session',
+    help: t('head.minimize_help', 'Close this view — the Agent keeps running'),
+    quiet: t('head.minimize_quiet', 'Close view — no Agent in this workspace'),
+    on: (tile) => tile.minimize() },
 
   ];
   return rows;

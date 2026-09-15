@@ -10,7 +10,10 @@ test('the tile corner exposes minimize and retirement through the existing Tile 
   assert.match(head, /on: \(tile\) => tile\.kill\(\)/);
   assert.match(head, /key: 'minimizeBtn',[^\n]+text: '−'/);
   assert.match(head, /on: \(tile\) => tile\.minimize\(\)/);
+  assert.ok(head.indexOf("key: 'mentionBtn'") < head.indexOf("key: 'docsBtn'"), 'session picker precedes Docs');
+  assert.ok(head.indexOf("key: 'docsBtn'") < head.indexOf("key: 'killBtn'"), 'Docs precedes the window controls');
   assert.ok(head.indexOf("key: 'killBtn'") < head.indexOf("key: 'minimizeBtn'"), 'close precedes minimize like the window controls it follows');
+  assert.equal(head.indexOf("key:", head.indexOf("key: 'minimizeBtn'") + 1), -1, 'no control follows the window controls');
   assert.doesNotMatch(head, /text: '🗑'/);
   assert.match(tile, /if \(this\.onMinimize\) this\.onMinimize\(this\);\s*else this\.detach\(\)/);
   assert.match(tile, /retireSession\(name, this\.retirementId/);
