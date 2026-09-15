@@ -12,7 +12,7 @@ title — designer, bookkeeper, health checker — is an agent; a box named like
 staff my codebase, health checks, dinner party — is a team.
 
 A template fills part of the New Agent or New Team form and stops: its answers become
-yours, and only provenance remains — it is never a live link (KOTOBA § LAUNCHER).
+yours, and only provenance remains — it is never a live link ([Vocabulary](../../KOTOBA.md#agent-composition-and-tools)).
 Picking one is the customising: everything it wrote stays editable underneath. Neither
 form is shown a template written for the other; the doors are `GET /api/templates/agents`
 and `GET /api/templates/teams`, filtered by `?kind=`.

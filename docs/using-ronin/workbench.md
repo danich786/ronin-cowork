@@ -18,7 +18,7 @@ The vocabulary comes from `ronin_catalogs/lexicons/professional_en.md`. In parti
 - a **surface** (`workspace_surface`) is the thing opened in that place;
 - the **surface head** is the permanent top row of that surface.
 
-If this guide and KOTOBA disagree, flag the difference. Do not invent a replacement word.
+If this guide and [KOTOBA](../../KOTOBA.md) disagree, flag the difference. Do not invent a replacement word.
 
 ## Library, profile, tenant
 

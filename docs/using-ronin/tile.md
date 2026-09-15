@@ -1,7 +1,7 @@
 # The tile — one cell of the coworkspace, top to bottom
 
 A **tile** is one cell of the coworkspace showing one session. The public word is *tile*;
-*pane* is the tmux terminal underneath and is machinery only (KOTOBA § THE GROUND).
+*pane* is the tmux terminal underneath and is machinery only ([Vocabulary](../../KOTOBA.md#coworkspace-and-work)).
 
 A tile is three things and nothing more: **a header**, **a mount point**, and **one of two
 views** composed into it. `class Tile` (`public/js/tile.js`) owns what any of it means; the
@@ -16,7 +16,7 @@ tape, then the commons panel, then xterm.
 ## What ships where
 
 **All frontend lives in `RONIN_COWORK`.** A `ronin_service` ships no HTML, JS or CSS — it
-fills a subset of *cowork's own* UI (KOTOBA § SURFACES). So every button below is a cowork
+fills a subset of *cowork's own* UI ([Vocabulary](../../KOTOBA.md#services-and-state)). So every button below is a cowork
 button. The question is only whether the thing behind it is plugged in.
 
 The client asks once, at boot, before the grid is built: `GET /api/version`
@@ -545,5 +545,4 @@ today; it would cost something the day the dot becomes a button.
 | the letter's role half | `src/tegami.ts` |
 | who is plugged in | `src/routes/version.ts` |
 
-Related: `docs/architecture/session-control-dials.md` · `public/js/README.md` · KOTOBA § COWORKSPACE,
-§ SURFACES, § LADDER.
+Related: `docs/architecture/session-control-dials.md` · `public/js/README.md` · [Vocabulary](../../KOTOBA.md#coworkspace-and-work).

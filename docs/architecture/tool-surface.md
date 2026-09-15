@@ -1,6 +1,6 @@
 # Tools and Agent capabilities
 
-Therefore:
+These authority boundaries are indexed by [KOTOBA](../../KOTOBA.md).
 
 - **Tool** — Ronin executable authority.
 - **Composite tool** — Ronin tool orchestrating multiple guarded operations.

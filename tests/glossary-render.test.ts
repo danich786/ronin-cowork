@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { renderGlossary } from '../src/birth-readme.js';
 import { activeDeskProfileName, listDeskProfiles } from '../src/desk-profiles.js';
 import { resolveLexicon } from '../src/lexicon-catalog.js';
@@ -11,6 +12,20 @@ const TEMPLATE = [
   '| `wipeboard` | **wipeboard**<!--g:glossary.wipeboard--> | one line |',
   '| team (`@ronin-tags`) | **Team**<!--g:glossary.team--> | one line |',
 ].join('\n');
+
+test('stock birth words agree with the UI lexicon when no desk profile is selected', async () => {
+  const [glossary, floor] = await Promise.all([
+    readFile(new URL('../KOTOBA_GLOSSARY.md', import.meta.url), 'utf8'),
+    readFile(new URL('../ronin_catalogs/lexicons/professional_en.md', import.meta.url), 'utf8'),
+  ]);
+  const words = new Map([...floor.matchAll(/^- \*\*([^*]+):\*\* (.*)$/gm)]
+    .map((match) => [match[1], match[2]]));
+  const cells = [...glossary.matchAll(/\*\*([^*\n]+)\*\*<!--g:([\w.-]+)-->/g)];
+  assert.ok(cells.length > 0, 'the shipped glossary has keyed stock words');
+  for (const [, word, key] of cells) {
+    assert.equal(word, words.get(key), `${key}: the stock fallback and displayed word must agree`);
+  }
+});
 
 test('the glossary renders its keyed cells from the desk words and drops the markers', async () => {
   const profileName = await activeDeskProfileName();
