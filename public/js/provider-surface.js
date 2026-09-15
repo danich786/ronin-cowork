@@ -71,33 +71,6 @@ export function createProviderSurface(context) {
   const out = WorkspaceKit.primitives.createSurface({ label: t('setup_surface.providers', 'Model providers'), className: 'setup-surface setup-provider-surface' });
   const action = (label, kind, onClick) => { const made = WorkspaceKit.primitives.createAction({ label, kind, action: onClick }); return made.el ?? made; };
   const yesNo = (on) => (on ? t('setup_surface.yes', 'yes') : t('setup_surface.no', 'no'));
-  const when = (stamp) => { const date = new Date(stamp); return Number.isNaN(date.getTime()) ? String(stamp) : date.toLocaleString(); };
-  const dates = el('details', 'setup-provider-dates');
-  const catalogDate = el('dd');
-  const machineDate = el('dd');
-  const versionsDate = el('dd');
-  const dateList = el('dl', 'setup-provider-date-list');
-  const dateRow = (label, value) => { const row = el('div'); row.append(el('dt', null, label), value); return row; };
-  const withdrawnList = el('dd');
-  const withdrawnRow = dateRow(t('setup_surface.withdrawn', 'Withdrawn by your copy'), withdrawnList);
-  withdrawnRow.hidden = true;
-  dateList.append(
-    dateRow(t('setup_surface.catalog_researched', 'Catalog researched'), catalogDate),
-    dateRow(t('setup_surface.machine_measured', 'Machine measured'), machineDate),
-    dateRow(t('setup_surface.versions_checked', 'Latest versions checked'), versionsDate),
-    withdrawnRow,
-  );
-  // Refresh lives in this box: the box is what-we-know-and-when, and Refresh renews it —
-  // measure again AND ask each installed CLI's package source for its newest release. The
-  // ask is outbound (one egress line each), so it is this press and never the surface
-  // simply opening; opening only measures. What it found is said, changed or not.
-  const refreshRow = el('div', 'setup-provider-refresh');
-  const refreshNote = el('span', 'setup-fine', t('setup_surface.refresh_note', 'Measures this machine again and asks each installed CLI’s package source for its newest release.'));
-  const descriptionsRow = el('div', 'setup-provider-descriptions');
-  const descriptionsReason = el('span', 'setup-fine', t('setup_surface.descriptions_unavailable', 'Ronin Services required · model descriptions update not published yet.'));
-  descriptionsReason.id = 'setup-provider-descriptions-reason';
-  const refreshOutcome = el('p', 'setup-fine setup-provider-refresh-outcome'); refreshOutcome.hidden = true;
-  dates.append(el('summary', null, t('setup_surface.check_for_updates', 'Check for updates')), dateList, refreshRow, descriptionsRow, refreshOutcome);
   const notice = el('p', 'setup-fine setup-provider-notice'); notice.hidden = true;
   const mikaAvailability = el('p', 'setup-fine setup-mika-availability');
   let opened = String(context.detail?.provider || context.detail?.key || '');
@@ -107,29 +80,6 @@ export function createProviderSurface(context) {
     if (!mounted) return;
     if (destroy) mounted.destroy?.(); else mounted.park?.();
     mounted = null;
-  };
-  const measuredDateText = () => {
-    const stamp = providerCatalog().measured_at || runtime?.measured_at || '';
-    return stamp
-      ? when(stamp)
-      : t('setup_surface.machine_unmeasured', 'Not measured yet');
-  };
-  const latestCheckedText = () => {
-    const stamps = (runtime.providers || []).map((provider) => provider?.latest_checked_at).filter(Boolean).sort();
-    return stamps.length ? when(stamps[stamps.length - 1]) : t('setup_surface.versions_unchecked', 'Not checked yet — press Refresh');
-  };
-  const paintDates = () => {
-    const read = providerCatalog();
-    const stockDate = read.stock_updated || t('setup_surface.catalog_date_unstated', 'Date not stated');
-    // Two layers, two dates, neither borrowed: the shipped file's, and the owner's copy's when one exists.
-    catalogDate.textContent = read.origin === 'user'
-      ? t('setup_surface.catalog_two_dates', 'Shipped {stock} · your copy {yours}', { stock: stockDate, yours: read.updated || t('setup_surface.catalog_date_unstated', 'Date not stated') })
-      : stockDate;
-    machineDate.textContent = measuredDateText();
-    versionsDate.textContent = latestCheckedText();
-    const gone = Array.isArray(read.withdrawn) ? read.withdrawn : [];
-    withdrawnList.textContent = gone.map((row) => row.label || row.provider).join(' · ');
-    withdrawnRow.hidden = gone.length === 0;
   };
   /**
    * WHICH LAYER a provider's section came from, said in words — the whole point of the
@@ -165,20 +115,6 @@ export function createProviderSurface(context) {
     }
     if (provider.askable === false) return t('setup_surface.installed_unaskable', 'Installed {version} · latest unknown: no package source to ask', { version }) + where;
     return t('setup_surface.installed_version', 'Installed {version}', { version }) + where;
-  };
-  /** After a Refresh: what moved since the last reading, or that nothing did. */
-  const refreshSummary = (before, after) => {
-    const rows = (runtime) => new Map((runtime?.providers || []).filter((p) => p?.id).map((p) => [p.id, p]));
-    const was = rows(before); const changes = [];
-    for (const [id, now] of rows(after)) {
-      const then = was.get(id) || {};
-      if (now.version !== then.version && (now.version || then.version)) changes.push(`${now.label || id}: ${then.version || '—'} → ${now.version || '—'}`);
-      if (now.latest !== then.latest && (now.latest || then.latest)) changes.push(`${now.label || id}: ${t('setup_surface.refresh_latest_word', 'latest')} ${then.latest || '—'} → ${now.latest || '—'}`);
-    }
-    const stamp = when(new Date().toISOString());
-    return changes.length
-      ? t('setup_surface.refresh_changed', 'Checked {when} — {changes}', { when: stamp, changes: changes.join(' · ') })
-      : t('setup_surface.refresh_unchanged', 'Checked {when} — unchanged', { when: stamp });
   };
   /** A catalog provider no registry CLI serves is a stone of its own, keyed by its vendor id. */
   const catalogOnly = () => {
@@ -386,24 +322,8 @@ export function createProviderSurface(context) {
     renderDetail: (item, host) => paintProvider(item.id, host),
     onSelectionChange: (id) => { opened = String(id || ''); },
   });
-  stones.mount(out.content, { after: [dates, mikaAvailability, notice] });
+  stones.mount(out.content, { after: [mikaAvailability, notice] });
   const say = (text, bad = false) => { notice.className = `${bad ? 'setup-notice bad' : 'setup-fine'} setup-provider-notice`; notice.textContent = text; notice.hidden = !text; };
-  const refresh = action(t('setup_surface.refresh', 'Refresh'), '', async () => {
-    const before = runtime;
-    if (!(await measure(true))) return;
-    refreshOutcome.textContent = refreshSummary(before, runtime);
-    refreshOutcome.hidden = false;
-    dates.open = true;
-  });
-  refresh.classList.add('setup-provider-action', 'setup-provider-refresh-action');
-  refreshRow.append(refresh, refreshNote);
-  // Disabled, never hidden: this teaches the catalog-level capability without implying
-  // that Services activation is sufficient while its library bundle is still unpublished.
-  const updateDescriptions = action(t('setup_surface.update_descriptions', 'Update descriptions'), '', () => {});
-  updateDescriptions.classList.add('setup-provider-action', 'setup-provider-descriptions-action');
-  updateDescriptions.disabled = true;
-  updateDescriptions.setAttribute('aria-describedby', descriptionsReason.id);
-  descriptionsRow.append(updateDescriptions, descriptionsReason);
   /** The frame from whatever `runtime` holds now: the record, or the measure once it lands. */
   const paintFrom = async () => {
     disposeMount();
@@ -416,7 +336,6 @@ export function createProviderSurface(context) {
         : t('setup_surface.models_signed_in', '{count} models signed in', { count: activatedNow });
     await loadProviderCatalog();
     context.workbench?.refreshSelector?.();
-    paintDates();
     const rows = providerCatalog().rows;
     const providers = (Array.isArray(runtime.providers) ? runtime.providers : []).filter((provider) => provider?.id);
     const stoneOf = (id, label, secondary, state, activated) => ({ id, label, secondary, state, className: 'setup-provider-stone', attrs: { 'data-provider': id, 'data-activated': String(activated) } });
