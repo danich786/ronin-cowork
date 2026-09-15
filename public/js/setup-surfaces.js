@@ -227,7 +227,7 @@ function createRegisterSurface(context) {
     if (identity) void context.environment?.setIdentityChoice?.(identity);
   });
   paintIdentityMode();
-  form.append(welcome, route, registrationIntro, about, fit, send, declined);
+  form.append(welcome, registrationIntro, about, fit, send, declined);
   const prefs = el('form', 'setup-form setup-preferences');
   const checks = Object.fromEntries(['newsletter', 'release_updates', 'no_communication'].map((name) => [name, input(name, 'checkbox')]));
   const followUps = Object.fromEntries(['product_research', 'interviews', 'support'].map((name) => [name, input(name, 'checkbox')]));

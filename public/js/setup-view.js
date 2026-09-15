@@ -13,7 +13,7 @@ import { campaignById, campaigns, initialCampaignId, loadCampaigns, saveCampaign
 import { readyMika } from './mika-ready.js';
 import { createMikaHelpPanel, createMikaTilePool } from './mika.js';
 import { toast } from './ui.js';
-import { SETUP_SCENES, setupJourney } from './setup-journey.js';
+import { SETUP_SCENES, automaticSetupScene, setupJourney } from './setup-journey.js';
 
 const PROFILE = 'setup';
 const MIKA_SESSION = 'mika_agent';
@@ -123,39 +123,21 @@ export function createSetupView() {
   const mikaHelp = createAction({ label: t('mika.help', 'ミ Help'), size: 'compact' });
   let helpPanel = null;
   let sceneOverride = 0;
-  let visibleTypes = new Set(ORDER);
-  let appliedSceneNumber = 0;
-  const servicesReady = () => {
-    const services = environment.setupRuntime?.services || {};
-    return services.active === true || services.installed === true || services.switched_on === true;
-  };
-  const codePath = () => (environment.kinds?.get?.()[0] || environment.setupRuntime?.preferences?.kinds?.[0]) === 'build';
   const paintSelectorCards = (host = bench?.host) => {
     if (!host) return;
+    const current = setupJourney(environment.setupRuntime || {}, sceneOverride);
     for (const card of host.querySelectorAll('[data-workbench-offer-type]')) {
-      card.dataset.sceneRelevant = String(visibleTypes.has(card.dataset.workbenchOfferType));
-      if (card.dataset.workbenchOfferType === SETUP_SURFACE_TYPES.installations) card.dataset.registrationLocked = String(!servicesReady());
-      if (card.dataset.workbenchOfferType === SETUP_SURFACE_TYPES.bounty) card.dataset.registrationLocked = String(!servicesReady() || Number(environment.setupRuntime?.activated_count || 0) < 2);
+      card.dataset.sceneRelevant = String(card.dataset.workbenchOfferType === current.type);
+      delete card.dataset.registrationLocked;
     }
   };
-  const setArrangementHidden = (slot, hidden) => {
-    if (bench && hidden !== bench.arrangement.state().hidden.includes(slot)) bench.arrangement.toggle(slot);
-  };
-  const applyJourney = (runtime = environment.setupRuntime) => {
+  const openScene = (number) => {
     if (!bench) return;
-    const scene = setupJourney(runtime || {}, sceneOverride);
-    appliedSceneNumber = scene.number;
-    visibleTypes = new Set(scene.visibleTypes);
-    setArrangementHidden('workspace1', false);
-    setArrangementHidden('workspace2', false);
-    setArrangementHidden('selector', !scene.selector);
-    if (scene.seats.workspace1) bench.place(scene.seats.workspace1, 'workspace1');
-    else bench.restoreDefault('workspace1');
-    if (scene.seats.workspace2) bench.place(scene.seats.workspace2, 'workspace2');
-    else bench.restoreDefault('workspace2');
-    bench.refreshSelector();
-    paintSelectorCards();
+    const scene = setupJourney(environment.setupRuntime || {}, number);
+    bench.place(scene.type, 'workspace2');
+    bench.select('workspace2');
     paintSceneIndex();
+    paintSelectorCards();
     save();
   };
   const environment = {
@@ -164,18 +146,9 @@ export function createSetupView() {
     openLaunchForm: ({ kind, seed = {} } = {}) => openLaunchForm(ctx, { kind, seed }),
     openTemplateLaunchForm: () => openTemplateLaunchForm(ctx),
     setupRuntime: null,
-    onSetupRuntime: (runtime) => {
-      environment.setupRuntime = runtime;
-      const next = setupJourney(runtime || {}, sceneOverride).number;
-      if (next !== appliedSceneNumber) applyJourney(runtime);
-    },
-    // What the person uses Ronin for: one persisted preference shared by Register and Presets.
-    kinds: createKindsPreference(globalThis.localStorage, (kinds) => {
-      if (environment.setupRuntime) environment.setupRuntime = { ...environment.setupRuntime, preferences: { ...(environment.setupRuntime.preferences || {}), kinds } };
-      bench?.refreshSelector();
-      if (appliedSceneNumber === 3) applyJourney();
-      return request('/api/setup/preferences', { method: 'PATCH', json: { kinds } });
-    }),
+    onSetupRuntime: (runtime) => { environment.setupRuntime = runtime; },
+    // Setup has one path: Ronin is configured as a developer workspace.
+    kinds: createKindsPreference(globalThis.localStorage, () => {}),
     setPathNote: (path_note) => request('/api/setup/preferences', { method: 'PATCH', json: { path_note } }),
     setIdentityChoice: (identity_choice) => request('/api/setup/preferences', { method: 'PATCH', json: { identity_choice } }),
     mountProviderSetupSession: providerSessions.mountProviderSetupSession,
@@ -217,7 +190,7 @@ export function createSetupView() {
     const button = barButton('setup-scene-button');
     button.textContent = label;
     button.title = title;
-    button.addEventListener('click', () => { sceneOverride = number; applyJourney(); });
+    button.addEventListener('click', () => { sceneOverride = number; openScene(number); });
     sceneButtons.push({ button, number });
     sceneIndex.append(button);
   };
@@ -253,8 +226,7 @@ export function createSetupView() {
     title: () => helpPanel?.isOpen() ? t('mika.header', 'Mika, your helpful assistant') : t('setup.title', 'Ronin Setup'),
     selectorWorkspace: 'workspace2',
     selectorCurrent: true,
-    selectorFilter: (type) => type !== PRESETS_TYPE && ORDER.includes(type)
-      && (codePath() || ![SETUP_SURFACE_TYPES.roots, SETUP_SURFACE_TYPES.bounty].includes(type)),
+    selectorFilter: (type) => type !== PRESETS_TYPE && ORDER.includes(type),
     onSelectorRefresh: () => paintSelectorCards(),
     actions: [mikaHelp],
     onStateChange: save,
@@ -296,7 +268,7 @@ export function createSetupView() {
       if (!environment.setupRuntime) {
         const runtime = await request('/api/setup/runtime', { cache: 'no-store' });
         environment.setupRuntime = runtime.ok ? runtime.data : { providers: [] };
-        if (runtime.ok) environment.kinds.hydrate(runtime.data?.preferences?.kinds || []);
+        if (runtime.ok) environment.kinds.hydrate(['build']);
       }
       // The catalog Presets' Where reads; the runtime read above has just seeded the pair.
       if (!Array.isArray(projectData)) await loadProjects();
@@ -318,7 +290,9 @@ export function createSetupView() {
       const widths = sameOrder(stored.arrangement?.order, DEFAULT_ARRANGEMENT.order) ? stored.arrangement.widths : DEFAULT_ARRANGEMENT.widths;
       bench.enter({ ...stored, count: 2, arrangement: { ...DEFAULT_ARRANGEMENT, widths } });
       bench.setCount(2);
-      applyJourney(environment.setupRuntime);
+      paintSceneIndex();
+      paintSelectorCards();
+      if (!stored.seats?.workspace2) openScene(sceneOverride || automaticSetupScene(environment.setupRuntime));
     },
     leave: () => bench.leave(),
     destroy: () => { helpPanel.destroy(); providerSessions.destroyAll(); mikaPool.destroyAll(); bench.leave(); ctx = null; },
