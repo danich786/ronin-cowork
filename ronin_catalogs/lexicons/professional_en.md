@@ -423,7 +423,7 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **help.installations:** What an Installation is
 - **help.installations_body:** An Installation is a system-level switch in the Campaign. A system installation joins every Cowork Agent; a provider installation makes its behaviours available for Teams and Agents to choose.
 - **help.behaviours:** What a Behaviour is
-- **help.behaviours_body:** A Behaviour says how the owner wants ordinary work done. Each is one short page delivered at birth when selected; Mandates is on by default, and the rest are additions the owner may choose.
+- **help.behaviours_body:** A Behaviour says how the owner wants ordinary work done. Each is one short page delivered at birth when selected. Mandate teaching belongs to every Cowork Agent's Ronin floor; behaviours are additions the owner may choose.
 - **help.type:** New session
 - **help.type_body:** Three kinds of thing can start here. A Cowork Agent is born with everything Ronin provides on this box. A bare-metal Agent is the provider’s own CLI and nothing else. A terminal is a shell with no agent. The choice decides which of the steps below exist — a terminal is asked three things because there are only three to ask.
 - **help.top:** Name & kind

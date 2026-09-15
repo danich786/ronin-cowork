@@ -45,7 +45,7 @@ requirement are on. A launch request naming an unavailable behaviour is born wit
 the birth receipt names it as undelivered and birth still succeeds. Providerless
 behaviours are always on offer.
 
-The stock shelf includes `mandates` (on by default), `buildout`, `recruit`,
+Every Cowork Agent receives mandate teaching from the Ronin floor. The selectable stock shelf includes `buildout`, `recruit`,
 `write_it_down`, `more_checkpoints`, `report_before_fixing`, `visual_staging`,
 `ronin_host`, `gbrain`, `trello`, and `perplexity`. A Team's required behaviours cannot
 be removed on an Agent form. Every form uses the same tall, wrapping behaviour stone;

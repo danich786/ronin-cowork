@@ -65,7 +65,7 @@ function parse(name: string, raw: string, campaign_id = ''): TeamRoster {
     try { return JSON.parse(get(k)); } catch { return undefined; }
   };
   const strings = (value: unknown, max: number): string[] => Array.isArray(value)
-    ? value.map((entry) => typeof entry === 'string' ? entry.trim().slice(0, max) : '').filter(Boolean)
+    ? value.map((entry) => typeof entry === 'string' ? entry.trim().slice(0, max) : '').filter((entry) => Boolean(entry) && entry !== 'mandates')
     : [];
   const behaviourValue = json('behaviours');
   const behaviourMap = behaviourValue && typeof behaviourValue === 'object' && !Array.isArray(behaviourValue)
@@ -96,7 +96,7 @@ function parse(name: string, raw: string, campaign_id = ''): TeamRoster {
     state: /^archived$/i.test(get('state')) ? 'archived' : 'active',
     behaviours: settled
       ? { selected: strings(behaviourMap.selected, 160), required: strings(behaviourMap.required, 160) }
-      : { selected: ['mandates'], required: [] },
+      : { selected: [], required: [] },
     agent_defaults: teamAgentDefaults(json('agent_defaults')),
     projects,
     done_projects: projectList('done_projects'),
@@ -244,7 +244,9 @@ export async function createTeamRoster(name: string, edit: RosterEdit, campaign_
     branches: edit.branches ?? {},
     wipeboard: edit.wipeboard || (await freeBoardToken(name, campaign_id)),
     state: edit.state ?? 'active',
-    behaviours: edit.behaviours ?? { selected: ['mandates'], required: [] },
+    behaviours: edit.behaviours
+      ? { selected: edit.behaviours.selected.filter((name) => name !== 'mandates'), required: edit.behaviours.required.filter((name) => name !== 'mandates') }
+      : { selected: [], required: [] },
     agent_defaults: teamAgentDefaults(edit.agent_defaults),
     projects: edit.projects ?? [],
     done_projects: edit.done_projects ?? [],
@@ -266,7 +268,12 @@ export async function writeTeamRoster(name: string, edit: RosterEdit, campaign_i
   let raw = await readFile(teamRosterFile(name, where), 'utf8');
   // `references` left the shape 2026-09-13 (never used); an old file's line goes on the next edit.
   const lines = raw.split('\n').filter((l) => !/^-\s*\*\*references:\*\*/.test(l.trim()));
-  const normalizedEdit: RosterEdit = edit;
+  const normalizedEdit: RosterEdit = edit.behaviours
+    ? { ...edit, behaviours: {
+        selected: edit.behaviours.selected.filter((name) => name !== 'mandates'),
+        required: edit.behaviours.required.filter((name) => name !== 'mandates'),
+      } }
+    : edit;
   const merged: TeamRoster = {
     ...existing,
     ...Object.fromEntries(KEYS.filter((k) => normalizedEdit[k] !== undefined).map((k) => [k, normalizedEdit[k]])),

@@ -111,7 +111,7 @@ test('the settled nested shapes round-trip, and an edit touches only what it sta
   const r = await writeTeamRoster('alpha', { title: 'Alpha Platform' });
   assert.equal(r.title, 'Alpha Platform');
   assert.equal(r.objective, 'ship the teams cut', 'unstated fields survive');
-  assert.deepEqual(r.behaviours, { selected: ['mandates'], required: ['mandates'] });
+  assert.deepEqual(r.behaviours, { selected: [], required: [] });
   assert.deepEqual(r.agent_defaults, {
     provider: 'anthropic', model: 'opus', reach: 'execute', recruit: 'nobody',
     output: ['code'], dial: 'read', launch_mode: 'configured',
@@ -128,20 +128,20 @@ test('a blank field is written as "—" and reads back as the blank it stands fo
   const r = await writeTeamRoster('bare', { branch: 'dev' });
   assert.equal(r.project_root, '', 'an untouched blank stays blank after an edit');
   assert.equal(r.kind, 'open');
-  assert.deepEqual(r.behaviours, { selected: ['mandates'], required: [] });
+  assert.deepEqual(r.behaviours, { selected: [], required: [] });
   assert.equal(r.branch, 'dev');
   const cleared = await writeTeamRoster('bare', { objective: '' });
   assert.equal(cleared.objective, '', 'clearing a field is blank on read-back, not "—"');
   await deleteTeamRoster('bare');
 });
 
-test('an old behaviour shape reads stock Mandates and is not rewritten', async () => {
+test('an old behaviour shape reads with no elective behaviours and is not rewritten', async () => {
   const file = path.join(temp, 'home_machine', 'old_shape.md');
   await fs.mkdir(path.dirname(file), { recursive: true });
   const raw = '# old_shape\n- **title:** Old Shape\n- **behaviours:** {"books":[],"required":false}\n';
   await fs.writeFile(file, raw, 'utf8');
   const roster = await readTeamRoster('old_shape', 'home_machine');
-  assert.deepEqual(roster?.behaviours, { selected: ['mandates'], required: [] });
+  assert.deepEqual(roster?.behaviours, { selected: [], required: [] });
   assert.equal(await fs.readFile(file, 'utf8'), raw, 'reading the old shape does not migrate it');
 });
 

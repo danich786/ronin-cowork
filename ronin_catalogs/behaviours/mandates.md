@@ -4,6 +4,10 @@
 - **blurb:** Follow the stated reach, recruiting, and output choices.
 - **installation:** —
 - **order:** 10
+- **scope:** floor
+
+Every Cowork Agent receives this behaviour. It is discoverable in the behaviour catalog,
+but it is not a selectable Campaign, Team, template, or New Agent option.
 
 - **Reach `open`:** Follow the request wherever it leads. `discuss` returns discussion only; `plan` produces a plan and uses the `buildout` behaviour for its house form; `execute` carries the agreed work through.
 - **Recruit `open`:** Recruit as useful. `nobody` works alone; `propose agents` proposes a team and waits; `staff agents` may recruit and uses the `recruit` behaviour for its house form.

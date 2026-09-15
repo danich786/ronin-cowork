@@ -21,7 +21,7 @@ import { availableBehaviours, resolveContributions, type ResolvedContribution } 
 import { resolveInstallations, type ResolvedInstallation } from './installations.js';
 import { initialCampaignId } from './campaign-scope.js';
 import { resolveLaunchSeed } from './launch-seed.js';
-import { resolveBehaviourBooks, type DeliveredBehaviour } from './behaviours.js';
+import { resolveBehaviourBooks, resolveFloorBehaviour, type DeliveredBehaviour } from './behaviours.js';
 import { templateProvenance } from './template-provenance.js';
 import { profileDir, resolveHouseSeatProfile, type HouseSeat } from './house-seats.js';
 import { capabilityTools, renderCapabilitiesOverview, resolveCapabilities, type ResolvedCapability } from './capabilities.js';
@@ -409,6 +409,7 @@ export async function resolveForm(
   const resolvedBehaviours = coworkAgent && agent
     ? await resolveBehaviourBooks(cascade.selected)
     : { delivered: [], ignored: [] };
+  const mandateFloor = coworkAgent && agent ? await resolveFloorBehaviour('mandates') : null;
   // CAPABILITY BUNDLES: the folder decides what exists, and facts select the knowledge.
   // Installed Cowork tools remain universal; feature facts decide feature projection.
   // Mika keeps her own curated toolset.
@@ -436,7 +437,7 @@ export async function resolveForm(
   // The selected capability documents are reached through the overview's own
   // "Full document" line, not as shelf cards: the packet has a one-read budget and the
   // fullest stock birth already sits within 2 KB of it with the overview inlined.
-  const completeReading = [...shelfReading, ...resolvedBehaviours.delivered.map((book) => book.file)];
+  const completeReading = [...shelfReading, ...(mandateFloor ? [mandateFloor.file] : []), ...resolvedBehaviours.delivered.map((book) => book.file)];
   const birthReading = coworkAgent && agent
     ? [...completeReading, ...(form.seed ?? [])].filter(Boolean)
     : [];

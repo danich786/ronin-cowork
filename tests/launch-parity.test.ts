@@ -464,8 +464,8 @@ test('kind and behaviours resolve at birth, with unusable books reported as unde
     behaviours: ['mandates', 'write_it_down', 'ways:not_there'],
   }), new Set());
   assert.equal(born.kind, 'coding');
-  assert.deepEqual(born.behaviours.map((row) => row.book), ['mandates', 'write_it_down']);
-  assert.ok(born.birth_reading.some((file) => file.endsWith('/behaviours/mandates.md')));
+  assert.deepEqual(born.behaviours.map((row) => row.book), ['write_it_down']);
+  assert.ok(born.birth_reading.some((file) => file.endsWith('/behaviours/mandates.md')), 'the canonical mandate behaviour is always applied as floor teaching');
   assert.ok(born.birth_reading.some((file) => file.endsWith('/behaviours/write_it_down.md')));
   assert.deepEqual(born.ignored, []);
   assert.deepEqual(born.undelivered, ['ways:not_there']);

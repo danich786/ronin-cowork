@@ -82,8 +82,8 @@ function editOf(body: unknown): RosterEdit {
     const value = b.behaviours && typeof b.behaviours === 'object' && !Array.isArray(b.behaviours)
       ? b.behaviours as Record<string, unknown> : {};
     edit.behaviours = {
-      selected: Array.isArray(value.selected) ? value.selected.map(String).map((v) => v.trim().slice(0, 160)).filter(Boolean) : [],
-      required: Array.isArray(value.required) ? value.required.map(String).map((v) => v.trim().slice(0, 160)).filter(Boolean) : [],
+      selected: Array.isArray(value.selected) ? value.selected.map(String).map((v) => v.trim().slice(0, 160)).filter((v) => Boolean(v) && v !== 'mandates') : [],
+      required: Array.isArray(value.required) ? value.required.map(String).map((v) => v.trim().slice(0, 160)).filter((v) => Boolean(v) && v !== 'mandates') : [],
     };
   }
   if (b.agent_defaults !== undefined) edit.agent_defaults = b.agent_defaults && typeof b.agent_defaults === 'object' && !Array.isArray(b.agent_defaults)

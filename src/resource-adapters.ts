@@ -185,7 +185,7 @@ const templateBox = (d: Definition): TemplateBox => ({
   blurb: d.get('blurb'),
   art: d.get('art'),
   kinds: splitDefinitionList(d.get('kinds')).filter((kind) => TEMPLATE_KINDS.includes(kind)),
-  behaviours: splitDefinitionList(d.get('behaviours')),
+  behaviours: splitDefinitionList(d.get('behaviours')).filter((name) => name !== 'mandates'),
 });
 
 export async function listAgentTemplates(): Promise<AgentTemplateRow[]> {
@@ -212,7 +212,7 @@ export function parseTemplateAgents(raw: string): TemplateAgentRow[] {
         instructions: entryValue(lines, 'instructions'),
         mandate: mandate ? templateMandate(mandate) : null,
         team_lead: /^yes$/i.test(entryValue(lines, 'team_lead')),
-        behaviours: splitDefinitionList(entryValue(lines, 'behaviours')),
+        behaviours: splitDefinitionList(entryValue(lines, 'behaviours')).filter((name) => name !== 'mandates'),
       };
     })
     .filter((row) => row.name);

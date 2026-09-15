@@ -32,7 +32,7 @@ const outputs = (value: unknown): Output[] => {
 };
 
 const books = (value: unknown): string[] => Array.isArray(value)
-  ? value.map((entry) => text(entry, 160)).filter(Boolean)
+  ? value.map((entry) => text(entry, 160)).filter((entry) => Boolean(entry) && entry !== 'mandates')
   : [];
 
 export function agentDefaults(value: unknown): AgentDefaults {
@@ -45,7 +45,7 @@ export function agentDefaults(value: unknown): AgentDefaults {
     reach: oneOf(input.reach, ['open', 'discuss', 'plan', 'execute'], 'plan'),
     recruit: oneOf(input.recruit, ['open', 'nobody', 'propose agents', 'staff agents'], 'propose agents'),
     output: outputs(input.output),
-    behaviours: input.behaviours === undefined ? ['mandates'] : books(input.behaviours),
+    behaviours: books(input.behaviours),
     dial: oneOf(input.dial, ['user', 'read', 'write'], 'write'),
     launch_mode: oneOf(input.launch_mode, ['configured', 'live_dangerously'], 'configured'),
   };

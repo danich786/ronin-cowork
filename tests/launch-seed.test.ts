@@ -30,8 +30,8 @@ const sources = (roster: TeamRoster | null) => ({ campaign, roster, roots: [{ na
 
 test('teamless seed exposes available behaviours and the fixed residue', () => {
   const seed = resolveLaunchSeed(sources(null));
-  assert.deepEqual(seed.available, ['gbrain', 'ronin_host', 'mandates']);
-  assert.deepEqual(seed.seeds.behaviours.value, ['gbrain', 'mandates']);
+  assert.deepEqual(seed.available, ['gbrain', 'ronin_host']);
+  assert.deepEqual(seed.seeds.behaviours.value, ['gbrain']);
   assert.equal(seed.behaviours.find((row) => row.name === 'gbrain')?.reading, '/gbrain.md');
   assert.equal(seed.resolved_contributions.find((row) => row.name === 'ronin_services')?.reading[0], 'routine/ronin_services/OFF.md');
   assert.equal(seed.resolved_contributions[0]?.stated_by, 'installation');
@@ -41,25 +41,25 @@ test('teamless seed exposes available behaviours and the fixed residue', () => {
 
 test('Team complete lists replace Campaign defaults and carry Team provenance', () => {
   const seed = resolveLaunchSeed(sources(team));
-  assert.deepEqual(seed.seeds.behaviours.value, ['ronin_host', 'mandates']);
+  assert.deepEqual(seed.seeds.behaviours.value, ['ronin_host']);
   assert.equal(seed.seeds.behaviours.stated_by[0]?.layer, 'team');
   assert.equal(seed.seeds.project_root.stated_by[0]?.layer, 'conditional');
-  assert.equal(seed.behaviours.find((row) => row.name === 'mandates')?.required, true);
+  assert.equal(seed.behaviours.some((row) => row.name === 'mandates'), false);
 });
 
 test('an unavailable requested behaviour is reported, never refused', () => {
   const off = { ...campaign, config: { ...campaign.config, installations: { ronin_services: false, gbrain: false } } };
   const seed = resolveLaunchSeed({ ...sources(null), campaign: off });
-  assert.deepEqual(seed.available, ['ronin_host', 'mandates']);
+  assert.deepEqual(seed.available, ['ronin_host']);
   assert.deepEqual(seed.undelivered, ['gbrain']);
 });
 
-test('unsettled Campaign and Team inputs seed stock Mandates', () => {
+test('unsettled Campaign and Team inputs seed no elective behaviours', () => {
   const oldCampaign = { ...campaign, config: {
     defaults: agentDefaults({ behaviours: [] }), cowork_defaults: {}, template_defaults: {},
   } } as CampaignConfig;
   const oldTeam = { ...team } as unknown as TeamRoster;
   delete (oldTeam as unknown as Record<string, unknown>).behaviours;
   const seed = resolveLaunchSeed({ ...sources(oldTeam), campaign: oldCampaign });
-  assert.deepEqual(seed.seeds.behaviours.value, ['mandates']);
+  assert.deepEqual(seed.seeds.behaviours.value, []);
 });

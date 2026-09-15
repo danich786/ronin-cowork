@@ -20,6 +20,10 @@ export async function resolveBehaviourBooks(input: readonly string[]): Promise<R
     if (!book || seen.has(book)) continue;
     seen.add(book);
     const name = book.replace(/^ways:/, '');
+    // `mandates` was an elective behaviour before 2026-09-15. It is now part of
+    // every Cowork Agent's base reading, so tolerate the old token without
+    // delivering or reporting it as a selectable behaviour.
+    if (name === 'mandates') continue;
     const resolved = ways.get(name);
     if (!/^[a-z0-9][a-z0-9_-]*$/.test(name) || !resolved) {
       ignored.push(`behaviours[${book || String(raw)}]`);
@@ -29,4 +33,10 @@ export async function resolveBehaviourBooks(input: readonly string[]): Promise<R
     delivered.push({ book, file });
   }
   return { delivered, ignored: ignored.sort() };
+}
+
+/** A canonical behaviour whose application scope is the Cowork Agent floor, not a selection. */
+export async function resolveFloorBehaviour(name: string): Promise<DeliveredBehaviour | null> {
+  const way = (await listWays()).find((row) => row.name === name);
+  return way ? { book: name, file: await wayFile(name, way.origin) } : null;
 }
