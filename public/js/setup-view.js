@@ -130,12 +130,25 @@ export function createSetupView() {
   let helpPanel = null;
   let sceneOverride = 0;
   let visibleTypes = new Set(ORDER);
+  let registrationLocked = true;
+  let registrationKnown = false;
+  let appliedSceneNumber = 0;
+  const paintSelectorCards = (host = bench?.host) => {
+    if (!host) return;
+    for (const card of host.querySelectorAll('[data-workbench-offer-type]')) {
+      card.dataset.sceneRelevant = String(visibleTypes.has(card.dataset.workbenchOfferType));
+      if ([SETUP_SURFACE_TYPES.installations, SETUP_SURFACE_TYPES.bounty].includes(card.dataset.workbenchOfferType)) {
+        card.dataset.registrationLocked = String(registrationLocked);
+      }
+    }
+  };
   const setArrangementHidden = (slot, hidden) => {
     if (bench && hidden !== bench.arrangement.state().hidden.includes(slot)) bench.arrangement.toggle(slot);
   };
   const applyJourney = (runtime = environment.setupRuntime) => {
     if (!bench) return;
     const scene = setupJourney(runtime || {}, sceneOverride);
+    appliedSceneNumber = scene.number;
     visibleTypes = new Set(scene.visibleTypes);
     setArrangementHidden('workspace1', false);
     setArrangementHidden('workspace2', false);
@@ -145,16 +158,7 @@ export function createSetupView() {
     if (scene.seats.workspace2) bench.place(scene.seats.workspace2, 'workspace2');
     else bench.restoreDefault('workspace2');
     bench.refreshSelector();
-    for (const card of bench.host.querySelectorAll('[data-workbench-offer-type]')) {
-      card.dataset.sceneRelevant = String(visibleTypes.has(card.dataset.workbenchOfferType));
-    }
-    void request('/api/setup/registration', { cache: 'no-store' }).then((registration) => {
-      const locked = !(registration.ok && registration.data?.status === 'registered');
-      for (const type of [SETUP_SURFACE_TYPES.installations, SETUP_SURFACE_TYPES.bounty]) {
-        const card = bench?.host.querySelector(`[data-workbench-offer-type="${type}"]`);
-        if (card) card.dataset.registrationLocked = String(locked);
-      }
-    });
+    paintSelectorCards();
     paintSceneIndex();
     save();
   };
@@ -164,7 +168,16 @@ export function createSetupView() {
     openLaunchForm: ({ kind, seed = {} } = {}) => openLaunchForm(ctx, { kind, seed }),
     openTemplateLaunchForm: () => openTemplateLaunchForm(ctx),
     setupRuntime: null,
-    onSetupRuntime: (runtime) => { environment.setupRuntime = runtime; applyJourney(runtime); },
+    onSetupRuntime: (runtime) => {
+      environment.setupRuntime = runtime;
+      const next = setupJourney(runtime || {}, sceneOverride).number;
+      if (next !== appliedSceneNumber) applyJourney(runtime);
+    },
+    setRegistration: (registration) => {
+      registrationKnown = true;
+      registrationLocked = registration?.status !== 'registered';
+      paintSelectorCards();
+    },
     // What the person uses Ronin for: one persisted preference shared by Register and Presets.
     kinds: createKindsPreference(globalThis.localStorage, (kinds) => request('/api/setup/preferences', { method: 'PATCH', json: { kinds } })),
     setPathNote: (path_note) => request('/api/setup/preferences', { method: 'PATCH', json: { path_note } }),
@@ -245,6 +258,7 @@ export function createSetupView() {
     selectorWorkspace: 'workspace2',
     selectorCurrent: true,
     selectorFilter: (type) => type !== PRESETS_TYPE && ORDER.includes(type),
+    onSelectorRefresh: () => paintSelectorCards(),
     actions: [mikaHelp],
     onStateChange: save,
     onPlacement: save,
@@ -286,6 +300,10 @@ export function createSetupView() {
         const runtime = await request('/api/setup/runtime', { cache: 'no-store' });
         environment.setupRuntime = runtime.ok ? runtime.data : { providers: [] };
         if (runtime.ok) environment.kinds.hydrate(runtime.data?.preferences?.kinds || []);
+      }
+      if (!registrationKnown) {
+        const registration = await request('/api/setup/registration', { cache: 'no-store' });
+        environment.setRegistration(registration.ok ? registration.data : null);
       }
       // The catalog Presets' Where reads; the runtime read above has just seeded the pair.
       if (!Array.isArray(projectData)) await loadProjects();

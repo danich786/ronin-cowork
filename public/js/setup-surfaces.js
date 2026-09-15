@@ -33,7 +33,11 @@ const summaries = new Map([
   [SETUP_SURFACE_TYPES.launchOwn, 'template · team · agent'],
 ]);
 const el = (tag, cls = '', text = null) => { const out = document.createElement(tag); if (cls) out.className = cls; if (text != null) out.textContent = text; return out; };
-const notifySummary = (type, value, workbench) => { summaries.set(type, value); workbench?.refreshSelector?.(); };
+const notifySummary = (type, value, workbench) => {
+  if (summaries.get(type) === value) return;
+  summaries.set(type, value);
+  workbench?.refreshSelector?.();
+};
 const surface = (label, className = '') => WorkspaceKit.primitives.createSurface({ label, className: `setup-surface ${className}`.trim() });
 const action = (label, kind, onClick) => {
   const made = WorkspaceKit.primitives.createAction({ label, kind, action: onClick });
@@ -256,6 +260,7 @@ function createRegisterSurface(context) {
     return words.filter(Boolean).join(' · ');
   };
   const paint = () => {
+    context.environment?.setRegistration?.(current);
     const registered = current?.status === 'registered';
     const anonymous = current?.status === 'anonymous';
     identity.hidden = !current?.submitted_at;
@@ -360,6 +365,7 @@ function createBountySurface(context) {
       request('/api/setup/registration', { cache: 'no-store' }), request('/api/setup/github', { cache: 'no-store' }),
     ]);
     const email = registration.ok && registration.data?.status === 'registered' && registration.data?.identity_mode === 'email';
+    if (registration.ok) context.environment?.setRegistration?.(registration.data);
     const connected = github.ok && github.data?.authenticated === true;
     const services = context.environment?.setupRuntime?.services?.active === true;
     const rows = [
@@ -666,6 +672,7 @@ function createSetupInstallationsSurface(context) {
   return { el: page.el, show: async () => {
     await loadCampaigns();
     const registration = await request('/api/setup/registration', { cache: 'no-store' });
+    if (registration.ok) context.environment?.setRegistration?.(registration.data);
     applyLock(!(registration.ok && registration.data?.status === 'registered'));
     await page.enter();
   }, destroy: () => { observer.disconnect(); page.destroy?.(); } };

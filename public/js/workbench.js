@@ -282,6 +282,7 @@ export function createWorkbench(options = {}) {
       card.el.addEventListener('dragstart', (event) => { event.dataTransfer.setData(SURFACE_DRAG, JSON.stringify({ type: definition.type, detail })); event.dataTransfer.setData('text/plain', label); event.dataTransfer.effectAllowed = 'copy'; });
       selectorCards.append(card.el);
     }
+    options.onSelectorRefresh?.(selectorCards);
   };
 
   paintShape();
