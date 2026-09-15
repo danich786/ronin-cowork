@@ -181,12 +181,19 @@ function createRegisterSurface(context) {
   const registrationIntro = el('section', 'setup-register-group setup-register-intro');
   registrationIntro.append(
     el('h3', '', t('setup_surface.optional_registration', 'Optional system registration')),
-    el('p', 'setup-lede', t('setup_surface.optional_registration_lede', 'Register only if you want to share a profile or use services tied to an identity.')),
+    el('p', 'setup-lede', t('setup_surface.optional_registration_lede', 'Registration is optional. It is separate from your local Ronin activity and from the services you install.')),
   );
+  const registrationReasons = el('ul', 'setup-register-reasons-list');
+  for (const reason of [
+    t('setup_surface.registration_reason_preferences', 'Share preferences and help support a model-provider ecosystem without lock-in.'),
+    t('setup_surface.registration_reason_services', 'Use additional Ronin Services while keeping installation and user activity separate from registration.'),
+    t('setup_surface.registration_reason_bounty', 'Participate in the Ronin Bounty Program.'),
+  ]) registrationReasons.append(el('li', '', reason));
+  registrationIntro.append(registrationReasons, el('p', 'setup-fine', t('setup_surface.registration_privacy', 'Ronin does not build a commercial identity profile from your local activity.')));
   fit.append(
     el('h3', '', t('setup_surface.ronin_fit', 'What brings you here')), preferredFeature.wrap, reasons.wrap,
   );
-  const consent = el('p', 'setup-fine setup-register-consent', t('setup_surface.consent_exact', 'Email registration sends a confirmation and can unlock Ronin Services. Anonymous registration sends these answers without contact details. Communication stays off unless you choose otherwise.'));
+  const consent = el('p', 'setup-fine setup-register-consent', t('setup_surface.consent_exact', 'Email registration sends a confirmation and supports Bounty participation. Anonymous registration shares these answers without contact details. Communication stays off unless you choose otherwise.'));
   const declined = el('p', 'setup-register-declined', t('setup_surface.no_thanks_message', 'We hope you enjoy Ronin. If you’d like to share feedback later, we’d be glad to hear it.'));
   declined.hidden = true;
   const registerAction = action(t('setup_surface.register_action', 'Send'), '', async () => {
@@ -199,7 +206,7 @@ function createRegisterSurface(context) {
       intended_use: [], theme_preference: '', own_words: '',
     } });
     notice.textContent = result.ok
-      ? anonymous ? t('setup_surface.anonymous_saved', 'Thanks — your anonymous hello was sent to Ronin.') : t('setup_surface.confirm_email', 'Registration saved. Confirm the email to receive Services entitlement.')
+      ? anonymous ? t('setup_surface.anonymous_saved', 'Thanks — your anonymous hello was sent to Ronin.') : t('setup_surface.confirm_email', 'Registration saved. Confirm your email to complete registration.')
       : result.message;
     if (result.ok) { current = result.data; paint(); }
   });
@@ -406,7 +413,7 @@ export function createServicesSurface(context) {
     const beta = el('section', 'setup-services-beta');
     beta.append(
       el('h3', '', t('services_setup.beta', 'In beta')),
-      el('p', '', t('services_setup.beta_copy', 'Ronin Services is the community half of Ronin, in beta. The code is open code, not open source: free to read, not to commercialise. Registering only tells us who is using it with us. It is optional, and nothing here is for sale.')),
+      el('p', '', t('services_setup.beta_copy', 'Ronin Services is the community half of Ronin, in beta. The code is open code, not open source: free to read, not to commercialise. Installing Services is separate from registration, and local user activity is not linked to a registration identity. Nothing here is for sale.')),
     );
     intro.append(lockup, beta);
     return intro;
