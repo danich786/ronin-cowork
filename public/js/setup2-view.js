@@ -3,17 +3,15 @@ import { WorkspaceKit } from './workspace-kit.js';
 import { SETUP_SURFACE_TYPES, registerSetupSurfaces } from './setup-surfaces.js';
 import { createProviderSetupSessionMount } from './provider-setup-session.js';
 import { request } from './request.js';
-import { SETUP_SCENES, automaticSetupScene, setupJourney } from './setup-journey.js';
+import { SETUP_SCENES } from './setup-journey.js';
 
 const PROFILE = 'setup2';
-const ORDER = Object.freeze([
-  SETUP_SURFACE_TYPES.providers,
-  SETUP_SURFACE_TYPES.register,
-  SETUP_SURFACE_TYPES.roots,
-  SETUP_SURFACE_TYPES.installations,
-  SETUP_SURFACE_TYPES.bounty,
-  SETUP_SURFACE_TYPES.launchOwn,
-]);
+// Release toggles: unfinished programs stay out of Setup without changing the workbench.
+export const SETUP2_FEATURES = Object.freeze({ bounty: false });
+const SCENES = Object.freeze(SETUP_SCENES
+  .filter((scene) => SETUP2_FEATURES.bounty || scene.type !== SETUP_SURFACE_TYPES.bounty)
+  .map((scene, index) => Object.freeze({ ...scene, number: index + 1 })));
+const ORDER = Object.freeze(SCENES.map((scene) => scene.type));
 const ARRANGEMENT = Object.freeze({
   order: Object.freeze(['workspace1', 'selector', 'workspace2']),
   hidden: Object.freeze([]),
@@ -50,7 +48,11 @@ export function createSetup2View() {
   sceneIndex.className = 'setup-scene-index';
   sceneIndex.setAttribute('aria-label', 'Setup steps');
   const sceneButtons = [];
-  const activeScene = () => setupJourney(runtime || {}, sceneOverride);
+  const automaticScene = () => Number(runtime?.activated_count || 0) > 0
+    ? SCENES.find((scene) => scene.type === SETUP_SURFACE_TYPES.roots) || SCENES[0]
+    : SCENES[0];
+  const sceneAt = (number) => Number(number) > 0 ? SCENES[Number(number) - 1] || automaticScene() : automaticScene();
+  const activeScene = () => sceneAt(sceneOverride);
   const paint = () => {
     const active = activeScene();
     for (const { button, number } of sceneButtons) {
@@ -65,7 +67,7 @@ export function createSetup2View() {
     }
   };
   const open = (number) => {
-    const scene = setupJourney(runtime || {}, number);
+    const scene = sceneAt(number);
     bench.place(scene.type, 'workspace2');
     bench.select('workspace2');
     paint();
@@ -79,7 +81,7 @@ export function createSetup2View() {
     sceneButtons.push({ button, number }); sceneIndex.append(button);
   };
   addStep(0, 'Auto', 'Open the recommended setup step');
-  for (const scene of SETUP_SCENES) addStep(scene.number, String(scene.number), `${scene.number}. ${scene.label}`);
+  for (const scene of SCENES) addStep(scene.number, String(scene.number), `${scene.number}. ${scene.label}`);
 
   bench = WorkspaceKit.workbench.create({
     profile: PROFILE,
@@ -115,11 +117,11 @@ export function createSetup2View() {
         environment.kinds.hydrate(['build']);
       }
       const stored = context.viewState('setup2') || {};
-      sceneOverride = Number(stored.sceneOverride) >= 1 && Number(stored.sceneOverride) <= SETUP_SCENES.length ? Number(stored.sceneOverride) : 0;
+      sceneOverride = Number(stored.sceneOverride) >= 1 && Number(stored.sceneOverride) <= SCENES.length ? Number(stored.sceneOverride) : 0;
       bench.enter({ ...stored, count: 2, arrangement: { ...ARRANGEMENT, widths: stored.arrangement?.widths || ARRANGEMENT.widths } });
       bench.setCount(2);
       paint();
-      if (!stored.seats?.workspace2) open(sceneOverride || automaticSetupScene(runtime));
+      if (!stored.seats?.workspace2) open(sceneOverride || automaticScene().number);
     },
     leave: () => bench.leave(),
     destroy: () => { providerSessions.destroyAll(); bench.leave(); ctx = null; },
