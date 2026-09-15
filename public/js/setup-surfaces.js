@@ -194,7 +194,7 @@ function createRegisterSurface(context) {
     el('h3', '', t('setup_surface.ronin_fit', 'What brings you here')), preferredFeature.wrap, reasons.wrap,
   );
   const consent = el('p', 'setup-fine setup-register-consent', t('setup_surface.consent_exact', 'Email registration sends a confirmation and supports Bounty participation. Anonymous registration shares these answers without contact details. Communication stays off unless you choose otherwise.'));
-  const declined = el('p', 'setup-register-declined', t('setup_surface.no_thanks_message', 'We hope you enjoy Ronin. If you’d like to share feedback later, we’d be glad to hear it.'));
+  const declined = el('p', 'setup-register-declined', t('setup_surface.no_thanks_message', 'Enjoy using Ronin. If you’d like to share feedback later, we’d be glad to hear from you at a later date.'));
   declined.hidden = true;
   const registerAction = action(t('setup_surface.register_action', 'Send'), '', async () => {
     notice.textContent = t('setup_surface.saving', 'Saving…');
