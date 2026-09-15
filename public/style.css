@@ -5926,6 +5926,14 @@ button.wb-door:hover b {
 .setup-bounty-requirement-list { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
 .setup-bounty-requirement-list .ready { color: var(--ok); }
 .setup-bounty-requirement-list .locked { color: var(--muted-2); }
+.setup-bounty-project-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: var(--space-4); }
+.setup-bounty-project { display: grid; gap: var(--space-3); border: var(--edge) solid var(--line); padding: var(--space-5); background: var(--panel); }
+.setup-bounty-project h4, .setup-bounty-project p { margin: 0; }
+.setup-registration-lock { margin: 0; padding: var(--space-3) var(--space-5); border-bottom: var(--edge) solid var(--line); color: var(--muted-2); }
+.setup-registration-lock[hidden] { display: none; }
+.wk-workbench-host [data-workbench-offer-type][data-scene-relevant='false'] { opacity: .48; }
+.wk-workbench-host [data-workbench-offer-type][data-scene-relevant='true'] .wk-card-heading { font-weight: 750; }
+.wk-workbench-host [data-registration-locked='true'] .wk-card-heading::after { content: '  🔒'; font-size: .8em; }
 .setup-preferences-wrap[hidden], .setup-register-options[hidden] { display: none; }
 .setup-preferences { display: grid; gap: 0; padding: 0; border: 0; }
 .setup-preferences > .wk-action { justify-self: start; margin-top: var(--space-6); }

@@ -145,6 +145,16 @@ export function createSetupView() {
     if (scene.seats.workspace2) bench.place(scene.seats.workspace2, 'workspace2');
     else bench.restoreDefault('workspace2');
     bench.refreshSelector();
+    for (const card of bench.host.querySelectorAll('[data-workbench-offer-type]')) {
+      card.dataset.sceneRelevant = String(visibleTypes.has(card.dataset.workbenchOfferType));
+    }
+    void request('/api/setup/registration', { cache: 'no-store' }).then((registration) => {
+      const locked = !(registration.ok && registration.data?.status === 'registered');
+      for (const type of [SETUP_SURFACE_TYPES.installations, SETUP_SURFACE_TYPES.bounty]) {
+        const card = bench?.host.querySelector(`[data-workbench-offer-type="${type}"]`);
+        if (card) card.dataset.registrationLocked = String(locked);
+      }
+    });
     paintSceneIndex();
     save();
   };
@@ -234,7 +244,7 @@ export function createSetupView() {
     title: () => helpPanel?.isOpen() ? t('mika.header', 'Mika, your helpful assistant') : t('setup.title', 'Ronin Setup'),
     selectorWorkspace: 'workspace2',
     selectorCurrent: true,
-    selectorFilter: (type) => type !== PRESETS_TYPE && visibleTypes.has(type),
+    selectorFilter: (type) => type !== PRESETS_TYPE && ORDER.includes(type),
     actions: [mikaHelp],
     onStateChange: save,
     onPlacement: save,

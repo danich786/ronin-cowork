@@ -40,6 +40,7 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
       },
       renderDetail: (item, host) => {
         host.scrollTop = 0; // a new page starts at its head, whatever the last one was scrolled to
+        if (typeof item.renderDetail === 'function') return item.renderDetail(host);
         if (item.id === NEW) {
           editing = NEW;
           host.append(addCard());
@@ -557,7 +558,7 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
       glyph: '+',
       className: 'setup-roots-add-stone',
       attrs: { title: t('roots.keep_hint', 'Keep a folder on this machine for Teams and Agents to start in.') },
-    }, ...roots.map((r) => ({
+    }, ...(options.extraItems || []), ...roots.map((r) => ({
       id: r.name,
       label: r.title || r.name,
       state: r.archived

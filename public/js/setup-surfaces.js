@@ -335,7 +335,18 @@ function createBountySurface(context) {
   requirements.append(el('h3', '', t('bounty.requirements', 'Before you opt in')));
   const list = el('ul', 'setup-bounty-requirement-list'); requirements.append(list);
   const projects = el('section', 'setup-bounty-projects');
-  projects.append(el('h3', '', t('bounty.projects', 'Available bounty projects')), el('p', 'setup-fine', t('bounty.projects_note', 'The downloadable project list and proposal form will live here. You can inspect projects before opting in.')));
+  projects.append(el('h3', '', t('bounty.projects', 'Available bounty projects')), el('p', 'setup-fine', t('bounty.projects_note', 'Project briefs are public. Registration is required only to open a proposal and apply.')));
+  const projectGrid = el('div', 'setup-bounty-project-grid');
+  for (const [name, description] of [
+    [t('bounty.project_onboarding', 'Onboarding and first-run'), t('bounty.project_onboarding_note', 'Make installation, provider sign-in, and the first useful Ronin session easier to understand.')],
+    [t('bounty.project_providers', 'Provider integrations'), t('bounty.project_providers_note', 'Improve authentication, model discovery, reliability, and provider-specific setup.')],
+    [t('bounty.project_workspaces', 'Workspace and team tooling'), t('bounty.project_workspaces_note', 'Build clearer repository, worktree, team coordination, and hand-in workflows.')],
+  ]) {
+    const card = el('article', 'setup-bounty-project');
+    card.append(el('h4', '', name), el('p', '', description), el('span', 'setup-fine', t('bounty.public_brief', 'Public brief · 🔒 Apply after registration')));
+    projectGrid.append(card);
+  }
+  projects.append(projectGrid);
   const join = action(t('bounty.join', 'Opt in to the Bounty Program'), 'primary', async () => {
     const result = await request('/api/setup/preferences', { method: 'PATCH', json: { bounty_opt_in: true } });
     notice.textContent = result.ok ? t('bounty.joined', 'Bounty Program opt-in saved on this machine.') : result.message;
@@ -641,7 +652,22 @@ function createLaunchOwnSurface(context) {
 function createSetupInstallationsSurface(context) {
   const selected = () => campaignById(context.tenant?.campaign) || campaigns()[0] || null;
   const page = createInstallationsSurface(selected, context);
-  return { el: page.el, show: async () => { await loadCampaigns(); await page.enter(); }, destroy: page.destroy };
+  const content = page.el.querySelector('.wk-surface-content');
+  const lock = el('p', 'setup-registration-lock', t('setup_surface.installations_locked', '🔒 Browse installations now. Register to change installation settings.'));
+  content?.prepend(lock);
+  const applyLock = (locked) => {
+    page.el.dataset.registrationLocked = String(locked);
+    lock.hidden = !locked;
+    for (const control of page.el.querySelectorAll('.sws-detail button, .sws-detail input, .sws-detail select, .sws-detail textarea')) control.disabled = locked;
+  };
+  const observer = new MutationObserver(() => applyLock(page.el.dataset.registrationLocked === 'true'));
+  if (content) observer.observe(content, { childList: true, subtree: true });
+  return { el: page.el, show: async () => {
+    await loadCampaigns();
+    const registration = await request('/api/setup/registration', { cache: 'no-store' });
+    applyLock(!(registration.ok && registration.data?.status === 'registered'));
+    await page.enter();
+  }, destroy: () => { observer.disconnect(); page.destroy?.(); } };
 }
 
 export function setupSurfaceDefinitions() {

@@ -38,7 +38,7 @@ export function createWorkspaceFoldersSurface({
     rootHost,
     () => connected?.(rootHost) ?? rootHost.isConnected,
     () => campaignId?.() || '',
-    presentation ? { presentation, before: onboarding ? [onboarding.el] : [] } : {},
+    presentation ? { presentation, extraItems: onboarding ? [onboarding.item] : [] } : {},
   );
 
   return {
@@ -137,5 +137,15 @@ function githubWorkspaceSetup(environment, workspace, onCloned) {
     if (result.ok) onCloned?.();
     cloneButton.disabled = !authenticated || !repository.value.trim();
   });
-  return { el: box, show };
+  return {
+    item: {
+      id: '\0github',
+      glyph: '⌘',
+      label: t('roots.github_stone', 'Authenticate GitHub + clone repo'),
+      state: t('roots.github_stone_state', 'Connect and clone'),
+      className: 'setup-roots-github-stone',
+      renderDetail: (host) => { host.append(box); void show(); return () => box.remove(); },
+    },
+    show,
+  };
 }

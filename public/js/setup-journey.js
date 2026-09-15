@@ -1,5 +1,5 @@
 export const SETUP_SCENES = Object.freeze([
-  { id: 'provider', label: 'Provider', selector: false, visibleTypes: ['setup.providers'], seats: { workspace1: '', workspace2: 'setup.providers' } },
+  { id: 'provider', label: 'Provider', selector: true, visibleTypes: ['setup.providers'], seats: { workspace1: '', workspace2: 'setup.providers' } },
   { id: 'register', label: 'Register', selector: true, visibleTypes: ['setup.providers', 'setup.register'], seats: { workspace1: 'setup.providers', workspace2: 'setup.register' } },
   { id: 'tailored', label: 'Tailored setup', selector: true, visibleTypes: ['setup.roots', 'setup.installations', 'setup.bounty', 'setup.launch-own'], seats: { workspace1: 'setup.roots', workspace2: 'setup.installations' } },
   { id: 'workspace', label: 'Workspace folders', selector: true, visibleTypes: ['setup.roots', 'setup.installations'], seats: { workspace1: 'setup.installations', workspace2: 'setup.roots' } },
