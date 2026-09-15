@@ -5897,7 +5897,18 @@ button.wb-door:hover b {
 .setup-registration-identity strong { color: var(--fg-strong); font-size: var(--text-7); font-weight: 650; line-height: 1.3; }
 .setup-registration-identity span { color: var(--muted-2); font-size: var(--text-5); line-height: 1.45; overflow-wrap: anywhere; }
 .setup-registration-identity:empty, .setup-registration-identity[hidden] { display: none; }
-.setup-github-workspace { padding: var(--space-6); border-bottom: var(--edge-2) solid var(--kaki); }
+.wk-surface-content:has(.setup-github-workspace) > .sws-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-5);
+}
+.wk-surface-content:has(.setup-github-workspace) > .sws-header > * { min-width: 0; }
+.setup-github-workspace {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--space-6);
+  border-bottom: var(--edge-2) solid var(--kaki);
+}
 .setup-github-workspace h2, .setup-bounty h2 { margin: 0 0 var(--space-3); font-size: var(--text-8); }
 .setup-github-workspace > p { margin: 0 0 var(--space-4); color: var(--muted-2); }
 .setup-github-actions, .setup-github-clone { display: flex; align-items: end; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-4); }
