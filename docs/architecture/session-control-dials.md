@@ -1,11 +1,13 @@
 # Session Control
 
-Each session stores `@ronin-control` as `user`, `read`, or `write`. The tile shows that
-value as 👤, 👁, or 🤖, and the owner can change it from the tile.
+New sessions start read/write (`write`) through the shared launcher in
+`src/spawn.ts`. Agent launch input does not select Control. This default supports
+Agents working together; it does not change existing sessions or archive restoration.
 
-Control is a visible coordination preference. It does not authorize or deny API calls,
-messages, work-record reads, page arrangements, tmux reads, or tmux writes. Tools may show
-the value alongside a session so people can coordinate around it.
+The legacy `@ronin-control` metadata still supports `user`, `read`, and `write`.
+It is not a general API or tmux authorization boundary. Safe message delivery in
+`src/message-queue.ts` does retain a message when the target is not `write`.
+Tools may report the stored value for coordination.
 
 The value is stored on the tmux session and returned by
 `GET /api/sessions/:name/control`. The tile changes it through

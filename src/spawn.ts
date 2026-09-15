@@ -469,7 +469,8 @@ export async function resolveForm(
       .filter(Boolean)
       .filter((t, i, a) => a.indexOf(t) === i)
       .slice(0, 16),
-    dial: agent ? 'read' : profile.dial,
+    // Collaboration is the launch default, not an Agent-selectable setting.
+    dial: 'write',
     mandate: resolvedMandate,
     team: form.team ?? '',
     project_root: root.name,

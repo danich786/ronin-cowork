@@ -409,6 +409,7 @@ test('an ordinary assisted launch starts an agent with the full brief', async ()
   // launch for `OpenShell` and the tile picker, and a bug for anything else.
   const r = await resolveForm(commonsForm(), new Set());
   assert.equal(r.agent, true, 'an ordinary launch starts a CLI');
+  assert.equal(r.dial, 'write', 'ordinary Agent births allow collaboration');
   assert.ok(r.cmd, 'and has a command to start');
   assert.ok(r.launchAgent, 'and stamps which CLI it started');
   assert.ok(r.project_root, 'a session is always born somewhere');
@@ -418,7 +419,7 @@ test('an ordinary assisted launch starts an agent with the full brief', async ()
 
 test('team_lead is explicit and carries the Cowork Team lead teaching', async () => {
   const lead = await resolveForm(commonsForm({ team: 'builders', team_lead: true }), new Set());
-  assert.equal(lead.dial, 'read');
+  assert.equal(lead.dial, 'write');
   const overview = lead.birth_reading.find((file) => file.endsWith('/CAPABILITIES.md'))!;
   assert.match(await fs.readFile(overview, 'utf8'), /When you are the designated Team lead/);
 });
@@ -456,7 +457,7 @@ test('a name alone resolves the ordinary Cowork Agent birth', async () => {
   assert.ok(born.installations.length > 0, 'the receipt source carries every installation');
   assert.ok(!born.installations.some((installation) => installation.name === 'cowork_agent'), 'the Cowork Agent is not an installation switch');
   assert.deepEqual(born.mandate, { reach: 'plan', recruit: 'propose agents', output: ['open'] });
-  assert.equal(born.dial, 'read');
+  assert.equal(born.dial, 'write');
 });
 
 test('kind and behaviours resolve at birth, with unusable books reported as undelivered', async () => {
