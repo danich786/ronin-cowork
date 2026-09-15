@@ -6,7 +6,7 @@ separate authorities; the Team Kanban derives a view rather than becoming a work
 1. **Objective enters the Team.** The Team lead records an idea or Project in the Team roster.
    The Project has stable identity, outcome, stage, and provenance.
 2. **Assignment is accepted.** A visible Agent is launched or assigned with the objective,
-   Campaign/Team context, project root, mandate, behaviors, capabilities, and repository
+   Campaign/Team context, Workspace Folder handle, mandate, behaviors, capabilities, and repository
    placement resolved before birth.
 3. **The Agent owns its work.** `work-record project create/write` establishes the Agent's
    Project and detailed execution record. The Team-held Project is provenance, not a shared
