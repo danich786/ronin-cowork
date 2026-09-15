@@ -21,5 +21,5 @@ pick otherwise on the form.
 Which provider, which model and what command launches it are the **provider catalog's**
 questions: `ronin_catalogs/MODEL_PROVIDERS.md`, one section per provider and one row per
 model, shadowed whole by a copy in your catalogs store. The extension contract and the
-third-party provider checklist are in `docs/model-providers.md`. Nothing about a
+third-party provider checklist are in `docs/architecture/model-providers.md`. Nothing about a
 provider is written here.

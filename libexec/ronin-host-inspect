@@ -3,7 +3,7 @@
 #                                (default: the working directory)
 #
 # A machine's capacity is a FACT ABOUT A BOX ON A DAY. It is never written into a
-# document — it is measured when someone asks, which is why `ronin_catalogs/behaviours/data.md` names
+# document — it is measured when someone asks, which is why `docs/operating/data.md` names
 # this tool instead of carrying numbers that a resize or a move would silently falsify.
 # Read-only: it measures and prints, and changes nothing.
 #
@@ -143,4 +143,4 @@ fi
 
 echo
 echo "These numbers are true as of the moment above and nowhere else. Do not copy them"
-echo "into a document — cite this tool instead (ronin_catalogs/behaviours/data.md)."
+echo "into a document — cite this tool instead (docs/operating/data.md)."

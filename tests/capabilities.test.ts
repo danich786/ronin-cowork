@@ -139,8 +139,8 @@ test('the overview is derived from selected knowledge, independent of universall
   const resolved = await resolveCapabilities({ ...none, lead: true, team: true }, { rows, present: everything });
   const text = renderCapabilitiesOverview(resolved);
   assert.match(text, /^# YOUR TOOLS/m);
-  assert.match(text, /Your tools are grouped by the work you are doing\./);
-  assert.match(text, /Run any tool with `--help`/);
+  assert.match(text, /Built from this session’s capability documents\./);
+  assert.match(text, /\*\*Help:\*\* `edges --help`/);
   const edgesAt = text.indexOf('### edges');
   const leadAt = text.indexOf('### team');
   const onlyAt = text.indexOf('### authority-only');
@@ -172,7 +172,7 @@ test('the folder is the catalog: an owner file shadows a stock name whole, a new
       '# Trello', '- **label:** Trello', '- **class:** integration', '- **requires:** behaviour:trello, connected', '',
       '## Tools', '', '| Tool | Authority | Teach |', '|---|---|---|', '| `trello_cards` | read | priority |', '',
     ].join('\n'));
-    await writeFile(path.join(dir, 'capabilities', 'session.md'), '# Gone\n- **hidden:** yes\n');
+    await writeFile(path.join(dir, 'capabilities', 'agent_session.md'), '# Gone\n- **hidden:** yes\n');
     const rows = await listCapabilities();
     const edges = rows.find((item) => item.name === 'edges')!;
     assert.equal(edges.origin, 'user');
@@ -184,7 +184,7 @@ test('the folder is the catalog: an owner file shadows a stock name whole, a new
     assert.equal(trello.class, 'integration');
     assert.deepEqual(trello.requires, ['behaviour:trello', 'connected']);
     assert.equal(trello.tools[0]?.name, 'trello_cards');
-    assert.ok(!rows.some((item) => item.name === 'session'), 'hidden withdraws a stock definition');
+    assert.ok(!rows.some((item) => item.name === 'agent_session'), 'hidden withdraws a stock definition');
     const resolved = await resolveCapabilities(
       { ...none, behaviours: new Set(['trello']), connected: true },
       { rows, present: async (tool) => tool === 'trello_cards' },
@@ -197,9 +197,9 @@ test('the folder is the catalog: an owner file shadows a stock name whole, a new
 
 test('the stock capability documents are well-formed and carry no retired vocabulary', async () => {
   const files = (await readdir(STOCK)).filter((name) => name.endsWith('.md') && name !== 'README.md').sort();
-  assert.deepEqual(files, ['edges.md', 'machine-settings.md', 'mika.md', 'ronin-host.md', 'session.md', 'team.md', 'work-record.md', 'worktree-desk.md']);
+  assert.deepEqual(files, ['agent_session.md', 'cowork_team.md', 'edges.md', 'machine-settings.md', 'mika.md', 'ronin-host.md', 'work-record.md', 'worktree-desk.md']);
   const rows = await withUserCatalogs(() => listCapabilities());
-  assert.deepEqual(rows.map((item) => item.name), ['edges', 'work-record', 'session', 'worktree-desk', 'machine-settings', 'team', 'ronin-host', 'mika'], 'ordered by `order`');
+  assert.deepEqual(rows.map((item) => item.name), ['edges', 'work-record', 'agent_session', 'worktree-desk', 'machine-settings', 'cowork_team', 'ronin-host', 'mika'], 'ordered by `order`');
   for (const item of rows) {
     const text = await readFile(item.file, 'utf8');
     assert.ok(item.label && item.blurb, `${item.name} has a label and a blurb`);
@@ -213,11 +213,11 @@ test('the stock capability documents are well-formed and carry no retired vocabu
   const by = Object.fromEntries(rows.map((item) => [item.name, item]));
   assert.deepEqual(by.edges.requires, []);
   assert.deepEqual(by['work-record'].requires, []);
-  assert.deepEqual(by.session.requires, []);
+  assert.deepEqual(by.agent_session.requires, []);
   assert.deepEqual(by['worktree-desk'].requires, ['arrangement:managed']);
   assert.deepEqual(by['machine-settings'].requires, ['campaign']);
-  assert.deepEqual(by.team.requires, []);
-  assert.deepEqual(by['ronin-host'].requires, ['behaviour:ronin_host']);
+  assert.deepEqual(by.cowork_team.requires, []);
+  assert.deepEqual(by['ronin-host'].requires, []);
   assert.deepEqual(by.mika.requires, ['installation:ronin_services']);
   assert.deepEqual(by.mika.tools.map((tool) => tool.name), ['mika']);
   assert.deepEqual(by['ronin-host'].tools.map((tool) => tool.name), ['ronin-host']);
@@ -228,19 +228,19 @@ test('the stock capability documents are well-formed and carry no retired vocabu
   assert.deepEqual(priority('work-record'), ['work-record update_record', 'work-record document add', 'work-record project create', 'work-record project read', 'work-record project write', 'work-record project return', 'work-record project backlog', 'work-record project done']);
   assert.deepEqual(priority('edges'), ['edges send', 'edges wipeboard', 'edges read', 'edges team']);
   assert.deepEqual(priority('worktree-desk'), ['worktree-desk status', 'worktree-desk sync', 'worktree-desk hand-in']);
-  assert.deepEqual(priority('session'), ['session_check', 'session_create']);
-  assert.ok(by.session.tools.some((tool) => tool.name === 'session_set'));
-  assert.deepEqual(priority('team'), [
+  assert.deepEqual(priority('agent_session'), ['session_check', 'session_create']);
+  assert.ok(by.agent_session.tools.some((tool) => tool.name === 'session_set'));
+  assert.deepEqual(priority('cowork_team'), [
     'team roster read', 'team project create',
     'team project read', 'team project list', 'team project write',
     'team project assign', 'team project return', 'team project backlog',
     'team project done', 'team project restore', 'team member status',
   ]);
-  assert.ok(!by.team.tools.some((tool) => tool.name === 'session_create'), 'Team does not duplicate the universal Session creation row');
+  assert.ok(!by.cowork_team.tools.some((tool) => tool.name === 'session_create'), 'Cowork Team does not duplicate Agent session creation');
   assert.match(await readFile(by['work-record'].file, 'utf8'), /Team roster issues its ID/);
   assert.match(await readFile(by['work-record'].file, 'utf8'), /Agents never choose or reuse IDs/);
   assert.match(await readFile(by['work-record'].file, 'utf8'), /`exit`[\s\S]*`none` · `agent` · `lead` · `user`[\s\S]*`status`[\s\S]*`green` · `yellow` · `red`/);
-  assert.match(await readFile(by['team'].file, 'utf8'), /Assign and return/);
+  assert.match(await readFile(by.cowork_team.file, 'utf8'), /Assign and return/);
   const machine = await readFile(by['machine-settings'].file, 'utf8');
   assert.match(machine, /canonical Campaign\/provider model\s+catalog used by the UI dropdowns/);
   assert.doesNotMatch(machine, /gpt-|claude-|gemini-|sonnet|opus/i, 'the capability carries no maintained model IDs');
@@ -249,11 +249,10 @@ test('the stock capability documents are well-formed and carry no retired vocabu
 test('optional capabilities are absent until their individual predicates hold', async () => {
   const rows = await withUserCatalogs(() => listCapabilities());
   const bare = await resolveCapabilities({ ...none, campaign: true }, { rows, present: async () => true });
-  for (const name of ['ronin-host', 'mika']) {
-    assert.equal(bare.find((row) => row.name === name)?.selected, false);
-  }
+  assert.equal(bare.find((row) => row.name === 'ronin-host')?.selected, true);
+  assert.equal(bare.find((row) => row.name === 'mika')?.selected, false);
   const selected = await resolveCapabilities({ ...none, campaign: true, connected: true,
-    installations: new Set(['ronin_services']), behaviours: new Set(['ronin_host']) },
+    installations: new Set(['ronin_services']), behaviours: new Set() },
   { rows, present: async () => true });
   for (const name of ['ronin-host', 'mika']) {
     assert.equal(selected.find((row) => row.name === name)?.selected, true);

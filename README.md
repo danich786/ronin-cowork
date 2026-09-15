@@ -62,8 +62,8 @@ independent Agent ── choose what helps ── Team coordination
 |---|---|
 | **Terminal** | A shell in an always-on tmux terminal. Nothing from Ronin. |
 | **Bare-metal Agent** | Claude, Codex, or another provider CLI in an always-on tmux terminal. No Ronin reading list, work record, or receipt. |
-| **Cowork Agent** | The same CLI born through Ronin: a work record, documents, capability tools, messaging, and session coordination; in a repository declared for Worktrees, a private branch and worktree with hand-in and the Team lead's promotion, so parallel Agents avoid file collisions ([how it decides](docs/worktrees.md)). |
-| **Installations** | What is on the machine, switched on or off in System settings. Ronin Services joins every Cowork Agent when it is on; gbrain, Trello and Perplexity make behaviours a Team or Agent can add ([installations and behaviours](docs/installations.md)). |
+| **Cowork Agent** | The same CLI born through Ronin: a work record, documents, capability tools, messaging, and session coordination; in a repository declared for Worktrees, a private branch and worktree with hand-in and the Team lead's promotion, so parallel Agents avoid file collisions ([how it decides](docs/architecture/worktrees.md)). |
+| **Installations** | What is on the machine, switched on or off in System settings. Ronin Services joins every Cowork Agent when it is on; gbrain, Trello and Perplexity make behaviours a Team or Agent can add ([installations and behaviours](docs/architecture/installations.md)). |
 
 [See how session types, installations and behaviours fit together.](https://ronincowork.com/explainers/cowork-and-services/)
 
@@ -71,11 +71,11 @@ independent Agent ── choose what helps ── Team coordination
 
 | I want to… | Start here |
 |---|---|
-| understand the shell, network, and data boundaries | [How Ronin protects your machine and work](docs/how-ronin-protects-you.md) |
-| decide whether I need another machine | [Choose or rent a machine](docs/rent-a-machine.md) |
-| have an Agent install Ronin | [Agent-led installation](docs/install.md) |
-| finish first use in Ronin Setup and start one working Agent | [Get started](docs/get-started.md) |
-| sign in an Agent provider safely | [Provider sign-in](docs/provider-sign-in.md) |
+| understand the shell, network, and data boundaries | [How Ronin protects your machine and work](docs/getting-started/how-ronin-protects-you.md) |
+| decide whether I need another machine | [Choose or rent a machine](docs/getting-started/rent-a-machine.md) |
+| have an Agent install Ronin | [Agent-led installation](docs/getting-started/install.md) |
+| finish first use in Ronin Setup and start one working Agent | [Get started](docs/getting-started/get-started.md) |
+| sign in an Agent provider safely | [Provider sign-in](docs/getting-started/provider-sign-in.md) |
 | find use, troubleshooting, or contributor guidance | [Documentation by question](docs/README.md) |
 
 ## The two repos
@@ -119,9 +119,9 @@ socket, the eight sockets themselves, and the bash shelf agents actually type at
 ## Installing it
 
 On a machine you control — your laptop, a home server, or a VM you rent. **No machine
-yet?** [`docs/rent-a-machine.md`](docs/rent-a-machine.md) walks an agent through renting
+yet?** [`docs/getting-started/rent-a-machine.md`](docs/getting-started/rent-a-machine.md) walks an agent through renting
 one: what capacity Ronin needs, and why you want it physically near you. **Want to check
-this before you run it?** [How Ronin protects your machine and work](docs/how-ronin-protects-you.md)
+this before you run it?** [How Ronin protects your machine and work](docs/getting-started/how-ronin-protects-you.md)
 is written for the Agent you ask to assess it—it names evidence rather than asking for trust.
 
 Two doors, same Ronin; pick one:
@@ -129,7 +129,7 @@ Two doors, same Ronin; pick one:
 **Door 1 — the one command.** For a person with a terminal and nothing else: the
 release bundles its own Node, tmux, and node_modules, so this works on a box with
 nothing installed and never asks you for anything
-(`docs/DEPENDENCY_BUNDLE_INSTALL.md`):
+(`docs/development/DEPENDENCY_BUNDLE_INSTALL.md`):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ronincowork/ronin-cowork/master/scripts/get-ronin | sh
@@ -139,7 +139,7 @@ On Windows: run `wsl --install` once in PowerShell, then run that same command
 inside the WSL shell.
 
 **Door 2 — the git path.** For an agent, or anyone who wants to read what they run.
-Hand your agent this repository's URL; `docs/install.md` is its walk. From a
+Hand your agent this repository's URL; `docs/getting-started/install.md` is its walk. From a
 checkout it can install the bundled release, or a plain one and bring its own tmux
 and Node:
 
@@ -152,7 +152,7 @@ cd ~/ronin/current && ./setup.sh     # sets everything up on this machine
 
 Either door reaches the same installed state: `setup.sh` **prints the URL it is serving
 on** and, on a local Linux desktop, opens it. A fresh install lands on Ronin Home with
-Ronin Setup open. [Get started](docs/get-started.md) continues through one provider and
+Ronin Setup open. [Get started](docs/getting-started/get-started.md) continues through one provider and
 one harmless successful Agent exchange. An installed Agent CLI is not proof that its
 provider is authenticated.
 
@@ -163,12 +163,12 @@ read the selected port from `.env`. Normally,
 `ssh -L 4810:<it>:4810 you@yourbox` puts Ronin on `http://127.0.0.1:4810` on your own
 machine; a fresh install uses `3776` instead if `4810` was occupied. Never expose the port publicly.
 
-Already have an Agent on that machine (Claude Code or Codex)? Hand it `docs/install.md`;
+Already have an Agent on that machine (Claude Code or Codex)? Hand it `docs/getting-started/install.md`;
 the Agent stays through first-use proof. Using an Agent is optional, not a requirement.
 
 ## Finding work in the coworkspace
 
-Campaign, Cowork, and Team use one Workbench format. [`docs/workbench.md`](docs/workbench.md)
+Campaign, Cowork, and Team use one Workbench format. [`docs/using-ronin/workbench.md`](docs/using-ronin/workbench.md)
 is the third-party Agent's guide to its discovery column, workspaces, surfaces, placement,
 and recall. It explains how to find and arrange work without requiring frontend or design
 system knowledge.

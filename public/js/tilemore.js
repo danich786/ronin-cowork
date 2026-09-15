@@ -8,7 +8,7 @@
  * closes go through the buttons that own them.
  *
  * Nothing is ever removed: tiles are built once at boot and live for the page
- * (docs/ui.md § Lifecycle), so there is no unmount at which a set would leak.
+ * (docs/architecture/ui.md § Lifecycle), so there is no unmount at which a set would leak.
  */
 const drops = new Set();
 
@@ -87,7 +87,7 @@ export function buildTileMore() {
       // (tilehead.js, the `modal` column). So this listener is now live at a moment it
       // the sheet does. Without this line the first Escape shut the drop out from under a
       // sheet that stayed open — "Escape closes the topmost transient surface"
-      // (docs/ui.md) run exactly backwards. The sheet takes this press; the next one
+      // (docs/architecture/ui.md) run exactly backwards. The sheet takes this press; the next one
       // takes the drop, which is the order they are stacked on screen.
       if (document.querySelector('.ui-sheet.open')) return;
       e.stopPropagation();

@@ -9,8 +9,8 @@ option and the caller is unchanged. “Spawn” is CLI-internal; the owner requi
 
 **Repository arrangement.** Every Workspace Folder is either a **worktree root** or a
 **checkout**, as declared by that repository. Before your first write in a folder, read
-the page its arrangement names: `ronin_catalogs/behaviours/worktree-root.md` for a worktree root, or
-`ronin_catalogs/behaviours/checkout.md` for a checkout. Your birth brief names the arrangement of the
+the page its arrangement names: `ronin_catalogs/behaviours/conditional/worktree-root.md` for a worktree root, or
+`ronin_catalogs/behaviours/conditional/checkout.md` for a checkout. Your birth brief names the arrangement of the
 root where you start; `worktree-desk open <repo>` names it for another root.
 
 **Your work record** is the owner's account of your task, progress, tracked documents,

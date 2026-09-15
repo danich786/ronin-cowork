@@ -9,7 +9,7 @@ Version: **0.153.4**. Installed version and tagged upstream input source reviewe
 Codex accepts the initial brief positionally. Ronin discovers the conversation from
 matching rollout/writer-lock file descriptors and archives/resumes that exact identity.
 The registry owns resume syntax. Settings/auth remain in the CLI's own configuration;
-[the Codex account Behavior](../../ronin_catalogs/behaviours/codex.md) owns the default billing policy.
+[the Codex account Behavior](../operating/codex-account.md) owns the default billing policy.
 
 The catalog's disconnected mode disables the named gbrain server only. Other configured
 MCP servers remain enabled. Configuration overrides merge; an empty server object is

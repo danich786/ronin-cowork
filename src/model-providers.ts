@@ -3,7 +3,7 @@
  *
  * `ronin_catalogs/MODEL_PROVIDERS.md` is stock; a copy in the owner's catalogs store is an
  * OVERLAY on it, merged per `### <Vendor>` section and keyed by the section's `provider` id
- * — the catalog entry merge described in `docs/shadowing.md`, so adding one provider or one
+ * — the catalog entry merge described in `docs/architecture/shadowing.md`, so adding one provider or one
  * row does not fork the seven the owner did not touch. A user section of a stock id
  * replaces that section whole and keeps its place; a new id appends; a user section that
  * says `- **hidden:** yes`, or whose every launch cell is `—`, withdraws the stock one.

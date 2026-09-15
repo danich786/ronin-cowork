@@ -34,7 +34,7 @@ The other shipped lexicons (`vibe_code_en`, `home_en`, `terminal_en`, `league_en
 reads in English. Wording and translation are one axis — there is no second setting.
 
 **Yours and ours.** A file of the same name in your catalogs store replaces ours **whole**;
-a new name adds a lexicon; `- **hidden:** yes` withdraws one of ours (`docs/shadowing.md`).
+a new name adds a lexicon; `- **hidden:** yes` withdraws one of ours (`docs/architecture/shadowing.md`).
 
 **A lexicon changes words, never structure.** A surface that must be *shaped* differently
 per profile is a Workspace Kit question, not a lexicon entry.

@@ -55,4 +55,4 @@ table was shelved as vocabulary; nothing objected, because no test read the real
 Abilities are selected by installation and behaviour definitions. Repository test protocols stay in repository
 developer instructions and are never ordinary user birth reading.
 
-See `docs/session-boot.md`.
+See `docs/architecture/session-boot.md`.

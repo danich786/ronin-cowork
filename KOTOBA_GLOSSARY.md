@@ -5,7 +5,7 @@ OBOERU · TOMODACHI · SOROBAN · KOSHI · KOE · DAIKUSAN · KOTOBA · AGERU ·
 SETTEI · KYOKAI · SHIWAKE · KOKUGO · JIKAN · ERABI**. You will meet them in tool names, files and documents.
 They never reach the person you work for: use the plain word below. Only **Ronin** itself
 is a name a user learns. Tools execute; capabilities teach;
-behaviours guide; skills adapt; UIs call (`docs/tool-surface.md`).
+behaviours guide; skills adapt; UIs call (`docs/architecture/tool-surface.md`).
 
 <!-- RENDERED_FOR:START -->
 > Template. A session receives this rendered with the owner's own desk words.

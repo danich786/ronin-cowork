@@ -31,7 +31,7 @@ test('every assisted session is handed the tool overview built from its selected
     const text = await readFile(lesson, 'utf8');
     assert.equal(text, overview, 'the fragment is the rendered overview, byte for byte');
     // The lesson is derived from the folder: every stock bundle, its priority tools, its help route.
-    for (const label of ['Edges', 'Work Record', 'Session', 'Worktree desk', 'Machine settings', 'Team']) {
+    for (const label of ['Edges', 'Work Record', 'Agent session', 'Worktree desk', 'Machine settings', 'Cowork Team']) {
       assert.match(text, new RegExp(`^### ${label}$`, 'm'));
     }
     assert.match(text, /`work-record project create`/);
@@ -143,7 +143,7 @@ test('the real stock shelf compiles to one read: contracts first, glossary last,
     assert.match(firstWindow, /Fork versus spawn/);
     assert.match(firstWindow, /session_create/);
     assert.match(firstWindow, /owner requires permission before spawning/);
-    assert.match(firstWindow, /ronin_catalogs\/behaviours\/worktree-root\.md/);
+    assert.match(firstWindow, /ronin_catalogs\/behaviours\/conditional\/worktree-root\.md/);
     // The glossary arrived rendered: markers gone, header rewritten.
     assert.doesNotMatch(text, /<!--g:/);
     assert.match(text, /Rendered for/);
@@ -170,14 +170,14 @@ test('core reading points to arrangement pages; system reading stays installatio
   const [base, services, worktrees, machine] = await Promise.all([
     readFile(path.join(repo, 'ronin_session_boot', 'all', 'BASE_ABILITIES.md'), 'utf8'),
     readFile(path.join(repo, 'ronin_session_boot', 'routine', 'ronin_services', 'SERVICES_ABILITIES.md'), 'utf8'),
-    readFile(path.join(repo, 'ronin_catalogs/behaviours', 'worktree-root.md'), 'utf8'),
+    readFile(path.join(repo, 'ronin_catalogs/behaviours', 'conditional', 'worktree-root.md'), 'utf8'),
     readFile(path.join(repo, 'ronin_session_boot', 'routine', 'ronin_host', 'HOST_ABILITIES.md'), 'utf8'),
   ]);
 
   assert.match(base, /work-record read/);
   assert.match(base, /edges wipeboard/);
-  assert.match(base, /ronin_catalogs\/behaviours\/worktree-root\.md/);
-  assert.match(base, /ronin_catalogs\/behaviours\/checkout\.md/);
+  assert.match(base, /ronin_catalogs\/behaviours\/conditional\/worktree-root\.md/);
+  assert.match(base, /ronin_catalogs\/behaviours\/conditional\/checkout\.md/);
   assert.match(base, /edges read/);
   assert.match(services, /Readable transcripts are not in this beta/);
   assert.match(services, /`edges read` falls back/);
@@ -331,6 +331,9 @@ test('the stock shelf, the owner shelf and generated fragments are teaching; the
   assert.equal(isShelfTeaching(path.join(repo, 'ronin_session_boot', 'all', 'SHELVES.md')), true);
   assert.equal(isShelfTeaching(path.join(storeDir('session_boot'), 'routine', 'ronin_base', 'OWN.md')), true);
   assert.equal(isShelfTeaching(path.join(storeDir('session_boot'), 'root', 'proj', 'KOTOBA.md')), false);
+  assert.equal(isShelfTeaching(path.join(storeDir('ways'), 'floor', 'owner-floor.md')), true);
+  assert.equal(isShelfTeaching(path.join(storeDir('ways'), 'conditional', 'owner-condition.md')), true);
+  assert.equal(isShelfTeaching(path.join(storeDir('ways'), 'selected', 'owner-choice.md')), false);
   assert.equal(isShelfTeaching('/somewhere/else/ways/book.md'), false);
 });
 
@@ -352,7 +355,7 @@ test('a system installation reads one way or the other', async () => {
   assert.match(index, /## Shelves/);
   assert.match(index, /## Coworkspace/);
   // The coworkspace page a newborn is handed: the surfaces, the head, copy and the lock.
-  const utility = await readFile(path.join(repo, 'docs', 'RONIN_UTILITY.md'), 'utf8');
+  const utility = await readFile(path.join(repo, 'docs', 'architecture', 'RONIN_UTILITY.md'), 'utf8');
   assert.match(utility, /hold \*\*Shift\*\* while dragging \(\*\*Option\*\* on a Mac\)/);
   assert.match(utility, /Campaign discovery workbench[\s\S]*Cowork workbench[\s\S]*Team workbench/);
   assert.match(utility, /🔒 Locked\*\* is the attached live terminal/);

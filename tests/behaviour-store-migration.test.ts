@@ -14,14 +14,14 @@ test('legacy owner SOPs move whole into Behaviors and differing collisions refus
     await mkdir(path.join(root, 'ways'), { recursive: true });
     await writeFile(path.join(root, 'sops', 'mine.md'), '# Mine\n');
     assert.deepEqual(await migrateSopsToBehaviours(), { moved: ['mine.md'], deduplicated: [] });
-    const migrated = await readFile(path.join(root, 'ways', 'mine.md'), 'utf8');
+    const migrated = await readFile(path.join(root, 'ways', 'selected', 'mine.md'), 'utf8');
     assert.match(migrated, /^# Mine\n\n- \*\*label:\*\* Mine/m);
-    assert.match(migrated, /^- \*\*scope:\*\* situational/m);
+    assert.match(migrated, /^- \*\*scope:\*\* selected/m);
 
     await mkdir(path.join(root, 'sops'), { recursive: true });
     await writeFile(path.join(root, 'sops', 'mine.md'), '# Different\n');
     await assert.rejects(migrateSopsToBehaviours(), /migration collision for mine\.md/);
-    assert.equal(await readFile(path.join(root, 'ways', 'mine.md'), 'utf8'), migrated);
+    assert.equal(await readFile(path.join(root, 'ways', 'selected', 'mine.md'), 'utf8'), migrated);
   } finally {
     if (oldUser === undefined) delete process.env.RONIN_USER_ROOT;
     else process.env.RONIN_USER_ROOT = oldUser;

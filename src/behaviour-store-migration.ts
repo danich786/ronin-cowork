@@ -13,7 +13,7 @@ function asBehaviour(name: string, text: string): string {
   const blurb = text.split(/\n\s*\n/)
     .map((part) => part.replace(/^#.*$/gm, '').replace(/^>\s?/gm, '').replace(/\s+/g, ' ').trim())
     .find(Boolean) || 'Owner procedure migrated into the Behavior shelf.';
-  const metadata = `- **label:** ${label}\n- **blurb:** ${blurb.slice(0, 200)}\n- **scope:** situational\n- **installation:** —\n- **order:** 900\n`;
+  const metadata = `- **label:** ${label}\n- **blurb:** ${blurb.slice(0, 200)}\n- **scope:** selected\n- **installation:** —\n- **order:** 900\n`;
   const heading = /^#.*$/m.exec(text);
   if (!heading?.index && heading) {
     const end = text.indexOf('\n', heading.index);
@@ -25,7 +25,7 @@ function asBehaviour(name: string, text: string): string {
 /** One-way cutover from the retired SOP store into the Behavior store. */
 export async function migrateSopsToBehaviours(): Promise<BehaviourStoreMigration> {
   const old = process.env.RONIN_SOPS_DIR?.trim() || path.join(rootDir('user'), 'sops');
-  const target = storeDir('ways');
+  const target = path.join(storeDir('ways'), 'selected');
   const done: BehaviourStoreMigration = { moved: [], deduplicated: [] };
   const entries = await readdir(old, { withFileTypes: true }).catch((error: NodeJS.ErrnoException) => {
     if (error.code === 'ENOENT') return [];

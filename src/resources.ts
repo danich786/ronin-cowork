@@ -127,6 +127,39 @@ async function readLayerFiles(
   return files;
 }
 
+async function readLayerTree(
+  dir: string,
+  symlinks: boolean,
+): Promise<Map<string, { path: string; text: string }>> {
+  const files = new Map<string, { path: string; text: string }>();
+  const walk = async (current: string, prefix = ''): Promise<void> => {
+    let entries;
+    try {
+      entries = await readdir(current, { withFileTypes: true });
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') return;
+      throw error;
+    }
+    for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+      if (entry.name.startsWith('.')) continue;
+      const relative = prefix ? path.join(prefix, entry.name) : entry.name;
+      const file = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        await walk(file, relative);
+        continue;
+      }
+      if (!entry.isFile() && !(symlinks && entry.isSymbolicLink())) continue;
+      try {
+        files.set(relative, { path: file, text: await readFile(file, 'utf8') });
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+      }
+    }
+  };
+  if (dir) await walk(dir);
+  return files;
+}
+
 export async function resolveFiles(spec: ResolveSpec): Promise<ResolvedFile[]> {
   const userDir = spec.user ?? (spec.store ? storeDir(spec.store) : '');
   const [stock, user] = await Promise.all([
@@ -140,6 +173,29 @@ export async function resolveFiles(spec: ResolveSpec): Promise<ResolvedFile[]> {
     if (!selected) return [];
     return [{
       name: relative.replace(/\.[^.]+$/, ''),
+      relative,
+      path: selected.path,
+      text: selected.text,
+      origin: user.has(relative) ? 'user' as const : 'stock' as const,
+      shadowed: user.has(relative) && stock.has(relative),
+    }];
+  });
+}
+
+/** Resolve a nested authored shelf. Owner files shadow stock by the same relative path. */
+export async function resolveTreeFiles(spec: ResolveSpec): Promise<ResolvedFile[]> {
+  const userDir = spec.user ?? (spec.store ? storeDir(spec.store) : '');
+  const [stock, user] = await Promise.all([
+    readLayerTree(spec.stock, spec.symlinks === true),
+    readLayerTree(userDir, spec.symlinks === true),
+  ]);
+  const relatives = [...new Set([...stock.keys(), ...user.keys()])].sort();
+  return relatives.flatMap((relative) => {
+    if (spec.include && !spec.include(relative)) return [];
+    const selected = user.get(relative) ?? stock.get(relative);
+    if (!selected) return [];
+    return [{
+      name: path.basename(relative).replace(/\.[^.]+$/, ''),
       relative,
       path: selected.path,
       text: selected.text,
@@ -163,7 +219,7 @@ export interface WayRow {
 const WAY_KINDS = new Set(['coding', 'work', 'personal', 'household', 'social', 'school']);
 
 export async function listWays(): Promise<WayRow[]> {
-  const files = await resolveFiles({
+  const files = await resolveTreeFiles({
     stock: path.join(STOCK_DIR, 'behaviours'), store: 'ways',
     include: (name) => name.endsWith('.md') && name !== 'README.md',
   });
@@ -171,7 +227,7 @@ export async function listWays(): Promise<WayRow[]> {
     const label = file.text.match(/^#\s+(.+)$/m)?.[1]?.trim() || file.name;
     const kinds = (file.text.match(/^-\s+\*\*kinds:\*\*\s*(.+)$/m)?.[1] ?? '')
       .split(',').map((kind) => kind.trim()).filter((kind) => WAY_KINDS.has(kind));
-    const scope = file.text.match(/^-\s+\*\*scope:\*\*\s*(.+)$/m)?.[1]?.trim() || 'selectable';
+    const scope = file.text.match(/^-\s+\*\*scope:\*\*\s*(.+)$/m)?.[1]?.trim() || 'selected';
     const blurb = file.text.split(/\n\s*\n/)
       .map((part) => part.replace(/^>\s?/gm, '').replace(/\s+/g, ' ').trim())
       .find((part) => part && !part.startsWith('#') && !part.startsWith('- **')) || '';
@@ -183,8 +239,11 @@ export async function listWays(): Promise<WayRow[]> {
 }
 
 export async function wayFile(name: string, origin: Origin): Promise<string> {
-  if (origin === 'user') return path.join(storeDir('ways'), `${name}.md`);
-  return path.join(STOCK_DIR, 'behaviours', `${name}.md`);
+  const row = (await resolveTreeFiles({
+    stock: path.join(STOCK_DIR, 'behaviours'), store: 'ways',
+    include: (relative) => path.basename(relative) === `${name}.md`,
+  })).find((file) => file.name === name && file.origin === origin);
+  return row?.path ?? '';
 }
 
 export interface CatalogSection {
@@ -320,7 +379,7 @@ function newFileHeader(file: string): string {
 >
 > One \`${head} <name>\` block per ${what}, with \`- **key:** value\` lines under it.
 ${stock}>
-> The rule in full: \`docs/shadowing.md\`.
+> The rule in full: \`docs/architecture/shadowing.md\`.
 `;
 }
 

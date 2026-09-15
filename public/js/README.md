@@ -9,7 +9,7 @@ serves this directory, so a change here is live on reload — same as it always 
 
 **Words:** every string a person reads goes through `t('room.key', 'literal')` from
 `lexicon.js`, with the key in `ronin_catalogs/lexicons/professional_en.md` in the same
-commit — `docs/kokugo.md` is the instruction, and `scripts/check-lexicon.mjs` fails a
+commit — `docs/products/kokugo.md` is the instruction, and `scripts/check-lexicon.mjs` fails a
 module that forgets. `index.html`'s static words go through `pagewords.js`.
 
 xterm stays a classic `<script>` (`window.Terminal`, `window.FitAddon`): the vendor files
@@ -32,20 +32,20 @@ The modules below are the client map.
 professionalisation pass: transport, dialog behaviour, the pane registry and the theme
 became shared contracts instead of per-feature re-inventions, and the retired Commons gave its
 two resident rooms — the roster and the launcher — their own modules. `roster.js` is still
-where a session is born now. `docs/ui.md` is the written contract those modules enforce.
+where a session is born now. `docs/architecture/ui.md` is the written contract those modules enforce.
 
 | Module | What it owns |
 |---|---|
 | `state.js` | DOM handle, constants, `tiles`, the shared-state object `S`, save/load |
 | `errors.js` | `showFailure`, `guard`, `deadTile` — the containment layer |
 | `request.js` | the ONE transport contract — every JSON call's "what happened" |
-| `ui.js` | the primitives: sheet, toast, field, status, button, tabs (docs/ui.md) |
-| `terminal-controls.js` | Copy, Clear, Close, Stop: shared interception, mobile buttons, and Hints (docs/terminal-controls.md) |
+| `ui.js` | the primitives: sheet, toast, field, status, button, tabs (docs/architecture/ui.md) |
+| `terminal-controls.js` | Copy, Clear, Close, Stop: shared interception, mobile buttons, and Hints (docs/using-ronin/terminal-controls.md) |
 | `theme.js` | dark/light: the saved choice, `termTheme()` read off the CSS tokens, the flip |
 | `api.js` | the `/api/sessions` calls |
 | `widgets.js` | `makeDial`, `makeGauge`, `setInert`, the job menu |
 | `glyphs.js` | THE RULED GLYPHS — one face per ruled word (reach, recruit, output, dial, kind) for ask()'s squares; `glyph(axis, value)`, `ruledRows(axis, values, word)` |
-| `ask.js` | ERABI, THE ONE SELECTOR UTILITY — `ask(spec)`: reading stones, the tray, the two shapes, switches, groups (ronin-lab `SELECTORS.md`; docs/ui.md § Asking a question) |
+| `ask.js` | ERABI, THE ONE SELECTOR UTILITY — `ask(spec)`: reading stones, the tray, the two shapes, switches, groups (ronin-lab `SELECTORS.md`; docs/architecture/ui.md § Asking a question) |
 | `events.js` | the `/events` socket, birth/death chips, `openSessionSomewhere` |
 | `home.js` | THE DATA CACHE — `refreshHome` + the catalog loaders, `homeFault` (the provider catalog is form-steps.js's) |
 | `form-steps.js` | the drawn form idiom, and THE ONE PICKER — `providerModelPair`, `loadProviderCatalog`, `orderedCatalog` |
@@ -109,7 +109,7 @@ The server has the same rule with a gate behind it (`scripts/check-src.mjs`, 700
 a ratchet). The client's gate is `check-modules` — the same 700, mechanically enforced
 
 The keypad's user-facing controls are documented in
-[`docs/terminal-controls.md`](../../docs/terminal-controls.md); the module rows above own
+[`docs/using-ronin/terminal-controls.md`](../../docs/using-ronin/terminal-controls.md); the module rows above own
 the implementation split.
 
 ## Four rules
@@ -130,7 +130,7 @@ If you find yourself wanting a back-edge, move the shared function down instead.
 **3. Transport goes through `request.js`.** Every JSON call uses `request()` and decides
 what its failure MEANS itself; no feature spells `fetch(` (the two documented exceptions:
 `voice.js` posts an audio blob, `stats.js` beacons a counter). Dialog-shaped surfaces use
-`ui.sheet`; one-shot outcomes use `ui.toast`. The contract is `docs/ui.md`.
+`ui.sheet`; one-shot outcomes use `ui.toast`. The contract is `docs/architecture/ui.md`.
 
 **4. Never reference an imported binding at module top level.** Everything cross-module
 is used inside a function body, called after the graph has loaded. A top-level
@@ -163,7 +163,7 @@ npm run stage           # low-level copy of this client to public-staging/
 still be useful for one local client check, but it is not the preferred multi-Agent Team
 review process and does not establish which aggregate repository commit is running.
 
-For a Team visual review, use the two-lane [visual-staging Behavior](../../ronin_catalogs/behaviours/ronin_methodology.md#visual-staging-one-disposable-team-preview):
+For a Team visual review, use the two-lane [visual-staging Behavior](../../docs/development/ronin-methodology.md#visual-staging-one-disposable-team-preview):
 Agents offer exact private commits provisionally, the lead serially composes one disposable
 staging worktree and separate preview process, and finished work later uses ordinary Worktrees
 hand-in. The preview's `/api/version` identifies the aggregate commit actually on display.

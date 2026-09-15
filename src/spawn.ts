@@ -1,4 +1,3 @@
-import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { mergeSessionDefaults, resolveLaunchCommand, type SessionsDefaults } from './launch-command.js';
 import { REPO_ROOT } from './resources.js';
@@ -21,13 +20,20 @@ import { availableBehaviours, resolveContributions, type ResolvedContribution } 
 import { resolveInstallations, type ResolvedInstallation } from './installations.js';
 import { initialCampaignId } from './campaign-scope.js';
 import { resolveLaunchSeed } from './launch-seed.js';
-import { resolveBehaviourBooks, resolveFloorBehaviour, type DeliveredBehaviour } from './behaviours.js';
+import {
+  renderSoughtOverview,
+  resolveBehaviourBooks,
+  resolveConditionalBehaviours,
+  resolveFloorBehaviours,
+  resolveSoughtBehaviours,
+  type DeliveredBehaviour,
+} from './behaviours.js';
 import { templateProvenance } from './template-provenance.js';
 import { profileDir, resolveHouseSeatProfile, type HouseSeat } from './house-seats.js';
 import { capabilityTools, renderCapabilitiesOverview, resolveCapabilities, type ResolvedCapability } from './capabilities.js';
 
-const WORKTREE_SOP = path.join(REPO_ROOT, 'ronin_catalogs', 'behaviours', 'worktree-root.md');
-const CHECKOUT_SOP = path.join(REPO_ROOT, 'ronin_catalogs', 'behaviours', 'checkout.md');
+const WORKTREE_SOP = path.join(REPO_ROOT, 'ronin_catalogs', 'behaviours', 'conditional', 'worktree-root.md');
+const CHECKOUT_SOP = path.join(REPO_ROOT, 'ronin_catalogs', 'behaviours', 'conditional', 'checkout.md');
 const CORE_CONTRIBUTION: ResolvedContribution = {
   name: 'cowork_agent', origin: 'stock', shadowed: false, label: 'Cowork Agent', blurb: '',
   reading: [], reading_off: [],
@@ -193,19 +199,16 @@ export function slugName(intentKind: string, prompt: string, taken: Set<string>)
 async function bootReading(
   projectRoot: string,
   mcpOn: boolean,
-  bornLead = false,
   routineReading: string[] = [],
   capabilitiesOverview?: string,
   session = '',
+  soughtOverview?: string,
 ): Promise<string[]> {
-  const files = await bootFiles(projectRoot, mcpOn, routineReading, capabilitiesOverview, session);
-  if (bornLead && !files.includes(teamsSopPath())) files.push(teamsSopPath());
-  return files;
+  return bootFiles(projectRoot, mcpOn, routineReading, capabilitiesOverview, session, soughtOverview);
 }
 
-export function teamsSopPath(): string {
-  const user = path.join(storeDir('ways'), 'teams.md');
-  return existsSync(user) ? user : path.join(REPO_ROOT, 'ronin_catalogs', 'behaviours', 'teams.md');
+export function coworkTeamCapabilityPath(): string {
+  return path.join(REPO_ROOT, 'ronin_catalogs', 'capabilities', 'cowork_team.md');
 }
 
 export async function resolveForm(
@@ -404,18 +407,23 @@ export async function resolveForm(
   // and the worktree capability follow the resolved assignment (bundle_commands, 2026-09-13:
   // three Agents born in the lab checkout with a cowork desk had no desk tool on PATH).
   const managedDesk = !!assignment?.desks.length || worktrees.repositories.some((row) => row.mode === 'managed');
+  const arrangement = managedDesk ? 'managed' : worktrees.repositories.length ? 'checkout' : 'none';
   const enabledReading = contributionReading(contributions);
   const kind = form.kind ?? String(parentSeed?.seeds.kind.value ?? 'open');
   const resolvedBehaviours = coworkAgent && agent
     ? await resolveBehaviourBooks(cascade.selected)
     : { delivered: [], ignored: [] };
-  const mandateFloor = coworkAgent && agent ? await resolveFloorBehaviour('mandates') : null;
+  const floorBehaviours = coworkAgent && agent ? await resolveFloorBehaviours() : [];
+  const conditionalBehaviours = coworkAgent && agent
+    ? await resolveConditionalBehaviours({ arrangement, team: !!form.team, lead: !!form.team_lead && !!form.team })
+    : [];
+  const soughtBehaviours = coworkAgent && agent ? await resolveSoughtBehaviours() : [];
   // CAPABILITY BUNDLES: the folder decides what exists, and facts select the knowledge.
   // Installed Cowork tools remain universal; feature facts decide feature projection.
   // Mika keeps her own curated toolset.
   const capabilities = coworkAgent && agent && form.house_seat !== 'mika'
     ? await resolveCapabilities({
-        arrangement: managedDesk ? 'managed' : worktrees.repositories.length ? 'checkout' : 'none',
+        arrangement,
         installations: new Set(installations.filter((installation) => installation.enabled).map((installation) => installation.name)),
         behaviours: new Set(cascade.selected),
         connected: !mcpOffWanted,
@@ -428,16 +436,17 @@ export async function resolveForm(
     ? await bootReading(
         root.name,
         !mcpOffWanted,
-        !!form.team_lead && !!form.team,
         enabledReading,
-        form.house_seat === 'mika' ? undefined : renderCapabilitiesOverview(capabilities),
+        form.house_seat === 'mika' ? undefined : renderCapabilitiesOverview(capabilities, { lead: !!form.team_lead && !!form.team }),
         name,
+        soughtBehaviours.length ? await renderSoughtOverview(soughtBehaviours) : undefined,
       )
     : [];
   // The selected capability documents are reached through the overview's own
   // "Full document" line, not as shelf cards: the packet has a one-read budget and the
   // fullest stock birth already sits within 2 KB of it with the overview inlined.
-  const completeReading = [...shelfReading, ...(mandateFloor ? [mandateFloor.file] : []), ...resolvedBehaviours.delivered.map((book) => book.file)];
+  const appliedBehaviours = [...floorBehaviours, ...conditionalBehaviours, ...resolvedBehaviours.delivered];
+  const completeReading = [...shelfReading, ...appliedBehaviours.map((book) => book.file)];
   const birthReading = coworkAgent && agent
     ? [...completeReading, ...(form.seed ?? [])].filter(Boolean)
     : [];
@@ -493,7 +502,7 @@ export async function resolveForm(
     team_wipeboard: roster?.wipeboard ?? '',
     team_state: roster?.state ?? '',
     birth_reading: birthReading,
-    behaviours: resolvedBehaviours.delivered,
+    behaviours: appliedBehaviours,
     kind,
     ignored: [
       ...resolvedBehaviours.ignored,

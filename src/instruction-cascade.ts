@@ -29,7 +29,7 @@ export function availableBehaviours(installations: InstallationRow[], value: unk
     for (const behaviour of installation.provides) supplied.add(behaviour);
   }
   return behaviours.filter((behaviour) =>
-    behaviour.scope === 'selectable' &&
+    behaviour.scope === 'selected' &&
     (!behaviour.installation || supplied.has(behaviour.name))
   ).map((behaviour) => behaviour.name);
 }

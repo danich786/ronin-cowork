@@ -114,7 +114,7 @@ const NEW_USER_FILE = `# PROJECT_ROOTS — your directories (user scope)
 > already born under it are untouched — the name never stops meaning what it meant.
 >
 > What a session here READS at birth is not a field — it is the files on this root's
-> shelf. Ask \`ronin-store session_boot\` for it, and see docs/session-boot.md.
+> shelf. Ask \`ronin-store session_boot\` for it, and see docs/architecture/session-boot.md.
 > The provider catalog (providers and models) is stock and lives in the install's
 > \`MODEL_PROVIDERS.md\`, not here; your own copy of that file beside this one shadows it.
 `;

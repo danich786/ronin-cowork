@@ -8,7 +8,7 @@ Version: **2.1.270**. Installed version checked; provider input documentation re
 
 Claude accepts the initial brief positionally. Ronin allocates a conversation UUID at
 launch and uses it for archive/resume; the registry owns the arguments. Credential
-locations are registry data. [Provider sign-in](../provider-sign-in.md) owns the owner
+locations are registry data. [Provider sign-in](../getting-started/provider-sign-in.md) owns the owner
 handoff and credential-handling rules.
 
 Dangerously and disconnected mode use the catalog's additive flags. Disconnected is

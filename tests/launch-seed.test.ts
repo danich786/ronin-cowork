@@ -12,9 +12,9 @@ const installations: InstallationRow[] = [
   { ...contribution, name: 'gbrain', effect: 'provider', provides: ['gbrain'], requires: [] },
 ];
 const behaviours: BehaviourRow[] = [
-  { ...contribution, name: 'gbrain', installation: 'gbrain', page: '/gbrain.md', scope: 'selectable' },
-  { ...contribution, name: 'ronin_host', installation: '', page: '/ronin_host.md', scope: 'selectable' },
-  { ...contribution, name: 'mandates', installation: '', page: '/mandates.md', scope: 'floor' },
+  { ...contribution, name: 'gbrain', installation: 'gbrain', page: '/gbrain.md', scope: 'selected', requires: [] },
+  { ...contribution, name: 'write_it_down', installation: '', page: '/write_it_down.md', scope: 'selected', requires: [] },
+  { ...contribution, name: 'mandates', installation: '', page: '/mandates.md', scope: 'floor', requires: [] },
 ];
 const campaign = { id: 'home_machine', config: {
   installations: { ronin_services: false, gbrain: true },
@@ -22,7 +22,7 @@ const campaign = { id: 'home_machine', config: {
   cowork_defaults: {}, template_defaults: {},
 } } as CampaignConfig;
 const team = { name: 'alpha', campaign_id: 'home_machine', kind: 'coding', project_root: 'work', branch: 'dev',
-  behaviours: { selected: ['ronin_host', 'mandates'], required: ['mandates'] },
+  behaviours: { selected: ['write_it_down', 'mandates'], required: ['mandates'] },
   agent_defaults: { provider: 'anthropic', model: 'opus', reach: 'execute', recruit: 'nobody', output: ['code'], dial: 'read', launch_mode: 'configured' },
 } as TeamRoster;
 const sources = (roster: TeamRoster | null) => ({ campaign, roster, roots: [{ name: 'home', dir: '/home', archived: false }],
@@ -30,7 +30,7 @@ const sources = (roster: TeamRoster | null) => ({ campaign, roster, roots: [{ na
 
 test('teamless seed exposes available behaviours and the fixed residue', () => {
   const seed = resolveLaunchSeed(sources(null));
-  assert.deepEqual(seed.available, ['gbrain', 'ronin_host']);
+  assert.deepEqual(seed.available, ['gbrain', 'write_it_down']);
   assert.deepEqual(seed.seeds.behaviours.value, ['gbrain']);
   assert.equal(seed.behaviours.find((row) => row.name === 'gbrain')?.reading, '/gbrain.md');
   assert.equal(seed.resolved_contributions.find((row) => row.name === 'ronin_services')?.reading[0], 'routine/ronin_services/OFF.md');
@@ -41,7 +41,7 @@ test('teamless seed exposes available behaviours and the fixed residue', () => {
 
 test('Team complete lists replace Campaign defaults and carry Team provenance', () => {
   const seed = resolveLaunchSeed(sources(team));
-  assert.deepEqual(seed.seeds.behaviours.value, ['ronin_host']);
+  assert.deepEqual(seed.seeds.behaviours.value, ['write_it_down']);
   assert.equal(seed.seeds.behaviours.stated_by[0]?.layer, 'team');
   assert.equal(seed.seeds.project_root.stated_by[0]?.layer, 'conditional');
   assert.equal(seed.behaviours.some((row) => row.name === 'mandates'), false);
@@ -50,7 +50,7 @@ test('Team complete lists replace Campaign defaults and carry Team provenance', 
 test('an unavailable requested behaviour is reported, never refused', () => {
   const off = { ...campaign, config: { ...campaign.config, installations: { ronin_services: false, gbrain: false } } };
   const seed = resolveLaunchSeed({ ...sources(null), campaign: off });
-  assert.deepEqual(seed.available, ['ronin_host']);
+  assert.deepEqual(seed.available, ['write_it_down']);
   assert.deepEqual(seed.undelivered, ['gbrain']);
 });
 

@@ -40,7 +40,7 @@ import { count } from '../counts.js';
 import { announceTeamChanges } from './wipeboards-api.js';
 import { writeTeams } from '../tegami.js';
 import { readTegami } from '../tegami-read.js';
-import { teamsSopPath } from '../spawn.js';
+import { coworkTeamCapabilityPath } from '../spawn.js';
 import { emitSessionEnd } from '../sockets.js';
 import { resumeAgentArgv } from '../agents.js';
 import { listTeamRosters } from '../team-rosters.js';
@@ -501,7 +501,7 @@ export function registerSessions(app: express.Express): void {
       if (fresh.length) {
           const msg =
             `You are now the team_lead of ${fresh.map((t) => `"${t}"`).join(', ')}. ` +
-            `Read first: ${teamsSopPath()} — how to raise supporting sessions and place them into your team.`;
+            `Read the "When you are the designated Team lead" section in ${coworkTeamCapabilityPath()}.`;
           const sent = await sendText(name, msg).catch(() => null);
           delivered = sent?.started ? 'delivered' : 'not delivered — the prompt was not accepting input';
       }

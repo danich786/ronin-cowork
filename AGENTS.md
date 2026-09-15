@@ -4,8 +4,8 @@ Choose the route that matches the user's request; do not make an installer read 
 contracts or make a contributor follow the installation journey.
 
 - Assessing whether Ronin fits this machine: read
-  [`docs/how-ronin-protects-you.md`](docs/how-ronin-protects-you.md).
-- Installing or helping with first use: begin with [`docs/install.md`](docs/install.md) and
+  [`docs/getting-started/how-ronin-protects-you.md`](docs/getting-started/how-ronin-protects-you.md).
+- Installing or helping with first use: begin with [`docs/getting-started/install.md`](docs/getting-started/install.md) and
   stay through its handoff to Ronin Setup, provider sign-in, and one working Agent.
 - Working inside an existing coworkspace: use the question-first
   [`docs/README.md`](docs/README.md).
@@ -13,7 +13,7 @@ contracts or make a contributor follow the installation journey.
   verdict. Playwright suites are explicit diagnostic commands.
 - Talking to tmux from the server: every call goes through the control-mode client
   (`src/tmux-client.ts`); programs that are not tmux start through the spawn broker
-  (`src/spawn-broker.ts`). [`docs/tmux-connection.md`](docs/tmux-connection.md) says why
+  (`src/spawn-broker.ts`). [`docs/architecture/tmux-connection.md`](docs/architecture/tmux-connection.md) says why
   and what the tests refuse.
 - Need a tmux server that is not the live one? `ronin-testserver open <name>`, use the
   `tmux` path it prints for every command, `ronin-testserver close <name>` when done —
@@ -21,7 +21,7 @@ contracts or make a contributor follow the installation journey.
   not get that way is one you may not touch.
 
 Desk work follows the desk contract handed to you at birth
-(`ronin_catalogs/behaviours/worktree-root.md`): **commit** preserves,
+(`ronin_catalogs/behaviours/conditional/worktree-root.md`): **commit** preserves,
 **hand-in** publishes to the team line, and `git push` belongs only to release work.
 After changing an installed box or its user stores, run `npm run byoin` to check that
 current user customization surfaces.

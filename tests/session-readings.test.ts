@@ -39,7 +39,7 @@ test('Session Readings resolves level shapes, leaf links and per-level shadows',
     assert.equal(rows.some((row) => row.level === 'routine/linked-routine'), false);
     const lesson = rows.find((row) => row.name === 'all/CAPABILITIES.md');
     assert.match(lesson?.content || '', /^# YOUR TOOLS/m);
-    assert.match(lesson?.content || '', /^### Team$/m, 'the listing shows every bundle as the fullest birth would');
+    assert.match(lesson?.content || '', /^### Cowork Team$/m, 'the listing shows every bundle as the fullest birth would');
     assert.doesNotMatch(lesson?.content || '', /\btejun(?:-[a-z]+|\b(?!_))/);
     assert.ok(rows.every((row) => !('file' in row) && !('path' in row)));
   } finally {

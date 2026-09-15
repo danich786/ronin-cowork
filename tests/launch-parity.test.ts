@@ -416,10 +416,11 @@ test('an ordinary assisted launch starts an agent with the full brief', async ()
   assert.ok(reading(r.brief).length >= 3, 'the levels, not a bare prompt');
 });
 
-test('team_lead is explicit and carries the lead reading', async () => {
+test('team_lead is explicit and carries the Cowork Team lead teaching', async () => {
   const lead = await resolveForm(commonsForm({ team: 'builders', team_lead: true }), new Set());
   assert.equal(lead.dial, 'read');
-  assert.match(lead.brief, /teams\.md/);
+  const overview = lead.birth_reading.find((file) => file.endsWith('/CAPABILITIES.md'))!;
+  assert.match(await fs.readFile(overview, 'utf8'), /When you are the designated Team lead/);
 });
 
 test('Mika house mechanics resolve explicitly', async () => {
@@ -464,9 +465,9 @@ test('kind and behaviours resolve at birth, with unusable books reported as unde
     behaviours: ['mandates', 'write_it_down', 'ways:not_there'],
   }), new Set());
   assert.equal(born.kind, 'coding');
-  assert.deepEqual(born.behaviours.map((row) => row.book), ['write_it_down']);
-  assert.ok(born.birth_reading.some((file) => file.endsWith('/behaviours/mandates.md')), 'the canonical mandate behaviour is always applied as floor teaching');
-  assert.ok(born.birth_reading.some((file) => file.endsWith('/behaviours/write_it_down.md')));
+  assert.deepEqual(born.behaviours.map((row) => row.book), ['mandates', 'checkout', 'write_it_down']);
+  assert.ok(born.birth_reading.some((file) => file.endsWith('/behaviours/floor/mandates.md')), 'the floor folder is applied');
+  assert.ok(born.birth_reading.some((file) => file.endsWith('/behaviours/selected/write_it_down.md')));
   assert.deepEqual(born.ignored, []);
   assert.deepEqual(born.undelivered, ['ways:not_there']);
   assert.equal(born.stated_by.kind[0]?.layer, 'launch');
