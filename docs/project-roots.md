@@ -1,11 +1,22 @@
-# Project roots — include a project in Ronin
+# Workspace Folders — include a place to work in Ronin
 
-A `project_root` is Ronin's stable ID for **where work happens**. It binds that ID to
+A Workspace Folder is Ronin's record for **where work happens**. Its stable
+**workspace-folder-handle** binds the record to
 an optional display title, an existing directory, the project's remit and matching words,
 its session-boot shelf,
-and its memory keys. The new-session launcher, Admin Desk, session identity, and recall
-all resolve that one ID. The title is presentation only: changing it never changes the ID,
+and its memory keys. The internal/API field carrying that handle is `project_root`. The
+new-session launcher, Admin Desk, session identity, and recall all resolve that one handle.
+The title is presentation only: changing it never changes the handle,
 directory, session identity, or repository identity.
+
+The resolved Agent instruction names both authorities explicitly. For example:
+
+```text
+Born in workspace-folder-handle: ronin_lab at path: /home/dohyo/ronin-lab.
+```
+
+The path may then resolve to a separate managed desk for the Agent. That desk is a working
+location, not another Workspace Folder and not another handle.
 
 ## Installed starting folders
 
@@ -21,8 +32,8 @@ There are two files with the same basename and different jobs:
 
 | File | Scope | Contains |
 |---|---|---|
-| `ronin_catalogs/PROJECT_ROOTS.md` | system, shipped with Cowork | the project_root contract; **no project roots** (providers and models are `MODEL_PROVIDERS.md`) |
-| `$(ronin-store catalogs)/PROJECT_ROOTS.md` | owner installation | the projects included on this Ronin installation |
+| `ronin_catalogs/PROJECT_ROOTS.md` | system, shipped with Cowork | the Workspace Folder contract; **no folders** (providers and models are `MODEL_PROVIDERS.md`) |
+| `$(ronin-store catalogs)/PROJECT_ROOTS.md` | owner installation | the Workspace Folders included on this Ronin installation |
 
 The second file is commonly described as **user scope**. That means owner-specific Ronin
 state: Ronin creates and reads it, but keeps it outside a product git checkout so an upgrade
@@ -30,7 +41,7 @@ cannot replace the owner's directories. It is part of the running Ronin installa
 not a second product catalog and should not be committed to `ronin-cowork`.
 
 The API and Admin Desk are co-editors of this markdown file. Use the API for ordinary changes
-because it validates the ID, directory, and resulting document atomically. Do not add an
+because it validates the handle, directory, and resulting document atomically. Do not add an
 owner directory to the shipped catalog.
 
 ## The invariant
@@ -63,7 +74,7 @@ kept out of the ordinary flow.
 Resolve these facts from the actual directory:
 
 ```text
-name    stable lowercase ID: letters, digits, - and _
+handle  stable lowercase Workspace Folder handle: letters, digits, - and _
 title   optional display title used only on human-facing surfaces
 dir     absolute directory path
 remit   one plain sentence saying what work belongs there
@@ -81,7 +92,7 @@ git -C <absolute-directory> branch --show-current       # only when it is a repo
 ```
 
 The returned git top level must equal the project-root directory; a nested directory must not
-inherit its parent's repository identity. A non-git directory is a legal project root.
+inherit its parent's repository identity. A non-git directory is a legal Workspace Folder.
 
 ### 2. Show the proposed block
 
@@ -116,23 +127,24 @@ Content-Type: application/json
 }
 ```
 
-The Admin Desk's **▣ Project root** control and Mika's constrained `machine-settings
+The Admin Desk's **Workspace folders** control and Mika's constrained `machine-settings
 project-root` tool use this same endpoint. They are preferred human-facing paths. Editing the owner catalog by hand remains an
 emergency/advanced path, not a separate workflow.
 
-`409` means the ID already exists: inspect and use `PUT /api/project-roots/:name` only if
+`409` means the handle already exists: inspect and use `PUT /api/project-roots/:name` only if
 the owner intended to edit it. A validation refusal is an answer; do not bypass it by hand-editing.
 
 ### 4. Verify all four surfaces
 
 Inclusion is not complete until all of these agree:
 
-1. `GET /api/project-roots` contains the ID, title, and directory; this is the launcher's live list.
+1. `GET /api/project-roots` contains the handle (`name` on the wire), title, and directory;
+   this is the launcher's live list.
 2. `GET /api/project-roots/detail` reports `exists: true`. For a repository, its live `remote`
    and `branch` match git; these facts are read from disk and are never copied into the catalog.
-3. Admin Desk → **▣ Project root** shows the entry without an excluded/archived state.
-4. **＋ New** offers the project root; a test session launched with it starts in the recorded
-   directory and carries `@ronin-project_root=<id>`.
+3. Admin Desk → **Workspace folders** shows the entry without an excluded/archived state.
+4. **＋ New** offers the Workspace Folder; a test session launched with it starts in the recorded
+   directory and carries `@ronin-project_root=<workspace-folder-handle>`.
 
 If API verification succeeds but the browser is stale, reload the surface; do not create a
 duplicate entry.
@@ -219,7 +231,7 @@ remediation, or topic branches to the remote; merged PR head branches accumulati
 `dev` and `master` are repository clutter and make Admin Desk look as though unfinished work
 remains.
 
-The Project Root editor reads these four profile fields live from `RONIN_REPO`. `mode=reviewed`
+The Workspace Folder editor reads these four profile fields live from `RONIN_REPO`. `mode=reviewed`
 means work collects on `working` before the owner's final PR to `stable`; `mode=direct` means
 accepted work publishes on `stable` itself. The Worktrees choice is the repository's alone:
 `desks=managed` makes the folder a **worktree root** and its Agents work at managed desks;
@@ -234,10 +246,10 @@ atomically. This is not a migration: refs, desks, Teams, and running Agent instr
 untouched.
 
 The same form appears while adding a root. Its repository Worktrees choice is seeded from
-**Worktrees for new project roots** on the Campaign workbench, while its mode and
+**Worktrees for new Workspace Folders** on the Campaign workbench, while its mode and
 branch suggestions remain editable before **Add**. For a Git directory the confirmed proposal
 is the file that is written; the backend does not substitute `dev`, `master`, or `main`.
-Non-Git directories remain legal project roots and receive no `RONIN_REPO`.
+Non-Git directories remain legal Workspace Folders and receive no `RONIN_REPO`.
 
 A session in a worktree root works at a **repo desk** — the internal record for its
 own branch and worktree, cut from its team's line
@@ -275,16 +287,16 @@ must not become a filesystem deletion by assumption.
 ## Failure rules
 
 - Directory absent: stop; create/clone it or correct the path before inclusion.
-- Invalid ID: choose a valid lowercase ID; do not weaken validation.
+- Invalid handle: choose a valid lowercase Workspace Folder handle; do not weaken validation.
 - Wrong git top level: choose the repository root rather than a nested directory.
 - Wrong/missing remote: repair repository identity before presenting it as a project repo.
-- Duplicate ID: inspect before editing; never silently replace another project.
+- Duplicate handle: inspect before editing; never silently replace another Workspace Folder.
 - Ronin API unavailable: report the service failure. Do not create a competing write path.
 - Browser does not show an API-verified root: diagnose the read/render path, not the catalog data.
 
 ## Which campaign a root belongs to
 
-A project_root carries a `- **campaign_id:**` line naming the body of work it belongs to.
+A Workspace Folder carries a `- **campaign_id:**` line naming the body of work it belongs to.
 An Agent and a Cowork may reference only a root in their own campaign, and the refusal names
 both. Root **names stay globally unique** — the catalog keys them by heading — so a combined
 multi-campaign view groups roots by campaign rather than merging same-looking names.

@@ -38,13 +38,16 @@ session_create — create one new Agent
 
 Usage:
   session_create <name> [--prompt <text>] [--team <team>]
-                        [--root <path>] [--provider <provider>] [--model <model>]
+                        [--root <workspace-folder-handle>]
+                        [--provider <provider>] [--model <model>]
                         [--behaviour ways:<book>]…
                         [--mode manual|assisted] [--cmd <cli>]
                         [--mcp on|off] [--tags a,b] [--seed p1,p2]
 
 Creation is always explicit. An existing name is refused rather than read or updated.
 With no --team, the new Agent joins the caller's first Team when there is one.
+--root selects a registered Workspace Folder by its handle (for example, ronin_lab),
+not by its filesystem path. Use `machine-settings project-root list` to read the handles.
 Choose a current pair in one call: session_create <name> --provider <provider> --model <model>.
 The choices, availability, and defaults below are read now from the same canonical
 Campaign/provider sources as Ronin's model dropdowns; this tool keeps no model list.

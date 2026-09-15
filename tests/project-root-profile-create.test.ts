@@ -35,7 +35,7 @@ test('non-git root remains legal when automatic declaration is deferred', async 
   await assert.rejects(access(path.join(plain, 'RONIN_REPO')), /ENOENT/);
   const root = (await listProjectRoots()).find((row) => row.name === 'plain');
   assert.equal(root?.title, 'Plain Workspace');
-  assert.equal(root?.name, 'plain', 'the display title never replaces the stable ID');
+  assert.equal(root?.name, 'plain', 'the display title never replaces the Workspace Folder handle');
 });
 
 test.after(async () => { await rm(box, { recursive: true, force: true }); });
