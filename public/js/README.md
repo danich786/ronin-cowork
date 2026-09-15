@@ -29,6 +29,23 @@ not part of this directory's documentation contract.
 
 The modules below are the client map.
 
+### Visible-surface ownership index
+
+Start here for a rendered change, then use the detailed module map below.
+
+| Visible surface | Entry/composition | API/state | CSS | Focused tests |
+|---|---|---|---|---|
+| Ronin Home | `home.js`, `layout.js`, `main.js` | home/settings APIs, `state.js` | `style.css`, `campaign-home.css` | `home-roster.test.ts`, `theme-boot.test.js` |
+| Campaign workbench | `campaign.js`, `campaign-view.js`, `campaign-surfaces.js` | Campaign, installations, templates, defaults APIs | `style.css`, `campaign-home.css` | `campaign-*.test.*` |
+| Cowork workbench | `cowork-view.js`, `workbench.js` | roster/home APIs | `style.css`, `workspace-kit.css` | `cowork-workbench.test.js`, `workbench-*.test.js` |
+| Team workbench and commons | `team-controller.js`, `team-roster-surface.js`, `team-configuration.js` | Team, Project, message, wipeboard, schedule APIs | `style.css`, `team-workspace.css` | `team-*.test.*`, message/wipeboard tests |
+| Agent tile | `tile.js`, `tilehead.js`, `termview.js`, `tapeview.js`, `composer.js` | session APIs, tile WebSocket, `state.js` | `style.css` | tile, terminal, composer, DVR and tape tests |
+| Phone | `phone.js`, shared tile modules | same server contracts as desktop | `style.css`, `team-workspace.css` | `mobile-document.test.js` plus affected shared-module tests |
+| New Agent/Team | `new-agent.js`, `new-team-form.js`, `launch-view.js` | launch and Team APIs | `launch-forms.css` | `new-launch-form-layout.test.js`, `new-team-*.test.js`, launch tests |
+| Ronin Setup | `setup-view.js`, `setup-surfaces.js`, provider/service state modules | setup runtime, registration and activation APIs | `style.css`, `ask.css` | `setup-*.test.*`, provider and activation tests |
+| Machine/cowork settings | `machine-settings.js`, `system.js`, `projectroots.js`, `desks.js` | machine settings, roots, archive, update APIs | `style.css` | machine-settings, project-root, archive and update tests |
+| Services surfaces | `stats.js`, `koshi.js`, `hotwords.js`, `gbrain.js` | same-origin routes declared by Services | `style.css` | `services-component-ui.test.js` and the owning Services tests |
+
 professionalisation pass: transport, dialog behaviour, the pane registry and the theme
 became shared contracts instead of per-feature re-inventions, and the retired Commons gave its
 two resident rooms — the roster and the launcher — their own modules. `roster.js` is still
