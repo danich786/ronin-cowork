@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+. "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/tool-count.sh" session_create "$@"
 # session_create — explicitly create one new Agent through the ordinary launch route.
 set -u
 . "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"

@@ -5,7 +5,7 @@ import { REPO_ROOT } from '../resources.js';
 
 const TOOLS = new Set(['wipeboard', 'desk', 'promotion', 'jikan', 'bundle', 'recovery', 'auth', 'message']);
 type Reply = { stdout: string; stderr: string; exit: number };
-type Context = { session: string; pane: string };
+type Context = { session: string; pane: string; counted?: boolean };
 
 function execute(tool: string, args: string[], input: string | undefined, context: Context): Promise<Reply> {
   return new Promise((resolve, reject) => {
@@ -16,6 +16,7 @@ function execute(tool: string, args: string[], input: string | undefined, contex
         RONIN_SESSION: context.session,
         TMUX_PANE: context.pane,
         RONIN_CLI_HTTP: '1',
+        ...(context.counted ? { RONIN_TOOL_COUNTED: '1' } : {}),
         ...(input === undefined ? {} : { RONIN_CLI_INPUT: input }),
       },
       stdio: ['pipe', 'pipe', 'pipe'],
@@ -40,7 +41,7 @@ export function registerCli(app: Express, options: {
     const args = Array.isArray(req.body?.args) ? req.body.args.map(String) : [];
     try {
       const reply = await run(tool, args, typeof req.body?.input === 'string' ? req.body.input : undefined, {
-        session: String(req.body?.session ?? ''), pane: String(req.body?.pane ?? ''),
+        counted: req.body?.counted === true, session: String(req.body?.session ?? ''), pane: String(req.body?.pane ?? ''),
       });
       res.json(reply);
     } catch (e) { res.status(500).json({ error: String((e as Error).message ?? e) }); }

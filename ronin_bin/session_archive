@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+. "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/tool-count.sh" session_archive "$@"
 # session_archive — stop a live session while keeping it resumable.
 # Usage: session_archive <session>
 set -u

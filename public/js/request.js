@@ -27,6 +27,10 @@ export async function request(url, opts = {}) {
     headers: { ...(opts.headers || {}) },
     signal: opts.signal,
   };
+  if (typeof document !== 'undefined' && String(url).startsWith('/api/')) {
+    const source = document.documentElement?.dataset?.roninSource;
+    if (source) init.headers['x-ronin-source'] = source;
+  }
   if (opts.cache) init.cache = opts.cache;
   if (opts.json !== undefined) {
     init.headers['content-type'] = 'application/json';
