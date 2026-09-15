@@ -1,91 +1,20 @@
-# RONIN_UTILITY — where everything is, and how the owner drives it
+# Ronin usage reference
 
-The quick answers for "where is…", "how do I…" and "what is this" about the coworkspace
-itself. Answer from here; the fuller pages are one `ls` away in `docs/`.
+This stable entry is also offered to Agents helping an owner use Ronin.
+Choose the task; implementation knowledge is not required.
 
-## The pages
-
-- **Ronin Home** (`/`) is the **Three Blocks** pattern: **Machine Settings**, **Teams**, and
-  **New Project**. Machine Settings always opens. Teams and New Project unlock after one
-  provider activation. Machine Settings defaults to **Ronin Setup** with zero or one
-  activated provider and **Ronin Settings** with two or more.
-- **The bar** on every page: two doors on the left, **Ronin** (the Campaign) and **Coworks**
-  (the all-Teams page); the **place** in the middle, in italics — *Teams* on the Coworks page,
-  *Your team: <name>* on a Team page — is a reading, not a button; on the right, **か New**
-  for a quick new session, **⚙** for the cowork commons, and **2 ⇄ 4**, one button wearing
-  the workspace count. On Ronin Setup that seat holds a subtle **📱 / 🖥** switcher and a small **◐ / ☀**
-  light/dark control instead: they set the Campaign's appearance for that surface and
-  never change the workspaces.
-- **On a phone** Ronin sends its own mobile page instead of the workbench: the Teams list,
-  a Team's **Agents | Docs**, and one Agent's full-screen tile with its メ sheet. Its address
-  is `/m`; the root address serves it to a phone by itself, so nothing desktop paints first.
-
-## The workbench — one page format, four scopes
-
-Every workbench is the same shape: a **selector column** (the roster: the Team commons card
-first, then each Agent as a card, then ＋ Add team member) beside **two or four workspaces**.
-A **workspace** is a numbered slot; a **surface** is what it holds. Select a workspace and
-click a roster card, or drag the card onto any workspace, and that surface opens there; the
-previous one is back in the column. An empty workspace says *Workspace*. Ronin remembers the
-arrangement per page. The three scopes differ only in what the column offers:
-
-| Workbench | Address | The column lists |
-|---|---|---|
-| **Campaign discovery workbench** | Machine Settings | the Campaign's own surfaces: configuration, project roots, Team roster, templates, Installations, Defaults, Model providers |
-| **Cowork workbench** | Coworks | every Team in the Cowork, then the sessions on no team |
-| **Team workbench** | a Team's page (`#/team/<name>`) | this Team's commons card and its members |
-| **Setup workbench** | Machine Settings / Ronin Setup | Presets pinned in workspace 1; Register, providers, folders, Services, gbrain, and Templates select into workspace 2 |
-
-| Surface | What it is for |
+| Task | Guide |
 |---|---|
-| **terminal tile** | one Agent: its live terminal, composer, Output selector, Control dial, work record |
-| **Commons** | this team: **Roster** (members, membership, and Agent actions) · **Docs** (what agents listed, plans, docs by project root) · **Wipeboard** · **Messages** · **Cron jobs** · **Configuration** (the team's behaviours and launch defaults) |
-| **cowork commons** (⚙) | this install and owner: usage stats · **Account** (Configuration · Appearance · Release & update · Hotwords · Koshi · gbrain · Log out) · Desk profile · Project roots · Archived · Help desk · Keypad |
-| **campaign commons** | the Campaign: Campaign · Project roots · Team roster · Templates · **Installations** (what is on the machine, on or off) · **Defaults** (the behaviours new teams start from) · **Model providers** (the same surface Ronin Setup opens: every provider and model Ronin offers — tier, cost, good at, not good at — and, per provider, install, sign-in and activation here) |
-| **new session** | the launcher, placed by か New or ＋ Add team member; the newborn lands in that workspace |
+| Complete setup and start an Agent | [Get started](../getting-started/get-started.md) |
+| Find and arrange work | [Workbench](../using-ronin/workbench.md) |
+| Use an Agent's terminal, docs, and work record | [The tile](../using-ronin/tile.md) |
+| Stop, clear, copy, or close | [Terminal controls](../using-ronin/terminal-controls.md) |
+| Start a Team | [New Team](../using-ronin/new-team.md) |
+| Archive or restore a session | [Archived sessions](../using-ronin/archived-sessions.md) |
+| Customize words, appearance, or guidance | [Customize](../getting-started/customize.md) |
+| Add optional Services | [Services](../getting-started/services-activation.md) |
+| Send product feedback | [Feedback](../using-ronin/feedback.md) |
 
-**Where to send the owner:** teams → the **Coworks** door · settings, account, look, updates
-→ **⚙ → Account** · which behaviours a team has → **Commons → Configuration**; for new teams, the
-Campaign's **Defaults** · which models exist, what they cost and which this box can launch → the Campaign's **Model providers** · project roots and templates → the campaign commons · a fuller new
-Agent or Team → **New Project** on the landing · a quick session → **か New**.
-
-## The tile head — the buttons, left to right
-
-| Button | What it does |
-|---|---|
-| **⛩** | edit this Agent's title (the session name beside it never changes) |
-| **View Work Record** | the Agent's own account: repositories, current action, the ladder |
-| **Output** | which view this tile shows — **Locked** is the live terminal; the record-fed views (Terminal Mirror, Detailed, Condensed, Cherry Pick, Agent Summary) arrive with Ronin Services and are absent on the free build |
-| **@** | mention another session — picks a name into the message box |
-| **メ** | the drop: the rest of the head, in one strip — **⛽** context gauge (how full the session's context window is, read off its own status line; hidden until there is a reading) · **🎛** Control dial (**👤** owner only · **👁** outside agents may watch · **🤖** outside agents may type; only the owner turns it) · **📄** this Agent's tracked docs, opened over the tile · **📝** session note · **🗑** kill the session and its viewers |
-
-## Locked and Unlocked
-
-**🔒 Locked** is the attached live terminal — the real `tmux` screen, rendered by a terminal
-emulator. Scrollback stays on the server, so wheel-scrolling round-trips through tmux; the ↓
-pill returns to the bottom, and typing while scrolled up does nothing until you are back
-at the bottom or press Escape. The free build offers Locked only.
-
-**🔓 Unlocked** views hold no terminal connection at all: they are RIREKI's record, rendered
-client-side as plain text — lower latency, a proper scrolling view, and ordinary copy and
-paste. They arrive with Ronin Services; a locked tile is not "broken" when they are absent.
-
-## Copy and paste
-
-- **Copying from a Locked tile:** hold **Shift** while dragging (**Option** on a Mac), then
-  copy as usual (Ctrl+C / ⌘C). Without the key the running app takes the drag as mouse input
-  and nothing is selected. The selection is captured the moment it is made, so a repaint
-  that clears the highlight does not lose it.
-- **Copying from an Unlocked view** is ordinary text selection.
-- **Pasting** goes into **the composer**, the box under the tile: Enter sends, Shift+Enter
-  (Option+Enter on a Mac) makes a new line, the mic dictates into it, ✕ clears it. It is
-  separate from the terminal's own input: a message reaches the session even when the tile
-  is scrolled up, and the box clears only once Ronin has accepted it; otherwise the text
-  stays with the reason above it. On touch, the **Keys** row beside it
-  sends what a keyboard would — Esc · ^C · ⌫ · ^U · ⇧Tab · the arrows — straight through.
-
-## Feedback
-
-The **Feedback** button sends the owner's words to the Ronin team: what they like, what they
-want added, how they use Ronin, and a comment. When the owner voices a wish, a complaint or a
-"how do I", answer, then point them there. Their experience is what shapes the next release.
+The [documentation index](../README.md) separates using Ronin from understanding its
+construction. Current availability comes from the running installation; optional or
+parked features are not promised merely because their source exists.

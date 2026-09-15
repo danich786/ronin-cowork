@@ -3,8 +3,17 @@
 Every Ronin browser Tile uses four actions. The CLI running inside it does not choose
 your browser shortcuts. These controls work on desktop and mobile, locked or unlocked.
 
-The complete default [input → CLI mapping table](../README.md#terminal-controls) is at the
-top of the documentation README. Clear means the entire unsubmitted input box.
+## Default shortcuts
+
+| Input | Codex | Claude | Gemini | Grok | Hermes |
+|---|---|---|---|---|---|
+| Escape — Stop | Escape | Escape | Ctrl+C | Ctrl+C | Ctrl+C |
+| Ctrl+Shift+Backspace — Clear | Ctrl+C | Escape | Ctrl+C | Ctrl+C | Ctrl+C |
+| Ctrl+Shift+X — Close | Confirm | Confirm | Confirm | Confirm | Confirm |
+| Ctrl+C | Blocked | Blocked | Blocked | Blocked | Blocked |
+
+Clear means the entire unsubmitted input box. Confirm opens the Ronin close dialog.
+Copy uses Option-drag and Cmd+C on Mac, or Shift-drag and Ctrl+C on Windows/Linux.
 
 **Hints** is pinned below the selector's scrolling cards. **Agent vocabulary** sits above
 **Session controls**; each starts expanded and saves its own collapsed state, independently

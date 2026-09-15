@@ -98,7 +98,7 @@ house-wide body of knowledge.
 | what a word means here | the house-words section of the birth README | guessing |
 | whether a capability exists | the catalogs, via the map | improvising with tmux |
 | how to use a capability tool | its selected document, then `<tool> --help` | guessing |
-| anything about another session | dial first; `edges read <session> since` first, with the durable record authoritative; then `edges send` | pane capture only when there is no tape or live prompt state is unknowable, and report the fallback; raw `send-keys` |
+| anything about another session | `work-record read --session <session>` for authored work; `edges read` when recorded output is available; `edges send` for a message | pane capture only when there is no tape or live prompt state is unknowable, and report the fallback; raw `send-keys` |
 | how the house does a domain | the Behavior shelf, by book | inventing a process |
 | what is true on this machine | run the named tool | any document |
 | where anything else is | the shelves section of the birth README | — |

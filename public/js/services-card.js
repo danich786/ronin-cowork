@@ -90,7 +90,7 @@ export function servicesCard(container, onChange) {
       const f = field(email, { label: t('services.email', 'Your email address'), sr: false });
       f.el.classList.add('st-field');
       // The same disclosure as first run, because a person may meet Services for the first
-      // time here rather than there. docs/getting-started/services-activation.md lists what this must say;
+      // time here rather than there. docs/architecture/services-activation.md lists what this must say;
       // about the product rather than a description of it.
       f.say(t('services.disclosure', 'Ronin receives this address, the accepted terms version, and a request from '
         + 'this install — enough to verify you and manage Services access. Services then '

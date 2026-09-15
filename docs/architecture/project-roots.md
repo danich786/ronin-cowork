@@ -12,7 +12,7 @@ directory, session identity, or repository identity.
 The resolved Agent instruction names both authorities explicitly. For example:
 
 ```text
-Born in workspace-folder-handle: ronin_lab at path: /home/dohyo/ronin-lab.
+Born in workspace-folder-handle: ronin_lab at path: /path/to/ronin_lab.
 ```
 
 The path may then resolve to a separate managed desk for the Agent. That desk is a working
@@ -25,6 +25,9 @@ Ronin Setup creates and registers **Ronin Lab** (`ronin_lab`) and **Ronin Projec
 names. Both start as Git repositories with a README and first commit. Project 1 is prepared
 for reviewed `dev`, stable `main`, and managed worktrees. They are built-in starting places;
 the ordinary add/load-root flow creates separately named user workspaces.
+Ronin Lab holds ideas, research, plans, and notes before or across projects; it is not
+the code repository for one specific project. The Ronin creators use their own Lab in
+the same way. Git preserves the notes without changing that purpose.
 
 ## Where the record lives
 
@@ -269,7 +272,8 @@ Under the direct arrangement, the repository declares one branch—`main` or `ma
 may publish to without a PR. In a laboratory, agents commit and push coherent checkpoints,
 including deletions and abandoned directions, because its history is how earlier ideas remain
 recoverable. Agents stage only their own work, fetch before pushing, never force-push, and
-preserve the unsquashed history. `ronin-lab` declares direct publishing to `main`.
+preserve the unsquashed history. Read the repository’s declared arrangement; the name
+“Lab” alone does not choose its publishing policy.
 
 ## Edit, archive and exclude
 

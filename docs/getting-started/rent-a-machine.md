@@ -57,7 +57,7 @@ Ronin **archives** a session: it identifies the provider's conversation, writes 
 manifest, and genuinely stops the tmux session and its agent processes — so the RAM comes
 back. Rehydrating creates a new process and lets the provider CLI resume its own
 conversation (`claude --resume <uuid>`, `codex resume <uuid>`), then restores the session's
-teams, leads, wipeboards, note, project root and dials. It is a resumable stop, not a
+Teams, leads, wipeboards, note, Workspace Folder, and session metadata. It is a resumable stop, not a
 suspended process and not a delete. [`docs/using-ronin/archived-sessions.md`](../using-ronin/archived-sessions.md) is
 the full account.
 

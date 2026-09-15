@@ -1,8 +1,8 @@
 # Shadowing — how a user makes a catalog theirs
 
-> **The law is `DAIKUSAN.md`**: *edit nothing shipped — put a file with the same name in
-> your catalog directory and it wins.* This is that law, built. One statement, three
-> implementation (`src/resources.ts`), and this page is the statement it obeys.
+Owner resources override shipped resources through the resolver in `src/resources.ts`.
+This page owns the replacement rules; [KOTOBA](../../KOTOBA.md) owns the terminology.
+For the owner journey, see [Customize Ronin](../getting-started/customize.md).
 
 ## The rule
 

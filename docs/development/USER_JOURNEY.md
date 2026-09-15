@@ -1,8 +1,9 @@
 # USER JOURNEY: finding Ronin to starting work
 
-This is the canonical new-owner journey. It owns the order of the experience, what each
-surface must communicate, and the handoff between surfaces. Detailed implementation belongs
-with the code it describes.
+This is the contributor acceptance contract for the implemented first-use journey.
+Users should follow [Get started](../getting-started/get-started.md). This page defines
+what each surface must establish and how contributors check its handoff; proposed redesigns
+and dated acceptance evidence belong in the creators’ Ronin Lab.
 
 The journey is complete when a stranger can install Ronin on a machine they control, open
 Ronin Setup, activate a provider, and begin useful work without help.

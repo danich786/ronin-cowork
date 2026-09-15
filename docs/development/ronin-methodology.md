@@ -56,13 +56,10 @@ with its answer; explicitly ask the owner for permission before spawning it.
 newborn receives resolved Campaign/Team context—not this conversation—reads its own birth
 packet, and leaves the caller unchanged. The command has no dial option.
 
-**`edges send` — one message to one session.** `edges send` carries the rules: the dial on
-the **target** governs, not yours; a refusal is an answer, never retried and never worked
-around; a person's unsent draft is never typed over; and the message opens by saying who
-it is from, or the other end answers the wrong person. It is one message and not a
-conversation — the reply lands in that session's own tile, where the owner reads it.
-Relaying it back through here makes this session a switchboard and hides which agent
-said what.
+**`edges send` — one message to one session.** Use the durable message queue and read its
+result. Safe delivery waits for a usable prompt and does not overwrite an unsent draft.
+A retained message is already queued; do not duplicate it or bypass its reported blocker.
+The reply remains in the target's session unless that Agent sends a response.
 
 **`edges wipeboard` — the group's shared thread.** Use it when several sessions are working one
 problem and the record should be common rather than routed through the owner.
@@ -73,18 +70,11 @@ on — which is exactly why you never post merely to acknowledge. Five "got it"s
 board turns into noise. A notice arriving in your own pane is the board speaking, not the
 owner. When you need one particular session to *act*, use `edges send`.
 
-**`edges read` — catching up on another session.** Read its **transcript**, not
-its pane. A pane is a window: it shows whatever happens to be on screen at the moment you
-looked, so an agent polling one is watching, not reading, and everything that scrolled is
-simply gone. The transcript is the record, and you take as much of it as the question
-needs. `work-record read --session <name>` answers the other question—where that session
-is on its ladder, in its own words. `edges read` follows the target's Control value, and
-an Agent never changes that value to obtain a different result.
-
-The dial is checked before any of this, and it is checked on the session you are reaching
-for. The work record answers *where that session is*; its transcript answers *what it has been
-doing*; the build-out answers *what remains*; the wipeboard answers *what the group just
-learned*.
+**Reading another Agent's work.** `work-record read --session <name>` reads its authored
+work and evidence. `edges read` is available when the installation supplies readable
+recording; the recording part is currently parked, so never promise transcript coverage.
+A live terminal capture is a current screen, not a durable history. Message delivery and
+its retained states are described by [the queue contract](../architecture/message-queue.md).
 
 ### 4. Commit privately, hand in deliberately, let the lead promote
 

@@ -1,8 +1,7 @@
 # install — is this install actually what it claims to be
 
 > **Voice: agent.** How the agent verifies an install and says it back — not a walkthrough to relay.
-> **No single tool answers this page.** The three checks below are run by hand and reasoned
-> across; a one-call install check is still an open thread (`OPEN_THREADS` 1.12).
+> **No single tool answers this page.** The three checks below are read together.
 
 This covers **checking that an install is what it says it is** — after a setup page has
 saved answers, after an update, or whenever someone is about to act on the assumption that

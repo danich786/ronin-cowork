@@ -17,6 +17,13 @@ several areas. [KOTOBA](../KOTOBA.md) defines the terms; the linked contracts ow
 | 6. Capabilities and tools | Which executable contract does the work, and what teaches it? | [Capabilities and tools](#capabilities-and-tools) |
 | 7. Work Record | How does the Agent represent its work and completion evidence? | [Work Record](#work-record) |
 
+## Documentation audiences
+
+[Using Ronin](README.md#evaluate-install-and-use-ronin), understanding its construction,
+and planning its development are different reading tasks. This map is the construction
+entry point. [Documentation ownership](development/documentation.md) keeps product guides,
+current contracts, and the creators' Lab plans distinct without duplicating these surfaces.
+
 ## Scope
 
 Scope describes applicability and inheritance, not a second Agent-composition package.
@@ -70,7 +77,8 @@ A Services capability selects parts; an Agent tool capability teaches tools. Kee
   [connector contract](https://github.com/ronincowork/ronin-services/blob/dev/connector-contract.md),
   [install contract](https://github.com/ronincowork/ronin-services/blob/dev/install-contract.md).
   Use those same paths in your matching Services desk for local work.
-- Cowork contract: [Services activation](getting-started/services-activation.md).
+- Cowork contract: [Services activation construction](architecture/services-activation.md).
+- User route: [Ronin Services](getting-started/services-activation.md).
 - Code: [parts.ts](../src/parts.ts) plans what loads; [index.ts](../src/index.ts) imports and
   registers it; [sockets.ts](../src/sockets.ts) hosts hooks;
   [installed-api.ts](../src/routes/installed-api.ts) reports present, loaded, parked, and desired facts.

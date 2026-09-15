@@ -90,31 +90,16 @@ sessions with no Services present—that is not a degraded mode. A Service adds 
 when installed; its absence is never an error. If that feature gives an Agent new tools,
 those tools are taught through a separate Agent capability document.
 
-## How they work together: the connector
+## Understand or contribute to Ronin
 
-Core code never imports Service code. Instead it exposes **sockets**—fixed connection
-points that no-op when empty — and each service ships one `register(sockets)` entry
-that plugs in at boot:
+The [seven-surface contributor map](docs/contributor-map.md) connects visible behavior to
+code, state, Services, and tests. Start there to understand the implementation; use
+[CONTRIBUTING](CONTRIBUTING.md) when proposing a change.
 
-- **boot** — a service runs its own timers and janitors, stopped at shutdown
-- **launch** — services hear "a session was born" and act (seed a ladder, arm a tape)
-- **row** — services contribute fields to the session roster
-- **routes** — services mount their own HTTP surface; absent means those paths 404
-  and the matching UI panels sit inert
-
-The contract crossing the repo boundary is two files, versioned together: the typed
-shape (`src/sockets-contract.ts` here, a copy in ronin-services) and the written
-meaning (`connector-contract.md` in ronin-services) — the second is the one humans
-edit, and it wins any argument the type names start. A breaking change bumps
-`CONTRACT_V` and lands in both repos in the same breath.
-
-The one place cowork names a service is a single assembler block in `src/index.ts` —
-empty in this repo. Installing services fills it; a gate (`scripts/check-kyokai.mjs`)
-enforces that no other core file ever reaches across the line.
-
-**Every door into Ronin is drawn on one page:** `docs/api-surface.html` — cowork's own
-routes and its two websockets, the endpoints each service mounts through the ROUTES
-socket, the eight sockets themselves, and the bash shelf agents actually type at.
+Services runs inside Cowork through the [connector contract](https://github.com/ronincowork/ronin-services/blob/dev/connector-contract.md).
+The [documentation index](docs/README.md) separates usage guides from construction
+references. The creators keep proposals, buildouts, and audits in their Ronin Lab;
+those documents are not prerequisites for installing or using Ronin.
 
 ## Installing it
 

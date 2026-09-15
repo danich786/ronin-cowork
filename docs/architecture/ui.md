@@ -499,9 +499,9 @@ or in `src/passkey.ts`'s head comment.
 ## Asking a question — ERABI, `ask()`, is the one selector
 
 Every place a form asks the owner to pick from a set of answers is drawn by
-`public/js/ask.js`, from a spec, and by nothing else. The ruling and the builder contract are
-ronin-lab `SELECTORS.md` (owner, 2026-09-12); the live benches that led to it are the lab's
-`concepts/selectors.html`. This is the minute an agent needs before adding a question.
+`public/js/ask.js`, from a spec, and by nothing else. This section owns the implemented
+builder contract. The creators’ Lab retains the design decisions and exploratory benches;
+contributors do not need that history to implement a question.
 
 **The rule.** A field is a **reading stone** — 140 × 48 px, label over answer — that opens a
 **tray** of stones under its group in one of two fixed shapes: the **square** (85 px, a glyph
@@ -562,9 +562,9 @@ the stones, not inside them. Contract and file list: `docs/architecture/team-wor
 
 **What is not an `ask()`.** The stone work surface (`stone-work-surface.js`) is a page for
 browsing a collection whose item is the content — Presets, Workspace Folders, Model
-providers, Templates — and stays. Tabs, the Presets kind filter, the Control dial and the
-2 ⇄ 4 button are not selections from a list. The tile head's Output and @ selects move to
-`ask()` in a later wave that honours the head's own `.open` sweep.
+providers, Templates — and stays. Tabs, the Presets kind filter, and the
+2 ⇄ 4 button are not selections from a list. The tile head owns its current Output and
+mention controls; proposed migrations belong in the creators’ Lab.
 
 **What enforces it.** `tests/ask.test.js` is the unit floor. The consumer guard — failing a
 hand-drawn `select`, `Option`, checkbox or `aria-pressed` row outside `ask.js`, the tile head

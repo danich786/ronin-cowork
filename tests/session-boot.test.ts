@@ -352,12 +352,14 @@ test('a system installation reads one way or the other', async () => {
     assert.match(off, /The switch:/);
   }
   const index = await readFile(path.join(repo, 'docs', 'README.md'), 'utf8');
-  assert.match(index, /## Shelves/);
-  assert.match(index, /## Coworkspace/);
-  // The coworkspace page a newborn is handed: the surfaces, the head, copy and the lock.
+  assert.match(index, /## Evaluate, install, and use Ronin/);
+  assert.match(index, /## Understand how Ronin is constructed/);
+  assert.match(index, /## Ideas and work in progress: Ronin Lab/);
+  // The newborn's reference routes to the usage authorities, rather than copying UI
+  // controls that can drift or making the owner read construction contracts first.
   const utility = await readFile(path.join(repo, 'docs', 'architecture', 'RONIN_UTILITY.md'), 'utf8');
-  assert.match(utility, /hold \*\*Shift\*\* while dragging \(\*\*Option\*\* on a Mac\)/);
-  assert.match(utility, /Campaign discovery workbench[\s\S]*Cowork workbench[\s\S]*Team workbench/);
-  assert.match(utility, /🔒 Locked\*\* is the attached live terminal/);
-  assert.match(utility, /\*\*メ\*\* \| the drop/);
+  for (const guide of ['workbench', 'tile', 'terminal-controls', 'archived-sessions']) {
+    assert.ok(utility.includes(`../using-ronin/${guide}.md`), `usage route: ${guide}`);
+  }
+  assert.doesNotMatch(utility, /Control dial|owner only/);
 });

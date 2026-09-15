@@ -1,107 +1,34 @@
 # Archived sessions
 
-Archive is a resumable stop, not a delete and not a hidden live process.
+Archive stops an Agent so you can later resume its provider conversation. The Agent is no
+longer running and does not occupy a place in the live roster.
 
-## What actually happens
+## Archive and restore
 
-The provider and tmux do different halves of the job:
+1. Open the Agent's close/delete action and choose **Archive**.
+2. If it owns an open managed desk, hand off or finish that desk first; the message explains
+   what prevents archiving.
+3. Find the record in **Archived** and select it to resume.
 
-1. Ronin identifies the provider's conversation UUID while the process is still live.
-2. Ronin writes a private manifest containing that UUID and the session's tmux/Ronin
-   metadata. It does not copy the model conversation.
-3. Ronin kills the base tmux session and every grouped `grid_*` viewer, then verifies they
-   are gone. The CLI processes are therefore gone from RAM and the session is absent from
-   the live census.
-4. On rehydrate, Ronin asks the central agent registry for the installed provider CLI and
-   its resume argv, then creates a new tmux session with that process. Today the verified
-   forms are `codex resume <uuid>` and `claude --resume <uuid>`.
-5. The provider CLI loads its own conversation history. Ronin restores the session key,
-   teams, leads, wipeboards, note, project root, control dial, agent stamp, provider UUID,
-   and session type. Only then is the archive manifest removed.
+Ronin needs an exact conversation identity and a supported provider resume operation.
+Claude and Codex have that integration. If Ronin cannot identify the conversation safely,
+it refuses before stopping the Agent. Installing a provider does not imply it supports archive.
 
-So this is not tmux serialization and it is not a suspended process. tmux is genuinely
-stopped; provider-native conversation resume is what makes the later process continuous.
+Restore requires that provider CLI and its own saved history. If the old session name is
+already in use or restoration fails, the archive remains available for recovery.
 
-## The recording
+## Archive, delete, or hide
 
-The session's readable recording is preserved with it. RIREKI's `r_tape` and `r_scroll`
-already live in the session record directory, so archive does not move or duplicate them.
-The manifest preserves the stable session key; rehydrate stamps that same key onto the new
-tmux session, and RIREKI continues against the same tape and scroll. Archive emits no
-`SessionEnd`, specifically so the recording lifecycle does not treat this resumable stop
-as a death. Hard delete emits `SessionEnd` and removes the record directory, including the
-tape and scroll.
+- **Archive** preserves a resumable record and stops the Agent.
+- **Delete** checks assigned desks and closes safe, handed-in work before ending the Agent.
+  It reports blockers instead of discarding unfinished work.
+- **Hard Delete** is the separately confirmed destructive option. Read its exact target and
+  consequences before confirming.
+- **Hide/close view** removes the tile from view; the Agent keeps running.
 
-- A live tile's trash action offers **Archive**, **Delete**, and **Hard Delete**. Archive is
-  resumable and refuses while the Agent owns an open desk. Delete visibly checks all desks,
-  automatically closes clean Team-contained work, and refuses actionably without loss.
-  Hard Delete is unmistakably destructive: after exact-target confirmation it preserves
-  quarantine/receipt evidence, then removes the Agent and every owned desk regardless of
-  dirty files or unhanded commits.
-- The Commons has a separate **Archived** tab listing disk-backed records. They are absent
-  from the Roster and live session list and therefore do not count toward the session maximum.
-- Clicking an archived row recreates tmux, resumes the same provider conversation, restores
-  Ronin's tmux metadata, and removes the manifest only after restoration succeeds.
-- Manifests contain Ronin/tmux metadata and the provider conversation UUID. They never store
-  the launch prompt, transcript, or raw process argv, and list responses omit the UUID.
+Ronin stores session metadata for restoration. The provider owns the conversation history;
+archive does not make a separate transcript backup. Readable recording is currently parked
+in Services, so do not depend on it to recover a conversation.
 
-New Claude launches carry a Ronin-minted `--session-id` and the same UUID is stamped on the
-tmux session. Legacy Claude sessions are discoverable only when exactly one history file
-contains the exact initial prompt. Codex discovery requires a matching rollout file and
-thread-writer lock in the pane process tree; the most recently written matching rollout is
-the active conversation. If discovery is absent or ambiguous, archive refuses before
-stopping tmux.
-
-The archive manifest store is declared as `archived_sessions` in both store tables. Resolve
-its location with `bin/ronin-store archived_sessions`; never spell the path in callers.
-
-## Failure guarantees
-
-- If no exact provider conversation UUID can be found, archive returns `409` before writing
-  a manifest or stopping tmux.
-- Manifest publication is exclusive. A colliding archive identity returns an error and the
-  existing manifest is never overwritten.
-- The manifest is durable before tmux is stopped. If stopping fails and the base session is
-  still live, the new manifest is removed; if the base is already gone, the manifest stays
-  available for recovery.
-- Rehydrate refuses a live name collision and a missing provider CLI. If process creation or
-  metadata restoration fails, the partial tmux tree is stopped and the manifest remains.
-- Archive does not emit `SessionEnd` and does not remove the session directory. Live shutdown
-  does both, whether selected on a live tile or on an archived row.
-
-## HTTP contract
-
-| Request | Result |
-|---|---|
-| `POST /api/sessions/:name/archive` | Persist the resumable manifest and stop the Agent; refuses while it owns an open desk |
-| `DELETE /api/sessions/:name` | Coordinated close of safe assigned desks followed by Agent deletion |
-| `POST /api/sessions/:name/shutdown` | Immediately start observable safe Delete, or exact-confirmed Hard Delete; returns an operation id |
-| `GET /api/session-shutdowns/:id` | Current phase, desk count, terminal success, or actionable blockers |
-| `GET /api/archived-sessions` | Roster-safe rows: `id`, `name`, `archived_at`, `agent` |
-| `POST /api/archived-sessions/:id/rehydrate` | Resume provider conversation and restore metadata |
-| `DELETE /api/archived-sessions/:id` | Irreversibly end and remove the archived record |
-
-The browser calls these routes through `public/js/api.js`. Archived rows never enter
-`S.sessions`, so they cannot appear in live pickers or consume the configured session max.
-Agents and team leads use those same routes through `session_archive <session>` and
-`session_restore <archive-id>`; the tools add no lifecycle or store of their own.
-
-## Provider identity
-
-New Claude launches are deterministic: Ronin mints a UUID, passes it as `--session-id`, and
-stamps it in `@ronin-provider-session`. A resumed Claude process also exposes its UUID in
-`--resume`. For older Claude sessions without either argument, Ronin scans only the current
-project's Claude history and accepts an ID only when exactly one file contains the exact
-initial user prompt; ambiguity fails closed.
-
-Codex does not currently accept a caller-minted conversation UUID on an ordinary new
-interactive launch. Its native process keeps both a rollout JSONL file and a matching
-thread-writer lock open. Ronin walks the pane process and descendants, intersects those two
-FD identities, and selects the most recently written exact match. A rollout without its
-matching lock is never accepted.
-
-Provider operation syntax is executable data owned once in `src/agents.ts` and documented in
-`docs/architecture/model-providers.md` § One command registry. Archive code discovers conversation
-identity; it does not own install, launch, update, or resume argv. Gemini's resume command
-is registered but its exact live-session identity discovery is not yet integrated; Grok
-and Hermes also remain non-archivable until their full identity contracts are verified.
+Agents can use `session_archive` and `session_restore`; their help gives the current syntax.
+Contributors: [archive identity, persistence, and API](../architecture/session-archive.md).

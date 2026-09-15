@@ -1,4 +1,4 @@
-# WORKSPACE KIT — current agent README
+# WORKSPACE KIT — construction contract
 
 ## Purpose and boundary
 
@@ -165,11 +165,6 @@ primitive copies and layout drift. `scripts/check-css.mjs` guards CSS. Staging
 pretend unlanded routes exist. `scripts/visual-ui.mjs` measures declared compositions. A
 SKIP is unverified, never a pass.
 
-Accepted evidence includes League, Team and New Team consuming the hardened contracts;
-Team managed Workbench and full Tile-host mode; Kit-owned League desktop/phone geometry;
-all 12 view/skin assertions plus Stock restoration; and live UI verification including the
-registry-derived five-room Commons.
-
 ## Known open seams
 
 - Sessions continues to own its compatibility 1/2/4 raw Tile grid. Any future Team
@@ -181,43 +176,19 @@ registry-derived five-room Commons.
 - Registration idioms may differ where reachability/lifecycle are correct. Normalize only
   for a demonstrated defect.
 - Tiny DOM helpers and resource-free views are not foundation gaps.
-- ExplorerRail programmatic reconciliation is not yet silent: `setSections()` calls
-  `select()`, which fires `onSelect`. The approved foundation cleanup is to notify only on
-  real user selection and then remove any consumer suppression workaround after audit.
-- `team-controller.js` still maintains `revision`, deep-copies state in `snapshot()`, and
-  passes that snapshot to subscribers even though consumers re-read authoritative
-  selectors. The approved KISS cleanup is a bare repaint notification and removal of the
-  unused snapshot machinery; do not replace it with another cache or state source.
-- `../ronin-lab/concepts/five-eyes.html` at reviewed commit `f9510ef` is visual reference,
-  not production code, state, or an alternate contract.
+- ExplorerRail consumers guard programmatic repaint against recursive selection.
+  Preserve that behavior when changing the shared rail callback contract.
 
-## Exact resume checklist
+## Contributor workflow
 
-1. Work at your repo desk, cut from your team line (`ronin_catalogs/behaviours/conditional/worktree-root.md`);
-   never touch or merge `master` without explicit authority.
-2. Read this file, `docs/test-protocols.md`, and the target consumer document completely.
-3. Inspect `git status`, current diff, recent history, and the canonical files above.
-4. Record unrelated dirty baseline. If exact hunk isolation is unsafe, stop.
-5. State the smallest foundation leg and named consumers. If reviewed contracts do not
-   determine it, ask the owner before coding.
-6. Search existing primitives/layouts/adapters/controllers first. Create no second CSS,
-   rendering, routing, state, socket, terminal or service-lifecycle system.
-7. Implement shared foundation first; touch features only for explicitly authorized minimal
-   compatibility proof.
-8. Check CSS governance and prove Sessions remains reachable with 1/2/4 Tiles unchanged.
-9. Use direct dogfood and scoped diagnostics. For unlanded views, use the declared staging
-   target without turning that evidence into a per-leg BYOIN run.
-10. Leave candidate-wide BYOIN to the designated integrator; never report a SKIP as proof.
-11. Stage exact owned paths/hunks, inspect `git diff --cached --check` and the whole cached
-    patch, then commit at your desk; hand in only when the work is coherent for the team.
-12. Handoff hash or uncommitted state, verification verdict, exact paths, migration steps,
-    unrelated failures, and anything not tested or done.
-
+Use the [contributor map](../contributor-map.md) and [Agent route](../../AGENTS.md).
+Keep implementation changes and their verification with the owning repository.
+Buildouts, temporary preview addresses, and session handoffs belong in the creators’ Lab.
 
 ## Questions are `ask()` specs
 
 A question a surface asks — a pick, a many, a switch — is an `ask()` spec (`public/js/ask.js`,
-docs/architecture/ui.md § Asking a question, ronin-lab `SELECTORS.md`). Consumers do not declare selector
+[UI contract](ui.md#asking-a-question--erabi-ask-is-the-one-selector)). Consumers do not declare selector
 DOM: no `select`, no option rows, no `aria-pressed` button rows, no bespoke stones. The
 utility owns the width, the shapes, the tray and the caption; the consumer owns the words
 and the answers.

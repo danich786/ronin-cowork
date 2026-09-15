@@ -52,6 +52,7 @@ runtime parts, while Agent capabilities teach tools (`docs/architecture/tool-sur
 | You will see | Say | What it is |
 |---|---|---|
 | team | **Team**<!--g:glossary.team--> | A set of sessions working together. |
+| Ronin Lab | **Ronin Lab** | A place for ideas, research, plans, and notes before or across projects. The creators’ Lab is their own instance. |
 | `team_roster` | **Team record**<!--g:glossary.team_roster--> | Team identity, defaults, and held Projects. Members and leads derive from sessions. |
 | `team_lead` | **team lead · 人**<!--g:glossary.team_lead--> | Set by hand, never inferred from what a session does. |
 | `session_type` | **session type**<!--g:glossary.session_type--> | **Cowork Agent**<!--g:glossary.cowork_agent--> with its resolved Agent composition · **bare-metal Agent**<!--g:glossary.bare_metal_agent--> a CLI started without it · **terminal**<!--g:glossary.terminal--> a shell with no agent. |

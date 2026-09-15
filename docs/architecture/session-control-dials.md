@@ -10,8 +10,8 @@ It is not a general API or tmux authorization boundary. Safe message delivery in
 Tools may report the stored value for coordination.
 
 The value is stored on the tmux session and returned by
-`GET /api/sessions/:name/control`. The tile changes it through
-`POST /api/sessions/:name/control`.
+`GET /api/sessions/:name/control`. The legacy setter remains
+`POST /api/sessions/:name/control`; the current tile header does not expose a dial.
 
 `bin/shim/tmux` has one separate responsibility: `tmux kill-server` and tmux's accepted
 abbreviations for that command are unavailable because they end every session.

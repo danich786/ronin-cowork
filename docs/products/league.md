@@ -1,4 +1,7 @@
-# Teams collection view
+# Teams collection construction
+
+For contributors. For navigation and Team creation, read [Workbench](../using-ronin/workbench.md)
+and [New Team](../using-ronin/new-team.md).
 
 The Teams workbench exists at `#/cowork`, rendered by
 `createCoworkView({ kind: 'cowork' })` in `public/js/cowork-view.js`.

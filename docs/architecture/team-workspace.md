@@ -1,4 +1,4 @@
-# TEAM WORKSPACE — current implementation and resume contract
+# TEAM WORKSPACE — construction contract
 
 > **The page format is the `workbench`** — the team was its first tenant, not its
 > definition. The surface map and the names (workspace · selector column · terminal_tile ·
@@ -78,7 +78,7 @@ roster cards call it — and so does a **draft** an agent hands in with `edges p
 each tab on the team; which workspace the owner is typing in; which shows the agent;
 what each holds); its other form takes `key=value` words naming only what should
 change. The wire is `src/routes/team-page-api.ts`: tabs report their view (`PUT`),
-agents read it (`GET`), and a draft (`POST`) is key-, dial- and membership-checked, then
+Agents read it (`GET`), and the operator validates a draft (`POST`) before it is
 pushed on `/events` as `{t:'team-page'}` to the tab that shows the agent, else every tab
 on the team. The server holds no page state. The roster header says who arranged it.
 
@@ -176,10 +176,10 @@ select `.wk-*` internals or restyle `.tile-head`.
 
 ## Existing Tile and header contract
 
-A workspace's terminal is obtained only through
-instantiates the existing `Tile` unchanged — picker, SHINGO ladder, role mark, branch
-reading, ⛩, @, ⚡, メ, output selector, dials, terminal, tape, composer — and appends the
-given actions to its own head row. Team never reaches into Tile DOM.
+Each workspace obtains a terminal through the shared Tile host. Team supplies the session
+and workspace lifecycle; it does not rebuild the header or reach into Tile DOM.
+`public/js/tile.js` and `public/js/tilehead.js` own the current controls. See
+[the tile usage guide](../using-ronin/tile.md) for what the owner sees.
 
 ## Lifecycle
 
@@ -238,25 +238,17 @@ The designated integrator runs one BYOIN mode on the release candidate; a SKIP i
 - No cherry-pick/summary reading on the cards: no service puts such a field on the
   `/api/home` row.
 - There is no Team-scoped 1/2/4 mode. Sessions retains its separate raw grid.
-- The hosted Tile keeps its global picker; switching it to a non-member is existing Tile
-  behavior.
+- The workspace selects the session it shows. The current Tile header displays its
+  session name; roster placement and drag/drop change the selection.
 - `src/` changes need `ronin-host restart` (`tsx`, no watch); `public/` is live.
 
-## Exact resume checklist
+## Contributor workflow
 
-1. Work at your repo desk (`ronin_catalogs/behaviours/conditional/worktree-root.md`); never act on
-   `master` without a fresh owner instruction.
-2. Read this file and `docs/architecture/workspace-kit.md`.
-3. Inspect `git status`; in a shared checkout, preserve unrelated changes.
-4. Name one bounded behavior; if it needs a new Kit primitive, Tile change, or backend
-   contract, stop for the owner.
-5. Route every change to the page through `arrange()`; never a second path.
-6. Keep Tiles lazy and destroyed on `leave()`; keep membership derived from tags; keep the
-   Sessions 1/2/4 grid untouched.
-7. Verify by probe, then scoped diagnostics; stage only owned paths; commit as you go at
-   your desk and hand in when the work is coherent for the team.
+Use the [contributor map](../contributor-map.md) and [Agent route](../../AGENTS.md).
+Keep implementation changes and their verification with the owning repository.
+Buildouts, temporary preview addresses, and session handoffs belong in the creators’ Lab.
 
-## Exact dogfood checklist
+## Manual verification
 
 1. Open a rostered `#/team/:name`; confirm the lead's Tile left, the commons right, the
    roster between, the layout map in the bar.

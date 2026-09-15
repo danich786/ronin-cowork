@@ -136,7 +136,10 @@ choices are separate, and **No communication** is one of them.
 
 A workspace folder is a folder Ronin keeps for Teams and Agents to start in. A new
 installation makes two inside Ronin: **Ronin Lab** for ideas, assistants, research and
-pre-project work, and **Ronin Project 1** for project work, prepared for worktrees. Each
+pre-project work, and **Ronin Project 1** for project work, prepared for worktrees.
+Your Lab is a general thinking space, not the code repository for a specific project.
+Ronin’s creators use their own Lab in the same way; their internal plans are not part of
+your installation instructions. Each
 uses its lowercase ID (`ronin_lab`, `ronin_project_1`) as the starting directory name and
 is a Git repository with a README and a first commit. Workspaces the owner adds are separate,
 named entries; they do not replace either built-in.
@@ -149,9 +152,10 @@ repository facts. More in `docs/architecture/project-roots.md`.
 
 ## Ronin Services
 
-Services is the community half of Ronin, in beta: readable transcripts and the Unlocked
-tile views, the template library, the background assistant that keeps work records
-current, voice, and team memory. Registering says who is using it; nothing is for sale.
+Services adds optional capabilities. The page reports what is installed and enabled on
+this machine. Readable recording and local weights are currently parked; their source
+presence does not make those features available. See [Ronin Services](services-activation.md)
+for installation, registration, availability, and data sharing.
 
 The surface shows one measured status line and three controls in one shape:
 **Register**, **Install**, and a **Turn on / Turn off** switch. Register and Install read

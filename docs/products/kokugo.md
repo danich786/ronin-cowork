@@ -1,4 +1,8 @@
-# KOKUGO — every string a person reads, through one door
+# UI wording construction (KOKUGO)
+
+For contributors changing UI strings. To change your own appearance or wording, use
+[Customize Ronin](../getting-started/customize.md). [KOTOBA](../../KOTOBA.md) owns meanings;
+lexicons change displayed words, not behavior.
 
 **The rule, in one sentence: every string a person reads in the coworkspace is
 `t('room.key', 'the literal')`, and the key lands in `ronin_catalogs/lexicons/professional_en.md`

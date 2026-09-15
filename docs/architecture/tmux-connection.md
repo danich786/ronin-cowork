@@ -92,16 +92,6 @@ per endpoint), `refresh-probe.mjs` and `team-probe.mjs` (repeated browser reload
 surface states, long tasks and errors). Open the inspector on the live server with
 `kill -USR1 <pid>`; the port is localhost-only and closes with the process.
 
-## Remaining work recorded on September 4
-
-The tiles still refetch control, ctx and work record on every pushed session list; the
-`/api/session-max` and `/api/messages` endpoints still work per call; the roster's
-git-derived desk fields are not yet cached by record time; the services repo's own tmux
-calls are not on the connection (its parts are parked); and the tiles themselves do not
-ride the connection. These are the dated implementation gaps from this report; reconcile
-them against current code before assigning fixes. The consolidated plan carries the
-forward workstreams. The build-out and its measurements live in the lab.
-
 ## Global-dev Services placement
 
 `npm start` and `npm run dev` prepare the global development runtime before starting

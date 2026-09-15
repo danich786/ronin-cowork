@@ -1,8 +1,7 @@
-# JIKAN — the house clock and Cron jobs
+# Cron jobs
 
-JIKAN (時間, "time") is the server clock used by Cron jobs and other timed work. Its
-intervals do not overlap. Cron jobs are scheduled messages; they do not start an Agent or
-a Team.
+Cron jobs deliver scheduled requests to existing Agents or Team leads. They do not start
+an Agent or a Team.
 
 A **Request** is the plain message an Agent receives, exactly as if a person typed it to
 the Agent. **To** is
