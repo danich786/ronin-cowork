@@ -77,8 +77,10 @@ installation itself a behavior.
   `reply`, and `repository-init`.
 - **Machine Settings** — Campaign, installation, provider, default, owner, and Workspace
   Folder configuration: `machine-settings …`.
-- **Team Lead** — Team record, Team-held Projects, assignment, return, and member status:
-  `team-lead roster …`, `project …`, and `member status`.
+- **Team** — Team record, membership and lead designation, Team-held Projects, assignment,
+  return, status, and Team forking. Current compatibility commands include `team-lead
+  roster …`, `team-lead project …`, `team-lead member status`, and Team-related
+  `session_set` operations; the target public surface groups them under `team …`.
 
 An installed extension may add another Tool capability, but a capability without a real
 tool is only proposed teaching and must not be presented as executable ability.
@@ -98,8 +100,9 @@ Agent-composition part.
 ## Assignment and mandate
 
 Assignment says what this Agent is doing and records concrete designations. Team lead is
-one explicit designation, never inferred from activity or treated as a general role
-system.
+one explicit designation, never inferred from activity or treated as a capability or
+general role system. It may select additional Team-management teaching, but the operational
+domain remains the Team capability.
 
 Mandate is separate because it states the assignment boundary rather than teaching a
 method:
