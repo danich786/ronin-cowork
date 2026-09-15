@@ -81,7 +81,7 @@ function parseRoots(raw: string): ProjectRootInfo[] {
         .replace(new RegExp(`^\\s*-\\s*\\*\\*${key}:\\*\\*\\s*`, 'i'), '')
         .trim();
     const dir = field('dir');
-    if (!dir) continue; // a project_root without a directory is not launchable
+    if (!dir) continue; // a Workspace Folder without a directory is not launchable
     roots.push({
       name,
       title: field('title'),
@@ -166,7 +166,7 @@ export async function upsertProjectRoot(name: string, fields: Partial<Record<Roo
   const found = headingLines(lines).find((h) => h.name === name);
 
   if (!found) {
-    if (!fields.dir) throw new Error('A new project_root needs a directory.');
+    if (!fields.dir) throw new Error('A new Workspace Folder needs a directory.');
     const block = [`## ${name}`];
     for (const key of FIELD_ORDER) {
       const v = fields[key];

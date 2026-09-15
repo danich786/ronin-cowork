@@ -157,6 +157,8 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
   assert.match(teamHelp, /move an Agent/i);
   assert.match(teamHelp, /remove the old Team on that Team's page/i);
   assert.match(teamHelp, /sets? or changes? that Team's lead/i);
+  assert.match(teamHelp, /--root <workspace-folder-handle>/);
+  assert.doesNotMatch(teamHelp, /--root <path>/);
   for (const args of [['edges', 'wipeboard'], ['edges', 'send'], ['work-record', 'read', '--session', 'nobody'], ['work-record', 'update_record', '--session', 'nobody', '--at', '1'], ['ronin-host', 'inspect'], ['ronin-host', 'account']]) {
     const r = await run(args);
     assert.doesNotMatch(r.out, REACH_FAILURES, `${args.join(' ')}: ${r.out}`);

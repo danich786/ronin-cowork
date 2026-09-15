@@ -460,11 +460,11 @@ export function createCoworkView(options = {}) {
   };
   /** The seat back, with nothing in it: its tiles go; the lead comes back warm on the next paint. */
   const emptySeat = (id) => {
+    seats[id].pool.destroyAll();
     remembered[id] = DISMISSED_WORKSPACE;
     bench.restoreDefault(id);
     delete seats[id].surface.el.dataset.workbenchSurface;
     delete seats[id].surface.el.dataset.workbenchResource;
-    seats[id].pool.destroyAll();
     ensureLeadHot(membersOfTeam(team));
     touch(id);
     paintSeats();
