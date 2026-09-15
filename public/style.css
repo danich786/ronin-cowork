@@ -778,6 +778,12 @@ body {
   -webkit-user-select: text;
   user-select: text;
 }
+.tile-head button.note.has-note {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+
 .tile-head button.job {
   margin-left: var(--space-2);
   font-size: var(--text-2);
@@ -855,6 +861,29 @@ body {
 .tile .tile-body[data-drop-text='true'] { outline: var(--edge) dashed var(--accent); outline-offset: calc(-1 * var(--edge)); }
 
 
+.tmore {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 6px;
+  z-index: 12;
+  gap: var(--space-4);
+  row-gap: var(--space-3);
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  max-width: calc(100% - 12px);
+  background: var(--panel);
+  border: var(--edge) solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  box-shadow: var(--shadow-sheet);
+}
+.tmore.open {
+  display: flex;
+}
+
+
 .tdocs {
   display: none;
   position: absolute;
@@ -916,6 +945,14 @@ body {
   color: var(--accent);
   border-color: var(--accent);
 }
+
+.tile-head .tmore .tdocs-btn {
+  width: auto;
+  padding-inline: var(--space-3);
+  gap: var(--space-2);
+}
+.tile-head .tmore .tdocs-btn::after { content: attr(data-label); }
+
 
 .tile-doc-view {
   display: none;
@@ -1253,7 +1290,8 @@ body {
   border-color: var(--accent);
 }
 
-.tile-head button.torii {
+.tile-head button.torii,
+.tile-head button.tmore-btn {
   width: 28px;
   font-size: var(--text-4);
 }
@@ -1527,6 +1565,7 @@ body {
 
   .tile-head button,
   .tile-head button.torii,
+  .tile-head button.tmore-btn,
   .tile-head select.tmention-btn {
     width: 34px;
     height: 32px;

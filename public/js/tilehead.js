@@ -1,11 +1,18 @@
 /* part of the ronin-cowork client — see js/README.md */
-import { makeGauge, setInert } from './widgets.js';
+import { CONTROL_POSITIONS, makeDial, makeGauge, setInert } from './widgets.js';
 import { clampTip } from './shingo.js';
+import { buildTileMore } from './tilemore.js';
 import { buildTileDocs } from './tiledocs.js';
 import { buildTileMentions } from './tilementions.js';
-import { serviceMissing } from './state.js';
+import { isCoarse } from './tiledrop.js';
+import { S, serviceMissing } from './state.js';
 import { makeOutput } from './output.js';
 import { t } from './lexicon.js';
+
+/** The dial's help. A function: the lexicon loads after this module is evaluated. */
+export function dialTitle() {
+  return t('head.dial_help', 'Who may touch this session: 👤 owner only · 👁 outside agents watch · 🤖 outside agents type. Yours to turn; agents never flip it.');
+}
 
 /**
  * THE HEADER, left to right. One row per control; see the file header for the columns.
@@ -30,9 +37,9 @@ const HEADER = () => {
   { key: 'sessionName', tag: 'span', cls: 'sess' },
 
   { key: 'workRecordBtn', cls: 'work-record',
-    text: t('head.work_record', 'Work Record'), needs: 'session',
-    help: t('head.work_record_help', 'Repositories, current action, and work record'),
-    quiet: t('head.work_record_quiet', 'Work Record — no Agent in this workspace'),
+    text: t('head.view_work_record', 'View Work Record'), needs: 'session',
+    help: t('head.work_record_help', 'View repositories, current action, and the work record'),
+    quiet: t('head.work_record_quiet', 'View Work Record — no Agent in this workspace'),
     on: (tile) => tile.toggleLadder() },
 
   { grow: true },
@@ -57,7 +64,20 @@ const HEADER = () => {
   // the raw view comes back it belongs INSIDE the ladder panel, where the reader already
   // is, not as a second glyph competing with the first.
 
-  // Window acts sit at the outside edge. The session controls remain beside them, but these
+  // controls ended this row and the session name has to remain readable; at four tiles up
+  // there was not room for both. The remaining controls stay in メ.
+  // left drop out of メ in one horizontal strip, unchanged. See tilemore.js for the
+  // glyph's history (it was the Commons button here until ⛩ took that everywhere) and
+  // for why this follows ⚡'s dismissal grammar rather than the retired `ui.popover`.
+  //
+  // NO `needs`. It is a container, not an act: it holds 🔒, which works with no session
+  // at all, and dimming it would hide the six explanations of why its contents are dim.
+  { key: 'moreBtn', hosts: true,
+    // No hover help: the fixed help box covered the drop this button exists to reveal.
+    // メ explains itself by opening; every control inside carries its own words.
+    widget: () => buildTileMore() },
+
+  // Window acts sit at the outside edge. The session picker and メ remain beside them, but these
   // two familiar marks get the corner: minus stops viewing; times opens the existing
   // retirement sheet. Killing is not reimplemented here (and the Close shortcut
   // path can land on the same Tile.kill boundary).
@@ -82,7 +102,13 @@ const HEADER = () => {
     widget: () => makeGauge('ctx'),
     help: t('head.gauge_help', "Context gauge — how full this session's context window is, read off the pane's own status line. Hidden until there is a reading.") },
 
-  { key: 'docsBtn', needs: 'session',
+  // On BOTH surfaces — cockpit dials are the motif everywhere (an explicit override of
+  // the desktop-freeze rule for this control).
+  { key: 'dial', drop: true, needs: 'session', holds: true,
+    widget: (tile) => makeDial(CONTROL_POSITIONS(), (v) => tile.pickControl(v)),
+    help: dialTitle(), quiet: t('head.dial_quiet', 'Control dial — no session in this tile yet') },
+
+  { key: 'docsBtn', drop: true, needs: 'session',
     widget: (tile) => buildTileDocs(tile),
     help: t('head.docs_help', "This Agent's tracked docs — open one over this tile"),
     quiet: t('head.docs_quiet', "This Agent's docs — no Agent in this workspace"),
@@ -92,6 +118,16 @@ const HEADER = () => {
       return n
         ? t('head.docs_read', 'Docs — {n} tracked by this Agent. Open one over this tile.', { n })
         : t('head.docs_none', 'Docs — this Agent is tracking none yet.');
+    } },
+
+  { key: 'noteBtn', cls: 'note', text: '📝', drop: true, modal: true, needs: 'session',
+    help: t('head.note_help', 'Session note (post-it)'),
+    quiet: t('head.note_quiet', 'Session note — no session in this tile yet'),
+    on: (tile) => tile.openNote(),
+    read: (tile, el) => {
+      const has = !!S.sessions.find((x) => x.name === tile.session)?.hasNote;
+      el.classList.toggle('has-note', has);
+      return has ? t('head.note_has', 'Session note (has notes)') : t('head.note_empty', 'Session note (empty)');
     } },
 
   ];
@@ -112,8 +148,8 @@ function quietReason(row, tile) {
  *
  * Driven by the same table that built it, so a control cannot be built and then left out
  * of the state pass: that is precisely how ⛩ ⚡ 🗑 stayed lit with no session while their
- * four neighbours dimmed. Rows carrying their own reading are refreshed by the tile
- * first — this decides only whether they are reachable.
+ * four neighbours dimmed. The rows carrying their own reading (the mark, 🏷, 📝, the
+ * dial) are refreshed by the tile first — this decides only whether they are reachable.
  */
 export function syncTileHead(tile) {
   for (const row of HEADER()) {
@@ -141,6 +177,13 @@ export function buildTileHead(tile) {
   el.append(head, body);
 
   const out = { el, body, headHelp: {} };
+  // メ BUILDS ON BOTH SURFACES now. It was desktop-only while the phone hoisted this
+  // header into the app bar behind its own メ — a control nested in a desktop drop
+  // would have been lost by that hoist's snapshot. The hoist is gone: a phone never
+  // builds this header at all (js/phone.js), and an iPad head with every drop row
+  // gauge, dial, note and kill sat loose on the row.
+  const coarse = isCoarse();
+  let host = null; // the `hosts` row's widget, once it has been built
   for (const row of HEADER()) {
     if (row.grow) {
       head.append(Object.assign(document.createElement('span'), { className: 'grow' }));
@@ -164,10 +207,31 @@ export function buildTileHead(tile) {
     // the same condition that dims it — an inert control here stays HOVERABLE so it can
     // say why (see setInert), so the refusal has to live in the handler.
     if (row.on) node.addEventListener('click', () => !quietReason(row, tile) && row.on(tile, node));
-    head.append(node);
+    // A `drop` row goes INTO メ's strip; everything else goes in the row. Same element,
+    // same handlers, same title — only the parent differs, which is the whole trick.
+    const nest = row.drop && host;
+    (nest ? host.menu : head).append(node);
+    // A control in the strip that OPENS something shuts the strip behind it, so the
+    // panel it just raised is not covered by the drop it came out of. The INSTRUMENTS
+    // (⛽ and 🎛 — the `holds` rows, whose value changes in place under your finger) leave
+    // it up, exactly as `tiledrop.js` gives the dial its 'stay' mode on the phone. So do
+    // the `modal` rows (🏷 and 📝), and for a reason that is the same sentence read the
+    // other way: their sheet is over a full-viewport scrim, so there is nothing for the
+    // strip to cover, and shutting it took the OPENER out of the document's flow —
+    // `modal` column in the header comment for the whole incident).
+    // Skipped while the control is inert: you clicked a dimmed 🗑 to find out why, and
+    // closing the drop under you is the opposite of an answer.
+    if (nest && !row.holds && !row.modal) {
+      node.addEventListener('click', () => !quietReason(row, tile) && host.close());
+    }
     out[row.key] = made ?? node;
-    // Controls with a menu hang it off the header rather than inside the button.
+    // ⚡ and メ carry a menu that hangs off the header rather than sitting in the row.
     if (made?.menu) head.append(made.menu);
+    if (row.hosts) host = made;
   }
+  // COARSE ONLY: the Output select joins メ's strip too (owner's header cleanup,
+  // same element, relocated: every handler and the syncOutput wiring come along, and
+  // no close-on-click is added because a select is an instrument you adjust in place.
+  if (coarse && host && out.outputEl) host.menu.prepend(out.outputEl.el ?? out.outputEl);
   return out;
 }

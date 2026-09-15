@@ -16,17 +16,6 @@ test('the tile corner exposes minimize and retirement through the existing Tile 
   assert.match(tile, /retireSession\(name, this\.retirementId/);
 });
 
-test('the tile header exposes Docs directly without the old control and note menu', async () => {
-  const [head, tile, phone] = await Promise.all([
-    read('public/js/tilehead.js'), read('public/js/tile.js'), read('public/js/phone.js'),
-  ]);
-  assert.match(head, /key: 'workRecordBtn',[\s\S]*text: t\('head\.work_record', 'Work Record'\)/);
-  assert.match(head, /key: 'docsBtn', needs: 'session'/);
-  assert.doesNotMatch(head, /buildTileMore|key: 'moreBtn'|key: 'dial'|key: 'noteBtn'/);
-  assert.doesNotMatch(tile, /refreshControl|pickControl|openNote/);
-  assert.doesNotMatch(phone, /node\('noteBtn'\)|node\('dial'\)/);
-});
-
 test('managed workspaces empty their seat and both empty views use the subdued Ronin mark', async () => {
   const [cowork, host, tile, css] = await Promise.all([
     read('public/js/cowork-view.js'), read('public/js/terminal-tile-host.js'),
