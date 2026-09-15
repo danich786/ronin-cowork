@@ -1,12 +1,13 @@
-# Agent composition
+# What a Cowork Agent receives
 
-An Agent composition states what this Agent is, and supplies the resources that teach the
-Agent what that composition means. It has five parts:
+Ronin calls the complete set of things given to one Cowork Agent its **Agent composition**.
+The phrase means both the Agent's resolved settings and the documents that explain how to
+use them. It has five parts:
 
 1. **Tool capabilities** — the operational domains available to the Agent, each
    categorizing its tools. A composite tool remains a tool.
 2. **Behaviors** — provider-neutral guidance for how the Agent works, including procedures
-   previously classified separately as Behaviors. Behaviors are system, Agent-selected, or
+   previously classified separately as SOPs. Behaviors are system, Agent-selected, or
    situational.
 3. **Mandate** — the assignment boundary: Reach, Recruit, and Output, accompanied by base
    Ronin teaching that explains how the Agent interprets those values.
@@ -69,7 +70,7 @@ installation itself a behavior.
   `read`, `team`, `wipeboard`, `page`, `control`, and `schedule`.
 - **Work Record** — the Agent's work record, documents, and held Projects:
   `work-record read`, `update_record`, `document …`, and `project …`.
-- **Agent** — Agent creation, inspection, configuration, archive, restoration, and
+- **Session** — Agent creation, inspection, configuration, archive, restoration, and
   ending: `session_create`, `session_check`, `session_set`, `session_archive`,
   `session_restore`, and `session_end`.
 - **Worktree Desk** — managed-worktree custody and delivery: `worktree-desk open`,
@@ -78,9 +79,8 @@ installation itself a behavior.
 - **Machine Settings** — Campaign, installation, provider, default, owner, and Workspace
   Folder configuration: `machine-settings …`.
 - **Team** — Team record, membership and lead designation, Team-held Projects, assignment,
-  return, status, and Team forking. Current compatibility commands include `team
-  roster …`, `team project …`, `team member status`, and Team-related
-  `session_set` operations; the target public surface groups them under `team …`.
+  return, status, and Team forking: `team roster …`, `team project …`, `team member
+  status`, and Team-related `session_set` operations.
 
 An installed extension may add another Tool capability, but a capability without a real
 tool is only proposed teaching and must not be presented as executable ability.
@@ -89,7 +89,7 @@ tool is only proposed teaching and must not be presented as executable ability.
 
 A behavior owns normative, provider-neutral guidance. A short standing practice and a
 long situational procedure are the same kind of artifact with different delivery rules.
-“Behavior” may remain ordinary prose for a standard operating procedure, but is not a separate
+“Procedure” may remain ordinary prose for steps within a Behavior; SOP is not a separate
 Agent-composition part.
 
 - **System** behaviors accompany the applicable Ronin system or installation.

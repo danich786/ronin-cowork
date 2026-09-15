@@ -1,4 +1,4 @@
-# Tool surface
+# Tools and Agent capabilities
 
 Therefore:
 
@@ -17,7 +17,7 @@ the sole home of Ronin business rules or unique authority. If another provider n
 equivalent help, it receives its own native representation derived from the same
 Ronin-owned capability/behavior—not a copied source of truth.
 
-This is the Tool surface.
+Together, these definitions are Ronin's Tool surface.
 
 The [Agent composition](agent-composition.md) places this surface beside behaviors,
 mandate, provider-native skills, and assignment.

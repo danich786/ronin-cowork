@@ -1,6 +1,7 @@
 # `public/js/` — the client, in modules
 
-**test_protocols:** ordinary dev work does not run BYOIN; the integrator runs it once at the `dev → master` boundary — `docs/test-protocols.md` is the contract.
+Repository verification is `npm run verify`; Playwright suites are explicit UI diagnostics.
+The repository's `AGENTS.md` owns the contributor route.
 
 Native ES modules. **No bundler, no build step, no TypeScript.** `index.html` loads
 `js/main.js` with `type="module"`; the browser fetches the rest. `express.static` already
@@ -21,7 +22,8 @@ constructor, killed `build()`, and left a page that rendered its static header a
 nothing. It took hours to find and survived two reverts, because the bug was older than
 the changes being reverted. A file that big is where a mistake like that hides.
 
-See `co-working/user_repo/wip/buildouts/` history and `CLAUDE.md` for the full account.
+Current behavior is owned by the source modules and their tests. Historical build-outs are
+not part of this directory's documentation contract.
 
 ## The map
 
@@ -106,8 +108,9 @@ whichever view is showing. Read `tile.js` and you should see composition, not ma
 The server has the same rule with a gate behind it (`scripts/check-src.mjs`, 700 lines and
 a ratchet). The client's gate is `check-modules` — the same 700, mechanically enforced
 
-The three keypad modules are described in one place and nowhere else:
-[`co-working/user_repo/README/KEYPAD_README.md`](../../co-working/user_repo/README/KEYPAD_README.md).
+The keypad's user-facing controls are documented in
+[`docs/terminal-controls.md`](../../docs/terminal-controls.md); the module rows above own
+the implementation split.
 
 ## Four rules
 

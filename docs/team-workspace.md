@@ -5,9 +5,8 @@
 > team_commons · cowork_commons · surface head) are `docs/cowork-space.md`; this file stays
 > the implementation record of the team's use of it.
 
-This is the current README for the Team destination. It records what is landed on `dev`
-resume. It is not a speculative redesign brief. The history of how it got here — the
-rulings, the measurements, the traps — is `wip/buildouts/TEAM_WORKBENCH.md`.
+This is the current contract for the Team destination. It describes what is landed on
+`dev`; it is not a speculative redesign brief or a pointer to temporary build-out history.
 
 ## Purpose and non-goals
 
@@ -221,9 +220,8 @@ keyboard · `5acb840` `edges page` · `a6819eb` the roster in its view · `04120
 `+show_file` on the team page · `02f288b` live membership seats and unseats ·
 `7c5c619` the head row and Team Configuration finished on measurement.
 
-Every leg was verified by a playwright probe against the live page (`scripts/lib/ui-host.mjs`,
-`loadPlaywright()`), recorded in `wip/buildouts/TEAM_WORKBENCH.md` under each LANDED
-section, plus the repo gates (`check-modules`, `check-workspace-kit`, `check-css`,
+The surface was verified by Playwright probes against the live page (`scripts/lib/ui-host.mjs`,
+`loadPlaywright()`), plus the repo gates (`check-modules`, `check-workspace-kit`, `check-css`,
 `check-dead`, `check-docs`, `check-tests` — 248 unit tests) and `scripts/smoke-ui.mjs`.
 The designated integrator runs one BYOIN mode on the release candidate; a SKIP is not a pass.
 
@@ -248,7 +246,7 @@ The designated integrator runs one BYOIN mode on the release candidate; a SKIP i
 
 1. Work at your repo desk (`ronin_catalogs/behaviours/worktree-root.md`); never act on
    `master` without a fresh owner instruction.
-2. Read `wip/buildouts/TEAM_WORKBENCH.md` (HANDOFF first), this file, and `docs/workspace-kit.md`.
+2. Read this file and `docs/workspace-kit.md`.
 3. Inspect `git status`; in a shared checkout, preserve unrelated changes.
 4. Name one bounded behavior; if it needs a new Kit primitive, Tile change, or backend
    contract, stop for the owner.

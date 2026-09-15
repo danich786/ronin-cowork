@@ -154,7 +154,6 @@ New Session, Docs and Wipeboard live in the cowork-space surfaces named above.
 
 - Implementation of the page as it stands: `docs/team-workspace.md`.
 - The Kit's contract: `docs/workspace-kit.md`.
-- The cowork commons build-out and its open decisions: `ronin-lab wip/buildouts/COWORK_COMMONS.md`.
 # Message delivery
 
 Team Commons' **Agent message queue** channel shows inbound session messages that have not

@@ -1,5 +1,15 @@
 # Ronin documentation — start with the question
 
+Two short maps define the Agent-facing system:
+
+- [Tools and Agent capabilities](tool-surface.md) defines Tool, Composite tool,
+  Capability, Behavior, Skill, UI, and internal implementation. The actual capability
+  files and their tools are indexed in
+  [`ronin_catalogs/capabilities/README.md`](../ronin_catalogs/capabilities/README.md).
+- [What a Cowork Agent receives](agent-composition.md) explains how those capabilities sit
+  beside Behaviors, mandate, provider-native Skills, and the Agent's assignment. “Agent
+  composition” is only the name for that complete resolved package.
+
 ## Terminal controls
 
 |Input|Codex|Claude|Gemini|Grok|Hermes|
@@ -33,14 +43,14 @@ Option-drag, Cmd+C (Mac); Shift-drag, Ctrl+C (Windows/Linux).
 | How do parallel Agents avoid colliding in the same files? | [Ronin Worktrees](worktrees.md) |
 | What is installed, what a Team or Agent can add, and how a new Agent is equipped? | [Installations and behaviours](installations.md) |
 | How should an Agent plan and maintain its work record? | [Keep a useful work record](work-record.md) |
-| What is a tool, composite tool, capability, Behavior, skill, UI, or internal API? | [Tool surface](tool-surface.md) |
+| What is a tool, composite tool, capability, Behavior, skill, UI, or internal API? | [Tools and Agent capabilities](tool-surface.md) |
 | How does a Team's five-stage Kanban derive projects and Landing? | [Team Kanban](team-kanban.md) |
 | How do I Stop, Clear, Close or Copy, and change shortcuts? | [Terminal controls](terminal-controls.md) |
 | Where are each Agent CLI's integration particulars? | [Agent integrations](agents/README.md) |
 | How do session Control settings work? | [Session Control](session-control-dials.md) |
 | What does a new Agent read at birth, and why does it fit one read? | [The birth packet](birth-packet.md) |
 | What does Ronin let an Agent do, and what does it only tell it? | [The Agent's philosophy: a gas pedal and a brake pedal](agent-philosophy.md) |
-| What makes up an Agent's tools, guidance, boundaries, native teaching, and assignment? | [Agent composition](agent-composition.md) and the [Tool surface](tool-surface.md) |
+| What makes up an Agent's tools, guidance, boundaries, native teaching, and assignment? | [What a Cowork Agent receives](agent-composition.md) |
 | How do I customize Ronin without editing shipped files? | [Customize](customize.md) and [shadowing](shadowing.md) |
 | What is a template, and how does my agent keep mine? | [Templates](templates.md) |
 | What has Ronin connected to? | [Services activation and the egress record](services-activation.md) |

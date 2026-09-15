@@ -83,11 +83,12 @@ independent Agent ── choose what helps ── Team coordination
 | Repo | What it is | Ships as |
 |---|---|---|
 | **ronin-cowork** (this one) | the open package — sessions, tiles, Workbench, rosters, notes, wipeboards, capability tools, the commons, launch, and **all frontend** | open repo; versioned releases |
-| **ronin-services** | the optional paid layer — incremental capabilities installed beside the open `ronin-cowork` package | hosted, versioned archive |
+| **ronin-services** | the optional paid layer — additional features installed beside the open `ronin-cowork` package | hosted, versioned archive |
 
 **The open package runs completely alone.** It compiles, boots, and serves a machine's tmux
-sessions with no Services present—that is not a degraded mode. A Service adds its
-capability when installed; its absence is never an error.
+sessions with no Services present—that is not a degraded mode. A Service adds its feature
+when installed; its absence is never an error. If that feature gives an Agent new tools,
+those tools are taught through a separate Agent capability document.
 
 ## How they work together: the connector
 
