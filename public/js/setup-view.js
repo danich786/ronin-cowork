@@ -124,16 +124,18 @@ export function createSetupView() {
   let helpPanel = null;
   let sceneOverride = 0;
   let visibleTypes = new Set(ORDER);
-  let registrationLocked = true;
-  let registrationKnown = false;
   let appliedSceneNumber = 0;
+  const servicesReady = () => {
+    const services = environment.setupRuntime?.services || {};
+    return services.active === true || services.installed === true || services.switched_on === true;
+  };
+  const codePath = () => (environment.kinds?.get?.()[0] || environment.setupRuntime?.preferences?.kinds?.[0]) === 'build';
   const paintSelectorCards = (host = bench?.host) => {
     if (!host) return;
     for (const card of host.querySelectorAll('[data-workbench-offer-type]')) {
       card.dataset.sceneRelevant = String(visibleTypes.has(card.dataset.workbenchOfferType));
-      if ([SETUP_SURFACE_TYPES.installations, SETUP_SURFACE_TYPES.bounty].includes(card.dataset.workbenchOfferType)) {
-        card.dataset.registrationLocked = String(registrationLocked);
-      }
+      if (card.dataset.workbenchOfferType === SETUP_SURFACE_TYPES.installations) card.dataset.registrationLocked = String(!servicesReady());
+      if (card.dataset.workbenchOfferType === SETUP_SURFACE_TYPES.bounty) card.dataset.registrationLocked = String(!servicesReady() || Number(environment.setupRuntime?.activated_count || 0) < 2);
     }
   };
   const setArrangementHidden = (slot, hidden) => {
@@ -167,13 +169,13 @@ export function createSetupView() {
       const next = setupJourney(runtime || {}, sceneOverride).number;
       if (next !== appliedSceneNumber) applyJourney(runtime);
     },
-    setRegistration: (registration) => {
-      registrationKnown = true;
-      registrationLocked = registration?.status !== 'registered';
-      paintSelectorCards();
-    },
     // What the person uses Ronin for: one persisted preference shared by Register and Presets.
-    kinds: createKindsPreference(globalThis.localStorage, (kinds) => request('/api/setup/preferences', { method: 'PATCH', json: { kinds } })),
+    kinds: createKindsPreference(globalThis.localStorage, (kinds) => {
+      if (environment.setupRuntime) environment.setupRuntime = { ...environment.setupRuntime, preferences: { ...(environment.setupRuntime.preferences || {}), kinds } };
+      bench?.refreshSelector();
+      if (appliedSceneNumber === 3) applyJourney();
+      return request('/api/setup/preferences', { method: 'PATCH', json: { kinds } });
+    }),
     setPathNote: (path_note) => request('/api/setup/preferences', { method: 'PATCH', json: { path_note } }),
     setIdentityChoice: (identity_choice) => request('/api/setup/preferences', { method: 'PATCH', json: { identity_choice } }),
     mountProviderSetupSession: providerSessions.mountProviderSetupSession,
@@ -251,7 +253,8 @@ export function createSetupView() {
     title: () => helpPanel?.isOpen() ? t('mika.header', 'Mika, your helpful assistant') : t('setup.title', 'Ronin Setup'),
     selectorWorkspace: 'workspace2',
     selectorCurrent: true,
-    selectorFilter: (type) => type !== PRESETS_TYPE && ORDER.includes(type),
+    selectorFilter: (type) => type !== PRESETS_TYPE && ORDER.includes(type)
+      && (codePath() || ![SETUP_SURFACE_TYPES.roots, SETUP_SURFACE_TYPES.bounty].includes(type)),
     onSelectorRefresh: () => paintSelectorCards(),
     actions: [mikaHelp],
     onStateChange: save,
@@ -294,10 +297,6 @@ export function createSetupView() {
         const runtime = await request('/api/setup/runtime', { cache: 'no-store' });
         environment.setupRuntime = runtime.ok ? runtime.data : { providers: [] };
         if (runtime.ok) environment.kinds.hydrate(runtime.data?.preferences?.kinds || []);
-      }
-      if (!registrationKnown) {
-        const registration = await request('/api/setup/registration', { cache: 'no-store' });
-        environment.setRegistration(registration.ok ? registration.data : null);
       }
       // The catalog Presets' Where reads; the runtime read above has just seeded the pair.
       if (!Array.isArray(projectData)) await loadProjects();

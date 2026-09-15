@@ -43,6 +43,7 @@ const action = (label, kind, onClick) => {
   const made = WorkspaceKit.primitives.createAction({ label, kind, action: onClick });
   return made.el ?? made;
 };
+const servicesReady = (runtime = {}) => runtime?.services?.active === true || runtime?.services?.installed === true || runtime?.services?.switched_on === true;
 
 export const SERVICE_COMPONENTS = Object.freeze([
   { id: 'task_manager', label: 'Task manager', needs: 'Adds a shared project board and quick summaries of active work.' },
@@ -260,7 +261,6 @@ function createRegisterSurface(context) {
     return words.filter(Boolean).join(' · ');
   };
   const paint = () => {
-    context.environment?.setRegistration?.(current);
     const registered = current?.status === 'registered';
     const anonymous = current?.status === 'anonymous';
     identity.hidden = !current?.submitted_at;
@@ -329,53 +329,47 @@ function createRootsSurface(context) {
 
 function createBountySurface(context) {
   const out = surface(t('setup_surface.bounty', 'Bounty Program'));
-  const body = el('div', 'setup-surface-body setup-bounty');
   const intro = el('section', 'setup-bounty-intro');
   intro.append(
     el('span', 'setup-register-eyebrow', t('bounty.eyebrow', 'BUILD RONIN WITH US')),
     el('h2', '', t('bounty.heading', 'Choose a bounty project')),
     el('p', 'setup-lede', t('bounty.lede', 'Browse published projects, choose one you want to take on, and submit a proposal. Joining is always a separate choice.')),
   );
-  const requirements = el('section', 'setup-bounty-requirements');
-  requirements.append(el('h3', '', t('bounty.requirements', 'Before you opt in')));
-  const list = el('ul', 'setup-bounty-requirement-list'); requirements.append(list);
-  const projects = el('section', 'setup-bounty-projects');
-  projects.append(el('h3', '', t('bounty.projects', 'Available bounty projects')), el('p', 'setup-fine', t('bounty.projects_note', 'Project briefs are public. Registration is required only to open a proposal and apply.')));
-  const projectGrid = el('div', 'setup-bounty-project-grid');
-  for (const [name, description] of [
-    [t('bounty.project_onboarding', 'Adaptive onboarding scenes'), t('bounty.project_onboarding_note', 'Deliver a clear first-run route that responds to a person’s intended use without hiding alternate paths.')],
-    [t('bounty.project_providers', 'Provider sign-in recovery'), t('bounty.project_providers_note', 'Improve authentication windows, completion detection, and recovery when a provider sign-in is interrupted.')],
-    [t('bounty.project_workspaces', 'Repository and worktree setup'), t('bounty.project_workspaces_note', 'Design the guided GitHub clone, repository arrangement, worktree, and hand-in experience for a new workspace.')],
-  ]) {
-    const card = el('article', 'setup-bounty-project');
-    card.append(el('h4', '', name), el('p', '', description), el('span', 'setup-fine', t('bounty.public_brief', 'Public brief · 🔒 Apply after registration')));
-    projectGrid.append(card);
-  }
-  projects.append(projectGrid);
-  const join = action(t('bounty.join', 'Opt in to the Bounty Program'), 'primary', async () => {
-    const result = await request('/api/setup/preferences', { method: 'PATCH', json: { bounty_opt_in: true } });
-    notice.textContent = result.ok ? t('bounty.joined', 'Bounty Program opt-in saved on this machine.') : result.message;
-    if (result.ok) join.disabled = true;
-  });
-  join.disabled = true;
-  const notice = el('p', 'setup-notice'); notice.setAttribute('role', 'status');
-  body.append(intro, requirements, projects, join, notice); out.content.append(body);
+  intro.append(el('p', 'setup-fine', t('bounty.projects_note', 'Every project brief is public. Registration is required only to apply.')));
+  const definitions = [
+    { id: 'adaptive-onboarding', label: t('bounty.project_onboarding', 'Adaptive onboarding scenes'), description: t('bounty.project_onboarding_note', 'Deliver a clear first-run route that responds to a person’s intended use without hiding alternate paths.') },
+    { id: 'provider-recovery', label: t('bounty.project_providers', 'Provider sign-in recovery'), description: t('bounty.project_providers_note', 'Improve authentication windows, completion detection, and recovery when a provider sign-in is interrupted.') },
+    { id: 'repository-setup', label: t('bounty.project_workspaces', 'Repository and worktree setup'), description: t('bounty.project_workspaces_note', 'Design the guided GitHub clone, repository arrangement, worktree, and hand-in experience for a new workspace.') },
+  ];
+  let gates = { registered: false, github: false, machine: false, joined: false };
+  const renderDetail = (project, host) => {
+    const detail = el('article', 'setup-bounty-detail');
+    detail.append(el('h3', '', project.label), el('p', 'setup-lede', project.description));
+    const requirements = el('ul', 'setup-bounty-requirement-list');
+    for (const [ready, text] of [[gates.machine, 'Two model providers and Ronin Services ready'], [gates.github, 'GitHub connected'], [gates.registered, 'Email registration confirmed']]) {
+      requirements.append(el('li', ready ? 'ready' : 'locked', `${ready ? '✓' : '○'} ${text}`));
+    }
+    const notice = el('p', 'setup-notice'); notice.setAttribute('role', 'status');
+    const apply = action(t('bounty.apply', 'Apply for this bounty'), 'primary', async () => {
+      const result = await request('/api/setup/preferences', { method: 'PATCH', json: { bounty_opt_in: true } });
+      notice.textContent = result.ok ? t('bounty.joined', 'Bounty Program opt-in saved on this machine.') : result.message;
+      if (result.ok) apply.disabled = true;
+    });
+    apply.disabled = !gates.machine || !gates.github || !gates.registered || gates.joined;
+    detail.append(el('h4', '', t('bounty.requirements', 'Before you apply')), requirements, apply, notice);
+    host.append(detail);
+  };
+  const stones = createStoneWorkSurface({ className: 'setup-bounty-stones', renderDetail });
+  stones.mount(out.content, { before: [intro] });
   return { el: out.el, show: async () => {
     const [registration, github] = await Promise.all([
       request('/api/setup/registration', { cache: 'no-store' }), request('/api/setup/github', { cache: 'no-store' }),
     ]);
     const email = registration.ok && registration.data?.status === 'registered' && registration.data?.identity_mode === 'email';
-    if (registration.ok) context.environment?.setRegistration?.(registration.data);
     const connected = github.ok && github.data?.authenticated === true;
-    const services = context.environment?.setupRuntime?.services?.active === true;
-    const rows = [
-      [email, t('bounty.email_ready', 'Email registration confirmed'), t('bounty.email_needed', 'Confirm an email registration')],
-      [connected, t('bounty.github_ready', 'GitHub connected'), t('bounty.github_needed', 'Connect GitHub in Workspace folders')],
-      [services, t('bounty.services_ready', 'Ronin Services active'), t('bounty.services_needed', 'Install and switch on Ronin Services')],
-    ];
-    list.replaceChildren(...rows.map(([ready, yes, no]) => el('li', ready ? 'ready' : 'locked', `${ready ? '✓' : '○'} ${ready ? yes : no}`)));
-    join.disabled = !rows.every(([ready]) => ready) || context.environment?.setupRuntime?.preferences?.bounty_opt_in === true;
-  } };
+    gates = { registered: email, github: connected, machine: servicesReady(context.environment?.setupRuntime) && Number(context.environment?.setupRuntime?.activated_count || 0) >= 2, joined: context.environment?.setupRuntime?.preferences?.bounty_opt_in === true };
+    stones.setItems(definitions.map((project) => ({ ...project, glyph: '◈', state: t('bounty.public_brief', 'Public brief') })));
+  }, destroy: () => stones.destroy() };
 }
 
 /** The one Services mark file, read once and inlined so the R's stroke follows the app's data-theme, not only the OS scheme.
@@ -660,7 +654,7 @@ function createSetupInstallationsSurface(context) {
   const selected = () => campaignById(context.tenant?.campaign) || campaigns()[0] || null;
   const page = createInstallationsSurface(selected, context);
   const content = page.el.querySelector('.wk-surface-content');
-  const lock = el('p', 'setup-registration-lock', t('setup_surface.installations_locked', '🔒 Browse installations now. Register to change installation settings.'));
+  const lock = el('p', 'setup-registration-lock', t('setup_surface.installations_locked', '🔒 Browse installations now. Switch on Ronin Services to change installation settings.'));
   content?.prepend(lock);
   const applyLock = (locked) => {
     page.el.dataset.registrationLocked = String(locked);
@@ -671,9 +665,7 @@ function createSetupInstallationsSurface(context) {
   if (content) observer.observe(content, { childList: true, subtree: true });
   return { el: page.el, show: async () => {
     await loadCampaigns();
-    const registration = await request('/api/setup/registration', { cache: 'no-store' });
-    if (registration.ok) context.environment?.setRegistration?.(registration.data);
-    applyLock(!(registration.ok && registration.data?.status === 'registered'));
+    applyLock(!servicesReady(context.environment?.setupRuntime));
     await page.enter();
   }, destroy: () => { observer.disconnect(); page.destroy?.(); } };
 }
