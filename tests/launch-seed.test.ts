@@ -6,15 +6,15 @@ import type { CampaignConfig } from '../src/campaigns.js';
 import type { BehaviourRow, InstallationRow } from '../src/resource-adapters.js';
 import type { TeamRoster } from '../src/team-rosters.js';
 
-const contribution = { label: '', blurb: '', origin: 'stock', shadowed: false, reading: [], reading_off: [], sops: [], tools: [], mcp: [], parts: [] } as const;
+const contribution = { label: '', blurb: '', origin: 'stock', shadowed: false, reading: [], reading_off: [], tools: [], mcp: [], parts: [] } as const;
 const installations: InstallationRow[] = [
   { ...contribution, name: 'ronin_services', effect: 'system', provides: [], requires: [], reading_off: ['routine/ronin_services/OFF.md'] },
   { ...contribution, name: 'gbrain', effect: 'provider', provides: ['gbrain'], requires: [] },
 ];
 const behaviours: BehaviourRow[] = [
-  { ...contribution, name: 'gbrain', installation: 'gbrain', page: '/gbrain.md' },
-  { ...contribution, name: 'ronin_host', installation: '', page: '/ronin_host.md' },
-  { ...contribution, name: 'mandates', installation: '', page: '/mandates.md' },
+  { ...contribution, name: 'gbrain', installation: 'gbrain', page: '/gbrain.md', scope: 'selectable' },
+  { ...contribution, name: 'ronin_host', installation: '', page: '/ronin_host.md', scope: 'selectable' },
+  { ...contribution, name: 'mandates', installation: '', page: '/mandates.md', scope: 'floor' },
 ];
 const campaign = { id: 'home_machine', config: {
   installations: { ronin_services: false, gbrain: true },

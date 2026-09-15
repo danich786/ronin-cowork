@@ -17,7 +17,11 @@ test('behaviours merge owner books over stock whole-file and append new names', 
     const { listWays } = await import('../src/resources.js');
     const rows = await listWays();
     const buildout = rows.find((row) => row.name === 'buildout');
-    assert.deepEqual(buildout, { name: 'buildout', label: 'My Buildout', blurb: 'Mine.', kinds: [], origin: 'user', shadowed: true });
+    assert.equal(buildout?.label, 'My Buildout');
+    assert.equal(buildout?.content, '# My Buildout\n\nMine.\n');
+    assert.equal(buildout?.scope, 'selectable');
+    assert.equal(buildout?.origin, 'user');
+    assert.equal(buildout?.shadowed, true);
     const mine = rows.find((row) => row.name === 'my_way');
     assert.equal(mine?.origin, 'user');
     assert.deepEqual(mine?.kinds, ['work', 'household']);

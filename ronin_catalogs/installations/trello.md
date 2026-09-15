@@ -5,7 +5,7 @@
 - **provides:** trello
 - **reading:** —
 - **reading_off:** —
-- **sops:** —
+- **ways:** —
 - **tools:** —
 - **parts:** —
 - **mcp:** —

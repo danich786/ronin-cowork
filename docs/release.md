@@ -119,7 +119,7 @@ serving Ronin at a source tree. The checkout is updated by git; the install by
 releases. `npm run stage` remains a low-level static-client copy to `/staging/`; it is not
 the multi-Agent visual-review workflow. Team preview composition uses one disposable,
 lead-owned staging worktree and a hand-started server on a separate port, as described in
-the [visual-staging SOP](../ronin_sops/ronin_methodology.md#visual-staging-one-disposable-team-preview). `/api/version` must name the
+the [visual-staging Behavior](../ronin_catalogs/behaviours/ronin_methodology.md#visual-staging-one-disposable-team-preview). `/api/version` must name the
 aggregate commit that process actually serves.
 
 ## Cutover (a checkout-serving box moves to releases, once)

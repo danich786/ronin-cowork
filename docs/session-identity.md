@@ -200,4 +200,4 @@ One further change would make the count self-correcting, and it is not written:
   legitimately unattached all the time. It would catch every orphan route at once, not just
   the disconnect the heartbeat covers.
 
-The health checklist for the tmux server itself is `ronin_sops/tmux_server.md`.
+The health checklist for the tmux server itself is `ronin_catalogs/behaviours/tmux_server.md`.

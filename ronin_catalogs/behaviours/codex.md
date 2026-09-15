@@ -1,8 +1,11 @@
 # codex — the account that pays for a Ronin coding session
 
+- **scope:** situational
+- **installation:** —
+
 Related reference: [Agent controls and integration](../docs/agents/codex.md).
 
-> Stock SOP. Your own copy in the sops store (`ronin-store sops` → `codex.md`) replaces
+> Stock Behavior. Your own copy in the ways store (`ronin-store ways` → `codex.md`) replaces
 > this file whole — a default, not law.
 > **Voice: agent.** How the agent sets the account that pays for a session — not a walkthrough to relay.
 > **Tool: `ronin-host secrets [path]`** — establish whether a project names an OpenAI key
@@ -25,7 +28,7 @@ interactive Ronin tile should use API billing.
 ## Signing in to the owner's ChatGPT account
 
 Follow the [Codex integration page's sign-in procedure](../docs/agents/codex.md#sign-in-particulars).
-That is the maintained home for CLI syntax and callback/device-flow details. This SOP
+That is the maintained home for CLI syntax and callback/device-flow details. This Behavior
 owns the billing choice, not a second copy of those commands.
 
 ## API keys are the exception

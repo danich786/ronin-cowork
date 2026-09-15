@@ -1,6 +1,9 @@
 # deploy — getting a thing running where other people can reach it
 
-> Stock SOP. Your own copy in the sops store (`ronin-store sops` → `deploy.md`) replaces
+- **scope:** situational
+- **installation:** —
+
+> Stock Behavior. Your own copy in the ways store (`ronin-store ways` → `deploy.md`) replaces
 > this file whole — a default, not law.
 > **Voice: relay.** Written for the agent to walk a person through, not to follow itself.
 

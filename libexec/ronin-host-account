@@ -82,7 +82,7 @@ print()
 if missing:
     print("  Not yet answered: " + ", ".join(missing) + ".")
     print("  Ask before assuming — a name Ronin guessed from the login is not one the")
-    print("  owner gave, and nothing shipped may name a person (ronin_sops/accounts.md).")
+    print("  owner gave, and nothing shipped may name a person (ronin_catalogs/behaviours/accounts.md).")
 else:
     print("  Everything this tool asks about has an answer.")
 PY

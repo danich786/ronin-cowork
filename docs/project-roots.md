@@ -50,7 +50,7 @@ GET /api/project-roots/detail proves disk + git facts
 Admin Desk and ＋ New show the project
 ```
 
-## SOP A — include an existing directory
+## Behavior A — include an existing directory
 
 The ordinary browser path uses the host-side folder chooser: navigate from Home, search the
 current folder, reveal hidden folders deliberately, then choose a directory. The chooser reports
@@ -137,9 +137,9 @@ Inclusion is not complete until all of these agree:
 If API verification succeeds but the browser is stale, reload the surface; do not create a
 duplicate entry.
 
-## SOP B — create a new GitHub project and include it
+## Behavior B — create a new GitHub project and include it
 
-This is SOP A preceded by repository creation. Do not blur the two authorities.
+This is Behavior A preceded by repository creation. Do not blur the two authorities.
 
 ### 1. Agree repository identity
 
@@ -163,7 +163,7 @@ in the checkout.
 
 ### 3. Include and verify
 
-Run SOP A steps 1–4 against the new directory. Repository creation is not proof of Ronin
+Run Behavior A steps 1–4 against the new directory. Repository creation is not proof of Ronin
 inclusion, and a catalog entry is not proof the repository exists; both halves must pass.
 
 ### 4. Include it in the owner's file sync when this machine uses one
@@ -174,8 +174,8 @@ a local install may need nothing.
 
 Measure rather than infer:
 
-1. Read the machine's standing sync documentation and applicable SOP (for Syncthing,
-   `ronin_sops/syncthing.md`).
+1. Read the machine's standing sync documentation and applicable Behavior (for Syncthing,
+   `ronin_catalogs/behaviours/syncthing.md`).
 2. Check the actual running process/API and inventory its configured folders. Do not conclude
    that syncing is absent from one inactive systemd scope; Syncthing can run as a user or system
    unit.
@@ -199,7 +199,7 @@ remains a separate requirement.
 ### 5. Establish and obey the repository's publishing arrangement
 
 Choose the mode with the owner; do not decide from the repository name alone. The full
-contract is `ronin_sops/github.md`.
+contract is `ronin_catalogs/behaviours/github.md`.
 
 Under the reviewed arrangement, a repository declares a working and stable branch. Ronin's
 current product repositories use:
@@ -241,10 +241,10 @@ Non-Git directories remain legal project roots and receive no `RONIN_REPO`.
 
 A session in a worktree root works at a **repo desk** — the internal record for its
 own branch and worktree, cut from its team's line
-(`ronin_sops/worktree-root.md`; the model is `docs/worktrees.md`). Commit preserves work privately at the desk;
+(`ronin_catalogs/behaviours/worktree-root.md`; the model is `docs/worktrees.md`). Commit preserves work privately at the desk;
 **hand-in** publishes committed work to the team line; the lead's **team promotion** runs the
 one full repository BYOIN and admits the team's state to `dev`. A desk branch is never
-published to the remote and never opened as a PR. In a checkout (`ronin_sops/checkout.md`), the
+published to the remote and never opened as a PR. In a checkout (`ronin_catalogs/behaviours/checkout.md`), the
 home checkout is shared: stage only your own paths and preserve every unrelated change there.
 
 For a new reviewed repository, agree whether the stable branch is `main` or `master`, create

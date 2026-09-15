@@ -232,7 +232,7 @@ except Exception: raise SystemExit("work-record update_record: Ronin returned an
 if data.get("error"): raise SystemExit("work-record update_record: " + str(data["error"]))
 area = data.get("area", "inbox")
 focus = data.get("focus", "see work-record read")
-next_cmd = f"team-lead project assign {team} {project_id} <session>" if area == "inbox" else f"team-lead project restore {team} {project_id}"
+next_cmd = f"team project assign {team} {project_id} <session>" if area == "inbox" else f"team project restore {team} {project_id}"
 print(f"Project {project_id} moved whole to Team {team} {area.title()}; holder: Team {team}; focus: {focus}; next: {next_cmd}. Remember to update your project.")
 PY
     exit $?

@@ -1,6 +1,9 @@
 # codebase_team — a team stands itself up around a codebase
 
-> Stock SOP. Your own copy in the sops store (`ronin-store sops` → `codebase_team.md`)
+- **scope:** situational
+- **installation:** —
+
+> Stock Behavior. Your own copy in the ways store (`ronin-store ways` → `codebase_team.md`)
 > replaces this file whole — a default, not law.
 > **Voice: agent.** Written for the **codebase assessor** — the cast row of the *Staff
 > My Codebase* team template that surveys and staffs — and for any session handed this

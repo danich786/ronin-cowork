@@ -20,8 +20,8 @@ One fact determines the result for each repository, its own `RONIN_REPO`:
 
 | The Workspace Folder declares | Result | The page the Agent is pointed at |
 |---|---|---|
-| `desks=none`, or no `RONIN_REPO` | a **checkout**: work on the repository's working line with ordinary Git; announce files; no hand-in | `ronin_sops/checkout.md` |
-| `desks=managed` | a **worktree root**: the Agent's managed branch and worktree, commit, hand-in, the lead's promotion | `ronin_sops/worktree-root.md` |
+| `desks=none`, or no `RONIN_REPO` | a **checkout**: work on the repository's working line with ordinary Git; announce files; no hand-in | `ronin_catalogs/behaviours/checkout.md` |
+| `desks=managed` | a **worktree root**: the Agent's managed branch and worktree, commit, hand-in, the lead's promotion | `ronin_catalogs/behaviours/worktree-root.md` |
 
 There is no Agent-side answer. The birth packet names the birth root's arrangement, and
 `worktree-desk open <repo>` names any other root's. The desk procedure and tools are in an
@@ -131,7 +131,7 @@ branch/worktree and serves that worktree on a separate preview port. Agents do n
 concurrently. Rejection changes or rebuilds only the disposable composition; it never deletes
 the Agent's private commit. Visual approval publishes nothing. Finished work still reaches the
 Team line through ordinary `worktree-desk hand-in`, then lead review and promotion. See the concise
-[visual-staging SOP](../ronin_sops/ronin_methodology.md#visual-staging-one-disposable-team-preview).
+[visual-staging Behavior](../ronin_catalogs/behaviours/ronin_methodology.md#visual-staging-one-disposable-team-preview).
 
 Team promotion builds the combined candidate, advances `dev` by compare-and-swap,
 restarts the live service, and performs deployment health checks. Failed post-restart

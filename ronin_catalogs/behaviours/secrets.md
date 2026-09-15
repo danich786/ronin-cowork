@@ -1,6 +1,9 @@
 # secrets — keys, tokens, and the one mistake that cannot be undone
 
-> Stock SOP. Your own copy in the sops store (`ronin-store sops` → `secrets.md`) replaces
+- **scope:** situational
+- **installation:** —
+
+> Stock Behavior. Your own copy in the ways store (`ronin-store ways` → `secrets.md`) replaces
 > this file whole — a default, not law.
 > **Voice: relay.** Written for the agent to walk a person through, not to follow itself.
 > **Tool: `ronin-host secrets [path]`** — which env files exist, the key NAMES in each, whether
@@ -31,7 +34,7 @@ The one credential decision every install makes, and the one that costs money wh
 made by accident. (Who the install belongs to is `accounts.md`; this is what pays.)
 Which providers and models Ronin can launch, and how a third-party provider is added, is
 the separate public contract in `docs/model-providers.md`. That document may name an
-environment variable; this SOP governs its value and where that value may live.
+environment variable; this Behavior governs its value and where that value may live.
 
 - **A subscription** (Claude Pro/Max and the like) — you log the CLI in once on this box
   and sessions use it. Flat monthly cost, nothing to rotate, nothing in any file.

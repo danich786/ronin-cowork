@@ -1,5 +1,8 @@
 # WORKTREE ROOT — get, update, and hand in
 
+- **scope:** conditional
+- **installation:** —
+
 Run `worktree-desk --help` before the first desk command in a session. The tool owns the
 current syntax and resolves the repository's declared arrangement; do not reproduce its
 guarded work with raw Git worktree commands.

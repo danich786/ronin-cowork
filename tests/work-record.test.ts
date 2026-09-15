@@ -158,7 +158,7 @@ test('project create, read and one-field write use the existing letter tools', (
   assert.equal((JSON.parse(read) as Record<string, unknown>).objective, 'Ship it');
 
   const returned = run({ ...f.env, RONIN_URL: 'http://operator.test' }, ['project', 'return', 'team/1']);
-  assert.match(returned, /moved whole to Team team Inbox; holder: Team team; focus: none; next: team-lead project assign team team\/1 <session>.*Remember to update your project/);
+  assert.match(returned, /moved whole to Team team Inbox; holder: Team team; focus: none; next: team project assign team team\/1 <session>.*Remember to update your project/);
 });
 
 test('project lifecycle verbs state intent explicitly and preserve unrelated fields', (t) => {

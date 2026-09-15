@@ -31,7 +31,6 @@ telemetry|data|telemetry
 ageru|user|ageru
 ledger|data|ledger
 message_queue|data|message-queue
-sops|user|sops
 ways|user|ways
 library|user|library
 session_boot|user|session_boot
@@ -45,6 +44,7 @@ catalogs|user|catalogs
 tools|user|tools
 memory|user|memory
 config|user|config
+mika_home|user|mika
 koshi_weights|user|koshi_weights
 koshi_weights_service|user|koshi_weights_service
 gbrain_brain|user|gbrain_brain

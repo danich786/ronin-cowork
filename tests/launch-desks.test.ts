@@ -99,7 +99,7 @@ test('arrangement pages stay on the SOP shelf and are pointed at, not pasted at 
     const without = (await bootFiles('', false, [])).map((f) => path.basename(f));
     assert.ok(!without.includes('worktree-root.md'));
     assert.ok(!without.includes('checkout.md'));
-    const contract = await readFile(path.join(process.cwd(), 'ronin_sops', 'worktree-root.md'), 'utf8');
+    const contract = await readFile(path.join(process.cwd(), 'ronin_catalogs/behaviours', 'worktree-root.md'), 'utf8');
     assert.match(contract, /contradiction between the assignment and status/);
     assert.match(contract, /worktree-desk status --assignment/);
     assert.match(contract, /do not create the missing branch or\s+worktree yourself/);
@@ -113,7 +113,7 @@ test('arrangement pages stay on the SOP shelf and are pointed at, not pasted at 
 test('the core points at both arrangement pages and the Routine manifest is gone', async () => {
   const repo = path.join(path.dirname(new URL(import.meta.url).pathname), '..');
   const core = await readFile(path.join(repo, 'ronin_session_boot', 'all', 'BASE_ABILITIES.md'), 'utf8');
-  assert.match(core, /ronin_sops\/worktree-root\.md/);
-  assert.match(core, /ronin_sops\/checkout\.md/);
+  assert.match(core, /ronin_catalogs\/behaviours\/worktree-root\.md/);
+  assert.match(core, /ronin_catalogs\/behaviours\/checkout\.md/);
   await assert.rejects(readFile(path.join(repo, 'ronin_catalogs', 'routines', 'ronin_worktrees.md')), /ENOENT/);
 });

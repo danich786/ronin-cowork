@@ -29,7 +29,7 @@ form's, not a file here: a template that filled nothing in would collapse nothin
 | `blurb` | one line under the name |
 | `order` | tray order; unordered boxes follow, by label |
 | `kinds` | which kinds bring this box forward — `open` on the form shows every template |
-| `behaviours` | `<shelf>:<name>` book addresses laid into the tray, e.g. `sops:teams, ways:write_it_down` |
+| `behaviours` | `<shelf>:<name>` book addresses laid into the tray, e.g. `ways:teams, ways:write_it_down` |
 
 ## The agent shelf's own fields
 
@@ -71,7 +71,7 @@ always a new file, never over a shipped one (those are edited on the campaign pa
 `- **hidden:** yes` withdraws a shipped box without deleting the file.
 
 Your agent keeps these for you: templates are plain files, so "keep this recipe with
-the Dinner Party template" is something you say to a session, and it writes the SOP to
+the Dinner Party template" is something you say to a session, and it writes the Behavior to
 your store, shadows the template, and adds the book itself — `docs/templates.md`.
 
 ## Bundles

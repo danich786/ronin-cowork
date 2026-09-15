@@ -12,7 +12,7 @@ Usage:
 Only the named facts change. A missing Agent is refused and never created; use
 session_create for a birth. The bare form is refused; use session_check
 for a read. Related: session_check --help; session_create --help;
-team-lead --help
+team --help
 EOF
     exit 0 ;;
 esac

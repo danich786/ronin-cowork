@@ -82,7 +82,6 @@ interface Row {
 export interface ContributionRow extends Pick<Row, 'name' | 'origin' | 'shadowed' | 'label' | 'blurb'> {
   reading: string[];
   reading_off: string[];
-  sops: string[];
   tools: string[];
   mcp: string[];
   /** Services parts this contribution runs inside the server; loaded only while its switch is on. */
@@ -95,7 +94,12 @@ export interface InstallationRow extends ContributionRow {
   requires: string[];
 }
 
-export interface BehaviourRow extends ContributionRow { installation: string; page: string }
+export type BehaviourScope = 'floor' | 'conditional' | 'selectable' | 'situational';
+export interface BehaviourRow extends ContributionRow {
+  installation: string;
+  page: string;
+  scope: BehaviourScope;
+}
 
 function credit(v: string): { text: string; url: string } | undefined {
   const m = /^\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)$/.exec(v.trim());
@@ -118,7 +122,7 @@ const contribution = (d: Definition): ContributionRow => ({
   name: d.name, origin: d.origin, shadowed: d.shadowed,
   label: d.get('label') || d.name, blurb: d.get('blurb'),
   reading: splitDefinitionList(d.get('reading')), reading_off: splitDefinitionList(d.get('reading_off')),
-  sops: splitDefinitionList(d.get('sops')), tools: splitDefinitionList(d.get('tools')),
+  tools: splitDefinitionList(d.get('tools')),
   mcp: splitDefinitionList(d.get('mcp')), parts: splitDefinitionList(d.get('parts')),
 });
 
@@ -134,7 +138,11 @@ export async function listInstallations(): Promise<InstallationRow[]> {
 export async function listBehaviours(): Promise<BehaviourRow[]> {
   return (await readDefinitions('behaviours')).map((d) => {
     const installation = d.get('installation').trim();
-    return { ...contribution(d), installation: /^[\u2013\u2014-]$/.test(installation) ? '' : installation, page: d.file };
+    const stated = d.get('scope').trim();
+    const scope: BehaviourScope = ['floor', 'conditional', 'situational'].includes(stated)
+      ? stated as BehaviourScope
+      : 'selectable';
+    return { ...contribution(d), installation: /^[\u2013\u2014-]$/.test(installation) ? '' : installation, page: d.file, scope };
   });
 }
 

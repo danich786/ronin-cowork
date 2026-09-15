@@ -37,7 +37,7 @@ These exact files are the source catalog for the virtual `YOUR TOOLS` view:
 | Core | `session.md` | live session inspection and lifecycle tools |
 | Core | `worktree-desk.md` | live desk tool, with managed-desk teaching selected by arrangement |
 | Core | `machine-settings.md` | typed Campaign, installation, provider, and machine settings |
-| Conditional | `team-lead.md` | lead-workflow knowledge emphasizing roster, Team-project, status, and visible delegation |
+| Core | `team.md` | live Team roster, project, custody, and member-status tools |
 | Optional | `ronin-host.md` | selected Ronin Host operations |
 | Optional | `ronin-services.md` | selected Ronin Services teaching and Mika launcher |
 | Optional | `gbrain.md` | selected GBrain boundary teaching; tool TBD |

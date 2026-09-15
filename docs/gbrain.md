@@ -43,7 +43,7 @@ its own, which nothing here asks of it.
 
 **What keyless behavior looks like, verified live** (so nobody rediscovers it as a fault):
 `think` answers "(no LLM available)", `synthesize` errors honestly, **`query` returns an
-empty list silently — agents must use `search`, never `query`** (the SOP says so), and
+empty list silently — agents must use `search`, never `query`** (the Behavior says so), and
 `extract_facts` extracts nothing. All expected; none of it is used in our shape.
 
 **If unattended feeds are ever ordered**, the chat-model question reopens — and even then
@@ -95,7 +95,7 @@ an operating protocol: the job shelf must point first to gbrain's live installed
 resolver, which dispatches the request to `brain-ops`, `query`, `capture` and
 the other applicable skills. Those skill bodies can be fetched from the installed package
 or through gbrain's `get_skill` MCP tool; they should not be copied into cowork. The working
-SOP and architecture overview may sit beside the resolver, and a `gbrain` project root may
+Behavior and architecture overview may sit beside the resolver, and a `gbrain` project root may
 carry the same pointers on its root shelf (`docs/session-boot.md`).
 
 ## Embeddings — why search needs a model, and which door that opens

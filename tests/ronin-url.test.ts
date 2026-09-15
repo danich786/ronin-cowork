@@ -103,7 +103,7 @@ test('every agent-facing API caller connects through the one library and carries
     'session_restore',
     'session_set',
     'show',
-    'team-lead',
+    'team',
   ]);
   for (const name of callers) {
     const body = readFileSync(path.join(bin, name), 'utf8');
@@ -134,7 +134,7 @@ test('a shell caller reaches the operator over its socket with no token and no P
   try {
     // Asynchronous on purpose: the fake operator answers on this event loop.
     const r = await new Promise<{ stdout: string; stderr: string }>((resolve) => {
-      execFile(path.join(root, 'ronin_bin', 'team-lead'), ['member', 'status', 'reach'], {
+      execFile(path.join(root, 'ronin_bin', 'team'), ['member', 'status', 'reach'], {
         encoding: 'utf8',
         env: { PATH: '/usr/bin:/bin', HOME: f.dir, RONIN_DATA_ROOT: f.dir },
       }, (_error, stdout, stderr) => resolve({ stdout, stderr }));

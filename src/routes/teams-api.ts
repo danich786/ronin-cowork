@@ -126,7 +126,7 @@ export function registerTeams(app: express.Express): void {
   app.post('/api/team-rosters/:name/projects', async (req, res) => {
     try {
       const result = await writeTeamIdea(req.params.name, undefined, ideaEditOf(req.body));
-      res.json({ ok: true, ...result, acknowledgement: `Project ${result.project.id} created with stable id ${result.project.id}. Next: team-lead project read ${req.params.name} ${result.project.id}. Remember to update your project.` });
+      res.json({ ok: true, ...result, acknowledgement: `Project ${result.project.id} created with stable id ${result.project.id}. Next: team project read ${req.params.name} ${result.project.id}. Remember to update your project.` });
     } catch (e) {
       res.status(400).json({ error: errMsg(e) });
     }
@@ -184,7 +184,7 @@ export function registerTeams(app: express.Express): void {
   app.post('/api/team-rosters/:name/projects/:id/restore', async (req, res) => {
     try {
       const { project, from } = await moveTeamProject(req.params.name, req.params.id, 'inbox');
-      res.json({ ok: true, project, area: 'inbox', acknowledgement: `Project ${project.id} restored from Team ${req.params.name} ${from} to Inbox; next: team-lead project assign ${req.params.name} ${project.id} <session>. Remember to update your project.` });
+      res.json({ ok: true, project, area: 'inbox', acknowledgement: `Project ${project.id} restored from Team ${req.params.name} ${from} to Inbox; next: team project assign ${req.params.name} ${project.id} <session>. Remember to update your project.` });
     } catch (e) {
       res.status(400).json({ error: errMsg(e) });
     }

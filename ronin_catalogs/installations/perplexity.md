@@ -5,7 +5,7 @@
 - **provides:** perplexity
 - **reading:** —
 - **reading_off:** —
-- **sops:** —
+- **ways:** —
 - **tools:** —
 - **parts:** —
 - **mcp:** —

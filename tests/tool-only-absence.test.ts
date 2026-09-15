@@ -34,7 +34,7 @@ const retired = [
   'ronin_bin/tejun-team-set',
   'ronin_bin/tejun-kanban',
 ];
-const shipped = ['src', 'public', 'scripts', 'ronin_bin', 'ronin_catalogs', 'ronin_library', 'ronin_session_boot', 'ronin_sops', 'docs'];
+const shipped = ['src', 'public', 'scripts', 'ronin_bin', 'ronin_catalogs', 'ronin_library', 'ronin_session_boot', 'ronin_catalogs/behaviours', 'docs'];
 const forbidden = /(?:\/api\/(?:macros|actions)\b|\btejun-(?:step|desk|team-set|kanban)\b|\b(?:ronin-repo-init|read_tegami|write_tegami)\b|\b(?:MIKA_)?(?:MACROS|ACTIONS)\.md\b|compile-macro|\*\*(?:macros|actions):\*\*)/;
 
 async function* walk(dir: string): AsyncGenerator<string> {

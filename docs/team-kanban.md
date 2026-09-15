@@ -4,7 +4,7 @@ Team Kanban is the five-column view of a Team's authored projects: Ideas, Planni
 Building, Landing, and Done. Open it from the Team Kanban card in the workspace selector
 or the Kanban tab in Team Commons. Both surfaces render the same live board returned by
 the canonical Team status route; Team Leads can read the same JSON with
-`team-lead member status <team>`. Run `team-lead --help` for the live surface.
+`team member status <team>`. Run `team --help` for the live surface.
 
 The board is a read-time projection, not another store. It combines roster-held ideas
 with projects in every live or archived work record tagged for the Team. The roster is

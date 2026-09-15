@@ -1,6 +1,9 @@
 # data — connecting to a data source, and choosing which one
 
-> Stock SOP. Your own copy in the sops store (`ronin-store sops` → `data.md`) replaces
+- **scope:** situational
+- **installation:** —
+
+> Stock Behavior. Your own copy in the ways store (`ronin-store ways` → `data.md`) replaces
 > this file whole — a default, not law.
 > **Voice: relay.** Written for the agent to walk a person through, not to follow itself.
 > **Tool: `ronin-host inspect [path]`** — cores, RAM, disk free where the work is, and every

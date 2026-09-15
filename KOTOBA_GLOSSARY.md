@@ -4,7 +4,7 @@ Ronin's internal system names are Japanese: **MICHI · TEGAMI · SHINGO · RIREK
 OBOERU · TOMODACHI · SOROBAN · KOSHI · KOE · DAIKUSAN · KOTOBA · AGERU · JUSHO · BYOIN ·
 SETTEI · KYOKAI · SHIWAKE · KOKUGO · JIKAN · ERABI**. You will meet them in tool names, files and documents.
 They never reach the person you work for: use the plain word below. Only **Ronin** itself
-is a name a user learns. Other English needs no gloss. Tools execute; capabilities teach;
+is a name a user learns. Tools execute; capabilities teach;
 behaviours guide; skills adapt; UIs call (`docs/tool-surface.md`).
 
 <!-- RENDERED_FOR:START -->

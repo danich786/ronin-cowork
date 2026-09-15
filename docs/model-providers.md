@@ -14,9 +14,9 @@ Provider setup has three records with deliberately different contents:
 |---|---|
 | this document | the provider/model extension contract |
 | `ronin_catalogs/MODEL_PROVIDERS.md` | every provider and model: tier, cost, what it is good at and not, the complete launch command |
-| `ronin_sops/secrets.md` | how the owner supplies and audits the credential that pays |
+| `ronin_catalogs/behaviours/secrets.md` | how the owner supplies and audits the credential that pays |
 
-Account identity is handled by `ronin_sops/accounts.md`. Secret values never cross into
+Account identity is handled by `ronin_catalogs/behaviours/accounts.md`. Secret values never cross into
 this document or the catalog.
 
 For CLI-specific particulars and exact code ownership, use the
@@ -362,7 +362,7 @@ named Codex profile and put only the profile plus model selection in the launch 
 
 The profile owns the compatible endpoint and protocol settings. Its credential comes
 from an environment variable or the provider's supported login store, following
-`ronin_sops/secrets.md`. Neither the secret nor its value belongs in this repository, the
+`ronin_catalogs/behaviours/secrets.md`. Neither the secret nor its value belongs in this repository, the
 catalog, a project_root, or a launch command.
 
 OpenAI-compatible is a claim to verify, not a blanket guarantee. Before adding rows,

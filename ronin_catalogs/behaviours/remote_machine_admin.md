@@ -1,6 +1,9 @@
 # remote_machine_admin — keeping the machine's groundwork in order
 
-> Stock SOP. Your own copy in the sops store (`ronin-store sops` → `remote_machine_admin.md`)
+- **scope:** situational
+- **installation:** —
+
+> Stock Behavior. Your own copy in the ways store (`ronin-store ways` → `remote_machine_admin.md`)
 > replaces this file whole — a default, not law.
 > **Voice: agent.** What to do when the machine underneath this install needs setting up,
 > checking, or repairing. Not a walkthrough to relay.

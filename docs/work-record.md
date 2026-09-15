@@ -132,10 +132,10 @@ tools:
 
 ```text
 session_create board_reader --prompt "Take virtual-kanban/6 and read its work record."
-team-lead project assign virtual-kanban virtual-kanban/6 board_reader
+team project assign virtual-kanban virtual-kanban/6 board_reader
 ```
 
-`session_create` creates the session and carries its explicit prompt; `team-lead project
+`session_create` creates the session and carries its explicit prompt; `team project
 assign` moves the roster-held project. Lead designation belongs to `session_set`, never
 session creation.
 

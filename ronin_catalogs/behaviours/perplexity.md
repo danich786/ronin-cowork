@@ -4,3 +4,4 @@
 - **installation:** perplexity
 - **mcp:** perplexity
 - **order:** 100
+- **scope:** selectable

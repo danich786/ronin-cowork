@@ -1,6 +1,9 @@
 # ronin_methodology — Ronin's method of development
 
-> Stock SOP. Your own copy in the sops store (`ronin-store sops` →
+- **scope:** floor
+- **installation:** —
+
+> Stock Behavior. Your own copy in the ways store (`ronin-store ways` →
 > `ronin_methodology.md`) replaces this file whole — a default, not law.
 > **Voice: agent.** How a session itself operates: a common methodology to use in the
 > absence of other instruction, and the process to name when the owner asks how the
@@ -112,16 +115,16 @@ full BYOIN runs at `dev → master`; neither runs at a commit or hand-in
 
 A mandate of reach `execute` builds from the agreed build-out, deleting each item from
 the doc as it lands. Where the work lands follows the Workspace Folder's arrangement: in a
-worktree root (`ronin_sops/worktree-root.md`) the session works at its desk and *offers* a
+worktree root (`ronin_catalogs/behaviours/worktree-root.md`) the session works at its desk and *offers* a
 hand-in at each DONE leg — the session decides when its work is coherent for the team,
-and a tool never decides that for it; in a checkout (`ronin_sops/checkout.md`) it commits
+and a tool never decides that for it; in a checkout (`ronin_catalogs/behaviours/checkout.md`) it commits
 to the repository's declared line and invents no desk state. Neither opens a pull request.
 
 #### Visual staging: one disposable Team preview
 
 Visual work may take a provisional lane before ordinary hand-in: the Agent offers exact
 commits as candidates, the lead composes and serves one disposable preview, and approval
-changes no Git line. The procedure is `ronin_sops/visual_staging.md`; the `visual_staging`
+changes no Git line. The procedure is `ronin_catalogs/behaviours/visual_staging.md`; the `visual_staging`
 behaviour gives it to an Agent, whose first act is to tell the Team and the lead to read it.
 
 Accepted state reaches a desk when its Agent chooses `worktree-desk sync`, which merges

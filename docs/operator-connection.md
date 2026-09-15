@@ -49,7 +49,7 @@ The two readers are `src/cli-http.ts`, which every TypeScript command (`worktree
 through, and `ronin_bin/ronin-url` with its sourced sibling `ronin_bin/ronin-http.sh`, which
 the zero-dependency shell tools (`session_create`, `session_end`, `session_check`,
 `session_set`,
-`team-lead roster write`, `edges page`, `mika`) go through. `ronin-url` prints one line —
+`team roster write`, `edges page`, `mika`) go through. `ronin-url` prints one line —
 `RONIN_URL` when set, else the socket path — and `ronin_connect` turns that into the base
 `url` and the `RONIN_CURL` transport options a request is built from; a caller never knows
 which it got. Wrappers locate those siblings from their own resolved file path, including

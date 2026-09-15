@@ -5,9 +5,8 @@
 > carry `- **library:** documents` resolve their locations from here, and a compile
 > inlines it.
 >
-> **It moved off the SOP shelf on 2026-08-15**, when the owner ruled that an action leads
-> to a library page and never to an SOP. The content did not change: it is reached from an
-> action, and that is what the library is.
+> This is supporting reference, not a Behavior. It is fetched when needed rather than
+> delivered as working instruction.
 
 **Every document produced in development is one of three things, and lives in one of
 three directories of the project_repo:**

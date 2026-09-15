@@ -1,5 +1,8 @@
 # CHECKOUT — work on the repository's working line
 
+- **scope:** conditional
+- **installation:** —
+
 This Workspace Folder uses its checkout. Before editing, announce the files you will
 touch when other Agents may be working in the same repository; everyone shares this
 working tree, so coordination is what prevents collisions.

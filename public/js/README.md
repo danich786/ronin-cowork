@@ -160,7 +160,7 @@ npm run stage           # low-level copy of this client to public-staging/
 still be useful for one local client check, but it is not the preferred multi-Agent Team
 review process and does not establish which aggregate repository commit is running.
 
-For a Team visual review, use the two-lane [visual-staging SOP](../../ronin_sops/ronin_methodology.md#visual-staging-one-disposable-team-preview):
+For a Team visual review, use the two-lane [visual-staging Behavior](../../ronin_catalogs/behaviours/ronin_methodology.md#visual-staging-one-disposable-team-preview):
 Agents offer exact private commits provisionally, the lead serially composes one disposable
 staging worktree and separate preview process, and finished work later uses ordinary Worktrees
 hand-in. The preview's `/api/version` identifies the aggregate commit actually on display.

@@ -10,11 +10,11 @@ test('agent_defaults validates every field in the complete record shape', () => 
     }],
     ['every valid value survives', {
       provider: ' anthropic ', model: ' opus ', reach: 'execute', recruit: 'staff agents', output: ['code', 'no code'],
-      behaviours: [' ways:CutCode ', 'ronin_sops:github'], dial: 'read', launch_mode: 'configured',
+      behaviours: [' ways:CutCode ', 'ronin_catalogs/behaviours:github'], dial: 'read', launch_mode: 'configured',
     }, {
       provider: 'anthropic', model: 'opus', reach: 'execute', recruit: 'staff agents',
       output: ['code', 'no code'],
-      behaviours: ['ways:CutCode', 'ronin_sops:github'], dial: 'read', launch_mode: 'configured',
+      behaviours: ['ways:CutCode', 'ronin_catalogs/behaviours:github'], dial: 'read', launch_mode: 'configured',
     }],
     ['bad hand edits fall back field by field', {
       reach: 'run', recruit: 'propose', output: 'report', routines: { base: 'yes', control: true },

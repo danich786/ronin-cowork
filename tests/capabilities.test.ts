@@ -88,7 +88,7 @@ test('work context selects knowledge while Cowork tools stay available and featu
   const rows = [
     row('edges', [], '| `edges send` | write | priority | `edges --help` |\n| `edges read` | read | priority | |\n'),
     row('worktree-desk', ['arrangement:managed'], '| `worktree-desk status` | read | priority | |\n'),
-    row('team-lead', ['lead'], '| `session_create` | create | priority | |\n| `absent_tool` | write | priority | |\n'),
+    row('team', [], '| `session_create` | create | priority | |\n| `absent_tool` | write | priority | |\n'),
     row('host', ['behaviour:ronin_host', 'lead'], '| `host_survey` | read | priority | |\n', 'feature'),
     row('authority-only', ['team']),
   ];
@@ -96,7 +96,7 @@ test('work context selects knowledge while Cowork tools stay available and featu
   assert.deepEqual(bare.map((item) => [item.name, item.selected, item.reason]), [
     ['edges', true, ''],
     ['worktree-desk', false, 'no managed arrangement'],
-    ['team-lead', false, 'not the Team lead'],
+    ['team', true, ''],
     ['host', false, 'behaviour ronin_host is not selected'],
     ['authority-only', false, 'not on a Team'],
   ]);
@@ -115,7 +115,7 @@ test('work context selects knowledge while Cowork tools stay available and featu
   );
   assert.ok(lead.every((item) => item.selected), lead.map((item) => `${item.name}:${item.reason}`).join(' '));
   assert.deepEqual(capabilityTools(lead), ['edges', 'worktree-desk', 'session_create', 'host_survey']);
-  const teamLead = lead.find((item) => item.name === 'team-lead')!;
+  const teamLead = lead.find((item) => item.name === 'team')!;
   assert.deepEqual(teamLead.delivered, ['session_create']);
   assert.deepEqual(teamLead.missing, ['absent_tool'], 'a listed tool the box lacks is recorded, never taught');
   const authorityOnly = lead.find((item) => item.name === 'authority-only')!;
@@ -132,7 +132,7 @@ test('work context selects knowledge while Cowork tools stay available and featu
 test('the overview is derived from selected knowledge, independent of universally available Cowork tools', async () => {
   const rows = [
     row('edges', [], '| `edges send` | write: one message | priority | `edges --help` |\n| `edges page` | read/write | | `edges --help` |\n'),
-    row('team-lead', ['lead'], '| `session_create` | create | priority | |\n| `absent_tool` | write | priority | |\n'),
+    row('team', [], '| `session_create` | create | priority | |\n| `absent_tool` | write | priority | |\n'),
     row('authority-only', []),
     row('worktree-desk', ['arrangement:managed'], '| `worktree-desk status` | read | priority | |\n'),
   ];
@@ -142,7 +142,7 @@ test('the overview is derived from selected knowledge, independent of universall
   assert.match(text, /Your tools are grouped by the work you are doing\./);
   assert.match(text, /Run any tool with `--help`/);
   const edgesAt = text.indexOf('### edges');
-  const leadAt = text.indexOf('### team-lead');
+  const leadAt = text.indexOf('### team');
   const onlyAt = text.indexOf('### authority-only');
   assert.ok(edgesAt >= 0 && leadAt > edgesAt && onlyAt > leadAt, 'selected bundles in folder order');
   assert.doesNotMatch(text, /### worktree-desk/, 'an unselected bundle is not in the lesson');
@@ -197,9 +197,9 @@ test('the folder is the catalog: an owner file shadows a stock name whole, a new
 
 test('the stock capability documents are well-formed and carry no retired vocabulary', async () => {
   const files = (await readdir(STOCK)).filter((name) => name.endsWith('.md') && name !== 'README.md').sort();
-  assert.deepEqual(files, ['edges.md', 'gbrain.md', 'machine-settings.md', 'perplexity.md', 'ronin-host.md', 'ronin-services.md', 'session.md', 'team-lead.md', 'trello.md', 'work-record.md', 'worktree-desk.md']);
+  assert.deepEqual(files, ['edges.md', 'gbrain.md', 'machine-settings.md', 'perplexity.md', 'ronin-host.md', 'ronin-services.md', 'session.md', 'team.md', 'trello.md', 'work-record.md', 'worktree-desk.md']);
   const rows = await withUserCatalogs(() => listCapabilities());
-  assert.deepEqual(rows.map((item) => item.name), ['edges', 'work-record', 'session', 'worktree-desk', 'machine-settings', 'team-lead', 'ronin-host', 'ronin-services', 'gbrain', 'trello', 'perplexity'], 'ordered by `order`');
+  assert.deepEqual(rows.map((item) => item.name), ['edges', 'work-record', 'session', 'worktree-desk', 'machine-settings', 'team', 'ronin-host', 'ronin-services', 'gbrain', 'trello', 'perplexity'], 'ordered by `order`');
   for (const item of rows) {
     const text = await readFile(item.file, 'utf8');
     assert.ok(item.label && item.blurb, `${item.name} has a label and a blurb`);
@@ -215,7 +215,7 @@ test('the stock capability documents are well-formed and carry no retired vocabu
   assert.deepEqual(by.session.requires, []);
   assert.deepEqual(by['worktree-desk'].requires, ['arrangement:managed']);
   assert.deepEqual(by['machine-settings'].requires, ['campaign']);
-  assert.deepEqual(by['team-lead'].requires, ['lead']);
+  assert.deepEqual(by.team.requires, []);
   assert.deepEqual(by['ronin-host'].requires, ['behaviour:ronin_host']);
   assert.deepEqual(by['ronin-services'].requires, ['installation:ronin_services']);
   assert.deepEqual(by.gbrain.requires, ['behaviour:gbrain']);
@@ -227,25 +227,25 @@ test('the stock capability documents are well-formed and carry no retired vocabu
     'GBrain remains authority-only teaching with no retired memory vocabulary');
   assert.deepEqual(by['ronin-host'].tools.map((tool) => tool.name), ['ronin-host']);
   assert.equal(by['ronin-host'].tools[0]?.help, 'ronin-host --help');
-  // Project create is first-class and priority. Session creation is universal; the lead
-  // bundle teaches visible delegation but does not duplicate the Session tool row.
+  // Project create is first-class and priority. Session creation is universal; the Team
+  // bundle names that boundary but does not duplicate the Session tool row.
   const priority = (name: string) => by[name].tools.filter((tool) => tool.priority).map((tool) => tool.command);
   assert.deepEqual(priority('work-record'), ['work-record update_record', 'work-record document add', 'work-record project create', 'work-record project read', 'work-record project write', 'work-record project return', 'work-record project backlog', 'work-record project done']);
   assert.deepEqual(priority('edges'), ['edges send', 'edges wipeboard', 'edges read', 'edges team']);
   assert.deepEqual(priority('worktree-desk'), ['worktree-desk status', 'worktree-desk sync', 'worktree-desk hand-in']);
   assert.deepEqual(priority('session'), ['session_check', 'session_create']);
   assert.ok(by.session.tools.some((tool) => tool.name === 'session_set'));
-  assert.deepEqual(priority('team-lead'), [
-    'team-lead roster read', 'team-lead project create',
-    'team-lead project read', 'team-lead project list', 'team-lead project write',
-    'team-lead project assign', 'team-lead project return', 'team-lead project backlog',
-    'team-lead project done', 'team-lead project restore', 'team-lead member status',
+  assert.deepEqual(priority('team'), [
+    'team roster read', 'team project create',
+    'team project read', 'team project list', 'team project write',
+    'team project assign', 'team project return', 'team project backlog',
+    'team project done', 'team project restore', 'team member status',
   ]);
-  assert.ok(!by['team-lead'].tools.some((tool) => tool.name === 'session_create'), 'Team Lead does not duplicate the universal creation row');
+  assert.ok(!by.team.tools.some((tool) => tool.name === 'session_create'), 'Team does not duplicate the universal Session creation row');
   assert.match(await readFile(by['work-record'].file, 'utf8'), /Team roster issues its ID/);
   assert.match(await readFile(by['work-record'].file, 'utf8'), /Agents never choose or reuse IDs/);
   assert.match(await readFile(by['work-record'].file, 'utf8'), /`exit`[\s\S]*`none` · `agent` · `lead` · `user`[\s\S]*`status`[\s\S]*`green` · `yellow` · `red`/);
-  assert.match(await readFile(by['team-lead'].file, 'utf8'), /Assign and return/);
+  assert.match(await readFile(by['team'].file, 'utf8'), /Assign and return/);
   const machine = await readFile(by['machine-settings'].file, 'utf8');
   assert.match(machine, /canonical Campaign\/provider model\s+catalog used by the UI dropdowns/);
   assert.doesNotMatch(machine, /gpt-|claude-|gemini-|sonnet|opus/i, 'the capability carries no maintained model IDs');

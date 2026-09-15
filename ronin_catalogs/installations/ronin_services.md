@@ -5,7 +5,7 @@
 - **provides:** —
 - **reading:** routine/ronin_services/SERVICES_ABILITIES.md
 - **reading_off:** routine/ronin_services/OFF.md
-- **sops:** —
+- **ways:** —
 - **tools:** —
 - **mcp:** —
 - **parts:** counting, kanban, koe, koshi, koshi_weights, michi, rireki

@@ -313,8 +313,8 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **campaign_view.library_hold_teams:** teams
 - **campaign_view.library_hold_agent:** agent
 - **campaign_view.library_hold_agents:** agents
-- **campaign_view.library_hold_sop:** SOP
-- **campaign_view.library_hold_sops:** SOPs
+- **campaign_view.library_hold_sop:** Behavior
+- **campaign_view.library_hold_ways:** Behaviors
 - **campaign_view.library_hold_page:** reference page
 - **campaign_view.library_hold_pages:** reference pages
 - **campaign_view.library_hold_tool:** tool
@@ -1186,7 +1186,7 @@ The catalog entry goes. {dir} is not touched.
 - **customize.sec_behavior:** Behavior
 - **customize.sec_people:** People & work
 - **customize.sec_presentation:** Presentation
-- **customize.sops:** SOPs
+- **customize.ways:** Behaviors
 - **customize.sops_read:** Read procedure
 - **customize.sops_blurb:** How this house goes about a domain — fetched by a situation, never pushed.
 - **customize.tools:** Tools

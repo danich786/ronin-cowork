@@ -1,6 +1,9 @@
 # accounts — who this install is for, and what it runs on
 
-> Stock SOP. Your own copy in the sops store (`ronin-store sops` → `accounts.md`) replaces
+- **scope:** situational
+- **installation:** —
+
+> Stock Behavior. Your own copy in the ways store (`ronin-store ways` → `accounts.md`) replaces
 > this file whole — a default, not law.
 > **Voice: agent.** How the agent establishes and records who this install is for — not a walkthrough to relay.
 > **Tool: `ronin-host account`** — the owner's name, the entitlement, the limits they set, and
@@ -9,7 +12,7 @@
 > questions are already answered on disk.
 
 Model/provider wiring is documented in `docs/model-providers.md`; the credentials that
-make those providers usable follow `secrets.md`. This SOP records neither.
+make those providers usable follow `secrets.md`. This Behavior records neither.
 
 A fresh box knows nothing about the person using it, and **nothing shipped may name a
 person** — so Ronin falls back to the login name rather than inventing one. A fallback is

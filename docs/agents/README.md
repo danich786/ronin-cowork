@@ -28,7 +28,7 @@ requires a separate versioned interface, not a second local command registry.
 
 When a CLI changes: update its owning definition, this integration page's explanation
 and tested version, and the focused behavior tests together. Unsupported behavior stays
-explicit. Authentication SOPs express owner policy and link here for CLI mechanics.
+explicit. Authentication Behaviors express owner policy and link here for CLI mechanics.
 
 ## Code ownership
 

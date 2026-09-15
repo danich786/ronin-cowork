@@ -4,3 +4,4 @@
 - **installation:** trello
 - **mcp:** trello
 - **order:** 80
+- **scope:** selectable

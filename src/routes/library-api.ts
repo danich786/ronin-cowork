@@ -94,7 +94,6 @@ export function registerLibrary(app: express.Express): void {
       const bundle = await packBundle({
         team,
         agents: list(req.query?.agents),
-        sops: list(req.query?.sops),
         ways: list(req.query?.ways),
         library: list(req.query?.library),
         tools: list(req.query?.tools),

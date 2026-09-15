@@ -69,12 +69,14 @@ import { startSpawnBroker, stopSpawnBroker } from './spawn-broker.js';
 import { ensureInstalledRoots } from './setup-runtime.js';
 import { registerSetupRuntime } from './routes/setup-runtime-api.js';
 import { registerMikaContext } from './mika-context.js';
+import { migrateSopsToBehaviours } from './behaviour-store-migration.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
 const PUBLIC = path.join(ROOT, 'public');
 const NM = path.join(ROOT, 'node_modules');
 const isEntryPoint = !!process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url;
+if (isEntryPoint) await migrateSopsToBehaviours();
 const isBoxInstance = isEntryPoint
   && process.env.NODE_ENV === 'production'
   && process.env.RONIN_TEST_RUNNER !== '1';

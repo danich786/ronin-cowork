@@ -193,7 +193,7 @@ registry-derived five-room Commons.
 
 ## Exact resume checklist
 
-1. Work at your repo desk, cut from your team line (`ronin_sops/worktree-root.md`);
+1. Work at your repo desk, cut from your team line (`ronin_catalogs/behaviours/worktree-root.md`);
    never touch or merge `master` without explicit authority.
 2. Read this file, `docs/test-protocols.md`, and the target consumer document completely.
 3. Inspect `git status`, current diff, recent history, and the canonical files above.

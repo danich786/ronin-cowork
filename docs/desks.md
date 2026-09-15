@@ -2,7 +2,7 @@
 
 The HTTP desk surface owns these mechanics. `worktree-desk` calls it and prints its reply.
 What a session is told is
-`ronin_sops/worktree-root.md`. This page is the tool-side reference:
+`ronin_catalogs/behaviours/worktree-root.md`. This page is the tool-side reference:
 what is recorded where, what each operation does to git, and what it refuses.
 
 > The current model is `docs/worktrees.md`.

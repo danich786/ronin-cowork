@@ -70,7 +70,7 @@ This matrix is the v1 product authority. Completion may add a planned capability
 
 | Resource | Intended v1 capability | Current preview |
 |---|---|---|
-| SOPs | Read-only | Reads `/api/sops`; resolved procedure text expands in place |
+| Behaviors | Read-only | Reads `/api/ways`; resolved procedure text expands in place |
 | Tools | Read-only | Unavailable: table parser and route missing |
 | Behaviours | Read-only | Reads `/api/ways`; stock pages and whole-file owner shadows |
 | Team roles | Guided agent handoff | Reads `/api/team-roles`; directory guidance |

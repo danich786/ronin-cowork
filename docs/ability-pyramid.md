@@ -23,7 +23,7 @@ a file at the tier that teaches it.
    T4   │  REFERENCE     │  the library — supporting pages named by current
         │                │  capability teaching.
         ├────────────────┤
-   T5   │  SOUGHT        │  the SOPs — fetched by a situation; the situation
+   T5   │  SOUGHT        │  the Behaviors — fetched by a situation; the situation
         │                │  selects the reader.
         └────────────────┘
    side │  MEASURED      │  facts about THIS machine — in no tier, ever.
@@ -78,8 +78,8 @@ a tier.
 
 The **catalogs** are complete and never pasted: selected capability documents teach the
 tools an Agent receives. The **library** holds supporting reference pages consumed by
-those tools and capabilities; a page only ever reached by browsing is an SOP on the wrong
-shelf. The **SOPs** cost nothing until a situation arises; the map makes the shape of
+those tools and capabilities; a page only ever reached by browsing is an Behavior on the wrong
+shelf. The **Behaviors** cost nothing until a situation arises; the map makes the shape of
 the question obvious ("how does this house do X?"), and the situation selects the
 reader. And facts about the machine live nowhere: they are **measured** by the tools,
 every time.
@@ -99,6 +99,6 @@ house-wide body of knowledge.
 | whether a capability exists | the catalogs, via the map | improvising with tmux |
 | how to use a capability tool | its selected document, then `<tool> --help` | guessing |
 | anything about another session | dial first; `edges read <session> since` first, with the durable record authoritative; then `edges send` | pane capture only when there is no tape or live prompt state is unknowable, and report the fallback; raw `send-keys` |
-| how the house does a domain | the SOP shelf, by book | inventing a process |
+| how the house does a domain | the Behavior shelf, by book | inventing a process |
 | what is true on this machine | run the named tool | any document |
 | where anything else is | the shelves section of the birth README | — |

@@ -6,7 +6,7 @@ Agent what that composition means. It has five parts:
 1. **Tool capabilities** — the operational domains available to the Agent, each
    categorizing its tools. A composite tool remains a tool.
 2. **Behaviors** — provider-neutral guidance for how the Agent works, including procedures
-   previously classified separately as SOPs. Behaviors are system, Agent-selected, or
+   previously classified separately as Behaviors. Behaviors are system, Agent-selected, or
    situational.
 3. **Mandate** — the assignment boundary: Reach, Recruit, and Output, accompanied by base
    Ronin teaching that explains how the Agent interprets those values.
@@ -78,8 +78,8 @@ installation itself a behavior.
 - **Machine Settings** — Campaign, installation, provider, default, owner, and Workspace
   Folder configuration: `machine-settings …`.
 - **Team** — Team record, membership and lead designation, Team-held Projects, assignment,
-  return, status, and Team forking. Current compatibility commands include `team-lead
-  roster …`, `team-lead project …`, `team-lead member status`, and Team-related
+  return, status, and Team forking. Current compatibility commands include `team
+  roster …`, `team project …`, `team member status`, and Team-related
   `session_set` operations; the target public surface groups them under `team …`.
 
 An installed extension may add another Tool capability, but a capability without a real
@@ -89,7 +89,7 @@ tool is only proposed teaching and must not be presented as executable ability.
 
 A behavior owns normative, provider-neutral guidance. A short standing practice and a
 long situational procedure are the same kind of artifact with different delivery rules.
-“SOP” may remain ordinary prose for a standard operating procedure, but is not a separate
+“Behavior” may remain ordinary prose for a standard operating procedure, but is not a separate
 Agent-composition part.
 
 - **System** behaviors accompany the applicable Ronin system or installation.

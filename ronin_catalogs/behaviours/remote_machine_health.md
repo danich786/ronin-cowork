@@ -1,6 +1,9 @@
 # remote_machine_health — the box is slow, or something died
 
-> Stock SOP. Your own copy in the sops store (`ronin-store sops` → `remote_machine_health.md`)
+- **scope:** situational
+- **installation:** —
+
+> Stock Behavior. Your own copy in the ways store (`ronin-store ways` → `remote_machine_health.md`)
 > replaces this file whole — a default, not law.
 > **Its sibling is `remote_machine_admin.md`** — this page diagnoses, that one sets up,
 > checks and repairs. Anything needing a chore done to the box is there.
@@ -9,7 +12,7 @@
 >
 > **Scope: THE MACHINE, not the sessions on it.** Memory, swap, disk, the kernel, the
 > hardware. Agent processes, tmux sessions and their cleanup are a **separate concern with
-> its own book**, `ronin_sops/tmux_server.md`, and deliberately are not here: a session
+> its own book**, `ronin_catalogs/behaviours/tmux_server.md`, and deliberately are not here: a session
 > hunting a stray process is not asking the same question as one asking whether the box is
 > healthy.
 > **Nothing in this file authorises killing anything.**
@@ -60,7 +63,7 @@ first: a real ceiling there is the truth about this process's world.
 
 - **Do not kill anything on the strength of this file.** Process cleanup belongs to the
   sessions concern, not here: the rules that make it safe live in
-  `ronin_sops/tmux_server.md`, and the tmux server is the one process on the box that
+  `ronin_catalogs/behaviours/tmux_server.md`, and the tmux server is the one process on the box that
   takes everyone's work with it.
 - **No `sudo` from a session.** Everything below that needs root is written out and handed
   to the person. A session composes the line; a person runs it.

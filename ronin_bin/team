@@ -6,18 +6,18 @@ ROOT="$(cd "$TOOL_DIR/.." && pwd)"
 die() { echo "$1" >&2; exit "${2:-4}"; }
 usage() { cat <<'EOF'
 Usage:
-  team-lead roster read <team>
-  team-lead roster write <team> [typed roster flags]
-  team-lead project create <team> --title <text> --objective <text>
-  team-lead project read <team> <id>
-  team-lead project list <team>
-  team-lead project write <team> <id> --field <value> ...
-  team-lead project assign <team> <id> <session>
-  team-lead project return <team> <id> <session>
-  team-lead project backlog <team> <id>
-  team-lead project done <team> <id>
-  team-lead project restore <team> <id>
-  team-lead member status <team>
+  team roster read <team>
+  team roster write <team> [typed roster flags]
+  team project create <team> --title <text> --objective <text>
+  team project read <team> <id>
+  team project list <team>
+  team project write <team> <id> --field <value> ...
+  team project assign <team> <id> <session>
+  team project return <team> <id> <session>
+  team project backlog <team> <id>
+  team project done <team> <id>
+  team project restore <team> <id>
+  team member status <team>
 All writes use canonical Team/project routes; member status is the settled Kanban view.
 Create a Team with roster write. Add membership or move an Agent with session_set.
 For a true move, remove the old Team on that Team's page. Set or change that Team's lead
@@ -26,7 +26,7 @@ Read-only Team enumeration belongs to `edges team`. Related: session_create --he
 session_set --help; edges --help
 EOF
 }
-case "${1:-}" in -h|--help) [ "$#" -eq 1 ] || { echo 'Run team-lead --help.' >&2; exit 2; }; usage; exit 0;; esac
+case "${1:-}" in -h|--help) [ "$#" -eq 1 ] || { echo 'Run team --help.' >&2; exit 2; }; usage; exit 0;; esac
 . "$TOOL_DIR/ronin-http.sh"
 ronin_connect || exit $?
 request() {
@@ -43,7 +43,7 @@ print(json.dumps(d))' "$@"; }
 area=${1:-}; verb=${2:-}; shift 2 || true
 case "$area:$verb" in
   roster:read) [ "$#" -eq 1 ] || die 'BAD-ARG: roster read needs team' 2; request GET "/api/team-rosters/$1" ;;
-  roster:write) [ "$#" -ge 1 ] || die 'BAD-ARG: roster write needs team' 2; exec bash "$ROOT/libexec/team-lead-roster-write" "$@" ;;
+  roster:write) [ "$#" -ge 1 ] || die 'BAD-ARG: roster write needs team' 2; exec bash "$ROOT/libexec/team-roster-write" "$@" ;;
   project:list) [ "$#" -eq 1 ] || die 'BAD-ARG: project list needs team' 2; request GET "/api/team-rosters/$1" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(json.dumps([{**p,"area":a} for a,k in (("inbox","projects"),("done","done_projects"),("backlog","backlog_projects")) for p in d.get(k,[])],indent=2))' ;;
   project:read) [ "$#" -eq 2 ] || die 'BAD-ARG: project read needs team and id' 2; request GET "/api/team-rosters/$1" | ID="$2" python3 -c 'import json,os,sys; d=json.load(sys.stdin); p=next(({**p,"area":a} for a,k in (("inbox","projects"),("done","done_projects"),("backlog","backlog_projects")) for p in d.get(k,[]) if p.get("id")==os.environ["ID"]),None); print(json.dumps(p,indent=2)) if p else sys.exit(3)' ;;
   project:create) [ "$#" -ge 3 ] || die 'BAD-ARG: project create needs team and fields' 2; team=$1; shift; body=$(json_fields "$@"); request POST "/api/team-rosters/$team/projects" "$body" ;;

@@ -26,11 +26,11 @@ import { templateProvenance } from './template-provenance.js';
 import { profileDir, resolveHouseSeatProfile, type HouseSeat } from './house-seats.js';
 import { capabilityTools, renderCapabilitiesOverview, resolveCapabilities, type ResolvedCapability } from './capabilities.js';
 
-const WORKTREE_SOP = path.join(REPO_ROOT, 'ronin_sops', 'worktree-root.md');
-const CHECKOUT_SOP = path.join(REPO_ROOT, 'ronin_sops', 'checkout.md');
+const WORKTREE_SOP = path.join(REPO_ROOT, 'ronin_catalogs', 'behaviours', 'worktree-root.md');
+const CHECKOUT_SOP = path.join(REPO_ROOT, 'ronin_catalogs', 'behaviours', 'checkout.md');
 const CORE_CONTRIBUTION: ResolvedContribution = {
   name: 'cowork_agent', origin: 'stock', shadowed: false, label: 'Cowork Agent', blurb: '',
-  reading: [], reading_off: [], sops: [],
+  reading: [], reading_off: [],
   tools: ['edges', 'session_create', 'session_end', 'session_archive', 'session_restore', 'session_check', 'session_set', 'work-record', 'ronin-url'],
   mcp: [], parts: [], enabled: true, stated_by: 'conditional', required_by: [],
 };
@@ -204,8 +204,8 @@ async function bootReading(
 }
 
 export function teamsSopPath(): string {
-  const user = path.join(storeDir('sops'), 'teams.md');
-  return existsSync(user) ? user : path.join(REPO_ROOT, 'ronin_sops', 'teams.md');
+  const user = path.join(storeDir('ways'), 'teams.md');
+  return existsSync(user) ? user : path.join(REPO_ROOT, 'ronin_catalogs', 'behaviours', 'teams.md');
 }
 
 export async function resolveForm(

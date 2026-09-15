@@ -28,7 +28,7 @@ and held-project create/read/write.
 | `work-record document list` | read: listed documents | | `work-record --help` |
 | `work-record document remove` | write: remove Docs visibility | | `work-record --help` |
 | `work-record project list` | read: held projects | | `work-record --help` |
-| `team-lead project list` | read: Team-held projects; the same dispatcher also exposes Team-holder project operations | | `team-lead --help` |
+| `team project list` | read: Team-held projects; the same dispatcher also exposes Team-holder project operations | | `team --help` |
 
 ## Projects
 

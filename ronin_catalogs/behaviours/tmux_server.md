@@ -1,6 +1,9 @@
 # tmux_server — the session engine, and how this house keeps it healthy
 
-> Stock SOP. Your own copy in the sops store (`ronin-store sops` → `tmux_server.md`)
+- **scope:** situational
+- **installation:** —
+
+> Stock Behavior. Your own copy in the ways store (`ronin-store ways` → `tmux_server.md`)
 > replaces this file whole — a default, not law.
 > **Voice: agent.** How a session establishes whether the tmux server is set up the way
 > Ronin needs it, what it may do about what it finds, and what it must never touch. Not a
@@ -10,7 +13,7 @@
 > over the server, **[planned]**. Until it exists, run the walk by hand.
 >
 > **Scope: THE SESSIONS AND THE SERVER THAT HOLDS THEM.** Its sibling is
-> `ronin_sops/remote_machine_health.md`, which owns the box — memory, swap, disk, the
+> `ronin_catalogs/behaviours/remote_machine_health.md`, which owns the box — memory, swap, disk, the
 > not asking the same question as one asking *is the session engine sane*, and one file
 > answering both made every answer longer than the question.
 
@@ -167,7 +170,7 @@ end sessions through Ronin, never to raise the number reflexively.
 
 ## Watch, do not reap
 
-Same rule as the sibling SOP, and for the same reason. **Do not build a reaper, a
+Same rule as the sibling Behavior, and for the same reason. **Do not build a reaper, a
 kill-daemon, or a scheduled job that acts on this server.** A periodic check that *reports*
 is welcome; one that kills is one bad pattern away from ending everyone's work. Where a
 leak keeps returning, fix what produces it — the current one has a cause and a named

@@ -38,10 +38,10 @@ Copy `.env.example` to `.env` and edit; every value is optional with a sane defa
   `ronin-doctor` never sources this file.
 - **A pane inherits the service's environment**, not the shell you typed in — when they
   disagree, the pane is what counts. How a credential is supplied and audited is
-  `ronin_sops/secrets.md`.
+  `ronin_catalogs/behaviours/secrets.md`.
 - **A set key silently outranks a subscription login** for CLIs that check the variable
   first — an owner on a subscription who exports a key is moved onto per-token billing
-  with no symptom but the invoice. Put a key here deliberately, not by habit; the SOP
+  with no symptom but the invoice. Put a key here deliberately, not by habit; the Behavior
   carries the full resolution order.
 
 ## Applying a change

@@ -30,8 +30,8 @@ evidence of its guarded operations. A capability categorizes and teaches that to
 behavior governs the work and any procedure around it; a skill adapts the teaching for one
 provider; and a UI calls the same contract. None copies the choreography.
 
-**Macro**, **action**, and **SOP** are not Ronin architectural categories. “Action” remains
-ordinary UI prose for something a person can do, and “SOP” may describe a procedure in
+**Macro**, **action**, and **Behavior** are not Ronin architectural categories. “Action” remains
+ordinary UI prose for something a person can do, and “Behavior” may describe a procedure in
 ordinary prose. Call a tool-centered teaching bundle a capability, working guidance a
 behavior, and an executable bundle a composite tool.
 
@@ -40,7 +40,7 @@ are peer tool operations with parallel stacks:
 
 | Object | UI client | Tool/API contract | Internal implementation |
 |---|---|---|---|
-| Team record | New Team | `team-lead roster write` / Team roster API | Team route and roster modules |
+| Team record | New Team | `team roster write` / Team roster API | Team route and roster modules |
 | Agent/session | New Agent/session | `session_create` / session launch API | Session route, launch resolver, spawn broker, and launch ledger |
 
 One may invoke or be composed with the other without becoming its presentation or

@@ -1,6 +1,9 @@
 # syncthing — the same folders on every one of your machines
 
-> Stock SOP. Your own copy in the sops store (`ronin-store sops` → `syncthing.md`)
+- **scope:** situational
+- **installation:** —
+
+> Stock Behavior. Your own copy in the ways store (`ronin-store ways` → `syncthing.md`)
 > replaces this file whole — a default, not law.
 > **Voice: agent.** How the agent diagnoses syncthing on this box — not a walkthrough to relay.
 > **Tool: syncthing's own.** The measuring is the vendor's REST API and systemd, and no

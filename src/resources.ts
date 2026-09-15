@@ -23,7 +23,6 @@ export const STORES: readonly Store[] = [
   store('ageru', 'user', 'ageru'),
   store('ledger', 'data', 'ledger'),
   store('message_queue', 'data', 'message-queue'),
-  store('sops', 'user', 'sops'),
   store('ways', 'user', 'ways'),
   store('library', 'user', 'library'),
   store('session_boot', 'user', 'session_boot'),
@@ -150,37 +149,12 @@ export async function resolveFiles(spec: ResolveSpec): Promise<ResolvedFile[]> {
   });
 }
 
-export interface SopRow {
-  name: string;
-  label: string;
-  blurb: string;
-  content: string;
-  origin: Origin;
-  shadowed: boolean;
-}
-
-export async function listSops(): Promise<SopRow[]> {
-  const files = await resolveFiles({
-    stock: path.join(__dirname, '..', 'ronin_sops'),
-    store: 'sops',
-    include: (name) => name.endsWith('.md') && name !== 'README.md',
-  });
-  return files.map((file) => {
-    const label = file.text.match(/^#\s+(.+)$/m)?.[1]?.trim() || file.name;
-    const blurb = file.text.split(/\n\s*\n/)
-      .map((part) => part.replace(/^>\s?/gm, '').replace(/\s+/g, ' ').trim())
-      .find((part) => part && !part.startsWith('#')) || '';
-    return {
-      name: file.name, label, blurb, content: file.text,
-      origin: file.origin, shadowed: file.shadowed,
-    };
-  }).sort((a, b) => a.label.localeCompare(b.label) || a.name.localeCompare(b.name));
-}
-
 export interface WayRow {
   name: string;
   label: string;
   blurb: string;
+  content: string;
+  scope: string;
   kinds: string[];
   origin: Origin;
   shadowed: boolean;
@@ -197,11 +171,12 @@ export async function listWays(): Promise<WayRow[]> {
     const label = file.text.match(/^#\s+(.+)$/m)?.[1]?.trim() || file.name;
     const kinds = (file.text.match(/^-\s+\*\*kinds:\*\*\s*(.+)$/m)?.[1] ?? '')
       .split(',').map((kind) => kind.trim()).filter((kind) => WAY_KINDS.has(kind));
+    const scope = file.text.match(/^-\s+\*\*scope:\*\*\s*(.+)$/m)?.[1]?.trim() || 'selectable';
     const blurb = file.text.split(/\n\s*\n/)
       .map((part) => part.replace(/^>\s?/gm, '').replace(/\s+/g, ' ').trim())
       .find((part) => part && !part.startsWith('#') && !part.startsWith('- **')) || '';
     return {
-      name: file.name, label, kinds, blurb: blurb.slice(0, 200),
+      name: file.name, label, kinds, scope, blurb: blurb.slice(0, 200), content: file.text,
       origin: file.origin, shadowed: file.shadowed,
     };
   }).sort((a, b) => a.label.localeCompare(b.label) || a.name.localeCompare(b.name));

@@ -1,6 +1,9 @@
 # skins — changing how Ronin looks
 
-> Stock SOP. Your own copy in the sops store (`ronin-store sops` → `skins.md`) replaces
+- **scope:** situational
+- **installation:** —
+
+> Stock Behavior. Your own copy in the ways store (`ronin-store ways` → `skins.md`) replaces
 > this file whole — a default, not law.
 > **Voice: relay.** Written for the agent to walk a person through, not to follow itself.
 

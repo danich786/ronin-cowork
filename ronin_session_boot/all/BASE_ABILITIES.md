@@ -5,12 +5,12 @@ resolves Campaign/Team and reads its own packet, not this conversation; there is
 option and the caller is unchanged. “Spawn” is CLI-internal; the owner requires permission before spawning.
 
 **Vocabulary:** **Fork it** / **New Agent** `session_create`; **Tell** `edges send`; **Wipeboard** `edges wipeboard`; **Show docs** `work-record document list` then read;
-**Update work record** `work-record update_record`; **New Team** `team-lead roster write`; **Hand in** `worktree-desk hand-in`; **Promote** lead review then `bin/ronin-promote <team>`; **Close session** `session_end`.
+**Update work record** `work-record update_record`; **New Team** `team roster write`; **Hand in** `worktree-desk hand-in`; **Promote** lead review then `bin/ronin-promote <team>`; **Close session** `session_end`.
 
 **Repository arrangement.** Every Workspace Folder is either a **worktree root** or a
 **checkout**, as declared by that repository. Before your first write in a folder, read
-the page its arrangement names: `ronin_sops/worktree-root.md` for a worktree root, or
-`ronin_sops/checkout.md` for a checkout. Your birth brief names the arrangement of the
+the page its arrangement names: `ronin_catalogs/behaviours/worktree-root.md` for a worktree root, or
+`ronin_catalogs/behaviours/checkout.md` for a checkout. Your birth brief names the arrangement of the
 root where you start; `worktree-desk open <repo>` names it for another root.
 
 **Your work record** is the owner's account of your task, progress, tracked documents,

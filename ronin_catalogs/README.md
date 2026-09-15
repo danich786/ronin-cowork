@@ -20,7 +20,7 @@ teach agent-facing tools.
 Add one executable in `ronin_bin/`, one row in `TOOLS.md`, and one capability document
 that states when the tool is selected and how it is taught. The capability's `requires:`
 facts are the only delivery gate. Keep operating rules in the capability document or a
-named SOP; there is no compiled instruction layer.
+named Behavior; there is no compiled instruction layer.
 
 [`docs/tool-surface.md`](../docs/tool-surface.md) owns the architectural vocabulary and its composite tool boundary.
 Do not introduce “macro” or “action” as a competing category.
@@ -46,7 +46,7 @@ keys to strings with a `base:` to fall through to. Both shadow whole-file by nam
 `installations/<name>.md` is one machine installation: `effect` is `system` (its reading,
 tools and parts join every Cowork Agent birth) or `provider` (it `provides`
 behaviours). `behaviours/<name>.md` is one selectable behaviour: its `installation`,
-reading, SOPs, tools and MCP connection. `behaviours/<name>.md` is one
+reading, Behaviors, tools and MCP connection. `behaviours/<name>.md` is one
 short page on how ordinary work is done. Each directory's `README.md` carries the exact
 format; `docs/installations.md` owns the cascade and birth behaviour. Membership is
 listed once, in the definition; do not add an owner field to each member.

@@ -5,14 +5,14 @@ import test from 'node:test';
 
 const root = path.resolve(import.meta.dirname, '..');
 
-test('Work Record and Team Lead are the only public names for their migrated surfaces', async () => {
+test('Work Record and Team are the only public names for their migrated surfaces', async () => {
   const work = await readFile(path.join(root, 'ronin_bin', 'work-record'), 'utf8');
   for (const route of ['update_record', 'document', 'project']) assert.match(work, new RegExp(`^  ${route}\\)`, 'm'));
   assert.match(work, /add\)\s+\[/);
   assert.match(work, /remove\)\s+\[/);
   assert.match(work, /list\)/);
 
-  const lead = await readFile(path.join(root, 'ronin_bin', 'team-lead'), 'utf8');
+  const lead = await readFile(path.join(root, 'ronin_bin', 'team'), 'utf8');
   for (const route of ['roster:read', 'roster:write', 'project:create', 'project:read', 'project:write', 'project:list', 'project:assign\|project:return', 'member:status']) {
     assert.match(lead, new RegExp(`^  ${route}\\)`, 'm'));
   }

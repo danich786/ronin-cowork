@@ -37,7 +37,7 @@ restart, and a running Agent never changes.
 Campaign defaults → Team → Agent carries one kind of choice: a **behaviour**. A behaviour
 can say how ordinary work should be done or add a facility and its taught practice. Its
 definition in `ronin_catalogs/behaviours/<name>.md` may name an installation and carry
-reading, SOPs, tools, and an MCP connection. Capability documents conditionally select
+reading, Behaviors, tools, and an MCP connection. Capability documents conditionally select
 knowledge, emphasis, and tool-job teaching for the Build Brief.
 
 An installation-gated behaviour appears on forms only while its installation and every

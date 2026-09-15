@@ -31,7 +31,7 @@ because it exists; a chosen feature's definition must select it.
 
 ## The two halves
 
-The same split `ronin_sops` and `ronin_library` already use — this is the third instance of
+The same split `ronin_catalogs/behaviours` and `ronin_library` already use — this is the third instance of
 a pattern, not a new idea.
 
 | | where | what happens to it |

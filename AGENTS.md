@@ -21,7 +21,7 @@ contracts or make a contributor follow the installation journey.
   not get that way is one you may not touch.
 
 Desk work follows the desk contract handed to you at birth
-(`ronin_sops/worktree-root.md`): **commit** preserves,
+(`ronin_catalogs/behaviours/worktree-root.md`): **commit** preserves,
 **hand-in** publishes to the team line, and `git push` belongs only to release work.
 After changing an installed box or its user stores, run `npm run byoin` to check that
 current user customization surfaces.

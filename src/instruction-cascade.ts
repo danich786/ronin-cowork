@@ -28,7 +28,10 @@ export function availableBehaviours(installations: InstallationRow[], value: unk
     if (installation.requires.some((required) => on[required] !== true)) continue;
     for (const behaviour of installation.provides) supplied.add(behaviour);
   }
-  return behaviours.filter((behaviour) => behaviour.name !== 'mandates' && (!behaviour.installation || supplied.has(behaviour.name))).map((behaviour) => behaviour.name);
+  return behaviours.filter((behaviour) =>
+    behaviour.scope === 'selectable' &&
+    (!behaviour.installation || supplied.has(behaviour.name))
+  ).map((behaviour) => behaviour.name);
 }
 
 export function resolveContributions(

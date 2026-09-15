@@ -31,12 +31,12 @@ test('every assisted session is handed the tool overview built from its selected
     const text = await readFile(lesson, 'utf8');
     assert.equal(text, overview, 'the fragment is the rendered overview, byte for byte');
     // The lesson is derived from the folder: every stock bundle, its priority tools, its help route.
-    for (const label of ['Edges', 'Work Record', 'Session', 'Worktree desk', 'Machine settings', 'Team lead']) {
+    for (const label of ['Edges', 'Work Record', 'Session', 'Worktree desk', 'Machine settings', 'Team']) {
       assert.match(text, new RegExp(`^### ${label}$`, 'm'));
     }
     assert.match(text, /`work-record project create`/);
     assert.match(text, /`session_check --help`/);
-    assert.doesNotMatch(text, /tejun|\+\w+:|MACROS/, 'no retired vocabulary reaches a newborn');
+    assert.doesNotMatch(text, /\btejun(?:-[a-z]+|\b(?!_))|\+\w+:|MACROS/, 'no retired vocabulary reaches a newborn');
     // The fork/spawn routing rule is Ronin Base's teaching, asserted on BASE_ABILITIES below.
     assert.doesNotMatch(text, /spawn an agent/i);
 
@@ -97,7 +97,7 @@ test('every selector phrase has an exact meaning in the universal Agent reading'
   const terms = [...block[1]!.matchAll(/\['([^']+)',\s*'[^']+'\]/g)].map((match) => match[1]!);
   assert.ok(terms.length, 'the selector should expose Agent vocabulary terms');
   for (const term of terms) assert.match(base, new RegExp(`\\*\\*${term.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}\\*\\*`), `${term} needs an exact universal meaning`);
-  for (const command of ['session_create', 'edges send', 'edges wipeboard', 'work-record document list', 'work-record update_record', 'team-lead roster write', 'worktree-desk hand-in', 'bin/ronin-promote <team>', 'session_end']) {
+  for (const command of ['session_create', 'edges send', 'edges wipeboard', 'work-record document list', 'work-record update_record', 'team roster write', 'worktree-desk hand-in', 'bin/ronin-promote <team>', 'session_end']) {
     assert.match(base, new RegExp(command.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')), `${command} needs to be named in the vocabulary contract`);
   }
 });
@@ -143,7 +143,7 @@ test('the real stock shelf compiles to one read: contracts first, glossary last,
     assert.match(firstWindow, /Fork versus spawn/);
     assert.match(firstWindow, /session_create/);
     assert.match(firstWindow, /owner requires permission before spawning/);
-    assert.match(firstWindow, /ronin_sops\/worktree-root\.md/);
+    assert.match(firstWindow, /ronin_catalogs\/behaviours\/worktree-root\.md/);
     // The glossary arrived rendered: markers gone, header rewritten.
     assert.doesNotMatch(text, /<!--g:/);
     assert.match(text, /Rendered for/);
@@ -170,14 +170,14 @@ test('core reading points to arrangement pages; system reading stays installatio
   const [base, services, worktrees, machine] = await Promise.all([
     readFile(path.join(repo, 'ronin_session_boot', 'all', 'BASE_ABILITIES.md'), 'utf8'),
     readFile(path.join(repo, 'ronin_session_boot', 'routine', 'ronin_services', 'SERVICES_ABILITIES.md'), 'utf8'),
-    readFile(path.join(repo, 'ronin_sops', 'worktree-root.md'), 'utf8'),
+    readFile(path.join(repo, 'ronin_catalogs/behaviours', 'worktree-root.md'), 'utf8'),
     readFile(path.join(repo, 'ronin_session_boot', 'routine', 'ronin_host', 'HOST_ABILITIES.md'), 'utf8'),
   ]);
 
   assert.match(base, /work-record read/);
   assert.match(base, /edges wipeboard/);
-  assert.match(base, /ronin_sops\/worktree-root\.md/);
-  assert.match(base, /ronin_sops\/checkout\.md/);
+  assert.match(base, /ronin_catalogs\/behaviours\/worktree-root\.md/);
+  assert.match(base, /ronin_catalogs\/behaviours\/checkout\.md/);
   assert.match(base, /edges read/);
   assert.match(services, /Readable transcripts are not in this beta/);
   assert.match(services, /`edges read` falls back/);

@@ -5,7 +5,7 @@
 - **provides:** gbrain
 - **reading:** —
 - **reading_off:** —
-- **sops:** —
+- **ways:** —
 - **tools:** —
 - **parts:** —
 - **mcp:** —

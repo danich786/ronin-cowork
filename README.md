@@ -34,7 +34,7 @@ files you already use.
 |---|---|
 | **[Your work stays yours](https://ronincowork.com/explainers/no-platform-lock-in/)** | Your code and documents stay on your machine, in ordinary repositories and files. Ronin does not become a data intermediary or proprietary home for them—so there is no platform lock-in. |
 | **[No behavioral takeover](https://ronincowork.com/explainers/no-behavioral-takeover/)** | Ronin gives Agents convenient tools at the edges of cooperation. It does not become their prompt engine or prescribe how they reason, code, or complete their work. |
-| **[Editable coordination](https://ronincowork.com/explainers/editable-coordination/)** | Select and customize the reading, SOPs, capability tools, and connections offered to new Agents. Owner versions live outside the repositories Ronin updates. |
+| **[Editable coordination](https://ronincowork.com/explainers/editable-coordination/)** | Select and customize the reading, Behaviors, capability tools, and connections offered to new Agents. Owner versions live outside the repositories Ronin updates. |
 
 Ronin does not relay your Agent traffic or upload your code and conversations to a Ronin
 cloud. Your provider CLI still communicates directly with its model provider, whose data

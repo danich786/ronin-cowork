@@ -138,7 +138,7 @@ function createRegisterSurface(context) {
     ['avoid_lock_in', 'I do not want to get locked into one provider.'],
     ['subscription_limits', 'If one subscription runs out of tokens, I want to shift work to another provider.'],
     ['visible_agents', 'I prefer a visible team of agents I can interact with directly, rather than hidden sub-agents.'],
-    ['own_instructions', 'I want my own standing instructions handed to my agents every time: a README or SOP that some agents, every agent, or a whole team reads by default.'],
+    ['own_instructions', 'I want my own standing instructions handed to my agents every time: a README or Behavior that some agents, every agent, or a whole team reads by default.'],
     ['no_collisions', 'When several agents work in one codebase, I want a structured way to keep them from colliding.'],
     ['something_else', 'Something else.'],
   ], { short: t('setup_surface.reasons_short', 'Describes you') });

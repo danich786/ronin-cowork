@@ -55,7 +55,7 @@ export function parseMikaTaxonomy(text: string): MikaTaxonomyNode[] {
       return found ? jsonString(found[1]) : '';
     };
     const node = { id: value('id'), label: value('label'), root: value('root') };
-    if (!/^[a-z0-9][a-z0-9-]*$/.test(node.id) || !node.label || !/^[a-z0-9_]+$/.test(node.root)) {
+    if (!/^[a-z0-9][a-z0-9-]*$/.test(node.id) || !node.label || !/^[a-z0-9_]+(?:\/[a-z0-9_-]+)*$/.test(node.root)) {
       throw new Error('Every Mika taxonomy node needs a safe id, label, and root.');
     }
     if (nodes.some((row) => row.id === node.id || row.root === node.root)) throw new Error(`Duplicate Mika taxonomy node: ${node.id}.`);
@@ -127,7 +127,7 @@ function defaultOwnerRoots(): Record<string, string> {
     // Product docs have no owner shadow store. Owner-authored reading belongs to the
     // library root below; treating library/docs as both would index the same file twice.
     docs: '',
-    ronin_sops: storeDir('sops'),
+    'ronin_catalogs/behaviours': storeDir('ways'),
     ronin_catalogs: storeDir('catalogs'),
     ronin_session_boot: storeDir('session_boot'),
     ronin_library: storeDir('library'),
@@ -140,6 +140,10 @@ async function resolvedEntries(nodes: MikaTaxonomyNode[], options: MikaKnowledge
   const entries: Array<Omit<MikaSourceEntry, 'preview' | 'snapshot'> & { fullPreview: string; text: string }> = [];
   const ids = new Set<string>();
   for (const node of nodes) {
+    const delegated = nodes
+      .map((other) => other.root)
+      .filter((root) => root.startsWith(`${node.root}/`))
+      .map((root) => root.slice(node.root.length + 1));
     const [stock, owner] = await Promise.all([
       markdownFiles(path.join(stockRoot, node.root)),
       markdownFiles(ownerRoots[node.root] ?? ''),
@@ -147,6 +151,8 @@ async function resolvedEntries(nodes: MikaTaxonomyNode[], options: MikaKnowledge
     const names = [...new Set([...stock.keys(), ...owner.keys()])]
       // Her own house folder is read whole at birth, never indexed as a source.
       .filter((name) => !(node.root === 'ronin_session_boot' && name.startsWith('house/mika/')))
+      // A more specific taxonomy root owns its subtree and its owner overlay.
+      .filter((name) => !delegated.some((root) => name === root || name.startsWith(`${root}/`)))
       .sort((a, b) => Buffer.from(a).compare(Buffer.from(b)));
     for (const relative of names) {
       const id = `${node.root}/${relative}`;

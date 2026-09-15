@@ -1,11 +1,14 @@
 # vpn — reaching your own Ronin from your other devices
 
-> Stock SOP. Your own copy in the sops store (`ronin-store sops` → `vpn.md`) replaces
+- **scope:** situational
+- **installation:** —
+
+> Stock Behavior. Your own copy in the ways store (`ronin-store ways` → `vpn.md`) replaces
 > this file whole — a default, not law.
 > **Voice: relay.** Written for the agent to walk a person through, not to follow itself.
 > **Tool: `bin/ronin-doctor`** — it resolves the address Ronin is actually bound to and
 > rules on whether that address is safe. Run it before the conversation starts and again
-> at the end; the whole of this SOP is about moving that address and then proving it moved.
+> at the end; the whole of this Behavior is about moving that address and then proving it moved.
 > The other half of the measuring is the VPN's own — `tailscale status` and
 > `tailscale serve status` — and neither answer is ever written down.
 
@@ -25,11 +28,11 @@ one of the answers turns out to be that a device was never set up at all.
 ## Who is reading this over your shoulder
 
 **Assume the person knows none of it.** Someone who was comfortable here would have done it
-already; the situation that fetched this SOP is nearly always someone who is not sure what
+already; the situation that fetched this Behavior is nearly always someone who is not sure what
 a VPN is, has never heard of the product, and will not tell you when they are lost.
 
 **So explain like you are explaining it to your grandmother, and keep doing it after they
-say they understand.** This is the SOP's main instruction. Everything below is easy; the
+say they understand.** This is the Behavior's main instruction. Everything below is easy; the
 only thing that actually goes wrong is an agent moving at its own speed past things it
 assumes are obvious.
 
@@ -59,7 +62,7 @@ years:
   to look — do not say "open Tailscale" and wait.**
 - **It contains a list of their machines, and that list is the whole idea.** Get them to open
   the app and read the list out to you. Once someone has seen their own laptop and their own
-  phone sitting in one list, everything else in this SOP explains itself, and they stop
+  phone sitting in one list, everything else in this Behavior explains itself, and they stop
   needing you.
 - **A device that is asleep or switched off is not on the list, and that is normal.** Their
   Ronin machine has to be awake and running. This is the answer to half of "it stopped
@@ -182,7 +185,7 @@ the machine in front of them today.
 
 **We do not publish Ronin to the open web.** The vendor offers a feature that puts a service
 on a public address; nobody here has walked it end to end, and it would leave the login page
-as the only thing between a stranger and the box. It is not part of this SOP.
+as the only thing between a stranger and the box. It is not part of this Behavior.
 
 **We hold nothing.** The VPN account is theirs, with that vendor, and no credential from it
 comes anywhere near Ronin or gets written into a file (`secrets.md`).
