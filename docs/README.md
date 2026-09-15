@@ -33,6 +33,7 @@ Option-drag, Cmd+C (Mac); Shift-drag, Ctrl+C (Windows/Linux).
 | How do parallel Agents avoid colliding in the same files? | [Ronin Worktrees](worktrees.md) |
 | What is installed, what a Team or Agent can add, and how a new Agent is equipped? | [Installations and behaviours](installations.md) |
 | How should an Agent plan and maintain its work record? | [Keep a useful work record](work-record.md) |
+| What is a tool, composite tool, capability, SOP, skill, UI, or internal API? | [Tool surface](tool-surface.md) |
 | How does a Team's five-stage Kanban derive projects and Landing? | [Team Kanban](team-kanban.md) |
 | How do I Stop, Clear, Close or Copy, and change shortcuts? | [Terminal controls](terminal-controls.md) |
 | Where are each Agent CLI's integration particulars? | [Agent integrations](agents/README.md) |

@@ -21,6 +21,9 @@ An SOP may point at a tool, but a tool does not turn an SOP into compiled instru
 The test when you are unsure: if an executable needs the material while it works, it is
 library. If someone would look it up when the topic came up, it is an SOP.
 
+An SOP may sequence several tools for a human or Agent, but that does not make the SOP a
+tool. [`docs/tool-surface.md`](../docs/tool-surface.md) owns this boundary.
+
 **Cut what is blindingly obvious.** The test is not length — it is whether a competent
 agent already knows the step. If a procedure has ten steps and eight of them are obvious,
 write the two. An SOP is not there to replace the agent's judgment with a checklist; it is

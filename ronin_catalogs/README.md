@@ -22,6 +22,14 @@ that states when the tool is selected and how it is taught. The capability's `re
 facts are the only delivery gate. Keep operating rules in the capability document or a
 named SOP; there is no compiled instruction layer.
 
+[`docs/tool-surface.md`](../docs/tool-surface.md) owns the architectural vocabulary and its composite tool boundary.
+Do not introduce “macro” or “action” as a competing category.
+
+Creating a Team record and creating an Agent/session are peer tool operations with
+parallel UI → tool/API → internal-module stacks. Connecting or composing them does not put
+them on different layers. Capability documents and UIs must call a composite tool instead
+of copying its guarded choreography.
+
 ## Adding a DESK PROFILE or a LEXICON (data, one file each)
 
 `desk_profiles/<name>.md` is the owner's standing defaults for the surfaces they work at

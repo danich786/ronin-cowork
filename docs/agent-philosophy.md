@@ -10,8 +10,10 @@
 1. **Knowledge, not rules.** The birth packet says where things are, what the words mean,
    and which verb does what. An Agent that did not know it could ask for something was
    not told; it was never stopped. Fix the packet, not the Agent.
-2. **A tool does one job.** It does not decide for the Agent, and it does not do the
-   neighbouring job on the Agent's behalf. `open` opens; it does not take custody back.
+2. **A tool does one bounded job.** That job may be composite when its declared outcome
+   requires coordinated guarded primitives; “composite” describes orchestration scope,
+   not a different authority class. It does not decide a neighbouring job for the Agent.
+   `open` opens; it does not take custody back.
    `hand-in` publishes to the line; it does not push. `harakiri` ends the Agent and its
    desks together; it does not ask whether the Agent is sure.
 3. **An acknowledgement, every time.** What happened, who holds what, and the verb that

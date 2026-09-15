@@ -10,6 +10,8 @@ is a name a user learns. Everything not listed here is ordinary English and need
 > Template. A session receives this rendered with the owner's own desk words.
 <!-- RENDERED_FOR:END -->
 
+Tool surface (`docs/tool-surface.md`): tools execute; capabilities teach; SOPs govern; skills adapt; UIs call; APIs implement. Composite is a tool; macro/action aren't categories.
+
 ## The names
 
 | You will see | Say | What it is |

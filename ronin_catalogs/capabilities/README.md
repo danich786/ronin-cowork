@@ -11,6 +11,9 @@ A capability bundle is a knowledge layer, not an authority layer. Selection chan
 the Build Brief teaches and emphasizes for that Agent; it does not grant, withhold,
 authorize, or forbid an installed tool or its help.
 
+Capabilities may teach primitive and composite tools alike. The canonical boundaries are
+in [`docs/tool-surface.md`](../../docs/tool-surface.md).
+
 The folder is the catalog. Ronin reads every definition here and in the owner's
 `<catalogs store>/capabilities/` (a file of the same name shadows the shipped one whole; a
 new name is added). Ronin Host, Ronin Services, gbrain, Trello, Perplexity and any later

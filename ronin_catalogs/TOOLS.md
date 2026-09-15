@@ -7,6 +7,9 @@ which `setup.sh` puts on PATH — call them by bare name, never by a built path.
 Agents: prefer the selected tool over hand-rolled choreography; it reports the result in
 the vocabulary used throughout the coworkspace.
 
+[`docs/tool-surface.md`](../docs/tool-surface.md) owns the architectural vocabulary, including the composite tool
+boundary. Catalog the public operation here, not its internal routes or modules.
+
 | Tool | Usage |
 |---|---|
 | `shim/tmux` | On PATH ahead of real tmux: makes `kill-server` unavailable because it ends every session. All other tmux commands pass through. |
@@ -30,6 +33,8 @@ the vocabulary used throughout the coworkspace.
 Rules for adding tools:
 - Add the executable, its catalog row, and the capability document that conditionally
   selects and teaches it.
+- When the job is composite, reuse guarded primitives behind one contract and preserve
+  their validation and audit evidence; do not expose copied choreography as another path.
 - Tools report stored preferences and operational warnings without treating them as
   access-control decisions.
 - Small, zero-dependency bash; concise outcomes and meaningful exit codes.
