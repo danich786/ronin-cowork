@@ -2,7 +2,7 @@ export const SETUP_SCENES = Object.freeze([
   { id: 'provider', label: 'Provider', selector: false, visibleTypes: ['setup.providers'], seats: { workspace1: '', workspace2: 'setup.providers' } },
   { id: 'register', label: 'Register', selector: true, visibleTypes: ['setup.providers', 'setup.register'], seats: { workspace1: 'setup.providers', workspace2: 'setup.register' } },
   { id: 'tailored', label: 'Tailored setup', selector: true, visibleTypes: ['setup.roots', 'setup.installations', 'setup.launch-own'], seats: { workspace1: 'setup.roots', workspace2: 'setup.installations' } },
-  { id: 'workspace', label: 'Workspace folders', selector: true, visibleTypes: ['setup.roots', 'setup.installations'], seats: { workspace1: '', workspace2: 'setup.roots' } },
+  { id: 'workspace', label: 'Workspace folders', selector: true, visibleTypes: ['setup.roots', 'setup.installations'], seats: { workspace1: 'setup.installations', workspace2: 'setup.roots' } },
   { id: 'installations', label: 'Installations', selector: true, visibleTypes: ['setup.roots', 'setup.installations'], seats: { workspace1: 'setup.roots', workspace2: 'setup.installations' } },
   { id: 'launch', label: 'Choose a start', selector: true, visibleTypes: ['setup.launch-own'], seats: { workspace1: 'setup.presets', workspace2: 'setup.launch-own' } },
   { id: 'ready', label: 'Ready', selector: true, visibleTypes: ['setup.providers', 'setup.register', 'setup.roots', 'setup.installations', 'setup.launch-own'], seats: { workspace1: 'setup.presets', workspace2: 'setup.launch-own' } },
@@ -24,7 +24,7 @@ function projectedScene(number, runtime) {
     visibleTypes: Object.freeze(software ? ['setup.roots', 'setup.installations', 'setup.launch-own'] : ['setup.installations', 'setup.launch-own']),
     seats: Object.freeze(software
       ? { workspace1: 'setup.roots', workspace2: 'setup.installations' }
-      : { workspace1: '', workspace2: 'setup.installations' }),
+      : { workspace1: 'setup.launch-own', workspace2: 'setup.installations' }),
   });
 }
 

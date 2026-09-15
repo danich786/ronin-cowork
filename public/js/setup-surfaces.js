@@ -150,6 +150,7 @@ function createRegisterSurface(context) {
   const own = el('textarea'); own.name = 'own_words'; own.rows = 3;
   own.addEventListener('change', () => { void context.environment?.setPathNote?.(own.value); });
   const identity = el('div', 'setup-registration-identity');
+  identity.hidden = true;
   const form = el('form', 'setup-form setup-register-form');
   const welcome = el('div', 'setup-register-welcome');
   welcome.append(el('span', 'setup-register-eyebrow', t('setup_surface.say_hello', 'Say hello')), el('h2', '', t('setup_surface.register_welcome', 'Welcome to Ronin')), el('p', 'setup-lede', t('setup_surface.register_lede', 'Share only what feels useful. Your answers help us shape better starting points; local Ronin works whether you register or not.')));
