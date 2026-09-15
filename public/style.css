@@ -6587,3 +6587,25 @@ html[data-screen='inside'] #phone .ph-bar .ph-title[data-boot='inside'] { displa
 .terminal-hint-row strong { font-weight: 700; color: var(--fg-strong); }
 .terminal-hint-row span { flex: 1 1 min-content; min-width: min-content; max-width: 100%; overflow-wrap: normal; text-align: right; }
 .terminal-copy-text { width: 100%; height: 50dvh; resize: vertical; font-family: var(--font-mono); white-space: pre; }
+
+@layer app {
+/* Tool-count report: table and selected capability Mekko. */
+.rs-selection { margin-bottom:var(--space-6); }
+.rs-capability-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(calc(var(--space-12)*3),1fr)); gap:var(--space-3); margin-bottom:var(--space-5); }
+.rs-capability-card { display:flex; flex-direction:column; gap:var(--space-2); text-align:left; padding:var(--space-4); border:var(--edge) solid var(--line); background:var(--bg-2); color:var(--fg); font:inherit; font-size:var(--text-2); cursor:pointer; }
+.rs-capability-card[aria-pressed=true] { border-color:var(--accent); box-shadow:inset 0 calc(-1 * var(--space-1)) var(--accent); }
+.rs-capability-card:focus-visible { outline:var(--edge) solid var(--accent); outline-offset:var(--space-1); }
+.rs-chart-heading { font-size:var(--text-2); margin-bottom:var(--space-3); }
+.rs-selected-row { background:var(--bg-2); }
+.rs-selected-row th:first-child { box-shadow:inset var(--space-1) 0 var(--accent); }
+
+.rs-table-wrap { overflow-x:auto; }
+.rs-count-table { border-collapse:collapse; width:100%; font-size:var(--text-2); }
+.rs-count-table th,.rs-count-table td { padding:var(--space-3); border-bottom:var(--edge) solid var(--line); text-align:right; }
+.rs-count-table th:first-child,.rs-count-table td:nth-child(2),.rs-count-table th:nth-child(2) { text-align:left; }
+.rs-count-table caption { text-align:left; padding:var(--space-4) 0; color:var(--muted); }
+
+.rs-stage button.td-seg,.desk-stats button.td-seg { border:0; padding:0; min-width:0; border-radius:0; cursor:pointer; }
+.rs-categories { display:flex; flex-wrap:wrap; margin-top:var(--space-4); }
+
+}
