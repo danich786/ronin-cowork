@@ -15,15 +15,11 @@ module that forgets. `index.html`'s static words go through `pagewords.js`.
 xterm stays a classic `<script>` (`window.Terminal`, `window.FitAddon`): the vendor files
 are served straight from `node_modules` and load before the module graph runs.
 
-## Why it is split at all
+## Ownership
 
-`this.body.appendChild(...)` nineteen lines before `this.body` was assigned — threw in a
-constructor, killed `build()`, and left a page that rendered its static header and did
-nothing. It took hours to find and survived two reverts, because the bug was older than
-the changes being reverted. A file that big is where a mistake like that hides.
-
-Current behavior is owned by the source modules and their tests. Historical build-outs are
-not part of this directory's documentation contract.
+Feature modules compose shared transport, UI primitives, and terminal boundaries. Start
+with the [canonical contributor map](../../docs/contributor-map.md#user-interface) for the
+cross-repository view. [KOTOBA](../../KOTOBA.md) owns meaning; the lexicon owns displayed words.
 
 ## The map
 
@@ -31,25 +27,33 @@ The modules below are the client map.
 
 ### Visible-surface ownership index
 
-Start here for a rendered change, then use the detailed module map below.
+Start here for a rendered change. Each row names an entry, the server door, the state
+owner, and a focused test. Follow the [state inventory](../../docs/state-inventory.md) when
+changing persistence. Browser state is presentation, not a second server authority.
 
-| Visible surface | Entry/composition | API/state | CSS | Focused tests |
+| Visible surface | UI entry / composition | Route owner | State / implementation owner | Focused tests |
 |---|---|---|---|---|
-| Ronin Home | `home.js`, `layout.js`, `main.js` | home/settings APIs, `state.js` | `style.css`, `campaign-home.css` | `home-roster.test.ts`, `theme-boot.test.js` |
-| Campaign workbench | `campaign.js`, `campaign-view.js`, `campaign-surfaces.js` | Campaign, installations, templates, defaults APIs | `style.css`, `campaign-home.css` | `campaign-*.test.*` |
-| Cowork workbench | `cowork-view.js`, `workbench.js` | roster/home APIs | `style.css`, `workspace-kit.css` | `cowork-workbench.test.js`, `workbench-*.test.js` |
-| Team workbench and commons | `team-controller.js`, `team-roster-surface.js`, `team-configuration.js` | Team, Project, message, wipeboard, schedule APIs | `style.css`, `team-workspace.css` | `team-*.test.*`, message/wipeboard tests |
-| Agent tile | `tile.js`, `tilehead.js`, `termview.js`, `tapeview.js`, `composer.js` | session APIs, tile WebSocket, `state.js` | `style.css` | tile, terminal, composer, DVR and tape tests |
-| Phone | `phone.js`, shared tile modules | same server contracts as desktop | `style.css`, `team-workspace.css` | `mobile-document.test.js` plus affected shared-module tests |
-| New Agent/Team | `new-agent.js`, `new-team-form.js`, `launch-view.js` | launch and Team APIs | `launch-forms.css` | `new-launch-form-layout.test.js`, `new-team-*.test.js`, launch tests |
-| Ronin Setup | `setup-view.js`, `setup-surfaces.js`, provider/service state modules | setup runtime, registration and activation APIs | `style.css`, `ask.css` | `setup-*.test.*`, provider and activation tests |
-| Machine/cowork settings | `machine-settings.js`, `system.js`, `projectroots.js`, `desks.js` | machine settings, roots, archive, update APIs | `style.css` | machine-settings, project-root, archive and update tests |
-| Services surfaces | `stats.js`, `koshi.js`, `hotwords.js`, `gbrain.js` | same-origin routes declared by Services | `style.css` | `services-component-ui.test.js` and the owning Services tests |
+| Ronin Home | [campaign-home.js](campaign-home.js), [layout.js](layout.js), [main.js](main.js) | [setup-runtime-api.ts](../../src/routes/setup-runtime-api.ts), [update-api.ts](../../src/routes/update-api.ts) | [setup-runtime.ts](../../src/setup-runtime.ts), [release-update-controller.js](release-update-controller.js) | [theme-boot.test.js](../../tests/theme-boot.test.js), [setup-runtime.test.ts](../../tests/setup-runtime.test.ts) |
+| Ronin Settings / Campaign | [campaign-view.js](campaign-view.js), [campaign-surfaces.js](campaign-surfaces.js) | [campaigns-api.ts](../../src/routes/campaigns-api.ts), [catalogs.ts](../../src/routes/catalogs.ts) | [campaigns.ts](../../src/campaigns.ts), [machine-settings.ts](../../src/machine-settings.ts) | [campaign-config.test.ts](../../tests/campaign-config.test.ts), [campaign-view-single.test.js](../../tests/campaign-view-single.test.js) |
+| Cowork workbench | [cowork-view.js](cowork-view.js), [workbench.js](workbench.js) | [launch.ts](../../src/routes/launch.ts): `/api/home` | [tmux.ts](../../src/tmux.ts), [team-rosters.ts](../../src/team-rosters.ts); [home.js](home.js) caches the response | [cowork-workbench.test.js](../../tests/cowork-workbench.test.js), [home-roster.test.ts](../../tests/home-roster.test.ts) |
+| Team workbench / Configuration | [team-controller.js](team-controller.js), [team-configuration.js](team-configuration.js) | [teams-api.ts](../../src/routes/teams-api.ts), [sessions-api.ts](../../src/routes/sessions-api.ts) | [team-rosters.ts](../../src/team-rosters.ts) for Team facts; [tmux.ts](../../src/tmux.ts) for membership | [team-configuration.test.js](../../tests/team-configuration.test.js), [team-rosters.test.ts](../../tests/team-rosters.test.ts) |
+| Team coordination tabs | [team-wipeboard.js](team-wipeboard.js), [team-jikan.js](team-jikan.js), [message-queue.js](message-queue.js) | [wipeboards-api.ts](../../src/routes/wipeboards-api.ts), [jikan-api.ts](../../src/routes/jikan-api.ts), [messages-api.ts](../../src/routes/messages-api.ts) | [wipeboards.ts](../../src/wipeboards.ts), [jikan.ts](../../src/jikan.ts), [message-queue.ts](../../src/message-queue.ts) | [wipeboards.test.ts](../../tests/wipeboards.test.ts), [team-jikan-client.test.js](../../tests/team-jikan-client.test.js), [message-queue.test.ts](../../tests/message-queue.test.ts) |
+| Work Record / Team Kanban | [shingo.js](shingo.js), [team-kanban.js](team-kanban.js) | [sessions-api.ts](../../src/routes/sessions-api.ts): `/tegami`; Services `kanban/kanban-api.ts` | [Work Record code path](../../docs/contributor-map.md#work-record); Kanban derives its answer | [work-record.test.ts](../../tests/work-record.test.ts), [team-kanban.test.js](../../tests/team-kanban.test.js) |
+| Agent tile | [tile.js](tile.js), [termview.js](termview.js), [composer.js](composer.js), [tilewire.js](tilewire.js) | [sessions-api.ts](../../src/routes/sessions-api.ts), [pty.ts](../../src/ws/pty.ts) | [tmux-client.ts](../../src/tmux-client.ts), [message-queue.ts](../../src/message-queue.ts) | [composer-parcel.test.js](../../tests/composer-parcel.test.js), [terminal-control-session.test.ts](../../tests/terminal-control-session.test.ts) |
+| Phone | [phone.js](phone.js), shared tile modules | [index.ts](../../src/index.ts) serves `mobile.html`; same feature routes as desktop | Same authorities as each feature above; [state.js](state.js) holds browser state | [mobile-document.test.js](../../tests/mobile-document.test.js), affected shared-module test |
+| New Agent / Team | [new-agent.js](new-agent.js), [new-team-form.js](new-team-form.js), [launch-view.js](launch-view.js) | [launch.ts](../../src/routes/launch.ts), [teams-api.ts](../../src/routes/teams-api.ts) | [agent-defaults.ts](../../src/agent-defaults.ts), [spawn.ts](../../src/spawn.ts), [team-rosters.ts](../../src/team-rosters.ts) | [new-launch-form-layout.test.js](../../tests/new-launch-form-layout.test.js), [launch-seed.test.ts](../../tests/launch-seed.test.ts) |
+| Ronin Setup | [setup-view.js](setup-view.js), [setup-surfaces.js](setup-surfaces.js), [provider-surface.js](provider-surface.js) | [setup-runtime-api.ts](../../src/routes/setup-runtime-api.ts), [services-activation-api.ts](../../src/routes/services-activation-api.ts) | [setup-runtime.ts](../../src/setup-runtime.ts), [registration.ts](../../src/activation/registration.ts), [activation state](../../src/activation/state.ts) | [setup-shell.test.js](../../tests/setup-shell.test.js), [services-activation.test.ts](../../tests/services-activation.test.ts) |
+| Machine settings / Workspace Folders / Archive | [machine-settings.js](machine-settings.js), [projectroots.js](projectroots.js), [archives.js](archives.js) | [machine-settings-api.ts](../../src/routes/machine-settings-api.ts), [catalogs.ts](../../src/routes/catalogs.ts), [sessions-api.ts](../../src/routes/sessions-api.ts) | [machine-settings.ts](../../src/machine-settings.ts), [project-roots.ts](../../src/project-roots.ts), [session-archive.ts](../../src/session-archive.ts) | [machine-settings-schema.test.ts](../../tests/machine-settings-schema.test.ts), [session-archive.test.ts](../../tests/session-archive.test.ts) |
+| Services surfaces | [stats.js](stats.js), [koshi.js](koshi.js), [hotwords.js](hotwords.js), [gbrain.js](gbrain.js) | Exact method/path and route source in the [Services manifest](https://github.com/ronincowork/ronin-services/blob/dev/services.json) | Each canonical Services part owns its API and store use; [parts.ts](../../src/parts.ts) owns startup selection | [services-component-ui.test.js](../../tests/services-component-ui.test.js), Services `bin/verify` |
 
-professionalisation pass: transport, dialog behaviour, the pane registry and the theme
-became shared contracts instead of per-feature re-inventions, and the retired Commons gave its
-two resident rooms — the roster and the launcher — their own modules. `roster.js` is still
-where a session is born now. `docs/architecture/ui.md` is the written contract those modules enforce.
+Shared CSS starts at [style.css](../style.css) and [workspace-kit.css](../workspace-kit.css).
+Feature styles: [Campaign/Home](../css/campaign-home.css), [Team](../css/team-workspace.css),
+[launch forms](../css/launch-forms.css), and [selectors](../css/ask.css).
+
+### Module responsibilities
+
+[UI architecture](../../docs/architecture/ui.md) defines the shared contracts. The table
+below describes implementation ownership; use the surface index above to find a feature.
 
 | Module | What it owns |
 |---|---|
@@ -110,20 +114,9 @@ where a session is born now. `docs/architecture/ui.md` is the written contract t
 | `mika.js` | `askMika` — the way to the house assistant |
 | `provenance.js` | the ◆/◈ marks — a catalog entry that is yours |
 
-The rule is nothing over 700 lines — and it is MECHANICAL now (`check-modules` fails the
-build), because the written-only version was crossed within a week of being written.
-the shape the owner ruled: a tile is one CELL of the coworkspace — header, dials, a mount
-point — that composes Locked or one of five record-fed Outputs, with the socket beside them.
-
-That split was not about the line count. The tape half of `tile.js` was **RIREKI's
-client-side render squatting in the coworkspace**: KOTOBA has RIREKI covering "capture,
-storage, render and the consumers", the server half honours it (`src/services/rireki/`,
-`libexec/rireki/`), and the client half did not. `tapeview.js` is that half, in its own module
-at last; `termview.js` is the locked mirror; `tilewire.js` is the socket that feeds
-whichever view is showing. Read `tile.js` and you should see composition, not machinery.
-
-The server has the same rule with a gate behind it (`scripts/check-src.mjs`, 700 lines and
-a ratchet). The client's gate is `check-modules` — the same 700, mechanically enforced
+Module size and dependency checks keep ownership visible: `check-modules` checks the client
+and `scripts/check-src.mjs` checks the server. A tile composes its header, terminal or
+transcript view, and socket; those modules own their respective machinery.
 
 The keypad's user-facing controls are documented in
 [`docs/using-ronin/terminal-controls.md`](../../docs/using-ronin/terminal-controls.md); the module rows above own
@@ -188,5 +181,4 @@ hand-in. The preview's `/api/version` identifies the aggregate commit actually o
 The phone surface is the one that matters most for a client change: its compact Output
 selector can choose the live terminal or any record-fed view supplied by Ronin Services.
 
-`npm run smoke` is the *other* test — it checks the pipe with no browser. It passed the
-Never conclude the UI works from it alone.
+`npm run smoke` checks the pipe without a browser. It does not verify rendered UI.

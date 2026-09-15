@@ -66,7 +66,7 @@ Macro, action, SOP, and Agent role are not additional composition layers. “Act
 | Term | Meaning and contract |
 |---|---|
 | Service part | Optional runtime module with one `register(sockets)` entry; canonical source is in `ronin_services` |
-| Socket | Cowork-owned extension interface; missing Services is a supported configuration ([Connector contract](https://github.com/ronincowork/ronin-services/blob/main/connector-contract.md)) |
+| Socket | Cowork-owned extension interface; missing Services is a supported configuration ([Connector contract](https://github.com/ronincowork/ronin-services/blob/dev/connector-contract.md)) |
 | Service capability | A selectable Services feature expanded to runtime parts by `src/parts.ts`; distinct from an Agent's tool capability bundle |
 | Parked part | Present on disk but not loaded, because of its marker or startup selection; not evidence of a running feature |
 | Authority / projection | The writer-owned truth / a derived reading of it; browser caches and Kanban do not become additional server authorities |
@@ -90,7 +90,7 @@ use the glossary's plain terms. **Koshi** is an existing UI name and an explicit
 | KOSHI | Ronin's helper agents |
 | KOE | Hotwords part; dictation's HTTP relay is currently in the counting part |
 | SETTEI | Configuration terminology |
-| AGERU | Outbound request and egress-record terminology |
+| AGERU | Ronin HQ request transport and its egress record; model-provider traffic is separate ([Services activation](docs/getting-started/services-activation.md)) |
 | JIKAN | Cron jobs |
 | ERABI | Shared selector UI in `public/js/ask.js` |
 | KOTOBA / KOKUGO | Canonical vocabulary / UI wording and translation |

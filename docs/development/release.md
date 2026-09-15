@@ -1,7 +1,7 @@
 # release — how a change becomes a running Ronin
 
-The chain is `ronin_repo → ronin_artifact → ronin_install → ronin_operator` (KOTOBA
-§ THE GROUND). This page is the middle two links: how the artifact is cut, and how an
+The chain is `ronin_repo → ronin_artifact → ronin_install → ronin_operator`
+([Vocabulary](../../KOTOBA.md#coworkspace-and-work)). This page is the middle two links: how the artifact is cut, and how an
 install moves to it. The one-line answer to "when does the app change": **merging to
 master changes nothing running; a box changes only when someone installs a release on
 it.** Two deliberate acts stand between an edit and the grid — the tag, and the update.

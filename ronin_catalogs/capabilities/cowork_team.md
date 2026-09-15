@@ -41,7 +41,7 @@ not duplicate them. Read-only Team enumeration belongs to `edges team`.
 
 | Capability | Meaning |
 |---|---|
-| Team record read and update | the roster's objective, launch defaults, membership, and the Team page |
+| Team record read and update | the roster's objective and launch defaults; the Team page derives membership from sessions |
 | Team project create, read, write | projects the Team holds before they are assigned; lead ideas live in the Team roster, not in a separate file or pool |
 | Assign and return | the two lead moves: assign a held project whole to one Agent; take one back from an Agent's record. A project is one canonical object and is never copied |
 | Member and project status | each member's work record and each project's two flags — `exit` (none · agent · lead · user) and `status` (green · yellow · red) — as the Team Kanban projects them at read time |

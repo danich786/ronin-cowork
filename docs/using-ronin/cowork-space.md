@@ -1,12 +1,10 @@
 # COWORK SPACE — the surface map
 
-**The page format is the `workbench`.** It was called "the team workspace" while the team was
-calling it the team workspace. But to be honest, this is the cowork space"*) because the
-page is about to hold surfaces that are not about a team. `#/team/:name` is one address
-into it; the League will be another. This page is the one document to point at when two
-people need the same word for a part of it. **[KOTOBA](../../KOTOBA.md#coworkspace-and-work) defines the shared nouns**;
-the glossary and lexicon supply the words the owner's desk profile renders; add a term here and
-you add it there in the same commit.
+**The page format is the workbench:** a discovery column beside workspaces that hold
+surfaces. A Team page (`#/team/:name`) uses this format, as do the other workbench scopes.
+[KOTOBA](../../KOTOBA.md#coworkspace-and-work) defines the shared nouns; the glossary and
+lexicon supply the owner's words. Update those sources together when a meaning or its
+stock wording changes.
 
 Campaign, Teams collection and Team are discovery boundaries, not different formats. Each has one
 discovery column whose cards are limited to that scope; every one uses the same surrounding

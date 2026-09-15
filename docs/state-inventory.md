@@ -1,24 +1,51 @@
 # Durable-state inventory
 
-One fact has one authority. Browser caches are presentation; API aggregates are projections;
-neither silently becomes another store.
+The [Runtime and state surface](contributor-map.md#runtime-and-state) starts here. One fact
+has one authority. An API aggregate, browser cache, or Kanban view is a projection.
 
-| Durable truth | Authority | Main readers/writers | Removal or migration boundary |
+Store identifiers resolve through [resources.ts](../src/resources.ts) / `ronin-store`;
+never substitute an assumed home-directory path. This is an ownership map, not a backup
+manifest. Live tmux facts are listed separately because they are not durable file stores.
+
+## Durable authorities
+
+| Truth | Authority and writer | Reader / projection | Lifecycle boundary |
 |---|---|---|---|
-| Machine, Campaign, installation, provider, and default settings | machine settings through `src/machine-settings.ts` and its schema | settings/setup APIs and Campaign surfaces | schema migration belongs with the reader/writer; `npm run byoin` checks owner overlays |
-| Registration and Services activation | `src/activation/registration.ts`, activation state, protected activation secrets | Setup Register and Services activation routes | registration deletion and entitlement recovery are explicit; secrets never enter browser projections |
-| Workspace Folders | project-root catalog via `src/project-roots.ts` | launch, folder, Campaign and desk resolution | archive/remove through project-root operations; never infer ownership from a path alone |
-| Repository arrangement | each root's `RONIN_REPO` | `src/desks/arrangement.ts`, launch and desk tools | repository-owned declaration; no branch-name inference |
-| Live session identity and runtime facts | tmux options through `src/tmux-client.ts`/`src/tmux.ts` plus session identity records | roster, WebSocket, launch, archive | tmux access only through the control client; session lifecycle owns cleanup |
-| Archived sessions | session archive manifests | archive/restore APIs and Archived UI | explicit restore or removal; not a live tmux session |
-| Team identity, membership, defaults, and held Projects | Team roster store | Team APIs, launch, roster and Team tools | Team operations own membership/project transitions |
-| Agent work, documents, and Projects | per-session work record | `work-record`, work-record APIs, Team Kanban projection | the Agent-authored record is authoritative; projections do not write it |
-| Messages, wipeboards, and schedules | their domain stores | Edges/tools and Team commons APIs | each domain owns retention and delivery state |
-| Managed desks, assignments, hand-ins, promotions, and settlements | desk lifecycle ledger and receipt stores under `src/desks/` and `src/promotion/` | worktree tools, Team lead, promotion and Kanban evidence | append-only evidence; recovery projects state from events rather than rewriting history |
-| Credentials and outbound grants | `src/credential-store.ts` and feature-specific protected stores | server-side connectors only | never return through settings/home APIs or process arguments |
-| Services data | the store named by each row of `ronin_services/services.json` | that service's canonical implementation | service install/uninstall contract must state what is removed and kept |
-| Browser preferences and drafts | explicit browser storage owned by the relevant client module | UI only | presentation convenience; never authority for server operations |
+| Machine and Campaign settings, installation choices, provider facts, defaults | [machine-settings.ts](../src/machine-settings.ts); [campaigns.ts](../src/campaigns.ts) uses its Campaign section | [machine-settings-api.ts](../src/routes/machine-settings-api.ts), [campaigns-api.ts](../src/routes/campaigns-api.ts) | Schema and migration belong with the settings writer; provider observations are measured facts |
+| Registration / Services activation | `config` store: [registration.ts](../src/activation/registration.ts), [state.ts](../src/activation/state.ts); protected credentials in [secrets.ts](../src/activation/secrets.ts) | [services-activation-api.ts](../src/routes/services-activation-api.ts) | Explicit registration deletion and entitlement recovery; browser projections exclude secrets |
+| Workspace Folders | Resolved catalog, [project-roots.ts](../src/project-roots.ts) | [catalogs.ts](../src/routes/catalogs.ts), launch and desk resolution | Catalog operations own update/removal; a path alone does not declare repository ownership |
+| Repository arrangement | Each root's `RONIN_REPO`, read by [arrangement.ts](../src/desks/arrangement.ts) | Launch and managed-desk tools | Repository-owned declaration; no branch-name inference |
+| Archived sessions | `archived_sessions` manifests, [session-archive.ts](../src/session-archive.ts) | [sessions-api.ts](../src/routes/sessions-api.ts), [archives.js](../public/js/archives.js) | Explicit archive/restore/remove; a manifest is not a live session |
+| Team identity, defaults, and Team-held Projects | `team_rosters`, [team-rosters.ts](../src/team-rosters.ts); custody operations in [team-projects.ts](../src/team-projects.ts) | [teams-api.ts](../src/routes/teams-api.ts), Team UI, launch | Team retirement and explicit Project assignment/return; **no membership or leads in this store** |
+| Agent-authored work, documents, and held Projects | `session/<key>/tegami.md`; [work-record-write](../libexec/work-record-write) updates authored fields; [tegami.ts](../src/tegami.ts) seeds and supports custody/derived-field changes | [tegami-read.ts](../src/tegami-read.ts), [sessions-api.ts](../src/routes/sessions-api.ts), Services Kanban | One file with explicit field ownership; Team references and positioning are derived fields, not Agent-authored truth |
+| Pending messages | `message_queue`, [message-queue.ts](../src/message-queue.ts) | [messages-api.ts](../src/routes/messages-api.ts), [message-queue.js](../public/js/message-queue.js) | Queue delivery, retry, force, and dismissal retain distinct outcomes |
+| Wipeboards | `wipeboards`, [wipeboards.ts](../src/wipeboards.ts) | [wipeboards-api.ts](../src/routes/wipeboards-api.ts), [team-wipeboard.js](../public/js/team-wipeboard.js) | Domain owns expiry, unread state, and delivery; reads are not durable task evidence |
+| Cron jobs | `jikan`, [jikan.ts](../src/jikan.ts) | [jikan-api.ts](../src/routes/jikan-api.ts), [team-jikan.js](../public/js/team-jikan.js) | Explicit schedule update/remove and delivery state |
+| Managed desks and assignments | [registry.ts](../src/desks/registry.ts), [lifecycle-ledger.ts](../src/desks/lifecycle-ledger.ts), [settlement.ts](../src/desks/settlement.ts) | [desk.ts](../src/desks/desk.ts), [desks-api.ts](../src/routes/desks-api.ts) | Managed lifecycle owns custody and cleanup; ledger events provide recovery evidence |
+| Hand-in and promotion evidence | [desk receipts](../src/desks/receipts.ts), [promotion receipts](../src/promotion/receipts.ts) | Desk/promotion tools and Services Kanban | Preserve receipts and Git containment evidence; review state is not inferred from phase prose |
+| Ronin HQ request history | [egress.ts](../src/activation/egress.ts), appended by [transport.ts](../src/activation/transport.ts) | [services-activation-api.ts](../src/routes/services-activation-api.ts) | Request metadata only, including failures; not a log of model-provider traffic or every network request |
+| Connector credentials | `services_secrets`, [credential-store.ts](../src/credential-store.ts) and activation secret writer | Server-side connectors | Protected writes/removal; never return credential values through settings/home APIs |
+| Services-owned data | Each part's store and writer in [services.json](https://github.com/ronincowork/ronin-services/blob/dev/services.json) | Canonical part implementation; Cowork UI reads its API | The owning service's install/uninstall contract specifies what is retained and removed |
+| Browser preferences and drafts | Relevant client module's browser storage, e.g. [state.js](../public/js/state.js) | UI only | Presentation persistence; never authority for server operations |
 
-When adding durable state, update this inventory in the same change. Name its schema,
-permissions, owner, projection, migration, backup/retention expectation, and removal path in
-the nearest implementation contract.
+## Live and derived facts
+
+**Membership and Team lead are session facts.** [tmux.ts](../src/tmux.ts) reads and writes
+session tags and lead designations through [tmux-client.ts](../src/tmux-client.ts).
+[sessions-api.ts](../src/routes/sessions-api.ts) exposes their operations and live Team
+projection. [teams-api.ts](../src/routes/teams-api.ts) rejects `members`, `sessions`, and
+lead fields in roster writes. Archive manifests preserve a restoration snapshot; they do
+not compete with the current live session.
+
+Live runtime identity also includes the session key resolved by
+[session-dir.ts](../src/session-dir.ts). Process existence and runtime options belong to
+the session lifecycle, not a new JSON roster. Tests use the managed test-server helper.
+
+The [Work Record surface](contributor-map.md#work-record) owns the authored account.
+[Coordination](coordination-trace.md) and [Team Kanban](using-ronin/team-kanban.md) connect it
+to other authorities without becoming another writer.
+
+When adding durable state, update this inventory and the nearest implementation contract.
+Name schema, permissions, writer, readers, migration, backup/retention expectations, and
+removal behavior there. After changing an installed box or owner stores, use `npm run byoin`
+to inspect customization surfaces; source-only edits use the repository verification route.
