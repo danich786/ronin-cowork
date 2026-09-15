@@ -611,14 +611,6 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
     return b;
   }
 
-  // Only while the pane is actually on screen — a tile on another tab costs nothing.
-  // Slow on purpose: the catalog changes when the owner changes it, and each poll
-  // shells out to git once per project_root.
-  // An open Setup detail is left alone too: a repaint would drop focus from its controls.
-  setInterval(() => {
-    if (isShowing() && !editing && !(stones && stoneSurface.selected())) void refresh();
-  }, 15000);
-
   say(t('roots.loading', 'loading…'));
   return {
     enter() {
