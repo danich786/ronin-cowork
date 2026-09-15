@@ -310,26 +310,27 @@ test('Setup kinds are canonical runtime facts and persist without replacing setu
     providers: { codex: { activated_at: '2026-09-06T01:00:00.000Z' } },
   }));
   assert.deepEqual(await runtime.writeSetupPreferences(['research', 'build', 'research']), {
-    kinds: ['build', 'research'], providers: [],
+    kinds: ['build', 'research'], providers: [], path_note: '',
   });
   const section = await state.readSetupSection();
   assert.equal(section.completed_at, '2026-09-06T00:00:00.000Z');
   assert.deepEqual(section.providers, { codex: { activated_at: '2026-09-06T01:00:00.000Z' } });
-  assert.deepEqual(section.preferences, { kinds: ['build', 'research'], providers: [] });
+  assert.deepEqual(section.preferences, { kinds: ['build', 'research'], providers: [], path_note: '' });
   const answer = await runtime.setupRuntimeAnswer(section, await measured(section, []), { exists: nobody }, undefined, catalog);
-  assert.deepEqual(answer.preferences, { kinds: ['build', 'research'], providers: [] });
+  assert.deepEqual(answer.preferences, { kinds: ['build', 'research'], providers: [], path_note: '' });
   assert.deepEqual(await runtime.writeSetupPreferences({ providers: ['hermes', 'openai', 'hermes'] }), {
-    kinds: ['build', 'research'], providers: ['hermes', 'openai'],
+    kinds: ['build', 'research'], providers: ['hermes', 'openai'], path_note: '',
   });
   assert.deepEqual((await state.readSetupSection()).preferences, {
-    kinds: ['build', 'research'], providers: ['hermes', 'openai'],
+    kinds: ['build', 'research'], providers: ['hermes', 'openai'], path_note: '',
   });
   assert.deepEqual(await runtime.writeSetupPreferences({ kinds: ['life'] }), {
-    kinds: ['life'], providers: ['hermes', 'openai'],
+    kinds: ['life'], providers: ['hermes', 'openai'], path_note: '',
   }, 'purpose writes preserve provider opt-ins');
   await assert.rejects(runtime.writeSetupPreferences('build'), /Send Setup preferences/);
-  await assert.rejects(runtime.writeSetupPreferences(['build', 'unknown']), /Kinds are build, life, and research/);
-  assert.deepEqual(await runtime.writeSetupPreferences([]), { kinds: [], providers: ['hermes', 'openai'] });
+  await assert.rejects(runtime.writeSetupPreferences(['build', 'unknown']), /Kinds are build, life, research, and other/);
+  assert.deepEqual(await runtime.writeSetupPreferences({ kinds: ['other'], path_note: 'Something new' }), { kinds: ['other'], providers: ['hermes', 'openai'], path_note: 'Something new' });
+  assert.deepEqual(await runtime.writeSetupPreferences([]), { kinds: [], providers: ['hermes', 'openai'], path_note: 'Something new' });
   await assert.rejects(runtime.writeSetupPreferences({ providers: ['bad provider'] }), /provider IDs/);
 });
 

@@ -21,12 +21,12 @@ export const INSTALLED_ROOTS = [
   { name: 'ronin_project_1', label: 'Ronin Project 1', remit: 'The first project-shaped workspace folder.', managed: true },
 ] as const;
 
-export const SETUP_PREFERENCE_KINDS = ['build', 'life', 'research'] as const;
+export const SETUP_PREFERENCE_KINDS = ['build', 'life', 'research', 'other'] as const;
 export type SetupPreferenceKind = typeof SETUP_PREFERENCE_KINDS[number];
-export interface SetupPreferences { kinds: SetupPreferenceKind[]; providers: string[] }
+export interface SetupPreferences { kinds: SetupPreferenceKind[]; providers: string[]; path_note: string }
 interface SetupSection {
   providers?: Record<string, { activated_at?: unknown; off_at?: unknown }>;
-  preferences?: { kinds?: unknown; providers?: unknown };
+  preferences?: { kinds?: unknown; providers?: unknown; path_note?: unknown };
   [key: string]: unknown;
 }
 
@@ -111,26 +111,28 @@ export function setupPreferences(section: SetupSection): SetupPreferences {
     ? [...new Set(section.preferences.providers.filter((provider): provider is string =>
       typeof provider === 'string' && /^[a-z0-9_-]+$/.test(provider)))]
     : [];
-  return { kinds: SETUP_PREFERENCE_KINDS.filter((kind) => selected.has(kind)), providers };
+  return { kinds: SETUP_PREFERENCE_KINDS.filter((kind) => selected.has(kind)), providers, path_note: typeof section.preferences?.path_note === 'string' ? section.preferences.path_note : '' };
 }
 
 export async function writeSetupPreferences(input: unknown): Promise<SetupPreferences> {
   const patch = Array.isArray(input) ? { kinds: input } : input;
   if (!patch || typeof patch !== 'object' || Array.isArray(patch)) throw new Error('Send Setup preferences.');
-  const update = patch as { kinds?: unknown; providers?: unknown };
-  if (update.kinds === undefined && update.providers === undefined) throw new Error('Send kinds or providers.');
-  let written: SetupPreferences = { kinds: [], providers: [] };
+  const update = patch as { kinds?: unknown; providers?: unknown; path_note?: unknown };
+  if (update.kinds === undefined && update.providers === undefined && update.path_note === undefined) throw new Error('Send kinds, providers, or a path note.');
+  let written: SetupPreferences = { kinds: [], providers: [], path_note: '' };
   await updateSection<SetupSection>('setup', (setup) => {
     const current = setupPreferences(setup);
     const kinds = update.kinds === undefined ? current.kinds : update.kinds;
     const providers = update.providers === undefined ? current.providers : update.providers;
+    const path_note = update.path_note === undefined ? current.path_note : update.path_note;
     if (!Array.isArray(kinds) || kinds.some((kind) => typeof kind !== 'string' || !SETUP_PREFERENCE_KINDS.includes(kind as SetupPreferenceKind))) {
-      throw new Error('Kinds are build, life, and research.');
+      throw new Error('Kinds are build, life, research, and other.');
     }
     if (!Array.isArray(providers) || providers.some((provider) => typeof provider !== 'string' || !/^[a-z0-9_-]+$/.test(provider))) {
       throw new Error('Providers must be provider IDs.');
     }
-    written = setupPreferences({ preferences: { kinds, providers } });
+    if (typeof path_note !== 'string' || path_note.length > 2000) throw new Error('Path note must be text up to 2000 characters.');
+    written = setupPreferences({ preferences: { kinds, providers, path_note } });
     return { ...setup, preferences: written };
   });
   return written;

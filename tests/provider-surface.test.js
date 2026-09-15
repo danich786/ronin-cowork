@@ -96,10 +96,10 @@ test('showing the surface paints the stones from the record at once, measures be
   calls.length = 0;
   const made = surface.createProviderSurface(ctx);
   await made.show();
-  assert.deepEqual(calls.slice(0, 3), ['GET /api/provider-catalog', 'GET /api/setup/runtime', 'POST /api/mika/ready'], 'the recorded provider count is painted first, then the one shared Mika readiness controller observes it');
+  assert.deepEqual(calls.slice(0, 2), ['GET /api/provider-catalog', 'GET /api/setup/runtime'], 'the recorded provider count is painted without starting Mika');
   assert.equal(ctx.refreshed.count, 1);
   await settle();
-  assert.deepEqual(calls.slice(3), ['GET /api/provider-catalog', 'GET /api/setup/runtime', 'POST /api/setup/providers/measure', 'GET /api/provider-catalog', 'GET /api/setup/runtime', 'POST /api/mika/ready', 'GET /api/provider-catalog', 'GET /api/setup/runtime'], 'then the surface catalog paint and background measure each re-read the single provider record');
+  assert.deepEqual(calls.slice(2), ['GET /api/provider-catalog', 'GET /api/setup/runtime', 'POST /api/setup/providers/measure', 'GET /api/provider-catalog', 'GET /api/setup/runtime', 'GET /api/provider-catalog', 'GET /api/setup/runtime'], 'then the surface catalog paint and background measure each re-read the single provider record');
   assert.equal(ctx.refreshed.count, 2, 'and the frame repainted when it landed');
   assert.equal(ctx.environment.setupRuntime, machine);
   const stones = byClass(made.el, 'sws-stone');
@@ -109,7 +109,7 @@ test('showing the surface paints the stones from the record at once, measures be
   assert.deepEqual(stones.map((stone) => byClass(stone, 'sws-secondary')[0].textContent), ['Anthropic · 2 models', 'OpenAI · 1 models', 'xAI', 'Pi · 1 models']);
   assert.deepEqual(stones.map((stone) => stone.attributes['data-activated']), ['true', 'false', 'false', 'false']);
   const dates = byClass(made.el, 'setup-provider-dates')[0];
-  assert.equal(walk(dates).find((node) => node.tagName === 'SUMMARY').textContent, 'Check dates');
+  assert.equal(walk(dates).find((node) => node.tagName === 'SUMMARY').textContent, 'Check for updates');
   assert.deepEqual(byClass(dates, 'setup-provider-date-list')[0].children.filter((row) => !row.hidden).map((row) => row.children.map((cell) => cell.textContent)), [
     ['Catalog researched', '2026-09-08'],
     ['Machine measured', new Date('2026-09-08T11:00:00.000Z').toLocaleString()],
@@ -118,7 +118,7 @@ test('showing the surface paints the stones from the record at once, measures be
   assert.equal(byClass(made.el, 'setup-provider-intro').length, 0);
   // Refresh lives inside the dates box — it is the one press that asks outside the machine,
   // its own door, never the plain measure — and it says what it found, changed or not.
-  assert.equal(byClass(dates, 'setup-provider-refresh-action').length, 1, 'Refresh is inside Check dates');
+  assert.equal(byClass(dates, 'setup-provider-refresh-action').length, 1, 'Refresh is inside Check for updates');
   assert.equal(byClass(made.el, 'setup-provider-refresh').length, 1, 'and nowhere else');
   const descriptions = byClass(dates, 'setup-provider-descriptions-action')[0];
   assert.equal(descriptions.textContent, 'Update descriptions');

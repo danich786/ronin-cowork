@@ -37,7 +37,6 @@ import { WorkspaceKit } from './workspace-kit.js';
 import { createStoneWorkSurface } from './stone-work-surface.js';
 import { loadProviderCatalog, modelAvailabilityFact, providerCatalog, tierWord } from './form-steps.js';
 import { mountProviderAttachment, providerFromRuntime, providerPresentation, providerReadiness } from './setup-provider-state.js';
-import { readyMika } from './mika-ready.js';
 
 const el = (tag, cls = '', text = null) => { const out = document.createElement(tag); if (cls) out.className = cls; if (text != null) out.textContent = String(text); return out; };
 
@@ -98,7 +97,7 @@ export function createProviderSurface(context) {
   const descriptionsReason = el('span', 'setup-fine', t('setup_surface.descriptions_unavailable', 'Ronin Services required · model descriptions update not published yet.'));
   descriptionsReason.id = 'setup-provider-descriptions-reason';
   const refreshOutcome = el('p', 'setup-fine setup-provider-refresh-outcome'); refreshOutcome.hidden = true;
-  dates.append(el('summary', null, t('setup_surface.check_dates', 'Check dates')), dateList, refreshRow, descriptionsRow, refreshOutcome);
+  dates.append(el('summary', null, t('setup_surface.check_for_updates', 'Check for updates')), dateList, refreshRow, descriptionsRow, refreshOutcome);
   const notice = el('p', 'setup-fine setup-provider-notice'); notice.hidden = true;
   const mikaAvailability = el('p', 'setup-fine setup-mika-availability');
   let opened = String(context.detail?.provider || context.detail?.key || '');
@@ -415,23 +414,6 @@ export function createProviderSurface(context) {
       ? t('setup_surface.mika_waits', 'Mika becomes available after you install and sign in to a model provider. Registration, Ronin Services, and gbrain are optional next steps.')
       : activatedNow === 1 ? t('setup_surface.one_model_signed_in', '1 model signed in')
         : t('setup_surface.models_signed_in', '{count} models signed in', { count: activatedNow });
-    if (activatedNow > 0) {
-      mikaAvailability.replaceChildren(el('span', 'tw-mika-spinner', '人'), el('span', '', t('mika.starting', 'Starting Mika…')));
-      mikaAvailability.querySelector('.tw-mika-spinner')?.setAttribute('aria-hidden', 'true');
-      mikaAvailability.setAttribute('role', 'status');
-      const ready = await readyMika('setup_provider_ready');
-      if (ready.ok && ready.data?.state === 'ready' && ready.data?.welcome_delivered === true) {
-        mikaAvailability.textContent = activatedNow === 1
-          ? t('setup_surface.one_model_signed_in', '1 model signed in')
-          : t('setup_surface.models_signed_in', '{count} models signed in', { count: activatedNow });
-      } else if (ready.ok && ready.data?.state === 'ready') {
-        mikaAvailability.textContent = activatedNow === 1
-          ? t('setup_surface.one_model_signed_in', '1 model signed in')
-          : t('setup_surface.models_signed_in', '{count} models signed in', { count: activatedNow });
-      } else {
-        mikaAvailability.textContent = t('mika.start_refused', 'Mika couldn’t start. You can try Help again.');
-      }
-    }
     await loadProviderCatalog();
     context.workbench?.refreshSelector?.();
     paintDates();

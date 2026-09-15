@@ -13,6 +13,7 @@ test('a ready provider exits Scene 1 without encoding later route decisions', ()
   const scene = setupJourney({ activated_count: 1 });
   assert.equal(scene.id, 'register');
   assert.equal(scene.number, 2);
+  assert.equal(scene.selector, true);
   assert.equal(scene.seats.workspace2, 'setup.register');
 });
 

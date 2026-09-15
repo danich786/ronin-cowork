@@ -157,6 +157,7 @@ export function createSetupView() {
     onSetupRuntime: (runtime) => { environment.setupRuntime = runtime; applyJourney(runtime); },
     // What the person uses Ronin for: one persisted preference shared by Register and Presets.
     kinds: createKindsPreference(globalThis.localStorage, (kinds) => request('/api/setup/preferences', { method: 'PATCH', json: { kinds } })),
+    setPathNote: (path_note) => request('/api/setup/preferences', { method: 'PATCH', json: { path_note } }),
     mountProviderSetupSession: providerSessions.mountProviderSetupSession,
     sessions: () => {
       const enabled = Number(environment.setupRuntime?.activated_count || 0) > 0;

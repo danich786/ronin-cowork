@@ -1,6 +1,6 @@
 export const SETUP_SCENES = Object.freeze([
   { id: 'provider', label: 'Provider', selector: false, visibleTypes: ['setup.providers'], seats: { workspace1: '', workspace2: 'setup.providers' } },
-  { id: 'register', label: 'Register', selector: false, visibleTypes: ['setup.providers', 'setup.register'], seats: { workspace1: 'setup.providers', workspace2: 'setup.register' } },
+  { id: 'register', label: 'Register', selector: true, visibleTypes: ['setup.providers', 'setup.register'], seats: { workspace1: 'setup.providers', workspace2: 'setup.register' } },
   { id: 'tailored', label: 'Tailored', selector: true, visibleTypes: ['setup.roots', 'setup.installations'], seats: { workspace1: '', workspace2: 'setup.roots' } },
   { id: 'workspace', label: 'Workspace', selector: false, visibleTypes: ['setup.roots'], seats: { workspace1: '', workspace2: 'setup.roots' } },
   { id: 'installations', label: 'Installations', selector: false, visibleTypes: ['setup.installations'], seats: { workspace1: '', workspace2: 'setup.installations' } },

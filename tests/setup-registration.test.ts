@@ -142,9 +142,10 @@ test('Register presents one open profile flow with card choices and anonymous de
   for (const key of ['identity_short', 'kind_short', 'preferred_feature_short', 'reasons_short', 'run_location_short']) assert.match(source, new RegExp(`short: t\\('setup_surface\\.${key}'`), `${key} names the stone`);
   assert.doesNotMatch(source, /glyph: '·'/, 'unruled Register answers are rectangles without placeholder glyphs');
   assert.match(source, /reasons\.other\.value/);
-  assert.match(source, /kind_other: kindOther\.value/);
+  assert.match(source, /kind: '', kind_other: ''/);
   assert.doesNotMatch(source, /kind\.wrap\.append\(kindOther\)/, 'the conditional input stays outside ERABI repaint ownership');
-  assert.match(source, /preferredFeature\.wrap, reasons\.wrap, kind\.wrap, kindOther,/);
+  assert.match(source, /route\.append\(kind\.wrap, kindOther, ownField\)/);
+  assert.match(source, /preferredFeature\.wrap, reasons\.wrap,/);
   assert.doesNotMatch(source, /Who is using Ronin\?|\['individual', 'Just me'\]|\['team', 'A team'\]|\['builder', 'Builder'\]|\['exploring', 'Exploring'\]/);
   assert.match(source, /Welcome to Ronin/);
   assert.match(source, /setup-register-group/);
@@ -179,6 +180,10 @@ test('Register presents one open profile flow with card choices and anonymous de
   assert.match(source, /Where will you install Ronin\?/);
   assert.doesNotMatch(source, /Where will you run Ronin\?|Where Ronin fits/);
   for (const kind of ['Which of these are you most likely to use?', 'Build software', 'Life assistants', 'Research and writing']) assert.match(source, new RegExp(kind.replace('?', '\\?')));
+  assert.match(source, /form\.append\(route, welcome, about, fit, send, declined\)/, 'the routing choice leads the form');
+  assert.match(source, /context\.environment\?\.kinds\?\.set\(routeKind \? \[routeKind\] : \[\]\)/, 'the answer changes Setup routing preferences');
+  assert.match(source, /kind: '', kind_other: ''/, 'routing is not registration profile data');
+  assert.match(source, /own_words: ''/, 'routing notes are not registration profile data');
   assert.match(source, /about\.append\([\s\S]*?identityMode\.wrap, emailField, runLocation\.wrap\)/, 'where Ronin will live belongs to About you');
   assert.ok(source.indexOf('runLocation.wrap') < source.indexOf('preferredFeature.wrap, reasons.wrap'), 'machine location comes before capability preference');
   assert.doesNotMatch(source, /Your starting theme|theme\.wrap/);
