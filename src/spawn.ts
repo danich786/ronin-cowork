@@ -159,7 +159,7 @@ export function buildBrief(
     const line = arrangement?.mode === 'managed'
       ? ` Arrangement: worktree root (read ${WORKTREE_SOP} before your first write).`
       : ` Arrangement: checkout (read ${CHECKOUT_SOP} before your first write).`;
-    parts.push(`Born in ${root.name} at ${root.dir}.${arrangement ? line : ''}`);
+    parts.push(`Born in workspace-folder-handle: ${root.name} at path: ${root.dir}.${arrangement ? line : ''}`);
   }
   if (assignment?.desks.length) parts.push(renderDeskBlock(assignment));
   const reading = [...boot, ...(form.seed ?? [])].filter(Boolean);
@@ -262,7 +262,7 @@ export async function resolveForm(
       ? undefined
       : (rosterRoot && !rosterRoot.archived ? rosterRoot : active[0]));
   if (form.project_root && !root) {
-    throw new Error(`Unknown project_root "${form.project_root}" (see your PROJECT_ROOTS.md).`);
+    throw new Error(`No Workspace Folder has the handle "${form.project_root}" (see your PROJECT_ROOTS.md).`);
   }
   if (!root) {
     throw new Error(

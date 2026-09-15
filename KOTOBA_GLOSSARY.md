@@ -1,11 +1,9 @@
 # KOTOBA_GLOSSARY — the words to use with the person you work for
 
-Ronin's internal system names are Japanese: **MICHI · TEGAMI · SHINGO · RIREKI ·
-OBOERU · TOMODACHI · SOROBAN · KOSHI · KOE · DAIKUSAN · KOTOBA · AGERU · JUSHO · BYOIN ·
-SETTEI · KYOKAI · SHIWAKE · KOKUGO · JIKAN · ERABI**. You will meet them in tool names, files and documents.
-They never reach the person you work for: use the plain word below. Only **Ronin** itself
-is a name a user learns. Tools execute; capabilities teach;
-behaviours guide; skills adapt; UIs call (`docs/architecture/tool-surface.md`).
+Use the plain words below with the owner; **Koshi** is the existing UI-name exception.
+[KOTOBA](KOTOBA.md) owns meanings; the lexicon owns displayed words. Tools execute;
+capabilities teach; behaviors guide; skills adapt; UIs call. Services capabilities select
+runtime parts, while Agent capabilities teach tools (`docs/architecture/tool-surface.md`).
 
 <!-- RENDERED_FOR:START -->
 > Template. A session receives this rendered with the owner's own desk words.
@@ -15,37 +13,37 @@ behaviours guide; skills adapt; UIs call (`docs/architecture/tool-surface.md`).
 
 | You will see | Say | What it is |
 |---|---|---|
-| JIKAN | **Cron jobs**<!--g:glossary.cron_jobs--> | A request delivered to an agent of the team, by name or to its lead, at a set time or on a rhythm, by Ronin's own clock. Say "schedule a request"; never "jikan". |
-| MICHI · TEGAMI · SHINGO · `ladder` | **work record**<!--g:glossary.work_record--> | The one record a session keeps of its work. Say "update your work record". |
-| RIREKI | the recording | Everything a tile printed, kept on disk. The Services card calls it Readable transcripts. |
+| JIKAN | **Cron jobs**<!--g:glossary.cron_jobs--> | Scheduled requests to a named Agent or Team lead. Say "schedule a request". |
+| MICHI · TEGAMI · SHINGO · `ladder` | **work record**<!--g:glossary.work_record--> | The session's authored work and evidence. Say "update your work record". |
+| RIREKI | the recording | Readable transcripts in Services. Currently parked; live output is not a durable transcript. |
 | OBOERU | **memory**<!--g:glossary.memory--> | Notes that outlive the session that wrote them. |
 | TOMODACHI · SOROBAN | **Stats**<!--g:glossary.stats--> | Counts of what sessions did, never content. |
-| KOSHI | Koshi | Ronin's own helper agents. The name is on screen as it stands. |
-| KOE | **Hotwords**<!--g:glossary.hotwords--> | Voice. The mic on a tile; Hotwords are the words dictation mishears. |
-| SETTEI | **Configuration**<!--g:glossary.configuration--> | The ⚙ tab. "Your settings" for what is in it. |
-| AGERU | **what gets sent**<!--g:glossary.packet--> · **where Ronin has connected**<!--g:glossary.egress_log--> | The one door out: a packet shown in full before it leaves, and the list of every outbound request. |
-| ERABI | — | The one selector utility: how a form asks a question — the reading stone, its tray, the two stone shapes, the caption, the switch (`ask()` in `public/js/ask.js`; ronin-lab `SELECTORS.md`). Internal machinery; the user sees a question, never the name. |
-| KOTOBA · KOKUGO · DAIKUSAN · JUSHO · BYOIN · KYOKAI · SHIWAKE | — | Internal machinery. There is no user word; do not translate or explain them. |
+| KOSHI | Koshi | Ronin's helper agents; this name is on screen. |
+| KOE | **Hotwords**<!--g:glossary.hotwords--> | The dictation glossary. The mic is Voice; implementation ownership is in KOTOBA. |
+| SETTEI | **Configuration**<!--g:glossary.configuration--> | Settings for the relevant scope. The gear opens cowork commons. |
+| AGERU | **what gets sent**<!--g:glossary.packet--> · **where Ronin has connected**<!--g:glossary.egress_log--> | Ronin HQ packets and request history. Model-provider traffic is separate, not in this record. |
+| ERABI | — | Shared selectors (`public/js/ask.js`). The owner sees a question, never this internal name. |
+| KOTOBA · KOKUGO · DAIKUSAN · JUSHO · BYOIN · KYOKAI · SHIWAKE | — | Internal names; use the feature's plain word. |
 
 ## The space
 
 | You will see | Say | What it is |
 |---|---|---|
 | `coworkspace` | **the coworkspace**<!--g:glossary.coworkspace--> | The whole UI. |
-| root destination | **Ronin Home** | The root page whose browser title uses this exact name. |
-| root layout | **Three Blocks** | The sparse Settings, Teams, and New Project pattern on Ronin Home. |
-| Setup workbench | **Ronin Setup** | Machine Settings focused on getting Ronin ready to launch. |
-| Campaign workbench | **Ronin Settings** | Machine Settings focused on the existing Campaign configuration. |
-| stone work surface | **stone work surface** | One reusable work surface that presents a collection as square stones. Selecting a stone moves the collection to a left rail and opens that item’s details on the right. Presets, Workspace Folders, and Model Providers reuse it. |
+| root destination | **Ronin Home** | The root page and its browser title. |
+| root layout | **Three Blocks** | Home's Settings, Teams, and New Project doors. |
+| Setup workbench | **Ronin Setup** | First-use workbench. |
+| Campaign workbench | **Ronin Settings** | Ongoing Campaign configuration workbench. |
+| stone work surface | **stone work surface** | Select a collection item: stones move to a left rail, details open on the right. Reused by Presets, Workspace Folders, and Model Providers. |
 | tile | **tile**<!--g:glossary.tile--> | One cell showing one session. Never "pane". |
 | `workspace` | **workspace**<!--g:glossary.workspace--> | One slot of the coworkspace. It holds a tile or a commons. |
 | `campaign_commons` | **the commons**<!--g:glossary.campaign_commons--> | The campaign's shared surface. |
-| `team_commons` | **team commons**<!--g:glossary.team_commons--> | A team's shared surface: Docs, Wipeboard, Messages, Configuration. |
-| `cowork_commons` | **cowork commons**<!--g:glossary.cowork_commons--> | The install's shared surface: machine, account, desk profile, project roots. |
+| `team_commons` | **team commons**<!--g:glossary.team_commons--> | Roster, Docs, Wipeboard, Messages, Cron jobs, Configuration. |
+| `cowork_commons` | **cowork commons**<!--g:glossary.cowork_commons--> | Machine, account, desk profile, Workspace Folders. |
 | `admin_desk` | **the desk**<!--g:glossary.desk--> | Everything about this install, behind ⚙. |
 | `commons_tab` | **tab**<!--g:glossary.tab--> | One section of a commons. Never "pane" or "panel". |
 | `session_roster` | **the roster**<!--g:glossary.roster--> | Every session on the machine. Never "the board". |
-| `MDEDIT` | **the Docs tab**<!--g:glossary.docs--> | The documents a session lists, opened in the tile. Say "list a doc". |
+| `MDEDIT` | **the Docs tab**<!--g:glossary.docs--> | The session's listed documents. Say "list a doc". |
 | `wipeboard` | **wipeboard**<!--g:glossary.wipeboard--> | A team's shared board file. Never "the board". |
 | 🔒 / 🔓 | **Locked / Unlocked**<!--g:glossary.locked--> | Whether this view is attached to the live session. |
 
@@ -53,18 +51,18 @@ behaviours guide; skills adapt; UIs call (`docs/architecture/tool-surface.md`).
 
 | You will see | Say | What it is |
 |---|---|---|
-| team | **Cowork**<!--g:glossary.team--> | A set of sessions working together. |
-| `team_roster` | **Cowork record**<!--g:glossary.team_roster--> | The team's record: kind, objective, kit, launch defaults. Members are read live. |
+| team | **Team**<!--g:glossary.team--> | A set of sessions working together. |
+| `team_roster` | **Team record**<!--g:glossary.team_roster--> | Team identity, defaults, and held Projects. Members and leads derive from sessions. |
 | `team_lead` | **team lead · 人**<!--g:glossary.team_lead--> | Set by hand, never inferred from what a session does. |
-| `session_type` | **session type**<!--g:glossary.session_type--> | **Cowork Agent**<!--g:glossary.cowork_agent--> born with everything Ronin provides on this box · **bare-metal Agent**<!--g:glossary.bare_metal_agent--> a CLI started without it · **terminal**<!--g:glossary.terminal--> a shell with no agent. |
+| `session_type` | **session type**<!--g:glossary.session_type--> | **Cowork Agent**<!--g:glossary.cowork_agent--> with its resolved Agent composition · **bare-metal Agent**<!--g:glossary.bare_metal_agent--> a CLI started without it · **terminal**<!--g:glossary.terminal--> a shell with no agent. |
 | `session_mandate` | **mandate**<!--g:glossary.mandate--> | **Reach**<!--g:glossary.reach--> how far an Agent goes · **Recruit**<!--g:glossary.recruit--> how it builds a Team · **Output**<!--g:glossary.output--> what it hands back. |
-| instruction cascade | **installation**<!--g:glossary.installation--> · **behaviour**<!--g:glossary.behaviour--> | Installations enable. Behaviours guide floor, conditional, selectable, or situational work; mandates are floor. |
+| instruction cascade | **installation**<!--g:glossary.installation--> · **behaviour**<!--g:glossary.behaviour--> | Installations enable; behaviors guide (floor, conditional, selected, sought). Mandate teaching is floor. |
 | `message_queue` | **message queue**<!--g:glossary.message_queue--> | Messages waiting to enter a live session. |
-| `project_root` | **project root**<!--g:glossary.project_root--> | A folder Ronin is allowed to work in. |
+| `project_root` | **workspace folder**<!--g:glossary.project_root--> | A registered folder Ronin may work in. Not a numbered browser workspace. |
 | `desk_profile` | **desk profile**<!--g:glossary.desk_profile--> | The owner's standing defaults: skin, words, layout. |
 | harakiri | **harakiri**<!--g:glossary.harakiri--> | A session ends itself. |
 | `@ronin_note` | **Note**<!--g:glossary.note--> | The owner's one line about a session. |
-| desk | **desk** | A managed private branch and worktree, leased to one or more sessions. |
-| hand-in | **hand in** | Admit committed desk work to the team's local review line. Never say “push.” |
+| desk | **desk** | A managed private branch and worktree with explicit custody. |
+| hand-in | **hand in** | Admit committed work to Team review. Never say “push.” |
 | commit | **commit** | A private checkpoint on a managed desk; it publishes nothing. |
 | push | **Git push** | Remote Git publication only; never the name for hand-in or promotion. |

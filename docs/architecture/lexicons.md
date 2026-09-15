@@ -10,6 +10,10 @@ names a skin (`docs/architecture/desk-profiles.md`).
 no saved `cowork` object. APIs, durable files and agent-facing machinery continue to use
 their exact internal terms. `Team Commons` is always explicit.
 
+Canonical meanings live in [KOTOBA](../../KOTOBA.md); the
+[Agent glossary](../../KOTOBA_GLOSSARY.md) translates those meanings into owner-facing
+teaching. Neither replaces this catalog of displayed strings.
+
 ## The catalog
 
 `ronin_catalogs/lexicons/<name>.md`, one file per lexicon, shadowable whole-file by name
