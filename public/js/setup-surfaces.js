@@ -166,7 +166,16 @@ function createRegisterSurface(context) {
   const ownField = field(t('setup_surface.own_words', 'Anything else'), own);
   ownField.classList.add('setup-register-full');
   const route = el('section', 'setup-register-group setup-register-route');
-  route.append(kind.wrap, kindOther, ownField);
+  route.append(
+    el('h3', '', t('setup_surface.setup_help', 'Help with system setup')),
+    el('p', 'setup-lede', t('setup_surface.setup_help_lede', 'Tell us what you are most likely to use Ronin for so Setup can show the most useful path.')),
+    kind.wrap, kindOther, ownField,
+  );
+  const registrationIntro = el('section', 'setup-register-group setup-register-intro');
+  registrationIntro.append(
+    el('h3', '', t('setup_surface.optional_registration', 'Optional system registration')),
+    el('p', 'setup-lede', t('setup_surface.optional_registration_lede', 'Register only if you want to share a profile or use services tied to an identity.')),
+  );
   fit.append(
     el('h3', '', t('setup_surface.ronin_fit', 'What brings you here')), preferredFeature.wrap, reasons.wrap,
   );
@@ -207,7 +216,7 @@ function createRegisterSurface(context) {
   };
   identityMode.onChange(paintIdentityMode);
   paintIdentityMode();
-  form.append(route, welcome, about, fit, send, declined);
+  form.append(welcome, route, registrationIntro, about, fit, send, declined);
   const prefs = el('form', 'setup-form setup-preferences');
   const checks = Object.fromEntries(['newsletter', 'release_updates', 'no_communication'].map((name) => [name, input(name, 'checkbox')]));
   const followUps = Object.fromEntries(['product_research', 'interviews', 'support'].map((name) => [name, input(name, 'checkbox')]));
