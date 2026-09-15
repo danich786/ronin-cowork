@@ -30,8 +30,8 @@ evidence of its guarded operations. A capability categorizes and teaches that to
 behavior governs the work and any procedure around it; a skill adapts the teaching for one
 provider; and a UI calls the same contract. None copies the choreography.
 
-**Macro**, **action**, and **Behavior** are not Ronin architectural categories. “Action” remains
-ordinary UI prose for something a person can do, and “Behavior” may describe a procedure in
+**Macro**, **action**, and **SOP** are not Ronin architectural categories. “Action” remains
+ordinary UI prose for something a person can do, and “procedure” may describe a step in
 ordinary prose. Call a tool-centered teaching bundle a capability, working guidance a
 behavior, and an executable bundle a composite tool.
 

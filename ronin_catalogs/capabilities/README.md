@@ -1,13 +1,14 @@
 # Capabilities
 
-One Markdown definition per **capability bundle**: the tool documents an Agent is taught at
-birth. A bundle is a document grouping — the question it answers, the actual tools that
-answer it, and the teaching around them. It is not an executable: it may list several
-tools, one, or none, and a tool may be surfaced by more than one bundle without being
-renamed to either. A bundle with no tool is knowledge and teaching, and it is still
-selected and still on the newborn's shelf.
+One Markdown definition per **Agent capability**: a coherent group of actual executable
+tools the Agent is taught at birth. The document states the question those tools answer,
+their authority, and the teaching around them. It is not itself executable. A capability
+may contain several tools or one tool, and a tool may be taught by more than one capability
+without being renamed. A document with no actual tool is not a capability: put installation
+facts in `../installations/`, working guidance in `../behaviours/`, and system explanation
+in `../../docs/`.
 
-A capability bundle is a knowledge layer, not an authority layer. Selection changes what
+A capability document is a teaching layer, not an authority layer. Selection changes what
 the Build Brief teaches and emphasizes for that Agent; it does not grant, withhold,
 authorize, or forbid an installed tool or its help.
 
@@ -38,11 +39,8 @@ These exact files are the source catalog for the virtual `YOUR TOOLS` view:
 | Core | `worktree-desk.md` | live desk tool, with managed-desk teaching selected by arrangement |
 | Core | `machine-settings.md` | typed Campaign, installation, provider, and machine settings |
 | Core | `team.md` | live Team roster, project, custody, and member-status tools |
-| Optional | `ronin-host.md` | selected Ronin Host operations |
-| Optional | `ronin-services.md` | selected Ronin Services teaching and Mika launcher |
-| Optional | `gbrain.md` | selected GBrain boundary teaching; tool TBD |
-| Optional | `trello.md` | selected, connected Trello boundary teaching; tool TBD |
-| Optional | `perplexity.md` | selected, connected Perplexity boundary teaching; tool TBD |
+| Conditional | `ronin-host.md` | advanced host inspection and guarded restart tool |
+| Conditional | `mika.md` | installed house-assistant launcher |
 
 Ronin reads these files, applies each file's predicates to teaching, checks each listed
 executable, and generates the virtual `YOUR TOOLS` overview from the selected definitions.
@@ -68,7 +66,7 @@ One row per actual tool, columns found by name in any order:
 | `Teach` | `priority` marks a tool taught in the birth overview; blank leaves it to `--help` |
 | `Help` | the discovery route when it is not `<tool> --help` |
 
-A nonexistent command belongs in prose as **TBD capability**, never in this table. A row
+A nonexistent command does not establish a capability and must not be listed here. A row
 whose executable is absent from this particular box — not in the owner's tools store or
 `ronin_bin/` — is delivered or taught nowhere; the birth receipt names it under `missing`
 when its class is eligible for delivery.

@@ -153,8 +153,7 @@ kind from its parent directory while assertions leak between kinds.
 | Coordinate | It should own | It must not own |
 |---|---|---|
 | `ronin_catalogs/installations/gbrain.md` | availability of the provider installation and behaviours it offers | installation script, operating protocol, architecture narrative |
-| `ronin_catalogs/behaviours/gbrain.md` | selectable contribution, scoped working procedure, reading, MCP and capability-selection facts | copied provider-native skill bodies or service health claims |
-| `ronin_catalogs/capabilities/gbrain.md` | question/tool teaching and authority boundary | pretend tools; provider skill bodies; architecture |
+| `ronin_catalogs/behaviours/gbrain.md` | selectable contribution, scoped working procedure, reading, and MCP facts | copied provider-native skill bodies, pretend tools, or service health claims |
 | legacy `ronin_sops/gbrain.md` | migration input whose unique working procedure folds into the Behavior | a surviving first-class target resource |
 | `docs/gbrain.md` | Cowork integration architecture and explicit ownership boundary | upstream manual, current machine status, an accumulated test diary |
 | Services `gbrain/README.md` | installable service’s files, health/install contract and pin relationship | Agent working practice or Cowork launch semantics |
@@ -167,16 +166,16 @@ Concrete drift already visible:
 - The SOP says off means no MCP servers at all; the architecture page records that Codex
   can disable named gbrain while other user MCP servers may still ride through.
 - The architecture page points first to upstream `brain-ops`, `query`, and `capture`, while
-  the capability definition says no callable tool and the behaviour points to a connected
-  shelf that stock does not supply. Those statements can all be true only if a service seed
-  receipt proves the provider-native resolver exists.
+  the behaviour points to a connected shelf that stock does not supply. That provider-native
+  material is not a Ronin capability unless and until a Ronin Agent tool actually exists.
 - Capitalization alternates between `gbrain` and `GBrain`. Use `gbrain` consistently in
   source and keep any display wording in the presentation owner; do not add a token map.
 
-The target directories should therefore make the kind physical and unambiguous. A file may
-remain named `gbrain.md` under installation, Behavior and capability owners; the legacy SOP
-copy is reconciled into the Behavior and removed. References point directly to the owner
-directory rather than passing through a token map.
+The target directories therefore make the kind physical and unambiguous. `gbrain.md`
+remains under Installation, Behavior, and explanatory documentation owners; it does not
+occupy the Capability shelf without an actual Agent tool. The legacy SOP copy is reconciled
+into the Behavior and removed. References point directly to the owner directory rather
+than passing through a token map.
 
 ## Exact cross-cutting drift risks
 
