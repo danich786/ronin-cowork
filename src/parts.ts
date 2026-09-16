@@ -84,6 +84,7 @@ export function partsToLoad<T extends { name: string; parked?: string }>(
     const installation = claims.get(part.name);
     if (part.parked) plan.parked.push({ name: part.name, reason: part.parked });
     else if (installation && on[installation] !== true) plan.parked.push({ name: part.name, installation, reason: 'master_off' });
+    else if (part.name === 'counting' && (!installation || !selectedPart.has(part.name))) plan.parked.push({ name: part.name, ...(installation ? { installation } : {}), reason: 'component_off' });
     else if (installation && !selectedPart.has(part.name)) plan.parked.push({ name: part.name, installation, reason: 'component_off' });
     else plan.load.push(part);
   }

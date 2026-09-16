@@ -296,6 +296,8 @@ test('THE TOMODACHI LOOP: the real sender delivers a dropped packet and keeps th
   async (t) => {
     if (!available) return t.skip(unavailable);
 
+    const { noteService } = await import('../../src/sockets.js');
+    noteService('counting');
     const { sendDuePackets, listReceipts } = await import('../../src/activation/tomodachi.js');
 
     // Nothing dropped yet: an empty outbox is the normal state between weeks.
