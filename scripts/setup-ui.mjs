@@ -181,7 +181,7 @@ async function setupPass(browser, options) {
   else bad(`${label}: Setup header still exposes Feedback`);
   const registerOK = JSON.stringify(state.register?.visibleInputs) === JSON.stringify(['email'])
     && state.register?.detailsOpen === false
-    && JSON.stringify(state.register?.detailFields) === JSON.stringify(['purpose', 'kind', 'user_type', 'own_words'])
+    && JSON.stringify(state.register?.detailFields) === JSON.stringify(['purpose', 'kind', 'user_type', 'user_intro', 'own_words'])
     && state.register?.identityVisible === false
     && state.register?.action?.background !== state.register?.action?.border;
   if (registerOK) ok(`${label}: Register is progressive, preserves all detail fields, hides pending identity, and uses a neutral outlined action`);

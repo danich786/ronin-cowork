@@ -417,11 +417,14 @@ test('an ordinary assisted launch starts an agent with the full brief', async ()
   assert.ok(reading(r.brief).length >= 3, 'the levels, not a bare prompt');
 });
 
-test('team_lead is explicit and carries the Cowork Team lead teaching', async () => {
+test('team_lead is explicit and applies its conditional Behavior at birth', async () => {
   const lead = await resolveForm(commonsForm({ team: 'builders', team_lead: true }), new Set());
   assert.equal(lead.dial, 'write');
-  const overview = lead.birth_reading.find((file) => file.endsWith('/CAPABILITIES.md'))!;
-  assert.match(await fs.readFile(overview, 'utf8'), /When you are the designated Team lead/);
+  const leadReading = lead.birth_reading.find((file) => file.endsWith('/conditional/team-lead.md'))!;
+  assert.ok(leadReading, 'the fact-selected Behavior is part of the birth reading');
+  assert.match(await fs.readFile(leadReading, 'utf8'), /immediate reading\s+assignment/);
+  const ordinary = await resolveForm(commonsForm({ team: 'builders', team_lead: false }), new Set());
+  assert.ok(!ordinary.birth_reading.some((file) => file.endsWith('/conditional/team-lead.md')));
 });
 
 test('Mika house mechanics resolve explicitly', async () => {
@@ -466,8 +469,9 @@ test('kind and behaviours resolve at birth, with unusable books reported as unde
     behaviours: ['mandates', 'write_it_down', 'ways:not_there'],
   }), new Set());
   assert.equal(born.kind, 'coding');
-  assert.deepEqual(born.behaviours.map((row) => row.book), ['mandates', 'checkout', 'write_it_down']);
+  assert.deepEqual(born.behaviours.map((row) => row.book), ['mandates', 'cowork-agent', 'checkout', 'write_it_down']);
   assert.ok(born.birth_reading.some((file) => file.endsWith('/behaviours/floor/mandates.md')), 'the floor folder is applied');
+  assert.ok(born.birth_reading.some((file) => file.endsWith('/behaviours/floor/cowork-agent.md')), 'every Cowork Agent receives its floor guidance');
   assert.ok(born.birth_reading.some((file) => file.endsWith('/behaviours/selected/write_it_down.md')));
   assert.deepEqual(born.ignored, []);
   assert.deepEqual(born.undelivered, ['ways:not_there']);

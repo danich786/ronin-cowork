@@ -40,7 +40,7 @@ import { count } from '../counts.js';
 import { announceTeamChanges } from './wipeboards-api.js';
 import { writeTeams } from '../tegami.js';
 import { readTegami } from '../tegami-read.js';
-import { coworkTeamCapabilityPath } from '../spawn.js';
+import { conditionalBehaviourPath } from '../behaviours.js';
 import { emitSessionEnd } from '../sockets.js';
 import { resumeAgentArgv } from '../agents.js';
 import { listTeamRosters } from '../team-rosters.js';
@@ -62,6 +62,10 @@ import { hardDeleteConfirmation, shutdownAgent, ShutdownRefused, ShutdownSlots, 
 import { listDesks } from '../desks/registry.js';
 
 interface PreparedEnding { proceed: boolean; acknowledgement?: Record<string, unknown> }
+
+export const teamLeadAcknowledgement = (teams: readonly string[], reading?: string): string =>
+  `You are now the team_lead of ${teams.map((team) => `"${team}"`).join(', ')}. ` +
+  `Reading assignment: read ${reading ?? 'the Team lead conditional Behavior'} now for what a Team lead does.`;
 
 interface ShutdownOperation extends ShutdownProgress {
   id: string;
@@ -499,9 +503,8 @@ export function registerSessions(app: express.Express): void {
       const fresh = leads.filter((t) => !before.includes(t));
       let delivered: string | null = null;
       if (fresh.length) {
-          const msg =
-            `You are now the team_lead of ${fresh.map((t) => `"${t}"`).join(', ')}. ` +
-            `Read the "When you are the designated Team lead" section in ${coworkTeamCapabilityPath()}.`;
+          const reading = await conditionalBehaviourPath('team-lead');
+          const msg = teamLeadAcknowledgement(fresh, reading);
           const sent = await sendText(name, msg).catch(() => null);
           delivered = sent?.started ? 'delivered' : 'not delivered — the prompt was not accepting input';
       }

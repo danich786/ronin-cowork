@@ -110,10 +110,9 @@ test('conditional arrangement pages are fact-selected for birth', async () => {
   }
 });
 
-test('the core points at both arrangement pages and the Routine manifest is gone', async () => {
+test('the desk capability points at the managed arrangement page and the Routine manifest is gone', async () => {
   const repo = path.join(path.dirname(new URL(import.meta.url).pathname), '..');
-  const core = await readFile(path.join(repo, 'ronin_session_boot', 'all', 'BASE_ABILITIES.md'), 'utf8');
+  const core = await readFile(path.join(repo, 'ronin_catalogs', 'capabilities', 'worktree-desk.md'), 'utf8');
   assert.match(core, /ronin_catalogs\/behaviours\/conditional\/worktree-root\.md/);
-  assert.match(core, /ronin_catalogs\/behaviours\/conditional\/checkout\.md/);
   await assert.rejects(readFile(path.join(repo, 'ronin_catalogs', 'routines', 'ronin_worktrees.md')), /ENOENT/);
 });

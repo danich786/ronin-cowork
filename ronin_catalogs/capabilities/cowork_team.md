@@ -3,13 +3,14 @@
 - **blurb:** How do I create or inspect a Team, keep its record and projects truthful, and move project custody?
 - **class:** cowork
 - **requires:** —
-- **lead_section:** When you are the designated Team lead
 - **order:** 60
 
 Reach for the Team tools when the question concerns a Team's existence or shared state:
 create or inspect its canonical roster, inspect its members and projects, maintain the
 projects it holds, or move project custody. Every Agent keeps its personal work record;
 the Team roster holds Team facts and unassigned projects.
+
+**New Team** means create the canonical Team record with `team roster write`.
 
 **Live tools:** the shipped `team` dispatcher owns Team records and projects.
 Universal `session_create` remains the visible Agent-creation path; this capability does
@@ -58,24 +59,5 @@ explicit designation, never inferred from capability selection or from using thi
 When a designated lead delegates visible work, universal `session_create` creates the
 Agent and `team project assign` moves a roster-held project to it.
 
-Promotion is the lead's: hand-ins reach the Team line, and the lead moves the coherent Team
-line to `dev` once, on the owner's word. Never promote mid-refactor.
-
-## When you are the designated Team lead
-
-Leading is an explicit session designation, never a capability or Behavior selection.
-This section is added to the generated Build Brief when `team_lead` is true.
-
-Read the roster and wipeboard before directing work. The roster owns the Team objective,
-defaults, project inbox, backlog, and done list; live membership is resolved from session
-facts. Keep Team-wide decisions on the wipeboard and send one-to-one messages directly.
-
-Raise visible Agents one at a time with `session_create --prompt <purpose>`. A newborn
-resolves its own Campaign and Team context and reads its own packet; it does not inherit
-the caller's conversation. Create a Team-held Project before delegating substantial work,
-then move that one canonical Project with `team project assign` rather than copying it.
-
-For code work, assign a managed desk from `dev` for new work or from the Team line when the
-Agent is joining work already in flight. The desk source changes where the private branch
-starts, not where it hands in. Review coherent Team work, ask the owner before promotion,
-and promote the Team line once rather than landing a refactor piecemeal.
+Lead-specific working guidance is a conditional Behavior applied from the explicit
+session designation. This capability remains the tool teaching for every Cowork Agent.

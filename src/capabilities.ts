@@ -51,8 +51,6 @@ export interface CapabilityRow {
   tools: CapabilityTool[];
   /** Predicates that must all hold for the bundle to be selected; blank means every Cowork Agent. */
   requires: string[];
-  text?: string;
-  leadSection?: string;
 }
 
 /**
@@ -144,8 +142,6 @@ const capabilityRow = (d: Definition): CapabilityRow => {
     class: (CAPABILITY_CLASSES as readonly string[]).includes(klass) ? klass as CapabilityClass : 'cowork',
     tools: parseToolsTable(d.text),
     requires: splitDefinitionList(d.get('requires')),
-    text: d.text,
-    leadSection: d.get('lead_section'),
   };
 };
 
@@ -249,16 +245,7 @@ const code = (text: string): string => `\`${text}\``;
  * beside it). A bundle with no projected tool says so in one line; its document is the
  * teaching.
  */
-const sectionBody = (text: string, title: string): string => {
-  if (!title) return '';
-  const at = text.split('\n').findIndex((line) => line.trim().toLowerCase() === `## ${title}`.toLowerCase());
-  if (at === -1) return '';
-  return text.split('\n').slice(at + 1).findIndex((line) => /^##\s+/.test(line)) === -1
-    ? text.split('\n').slice(at + 1).join('\n').trim()
-    : text.split('\n').slice(at + 1, at + 1 + text.split('\n').slice(at + 1).findIndex((line) => /^##\s+/.test(line))).join('\n').trim();
-};
-
-export function renderCapabilitiesOverview(rows: readonly ResolvedCapability[], facts?: Pick<CapabilityFacts, 'lead'>): string {
+export function renderCapabilitiesOverview(rows: readonly ResolvedCapability[]): string {
   const selected = selectedCapabilities(rows);
   const lines = ['# YOUR TOOLS — the capability bundles this session can use', '', LESSON, ''];
   if (!selected.length) {
@@ -283,10 +270,6 @@ export function renderCapabilitiesOverview(rows: readonly ResolvedCapability[], 
       lines.push('- **Tools:** none projected on this box yet — the document is the teaching.');
     }
     lines.push(`- **Full document:** ${code(row.file)}`, '');
-    if (facts?.lead && row.leadSection) {
-      const teaching = sectionBody(row.text ?? '', row.leadSection);
-      if (teaching) lines.push(`#### ${row.leadSection}`, '', teaching, '');
-    }
   }
   return lines.join('\n');
 }

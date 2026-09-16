@@ -572,6 +572,7 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **setup_surface.preferred_feature_short:** Capability
 - **setup_surface.reasons_short:** Describes you
 - **setup_surface.run_location_short:** Install on
+- **setup_surface.user_intro:** Introduce yourself to your Cowork Agents (up to two short lines)
 - **ask.none:** None
 - **ask.chosen:** {n} chosen
 - **ask.find:** type to find

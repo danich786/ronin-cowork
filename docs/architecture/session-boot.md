@@ -101,14 +101,11 @@ terminator, so the tape says what arrived. Measured 2026-09-04: Codex delivers ~
 per shell read, Claude Code 30,000 chars per Bash call and 25,000 tokens per Read, and both
 open a file in a first window of ~250 lines — which is why the contracts come first.
 
-Three universal shelf files and two generated fragments, compiled in reading order —
-the contracts first, then the maps and glossary — and held to the
+Two universal background files and two generated fragments, compiled in reading order —
+then the tool map and glossary — and held to the
 one-read budget (`PACKET_BUDGET` in `src/birth-readme.ts`) by `tests/session-boot.test.ts`
 on the real shelf:
 
-- **`all/README.md`** — the map of where everything is **and what is on each shelf**. Each roster
-  sits beside the `ls` that resolves the live truth, stores included, and the directory
-  wins whenever the two disagree.
 - **`all/RONIN_UTILITY.md`** — the coworkspace for an Agent: the pages, the three
   workbenches and their surfaces, the tile head's buttons, Locked and Unlocked, copy and paste.
 - **`all/KOTOBA_GLOSSARY.md`** — the house names (TEGAMI, RIREKI, the wipeboard …) and the
@@ -123,8 +120,9 @@ on the real shelf:
   Behavior, or explanatory document rather than a capability.
   The generated copy is disposable data as an internal compiler fragment.
 
-Abilities belong to the Cowork Agent itself (`all/BASE_ABILITIES.md`), to a system
-installation (Ronin Services) or to a feature (Ronin Host, gbrain); see
+General Cowork Agent guidance belongs to the Behavior floor (`floor/cowork-agent.md` and
+`floor/mandates.md`). System teaching belongs to an installation (Ronin Services) or to a
+feature (Ronin Host, gbrain); see
 [`docs/architecture/installations.md`](installations.md). Test
 protocols are repository-contributor instructions and never enter user birth reading.
 The compiled result lives as `README.md` beside that session's letter and birth receipt.

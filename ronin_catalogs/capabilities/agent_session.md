@@ -13,6 +13,10 @@ for a particular topic, with that topic supplied in its prompt. Never interpret 
 phrases as permission to spawn a sub-agent inside your CLI. CLI-internal **spawn** is
 a separate action and requires the owner's explicit permission.
 
+**Fork it** and **New Agent** both mean create a visible session with `session_create`.
+**Close session** means end this Agent safely with `session_end` after its custody
+preflight succeeds.
+
 **Live tools:** every command in the table below ships in `ronin_bin/`.
 
 ## Tools

@@ -146,6 +146,7 @@ function createRegisterSurface(context) {
     ['virtual_machine', 'Virtual machine'], ['personal_server', 'Personal server'], ['personal_computer', 'Personal computer'],
   ], { short: t('setup_surface.run_location_short', 'Install on') });
   const own = el('textarea'); own.name = 'own_words'; own.rows = 3;
+  const userIntro = el('textarea'); userIntro.name = 'user_intro'; userIntro.rows = 2; userIntro.maxLength = 361;
   const identity = el('div', 'setup-registration-identity');
   const form = el('form', 'setup-form setup-register-form');
   const welcome = el('div', 'setup-register-welcome');
@@ -162,9 +163,11 @@ function createRegisterSurface(context) {
   kind.wrap.classList.add('setup-register-full');
   const ownField = field(t('setup_surface.own_words', 'Anything else'), own);
   ownField.classList.add('setup-register-full');
+  const userIntroField = field(t('setup_surface.user_intro', 'Introduce yourself to your Cowork Agents (up to two short lines)'), userIntro);
+  userIntroField.classList.add('setup-register-full');
   fit.append(
     el('h3', '', t('setup_surface.ronin_fit', 'What brings you here')), preferredFeature.wrap, reasons.wrap, kind.wrap, kindOther,
-    ownField,
+    userIntroField, ownField,
   );
   const consent = el('p', 'setup-fine setup-register-consent', t('setup_surface.consent_exact', 'Email registration sends a confirmation and can unlock Ronin Services. Anonymous registration sends these answers without contact details. Communication stays off unless you choose otherwise.'));
   const declined = el('p', 'setup-register-declined', t('setup_surface.no_thanks_message', 'We hope you enjoy Ronin. If you’d like to share feedback later, we’d be glad to hear it.'));
@@ -176,7 +179,7 @@ function createRegisterSurface(context) {
       identity_mode: anonymous ? 'anonymous' : 'email', email: email.value, purpose: '',
       kind: kind.value.value, kind_other: kindOther.value, user_type: '', goals: [], preferred_feature: preferredFeature.value.value,
       reasons: reasons.values(), reason_other: reasons.other.value, run_location: runLocation.value.value,
-      intended_use: [], theme_preference: '', own_words: own.value,
+      intended_use: [], theme_preference: '', user_intro: userIntro.value, own_words: own.value,
     } });
     notice.textContent = result.ok
       ? anonymous ? t('setup_surface.anonymous_saved', 'Thanks — your anonymous hello was sent to Ronin.') : t('setup_surface.confirm_email', 'Registration saved. Confirm the email to receive Services entitlement.')
@@ -258,7 +261,7 @@ function createRegisterSurface(context) {
         kind: current.kind, kind_other: current.kind_other, user_type: current.user_type, goals: current.goals,
         preferred_feature: current.preferred_feature, reasons: current.reasons, reason_other: current.reason_other, run_location: current.run_location,
         intended_use: current.intended_use,
-        theme_preference: current.theme_preference, own_words: current.own_words,
+        theme_preference: current.theme_preference, user_intro: current.user_intro, own_words: current.own_words,
       } });
       notice.textContent = result.ok ? t('setup_surface.registration_address_changed', 'Registration email changed; check the new address.') : result.message;
       if (result.ok) { current = result.data; paint(); }

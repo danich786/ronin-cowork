@@ -207,10 +207,6 @@ async function bootReading(
   return bootFiles(projectRoot, mcpOn, routineReading, capabilitiesOverview, session, soughtOverview);
 }
 
-export function coworkTeamCapabilityPath(): string {
-  return path.join(REPO_ROOT, 'ronin_catalogs', 'capabilities', 'cowork_team.md');
-}
-
 export async function resolveForm(
   form: SpawnForm,
   taken: Set<string>,
@@ -437,7 +433,7 @@ export async function resolveForm(
         root.name,
         !mcpOffWanted,
         enabledReading,
-        form.house_seat === 'mika' ? undefined : renderCapabilitiesOverview(capabilities, { lead: !!form.team_lead && !!form.team }),
+        form.house_seat === 'mika' ? undefined : renderCapabilitiesOverview(capabilities),
         name,
         soughtBehaviours.length ? await renderSoughtOverview(soughtBehaviours) : undefined,
       )
@@ -446,7 +442,15 @@ export async function resolveForm(
   // "Full document" line, not as shelf cards: the packet has a one-read budget and the
   // fullest stock birth already sits within 2 KB of it with the overview inlined.
   const appliedBehaviours = [...floorBehaviours, ...conditionalBehaviours, ...resolvedBehaviours.delivered];
-  const completeReading = [...shelfReading, ...appliedBehaviours.map((book) => book.file)];
+  const glossaryReading = shelfReading.filter((file) => path.basename(file) === 'KOTOBA_GLOSSARY.md');
+  const backgroundReading = shelfReading.filter((file) => path.basename(file) !== 'KOTOBA_GLOSSARY.md');
+  // Working guidance comes first; Session Boot is background. Keep the rendered glossary
+  // last because it is reference and the least costly part of a truncated first window.
+  const completeReading = [
+    ...appliedBehaviours.map((book) => book.file),
+    ...backgroundReading,
+    ...glossaryReading,
+  ];
   const birthReading = coworkAgent && agent
     ? [...completeReading, ...(form.seed ?? [])].filter(Boolean)
     : [];

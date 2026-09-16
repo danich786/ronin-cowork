@@ -25,3 +25,7 @@ Each definition carries `scope`, optional `label`, `blurb`, `installation`, `req
 `reading`, `tools`, `mcp`, and `order` keys as needed. The directory and declared `scope`
 must agree. There is no `situational`, SOP, practices, reference, or docs sub-shelf here.
 Ordinary searchable operator and product explanation belongs in `docs/`.
+
+Registration may add the owner's `floor/user-intro.md` to the owner `ways` store. It is a
+maximum two-line introduction compiled into every Cowork Agent's README; blank registration
+text removes it. The registration record is canonical, so there is no maintained index.
