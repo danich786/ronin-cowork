@@ -9,10 +9,17 @@ current syntax and resolves the repository's declared arrangement; do not reprod
 guarded work with raw Git worktree commands.
 
 An assigned desk is a private branch and worktree. Compare `worktree-desk status --assignment`
-with the brief before writing. `worktree-desk sync <repo>` adopts accepted dev
-changes; commit preserves a coherent checkpoint on the private desk; `worktree-desk hand-in
-<repo>` admits committed work to the Team review line. None of those operations is Git
-push.
+with the brief before writing. `worktree-desk sync <repo>` merges global dev by default.
+Use `--source team` for the shared Team review line, `--source lead` for the Team lead’s
+private desk, or `--source <repo:branch>` for a specific teammate’s desk in the same repo.
+Only committed work merges. Read the acknowledgement: exact source SHA, destination
+before/after HEAD, and merged, already-contained, pending, or conflict. Unsaved source
+files are excluded; pending/conflict leaves your files untouched. Resolve conflicts on
+your private desk, using the reported commit, then commit and hand in.
+
+Commit preserves a private checkpoint; `worktree-desk hand-in <repo>` admits committed
+work to Team review. Sync changes neither source custody nor your hand-in destination.
+None of those operations is Git push.
 
 If no desk was named, `worktree-desk open <repo>` either opens one or reports that the
 repository uses its checkout. A contradiction between the assignment and status is the

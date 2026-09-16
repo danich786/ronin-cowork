@@ -48,6 +48,8 @@ export function createGithubWorkspaceSetup({ environment, workspace = 'workspace
   let checking = false;
   let connecting = false;
   let removing = false;
+  let loginAccount = null;
+  let measuring = false;
   let cloning = false;
   let destroyed = false;
   let closing = null;
@@ -88,9 +90,9 @@ export function createGithubWorkspaceSetup({ environment, workspace = 'workspace
       ? t('roots.github_clone_ready', 'GitHub is connected. Enter the repository you want to clone.')
       : t('roots.github_clone_needs_auth', 'Authenticate GitHub first.');
     connect.hidden = authenticated || !installed;
-    connect.disabled = connecting;
+    connect.disabled = connecting || removing || Boolean(mounted);
     remove.hidden = !authenticated || !installed;
-    remove.disabled = removing;
+    remove.disabled = removing || connecting || Boolean(mounted);
     cloneButton.disabled = cloning || !authenticated || !repository.value.trim();
     items[0].state = authenticated
       ? t('roots.github_auth_connected_state', 'Connected{account}', { account: account ? ` · ${account}` : '' })
@@ -114,15 +116,22 @@ export function createGithubWorkspaceSetup({ environment, workspace = 'workspace
     return Boolean(mounted);
   };
   const show = async () => {
+    if (measuring || destroyed) return null;
+    measuring = true; paint({ installed, authenticated, account });
     const result = await request('/api/setup/github', { cache: 'no-store' });
+    measuring = false;
+    if (destroyed) return result;
     if (result.ok) {
       paint(result.data);
-      if (!result.data?.authenticated) mountAttachment(result.data?.attachment);
-    } else state.textContent = result.message;
+      if (result.data?.attachment) {
+        if (loginAccount === null) loginAccount = result.data.account || '';
+        mountAttachment(result.data.attachment);
+      }
+    } else { paint({ installed, authenticated, account }); state.textContent = result.message; }
     return result;
   };
   const teardown = async (closeRemote = false) => {
-    stopWatch(); unmount();
+    stopWatch(); unmount(); loginAccount = null;
     if (!closeRemote || closing) return closing;
     closing = request('/api/setup/github/close', { method: 'POST' }).then((result) => {
       if (result.ok) paint(result.data); else if (!destroyed) state.textContent = result.message;
@@ -140,20 +149,21 @@ export function createGithubWorkspaceSetup({ environment, workspace = 'workspace
     checking = true;
     try {
       const result = await request('/api/setup/github', { cache: 'no-store' });
-      if (result.ok && result.data?.authenticated) await finishAuthentication(result.data);
+      if (result.ok && result.data?.authenticated && (loginAccount === null || result.data.account !== loginAccount)) await finishAuthentication(result.data);
     } finally { checking = false; }
   };
 
   repository.addEventListener('input', () => paint({ installed, authenticated, account }));
   connect.addEventListener('click', async () => {
     if (connecting || mounted || destroyed) return;
+    loginAccount = account;
     connecting = true; connect.disabled = true;
     try {
       const result = await request('/api/setup/github/login', { method: 'POST' });
-      if (!result.ok) { state.textContent = result.message; return; }
+      if (!result.ok) { connecting = false; paint({ installed, authenticated, account }); state.textContent = result.message; return; }
       paint(result.data);
       mountAttachment(result.data?.attachment);
-    } finally { connecting = false; connect.disabled = false; }
+    } finally { connecting = false; connect.disabled = removing || Boolean(mounted); }
   });
   remove.addEventListener('click', async () => {
     if (removing || !authenticated || destroyed) return;
@@ -166,7 +176,7 @@ export function createGithubWorkspaceSetup({ environment, workspace = 'workspace
   });
   done.addEventListener('click', async () => {
     const result = await show();
-    if (!result.ok) return;
+    if (!result?.ok) return;
     if (!result.data?.authenticated) { state.textContent = t('roots.github_waiting', 'Finish GitHub authentication in the window first.'); return; }
     await finishAuthentication(result.data);
   });

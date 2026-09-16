@@ -113,9 +113,14 @@ resulting line, and contributing session.
 
 A hand-in moves the line and nothing else: no desk, the handing-in one included, is
 merged or rewritten by it. A desk takes in accepted work only when its session runs
-`worktree-desk sync`, which merges local `dev`; the team line is never merged into a desk.
-After `ACCEPTED` the desk is level with the line because its tip is a parent of the line's
-new merge commit, not because the desk moved. The tool then tells the team lead itself,
+`worktree-desk sync`, which defaults to local `dev`. An explicit `--source team` merges
+the shared Team line; `--source lead` resolves a lead-owned desk; `--source <repo:branch>`
+selects a particular same-repository desk. Each operation resolves one exact commit,
+merges committed history only, and reports source SHA and destination before/after HEAD.
+Ambiguous lead desks require an explicit desk. Source files, custody, and the hand-in
+destination are unchanged. This is opt-in adoption, never a side effect of hand-in.
+After `ACCEPTED` the desk’s tip is contained in the line’s new merge commit; the desk
+itself has not moved and may still lack other Team work. The tool then tells the team lead itself,
 in the lead's tile (or on the team wipeboard when the tile cannot take it); a team with no
 lead gets one sentence back saying nobody was told.
 

@@ -23,7 +23,7 @@ test('Setup and Settings use the same Workspace Folders stone presentation', asy
 test('Setup 2 GitHub lifecycle uses only a published session and hands success to Clone', async () => {
   const github = await source('public/js/github-workspace-setup.js');
   assert.match(github, /attachment\?\.type !== 'session' \|\| !attachment\.key/);
-  assert.match(github, /if \(!result\.data\?\.authenticated\) mountAttachment\(result\.data\?\.attachment\)/, 're-entering resumes the published temporary session');
+  assert.match(github, /mountAttachment\(result\.data\.attachment\)/, 're-entering resumes the published temporary session');
   assert.match(github, /if \(connecting \|\| mounted \|\| destroyed\) return/);
   assert.match(github, /if \(checking \|\| destroyed\) return/);
   assert.match(github, /stopWatch\(\); unmount\(\)/);

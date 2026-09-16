@@ -441,3 +441,26 @@ test('Setup kinds are canonical runtime facts and persist without replacing setu
 });
 
 test.after(async () => { await rm(box, { recursive: true, force: true }); });
+
+
+test('GitHub sign-out removes only the displayed account and measures the remaining login', async () => {
+  let account = 'octo-cat';
+  const removed: string[] = [];
+  const ops: runtime.GithubSetupOps = {
+    installed: async () => true,
+    authStatus: async () => account ? `  ✓ Logged in to github.com account ${account} (keyring)` : '',
+    exists: async () => false,
+    open: async () => undefined,
+    close: async () => undefined,
+    logout: async (name) => { removed.push(name); account = 'another-cat'; },
+  };
+  await assert.rejects(runtime.logoutGithub('stale-cat', ops), /account changed/);
+  await assert.rejects(runtime.logoutGithub(undefined, ops), /account changed/);
+  assert.deepEqual(removed, []);
+  const remaining = await runtime.logoutGithub('octo-cat', ops);
+  assert.deepEqual(removed, ['octo-cat']);
+  assert.equal(remaining.account, 'another-cat');
+  assert.equal(remaining.authenticated, true);
+  ops.logout = async () => { account = ''; };
+  assert.equal((await runtime.logoutGithub('another-cat', ops)).authenticated, false);
+});

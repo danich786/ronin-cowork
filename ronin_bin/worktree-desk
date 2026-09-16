@@ -5,7 +5,7 @@
 # Usage: worktree-desk status [--session s | --team t | --repo r]   per desk: clean/dirty · ahead · pending · blocked
 #        worktree-desk open <repo[:branch]> [--team t]              get a desk from current local dev
 #        worktree-desk hand-in [<repo[:branch]>] [--assignment] [--project <id>]  hand your committed delta to the team line
-#        worktree-desk sync [<repo[:branch]>]                       update the desk from current local dev
+#        worktree-desk sync [<repo[:branch]>] [--source dev|team|lead|<repo:branch>]                       merge the selected committed source into the desk
 #        worktree-desk close [<repo[:branch]>]                      remove a clean desk whose tip is on its line
 #        worktree-desk repository-init <existing-project-root>      initialize a local repository
 #
@@ -27,7 +27,7 @@ Usage:
   worktree-desk open <repo[:branch]> [--source dev|team]
   worktree-desk assign <repo[:branch]> --session <name> --team <team> [--source dev|team]
   worktree-desk status [<repo[:branch]>] [--assignment]
-  worktree-desk sync [<repo[:branch]>]
+  worktree-desk sync [<repo[:branch]>] [--source dev|team|lead|<repo:branch>]
   worktree-desk hand-in [<repo[:branch]>] [--assignment] [--project <team/id>]
   worktree-desk close [<repo[:branch]>] [--with-session]
   worktree-desk receipts [<repo>] [--line | --id <receipt-id>]
@@ -38,9 +38,14 @@ Usage:
 
 Common tasks:
   Start fresh work with --source dev; use --source team when joining ongoing Team work.
-  Check status when surprised, sync accepted dev changes, commit, then hand in.
+  Sync defaults to global dev. --source team selects the shared Team review line.
+  --source lead selects the Team lead's private desk; name repo:branch if ambiguous.
+  --source <repo:branch> selects any recorded desk in the same repository.
+  Only committed work is merged. Unsaved source files stay at the source.
+  The acknowledgement names the exact source commit and before/after destination HEAD.
+  Check the result: merged, already contained, pending, or conflicted. Then hand in.
 
-Open creates a private desk; sync merges local dev; hand-in admits committed work to
+Open creates a private desk; sync merges your selected source; hand-in admits committed work to
 the Team review line. Assign lets the lead choose the same source for another Agent;
 receipts are the publication record; handoff transfers custody without moving work.
 None performs Git push. Close only removes a clean, integrated desk. Discard is the

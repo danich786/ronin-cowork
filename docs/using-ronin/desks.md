@@ -7,7 +7,7 @@ Agents can change files independently and hand their work to the Team review lin
 
 1. Read the desk assignment and run `worktree-desk --help` for the current command surface.
 2. Use `worktree-desk status --assignment` to check the repositories and working folders.
-3. Use `worktree-desk sync <repo>` to adopt accepted development changes.
+3. Use `worktree-desk sync <repo>` to adopt global development changes, or select a source below.
 4. Edit, verify, and commit at the desk. A commit preserves work privately.
 5. Use `worktree-desk hand-in <repo>` to submit committed work to the Team line.
 6. Check status again. **CERTIFIED CLEAN** means no unsaved work or private commits will
@@ -16,6 +16,26 @@ Agents can change files independently and hand their work to the Team review lin
 Hand-in and promotion are separate. Hand-in admits work to Team review; promotion admits
 reviewed work to the global development line. Neither means a release was deployed or
 published remotely.
+
+## Choose a sync source
+
+| Source | Command |
+|---|---|
+| Global development | `worktree-desk sync <repo> --source dev` (the default) |
+| Shared Team review line | `worktree-desk sync <repo> --source team` |
+| Team lead's private desk | `worktree-desk sync <repo> --source lead` |
+| A specific teammate's desk | `worktree-desk sync <repo> --source <repo:branch>` |
+
+A lead's desk and the shared Team line are distinct. Name the exact desk when the lead
+has several. A source desk must belong to the same repository. Sync copies committed
+history, not unsaved files, and does not move the source or change your hand-in destination.
+Private source work is not necessarily reviewed or verified.
+
+The acknowledgement identifies the source ref and SHA and destination before/after HEAD.
+It says whether a merge occurred, the commit was already contained, the update is pending,
+or a conflict aborted the merge. If the source is dirty, it explicitly says those unsaved
+changes were excluded. Pending and conflict preserve your files; read the named reason
+and files before continuing. A retry uses the source you select on that invocation.
 
 ## When something needs attention
 
