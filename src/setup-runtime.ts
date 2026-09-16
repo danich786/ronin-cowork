@@ -18,7 +18,7 @@ import type { InstalledAnswer } from './routes/installed-api.js';
 export const PROVIDER_SETUP_TEAM = 'provider_setup';
 export const INSTALLED_ROOTS = [
   { name: 'ronin_lab', label: 'Ronin Lab', remit: 'Ideas, assistants, notes, research, and pre-project work.', managed: false },
-  { name: 'ronin_project_1', label: 'Ronin Project 1', remit: 'The first project-shaped workspace folder.', managed: true },
+  { name: 'project_one', label: 'Project One', remit: 'The first project-shaped workspace folder.', managed: true },
 ] as const;
 
 export const SETUP_PREFERENCE_KINDS = ['build', 'life', 'research', 'other'] as const;
@@ -357,6 +357,7 @@ async function git(dir: string, args: string[]): Promise<string> {
 }
 
 const GITHUB_SETUP_SESSION = 'setup_github';
+const GITHUB_INSTALL_SESSION = 'install_github';
 
 export type GithubSetupState = 'missing' | 'needs_authentication' | 'authenticated';
 export interface GithubSetupAnswer {
@@ -364,6 +365,7 @@ export interface GithubSetupAnswer {
   authenticated: boolean;
   account: string;
   state: GithubSetupState;
+  installing: boolean;
   attachment: { type: 'session'; key: string; team: typeof PROVIDER_SETUP_TEAM; temporary: true } | null;
 }
 
@@ -371,8 +373,11 @@ export interface GithubSetupOps {
   installed(): Promise<boolean>;
   authStatus(): Promise<string>;
   exists(): Promise<boolean>;
+  installExists(): Promise<boolean>;
   open(): Promise<void>;
+  openInstall(): Promise<void>;
   close(): Promise<void>;
+  closeInstall(): Promise<void>;
   logout(account: string): Promise<void>;
 }
 
@@ -397,13 +402,44 @@ export async function createGithubSetupSession(primitives: GithubSessionPrimitiv
   });
 }
 
+/** GitHub's supported package paths, run visibly because system package managers may ask for sudo. */
+export function githubInstallCommand(platform = os.platform()): string {
+  if (platform === 'darwin') return 'command -v brew >/dev/null || { echo "Homebrew is required to install GitHub CLI on macOS: https://brew.sh"; exit 1; }; brew install gh';
+  if (platform === 'linux') return [
+    'if [ "$(id -u)" -eq 0 ]; then SUDO=""; elif command -v sudo >/dev/null; then SUDO=sudo; else echo "Installing GitHub CLI requires sudo on this Linux machine."; exit 1; fi',
+    'if command -v brew >/dev/null; then brew install gh',
+    'elif command -v apt-get >/dev/null; then (command -v wget >/dev/null || ($SUDO apt-get update && $SUDO apt-get install -y wget)) && $SUDO mkdir -p -m 755 /etc/apt/keyrings && GH_KEY=$(mktemp) && wget -nv -O"$GH_KEY" https://cli.github.com/packages/githubcli-archive-keyring.gpg && $SUDO tee /etc/apt/keyrings/githubcli-archive-keyring.gpg <"$GH_KEY" >/dev/null && $SUDO chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | $SUDO tee /etc/apt/sources.list.d/github-cli.list >/dev/null && $SUDO apt-get update && $SUDO apt-get install -y gh',
+    'elif command -v dnf >/dev/null; then $SUDO dnf install -y gh',
+    'elif command -v yum >/dev/null; then $SUDO yum install -y gh',
+    'elif command -v pacman >/dev/null; then $SUDO pacman -S --needed github-cli',
+    'else echo "No supported GitHub CLI package manager was found. See https://cli.github.com/"; exit 1; fi',
+  ].join('; ');
+  throw new Error('GitHub CLI installation is supported on macOS and Linux.');
+}
+
+export async function createGithubInstallSession(primitives: GithubSessionPrimitives = {
+  create: createSession,
+  tag: async (name, tags) => { await setTags(name, tags); },
+  identify: setSessionIdentity,
+}): Promise<void> {
+  await primitives.create(GITHUB_INSTALL_SESSION, os.homedir(), { agent: false, argv: [] });
+  await primitives.tag(GITHUB_INSTALL_SESSION, [PROVIDER_SETUP_TEAM]);
+  await primitives.identify(GITHUB_INSTALL_SESSION, {
+    sessionType: 'provider_setup', cli: 'gh', provider: 'github', model: '',
+  });
+  await runCommand(GITHUB_INSTALL_SESSION, githubInstallCommand());
+}
+
 const defaultGithubSetupOps: GithubSetupOps = {
   installed: () => run('gh', ['--version'], { timeout: 5_000 }).then(() => true, () => false),
   authStatus: () => run('gh', ['auth', 'status', '--hostname', 'github.com', '--active'], { timeout: 8_000 })
     .then((result) => result.stderr || result.stdout, () => ''),
   exists: () => sessionExists(GITHUB_SETUP_SESSION),
+  installExists: () => sessionExists(GITHUB_INSTALL_SESSION),
   open: () => createGithubSetupSession(),
+  openInstall: () => createGithubInstallSession(),
   close: () => killSessionTree(GITHUB_SETUP_SESSION),
+  closeInstall: () => killSessionTree(GITHUB_INSTALL_SESSION),
   logout: (account) => run('gh', ['auth', 'logout', '--hostname', 'github.com', '--user', account], { timeout: 8_000 }).then(() => undefined),
 };
 
@@ -415,15 +451,23 @@ export function githubAccountFromStatus(status: string): string {
 export async function githubSetupAnswer(ops: GithubSetupOps = defaultGithubSetupOps): Promise<GithubSetupAnswer> {
   const installed = await ops.installed();
   const account = installed ? githubAccountFromStatus(await ops.authStatus()) : '';
-  const open = await ops.exists();
+  const [open, installing] = await Promise.all([ops.exists(), ops.installExists()]);
   const authenticated = account !== '';
   return {
     installed,
     authenticated,
     account,
     state: !installed ? 'missing' : authenticated ? 'authenticated' : 'needs_authentication',
-    attachment: open ? { type: 'session', key: GITHUB_SETUP_SESSION, team: PROVIDER_SETUP_TEAM, temporary: true } : null,
+    installing,
+    attachment: installing ? { type: 'session', key: GITHUB_INSTALL_SESSION, team: PROVIDER_SETUP_TEAM, temporary: true }
+      : open ? { type: 'session', key: GITHUB_SETUP_SESSION, team: PROVIDER_SETUP_TEAM, temporary: true } : null,
   };
+}
+
+export async function openGithubInstall(ops: GithubSetupOps = defaultGithubSetupOps): Promise<GithubSetupAnswer> {
+  if (await ops.installed()) return githubSetupAnswer(ops);
+  if (!(await ops.installExists())) await ops.openInstall();
+  return githubSetupAnswer(ops);
 }
 
 export async function openGithubLogin(ops: GithubSetupOps = defaultGithubSetupOps): Promise<GithubSetupAnswer> {
@@ -434,6 +478,7 @@ export async function openGithubLogin(ops: GithubSetupOps = defaultGithubSetupOp
 
 export async function closeGithubLogin(ops: GithubSetupOps = defaultGithubSetupOps): Promise<GithubSetupAnswer> {
   if (await ops.exists()) await ops.close();
+  if (await ops.installExists()) await ops.closeInstall();
   return githubSetupAnswer(ops);
 }
 

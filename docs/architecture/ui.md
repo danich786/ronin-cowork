@@ -481,7 +481,7 @@ wrong-origin, cross-site, replayed and unverified assertions are each proven to 
 **The browser ceremony has never run.** No line of this has met a real
 `navigator.credentials` call, a real Touch ID prompt or a real device; it landed against
 a server that was never restarted to pick it up. Two things are settled only by the owner
-opening `https://<magicdns>:8443` and pressing the button once:
+opening `https://<magicdns>:4810` and pressing the button once:
 
 - **whether `tailscale serve` forwards the original `Host`.** The RP ID derives from it.
   It is built to refuse loudly rather than guess — if `Host` arrives as the IP the

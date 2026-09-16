@@ -9,6 +9,7 @@ import { normalizeGardenCanvasCatalog } from './garden-canvas-model.js';
 import { PRESETS_TYPE, createKindsPreference, registerPresetsSurface } from './presets.js';
 import { launchPresetPlan, presetLaunchUrl } from './preset-launch.js';
 import { reserveWorkspaceTab } from './workspace.js';
+import { setTheme } from './theme.js';
 
 const PROFILE = 'setup';
 // Release toggles: unfinished programs stay out of Setup without changing the workbench.
@@ -41,17 +42,34 @@ export function createSetupView() {
   let providerSurface = null;
   let paintedSceneId = null;
   let completionLoaded = false;
-  let completion = { registered: false, github: false };
+  let completion = { registered: false, github: false, roots: false };
   let installationsComplete = false;
   let launchComplete = false;
   let sceneOverride = 1;
   const providerSessions = createProviderSetupSessionMount();
   const kinds = createKindsPreference(globalThis.localStorage, (next) => request('/api/setup/preferences', { method: 'PATCH', json: { kinds: next } }));
   const nextAction = WorkspaceKit.primitives.createAction({ label: 'Next', launch: true, action: () => advance() });
+  const themeToggle = document.createElement('button');
+  themeToggle.className = 'bar-toggle setup-theme-toggle';
+  themeToggle.type = 'button';
+  const paintTheme = () => {
+    const dark = document.documentElement.dataset.theme === 'dark';
+    themeToggle.textContent = dark ? '☀' : '◐';
+    themeToggle.title = dark ? 'Use light appearance' : 'Use dark appearance';
+    themeToggle.setAttribute('aria-label', themeToggle.title);
+    themeToggle.setAttribute('aria-pressed', String(dark));
+  };
+  themeToggle.addEventListener('click', () => {
+    const dark = document.documentElement.dataset.theme === 'dark';
+    setTheme(dark ? 'light' : 'dark');
+    paintTheme();
+  });
+  paintTheme();
   const blank = (id) => WorkspaceKit.primitives.createBlankSurface(id.replace('workspace', 'Workspace ')).el;
   const environment = {
     setupOnboardingExtras: true,
     onGithubAuthenticated: () => { completion.github = true; paint(); },
+    onWorkspaceFolderChosen: () => { completion.roots = true; save(); paint(); },
     onInstallationsState: (values) => { installationsComplete = Object.values(values || {}).some((value) => value === true); paint(); },
     onSetupLaunched: () => { launchComplete = true; paint(); },
     setupRuntime: null,
@@ -96,14 +114,14 @@ export function createSetupView() {
       open(scene.number);
     },
   };
-  const save = () => ctx?.patchViewState('setup', { ...bench.snapshot(), sceneOverride });
+  const save = () => ctx?.patchViewState('setup', { ...bench.snapshot(), sceneOverride, setupCompletion: { roots: completion.roots } });
   const defaultScene = () => SCENES.find((scene) => !sceneComplete(scene)) || SCENES[SCENES.length - 1];
   const sceneAt = (number) => SCENES[Number(number) - 1] || defaultScene();
   const activeScene = () => sceneAt(sceneOverride);
   const sceneComplete = (scene) => {
     if (scene.type === SETUP_SURFACE_TYPES.providers) return Number(runtime?.activated_count || 0) > 0;
     if (scene.type === SETUP_SURFACE_TYPES.register) return completion.registered || kinds.get().length > 0;
-    if (scene.type === SETUP_SURFACE_TYPES.roots) return completion.github || Boolean(runtime?.roots?.length);
+    if (scene.type === SETUP_SURFACE_TYPES.roots) return completion.github || completion.roots;
     if (scene.type === SETUP_SURFACE_TYPES.installations) return installationsComplete;
     if (scene.type === SETUP_SURFACE_TYPES.launchOwn) return launchComplete;
     return false;
@@ -131,6 +149,16 @@ export function createSetupView() {
       if (scene?.id === active.id) card.setAttribute('aria-current', 'page');
       else card.removeAttribute('aria-current');
       const complete = Boolean(scene && sceneComplete(scene));
+      const blocked = scene?.type === SETUP_SURFACE_TYPES.launchOwn
+        && Number(runtime?.activated_count || 0) < 1;
+      card.disabled = blocked;
+      if (blocked) {
+        card.setAttribute('aria-disabled', 'true');
+        card.title = 'Activate a model provider before launching an Agent, Team, or Preset.';
+      } else {
+        card.removeAttribute('aria-disabled');
+        card.removeAttribute('title');
+      }
       card.dataset.complete = String(complete);
       const heading = card.querySelector('.wk-card-heading');
       let mark = heading?.querySelector('[data-setup-complete-mark]');
@@ -169,6 +197,7 @@ export function createSetupView() {
     title: () => 'Ronin Setup',
     selectorWorkspace: 'workspace2',
     selectorCurrent: true,
+    hintsCollapsed: true,
     selectorFilter: (type) => ORDER.includes(type),
     onSelectorRefresh: paint,
     onStateChange: save,
@@ -191,6 +220,7 @@ export function createSetupView() {
     glyph: '人',
     hideFeedback: true,
     hideShapeControl: true,
+    barActions: [themeToggle],
     title: () => 'Ronin Setup',
     mount: (_host, context) => { ctx = context; },
     enter: async (context) => {
@@ -209,6 +239,7 @@ export function createSetupView() {
         completion = {
           registered: registration.ok && registration.data?.registered === true,
           github: github.ok && github.data?.authenticated === true,
+          roots: false,
         };
         completionLoaded = true;
       }
@@ -217,6 +248,7 @@ export function createSetupView() {
         gardenContent = normalizeGardenCanvasCatalog(result.ok ? result.data : { schema_version: 2, canvases: {} });
       }
       const stored = context.viewState('setup') || {};
+      completion.roots = stored.setupCompletion?.roots === true;
       sceneOverride = defaultScene().number;
       bench.enter({ ...stored, count: 2, arrangement: { ...ARRANGEMENT, widths: stored.arrangement?.widths || ARRANGEMENT.widths } });
       bench.setCount(2);

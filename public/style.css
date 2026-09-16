@@ -2721,12 +2721,6 @@ body {
 .pr-fine.bad, .pr-detail .pr-err { color: var(--bad-soft); }
 .pr-section .pr-fact-list + .pr-fine { margin-top: var(--space-5); }
 /* What a workspace is, above the stones, in the same 14px as the detail. */
-.wk-surface-content.sws-host > .pr-intro { display: grid; gap: var(--space-3); margin: 0; max-width: 44rem; color: var(--muted-2); font-size: var(--text-5); line-height: 1.5; }
-.pr-intro-line { margin: 0; }
-.pr-intro-more { border: 0; background: none; padding: 0; color: var(--kaki); font: inherit; cursor: pointer; text-decoration: underline; }
-.pr-intro-more:hover { color: var(--kaki-lift); }
-.pr-intro-points { display: grid; gap: var(--space-2); margin: 0; padding-left: var(--space-9); }
-.pr-intro-points[hidden] { display: none; }
 /* The folder browser inside the add page: the same face and size, fields and buttons as the
    form's, no second scale of its own. */
 .pr-detail .folder-picker { font-size: inherit; }
@@ -5897,8 +5891,8 @@ button.wb-door:hover b {
 }
 .setup-github-workspace h2, .setup-bounty h2 { margin: 0 0 var(--space-3); font-size: var(--text-8); }
 .setup-github-workspace > p { margin: 0 0 var(--space-4); color: var(--muted-2); }
-.setup-github-actions, .setup-github-clone { display: flex; align-items: end; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-4); }
-.setup-github-actions button, .setup-github-clone button, .setup-bounty > .wk-action { min-height: 34px; }
+.setup-github-clone { display: flex; align-items: end; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-4); }
+.setup-github-clone button, .setup-bounty > .wk-action { min-height: 34px; }
 .setup-github-clone label { display: grid; gap: var(--space-2); flex: 1 1 16rem; }
 .setup-github-clone input { min-height: 34px; padding: 0 var(--space-4); border: var(--edge) solid var(--line); background: var(--panel); color: var(--fg); }
 .setup-github-terminal[hidden] { display: none; }
@@ -5945,12 +5939,14 @@ button.wb-door:hover b {
 .setup-services-beta { display: grid; gap: var(--space-3); border-left: var(--edge-2) solid var(--kaki); padding: var(--space-3) var(--space-6); }
 .setup-services-beta h3 { margin: 0; color: var(--fg-strong); font-size: var(--text-7); font-weight: 650; }
 .setup-services-beta p { margin: 0; color: var(--muted-2); font-size: var(--text-5); line-height: 1.45; }
-.setup-services-lockup { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-5); align-items: center; }
+.setup-services-lockup { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-5); align-items: center; }
 .setup-services-mark { display: block; width: 3.5rem; height: 3.5rem; }
 .setup-services-mark img, .setup-services-mark svg { display: block; width: 100%; height: 100%; object-fit: contain; }
 .setup-services-identity { display: grid; gap: var(--space-2); }
 .setup-services-identity h2 { margin: 0; color: var(--fg-strong); font-size: var(--text-9); font-weight: 600; }
 .setup-services-identity .setup-lede { font-size: var(--text-5); line-height: 1.45; }
+.setup-services-beta-marker { align-self: start; color: var(--kaki); font-size: var(--text-3); letter-spacing: .08em; text-transform: uppercase; }
+.wk-workbench-host[data-workbench-profile='setup'] .wk-workbench-selector-cards > .wk-card:disabled { cursor: not-allowed; opacity: .42; }
 .setup-services-benefits { display: grid; gap: var(--space-4); }
 .setup-services-benefit { display: grid; grid-template-columns: 10rem minmax(0, 1fr); gap: var(--space-2) var(--space-6); align-items: start; border-top: var(--edge-2) solid var(--kaki); background: var(--panel); padding: var(--space-6) var(--space-5); }
 .setup-services-benefit h3, .setup-services-benefit p { margin: 0; }

@@ -20,9 +20,9 @@ location, not another Workspace Folder and not another handle.
 
 ## Installed starting folders
 
-Ronin Setup creates and registers **Ronin Lab** (`ronin_lab`) and **Ronin Project 1**
-(`ronin_project_1`) inside `RONIN_USER_ROOT`, using those lowercase IDs as their directory
-names. Both start as Git repositories with a README and first commit. Project 1 is prepared
+Ronin Setup creates and registers **Ronin Lab** (`ronin_lab`) and **Project One**
+(`project_one`) inside `RONIN_USER_ROOT`, using those lowercase IDs as their directory
+names. Both start as Git repositories with a README and first commit. Project One is prepared
 for reviewed `dev`, stable `main`, and managed worktrees. They are built-in starting places;
 the ordinary add/load-root flow creates separately named user workspaces.
 Ronin Lab holds ideas, research, plans, and notes before or across projects; it is not

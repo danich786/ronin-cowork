@@ -250,47 +250,25 @@ sudo -v
 Continue only after direct key login and sudo both work. All agent authentication, tmux
 sessions, and Ronin files belong to this ordinary account — not root.
 
-## 5. Let Ronin survive logout
+## 5. Check logout persistence
 
-**Do this before installing Ronin, and do not skip it on a rented machine.**
-
-Ronin runs as `systemd --user` units. By default, a user's services are stopped when that
-user's last session ends — which on a headless machine means **the moment the owner closes
-their SSH connection.** They would install Ronin, disconnect, and find it gone.
-
-`loginctl enable-linger` tells systemd to keep that user's service manager running whether
-or not anyone is logged in:
+Ronin's installer detects whether the account's user services survive logout and
+includes enabling linger in its explained administrator approval when needed.
+There is no separate preparation command. After installation, verify:
 
 ```bash
-sudo loginctl enable-linger <account>
 loginctl show-user <account> --property=Linger --value    # expect: yes
 ```
 
-This is the one step on this page that needs `sudo`, and it is the owner's to approve.
-`setup.sh` detects a missing linger and prints this command, and `bin/ronin-doctor` reports
-it as a fault — but by then the owner has already met the symptom. Do it here.
+## 6. Check swap
 
-## 6. Give the machine swap
+Cloud machines may have no swap. Ronin's installer checks whether a 4 GB swapfile can
+be created and includes it in the same administrator approval. Do not create a second
+swapfile or append an extra `/etc/fstab` entry during provisioning.
 
-**Do this on every rented machine; cloud images ship without it.**
-
-Ronin runs several agent sessions at once and each one runs real work — test suites,
-builds, browsers. When RAM fills on a machine with no swap, the kernel has no overflow:
-it picks a process and kills it, and it chooses which. On a Ronin box that is usually an
-agent session, mid-task, with its work in it. Swap does not add memory; it turns a sudden
-death into slowness, which is the difference between losing an hour and noticing the box
-is sluggish.
-
-```bash
-swapon --show    # no output at all means there is none
-sudo bash -c 'fallocate -l 4G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile && echo "/swapfile none swap sw 0 0" >> /etc/fstab'
-swapon --show    # expect: /swapfile
-```
-
-The `/etc/fstab` line is what makes it survive a reboot. This needs `sudo` and is the
-owner's to approve. On a first install, setup includes an offerable swapfile in its one
-explained approval before activation; `bin/ronin-doctor` reports `NO SWAP` until one
-exists. Preparing it here is also valid.
+After installation, `swapon --show` and `bin/ronin-doctor` report the actual result.
+If swap could not be configured, retain the finding: memory pressure can terminate
+processes. Existing swap and container-managed memory require no duplicate setup.
 
 ## 7. Establish private access
 
@@ -298,10 +276,9 @@ Install Tailscale on the owner's computer and the machine using the current
 [official instructions](https://tailscale.com/kb/1347/installation). The owner signs both
 devices into the same tailnet.
 
-**Install and sign in to Tailscale before running Ronin's `setup.sh`, not after.** Setup
-reads `tailscale ip -4` to decide what address to bind to. If Tailscale is absent at that
-moment Ronin binds to loopback, and reaching it means an SSH tunnel until someone
-reconfigures and restarts it. The ordering is not cosmetic.
+**Install and sign in to Tailscale before installing Ronin.** Setup establishes and
+verifies the private HTTPS address on port `4810`. Missing Tailscale or HTTPS setup is
+a condition to resolve, not a reason to hand the owner another kind of address.
 
 Prove the route from the owner's computer before relying on it:
 
@@ -316,12 +293,9 @@ everything interactive feels worse than it needs to. **The reported time should 
 the region measurement predicted**; if it is far higher, something other than distance is
 wrong, and it is worth finding now.
 
-**The tailnet becomes Ronin's security boundary**, so it is worth knowing what is in it
-while it is being created. By default Ronin has no login — inside the tailnet it simply
-opens, which is the convenience most owners want — and the trade is that whatever is on
-that tailnet can use it. If it holds the owner's own devices, that is the arrangement
-working. If it came from a work or Google Workspace sign-in it may hold colleagues, which
-is worth one question now rather than later. The install guide covers the choice.
+**Access is controlled by Tailscale.** Confirm who the tailnet's access rules permit
+to reach this machine. Those users can operate Ronin's shells as the installed account;
+a work tailnet may include colleagues as well as the owner's devices.
 
 Do not open Ronin's port to the public internet. Keep provider-console and public-SSH
 recovery working until the owner has accepted the Tailscale path. Firewall hardening comes
@@ -353,8 +327,7 @@ Before handing the machine to the Ronin installer, report:
 - OS version and hostname;
 - ordinary account name;
 - successful direct SSH and sudo checks;
-- **linger confirmed on** for that account;
-- **swap present** (`swapon --show` prints a line), or the owner has knowingly declined it;
+- observed linger and swap state, with missing setup left to the installer;
 - **Tailscale up and signed in**, with a successful reachability check;
 - provider-console recovery location;
 - agent CLI available on the machine.

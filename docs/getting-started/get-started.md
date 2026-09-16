@@ -8,8 +8,9 @@ not show.
 
 ## Before opening the URL
 
-Report the URL together with its access posture: the actual bind, whether Ronin login is
-enabled, and who can reach the tailnet or tunnel. If those facts are not known, return to
+Report the verified `https://<machine>.<tailnet>.ts.net:4810` URL and explain that
+access is controlled by Tailscale. Confirm who its access rules permit to reach Ronin.
+If those facts are not known, return to
 [the install checks](install.md#5-verify-the-running-install).
 
 Open the printed URL. Ronin Home is the landing page; **Machine Settings** opens Ronin

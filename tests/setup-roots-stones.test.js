@@ -14,7 +14,7 @@ test('Setup and Settings use the same Workspace Folders stone presentation', asy
   assert.match(campaign, /createWorkspaceFoldersSurface\(\{[\s\S]*presentation: 'stones'[\s\S]*environment: e,[\s\S]*workspace,/);
   assert.doesNotMatch(campaign, /worktreesDefault/);
   assert.match(shared, /presentation === 'stones' && onboardingExtras/);
-  assert.match(shared, /presentation \? \{ presentation, extraItems: onboarding\?\.items \|\| \[\] \} : \{\}/);
+  assert.match(shared, /presentation \? \{[\s\S]*presentation,[\s\S]*extraItems: onboarding\?\.items \|\| \[\],[\s\S]*onSelection: \(id\) => environment\?\.onWorkspaceFolderChosen\?\.\(id\),[\s\S]*\} : \{\}/);
   assert.match(setup, /onboardingExtras: context\.environment\?\.setupOnboardingExtras === true/);
   assert.match(await source('public/js/setup-view.js'), /setupOnboardingExtras: true/);
   assert.doesNotMatch(campaign, /onboardingExtras/, 'shared Settings does not opt into onboarding-only GitHub stones');
@@ -27,6 +27,7 @@ test('Setup GitHub lifecycle uses only a published session and hands success to 
   ]);
   assert.match(github, /import \{ WorkspaceKit \} from '\.\/workspace-kit\.js'/);
   assert.match(github, /const connect = action\([^\n]+, 'primary'\)/);
+  assert.match(github, /const install = action\([^\n]+, 'primary'\)/);
   assert.match(github, /const remove = action\([^\n]+, 'danger'\)/);
   assert.match(github, /const cloneButton = action\([^\n]+, 'primary'\)/);
   assert.match(kit, /\.wk-action:hover:not\(:disabled\) \{[^}]*border-color: var\(--kaki\);[^}]*background: var\(--accent-soft\)/, 'ordinary actions visibly respond to a pointer');
@@ -41,6 +42,8 @@ test('Setup GitHub lifecycle uses only a published session and hands success to 
   assert.match(github, /roots\.github_remove_auth', 'Remove authentication'/);
   assert.match(github, /remove\.hidden = !authenticated \|\| !installed/);
   assert.match(github, /request\('\/api\/setup\/github\/logout', \{ method: 'POST' \}\)/);
+  assert.match(github, /request\('\/api\/setup\/github\/install', \{ method: 'POST' \}\)/);
+  assert.match(github, /setup-provider-steps setup-github-steps/);
   const finish = github.slice(github.indexOf('const finishAuthentication'), github.indexOf('const poll'));
   assert.doesNotMatch(finish, /\/clone|onCloned/, 'authentication never starts a clone');
   assert.match(github, /if \(result\.ok\) await onCloned\?\.\(result\.data\?\.workspace\)/);
@@ -64,11 +67,9 @@ test('roots adapt the real project-root detail and Add form to the shared stone 
   assert.match(roots, /if \(current\) host\.append\(detail\(current\)\)/);
   assert.match(roots, /stoneSurface\.refreshDetail\(\)/);
   assert.match(roots, /const openAdd = stones \? null : createAction/);
-  assert.match(roots, /stoneSurface\.mount\(root, \{ before: \[\.\.\.\(options\.before \|\| \[\]\), intro, messages\] \}\)/);
-  assert.match(roots, /intro\.className = 'pr-intro'[\s\S]*?t\('roots\.intro_line', 'A workspace is a folder Ronin keeps for Teams and Agents\.'\)/, 'one line, not a paragraph');
-  assert.match(roots, /more\.className = 'pr-intro-more'[\s\S]*?t\('roots\.learn_more', 'Learn more'\)[\s\S]*?more\.setAttribute\('aria-expanded', 'false'\)/, 'a Learn more that opens on click');
-  assert.match(roots, /points\.hidden = true;[\s\S]*?t\('roots\.intro_repo'[\s\S]*?t\('roots\.intro_born'[\s\S]*?t\('roots\.intro_accumulates'/, 'three short points, closed at first');
-  assert.doesNotMatch(roots, /roots\.intro'/, 'the hard paragraph is gone');
+  assert.match(roots, /stoneSurface\.mount\(root, \{ before: \[\.\.\.\(options\.before \|\| \[\]\), messages\] \}\)/);
+  assert.doesNotMatch(roots, /roots\.intro_|roots\.learn_more|pr-intro/, 'Workspace Folders has no explanatory preamble');
+  assert.match(roots, /options\.onSelection\?\.\(id\)/, 'choosing a real folder records owner completion');
   assert.match(roots, /stoneSurface\.setItems\(\[\{\s*id: NEW,\s*label: t\('roots\.add_stone', 'Add A Workspace'\),\s*glyph: '\+',\s*className: 'setup-roots-add-stone'/, 'Add A Workspace is the first stone');
   assert.doesNotMatch(roots, /stoneSurface\.openDetail/);
   assert.doesNotMatch(roots, /secondary: r\.remit \|\| r\.dir/);
@@ -151,7 +152,7 @@ test('roots stones mount visible loading, empty, and failure output without chan
   const roots = await source('public/js/projectroots.js');
   assert.match(roots, /messages\.className = 'pr-status'/);
   assert.match(roots, /messages\.setAttribute\('role', 'status'\)/);
-  assert.match(roots, /stoneSurface\.mount\(root, \{ before: \[\.\.\.\(options\.before \|\| \[\]\), intro, messages\] \}\)/);
+  assert.match(roots, /stoneSurface\.mount\(root, \{ before: \[\.\.\.\(options\.before \|\| \[\]\), messages\] \}\)/);
   assert.match(roots, /const output = stones \? messages : list/);
   assert.match(roots, /messages\.replaceChildren\(\)/, 'a successful render clears loading or failure output');
   assert.match(roots, /\(stones \? messages : list\)\.appendChild/, 'the zero-roots message uses the mounted status host');
