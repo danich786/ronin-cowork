@@ -1047,6 +1047,10 @@ The catalog entry goes. {dir} is not touched.
 - **roots.state_worktrees:** Repo: Worktrees on. Agent must also have Worktrees on.
 - **roots.state_checkout:** This repository uses its checkout.
 - **roots.state_undeclared:** No repository profile is declared, so Agents use the checkout. Edit this root to allow Ronin Worktrees.
+- **roots.stone_plain_folder:** Plain folder
+- **roots.stone_repo_no_remote:** Repository · no remote
+- **roots.stone_repo_worktrees:** Repository · Worktrees
+- **roots.stone_repo_checkout:** Repository · checkout
 - **roots.github_auth_stone:** Authenticate GitHub
 - **roots.github_auth_state:** Connect account
 - **roots.github_auth_connected_state:** Connected{account}

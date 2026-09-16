@@ -75,7 +75,7 @@ export function createGithubWorkspaceSetup({ environment, workspace = 'workspace
   let unmounting = false;
 
   const items = [{
-    id: '\0github-auth', glyph: '⌘', label: t('roots.github_auth_stone', 'Authenticate GitHub'),
+    id: '\0github-auth', label: t('roots.github_auth_stone', 'Authenticate GitHub'),
     state: '', className: 'setup-roots-github-stone',
     renderDetail: (host) => {
       host.append(authBox); void show();

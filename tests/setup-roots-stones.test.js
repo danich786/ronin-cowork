@@ -44,6 +44,7 @@ test('Setup GitHub lifecycle uses only a published session and hands success to 
   assert.match(github, /request\('\/api\/setup\/github\/logout', \{ method: 'POST' \}\)/);
   assert.match(github, /request\('\/api\/setup\/github\/install', \{ method: 'POST' \}\)/);
   assert.match(github, /setup-provider-steps setup-github-steps/);
+  assert.doesNotMatch(github, /glyph: '⌘'/, 'GitHub never borrows the macOS Command key as its identity');
   const finish = github.slice(github.indexOf('const finishAuthentication'), github.indexOf('const poll'));
   assert.doesNotMatch(finish, /\/clone|onCloned/, 'authentication never starts a clone');
   assert.match(github, /if \(result\.ok\) await onCloned\?\.\(result\.data\?\.workspace\)/);
@@ -70,10 +71,13 @@ test('roots adapt the real project-root detail and Add form to the shared stone 
   assert.match(roots, /stoneSurface\.mount\(root, \{ before: \[\.\.\.\(options\.before \|\| \[\]\), messages\] \}\)/);
   assert.doesNotMatch(roots, /roots\.intro_|roots\.learn_more|pr-intro/, 'Workspace Folders has no explanatory preamble');
   assert.match(roots, /options\.onSelection\?\.\(id\)/, 'choosing a real folder records owner completion');
-  assert.match(roots, /stoneSurface\.setItems\(\[\{\s*id: NEW,\s*label: t\('roots\.add_stone', 'Add A Workspace'\),\s*glyph: '\+',\s*className: 'setup-roots-add-stone'/, 'Add A Workspace is the first stone');
+  assert.match(roots, /stoneSurface\.setItems\(\[\{\s*id: NEW,\s*label: t\('roots\.add_stone', 'Add a workspace'\),\s*glyph: '\+',\s*className: 'setup-roots-add-stone'/, 'Add a workspace is the first stone');
   assert.doesNotMatch(roots, /stoneSurface\.openDetail/);
   assert.doesNotMatch(roots, /secondary: r\.remit \|\| r\.dir/);
-  assert.match(roots, /t\('roots\.stone_ready', 'Ready'\)/);
+  assert.match(roots, /t\('roots\.stone_plain_folder', 'Plain folder'\)/);
+  assert.match(roots, /t\('roots\.stone_repo_no_remote', 'Repository · no remote'\)/);
+  assert.match(roots, /t\('roots\.stone_repo_worktrees', 'Repository · Worktrees'\)/);
+  assert.match(roots, /t\('roots\.stone_repo_checkout', 'Repository · checkout'\)/);
   assert.match(roots, /t\('roots\.stone_missing', 'Folder missing'\)/);
   assert.match(roots, /t\('roots\.chip_archived', 'Archived'\)/);
   assert.match(roots, /createFolderPicker/);
@@ -136,6 +140,7 @@ test('roots carry no parallel stone DOM or CSS presentation and the detail rhyth
   assert.match(css, /\.setup-roots-stones \.sws-stone\.archived \.sws-state/);
   assert.doesNotMatch(css, /\.setup-roots-stones \.sws-stone\.archived \.sws-state\s*\{[^}]*?(?:border|border-radius|background|padding):/);
   assert.match(css, /\.setup-roots-stones \.setup-roots-add-stone \{[^}]*border-style: dashed;[^}]*background: var\(--panel\);[^}]*color: var\(--fg\)/, 'Add is neutral until selected');
+  assert.doesNotMatch(css, /\.setup-roots-stones \.setup-roots-add-stone \.sws-glyph/, 'both add-action plus glyphs inherit the shared accent');
   assert.match(css, /\.setup-roots-stones \.sws-stone\[aria-pressed='true'\] \{[^}]*border-color: var\(--kaki\);[^}]*background: var\(--accent-soft\);[^}]*color: var\(--fg-strong\)/, 'only the selected stone receives the highlight');
   assert.match(css, /\.pr-detail-head \{[^}]*border-bottom: var\(--edge-2\) solid var\(--kaki\)/, 'one kaki rule closes the head');
   assert.match(css, /\.pr-detail-heading \{[^}]*justify-content: space-between/, 'the head line carries the name and its actions, as Presets does');
