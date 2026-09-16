@@ -71,19 +71,18 @@
   .garden-copy-body { color: var(--fg); font-size: var(--text-5); line-height: var(--gc-body-lh); max-width: var(--gc-measure); }
   .garden-copy-stamp { color: var(--dim); font-size: var(--text-2); line-height: 1.45; }
 
-  /* One heading rank per canvas. The first block is the title; every block
-     after it is body rank with a mark in the gutter, never a smaller heading. */
-  .garden-copy-item:not(:first-child) { grid-template-columns: var(--gc-mark) minmax(0, 1fr); column-gap: var(--space-6); }
-  .garden-copy-item:not(:first-child)::before { content: ''; grid-row: 1; width: var(--gc-mark); height: var(--gc-mark-weight); margin-top: .75em; background: var(--kaki); }
-  .garden-copy-item:not(:first-child) > * { grid-column: 2; }
-  .garden-copy-item:not(:first-child) .garden-copy-heading { font-size: var(--text-4); font-weight: 650; line-height: 1.45; letter-spacing: 0; max-width: var(--gc-measure); }
-  .garden-copy-item:not(:first-child) .garden-copy-eyebrow::before { display: none; }
+  /* One heading rank per canvas. The title block keeps it; every other kind is
+     body rank. Kind is a closed set from the normalizer, so it is taken as
+     given — the canvas reads no meaning into a block's position. */
+  .garden-copy-item[data-kind='instruction'] { grid-template-columns: var(--gc-mark) minmax(0, 1fr); column-gap: var(--space-6); }
+  .garden-copy-item[data-kind='instruction']::before { content: ''; grid-row: 1; width: var(--gc-mark); height: var(--gc-mark-weight); margin-top: .75em; background: var(--kaki); }
+  .garden-copy-item[data-kind='instruction'] > * { grid-column: 2; }
+  .garden-copy-item:not([data-kind='title']) .garden-copy-heading { font-size: var(--text-4); font-weight: 650; line-height: 1.45; letter-spacing: 0; max-width: var(--gc-measure); }
+  .garden-copy-item:not([data-kind='title']) .garden-copy-eyebrow::before { display: none; }
 
-  /* A note is an aside; a response is painted rather than authored. Both are
-     quieter than a stated instruction and neither takes the gutter mark. */
-  .garden-copy-item[data-kind='note']::before, .garden-copy-item[data-kind='response']::before { display: none; }
-  .garden-copy-item[data-kind='note'], .garden-copy-item[data-kind='response'] { grid-template-columns: minmax(0, 1fr); }
-  .garden-copy-item[data-kind='note'] > *, .garden-copy-item[data-kind='response'] > * { grid-column: 1; }
+  /* A note is an aside; a response is painted rather than authored. Neither
+     takes the gutter mark, and a response is threaded and dated. The canvas
+     never computes age — it renders the state it was handed. */
   .garden-copy-item[data-kind='note'] .garden-copy-body { color: var(--muted); font-size: var(--text-4); }
   .garden-copy-item[data-kind='response'] { padding-left: var(--space-7); border-left: var(--edge) solid var(--line); }
   .garden-copy-item[data-kind='response'] .garden-copy-body { font-size: var(--text-4); }
@@ -121,7 +120,7 @@
   /* Asked: a canvas carrying a live question fills instead of floating — title
      at the top, the stack scrolling, the input at the foot. Read from the
      canvas's own regions, never from a scene or a route. */
-  .garden-canvas-scene:has(> .garden-region-question:not([hidden])) { align-content: stretch; grid-template-rows: auto minmax(0, 1fr) auto auto; gap: var(--space-9); padding-bottom: var(--space-10); }
+  .garden-canvas-scene:has(> .garden-region-question:not([hidden])) { align-content: stretch; grid-template-rows: minmax(0, 1fr) auto auto auto; gap: var(--space-9); padding-bottom: var(--space-10); }
   .garden-canvas-scene:has(> .garden-region-question:not([hidden])) .garden-region-copy { overflow-y: auto; align-content: start; }
 
   .garden-media-overlay { position: absolute; inset: 0; z-index: 11; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: var(--space-8); padding: var(--space-9) var(--space-10) var(--space-10); background: var(--panel); }
