@@ -141,7 +141,7 @@ export function createSetup2View() {
       }
       if (!gardenContent) {
         const result = await request(GARDEN_CONTENT_URL);
-        gardenContent = normalizeGardenCanvasCatalog(result.ok ? result.data : { version: 1, scenarios: {} });
+        gardenContent = normalizeGardenCanvasCatalog(result.ok ? result.data : { schema_version: 1, scenarios: {}, canvases: {} });
       }
       const stored = context.viewState('setup2') || {};
       sceneOverride = Number(stored.sceneOverride) >= 1 && Number(stored.sceneOverride) <= SCENES.length ? Number(stored.sceneOverride) : 0;

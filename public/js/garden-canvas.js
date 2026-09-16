@@ -81,10 +81,16 @@ export function createGardenCanvas({ onAction = () => {} } = {}) {
     close.focus();
   };
 
-  const paintCopy = (copy) => {
-    if (copy.eyebrow) regions.copy.append(node('p', 'garden-copy-eyebrow', copy.eyebrow));
-    if (copy.heading) regions.copy.append(node('h2', 'garden-copy-heading', copy.heading));
-    if (copy.body) regions.copy.append(node('p', 'garden-copy-body', copy.body));
+  const paintCopy = (items) => {
+    for (const copy of items) {
+      const item = node('article', 'garden-copy-item');
+      item.dataset.copyId = copy.id;
+      if (copy.eyebrow) item.append(node('p', 'garden-copy-eyebrow', copy.eyebrow));
+      if (copy.heading) item.append(node('h2', 'garden-copy-heading', copy.heading));
+      if (copy.body) item.append(node('p', 'garden-copy-body', copy.body));
+      if (copy.stamp) item.append(node('time', 'garden-copy-stamp', copy.stamp));
+      regions.copy.append(item);
+    }
   };
   const paintQuestion = (question) => {
     const label = node('label', 'garden-question-label', question.prompt);

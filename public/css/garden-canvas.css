@@ -4,6 +4,8 @@
   .garden-canvas-mark { position: absolute; inset: auto 0 0; width: 100%; height: auto; color: var(--kaki); opacity: .48; z-index: -1; }
   .garden-region { display: grid; gap: var(--space-3); min-width: 0; }
   .garden-region[hidden] { display: none; }
+  .garden-copy-item { display: grid; gap: var(--space-3); }
+  .garden-copy-stamp { color: var(--muted); font-size: var(--text-2); }
   .garden-copy-eyebrow { margin: 0; color: var(--kaki-lift); font-size: var(--text-2); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
   .garden-copy-heading { margin: 0; color: var(--fg-strong); font-size: var(--text-8); font-weight: 550; line-height: 1.15; }
   .garden-copy-body { margin: 0; color: var(--fg); font-size: var(--text-4); line-height: 1.65; }

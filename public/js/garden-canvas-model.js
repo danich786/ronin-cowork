@@ -24,9 +24,13 @@ const normalizeCta = (value) => {
 };
 
 const normalizeCopy = (value) => {
-  if (!enabled(value)) return null;
-  const copy = { eyebrow: text(value.eyebrow), heading: text(value.heading), body: text(value.body) };
-  return Object.values(copy).some(Boolean) ? Object.freeze(copy) : null;
+  if (!Array.isArray(value)) return null;
+  const items = value.flatMap((item) => {
+    if (!enabled(item) || !text(item.id)) return [];
+    const copy = { id: text(item.id), kind: text(item.kind) || 'copy', eyebrow: text(item.eyebrow), heading: text(item.heading), body: text(item.body), stamp: text(item.stamp) };
+    return copy.eyebrow || copy.heading || copy.body ? [Object.freeze(copy)] : [];
+  });
+  return items.length ? Object.freeze(items) : null;
 };
 
 const normalizeMedia = (value) => {
@@ -37,26 +41,28 @@ const normalizeMedia = (value) => {
     const root = kind === 'doc' ? text(item.root) : '';
     const path = kind === 'doc' ? text(item.path) : '';
     if (!kind || !text(item.label) || (kind === 'doc' ? !root || !path : !src)) return [];
-    return [Object.freeze({ kind, src, root, path, label: text(item.label), description: text(item.description) })];
+    return [Object.freeze({ id: text(item.id), kind, src, root, path, label: text(item.label), description: text(item.description), stamp: text(item.stamp) })];
   });
   return items.length ? Object.freeze(items) : null;
 };
 
 export function normalizeGardenCanvasCatalog(value) {
-  if (!value || value.version !== GARDEN_CANVAS_VERSION || !value.scenarios || typeof value.scenarios !== 'object') {
+  if (!value || value.schema_version !== GARDEN_CANVAS_VERSION || !value.scenarios || typeof value.scenarios !== 'object' || !value.canvases || typeof value.canvases !== 'object') {
     throw new Error(`garden canvas content must use version ${GARDEN_CANVAS_VERSION}`);
   }
   const scenarios = {};
-  for (const [id, raw] of Object.entries(value.scenarios)) {
-    if (!/^[a-z][a-z0-9-]*$/.test(id) || !raw || typeof raw !== 'object') continue;
+  for (const [id, canvasId] of Object.entries(value.scenarios)) {
+    const raw = value.canvases[canvasId];
+    if (!/^[a-z][a-z0-9-]*$/.test(id) || typeof canvasId !== 'string' || !raw || typeof raw !== 'object') continue;
     scenarios[id] = Object.freeze({
+      id: canvasId,
       question: normalizeQuestion(raw.question),
       cta: normalizeCta(raw.cta),
       copy: normalizeCopy(raw.copy),
       media: normalizeMedia(raw.media),
     });
   }
-  return Object.freeze({ version: GARDEN_CANVAS_VERSION, scenarios: Object.freeze(scenarios) });
+  return Object.freeze({ schema_version: GARDEN_CANVAS_VERSION, scenarios: Object.freeze(scenarios) });
 }
 
 export function createGardenTransitionGate(apply) {
