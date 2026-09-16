@@ -10,33 +10,30 @@ specification first.
 Machine Settings always opens. Teams and New Project stay legible but unavailable until
 one model provider is activated; focusing either one says so.
 
-Machine Settings holds two workbenches. **Ronin Setup**, this guide, opens by default
-while zero or one provider is activated. **Ronin Settings**, the full configuration
-workbench, opens by default once two or more are. The place name in the top bar switches
-between them without reloading; an explicit choice lasts for the visit.
+Machine Settings opens **Ronin Setup**, this guide, while the installation is getting
+ready. **Ronin Settings** remains the full configuration workbench. The place name in the
+top bar switches between them without reloading.
 
 ## The Setup workbench
 
 Setup is one workbench with two workspaces and a selector column between them:
 
-- **Workspace 1** always holds **Presets**.
-- **The selector** lists the setup surfaces in this order: Model providers, Register,
-  Workspace folders, Ronin Services, gbrain, Launch your own. Each card carries a one-line
-  state, never an explanation.
-- **Workspace 2** shows the selected surface. Setup opens on Model providers until a
-  provider is activated; after that it remembers the surface you left open.
+- **Workspace 1** holds the Garden Canvas: short authored guidance for the selected step.
+- **The selector** lists Model providers, optional registration, Workspace folders,
+  Installations, and Launch. A check means the step's actual completion fact is true.
+- **Workspace 2** is the actionable surface for the selected step. Selecting a card changes
+  both workspaces together. A completed non-final step offers **Next**.
 
-On a phone the same three columns stack. While Setup is open, the right of the top bar
-holds a phone / desktop switcher and a light / dark control; they set the appearance of
-that surface and nothing else.
+On a phone the same three columns stack. Setup reads completion once when it opens and
+updates it after the corresponding action; it does not poll in the background.
 
 Every stone surface in Setup shares one shape: square stones on the left; select one and
 the stones fold into a rail with the stone's page beside it; Escape closes it.
 
 ## Presets
 
-Presets are eight quick starts. Each is an ordinary template with a small, fixed set of
-choices in front of it and a launch that opens in a new browser tab.
+Presets are available from the Launch step. They are ordinary templates with a small,
+fixed set of choices in front of them and a launch that opens in a new browser tab.
 
 Above the stones, **You use Ronin for** narrows the eight to a purpose: **Build software**
 (Bare Metal, Ronin Team, Code Stack Eval, Develop a New Project), **Life Assistants**

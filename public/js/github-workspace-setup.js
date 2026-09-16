@@ -1,4 +1,4 @@
-/* Setup 2's GitHub authentication and clone handoff for the Workspace Folder surface. */
+/* Setup's GitHub authentication and clone handoff for the Workspace Folder surface. */
 import { t } from './lexicon.js';
 import { request } from './request.js';
 import { WorkspaceKit } from './workspace-kit.js';

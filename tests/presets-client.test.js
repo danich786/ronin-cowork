@@ -265,17 +265,7 @@ test('Ronin Team and Agent + Editable Doc ask Where from the one list of workspa
   assert.doesNotMatch(source, /'Which folder'/);
   assert.match(source, /const roots = rootChoices\(runtime, environment\)/, 'one chooser, one source');
   assert.doesNotMatch(source, /const roots = runtime\.roots \|\| \[\]/);
-  // The source is the client's project catalog, handed in by the Setup view; the catalog
-  // announces its reloads so a folder kept in workspace 2 becomes a choice at once.
-  const setup = await readFile(new URL('../public/js/setup-view.js', import.meta.url), 'utf8');
-  assert.match(setup, /trackedRoots: \(\) => \(Array\.isArray\(projectData\) \? projectData : \[\]\)/);
-  assert.match(setup, /onTrackedRoots: onProjects/);
-  assert.match(setup, /if \(!Array\.isArray\(projectData\)\) await loadProjects\(\);/);
-  const home = await readFile(new URL('../public/js/home.js', import.meta.url), 'utf8');
-  assert.match(home, /export function onProjects\(listener\)/);
-  assert.match(home, /for \(const listener of projectListeners\)/);
-  // Seeded pair first under the runtime's labels, then every other tracked folder by name;
-  // a host with no catalog keeps the seeded pair.
+  // A supplied project catalog wins; otherwise the runtime's registered roots remain the fallback.
   const runtime = { roots: [{ name: 'ronin_lab', label: 'Ronin Lab' }, { name: 'ronin_project_1', label: 'Ronin Project 1' }] };
   assert.deepEqual(presets.rootChoices(runtime, { trackedRoots: () => [{ name: 'site' }, { name: 'ronin_project_1' }, { name: 'ronin_lab' }, { name: 'shiwake' }] }), [
     { name: 'ronin_lab', label: 'Ronin Lab' }, { name: 'ronin_project_1', label: 'Ronin Project 1' }, { name: 'site', label: 'site' }, { name: 'shiwake', label: 'shiwake' },

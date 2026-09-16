@@ -15,12 +15,12 @@ test('Setup and Settings use the same Workspace Folders stone presentation', asy
   assert.doesNotMatch(campaign, /worktreesDefault/);
   assert.match(shared, /presentation === 'stones' && onboardingExtras/);
   assert.match(shared, /presentation \? \{ presentation, extraItems: onboarding\?\.items \|\| \[\] \} : \{\}/);
-  assert.match(setup, /onboardingExtras: context\.environment\?\.setup2OnboardingExtras === true/);
-  assert.match(await source('public/js/setup2-view.js'), /setup2OnboardingExtras: true/);
+  assert.match(setup, /onboardingExtras: context\.environment\?\.setupOnboardingExtras === true/);
+  assert.match(await source('public/js/setup-view.js'), /setupOnboardingExtras: true/);
   assert.doesNotMatch(campaign, /onboardingExtras/, 'shared Settings does not opt into onboarding-only GitHub stones');
 });
 
-test('Setup 2 GitHub lifecycle uses only a published session and hands success to Clone', async () => {
+test('Setup GitHub lifecycle uses only a published session and hands success to Clone', async () => {
   const [github, kit] = await Promise.all([
     source('public/js/github-workspace-setup.js'),
     source('public/workspace-kit.css'),

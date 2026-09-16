@@ -40,7 +40,7 @@ test('Agent and Team details use form-only adapters without consumer geometry ov
 
 test('Setup has no separate Presets selector', async () => {
   const setupView = await readFile(new URL('../public/js/setup-view.js', import.meta.url), 'utf8');
-  const order = setupView.slice(setupView.indexOf('const ORDER'), setupView.indexOf('const DEFAULT_ARRANGEMENT'));
+  const order = setupView.slice(setupView.indexOf('const ORDER'), setupView.indexOf('const ARRANGEMENT'));
   assert.doesNotMatch(order, /SETUP_SURFACE_TYPES\.presets/);
   assert.doesNotMatch(source, /campaignTemplatesDefinition\(\)|createTemplatesSurface\(\)/);
   assert.match(source, /PRESETS_TYPE/);
