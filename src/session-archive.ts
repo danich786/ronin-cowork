@@ -3,7 +3,6 @@ import os from 'node:os';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { storeDir } from './resources.js';
-import type { Control } from './tmux.js';
 import { AGENTS, agentSpec } from './agents.js';
 
 export const ARCHIVE_DIR = storeDir('archived_sessions');
@@ -23,7 +22,6 @@ export interface ArchivedSession {
   leads: string[];
   wipeboards: string[];
   note: string;
-  control: Control;
   project_root: string;
 }
 

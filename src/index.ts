@@ -295,7 +295,7 @@ mountServiceRoutes(app);
 
 void resumeInstallWatch();
 
-registerSessions(app); // per-session: kill/harakiri, meta, dials, ctx, tegami, send — src/routes/sessions-api.ts
+registerSessions(app); // per-session: kill/harakiri, meta, ctx, tegami, send — src/routes/sessions-api.ts
 registerWipeboards(app); // /api/wipeboards* — src/routes/wipeboards-api.ts
 registerTerminalControls(app);
 registerMessages(app); // /api/messages* — durable inbound session delivery

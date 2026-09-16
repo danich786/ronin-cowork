@@ -22,7 +22,6 @@ test('Campaign defaults use ask() and Output keeps multi-select semantics', asyn
   assert.match(source, /request\(`\/api\/launch-seed/);
   assert.match(source, /shape: 'tall'/);
   assert.doesNotMatch(source, /textarea/);
-  assert.match(source, /const next = \{ \.\.\.current, \.\.\.picked, dial: 'write',/);
   assert.match(source, /trayHost: questionsRow/, 'the launch-mode tray drops below the row, so neighbouring groups stay anchored');
   assert.match(css, /\.cv-defaults-form > \.ask,[\s\S]*?\.cv-defaults-form > \.cv-default-field \{ grid-column: 1 \/ -1; \}/, 'the question row spans the card');
 });

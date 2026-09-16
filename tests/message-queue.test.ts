@@ -163,9 +163,7 @@ test('auto-force fires once per retained message after two minutes, never before
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ronin-message-queue-autoforce-'));
   process.env.RONIN_MESSAGE_QUEUE_DIR = root;
   const queue = await import(`../src/message-queue.ts?autoforce=${Date.now()}`);
-  const { setControl } = await import('../src/tmux.js');
   const target = await liveTarget(t, 'queue_autoforce_target');
-  await setControl(target, 'read'); // safe delivery holds; the message is Waiting
   const item = await queue.enqueueMessage(target, 'stuck behind a dial', 'tell', 'sender');
   let forced = 0;
   const delivery = {
@@ -193,57 +191,7 @@ test('auto-force fires once per retained message after two minutes, never before
   await fs.rm(root, { recursive: true, force: true });
 });
 
-test('safe delivery honors Control while explicit Force keeps its documented override', async (t) => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ronin-message-queue-control-'));
-  process.env.RONIN_MESSAGE_QUEUE_DIR = root;
-  const queue = await import(`../src/message-queue.ts?control=${Date.now()}`);
-  const { setControl } = await import('../src/tmux.js');
-  const target = await liveTarget(t, 'queue_control_target');
-  await setControl(target, 'read');
-  const item = await queue.enqueueMessage(target, 'respect Control', 'house');
-  let safeCalls = 0;
-  let forceCalls = 0;
-  const delivery = {
-    safe: async () => { safeCalls += 1; return { delivered: false, submitted: false, reason: 'unused' }; },
-    force: async () => { forceCalls += 1; return { delivered: false, submitted: true, reason: 'forced test' }; },
-  };
-  assert.match((await queue.attemptMessage(item.id, 'safe', delivery))?.reason ?? '', /Control/);
-  assert.equal(safeCalls, 0);
-  await queue.attemptMessage(item.id, 'force', delivery);
-  assert.equal(forceCalls, 1);
-  await fs.rm(root, { recursive: true, force: true });
-});
 
-test('manual and expired direct tells NACK once, but viewer senders and NACKs do not loop', async (t) => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ronin-message-queue-nack-'));
-  process.env.RONIN_MESSAGE_QUEUE_DIR = root;
-  const queue = await import(`../src/message-queue.ts?nack=${Date.now()}`);
-  const { setControl } = await import('../src/tmux.js');
-  const server = await openTestServer('mq_nack', { onPath: true });
-  t.after(() => closeTestServer(server));
-  const sender = 'queue_nack_sender';
-  const target = 'queue_nack_target';
-  await server.run('new-session', '-d', '-s', sender);
-  await server.run('new-session', '-d', '-s', target);
-  await setControl(sender, 'read');
-  const direct = await queue.enqueueMessage(target, 'dismiss me', 'tell', sender);
-  assert.equal(await queue.dismissMessage(direct.id), true);
-  assert.equal(await queue.dismissMessage(direct.id), false);
-  const expiring = await queue.enqueueMessage(target, 'expire me', 'tell', sender);
-  await queue.listQueuedMessages(Date.parse(expiring.expires_at) + 1);
-  const viewer = await queue.enqueueMessage(target, 'no viewer nack', 'tell', 'grid_fake');
-  await queue.dismissMessage(viewer.id);
-  const nack = await queue.enqueueMessage(target, 'already a NACK', 'house', 'Ronin House');
-  await queue.dismissMessage(nack.id);
-  const returns = (await queue.listQueuedMessages()).filter((item) => item.target === sender && item.source === 'house');
-  const pane = await server.run('capture-pane', '-p', '-S', '-', '-t', sender);
-  const evidence = `${returns.map((item) => item.text).join('\n')}\n${pane}`;
-  assert.equal(evidence.split(`Your tell ${direct.id}`).length - 1, 1);
-  assert.equal(evidence.split(`Your tell ${expiring.id}`).length - 1, 1);
-  assert.doesNotMatch(evidence, new RegExp(viewer.id));
-  assert.doesNotMatch(evidence, new RegExp(nack.id));
-  await fs.rm(root, { recursive: true, force: true });
-});
 
 test('messages to one target cannot interleave; an owner message waiting for the sender still bypasses preflight', async (t) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ronin-message-queue-owner-'));

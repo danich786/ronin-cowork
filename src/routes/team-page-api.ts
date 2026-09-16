@@ -36,9 +36,9 @@ export function registerTeamPage(app: express.Express): void {
     const { team } = req.params;
     const session = String(req.query.session ?? '');
     const list = fresh(team).map((v) => ({ tab: v.tab, at: v.at, showsYou: !!session && v.sessions.includes(session), view: v.view }));
-    let roster: { name: string; lead: boolean; control: string }[] = [];
+    let roster: { name: string; lead: boolean }[] = [];
     try {
-      roster = (await listSessions()).filter((s) => s.tags.includes(team)).map((s) => ({ name: s.name, lead: s.leads.includes(team), control: s.control }));
+      roster = (await listSessions()).filter((s) => s.tags.includes(team)).map((s) => ({ name: s.name, lead: s.leads.includes(team) }));
     } catch { /* the view still answers without it */ }
     res.json({ team, roster, tabs: list });
   });

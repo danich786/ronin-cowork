@@ -425,7 +425,7 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
     agent_defaults: {
       provider: draft.provider, model: draft.model,
       reach: draft.reach, recruit: draft.recruit, output: draft.output,
-      dial: 'write', launch_mode: draft.launchMode,
+      launch_mode: draft.launchMode,
     },
   });
 

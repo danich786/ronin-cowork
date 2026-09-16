@@ -1,5 +1,5 @@
 import type express from 'express';
-import { type Control, isValidName, listSessions, sessionExists, teamsInPlay } from '../tmux.js';
+import { isValidName, listSessions, sessionExists, teamsInPlay } from '../tmux.js';
 import { attemptMessage, enqueueMessage } from '../message-queue.js';
 import {
   appendPost,
@@ -97,11 +97,11 @@ async function teamBehind(board: string): Promise<string | null> {
 
 const isTeamBoard = async (name: string): Promise<boolean> => (await teamBehind(name)) !== null;
 
-async function boardMembers(board: string, knownTeam?: string | null): Promise<{ name: string; control: Control }[]> {
+async function boardMembers(board: string, knownTeam?: string | null): Promise<{ name: string }[]> {
   const sessions = await listSessions();
   const team = knownTeam === undefined ? await teamBehind(board) : knownTeam;
   if (!team) return [];
-  return sessions.filter((s) => s.tags.includes(team)).map((s) => ({ name: s.name, control: s.control }));
+  return sessions.filter((s) => s.tags.includes(team)).map((s) => ({ name: s.name }));
 }
 
 export function registerWipeboards(app: express.Express): void {
@@ -185,10 +185,6 @@ export function registerWipeboards(app: express.Express): void {
         const members = await boardMembers(name);
         const roll = members.map((m) => m.name);
         for (const m of members) {
-          if (m.control !== 'write') {
-            results[m.name] = 'on the team, not notified (dial is not 🤖)';
-            continue;
-          }
           const q = await enqueueMessage(m.name, teamJoinNotice(name, boardPath(name), roll), 'wipeboard_notice');
           const retained = await attemptMessage(q.id, 'safe');
           results[m.name] = retained ? `queued — ${retained.reason}` : 'notified';

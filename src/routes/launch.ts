@@ -7,7 +7,6 @@ import {
   listSessions,
   sessionDir,
   sessionExists,
-  setControl,
   setSessionIdentity,
   setLeads,
   setProviderSessionId,
@@ -446,7 +445,6 @@ export function registerLaunch(app: express.Express): LaunchControl {
               RONIN_MACHINE_SETTINGS_AUTHORITY: 'mika',
             }
           : birthEnv(routineTools?.path, boundOperatorSocket(), agentBinDir(), process.env.PATH ?? ''),
-        control: resolved.agent ? resolved.dial : undefined,
         key: birthKey || undefined,
         // The Services switch as resolved for THIS Agent at birth (campaign < team < form):
         // off means RIREKI never records it. Set here and never again — nothing cascades
@@ -483,7 +481,6 @@ export function registerLaunch(app: express.Express): LaunchControl {
         mikaTips ? [mikaTips] : [],
       );
       }
-      await setControl(resolved.name, resolved.dial);
     } catch (e) {
       if (birthDir && !runtimeBorn) await rm(birthDir, { recursive: true, force: true });
       void appendLaunchLedger(form, resolved, false);
@@ -521,7 +518,6 @@ export function registerLaunch(app: express.Express): LaunchControl {
         project_root: resolved.project_root,
         dir: resolved.dir,
         cmd: resolved.cmd,
-        dial: resolved.dial,
         tags: resolved.tags,
         team_lead: !!form.team_lead && !!resolved.team,
         kind: resolved.kind,

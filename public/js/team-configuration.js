@@ -123,7 +123,7 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
         // Spread what was read so a key this card does not draw is carried rather than
         // dropped — but NOT `permissions`, which is ruled out of agent_defaults entirely;
         // spreading it would rewrite a retired field on every save.
-        agent_defaults: { ...defaults, permissions: undefined, provider: picked.provider, model: picked.model, reach: picked.reach, recruit: picked.recruit, output: picked.output, dial: 'write', launch_mode: picked.launch_mode },
+        agent_defaults: { ...defaults, permissions: undefined, provider: picked.provider, model: picked.model, reach: picked.reach, recruit: picked.recruit, output: picked.output, launch_mode: picked.launch_mode },
       } });
       status.textContent = saved.ok ? t('team_config.saved', 'Saved') : saved.message; if (saveAction) saveAction.setDisabled(false); else save.disabled = false; if (saved.ok) optionsArg.onSaved?.(saved.data.roster);
     });

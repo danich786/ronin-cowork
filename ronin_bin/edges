@@ -16,12 +16,10 @@ Usage:
   edges wipeboard [arguments...]
   edges page [--team <team>] [key=value ...]
   edges schedule [arguments...]
-  edges control <session>
 
 Bare `edges read <session> [lines]` reads the durable settled record first and
 falls back to the recent live pane only when no durable record exists. The
-advanced read modes expose the durable record directly. `edges control` is
-read-only. Run `edges <subcommand> --help` for a subcommand's details.
+advanced read modes expose the durable record directly. Run `edges <subcommand> --help` for a subcommand's details.
 Related: session_check --help; session_create --help; session_set --help.
 EOF
 }
@@ -43,13 +41,5 @@ case "$1" in
   wipeboard) shift; exec "$HERE/.edges-wipeboard" "$@" ;;
   page) shift; exec "$HERE/.edges-page" "$@" ;;
   schedule) shift; exec "$HERE/.edges-schedule" "$@" ;;
-  control)
-    shift
-    case "${1-}" in -h|--help) [ "$#" -eq 1 ] || { echo "edges control: --help takes no other arguments. Run edges control --help." >&2; exit 2; }; echo "Usage: edges control <session>"; echo "Read one Agent's current Control setting; this changes nothing."; exit 0 ;; esac
-    [ "$#" -eq 1 ] || { echo "usage: edges control <session>" >&2; exit 2; }
-    tmux has-session -t "=$1" 2>/dev/null || { echo "NO-SESSION: no exact session named '$1'." >&2; exit 3; }
-    value=$(tmux show-options -qv -t "=$1" @ronin-control 2>/dev/null)
-    printf '%s\n' "${value:-write}"
-    ;;
   *) echo "edges: unknown subcommand '$1'. Run edges --help." >&2; exit 2 ;;
 esac
