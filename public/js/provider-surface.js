@@ -75,6 +75,8 @@ export function createProviderSurface(context) {
   const notice = el('p', 'setup-fine setup-provider-notice'); notice.hidden = true;
   const mikaAvailability = el('p', 'setup-fine setup-mika-availability');
   let opened = String(context.detail?.provider || context.detail?.key || '');
+  let firstProviderId = '';
+  let openFirstWhenReady = false;
   let mounted = null;
   let runtime = { providers: [] };
   const disposeMount = (destroy = true) => {
@@ -322,7 +324,12 @@ export function createProviderSurface(context) {
     renderDetail: (item, host) => paintProvider(item.id, host),
     onSelectionChange: (id) => { opened = String(id || ''); },
   });
-  const controller = Object.freeze({ showStones: () => stones.select('') });
+  const controller = Object.freeze({
+    openFirst: () => {
+      if (firstProviderId) stones.select(firstProviderId, { focus: true });
+      else openFirstWhenReady = true;
+    },
+  });
   context.environment?.onProviderSurface?.(controller);
   stones.mount(out.content, { after: [mikaAvailability, notice] });
   const say = (text, bad = false) => { notice.className = `${bad ? 'setup-notice bad' : 'setup-fine'} setup-provider-notice`; notice.textContent = text; notice.hidden = !text; };
@@ -353,8 +360,13 @@ export function createProviderSurface(context) {
         disabled: entry.models.length === 0,
       })),
     ];
+    firstProviderId = String(items[0]?.id || '');
     say(items.length ? '' : t('setup_surface.no_catalog', 'No model providers are in the catalog on this machine.'));
     stones.setItems(items);
+    if (openFirstWhenReady && firstProviderId) {
+      openFirstWhenReady = false;
+      stones.select(firstProviderId, { focus: true });
+    }
   };
   /** The first frame: the recorded summary, through the one picker's read, at once. */
   const showRecord = async () => {

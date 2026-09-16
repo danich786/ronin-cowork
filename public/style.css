@@ -5918,10 +5918,12 @@ button.wb-door:hover b {
 .wk-workbench-host[data-workbench-profile='setup2'] [data-step-state='complete'] .wk-card-heading { font-weight: 500; }
 .wk-workbench-host[data-workbench-profile='setup2'] [data-step-state='current'] { opacity: 1; }
 .wk-workbench-host[data-workbench-profile='setup2'] [data-step-state='upcoming'] { opacity: .48; }
+.wk-workbench-host[data-workbench-profile='setup2'] [data-complete='true'] { opacity: 1; }
+.wk-workbench-host[data-workbench-profile='setup2'] [data-complete='true'] .wk-card-heading::before { content: '✓'; margin-right: var(--space-3); color: var(--kaki-lift); font-weight: 650; }
 .wk-workbench-host[data-workbench-profile='setup2'] .setup-selector-pulse { animation: setup-selector-pulse 520ms ease-out; }
 @keyframes setup-selector-pulse {
-  0%, 100% { box-shadow: none; }
-  42% { box-shadow: 0 0 0 var(--space-2) color-mix(in srgb, var(--kaki) 38%, transparent); }
+  0%, 100% { outline: 0 solid transparent; outline-offset: 0; }
+  42% { outline: var(--space-2) solid color-mix(in srgb, var(--kaki) 48%, transparent); outline-offset: var(--space-2); }
 }
 @media (prefers-reduced-motion: reduce) {
   .wk-workbench-host[data-workbench-profile='setup2'] .setup-selector-pulse { animation: none; outline-color: var(--kaki); }

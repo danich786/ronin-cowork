@@ -36,13 +36,15 @@ export function createSetup2View() {
   let gardenContent = null;
   let providerSurface = null;
   let paintedSceneId = null;
+  let completionLoaded = false;
+  let completion = { registered: false, github: false };
   let sceneOverride = 0;
   const providerSessions = createProviderSetupSessionMount();
   let kinds = ['build'];
   const blank = (id) => WorkspaceKit.primitives.createBlankSurface(id.replace('workspace', 'Workspace ')).el;
   const environment = {
     setupRuntime: null,
-    onSetupRuntime: (next) => { runtime = next; environment.setupRuntime = next; },
+    onSetupRuntime: (next) => { runtime = next; environment.setupRuntime = next; paint(); },
     kinds: { get: () => [...kinds], hydrate: () => { kinds = ['build']; }, set: () => { kinds = ['build']; } },
     setPathNote: (path_note) => request('/api/setup/preferences', { method: 'PATCH', json: { path_note } }),
     setIdentityChoice: (identity_choice) => request('/api/setup/preferences', { method: 'PATCH', json: { identity_choice } }),
@@ -68,7 +70,7 @@ export function createSetup2View() {
         if (!scene) return;
         sceneOverride = scene.number;
         open(scene.number);
-        providerSurface?.showStones();
+        providerSurface?.openFirst();
         flashSelector(scene.type);
         return;
       }
@@ -88,6 +90,13 @@ export function createSetup2View() {
     : SCENES[0];
   const sceneAt = (number) => Number(number) > 0 ? SCENES[Number(number) - 1] || automaticScene() : automaticScene();
   const activeScene = () => sceneAt(sceneOverride);
+  const sceneComplete = (scene) => {
+    if (scene.type === SETUP_SURFACE_TYPES.providers) return Number(runtime?.activated_count || 0) > 0;
+    if (scene.type === SETUP_SURFACE_TYPES.register) return completion.registered;
+    if (scene.type === SETUP_SURFACE_TYPES.roots) return completion.github || Boolean(runtime?.roots?.length);
+    if (scene.type === SETUP_SURFACE_TYPES.installations) return Boolean(runtime?.services?.active || runtime?.services?.activated || runtime?.services?.installed);
+    return false;
+  };
   const flashSelector = (type) => {
     const card = bench?.host.querySelector(`[data-workbench-offer-type="${type}"]`);
     if (!card) return;
@@ -111,8 +120,9 @@ export function createSetup2View() {
     for (const card of bench?.host.querySelectorAll('[data-workbench-offer-type]') || []) {
       delete card.dataset.sceneRelevant;
       const position = ORDER.indexOf(card.dataset.workbenchOfferType);
-      card.dataset.stepState = position < active.number - 1 ? 'complete'
-        : position === active.number - 1 ? 'current' : 'upcoming';
+      const scene = SCENES[position];
+      card.dataset.complete = String(Boolean(scene && sceneComplete(scene)));
+      card.dataset.stepState = position === active.number - 1 ? 'current' : 'upcoming';
     }
   };
   const open = (number) => {
@@ -170,6 +180,17 @@ export function createSetup2View() {
         runtime = result.ok ? result.data : { providers: [], activated_count: 0 };
         environment.setupRuntime = runtime;
         environment.kinds.hydrate(['build']);
+      }
+      if (!completionLoaded) {
+        const [registration, github] = await Promise.all([
+          request('/api/setup/registration', { cache: 'no-store' }),
+          request('/api/setup/github', { cache: 'no-store' }),
+        ]);
+        completion = {
+          registered: registration.ok && registration.data?.registered === true,
+          github: github.ok && github.data?.authenticated === true,
+        };
+        completionLoaded = true;
       }
       if (!gardenContent) {
         const result = await request(GARDEN_CONTENT_URL);
