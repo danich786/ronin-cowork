@@ -1059,6 +1059,10 @@ The catalog entry goes. {dir} is not touched.
 - **roots.github_auth_lede:** Connect your GitHub account in a temporary authentication window.
 - **roots.github_connect:** Connect GitHub
 - **roots.github_check:** Check connection
+- **roots.github_recheck:** Re-check connection
+- **roots.github_checking:** Checking…
+- **roots.github_change_account:** Change account
+- **roots.github_sign_out:** Sign out
 - **roots.github_done:** Done
 - **roots.github_close:** Close
 - **roots.github_missing:** GitHub CLI is not installed.

@@ -368,6 +368,7 @@ export interface GithubSetupAnswer {
 }
 
 export interface GithubSetupOps {
+  logout?(account: string): Promise<void>;
   installed(): Promise<boolean>;
   authStatus(): Promise<string>;
   exists(): Promise<boolean>;
@@ -397,6 +398,9 @@ export async function createGithubSetupSession(primitives: GithubSessionPrimitiv
 }
 
 const defaultGithubSetupOps: GithubSetupOps = {
+  logout: async (account) => {
+    await run('gh', ['auth', 'logout', '--hostname', 'github.com', '--user', account], { timeout: 8_000 });
+  },
   installed: () => run('gh', ['--version'], { timeout: 5_000 }).then(() => true, () => false),
   authStatus: () => run('gh', ['auth', 'status', '--hostname', 'github.com', '--active'], { timeout: 8_000 })
     .then((result) => result.stderr || result.stdout, () => ''),
@@ -432,6 +436,18 @@ export async function openGithubLogin(ops: GithubSetupOps = defaultGithubSetupOp
 
 export async function closeGithubLogin(ops: GithubSetupOps = defaultGithubSetupOps): Promise<GithubSetupAnswer> {
   if (await ops.exists()) await ops.close();
+  return githubSetupAnswer(ops);
+}
+
+/** Remove only the account the user saw, never a newly selected account. */
+export async function logoutGithub(account: unknown, ops: GithubSetupOps = defaultGithubSetupOps): Promise<GithubSetupAnswer> {
+  const current = await githubSetupAnswer(ops);
+  if (typeof account !== 'string' || !account || current.account !== account) {
+    throw new Error('The GitHub account changed. Re-check the connection before signing out.');
+  }
+  if (!ops.logout) throw new Error('GitHub sign-out is unavailable.');
+  if (await ops.exists()) await ops.close();
+  await ops.logout(account);
   return githubSetupAnswer(ops);
 }
 

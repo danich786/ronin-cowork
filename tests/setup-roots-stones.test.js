@@ -23,7 +23,7 @@ test('Setup and Settings use the same Workspace Folders stone presentation', asy
 test('Setup 2 GitHub lifecycle uses only a published session and hands success to Clone', async () => {
   const github = await source('public/js/github-workspace-setup.js');
   assert.match(github, /attachment\?\.type !== 'session' \|\| !attachment\.key/);
-  assert.match(github, /if \(!result\.data\?\.authenticated\) mountAttachment\(result\.data\?\.attachment\)/, 're-entering resumes the published temporary session');
+  assert.match(github, /mountAttachment\(result\.data\.attachment\)/, 're-entering resumes the published temporary session');
   assert.match(github, /if \(connecting \|\| mounted \|\| destroyed\) return/);
   assert.match(github, /if \(checking \|\| destroyed\) return/);
   assert.match(github, /stopWatch\(\); unmount\(\)/);
@@ -121,7 +121,8 @@ test('roots carry no parallel stone DOM or CSS presentation and the detail rhyth
   assert.doesNotMatch(css, /\.setup-roots-stones \.sws-(rail|grid|detail|host)\b/, 'no consumer override of the shared rail, grid, or detail geometry');
   assert.match(css, /\.setup-roots-stones \.sws-stone\.archived \.sws-state/);
   assert.doesNotMatch(css, /\.setup-roots-stones \.sws-stone\.archived \.sws-state\s*\{[^}]*?(?:border|border-radius|background|padding):/);
-  assert.match(css, /\.setup-roots-stones \.setup-roots-add-stone[\s\S]*?border-color: var\(--kaki\)[\s\S]*?border-style: dashed[\s\S]*?background: color-mix\(in srgb, var\(--kaki-tint\)/);
+  assert.match(css, /\.setup-roots-stones \.setup-roots-add-stone \{\s*border-style: dashed;\s*\}/);
+  assert.match(css, /\.setup-roots-stones \.sws-stone\[aria-pressed='true'\] \{[^}]*background: color-mix/);
   assert.match(css, /\.pr-detail-head \{[^}]*border-bottom: var\(--edge-2\) solid var\(--kaki\)/, 'one kaki rule closes the head');
   assert.match(css, /\.pr-detail-heading \{[^}]*justify-content: space-between/, 'the head line carries the name and its actions, as Presets does');
   const detailCss = css.slice(css.indexOf("/* Setup's selected folder"), css.indexOf('.cv-worktrees-default {'));

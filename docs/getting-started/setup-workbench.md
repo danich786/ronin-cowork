@@ -154,6 +154,11 @@ repository are listed first. Selecting a stone opens its page: name and actions
 (**Edit**, **Archive**, **Exclude**), one state line, then its summary, folder facts and
 repository facts. More in `docs/architecture/project-roots.md`.
 
+**Authenticate GitHub** shows the connected account. **Re-check connection** refreshes
+that status; **Change account** opens the GitHub login window. **Sign out** removes the
+shown account's saved GitHub CLI login from this machine. If another saved account becomes
+active, the card shows that account. Sign-out does not revoke the account's GitHub tokens.
+
 ## Ronin Services
 
 Services adds optional capabilities. The page reports what is installed and enabled on

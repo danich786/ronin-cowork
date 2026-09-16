@@ -15,11 +15,12 @@ export function createGithubWorkspaceSetup({ environment, workspace = 'workspace
   const actions = el('div', 'setup-github-actions');
   const connect = el('button', '', t('roots.github_connect', 'Connect GitHub')); connect.type = 'button';
   const check = el('button', '', t('roots.github_check', 'Check connection')); check.type = 'button';
+  const signOut = el('button', '', t('roots.github_sign_out', 'Sign out')); signOut.type = 'button';
   const terminal = el('div', 'setup-github-terminal'); terminal.hidden = true;
   const terminalActions = el('div', 'setup-github-terminal-actions'); terminalActions.hidden = true;
   const done = el('button', '', t('roots.github_done', 'Done')); done.type = 'button';
   const close = el('button', '', t('roots.github_close', 'Close')); close.type = 'button';
-  actions.append(connect, check); terminalActions.append(done, close);
+  actions.append(connect, check, signOut); terminalActions.append(done, close);
   authBox.append(
     el('h2', '', t('roots.github_auth_heading', 'Authenticate GitHub')),
     el('p', '', t('roots.github_auth_lede', 'Connect your GitHub account in a temporary authentication window.')),
@@ -47,6 +48,9 @@ export function createGithubWorkspaceSetup({ environment, workspace = 'workspace
   let watch = 0;
   let checking = false;
   let connecting = false;
+  let signingOut = false;
+  let loginAccount = null;
+  let measuring = false;
   let cloning = false;
   let destroyed = false;
   let closing = null;
@@ -86,8 +90,13 @@ export function createGithubWorkspaceSetup({ environment, workspace = 'workspace
     cloneState.textContent = authenticated
       ? t('roots.github_clone_ready', 'GitHub is connected. Enter the repository you want to clone.')
       : t('roots.github_clone_needs_auth', 'Authenticate GitHub first.');
-    connect.hidden = authenticated || !installed;
-    connect.disabled = connecting;
+    connect.hidden = !installed;
+    connect.textContent = authenticated ? t('roots.github_change_account', 'Change account') : t('roots.github_connect', 'Connect GitHub');
+    connect.disabled = connecting || signingOut || Boolean(mounted);
+    check.textContent = measuring ? t('roots.github_checking', 'Checking…') : authenticated ? t('roots.github_recheck', 'Re-check connection') : t('roots.github_check', 'Check connection');
+    check.disabled = measuring || signingOut;
+    signOut.hidden = !authenticated;
+    signOut.disabled = signingOut || connecting || Boolean(mounted);
     cloneButton.disabled = cloning || !authenticated || !repository.value.trim();
     items[0].state = authenticated
       ? t('roots.github_auth_connected_state', 'Connected{account}', { account: account ? ` · ${account}` : '' })
@@ -111,15 +120,22 @@ export function createGithubWorkspaceSetup({ environment, workspace = 'workspace
     return Boolean(mounted);
   };
   const show = async () => {
+    if (measuring || destroyed) return null;
+    measuring = true; paint({ installed, authenticated, account });
     const result = await request('/api/setup/github', { cache: 'no-store' });
+    measuring = false;
+    if (destroyed) return result;
     if (result.ok) {
       paint(result.data);
-      if (!result.data?.authenticated) mountAttachment(result.data?.attachment);
-    } else state.textContent = result.message;
+      if (result.data?.attachment) {
+        if (loginAccount === null) loginAccount = result.data.account || '';
+        mountAttachment(result.data.attachment);
+      }
+    } else { paint({ installed, authenticated, account }); state.textContent = result.message; }
     return result;
   };
   const teardown = async (closeRemote = false) => {
-    stopWatch(); unmount();
+    stopWatch(); unmount(); loginAccount = null;
     if (!closeRemote || closing) return closing;
     closing = request('/api/setup/github/close', { method: 'POST' }).then((result) => {
       if (result.ok) paint(result.data); else if (!destroyed) state.textContent = result.message;
@@ -137,7 +153,7 @@ export function createGithubWorkspaceSetup({ environment, workspace = 'workspace
     checking = true;
     try {
       const result = await request('/api/setup/github', { cache: 'no-store' });
-      if (result.ok && result.data?.authenticated) await finishAuthentication(result.data);
+      if (result.ok && result.data?.authenticated && (loginAccount === null || result.data.account !== loginAccount)) await finishAuthentication(result.data);
     } finally { checking = false; }
   };
 
@@ -145,19 +161,29 @@ export function createGithubWorkspaceSetup({ environment, workspace = 'workspace
   check.addEventListener('click', () => { void show(); });
   connect.addEventListener('click', async () => {
     if (connecting || mounted || destroyed) return;
+    loginAccount = account;
     connecting = true; connect.disabled = true;
     try {
       const result = await request('/api/setup/github/login', { method: 'POST' });
-      if (!result.ok) { state.textContent = result.message; return; }
+      if (!result.ok) { connecting = false; paint({ installed, authenticated, account }); state.textContent = result.message; return; }
       paint(result.data);
       mountAttachment(result.data?.attachment);
-    } finally { connecting = false; connect.disabled = false; }
+    } finally { connecting = false; connect.disabled = signingOut || Boolean(mounted); }
   });
   done.addEventListener('click', async () => {
     const result = await show();
-    if (!result.ok) return;
+    if (!result?.ok) return;
     if (!result.data?.authenticated) { state.textContent = t('roots.github_waiting', 'Finish GitHub authentication in the window first.'); return; }
     await finishAuthentication(result.data);
+  });
+  signOut.addEventListener('click', async () => {
+    if (signingOut || mounted || !authenticated || destroyed) return;
+    signingOut = true; paint({ installed, authenticated, account });
+    const result = await request('/api/setup/github/logout', { method: 'POST', json: { account } });
+    signingOut = false;
+    if (destroyed) return;
+    if (result.ok) paint(result.data);
+    else { paint({ installed, authenticated, account }); state.textContent = result.message; }
   });
   close.addEventListener('click', () => { void teardown(true); });
   cloneButton.addEventListener('click', async () => {

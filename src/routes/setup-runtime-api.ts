@@ -15,6 +15,7 @@ import {
   githubSetupAnswer,
   openGithubLogin,
   closeGithubLogin,
+  logoutGithub,
   cloneGithubWorkspace,
 } from '../setup-runtime.js';
 import { installedAnswer } from './installed-api.js';
@@ -171,6 +172,11 @@ export function registerSetupRuntime(app: express.Express): void {
 
   app.post('/api/setup/github/close', async (_req, res) => {
     try { res.json({ ok: true, ...(await closeGithubLogin()) }); }
+    catch (error) { res.status(400).json({ error: errMsg(error) }); }
+  });
+
+  app.post('/api/setup/github/logout', async (req, res) => {
+    try { res.json({ ok: true, ...(await logoutGithub(req.body?.account)) }); }
     catch (error) { res.status(400).json({ error: errMsg(error) }); }
   });
 

@@ -2637,13 +2637,11 @@ body {
   color: var(--bad-soft);
 }
 .setup-roots-stones .setup-roots-add-stone {
-  border-color: var(--kaki);
   border-style: dashed;
+}
+.setup-roots-stones .sws-stone[aria-pressed='true'] {
   background: color-mix(in srgb, var(--kaki-tint) 18%, var(--panel));
   color: var(--kaki-lift);
-}
-.setup-roots-stones .setup-roots-add-stone .sws-glyph {
-  color: var(--kaki);
 }
 /* Setup's selected folder: one page in the shape every stone detail shares. One type family,
    one size (14px; 13px only for editor notes), two weights, two colours: strong for headings
