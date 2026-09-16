@@ -9,7 +9,7 @@ const source = async (path) => readFile(new URL(`../public/${path}`, import.meta
 
 test('Ronin Home defaults Machine Settings from the activated-provider threshold', () => {
   assert.equal(setupDefaultView(0), 'setup');
-  assert.equal(setupDefaultView(1), 'setup');
+  assert.equal(setupDefaultView(1), 'campaign');
   assert.equal(setupDefaultView(2), 'campaign');
   assert.equal(setupDefaultView(7), 'campaign');
 });
@@ -20,7 +20,7 @@ test('Ronin Home names the place and gates Teams and New Project on runtime read
   assert.match(home, /request\('\/api\/setup\/runtime'/);
   assert.match(home, /activatedCount < 1/);
   assert.match(home, /aria-disabled/);
-  assert.match(home, /Activate one model provider in Machine Settings/);
+  assert.match(home, /Activate one model provider in Machine Setup/);
 });
 
 test('Setup and Settings share the machine-settings island without a right header editor', async () => {
