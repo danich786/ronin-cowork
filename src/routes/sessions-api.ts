@@ -100,11 +100,6 @@ async function performAgentShutdown(name: string, progress: (value: ShutdownProg
   return result.closed;
 }
 
-async function notifyShutdownBlockers(name: string, error: ShutdownRefused): Promise<void> {
-  const queued = await enqueueMessage(name, `Ronin could not close this Agent because assigned desk work needs closeout.\n${error.message}\nRun session_end again after completing the named NEXT actions.`, 'house');
-  await attemptMessage(queued.id, 'safe').catch(() => null);
-}
-
 async function performAgentHardDelete(name: string, progress: (value: ShutdownProgress) => void, signal: AbortSignal): Promise<NonNullable<ShutdownOperation['destructive']>> {
   signal.throwIfAborted();
   progress({ phase: 'resolving_agent', message: `Resolving Agent ${name}` });
@@ -251,7 +246,6 @@ export function registerSessions(app: express.Express): void {
       res.json({ ok: true, closed: result.closed });
     } catch (e) {
       if (e instanceof ShutdownRefused) {
-        await notifyShutdownBlockers(name, e);
         return res.status(409).json({ error: e.message, blockers: e.blockers });
       }
       res.status(500).json({ error: String((e as Error)?.message ?? e) });
@@ -306,7 +300,6 @@ export function registerSessions(app: express.Express): void {
         operation.error = String((e as Error)?.message ?? e);
         operation.message = operation.error;
         if (e instanceof ShutdownRefused) operation.blockers = e.blockers;
-        if (e instanceof ShutdownRefused) await notifyShutdownBlockers(name, e);
       } finally {
         controller.abort();
         if (deadline) clearTimeout(deadline);
@@ -350,7 +343,6 @@ export function registerSessions(app: express.Express): void {
       console.log(`[ronin] harakiri: ${name} (pane ${pane}); closed ${closed.length} desk(s)`);
     } catch (e) {
       if (e instanceof ShutdownRefused) {
-        await notifyShutdownBlockers(name, e);
         return res.status(409).json({ error: e.message, blockers: e.blockers });
       }
       res.status(500).json({ error: String((e as Error)?.message ?? e) });

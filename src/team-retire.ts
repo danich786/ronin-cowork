@@ -8,6 +8,9 @@ import { resolveEndingRequest } from './desks/ending-response.js';
 export type TeamRetireDisposition = 'inspect' | 'prompt' | 'ignore';
 
 export async function retireTeam(name: string, disposition: TeamRetireDisposition = 'inspect'): Promise<Record<string, unknown>> {
+  if (disposition === 'inspect') {
+    return { ok: true, inspected: name, ending: await inspectTeamEnding(name) };
+  }
   // Recover an orphaned legacy/incomplete membership that has no Team roster. With no
   // roster it cannot own the desk/team-line state inspected by this preflight, but its
   // stale member tags and leads still need to be detached.

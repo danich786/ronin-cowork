@@ -79,50 +79,18 @@ its retained states are described by [the queue contract](../architecture/messag
 
 ### 4. Commit privately, hand in deliberately, let the lead promote
 
-Under the reviewed arrangement (declared in each repository's `RONIN_REPO`),
-Ronin's product repositories use:
+Keep preservation, review and publication distinct. A commit preserves coherent work in
+the Agent's own working context. A hand-in offers that work to the Team for review; it
+does not end the Agent, close its desk or imply acceptance. Promotion is a separate Team
+lead boundary that moves reviewed Team work toward the repository's shared state.
 
-```text
-team/<team>/<session>   your desk — a private branch and its worktree, one per repo you change
-team/<team>/dev         the team's line — a funnel point: handed in to, never edited
-dev                     the repository-wide pool, and the live app — moves by team promotion
-master                  reviewed/released line — moves by PR from dev
-```
+The repository's declared arrangement determines the concrete path. Capability documents,
+conditional Behaviors and tool help teach those mechanics; this methodology does not
+duplicate their commands or branch choreography. At every boundary, the Agent reads the
+tool's acknowledgement and chooses the next act rather than treating one successful act
+as permission to cascade into another.
 
-Three scopes, kept distinct. **Commit** preserves: a checkpoint on your desk, as often as
-coherent, partial ones included; nothing propagates and no gate runs. **Hand-in**
-publishes: `worktree-desk hand-in` admits your committed range to the team line by mechanical
-admission (merge, conflict check, near-instant invariants) — a conflict is contained in a
-candidate, the line is untouched, and the lead adjudicates. **Team promotion** is the
-lead's or compiler's act: the team line admitted to `dev` on a candidate that passed the
-first full repository BYOIN, with a receipt for the exact SHA; `dev` restarts. The second
-full BYOIN runs at `dev → master`; neither runs at a commit or hand-in
-(`docs/test-protocols.md`).
-
-A mandate of reach `execute` builds from the agreed build-out, deleting each item from
-the doc as it lands. Where the work lands follows the Workspace Folder's arrangement: in a
-worktree root (`ronin_catalogs/behaviours/conditional/worktree-root.md`) the session works at its desk and *offers* a
-hand-in at each DONE leg — the session decides when its work is coherent for the team,
-and a tool never decides that for it; in a checkout (`ronin_catalogs/behaviours/conditional/checkout.md`) it commits
-to the repository's declared line and invents no desk state. Neither opens a pull request.
-
-#### Visual staging: one disposable Team preview
-
-Visual work may take a provisional lane before ordinary hand-in: the Agent offers exact
-commits as candidates, the lead composes and serves one disposable preview, and approval
-changes no Git line. The procedure is `ronin_catalogs/behaviours/selected/visual_staging.md`; the `visual_staging`
-behaviour gives it to an Agent, whose first act is to tell the Team and the lead to read it.
-
-Accepted state reaches a desk when its Agent chooses `worktree-desk sync`, which merges
-current local `dev`. Status reports the distance; 20 commits behind is a notice, not a
-block. Read pending and overlap notices before you go on.
-
-The final review is one pull request from `dev` to the stable line, opened by the release
-process with the promotion receipt, never by an ordinary session, and never merged by an
-agent. A Ronin repository under the direct arrangement instead publishes to its declared
-`main` or `master`: no desk, no ordinary PR, and published history is not rewritten.
-
-### 5. Land the state, then retire the session
+### 5. Leave durable state before the session ends
 
 Finishing the work of a session, before it ends, leaves no essential knowledge in a pane
 or in `wip/`:
@@ -133,11 +101,10 @@ or in `wip/`:
   what exists and how it works now;
 - add the single manifest pointer when the project uses a manifest — one line, an index
   entry and not a history;
-- close every finished desk explicitly after `worktree-desk hand-in --assignment`; hand-in
-  does not close one, and the live session stays ready at the project root for later work;
-  under direct publishing, use ordinary Git instead;
-- report the paths, what was handed in, what was closed, and the manifest line **before**
-  `harakiri`, not after.
+- leave the work record and standing documents truthful enough that another Agent can
+  resume without reconstructing decisions from a terminal;
+- treat ending the Agent as its own explicit lifecycle decision, separate from preserving
+  or handing in work.
 
 The standing document is not a retrospective. Decisions that still constrain the system
 belong there; conversation, abandoned options and a chronology do not. A scratch session
