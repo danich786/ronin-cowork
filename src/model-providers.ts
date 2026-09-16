@@ -61,6 +61,8 @@ export interface ProviderCatalogEntry {
   origin: Origin;
   /** A user section that replaced a shipped section of the same provider id, whole. */
   shadowed: boolean;
+  /** Optional display status for a provider that is beta or not offered yet. */
+  maturity?: string;
   liveDangerously?: string;
   gbrainDisconnected?: string;
   models: SessionLaunchSpec[];
@@ -170,6 +172,7 @@ export function parseProviderCatalog(raw: string, origin: Origin = 'stock'): Pro
     if (!label || !provider || !cli) continue;
     const liveDangerously = field(section, 'live_dangerously');
     const gbrainDisconnected = field(section, 'gbrain_disconnected');
+    const maturity = field(section, 'maturity');
     const rows = new Map<string, Record<string, string>>();
     let header: string[] = [];
     for (const line of section.split('\n')) {
@@ -206,6 +209,7 @@ export function parseProviderCatalog(raw: string, origin: Origin = 'stock'): Pro
       provider, cli, label, origin, shadowed: false, models,
       ...(liveDangerously ? { liveDangerously } : {}),
       ...(gbrainDisconnected ? { gbrainDisconnected } : {}),
+      ...(maturity ? { maturity } : {}),
     });
   }
   return out;

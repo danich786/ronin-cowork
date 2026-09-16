@@ -2,6 +2,7 @@
 - **label:** gbrain
 - **blurb:** Makes the gbrain behaviour available.
 - **effect:** provider
+- **maturity:** beta
 - **provides:** gbrain
 - **reading:** —
 - **reading_off:** —

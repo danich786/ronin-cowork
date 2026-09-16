@@ -99,6 +99,7 @@ export interface ContributionRow extends Pick<Row, 'name' | 'origin' | 'shadowed
 
 export interface InstallationRow extends ContributionRow {
   effect: 'system' | 'provider';
+  maturity: string;
   provides: string[];
   requires: string[];
 }
@@ -140,6 +141,7 @@ export async function listInstallations(): Promise<InstallationRow[]> {
   return (await readDefinitions('installations')).map((d) => ({
     ...contribution(d),
     effect: d.get('effect') === 'system' ? 'system' : 'provider',
+    maturity: d.get('maturity'),
     provides: splitDefinitionList(d.get('provides')),
     requires: splitDefinitionList(d.get('requires')),
   }));

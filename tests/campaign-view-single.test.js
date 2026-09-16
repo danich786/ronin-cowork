@@ -12,6 +12,7 @@ test('the Campaign page has one switch for offering New Campaign', async () => {
     assert.match(source, new RegExp(`add\\(\\{ type: TYPES\\.${type}`));
   }
   assert.match(source, /add\(campaignTemplatesDefinition\(\)\)/);
+  assert.doesNotMatch(source, /SETUP_SURFACE_TYPES\.launchOwn, TYPES\.templates/, 'Templates stays registered but is absent from the Settings selector');
   assert.match(source, /add\(providerSurfaceDefinition\(\)\)/);
   assert.match(source, /providers: PROVIDER_SURFACE_TYPE/);
 });

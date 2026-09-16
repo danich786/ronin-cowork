@@ -6,7 +6,8 @@ test('Campaign Installations is the shared stone surface with the Setup Services
   const source = await readFile(new URL('../public/js/campaign-installations.js', import.meta.url), 'utf8');
   assert.match(source, /createStoneWorkSurface/);
   assert.match(source, /\['ronin_services', 'gbrain', 'trello', 'perplexity'\]/);
-  assert.match(source, /ronin_services: 'beta',[\s\S]*gbrain: 'beta',[\s\S]*trello: 'comingSoon',[\s\S]*perplexity: 'comingSoon'/);
+  assert.match(source, /createStatusMarker\(installation\.maturity\)/);
+  assert.doesNotMatch(source, /INSTALLATION_STATUS/);
   assert.match(source, /createServicesSurface\(sharedContext\)/);
   assert.match(source, /createGbrainSurface\(sharedContext\)/);
   assert.match(source, /key: 'available'.*switch: \[t\('campaign_view\.on', 'On'\), t\('campaign_view\.off', 'Off'\)\]/);

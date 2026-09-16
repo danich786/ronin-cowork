@@ -2,6 +2,7 @@
 - **label:** Trello
 - **blurb:** Makes the Trello behaviour available when its connection exists.
 - **effect:** provider
+- **maturity:** comingSoon
 - **provides:** trello
 - **reading:** —
 - **reading_off:** —

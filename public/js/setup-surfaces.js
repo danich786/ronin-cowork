@@ -668,6 +668,7 @@ export function createGbrainSurface(context) {
 
 function createLaunchOwnSurface(context) {
   const out = surface(t('setup_surface.launch_own', 'Launch your own'));
+  const showTemplates = context.tenant?.kind !== 'campaign';
   const renderDetail = (item, host) => {
     const views = [item.id === 'template'
       ? createTemplatesSurface()
@@ -680,7 +681,7 @@ function createLaunchOwnSurface(context) {
     items: [
       { id: 'agent', glyph: '人', label: t('agent', 'Agent') },
       { id: 'team', glyph: '人人', label: t('team', 'Team') },
-      { id: 'template', glyph: '▤', label: t('template', 'Template') },
+      ...(showTemplates ? [{ id: 'template', glyph: '▤', label: t('template', 'Template') }] : []),
     ],
     className: 'setup-launch-own-surface',
     renderDetail,

@@ -96,7 +96,7 @@ function registerCampaignSurfaces() {
     TERMINAL_TYPE,
     TYPES.identity, TYPES.roots, TYPES.defaults, TYPES.installations, TYPES.providers, TYPES.document,
     SETUP_SURFACE_TYPES.register,
-    SETUP_SURFACE_TYPES.launchOwn, TYPES.templates, TYPES.machine,
+    SETUP_SURFACE_TYPES.launchOwn, TYPES.machine,
     ...(MULTIPLE_CAMPAIGNS_ENABLED ? [TYPES.create] : []),
     FEEDBACK_TYPE,
   ]);

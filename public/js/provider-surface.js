@@ -120,8 +120,7 @@ export function createProviderSurface(context) {
   /** A catalog provider no registry CLI serves is a stone of its own, keyed by its vendor id. */
   const catalogOnly = () => {
     const known = new Set((runtime.providers || []).map((provider) => provider?.id));
-    const rows = providerCatalog().rows;
-    return rows.filter((row, index) => !known.has(row.cli) && rows.findIndex((other) => other.provider === row.provider) === index);
+    return (providerCatalog().providers || []).filter((entry) => !known.has(entry.cli));
   };
 
   /* ---- 1 · YOURS: the three steps, exactly as the runtime row measures them ---- */
@@ -346,10 +345,13 @@ export function createProviderSurface(context) {
       ...providers.map((provider) => {
         const own = rows.filter((row) => row.cli === provider.id);
         const vendor = own[0]?.provider_label || provider.from || '';
-        return stoneOf(String(provider.id), provider.label || provider.id, own.length ? t('setup_surface.provider_models_n', '{vendor} · {n} models', { vendor, n: own.length }) : vendor, providerPresentation(provider).inventoryState, provider.activated === true);
+        const entry = (providerCatalog().providers || []).find((candidate) => candidate.cli === provider.id);
+        return stoneOf(String(provider.id), provider.label || provider.id, own.length ? t('setup_surface.provider_models_n', '{vendor} · {n} models', { vendor, n: own.length }) : vendor, providerPresentation(provider).inventoryState, provider.activated === true, createStatusMarker(entry?.maturity));
       }),
-      ...catalogOnly().map((row) => stoneOf(row.provider, row.provider_label, t('setup_surface.provider_models_n', '{vendor} · {n} models', { vendor: row.provider_label, n: rows.filter((item) => item.provider === row.provider).length }), t('setup_surface.no_cli_state', 'No CLI'), false)),
-      { ...stoneOf('openrouter', 'OpenRouter', '', '', false, createStatusMarker('comingSoon')), disabled: true },
+      ...catalogOnly().map((entry) => ({
+        ...stoneOf(entry.provider, entry.label, entry.models.length ? t('setup_surface.provider_models_n', '{vendor} · {n} models', { vendor: entry.label, n: entry.models.length }) : '', entry.models.length ? t('setup_surface.no_cli_state', 'No CLI') : '', false, createStatusMarker(entry.maturity)),
+        disabled: entry.models.length === 0,
+      })),
     ];
     say(items.length ? '' : t('setup_surface.no_catalog', 'No model providers are in the catalog on this machine.'));
     stones.setItems(items);
