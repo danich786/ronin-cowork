@@ -18,7 +18,7 @@
         {
           "id": "provider-one-is-enough",
           "kind": "instruction",
-          "body": "Sign in directly with the model provider. One provider is enough to start."
+          "body": "Sign in with the provider's own CLI; the credential stays here. One provider is enough to start."
         }
       ],
       "cta": {
