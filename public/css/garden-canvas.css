@@ -12,7 +12,7 @@
     --gc-step-tight: var(--space-5);
     --gc-step: var(--space-6);
     --gc-step-loose: var(--space-7);
-    --gc-measure: 36ch;
+    --gc-measure: 27rem;
     --gc-heading-measure: 19ch;
     --gc-heading-size: var(--text-10);
     --gc-heading-lh: 1.18;
