@@ -34,6 +34,7 @@ export function createSetup2View() {
   let runtime = null;
   let garden = null;
   let gardenContent = null;
+  let paintedSceneId = null;
   let sceneOverride = 0;
   const providerSessions = createProviderSetupSessionMount();
   let kinds = ['build'];
@@ -68,7 +69,11 @@ export function createSetup2View() {
   const activeScene = () => sceneAt(sceneOverride);
   const selectGarden = (scene) => {
     if (!garden || !gardenContent || !scene) return false;
-    return garden.select(scene.id, gardenContent, scene.id);
+    if (paintedSceneId === scene.id) return false;
+    const canvasId = gardenContent.scenarios[scene.id];
+    garden.paint(gardenContent.canvases[canvasId] || null);
+    paintedSceneId = scene.id;
+    return true;
   };
   const paint = () => {
     const active = activeScene();

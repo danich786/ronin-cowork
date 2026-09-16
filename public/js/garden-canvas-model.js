@@ -69,10 +69,13 @@ export function normalizeGardenCanvasCatalog(value, now = Date.now()) {
     throw new Error(`garden canvas content must use version ${GARDEN_CANVAS_VERSION}`);
   }
   const scenarios = {};
+  const canvases = {};
   for (const [id, canvasId] of Object.entries(value.scenarios)) {
     const raw = value.canvases[canvasId];
     if (!/^[a-z][a-z0-9-]*$/.test(id) || typeof canvasId !== 'string' || !raw || typeof raw !== 'object') continue;
-    scenarios[id] = Object.freeze({
+    scenarios[id] = canvasId;
+    if (canvases[canvasId]) continue;
+    canvases[canvasId] = Object.freeze({
       id: canvasId,
       question: normalizeQuestion(raw.question),
       cta: normalizeCta(raw.cta),
@@ -80,22 +83,5 @@ export function normalizeGardenCanvasCatalog(value, now = Date.now()) {
       media: normalizeMedia(raw.media),
     });
   }
-  return Object.freeze({ schema_version: GARDEN_CANVAS_VERSION, scenarios: Object.freeze(scenarios) });
-}
-
-export function createGardenTransitionGate(apply) {
-  if (typeof apply !== 'function') throw new TypeError('garden transition gate needs an apply function');
-  let appliedToken = null;
-  let count = 0;
-  return Object.freeze({
-    select(scenarioId, content, transitionToken) {
-      if (transitionToken === undefined || transitionToken === null) throw new Error('garden canvas selection needs a transition token');
-      if (Object.is(appliedToken, transitionToken)) return false;
-      appliedToken = transitionToken;
-      apply(scenarioId, content);
-      count += 1;
-      return true;
-    },
-    count: () => count,
-  });
+  return Object.freeze({ schema_version: GARDEN_CANVAS_VERSION, scenarios: Object.freeze(scenarios), canvases: Object.freeze(canvases) });
 }
