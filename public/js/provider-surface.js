@@ -37,6 +37,7 @@ import { WorkspaceKit } from './workspace-kit.js';
 import { createStoneWorkSurface } from './stone-work-surface.js';
 import { loadProviderCatalog, modelAvailabilityFact, providerCatalog, tierWord } from './form-steps.js';
 import { mountProviderAttachment, providerFromRuntime, providerPresentation, providerReadiness } from './setup-provider-state.js';
+import { createStatusMarker } from './status-marker.js';
 
 const el = (tag, cls = '', text = null) => { const out = document.createElement(tag); if (cls) out.className = cls; if (text != null) out.textContent = String(text); return out; };
 
@@ -340,7 +341,7 @@ export function createProviderSurface(context) {
     context.workbench?.refreshSelector?.();
     const rows = providerCatalog().rows;
     const providers = (Array.isArray(runtime.providers) ? runtime.providers : []).filter((provider) => provider?.id);
-    const stoneOf = (id, label, secondary, state, activated) => ({ id, label, secondary, state, className: 'setup-provider-stone', attrs: { 'data-provider': id, 'data-activated': String(activated) } });
+    const stoneOf = (id, label, secondary, state, activated, marker = null) => ({ id, label, secondary, state, marker, className: 'setup-provider-stone', attrs: { 'data-provider': id, 'data-activated': String(activated) } });
     const items = [
       ...providers.map((provider) => {
         const own = rows.filter((row) => row.cli === provider.id);
@@ -348,6 +349,7 @@ export function createProviderSurface(context) {
         return stoneOf(String(provider.id), provider.label || provider.id, own.length ? t('setup_surface.provider_models_n', '{vendor} · {n} models', { vendor, n: own.length }) : vendor, providerPresentation(provider).inventoryState, provider.activated === true);
       }),
       ...catalogOnly().map((row) => stoneOf(row.provider, row.provider_label, t('setup_surface.provider_models_n', '{vendor} · {n} models', { vendor: row.provider_label, n: rows.filter((item) => item.provider === row.provider).length }), t('setup_surface.no_cli_state', 'No CLI'), false)),
+      { ...stoneOf('openrouter', 'OpenRouter', '', '', false, createStatusMarker('comingSoon')), disabled: true },
     ];
     say(items.length ? '' : t('setup_surface.no_catalog', 'No model providers are in the catalog on this machine.'));
     stones.setItems(items);

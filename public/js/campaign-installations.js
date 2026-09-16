@@ -8,8 +8,15 @@ import { ask } from './ask.js';
 import { createStoneWorkSurface } from './stone-work-surface.js';
 import { createServicesSurface, createGbrainSurface } from './setup-surfaces.js';
 import { completeInstallationMap as completeMap } from './installation-map.js';
+import { createStatusMarker } from './status-marker.js';
 
 const INSTALLATION_ORDER = ['ronin_services', 'gbrain', 'trello', 'perplexity'];
+const INSTALLATION_STATUS = Object.freeze({
+  ronin_services: 'beta',
+  gbrain: 'beta',
+  trello: 'comingSoon',
+  perplexity: 'comingSoon',
+});
 
 const el = (tag, cls = '', text = null) => {
   const out = document.createElement(tag);
@@ -41,6 +48,7 @@ export function createInstallationsSurface(campaign, context = {}) {
     ...installation,
     id: installation.name,
     label: installation.label || installation.name,
+    marker: createStatusMarker(INSTALLATION_STATUS[installation.name]),
     state: stateWord(installation),
     attrs: gated(installation.name)
       ? { 'data-gated': 'true', title: t('campaign_view.services_required', 'Ronin Services required') }
