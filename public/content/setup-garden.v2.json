@@ -53,12 +53,12 @@
       ],
       "media": [
         {
-          "id": "register-protection",
+          "id": "register-services-doc",
           "kind": "doc",
-          "label": "How Ronin protects you",
-          "description": "What stays on your machine, and what does not",
+          "label": "Registration and Services",
+          "description": "What registering establishes, and what it does not gate",
           "root": "ronin_cowork",
-          "path": "docs/getting-started/how-ronin-protects-you.md"
+          "path": "docs/getting-started/services-activation.md"
         }
       ]
     },
@@ -82,9 +82,9 @@
           "id": "workspace-folders-doc",
           "kind": "doc",
           "label": "Workspace Folders",
-          "description": "How Ronin records where work may happen",
+          "description": "What a Workspace Folder is, and how to choose one",
           "root": "ronin_cowork",
-          "path": "docs/architecture/project-roots.md"
+          "path": "docs/using-ronin/workspace-folders.md"
         }
       ]
     },
@@ -105,12 +105,12 @@
       ],
       "media": [
         {
-          "id": "installations-doc",
+          "id": "services-doc",
           "kind": "doc",
-          "label": "Installations and behaviours",
-          "description": "What a new Agent is equipped with",
+          "label": "Ronin Services",
+          "description": "Optional capabilities, and how to switch them on",
           "root": "ronin_cowork",
-          "path": "docs/architecture/installations.md"
+          "path": "docs/getting-started/services-activation.md"
         }
       ]
     },
