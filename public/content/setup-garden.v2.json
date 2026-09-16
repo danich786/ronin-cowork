@@ -43,12 +43,12 @@
           "kind": "title",
           "eyebrow": "Optional",
           "heading": "Introduce yourself",
-          "body": "Registering lets us reach you about updates. Ronin works exactly the same if you skip it."
+          "body": "Registering gives you access to Ronin Services and lets you take part in the Bounty Program. Both are free."
         },
         {
           "id": "register-nothing-required",
           "kind": "instruction",
-          "body": "Nothing here is required, and nothing leaves this machine until you send it."
+          "body": "It is not required. Ronin works without it, and Services already installed stay usable either way."
         }
       ],
       "media": [
