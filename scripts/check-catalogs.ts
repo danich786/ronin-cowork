@@ -160,6 +160,9 @@ if (!/^\d{4}-\d{2}-\d{2}$/.test(updated)) fail('MODEL_PROVIDERS.md: the header c
     const at = `MODEL_PROVIDERS.md: ${entry.label}`;
     if (providers.has(entry.provider)) fail(`${at}: provider id "${entry.provider}" is used by two sections`);
     providers.add(entry.provider);
+    // A coming-soon section is display inventory, not a launch promise. With no launch
+    // rows it may name the future CLI without inventing an executable registry entry.
+    if (entry.maturity === 'comingSoon' && entry.models.length === 0) continue;
     if (clis.has(entry.cli)) fail(`${at}: cli "${entry.cli}" is served by two sections`);
     clis.add(entry.cli);
     const agent = AGENTS.find((row) => row.id === entry.cli);

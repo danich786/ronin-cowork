@@ -43,9 +43,10 @@ test('GET /api/provider-catalog is the catalog object, whole and dated', async (
   assert.deepEqual(body.withdrawn, []);
   assert.ok(body.providers.length >= 5);
   for (const entry of body.providers) {
-    assert.deepEqual(Object.keys(entry).filter((key) => !['gbrainDisconnected', 'liveDangerously'].includes(key)).sort(), ['cli', 'label', 'models', 'origin', 'provider', 'shadowed']);
+    assert.deepEqual(Object.keys(entry).filter((key) => !['gbrainDisconnected', 'liveDangerously', 'maturity'].includes(key)).sort(), ['cli', 'label', 'models', 'origin', 'provider', 'shadowed']);
     assert.equal(entry.origin, 'stock');
-    assert.ok(entry.models.length > 0, `${entry.label} carries its models`);
+    if (entry.maturity === 'comingSoon') assert.deepEqual(entry.models, [], `${entry.label} is visible but unavailable`);
+    else assert.ok(entry.models.length > 0, `${entry.label} carries its models`);
   }
 });
 

@@ -216,7 +216,7 @@ export function kindTiles(current, onPick) {
 }
 
 /**
- * The template tray: `Make your own` leads (the form's own box — a template that filled
+ * The template tray: `Open` leads (the form's own box — a template that filled
  * nothing in would collapse nothing), the catalog rows follow in their stated order, and
  * the library door stands greyed so the shelf is not mistaken for the whole offer.
  */
@@ -236,7 +236,7 @@ export function templateBox(art, label, blurb, picked, act) {
 export function templateTray(rows, current, onPick, { includeOwn = true } = {}) {
   const grid = el('div', 'fs-tmplgrid');
   const box = templateBox;
-  if (includeOwn) grid.append(box('＋', t('forms.own', 'Make your own'), t('forms.own_blurb', 'Fresh and empty. Fill it in yourself.'), current === '', () => onPick('')));
+  if (includeOwn) grid.append(box('○', t('campaign_view.option_open', 'Open'), t('forms.open_template_blurb', 'Use the open form with no template.'), current === '', () => onPick('')));
   for (const row of rows) {
     grid.append(box(row.art, row.label, row.blurb, current === row.name, () => onPick(row.name)));
   }
@@ -261,7 +261,7 @@ export function templateTray(rows, current, onPick, { includeOwn = true } = {}) 
  * A surface calls `loadProviderCatalog()` when it is shown and paints from
  * `providerCatalog()`; a picker built before the first read paints again when it lands.
  */
-let catalog = { rows: [], machine: [], measured_at: '', origin: '', updated: '', stock_updated: '', withdrawn: [], loaded: false };
+let catalog = { rows: [], providers: [], machine: [], measured_at: '', origin: '', updated: '', stock_updated: '', withdrawn: [], loaded: false };
 let inflight = null;
 
 export function loadProviderCatalog() {
@@ -270,7 +270,7 @@ export function loadProviderCatalog() {
     const providers = read.ok && Array.isArray(read.data?.providers) ? read.data.providers : [];
     const machine = runtime.ok && Array.isArray(runtime.data?.providers) ? runtime.data.providers : [];
     catalog = {
-      rows: orderedCatalog(catalogRows(providers), machine), machine,
+      rows: orderedCatalog(catalogRows(providers), machine), providers, machine,
       measured_at: runtime.ok ? String(runtime.data?.measured_at || '') : '',
       origin: read.ok ? String(read.data?.origin || '') : '', updated: read.ok ? String(read.data?.updated || '') : '',
       stock_updated: read.ok ? String(read.data?.stock_updated || '') : '',
@@ -283,7 +283,7 @@ export function loadProviderCatalog() {
   return inflight;
 }
 
-/** What every reader paints from: `{ rows, machine, measured_at, origin, updated, stock_updated, withdrawn, loaded }`. */
+/** What every reader paints from: `{ rows, providers, machine, measured_at, origin, updated, stock_updated, withdrawn, loaded }`. */
 export const providerCatalog = () => catalog;
 
 /**

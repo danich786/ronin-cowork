@@ -11,6 +11,7 @@ class FakeNode {
   setAttribute(name, value) { this.attributes[name] = String(value); }
   addEventListener(name, callback) { (this.listeners[name] ||= []).push(callback); }
   querySelectorAll(selector) { return [...this.walk()].filter((node) => selector === '[data-sws-id]' && node.dataset.swsId); }
+  querySelector(selector) { return [...this.walk()].find((node) => selector === '.sws-state' && node.className === 'sws-state') || null; }
   *walk() { for (const child of this.children) { if (!(child instanceof FakeNode)) continue; yield child; yield* child.walk(); } }
   click() { for (const callback of this.listeners.click || []) callback({ currentTarget: this }); }
 }
@@ -19,6 +20,7 @@ globalThis.Node = FakeNode;
 globalThis.document = { createElement: (tag) => new FakeNode(tag), createTextNode: (text) => Object.assign(new FakeNode('#text'), { textContent: text }) };
 
 const { createStoneWorkSurface } = await import('../public/js/stone-work-surface.js');
+const { createStatusMarker } = await import('../public/js/status-marker.js');
 
 test('shared stone surface selects, refreshes, opens external detail, and restores focus on Escape', () => {
   const rendered = [];
@@ -53,6 +55,32 @@ test('shared stone surface selects, refreshes, opens external detail, and restor
   assert.equal(prevented, true);
   assert.equal(surface.el.dataset.open, 'false');
   assert.equal(surface.el.querySelectorAll('[data-sws-id]')[1].focused, true);
+});
+
+test('stone state can update without disposing or reconstructing an open detail', () => {
+  let renders = 0;
+  const surface = createStoneWorkSurface({
+    items: [{ id: 'one', label: 'One', state: 'waiting' }],
+    renderDetail: (_item, host) => { renders += 1; host.append(new FakeNode('article')); },
+  });
+  surface.select('one');
+  const stone = surface.el.querySelectorAll('[data-sws-id]')[0];
+  surface.updateItems([{ id: 'one', state: 'ready', disabled: true }]);
+  assert.equal(renders, 1);
+  assert.equal(stone.disabled, true);
+  assert.equal(stone.querySelector('.sws-state').textContent, 'ready');
+});
+
+test('shared status markers are compact, token-driven, and can be placed on any stone', async () => {
+  const marker = createStatusMarker('beta');
+  const surface = createStoneWorkSurface({ items: [{ id: 'one', label: 'One', marker }] });
+  assert.equal(surface.el.querySelectorAll('[data-sws-id]')[0].children[1], marker);
+  assert.equal(marker.textContent, 'Beta');
+  assert.equal(marker.dataset.status, 'beta');
+  const css = await readFile(new URL('../public/css/launch-forms.css', import.meta.url), 'utf8');
+  assert.match(css, /\.status-marker \{[^}]*color: var\(--kaki\);[^}]*font-size: var\(--text-1\)/);
+  assert.match(css, /\.status-marker::before \{[^}]*width: var\(--space-1\);[^}]*background: currentColor/);
+  assert.doesNotMatch(css, /\.status-marker \{[^}]*border(?:-radius)?:/);
 });
 
 test('consumers cannot override the shared hidden detail or stone geometry', async () => {

@@ -28,8 +28,9 @@ test('the stock catalog names every provider with its CLI, its tiers and a marke
   assert.equal(read.origin, 'stock');
   assert.match(read.updated, /^\d{4}-\d{2}-\d{2}$/, 'the stock catalog says when it was last read from the public record');
   const providers = read.providers;
-  assert.deepEqual(providers.map((entry) => entry.cli), ['claude', 'codex', 'gemini', 'grok', 'hermes'], 'one section per CLI the registry knows');
-  for (const entry of providers) {
+  const available = providers.filter((entry) => entry.models.length > 0);
+  assert.deepEqual(available.map((entry) => entry.cli), ['claude', 'codex', 'gemini', 'grok', 'hermes'], 'one launchable section per CLI the registry knows');
+  for (const entry of available) {
     assert.ok(AGENTS.some((agent) => agent.id === entry.cli), `${entry.label}: cli ${entry.cli} is in src/agents.ts`);
     assert.ok(entry.models.length > 0, `${entry.label} offers a model`);
     assert.ok(entry.models.filter((row) => row.default).length <= 1, `${entry.label} marks at most one default`);
@@ -42,6 +43,10 @@ test('the stock catalog names every provider with its CLI, its tiers and a marke
       assert.equal(row.cli, entry.cli);
     }
   }
+  assert.deepEqual(providers.find((entry) => entry.provider === 'openrouter'), {
+    provider: 'openrouter', cli: 'openrouter', label: 'OpenRouter', origin: 'stock', shadowed: false,
+    maturity: 'comingSoon', models: [],
+  }, 'a coming-soon provider is catalog data but has no launch rows');
   const anthropic = providers.find((entry) => entry.provider === 'anthropic')!;
   assert.equal(anthropic.label, 'Anthropic');
   assert.equal(anthropic.gbrainDisconnected, '--strict-mcp-config');
@@ -112,7 +117,7 @@ test("the owner's copy is an overlay: a section of a shipped id replaces it in p
     assert.equal(read.updated, '', 'the copy has no updated line and says so');
     assert.match(read.stock_updated, /^\d{4}-\d{2}-\d{2}$/, 'the shipped date is carried beside it, never borrowed for it');
     assert.deepEqual(read.providers.map((p) => [p.provider, p.origin, p.shadowed]), [
-      ['anthropic', 'user', true], ['openai', 'stock', false], ['nous', 'stock', false], ['example', 'user', false],
+      ['anthropic', 'user', true], ['openai', 'stock', false], ['nous', 'stock', false], ['openrouter', 'stock', false], ['example', 'user', false],
     ], 'anthropic replaced in place; openai and nous untouched; xai hidden and google tombstoned are gone; example appended');
     assert.equal(read.providers[0].label, 'Anthropic (mine)', 'the heading is the copy\'s, the key was the id');
     assert.deepEqual(read.providers[0].models.map((m) => m.cmd), ['claude --model fable'], 'the section replaced whole — the shipped rows do not merge in');

@@ -37,6 +37,7 @@ let catalog = { origin: 'stock', path: '/stock/MODEL_PROVIDERS.md', updated: '20
   ] },
   { provider: 'openai', cli: 'codex', label: 'OpenAI', models: [{ model: 'gpt-5.6-sol', tier: 'frontier', default: true, cost: '$5 in · $30 out per M tokens (2026-09)', good_at: 'the hardest coding', not_good_at: 'bulk loops', cmd: 'codex --model gpt-5.6-sol' }] },
   { provider: 'pi', cli: 'pi', label: 'Pi', models: [{ model: 'pi-1', tier: 'standard', default: true, cost: 'free (2026-09)', good_at: 'chat', not_good_at: 'code', cmd: 'pi' }] },
+  { provider: 'openrouter', cli: 'openrouter', label: 'OpenRouter', maturity: 'comingSoon', models: [] },
 ] };
 let machine = { measured_at: '2026-09-08T11:00:00.000Z', activated_count: 1, providers: [
   { id: 'claude', label: 'Claude Code', from: 'Anthropic', installed: true, path: '/home/glen/.local/bin/claude', signed_in: true, activated: true, state: 'activated', version: '2.1.263', latest: '2.1.265', latest_checked_at: '2026-09-09T12:00:00.000Z', updatable: true, self_updates: true, askable: true, update: 'claude update', update_available: true },
@@ -103,11 +104,13 @@ test('showing the surface paints the stones from the record at once, measures be
   assert.equal(ctx.refreshed.count, 2, 'and the frame repainted when it landed');
   assert.equal(ctx.environment.setupRuntime, machine);
   const stones = byClass(made.el, 'sws-stone');
-  assert.deepEqual(stones.map((stone) => stone.attributes['data-provider']), ['claude', 'codex', 'grok', 'pi']);
-  assert.deepEqual(stones.map((stone) => byClass(stone, 'sws-label')[0].textContent), ['Claude Code', 'Codex', 'Grok Build', 'Pi']);
-  assert.deepEqual(stones.map((stone) => byClass(stone, 'sws-state')[0].textContent), ['Activated', 'Sign-in open', 'Not installed', 'No CLI']);
-  assert.deepEqual(stones.map((stone) => byClass(stone, 'sws-secondary')[0].textContent), ['Anthropic · 2 models', 'OpenAI · 1 models', 'xAI', 'Pi · 1 models']);
-  assert.deepEqual(stones.map((stone) => stone.attributes['data-activated']), ['true', 'false', 'false', 'false']);
+  assert.deepEqual(stones.map((stone) => stone.attributes['data-provider']), ['claude', 'codex', 'grok', 'pi', 'openrouter']);
+  assert.deepEqual(stones.map((stone) => byClass(stone, 'sws-label')[0].textContent), ['Claude Code', 'Codex', 'Grok Build', 'Pi', 'OpenRouter']);
+  assert.deepEqual(stones.slice(0, 4).map((stone) => byClass(stone, 'sws-state')[0].textContent), ['Activated', 'Sign-in open', 'Not installed', 'No CLI']);
+  assert.deepEqual(stones.slice(0, 4).map((stone) => byClass(stone, 'sws-secondary')[0].textContent), ['Anthropic · 2 models', 'OpenAI · 1 models', 'xAI', 'Pi · 1 models']);
+  assert.deepEqual(stones.map((stone) => stone.attributes['data-activated']), ['true', 'false', 'false', 'false', 'false']);
+  assert.equal(stones[4].disabled, true);
+  assert.equal(byClass(stones[4], 'status-marker')[0].textContent, 'Coming soon');
   const dates = byClass(made.el, 'setup-provider-dates')[0];
   assert.equal(walk(dates).find((node) => node.tagName === 'SUMMARY').textContent, 'Check for updates');
   assert.deepEqual(byClass(dates, 'setup-provider-date-list')[0].children.filter((row) => !row.hidden).map((row) => row.children.map((cell) => cell.textContent)), [

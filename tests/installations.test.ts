@@ -6,7 +6,7 @@ import type { InstallationRow } from '../src/resource-adapters.js';
 const installation = (name: string, requires: string[] = []): InstallationRow => ({
   name, origin: 'stock', shadowed: false, label: name, blurb: '',
   reading: [], reading_off: [], tools: [], mcp: [], parts: [],
-  effect: 'system', provides: [], requires,
+  effect: 'system', maturity: '', provides: [], requires,
 });
 
 test('installations resolve directly from their cards, without an inferred dependency state', () => {

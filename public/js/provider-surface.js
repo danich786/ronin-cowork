@@ -37,6 +37,7 @@ import { WorkspaceKit } from './workspace-kit.js';
 import { createStoneWorkSurface } from './stone-work-surface.js';
 import { loadProviderCatalog, modelAvailabilityFact, providerCatalog, tierWord } from './form-steps.js';
 import { mountProviderAttachment, providerFromRuntime, providerPresentation, providerReadiness } from './setup-provider-state.js';
+import { createStatusMarker } from './status-marker.js';
 
 const el = (tag, cls = '', text = null) => { const out = document.createElement(tag); if (cls) out.className = cls; if (text != null) out.textContent = String(text); return out; };
 
@@ -74,6 +75,8 @@ export function createProviderSurface(context) {
   const notice = el('p', 'setup-fine setup-provider-notice'); notice.hidden = true;
   const mikaAvailability = el('p', 'setup-fine setup-mika-availability');
   let opened = String(context.detail?.provider || context.detail?.key || '');
+  let firstProviderId = '';
+  let openFirstWhenReady = false;
   let mounted = null;
   let runtime = { providers: [] };
   const disposeMount = (destroy = true) => {
@@ -119,8 +122,7 @@ export function createProviderSurface(context) {
   /** A catalog provider no registry CLI serves is a stone of its own, keyed by its vendor id. */
   const catalogOnly = () => {
     const known = new Set((runtime.providers || []).map((provider) => provider?.id));
-    const rows = providerCatalog().rows;
-    return rows.filter((row, index) => !known.has(row.cli) && rows.findIndex((other) => other.provider === row.provider) === index);
+    return (providerCatalog().providers || []).filter((entry) => !known.has(entry.cli));
   };
 
   /* ---- 1 · YOURS: the three steps, exactly as the runtime row measures them ---- */
@@ -322,6 +324,13 @@ export function createProviderSurface(context) {
     renderDetail: (item, host) => paintProvider(item.id, host),
     onSelectionChange: (id) => { opened = String(id || ''); },
   });
+  const controller = Object.freeze({
+    openFirst: () => {
+      if (firstProviderId) stones.select(firstProviderId, { focus: true });
+      else openFirstWhenReady = true;
+    },
+  });
+  context.environment?.onProviderSurface?.(controller);
   stones.mount(out.content, { after: [mikaAvailability, notice] });
   const say = (text, bad = false) => { notice.className = `${bad ? 'setup-notice bad' : 'setup-fine'} setup-provider-notice`; notice.textContent = text; notice.hidden = !text; };
   /** The frame from whatever `runtime` holds now: the record, or the measure once it lands. */
@@ -338,17 +347,26 @@ export function createProviderSurface(context) {
     context.workbench?.refreshSelector?.();
     const rows = providerCatalog().rows;
     const providers = (Array.isArray(runtime.providers) ? runtime.providers : []).filter((provider) => provider?.id);
-    const stoneOf = (id, label, secondary, state, activated) => ({ id, label, secondary, state, className: 'setup-provider-stone', attrs: { 'data-provider': id, 'data-activated': String(activated) } });
+    const stoneOf = (id, label, secondary, state, activated, marker = null) => ({ id, label, secondary, state, marker, className: 'setup-provider-stone', attrs: { 'data-provider': id, 'data-activated': String(activated) } });
     const items = [
       ...providers.map((provider) => {
         const own = rows.filter((row) => row.cli === provider.id);
         const vendor = own[0]?.provider_label || provider.from || '';
-        return stoneOf(String(provider.id), provider.label || provider.id, own.length ? t('setup_surface.provider_models_n', '{vendor} · {n} models', { vendor, n: own.length }) : vendor, providerPresentation(provider).inventoryState, provider.activated === true);
+        const entry = (providerCatalog().providers || []).find((candidate) => candidate.cli === provider.id);
+        return stoneOf(String(provider.id), provider.label || provider.id, own.length ? t('setup_surface.provider_models_n', '{vendor} · {n} models', { vendor, n: own.length }) : vendor, providerPresentation(provider).inventoryState, provider.activated === true, createStatusMarker(entry?.maturity));
       }),
-      ...catalogOnly().map((row) => stoneOf(row.provider, row.provider_label, t('setup_surface.provider_models_n', '{vendor} · {n} models', { vendor: row.provider_label, n: rows.filter((item) => item.provider === row.provider).length }), t('setup_surface.no_cli_state', 'No CLI'), false)),
+      ...catalogOnly().map((entry) => ({
+        ...stoneOf(entry.provider, entry.label, entry.models.length ? t('setup_surface.provider_models_n', '{vendor} · {n} models', { vendor: entry.label, n: entry.models.length }) : '', entry.models.length ? t('setup_surface.no_cli_state', 'No CLI') : '', false, createStatusMarker(entry.maturity)),
+        disabled: entry.models.length === 0,
+      })),
     ];
+    firstProviderId = String(items[0]?.id || '');
     say(items.length ? '' : t('setup_surface.no_catalog', 'No model providers are in the catalog on this machine.'));
     stones.setItems(items);
+    if (openFirstWhenReady && firstProviderId) {
+      openFirstWhenReady = false;
+      stones.select(firstProviderId, { focus: true });
+    }
   };
   /** The first frame: the recorded summary, through the one picker's read, at once. */
   const showRecord = async () => {
@@ -384,6 +402,6 @@ export function createProviderSurface(context) {
     el: out.el,
     // Show resolves on the first frame; the measure follows on its own and repaints.
     show: async () => { await showRecord(); void measure(false); },
-    destroy: () => { disposeMount(); stones.destroy(); },
+    destroy: () => { context.environment?.onProviderSurface?.(null); disposeMount(); stones.destroy(); },
   };
 }

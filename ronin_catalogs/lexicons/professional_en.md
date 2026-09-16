@@ -1051,6 +1051,31 @@ The catalog entry goes. {dir} is not touched.
 - **roots.state_worktrees:** Repo: Worktrees on. Agent must also have Worktrees on.
 - **roots.state_checkout:** This repository uses its checkout.
 - **roots.state_undeclared:** No repository profile is declared, so Agents use the checkout. Edit this root to allow Ronin Worktrees.
+- **roots.github_auth_stone:** Authenticate GitHub
+- **roots.github_auth_state:** Connect account
+- **roots.github_auth_connected_state:** Connected{account}
+- **roots.github_auth_unavailable_state:** GitHub CLI unavailable
+- **roots.github_auth_heading:** Authenticate GitHub
+- **roots.github_auth_lede:** Connect your GitHub account in a temporary authentication window.
+- **roots.github_connect:** Connect GitHub
+- **roots.github_check:** Check connection
+- **roots.github_done:** Done
+- **roots.github_close:** Close
+- **roots.github_missing:** GitHub CLI is not installed.
+- **roots.github_connected:** Connected to GitHub as {account}.
+- **roots.github_not_connected:** GitHub is not connected on this machine.
+- **roots.github_waiting:** Finish GitHub authentication in the window first.
+- **roots.github_clone_stone:** Clone a repository
+- **roots.github_clone_state:** Authenticate first
+- **roots.github_clone_ready_state:** Ready to clone
+- **roots.github_clone_heading:** Clone a repository
+- **roots.github_clone_lede:** Clone a GitHub repository and add its folder as a Ronin workspace.
+- **roots.github_clone_needs_auth:** Authenticate GitHub first.
+- **roots.github_clone_ready:** GitHub is connected. Enter the repository you want to clone.
+- **roots.github_repository:** GitHub repository
+- **roots.github_clone:** Clone and add workspace
+- **roots.github_cloning:** Cloning repository…
+- **roots.github_cloned:** Added {name} as a workspace.
 
 ## docs — docs.js (the ▧ Docs tab)
 - **docs.back_title:** Back to the list

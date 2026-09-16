@@ -30,6 +30,12 @@ test('the tile header exposes Docs directly without the old control and note men
   assert.doesNotMatch(phone, /node\('noteBtn'\)|node\('dial'\)/);
 });
 
+test('the Torii rename prompt keeps the immutable Agent ID visible', async () => {
+  const tile = await read('public/js/tile.js');
+  assert.match(tile, /head\.rename_prompt', 'Edit Agent title\\n\\nAgent ID: \{id\}', \{ id: session \}/);
+  assert.match(tile, /setSessionTitle\(session, wanted\.trim\(\)\)/);
+});
+
 test('managed workspaces empty their seat and both empty views use the subdued Ronin mark', async () => {
   const [cowork, host, tile, css] = await Promise.all([
     read('public/js/cowork-view.js'), read('public/js/terminal-tile-host.js'),

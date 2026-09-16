@@ -5,7 +5,6 @@ import { t } from './lexicon.js';
 import { buildGbrain } from './gbrain.js';
 import { createWorkspaceFoldersSurface } from './workspace-folders-surface.js';
 import { ask } from './ask.js';
-import { CAMPAIGN_TEMPLATES_TYPE, createTemplatesSurface } from './campaign-templates.js';
 import { PROVIDER_SURFACE_TYPE, providerSurfaceDefinition } from './provider-surface.js';
 import { createStoneWorkSurface } from './stone-work-surface.js';
 import { servicesSetupModel } from './services-setup-state.js';
@@ -13,16 +12,17 @@ import { campaignById, campaigns, loadCampaigns, saveCampaign } from './campaign
 import { completeInstallationMap } from './installation-map.js';
 import { createEmbeddedNewTeamFormView } from './new-team-form.js';
 import { createEmbeddedNewAgentView } from './new-agent.js';
-import { HOUSE_PRESETS, buildLaunchPlan, initialControls, seatingPlan } from './presets.js';
+import { HOUSE_PRESETS, PRESETS_TYPE, buildLaunchPlan, initialControls, seatingPlan } from './presets.js';
 import { launchPresetPlan, presetLaunchUrl } from './preset-launch.js';
 import { closeWorkspaceTab, reserveWorkspaceTab } from './workspace.js';
 import { createInstallationsSurface } from './campaign-installations.js';
+import { createStatusMarker } from './status-marker.js';
 
 // Model providers is the one surface two workbenches seat (provider-surface.js); its type
 // is that module's, and Ronin Settings registers the same definition.
 export const SETUP_SURFACE_TYPES = Object.freeze({
   register: 'setup.register', providers: PROVIDER_SURFACE_TYPE, roots: 'setup.roots',
-  installations: 'setup.installations', bounty: 'setup.bounty', templates: CAMPAIGN_TEMPLATES_TYPE, launchOwn: 'setup.launch-own',
+  installations: 'setup.installations', bounty: 'setup.bounty', launchOwn: 'setup.launch-own',
 });
 
 const summaries = new Map([
@@ -30,7 +30,7 @@ const summaries = new Map([
   [SETUP_SURFACE_TYPES.roots, '2 folders'],
   [SETUP_SURFACE_TYPES.installations, 'Ronin Services'],
   [SETUP_SURFACE_TYPES.bounty, 'optional · separate opt-in'],
-  [SETUP_SURFACE_TYPES.launchOwn, 'template · team · agent'],
+  [SETUP_SURFACE_TYPES.launchOwn, 'presets · team · agent'],
 ]);
 const el = (tag, cls = '', text = null) => { const out = document.createElement(tag); if (cls) out.className = cls; if (text != null) out.textContent = text; return out; };
 const notifySummary = (type, value, workbench) => {
@@ -46,12 +46,12 @@ const action = (label, kind, onClick) => {
 const servicesReady = (runtime = {}) => runtime?.services?.active === true || runtime?.services?.installed === true || runtime?.services?.switched_on === true;
 
 export const SERVICE_COMPONENTS = Object.freeze([
-  { id: 'task_manager', label: 'Task manager', needs: 'Adds a shared project board and quick summaries of active work.' },
-  { id: 'terminal_transcript', label: 'Terminal transcript', needs: 'Records terminal activity for transcript views and downstream summaries.' },
-  { id: 'voice_hotwords', label: 'Voice & Hotwords', needs: 'Adds voice tools and corrections for words dictation commonly mishears.' },
-  { id: 'usage_stats', label: 'Usage stats', needs: 'Keeps local usage counts without storing transcript content.' },
-  { id: 'project_coordinator', label: 'Project coordinator', needs: 'Watches active projects and prompts Agents to keep status and summaries current.' },
-  { id: 'local_weights', label: 'Local weights', needs: 'Provides locally stored model weights for features that need them.' },
+  { id: 'task_manager', label: 'Task manager', status: 'beta', needs: 'Adds a shared project board and quick summaries of active work.' },
+  { id: 'terminal_transcript', label: 'Terminal transcript', status: 'comingSoon', needs: 'Records terminal activity for transcript views and downstream summaries.' },
+  { id: 'voice_hotwords', label: 'Voice & Hotwords', status: 'beta', needs: 'Adds voice tools and corrections for words dictation commonly mishears.' },
+  { id: 'usage_stats', label: 'Usage stats', status: 'beta', needs: 'Keeps local usage counts without storing transcript content.' },
+  { id: 'project_coordinator', label: 'Project coordinator', status: 'comingSoon', needs: 'Watches active projects and prompts Agents to keep status and summaries current.' },
+  { id: 'local_weights', label: 'Local weights', status: 'beta', needs: 'Provides locally stored model weights for features that need them.' },
 ]);
 
 export function serviceComponentRows(installed, masterOn) {
@@ -362,6 +362,7 @@ function createRootsSurface(context) {
     presentation: 'stones',
     environment: context.environment,
     workspace: context.workspace,
+    onboardingExtras: context.environment?.setup2OnboardingExtras === true,
     onShow: () => notifySummary(SETUP_SURFACE_TYPES.roots, '2 folders + yours', context.workbench),
   });
 }
@@ -567,6 +568,7 @@ export function createServicesSurface(context) {
     for (const component of SERVICE_COMPONENTS) {
       const item = el('div', 'setup-services-benefit');
       const heading = el('h3', '', component.label);
+      heading.append(createStatusMarker(component.status));
       const copy = el('div', 'setup-services-feature-copy');
       const status = el('span', 'setup-services-feature-status');
       const caption = el('p', '', component.needs);
@@ -666,10 +668,13 @@ export function createGbrainSurface(context) {
 
 function createLaunchOwnSurface(context) {
   const out = surface(t('setup_surface.launch_own', 'Launch your own'));
+  const setup = context.tenant?.kind === 'setup';
   const renderDetail = (item, host) => {
-    const views = [item.id === 'template'
-      ? createTemplatesSurface()
-      : item.id === 'team' ? createEmbeddedNewTeamFormView(WorkspaceKit, {}) : createEmbeddedNewAgentView(WorkspaceKit, {})];
+    if (item.id === 'preset') {
+      context.workbench?.place(PRESETS_TYPE, context.workspace || 'workspace2');
+      return null;
+    }
+    const views = [item.id === 'team' ? createEmbeddedNewTeamFormView(WorkspaceKit, {}) : createEmbeddedNewAgentView(WorkspaceKit, {})];
     host.append(...views.map((view) => view.el));
     for (const view of views) void view.enter({});
     return () => { for (const view of views) view.el.remove(); };
@@ -678,7 +683,7 @@ function createLaunchOwnSurface(context) {
     items: [
       { id: 'agent', glyph: '人', label: t('agent', 'Agent') },
       { id: 'team', glyph: '人人', label: t('team', 'Team') },
-      { id: 'template', glyph: '▤', label: t('template', 'Template') },
+      ...(setup ? [{ id: 'preset', glyph: '▤', label: t('setup.presets', 'Presets') }] : []),
     ],
     className: 'setup-launch-own-surface',
     renderDetail,

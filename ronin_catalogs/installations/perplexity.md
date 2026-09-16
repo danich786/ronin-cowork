@@ -2,6 +2,7 @@
 - **label:** Perplexity
 - **blurb:** Makes the Perplexity research behaviour available when its connection exists.
 - **effect:** provider
+- **maturity:** comingSoon
 - **provides:** perplexity
 - **reading:** —
 - **reading_off:** —
