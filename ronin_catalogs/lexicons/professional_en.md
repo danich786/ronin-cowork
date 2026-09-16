@@ -377,9 +377,7 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 ## campaign_home — campaign-home.js (the root arrival: Machine Settings, Teams, Launch)
 
 - **campaign_home.ronin_home:** Ronin Home
-- **campaign_home.machine_settings:** Machine Settings
-- **campaign_home.machine_setup:** Machine Setup
-- **campaign_home.setup_is:** Install and authenticate a model provider
+- **campaign_home.machine_settings:** Machine Setup
 - **campaign_home.campaign_is:** Admin Desk configuration
 - **campaign_home.coworks_is:** Your Teams and Agents
 - **campaign_home.launch:** New Project
