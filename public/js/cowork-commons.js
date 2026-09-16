@@ -14,7 +14,7 @@ import { t } from './lexicon.js';
 import { buildMessageQueue } from './message-queue.js';
 import { choice } from './campaign-desk.js';
 import { saveCampaign } from './campaigns.js';
-import { applyTheme, setCampaignTheme } from './theme.js';
+import { setCampaignTheme, setTheme } from './theme.js';
 
 export function coworkCommons(options = {}) {
   const { createChannelSurface } = WorkspaceKit.primitives;
@@ -79,7 +79,9 @@ export function coworkCommons(options = {}) {
       if (!r.ok) return paintThemes();
       const desk = options.campaign?.()?.desk || {};
       setCampaignTheme(desk);
-      applyTheme();
+      // A direct Setup-header choice is a device pin. Choosing the Campaign's
+      // authoritative Desk theme releases that pin so the saved value can win now.
+      setTheme('auto');
       paintThemes();
     };
     themes.append(
