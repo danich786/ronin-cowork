@@ -8,17 +8,12 @@
           "kind": "title",
           "eyebrow": "Your models, directly",
           "heading": "Choose how your agents think",
-          "body": "Keep your accounts directly with the model companies and use your own subscriptions or API keys."
+          "body": "Sign in directly with the model provider. Use your normal subscription or API directly with the provider."
         },
         {
           "id": "provider-credential",
           "kind": "instruction",
           "body": "Ronin does not resell model access or place itself between you and the provider."
-        },
-        {
-          "id": "provider-one-is-enough",
-          "kind": "instruction",
-          "body": "Sign in with the provider's own CLI; the credential stays here. One provider is enough to start."
         }
       ],
       "cta": {
