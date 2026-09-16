@@ -33,9 +33,11 @@ const normalizeMedia = (value) => {
   const rows = Array.isArray(value) ? value : enabled(value) && Array.isArray(value.items) ? value.items : [];
   const items = rows.flatMap((item) => {
     const kind = enabled(item) && ['doc', 'url', 'video'].includes(item.kind) ? item.kind : '';
-    const src = kind ? safeSource(item.src) : '';
-    if (!kind || !src || !text(item.label)) return [];
-    return [Object.freeze({ kind, src, label: text(item.label), description: text(item.description) })];
+    const src = kind === 'doc' ? '' : safeSource(item.src);
+    const root = kind === 'doc' ? text(item.root) : '';
+    const path = kind === 'doc' ? text(item.path) : '';
+    if (!kind || !text(item.label) || (kind === 'doc' ? !root || !path : !src)) return [];
+    return [Object.freeze({ kind, src, root, path, label: text(item.label), description: text(item.description) })];
   });
   return items.length ? Object.freeze(items) : null;
 };

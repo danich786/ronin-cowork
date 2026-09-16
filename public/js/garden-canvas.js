@@ -1,6 +1,7 @@
 /* A stable four-region work surface; scenario JSON supplies content, never layout. */
 import { WorkspaceKit } from './workspace-kit.js';
 import { GARDEN_REGION_KEYS, createGardenTransitionGate } from './garden-canvas-model.js';
+import { request } from './request.js';
 
 export const GARDEN_CANVAS_TYPE = 'setup.garden';
 
@@ -51,14 +52,17 @@ export function createGardenCanvas({ onAction = () => {} } = {}) {
   overlay.addEventListener('pointerdown', (event) => { if (event.target === overlay) { event.preventDefault(); closeMedia(); } });
   overlay.addEventListener('keydown', (event) => { if (event.key === 'Escape') { event.preventDefault(); closeMedia(); } });
 
-  const openMedia = (item, opener) => {
+  const openMedia = async (item, opener) => {
     mediaOpener = opener;
     mediaBody.replaceChildren();
     const title = node('h2', '', item.label);
-    const external = node('a', 'garden-media-external', 'Open separately ↗');
-    external.href = item.src; external.target = '_blank'; external.rel = 'noopener';
     let viewer;
-    if (item.kind === 'video') {
+    if (item.kind === 'doc') {
+      viewer = node('pre', 'garden-media-doc', 'Loading…');
+      const query = new URLSearchParams({ root: item.root, path: item.path });
+      const result = await request('/api/file?' + query.toString());
+      viewer.textContent = result.ok ? result.data.text || '' : result.message;
+    } else if (item.kind === 'video') {
       viewer = node('video', 'garden-media-video');
       viewer.controls = true; viewer.preload = 'metadata'; viewer.src = item.src;
     } else {
@@ -66,7 +70,13 @@ export function createGardenCanvas({ onAction = () => {} } = {}) {
       viewer.title = item.label; viewer.src = item.src;
       viewer.setAttribute('sandbox', 'allow-same-origin');
     }
-    mediaBody.append(title, external, viewer);
+    mediaBody.append(title);
+    if (item.src) {
+      const external = node('a', 'garden-media-external', 'Open separately ↗');
+      external.href = item.src; external.target = '_blank'; external.rel = 'noopener';
+      mediaBody.append(external);
+    }
+    mediaBody.append(viewer);
     overlay.hidden = false;
     close.focus();
   };
@@ -95,7 +105,7 @@ export function createGardenCanvas({ onAction = () => {} } = {}) {
       button.type = 'button';
       button.append(node('strong', '', item.label));
       if (item.description) button.append(node('span', '', item.description));
-      button.addEventListener('click', () => openMedia(item, button));
+      button.addEventListener('click', () => { void openMedia(item, button); });
       list.append(button);
     }
     regions.media.append(list);

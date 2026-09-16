@@ -10,7 +10,16 @@
       "cta": {
         "label": "Install and authenticate model providers using your own subscription or API",
         "action": "setup.providers"
-      }
+      },
+      "media": [
+        {
+          "kind": "doc",
+          "label": "Provider sign-in guide",
+          "description": "How Ronin keeps credentials with you",
+          "root": "ronin_cowork",
+          "path": "docs/getting-started/provider-sign-in.md"
+        }
+      ]
     },
     "register": {
       "copy": {
