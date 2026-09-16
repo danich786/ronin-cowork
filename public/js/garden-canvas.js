@@ -1,6 +1,4 @@
-/* A stable four-region work surface. It is a painter: it is handed one resolved
-   canvas object and renders it. It looks nothing up, fetches nothing, keeps no
-   clock, and decides nothing about why it was given what it was given. */
+/* A dumb four-region painter: its controller supplies one normalized canvas object. */
 import { WorkspaceKit } from './workspace-kit.js';
 import { GARDEN_REGION_KEYS } from './garden-canvas-model.js';
 
@@ -23,12 +21,7 @@ export function createGardenCanvas({ onAction = () => {}, onMedia = () => {} } =
   mark.setAttribute('viewBox', '0 0 900 180');
   mark.setAttribute('preserveAspectRatio', 'xMidYMax slice');
   mark.setAttribute('aria-hidden', 'true');
-  // Senmaida: five terrace contours across 900 units at natural size, every
-  // diagonal a 2:1 chamfer with mitred joins — the cut from the nin frame. The
-  // fourth contour is a dead-flat bund, the causeway the figure walks.
   mark.innerHTML = '<g fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="miter" stroke-linecap="square"><path d="M0 52H160L184 40H330L350 50H452L476 38H660L680 48H812L834 36H900" stroke-opacity=".1"/><path d="M0 78H70L102 62H228L248 72H360L386 59H580L604 71H772L798 58H900" stroke-opacity=".16"/><path d="M0 102H196L220 90H296L316 100H412L436 88H612L638 101H800L824 89H900" stroke-opacity=".23"/><path d="M0 124H900" stroke-opacity=".34"/><path d="M0 148H80L104 136H268L288 146H440L464 134H668L690 145H860L880 135H900" stroke-opacity=".28"/></g><path d="M0 168H128L144 160H396L414 169H700L720 159H900V180H0Z" fill="currentColor" fill-opacity=".11"/><path d="M0 168H128L144 160H396L414 169H700L720 159H900" fill="none" stroke="currentColor" stroke-width="1.25" stroke-opacity=".46" stroke-linejoin="miter" stroke-linecap="square"/>';
-  // The figure stays out of the scaled drawing so a narrow column never shrinks
-  // it; CSS places it by percentage, so it walks the bund as the column widens.
   const hito = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   hito.setAttribute('class', 'garden-canvas-hito');
   hito.setAttribute('viewBox', '24 18 75 72');
@@ -43,58 +36,12 @@ export function createGardenCanvas({ onAction = () => {}, onMedia = () => {} } =
     return [key, region];
   }));
 
-  const overlay = node('div', 'garden-media-overlay');
-  overlay.hidden = true;
-  overlay.setAttribute('role', 'dialog');
-  overlay.setAttribute('aria-modal', 'true');
-  overlay.setAttribute('aria-label', 'Media');
-  const close = node('button', 'garden-media-close', '×');
-  close.type = 'button'; close.setAttribute('aria-label', 'Close media');
-  const mediaBody = node('div', 'garden-media-body');
-  overlay.append(close, mediaBody);
-  let mediaOpener = null;
-  const closeMedia = () => {
-    if (overlay.hidden) return;
-    mediaBody.replaceChildren();
-    overlay.hidden = true;
-    mediaOpener?.focus();
-    mediaOpener = null;
-  };
-  close.addEventListener('click', closeMedia);
-  overlay.addEventListener('pointerdown', (event) => { if (event.target === overlay) { event.preventDefault(); closeMedia(); } });
-  overlay.addEventListener('keydown', (event) => { if (event.key === 'Escape') { event.preventDefault(); closeMedia(); } });
-
-  /* The host reads the document or resolves the source and hands back a view. */
-  const showMedia = (view) => {
-    mediaBody.replaceChildren();
-    if (!view) return;
-    mediaBody.append(node('h2', '', view.label));
-    if (view.src) {
-      const external = node('a', 'garden-media-external', 'Open separately \u2197');
-      external.href = view.src; external.target = '_blank'; external.rel = 'noopener';
-      mediaBody.append(external);
-    }
-    let viewer;
-    if (typeof view.text === 'string') {
-      viewer = node('pre', 'garden-media-doc', view.text);
-    } else if (view.kind === 'video') {
-      viewer = node('video', 'garden-media-video');
-      viewer.controls = true; viewer.preload = 'metadata'; viewer.src = view.src;
-    } else {
-      viewer = node('iframe', 'garden-media-frame');
-      viewer.title = view.label; viewer.src = view.src;
-      viewer.setAttribute('sandbox', 'allow-same-origin');
-    }
-    mediaBody.append(viewer);
-    overlay.hidden = false;
-    close.focus();
-  };
-
   const paintCopy = (items) => {
     for (const copy of items) {
       const item = node('article', 'garden-copy-item');
       item.dataset.copyId = copy.id;
       if (copy.kind) item.dataset.kind = copy.kind;
+      if (copy.age) item.dataset.age = copy.age;
       if (copy.eyebrow) item.append(node('p', 'garden-copy-eyebrow', copy.eyebrow));
       if (copy.heading) item.append(node('h2', 'garden-copy-heading', copy.heading));
       if (copy.body) item.append(node('p', 'garden-copy-body', copy.body));
@@ -123,26 +70,24 @@ export function createGardenCanvas({ onAction = () => {}, onMedia = () => {} } =
       if (item.id) button.dataset.mediaId = item.id;
       button.append(node('strong', '', item.label));
       if (item.description) button.append(node('span', '', item.description));
-      button.addEventListener('click', () => { mediaOpener = button; onMedia(item); });
+      button.addEventListener('click', () => onMedia(item));
       list.append(button);
     }
     regions.media.append(list);
   };
 
-  let painted = 0;
   const paint = (canvas) => {
-    closeMedia();
     for (const region of Object.values(regions)) { region.replaceChildren(); region.hidden = true; }
     if (canvas?.copy) { paintCopy(canvas.copy); regions.copy.hidden = false; }
     if (canvas?.question) { paintQuestion(canvas.question); regions.question.hidden = false; }
     if (canvas?.cta) { paintCta(canvas.cta); regions.cta.hidden = false; }
     if (canvas?.media) { paintMedia(canvas.media); regions.media.hidden = false; }
+    scene.dataset.canvas = canvas?.id || '';
     scene.dataset.empty = String(!canvas || GARDEN_REGION_KEYS.every((key) => !canvas[key]));
-    painted += 1;
   };
 
-  surface.content.append(scene, overlay);
-  return { ...surface, paint, showMedia, closeMedia, paintCount: () => painted };
+  surface.content.append(scene);
+  return { ...surface, paint };
 }
 
 export function registerGardenCanvas() {
@@ -154,7 +99,7 @@ export function registerGardenCanvas() {
     create: (context) => {
       const canvas = createGardenCanvas({
         onAction: (action) => context.environment?.openSetupAction?.(action),
-        onMedia: (item) => context.environment?.openGardenMedia?.(item),
+        onMedia: (media) => context.environment?.openGardenMedia?.(media),
       });
       context.environment?.onGardenCanvas?.(canvas);
       return canvas;
