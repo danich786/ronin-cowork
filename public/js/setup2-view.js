@@ -19,7 +19,7 @@ const ARRANGEMENT = Object.freeze({
   hidden: Object.freeze([]),
   widths: Object.freeze({ workspace1: 34, selector: 18, workspace2: 48 }),
 });
-const GARDEN_CONTENT_URL = '/content/setup-garden.v2.json';
+const GARDEN_CONTENT_URL = '/content/setup-garden.v1.json';
 
 function registerSetup2Workbench() {
   registerSetupSurfaces();
@@ -50,6 +50,13 @@ export function createSetup2View() {
     openLaunchForm: () => ctx?.navigate('launch'),
     openTemplateLaunchForm: () => ctx?.navigate('launch'),
     onGardenCanvas: (next) => { garden = next; },
+    openGardenMedia: async (item) => {
+      if (!garden) return;
+      if (item.kind !== 'doc') { garden.showMedia({ label: item.label, kind: item.kind, src: item.src }); return; }
+      const query = new URLSearchParams({ root: item.root, path: item.path });
+      const result = await request('/api/file?' + query.toString());
+      garden.showMedia({ label: item.label, kind: item.kind, text: result.ok ? result.data.text || '' : result.message });
+    },
     openSetupAction: (action) => {
       const scene = SCENES.find((candidate) => candidate.type === action);
       if (!scene) return;
@@ -68,8 +75,7 @@ export function createSetup2View() {
   const sceneAt = (number) => Number(number) > 0 ? SCENES[Number(number) - 1] || automaticScene() : automaticScene();
   const activeScene = () => sceneAt(sceneOverride);
   const selectGarden = (scene) => {
-    if (!garden || !gardenContent || !scene) return false;
-    if (paintedSceneId === scene.id) return false;
+    if (!garden || !gardenContent || !scene || paintedSceneId === scene.id) return false;
     const canvasId = gardenContent.scenarios[scene.id];
     garden.paint(gardenContent.canvases[canvasId] || null);
     paintedSceneId = scene.id;

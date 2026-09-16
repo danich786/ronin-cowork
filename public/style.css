@@ -80,6 +80,14 @@
   --kaki-lift: #e08163;
   --aiiro: #274a78;
 
+  /* Garden Canvas. Kaki on white fails at 14px, so the light skin fills with
+     the deeper kaki-lift; the horizon is quieter on a cream ground. */
+  --gc-cta-bg: var(--kaki);
+  --gc-cta-ink: var(--bg);
+  --gc-cta-bg-hover: var(--kaki-lift);
+  --gc-motif-opacity: .95;
+  --gc-motif-wash: 10%;
+
 
 
   --term-cube: standard;
@@ -259,6 +267,12 @@
   --shadow-menu: 0 8px 24px rgb(30 30 30 / 18%);
   --shadow-sheet: 0 12px 34px rgb(30 30 30 / 22%);
   --kaki-lift: #a34e2f;
+
+  --gc-cta-bg: var(--kaki-lift);
+  --gc-cta-ink: var(--on-strong);
+  --gc-cta-bg-hover: color-mix(in srgb, var(--kaki-lift) 86%, #000);
+  --gc-motif-opacity: .5;
+  --gc-motif-wash: 8%;
 
   /* Light mode uses the selected full-fill treatment for collection scopes. */
   --scope-campaign-head-bg: var(--scope-graphite);
