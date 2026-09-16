@@ -44,6 +44,9 @@ test('Roster expands live readings and actions; Launch uses the paired workspace
   assert.match(view, /onClose: \(member\) => retireSession\(member\.name/);
   assert.match(members, /actions: \[launch, rename, lead, eject, close\]/);
   assert.match(members, /classList\.add\('league-team-member-live'\)/);
+  assert.match(members, /'Title · \{title\}'/);
+  assert.match(members, /'Agent · \{name\}'/);
+  assert.match(members, /'ID · @\{id\}'[\s\S]*id: member\.name/);
   assert.match(members, /league-team-member-disclosure', '⌄'/);
   assert.match(members, /label: t\('league\.launch_agent', 'Launch'\)/);
   assert.match(css, /\.league-team-member-detail\[hidden\] \{ display: none; \}/);
