@@ -3,10 +3,14 @@
 # ronin-cowork setup — installs dependencies and an always-on autostart service.
 # Run from the repo root:   ./setup.sh
 #
-# Works on Linux (systemd --user) and macOS (prints launchd steps). No root needed
-# for the app itself; only the optional `tailscale serve` and `enable-linger` steps
-# below use sudo.
+# Works on Linux (systemd --user) and macOS (prints launchd steps). The app stays
+# unprivileged. On Linux, setup asks once before using sudo for the detected machine
+# settings: linger, optional Tailscale HTTPS, and an offerable swapfile.
 set -euo pipefail
+
+MACHINE_ONLY=0
+if [ "${1:-}" = --machine-only ]; then MACHINE_ONLY=1; shift; fi
+[ $# -eq 0 ] || { printf 'usage: %s [--machine-only]\n' "$0" >&2; exit 64; }
 
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$REPO_DIR"
@@ -72,6 +76,31 @@ fi
 RONIN_PREFLIGHT_BIND="${BIND:-$(ronin_bind "$REPO_DIR")}"
 export RONIN_PREFLIGHT_BIND
 ronin_preflight_port "$REPO_DIR" "$NODE_BIN"
+
+# --- root-owned machine settings: one decision, one password, during this install ---
+# Do this before setup changes tmux, rc files, units, or stores. The predicates remain
+# in ronin-machine.sh, shared with doctor; the small apply helper receives only fixed,
+# already-separated arguments and invokes each privileged program directly.
+OS="$(uname -s)"
+if [ "$OS" = Linux ]; then
+  # shellcheck source=libexec/ronin-machine.sh
+  . "$REPO_DIR/libexec/ronin-machine.sh"
+  MACHINE_APPLY_ARGS=()
+  machine_linger_on || if [ $? -eq 1 ]; then
+    MACHINE_APPLY_ARGS+=(--linger "$(id -un)")
+  fi
+  PREFLIGHT_SERVED="$(ronin_served_url "$RONIN_PREFLIGHT_PORT")"
+  if [ -z "$PREFLIGHT_SERVED" ] && [ "$RONIN_PREFLIGHT_BIND" != 127.0.0.1 ] && command -v tailscale >/dev/null 2>&1; then
+    MACHINE_APPLY_ARGS+=(--serve "$RONIN_PREFLIGHT_BIND" "$RONIN_PREFLIGHT_PORT")
+  fi
+  if machine_swap_offerable; then
+    MACHINE_APPLY_ARGS+=(--swap)
+  fi
+  if [ "${#MACHINE_APPLY_ARGS[@]}" -gt 0 ]; then
+    "$REPO_DIR/libexec/ronin-machine-apply" "${MACHINE_APPLY_ARGS[@]}" >&3 || exit $?
+  fi
+fi
+[ "$MACHINE_ONLY" -eq 0 ] || exit 0
 ronin_adopt_tmux "$("$REPO_DIR/bin/ronin-store" --root data)"
 
 # --- install deps (checkout only: a bundle arrives with finished node_modules) ---
@@ -125,8 +154,6 @@ else
   python3 "$CLAUDE_SETTINGS_PY" "$STATUSLINE_SH" || \
     echo "    WARNING: could not write ~/.claude/settings.json — add the two keys by hand."
 fi
-
-OS="$(uname -s)"   # also used by the autostart section below
 
 # --- PATH: bin/shim (the tmux server wall), ronin_bin (agent tools), bin (house scripts) ---
 #   <repo>/bin/shim  bin/shim/tmux makes kill-server unavailable.
@@ -550,57 +577,8 @@ export RONIN_IP="${IP:-}" RONIN_FQDN="${FQDN:-}"
 PORT="$(ronin_port "$REPO_DIR")"
 OPEN_URL="$(ronin_open_url "$REPO_DIR" "$PORT")"
 
-# Only what is still outstanding on this box — and no prose dressed as a numbered
-# step. A person at this prompt needs exactly three things: run this, here is the
-# gap so you know what to copy, here is where you end up. (Owner, 2026-08-22: "copy
-# and paste this line, put it in, and you will be good to go — then the new URL.")
-SERVED_ALREADY="$(ronin_served_url "$PORT")"
-# ONE PASTE, ONE PASSWORD. These are collected as privileged ACTIONS without their own
-# `sudo`, and rendered below as a single `sudo bash -c` block. Three separate sudo lines
-# meant three pastes and three password prompts for what is one decision: "yes, do the
-# root-owned parts of my install" (owner, 2026-08-24).
-STEP_ACT=(); STEP_OK=(); STEP_FAIL=(); NSTEPS=0
-machine_linger_on || if [ $? -eq 1 ]; then
-  STEP_ACT[$NSTEPS]="$(machine_linger_action)"
-  STEP_OK[$NSTEPS]="linger enabled for ${USER:-$(id -un)}"
-  STEP_FAIL[$NSTEPS]="linger was not enabled"
-  NSTEPS=$(( NSTEPS + 1 ))
-  WANT_LINGER=1
-fi
-# Nothing to ask for when serve already points at THIS install: the address in the box
-# above is that mapping. Asking anyway is what put a second, different door on a box
-# that already had one, and left the banner naming the other.
-WANT_SERVE=""
-if [ -z "$SERVED_ALREADY" ] && [ -n "${IP:-}" ] && command -v tailscale >/dev/null 2>&1; then
-  # tailscale's success chatter (the proxy tree, the disable hint) says nothing the
-# line above has not already said better — stdout is dropped, errors still speak.
-  STEP_ACT[$NSTEPS]="tailscale serve --bg --https=8443 http://$IP:$PORT >/dev/null"
-  STEP_OK[$NSTEPS]="Tailscale HTTPS now serves Ronin on port 8443"
-  STEP_FAIL[$NSTEPS]="Tailscale HTTPS was not configured"
-  NSTEPS=$(( NSTEPS + 1 ))
-  WANT_SERVE=1
-fi
-
-# SWAP, WHERE THERE IS NONE. Ronin runs several agent sessions at once and each runs
-# real work. On a box with no swap the kernel has no overflow when memory fills: it
-# picks a process and kills it, and it chooses which — which means somebody's session
-# dies with their work in it. Swap converts that into slowness instead.
-#
-# OFFERED, NEVER DONE — the same contract as the two steps above: detect the condition
-# and hand over the line; setup does not hold root.
-#
-# EVERY CONDITION IS machine_swap_offerable's, not spelled again here. doctor asks the
-# same library the same question, so the offer and the finding cannot drift apart.
-if [ "$OS" = "Linux" ] && machine_swap_offerable; then
-  STEP_ACT[$NSTEPS]="$(machine_swap_action)"
-  STEP_OK[$NSTEPS]="4 GB swapfile installed and recorded in /etc/fstab"
-  STEP_FAIL[$NSTEPS]="swapfile was not installed"
-  NSTEPS=$(( NSTEPS + 1 ))
-  WANT_SWAP=1
-fi
-
-# The frame and the paste printed below are the contract. On a local graphical desktop this is
-# merely a convenience: wait for /api/health to answer 200, then ask the OS to open
+# The closing frame is the contract. On a local graphical desktop, opening it is merely
+# a convenience: wait for /api/health to answer 200, then ask the OS to open
 # the page. SSH/headless detection and opener failures are non-fatal in the helper.
 # Linux only, deliberately: macOS renders the launchd agent but the user loads it by
 # hand, so setup.sh has no moment where the service is observably ready to open.
@@ -669,47 +647,3 @@ else
 fi
 RESULT_LINES+=("Network bind · $RECORDED_BIND in $(ronin_tilde "$REPO_DIR")/.env" "               source: $RECORDED_BIND_SOURCE")
 ronin_banner "$REPO_DIR" "$OPEN_URL" "${RESULT_LINES[@]}" >&3
-
-# LAST ON PURPOSE: the one thing they still have to do is the last thing on the screen.
-# The frame above has said where Ronin is and what changed; this says what is left.
-if [ "$NSTEPS" = 1 ]; then
-  out "  One more step. Copy and paste this, and you're good to go:"
-elif [ "$NSTEPS" -gt 1 ]; then
-  out "  One more step. Copy and paste this whole block — it asks for your password once:"
-fi
-if [ "$NSTEPS" -gt 0 ]; then
-  out ""
-  # Each action reports on its own line inside ONE sudo: the action, then a check mark
-  # with what happened, or a cross with what did not and where Ronin still answers.
-  # One plain line per action, readable at a glance, and deliberately no `set -e`: the
-  # actions are independent, so one failing reports itself and never skips the rest.
-  out "      sudo bash -c '"
-  s=0
-  while [ "$s" -lt "$NSTEPS" ]; do
-    out "        ${STEP_ACT[$s]} && echo \"✓ ${STEP_OK[$s]}\" || echo \"✗ ${STEP_FAIL[$s]} — Ronin is still at $OPEN_URL\""
-    s=$(( s + 1 ))
-  done
-  out "      '"
-  out ""
-  # Each privileged line gets its one-sentence why, here where the line is, because the
-  # person pasting it may never open the docs (issue #74: "not explained").
-  if [ -n "${WANT_LINGER:-}" ]; then
-    out "  (The linger part keeps Ronin running after you log out: without it, every SSH"
-    out "   disconnect stops Ronin and every agent in it. Set once, it survives reboots.)"
-    out ""
-  fi
-  if [ -n "${WANT_SWAP:-}" ]; then
-    out "  (The swapfile part is insurance: this box has no swap, so if memory ever fills,"
-    out "   the kernel kills a session instead of slowing down. It is a one-time setup —"
-    out "   the /etc/fstab line brings it back automatically on every reboot.)"
-    out ""
-  fi
-  if [ -n "$WANT_SERVE" ] && [ -n "${FQDN:-}" ]; then
-    out "  When that's done, your door is:"
-    out ""
-    out "      https://$FQDN:8443"
-  else
-    out "  When that's done, run  ronin-welcome  to see your address."
-  fi
-  out ""
-fi
