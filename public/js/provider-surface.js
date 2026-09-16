@@ -322,6 +322,8 @@ export function createProviderSurface(context) {
     renderDetail: (item, host) => paintProvider(item.id, host),
     onSelectionChange: (id) => { opened = String(id || ''); },
   });
+  const controller = Object.freeze({ showStones: () => stones.select('') });
+  context.environment?.onProviderSurface?.(controller);
   stones.mount(out.content, { after: [mikaAvailability, notice] });
   const say = (text, bad = false) => { notice.className = `${bad ? 'setup-notice bad' : 'setup-fine'} setup-provider-notice`; notice.textContent = text; notice.hidden = !text; };
   /** The frame from whatever `runtime` holds now: the record, or the measure once it lands. */
@@ -384,6 +386,6 @@ export function createProviderSurface(context) {
     el: out.el,
     // Show resolves on the first frame; the measure follows on its own and repaints.
     show: async () => { await showRecord(); void measure(false); },
-    destroy: () => { disposeMount(); stones.destroy(); },
+    destroy: () => { context.environment?.onProviderSurface?.(null); disposeMount(); stones.destroy(); },
   };
 }

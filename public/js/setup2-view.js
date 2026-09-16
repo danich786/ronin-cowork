@@ -34,6 +34,7 @@ export function createSetup2View() {
   let runtime = null;
   let garden = null;
   let gardenContent = null;
+  let providerSurface = null;
   let paintedSceneId = null;
   let sceneOverride = 0;
   const providerSessions = createProviderSetupSessionMount();
@@ -54,6 +55,7 @@ export function createSetup2View() {
       paintedSceneId = null;
       selectGarden(activeScene());
     },
+    onProviderSurface: (next) => { providerSurface = next; },
     openGardenMedia: async (item) => {
       if (!garden) return;
       if (item.kind !== 'doc') { garden.showMedia({ label: item.label, kind: item.kind, src: item.src }); return; }
@@ -62,6 +64,15 @@ export function createSetup2View() {
       garden.showMedia({ label: item.label, kind: item.kind, text: result.ok ? result.data.text || '' : result.message });
     },
     openSetupAction: (action) => {
+      if (action === 'setup.providers.choose') {
+        const scene = SCENES.find((candidate) => candidate.type === SETUP_SURFACE_TYPES.providers);
+        if (!scene) return;
+        sceneOverride = scene.number;
+        open(scene.number);
+        providerSurface?.showStones();
+        flashSelector(scene.type);
+        return;
+      }
       const scene = SCENES.find((candidate) => candidate.type === action);
       if (!scene) return;
       sceneOverride = scene.number;
@@ -78,6 +89,14 @@ export function createSetup2View() {
     : SCENES[0];
   const sceneAt = (number) => Number(number) > 0 ? SCENES[Number(number) - 1] || automaticScene() : automaticScene();
   const activeScene = () => sceneAt(sceneOverride);
+  const flashSelector = (type) => {
+    const card = bench?.host.querySelector(`[data-workbench-offer-type="${type}"]`);
+    if (!card) return;
+    card.classList.remove('setup-selector-pulse');
+    void card.offsetWidth;
+    card.classList.add('setup-selector-pulse');
+    card.addEventListener('animationend', () => card.classList.remove('setup-selector-pulse'), { once: true });
+  };
   const selectGarden = (scene) => {
     if (!garden || !gardenContent || !scene || paintedSceneId === scene.id) return false;
     garden.paint(gardenContent.canvases[scene.canvas] || null);

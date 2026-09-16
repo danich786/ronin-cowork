@@ -5918,6 +5918,14 @@ button.wb-door:hover b {
 .wk-workbench-host[data-workbench-profile='setup2'] [data-step-state='complete'] .wk-card-heading { font-weight: 500; }
 .wk-workbench-host[data-workbench-profile='setup2'] [data-step-state='current'] { opacity: 1; outline: var(--edge-2) solid var(--kaki); outline-offset: calc(-1 * var(--edge-2)); }
 .wk-workbench-host[data-workbench-profile='setup2'] [data-step-state='upcoming'] { opacity: .48; }
+.wk-workbench-host[data-workbench-profile='setup2'] .setup-selector-pulse { animation: setup-selector-pulse 520ms ease-out; }
+@keyframes setup-selector-pulse {
+  0%, 100% { box-shadow: none; }
+  42% { box-shadow: 0 0 0 var(--space-2) color-mix(in srgb, var(--kaki) 38%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wk-workbench-host[data-workbench-profile='setup2'] .setup-selector-pulse { animation: none; outline-color: var(--kaki); }
+}
 .setup-preferences-wrap[hidden], .setup-register-options[hidden] { display: none; }
 .setup-preferences { display: grid; gap: 0; padding: 0; border: 0; }
 .setup-preferences > .wk-action { justify-self: start; margin-top: var(--space-6); }

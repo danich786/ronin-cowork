@@ -23,7 +23,7 @@
       ],
       "cta": {
         "label": "Install a provider",
-        "action": "setup.providers"
+        "action": "setup.providers.choose"
       },
       "media": [
         {
