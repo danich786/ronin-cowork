@@ -92,7 +92,7 @@ test('one definition under one type, registered by both workbenches, with one sh
   assert.match(await source('provider-setup-session.js'), /createTerminalTileHost\(\{ mode: 'full' \}\)/);
 });
 
-test('showing the surface paints the stones from the record at once, measures behind them, and lists one stone per registry CLI plus catalog-only providers', async () => {
+test('showing the surface paints and measures one stone per registry CLI plus catalog-only providers', async () => {
   const ctx = context();
   calls.length = 0;
   const made = surface.createProviderSurface(ctx);
@@ -111,30 +111,8 @@ test('showing the surface paints the stones from the record at once, measures be
   assert.deepEqual(stones.map((stone) => stone.attributes['data-activated']), ['true', 'false', 'false', 'false', 'false']);
   assert.equal(stones[4].disabled, true);
   assert.equal(byClass(stones[4], 'status-marker')[0].textContent, 'Coming soon');
-  const dates = byClass(made.el, 'setup-provider-dates')[0];
-  assert.equal(walk(dates).find((node) => node.tagName === 'SUMMARY').textContent, 'Check for updates');
-  assert.deepEqual(byClass(dates, 'setup-provider-date-list')[0].children.filter((row) => !row.hidden).map((row) => row.children.map((cell) => cell.textContent)), [
-    ['Catalog researched', '2026-09-08'],
-    ['Machine measured', new Date('2026-09-08T11:00:00.000Z').toLocaleString()],
-    ['Latest versions checked', new Date('2026-09-09T12:00:00.000Z').toLocaleString()],
-  ]);
+  assert.equal(byClass(made.el, 'setup-provider-dates').length, 0, 'application updates do not belong on provider setup');
   assert.equal(byClass(made.el, 'setup-provider-intro').length, 0);
-  // Refresh lives inside the dates box — it is the one press that asks outside the machine,
-  // its own door, never the plain measure — and it says what it found, changed or not.
-  assert.equal(byClass(dates, 'setup-provider-refresh-action').length, 1, 'Refresh is inside Check for updates');
-  assert.equal(byClass(made.el, 'setup-provider-refresh').length, 1, 'and nowhere else');
-  const descriptions = byClass(dates, 'setup-provider-descriptions-action')[0];
-  assert.equal(descriptions.textContent, 'Update descriptions');
-  assert.equal(descriptions.disabled, true, 'the future catalog action is taught, never offered');
-  assert.equal(descriptions.attributes['aria-describedby'], 'setup-provider-descriptions-reason');
-  assert.equal(byClass(dates, 'setup-provider-descriptions')[0].textContent,
-    'Update descriptionsRonin Services required · model descriptions update not published yet.');
-  calls.length = 0;
-  byClass(dates, 'setup-provider-refresh-action')[0].click();
-  await new Promise((resolve) => setTimeout(resolve, 0));
-  assert.equal(calls[0], 'POST /api/setup/providers/refresh');
-  assert.match(byClass(dates, 'setup-provider-refresh-outcome')[0].textContent, /^Checked .+ — unchanged$/, 'nothing moved, and that is said with its time');
-  assert.equal(dates.open, true);
   assert.equal(surface.providersSummary((await import('../public/js/form-steps.js')).providerCatalog()), '3 providers · 4 models · 1 activated here · catalog updated 2026-09-08');
 });
 
@@ -324,7 +302,7 @@ test('a stale CLI list is dated and named without disproving a catalog row, and 
   }
 });
 
-test('an unmeasured machine and the owner\'s catalog copy are each said, never guessed — and a shadowed section says so, with its cost', async () => {
+test('an unmeasured machine and the owner\'s catalog copy remain factual in provider detail', async () => {
   machine = { providers: [] };
   catalog = { ...catalog, origin: 'user', updated: '2026-10-01', withdrawn: [{ provider: 'xai', label: 'xAI' }], providers: [
     { ...catalog.providers[0], origin: 'user', shadowed: true },
@@ -333,13 +311,7 @@ test('an unmeasured machine and the owner\'s catalog copy are each said, never g
   ] };
   const made = surface.createProviderSurface(context());
   await made.show(); await settle();
-  const dates = byClass(made.el, 'setup-provider-dates')[0];
-  assert.deepEqual(byClass(dates, 'setup-provider-date-list')[0].children.filter((row) => !row.hidden).map((row) => row.children.map((cell) => cell.textContent)), [
-    ['Catalog researched', 'Shipped 2026-09-08 · your copy 2026-10-01'],
-    ['Machine measured', 'Not measured yet'],
-    ['Latest versions checked', 'Not checked yet — press Refresh'],
-    ['Withdrawn by your copy', 'xAI'],
-  ], 'two layers, two dates, neither borrowed; what the copy withdrew is named');
+  assert.equal(byClass(made.el, 'setup-provider-dates').length, 0);
   assert.equal(surface.providersSummary((await import('../public/js/form-steps.js')).providerCatalog()), '3 providers · 4 models · 0 activated here · catalog updated 2026-09-08 · 2 yours');
   byClass(made.el, 'sws-stone')[0].click();
   const from = byClass(made.el, 'setup-provider-provenance')[0];

@@ -21,9 +21,7 @@ test('selected details mount the real forms and Setup Presets surface', () => {
   assert.match(source, /createEmbeddedNewTeamFormView\(WorkspaceKit/);
   assert.match(source, /createEmbeddedNewAgentView\(WorkspaceKit/);
   assert.doesNotMatch(source, /createNew(?:AgentView|TeamFormView)\(WorkspaceKit/);
-  assert.match(source, /item\.id === 'preset'[\s\S]*createPresetsSurface\(/);
-  assert.match(source, /for \(const view of views\) void view\.enter\(\{\}\)/);
-  assert.match(source, /return \(\) => \{ for \(const view of views\) view\.el\.remove\(\); \}/);
+  assert.match(source, /item\.id === 'preset'[\s\S]*context\.workbench\?\.place\(PRESETS_TYPE/);
 });
 
 test('Agent and Team details use form-only adapters without consumer geometry overrides', async () => {
@@ -45,7 +43,7 @@ test('Setup has no separate Presets selector', async () => {
   const order = setupView.slice(setupView.indexOf('const ORDER'), setupView.indexOf('const DEFAULT_ARRANGEMENT'));
   assert.doesNotMatch(order, /SETUP_SURFACE_TYPES\.presets/);
   assert.doesNotMatch(source, /campaignTemplatesDefinition\(\)|createTemplatesSurface\(\)/);
-  assert.match(source, /createPresetsSurface/);
+  assert.match(source, /PRESETS_TYPE/);
 });
 
 test('Launch your own has no consumer geometry or obsolete card-grid CSS', () => {

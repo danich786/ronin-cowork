@@ -16,23 +16,24 @@ class FakeNode {
 }
 
 globalThis.Node = FakeNode;
-globalThis.document = { createElement: (tag) => new FakeNode(tag), createTextNode: (text) => Object.assign(new FakeNode('#text'), { textContent: text }) };
-
+globalThis.document = {
+  createElement: (tag) => new FakeNode(tag),
+  createTextNode: (text) => Object.assign(new FakeNode('#text'), { textContent: text }),
+  querySelector: () => null,
+  head: { append() {} },
+};
+globalThis.window = { matchMedia: () => ({ matches: false }), addEventListener() {}, removeEventListener() {}, setInterval: () => 1, clearInterval: () => {} };
+Object.defineProperty(globalThis, 'navigator', { value: { platform: 'Linux' }, configurable: true });
 
 const { createGithubWorkspaceSetup } = await import('../public/js/github-workspace-setup.js');
 const settle = () => new Promise((resolve) => setImmediate(resolve));
 
-test('connected GitHub can re-check, change accounts without closing early, and sign out the shown login', async () => {
+test('connected GitHub offers one server-owned removal action and keeps clone separate', async () => {
   const calls = [];
   let github = { installed: true, authenticated: true, account: 'octo-cat', attachment: null };
-  let poll;
   let finishes = 0;
-  let resolveCheck;
-  let hold = false;
-  globalThis.window = { setInterval: (fn) => { poll = fn; return 1; }, clearInterval: () => {} };
   globalThis.fetch = async (url, options) => {
     calls.push({ url, options });
-    if (hold && url === '/api/setup/github') await new Promise((resolve) => { resolveCheck = resolve; });
     if (url.endsWith('/login')) github = { ...github, attachment: { type: 'session', key: 'setup_github' } };
     if (url.endsWith('/close')) github = { ...github, attachment: null };
     if (url.endsWith('/logout')) github = { installed: true, authenticated: false, account: '', attachment: null };
@@ -46,29 +47,15 @@ test('connected GitHub can re-check, change accounts without closing early, and 
   surface.items[0].renderDetail(host);
   await settle();
   const button = (label) => [...host.walk()].find((n) => n.tagName === 'BUTTON' && n.textContent === label);
-  assert.ok(button('Change account'));
-  assert.equal(button('Sign out').hidden, false);
-  hold = true;
-  button('Re-check connection').click();
-  assert.equal(button('Checking…').disabled, true);
-  resolveCheck(); hold = false;
-  await settle();
-  assert.equal(button('Re-check connection').disabled, false);
-  button('Change account').click();
-  await settle();
-  poll(); await settle();
-  assert.equal(finishes, 0, 'the existing account must not end a new login attempt');
-  assert.equal(calls.some((c) => c.url.endsWith('/close')), false);
-  github = { ...github, account: 'new-cat' };
-  poll(); await settle();
-  assert.equal(finishes, 1);
-  assert.equal(surface.items[0].state, 'Connected · new-cat');
-  button('Sign out').click(); await settle();
+  assert.equal(button('Connect GitHub').hidden, true);
+  assert.equal(button('Remove authentication').hidden, false);
+  assert.equal(surface.items[0].state, 'Connected · octo-cat');
+  button('Remove authentication').click(); await settle();
   const logout = calls.find((c) => c.url.endsWith('/logout'));
-  assert.deepEqual(JSON.parse(logout.options.body), { account: 'new-cat' });
-  assert.equal(button('Sign out').hidden, true);
+  assert.equal(logout.options.body, undefined, 'the server discovers the active account; the browser cannot name another one');
+  assert.equal(button('Remove authentication').hidden, true);
   assert.ok(button('Connect GitHub'));
-  assert.ok(button('Check connection'));
   assert.equal(surface.items[1].disabled, true);
+  assert.equal(finishes, 0, 'removal is not authentication completion');
   surface.destroy(); await settle();
 });

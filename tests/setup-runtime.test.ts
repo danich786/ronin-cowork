@@ -416,51 +416,28 @@ test('Setup kinds are canonical runtime facts and persist without replacing setu
     providers: { codex: { activated_at: '2026-09-06T01:00:00.000Z' } },
   }));
   assert.deepEqual(await runtime.writeSetupPreferences(['research', 'build', 'research']), {
-    kinds: ['build', 'research'], providers: [], path_note: '',
+    kinds: ['build', 'research'], providers: [], path_note: '', identity_choice: '', bounty_opt_in: false,
   });
   const section = await state.readSetupSection();
   assert.equal(section.completed_at, '2026-09-06T00:00:00.000Z');
   assert.deepEqual(section.providers, { codex: { activated_at: '2026-09-06T01:00:00.000Z' } });
-  assert.deepEqual(section.preferences, { kinds: ['build', 'research'], providers: [], path_note: '' });
+  assert.deepEqual(section.preferences, { kinds: ['build', 'research'], providers: [], path_note: '', identity_choice: '', bounty_opt_in: false });
   const answer = await runtime.setupRuntimeAnswer(section, await measured(section, []), { exists: nobody }, undefined, catalog);
-  assert.deepEqual(answer.preferences, { kinds: ['build', 'research'], providers: [], path_note: '' });
+  assert.deepEqual(answer.preferences, { kinds: ['build', 'research'], providers: [], path_note: '', identity_choice: '', bounty_opt_in: false });
   assert.deepEqual(await runtime.writeSetupPreferences({ providers: ['hermes', 'openai', 'hermes'] }), {
-    kinds: ['build', 'research'], providers: ['hermes', 'openai'], path_note: '',
+    kinds: ['build', 'research'], providers: ['hermes', 'openai'], path_note: '', identity_choice: '', bounty_opt_in: false,
   });
   assert.deepEqual((await state.readSetupSection()).preferences, {
-    kinds: ['build', 'research'], providers: ['hermes', 'openai'], path_note: '',
+    kinds: ['build', 'research'], providers: ['hermes', 'openai'], path_note: '', identity_choice: '', bounty_opt_in: false,
   });
   assert.deepEqual(await runtime.writeSetupPreferences({ kinds: ['life'] }), {
-    kinds: ['life'], providers: ['hermes', 'openai'], path_note: '',
+    kinds: ['life'], providers: ['hermes', 'openai'], path_note: '', identity_choice: '', bounty_opt_in: false,
   }, 'purpose writes preserve provider opt-ins');
   await assert.rejects(runtime.writeSetupPreferences('build'), /Send Setup preferences/);
   await assert.rejects(runtime.writeSetupPreferences(['build', 'unknown']), /Kinds are build, life, research, and other/);
-  assert.deepEqual(await runtime.writeSetupPreferences({ kinds: ['other'], path_note: 'Something new' }), { kinds: ['other'], providers: ['hermes', 'openai'], path_note: 'Something new' });
-  assert.deepEqual(await runtime.writeSetupPreferences([]), { kinds: [], providers: ['hermes', 'openai'], path_note: 'Something new' });
+  assert.deepEqual(await runtime.writeSetupPreferences({ kinds: ['other'], path_note: 'Something new' }), { kinds: ['other'], providers: ['hermes', 'openai'], path_note: 'Something new', identity_choice: '', bounty_opt_in: false });
+  assert.deepEqual(await runtime.writeSetupPreferences([]), { kinds: [], providers: ['hermes', 'openai'], path_note: 'Something new', identity_choice: '', bounty_opt_in: false });
   await assert.rejects(runtime.writeSetupPreferences({ providers: ['bad provider'] }), /provider IDs/);
 });
 
 test.after(async () => { await rm(box, { recursive: true, force: true }); });
-
-
-test('GitHub sign-out removes only the displayed account and measures the remaining login', async () => {
-  let account = 'octo-cat';
-  const removed: string[] = [];
-  const ops: runtime.GithubSetupOps = {
-    installed: async () => true,
-    authStatus: async () => account ? `  ✓ Logged in to github.com account ${account} (keyring)` : '',
-    exists: async () => false,
-    open: async () => undefined,
-    close: async () => undefined,
-    logout: async (name) => { removed.push(name); account = 'another-cat'; },
-  };
-  await assert.rejects(runtime.logoutGithub('stale-cat', ops), /account changed/);
-  await assert.rejects(runtime.logoutGithub(undefined, ops), /account changed/);
-  assert.deepEqual(removed, []);
-  const remaining = await runtime.logoutGithub('octo-cat', ops);
-  assert.deepEqual(removed, ['octo-cat']);
-  assert.equal(remaining.account, 'another-cat');
-  assert.equal(remaining.authenticated, true);
-  ops.logout = async () => { account = ''; };
-  assert.equal((await runtime.logoutGithub('another-cat', ops)).authenticated, false);
-});

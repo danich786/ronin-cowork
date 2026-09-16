@@ -4,15 +4,15 @@ import { readFile } from 'node:fs/promises';
 
 const source = await readFile(new URL('../public/js/campaign-templates.js', import.meta.url), 'utf8');
 
-test('Setup and Campaign share the one canonical Templates stone consumer', async () => {
+test('Campaign owns Templates while Setup uses the independent Presets consumer', async () => {
   const [setup, campaign] = await Promise.all([
     readFile(new URL('../public/js/setup-surfaces.js', import.meta.url), 'utf8'),
     readFile(new URL('../public/js/campaign-view.js', import.meta.url), 'utf8'),
   ]);
-  assert.match(setup, /import \{ CAMPAIGN_TEMPLATES_TYPE, createTemplatesSurface \}/);
-  assert.match(setup, /item\.id === 'template'[\s\S]*createTemplatesSurface\(\)/);
-  assert.doesNotMatch(setup, /campaignTemplatesDefinition\(\)/);
-  assert.match(campaign, /add\(campaignTemplatesDefinition\(\)\)/);
+  assert.doesNotMatch(setup, /CAMPAIGN_TEMPLATES_TYPE|createTemplatesSurface|campaignTemplatesDefinition/);
+  assert.match(setup, /item\.id === 'preset'[\s\S]*context\.workbench\?\.place\(PRESETS_TYPE/);
+  assert.match(campaign, /templates: 'campaign\.templates'/);
+  assert.match(source, /export function campaignTemplatesDefinition\(\)/);
   assert.match(source, /import \{ createStoneWorkSurface \} from '\.\/stone-work-surface\.js'/);
   assert.match(source, /stoneSurface\.mount\(body, \{ before: \[installedHead\], after: \[libraryRoom\] \}\)/);
 });

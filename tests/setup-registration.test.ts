@@ -89,15 +89,14 @@ test('registration recovery keeps consent separate and deletion removes local id
   assert.equal(await getEntitlementToken(), null);
 });
 
-test('Setup reuses canonical Campaign Templates only inside Launch Your Own', async () => {
+test('Setup keeps Campaign Templates out and opens Presets only from Launch Your Own', async () => {
   const source = await (await import('node:fs/promises')).readFile(new URL('../public/js/setup-surfaces.js', import.meta.url), 'utf8');
   for (const id of ['setup.register', 'setup.roots', 'setup.installations']) assert.match(source, new RegExp(id.replace('.', '\\.')));
   assert.doesNotMatch(source, /setup\.services|setup\.gbrain/);
   // Model providers is the one surface Ronin Settings also seats; its type is that module's.
   assert.match(source, /providers: PROVIDER_SURFACE_TYPE/);
-  assert.match(source, /templates: CAMPAIGN_TEMPLATES_TYPE/);
-  assert.match(source, /createTemplatesSurface\(\)/);
-  assert.doesNotMatch(source, /campaignTemplatesDefinition\(\)/);
+  assert.match(source, /item\.id === 'preset'[\s\S]*context\.workbench\?\.place\(PRESETS_TYPE/);
+  assert.doesNotMatch(source, /CAMPAIGN_TEMPLATES_TYPE|createTemplatesSurface|campaignTemplatesDefinition/);
   assert.doesNotMatch(source, /setup-template-(?:modes|room|card)|openTemplateMaker|\/api\/library/);
   assert.doesNotMatch(source, /servicesCard\s*\(/, 'Setup has no separate Services email/token activation card');
 });

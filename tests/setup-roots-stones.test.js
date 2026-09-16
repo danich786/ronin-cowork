@@ -64,7 +64,7 @@ test('roots adapt the real project-root detail and Add form to the shared stone 
   assert.match(roots, /if \(current\) host\.append\(detail\(current\)\)/);
   assert.match(roots, /stoneSurface\.refreshDetail\(\)/);
   assert.match(roots, /const openAdd = stones \? null : createAction/);
-  assert.match(roots, /stoneSurface\.mount\(root, \{ before: \[intro, messages\] \}\)/);
+  assert.match(roots, /stoneSurface\.mount\(root, \{ before: \[\.\.\.\(options\.before \|\| \[\]\), intro, messages\] \}\)/);
   assert.match(roots, /intro\.className = 'pr-intro'[\s\S]*?t\('roots\.intro_line', 'A workspace is a folder Ronin keeps for Teams and Agents\.'\)/, 'one line, not a paragraph');
   assert.match(roots, /more\.className = 'pr-intro-more'[\s\S]*?t\('roots\.learn_more', 'Learn more'\)[\s\S]*?more\.setAttribute\('aria-expanded', 'false'\)/, 'a Learn more that opens on click');
   assert.match(roots, /points\.hidden = true;[\s\S]*?t\('roots\.intro_repo'[\s\S]*?t\('roots\.intro_born'[\s\S]*?t\('roots\.intro_accumulates'/, 'three short points, closed at first');
@@ -119,7 +119,7 @@ test('the Setup form keeps the real fields and reads as sections, while Campaign
   assert.match(roots, /t\('roots\.add_head', 'Add a workspace'\)/);
   assert.match(roots, /words: \{[\s\S]*?chosen: t\('roots\.picker_path', 'Path'\),[\s\S]*?note: '',[\s\S]*?take: t\('roots\.picker_keep', 'Keep'\)/, 'Setup says the picker in keep-or-ignore terms, never "choose" or "where the Agent will start"');
   assert.doesNotMatch(roots.slice(roots.indexOf('function addCard')), /roots\.add_hint/, 'the add page does not say choose');
-  assert.match(roots, /!\(stones && stoneSurface\.selected\(\)\)/, 'an open Setup detail is not repainted by the poll');
+  assert.doesNotMatch(roots, /setInterval|poll/, 'the roots surface has no background repaint loop');
 });
 
 test('roots carry no parallel stone DOM or CSS presentation and the detail rhythm uses kaki rules', async () => {
@@ -151,7 +151,7 @@ test('roots stones mount visible loading, empty, and failure output without chan
   const roots = await source('public/js/projectroots.js');
   assert.match(roots, /messages\.className = 'pr-status'/);
   assert.match(roots, /messages\.setAttribute\('role', 'status'\)/);
-  assert.match(roots, /stoneSurface\.mount\(root, \{ before: \[intro, messages\] \}\)/);
+  assert.match(roots, /stoneSurface\.mount\(root, \{ before: \[\.\.\.\(options\.before \|\| \[\]\), intro, messages\] \}\)/);
   assert.match(roots, /const output = stones \? messages : list/);
   assert.match(roots, /messages\.replaceChildren\(\)/, 'a successful render clears loading or failure output');
   assert.match(roots, /\(stones \? messages : list\)\.appendChild/, 'the zero-roots message uses the mounted status host');
