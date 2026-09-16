@@ -69,12 +69,17 @@
           "kind": "title",
           "eyebrow": "Your ground",
           "heading": "Choose a Workspace Folder",
-          "body": "A Workspace Folder is a folder you have registered as somewhere Ronin may work."
+          "body": "Workspace Folders are your project roots: real directories on this machine and GitHub repositories. They give your agents known surfaces to work on."
         },
         {
           "id": "workspace-add",
           "kind": "instruction",
-          "body": "Add the folder holding the project you want worked on. You can register more at any time."
+          "body": "Add the directory or repository holding the project you want worked on. You can register more at any time."
+        },
+        {
+          "id": "workspace-github",
+          "kind": "instruction",
+          "body": "Authenticate with GitHub to work on remote repositories as well as folders already on this machine."
         }
       ],
       "media": [

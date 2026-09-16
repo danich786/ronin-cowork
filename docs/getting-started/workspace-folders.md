@@ -1,8 +1,9 @@
 # Workspace Folders — where Ronin works
 
-A Workspace Folder is a folder on this machine that you have registered as somewhere Ronin
-may work. When you start an Agent you choose one, and that folder becomes the Agent's
-ground: it is where the Agent opens files, runs commands, and keeps its work.
+Workspace Folders are your project roots — the known surfaces your Agents work on. A
+Workspace Folder is a real directory on this machine or a GitHub repository. When you start
+an Agent you choose one, and it becomes that Agent's ground: where it opens files, runs
+commands, and keeps its work.
 
 You need at least one before an Agent has anywhere to work. One is enough to start.
 
@@ -13,11 +14,20 @@ Workspace Folders page in cowork commons afterwards. You give two things:
 
 | You give | What it is |
 |---|---|
-| A directory | An existing folder on this machine. Ronin does not create it for you. |
+| A directory | An existing folder on this machine, or a repository you clone through GitHub. |
 | A name | What you will see in the launcher and on an Agent's record. Presentation only. |
 
 The name is free to change later. Changing it never moves the directory, never renames the
 folder on disk, and never changes the identity of any Agent already working there.
+
+## GitHub repositories
+
+Authenticate with GitHub from the same surface to work on remote repositories as well as
+folders already on this machine. Once authenticated you can clone a repository and register
+it in one step, and it becomes a Workspace Folder like any other.
+
+Local directories do not need this. Authenticate only when you want Ronin reaching
+repositories that are not already on the machine.
 
 ## Choosing a folder
 
