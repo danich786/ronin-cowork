@@ -75,7 +75,7 @@ export function createAgentDefaultsSurface(campaign) {
     const save = el('button', 'cv-save', t('panels.save', 'Save')); save.type = 'submit'; actions.append(notice.el, save); form.append(actions); body.append(form);
     form.addEventListener('submit', async (event) => {
       event.preventDefault(); save.disabled = true; notice.set('info', t('campaign.saving', 'saving…'));
-      const next = { ...current, ...picked, dial: 'write', behaviours: list(picked.behaviours) };
+      const next = { ...current, ...picked, behaviours: list(picked.behaviours) };
       const result = await saveCampaign(row.id, { config: { defaults: next } });
       notice.set(result.ok ? 'success' : 'failed', result.ok ? t('settei.saved', 'saved') : result.message); save.disabled = false;
       if (result.ok) paint(seed);

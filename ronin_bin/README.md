@@ -57,8 +57,7 @@ operation listed in `ronin_catalogs/TOOLS.md` and taught by a capability documen
 
 1. Add the executable, its `TOOLS.md` row, and the capability document that selects and
    teaches it. All three or it did not ship.
-2. Tools report relevant session state and proceed. `@ronin-control` is a visible
-   preference, not an access boundary.
+2. Tools report relevant session state and proceed.
 3. Zero-dependency bash (assume no jq; python3 exists if JSON is unavoidable).
 4. One-line outcomes make the result easy to read; warnings do not stop the action.
 5. Name the task surface plainly. Keep flags minimal; positional args.

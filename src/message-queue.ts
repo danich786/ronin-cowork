@@ -233,9 +233,6 @@ export async function attemptMessage(
         ? 'the target name now belongs to a different session'
         : 'target session no longer exists');
     }
-    if (mode === 'safe' && targetSession.control !== 'write') {
-      return retain('stuck', `the target Control setting is '${targetSession.control}'`);
-    }
     // CLI workers and the server share this lock: one complete message per target.
     targetLockPath = path.join(DIR, `target-${createHash('sha256').update(item.target_key).digest('hex')}.lock`);
     try {

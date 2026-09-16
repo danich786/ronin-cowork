@@ -1,7 +1,6 @@
 export type Reach = 'open' | 'discuss' | 'plan' | 'execute';
 export type Recruit = 'open' | 'nobody' | 'propose agents' | 'staff agents';
 export type Output = 'open' | 'a plan' | 'ideas' | 'code' | 'an artifact' | 'the team' | 'no code';
-export type AgentDial = 'user' | 'read' | 'write';
 export type LaunchMode = 'configured' | 'live_dangerously';
 export interface Mandate { reach: Reach; recruit: Recruit; output: Output[] }
 
@@ -12,7 +11,6 @@ export interface AgentDefaults {
   recruit: Recruit;
   output: Output[];
   behaviours: string[];
-  dial: AgentDial;
   launch_mode: LaunchMode;
 }
 
@@ -46,7 +44,6 @@ export function agentDefaults(value: unknown): AgentDefaults {
     recruit: oneOf(input.recruit, ['open', 'nobody', 'propose agents', 'staff agents'], 'propose agents'),
     output: outputs(input.output),
     behaviours: books(input.behaviours),
-    dial: oneOf(input.dial, ['user', 'read', 'write'], 'write'),
     launch_mode: oneOf(input.launch_mode, ['configured', 'live_dangerously'], 'configured'),
   };
 }

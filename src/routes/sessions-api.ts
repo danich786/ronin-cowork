@@ -1,8 +1,6 @@
 import fs from 'node:fs';
 import type express from 'express';
 import {
-  type Control,
-  getControl,
   getLeads,
   getWipeboards,
   getProviderSessionId,
@@ -15,7 +13,6 @@ import {
   listSessions,
   sessionExists,
   sessionOfPane,
-  setControl,
   setLeads,
   setNote,
   setProjectRoot,
@@ -161,7 +158,7 @@ export function registerSessions(app: express.Express): void {
         version: 1, id: key, name, key, archived_at: new Date().toISOString(), cwd: runtime.cwd,
         identity: (await listSessions()).find((s) => s.name === name)?.identity,
         agent: provider.agent, provider_session_id: provider.id, tags: await getTags(name), leads: await getLeads(name),
-        wipeboards: await getWipeboards(name), note: await getNote(name), control: await getControl(name), project_root: await getProjectRoot(name),
+        wipeboards: await getWipeboards(name), note: await getNote(name), project_root: await getProjectRoot(name),
       };
       await writeArchive(archived);
       try { await stopSessionTree(name); }
@@ -195,7 +192,6 @@ export function registerSessions(app: express.Express): void {
         if (archived.identity) await setSessionIdentity(archived.name, archived.identity);
         else await setLaunchStamp(archived.name, archived.agent);
         await setProviderSessionId(archived.name, archived.provider_session_id);
-        await setControl(archived.name, archived.control);
         await writeTeams(archived.name, archived.tags);
       } catch (e) {
         await stopSessionTree(archived.name);
@@ -461,7 +457,6 @@ export function registerSessions(app: express.Express): void {
         members: await Promise.all(
           members.map(async (s) => ({
             name: s.name,
-            dial: await getControl(s.name),
             team_lead: s.leads.includes(name),
           })),
         ),
@@ -513,30 +508,6 @@ export function registerSessions(app: express.Express): void {
     res.json({ team_lead: await getLeads(name) });
   });
 
-  app.get('/api/sessions/:name/control', async (req, res) => {
-    const { name } = req.params;
-    if (!isValidName(name)) return res.status(400).json({ error: 'Invalid name.' });
-    if (!(await sessionExists(name))) return res.status(404).json({ error: 'No such session.' });
-    res.json({ control: await getControl(name) });
-  });
-
-  app.post('/api/sessions/:name/control', async (req, res) => {
-    const { name } = req.params;
-    if (!isValidName(name)) return res.status(400).json({ error: 'Invalid name.' });
-    if (!(await sessionExists(name))) return res.status(404).json({ error: 'No such session.' });
-    const control = String(req.body?.control ?? '');
-    if (control !== 'user' && control !== 'read' && control !== 'write') {
-      return res.status(400).json({ error: 'control must be user, read or write.' });
-    }
-    try {
-      await setControl(name, control as Control);
-      count('dial.set', { dial: control });
-      res.json({ ok: true, control });
-    } catch (e) {
-      res.status(500).json({ error: String((e as Error)?.message ?? e) });
-    }
-  });
-
   app.get('/api/sessions/:name/ctx', async (req, res) => {
     const { name } = req.params;
     if (!isValidName(name)) return res.status(400).json({ error: 'Invalid name.' });
@@ -554,7 +525,6 @@ export function registerSessions(app: express.Express): void {
     const { name } = req.params;
     if (!isValidName(name)) return res.status(400).json({ error: 'Invalid name.' });
     if (!(await sessionExists(name))) return res.status(404).json({ error: 'No such session.' });
-    const control = await getControl(name);
     const raw = String(req.body?.text ?? '');
     if (!raw.trim()) return res.status(400).json({ error: 'Nothing to send.' });
     try {
@@ -562,7 +532,7 @@ export function registerSessions(app: express.Express): void {
       const text = expanded ?? raw;
       const item = await enqueueMessage(name, text, 'owner');
       const retained = await attemptMessage(item.id, 'force');
-      res.json({ ok: true, control, expanded: expanded != null, queued: retained !== null, started: retained === null, message: retained });
+      res.json({ ok: true, expanded: expanded != null, queued: retained !== null, started: retained === null, message: retained });
     } catch (e) {
       if (e instanceof MessageRefused) return res.status(404).json({ error: e.message, code: 'target_missing' });
       res.status(500).json({ error: String((e as Error)?.message ?? e) });

@@ -28,7 +28,7 @@ export async function appendLaunchLedger(form: SpawnForm, resolved: Resolved, ok
       intent: form.prompt,
       picks: { project_root: form.project_root, tags: form.tags, seed: form.seed, reference: form.reference },
       fill: null,
-      resolved: { name: resolved.name, dir: resolved.dir, cmd: resolved.cmd, dial: resolved.dial },
+      resolved: { name: resolved.name, dir: resolved.dir, cmd: resolved.cmd },
       boot: ok ? { state: 'open', opened_at: new Date().toISOString() } : { state: 'failed' },
       spawn: { name: resolved.name, ok },
       outcome: null,

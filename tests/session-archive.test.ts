@@ -13,7 +13,7 @@ test('archive manifests round-trip and list newest first', async () => {
     archived_at: '2026-08-24T00:00:00.000Z', cwd: '/tmp', agent: 'claude',
     provider_session_id: '00000000-0000-0000-0000-000000000000',
     identity: { sessionType: 'cowork_agent', cli: 'claude', provider: 'anthropic', model: 'opus' },
-    tags: ['team'], leads: [], wipeboards: [], note: '', control: 'write' as const,
+    tags: ['team'], leads: [], wipeboards: [], note: '',
     project_root: 'ronin_cowork',
   };
   try {

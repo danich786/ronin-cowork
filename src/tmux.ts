@@ -2,9 +2,7 @@ import { config } from './machine-settings.js';
 import { ensureTmuxServer } from './host-guard.js';
 import { removeHandoff } from './handoff.js';
 import { assertUnderMax } from './machine-state.js';
-import { CONTROL_OPT, RIREKI_OPT, newSessionArgs } from './session-args.js';
-export type { Control } from './session-args.js';
-import type { Control } from './session-args.js';
+import { RIREKI_OPT, newSessionArgs } from './session-args.js';
 import { tmux } from './tmux-client.js';
 
 export interface SessionIdentity {
@@ -23,7 +21,6 @@ export interface SessionInfo {
   hasNote: boolean;
   tags: string[];
   leads: string[];
-  control: Control;
   key: string;
   agent: string;
   identity?: SessionIdentity;
@@ -79,13 +76,13 @@ export async function listSessions(): Promise<SessionInfo[]> {
     const stdout = await tmux.run([
       'list-sessions',
       '-F',
-      `#{session_name}\t#{${TITLE_OPT}}\t#{session_windows}\t#{?session_attached,1,0}\t#{session_created}\t#{?${NOTE_OPT},1,0}\t#{${TAGS_OPT}}\t#{${LEAD_OPT}}\t#{@ronin-control}\t#{@ronin-key}\t#{${AGENT_OPT}}\t#{${CAMPAIGN_OPT}}\t#{${RIREKI_OPT}}\t#{window_activity}\t#{@ronin-identity}`,
+      `#{session_name}\t#{${TITLE_OPT}}\t#{session_windows}\t#{?session_attached,1,0}\t#{session_created}\t#{?${NOTE_OPT},1,0}\t#{${TAGS_OPT}}\t#{${LEAD_OPT}}\t#{@ronin-key}\t#{${AGENT_OPT}}\t#{${CAMPAIGN_OPT}}\t#{${RIREKI_OPT}}\t#{window_activity}\t#{@ronin-identity}`,
     ]);
     return stdout
       .split('\n')
       .filter(Boolean)
       .map((line) => {
-        const [name, title, windows, attached, created, hasNote, tags, leads, control, key, agent, campaign, rireki, activity, identity] = line.split('\t');
+        const [name, title, windows, attached, created, hasNote, tags, leads, key, agent, campaign, rireki, activity, identity] = line.split('\t');
         return {
           name,
           title: title?.trim() || '',
@@ -95,7 +92,6 @@ export async function listSessions(): Promise<SessionInfo[]> {
           hasNote: hasNote === '1',
           tags: parseTags(tags),
           leads: parseTags(leads),
-          control: control === 'user' || control === 'read' ? (control as Control) : 'write',
           key: key?.trim() || `${name}-${Number(created) || 0}`,
           agent: agent?.trim() || '',
           identity: parseSessionIdentity(identity),
@@ -130,7 +126,6 @@ export async function setSessionTitle(name: string, title: string): Promise<void
 
 export interface CreateOpts {
   agent?: boolean;
-  control?: Control;
   exempt?: boolean;
   argv?: readonly string[];
   env?: Readonly<Record<string, string>>;
@@ -148,7 +143,6 @@ export async function createSession(name: string, dir?: string, opts: CreateOpts
     cwd: withDir ? cwd : undefined,
     env: opts.env,
     argv: opts.argv,
-    control: opts.control,
     key: opts.key,
     rireki: opts.rireki,
   });
@@ -399,20 +393,6 @@ export async function getProviderSessionId(name: string): Promise<string> {
   } catch {
     return '';
   }
-}
-
-export async function getControl(name: string): Promise<Control> {
-  try {
-    const stdout = await tmux.run(['show-options', '-t', exactPane(name), '-qv', CONTROL_OPT]);
-    const v = stdout.trim();
-    return v === 'user' || v === 'read' ? v : 'write';
-  } catch {
-    return 'write';
-  }
-}
-
-export async function setControl(name: string, control: Control): Promise<void> {
-  await tmux.run(['set-option', '-t', exactPane(name), CONTROL_OPT, control]);
 }
 
 export { applyTileInput, capturePane, cleanupViewers, createViewer, jumpToBottom, paneMouseState, sendRawKeys, tileInputAction } from './viewer.js';
