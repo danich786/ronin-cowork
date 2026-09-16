@@ -7,13 +7,23 @@
           "id": "provider-boundary",
           "kind": "title",
           "eyebrow": "Your models, directly",
-          "heading": "Choose how your agents think",
+          "heading": "No model lock in",
           "body": "Sign in directly with the model provider. Use your normal subscription or API directly with the provider."
         },
         {
-          "id": "provider-credential",
+          "id": "provider-no-lock-in",
+          "kind": "instruction",
+          "body": "Use the strength of each model provider without being locked into one."
+        },
+        {
+          "id": "provider-no-resale",
           "kind": "instruction",
           "body": "Ronin does not resell model access or place itself between you and the provider."
+        },
+        {
+          "id": "provider-coworking",
+          "kind": "instruction",
+          "body": "Let agents cowork side by side, connected at the edges by Ronin's tools."
         }
       ],
       "cta": {
