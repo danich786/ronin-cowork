@@ -525,21 +525,26 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
       for (const r of roots) list.appendChild(block(r));
       return;
     }
-    // Add A Workspace leads the collection (Glen, 2026-09-07): adding is the thing people do.
+    const stoneState = (r) => {
+      if (r.archived) return t('roots.chip_archived', 'Archived');
+      if (!r.facts?.exists) return t('roots.stone_missing', 'Folder missing');
+      if (!r.facts.repo) return t('roots.stone_plain_folder', 'Plain folder');
+      if (!r.facts.repo.remote) return t('roots.stone_repo_no_remote', 'Repository · no remote');
+      return r.arrangement?.source !== 'absent' && r.repo_profile?.worktrees === 'enabled'
+        ? t('roots.stone_repo_worktrees', 'Repository · Worktrees')
+        : t('roots.stone_repo_checkout', 'Repository · checkout');
+    };
+    // Add a workspace leads the collection (Glen, 2026-09-07): adding is the thing people do.
     stoneSurface.setItems([{
       id: NEW,
-      label: t('roots.add_stone', 'Add A Workspace'),
+      label: t('roots.add_stone', 'Add a workspace'),
       glyph: '+',
       className: 'setup-roots-add-stone',
       attrs: { title: t('roots.keep_hint', 'Keep a folder on this machine for Teams and Agents to start in.') },
     }, ...(options.extraItems || []), ...roots.map((r) => ({
       id: r.name,
       label: r.title || r.name,
-      state: r.archived
-        ? t('roots.chip_archived', 'Archived')
-        : !r.facts?.exists
-          ? t('roots.stone_missing', 'Folder missing')
-          : t('roots.stone_ready', 'Ready'),
+      state: stoneState(r),
       className: [!r.facts?.exists ? 'gone' : '', r.archived ? 'archived' : ''].filter(Boolean).join(' '),
     }))]);
   }
@@ -547,7 +552,7 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
   /** The last card in the list: the same shape as a root, and the place a new one is typed. */
   function addCard() {
     if (stones) {
-      // Under the dotted Add A Workspace stone: the same real add form, under one head.
+      // Under the dotted Add a workspace stone: the same real add form, under one head.
       const d = document.createElement('article');
       d.className = 'pr-detail';
       d.dataset.mode = 'add';

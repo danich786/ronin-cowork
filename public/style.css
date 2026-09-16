@@ -2641,9 +2641,6 @@ body {
   background: var(--panel);
   color: var(--fg);
 }
-.setup-roots-stones .setup-roots-add-stone .sws-glyph {
-  color: var(--muted-2);
-}
 .setup-roots-stones .sws-stone[aria-pressed='true'] {
   border-color: var(--kaki);
   background: var(--accent-soft);

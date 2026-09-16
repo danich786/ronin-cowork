@@ -103,3 +103,9 @@ test('consumers cannot override the shared hidden detail or stone geometry', asy
   assert.doesNotMatch(css, /\.setup-provider-stones \.sws-(?:rail|grid|detail)/);
   assert.doesNotMatch(css, /\.setup-roots-stones \.sws-(?:rail|grid|detail)/);
 });
+
+test('stone states wrap complete account and provider names instead of truncating them', async () => {
+  const css = await readFile(new URL('../public/css/launch-forms.css', import.meta.url), 'utf8');
+  assert.match(css, /\.sws-state \{[^}]*overflow-wrap: anywhere;[^}]*white-space: normal/);
+  assert.doesNotMatch(css, /\.sws-state \{[^}]*text-overflow: ellipsis/);
+});
