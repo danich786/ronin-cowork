@@ -190,18 +190,18 @@ export function buildHints() {
   };
   const vocabulary = section('Agent vocabulary', 'agent-vocabulary-hints', 'ronin.hints.vocabulary.collapsed');
   for (const [term, description] of [
-    ['Fork it', 'Create a Ronin Agent for a topic.'],
+    ['Create new session (Agent)', 'Start another visible Ronin Agent session.'],
     ['Tell', 'Message another Agent.'],
     ['Wipeboard', 'Share a note with the Team.'],
     ['Show docs', 'Open a document to read.'],
     ['Update work record', 'Record progress and next steps.'],
     ['New Team', 'Group Agents around shared work.'],
-    ['New Agent', 'Start a fresh Agent session.'],
     ['Hand in', 'Submit code for Team review.'],
     ['Promote', 'Move reviewed code to global dev.'],
     ['Close session', 'End the Agent safely.'],
   ]) {
     const row = document.createElement('div'); row.className = 'terminal-hint-row';
+    if (term === 'Create new session (Agent)') row.classList.add('session-create');
     const label = document.createElement('strong'); label.textContent = term;
     const meaning = document.createElement('span'); meaning.textContent = description;
     row.append(label, meaning); vocabulary.append(row);
