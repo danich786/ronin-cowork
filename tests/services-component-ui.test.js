@@ -27,6 +27,11 @@ test('Services owns all six owner-facing capabilities and exact captions', () =>
   assert.doesNotMatch(parts, /public\/js|setup-surfaces/);
 });
 
+test('Services maturity matches what owners can use now', () => {
+  assert.match(setup, /id: 'voice_hotwords',[^}]+status: 'comingSoon'/);
+  assert.match(setup, /id: 'project_coordinator',[^}]+status: 'beta'/);
+});
+
 test('installed truth distinguishes desired, running, parked, and restart state', () => {
   assert.match(installed, /desired: Record<string, boolean>/);
   assert.match(installed, /listServiceFailures\(\)/);
