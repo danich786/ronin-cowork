@@ -4,17 +4,16 @@ import { readFile } from 'node:fs/promises';
 
 const source = async (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
-test('Setup opts into roots stones while Campaign keeps the arrangement-default-free root surface', async () => {
+test('Setup and Settings use the same Workspace Folders stone presentation', async () => {
   const [setup, campaign, shared] = await Promise.all([
     source('public/js/setup-surfaces.js'),
     source('public/js/campaign-view.js'),
     source('public/js/workspace-folders-surface.js'),
   ]);
   assert.match(setup, /createWorkspaceFoldersSurface\(\{[\s\S]*presentation: 'stones'/);
-  assert.doesNotMatch(campaign, /presentation: 'stones'/);
-  assert.match(campaign, /createWorkspaceFoldersSurface\(\{/);
+  assert.match(campaign, /createWorkspaceFoldersSurface\(\{[\s\S]*presentation: 'stones'[\s\S]*environment: e,[\s\S]*workspace,/);
   assert.doesNotMatch(campaign, /worktreesDefault/);
-  assert.match(shared, /buildProjectRoots\([\s\S]*presentation \? \{ presentation \} : \{\}/);
+  assert.match(shared, /buildProjectRoots\([\s\S]*presentation \? \{ presentation, extraItems: onboarding\?\.items \|\| \[\] \} : \{\}/);
 });
 
 test('Setup mounts the roots stones on the surface content so the shared insets apply', async () => {

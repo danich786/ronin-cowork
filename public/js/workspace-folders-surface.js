@@ -11,9 +11,8 @@ const el = (tag, cls = '') => {
 };
 
 /**
- * Setup and Campaign show the same collection, but ask different questions of it.
- * Setup presents keep-or-ignore stones. Campaign keeps the established scoped list and
- * the default for future repositories. Those are options on one surface, not two copies.
+ * Setup and Settings show the same collection through the same keep-or-ignore stones.
+ * Campaign scope remains an input to that one surface, not a second presentation.
  */
 export function createWorkspaceFoldersSurface({
   campaignId,

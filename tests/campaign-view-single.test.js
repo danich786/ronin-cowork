@@ -63,6 +63,8 @@ test('Campaign delegates Workspace folders assembly with scope and no future-roo
   ]);
   assert.match(campaign, /campaignId: \(\) => e\.selected\(\)\?\.id \|\| ''/);
   assert.match(campaign, /connected: \(host\) => e\.entered\(\) && host\.isConnected/);
+  assert.match(campaign, /presentation: 'stones'/);
+  assert.match(campaign, /environment: e,[\s\S]*workspace,/);
   assert.doesNotMatch(campaign, /worktreesDefault/);
   assert.doesNotMatch(shared, /new_project|family: 'desks'/);
 });
