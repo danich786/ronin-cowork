@@ -13,16 +13,27 @@ const node = (tag, cls = '', value = '') => {
 };
 
 export function createGardenCanvas({ onAction = () => {} } = {}) {
-  const surface = WorkspaceKit.primitives.createSurface({ label: 'Garden canvas', className: 'garden-canvas' });
+  const surface = WorkspaceKit.primitives.createSurface({ label: 'Garden canvas', className: 'garden-canvas', header: false });
   surface.content.classList.add('garden-canvas-content');
   const scene = node('div', 'garden-canvas-scene');
   scene.setAttribute('aria-live', 'polite');
   const mark = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   mark.setAttribute('class', 'garden-canvas-mark');
-  mark.setAttribute('viewBox', '0 0 480 96');
+  mark.setAttribute('viewBox', '0 0 900 180');
+  mark.setAttribute('preserveAspectRatio', 'xMidYMax slice');
   mark.setAttribute('aria-hidden', 'true');
-  mark.innerHTML = '<g fill="none" stroke="currentColor" stroke-linecap="square" stroke-linejoin="miter"><path d="M0 76L54 45l35 20 49-34 38 31 51-45 35 38 43-29 35 40 54-28 39 22 47-31"/><path d="M0 88l73-24 45 18 65-31 45 27 64-30 52 29 68-25 68 20" opacity=".45"/><path d="M286 67h71l-12 13h-47zM322 67V29l27 30h-27"/></g><path d="M132 69l22-24 16 17 28-35 20 31-21-13-18 24zM385 64l17-20 13 13 18-23 18 27-17-11-15 19z" fill="currentColor" opacity=".24"/>';
-  scene.append(mark);
+  // Senmaida: five terrace contours across 900 units at natural size, every
+  // diagonal a 2:1 chamfer with mitred joins — the cut from the nin frame. The
+  // fourth contour is a dead-flat bund, the causeway the figure walks.
+  mark.innerHTML = '<g fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="miter" stroke-linecap="square"><path d="M0 52H160L184 40H330L350 50H452L476 38H660L680 48H812L834 36H900" stroke-opacity=".1"/><path d="M0 78H70L102 62H228L248 72H360L386 59H580L604 71H772L798 58H900" stroke-opacity=".16"/><path d="M0 102H196L220 90H296L316 100H412L436 88H612L638 101H800L824 89H900" stroke-opacity=".23"/><path d="M0 124H900" stroke-opacity=".34"/><path d="M0 148H80L104 136H268L288 146H440L464 134H668L690 145H860L880 135H900" stroke-opacity=".28"/></g><path d="M0 168H128L144 160H396L414 169H700L720 159H900V180H0Z" fill="currentColor" fill-opacity=".11"/><path d="M0 168H128L144 160H396L414 169H700L720 159H900" fill="none" stroke="currentColor" stroke-width="1.25" stroke-opacity=".46" stroke-linejoin="miter" stroke-linecap="square"/>';
+  // The figure stays out of the scaled drawing so a narrow column never shrinks
+  // it; CSS places it by percentage, so it walks the bund as the column widens.
+  const hito = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  hito.setAttribute('class', 'garden-canvas-hito');
+  hito.setAttribute('viewBox', '24 18 75 72');
+  hito.setAttribute('aria-hidden', 'true');
+  hito.innerHTML = '<g fill="currentColor"><path d="M52.3 21.8c3.9-4.3 10.4-4.1 14.5-.5l3.8 3.4c2 1.8 2.1 4.4.5 6.7-5.4 7.8-8.7 15.8-12.1 23.7-6.1 14.4-15.7 24.7-29.4 32.7-3.7 2.2-7.4 1.4-8.8-1.6-1.2-2.6.4-5 3.7-7.4 11.2-8.1 19.1-17.7 24-29.2 3.8-9 6.8-17.1 5.1-22.4l-1.8-3c-.5-.8-.3-1.7.5-2.4z"/><path d="M54.2 50c2.8-2.5 6.3-2.1 9.3 1.2 9.9 11.1 19.8 20 32.2 27.2 3.7 2.1 4.6 5 2.2 7.4-1.8 1.8-5 2.5-9.2 1.8-13.2-2.4-24.7-12.4-36.3-25.8-3.7-4.2-2.9-8.6 1.8-11.8z"/></g>';
+  scene.append(mark, hito);
   const regions = Object.fromEntries(GARDEN_REGION_KEYS.map((key) => {
     const region = node('section', `garden-region garden-region-${key}`);
     region.dataset.region = key;
@@ -85,6 +96,7 @@ export function createGardenCanvas({ onAction = () => {} } = {}) {
     for (const copy of items) {
       const item = node('article', 'garden-copy-item');
       item.dataset.copyId = copy.id;
+      if (copy.kind) item.dataset.kind = copy.kind;
       if (copy.eyebrow) item.append(node('p', 'garden-copy-eyebrow', copy.eyebrow));
       if (copy.heading) item.append(node('h2', 'garden-copy-heading', copy.heading));
       if (copy.body) item.append(node('p', 'garden-copy-body', copy.body));
@@ -109,6 +121,8 @@ export function createGardenCanvas({ onAction = () => {} } = {}) {
     for (const item of items) {
       const button = node('button', 'garden-media-choice');
       button.type = 'button';
+      button.dataset.kind = item.kind;
+      if (item.id) button.dataset.mediaId = item.id;
       button.append(node('strong', '', item.label));
       if (item.description) button.append(node('span', '', item.description));
       button.addEventListener('click', () => { void openMedia(item, button); });
