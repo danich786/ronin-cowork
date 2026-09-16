@@ -37,6 +37,7 @@ One `### <Vendor label>` section per provider. Its fields:
 | `cli` | the id of the CLI that serves it in `src/agents.ts` (`claude`, `codex`, …) — the join between this catalog and what the machine measures |
 | `gbrain_disconnected` | the CLI's disconnected-launch flag; scope varies by CLI (see docs/agents), and absence refuses explicit disconnected launches |
 | `live_dangerously` | the CLI's additive flag for the Dangerously launch mode; a provider without one refuses that mode |
+| `maturity` | optional display status: `beta` or `comingSoon`; a provider with no launch rows remains visible only as an unavailable catalog card |
 
 Then one table, one row per model, **in the order the picker offers them**:
 
@@ -171,6 +172,15 @@ and none of these cells has yet been exercised through Ronin.
 |---|---|
 | `nousresearch/hermes-4-405b` | `hermes chat --provider nous -m nousresearch/hermes-4-405b` |
 | `nousresearch/hermes-4.3-36b` | `hermes chat --provider nous -m nousresearch/hermes-4.3-36b` |
+
+### OpenRouter
+
+- **provider:** `openrouter`
+- **cli:** `openrouter`
+- **maturity:** `comingSoon`
+
+OpenRouter is listed for visibility only. It has no launch rows yet, so it is not offered
+by model selectors and cannot be launched.
 
 Other providers (pi, perplexity, …) arrive the same way: a contributor PR adding a
 section, or a row in your own shadow copy.

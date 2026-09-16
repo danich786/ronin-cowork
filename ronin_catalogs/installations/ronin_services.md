@@ -2,6 +2,7 @@
 - **label:** Ronin Services
 - **blurb:** The system-wide Services installation: Team Kanban, template library, live status from Koshi, voice and Hotwords.
 - **effect:** system
+- **maturity:** beta
 - **provides:** —
 - **reading:** routine/ronin_services/SERVICES_ABILITIES.md
 - **reading_off:** routine/ronin_services/OFF.md

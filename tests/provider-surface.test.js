@@ -37,6 +37,7 @@ let catalog = { origin: 'stock', path: '/stock/MODEL_PROVIDERS.md', updated: '20
   ] },
   { provider: 'openai', cli: 'codex', label: 'OpenAI', models: [{ model: 'gpt-5.6-sol', tier: 'frontier', default: true, cost: '$5 in · $30 out per M tokens (2026-09)', good_at: 'the hardest coding', not_good_at: 'bulk loops', cmd: 'codex --model gpt-5.6-sol' }] },
   { provider: 'pi', cli: 'pi', label: 'Pi', models: [{ model: 'pi-1', tier: 'standard', default: true, cost: 'free (2026-09)', good_at: 'chat', not_good_at: 'code', cmd: 'pi' }] },
+  { provider: 'openrouter', cli: 'openrouter', label: 'OpenRouter', maturity: 'comingSoon', models: [] },
 ] };
 let machine = { measured_at: '2026-09-08T11:00:00.000Z', activated_count: 1, providers: [
   { id: 'claude', label: 'Claude Code', from: 'Anthropic', installed: true, path: '/home/glen/.local/bin/claude', signed_in: true, activated: true, state: 'activated', version: '2.1.263', latest: '2.1.265', latest_checked_at: '2026-09-09T12:00:00.000Z', updatable: true, self_updates: true, askable: true, update: 'claude update', update_available: true },
