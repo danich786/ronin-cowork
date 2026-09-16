@@ -236,6 +236,7 @@ export async function announceTeamChanges(
   session: string,
   before: string[],
   after: string[],
+  options: { notifyAgent?: boolean } = {},
 ): Promise<Record<string, string>> {
   const results: Record<string, string> = {};
   const desks = (await listDeskRecords()).filter((desk) =>
@@ -249,6 +250,12 @@ export async function announceTeamChanges(
     for (const t of teams) {
       if (!(await boardExists(t))) continue;
       await appendPost(t, 'system', `${await ownerAuthor()} ${join ? 'tagged' : 'untagged'} @${session} ${join ? 'into' : 'out of'} the "${t}" team`);
+      // Birth already supplies Team guidance in argv with the brief. Preserve the board
+      // event without pasting a second prompt into a CLI that is still starting.
+      if (options.notifyAgent === false) {
+        results[t] = 'the board was told; Agent guidance is in the birth brief';
+        continue;
+      }
       if (!(await sessionExists(session))) {
         results[t] = 'session is gone — the board was told';
         continue;

@@ -144,6 +144,12 @@ const reading = (brief: string): string[] =>
     .filter(Boolean)
     .sort();
 
+test('birth brief includes wipeboard guidance for every Team without a follow-up message', async () => {
+  const agent = await resolveForm(commonsForm({ tags: ['crew', 'other_crew', 'crew'] }), new Set());
+  assert.match(agent.brief, /Team membership: crew, other_crew\. Run: edges wipeboard/);
+  assert.equal(agent.brief.match(/Membership follows the team/g)?.length, 1);
+});
+
 test('equivalent specs from Commons and forkit resolve to the same launch', async () => {
   const fromCommons = await resolveForm(commonsForm(), new Set());
   const fromForkit = await resolveForm(forkitForm({ prompt: commonsForm().prompt }), new Set());

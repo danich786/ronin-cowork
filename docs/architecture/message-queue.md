@@ -6,6 +6,10 @@ There are two input paths:
 - Complete messages use the message queue: direct tells, House receipts, wipeboard
   notices, and Ronin's message box (on mobile and in Unlocked views).
 
+At birth, Team and wipeboard guidance travels with the initial brief. Launch records
+Team membership on the board without queuing a second prompt into the starting CLI.
+Later membership changes still send their notices through this queue.
+
 ## One send operation
 
 Delivery means **paste the text, pause 300 ms, press Enter**. A private tmux buffer
