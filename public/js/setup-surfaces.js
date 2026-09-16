@@ -214,8 +214,7 @@ function createRegisterSurface(context) {
     el('h3', '', t('setup_surface.user_intro_heading', 'Introduce yourself to your Agents')),
     el('p', 'setup-lede', t('setup_surface.user_intro_lede', 'This stays on your machine in user intro.md and is included when new Agents are born. It is separate from registration. Keep it short: up to 600 characters, roughly 150 tokens.')),
     field(t('setup_surface.user_intro_label', 'A short note about you'), userIntroText),
-    el('p', 'setup-fine', t('setup_surface.user_intro_example', 'Example: “Hi, my name is Jill. I’m a vibe coder. Simple explanations help me, and I’m happy to try ambitious ideas.”')),
-    action(t('setup_surface.user_intro_save', 'Save Agent introduction'), '', () => { void saveUserIntro(); }),
+    action(t('setup_surface.user_intro_save', 'Save Agent introduction'), 'primary', () => { void saveUserIntro(); }),
     userIntroNotice,
   );
   const registerAction = action(t('setup_surface.register_action', 'Send'), '', async () => {
@@ -258,7 +257,7 @@ function createRegisterSurface(context) {
     if (identity) void context.environment?.setIdentityChoice?.(identity);
   });
   paintIdentityMode();
-  form.append(welcome, registrationIntro, about, fit, send, declined);
+  form.append(welcome, registrationIntro, about, fit, send);
   const prefs = el('form', 'setup-form setup-preferences');
   const checks = Object.fromEntries(['newsletter', 'release_updates', 'no_communication'].map((name) => [name, input(name, 'checkbox')]));
   const followUps = Object.fromEntries(['product_research', 'interviews', 'support'].map((name) => [name, input(name, 'checkbox')]));
@@ -339,7 +338,7 @@ function createRegisterSurface(context) {
     }));
     notifySummary(SETUP_SURFACE_TYPES.register, current?.status || 'optional', context.workbench);
   };
-  body.append(identity, form, userIntro, preferences, recoveryOptions, notice); out.content.append(body);
+  body.append(identity, form, userIntro, declined, preferences, recoveryOptions, notice); out.content.append(body);
   return { el: out.el, show: async () => {
     const routeKind = context.environment?.kinds?.get?.()[0] || '';
     kind.set({ build: 'build_software', life: 'life_assistants', research: 'research_writing', other: 'other' }[routeKind] || '');
