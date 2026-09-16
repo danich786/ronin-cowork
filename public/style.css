@@ -2638,10 +2638,19 @@ body {
 }
 .setup-roots-stones .setup-roots-add-stone {
   border-style: dashed;
+  background: var(--panel);
+  color: var(--fg);
+}
+.setup-roots-stones .setup-roots-add-stone .sws-glyph {
+  color: var(--muted-2);
 }
 .setup-roots-stones .sws-stone[aria-pressed='true'] {
-  background: color-mix(in srgb, var(--kaki-tint) 18%, var(--panel));
-  color: var(--kaki-lift);
+  border-color: var(--kaki);
+  background: var(--accent-soft);
+  color: var(--fg-strong);
+}
+.setup-roots-stones .sws-stone[aria-pressed='true'] .sws-glyph {
+  color: var(--kaki);
 }
 /* Setup's selected folder: one page in the shape every stone detail shares. One type family,
    one size (14px; 13px only for editor notes), two weights, two colours: strong for headings

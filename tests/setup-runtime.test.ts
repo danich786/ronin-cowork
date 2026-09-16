@@ -281,6 +281,7 @@ test('GitHub setup publishes one provider-style attachment and opens and closes 
     exists: async () => live,
     open: async () => { opens += 1; live = true; },
     close: async () => { closes += 1; live = false; },
+    logout: async () => { status = ''; },
   };
 
   assert.deepEqual(await runtime.githubSetupAnswer(ops), {
@@ -317,12 +318,32 @@ test('GitHub setup does not probe auth when gh is absent and refuses to open', a
     exists: async () => false,
     open: async () => undefined,
     close: async () => undefined,
+    logout: async () => undefined,
   };
   assert.deepEqual(await runtime.githubSetupAnswer(ops), {
     installed: false, authenticated: false, account: '', state: 'missing', attachment: null,
   });
   assert.equal(statusCalls, 0);
   await assert.rejects(runtime.openGithubLogin(ops), /GitHub CLI is not installed/);
+});
+
+test('GitHub logout removes only the detected active account and closes its temporary session', async () => {
+  let live = true;
+  let status = 'github.com\n  ✓ Logged in to github.com account octo-cat (keyring)';
+  const loggedOut: string[] = [];
+  const ops: runtime.GithubSetupOps = {
+    installed: async () => true,
+    authStatus: async () => status,
+    exists: async () => live,
+    open: async () => { live = true; },
+    close: async () => { live = false; },
+    logout: async (account) => { loggedOut.push(account); status = ''; },
+  };
+  assert.deepEqual(await runtime.removeGithubAuthentication(ops), {
+    installed: true, authenticated: false, account: '', state: 'needs_authentication', attachment: null,
+  });
+  assert.deepEqual(loggedOut, ['octo-cat']);
+  await assert.rejects(runtime.removeGithubAuthentication(ops), /not authenticated/);
 });
 
 test('installed roots are distinct registered repositories with READMEs and first commits', async () => {
