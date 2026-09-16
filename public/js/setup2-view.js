@@ -49,7 +49,6 @@ export function createSetup2View() {
     mountProviderSetupSession: providerSessions.mountProviderSetupSession,
     showNewSession: (prompt) => { ctx?.patchViewState('launch', { prompt: String(prompt || '') }); ctx?.navigate('launch'); },
     openLaunchForm: () => ctx?.navigate('launch'),
-    openTemplateLaunchForm: () => ctx?.navigate('launch'),
     onGardenCanvas: (next) => {
       garden = next;
       paintedSceneId = null;

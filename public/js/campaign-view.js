@@ -7,7 +7,6 @@ import { createCampaignIdentitySurface, createNewCampaignSurface } from './campa
 import { createDeskProfileSurface, skinWord } from './campaign-desk.js';
 import { createAgentDefaultsSurface, defaultsSummary } from './campaign-defaults.js';
 import { createInstallationsSurface, installationsSummary } from './campaign-installations.js';
-import { CAMPAIGN_TEMPLATES_TYPE, campaignTemplatesDefinition } from './campaign-templates.js';
 import { PROVIDER_SURFACE_TYPE, providerSurfaceDefinition } from './provider-surface.js';
 import { createProviderSetupSessionMount } from './provider-setup-session.js';
 import { createWorkspaceFoldersSurface } from './workspace-folders-surface.js';
@@ -20,7 +19,7 @@ import { SETUP_SURFACE_TYPES, registerSetupSurfaces } from './setup-surfaces.js'
 import { readyMika } from './mika-ready.js';
 import { createMikaHelpPanel, createMikaTilePool } from './mika.js';
 import { toast } from './ui.js';
-import { openLaunchForm, openTemplateLaunchForm } from './workspace.js';
+import { openLaunchForm } from './workspace.js';
 import { createDocumentWorkspaceAdapter } from './docs.js';
 import { installBehaviourReader } from './behaviour-reader.js';
 
@@ -29,7 +28,7 @@ const MIKA_SESSION = 'mika_agent';
 const TERMINAL_TYPE = 'session.terminal';
 // the machine's own half — account, health — is the Admin Desk's.
 // defaults · Project roots lead, and they are the four the page opens on.
-const TYPES = Object.freeze({ machine: 'campaign.machine', templates: CAMPAIGN_TEMPLATES_TYPE, defaults: 'campaign.defaults', roots: 'campaign.project-roots', identity: 'campaign.identity', installations: 'campaign.installations', providers: PROVIDER_SURFACE_TYPE, profile: 'campaign.desk-profile', create: 'campaign.new', document: 'document' });
+const TYPES = Object.freeze({ machine: 'campaign.machine', templates: 'campaign.templates', defaults: 'campaign.defaults', roots: 'campaign.project-roots', identity: 'campaign.identity', installations: 'campaign.installations', providers: PROVIDER_SURFACE_TYPE, profile: 'campaign.desk-profile', create: 'campaign.new', document: 'document' });
 /** The machine's tabs of the cowork commons — everything about this install that is not already a surface here. */
 const MACHINE_TABS = Object.freeze(['themes', 'account', 'archives', 'messages', 'help', 'keypad', 'health']);
 const LEGACY = Object.freeze({ '@campaign': TYPES.identity, '@profile': TYPES.profile, '@roots': TYPES.roots, '@templates': TYPES.templates, 'campaign.team-templates': TYPES.templates, 'campaign.session-roles': TYPES.templates, '@new-campaign': TYPES.create });
@@ -84,7 +83,6 @@ function registerCampaignSurfaces() {
   // two tabs this page already has as surfaces left out.
   add({ type: TYPES.machine, header: 'channels', label: () => t('cowork.commons', 'Ronin Desk'), summary: () => t('campaign_view.machine_summary', 'Themes · Account · Archived · Messages · Help desk · Keypad · Desk.'), create: ({ environment: e }) => { const surface = coworkCommons({ tabs: MACHINE_TABS, label: t('cowork.commons', 'Ronin Desk'), campaign: e.selected }); return e.progressive({ el: surface.el, show: () => surface.select(surface.current() || 'themes') }); } });
   // — teams and agents — in the forms' own boxes, by kind. The session-roles card that once
-  add(campaignTemplatesDefinition());
   if (MULTIPLE_CAMPAIGNS_ENABLED) add({ type: TYPES.create, header: 'surface', label: () => t('campaign.new', 'New Campaign'), summary: () => t('campaign_view.new_summary', 'Set the stage. It creates no Team and launches no Agent.'), variant: 'dotted', create: ({ workspace, environment: e }) => { const surface = createNewCampaignSurface(async (fields) => { const result = await createCampaign(fields); if (result.ok) { e.ctx()?.patchState({ campaignSelection: { mode: 'selected', campaign_ids: [result.data.id], primary_campaign_id: result.data.id } }); e.ctx()?.patchViewState('home', { cowork: '', agent: '' }); e.workbench()?.place(TYPES.identity, workspace); } return result; }); return { el: surface.el, show: () => surface.enter() }; } });
   // New Campaign is not registered while multiple Campaigns are off.
   // Desk profile remains registered so a remembered workspace can still restore it, but
@@ -93,7 +91,7 @@ function registerCampaignSurfaces() {
     TERMINAL_TYPE,
     TYPES.identity, TYPES.roots, TYPES.defaults, TYPES.installations, TYPES.providers, TYPES.document,
     SETUP_SURFACE_TYPES.register,
-    SETUP_SURFACE_TYPES.launchOwn, TYPES.templates, TYPES.machine,
+    SETUP_SURFACE_TYPES.launchOwn, TYPES.machine,
     ...(MULTIPLE_CAMPAIGNS_ENABLED ? [TYPES.create] : []),
     FEEDBACK_TYPE,
   ]);
@@ -150,7 +148,6 @@ export function createCampaignView() {
     mountProviderSetupSession: providerSessions.mountProviderSetupSession,
     showNewSession: (prompt) => { ctx?.patchViewState('launch', { prompt: String(prompt || '') }); ctx?.navigate('launch'); },
     openLaunchForm: ({ kind, seed = {} } = {}) => openLaunchForm(ctx, { kind, seed }),
-    openTemplateLaunchForm: () => openTemplateLaunchForm(ctx),
     document: (detail = {}) => createDocumentWorkspaceAdapter({ root: detail.root, path: detail.path || detail.key }),
     sessions: () => [{
       key: MIKA_SESSION,
