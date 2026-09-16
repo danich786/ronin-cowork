@@ -368,12 +368,12 @@ export interface GithubSetupAnswer {
 }
 
 export interface GithubSetupOps {
-  logout?(account: string): Promise<void>;
   installed(): Promise<boolean>;
   authStatus(): Promise<string>;
   exists(): Promise<boolean>;
   open(): Promise<void>;
   close(): Promise<void>;
+  logout(account: string): Promise<void>;
 }
 
 export interface GithubSessionPrimitives {
@@ -398,15 +398,13 @@ export async function createGithubSetupSession(primitives: GithubSessionPrimitiv
 }
 
 const defaultGithubSetupOps: GithubSetupOps = {
-  logout: async (account) => {
-    await run('gh', ['auth', 'logout', '--hostname', 'github.com', '--user', account], { timeout: 8_000 });
-  },
   installed: () => run('gh', ['--version'], { timeout: 5_000 }).then(() => true, () => false),
   authStatus: () => run('gh', ['auth', 'status', '--hostname', 'github.com', '--active'], { timeout: 8_000 })
     .then((result) => result.stderr || result.stdout, () => ''),
   exists: () => sessionExists(GITHUB_SETUP_SESSION),
   open: () => createGithubSetupSession(),
   close: () => killSessionTree(GITHUB_SETUP_SESSION),
+  logout: (account) => run('gh', ['auth', 'logout', '--hostname', 'github.com', '--user', account], { timeout: 8_000 }).then(() => undefined),
 };
 
 /** Accept only gh's explicit active-login line; warnings and failure prose are not auth. */
@@ -439,15 +437,13 @@ export async function closeGithubLogin(ops: GithubSetupOps = defaultGithubSetupO
   return githubSetupAnswer(ops);
 }
 
-/** Remove only the account the user saw, never a newly selected account. */
-export async function logoutGithub(account: unknown, ops: GithubSetupOps = defaultGithubSetupOps): Promise<GithubSetupAnswer> {
+/** Remove only the active github.com credential that gh reported; the browser cannot name another account. */
+export async function removeGithubAuthentication(ops: GithubSetupOps = defaultGithubSetupOps): Promise<GithubSetupAnswer> {
   const current = await githubSetupAnswer(ops);
-  if (typeof account !== 'string' || !account || current.account !== account) {
-    throw new Error('The GitHub account changed. Re-check the connection before signing out.');
-  }
-  if (!ops.logout) throw new Error('GitHub sign-out is unavailable.');
+  if (!current.installed) throw new Error('GitHub CLI is not installed on this machine.');
+  if (!current.authenticated || !current.account) throw new Error('GitHub is not authenticated on this machine.');
   if (await ops.exists()) await ops.close();
-  await ops.logout(account);
+  await ops.logout(current.account);
   return githubSetupAnswer(ops);
 }
 
