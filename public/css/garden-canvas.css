@@ -1,0 +1,24 @@
+@layer app {
+  .garden-canvas, .garden-canvas-content { position: relative; overflow: hidden; }
+  .garden-canvas-scene { position: relative; display: grid; align-content: center; gap: var(--space-6); width: 100%; min-height: 100%; padding: var(--space-8); isolation: isolate; background: linear-gradient(160deg, var(--panel), var(--bg)); }
+  .garden-canvas-mark { position: absolute; inset: auto 0 0; width: 100%; height: auto; color: var(--kaki); opacity: .48; z-index: -1; }
+  .garden-region { display: grid; gap: var(--space-3); min-width: 0; }
+  .garden-region[hidden] { display: none; }
+  .garden-copy-eyebrow { margin: 0; color: var(--kaki-lift); font-size: var(--text-2); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .garden-copy-heading { margin: 0; color: var(--fg-strong); font-size: var(--text-8); font-weight: 550; line-height: 1.15; }
+  .garden-copy-body { margin: 0; color: var(--fg); font-size: var(--text-4); line-height: 1.65; }
+  .garden-question-label { display: grid; gap: var(--space-3); color: var(--fg-strong); font-weight: 600; }
+  .garden-question-input { width: 100%; padding: var(--space-4); border: var(--edge) solid var(--line-2); border-radius: var(--radius-md); background: var(--well); color: var(--fg); font: inherit; }
+  textarea.garden-question-input { resize: vertical; }
+  .garden-cta { padding: var(--space-4) var(--space-6); border: var(--edge) solid var(--kaki); border-radius: var(--radius-md); background: var(--kaki); color: var(--on-strong); font: inherit; font-weight: 650; text-align: left; cursor: pointer; }
+  .garden-media-list { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+  .garden-media-choice { display: grid; gap: var(--space-1); padding: var(--space-4); border: var(--edge) solid var(--line); border-radius: var(--radius-md); background: var(--raise); color: var(--fg); font: inherit; text-align: left; cursor: pointer; }
+  .garden-media-choice span { color: var(--muted); font-size: var(--text-2); }
+  .garden-media-overlay { position: absolute; inset: 0; z-index: 11; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: var(--space-4); padding: var(--space-6); background: var(--bg); }
+  .garden-media-overlay[hidden] { display: none; }
+  .garden-media-close { justify-self: end; border: var(--edge) solid var(--line-2); border-radius: var(--radius-pill); background: var(--raise); color: var(--fg-strong); padding: var(--space-3) var(--space-5); cursor: pointer; }
+  .garden-media-body { display: grid; grid-template-rows: auto auto minmax(0, 1fr); min-height: 0; gap: var(--space-4); }
+  .garden-media-body h2 { margin: 0; color: var(--fg-strong); font-size: var(--text-6); }
+  .garden-media-frame, .garden-media-video { width: 100%; height: 100%; min-height: 0; border: var(--edge) solid var(--line); border-radius: var(--radius-md); background: var(--panel); }
+  .garden-media-external { color: var(--accent-2); }
+}
