@@ -1,7 +1,7 @@
 import { request } from './request.js';
 const el=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n};
 export function buildStats(root){
-let current='week',selection='Agent session';
+let current='period',selection='Agent session';
 let callRows=[], report=null, loading=false;
 const actors=['Agent','User · desktop','User · mobile','Trello','System'];
 const stats=root;
@@ -19,14 +19,14 @@ function selectionChart(){
  actors.forEach((actor,i)=>{if(!rows.some(r=>r[current][i]>0))return;const item=el('span',''),swatch=el('i','');swatch.style.background=colors[i];item.append(swatch,document.createTextNode(actor));legend.append(item)});
  wrap.append(cards,el('h3','rs-chart-heading',selection),chart,legend,detail);return wrap;
 }
-function render(){range.textContent=report ? report.active_days+' active days · collected since '+report.from.slice(0,10) : '';wins.querySelectorAll('button').forEach(b=>{b.classList.toggle('on',b.dataset.period===current);b.setAttribute('aria-pressed',String(b.dataset.period===current))});body.replaceChildren(selectionChart(),table(callRows),el('div','td-foot','Approximate tool-call counts since collection. Trello applies only to Work record; — means not applicable. Quiet local counters; no call contents.'));
+function render(){range.textContent=report ? 'Collection period · '+report.from.slice(0,10)+' → '+report.until.slice(0,10)+' · '+Math.max(1, Math.ceil((Date.parse(report.until)-Date.parse(report.from))/86400000))+' elapsed days · '+report.active_days+' active days' : '';wins.querySelectorAll('button').forEach(b=>{b.classList.toggle('on',b.dataset.period===current);b.setAttribute('aria-pressed',String(b.dataset.period===current))});body.replaceChildren(selectionChart(),table(callRows),el('div','td-foot','Approximate tool-call counts for this collection period. Refresh reads without resetting. Trello applies only to Work record; — means not applicable. Quiet local counters; no call contents.'));
 }
 
 async function load(){
  if(loading)return;loading=true;refresh.disabled=true;
  const r=await request('/api/tomodachi/tool-calls',{cache:'no-store'});
  if(r.ok){report=r.data;const sources=['agent','user_desktop','user_mobile','trello','system'];
- callRows=Object.entries(report.tools).map(([tool,group])=>({tool,group,week:sources.map(source=>source==='trello'&&group!=='Work record'?null:(report.counts.find(row=>row.tool===tool&&row.source===source)?.count??0))}));
+ callRows=Object.entries(report.tools).map(([tool,group])=>({tool,group,period:sources.map(source=>source==='trello'&&group!=='Work record'?null:(report.counts.find(row=>row.tool===tool&&row.source===source)?.count??0))}));
  render();}else body.textContent='Stats are not available on this install yet.';
  loading=false;refresh.disabled=false;
 }
