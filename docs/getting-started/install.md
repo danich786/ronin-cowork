@@ -20,10 +20,10 @@ solve them, work around them, or warn the owner about them.
 | **Do I start tmux before `setup.sh`?** | No. Setup measures whether a server is on the default socket and never asks: it joins one that exists, and otherwise `tmux-server.service` starts Ronin's own in its own cgroup. A server started by hand first is only adopted as somebody else's, outside the unit. |
 | **Why is `tmux-server.service` `active (exited)`?** | Handled: setup adopted the existing server, so the unit correctly did not start another. `bin/ronin-doctor` reports the adopted server as a note. |
 | **`systemd --user` dies at logout on a headless box** | Handled in step 3. `bin/ronin-doctor` confirms `ok — linger is on — the coworkspace survives logout`. |
-| **No swap on a cloud VM** | Handled in step 3. Most cloud images ship without swap; setup offers the swapfile line in its closing paste, and `bin/ronin-doctor` reports `NO SWAP` with the same line until it exists. |
+| **No swap on a cloud VM** | Handled in step 3. On a first install, setup explains the outstanding machine changes, asks once, and creates an offerable swapfile through one sudo authorization. `bin/ronin-doctor` reports `NO SWAP` until it exists. |
 | **Tailscale ordering matters** | Handled in step 3: setup records the address from `tailscale ip -4`. Doctor confirms `ok — auth is off, but the bind is this machine's tailnet address` when that is the chosen posture. |
 | **Is the download what it claims to be?** | Handled: `SHA256SUMS` proves the downloaded bytes match the release manifest and mismatches stop installation. It is not a signature and cannot prove who published both files; release signing is planned. |
-| **Does any of this need root?** | The app, no. Only `enable-linger` and optional `tailscale serve`, both printed for the owner rather than run for them. |
+| **Does any of this need root?** | The app, no. A first install asks once before using sudo for outstanding linger, optional Tailscale HTTPS, and an offerable swapfile. Root never runs the Ronin application. |
 | **Is the port exposed?** | It binds to the tailnet or loopback, and **refuses to boot** on a public address with auth off. |
 | **Is it password-protected?** | Not by default, deliberately; the closing setup frame states the posture. `bin/ronin-passwd` adds a login if the owner wants one; see step 5. |
 | **Why does `current/.env` look mode 777?** | Handled: `current/.env` is a symlink; its target is owner-only. `stat -L -c %a current/.env` (Linux) or `stat -L -f %Lp current/.env` (Mac) reads `600`. |
@@ -122,9 +122,9 @@ loginctl show-user "$USER" --property=Linger --value    # yes, or it needs enabl
 sudo loginctl enable-linger "$USER"                     # owner approves — this is sudo
 ```
 
-`setup.sh` detects this and prints the command, and `bin/ronin-doctor` reports it as a
-fault. Doing it here means the owner never meets the symptom. Once enabled it survives
-reboots; it is set once for the account.
+The one-line installer detects this before activating Ronin, explains it with the other
+outstanding machine settings, and asks once before using sudo. `bin/ronin-doctor` reports
+it as a fault until it is enabled. Once enabled it survives reboots.
 
 **Tailscale, if it is being used, must be up and signed in before `setup.sh` runs.** Setup
 reads `tailscale ip -4` to decide what address to bind to. Tailscale absent at that moment
@@ -149,10 +149,10 @@ swapon --show    # no output at all means there is none
 sudo bash -c 'fallocate -l 4G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile && echo "/swapfile none swap sw 0 0" >> /etc/fstab'
 ```
 
-The `/etc/fstab` line is what brings it back after a reboot; without it the swap is gone
-at the next boot. `setup.sh` offers this same line in its closing paste when the box can
-take a swapfile, and `bin/ronin-doctor` reports `NO SWAP` until it exists. Inside a
-container, swap is the host's business; skip it and say so.
+The `/etc/fstab` line is what brings it back after a reboot. The one-line installer offers
+this as one of its explained machine changes and performs it through the same single sudo
+authorization; `bin/ronin-doctor` reports `NO SWAP` until it exists. Inside a container,
+swap is the host's business; skip it and say so.
 
 **What you should see:** linger is `yes` on a headless Linux box, `swapon --show` prints
 a line, and either `tailscale ip -4` prints the agreed private address or the owner has

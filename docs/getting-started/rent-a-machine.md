@@ -287,11 +287,10 @@ sudo bash -c 'fallocate -l 4G /swapfile && chmod 600 /swapfile && mkswap /swapfi
 swapon --show    # expect: /swapfile
 ```
 
-The `/etc/fstab` line is what makes it survive a reboot; without it the swap vanishes at
-the next boot. This needs `sudo` and is the owner's to approve. `setup.sh` offers the
-same line in its closing paste when the box can take a swapfile, and `bin/ronin-doctor`
-reports `NO SWAP` until one exists — but by then an agent may already have been killed.
-Do it here.
+The `/etc/fstab` line is what makes it survive a reboot. This needs `sudo` and is the
+owner's to approve. On a first install, setup includes an offerable swapfile in its one
+explained approval before activation; `bin/ronin-doctor` reports `NO SWAP` until one
+exists. Preparing it here is also valid.
 
 ## 7. Establish private access
 

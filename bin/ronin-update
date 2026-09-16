@@ -476,6 +476,17 @@ kill_tree "$CANDIDATE_PID"
 wait "$CANDIDATE_PID" 2>/dev/null || true
 CANDIDATE_PID=""
 
+# A public first install is one uninterrupted journey. After the verified candidate
+# proves it boots, but before `current` is activated, let that candidate explain and
+# apply the outstanding root-owned machine settings. setup.sh re-measures them later
+# and therefore does not prompt twice.
+FIRST_CURRENT="$(readlink "$HOME_DIR/current" 2>/dev/null || true)"
+if [ -n "${RONIN_FROM_GET:-}" ] && [ -z "$FIRST_CURRENT" ]; then
+  say "candidate verified — checking the machine settings Ronin needs"
+  (cd "$TARGET" && ./setup.sh --machine-only) ||
+    fail "machine setup was not approved or did not complete — Ronin was not activated"
+fi
+
 # --- swap ---
 CUR="$(readlink "$HOME_DIR/current" 2>/dev/null || true)"
 [ -n "$CUR" ] && ln -sfn "$CUR" "$HOME_DIR/previous"

@@ -4,7 +4,7 @@
 
 Ronin puts real shells in a browser. Its tiles run as the account that installed it, so
 anyone who can open the page has that account's shell authority. Ronin reduces accidental
-exposure by remaining unprivileged, refusing an unsafe unauthenticated bind, using its own
+exposure by running the application unprivileged, refusing an unsafe unauthenticated bind, using its own
 tmux server, keeping Ronin's egress narrow and visible, and making the install removable.
 Those controls do not make Ronin a sandbox or replace a carefully chosen network boundary.
 
@@ -16,7 +16,7 @@ observe, and use **unknown** when safe evidence cannot settle a question.
 | Check | Evidence | Healthy observation |
 |---|---|---|
 | readable bootstrap, no root | `cat scripts/get-ronin` and `grep -n sudo scripts/get-ronin` | short script readable in one screen; no privileged command |
-| setup privilege boundary | `grep -n sudo setup.sh` | comments and one block printed for the owner; setup never invokes `sudo` |
+| setup privilege boundary | `cat libexec/ronin-machine-apply` | one explained consent and one sudo process with fixed root code; the application and services remain unprivileged |
 | verified, unsigned release bytes | `grep -n 'SHA256SUMS\|MISMATCH' scripts/get-ronin bin/ronin-update` | bytes match the published manifest and mismatch is refused; this does not prove who published both files, and signing is planned |
 | open-package license | `head -3 LICENSE` and `test -f NOTICE` | Apache License 2.0 and NOTICE |
 | unprivileged services | `systemctl --user list-units 'ronin*' 'tmux-server*'` | user units, no application root service |

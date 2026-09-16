@@ -27,12 +27,12 @@ approximate, and `ronin-doctor` is the one that turns a reading into a finding w
 
 ## The one rule that shapes everything else
 
-**Ronin holds no root, and asks for none.** Every chore below is something a *person* does.
-Your job is to detect it, explain the trade-off, and hand over the exact line — never to run
-it, and never to find a tidier way to ask for privilege. This install has no `sudo` in any of
-its own paths and that is worth more than any capability on this page.
+**Ronin's application holds no root.** First install may ask the owner once to approve the
+fixed linger, private HTTPS, and swap settings before activation; one short-lived sudo
+process applies only the selected settings. Later repair remains something a person
+explicitly approves after the finding and trade-off are explained.
 
-So: **compose, explain, hand over. Then verify by reading, not by assuming.**
+So: **measure, explain, obtain approval, then verify by reading rather than assuming.**
 
 ## Checking the groundwork, row by row
 
