@@ -50,7 +50,11 @@ export function createWorkspaceFoldersSurface({
     rootHost,
     () => connected?.(rootHost) ?? rootHost.isConnected,
     () => campaignId?.() || '',
-    presentation ? { presentation, extraItems: onboarding?.items || [] } : {},
+    presentation ? {
+      presentation,
+      extraItems: onboarding?.items || [],
+      onSelection: (id) => environment?.onWorkspaceFolderChosen?.(id),
+    } : {},
   );
 
   return {

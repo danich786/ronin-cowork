@@ -14,8 +14,8 @@ export const PRESET_STORAGE_KEY = 'ronin.setup.presets.v1';
 export const HOUSE_PRESETS = Object.freeze([
   { handle: 'bare_metal', shelf: 'teams', label: 'Bare Metal', description: 'Choose a provider and model for each native session, or leave it at Default.', glyph: { rects: [[4, 9, 10, 14], [18, 9, 10, 14]] }, destination: 'Ronin Lab' },
   { handle: 'ronin_team', shelf: 'teams', label: 'Ronin Team', description: 'Launch a Team Lead and open Team Configuration beside the team.', glyph: { text: '人人' }, destination: 'Ronin Lab' },
-  { handle: 'staff_my_codebase', shelf: 'teams', label: 'Code Stack Eval', description: 'Point a team at a codebase and get its read on the stack.', glyph: { path: 'M5 7h22 M5 13h22 M5 19h22 M5 25h14' }, destination: 'Ronin Project 1' },
-  { handle: 'develop_new_project', shelf: 'teams', label: 'Develop a New Project', description: 'A lead plus workstream agents, each in its own worktree.', glyph: { path: 'M8 28V4 M8 12h6c4 0 4-4 10-4h3 M8 20h6c4 0 4 4 10 4h3' }, destination: 'Ronin Project 1' },
+  { handle: 'staff_my_codebase', shelf: 'teams', label: 'Code Stack Eval', description: 'Point a team at a codebase and get its read on the stack.', glyph: { path: 'M5 7h22 M5 13h22 M5 19h22 M5 25h14' }, destination: 'Project One' },
+  { handle: 'develop_new_project', shelf: 'teams', label: 'Develop a New Project', description: 'A lead plus workstream agents, each in its own worktree.', glyph: { path: 'M8 28V4 M8 12h6c4 0 4-4 10-4h3 M8 20h6c4 0 4 4 10 4h3' }, destination: 'Project One' },
   { handle: 'personal_assistant', shelf: 'agents', label: 'Personal Assistant', description: 'One assistant that remembers. Alone, or a lead that hires help.', glyph: { text: '人' }, destination: 'Ronin Lab' },
   { handle: 'health_and_fitness', shelf: 'teams', label: 'Home Health', description: 'Head coach, nutritionist, race guide. Drop or add roles.', glyph: { path: 'M3 17h6l3-8 5 14 3-6h9' }, destination: 'Ronin Lab' },
   { handle: 'morning_brief', shelf: 'teams', label: 'Grokbot Morning Briefing', description: 'Grok writes you a briefing on a schedule you set.', glyph: { path: 'M6 22a10 10 0 0 1 20 0 M2 26h28 M16 5v3 M7 10l2 2 M25 10l-2 2' }, destination: 'Ronin Lab' },
@@ -191,8 +191,8 @@ export function initialControls(handle) {
   switch (handle) {
     case 'bare_metal': return { tiles: 4, root: 'ronin_lab', sessions: [{ name: 'session_1' }, { name: 'session_2' }, { name: 'session_3' }] };
     case 'ronin_team': return { root: 'ronin_lab', sessions: [{ name: 'team_lead', team_lead: true }, { name: 'agent_1' }, { name: 'agent_2' }] };
-    case 'staff_my_codebase': return { root: 'ronin_project_1', root_dir: '' };
-    case 'develop_new_project': return { root: 'ronin_project_1', workstreams: ['frontend', 'backend'] };
+    case 'staff_my_codebase': return { root: 'project_one', root_dir: '' };
+    case 'develop_new_project': return { root: 'project_one', workstreams: ['frontend', 'backend'] };
     case 'personal_assistant': return { assistant_mode: 'single', specialists: '' };
     case 'health_and_fitness': return { roles: [
       { name: 'Head Coach', ask: 'Set the programme, hold the check-ins, and adjust it season by season.' },
@@ -246,7 +246,7 @@ function renderRootControls(host, state, roots, label = 'Which project', environ
   // the open detail stay as they were.
   const fill = (choices) => {
     const rows = choices.map((root) => ({ v: root.name || root.id, l: root.label || root.name || root.id }));
-    if (!rows.length) rows.push({ v: state.root || 'ronin_project_1', l: state.root || 'Ronin Project 1' });
+    if (!rows.length) rows.push({ v: state.root || 'project_one', l: state.root || 'Project One' });
     const wanted = rows.some((root) => root.v === state.root) ? state.root : rows[0].v;
     state.root = wanted;
     if (question) { question.options('root', rows); question.set('root', wanted); }

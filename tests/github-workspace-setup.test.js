@@ -59,3 +59,29 @@ test('connected GitHub offers one server-owned removal action and keeps clone se
   assert.equal(finishes, 0, 'removal is not authentication completion');
   surface.destroy(); await settle();
 });
+
+test('missing GitHub CLI offers one Install button and mounts its visible provider session', async () => {
+  const calls = [];
+  let mounts = 0;
+  let github = { installed: false, authenticated: false, account: '', installing: false, attachment: null };
+  globalThis.fetch = async (url, options) => {
+    calls.push({ url, options });
+    if (url.endsWith('/install')) github = {
+      ...github, installing: true,
+      attachment: { type: 'session', key: 'install_github', team: 'provider_setup', temporary: true },
+    };
+    return { ok: true, status: 200, json: async () => ({ ...github }) };
+  };
+  const surface = createGithubWorkspaceSetup({
+    environment: { mountProviderSetupSession: ({ session }) => { assert.equal(session, 'install_github'); mounts++; return { park() {}, destroy() {} }; } },
+  });
+  const host = new FakeNode('div');
+  surface.items[0].renderDetail(host); await settle();
+  const button = (label) => [...host.walk()].find((node) => node.tagName === 'BUTTON' && node.textContent === label);
+  assert.equal(button('Install').hidden, false);
+  assert.equal(button('Connect GitHub').hidden, true);
+  button('Install').click(); await settle();
+  assert.ok(calls.some((call) => call.url.endsWith('/install') && call.options.method === 'POST'));
+  assert.equal(mounts, 1);
+  surface.destroy(); await settle();
+});

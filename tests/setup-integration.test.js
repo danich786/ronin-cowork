@@ -31,8 +31,8 @@ test('all core handles expose only their ruled specialized controls after the un
 test('all initial controls preserve the ruled destinations and teaching choices', () => {
   assert.deepEqual(presets.initialControls('bare_metal'), { tiles: 4, root: 'ronin_lab', sessions: [{ name: 'session_1' }, { name: 'session_2' }, { name: 'session_3' }] });
   assert.deepEqual(presets.initialControls('ronin_team').sessions.map((row) => [row.name, row.team_lead === true]), [['team_lead', true], ['agent_1', false], ['agent_2', false]]);
-  assert.equal(presets.initialControls('staff_my_codebase').root, 'ronin_project_1');
-  assert.deepEqual(presets.initialControls('develop_new_project'), { root: 'ronin_project_1', workstreams: ['frontend', 'backend'] });
+  assert.equal(presets.initialControls('staff_my_codebase').root, 'project_one');
+  assert.deepEqual(presets.initialControls('develop_new_project'), { root: 'project_one', workstreams: ['frontend', 'backend'] });
   assert.deepEqual(presets.initialControls('personal_assistant'), { assistant_mode: 'single', specialists: '' });
   assert.deepEqual(presets.initialControls('health_and_fitness', 'claude').roles.map((row) => row.name), ['Head Coach', 'Nutritionist', 'Race and Event Guide']);
   assert.ok(presets.initialControls('health_and_fitness').roles.every((row) => row.ask));
