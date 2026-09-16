@@ -81,6 +81,7 @@ test('shared status markers are compact, token-driven, and can be placed on any 
   assert.match(css, /\.status-marker \{[^}]*color: var\(--kaki\);[^}]*font-size: var\(--text-1\)/);
   assert.match(css, /\.status-marker::before \{[^}]*width: var\(--space-1\);[^}]*background: currentColor/);
   assert.doesNotMatch(css, /\.status-marker \{[^}]*border(?:-radius)?:/);
+  assert.match(css, /\.sws-stone > \.status-marker \{[^}]*position: absolute;[^}]*inset-block-start: var\(--space-4\);[^}]*inset-inline-end: var\(--space-4\)/);
 });
 
 test('consumers cannot override the shared hidden detail or stone geometry', async () => {
