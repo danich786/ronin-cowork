@@ -49,7 +49,11 @@ export function createSetup2View() {
     showNewSession: (prompt) => { ctx?.patchViewState('launch', { prompt: String(prompt || '') }); ctx?.navigate('launch'); },
     openLaunchForm: () => ctx?.navigate('launch'),
     openTemplateLaunchForm: () => ctx?.navigate('launch'),
-    onGardenCanvas: (next) => { garden = next; },
+    onGardenCanvas: (next) => {
+      garden = next;
+      paintedSceneId = null;
+      selectGarden(activeScene());
+    },
     openGardenMedia: async (item) => {
       if (!garden) return;
       if (item.kind !== 'doc') { garden.showMedia({ label: item.label, kind: item.kind, src: item.src }); return; }
