@@ -1,5 +1,5 @@
 /* Versioned content boundary for the reusable garden canvas. */
-export const GARDEN_CANVAS_VERSION = 1;
+export const GARDEN_CANVAS_VERSION = 2;
 export const GARDEN_REGION_KEYS = Object.freeze(['question', 'cta', 'copy', 'media']);
 
 const text = (value) => typeof value === 'string' ? value.trim() : '';
@@ -23,12 +23,30 @@ const normalizeCta = (value) => {
   return action && label ? Object.freeze({ action, label }) : null;
 };
 
-const normalizeCopy = (value) => {
+const isoInstant = (value) => {
+  const candidate = text(value);
+  return candidate && /(?:Z|[+-]\d\d:\d\d)$/.test(candidate) && Number.isFinite(Date.parse(candidate)) ? candidate : '';
+};
+
+const normalizeCopy = (value, now) => {
   if (!Array.isArray(value)) return null;
-  const items = value.flatMap((item) => {
+  const items = value.flatMap((item, index) => {
     if (!enabled(item) || !text(item.id)) return [];
-    const copy = { id: text(item.id), kind: text(item.kind) || 'copy', eyebrow: text(item.eyebrow), heading: text(item.heading), body: text(item.body), stamp: text(item.stamp) };
-    return copy.eyebrow || copy.heading || copy.body ? [Object.freeze(copy)] : [];
+    const kind = text(item.kind);
+    const body = text(item.body);
+    if (kind === 'title') {
+      if (index !== 0) return [];
+      const copy = { id: text(item.id), kind, eyebrow: text(item.eyebrow), heading: text(item.heading), body };
+      return copy.eyebrow || copy.heading || copy.body ? [Object.freeze(copy)] : [];
+    }
+    if (kind === 'instruction' || kind === 'note') {
+      return body ? [Object.freeze({ id: text(item.id), kind, body, stamp: text(item.stamp) })] : [];
+    }
+    if (kind !== 'response' || !body) return [];
+    const at = isoInstant(item.at);
+    const expires_at = item.expires_at == null ? '' : isoInstant(item.expires_at);
+    if (!at || (item.expires_at != null && !expires_at) || (expires_at && (Date.parse(expires_at) <= Date.parse(at) || Date.parse(expires_at) <= now))) return [];
+    return [Object.freeze({ id: text(item.id), kind, body, at, expires_at })];
   });
   return items.length ? Object.freeze(items) : null;
 };
@@ -40,13 +58,13 @@ const normalizeMedia = (value) => {
     const src = kind === 'doc' ? '' : safeSource(item.src);
     const root = kind === 'doc' ? text(item.root) : '';
     const path = kind === 'doc' ? text(item.path) : '';
-    if (!kind || !text(item.label) || (kind === 'doc' ? !root || !path : !src)) return [];
+    if (!text(item.id) || !kind || !text(item.label) || (kind === 'doc' ? !root || !path : !src)) return [];
     return [Object.freeze({ id: text(item.id), kind, src, root, path, label: text(item.label), description: text(item.description), stamp: text(item.stamp) })];
   });
   return items.length ? Object.freeze(items) : null;
 };
 
-export function normalizeGardenCanvasCatalog(value) {
+export function normalizeGardenCanvasCatalog(value, now = Date.now()) {
   if (!value || value.schema_version !== GARDEN_CANVAS_VERSION || !value.scenarios || typeof value.scenarios !== 'object' || !value.canvases || typeof value.canvases !== 'object') {
     throw new Error(`garden canvas content must use version ${GARDEN_CANVAS_VERSION}`);
   }
@@ -58,7 +76,7 @@ export function normalizeGardenCanvasCatalog(value) {
       id: canvasId,
       question: normalizeQuestion(raw.question),
       cta: normalizeCta(raw.cta),
-      copy: normalizeCopy(raw.copy),
+      copy: normalizeCopy(raw.copy, now),
       media: normalizeMedia(raw.media),
     });
   }
