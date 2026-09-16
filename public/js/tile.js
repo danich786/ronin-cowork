@@ -160,7 +160,7 @@ export class Tile {
     if (!this.session) return;
     const session = this.session;
     const current = S.sessions.find((row) => row.name === session)?.title || readableSession(session);
-    const wanted = window.prompt(t('head.rename_prompt', 'Edit Agent title'), current);
+    const wanted = window.prompt(t('head.rename_prompt', 'Edit Agent title\n\nAgent ID: {id}', { id: session }), current);
     if (wanted == null || wanted.trim() === current) return;
     try {
       await setSessionTitle(session, wanted.trim());

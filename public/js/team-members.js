@@ -10,6 +10,8 @@ const el = (tag, cls, text) => { const node = document.createElement(tag); if (c
 
 export const agentTitle = (session) => session.title || String(session.name || '').split(/[_-]+/).filter(Boolean)
   .map((part) => part[0]?.toUpperCase() + part.slice(1)).join(' ');
+const agentName = (session) => String(session.identity?.cli || session.agent || session.session_type || 'Agent')
+  .split(/[_-]+/).filter(Boolean).map((part) => part[0]?.toUpperCase() + part.slice(1)).join(' ');
 
 // "flashing the team configuration on and off"). Every five-second row read and every
 // refreshTeams() publish land in the panel renderers; redrawing unconditionally flashed
@@ -34,7 +36,11 @@ export const buildTeamMembers = (name, options = {}) => {
     const identity = el('div', 'league-team-member-identity');
     const mark = el('span', 'league-team-member-mark', member.team_lead ? '人' : ''); mark.setAttribute('aria-hidden', 'true');
     const words = el('div', 'league-team-member-words');
-    words.append(el('strong', null, agentTitle(member)));
+    words.append(
+      el('strong', null, t('league.agent_title_fact', 'Title · {title}', { title: agentTitle(member) })),
+      el('span', null, t('league.agent_name_fact', 'Agent · {name}', { name: agentName(member) })),
+      el('span', 'league-team-member-id', t('league.agent_id_fact', 'ID · @{id}', { id: member.name })),
+    );
     identity.append(mark, words);
     if (holding) { row.append(identity); list.append(row); continue; }
     const launch = options.onOpen ? createAction({ label: t('league.launch_agent', 'Launch'), size: 'compact', action: () => options.onOpen(member) }) : null;
