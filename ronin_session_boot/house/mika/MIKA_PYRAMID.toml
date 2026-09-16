@@ -8,7 +8,7 @@ root = "docs"
 [[node]]
 id = "house-procedures"
 label = "House procedures and situations"
-root = "ronin_sops"
+root = "ronin_catalogs/behaviours"
 
 [[node]]
 id = "capabilities-tools-and-models"

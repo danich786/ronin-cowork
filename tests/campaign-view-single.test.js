@@ -11,7 +11,7 @@ test('the Campaign page has one switch for offering New Campaign', async () => {
   for (const type of ['identity', 'profile', 'installations', 'defaults']) {
     assert.match(source, new RegExp(`add\\(\\{ type: TYPES\\.${type}`));
   }
-  assert.match(source, /add\(campaignTemplatesDefinition\(\)\)/);
+  assert.doesNotMatch(source, /campaignTemplatesDefinition|SETUP_SURFACE_TYPES\.launchOwn, TYPES\.templates/, 'Templates is absent from Settings');
   assert.match(source, /add\(providerSurfaceDefinition\(\)\)/);
   assert.match(source, /providers: PROVIDER_SURFACE_TYPE/);
 });
@@ -63,6 +63,8 @@ test('Campaign delegates Workspace folders assembly with scope and no future-roo
   ]);
   assert.match(campaign, /campaignId: \(\) => e\.selected\(\)\?\.id \|\| ''/);
   assert.match(campaign, /connected: \(host\) => e\.entered\(\) && host\.isConnected/);
+  assert.match(campaign, /presentation: 'stones'/);
+  assert.match(campaign, /environment: e,[\s\S]*workspace,/);
   assert.doesNotMatch(campaign, /worktreesDefault/);
   assert.doesNotMatch(shared, /new_project|family: 'desks'/);
 });

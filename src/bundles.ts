@@ -12,7 +12,7 @@ const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const BUNDLE_FORMAT = 'ronin-bundle/1';
 export const LIBRARY_FORMAT = 'ronin-library/1';
 
-export type BundleStore = 'catalogs' | 'sops' | 'ways' | 'library' | 'tools';
+export type BundleStore = 'catalogs' | 'ways' | 'library' | 'tools';
 export type BundleCatalog = 'TOOLS.md' | 'MODEL_PROVIDERS.md';
 
 export interface BundleFile {
@@ -59,7 +59,7 @@ export interface LibraryIndex {
 }
 
 const TOKEN = /^[a-z0-9][a-z0-9_-]{0,63}$/;
-const STORES: readonly BundleStore[] = ['catalogs', 'sops', 'ways', 'library', 'tools'];
+const STORES: readonly BundleStore[] = ['catalogs', 'ways', 'library', 'tools'];
 const CATALOGS: readonly BundleCatalog[] = ['TOOLS.md', 'MODEL_PROVIDERS.md'];
 /** A provider section's id: `- **provider:** \`openai\`` — the key it merges by, since its heading is a vendor's name. */
 const providerIdOf = (section: string): string => /^-\s*\*\*provider:\*\*\s*`([^`]+)`\s*$/m.exec(section)?.[1]?.trim() ?? '';
@@ -75,8 +75,7 @@ export const sha256 = (text: string): string => createHash('sha256').update(text
 function stockPathFor(file: Pick<BundleFile, 'store' | 'path'>): string {
   switch (file.store) {
     case 'catalogs': return path.join(STOCK_DIR, file.path);
-    case 'sops': return path.join(ROOT, 'ronin_sops', file.path);
-    case 'ways': return path.join(ROOT, 'ways', file.path);
+    case 'ways': return path.join(STOCK_DIR, 'behaviours', file.path);
     case 'library': return path.join(ROOT, 'ronin_library', file.path);
     case 'tools': return path.join(ROOT, 'ronin_bin', file.path);
   }
@@ -100,6 +99,12 @@ function checkPath(store: BundleStore, p: string): string | null {
     const dir = parts.slice(0, -1).join('/');
     if (!CATALOG_DIRS.includes(dir)) return `a catalog file sits on one of: ${CATALOG_DIRS.join(', ')}`;
     if (!/^[\w-]{1,64}$/.test(stem)) return 'a definition is named by its token';
+    return null;
+  }
+  if (store === 'ways') {
+    if (parts.length !== 2 || !['floor', 'conditional', 'selected', 'sought'].includes(parts[0]) || !TOKEN.test(stem)) {
+      return 'a Behavior is one Markdown file under floor, conditional, selected, or sought';
+    }
     return null;
   }
   if (parts.length !== 1 || !TOKEN.test(stem)) return 'a book is one file, named by its token';
@@ -363,7 +368,6 @@ export async function installBundle(bundle: Bundle, opts: { replace?: boolean } 
 export interface PackRequest {
   team: string;
   agents?: string[];
-  sops?: string[];
   ways?: string[];
   library?: string[];
   tools?: string[];
@@ -392,23 +396,16 @@ export async function packBundle(req: PackRequest): Promise<Bundle> {
     await addFile('catalogs', `templates/agents/${agent.name}.md`, agent.file);
     for (const b of agent.get('behaviours').split(',')) if (b.trim()) books.add(b.trim());
   }
-  for (const s of req.sops ?? []) books.add(`sops:${s}`);
   for (const w of req.ways ?? []) books.add(`ways:${w}`);
   const toolNames = new Set(req.tools ?? []);
   for (const behaviour of await readDefinitions('behaviours')) {
     if (!books.has(behaviour.name)) continue;
-    if (behaviour.origin === 'user') await addFile('ways', `${behaviour.name}.md`, behaviour.file);
-    for (const s of behaviour.get('sops').split(',')) if (s.trim() && s.trim() !== '—') books.add(`sops:${s.trim()}`);
+    if (behaviour.origin === 'user') await addFile('ways', path.relative(storeDir('ways'), behaviour.file), behaviour.file);
     for (const t of behaviour.get('tools').split(',')) if (t.trim() && t.trim() !== '—') toolNames.add(t.trim());
-  }
-  for (const book of books) {
-    const match = /^sops:([a-z0-9][a-z0-9_-]*)$/.exec(book);
-    if (match) await addFile('sops', `${match[1]}.md`, path.join(storeDir('sops'), `${match[1]}.md`));
   }
   const resolved = await resolveBehaviourBooks([...books]);
   for (const b of resolved.delivered) {
-    const name = b.book.replace(/^ways:/, '');
-    if (b.file.startsWith(storeDir('ways'))) await addFile('ways', `${name}.md`, b.file);
+    if (b.file.startsWith(storeDir('ways'))) await addFile('ways', path.relative(storeDir('ways'), b.file), b.file);
   }
   for (const name of req.library ?? []) await addFile('library', `${name}.md`, path.join(storeDir('library'), `${name}.md`));
   for (const name of toolNames) {

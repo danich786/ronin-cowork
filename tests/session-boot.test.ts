@@ -9,6 +9,7 @@ import { buildBrief, type SpawnForm } from '../src/spawn.js';
 import { contributionReading } from '../src/resource-adapters.js';
 import type { LaunchProfile } from '../src/launch-profile.js';
 import { CAPABILITIES_READING, renderCapabilitiesOverview, resolveCapabilities } from '../src/capabilities.js';
+import { resolveConditionalBehaviours, resolveFloorBehaviours } from '../src/behaviours.js';
 
 /** The fullest overview: every stock capability document selected, every listed tool present. */
 const fullOverview = async (): Promise<string> => renderCapabilitiesOverview(await resolveCapabilities(
@@ -31,13 +32,13 @@ test('every assisted session is handed the tool overview built from its selected
     const text = await readFile(lesson, 'utf8');
     assert.equal(text, overview, 'the fragment is the rendered overview, byte for byte');
     // The lesson is derived from the folder: every stock bundle, its priority tools, its help route.
-    for (const label of ['Edges', 'Work Record', 'Session', 'Worktree desk', 'Machine settings', 'Team lead']) {
+    for (const label of ['Edges', 'Work Record', 'Agent session', 'Worktree desk', 'Machine settings', 'Cowork Team']) {
       assert.match(text, new RegExp(`^### ${label}$`, 'm'));
     }
     assert.match(text, /`work-record project create`/);
     assert.match(text, /`session_check --help`/);
-    assert.doesNotMatch(text, /tejun|\+\w+:|MACROS/, 'no retired vocabulary reaches a newborn');
-    // The fork/spawn routing rule is Ronin Base's teaching, asserted on BASE_ABILITIES below.
+    assert.doesNotMatch(text, /\btejun(?:-[a-z]+|\b(?!_))|\+\w+:|MACROS/, 'no retired vocabulary reaches a newborn');
+    // Fork/spawn belongs to the Agent session capability rather than universal boot noise.
     assert.doesNotMatch(text, /spawn an agent/i);
 
     const profile = {
@@ -74,9 +75,11 @@ test('the universal shelf carries vocabulary and navigation, not optional abilit
     // universal set. A blank axis omits only its own level.
     const boot = await bootFiles('', false);
     const names = boot.map((file) => path.basename(file));
-    for (const required of ['README.md', 'RONIN_UTILITY.md', 'KOTOBA_GLOSSARY.md']) {
+    for (const required of ['RONIN_UTILITY.md', 'KOTOBA_GLOSSARY.md']) {
       assert.ok(names.includes(required), `the universal boot shelf should contain ${required}`);
     }
+    assert.ok(!names.includes('README.md'), 'the documentation map is not universal birth reading');
+    assert.ok(!names.includes('BASE_ABILITIES.md'), 'Cowork working guidance comes from the Behavior floor');
     // The UI string table is not vocabulary: 105 KB of `key: string` inlined here is what
     // pushed every contract past the line a newborn's CLI stops reading at (2026-09-03).
     assert.ok(!names.includes('professional_en.md'), 'the lexicon is not birth reading');
@@ -89,16 +92,33 @@ test('the universal shelf carries vocabulary and navigation, not optional abilit
   }
 });
 
-test('every selector phrase has an exact meaning in the universal Agent reading', async () => {
+test('every selector phrase has an exact meaning in floor or capability teaching', async () => {
   const selector = await readFile(path.resolve('public/js/terminal-controls.js'), 'utf8');
-  const base = await readFile(path.resolve('ronin_session_boot/all/BASE_ABILITIES.md'), 'utf8');
+  const style = await readFile(path.resolve('public/style.css'), 'utf8');
+  const teaching = (await Promise.all([
+    'ronin_catalogs/behaviours/floor/cowork-agent.md',
+    'ronin_catalogs/capabilities/agent_session.md',
+    'ronin_catalogs/capabilities/edges.md',
+    'ronin_catalogs/capabilities/work-record.md',
+    'ronin_catalogs/capabilities/cowork_team.md',
+    'ronin_catalogs/capabilities/worktree-desk.md',
+    'ronin_catalogs/behaviours/conditional/team-lead.md',
+  ].map((file) => readFile(path.resolve(file), 'utf8')))).join('\n');
   const block = selector.match(/const vocabulary = section\('Agent vocabulary'[\s\S]*?for \(const \[term, description\] of \[([\s\S]*?)\]\) \{/);
   assert.ok(block, 'the selector should expose one Agent vocabulary list');
   const terms = [...block[1]!.matchAll(/\['([^']+)',\s*'[^']+'\]/g)].map((match) => match[1]!);
   assert.ok(terms.length, 'the selector should expose Agent vocabulary terms');
-  for (const term of terms) assert.match(base, new RegExp(`\\*\\*${term.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}\\*\\*`), `${term} needs an exact universal meaning`);
-  for (const command of ['session_create', 'edges send', 'edges wipeboard', 'work-record document list', 'work-record update_record', 'team-lead roster write', 'worktree-desk hand-in', 'bin/ronin-promote <team>', 'session_end']) {
-    assert.match(base, new RegExp(command.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')), `${command} needs to be named in the vocabulary contract`);
+  assert.ok(terms.includes('Create new session (Agent)'), 'visible Agent creation has one session-shaped phrase');
+  assert.equal(terms[0], 'Create new session (Agent)', 'visible session creation stays at the top');
+  assert.ok(!terms.includes('Fork it') && !terms.includes('New Agent'), 'ambiguous Agent creation aliases stay out of the selector');
+  assert.match(selector, /term === 'Create new session \(Agent\)'[^\n]+classList\.add\('session-create'\)/);
+  assert.match(style, /\.terminal-hint-row\.session-create[^}]+var\(--kaki\)/);
+  const escaped = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  for (const term of terms) assert.match(teaching, new RegExp(`\\*\\*${escaped(term)}\\*\\*`, 'i'), `${term} needs an exact meaning`);
+  assert.match(teaching, /AN OWNER ASKING FOR AN AGENT ALWAYS MEANS:[\s\S]*IT NEVER MEANS SPAWN A CLI-INTERNAL SUB-AGENT/);
+  assert.match(teaching, /owner's wording does not\s+provoke it/);
+  for (const command of ['session_create', 'edges send', 'edges wipeboard', 'work-record document list', 'work-record update_record', 'team roster write', 'worktree-desk hand-in', 'bin/ronin-promote <team>', 'session_end']) {
+    assert.match(teaching, new RegExp(escaped(command)), `${command} needs to be named by its owner`);
   }
 });
 
@@ -112,16 +132,23 @@ test('the real stock shelf compiles to one read: contracts first, glossary last,
   const temp = await mkdtemp(path.join(os.tmpdir(), 'ronin-session-boot-test-'));
   const oldCache = process.env.RONIN_SESSION_BOOT_CACHE_DIR;
   const oldShelf = process.env.RONIN_SESSION_BOOT_DIR;
+  const oldWays = process.env.RONIN_WAYS_DIR;
   process.env.RONIN_SESSION_BOOT_CACHE_DIR = path.join(temp, 'generated');
   process.env.RONIN_SESSION_BOOT_DIR = path.join(temp, 'shelf');
+  process.env.RONIN_WAYS_DIR = path.join(temp, 'ways');
   try {
+    await mkdir(path.join(temp, 'ways', 'floor'), { recursive: true });
+    await writeFile(path.join(temp, 'ways', 'floor', 'user-intro.md'), `# User intro\n\n- **scope:** floor\n\n## About the user\n\n${'a'.repeat(180)}\n${'b'.repeat(180)}\n`);
     // The largest stock birth: every Routine on, MCP on, every capability bundle selected
     // with every listed tool present.
-    const boot = await bootFiles('', true, [
-      'all/BASE_ABILITIES.md',
+    const applied = [
+      ...await resolveFloorBehaviours(),
+      ...await resolveConditionalBehaviours({ arrangement: 'managed', team: true, lead: true }),
+    ].map((row) => row.file);
+    const boot = [...applied, ...await bootFiles('', true, [
       'routine/ronin_services/SERVICES_ABILITIES.md',
       'routine/ronin_host/HOST_ABILITIES.md',
-    ], await fullOverview(), 'newborn');
+    ], await fullOverview(), 'newborn')];
     const target = await compileBirthReadmeAt(path.join(temp, 'session'), boot, 'newborn', isShelfTeaching);
     const text = await readFile(target, 'utf8');
     const bytes = Buffer.byteLength(text, 'utf8');
@@ -131,8 +158,8 @@ test('the real stock shelf compiles to one read: contracts first, glossary last,
     assert.doesNotMatch(text, /^## professional_en/m, 'the UI string table is not in the packet');
 
     const at = (re: RegExp) => { const i = text.search(re); assert.ok(i >= 0, `${re} is in the packet`); return i; };
-    const contracts = at(/^## BASE ABILITIES/m);
-    const map = at(/^## Ronin documentation/m);
+    const contracts = at(/^## Cowork Agent/m);
+    const map = at(/^## Ronin usage reference/m);
     const glossary = at(/^## KOTOBA_GLOSSARY/m);
     assert.ok(contracts < map, 'the core contract comes before the documentation map');
     assert.ok(glossary > at(/^## YOUR TOOLS/m), 'the glossary is last');
@@ -140,10 +167,10 @@ test('the real stock shelf compiles to one read: contracts first, glossary last,
     assert.equal(text.lastIndexOf('\n## '), text.lastIndexOf('\n## KOTOBA_GLOSSARY'), 'nothing follows the glossary');
     // The two rules a newborn most often breaks sit inside the first window it opens.
     const firstWindow = text.split('\n').slice(0, 250).join('\n');
-    assert.match(firstWindow, /Fork versus spawn/);
-    assert.match(firstWindow, /session_create/);
-    assert.match(firstWindow, /owner requires permission before spawning/);
-    assert.match(firstWindow, /ronin_sops\/worktree-root\.md/);
+    assert.match(firstWindow, /Read the complete Build Brief before acting/);
+    assert.match(firstWindow, /do not reproduce its guarded operation/);
+    assert.match(firstWindow, /Read the roster and wipeboard before directing work/);
+    assert.match(firstWindow, /ronin_catalogs\/behaviours\/conditional\/worktree-root\.md/);
     // The glossary arrived rendered: markers gone, header rewritten.
     assert.doesNotMatch(text, /<!--g:/);
     assert.match(text, /Rendered for/);
@@ -161,24 +188,28 @@ test('the real stock shelf compiles to one read: contracts first, glossary last,
     else process.env.RONIN_SESSION_BOOT_CACHE_DIR = oldCache;
     if (oldShelf === undefined) delete process.env.RONIN_SESSION_BOOT_DIR;
     else process.env.RONIN_SESSION_BOOT_DIR = oldShelf;
+    if (oldWays === undefined) delete process.env.RONIN_WAYS_DIR;
+    else process.env.RONIN_WAYS_DIR = oldWays;
     await rm(temp, { recursive: true, force: true });
   }
 });
 
-test('core reading points to arrangement pages; system reading stays installation-selected', async () => {
+test('floor and capability teaching own ordinary work; system reading stays installation-selected', async () => {
   const repo = path.join(path.dirname(new URL(import.meta.url).pathname), '..');
-  const [base, services, worktrees, machine] = await Promise.all([
-    readFile(path.join(repo, 'ronin_session_boot', 'all', 'BASE_ABILITIES.md'), 'utf8'),
+  const [cowork, sessions, edges, services, worktrees, machine] = await Promise.all([
+    readFile(path.join(repo, 'ronin_catalogs', 'behaviours', 'floor', 'cowork-agent.md'), 'utf8'),
+    readFile(path.join(repo, 'ronin_catalogs', 'capabilities', 'agent_session.md'), 'utf8'),
+    readFile(path.join(repo, 'ronin_catalogs', 'capabilities', 'edges.md'), 'utf8'),
     readFile(path.join(repo, 'ronin_session_boot', 'routine', 'ronin_services', 'SERVICES_ABILITIES.md'), 'utf8'),
-    readFile(path.join(repo, 'ronin_sops', 'worktree-root.md'), 'utf8'),
+    readFile(path.join(repo, 'ronin_catalogs/behaviours', 'conditional', 'worktree-root.md'), 'utf8'),
     readFile(path.join(repo, 'ronin_session_boot', 'routine', 'ronin_host', 'HOST_ABILITIES.md'), 'utf8'),
   ]);
 
-  assert.match(base, /work-record read/);
-  assert.match(base, /edges wipeboard/);
-  assert.match(base, /ronin_sops\/worktree-root\.md/);
-  assert.match(base, /ronin_sops\/checkout\.md/);
-  assert.match(base, /edges read/);
+  assert.match(cowork, /Keep the Work Record truthful/);
+  assert.match(cowork, /do not reproduce its guarded operation/);
+  assert.match(sessions, /Fork[\s\S]*fork it[\s\S]*session_create/i);
+  assert.match(edges, /edges wipeboard/);
+  assert.match(edges, /edges read/);
   assert.match(services, /Readable transcripts are not in this beta/);
   assert.match(services, /`edges read` falls back/);
   assert.match(services, /Koshi\*\* is Ronin's assisted administrative behavior/);
@@ -331,6 +362,9 @@ test('the stock shelf, the owner shelf and generated fragments are teaching; the
   assert.equal(isShelfTeaching(path.join(repo, 'ronin_session_boot', 'all', 'SHELVES.md')), true);
   assert.equal(isShelfTeaching(path.join(storeDir('session_boot'), 'routine', 'ronin_base', 'OWN.md')), true);
   assert.equal(isShelfTeaching(path.join(storeDir('session_boot'), 'root', 'proj', 'KOTOBA.md')), false);
+  assert.equal(isShelfTeaching(path.join(storeDir('ways'), 'floor', 'owner-floor.md')), true);
+  assert.equal(isShelfTeaching(path.join(storeDir('ways'), 'conditional', 'owner-condition.md')), true);
+  assert.equal(isShelfTeaching(path.join(storeDir('ways'), 'selected', 'owner-choice.md')), false);
   assert.equal(isShelfTeaching('/somewhere/else/ways/book.md'), false);
 });
 
@@ -349,12 +383,14 @@ test('a system installation reads one way or the other', async () => {
     assert.match(off, /The switch:/);
   }
   const index = await readFile(path.join(repo, 'docs', 'README.md'), 'utf8');
-  assert.match(index, /## Shelves/);
-  assert.match(index, /## Coworkspace/);
-  // The coworkspace page a newborn is handed: the surfaces, the head, copy and the lock.
-  const utility = await readFile(path.join(repo, 'docs', 'RONIN_UTILITY.md'), 'utf8');
-  assert.match(utility, /hold \*\*Shift\*\* while dragging \(\*\*Option\*\* on a Mac\)/);
-  assert.match(utility, /Campaign discovery workbench[\s\S]*Cowork workbench[\s\S]*Team workbench/);
-  assert.match(utility, /🔒 Locked\*\* is the attached live terminal/);
-  assert.match(utility, /\*\*メ\*\* \| the drop/);
+  assert.match(index, /## Evaluate, install, and use Ronin/);
+  assert.match(index, /## Understand how Ronin is constructed/);
+  assert.match(index, /## Ideas and work in progress: Ronin Lab/);
+  // The newborn's reference routes to the usage authorities, rather than copying UI
+  // controls that can drift or making the owner read construction contracts first.
+  const utility = await readFile(path.join(repo, 'docs', 'architecture', 'RONIN_UTILITY.md'), 'utf8');
+  for (const guide of ['workbench', 'tile', 'terminal-controls', 'archived-sessions']) {
+    assert.ok(utility.includes(`../using-ronin/${guide}.md`), `usage route: ${guide}`);
+  }
+  assert.doesNotMatch(utility, /Control dial|owner only/);
 });

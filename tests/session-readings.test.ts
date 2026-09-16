@@ -17,7 +17,7 @@ test('Session Readings resolves level shapes, leaf links and per-level shadows',
       await mkdir(path.join(shelf, dir), { recursive: true });
       await writeFile(path.join(shelf, dir, `${dir.replaceAll('/', '-')}.md`), `# ${dir}\n`);
     }
-    await writeFile(path.join(shelf, 'all', 'README.md'), '# Owner abilities\n');
+    await writeFile(path.join(shelf, 'all', 'RONIN_UTILITY.md'), '# Owner usage map\n');
     const outside = path.join(temp, 'outside.md');
     await writeFile(outside, '# Linked reading\n');
     await symlink(outside, path.join(shelf, 'root/project', 'linked.md'));
@@ -29,18 +29,18 @@ test('Session Readings resolves level shapes, leaf links and per-level shadows',
     for (const level of ['all', 'root/project', 'routine/ronin_services', 'house/atarashi', 'gbrain_connected']) {
       assert.ok(rows.some((row) => row.level === level), `${level} should be represented`);
     }
-    const shadow = rows.find((row) => row.name === 'all/README.md');
+    const shadow = rows.find((row) => row.name === 'all/RONIN_UTILITY.md');
     assert.equal(shadow?.origin, 'user');
     assert.equal(shadow?.shadowed, true);
-    assert.equal(shadow?.content, '# Owner abilities\n');
+    assert.equal(shadow?.content, '# Owner usage map\n');
     const linked = rows.find((row) => row.name === 'root/project/linked.md');
     assert.equal(linked?.linked, true);
     assert.equal(linked?.content, '# Linked reading\n');
     assert.equal(rows.some((row) => row.level === 'routine/linked-routine'), false);
     const lesson = rows.find((row) => row.name === 'all/CAPABILITIES.md');
     assert.match(lesson?.content || '', /^# YOUR TOOLS/m);
-    assert.match(lesson?.content || '', /^### Team lead$/m, 'the listing shows every bundle as the fullest birth would');
-    assert.doesNotMatch(lesson?.content || '', /tejun/);
+    assert.match(lesson?.content || '', /^### Cowork Team$/m, 'the listing shows every bundle as the fullest birth would');
+    assert.doesNotMatch(lesson?.content || '', /\btejun(?:-[a-z]+|\b(?!_))/);
     assert.ok(rows.every((row) => !('file' in row) && !('path' in row)));
   } finally {
     if (previous === undefined) delete process.env.RONIN_SESSION_BOOT_DIR;

@@ -21,12 +21,12 @@ export const INSTALLED_ROOTS = [
   { name: 'ronin_project_1', label: 'Ronin Project 1', remit: 'The first project-shaped workspace folder.', managed: true },
 ] as const;
 
-export const SETUP_PREFERENCE_KINDS = ['build', 'life', 'research'] as const;
+export const SETUP_PREFERENCE_KINDS = ['build', 'life', 'research', 'other'] as const;
 export type SetupPreferenceKind = typeof SETUP_PREFERENCE_KINDS[number];
-export interface SetupPreferences { kinds: SetupPreferenceKind[]; providers: string[] }
+export interface SetupPreferences { kinds: SetupPreferenceKind[]; providers: string[]; path_note: string; identity_choice: '' | 'email' | 'anonymous' | 'declined'; bounty_opt_in: boolean }
 interface SetupSection {
   providers?: Record<string, { activated_at?: unknown; off_at?: unknown }>;
-  preferences?: { kinds?: unknown; providers?: unknown };
+  preferences?: { kinds?: unknown; providers?: unknown; path_note?: unknown; identity_choice?: unknown; bounty_opt_in?: unknown };
   [key: string]: unknown;
 }
 
@@ -111,26 +111,38 @@ export function setupPreferences(section: SetupSection): SetupPreferences {
     ? [...new Set(section.preferences.providers.filter((provider): provider is string =>
       typeof provider === 'string' && /^[a-z0-9_-]+$/.test(provider)))]
     : [];
-  return { kinds: SETUP_PREFERENCE_KINDS.filter((kind) => selected.has(kind)), providers };
+  const identity = section.preferences?.identity_choice;
+  return {
+    kinds: SETUP_PREFERENCE_KINDS.filter((kind) => selected.has(kind)), providers,
+    path_note: typeof section.preferences?.path_note === 'string' ? section.preferences.path_note : '',
+    identity_choice: identity === 'email' || identity === 'anonymous' || identity === 'declined' ? identity : '',
+    bounty_opt_in: section.preferences?.bounty_opt_in === true,
+  };
 }
 
 export async function writeSetupPreferences(input: unknown): Promise<SetupPreferences> {
   const patch = Array.isArray(input) ? { kinds: input } : input;
   if (!patch || typeof patch !== 'object' || Array.isArray(patch)) throw new Error('Send Setup preferences.');
-  const update = patch as { kinds?: unknown; providers?: unknown };
-  if (update.kinds === undefined && update.providers === undefined) throw new Error('Send kinds or providers.');
-  let written: SetupPreferences = { kinds: [], providers: [] };
+  const update = patch as { kinds?: unknown; providers?: unknown; path_note?: unknown; identity_choice?: unknown; bounty_opt_in?: unknown };
+  if (update.kinds === undefined && update.providers === undefined && update.path_note === undefined && update.identity_choice === undefined && update.bounty_opt_in === undefined) throw new Error('Send onboarding preferences.');
+  let written: SetupPreferences = { kinds: [], providers: [], path_note: '', identity_choice: '', bounty_opt_in: false };
   await updateSection<SetupSection>('setup', (setup) => {
     const current = setupPreferences(setup);
     const kinds = update.kinds === undefined ? current.kinds : update.kinds;
     const providers = update.providers === undefined ? current.providers : update.providers;
+    const path_note = update.path_note === undefined ? current.path_note : update.path_note;
+    const identity_choice = update.identity_choice === undefined ? current.identity_choice : update.identity_choice;
+    const bounty_opt_in = update.bounty_opt_in === undefined ? current.bounty_opt_in : update.bounty_opt_in;
     if (!Array.isArray(kinds) || kinds.some((kind) => typeof kind !== 'string' || !SETUP_PREFERENCE_KINDS.includes(kind as SetupPreferenceKind))) {
-      throw new Error('Kinds are build, life, and research.');
+      throw new Error('Kinds are build, life, research, and other.');
     }
     if (!Array.isArray(providers) || providers.some((provider) => typeof provider !== 'string' || !/^[a-z0-9_-]+$/.test(provider))) {
       throw new Error('Providers must be provider IDs.');
     }
-    written = setupPreferences({ preferences: { kinds, providers } });
+    if (typeof path_note !== 'string' || path_note.length > 2000) throw new Error('Path note must be text up to 2000 characters.');
+    if (!['', 'email', 'anonymous', 'declined'].includes(String(identity_choice))) throw new Error('Identity choice must be email, anonymous, or declined.');
+    if (typeof bounty_opt_in !== 'boolean') throw new Error('Bounty opt-in must be true or false.');
+    written = setupPreferences({ preferences: { kinds, providers, path_note, identity_choice, bounty_opt_in } });
     return { ...setup, preferences: written };
   });
   return written;
@@ -342,6 +354,114 @@ async function exists(file: string): Promise<boolean> {
 
 async function git(dir: string, args: string[]): Promise<string> {
   return (await run('git', ['-C', dir, ...args], { timeout: 10_000 })).stdout.trim();
+}
+
+const GITHUB_SETUP_SESSION = 'setup_github';
+
+export type GithubSetupState = 'missing' | 'needs_authentication' | 'authenticated';
+export interface GithubSetupAnswer {
+  installed: boolean;
+  authenticated: boolean;
+  account: string;
+  state: GithubSetupState;
+  attachment: { type: 'session'; key: string; team: typeof PROVIDER_SETUP_TEAM; temporary: true } | null;
+}
+
+export interface GithubSetupOps {
+  installed(): Promise<boolean>;
+  authStatus(): Promise<string>;
+  exists(): Promise<boolean>;
+  open(): Promise<void>;
+  close(): Promise<void>;
+  logout(account: string): Promise<void>;
+}
+
+export interface GithubSessionPrimitives {
+  create(name: string, cwd: string, options: { agent: boolean; argv: string[] }): Promise<void>;
+  tag(name: string, tags: string[]): Promise<void>;
+  identify(name: string, identity: { sessionType: string; cli: string; provider: string; model: string }): Promise<void>;
+}
+
+export async function createGithubSetupSession(primitives: GithubSessionPrimitives = {
+  create: createSession,
+  tag: async (name, tags) => { await setTags(name, tags); },
+  identify: setSessionIdentity,
+}): Promise<void> {
+  await primitives.create(GITHUB_SETUP_SESSION, os.homedir(), {
+    agent: false,
+    argv: ['gh', 'auth', 'login', '--hostname', 'github.com', '--git-protocol', 'https'],
+  });
+  await primitives.tag(GITHUB_SETUP_SESSION, [PROVIDER_SETUP_TEAM]);
+  await primitives.identify(GITHUB_SETUP_SESSION, {
+    sessionType: 'provider_setup', cli: 'gh', provider: 'github', model: '',
+  });
+}
+
+const defaultGithubSetupOps: GithubSetupOps = {
+  installed: () => run('gh', ['--version'], { timeout: 5_000 }).then(() => true, () => false),
+  authStatus: () => run('gh', ['auth', 'status', '--hostname', 'github.com', '--active'], { timeout: 8_000 })
+    .then((result) => result.stderr || result.stdout, () => ''),
+  exists: () => sessionExists(GITHUB_SETUP_SESSION),
+  open: () => createGithubSetupSession(),
+  close: () => killSessionTree(GITHUB_SETUP_SESSION),
+  logout: (account) => run('gh', ['auth', 'logout', '--hostname', 'github.com', '--user', account], { timeout: 8_000 }).then(() => undefined),
+};
+
+/** Accept only gh's explicit active-login line; warnings and failure prose are not auth. */
+export function githubAccountFromStatus(status: string): string {
+  return status.match(/^\s*✓\s+Logged in to github\.com account ([A-Za-z0-9](?:[A-Za-z0-9-]{0,38}))\b/im)?.[1] ?? '';
+}
+
+export async function githubSetupAnswer(ops: GithubSetupOps = defaultGithubSetupOps): Promise<GithubSetupAnswer> {
+  const installed = await ops.installed();
+  const account = installed ? githubAccountFromStatus(await ops.authStatus()) : '';
+  const open = await ops.exists();
+  const authenticated = account !== '';
+  return {
+    installed,
+    authenticated,
+    account,
+    state: !installed ? 'missing' : authenticated ? 'authenticated' : 'needs_authentication',
+    attachment: open ? { type: 'session', key: GITHUB_SETUP_SESSION, team: PROVIDER_SETUP_TEAM, temporary: true } : null,
+  };
+}
+
+export async function openGithubLogin(ops: GithubSetupOps = defaultGithubSetupOps): Promise<GithubSetupAnswer> {
+  if (!(await ops.installed())) throw new Error('GitHub CLI is not installed on this machine.');
+  if (!(await ops.exists())) await ops.open();
+  return githubSetupAnswer(ops);
+}
+
+export async function closeGithubLogin(ops: GithubSetupOps = defaultGithubSetupOps): Promise<GithubSetupAnswer> {
+  if (await ops.exists()) await ops.close();
+  return githubSetupAnswer(ops);
+}
+
+/** Remove only the active github.com credential that gh reported; the browser cannot name another account. */
+export async function removeGithubAuthentication(ops: GithubSetupOps = defaultGithubSetupOps): Promise<GithubSetupAnswer> {
+  const current = await githubSetupAnswer(ops);
+  if (!current.installed) throw new Error('GitHub CLI is not installed on this machine.');
+  if (!current.authenticated || !current.account) throw new Error('GitHub is not authenticated on this machine.');
+  if (await ops.exists()) await ops.close();
+  await ops.logout(current.account);
+  return githubSetupAnswer(ops);
+}
+
+export async function cloneGithubWorkspace(repository: unknown): Promise<{ name: string; dir: string }> {
+  const slug = typeof repository === 'string' ? repository.trim().replace(/^https:\/\/github\.com\//, '').replace(/\.git$/, '') : '';
+  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(slug)) throw new Error('Repository must be owner/name or a github.com URL.');
+  const status = await githubSetupAnswer();
+  if (!status.authenticated) throw new Error('Connect GitHub before cloning a repository.');
+  const base = slug.split('/')[1].toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-|-$/g, '');
+  if (!base) throw new Error('That repository does not make a valid workspace ID.');
+  const known = await peekProjectRoots();
+  let name = base;
+  for (let suffix = 2; known.some((root) => root.name === name); suffix++) name = `${base}-${suffix}`;
+  const dir = path.join(rootDir('user'), name);
+  if (await exists(dir)) throw new Error(`The destination ${dir} already exists.`);
+  await run('gh', ['repo', 'clone', slug, dir], { timeout: 120_000, maxBuffer: 1024 * 1024 });
+  await upsertProjectRoot(name, { title: slug.split('/')[1], dir, remit: `Work in ${slug}.`, match: slug, archived: '' }, { declareArrangement: false });
+  return { name, dir };
 }
 
 async function ensureRepository(dir: string, label: string, managed: boolean): Promise<void> {

@@ -67,7 +67,7 @@ test('Where it works keeps birthplace separate and offers additional workspaces 
   assert.match(form, /request\('\/api\/project-roots\/detail'\)/);
   assert.match(form, /rootRows\.data\?\.roots/);
   assert.doesNotMatch(form, /worktrees/);
-  assert.match(form, /v: row\.name, l: row\.title \|\| row\.name/, 'root choices submit the stable ID and display the optional title');
+  assert.match(form, /v: row\.name, l: row\.title \|\| row\.name/, 'root choices submit the Workspace Folder handle and display the optional title');
   assert.match(form, /label: t\('where\.born_in', 'Born in'\), options: rootRows/);
   assert.match(form, /label: t\('where\.additional', 'Additional workspaces'\), many: true, after: 'root', options: \(value\) => rootRows\(\)\.filter\(\(row\) => row\.v !== value\.root\)/);
   assert.match(form, /draft\.type === 'bare_metal_agent' \? \['provider', 'model', 'root', 'launchMode'\]/,
@@ -85,13 +85,16 @@ test('the old New Agent selector implementation and CSS are deleted', async () =
   assert.match(css, /\.na-surface :is\(\.wk-field, \.ask\)\[hidden\] \{ display: none; \}/);
 });
 
-test('New Team folds Kind and template choice into one optional first section', async () => {
+test('New Team folds Kind and Template into one optional first row', async () => {
   const [form, agents] = await Promise.all([source('new-team-form.js'), source('team-agents.js')]);
-  assert.match(form, /\['template', 'top', 'lead', 'defaults', 'where', 'kit'\]/);
-  assert.match(form, /Templates · optional/);
-  assert.match(form, /stepTemplate\.body\.append\(kindHost, trayHost\)/);
-  assert.doesNotMatch(form, /const stepKind = createStep/);
-  assert.match(form, /includeOwn: false/);
+  assert.match(form, /\['setup', 'top', 'lead', 'defaults', 'where', 'kit'\]/);
+  assert.match(form, /key: 'setup', title: t\('new_team\.kind_template', 'Kind & Template'\), onToggle/);
+  assert.match(form, /stepSetup\.body\.append\(kindHost,[\s\S]*trayHost\)/);
+  assert.match(form, /stepSetup\.setCollapsed\(!setupOpen,[\s\S]*Optional — Kind and Template/);
+  assert.match(form, /form\.append\(stepSetup\.el, stepTop\.el/);
+  assert.match(form, /className: 'ntf-kind-questions',[\s\S]*exposed: true/);
+  assert.match(form, /draft\.expanded = name \? \{ lead: true \} : \{\}/, 'choosing a template opens its populated Agents section');
+  assert.match(form, /templateTray\(offered\(\), draft\.template, \(name\) => applyTemplate\(name\)\)/, 'the tray includes its No template reset');
   assert.match(form, /Name & instructions/);
   assert.match(agents, /＋ Add Agent/);
   assert.doesNotMatch(agents, /Team lead|team_lead|\.lead/);

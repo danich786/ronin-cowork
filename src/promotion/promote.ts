@@ -4,6 +4,7 @@ import { healthCheck, notifyTeam, restartService, serviceStartedAfter } from './
 import { queuePromotionContinuation } from './continuation.js';
 import { houseSend } from '../desks/lead.js';
 import { receiptById } from '../desks/receipts.js';
+import { REPO_ROOT } from '../resources.js';
 import {
   acquirePromotionLock, advanceState, anyAdvanced, lastGoodPromotion, listReceipts, newReceipt, newReceiptId, now, readReceipt, releasePromotionLock, writeReceipt, PROMOTION_LEDGER_DIR,
   type HealthResult, type PromotionReceipt, type RefAdvance, type RepoCandidate,
@@ -21,10 +22,20 @@ export interface Effects {
   beforeAdvance?: (repo: string, index: number) => Promise<void>;
 }
 
+/** Restart and health belong to the Cowork operator, not whichever repository changed. */
+export function promotionOperatorDir(_changedRepoDir?: string): string {
+  return REPO_ROOT;
+}
+
 export const realEffects: Effects = {
   restart: restartService,
-  health: (dir) => healthCheck({ dir }),
-  notify: notifyTeam,
+  // The live operator is always Ronin Cowork, even when a promotion changes only
+  // Services (or another registered repository). A deferred continuation keeps only
+  // changed repositories in its receipt, so deriving health/notification from the
+  // first changed repo makes a Services-only run read the wrong .env and probe the
+  // fallback port.
+  health: (dir) => healthCheck({ dir: promotionOperatorDir(dir) }),
+  notify: (dir, team, text) => notifyTeam(promotionOperatorDir(dir), team, text),
   tell: houseSend,
   handInsFor: ledgerHandIns,
 };

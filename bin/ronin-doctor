@@ -337,7 +337,7 @@ ver="$([ "$HEALTH_UP" = 1 ] && curl -fsS -m 4 "${URL}api/version" 2>/dev/null ||
 op_commit="$(printf '%s' "$ver" | sed -n 's/.*"commit":"\([^"]*\)".*/\1/p')"
 op_release="$(printf '%s' "$ver" | sed -n 's/.*"release":"\([^"]*\)".*/\1/p')"
 # A RELEASE INSTALL compares release strings — the whole point of the artifact
-# (docs/release.md). The operator answers the release it started from; this tree's
+# (docs/development/release.md). The operator answers the release it started from; this tree's
 # VERSION file says what is unpacked here. Equal = current. Different = an update was
 # unpacked or swapped since the operator started, and a restart carries it.
 if [ -n "$op_release" ]; then
@@ -479,7 +479,7 @@ if [ -z "$st_dir" ]; then
 elif grep -qE '^[[:space:]]*(\(\?[a-z]+\))?/?\.git/?[[:space:]]*$' "$st_dir/.stignore" 2>/dev/null; then
   ok "inside a Syncthing share ($st_dir) with .git ignored — the checkout is the box's alone"
 else
-  find_ "the repository is inside a Syncthing share ($st_dir) and .git is NOT in its .stignore — two peers writing .git corrupts it and no managed desk can be opened here; add a '.git' line to $st_dir/.stignore on every machine (WORKTREES.md §0, ronin_sops/syncthing.md)"
+  find_ "the repository is inside a Syncthing share ($st_dir) and .git is NOT in its .stignore — two peers writing .git corrupts it and no managed desk can be opened here; add a '.git' line to $st_dir/.stignore on every machine (WORKTREES.md §0, docs/operating/syncthing.md)"
 fi
 
 # The guards and Ronin's tools on PATH (setup.sh appends the block; a shell must have
@@ -644,7 +644,7 @@ machine_kernel_log_readable; case $? in
   # needs. Case 2 below — no kernel log interface at all, which is strictly worse and
   # cannot be fixed — was already a note; grading the fixable case harder than the
   # permanent one was backwards. The remedy stays in the text for anyone who wants it.
-  *) note "the kernel log is not readable, so after something is killed nothing here can say what or when — only that it vanished. Optional, and Ronin needs none of it: 'sudo $(machine_kernel_log_action)' then log out and back in buys that history, at the cost of letting anything running as this user read system logs. ronin_sops/remote_machine_health.md § what killed it" ;;
+  *) note "the kernel log is not readable, so after something is killed nothing here can say what or when — only that it vanished. Optional, and Ronin needs none of it: 'sudo $(machine_kernel_log_action)' then log out and back in buys that history, at the cost of letting anything running as this user read system logs. docs/operating/remote-machine-health.md § what killed it" ;;
 esac
 
 machine_has_swap; case $? in
@@ -658,11 +658,11 @@ machine_has_swap; case $? in
       # The remedy is the LINE, the same one setup.sh offers, whenever this box can take a
       # swapfile (machine_swap_offerable: ext4/xfs root, room for it, nothing at /swapfile);
       # linger's finding prints its command and swap's pointed at a document (issue #74).
-      # Where the file is not a sane offer the SOP says what is, and why.
+      # Where the file is not a sane offer the Behavior says what is, and why.
       if machine_swap_offerable; then
-        find_ "NO SWAP on this box (${ram_gb:-?} GB RAM) — when memory fills the kernel kills a process rather than slowing down, and it chooses which. remedy: sudo bash -c '$(machine_swap_action)'  (why: ronin_sops/remote_machine_health.md § swap)"
+        find_ "NO SWAP on this box (${ram_gb:-?} GB RAM) — when memory fills the kernel kills a process rather than slowing down, and it chooses which. remedy: sudo bash -c '$(machine_swap_action)'  (why: docs/operating/remote-machine-health.md § swap)"
       else
-        find_ "NO SWAP on this box (${ram_gb:-?} GB RAM) — when memory fills the kernel kills a process rather than slowing down, and it chooses which. remedy: ronin_sops/remote_machine_health.md § swap"
+        find_ "NO SWAP on this box (${ram_gb:-?} GB RAM) — when memory fills the kernel kills a process rather than slowing down, and it chooses which. remedy: docs/operating/remote-machine-health.md § swap"
       fi
     fi ;;
 esac

@@ -1,1 +1,1 @@
-../../docs/RONIN_UTILITY.md
+../../docs/architecture/RONIN_UTILITY.md

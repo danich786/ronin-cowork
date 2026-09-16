@@ -27,7 +27,7 @@ import { fileURLToPath } from 'node:url';
 const exec = promisify(execFile);
 
 // A SIBLING CHECKOUT, RESOLVED — never one machine's absolute path. This defaulted to
-// `/home/glen3/dohyo/ronin-shiwake`, and `tests/` ships in the tarball (docs/release.md:
+// `/home/glen3/dohyo/ronin-shiwake`, and `tests/` ships in the tarball (docs/development/release.md:
 // an install can run its own byoin_checks), so every install carried one person's home
 // directory and skipped here forever without anyone being able to act on the reason.
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -296,6 +296,8 @@ test('THE TOMODACHI LOOP: the real sender delivers a dropped packet and keeps th
   async (t) => {
     if (!available) return t.skip(unavailable);
 
+    const { noteService } = await import('../../src/sockets.js');
+    noteService('counting');
     const { sendDuePackets, listReceipts } = await import('../../src/activation/tomodachi.js');
 
     // Nothing dropped yet: an empty outbox is the normal state between weeks.

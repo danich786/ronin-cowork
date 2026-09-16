@@ -46,7 +46,7 @@ export class Tile {
     this.output = S.streamOff ? 'locked' : (S.output || (S.locked ? 'locked' : 'terminal_mirror'));
     this.locked = this.output === 'locked';
 
-    // The header — the session name, the dials, the chip, the buttons. Construction only;
+    // The header — the session name, readings, and buttons. Construction only;
     // every callback in it lands back here.
     // Every control the table declared, under the name the table gave it. Held as
     // references rather than re-queried: on touch these nodes are RELOCATED into the app
@@ -160,7 +160,7 @@ export class Tile {
     if (!this.session) return;
     const session = this.session;
     const current = S.sessions.find((row) => row.name === session)?.title || readableSession(session);
-    const wanted = window.prompt(t('head.rename_prompt', 'Edit Agent title'), current);
+    const wanted = window.prompt(t('head.rename_prompt', 'Edit Agent title\n\nAgent ID: {id}', { id: session }), current);
     if (wanted == null || wanted.trim() === current) return;
     try {
       await setSessionTitle(session, wanted.trim());
@@ -217,7 +217,7 @@ export class Tile {
     this.tegami = r.ok ? r.data : null;
     // changes. Measured without it: switch a tile from a session with docs to one with none
     // and 📄 stayed lit, claiming the previous session's docs until the roster poll redrew.
-    // `syncTileHead`, not `syncHeader` — the reading pass, without re-fetching the dial.
+    // `syncTileHead`, not `syncHeader` — the reading pass without another server fetch.
     syncTileHead(this);
     if (this.ladderOpen) this.drawLadder();
     if (!this.tegami) this.closeLadder();
@@ -264,39 +264,13 @@ export class Tile {
     if (now) now.scrollIntoView({ block: 'center' });
   }
 
-  /** Point the dial at the session's current @ronin-control (truth lives on tmux). */
-  async refreshControl(announce = false) {
-    const session = this.session;
-    if (!session) return this.dial.set('write');
-    const r = await request('/api/sessions/' + encodeURIComponent(session) + '/control', { cache: 'no-store' });
-    if (r.ok && this.session === session) this.dial.set(r.data.control || 'write', announce);
-  }
-
-  /** Dial tapped: set the new position on the server, then re-read to reflect truth. */
-  async pickControl(v) {
-    const session = this.session;
-    if (!session) return;
-    const r = await request('/api/sessions/' + encodeURIComponent(session) + '/control', {
-      method: 'POST',
-      json: { control: v },
-    });
-    // The toast, not an alert: a browser alert over a live terminal steals the
-    // keyboard, and the dial's own re-read below already shows the true position.
-    if (!r.ok) toast(`could not set control — ${r.message}`, false);
-    this.refreshControl(true);
-  }
-
-  openNote() {
-    if (S.notePanel) S.notePanel.open(this.session);
-  }
-
   /**
    * THE HEADER'S STATE, in one pass.
    *
    * Every control on the header that depends on a session is decided HERE, together.
    * They were decided in four places before, which is how three of them ended up never
-   * being decided at all: 🏷 📝 the mark and the dial went inert with no session while ⛩
-   * 🗑 stayed lit, though a letter and a kill are every bit as
+   * being decided at all: some controls went inert with no session while ⛩ and Close
+   * stayed lit, though a letter and a kill are every bit as
    * meaningless without one. The rule is now visible in one list instead of implied by
    * which functions happened to exist.
    *
@@ -305,7 +279,6 @@ export class Tile {
    * the reason unsaid.
    */
   syncHeader() {
-    this.refreshControl(); // async: the dial's position is the server's truth
     syncTileHead(this);
   }
 

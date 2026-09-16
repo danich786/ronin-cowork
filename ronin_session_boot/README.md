@@ -37,13 +37,12 @@ README beside a session's letter is the only document the newborn is asked to op
 
 ## What ships
 
-Three universal sources and two generated fragments — the tool overview and the rendered
-glossary — compiled in reading order, the contracts first, the glossary last, and held to a
+Two universal background sources and two generated fragments — the tool overview and the
+rendered glossary — compiled in reading order and held to a
 one-read budget by
 `tests/session-boot.test.ts` (a 121 KB packet was born on 2026-09-03 when a UI string
 table was shelved as vocabulary; nothing objected, because no test read the real shelf):
 
-- `all/README.md` — the map of where everything is, and what is on each shelf.
 - `all/RONIN_UTILITY.md` — where everything is in the coworkspace and how the owner drives it.
 - `all/KOTOBA_GLOSSARY.md` — the house names and the plain word to say for each, rendered at
   birth with the owner's desk words.
@@ -52,7 +51,8 @@ table was shelved as vocabulary; nothing objected, because no test read the real
   exist on this box, `--help`, and each full document's path — and includes it in the
   compiled README.
 
-Abilities are selected by installation and behaviour definitions. Repository test protocols stay in repository
+Cowork-agent working guidance is applied from the Behavior floor. Other guidance is selected
+by conditional and selected Behavior definitions. Repository test protocols stay in repository
 developer instructions and are never ordinary user birth reading.
 
-See `docs/session-boot.md`.
+See `docs/architecture/session-boot.md`.

@@ -138,6 +138,11 @@ export interface DeskNotice {
   desk: string;
   session: string;
   line_sha: string;
+  source_ref?: string;
+  source_dirty?: boolean;
+  before_sha?: string;
+  after_sha?: string;
+  reason?: string;
   by: string;
   files: string[];
 }

@@ -18,7 +18,7 @@ process.env.RONIN_TOOLS_DIR = path.join(temp, 'own-tools');
 
 const routine = (name: string, enabled: boolean, tools: string[]): ResolvedContribution => ({
   name, label: name, blurb: '', origin: 'stock', shadowed: false,
-  reading: [], sops: [], tools, mcp: [], parts: [], requires: [],
+  reading: [], tools, mcp: [], parts: [], requires: [],
   enabled, stated_by: 'campaign', required_by: [],
 } satisfies ContributionRow & ResolvedContribution);
 
@@ -58,7 +58,7 @@ test('missing enabled tools are visible and do not refuse projection', async () 
  * caller broken when it was looked up by name). So each caller is run through its
  * projected symlink with only `RONIN_URL` set, and must arrive at the operator it names. */
 const REACH_FAILURES = /Cannot find module|command not found|No such file or directory|NO-REPO/;
-const URL_CALLERS = ['session_archive', 'session_end', 'session_restore', 'session_check', 'session_create', 'session_set', 'team-lead', 'edges', 'mika'];
+const URL_CALLERS = ['session_archive', 'session_end', 'session_restore', 'session_check', 'session_create', 'session_set', 'team', 'edges', 'mika'];
 test('projected ronin_bin tools resolve the symlink and reach the repository and the operator', async (t) => {
   const tools = [...new Set(['worktree-desk', 'edges', 'work-record', 'ronin-host', 'ronin-url', ...URL_CALLERS])];
   const projected = await projectRoutineTools('resolve', [routine('ronin_base', true, tools)]);
@@ -105,7 +105,7 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
     }
   };
   const helpTools = [
-    'work-record', 'worktree-desk', 'edges', 'team-lead',
+    'work-record', 'worktree-desk', 'edges', 'team',
     'session_check', 'session_create', 'session_set', 'session_archive', 'session_restore',
     'session_end',
   ];
@@ -141,7 +141,9 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
     assert.match(deskHelp, new RegExp(`worktree-desk ${task}`), `desk help includes ${task}`);
   }
   assert.match(deskHelp, /--source dev\|team/);
-  assert.match(deskHelp, /only destructive form/);
+  assert.match(deskHelp, /only\s+destructive form/);
+  assert.match(deskHelp, /refuses an occupied\s+desk without changing anything/);
+  assert.match(deskHelp, /Hard Delete action/);
   assert.match(deskHelp, /None performs Git push/);
 
   const teamHelp = [
@@ -149,7 +151,7 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
     (await run(['session_check', '--help'])).out,
     (await run(['session_create', '--help'])).out,
     (await run(['session_set', '--help'])).out,
-    (await run(['team-lead', '--help'])).out,
+    (await run(['team', '--help'])).out,
   ].join('\n');
   assert.match(teamHelp, /creates? an Agent/i);
   assert.match(teamHelp, /Create a Team/i);
@@ -157,6 +159,8 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
   assert.match(teamHelp, /move an Agent/i);
   assert.match(teamHelp, /remove the old Team on that Team's page/i);
   assert.match(teamHelp, /sets? or changes? that Team's lead/i);
+  assert.match(teamHelp, /--root <workspace-folder-handle>/);
+  assert.doesNotMatch(teamHelp, /--root <path>/);
   for (const args of [['edges', 'wipeboard'], ['edges', 'send'], ['work-record', 'read', '--session', 'nobody'], ['work-record', 'update_record', '--session', 'nobody', '--at', '1'], ['ronin-host', 'inspect'], ['ronin-host', 'account']]) {
     const r = await run(args);
     assert.doesNotMatch(r.out, REACH_FAILURES, `${args.join(' ')}: ${r.out}`);
@@ -170,7 +174,7 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
     [['session_check', 'reach'], '/api/sessions', {}],
     [['session_create', 'reach'], '/api/session', {}],
     [['session_set', 'reach', '--root', 'lab'], '/api/sessions', {}],
-    [['team-lead', 'roster', 'write', 'reach'], '/api/team', {}],
+    [['team', 'roster', 'write', 'reach'], '/api/team', {}],
     // `mika` asks tmux first; a live Mika on the box must not turn this knock into a send.
     // (An existing empty dir: tmux falls back to /tmp when TMUX_TMPDIR is missing.)
     [['mika'], '/api/mika', { TMUX_TMPDIR: temp }],

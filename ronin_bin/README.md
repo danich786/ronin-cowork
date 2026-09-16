@@ -5,9 +5,8 @@ decided at birth (`src/spawn.ts`, `src/routine-tools.ts`), never by this directo
 whole:
 
 - **every Cowork Agent** — `edges`, `session_create`, `session_check`, `session_set`,
-  `session_end`, `session_archive`, `session_restore`, `work-record`, and `ronin-url`, the
-  operator address the others source;
-- **the designated Team lead** — the additional conditional `team-lead` surface;
+  `session_end`, `session_archive`, `session_restore`, `work-record`, `team`, and
+  `ronin-url`, the operator address the others source;
 - **with a managed desk** — `worktree-desk`;
 - **with the Ronin Host behaviour** — `ronin-host` and its dynamically available `--help`;
 - **with the GBrain behaviour** — boundary teaching only; no callable GBrain tool yet;
@@ -35,21 +34,21 @@ and typed by nobody (`ronin-gate` from ExecStartPost, `rireki/` the tmux applet,
 where it is: it is PATH interception, so you type `tmux` and the guard answers.
 
 One shelf per audience: **ronin_catalogs** (what you can do) · **ronin_library** (the
-reading) · **ronin_sops** (how this house works) · **ronin_bin** (what you run).
+reading) · **ronin_catalogs/behaviours** (how this house works) · **ronin_bin** (what you run).
 
 ## Command help
 
 Selected capability documents name the available task tool. `<tool> --help` gives its
 current usage before execution; help is local, side-effect-free, and exits zero.
 
-**Two files here are not tools.** `tool-path.sh` resolves a tool's real file behind its
+**Two sourced files here are not tools.** `tool-path.sh` resolves a tool's real file behind its
 projected symlink (`SELF`, hence `TOOL_DIR`) and carries `ronin_session_me`, the one
 resolver of which session a tool is acting for (the pane, then `$TMUX`, then the session's
 own command directory the tool was reached through; never the focused tile), and
 `ronin-http.sh` is sourced by every tool that talks to the operator: `ronin_connect`
 resolves the door through the sibling `ronin-url` — the operator's Unix socket, or
 `RONIN_URL` — and sets `url` and `RONIN_CURL` for the request
-(`docs/operator-connection.md`). A tool never carries an address of its own.
+(`docs/architecture/operator-connection.md`). A tool never carries an address of its own.
 
 ## Adding a tool
 

@@ -102,7 +102,7 @@ if (await exists(catalogsDir)) {
   }
   await checkDefinitionsSurface(catalogsDir);
 }
-await checkShadowStore('sops', 'ronin_sops');
+await checkShadowStore('ways', 'ronin_catalogs/behaviours');
 await checkShadowStore('library', 'ronin_library');
 await checkShadowStore('session_boot', 'ronin_session_boot');
 

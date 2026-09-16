@@ -1,3 +1,4 @@
+import { listServices } from '../sockets.js';
 import { onClock } from '../jikan.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -20,12 +21,13 @@ export interface SendReport {
   sent: number;
   alreadyStored: number;
   failed: number;
-  skipped: 'no-entitlement' | 'nothing-due' | null;
+  skipped: 'disabled' | 'no-entitlement' | 'nothing-due' | null;
 }
 
 export async function sendDuePackets(): Promise<SendReport> {
   const report: SendReport = { attempted: 0, sent: 0, alreadyStored: 0, failed: 0, skipped: null };
 
+  if (!listServices().includes('counting')) { report.skipped = 'disabled'; return report; }
   const token = await getEntitlementToken();
   if (!token) {
     report.skipped = 'no-entitlement';

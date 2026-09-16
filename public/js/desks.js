@@ -13,7 +13,7 @@
  * from memory. The server memoises too; between the two, N tiles cost one git pass.
  *
  * The roll-up (`2 desks · 1 pending · 3 private`) keeps paths and SHAs OUT of the row
- * (docs/worktrees.md "Surfaces that change": detail behind inspection). The tooltip carries
+ * (docs/architecture/worktrees.md "Surfaces that change": detail behind inspection). The tooltip carries
  * one line per desk: repo, branch, line, ahead/behind, dirt, pending, parked, blocked.
  */
 import { request } from './request.js';

@@ -12,13 +12,13 @@ import type { Origin } from './resources.js';
  * definition — `- **key:** value` lines under its title — then a `## Tools` table naming
  * the actual tools with their authority, whether they are taught at birth, and their help
  * route, then the full teaching. Nothing here knows a bundle by name: the folder is the
- * catalog, so Ronin Host, Ronin Services, gbrain, Trello, Perplexity and any later add-on
- * are one more file each, selected for teaching by their own `requires:` line.
+ * catalog; core and conditional Agent capabilities use the same format and select their
+ * teaching through their own `requires:` line.
  *
- * A bundle is a document grouping, not an executable (lead ruling, 2026-09-13). It lists
- * the actual tools that answer its question — several, one, or none — and a tool may be
- * surfaced by more than one bundle without being renamed to either. A bundle with no tool
- * is knowledge and teaching: still selected, still on the newborn's shelf. Selection is a
+ * A capability is a document grouping, not an executable. It lists one or more actual
+ * tools that answer its question, and a tool may be surfaced by more than one capability
+ * without being renamed to either. Tool-free installation facts, working guidance, and
+ * system explanation belong to their own shelves. Selection is a
  * predicate over launch facts and controls knowledge only. Every installed Cowork tool is
  * callable by every Cowork Agent; feature and integration tools are projected only when
  * their document is selected. The birth lesson names only selected knowledge.
@@ -234,9 +234,7 @@ export const capabilityTools = (rows: readonly ResolvedCapability[]): string[] =
 export const CAPABILITIES_READING = 'CAPABILITIES.md';
 
 const LESSON =
-  'Your tools are grouped by the work you are doing. This page was built from the tool documents ' +
-  'available to this session. Each entry gives you its priority tools and points to the full document. ' +
-  'Run any tool with `--help` to see its operations, and any operation with `--help` for exact usage.';
+  'Built from this session’s capability documents. Each entry gives priority tools, help, and the full teaching.';
 
 const code = (text: string): string => `\`${text}\``;
 

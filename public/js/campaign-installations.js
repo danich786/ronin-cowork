@@ -8,9 +8,9 @@ import { ask } from './ask.js';
 import { createStoneWorkSurface } from './stone-work-surface.js';
 import { createServicesSurface, createGbrainSurface } from './setup-surfaces.js';
 import { completeInstallationMap as completeMap } from './installation-map.js';
+import { createStatusMarker } from './status-marker.js';
 
 const INSTALLATION_ORDER = ['ronin_services', 'gbrain', 'trello', 'perplexity'];
-
 const el = (tag, cls = '', text = null) => {
   const out = document.createElement(tag);
   if (cls) out.className = cls;
@@ -41,6 +41,7 @@ export function createInstallationsSurface(campaign, context = {}) {
     ...installation,
     id: installation.name,
     label: installation.label || installation.name,
+    marker: createStatusMarker(installation.maturity),
     state: stateWord(installation),
     attrs: gated(installation.name)
       ? { 'data-gated': 'true', title: t('campaign_view.services_required', 'Ronin Services required') }
@@ -70,6 +71,7 @@ export function createInstallationsSurface(campaign, context = {}) {
       values = installations;
       refreshStoneMarks();
       context.onInstallationChange?.(installation.name, on);
+      context.onInstallationsState?.({ ...values });
     }
     return result;
   };
@@ -174,6 +176,7 @@ export function createInstallationsSurface(campaign, context = {}) {
     catalog = INSTALLATION_ORDER.map((name) => rows.find((row) => row.name === name)).filter(Boolean);
     installed = installedResult.ok ? installedResult.data : null;
     values = completeMap(catalog, campaign()?.config?.installations);
+    context.onInstallationsState?.({ ...values });
     defaultBehaviours = Array.isArray(campaign()?.config?.defaults?.behaviours) ? [...campaign().config.defaults.behaviours] : [];
     stoneSurface.setItems(catalog.map(itemFor));
     stoneSurface.select('ronin_services');

@@ -26,6 +26,7 @@ import { sessionKey } from '../session-dir.js';
 import { listTeamRosters } from '../team-rosters.js';
 import { readWipeboardSettings } from '../machine-state.js';
 import { count } from '../counts.js';
+import { listDeskRecords } from '../desks/registry.js';
 
 async function memberKeys(
   team: string | null,
@@ -237,6 +238,9 @@ export async function announceTeamChanges(
   after: string[],
 ): Promise<Record<string, string>> {
   const results: Record<string, string> = {};
+  const desks = (await listDeskRecords()).filter((desk) =>
+    desk.state === 'open' && (desk.owners?.length ? desk.owners : [desk.session]).includes(session));
+  const deskIds = (rows: typeof desks): string[] => rows.map((desk) => `${desk.repo}:${desk.branch}`);
   const moves: [string[], boolean][] = [
     [after.filter((t) => !before.includes(t)), true],
     [before.filter((t) => !after.includes(t)), false],
@@ -251,8 +255,8 @@ export async function announceTeamChanges(
       }
       const file = boardPath(t);
       const notice = join
-        ? teamJoinNotice(t, file, (await boardMembers(t)).map((m) => m.name))
-        : teamLeaveNotice(t, file);
+        ? teamJoinNotice(t, file, (await boardMembers(t)).map((m) => m.name), deskIds(desks.filter((desk) => desk.team !== t)))
+        : teamLeaveNotice(t, file, deskIds(desks.filter((desk) => desk.team === t)));
       const q = await enqueueMessage(session, notice, 'wipeboard_notice');
       const retained = await attemptMessage(q.id, 'safe');
       results[t] = retained ? `queued — ${retained.reason}` : 'notified';

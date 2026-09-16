@@ -2,6 +2,7 @@
 import { WorkspaceKit } from './workspace-kit.js';
 import { buildProjectRoots } from './projectroots.js';
 import { t } from './lexicon.js';
+import { createGithubWorkspaceSetup } from './github-workspace-setup.js';
 
 const el = (tag, cls = '') => {
   const out = document.createElement(tag);
@@ -10,15 +11,17 @@ const el = (tag, cls = '') => {
 };
 
 /**
- * Setup and Campaign show the same collection, but ask different questions of it.
- * Setup presents keep-or-ignore stones. Campaign keeps the established scoped list and
- * the default for future repositories. Those are options on one surface, not two copies.
+ * Setup and Settings show the same collection through the same keep-or-ignore stones.
+ * Campaign scope remains an input to that one surface, not a second presentation.
  */
 export function createWorkspaceFoldersSurface({
   campaignId,
   connected,
   presentation = '',
   onShow = () => {},
+  environment = null,
+  workspace = 'workspace2',
+  onboardingExtras = false,
 } = {}) {
   const surface = WorkspaceKit.primitives.createSurface({
     label: t('cowork.tab_roots', 'Workspace folders'),
@@ -29,18 +32,34 @@ export function createWorkspaceFoldersSurface({
     : el('div', 'desk-pane desk-proj show');
   if (rootHost !== surface.content) surface.content.append(rootHost);
 
-  const room = buildProjectRoots(
+  let room = null;
+  const onboarding = presentation === 'stones' && onboardingExtras ? createGithubWorkspaceSetup({
+    environment,
+    workspace,
+    onStateChange: () => room?.updateExtraItems(),
+    onAuthenticated: () => {
+      environment?.onGithubAuthenticated?.();
+      room?.select('\0github-clone', { focus: true });
+    },
+    onCloned: async (root) => {
+      await room?.refresh();
+      if (root?.name) room?.select(root.name, { focus: true });
+    },
+  }) : null;
+  room = buildProjectRoots(
     rootHost,
     () => connected?.(rootHost) ?? rootHost.isConnected,
     () => campaignId?.() || '',
-    presentation ? { presentation } : {},
+    presentation ? { presentation, extraItems: onboarding?.items || [] } : {},
   );
 
   return {
     el: surface.el,
     show: () => {
+      void onboarding?.show();
       room.enter();
       onShow();
     },
+    destroy: () => onboarding?.destroy(),
   };
 }

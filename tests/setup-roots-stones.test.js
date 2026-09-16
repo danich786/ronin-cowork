@@ -4,17 +4,50 @@ import { readFile } from 'node:fs/promises';
 
 const source = async (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
-test('Setup opts into roots stones while Campaign keeps the arrangement-default-free root surface', async () => {
+test('Setup and Settings use the same Workspace Folders stone presentation', async () => {
   const [setup, campaign, shared] = await Promise.all([
     source('public/js/setup-surfaces.js'),
     source('public/js/campaign-view.js'),
     source('public/js/workspace-folders-surface.js'),
   ]);
   assert.match(setup, /createWorkspaceFoldersSurface\(\{[\s\S]*presentation: 'stones'/);
-  assert.doesNotMatch(campaign, /presentation: 'stones'/);
-  assert.match(campaign, /createWorkspaceFoldersSurface\(\{/);
+  assert.match(campaign, /createWorkspaceFoldersSurface\(\{[\s\S]*presentation: 'stones'[\s\S]*environment: e,[\s\S]*workspace,/);
   assert.doesNotMatch(campaign, /worktreesDefault/);
-  assert.match(shared, /buildProjectRoots\([\s\S]*presentation \? \{ presentation \} : \{\}/);
+  assert.match(shared, /presentation === 'stones' && onboardingExtras/);
+  assert.match(shared, /presentation \? \{ presentation, extraItems: onboarding\?\.items \|\| \[\] \} : \{\}/);
+  assert.match(setup, /onboardingExtras: context\.environment\?\.setup2OnboardingExtras === true/);
+  assert.match(await source('public/js/setup2-view.js'), /setup2OnboardingExtras: true/);
+  assert.doesNotMatch(campaign, /onboardingExtras/, 'shared Settings does not opt into onboarding-only GitHub stones');
+});
+
+test('Setup 2 GitHub lifecycle uses only a published session and hands success to Clone', async () => {
+  const [github, kit] = await Promise.all([
+    source('public/js/github-workspace-setup.js'),
+    source('public/workspace-kit.css'),
+  ]);
+  assert.match(github, /import \{ WorkspaceKit \} from '\.\/workspace-kit\.js'/);
+  assert.match(github, /const connect = action\([^\n]+, 'primary'\)/);
+  assert.match(github, /const remove = action\([^\n]+, 'danger'\)/);
+  assert.match(github, /const cloneButton = action\([^\n]+, 'primary'\)/);
+  assert.match(kit, /\.wk-action:hover:not\(:disabled\) \{[^}]*border-color: var\(--kaki\);[^}]*background: var\(--accent-soft\)/, 'ordinary actions visibly respond to a pointer');
+  assert.match(kit, /\.wk-action\[data-kind='primary'\]:hover:not\(:disabled\) \{[^}]*background: var\(--kaki-lift\)/, 'primary actions lift on hover');
+  assert.match(github, /attachment\?\.type !== 'session' \|\| !attachment\.key/);
+  assert.match(github, /mountAttachment\(result\.data\.attachment\)/, 're-entering resumes the published temporary session');
+  assert.match(github, /if \(connecting \|\| mounted \|\| destroyed\) return/);
+  assert.match(github, /if \(checking \|\| destroyed\) return/);
+  assert.match(github, /stopWatch\(\); unmount\(\)/);
+  assert.match(github, /onAuthenticated\?\.\(\)/);
+  assert.doesNotMatch(github, /roots\.github_check|Check connection/);
+  assert.match(github, /roots\.github_remove_auth', 'Remove authentication'/);
+  assert.match(github, /remove\.hidden = !authenticated \|\| !installed/);
+  assert.match(github, /request\('\/api\/setup\/github\/logout', \{ method: 'POST' \}\)/);
+  const finish = github.slice(github.indexOf('const finishAuthentication'), github.indexOf('const poll'));
+  assert.doesNotMatch(finish, /\/clone|onCloned/, 'authentication never starts a clone');
+  assert.match(github, /if \(result\.ok\) await onCloned\?\.\(result\.data\?\.workspace\)/);
+  const shared = await source('public/js/workspace-folders-surface.js');
+  assert.match(shared, /onAuthenticated: \(\) => \{[\s\S]*environment\?\.onGithubAuthenticated\?\.\(\);[\s\S]*room\?\.select\('\\0github-clone', \{ focus: true \}\)/);
+  assert.match(shared, /await room\?\.refresh\(\);[\s\S]*room\?\.select\(root\.name, \{ focus: true \}\)/);
+  assert.match(shared, /destroy: \(\) => onboarding\?\.destroy\(\)/);
 });
 
 test('Setup mounts the roots stones on the surface content so the shared insets apply', async () => {
@@ -31,7 +64,7 @@ test('roots adapt the real project-root detail and Add form to the shared stone 
   assert.match(roots, /if \(current\) host\.append\(detail\(current\)\)/);
   assert.match(roots, /stoneSurface\.refreshDetail\(\)/);
   assert.match(roots, /const openAdd = stones \? null : createAction/);
-  assert.match(roots, /stoneSurface\.mount\(root, \{ before: \[intro, messages\] \}\)/);
+  assert.match(roots, /stoneSurface\.mount\(root, \{ before: \[\.\.\.\(options\.before \|\| \[\]\), intro, messages\] \}\)/);
   assert.match(roots, /intro\.className = 'pr-intro'[\s\S]*?t\('roots\.intro_line', 'A workspace is a folder Ronin keeps for Teams and Agents\.'\)/, 'one line, not a paragraph');
   assert.match(roots, /more\.className = 'pr-intro-more'[\s\S]*?t\('roots\.learn_more', 'Learn more'\)[\s\S]*?more\.setAttribute\('aria-expanded', 'false'\)/, 'a Learn more that opens on click');
   assert.match(roots, /points\.hidden = true;[\s\S]*?t\('roots\.intro_repo'[\s\S]*?t\('roots\.intro_born'[\s\S]*?t\('roots\.intro_accumulates'/, 'three short points, closed at first');
@@ -56,8 +89,8 @@ test('the selected folder is one page: a head line with every action, then Summa
   assert.match(detail, /if \(editing === r\.name\) \{\s*const f = form\(r\);[\s\S]*?d\.append\(f\);\s*return d;\s*\}/, 'Edit swaps the facts for the real form under the same head');
   assert.match(detail, /go\.append\(edit, shelve, drop\)/, 'Edit, Archive and Exclude share the head line');
   assert.match(detail, /go\.append\(f\.querySelector\('\.pr-frow'\)\)/, 'Save and Cancel stand where Edit stood');
-  assert.match(detail, /make\('h3', 'pr-detail-name', r\.title \|\| r\.name\)/, 'the head uses the display title with the stable ID as fallback');
-  assert.match(detail, /t\('roots\.fact_id', 'ID'\), r\.name/, 'the detail keeps the stable ID visible');
+  assert.match(detail, /make\('h3', 'pr-detail-name', r\.title \|\| r\.name\)/, 'the head uses the display title with the Workspace Folder handle as fallback');
+  assert.match(detail, /t\('roots\.fact_handle', 'Workspace Folder handle'\), r\.name/, 'the detail keeps the Workspace Folder handle visible');
   const order = ["t('roots.edit_folder', 'Edit')", "t('roots.summary', 'Summary')", "t('roots.section_folder', 'Folder')", "t('roots.section_repository', 'Repository')"]
     .map((needle) => detail.indexOf(needle));
   assert.ok(order.every((at) => at >= 0), 'every section is present');
@@ -86,7 +119,7 @@ test('the Setup form keeps the real fields and reads as sections, while Campaign
   assert.match(roots, /t\('roots\.add_head', 'Add a workspace'\)/);
   assert.match(roots, /words: \{[\s\S]*?chosen: t\('roots\.picker_path', 'Path'\),[\s\S]*?note: '',[\s\S]*?take: t\('roots\.picker_keep', 'Keep'\)/, 'Setup says the picker in keep-or-ignore terms, never "choose" or "where the Agent will start"');
   assert.doesNotMatch(roots.slice(roots.indexOf('function addCard')), /roots\.add_hint/, 'the add page does not say choose');
-  assert.match(roots, /!\(stones && stoneSurface\.selected\(\)\)/, 'an open Setup detail is not repainted by the poll');
+  assert.doesNotMatch(roots, /setInterval|poll/, 'the roots surface has no background repaint loop');
 });
 
 test('roots carry no parallel stone DOM or CSS presentation and the detail rhythm uses kaki rules', async () => {
@@ -101,7 +134,8 @@ test('roots carry no parallel stone DOM or CSS presentation and the detail rhyth
   assert.doesNotMatch(css, /\.setup-roots-stones \.sws-(rail|grid|detail|host)\b/, 'no consumer override of the shared rail, grid, or detail geometry');
   assert.match(css, /\.setup-roots-stones \.sws-stone\.archived \.sws-state/);
   assert.doesNotMatch(css, /\.setup-roots-stones \.sws-stone\.archived \.sws-state\s*\{[^}]*?(?:border|border-radius|background|padding):/);
-  assert.match(css, /\.setup-roots-stones \.setup-roots-add-stone[\s\S]*?border-color: var\(--kaki\)[\s\S]*?border-style: dashed[\s\S]*?background: color-mix\(in srgb, var\(--kaki-tint\)/);
+  assert.match(css, /\.setup-roots-stones \.setup-roots-add-stone \{[^}]*border-style: dashed;[^}]*background: var\(--panel\);[^}]*color: var\(--fg\)/, 'Add is neutral until selected');
+  assert.match(css, /\.setup-roots-stones \.sws-stone\[aria-pressed='true'\] \{[^}]*border-color: var\(--kaki\);[^}]*background: var\(--accent-soft\);[^}]*color: var\(--fg-strong\)/, 'only the selected stone receives the highlight');
   assert.match(css, /\.pr-detail-head \{[^}]*border-bottom: var\(--edge-2\) solid var\(--kaki\)/, 'one kaki rule closes the head');
   assert.match(css, /\.pr-detail-heading \{[^}]*justify-content: space-between/, 'the head line carries the name and its actions, as Presets does');
   const detailCss = css.slice(css.indexOf("/* Setup's selected folder"), css.indexOf('.cv-worktrees-default {'));
@@ -117,7 +151,7 @@ test('roots stones mount visible loading, empty, and failure output without chan
   const roots = await source('public/js/projectroots.js');
   assert.match(roots, /messages\.className = 'pr-status'/);
   assert.match(roots, /messages\.setAttribute\('role', 'status'\)/);
-  assert.match(roots, /stoneSurface\.mount\(root, \{ before: \[intro, messages\] \}\)/);
+  assert.match(roots, /stoneSurface\.mount\(root, \{ before: \[\.\.\.\(options\.before \|\| \[\]\), intro, messages\] \}\)/);
   assert.match(roots, /const output = stones \? messages : list/);
   assert.match(roots, /messages\.replaceChildren\(\)/, 'a successful render clears loading or failure output');
   assert.match(roots, /\(stones \? messages : list\)\.appendChild/, 'the zero-roots message uses the mounted status host');

@@ -12,7 +12,7 @@ title — designer, bookkeeper, health checker — is an agent; a box named like
 staff my codebase, health checks, dinner party — is a team.
 
 A template fills part of the New Agent or New Team form and stops: its answers become
-yours, and only provenance remains — it is never a live link (KOTOBA § LAUNCHER).
+yours, and only provenance remains — it is never a live link ([Vocabulary](../../KOTOBA.md#agent-composition-and-tools)).
 Picking one is the customising: everything it wrote stays editable underneath. Neither
 form is shown a template written for the other; the doors are `GET /api/templates/agents`
 and `GET /api/templates/teams`, filtered by `?kind=`.
@@ -29,7 +29,7 @@ form's, not a file here: a template that filled nothing in would collapse nothin
 | `blurb` | one line under the name |
 | `order` | tray order; unordered boxes follow, by label |
 | `kinds` | which kinds bring this box forward — `open` on the form shows every template |
-| `behaviours` | `<shelf>:<name>` book addresses laid into the tray, e.g. `sops:teams, ways:write_it_down` |
+| `behaviours` | `<shelf>:<name>` book addresses laid into the tray, e.g. `ways:teams, ways:write_it_down` |
 
 ## The agent shelf's own fields
 
@@ -71,8 +71,8 @@ always a new file, never over a shipped one (those are edited on the campaign pa
 `- **hidden:** yes` withdraws a shipped box without deleting the file.
 
 Your agent keeps these for you: templates are plain files, so "keep this recipe with
-the Dinner Party template" is something you say to a session, and it writes the SOP to
-your store, shadows the template, and adds the book itself — `docs/templates.md`.
+the Dinner Party template" is something you say to a session, and it writes the Behavior to
+your store, shadows the template, and adds the book itself — `docs/architecture/templates.md`.
 
 ## Bundles
 
@@ -80,4 +80,4 @@ A **template bundle** is a team template with copies of everything it names — 
 behaviours and their supporting books and tools — as one JSON document, for the
 template library on ronincowork.com or a library of your own. Installing one lands every
 copy in your stores (never here); `bin/ronin-bundle` packs and installs by hand, and the
-Campaign page's Templates card does it from the library. The rules are in `docs/templates.md`.
+Campaign page's Templates card does it from the library. The rules are in `docs/architecture/templates.md`.

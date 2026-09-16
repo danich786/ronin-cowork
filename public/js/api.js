@@ -11,7 +11,7 @@ import { S, tiles } from './state.js';
  * fetch, visibility/bfcache refreshes, the /events push — lands here, so "what just
  * changed the session set" is one grep instead of a hunt. It writes the fact and
  * fans the pickers; what an arrival MEANS (births, deaths, chips) stays with the
- * caller that knows. The full update-path map is docs/ui.md §Update paths.
+ * caller that knows. The full update-path map is docs/architecture/ui.md §Update paths.
  */
 export function reconcileSessions(list) {
   S.sessions = list;

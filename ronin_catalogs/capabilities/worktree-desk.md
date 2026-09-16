@@ -7,14 +7,17 @@
 
 Reach for this bundle because you hold a managed desk: a private branch and worktree leased
 to you. Status, sync, commit, and hand-in are distinct; none is Git push. Read
-`ronin_sops/worktree-root.md` before the first write.
+`ronin_catalogs/behaviours/conditional/worktree-root.md` before the first write.
+
+**Hand in** means submit committed desk work to the Team review line with
+`worktree-desk hand-in`; it does not promote or push.
 
 ## Tools
 
 | Tool | Authority | Teach | Help |
 |---|---|---|---|
 | `worktree-desk status` | read: lifecycle facts of your desks | priority | `worktree-desk --help` |
-| `worktree-desk sync` | write: merge current local `dev` into the desk | priority | `worktree-desk --help` |
+| `worktree-desk sync` | write: merge the selected committed source into your desk | priority | `worktree-desk --help` |
 | `worktree-desk hand-in` | write: admit committed work to the Team line | priority | `worktree-desk --help` |
 | `worktree-desk open` | create: a private desk | | `worktree-desk --help` |
 | `worktree-desk close` | write: remove a clean, integrated desk | | `worktree-desk --help` |
@@ -38,8 +41,11 @@ the Team line only: the lead's promotion moves the coherent Team line to `dev`, 
 publication is separate work.
 
 `close` removes only a clean desk already contained in its line and refuses while a live
-session stands in it. The desk you were born in is closed with you when you end, never by
-hand. `discard` is the one destructive form and requires the exact confirmation shown.
+Agent stands in it. The desk you were born in is closed with you when you end, never by
+hand. `discard` is the one destructive form and requires the exact confirmation shown. A
+discard refuses while any live Agent stands in the desk and reports who occupies it;
+nothing is deleted. Use the existing Hard Delete action when the intention is to remove
+the Agent and its desks together. Normal clean closure remains `session_end`.
 
 `repository-init` runs local `git init` only, in an existing Workspace Folder; it never
 creates the folder, a remote, or a hosted repository.
@@ -50,10 +56,25 @@ The table is the executable contract. All ten rows are subcommands of the single
 `repository-init` is the repository operation. No second desk or repository initializer
 is projected.
 
-Known workflow gap: `sync` reads the repository's current working line (`dev`) only. It
-does not provide an adopt-Team-line operation for ordered reconciliation of shared files.
-Until that operation exists, a lead must explicitly authorize the exact non-destructive
-Team-line merge; the Agent must not infer another ref or substitute a rebase.
+## Choose what to sync
+
+```sh
+worktree-desk sync <repo>                       # global dev (default)
+worktree-desk sync <repo> --source team         # shared Team review line
+worktree-desk sync <repo> --source lead         # Team lead's private desk
+worktree-desk sync <repo> --source <repo:branch> # a specific teammate's desk
+```
+
+The named desk must be in the same repository. If the lead choice is ambiguous, name
+one of the exact desks the tool reports. Source selection does not change custody,
+the hand-in destination, or the source desk. It merges committed work only; uncommitted
+source files stay there. This does not certify the source work as reviewed or tested.
+
+Read the acknowledgement: it names the source ref and exact SHA, the destination's
+before/after HEAD, and merged, already-contained, pending, or conflict. Pending and
+conflict leave your files untouched. Commit or preserve destination edits before retrying
+a pending sync with the same explicit source. On conflict, resolve the reported commit
+on your private desk; do not edit the source or shared Team line.
 
 After the final hand-in, `status` must say `CERTIFIED CLEAN`: no unsaved files and every
 commit on the Team line. Stay parked unless told to end.

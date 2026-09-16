@@ -21,11 +21,11 @@ Usage:
   machine-settings defaults read [--campaign <id>]
   machine-settings defaults write <field> <value> [--campaign <id>]
   machine-settings project-root list [--campaign <id>] [--all]
-  machine-settings project-root read <id> [--campaign <id>]
-  machine-settings project-root create <id> --title <title> --dir <path> [field flags]
-  machine-settings project-root write <id> <field> <value>
-  machine-settings project-root archive <id>
-  machine-settings project-root exclude <id>
+  machine-settings project-root read <workspace-folder-handle> [--campaign <id>]
+  machine-settings project-root create <workspace-folder-handle> --title <title> --dir <path> [field flags]
+  machine-settings project-root write <workspace-folder-handle> <field> <value>
+  machine-settings project-root archive <workspace-folder-handle>
+  machine-settings project-root exclude <workspace-folder-handle>
   machine-settings provider read [--campaign <id>]
   machine-settings provider write-default <provider> <model>
   machine-settings provider write-preferred <provider> <model>
@@ -209,13 +209,13 @@ print(json.dumps({"config":{"defaults":d}}))') || die 'BAD-ARG: unknown defaults
   project-root)
     sub=${1:-}; shift || true
     case "$sub" in
-      -h|--help|'') echo 'Usage: project-root list|read|create|write|archive|exclude. Writable fields: title, dir, match, remit, docs, plans, campaign_id.';;
+      -h|--help|'') echo 'Usage: project-root list|read|create|write|archive|exclude. Commands identify a Workspace Folder by its workspace-folder-handle. Writable fields: title, dir, match, remit, docs, plans, campaign_id.';;
       list) all=false; args=(); while [ "$#" -gt 0 ]; do case "$1" in --all) all=true; shift;; *) args+=("$1"); shift;; esac; done; take_campaign "${args[@]}"; resolve_campaign; path="/api/project-roots/detail?campaign_id=$CAMPAIGN"; [ "$all" = false ] || path='/api/project-roots/detail'; api GET "$path" | pretty;;
       read) need id "${1-}"; id=$1; shift; take_campaign "$@"; resolve_campaign; api GET "/api/project-roots/detail?campaign_id=$CAMPAIGN" | ID="$id" python3 -c 'import json,os,sys; rows=[x for x in json.load(sys.stdin).get("roots",[]) if x.get("name")==os.environ["ID"]]; print(json.dumps(rows[0],indent=2)) if len(rows)==1 else (_ for _ in ()).throw(SystemExit(3))' || die "NO-PROJECT-ROOT: '$id' is not in Campaign '$CAMPAIGN'" 3;;
       create) need id "${1-}"; id=$1; shift; title='' dir='' campaign_id='' remit='' match='' docs='' plans=''; while [ "$#" -gt 0 ]; do need "$@"; case "$1" in --title) title=$2;; --dir) dir=$2;; --campaign) campaign_id=$2;; --remit) remit=$2;; --match) match=$2;; --docs) docs=$2;; --plans) plans=$2;; *) die "BAD-ARG: unknown project-root flag '$1'." 2;; esac; shift 2; done; [ -n "$dir" ] || die 'BAD-ARG: --dir is required.' 2; CAMPAIGN=$campaign_id; resolve_campaign; body=$(json_body 'import json,sys; keys=["name","title","dir","campaign_id","remit","match","docs","plans"]; print(json.dumps({k:v for k,v in zip(keys,sys.argv[1:]) if v}))' "$id" "$title" "$dir" "$CAMPAIGN" "$remit" "$match" "$docs" "$plans"); mutate POST '/api/project-roots' "$body" | pretty;;
-      write) id=${1:-}; field=${2:-}; value=${3-}; [ "$#" -eq 3 ] || die 'BAD-ARG: project-root write needs id, field, value.' 2; case "$field" in title|dir|match|remit|docs|plans|campaign_id) ;; *) die 'BAD-ARG: project-root field is title, dir, match, remit, docs, plans, or campaign_id.' 2;; esac; body=$(json_body 'import json,sys; print(json.dumps({sys.argv[1]:sys.argv[2]}))' "$field" "$value"); mutate PUT "/api/project-roots/$id" "$body" | pretty;;
-      archive) [ "$#" -eq 1 ] || die 'BAD-ARG: project-root archive needs one id.' 2; mutate PUT "/api/project-roots/$1" '{"archived":true}' | pretty;;
-      exclude) [ "$#" -eq 1 ] || die 'BAD-ARG: project-root exclude needs one id.' 2; [ "$MIKA_MODE" = false ] || die 'REFUSED: Mika cannot exclude a Workspace Folder.' 4; mutate DELETE "/api/project-roots/$1" '{}' | pretty;;
+      write) id=${1:-}; field=${2:-}; value=${3-}; [ "$#" -eq 3 ] || die 'BAD-ARG: project-root write needs workspace-folder-handle, field, value.' 2; case "$field" in title|dir|match|remit|docs|plans|campaign_id) ;; *) die 'BAD-ARG: project-root field is title, dir, match, remit, docs, plans, or campaign_id.' 2;; esac; body=$(json_body 'import json,sys; print(json.dumps({sys.argv[1]:sys.argv[2]}))' "$field" "$value"); mutate PUT "/api/project-roots/$id" "$body" | pretty;;
+      archive) [ "$#" -eq 1 ] || die 'BAD-ARG: project-root archive needs one workspace-folder-handle.' 2; mutate PUT "/api/project-roots/$1" '{"archived":true}' | pretty;;
+      exclude) [ "$#" -eq 1 ] || die 'BAD-ARG: project-root exclude needs one workspace-folder-handle.' 2; [ "$MIKA_MODE" = false ] || die 'REFUSED: Mika cannot exclude a Workspace Folder.' 4; mutate DELETE "/api/project-roots/$1" '{}' | pretty;;
       *) die "BAD-ARG: unknown project-root operation '$sub'." 2;; esac
     ;;
   provider)

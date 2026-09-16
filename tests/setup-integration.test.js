@@ -135,7 +135,7 @@ test('all inventoried launch families use the shared launch marker and no Team R
   assert.doesNotMatch(files[3], /'torii', '⛩'/);
 });
 
-test('Setup surfaces consume the one runtime contract and mount canonical Campaign Templates only through Launch Your Own', async () => {
+test('Setup surfaces consume one runtime contract and open Presets only through Launch Your Own', async () => {
   const text = await source('setup-surfaces.js');
   // The Model providers surface (provider-surface.js, the one surface Ronin Settings also
   // seats) is the one client that measures; every other surface takes the Campaign's
@@ -148,8 +148,8 @@ test('Setup surfaces consume the one runtime contract and mount canonical Campai
   assert.match(providers, /\/login`/);
   assert.match(providers, /\/done`/);
   assert.match(providers, /\/close`/);
-  assert.match(text, /createTemplatesSurface\(\)/);
-  assert.doesNotMatch(text, /campaignTemplatesDefinition\(\)/);
+  assert.match(text, /item\.id === 'preset'[\s\S]*context\.workbench\?\.place\(PRESETS_TYPE/);
+  assert.doesNotMatch(text, /CAMPAIGN_TEMPLATES_TYPE|createTemplatesSurface|campaignTemplatesDefinition/);
   assert.doesNotMatch(text, /mode === 'loaded'|mode === 'make'|\/api\/library/);
 });
 

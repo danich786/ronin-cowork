@@ -9,7 +9,7 @@ import {
 } from './git.js';
 import {
   assignmentId, deskStatus, deskWorktree, lineFor, readDesk, removeDesk, updateDesk,
-  writeDesk,
+  writeDesk, listDesks,
 } from './registry.js';
 import { soloDeskBranch, teamDeskBranch, type DeskNotice, type DeskRecord, type DeskSource, type DeskStatus, type RepoArrangement, type TeamLine } from './schema.js';
 import { materializeNodeModules } from '../worktree-runtime.js';
@@ -123,8 +123,8 @@ export async function openDesk(input: OpenInput): Promise<DeskStatus> {
 export async function adoptLine(rec: DeskRecord, a: RepoArrangement, by: string, source = rec.line, resolvedSha = ''): Promise<DeskNotice> {
   const st = await deskStatus(rec, a);
   const line_sha = resolvedSha || await revParse(a.dir, `refs/heads/${source}`);
-  const base: DeskNotice = { kind: 'adopted', repo: rec.repo, desk: rec.branch, session: rec.session, line_sha, by, files: [] };
-  if (!line_sha || !st.tip) return { ...base, kind: 'pending' };
+  const base: DeskNotice = { kind: 'adopted', repo: rec.repo, desk: rec.branch, session: rec.session, line_sha, source_ref: source, before_sha: st.tip, after_sha: st.tip, by, files: [] };
+  if (!line_sha || !st.tip) return { ...base, kind: 'pending', reason: 'source or destination commit is missing' };
   const sourceDistance = await aheadBehind(a.dir, st.tip, line_sha);
   if (sourceDistance.behind === 0) {
     if (rec.pending) await updateDesk(rec.repo, rec.branch, { pending: null });
@@ -134,7 +134,7 @@ export async function adoptLine(rec: DeskRecord, a: RepoArrangement, by: string,
     const lineChanged = await changedFiles(a.dir, st.tip, line_sha);
     const overlap = lineChanged.filter((f) => st.dirty_files.includes(f));
     await updateDesk(rec.repo, rec.branch, { pending: { line_sha, by, at: new Date().toISOString(), overlap } });
-    return { ...base, kind: overlap.length ? 'pending_overlap' : 'pending', files: overlap };
+    return { ...base, kind: overlap.length ? 'pending_overlap' : 'pending', files: overlap, reason: !st.mounted ? 'destination desk is unmounted' : 'destination has unsaved changes' };
   }
   const m = await mergeInto(st.worktree, line_sha, `Update ${rec.branch} from ${source} at ${line_sha.slice(0, 10)}`);
   if (!m.ok) {
@@ -142,14 +142,54 @@ export async function adoptLine(rec: DeskRecord, a: RepoArrangement, by: string,
     return { ...base, kind: 'conflict', files: m.conflicts };
   }
   await updateDesk(rec.repo, rec.branch, { pending: null });
-  return base;
+  return { ...base, after_sha: await revParse(a.dir, `refs/heads/${rec.branch}`) };
 }
 
-export async function syncDesk(repo: string, branch: string): Promise<DeskNotice> {
+/** Resolve a source once, then merge only that committed revision into the caller's desk.
+ * The shared Team line and a lead's private desk are deliberately different sources. */
+export async function syncDesk(
+  repo: string,
+  branch: string,
+  source = 'dev',
+  sessions: () => Promise<Array<{ name: string; leads: string[] }>> = listSessions,
+): Promise<DeskNotice> {
   const rec = await readDesk(repo, branch);
-  if (!rec) return { kind: 'pending', repo, desk: branch, session: '', line_sha: '', by: '', files: [] };
+  if (!rec) throw new Error(`no desk recorded for ${repo}:${branch}`);
   const a = await arrangementOf(repo);
-  return adoptLine(rec, a, rec.pending?.by ?? '', a.working);
+  let ref: string;
+  let sourceDirty = false;
+  if (source === 'dev') ref = a.working;
+  else if (source === 'team') ref = rec.line;
+  else {
+    let candidates: DeskStatus[];
+    if (source === 'lead') {
+      if (!rec.team) throw new Error('this desk has no Team; name the source repo:branch');
+      const leads = (await sessions()).filter((s) => s.leads.includes(rec.team)).map((s) => s.name);
+      if (!leads.length) throw new Error(`Team ${rec.team} has no live lead; name the source repo:branch`);
+      candidates = (await listDesks({ repo })).filter((d) =>
+        (d.owners?.length ? d.owners : [d.session]).some((owner) => leads.includes(owner)));
+    } else {
+      const colon = source.indexOf(':');
+      if (colon < 1 || !source.slice(colon + 1)) {
+        throw new Error('sync --source expects dev, team, lead, or an exact repo:branch desk');
+      }
+      if (source.slice(0, colon) !== repo) throw new Error(`source must belong to repository ${repo}`);
+      candidates = (await listDesks({ repo })).filter((d) => d.branch === source.slice(colon + 1));
+    }
+    if (!candidates.length) throw new Error(`no source desk for ${source} in ${repo}; name an existing repo:branch`);
+    if (candidates.length > 1) throw new Error(`source ${source} is ambiguous; choose ${candidates.map((d) => `${d.repo}:${d.branch}`).join(', ')}`);
+    ref = candidates[0]!.branch;
+    sourceDirty = candidates[0]!.dirty;
+  }
+  if (!ref) throw new Error(`repository ${repo} has no working line; name the source repo:branch`);
+  if (source === 'dev' || source === 'team') {
+    const mounted = await worktreeOf(a.dir, ref);
+    sourceDirty = mounted ? (await dirtyFiles(mounted.path)).length > 0 : false;
+  }
+  const sha = await revParse(a.dir, `refs/heads/${ref}`);
+  if (!sha) throw new Error(`source branch ${ref} does not exist`);
+  const result = await adoptLine(rec, a, rec.session, ref, sha);
+  return { ...result, source_dirty: sourceDirty };
 }
 
 export interface CloseOutcome { desk: DeskStatus | null; action: 'closed' | 'kept'; reason: string }

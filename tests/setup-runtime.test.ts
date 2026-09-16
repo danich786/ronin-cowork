@@ -240,6 +240,112 @@ test('Done records completion and closes; Close before completion only closes', 
   assert.equal(recorded.length, 1, 'Close did not record activation');
 });
 
+test('GitHub auth status accepts only an explicit active github.com account', () => {
+  assert.equal(runtime.githubAccountFromStatus([
+    'github.com',
+    '  ✓ Logged in to github.com account octo-cat (keyring)',
+    '  - Active account: true',
+  ].join('\n')), 'octo-cat');
+  assert.equal(runtime.githubAccountFromStatus('warning: account octo-cat has an invalid token'), '');
+  assert.equal(runtime.githubAccountFromStatus('  X Failed to log in to github.com account octo-cat'), '');
+  assert.equal(runtime.githubAccountFromStatus('  ✓ Logged in to example.com account octo-cat'), '');
+});
+
+test('GitHub login session is born through the provider setup identity contract', async () => {
+  const calls: unknown[] = [];
+  await runtime.createGithubSetupSession({
+    create: async (...args) => { calls.push(['create', ...args]); },
+    tag: async (...args) => { calls.push(['tag', ...args]); },
+    identify: async (...args) => { calls.push(['identify', ...args]); },
+  });
+  assert.deepEqual(calls, [
+    ['create', 'setup_github', os.homedir(), {
+      agent: false,
+      argv: ['gh', 'auth', 'login', '--hostname', 'github.com', '--git-protocol', 'https'],
+    }],
+    ['tag', 'setup_github', ['provider_setup']],
+    ['identify', 'setup_github', {
+      sessionType: 'provider_setup', cli: 'gh', provider: 'github', model: '',
+    }],
+  ]);
+});
+
+test('GitHub setup publishes one provider-style attachment and opens and closes idempotently', async () => {
+  let live = false;
+  let opens = 0;
+  let closes = 0;
+  let status = '';
+  const ops: runtime.GithubSetupOps = {
+    installed: async () => true,
+    authStatus: async () => status,
+    exists: async () => live,
+    open: async () => { opens += 1; live = true; },
+    close: async () => { closes += 1; live = false; },
+    logout: async () => { status = ''; },
+  };
+
+  assert.deepEqual(await runtime.githubSetupAnswer(ops), {
+    installed: true, authenticated: false, account: '', state: 'needs_authentication', attachment: null,
+  });
+  assert.deepEqual(await runtime.openGithubLogin(ops), {
+    installed: true,
+    authenticated: false,
+    account: '',
+    state: 'needs_authentication',
+    attachment: { type: 'session', key: 'setup_github', team: 'provider_setup', temporary: true },
+  });
+  await runtime.openGithubLogin(ops);
+  assert.equal(opens, 1, 'a second Connect reuses the visible setup session');
+
+  status = 'github.com\n  ✓ Logged in to github.com account octo-cat (keyring)';
+  const authenticated = await runtime.githubSetupAnswer(ops);
+  assert.deepEqual({ state: authenticated.state, authenticated: authenticated.authenticated, account: authenticated.account }, {
+    state: 'authenticated', authenticated: true, account: 'octo-cat',
+  });
+
+  assert.deepEqual(await runtime.closeGithubLogin(ops), {
+    installed: true, authenticated: true, account: 'octo-cat', state: 'authenticated', attachment: null,
+  });
+  await runtime.closeGithubLogin(ops);
+  assert.equal(closes, 1, 'Close is harmless once the setup session is gone');
+});
+
+test('GitHub setup does not probe auth when gh is absent and refuses to open', async () => {
+  let statusCalls = 0;
+  const ops: runtime.GithubSetupOps = {
+    installed: async () => false,
+    authStatus: async () => { statusCalls += 1; return 'unexpected'; },
+    exists: async () => false,
+    open: async () => undefined,
+    close: async () => undefined,
+    logout: async () => undefined,
+  };
+  assert.deepEqual(await runtime.githubSetupAnswer(ops), {
+    installed: false, authenticated: false, account: '', state: 'missing', attachment: null,
+  });
+  assert.equal(statusCalls, 0);
+  await assert.rejects(runtime.openGithubLogin(ops), /GitHub CLI is not installed/);
+});
+
+test('GitHub logout removes only the detected active account and closes its temporary session', async () => {
+  let live = true;
+  let status = 'github.com\n  ✓ Logged in to github.com account octo-cat (keyring)';
+  const loggedOut: string[] = [];
+  const ops: runtime.GithubSetupOps = {
+    installed: async () => true,
+    authStatus: async () => status,
+    exists: async () => live,
+    open: async () => { live = true; },
+    close: async () => { live = false; },
+    logout: async (account) => { loggedOut.push(account); status = ''; },
+  };
+  assert.deepEqual(await runtime.removeGithubAuthentication(ops), {
+    installed: true, authenticated: false, account: '', state: 'needs_authentication', attachment: null,
+  });
+  assert.deepEqual(loggedOut, ['octo-cat']);
+  await assert.rejects(runtime.removeGithubAuthentication(ops), /not authenticated/);
+});
+
 test('installed roots are distinct registered repositories with READMEs and first commits', async () => {
   const answer = await runtime.setupRuntimeAnswer({}, await measured({}, []), { exists: async () => false }, undefined, catalog);
   assert.deepEqual(answer.roots.map((root) => root.dir), [
@@ -310,26 +416,27 @@ test('Setup kinds are canonical runtime facts and persist without replacing setu
     providers: { codex: { activated_at: '2026-09-06T01:00:00.000Z' } },
   }));
   assert.deepEqual(await runtime.writeSetupPreferences(['research', 'build', 'research']), {
-    kinds: ['build', 'research'], providers: [],
+    kinds: ['build', 'research'], providers: [], path_note: '', identity_choice: '', bounty_opt_in: false,
   });
   const section = await state.readSetupSection();
   assert.equal(section.completed_at, '2026-09-06T00:00:00.000Z');
   assert.deepEqual(section.providers, { codex: { activated_at: '2026-09-06T01:00:00.000Z' } });
-  assert.deepEqual(section.preferences, { kinds: ['build', 'research'], providers: [] });
+  assert.deepEqual(section.preferences, { kinds: ['build', 'research'], providers: [], path_note: '', identity_choice: '', bounty_opt_in: false });
   const answer = await runtime.setupRuntimeAnswer(section, await measured(section, []), { exists: nobody }, undefined, catalog);
-  assert.deepEqual(answer.preferences, { kinds: ['build', 'research'], providers: [] });
+  assert.deepEqual(answer.preferences, { kinds: ['build', 'research'], providers: [], path_note: '', identity_choice: '', bounty_opt_in: false });
   assert.deepEqual(await runtime.writeSetupPreferences({ providers: ['hermes', 'openai', 'hermes'] }), {
-    kinds: ['build', 'research'], providers: ['hermes', 'openai'],
+    kinds: ['build', 'research'], providers: ['hermes', 'openai'], path_note: '', identity_choice: '', bounty_opt_in: false,
   });
   assert.deepEqual((await state.readSetupSection()).preferences, {
-    kinds: ['build', 'research'], providers: ['hermes', 'openai'],
+    kinds: ['build', 'research'], providers: ['hermes', 'openai'], path_note: '', identity_choice: '', bounty_opt_in: false,
   });
   assert.deepEqual(await runtime.writeSetupPreferences({ kinds: ['life'] }), {
-    kinds: ['life'], providers: ['hermes', 'openai'],
+    kinds: ['life'], providers: ['hermes', 'openai'], path_note: '', identity_choice: '', bounty_opt_in: false,
   }, 'purpose writes preserve provider opt-ins');
   await assert.rejects(runtime.writeSetupPreferences('build'), /Send Setup preferences/);
-  await assert.rejects(runtime.writeSetupPreferences(['build', 'unknown']), /Kinds are build, life, and research/);
-  assert.deepEqual(await runtime.writeSetupPreferences([]), { kinds: [], providers: ['hermes', 'openai'] });
+  await assert.rejects(runtime.writeSetupPreferences(['build', 'unknown']), /Kinds are build, life, research, and other/);
+  assert.deepEqual(await runtime.writeSetupPreferences({ kinds: ['other'], path_note: 'Something new' }), { kinds: ['other'], providers: ['hermes', 'openai'], path_note: 'Something new', identity_choice: '', bounty_opt_in: false });
+  assert.deepEqual(await runtime.writeSetupPreferences([]), { kinds: [], providers: ['hermes', 'openai'], path_note: 'Something new', identity_choice: '', bounty_opt_in: false });
   await assert.rejects(runtime.writeSetupPreferences({ providers: ['bad provider'] }), /provider IDs/);
 });
 

@@ -3,7 +3,7 @@
  *
  * `ronin_catalogs/MODEL_PROVIDERS.md` is stock; a copy in the owner's catalogs store is an
  * OVERLAY on it, merged per `### <Vendor>` section and keyed by the section's `provider` id
- * — the catalog entry merge described in `docs/shadowing.md`, so adding one provider or one
+ * — the catalog entry merge described in `docs/architecture/shadowing.md`, so adding one provider or one
  * row does not fork the seven the owner did not touch. A user section of a stock id
  * replaces that section whole and keeps its place; a new id appends; a user section that
  * says `- **hidden:** yes`, or whose every launch cell is `—`, withdraws the stock one.
@@ -61,6 +61,8 @@ export interface ProviderCatalogEntry {
   origin: Origin;
   /** A user section that replaced a shipped section of the same provider id, whole. */
   shadowed: boolean;
+  /** Optional display status for a provider that is beta or not offered yet. */
+  maturity?: string;
   liveDangerously?: string;
   gbrainDisconnected?: string;
   models: SessionLaunchSpec[];
@@ -170,6 +172,7 @@ export function parseProviderCatalog(raw: string, origin: Origin = 'stock'): Pro
     if (!label || !provider || !cli) continue;
     const liveDangerously = field(section, 'live_dangerously');
     const gbrainDisconnected = field(section, 'gbrain_disconnected');
+    const maturity = field(section, 'maturity');
     const rows = new Map<string, Record<string, string>>();
     let header: string[] = [];
     for (const line of section.split('\n')) {
@@ -206,6 +209,7 @@ export function parseProviderCatalog(raw: string, origin: Origin = 'stock'): Pro
       provider, cli, label, origin, shadowed: false, models,
       ...(liveDangerously ? { liveDangerously } : {}),
       ...(gbrainDisconnected ? { gbrainDisconnected } : {}),
+      ...(maturity ? { maturity } : {}),
     });
   }
   return out;

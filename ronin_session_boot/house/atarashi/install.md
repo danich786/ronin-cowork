@@ -1,9 +1,9 @@
 # install — is this install actually what it claims to be
 
-> Stock SOP. Your own copy in the sops store (`ronin-store sops` → `install.md`) replaces
+> Stock Behavior. Your own copy in the ways store (`ronin-store ways` → `install.md`) replaces
 > this file whole — a default, not law.
 > **Voice: agent.** How the agent verifies an install and says it back — not a walkthrough to relay.
-> **No tool answers this SOP.** The three checks below are run by hand and reasoned
+> **No tool answers this Behavior.** The three checks below are run by hand and reasoned
 > across; a one-call install check is still an open thread (`OPEN_THREADS` 1.12).
 
 This covers **checking that an install is what it says it is** — after a setup page has

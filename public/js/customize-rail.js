@@ -2,7 +2,7 @@
 /**
  * CUSTOMIZE — the resource model, and the ONE place the v1 capability matrix is encoded.
  *
- * The matrix is the authority (docs/customize.md): each resource is
+ * The matrix is the authority (docs/architecture/customize.md): each resource is
  * exactly one of DIRECT EDITOR, GUIDED AGENT HANDOFF or READ-ONLY, and a resource earns a
  * direct editor only where a typed, validating write API already exists. Two do. The rest
  * are handoff or read-only, and this file is where that ruling lives so a view cannot
@@ -34,9 +34,9 @@ export function sections() {
  */
 export function resources() {
   return [
-    { id: 'sops', section: 'behavior', mark: '▤', label: t('customize.sops', 'SOPs'),
-      capability: 'read-only', read: '/api/sops', readLabel: t('customize.sops_read', 'Read procedure'),
-      blurb: t('customize.sops_blurb', 'How this house goes about a domain — fetched by a situation, never pushed.') },
+    { id: 'behaviours', section: 'behavior', mark: '▤', label: t('customize.behaviours', 'Behaviors'),
+      capability: 'read-only', read: '/api/ways', readLabel: t('customize.behaviours_read', 'Read behavior'),
+      blurb: t('customize.behaviours_blurb', 'How this house works: floor, conditional, selectable, and situational guidance in one catalog.') },
     { id: 'tools', section: 'behavior', mark: '⚙', label: t('customize.tools', 'Tools'),
       capability: 'read-only', read: null,
       why: t('customize.tools_why', 'Agent tool teaching is composed from the capability files in ronin_catalogs/capabilities; Customize does not yet expose a reader for that catalog.'),

@@ -20,7 +20,7 @@ test('retiring an orphaned no-roster membership detaches it without an impossibl
   await tmux.setTags('tag_only_member', ['tag_only', 'other']);
   await tmux.setLeads('tag_only_member', ['tag_only']);
 
-  assert.deepEqual(await retireTeam('tag_only'), { ok: true, retired: 'tag_only' });
+  assert.deepEqual(await retireTeam('tag_only', 'ignore'), { ok: true, retired: 'tag_only' });
   assert.deepEqual(await tmux.getTags('tag_only_member'), ['other']);
   assert.deepEqual(await tmux.getLeads('tag_only_member'), []);
 });
@@ -30,7 +30,14 @@ test('retiring a normal roster Team removes its record and membership', async ()
   await tmux.createSession('ordinary_member', box, { agent: false, argv: ['/bin/sh', '-c', 'while :; do sleep 60; done'] });
   await tmux.setTags('ordinary_member', ['ordinary']);
 
-  assert.deepEqual(await retireTeam('ordinary'), { ok: true, retired: 'ordinary' });
+  const inspection = await retireTeam('ordinary');
+  assert.equal(inspection.ok, true);
+  assert.equal(inspection.inspected, 'ordinary');
+  assert.ok(await readTeamRoster('ordinary'), 'inspection leaves the Team intact');
+
+  const retired = await retireTeam('ordinary', 'ignore');
+  assert.equal(retired.ok, true);
+  assert.equal(retired.retired, 'ordinary');
   assert.equal(await readTeamRoster('ordinary'), null);
   assert.deepEqual(await tmux.getTags('ordinary_member'), []);
 });

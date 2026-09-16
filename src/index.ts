@@ -48,6 +48,7 @@ import { registerVersion } from './routes/version.js';
 import { registerWipeboards } from './routes/wipeboards-api.js';
 import { registerTerminalControls } from './terminal-controls.js';
 import { registerMessages } from './routes/messages-api.js';
+import { countBrowserTool } from './tool-call-api.js';
 import { registerCli } from './routes/cli-api.js';
 import { startMessageQueue } from './message-queue.js';
 import { seedHouseBoard } from './wipeboards.js';
@@ -62,19 +63,21 @@ import { discoverParts, partsToLoad } from './parts.js';
 import { initialCampaign } from './campaigns.js';
 import { listInstallations } from './resource-adapters.js';
 import type { ServiceRegistration } from './sockets-contract.js';
-import { resourceRequestCache } from './resources.js';
+import { resourceRequestCache, storeDir } from './resources.js';
 import { compressResponse } from './http-performance.js';
 import { roninIdentity } from './routes/version.js';
 import { startSpawnBroker, stopSpawnBroker } from './spawn-broker.js';
 import { ensureInstalledRoots } from './setup-runtime.js';
 import { registerSetupRuntime } from './routes/setup-runtime-api.js';
 import { registerMikaContext } from './mika-context.js';
+import { migrateSopsToBehaviours } from './behaviour-store-migration.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
 const PUBLIC = path.join(ROOT, 'public');
 const NM = path.join(ROOT, 'node_modules');
 const isEntryPoint = !!process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url;
+if (isEntryPoint) await migrateSopsToBehaviours();
 const isBoxInstance = isEntryPoint
   && process.env.NODE_ENV === 'production'
   && process.env.RONIN_TEST_RUNNER !== '1';
@@ -188,6 +191,15 @@ app.get('/m', sendMobile);
 app.get('/mobile.html', sendMobile);
 app.use(`/${assetVersion}`, express.static(PUBLIC, { immutable: true, maxAge: '1y', index: false }));
 
+// A development preview is replaced in place. Keep an already-open browser intact across
+// that one restart: its document may still ask for the preceding commit-prefixed assets.
+// Production retains strict immutable versioning; only development maps an old eight-hex
+// prefix onto the current preview files, which are served no-cache below.
+if (process.env.NODE_ENV !== 'production') app.use((req, _res, next) => {
+  req.url = req.url.replace(/^\/[0-9a-f]{8}(?=\/(?:style\.css|js\/|css\/))/, '');
+  next();
+});
+
 const noCacheClient = (res: express.Response, filePath: string) => {
   if (/\.(?:html|js|css)$/.test(filePath)) res.setHeader('Cache-Control', 'no-cache');
 };
@@ -216,6 +228,7 @@ app.get('/api/health', (_req, res) =>
 );
 
 registerPasskeyManage(app); // /api/passkey/{list,register-options,register,remove} — BEHIND the gate on purpose
+app.use(countBrowserTool);
 registerLaunch(app); // /api/launch (both variants), /api/sessions, /api/home, session-max, owner — src/routes/launch.ts
 registerMikaContext(app); // /api/mika/context/:tab — tiny tab-scoped owner_view/show seam
 registerCatalogs(app); // catalogs and configuration resources — src/routes/catalogs.ts
@@ -271,6 +284,9 @@ for (const { name: dir, entry } of plan.load) {
     noteServiceFailure(dir, (e as Error).message);
   }
 }
+// Tool-count command hook is registered only by an active entitled Services module.
+try { fs.rmSync(path.join(storeDir('telemetry'), 'tool-count-hook'), { force: true }); }
+catch { /* Optional counting must never prevent startup. */ }
 for (const s of services) {
   noteService(s.name); // the roster /api/version reports, so the client's SWITCH knows
   s.register(sockets);

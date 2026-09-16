@@ -1,8 +1,8 @@
 # RONIN_REPO — this repository's declared arrangement. Read by tools; not inferred.
 #
 # A repository chooses REVIEWED desks or DIRECT publishing; it is never decided by
-# whichever branch happens to be checked out (ronin_sops/github.md). The desk model and
-# its boundaries: ronin-cowork/docs/worktrees.md; the network around it:
+# whichever branch happens to be checked out. The desk model and
+# its boundaries: ronin-cowork/docs/architecture/worktrees.md; the network around it:
 # docs/control-surface.md. Keys are key=value, one per line, like VERSION.
 #
 #   mode     reviewed | direct

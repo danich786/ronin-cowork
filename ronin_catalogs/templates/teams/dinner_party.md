@@ -6,8 +6,8 @@
 - **kinds:** household, social
 - **objective:** A menu, a table and a good evening — planned well enough that the host enjoys it too.
 
-A standing menu book or house recipe file belongs with this template: save it as an SOP
-in your own store, shadow this file, and add the book (docs/templates.md).
+A standing menu book or house recipe file belongs with this template: save it as an Behavior
+in your own store, shadow this file, and add the book (docs/architecture/templates.md).
 
 ## agents
 

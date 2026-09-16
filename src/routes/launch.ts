@@ -164,9 +164,9 @@ export function acceptedLaunchBody(input: unknown): { body: Record<string, unkno
   if (body.template !== undefined) body.template = String(body.template).trim();
 
   const inapplicable = sessionType === 'terminal'
-      ? ['provider', 'model', 'instructions', 'prompt', 'kind', 'mandate', 'behaviours', 'template', 'sops', 'cmd', 'launch_mode', 'seed', 'inject', 'reference']
+      ? ['provider', 'model', 'instructions', 'prompt', 'kind', 'mandate', 'behaviours', 'template', 'cmd', 'launch_mode', 'seed', 'inject', 'reference']
     : sessionType === 'bare_metal_agent'
-      ? ['kind', 'mandate', 'behaviours', 'template', 'sops', 'seed', 'inject', 'reference', 'team_lead']
+      ? ['kind', 'mandate', 'behaviours', 'template', 'seed', 'inject', 'reference', 'team_lead']
       : [];
   for (const key of inapplicable) drop(key);
   if (sessionType === 'bare_metal_agent' && body.desk === 'own') drop('desk');

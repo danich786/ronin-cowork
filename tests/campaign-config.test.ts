@@ -39,9 +39,10 @@ test('a pre-installation-cascade campaign gets stock defaults without a rewrite'
     id: 'no_capabilities', title: 'Legacy defaults', desk: {}, config: {},
   } } }, null, 2) + '\n';
   await fs.writeFile(file, old, 'utf8');
+  assert.equal((await readCampaign('no_capabilities'))?.config.services.parts.usage_stats, false, 'missing choices do not opt into Stats');
   const campaign = await readCampaign('home_machine');
   assert.equal('features' in (campaign?.config.defaults ?? {}), false);
-  assert.deepEqual(campaign?.config.defaults.behaviours, ['mandates']);
+  assert.deepEqual(campaign?.config.defaults.behaviours, [], 'mandate teaching is the floor, not a Campaign behaviour default');
   assert.equal(campaign?.config.services.parts.task_manager, true, 'either legacy half enables the indivisible Task manager');
   assert.equal(campaign?.config.services.parts.voice_hotwords, false, 'legacy voice never opts into the capability');
   assert.equal(campaign?.config.services.parts.terminal_transcript, false, 'legacy recording never opts into the capability');

@@ -17,7 +17,7 @@
 Everything below is a snapshot, not live data: the models a vendor lists, the prices it
 publishes and the words about what each model is good at were read on the date above.
 The stock catalog is refreshed with each Ronin release (the release order in
-`docs/tarball.md` has the step: re-read prices and models, bump `updated`). A shadow copy
+`docs/development/tarball.md` has the step: re-read prices and models, bump `updated`). A shadow copy
 in your catalogs store is yours to refresh, and carries its own `updated` line. Ronin
 shows the date it has, stale or not; it never hides it and never guesses a newer one.
 
@@ -37,6 +37,7 @@ One `### <Vendor label>` section per provider. Its fields:
 | `cli` | the id of the CLI that serves it in `src/agents.ts` (`claude`, `codex`, …) — the join between this catalog and what the machine measures |
 | `gbrain_disconnected` | the CLI's disconnected-launch flag; scope varies by CLI (see docs/agents), and absence refuses explicit disconnected launches |
 | `live_dangerously` | the CLI's additive flag for the Dangerously launch mode; a provider without one refuses that mode |
+| `maturity` | optional display status: `beta` or `comingSoon`; a provider with no launch rows remains visible only as an unavailable catalog card |
 
 Then one table, one row per model, **in the order the picker offers them**:
 
@@ -118,7 +119,7 @@ Model ids are passed unchanged to Gemini CLI's `--model` option. The free tier s
 Flash models only; Pro needs a paid plan. Gemini CLI declares no MCP-off flag, so it
 cannot launch disconnected. These cells are written from Google's published CLI
 reference and price list and have not yet been exercised end to end through Ronin; the
-first real launch of each is the proof, per `docs/model-providers.md`.
+first real launch of each is the proof, per `docs/architecture/model-providers.md`.
 
 | model | tier | default | cost | good at | not good at | launch |
 |---|---|---|---|---|---|---|
@@ -172,9 +173,18 @@ and none of these cells has yet been exercised through Ronin.
 | `nousresearch/hermes-4-405b` | `hermes chat --provider nous -m nousresearch/hermes-4-405b` |
 | `nousresearch/hermes-4.3-36b` | `hermes chat --provider nous -m nousresearch/hermes-4.3-36b` |
 
+### OpenRouter
+
+- **provider:** `openrouter`
+- **cli:** `openrouter`
+- **maturity:** `comingSoon`
+
+OpenRouter is listed for visibility only. It has no launch rows yet, so it is not offered
+by model selectors and cannot be launched.
+
 Other providers (pi, perplexity, …) arrive the same way: a contributor PR adding a
 section, or a row in your own shadow copy.
 
 **Other launch settings** a spawn may carry (not role-level; chosen per session):
 launch mode (`configured` / `live_dangerously`) and the `@ronin-control` dial the
-session is born with (`user` / `read` / `write` — see `docs/session-control-dials.md`).
+session is born with (`user` / `read` / `write` — see `docs/architecture/session-control-dials.md`).

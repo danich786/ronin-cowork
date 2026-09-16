@@ -1,0 +1,146 @@
+@layer app {
+  /* Garden Canvas owns its own tokens. The scale, palette and radii come from
+     the house set; anything the house does not carry is minted here rather than
+     hard-coded, so one edit moves the whole surface. */
+  .garden-canvas {
+    --gc-pad-x: var(--space-12);
+    --gc-pad-top: var(--space-10);
+    --gc-horizon: 180px;
+    --gc-pad-bottom: calc(var(--gc-horizon) + var(--space-10));
+    --gc-region-gap: var(--space-11);
+    --gc-block-gap: var(--space-8);
+    --gc-step-tight: var(--space-5);
+    --gc-step: var(--space-6);
+    --gc-step-loose: var(--space-7);
+    --gc-measure: 27rem;
+    --gc-heading-measure: 19ch;
+    --gc-heading-size: var(--text-10);
+    --gc-heading-lh: 1.18;
+    --gc-heading-track: -0.013em;
+    --gc-body-lh: 1.66;
+    --gc-mark: 16px;
+    --gc-mark-weight: 2px;
+    --gc-glyph: 16px;
+    --gc-row-pad: var(--space-6) var(--space-7);
+    --gc-kind-ink: var(--kaki-lift);
+    --gc-hito-w: 27px;
+    --gc-hito-h: 26px;
+    --gc-hito-walk: 38%;
+    --gc-hito-stand: 56px;
+    --gc-stale: .45;
+    --gc-nudge: var(--edge-2);
+  }
+  .garden-canvas, .garden-canvas-content { position: relative; overflow: hidden; }
+  .garden-canvas-content { display: grid; }
+
+  /* Content is not centred in the column. Deep bottom padding reserves the
+     horizon, so centring what remains lands the block in the upper third and
+     the ground below reads as intended rather than as leftover. */
+  .garden-canvas-scene { position: relative; display: grid; align-content: center; gap: var(--gc-region-gap); width: 100%; min-height: 100%; padding: var(--gc-pad-top) var(--gc-pad-x) var(--gc-pad-bottom); isolation: isolate; overflow-y: auto; background: radial-gradient(128% 54% at 50% 104%, color-mix(in srgb, var(--kaki) var(--gc-motif-wash), transparent), transparent 72%), linear-gradient(168deg, var(--panel), var(--bg) 64%); }
+
+  /* The horizon keeps its height and crops at the sides: a narrower column
+     shows less field, never a squashed one. */
+  .garden-canvas-mark { position: absolute; inset: auto 0 0; width: 100%; height: var(--gc-horizon); color: var(--kaki); opacity: var(--gc-motif-opacity); z-index: -1; pointer-events: none; }
+  /* The figure is its own fixed-size element, placed by percentage, so it walks
+     the flat bund as the column widens instead of scaling with it. */
+  .garden-canvas-hito { position: absolute; bottom: var(--gc-hito-stand); left: var(--gc-hito-walk); width: var(--gc-hito-w); height: var(--gc-hito-h); color: var(--kaki); opacity: var(--gc-motif-opacity); z-index: -1; pointer-events: none; transition: left 520ms cubic-bezier(.4, .1, .3, 1); }
+
+  /* Reading order. The region keys are frozen as question · cta · copy · media,
+     so the order the owner reads in is set here and nowhere else. */
+  .garden-region { display: grid; min-width: 0; }
+  .garden-region[hidden] { display: none; }
+  .garden-region-copy { order: 1; gap: var(--gc-block-gap); }
+  .garden-region-question { order: 2; }
+  .garden-region-cta { order: 3; }
+  .garden-region-media { order: 4; }
+
+  /* Every gap below is either a grid gap or an adjacent-sibling rule, so a
+     missing eyebrow, heading, body or stamp leaves no space behind it and each
+     surviving pair still gets the spacing it wants. */
+  .garden-copy-item { display: grid; }
+  .garden-copy-item > * { margin: 0; }
+  .garden-copy-eyebrow + .garden-copy-heading { margin-top: var(--gc-step-tight); }
+  .garden-copy-eyebrow + .garden-copy-body { margin-top: var(--gc-step); }
+  .garden-copy-heading + .garden-copy-body { margin-top: var(--gc-step-loose); }
+  .garden-copy-eyebrow + .garden-copy-stamp, .garden-copy-heading + .garden-copy-stamp, .garden-copy-body + .garden-copy-stamp { margin-top: var(--gc-step-tight); }
+  .garden-copy-item:first-child + .garden-copy-item { margin-top: var(--gc-step-tight); }
+
+  .garden-copy-eyebrow { display: flex; align-items: center; gap: var(--space-5); color: var(--kaki-lift); font-size: var(--text-2); font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
+  .garden-copy-eyebrow::before { content: ''; flex: none; width: var(--gc-mark); height: var(--gc-mark-weight); background: var(--kaki); }
+  .garden-copy-heading { color: var(--fg-strong); font-size: var(--gc-heading-size); font-weight: 550; line-height: var(--gc-heading-lh); letter-spacing: var(--gc-heading-track); text-wrap: balance; max-width: var(--gc-heading-measure); }
+  .garden-copy-body { color: var(--fg); font-size: var(--text-5); line-height: var(--gc-body-lh); max-width: var(--gc-measure); }
+  .garden-copy-stamp { color: var(--dim); font-size: var(--text-2); line-height: 1.45; }
+
+  /* One heading rank per canvas. The title block keeps it; every other kind is
+     body rank. Kind is a closed set from the normalizer, so it is taken as
+     given — the canvas reads no meaning into a block's position. */
+  .garden-copy-item[data-kind='instruction'] { grid-template-columns: var(--gc-mark) minmax(0, 1fr); column-gap: var(--space-6); }
+  .garden-copy-item[data-kind='instruction']::before { content: ''; grid-row: 1; width: var(--gc-mark); height: var(--gc-mark-weight); margin-top: .75em; background: var(--kaki); }
+  .garden-copy-item[data-kind='instruction'] > * { grid-column: 2; }
+  .garden-copy-item:not([data-kind='title']) .garden-copy-heading { font-size: var(--text-4); font-weight: 650; line-height: 1.45; letter-spacing: 0; max-width: var(--gc-measure); }
+  .garden-copy-item:not([data-kind='title']) .garden-copy-eyebrow::before { display: none; }
+
+  /* A note is an aside; a response is painted rather than authored. Neither
+     takes the gutter mark, and a response is threaded and dated. The canvas
+     never computes age — it renders the state it was handed. */
+  .garden-copy-item[data-kind='note'] .garden-copy-body { color: var(--muted); font-size: var(--text-4); }
+  .garden-copy-item[data-kind='response'] { padding-left: var(--space-7); border-left: var(--edge) solid var(--line); }
+  .garden-copy-item[data-kind='response'] .garden-copy-body { font-size: var(--text-4); }
+  .garden-copy-item[data-age='fading'] { opacity: var(--gc-stale); }
+  .garden-copy-item[data-age='fading'] .garden-copy-stamp { color: var(--kaki-lift); }
+
+  .garden-question-label { display: grid; gap: var(--space-5); max-width: var(--gc-measure); color: var(--fg-strong); font-size: var(--text-4); font-weight: 600; }
+  .garden-question-input { width: 100%; padding: var(--space-6) var(--space-7); border: var(--edge) solid var(--line-2); border-radius: var(--radius-md); background: var(--well); color: var(--fg); font: inherit; font-weight: 400; }
+  .garden-question-input::placeholder { color: var(--dim); }
+  .garden-question-input:focus-visible { border-color: var(--kaki); outline: var(--edge-2) solid color-mix(in srgb, var(--kaki) 55%, transparent); outline-offset: var(--edge); }
+  textarea.garden-question-input { resize: vertical; min-height: calc(var(--space-12) * 2); }
+
+  /* The only filled kaki on the surface, sized to its label. */
+  .garden-cta { justify-self: start; display: inline-flex; align-items: center; gap: var(--space-5); padding: var(--space-6) var(--space-9); border: var(--edge) solid transparent; border-radius: var(--radius-md); background: var(--gc-cta-bg); color: var(--gc-cta-ink); font: inherit; font-size: var(--text-5); font-weight: 650; text-align: left; cursor: pointer; transition: background 140ms ease; }
+  .garden-cta::after { content: ''; flex: none; width: var(--gc-glyph); height: var(--gc-glyph); background: currentColor; transition: transform 160ms ease; -webkit-mask: var(--gc-icon-chevron) center / contain no-repeat; mask: var(--gc-icon-chevron) center / contain no-repeat; }
+  .garden-cta:hover { background: var(--gc-cta-bg-hover); }
+  .garden-cta:hover::after { transform: translateX(var(--gc-nudge)); }
+
+  /* A row per item, stacked full width: the owner is choosing what to open, and
+     the kind decides whether they have two minutes or ten. */
+  .garden-media-list { display: grid; gap: var(--space-4); max-width: var(--gc-measure); }
+  .garden-media-choice { display: grid; grid-template-columns: var(--gc-glyph) minmax(0, 1fr) var(--gc-glyph); align-items: center; column-gap: var(--space-7); width: 100%; padding: var(--gc-row-pad); border: var(--edge) solid var(--line); border-radius: var(--radius-md); background: transparent; color: var(--fg); font: inherit; text-align: left; cursor: pointer; transition: background 140ms ease, border-color 140ms ease; }
+  .garden-media-choice::before, .garden-media-choice::after { content: ''; grid-row: 1 / -1; width: var(--gc-glyph); height: var(--gc-glyph); background: currentColor; }
+  .garden-media-choice::before { grid-column: 1; color: var(--gc-kind-ink); -webkit-mask: var(--gc-icon-doc) center / contain no-repeat; mask: var(--gc-icon-doc) center / contain no-repeat; }
+  .garden-media-choice[data-kind='video']::before { -webkit-mask-image: var(--gc-icon-video); mask-image: var(--gc-icon-video); }
+  .garden-media-choice[data-kind='url']::before { -webkit-mask-image: var(--gc-icon-link); mask-image: var(--gc-icon-link); }
+  .garden-media-choice::after { grid-column: 3; color: var(--dim); transition: transform 160ms ease, color 140ms ease; -webkit-mask: var(--gc-icon-chevron) center / contain no-repeat; mask: var(--gc-icon-chevron) center / contain no-repeat; }
+  .garden-media-choice > * { grid-column: 2; min-width: 0; }
+  .garden-media-choice strong { color: var(--fg-strong); font-size: var(--text-4); font-weight: 600; }
+  .garden-media-choice span { color: var(--muted); font-size: var(--text-2); line-height: 1.45; }
+  .garden-media-choice strong + span { margin-top: var(--space-1); }
+  .garden-media-choice:hover { background: var(--raise); border-color: var(--line-2); }
+  .garden-media-choice:hover::after { transform: translateX(var(--gc-nudge)); color: var(--kaki-lift); }
+
+  /* Asked: a canvas carrying a live question fills instead of floating — title
+     at the top, the stack scrolling, the input at the foot. Read from the
+     canvas's own regions, never from a scene or a route. */
+  .garden-canvas-scene:has(> .garden-region-question:not([hidden])) { align-content: stretch; grid-template-rows: minmax(0, 1fr) auto auto auto; gap: var(--space-9); padding-bottom: var(--space-10); }
+  .garden-canvas-scene:has(> .garden-region-question:not([hidden])) .garden-region-copy { overflow-y: auto; align-content: start; }
+
+  .garden-media-overlay { position: absolute; inset: 0; z-index: 11; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: var(--space-8); padding: var(--space-9) var(--space-10) var(--space-10); background: var(--panel); }
+  .garden-media-overlay[hidden] { display: none; }
+  .garden-media-close { justify-self: end; border: var(--edge) solid var(--line-2); border-radius: var(--radius-pill); background: var(--raise); color: var(--fg-strong); padding: var(--space-3) var(--space-5); cursor: pointer; }
+  .garden-media-body { display: grid; grid-template-rows: auto auto minmax(0, 1fr); min-height: 0; gap: var(--space-6); }
+  .garden-media-body h2 { margin: 0; color: var(--fg-strong); font-size: var(--text-9); font-weight: 600; line-height: 1.25; letter-spacing: -.012em; }
+  .garden-media-frame, .garden-media-video { width: 100%; height: 100%; min-height: 0; border: var(--edge) solid var(--line); border-radius: var(--radius-md); background: var(--panel); }
+  .garden-media-doc { min-height: 0; margin: 0; overflow: auto; white-space: pre-wrap; color: var(--fg); font-family: var(--font-mono); font-size: var(--text-3); line-height: 1.7; }
+  .garden-media-external { justify-self: start; color: var(--kaki-lift); font-size: var(--text-3); }
+
+  /* Kind marks. Mitred joins and square caps, the cut from the nin frame. */
+  .garden-canvas {
+    --gc-icon-doc: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23000' stroke-width='1.3' stroke-linejoin='miter' stroke-linecap='square'%3E%3Cpath d='M3.5 1.5h6l3 3v10h-9z'/%3E%3Cpath d='M9.5 1.5v3h3'/%3E%3Cpath d='M5.8 8.2h4.4M5.8 10.8h4.4'/%3E%3C/svg%3E");
+    --gc-icon-video: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23000' stroke-width='1.3' stroke-linejoin='miter' stroke-linecap='square'%3E%3Cpath d='M1.5 3h13v10h-13z'/%3E%3Cpath d='M6.6 5.9l4 2.1-4 2.1z' fill='%23000'/%3E%3C/svg%3E");
+    --gc-icon-link: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23000' stroke-width='1.3' stroke-linejoin='miter' stroke-linecap='square'%3E%3Cpath d='M9.6 2.4h4v4'/%3E%3Cpath d='M13.6 2.4L7.4 8.6'/%3E%3Cpath d='M11.2 9.4v4.2H2.4V4.8h4.2'/%3E%3C/svg%3E");
+    --gc-icon-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23000' stroke-width='1.4' stroke-linejoin='miter' stroke-linecap='square'%3E%3Cpath d='M5.8 2.6L11.2 8l-5.4 5.4'/%3E%3C/svg%3E");
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .garden-canvas-hito, .garden-cta, .garden-cta::after, .garden-media-choice, .garden-media-choice::after { transition: none; }
+  }
+}

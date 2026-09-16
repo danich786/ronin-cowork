@@ -1,7 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { installBundle, libraryCard, packBundle, parseBundle, planInstall, type PackRequest } from '../bundles.js';
 
-const USAGE = `usage: ronin-bundle pack <team> [--agents a,b] [--sops x] [--ways y] [--library z] [--tools t] [--version v] [--out file]
+const USAGE = `usage: ronin-bundle pack <team> [--agents a,b] [--ways x] [--library z] [--tools t] [--version v] [--out file]
        ronin-bundle plan <file.json>
        ronin-bundle install <file.json> [--replace]
        ronin-bundle card <file.json> --url <relative-url>`;
@@ -35,7 +35,7 @@ async function main(): Promise<void> {
     if (!team) { console.error(USAGE); process.exit(2); }
     const req: PackRequest = {
       team,
-      agents: list(opts.agents), sops: list(opts.sops), ways: list(opts.ways), library: list(opts.library),
+      agents: list(opts.agents), ways: list(opts.ways), library: list(opts.library),
       tools: list(opts.tools),
       version: typeof opts.version === 'string' ? opts.version : undefined,
     };

@@ -22,13 +22,12 @@ export function campaignTemplatesDefinition() {
   };
 }
 
-/** `{ teams: 2, sops: 1 }` → "2 teams · 1 SOP" in the person's words. Every key is spelled
+/** `{ teams: 2, ways: 1 }` → "2 teams · 1 behaviour" in the person's words. Every key is spelled
  *  out so check-lexicon can see it; a templated key would be invisible to the floor check. */
 function holdsWords(holds) {
   const word = {
     teams: (n) => (n === 1 ? t('campaign_view.library_hold_team', 'team') : t('campaign_view.library_hold_teams', 'teams')),
     agents: (n) => (n === 1 ? t('campaign_view.library_hold_agent', 'agent') : t('campaign_view.library_hold_agents', 'agents')),
-    sops: (n) => (n === 1 ? t('campaign_view.library_hold_sop', 'SOP') : t('campaign_view.library_hold_sops', 'SOPs')),
     ways: (n) => (n === 1 ? t('campaign_view.library_hold_way', 'behaviour') : t('campaign_view.library_hold_ways', 'behaviours')),
     library: (n) => (n === 1 ? t('campaign_view.library_hold_page', 'reference page') : t('campaign_view.library_hold_pages', 'reference pages')),
     tools: (n) => (n === 1 ? t('campaign_view.library_hold_tool', 'tool') : t('campaign_view.library_hold_tools', 'tools')),

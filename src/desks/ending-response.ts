@@ -48,6 +48,9 @@ export async function resolveEndingRequest(
   },
 ): Promise<{ proceed: boolean; response?: EndingWarningResponse; acknowledgement?: Record<string, unknown> }> {
   if (!ending.unresolved.length) return { proceed: true };
+  if (disposition === 'inspect') {
+    return { proceed: false, response: endingWarningResponse(ending) };
+  }
   if (disposition === 'prompt') {
     return { proceed: false, response: endingWarningResponse(ending, await actions.prompt()) };
   }

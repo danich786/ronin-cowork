@@ -29,16 +29,15 @@ const teamBy = (roster: TeamRoster): StatedBy[] => [{ layer: 'team', source: tea
 export function resolveLaunchSeed(s: LaunchSeedSources): LaunchSeed & { resolved_contributions: ResolvedContribution[]; undelivered: string[] } {
   const c = s.campaign.config.defaults;
   const t = s.roster;
-  const campaignSettled = Object.prototype.hasOwnProperty.call(s.campaign.config, 'installations');
   const teamSettled = !!t && Object.prototype.hasOwnProperty.call(t, 'behaviours');
-  const campaignBehaviours = campaignSettled ? c.behaviours : ['mandates'];
+  const campaignBehaviours = c.behaviours;
   const a = t ? { ...c, ...t.agent_defaults } : c;
   const teamSource = t ? teamBy(t) : null;
   const source = (field: string): StatedBy[] => teamSource ?? campaignBy(s.campaign.id, `defaults.${field}`);
   const root = t?.project_root || s.roots.find((item) => !item.archived)?.name || '';
   const available = availableBehaviours(s.installations, s.campaign.config.installations, s.behaviours);
-  const selectedBehaviours = t ? (teamSettled ? t.behaviours.selected : ['mandates']) : campaignBehaviours;
-  const required = new Set(teamSettled ? t?.behaviours.required ?? [] : []);
+  const selectedBehaviours = t ? t.behaviours?.selected ?? [] : campaignBehaviours;
+  const required = new Set(teamSettled ? t?.behaviours?.required ?? [] : []);
   const cascade = resolveContributions(
     s.installations, s.campaign.config.installations, s.behaviours, available,
     campaignBehaviours, t ? [...new Set([...selectedBehaviours, ...required])] : undefined,
@@ -58,7 +57,7 @@ export function resolveLaunchSeed(s: LaunchSeedSources): LaunchSeed & { resolved
       launch_mode: { value: a.launch_mode, stated_by: source('launch_mode') },
       behaviours: { value: cascade.selected, stated_by: behaviourSource },
     },
-    behaviours: s.behaviours.map((row) => ({ name: row.name, label: row.label, blurb: row.blurb, reading: row.page, on: cascade.selected.includes(row.name), required: required.has(row.name), available: available.includes(row.name), stated_by: behaviourSource })),
+    behaviours: s.behaviours.filter((row) => row.name !== 'mandates').map((row) => ({ name: row.name, label: row.label, blurb: row.blurb, reading: row.page, on: cascade.selected.includes(row.name), required: required.has(row.name), available: available.includes(row.name), stated_by: behaviourSource })),
     available, still_asked: ['session_type', 'name', 'instructions'],
     resolved_contributions: cascade.contributions, undelivered: cascade.undelivered,
   };

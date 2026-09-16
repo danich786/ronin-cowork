@@ -50,7 +50,7 @@ test('POST /api/team-rosters creates a Team from its name alone', async () => {
   assert.equal(body.roster.project_root, 'ronin_cowork');
   assert.deepEqual(body.roster.repos, ['ronin_cowork']);
   assert.equal(body.roster.branch, 'dev');
-  assert.deepEqual(body.roster.behaviours, { selected: ['gbrain', 'mandates'], required: [] });
+  assert.deepEqual(body.roster.behaviours, { selected: ['gbrain'], required: [] });
   assert.deepEqual(body.roster.agent_defaults, {
     provider: 'openai', model: 'gpt-test', reach: 'execute', recruit: 'nobody', output: ['code'],
     dial: 'read', launch_mode: 'configured',
@@ -67,7 +67,7 @@ test('PUT /api/team creates with Campaign defaults, then omission on update pres
   assert.equal(first.roster.project_root, 'ronin_cowork');
   assert.deepEqual(first.roster.repos, ['ronin_cowork']);
   assert.equal(first.roster.branch, 'dev');
-  assert.deepEqual(first.roster.behaviours.selected, ['gbrain', 'mandates']);
+  assert.deepEqual(first.roster.behaviours.selected, ['gbrain']);
   assert.equal(first.roster.agent_defaults.model, 'gpt-test');
 
   const updated = await fetch(`${base}/api/team`, {
@@ -80,7 +80,7 @@ test('PUT /api/team creates with Campaign defaults, then omission on update pres
   assert.equal(second.roster.project_root, 'ronin_cowork');
   assert.deepEqual(second.roster.repos, ['ronin_cowork']);
   assert.equal(second.roster.branch, 'dev');
-  assert.deepEqual(second.roster.behaviours.selected, ['gbrain', 'mandates']);
+  assert.deepEqual(second.roster.behaviours.selected, ['gbrain']);
   assert.equal(second.roster.agent_defaults.model, 'gpt-test');
 });
 
@@ -109,7 +109,7 @@ test('POST /api/team-rosters overlays explicit choices on Campaign defaults', as
   assert.equal(body.roster.agent_defaults.model, 'gpt-test');
 });
 
-test('the seed door reads this Team\'s pre-cut behaviour shape as stock Mandates', async () => {
+test('the seed door tolerates a pre-cut behaviour shape without inventing an elective mandate', async () => {
   const file = path.join(process.env.RONIN_TEAM_ROSTERS_DIR!, 'home_machine', 'installation-cascade.md');
   await fs.mkdir(path.dirname(file), { recursive: true });
   const raw = [
@@ -124,8 +124,8 @@ test('the seed door reads this Team\'s pre-cut behaviour shape as stock Mandates
   const response = await fetch(`${base}/api/launch-seed?team=installation-cascade`);
   assert.equal(response.status, 200);
   const seed = await response.json() as { seeds: { behaviours: { value: string[] } }; behaviours: Array<{ name: string; on: boolean }> };
-  assert.deepEqual(seed.seeds.behaviours.value, ['mandates']);
-  assert.equal(seed.behaviours.find((row) => row.name === 'mandates')?.on, true);
+  assert.deepEqual(seed.seeds.behaviours.value, []);
+  assert.equal(seed.behaviours.some((row) => row.name === 'mandates'), false);
   assert.equal(await fs.readFile(file, 'utf8'), raw, 'the seed read performs no migration');
 });
 

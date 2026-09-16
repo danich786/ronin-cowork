@@ -21,7 +21,7 @@ const RETIRED = [
   'tejun-fork', 'tejun-harakiri', 'tejun-archive', 'tejun-rehydrate',
   'tejun-kanban',
 ];
-const SHIPPED = ['ronin_bin', 'ronin_catalogs', 'ronin_session_boot', 'ronin_sops', 'ronin_library', 'docs', 'src', 'public', 'scripts', 'tests', 'bin', 'libexec'];
+const SHIPPED = ['ronin_bin', 'ronin_catalogs', 'ronin_session_boot', 'ronin_catalogs/behaviours', 'ronin_library', 'docs', 'src', 'public', 'scripts', 'tests', 'bin', 'libexec'];
 const ABSENCE_FIXTURES = new Set([
   path.join(root, 'tests', 'session-names.test.ts'),
   path.join(root, 'tests', 'tool-bundle-dispatchers.test.ts'),

@@ -313,8 +313,8 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **campaign_view.library_hold_teams:** teams
 - **campaign_view.library_hold_agent:** agent
 - **campaign_view.library_hold_agents:** agents
-- **campaign_view.library_hold_sop:** SOP
-- **campaign_view.library_hold_sops:** SOPs
+- **campaign_view.library_hold_sop:** Behavior
+- **campaign_view.library_hold_ways:** Behaviors
 - **campaign_view.library_hold_page:** reference page
 - **campaign_view.library_hold_pages:** reference pages
 - **campaign_view.library_hold_tool:** tool
@@ -423,7 +423,7 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **help.installations:** What an Installation is
 - **help.installations_body:** An Installation is a system-level switch in the Campaign. A system installation joins every Cowork Agent; a provider installation makes its behaviours available for Teams and Agents to choose.
 - **help.behaviours:** What a Behaviour is
-- **help.behaviours_body:** A Behaviour says how the owner wants ordinary work done. Each is one short page delivered at birth when selected; Mandates is on by default, and the rest are additions the owner may choose.
+- **help.behaviours_body:** A Behaviour says how the owner wants ordinary work done. Each is one short page delivered at birth when selected. Mandate teaching belongs to every Cowork Agent's Ronin floor; behaviours are additions the owner may choose.
 - **help.type:** New session
 - **help.type_body:** Three kinds of thing can start here. A Cowork Agent is born with everything Ronin provides on this box. A bare-metal Agent is the provider’s own CLI and nothing else. A terminal is a shell with no agent. The choice decides which of the steps below exist — a terminal is asked three things because there are only three to ask.
 - **help.top:** Name & kind
@@ -572,6 +572,7 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **setup_surface.preferred_feature_short:** Capability
 - **setup_surface.reasons_short:** Describes you
 - **setup_surface.run_location_short:** Install on
+- **setup_surface.user_intro:** Introduce yourself to your Cowork Agents (up to two short lines)
 - **ask.none:** None
 - **ask.chosen:** {n} chosen
 - **ask.find:** type to find
@@ -1008,7 +1009,7 @@ The pad's current config downloads as a backup first.
 - **roots.section_folder:** Folder
 - **roots.section_repository:** Repository
 - **roots.fact_directory:** Directory
-- **roots.fact_id:** ID
+- **roots.fact_handle:** Workspace Folder handle
 - **roots.fact_docs:** Docs
 - **roots.fact_plans:** Plans
 - **roots.fact_match:** Match
@@ -1050,6 +1051,32 @@ The catalog entry goes. {dir} is not touched.
 - **roots.state_worktrees:** Repo: Worktrees on. Agent must also have Worktrees on.
 - **roots.state_checkout:** This repository uses its checkout.
 - **roots.state_undeclared:** No repository profile is declared, so Agents use the checkout. Edit this root to allow Ronin Worktrees.
+- **roots.github_auth_stone:** Authenticate GitHub
+- **roots.github_auth_state:** Connect account
+- **roots.github_auth_connected_state:** Connected{account}
+- **roots.github_auth_unavailable_state:** GitHub CLI unavailable
+- **roots.github_auth_heading:** Authenticate GitHub
+- **roots.github_auth_lede:** Connect your GitHub account in a temporary authentication window.
+- **roots.github_connect:** Connect GitHub
+- **roots.github_remove_auth:** Remove authentication
+- **roots.github_removing_auth:** Removing GitHub authentication…
+- **roots.github_done:** Done
+- **roots.github_close:** Close
+- **roots.github_missing:** GitHub CLI is not installed.
+- **roots.github_connected:** Connected to GitHub as {account}.
+- **roots.github_not_connected:** GitHub is not connected on this machine.
+- **roots.github_waiting:** Finish GitHub authentication in the window first.
+- **roots.github_clone_stone:** Clone a repository
+- **roots.github_clone_state:** Authenticate first
+- **roots.github_clone_ready_state:** Ready to clone
+- **roots.github_clone_heading:** Clone a repository
+- **roots.github_clone_lede:** Clone a GitHub repository and add its folder as a Ronin workspace.
+- **roots.github_clone_needs_auth:** Authenticate GitHub first.
+- **roots.github_clone_ready:** GitHub is connected. Enter the repository you want to clone.
+- **roots.github_repository:** GitHub repository
+- **roots.github_clone:** Clone and add workspace
+- **roots.github_cloning:** Cloning repository…
+- **roots.github_cloned:** Added {name} as a workspace.
 
 ## docs — docs.js (the ▧ Docs tab)
 - **docs.back_title:** Back to the list
@@ -1186,7 +1213,7 @@ The catalog entry goes. {dir} is not touched.
 - **customize.sec_behavior:** Behavior
 - **customize.sec_people:** People & work
 - **customize.sec_presentation:** Presentation
-- **customize.sops:** SOPs
+- **customize.ways:** Behaviors
 - **customize.sops_read:** Read procedure
 - **customize.sops_blurb:** How this house goes about a domain — fetched by a situation, never pushed.
 - **customize.tools:** Tools
@@ -1621,10 +1648,10 @@ The catalog entry goes. {dir} is not touched.
 - **errors.no_session_list:** could not load the session list
 
 ## roots — the edit form
-- **roots.f_handle:** ID
-- **roots.f_handle_hint:** The stable ID used by sessions and tools.
+- **roots.f_handle:** Workspace Folder handle
+- **roots.f_handle_hint:** The stable handle used by sessions and tools, such as ronin_lab.
 - **roots.f_title:** display title
-- **roots.f_title_hint:** The name shown on screen. Changing it never changes the ID or directory.
+- **roots.f_title_hint:** The name shown on screen. Changing it never changes the handle or directory.
 - **roots.f_title_placeholder:** optional
 - **roots.f_directory:** directory
 - **roots.f_directory_hint:** Any absolute path, at any depth

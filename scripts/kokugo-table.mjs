@@ -64,7 +64,7 @@ lines.push(`\`${FLOOR}\` is the floor: every key a surface reads, in plain Engli
 lines.push('lexicon (`ronin_catalogs/lexicons/`, shadowed whole-file by your catalogs store): its word where it');
 lines.push('says one, blank where it falls through to the floor. A catalog token (`kind.*`, `role.*`,');
 lines.push('`behaviour.*` may be blank in the floor too — the definition\'s own label is its floor.');
-lines.push('Rooms are the part of a key before its first dot. `docs/kokugo.md` says how a view adds a word.');
+lines.push('Rooms are the part of a key before its first dot. `docs/products/kokugo.md` says how a view adds a word.');
 lines.push('');
 lines.push(`${keys.size} keys · ${rooms.size} rooms · lexicons: ${[FLOOR, ...others].map((n) => `\`${n}\` (${lexicons.get(n).fields.label || n})`).join(' · ')}`);
 lines.push('');

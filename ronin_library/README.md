@@ -3,7 +3,7 @@
 After changing this shelf, run `npm run verify`. User-store shadows are checked with `npm run byoin`.
 
 Long-form reference material retained for installations that still select it. Capability
-documents and SOPs are the public routes for current Agent work.
+documents and Behaviors are the public routes for current Agent work.
 
 ## Yours beats ours, file for file
 

@@ -112,19 +112,18 @@ test('Cowork Team and Team Agent cards toggle between names-only and the full re
   assert.match(css, /\.wk-workbench-host\[data-selector-density='thin'\] \.wk-workbench-selector-cards > \.wk-card \.wk-card-summary/);
 });
 
-test('Campaign Settings and Setup selectors default to names-only and remember expansion', async () => {
+test('Campaign remembers density while Setup stays in the names-only selector', async () => {
   const [campaign, setup] = await Promise.all([
     source('js/campaign-view.js'), source('js/setup-view.js'),
   ]);
-  for (const view of [campaign, setup]) {
-    assert.match(view, /let thinSelectorCards = true;/);
-    assert.match(view, /selectorDensity: thinSelectorCards \? 'thin' : 'thick'/);
-    assert.match(view, /thinSelectorCards = stored\.selectorDensity !== 'thick'/);
-    assert.match(view, /host\.dataset\.selectorDensity = thinSelectorCards \? 'thin' : 'thick'/);
-  }
+  assert.match(campaign, /let thinSelectorCards = true;/);
+  assert.match(campaign, /selectorDensity: thinSelectorCards \? 'thin' : 'thick'/);
+  assert.match(campaign, /thinSelectorCards = stored\.selectorDensity !== 'thick'/);
+  assert.match(campaign, /host\.dataset\.selectorDensity = thinSelectorCards \? 'thin' : 'thick'/);
   assert.match(campaign, /actions: \[densityToggle, mikaHelp\]/);
   assert.match(setup, /actions: \[mikaHelp\]/);
-  assert.match(setup, /barActions: \[densityToggle, surfaceToggle, themeToggle\]/);
+  assert.match(setup, /bench\.host\.dataset\.selectorDensity = 'thin'/);
+  assert.match(setup, /barActions: \[sceneIndex, surfaceToggle, themeToggle\]/);
 });
 
 test('the existing workbench can pin a Setup workspace and aim selector cards at the selected work surface', async () => {
@@ -140,20 +139,35 @@ test('the existing workbench can pin a Setup workspace and aim selector cards at
   assert.match(workbench, /cell\.addEventListener\('pointerdown',[\s\S]*select\(id\);[\s\S]*}, true\)/);
 });
 
-test('the fourth Setup workbench registers real lane surfaces in ruled order', async () => {
+test('Setup 2 progression is selected card, minimum checks, and one gated Next in Workspace 2', async () => {
+  const [setup, style] = await Promise.all([source('js/setup2-view.js'), source('style.css')]);
+  assert.match(setup, /createAction\(\{ label: 'Next', launch: true, action: \(\) => advance\(\) \}\)/, 'Next uses the Launch-format action');
+  assert.match(setup, /active\.number < SCENES\.length && sceneComplete\(active\)/, 'Next exists only for a complete non-final selected card');
+  assert.match(setup, /\[data-workspace="workspace2"\] > \.wk-surface > \.wk-surface-header \.wk-surface-header-actions/, 'Next sits at the top-right of Workspace 2');
+  assert.match(setup, /actions\.prepend\(nextAction\.el\)/);
+  assert.match(setup, /garden\.controls\.replaceChildren\(\);[\s\S]*garden\.controls\.hidden = true/, 'Workspace 1 cannot retain the progression action');
+  assert.match(setup, /SETUP_SURFACE_TYPES\.providers\) return Number\(runtime\?\.activated_count \|\| 0\) > 0/);
+  assert.match(setup, /SETUP_SURFACE_TYPES\.register\) return completion\.registered \|\| kinds\.get\(\)\.length > 0/);
+  assert.match(setup, /SETUP_SURFACE_TYPES\.roots\) return completion\.github \|\| Boolean\(runtime\?\.roots\?\.length\)/);
+  assert.match(setup, /SETUP_SURFACE_TYPES\.installations\) return installationsComplete/);
+  assert.match(setup, /SETUP_SURFACE_TYPES\.launchOwn\) return launchComplete/);
+  assert.doesNotMatch(setup, /data\.stepState|flashSelector|setup-selector-pulse/);
+  assert.match(style, /data-workbench-profile='setup2'[\s\S]*?\.wk-card\[aria-current='page'\][^}]*background: var\(--kaki\)/, 'only the selected card gets the orange fill');
+  assert.match(setup, /mark\.className = 'wk-card-mark';[\s\S]*mark\.textContent = '✓';[\s\S]*heading\.prepend\(mark\)/, 'completion uses the stock visible card mark');
+  assert.doesNotMatch(style, /data-complete='true'[^\n]*::before/, 'completion is not a fragile pseudo-element');
+});
+
+test('the Setup workbench registers real surfaces and maps each scene to workspace 2', async () => {
   const [setup, main, cowork] = await Promise.all([
     source('js/setup-view.js'), source('js/main.js'), source('js/cowork-view.js'),
   ]);
   assert.match(setup, /registerSetupSurfaces\(\);[\s\S]*registerPresetsSurface\(\);/);
-  // The Team page's own shape: workspace 1 · selector · workspace 2. Presets is pinned in
-  // workspace 1 (the widest column); the selector aims at workspace 2.
-  assert.match(setup, /fixedWorkspaces: \{ workspace1: PRESETS_TYPE \}/);
+  assert.match(setup, /const scene = setupJourney\(environment\.setupRuntime \|\| \{\}, number\)/);
+  assert.match(setup, /bench\.place\(scene\.type, 'workspace2'\)/);
   assert.match(setup, /selectorWorkspace: 'workspace2'/);
   assert.match(setup, /selectorCurrent: true/);
   assert.doesNotMatch(setup, /arrangement\.move\('selector', 0\)/);
   assert.match(setup, /order: Object\.freeze\(\['workspace1', 'selector', 'workspace2'\]\)/);
-  assert.match(setup, /bench\.place\(PRESETS_TYPE, 'workspace1'\)/);
-  assert.match(setup, /SETUP_SURFACE_TYPES\.providers, 'workspace2', detail\)/);
   assert.match(setup, /hideFeedback: true/);
   assert.match(setup, /hideShapeControl: true/);
   // Provider sign-in and the ordinary Mika agent each reuse their existing tile hosts.
@@ -171,11 +185,12 @@ test('the fourth Setup workbench registers real lane surfaces in ruled order', a
   assert.match(setup, /environment\.setupRuntime = runtime\.ok \? runtime\.data : \{ providers: \[\] \};[\s\S]*bench\.refreshSelector\(\);[\s\S]*const stored/);
   assert.doesNotMatch(setup, /SetupRequirement|requirementState|flashCycle/);
   assert.match(setup, /SETUP_SURFACE_TYPES\.providers, SETUP_SURFACE_TYPES\.register, SETUP_SURFACE_TYPES\.roots/);
-  assert.match(setup, /SETUP_SURFACE_TYPES\.installations, SETUP_SURFACE_TYPES\.launchOwn/);
+  assert.match(setup, /SETUP_SURFACE_TYPES\.installations, SETUP_SURFACE_TYPES\.bounty, SETUP_SURFACE_TYPES\.launchOwn/);
   assert.doesNotMatch(setup, /SETUP_SURFACE_TYPES\.(?:services|gbrain)/);
   assert.doesNotMatch(setup, /SETUP_SURFACE_TYPES\.templates/);
   const providers = await source('js/provider-surface.js');
-  assert.match(providers, /context\.workbench\?\.profile === 'setup'[\s\S]*\['workspace1', 'selector'\][\s\S]*\(activatedNow === 0\) !== context\.workbench\.arrangement\.state\(\)\.hidden\.includes\(slot\)[\s\S]*arrangement\.toggle\(slot\)/);
+  assert.match(providers, /context\.environment\.onSetupRuntime\?\.\(runtime\)/,
+    'provider measurements report facts to the journey instead of moving Setup furniture themselves');
   assert.match(main, /workspace\.register\('setup', createSetupView\(\)\)/);
   assert.match(cowork, /PRESETS_TYPE/);
 });
@@ -193,7 +208,10 @@ test('Setup adds only Help to its selector header and keeps appearance in the to
   assert.match(setup, /actions: \[mikaHelp\]/);
   // Light/dark is a bar action: built by Setup, seated by the ViewHost in the bar's one
   // actions slot at the right, pinning the device theme through theme.js and nothing else.
-  assert.match(setup, /barActions: \[densityToggle, surfaceToggle, themeToggle\]/);
+  assert.match(setup, /barActions: \[sceneIndex, surfaceToggle, themeToggle\]/);
+  assert.match(setup, /addSceneButton\(0, t\('setup\.scene_auto'/);
+  assert.match(setup, /for \(const scene of SETUP_SCENES\) addSceneButton/);
+  assert.match(setup, /sceneOverride, selectorDensity/);
   assert.match(setup, /barButton\('setup-theme-toggle'\)/);
   assert.match(setup, /barButton\('setup-surface-toggle'\)/);
   assert.match(setup, /saveCampaign\(id, \{ desk: \{ \[field\]: /);

@@ -1,12 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp } from 'node:fs/promises';
+import { mkdtemp, readFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'ronin-registration-'));
 process.env.RONIN_CONFIG_DIR = path.join(root, 'config');
 process.env.RONIN_SERVICES_SECRETS_DIR = path.join(root, 'secrets');
+process.env.RONIN_WAYS_DIR = path.join(root, 'ways');
 
 const { deleteRegistration, readRegistration, registrationAnswer, submitRegistration, updateCommunication } = await import('../src/activation/registration.js');
 const { putEntitlementToken, getEntitlementToken } = await import('../src/activation/secrets.js');
@@ -24,7 +25,9 @@ test('registration records purpose fields but never stores the plain email', asy
   await submitRegistration({
     email: 'person@example.com', purpose: 'Build a product', kind: 'work',
     user_type: 'individual', preferred_feature: 'multiple_providers',
-    reasons: ['different_strengths', 'avoid_lock_in'], run_location: 'personal_server', own_words: 'Keep the setup small.',
+    reasons: ['different_strengths', 'avoid_lock_in'], run_location: 'personal_server',
+    user_intro: 'I build small, durable software.\nI prefer direct answers.\nThis third line is dropped.',
+    own_words: 'Keep the setup small.',
   });
   const record = await readRegistration();
   assert.equal(record.email_masked, 'p*****@example.com');
@@ -33,6 +36,17 @@ test('registration records purpose fields but never stores the plain email', asy
   assert.equal(record.preferred_feature, 'multiple_providers');
   assert.deepEqual(record.reasons, ['different_strengths', 'avoid_lock_in']);
   assert.equal(record.run_location, 'personal_server');
+  assert.equal(record.user_intro, 'I build small, durable software.\nI prefer direct answers.');
+  const intro = await readFile(path.join(root, 'ways', 'floor', 'user-intro.md'), 'utf8');
+  assert.match(intro, /- \*\*scope:\*\* floor/);
+  assert.match(intro, /## About the user\n\nI build small, durable software\.\nI prefer direct answers\./);
+  assert.doesNotMatch(intro, /third line/);
+  const { resolveFloorBehaviours } = await import('../src/behaviours.js');
+  const resolvedIntro = (await resolveFloorBehaviours()).find((row) => row.book === 'user-intro');
+  assert.equal(resolvedIntro?.file, path.join(root, 'ways', 'floor', 'user-intro.md'));
+  const { compileBirthReadmeAt, isShelfTeaching } = await import('../src/birth-readme.js');
+  const readme = await compileBirthReadmeAt(path.join(root, 'session'), [resolvedIntro!.file], 'newborn', isShelfTeaching);
+  assert.match(await readFile(readme, 'utf8'), /^## User intro[\s\S]*^### About the user/m);
   assert.equal(JSON.stringify(record).includes('person@example.com'), false);
   assert.equal((await registrationAnswer()).status, 'pending', 'submission is not entitlement');
 });
@@ -75,15 +89,14 @@ test('registration recovery keeps consent separate and deletion removes local id
   assert.equal(await getEntitlementToken(), null);
 });
 
-test('Setup reuses canonical Campaign Templates only inside Launch Your Own', async () => {
+test('Setup keeps Campaign Templates out and opens Presets only from Launch Your Own', async () => {
   const source = await (await import('node:fs/promises')).readFile(new URL('../public/js/setup-surfaces.js', import.meta.url), 'utf8');
   for (const id of ['setup.register', 'setup.roots', 'setup.installations']) assert.match(source, new RegExp(id.replace('.', '\\.')));
   assert.doesNotMatch(source, /setup\.services|setup\.gbrain/);
   // Model providers is the one surface Ronin Settings also seats; its type is that module's.
   assert.match(source, /providers: PROVIDER_SURFACE_TYPE/);
-  assert.match(source, /templates: CAMPAIGN_TEMPLATES_TYPE/);
-  assert.match(source, /createTemplatesSurface\(\)/);
-  assert.doesNotMatch(source, /campaignTemplatesDefinition\(\)/);
+  assert.match(source, /item\.id === 'preset'[\s\S]*context\.workbench\?\.place\(PRESETS_TYPE/);
+  assert.doesNotMatch(source, /CAMPAIGN_TEMPLATES_TYPE|createTemplatesSurface|campaignTemplatesDefinition/);
   assert.doesNotMatch(source, /setup-template-(?:modes|room|card)|openTemplateMaker|\/api\/library/);
   assert.doesNotMatch(source, /servicesCard\s*\(/, 'Setup has no separate Services email/token activation card');
 });
@@ -134,6 +147,8 @@ test('selector definitions retain neutral provider grouping without requirement 
 test('Register presents one open profile flow with card choices and anonymous delivery', async () => {
   const source = await (await import('node:fs/promises')).readFile(new URL('../public/js/setup-surfaces.js', import.meta.url), 'utf8');
   for (const name of ['email', 'own_words']) assert.match(source, new RegExp(`name = '${name}'|input\\('${name}'`));
+  assert.match(source, /userIntroText\.rows = 4/);
+  assert.match(source, /saveUserIntro\(\)/, 'the local Agent introduction remains separate from registration delivery');
   for (const name of ['identity_mode', 'kind', 'preferred_feature', 'run_location']) assert.match(source, new RegExp(`choiceGroup\\('${name}'`));
   assert.match(source, /const question = ask\(/);
   assert.equal((source.match(/exposed: true/g) || []).length, 1, 'Register exposes its short choice selectors through ERABI');
@@ -142,9 +157,10 @@ test('Register presents one open profile flow with card choices and anonymous de
   for (const key of ['identity_short', 'kind_short', 'preferred_feature_short', 'reasons_short', 'run_location_short']) assert.match(source, new RegExp(`short: t\\('setup_surface\\.${key}'`), `${key} names the stone`);
   assert.doesNotMatch(source, /glyph: '·'/, 'unruled Register answers are rectangles without placeholder glyphs');
   assert.match(source, /reasons\.other\.value/);
-  assert.match(source, /kind_other: kindOther\.value/);
+  assert.match(source, /kind: '', kind_other: ''/);
   assert.doesNotMatch(source, /kind\.wrap\.append\(kindOther\)/, 'the conditional input stays outside ERABI repaint ownership');
-  assert.match(source, /preferredFeature\.wrap, reasons\.wrap, kind\.wrap, kindOther,/);
+  assert.match(source, /kind\.wrap, kindOther, ownField,/);
+  assert.match(source, /preferredFeature\.wrap, reasons\.wrap,/);
   assert.doesNotMatch(source, /Who is using Ronin\?|\['individual', 'Just me'\]|\['team', 'A team'\]|\['builder', 'Builder'\]|\['exploring', 'Exploring'\]/);
   assert.match(source, /Welcome to Ronin/);
   assert.match(source, /setup-register-group/);
@@ -179,12 +195,16 @@ test('Register presents one open profile flow with card choices and anonymous de
   assert.match(source, /Where will you install Ronin\?/);
   assert.doesNotMatch(source, /Where will you run Ronin\?|Where Ronin fits/);
   for (const kind of ['Which of these are you most likely to use?', 'Build software', 'Life assistants', 'Research and writing']) assert.match(source, new RegExp(kind.replace('?', '\\?')));
+  assert.match(source, /form\.append\(welcome, registrationIntro, about, fit, send\)/, 'the introduction and routing choice lead the registration form');
+  assert.match(source, /context\.environment\?\.kinds\?\.set\(routeKind \? \[routeKind\] : \[\]\)/, 'the answer changes Setup routing preferences');
+  assert.match(source, /kind: '', kind_other: ''/, 'routing is not registration profile data');
+  assert.match(source, /own_words: ''/, 'routing notes are not registration profile data');
   assert.match(source, /about\.append\([\s\S]*?identityMode\.wrap, emailField, runLocation\.wrap\)/, 'where Ronin will live belongs to About you');
   assert.ok(source.indexOf('runLocation.wrap') < source.indexOf('preferredFeature.wrap, reasons.wrap'), 'machine location comes before capability preference');
   assert.doesNotMatch(source, /Your starting theme|theme\.wrap/);
   assert.doesNotMatch(source, /What would make Ronin useful to you\?|Anything else\? \(optional\)/);
   assert.match(source, /setup_surface\.own_words', 'Anything else'/);
-  assert.match(source, /We hope you enjoy Ronin\. If you’d like to share feedback later, we’d be glad to hear it\./);
+  assert.match(source, /Enjoy using Ronin\. If you’d like to share feedback later, we’d be glad to hear from you at a later date\./);
   assert.match(source, /declinedRegistration[\s\S]*?fit\.hidden = declinedRegistration/);
   assert.match(source, /registerAction\.hidden = declinedRegistration/);
   assert.match(source, /Communication choices/);
@@ -448,7 +468,7 @@ test('Setup has one Installations card, Account has no gbrain tab, and Machine S
     fs.readFile(new URL('../public/js/campaign-installations.js', import.meta.url), 'utf8'),
   ]);
   assert.match(surfaces, /definition\(SETUP_SURFACE_TYPES\.installations, t\('campaign_view\.installations', 'Installations'\), createSetupInstallationsSurface\)/);
-  assert.match(surfaces, /createInstallationsSurface\(selected, context\)/);
+  assert.match(surfaces, /createInstallationsSurface\(selected, \{[\s\S]*onInstallationsState: \(values\) => context\.environment\?\.onInstallationsState\?\.\(values\)/);
   assert.doesNotMatch(setupView, /SETUP_SURFACE_TYPES\.(?:services|gbrain)/);
   assert.doesNotMatch(account, /id: 'gbrain'/);
   assert.match(machine, /tickRow\(observed\.ronin\.services\.includes\('gbrain'\)/, 'the measured gbrain row remains');
@@ -456,6 +476,7 @@ test('Setup has one Installations card, Account has no gbrain tab, and Machine S
   assert.match(installations, /createServicesSurface\(sharedContext\)/);
   assert.match(installations, /createGbrainSurface\(sharedContext\)/);
   assert.match(installations, /stoneSurface\.select\('ronin_services'\)/);
+  assert.match(installations, /context\.onInstallationsState\?\.\(\{ \.\.\.values \}\)/, 'Setup completion follows the saved installation map');
 });
 
 test('legacy Services mutation entry points explicitly retire to registration', async () => {
