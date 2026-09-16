@@ -11,7 +11,7 @@ route depends on the task, not on who is reading.
 | Choose a machine and install Ronin | [Prepare a machine](getting-started/rent-a-machine.md), then [install](getting-started/install.md) |
 | Finish setup and start one working Agent | [Get started](getting-started/get-started.md), [Ronin Setup](getting-started/setup-workbench.md), and [provider sign-in](getting-started/provider-sign-in.md) |
 | Find and arrange my work | [Workbench](using-ronin/workbench.md) and [the tile](using-ronin/tile.md) |
-| Choose where Ronin works | [Workspace Folders](using-ronin/workspace-folders.md) |
+| Choose where Ronin works | [Workspace Folders](getting-started/workspace-folders.md) |
 | Start a Team | [New Team](using-ronin/new-team.md) |
 | Track work and coordinate Agents | [Work record](using-ronin/work-record.md), [Team Kanban](using-ronin/team-kanban.md), and [wipeboards](using-ronin/wipeboards.md) |
 | Stop, clear, copy, or close | [Terminal controls](using-ronin/terminal-controls.md) |

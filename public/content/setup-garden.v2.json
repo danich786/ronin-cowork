@@ -84,7 +84,7 @@
           "label": "Workspace Folders",
           "description": "What a Workspace Folder is, and how to choose one",
           "root": "ronin_cowork",
-          "path": "docs/using-ronin/workspace-folders.md"
+          "path": "docs/getting-started/workspace-folders.md"
         }
       ]
     },

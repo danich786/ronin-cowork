@@ -8,7 +8,7 @@ You need at least one before an Agent has anywhere to work. One is enough to sta
 
 ## Add one
 
-Open **Workspace folders** in [Ronin Setup](../getting-started/setup-workbench.md), or the
+Open **Workspace folders** in [Ronin Setup](setup-workbench.md), or the
 Workspace Folders page in cowork commons afterwards. You give two things:
 
 | You give | What it is |
@@ -25,7 +25,7 @@ Point at the project you actually want worked on — the repository, the notes d
 site. Prefer the folder you would open in an editor.
 
 A Workspace Folder can be a Git repository or a plain directory. When it is a repository,
-Agents working there can be given [managed desks](desks.md), so each one commits on its own
+Agents working there can be given [managed desks](../using-ronin/desks.md), so each one commits on its own
 branch instead of sharing your working tree.
 
 You can register as many as you like, and the same machine can hold unrelated ones — a work
@@ -37,7 +37,7 @@ Registering a folder is how you **point** Ronin at work. It is a convenience and
 not a sandbox: Ronin's tiles run as the account that installed Ronin, and that account's
 own file permissions are what actually limit reach. If you need a harder boundary, put it
 at the account or machine level — see
-[how Ronin protects your machine and work](../getting-started/how-ronin-protects-you.md).
+[how Ronin protects your machine and work](how-ronin-protects-you.md).
 
 ## Removing one
 
@@ -47,7 +47,7 @@ stops being offered when you start something new.
 
 ## Related
 
-- [Ronin Setup](../getting-started/setup-workbench.md) — the first-run door, and every page behind it
-- [Managed desks](desks.md) — private branches for Agents in a repository
+- [Ronin Setup](setup-workbench.md) — the first-run door, and every page behind it
+- [Managed desks](../using-ronin/desks.md) — private branches for Agents in a repository
 - [Workspace Folders — construction](../architecture/project-roots.md) — the handle, the
   record, and how session identity resolves it
