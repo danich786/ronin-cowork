@@ -84,7 +84,7 @@
         {
           "id": "workspace-desks",
           "kind": "instruction",
-          "body": "For a repository, choose how Agents work in it: a desk gives each Agent its own branch and working tree, which suits active code editing. A shared checkout keeps everyone in one tree, which suits notes, research and planning."
+          "body": "For a repository, choose how Agents work in it. A desk gives each Agent its own branch and working tree, which suits code. A shared checkout keeps everyone in one tree, which suits documents, plans and work in progress."
         }
       ],
       "media": [
