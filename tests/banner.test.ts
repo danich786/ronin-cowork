@@ -81,15 +81,14 @@ test('a root with no .env still answers with the documented default', () => {
   assert.equal(call(box(''), 'ronin_port', fs.mkdtempSync(path.join(os.tmpdir(), 'ronin-bare-'))), '4810');
 });
 
-test('without a served mapping the address falls back to one that answers now', () => {
+test('without a served mapping there is no public address to print', () => {
   const dir = box('', '8080');
   const url = execFileSync(
     'bash',
     ['-uc', `. "${lib}"; ronin_open_url "${dir}" "$(ronin_port "${dir}")"`],
     { env: { PATH: `${dir}:/usr/bin:/bin`, RONIN_FQDN: 'box.tailnet.ts.net', RONIN_IP: '' }, encoding: 'utf8' },
   ).trim();
-  // HTTP, and carrying the operator's port rather than a constant.
-  assert.equal(url, 'http://box.tailnet.ts.net:8080');
+  assert.equal(url, '');
 });
 
 test('the banner keeps identity framed and the URL whole on its own copyable line', () => {

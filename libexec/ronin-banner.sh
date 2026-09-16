@@ -4,13 +4,12 @@
 # Sourced, never run. Two callers share it so there is ONE implementation of
 # "which door is open": setup.sh draws it at the end of an install, and
 # bin/ronin-welcome redraws it afterwards — which is the whole point, because
-# the HTTPS address does not exist until someone has run `tailscale serve`
-# with a sudo the installer never has.
+# the HTTPS address does not exist until the installer has established Tailscale Serve.
 #
 #   ronin_port   <root>            echoes the port this install actually serves
 #   ronin_bind   <root>            echoes the address this install binds
 #   ronin_record_bind <root>       writes that address into .env, once, and says so
-#   ronin_open_url <root> <port>   echoes the address that is live RIGHT NOW
+#   ronin_open_url <root> <port>   echoes the verified private HTTPS address, if present
 #   ronin_banner <root> <url>      draws the box, on stdout
 #
 # Everything writes to stdout; a caller that wants another stream redirects.
@@ -97,7 +96,7 @@ ronin_record_bind() {
 # status` prints the public URL and then its target beneath it:
 #
 #   https://box.tailnet.ts.net:4810/
-#   |-- proxy http://127.0.0.1:4810
+#   |-- proxy http://<loopback>:<backend-port>
 #
 # so the URL is remembered and only emitted once a target naming our port
 # follows it. Matching any https:// line instead would hand a stranger whatever
@@ -121,18 +120,11 @@ ronin_served_url() {
   ' || true
 }
 
-# The address to print: the served HTTPS one when it exists, otherwise the
-# tailnet HTTP address that answers at this moment. Never a promise.
+# The only address an install may print is the verified Tailscale HTTPS mapping.
 ronin_open_url() {
-  local root="$1" port="$2" url=""
-  url="$(ronin_served_url "$port" "${RONIN_BACKEND_HOST:-${RONIN_IP:-}}" "${RONIN_PUBLIC_PORT:-4810}")"
-  if [ -z "$url" ]; then
-    local fqdn="${RONIN_FQDN:-}" ip="${RONIN_IP:-}"
-    if   [ -n "$fqdn" ]; then url="http://$fqdn:$port"
-    elif [ -n "$ip" ];   then url="http://$ip:$port"
-    else                      url="http://127.0.0.1:$port"; fi
-  fi
-  printf '%s' "$url"
+  local root="$1" port="$2"
+  : "$root"
+  ronin_served_url "$port" "${RONIN_BACKEND_HOST:-${RONIN_IP:-}}" "${RONIN_PUBLIC_PORT:-4810}"
 }
 
 ronin_banner() { # <root> <url> [report] [warning]
