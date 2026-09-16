@@ -108,7 +108,8 @@ export function createSetup2View() {
     if (scene.type === SETUP_SURFACE_TYPES.launchOwn) return launchComplete;
     return false;
   };
-  const seatNext = () => {
+  const seatNext = (visible) => {
+    if (!visible) { nextAction.el.remove(); return; }
     const actions = bench?.host.querySelector('[data-workspace="workspace2"] > .wk-surface > .wk-surface-header .wk-surface-header-actions');
     if (!actions) return;
     actions.prepend(nextAction.el);
@@ -121,8 +122,8 @@ export function createSetup2View() {
   };
   const paint = () => {
     const active = activeScene();
-    nextAction.el.hidden = active.number >= SCENES.length || !sceneComplete(active);
-    seatNext();
+    const canAdvance = active.number < SCENES.length && sceneComplete(active);
+    seatNext(canAdvance);
     for (const card of bench?.host.querySelectorAll('[data-workbench-offer-type]') || []) {
       delete card.dataset.sceneRelevant;
       const position = ORDER.indexOf(card.dataset.workbenchOfferType);
@@ -151,6 +152,7 @@ export function createSetup2View() {
     save();
   };
   function advance() {
+    if (!sceneComplete(activeScene())) return;
     const next = SCENES[activeScene().number];
     if (!next) return;
     sceneOverride = next.number;
