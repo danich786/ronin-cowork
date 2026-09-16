@@ -103,6 +103,7 @@ test('conditional arrangement pages are fact-selected for birth', async () => {
     assert.match(contract, /contradiction between the assignment and status/);
     assert.match(contract, /worktree-desk status --assignment/);
     assert.match(contract, /do not create the missing branch or\s+worktree yourself/);
+    assert.match(contract, /discard.*refuses an occupied desk/);
   } finally {
     if (oldCache === undefined) delete process.env.RONIN_SESSION_BOOT_CACHE_DIR; else process.env.RONIN_SESSION_BOOT_CACHE_DIR = oldCache;
     if (oldCatalogs === undefined) delete process.env.RONIN_CATALOGS_DIR; else process.env.RONIN_CATALOGS_DIR = oldCatalogs;
@@ -114,5 +115,7 @@ test('the desk capability points at the managed arrangement page and the Routine
   const repo = path.join(path.dirname(new URL(import.meta.url).pathname), '..');
   const core = await readFile(path.join(repo, 'ronin_catalogs', 'capabilities', 'worktree-desk.md'), 'utf8');
   assert.match(core, /ronin_catalogs\/behaviours\/conditional\/worktree-root\.md/);
+  assert.match(core, /discard refuses while any live Agent stands in the desk/);
+  assert.match(core, /Hard Delete action/);
   await assert.rejects(readFile(path.join(repo, 'ronin_catalogs', 'routines', 'ronin_worktrees.md')), /ENOENT/);
 });

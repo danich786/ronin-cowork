@@ -1,7 +1,7 @@
-import { listSessions } from '../tmux.js';
+import { listSessions, sessionDir } from '../tmux.js';
 import { tmux } from '../tmux-client.js';
 import { deriveAssignment, listDesks, readAssignment, assignmentId } from '../desks/registry.js';
-import { closeDesk, discardDesk, handoffDesk, openDesk, syncDesk, certifyDesks } from '../desks/desk.js';
+import { closeDesk, cwdIsInside, discardDesk, handoffDesk, openDesk, syncDesk, certifyDesks } from '../desks/desk.js';
 import { handIn, handInAssignment } from '../desks/hand-in.js';
 import { notifyLeads, replyToHandIn, teamOfLine } from '../desks/lead.js';
 import { acceptedSince, receiptById, receiptsForDesk, receiptsForLine } from '../desks/receipts.js';
@@ -281,6 +281,13 @@ async function main(): Promise<void> {
         if (!session || !positional[0]) die(USAGE, 2);
         const d = await pickOne(session, positional[0], 'discard');
         const confirmation = str(flags.get('confirm'));
+        const occupants: string[] = [];
+        for (const live of await listSessions()) {
+          if (cwdIsInside(d.worktree, await sessionDir(live.name))) occupants.push(live.name);
+        }
+        if (occupants.length) {
+          die(`OCCUPIED: ${occupants.join(', ')} ${occupants.length === 1 ? 'is' : 'are'} running inside ${d.worktree}; nothing was deleted. Use Hard Delete if you want to remove the Agent and its desks together.`, 4);
+        }
         const expected = `DISCARD ${deskId(d)}`;
         if (confirmation !== expected) die(`CONFIRM: discard deletes ${deskId(d)} and every commit only it holds — say --confirm "${expected}"`, 4);
         const a = await arrangementOf(d.repo);

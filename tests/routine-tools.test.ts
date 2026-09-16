@@ -141,7 +141,9 @@ test('projected ronin_bin tools resolve the symlink and reach the repository and
     assert.match(deskHelp, new RegExp(`worktree-desk ${task}`), `desk help includes ${task}`);
   }
   assert.match(deskHelp, /--source dev\|team/);
-  assert.match(deskHelp, /only destructive form/);
+  assert.match(deskHelp, /only\s+destructive form/);
+  assert.match(deskHelp, /refuses an occupied\s+desk without changing anything/);
+  assert.match(deskHelp, /Hard Delete action/);
   assert.match(deskHelp, /None performs Git push/);
 
   const teamHelp = [
