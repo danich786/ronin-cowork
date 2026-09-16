@@ -48,9 +48,11 @@ Common tasks:
 Open creates a private desk; sync merges your selected source; hand-in admits committed work to
 the Team review line. Assign lets the lead choose the same source for another Agent;
 receipts are the publication record; handoff transfers custody without moving work.
-None performs Git push. Close only removes a clean, integrated desk. Discard is the
-only destructive form and requires the exact confirmation shown above. `--with-session`
-validates the named desk, then safely closes every assigned desk before ending the Agent.
+None performs Git push. Close only removes a clean, integrated desk. Discard is the only
+destructive form and requires the exact confirmation shown above. It refuses an occupied
+desk without changing anything; use the existing Hard Delete action to remove an Agent and
+its desks together. On close, `--with-session` validates the named desk, then safely closes
+every assigned desk before ending the Agent.
 Related: the Ronin Worktrees birth guidance.
 EOF
     exit 0 ;;

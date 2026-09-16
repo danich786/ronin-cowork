@@ -29,3 +29,7 @@ worktree yourself.
 After the final hand-in, status must say `CERTIFIED CLEAN`: no unsaved files and every
 commit on the Team line. Stay parked unless told to end; `session_end` closes all
 certified desks and ends the Agent together.
+
+`worktree-desk discard` refuses an occupied desk, names the Agent standing there, and
+deletes nothing. Use Hard Delete when the intention is to remove the Agent and its desks
+together.
