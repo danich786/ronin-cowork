@@ -1,7 +1,8 @@
-/* A stable four-region work surface; scenario JSON supplies content, never layout. */
+/* A stable four-region work surface. It is a painter: it is handed one resolved
+   canvas object and renders it. It looks nothing up, fetches nothing, keeps no
+   clock, and decides nothing about why it was given what it was given. */
 import { WorkspaceKit } from './workspace-kit.js';
-import { GARDEN_REGION_KEYS, createGardenTransitionGate } from './garden-canvas-model.js';
-import { request } from './request.js';
+import { GARDEN_REGION_KEYS } from './garden-canvas-model.js';
 
 export const GARDEN_CANVAS_TYPE = 'setup.garden';
 
@@ -12,7 +13,7 @@ const node = (tag, cls = '', value = '') => {
   return el;
 };
 
-export function createGardenCanvas({ onAction = () => {} } = {}) {
+export function createGardenCanvas({ onAction = () => {}, onMedia = () => {} } = {}) {
   const surface = WorkspaceKit.primitives.createSurface({ label: 'Garden canvas', className: 'garden-canvas', header: false });
   surface.content.classList.add('garden-canvas-content');
   const scene = node('div', 'garden-canvas-scene');
@@ -63,29 +64,26 @@ export function createGardenCanvas({ onAction = () => {} } = {}) {
   overlay.addEventListener('pointerdown', (event) => { if (event.target === overlay) { event.preventDefault(); closeMedia(); } });
   overlay.addEventListener('keydown', (event) => { if (event.key === 'Escape') { event.preventDefault(); closeMedia(); } });
 
-  const openMedia = async (item, opener) => {
-    mediaOpener = opener;
+  /* The host reads the document or resolves the source and hands back a view. */
+  const showMedia = (view) => {
     mediaBody.replaceChildren();
-    const title = node('h2', '', item.label);
+    if (!view) return;
+    mediaBody.append(node('h2', '', view.label));
+    if (view.src) {
+      const external = node('a', 'garden-media-external', 'Open separately \u2197');
+      external.href = view.src; external.target = '_blank'; external.rel = 'noopener';
+      mediaBody.append(external);
+    }
     let viewer;
-    if (item.kind === 'doc') {
-      viewer = node('pre', 'garden-media-doc', 'Loading…');
-      const query = new URLSearchParams({ root: item.root, path: item.path });
-      const result = await request('/api/file?' + query.toString());
-      viewer.textContent = result.ok ? result.data.text || '' : result.message;
-    } else if (item.kind === 'video') {
+    if (typeof view.text === 'string') {
+      viewer = node('pre', 'garden-media-doc', view.text);
+    } else if (view.kind === 'video') {
       viewer = node('video', 'garden-media-video');
-      viewer.controls = true; viewer.preload = 'metadata'; viewer.src = item.src;
+      viewer.controls = true; viewer.preload = 'metadata'; viewer.src = view.src;
     } else {
       viewer = node('iframe', 'garden-media-frame');
-      viewer.title = item.label; viewer.src = item.src;
+      viewer.title = view.label; viewer.src = view.src;
       viewer.setAttribute('sandbox', 'allow-same-origin');
-    }
-    mediaBody.append(title);
-    if (item.src) {
-      const external = node('a', 'garden-media-external', 'Open separately ↗');
-      external.href = item.src; external.target = '_blank'; external.rel = 'noopener';
-      mediaBody.append(external);
     }
     mediaBody.append(viewer);
     overlay.hidden = false;
@@ -125,26 +123,26 @@ export function createGardenCanvas({ onAction = () => {} } = {}) {
       if (item.id) button.dataset.mediaId = item.id;
       button.append(node('strong', '', item.label));
       if (item.description) button.append(node('span', '', item.description));
-      button.addEventListener('click', () => { void openMedia(item, button); });
+      button.addEventListener('click', () => { mediaOpener = button; onMedia(item); });
       list.append(button);
     }
     regions.media.append(list);
   };
 
-  const transition = createGardenTransitionGate((scenarioId, content) => {
+  let painted = 0;
+  const paint = (canvas) => {
     closeMedia();
     for (const region of Object.values(regions)) { region.replaceChildren(); region.hidden = true; }
-    const next = content?.scenarios?.[scenarioId] || null;
-    if (next?.copy) { paintCopy(next.copy); regions.copy.hidden = false; }
-    if (next?.question) { paintQuestion(next.question); regions.question.hidden = false; }
-    if (next?.cta) { paintCta(next.cta); regions.cta.hidden = false; }
-    if (next?.media) { paintMedia(next.media); regions.media.hidden = false; }
-    scene.dataset.scenario = scenarioId || '';
-    scene.dataset.empty = String(!next || GARDEN_REGION_KEYS.every((key) => !next[key]));
-  });
+    if (canvas?.copy) { paintCopy(canvas.copy); regions.copy.hidden = false; }
+    if (canvas?.question) { paintQuestion(canvas.question); regions.question.hidden = false; }
+    if (canvas?.cta) { paintCta(canvas.cta); regions.cta.hidden = false; }
+    if (canvas?.media) { paintMedia(canvas.media); regions.media.hidden = false; }
+    scene.dataset.empty = String(!canvas || GARDEN_REGION_KEYS.every((key) => !canvas[key]));
+    painted += 1;
+  };
 
   surface.content.append(scene, overlay);
-  return { ...surface, select: transition.select, closeMedia, paintCount: transition.count };
+  return { ...surface, paint, showMedia, closeMedia, paintCount: () => painted };
 }
 
 export function registerGardenCanvas() {
@@ -154,7 +152,10 @@ export function registerGardenCanvas() {
     header: 'surface',
     label: 'Garden canvas',
     create: (context) => {
-      const canvas = createGardenCanvas({ onAction: (action) => context.environment?.openSetupAction?.(action) });
+      const canvas = createGardenCanvas({
+        onAction: (action) => context.environment?.openSetupAction?.(action),
+        onMedia: (item) => context.environment?.openGardenMedia?.(item),
+      });
       context.environment?.onGardenCanvas?.(canvas);
       return canvas;
     },

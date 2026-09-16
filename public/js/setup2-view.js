@@ -34,6 +34,7 @@ export function createSetup2View() {
   let runtime = null;
   let garden = null;
   let gardenContent = null;
+  let paintedCanvas = null;
   let sceneOverride = 0;
   const providerSessions = createProviderSetupSessionMount();
   let kinds = ['build'];
@@ -49,6 +50,13 @@ export function createSetup2View() {
     openLaunchForm: () => ctx?.navigate('launch'),
     openTemplateLaunchForm: () => ctx?.navigate('launch'),
     onGardenCanvas: (next) => { garden = next; },
+    openGardenMedia: async (item) => {
+      if (!garden) return;
+      if (item.kind !== 'doc') { garden.showMedia({ label: item.label, kind: item.kind, src: item.src }); return; }
+      const query = new URLSearchParams({ root: item.root, path: item.path });
+      const result = await request('/api/file?' + query.toString());
+      garden.showMedia({ label: item.label, kind: item.kind, text: result.ok ? result.data.text || '' : result.message });
+    },
     openSetupAction: (action) => {
       const scene = SCENES.find((candidate) => candidate.type === action);
       if (!scene) return;
@@ -67,8 +75,10 @@ export function createSetup2View() {
   const sceneAt = (number) => Number(number) > 0 ? SCENES[Number(number) - 1] || automaticScene() : automaticScene();
   const activeScene = () => sceneAt(sceneOverride);
   const selectGarden = (scene) => {
-    if (!garden || !gardenContent || !scene) return false;
-    return garden.select(scene.id, gardenContent, scene.id);
+    if (!garden || !gardenContent || !scene || paintedCanvas === scene.id) return false;
+    paintedCanvas = scene.id;
+    garden.paint(gardenContent.scenarios[scene.id] || null);
+    return true;
   };
   const paint = () => {
     const active = activeScene();
@@ -141,7 +151,7 @@ export function createSetup2View() {
       }
       if (!gardenContent) {
         const result = await request(GARDEN_CONTENT_URL);
-        gardenContent = normalizeGardenCanvasCatalog(result.ok ? result.data : { schema_version: 1, scenarios: {}, canvases: {} });
+        gardenContent = result.ok ? normalizeGardenCanvasCatalog(result.data) : null;
       }
       const stored = context.viewState('setup2') || {};
       sceneOverride = Number(stored.sceneOverride) >= 1 && Number(stored.sceneOverride) <= SCENES.length ? Number(stored.sceneOverride) : 0;
