@@ -13,12 +13,12 @@
         {
           "id": "provider-credential",
           "kind": "instruction",
-          "body": "Ronin does not resell model access and does not place itself between you and the provider. The credential is written by the provider's own CLI and stays on this machine."
+          "body": "Ronin does not resell model access or place itself between you and the provider."
         },
         {
           "id": "provider-one-is-enough",
           "kind": "instruction",
-          "body": "One working provider is enough to move on. Add the rest whenever you like."
+          "body": "Sign in with the provider's own CLI; the credential stays here. One provider is enough to start."
         }
       ],
       "cta": {
@@ -69,22 +69,22 @@
           "kind": "title",
           "eyebrow": "Your ground",
           "heading": "Choose a Workspace Folder",
-          "body": "Workspace Folders are your project roots: real directories on this machine and GitHub repositories. They give your agents known surfaces to work on."
+          "body": "Your project roots: directories on this machine and GitHub repositories. They give Agents known surfaces to work on."
         },
         {
           "id": "workspace-add",
           "kind": "instruction",
-          "body": "Add the directory or repository holding the project you want worked on. You can register more at any time."
+          "body": "Add the directory or repository you want worked on. Register more at any time."
         },
         {
           "id": "workspace-github",
           "kind": "instruction",
-          "body": "Authenticate with GitHub to work on remote repositories as well as folders already on this machine."
+          "body": "Authenticate with GitHub to reach remote repositories too."
         },
         {
           "id": "workspace-desks",
           "kind": "instruction",
-          "body": "For a repository, choose how Agents work in it. A desk gives each Agent its own branch and working tree, which suits code. A shared checkout keeps everyone in one tree, which suits documents, plans and work in progress."
+          "body": "Give each Agent its own desk for code, or share one checkout for documents and plans."
         }
       ],
       "media": [
@@ -105,22 +105,22 @@
           "kind": "title",
           "eyebrow": "Add only what helps",
           "heading": "Choose installations",
-          "body": "Installations add optional facilities. The core coworkspace stays local and light without any of them."
+          "body": "Optional facilities. The coworkspace stays local and light without any of them."
         },
         {
           "id": "installations-skip",
           "kind": "instruction",
-          "body": "Skip anything you are unsure about. An installation can be added the day you need it."
+          "body": "Skip anything you are unsure about; add it the day you need it."
         },
         {
           "id": "installations-registered",
           "kind": "instruction",
-          "body": "Installations maintained by the Ronin team ask that you register first. They are open code and not charged for."
+          "body": "The ones Ronin maintains ask you to register first. They are open code and free."
         },
         {
           "id": "installations-terms",
           "kind": "instruction",
-          "body": "In return, Ronin collects aggregate tool-use counts — never your code, prompts or messages — and asks that you do not commercialize the tools."
+          "body": "In return Ronin counts tool use — never your code, prompts or messages — and asks you not to commercialize the tools."
         }
       ],
       "media": [
