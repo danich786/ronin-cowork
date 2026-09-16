@@ -21,7 +21,16 @@ test('Setup and Settings use the same Workspace Folders stone presentation', asy
 });
 
 test('Setup 2 GitHub lifecycle uses only a published session and hands success to Clone', async () => {
-  const github = await source('public/js/github-workspace-setup.js');
+  const [github, kit] = await Promise.all([
+    source('public/js/github-workspace-setup.js'),
+    source('public/workspace-kit.css'),
+  ]);
+  assert.match(github, /import \{ WorkspaceKit \} from '\.\/workspace-kit\.js'/);
+  assert.match(github, /const connect = action\([^\n]+, 'primary'\)/);
+  assert.match(github, /const remove = action\([^\n]+, 'danger'\)/);
+  assert.match(github, /const cloneButton = action\([^\n]+, 'primary'\)/);
+  assert.match(kit, /\.wk-action:hover:not\(:disabled\) \{[^}]*border-color: var\(--kaki\);[^}]*background: var\(--accent-soft\)/, 'ordinary actions visibly respond to a pointer');
+  assert.match(kit, /\.wk-action\[data-kind='primary'\]:hover:not\(:disabled\) \{[^}]*background: var\(--kaki-lift\)/, 'primary actions lift on hover');
   assert.match(github, /attachment\?\.type !== 'session' \|\| !attachment\.key/);
   assert.match(github, /mountAttachment\(result\.data\.attachment\)/, 're-entering resumes the published temporary session');
   assert.match(github, /if \(connecting \|\| mounted \|\| destroyed\) return/);
