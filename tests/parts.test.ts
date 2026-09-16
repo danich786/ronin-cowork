@@ -73,3 +73,10 @@ test('discoverParts lists directories with a register entry, and nothing else', 
   assert.deepEqual(discoverParts(dir).map((p) => p.name), ['rireki']);
   assert.deepEqual(discoverParts(path.join(dir, 'missing')), []);
 });
+
+ test('Stats requires a claimed installation and explicit capability opt-in', () => {
+  for (const selected of [{}, { usage_stats: false }, { usage_stats: true }]) {
+    assert.equal(partsToLoad([{ name: 'counting' }], [], {}, selected).load.length, 0);
+  }
+  assert.equal(partsToLoad([{ name: 'counting' }], installations, { ronin_services: true }, { usage_stats: true }).load.length, 1);
+});

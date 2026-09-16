@@ -118,7 +118,7 @@ const serviceSettings = (v: unknown): { parts: Record<string, boolean> } => {
   return {
     parts: Object.prototype.hasOwnProperty.call(value, 'parts')
       ? capabilitySettings(booleanMap(value.parts))
-      : { ...emptyServiceCapabilities(), task_manager: true, usage_stats: true, project_coordinator: true },
+      : { ...emptyServiceCapabilities(), task_manager: true, usage_stats: false, project_coordinator: true },
   };
 };
 
