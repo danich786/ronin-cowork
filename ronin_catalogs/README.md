@@ -1,6 +1,8 @@
 # Ronin catalogs
 
-Repository verification is `npm run verify`. Installed user customization is checked with `npm run byoin`.
+Use focused catalog checks for individual changes. The lead owns full `npm run verify`
+at the combined integration/release gate ([verification guidance](../docs/development/verification.md)).
+Installed user customization is checked with `npm run byoin`.
 
 This shelf defines system-scope catalogs and the capability documents that select and
 teach Agent-facing tools.

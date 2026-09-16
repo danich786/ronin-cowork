@@ -14,7 +14,11 @@ release renews.
 
 1. Work reaches `dev` by **team promotion**, which constructs the candidate, advances the
    working reference by compare-and-swap, restarts the app, and checks deployment health.
-   A `dev → master` pull request runs `npm run verify` in GitHub.
+   The lead/release maintainer owns full `npm run verify` on the combined candidate before
+   publishing global `dev` to remote `dev` and opening the release PR; the lead may choose
+   to obtain that verdict earlier at Team promotion. Individual Agents use focused checks,
+   not a full run at every hand-in ([verification guidance](verification.md)).
+   A `dev → master` pull request also runs `npm run verify` in GitHub.
 2. A person merges. Master moving is a record of what is releasable, not a release.
 3. A person fetches and checks out `master`, confirms it is current, then pushes a tag
    `vX.Y.Z` on that commit. That is the release act. The release workflow

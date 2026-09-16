@@ -158,7 +158,9 @@ Before adding or moving a directory:
 3. Update this outline and the narrower child `README.md` in the same change.
 4. Update links and consumers; do not leave aliases merely to preserve an old layout.
 5. Preserve owner shadows at the same semantic coordinate when a catalog changes.
-6. Run `npm run verify`; after changing owner-store surfaces, also run `npm run byoin`.
+6. Run focused checks for the changed paths and links. Leave the full `npm run verify`
+   verdict to the lead's combined gate ([verification guidance](../development/verification.md));
+   after changing an installed box or its user stores, run `npm run byoin`.
 
 The [contributor map](../contributor-map.md) answers which product surface a change
 crosses. This page answers where its files belong.

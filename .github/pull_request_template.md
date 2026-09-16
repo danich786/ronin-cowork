@@ -11,12 +11,16 @@ Closes #
 
 ## Checks performed
 
-- [ ] `npm run verify`
-- [ ] `npm run byoin`
-- [ ] focused tests added or updated
+- [ ] Focused checks run and results recorded
+- [ ] `npm run byoin` for installed-box/user-store changes, or not applicable
+- [ ] Focused tests added or updated where needed
 - [ ] relevant rendered/manual check completed, or not applicable
 
-<!-- Give exact commands and results. For BYOIN, say whether it examined customization
+<!-- Individual contributors normally leave full npm run verify to the lead/maintainer
+     at the final combined gate. Record the tested commit and result here if that gate
+     has run, or say deferred to the lead/CI. A lead may request earlier integration
+     verification; see docs/development/verification.md.
+     Give exact commands and results. For BYOIN, say whether it examined customization
      or reported that none existed. A skipped check is neither failure nor proof: name it. -->
 
 ## Target branch

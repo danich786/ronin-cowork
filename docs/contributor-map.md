@@ -158,6 +158,8 @@ briefly when its absence would otherwise be ambiguous; a small change needs no l
 8. **Tests:** focused seam checks and any necessary cross-surface journey.
 
 Privacy, security, accessibility, failure recovery, and release apply across all seven.
-Resolve competing writers before extending a feature. During iteration use focused checks;
-run `npm run verify` once the combined Cowork change is ready. For Services also run
-`bin/verify --cowork /path/to/the/matching/ronin-cowork` from its desk.
+Resolve competing writers before extending a feature. Individual Agents use focused checks
+and report them at hand-in. The Team lead/release maintainer owns `npm run verify` for the
+combined integration or release candidate; a lead may request an earlier run when needed.
+See [verification guidance](development/verification.md). For combined Services changes,
+also arrange `bin/verify --cowork /path/to/the/matching/ronin-cowork` from the Services desk.

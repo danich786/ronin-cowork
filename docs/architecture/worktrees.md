@@ -174,7 +174,8 @@ worktrees are preserved to named recovery refs and receipts before cleanup.
 - Keep Project Root controls thin: they edit the repository profile but do not implement
   launch, branch, worktree, or promotion policy.
 - Do not edit funnel-point worktrees directly.
-- Run `npm run verify` when the repository needs a TypeScript and behavior-test verdict.
+- Use focused checks at the private desk. The lead owns the full `npm run verify` verdict
+  at the combined integration/release gate; see [verification guidance](../development/verification.md).
 - Do not delete worktrees, branches, registry rows, receipts, or recovery state implicitly.
 
 ## Executable coverage
