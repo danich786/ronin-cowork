@@ -469,9 +469,10 @@ test('kind and behaviours resolve at birth, with unusable books reported as unde
     behaviours: ['mandates', 'write_it_down', 'ways:not_there'],
   }), new Set());
   assert.equal(born.kind, 'coding');
-  assert.deepEqual(born.behaviours.map((row) => row.book), ['mandates', 'cowork-agent', 'checkout', 'write_it_down']);
+  assert.deepEqual(born.behaviours.map((row) => row.book), ['mandates', 'cowork-agent', 'user-intro', 'checkout', 'write_it_down']);
   assert.ok(born.birth_reading.some((file) => file.endsWith('/behaviours/floor/mandates.md')), 'the floor folder is applied');
   assert.ok(born.birth_reading.some((file) => file.endsWith('/behaviours/floor/cowork-agent.md')), 'every Cowork Agent receives its floor guidance');
+  assert.ok(born.birth_reading.some((file) => file.endsWith('/behaviours/floor/user-intro.md')), 'the stock-empty user introduction has a stable floor coordinate');
   assert.ok(born.birth_reading.some((file) => file.endsWith('/behaviours/selected/write_it_down.md')));
   assert.deepEqual(born.ignored, []);
   assert.deepEqual(born.undelivered, ['ways:not_there']);
