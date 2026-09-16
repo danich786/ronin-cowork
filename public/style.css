@@ -5890,6 +5890,7 @@ button.wb-door:hover b {
 .setup-register-consent { max-width: 40rem; color: var(--muted-2); font-size: var(--text-4); line-height: 1.5; }
 .setup-register-form [hidden] { display: none !important; }
 .setup-register-reasons-list { display: grid; gap: var(--space-2); margin: 0; padding-left: var(--space-6); color: var(--fg); line-height: 1.45; }
+.setup-user-intro-actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-3); }
 .setup-register-notice { min-height: 1.45em; color: var(--muted-2); font-size: var(--text-4); }
 .setup-register-notice:empty { display: none; }
 .setup-register-declined { max-width: 36rem; margin: 0; border-left: var(--edge-2) solid var(--kaki); padding: var(--space-4) var(--space-6); color: var(--fg); font-size: var(--text-5); line-height: 1.55; }

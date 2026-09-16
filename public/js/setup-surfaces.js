@@ -210,11 +210,14 @@ function createRegisterSurface(context) {
       ? t('setup_surface.user_intro_saved', 'Saved locally for future Agent introductions.') : result.message;
     return result.ok;
   };
+  const saveUserIntroAction = action(t('setup_surface.user_intro_save', 'Save Agent introduction'), 'primary', () => { void saveUserIntro(); });
+  const userIntroActions = el('div', 'setup-user-intro-actions');
+  userIntroActions.append(saveUserIntroAction, el('span', 'setup-fine', t('setup_surface.user_intro_local_only', 'Saved locally — not sent to Ronin.')));
   userIntro.append(
     el('h3', '', t('setup_surface.user_intro_heading', 'Introduce yourself to your Agents')),
     el('p', 'setup-lede', t('setup_surface.user_intro_lede', 'This stays on your machine in user intro.md and is included when new Agents are born. It is separate from registration. Keep it short: up to 600 characters, roughly 150 tokens.')),
     field(t('setup_surface.user_intro_label', 'A short note about you'), userIntroText),
-    action(t('setup_surface.user_intro_save', 'Save Agent introduction'), 'primary', () => { void saveUserIntro(); }),
+    userIntroActions,
     userIntroNotice,
   );
   const registerAction = action(t('setup_surface.register_action', 'Send'), '', async () => {
