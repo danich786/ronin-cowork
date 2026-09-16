@@ -44,7 +44,7 @@ export function buildHotwords(pane, isShowing) {
   count.textContent = t('hotwords.loading', 'loading…');
 
   // WHOSE LIST IS THIS. Hotwords is the one catalog that is copy-on-write rather than
-  // an entry-merge (docs/shadowing.md): until your first edit you are reading Ronin's
+  // an entry-merge (docs/architecture/shadowing.md): until your first edit you are reading Ronin's
   // shipped list; after it, your file IS the list and new stock words will not reach
   // you. That is worth one line, because nothing else on this tab would ever say it.
   const whose = document.createElement('div');

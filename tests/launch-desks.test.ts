@@ -78,7 +78,7 @@ test('the brief carries every desk, the primary, the line, and the four words â€
   const root = { name: 'cowork', dir: '/w/cowork', match: [], remit: '' } as unknown as Parameters<typeof buildBrief>[1];
   const rows = [{ repo: 'cowork', project_root: 'cowork', worktrees: 'enabled', mode: 'managed', location: '/w/cowork', branches: { working: 'dev', stable: 'master' }, managed: assignment.desks[0], reason: 'worktree_root', provenance: { repository: 'RONIN_REPO' } }] as const;
   const brief = buildBrief(profile, root, form, undefined, [], null, assignment, [...rows]);
-  assert.match(brief, /Born in cowork at \/w\/cowork\. Arrangement: worktree root/);
+  assert.match(brief, /Born in workspace-folder-handle: cowork at path: \/w\/cowork\. Arrangement: worktree root/);
   assert.match(brief, /Your assignment has 2 desks:/);
   assert.match(brief, /cowork\s+\/w\/cowork\/team\/comp\/fable\s+â†’ team\/comp\/dev\s+\(you start here: your shell opens inside this desk, and the desk ends with you\)/);
   assert.match(brief, /services\s+\/w\/services\/team\/comp\/fable\s+â†’ team\/comp\/dev/);
@@ -89,7 +89,7 @@ test('the brief carries every desk, the primary, the line, and the four words â€
   assert.doesNotMatch(none, /desk/i, 'a launch with no assignment is told nothing about desks');
 });
 
-test('arrangement pages stay on the SOP shelf and are pointed at, not pasted at birth', async () => {
+test('conditional arrangement pages are fact-selected for birth', async () => {
   const temp = await mkdtemp(path.join(os.tmpdir(), 'ronin-launch-desks-test-'));
   const oldCache = process.env.RONIN_SESSION_BOOT_CACHE_DIR;
   const oldCatalogs = process.env.RONIN_CATALOGS_DIR;
@@ -99,7 +99,7 @@ test('arrangement pages stay on the SOP shelf and are pointed at, not pasted at 
     const without = (await bootFiles('', false, [])).map((f) => path.basename(f));
     assert.ok(!without.includes('worktree-root.md'));
     assert.ok(!without.includes('checkout.md'));
-    const contract = await readFile(path.join(process.cwd(), 'ronin_catalogs/behaviours', 'worktree-root.md'), 'utf8');
+    const contract = await readFile(path.join(process.cwd(), 'ronin_catalogs/behaviours', 'conditional', 'worktree-root.md'), 'utf8');
     assert.match(contract, /contradiction between the assignment and status/);
     assert.match(contract, /worktree-desk status --assignment/);
     assert.match(contract, /do not create the missing branch or\s+worktree yourself/);
@@ -110,10 +110,9 @@ test('arrangement pages stay on the SOP shelf and are pointed at, not pasted at 
   }
 });
 
-test('the core points at both arrangement pages and the Routine manifest is gone', async () => {
+test('the desk capability points at the managed arrangement page and the Routine manifest is gone', async () => {
   const repo = path.join(path.dirname(new URL(import.meta.url).pathname), '..');
-  const core = await readFile(path.join(repo, 'ronin_session_boot', 'all', 'BASE_ABILITIES.md'), 'utf8');
-  assert.match(core, /ronin_catalogs\/behaviours\/worktree-root\.md/);
-  assert.match(core, /ronin_catalogs\/behaviours\/checkout\.md/);
+  const core = await readFile(path.join(repo, 'ronin_catalogs', 'capabilities', 'worktree-desk.md'), 'utf8');
+  assert.match(core, /ronin_catalogs\/behaviours\/conditional\/worktree-root\.md/);
   await assert.rejects(readFile(path.join(repo, 'ronin_catalogs', 'routines', 'ronin_worktrees.md')), /ENOENT/);
 });

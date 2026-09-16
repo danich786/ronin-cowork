@@ -42,8 +42,8 @@ activation, or restart operation and measuring again. Observed, status, needed, 
 measured facts are always read-only.
 
 The selected Campaign is the current session's when `--campaign` is omitted; an ambiguous
-or absent Campaign is reported, never guessed. Project-root writes keep the stable ID:
-title and directory may change, the ID does not. Archive keeps the catalog entry and removes
+or absent Campaign is reported, never guessed. Workspace Folder writes preserve the
+workspace-folder-handle; title and directory may change. Archive keeps the catalog entry and removes
 it from launch choices; exclude removes only the entry and never deletes a directory or
 hosted repository. Creation and repository-profile changes keep their inspection and
 explicit confirmation steps.

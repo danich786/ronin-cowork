@@ -108,6 +108,10 @@ test('creation help renders current catalog choices, availability, and Campaign 
   assert.match(result.output, new RegExp(`${facts.provider} \\(Fixture Provider\\) — available`));
   assert.match(result.output, new RegExp(`${facts.model} · fixture-tier — available`));
   assert.match(result.output, new RegExp(`Current launch default: ${facts.provider}/${facts.model} — fixture Campaign default`));
+  assert.match(result.output, /--root <workspace-folder-handle>/);
+  assert.match(result.output, /ronin_lab/);
+  assert.match(result.output, /not by its filesystem path/);
+  assert.doesNotMatch(result.output, /--root <path>/);
   assert.doesNotMatch(result.output, /--project|--lead/);
   assert.deepEqual(f.requests.map(({ method, url }) => `${method} ${url}`), [
     'GET /api/provider-catalog', 'GET /api/setup/runtime', 'GET /api/launch-seed',

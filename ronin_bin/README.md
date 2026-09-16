@@ -48,7 +48,7 @@ own command directory the tool was reached through; never the focused tile), and
 `ronin-http.sh` is sourced by every tool that talks to the operator: `ronin_connect`
 resolves the door through the sibling `ronin-url` — the operator's Unix socket, or
 `RONIN_URL` — and sets `url` and `RONIN_CURL` for the request
-(`docs/operator-connection.md`). A tool never carries an address of its own.
+(`docs/architecture/operator-connection.md`). A tool never carries an address of its own.
 
 ## Adding a tool
 

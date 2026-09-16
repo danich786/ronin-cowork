@@ -332,16 +332,28 @@ export function postNotice(board: string, author: string): string {
   );
 }
 
-export function teamJoinNotice(team: string, _file: string, members: string[]): string {
+export function teamJoinNotice(team: string, _file: string, members: string[], oldDesks?: string[]): string {
+  const transition = oldDesks
+    ? ` Existing desks do not move with Team membership${oldDesks.length ? `: ${oldDesks.join(', ')}` : ''}. ` +
+      `Before new work for "${team}", run worktree-desk open <repo> --source team; ` +
+      `that new desk hands in to this Team's lead.`
+    : '';
   return (
     `You're on the "${team}" team, which has a wipeboard. ${checkLine} — it hands you whatever ` +
     `you have not read. Membership follows the team. ` +
-    `On it: ${members.length ? members.join(', ') : 'nobody else yet'}.`
+    `On it: ${members.length ? members.join(', ') : 'nobody else yet'}.` + transition
   );
 }
 
-export function teamLeaveNotice(team: string, _file: string): string {
-  return `You've left the "${team}" team — its wipeboard will no longer reach you.`;
+export function teamLeaveNotice(team: string, _file: string, desks?: string[]): string {
+  const transition = desks
+    ? desks.length
+      ? ` Your open "${team}" desks did not move: ${desks.join(', ')}. ` +
+        `Finish and hand them in to "${team}", close them if settled, or use worktree-desk's explicit discard action. ` +
+        `Their hand-ins still go to "${team}"'s lead. Run: worktree-desk status --assignment.`
+      : ` You have no open "${team}" desks to settle.`
+    : '';
+  return `You've left the "${team}" team — its wipeboard will no longer reach you.${transition}`;
 }
 
 export async function teamOfBoard(board: string): Promise<string | null> {

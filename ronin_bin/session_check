@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+. "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/tool-count.sh" session_check "$@"
 # session_check — read one live session by exact name; never creates or changes it.
 set -u
 case "${1-}" in
@@ -41,5 +42,5 @@ print(f"session:      {s['"'"'name'"'"']}")
 print(f"teams:        {'"'"', '"'"'.join(s.get('"'"'tags'"'"') or []) or '"'"'— (rōnin)'"'"'}")
 print(f"人 of:        {'"'"', '"'"'.join(s.get('"'"'leads'"'"') or []) or '"'"'—'"'"'}")
 print(f"dial:         {s.get('"'"'control'"'"') or '"'"'—'"'"'}")
-print(f"project_root: {os.environ['"'"'ROOT'"'"'] or '"'"'—'"'"'}")
+print(f"workspace-folder-handle: {os.environ['"'"'ROOT'"'"'] or '"'"'—'"'"'}")
 '

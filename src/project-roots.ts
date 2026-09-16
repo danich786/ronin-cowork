@@ -81,7 +81,7 @@ function parseRoots(raw: string): ProjectRootInfo[] {
         .replace(new RegExp(`^\\s*-\\s*\\*\\*${key}:\\*\\*\\s*`, 'i'), '')
         .trim();
     const dir = field('dir');
-    if (!dir) continue; // a project_root without a directory is not launchable
+    if (!dir) continue; // a Workspace Folder without a directory is not launchable
     roots.push({
       name,
       title: field('title'),
@@ -114,7 +114,7 @@ const NEW_USER_FILE = `# PROJECT_ROOTS — your directories (user scope)
 > already born under it are untouched — the name never stops meaning what it meant.
 >
 > What a session here READS at birth is not a field — it is the files on this root's
-> shelf. Ask \`ronin-store session_boot\` for it, and see docs/session-boot.md.
+> shelf. Ask \`ronin-store session_boot\` for it, and see docs/architecture/session-boot.md.
 > The provider catalog (providers and models) is stock and lives in the install's
 > \`MODEL_PROVIDERS.md\`, not here; your own copy of that file beside this one shadows it.
 `;
@@ -166,7 +166,7 @@ export async function upsertProjectRoot(name: string, fields: Partial<Record<Roo
   const found = headingLines(lines).find((h) => h.name === name);
 
   if (!found) {
-    if (!fields.dir) throw new Error('A new project_root needs a directory.');
+    if (!fields.dir) throw new Error('A new Workspace Folder needs a directory.');
     const block = [`## ${name}`];
     for (const key of FIELD_ORDER) {
       const v = fields[key];

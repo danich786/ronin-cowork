@@ -9,6 +9,9 @@ Reach for this bundle when your task, position, documents, or a held project cha
 is the one record the owner reads on your tile and roster. Documents and projects are
 resources inside it, not separate memory systems.
 
+**Show docs** means list the documents attached to this record. **Update work record**
+means record current progress, position, and next steps through the typed dispatcher.
+
 **Live tool:** the shipped `work-record` dispatcher owns record fields, Docs visibility,
 and held-project create/read/write.
 

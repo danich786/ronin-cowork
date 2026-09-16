@@ -9,7 +9,7 @@ Each CLI has one maintained integration page:
 - [Hermes](hermes.md)
 
 These pages own each CLI's Ronin-specific explanation and code map. Shared browser
-shortcuts belong only to [Terminal controls](../terminal-controls.md).
+shortcuts belong only to [Terminal controls](../using-ronin/terminal-controls.md).
 
 The CLI and inference provider are separate: several inference providers can use one
 CLI. Models, prices, launch rows and owner overrides belong to the
@@ -36,7 +36,7 @@ explicit. Authentication Behaviors express owner policy and link here for CLI me
 - `src/spawn.ts`, `src/routes/launch.ts`: resolve catalog entries and persist launch identity.
 - `src/tmux.ts`, `src/session-archive.ts`, `src/routes/sessions-api.ts`: live identity and archive/resume.
 - `src/terminal-controls.ts`: read the Agent document and dispatch using persisted CLI identity; no screen detection.
-- [Provider contract](../model-providers.md): extension and owner-overlay rules.
+- [Provider contract](../architecture/model-providers.md): extension and owner-overlay rules.
 - Tests: `tests/terminal-controls.test.ts`, `tests/model-providers.test.ts`,
   `tests/agent-prompts.test.ts`, and archive lifecycle tests. These check Ronin;
   they do not certify a live CLI journey unless that journey is explicitly documented.

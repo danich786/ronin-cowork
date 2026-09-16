@@ -34,7 +34,7 @@ rendered from it; neither is edited here. Editing a file in this directory produ
 second, quietly divergent mark — the exact failure the lab's own design notes warn about.
 
 The colours are shared and are NOT copied. `--kaki: #c46243` is the mark's persimmon and is
-already a token `public/style.css` defines, governed by `docs/ui.md`. The lab extends that
+already a token `public/style.css` defines, governed by `docs/architecture/ui.md`. The lab extends that
 vocabulary rather than keeping a parallel palette, and so does this.
 
 Served by `src/index.ts` from **ahead of the auth gate**, so the login page can wear it.

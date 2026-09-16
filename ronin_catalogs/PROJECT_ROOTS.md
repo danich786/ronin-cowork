@@ -10,9 +10,11 @@ scope**, the catalogs store's `PROJECT_ROOTS.md` — outside every repo, created
 first use, and untouched by any upgrade (`DAIKUSAN.md`, the three scopes). Adding a root
 here would put your directories in a file the next upgrade overwrites.
 
-A **`project_root`** is *where* the work happens. It is used by launch forms and memory
-frontmatter. One lookup fixes: where to work (`dir`), what a cold agent reads first (`read`),
-and which memories it recalls (`memory`). A root never chooses a model — sessions have
+A **Workspace Folder** records *where* work happens. Its **workspace-folder-handle**
+travels as `project_root` in code, launch forms, and memory frontmatter. One lookup fixes:
+where to work (`dir`), what a cold Agent
+reads first (`read`), and which memories it recalls (`memory`). A Workspace Folder never
+chooses a model — sessions have
 ONE default (`agents.sessions.default`, set in ⚙ Configuration), and every launch may
 pick otherwise on the form.
 
@@ -21,5 +23,5 @@ pick otherwise on the form.
 Which provider, which model and what command launches it are the **provider catalog's**
 questions: `ronin_catalogs/MODEL_PROVIDERS.md`, one section per provider and one row per
 model, shadowed whole by a copy in your catalogs store. The extension contract and the
-third-party provider checklist are in `docs/model-providers.md`. Nothing about a
+third-party provider checklist are in `docs/architecture/model-providers.md`. Nothing about a
 provider is written here.

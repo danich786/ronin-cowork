@@ -101,7 +101,7 @@ if [ -z "$HOME_DIR" ]; then
   if [ "$MODE" = "check" ] && [ -z "$FILE" ]; then
     : # a bare --check from a checkout still works: installed=none, latest from the feed
   else
-    fail "run from a checkout: pass --home <dir> (the install home; docs/release.md)"
+    fail "run from a checkout: pass --home <dir> (the install home; docs/development/release.md)"
   fi
 fi
 
@@ -234,7 +234,7 @@ unit_serves_home() {
 
 # Why nothing was restarted. There are four reasons and they want four different acts
 # from the reader; printing "the unit serves elsewhere" for all of them sent a Mac owner
-# to docs/release.md to chase a cutover that was not happening, when the truth was that
+# to docs/development/release.md to chase a cutover that was not happening, when the truth was that
 # the launchd agent had simply never been loaded.
 why_not_restarted() {
   local kind wd
@@ -248,7 +248,7 @@ why_not_restarted() {
     echo "  $kind reports no working directory for $RONIN_UNIT — cannot tell what it serves."
     echo "  Restart it by hand once you have: $(machine_operator_restart_action)"
   else
-    echo "  this box's operator serves $wd, not $HOME_DIR/current (cutover pending? docs/release.md)."
+    echo "  this box's operator serves $wd, not $HOME_DIR/current (cutover pending? docs/development/release.md)."
   fi
 }
 
@@ -498,7 +498,7 @@ elif [ -z "$CUR" ]; then
   # Only for a hand-run update; get-ronin execs setup.sh itself.
   if [ -z "${RONIN_FROM_GET:-}" ]; then
     echo "  To make it serve: (cd $HOME_DIR/current && ./setup.sh)   # units, PATH, start"
-    echo "  Cutover from a checkout-serving box is a deliberate act: docs/release.md."
+    echo "  Cutover from a checkout-serving box is a deliberate act: docs/development/release.md."
   fi
 else
   echo "✓ $VER is installed and current — but nothing was restarted, so it is NOT live yet:"

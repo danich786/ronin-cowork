@@ -29,6 +29,7 @@ export interface RegistrationRecord {
   run_location: string;
   intended_use: string[];
   theme_preference: string;
+  user_intro: string;
   own_words: string;
   anonymous_packet_id: string;
   communication: CommunicationPreferences;
@@ -50,6 +51,7 @@ const EMPTY: RegistrationRecord = {
   run_location: '',
   intended_use: [],
   theme_preference: '',
+  user_intro: '',
   own_words: '',
   anonymous_packet_id: '',
   communication: {
@@ -63,7 +65,11 @@ const EMPTY: RegistrationRecord = {
 };
 
 const file = () => path.join(storeDir('config'), 'registration.json');
+const userIntroFile = () => path.join(storeDir('ways'), 'floor', 'user-intro.md');
 const text = (value: unknown, max = 240) => typeof value === 'string' ? value.trim().slice(0, max) : '';
+const userIntro = (value: unknown): string => typeof value === 'string'
+  ? value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).slice(0, 2).map((line) => line.slice(0, 180)).join('\n')
+  : '';
 const list = (value: unknown) => Array.isArray(value)
   ? [...new Set(value.map((item) => text(item, 48)).filter(Boolean))].slice(0, 8)
   : [];
@@ -91,12 +97,23 @@ async function writeRegistration(next: RegistrationRecord): Promise<Registration
   const tmp = `${target}.tmp`;
   await fs.writeFile(tmp, `${JSON.stringify(next, null, 2)}\n`, { mode: 0o600 });
   await fs.rename(tmp, target);
+  const introTarget = userIntroFile();
+  if (next.user_intro) {
+    await fs.mkdir(path.dirname(introTarget), { recursive: true });
+    const introTmp = `${introTarget}.tmp`;
+    const markdown = `# User intro\n\n- **label:** User intro\n- **blurb:** What the owner wants every Cowork Agent to know about them.\n- **installation:** —\n- **order:** 30\n- **scope:** floor\n\n## About the user\n\n${next.user_intro}\n`;
+    await fs.writeFile(introTmp, markdown, { mode: 0o600 });
+    await fs.rename(introTmp, introTarget);
+  } else {
+    await fs.rm(introTarget, { force: true });
+  }
   return next;
 }
 
 export async function deleteRegistration(): Promise<void> {
   await Promise.all([
     fs.rm(file(), { force: true }),
+    fs.rm(userIntroFile(), { force: true }),
     clearClaimSecret(),
     clearEntitlementToken(),
   ]);
@@ -128,6 +145,7 @@ export async function submitRegistration(input: Record<string, unknown>): Promis
     run_location: text(input.run_location, 80),
     intended_use: list(input.intended_use),
     theme_preference: text(input.theme_preference, 24),
+    user_intro: userIntro(input.user_intro),
     own_words: text(input.own_words, 500),
     anonymous_packet_id: identityMode === 'anonymous' ? current.anonymous_packet_id || packetId() : '',
     submitted_at: current.submitted_at ?? new Date().toISOString(),
@@ -176,6 +194,7 @@ export async function registrationAnswer() {
     run_location: record.run_location,
     intended_use: record.intended_use,
     theme_preference: record.theme_preference,
+    user_intro: record.user_intro,
     own_words: record.own_words,
     communication: record.communication,
     submitted_at: record.submitted_at,

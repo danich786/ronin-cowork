@@ -572,6 +572,7 @@ nothing paints exactly this. `check-lexicon` holds this file complete.
 - **setup_surface.preferred_feature_short:** Capability
 - **setup_surface.reasons_short:** Describes you
 - **setup_surface.run_location_short:** Install on
+- **setup_surface.user_intro:** Introduce yourself to your Cowork Agents (up to two short lines)
 - **ask.none:** None
 - **ask.chosen:** {n} chosen
 - **ask.find:** type to find
@@ -1008,7 +1009,7 @@ The pad's current config downloads as a backup first.
 - **roots.section_folder:** Folder
 - **roots.section_repository:** Repository
 - **roots.fact_directory:** Directory
-- **roots.fact_id:** ID
+- **roots.fact_handle:** Workspace Folder handle
 - **roots.fact_docs:** Docs
 - **roots.fact_plans:** Plans
 - **roots.fact_match:** Match
@@ -1621,10 +1622,10 @@ The catalog entry goes. {dir} is not touched.
 - **errors.no_session_list:** could not load the session list
 
 ## roots — the edit form
-- **roots.f_handle:** ID
-- **roots.f_handle_hint:** The stable ID used by sessions and tools.
+- **roots.f_handle:** Workspace Folder handle
+- **roots.f_handle_hint:** The stable handle used by sessions and tools, such as ronin_lab.
 - **roots.f_title:** display title
-- **roots.f_title_hint:** The name shown on screen. Changing it never changes the ID or directory.
+- **roots.f_title_hint:** The name shown on screen. Changing it never changes the handle or directory.
 - **roots.f_title_placeholder:** optional
 - **roots.f_directory:** directory
 - **roots.f_directory_hint:** Any absolute path, at any depth

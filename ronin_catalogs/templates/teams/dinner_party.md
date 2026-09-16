@@ -7,7 +7,7 @@
 - **objective:** A menu, a table and a good evening — planned well enough that the host enjoys it too.
 
 A standing menu book or house recipe file belongs with this template: save it as an Behavior
-in your own store, shadow this file, and add the book (docs/templates.md).
+in your own store, shadow this file, and add the book (docs/architecture/templates.md).
 
 ## agents
 

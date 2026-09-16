@@ -40,7 +40,7 @@ import { count } from '../counts.js';
 import { announceTeamChanges } from './wipeboards-api.js';
 import { writeTeams } from '../tegami.js';
 import { readTegami } from '../tegami-read.js';
-import { teamsSopPath } from '../spawn.js';
+import { conditionalBehaviourPath } from '../behaviours.js';
 import { emitSessionEnd } from '../sockets.js';
 import { resumeAgentArgv } from '../agents.js';
 import { listTeamRosters } from '../team-rosters.js';
@@ -62,6 +62,10 @@ import { hardDeleteConfirmation, shutdownAgent, ShutdownRefused, ShutdownSlots, 
 import { listDesks } from '../desks/registry.js';
 
 interface PreparedEnding { proceed: boolean; acknowledgement?: Record<string, unknown> }
+
+export const teamLeadAcknowledgement = (teams: readonly string[], reading?: string): string =>
+  `You are now the team_lead of ${teams.map((team) => `"${team}"`).join(', ')}. ` +
+  `Reading assignment: read ${reading ?? 'the Team lead conditional Behavior'} now for what a Team lead does.`;
 
 interface ShutdownOperation extends ShutdownProgress {
   id: string;
@@ -365,7 +369,7 @@ export function registerSessions(app: express.Express): void {
     if (!isValidName(name)) return res.status(400).json({ error: 'Invalid name.' });
     if (!(await sessionExists(name))) return res.status(404).json({ error: 'No such session.' });
     const root = String(req.body?.project_root ?? '').trim();
-    if (root && !isValidRootName(root)) return res.status(400).json({ error: 'Invalid project_root handle.' });
+    if (root && !isValidRootName(root)) return res.status(400).json({ error: 'Invalid Workspace Folder handle.' });
     try {
       await assertSameCampaignRoot(await getCampaign(name), root);
     } catch (e) {
@@ -499,9 +503,8 @@ export function registerSessions(app: express.Express): void {
       const fresh = leads.filter((t) => !before.includes(t));
       let delivered: string | null = null;
       if (fresh.length) {
-          const msg =
-            `You are now the team_lead of ${fresh.map((t) => `"${t}"`).join(', ')}. ` +
-            `Read first: ${teamsSopPath()} — how to raise supporting sessions and place them into your team.`;
+          const reading = await conditionalBehaviourPath('team-lead');
+          const msg = teamLeadAcknowledgement(fresh, reading);
           const sent = await sendText(name, msg).catch(() => null);
           delivered = sent?.started ? 'delivered' : 'not delivered — the prompt was not accepting input';
       }

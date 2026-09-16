@@ -13,13 +13,13 @@ the Build Brief teaches and emphasizes for that Agent; it does not grant, withho
 authorize, or forbid an installed tool or its help.
 
 Capabilities may teach primitive and composite tools alike. The canonical boundaries are
-in [`docs/tool-surface.md`](../../docs/tool-surface.md).
+in [`docs/architecture/tool-surface.md`](../../docs/architecture/tool-surface.md).
 
 The folder is the catalog. Ronin reads every definition here and in the owner's
 `<catalogs store>/capabilities/` (a file of the same name shadows the shipped one whole; a
-new name is added). Ronin Host, Ronin Services, gbrain, Trello, Perplexity and any later
-add-on are one file each, gated by their own `requires:` line; nothing in the resolver
-knows a bundle by name.
+new name is added). Every definition groups actual Agent tools and carries its own
+`requires:` facts; an installation or integration without Agent tools remains on its own
+shelf. Nothing in the resolver knows a capability by name.
 
 ## The definition
 
@@ -35,10 +35,10 @@ These exact files are the source catalog for the virtual `YOUR TOOLS` view:
 |---|---|---|
 | Core | `edges.md` | live cross-session and Team communication/read tool |
 | Core | `work-record.md` | live personal record, document, and held-project tool |
-| Core | `session.md` | live session inspection and lifecycle tools |
+| Core | `agent_session.md` | live Agent/session inspection and lifecycle tools |
 | Core | `worktree-desk.md` | live desk tool, with managed-desk teaching selected by arrangement |
 | Core | `machine-settings.md` | typed Campaign, installation, provider, and machine settings |
-| Core | `team.md` | live Team roster, project, custody, and member-status tools |
+| Core | `cowork_team.md` | live Cowork Team roster, project, custody, and member-status tools; designated-lead teaching is conditionally embedded |
 | Conditional | `ronin-host.md` | advanced host inspection and guarded restart tool |
 | Conditional | `mika.md` | installed house-assistant launcher |
 
@@ -101,5 +101,5 @@ predicates on the same document still affect teaching only.
 The compiler renders one virtual overview from selected definitions — title, blurb,
 priority tools with their jobs, help routes, and the full-document path — and puts the
 full document on the shelf as a card. The birth receipt records every definition with
-`selected`, `reason`, `tools` and `missing`. `docs/session-boot.md` and
-`docs/birth-packet.md` own the packet; `docs/installations.md` owns the cascade.
+`selected`, `reason`, `tools` and `missing`. `docs/architecture/session-boot.md` and
+`docs/architecture/birth-packet.md` own the packet; `docs/architecture/installations.md` owns the cascade.

@@ -5,7 +5,7 @@
 > questions `public/style.css` already asks under `@layer foundations`. That is the whole
 > safety story: there is no selector here to get wrong.
 >
-> **This is a shadowable catalog** (`docs/shadowing.md`). The entries below ship and are
+> **This is a shadowable catalog** (`docs/architecture/shadowing.md`). The entries below ship and are
 > replaced wholesale by an upgrade. Your own copy lives in the catalogs store, outside
 > every repo — an upgrade cannot touch it and an uninstall leaves it. A `## name` of yours
 > REPLACES the shipped one of that name whole; a new name is added after them;
@@ -38,7 +38,7 @@
 >    visit, with cleared storage, or with the tailnet flaky, the page paints correctly today
 >    with no JS having run at all. Move the shipped palette here and there is nothing to
 >    fall back to — not a flash of dark, a flash of *nothing*, with every `var(--bg)`
->    resolving to empty. Same law as stock ⊕ user in `docs/shadowing.md`: the stock layer
+>    resolving to empty. Same law as stock ⊕ user in `docs/architecture/shadowing.md`: the stock layer
 >    exists to be there before anything else is.
 > 2. **Keeping a floor AND a copy here would be the same palette spelled twice** — the exact
 >    drift the token rule exists to end — and `scripts/check-css.mjs` would measure the

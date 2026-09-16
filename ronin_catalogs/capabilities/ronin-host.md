@@ -2,7 +2,7 @@
 - **label:** Ronin Host
 - **blurb:** How do I inspect or operate the machine underneath Ronin?
 - **class:** feature
-- **requires:** behaviour:ronin_host
+- **requires:** —
 - **order:** 70
 
 Reach for this bundle for measured machine facts, account state, secret presence, restart,

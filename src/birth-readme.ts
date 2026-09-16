@@ -7,6 +7,7 @@ import { resolveFiles } from './resources.js';
 import { activeDeskProfileName, listDeskProfiles } from './desk-profiles.js';
 import { resolveLexicon } from './lexicon-catalog.js';
 import { CAPABILITIES_READING } from './capabilities.js';
+import { SOUGHT_READING } from './behaviours.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -144,6 +145,16 @@ async function capabilitiesReading(text: string, session = ''): Promise<string> 
   return target;
 }
 
+async function soughtReading(text: string, session = ''): Promise<string> {
+  const dir = session ? path.join(storeDir('session_boot_cache'), 'sessions', session) : storeDir('session_boot_cache');
+  const target = path.join(dir, SOUGHT_READING);
+  const temp = `${target}.${process.pid}.${randomUUID()}.tmp`;
+  await mkdir(dir, { recursive: true });
+  await writeFile(temp, text);
+  await rename(temp, target);
+  return target;
+}
+
 export async function ensureShelf(roots: string[] = []): Promise<void> {
   const base = userShelf();
   const dirs = [
@@ -190,6 +201,7 @@ export async function bootFiles(
   routineReading: string[] = [],
   capabilitiesOverview?: string,
   session = '',
+  soughtOverview?: string,
 ): Promise<string[]> {
   const user = userShelf();
   const universal = await levelFiles(path.join(STOCK, 'all'), path.join(user, 'all'));
@@ -218,6 +230,7 @@ export async function bootFiles(
     files.push(file);
   }
   if (capabilitiesOverview !== undefined) files.push(await capabilitiesReading(capabilitiesOverview, session));
+  if (soughtOverview !== undefined) files.push(await soughtReading(soughtOverview, session));
   for (const template of universal.filter(isGlossary)) files.push(await glossaryReading(template, session));
   return files;
 }
@@ -226,7 +239,12 @@ export function isShelfTeaching(file: string): boolean {
   const under = (base: string) => file === base || file.startsWith(base + path.sep);
   if (under(STOCK) || under(storeDir('session_boot_cache'))) return true;
   const shelf = userShelf();
-  return under(shelf) && !under(path.join(shelf, 'root'));
+  if (under(shelf) && !under(path.join(shelf, 'root'))) return true;
+  const behaviours = path.join(path.dirname(STOCK), 'ronin_catalogs', 'behaviours');
+  const ownerBehaviours = storeDir('ways');
+  return [behaviours, ownerBehaviours].some((root) =>
+    under(path.join(root, 'floor')) || under(path.join(root, 'conditional')),
+  );
 }
 
 function titleOf(text: string, file: string): string {

@@ -7,7 +7,10 @@
 
 Reach for this bundle because you hold a managed desk: a private branch and worktree leased
 to you. Status, sync, commit, and hand-in are distinct; none is Git push. Read
-`ronin_catalogs/behaviours/worktree-root.md` before the first write.
+`ronin_catalogs/behaviours/conditional/worktree-root.md` before the first write.
+
+**Hand in** means submit committed desk work to the Team review line with
+`worktree-desk hand-in`; it does not promote or push.
 
 ## Tools
 

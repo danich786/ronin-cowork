@@ -6,7 +6,7 @@ import { t } from './lexicon.js';
  * PROVENANCE — the mark that says a catalog entry is yours.
  *
  * Every catalog the commons renders is resolved from two files: the shipped one in the
- * install, and your own in the catalogs store, entry-merged by name (`docs/shadowing.md`).
+ * install, and your own in the catalogs store, entry-merged by name (`docs/architecture/shadowing.md`).
  * The server puts `origin` and `shadowed` on every entry; this is the one place that
  * turns them into something on screen, so the four surfaces cannot drift apart.
  *

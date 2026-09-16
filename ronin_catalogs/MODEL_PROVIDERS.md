@@ -17,7 +17,7 @@
 Everything below is a snapshot, not live data: the models a vendor lists, the prices it
 publishes and the words about what each model is good at were read on the date above.
 The stock catalog is refreshed with each Ronin release (the release order in
-`docs/tarball.md` has the step: re-read prices and models, bump `updated`). A shadow copy
+`docs/development/tarball.md` has the step: re-read prices and models, bump `updated`). A shadow copy
 in your catalogs store is yours to refresh, and carries its own `updated` line. Ronin
 shows the date it has, stale or not; it never hides it and never guesses a newer one.
 
@@ -118,7 +118,7 @@ Model ids are passed unchanged to Gemini CLI's `--model` option. The free tier s
 Flash models only; Pro needs a paid plan. Gemini CLI declares no MCP-off flag, so it
 cannot launch disconnected. These cells are written from Google's published CLI
 reference and price list and have not yet been exercised end to end through Ronin; the
-first real launch of each is the proof, per `docs/model-providers.md`.
+first real launch of each is the proof, per `docs/architecture/model-providers.md`.
 
 | model | tier | default | cost | good at | not good at | launch |
 |---|---|---|---|---|---|---|
@@ -177,4 +177,4 @@ section, or a row in your own shadow copy.
 
 **Other launch settings** a spawn may carry (not role-level; chosen per session):
 launch mode (`configured` / `live_dangerously`) and the `@ronin-control` dial the
-session is born with (`user` / `read` / `write` — see `docs/session-control-dials.md`).
+session is born with (`user` / `read` / `write` — see `docs/architecture/session-control-dials.md`).

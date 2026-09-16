@@ -9,6 +9,9 @@ Reach for this bundle whenever work crosses out of this session: one-to-one mess
 Team-wide posts, another session's recent view, rosters, Team pages, schedules, or visible
 Control. Nothing here changes your own record; that belongs to Work Record.
 
+**Tell** means message another Agent with `edges send`. **Wipeboard** means read or share
+a Team note with `edges wipeboard`.
+
 ## Tools
 
 | Tool | Authority | Teach | Help |

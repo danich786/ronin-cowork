@@ -91,7 +91,7 @@ function createRegisterSurface(context) {
       onChange: (next) => { selected = next[name]; value.value = multiple ? JSON.stringify(selected) : selected; for (const listener of listeners) listener(selected); },
     });
     question.el.classList.add('setup-register-bounded');
-    return { value, wrap: question.el, values: () => multiple ? [...selected] : selected, onChange: (listener) => listeners.push(listener), set: (next) => question.set(name, next) };
+    return { value, wrap: question.el, values: () => multiple ? [...selected] : selected, onChange: (listener) => listeners.push(listener) };
   };
   const checklistGroup = (name, label, choices) => {
     const other = input(`${name}_other`); other.className = 'setup-register-other'; other.placeholder = t('setup_surface.something_else_prompt', 'Tell us'); other.hidden = true;
@@ -125,8 +125,6 @@ function createRegisterSurface(context) {
   const kindOther = input('kind_other'); kindOther.className = 'setup-register-other'; kindOther.placeholder = t('setup_surface.something_else_prompt', 'Tell us'); kindOther.hidden = true;
   kind.onChange(() => {
     kindOther.hidden = kind.value.value !== 'other'; if (!kindOther.hidden) kindOther.focus();
-    const routeKind = { build_software: 'build', life_assistants: 'life', research_writing: 'research', other: 'other' }[kind.value.value];
-    context.environment?.kinds?.set(routeKind ? [routeKind] : []);
   });
   const preferredFeature = choiceGroup('preferred_feature', t('setup_surface.preferred_feature', 'Which core Ronin capability do you prefer most?'), [
     ['remote_access', 'Work from anywhere', t('setup_surface.feature_remote_access', 'Ronin runs on your home machine or a virtual machine. You open it from a browser wherever you are, any time.')],
@@ -148,7 +146,7 @@ function createRegisterSurface(context) {
     ['virtual_machine', 'Virtual machine'], ['personal_server', 'Personal server'], ['personal_computer', 'Personal computer'],
   ], { short: t('setup_surface.run_location_short', 'Install on') });
   const own = el('textarea'); own.name = 'own_words'; own.rows = 3;
-  own.addEventListener('change', () => { void context.environment?.setPathNote?.(own.value); });
+  const userIntro = el('textarea'); userIntro.name = 'user_intro'; userIntro.rows = 2; userIntro.maxLength = 361;
   const identity = el('div', 'setup-registration-identity');
   const form = el('form', 'setup-form setup-register-form');
   const welcome = el('div', 'setup-register-welcome');
@@ -165,19 +163,11 @@ function createRegisterSurface(context) {
   kind.wrap.classList.add('setup-register-full');
   const ownField = field(t('setup_surface.own_words', 'Anything else'), own);
   ownField.classList.add('setup-register-full');
-  const route = el('section', 'setup-register-group setup-register-route');
-  route.append(
-    el('h3', '', t('setup_surface.setup_help', 'Help with system setup')),
-    el('p', 'setup-lede', t('setup_surface.setup_help_lede', 'Tell us what you are most likely to use Ronin for so Setup can show the most useful path.')),
-    kind.wrap, kindOther, ownField,
-  );
-  const registrationIntro = el('section', 'setup-register-group setup-register-intro');
-  registrationIntro.append(
-    el('h3', '', t('setup_surface.optional_registration', 'Optional system registration')),
-    el('p', 'setup-lede', t('setup_surface.optional_registration_lede', 'Register only if you want to share a profile or use services tied to an identity.')),
-  );
+  const userIntroField = field(t('setup_surface.user_intro', 'Introduce yourself to your Cowork Agents (up to two short lines)'), userIntro);
+  userIntroField.classList.add('setup-register-full');
   fit.append(
-    el('h3', '', t('setup_surface.ronin_fit', 'What brings you here')), preferredFeature.wrap, reasons.wrap,
+    el('h3', '', t('setup_surface.ronin_fit', 'What brings you here')), preferredFeature.wrap, reasons.wrap, kind.wrap, kindOther,
+    userIntroField, ownField,
   );
   const consent = el('p', 'setup-fine setup-register-consent', t('setup_surface.consent_exact', 'Email registration sends a confirmation and can unlock Ronin Services. Anonymous registration sends these answers without contact details. Communication stays off unless you choose otherwise.'));
   const declined = el('p', 'setup-register-declined', t('setup_surface.no_thanks_message', 'We hope you enjoy Ronin. If you’d like to share feedback later, we’d be glad to hear it.'));
@@ -187,9 +177,9 @@ function createRegisterSurface(context) {
     const anonymous = identityMode.value.value !== 'email';
     const result = await request('/api/setup/registration', { method: 'POST', json: {
       identity_mode: anonymous ? 'anonymous' : 'email', email: email.value, purpose: '',
-      kind: '', kind_other: '', user_type: '', goals: [], preferred_feature: preferredFeature.value.value,
+      kind: kind.value.value, kind_other: kindOther.value, user_type: '', goals: [], preferred_feature: preferredFeature.value.value,
       reasons: reasons.values(), reason_other: reasons.other.value, run_location: runLocation.value.value,
-      intended_use: [], theme_preference: '', own_words: '',
+      intended_use: [], theme_preference: '', user_intro: userIntro.value, own_words: own.value,
     } });
     notice.textContent = result.ok
       ? anonymous ? t('setup_surface.anonymous_saved', 'Thanks — your anonymous hello was sent to Ronin.') : t('setup_surface.confirm_email', 'Registration saved. Confirm the email to receive Services entitlement.')
@@ -216,7 +206,7 @@ function createRegisterSurface(context) {
   };
   identityMode.onChange(paintIdentityMode);
   paintIdentityMode();
-  form.append(welcome, route, registrationIntro, about, fit, send, declined);
+  form.append(welcome, about, fit, send, declined);
   const prefs = el('form', 'setup-form setup-preferences');
   const checks = Object.fromEntries(['newsletter', 'release_updates', 'no_communication'].map((name) => [name, input(name, 'checkbox')]));
   const followUps = Object.fromEntries(['product_research', 'interviews', 'support'].map((name) => [name, input(name, 'checkbox')]));
@@ -246,6 +236,7 @@ function createRegisterSurface(context) {
   const wordFor = (key) => labels.get(key) || '';
   const summaryWords = () => {
     const words = [current?.email_masked, current?.run_location && wordFor(current.run_location), current?.preferred_feature && wordFor(current.preferred_feature)];
+    words.push(current?.kind === 'other' && current?.kind_other ? current.kind_other : current?.kind && wordFor(current.kind));
     for (const reason of current?.reasons || []) words.push(reason === 'something_else' && current?.reason_other ? current.reason_other : wordFor(reason));
     return words.filter(Boolean).join(' · ');
   };
@@ -270,7 +261,7 @@ function createRegisterSurface(context) {
         kind: current.kind, kind_other: current.kind_other, user_type: current.user_type, goals: current.goals,
         preferred_feature: current.preferred_feature, reasons: current.reasons, reason_other: current.reason_other, run_location: current.run_location,
         intended_use: current.intended_use,
-        theme_preference: current.theme_preference, own_words: current.own_words,
+        theme_preference: current.theme_preference, user_intro: current.user_intro, own_words: current.own_words,
       } });
       notice.textContent = result.ok ? t('setup_surface.registration_address_changed', 'Registration email changed; check the new address.') : result.message;
       if (result.ok) { current = result.data; paint(); }
@@ -298,12 +289,7 @@ function createRegisterSurface(context) {
     notifySummary(SETUP_SURFACE_TYPES.register, current?.status || 'optional', context.workbench);
   };
   body.append(identity, form, preferences, recoveryOptions, notice); out.content.append(body);
-  return { el: out.el, show: async () => {
-    const routeKind = context.environment?.kinds?.get?.()[0] || '';
-    kind.set({ build: 'build_software', life: 'life_assistants', research: 'research_writing', other: 'other' }[routeKind] || '');
-    own.value = context.environment?.setupRuntime?.preferences?.path_note || '';
-    const result = await request('/api/setup/registration', { cache: 'no-store' }); current = result.ok ? result.data : null; paint();
-  } };
+  return { el: out.el, show: async () => { const result = await request('/api/setup/registration', { cache: 'no-store' }); current = result.ok ? result.data : null; paint(); } };
 }
 
 function createRootsSurface(context) {

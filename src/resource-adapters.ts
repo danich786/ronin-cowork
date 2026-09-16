@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { STOCK_DIR, entryValue, isKeyLine, resolveFiles, type Origin } from './resources.js';
+import { STOCK_DIR, entryValue, isKeyLine, resolveFiles, resolveTreeFiles, type Origin } from './resources.js';
 import { storeDir } from './resources.js';
 
 export type DefinitionKind =
@@ -25,13 +25,22 @@ const isHidden = (d: Definition): boolean => /^yes$/i.test(d.get('hidden'));
 
 export async function readDefinitions(kind: DefinitionKind): Promise<Definition[]> {
   const merged = new Map<string, Definition>();
-  for (const file of await resolveFiles({
+  const resolver = kind === 'behaviours' ? resolveTreeFiles : resolveFiles;
+  for (const file of await resolver({
     stock: path.join(STOCK_DIR, kind),
     user: kind === 'behaviours' ? storeDir('ways') : path.join(storeDir('catalogs'), kind),
     include: isDefinitionFile,
     symlinks: true,
   })) {
     const lines = file.text.split('\n');
+    if (kind === 'behaviours') {
+      const directory = file.relative.split(path.sep)[0];
+      const stated = entryValue(lines, 'scope');
+      if (!['floor', 'conditional', 'selected', 'sought'].includes(directory) || stated !== directory) {
+        console.error(`[ronin] ${file.path}: Behavior directory and \`scope\` must agree — skipped.`);
+        continue;
+      }
+    }
     if (!lines.some(isKeyLine)) {
       console.error(`[ronin] ${file.path}: no \`- **key:** value\` lines — not a definition, skipped.`);
       continue;
@@ -94,11 +103,12 @@ export interface InstallationRow extends ContributionRow {
   requires: string[];
 }
 
-export type BehaviourScope = 'floor' | 'conditional' | 'selectable' | 'situational';
+export type BehaviourScope = 'floor' | 'conditional' | 'selected' | 'sought';
 export interface BehaviourRow extends ContributionRow {
   installation: string;
   page: string;
   scope: BehaviourScope;
+  requires: string[];
 }
 
 function credit(v: string): { text: string; url: string } | undefined {
@@ -139,10 +149,16 @@ export async function listBehaviours(): Promise<BehaviourRow[]> {
   return (await readDefinitions('behaviours')).map((d) => {
     const installation = d.get('installation').trim();
     const stated = d.get('scope').trim();
-    const scope: BehaviourScope = ['floor', 'conditional', 'situational'].includes(stated)
+    const scope: BehaviourScope = ['floor', 'conditional', 'sought'].includes(stated)
       ? stated as BehaviourScope
-      : 'selectable';
-    return { ...contribution(d), installation: /^[\u2013\u2014-]$/.test(installation) ? '' : installation, page: d.file, scope };
+      : 'selected';
+    return {
+      ...contribution(d),
+      installation: /^[\u2013\u2014-]$/.test(installation) ? '' : installation,
+      page: d.file,
+      scope,
+      requires: splitDefinitionList(d.get('requires')),
+    };
   });
 }
 

@@ -6,7 +6,7 @@ This shelf defines system-scope catalogs and the capability documents that selec
 teach Agent-facing tools.
 
 > **Everything in this directory is SYSTEM SCOPE — an upgrade replaces it wholesale**
-> (`docs/shadowing.md`). Nothing here may list the_owner's own things.
+> (`docs/architecture/shadowing.md`). Nothing here may list the_owner's own things.
 >
 > That is why `PROJECT_ROOTS.md` here holds **only the project_root contract** and
 > `MODEL_PROVIDERS.md` holds **the stock provider catalog** (a copy in your catalogs store
@@ -22,7 +22,7 @@ that states when the tool is selected and how it is taught. The capability's `re
 facts are the only delivery gate. Keep operating rules in the capability document or a
 named Behavior; there is no compiled instruction layer.
 
-[`docs/tool-surface.md`](../docs/tool-surface.md) owns the architectural vocabulary and its composite tool boundary.
+[`docs/architecture/tool-surface.md`](../docs/architecture/tool-surface.md) owns the architectural vocabulary and its composite tool boundary.
 Do not introduce “macro” or “action” as a competing category.
 
 ## Directory map
@@ -32,8 +32,11 @@ input; identical subject names across directories do not make the documents inte
 
 | Path | Files | Why it exists / what belongs here |
 |---|---|---|
-| `capabilities/` | Core: `edges.md`, `machine-settings.md`, `session.md`, `team.md`, `work-record.md`, `worktree-desk.md`. Conditional: `mika.md`, `ronin-host.md`. | Agent-operable domains made from one or more real tools. Every file has a `## Tools` table; products without Agent tools do not belong here. |
-| `behaviours/` | `accounts.md`, `buildout.md`, `checkout.md`, `codebase_team.md`, `codex.md`, `data.md`, `deploy.md`, `gbrain.md`, `install.md`, `mandates.md`, `more_checkpoints.md`, `perplexity.md`, `recruit.md`, `remote_machine_admin.md`, `remote_machine_health.md`, `report_before_fixing.md`, `ronin_host.md`, `ronin_methodology.md`, `secrets.md`, `skins.md`, `syncthing.md`, `teams.md`, `tmux_server.md`, `trello.md`, `visual_staging.md`, `vpn.md`, `worktree-root.md`, `write_it_down.md`. | Scoped instructions for how an Agent works. Floor, selectable, and situational guidance share this shelf and declare their scope in the file. |
+| `capabilities/` | Core: `agent_session.md`, `cowork_team.md`, `edges.md`, `machine-settings.md`, `work-record.md`, `worktree-desk.md`. Feature: `mika.md`, `ronin-host.md`. | Agent-operable domains made from real tools. Every file has a `## Tools` table. |
+| `behaviours/floor/` | `mandates.md` | The complete automatic floor; the folder resolves wholesale. |
+| `behaviours/conditional/` | `checkout.md`, `worktree-root.md` | Candidates applied from launch facts declared in each file. |
+| `behaviours/selected/` | `buildout.md`, `codebase_team.md`, `gbrain.md`, `more_checkpoints.md`, `perplexity.md`, `recruit.md`, `report_before_fixing.md`, `trello.md`, `visual_staging.md`, `write_it_down.md` | Candidates applied through Agent → Team → Campaign selection. |
+| `behaviours/sought/` | empty | Future awareness-only pages; the folder would generate its own index. |
 | `installations/` | `gbrain.md`, `perplexity.md`, `ronin_services.md`, `trello.md`. | What can be installed or enabled on a machine and what that installation contributes. An installation is not an Agent capability. |
 | `desk_profiles/` | `home.md`, `league.md`, `professional.md`, `terminal.md`, `vibe_code.md`. | Named presentation and workspace defaults copied into Campaign configuration. |
 | `lexicons/` | `home_en.md`, `league_en.md`, `professional_en.md`, `terminal_en.md`, `vibe_code_en.md`. | Surface-language overrides; `professional_en.md` is the complete floor. |
@@ -56,18 +59,17 @@ of copying its guarded choreography.
 `theme`, `lexicon` (a `lexicons/` entry),
 `rireki_view`, `team_arrangement`. `lexicons/<name>.md` is the words a surface uses —
 keys to strings with a `base:` to fall through to. Both shadow whole-file by name
-(`docs/shadowing.md`); each directory's README carries the format. The rule for words:
+(`docs/architecture/shadowing.md`); each directory's README carries the format. The rule for words:
 `professional_en` is the floor and complete, a lexicon says only what it changes, and
-`scripts/check-lexicon.mjs` keeps the floor honest. `docs/desk-profiles.md`, `docs/lexicons.md`.
+`scripts/check-lexicon.mjs` keeps the floor honest. `docs/architecture/desk-profiles.md`, `docs/architecture/lexicons.md`.
 
 ## Adding an INSTALLATION, a FEATURE, or a BEHAVIOUR
 
 `installations/<name>.md` is one machine installation: `effect` is `system` (its reading,
 tools and parts join every Cowork Agent birth) or `provider` (it `provides`
-behaviours). `behaviours/<name>.md` is one selectable behaviour: its `installation`,
-reading, Behaviors, tools and MCP connection. `behaviours/<name>.md` is one
-short page on how ordinary work is done. Each directory's `README.md` carries the exact
-format; `docs/installations.md` owns the cascade and birth behaviour. Membership is
+behaviours). `behaviours/<scope>/<name>.md` is one scoped page on how ordinary work is
+done. Each directory's `README.md` carries the exact
+format; `docs/architecture/installations.md` owns the cascade and birth behaviour. Membership is
 listed once, in the definition; do not add an owner field to each member.
 
 ## Adding a CAPABILITY (a bundle of tools, taught at birth)
@@ -79,4 +81,4 @@ that select it — an installation on, a behaviour selected, a managed desk, a c
 Campaign, a Team, the lead designation — and blank selects it for every Cowork Agent. A
 capability may list several tools or one; the birth overview is rendered from the
 selected documents and names only tools that exist on this box. `capabilities/README.md`
-carries the exact format; `docs/installations.md` owns the birth behaviour.
+carries the exact format; `docs/architecture/installations.md` owns the birth behaviour.

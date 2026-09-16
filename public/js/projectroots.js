@@ -10,10 +10,10 @@ import { ask } from './ask.js';
 
 export function buildProjectRoots(root, isShowing, campaignId = () => '', options = {}) {
   const { createAction } = WorkspaceKit.primitives;
-  const NEW = '\0new'; // `editing` when the add card's form is open — no root has this ID
+  const NEW = '\0new'; // `editing` when the add card's form is open — no root has this handle
   const stones = options.presentation === 'stones';
   let data = null; // { roots: [...], untagged: n }
-  let editing = null; // ID of the block whose form is open
+  let editing = null; // handle of the block whose form is open
 
   const head = document.createElement('div');
   head.className = 'pr-head';
@@ -104,7 +104,7 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
   }
 
   /* -- the form: EDIT on a block that exists, ADD inside the card at the end (`creating`),
-   * where the ID is the one field typed this once. -- */
+   * where the Workspace Folder handle is the one field typed this once. -- */
   function form(existing, creating = false) {
     const f = document.createElement('div');
     f.className = 'pr-form';
@@ -140,12 +140,12 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
       host.appendChild(wrap);
       return i;
     };
-    // The ID is shown, never edited: changing identity is a catalog operation, not a form
+    // The handle is shown, never edited: changing identity is a catalog operation, not a form
     // field. The independent display title is ordinary editable presentation.
-    const handleInput = mk(t('roots.f_handle', 'ID'), 'name', existing.name, t('roots.f_handle_hint', 'The stable ID used by sessions and tools.'), 'ronin');
+    const handleInput = mk(t('roots.f_handle', 'Workspace Folder handle'), 'name', existing.name, t('roots.f_handle_hint', 'The stable handle used by sessions and tools, such as ronin_lab.'), 'ronin_lab');
     handleInput.disabled = !creating;
     if (stones && !creating) handleInput.closest('label').hidden = true; // the detail head already says it
-    mk(t('roots.f_title', 'display title'), 'title', existing.title, t('roots.f_title_hint', 'The name shown on screen. Changing it never changes the ID or directory.'), t('roots.f_title_placeholder', 'optional'));
+    mk(t('roots.f_title', 'display title'), 'title', existing.title, t('roots.f_title_hint', 'The name shown on screen. Changing it never changes the handle or directory.'), t('roots.f_title_placeholder', 'optional'));
     const dirInput = mk(t('roots.f_directory', 'directory'), 'dir', existing.dir, t('roots.f_directory_hint', 'Where the Agent starts and discovers project instructions.'), '');
     if (creating) {
       dirInput.closest('label').hidden = true;
@@ -251,7 +251,7 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
         body[i.dataset.key] = i.value.trim();
       });
       const name = creating ? body.name : existing.name;
-      delete body.name; // on an edit the route already carries the ID; on an add it rides the body
+      delete body.name; // on an edit the route already carries the handle; on an add it rides the body
       let proposedProfile = null;
       if (profileFields) {
         let creationIsRepo = true;
@@ -499,7 +499,7 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
     d.append(section(t('roots.summary', 'Summary'), summary));
 
     const folder = section(t('roots.section_folder', 'Folder'), facts([
-      [t('roots.fact_id', 'ID'), r.name],
+      [t('roots.fact_handle', 'Workspace Folder handle'), r.name],
       [t('roots.fact_directory', 'Directory'), r.dir, { tone: exists ? '' : 'bad' }],
       [t('roots.fact_docs', 'Docs'), (r.docs || []).join(', ')],
       [t('roots.fact_plans', 'Plans'), (r.plans || []).join(', ')],

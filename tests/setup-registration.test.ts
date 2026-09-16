@@ -1,12 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp } from 'node:fs/promises';
+import { mkdtemp, readFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'ronin-registration-'));
 process.env.RONIN_CONFIG_DIR = path.join(root, 'config');
 process.env.RONIN_SERVICES_SECRETS_DIR = path.join(root, 'secrets');
+process.env.RONIN_WAYS_DIR = path.join(root, 'ways');
 
 const { deleteRegistration, readRegistration, registrationAnswer, submitRegistration, updateCommunication } = await import('../src/activation/registration.js');
 const { putEntitlementToken, getEntitlementToken } = await import('../src/activation/secrets.js');
@@ -24,7 +25,9 @@ test('registration records purpose fields but never stores the plain email', asy
   await submitRegistration({
     email: 'person@example.com', purpose: 'Build a product', kind: 'work',
     user_type: 'individual', preferred_feature: 'multiple_providers',
-    reasons: ['different_strengths', 'avoid_lock_in'], run_location: 'personal_server', own_words: 'Keep the setup small.',
+    reasons: ['different_strengths', 'avoid_lock_in'], run_location: 'personal_server',
+    user_intro: 'I build small, durable software.\nI prefer direct answers.\nThis third line is dropped.',
+    own_words: 'Keep the setup small.',
   });
   const record = await readRegistration();
   assert.equal(record.email_masked, 'p*****@example.com');
@@ -33,6 +36,17 @@ test('registration records purpose fields but never stores the plain email', asy
   assert.equal(record.preferred_feature, 'multiple_providers');
   assert.deepEqual(record.reasons, ['different_strengths', 'avoid_lock_in']);
   assert.equal(record.run_location, 'personal_server');
+  assert.equal(record.user_intro, 'I build small, durable software.\nI prefer direct answers.');
+  const intro = await readFile(path.join(root, 'ways', 'floor', 'user-intro.md'), 'utf8');
+  assert.match(intro, /- \*\*scope:\*\* floor/);
+  assert.match(intro, /## About the user\n\nI build small, durable software\.\nI prefer direct answers\./);
+  assert.doesNotMatch(intro, /third line/);
+  const { resolveFloorBehaviours } = await import('../src/behaviours.js');
+  const resolvedIntro = (await resolveFloorBehaviours()).find((row) => row.book === 'user-intro');
+  assert.equal(resolvedIntro?.file, path.join(root, 'ways', 'floor', 'user-intro.md'));
+  const { compileBirthReadmeAt, isShelfTeaching } = await import('../src/birth-readme.js');
+  const readme = await compileBirthReadmeAt(path.join(root, 'session'), [resolvedIntro!.file], 'newborn', isShelfTeaching);
+  assert.match(await readFile(readme, 'utf8'), /^## User intro[\s\S]*^### About the user/m);
   assert.equal(JSON.stringify(record).includes('person@example.com'), false);
   assert.equal((await registrationAnswer()).status, 'pending', 'submission is not entitlement');
 });
@@ -133,7 +147,8 @@ test('selector definitions retain neutral provider grouping without requirement 
 
 test('Register presents one open profile flow with card choices and anonymous delivery', async () => {
   const source = await (await import('node:fs/promises')).readFile(new URL('../public/js/setup-surfaces.js', import.meta.url), 'utf8');
-  for (const name of ['email', 'own_words']) assert.match(source, new RegExp(`name = '${name}'|input\\('${name}'`));
+  for (const name of ['email', 'user_intro', 'own_words']) assert.match(source, new RegExp(`name = '${name}'|input\\('${name}'`));
+  assert.match(source, /userIntro\.rows = 2/);
   for (const name of ['identity_mode', 'kind', 'preferred_feature', 'run_location']) assert.match(source, new RegExp(`choiceGroup\\('${name}'`));
   assert.match(source, /const question = ask\(/);
   assert.equal((source.match(/exposed: true/g) || []).length, 1, 'Register exposes its short choice selectors through ERABI');

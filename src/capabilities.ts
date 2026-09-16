@@ -234,9 +234,7 @@ export const capabilityTools = (rows: readonly ResolvedCapability[]): string[] =
 export const CAPABILITIES_READING = 'CAPABILITIES.md';
 
 const LESSON =
-  'Your tools are grouped by the work you are doing. This page was built from the tool documents ' +
-  'available to this session. Each entry gives you its priority tools and points to the full document. ' +
-  'Run any tool with `--help` to see its operations, and any operation with `--help` for exact usage.';
+  'Built from this session’s capability documents. Each entry gives priority tools, help, and the full teaching.';
 
 const code = (text: string): string => `\`${text}\``;
 

@@ -10,8 +10,8 @@ const proof = (detail: string): RepoProof => ({
 
 test('failure routing selects only exact changed paths named by failed gates', () => {
   assert.deepEqual(
-    filesNamedByFailedGates(proof('FAIL docs/worktrees.md:106 — bad claim'), ['docs/worktrees.md', 'public/js/cowork-view.js']),
-    ['docs/worktrees.md'],
+    filesNamedByFailedGates(proof('FAIL docs/architecture/worktrees.md:106 — bad claim'), ['docs/architecture/worktrees.md', 'public/js/cowork-view.js']),
+    ['docs/architecture/worktrees.md'],
   );
 });
 

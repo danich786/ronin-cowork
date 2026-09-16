@@ -12,18 +12,18 @@ test('Behavior shelf resolves owner additions and whole-file shadows with readab
   const previous = process.env.RONIN_WAYS_DIR;
   process.env.RONIN_WAYS_DIR = path.join(temp, 'sops');
   try {
-    await mkdir(process.env.RONIN_WAYS_DIR, { recursive: true });
-    await writeFile(path.join(process.env.RONIN_WAYS_DIR, 'accounts.md'), '# My accounts\n\nOwner process.\n');
-    await writeFile(path.join(process.env.RONIN_WAYS_DIR, 'local-only.md'), '# Local only\n\nMy own procedure.\n');
+    await mkdir(path.join(process.env.RONIN_WAYS_DIR, 'selected'), { recursive: true });
+    await writeFile(path.join(process.env.RONIN_WAYS_DIR, 'selected', 'buildout.md'), '# My buildout\n\nOwner process.\n');
+    await writeFile(path.join(process.env.RONIN_WAYS_DIR, 'selected', 'local-only.md'), '# Local only\n\nMy own procedure.\n');
     await writeFile(path.join(process.env.RONIN_WAYS_DIR, 'README.md'), '# Not an SOP\n');
     await writeFile(path.join(temp, 'outside.md'), '# Outside\n\nMust not be served.\n');
-    await symlink(path.join(temp, 'outside.md'), path.join(process.env.RONIN_WAYS_DIR, 'linked.md'));
+    await symlink(path.join(temp, 'outside.md'), path.join(process.env.RONIN_WAYS_DIR, 'selected', 'linked.md'));
 
     const rows = await listWays();
-    const shadow = rows.find((row) => row.name === 'accounts');
+    const shadow = rows.find((row) => row.name === 'buildout');
     assert.deepEqual(
       shadow && { label: shadow.label, origin: shadow.origin, shadowed: shadow.shadowed, content: shadow.content },
-      { label: 'My accounts', origin: 'user', shadowed: true, content: '# My accounts\n\nOwner process.\n' },
+      { label: 'My buildout', origin: 'user', shadowed: true, content: '# My buildout\n\nOwner process.\n' },
     );
     const added = rows.find((row) => row.name === 'local-only');
     assert.equal(added?.origin, 'user');
@@ -31,7 +31,7 @@ test('Behavior shelf resolves owner additions and whole-file shadows with readab
     assert.equal(added?.blurb, 'My own procedure.');
     assert.equal(rows.some((row) => row.name === 'README'), false);
     assert.equal(rows.some((row) => row.name === 'linked'), false);
-    assert.equal(rows.filter((row) => row.name === 'accounts').length, 1);
+    assert.equal(rows.filter((row) => row.name === 'buildout').length, 1);
   } finally {
     if (previous === undefined) delete process.env.RONIN_WAYS_DIR;
     else process.env.RONIN_WAYS_DIR = previous;
@@ -76,5 +76,5 @@ test('catalog routes expose the resolved Behavior shelf as JSON', async () => {
   await handler({}, res);
   assert.equal(status, 200);
   assert.ok(Array.isArray(body));
-  assert.ok(body.some((row) => row.name === 'accounts' && typeof row.content === 'string'));
+  assert.ok(body.some((row) => row.name === 'buildout' && typeof row.content === 'string'));
 });

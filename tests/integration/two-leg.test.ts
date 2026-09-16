@@ -27,7 +27,7 @@ import { fileURLToPath } from 'node:url';
 const exec = promisify(execFile);
 
 // A SIBLING CHECKOUT, RESOLVED — never one machine's absolute path. This defaulted to
-// `/home/glen3/dohyo/ronin-shiwake`, and `tests/` ships in the tarball (docs/release.md:
+// `/home/glen3/dohyo/ronin-shiwake`, and `tests/` ships in the tarball (docs/development/release.md:
 // an install can run its own byoin_checks), so every install carried one person's home
 // directory and skipped here forever without anyone being able to act on the reason.
 const HERE = path.dirname(fileURLToPath(import.meta.url));

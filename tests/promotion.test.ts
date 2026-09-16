@@ -74,6 +74,10 @@ function fakes(over: Partial<Effects> = {}): Effects {
 
 const quiet = { ledgerDir: LEDGER, log: () => undefined };
 
+test('promotion health always resolves through the Cowork operator', () => {
+  assert.equal(P.promotionOperatorDir('/tmp/ronin-services'), path.resolve('.'));
+});
+
 test('happy path: candidate = dev + line, CAS advance, mounted dev refreshed', async () => {
   const cw = await fixture('cowork');
   const containedDesk = path.join(root, 'wt', `happy-desk-${Math.random().toString(36).slice(2, 6)}`);
