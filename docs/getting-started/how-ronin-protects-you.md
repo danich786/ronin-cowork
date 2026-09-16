@@ -4,8 +4,8 @@
 
 Ronin puts real shells in a browser. Its tiles run as the account that installed it, so
 anyone who can open the page has that account's shell authority. Ronin reduces accidental
-exposure by running the application unprivileged, refusing an unsafe unauthenticated bind, using its own
-tmux server, keeping Ronin's egress narrow and visible, and making the install removable.
+exposure by running the application unprivileged, refusing an unsafe unauthenticated bind, preserving existing
+tmux sessions, keeping Ronin's egress narrow and visible, and making the install removable.
 Those controls do not make Ronin a sandbox or replace a carefully chosen network boundary.
 
 Do not accept this page as proof. Inspect the checkout and running machine, report what you
@@ -28,9 +28,9 @@ observe, and use **unknown** when safe evidence cannot settle a question.
 | release-layout secret mode | `stat -L -c %a current/.env` (Linux) or `stat -L -f %Lp current/.env` (Mac) | `current/.env` is a symlink and its target reads `600`; the link's own apparent `777` is not the file mode |
 | Claude Code settings | `python3 hostside/claude-settings.py --check` and `grep -n statusLine bin/ronin-uninstall` | `statusLine` enables the gauge; only unset/default themes become `dark-ansi`; owner choices stay; uninstall removes only its unchanged statusLine and leaves theme |
 | prior clean uninstall | `journalctl --user -u ronin.service --no-pager -n 20` plus `bin/ronin-doctor` | history may remain while files and units are absent; `FIRST install on this home` means no earlier current release in that home |
-| release-directory git noise | `journalctl --user -u ronin.service --no-pager -n 50` and `curl -fsS http://127.0.0.1:4810/api/version` | `fatal: not a git repository` alone is known cosmetic output from a release directory; health/version still identify the running release |
-| linger and chosen bind | `bin/ronin-doctor` | `ok — linger is on — the coworkspace survives logout`; for tailnet-without-password, `ok — auth is off, but the bind is this machine's tailnet address` |
-| disclosed login posture | `bin/ronin-welcome` and the closing setup frame | explicitly says password or no password and names the private URL; no-password means the tailnet access rules are the wall |
+| release-directory git noise | `journalctl --user -u ronin.service --no-pager -n 50` and `curl -fsS https://<machine>.<tailnet>.ts.net:4810/api/version` | `fatal: not a git repository` alone is known cosmetic output from a release directory; health/version still identify the running release |
+| linger and private HTTPS | `bin/ronin-doctor` | linger is enabled; the machine-name HTTPS address on port `4810` answers |
+| disclosed access boundary | `bin/ronin-welcome` and the closing setup result | names the private HTTPS URL on port `4810` and states that access is controlled by Tailscale |
 | websocket origin check | `grep -n originAllowed src/index.ts src/ws/origin.ts` | a page Ronin did not serve is refused |
 | Ronin egress | `grep -RIn 'ALLOWED_HOST\|EgressRefused\|fetch(' src` | activation transport is allowlisted; investigate every other call site |
 | actual egress record | `cat "$(bin/ronin-store session)/../egress.jsonl"` | absent/empty on a fresh install of the open `ronin-cowork` package, or entries the owner can account for |
@@ -58,9 +58,9 @@ what remains unknown, and what would change the recommendation.
 
 ## Boundaries to explain
 
-- **Network:** with no Ronin password, the tailnet and its access rules are the wall.
-  Everyone permitted to reach Ronin can use the shell. Loopback plus an SSH tunnel is also
-  valid. Never expose the port publicly.
+- **Network:** access is controlled by Tailscale. Everyone its rules permit to reach
+  Ronin can use the installed account's shell. Use the verified machine-name HTTPS address
+  on port `4810`. Never expose Ronin publicly.
 - **Credentials:** Agent CLIs use credentials on the machine. Ronin does not broker them,
   but a shell with this account's authority may reach what the account can reach.
 - **Provider data:** the Agent CLI talks directly to its provider under the owner's account.
@@ -74,7 +74,7 @@ what remains unknown, and what would change the recommendation.
 
 ## Hand back the result
 
-State the observed bind and login posture, who can reach that network, whether existing
+State the observed bind and Tailscale access boundary, who can reach that network, whether existing
 tmux work is separate, what outbound paths you found, which provider-policy questions
 remain unknown, and whether you recommend proceeding for this machine.
 

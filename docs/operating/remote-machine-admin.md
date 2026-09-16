@@ -43,7 +43,7 @@ measured, never remembered, including from earlier in the same session.
 |---|---|---|
 | **swap** | `/usr/sbin/swapon --show` — empty means none | `remote_machine_health.md` § swap has the reasoning and the line |
 | **linger** | `loginctl show-user "$USER" --property=Linger --value` | without it every `--user` service stops at logout, so the coworkspace is simply gone whenever nobody is signed in |
-| **the door** | `tailscale serve status` | absence is **not** a fault: reaching an install at `http://ip:port` over the tailnet is a legitimate arrangement |
+| **private HTTPS** | `tailscale serve status` and `bin/ronin-doctor` | the machine-name HTTPS address on port `4810` must answer; report missing or unhealthy HTTPS as incomplete setup |
 | **kernel log** | `journalctl -k -n1` returns entries, or `dmesg` works | without it nothing can say what was killed — see below |
 | **the reading** | `curl -s localhost:PORT/api/machine` | `{"off":true}` means the owner turned watching off; a 404 means the machine service is not installed |
 
@@ -91,7 +91,7 @@ Each of these produces a confidently wrong answer if you assume Linux-on-a-VM:
 - **No `sudo` at all** — a managed or corporate box. Every chore degrades to advice; none of
   them is an error. Say what would help and stop.
 - **A provider that already manages swap or updates** — offering again is noise. Check first.
-- **A home server on no tailnet** — the door row does not apply.
+- **A home server on no tailnet** — establish Tailscale access before completing Ronin setup.
 
 ## When the person says no
 

@@ -38,15 +38,9 @@ let lookAt = '';
 try {
   const st = JSON.parse(execFileSync('tailscale', ['status', '--json'], { encoding: 'utf8' }));
   const fqdn = (st.Self?.DNSName || '').replace(/\.$/, '');
-  if (fqdn) lookAt = `https://${fqdn}:8443/staging/`;
+  if (fqdn) lookAt = `https://${fqdn}:4810/staging/`;
 } catch { /* tailscale not installed / not up */ }
-if (!lookAt) {
-  try {
-    const ip = execFileSync('tailscale', ['ip', '-4'], { encoding: 'utf8' }).trim().split('\n')[0];
-    if (ip) lookAt = `http://${ip}:${process.env.PORT || 4810}/staging/`;
-  } catch { /* still nothing — the placeholder stands */ }
-}
 lookAt ||= '<your Ronin URL>/staging/';
 console.log('');
-console.log(`  look at it:  ${lookAt}`);
+console.log(`  staging address (requires a working Ronin HTTPS install): ${lookAt}`);
 console.log('  gate it:     npm run verify:staging');

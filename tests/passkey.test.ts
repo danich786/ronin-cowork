@@ -25,7 +25,7 @@ import {
 } from '../src/passkey.js';
 
 const RP = 'box.example.ts.net';
-const ORIGIN = `https://${RP}:8443`;
+const ORIGIN = `https://${RP}:4810`;
 const b64u = (b: Buffer): string => b.toString('base64url');
 
 const { publicKey, privateKey } = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
@@ -78,7 +78,7 @@ const oneShot = (want: string) => {
 /* ------------------------------------------------------------------ the RP ID */
 
 test('an RP ID comes off a domain Host and never off an IP', () => {
-  assert.deepEqual(rpIdFromHost('box.example.ts.net:8443'), { rpId: 'box.example.ts.net' });
+  assert.deepEqual(rpIdFromHost('box.example.ts.net:4810'), { rpId: 'box.example.ts.net' });
   assert.deepEqual(rpIdFromHost('BOX.example.TS.net'), { rpId: 'box.example.ts.net' });
   assert.deepEqual(rpIdFromHost('localhost:4810'), { rpId: 'localhost' });
   // The shape the owner actually types, and the one that must fail with a sentence.

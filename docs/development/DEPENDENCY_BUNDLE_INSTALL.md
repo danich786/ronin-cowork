@@ -46,27 +46,27 @@ match) is exactly what makes the WSL path painless.
 
 ## Installing, per platform
 
-The user journey is identical everywhere: download → run `./setup.sh` → the link prints →
-open it. The README's one-command door (`scripts/get-ronin`, fetched raw and piped to sh)
-is exactly that journey automated: pick this box's artifact, verify its checksum, install,
-run setup — assuming nothing is on the box, because the bundle guarantees nothing needs
-to be. The git door stays beside it for agents and readers, and can install either
-flavor. On a local graphical Linux desktop the browser is opened as a courtesy
-(`libexec/ronin-open-browser`, best-effort, never fatal, never over SSH); the printed
-link remains the contract on every platform.
+The public installer (`scripts/get-ronin`, fetched raw and piped to sh) selects the
+platform artifact, verifies its checksum, installs it, and runs setup. The bundle supplies
+Node, tmux, and application dependencies. Tailscale must be installed and signed in;
+setup explains the outstanding administrator changes before applying them.
 
-- **Linux**: unpack the artifact for your architecture, `./setup.sh`. Services install as
-  user-level systemd units; the tmux server unit runs the bundled binary directly
-  (`deploy/tmux-server.service`, `__TMUX_BIN__`), and the app resolves tmux through
-  `vendor/bin` first (`deploy/ronin.service`, `__TMUX_DIR__`).
-- **macOS**: unpack the darwin artifact for your chip, `./setup.sh`. The launchd agent is
-  rendered from `deploy/com.ronin.plist` with the same placeholders; setup prints the
-  `launchctl load` line for the one step macOS keeps manual.
-- **Windows (WSL2)**: in PowerShell, `wsl --install` (once, then reboot if asked); inside
-  the WSL shell, install the **linux-x64** artifact exactly as on Linux (arm64 Windows
-  machines take linux-arm64). WSL2 runs systemd on current builds, so the same user units
-  work; the printed URL is reachable from the Windows browser as localhost. Everything in
-  the bundle was built for exactly this box-with-nothing case.
+The successful browser destination is `https://<machine>.<tailnet>.ts.net:4810`.
+Access is controlled by Tailscale. A missing service, HTTPS mapping, or failed readiness
+check is incomplete setup, not an alternative address. On a local graphical Linux desktop,
+`libexec/ronin-open-browser` opens the verified URL as a convenience; its failure does not
+invalidate a working URL.
+
+- **Linux:** services use user-level systemd units. The tmux unit runs the bundled binary
+  (`deploy/tmux-server.service`, `__TMUX_BIN__`); the application resolves tmux through
+  `vendor/bin` (`deploy/ronin.service`, `__TMUX_DIR__`).
+- **macOS:** setup renders the launchd agent from `deploy/com.ronin.plist`. Creating the
+  plist alone is not a running installation; follow any reported activation requirement
+  before expecting a verified URL.
+- **Windows (WSL2):** enable WSL2, then use the Linux artifact matching its architecture.
+  The Linux environment needs a working service manager and Tailscale setup. Verify the
+  machine-name HTTPS address from the Windows browser; do not infer access from unpacking
+  the artifact.
 
 ## Where every byte is pinned
 
