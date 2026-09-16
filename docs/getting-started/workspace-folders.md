@@ -34,9 +34,25 @@ repositories that are not already on the machine.
 Point at the project you actually want worked on — the repository, the notes directory, the
 site. Prefer the folder you would open in an editor.
 
-A Workspace Folder can be a Git repository or a plain directory. When it is a repository,
-Agents working there can be given [managed desks](../using-ronin/desks.md), so each one commits on its own
-branch instead of sharing your working tree.
+A Workspace Folder can be a Git repository or a plain directory.
+
+## Desks or a shared checkout
+
+When a Workspace Folder is a repository, you choose how Agents work inside it.
+
+| Choice | What each Agent gets | Suits |
+|---|---|---|
+| [Managed desk](../using-ronin/desks.md) | Its own branch and working tree | Active code editing, and several Agents at once |
+| Shared checkout | The one working tree, on whatever branch it is on | Notes, research, plans, and reading |
+
+Prefer desks whenever the work is code and more than one Agent may touch it. Parallel
+Agents on one checkout share a single set of uncommitted changes, so one Agent's
+half-finished edit is visible to every other and easy to lose.
+
+Prefer a shared checkout when the point is that everyone sees the same documents. A lab or
+notes repository — a place for ideas, research, plans and notes before or across projects
+— is the clearest case: the work is prose, the value is in everyone reading one current
+copy, and branch isolation only gets in the way.
 
 You can register as many as you like, and the same machine can hold unrelated ones — a work
 repository, a personal notes folder, a site. Agents see only the one they were started in.

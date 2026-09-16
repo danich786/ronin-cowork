@@ -80,6 +80,11 @@
           "id": "workspace-github",
           "kind": "instruction",
           "body": "Authenticate with GitHub to work on remote repositories as well as folders already on this machine."
+        },
+        {
+          "id": "workspace-desks",
+          "kind": "instruction",
+          "body": "For a repository, choose how Agents work in it: a desk gives each Agent its own branch and working tree, which suits active code editing. A shared checkout keeps everyone in one tree, which suits notes, research and planning."
         }
       ],
       "media": [
