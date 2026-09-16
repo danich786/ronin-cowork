@@ -1022,12 +1022,6 @@ The pad's current config downloads as a backup first.
 - **roots.profile_undeclared:** Not declared
 - **roots.repository_none:** Not a Git repository. A workspace folder does not need to be one.
 - **roots.add_head:** Add a workspace
-- **roots.intro_line:** A workspace is a folder Ronin keeps for Teams and Agents.
-- **roots.learn_more:** Learn more
-- **roots.learn_less:** Less
-- **roots.intro_repo:** It may be a Git repository.
-- **roots.intro_born:** Agents are born from it and make their own files there.
-- **roots.intro_accumulates:** Their work accumulates there: plans, memory, notes, calendar documents.
 - **roots.keep_hint:** Keep a folder on this machine for Teams and Agents to start in.
 - **roots.keep_lede:** Keep a folder on this machine for Teams and Agents to start in; a folder not kept is simply left alone.
 - **roots.picker_path:** Path
@@ -1056,9 +1050,21 @@ The catalog entry goes. {dir} is not touched.
 - **roots.github_auth_stone:** Authenticate GitHub
 - **roots.github_auth_state:** Connect account
 - **roots.github_auth_connected_state:** Connected{account}
-- **roots.github_auth_unavailable_state:** GitHub CLI unavailable
-- **roots.github_auth_heading:** Authenticate GitHub
-- **roots.github_auth_lede:** Connect your GitHub account in a temporary authentication window.
+- **roots.github_auth_unavailable_state:** Install GitHub CLI
+- **roots.github_auth_heading:** GitHub CLI
+- **roots.github_auth_lede:** Install GitHub CLI, authenticate your account, then clone repositories.
+- **roots.github_install:** Install
+- **roots.github_install_step:** Install
+- **roots.github_auth_step:** Authenticate
+- **roots.github_ready_step:** Ready
+- **roots.github_installed:** Installed
+- **roots.github_installing:** Installing…
+- **roots.github_not_installed:** Not installed
+- **roots.github_signed_in:** Signed in as {account}
+- **roots.github_not_signed_in:** Not signed in
+- **roots.github_after_install:** After install
+- **roots.github_ready:** Ready to clone
+- **roots.github_not_ready:** Not yet
 - **roots.github_connect:** Connect GitHub
 - **roots.github_remove_auth:** Remove authentication
 - **roots.github_removing_auth:** Removing GitHub authentication…

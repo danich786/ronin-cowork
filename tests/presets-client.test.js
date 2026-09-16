@@ -266,9 +266,9 @@ test('Ronin Team and Agent + Editable Doc ask Where from the one list of workspa
   assert.match(source, /const roots = rootChoices\(runtime, environment\)/, 'one chooser, one source');
   assert.doesNotMatch(source, /const roots = runtime\.roots \|\| \[\]/);
   // A supplied project catalog wins; otherwise the runtime's registered roots remain the fallback.
-  const runtime = { roots: [{ name: 'ronin_lab', label: 'Ronin Lab' }, { name: 'ronin_project_1', label: 'Ronin Project 1' }] };
-  assert.deepEqual(presets.rootChoices(runtime, { trackedRoots: () => [{ name: 'site' }, { name: 'ronin_project_1' }, { name: 'ronin_lab' }, { name: 'shiwake' }] }), [
-    { name: 'ronin_lab', label: 'Ronin Lab' }, { name: 'ronin_project_1', label: 'Ronin Project 1' }, { name: 'site', label: 'site' }, { name: 'shiwake', label: 'shiwake' },
+  const runtime = { roots: [{ name: 'ronin_lab', label: 'Ronin Lab' }, { name: 'project_one', label: 'Project One' }] };
+  assert.deepEqual(presets.rootChoices(runtime, { trackedRoots: () => [{ name: 'site' }, { name: 'project_one' }, { name: 'ronin_lab' }, { name: 'shiwake' }] }), [
+    { name: 'ronin_lab', label: 'Ronin Lab' }, { name: 'project_one', label: 'Project One' }, { name: 'site', label: 'site' }, { name: 'shiwake', label: 'shiwake' },
   ]);
   assert.deepEqual(presets.rootChoices(runtime, { trackedRoots: () => [{ name: 'site' }] }), [{ name: 'site', label: 'site' }], 'an excluded seeded folder is no choice');
   assert.deepEqual(presets.rootChoices({}, { trackedRoots: () => [{ name: 'site', title: 'Ronin Site' }] }), [{ name: 'site', label: 'Ronin Site' }], 'a title changes presentation without changing the Workspace Folder handle');
@@ -277,9 +277,9 @@ test('Ronin Team and Agent + Editable Doc ask Where from the one list of workspa
 
 test('Where lists every tracked workspace folder and refills in place when one is kept', async () => {
   let listener = null;
-  let tracked = [{ name: 'ronin_lab' }, { name: 'ronin_project_1' }, { name: 'site' }];
+  let tracked = [{ name: 'ronin_lab' }, { name: 'project_one' }, { name: 'site' }];
   const surface = presets.createPresetsSurface({ environment: {
-    presetData: async () => ({ templates: [], runtime: { activated_count: 1, providers: [{ id: 'codex', activated: true }], roots: [{ name: 'ronin_lab', label: 'Ronin Lab' }, { name: 'ronin_project_1', label: 'Ronin Project 1' }] } }),
+    presetData: async () => ({ templates: [], runtime: { activated_count: 1, providers: [{ id: 'codex', activated: true }], roots: [{ name: 'ronin_lab', label: 'Ronin Lab' }, { name: 'project_one', label: 'Project One' }] } }),
     trackedRoots: () => tracked,
     onTrackedRoots: (fn) => { listener = fn; return () => {}; },
     loadPresetSlots: () => null,
@@ -292,14 +292,14 @@ test('Where lists every tracked workspace folder and refills in place when one i
   assert.ok(reading.textContent.includes('Ronin Lab'), 'Ronin Lab by default');
   reading.click();
   let options = [...surface.el.walk()].filter((node) => String(node.className).split(' ').includes('ask-opt'));
-  assert.deepEqual(options.map((row) => row.textContent), ['Ronin Lab', 'Ronin Project 1', 'site']);
+  assert.deepEqual(options.map((row) => row.textContent), ['Ronin Lab', 'Project One', 'site']);
   options[2].click();
   tracked = [...tracked, { name: 'shiwake' }];
   listener();
   reading = [...surface.el.walk()].find((node) => node.dataset.askKey === 'root');
   assert.ok(reading.textContent.includes('site'), 'the choice survives the refill');
   reading.click(); options = [...surface.el.walk()].filter((node) => String(node.className).split(' ').includes('ask-opt'));
-  assert.deepEqual(options.map((row) => row.textContent), ['Ronin Lab', 'Ronin Project 1', 'site', 'shiwake'], 'the kept folder is a choice at once');
+  assert.deepEqual(options.map((row) => row.textContent), ['Ronin Lab', 'Project One', 'site', 'shiwake'], 'the kept folder is a choice at once');
   assert.ok([...surface.el.walk()].some((node) => node.tagName === 'BUTTON' && node.textContent === '＋ workspace folder'), 'the door to keep another folder sits beside Where');
 });
 

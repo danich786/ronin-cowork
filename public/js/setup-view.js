@@ -24,7 +24,6 @@ const ARRANGEMENT = Object.freeze({
   widths: Object.freeze({ workspace1: 34, selector: 18, workspace2: 48 }),
 });
 const GARDEN_CONTENT_URL = '/content/setup-garden.v2.json';
-const SEEDED_ROOTS = new Set(['ronin_lab', 'ronin_project_1']);
 
 function registerSetupWorkbench() {
   registerSetupSurfaces();
@@ -43,7 +42,7 @@ export function createSetupView() {
   let providerSurface = null;
   let paintedSceneId = null;
   let completionLoaded = false;
-  let completion = { registered: false, github: false };
+  let completion = { registered: false, github: false, roots: false };
   let installationsComplete = false;
   let launchComplete = false;
   let sceneOverride = 1;
@@ -70,6 +69,7 @@ export function createSetupView() {
   const environment = {
     setupOnboardingExtras: true,
     onGithubAuthenticated: () => { completion.github = true; paint(); },
+    onWorkspaceFolderChosen: () => { completion.roots = true; save(); paint(); },
     onInstallationsState: (values) => { installationsComplete = Object.values(values || {}).some((value) => value === true); paint(); },
     onSetupLaunched: () => { launchComplete = true; paint(); },
     setupRuntime: null,
@@ -114,15 +114,14 @@ export function createSetupView() {
       open(scene.number);
     },
   };
-  const save = () => ctx?.patchViewState('setup', { ...bench.snapshot(), sceneOverride });
+  const save = () => ctx?.patchViewState('setup', { ...bench.snapshot(), sceneOverride, setupCompletion: { roots: completion.roots } });
   const defaultScene = () => SCENES.find((scene) => !sceneComplete(scene)) || SCENES[SCENES.length - 1];
   const sceneAt = (number) => SCENES[Number(number) - 1] || defaultScene();
   const activeScene = () => sceneAt(sceneOverride);
   const sceneComplete = (scene) => {
     if (scene.type === SETUP_SURFACE_TYPES.providers) return Number(runtime?.activated_count || 0) > 0;
     if (scene.type === SETUP_SURFACE_TYPES.register) return completion.registered || kinds.get().length > 0;
-    if (scene.type === SETUP_SURFACE_TYPES.roots) return completion.github
-      || Boolean(runtime?.roots?.some((root) => !SEEDED_ROOTS.has(root?.name)));
+    if (scene.type === SETUP_SURFACE_TYPES.roots) return completion.github || completion.roots;
     if (scene.type === SETUP_SURFACE_TYPES.installations) return installationsComplete;
     if (scene.type === SETUP_SURFACE_TYPES.launchOwn) return launchComplete;
     return false;
@@ -240,6 +239,7 @@ export function createSetupView() {
         completion = {
           registered: registration.ok && registration.data?.registered === true,
           github: github.ok && github.data?.authenticated === true,
+          roots: false,
         };
         completionLoaded = true;
       }
@@ -248,6 +248,7 @@ export function createSetupView() {
         gardenContent = normalizeGardenCanvasCatalog(result.ok ? result.data : { schema_version: 2, canvases: {} });
       }
       const stored = context.viewState('setup') || {};
+      completion.roots = stored.setupCompletion?.roots === true;
       sceneOverride = defaultScene().number;
       bench.enter({ ...stored, count: 2, arrangement: { ...ARRANGEMENT, widths: stored.arrangement?.widths || ARRANGEMENT.widths } });
       bench.setCount(2);

@@ -62,7 +62,7 @@ still opens; its Launch is held and a line beside it says what is missing. Activ
 provider unlocks the stones at once.
 
 **Where.** Ronin Team, Develop a New Project and Agent + Editable Doc ask where to start:
-every workspace folder Ronin keeps, Ronin Lab and Ronin Project 1 first and Ronin Lab
+every workspace folder Ronin keeps, with Ronin Lab and Project One first and Ronin Lab
 chosen by default, then the rest by name — the same list the Workspace folders surface
 shows. **＋ workspace folder** beside it opens Workspace folders in the next workspace; a
 folder kept there is a choice at once, with your choice and typed message left as they
@@ -137,11 +137,11 @@ choices are separate, and **No communication** is one of them.
 
 A workspace folder is a folder Ronin keeps for Teams and Agents to start in. A new
 installation makes two inside Ronin: **Ronin Lab** for ideas, assistants, research and
-pre-project work, and **Ronin Project 1** for project work, prepared for worktrees.
+pre-project work, and **Project One** for project work, prepared for worktrees.
 Your Lab is a general thinking space, not the code repository for a specific project.
 Ronin’s creators use their own Lab in the same way; their internal plans are not part of
 your installation instructions. Each
-uses its lowercase ID (`ronin_lab`, `ronin_project_1`) as the starting directory name and
+uses its lowercase ID (`ronin_lab`, `project_one`) as the starting directory name and
 is a Git repository with a README and a first commit. Workspaces the owner adds are separate,
 named entries; they do not replace either built-in.
 
@@ -151,10 +151,13 @@ repository are listed first. Selecting a stone opens its page: name and actions
 (**Edit**, **Archive**, **Exclude**), one state line, then its summary, folder facts and
 repository facts. More in `docs/architecture/project-roots.md`.
 
-**Authenticate GitHub** shows the connected account. **Re-check connection** refreshes
-that status; **Change account** opens the GitHub login window. **Sign out** removes the
-shown account's saved GitHub CLI login from this machine. If another saved account becomes
-active, the card shows that account. Sign-out does not revoke the account's GitHub tokens.
+**Authenticate GitHub** follows three measured steps: **Install**, **Authenticate**, and
+**Ready**. If `gh` is absent, one Install button opens a visible temporary provider-style
+terminal and runs the supported package-manager path for this macOS or Linux machine; the
+owner can see its output and answer a system privilege prompt. Authenticate then opens the
+GitHub login window. A connected account is named and offers **Remove authentication**;
+removal deletes that account's saved GitHub CLI login from this machine but does not revoke
+the account's GitHub tokens.
 
 ## Ronin Services
 

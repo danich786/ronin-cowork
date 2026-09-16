@@ -52,10 +52,10 @@ test('Develop Project launch aggregates real managed work-location facts', async
     }
     throw new Error(`unexpected ${url}`);
   };
-  const result = await launchPresetPlan({ template: { shelf: 'teams', name: 'develop_new_project' }, inputs: { root: 'ronin_project_1', workstreams: ['frontend', 'backend'] } }, send);
+  const result = await launchPresetPlan({ template: { shelf: 'teams', name: 'develop_new_project' }, inputs: { root: 'project_one', workstreams: ['frontend', 'backend'] } }, send);
   assert.equal(result.ok, true);
   assert.equal(result.data.receipts.length, 2);
-  assert.ok(result.data.receipts.every((receipt: any) => receipt.project_root === 'ronin_project_1'));
+  assert.ok(result.data.receipts.every((receipt: any) => receipt.project_root === 'project_one'));
   assert.ok(result.data.receipts.every((receipt: any) => receipt.work_locations[0]?.mode === 'managed'));
   assert.ok(result.data.receipts.every((receipt: any) => receipt.desks[0]?.line === 'team/develop_project/dev'));
 });

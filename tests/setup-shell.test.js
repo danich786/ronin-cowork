@@ -146,7 +146,7 @@ test('Setup progression is selected card, factual checks, and one gated Next in 
   assert.match(setup, /garden\.controls\.replaceChildren\(\);[\s\S]*garden\.controls\.hidden = true/, 'Workspace 1 cannot retain the progression action');
   assert.match(setup, /SETUP_SURFACE_TYPES\.providers\) return Number\(runtime\?\.activated_count \|\| 0\) > 0/);
   assert.match(setup, /SETUP_SURFACE_TYPES\.register\) return completion\.registered \|\| kinds\.get\(\)\.length > 0/);
-  assert.match(setup, /SETUP_SURFACE_TYPES\.roots\) return completion\.github \|\| Boolean\(runtime\?\.roots\?\.length\)/);
+  assert.match(setup, /SETUP_SURFACE_TYPES\.roots\) return completion\.github \|\| completion\.roots/);
   assert.match(setup, /SETUP_SURFACE_TYPES\.installations\) return installationsComplete/);
   assert.match(setup, /SETUP_SURFACE_TYPES\.launchOwn\) return launchComplete/);
   assert.doesNotMatch(setup, /data\.stepState|flashSelector|setup-selector-pulse/);
