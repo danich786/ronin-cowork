@@ -81,9 +81,8 @@ spawned; a failure is thrown, and launch does not fall back to a funnel checkout
 
 `handIn(repo, branch)`, under the line's lock:
 
-1. the line's mounted worktree must be clean — a funnel point is never written into —
-   else `REFUSED` with the files;
-2. a fresh detached candidate at the line's tip (`old`); a candidate a crashed run left
+1. record the current line tip (`old`) and whether its mounted worktree has unsaved files;
+2. create a fresh detached candidate at current global dev; a candidate a crashed run left
    behind is removed first, never reused;
 3. merge the desk into the candidate. A conflict is aborted there, the desk is marked
    blocked, a `conflict` receipt names the files; the line is untouched. The candidate
@@ -95,16 +94,29 @@ spawned; a failure is thrown, and launch does not fall back to a funnel checkout
    other desk gets a `conflict` receipt that names that route;
 4. `git update-ref refs/heads/<line> <candidate> <old>` — the compare-and-swap. If the
    line moved meanwhile, rebuild on the new tip (a `stale` receipt each time, up to three);
-5. `git reset --hard` the line's worktree to the line. Not `merge --ff-only`: `update-ref`
-   on a checked-out branch has already moved that worktree's HEAD, leaving the old tree in
-   its index;
+5. refresh the line's worktree if clean. If it has unsaved files, leave it untouched and
+   report that the ref advanced but its working files did not;
 6. append the `accepted` receipt; record it on the desk; clear the block.
 
-Then, outside the lock, downward adoption for every desk on the line, the handing-in desk
-included: a clean, mounted desk merges the line now (`adopted`); a dirty or unmounted one
-gets a `pending` row with the overlap — line-changed files it also has unsaved — and its
-files are not touched (`pending` / `pending_overlap`); a clean desk whose commits conflict
-with the line is left as it is (`conflict`), to be contained at its own hand-in.
+Hand-in updates no private desk and writes no pending marker on a sibling. The submitting
+Agent's tip is contained in the Team line, but its desk does not automatically gain other
+Team commits. Each Agent chooses when and what to adopt through sync.
+
+## Sync
+
+`syncDesk` resolves `dev` (default), `team` (the desk's shared line), `lead` (a desk owned
+by a live Team lead), or an exact `repo:branch` from the desk registry. The source desk
+must be in the destination repository. Multiple matching lead desks are reported by name
+rather than chosen arbitrarily. Missing sources do not fall back to a different ref.
+
+The selected branch resolves to a SHA once before `adoptLine` runs. Only that committed
+revision is merged; unsaved source edits are excluded and the acknowledgement says so.
+It reports the source ref/SHA and destination before/after HEAD. A contained commit is a
+no-op. A dirty or unmounted destination stays pending; a merge conflict is aborted and
+reports the files. Neither changes the destination's files. Resolving the reported commit
+belongs on the private desk. A subsequent sync selects its source afresh from its arguments.
+Custody, source refs, and the hand-in line are unchanged. Sync does not promote or certify
+private work as reviewed.
 
 Repository verification does not run at any step. `dev` never moves here.
 

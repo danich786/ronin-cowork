@@ -7,8 +7,8 @@
  *     direct repos are refused by name; a repo with no RONIN_REPO gets no desk;
  *   - hand-in is mechanical admission: the line advances by compare-and-swap only, a
  *     conflict leaves it untouched, and policy-only conditions remain ordinary output;
- *   - accepted team state flows down: a clean sibling adopts now, a dirty one is marked
- *     pending with the overlap and its files are not touched;
+ *   - hand-in leaves private desks untouched; explicit sync selects one committed source
+ *     and preserves dirty/conflicting destinations; acknowledgements name the exact result;
  *   - close never loses work: dirty or unique work remains open and named, while a clean
  *     integrated desk is removed; handoff changes explicit custody; discard is explicit;
  *   - two hand-ins at once serialize and both land; a crashed holder's lock is reclaimed;
@@ -303,7 +303,7 @@ test('handIn with no new desk delta is an accepted ordinary result and moves no 
   assert.equal(sh(cowork, ['rev-parse', 'team/comp/dev']), before);
 });
 
-test('hand-in leaves every sibling untouched; each catches up only through explicit sync from dev', async () => {
+test('hand-in leaves every sibling untouched; default sync catches up from dev', async () => {
   const clean = await openDesk({ repo: 'cowork', session: 'wispr', team: 'comp' });
   const dirty = await openDesk({ repo: 'cowork', session: 'rireki', team: 'comp' });
   assert.equal(clean.ahead, 0);
@@ -564,4 +564,95 @@ test('crash mid-hand-in: a candidate left behind by a crashed run is rebuilt, no
   assert.ok(!existsSync(path.join(deskWorktree('cowork', 'team/comp/dev'), 'leftover.txt')), 'and nothing of it reached the line');
   assert.equal(existsSync(cand), false, 'handled success cleans inherited candidate scratch');
   assert.doesNotMatch(await fs.readFile(gitTrace, 'utf8'), /(?:^|\n)-C .* worktree prune(?:\n|$)/, 'hand-in never invokes repo-wide worktree prune');
+});
+
+test('sync selects the Team line or a committed teammate desk without moving either source', async () => {
+  const target = await openDesk({ repo: 'cowork', session: 'sync-target', team: 'sync-choice' });
+  const peer = await openDesk({ repo: 'cowork', session: 'sync-peer', team: 'sync-choice' });
+  const devBefore = sh(cowork, ['rev-parse', 'dev']);
+  const teamTip = await commitFile(deskWorktree('cowork', target.line), 'sync-team.txt', 'accepted\n');
+  await syncDesk('cowork', target.branch);
+  assert.ok(!existsSync(path.join(target.worktree, 'sync-team.txt')), 'default remains global dev');
+  await fs.writeFile(path.join(deskWorktree('cowork', target.line), 'sync-team.txt'), 'unsaved team work\n');
+  const fromTeam = await syncDesk('cowork', target.branch, 'team');
+  assert.equal(fromTeam.source_dirty, true);
+  assert.equal(fromTeam.source_ref, target.line);
+  assert.equal(fromTeam.line_sha, teamTip);
+  assert.notEqual(fromTeam.before_sha, fromTeam.after_sha);
+  assert.equal(await fs.readFile(path.join(target.worktree, 'sync-team.txt'), 'utf8'), 'accepted\n');
+  const ownTip = await commitFile(target.worktree, 'sync-own.txt', 'private work\n');
+  const peerTip = await commitFile(peer.worktree, 'sync-peer.txt', 'committed\n');
+  await fs.writeFile(path.join(peer.worktree, 'sync-peer.txt'), 'unsaved\n');
+  const fromPeer = await syncDesk('cowork', target.branch, `cowork:${peer.branch}`);
+  assert.equal(fromPeer.line_sha, peerTip);
+  assert.equal(fromPeer.source_dirty, true);
+  assert.equal(await fs.readFile(path.join(target.worktree, 'sync-peer.txt'), 'utf8'), 'committed\n');
+  assert.equal(await fs.readFile(path.join(peer.worktree, 'sync-peer.txt'), 'utf8'), 'unsaved\n');
+  assert.equal(sh(cowork, ['rev-parse', peer.branch]), peerTip);
+  assert.equal(sh(cowork, ['rev-parse', target.line]), teamTip);
+  assert.equal(sh(cowork, ['rev-parse', 'dev']), devBefore);
+  sh(cowork, ['merge-base', '--is-ancestor', ownTip, fromPeer.after_sha!]);
+  sh(cowork, ['merge-base', '--is-ancestor', peerTip, fromPeer.after_sha!]);
+  assert.equal((await readDesk('cowork', target.branch))!.line, target.line);
+  const again = await syncDesk('cowork', target.branch, `cowork:${peer.branch}`);
+  assert.equal(again.before_sha, again.after_sha, 'already-contained revision is a no-op');
+});
+
+test('sync resolves lead desks by live leadership and explicit custody, and reports ambiguity', async () => {
+  const target = await openDesk({ repo: 'cowork', session: 'lead-target', team: 'sync-lead' });
+  const lead = await openDesk({ repo: 'cowork', session: 'lead-owner', team: 'sync-lead', branch: 'custom/lead-desk' });
+  const tip = await commitFile(lead.worktree, 'lead-work.txt', 'lead\n');
+  const sessions = async () => [{ name: 'lead-owner', leads: ['sync-lead'] }];
+  const notice = await syncDesk('cowork', target.branch, 'lead', sessions);
+  assert.equal(notice.source_ref, lead.branch, 'do not guess team/name coordinates');
+  assert.equal(notice.line_sha, tip);
+  await openDesk({ repo: 'cowork', session: 'lead-owner', team: 'sync-lead', branch: 'custom/second-lead-desk' });
+  const before = sh(target.worktree, ['rev-parse', 'HEAD']);
+  await assert.rejects(syncDesk('cowork', target.branch, 'lead', sessions), /ambiguous.*custom\/lead-desk.*custom\/second-lead-desk/);
+  await assert.rejects(syncDesk('cowork', target.branch, 'lead', async () => []), /no live lead/);
+  assert.equal(sh(target.worktree, ['rev-parse', 'HEAD']), before);
+});
+
+test('sync preserves dirty destinations and aborts conflicting teammate merges without losing work', async () => {
+  const target = await openDesk({ repo: 'cowork', session: 'conflict-target', team: 'sync-conflict' });
+  const peer = await openDesk({ repo: 'cowork', session: 'conflict-peer', team: 'sync-conflict' });
+  const source = `cowork:${peer.branch}`;
+  const peerTip = await commitFile(peer.worktree, 'sync-conflict.txt', 'peer\n');
+  await fs.writeFile(path.join(target.worktree, 'sync-conflict.txt'), 'mine\n');
+  const pending = await syncDesk('cowork', target.branch, source);
+  assert.equal(pending.kind, 'pending_overlap');
+  assert.equal(pending.before_sha, pending.after_sha);
+  assert.equal(pending.line_sha, peerTip);
+  const ownTip = await commitFile(target.worktree, 'sync-conflict.txt', 'mine\n');
+  const conflict = await syncDesk('cowork', target.branch, source);
+  assert.equal(conflict.kind, 'conflict');
+  assert.deepEqual(conflict.files, ['sync-conflict.txt']);
+  assert.equal(conflict.before_sha, ownTip);
+  assert.equal(conflict.after_sha, ownTip);
+  assert.equal(sh(target.worktree, ['status', '--porcelain']), '');
+  assert.equal(await fs.readFile(path.join(target.worktree, 'sync-conflict.txt'), 'utf8'), 'mine\n');
+  assert.equal(sh(cowork, ['rev-parse', peer.branch]), peerTip);
+  await assert.rejects(syncDesk('cowork', target.branch, 'services:some/desk'), /must belong to repository cowork/);
+  await assert.rejects(syncDesk('cowork', target.branch, 'cowork:missing/desk'), /no source desk/);
+  await assert.rejects(syncDesk('cowork', target.branch, 'typo'), /expects dev, team, lead/);
+  assert.equal(sh(target.worktree, ['rev-parse', 'HEAD']), ownTip);
+});
+
+test('sync CLI acknowledges exact source, changed versus unchanged HEAD, and excluded source edits', async () => {
+  const target = await openDesk({ repo: 'cowork', session: 'ack-target', team: 'sync-ack' });
+  const peer = await openDesk({ repo: 'cowork', session: 'ack-peer', team: 'sync-ack' });
+  const sha = await commitFile(peer.worktree, 'sync-ack.txt', 'committed\n');
+  await fs.writeFile(path.join(peer.worktree, 'sync-ack.txt'), 'unsaved\n');
+  const runSync = () => execFileSync(process.execPath, [
+    '--import', 'tsx', path.resolve('src/commands/desk.ts'), 'sync', `cowork:${target.branch}`,
+    '--source', `cowork:${peer.branch}`,
+  ], { cwd: path.resolve('.'), env: { ...process.env, RONIN_SESSION: 'ack-target', RONIN_TEAMS: 'sync-ack' } }).toString();
+  const first = runSync();
+  assert.match(first, /^MERGED /);
+  assert.ok(first.includes(`merged ${peer.branch}@${sha}; HEAD ${target.tip} →`));
+  assert.match(first, /Source desk has unsaved changes; they were not copied/);
+  const second = runSync();
+  assert.match(second, /^UP-TO-DATE /);
+  assert.ok(second.includes(`already contains ${peer.branch}@${sha}; HEAD unchanged at`));
+  assert.equal(await fs.readFile(path.join(target.worktree, 'sync-ack.txt'), 'utf8'), 'committed\n');
 });
