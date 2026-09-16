@@ -27,12 +27,12 @@
       },
       "media": [
         {
-          "id": "provider-sign-in-guide",
+          "id": "provider-install-guide",
           "kind": "doc",
-          "label": "Provider sign-in",
-          "description": "What signing in does, and where the credential lives",
+          "label": "Install a provider",
+          "description": "Choosing a provider in Setup, and what installation opens",
           "root": "ronin_cowork",
-          "path": "docs/getting-started/provider-sign-in.md"
+          "path": "docs/getting-started/agent-install.md"
         }
       ]
     },

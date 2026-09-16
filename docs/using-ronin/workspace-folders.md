@@ -47,7 +47,7 @@ stops being offered when you start something new.
 
 ## Related
 
-- [Get started](../getting-started/get-started.md) — first run, through to one working Agent
+- [Ronin Setup](../getting-started/setup-workbench.md) — the first-run door, and every page behind it
 - [Managed desks](desks.md) — private branches for Agents in a repository
 - [Workspace Folders — construction](../architecture/project-roots.md) — the handle, the
   record, and how session identity resolves it
