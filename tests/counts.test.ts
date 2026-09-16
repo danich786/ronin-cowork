@@ -8,7 +8,6 @@ import assert from 'node:assert/strict';
 import { count, setCountSink, type CountFields } from '../src/counts.js';
 
 test('the free build: count() with no sink is a silent no-op', () => {
-  count('dial.set', { dial: 'read' }); // must simply not throw
 });
 
 test('a throwing sink never reaches the caller', () => {

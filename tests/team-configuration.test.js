@@ -63,7 +63,7 @@ const roster = {
   durable: true, name: 'jobber', title: 'Jobber', kind: 'coding', objective: 'Polish.',
   project_root: 'ronin_cowork', repos: ['ronin_services'], branches: { ronin_services: 'dev' },
   behaviours: { selected: ['mandates', 'buildout'], required: ['mandates'] },
-  agent_defaults: { provider: 'openai', model: 'gpt-5.6-sol', reach: 'plan', recruit: 'propose agents', output: 'open', dial: 'write', launch_mode: 'live_dangerously', permissions: 'retired', note: 'carried' },
+  agent_defaults: { provider: 'openai', model: 'gpt-5.6-sol', reach: 'plan', recruit: 'propose agents', output: 'open', launch_mode: 'live_dangerously', permissions: 'retired', note: 'carried' },
 };
 
 const { renderTeamConfiguration } = await import('../public/js/team-configuration.js');
@@ -153,7 +153,6 @@ test('Save leaves behaviours untouched and carries agent defaults without permis
   assert.equal(body.agent_defaults.note, 'carried', 'a key the tab does not draw is carried');
   assert.equal('permissions' in body.agent_defaults, false, 'the retired key is not rewritten');
   assert.equal(body.agent_defaults.model, 'gpt-5.6-sol');
-  assert.equal(body.agent_defaults.dial, 'write', 'the retired Control default is written as the one value every Agent starts with');
   assert.deepEqual(body.agent_defaults.output, ['open']);
   assert.ok(savedRoster, 'onSaved received the server’s roster');
   assert.equal(form.one('tw-config-status').textContent, 'Saved');

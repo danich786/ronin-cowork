@@ -199,7 +199,6 @@ test('Team Configuration hides legacy Control and hosts Runtime trays below its 
   const form = await source('team-configuration.js');
   assert.doesNotMatch(form, /key: 'dial'|ruledRows\('dial'|team_config\.dial/);
   assert.match(form, /trayHost: defaultsRow/);
-  assert.match(form, /dial: 'write'/);
 });
 
 test('New Team checks names only for a cast and opens partial Teams with exact recovery evidence', async () => {

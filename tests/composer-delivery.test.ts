@@ -19,8 +19,6 @@ test('one Ronin box request submits even if copy mode reopens after the paste', 
   });
   const prompt = 'printf "› \\033[2mAsk\\033[0m"; while IFS= read -r line; do printf "\\nSUBMITTED:%s\\n› \\033[2mAsk\\033[0m" "$line"; done';
   await server.run('new-session', '-d', '-s', 'composer_target', '/bin/bash', '-c', prompt);
-  const { setControl } = await import('../src/tmux.js');
-  await setControl('composer_target', 'read');
   await server.run('copy-mode', '-t', '=composer_target:');
   const { tmux } = await import('../src/tmux-client.js');
   await tmux.connect();

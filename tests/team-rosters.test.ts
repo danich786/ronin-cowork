@@ -33,7 +33,7 @@ test('create → read → list: a zero-member team is a real, openable record', 
     behaviours: { selected: ['mandates'], required: ['mandates'] },
     agent_defaults: {
       provider: 'anthropic', model: 'opus', reach: 'execute', recruit: 'nobody',
-      output: 'code', dial: 'read', launch_mode: 'configured',
+      output: 'code', launch_mode: 'configured',
     },
   });
   assert.equal(r.kind, 'coding');
@@ -114,7 +114,7 @@ test('the settled nested shapes round-trip, and an edit touches only what it sta
   assert.deepEqual(r.behaviours, { selected: [], required: [] });
   assert.deepEqual(r.agent_defaults, {
     provider: 'anthropic', model: 'opus', reach: 'execute', recruit: 'nobody',
-    output: ['code'], dial: 'read', launch_mode: 'configured',
+    output: ['code'], launch_mode: 'configured',
   });
 });
 

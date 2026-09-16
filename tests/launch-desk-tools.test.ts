@@ -55,7 +55,7 @@ await fs.writeFile(path.join(process.env.RONIN_CATALOGS_DIR!, 'PROJECT_ROOTS.md'
 await fs.mkdir(path.join(tmp, 'config'), { recursive: true });
 await fs.writeFile(path.join(tmp, 'config', 'machine_settings.json'), JSON.stringify({
   agents: { sessions: { default: { provider: 'anthropic', model: 'fable' } } },
-  campaigns: { home_machine: { title: 'Ronin Home', state: 'active', config: { agent_defaults: { dial: 'write' } } } },
+  campaigns: { home_machine: { title: 'Ronin Home', state: 'active', config: { agent_defaults: {} } } },
 }));
 await fs.mkdir(path.join(tmp, 'shelf', 'all'), { recursive: true });
 await fs.writeFile(path.join(tmp, 'shelf', 'all', 'ALL_BOOK.md'), '# ALL_BOOK.md');
