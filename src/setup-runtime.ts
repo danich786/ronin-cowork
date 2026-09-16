@@ -373,6 +373,7 @@ export interface GithubSetupOps {
   exists(): Promise<boolean>;
   open(): Promise<void>;
   close(): Promise<void>;
+  logout(account: string): Promise<void>;
 }
 
 export interface GithubSessionPrimitives {
@@ -403,6 +404,7 @@ const defaultGithubSetupOps: GithubSetupOps = {
   exists: () => sessionExists(GITHUB_SETUP_SESSION),
   open: () => createGithubSetupSession(),
   close: () => killSessionTree(GITHUB_SETUP_SESSION),
+  logout: (account) => run('gh', ['auth', 'logout', '--hostname', 'github.com', '--user', account], { timeout: 8_000 }).then(() => undefined),
 };
 
 /** Accept only gh's explicit active-login line; warnings and failure prose are not auth. */
@@ -432,6 +434,16 @@ export async function openGithubLogin(ops: GithubSetupOps = defaultGithubSetupOp
 
 export async function closeGithubLogin(ops: GithubSetupOps = defaultGithubSetupOps): Promise<GithubSetupAnswer> {
   if (await ops.exists()) await ops.close();
+  return githubSetupAnswer(ops);
+}
+
+/** Remove only the active github.com credential that gh reported; the browser cannot name another account. */
+export async function removeGithubAuthentication(ops: GithubSetupOps = defaultGithubSetupOps): Promise<GithubSetupAnswer> {
+  const current = await githubSetupAnswer(ops);
+  if (!current.installed) throw new Error('GitHub CLI is not installed on this machine.');
+  if (!current.authenticated || !current.account) throw new Error('GitHub is not authenticated on this machine.');
+  if (await ops.exists()) await ops.close();
+  await ops.logout(current.account);
   return githubSetupAnswer(ops);
 }
 

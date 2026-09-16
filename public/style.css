@@ -2637,12 +2637,19 @@ body {
   color: var(--bad-soft);
 }
 .setup-roots-stones .setup-roots-add-stone {
-  border-color: var(--kaki);
   border-style: dashed;
-  background: color-mix(in srgb, var(--kaki-tint) 18%, var(--panel));
-  color: var(--kaki-lift);
+  background: var(--panel);
+  color: var(--fg);
 }
 .setup-roots-stones .setup-roots-add-stone .sws-glyph {
+  color: var(--muted-2);
+}
+.setup-roots-stones .sws-stone[aria-pressed='true'] {
+  border-color: var(--kaki);
+  background: var(--accent-soft);
+  color: var(--fg-strong);
+}
+.setup-roots-stones .sws-stone[aria-pressed='true'] .sws-glyph {
   color: var(--kaki);
 }
 /* Setup's selected folder: one page in the shape every stone detail shares. One type family,
