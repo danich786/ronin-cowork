@@ -12,7 +12,7 @@ import { campaignById, campaigns, loadCampaigns, saveCampaign } from './campaign
 import { completeInstallationMap } from './installation-map.js';
 import { createEmbeddedNewTeamFormView } from './new-team-form.js';
 import { createEmbeddedNewAgentView } from './new-agent.js';
-import { HOUSE_PRESETS, buildLaunchPlan, createPresetsSurface, initialControls, seatingPlan } from './presets.js';
+import { HOUSE_PRESETS, PRESETS_TYPE, buildLaunchPlan, initialControls, seatingPlan } from './presets.js';
 import { launchPresetPlan, presetLaunchUrl } from './preset-launch.js';
 import { closeWorkspaceTab, reserveWorkspaceTab } from './workspace.js';
 import { createInstallationsSurface } from './campaign-installations.js';
@@ -670,18 +670,11 @@ function createLaunchOwnSurface(context) {
   const out = surface(t('setup_surface.launch_own', 'Launch your own'));
   const setup = context.tenant?.kind === 'setup';
   const renderDetail = (item, host) => {
-    const views = [item.id === 'preset'
-      ? createPresetsSurface({
-        environment: {
-          ...context.environment,
-          runtime: () => context.environment?.setupRuntime || {},
-          launch: launchPresetPlan,
-          launchUrl: presetLaunchUrl,
-          reserveLaunchTab: reserveWorkspaceTab,
-        },
-        workspace: context.workspace || 'workspace2',
-      })
-      : item.id === 'team' ? createEmbeddedNewTeamFormView(WorkspaceKit, {}) : createEmbeddedNewAgentView(WorkspaceKit, {})];
+    if (item.id === 'preset') {
+      context.workbench?.place(PRESETS_TYPE, context.workspace || 'workspace2');
+      return null;
+    }
+    const views = [item.id === 'team' ? createEmbeddedNewTeamFormView(WorkspaceKit, {}) : createEmbeddedNewAgentView(WorkspaceKit, {})];
     host.append(...views.map((view) => view.el));
     for (const view of views) void view.enter({});
     return () => { for (const view of views) view.el.remove(); };

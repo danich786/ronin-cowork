@@ -71,14 +71,16 @@ test('stone state can update without disposing or reconstructing an open detail'
   assert.equal(stone.querySelector('.sws-state').textContent, 'ready');
 });
 
-test('shared status markers are square, token-driven, and can be placed on any stone', async () => {
+test('shared status markers are compact, token-driven, and can be placed on any stone', async () => {
   const marker = createStatusMarker('beta');
   const surface = createStoneWorkSurface({ items: [{ id: 'one', label: 'One', marker }] });
   assert.equal(surface.el.querySelectorAll('[data-sws-id]')[0].children[1], marker);
   assert.equal(marker.textContent, 'Beta');
   assert.equal(marker.dataset.status, 'beta');
   const css = await readFile(new URL('../public/css/launch-forms.css', import.meta.url), 'utf8');
-  assert.match(css, /\.status-marker \{[^}]*border: var\(--edge\) solid currentColor;[^}]*border-radius: 0;/);
+  assert.match(css, /\.status-marker \{[^}]*color: var\(--kaki\);[^}]*font-size: var\(--text-1\)/);
+  assert.match(css, /\.status-marker::before \{[^}]*width: var\(--space-1\);[^}]*background: currentColor/);
+  assert.doesNotMatch(css, /\.status-marker \{[^}]*border(?:-radius)?:/);
 });
 
 test('consumers cannot override the shared hidden detail or stone geometry', async () => {

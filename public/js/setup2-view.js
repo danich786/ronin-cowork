@@ -6,6 +6,9 @@ import { request } from './request.js';
 import { SETUP_SCENES } from './setup-journey.js';
 import { GARDEN_CANVAS_TYPE, registerGardenCanvas } from './garden-canvas.js';
 import { normalizeGardenCanvasCatalog } from './garden-canvas-model.js';
+import { PRESETS_TYPE, createKindsPreference, registerPresetsSurface } from './presets.js';
+import { launchPresetPlan, presetLaunchUrl } from './preset-launch.js';
+import { reserveWorkspaceTab } from './workspace.js';
 
 const PROFILE = 'setup2';
 // Release toggles: unfinished programs stay out of Setup without changing the workbench.
@@ -24,7 +27,8 @@ const GARDEN_CONTENT_URL = '/content/setup-garden.v2.json';
 function registerSetup2Workbench() {
   registerSetupSurfaces();
   registerGardenCanvas();
-  return WorkspaceKit.workbench.profiles.define(PROFILE, [GARDEN_CANVAS_TYPE, ...ORDER]);
+  registerPresetsSurface();
+  return WorkspaceKit.workbench.profiles.define(PROFILE, [GARDEN_CANVAS_TYPE, PRESETS_TYPE, ...ORDER]);
 }
 
 export function createSetup2View() {
@@ -38,16 +42,22 @@ export function createSetup2View() {
   let paintedSceneId = null;
   let completionLoaded = false;
   let completion = { registered: false, github: false };
-  let sceneOverride = 0;
+  let sceneOverride = 1;
   const providerSessions = createProviderSetupSessionMount();
-  let kinds = ['build'];
+  const kinds = createKindsPreference(globalThis.localStorage, (next) => request('/api/setup/preferences', { method: 'PATCH', json: { kinds: next } }));
+  const nextAction = WorkspaceKit.primitives.createAction({ label: 'Next', kind: 'primary', action: () => advance() });
+  nextAction.el.classList.add('setup-next');
   const blank = (id) => WorkspaceKit.primitives.createBlankSurface(id.replace('workspace', 'Workspace ')).el;
   const environment = {
     setup2OnboardingExtras: true,
     onGithubAuthenticated: () => { completion.github = true; paint(); },
     setupRuntime: null,
     onSetupRuntime: (next) => { runtime = next; environment.setupRuntime = next; paint(); },
-    kinds: { get: () => [...kinds], hydrate: () => { kinds = ['build']; }, set: () => { kinds = ['build']; } },
+    kinds,
+    runtime: () => runtime || {},
+    launch: launchPresetPlan,
+    launchUrl: presetLaunchUrl,
+    reserveLaunchTab: reserveWorkspaceTab,
     setPathNote: (path_note) => request('/api/setup/preferences', { method: 'PATCH', json: { path_note } }),
     setIdentityChoice: (identity_choice) => request('/api/setup/preferences', { method: 'PATCH', json: { identity_choice } }),
     mountProviderSetupSession: providerSessions.mountProviderSetupSession,
@@ -55,6 +65,8 @@ export function createSetup2View() {
     openLaunchForm: () => ctx?.navigate('launch'),
     onGardenCanvas: (next) => {
       garden = next;
+      garden.controls.hidden = false;
+      garden.controls.replaceChildren(nextAction.el);
       paintedSceneId = null;
       selectGarden(activeScene());
     },
@@ -83,14 +95,8 @@ export function createSetup2View() {
     },
   };
   const save = () => ctx?.patchViewState('setup2', { ...bench.snapshot(), sceneOverride });
-  const sceneIndex = document.createElement('span');
-  sceneIndex.className = 'setup-scene-index';
-  sceneIndex.setAttribute('aria-label', 'Setup steps');
-  const sceneButtons = [];
-  const automaticScene = () => Number(runtime?.activated_count || 0) > 0
-    ? SCENES.find((scene) => scene.type === SETUP_SURFACE_TYPES.roots) || SCENES[0]
-    : SCENES[0];
-  const sceneAt = (number) => Number(number) > 0 ? SCENES[Number(number) - 1] || automaticScene() : automaticScene();
+  const defaultScene = () => SCENES.find((scene) => !sceneComplete(scene)) || SCENES[SCENES.length - 1];
+  const sceneAt = (number) => SCENES[Number(number) - 1] || defaultScene();
   const activeScene = () => sceneAt(sceneOverride);
   const sceneComplete = (scene) => {
     if (scene.type === SETUP_SURFACE_TYPES.providers) return Number(runtime?.activated_count || 0) > 0;
@@ -115,14 +121,13 @@ export function createSetup2View() {
   };
   const paint = () => {
     const active = activeScene();
-    for (const { button, number } of sceneButtons) {
-      button.setAttribute('aria-pressed', String(number === sceneOverride));
-      button.dataset.current = String(number > 0 && number === active.number);
-    }
+    nextAction.el.hidden = active.number >= SCENES.length;
     for (const card of bench?.host.querySelectorAll('[data-workbench-offer-type]') || []) {
       delete card.dataset.sceneRelevant;
       const position = ORDER.indexOf(card.dataset.workbenchOfferType);
       const scene = SCENES[position];
+      if (scene?.id === active.id) card.setAttribute('aria-current', 'page');
+      else card.removeAttribute('aria-current');
       card.dataset.complete = String(Boolean(scene && sceneComplete(scene)));
       card.dataset.stepState = position === active.number - 1 ? 'current' : 'upcoming';
     }
@@ -135,15 +140,12 @@ export function createSetup2View() {
     paint();
     save();
   };
-  const addStep = (number, label, title) => {
-    const button = document.createElement('button');
-    button.className = 'bar-toggle setup-scene-button';
-    button.type = 'button'; button.textContent = label; button.title = title; button.setAttribute('aria-label', title);
-    button.addEventListener('click', () => { sceneOverride = number; open(number); });
-    sceneButtons.push({ button, number }); sceneIndex.append(button);
-  };
-  addStep(0, 'Auto', 'Open the recommended setup step');
-  for (const scene of SCENES) addStep(scene.number, String(scene.number), `${scene.number}. ${scene.label}`);
+  function advance() {
+    const next = SCENES[activeScene().number];
+    if (!next) return;
+    sceneOverride = next.number;
+    open(next.number);
+  }
 
   bench = WorkspaceKit.workbench.create({
     profile: PROFILE,
@@ -160,7 +162,11 @@ export function createSetup2View() {
     onPlacement: (snapshot) => {
       const type = typeof snapshot?.seats?.workspace2 === 'string' ? snapshot.seats.workspace2 : snapshot?.seats?.workspace2?.type;
       const scene = SCENES.find((candidate) => candidate.type === type);
-      if (scene) selectGarden(scene);
+      if (scene) {
+        sceneOverride = scene.number;
+        selectGarden(scene);
+        paint();
+      }
       save();
     },
   });
@@ -172,7 +178,6 @@ export function createSetup2View() {
     glyph: '人',
     hideFeedback: true,
     hideShapeControl: true,
-    barActions: [sceneIndex],
     title: () => 'Ronin Setup 2',
     mount: (_host, context) => { ctx = context; },
     enter: async (context) => {
@@ -181,7 +186,7 @@ export function createSetup2View() {
         const result = await request('/api/setup/runtime', { cache: 'no-store' });
         runtime = result.ok ? result.data : { providers: [], activated_count: 0 };
         environment.setupRuntime = runtime;
-        environment.kinds.hydrate(['build']);
+        environment.kinds.hydrate(runtime?.preferences?.kinds?.length ? runtime.preferences.kinds : ['build']);
       }
       if (!completionLoaded) {
         const [registration, github] = await Promise.all([
@@ -199,12 +204,12 @@ export function createSetup2View() {
         gardenContent = normalizeGardenCanvasCatalog(result.ok ? result.data : { schema_version: 2, canvases: {} });
       }
       const stored = context.viewState('setup2') || {};
-      sceneOverride = Number(stored.sceneOverride) >= 1 && Number(stored.sceneOverride) <= SCENES.length ? Number(stored.sceneOverride) : 0;
+      sceneOverride = defaultScene().number;
       bench.enter({ ...stored, count: 2, arrangement: { ...ARRANGEMENT, widths: stored.arrangement?.widths || ARRANGEMENT.widths } });
       bench.setCount(2);
       bench.place(GARDEN_CANVAS_TYPE, 'workspace1');
       paint();
-      open(sceneOverride || automaticScene().number);
+      open(sceneOverride);
     },
     leave: () => bench.leave(),
     destroy: () => { providerSessions.destroyAll(); bench.leave(); ctx = null; },

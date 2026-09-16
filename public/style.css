@@ -5920,6 +5920,7 @@ button.wb-door:hover b {
 .wk-workbench-host[data-workbench-profile='setup2'] [data-step-state='upcoming'] { opacity: .48; }
 .wk-workbench-host[data-workbench-profile='setup2'] [data-complete='true'] { opacity: 1; }
 .wk-workbench-host[data-workbench-profile='setup2'] [data-complete='true'] .wk-card-heading::before { content: '✓'; margin-right: var(--space-3); color: var(--kaki-lift); font-weight: 650; }
+.garden-canvas > .wk-surface-controls { display: flex; justify-content: flex-end; padding: var(--space-4) var(--space-6); border-top: var(--edge) solid var(--line); background: var(--panel); }
 .wk-workbench-host[data-workbench-profile='setup2'] .setup-selector-pulse { animation: setup-selector-pulse 520ms ease-out; }
 @keyframes setup-selector-pulse {
   0%, 100% { outline: 0 solid transparent; outline-offset: 0; }
