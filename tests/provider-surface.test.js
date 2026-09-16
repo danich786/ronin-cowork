@@ -103,11 +103,13 @@ test('showing the surface paints the stones from the record at once, measures be
   assert.equal(ctx.refreshed.count, 2, 'and the frame repainted when it landed');
   assert.equal(ctx.environment.setupRuntime, machine);
   const stones = byClass(made.el, 'sws-stone');
-  assert.deepEqual(stones.map((stone) => stone.attributes['data-provider']), ['claude', 'codex', 'grok', 'pi']);
-  assert.deepEqual(stones.map((stone) => byClass(stone, 'sws-label')[0].textContent), ['Claude Code', 'Codex', 'Grok Build', 'Pi']);
-  assert.deepEqual(stones.map((stone) => byClass(stone, 'sws-state')[0].textContent), ['Activated', 'Sign-in open', 'Not installed', 'No CLI']);
-  assert.deepEqual(stones.map((stone) => byClass(stone, 'sws-secondary')[0].textContent), ['Anthropic · 2 models', 'OpenAI · 1 models', 'xAI', 'Pi · 1 models']);
-  assert.deepEqual(stones.map((stone) => stone.attributes['data-activated']), ['true', 'false', 'false', 'false']);
+  assert.deepEqual(stones.map((stone) => stone.attributes['data-provider']), ['claude', 'codex', 'grok', 'pi', 'openrouter']);
+  assert.deepEqual(stones.map((stone) => byClass(stone, 'sws-label')[0].textContent), ['Claude Code', 'Codex', 'Grok Build', 'Pi', 'OpenRouter']);
+  assert.deepEqual(stones.slice(0, 4).map((stone) => byClass(stone, 'sws-state')[0].textContent), ['Activated', 'Sign-in open', 'Not installed', 'No CLI']);
+  assert.deepEqual(stones.slice(0, 4).map((stone) => byClass(stone, 'sws-secondary')[0].textContent), ['Anthropic · 2 models', 'OpenAI · 1 models', 'xAI', 'Pi · 1 models']);
+  assert.deepEqual(stones.map((stone) => stone.attributes['data-activated']), ['true', 'false', 'false', 'false', 'false']);
+  assert.equal(stones[4].disabled, true);
+  assert.equal(byClass(stones[4], 'status-marker')[0].textContent, 'Coming soon');
   const dates = byClass(made.el, 'setup-provider-dates')[0];
   assert.equal(walk(dates).find((node) => node.tagName === 'SUMMARY').textContent, 'Check for updates');
   assert.deepEqual(byClass(dates, 'setup-provider-date-list')[0].children.filter((row) => !row.hidden).map((row) => row.children.map((cell) => cell.textContent)), [

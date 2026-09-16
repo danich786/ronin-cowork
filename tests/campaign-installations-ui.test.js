@@ -6,6 +6,7 @@ test('Campaign Installations is the shared stone surface with the Setup Services
   const source = await readFile(new URL('../public/js/campaign-installations.js', import.meta.url), 'utf8');
   assert.match(source, /createStoneWorkSurface/);
   assert.match(source, /\['ronin_services', 'gbrain', 'trello', 'perplexity'\]/);
+  assert.match(source, /ronin_services: 'beta',[\s\S]*gbrain: 'beta',[\s\S]*trello: 'comingSoon',[\s\S]*perplexity: 'comingSoon'/);
   assert.match(source, /createServicesSurface\(sharedContext\)/);
   assert.match(source, /createGbrainSurface\(sharedContext\)/);
   assert.match(source, /key: 'available'.*switch: \[t\('campaign_view\.on', 'On'\), t\('campaign_view\.off', 'Off'\)\]/);
@@ -29,4 +30,10 @@ test('the Campaign imports the exact exported Setup page builders', async () => 
   const setup = await readFile(new URL('../public/js/setup-surfaces.js', import.meta.url), 'utf8');
   assert.match(setup, /export function createServicesSurface\(context\)/);
   assert.match(setup, /export function createGbrainSurface\(context\)/);
+  for (const id of ['task_manager', 'voice_hotwords', 'usage_stats', 'local_weights']) {
+    assert.match(setup, new RegExp(`id: '${id}',[^}]+status: 'beta'`));
+  }
+  for (const id of ['terminal_transcript', 'project_coordinator']) {
+    assert.match(setup, new RegExp(`id: '${id}',[^}]+status: 'comingSoon'`));
+  }
 });

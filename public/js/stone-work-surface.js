@@ -59,6 +59,7 @@ export function createStoneWorkSurface({ items = [], selectedId = '', renderDeta
         button.append(glyph);
       }
       button.append(element('b', 'sws-label', item.label || id));
+      if (item.marker) button.append(item.marker);
       if (item.secondary) button.append(element('small', 'sws-secondary', item.secondary));
       if (item.state) button.append(element('small', 'sws-state', item.state));
       button.addEventListener('click', () => {

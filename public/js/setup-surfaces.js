@@ -16,6 +16,7 @@ import { HOUSE_PRESETS, buildLaunchPlan, createPresetsSurface, initialControls, 
 import { launchPresetPlan, presetLaunchUrl } from './preset-launch.js';
 import { closeWorkspaceTab, reserveWorkspaceTab } from './workspace.js';
 import { createInstallationsSurface } from './campaign-installations.js';
+import { createStatusMarker } from './status-marker.js';
 
 // Model providers is the one surface two workbenches seat (provider-surface.js); its type
 // is that module's, and Ronin Settings registers the same definition.
@@ -45,12 +46,12 @@ const action = (label, kind, onClick) => {
 const servicesReady = (runtime = {}) => runtime?.services?.active === true || runtime?.services?.installed === true || runtime?.services?.switched_on === true;
 
 export const SERVICE_COMPONENTS = Object.freeze([
-  { id: 'task_manager', label: 'Task manager', needs: 'Adds a shared project board and quick summaries of active work.' },
-  { id: 'terminal_transcript', label: 'Terminal transcript', needs: 'Records terminal activity for transcript views and downstream summaries.' },
-  { id: 'voice_hotwords', label: 'Voice & Hotwords', needs: 'Adds voice tools and corrections for words dictation commonly mishears.' },
-  { id: 'usage_stats', label: 'Usage stats', needs: 'Keeps local usage counts without storing transcript content.' },
-  { id: 'project_coordinator', label: 'Project coordinator', needs: 'Watches active projects and prompts Agents to keep status and summaries current.' },
-  { id: 'local_weights', label: 'Local weights', needs: 'Provides locally stored model weights for features that need them.' },
+  { id: 'task_manager', label: 'Task manager', status: 'beta', needs: 'Adds a shared project board and quick summaries of active work.' },
+  { id: 'terminal_transcript', label: 'Terminal transcript', status: 'comingSoon', needs: 'Records terminal activity for transcript views and downstream summaries.' },
+  { id: 'voice_hotwords', label: 'Voice & Hotwords', status: 'beta', needs: 'Adds voice tools and corrections for words dictation commonly mishears.' },
+  { id: 'usage_stats', label: 'Usage stats', status: 'beta', needs: 'Keeps local usage counts without storing transcript content.' },
+  { id: 'project_coordinator', label: 'Project coordinator', status: 'comingSoon', needs: 'Watches active projects and prompts Agents to keep status and summaries current.' },
+  { id: 'local_weights', label: 'Local weights', status: 'beta', needs: 'Provides locally stored model weights for features that need them.' },
 ]);
 
 export function serviceComponentRows(installed, masterOn) {
@@ -566,6 +567,7 @@ export function createServicesSurface(context) {
     for (const component of SERVICE_COMPONENTS) {
       const item = el('div', 'setup-services-benefit');
       const heading = el('h3', '', component.label);
+      heading.append(createStatusMarker(component.status));
       const copy = el('div', 'setup-services-feature-copy');
       const status = el('span', 'setup-services-feature-status');
       const caption = el('p', '', component.needs);
