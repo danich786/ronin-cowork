@@ -21,11 +21,11 @@ solve them, work around them, or warn the owner about them.
 | **Why is `tmux-server.service` `active (exited)`?** | Handled: setup adopted the existing server, so the unit correctly did not start another. `bin/ronin-doctor` reports the adopted server as a note. |
 | **`systemd --user` dies at logout on a headless box** | Handled in step 3. `bin/ronin-doctor` confirms `ok — linger is on — the coworkspace survives logout`. |
 | **No swap on a cloud VM** | Handled in step 3. On a first install, setup explains the outstanding machine changes, asks once, and creates an offerable swapfile through one sudo authorization. `bin/ronin-doctor` reports `NO SWAP` until it exists. |
-| **Tailscale ordering matters** | Handled in step 3: setup records the address from `tailscale ip -4`. Doctor confirms `ok — auth is off, but the bind is this machine's tailnet address` when that is the chosen posture. |
+| **Tailscale ordering matters** | Handled in step 3: setup requires a signed-in Tailscale CLI, keeps the operator backend on loopback, and verifies `https://<full-machine-name>:4810`. |
 | **Is the download what it claims to be?** | Handled: `SHA256SUMS` proves the downloaded bytes match the release manifest and mismatches stop installation. It is not a signature and cannot prove who published both files; release signing is planned. |
-| **Does any of this need root?** | The app, no. A first install asks once before using sudo for outstanding linger, optional Tailscale HTTPS, and an offerable swapfile. Root never runs the Ronin application. |
-| **Is the port exposed?** | It binds to the tailnet or loopback, and **refuses to boot** on a public address with auth off. |
-| **Is it password-protected?** | Not by default, deliberately; the closing setup frame states the posture. `bin/ronin-passwd` adds a login if the owner wants one; see step 5. |
+| **Does any of this need root?** | The app, no. A first install asks once before using sudo for outstanding linger, required Tailscale HTTPS, and an offerable swapfile. Root never runs the Ronin application. |
+| **Is the port exposed?** | The backend binds to loopback. Tailscale owns the private HTTPS listener and access policy. |
+| **Who controls access?** | Tailscale. A successful install prints only the verified private HTTPS address. |
 | **Why does `current/.env` look mode 777?** | Handled: `current/.env` is a symlink; its target is owner-only. `stat -L -c %a current/.env` (Linux) or `stat -L -f %Lp current/.env` (Mac) reads `600`. |
 | **Does setup edit Claude Code settings?** | Handled: it adds `statusLine` for the context gauge and changes only an unset/default `dark`/`light` theme to `dark-ansi` so the pane follows Ronin; other choices stay untouched. Uninstall removes its own unchanged `statusLine`, preserves all other keys, and leaves the theme choice in place. |
 | **Why is `bin/shim` first on PATH?** | Handled: new shells use a short script you can read in one screen with `ls bin/shim && cat bin/shim/tmux`. It passes every command to the real tmux and refuses only `kill-server`, which would end every session. |
@@ -44,14 +44,14 @@ including `unknown`, then return here if the owner chooses to proceed.
 **Ronin is a browser front end for real tmux sessions on this machine.** Tiles are live
 terminals attached to the default tmux server — xterm.js in the browser, a websocket, node-pty and
 tmux on the host. **Anyone who can open that page has a shell on this machine as this
-account.** That is the product working correctly, and it is why the network and password
-steps below are not optional decoration.
+account.** That is the product working correctly, and it is why the verified private
+Tailscale route is part of installation rather than optional decoration.
 
 ## What you are, and where you stop
 
 You are the owner's own Agent, outside Ronin. Installation is complete when the operator
-and the tmux server's cgroup boundary survive, the owner can reach the private URL with a known
-login posture, Ronin Setup is reachable, one provider is usable, and one new Agent answers
+and the tmux server's cgroup boundary survive, the owner can reach the verified private HTTPS
+URL, Ronin Setup is reachable, one provider is usable, and one new Agent answers
 a harmless prompt. You explain and verify; the owner makes their choices and performs
 login, billing, privilege, and credential-bearing actions.
 
@@ -117,26 +117,20 @@ units. On a headless machine (a rented VM, a home server nobody sits at) the use
 service manager stops when their last session ends, so Ronin stops when the SSH connection
 closes. On a desktop the owner is logged in anyway and it rarely bites.
 
-```bash
-loginctl show-user "$USER" --property=Linger --value    # yes, or it needs enabling
-sudo loginctl enable-linger "$USER"                     # owner approves — this is sudo
-```
-
 The one-line installer detects this before activating Ronin, explains it with the other
 outstanding machine settings, and asks once before using sudo. `bin/ronin-doctor` reports
 it as a fault until it is enabled. Once enabled it survives reboots.
 
-**Tailscale, if it is being used, must be up and signed in before `setup.sh` runs.** Setup
-reads `tailscale ip -4` to decide what address to bind to. Tailscale absent at that moment
-means Ronin binds to loopback, and reaching it needs an SSH tunnel until somebody
-reconfigures and restarts it. Installing Tailscale afterwards does not retro-fit the bind.
+**Tailscale must be installed, up, and signed in before setup runs.** The backend stays on
+loopback. Setup uses the machine's full Tailscale DNS name to establish and verify the only
+public result it will print: `https://<full-machine-name>:4810`.
 
 ```bash
 tailscale ip -4        # an address here, before you run setup
 ```
 
-If the owner is not using Tailscale, that is a fine answer — loopback plus an SSH tunnel
-works. Establish which it is now, not after.
+If that check does not return an address, installation stops with the next action. It does
+not activate Ronin and present an unverified or non-HTTPS alternative as success.
 
 **Swap — or the kernel kills a session when memory fills.** Cloud images (Google Cloud,
 AWS, DigitalOcean, Hetzner) ship with no swap. Ronin runs several agents at once, each
@@ -144,19 +138,14 @@ doing real work; with no swap the kernel has no overflow when RAM fills, so it p
 process and kills it, and it chooses which — usually the agent session with the most in
 it. Swap turns that sudden death into slowness. On Linux, when there is none:
 
-```bash
-swapon --show    # no output at all means there is none
-sudo bash -c 'fallocate -l 4G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile && echo "/swapfile none swap sw 0 0" >> /etc/fstab'
-```
-
-The `/etc/fstab` line is what brings it back after a reboot. The one-line installer offers
-this as one of its explained machine changes and performs it through the same single sudo
-authorization; `bin/ronin-doctor` reports `NO SWAP` until it exists. Inside a container,
-swap is the host's business; skip it and say so.
+The one-line installer detects whether swap is absent, offers a persistent 4 GB swapfile as
+one of its explained machine changes, and performs it through the same single sudo
+authorization. `bin/ronin-doctor` reports `NO SWAP` until swap exists. Inside a container,
+swap is the host's business and the installer does not offer to create it.
 
 **What you should see:** linger is `yes` on a headless Linux box, `swapon --show` prints
-a line, and either `tailscale ip -4` prints the agreed private address or the owner has
-deliberately chosen loopback. On macOS, linger and swap do not apply.
+a line when swap was accepted, and `tailscale ip -4` prints the machine's private address.
+On macOS, linger and swap do not apply.
 
 ## 4. Set up and serve
 
@@ -171,7 +160,9 @@ installation for this OS; install with the owner's approval only. Then:
 cd <install-home>/current && ./setup.sh
 ```
 
-It installs the units and starts the operator, and prints the URL it is serving on. It
+It installs the units and starts the operator, then prints one verified, copyable URL and
+the next browser step. Detailed machine changes and checks stay in the named install report
+rather than filling the terminal result. It
 measures whether a tmux server is already on the default socket and never asks: one that
 exists is joined, and when there is none `tmux-server.service` starts Ronin's own, so
 there is no "start tmux first" step and adding one only hands setup a server to adopt.
@@ -186,36 +177,15 @@ server, reports every outside-the-home change or refusal, starts the operator, a
 the agreed private URL. With no headless browser, the journal says the render check was
 skipped because boot and version are the proof; it does not call the UI broken.
 
-Never expose Ronin's port publicly. Loopback is enough on a laptop; on a remote box use
-the private route the owner already reaches it by, or Tailscale if the owner wants HTTPS
-and reach from their other devices. An SSH tunnel is enough, and the box-side end of the
-forward is the address Ronin bound — the tailnet IP that `setup.sh` printed, unless
-`.env` sets `BIND`. Read the selected port from `.env`, then use it on both sides:
-`ssh -L <port>:<that address>:<port> <account>@<box>` (normally `4810`; a fresh
-collision fallback is `3776`).
+The backend listener is an implementation detail on loopback. Tailscale Serve owns the
+external HTTPS listener on port `4810` and proxies to the selected backend port. When
+`4810` is already needed internally, setup may record backend port `3776`; that never
+changes the address the owner opens.
 
 ## 5. Verify the running install
 
-**Mention the login posture before the URL is opened, then do what the owner says.**
-
-Ronin ships with no password. Inside the tailnet it simply opens — no login on the phone,
-no login on the laptop, no login every time they come back to it. That is a deliberate
-convenience and a lot of people run it exactly this way: the tailnet is the wall, and they
-are content that everything inside the wall is reachable.
-
-The owner should know that is the arrangement, because it means **whoever the tailnet and
-its access rules permit to reach Ronin can use it.** Usually that is their own devices and
-the answer is "fine". It is worth checking the tailnet identity and access rules when it
-came from a work or Google Workspace sign-in, where permitted reach may include colleagues
-rather than only the owner's machines.
-
-If they want a login, it is one command, and you never see what they choose:
-
-```bash
-bin/ronin-passwd
-```
-
-Either answer is a good answer. Note which one they chose in your handover and move on.
+**Access is controlled by Tailscale.** Confirm the owner can open the one verified HTTPS
+address from their intended device, then continue into Machine Settings.
 
 Before opening the URL, preserve evidence that the installed copy is the one answering:
 
@@ -233,7 +203,7 @@ depending on its process-tree shape. If process details are hidden, no PID is fo
 cgroup is unreadable, or more than one interpretation remains, report the listener as
 **unknown** rather than assigning another Node process to Ronin. Record warnings and skips
 as such. Confirm existing ordinary tmux sessions still exist, the reported URL answers from
-the owner's device, and the listening address matches the agreed loopback or tailnet route.
+the owner's device, and the backend listener remains on loopback.
 Do not turn configuration intent into evidence about the running process.
 
 **Expected first-install state:**
@@ -271,9 +241,9 @@ Use this handover template:
 ```text
 Installed: <release and install home>
 Changed outside the install home: <each disclosed path/unit/lease, or none>
-Checks passed: <doctor, units, listener/private route, existing tmux sessions, first Agent>
+Checks passed: <doctor, units, loopback backend, HTTPS route, existing tmux sessions, first Agent>
 Matched expected first-install state: <items from the list above>
 Deviated from expected: <exact observation and safe next action, or none>
 Not tested: <checks not actually exercised>
-Login posture: <tailnet-only or password enabled>
+Access: controlled by Tailscale
 ```

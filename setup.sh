@@ -5,7 +5,7 @@
 #
 # Works on Linux (systemd --user) and macOS (prints launchd steps). The app stays
 # unprivileged. On Linux, setup asks once before using sudo for the detected machine
-# settings: linger, optional Tailscale HTTPS, and an offerable swapfile.
+# settings: linger, required Tailscale HTTPS, and an offerable swapfile.
 set -euo pipefail
 
 MACHINE_ONLY=0
@@ -18,10 +18,12 @@ cd "$REPO_DIR"
 # The install talks to a log, not to the person. fd 3 is the terminal, kept for the
 # banner at the end and for anything that actually needs them. RONIN_VERBOSE=1 puts the
 # whole transcript back on screen.
-RONIN_SETUP_LOG="${TMPDIR:-/tmp}/ronin-setup.log"
-exec 3>&1
+RONIN_REPORT_ROOT="$("$REPO_DIR/bin/ronin-store" --root data 2>/dev/null || printf '%s' "$HOME/.ronin")/reports"
+mkdir -p "$RONIN_REPORT_ROOT" 2>/dev/null || true
+RONIN_SETUP_LOG="${RONIN_INSTALL_REPORT:-$RONIN_REPORT_ROOT/install-$(date -u +%Y%m%dT%H%M%SZ)-$$.log}"
+if [ -z "${RONIN_TERMINAL_FD:-}" ]; then exec 3>&1; fi
 if [ -z "${RONIN_VERBOSE:-}" ]; then
-  : > "$RONIN_SETUP_LOG" 2>/dev/null || RONIN_SETUP_LOG=/dev/null
+  touch "$RONIN_SETUP_LOG" 2>/dev/null || RONIN_SETUP_LOG=/dev/null
   exec >>"$RONIN_SETUP_LOG" 2>&1
 fi
 out() { printf '%s\n' "$*" >&3; }
@@ -57,7 +59,7 @@ fi
 if command -v tailscale >/dev/null; then
   echo "    tailscale: $(command -v tailscale)"
 else
-  echo "    tailscale: not found (optional — it is what gives this box an HTTPS address)"
+  echo "    tailscale: not found (required for the private HTTPS address)"
 fi
 
 # --- coexistence preflight: before dependency, rc, option, or unit mutations ---
@@ -77,27 +79,40 @@ RONIN_PREFLIGHT_BIND="${BIND:-$(ronin_bind "$REPO_DIR")}"
 export RONIN_PREFLIGHT_BIND
 ronin_preflight_port "$REPO_DIR" "$NODE_BIN"
 
-# --- root-owned machine settings: one decision, one password, during this install ---
+# --- root-owned machine settings: one decision and one authorization during install ---
 # Do this before setup changes tmux, rc files, units, or stores. The predicates remain
 # in ronin-machine.sh, shared with doctor; the small apply helper receives only fixed,
 # already-separated arguments and invokes each privileged program directly.
 OS="$(uname -s)"
-if [ "$OS" = Linux ]; then
+if [ "$OS" = Linux ] && { [ "$MACHINE_ONLY" -eq 1 ] || [ -z "${RONIN_MACHINE_PREPARED:-}" ]; }; then
   # shellcheck source=libexec/ronin-machine.sh
   . "$REPO_DIR/libexec/ronin-machine.sh"
   MACHINE_APPLY_ARGS=()
   machine_linger_on || if [ $? -eq 1 ]; then
     MACHINE_APPLY_ARGS+=(--linger "$(id -un)")
   fi
-  PREFLIGHT_SERVED="$(ronin_served_url "$RONIN_PREFLIGHT_PORT")"
-  if [ -z "$PREFLIGHT_SERVED" ] && [ "$RONIN_PREFLIGHT_BIND" != 127.0.0.1 ] && command -v tailscale >/dev/null 2>&1; then
+  TAILSCALE_IP="$(command -v tailscale >/dev/null 2>&1 && tailscale ip -4 2>/dev/null | head -1 || true)"
+  if [ -z "$TAILSCALE_IP" ]; then
+    out ""
+    out "  Ronin needs Tailscale to create its private HTTPS address."
+    out "  Install or sign in to Tailscale, then run the Ronin install command again."
+    out "  Install details: $RONIN_SETUP_LOG"
+    out ""
+    exit 1
+  fi
+  PREFLIGHT_SERVED="$(ronin_served_url "$RONIN_PREFLIGHT_PORT" "$RONIN_PREFLIGHT_BIND" 4810)"
+  if [ -z "$PREFLIGHT_SERVED" ] && [ -n "$TAILSCALE_IP" ]; then
     MACHINE_APPLY_ARGS+=(--serve "$RONIN_PREFLIGHT_BIND" "$RONIN_PREFLIGHT_PORT")
   fi
   if machine_swap_offerable; then
     MACHINE_APPLY_ARGS+=(--swap)
   fi
   if [ "${#MACHINE_APPLY_ARGS[@]}" -gt 0 ]; then
-    "$REPO_DIR/libexec/ronin-machine-apply" "${MACHINE_APPLY_ARGS[@]}" >&3 || exit $?
+    set +e
+    "$REPO_DIR/libexec/ronin-machine-apply" "${MACHINE_APPLY_ARGS[@]}" | tee /dev/fd/3
+    apply_rc=${PIPESTATUS[0]}
+    set -e
+    [ "$apply_rc" -eq 0 ] || exit "$apply_rc"
   fi
 fi
 [ "$MACHINE_ONLY" -eq 0 ] || exit 0
@@ -386,11 +401,11 @@ else
     fi
   fi
 
-  ronin_say "    NOTE: rc files are read at shell START — this shell and every session already"
-  ronin_say "    open keep the old PATH. For the current shell, run:"
-  ronin_say "      $PATH_LINE_BOTH"
-  ronin_say "    Check any shell with:  command -v tmux work-record"
-  ronin_say "      -> $SHIM_DIR/tmux  and  $RBIN_DIR/work-record"
+  echo "    NOTE: rc files are read at shell START — this shell and every session already"
+  echo "    open keep the old PATH. For the current shell, run:"
+  echo "      $PATH_LINE_BOTH"
+  echo "    Check any shell with:  command -v tmux work-record"
+  echo "      -> $SHIM_DIR/tmux  and  $RBIN_DIR/work-record"
 fi
 
 # --- PATH: where an agent Ronin installs lands ---
@@ -457,7 +472,7 @@ else
       ronin_say "      $AGENT_LINE"
     fi
   done
-  ronin_say "    NOTE: read at shell START. For this shell:  $AGENT_LINE"
+  echo "    NOTE: read at shell START. For this shell:  $AGENT_LINE"
 fi
 
 # --- autostart ---
@@ -555,9 +570,9 @@ fi
 # recorded one, not a fresh probe: what .env says is what the socket will bind, so it is
 # what the banner prints and what `tailscale serve` is mapped at. Loopback is a door on
 # this box only — nothing to serve, no tailnet name to print.
-IP="$(ronin_bind "$REPO_DIR")"; FQDN=""
+BACKEND_IP="$(ronin_bind "$REPO_DIR")"; IP="$BACKEND_IP"; FQDN=""
 [ "$IP" = 127.0.0.1 ] && IP=""
-if [ -n "$IP" ] && command -v tailscale >/dev/null; then
+if command -v tailscale >/dev/null; then
   FQDN="$(tailscale status --json 2>/dev/null | "$NODE_DIR/node" -e \
     'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{try{process.stdout.write((JSON.parse(d).Self.DNSName||"").replace(/\.$/,""))}catch{}})' 2>/dev/null || true)"
 fi
@@ -573,21 +588,31 @@ fi
 # two different things about one machine.
 # shellcheck source=libexec/ronin-machine.sh
 . "$REPO_DIR/libexec/ronin-machine.sh"
-export RONIN_IP="${IP:-}" RONIN_FQDN="${FQDN:-}"
+export RONIN_IP="${IP:-}" RONIN_FQDN="${FQDN:-}" RONIN_BACKEND_HOST="$BACKEND_IP" RONIN_PUBLIC_PORT=4810
 PORT="$(ronin_port "$REPO_DIR")"
 OPEN_URL="$(ronin_open_url "$REPO_DIR" "$PORT")"
+TAILSCALE_IP="$(command -v tailscale >/dev/null 2>&1 && tailscale ip -4 2>/dev/null | head -1 || true)"
+if [ -z "$TAILSCALE_IP" ] || [ -z "$FQDN" ] || [ "$OPEN_URL" != "https://$FQDN:4810" ]; then
+  out ""
+  out "  Ronin could not establish https://${FQDN:-<machine-name>}:4810."
+  out "  Check that Tailscale is signed in and permits Serve, then run the install again."
+  out "  Install details: $RONIN_SETUP_LOG"
+  out ""
+  exit 1
+fi
 
-# The closing frame is the contract. On a local graphical desktop, opening it is merely
-# a convenience: wait for /api/health to answer 200, then ask the OS to open
-# the page. SSH/headless detection and opener failures are non-fatal in the helper.
+# The closing greeting is a readiness claim. Use the selected URL's actual protocol,
+# require /api/health to answer before printing it, then ask a local graphical OS to
+# open the page. Browser-opening failures remain non-fatal.
 # Linux only, deliberately: macOS renders the launchd agent but the user loads it by
 # hand, so setup.sh has no moment where the service is observably ready to open.
 if [ "$OS" = "Linux" ]; then
   RONIN_READY=0
   for _ in 1 2 3 4 5 6 7 8 9 10; do
     if "$NODE_DIR/node" -e '
-      const http = require("node:http");
-      const req = http.get(process.argv[1] + "/api/health",
+      const u = new URL("/api/health", process.argv[1]);
+      const client = require(u.protocol === "https:" ? "node:https" : "node:http");
+      const req = client.get(u,
         r => { r.resume(); process.exit(r.statusCode === 200 ? 0 : 1); });
       req.setTimeout(500, () => req.destroy());
       req.on("error", () => process.exit(1));
@@ -599,51 +624,27 @@ if [ "$OS" = "Linux" ]; then
   done
   if [ "$RONIN_READY" -eq 1 ]; then
     "$REPO_DIR/libexec/ronin-open-browser" "$OPEN_URL" || true
+  else
+    out ""
+    out "  Ronin started, but its selected address did not pass the health check:"
+    out "  $OPEN_URL"
+    out "  Install details: $RONIN_SETUP_LOG"
+    out ""
+    exit 1
   fi
 fi
 
-# The frame comes first: one composed result gives the person the address to copy and
-# every persistent touch outside the install home. This is presentation, not another
-# setup log. Paths are printed with ~ and every line fits an 80-column terminal, which
-# the frame itself guarantees (libexec/ronin-banner.sh, RONIN_FRAME_TEXT).
-USER_STORE_ROOT="$("$REPO_DIR/bin/ronin-store" --root user)"
-DATA_STORE_ROOT="$("$REPO_DIR/bin/ronin-store" --root data)"
-RC_SUMMARY=""
-for f in "$RC" ${RC_ALSO:+"$RC_ALSO"}; do
-  [ -n "$f" ] && [ -f "$f" ] || continue
-  if grep -qF "$SHIM_BEGIN" "$f" 2>/dev/null || grep -qF "$AGENT_BEGIN" "$f" 2>/dev/null; then
-    case " $RC_SUMMARY " in *" $f "*) ;; *) RC_SUMMARY="${RC_SUMMARY:+$RC_SUMMARY, }$(ronin_tilde "$f")" ;; esac
-  fi
-done
-RESULT_LINES=(
-  "WHAT CHANGED OUTSIDE $(ronin_tilde "$REPO_DIR")"
-  "Claude Code  · ~/.claude/settings.json: statusLine, when unclaimed;"
-  "               theme dark-ansi if unset, dark or light; others stay."
-)
-if [ -n "$RC_SUMMARY" ]; then
-  RESULT_LINES+=("Shell PATH   · $RC_SUMMARY" "               shim first; Ronin tools next; ~/.local/bin last.")
-else
-  RESULT_LINES+=("Shell PATH   · no rc file changed; use the manual line printed above.")
+if [ "$OS" = Darwin ]; then
+  out ""
+  out "  Ronin is installed, but it is not running yet on this Mac."
+  out "  Run: launchctl load -w $HOME/Library/LaunchAgents/com.ronin.plist"
+  out "  Install details: $RONIN_SETUP_LOG"
+  out ""
+  exit 0
 fi
-RESULT_LINES+=(
-  "tmux command · $(ronin_tilde "$SHIM_DIR")/tmux"
-  "               refuses 'tmux kill-server' because it ends every session."
-  "Stores       · user: $(ronin_tilde "$USER_STORE_ROOT")"
-  "               data: $(ronin_tilde "$DATA_STORE_ROOT")"
-)
-if [ "$OS" = Linux ] && command -v systemctl >/dev/null 2>&1; then
-  RESULT_LINES+=("Autostart    · ~/.config/systemd/user/{tmux-server,ronin}.service")
-elif [ "$OS" = Darwin ]; then
-  RESULT_LINES+=("Autostart    · ~/Library/LaunchAgents/com.ronin.plist (load line above)")
-else
-  RESULT_LINES+=("Autostart    · no unit or plist written on this platform.")
+
+MACHINE_WARNING=""
+if [ -n "${RONIN_MACHINE_RESULT:-}" ] && [ -s "$RONIN_MACHINE_RESULT" ]; then
+  MACHINE_WARNING="Some machine protections did not complete; run ronin-doctor after setup."
 fi
-TMUX_LEASE="$DATA_STORE_ROOT/machine/tmux-adoption"
-if [ -f "$TMUX_LEASE" ]; then
-  TMUX_PRIOR="$(sed -n 's/^prior=//p' "$TMUX_LEASE" 2>/dev/null | head -1)"
-  RESULT_LINES+=("tmux lease   · exit-empty is off; prior ${TMUX_PRIOR:-unknown}; uninstall restores it." "               $(ronin_tilde "$TMUX_LEASE")")
-else
-  RESULT_LINES+=("tmux lease   · none; no existing default tmux server was changed.")
-fi
-RESULT_LINES+=("Network bind · $RECORDED_BIND in $(ronin_tilde "$REPO_DIR")/.env" "               source: $RECORDED_BIND_SOURCE")
-ronin_banner "$REPO_DIR" "$OPEN_URL" "${RESULT_LINES[@]}" >&3
+ronin_banner "$REPO_DIR" "$OPEN_URL" "$RONIN_SETUP_LOG" "$MACHINE_WARNING" >&3

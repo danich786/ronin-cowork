@@ -308,23 +308,10 @@ fi
 
 # The same condition src/config.ts refuses at startup, asked of the RUNNING box — so a
 # hand-edited .env is caught before the next restart rather than by it.
-D_USER="${GRID_USER:-$(env_get GRID_USER)}"
-D_PASS="${GRID_PASS:-$(env_get GRID_PASS)}"
-if [ -n "$D_USER" ] && [ -n "$D_PASS" ]; then
-  ok "HTTP auth is ON"
-else
-  TSIP="$(command -v tailscale >/dev/null 2>&1 && tailscale ip -4 2>/dev/null | head -1)"
-  case "$HOSTIP" in
-    127.*|::1|localhost) ok "auth is off, but the bind is loopback-only ($HOSTIP)" ;;
-    *)
-      if [ -n "$TSIP" ] && [ "$HOSTIP" = "$TSIP" ]; then
-        ok "auth is off, but the bind is this machine's tailnet address ($HOSTIP)"
-      else
-        find_ "auth is OFF and the bind is $HOSTIP — neither loopback nor this machine's tailnet address, which serves live shells to anything that can reach the port; set GRID_USER + GRID_PASS in .env, or bind 127.0.0.1 or the tailnet IP"
-      fi
-      ;;
-  esac
-fi
+case "$HOSTIP" in
+  127.*|::1|localhost) ok "operator backend is loopback-only ($HOSTIP); access belongs to Tailscale" ;;
+  *) find_ "operator backend binds $HOSTIP instead of loopback; run setup to migrate it behind Tailscale HTTPS" ;;
+esac
 
 # ---- 5. src/ staleness ------------------------------------------------------------
 # The operator is a memory copy taken at start; src/ and package.json edits are not
@@ -570,12 +557,10 @@ else
   find_ "Claude Code is missing a setting Ronin needs — run: hostside/claude-settings.py"
 fi
 
-# ---- the steps setup.sh offers once, and nothing re-checked -------------------------
+# ---- the machine settings first install applies, and doctor re-checks ----------------
 #
-# setup.sh detects each of these, hands the person a line, and never looks again. An
-# install that predates the offer never saw it at all, and a person can decline or miss
-# it — so the only place these can be caught afterwards is here. Same reasoning as the
-# swap finding below.
+# First install detects and offers these together. A partial failure or an older install
+# can still lack one, so doctor measures them again rather than trusting setup history.
 #
 # ONE DEFINITION, NOT A THIRD OPINION: `ronin_served_url` is how setup.sh and
 # ronin-welcome both answer "is a door pointed at this install", so doctor sources the
@@ -595,18 +580,17 @@ machine_linger_on; case $? in
   *) find_ "linger is OFF — every --user service stops at logout, so Ronin is absent whenever nobody is signed in. remedy: sudo $(machine_linger_action)" ;;
 esac
 
-# SERVE is a NOTE, deliberately, and not a finding. Reaching the install over the tailnet
-# at http://ip:port is a legitimate arrangement — setup.sh's own banner falls back to
-# exactly that — so an absent `serve` is a fact worth stating and not a fault. A gate
-# that cries wolf gets disabled, and this is the shape of question that would.
+# The verified Tailscale HTTPS route is part of a successful install. Doctor therefore
+# treats a missing exact mapping as a finding; internal HTTP remains only the loopback
+# transport between Serve and the operator.
 if ! command -v tailscale >/dev/null 2>&1; then
   note "no tailscale here — no tailnet door to check"
-elif ! served="$(ronin_served_url "$PORT" 2>/dev/null)"; then
+elif ! served="$(ronin_served_url "$PORT" "$HOSTIP" 4810 2>/dev/null)"; then
   note "tailscale is present but did not answer — door not assessed"
 elif [ -n "$served" ]; then
   ok "a tailnet door serves this install — $served"
 else
-  note "no HTTPS tailnet door for port $PORT; reachable over the tailnet by address, or run: sudo tailscale serve --bg --https=8443 http://$HOSTIP:$PORT"
+  find_ "required Tailscale HTTPS address on port 4810 is missing; run setup again after checking Tailscale Serve permission"
 fi
 
 # ---- the box itself: can it survive a busy hour? ------------------------------------

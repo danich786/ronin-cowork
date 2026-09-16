@@ -11,7 +11,7 @@ const lib = path.resolve('libexec/ronin-banner.sh');
  * The installer's closing address is the one thing a person keeps, so it is worth a
  * consumer-side test. Found walking a real install, 2026-08-21: a v1.3.2 install printed
  * `https://<box>.ts.net` in the banner and then, in the same breath, told the operator
- * to create a DIFFERENT door on :8443 — because the banner asked `tailscale serve
+ * to create a different door — because the banner asked `tailscale serve
  * status` which mapping existed, and the step below it only asked whether tailscale was
  * installed at all.
  *
@@ -26,31 +26,50 @@ function box(serveStatus: string, port = '4810') {
 }
 
 function call(dir: string, fn: string, ...args: string[]) {
-  return execFileSync('bash', ['-c', `. "${lib}"; ${fn} ${args.map((a) => `"${a}"`).join(' ')}`], {
+  return execFileSync('bash', ['-uc', `. "${lib}"; ${fn} ${args.map((a) => `"${a}"`).join(' ')}`], {
     env: { PATH: `${dir}:/usr/bin:/bin`, HOME: dir },
     encoding: 'utf8',
   }).trim();
 }
 
-const OURS = ['https://box.tailnet.ts.net:8443/', '|-- proxy http://100.72.224.3:4810'].join('\n');
+const OURS = ['https://box.tailnet.ts.net:4810/', '|-- proxy http://127.0.0.1:4810'].join('\n');
 const FOREIGN = ['https://box.tailnet.ts.net:9000/', '|-- proxy http://100.72.224.3:8080'].join('\n');
 
 test('a serve mapping onto our port is the address to print', () => {
-  assert.equal(call(box(OURS), 'ronin_served_url', '4810'), 'https://box.tailnet.ts.net:8443');
+  assert.equal(call(box(OURS), 'ronin_served_url', '4810', '127.0.0.1'), 'https://box.tailnet.ts.net:4810');
 });
 
 test('a serve mapping onto someone else\'s port is NOT our door', () => {
   // The regression that matters: `grep https:// | head -1` would hand a stranger
   // whatever else they serve on that tailnet and call it the way in to Ronin.
-  assert.equal(call(box(FOREIGN), 'ronin_served_url', '4810'), '');
+  assert.equal(call(box(FOREIGN), 'ronin_served_url', '4810', '127.0.0.1'), '');
 });
 
 test('ours is found even when another mapping is listed first', () => {
-  assert.equal(call(box(`${FOREIGN}\n${OURS}`), 'ronin_served_url', '4810'), 'https://box.tailnet.ts.net:8443');
+  assert.equal(call(box(`${FOREIGN}\n${OURS}`), 'ronin_served_url', '4810', '127.0.0.1'), 'https://box.tailnet.ts.net:4810');
 });
 
 test('no serve mapping at all means no HTTPS claim', () => {
-  assert.equal(call(box(''), 'ronin_served_url', '4810'), '');
+  assert.equal(call(box(''), 'ronin_served_url', '4810', '127.0.0.1'), '');
+});
+
+test('a matching port on the wrong backend host is not our door', () => {
+  assert.equal(call(box(OURS), 'ronin_served_url', '4810', '100.99.88.77'), '');
+});
+
+test('a port prefix is not an exact backend match', () => {
+  const prefixed = ['https://box.tailnet.ts.net:4810/', '|-- proxy http://127.0.0.1:48100'].join('\n');
+  assert.equal(call(box(prefixed), 'ronin_served_url', '4810', '127.0.0.1'), '');
+});
+
+test('public HTTPS stays on 4810 when the loopback backend selected its fallback port', () => {
+  const fallback = ['https://box.tailnet.ts.net:4810/', '|-- proxy http://127.0.0.1:3776'].join('\n');
+  assert.equal(call(box(fallback, '3776'), 'ronin_served_url', '3776', '127.0.0.1', '4810'), 'https://box.tailnet.ts.net:4810');
+});
+
+test('an otherwise matching mapping on legacy public port 8443 is not our door', () => {
+  const legacy = ['https://box.tailnet.ts.net:8443/', '|-- proxy http://127.0.0.1:4810'].join('\n');
+  assert.equal(call(box(legacy), 'ronin_served_url', '4810', '127.0.0.1'), '');
 });
 
 test('the port comes from .env, because .env is where an operator is told to change it', () => {
@@ -66,20 +85,24 @@ test('without a served mapping the address falls back to one that answers now', 
   const dir = box('', '8080');
   const url = execFileSync(
     'bash',
-    ['-c', `. "${lib}"; ronin_open_url "${dir}" "$(ronin_port "${dir}")"`],
+    ['-uc', `. "${lib}"; ronin_open_url "${dir}" "$(ronin_port "${dir}")"`],
     { env: { PATH: `${dir}:/usr/bin:/bin`, RONIN_FQDN: 'box.tailnet.ts.net', RONIN_IP: '' }, encoding: 'utf8' },
   ).trim();
   // HTTP, and carrying the operator's port rather than a constant.
   assert.equal(url, 'http://box.tailnet.ts.net:8080');
 });
 
-test('the banner draws the url it is given, inside a frame that closes', () => {
+test('the banner keeps identity framed and the URL whole on its own copyable line', () => {
   const dir = box('');
-  const out = execFileSync('bash', ['-c', `. "${lib}"; ronin_banner "${dir}" "http://box:4810"`], {
+  const url = 'https://a-very-long-machine-name-that-must-never-wrap.tailnet.ts.net:4810';
+  const out = execFileSync('bash', ['-uc', `. "${lib}"; ronin_banner "${dir}" "${url}" "/tmp/report.log"`], {
     env: { PATH: `${dir}:/usr/bin:/bin` },
     encoding: 'utf8',
   });
-  assert.match(out, /http:\/\/box:4810/);
+  assert.ok(out.split('\n').includes(`  ${url}`));
+  assert.doesNotMatch(out, /WHAT CHANGED OUTSIDE/);
+  assert.match(out, /Next: open Machine Settings/);
+  assert.match(out, /Install details: \/tmp\/report\.log/);
   const [top, bottom] = [out.split('\n').find((l) => l.includes('╭'))!, out.split('\n').find((l) => l.includes('╰'))!];
   // 人 is double-width; a frame that does not measure it is a frame with a ragged edge.
   assert.equal([...top].length, [...bottom].length);
@@ -99,7 +122,7 @@ function tailnetBox(ip: string, env: string) {
 
 test('ronin_bind prefers the address recorded in .env over the tailscale probe', () => {
   const probe = tailnetBox('100.72.224.3', 'PORT=4810\n');
-  assert.equal(call(probe, 'ronin_bind_full', probe), '100.72.224.3 tailscale', 'unrecorded: the probe is what it would have said');
+  assert.equal(call(probe, 'ronin_bind_full', probe), '127.0.0.1 loopback');
   const recorded = tailnetBox('100.72.224.3', 'PORT=4810\nBIND=10.9.8.7\n');
   assert.equal(call(recorded, 'ronin_bind_full', recorded), '10.9.8.7 env');
   const bare = tailnetBox('', 'PORT=4810\n');
@@ -114,14 +137,22 @@ test('a hand-set BIND is left byte-identical by setup, however often it reruns',
   assert.equal(fs.readFileSync(path.join(dir, '.env'), 'utf8'), env);
 });
 
+test('a setup-recorded tailnet bind migrates to the loopback Serve backend', () => {
+  const env = '# The address Ronin binds. Recorded by setup.sh on 2026-09-01\nBIND=100.72.224.3\nPORT=4810\n';
+  const dir = tailnetBox('100.72.224.3', env);
+  assert.equal(call(dir, 'ronin_bind_full', dir), '127.0.0.1 migration');
+  assert.match(call(dir, 'ronin_record_bind', dir), /migrated .* to loopback/);
+  assert.match(fs.readFileSync(path.join(dir, '.env'), 'utf8'), /^BIND=127\.0\.0\.1$/m);
+});
+
 test('an unrecorded .env gets the resolved address once; a rerun does not add a second', () => {
   const env = 'PORT=4810\n#BIND=100.x.y.z\n';
   const dir = tailnetBox('100.72.224.3', env);
-  assert.match(call(dir, 'ronin_record_bind', dir), /recorded 100\.72\.224\.3 in \.env/);
+  assert.match(call(dir, 'ronin_record_bind', dir), /recorded 127\.0\.0\.1 in \.env/);
   const once = fs.readFileSync(path.join(dir, '.env'), 'utf8');
   assert.ok(once.startsWith(env), 'the owner\'s lines are untouched');
   assert.equal(once.match(/^BIND=/gm)?.length, 1);
-  assert.equal(call(dir, 'ronin_bind', dir), '100.72.224.3');
+  assert.equal(call(dir, 'ronin_bind', dir), '127.0.0.1');
   call(dir, 'ronin_record_bind', dir);
   assert.equal(fs.readFileSync(path.join(dir, '.env'), 'utf8'), once);
 });

@@ -65,6 +65,8 @@ WANT="$(awk -v n="$NAME" '$2==n{print $1}' "$WORK/SHA256SUMS")"
 tar -xzf "$WORK/$NAME" -C "$WORK"
 TREE="$WORK/ronin-cowork-$VER"
 HOME_DIR="${RONIN_HOME:-$("$TREE/bin/ronin-store" --root user)}"
-RONIN_FROM_GET=1 "$TREE/bin/ronin-update" --file "$WORK/$NAME" --home "$HOME_DIR"
-cd "$HOME_DIR/current"
-exec ./setup.sh
+REPORT_ROOT="$("$TREE/bin/ronin-store" --root data)/reports"
+mkdir -p "$REPORT_ROOT"
+INSTALL_REPORT="$REPORT_ROOT/install-$(date -u +%Y%m%dT%H%M%SZ)-$$.log"
+RONIN_INSTALL_REPORT="$INSTALL_REPORT" RONIN_FROM_GET=1 \
+  "$TREE/bin/ronin-update" --file "$WORK/$NAME" --home "$HOME_DIR"

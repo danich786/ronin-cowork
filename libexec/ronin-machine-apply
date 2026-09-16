@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Apply the small, fixed set of root-owned machine settings setup.sh has already
 # detected. This wrapper stays unprivileged. One sudo process receives fixed root code
-# on stdin and data as positional arguments: one approval, at most one password prompt,
+# on stdin and data as positional arguments: one approval, at most one sudo prompt,
 # and no user-writable Ronin file is named as root's executable.
 set -u
 
@@ -47,11 +47,12 @@ if ! command -v sudo >/dev/null 2>&1; then
 fi
 
 # This is deliberately ONE sudo invocation. Even sudoers timestamp_timeout=0 cannot
-# turn the three settings into three password prompts.
+# turn the three settings into three authorization prompts.
 sudo_rc=0
 sudo bash -s -- "$LINGER_USER" "$SERVE_IP" "$SERVE_PORT" "$WANT_SWAP" <<'RONIN_ROOT' || sudo_rc=$?
 linger_user="$1"; serve_ip="$2"; serve_port="$3"; want_swap="$4"
-failed=0
+optional_failed=0
+serve_failed=0
 
 if [ -n "$linger_user" ]; then
   if id -u "$linger_user" >/dev/null 2>&1 &&
@@ -59,19 +60,19 @@ if [ -n "$linger_user" ]; then
      [ "$(loginctl show-user "$linger_user" --property=Linger --value 2>/dev/null)" = yes ]; then
     printf '  ✓ Ronin will keep running after %s logs out\n' "$linger_user"
   else
-    printf '  ✗ could not keep Ronin running after logout\n'; failed=1
+    printf '  ✗ could not keep Ronin running after logout\n'; optional_failed=1
   fi
 fi
 
 if [ -n "$serve_ip" ]; then
   case "$serve_ip:$serve_port" in
-    *[!0-9A-Fa-f:.]*) printf '  ✗ refused an invalid Tailscale address or port\n'; failed=1 ;;
+    *[!0-9A-Fa-f:.]*) printf '  ✗ refused an invalid Tailscale address or port\n'; serve_failed=1 ;;
     *)
       if [ "$serve_port" -ge 1 ] 2>/dev/null && [ "$serve_port" -le 65535 ] 2>/dev/null &&
-         tailscale serve --bg --https=8443 "http://$serve_ip:$serve_port" >/dev/null; then
-        printf '  ✓ Tailscale HTTPS now serves Ronin on port 8443\n'
+         tailscale serve --bg --https=4810 "http://$serve_ip:$serve_port" >/dev/null; then
+        printf '  ✓ Tailscale HTTPS now serves Ronin on port 4810\n'
       else
-        printf '  ✗ Tailscale HTTPS was not configured\n'; failed=1
+        printf '  ✗ Tailscale HTTPS was not configured\n'; serve_failed=1
       fi ;;
   esac
 fi
@@ -80,7 +81,7 @@ if [ "$want_swap" = 1 ]; then
   made=0; active=0
   if [ -e /swapfile ] || grep -Eq '^[[:space:]]*/swapfile[[:space:]]' /etc/fstab 2>/dev/null; then
     printf '  ✗ swapfile was not installed: /swapfile or its fstab row appeared; inspect it first\n'
-    failed=1
+    optional_failed=1
   elif fallocate -l 4G /swapfile; then
     made=1
     if chmod 600 /swapfile && mkswap /swapfile >/dev/null && swapon /swapfile; then
@@ -89,21 +90,32 @@ if [ "$want_swap" = 1 ]; then
         printf '  ✓ 4 GB swapfile installed and recorded in /etc/fstab\n'
         made=0; active=0
       else
-        printf '  ✗ swapfile could not be made persistent; rolling it back\n'; failed=1
+        printf '  ✗ swapfile could not be made persistent; rolling it back\n'; optional_failed=1
       fi
     else
-      printf '  ✗ swapfile was not installed; rolling it back\n'; failed=1
+      printf '  ✗ swapfile was not installed; rolling it back\n'; optional_failed=1
     fi
     if [ "$active" = 1 ]; then swapoff /swapfile 2>/dev/null || true; fi
     if [ "$made" = 1 ]; then rm -f /swapfile; fi
   else
-    printf '  ✗ swapfile was not installed\n'; failed=1
+    printf '  ✗ swapfile was not installed\n'; optional_failed=1
   fi
 fi
-exit "$failed"
+if [ "$serve_failed" -ne 0 ]; then
+  printf '  ! Ronin was not activated because its required HTTPS address could not be established\n'
+  exit 11
+fi
+if [ "$optional_failed" -ne 0 ]; then
+  printf '  ! Ronin will continue using the machine settings that did succeed\n'
+fi
+exit "$(( optional_failed == 0 ? 0 : 10 ))"
 RONIN_ROOT
+if [ "$sudo_rc" -eq 10 ]; then
+  [ -z "${RONIN_MACHINE_RESULT:-}" ] || printf '%s\n' warning > "$RONIN_MACHINE_RESULT"
+  sudo_rc=0
+fi
 if [ "$sudo_rc" -ne 0 ]; then
-  printf '  Some administrator changes did not complete; setup will report the usable address.\n'
+  printf '  Administrator access failed before the machine changes could complete.\n'
 fi
 printf '\n'
 exit "$sudo_rc"
