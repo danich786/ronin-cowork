@@ -129,8 +129,9 @@ Registration is optional; local Ronin works without it. The form asks for an ema
 brings you here, which core Ronin feature you prefer, which of the starting patterns you
 are most likely to use, what describes you, where you will install, a two-line introduction
 for your Cowork Agents, and anything else. The introduction stays on this machine as the
-owner `ways/floor/user-intro.md` Behavior and is included in every Cowork Agent's birth
-README; leaving it blank removes that page.
+owner `ways/floor/user-intro.md` shadow of the stock-empty Behavior and is included in every
+Cowork Agent's birth README; leaving it blank removes the shadow and leaves the placeholder
+empty.
 Share only what feels useful. A registered identity is what Ronin Services entitlement
 hangs on; it is not a subscription and it switches nothing on by itself. Communication
 choices are separate, and **No communication** is one of them.

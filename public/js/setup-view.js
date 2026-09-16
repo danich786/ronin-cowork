@@ -13,7 +13,7 @@ import { campaignById, campaigns, initialCampaignId, loadCampaigns, saveCampaign
 import { readyMika } from './mika-ready.js';
 import { createMikaHelpPanel, createMikaTilePool } from './mika.js';
 import { toast } from './ui.js';
-import { SETUP_SCENES, setupJourney } from './setup-journey.js';
+import { SETUP_SCENES, automaticSetupScene, setupJourney } from './setup-journey.js';
 
 const PROFILE = 'setup';
 const MIKA_SESSION = 'mika_agent';
@@ -21,7 +21,7 @@ const TERMINAL_TYPE = 'session.terminal';
 // The selector's fixed order. Model providers comes first because it is the first job.
 const ORDER = Object.freeze([
   SETUP_SURFACE_TYPES.providers, SETUP_SURFACE_TYPES.register, SETUP_SURFACE_TYPES.roots,
-  SETUP_SURFACE_TYPES.installations, SETUP_SURFACE_TYPES.launchOwn,
+  SETUP_SURFACE_TYPES.installations, SETUP_SURFACE_TYPES.bounty, SETUP_SURFACE_TYPES.launchOwn,
 ]);
 // THE SAME SHAPE AS THE TEAM PAGE: workspace 1, the selector, workspace 2. Presets is
 // pinned in workspace 1 and takes the widest column; the setup work sits compact in
@@ -99,12 +99,6 @@ export function createSetupView() {
   paintAppearance();
   const blank = (id) => {
     const made = WorkspaceKit.primitives.createBlankSurface(id.replace('workspace', 'Workspace '));
-    if (id === 'workspace1') {
-      made.el.classList.add('setup-provider-quiet');
-      const instruction = document.createElement('p');
-      instruction.textContent = t('setup.provider_first', 'Connect a model provider with your own account. Ronin never sits between you and your provider.');
-      made.content.append(instruction);
-    }
     return made.el;
   };
   const presetEnvironment = () => ({
@@ -129,23 +123,21 @@ export function createSetupView() {
   const mikaHelp = createAction({ label: t('mika.help', 'ミ Help'), size: 'compact' });
   let helpPanel = null;
   let sceneOverride = 0;
-  let visibleTypes = new Set(ORDER);
-  const setArrangementHidden = (slot, hidden) => {
-    if (bench && hidden !== bench.arrangement.state().hidden.includes(slot)) bench.arrangement.toggle(slot);
+  const paintSelectorCards = (host = bench?.host) => {
+    if (!host) return;
+    const current = setupJourney(environment.setupRuntime || {}, sceneOverride);
+    for (const card of host.querySelectorAll('[data-workbench-offer-type]')) {
+      card.dataset.sceneRelevant = String(card.dataset.workbenchOfferType === current.type);
+      delete card.dataset.registrationLocked;
+    }
   };
-  const applyJourney = (runtime = environment.setupRuntime) => {
+  const openScene = (number) => {
     if (!bench) return;
-    const scene = setupJourney(runtime || {}, sceneOverride);
-    visibleTypes = new Set(scene.visibleTypes);
-    setArrangementHidden('workspace1', false);
-    setArrangementHidden('workspace2', false);
-    setArrangementHidden('selector', !scene.selector);
-    if (scene.seats.workspace1) bench.place(scene.seats.workspace1, 'workspace1');
-    else bench.restoreDefault('workspace1');
-    if (scene.seats.workspace2) bench.place(scene.seats.workspace2, 'workspace2');
-    else bench.restoreDefault('workspace2');
-    bench.refreshSelector();
+    const scene = setupJourney(environment.setupRuntime || {}, number);
+    bench.place(scene.type, 'workspace2');
+    bench.select('workspace2');
     paintSceneIndex();
+    paintSelectorCards();
     save();
   };
   const environment = {
@@ -154,9 +146,11 @@ export function createSetupView() {
     openLaunchForm: ({ kind, seed = {} } = {}) => openLaunchForm(ctx, { kind, seed }),
     openTemplateLaunchForm: () => openTemplateLaunchForm(ctx),
     setupRuntime: null,
-    onSetupRuntime: (runtime) => { environment.setupRuntime = runtime; applyJourney(runtime); },
-    // What the person uses Ronin for: one persisted preference shared by Register and Presets.
-    kinds: createKindsPreference(globalThis.localStorage, (kinds) => request('/api/setup/preferences', { method: 'PATCH', json: { kinds } })),
+    onSetupRuntime: (runtime) => { environment.setupRuntime = runtime; },
+    // Setup has one path: Ronin is configured as a developer workspace.
+    kinds: createKindsPreference(globalThis.localStorage, () => {}),
+    setPathNote: (path_note) => request('/api/setup/preferences', { method: 'PATCH', json: { path_note } }),
+    setIdentityChoice: (identity_choice) => request('/api/setup/preferences', { method: 'PATCH', json: { identity_choice } }),
     mountProviderSetupSession: providerSessions.mountProviderSetupSession,
     sessions: () => {
       const enabled = Number(environment.setupRuntime?.activated_count || 0) > 0;
@@ -184,10 +178,7 @@ export function createSetupView() {
     mikaPool.sync([MIKA_SESSION]);
     return bench?.place(TERMINAL_TYPE, 'workspace2', { key: MIKA_SESSION }) || false;
   };
-  // viewportMode was the retired presentation toggle's memory; writing undefined drops
-  // it from a stored visit so nobody stays in the stack it forced.
-  let thinSelectorCards = true;
-  const save = () => ctx?.patchViewState('setup', { ...bench.snapshot(), viewportMode: undefined, sceneOverride, selectorDensity: thinSelectorCards ? 'thin' : 'thick' });
+  const save = () => ctx?.patchViewState('setup', { ...bench.snapshot(), viewportMode: undefined, sceneOverride, selectorDensity: undefined });
   const sceneIndex = document.createElement('span');
   sceneIndex.className = 'setup-scene-index';
   sceneIndex.setAttribute('aria-label', t('setup.scenes', 'Setup scenes'));
@@ -196,7 +187,7 @@ export function createSetupView() {
     const button = barButton('setup-scene-button');
     button.textContent = label;
     button.title = title;
-    button.addEventListener('click', () => { sceneOverride = number; applyJourney(); });
+    button.addEventListener('click', () => { sceneOverride = number; openScene(number); });
     sceneButtons.push({ button, number });
     sceneIndex.append(button);
   };
@@ -210,19 +201,6 @@ export function createSetupView() {
     }
     sceneIndex.dataset.mode = sceneOverride === 0 ? 'auto' : 'manual';
   }
-  const densityToggle = barButton('tw-agent-density');
-  const densityLines = document.createElement('span');
-  densityLines.className = 'tw-agent-density-lines';
-  densityLines.append(document.createElement('i'), document.createElement('i'));
-  densityToggle.replaceChildren(densityLines);
-  const paintDensityToggle = () => {
-    if (bench?.host) bench.host.dataset.selectorDensity = thinSelectorCards ? 'thin' : 'thick';
-    densityToggle.dataset.lines = thinSelectorCards ? 'two' : 'one';
-    densityToggle.title = thinSelectorCards ? 'Show full Setup cards' : 'Show Setup names only';
-    densityToggle.setAttribute('aria-label', densityToggle.title);
-    densityToggle.setAttribute('aria-pressed', String(thinSelectorCards));
-  };
-  densityToggle.addEventListener('click', () => { thinSelectorCards = !thinSelectorCards; paintDensityToggle(); save(); });
   bench = WorkspaceKit.workbench.create({
     profile: PROFILE,
     tenant: { kind: 'setup' },
@@ -232,12 +210,13 @@ export function createSetupView() {
     title: () => helpPanel?.isOpen() ? t('mika.header', 'Mika, your helpful assistant') : t('setup.title', 'Ronin Setup'),
     selectorWorkspace: 'workspace2',
     selectorCurrent: true,
-    selectorFilter: (type) => type !== PRESETS_TYPE && visibleTypes.has(type),
+    selectorFilter: (type) => type !== PRESETS_TYPE && ORDER.includes(type),
+    onSelectorRefresh: () => paintSelectorCards(),
     actions: [mikaHelp],
     onStateChange: save,
     onPlacement: save,
   });
-  paintDensityToggle();
+  bench.host.dataset.selectorDensity = 'thin';
   // ミ Help: Mika takes over the selector column with her ordinary tile borrowed in;
   // Close hands it back. The same panel serves every workbench (mika.js).
   helpPanel = createMikaHelpPanel({
@@ -265,7 +244,7 @@ export function createSetupView() {
     glyph: '人',
     hideFeedback: true,
     hideShapeControl: true,
-    barActions: [sceneIndex, densityToggle, surfaceToggle, themeToggle],
+    barActions: [sceneIndex, surfaceToggle, themeToggle],
     title: () => t('setup.title', 'Ronin Setup'),
     mount: (_host, context) => { ctx = context; },
     enter: async (context) => {
@@ -273,7 +252,7 @@ export function createSetupView() {
       if (!environment.setupRuntime) {
         const runtime = await request('/api/setup/runtime', { cache: 'no-store' });
         environment.setupRuntime = runtime.ok ? runtime.data : { providers: [] };
-        if (runtime.ok) environment.kinds.hydrate(runtime.data?.preferences?.kinds || []);
+        if (runtime.ok) environment.kinds.hydrate(['build']);
       }
       // The catalog Presets' Where reads; the runtime read above has just seeded the pair.
       if (!Array.isArray(projectData)) await loadProjects();
@@ -284,8 +263,6 @@ export function createSetupView() {
       const stored = context.viewState('setup') || {};
       sceneOverride = Number.isInteger(Number(stored.sceneOverride)) && Number(stored.sceneOverride) >= 1 && Number(stored.sceneOverride) <= SETUP_SCENES.length
         ? Number(stored.sceneOverride) : 0;
-      thinSelectorCards = stored.selectorDensity !== 'thick';
-      paintDensityToggle();
       // The Campaign's record is not read at boot on this page; fetch it once so the
       // light/dark icon shows the configured theme, not a guess.
       if (!campaigns().length) void loadCampaigns().then(paintAppearance);
@@ -295,7 +272,9 @@ export function createSetupView() {
       const widths = sameOrder(stored.arrangement?.order, DEFAULT_ARRANGEMENT.order) ? stored.arrangement.widths : DEFAULT_ARRANGEMENT.widths;
       bench.enter({ ...stored, count: 2, arrangement: { ...DEFAULT_ARRANGEMENT, widths } });
       bench.setCount(2);
-      applyJourney(environment.setupRuntime);
+      paintSceneIndex();
+      paintSelectorCards();
+      if (!stored.seats?.workspace2) openScene(sceneOverride || automaticSetupScene(environment.setupRuntime));
     },
     leave: () => bench.leave(),
     destroy: () => { helpPanel.destroy(); providerSessions.destroyAll(); mikaPool.destroyAll(); bench.leave(); ctx = null; },

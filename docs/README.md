@@ -40,6 +40,7 @@ change area to its code, UI, stores, Services, documentation, and tests.
 | How does the server run terminals and optional parts? | [Runtime connection](architecture/tmux-connection.md) and [Services contracts](https://github.com/ronincowork/ronin-services/blob/dev/README.md#understand-or-change-services) |
 | How are provider CLIs integrated? | [Agent integrations](agents/README.md) and [provider registry](architecture/model-providers.md) |
 | How do I contribute and verify a change? | [CONTRIBUTING](../CONTRIBUTING.md), [Agent route](../AGENTS.md), and [development references](development/README.md) |
+| Where does a new file or directory belong? | [Repository layout and ownership](architecture/repository-layout.md) |
 
 These references describe implemented behavior. They are useful to any contributor,
 including a user extending Ronin; they do not require access to the creators' Lab.

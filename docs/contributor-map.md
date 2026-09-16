@@ -3,6 +3,8 @@
 This is the canonical codebase map consumed by contributor and bounty guidance. Keep this
 path and the seven section anchors stable. Program documents link here; they do not own a
 second surface taxonomy. Start with [AGENTS.md](../AGENTS.md) for the repository workflow.
+Use the [repository layout](architecture/repository-layout.md) for directory and file
+placement; this page maps cross-cutting product surfaces rather than folders.
 
 These are change areas, not seven directories or seven UI objects. A feature can cross
 several areas. [KOTOBA](../KOTOBA.md) defines the terms; the linked contracts own behavior.

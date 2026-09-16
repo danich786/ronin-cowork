@@ -34,7 +34,7 @@ export const PRESET_KINDS = Object.freeze([
 ]);
 export const DEFAULT_RESTING_PRESETS = Object.freeze(['bare_metal', 'personal_assistant', 'agent_editable_doc']);
 export const PRESET_KINDS_KEY = 'ronin.setup.kinds.v1';
-const knownKind = (id) => PRESET_KINDS.some((kind) => kind.id === id);
+const knownKind = (id) => id === 'other' || PRESET_KINDS.some((kind) => kind.id === id);
 /** The house handles at rest for the picked kinds, in kind order, deduplicated. */
 export const restingPresets = (kinds = []) => {
   const picked = PRESET_KINDS.filter((kind) => kinds.includes(kind.id)).flatMap((kind) => kind.presets);

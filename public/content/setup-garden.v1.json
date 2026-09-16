@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "scenarios": {
+    "provider": {
+      "copy": {
+        "eyebrow": "Your models, directly",
+        "heading": "Choose how your agents think",
+        "body": "Ronin helps you control your agents but does not sit between you and your model providers."
+      },
+      "cta": {
+        "label": "Install and authenticate model providers using your own subscription or API",
+        "action": "setup.providers"
+      },
+      "media": [
+        {
+          "kind": "doc",
+          "label": "Provider sign-in guide",
+          "description": "How Ronin keeps credentials with you",
+          "root": "ronin_cowork",
+          "path": "docs/getting-started/provider-sign-in.md"
+        }
+      ]
+    },
+    "register": {
+      "copy": {
+        "eyebrow": "Optional",
+        "heading": "Introduce yourself",
+        "body": "Local Ronin works whether you register or not. Share only what feels useful."
+      }
+    },
+    "workspace": {
+      "copy": {
+        "eyebrow": "Your ground",
+        "heading": "Choose a Workspace Folder",
+        "body": "A Workspace Folder is a place Ronin may work in."
+      }
+    },
+    "installations": {
+      "copy": {
+        "eyebrow": "Add only what helps",
+        "heading": "Choose installations",
+        "body": "Installations add optional facilities while the core coworkspace stays local and lightweight."
+      }
+    },
+    "launch": {
+      "copy": {
+        "eyebrow": "Ready when you are",
+        "heading": "Start one Agent",
+        "body": "Give the Agent a clear objective and keep the first piece of work small."
+      }
+    }
+  }
+}

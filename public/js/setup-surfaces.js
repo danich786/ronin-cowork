@@ -22,22 +22,28 @@ import { createInstallationsSurface } from './campaign-installations.js';
 // is that module's, and Ronin Settings registers the same definition.
 export const SETUP_SURFACE_TYPES = Object.freeze({
   register: 'setup.register', providers: PROVIDER_SURFACE_TYPE, roots: 'setup.roots',
-  installations: 'setup.installations', templates: CAMPAIGN_TEMPLATES_TYPE, launchOwn: 'setup.launch-own',
+  installations: 'setup.installations', bounty: 'setup.bounty', templates: CAMPAIGN_TEMPLATES_TYPE, launchOwn: 'setup.launch-own',
 });
 
 const summaries = new Map([
   [SETUP_SURFACE_TYPES.register, 'optional'],
   [SETUP_SURFACE_TYPES.roots, '2 folders'],
   [SETUP_SURFACE_TYPES.installations, 'Ronin Services'],
+  [SETUP_SURFACE_TYPES.bounty, 'optional · separate opt-in'],
   [SETUP_SURFACE_TYPES.launchOwn, 'template · team · agent'],
 ]);
 const el = (tag, cls = '', text = null) => { const out = document.createElement(tag); if (cls) out.className = cls; if (text != null) out.textContent = text; return out; };
-const notifySummary = (type, value, workbench) => { summaries.set(type, value); workbench?.refreshSelector?.(); };
+const notifySummary = (type, value, workbench) => {
+  if (summaries.get(type) === value) return;
+  summaries.set(type, value);
+  workbench?.refreshSelector?.();
+};
 const surface = (label, className = '') => WorkspaceKit.primitives.createSurface({ label, className: `setup-surface ${className}`.trim() });
 const action = (label, kind, onClick) => {
   const made = WorkspaceKit.primitives.createAction({ label, kind, action: onClick });
   return made.el ?? made;
 };
+const servicesReady = (runtime = {}) => runtime?.services?.active === true || runtime?.services?.installed === true || runtime?.services?.switched_on === true;
 
 export const SERVICE_COMPONENTS = Object.freeze([
   { id: 'task_manager', label: 'Task manager', needs: 'Adds a shared project board and quick summaries of active work.' },
@@ -91,7 +97,7 @@ function createRegisterSurface(context) {
       onChange: (next) => { selected = next[name]; value.value = multiple ? JSON.stringify(selected) : selected; for (const listener of listeners) listener(selected); },
     });
     question.el.classList.add('setup-register-bounded');
-    return { value, wrap: question.el, values: () => multiple ? [...selected] : selected, onChange: (listener) => listeners.push(listener) };
+    return { value, wrap: question.el, values: () => multiple ? [...selected] : selected, onChange: (listener) => listeners.push(listener), set: (next) => question.set(name, next) };
   };
   const checklistGroup = (name, label, choices) => {
     const other = input(`${name}_other`); other.className = 'setup-register-other'; other.placeholder = t('setup_surface.something_else_prompt', 'Tell us'); other.hidden = true;
@@ -115,7 +121,8 @@ function createRegisterSurface(context) {
   };
   const email = input('email', 'email'); email.placeholder = 'you@example.com'; email.autocomplete = 'email';
   const identityMode = choiceGroup('identity_mode', t('setup_surface.identity', 'How would you like to register?'), [
-    ['email', 'With email'], ['anonymous', 'Anonymous'], ['no_thanks', 'No thank you'],
+    ['email', 'With email', 'Eligible for additional Ronin Services and participation in the Bounty Program.'],
+    ['anonymous', 'Anonymous'], ['no_thanks', 'No thank you'],
   ], { short: t('setup_surface.identity_short', 'Register as') });
   identityMode.wrap.classList.add('setup-register-identity-choice');
   const kind = choiceGroup('kind', t('setup_surface.kind', 'Which of these are you most likely to use?'), [
@@ -125,6 +132,8 @@ function createRegisterSurface(context) {
   const kindOther = input('kind_other'); kindOther.className = 'setup-register-other'; kindOther.placeholder = t('setup_surface.something_else_prompt', 'Tell us'); kindOther.hidden = true;
   kind.onChange(() => {
     kindOther.hidden = kind.value.value !== 'other'; if (!kindOther.hidden) kindOther.focus();
+    const routeKind = { build_software: 'build', life_assistants: 'life', research_writing: 'research', other: 'other' }[kind.value.value];
+    context.environment?.kinds?.set(routeKind ? [routeKind] : []);
   });
   const preferredFeature = choiceGroup('preferred_feature', t('setup_surface.preferred_feature', 'Which core Ronin capability do you prefer most?'), [
     ['remote_access', 'Work from anywhere', t('setup_surface.feature_remote_access', 'Ronin runs on your home machine or a virtual machine. You open it from a browser wherever you are, any time.')],
@@ -146,8 +155,9 @@ function createRegisterSurface(context) {
     ['virtual_machine', 'Virtual machine'], ['personal_server', 'Personal server'], ['personal_computer', 'Personal computer'],
   ], { short: t('setup_surface.run_location_short', 'Install on') });
   const own = el('textarea'); own.name = 'own_words'; own.rows = 3;
-  const userIntro = el('textarea'); userIntro.name = 'user_intro'; userIntro.rows = 2; userIntro.maxLength = 361;
+  own.addEventListener('change', () => { void context.environment?.setPathNote?.(own.value); });
   const identity = el('div', 'setup-registration-identity');
+  identity.hidden = true;
   const form = el('form', 'setup-form setup-register-form');
   const welcome = el('div', 'setup-register-welcome');
   welcome.append(el('span', 'setup-register-eyebrow', t('setup_surface.say_hello', 'Say hello')), el('h2', '', t('setup_surface.register_welcome', 'Welcome to Ronin')), el('p', 'setup-lede', t('setup_surface.register_lede', 'Share only what feels useful. Your answers help us shape better starting points; local Ronin works whether you register or not.')));
@@ -163,26 +173,65 @@ function createRegisterSurface(context) {
   kind.wrap.classList.add('setup-register-full');
   const ownField = field(t('setup_surface.own_words', 'Anything else'), own);
   ownField.classList.add('setup-register-full');
-  const userIntroField = field(t('setup_surface.user_intro', 'Introduce yourself to your Cowork Agents (up to two short lines)'), userIntro);
-  userIntroField.classList.add('setup-register-full');
-  fit.append(
-    el('h3', '', t('setup_surface.ronin_fit', 'What brings you here')), preferredFeature.wrap, reasons.wrap, kind.wrap, kindOther,
-    userIntroField, ownField,
+  const route = el('section', 'setup-register-group setup-register-route');
+  route.append(
+    el('h3', '', t('setup_surface.setup_help', 'Help with system setup')),
+    el('p', 'setup-lede', t('setup_surface.setup_help_lede', 'Tell us what you are most likely to use Ronin for so Setup can show the most useful path.')),
+    kind.wrap, kindOther, ownField,
   );
-  const consent = el('p', 'setup-fine setup-register-consent', t('setup_surface.consent_exact', 'Email registration sends a confirmation and can unlock Ronin Services. Anonymous registration sends these answers without contact details. Communication stays off unless you choose otherwise.'));
-  const declined = el('p', 'setup-register-declined', t('setup_surface.no_thanks_message', 'We hope you enjoy Ronin. If you’d like to share feedback later, we’d be glad to hear it.'));
+  const registrationIntro = el('section', 'setup-register-group setup-register-intro');
+  registrationIntro.append(
+    el('h3', '', t('setup_surface.optional_registration', 'Optional system registration')),
+    el('p', 'setup-lede', t('setup_surface.optional_registration_lede', 'Registration is optional. It is separate from your local Ronin activity and from the services you install.')),
+  );
+  const registrationReasons = el('ul', 'setup-register-reasons-list');
+  for (const reason of [
+    t('setup_surface.registration_reason_preferences', 'Share preferences and help support a model-provider ecosystem without lock-in.'),
+    t('setup_surface.registration_reason_services', 'Use additional Ronin Services while keeping installation and user activity separate from registration.'),
+    t('setup_surface.registration_reason_bounty', 'Participate in the Ronin Bounty Program.'),
+  ]) registrationReasons.append(el('li', '', reason));
+  registrationIntro.append(registrationReasons, el('p', 'setup-fine', t('setup_surface.registration_privacy', 'Ronin does not build a commercial identity profile from your local activity.')));
+  fit.append(
+    el('h3', '', t('setup_surface.ronin_fit', 'What brings you here')), preferredFeature.wrap, reasons.wrap,
+  );
+  const consent = el('p', 'setup-fine setup-register-consent', t('setup_surface.consent_exact', 'Email registration sends a confirmation and supports Bounty participation. Anonymous registration shares these answers without contact details. Communication stays off unless you choose otherwise.'));
+  const declined = el('p', 'setup-register-declined', t('setup_surface.no_thanks_message', 'Enjoy using Ronin. If you’d like to share feedback later, we’d be glad to hear from you at a later date.'));
   declined.hidden = true;
+  const userIntro = el('section', 'setup-register-group setup-user-intro');
+  const userIntroText = el('textarea');
+  userIntroText.rows = 4; userIntroText.maxLength = 600;
+  userIntroText.placeholder = 'Hi, my name is Jill. I’m a vibe coder. Simple explanations help me, and I’m happy to try ambitious ideas.';
+  const userIntroNotice = el('p', 'setup-notice'); userIntroNotice.setAttribute('role', 'status');
+  const saveUserIntro = async () => {
+    const intro = userIntroText.value.trim();
+    if (!intro) { userIntroNotice.textContent = t('setup_surface.user_intro_empty', 'Write a short introduction before saving.'); return false; }
+    const result = await request('/api/setup/user-intro', { method: 'PUT', json: { intro } });
+    userIntroNotice.textContent = result.ok
+      ? t('setup_surface.user_intro_saved', 'Saved locally for future Agent introductions.') : result.message;
+    return result.ok;
+  };
+  const saveUserIntroAction = action(t('setup_surface.user_intro_save', 'Save Agent introduction'), 'primary', () => { void saveUserIntro(); });
+  const userIntroActions = el('div', 'setup-user-intro-actions');
+  userIntroActions.append(saveUserIntroAction, el('span', 'setup-fine', t('setup_surface.user_intro_local_only', 'Saved locally — not sent to Ronin.')));
+  userIntro.append(
+    el('h3', '', t('setup_surface.user_intro_heading', 'Introduce yourself to your Agents')),
+    el('p', 'setup-lede', t('setup_surface.user_intro_lede', 'This stays on your machine in user intro.md and is included when new Agents are born. It is separate from registration. Keep it short: up to 600 characters, roughly 150 tokens.')),
+    field(t('setup_surface.user_intro_label', 'A short note about you'), userIntroText),
+    userIntroActions,
+    userIntroNotice,
+  );
   const registerAction = action(t('setup_surface.register_action', 'Send'), '', async () => {
     notice.textContent = t('setup_surface.saving', 'Saving…');
     const anonymous = identityMode.value.value !== 'email';
+    if (userIntroText.value.trim() && !await saveUserIntro()) return;
     const result = await request('/api/setup/registration', { method: 'POST', json: {
       identity_mode: anonymous ? 'anonymous' : 'email', email: email.value, purpose: '',
-      kind: kind.value.value, kind_other: kindOther.value, user_type: '', goals: [], preferred_feature: preferredFeature.value.value,
+      kind: '', kind_other: '', user_type: '', goals: [], preferred_feature: preferredFeature.value.value,
       reasons: reasons.values(), reason_other: reasons.other.value, run_location: runLocation.value.value,
-      intended_use: [], theme_preference: '', user_intro: userIntro.value, own_words: own.value,
+      intended_use: [], theme_preference: '', own_words: '',
     } });
     notice.textContent = result.ok
-      ? anonymous ? t('setup_surface.anonymous_saved', 'Thanks — your anonymous hello was sent to Ronin.') : t('setup_surface.confirm_email', 'Registration saved. Confirm the email to receive Services entitlement.')
+      ? anonymous ? t('setup_surface.anonymous_saved', 'Thanks — your anonymous hello was sent to Ronin.') : t('setup_surface.confirm_email', 'Registration saved. Confirm your email to complete registration.')
       : result.message;
     if (result.ok) { current = result.data; paint(); }
   });
@@ -196,6 +245,7 @@ function createRegisterSurface(context) {
     const emailRegistration = identityMode.value.value === 'email';
     const declinedRegistration = identityMode.value.value === 'no_thanks';
     emailField.hidden = !emailRegistration || declinedRegistration;
+    runLocation.wrap.hidden = declinedRegistration;
     fit.hidden = declinedRegistration;
     consent.hidden = declinedRegistration;
     registerAction.hidden = declinedRegistration;
@@ -204,9 +254,13 @@ function createRegisterSurface(context) {
     declined.hidden = !declinedRegistration;
     email.required = emailRegistration && !declinedRegistration;
   };
-  identityMode.onChange(paintIdentityMode);
+  identityMode.onChange(() => {
+    paintIdentityMode();
+    const identity = identityMode.value.value === 'no_thanks' ? 'declined' : identityMode.value.value;
+    if (identity) void context.environment?.setIdentityChoice?.(identity);
+  });
   paintIdentityMode();
-  form.append(welcome, about, fit, send, declined);
+  form.append(welcome, registrationIntro, about, fit, send);
   const prefs = el('form', 'setup-form setup-preferences');
   const checks = Object.fromEntries(['newsletter', 'release_updates', 'no_communication'].map((name) => [name, input(name, 'checkbox')]));
   const followUps = Object.fromEntries(['product_research', 'interviews', 'support'].map((name) => [name, input(name, 'checkbox')]));
@@ -236,7 +290,6 @@ function createRegisterSurface(context) {
   const wordFor = (key) => labels.get(key) || '';
   const summaryWords = () => {
     const words = [current?.email_masked, current?.run_location && wordFor(current.run_location), current?.preferred_feature && wordFor(current.preferred_feature)];
-    words.push(current?.kind === 'other' && current?.kind_other ? current.kind_other : current?.kind && wordFor(current.kind));
     for (const reason of current?.reasons || []) words.push(reason === 'something_else' && current?.reason_other ? current.reason_other : wordFor(reason));
     return words.filter(Boolean).join(' · ');
   };
@@ -261,7 +314,7 @@ function createRegisterSurface(context) {
         kind: current.kind, kind_other: current.kind_other, user_type: current.user_type, goals: current.goals,
         preferred_feature: current.preferred_feature, reasons: current.reasons, reason_other: current.reason_other, run_location: current.run_location,
         intended_use: current.intended_use,
-        theme_preference: current.theme_preference, user_intro: current.user_intro, own_words: current.own_words,
+        theme_preference: current.theme_preference, own_words: current.own_words,
       } });
       notice.textContent = result.ok ? t('setup_surface.registration_address_changed', 'Registration email changed; check the new address.') : result.message;
       if (result.ok) { current = result.data; paint(); }
@@ -288,16 +341,74 @@ function createRegisterSurface(context) {
     }));
     notifySummary(SETUP_SURFACE_TYPES.register, current?.status || 'optional', context.workbench);
   };
-  body.append(identity, form, preferences, recoveryOptions, notice); out.content.append(body);
-  return { el: out.el, show: async () => { const result = await request('/api/setup/registration', { cache: 'no-store' }); current = result.ok ? result.data : null; paint(); } };
+  body.append(identity, form, userIntro, declined, preferences, recoveryOptions, notice); out.content.append(body);
+  return { el: out.el, show: async () => {
+    const routeKind = context.environment?.kinds?.get?.()[0] || '';
+    kind.set({ build: 'build_software', life: 'life_assistants', research: 'research_writing', other: 'other' }[routeKind] || '');
+    own.value = context.environment?.setupRuntime?.preferences?.path_note || '';
+    const [result, intro] = await Promise.all([
+      request('/api/setup/registration', { cache: 'no-store' }),
+      request('/api/setup/user-intro', { cache: 'no-store' }),
+    ]);
+    current = result.ok ? result.data : null;
+    if (intro.ok) userIntroText.value = intro.data?.intro || '';
+    paint();
+  } };
 }
 
 function createRootsSurface(context) {
   return createWorkspaceFoldersSurface({
     campaignId: () => context.tenant?.campaign || '',
     presentation: 'stones',
+    environment: context.environment,
+    workspace: context.workspace,
     onShow: () => notifySummary(SETUP_SURFACE_TYPES.roots, '2 folders + yours', context.workbench),
   });
+}
+
+function createBountySurface(context) {
+  const out = surface(t('setup_surface.bounty', 'Bounty Program'));
+  const intro = el('section', 'setup-bounty-intro');
+  intro.append(
+    el('span', 'setup-register-eyebrow', t('bounty.eyebrow', 'BUILD RONIN WITH US')),
+    el('h2', '', t('bounty.heading', 'Choose a bounty project')),
+    el('p', 'setup-lede', t('bounty.lede', 'Browse published projects, choose one you want to take on, and submit a proposal. Joining is always a separate choice.')),
+  );
+  intro.append(el('p', 'setup-fine', t('bounty.projects_note', 'Every project brief is public. Registration is required only to apply.')));
+  const definitions = [
+    { id: 'adaptive-onboarding', label: t('bounty.project_onboarding', 'Adaptive onboarding scenes'), description: t('bounty.project_onboarding_note', 'Deliver a clear first-run route that responds to a person’s intended use without hiding alternate paths.') },
+    { id: 'provider-recovery', label: t('bounty.project_providers', 'Provider sign-in recovery'), description: t('bounty.project_providers_note', 'Improve authentication windows, completion detection, and recovery when a provider sign-in is interrupted.') },
+    { id: 'repository-setup', label: t('bounty.project_workspaces', 'Repository and worktree setup'), description: t('bounty.project_workspaces_note', 'Design the guided GitHub clone, repository arrangement, worktree, and hand-in experience for a new workspace.') },
+  ];
+  let gates = { registered: false, github: false, machine: false, joined: false };
+  const renderDetail = (project, host) => {
+    const detail = el('article', 'setup-bounty-detail');
+    detail.append(el('h3', '', project.label), el('p', 'setup-lede', project.description));
+    const requirements = el('ul', 'setup-bounty-requirement-list');
+    for (const [ready, text] of [[gates.machine, 'Two model providers and Ronin Services ready'], [gates.github, 'GitHub connected'], [gates.registered, 'Email registration confirmed']]) {
+      requirements.append(el('li', ready ? 'ready' : 'locked', `${ready ? '✓' : '○'} ${text}`));
+    }
+    const notice = el('p', 'setup-notice'); notice.setAttribute('role', 'status');
+    const apply = action(t('bounty.apply', 'Apply for this bounty'), 'primary', async () => {
+      const result = await request('/api/setup/preferences', { method: 'PATCH', json: { bounty_opt_in: true } });
+      notice.textContent = result.ok ? t('bounty.joined', 'Bounty Program opt-in saved on this machine.') : result.message;
+      if (result.ok) apply.disabled = true;
+    });
+    apply.disabled = !gates.machine || !gates.github || !gates.registered || gates.joined;
+    detail.append(el('h4', '', t('bounty.requirements', 'Before you apply')), requirements, apply, notice);
+    host.append(detail);
+  };
+  const stones = createStoneWorkSurface({ className: 'setup-bounty-stones', renderDetail });
+  stones.mount(out.content, { before: [intro] });
+  return { el: out.el, show: async () => {
+    const [registration, github] = await Promise.all([
+      request('/api/setup/registration', { cache: 'no-store' }), request('/api/setup/github', { cache: 'no-store' }),
+    ]);
+    const email = registration.ok && registration.data?.status === 'registered' && registration.data?.identity_mode === 'email';
+    const connected = github.ok && github.data?.authenticated === true;
+    gates = { registered: email, github: connected, machine: servicesReady(context.environment?.setupRuntime) && Number(context.environment?.setupRuntime?.activated_count || 0) >= 2, joined: context.environment?.setupRuntime?.preferences?.bounty_opt_in === true };
+    stones.setItems(definitions.map((project) => ({ ...project, glyph: '◈', state: t('bounty.public_brief', 'Public brief') })));
+  }, destroy: () => stones.destroy() };
 }
 
 /** The one Services mark file, read once and inlined so the R's stroke follows the app's data-theme, not only the OS scheme.
@@ -334,7 +445,7 @@ export function createServicesSurface(context) {
     const beta = el('section', 'setup-services-beta');
     beta.append(
       el('h3', '', t('services_setup.beta', 'In beta')),
-      el('p', '', t('services_setup.beta_copy', 'Ronin Services is the community half of Ronin, in beta. The code is open code, not open source: free to read, not to commercialise. Registering only tells us who is using it with us. It is optional, and nothing here is for sale.')),
+      el('p', '', t('services_setup.beta_copy', 'Ronin Services is the community half of Ronin, in beta. The code is open code, not open source: free to read, not to commercialise. Installing Services is separate from registration, and local user activity is not linked to a registration identity. Nothing here is for sale.')),
     );
     intro.append(lockup, beta);
     return intro;
@@ -581,7 +692,21 @@ function createLaunchOwnSurface(context) {
 function createSetupInstallationsSurface(context) {
   const selected = () => campaignById(context.tenant?.campaign) || campaigns()[0] || null;
   const page = createInstallationsSurface(selected, context);
-  return { el: page.el, show: async () => { await loadCampaigns(); await page.enter(); }, destroy: page.destroy };
+  const content = page.el.querySelector('.wk-surface-content');
+  const lock = el('p', 'setup-registration-lock', t('setup_surface.installations_locked', '🔒 Browse installations now. Switch on Ronin Services to change installation settings.'));
+  content?.prepend(lock);
+  const applyLock = (locked) => {
+    page.el.dataset.registrationLocked = String(locked);
+    lock.hidden = !locked;
+    for (const control of page.el.querySelectorAll('.sws-detail button, .sws-detail input, .sws-detail select, .sws-detail textarea')) control.disabled = locked;
+  };
+  const observer = new MutationObserver(() => applyLock(page.el.dataset.registrationLocked === 'true'));
+  if (content) observer.observe(content, { childList: true, subtree: true });
+  return { el: page.el, show: async () => {
+    await loadCampaigns();
+    applyLock(!servicesReady(context.environment?.setupRuntime));
+    await page.enter();
+  }, destroy: () => { observer.disconnect(); page.destroy?.(); } };
 }
 
 export function setupSurfaceDefinitions() {
@@ -594,6 +719,7 @@ export function setupSurfaceDefinitions() {
     providerSurfaceDefinition(),
     definition(SETUP_SURFACE_TYPES.roots, t('setup_surface.roots', 'Workspace folders'), createRootsSurface),
     definition(SETUP_SURFACE_TYPES.installations, t('campaign_view.installations', 'Installations'), createSetupInstallationsSurface),
+    definition(SETUP_SURFACE_TYPES.bounty, t('setup_surface.bounty', 'Bounty Program'), createBountySurface),
     definition(SETUP_SURFACE_TYPES.launchOwn, t('setup_surface.launch_own', 'Launch your own'), createLaunchOwnSurface),
   ];
 }

@@ -191,6 +191,15 @@ app.get('/m', sendMobile);
 app.get('/mobile.html', sendMobile);
 app.use(`/${assetVersion}`, express.static(PUBLIC, { immutable: true, maxAge: '1y', index: false }));
 
+// A development preview is replaced in place. Keep an already-open browser intact across
+// that one restart: its document may still ask for the preceding commit-prefixed assets.
+// Production retains strict immutable versioning; only development maps an old eight-hex
+// prefix onto the current preview files, which are served no-cache below.
+if (process.env.NODE_ENV !== 'production') app.use((req, _res, next) => {
+  req.url = req.url.replace(/^\/[0-9a-f]{8}(?=\/(?:style\.css|js\/|css\/))/, '');
+  next();
+});
+
 const noCacheClient = (res: express.Response, filePath: string) => {
   if (/\.(?:html|js|css)$/.test(filePath)) res.setHeader('Cache-Control', 'no-cache');
 };

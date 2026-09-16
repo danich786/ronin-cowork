@@ -46,11 +46,12 @@ The exact document contract lives in `ronin_library/documents.md`.
 
 ### 3. Coordinate through shared edges
 
-**Visible delegation — give the work its own session.** “Fork”, “fork it”, “launch”, and
-“new session” all mean the universal `session_create` command: a **Ronin session** on the
-roster, with its own tile, ladder, and life, addressable by name after this conversation
-ends. “Spawn” alone means a CLI-internal sub-agent, invisible to the coworkspace and ending
-with its answer; explicitly ask the owner for permission before spawning it.
+**Visible delegation — give the work its own session. AN OWNER ASKING FOR AN AGENT ALWAYS
+MEANS `session_create`; IT NEVER MEANS SPAWN A CLI-INTERNAL SUB-AGENT.** “Agent,” “new
+agent,” “fork,” and “fork it” do not request or authorize spawning. They mean a visible
+**Ronin session** on the roster, with its own tile, ladder, and life, addressable by name
+after this conversation ends. Internal spawning is the CLI's own implementation choice
+only when independently allowed; the owner's wording does not provoke it.
 
 `session_create <name> --prompt` carries the visible session's explicit purpose. The
 newborn receives resolved Campaign/Team context—not this conversation—reads its own birth

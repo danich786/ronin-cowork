@@ -26,6 +26,7 @@ Each definition carries `scope`, optional `label`, `blurb`, `installation`, `req
 must agree. There is no `situational`, SOP, practices, reference, or docs sub-shelf here.
 Ordinary searchable operator and product explanation belongs in `docs/`.
 
-Registration may add the owner's `floor/user-intro.md` to the owner `ways` store. It is a
-maximum two-line introduction compiled into every Cowork Agent's README; blank registration
-text removes it. The registration record is canonical, so there is no maintained index.
+Stock `floor/user-intro.md` is the empty placeholder. Registration populates its whole-file
+shadow in the owner `ways` store with a maximum two-line introduction compiled into every
+Cowork Agent's README; blank registration text removes the shadow and reveals the empty
+stock page. The registration record is canonical, so there is no maintained index.

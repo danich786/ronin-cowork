@@ -7,13 +7,15 @@
 
 Reach for the session tools when the question is about an Agent's existence rather than
 its work: inspect a name, launch a visible Ronin Agent, change Team or lead designation,
-archive and restore, or end yourself safely. **Fork**, **fork it**, **launch**, **new
-Agent**, and **new session** all mean `session_create`: create a visible Ronin Agent
-for a particular topic, with that topic supplied in its prompt. Never interpret these
-phrases as permission to spawn a sub-agent inside your CLI. CLI-internal **spawn** is
-a separate action and requires the owner's explicit permission.
+archive and restore, or end yourself safely.
 
-**Fork it** and **New Agent** both mean create a visible session with `session_create`.
+**AN OWNER ASKING FOR AN AGENT ALWAYS MEANS: CREATE ANOTHER VISIBLE RONIN SESSION WITH
+`session_create`. IT NEVER MEANS SPAWN A CLI-INTERNAL SUB-AGENT.** “Agent,” “new agent,”
+“fork,” and “fork it” do not request or authorize spawning. Internal spawning is your
+own implementation choice only when independently allowed; the owner's wording does not
+provoke it. Supply the visible session's particular topic in its prompt.
+
+**Create new session (Agent)** means create that visible session with `session_create`.
 **Close session** means end this Agent safely with `session_end` after its custody
 preflight succeeds.
 
