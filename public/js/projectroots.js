@@ -40,6 +40,7 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
       },
       renderDetail: (item, host) => {
         host.scrollTop = 0; // a new page starts at its head, whatever the last one was scrolled to
+        if (typeof item.renderDetail === 'function') return item.renderDetail(host);
         if (item.id === NEW) {
           editing = NEW;
           host.append(addCard());
@@ -77,7 +78,7 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
       more.textContent = points.hidden ? t('roots.learn_more', 'Learn more') : t('roots.learn_less', 'Less');
     });
     intro.append(line, points);
-    stoneSurface.mount(root, { before: [intro, messages] });
+    stoneSurface.mount(root, { before: [...(options.before || []), intro, messages] });
   } else root.append(head, list);
 
   const say = (msg, bad) => {
@@ -557,7 +558,7 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
       glyph: '+',
       className: 'setup-roots-add-stone',
       attrs: { title: t('roots.keep_hint', 'Keep a folder on this machine for Teams and Agents to start in.') },
-    }, ...roots.map((r) => ({
+    }, ...(options.extraItems || []), ...roots.map((r) => ({
       id: r.name,
       label: r.title || r.name,
       state: r.archived
@@ -609,14 +610,6 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
     }
     return b;
   }
-
-  // Only while the pane is actually on screen — a tile on another tab costs nothing.
-  // Slow on purpose: the catalog changes when the owner changes it, and each poll
-  // shells out to git once per project_root.
-  // An open Setup detail is left alone too: a repaint would drop focus from its controls.
-  setInterval(() => {
-    if (isShowing() && !editing && !(stones && stoneSurface.selected())) void refresh();
-  }, 15000);
 
   say(t('roots.loading', 'loading…'));
   return {
