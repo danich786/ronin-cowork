@@ -171,7 +171,7 @@ export function flashControlHints() {
     card.animate(frames, { duration: 2500, easing: 'ease-out', id: 'selection-hint' });
   }
 }
-export function buildHints() {
+export function buildHints({ collapsedByDefault = false } = {}) {
   initialize();
   const hints = document.createElement('section');
   hints.className = 'terminal-hints';
@@ -181,7 +181,8 @@ export function buildHints() {
   const section = (label, className, preferenceKey) => {
     const card = document.createElement('details');
     card.className = `${className} wk-card`;
-    card.open = preference(preferenceKey) !== 'yes';
+    const saved = preference(preferenceKey);
+    card.open = saved === 'no' || (!collapsedByDefault && saved !== 'yes');
     const summary = document.createElement('summary'); summary.textContent = label;
     card.append(summary);
     card.addEventListener('toggle', () => preference(preferenceKey, card.open ? 'no' : 'yes'));

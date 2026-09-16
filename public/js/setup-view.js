@@ -9,6 +9,7 @@ import { normalizeGardenCanvasCatalog } from './garden-canvas-model.js';
 import { PRESETS_TYPE, createKindsPreference, registerPresetsSurface } from './presets.js';
 import { launchPresetPlan, presetLaunchUrl } from './preset-launch.js';
 import { reserveWorkspaceTab } from './workspace.js';
+import { setTheme } from './theme.js';
 
 const PROFILE = 'setup';
 // Release toggles: unfinished programs stay out of Setup without changing the workbench.
@@ -23,6 +24,7 @@ const ARRANGEMENT = Object.freeze({
   widths: Object.freeze({ workspace1: 34, selector: 18, workspace2: 48 }),
 });
 const GARDEN_CONTENT_URL = '/content/setup-garden.v2.json';
+const SEEDED_ROOTS = new Set(['ronin_lab', 'ronin_project_1']);
 
 function registerSetupWorkbench() {
   registerSetupSurfaces();
@@ -48,6 +50,22 @@ export function createSetupView() {
   const providerSessions = createProviderSetupSessionMount();
   const kinds = createKindsPreference(globalThis.localStorage, (next) => request('/api/setup/preferences', { method: 'PATCH', json: { kinds: next } }));
   const nextAction = WorkspaceKit.primitives.createAction({ label: 'Next', launch: true, action: () => advance() });
+  const themeToggle = document.createElement('button');
+  themeToggle.className = 'bar-toggle setup-theme-toggle';
+  themeToggle.type = 'button';
+  const paintTheme = () => {
+    const dark = document.documentElement.dataset.theme === 'dark';
+    themeToggle.textContent = dark ? '☀' : '◐';
+    themeToggle.title = dark ? 'Use light appearance' : 'Use dark appearance';
+    themeToggle.setAttribute('aria-label', themeToggle.title);
+    themeToggle.setAttribute('aria-pressed', String(dark));
+  };
+  themeToggle.addEventListener('click', () => {
+    const dark = document.documentElement.dataset.theme === 'dark';
+    setTheme(dark ? 'light' : 'dark');
+    paintTheme();
+  });
+  paintTheme();
   const blank = (id) => WorkspaceKit.primitives.createBlankSurface(id.replace('workspace', 'Workspace ')).el;
   const environment = {
     setupOnboardingExtras: true,
@@ -103,7 +121,8 @@ export function createSetupView() {
   const sceneComplete = (scene) => {
     if (scene.type === SETUP_SURFACE_TYPES.providers) return Number(runtime?.activated_count || 0) > 0;
     if (scene.type === SETUP_SURFACE_TYPES.register) return completion.registered || kinds.get().length > 0;
-    if (scene.type === SETUP_SURFACE_TYPES.roots) return completion.github || Boolean(runtime?.roots?.length);
+    if (scene.type === SETUP_SURFACE_TYPES.roots) return completion.github
+      || Boolean(runtime?.roots?.some((root) => !SEEDED_ROOTS.has(root?.name)));
     if (scene.type === SETUP_SURFACE_TYPES.installations) return installationsComplete;
     if (scene.type === SETUP_SURFACE_TYPES.launchOwn) return launchComplete;
     return false;
@@ -131,6 +150,16 @@ export function createSetupView() {
       if (scene?.id === active.id) card.setAttribute('aria-current', 'page');
       else card.removeAttribute('aria-current');
       const complete = Boolean(scene && sceneComplete(scene));
+      const blocked = scene?.type === SETUP_SURFACE_TYPES.launchOwn
+        && Number(runtime?.activated_count || 0) < 1;
+      card.disabled = blocked;
+      if (blocked) {
+        card.setAttribute('aria-disabled', 'true');
+        card.title = 'Activate a model provider before launching an Agent, Team, or Preset.';
+      } else {
+        card.removeAttribute('aria-disabled');
+        card.removeAttribute('title');
+      }
       card.dataset.complete = String(complete);
       const heading = card.querySelector('.wk-card-heading');
       let mark = heading?.querySelector('[data-setup-complete-mark]');
@@ -169,6 +198,7 @@ export function createSetupView() {
     title: () => 'Ronin Setup',
     selectorWorkspace: 'workspace2',
     selectorCurrent: true,
+    hintsCollapsed: true,
     selectorFilter: (type) => ORDER.includes(type),
     onSelectorRefresh: paint,
     onStateChange: save,
@@ -191,6 +221,7 @@ export function createSetupView() {
     glyph: '人',
     hideFeedback: true,
     hideShapeControl: true,
+    barActions: [themeToggle],
     title: () => 'Ronin Setup',
     mount: (_host, context) => { ctx = context; },
     enter: async (context) => {

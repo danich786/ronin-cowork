@@ -13,7 +13,7 @@ const el = (tag, cls, text) => {
 
 function DOORS() {
   return [
-    { key: 'campaign', route: 'campaign', glyph: 'gear', name: t('campaign_home.machine_settings', 'Machine Settings'), is: t('campaign_home.campaign_is', 'Admin Desk configuration') },
+    { key: 'campaign', route: 'campaign', glyph: 'gear', name: t('campaign_home.machine_settings', 'Machine Setup'), is: t('campaign_home.campaign_is', 'Configure this Ronin machine') },
     { key: 'coworks', route: 'cowork', glyph: '人人', name: t('campaign.coworks', 'Teams'), is: t('campaign_home.coworks_is', 'Your Teams and Agents') },
     { key: 'launch', route: 'launch', glyph: '人', name: t('campaign_home.launch', 'New Project'), is: t('campaign_home.launch_is', 'Start a new Team or Agent') },
   ];
@@ -88,7 +88,7 @@ export function createCampaignHome() {
         card.setAttribute('aria-disabled', 'true');
       }
       card.append(doorGlyph(door.glyph), el('h2', null, door.name), el('p', 'ch-is', door.is));
-      if (locked) card.append(el('p', 'ch-gate', t('setup.provider_gate', 'Activate one model provider in Machine Settings to use this.')));
+      if (locked) card.append(el('p', 'ch-gate', t('setup.provider_gate', 'Activate one model provider in Machine Setup to use this.')));
       card.addEventListener('click', (event) => {
         // Modified clicks belong to the browser: new tab/window, link menu, middle click.
         if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
