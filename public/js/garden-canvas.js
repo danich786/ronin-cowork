@@ -19,9 +19,9 @@ export function createGardenCanvas({ onAction = () => {} } = {}) {
   scene.setAttribute('aria-live', 'polite');
   const mark = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   mark.setAttribute('class', 'garden-canvas-mark');
-  mark.setAttribute('viewBox', '0 0 480 72');
+  mark.setAttribute('viewBox', '0 0 480 96');
   mark.setAttribute('aria-hidden', 'true');
-  mark.innerHTML = '<path d="M8 54c72-45 118 28 192-12s118 25 180-5 72 5 92-9" fill="none" stroke="currentColor"/><circle cx="410" cy="20" r="12" fill="none" stroke="currentColor"/><path d="M66 58c18-16 42-16 58 0zM286 56c12-11 31-11 44 0z" fill="currentColor" opacity=".32"/>';
+  mark.innerHTML = '<g fill="none" stroke="currentColor" stroke-linecap="square" stroke-linejoin="miter"><path d="M0 76L54 45l35 20 49-34 38 31 51-45 35 38 43-29 35 40 54-28 39 22 47-31"/><path d="M0 88l73-24 45 18 65-31 45 27 64-30 52 29 68-25 68 20" opacity=".45"/><path d="M286 67h71l-12 13h-47zM322 67V29l27 30h-27"/></g><path d="M132 69l22-24 16 17 28-35 20 31-21-13-18 24zM385 64l17-20 13 13 18-23 18 27-17-11-15 19z" fill="currentColor" opacity=".24"/>';
   scene.append(mark);
   const regions = Object.fromEntries(GARDEN_REGION_KEYS.map((key) => {
     const region = node('section', `garden-region garden-region-${key}`);
