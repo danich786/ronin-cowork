@@ -19,7 +19,7 @@ const ARRANGEMENT = Object.freeze({
   hidden: Object.freeze([]),
   widths: Object.freeze({ workspace1: 34, selector: 18, workspace2: 48 }),
 });
-const GARDEN_CONTENT_URL = '/content/setup-garden.v1.json';
+const GARDEN_CONTENT_URL = '/content/setup-garden.v2.json';
 
 function registerSetup2Workbench() {
   registerSetupSurfaces();
