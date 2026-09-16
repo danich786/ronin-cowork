@@ -18,8 +18,9 @@ Copy uses Option-drag and Cmd+C on Mac, or Shift-drag and Ctrl+C on Windows/Linu
 **Hints** is pinned below the selector's scrolling cards. **Agent vocabulary** sits above
 **Session controls**; each starts expanded and saves its own collapsed state, independently
 of the roster. Vocabulary gives short phrases to use with an Agent, drawn from the
-[tool catalog](../../ronin_catalogs/TOOLS.md). “Fork it” means create a new Agent for a
-particular topic; it does not copy the current conversation.
+[tool catalog](../../ronin_catalogs/TOOLS.md). The vocabulary calls visible creation
+**Create new session (Agent)** so an agent CLI does not mistake the owner's request for
+internal spawning.
 
 A failed locked-terminal selection attempt expands Session controls and flashes it orange,
 instead of showing a popup. Mobile has no Hints card; its four action buttons use the

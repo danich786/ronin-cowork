@@ -94,6 +94,7 @@ test('the universal shelf carries vocabulary and navigation, not optional abilit
 
 test('every selector phrase has an exact meaning in floor or capability teaching', async () => {
   const selector = await readFile(path.resolve('public/js/terminal-controls.js'), 'utf8');
+  const style = await readFile(path.resolve('public/style.css'), 'utf8');
   const teaching = (await Promise.all([
     'ronin_catalogs/behaviours/floor/cowork-agent.md',
     'ronin_catalogs/capabilities/agent_session.md',
@@ -107,9 +108,17 @@ test('every selector phrase has an exact meaning in floor or capability teaching
   assert.ok(block, 'the selector should expose one Agent vocabulary list');
   const terms = [...block[1]!.matchAll(/\['([^']+)',\s*'[^']+'\]/g)].map((match) => match[1]!);
   assert.ok(terms.length, 'the selector should expose Agent vocabulary terms');
-  for (const term of terms) assert.match(teaching, new RegExp(`\\*\\*${term.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}\\*\\*`, 'i'), `${term} needs an exact meaning`);
+  assert.ok(terms.includes('Create new session (Agent)'), 'visible Agent creation has one session-shaped phrase');
+  assert.equal(terms[0], 'Create new session (Agent)', 'visible session creation stays at the top');
+  assert.ok(!terms.includes('Fork it') && !terms.includes('New Agent'), 'ambiguous Agent creation aliases stay out of the selector');
+  assert.match(selector, /term === 'Create new session \(Agent\)'[^\n]+classList\.add\('session-create'\)/);
+  assert.match(style, /\.terminal-hint-row\.session-create[^}]+var\(--kaki\)/);
+  const escaped = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  for (const term of terms) assert.match(teaching, new RegExp(`\\*\\*${escaped(term)}\\*\\*`, 'i'), `${term} needs an exact meaning`);
+  assert.match(teaching, /AN OWNER ASKING FOR AN AGENT ALWAYS MEANS:[\s\S]*IT NEVER MEANS SPAWN A CLI-INTERNAL SUB-AGENT/);
+  assert.match(teaching, /owner's wording does not\s+provoke it/);
   for (const command of ['session_create', 'edges send', 'edges wipeboard', 'work-record document list', 'work-record update_record', 'team roster write', 'worktree-desk hand-in', 'bin/ronin-promote <team>', 'session_end']) {
-    assert.match(teaching, new RegExp(command.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')), `${command} needs to be named by its owner`);
+    assert.match(teaching, new RegExp(escaped(command)), `${command} needs to be named by its owner`);
   }
 });
 
