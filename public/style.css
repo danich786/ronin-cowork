@@ -87,6 +87,7 @@
   --gc-cta-bg-hover: var(--kaki-lift);
   --gc-motif-opacity: .95;
   --gc-motif-wash: 10%;
+  --ch-horizon-opacity: .9;
 
 
 
@@ -273,6 +274,7 @@
   --gc-cta-bg-hover: color-mix(in srgb, var(--kaki-lift) 86%, #000);
   --gc-motif-opacity: .5;
   --gc-motif-wash: 8%;
+  --ch-horizon-opacity: .85;
 
   /* Light mode uses the selected full-fill treatment for collection scopes. */
   --scope-campaign-head-bg: var(--scope-graphite);

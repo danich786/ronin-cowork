@@ -3,6 +3,7 @@
 import { t } from './lexicon.js';
 import { request } from './request.js';
 import { createReleaseUpdateController, packageReading } from './release-update-controller.js';
+import { createSenmaida } from './senmaida.js';
 
 const el = (tag, cls, text) => {
   const out = document.createElement(tag);
@@ -43,6 +44,7 @@ function doorGlyph(glyph) {
 
 export function createCampaignHome() {
   const root = el('main', 'ch-view');
+  root.append(createSenmaida('page', 'ch-horizon'));
   const frame = el('div', 'ch-frame');
   const doors = el('div', 'ch-doors');
   const release = el('div', 'ch-release');
