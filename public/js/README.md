@@ -1,6 +1,8 @@
 # `public/js/` — the client, in modules
 
-Repository verification is `npm run verify`; Playwright suites are explicit UI diagnostics.
+Individual Agents use focused client checks; Playwright suites are explicit UI diagnostics.
+The lead owns full `npm run verify` at the combined integration/release gate
+([verification guidance](../../docs/development/verification.md)).
 The repository's `AGENTS.md` owns the contributor route.
 
 Native ES modules. **No bundler, no build step, no TypeScript.** `index.html` loads

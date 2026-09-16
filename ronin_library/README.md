@@ -1,6 +1,9 @@
 # ronin_library — the reference shelf
 
-After changing this shelf, run `npm run verify`. User-store shadows are checked with `npm run byoin`.
+After changing this shelf, review the changed documents and links. Individual Agents
+leave full `npm run verify` to the lead's combined gate
+([verification guidance](../docs/development/verification.md)). User-store shadows are
+checked with `npm run byoin` after changing the installed stores.
 
 Long-form reference material retained for installations that still select it. Capability
 documents and Behaviors are the public routes for current Agent work.

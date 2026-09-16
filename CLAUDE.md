@@ -1,8 +1,11 @@
 # ronin-cowork — agent contract
 
-Run `npm run verify` for TypeScript and behavior tests. Playwright suites are explicit
-diagnostic commands. Desk work follows the desk contract handed to you at birth
-(`ronin_session_boot/routine/ronin_worktrees/WORKTREES.md`): **commit** preserves,
+Start with [AGENTS.md](AGENTS.md) for the contributor route. Individual Agents use focused
+checks and normally leave `npm run verify` to the Team lead/release maintainer at the
+final combined gate. A lead may request an earlier integration run; see
+[verification guidance](docs/development/verification.md). Playwright suites are explicit
+diagnostics. Desk work follows the desk contract handed to you at birth
+(`ronin_catalogs/behaviours/conditional/worktree-root.md`): **commit** preserves,
 **hand-in** publishes to the team line, and `git push` belongs only to release work.
 After changing an installed box or its user stores, run `npm run byoin` to check that
 current user customization surfaces.

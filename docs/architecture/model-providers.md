@@ -400,7 +400,8 @@ the shipped catalog.
    with real model ids; mark the default row; fill tier, cost, good at and not good at.
 6. Make permission/sandbox policy explicit in the launch cell and declare the
    `live_dangerously` and `gbrain_disconnected` flags the CLI has.
-7. Run `node scripts/check-tests.mjs`, `npx tsx scripts/check-catalogs.ts`, and
-   `npm run verify`.
+7. Run `npm run check:catalogs` and the focused provider tests affected by the change.
+   Leave full `npm run verify` to the lead's combined gate unless an earlier run is
+   explicitly requested ([verification guidance](../development/verification.md)).
 8. Launch every new row through ＋ New session. Confirm the receipt's command, the agent
    and model visible in the tile, and the complete startup request received by the agent.
