@@ -1,0 +1,67 @@
+{
+  "schema_version": 2,
+  "scenarios": {
+    "provider": "library.setup.provider-welcome",
+    "register": "library.setup.register",
+    "workspace": "library.setup.workspace",
+    "installations": "library.setup.installations",
+    "launch": "library.setup.launch"
+  },
+  "canvases": {
+    "library.setup.provider-welcome": {
+      "copy": [
+        {
+          "id": "provider-boundary",
+          "kind": "title",
+          "eyebrow": "Your models, directly",
+          "heading": "Choose how your agents think",
+          "body": "Ronin helps you control your agents. It does not sit between you and your model providers."
+        },
+        {
+          "id": "provider-credential",
+          "kind": "instruction",
+          "body": "Sign in with your own subscription or your own API key. The credential stays on this machine."
+        },
+        {
+          "id": "provider-one-is-enough",
+          "kind": "instruction",
+          "body": "One working provider is enough to start. Add the others whenever you like."
+        }
+      ],
+      "cta": {
+        "label": "Install a provider",
+        "action": "setup.providers"
+      },
+      "media": [
+        {
+          "id": "provider-sign-in-guide",
+          "kind": "doc",
+          "label": "Provider sign-in guide",
+          "description": "How Ronin keeps credentials with you",
+          "root": "ronin_cowork",
+          "path": "docs/getting-started/provider-sign-in.md"
+        }
+      ]
+    },
+    "library.setup.register": {
+      "copy": [
+        { "id": "register-intro", "kind": "title", "eyebrow": "Optional", "heading": "Introduce yourself", "body": "Local Ronin works whether you register or not. Share only what feels useful." }
+      ]
+    },
+    "library.setup.workspace": {
+      "copy": [
+        { "id": "workspace-intro", "kind": "title", "eyebrow": "Your ground", "heading": "Choose a Workspace Folder", "body": "A Workspace Folder is a place Ronin may work in." }
+      ]
+    },
+    "library.setup.installations": {
+      "copy": [
+        { "id": "installations-intro", "kind": "title", "eyebrow": "Add only what helps", "heading": "Choose installations", "body": "Installations add optional facilities while the core coworkspace stays local and lightweight." }
+      ]
+    },
+    "library.setup.launch": {
+      "copy": [
+        { "id": "launch-intro", "kind": "title", "eyebrow": "Ready when you are", "heading": "Start one Agent", "body": "Give the Agent a clear objective and keep the first piece of work small." }
+      ]
+    }
+  }
+}
