@@ -197,9 +197,31 @@ function createRegisterSurface(context) {
   const consent = el('p', 'setup-fine setup-register-consent', t('setup_surface.consent_exact', 'Email registration sends a confirmation and supports Bounty participation. Anonymous registration shares these answers without contact details. Communication stays off unless you choose otherwise.'));
   const declined = el('p', 'setup-register-declined', t('setup_surface.no_thanks_message', 'Enjoy using Ronin. If you’d like to share feedback later, we’d be glad to hear from you at a later date.'));
   declined.hidden = true;
+  const userIntro = el('section', 'setup-register-group setup-user-intro');
+  const userIntroText = el('textarea');
+  userIntroText.rows = 4; userIntroText.maxLength = 600;
+  userIntroText.placeholder = 'Hi, my name is Jill. I’m a vibe coder. Simple explanations help me, and I’m happy to try ambitious ideas.';
+  const userIntroNotice = el('p', 'setup-notice'); userIntroNotice.setAttribute('role', 'status');
+  const saveUserIntro = async () => {
+    const intro = userIntroText.value.trim();
+    if (!intro) { userIntroNotice.textContent = t('setup_surface.user_intro_empty', 'Write a short introduction before saving.'); return false; }
+    const result = await request('/api/setup/user-intro', { method: 'PUT', json: { intro } });
+    userIntroNotice.textContent = result.ok
+      ? t('setup_surface.user_intro_saved', 'Saved locally for future Agent introductions.') : result.message;
+    return result.ok;
+  };
+  userIntro.append(
+    el('h3', '', t('setup_surface.user_intro_heading', 'Introduce yourself to your Agents')),
+    el('p', 'setup-lede', t('setup_surface.user_intro_lede', 'This stays on your machine in user intro.md and is included when new Agents are born. It is separate from registration. Keep it short: up to 600 characters, roughly 150 tokens.')),
+    field(t('setup_surface.user_intro_label', 'A short note about you'), userIntroText),
+    el('p', 'setup-fine', t('setup_surface.user_intro_example', 'Example: “Hi, my name is Jill. I’m a vibe coder. Simple explanations help me, and I’m happy to try ambitious ideas.”')),
+    action(t('setup_surface.user_intro_save', 'Save Agent introduction'), '', () => { void saveUserIntro(); }),
+    userIntroNotice,
+  );
   const registerAction = action(t('setup_surface.register_action', 'Send'), '', async () => {
     notice.textContent = t('setup_surface.saving', 'Saving…');
     const anonymous = identityMode.value.value !== 'email';
+    if (userIntroText.value.trim() && !await saveUserIntro()) return;
     const result = await request('/api/setup/registration', { method: 'POST', json: {
       identity_mode: anonymous ? 'anonymous' : 'email', email: email.value, purpose: '',
       kind: '', kind_other: '', user_type: '', goals: [], preferred_feature: preferredFeature.value.value,
@@ -317,12 +339,18 @@ function createRegisterSurface(context) {
     }));
     notifySummary(SETUP_SURFACE_TYPES.register, current?.status || 'optional', context.workbench);
   };
-  body.append(identity, form, preferences, recoveryOptions, notice); out.content.append(body);
+  body.append(identity, form, userIntro, preferences, recoveryOptions, notice); out.content.append(body);
   return { el: out.el, show: async () => {
     const routeKind = context.environment?.kinds?.get?.()[0] || '';
     kind.set({ build: 'build_software', life: 'life_assistants', research: 'research_writing', other: 'other' }[routeKind] || '');
     own.value = context.environment?.setupRuntime?.preferences?.path_note || '';
-    const result = await request('/api/setup/registration', { cache: 'no-store' }); current = result.ok ? result.data : null; paint();
+    const [result, intro] = await Promise.all([
+      request('/api/setup/registration', { cache: 'no-store' }),
+      request('/api/setup/user-intro', { cache: 'no-store' }),
+    ]);
+    current = result.ok ? result.data : null;
+    if (intro.ok) userIntroText.value = intro.data?.intro || '';
+    paint();
   } };
 }
 

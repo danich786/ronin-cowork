@@ -20,6 +20,7 @@ import {
 import { installedAnswer } from './installed-api.js';
 import { measureAndRecordProviders, readProviderSummary } from '../provider-summary.js';
 import type { ProviderSummary } from '../model-providers.js';
+import { readUserIntro, writeUserIntro } from '../user-intro.js';
 
 const errMsg = (error: unknown) => String((error as Error)?.message ?? error).replaceAll(homedir(), '~');
 /** The answer from the Campaign's summary; a machine never measured is measured once, not guessed. */
@@ -30,6 +31,16 @@ const answer = async (summary?: ProviderSummary) => {
 };
 
 export function registerSetupRuntime(app: express.Express): void {
+  app.get('/api/setup/user-intro', async (_req, res) => {
+    try { res.json(await readUserIntro()); }
+    catch (error) { res.status(500).json({ error: errMsg(error) }); }
+  });
+
+  app.put('/api/setup/user-intro', async (req, res) => {
+    try { res.json({ ok: true, ...(await writeUserIntro(req.body?.intro)) }); }
+    catch (error) { res.status(400).json({ error: errMsg(error) }); }
+  });
+
   app.get('/api/setup/runtime', async (_req, res) => {
     try {
       await ensureInstalledRoots();
