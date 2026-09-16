@@ -14,7 +14,7 @@ const node = (tag, cls = '', value = '') => {
 };
 
 export function createGardenCanvas({ onAction = () => {}, onMedia = () => {} } = {}) {
-  const surface = WorkspaceKit.primitives.createSurface({ label: 'Garden canvas', className: 'garden-canvas' });
+  const surface = WorkspaceKit.primitives.createSurface({ label: 'Assist', className: 'garden-canvas' });
   surface.content.classList.add('garden-canvas-content');
   const scene = node('div', 'garden-canvas-scene');
   scene.setAttribute('aria-live', 'polite');
@@ -150,7 +150,7 @@ export function registerGardenCanvas() {
   return WorkspaceKit.workbench.library.register({
     type: GARDEN_CANVAS_TYPE,
     header: 'surface',
-    label: 'Garden canvas',
+    label: 'Assist',
     create: (context) => {
       const canvas = createGardenCanvas({
         onAction: (action) => context.environment?.openSetupAction?.(action),
