@@ -80,8 +80,7 @@ export function createSetup2View() {
   const activeScene = () => sceneAt(sceneOverride);
   const selectGarden = (scene) => {
     if (!garden || !gardenContent || !scene || paintedSceneId === scene.id) return false;
-    const canvasId = gardenContent.scenarios[scene.id];
-    garden.paint(gardenContent.canvases[canvasId] || null);
+    garden.paint(gardenContent.canvases[scene.canvas] || null);
     paintedSceneId = scene.id;
     return true;
   };
@@ -156,7 +155,7 @@ export function createSetup2View() {
       }
       if (!gardenContent) {
         const result = await request(GARDEN_CONTENT_URL);
-        gardenContent = normalizeGardenCanvasCatalog(result.ok ? result.data : { schema_version: 2, scenarios: {}, canvases: {} });
+        gardenContent = normalizeGardenCanvasCatalog(result.ok ? result.data : { schema_version: 2, canvases: {} });
       }
       const stored = context.viewState('setup2') || {};
       sceneOverride = Number(stored.sceneOverride) >= 1 && Number(stored.sceneOverride) <= SCENES.length ? Number(stored.sceneOverride) : 0;

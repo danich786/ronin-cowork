@@ -65,16 +65,12 @@ const normalizeMedia = (value) => {
 };
 
 export function normalizeGardenCanvasCatalog(value, now = Date.now()) {
-  if (!value || value.schema_version !== GARDEN_CANVAS_VERSION || !value.scenarios || typeof value.scenarios !== 'object' || !value.canvases || typeof value.canvases !== 'object') {
+  if (!value || value.schema_version !== GARDEN_CANVAS_VERSION || !value.canvases || typeof value.canvases !== 'object') {
     throw new Error(`garden canvas content must use version ${GARDEN_CANVAS_VERSION}`);
   }
-  const scenarios = {};
   const canvases = {};
-  for (const [id, canvasId] of Object.entries(value.scenarios)) {
-    const raw = value.canvases[canvasId];
-    if (!/^[a-z][a-z0-9-]*$/.test(id) || typeof canvasId !== 'string' || !raw || typeof raw !== 'object') continue;
-    scenarios[id] = canvasId;
-    if (canvases[canvasId]) continue;
+  for (const [canvasId, raw] of Object.entries(value.canvases)) {
+    if (!canvasId || !raw || typeof raw !== 'object') continue;
     canvases[canvasId] = Object.freeze({
       id: canvasId,
       question: normalizeQuestion(raw.question),
@@ -83,5 +79,5 @@ export function normalizeGardenCanvasCatalog(value, now = Date.now()) {
       media: normalizeMedia(raw.media),
     });
   }
-  return Object.freeze({ schema_version: GARDEN_CANVAS_VERSION, scenarios: Object.freeze(scenarios), canvases: Object.freeze(canvases) });
+  return Object.freeze({ schema_version: GARDEN_CANVAS_VERSION, canvases: Object.freeze(canvases) });
 }

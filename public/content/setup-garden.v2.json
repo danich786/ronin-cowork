@@ -1,12 +1,5 @@
 {
   "schema_version": 2,
-  "scenarios": {
-    "provider": "library.setup.provider-welcome",
-    "register": "library.setup.register",
-    "workspace": "library.setup.workspace",
-    "installations": "library.setup.installations",
-    "launch": "library.setup.launch"
-  },
   "canvases": {
     "library.setup.provider-welcome": {
       "copy": [
