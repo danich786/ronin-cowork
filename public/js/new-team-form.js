@@ -126,13 +126,15 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
   }
   const templateDirty = () => !!templateRow() && authored() !== snapshot;
 
-  /* ---- Kind and Template are two flat, always-open choices. ---- */
-  const stepKind = createStep({ n: 1, key: 'kind', title: t('kind', 'Kind') });
-  const stepTemplate = createStep({ n: 2, key: 'template', title: t('template', 'Template') });
+  /* ---- Kind and Template share one optional disclosure. ---- */
+  let setupOpen = false;
+  const stepSetup = createStep({ n: 1, key: 'setup', title: t('new_team.kind_template', 'Kind & Template'), onToggle: () => {
+    setupOpen = !setupOpen;
+    paint();
+  } });
   const kindHost = el('div');
   const trayHost = el('div');
-  stepKind.body.append(kindHost);
-  stepTemplate.body.append(trayHost);
+  stepSetup.body.append(kindHost, el('h4', 'fs-head', t('template', 'Template')), trayHost);
   function paintTray() {
     trayHost.replaceChildren(templateTray(offered(), draft.template, (name) => applyTemplate(name)));
   }
@@ -336,13 +338,13 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
 
   /* ---- the collapse rules: a template's answers fold; the header opens them ---- */
   const FOLDS = ['lead'];
-  const steps = { kind: stepKind, template: stepTemplate, top: stepTop, lead: stepLead, defaults: null, where: stepWhere, kit: stepKit };
+  const steps = { setup: stepSetup, top: stepTop, lead: stepLead, defaults: null, where: stepWhere, kit: stepKit };
   function toggle(key) {
     if (draft.expanded[key]) delete draft.expanded[key];
     else draft.expanded[key] = true;
     paintFolds();
   }
-  const plan = () => ['kind', 'template', 'top', 'lead', 'defaults', 'where', 'kit'];
+  const plan = () => ['setup', 'top', 'lead', 'defaults', 'where', 'kit'];
   const meta = {
     lead: () => t('new_team.agents_meta', '{n} agents', { n: draft.agents.length }),
   };
@@ -544,6 +546,7 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
     draft.books = [];
     draft.agents = [];
     draft.expanded = {};
+    setupOpen = false;
     snapshot = '';
     nameInput.value = '';
     titleInput.value = '';
@@ -573,6 +576,7 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
   function paint() {
     plan().forEach((key, index) => steps[key].setNumber(index + 1));
     stepPayload.setNumber(plan().length + 1);
+    stepSetup.setCollapsed(!setupOpen, t('new_team.kind_template_summary', 'Optional — Kind and Template'), true);
     stepDefaults.setCollapsed(!defaultsOpen, t('new_team.defaults_summary', 'Settings inherited by Agents launched in this Team'), true);
     for (const key of ['where', 'kit']) steps[key].el.hidden = !defaultsOpen;
     stepPayload.setCollapsed(!payloadOpen, t('forms.payload_summary', 'Review what Launch will create'), true);
@@ -605,7 +609,7 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
   } });
   stepPayload.body.append(foot, saveRow.el);
   stepPayload.setCollapsed(true, t('forms.payload_summary', 'Review what Launch will create'), true);
-  form.append(stepKind.el, stepTemplate.el, stepTop.el, stepLead.el, stepDefaults.el, stepWhere.el, stepKit.el, stepPayload.el);
+  form.append(stepSetup.el, stepTop.el, stepLead.el, stepDefaults.el, stepWhere.el, stepKit.el, stepPayload.el);
   surface.content.append(form, notice.el);
 
   return {

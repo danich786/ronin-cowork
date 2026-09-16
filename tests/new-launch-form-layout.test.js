@@ -85,13 +85,13 @@ test('the old New Agent selector implementation and CSS are deleted', async () =
   assert.match(css, /\.na-surface :is\(\.wk-field, \.ask\)\[hidden\] \{ display: none; \}/);
 });
 
-test('New Team shows Kind and Template as separate flat choices', async () => {
+test('New Team folds Kind and Template into one optional first row', async () => {
   const [form, agents] = await Promise.all([source('new-team-form.js'), source('team-agents.js')]);
-  assert.match(form, /\['kind', 'template', 'top', 'lead', 'defaults', 'where', 'kit'\]/);
-  assert.match(form, /key: 'kind', title: t\('kind', 'Kind'\)/);
-  assert.match(form, /key: 'template', title: t\('template', 'Template'\)/);
-  assert.match(form, /stepKind\.body\.append\(kindHost\)/);
-  assert.match(form, /stepTemplate\.body\.append\(trayHost\)/);
+  assert.match(form, /\['setup', 'top', 'lead', 'defaults', 'where', 'kit'\]/);
+  assert.match(form, /key: 'setup', title: t\('new_team\.kind_template', 'Kind & Template'\), onToggle/);
+  assert.match(form, /stepSetup\.body\.append\(kindHost,[\s\S]*trayHost\)/);
+  assert.match(form, /stepSetup\.setCollapsed\(!setupOpen,[\s\S]*Optional — Kind and Template/);
+  assert.match(form, /form\.append\(stepSetup\.el, stepTop\.el/);
   assert.match(form, /className: 'ntf-kind-questions',[\s\S]*exposed: true/);
   assert.match(form, /draft\.expanded = name \? \{ lead: true \} : \{\}/, 'choosing a template opens its populated Agents section');
   assert.match(form, /templateTray\(offered\(\), draft\.template, \(name\) => applyTemplate\(name\)\)/, 'the tray includes its No template reset');
