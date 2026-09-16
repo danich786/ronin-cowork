@@ -31,7 +31,7 @@ test('archive/delete omission proceeds through quarantine custody and never prom
   assert.equal(decision.response, undefined);
 });
 
-test('team retirement omission proceeds through the same quarantine custody decision', async () => {
+test('team retirement inspection reports and performs no ending action', async () => {
   const teamEnding: EndingPreflight = { ...ending, scope: 'team', subject: 'worktree-fix', requested_action: 'retire' };
   const calls: string[] = [];
   const custody = { prompted: [], closed: ['r:team/worktree-fix/dev'], quarantined: [], discarded: [] };
@@ -39,9 +39,9 @@ test('team retirement omission proceeds through the same quarantine custody deci
     prompt: async () => { calls.push('prompt'); return custody; },
     quarantine: async () => { calls.push('quarantine'); return custody; },
   });
-  assert.equal(decision.proceed, true);
-  assert.deepEqual(calls, ['quarantine']);
-  assert.equal(decision.acknowledgement?.acknowledged, true);
+  assert.equal(decision.proceed, false);
+  assert.deepEqual(calls, []);
+  assert.equal(decision.response?.ending, teamEnding);
 });
 
 test('Prompt reports its one chosen message action without hiding or re-running the warning', () => {

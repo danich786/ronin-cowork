@@ -41,8 +41,11 @@ the Team line only: the lead's promotion moves the coherent Team line to `dev`, 
 publication is separate work.
 
 `close` removes only a clean desk already contained in its line and refuses while a live
-session stands in it. The desk you were born in is closed with you when you end, never by
-hand. `discard` is the one destructive form and requires the exact confirmation shown.
+Agent stands in it. The desk you were born in is closed with you when you end, never by
+hand. `discard` is the one destructive form and requires the exact confirmation shown. A
+discard refuses while any live Agent stands in the desk and reports who occupies it;
+nothing is deleted. Use the existing Hard Delete action when the intention is to remove
+the Agent and its desks together. Normal clean closure remains `session_end`.
 
 `repository-init` runs local `git init` only, in an existing Workspace Folder; it never
 creates the folder, a remote, or a hosted repository.

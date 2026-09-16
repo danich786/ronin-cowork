@@ -1,7 +1,7 @@
-import { listSessions } from '../tmux.js';
+import { listSessions, sessionDir } from '../tmux.js';
 import { tmux } from '../tmux-client.js';
 import { deriveAssignment, listDesks, readAssignment, assignmentId } from '../desks/registry.js';
-import { closeDesk, discardDesk, handoffDesk, openDesk, syncDesk, certifyDesks } from '../desks/desk.js';
+import { closeDesk, cwdIsInside, discardDesk, handoffDesk, openDesk, syncDesk, certifyDesks } from '../desks/desk.js';
 import { handIn, handInAssignment } from '../desks/hand-in.js';
 import { notifyLeads, replyToHandIn, teamOfLine } from '../desks/lead.js';
 import { acceptedSince, receiptById, receiptsForDesk, receiptsForLine } from '../desks/receipts.js';
@@ -212,7 +212,7 @@ async function main(): Promise<void> {
               : '  Code handed in. No Project was associated; Project state is unchanged.');
             out(`  desk is ${tidy.desk.ahead === 0 ? 'level with the line' : `${tidy.desk.ahead} commit(s) ahead of the line`}`);
             out(tidy.unsaved_files.length ? `  not handed in: ${tidy.unsaved_files.join(', ')}` : '  no unsaved or untracked files');
-            out(`  NEXT: line moved; run worktree-desk status ${deskId(d)}; if it reports a dev update, run worktree-desk sync ${deskId(d)}; contact the lead with edges send <lead>`);
+            out(`  NEXT: line moved; run worktree-desk status ${deskId(d)}; if it reports a dev update, run worktree-desk sync ${deskId(d)}`);
           }
           if (receipt.result !== 'accepted') worst = 4;
           // The tool finds the lead and tells them (owner, 2026-09-05: the session neither
@@ -222,7 +222,9 @@ async function main(): Promise<void> {
           const outcome = receipt.result === 'accepted' ? 'accepted' : receipt.result === 'conflict' ? 'conflict' : null;
           if (team && outcome) {
             for (const dlv of await notifyLeads({ team, line: d.line, session, receiptId: receipt.id, result: outcome, lineSha: receipt.line_sha, files: receipt.conflict_files, projectId: receipt.project_id })) {
-              out(dlv.how === 'self' ? `  ${dlv.detail}` : `  lead ${dlv.to}: ${dlv.how === 'house-send' ? 'told' : 'not reachable at the tile — posted on the team wipeboard'} — ${dlv.detail}`);
+              out(dlv.how === 'self'
+                ? `  ${dlv.detail}`
+                : `  Lead notification was automatic: delivered to ${dlv.to} ${dlv.how === 'house-send' ? 'at the tile' : 'on the Team wipeboard'}. No further notification from the Agent is required.`);
             }
           }
           if (receipt.result === 'accepted') out('Remember to update your project.');
@@ -281,6 +283,13 @@ async function main(): Promise<void> {
         if (!session || !positional[0]) die(USAGE, 2);
         const d = await pickOne(session, positional[0], 'discard');
         const confirmation = str(flags.get('confirm'));
+        const occupants: string[] = [];
+        for (const live of await listSessions()) {
+          if (cwdIsInside(d.worktree, await sessionDir(live.name))) occupants.push(live.name);
+        }
+        if (occupants.length) {
+          die(`OCCUPIED: ${occupants.join(', ')} ${occupants.length === 1 ? 'is' : 'are'} running inside ${d.worktree}; nothing was deleted. Use Hard Delete if you want to remove the Agent and its desks together.`, 4);
+        }
         const expected = `DISCARD ${deskId(d)}`;
         if (confirmation !== expected) die(`CONFIRM: discard deletes ${deskId(d)} and every commit only it holds — say --confirm "${expected}"`, 4);
         const a = await arrangementOf(d.repo);
