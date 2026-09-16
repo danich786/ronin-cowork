@@ -212,7 +212,7 @@ async function main(): Promise<void> {
               : '  Code handed in. No Project was associated; Project state is unchanged.');
             out(`  desk is ${tidy.desk.ahead === 0 ? 'level with the line' : `${tidy.desk.ahead} commit(s) ahead of the line`}`);
             out(tidy.unsaved_files.length ? `  not handed in: ${tidy.unsaved_files.join(', ')}` : '  no unsaved or untracked files');
-            out(`  NEXT: line moved; run worktree-desk status ${deskId(d)}; if it reports a dev update, run worktree-desk sync ${deskId(d)}; contact the lead with edges send <lead>`);
+            out(`  NEXT: line moved; run worktree-desk status ${deskId(d)}; if it reports a dev update, run worktree-desk sync ${deskId(d)}`);
           }
           if (receipt.result !== 'accepted') worst = 4;
           // The tool finds the lead and tells them (owner, 2026-09-05: the session neither
@@ -222,7 +222,9 @@ async function main(): Promise<void> {
           const outcome = receipt.result === 'accepted' ? 'accepted' : receipt.result === 'conflict' ? 'conflict' : null;
           if (team && outcome) {
             for (const dlv of await notifyLeads({ team, line: d.line, session, receiptId: receipt.id, result: outcome, lineSha: receipt.line_sha, files: receipt.conflict_files, projectId: receipt.project_id })) {
-              out(dlv.how === 'self' ? `  ${dlv.detail}` : `  lead ${dlv.to}: ${dlv.how === 'house-send' ? 'told' : 'not reachable at the tile — posted on the team wipeboard'} — ${dlv.detail}`);
+              out(dlv.how === 'self'
+                ? `  ${dlv.detail}`
+                : `  Lead notification was automatic: delivered to ${dlv.to} ${dlv.how === 'house-send' ? 'at the tile' : 'on the Team wipeboard'}. No further notification from the Agent is required.`);
             }
           }
           if (receipt.result === 'accepted') out('Remember to update your project.');

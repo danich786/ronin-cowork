@@ -30,7 +30,9 @@ export async function refreshTeams() {
   return { live, durable, snapshot: snapshot() };
 }
 export async function deleteTeamRoster(team) {
-  const result = await request(`/api/team-rosters/${encodeURIComponent(team)}`, { method: 'DELETE' });
+  const result = await request(`/api/team-rosters/${encodeURIComponent(team)}`, {
+    method: 'DELETE', json: { worktree_disposition: 'ignore' },
+  });
   if (result.ok) await refreshTeams();
   return result;
 }
