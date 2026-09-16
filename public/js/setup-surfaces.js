@@ -121,7 +121,8 @@ function createRegisterSurface(context) {
   };
   const email = input('email', 'email'); email.placeholder = 'you@example.com'; email.autocomplete = 'email';
   const identityMode = choiceGroup('identity_mode', t('setup_surface.identity', 'How would you like to register?'), [
-    ['email', 'With email'], ['anonymous', 'Anonymous'], ['no_thanks', 'No thank you'],
+    ['email', 'With email', 'Eligible for additional Ronin Services and participation in the Bounty Program.'],
+    ['anonymous', 'Anonymous'], ['no_thanks', 'No thank you'],
   ], { short: t('setup_surface.identity_short', 'Register as') });
   identityMode.wrap.classList.add('setup-register-identity-choice');
   const kind = choiceGroup('kind', t('setup_surface.kind', 'Which of these are you most likely to use?'), [
