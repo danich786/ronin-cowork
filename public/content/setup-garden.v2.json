@@ -106,6 +106,16 @@
           "id": "installations-skip",
           "kind": "instruction",
           "body": "Skip anything you are unsure about. An installation can be added the day you need it."
+        },
+        {
+          "id": "installations-registered",
+          "kind": "instruction",
+          "body": "Installations maintained by the Ronin team ask that you register first. They are open code and not charged for."
+        },
+        {
+          "id": "installations-terms",
+          "kind": "instruction",
+          "body": "In return, Ronin collects aggregate tool-use counts — never your code, prompts or messages — and asks that you do not commercialize the tools."
         }
       ],
       "media": [
