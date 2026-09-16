@@ -147,8 +147,9 @@ test('selector definitions retain neutral provider grouping without requirement 
 
 test('Register presents one open profile flow with card choices and anonymous delivery', async () => {
   const source = await (await import('node:fs/promises')).readFile(new URL('../public/js/setup-surfaces.js', import.meta.url), 'utf8');
-  for (const name of ['email', 'user_intro', 'own_words']) assert.match(source, new RegExp(`name = '${name}'|input\\('${name}'`));
-  assert.match(source, /userIntro\.rows = 2/);
+  for (const name of ['email', 'own_words']) assert.match(source, new RegExp(`name = '${name}'|input\\('${name}'`));
+  assert.match(source, /userIntroText\.rows = 4/);
+  assert.match(source, /saveUserIntro\(\)/, 'the local Agent introduction remains separate from registration delivery');
   for (const name of ['identity_mode', 'kind', 'preferred_feature', 'run_location']) assert.match(source, new RegExp(`choiceGroup\\('${name}'`));
   assert.match(source, /const question = ask\(/);
   assert.equal((source.match(/exposed: true/g) || []).length, 1, 'Register exposes its short choice selectors through ERABI');
@@ -159,7 +160,7 @@ test('Register presents one open profile flow with card choices and anonymous de
   assert.match(source, /reasons\.other\.value/);
   assert.match(source, /kind: '', kind_other: ''/);
   assert.doesNotMatch(source, /kind\.wrap\.append\(kindOther\)/, 'the conditional input stays outside ERABI repaint ownership');
-  assert.match(source, /route\.append\(kind\.wrap, kindOther, ownField\)/);
+  assert.match(source, /kind\.wrap, kindOther, ownField,/);
   assert.match(source, /preferredFeature\.wrap, reasons\.wrap,/);
   assert.doesNotMatch(source, /Who is using Ronin\?|\['individual', 'Just me'\]|\['team', 'A team'\]|\['builder', 'Builder'\]|\['exploring', 'Exploring'\]/);
   assert.match(source, /Welcome to Ronin/);
@@ -195,7 +196,7 @@ test('Register presents one open profile flow with card choices and anonymous de
   assert.match(source, /Where will you install Ronin\?/);
   assert.doesNotMatch(source, /Where will you run Ronin\?|Where Ronin fits/);
   for (const kind of ['Which of these are you most likely to use?', 'Build software', 'Life assistants', 'Research and writing']) assert.match(source, new RegExp(kind.replace('?', '\\?')));
-  assert.match(source, /form\.append\(route, welcome, about, fit, send, declined\)/, 'the routing choice leads the form');
+  assert.match(source, /form\.append\(welcome, registrationIntro, about, fit, send\)/, 'the introduction and routing choice lead the registration form');
   assert.match(source, /context\.environment\?\.kinds\?\.set\(routeKind \? \[routeKind\] : \[\]\)/, 'the answer changes Setup routing preferences');
   assert.match(source, /kind: '', kind_other: ''/, 'routing is not registration profile data');
   assert.match(source, /own_words: ''/, 'routing notes are not registration profile data');
@@ -204,7 +205,7 @@ test('Register presents one open profile flow with card choices and anonymous de
   assert.doesNotMatch(source, /Your starting theme|theme\.wrap/);
   assert.doesNotMatch(source, /What would make Ronin useful to you\?|Anything else\? \(optional\)/);
   assert.match(source, /setup_surface\.own_words', 'Anything else'/);
-  assert.match(source, /We hope you enjoy Ronin\. If you’d like to share feedback later, we’d be glad to hear it\./);
+  assert.match(source, /Enjoy using Ronin\. If you’d like to share feedback later, we’d be glad to hear from you at a later date\./);
   assert.match(source, /declinedRegistration[\s\S]*?fit\.hidden = declinedRegistration/);
   assert.match(source, /registerAction\.hidden = declinedRegistration/);
   assert.match(source, /Communication choices/);
