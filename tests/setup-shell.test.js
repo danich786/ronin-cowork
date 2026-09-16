@@ -144,8 +144,9 @@ test('Setup 2 progression is selected card, minimum checks, and one gated Next i
   const [setup, style] = await Promise.all([source('js/setup2-view.js'), source('style.css')]);
   assert.match(setup, /createAction\(\{ label: 'Next', launch: true, action: \(\) => advance\(\) \}\)/, 'Next uses the Launch-format action');
   assert.match(setup, /active\.number >= SCENES\.length \|\| !sceneComplete\(active\)/, 'Next exists only for a complete non-final selected card');
-  assert.match(setup, /\[data-workspace="workspace2"\] > \.wk-surface > \.wk-surface-controls/, 'Next sits at the top of Workspace 2');
-  assert.match(setup, /controls\.hidden = nextAction\.el\.hidden/);
+  assert.match(setup, /\[data-workspace="workspace2"\] > \.wk-surface > \.wk-surface-header \.wk-surface-header-actions/, 'Next sits at the top-right of Workspace 2');
+  assert.match(setup, /actions\.prepend\(nextAction\.el\)/);
+  assert.match(setup, /garden\.controls\.replaceChildren\(\);[\s\S]*garden\.controls\.hidden = true/, 'Workspace 1 cannot retain the progression action');
   assert.match(setup, /SETUP_SURFACE_TYPES\.providers\) return Number\(runtime\?\.activated_count \|\| 0\) > 0/);
   assert.match(setup, /SETUP_SURFACE_TYPES\.register\) return completion\.registered \|\| kinds\.get\(\)\.length > 0/);
   assert.match(setup, /SETUP_SURFACE_TYPES\.roots\) return completion\.github \|\| Boolean\(runtime\?\.roots\?\.length\)/);
@@ -153,7 +154,8 @@ test('Setup 2 progression is selected card, minimum checks, and one gated Next i
   assert.match(setup, /SETUP_SURFACE_TYPES\.launchOwn\) return launchComplete/);
   assert.doesNotMatch(setup, /data\.stepState|flashSelector|setup-selector-pulse/);
   assert.match(style, /data-workbench-profile='setup2'[\s\S]*?\.wk-card\[aria-current='page'\][^}]*background: var\(--kaki\)/, 'only the selected card gets the orange fill');
-  assert.match(style, /\[data-complete='true'\] \.wk-card-heading::before \{ content: '✓'/, 'completion remains a check mark');
+  assert.match(setup, /mark\.className = 'wk-card-mark';[\s\S]*mark\.textContent = '✓';[\s\S]*heading\.prepend\(mark\)/, 'completion uses the stock visible card mark');
+  assert.doesNotMatch(style, /data-complete='true'[^\n]*::before/, 'completion is not a fragile pseudo-element');
 });
 
 test('the fourth Setup workbench registers real surfaces and lets the journey project its seats', async () => {

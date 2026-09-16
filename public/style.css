@@ -5915,11 +5915,10 @@ button.wb-door:hover b {
 .wk-workbench-host [data-workbench-offer-type][data-scene-relevant='true'] .wk-card-heading { font-weight: 750; }
 .wk-workbench-host [data-registration-locked='true'] .wk-card-heading::after { content: '  🔒'; font-size: .8em; }
 .wk-workbench-host[data-workbench-profile='setup2'] [data-complete='true'] { opacity: 1; }
-.wk-workbench-host[data-workbench-profile='setup2'] [data-complete='true'] .wk-card-heading::before { content: '✓'; margin-right: var(--space-3); color: var(--kaki-lift); font-weight: 650; }
 .wk-workbench-host[data-workbench-profile='setup2'] .wk-workbench-selector-cards > .wk-card[aria-current='page'] { border-color: var(--kaki); background: var(--kaki); color: var(--on-strong); }
 .wk-workbench-host[data-workbench-profile='setup2'] .wk-workbench-selector-cards > .wk-card[aria-current='page'] .wk-card-heading,
 .wk-workbench-host[data-workbench-profile='setup2'] .wk-workbench-selector-cards > .wk-card[aria-current='page'] .wk-card-summary { color: var(--on-strong); }
-.wk-workbench-host[data-workbench-profile='setup2'] [data-workspace='workspace2'] > .wk-surface > .wk-surface-controls:not([hidden]) { display: flex; justify-content: flex-start; padding: var(--space-4) var(--space-6) 0; background: var(--panel); }
+.wk-workbench-host[data-workbench-profile='setup2'] .wk-workbench-selector-cards > .wk-card[aria-current='page'] .wk-card-mark { color: var(--on-strong); opacity: .78; }
 .setup-preferences-wrap[hidden], .setup-register-options[hidden] { display: none; }
 .setup-preferences { display: grid; gap: 0; padding: 0; border: 0; }
 .setup-preferences > .wk-action { justify-self: start; margin-top: var(--space-6); }

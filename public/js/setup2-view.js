@@ -48,7 +48,6 @@ export function createSetup2View() {
   const providerSessions = createProviderSetupSessionMount();
   const kinds = createKindsPreference(globalThis.localStorage, (next) => request('/api/setup/preferences', { method: 'PATCH', json: { kinds: next } }));
   const nextAction = WorkspaceKit.primitives.createAction({ label: 'Next', launch: true, action: () => advance() });
-  nextAction.el.classList.add('setup-next');
   const blank = (id) => WorkspaceKit.primitives.createBlankSurface(id.replace('workspace', 'Workspace ')).el;
   const environment = {
     setup2OnboardingExtras: true,
@@ -69,6 +68,8 @@ export function createSetup2View() {
     openLaunchForm: () => ctx?.navigate('launch'),
     onGardenCanvas: (next) => {
       garden = next;
+      garden.controls.replaceChildren();
+      garden.controls.hidden = true;
       paintedSceneId = null;
       selectGarden(activeScene());
     },
@@ -108,10 +109,9 @@ export function createSetup2View() {
     return false;
   };
   const seatNext = () => {
-    const controls = bench?.host.querySelector('[data-workspace="workspace2"] > .wk-surface > .wk-surface-controls');
-    if (!controls) return;
-    controls.hidden = nextAction.el.hidden;
-    controls.replaceChildren(nextAction.el);
+    const actions = bench?.host.querySelector('[data-workspace="workspace2"] > .wk-surface > .wk-surface-header .wk-surface-header-actions');
+    if (!actions) return;
+    actions.prepend(nextAction.el);
   };
   const selectGarden = (scene) => {
     if (!garden || !gardenContent || !scene || paintedSceneId === scene.id) return false;
@@ -129,7 +129,17 @@ export function createSetup2View() {
       const scene = SCENES[position];
       if (scene?.id === active.id) card.setAttribute('aria-current', 'page');
       else card.removeAttribute('aria-current');
-      card.dataset.complete = String(Boolean(scene && sceneComplete(scene)));
+      const complete = Boolean(scene && sceneComplete(scene));
+      card.dataset.complete = String(complete);
+      const heading = card.querySelector('.wk-card-heading');
+      let mark = heading?.querySelector('[data-setup-complete-mark]');
+      if (complete && !mark) {
+        mark = document.createElement('span');
+        mark.className = 'wk-card-mark';
+        mark.dataset.setupCompleteMark = '';
+        mark.textContent = '✓';
+        heading.prepend(mark);
+      } else if (!complete) mark?.remove();
     }
   };
   const open = (number) => {
