@@ -43,6 +43,8 @@ export function createSetup2View() {
   let kinds = ['build'];
   const blank = (id) => WorkspaceKit.primitives.createBlankSurface(id.replace('workspace', 'Workspace ')).el;
   const environment = {
+    setup2OnboardingExtras: true,
+    onGithubAuthenticated: () => { completion.github = true; paint(); },
     setupRuntime: null,
     onSetupRuntime: (next) => { runtime = next; environment.setupRuntime = next; paint(); },
     kinds: { get: () => [...kinds], hydrate: () => { kinds = ['build']; }, set: () => { kinds = ['build']; } },

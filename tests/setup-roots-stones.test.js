@@ -13,7 +13,28 @@ test('Setup and Settings use the same Workspace Folders stone presentation', asy
   assert.match(setup, /createWorkspaceFoldersSurface\(\{[\s\S]*presentation: 'stones'/);
   assert.match(campaign, /createWorkspaceFoldersSurface\(\{[\s\S]*presentation: 'stones'[\s\S]*environment: e,[\s\S]*workspace,/);
   assert.doesNotMatch(campaign, /worktreesDefault/);
-  assert.match(shared, /buildProjectRoots\([\s\S]*presentation \? \{ presentation, extraItems: onboarding\?\.items \|\| \[\] \} : \{\}/);
+  assert.match(shared, /presentation === 'stones' && onboardingExtras/);
+  assert.match(shared, /presentation \? \{ presentation, extraItems: onboarding\?\.items \|\| \[\] \} : \{\}/);
+  assert.match(setup, /onboardingExtras: context\.environment\?\.setup2OnboardingExtras === true/);
+  assert.match(await source('public/js/setup2-view.js'), /setup2OnboardingExtras: true/);
+  assert.doesNotMatch(campaign, /onboardingExtras/, 'shared Settings does not opt into onboarding-only GitHub stones');
+});
+
+test('Setup 2 GitHub lifecycle uses only a published session and hands success to Clone', async () => {
+  const github = await source('public/js/github-workspace-setup.js');
+  assert.match(github, /attachment\?\.type !== 'session' \|\| !attachment\.key/);
+  assert.match(github, /if \(!result\.data\?\.authenticated\) mountAttachment\(result\.data\?\.attachment\)/, 're-entering resumes the published temporary session');
+  assert.match(github, /if \(connecting \|\| mounted \|\| destroyed\) return/);
+  assert.match(github, /if \(checking \|\| destroyed\) return/);
+  assert.match(github, /stopWatch\(\); unmount\(\)/);
+  assert.match(github, /onAuthenticated\?\.\(\)/);
+  const finish = github.slice(github.indexOf('const finishAuthentication'), github.indexOf('const poll'));
+  assert.doesNotMatch(finish, /\/clone|onCloned/, 'authentication never starts a clone');
+  assert.match(github, /if \(result\.ok\) await onCloned\?\.\(result\.data\?\.workspace\)/);
+  const shared = await source('public/js/workspace-folders-surface.js');
+  assert.match(shared, /onAuthenticated: \(\) => \{[\s\S]*environment\?\.onGithubAuthenticated\?\.\(\);[\s\S]*room\?\.select\('\\0github-clone', \{ focus: true \}\)/);
+  assert.match(shared, /await room\?\.refresh\(\);[\s\S]*room\?\.select\(root\.name, \{ focus: true \}\)/);
+  assert.match(shared, /destroy: \(\) => onboarding\?\.destroy\(\)/);
 });
 
 test('Setup mounts the roots stones on the surface content so the shared insets apply', async () => {

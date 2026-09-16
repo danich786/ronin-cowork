@@ -362,6 +362,7 @@ function createRootsSurface(context) {
     presentation: 'stones',
     environment: context.environment,
     workspace: context.workspace,
+    onboardingExtras: context.environment?.setup2OnboardingExtras === true,
     onShow: () => notifySummary(SETUP_SURFACE_TYPES.roots, '2 folders + yours', context.workbench),
   });
 }

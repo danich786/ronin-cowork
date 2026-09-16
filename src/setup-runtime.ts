@@ -358,30 +358,81 @@ async function git(dir: string, args: string[]): Promise<string> {
 
 const GITHUB_SETUP_SESSION = 'setup_github';
 
-export async function githubSetupAnswer(): Promise<{ installed: boolean; authenticated: boolean; account: string; attachment: { type: 'session'; key: string; temporary: true } | null }> {
-  const installed = await run('gh', ['--version'], { timeout: 5_000 }).then(() => true, () => false);
-  const status = installed
-    ? await run('gh', ['auth', 'status', '--hostname', 'github.com'], { timeout: 8_000 }).then((result) => result.stderr || result.stdout, () => '')
-    : '';
-  const account = status.match(/account\s+([^\s(]+)/i)?.[1] || '';
-  const open = await sessionExists(GITHUB_SETUP_SESSION);
-  return { installed, authenticated: Boolean(status), account, attachment: open ? { type: 'session', key: GITHUB_SETUP_SESSION, temporary: true } : null };
+export type GithubSetupState = 'missing' | 'needs_authentication' | 'authenticated';
+export interface GithubSetupAnswer {
+  installed: boolean;
+  authenticated: boolean;
+  account: string;
+  state: GithubSetupState;
+  attachment: { type: 'session'; key: string; team: typeof PROVIDER_SETUP_TEAM; temporary: true } | null;
 }
 
-export async function openGithubLogin(): Promise<Awaited<ReturnType<typeof githubSetupAnswer>>> {
-  if (!(await run('gh', ['--version'], { timeout: 5_000 }).then(() => true, () => false))) throw new Error('GitHub CLI is not installed on this machine.');
-  if (!(await sessionExists(GITHUB_SETUP_SESSION))) {
-    await createSession(GITHUB_SETUP_SESSION, os.homedir(), {
-      agent: false,
-      argv: ['gh', 'auth', 'login', '--hostname', 'github.com', '--git-protocol', 'https'],
-    });
-  }
-  return githubSetupAnswer();
+export interface GithubSetupOps {
+  installed(): Promise<boolean>;
+  authStatus(): Promise<string>;
+  exists(): Promise<boolean>;
+  open(): Promise<void>;
+  close(): Promise<void>;
 }
 
-export async function closeGithubLogin(): Promise<Awaited<ReturnType<typeof githubSetupAnswer>>> {
-  if (await sessionExists(GITHUB_SETUP_SESSION)) await killSessionTree(GITHUB_SETUP_SESSION);
-  return githubSetupAnswer();
+export interface GithubSessionPrimitives {
+  create(name: string, cwd: string, options: { agent: boolean; argv: string[] }): Promise<void>;
+  tag(name: string, tags: string[]): Promise<void>;
+  identify(name: string, identity: { sessionType: string; cli: string; provider: string; model: string }): Promise<void>;
+}
+
+export async function createGithubSetupSession(primitives: GithubSessionPrimitives = {
+  create: createSession,
+  tag: async (name, tags) => { await setTags(name, tags); },
+  identify: setSessionIdentity,
+}): Promise<void> {
+  await primitives.create(GITHUB_SETUP_SESSION, os.homedir(), {
+    agent: false,
+    argv: ['gh', 'auth', 'login', '--hostname', 'github.com', '--git-protocol', 'https'],
+  });
+  await primitives.tag(GITHUB_SETUP_SESSION, [PROVIDER_SETUP_TEAM]);
+  await primitives.identify(GITHUB_SETUP_SESSION, {
+    sessionType: 'provider_setup', cli: 'gh', provider: 'github', model: '',
+  });
+}
+
+const defaultGithubSetupOps: GithubSetupOps = {
+  installed: () => run('gh', ['--version'], { timeout: 5_000 }).then(() => true, () => false),
+  authStatus: () => run('gh', ['auth', 'status', '--hostname', 'github.com', '--active'], { timeout: 8_000 })
+    .then((result) => result.stderr || result.stdout, () => ''),
+  exists: () => sessionExists(GITHUB_SETUP_SESSION),
+  open: () => createGithubSetupSession(),
+  close: () => killSessionTree(GITHUB_SETUP_SESSION),
+};
+
+/** Accept only gh's explicit active-login line; warnings and failure prose are not auth. */
+export function githubAccountFromStatus(status: string): string {
+  return status.match(/^\s*✓\s+Logged in to github\.com account ([A-Za-z0-9](?:[A-Za-z0-9-]{0,38}))\b/im)?.[1] ?? '';
+}
+
+export async function githubSetupAnswer(ops: GithubSetupOps = defaultGithubSetupOps): Promise<GithubSetupAnswer> {
+  const installed = await ops.installed();
+  const account = installed ? githubAccountFromStatus(await ops.authStatus()) : '';
+  const open = await ops.exists();
+  const authenticated = account !== '';
+  return {
+    installed,
+    authenticated,
+    account,
+    state: !installed ? 'missing' : authenticated ? 'authenticated' : 'needs_authentication',
+    attachment: open ? { type: 'session', key: GITHUB_SETUP_SESSION, team: PROVIDER_SETUP_TEAM, temporary: true } : null,
+  };
+}
+
+export async function openGithubLogin(ops: GithubSetupOps = defaultGithubSetupOps): Promise<GithubSetupAnswer> {
+  if (!(await ops.installed())) throw new Error('GitHub CLI is not installed on this machine.');
+  if (!(await ops.exists())) await ops.open();
+  return githubSetupAnswer(ops);
+}
+
+export async function closeGithubLogin(ops: GithubSetupOps = defaultGithubSetupOps): Promise<GithubSetupAnswer> {
+  if (await ops.exists()) await ops.close();
+  return githubSetupAnswer(ops);
 }
 
 export async function cloneGithubWorkspace(repository: unknown): Promise<{ name: string; dir: string }> {

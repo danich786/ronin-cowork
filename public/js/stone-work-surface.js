@@ -106,6 +106,22 @@ export function createStoneWorkSurface({ items = [], selectedId = '', renderDeta
       return api;
     },
     setItems(next) { rows = [...(next || [])]; paint(); return api; },
+    updateItems(next) {
+      for (const patch of next || []) {
+        const row = byId(patch.id);
+        if (!row) continue;
+        Object.assign(row, patch);
+        const button = buttonFor(row.id);
+        if (!button) continue;
+        button.disabled = row.disabled === true;
+        button.className = `sws-stone ${row.className || ''}`.trim();
+        const state = button.querySelector('.sws-state');
+        if (row.state && state) state.textContent = row.state;
+        else if (row.state && !state) button.append(element('small', 'sws-state', row.state));
+        else state?.remove();
+      }
+      return api;
+    },
     select(id, { focus = false } = {}) {
       const next = byId(id) ? String(id) : '';
       if (next) restoreId = next;

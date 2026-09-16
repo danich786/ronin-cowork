@@ -616,5 +616,12 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
     enter() {
       void refresh();
     },
+    refresh,
+    updateExtraItems() {
+      stoneSurface?.updateItems(options.extraItems || []);
+    },
+    select(id, options) {
+      stoneSurface?.select(id, options);
+    },
   };
 }
