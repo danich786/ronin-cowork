@@ -6,6 +6,9 @@ import { request } from './request.js';
 import { SETUP_SCENES } from './setup-journey.js';
 import { GARDEN_CANVAS_TYPE, registerGardenCanvas } from './garden-canvas.js';
 import { normalizeGardenCanvasCatalog } from './garden-canvas-model.js';
+import { PRESETS_TYPE, createKindsPreference, registerPresetsSurface } from './presets.js';
+import { launchPresetPlan, presetLaunchUrl } from './preset-launch.js';
+import { reserveWorkspaceTab } from './workspace.js';
 
 const PROFILE = 'setup2';
 // Release toggles: unfinished programs stay out of Setup without changing the workbench.
@@ -24,7 +27,8 @@ const GARDEN_CONTENT_URL = '/content/setup-garden.v2.json';
 function registerSetup2Workbench() {
   registerSetupSurfaces();
   registerGardenCanvas();
-  return WorkspaceKit.workbench.profiles.define(PROFILE, [GARDEN_CANVAS_TYPE, ...ORDER]);
+  registerPresetsSurface();
+  return WorkspaceKit.workbench.profiles.define(PROFILE, [GARDEN_CANVAS_TYPE, PRESETS_TYPE, ...ORDER]);
 }
 
 export function createSetup2View() {
@@ -40,12 +44,16 @@ export function createSetup2View() {
   let completion = { registered: false, github: false };
   let sceneOverride = 0;
   const providerSessions = createProviderSetupSessionMount();
-  let kinds = ['build'];
+  const kinds = createKindsPreference(globalThis.localStorage, (next) => request('/api/setup/preferences', { method: 'PATCH', json: { kinds: next } }));
   const blank = (id) => WorkspaceKit.primitives.createBlankSurface(id.replace('workspace', 'Workspace ')).el;
   const environment = {
     setupRuntime: null,
     onSetupRuntime: (next) => { runtime = next; environment.setupRuntime = next; paint(); },
-    kinds: { get: () => [...kinds], hydrate: () => { kinds = ['build']; }, set: () => { kinds = ['build']; } },
+    kinds,
+    runtime: () => runtime || {},
+    launch: launchPresetPlan,
+    launchUrl: presetLaunchUrl,
+    reserveLaunchTab: reserveWorkspaceTab,
     setPathNote: (path_note) => request('/api/setup/preferences', { method: 'PATCH', json: { path_note } }),
     setIdentityChoice: (identity_choice) => request('/api/setup/preferences', { method: 'PATCH', json: { identity_choice } }),
     mountProviderSetupSession: providerSessions.mountProviderSetupSession,
@@ -121,6 +129,8 @@ export function createSetup2View() {
       delete card.dataset.sceneRelevant;
       const position = ORDER.indexOf(card.dataset.workbenchOfferType);
       const scene = SCENES[position];
+      if (scene?.id === active.id) card.setAttribute('aria-current', 'page');
+      else card.removeAttribute('aria-current');
       card.dataset.complete = String(Boolean(scene && sceneComplete(scene)));
       card.dataset.stepState = position === active.number - 1 ? 'current' : 'upcoming';
     }
@@ -179,7 +189,7 @@ export function createSetup2View() {
         const result = await request('/api/setup/runtime', { cache: 'no-store' });
         runtime = result.ok ? result.data : { providers: [], activated_count: 0 };
         environment.setupRuntime = runtime;
-        environment.kinds.hydrate(['build']);
+        environment.kinds.hydrate(runtime?.preferences?.kinds?.length ? runtime.preferences.kinds : ['build']);
       }
       if (!completionLoaded) {
         const [registration, github] = await Promise.all([
