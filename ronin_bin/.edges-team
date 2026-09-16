@@ -18,7 +18,7 @@ Usage:
   edges team <team>
 
 Use the bare form to discover Teams, then name one before coordinating its members.
-This is a live, read-only tmux roster; it changes no membership or Control setting.
+This is a live, read-only tmux roster; it changes no membership.
 Create an Agent, add it to a Team, or set or change that Team's lead with
 session_create --help. Inspect an Agent with session_check --help. Create a Team with
 team-lead roster write. Add membership

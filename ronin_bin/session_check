@@ -10,7 +10,7 @@ session_check — read one live Agent by exact name
 Usage:
   session_check <name>
 
-Reports the Agent's Teams, lead designations, Control setting, and project root.
+Reports the Agent's Teams, lead designations, and project root.
 An unused name returns NO-SESSION and changes nothing. Related:
 session_create --help; session_set --help; edges team --help
 EOF
