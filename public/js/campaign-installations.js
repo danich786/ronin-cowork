@@ -71,6 +71,7 @@ export function createInstallationsSurface(campaign, context = {}) {
       values = installations;
       refreshStoneMarks();
       context.onInstallationChange?.(installation.name, on);
+      context.onInstallationsState?.({ ...values });
     }
     return result;
   };
@@ -175,6 +176,7 @@ export function createInstallationsSurface(campaign, context = {}) {
     catalog = INSTALLATION_ORDER.map((name) => rows.find((row) => row.name === name)).filter(Boolean);
     installed = installedResult.ok ? installedResult.data : null;
     values = completeMap(catalog, campaign()?.config?.installations);
+    context.onInstallationsState?.({ ...values });
     defaultBehaviours = Array.isArray(campaign()?.config?.defaults?.behaviours) ? [...campaign().config.defaults.behaviours] : [];
     stoneSurface.setItems(catalog.map(itemFor));
     stoneSurface.select('ronin_services');

@@ -140,6 +140,22 @@ test('the existing workbench can pin a Setup workspace and aim selector cards at
   assert.match(workbench, /cell\.addEventListener\('pointerdown',[\s\S]*select\(id\);[\s\S]*}, true\)/);
 });
 
+test('Setup 2 progression is selected card, minimum checks, and one gated Next in Workspace 2', async () => {
+  const [setup, style] = await Promise.all([source('js/setup2-view.js'), source('style.css')]);
+  assert.match(setup, /createAction\(\{ label: 'Next', launch: true, action: \(\) => advance\(\) \}\)/, 'Next uses the Launch-format action');
+  assert.match(setup, /active\.number >= SCENES\.length \|\| !sceneComplete\(active\)/, 'Next exists only for a complete non-final selected card');
+  assert.match(setup, /\[data-workspace="workspace2"\] > \.wk-surface > \.wk-surface-controls/, 'Next sits at the top of Workspace 2');
+  assert.match(setup, /controls\.hidden = nextAction\.el\.hidden/);
+  assert.match(setup, /SETUP_SURFACE_TYPES\.providers\) return Number\(runtime\?\.activated_count \|\| 0\) > 0/);
+  assert.match(setup, /SETUP_SURFACE_TYPES\.register\) return completion\.registered \|\| kinds\.get\(\)\.length > 0/);
+  assert.match(setup, /SETUP_SURFACE_TYPES\.roots\) return completion\.github \|\| Boolean\(runtime\?\.roots\?\.length\)/);
+  assert.match(setup, /SETUP_SURFACE_TYPES\.installations\) return installationsComplete/);
+  assert.match(setup, /SETUP_SURFACE_TYPES\.launchOwn\) return launchComplete/);
+  assert.doesNotMatch(setup, /data\.stepState|flashSelector|setup-selector-pulse/);
+  assert.match(style, /data-workbench-profile='setup2'[\s\S]*?\.wk-card\[aria-current='page'\][^}]*background: var\(--kaki\)/, 'only the selected card gets the orange fill');
+  assert.match(style, /\[data-complete='true'\] \.wk-card-heading::before \{ content: '✓'/, 'completion remains a check mark');
+});
+
 test('the fourth Setup workbench registers real surfaces and lets the journey project its seats', async () => {
   const [setup, main, cowork] = await Promise.all([
     source('js/setup-view.js'), source('js/main.js'), source('js/cowork-view.js'),

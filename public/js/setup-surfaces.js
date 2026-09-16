@@ -696,7 +696,10 @@ function createLaunchOwnSurface(context) {
 
 function createSetupInstallationsSurface(context) {
   const selected = () => campaignById(context.tenant?.campaign) || campaigns()[0] || null;
-  const page = createInstallationsSurface(selected, context);
+  const page = createInstallationsSurface(selected, {
+    ...context,
+    onInstallationsState: (values) => context.environment?.onInstallationsState?.(values),
+  });
   const content = page.el.querySelector('.wk-surface-content');
   const lock = el('p', 'setup-registration-lock', t('setup_surface.installations_locked', '🔒 Browse installations now. Switch on Ronin Services to change installation settings.'));
   content?.prepend(lock);

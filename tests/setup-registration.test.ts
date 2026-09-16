@@ -469,7 +469,7 @@ test('Setup has one Installations card, Account has no gbrain tab, and Machine S
     fs.readFile(new URL('../public/js/campaign-installations.js', import.meta.url), 'utf8'),
   ]);
   assert.match(surfaces, /definition\(SETUP_SURFACE_TYPES\.installations, t\('campaign_view\.installations', 'Installations'\), createSetupInstallationsSurface\)/);
-  assert.match(surfaces, /createInstallationsSurface\(selected, context\)/);
+  assert.match(surfaces, /createInstallationsSurface\(selected, \{[\s\S]*onInstallationsState: \(values\) => context\.environment\?\.onInstallationsState\?\.\(values\)/);
   assert.doesNotMatch(setupView, /SETUP_SURFACE_TYPES\.(?:services|gbrain)/);
   assert.doesNotMatch(account, /id: 'gbrain'/);
   assert.match(machine, /tickRow\(observed\.ronin\.services\.includes\('gbrain'\)/, 'the measured gbrain row remains');
@@ -477,6 +477,7 @@ test('Setup has one Installations card, Account has no gbrain tab, and Machine S
   assert.match(installations, /createServicesSurface\(sharedContext\)/);
   assert.match(installations, /createGbrainSurface\(sharedContext\)/);
   assert.match(installations, /stoneSurface\.select\('ronin_services'\)/);
+  assert.match(installations, /context\.onInstallationsState\?\.\(\{ \.\.\.values \}\)/, 'Setup completion follows the saved installation map');
 });
 
 test('legacy Services mutation entry points explicitly retire to registration', async () => {

@@ -619,6 +619,7 @@ export function createPresetsSurface({ environment = {}, workspace = 'workspace1
         warning.hidden = false;
       }
       notice.set('success', refused.length ? `Launched in a new tab without ${refused.length} of ${refused.length + (result.data?.sessions?.length || 0)}.` : 'Launched in a new tab.');
+      environment.onSetupLaunched?.();
     };
     if (!gate.ready) { const mark = el('button', 'sp-warn', '!'); mark.type = 'button'; mark.title = 'Not launchable yet'; mark.addEventListener('click', showHeld); go.append(mark); }
     const launch = createAction({ label: 'Launch', kind: 'primary', action: gate.ready ? launchNow : showHeld });

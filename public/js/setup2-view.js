@@ -42,15 +42,19 @@ export function createSetup2View() {
   let paintedSceneId = null;
   let completionLoaded = false;
   let completion = { registered: false, github: false };
+  let installationsComplete = false;
+  let launchComplete = false;
   let sceneOverride = 1;
   const providerSessions = createProviderSetupSessionMount();
   const kinds = createKindsPreference(globalThis.localStorage, (next) => request('/api/setup/preferences', { method: 'PATCH', json: { kinds: next } }));
-  const nextAction = WorkspaceKit.primitives.createAction({ label: 'Next', kind: 'primary', action: () => advance() });
+  const nextAction = WorkspaceKit.primitives.createAction({ label: 'Next', launch: true, action: () => advance() });
   nextAction.el.classList.add('setup-next');
   const blank = (id) => WorkspaceKit.primitives.createBlankSurface(id.replace('workspace', 'Workspace ')).el;
   const environment = {
     setup2OnboardingExtras: true,
     onGithubAuthenticated: () => { completion.github = true; paint(); },
+    onInstallationsState: (values) => { installationsComplete = Object.values(values || {}).some((value) => value === true); paint(); },
+    onSetupLaunched: () => { launchComplete = true; paint(); },
     setupRuntime: null,
     onSetupRuntime: (next) => { runtime = next; environment.setupRuntime = next; paint(); },
     kinds,
@@ -65,8 +69,6 @@ export function createSetup2View() {
     openLaunchForm: () => ctx?.navigate('launch'),
     onGardenCanvas: (next) => {
       garden = next;
-      garden.controls.hidden = false;
-      garden.controls.replaceChildren(nextAction.el);
       paintedSceneId = null;
       selectGarden(activeScene());
     },
@@ -85,7 +87,6 @@ export function createSetup2View() {
         sceneOverride = scene.number;
         open(scene.number);
         providerSurface?.openFirst();
-        flashSelector(scene.type);
         return;
       }
       const scene = SCENES.find((candidate) => candidate.type === action);
@@ -100,18 +101,17 @@ export function createSetup2View() {
   const activeScene = () => sceneAt(sceneOverride);
   const sceneComplete = (scene) => {
     if (scene.type === SETUP_SURFACE_TYPES.providers) return Number(runtime?.activated_count || 0) > 0;
-    if (scene.type === SETUP_SURFACE_TYPES.register) return completion.registered;
+    if (scene.type === SETUP_SURFACE_TYPES.register) return completion.registered || kinds.get().length > 0;
     if (scene.type === SETUP_SURFACE_TYPES.roots) return completion.github || Boolean(runtime?.roots?.length);
-    if (scene.type === SETUP_SURFACE_TYPES.installations) return Boolean(runtime?.services?.active || runtime?.services?.activated || runtime?.services?.installed);
+    if (scene.type === SETUP_SURFACE_TYPES.installations) return installationsComplete;
+    if (scene.type === SETUP_SURFACE_TYPES.launchOwn) return launchComplete;
     return false;
   };
-  const flashSelector = (type) => {
-    const card = bench?.host.querySelector(`[data-workbench-offer-type="${type}"]`);
-    if (!card) return;
-    card.classList.remove('setup-selector-pulse');
-    void card.offsetWidth;
-    card.classList.add('setup-selector-pulse');
-    card.addEventListener('animationend', () => card.classList.remove('setup-selector-pulse'), { once: true });
+  const seatNext = () => {
+    const controls = bench?.host.querySelector('[data-workspace="workspace2"] > .wk-surface > .wk-surface-controls');
+    if (!controls) return;
+    controls.hidden = nextAction.el.hidden;
+    controls.replaceChildren(nextAction.el);
   };
   const selectGarden = (scene) => {
     if (!garden || !gardenContent || !scene || paintedSceneId === scene.id) return false;
@@ -121,7 +121,8 @@ export function createSetup2View() {
   };
   const paint = () => {
     const active = activeScene();
-    nextAction.el.hidden = active.number >= SCENES.length;
+    nextAction.el.hidden = active.number >= SCENES.length || !sceneComplete(active);
+    seatNext();
     for (const card of bench?.host.querySelectorAll('[data-workbench-offer-type]') || []) {
       delete card.dataset.sceneRelevant;
       const position = ORDER.indexOf(card.dataset.workbenchOfferType);
@@ -129,7 +130,6 @@ export function createSetup2View() {
       if (scene?.id === active.id) card.setAttribute('aria-current', 'page');
       else card.removeAttribute('aria-current');
       card.dataset.complete = String(Boolean(scene && sceneComplete(scene)));
-      card.dataset.stepState = position === active.number - 1 ? 'current' : 'upcoming';
     }
   };
   const open = (number) => {
@@ -146,6 +146,7 @@ export function createSetup2View() {
     sceneOverride = next.number;
     open(next.number);
   }
+  kinds.subscribe(() => paint());
 
   bench = WorkspaceKit.workbench.create({
     profile: PROFILE,
@@ -186,7 +187,7 @@ export function createSetup2View() {
         const result = await request('/api/setup/runtime', { cache: 'no-store' });
         runtime = result.ok ? result.data : { providers: [], activated_count: 0 };
         environment.setupRuntime = runtime;
-        environment.kinds.hydrate(runtime?.preferences?.kinds?.length ? runtime.preferences.kinds : ['build']);
+        environment.kinds.hydrate(runtime?.preferences?.kinds || []);
       }
       if (!completionLoaded) {
         const [registration, github] = await Promise.all([
