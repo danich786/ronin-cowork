@@ -462,12 +462,10 @@ export function registerLaunch(app: express.Express): LaunchControl {
       if (birthKey) rememberSessionKey(resolved.name, birthKey);
       if (resolved.tags.length) {
         await setTags(resolved.name, resolved.tags);
-        // Membership is metadata for every session, but only a Cowork Agent receives a
-        // membership message. A Terminal is a plain shell: delivering this notice would
-        // type Ronin prose into its pane immediately after launch. A house seat likewise
-        // has no board tools and cannot act on the notice.
+        // The birth brief carries Team guidance. Record membership on the board without
+        // a second terminal submission racing the CLI's startup or its first turn.
         if (resolved.session_type === 'cowork_agent' && houseSeat !== 'mika') {
-          await announceTeamChanges(resolved.name, [], resolved.tags).catch(() => {});
+          await announceTeamChanges(resolved.name, [], resolved.tags, { notifyAgent: false }).catch(() => {});
         }
       }
       if (form.team_lead && resolved.team) await setLeads(resolved.name, [resolved.team]);

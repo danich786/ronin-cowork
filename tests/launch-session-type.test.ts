@@ -59,13 +59,13 @@ test('terminal ignores Agent-only fields and notes each one for the receipt', ()
   }
 });
 
-test('a Team terminal receives membership metadata but no injected Team notice', async () => {
+test('birth records Team membership without injecting a second prompt', async () => {
   const source = await fs.readFile(new URL('../src/routes/launch.ts', import.meta.url), 'utf8');
   assert.match(source, /await setTags\(resolved\.name, resolved\.tags\)/, 'the terminal keeps its Team tag');
   assert.match(
     source,
-    /if \(resolved\.session_type === 'cowork_agent' && houseSeat !== 'mika'\) \{\s*await announceTeamChanges/,
-    'only a Cowork Agent receives prose in its pane after joining a Team',
+    /await announceTeamChanges\(resolved\.name, \[\], resolved\.tags, \{ notifyAgent: false \}\)/,
+    'birth tells the board but never injects a second prompt into the starting CLI',
   );
 });
 

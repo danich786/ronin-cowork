@@ -138,6 +138,10 @@ export function buildBrief(
         `(edges team ${form.team}), it has no durable roster, and its wipeboard is "${form.team}" (edges wipeboard ${form.team}).`,
     );
   }
+  const birthTeams = [...new Set([form.team, ...(form.tags ?? [])].filter(Boolean))];
+  if (birthTeams.length) {
+    parts.push(`Team membership: ${birthTeams.join(', ')}. Run: edges wipeboard — it hands you whatever you have not read. Membership follows the team.`);
+  }
   // THE LAUNCH CONTRACT, IN THE PROMPT. These are suggestions the Agent reads, never
   // controls Ronin enforces. `open` means the owner stated no constraint, so silence is
   // the honest rendering; only actual choices deserve prompt space. Output is plural by
