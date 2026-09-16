@@ -89,7 +89,7 @@
   .garden-copy-item[data-age='fading'] { opacity: var(--gc-stale); }
   .garden-copy-item[data-age='fading'] .garden-copy-stamp { color: var(--kaki-lift); }
 
-  .garden-question-label { display: grid; gap: var(--space-5); color: var(--fg-strong); font-size: var(--text-4); font-weight: 600; }
+  .garden-question-label { display: grid; gap: var(--space-5); max-width: var(--gc-measure); color: var(--fg-strong); font-size: var(--text-4); font-weight: 600; }
   .garden-question-input { width: 100%; padding: var(--space-6) var(--space-7); border: var(--edge) solid var(--line-2); border-radius: var(--radius-md); background: var(--well); color: var(--fg); font: inherit; font-weight: 400; }
   .garden-question-input::placeholder { color: var(--dim); }
   .garden-question-input:focus-visible { border-color: var(--kaki); outline: var(--edge-2) solid color-mix(in srgb, var(--kaki) 55%, transparent); outline-offset: var(--edge); }
@@ -103,7 +103,7 @@
 
   /* A row per item, stacked full width: the owner is choosing what to open, and
      the kind decides whether they have two minutes or ten. */
-  .garden-media-list { display: grid; gap: var(--space-4); }
+  .garden-media-list { display: grid; gap: var(--space-4); max-width: var(--gc-measure); }
   .garden-media-choice { display: grid; grid-template-columns: var(--gc-glyph) minmax(0, 1fr) var(--gc-glyph); align-items: center; column-gap: var(--space-7); width: 100%; padding: var(--gc-row-pad); border: var(--edge) solid var(--line); border-radius: var(--radius-md); background: transparent; color: var(--fg); font: inherit; text-align: left; cursor: pointer; transition: background 140ms ease, border-color 140ms ease; }
   .garden-media-choice::before, .garden-media-choice::after { content: ''; grid-row: 1 / -1; width: var(--gc-glyph); height: var(--gc-glyph); background: currentColor; }
   .garden-media-choice::before { grid-column: 1; color: var(--gc-kind-ink); -webkit-mask: var(--gc-icon-doc) center / contain no-repeat; mask: var(--gc-icon-doc) center / contain no-repeat; }
