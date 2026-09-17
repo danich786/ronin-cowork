@@ -191,8 +191,9 @@ const defaultSessionOps: ProviderSessionOps = {
     const launch = await launchArgv(spec.cmd, '');
     if (!launch.argv.length) throw new Error(`${spec.label} is not installed on this machine.`);
     await mkdir(rootDir('user'), { recursive: true });
-    await createSetupSession(name, spec.id, rootDir('user'), { agent: false, argv: ['bash', '-c', '"$@"; exec bash -i', 'ronin-provider-setup', ...launch.argv] });
+    await createSetupSession(name, spec.id, rootDir('user'), { agent: false, argv: [] });
     void collectBirthLines(name, true);
+    await runCommand(name, launch.argv.map((arg) => "'" + arg.replace(/'/g, "'\\''") + "'").join(' '));
   },
   async openUpdate(provider, name) {
     const spec = AGENTS.find((agent) => agent.id === provider);
