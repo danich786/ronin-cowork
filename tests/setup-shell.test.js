@@ -23,6 +23,17 @@ test('Ronin Home names the place and gates Teams and New Project on runtime read
   assert.match(home, /Activate one model provider in Machine Setup/);
 });
 
+test('Ronin Home and Setup share the same persisted light and dark control', async () => {
+  const [home, setup, toggle] = await Promise.all([
+    source('js/campaign-home.js'), source('js/setup-view.js'), source('js/theme-toggle.js'),
+  ]);
+  assert.match(home, /const themeToggle = createThemeToggle\(\)/);
+  assert.match(home, /barActions: \[themeToggle\]/);
+  assert.match(setup, /const themeToggle = createThemeToggle\(\)/);
+  assert.match(toggle, /import\('\.\/theme\.js'\)[\s\S]*setTheme\(dark \? 'light' : 'dark'\)/);
+  assert.match(toggle, /aria-pressed/);
+});
+
 test('Setup and Settings share the machine-settings island without a right header editor', async () => {
   const [html, header, main] = await Promise.all([
     source('index.html'), source('js/workspace-header.js'), source('js/main.js'),

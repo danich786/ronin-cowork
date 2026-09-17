@@ -4,6 +4,7 @@ import { t } from './lexicon.js';
 import { request } from './request.js';
 import { createReleaseUpdateController, packageReading } from './release-update-controller.js';
 import { createSenmaida } from './senmaida.js';
+import { createThemeToggle } from './theme-toggle.js';
 
 const el = (tag, cls, text) => {
   const out = document.createElement(tag);
@@ -43,6 +44,7 @@ function doorGlyph(glyph) {
 }
 
 export function createCampaignHome() {
+  const themeToggle = createThemeToggle();
   const root = el('main', 'ch-view');
   root.append(createSenmaida('page', 'ch-horizon'));
   const frame = el('div', 'ch-frame');
@@ -130,6 +132,7 @@ export function createCampaignHome() {
     el: root,
     glyph: '⛩',
     title: () => t('campaign_home.ronin_home', 'Ronin Home'),
+    barActions: [themeToggle],
     enter: (context) => {
       ctx = context;
       entered = true;
