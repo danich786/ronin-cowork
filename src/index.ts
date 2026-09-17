@@ -56,7 +56,7 @@ import { handleEvents, startSessionsBroadcast } from './ws/events.js';
 import { tmux as tmuxClient } from './tmux-client.js';
 import { handlePty } from './ws/pty.js';
 import { originAllowed, allowedOrigins } from './ws/origin.js';
-import { DocumentPathError, legacyDocumentPath, readDocumentFile, saveDocumentFile } from './document-file.js';
+import { DocumentPathError, legacyDocumentPath, readDocumentFile, readProductDocumentFile, saveDocumentFile } from './document-file.js';
 import { checkTmuxServerCgroup } from './host-guard.js';
 import { sockets, startBootHooks, stopBootHooks, mountServiceRoutes, noteService, noteServiceCapabilityPlan, noteServiceFailure, noteServiceParked } from './sockets.js';
 import { discoverParts, partsToLoad } from './parts.js';
@@ -305,6 +305,10 @@ startMessageQueue();
 app.get('/api/file', async (req, res) => {
   const file = String(req.query.path ?? '');
   try {
+    if (req.query.product === '1') {
+      const safe = await readProductDocumentFile(file);
+      return res.json(safe);
+    }
     if (req.query.root) {
       const safe = await readDocumentFile(req.query.root, file);
       return res.json(safe);
@@ -324,6 +328,7 @@ app.put('/api/file', express.text({ type: '*/*', limit: '8mb' }), async (req, re
   const file = String(req.query.path ?? '');
   const text = typeof req.body === 'string' ? req.body : '';
   try {
+    if (req.query.product === '1') return res.status(405).json({ error: 'Product documentation is read-only.' });
     if (req.query.root) await saveDocumentFile(req.query.root, file, text);
     else {
       const legacy = legacyDocumentPath(file);

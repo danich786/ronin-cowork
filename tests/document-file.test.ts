@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, symlink, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { DocumentPathError, legacyDocumentPath, resolveDocumentFile } from '../src/document-file.js';
+import { DocumentPathError, legacyDocumentPath, resolveDocumentFile, resolveProductDocumentFile } from '../src/document-file.js';
 import type { ProjectRootInfo } from '../src/project-roots.js';
 
 const rootInfo = (name: string, dir: string): ProjectRootInfo => ({
@@ -43,4 +43,13 @@ test('legacy Docs access remains byte-for-byte absolute and outside root policy'
   assert.equal(legacyDocumentPath('/any/existing/docs/path.html'), '/any/existing/docs/path.html');
   assert.equal(legacyDocumentPath('/home/person/private-note.md'), '/home/person/private-note.md');
   assert.throws(() => legacyDocumentPath('relative.md'), (error: unknown) => error instanceof DocumentPathError && error.status === 400);
+});
+
+test('shipped product guides resolve read-only without a registered Workspace Folder', async () => {
+  const product = await mkdtemp(path.join(os.tmpdir(), 'ronin-product-doc-'));
+  await mkdir(path.join(product, 'docs', 'getting-started'), { recursive: true });
+  const guide = path.join(product, 'docs', 'getting-started', 'install.md');
+  await writeFile(guide, '# Install\n');
+  assert.equal(await resolveProductDocumentFile('docs/getting-started/install.md', product), guide);
+  await assert.rejects(resolveProductDocumentFile('../outside.md', product), (error: unknown) => error instanceof DocumentPathError && error.status === 403);
 });

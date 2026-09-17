@@ -58,7 +58,7 @@ const normalizeMedia = (value) => {
     const src = kind === 'doc' ? '' : safeSource(item.src);
     const root = kind === 'doc' ? text(item.root) : '';
     const path = kind === 'doc' ? text(item.path) : '';
-    if (!text(item.id) || !kind || !text(item.label) || (kind === 'doc' ? !root || !path : !src)) return [];
+    if (!text(item.id) || !kind || !text(item.label) || (kind === 'doc' ? !path : !src)) return [];
     return [Object.freeze({ id: text(item.id), kind, src, root, path, label: text(item.label), description: text(item.description), stamp: text(item.stamp) })];
   });
   return items.length ? Object.freeze(items) : null;

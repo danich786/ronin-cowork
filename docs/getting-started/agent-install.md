@@ -1,15 +1,46 @@
 # Install an Agent provider
 
-Open **Model providers** in [Ronin Setup](setup-workbench.md). Choose the provider you
-want to use and follow the installation action it offers. If it needs manual preparation,
-the row explains what is missing.
+Open **Model providers** in [Ronin Setup](setup-workbench.md). Each provider has three
+separate steps—**Install**, **Authenticate**, and **Ready**—because a CLI being present does
+not prove that it is signed in or available to Ronin.
 
-Installation opens a visible session. Follow the provider's own prompts there. A failed
-command does not establish a working provider; check the measured provider status before
-trying to launch work.
+## Choose a provider
 
-Installation and sign-in are separate. Continue with [Provider sign-in](provider-sign-in.md),
-then send one harmless request as described in [Get started](get-started.md).
+Choose the provider whose account and billing arrangement you want to use. Ronin connects
+to that provider directly; it does not resell model access or put a Ronin credential
+between you and the provider. You only need one working provider to continue Setup.
+
+The provider stone tells you what this machine currently has:
+
+- **Not installed** means Ronin has a safe installation command for that CLI.
+- **Manual install** means the provider needs preparation Ronin should not guess or run.
+- **Needs sign-in** means the CLI is present but has not been activated here.
+- **Activated** means Ronin has recorded the provider as ready to launch.
+
+## Install
+
+Open the provider and press **Install**. Installation runs in a visible temporary terminal
+on the Model providers surface. You can watch the provider's own installer, respond to a
+system prompt when necessary, and retain the exact failure if it does not complete. Ronin
+measures the CLI again afterward; merely starting the terminal does not mark it installed.
+
+If the provider offers an **Install guide** instead of an Install button, follow the linked
+vendor preparation. Ronin deliberately avoids inventing an automatic command where its
+registry cannot install the CLI safely.
+
+## Authenticate and make it ready
+
+Once Install has a check, press **Authenticate**. The provider's native sign-in opens in a
+temporary terminal. Complete account, browser, device-code, billing, and trust choices
+yourself; never paste a secret into an Agent conversation. **Done** measures the result and
+records activation. **Close** leaves the provider unactivated.
+
+When all three steps have checks, launch one Agent and send the harmless proof request in
+[Get started](get-started.md#prove-one-working-agent). That visible response—not an
+installed command or a saved credential—is the end-to-end proof.
+
+For credential boundaries and provider-specific handoff, continue with
+[Provider sign-in](provider-sign-in.md).
 
 Contributors: [provider installation construction](../architecture/agent-install.md) and
 [provider registry](../architecture/model-providers.md).
