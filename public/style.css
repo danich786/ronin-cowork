@@ -718,6 +718,10 @@ body {
   min-width: 0;
 }
 
+/* The document shell starts optional header capabilities hidden. Component display
+   rules must never override that first-paint fact before the active view is known. */
+#bar > [hidden] { display: none !important; }
+
 #bar .shape-cycle,
 #bar .bar-toggle {
   display: inline-flex;
