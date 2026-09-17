@@ -310,7 +310,7 @@ export class ControlTmuxClient implements TmuxClient {
       if (!reply || !reply.id || reply.id !== id) return this.protocolFailure(`unmatched ${line}`);
       this.reply = undefined;
       this.deps.clearTimer(reply.timer);
-      const text = reply.lines.join('\n');
+      const text = reply.lines.map(decodeTmuxOutput).join('\n');
       if (line.startsWith('%error ')) reply.reject(new Error(text));
       else reply.resolve(text);
       return;

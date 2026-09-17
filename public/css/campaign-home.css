@@ -108,6 +108,7 @@
 
   .ch-release {
     position: absolute;
+    z-index: 2;
     right: var(--space-8);
     bottom: var(--space-7);
     max-width: calc(100% - var(--space-8) * 2);
