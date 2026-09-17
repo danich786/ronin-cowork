@@ -255,7 +255,7 @@ test('a fresh box — no tmux server — is measured as none: setup continues, l
     assert.match(probe.stdout, /\/tmp\/tmux-1001\/default$/, text);
     // under setup.sh's own `set -e`: a wrong non-zero here is exactly the exit 2 of #74
     const adopt = await exec('bash', ['-c', `set -eu; . "${helper}"; TMUX_BIN="$1"; ronin_adopt_tmux "$2"; echo "adopt=$?"`, 'test', fake, state], { env });
-    assert.match(adopt.stdout, /No tmux server found\. Ronin is starting its own\./);
+    assert.match(adopt.stdout, /No tmux server found: Ronin is starting its own\./);
     assert.match(adopt.stdout, /^adopt=0$/m);
     await assert.rejects(fs.access(path.join(state, 'machine', 'tmux-adoption')), 'nothing is leased when there is no server');
     // uninstall on the same box: a stale lease is evidence of nothing, and goes
@@ -299,7 +299,7 @@ esac
 
   await fs.writeFile(path.join(proc, 'cgroup'), '0::/user.slice/user-1000.slice/user@1000.service/app.slice/tmux-server.service\n');
   const ours = await run(path.join(root, 'ours'));
-  assert.match(ours.stdout, /Ronin's own tmux server is running \(pid \d+, started by tmux-server\.service\): nothing to adopt, nothing leased/);
+  assert.match(ours.stdout, /Tmux server found, and Ronin is joining\./);
   await assert.rejects(fs.access(path.join(root, 'ours', 'machine', 'tmux-adoption')));
   assert.equal(await fs.readFile(writes, 'utf8'), '', 'no option is written to a server the conf already configured');
 
