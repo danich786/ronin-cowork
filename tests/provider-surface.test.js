@@ -66,7 +66,7 @@ const context = () => {
     mounts, refreshed,
     workspace: 'workspace2', detail: {},
     workbench: { refreshSelector: () => { refreshed.count++; } },
-    environment: { mountProviderSetupSession: (args) => { mounts.push(args); return { el: new FakeNode('div'), park() {}, destroy() {} }; } },
+    environment: { mountProviderSetupSession: (args) => { mounts.push(args); return { el: new FakeNode('div'), park() {}, destroy() { args.onClosed?.(); } }; } },
   };
 };
 
@@ -396,4 +396,20 @@ test('Done asks through Erabi for the sign-in method and title, then submits tha
     assert.deepEqual(saved, { method: 'subscription', label: 'Personal account' });
     assert.match(view.el.textContent, /Your sign-in record: Subscription · Personal account/);
   } finally { view.destroy(); machine = originalMachine; globalThis.fetch = originalFetch; }
+});
+
+
+test('repainting an open setup terminal does not start another measurement from teardown', async () => {
+  const ctx = context();
+  ctx.detail = { provider: 'codex' };
+  const view = surface.createProviderSurface(ctx);
+  try {
+    await view.show(); await settle();
+    await view.show(); await settle();
+    const count = ctx.mounts.length;
+    const measurements = calls.filter(call => call.endsWith('/providers/measure')).length;
+    await settle();
+    assert.equal(ctx.mounts.length, count, 'the new terminal stays mounted');
+    assert.equal(calls.filter(call => call.endsWith('/providers/measure')).length, measurements);
+  } finally { view.destroy(); }
 });

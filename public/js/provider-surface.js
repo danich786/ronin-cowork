@@ -230,7 +230,7 @@ export function createProviderSurface(context) {
       close.classList.add('setup-provider-action', 'setup-provider-update-close');
       installRow.controls.append(close, cancelSetup());
       installRow.item.append(terminal);
-      mounted = mountProviderAttachment(context.environment, terminal, provider, context.workspace, () => void paint());
+      mounted = mountProviderAttachment(context.environment, terminal, provider, context.workspace);
       if (!mounted) terminal.append(el('p', 'setup-notice bad', t('setup_surface.login_attachment_missing', 'The native setup session is open but its terminal attachment is unavailable.')));
     // Update is useful only when there is somewhere newer to move AND the provider is
     // usable. Otherwise the row already says the complete fact: up to date, or not signed in.
@@ -279,7 +279,7 @@ export function createProviderSurface(context) {
       close.classList.add('setup-provider-action');
       authRow.controls.append(done, close, cancelSetup());
       authRow.item.append(terminal);
-      mounted = mountProviderAttachment(context.environment, terminal, provider, context.workspace, () => void paint());
+      mounted = mountProviderAttachment(context.environment, terminal, provider, context.workspace);
       if (!mounted) terminal.append(el('p', 'setup-notice bad', t('setup_surface.login_attachment_missing', 'The native setup session is open but its terminal attachment is unavailable.')));
     }
     // THE SWITCH lives on the Ready step. Activated: Turn off, with the sentence that says
