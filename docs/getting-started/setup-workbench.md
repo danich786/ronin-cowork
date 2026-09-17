@@ -110,14 +110,14 @@ step waits.
 | Step | What it measures | The control |
 |---|---|---|
 | **Install** | whether the CLI is on this machine | **Install** opens the provider's installer and first-run setup in a tile on this surface; a provider Ronin cannot install safely gets an **Install guide** link |
-| **Authenticate** | whether the provider is signed in here | **Authenticate** opens the provider's own sign-in in a tile on this surface; **Done** records it, **Close** leaves things as they were |
+| **Authenticate** | whether the provider is signed in here | **Authenticate** opens the provider's own sign-in in a tile on this surface; **Done** records it, **Close** ends the terminal session |
 | **Ready** | activation, which unlocks Teams, New Project and the preset stones | **Turn off** stops Ronin measuring, updating and launching the provider — tiles already running are not touched and the sign-in is kept; **Turn on** brings it back, and nothing needs signing in again |
 
 The install window can continue directly into the provider's sign-in. Complete it there,
-then press **Close**. **Cancel setup** immediately ends the temporary install or
+then press **Done**. **Close** immediately ends the temporary install or
 sign-in session without asking for a method or title. It does not undo an installation
 or sign-in already completed. **Back** in the sign-in form returns to the terminal.
-Close and Done ask you to choose **Subscription**, **API key**, or
+Done asks you to choose **Subscription**, **API key**, or
 **Third-party service** and give the sign-in a title, such as “Work OpenRouter”. Choose
 **Not signed in** if you did not authenticate. Ronin saves your description separately
 from the credentials, then checks installation and saved credentials again. A detected
