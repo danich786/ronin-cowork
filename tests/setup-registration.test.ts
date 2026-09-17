@@ -183,7 +183,9 @@ test('Register presents one open profile flow with card choices and anonymous de
   assert.match(source, /const wordFor = \(key\) => labels\.get\(key\)/, 'the submitted summary speaks the form\'s words, never a stored key');
   assert.match(source, /el\('span', '', summaryWords\(\)\)/);
   assert.doesNotMatch(source, /\.\.\.\(current\?\.reasons \|\| \[\]\)\]\.filter\(Boolean\)/);
-  assert.match(source, /checkRow\(t\('setup_surface\.no_communication', 'No communication'\), checks\.no_communication, 'setup-register-check-apart'\)/);
+  assert.doesNotMatch(source, /Communication choices|No communication|Update preferences/);
+  assert.match(source, /registration_confirmation', 'Registration confirmation'/);
+  assert.match(source, /Required only if you want to install Ronin Services\./);
   assert.match(source, /identity\.dataset\.tone = current\?\.status === 'pending' \? 'pending' : 'ok'/);
   assert.match(css, /\.setup-register-compact \{ container: setup-register \/ inline-size;/, 'Register sizes its pairs from its own width');
   assert.match(css, /@container setup-register \(min-width: 40rem\)/);
@@ -207,8 +209,8 @@ test('Register presents one open profile flow with card choices and anonymous de
   assert.match(source, /Enjoy using Ronin\. If you’d like to share feedback later, we’d be glad to hear from you at a later date\./);
   assert.match(source, /declinedRegistration[\s\S]*?fit\.hidden = declinedRegistration/);
   assert.match(source, /registerAction\.hidden = declinedRegistration/);
-  assert.match(source, /Communication choices/);
-  assert.match(source, /Communication stays off unless you choose otherwise/);
+  assert.match(source, /user_intro_submit', 'Submit'/);
+  assert.match(source, /if \(result\.ok\) userIntro\.hidden = true/);
   assert.match(source, /register_action'[\s\S]*?'Send'\), '', async/);
   assert.match(source, /registerAction\.dataset\.launch = 'true'/);
   assert.match(source, /identity_mode: anonymous \? 'anonymous' : 'email'/);
