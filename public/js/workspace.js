@@ -203,16 +203,14 @@ export function createWorkspace(host, options = {}) {
     map = invoke(id, 'map', () => WorkspacePrimitives.createLayoutMap(view.arrangement)) || null;
     if (map) mapSlot.append(map.el);
   };
-  // BAR ACTIONS. A view that exposes `barActions` — its own compact controls, such as
-  // Setup's light/dark toggle — gets them seated in the bar's one actions slot, at the
-  // right, while it is active; every other view leaves the slot empty. The same rule as
-  // the map: the ViewHost does the seating so no feature touches the header itself, and
-  // the controls stay the view's own (it built them, it wires them, it keeps them).
+  // HEADER CAPABILITIES. A view declares only what it owns: compact actions, pane count,
+  // machine telemetry, Services state, and Feedback. The ViewHost seats them and defaults
+  // every undeclared capability to absent, so a static page cannot inherit workbench chrome.
   const actionsSlot = options.actionsSlot instanceof Element ? options.actionsSlot : null;
   const showActions = (id, view) => {
     if (!actionsSlot) return;
     actionsSlot.replaceChildren();
-    for (const action of Array.isArray(view.barActions) ? view.barActions : []) {
+    for (const action of Array.isArray(view.header?.actions) ? view.header.actions : []) {
       const el = action?.el ?? action;
       if (el instanceof Node) actionsSlot.append(el);
     }
@@ -280,9 +278,11 @@ export function createWorkspace(host, options = {}) {
     if (active?.view !== next) { showMap(id, next); showActions(id, next); }
     showName(id, next);
     const feedback = document.getElementById('feedbackaction');
-    if (feedback) feedback.hidden = next.hideFeedback === true;
+    if (feedback) feedback.hidden = next.header?.feedback !== true;
     const shapeControl = document.getElementById('shapecycle');
-    if (shapeControl) shapeControl.hidden = next.hideShapeControl === true;
+    if (shapeControl) shapeControl.hidden = next.header?.shape !== true;
+    options.ramRpm?.setVisible(next.header?.ram === true);
+    options.servicesStatus?.setVisible(next.header?.services === true);
     active = { id, view: next, param };
     state.view = id;
     if (id === 'team') state.team = param;

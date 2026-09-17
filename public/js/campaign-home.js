@@ -4,6 +4,7 @@ import { t } from './lexicon.js';
 import { request } from './request.js';
 import { createReleaseUpdateController, packageReading } from './release-update-controller.js';
 import { createSenmaida } from './senmaida.js';
+import { createThemeToggle } from './theme-toggle.js';
 
 const el = (tag, cls, text) => {
   const out = document.createElement(tag);
@@ -43,6 +44,7 @@ function doorGlyph(glyph) {
 }
 
 export function createCampaignHome() {
+  const themeToggle = createThemeToggle();
   const root = el('main', 'ch-view');
   root.append(createSenmaida('page', 'ch-horizon'));
   const frame = el('div', 'ch-frame');
@@ -130,10 +132,10 @@ export function createCampaignHome() {
     el: root,
     glyph: '⛩',
     title: () => t('campaign_home.ronin_home', 'Ronin Home'),
+    header: { actions: [themeToggle] },
     enter: (context) => {
       ctx = context;
       entered = true;
-      document.body.classList.add('ronin-home-active');
       paintDoors();
       void request('/api/setup/runtime', { cache: 'no-store' }).then((result) => {
         if (!entered) return;
@@ -142,7 +144,7 @@ export function createCampaignHome() {
         paintDoors();
       });
     },
-    leave: () => { entered = false; document.body.classList.remove('ronin-home-active'); },
-    destroy: () => { entered = false; ctx = null; document.body.classList.remove('ronin-home-active'); },
+    leave: () => { entered = false; },
+    destroy: () => { entered = false; ctx = null; },
   };
 }

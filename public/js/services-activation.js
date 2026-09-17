@@ -11,7 +11,8 @@ const el = (tag, cls, text) => {
 
 export function installServicesStatus() {
   const trigger = document.getElementById('servicesstate');
-  if (!trigger) return;
+  const unavailable = { setVisible() {} };
+  if (!trigger) return unavailable;
   const pop = el('div', 'services-pop'); pop.hidden = true;
   const message = el('p', 'services-pop-message');
   const actions = el('div', 'services-pop-actions');
@@ -21,12 +22,12 @@ export function installServicesStatus() {
   const cancel = el('button', '', t('services.cancel_services', 'Cancel Ronin Services'));
   for (const item of [check, resend, change, cancel]) { item.type = 'button'; actions.append(item); }
   pop.append(message, actions); document.body.append(pop);
-  let state = null; let busy = false; let installTimer = null;
+  let state = null; let busy = false; let installTimer = null; let visible = false;
 
   const paint = (next) => {
     state = next;
     const stage = next?.stage || 'not_requested';
-    trigger.hidden = ['not_requested', 'cancelled'].includes(stage);
+    trigger.hidden = !visible || ['not_requested', 'cancelled'].includes(stage);
     trigger.classList.toggle('busy', busy || ['requesting', 'installing'].includes(stage));
     trigger.textContent = stage === 'installed' ? t('services.bar_ready', 'Services ready')
       : stage === 'installing' ? t('services.bar_installing', 'Installing Ronin Services…')
@@ -80,4 +81,12 @@ export function installServicesStatus() {
     if (document.visibilityState === 'visible') void refresh();
   });
   void refresh();
+  return { setVisible(next) {
+    visible = next === true;
+    paint(state);
+    if (!visible) {
+      pop.hidden = true;
+      trigger.setAttribute('aria-expanded', 'false');
+    }
+  } };
 }

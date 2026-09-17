@@ -718,6 +718,10 @@ body {
   min-width: 0;
 }
 
+/* The document shell starts optional header capabilities hidden. Component display
+   rules must never override that first-paint fact before the active view is known. */
+#bar > [hidden] { display: none !important; }
+
 #bar .shape-cycle,
 #bar .bar-toggle {
   display: inline-flex;
@@ -5702,9 +5706,14 @@ button.wb-door:hover b {
 
 
 
-.ramrpm { margin-left: var(--space-4); border: var(--edge) solid var(--line-2); border-radius: var(--radius-pill); background: var(--raise); color: var(--muted-2); padding: var(--space-3) var(--space-6); font: var(--text-2) var(--font-mono); cursor: default; user-select: none; }
+.ramrpm { margin-left: var(--space-4); border: var(--edge) solid var(--line-2); border-radius: var(--radius-pill); background: var(--raise); color: var(--muted-2); padding: var(--space-3) var(--space-6); font: var(--text-2) var(--font-mono); cursor: pointer; user-select: none; }
 .ramrpm[data-band='warn'] { color: var(--warn); border-color: var(--warn); }
 .ramrpm[data-band='red'] { color: var(--bad); border-color: var(--bad); }
+.ramrpm-pop { position: fixed; z-index: 50; width: min(300px, calc(100vw - var(--space-8))); border: var(--edge) solid var(--line-2); border-radius: var(--radius-sm); background: var(--panel); box-shadow: var(--shadow-menu); padding: var(--space-6); color: var(--fg); font: var(--text-3) var(--font-ui); }
+.ramrpm-pop p { display: flex; justify-content: space-between; gap: var(--space-6); margin: 0; padding: var(--space-2) 0; border-bottom: var(--edge) solid var(--line); }
+.ramrpm-pop p:last-child { border-bottom: 0; }
+.ramrpm-pop strong { color: var(--fg-strong); }
+.ramrpm-pop span { color: var(--muted-2); text-align: right; }
 
 .services-state { margin-left: var(--space-4); border: var(--edge) solid var(--line-2); border-radius: var(--radius-xs); background: var(--raise); color: var(--muted-2); padding: var(--space-3) var(--space-6); font: var(--text-2) var(--font-mono); cursor: pointer; }
 .services-state.busy::before { content: '◌'; display: inline-block; margin-right: var(--space-3); animation: services-spin var(--motion-slow) linear infinite; }

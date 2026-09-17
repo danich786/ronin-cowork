@@ -136,6 +136,7 @@
     <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/terminal-input.js" />
     <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/terminal-tile-host.js" />
     <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/termview.js" />
+    <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/theme-toggle.js" />
     <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/theme.js" />
     <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/tile-doc-view.js" />
     <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/tile.js" />
@@ -176,7 +177,7 @@
            js/workspace-header.js writes it; nothing else does. -->
       <span class="grow"><span id="viewplace" class="ui-bar-place" hidden></span></span>
       <span id="viewmap" class="wk-view-map"></span>
-      <span id="ramrpm" class="ramrpm" hidden></span>
+      <button id="ramrpm" class="ramrpm" type="button" hidden aria-expanded="false"></button>
       <!-- A view's own compact controls (Setup's light/dark). js/workspace.js seats them. -->
       <span id="viewactions" class="wk-view-actions"></span>
       <span id="feedbackaction"></span>

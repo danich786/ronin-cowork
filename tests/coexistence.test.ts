@@ -97,7 +97,7 @@ esac
   const restore = () => exec('bash', ['-c', `. "${helper}"; ronin_restore_tmux "$2" "$1"`, 'test', fake, root], { env });
 
   const first = await adopt();
-  assert.match(first.stdout, /adopted \(pid \d+\)/);
+  assert.match(first.stdout, /tmux pid \d+: adopted;/);
   assert.match(first.stdout, /server is tmux 3\.2a and Ronin's client is tmux 3\.7c/, 'version skew is disclosed');
   assert.match(await fs.readFile(lease, 'utf8'), /^prior=on$/m);
   assert.equal(await fs.readFile(value, 'utf8'), 'off');
@@ -255,7 +255,7 @@ test('a fresh box — no tmux server — is measured as none: setup continues, l
     assert.match(probe.stdout, /\/tmp\/tmux-1001\/default$/, text);
     // under setup.sh's own `set -e`: a wrong non-zero here is exactly the exit 2 of #74
     const adopt = await exec('bash', ['-c', `set -eu; . "${helper}"; TMUX_BIN="$1"; ronin_adopt_tmux "$2"; echo "adopt=$?"`, 'test', fake, state], { env });
-    assert.match(adopt.stdout, /no tmux server on \/tmp\/tmux-1001\/default: tmux-server\.service starts Ronin's own/);
+    assert.match(adopt.stdout, /No tmux server found: Ronin is starting its own\./);
     assert.match(adopt.stdout, /^adopt=0$/m);
     await assert.rejects(fs.access(path.join(state, 'machine', 'tmux-adoption')), 'nothing is leased when there is no server');
     // uninstall on the same box: a stale lease is evidence of nothing, and goes
@@ -299,19 +299,19 @@ esac
 
   await fs.writeFile(path.join(proc, 'cgroup'), '0::/user.slice/user-1000.slice/user@1000.service/app.slice/tmux-server.service\n');
   const ours = await run(path.join(root, 'ours'));
-  assert.match(ours.stdout, /Ronin's own tmux server is running \(pid \d+, started by tmux-server\.service\): nothing to adopt, nothing leased/);
+  assert.match(ours.stdout, /Tmux server found, and Ronin is joining\./);
   await assert.rejects(fs.access(path.join(root, 'ours', 'machine', 'tmux-adoption')));
   assert.equal(await fs.readFile(writes, 'utf8'), '', 'no option is written to a server the conf already configured');
 
   await fs.writeFile(path.join(proc, 'cgroup'), '0::/user.slice/user-1000.slice/user@1000.service/app.slice/ronin.service\n');
   const inside = await run(path.join(root, 'inside'));
-  assert.match(inside.stdout, /adopted \(pid \d+\)/);
+  assert.match(inside.stdout, /tmux pid \d+: adopted;/);
   assert.match(inside.stdout, /runs inside the operator's own cgroup, so restarting Ronin would end every session in it/);
   await fs.access(path.join(root, 'inside', 'machine', 'tmux-adoption'));
 
   await fs.writeFile(path.join(proc, 'cgroup'), '0::/user.slice/user-1000.slice/session-3.scope\n');
   const theirs = await run(path.join(root, 'theirs'));
-  assert.match(theirs.stdout, /adopted \(pid \d+\)/);
+  assert.match(theirs.stdout, /tmux pid \d+: adopted;/);
   assert.doesNotMatch(theirs.stdout, /operator's own cgroup/);
   await fs.rm(root, { recursive: true, force: true });
 });
@@ -342,7 +342,7 @@ test('the real tmux answers the probe exactly as the fakes say: no socket, live 
     // adopted (its cgroup is unreadable through RONIN_PROC, so it counts as someone else's),
     // leased, restored — and the session is still there: nothing here ever stops a server
     const state = path.join(root, 'state');
-    assert.match((await sh(`ronin_adopt_tmux "${state}"`)).stdout, /adopted \(pid \d+\)/);
+    assert.match((await sh(`ronin_adopt_tmux "${state}"`)).stdout, /tmux pid \d+: adopted;/);
     assert.equal(await option(), 'off');
     assert.match((await sh(`ronin_restore_tmux "${state}" "$1"`)).stdout, /restored tmux exit-empty=on/);
     assert.equal(await option(), 'on');

@@ -118,7 +118,7 @@ ronin_adopt_tmux() { # state root
   ronin_tmux_probe || probe_rc=$?
   case "$probe_rc" in
     0) ;;
-    1) ronin_say "==> no tmux server on $(ronin_tmux_probe_socket): tmux-server.service starts Ronin's own, in its own cgroup, so restarting Ronin never reaches a session"; return 0 ;;
+    1) ronin_say "==> No tmux server found: Ronin is starting its own."; return 0 ;;
     *) return "$probe_rc" ;;
   esac
 
@@ -146,7 +146,7 @@ ronin_adopt_tmux() { # state root
       fi
       # The adopted server is gone (a reboot, most often) and its setting died with it: the
       # old lease has nothing left to restore. The server now here is a new adoption.
-      ronin_say "==> the tmux server recorded at adoption (pid $old_pid) no longer exists; recording the current one instead"
+      echo "==> the tmux server recorded at adoption (pid $old_pid) no longer exists; recording the current one instead"
       rm -f "$lease"
     fi
   fi
@@ -155,7 +155,8 @@ ronin_adopt_tmux() { # state root
   # lease an older release wrote for it stays until uninstall reads it back as a no-op.
   case "$(ronin_tmux_server_owner "$pid")" in
     unit)
-      ronin_say "==> Ronin's own tmux server is running (pid $pid, started by tmux-server.service): nothing to adopt, nothing leased"
+      ronin_say "==> Tmux server found, and Ronin is joining."
+      echo "    tmux pid $pid: owned by tmux-server.service; no adoption lease needed"
       return 0 ;;
     operator)
       ronin_say "    this server runs inside the operator's own cgroup, so restarting Ronin would end every session in it; bin/ronin-doctor names the repair, and the owner times it" ;;
@@ -169,9 +170,10 @@ ronin_adopt_tmux() { # state root
   fi
   ronin_tmux set-option -s exit-empty off
   client_version=$(ronin_tmux -V 2>/dev/null)
-  ronin_say "==> existing tmux server adopted (pid $pid): your sessions stay where they are, in the shared server; exit-empty is leased off (was $prior) and restored on uninstall"
+  ronin_say "==> Tmux server found, and Ronin is joining."
+  echo "    tmux pid $pid: adopted; exit-empty leased off (was $prior); uninstall restores it"
   if [ -n "$server_version" ] && [ "tmux $server_version" != "$client_version" ]; then
-    ronin_say "    the running server is tmux $server_version and Ronin's client is $client_version; the server's behaviour is the one tiles get"
+    echo "    the running server is tmux $server_version and Ronin's client is $client_version; the server's behaviour is the one tiles get"
   fi
 }
 

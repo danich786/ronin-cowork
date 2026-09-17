@@ -9,7 +9,7 @@ import { normalizeGardenCanvasCatalog } from './garden-canvas-model.js';
 import { PRESETS_TYPE, createKindsPreference, registerPresetsSurface } from './presets.js';
 import { launchPresetPlan, presetLaunchUrl } from './preset-launch.js';
 import { reserveWorkspaceTab } from './workspace.js';
-import { setTheme } from './theme.js';
+import { createThemeToggle } from './theme-toggle.js';
 
 const PROFILE = 'setup';
 // Release toggles: unfinished programs stay out of Setup without changing the workbench.
@@ -49,22 +49,7 @@ export function createSetupView() {
   const providerSessions = createProviderSetupSessionMount();
   const kinds = createKindsPreference(globalThis.localStorage, (next) => request('/api/setup/preferences', { method: 'PATCH', json: { kinds: next } }));
   const nextAction = WorkspaceKit.primitives.createAction({ label: 'Next', launch: true, action: () => advance() });
-  const themeToggle = document.createElement('button');
-  themeToggle.className = 'bar-toggle setup-theme-toggle';
-  themeToggle.type = 'button';
-  const paintTheme = () => {
-    const dark = document.documentElement.dataset.theme === 'dark';
-    themeToggle.textContent = dark ? '☀' : '◐';
-    themeToggle.title = dark ? 'Use light appearance' : 'Use dark appearance';
-    themeToggle.setAttribute('aria-label', themeToggle.title);
-    themeToggle.setAttribute('aria-pressed', String(dark));
-  };
-  themeToggle.addEventListener('click', () => {
-    const dark = document.documentElement.dataset.theme === 'dark';
-    setTheme(dark ? 'light' : 'dark');
-    paintTheme();
-  });
-  paintTheme();
+  const themeToggle = createThemeToggle();
   const blank = (id) => WorkspaceKit.primitives.createBlankSurface(id.replace('workspace', 'Workspace ')).el;
   const environment = {
     setupOnboardingExtras: true,
@@ -95,7 +80,9 @@ export function createSetupView() {
     openGardenMedia: async (item) => {
       if (!garden) return;
       if (item.kind !== 'doc') { garden.showMedia({ label: item.label, kind: item.kind, src: item.src }); return; }
-      const query = new URLSearchParams({ root: item.root, path: item.path });
+      const query = new URLSearchParams({ path: item.path });
+      if (item.root) query.set('root', item.root);
+      else query.set('product', '1');
       const result = await request('/api/file?' + query.toString());
       garden.showMedia({ label: item.label, kind: item.kind, text: result.ok ? result.data.text || '' : result.message });
     },
@@ -219,9 +206,7 @@ export function createSetupView() {
   return {
     el: bench.host,
     glyph: '人',
-    hideFeedback: true,
-    hideShapeControl: true,
-    barActions: [themeToggle],
+    header: { actions: [themeToggle] },
     title: () => 'Ronin Setup',
     mount: (_host, context) => { ctx = context; },
     enter: async (context) => {

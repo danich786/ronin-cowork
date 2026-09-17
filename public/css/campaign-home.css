@@ -1,9 +1,6 @@
 
 @layer app {
 
-  body.ronin-home-active #bar > :not(#brandbtn) { display: none !important; }
-
-
   .ch-view {
     --ch-box: 2px;
     --ch-horizon-h: 290px;

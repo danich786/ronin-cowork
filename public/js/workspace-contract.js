@@ -4,6 +4,20 @@ export const WORKSPACE_DESTINATIONS = Object.freeze([
   'campaign', 'cowork', 'team', 'customize', 'commons', 'configuration',
 ]);
 
+/** Shared header capabilities for a movable workbench. Static views opt into only
+ * what they own; undeclared capabilities stay absent. */
+export const WORKBENCH_HEADER = Object.freeze({
+  shape: true,
+  ram: true,
+  services: true,
+  feedback: true,
+});
+export const UTILITY_HEADER = Object.freeze({
+  ram: true,
+  services: true,
+  feedback: true,
+});
+
 const destinationSet = new Set(WORKSPACE_DESTINATIONS);
 const text = (value) => typeof value === 'string' ? value : '';
 

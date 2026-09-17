@@ -3,6 +3,7 @@ import { WorkspaceKit } from './workspace-kit.js';
 import { byId, railSections, resources } from './customize-rail.js';
 import { t } from './lexicon.js';
 import { renderResource } from './customize-resources.js';
+import { UTILITY_HEADER } from './workspace-contract.js';
 
 
 export function buildCustomize() {
@@ -61,6 +62,7 @@ export function buildCustomize() {
 
   return {
     el: layout,
+    header: UTILITY_HEADER,
     title: () => t('customize.title', 'Customize') + ' · ronin',
     enter: () => { if (!current) show(resources()[0].id); },
     rail,

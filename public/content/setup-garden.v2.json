@@ -36,7 +36,6 @@
           "kind": "doc",
           "label": "Install a provider",
           "description": "Choosing a provider in Setup, and what installation opens",
-          "root": "ronin_cowork",
           "path": "docs/getting-started/agent-install.md"
         }
       ]
@@ -62,7 +61,6 @@
           "kind": "doc",
           "label": "Registration and Services",
           "description": "What registering establishes, and what it does not gate",
-          "root": "ronin_cowork",
           "path": "docs/getting-started/services-activation.md"
         }
       ]
@@ -98,7 +96,6 @@
           "kind": "doc",
           "label": "Workspace Folders",
           "description": "What a Workspace Folder is, and how to choose one",
-          "root": "ronin_cowork",
           "path": "docs/getting-started/workspace-folders.md"
         }
       ]
@@ -134,7 +131,6 @@
           "kind": "doc",
           "label": "Ronin Services",
           "description": "Optional capabilities, and how to switch them on",
-          "root": "ronin_cowork",
           "path": "docs/getting-started/services-activation.md"
         }
       ]
@@ -165,7 +161,6 @@
           "kind": "doc",
           "label": "The tile",
           "description": "Where an Agent terminal, documents and work record live",
-          "root": "ronin_cowork",
           "path": "docs/using-ronin/tile.md"
         }
       ]

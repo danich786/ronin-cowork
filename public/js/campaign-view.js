@@ -22,6 +22,7 @@ import { toast } from './ui.js';
 import { openLaunchForm } from './workspace.js';
 import { createDocumentWorkspaceAdapter } from './docs.js';
 import { installBehaviourReader } from './behaviour-reader.js';
+import { WORKBENCH_HEADER } from './workspace-contract.js';
 
 const PROFILE = 'campaign';
 const MIKA_SESSION = 'mika_agent';
@@ -205,7 +206,7 @@ export function createCampaignView() {
   });
   mikaHelp.el.addEventListener('click', () => { void helpPanel.open(); });
   return {
-    el: bench.host, glyph: '⛩', arrangement: bench.arrangement,
+    el: bench.host, glyph: '⛩', arrangement: bench.arrangement, header: WORKBENCH_HEADER,
     title: () => t('campaign.settings_short_title', 'Settings'),
     placeFeedback: () => bench.place(FEEDBACK_TYPE, bench.selected()),
     mount: (_host, context) => { ctx = context; },
