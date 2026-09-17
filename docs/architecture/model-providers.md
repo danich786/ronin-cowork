@@ -144,9 +144,12 @@ What this machine *has* is measured, not derived on every read. The Campaign rec
 Everything else reads the record through `GET /api/setup/runtime`: Ronin Home's three
 blocks, the Presets gates, the gbrain next step and the selector summaries. A machine that
 has never been measured is measured once on the first read, not guessed. A stale summary
-shows its date. Agent installs run in a tile with no completion hook in the server, so a
-freshly installed CLI shows on the next visit to Model providers or the next Ronin start;
-a count that lags an install by that much is the measurement, not a bug.
+shows its date. `POST /api/setup/providers/:provider/install` uses the shared installer
+and returns the runtime with its explicit `install_open` session attachment. Setup and
+Settings mount that attachment on the provider page, including first-run sign-in. It stays
+available after the binary appears, until Close ends the session and measures again.
+There is no completion hook in the installer; closing the tile, reopening Model providers,
+or restarting Ronin refreshes the measured installation and credential facts.
 
 ## Provider and agent are different axes
 
@@ -405,3 +408,17 @@ the shipped catalog.
    explicitly requested ([verification guidance](../development/verification.md)).
 8. Launch every new row through ＋ New session. Confirm the receipt's command, the agent
    and model visible in the tile, and the complete startup request received by the agent.
+
+
+## Setup sessions and sign-in descriptions
+
+`src/setup-session.ts` creates and identifies temporary setup sessions for provider
+installation, sign-in and update, and GitHub installation and authentication. Each runtime
+publishes the same explicit session attachment. Both UIs mount it through
+`provider-setup-session.js`; Close ends the temporary tmux session.
+
+Close/Done can save an owner-described `sign_in` record under
+`setup.providers.<cli>.sign_in` in machine settings: `method` (`subscription`, `api_key`,
+`third_party`), `label`, and `recorded_at`. An explicit null clears that description.
+It contains no credentials and does not establish authentication, change the CLI's
+configuration, or select an account for future launches. Activation preserves the record.

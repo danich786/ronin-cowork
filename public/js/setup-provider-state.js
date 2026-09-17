@@ -65,6 +65,11 @@ export function providerPresentation(provider) {
     detail: `Finish signing in to ${label} in the tile, then press Done. Close keeps things as they were.`,
     action: 'login_open',
   };
+  if (provider?.install_open) return {
+    inventoryState: 'Installation open',
+    detail: 'Finish installation and any first-run sign-in in the tile here, then press Close to check readiness.',
+    action: 'install_open',
+  };
   if (provider?.activated) return {
     inventoryState: 'Activated',
     detail: signedInSentence(provider),
@@ -107,6 +112,7 @@ export const TURN_OFF_SENTENCE = 'Turn off stops Ronin measuring, updating and l
 
 /** The Install step's text for an installed CLI: about updating, or nothing. */
 function installedDetail(provider) {
+  if (provider?.install_open && !provider?.login_open) return 'Finish installation and any first-run sign-in in the tile here, then press Close to check readiness.';
   if (provider?.update_open && !provider?.login_open) return 'Updating in the page: when it has printed the new version, press Close, then Refresh. Tiles already running keep the version they started with; every launch after this gets the new one.';
   if (provider?.activated && provider?.updatable && provider?.update_available) return 'Runs here in the page. Tiles already running keep the version they started with; every launch after this gets the new one.';
   if (provider?.self_updates) return 'Usually updates itself.';

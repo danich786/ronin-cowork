@@ -476,3 +476,48 @@ test('Setup kinds are canonical runtime facts and persist without replacing setu
 });
 
 test.after(async () => { await rm(box, { recursive: true, force: true }); });
+
+test('provider installation publishes the same resumable attachment before and after the CLI appears', async () => {
+  const exists = async (name: string) => name === 'install_codex';
+  for (const installed of [[], ['codex']]) {
+    const provider = row(await answer({}, installed, [], exists), 'codex');
+    assert.equal(provider.install_open, true);
+    assert.deepEqual(provider.attachment, { type: 'session', key: 'install_codex', team: 'provider_setup', temporary: true });
+  }
+});
+
+
+test('first-run sign-in during installation becomes Ready on measurement without a second login', async () => {
+  const signed = row(await answer({}, ['codex'], ['codex']), 'codex');
+  assert.equal(signed.activated, true);
+  assert.equal(signed.login_open, false);
+  assert.equal(signed.attachment, null);
+  const unsigned = row(await answer({}, ['codex']), 'codex');
+  assert.equal(unsigned.activated, false);
+  assert.equal(unsigned.state, 'installed');
+});
+
+
+test('owner sign-in descriptions persist independently of authentication and preserve other provider settings', async () => {
+  const { readSetupSection, updateSection } = await import('../src/machine-state.js');
+  await updateSection<Record<string, any>>('setup', (setup) => ({ ...setup, providers: { ...setup.providers, codex: { activated_at: 'earlier', off_at: 'off' } } }));
+  const saved = await runtime.saveProviderSignIn('codex', { method: 'third_party', label: 'Work OpenRouter' });
+  let section = await readSetupSection() as any;
+  assert.deepEqual(section.providers.codex.sign_in, saved);
+  assert.equal(section.providers.codex.activated_at, 'earlier');
+  assert.equal(section.providers.codex.off_at, 'off');
+  await runtime.completeProviderLogin('codex', { exists: async () => true, open: async () => {}, close: async () => {} });
+  section = await readSetupSection() as any;
+  assert.deepEqual(section.providers.codex.sign_in, saved, 'Done preserves the descriptive record');
+  assert.deepEqual(row(await answer(section, ['codex']), 'codex').sign_in, saved);
+  await assert.rejects(runtime.saveProviderSignIn('codex', { method: 'api_key', label: '' }), /label/);
+  await assert.rejects(runtime.saveProviderSignIn('codex', { method: 'guess', label: 'Work' }), /Choose/);
+  await runtime.saveProviderSignIn('codex', null);
+  section = await readSetupSection() as any;
+  assert.equal(section.providers.codex.sign_in, undefined);
+  assert.ok(section.providers.codex.activated_at);
+  const fresh = await runtime.saveProviderSignIn('claude', { method: 'subscription', label: 'Personal Claude' });
+  section = await readSetupSection() as any;
+  assert.equal(section.providers.claude.activated_at, undefined, 'a descriptive note never authenticates a provider');
+  assert.deepEqual(row(await answer(section, []), 'claude').sign_in, fresh);
+});

@@ -6086,6 +6086,11 @@ button.wb-door:hover b {
   .setup-provider-step { grid-template-columns: auto minmax(0, 1fr) auto; }
   .setup-provider-control { grid-column: auto; align-self: center; justify-content: flex-end; }
 }
+.setup-provider-completion { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4); }
+.setup-provider-completion[hidden], .setup-provider-sign-in-title[hidden] { display: none; }
+.setup-provider-completion > .setup-provider-note, .setup-provider-completion > .ask { flex-basis: 100%; }
+.setup-provider-sign-in-title { display: grid; gap: var(--space-2); }
+.setup-provider-sign-in-title input { background: var(--well); color: var(--fg); border: var(--edge) solid var(--line); padding: var(--space-3); font: inherit; }
 .setup-provider-problem { margin: 0; }
 .setup-provider-problem[hidden] { display: none; }
 /* The native sign-in tile: headerless, since it is a sign-in and not a session anyone
