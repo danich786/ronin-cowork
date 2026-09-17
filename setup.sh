@@ -607,26 +607,11 @@ fi
 # Linux only, deliberately: macOS renders the launchd agent but the user loads it by
 # hand, so setup.sh has no moment where the service is observably ready to open.
 if [ "$OS" = "Linux" ]; then
-  RONIN_READY=0
-  for _ in 1 2 3 4 5 6 7 8 9 10; do
-    if "$NODE_DIR/node" -e '
-      const u = new URL("/api/health", process.argv[1]);
-      const client = require(u.protocol === "https:" ? "node:https" : "node:http");
-      const req = client.get(u,
-        r => { r.resume(); process.exit(r.statusCode === 200 ? 0 : 1); });
-      req.setTimeout(500, () => req.destroy());
-      req.on("error", () => process.exit(1));
-    ' "$OPEN_URL" >/dev/null 2>&1; then
-      RONIN_READY=1
-      break
-    fi
-    sleep 1
-  done
-  if [ "$RONIN_READY" -eq 1 ]; then
+  if "$NODE_DIR/node" "$REPO_DIR/libexec/ronin-wait-ready.cjs" "$OPEN_URL"; then
     "$REPO_DIR/libexec/ronin-open-browser" "$OPEN_URL" || true
   else
     out ""
-    out "  Ronin started, but its selected address did not pass the health check:"
+    out "  Ronin is installed, but its HTTPS address did not pass the health check:"
     out "  $OPEN_URL"
     out "  Install details: $RONIN_SETUP_LOG"
     out ""

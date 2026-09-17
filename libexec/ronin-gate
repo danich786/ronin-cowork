@@ -16,14 +16,30 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 say() { :; } # render_check requires a progress reporter; this gate grades by return code below.
 # shellcheck source=ronin-render-check.sh
 . "$ROOT/libexec/ronin-render-check.sh"
+# The service's Node process reads .env itself; ExecStartPost does not inherit that
+# process's environment. Read the same file with dotenv (never source it as shell).
+# Explicit service environment still wins, just as it does for the application.
+if ! ADDRESS="$(cd "$ROOT" && node -e '
+  require("dotenv").config();
+  console.log(process.env.PORT || "4810", process.env.BIND?.trim() || "unset");
+')"; then
+  echo 'RONIN GATE: FAIL — could not read the backend configuration'
+  exit 0
+fi
+read -r PORT HOSTIP <<< "$ADDRESS"
 PORT="${PORT:-4810}"
-if [ -n "${BIND:-}" ]; then
-  HOSTIP="$BIND"
+if [ -n "${HOSTIP:-}" ] && [ "$HOSTIP" != unset ]; then
+  :
 elif command -v tailscale >/dev/null 2>&1 && tailscale ip -4 >/dev/null 2>&1; then
   HOSTIP="$(tailscale ip -4 | head -1)"
 else
   HOSTIP="127.0.0.1"
 fi
+case "$HOSTIP" in
+  0.0.0.0) HOSTIP=127.0.0.1 ;;
+  ::) HOSTIP='[::1]' ;;
+  *:*) HOSTIP="[$HOSTIP]" ;;
+esac
 URL="${RONIN_GATE_URL:-http://${HOSTIP}:${PORT}/}"
 
 # Wait for the server to answer at all (up to ~40s).
