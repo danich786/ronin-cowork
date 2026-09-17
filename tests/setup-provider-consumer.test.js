@@ -154,6 +154,6 @@ test('provider steps adapt to the shared stone surface width with one control si
   assert.match(css, /\.setup-provider-label \{[^}]*font-size: var\(--text-7\)/);
   assert.match(css, /\.setup-provider-note \{[^}]*font-size: var\(--text-5\)/);
   assert.match(css, /\.setup-provider-control > \.setup-provider-action:disabled \{[^}]*background: transparent/);
-  assert.match(css, /\.setup-provider-terminal \{[^}]*min-height: max\(30rem, 78vh\)/);
+  assert.match(css, /\.setup-provider-terminal \{[^}]*height: min\(30rem, 50dvh\); min-height: 0/);
   assert.match(css, /\.setup-provider-terminal \.tile > \.tile-head \{ display: none; \}/);
 });
