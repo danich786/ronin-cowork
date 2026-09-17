@@ -199,7 +199,9 @@ export function createProviderSurface(context) {
       ] }] }], { value: { method }, onChange: (value) => { method = value.method; update(); }, trayHost: fields });
       title.addEventListener('input', update);
       fields.append(field, signInForm.el);
-      completion.append(fields, message, submit);
+      const actions = el('div', 'setup-provider-completion-actions');
+      actions.append(submit, closeSetup());
+      completion.append(fields, message, actions);
       update();
     };
     // One shape for all three steps: a mark that says done, current, or pending; the label
@@ -242,10 +244,12 @@ export function createProviderSurface(context) {
     if ((provider.install_open || provider.update_open) && !provider.login_open) {
       const terminal = el('div', 'setup-provider-terminal');
 
-      const close = closeSetup();
-      close.classList.add('setup-provider-update-close');
-      installRow.controls.append(close);
-      installRow.item.append(terminal);
+      if (!provider.install_open) {
+        const close = closeSetup();
+        close.classList.add('setup-provider-update-close');
+        installRow.item.append(terminal, close);
+      }
+      if (provider.install_open) installRow.item.append(terminal);
       if (provider.install_open) {
         finish(`/api/setup/providers/${encodeURIComponent(provider.id)}/done`);
         installRow.item.append(completion);
@@ -294,7 +298,6 @@ export function createProviderSurface(context) {
       authRow.controls.append(control(auth, t('setup_surface.authenticate', 'Authenticate'), () => press(`/api/setup/providers/${encodeURIComponent(provider.id)}/login`)));
     } else if (auth.action === 'login_open') {
       const terminal = el('div', 'setup-provider-terminal');
-      authRow.controls.append(closeSetup());
       finish(`/api/setup/providers/${encodeURIComponent(provider.id)}/done`);
       authRow.item.append(terminal, completion);
       mounted = mountProviderAttachment(context.environment, terminal, provider, context.workspace);

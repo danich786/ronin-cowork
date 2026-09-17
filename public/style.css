@@ -6087,6 +6087,8 @@ button.wb-door:hover b {
   .setup-provider-control { grid-column: auto; align-self: center; justify-content: flex-end; }
 }
 .setup-provider-completion { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-6); min-width: 0; padding: var(--space-6); border: var(--edge) solid var(--line); border-radius: var(--radius-xs); }
+.setup-provider-completion-actions { display: flex; flex-wrap: wrap; gap: var(--space-4); width: 100%; }
+.setup-provider-completion-actions > .wk-action { flex: 0 0 10rem; width: 10rem; min-height: 2.25rem; }
 .setup-provider-authentication-fields { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-6); width: 100%; min-width: 0; }
 .setup-provider-completion[hidden], .setup-provider-sign-in-title[hidden] { display: none; }
 .setup-provider-completion > .setup-provider-note { margin: 0; }
