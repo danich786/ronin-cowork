@@ -136,7 +136,7 @@ What this machine *has* is measured, not derived on every read. The Campaign rec
 `src/provider-summary.ts` measures and records it. It is written:
 
 - at Ronin start;
-- after **Done** and after **Close** on the Setup Model providers surface (a sign-in
+- after **Done** and after **Cancel** on the Setup Model providers surface (a sign-in
   closed without Done may still have left a credential file);
 - whenever the Setup **Model providers** surface is opened — that surface paints the record
   first, then probes behind it with `POST /api/setup/providers/measure` and repaints.
@@ -147,7 +147,7 @@ has never been measured is measured once on the first read, not guessed. A stale
 shows its date. `POST /api/setup/providers/:provider/install` uses the shared installer
 and returns the runtime with its explicit `install_open` session attachment. Setup and
 Settings mount that attachment on the provider page, including first-run sign-in. It stays
-available after the binary appears, until Close ends the session and measures again.
+available after the binary appears, until Cancel ends the session and measures again.
 There is no completion hook in the installer; closing the tile, reopening Model providers,
 or restarting Ronin refreshes the measured installation and credential facts.
 
@@ -236,7 +236,7 @@ for the stock file, *Your catalog copy, updated <date>* when the owner's store s
 and when this machine was last measured.
 
 A stone opens that provider, top to bottom: **Yours**, the three measured steps (install ·
-authenticate with the native sign-in tile, Done and Close · ready) read from the runtime
+authenticate with the native sign-in tile, Done and Cancel · ready) read from the runtime
 row (`docs/getting-started/setup-workbench.md`, *Activate a provider*); then **The catalog**, the three
 measured facts, dated, and the model table — model, tier, cost as read, good at, not good
 at — with the marked default said. Where the CLI publishes its own model list, each row
@@ -276,7 +276,7 @@ machine again and asks the npm registry for each operational/activated CLI whose
 install line names an npm package — one outbound request each, on the egress record, only
 on this press — and then says what it found with the time, *Checked … — unchanged* or the
 numbers that moved. **Update** runs the registry's `operations.update` line in a temporary
-`provider_setup` session shown in the page exactly as a sign-in is. The same **Close** ends
+`provider_setup` session shown in the page exactly as a sign-in is. The same **Cancel** ends
 all three temporary sessions — install, sign-in and update — through one teardown; npm is
 pointed at the owner's own prefix, so no box needs root and the owner
 answers nothing. It is the owner's press, never Ronin's. Tiles already running keep the
@@ -414,10 +414,11 @@ the shipped catalog.
 
 `src/setup-session.ts` creates and identifies temporary setup sessions for provider
 installation, sign-in and update, and GitHub installation and authentication. Each runtime
-publishes the same explicit session attachment. Both UIs mount it through
-`provider-setup-session.js`; Close ends the temporary tmux session.
+publishes the same explicit session attachment. Each opens a normal tmux shell and
+runs the command inside it, so exiting the CLI returns to the shell prompt. Both UIs mount it through
+`provider-setup-session.js`; Cancel ends the temporary tmux session.
 
-Close/Done can save an owner-described `sign_in` record under
+Done saves an owner-described `sign_in` record under
 `setup.providers.<cli>.sign_in` in machine settings: `method` (`subscription`, `api_key`,
 `third_party`), `label`, and `recorded_at`. An explicit null clears that description.
 It contains no credentials and does not establish authentication, change the CLI's

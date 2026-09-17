@@ -43,7 +43,7 @@ test('installed providers say what Authenticate does; signed-in providers say wh
   const quiet = providerReadiness({ id: 'claude', label: 'Claude Code', installed: true, signed_in: true, activated: true, updatable: true, update_available: false, self_updates: true });
   assert.equal(quiet[0].detail, 'Usually updates itself.'); assert.equal(quiet[0].command, '');
   const running = providerReadiness({ id: 'claude', label: 'Claude Code', installed: true, signed_in: true, activated: true, update_open: true });
-  assert.match(running[0].detail, /^Updating in the page: when it has printed the new version, press Close, then Refresh\./); assert.equal(running[0].command, '');
+  assert.match(running[0].detail, /^Updating in the page: when it has printed the new version, press Cancel, then Refresh\./); assert.equal(running[0].command, '');
   const offSteps = providerReadiness({ id: 'codex', label: 'Codex', installed: true, signed_in: true, activated: false, off: true });
   assert.deepEqual(offSteps.map((step) => [step.key, step.status, step.done, step.current, step.action]), [
     ['installed', 'installed', true, false, 'none'],
@@ -54,7 +54,7 @@ test('installed providers say what Authenticate does; signed-in providers say wh
   const recorded = providerPresentation({ id: 'codex', label: 'Codex', installed: true, activated: true, signed_in: false, activated_at: '2026-09-07T11:02:00.000Z' });
   assert.equal(recorded.detail, 'Sign-in recorded 2026-09-07. Codex asks again itself if it ever needs to.');
   const open = providerPresentation({ id: 'codex', label: 'Codex', installed: true, login_open: true });
-  assert.equal(open.detail, 'Finish signing in to Codex in the tile, then press Done. Close keeps things as they were.');
+  assert.equal(open.detail, 'Finish signing in to Codex in the tile, then press Done. Cancel ends this terminal session without saving these details.');
   assert.doesNotMatch(open.detail + recorded.detail + measured.detail, /Done \/ Close records/);
 });
 

@@ -26,8 +26,9 @@ class FakeNode {
   set textContent(value) { this._text = String(value || ''); this.children = []; }
   get classList() { const self = this; return { add: (...names) => { self.className = [self.className, ...names].filter(Boolean).join(' '); }, remove: (...names) => { self.className = self.className.split(' ').filter((n) => !names.includes(n)).join(' '); }, toggle: (name, on) => { on ? this.add(name) : this.remove(name); }, contains: (name) => self.className.split(' ').includes(name) }; }
 }
+globalThis.requestAnimationFrame = (callback) => setTimeout(callback, 0);
 globalThis.Node = FakeNode;
-globalThis.document = { createDocumentFragment: () => new FakeNode('fragment'), createElement: (tag) => new FakeNode(tag), createElementNS: (_ns, tag) => new FakeNode(tag), querySelector: () => null, head: { append() {} } };
+globalThis.document = { createDocumentFragment: () => new FakeNode('fragment'), createElement: (tag) => new FakeNode(tag), createElementNS: (_ns, tag) => new FakeNode(tag), querySelector: () => null, head: { append() {} }, addEventListener() {}, removeEventListener() {} };
 globalThis.window = { matchMedia: () => ({ matches: false }), addEventListener() {}, removeEventListener() {} };
 
 let catalog = { origin: 'stock', path: '/stock/MODEL_PROVIDERS.md', updated: '2026-09-08', stock_updated: '2026-09-08', withdrawn: [], providers: [
@@ -189,8 +190,8 @@ test('an update in progress is the same window-in-a-window as a sign-in, with th
     const step = byClass(made.el, 'setup-provider-step')[0];
     assert.ok(byClass(step, 'setup-provider-terminal')[0], 'in the Install step');
     assert.equal(byClass(step, 'setup-provider-update').length, 0, 'no second Update while one runs');
-    assert.match(byClass(step, 'setup-provider-note')[0].textContent, /press Close, then Refresh/);
-    assert.deepEqual(step.children.map((node) => node.className), ['setup-provider-mark', 'setup-provider-copy', 'setup-provider-control', 'setup-provider-terminal'], 'the terminal is the one thing a grid may carry beyond its three columns');
+    assert.match(byClass(step, 'setup-provider-note')[0].textContent, /press Cancel, then Refresh/);
+    assert.deepEqual(step.children.map((node) => node.className), ['setup-provider-mark', 'setup-provider-copy', 'setup-provider-control', 'setup-provider-terminal', 'wk-action setup-provider-action setup-provider-update-close'], 'the terminal is the one thing a grid may carry beyond its three columns');
     calls.length = 0;
     byClass(step, 'setup-provider-update-close')[0].click();
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -255,7 +256,7 @@ test('a sign-in in progress mounts the native tile through the environment, on w
   assert.equal(ctx.mounts[0].provider.id, 'codex');
   assert.ok(byClass(made.el, 'setup-provider-terminal')[0]);
   const labels = byClass(byClass(made.el, 'setup-provider')[0], 'setup-provider-action').map((node) => node.textContent);
-  assert.deepEqual(labels, ['Done', 'Close', 'Cancel setup'], 'the card owns only the current step\'s controls; Refresh sits by the dates, outside it');
+  assert.deepEqual(labels, ['Cancel'], 'the card owns only the current step\'s controls; Refresh sits by the dates, outside it');
   // Without a mount in the environment the surface says so rather than failing.
   const bare = surface.createProviderSurface({ ...context(), environment: {} });
   await bare.show(); await settle();
@@ -355,9 +356,8 @@ test('Install mounts its returned session inline, survives a completed install, 
     await view.show(); await settle();
     assert.equal(ctx.mounts.at(-1).session, 'install_grok', 'installation output stays reachable once the CLI is on PATH');
     assert.equal(byClass(view.el, 'setup-provider-action').some((n) => n.textContent === 'Authenticate'), false);
-    byClass(view.el, 'setup-provider-action').find((n) => n.textContent === 'Close').click();
     assert.equal(byClass(view.el, 'setup-provider-completion')[0].hidden, false);
-    byClass(byClass(view.el, 'setup-provider-completion')[0], 'setup-provider-action').find((n) => n.textContent === 'Cancel setup').click();
+    byClass(byClass(view.el, 'setup-provider-completion')[0], 'setup-provider-action').find((n) => n.textContent === 'Cancel').click();
     await settle();
     assert.ok(requests.includes('/api/setup/providers/grok/close'));
     assert.ok(byClass(view.el, 'setup-provider-action').some((n) => n.textContent === 'Authenticate'));
@@ -381,12 +381,12 @@ test('Done asks through Erabi for the sign-in method and title, then submits tha
   try {
     await view.show(); await settle();
     byClass(view.el, 'sws-stone').find((n) => n.attributes['data-provider'] === 'codex').click();
-    byClass(view.el, 'setup-provider-action').find((n) => n.textContent === 'Done').click();
     assert.equal(saved, null, 'opening the question does not finish authentication');
     const panel = byClass(view.el, 'setup-provider-completion')[0];
     assert.equal(byClass(panel, 'ask').length, 1);
-    walk(panel).find((n) => n.tagName === 'BUTTON' && n.textContent === 'Subscription').click();
-    const save = walk(panel).find((n) => n.tagName === 'BUTTON' && n.textContent === 'Save and close');
+    byClass(panel, 'ask-stone')[0].click();
+    byClass(panel, 'ask-opt').find((n) => n.dataset.askValue === 'subscription').click();
+    const save = walk(panel).find((n) => n.tagName === 'BUTTON' && n.textContent === 'Done');
     assert.equal(save.disabled, true, 'a named sign-in is required');
     const input = walk(panel).find((n) => n.tagName === 'INPUT');
     input.value = 'Personal account';
@@ -394,7 +394,7 @@ test('Done asks through Erabi for the sign-in method and title, then submits tha
     assert.equal(save.disabled, false);
     save.click(); await settle();
     assert.deepEqual(saved, { method: 'subscription', label: 'Personal account' });
-    assert.match(view.el.textContent, /Your sign-in record: Subscription · Personal account/);
+    assert.match(view.el.textContent, /Your sign-in record: Account \/ subscription · Personal account/);
   } finally { view.destroy(); machine = originalMachine; globalThis.fetch = originalFetch; }
 });
 

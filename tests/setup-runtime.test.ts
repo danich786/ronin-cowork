@@ -257,16 +257,17 @@ test('GitHub login session is born through the provider setup identity contract'
     create: async (...args) => { calls.push(['create', ...args]); },
     tag: async (...args) => { calls.push(['tag', ...args]); },
     identify: async (...args) => { calls.push(['identify', ...args]); },
-  });
+  }, async (...args) => { calls.push(['command', ...args]); });
   assert.deepEqual(calls, [
     ['create', 'setup_github', os.homedir(), {
       agent: false,
-      argv: ['gh', 'auth', 'login', '--hostname', 'github.com', '--git-protocol', 'https'],
+      argv: [],
     }],
     ['tag', 'setup_github', ['provider_setup']],
     ['identify', 'setup_github', {
       sessionType: 'provider_setup', cli: 'gh', provider: 'github', model: '',
     }],
+    ['command', 'setup_github', 'gh auth login --hostname github.com --git-protocol https'],
   ]);
 });
 
