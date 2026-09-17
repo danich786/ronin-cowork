@@ -1967,3 +1967,6 @@ The catalog entry goes. {dir} is not touched.
 
 - **setup_surface.name_before_close:** To close, name your authentication.
 - **setup_surface.type_before_close:** Choose an authentication type, or Not signed in.
+
+- **setup_surface.authentication_title:** Authentication title
+- **setup_surface.authentication_title_hint:** Choose a title

@@ -165,8 +165,8 @@ export function createProviderSurface(context) {
       const draft = authenticationDrafts.get(provider.id) || provider.sign_in || {};
       const title = el('input'); title.type = 'text'; title.maxLength = 120;
       title.value = draft.label || '';
-      title.placeholder = t('setup_surface.authentication_name_hint', 'Email address or account name');
-      const field = el('label', 'setup-provider-sign-in-title', t('setup_surface.authentication_name', 'Authentication name'));
+      title.placeholder = t('setup_surface.authentication_title_hint', 'Choose a title');
+      const field = el('label', 'setup-provider-sign-in-title', t('setup_surface.authentication_title', 'Authentication title'));
       field.append(title);
       let method = draft.method || '';
       const message = el('p', 'setup-notice bad'); message.hidden = true;
@@ -189,14 +189,16 @@ export function createProviderSurface(context) {
       };
       const submit = action(t('setup_surface.done', 'Done'), 'primary', () => saveAuthentication(path));
       const update = () => { authenticationDrafts.set(provider.id, { method, label: title.value }); field.hidden = method === 'not_signed_in'; submit.disabled = !method || (method !== 'not_signed_in' && !title.value.trim()); };
+      const fields = el('div', 'setup-provider-authentication-fields');
       signInForm = ask([{ fields: [{ key: 'method', label: t('setup_surface.authentication_type', 'Authentication type'), options: [
         { v: 'subscription', l: t('setup_surface.account_subscription', 'Account / subscription') },
         { v: 'api_key', l: t('setup_surface.api_key', 'API key') },
         { v: 'third_party', l: t('setup_surface.third_party', 'Third-party service'), sub: t('setup_surface.third_party_hint', 'For example, OpenRouter. Put the service or account name in the title.') },
         { v: 'not_signed_in', l: t('setup_surface.not_authenticated', 'Not signed in') },
-      ] }] }], { value: { method }, onChange: (value) => { method = value.method; update(); }, exposed: true });
+      ] }] }], { value: { method }, onChange: (value) => { method = value.method; update(); }, trayHost: fields });
       title.addEventListener('input', update);
-      completion.append(field, signInForm.el, message, submit);
+      fields.append(field, signInForm.el);
+      completion.append(fields, message, submit);
       update();
     };
     // One shape for all three steps: a mark that says done, current, or pending; the label
