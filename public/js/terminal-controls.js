@@ -164,8 +164,17 @@ export function flashControlHints() {
     card.open = true;
     card.scrollIntoView({ block: 'nearest' });
     for (const animation of card.getAnimations()) if (animation.id === 'selection-hint') animation.cancel();
-    const orange = { outline: '2px solid var(--kaki)', boxShadow: '0 0 0 4px var(--kaki)' };
-    const quiet = { outline: '2px solid transparent', boxShadow: '0 0 0 0 transparent' };
+    const backgroundColor = getComputedStyle(card).backgroundColor;
+    const orange = {
+      backgroundColor: 'var(--kaki)',
+      outline: '2px solid var(--kaki)',
+      boxShadow: '0 0 0 4px var(--kaki)',
+    };
+    const quiet = {
+      backgroundColor,
+      outline: '2px solid transparent',
+      boxShadow: '0 0 0 0 transparent',
+    };
     const frames = window.matchMedia('(prefers-reduced-motion: reduce)').matches
       ? [orange, orange] : [orange, quiet, orange, quiet];
     card.animate(frames, { duration: 2500, easing: 'ease-out', id: 'selection-hint' });
