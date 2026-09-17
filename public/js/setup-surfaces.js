@@ -211,7 +211,7 @@ function createRegisterSurface(context) {
     if (result.ok) userIntro.hidden = true;
     return result.ok;
   };
-  const saveUserIntroAction = action(t('setup_surface.user_intro_save', 'Save Agent introduction'), 'primary', () => { void saveUserIntro(); });
+  const saveUserIntroAction = action(t('setup_surface.user_intro_submit', 'Submit'), 'primary', () => { void saveUserIntro(); });
   const userIntroActions = el('div', 'setup-user-intro-actions');
   userIntroActions.append(saveUserIntroAction, el('span', 'setup-fine', t('setup_surface.user_intro_local_only', 'Saved locally — not sent to Ronin.')));
   userIntro.append(
