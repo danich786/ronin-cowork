@@ -133,7 +133,7 @@ ronin_banner() { # <root> <url> [report] [warning]
   [ -f "$root/VERSION" ] && ver="$(sed -n 's/^release=//p' "$root/VERSION" 2>/dev/null || true)"
   [ -n "$ver" ] && ver=" $ver "
 
-  local l1="$mark  Yoshi, Ronin is running on your machine."
+  local l1="$mark  Yatta, Ronin is running on your machine."
   local w1=$(( ${#l1} + 1 ))
   local w="$w1"
   local chrome=$(( ${#title} + ${#ver} + 4 ))

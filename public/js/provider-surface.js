@@ -424,10 +424,10 @@ export function createProviderSurface(context) {
     context.environment.setupRuntime = runtime;
     const activatedNow = Number(runtime.activated_count || 0);
     context.environment.onSetupRuntime?.(runtime);
-    mikaAvailability.textContent = activatedNow === 0
-      ? t('setup_surface.mika_waits', 'Mika becomes available after you install and sign in to a model provider. Registration, Ronin Services, and gbrain are optional next steps.')
-      : activatedNow === 1 ? t('setup_surface.one_model_signed_in', '1 model signed in')
-        : t('setup_surface.models_signed_in', '{count} models signed in', { count: activatedNow });
+    mikaAvailability.hidden = activatedNow === 0;
+    mikaAvailability.textContent = activatedNow === 1
+      ? t('setup_surface.one_model_signed_in', '1 model signed in')
+      : activatedNow > 1 ? t('setup_surface.models_signed_in', '{count} models signed in', { count: activatedNow }) : '';
     await loadProviderCatalog();
     context.workbench?.refreshSelector?.();
     const rows = providerCatalog().rows;
