@@ -203,9 +203,9 @@ export function createWorkspace(host, options = {}) {
     map = invoke(id, 'map', () => WorkspacePrimitives.createLayoutMap(view.arrangement)) || null;
     if (map) mapSlot.append(map.el);
   };
-  // HEADER CAPABILITIES. A view declares only what it owns: compact actions, pane-count
-  // control, and machine telemetry. The ViewHost seats those capabilities and defaults
-  // every undeclared one to absent, so a static page cannot inherit workbench chrome.
+  // HEADER CAPABILITIES. A view declares only what it owns: compact actions, pane count,
+  // machine telemetry, Services state, and Feedback. The ViewHost seats them and defaults
+  // every undeclared capability to absent, so a static page cannot inherit workbench chrome.
   const actionsSlot = options.actionsSlot instanceof Element ? options.actionsSlot : null;
   const showActions = (id, view) => {
     if (!actionsSlot) return;
@@ -278,10 +278,11 @@ export function createWorkspace(host, options = {}) {
     if (active?.view !== next) { showMap(id, next); showActions(id, next); }
     showName(id, next);
     const feedback = document.getElementById('feedbackaction');
-    if (feedback) feedback.hidden = next.hideFeedback === true;
+    if (feedback) feedback.hidden = next.header?.feedback !== true;
     const shapeControl = document.getElementById('shapecycle');
     if (shapeControl) shapeControl.hidden = next.header?.shape !== true;
     options.ramRpm?.setVisible(next.header?.ram === true);
+    options.servicesStatus?.setVisible(next.header?.services === true);
     active = { id, view: next, param };
     state.view = id;
     if (id === 'team') state.team = param;

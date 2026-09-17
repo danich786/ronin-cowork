@@ -23,6 +23,7 @@ import { refreshDesks } from './desks.js';
 import { acceptDrops as acceptSessionDrops } from './team-drag.js';
 import { S } from './state.js';
 import { renderTeamConfiguration } from './team-configuration.js';
+import { WORKBENCH_HEADER } from './workspace-contract.js';
 import { agentTitle, buildTeamMembers, configSignature } from './team-members.js';
 import { isCoarse } from './tiledrop.js';
 import { createFeedbackSurface, FEEDBACK_TYPE, registerFeedbackSurface } from './feedback.js';
@@ -786,7 +787,7 @@ export function createCoworkView(options = {}) {
     el: root, glyph: campaign ? '⛩' : '人',
     // The ViewHost draws the Kit's layout map in the bar for this while the view is active.
     arrangement: bench.arrangement,
-    header: { shape: true, ram: true },
+    header: WORKBENCH_HEADER,
     // The owner's per-tab name; Teams defaults to its page name, a Team to the Team name.
     title: ({ param, viewState }) => {
       const fallback = campaign ? coworkIdentity.tabLabel : (readableTeam(param || team) || t('team.team', 'Team'));

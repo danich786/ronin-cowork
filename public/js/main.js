@@ -48,6 +48,7 @@ export async function init() {
   // rather than appearing a minute in. Guarded like every other mount: a box that
   // cannot answer /api/machine must still get its coworkspace.
   const ramRpm = guard('mount RAM_RPM', mountRamRpm, { setVisible() {} });
+  const servicesStatus = guard('services activation status', installServicesStatus, { setVisible() {} });
 
   // The theme before the grid: tiles are born reading the resolved terminal palette.
   guard('apply theme', applyTheme);
@@ -77,6 +78,7 @@ export async function init() {
     mapSlot: document.getElementById('viewmap'),
     actionsSlot: document.getElementById('viewactions'),
     ramRpm,
+    servicesStatus,
     onNavigate: () => refreshWorkspaceHeader(),
   });
   workspace.kit = WorkspaceKit;
@@ -116,7 +118,6 @@ export async function init() {
   reveal();
 
   guard('install workspace controls', build);
-  guard('services activation status', installServicesStatus);
   // The session list is the one step worth reporting loudly: without it every tile
   // is an empty picker, which reads as "broken" rather than "server unreachable".
   {

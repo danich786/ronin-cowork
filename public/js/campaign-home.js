@@ -136,7 +136,6 @@ export function createCampaignHome() {
     enter: (context) => {
       ctx = context;
       entered = true;
-      document.body.classList.add('ronin-home-active');
       paintDoors();
       void request('/api/setup/runtime', { cache: 'no-store' }).then((result) => {
         if (!entered) return;
@@ -145,7 +144,7 @@ export function createCampaignHome() {
         paintDoors();
       });
     },
-    leave: () => { entered = false; document.body.classList.remove('ronin-home-active'); },
-    destroy: () => { entered = false; ctx = null; document.body.classList.remove('ronin-home-active'); },
+    leave: () => { entered = false; },
+    destroy: () => { entered = false; ctx = null; },
   };
 }

@@ -8,6 +8,7 @@ import { t } from './lexicon.js';
 import { createFeedbackSurface, FEEDBACK_TYPE, registerFeedbackSurface } from './feedback.js';
 import { createDocumentWorkspaceAdapter } from './docs.js';
 import { installBehaviourReader } from './behaviour-reader.js';
+import { WORKBENCH_HEADER } from './workspace-contract.js';
 
 const PROFILE = 'launch';
 const TYPES = Object.freeze({ team: 'launch.team', agent: 'launch.agent', help: 'launch.help', document: 'document' });
@@ -120,7 +121,7 @@ export function createLaunchView() {
     el: bench.host,
     glyph: '＋',
     arrangement: bench.arrangement,
-    header: { shape: true, ram: true },
+    header: WORKBENCH_HEADER,
     placeFeedback: () => bench.place(FEEDBACK_TYPE, bench.selected()),
     title: () => t('campaign_home.launch', 'New Project'),
     mount: (_host, context) => { ctx = context; },
