@@ -83,6 +83,8 @@ test('roots adapt the real project-root detail and Add form to the shared stone 
   assert.match(roots, /createFolderPicker/);
   assert.match(roots, /\/api\/project-roots\/inspect/);
   assert.match(roots, /\/repo-profile/);
+  assert.match(roots, /existing\.repo_profile\?\.worktrees \|\| \(creating \? 'enabled' : 'disabled'\)/, 'new repository workspaces default to a worktree root without rewriting existing choices');
+  assert.match(roots, /creating \? \(existing\.repo_profile\?\.mode \|\| 'direct'\) : before\.mode/, 'the worktree default does not silently opt into reviewed publishing');
 });
 
 test('the selected folder is one page: a head line with every action, then Summary, Folder, Repository', async () => {

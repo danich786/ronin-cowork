@@ -147,7 +147,10 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
     // declares whether it is a worktree root or a checkout.
     let profileFields = null;
     if (creating || existing.facts?.repo) {
-      const seedWorktrees = existing.repo_profile?.worktrees || 'disabled';
+      // A newly added repository is normally meant to host Agent desks. Make that
+      // safe arrangement the visible default; an existing repository's declaration
+      // remains authoritative and can still explicitly choose a shared checkout.
+      const seedWorktrees = existing.repo_profile?.worktrees || (creating ? 'enabled' : 'disabled');
       const before = {
         mode: existing.repo_profile?.mode || 'direct',
         working: existing.arrangement?.source === 'absent' ? '' : (existing.arrangement?.working || ''),
@@ -156,7 +159,7 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
       };
       const repoFields = group(stones ? t('roots.section_repository', 'Repository') : t('roots.group_repository', 'Advanced repository workflow'), t('roots.group_repository_help', 'Optional Git publishing and Worktrees choices. An ordinary folder needs none of these.'));
       repoFields.classList.add('pr-group-advanced');
-      const initialMode = creating ? (seedWorktrees === 'enabled' ? 'reviewed' : 'direct') : before.mode;
+      const initialMode = creating ? (existing.repo_profile?.mode || 'direct') : before.mode;
       let repositoryAnswers = { mode: initialMode, worktrees: creating ? seedWorktrees : before.worktrees };
       let syncProfile = () => {};
       const repositoryQuestions = ask([{ group: '', fields: [
