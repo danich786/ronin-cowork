@@ -80,6 +80,7 @@ export function createProviderSurface(context) {
   let openFirstWhenReady = false;
   let mounted = null;
   let signInForm = null;
+  const authenticationDrafts = new Map();
   let runtime = { providers: [] };
   const disposeMount = (destroy = true) => {
     signInForm?.destroy(); signInForm = null;
@@ -158,33 +159,34 @@ export function createProviderSurface(context) {
     const finish = (path) => {
       if (!completion.hidden) return;
       completion.hidden = false;
-      completion.append(el('p', 'setup-provider-note', t('setup_surface.sign_in_question', 'Did you authenticate? Choose how and give this sign-in a title.')));
+      completion.append(el('h3', 'setup-provider-note', t('setup_surface.naming_authentication', 'Naming this authentication')));
+      const draft = authenticationDrafts.get(provider.id) || provider.sign_in || {};
       const title = el('input'); title.type = 'text'; title.maxLength = 120;
-      title.value = provider.sign_in?.label || '';
-      const field = el('label', 'setup-provider-sign-in-title', t('setup_surface.sign_in_title', 'Sign-in title'));
+      title.value = draft.label || '';
+      title.placeholder = t('setup_surface.authentication_name_hint', 'Email address or account name');
+      const field = el('label', 'setup-provider-sign-in-title', t('setup_surface.authentication_name', 'Authentication name'));
       field.append(title);
-      let method = provider.sign_in?.method || '';
-      const submit = action(t('setup_surface.save_close', 'Save and close'), 'primary', async () => {
+      let method = draft.method || '';
+      const submit = action(t('setup_surface.done', 'Done'), 'primary', async () => {
         if (!method || (method !== 'not_signed_in' && !title.value.trim())) return;
         submit.disabled = true;
         const target = method === 'not_signed_in' ? `/api/setup/providers/${encodeURIComponent(provider.id)}/close` : path;
         const result = await request(target, { method: 'POST', json: { sign_in: method === 'not_signed_in' ? null : { method, label: title.value.trim() } } });
         if (!result.ok) { problem.textContent = result.message; problem.hidden = false; submit.disabled = false; return; }
+        authenticationDrafts.delete(provider.id);
         mounted?.park?.();
         await paint();
       });
-      const update = () => { field.hidden = method === 'not_signed_in'; submit.disabled = !method || (method !== 'not_signed_in' && !title.value.trim()); };
-      signInForm = ask([{ fields: [{ key: 'method', label: t('setup_surface.sign_in_method', 'Sign-in method'), options: [
-        { v: 'subscription', l: t('setup_surface.subscription', 'Subscription') },
+      const update = () => { authenticationDrafts.set(provider.id, { method, label: title.value }); field.hidden = method === 'not_signed_in'; submit.disabled = !method || (method !== 'not_signed_in' && !title.value.trim()); };
+      signInForm = ask([{ fields: [{ key: 'method', label: t('setup_surface.authentication_type', 'Authentication type'), options: [
+        { v: 'subscription', l: t('setup_surface.account_subscription', 'Account / subscription') },
         { v: 'api_key', l: t('setup_surface.api_key', 'API key') },
         { v: 'third_party', l: t('setup_surface.third_party', 'Third-party service'), sub: t('setup_surface.third_party_hint', 'For example, OpenRouter. Put the service or account name in the title.') },
         { v: 'not_signed_in', l: t('setup_surface.not_authenticated', 'Not signed in') },
       ] }] }], { value: { method }, onChange: (value) => { method = value.method; update(); }, exposed: true });
       title.addEventListener('input', update);
-      const cancel = action(t('setup_surface.back', 'Back'), '', () => { signInForm?.destroy(); signInForm = null; completion.replaceChildren(); completion.hidden = true; });
-      completion.append(signInForm.el, field, submit, cancel, closeSetup());
+      completion.append(field, signInForm.el, submit);
       update();
-      completion.scrollIntoView?.({ block: 'nearest' });
     };
     // One shape for all three steps: a mark that says done, current, or pending; the label
     // with its measured state beside it; at most one short line; then a control of one size.
@@ -225,11 +227,15 @@ export function createProviderSurface(context) {
     // label carries the news instead. A sign-in that is open owns the one attachment.
     if ((provider.install_open || provider.update_open) && !provider.login_open) {
       const terminal = el('div', 'setup-provider-terminal');
-      if (provider.install_open) installRow.controls.append(control(install, t('setup_surface.done', 'Done'), () => finish(`/api/setup/providers/${encodeURIComponent(provider.id)}/done`)));
+
       const close = closeSetup();
       close.classList.add('setup-provider-update-close');
       installRow.controls.append(close);
       installRow.item.append(terminal);
+      if (provider.install_open) {
+        finish(`/api/setup/providers/${encodeURIComponent(provider.id)}/done`);
+        installRow.item.append(completion);
+      }
       mounted = mountProviderAttachment(context.environment, terminal, provider, context.workspace);
       if (!mounted) terminal.append(el('p', 'setup-notice bad', t('setup_surface.login_attachment_missing', 'The native setup session is open but its terminal attachment is unavailable.')));
     // Update is useful only when there is somewhere newer to move AND the provider is
@@ -274,9 +280,9 @@ export function createProviderSurface(context) {
       authRow.controls.append(control(auth, t('setup_surface.authenticate', 'Authenticate'), () => press(`/api/setup/providers/${encodeURIComponent(provider.id)}/login`)));
     } else if (auth.action === 'login_open') {
       const terminal = el('div', 'setup-provider-terminal');
-      const done = control(auth, t('setup_surface.done', 'Done'), () => finish(`/api/setup/providers/${encodeURIComponent(provider.id)}/done`));
-      authRow.controls.append(done, closeSetup());
-      authRow.item.append(terminal);
+      authRow.controls.append(closeSetup());
+      finish(`/api/setup/providers/${encodeURIComponent(provider.id)}/done`);
+      authRow.item.append(terminal, completion);
       mounted = mountProviderAttachment(context.environment, terminal, provider, context.workspace);
       if (!mounted) terminal.append(el('p', 'setup-notice bad', t('setup_surface.login_attachment_missing', 'The native setup session is open but its terminal attachment is unavailable.')));
     }
@@ -296,10 +302,10 @@ export function createProviderSurface(context) {
     }
     card.append(head, flow);
     if (provider.sign_in) {
-      const names = { subscription: t('setup_surface.subscription', 'Subscription'), api_key: t('setup_surface.api_key', 'API key'), third_party: t('setup_surface.third_party', 'Third-party service') };
+      const names = { subscription: t('setup_surface.account_subscription', 'Account / subscription'), api_key: t('setup_surface.api_key', 'API key'), third_party: t('setup_surface.third_party', 'Third-party service') };
       card.append(el('p', 'setup-provider-note', t('setup_surface.sign_in_recorded', 'Your sign-in record: {method} · {title}', { method: names[provider.sign_in.method] || provider.sign_in.method, title: provider.sign_in.label })));
     }
-    card.append(completion, problem);
+    card.append(problem);
     host.append(card);
   };
 

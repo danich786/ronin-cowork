@@ -1958,3 +1958,9 @@ The catalog entry goes. {dir} is not touched.
 - **setup_surface.back:** Back
 - **setup_surface.cancel_setup:** Cancel setup
 - **setup_surface.sign_in_recorded:** Your sign-in record: {method} · {title}
+
+- **setup_surface.naming_authentication:** Naming this authentication
+- **setup_surface.authentication_name:** Authentication name
+- **setup_surface.authentication_name_hint:** Email address or account name
+- **setup_surface.authentication_type:** Authentication type
+- **setup_surface.account_subscription:** Account / subscription
