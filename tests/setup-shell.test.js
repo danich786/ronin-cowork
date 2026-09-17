@@ -35,6 +35,16 @@ test('Setup and Settings share the machine-settings island without a right heade
   assert.match(header, /'Settings'/);
 });
 
+test('Setup hints start collapsed without inheriting another workbench preference', async () => {
+  const [setup, workbench, controls] = await Promise.all([
+    source('js/setup-view.js'), source('js/workbench.js'), source('js/terminal-controls.js'),
+  ]);
+  assert.match(setup, /hintsCollapsed: true/);
+  assert.match(setup, /hintsPreferenceScope: 'setup'/);
+  assert.match(workbench, /preferenceScope: options\.hintsPreferenceScope \|\| ''/);
+  assert.match(controls, /ronin\.hints\.\$\{preferenceScope\}\.\$\{name\}\.collapsed/);
+});
+
 test('phone Setup workspaces keep one common viewport height for stone rail scrolling', async () => {
   const kit = await source('workspace-kit.css');
   assert.match(kit, /data-workbench-profile='setup'\] \.wk-workbench-column \{ height: calc\(100dvh - var\(--row-head\) - var\(--space-6\)\); min-height: 0; \}/);

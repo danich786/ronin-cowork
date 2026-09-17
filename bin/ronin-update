@@ -317,6 +317,12 @@ fi
 # --- install ---
 WORK="$(mktemp -d)"
 CANDIDATE_PID=""
+CANDIDATE_SERVER=""
+candidate_server_close() {
+  [ -n "$CANDIDATE_SERVER" ] || return 0
+  RONIN_TESTSERVER_ROOT="$WORK/tmux" "$TARGET/bin/ronin-testserver" close "$CANDIDATE_SERVER"
+  CANDIDATE_SERVER=""
+}
 # npm start is a tree (npm → sh → tsx); killing the top leaves the server running.
 kill_tree() {
   local p
@@ -325,6 +331,7 @@ kill_tree() {
 }
 cleanup() {
   [ -n "$CANDIDATE_PID" ] && kill_tree "$CANDIDATE_PID"
+  candidate_server_close
   rm -rf "$WORK"
 }
 trap cleanup EXIT
@@ -462,15 +469,22 @@ fi
 # --- gate the CANDIDATE before anything swaps ---
 # Loopback scratch port: the candidate is reachable only from this machine, for the
 # seconds the gate needs, then killed. PORT/BIND as environment beat the linked .env
-# (dotenv never overrides real env). It watches the same tmux server as the live
-# operator — sessions are shared state and that is the design being tested.
+# (dotenv never overrides real env). The trial gets private stores and a server
+# allocated by ronin-testserver. It must never create or adopt the user's server,
+# clean their viewers, or migrate their stores before the release is accepted.
 SCRATCH=""
 for p in 3979 3980 3981 3982 3983; do
   curl -fsS -m 1 -o /dev/null "http://127.0.0.1:$p/api/health" 2>/dev/null || { SCRATCH="$p"; break; }
 done
 [ -n "$SCRATCH" ] || fail "no free scratch port in 3979-3983"
 say "booting the candidate on loopback:$SCRATCH for its gate"
-(cd "$TARGET" && PORT="$SCRATCH" BIND=127.0.0.1 npm start >"$WORK/candidate.log" 2>&1) &
+CANDIDATE_SERVER="candidate"
+RONIN_TESTSERVER_ROOT="$WORK/tmux" "$TARGET/bin/ronin-testserver" open "$CANDIDATE_SERVER"
+mkdir -p "$WORK/home"
+(cd "$TARGET" && env -u TMUX -u TMUX_PANE \
+  PATH="$WORK/tmux/$CANDIDATE_SERVER:$PATH" HOME="$WORK/home" \
+  RONIN_USER_ROOT="$WORK/user" RONIN_DATA_ROOT="$WORK/data" \
+  PORT="$SCRATCH" BIND=127.0.0.1 npm start >"$WORK/candidate.log" 2>&1) &
 CANDIDATE_PID=$!
 for _ in $(seq 1 30); do
   curl -fsS -m 1 -o /dev/null "http://127.0.0.1:$SCRATCH/api/health" 2>/dev/null && break
@@ -488,6 +502,7 @@ fi
 kill_tree "$CANDIDATE_PID"
 wait "$CANDIDATE_PID" 2>/dev/null || true
 CANDIDATE_PID=""
+candidate_server_close
 
 # A public install is one uninterrupted journey. After the verified candidate proves it
 # boots, but before `current` is activated, let that candidate explain and apply any

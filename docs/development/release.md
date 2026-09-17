@@ -87,7 +87,9 @@ The flow, in order — and the order is the safety:
 4. **gate the candidate**: it boots on a loopback scratch port, must answer its own
    release string on `/api/version`, and must pass the real-browser render gate
    (`libexec/ronin-gate`). **A failed gate swaps nothing — the serving release never
-   moved.** The candidate is then killed; it served no one.
+   moved.** The candidate uses temporary stores and a private tmux server allocated
+   by `bin/ronin-testserver`; both are cleaned up on success or failure. Setup then
+   adopts a real existing server, or starts Ronin’s own when none exists.
 5. **swap** the `current` symlink and restart `ronin` — only if that unit
    actually serves this home; otherwise it says so and stops
 6. **gate the live page**, and report the release now answering
