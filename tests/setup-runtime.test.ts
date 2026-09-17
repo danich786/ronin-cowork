@@ -235,10 +235,10 @@ test('Done records completion and closes; Close before completion only closes', 
   assert.deepEqual(closed, ['provider_setup_claude']);
   await assert.rejects(runtime.completeProviderLogin('claude', ops, undefined, async () => undefined), /No open login or install session/);
 
-  live.add('provider_install_codex');
+  live.add('install_codex');
   await runtime.completeProviderLogin('codex', ops, () => '2026-09-05T02:03:04.000Z', async (provider, at) => { recorded.push([provider, at]); });
   assert.deepEqual(recorded.at(-1), ['codex', '2026-09-05T02:03:04.000Z'], 'Done accepts first-run authentication in the install session');
-  assert.equal(live.has('provider_install_codex'), false);
+  assert.equal(live.has('install_codex'), false);
 
   live.add('provider_setup_gemini');
   assert.deepEqual(await runtime.closeProviderLogin('gemini', ops), { session: 'provider_setup_gemini', closed: true });
