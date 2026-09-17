@@ -6086,12 +6086,12 @@ button.wb-door:hover b {
   .setup-provider-step { grid-template-columns: auto minmax(0, 1fr) auto; }
   .setup-provider-control { grid-column: auto; align-self: center; justify-content: flex-end; }
 }
-.setup-provider-completion { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4); }
-.setup-provider-authentication-fields { display: flex; flex-wrap: wrap; align-items: end; gap: var(--space-4); width: 100%; }
+.setup-provider-completion { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-6); min-width: 0; padding: var(--space-6); border: var(--edge) solid var(--line); border-radius: var(--radius-xs); }
+.setup-provider-authentication-fields { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-6); width: 100%; min-width: 0; }
 .setup-provider-completion[hidden], .setup-provider-sign-in-title[hidden] { display: none; }
-.setup-provider-completion > .setup-provider-note, .setup-provider-completion > .ask { flex-basis: 100%; }
-.setup-provider-sign-in-title { display: grid; gap: var(--space-2); }
-.setup-provider-sign-in-title input { background: var(--well); color: var(--fg); border: var(--edge) solid var(--line); padding: var(--space-3); font: inherit; }
+.setup-provider-completion > .setup-provider-note { margin: 0; }
+.setup-provider-sign-in-title { display: grid; gap: var(--space-3); width: 100%; min-width: 0; color: var(--muted); font-size: var(--form-note); }
+.setup-provider-sign-in-title input { width: 100%; min-width: 0; min-height: 48px; background: var(--well); color: var(--fg); border: var(--edge) solid var(--line); border-radius: var(--radius-xs); padding: var(--space-5) var(--space-6); font: inherit; font-size: var(--form-input); }
 .setup-provider-problem { margin: 0; }
 .setup-provider-problem[hidden] { display: none; }
 /* The native sign-in tile: headerless, with a bounded height so the surrounding
