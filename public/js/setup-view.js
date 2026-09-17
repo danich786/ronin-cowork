@@ -95,7 +95,9 @@ export function createSetupView() {
     openGardenMedia: async (item) => {
       if (!garden) return;
       if (item.kind !== 'doc') { garden.showMedia({ label: item.label, kind: item.kind, src: item.src }); return; }
-      const query = new URLSearchParams({ root: item.root, path: item.path });
+      const query = new URLSearchParams({ path: item.path });
+      if (item.root) query.set('root', item.root);
+      else query.set('product', '1');
       const result = await request('/api/file?' + query.toString());
       garden.showMedia({ label: item.label, kind: item.kind, text: result.ok ? result.data.text || '' : result.message });
     },

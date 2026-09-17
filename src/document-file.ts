@@ -2,6 +2,7 @@ import { constants } from 'node:fs';
 import { open, realpath, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { listProjectRoots, type ProjectRootInfo } from './project-roots.js';
+import { REPO_ROOT } from './resources.js';
 
 export class DocumentPathError extends Error {
   constructor(message: string, readonly status = 400) { super(message); }
@@ -47,9 +48,37 @@ export async function resolveDocumentFile(rootName: unknown, requestedPath: unkn
   return canonical;
 }
 
+/** Resolve one shipped, read-only owner guide without pretending the install is a Workspace Folder. */
+export async function resolveProductDocumentFile(requestedPath: unknown, productRoot = REPO_ROOT): Promise<string> {
+  const supplied = String(requestedPath ?? '').trim();
+  if (!supplied) throw new DocumentPathError('A document path is required.');
+  if (path.isAbsolute(supplied) || supplied.includes('\0')) throw new DocumentPathError('Use a product-document path.');
+  const docsRoot = await realpath(path.join(productRoot, 'docs')).catch(() => { throw new DocumentPathError('Product documentation is unavailable.', 404); });
+  const candidate = path.resolve(productRoot, supplied);
+  if (!containedBy(docsRoot, candidate)) throw new DocumentPathError('That is not a product document.', 403);
+  let canonical: string;
+  try { canonical = await realpath(candidate); }
+  catch (error) {
+    if ((error as NodeJS.ErrnoException)?.code === 'ENOENT') throw new DocumentPathError('No such product document.', 404);
+    throw error;
+  }
+  if (!containedBy(docsRoot, canonical)) throw new DocumentPathError('That is not a product document.', 403);
+  if (!/\.md$/i.test(canonical)) throw new DocumentPathError('Only Markdown product documents can be read.', 415);
+  const facts = await stat(canonical);
+  if (!facts.isFile()) throw new DocumentPathError('No such product document.', 404);
+  return canonical;
+}
+
 /** Read from the validated inode without following a last-moment replacement symlink. */
 export async function readDocumentFile(rootName: unknown, requestedPath: unknown): Promise<{ path: string; text: string }> {
   const file = await resolveDocumentFile(rootName, requestedPath);
+  const handle = await open(file, constants.O_RDONLY | constants.O_NOFOLLOW);
+  try { return { path: file, text: await handle.readFile('utf8') }; }
+  finally { await handle.close(); }
+}
+
+export async function readProductDocumentFile(requestedPath: unknown): Promise<{ path: string; text: string }> {
+  const file = await resolveProductDocumentFile(requestedPath);
   const handle = await open(file, constants.O_RDONLY | constants.O_NOFOLLOW);
   try { return { path: file, text: await handle.readFile('utf8') }; }
   finally { await handle.close(); }
