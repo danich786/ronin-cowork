@@ -77,6 +77,7 @@ export function createProviderSurface(context) {
   const mikaAvailability = el('p', 'setup-fine setup-mika-availability');
   let opened = String(context.detail?.provider || context.detail?.key || '');
   let firstProviderId = '';
+  let alignedProvider = '';
   let openFirstWhenReady = false;
   let mounted = null;
   let signInForm = null;
@@ -389,6 +390,16 @@ export function createProviderSurface(context) {
     }
     host.append(yours);
     paintCatalog(rows, provider, host);
+    if (alignedProvider !== id) {
+      alignedProvider = id;
+      requestAnimationFrame(() => {
+        if (!host.isConnected || alignedProvider !== id) return;
+        const current = host.querySelector('.setup-provider-step[data-current="true"]');
+        host.scrollTop = current
+          ? host.scrollTop + current.getBoundingClientRect().top - host.getBoundingClientRect().top
+          : 0;
+      });
+    }
     return () => disposeMount();
   };
 
@@ -396,7 +407,7 @@ export function createProviderSurface(context) {
     selectedId: opened,
     className: 'setup-provider-stones',
     renderDetail: (item, host) => paintProvider(item.id, host),
-    onSelectionChange: (id) => { opened = String(id || ''); },
+    onSelectionChange: (id) => { opened = String(id || ''); if (!id) alignedProvider = ''; },
   });
   const controller = Object.freeze({
     openFirst: () => {
