@@ -97,7 +97,7 @@ esac
   const restore = () => exec('bash', ['-c', `. "${helper}"; ronin_restore_tmux "$2" "$1"`, 'test', fake, root], { env });
 
   const first = await adopt();
-  assert.match(first.stdout, /adopted \(pid \d+\)/);
+  assert.match(first.stdout, /tmux pid \d+: adopted;/);
   assert.match(first.stdout, /server is tmux 3\.2a and Ronin's client is tmux 3\.7c/, 'version skew is disclosed');
   assert.match(await fs.readFile(lease, 'utf8'), /^prior=on$/m);
   assert.equal(await fs.readFile(value, 'utf8'), 'off');
@@ -305,13 +305,13 @@ esac
 
   await fs.writeFile(path.join(proc, 'cgroup'), '0::/user.slice/user-1000.slice/user@1000.service/app.slice/ronin.service\n');
   const inside = await run(path.join(root, 'inside'));
-  assert.match(inside.stdout, /adopted \(pid \d+\)/);
+  assert.match(inside.stdout, /tmux pid \d+: adopted;/);
   assert.match(inside.stdout, /runs inside the operator's own cgroup, so restarting Ronin would end every session in it/);
   await fs.access(path.join(root, 'inside', 'machine', 'tmux-adoption'));
 
   await fs.writeFile(path.join(proc, 'cgroup'), '0::/user.slice/user-1000.slice/session-3.scope\n');
   const theirs = await run(path.join(root, 'theirs'));
-  assert.match(theirs.stdout, /adopted \(pid \d+\)/);
+  assert.match(theirs.stdout, /tmux pid \d+: adopted;/);
   assert.doesNotMatch(theirs.stdout, /operator's own cgroup/);
   await fs.rm(root, { recursive: true, force: true });
 });
@@ -342,7 +342,7 @@ test('the real tmux answers the probe exactly as the fakes say: no socket, live 
     // adopted (its cgroup is unreadable through RONIN_PROC, so it counts as someone else's),
     // leased, restored — and the session is still there: nothing here ever stops a server
     const state = path.join(root, 'state');
-    assert.match((await sh(`ronin_adopt_tmux "${state}"`)).stdout, /adopted \(pid \d+\)/);
+    assert.match((await sh(`ronin_adopt_tmux "${state}"`)).stdout, /tmux pid \d+: adopted;/);
     assert.equal(await option(), 'off');
     assert.match((await sh(`ronin_restore_tmux "${state}" "$1"`)).stdout, /restored tmux exit-empty=on/);
     assert.equal(await option(), 'on');
