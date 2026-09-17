@@ -1970,3 +1970,5 @@ The catalog entry goes. {dir} is not touched.
 
 - **setup_surface.authentication_title:** Authentication title
 - **setup_surface.authentication_title_hint:** Choose a title
+
+- **setup_surface.title_before_done:** To finish, give this authentication a title.

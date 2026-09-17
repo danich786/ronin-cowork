@@ -148,10 +148,11 @@ export function createProviderSurface(context) {
     };
     let saveAuthentication = null;
     const closeSetup = () => {
-      const button = action(t('setup_surface.close', 'Close'), '', async () => {
+      const button = action(t('setup_surface.cancel', 'Cancel'), '', async () => {
         button.disabled = true;
         const path = `/api/setup/providers/${encodeURIComponent(provider.id)}/close`;
-        if (saveAuthentication) await saveAuthentication(path); else await press(path);
+        authenticationDrafts.delete(provider.id);
+        await press(path);
         button.disabled = false;
       });
       button.classList.add('setup-provider-action');
@@ -172,7 +173,7 @@ export function createProviderSurface(context) {
       const message = el('p', 'setup-notice bad'); message.hidden = true;
       saveAuthentication = async (destination = path) => {
         if (method !== 'not_signed_in' && !title.value.trim()) {
-          message.textContent = t('setup_surface.name_before_close', 'To close, name your authentication.');
+          message.textContent = t('setup_surface.title_before_done', 'To finish, give this authentication a title.');
           message.hidden = false; title.focus(); return;
         }
         if (!method) {
