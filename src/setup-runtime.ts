@@ -420,11 +420,12 @@ export interface GithubSetupOps {
 
 export type GithubSessionPrimitives = SetupSessionPrimitives;
 
-export async function createGithubSetupSession(primitives?: GithubSessionPrimitives): Promise<void> {
+export async function createGithubSetupSession(primitives?: GithubSessionPrimitives, command = runCommand): Promise<void> {
   await createSetupSession(GITHUB_SETUP_SESSION, 'gh', os.homedir(), {
     agent: false, provider: 'github',
-    argv: ['gh', 'auth', 'login', '--hostname', 'github.com', '--git-protocol', 'https'],
+    argv: [],
   }, primitives);
+  await command(GITHUB_SETUP_SESSION, 'gh auth login --hostname github.com --git-protocol https');
 }
 
 /** GitHub's supported package paths, run visibly because system package managers may ask for sudo. */
