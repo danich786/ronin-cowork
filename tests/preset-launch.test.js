@@ -34,9 +34,9 @@ test('Morning Brief creates a real schedule and returns its receipt', async () =
 
 test('Develop Project retains every ordinary launch receipt and work location', async () => {
   const calls = [], send = responder({ name: 'develop_new_project', label: 'Develop', agents: [] }, calls);
-  const result = await launchPresetPlan({ template: { shelf: 'teams', name: 'develop_new_project' }, inputs: { root: 'ronin_project_1', workstreams: ['frontend', 'backend'] } }, send);
+  const result = await launchPresetPlan({ template: { shelf: 'teams', name: 'develop_new_project' }, inputs: { root: 'project_one', workstreams: ['frontend', 'backend'] } }, send);
   assert.equal(result.data.receipts.length, 2);
-  assert.ok(result.data.receipts.every((receipt) => receipt.project_root === 'ronin_project_1' && receipt.work_locations.length === 1));
+  assert.ok(result.data.receipts.every((receipt) => receipt.project_root === 'project_one' && receipt.work_locations.length === 1));
 });
 
 test('Ronin Team launches the stored template through the team loader, with nothing about provider or model on a row', async () => {

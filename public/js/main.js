@@ -17,7 +17,6 @@ import { createCoworkView } from './cowork-view.js';
 import { createCampaignHome } from './campaign-home.js';
 import { createCampaignView } from './campaign-view.js';
 import { createSetupView } from './setup-view.js';
-import { createSetup2View } from './setup2-view.js';
 import { createLaunchView } from './launch-view.js';
 import { installWorkspaceHeader } from './workspace-header.js';
 import { WorkspaceKit } from './workspace-kit.js';
@@ -103,7 +102,6 @@ export async function init() {
   // space, offering a Campaign's own configuration instead of its Coworks and Agents.
   guard('register the Campaign destination', () => workspace.register('campaign', createCampaignView()));
   guard('register the Setup destination', () => workspace.register('setup', createSetupView()));
-  guard('register the Setup 2 destination', () => workspace.register('setup2', createSetup2View()));
   guard('register the Launch destination', () => workspace.register('launch', createLaunchView()));
   workspace.start();
   document.getElementById('bootframe')?.remove();

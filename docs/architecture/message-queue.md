@@ -6,6 +6,10 @@ There are two input paths:
 - Complete messages use the message queue: direct tells, House receipts, wipeboard
   notices, and Ronin's message box (on mobile and in Unlocked views).
 
+At birth, Team and wipeboard guidance travels with the initial brief. Launch records
+Team membership on the board without queuing a second prompt into the starting CLI.
+Later membership changes still send their notices through this queue.
+
 ## One send operation
 
 Delivery means **paste the text, pause 300 ms, press Enter**. A private tmux buffer
@@ -22,8 +26,7 @@ A terminal transport error remains visible in Messages.
 
 ## Preflight and the two-minute limit
 
-Ordinary queued messages check the target's birth identity, Control setting and input
-before typing. A recognized draft or dialog holds the message without inserting anything.
+Ordinary queued messages check the target's birth identity and input before typing. A recognized draft or dialog holds the message without inserting anything.
 Thinking by itself does not hold delivery, and must not hide a draft or dialog.
 Unknown screens do not hold delivery. The preflight is deliberately best effort.
 

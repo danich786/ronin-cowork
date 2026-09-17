@@ -41,6 +41,9 @@ async function* walk(dir: string): AsyncGenerator<string> {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     if (entry.name.startsWith('.')) continue;
     const file = path.join(dir, entry.name);
+    // Runtime-installed Ronin Services are mounted here and gitignored. They are
+    // not shipped Cowork source, so this Cowork retirement guard must not audit them.
+    if (entry.isDirectory() && file === path.join(root, 'src/services')) continue;
     if (entry.isDirectory()) yield* walk(file);
     else if (entry.isFile()) yield file;
   }

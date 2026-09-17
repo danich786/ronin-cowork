@@ -13,7 +13,7 @@
  * fork arrived with no letter, no role and no Build Brief at all.
  *
  * WHAT IS ASSERTED. `resolveForm` is the mechanism: every caller reaches it through
- * `POST /api/launch`, and everything downstream of it — the dial, the tags, the letter,
+ * `POST /api/launch`, and everything downstream of it — the tags, the letter,
  * the counting — is the route's single body of code. So parity is proven where the two
  * callers could possibly diverge: hand it equivalent specs and the RESOLVED launch and
  * the READING LIST must be identical, field for field. A second launch path would have to
@@ -64,12 +64,12 @@ await fs.writeFile(
       home_machine: {
         title: 'Ronin Home',
         state: 'active',
-        config: { installations: { gbrain: false }, defaults: { dial: 'write' } },
+        config: { installations: { gbrain: false }, defaults: {} },
       },
       gbrain_connected: {
         title: 'Gbrain connected',
         state: 'archived',
-        config: { installations: { gbrain: true }, defaults: { behaviours: ['gbrain'], dial: 'write' } },
+        config: { installations: { gbrain: true }, defaults: { behaviours: ['gbrain'] } },
       },
     },
   }),
@@ -93,7 +93,7 @@ await fs.writeFile(
   path.join(temp, 'team_rosters', 'scratchteam.md'),
   [
     '# scratchteam', '', '- **objective:** prove the parity', '- **project_root:** beta',
-    '- **agent_defaults:** {"provider":"","model":"","reach":"discuss","recruit":"nobody","output":"ideas","dial":"write","launch_mode":"configured","gbrain_mode":"disconnected"}',
+    '- **agent_defaults:** {"provider":"","model":"","reach":"discuss","recruit":"nobody","output":"ideas","launch_mode":"configured","gbrain_mode":"disconnected"}',
     '- **state:** active', '',
   ].join('\n'),
 );
@@ -123,7 +123,6 @@ const mechanism = (r: Awaited<ReturnType<typeof resolveForm>>) => ({
   project_root: r.project_root,
   dir: r.dir,
   cmd: r.cmd,
-  dial: r.dial,
   agent: r.agent,
   capExempt: r.capExempt,
   gbrain_mode: r.gbrain_mode,
@@ -143,6 +142,12 @@ const reading = (brief: string): string[] =>
     .map((f) => path.basename(f.trim()))
     .filter(Boolean)
     .sort();
+
+test('birth brief includes wipeboard guidance for every Team without a follow-up message', async () => {
+  const agent = await resolveForm(commonsForm({ tags: ['crew', 'other_crew', 'crew'] }), new Set());
+  assert.match(agent.brief, /Team membership: crew, other_crew\. Run: edges wipeboard/);
+  assert.equal(agent.brief.match(/Membership follows the team/g)?.length, 1);
+});
 
 test('equivalent specs from Commons and forkit resolve to the same launch', async () => {
   const fromCommons = await resolveForm(commonsForm(), new Set());
@@ -363,7 +368,6 @@ test('stated_by carries the settled launch, Team, and Campaign layers', async ()
   assert.match(inherited.stated_by.project_root[0]?.source ?? '', /team_rosters\/scratchteam\.md$/);
 
   const campaign = await resolveForm(commonsForm(), new Set());
-  assert.deepEqual(campaign.stated_by.dial, [{ layer: 'system', source: 'src/spawn.ts' }]);
 });
 
 
@@ -409,7 +413,6 @@ test('an ordinary assisted launch starts an agent with the full brief', async ()
   // launch for `OpenShell` and the tile picker, and a bug for anything else.
   const r = await resolveForm(commonsForm(), new Set());
   assert.equal(r.agent, true, 'an ordinary launch starts a CLI');
-  assert.equal(r.dial, 'write', 'ordinary Agent births allow collaboration');
   assert.ok(r.cmd, 'and has a command to start');
   assert.ok(r.launchAgent, 'and stamps which CLI it started');
   assert.ok(r.project_root, 'a session is always born somewhere');
@@ -419,7 +422,6 @@ test('an ordinary assisted launch starts an agent with the full brief', async ()
 
 test('team_lead is explicit and applies its conditional Behavior at birth', async () => {
   const lead = await resolveForm(commonsForm({ team: 'builders', team_lead: true }), new Set());
-  assert.equal(lead.dial, 'write');
   const leadReading = lead.birth_reading.find((file) => file.endsWith('/conditional/team-lead.md'))!;
   assert.ok(leadReading, 'the fact-selected Behavior is part of the birth reading');
   assert.match(await fs.readFile(leadReading, 'utf8'), /immediate reading\s+assignment/);
@@ -460,7 +462,6 @@ test('a name alone resolves the ordinary Cowork Agent birth', async () => {
   assert.ok(born.installations.length > 0, 'the receipt source carries every installation');
   assert.ok(!born.installations.some((installation) => installation.name === 'cowork_agent'), 'the Cowork Agent is not an installation switch');
   assert.deepEqual(born.mandate, { reach: 'plan', recruit: 'propose agents', output: ['open'] });
-  assert.equal(born.dial, 'write');
 });
 
 test('kind and behaviours resolve at birth, with unusable books reported as undelivered', async () => {

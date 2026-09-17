@@ -197,11 +197,11 @@ PY
   defaults)
     sub=${1:-}; shift || true
     case "$sub" in
-      -h|--help|'') echo 'Fields: provider, model, reach, recruit, output, behaviours, dial, launch-mode. Lists use comma-separated values.';;
+      -h|--help|'') echo 'Fields: provider, model, reach, recruit, output, behaviours, launch-mode. Lists use comma-separated values.';;
       read) take_campaign "$@"; resolve_campaign; api GET "/api/campaigns/$CAMPAIGN" | python3 -c 'import json,sys; print(json.dumps(json.load(sys.stdin).get("config",{}).get("defaults",{}),indent=2))';;
       write) field=${1:-}; value=${2-}; [ "$#" -ge 2 ] || die 'BAD-ARG: defaults write needs field and value.' 2; shift 2; take_campaign "$@"; resolve_campaign; c=$(api GET "/api/campaigns/$CAMPAIGN"); body=$(printf '%s' "$c" | FIELD="$field" VALUE="$value" python3 -c 'import json,os,sys
 c=json.load(sys.stdin); d=dict(c.get("config",{}).get("defaults",{})); f=os.environ["FIELD"].replace("-","_"); v=os.environ["VALUE"]
-if f not in {"provider","model","reach","recruit","output","behaviours","dial","launch_mode"}: raise SystemExit(2)
+if f not in {"provider","model","reach","recruit","output","behaviours","launch_mode"}: raise SystemExit(2)
 d[f]=[x.strip() for x in v.split(",") if x.strip()] if f in {"output","behaviours"} else v
 print(json.dumps({"config":{"defaults":d}}))') || die 'BAD-ARG: unknown defaults field.' 2; mutate PUT "/api/campaigns/$CAMPAIGN" "$body" | pretty;;
       *) die "BAD-ARG: unknown defaults operation '$sub'." 2;; esac

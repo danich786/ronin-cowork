@@ -274,24 +274,29 @@ test('GitHub setup publishes one provider-style attachment and opens and closes 
   let live = false;
   let opens = 0;
   let closes = 0;
+  let installLive = false;
   let status = '';
   const ops: runtime.GithubSetupOps = {
     installed: async () => true,
     authStatus: async () => status,
     exists: async () => live,
+    installExists: async () => installLive,
     open: async () => { opens += 1; live = true; },
+    openInstall: async () => { installLive = true; },
     close: async () => { closes += 1; live = false; },
+    closeInstall: async () => { installLive = false; },
     logout: async () => { status = ''; },
   };
 
   assert.deepEqual(await runtime.githubSetupAnswer(ops), {
-    installed: true, authenticated: false, account: '', state: 'needs_authentication', attachment: null,
+    installed: true, authenticated: false, account: '', state: 'needs_authentication', installing: false, attachment: null,
   });
   assert.deepEqual(await runtime.openGithubLogin(ops), {
     installed: true,
     authenticated: false,
     account: '',
     state: 'needs_authentication',
+    installing: false,
     attachment: { type: 'session', key: 'setup_github', team: 'provider_setup', temporary: true },
   });
   await runtime.openGithubLogin(ops);
@@ -304,7 +309,7 @@ test('GitHub setup publishes one provider-style attachment and opens and closes 
   });
 
   assert.deepEqual(await runtime.closeGithubLogin(ops), {
-    installed: true, authenticated: true, account: 'octo-cat', state: 'authenticated', attachment: null,
+    installed: true, authenticated: true, account: 'octo-cat', state: 'authenticated', installing: false, attachment: null,
   });
   await runtime.closeGithubLogin(ops);
   assert.equal(closes, 1, 'Close is harmless once the setup session is gone');
@@ -316,15 +321,42 @@ test('GitHub setup does not probe auth when gh is absent and refuses to open', a
     installed: async () => false,
     authStatus: async () => { statusCalls += 1; return 'unexpected'; },
     exists: async () => false,
+    installExists: async () => false,
     open: async () => undefined,
+    openInstall: async () => undefined,
     close: async () => undefined,
+    closeInstall: async () => undefined,
     logout: async () => undefined,
   };
   assert.deepEqual(await runtime.githubSetupAnswer(ops), {
-    installed: false, authenticated: false, account: '', state: 'missing', attachment: null,
+    installed: false, authenticated: false, account: '', state: 'missing', installing: false, attachment: null,
   });
   assert.equal(statusCalls, 0);
   await assert.rejects(runtime.openGithubLogin(ops), /GitHub CLI is not installed/);
+});
+
+test('GitHub install opens one visible provider-style session before authentication', async () => {
+  let installLive = false;
+  let opens = 0;
+  const ops: runtime.GithubSetupOps = {
+    installed: async () => false,
+    authStatus: async () => '',
+    exists: async () => false,
+    installExists: async () => installLive,
+    open: async () => undefined,
+    openInstall: async () => { opens += 1; installLive = true; },
+    close: async () => undefined,
+    closeInstall: async () => { installLive = false; },
+    logout: async () => undefined,
+  };
+  assert.deepEqual(await runtime.openGithubInstall(ops), {
+    installed: false, authenticated: false, account: '', state: 'missing', installing: true,
+    attachment: { type: 'session', key: 'install_github', team: 'provider_setup', temporary: true },
+  });
+  await runtime.openGithubInstall(ops);
+  assert.equal(opens, 1);
+  assert.match(runtime.githubInstallCommand('darwin'), /brew install gh/);
+  assert.match(runtime.githubInstallCommand('linux'), /apt-get[\s\S]*dnf[\s\S]*pacman/);
 });
 
 test('GitHub logout removes only the detected active account and closes its temporary session', async () => {
@@ -335,12 +367,15 @@ test('GitHub logout removes only the detected active account and closes its temp
     installed: async () => true,
     authStatus: async () => status,
     exists: async () => live,
+    installExists: async () => false,
     open: async () => { live = true; },
+    openInstall: async () => undefined,
     close: async () => { live = false; },
+    closeInstall: async () => undefined,
     logout: async (account) => { loggedOut.push(account); status = ''; },
   };
   assert.deepEqual(await runtime.removeGithubAuthentication(ops), {
-    installed: true, authenticated: false, account: '', state: 'needs_authentication', attachment: null,
+    installed: true, authenticated: false, account: '', state: 'needs_authentication', installing: false, attachment: null,
   });
   assert.deepEqual(loggedOut, ['octo-cat']);
   await assert.rejects(runtime.removeGithubAuthentication(ops), /not authenticated/);
@@ -350,12 +385,12 @@ test('installed roots are distinct registered repositories with READMEs and firs
   const answer = await runtime.setupRuntimeAnswer({}, await measured({}, []), { exists: async () => false }, undefined, catalog);
   assert.deepEqual(answer.roots.map((root) => root.dir), [
     path.join(process.env.RONIN_USER_ROOT!, 'ronin_lab'),
-    path.join(process.env.RONIN_USER_ROOT!, 'ronin_project_1'),
+    path.join(process.env.RONIN_USER_ROOT!, 'project_one'),
   ]);
   const made = await runtime.ensureInstalledRoots();
   assert.deepEqual(made.map((root) => root.dir), [
     path.join(process.env.RONIN_USER_ROOT!, 'ronin_lab'),
-    path.join(process.env.RONIN_USER_ROOT!, 'ronin_project_1'),
+    path.join(process.env.RONIN_USER_ROOT!, 'project_one'),
   ]);
   for (const root of made) {
     await access(path.join(root.dir, 'README.md'));
@@ -363,24 +398,24 @@ test('installed roots are distinct registered repositories with READMEs and firs
     assert.equal(execFileSync('git', ['-C', root.dir, 'rev-list', '--count', 'HEAD'], { encoding: 'utf8' }).trim(), '1');
   }
   const registered = await roots.listProjectRoots();
-  assert.deepEqual(registered.map((root) => root.name), ['ronin_lab', 'ronin_project_1']);
-  assert.deepEqual(registered.map((root) => root.title), ['Ronin Lab', 'Ronin Project 1']);
-  const project = made.find((root) => root.name === 'ronin_project_1')!;
+  assert.deepEqual(registered.map((root) => root.name), ['ronin_lab', 'project_one']);
+  assert.deepEqual(registered.map((root) => root.title), ['Ronin Lab', 'Project One']);
+  const project = made.find((root) => root.name === 'project_one')!;
   assert.match(await readFile(path.join(project.dir, 'RONIN_REPO'), 'utf8'), /mode=reviewed[\s\S]*working=dev[\s\S]*stable=main[\s\S]*desks=managed/);
   assert.doesNotThrow(() => execFileSync('git', ['-C', project.dir, 'show-ref', '--verify', '--quiet', 'refs/heads/dev']));
 
-  const arrangement = await arrangements.arrangementOf('ronin_project_1');
+  const arrangement = await arrangements.arrangementOf('project_one');
   assert.deepEqual(
     { mode: arrangement.mode, working: arrangement.working, stable: arrangement.stable, desks: arrangement.desks },
     { mode: 'reviewed', working: 'dev', stable: 'main', desks: 'managed' },
   );
   const launch = await launchDesks.resolveLaunchDesks({
-    session: 'develop_project_proof', team: 'develop_project', project_root: 'ronin_project_1', agent: true, control: true,
+    session: 'develop_project_proof', team: 'develop_project', project_root: 'project_one', agent: true, control: true,
   });
-  assert.equal(launch.assignment?.project_root, 'ronin_project_1');
-  assert.equal(launch.assignment?.primary, 'ronin_project_1');
+  assert.equal(launch.assignment?.project_root, 'project_one');
+  assert.equal(launch.assignment?.primary, 'project_one');
   assert.equal(launch.assignment?.desks[0]?.line, 'team/develop_project/dev');
-  assert.equal(launch.repositories[0]?.repo, 'ronin_project_1');
+  assert.equal(launch.repositories[0]?.repo, 'project_one');
   assert.equal(launch.repositories[0]?.mode, 'managed');
   assert.equal(launch.repositories[0]?.managed?.worktree, launch.assignment?.desks[0]?.worktree);
 });
@@ -388,7 +423,7 @@ test('installed roots are distinct registered repositories with READMEs and firs
 test('concurrent runtime reads do not collide on the roots catalog', async () => {
   const before = await readFile(path.join(process.env.RONIN_CATALOGS_DIR!, 'PROJECT_ROOTS.md'), 'utf8');
   const rounds = await Promise.all([1, 2, 3, 4].map(() => runtime.ensureInstalledRoots()));
-  for (const made of rounds) assert.deepEqual(made.map((root) => root.name), ['ronin_lab', 'ronin_project_1']);
+  for (const made of rounds) assert.deepEqual(made.map((root) => root.name), ['ronin_lab', 'project_one']);
   assert.equal(await readFile(path.join(process.env.RONIN_CATALOGS_DIR!, 'PROJECT_ROOTS.md'), 'utf8'), before, 'an unchanged catalog is not rewritten');
 });
 

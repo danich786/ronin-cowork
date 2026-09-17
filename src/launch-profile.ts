@@ -1,4 +1,3 @@
-export type Dial = 'user' | 'read' | 'write';
 
 export type StatedLayer =
   | 'install' | 'installation' | 'campaign' | 'team' | 'agent' | 'conditional' | 'template' | 'launch'
@@ -9,7 +8,6 @@ export interface StatedBy {
 }
 
 const SYSTEM: Record<string, string> = {
-  dial: 'write',
   ack: '',
   opening: '{prompt}',
   agent: '',
@@ -20,7 +18,6 @@ const SYSTEM: Record<string, string> = {
 
 export interface LaunchProfile {
   agent: boolean;
-  dial: Dial;
   ack: boolean;
   opening: string;
   posture: string[];
@@ -36,12 +33,10 @@ const SYSTEM_SOURCE = 'src/launch-profile.ts';
 const sourceOf = (): StatedBy[] => [{ layer: 'system', source: SYSTEM_SOURCE }];
 
 export function resolveLaunchProfile(): LaunchProfile {
-  const dial = SYSTEM.dial.toLowerCase();
   const mcp = SYSTEM.mcp.toLowerCase();
 
   return {
     agent: true,
-    dial: (dial === 'user' || dial === 'read' ? dial : 'write') as Dial,
     ack: /^y/i.test(SYSTEM.ack),
     opening: SYSTEM.opening,
     posture: [],
@@ -51,7 +46,7 @@ export function resolveLaunchProfile(): LaunchProfile {
     mcpDefault: mcp === 'always' || mcp === 'on',
     dir: SYSTEM.dir,
     stated_by: {
-      agent: sourceOf(), dial: sourceOf(), ack: sourceOf(), opening: sourceOf(),
+      agent: sourceOf(), ack: sourceOf(), opening: sourceOf(),
       posture: sourceOf(), label: sourceOf(), capExempt: sourceOf(),
       mcpAlways: sourceOf(), mcpDefault: sourceOf(), dir: sourceOf(),
     },

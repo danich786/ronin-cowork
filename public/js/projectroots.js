@@ -37,6 +37,7 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
       className: 'setup-roots-stones',
       onSelectionChange: (id) => {
         if (id !== editing) editing = null;
+        if (data?.roots?.some((entry) => entry.name === id)) options.onSelection?.(id);
       },
       renderDetail: (item, host) => {
         host.scrollTop = 0; // a new page starts at its head, whatever the last one was scrolled to
@@ -51,34 +52,7 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
         }
       },
     });
-    // What a workspace is, above the stones: one line, a kaki Learn more, three short
-    // points that open on click — never a hard paragraph (Glen, 2026-09-07).
-    const intro = document.createElement('div');
-    intro.className = 'pr-intro';
-    const line = document.createElement('p');
-    line.className = 'pr-intro-line';
-    line.append(document.createTextNode(t('roots.intro_line', 'A workspace is a folder Ronin keeps for Teams and Agents.') + ' '));
-    const more = document.createElement('button');
-    more.type = 'button';
-    more.className = 'pr-intro-more';
-    more.textContent = t('roots.learn_more', 'Learn more');
-    more.setAttribute('aria-expanded', 'false');
-    line.append(more);
-    const points = document.createElement('ul');
-    points.className = 'pr-intro-points';
-    points.hidden = true;
-    for (const text of [
-      t('roots.intro_repo', 'It may be a Git repository.'),
-      t('roots.intro_born', 'Agents are born from it and make their own files there.'),
-      t('roots.intro_accumulates', 'Their work accumulates there: plans, memory, notes, calendar documents.'),
-    ]) points.appendChild(document.createElement('li')).textContent = text;
-    more.addEventListener('click', () => {
-      points.hidden = !points.hidden;
-      more.setAttribute('aria-expanded', String(!points.hidden));
-      more.textContent = points.hidden ? t('roots.learn_more', 'Learn more') : t('roots.learn_less', 'Less');
-    });
-    intro.append(line, points);
-    stoneSurface.mount(root, { before: [...(options.before || []), intro, messages] });
+    stoneSurface.mount(root, { before: [...(options.before || []), messages] });
   } else root.append(head, list);
 
   const say = (msg, bad) => {
@@ -551,21 +525,26 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
       for (const r of roots) list.appendChild(block(r));
       return;
     }
-    // Add A Workspace leads the collection (Glen, 2026-09-07): adding is the thing people do.
+    const stoneState = (r) => {
+      if (r.archived) return t('roots.chip_archived', 'Archived');
+      if (!r.facts?.exists) return t('roots.stone_missing', 'Folder missing');
+      if (!r.facts.repo) return t('roots.stone_plain_folder', 'Plain folder');
+      if (!r.facts.repo.remote) return t('roots.stone_repo_no_remote', 'Repository · no remote');
+      return r.arrangement?.source !== 'absent' && r.repo_profile?.worktrees === 'enabled'
+        ? t('roots.stone_repo_worktrees', 'Repository · Worktrees')
+        : t('roots.stone_repo_checkout', 'Repository · checkout');
+    };
+    // Add a workspace leads the collection (Glen, 2026-09-07): adding is the thing people do.
     stoneSurface.setItems([{
       id: NEW,
-      label: t('roots.add_stone', 'Add A Workspace'),
+      label: t('roots.add_stone', 'Add a workspace'),
       glyph: '+',
       className: 'setup-roots-add-stone',
       attrs: { title: t('roots.keep_hint', 'Keep a folder on this machine for Teams and Agents to start in.') },
     }, ...(options.extraItems || []), ...roots.map((r) => ({
       id: r.name,
       label: r.title || r.name,
-      state: r.archived
-        ? t('roots.chip_archived', 'Archived')
-        : !r.facts?.exists
-          ? t('roots.stone_missing', 'Folder missing')
-          : t('roots.stone_ready', 'Ready'),
+      state: stoneState(r),
       className: [!r.facts?.exists ? 'gone' : '', r.archived ? 'archived' : ''].filter(Boolean).join(' '),
     }))]);
   }
@@ -573,7 +552,7 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
   /** The last card in the list: the same shape as a root, and the place a new one is typed. */
   function addCard() {
     if (stones) {
-      // Under the dotted Add A Workspace stone: the same real add form, under one head.
+      // Under the dotted Add a workspace stone: the same real add form, under one head.
       const d = document.createElement('article');
       d.className = 'pr-detail';
       d.dataset.mode = 'add';

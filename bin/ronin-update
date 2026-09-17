@@ -52,8 +52,21 @@ SLUG="${RONIN_RELEASE_REPO:-ronincowork/ronin-cowork}"    # the cowork release f
 # one press. Override for a fork or a private trial: RONIN_SERVICES_REPO.
 SVC_SLUG="${RONIN_SERVICES_REPO:-ronincowork/ronin-releases}"
 
-fail() { echo "✗ $1" >&2; exit 1; }
+fail() {
+  echo "✗ $1" >&2
+  [ -z "${RONIN_TERMINAL_FD:-}" ] || echo "  Installation stopped: $1" >&3
+  exit 1
+}
 say()  { echo "→ $1"; }
+
+# The public one-line install keeps construction detail in its report. fd 3 remains the
+# terminal for consent, blocking reasons, and the compact verified result.
+if [ -n "${RONIN_FROM_GET:-}" ] && [ -n "${RONIN_INSTALL_REPORT:-}" ]; then
+  exec 3>&1
+  export RONIN_TERMINAL_FD=3
+  exec >>"$RONIN_INSTALL_REPORT" 2>&1
+  printf '  Preparing the verified Ronin release…\n' >&3
+fi
 
 # What manages the operator here, what it is called, and how it is restarted — asked of
 # the box, once, in libexec/ronin-machine.sh. This file used to ask `systemctl` directly
@@ -476,6 +489,20 @@ kill_tree "$CANDIDATE_PID"
 wait "$CANDIDATE_PID" 2>/dev/null || true
 CANDIDATE_PID=""
 
+# A public install is one uninterrupted journey. After the verified candidate proves it
+# boots, but before `current` is activated, let that candidate explain and apply any
+# outstanding root-owned settings. The updater then runs full setup itself with the same
+# report and result marker, so updates and reruns cannot accidentally suppress this step.
+if [ -n "${RONIN_FROM_GET:-}" ]; then
+  REPORT_ROOT="$("$TARGET/bin/ronin-store" --root data)/reports"
+  mkdir -p "$REPORT_ROOT"
+  export RONIN_INSTALL_REPORT="${RONIN_INSTALL_REPORT:-$REPORT_ROOT/install-$(date -u +%Y%m%dT%H%M%SZ)-$$.log}"
+  export RONIN_MACHINE_RESULT="$REPORT_ROOT/.machine-result-$$"
+  say "candidate verified — checking the machine settings Ronin needs"
+  (cd "$TARGET" && ./setup.sh --machine-only) ||
+    fail "machine setup was not approved or did not complete — Ronin was not activated"
+fi
+
 # --- swap ---
 CUR="$(readlink "$HOME_DIR/current" 2>/dev/null || true)"
 [ -n "$CUR" ] && ln -sfn "$CUR" "$HOME_DIR/previous"
@@ -503,5 +530,9 @@ elif [ -z "$CUR" ]; then
 else
   echo "✓ $VER is installed and current — but nothing was restarted, so it is NOT live yet:"
   why_not_restarted
+fi
+if [ -n "${RONIN_FROM_GET:-}" ]; then
+  (cd "$HOME_DIR/current" && RONIN_MACHINE_PREPARED=1 ./setup.sh)
+  rm -f "$RONIN_MACHINE_RESULT"
 fi
 exit 0

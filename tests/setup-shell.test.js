@@ -9,7 +9,7 @@ const source = async (path) => readFile(new URL(`../public/${path}`, import.meta
 
 test('Ronin Home defaults Machine Settings from the activated-provider threshold', () => {
   assert.equal(setupDefaultView(0), 'setup');
-  assert.equal(setupDefaultView(1), 'setup');
+  assert.equal(setupDefaultView(1), 'campaign');
   assert.equal(setupDefaultView(2), 'campaign');
   assert.equal(setupDefaultView(7), 'campaign');
 });
@@ -20,7 +20,7 @@ test('Ronin Home names the place and gates Teams and New Project on runtime read
   assert.match(home, /request\('\/api\/setup\/runtime'/);
   assert.match(home, /activatedCount < 1/);
   assert.match(home, /aria-disabled/);
-  assert.match(home, /Activate one model provider in Machine Settings/);
+  assert.match(home, /Activate one model provider in Machine Setup/);
 });
 
 test('Setup and Settings share the machine-settings island without a right header editor', async () => {
@@ -121,9 +121,7 @@ test('Campaign remembers density while Setup stays in the names-only selector', 
   assert.match(campaign, /thinSelectorCards = stored\.selectorDensity !== 'thick'/);
   assert.match(campaign, /host\.dataset\.selectorDensity = thinSelectorCards \? 'thin' : 'thick'/);
   assert.match(campaign, /actions: \[densityToggle, mikaHelp\]/);
-  assert.match(setup, /actions: \[mikaHelp\]/);
   assert.match(setup, /bench\.host\.dataset\.selectorDensity = 'thin'/);
-  assert.match(setup, /barActions: \[sceneIndex, surfaceToggle, themeToggle\]/);
 });
 
 test('the existing workbench can pin a Setup workspace and aim selector cards at the selected work surface', async () => {
@@ -139,8 +137,8 @@ test('the existing workbench can pin a Setup workspace and aim selector cards at
   assert.match(workbench, /cell\.addEventListener\('pointerdown',[\s\S]*select\(id\);[\s\S]*}, true\)/);
 });
 
-test('Setup 2 progression is selected card, minimum checks, and one gated Next in Workspace 2', async () => {
-  const [setup, style] = await Promise.all([source('js/setup2-view.js'), source('style.css')]);
+test('Setup progression is selected card, factual checks, and one gated Next in Workspace 2', async () => {
+  const [setup, style] = await Promise.all([source('js/setup-view.js'), source('style.css')]);
   assert.match(setup, /createAction\(\{ label: 'Next', launch: true, action: \(\) => advance\(\) \}\)/, 'Next uses the Launch-format action');
   assert.match(setup, /active\.number < SCENES\.length && sceneComplete\(active\)/, 'Next exists only for a complete non-final selected card');
   assert.match(setup, /\[data-workspace="workspace2"\] > \.wk-surface > \.wk-surface-header \.wk-surface-header-actions/, 'Next sits at the top-right of Workspace 2');
@@ -148,11 +146,11 @@ test('Setup 2 progression is selected card, minimum checks, and one gated Next i
   assert.match(setup, /garden\.controls\.replaceChildren\(\);[\s\S]*garden\.controls\.hidden = true/, 'Workspace 1 cannot retain the progression action');
   assert.match(setup, /SETUP_SURFACE_TYPES\.providers\) return Number\(runtime\?\.activated_count \|\| 0\) > 0/);
   assert.match(setup, /SETUP_SURFACE_TYPES\.register\) return completion\.registered \|\| kinds\.get\(\)\.length > 0/);
-  assert.match(setup, /SETUP_SURFACE_TYPES\.roots\) return completion\.github \|\| Boolean\(runtime\?\.roots\?\.length\)/);
+  assert.match(setup, /SETUP_SURFACE_TYPES\.roots\) return completion\.github \|\| completion\.roots/);
   assert.match(setup, /SETUP_SURFACE_TYPES\.installations\) return installationsComplete/);
   assert.match(setup, /SETUP_SURFACE_TYPES\.launchOwn\) return launchComplete/);
   assert.doesNotMatch(setup, /data\.stepState|flashSelector|setup-selector-pulse/);
-  assert.match(style, /data-workbench-profile='setup2'[\s\S]*?\.wk-card\[aria-current='page'\][^}]*background: var\(--kaki\)/, 'only the selected card gets the orange fill');
+  assert.match(style, /data-workbench-profile='setup'[\s\S]*?\.wk-card\[aria-current='page'\][^}]*background: var\(--kaki\)/, 'only the selected card gets the orange fill');
   assert.match(setup, /mark\.className = 'wk-card-mark';[\s\S]*mark\.textContent = '✓';[\s\S]*heading\.prepend\(mark\)/, 'completion uses the stock visible card mark');
   assert.doesNotMatch(style, /data-complete='true'[^\n]*::before/, 'completion is not a fragile pseudo-element');
 });
@@ -162,7 +160,7 @@ test('the Setup workbench registers real surfaces and maps each scene to workspa
     source('js/setup-view.js'), source('js/main.js'), source('js/cowork-view.js'),
   ]);
   assert.match(setup, /registerSetupSurfaces\(\);[\s\S]*registerPresetsSurface\(\);/);
-  assert.match(setup, /const scene = setupJourney\(environment\.setupRuntime \|\| \{\}, number\)/);
+  assert.match(setup, /const scene = sceneAt\(number\)/);
   assert.match(setup, /bench\.place\(scene\.type, 'workspace2'\)/);
   assert.match(setup, /selectorWorkspace: 'workspace2'/);
   assert.match(setup, /selectorCurrent: true/);
@@ -170,22 +168,13 @@ test('the Setup workbench registers real surfaces and maps each scene to workspa
   assert.match(setup, /order: Object\.freeze\(\['workspace1', 'selector', 'workspace2'\]\)/);
   assert.match(setup, /hideFeedback: true/);
   assert.match(setup, /hideShapeControl: true/);
-  // Provider sign-in and the ordinary Mika agent each reuse their existing tile hosts.
+  // Provider sign-in reuses the existing tile host; Setup itself starts no helper Agent.
   assert.match(setup, /mountProviderSetupSession: providerSessions\.mountProviderSetupSession/);
-  assert.match(setup, /createMikaTilePool\(\)/);
-  assert.match(setup, /TERMINAL_TYPE, 'workspace2', \{ key: MIKA_SESSION \}/);
-  assert.match(setup, /action: \(\) => \{ void ensureAndPlaceMika\(\); \}/);
-  // Help is the shared selector panel (mika.js): it readies her and borrows her tile,
-  // and never places a workspace; the Mika card is the door that places.
-  const helpPanel = setup.slice(setup.indexOf('helpPanel = createMikaHelpPanel('), setup.indexOf("mikaHelp.el.addEventListener('click'"));
-  assert.match(helpPanel, /await ensureMika\(\)/);
-  assert.doesNotMatch(helpPanel, /ensureAndPlaceMika|bench\?\.place\(TERMINAL_TYPE/);
-  assert.match(setup, /mikaHelp\.el\.addEventListener\('click', \(\) => \{ if \(operational\(\)\) void helpPanel\.open\(\); \}\)/);
-  assert.doesNotMatch(setup, /workspace_two_busy|Workspace 2 is in use/);
-  assert.match(setup, /environment\.setupRuntime = runtime\.ok \? runtime\.data : \{ providers: \[\] \};[\s\S]*bench\.refreshSelector\(\);[\s\S]*const stored/);
+  assert.doesNotMatch(setup, /createMikaTilePool|createMikaHelpPanel|MIKA_SESSION/);
+  assert.match(setup, /request\('\/api\/setup\/runtime', \{ cache: 'no-store' \}\)/);
   assert.doesNotMatch(setup, /SetupRequirement|requirementState|flashCycle/);
-  assert.match(setup, /SETUP_SURFACE_TYPES\.providers, SETUP_SURFACE_TYPES\.register, SETUP_SURFACE_TYPES\.roots/);
-  assert.match(setup, /SETUP_SURFACE_TYPES\.installations, SETUP_SURFACE_TYPES\.bounty, SETUP_SURFACE_TYPES\.launchOwn/);
+  assert.match(setup, /const SCENES = Object\.freeze\(SETUP_SCENES/);
+  assert.match(setup, /scene\.type !== SETUP_SURFACE_TYPES\.bounty/);
   assert.doesNotMatch(setup, /SETUP_SURFACE_TYPES\.(?:services|gbrain)/);
   assert.doesNotMatch(setup, /SETUP_SURFACE_TYPES\.templates/);
   const providers = await source('js/provider-surface.js');
@@ -195,38 +184,16 @@ test('the Setup workbench registers real surfaces and maps each scene to workspa
   assert.match(cowork, /PRESETS_TYPE/);
 });
 
-test('Setup adds only Help to its selector header and keeps appearance in the top header', async () => {
-  const [setup, kit, style, html, host, main, theme] = await Promise.all([
-    source('js/setup-view.js'), source('workspace-kit.css'), source('style.css'), source('index.html'),
-    source('js/workspace.js'), source('js/main.js'), source('js/theme.js'),
+test('Setup is the one public destination and has no parallel preview route', async () => {
+  const [setup, kit, html, main] = await Promise.all([
+    source('js/setup-view.js'), source('workspace-kit.css'), source('index.html'), source('js/main.js'),
   ]);
-  // The presentation toggle that forced the phone stack onto a desktop — and read as
-  // Setup collapsing to one workspace — is gone, with its CSS and its stored memory.
-  assert.doesNotMatch(setup, /viewportToggle|setupViewport|setup-header-toggle|presentation'/);
-  assert.match(setup, /viewportMode: undefined/);
+  assert.match(setup, /const PROFILE = 'setup'/);
+  assert.match(setup, /patchViewState\('setup'/);
+  assert.match(setup, /context\.viewState\('setup'\)/);
   assert.doesNotMatch(kit, /data-setup-viewport|setup-header-toggle/);
-  assert.match(setup, /actions: \[mikaHelp\]/);
-  // Light/dark is a bar action: built by Setup, seated by the ViewHost in the bar's one
-  // actions slot at the right, pinning the device theme through theme.js and nothing else.
-  assert.match(setup, /barActions: \[sceneIndex, surfaceToggle, themeToggle\]/);
-  assert.match(setup, /addSceneButton\(0, t\('setup\.scene_auto'/);
-  assert.match(setup, /for \(const scene of SETUP_SCENES\) addSceneButton/);
-  assert.match(setup, /sceneOverride, selectorDensity/);
-  assert.match(setup, /barButton\('setup-theme-toggle'\)/);
-  assert.match(setup, /barButton\('setup-surface-toggle'\)/);
-  assert.match(setup, /saveCampaign\(id, \{ desk: \{ \[field\]: /);
-  assert.match(setup, /surface === 'mobile' \? 'theme_mobile' : 'theme'/);
-  assert.match(setup, /setCampaignTheme\(desk\(\)\); applyTheme\(\);/);
-  assert.match(setup, /t\('setup\.use_dark'/);
-  assert.match(setup, /setAttribute\('aria-pressed'/);
-  assert.doesNotMatch(setup, /localStorage\.setItem\([^)]*theme/);
-  assert.doesNotMatch(setup, /(themeToggle|surfaceToggle)[^\n]*(setCount|arrangement|place\(|select\()/);
-  assert.match(html, /<span id="viewactions" class="wk-view-actions"><\/span>\s*<span id="feedbackaction">/);
-  assert.match(main, /actionsSlot: document\.getElementById\('viewactions'\)/);
-  assert.match(host, /const showActions = \(id, view\) =>/);
-  assert.match(host, /view\.barActions/);
-  assert.match(host, /showMap\(id, next\); showActions\(id, next\);/);
-  assert.match(style, /#bar \.shape-cycle,\n#bar \.bar-toggle \{/);
-  assert.match(kit, /\.wk-view-actions:empty \{ display: none; \}/);
-  assert.match(theme, /export function setTheme\(name\)/);
+  assert.match(main, /workspace\.register\('setup', createSetupView\(\)\)/);
+  assert.doesNotMatch(main, /setup2|createSetup2View/);
+  assert.match(html, /js\/setup-view\.js/);
+  assert.doesNotMatch(html, /js\/setup2-view\.js/);
 });

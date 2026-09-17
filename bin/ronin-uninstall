@@ -13,8 +13,8 @@
 #   KEPT      the user root (their catalogs, memories, config — the whole point), every
 #             live tmux session, and this checkout itself — deleting the repo directory
 #             is the user's own last step, and takes node_modules and .env with it.
-#   PRINTED   the two sudo steps setup.sh only ever printed (tailscale serve, linger) —
-#             they were the user's hand going in and they are the user's hand going out.
+#   PRINTED   the administrator-owned machine settings that require explicit reversal —
+#             they were authorized going in and remain explicit going out.
 #
 # Guards, in the order they bite:
 #   - tmux-server.service OWNS every session on the box (docs/tmux-server-cgroup.md).
@@ -223,8 +223,8 @@ fi
 say "KEPT: $USER_ROOT — the user's catalogs, memories, config. Uninstall never touches it."
 
 # ---- 7. what only your hand can undo ------------------------------------------------------
-echo "→ the two sudo steps (setup.sh only ever printed these; so does this)"
-say "sudo tailscale serve --https=8443 off      # if you set up the HTTPS serve"
+echo "→ administrator-owned machine settings to reverse explicitly"
+say "sudo tailscale serve --https=4810 off      # if you set up the HTTPS serve"
 say "sudo loginctl disable-linger $USER         # if you enabled linger"
 
 echo ""

@@ -20,7 +20,7 @@ await fs.writeFile(path.join(process.env.RONIN_CONFIG_DIR, 'machine_settings.jso
         installations: {},
         defaults: {
           provider: 'openai', model: 'gpt-test', reach: 'execute', recruit: 'nobody', output: ['code'],
-          behaviours: ['gbrain', 'mandates'], dial: 'read', launch_mode: 'configured',
+          behaviours: ['gbrain', 'mandates'], launch_mode: 'configured',
         },
         cowork_defaults: { project_root: 'ronin_cowork', repos: ['ronin_cowork'], branch: 'dev' },
       },
@@ -53,7 +53,7 @@ test('POST /api/team-rosters creates a Team from its name alone', async () => {
   assert.deepEqual(body.roster.behaviours, { selected: ['gbrain'], required: [] });
   assert.deepEqual(body.roster.agent_defaults, {
     provider: 'openai', model: 'gpt-test', reach: 'execute', recruit: 'nobody', output: ['code'],
-    dial: 'read', launch_mode: 'configured',
+    launch_mode: 'configured',
   });
 });
 

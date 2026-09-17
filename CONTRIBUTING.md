@@ -29,16 +29,15 @@ the only ordinary PR into it is the maintainers' rolling, promotion-receipt-back
 
 ## 3. Verify the change
 
-Install dependencies and run the repository verdict:
+Install dependencies with `npm ci`, then run the focused checks relevant to your change.
+Add or update behavior tests when they demonstrate a meaningful regression; use syntax,
+link, type, or rendered checks as appropriate. Report the exact commands and outcomes.
 
-```bash
-npm ci
-npm run verify
-npm run byoin
-```
-
-`npm run verify` runs the TypeScript and behavior-test verdict. Add or update focused tests
-that demonstrate the bug without the fix and pass with it.
+Individual contributors and Agents normally **do not run `npm run verify`** before a
+commit, hand-in, or contributor PR. The Team lead or release maintainer owns that full
+TypeScript and behavior verdict for the combined candidate at the final integration or
+release gate. A lead may request an earlier run to investigate integration risk. See
+[verification guidance](docs/development/verification.md) for timing and focused commands.
 
 `npm run byoin` checks that current user-customization stores still surface correctly. A
 box with no customization may report that there was nothing to check; say so rather than
@@ -46,8 +45,8 @@ presenting that result as proof against customized data. If your change affects 
 installed box, user stores, setup, upgrades, or rendered customization, also follow the
 relevant installation or diagnostic instructions and report exactly what was exercised.
 
-Playwright and visual suites are explicit diagnostics, not a substitute for the repository
-verdict. Run the relevant one when the issue concerns rendered or interactive behavior,
+Playwright and visual suites are explicit diagnostics; their results complement the
+lead-owned repository verdict. Run the relevant one when the issue concerns rendered or interactive behavior,
 and include screenshots or a precise manual check when visual judgment is involved.
 
 ## 4. Open the pull request

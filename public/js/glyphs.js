@@ -10,7 +10,6 @@ export const GLYPHS = Object.freeze({
   reach: { open: '○', discuss: '💬', plan: '🗺', execute: '⚙' },
   recruit: { open: '○', nobody: '👤', 'propose agents': '💡', 'staff agents': '👥' },
   output: { open: '○', 'a plan': '📝', ideas: '💭', code: '⌨', 'an artifact': '📦', 'the team': '👥', 'no code': '🚫' },
-  dial: { user: '👤', read: '👁', write: '🤖' },
   kind: { open: '○', coding: '⌨', work: '💼', personal: '🎩', household: '🏠', social: '🎪', school: '🎓' },
 });
 

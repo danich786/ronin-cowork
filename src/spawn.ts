@@ -10,7 +10,7 @@ import { offAt } from './provider-summary.js';
 import { storeDir } from './resources.js';
 import { contributionReading, listBehaviours, listInstallations } from './resource-adapters.js';
 import { isCreatableTeamName as isTeamName, readTeamRoster, teamRosterFile, type TeamRoster } from './team-rosters.js';
-import { resolveLaunchProfile, type Dial, type LaunchProfile, type StatedBy } from './launch-profile.js';
+import { resolveLaunchProfile, type LaunchProfile, type StatedBy } from './launch-profile.js';
 import { readCampaign } from './campaigns.js';
 import { primaryWorkLocation, renderDeskBlock, renderWorkLocations, resolveLaunchDesks, type DeskChoice } from './launch-desks.js';
 import type { ResolvedWorktreesRepository } from './worktrees-resolution.js';
@@ -72,7 +72,6 @@ export interface Resolved {
   dir: string;
   cmd: string;
   tags: string[];
-  dial: Dial;
   mandate: Mandate;
   team: string;
   project_root: string;
@@ -137,6 +136,10 @@ export function buildBrief(
       `You are born onto team "${form.team}" — a tag-only team: its members are the sessions carrying its tag ` +
         `(edges team ${form.team}), it has no durable roster, and its wipeboard is "${form.team}" (edges wipeboard ${form.team}).`,
     );
+  }
+  const birthTeams = [...new Set([form.team, ...(form.tags ?? [])].filter(Boolean))];
+  if (birthTeams.length) {
+    parts.push(`Team membership: ${birthTeams.join(', ')}. Run: edges wipeboard — it hands you whatever you have not read. Membership follows the team.`);
   }
   // THE LAUNCH CONTRACT, IN THE PROMPT. These are suggestions the Agent reads, never
   // controls Ronin enforces. `open` means the owner stated no constraint, so silence is
@@ -474,7 +477,6 @@ export async function resolveForm(
       .filter((t, i, a) => a.indexOf(t) === i)
       .slice(0, 16),
     // Collaboration is the launch default, not an Agent-selectable setting.
-    dial: 'write',
     mandate: resolvedMandate,
     team: form.team ?? '',
     project_root: root.name,
@@ -531,7 +533,6 @@ export async function resolveForm(
         : system),
       team: form.team ? explicit : system,
       project_root: rootSource,
-      dial: system,
       brief: unique(preset.brief ? preset.source! : explicit,
         profile.stated_by.opening, roster ? rosterSource : [], rootSource),
       agent: profile.stated_by.agent,

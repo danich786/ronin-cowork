@@ -186,5 +186,4 @@ Other providers (pi, perplexity, …) arrive the same way: a contributor PR addi
 section, or a row in your own shadow copy.
 
 **Other launch settings** a spawn may carry (not role-level; chosen per session):
-launch mode (`configured` / `live_dangerously`) and the `@ronin-control` dial the
-session is born with (`user` / `read` / `write` — see `docs/architecture/session-control-dials.md`).
+launch mode (`configured` / `live_dangerously`).

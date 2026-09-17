@@ -6,8 +6,11 @@ Promotion coordinates candidate construction, reference movement, restart, and h
 One box-wide lock covers that entire run across every team. A later promotion answers
 `BUSY`, names the active team, receipt, and state, and stops immediately.
 Locks older than the in-flight window are reclaimed with the reason shown.
-Repository verification is independent: run `npm run verify` when a repository verdict is
-needed.
+Repository verification is independent and lead-owned. Normally run `npm run verify` on
+the combined candidate at the final gate before remote `dev` publication and the release
+PR. The Team lead may choose an earlier run at promotion into global `dev` when integration
+risk warrants it. Individual hand-ins need focused checks, not repeated full-suite runs;
+see [verification guidance](../development/verification.md).
 
 ## Promotion flow
 

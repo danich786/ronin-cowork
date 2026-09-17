@@ -1,0 +1,121 @@
+#!/usr/bin/env bash
+# Apply the small, fixed set of root-owned machine settings setup.sh has already
+# detected. This wrapper stays unprivileged. One sudo process receives fixed root code
+# on stdin and data as positional arguments: one approval, at most one sudo prompt,
+# and no user-writable Ronin file is named as root's executable.
+set -u
+
+LINGER_USER=""
+SERVE_IP=""
+SERVE_PORT=""
+WANT_SWAP=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --linger) [ $# -ge 2 ] || exit 64; LINGER_USER="$2"; shift 2 ;;
+    --serve)  [ $# -ge 3 ] || exit 64; SERVE_IP="$2"; SERVE_PORT="$3"; shift 3 ;;
+    --swap)   WANT_SWAP=1; shift ;;
+    *) printf 'ronin-machine-apply: unknown argument: %s\n' "$1" >&2; exit 64 ;;
+  esac
+done
+
+count=0
+[ -n "$LINGER_USER" ] && count=$((count + 1))
+[ -n "$SERVE_IP" ] && count=$((count + 1))
+[ "$WANT_SWAP" -eq 1 ] && count=$((count + 1))
+[ "$count" -gt 0 ] || exit 0
+
+printf '\n  Ronin needs administrator access to finish this machine:\n'
+[ -n "$LINGER_USER" ] && printf '    • keep Ronin running after %s logs out\n' "$LINGER_USER"
+[ -n "$SERVE_IP" ] && printf '    • open Ronin at a private Tailscale HTTPS address\n'
+[ "$WANT_SWAP" -eq 1 ] && printf '    • add a 4 GB swapfile so memory pressure slows sessions instead of killing them\n'
+printf '\n  Continue? [y/N] '
+
+tty_path="${RONIN_SETUP_TTY:-/dev/tty}"
+answer=""
+if [ ! -r "$tty_path" ] || ! IFS= read -r answer <"$tty_path"; then
+  printf '\n  No interactive terminal is available; administrator changes were skipped.\n\n'
+  exit 2
+fi
+case "$answer" in
+  y|Y|yes|YES|Yes) ;;
+  *) printf '\n  Installation cancelled before Ronin was activated.\n\n'; exit 2 ;;
+esac
+
+if ! command -v sudo >/dev/null 2>&1; then
+  printf '\n  sudo is not available; administrator changes were skipped.\n\n'
+  exit 2
+fi
+
+# This is deliberately ONE sudo invocation. Even sudoers timestamp_timeout=0 cannot
+# turn the three settings into three authorization prompts.
+sudo_rc=0
+sudo bash -s -- "$LINGER_USER" "$SERVE_IP" "$SERVE_PORT" "$WANT_SWAP" <<'RONIN_ROOT' || sudo_rc=$?
+linger_user="$1"; serve_ip="$2"; serve_port="$3"; want_swap="$4"
+optional_failed=0
+serve_failed=0
+
+if [ -n "$linger_user" ]; then
+  if id -u "$linger_user" >/dev/null 2>&1 &&
+     loginctl enable-linger "$linger_user" &&
+     [ "$(loginctl show-user "$linger_user" --property=Linger --value 2>/dev/null)" = yes ]; then
+    printf '  ✓ Ronin will keep running after %s logs out\n' "$linger_user"
+  else
+    printf '  ✗ could not keep Ronin running after logout\n'; optional_failed=1
+  fi
+fi
+
+if [ -n "$serve_ip" ]; then
+  case "$serve_ip:$serve_port" in
+    *[!0-9A-Fa-f:.]*) printf '  ✗ refused an invalid Tailscale address or port\n'; serve_failed=1 ;;
+    *)
+      if [ "$serve_port" -ge 1 ] 2>/dev/null && [ "$serve_port" -le 65535 ] 2>/dev/null &&
+         tailscale serve --bg --https=4810 "http://$serve_ip:$serve_port" >/dev/null; then
+        printf '  ✓ Tailscale HTTPS now serves Ronin on port 4810\n'
+      else
+        printf '  ✗ Tailscale HTTPS was not configured\n'; serve_failed=1
+      fi ;;
+  esac
+fi
+
+if [ "$want_swap" = 1 ]; then
+  made=0; active=0
+  if [ -e /swapfile ] || grep -Eq '^[[:space:]]*/swapfile[[:space:]]' /etc/fstab 2>/dev/null; then
+    printf '  ✗ swapfile was not installed: /swapfile or its fstab row appeared; inspect it first\n'
+    optional_failed=1
+  elif fallocate -l 4G /swapfile; then
+    made=1
+    if chmod 600 /swapfile && mkswap /swapfile >/dev/null && swapon /swapfile; then
+      active=1
+      if printf '%s\n' '/swapfile none swap sw 0 0' >> /etc/fstab; then
+        printf '  ✓ 4 GB swapfile installed and recorded in /etc/fstab\n'
+        made=0; active=0
+      else
+        printf '  ✗ swapfile could not be made persistent; rolling it back\n'; optional_failed=1
+      fi
+    else
+      printf '  ✗ swapfile was not installed; rolling it back\n'; optional_failed=1
+    fi
+    if [ "$active" = 1 ]; then swapoff /swapfile 2>/dev/null || true; fi
+    if [ "$made" = 1 ]; then rm -f /swapfile; fi
+  else
+    printf '  ✗ swapfile was not installed\n'; optional_failed=1
+  fi
+fi
+if [ "$serve_failed" -ne 0 ]; then
+  printf '  ! Ronin was not activated because its required HTTPS address could not be established\n'
+  exit 11
+fi
+if [ "$optional_failed" -ne 0 ]; then
+  printf '  ! Ronin will continue using the machine settings that did succeed\n'
+fi
+exit "$(( optional_failed == 0 ? 0 : 10 ))"
+RONIN_ROOT
+if [ "$sudo_rc" -eq 10 ]; then
+  [ -z "${RONIN_MACHINE_RESULT:-}" ] || printf '%s\n' warning > "$RONIN_MACHINE_RESULT"
+  sudo_rc=0
+fi
+if [ "$sudo_rc" -ne 0 ]; then
+  printf '  Administrator access failed before the machine changes could complete.\n'
+fi
+printf '\n'
+exit "$sudo_rc"

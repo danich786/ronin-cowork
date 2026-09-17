@@ -113,7 +113,8 @@ Two doors, same Ronin; pick one:
 
 **Door 1 — the one command.** For a person with a terminal and nothing else: the
 release bundles its own Node, tmux, and node_modules, so this works on a box with
-nothing installed and never asks you for anything
+no separate Node or tmux installation. Sign in to Tailscale first; the installer
+explains any administrator changes and asks for approval once
 (`docs/development/DEPENDENCY_BUNDLE_INSTALL.md`):
 
 ```bash
@@ -135,18 +136,16 @@ bin/ronin-update --home ~/ronin      # fetches the release, verifies, unpacks
 cd ~/ronin/current && ./setup.sh     # sets everything up on this machine
 ```
 
-Either door reaches the same installed state: `setup.sh` **prints the URL it is serving
-on** and, on a local Linux desktop, opens it. A fresh install lands on Ronin Home with
-Ronin Setup open. [Get started](docs/getting-started/get-started.md) continues through one provider and
-one harmless successful Agent exchange. An installed Agent CLI is not proof that its
-provider is authenticated.
+Setup prints one verified address: `https://<machine>.<tailnet>.ts.net:4810`.
+Access is controlled by Tailscale. Connect the browser device to the intended tailnet;
+its access rules determine who can use Ronin and the account's shell. Never expose
+Ronin to the public internet.
 
-If the box is remote, reach the URL over the private route you already use — an SSH
-tunnel is enough. The box-side end of the forward is the address Ronin bound, which
-`setup.sh` printed: the tailnet IP unless `.env` sets `BIND`. With that address,
-read the selected port from `.env`. Normally,
-`ssh -L 4810:<it>:4810 you@yourbox` puts Ronin on `http://127.0.0.1:4810` on your own
-machine; a fresh install uses `3776` instead if `4810` was occupied. Never expose the port publicly.
+On a local Linux desktop, setup also opens the browser. Follow the printed next step
+into Ronin Setup. [Get started](docs/getting-started/get-started.md) continues through
+one provider and one harmless successful Agent exchange. An installed Agent CLI is
+not proof that its provider is authenticated. If HTTPS cannot be established, resolve
+the reported setup problem before continuing.
 
 Already have an Agent on that machine (Claude Code or Codex)? Hand it `docs/getting-started/install.md`;
 the Agent stays through first-use proof. Using an Agent is optional, not a requirement.

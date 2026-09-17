@@ -3,14 +3,8 @@
 #
 #   ronin-welcome
 #
-# setup.sh prints the box once, at the end of an install, and at that moment the
-# only address that exists is HTTP over the tailnet: `tailscale serve` needs a
-# sudo the installer does not have. The HTTPS door arrives a minute later, when
-# the operator runs the command setup.sh printed — and tailscale answers that
-# with its own output, after which the box has scrolled away.
-#
-# So this exists to be run after that step: same box, same code path, the real
-# address. It reads the machine and reports; it changes nothing.
+# setup.sh prints the verified address once. This redraws the same compact arrival
+# result from current machine state; it reads and changes nothing.
 set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -27,15 +21,14 @@ if command -v tailscale >/dev/null 2>&1; then
       'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{try{process.stdout.write((JSON.parse(d).Self.DNSName||"").replace(/\.$/,""))}catch{}})' 2>/dev/null || true)"
   fi
 fi
-export RONIN_IP="${RONIN_IP:-}" RONIN_FQDN="${RONIN_FQDN:-}"
+RONIN_BACKEND_HOST="$(ronin_bind "$ROOT")"
+export RONIN_IP="${RONIN_IP:-}" RONIN_FQDN="${RONIN_FQDN:-}" RONIN_BACKEND_HOST RONIN_PUBLIC_PORT=4810
 
 PORT="$(ronin_port "$ROOT")"
 URL="$(ronin_open_url "$ROOT" "$PORT")"
+if [ -z "${RONIN_FQDN:-}" ] || [ "$URL" != "https://$RONIN_FQDN:4810" ]; then
+  printf '  Ronin does not have its required private HTTPS address.\n'
+  printf '  Check Tailscale with ronin-doctor, then run setup again.\n\n'
+  exit 1
+fi
 ronin_banner "$ROOT" "$URL"
-
-case "$URL" in
-  https://*) ;;
-  *) printf '  Still HTTP. For an HTTPS door (the 🎤 microphone needs one):\n'
-     [ -n "$RONIN_IP" ] &&
-       printf '      sudo tailscale serve --bg --https=8443 http://%s:%s >/dev/null\n\n' "$RONIN_IP" "$PORT" ;;
-esac

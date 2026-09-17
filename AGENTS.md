@@ -10,8 +10,11 @@ contracts or make a contributor follow the installation journey.
 - Working inside an existing coworkspace: use the question-first
   [`docs/README.md`](docs/README.md).
 - Developing this repository: start with the [contributor map](docs/contributor-map.md)
-  for code ownership and [KOTOBA](KOTOBA.md) for vocabulary. Run `npm run verify` for the
-  TypeScript and behavior-test verdict. Playwright suites are explicit diagnostic commands.
+  for code ownership and [KOTOBA](KOTOBA.md) for vocabulary. Individual Agents use focused
+  checks; `npm run verify` is normally the Team lead/release maintainer's final combined
+  gate, not a per-Agent hand-in requirement. A lead may request an earlier integration
+  run. Follow [verification guidance](docs/development/verification.md). Playwright suites
+  are explicit diagnostic commands.
 - Talking to tmux from the server: every call goes through the control-mode client
   (`src/tmux-client.ts`); programs that are not tmux start through the spawn broker
   (`src/spawn-broker.ts`). [`docs/architecture/tmux-connection.md`](docs/architecture/tmux-connection.md) says why

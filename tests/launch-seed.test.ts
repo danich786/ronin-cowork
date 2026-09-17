@@ -23,7 +23,7 @@ const campaign = { id: 'home_machine', config: {
 } } as CampaignConfig;
 const team = { name: 'alpha', campaign_id: 'home_machine', kind: 'coding', project_root: 'work', branch: 'dev',
   behaviours: { selected: ['write_it_down', 'mandates'], required: ['mandates'] },
-  agent_defaults: { provider: 'anthropic', model: 'opus', reach: 'execute', recruit: 'nobody', output: ['code'], dial: 'read', launch_mode: 'configured' },
+  agent_defaults: { provider: 'anthropic', model: 'opus', reach: 'execute', recruit: 'nobody', output: ['code'], launch_mode: 'configured' },
 } as TeamRoster;
 const sources = (roster: TeamRoster | null) => ({ campaign, roster, roots: [{ name: 'home', dir: '/home', archived: false }],
   sessions: { default: { provider: 'anthropic', model: 'sonnet' } }, installations, behaviours });
@@ -36,7 +36,6 @@ test('teamless seed exposes available behaviours and the fixed residue', () => {
   assert.equal(seed.resolved_contributions.find((row) => row.name === 'ronin_services')?.reading[0], 'routine/ronin_services/OFF.md');
   assert.equal(seed.resolved_contributions[0]?.stated_by, 'installation');
   assert.deepEqual(seed.still_asked, ['session_type', 'name', 'instructions']);
-  assert.equal('dial' in shownLaunchSeed(seed).seeds, false);
 });
 
 test('Team complete lists replace Campaign defaults and carry Team provenance', () => {

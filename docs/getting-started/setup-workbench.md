@@ -10,33 +10,30 @@ specification first.
 Machine Settings always opens. Teams and New Project stay legible but unavailable until
 one model provider is activated; focusing either one says so.
 
-Machine Settings holds two workbenches. **Ronin Setup**, this guide, opens by default
-while zero or one provider is activated. **Ronin Settings**, the full configuration
-workbench, opens by default once two or more are. The place name in the top bar switches
-between them without reloading; an explicit choice lasts for the visit.
+Machine Settings opens **Ronin Setup**, this guide, while the installation is getting
+ready. **Ronin Settings** remains the full configuration workbench. The place name in the
+top bar switches between them without reloading.
 
 ## The Setup workbench
 
 Setup is one workbench with two workspaces and a selector column between them:
 
-- **Workspace 1** always holds **Presets**.
-- **The selector** lists the setup surfaces in this order: Model providers, Register,
-  Workspace folders, Ronin Services, gbrain, Launch your own. Each card carries a one-line
-  state, never an explanation.
-- **Workspace 2** shows the selected surface. Setup opens on Model providers until a
-  provider is activated; after that it remembers the surface you left open.
+- **Workspace 1** holds the Garden Canvas: short authored guidance for the selected step.
+- **The selector** lists Model providers, optional registration, Workspace folders,
+  Installations, and Launch. A check means the step's actual completion fact is true.
+- **Workspace 2** is the actionable surface for the selected step. Selecting a card changes
+  both workspaces together. A completed non-final step offers **Next**.
 
-On a phone the same three columns stack. While Setup is open, the right of the top bar
-holds a phone / desktop switcher and a light / dark control; they set the appearance of
-that surface and nothing else.
+On a phone the same three columns stack. Setup reads completion once when it opens and
+updates it after the corresponding action; it does not poll in the background.
 
 Every stone surface in Setup shares one shape: square stones on the left; select one and
 the stones fold into a rail with the stone's page beside it; Escape closes it.
 
 ## Presets
 
-Presets are eight quick starts. Each is an ordinary template with a small, fixed set of
-choices in front of it and a launch that opens in a new browser tab.
+Presets are available from the Launch step. They are ordinary templates with a small,
+fixed set of choices in front of them and a launch that opens in a new browser tab.
 
 Above the stones, **You use Ronin for** narrows the eight to a purpose: **Build software**
 (Bare Metal, Ronin Team, Code Stack Eval, Develop a New Project), **Life Assistants**
@@ -65,7 +62,7 @@ still opens; its Launch is held and a line beside it says what is missing. Activ
 provider unlocks the stones at once.
 
 **Where.** Ronin Team, Develop a New Project and Agent + Editable Doc ask where to start:
-every workspace folder Ronin keeps, Ronin Lab and Ronin Project 1 first and Ronin Lab
+every workspace folder Ronin keeps, with Ronin Lab and Project One first and Ronin Lab
 chosen by default, then the rest by name — the same list the Workspace folders surface
 shows. **＋ workspace folder** beside it opens Workspace folders in the next workspace; a
 folder kept there is a choice at once, with your choice and typed message left as they
@@ -140,11 +137,11 @@ choices are separate, and **No communication** is one of them.
 
 A workspace folder is a folder Ronin keeps for Teams and Agents to start in. A new
 installation makes two inside Ronin: **Ronin Lab** for ideas, assistants, research and
-pre-project work, and **Ronin Project 1** for project work, prepared for worktrees.
+pre-project work, and **Project One** for project work, prepared for worktrees.
 Your Lab is a general thinking space, not the code repository for a specific project.
 Ronin’s creators use their own Lab in the same way; their internal plans are not part of
 your installation instructions. Each
-uses its lowercase ID (`ronin_lab`, `ronin_project_1`) as the starting directory name and
+uses its lowercase ID (`ronin_lab`, `project_one`) as the starting directory name and
 is a Git repository with a README and a first commit. Workspaces the owner adds are separate,
 named entries; they do not replace either built-in.
 
@@ -154,10 +151,13 @@ repository are listed first. Selecting a stone opens its page: name and actions
 (**Edit**, **Archive**, **Exclude**), one state line, then its summary, folder facts and
 repository facts. More in `docs/architecture/project-roots.md`.
 
-**Authenticate GitHub** shows the connected account. **Re-check connection** refreshes
-that status; **Change account** opens the GitHub login window. **Sign out** removes the
-shown account's saved GitHub CLI login from this machine. If another saved account becomes
-active, the card shows that account. Sign-out does not revoke the account's GitHub tokens.
+**Authenticate GitHub** follows three measured steps: **Install**, **Authenticate**, and
+**Ready**. If `gh` is absent, one Install button opens a visible temporary provider-style
+terminal and runs the supported package-manager path for this macOS or Linux machine; the
+owner can see its output and answer a system privilege prompt. Authenticate then opens the
+GitHub login window. A connected account is named and offers **Remove authentication**;
+removal deletes that account's saved GitHub CLI login from this machine but does not revoke
+the account's GitHub tokens.
 
 ## Ronin Services
 

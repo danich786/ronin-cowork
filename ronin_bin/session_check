@@ -10,7 +10,7 @@ session_check — read one live Agent by exact name
 Usage:
   session_check <name>
 
-Reports the Agent's Teams, lead designations, Control setting, and project root.
+Reports the Agent's Teams, lead designations, and project root.
 An unused name returns NO-SESSION and changes nothing. Related:
 session_create --help; session_set --help; edges team --help
 EOF
@@ -41,6 +41,5 @@ s = json.load(sys.stdin)
 print(f"session:      {s['"'"'name'"'"']}")
 print(f"teams:        {'"'"', '"'"'.join(s.get('"'"'tags'"'"') or []) or '"'"'— (rōnin)'"'"'}")
 print(f"人 of:        {'"'"', '"'"'.join(s.get('"'"'leads'"'"') or []) or '"'"'—'"'"'}")
-print(f"dial:         {s.get('"'"'control'"'"') or '"'"'—'"'"'}")
 print(f"workspace-folder-handle: {os.environ['"'"'ROOT'"'"'] or '"'"'—'"'"'}")
 '

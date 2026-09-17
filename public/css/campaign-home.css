@@ -6,6 +6,8 @@
 
   .ch-view {
     --ch-box: 2px;
+    --ch-horizon-h: 290px;
+    --ch-horizon-ink: var(--kaki);
     --ch-glyph: 30px;
     --ch-frame-w: 860px;
     --ch-door-h: 208px;
@@ -25,6 +27,11 @@
     flex-direction: column;
     gap: var(--space-7);
   }
+
+  /* The house horizon, giving the root its ground. The drawing crops at the
+     sides rather than scaling, so a wider window shows more field. */
+  .ch-horizon { position: absolute; left: 0; bottom: 0; width: 100%; height: var(--ch-horizon-h); color: var(--ch-horizon-ink); opacity: var(--ch-horizon-opacity); z-index: 0; pointer-events: none; }
+  .ch-frame { position: relative; z-index: 1; }
 
   .ch-doors { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-8); }
 

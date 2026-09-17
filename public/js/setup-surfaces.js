@@ -48,9 +48,9 @@ const servicesReady = (runtime = {}) => runtime?.services?.active === true || ru
 export const SERVICE_COMPONENTS = Object.freeze([
   { id: 'task_manager', label: 'Task manager', status: 'beta', needs: 'Adds a shared project board and quick summaries of active work.' },
   { id: 'terminal_transcript', label: 'Terminal transcript', status: 'comingSoon', needs: 'Records terminal activity for transcript views and downstream summaries.' },
-  { id: 'voice_hotwords', label: 'Voice & Hotwords', status: 'beta', needs: 'Adds voice tools and corrections for words dictation commonly mishears.' },
+  { id: 'voice_hotwords', label: 'Voice & Hotwords', status: 'comingSoon', needs: 'Adds voice tools and corrections for words dictation commonly mishears.' },
   { id: 'usage_stats', label: 'Usage stats', status: 'beta', needs: 'Keeps local usage counts without storing transcript content.' },
-  { id: 'project_coordinator', label: 'Project coordinator', status: 'comingSoon', needs: 'Watches active projects and prompts Agents to keep status and summaries current.' },
+  { id: 'project_coordinator', label: 'Project coordinator', status: 'beta', needs: 'Watches active projects and prompts Agents to keep status and summaries current.' },
   { id: 'local_weights', label: 'Local weights', status: 'beta', needs: 'Provides locally stored model weights for features that need them.' },
 ]);
 
@@ -362,7 +362,7 @@ function createRootsSurface(context) {
     presentation: 'stones',
     environment: context.environment,
     workspace: context.workspace,
-    onboardingExtras: context.environment?.setup2OnboardingExtras === true,
+    onboardingExtras: context.environment?.setupOnboardingExtras === true,
     onShow: () => notifySummary(SETUP_SURFACE_TYPES.roots, '2 folders + yours', context.workbench),
   });
 }
@@ -438,17 +438,15 @@ export function createServicesSurface(context) {
     markHost.append(mark);
     void inlineServicesMark(markHost);
     const identity = el('div', 'setup-services-identity');
-    identity.append(
-      el('h2', '', t('settei.ronin_services', 'Ronin Services')),
-      el('p', 'setup-lede', t('services_setup.intro', 'Ronin’s hosted parts: the recording, the template library, a background assistant, voice, and team memory.')),
-    );
-    lockup.append(markHost, identity);
-    const beta = el('section', 'setup-services-beta');
-    beta.append(
-      el('h3', '', t('services_setup.beta', 'In beta')),
-      el('p', '', t('services_setup.beta_copy', 'Ronin Services is the community half of Ronin, in beta. The code is open code, not open source: free to read, not to commercialise. Installing Services is separate from registration, and local user activity is not linked to a registration identity. Nothing here is for sale.')),
-    );
-    intro.append(lockup, beta);
+    identity.append(el('h2', '', t('settei.ronin_services', 'Ronin Services')));
+    lockup.append(markHost, identity, el('strong', 'setup-services-beta-marker', t('services_setup.beta', 'In beta')));
+    const copy = el('section', 'setup-services-beta');
+    for (const words of [
+      t('services_setup.intro', 'Ronin Services are incremental features and are not required for agent coworking functionality.'),
+      t('services_setup.beta_copy', 'These are beta projects and often require working with third parties. The code is open code, not open source: free to read, not to commercialise.'),
+      t('services_setup.registration_copy', 'Filling out the registration and sharing your email opens access to Ronin Services free of charge. We also ask that you help build Ronin and share a weekly count of tool calls. This is not linked to your identity and carries no code, tiles, name, or alpha of any kind.'),
+    ]) copy.append(el('p', '', words));
+    intro.append(lockup, copy);
     return intro;
   };
   const openRegister = () => context.workbench?.place(SETUP_SURFACE_TYPES.register, context.workspace || 'workspace2');
@@ -701,12 +699,15 @@ function createSetupInstallationsSurface(context) {
     onInstallationsState: (values) => context.environment?.onInstallationsState?.(values),
   });
   const content = page.el.querySelector('.wk-surface-content');
-  const lock = el('p', 'setup-registration-lock', t('setup_surface.installations_locked', '🔒 Browse installations now. Switch on Ronin Services to change installation settings.'));
+  const lock = el('p', 'setup-registration-lock', t('setup_surface.installations_locked', '🔒 You need to register with an email address before you can install Ronin Services. You can still browse what is available.'));
   content?.prepend(lock);
   const applyLock = (locked) => {
     page.el.dataset.registrationLocked = String(locked);
     lock.hidden = !locked;
-    for (const control of page.el.querySelectorAll('.sws-detail button, .sws-detail input, .sws-detail select, .sws-detail textarea')) control.disabled = locked;
+    for (const control of page.el.querySelectorAll('.sws-detail button, .sws-detail input, .sws-detail select, .sws-detail textarea')) {
+      const register = control.matches('.setup-services-step-action[data-step="register"]');
+      if (!register) control.disabled = locked;
+    }
   };
   const observer = new MutationObserver(() => applyLock(page.el.dataset.registrationLocked === 'true'));
   if (content) observer.observe(content, { childList: true, subtree: true });

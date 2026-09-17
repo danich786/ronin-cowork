@@ -1,6 +1,4 @@
-export type Control = 'user' | 'read' | 'write';
 
-export const CONTROL_OPT = '@ronin-control';
 export const SESSION_KEY_OPT = '@ronin-key';
 /**
  * RIREKI's per-session dial. Its sweep (libexec/rireki/rireki-sweep) arms a recorder on
@@ -16,7 +14,6 @@ export function newSessionArgs(
     cwd?: string;
     env?: Readonly<Record<string, string>>;
     argv?: readonly string[];
-    control?: Control;
     key?: string;
     rireki?: boolean;
   } = {},
@@ -31,7 +28,6 @@ export function newSessionArgs(
     const argv = envPairs.length ? ['env', ...envPairs, ...opts.argv] : opts.argv;
     a.push('--', ...argv, ';', 'set-option', '-w', '-t', name, 'remain-on-exit', 'on');
   }
-  if (opts.control) a.push(';', 'set-option', '-t', name, CONTROL_OPT, opts.control);
   if (opts.key) a.push(';', 'set-option', '-t', name, SESSION_KEY_OPT, opts.key);
   if (opts.rireki === false) a.push(';', 'set-option', '-t', name, RIREKI_OPT, 'off');
   return a;

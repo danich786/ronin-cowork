@@ -59,13 +59,13 @@ test('terminal ignores Agent-only fields and notes each one for the receipt', ()
   }
 });
 
-test('a Team terminal receives membership metadata but no injected Team notice', async () => {
+test('birth records Team membership without injecting a second prompt', async () => {
   const source = await fs.readFile(new URL('../src/routes/launch.ts', import.meta.url), 'utf8');
   assert.match(source, /await setTags\(resolved\.name, resolved\.tags\)/, 'the terminal keeps its Team tag');
   assert.match(
     source,
-    /if \(resolved\.session_type === 'cowork_agent' && houseSeat !== 'mika'\) \{\s*await announceTeamChanges/,
-    'only a Cowork Agent receives prose in its pane after joining a Team',
+    /await announceTeamChanges\(resolved\.name, \[\], resolved\.tags, \{ notifyAgent: false \}\)/,
+    'birth tells the board but never injects a second prompt into the starting CLI',
   );
 });
 
@@ -79,20 +79,13 @@ test('bare-metal Agent ignores Ronin-only fields and a managed desk', () => {
 
 test('unknown, retired, invalid, and server-owned fields are ignored and noted together', () => {
   const result = acceptedLaunchBody({
-    name: 'proof', lifecycle: 'old', mystery: true, dial: 'loud', stated_by: {},
+    name: 'proof', lifecycle: 'old', mystery: true, stated_by: {},
   });
   assert.deepEqual(result.body, { name: 'proof', session_type: 'cowork_agent' });
-  assert.deepEqual(result.ignored, ['dial', 'lifecycle', 'mystery', 'stated_by']);
+  assert.deepEqual(result.ignored, ['lifecycle', 'mystery', 'stated_by']);
 });
 
-test('dial input is always ignored and launch writes Control only to the resolved newborn', async () => {
-  const accepted = acceptedLaunchBody({ name: 'proof', dial: 'write' });
-  assert.equal(accepted.body.dial, undefined);
-  assert.deepEqual(accepted.ignored, ['dial']);
-  const source = await fs.readFile(new URL('../src/routes/launch.ts', import.meta.url), 'utf8');
-  assert.match(source, /setControl\(resolved\.name, resolved\.dial\)/);
-  assert.doesNotMatch(source, /setControl\(caller/);
-});
+
 
 test('cowork kind and behaviours survive body acceptance while unusable shapes are ignored', () => {
   const accepted = acceptedLaunchBody({ name: 'proof', kind: 'coding', behaviours: ['sops:github'] });

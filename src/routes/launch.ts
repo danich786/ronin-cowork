@@ -7,7 +7,6 @@ import {
   listSessions,
   sessionDir,
   sessionExists,
-  setControl,
   setSessionIdentity,
   setLeads,
   setProviderSessionId,
@@ -446,7 +445,6 @@ export function registerLaunch(app: express.Express): LaunchControl {
               RONIN_MACHINE_SETTINGS_AUTHORITY: 'mika',
             }
           : birthEnv(routineTools?.path, boundOperatorSocket(), agentBinDir(), process.env.PATH ?? ''),
-        control: resolved.agent ? resolved.dial : undefined,
         key: birthKey || undefined,
         // The Services switch as resolved for THIS Agent at birth (campaign < team < form):
         // off means RIREKI never records it. Set here and never again — nothing cascades
@@ -462,12 +460,10 @@ export function registerLaunch(app: express.Express): LaunchControl {
       if (birthKey) rememberSessionKey(resolved.name, birthKey);
       if (resolved.tags.length) {
         await setTags(resolved.name, resolved.tags);
-        // Membership is metadata for every session, but only a Cowork Agent receives a
-        // membership message. A Terminal is a plain shell: delivering this notice would
-        // type Ronin prose into its pane immediately after launch. A house seat likewise
-        // has no board tools and cannot act on the notice.
+        // The birth brief carries Team guidance. Record membership on the board without
+        // a second terminal submission racing the CLI's startup or its first turn.
         if (resolved.session_type === 'cowork_agent' && houseSeat !== 'mika') {
-          await announceTeamChanges(resolved.name, [], resolved.tags).catch(() => {});
+          await announceTeamChanges(resolved.name, [], resolved.tags, { notifyAgent: false }).catch(() => {});
         }
       }
       if (form.team_lead && resolved.team) await setLeads(resolved.name, [resolved.team]);
@@ -485,7 +481,6 @@ export function registerLaunch(app: express.Express): LaunchControl {
         mikaTips ? [mikaTips] : [],
       );
       }
-      await setControl(resolved.name, resolved.dial);
     } catch (e) {
       if (birthDir && !runtimeBorn) await rm(birthDir, { recursive: true, force: true });
       void appendLaunchLedger(form, resolved, false);
@@ -523,7 +518,6 @@ export function registerLaunch(app: express.Express): LaunchControl {
         project_root: resolved.project_root,
         dir: resolved.dir,
         cmd: resolved.cmd,
-        dial: resolved.dial,
         tags: resolved.tags,
         team_lead: !!form.team_lead && !!resolved.team,
         kind: resolved.kind,

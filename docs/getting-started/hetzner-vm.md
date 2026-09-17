@@ -254,35 +254,19 @@ Continue only after direct key login prints `<account>` and `sudo whoami` prints
 All agent authentication, tmux sessions, and Ronin files belong to this ordinary
 account—not root.
 
-Enable linger so Ronin's user services survive logout:
-
-```bash
-sudo loginctl enable-linger <account>
-loginctl show-user <account> --property=Linger --value   # expect: yes
-```
-
-Cloud images commonly have no swap. Check first. Empty `swapon --show` output proves only
-that no swap is active, so also require that `/swapfile` does not exist and `/etc/fstab`
-has no `/swapfile` entry. If either guard fails, stop and inspect instead of overwriting or
-duplicating it. Only after all three checks pass, create the documented 4 GB swapfile and
-make it survive reboot:
-
-```bash
-swapon --show
-test ! -e /swapfile
-! grep -Eq '^[[:space:]]*/swapfile[[:space:]]' /etc/fstab
-sudo bash -c 'fallocate -l 4G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile && echo "/swapfile none swap sw 0 0" >> /etc/fstab'
-swapon --show   # expect: /swapfile
-grep -Ec '^[[:space:]]*/swapfile[[:space:]]' /etc/fstab   # expect: 1
-```
+Ronin's installer owns linger and swap setup. It detects what is missing, explains
+the machine changes, and asks for administrator approval once. Do not add a separate
+privileged preparation block here. After installation, verify linger with
+`loginctl show-user <account> --property=Linger --value` and swap with `swapon --show`;
+record any remaining findings from `bin/ronin-doctor`.
 
 ## 5. Establish private access
 
 Install Tailscale on the owner's computer and the VM using the current
 [official instructions](https://tailscale.com/kb/1347/installation). Install and sign in
 on the owner's computer first. Confirm it is the intended tailnet and ask whether its
-devices and users are all intended to reach Ronin: by default Ronin has no password, so
-the tailnet and its access rules are the security boundary.
+access rules permit only the intended users and devices to reach Ronin. Access is
+controlled by Tailscale; permitted users can operate the installed account's shells.
 
 With the owner's approval, run the current official Linux convenience installer on the
 VM, then sign it into that same tailnet with the chosen hostname. Re-check the linked
@@ -352,8 +336,7 @@ Before handing the VM to the Ronin installer, report:
 - Ubuntu version and hostname;
 - ordinary account name;
 - successful direct SSH and sudo checks;
-- linger enabled and verified as `yes`;
-- swap present, including whether the 4 GB swapfile was created;
+- observed linger and swap state, with missing setup left to the installer;
 - successful Tailscale reachability check;
 - provider-console recovery location;
 - agent CLI available on the VM.

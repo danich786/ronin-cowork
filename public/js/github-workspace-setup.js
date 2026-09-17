@@ -1,4 +1,4 @@
-/* Setup 2's GitHub authentication and clone handoff for the Workspace Folder surface. */
+/* Setup's GitHub authentication and clone handoff for the Workspace Folder surface. */
 import { t } from './lexicon.js';
 import { request } from './request.js';
 import { WorkspaceKit } from './workspace-kit.js';
@@ -14,18 +14,34 @@ const action = (label, kind) => WorkspaceKit.primitives.createAction({ label, ki
 export function createGithubWorkspaceSetup({ environment, workspace = 'workspace2', onStateChange, onAuthenticated, onCloned } = {}) {
   const authBox = el('section', 'setup-github-workspace');
   const state = el('p', 'setup-fine setup-github-state');
-  const actions = el('div', 'setup-github-actions');
+  const install = action(t('roots.github_install', 'Install'), 'primary');
   const connect = action(t('roots.github_connect', 'Connect GitHub'), 'primary');
   const remove = action(t('roots.github_remove_auth', 'Remove authentication'), 'danger');
   const terminal = el('div', 'setup-github-terminal'); terminal.hidden = true;
   const terminalActions = el('div', 'setup-github-terminal-actions'); terminalActions.hidden = true;
   const done = action(t('roots.github_done', 'Done'), 'primary');
   const close = action(t('roots.github_close', 'Close'));
-  actions.append(connect, remove); terminalActions.append(done, close);
+  terminalActions.append(done, close);
+  const flow = el('ol', 'setup-provider-steps setup-github-steps');
+  const step = (key, label) => {
+    const row = el('li', 'setup-provider-step'); row.dataset.step = key;
+    const mark = el('span', 'setup-provider-mark'); mark.setAttribute('aria-hidden', 'true');
+    const copy = el('div', 'setup-provider-copy');
+    const title = el('div', 'setup-provider-title');
+    const value = el('span', 'setup-provider-state');
+    const controls = el('div', 'setup-provider-control');
+    title.append(el('strong', 'setup-provider-label', label), value); copy.append(title); row.append(mark, copy, controls);
+    flow.append(row); return { row, mark, value, controls };
+  };
+  const installStep = step('install', t('roots.github_install_step', 'Install'));
+  const authStep = step('authenticate', t('roots.github_auth_step', 'Authenticate'));
+  const readyStep = step('ready', t('roots.github_ready_step', 'Ready'));
+  installStep.controls.append(install);
+  authStep.controls.append(connect, remove);
   authBox.append(
-    el('h2', '', t('roots.github_auth_heading', 'Authenticate GitHub')),
-    el('p', '', t('roots.github_auth_lede', 'Connect your GitHub account in a temporary authentication window.')),
-    state, actions, terminal, terminalActions,
+    el('h2', '', t('roots.github_auth_heading', 'GitHub CLI')),
+    el('p', '', t('roots.github_auth_lede', 'Install GitHub CLI, authenticate your account, then clone repositories.')),
+    flow, state, terminal, terminalActions,
   );
 
   const cloneBox = el('section', 'setup-github-workspace');
@@ -49,6 +65,7 @@ export function createGithubWorkspaceSetup({ environment, workspace = 'workspace
   let watch = 0;
   let checking = false;
   let connecting = false;
+  let installing = false;
   let removing = false;
   let loginAccount = null;
   let measuring = false;
@@ -58,7 +75,7 @@ export function createGithubWorkspaceSetup({ environment, workspace = 'workspace
   let unmounting = false;
 
   const items = [{
-    id: '\0github-auth', glyph: '⌘', label: t('roots.github_auth_stone', 'Authenticate GitHub'),
+    id: '\0github-auth', label: t('roots.github_auth_stone', 'Authenticate GitHub'),
     state: '', className: 'setup-roots-github-stone',
     renderDetail: (host) => {
       host.append(authBox); void show();
@@ -91,14 +108,25 @@ export function createGithubWorkspaceSetup({ environment, workspace = 'workspace
     cloneState.textContent = authenticated
       ? t('roots.github_clone_ready', 'GitHub is connected. Enter the repository you want to clone.')
       : t('roots.github_clone_needs_auth', 'Authenticate GitHub first.');
+    install.hidden = installed;
+    install.disabled = installing || connecting || Boolean(mounted);
     connect.hidden = authenticated || !installed;
-    connect.disabled = connecting || removing || Boolean(mounted);
+    connect.disabled = connecting || installing || removing || Boolean(mounted);
     remove.hidden = !authenticated || !installed;
     remove.disabled = removing || connecting || Boolean(mounted);
+    const steps = [
+      [installStep, installed, !installed, installed ? t('roots.github_installed', 'Installed') : github.installing ? t('roots.github_installing', 'Installing…') : t('roots.github_not_installed', 'Not installed')],
+      [authStep, authenticated, installed && !authenticated, authenticated ? t('roots.github_signed_in', 'Signed in as {account}', { account }) : installed ? t('roots.github_not_signed_in', 'Not signed in') : t('roots.github_after_install', 'After install')],
+      [readyStep, authenticated, false, authenticated ? t('roots.github_ready', 'Ready to clone') : t('roots.github_not_ready', 'Not yet')],
+    ];
+    steps.forEach(([part, complete, current, value], index) => {
+      part.row.dataset.done = String(complete); part.row.dataset.current = String(current);
+      part.mark.textContent = complete ? '✓' : String(index + 1); part.value.textContent = value;
+    });
     cloneButton.disabled = cloning || !authenticated || !repository.value.trim();
     items[0].state = authenticated
       ? t('roots.github_auth_connected_state', 'Connected{account}', { account: account ? ` · ${account}` : '' })
-      : !installed ? t('roots.github_auth_unavailable_state', 'GitHub CLI unavailable') : t('roots.github_auth_state', 'Connect account');
+      : !installed ? t('roots.github_auth_unavailable_state', 'Install GitHub CLI') : t('roots.github_auth_state', 'Connect account');
     items[1].state = authenticated ? t('roots.github_clone_ready_state', 'Ready to clone') : t('roots.github_clone_state', 'Authenticate first');
     items[1].disabled = !authenticated;
     onStateChange?.();
@@ -152,10 +180,20 @@ export function createGithubWorkspaceSetup({ environment, workspace = 'workspace
     try {
       const result = await request('/api/setup/github', { cache: 'no-store' });
       if (result.ok && result.data?.authenticated && (loginAccount === null || result.data.account !== loginAccount)) await finishAuthentication(result.data);
+      else if (result.ok) paint(result.data);
     } finally { checking = false; }
   };
 
   repository.addEventListener('input', () => paint({ installed, authenticated, account }));
+  install.addEventListener('click', async () => {
+    if (installing || installed || mounted || destroyed) return;
+    installing = true; install.disabled = true;
+    try {
+      const result = await request('/api/setup/github/install', { method: 'POST' });
+      if (!result.ok) { state.textContent = result.message; return; }
+      paint(result.data); mountAttachment(result.data?.attachment);
+    } finally { installing = false; install.disabled = Boolean(mounted); }
+  });
   connect.addEventListener('click', async () => {
     if (connecting || mounted || destroyed) return;
     loginAccount = account;
@@ -179,6 +217,7 @@ export function createGithubWorkspaceSetup({ environment, workspace = 'workspace
   done.addEventListener('click', async () => {
     const result = await show();
     if (!result?.ok) return;
+    if (result.data?.installed && !result.data?.authenticated && result.data?.installing) { await teardown(true); await show(); return; }
     if (!result.data?.authenticated) { state.textContent = t('roots.github_waiting', 'Finish GitHub authentication in the window first.'); return; }
     await finishAuthentication(result.data);
   });

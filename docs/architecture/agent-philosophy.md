@@ -46,8 +46,8 @@ is the one place; these are the pieces.
 |---|---|
 | *Honey, not sticks* — no refusals beyond what git itself cannot do; a check tells, it does not block | [`worktrees.md`](worktrees.md), "Desk lifecycle and recovery" |
 | *Measured, never asked* — tmux is the authority on whether tmux runs | `libexec/ronin-coexist.sh`, the existence probe |
-| *Disclosed, not asked* — adoption of an existing tmux server reaches the terminal, and does not wait for a yes | `setup.sh`, the coexistence preflight |
-| *Offered, never done* — setup detects a missing linger or swap and hands over the line; it holds no root | `setup.sh`, the closing paste |
+| *Disclosed, not asked* — adoption of an existing tmux server is recorded in the install report and does not wait for a yes | `setup.sh`, the coexistence preflight |
+| *Explained, approved once* — first install names outstanding machine settings before activation and applies them through one sudo process; the application holds no root | `setup.sh`, `libexec/ronin-machine-apply` |
 | *A finding, never an action* — doctor reads and names the remedy; it touches nothing | `bin/ronin-doctor`, "the box" |
 | *Never post to acknowledge* — the read cursor is the only acknowledgement on a wipeboard | [`wipeboards.md`](../using-ronin/wipeboards.md) |
 | *Stay or go* — the desk an Agent lives in is parked or ends with the Agent; nobody asks it to leave | `ronin_catalogs/behaviours/conditional/worktree-root.md`, "Finish the assignment" |

@@ -1,7 +1,6 @@
-import { getControl, listSessions } from './tmux.js';
+import { listSessions } from './tmux.js';
 import { boardExists, boardOfTeam, boardPath, isValidBoardName, listBoardFiles, readBoard, teamOfBoard } from './wipeboards.js';
 
-const DIAL_ICON: Record<string, string> = { user: '👤 user', read: '👁 read', write: '🤖 write' };
 
 export async function expandLookup(text: string): Promise<string | null> {
   const all = await listSessions();
@@ -10,7 +9,7 @@ export async function expandLookup(text: string): Promise<string | null> {
     Promise.all(
       all
         .filter((s) => s.tags.includes(want))
-        .map(async (s) => `${s.name} [${DIAL_ICON[await getControl(s.name)] ?? '🤖 write'}]`),
+        .map(async (s) => `${s.name}`),
     );
 
   const wb = /^\s*[+ろ/]?(wipeboards?|whiteboards?)\s*:?\s*([a-z0-9_-]*)\s*$/i.exec(text);
@@ -42,7 +41,7 @@ export async function expandLookup(text: string): Promise<string | null> {
     const board = (await boardExists(boardId)) ? await readBoard(boardId) : { name: boardId, brief: '', posts: [] };
     const rows: string[] = [];
     for (const s of all) {
-      if (isTeam && s.tags.includes(asTeam as string)) rows.push(`${s.name} [${DIAL_ICON[await getControl(s.name)] ?? '🤖 write'}]`);
+      if (isTeam && s.tags.includes(asTeam as string)) rows.push(`${s.name}`);
     }
     const brief = board.brief.replace(/\s+/g, ' ').trim().replace(/\.$/, '');
     return (

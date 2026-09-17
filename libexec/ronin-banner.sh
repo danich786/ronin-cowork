@@ -4,13 +4,12 @@
 # Sourced, never run. Two callers share it so there is ONE implementation of
 # "which door is open": setup.sh draws it at the end of an install, and
 # bin/ronin-welcome redraws it afterwards — which is the whole point, because
-# the HTTPS address does not exist until someone has run `tailscale serve`
-# with a sudo the installer never has.
+# the HTTPS address does not exist until the installer has established Tailscale Serve.
 #
 #   ronin_port   <root>            echoes the port this install actually serves
 #   ronin_bind   <root>            echoes the address this install binds
 #   ronin_record_bind <root>       writes that address into .env, once, and says so
-#   ronin_open_url <root> <port>   echoes the address that is live RIGHT NOW
+#   ronin_open_url <root> <port>   echoes the verified private HTTPS address, if present
 #   ronin_banner <root> <url>      draws the box, on stdout
 #
 # Everything writes to stdout; a caller that wants another stream redirects.
@@ -29,8 +28,9 @@ ronin_port() {
 }
 
 # The bind address, resolved once and the same way for everyone who asks. .env wins,
-# because a recorded address is a fact and a probe is a guess; then the tailnet address;
-# then loopback.
+# because a recorded owner choice is a fact. New installs bind loopback and let
+# Tailscale Serve own the private HTTPS listener; older setup-generated tailnet binds
+# migrate to loopback without changing an owner-authored BIND.
 #
 # UNLIKE ronin_port THIS DOES NOT READ .env.example. The example ships BIND commented out
 # on purpose — an unset BIND is a real answer ("work it out"), not a missing one, and a
@@ -44,11 +44,15 @@ ronin_bind_full() {
   if [ -f "$root/.env" ]; then
     bind="$(sed -n 's/^[[:space:]]*BIND=\([^[:space:]#]*\).*/\1/p' "$root/.env" 2>/dev/null | head -1)"
   fi
-  if [ -n "$bind" ]; then printf '%s env' "$bind"; return 0; fi
-  if command -v tailscale >/dev/null 2>&1; then
-    bind="$(tailscale ip -4 2>/dev/null | head -1 || true)"
+  if [ -n "$bind" ]; then
+    local tail_ip=""
+    tail_ip="$(command -v tailscale >/dev/null 2>&1 && tailscale ip -4 2>/dev/null | head -1 || true)"
+    if [ -n "$tail_ip" ] && [ "$bind" = "$tail_ip" ] &&
+       grep -q '^# The address Ronin binds\. Recorded by setup\.sh on ' "$root/.env" 2>/dev/null; then
+      printf '127.0.0.1 migration'; return 0
+    fi
+    printf '%s env' "$bind"; return 0
   fi
-  if [ -n "$bind" ]; then printf '%s tailscale' "$bind"; return 0; fi
   printf '127.0.0.1 loopback'
 }
 
@@ -72,136 +76,66 @@ ronin_record_bind() {
     echo "==> BIND: $addr (already in .env — left as it is)"
     return 0
   fi
+  if [ "$src" = migration ]; then
+    tmp="${TMPDIR:-/tmp}/ronin-bind-$$"
+    awk 'BEGIN{done=0} /^BIND=/ && !done {print "BIND=127.0.0.1"; done=1; next} {print}' "$root/.env" > "$tmp"
+    cat "$tmp" > "$root/.env" && rm -f "$tmp"
+    echo "==> BIND: migrated Ronin's recorded tailnet bind to loopback for private HTTPS"
+    return 0
+  fi
   {
     echo ""
     echo "# The address Ronin binds. Recorded by setup.sh on $(date +%Y-%m-%d) so that a later"
-    echo "# start cannot quietly answer somewhere else. Delete this line to go back to working"
-    echo "# it out from \`tailscale ip -4\` on every start."
+    echo "# start cannot quietly answer somewhere else. Tailscale Serve owns private HTTPS."
     echo "BIND=$addr"
   } >> "$root/.env"
-  if [ "$src" = tailscale ]; then
-    echo "==> BIND: recorded $addr in .env (this box's tailnet address)"
-  else
-    echo "==> BIND: recorded 127.0.0.1 in .env — no tailnet address to be had, so Ronin will"
-    echo "    answer on this box only. Install or sign in to tailscale, delete that BIND line"
-    echo "    and re-run to reach it from your other devices."
-  fi
+  echo "==> BIND: recorded 127.0.0.1 in .env (Tailscale Serve owns private HTTPS)"
 }
 
 # A serve mapping counts only if it points at THIS install. `tailscale serve
 # status` prints the public URL and then its target beneath it:
 #
-#   https://box.tailnet.ts.net:8443/
-#   |-- proxy http://100.72.224.3:4810
+#   https://box.tailnet.ts.net:4810/
+#   |-- proxy http://<loopback>:<backend-port>
 #
 # so the URL is remembered and only emitted once a target naming our port
 # follows it. Matching any https:// line instead would hand a stranger whatever
 # else they happen to serve on that tailnet and call it the door to Ronin.
 ronin_served_url() {
-  local port="$1"
+  local port="$1" host="${2:-}" public_port="${3:-4810}"
+  [ -n "$host" ] || return 0
   command -v tailscale >/dev/null 2>&1 || return 0
-  tailscale serve status 2>/dev/null | awk -v p=":$port" '
-    /^[[:space:]]*https:\/\// { u = $1; sub(/\/$/, "", u); next }
-    u != "" && index($0, p) { print u; exit }
+  tailscale serve status 2>/dev/null | awk -v backend="$host:$port" -v public_port="$public_port" '
+    /^[[:space:]]*https:\/\// {
+      u = $1; sub(/\/$/, "", u)
+      public_ok = (u ~ (":" public_port "$") )
+      next
+    }
+    u != "" && /proxy[[:space:]]+https?:\/\// {
+      target = $NF
+      sub(/^https?:\/\//, "", target)
+      sub(/\/$/, "", target)
+      if (public_ok && target == backend) { print u; exit }
+    }
   ' || true
 }
 
-# The address to print: the served HTTPS one when it exists, otherwise the
-# tailnet HTTP address that answers at this moment. Never a promise.
+# The only address an install may print is the verified Tailscale HTTPS mapping.
 ronin_open_url() {
-  local root="$1" port="$2" url=""
-  url="$(ronin_served_url "$port")"
-  if [ -z "$url" ]; then
-    local fqdn="${RONIN_FQDN:-}" ip="${RONIN_IP:-}"
-    if   [ -n "$fqdn" ]; then url="http://$fqdn:$port"
-    elif [ -n "$ip" ];   then url="http://$ip:$port"
-    else                      url="http://127.0.0.1:$port"; fi
-  fi
-  printf '%s' "$url"
+  local root="$1" port="$2"
+  : "$root"
+  ronin_served_url "$port" "${RONIN_BACKEND_HOST:-${RONIN_IP:-}}" "${RONIN_PUBLIC_PORT:-4810}"
 }
 
-# THE FRAME FITS AN 80-COLUMN TERMINAL. Every inner line is wrapped here to at most
-# RONIN_FRAME_TEXT columns, and the frame around it is fixed: two columns of indent, the
-# left edge, two of padding, the text, two of padding, the right edge — 72 + 8 = 80. A
-# caller hands in whole sentences and paths and the frame does the fitting; it never
-# refuses a long line and never lets one push the right edge off the screen.
-RONIN_FRAME_TEXT=72
-
-# A path with $HOME spelled out is what pushed the first frame to 103 columns. Callers
-# print paths through this so the person reads ~/ronin/current, which is also how they
-# would type it.
-ronin_tilde() {
-  case "$1" in
-    "$HOME")   printf '~' ;;
-    "$HOME"/*) printf '~%s' "${1#"$HOME"}" ;;
-    *)         printf '%s' "$1" ;;
-  esac
-}
-
-# Wrap one frame line to at most $2 columns, on the last space that fits. A line shaped
-# "Label        · text" continues under its text column, so the label column stays a
-# column; any other line continues under its own leading whitespace. A run with no
-# space in it (a long path) is cut where it must be, never dropped.
-ronin_wrap() {
-  local text="$1" width="$2" indent="" rest chunk cut after
-  case "$text" in
-    *" · "*) after="${text#* · }"; indent="$(printf '%*s' $(( ${#text} - ${#after} )) '')" ;;
-    *)       indent="${text%%[! ]*}" ;;
-  esac
-  rest="$text"
-  while [ ${#rest} -gt "$width" ]; do
-    chunk="${rest:0:$(( width + 1 ))}"
-    cut="${chunk% *}"
-    if [ ${#cut} -eq ${#chunk} ] || [ ${#cut} -le ${#indent} ]; then cut="${rest:0:$width}"; fi
-    printf '%s\n' "${cut%"${cut##*[! ]}"}"
-    rest="${rest:${#cut}}"
-    rest="${rest#"${rest%%[! ]*}"}"
-    rest="$indent$rest"
-  done
-  printf '%s\n' "$rest"
-}
-
-ronin_banner() { # <root> <url> [change line...]
-  local root="$1" url="$2"; shift 2
-  local title=" RONIN COWORK " ver="" mark="人" grid_pass="" text="$RONIN_FRAME_TEXT"
+ronin_banner() { # <root> <url> [report] [warning]
+  local root="$1" url="$2" report="${3:-}" warning="${4:-}"
+  local title=" RONIN COWORK " ver="" mark="人"
   [ -f "$root/VERSION" ] && ver="$(sed -n 's/^release=//p' "$root/VERSION" 2>/dev/null || true)"
   [ -n "$ver" ] && ver=" $ver "
 
-  # Visual width, not character count: 人 is double-width and counts as one. Keep
-  # ambiguous-width glyphs (⬡ and friends) out of the frame — they are one column in
-  # some terminals and two in others.
-  local l1="$mark   You're in. Thanks for joining us."
-  local l2="Your agents have a room now — open the door:"
-  if [ -f "$root/.env" ]; then
-    grid_pass="$(sed -n 's/^[[:space:]]*GRID_PASS=[[:space:]]*//p' "$root/.env" 2>/dev/null | head -1)"
-  fi
-  # The posture is two sentences on two lines: the fact, then the remedy. One line held
-  # both at 88 columns and broke every 80-column terminal it met.
-  local posture=()
-  if [ -z "$grid_pass" ]; then
-    posture=("No password: anyone your tailnet lets reach this has a shell here."
-             "bin/ronin-passwd adds one.")
-  fi
-  # Everything after the greeting is wrapped to the text width before it is measured,
-  # so the widest line the frame can hold is the widest line it will ever draw.
-  local body=() details=() line
-  while IFS= read -r line; do body+=("$line"); done < <(ronin_wrap "$l2" "$text")
-  local url_at=${#body[@]}
-  while IFS= read -r line; do body+=("$line"); done < <(ronin_wrap "$url" "$text")
-  for line in ${posture[@]+"${posture[@]}"}; do
-    while IFS= read -r l; do body+=("$l"); done < <(ronin_wrap "$line" "$text")
-  done
-  local l detail
-  for detail in "$@"; do
-    while IFS= read -r l; do details+=("$l"); done < <(ronin_wrap "$detail" "$text")
-  done
-
-  local w1=$(( ${#l1} + 1 )) w=0
-  [ "$w1" -gt "$w" ] && w=$w1
-  for line in "${body[@]}" ${details[@]+"${details[@]}"}; do
-    [ ${#line} -gt "$w" ] && w=${#line}
-  done
-  # A frame that cannot hold its own chrome is a broken frame.
+  local l1="$mark  You're in."
+  local w1=$(( ${#l1} + 1 ))
+  local w="$w1"
   local chrome=$(( ${#title} + ${#ver} + 4 ))
   local inner=$(( w + 4 )); [ "$chrome" -gt "$inner" ] && inner=$chrome
 
@@ -213,22 +147,12 @@ ronin_banner() { # <root> <url> [change line...]
   printf '  │%*s│\n' "$inner" ""
   printf '  │  %s%*s│\n' "$l1" $(( inner - 2 - w1 )) ""
   printf '  │%*s│\n' "$inner" ""
-  i=0
-  for line in "${body[@]}"; do
-    # Bold only for a tty, so a piped transcript stays clean.
-    if [ "$i" -eq "$url_at" ] && [ -t 1 ]; then
-      printf '  │  \033[1m%s\033[0m%*s│\n' "$line" $(( inner - 2 - ${#line} )) ""
-    else
-      printf '  │  %s%*s│\n' "$line" $(( inner - 2 - ${#line} )) ""
-    fi
-    i=$(( i + 1 ))
-  done
-  if [ ${#details[@]} -gt 0 ]; then
-    printf '  ├%s┤\n' "$bar"
-    for line in "${details[@]}"; do
-      printf '  │  %s%*s│\n' "$line" $(( inner - 2 - ${#line} )) ""
-    done
-  fi
-  printf '  │%*s│\n' "$inner" ""
   printf '  ╰%s╯\n\n' "$bar"
+  printf '  Open Ronin:\n'
+  if [ -t 1 ]; then printf '  \033[1m%s\033[0m\n\n' "$url"; else printf '  %s\n\n' "$url"; fi
+  printf '  Next: open Machine Settings to set up your first Agent.\n'
+  printf '  Access is controlled by Tailscale.\n'
+  [ -z "$warning" ] || printf '\n  Warning: %s\n' "$warning"
+  [ -z "$report" ] || printf '\n  Install details: %s\n' "$report"
+  printf '\n'
 }

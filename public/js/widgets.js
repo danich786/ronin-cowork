@@ -147,18 +147,6 @@ export function setInert(el, inert, why, title) {
  * It knows nothing about sessions or fetching. The caller owns what a pick MEANS, which
  * is what lets the same menu hang off a tile header and a roster row.
  */
-// The control dial's three detents (@ronin-control on the tmux session). "Outside
-// agents" = other agents reaching into the session (via /send or tmux) — never the
-// agent already running inside it, and never the owner's own typing.
-// A function, not a table: the lexicon loads after this module is evaluated, so the dial's
-// words are read when a tile head is built.
-export function CONTROL_POSITIONS() {
-  return [
-    { v: 'user', icon: '👤', label: t('dial.user', 'Owner only'), help: t('dial.user_help', 'Owner only — outside agents may not read or type here'), angle: -60 },
-    { v: 'read', icon: '👁', label: t('dial.read', 'Outside agents: watch'), help: t('dial.read_help', 'Outside agents may watch this session, not type into it'), angle: 0 },
-    { v: 'write', icon: '🤖', label: t('dial.write', 'Outside agents: type'), help: t('dial.write_help', 'Outside agents may type into this session'), angle: 60 },
-  ];
-}
 
 /* ---------- lifecycle events (births & deaths, no reload) ---------- */
 // One /events socket per PAGE: the server pushes the fresh session list whenever

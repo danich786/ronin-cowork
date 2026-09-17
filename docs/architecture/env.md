@@ -20,8 +20,8 @@ Copy `.env.example` to `.env` and edit; every value is optional with a sane defa
 
 | Variable | Default | What it does |
 |---|---|---|
-| `PORT` | `4810` | the port the operator listens on; a fresh install records `3776` instead if `4810` is already in use |
-| `BIND` | the tailnet IP (`tailscale ip -4`) | bind address. Unset = tailnet-only, the recommended deployment; `127.0.0.1` = local only; `0.0.0.0` = all interfaces — with no auth the server **refuses to start** that way |
+| `PORT` | `4810` | internal operator port; setup may record `3776` if occupied. The browser-facing HTTPS port remains `4810`. |
+| `BIND` | runtime probes the tailnet IP, otherwise loopback | setup records `127.0.0.1` for the installed backend. An unauthenticated public bind is refused. |
 | `GRID_USER` · `GRID_PASS` | unset | HTTP Basic gate, both required to enable. The owner's browser login is separate (`bin/ronin-passwd`); either satisfies the gate |
 | `RONIN_ALLOWED_ORIGINS` | unset | extra hostnames a browser may open a websocket from — only needed behind a non-Tailscale reverse proxy that rewrites `Host` |
 | `TMUX_WINDOW_SIZE` | `latest` | window-size policy for browser viewers beside another client (`latest` / `largest` / `smallest` / `manual`) |
@@ -30,6 +30,18 @@ Copy `.env.example` to `.env` and edit; every value is optional with a sane defa
 | `RONIN_USER_ROOT` · `RONIN_DATA_ROOT` | store defaults | relocate the two store roots (`src/resources.ts`) |
 | `RONIN_<ID>_DIR` | per store | override a single store's directory |
 | `ANTHROPIC_API_KEY` · `OPENAI_API_KEY` and kin | unset | **provider credentials — the secrets.** Cowork itself never reads a value; a koshi outlet reads the variable its `keyEnv` *names*, and agent CLIs in panes read their standard variables |
+
+## Installed network configuration
+
+Setup records a loopback backend and Tailscale Serve provides the browser address:
+`https://<full-Tailscale-DNS>:4810`. The HTTPS proxy forwards to the selected internal
+operator port on `127.0.0.1`. Internal port selection never changes the public port or
+introduces another browser address. Access is controlled by Tailscale.
+
+Setup migrates a setup-generated `BIND` equal to the machine's current Tailscale IP to
+`127.0.0.1`. Owner-authored `BIND` values remain untouched; a conflicting configuration
+must be resolved explicitly before setup can verify the HTTPS address. Runtime source
+defaults remain distinct from the values recorded by the installer.
 
 ## The secrets rules
 

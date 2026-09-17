@@ -69,10 +69,11 @@ journalctl --user -u ronin.service -n 50 says why; start it with: systemctl --us
 
 ## What this is not
 
-The browser's door is unchanged: `http://<BIND>:<PORT>` from `.env`, the banner, `ronin-gate`,
-`ronin-doctor` and the promotion health check all keep asking *is the page up* at that
-address. The socket answers a different question, *where do I send a command*, and is
-added beside the HTTP listener, never instead of it.
+The browser uses `https://<full-Tailscale-DNS>:4810`, provided by Tailscale Serve.
+The installed operator's HTTP listener is a loopback backend on its configured `PORT`;
+internal health probes may contact that listener directly. A healthy backend alone does
+not prove the browser's HTTPS route. The local command socket answers a different
+question, *where do I send a command*, and exists beside that backend listener.
 
 Command discovery is fixed separately at Agent birth. The launch route resolves that Agent's
 installations, behaviours and root arrangement, projects only the entitled commands as symlinks into that Agent's own

@@ -27,12 +27,12 @@ approximate, and `ronin-doctor` is the one that turns a reading into a finding w
 
 ## The one rule that shapes everything else
 
-**Ronin holds no root, and asks for none.** Every chore below is something a *person* does.
-Your job is to detect it, explain the trade-off, and hand over the exact line — never to run
-it, and never to find a tidier way to ask for privilege. This install has no `sudo` in any of
-its own paths and that is worth more than any capability on this page.
+**Ronin's application holds no root.** First install may ask the owner once to approve the
+fixed linger, private HTTPS, and swap settings before activation; one short-lived sudo
+process applies only the selected settings. Later repair remains something a person
+explicitly approves after the finding and trade-off are explained.
 
-So: **compose, explain, hand over. Then verify by reading, not by assuming.**
+So: **measure, explain, obtain approval, then verify by reading rather than assuming.**
 
 ## Checking the groundwork, row by row
 
@@ -43,7 +43,7 @@ measured, never remembered, including from earlier in the same session.
 |---|---|---|
 | **swap** | `/usr/sbin/swapon --show` — empty means none | `remote_machine_health.md` § swap has the reasoning and the line |
 | **linger** | `loginctl show-user "$USER" --property=Linger --value` | without it every `--user` service stops at logout, so the coworkspace is simply gone whenever nobody is signed in |
-| **the door** | `tailscale serve status` | absence is **not** a fault: reaching an install at `http://ip:port` over the tailnet is a legitimate arrangement |
+| **private HTTPS** | `tailscale serve status` and `bin/ronin-doctor` | the machine-name HTTPS address on port `4810` must answer; report missing or unhealthy HTTPS as incomplete setup |
 | **kernel log** | `journalctl -k -n1` returns entries, or `dmesg` works | without it nothing can say what was killed — see below |
 | **the reading** | `curl -s localhost:PORT/api/machine` | `{"off":true}` means the owner turned watching off; a 404 means the machine service is not installed |
 
@@ -91,7 +91,7 @@ Each of these produces a confidently wrong answer if you assume Linux-on-a-VM:
 - **No `sudo` at all** — a managed or corporate box. Every chore degrades to advice; none of
   them is an error. Say what would help and stop.
 - **A provider that already manages swap or updates** — offering again is noise. Check first.
-- **A home server on no tailnet** — the door row does not apply.
+- **A home server on no tailnet** — establish Tailscale access before completing Ronin setup.
 
 ## When the person says no
 

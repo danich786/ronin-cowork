@@ -3,6 +3,7 @@
 import { t } from './lexicon.js';
 import { request } from './request.js';
 import { createReleaseUpdateController, packageReading } from './release-update-controller.js';
+import { createSenmaida } from './senmaida.js';
 
 const el = (tag, cls, text) => {
   const out = document.createElement(tag);
@@ -19,7 +20,7 @@ function DOORS() {
   ];
 }
 
-export const setupDefaultView = (activatedCount) => Number(activatedCount) >= 2 ? 'campaign' : 'setup';
+export const setupDefaultView = (activatedCount) => Number(activatedCount) >= 1 ? 'campaign' : 'setup';
 
 /** The machine door's house mark: a wheel with eight broad teeth, recognisably admin
  * without importing a platform emoji or turning into a literal vehicle silhouette. */
@@ -43,6 +44,7 @@ function doorGlyph(glyph) {
 
 export function createCampaignHome() {
   const root = el('main', 'ch-view');
+  root.append(createSenmaida('page', 'ch-horizon'));
   const frame = el('div', 'ch-frame');
   const doors = el('div', 'ch-doors');
   const release = el('div', 'ch-release');
@@ -81,14 +83,18 @@ export function createCampaignHome() {
       const card = el('a', 'ch-door');
       const locked = door.key !== 'campaign' && (!runtimeKnown || activatedCount < 1);
       const route = door.key === 'campaign' ? setupDefaultView(activatedCount) : door.route;
+      const name = door.key === 'campaign' && route === 'setup'
+        ? t('campaign_home.machine_setup', 'Machine Setup') : door.name;
+      const reading = door.key === 'campaign' && route === 'setup'
+        ? t('campaign_home.setup_is', 'Install and authenticate a model provider') : door.is;
       card.href = `#/${route}`;
       card.dataset.door = door.key;
       if (locked) {
         card.dataset.unavailable = 'true';
         card.setAttribute('aria-disabled', 'true');
       }
-      card.append(doorGlyph(door.glyph), el('h2', null, door.name), el('p', 'ch-is', door.is));
-      if (locked) card.append(el('p', 'ch-gate', t('setup.provider_gate', 'Activate one model provider in Machine Settings to use this.')));
+      card.append(doorGlyph(door.glyph), el('h2', null, name), el('p', 'ch-is', reading));
+      if (locked) card.append(el('p', 'ch-gate', t('setup.provider_gate', 'Activate one model provider in Machine Setup to use this.')));
       card.addEventListener('click', (event) => {
         // Modified clicks belong to the browser: new tab/window, link menu, middle click.
         if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;

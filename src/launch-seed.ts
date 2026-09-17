@@ -6,7 +6,7 @@ import type { ProjectRootInfo } from './project-roots.js';
 import { availableBehaviours, resolveContributions, type ResolvedContribution } from './instruction-cascade.js';
 import { teamRosterFile, type TeamRoster } from './team-rosters.js';
 
-export type SeedField = 'kind' | 'project_root' | 'branch' | 'provider' | 'model' | 'reach' | 'recruit' | 'output' | 'dial' | 'launch_mode' | 'behaviours';
+export type SeedField = 'kind' | 'project_root' | 'branch' | 'provider' | 'model' | 'reach' | 'recruit' | 'output' | 'launch_mode' | 'behaviours';
 export interface SeedValue<T = unknown> { value: T; stated_by: StatedBy[] }
 export interface LaunchSeed {
   campaign_id: string; seeds: Record<SeedField, SeedValue>;
@@ -17,8 +17,8 @@ export interface LaunchSeedSources {
   campaign: CampaignConfig; roster: TeamRoster | null; roots: ProjectRootInfo[];
   sessions: SessionsDefaults | undefined; installations: InstallationRow[]; behaviours: BehaviourRow[];
 }
-export function shownLaunchSeed(seed: LaunchSeed): Omit<LaunchSeed, 'seeds'> & { seeds: Omit<LaunchSeed['seeds'], 'dial'> } {
-  const { dial: _dial, ...seeds } = seed.seeds;
+export function shownLaunchSeed(seed: LaunchSeed): LaunchSeed {
+  const { ...seeds } = seed.seeds;
   return { ...seed, seeds };
 }
 const installation = (source: string): StatedBy[] => [{ layer: 'installation', source }];
@@ -53,7 +53,7 @@ export function resolveLaunchSeed(s: LaunchSeedSources): LaunchSeed & { resolved
       branch: { value: t?.branch ?? '', stated_by: conditional(t ? teamRosterFile(t.name, t.campaign_id) : 'branch default') },
       provider: { value: pair?.provider ?? '', stated_by: pairSource }, model: { value: pair?.model ?? '', stated_by: pairSource },
       reach: { value: a.reach, stated_by: source('reach') }, recruit: { value: a.recruit, stated_by: source('recruit') },
-      output: { value: a.output, stated_by: source('output') }, dial: { value: a.dial, stated_by: source('dial') },
+      output: { value: a.output, stated_by: source('output') },
       launch_mode: { value: a.launch_mode, stated_by: source('launch_mode') },
       behaviours: { value: cascade.selected, stated_by: behaviourSource },
     },

@@ -5,7 +5,7 @@
 # Usage: session_end        — no arguments. You do not name a session.
 #
 # This is a HANDOFF, not a procedure. It tells Ronin which pane it is standing in and
-# stops there. Ronin resolves that pane to its real session, checks the dial and ends it
+# stops there. Ronin resolves that pane to its real session and ends it
 # with the same code path the UI's delete button uses. Nothing here knows how a session
 # is killed, and it must stay that way: one implementation of the dangerous thing, in
 # Ronin, not a second copy in bash that drifts from it. (An earlier version of this file
@@ -69,7 +69,6 @@ body=$(curl -sS -m 10 -o "$response_file" -w '%{http_code}' "${RONIN_CURL[@]+"${
 case "$body" in
   200) ;;
   401) echo "STUCK: Ronin rejected the request (auth on). Set RONIN_AUTH=user:pass." >&2; exit 5 ;;
-  403) echo "DENIED: owner-controlled session (dial 👤); ask the owner to end it." >&2; exit 4 ;;
   404) echo "STUCK: Ronin does not see pane $pane in any session." >&2; exit 5 ;;
   409) echo "REFUSED: Ronin kept this Agent and its desks open. Complete every NEXT action below, then run session_end again." >&2
        cat "$response_file" >&2
