@@ -10,7 +10,7 @@ import { readFile } from 'node:fs/promises';
  */
 class FakeNode {
   constructor(tag = '') { this.tagName = tag.toUpperCase(); this.dataset = {}; this.children = []; this.listeners = {}; this.attributes = {}; this._text = ''; this.disabled = false; this.className = ''; this.hidden = false; }
-  append(...nodes) { this.children.push(...nodes.flat().filter(Boolean)); }
+  append(...nodes) { this.children.push(...nodes.flat().filter(Boolean).map((node) => typeof node === 'string' ? Object.assign(new FakeNode('#text'), { textContent: node }) : node)); }
   replaceChildren(...nodes) { this.children = []; this.append(...nodes); }
   add(node) { this.append(node); }
   remove() {}
@@ -27,7 +27,7 @@ class FakeNode {
   get classList() { const self = this; return { add: (...names) => { self.className = [self.className, ...names].filter(Boolean).join(' '); }, remove: (...names) => { self.className = self.className.split(' ').filter((n) => !names.includes(n)).join(' '); }, toggle: (name, on) => { on ? this.add(name) : this.remove(name); }, contains: (name) => self.className.split(' ').includes(name) }; }
 }
 globalThis.Node = FakeNode;
-globalThis.document = { createElement: (tag) => new FakeNode(tag), createElementNS: (_ns, tag) => new FakeNode(tag), querySelector: () => null, head: { append() {} } };
+globalThis.document = { createDocumentFragment: () => new FakeNode('fragment'), createElement: (tag) => new FakeNode(tag), createElementNS: (_ns, tag) => new FakeNode(tag), querySelector: () => null, head: { append() {} } };
 globalThis.window = { matchMedia: () => ({ matches: false }), addEventListener() {}, removeEventListener() {} };
 
 let catalog = { origin: 'stock', path: '/stock/MODEL_PROVIDERS.md', updated: '2026-09-08', stock_updated: '2026-09-08', withdrawn: [], providers: [
@@ -320,4 +320,81 @@ test('an unmeasured machine and the owner\'s catalog copy remain factual in prov
   byClass(made.el, 'sws-stone')[2].click();
   assert.equal(byClass(made.el, 'setup-provider-provenance')[0].textContent, 'Yours · not in the shipped catalog (your copy updated 2026-10-01)');
   assert.deepEqual(byClass(made.el, 'sws-stone').map((stone) => stone.attributes['data-provider']), ['anthropic', 'openai', 'pi'], 'with no registry rows every catalog provider is a stone of its own');
+});
+
+test('Install mounts its returned session inline, survives a completed install, and closes through the provider door', async () => {
+  const originalMachine = machine;
+  const originalFetch = globalThis.fetch;
+  const ctx = context();
+  ctx.detail = { provider: 'grok' };
+  const base = { id: 'grok', label: 'Grok Build', installed: false, installable: true, install: 'install fixture', activated: false };
+  machine = { providers: [{ ...base }], activated_count: 0 };
+  let installs = 0;
+  const requests = [];
+  globalThis.fetch = async (url, init = {}) => {
+    requests.push(url);
+    if (url.endsWith('/grok/install')) {
+      installs++;
+      machine = { ...machine, providers: [{ ...base, install_open: true, attachment: { type: 'session', key: 'install_grok', team: 'provider_setup', temporary: true } }] };
+      return { ok: true, status: 200, json: async () => ({ ok: true, runtime: machine }) };
+    }
+    if (url.endsWith('/grok/close')) machine = { ...machine, providers: [{ ...base, installed: true, installable: false }] };
+    return originalFetch(url, init);
+  };
+  const view = surface.createProviderSurface(ctx);
+  try {
+    await view.show(); await settle();
+    byClass(view.el, 'sws-stone').find((n) => n.attributes['data-provider'] === 'grok').click();
+    const install = byClass(view.el, 'setup-provider-action').find((n) => n.textContent === 'Install');
+    install.click(); install.click(); await settle();
+    assert.equal(installs, 1);
+    assert.equal(ctx.mounts.at(-1).session, 'install_grok');
+    assert.equal(ctx.mounts.at(-1).workspace, 'workspace2');
+    machine.providers[0].installed = true;
+    machine.providers[0].installable = false;
+    await view.show(); await settle();
+    assert.equal(ctx.mounts.at(-1).session, 'install_grok', 'installation output stays reachable once the CLI is on PATH');
+    assert.equal(byClass(view.el, 'setup-provider-action').some((n) => n.textContent === 'Authenticate'), false);
+    byClass(view.el, 'setup-provider-action').find((n) => n.textContent === 'Close').click();
+    const notSigned = walk(view.el).find((n) => n.tagName === 'BUTTON' && n.textContent === 'Not signed in');
+    notSigned.click();
+    walk(view.el).find((n) => n.tagName === 'BUTTON' && n.textContent === 'Save and close').click();
+    await settle();
+    assert.ok(requests.includes('/api/setup/providers/grok/close'));
+    assert.ok(byClass(view.el, 'setup-provider-action').some((n) => n.textContent === 'Authenticate'));
+  } finally { view.destroy(); machine = originalMachine; globalThis.fetch = originalFetch; }
+});
+
+test('Done asks through Erabi for the sign-in method and title, then submits that description', async () => {
+  const originalMachine = machine;
+  const originalFetch = globalThis.fetch;
+  machine = { providers: [{ id: 'codex', label: 'Codex', installed: true, login_open: true, attachment: { type: 'session', key: 'provider_setup_codex' } }], activated_count: 0 };
+  let saved = null;
+  globalThis.fetch = async (url, init = {}) => {
+    if (url.endsWith('/codex/done')) {
+      saved = JSON.parse(init.body).sign_in;
+      machine = { providers: [{ id: 'codex', label: 'Codex', installed: true, activated: true, sign_in: saved }], activated_count: 1 };
+      return { ok: true, status: 200, json: async () => ({ ok: true }) };
+    }
+    return originalFetch(url, init);
+  };
+  const view = surface.createProviderSurface(context());
+  try {
+    await view.show(); await settle();
+    byClass(view.el, 'sws-stone').find((n) => n.attributes['data-provider'] === 'codex').click();
+    byClass(view.el, 'setup-provider-action').find((n) => n.textContent === 'Done').click();
+    assert.equal(saved, null, 'opening the question does not finish authentication');
+    const panel = byClass(view.el, 'setup-provider-completion')[0];
+    assert.equal(byClass(panel, 'ask').length, 1);
+    walk(panel).find((n) => n.tagName === 'BUTTON' && n.textContent === 'Subscription').click();
+    const save = walk(panel).find((n) => n.tagName === 'BUTTON' && n.textContent === 'Save and close');
+    assert.equal(save.disabled, true, 'a named sign-in is required');
+    const input = walk(panel).find((n) => n.tagName === 'INPUT');
+    input.value = 'Personal account';
+    for (const fn of input.listeners.input) fn();
+    assert.equal(save.disabled, false);
+    save.click(); await settle();
+    assert.deepEqual(saved, { method: 'subscription', label: 'Personal account' });
+    assert.match(view.el.textContent, /Your sign-in record: Subscription · Personal account/);
+  } finally { view.destroy(); machine = originalMachine; globalThis.fetch = originalFetch; }
 });

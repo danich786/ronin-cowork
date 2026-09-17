@@ -5,7 +5,8 @@ import { AGENTS, listAgentAvailability } from './agents.js';
 import { REPO_ROOT } from './resources.js';
 import { runCommand } from './send.js';
 import { collectBirthLines, emitSessionWillBorn } from './sockets.js';
-import { createSession, killSessionTree, sessionExists } from './tmux.js';
+import { sessionExists } from './tmux.js';
+import { createSetupSession } from './setup-session.js';
 
 function agentPrefix(): string {
   return path.join(os.homedir(), '.local');
@@ -82,9 +83,9 @@ async function one(
 
   const session = sessionFor(spec.id);
   try {
-    if (await sessionExists(session)) await killSessionTree(session);
+    if (await sessionExists(session)) return said('started', `installation session already open for ${spec.label}`, session);
     await emitSessionWillBorn(session); // a reused name's stale tape is reset here
-    await createSession(session, undefined, { agent: false });
+    await createSetupSession(session, spec.id, os.homedir(), { agent: false, argv: [] });
     void collectBirthLines(session, true);
     await runCommand(session, installLine(spec.operations.install, spec.cmd));
     return said('started', `installing ${spec.label} in ${session}`, session);
