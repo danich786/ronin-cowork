@@ -10,6 +10,7 @@ async function waitReady(address, { timeout = 60000, requestTimeout = 5000, inte
   if (!client) throw new Error(`Unsupported readiness protocol: ${url.protocol}`);
   const deadline = performance.now() + timeout;
   let last = 'No response';
+  let lastHttp = null;
   while (performance.now() < deadline) {
     try {
       await new Promise((resolve, reject) => {
@@ -27,12 +28,13 @@ async function waitReady(address, { timeout = 60000, requestTimeout = 5000, inte
       return;
     } catch (error) {
       last = `${error.code ? `${error.code}: ` : ''}${error.message}`;
+      if (/^HTTP \d{3}$/.test(error.message)) lastHttp = error.message;
     }
     const remaining = deadline - performance.now();
     if (remaining <= interval) break;
     await new Promise(resolve => setTimeout(resolve, interval));
   }
-  throw new Error(`Readiness failed for ${url.href}: ${last}`);
+  throw new Error(`Readiness failed for ${url.href}: ${lastHttp || last}`);
 }
 
 module.exports = { waitReady };
