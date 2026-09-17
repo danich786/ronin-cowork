@@ -30,7 +30,7 @@ test('Ronin Home and Setup share the same persisted light and dark control', asy
   ]);
   assert.match(home, /const themeToggle = createThemeToggle\(\)/);
   assert.match(home, /header: \{ actions: \[themeToggle\] \}/);
-  assert.match(homeCss, /:not\(#brandbtn\):not\(#viewactions\)/, 'Home keeps the ViewHost action seat visible');
+  assert.match(homeCss, /:not\(#brandbtn\):not\(\.grow\):not\(#viewactions\)/, 'Home keeps the flex spacer and ViewHost action seat visible');
   assert.match(setup, /const themeToggle = createThemeToggle\(\)/);
   assert.match(setup, /header: \{ actions: \[themeToggle\] \}/);
   assert.match(toggle, /import\('\.\/theme\.js'\)[\s\S]*setTheme\(dark \? 'light' : 'dark'\)/);
