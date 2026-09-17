@@ -786,6 +786,7 @@ export function createCoworkView(options = {}) {
     el: root, glyph: campaign ? '⛩' : '人',
     // The ViewHost draws the Kit's layout map in the bar for this while the view is active.
     arrangement: bench.arrangement,
+    header: { shape: true, ram: true },
     // The owner's per-tab name; Teams defaults to its page name, a Team to the Team name.
     title: ({ param, viewState }) => {
       const fallback = campaign ? coworkIdentity.tabLabel : (readableTeam(param || team) || t('team.team', 'Team'));

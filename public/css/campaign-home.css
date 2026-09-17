@@ -1,7 +1,9 @@
 
 @layer app {
 
-  body.ronin-home-active #bar > :not(#brandbtn) { display: none !important; }
+  /* Home keeps its brand and the ViewHost-owned action seat. Individual controls
+     never escape through this selector: the active view decides what the seat holds. */
+  body.ronin-home-active #bar > :not(#brandbtn):not(#viewactions) { display: none !important; }
 
 
   .ch-view {

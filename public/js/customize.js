@@ -61,6 +61,7 @@ export function buildCustomize() {
 
   return {
     el: layout,
+    header: { ram: true },
     title: () => t('customize.title', 'Customize') + ' · ronin',
     enter: () => { if (!current) show(resources()[0].id); },
     rail,

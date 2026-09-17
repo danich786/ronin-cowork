@@ -18,7 +18,6 @@ function render(el, m) {
   const share = free / total;
   const gb = (mb) => (mb >= 1024 ? `${(mb / 1024).toFixed(1)}G` : `${mb}M`);
 
-  el.hidden = false;
   el.dataset.band = bandFor(share);
   el.textContent = gb(free);
 
@@ -31,12 +30,20 @@ function render(el, m) {
 
 export function mountRamRpm() {
   const el = document.getElementById('ramrpm');
-  if (!el) return;
+  const unavailable = { setVisible() {} };
+  if (!el) return unavailable;
   // THE SWITCH, client half. Machine administration is a SERVICES capability, so on the
   // free build there is no /api/machine to ask — draw nothing rather than fetch into a
-  if (serviceMissing('machine')) return;
+  if (serviceMissing('machine')) return unavailable;
 
   let timer = null;
+  let visible = false;
+  let reading = null;
+  let off = false;
+  const paint = () => {
+    el.hidden = !visible || off || !reading;
+    if (!el.hidden) render(el, reading);
+  };
   const read = async () => {
     const r = await request('/api/machine', { cache: 'no-store' });
     // A failed read LEAVES THE LAST NUMBER STANDING rather than blanking or zeroing.
@@ -45,8 +52,8 @@ export function mountRamRpm() {
     // OFF is a real answer, not a failure: the owner said do not watch this box. Hide
     // the gauge and STOP asking — a poll that keeps running after being switched off is
     // the switch not working, whatever the face shows.
-    if (r && r.ok && r.data && r.data.off) { el.hidden = true; stop(); return; }
-    if (r && r.ok && r.data && r.data.mem) render(el, r.data);
+    if (r && r.ok && r.data && r.data.off) { off = true; paint(); stop(); return; }
+    if (r && r.ok && r.data && r.data.mem) { reading = r.data; paint(); }
   };
 
   const stop = () => { if (timer) { clearInterval(timer); timer = null; } };
@@ -54,4 +61,5 @@ export function mountRamRpm() {
 
   document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
   if (!document.hidden) start();
+  return { setVisible(next) { visible = next === true; paint(); } };
 }

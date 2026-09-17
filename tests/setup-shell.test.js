@@ -24,14 +24,20 @@ test('Ronin Home names the place and gates Teams and New Project on runtime read
 });
 
 test('Ronin Home and Setup share the same persisted light and dark control', async () => {
-  const [home, setup, toggle] = await Promise.all([
-    source('js/campaign-home.js'), source('js/setup-view.js'), source('js/theme-toggle.js'),
+  const [home, homeCss, setup, toggle, workspace, ram] = await Promise.all([
+    source('js/campaign-home.js'), source('css/campaign-home.css'), source('js/setup-view.js'), source('js/theme-toggle.js'),
+    source('js/workspace.js'), source('js/ramrpm.js'),
   ]);
   assert.match(home, /const themeToggle = createThemeToggle\(\)/);
-  assert.match(home, /barActions: \[themeToggle\]/);
+  assert.match(home, /header: \{ actions: \[themeToggle\] \}/);
+  assert.match(homeCss, /:not\(#brandbtn\):not\(#viewactions\)/, 'Home keeps the ViewHost action seat visible');
   assert.match(setup, /const themeToggle = createThemeToggle\(\)/);
+  assert.match(setup, /header: \{ actions: \[themeToggle\] \}/);
   assert.match(toggle, /import\('\.\/theme\.js'\)[\s\S]*setTheme\(dark \? 'light' : 'dark'\)/);
   assert.match(toggle, /aria-pressed/);
+  assert.match(workspace, /shapeControl\.hidden = next\.header\?\.shape !== true/, 'undeclared pane count stays absent');
+  assert.match(workspace, /options\.ramRpm\?\.setVisible\(next\.header\?\.ram === true\)/);
+  assert.match(ram, /return \{ setVisible\(next\) \{ visible = next === true; paint\(\); \} \}/, 'the poller supplies facts while the active view owns visibility');
 });
 
 test('Setup and Settings share the machine-settings island without a right header editor', async () => {
@@ -188,7 +194,7 @@ test('the Setup workbench registers real surfaces and maps each scene to workspa
   assert.doesNotMatch(setup, /arrangement\.move\('selector', 0\)/);
   assert.match(setup, /order: Object\.freeze\(\['workspace1', 'selector', 'workspace2'\]\)/);
   assert.match(setup, /hideFeedback: true/);
-  assert.match(setup, /hideShapeControl: true/);
+  assert.match(setup, /header: \{ actions: \[themeToggle\] \}/);
   // Provider sign-in reuses the existing tile host; Setup itself starts no helper Agent.
   assert.match(setup, /mountProviderSetupSession: providerSessions\.mountProviderSetupSession/);
   assert.doesNotMatch(setup, /createMikaTilePool|createMikaHelpPanel|MIKA_SESSION/);

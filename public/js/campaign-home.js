@@ -132,7 +132,7 @@ export function createCampaignHome() {
     el: root,
     glyph: '⛩',
     title: () => t('campaign_home.ronin_home', 'Ronin Home'),
-    barActions: [themeToggle],
+    header: { actions: [themeToggle] },
     enter: (context) => {
       ctx = context;
       entered = true;

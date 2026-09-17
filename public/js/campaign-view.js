@@ -205,7 +205,7 @@ export function createCampaignView() {
   });
   mikaHelp.el.addEventListener('click', () => { void helpPanel.open(); });
   return {
-    el: bench.host, glyph: '⛩', arrangement: bench.arrangement,
+    el: bench.host, glyph: '⛩', arrangement: bench.arrangement, header: { shape: true, ram: true },
     title: () => t('campaign.settings_short_title', 'Settings'),
     placeFeedback: () => bench.place(FEEDBACK_TYPE, bench.selected()),
     mount: (_host, context) => { ctx = context; },

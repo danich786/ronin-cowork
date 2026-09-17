@@ -120,6 +120,7 @@ export function createLaunchView() {
     el: bench.host,
     glyph: '＋',
     arrangement: bench.arrangement,
+    header: { shape: true, ram: true },
     placeFeedback: () => bench.place(FEEDBACK_TYPE, bench.selected()),
     title: () => t('campaign_home.launch', 'New Project'),
     mount: (_host, context) => { ctx = context; },
