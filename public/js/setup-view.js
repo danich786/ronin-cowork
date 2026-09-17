@@ -198,6 +198,7 @@ export function createSetupView() {
     selectorWorkspace: 'workspace2',
     selectorCurrent: true,
     hintsCollapsed: true,
+    hintsPreferenceScope: 'setup',
     selectorFilter: (type) => ORDER.includes(type),
     onSelectorRefresh: paint,
     onStateChange: save,

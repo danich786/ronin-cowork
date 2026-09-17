@@ -171,13 +171,16 @@ export function flashControlHints() {
     card.animate(frames, { duration: 2500, easing: 'ease-out', id: 'selection-hint' });
   }
 }
-export function buildHints({ collapsedByDefault = false } = {}) {
+export function buildHints({ collapsedByDefault = false, preferenceScope = '' } = {}) {
   initialize();
   const hints = document.createElement('section');
   hints.className = 'terminal-hints';
   hints.setAttribute('aria-label', 'Hints');
   const title = document.createElement('h3'); title.textContent = 'Hints';
   hints.append(title);
+  const scopedPreference = (name, fallback) => preferenceScope
+    ? `ronin.hints.${preferenceScope}.${name}.collapsed`
+    : fallback;
   const section = (label, className, preferenceKey) => {
     const card = document.createElement('details');
     card.className = `${className} wk-card`;
@@ -189,7 +192,7 @@ export function buildHints({ collapsedByDefault = false } = {}) {
     hints.append(card);
     return card;
   };
-  const vocabulary = section('Agent vocabulary', 'agent-vocabulary-hints', 'ronin.hints.vocabulary.collapsed');
+  const vocabulary = section('Agent vocabulary', 'agent-vocabulary-hints', scopedPreference('vocabulary', 'ronin.hints.vocabulary.collapsed'));
   for (const [term, description] of [
     ['Create new session (Agent)', 'Start another visible Ronin Agent session.'],
     ['Tell', 'Message another Agent.'],
@@ -207,7 +210,7 @@ export function buildHints({ collapsedByDefault = false } = {}) {
     const meaning = document.createElement('span'); meaning.textContent = description;
     row.append(label, meaning); vocabulary.append(row);
   }
-  const controls = section('Session controls', 'session-control-hints', 'ronin.hints.collapsed');
+  const controls = section('Session controls', 'session-control-hints', scopedPreference('controls', 'ronin.hints.collapsed'));
   for (const action of actions) {
     const row = document.createElement('div'); row.className = 'terminal-hint-row';
     const label = document.createElement('strong'); label.textContent = labels[action];
