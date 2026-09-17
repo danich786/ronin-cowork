@@ -146,10 +146,12 @@ export function createProviderSurface(context) {
       if (!result.ok) { problem.textContent = result.message; problem.hidden = false; return; }
       await after();
     };
+    let saveAuthentication = null;
     const closeSetup = () => {
       const button = action(t('setup_surface.close', 'Close'), '', async () => {
         button.disabled = true;
-        await press(`/api/setup/providers/${encodeURIComponent(provider.id)}/close`);
+        const path = `/api/setup/providers/${encodeURIComponent(provider.id)}/close`;
+        if (saveAuthentication) await saveAuthentication(path); else await press(path);
         button.disabled = false;
       });
       button.classList.add('setup-provider-action');
@@ -167,16 +169,25 @@ export function createProviderSurface(context) {
       const field = el('label', 'setup-provider-sign-in-title', t('setup_surface.authentication_name', 'Authentication name'));
       field.append(title);
       let method = draft.method || '';
-      const submit = action(t('setup_surface.done', 'Done'), 'primary', async () => {
-        if (!method || (method !== 'not_signed_in' && !title.value.trim())) return;
+      const message = el('p', 'setup-notice bad'); message.hidden = true;
+      saveAuthentication = async (destination = path) => {
+        if (method !== 'not_signed_in' && !title.value.trim()) {
+          message.textContent = t('setup_surface.name_before_close', 'To close, name your authentication.');
+          message.hidden = false; title.focus(); return;
+        }
+        if (!method) {
+          message.textContent = t('setup_surface.type_before_close', 'Choose an authentication type, or Not signed in.');
+          message.hidden = false; completion.scrollIntoView?.({ block: 'nearest' }); return;
+        }
         submit.disabled = true;
-        const target = method === 'not_signed_in' ? `/api/setup/providers/${encodeURIComponent(provider.id)}/close` : path;
+        const target = method === 'not_signed_in' ? `/api/setup/providers/${encodeURIComponent(provider.id)}/close` : destination;
         const result = await request(target, { method: 'POST', json: { sign_in: method === 'not_signed_in' ? null : { method, label: title.value.trim() } } });
         if (!result.ok) { problem.textContent = result.message; problem.hidden = false; submit.disabled = false; return; }
         authenticationDrafts.delete(provider.id);
         mounted?.park?.();
         await paint();
-      });
+      };
+      const submit = action(t('setup_surface.done', 'Done'), 'primary', () => saveAuthentication(path));
       const update = () => { authenticationDrafts.set(provider.id, { method, label: title.value }); field.hidden = method === 'not_signed_in'; submit.disabled = !method || (method !== 'not_signed_in' && !title.value.trim()); };
       signInForm = ask([{ fields: [{ key: 'method', label: t('setup_surface.authentication_type', 'Authentication type'), options: [
         { v: 'subscription', l: t('setup_surface.account_subscription', 'Account / subscription') },
@@ -185,7 +196,7 @@ export function createProviderSurface(context) {
         { v: 'not_signed_in', l: t('setup_surface.not_authenticated', 'Not signed in') },
       ] }] }], { value: { method }, onChange: (value) => { method = value.method; update(); }, exposed: true });
       title.addEventListener('input', update);
-      completion.append(field, signInForm.el, submit);
+      completion.append(field, signInForm.el, message, submit);
       update();
     };
     // One shape for all three steps: a mark that says done, current, or pending; the label

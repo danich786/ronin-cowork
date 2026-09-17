@@ -1964,3 +1964,6 @@ The catalog entry goes. {dir} is not touched.
 - **setup_surface.authentication_name_hint:** Email address or account name
 - **setup_surface.authentication_type:** Authentication type
 - **setup_surface.account_subscription:** Account / subscription
+
+- **setup_surface.name_before_close:** To close, name your authentication.
+- **setup_surface.type_before_close:** Choose an authentication type, or Not signed in.
