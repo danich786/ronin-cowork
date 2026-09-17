@@ -118,7 +118,7 @@ ronin_adopt_tmux() { # state root
   ronin_tmux_probe || probe_rc=$?
   case "$probe_rc" in
     0) ;;
-    1) ronin_say "==> no tmux server on $(ronin_tmux_probe_socket): tmux-server.service starts Ronin's own, in its own cgroup, so restarting Ronin never reaches a session"; return 0 ;;
+    1) ronin_say "==> No tmux server found. Ronin is starting its own."; return 0 ;;
     *) return "$probe_rc" ;;
   esac
 
