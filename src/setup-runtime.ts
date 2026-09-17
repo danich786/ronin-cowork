@@ -11,11 +11,12 @@ import { rootDir } from './resources.js';
 import { runCommand } from './send.js';
 import { execFile as run } from './spawn-broker.js';
 import { collectBirthLines } from './sockets.js';
-import { createSession, killSessionTree, sessionExists, setSessionIdentity, setTags } from './tmux.js';
+import { killSessionTree, sessionExists } from './tmux.js';
 import { addJob, isValidTeam, listJobs, type Job } from './jikan.js';
 import type { InstalledAnswer } from './routes/installed-api.js';
 
-export const PROVIDER_SETUP_TEAM = 'provider_setup';
+import { createSetupSession, setupAttachment, PROVIDER_SETUP_TEAM, type SetupSessionPrimitives } from './setup-session.js';
+export { PROVIDER_SETUP_TEAM } from './setup-session.js';
 export const INSTALLED_ROOTS = [
   { name: 'ronin_lab', label: 'Ronin Lab', remit: 'Ideas, assistants, notes, research, and pre-project work.', managed: false },
   { name: 'project_one', label: 'Project One', remit: 'The first project-shaped workspace folder.', managed: true },
@@ -25,9 +26,41 @@ export const SETUP_PREFERENCE_KINDS = ['build', 'life', 'research', 'other'] as 
 export type SetupPreferenceKind = typeof SETUP_PREFERENCE_KINDS[number];
 export interface SetupPreferences { kinds: SetupPreferenceKind[]; providers: string[]; path_note: string; identity_choice: '' | 'email' | 'anonymous' | 'declined'; bounty_opt_in: boolean }
 interface SetupSection {
-  providers?: Record<string, { activated_at?: unknown; off_at?: unknown }>;
+  providers?: Record<string, { activated_at?: unknown; off_at?: unknown; sign_in?: ProviderSignIn }>;
   preferences?: { kinds?: unknown; providers?: unknown; path_note?: unknown; identity_choice?: unknown; bounty_opt_in?: unknown };
   [key: string]: unknown;
+}
+
+export interface ProviderSignIn {
+  method: 'subscription' | 'api_key' | 'third_party';
+  label: string;
+  recorded_at: string;
+}
+
+/** Owner-described metadata only: saving it never establishes authentication. */
+export async function saveProviderSignIn(provider: string, input: unknown): Promise<ProviderSignIn | null> {
+  if (!AGENTS.some((agent) => agent.id === provider)) throw new Error(`Unknown provider "${provider}".`);
+  if (input === null) {
+    await updateSection<SetupSection>('setup', (setup) => {
+      const current = { ...setup.providers?.[provider] };
+      delete current.sign_in;
+      return { ...setup, providers: { ...setup.providers, [provider]: current } };
+    });
+    return null;
+  }
+  const data = input as Partial<ProviderSignIn> | null;
+  if (!data || !['subscription', 'api_key', 'third_party'].includes(String(data.method))) {
+    throw new Error('Choose Subscription, API key, or Third-party service.');
+  }
+  if (typeof data.label !== 'string' || !data.label.trim() || data.label.trim().length > 120) {
+    throw new Error('Give this sign-in a label of 1–120 characters.');
+  }
+  const sign_in: ProviderSignIn = { method: data.method as ProviderSignIn['method'], label: data.label.trim(), recorded_at: new Date().toISOString() };
+  await updateSection<SetupSection>('setup', (setup) => ({
+    ...setup,
+    providers: { ...setup.providers, [provider]: { ...setup.providers?.[provider], sign_in } },
+  }));
+  return sign_in;
 }
 
 export interface SetupProviderState {
@@ -44,6 +77,8 @@ export interface SetupProviderState {
   blocked: string | null;
   path: string | null;
   login_open: boolean;
+  install_open: boolean;
+  sign_in: ProviderSignIn | null;
   signed_in: boolean;
   activated: boolean;
   activated_at: string | null;
@@ -156,18 +191,16 @@ const defaultSessionOps: ProviderSessionOps = {
     const launch = await launchArgv(spec.cmd, '');
     if (!launch.argv.length) throw new Error(`${spec.label} is not installed on this machine.`);
     await mkdir(rootDir('user'), { recursive: true });
-    await createSession(name, rootDir('user'), { agent: true, argv: launch.argv });
+    await createSetupSession(name, spec.id, rootDir('user'), { agent: false, argv: [] });
     void collectBirthLines(name, true);
-    await setTags(name, [PROVIDER_SETUP_TEAM]);
-    await setSessionIdentity(name, { sessionType: 'provider_setup', cli: spec.id, provider: '', model: '' });
+    await runCommand(name, launch.argv.map((arg) => "'" + arg.replace(/'/g, "'\\''") + "'").join(' '));
   },
   async openUpdate(provider, name) {
     const spec = AGENTS.find((agent) => agent.id === provider);
     if (!spec) throw new Error(`Unknown provider "${provider}".`);
     await mkdir(rootDir('user'), { recursive: true });
-    await createSession(name, rootDir('user'), { agent: false });
+    await createSetupSession(name, spec.id, rootDir('user'), { agent: false, argv: [] });
     void collectBirthLines(name, true);
-    await setTags(name, [PROVIDER_SETUP_TEAM]);
     await runCommand(name, updateCommand(spec));
   },
   close: killSessionTree,
@@ -189,7 +222,8 @@ export async function setupRuntimeAnswer(
     const entry = entries.find((row) => row.cli === agent.id);
     const session = sessionName(agent.id);
     const updateSession = updateSessionName(agent.id);
-    const [loginOpen, updateOpen] = await Promise.all([ops.exists(session), ops.exists(updateSession)]);
+    const installSession = installSessionName(agent.id);
+    const [loginOpen, updateOpen, installOpen] = await Promise.all([ops.exists(session), ops.exists(updateSession), ops.exists(installSession)]);
     const completed = activatedAt(section, agent.id);
     const offSince = offAt(section, agent.id);
     const isInstalled = summary.installed.includes(agent.id);
@@ -212,6 +246,8 @@ export async function setupRuntimeAnswer(
       blocked: agent.parked || null,
       path: isInstalled ? summary.paths[agent.id] ?? null : null,
       login_open: loginOpen,
+      install_open: installOpen,
+      sign_in: section.providers?.[agent.id]?.sign_in ?? null,
       signed_in: signedIn,
       activated,
       activated_at: completed,
@@ -228,10 +264,11 @@ export async function setupRuntimeAnswer(
       update_available: Boolean(version && latest && newerVersion(version, latest.version)),
       askable: npmPackageOf(agent.operations.install) !== '',
       update_open: updateOpen,
-      // One attachment per provider: the sign-in when open, else the update. Both are the
-      // same temporary provider_setup session shape and the same Close ends either.
-      attachment: loginOpen ? { type: 'session', key: session, team: PROVIDER_SETUP_TEAM, temporary: true }
-        : updateOpen ? { type: 'session', key: updateSession, team: PROVIDER_SETUP_TEAM, temporary: true } : null,
+      // One attachment per provider: sign-in, update, then install. The same Close
+      // ends all three; installation remains visible after the binary appears.
+      attachment: loginOpen ? setupAttachment(session)
+        : updateOpen ? setupAttachment(updateSession)
+          : installOpen ? setupAttachment(installSession) : null,
       state: offSince !== null && isInstalled ? 'off' : activated ? 'activated' : loginOpen ? 'login_open' : isInstalled ? 'installed' : agent.operations.install ? 'installable' : 'absent',
     };
   }));
@@ -344,7 +381,7 @@ export async function setProviderOff(provider: string, off: boolean, now = () =>
 async function recordProviderActivation(provider: string, activated_at: string): Promise<void> {
   await updateSection<SetupSection>('setup', (setup) => ({
     ...setup,
-    providers: { ...(setup.providers ?? {}), [provider]: { activated_at } },
+    providers: { ...(setup.providers ?? {}), [provider]: { ...setup.providers?.[provider], activated_at } },
   }));
 }
 
@@ -381,25 +418,14 @@ export interface GithubSetupOps {
   logout(account: string): Promise<void>;
 }
 
-export interface GithubSessionPrimitives {
-  create(name: string, cwd: string, options: { agent: boolean; argv: string[] }): Promise<void>;
-  tag(name: string, tags: string[]): Promise<void>;
-  identify(name: string, identity: { sessionType: string; cli: string; provider: string; model: string }): Promise<void>;
-}
+export type GithubSessionPrimitives = SetupSessionPrimitives;
 
-export async function createGithubSetupSession(primitives: GithubSessionPrimitives = {
-  create: createSession,
-  tag: async (name, tags) => { await setTags(name, tags); },
-  identify: setSessionIdentity,
-}): Promise<void> {
-  await primitives.create(GITHUB_SETUP_SESSION, os.homedir(), {
-    agent: false,
-    argv: ['gh', 'auth', 'login', '--hostname', 'github.com', '--git-protocol', 'https'],
-  });
-  await primitives.tag(GITHUB_SETUP_SESSION, [PROVIDER_SETUP_TEAM]);
-  await primitives.identify(GITHUB_SETUP_SESSION, {
-    sessionType: 'provider_setup', cli: 'gh', provider: 'github', model: '',
-  });
+export async function createGithubSetupSession(primitives?: GithubSessionPrimitives, command = runCommand): Promise<void> {
+  await createSetupSession(GITHUB_SETUP_SESSION, 'gh', os.homedir(), {
+    agent: false, provider: 'github',
+    argv: [],
+  }, primitives);
+  await command(GITHUB_SETUP_SESSION, 'gh auth login --hostname github.com --git-protocol https');
 }
 
 /** GitHub's supported package paths, run visibly because system package managers may ask for sudo. */
@@ -417,16 +443,8 @@ export function githubInstallCommand(platform = os.platform()): string {
   throw new Error('GitHub CLI installation is supported on macOS and Linux.');
 }
 
-export async function createGithubInstallSession(primitives: GithubSessionPrimitives = {
-  create: createSession,
-  tag: async (name, tags) => { await setTags(name, tags); },
-  identify: setSessionIdentity,
-}): Promise<void> {
-  await primitives.create(GITHUB_INSTALL_SESSION, os.homedir(), { agent: false, argv: [] });
-  await primitives.tag(GITHUB_INSTALL_SESSION, [PROVIDER_SETUP_TEAM]);
-  await primitives.identify(GITHUB_INSTALL_SESSION, {
-    sessionType: 'provider_setup', cli: 'gh', provider: 'github', model: '',
-  });
+export async function createGithubInstallSession(primitives?: GithubSessionPrimitives): Promise<void> {
+  await createSetupSession(GITHUB_INSTALL_SESSION, 'gh', os.homedir(), { agent: false, argv: [], provider: 'github' }, primitives);
   await runCommand(GITHUB_INSTALL_SESSION, githubInstallCommand());
 }
 
@@ -459,8 +477,8 @@ export async function githubSetupAnswer(ops: GithubSetupOps = defaultGithubSetup
     account,
     state: !installed ? 'missing' : authenticated ? 'authenticated' : 'needs_authentication',
     installing,
-    attachment: installing ? { type: 'session', key: GITHUB_INSTALL_SESSION, team: PROVIDER_SETUP_TEAM, temporary: true }
-      : open ? { type: 'session', key: GITHUB_SETUP_SESSION, team: PROVIDER_SETUP_TEAM, temporary: true } : null,
+    attachment: installing ? setupAttachment(GITHUB_INSTALL_SESSION)
+      : open ? setupAttachment(GITHUB_SETUP_SESSION) : null,
   };
 }
 

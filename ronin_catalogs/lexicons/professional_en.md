@@ -1943,3 +1943,32 @@ The catalog entry goes. {dir} is not touched.
 - **setup_surface.col_good_at:** Good at
 - **setup_surface.col_not_good_at:** Not good at
 - **setup_surface.model_default_mark:** the default
+
+## Provider sign-in record
+- **setup_surface.sign_in_question:** Did you authenticate? Choose how and give this sign-in a title.
+- **setup_surface.sign_in_title:** Sign-in title
+- **setup_surface.sign_in_method:** Sign-in method
+- **setup_surface.subscription:** Subscription
+- **setup_surface.api_key:** API key
+- **setup_surface.third_party:** Third-party service
+- **setup_surface.third_party_hint:** For example, OpenRouter. Put the service or account name in the title.
+- **setup_surface.not_authenticated:** Not signed in
+- **setup_surface.save_close:** Save and close
+- **setup_surface.cancel:** Cancel
+- **setup_surface.back:** Back
+- **setup_surface.cancel_setup:** Cancel setup
+- **setup_surface.sign_in_recorded:** Your sign-in record: {method} · {title}
+
+- **setup_surface.naming_authentication:** Naming this authentication
+- **setup_surface.authentication_name:** Authentication name
+- **setup_surface.authentication_name_hint:** Email address or account name
+- **setup_surface.authentication_type:** Authentication type
+- **setup_surface.account_subscription:** Account / subscription
+
+- **setup_surface.name_before_close:** To close, name your authentication.
+- **setup_surface.type_before_close:** Choose an authentication type, or Not signed in.
+
+- **setup_surface.authentication_title:** Authentication title
+- **setup_surface.authentication_title_hint:** Choose a title
+
+- **setup_surface.title_before_done:** To finish, give this authentication a title.

@@ -109,9 +109,25 @@ step waits.
 
 | Step | What it measures | The control |
 |---|---|---|
-| **Install** | whether the CLI is on this machine | **Install** runs the provider's own install; a provider Ronin cannot install safely gets an **Install guide** link |
-| **Authenticate** | whether the provider is signed in here | **Authenticate** opens the provider's own sign-in in a tile on this surface; **Done** records it, **Close** leaves things as they were |
+| **Install** | whether the CLI is on this machine | **Install** opens the provider's installer and first-run setup in a tile on this surface; a provider Ronin cannot install safely gets an **Install guide** link |
+| **Authenticate** | whether the provider is signed in here | **Authenticate** opens the provider's own sign-in in a tile on this surface; **Done** records it, **Cancel** ends the terminal session |
 | **Ready** | activation, which unlocks Teams, New Project and the preset stones | **Turn off** stops Ronin measuring, updating and launching the provider — tiles already running are not touched and the sign-in is kept; **Turn on** brings it back, and nothing needs signing in again |
+
+The install window can continue directly into the provider's sign-in. The temporary
+terminal has a normal tmux shell: exiting the CLI returns to its prompt. Installation,
+provider authentication, and GitHub setup all use this pattern.
+
+Under the terminal, **Naming this authentication** has a free-text **Authentication title**
+and an **Authentication type** stone. Open the stone to choose **Account / subscription**,
+**API key**, **Third-party service**, or **Not signed in**; the choices collapse after selection.
+The title can be anything meaningful to you, such as “Personal Google” or “Work OpenRouter”.
+**Done** saves the title and type and finishes setup. **Cancel** ends the temporary session
+without requiring or saving those fields; it does not undo installation or credentials
+already saved by the CLI. Both buttons sit together below the fields.
+
+Ronin saves this description separately from credentials, then checks readiness again.
+The terminal height is bounded, and opening a provider scrolls its detail panel to the
+first unfinished step. This works in both Ronin Setup and Ronin Settings.
 
 Below the steps sits what the catalog knows about the provider: its models, their tier and
 cost as read, and the default. Ronin only checks that a sign-in exists; it never reads a

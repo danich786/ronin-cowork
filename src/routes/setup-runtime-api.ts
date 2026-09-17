@@ -1,4 +1,5 @@
 import { homedir } from 'node:os';
+import { dispatchInstall } from '../agent-install.js';
 import type express from 'express';
 import { readSetupSection } from '../machine-state.js';
 import {
@@ -9,6 +10,7 @@ import {
   openProviderUpdate,
   setProviderOff,
   setupRuntimeAnswer,
+  saveProviderSignIn,
   createMorningBriefSchedule,
   morningBriefSchedules,
   writeSetupPreferences,
@@ -73,6 +75,19 @@ export function registerSetupRuntime(app: express.Express): void {
     }
   });
 
+  app.post('/api/setup/providers/:provider/install', async (req, res) => {
+    try {
+      const [result] = await dispatchInstall([{ kind: 'agent', name: String(req.params.provider) }]);
+      if (!result || result.outcome === 'refused') {
+        res.status(400).json({ error: result?.say || 'Installation did not start.' });
+        return;
+      }
+      res.json({ ok: true, outcome: result.outcome, runtime: await answer() });
+    } catch (error) {
+      res.status(400).json({ error: errMsg(error) });
+    }
+  });
+
   // Update: the registry's update line in a temporary provider_setup session shown in the
   // page, as a sign-in is; the same /close ends it. The owner's press.
   app.post('/api/setup/providers/:provider/update', async (req, res) => {
@@ -113,6 +128,7 @@ export function registerSetupRuntime(app: express.Express): void {
 
   app.post('/api/setup/providers/:provider/done', async (req, res) => {
     try {
+      if (req.body?.sign_in !== undefined) await saveProviderSignIn(String(req.params.provider), req.body.sign_in);
       const result = await completeProviderLogin(String(req.params.provider));
       res.json({ ok: true, closed: true, activation_recorded: true, activated_at: result.activated_at, attachment: null, runtime: await answer(await measureAndRecordProviders()) });
     } catch (error) {
@@ -122,6 +138,7 @@ export function registerSetupRuntime(app: express.Express): void {
 
   app.post('/api/setup/providers/:provider/close', async (req, res) => {
     try {
+      if (req.body?.sign_in !== undefined) await saveProviderSignIn(String(req.params.provider), req.body.sign_in);
       await closeProviderLogin(String(req.params.provider));
       // A sign-in closed without Done may still have left the CLI's credential file: measure.
       res.json({ ok: true, closed: true, activation_recorded: false, attachment: null, runtime: await answer(await measureAndRecordProviders()) });

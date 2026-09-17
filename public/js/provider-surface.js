@@ -32,6 +32,7 @@
  * (gemini alone took 2.9s to answer, 2026-09-09); nothing measured ever stands there again.
  */
 import { t } from './lexicon.js';
+import { ask } from './ask.js';
 import { request } from './request.js';
 import { WorkspaceKit } from './workspace-kit.js';
 import { createStoneWorkSurface } from './stone-work-surface.js';
@@ -76,10 +77,14 @@ export function createProviderSurface(context) {
   const mikaAvailability = el('p', 'setup-fine setup-mika-availability');
   let opened = String(context.detail?.provider || context.detail?.key || '');
   let firstProviderId = '';
+  let alignedProvider = '';
   let openFirstWhenReady = false;
   let mounted = null;
+  let signInForm = null;
+  const authenticationDrafts = new Map();
   let runtime = { providers: [] };
   const disposeMount = (destroy = true) => {
+    signInForm?.destroy(); signInForm = null;
     if (!mounted) return;
     if (destroy) mounted.destroy?.(); else mounted.park?.();
     mounted = null;
@@ -142,6 +147,64 @@ export function createProviderSurface(context) {
       if (!result.ok) { problem.textContent = result.message; problem.hidden = false; return; }
       await after();
     };
+    let saveAuthentication = null;
+    const closeSetup = () => {
+      const button = action(t('setup_surface.cancel', 'Cancel'), '', async () => {
+        button.disabled = true;
+        const path = `/api/setup/providers/${encodeURIComponent(provider.id)}/close`;
+        authenticationDrafts.delete(provider.id);
+        await press(path);
+        button.disabled = false;
+      });
+      button.classList.add('setup-provider-action');
+      return button;
+    };
+    const completion = el('section', 'setup-provider-completion'); completion.hidden = true;
+    const finish = (path) => {
+      if (!completion.hidden) return;
+      completion.hidden = false;
+      completion.append(el('h3', 'setup-provider-note', t('setup_surface.naming_authentication', 'Naming this authentication')));
+      const draft = authenticationDrafts.get(provider.id) || provider.sign_in || {};
+      const title = el('input'); title.type = 'text'; title.maxLength = 120;
+      title.value = draft.label || '';
+      title.placeholder = t('setup_surface.authentication_title_hint', 'Choose a title');
+      const field = el('label', 'setup-provider-sign-in-title', t('setup_surface.authentication_title', 'Authentication title'));
+      field.append(title);
+      let method = draft.method || '';
+      const message = el('p', 'setup-notice bad'); message.hidden = true;
+      saveAuthentication = async (destination = path) => {
+        if (method !== 'not_signed_in' && !title.value.trim()) {
+          message.textContent = t('setup_surface.title_before_done', 'To finish, give this authentication a title.');
+          message.hidden = false; title.focus(); return;
+        }
+        if (!method) {
+          message.textContent = t('setup_surface.type_before_close', 'Choose an authentication type, or Not signed in.');
+          message.hidden = false; completion.scrollIntoView?.({ block: 'nearest' }); return;
+        }
+        submit.disabled = true;
+        const target = method === 'not_signed_in' ? `/api/setup/providers/${encodeURIComponent(provider.id)}/close` : destination;
+        const result = await request(target, { method: 'POST', json: { sign_in: method === 'not_signed_in' ? null : { method, label: title.value.trim() } } });
+        if (!result.ok) { problem.textContent = result.message; problem.hidden = false; submit.disabled = false; return; }
+        authenticationDrafts.delete(provider.id);
+        mounted?.park?.();
+        await paint();
+      };
+      const submit = action(t('setup_surface.done', 'Done'), 'primary', () => saveAuthentication(path));
+      const update = () => { authenticationDrafts.set(provider.id, { method, label: title.value }); field.hidden = method === 'not_signed_in'; submit.disabled = !method || (method !== 'not_signed_in' && !title.value.trim()); };
+      const fields = el('div', 'setup-provider-authentication-fields');
+      signInForm = ask([{ fields: [{ key: 'method', label: t('setup_surface.authentication_type', 'Authentication type'), options: [
+        { v: 'subscription', l: t('setup_surface.account_subscription', 'Account / subscription') },
+        { v: 'api_key', l: t('setup_surface.api_key', 'API key') },
+        { v: 'third_party', l: t('setup_surface.third_party', 'Third-party service'), sub: t('setup_surface.third_party_hint', 'For example, OpenRouter. Put the service or account name in the title.') },
+        { v: 'not_signed_in', l: t('setup_surface.not_authenticated', 'Not signed in') },
+      ] }] }], { value: { method }, onChange: (value) => { method = value.method; update(); }, trayHost: fields });
+      title.addEventListener('input', update);
+      fields.append(field, signInForm.el);
+      const actions = el('div', 'setup-provider-completion-actions');
+      actions.append(submit, closeSetup());
+      completion.append(fields, message, actions);
+      update();
+    };
     // One shape for all three steps: a mark that says done, current, or pending; the label
     // with its measured state beside it; at most one short line; then a control of one size.
     // Only the current step's control is the kaki primary.
@@ -175,17 +238,24 @@ export function createProviderSurface(context) {
     // Every step's text — the update running, the line Update runs, "usually updates
     // itself", the switch's sentence — is the step's own `detail`/`command`, painted by
     // stepRow in the text column. Nothing is appended to the grid but a terminal.
-    // UPDATE — only for an installed CLI the registry knows how to update. It opens in the
+    // Install and update share the same attachment and Close as sign-in. They open in the
     // page exactly as a sign-in does: a temporary provider_setup session, mounted here, and
     // the same Close ends it. Not the kaki primary (that is the current step's), so the
     // label carries the news instead. A sign-in that is open owns the one attachment.
-    if (install.status === 'installed' && provider.update_open && !provider.login_open) {
+    if ((provider.install_open || provider.update_open) && !provider.login_open) {
       const terminal = el('div', 'setup-provider-terminal');
-      const close = action(t('setup_surface.close', 'Close'), '', () => { mounted?.park?.(); return press(`/api/setup/providers/${encodeURIComponent(provider.id)}/close`); });
-      close.classList.add('setup-provider-action', 'setup-provider-update-close');
-      installRow.controls.append(close);
-      installRow.item.append(terminal);
-      mounted = mountProviderAttachment(context.environment, terminal, provider, context.workspace, () => void paint());
+
+      if (!provider.install_open) {
+        const close = closeSetup();
+        close.classList.add('setup-provider-update-close');
+        installRow.item.append(terminal, close);
+      }
+      if (provider.install_open) installRow.item.append(terminal);
+      if (provider.install_open) {
+        finish(`/api/setup/providers/${encodeURIComponent(provider.id)}/done`);
+        installRow.item.append(completion);
+      }
+      mounted = mountProviderAttachment(context.environment, terminal, provider, context.workspace);
       if (!mounted) terminal.append(el('p', 'setup-notice bad', t('setup_surface.login_attachment_missing', 'The native setup session is open but its terminal attachment is unavailable.')));
     // Update is useful only when there is somewhere newer to move AND the provider is
     // usable. Otherwise the row already says the complete fact: up to date, or not signed in.
@@ -211,27 +281,27 @@ export function createProviderSurface(context) {
       const link = el('a', 'wk-action setup-provider-action setup-provider-manual', install.manual.label);
       link.href = install.manual.url; link.target = '_blank'; link.rel = 'noopener noreferrer';
       installRow.controls.append(link);
-    } else if (install.current && install.action === 'install' && provider.installable) {
-      installRow.controls.append(control(install, t('setup_surface.install', 'Install'), async () => {
-        const result = await request('/api/install', { method: 'POST', json: { items: [{ kind: 'agent', name: provider.id }] } });
-        if (!result.ok) { problem.textContent = result.message; problem.hidden = false; return; }
-        await paint();
-      }));
+    } else if (install.current && install.action === 'install' && provider.installable && !provider.install_open) {
+      const installButton = control(install, t('setup_surface.install', 'Install'), async () => {
+        installButton.disabled = true;
+        const result = await request(`/api/setup/providers/${encodeURIComponent(provider.id)}/install`, { method: 'POST', json: {} });
+        if (!result.ok) { problem.textContent = result.message; problem.hidden = false; installButton.disabled = false; return; }
+        runtime = result.data.runtime;
+        await paintFrom();
+      });
+      installRow.controls.append(installButton);
     }
     const authRow = stepRow(auth, auth.status === 'recorded'
       ? t('setup_surface.signed_in', 'Signed in')
       : auth.status === 'open' ? t('setup_surface.sign_in_open', 'Sign-in open')
         : auth.status === 'available' ? t('setup_surface.not_signed_in', 'Not signed in') : t('setup_surface.install_first', 'After install'));
-    if (auth.current && auth.action !== 'login_open') {
+    if (auth.current && auth.action !== 'login_open' && !provider.install_open) {
       authRow.controls.append(control(auth, t('setup_surface.authenticate', 'Authenticate'), () => press(`/api/setup/providers/${encodeURIComponent(provider.id)}/login`)));
     } else if (auth.action === 'login_open') {
       const terminal = el('div', 'setup-provider-terminal');
-      const done = control(auth, t('setup_surface.done', 'Done'), () => { mounted?.park?.(); return press(`/api/setup/providers/${encodeURIComponent(provider.id)}/done`); });
-      const close = action(t('setup_surface.close', 'Close'), '', () => { mounted?.park?.(); return press(`/api/setup/providers/${encodeURIComponent(provider.id)}/close`); });
-      close.classList.add('setup-provider-action');
-      authRow.controls.append(done, close);
-      authRow.item.append(terminal);
-      mounted = mountProviderAttachment(context.environment, terminal, provider, context.workspace, () => void paint());
+      finish(`/api/setup/providers/${encodeURIComponent(provider.id)}/done`);
+      authRow.item.append(terminal, completion);
+      mounted = mountProviderAttachment(context.environment, terminal, provider, context.workspace);
       if (!mounted) terminal.append(el('p', 'setup-notice bad', t('setup_surface.login_attachment_missing', 'The native setup session is open but its terminal attachment is unavailable.')));
     }
     // THE SWITCH lives on the Ready step. Activated: Turn off, with the sentence that says
@@ -248,7 +318,12 @@ export function createProviderSurface(context) {
       turnOn.classList.add('setup-provider-turn-on');
       readyRow.controls.append(turnOn);
     }
-    card.append(head, flow, problem);
+    card.append(head, flow);
+    if (provider.sign_in) {
+      const names = { subscription: t('setup_surface.account_subscription', 'Account / subscription'), api_key: t('setup_surface.api_key', 'API key'), third_party: t('setup_surface.third_party', 'Third-party service') };
+      card.append(el('p', 'setup-provider-note', t('setup_surface.sign_in_recorded', 'Your sign-in record: {method} · {title}', { method: names[provider.sign_in.method] || provider.sign_in.method, title: provider.sign_in.label })));
+    }
+    card.append(problem);
     host.append(card);
   };
 
@@ -315,6 +390,16 @@ export function createProviderSurface(context) {
     }
     host.append(yours);
     paintCatalog(rows, provider, host);
+    if (alignedProvider !== id) {
+      alignedProvider = id;
+      requestAnimationFrame(() => {
+        if (!host.isConnected || alignedProvider !== id) return;
+        const current = host.querySelector('.setup-provider-step[data-current="true"]');
+        host.scrollTop = current
+          ? host.scrollTop + current.getBoundingClientRect().top - host.getBoundingClientRect().top
+          : 0;
+      });
+    }
     return () => disposeMount();
   };
 
@@ -322,7 +407,7 @@ export function createProviderSurface(context) {
     selectedId: opened,
     className: 'setup-provider-stones',
     renderDetail: (item, host) => paintProvider(item.id, host),
-    onSelectionChange: (id) => { opened = String(id || ''); },
+    onSelectionChange: (id) => { opened = String(id || ''); if (!id) alignedProvider = ''; },
   });
   const controller = Object.freeze({
     openFirst: () => {
