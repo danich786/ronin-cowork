@@ -354,11 +354,15 @@ export async function completeProviderLogin(
   record: (provider: string, activated_at: string) => Promise<void> = recordProviderActivation,
 ): Promise<{ session: string; activated_at: string }> {
   if (!AGENTS.some((agent) => agent.id === provider)) throw new Error(`Unknown provider "${provider}".`);
-  const session = sessionName(provider);
-  if (!(await ops.exists(session))) throw new Error(`No open login session for ${provider}; activation was not recorded.`);
+  const loginSession = sessionName(provider);
+  const installSession = installSessionName(provider);
+  const session = await ops.exists(loginSession)
+    ? loginSession
+    : await ops.exists(installSession) ? installSession : '';
+  if (!session) throw new Error(`No open login or install session for ${provider}; activation was not recorded.`);
   const activated_at = now();
   await record(provider, activated_at);
-  await ops.close(session);
+  await closeProviderLogin(provider, ops);
   return { session, activated_at };
 }
 

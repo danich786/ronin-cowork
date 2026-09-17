@@ -194,7 +194,7 @@ function createRegisterSurface(context) {
   fit.append(
     el('h3', '', t('setup_surface.ronin_fit', 'What brings you here')), preferredFeature.wrap, reasons.wrap,
   );
-  const consent = el('p', 'setup-fine setup-register-consent', t('setup_surface.consent_exact', 'Email registration sends a confirmation and supports Bounty participation. Anonymous registration shares these answers without contact details. Communication stays off unless you choose otherwise.'));
+  const consent = el('p', 'setup-fine setup-register-consent', t('setup_surface.consent_exact', 'Email registration sends a confirmation and supports Ronin Services and Bounty participation. Anonymous registration shares these answers without contact details.'));
   const declined = el('p', 'setup-register-declined', t('setup_surface.no_thanks_message', 'Enjoy using Ronin. If you’d like to share feedback later, we’d be glad to hear from you at a later date.'));
   declined.hidden = true;
   const userIntro = el('section', 'setup-register-group setup-user-intro');
@@ -208,9 +208,10 @@ function createRegisterSurface(context) {
     const result = await request('/api/setup/user-intro', { method: 'PUT', json: { intro } });
     userIntroNotice.textContent = result.ok
       ? t('setup_surface.user_intro_saved', 'Saved locally for future Agent introductions.') : result.message;
+    if (result.ok) userIntro.hidden = true;
     return result.ok;
   };
-  const saveUserIntroAction = action(t('setup_surface.user_intro_save', 'Save Agent introduction'), 'primary', () => { void saveUserIntro(); });
+  const saveUserIntroAction = action(t('setup_surface.user_intro_submit', 'Submit'), 'primary', () => { void saveUserIntro(); });
   const userIntroActions = el('div', 'setup-user-intro-actions');
   userIntroActions.append(saveUserIntroAction, el('span', 'setup-fine', t('setup_surface.user_intro_local_only', 'Saved locally — not sent to Ronin.')));
   userIntro.append(
@@ -261,31 +262,13 @@ function createRegisterSurface(context) {
   });
   paintIdentityMode();
   form.append(welcome, registrationIntro, about, fit, send);
-  const prefs = el('form', 'setup-form setup-preferences');
-  const checks = Object.fromEntries(['newsletter', 'release_updates', 'no_communication'].map((name) => [name, input(name, 'checkbox')]));
-  const followUps = Object.fromEntries(['product_research', 'interviews', 'support'].map((name) => [name, input(name, 'checkbox')]));
-  const prefNotice = el('p', 'setup-notice setup-register-notice');
-  prefNotice.setAttribute('aria-live', 'polite');
   const recovery = el('div', 'setup-registration-recovery');
-  const preferences = el('section', 'setup-register-group setup-preferences-wrap');
-  preferences.append(el('h3', '', t('setup_surface.communication_preferences', 'Communication choices')), prefs);
   const recoveryOptions = el('section', 'setup-register-group setup-register-options');
-  recoveryOptions.append(el('h3', '', t('setup_surface.registration_options', 'Registration options')), recovery);
-  prefs.append(
-    checkRow(t('setup_surface.newsletter', 'Newsletter'), checks.newsletter),
-    checkRow(t('setup_surface.release_updates', 'Code and release updates'), checks.release_updates),
-    el('span', 'setup-register-subhead', t('setup_surface.follow_up', 'Allowed follow-up')),
-    checkRow(t('setup_surface.follow_product', 'Product research'), followUps.product_research),
-    checkRow(t('setup_surface.follow_interviews', 'Interviews'), followUps.interviews),
-    checkRow(t('setup_surface.follow_support', 'Support'), followUps.support),
-    checkRow(t('setup_surface.no_communication', 'No communication'), checks.no_communication, 'setup-register-check-apart'),
-    action(t('setup_surface.update_preferences', 'Update preferences'), '', async () => {
-      const result = await request('/api/setup/registration/communication', { method: 'PATCH', json: { newsletter: checks.newsletter.checked, release_updates: checks.release_updates.checked, no_communication: checks.no_communication.checked, follow_up: Object.entries(followUps).filter(([, box]) => box.checked).map(([name]) => name) } });
-      prefNotice.textContent = result.ok ? t('setup_surface.preferences_saved', 'Preferences updated.') : result.message;
-      if (result.ok) { current = result.data; paint(); }
-    }), prefNotice,
+  recoveryOptions.append(
+    el('h3', '', t('setup_surface.registration_confirmation', 'Registration confirmation')),
+    el('p', 'setup-lede', t('setup_surface.registration_confirmation_lede', 'Required only if you want to install Ronin Services.')),
+    recovery,
   );
-  checks.no_communication.addEventListener('change', () => { if (checks.no_communication.checked) { checks.newsletter.checked = false; checks.release_updates.checked = false; for (const box of Object.values(followUps)) box.checked = false; } });
   /** The submitted summary speaks the same words the form showed, never a stored key. */
   const wordFor = (key) => labels.get(key) || '';
   const summaryWords = () => {
@@ -301,10 +284,7 @@ function createRegisterSurface(context) {
     identity.replaceChildren(el('strong', '', anonymous ? t('setup_surface.registered_anonymous', 'Registered anonymously') : registered ? t('setup_surface.registered', 'Registered') : t('setup_surface.check_email', 'Check your email')),
       el('span', '', summaryWords()));
     form.hidden = Boolean(current?.submitted_at);
-    preferences.hidden = !current?.submitted_at || anonymous;
     recoveryOptions.hidden = !current?.submitted_at;
-    if (current?.communication) for (const key of Object.keys(checks)) checks[key].checked = current.communication[key] === true;
-    for (const [key, box] of Object.entries(followUps)) box.checked = current?.communication?.follow_up?.includes(key) === true;
     recovery.replaceChildren();
     const changeEmail = () => action(t('setup_surface.change_registration_email', 'Change email'), '', async () => {
       const next = window.prompt(t('setup_surface.new_registration_email', 'Send registration confirmation to:'));
@@ -341,7 +321,7 @@ function createRegisterSurface(context) {
     }));
     notifySummary(SETUP_SURFACE_TYPES.register, current?.status || 'optional', context.workbench);
   };
-  body.append(identity, form, userIntro, declined, preferences, recoveryOptions, notice); out.content.append(body);
+  body.append(identity, form, userIntro, declined, recoveryOptions, notice); out.content.append(body);
   return { el: out.el, show: async () => {
     const routeKind = context.environment?.kinds?.get?.()[0] || '';
     kind.set({ build: 'build_software', life: 'life_assistants', research: 'research_writing', other: 'other' }[routeKind] || '');
@@ -351,7 +331,10 @@ function createRegisterSurface(context) {
       request('/api/setup/user-intro', { cache: 'no-store' }),
     ]);
     current = result.ok ? result.data : null;
-    if (intro.ok) userIntroText.value = intro.data?.intro || '';
+    if (intro.ok) {
+      userIntroText.value = intro.data?.intro || '';
+      userIntro.hidden = Boolean(userIntroText.value.trim());
+    }
     paint();
   } };
 }
