@@ -1955,4 +1955,6 @@ The catalog entry goes. {dir} is not touched.
 - **setup_surface.not_authenticated:** Not signed in
 - **setup_surface.save_close:** Save and close
 - **setup_surface.cancel:** Cancel
+- **setup_surface.back:** Back
+- **setup_surface.cancel_setup:** Cancel setup
 - **setup_surface.sign_in_recorded:** Your sign-in record: {method} · {title}

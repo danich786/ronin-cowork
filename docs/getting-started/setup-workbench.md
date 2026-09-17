@@ -114,7 +114,10 @@ step waits.
 | **Ready** | activation, which unlocks Teams, New Project and the preset stones | **Turn off** stops Ronin measuring, updating and launching the provider — tiles already running are not touched and the sign-in is kept; **Turn on** brings it back, and nothing needs signing in again |
 
 The install window can continue directly into the provider's sign-in. Complete it there,
-then press **Close**. Close and Done ask you to choose **Subscription**, **API key**, or
+then press **Close**. **Cancel setup** immediately ends the temporary install or
+sign-in session without asking for a method or title. It does not undo an installation
+or sign-in already completed. **Back** in the sign-in form returns to the terminal.
+Close and Done ask you to choose **Subscription**, **API key**, or
 **Third-party service** and give the sign-in a title, such as “Work OpenRouter”. Choose
 **Not signed in** if you did not authenticate. Ronin saves your description separately
 from the credentials, then checks installation and saved credentials again. A detected

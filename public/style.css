@@ -6093,11 +6093,10 @@ button.wb-door:hover b {
 .setup-provider-sign-in-title input { background: var(--well); color: var(--fg); border: var(--edge) solid var(--line); padding: var(--space-3); font: inherit; }
 .setup-provider-problem { margin: 0; }
 .setup-provider-problem[hidden] { display: none; }
-/* The native sign-in tile: headerless, since it is a sign-in and not a session anyone
-   drives from the tile head, and tall enough to take most of the workspace; the detail
-   scrolls down to it. */
-.setup-provider-terminal { grid-column: 1 / -1; min-height: max(30rem, 78vh); overflow: hidden; border: var(--edge) solid var(--line); border-radius: var(--radius-xs); background: var(--term-bg); }
-.setup-provider-terminal > .wk-terminal-host, .setup-provider-terminal .tile { height: 100%; min-height: inherit; }
+/* The native sign-in tile: headerless, with a bounded height so the surrounding
+   setup controls remain reachable. Terminal output scrolls inside the tile. */
+.setup-provider-terminal { grid-column: 1 / -1; height: min(30rem, 50dvh); min-height: 0; overflow: hidden; border: var(--edge) solid var(--line); border-radius: var(--radius-xs); background: var(--term-bg); }
+.setup-provider-terminal > .wk-terminal-host, .setup-provider-terminal .tile { height: 100%; min-height: 0; max-height: 100%; }
 .setup-provider-terminal .tile > .tile-head { display: none; }
 @media (max-width: 700px) {
   .setup-explainer-body { grid-template-columns: 1fr; }

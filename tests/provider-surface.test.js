@@ -255,7 +255,7 @@ test('a sign-in in progress mounts the native tile through the environment, on w
   assert.equal(ctx.mounts[0].provider.id, 'codex');
   assert.ok(byClass(made.el, 'setup-provider-terminal')[0]);
   const labels = byClass(byClass(made.el, 'setup-provider')[0], 'setup-provider-action').map((node) => node.textContent);
-  assert.deepEqual(labels, ['Done', 'Close'], 'the card owns only the current step\'s controls; Refresh sits by the dates, outside it');
+  assert.deepEqual(labels, ['Done', 'Close', 'Cancel setup'], 'the card owns only the current step\'s controls; Refresh sits by the dates, outside it');
   // Without a mount in the environment the surface says so rather than failing.
   const bare = surface.createProviderSurface({ ...context(), environment: {} });
   await bare.show(); await settle();
@@ -356,9 +356,8 @@ test('Install mounts its returned session inline, survives a completed install, 
     assert.equal(ctx.mounts.at(-1).session, 'install_grok', 'installation output stays reachable once the CLI is on PATH');
     assert.equal(byClass(view.el, 'setup-provider-action').some((n) => n.textContent === 'Authenticate'), false);
     byClass(view.el, 'setup-provider-action').find((n) => n.textContent === 'Close').click();
-    const notSigned = walk(view.el).find((n) => n.tagName === 'BUTTON' && n.textContent === 'Not signed in');
-    notSigned.click();
-    walk(view.el).find((n) => n.tagName === 'BUTTON' && n.textContent === 'Save and close').click();
+    assert.equal(byClass(view.el, 'setup-provider-completion')[0].hidden, false);
+    byClass(byClass(view.el, 'setup-provider-completion')[0], 'setup-provider-action').find((n) => n.textContent === 'Cancel setup').click();
     await settle();
     assert.ok(requests.includes('/api/setup/providers/grok/close'));
     assert.ok(byClass(view.el, 'setup-provider-action').some((n) => n.textContent === 'Authenticate'));

@@ -145,6 +145,15 @@ export function createProviderSurface(context) {
       if (!result.ok) { problem.textContent = result.message; problem.hidden = false; return; }
       await after();
     };
+    const cancelSetup = () => {
+      const button = action(t('setup_surface.cancel_setup', 'Cancel setup'), '', async () => {
+        button.disabled = true;
+        await press(`/api/setup/providers/${encodeURIComponent(provider.id)}/close`);
+        button.disabled = false;
+      });
+      button.classList.add('setup-provider-action');
+      return button;
+    };
     const completion = el('section', 'setup-provider-completion'); completion.hidden = true;
     const finish = (path, recordSignIn = true) => {
       if (!recordSignIn) { mounted?.park?.(); return press(path); }
@@ -173,8 +182,8 @@ export function createProviderSurface(context) {
         { v: 'not_signed_in', l: t('setup_surface.not_authenticated', 'Not signed in') },
       ] }] }], { value: { method }, onChange: (value) => { method = value.method; update(); }, exposed: true });
       title.addEventListener('input', update);
-      const cancel = action(t('setup_surface.cancel', 'Cancel'), '', () => { signInForm?.destroy(); signInForm = null; completion.replaceChildren(); completion.hidden = true; });
-      completion.append(signInForm.el, field, submit, cancel);
+      const cancel = action(t('setup_surface.back', 'Back'), '', () => { signInForm?.destroy(); signInForm = null; completion.replaceChildren(); completion.hidden = true; });
+      completion.append(signInForm.el, field, submit, cancel, cancelSetup());
       update();
       completion.scrollIntoView?.({ block: 'nearest' });
     };
@@ -219,7 +228,7 @@ export function createProviderSurface(context) {
       const terminal = el('div', 'setup-provider-terminal');
       const close = action(t('setup_surface.close', 'Close'), '', () => finish(`/api/setup/providers/${encodeURIComponent(provider.id)}/close`, provider.install_open === true));
       close.classList.add('setup-provider-action', 'setup-provider-update-close');
-      installRow.controls.append(close);
+      installRow.controls.append(close, cancelSetup());
       installRow.item.append(terminal);
       mounted = mountProviderAttachment(context.environment, terminal, provider, context.workspace, () => void paint());
       if (!mounted) terminal.append(el('p', 'setup-notice bad', t('setup_surface.login_attachment_missing', 'The native setup session is open but its terminal attachment is unavailable.')));
@@ -268,7 +277,7 @@ export function createProviderSurface(context) {
       const done = control(auth, t('setup_surface.done', 'Done'), () => finish(`/api/setup/providers/${encodeURIComponent(provider.id)}/done`));
       const close = action(t('setup_surface.close', 'Close'), '', () => finish(`/api/setup/providers/${encodeURIComponent(provider.id)}/close`));
       close.classList.add('setup-provider-action');
-      authRow.controls.append(done, close);
+      authRow.controls.append(done, close, cancelSetup());
       authRow.item.append(terminal);
       mounted = mountProviderAttachment(context.environment, terminal, provider, context.workspace, () => void paint());
       if (!mounted) terminal.append(el('p', 'setup-notice bad', t('setup_surface.login_attachment_missing', 'The native setup session is open but its terminal attachment is unavailable.')));
