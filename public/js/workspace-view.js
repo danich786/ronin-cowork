@@ -1,32 +1,38 @@
 /* part of the ronin-cowork client — see js/README.md */
 /**
  * WORKSPACE — the thin tenant on the tenant frame (js/tenant-frame.js) for one workspace
- * folder; the route names it, the server narrows the reading to it. Standing raw: one
- * card, Reading. The Teams and boards in it, its docs and repos, the tiles of whoever is
- * in it and its configuration follow, one row of UI_STRUCTURE.md per hand-in.
+ * folder; the route names it, the server narrows the reading to it. WS1 is the Teams and
+ * boards in it (workspace-teams-surface.js, Phalanx C/D); WS2 its docs and repos
+ * (workspace-docs-surface.js, Rows). The tiles of whoever is in it and its configuration follow, one row of PATTERNS.md per hand-in.
  */
 import { createTenantFrame } from './tenant-frame.js';
-import { createReadingSurface, READING_TYPE } from './reading-surface.js';
+import { createWorkspaceTeamsSurface, WORKSPACE_TEAMS_TYPE } from './workspace-teams-surface.js';
+import { createWorkspaceDocsSurface, WORKSPACE_DOCS_TYPE } from './workspace-docs-surface.js';
+import { openWorkspaceTab } from './workspace.js';
 import { t } from './lexicon.js';
 import { WORKBENCH_PROFILES } from './workbench-catalog.js';
-import { DISMISSED_WORKSPACE } from './workspace-contract.js';
 
 export function createWorkspaceView() {
   const bySeat = {};
+  const docsBySeat = {};
   return createTenantFrame({
     key: 'workspace',
     profile: WORKBENCH_PROFILES.workspace,
     glyph: '⌂',
     label: () => t('next.workspace', 'Workspace'),
     name: (folder) => folder || t('next.workspace', 'Workspace'),
-    homeCard: READING_TYPE,
-    firstOpen: () => ({ workspace1: READING_TYPE, workspace2: DISMISSED_WORKSPACE }),
+    homeCard: WORKSPACE_TEAMS_TYPE,
+    firstOpen: () => ({ workspace1: WORKSPACE_TEAMS_TYPE, workspace2: WORKSPACE_DOCS_TYPE }),
     cards: (frame) => ({
-      reading: (seat) => {
-        bySeat[seat] ||= createReadingSurface({ label: t('tenant.reading', 'Reading'), filter: () => ({ root: [frame.param()] }) });
+      workspaceTeams: (seat) => {
+        bySeat[seat] ||= createWorkspaceTeamsSurface({ folder: () => frame.param(), openTeam: (name) => openWorkspaceTab('team-next', name) });
         return bySeat[seat];
       },
+      workspaceDocs: (seat) => {
+        docsBySeat[seat] ||= createWorkspaceDocsSurface({ folder: () => frame.param() });
+        return docsBySeat[seat];
+      },
     }),
-    destroy: () => { for (const surface of Object.values(bySeat)) surface.destroy(); },
+    destroy: () => { for (const surface of [...Object.values(bySeat), ...Object.values(docsBySeat)]) surface.destroy(); },
   });
 }

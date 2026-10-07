@@ -36,7 +36,8 @@ every item; a Team workbench draws the server's `?team=` reading `boards` (its b
 Unfiled) and filters nothing in the browser. In Board view an item card drags onto another
 board's list (one reparent call under that board; its children come with it) or onto empty
 row space (reparent to none: a root); on a Team workbench a root made that way is then
-assigned to the Team when it had no holder. The store writes each move's trail line. Every press opens an overlay
+assigned to the Team when it had no holder. In Status view an item card drags onto another
+stage's list (one `POST /api/work-items/:id/stage` call with that stage). The store writes each move's trail line. Every press opens an overlay
 from `work-details.js`, whose one utility sits top right: Save (only while there is
 something to save), Assign, Add (the Add form as an overlay, placed where it was pressed),
 Close. The Add form, the same wherever Add appears, asks title, objective, status and
@@ -187,10 +188,21 @@ view that offers `tabName`, so every tenant on the frame has it as the old Team 
 with a `board` scope, WS1, that one board drawn by status or as its one list, its reading
 arriving by push (the work-items want by board) and repainting on every change, Add
 starting on it and no Add board (PATTERNS.md, "Board tenant: the board itself"; owner,
-2026-10-07). The bar name is the board's title off that reading. **Workspace** (`workspace`,
-param the folder name) still stands raw: one card, Reading (`reading-surface.js`, type
-`tenant.reading`), the tenant's collection reading painted whole in WS1. Each later row of
-their tables in `PATTERNS.md` is its own hand-in that adds or replaces one card.
+2026-10-07). The bar name is the board's title off that reading.
+
+**Workspace** (`workspace`, param the folder name) opens on **Teams and boards**
+(`workspace-teams-surface.js`, type `workspace.teams`) in workspace 1 and **Docs and repos**
+(`workspace-docs-surface.js`, type `workspace.docs`) in workspace 2. Teams and boards is
+the collection push for `root=<folder>` drawn with the collection phalanx and Who's mapping
+(`who-rows.js`). Stones are the Teams whose folders include this one; bars are their boards;
+a Team pressed opens its thin open (objective, one door, Launch); a bar pressed expands in
+place (a board's objective and items by title, an item's description, status and holder).
+Docs and repos is two lists of title-only rows (`itemLine` with `bar: false`): the folder's
+registered docs and plans, and the repos its Teams list, both carried on the reading's
+`roots` (`docs`, `repos`).
+
+Each later row of their tables in the Lab's `PATTERNS.md` is its own hand-in that adds one
+card.
 
 **The Next root** (`next`, `next-home.js`) is the temporary door to the new set: Ronin
 Home's shape with four doors, Collections, Team, Board, Workspace, and under each the names

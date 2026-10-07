@@ -7,6 +7,8 @@
  *                    and every item under it, team:<name> directly, agent:<name> through the
  *                    Agent's Team tags; the Unfiled board has no Team
  *   board → folders  through its Teams; the Unfiled board has none
+ *   folder → docs    its registered docs and plans, as PROJECT_ROOTS.md lists them
+ *   folder → repos   the repos its Teams list, each once
  *
  * The campaign scopes it: Teams and folders whose campaign_id resolves to it, boards with no
  * Team or one of its Teams; absent, the one machine campaign. Filters, all optional, narrow together: team (its folders and boards), root (one folder or
@@ -28,7 +30,7 @@ export interface CollectionTeam {
   agents: string[]; roots: string[]; repos: string[]; boards: string[]; items: number;
 }
 export type CollectionBoard = HeldItem & { teams: string[]; agents: string[]; roots: string[]; stages: Array<{ stage: string; items: HeldItem[] }> };
-export interface CollectionRoot { name: string; path: string; teams: string[]; boards: string[] }
+export interface CollectionRoot { name: string; path: string; docs: string[]; repos: string[]; teams: string[]; boards: string[] }
 export interface CollectionReading { teams: CollectionTeam[]; boards: CollectionBoard[]; roots: CollectionRoot[] }
 
 const unique = (values: string[]): string[] => [...new Set(values.filter(Boolean))];
@@ -98,6 +100,8 @@ export async function collectionReading(filters: CollectionFilters = {}): Promis
     })),
     roots: shownFolders.map((folder) => ({
       name: folder.name, path: folder.dir,
+      docs: unique([...folder.docs, ...folder.plans]),
+      repos: unique(teams.filter((row) => foldersOf.get(row.name)?.includes(folder.name)).flatMap((row) => row.repos)),
       teams: teams.filter((row) => foldersOf.get(row.name)?.includes(folder.name)).map((row) => row.name),
       boards: boards.filter((row) => row.roots.includes(folder.name)).map((row) => row.board.id),
     })),
