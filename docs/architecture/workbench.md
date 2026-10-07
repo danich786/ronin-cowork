@@ -52,12 +52,15 @@ Two `ask()` questions: Workspace (a many-of, none is all) and Under each Team (B
 Agents, a one-of-two that flips on press). One stone per Team, name only; under it the
 boards or the Agents as bars, title only. A Team pressed is the thin open beside the rail:
 objective, Agents with 人 on the lead, boards by name, and one door, Launch, which opens the
-Team's tab (Who is the only door that launches Team tabs). A bar pressed expands in place
-(the fork's `expand`): an Agent to its role, what it is working on now (the home row's work
+Team's tab (Who is the only door that launches Team tabs). A bar pressed opens its read in a
+partial overlay hung off the bar (`partial-overlay.js`; owner 2026-10-07, replacing the
+expand in place; the fork hands the press to the consumer through `press(item, bar)`): an
+Agent to its role, what it is working on now (the home row's work
 record and stance) and the items it holds; a board to its objective and its items by title,
-each a press to its description, status and holder, with one door, Open, which places the
-work-item surface in the other workspace (the Trello view until the What door exists); an
-item to its description, status and holder. The drags are a board onto another Team (`whoMove`:
+each a press to its description, status and holder, with one door, Open, inside the window,
+which lifts it and places the work-item surface in the other workspace (the Trello view until
+the What door exists); an item to its description, status and holder. The same read opens
+from the thin open's bars. The drags are a board onto another Team (`whoMove`:
 assign) and the Add block beside Under each Team onto a Team stone (`whoMove`: add), which
 opens a partial overlay (`partial-overlay.js`: a small window inside the surface under its
 anchor, Close, Escape or a press outside lifts it) holding the add form for what is showing:

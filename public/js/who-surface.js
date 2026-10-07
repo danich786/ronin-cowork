@@ -10,7 +10,8 @@
  *   Bars          boards or Agents under each Team, title only.
  *   Team pressed  the thin open beside the rail: objective, Agents with 人 on the lead, boards
  *                 by name, and one door, Launch, which opens the Team's tab.
- *   Bar pressed   expands in place to a short read in one format (the fork's `expand`):
+ *   Bar pressed   its read opens in a partial overlay hung off the bar (partial-overlay.js;
+ *                 owner 2026-10-07, replacing the expand in place), one format:
  *                 an Agent — its role, what it is working on now, the items it holds;
  *                 a board — its objective and its items by title, each a press to its own
  *                 description, status and holder, and one door, Open, which places the
@@ -88,7 +89,7 @@ export function createWhoSurface({ openTeam = () => {}, openBoard = () => {}, on
 
   let rows = new Map(); // session name -> the store's home row (stance, work record)
   const nowOf = (name) => { const row = rows.get(name) || {}; const step = currentWorkStep(row.tegami); return [step.text, stanceLabel(row.stance)].filter(Boolean).join(' · '); };
-  // `now` is read when a bar expands, never carried in the rows: a status tick must not repaint the stones.
+  // `now` is read when a bar is pressed, never carried in the rows: a status tick must not repaint the stones.
   const members = (name) => membersOfTeam(name).map((member) => ({ name: member.name, title: agentTitle(member), lead: Boolean(member.team_lead) }));
 
   /* ---------- the thin open: a Team pressed ----------
@@ -98,12 +99,7 @@ export function createWhoSurface({ openTeam = () => {}, openBoard = () => {}, on
     const button = el('button', `sws-stone ${row.className || ''}`.trim()); button.type = 'button';
     button.dataset.cphDepth = '1'; button.dataset.swsId = String(row.id);
     button.append(el('b', 'sws-label', row.label));
-    let open = null;
-    button.setAttribute('aria-expanded', 'false');
-    button.addEventListener('click', () => {
-      if (open) { open.remove(); open = null; button.setAttribute('aria-expanded', 'false'); return; }
-      open = el('div', 'cph-expand'); expand(row, open); button.after(open); button.setAttribute('aria-expanded', 'true');
-    });
+    button.addEventListener('click', () => press(row, button));
     return button;
   };
   const list = (title, rows) => {
@@ -130,9 +126,15 @@ export function createWhoSurface({ openTeam = () => {}, openBoard = () => {}, on
     host.append(box);
   };
 
-  /* ---------- a bar pressed: the short read in one format ---------- */
-  const read1 = (host, lines) => { for (const [label, text] of lines) { if (!text) continue; const line = el('div', 'cph-expand-line'); line.append(el('b', '', label), document.createTextNode(text)); host.append(line); } };
-  const expand = (item, host) => {
+  /* ---------- a bar pressed: its read in a partial overlay hung off the bar ----------
+   * Owner, 2026-10-07: this replaced the expand in place. One format for Agent, board and
+   * item; a board's Open sits inside it. The bar reads pressed while its window is up. */
+  const read1 = (host, lines) => { for (const [label, text] of lines) { if (!text) continue; const line = el('div', 'cph-read-line'); line.append(el('b', '', label), document.createTextNode(text)); host.append(line); } };
+  const press = (item, bar) => {
+    bar.setAttribute('aria-pressed', 'true');
+    openPartialOverlay(surface.content, { anchor: bar, title: item.label, draw: (body, { lift }) => readOf(item, body, lift), onClose: () => bar.setAttribute('aria-pressed', 'false') });
+  };
+  const readOf = (item, host, lift = () => {}) => {
     if (item.kind === 'agent') {
       const member = { ...(members(item.team).find((row) => row.name === item.agent.name) || item.agent), now: nowOf(item.agent.name) };
       const held = itemsHeldBy(last?.boards?.filter((board) => board.teams.includes(item.team)) || [], member.name);
@@ -146,19 +148,19 @@ export function createWhoSurface({ openTeam = () => {}, openBoard = () => {}, on
     if (item.kind === 'board') {
       read1(host, [[t('collection.objective', 'Objective'), item.board.objective || t('collection.none', 'None')]]);
       const items = item.board.stages.flatMap((stage) => stage.items);
-      const titles = el('div', 'cph-expand-items');
+      const titles = el('div', 'cph-read-items');
       for (const row of items) {
-        const line = el('button', 'cph-expand-item'); line.type = 'button'; line.textContent = row.title;
+        const line = el('button', 'cph-read-item'); line.type = 'button'; line.textContent = row.title;
         line.draggable = true; line.addEventListener('dragstart', (event) => carryItem(event.dataTransfer, row)); // onto a tile: the item's reference
         line.setAttribute('aria-expanded', 'false');
-        const more = el('div', 'cph-expand-more'); more.hidden = true;
+        const more = el('div', 'cph-read-more'); more.hidden = true;
         read1(more, [[t('collection.description', 'Description'), row.objective || t('collection.none', 'None')], [t('collection.status', 'Status'), stageLabel(row.stage)], [t('collection.holder', 'Holder'), holderName(row.holder) || t('collection.nobody', 'nobody')]]);
         line.addEventListener('click', () => { more.hidden = !more.hidden; line.setAttribute('aria-expanded', String(!more.hidden)); });
         titles.append(line, more);
       }
       if (!items.length) titles.append(el('span', 'who-open-none', t('collection.board_empty', 'Nothing under this board yet.')));
       host.append(titles);
-      const open = createAction({ label: t('collection.open', 'Open'), size: 'compact', action: () => openBoard(item.board) });
+      const open = createAction({ label: t('collection.open', 'Open'), size: 'compact', action: () => { lift(); openBoard(item.board); } });
       host.append(open.el);
       return;
     }
@@ -166,7 +168,7 @@ export function createWhoSurface({ openTeam = () => {}, openBoard = () => {}, on
       read1(host, [[t('collection.description', 'Description'), item.item.objective || t('collection.none', 'None')], [t('collection.status', 'Status'), stageLabel(item.item.stage)], [t('collection.holder', 'Holder'), holderName(item.item.holder) || t('collection.nobody', 'nobody')]]);
     }
   };
-  const phalanx = createCollectionPhalanx({ className: 'who-phalanx', items: [], renderDetail, expand });
+  const phalanx = createCollectionPhalanx({ className: 'who-phalanx', items: [], renderDetail, press });
   phalanx.mount(surface.content, { before: [questions] });
 
   /* ---------- the drags: a board onto another Team; the Add block onto a Team ---------- */
