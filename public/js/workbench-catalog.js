@@ -16,13 +16,14 @@ import { WORK_VIEWS_TYPE } from './work-views-surface.js';
 import { WHO_TYPE } from './who-surface.js';
 import { READING_TYPE } from './reading-surface.js';
 import { WORKSPACE_TEAMS_TYPE } from './workspace-teams-surface.js';
+import { WORKSPACE_DOCS_TYPE } from './workspace-docs-surface.js';
 import { WORK_SURFACES_TYPE } from './work-surfaces.js';
 
 export const WORKBENCH_PROFILES = Object.freeze({ campaign: 'campaign', launch: 'launch', desk: 'desk', cowork: 'cowork', team: 'team', agent: 'agent', collections: 'collections', board: 'board', workspace: 'workspace', teamNext: 'team-next' });
 export const WORKBENCH_TYPES = Object.freeze({
   document: 'document', terminal: 'session.terminal', behaviours: BEHAVIOUR_SURFACE_TYPE, feedback: FEEDBACK_TYPE,
   launchTeam: 'launch.team', launchAgent: 'launch.agent', launchHelp: 'launch.help',
-  commons: 'team.commons', teamChart: TEAM_CHART_TYPE, kanban: 'team.kanban', workItems: WORK_ITEMS_TYPE, workViews: WORK_VIEWS_TYPE, who: WHO_TYPE, reading: READING_TYPE, workspaceTeams: WORKSPACE_TEAMS_TYPE, teamWork: WORK_SURFACES_TYPE, taskStatus: 'task-manager.status', taskProject: 'task-manager.project', cron: 'cowork.cron-jobs',
+  commons: 'team.commons', teamChart: TEAM_CHART_TYPE, kanban: 'team.kanban', workItems: WORK_ITEMS_TYPE, workViews: WORK_VIEWS_TYPE, who: WHO_TYPE, reading: READING_TYPE, workspaceTeams: WORKSPACE_TEAMS_TYPE, workspaceDocs: WORKSPACE_DOCS_TYPE, teamWork: WORK_SURFACES_TYPE, taskStatus: 'task-manager.status', taskProject: 'task-manager.project', cron: 'cowork.cron-jobs',
   roster: 'cowork.team-roster', sessionRoster: 'cowork.session-roster', newTeamForm: 'cowork.new-team-form', newAgent: 'session.new-agent',
   team: 'team.profile', teamProfile: 'team-next.profile', archives: 'cowork.archives',
   agentDocuments: 'agent.documents', agentTeams: 'agent.team-membership', agentTasks: 'agent.task-manager', agentComposition: AGENT_COMPOSITION_TYPE,
@@ -56,6 +57,8 @@ export function registerWorkbenchCatalog() {
   add({ type: WORKBENCH_TYPES.reading, header: 'surface', className: 'wk-selector-utility', label: () => t('tenant.reading', 'Reading'), summary: () => t('tenant.reading_summary', 'The record, raw, until its surfaces are placed'), create: ({ workspace, environment }) => environment.reading(workspace) });
   // The Workspace tenant's WS1: the Teams in the folder and their boards (Phalanx C/D).
   add({ type: WORKBENCH_TYPES.workspaceTeams, header: 'surface', className: 'wk-selector-utility', label: () => t('workspace.teams', 'Teams and boards'), summary: () => t('workspace.teams_summary', 'The Teams working in this folder, with their boards'), create: ({ workspace, environment }) => environment.workspaceTeams(workspace) });
+  // The Workspace tenant's WS2: the folder's docs and its Teams' repos (Rows).
+  add({ type: WORKBENCH_TYPES.workspaceDocs, header: 'surface', className: 'wk-selector-utility', label: () => t('workspace.docs', 'Docs and repos'), summary: () => t('workspace.docs_summary', 'The folder\'s docs and the repos its Teams list'), create: ({ workspace, environment }) => environment.workspaceDocs(workspace) });
   add({ type: WORKBENCH_TYPES.taskStatus, header: 'surface', discover: () => [], create: ({ workspace, detail, environment }) => environment.taskStatus(workspace, detail) });
   add({ type: WORKBENCH_TYPES.taskProject, header: 'surface', discover: () => [], create: ({ workspace, detail, environment }) => environment.taskProject(workspace, detail) });
   via(WORKBENCH_TYPES.roster, 'surface', 'roster', { className: 'wk-selector-utility', label: () => t('campaign.coworks', 'Teams') });
@@ -88,10 +91,10 @@ export function registerWorkbenchCatalog() {
   // Collections (the thin tenant on the tenant frame): Who; What, Where and New follow. The
   // Trello view is placeable by a board's Open but not offered (collections-view.js filters it).
   profiles.define(WORKBENCH_PROFILES.collections, [WORKBENCH_TYPES.who, WORKBENCH_TYPES.workViews, WORKBENCH_TYPES.document, FEEDBACK_TYPE]);
-  // Board stands raw: the tenant's reading in its place; Workspace has its Teams and boards. Their rows come one card per hand-in.
+  // Board stands raw: the tenant's reading in its place; Workspace has its Teams and boards, and its docs and repos. Their rows come one card per hand-in.
   profiles.define(WORKBENCH_PROFILES.teamNext, [WORKBENCH_TYPES.commons, WORKBENCH_TYPES.teamChart, WORKBENCH_TYPES.teamWork, WORKBENCH_TYPES.teamProfile, WORKBENCH_TYPES.terminal, WORKBENCH_TYPES.agentComposition, WORKBENCH_TYPES.newAgent, BEHAVIOUR_SURFACE_TYPE, FEEDBACK_TYPE]);
   profiles.define(WORKBENCH_PROFILES.board, [WORKBENCH_TYPES.reading, WORKBENCH_TYPES.document, FEEDBACK_TYPE]);
-  profiles.define(WORKBENCH_PROFILES.workspace, [WORKBENCH_TYPES.workspaceTeams, WORKBENCH_TYPES.document, FEEDBACK_TYPE]);
+  profiles.define(WORKBENCH_PROFILES.workspace, [WORKBENCH_TYPES.workspaceTeams, WORKBENCH_TYPES.workspaceDocs, WORKBENCH_TYPES.document, FEEDBACK_TYPE]);
   profiles.define(WORKBENCH_PROFILES.team, [WORKBENCH_TYPES.commons, WORKBENCH_TYPES.teamChart, WORKBENCH_TYPES.workItems, WORKBENCH_TYPES.workViews, WORKBENCH_TYPES.taskStatus, WORKBENCH_TYPES.taskProject, WORKBENCH_TYPES.terminal, WORKBENCH_TYPES.agentComposition, WORKBENCH_TYPES.newAgent, BEHAVIOUR_SURFACE_TYPE, FEEDBACK_TYPE]);
   profiles.define(WORKBENCH_PROFILES.agent, [WORKBENCH_TYPES.terminal, WORKBENCH_TYPES.agentComposition, WORKBENCH_TYPES.agentDocuments, WORKBENCH_TYPES.agentTeams, WORKBENCH_TYPES.agentTasks, WORKBENCH_TYPES.workItems, WORKBENCH_TYPES.taskStatus, WORKBENCH_TYPES.taskProject, WORKBENCH_TYPES.document, FEEDBACK_TYPE]);
   profiles.define(WORKBENCH_PROFILES.campaign, [WORKBENCH_TYPES.terminal, WORKBENCH_TYPES.campaignMachine, BEHAVIOUR_SURFACE_TYPE, PASSWORD_SURFACE_TYPE, WORKBENCH_TYPES.campaignInstallations, PROVIDER_SURFACE_TYPE, SETUP_SURFACE_TYPES.register, FEEDBACK_TYPE, WORKBENCH_TYPES.campaignIdentity, WORKBENCH_TYPES.campaignDefaults, WORKBENCH_TYPES.campaignRoots, SETUP_SURFACE_TYPES.launchOwn, WORKBENCH_TYPES.document, ...(MULTIPLE_CAMPAIGNS_ENABLED ? [WORKBENCH_TYPES.campaignCreate] : [])]);

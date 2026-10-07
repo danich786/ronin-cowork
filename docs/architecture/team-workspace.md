@@ -136,7 +136,7 @@ Agent in two Teams brings the board to both. The Unfiled board has no Team. A Te
 and Where, derived and never stored. It answers `teams` (`name, title, objective, lead,
 agents, roots, repos, boards, items`: the item count on its boards), `boards` (the root item
 with `holder, teams, agents, roots` and `stages: [{ stage, items }]`, non-empty stages only)
-and `roots` (`name, path, teams, boards`). A Team's folders are its roster's `project_root`
+and `roots` (`name, path, docs, repos, teams, boards`; docs are the folder's registered docs and plans, repos the repos its Teams list). A Team's folders are its roster's `project_root`
 and `repos` that are registered workspace folders; a board's folders come through its
 Teams, and the Unfiled board has none. Optional filters narrow every list together:
 `team` (its folders and boards), `root` (one folder or several, repeated `root=a&root=b` or

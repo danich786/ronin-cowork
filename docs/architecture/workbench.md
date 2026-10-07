@@ -190,11 +190,15 @@ in workspace 1, workspace 2 dismissed. The Board's bar name is the board's title
 reading arrives.
 
 **Workspace** (`workspace`, param the folder name) opens on **Teams and boards**
-(`workspace-teams-surface.js`, type `workspace.teams`) in workspace 1, workspace 2 dismissed:
+(`workspace-teams-surface.js`, type `workspace.teams`) in workspace 1 and **Docs and repos**
+(`workspace-docs-surface.js`, type `workspace.docs`) in workspace 2. Teams and boards is
 the collection push for `root=<folder>` drawn with the collection phalanx and Who's mapping
 (`who-rows.js`). Stones are the Teams whose folders include this one; bars are their boards;
 a Team pressed opens its thin open (objective, one door, Launch); a bar pressed expands in
 place (a board's objective and items by title, an item's description, status and holder).
+Docs and repos is two lists of title-only rows (`itemLine` with `bar: false`): the folder's
+registered docs and plans, and the repos its Teams list, both carried on the reading's
+`roots` (`docs`, `repos`).
 
 Each later row of their tables in the Lab's `PATTERNS.md` is its own hand-in that adds one
 card.
