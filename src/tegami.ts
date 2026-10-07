@@ -5,6 +5,7 @@ import { RIREKI_DIR, sessionKey } from './session-dir.js';
 import { readTeamRoster } from './team-rosters.js';
 import type { SessionInfo } from './tmux.js';
 import { mandate, type Mandate } from './agent-defaults.js';
+import { enqueueMessage } from './message-queue.js';
 
 export interface TegamiCheckout {
   repo: string;
@@ -309,14 +310,29 @@ export async function writeTeams(name: string, tags: string[]): Promise<boolean>
   return true;
 }
 
-/** Change only the current mandate in an Agent-authored work record. Birth remains immutable. */
-export async function writeMandate(name: string, current: Mandate): Promise<Mandate> {
+/** THE ACK (owner, 2026-10-07): a write to an Agent's work record by anyone else is pushed
+ * to the Agent as one line, what changed and who changed it; never left for the Agent to
+ * notice. A write by the Agent itself is not acked. Returns whether one was queued. */
+export async function ackRecord(name: string, by: string, change: string): Promise<boolean> {
+  if (by === name) return false;
+  await enqueueMessage(name, `${change} (by ${by || 'unknown'}). work-record read shows your record.`, 'house', 'Work record');
+  return true;
+}
+
+const AXES = [['reach', 'Reach'], ['recruit', 'Recruit'], ['output', 'Output']] as const;
+const axis = (value: string | string[]): string => [value].flat().join(', ');
+
+/** Change only the current mandate in an Agent-authored work record. Birth remains immutable.
+ * The Agent is acked with each axis that moved, before → after. */
+export async function writeMandate(name: string, current: Mandate, by: string): Promise<{ mandate: Mandate; acked: boolean }> {
   const file = tegamiPath(await sessionKey(name));
   const text = await fs.readFile(file, 'utf8');
   const parsed = letterBlock(text);
   if (!parsed) throw new Error(`@${name} has no readable work record`);
+  const before = mandate(parsed.body.mandate);
   const next = mandate(current);
   parsed.body.mandate = next;
   await replaceLetterBlock(file, text, parsed, parsed.body);
-  return next;
+  const moved = AXES.filter(([key]) => axis(before[key]) !== axis(next[key])).map(([key, label]) => `${label} ${axis(before[key])} → ${axis(next[key])}`);
+  return { mandate: next, acked: moved.length ? await ackRecord(name, by, `Your mandate changed: ${moved.join('; ')}`) : false };
 }
