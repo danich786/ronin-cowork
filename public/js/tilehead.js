@@ -202,11 +202,9 @@ export function tileMenu(tile) {
  * the tile in the record's place; Close or Escape lifts it.
  */
 async function openWorkRecord(tile) {
-  const session = tile.session;
   // Loaded on first open: the overlay's module draws the kit, which a tile need not carry.
   const [{ fullOverlay }, desks] = await Promise.all([import('./work-details.js'),
-    tile.tegami ? readDesks(session) : null]);
-  if (tile.session !== session) return;
+    tile.tegami ? readDesks(tile.session) : null]);
   tile.body.querySelector(':scope > .work-overlay')?.remove();
   const layer = fullOverlay(tile.body, (box, through) => {
     const head = document.createElement('div');

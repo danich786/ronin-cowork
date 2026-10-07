@@ -1184,6 +1184,7 @@ body {
   border: var(--edge) solid var(--define-line);
   border-radius: var(--radius-lg);
   overflow: hidden;
+  position: relative; /* the menu (js/menu.js) hangs inside it */
 }
 .tile.active {
   border-color: var(--accent);
