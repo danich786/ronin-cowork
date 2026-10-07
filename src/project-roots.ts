@@ -25,6 +25,7 @@ export interface ProjectRootInfo {
   name: string;
   title: string;
   dir: string;
+  memory: string;
   match: string[];
   remit: string;
   docs: string[];
@@ -87,6 +88,7 @@ function parseRoots(raw: string): ProjectRootInfo[] {
       name,
       title: field('title'),
       dir: expand(dir),
+      memory: field('memory'),
       match: field('match')
         .split(',')
         .map((m) => m.trim())
