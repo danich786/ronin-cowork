@@ -16,7 +16,8 @@
  *                 a board — its objective and its items by title, each a press to its own
  *                 description, status and holder, and one door, Open, which places the
  *                 work-item surface beside this one; an item — description, status, holder.
- *   Drag          a board onto another Team. The Add block beside Under each Team, dragged onto
+ *   Drag          a board onto another Team; an Agent onto another Team, which moves it there
+ *                 (owner, 2026-10-07). The Add block beside Under each Team, dragged onto
  *                 a Team stone, opens a partial overlay with the add form for what is showing
  *                 (a board, or an Agent) — owner, 2026-10-07.
  *
@@ -25,7 +26,7 @@
  */
 import { WorkspaceKit } from './workspace-kit.js';
 import { createCollectionPhalanx } from './collection-phalanx.js';
-import { membersOfTeam, subscribe } from './team-controller.js';
+import { membersOfTeam, moveTeamMembership, subscribe } from './team-controller.js';
 import { subscribe as subscribeStore } from './store.js';
 import { carryItem } from './team-drag.js';
 import { itemsHeldBy, whoMove, whoRows } from './who-rows.js';
@@ -171,7 +172,7 @@ export function createWhoSurface({ openTeam = () => {}, openBoard = () => {}, on
   const phalanx = createCollectionPhalanx({ className: 'who-phalanx', items: [], renderDetail, press });
   phalanx.mount(surface.content, { before: [questions] });
 
-  /* ---------- the drags: a board onto another Team; the Add block onto a Team ---------- */
+  /* ---------- the drags: a board or an Agent onto another Team; the Add block onto a Team ---------- */
   const carried = (event) => { try { return JSON.parse(event.dataTransfer?.getData(DRAG) || 'null'); } catch { return null; } };
   const wire = (teams) => teams.map((team) => ({
     ...team,
@@ -183,16 +184,23 @@ export function createWhoSurface({ openTeam = () => {}, openBoard = () => {}, on
         const moved = carried(event);
         const move = whoMove(moved, team);
         if (move === 'add') { addTo(team, event.currentTarget); return; }
-        if (move !== 'assign') return;
-        const result = await request(`/api/work-items/${encodeURIComponent(moved.id)}/assign`, { method: 'POST', json: { team: team.id } });
+        if (!move) return;
+        // One write each: a board is assigned; an Agent leaves the Team it was under and joins this one.
+        const result = move === 'join'
+          ? await moveTeamMembership(moved.id, moved.team, team.id)
+          : await request(`/api/work-items/${encodeURIComponent(moved.id)}/assign`, { method: 'POST', json: { team: team.id } });
         if (!result.ok) { surface.setState('failed', result.message || ''); return; }
         void read();
       },
     },
-    items: (team.items || []).map((row) => row.kind !== 'board' ? row : {
+    items: (team.items || []).map((row) => row.kind === 'board' ? {
       ...row, draggable: true,
       events: { dragstart: (event) => { event.dataTransfer.setData(DRAG, JSON.stringify({ kind: 'board', id: row.id, team: team.id })); carryItem(event.dataTransfer, { id: row.id, title: row.label }); event.dataTransfer.effectAllowed = 'move'; } },
-    }),
+    } : row.kind === 'agent' ? {
+      // An Agent bar drags onto another Team stone and moves there (owner, 2026-10-07).
+      ...row, draggable: true,
+      events: { dragstart: (event) => { event.dataTransfer.setData(DRAG, JSON.stringify({ kind: 'agent', id: row.agent.name, team: team.id })); event.dataTransfer.effectAllowed = 'move'; } },
+    } : row),
   }));
 
   /* ---------- the reading ---------- */
