@@ -141,7 +141,7 @@ the owner intended to edit it. A validation refusal is an answer; do not bypass 
 
 Inclusion is not complete until all of these agree:
 
-1. `GET /api/project-roots` contains the handle (`name` on the wire), title, and directory;
+1. `GET /api/project-roots` contains the handle (`name` on the wire), title, directory, and `memory` (as stored, blank when unset);
    this is the launcher's live list.
 2. `GET /api/project-roots/detail` reports `exists: true`. For a repository, its live `remote`
    and `branch` match git; these facts are read from disk and are never copied into the catalog.
