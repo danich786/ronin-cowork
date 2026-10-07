@@ -91,7 +91,7 @@ below describes implementation ownership; use the surface index above to find a 
 | `shingo.js` | SHINGO 信号 — the expanded work-record reading and its age helpers |
 | `tile.js` / `surface-host.js` | `class Tile` — one cell of the coworkspace; its surface host owns the catalogued sibling tenants and names the one active tenant |
 | `tilehead.js` | `buildTileHead` — the cell's chrome, one table and a loop: name, reading toggle, メ, window control; `tileMenu` — the tile's menu (send a file, mention, output, work record, delete or archive) |
-| `menu.js` | `createMenuButton`, `openMenu`, `closeMenu`, `menuOpen` — THE MENU location's one owner: an overlay hung off its メ control over the surface it heads; groups of rows (action, radio, drill-in list), a drawn reading, a pinned foot |
+| `menu.js` | `createMenuButton`, `openMenu`, `closeMenu`, `menuOpen` — THE MENU location's one owner: an overlay hung off its メ control over the surface it heads; groups of rows (action, radio, drill-in list) and a pinned foot; a row that opens a read opens it in the full overlay |
 | `output.js` | `OUTPUTS` — the Output names the menu offers |
 | `tapeview.js` | **RIREKI's client render** — the 🔓 view: transcript, folds, live frame, scroll anchoring, paging |
 | `tapefold.js` | `groupRecs` — the fold rule, pure (tested: `tests/tape-fold.test.js`) |

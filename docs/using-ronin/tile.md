@@ -23,7 +23,7 @@ it; the arrow keys move through it.
 | 📎 Send a file | Send a file from Finder, or the photo library on a phone — see [Share a file with an Agent](share-a-file.md) |
 | @ Mention a session | Choose a session; its name goes into the message box |
 | Output | **Terminal Mirror** — the live terminal — or **Locked**, the same terminal to watch without typing into it. Not shown when this Agent has no Ronin Services |
-| Work record | The Agent's task at hand, worktrees, Teams, progress and tracked documents. Press a document to open it over the tile |
+| ☰ Work record | Opens over the whole tile, leaving the terminal untouched beneath it: the Agent's task at hand, worktrees, Teams, progress and tracked documents. Press a document to open it over the tile; Close or Escape returns to the terminal |
 | × Delete or archive… | Open the archive/delete choices; it stays at the foot of the menu |
 
 The context gauge appears when Ronin has a reading from the session. An empty workspace
