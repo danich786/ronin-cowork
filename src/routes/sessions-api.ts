@@ -30,6 +30,7 @@ import {
   stopSessionTree,
 } from '../tmux.js';
 import { enqueueMessage } from '../message-queue.js';
+import { callerOf } from './work-items-api.js';
 import { sessionKey } from '../session-dir.js';
 import { isValidRootName, listProjectRoots } from '../project-roots.js';
 import { expandLookup } from '../lookup.js';
@@ -178,9 +179,8 @@ export function registerSessions(app: express.Express): void {
     if (!isValidName(name)) return res.status(400).json({ error: 'Invalid name.' });
     if (!(await sessionExists(name))) return res.status(404).json({ error: 'No such session.' });
     try {
-      const saved = await writeMandate(name, mandate(req.body));
-      const item = await enqueueMessage(name, `Your current mandate changed. Your birth mandate remains part of your immutable birth record.\n\nReach: ${saved.reach}\nRecruit: ${saved.recruit}\nOutput: ${saved.output.join(', ')}`, 'owner');
-      res.json({ ok: true, mandate: saved, queued: true, message: item });
+      const saved = await writeMandate(name, mandate(req.body), callerOf(req));
+      res.json({ ok: true, mandate: saved.mandate, queued: saved.acked });
     } catch (e) { res.status(409).json({ error: String((e as Error)?.message ?? e) }); }
   });
 
