@@ -4,7 +4,7 @@
  * folder; the route names it, the server narrows the reading to it. WS1 is the Teams and
  * boards in it (workspace-teams-surface.js, Phalanx C/D); WS2 its docs and repos
  * (workspace-docs-surface.js, Rows). Configuration is an item on WS1's メ opening the full
- * overlay with Grey form rows (title, remit, match, docs, plans; PUT /api/project-roots/:name,
+ * overlay with Grey form rows (title, remit, memory, match, docs, plans; PUT /api/project-roots/:name,
  * each row its own save), seeded from the folder catalog the page holds (home.js). The tiles
  * of whoever is in it follow.
  */
@@ -20,7 +20,9 @@ import { WORKBENCH_PROFILES } from './workbench-catalog.js';
 
 const list = (value) => (Array.isArray(value) ? value.join(', ') : String(value || ''));
 // One field per save, as the store merges it; lists are typed as the store reads them, commas between.
-const saveField = (name, field) => (value) => request(`/api/project-roots/${encodeURIComponent(name)}`, { method: 'PUT', json: { [field]: value } });
+function saveField(name, field) {
+  return (value) => request(`/api/project-roots/${encodeURIComponent(name)}`, { method: 'PUT', json: { [field]: value } });
+}
 
 export function createWorkspaceView() {
   const bySeat = {};
@@ -44,6 +46,7 @@ export function createWorkspaceView() {
             openConfiguration(surface.el, { title: t('workspace.configuration_title', 'Configuration · {folder}', { folder: folder.title || name }), rows: () => [
               { label: t('team_config.title', 'Title'), value: folder.title || '', save: saveField(name, 'title'), after },
               { label: t('workspace.remit', 'Remit'), value: folder.remit || '', kind: 'long', save: saveField(name, 'remit'), after },
+              { label: t('workspace.memory', 'Memory'), value: folder.memory || '', kind: 'long', save: saveField(name, 'memory'), after },
               { label: t('workspace.match', 'Match'), value: list(folder.match), note: t('workspace.list_note', 'commas between'), save: saveField(name, 'match'), after },
               { label: t('workspace.docs', 'Docs'), value: list(folder.docs), note: t('workspace.list_note', 'commas between'), save: saveField(name, 'docs'), after },
               { label: t('workspace.plans', 'Plans'), value: list(folder.plans), note: t('workspace.list_note', 'commas between'), save: saveField(name, 'plans'), after },

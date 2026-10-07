@@ -204,11 +204,15 @@ hands over `menu: () => groups`) opening the full overlay (`fullOverlay`, `work-
 with Grey form rows (`saveRow`, `save-row.js`) for title and objective, each saving itself
 by `PUT /api/work-items/:id`; the push repaints the board after. `configuration-overlay.js`
 is the one glue for that, shared by Board, Workspace and Team. **Workspace configuration** is the
-same on the Teams and boards surface's メ: rows for title, remit, match, docs and plans, each
+same on the Teams and boards surface's メ: rows for title, remit, memory, match, docs and plans, each
 `PUT /api/project-roots/:name` with that one field (the store merges field by field; lists are
 comma strings), seeded from the folder catalog the page holds and re-read after a save
-(`loadProjects`, `home.js`). `memory` is stored but not served by that catalog, so it has no
-row until the route serves it.
+(`loadProjects`, `home.js`; the catalog carries `memory` since 892f0aba). **Team configuration** on
+`team-next` is the same on the Commons' メ, replacing the Commons' Configuration tab there
+(the old Team keeps its tab): rows for title, purpose, kind, where it works, model, mandate
+and launch mode, the enumerations as `ask()` question rows that commit on change, each row
+its own `PUT /api/team-rosters/:name` (the store merges a roster field by field and writes
+`agent_defaults` whole, so those rows send the merged object).
 
 **Workspace** (`workspace`, param the folder name) opens on **Teams and boards**
 (`workspace-teams-surface.js`, type `workspace.teams`) in workspace 1 and **Docs and repos**
