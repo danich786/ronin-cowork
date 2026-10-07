@@ -21,7 +21,7 @@ in the shared `ViewHost`; they never replace, wrap, or reinterpret the Sessions 
 | Contract | Canonical source | Owns |
 |---|---|---|
 | Kit facade | `public/js/workspace-kit.js` | The single `WorkspaceKit` namespace and Kit stylesheet loading |
-| Primitives | `public/js/workspace-primitives.js` | Surface, Card, actions, the header menu, metadata, forms, fields, notices, ExplorerRail, Channel Surface and standard states |
+| Primitives | `public/js/workspace-primitives.js` | Surface, Card, actions, metadata, forms, fields, notices, ExplorerRail, Channel Surface and standard states |
 | Layouts | `public/js/workspace-layouts.js` | LeagueBoard, managed Workbench, SessionGrid, Explorer and New Team compositions |
 | Adapters | `public/js/workspace-adapters.js` | Room workspace adapters and terminal Tile-host export |
 | Terminal host | `public/js/terminal-tile-host.js` | The one Tile transport/render/focus/fit/composer lifecycle seam |
@@ -42,13 +42,11 @@ const { workspaceTarget, navigateWorkspace, normalizeWorkbenchState } = Workspac
 
 Current load-bearing contracts:
 
-- **The header menu** is the location "menu" of the Lab's `PATTERNS.md` on a workspace's
-  header: `createSurface({ menu: [{ label, action, danger? }] })` puts one control at the
-  end of the header's actions that drops a sheet of those items; `header.menu.setItems()`
-  redraws it, and no items hides the control. One sheet is open at a time; Escape and a
-  press elsewhere close it. Configuration on the tenants hangs off it and opens the **full
-  overlay**, `fullOverlay(host, draw, { closed })` from `work-details.js`: the one layer
-  over a surface's content with the one Close (owner, 2026-10-07).
+- **The full overlay** is the location of that name in the Lab's `PATTERNS.md`:
+  `fullOverlay(host, draw, { closed })` from `work-details.js`, the one layer over a
+  surface's content with the one Close; the content positions itself as the layer's box.
+  The menu location is being found once, for the tile header and the workspace header
+  alike (surface_menu, 2026-10-07); nothing in the Kit draws a menu until it is.
 
 Workbench profiles, per-surface data requirements, restoration, and structured launches
 are specified together in [Workbench construction](workbench.md). This page owns the Kit
