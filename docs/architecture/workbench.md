@@ -198,7 +198,12 @@ view that offers `tabName`, so every tenant on the frame has it as the old Team 
 with a `board` scope, WS1, that one board drawn by status or as its one list, its reading
 arriving by push (the work-items want by board) and repainting on every change, Add
 starting on it and no Add board (PATTERNS.md, "Board tenant: the board itself"; owner,
-2026-10-07). The bar name is the board's title off that reading.
+2026-10-07). The bar name is the board's title off that reading. **Board configuration** is
+an item on that surface's メ (the menu, `menu.js`, seated by the Workbench when a surface
+hands over `menu: () => groups`) opening the full overlay (`fullOverlay`, `work-details.js`)
+with Grey form rows (`saveRow`, `save-row.js`) for title and objective, each saving itself
+by `PUT /api/work-items/:id`; the push repaints the board after. `configuration-overlay.js`
+is the one glue for that, shared by Board, Workspace and Team.
 
 **Workspace** (`workspace`, param the folder name) opens on **Teams and boards**
 (`workspace-teams-surface.js`, type `workspace.teams`) in workspace 1 and **Docs and repos**

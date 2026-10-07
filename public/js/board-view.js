@@ -3,11 +3,14 @@
  * BOARD — the thin tenant on the tenant frame (js/tenant-frame.js). The route names the
  * board by its item id; the server narrows the reading to it and pushes it. WS1 is the
  * Board pattern (work-views-surface.js) for that one board (PATTERNS.md, Board tenant: the
- * board itself; owner, 2026-10-07). The item, the holders' tiles and the configuration
- * follow, one row per hand-in.
+ * board itself; owner, 2026-10-07). Configuration is an item on that surface's メ opening the
+ * full overlay with Grey form rows: title and objective, each saving itself
+ * (PUT /api/work-items/:id). The item and the holders' tiles follow, one row per hand-in.
  */
 import { createTenantFrame } from './tenant-frame.js';
 import { createWorkViewsSurface } from './work-views-surface.js';
+import { configurationGroup, openConfiguration } from './configuration-overlay.js';
+import { request } from './request.js';
 import { membersOfTeam, teamsFromState } from './team-controller.js';
 import { openWorkspaceTab } from './workspace.js';
 import { S } from './state.js';
@@ -29,8 +32,11 @@ function openTeam(name) {
   return openWorkspaceTab('team-next', name);
 }
 
+const saveField = (id, field) => (value) => request(`/api/work-items/${encodeURIComponent(id)}`, { method: 'PUT', json: { [field]: value } });
+
 export function createBoardView() {
   const titles = new Map(); // board id -> title, learned from the reading; the bar name
+  const records = new Map(); // board id -> the root item as last read; configuration starts from it
   return createTenantFrame({
     key: 'board',
     profile: WORKBENCH_PROFILES.board,
@@ -40,16 +46,30 @@ export function createBoardView() {
     homeCard: WORKBENCH_TYPES.workViews,
     firstOpen: () => ({ workspace1: WORKBENCH_TYPES.workViews, workspace2: DISMISSED_WORKSPACE }),
     cards: (frame) => ({
-      workViews: () => createWorkViewsSurface({
-        board: () => frame.param(), holderTeam, openTeam, leadOf,
-        onRead: (boards) => {
-          const root = boards.find((entry) => entry.board.id === frame.param())?.board;
-          if (!root?.title || titles.get(root.id) === root.title) return;
-          titles.set(root.id, root.title);
-          S.refreshWorkspaceHeader?.();
-          S.workspace?.refreshTitle?.();
-        },
-      }),
+      workViews: () => {
+        const view = createWorkViewsSurface({
+          board: () => frame.param(), holderTeam, openTeam, leadOf,
+          onRead: (boards) => {
+            const root = boards.find((entry) => entry.board.id === frame.param())?.board;
+            if (!root) return;
+            records.set(root.id, root);
+            if (titles.get(root.id) === root.title) return;
+            titles.set(root.id, root.title);
+            S.refreshWorkspaceHeader?.();
+            S.workspace?.refreshTitle?.();
+          },
+        });
+        // Configuration: an item on this surface's メ; the rows start from the record as last pushed.
+        const configure = () => {
+          const id = frame.param();
+          const board = records.get(id) || { id, title: titles.get(id) || id, objective: '' };
+          openConfiguration(view.el, { title: t('board.configuration_title', 'Configuration · {board}', { board: board.title }), rows: () => [
+            { label: t('team_config.title', 'Title'), value: board.title, save: saveField(id, 'title') },
+            { label: t('collection.objective', 'Objective'), value: board.objective || '', kind: 'long', save: saveField(id, 'objective') },
+          ] });
+        };
+        return { ...view, menu: () => configurationGroup(configure) };
+      },
     }),
   });
 }
