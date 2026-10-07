@@ -47,7 +47,7 @@ export function createSurface(options = {}) {
   if (options.flush) el.dataset.flush = 'true';
   const controls = node('div', 'wk-surface-controls');
   controls.hidden = true;
-  const header = options.header === false ? null : createSurfaceHeader({ label: options.label, actions: options.actions, menu: options.menu, menuLabel: options.menuLabel });
+  const header = options.header === false ? null : createSurfaceHeader({ label: options.label, actions: options.actions });
   const content = node('div', 'wk-surface-content');
   const state = node('p', 'wk-state');
   state.hidden = true;
@@ -73,53 +73,13 @@ function createBlankSurface(label = t('team.workspace_blank', 'Workspace')) {
   return surface;
 }
 
-/** THE HEADER MENU — the location "menu" of PATTERNS.md on a workspace's header: one control
- *  at the end of the actions that drops a small sheet of items under itself. Items are
- *  `{ label, action, danger? }`; press one and the sheet closes behind you. Escape and a
- *  press elsewhere close it. `setItems` redraws the sheet; no items hides the control. */
-let openMenu = null;
-export function createHeaderMenu({ label = t('workspace.menu', 'Menu'), items = [] } = {}) {
-  const el = node('div', 'wk-menu');
-  const button = node('button', 'wk-action wk-menu-button', '⋯');
-  button.type = 'button';
-  button.setAttribute('aria-haspopup', 'menu');
-  button.setAttribute('aria-expanded', 'false');
-  button.setAttribute('aria-label', label);
-  const sheet = node('div', 'wk-menu-sheet');
-  sheet.setAttribute('role', 'menu');
-  sheet.hidden = true;
-  const close = () => { if (sheet.hidden) return; sheet.hidden = true; button.setAttribute('aria-expanded', 'false'); if (openMenu === api) openMenu = null; };
-  const open = () => { openMenu?.close(); sheet.hidden = false; button.setAttribute('aria-expanded', 'true'); openMenu = api; sheet.querySelector('button')?.focus(); };
-  const setItems = (next = []) => {
-    sheet.replaceChildren(...next.map((item) => {
-      const row = node('button', `wk-menu-item${item.danger ? ' wk-menu-item-danger' : ''}`, item.label);
-      row.type = 'button';
-      row.setAttribute('role', 'menuitem');
-      row.addEventListener('click', () => { close(); item.action?.(); });
-      return row;
-    }));
-    el.hidden = !next.length;
-  };
-  button.addEventListener('click', (event) => { event.stopPropagation(); if (sheet.hidden) open(); else close(); });
-  el.addEventListener('keydown', (event) => { if (event.key === 'Escape') { close(); button.focus(); } });
-  sheet.addEventListener('click', (event) => event.stopPropagation());
-  el.append(button, sheet);
-  const api = { el, button, sheet, open, close, setItems };
-  setItems(items);
-  return api;
-}
-// One open sheet at a time: a press anywhere else closes it, like the tile's メ sheet.
-if (typeof document !== 'undefined') document.addEventListener('click', () => openMenu?.close());
-
 export function createSurfaceHeader(options = {}) {
   const el = node('header', 'wk-surface-header');
   const title = node('span', 'wk-surface-header-title', options.label ?? '');
   const actions = node('div', 'wk-surface-header-actions');
   for (const action of options.actions || []) actions.append(action?.el ?? action);
-  const menu = options.menu ? createHeaderMenu({ label: options.menuLabel, items: options.menu }) : null;
-  if (menu) actions.append(menu.el);
   el.append(title, actions);
-  return { el, title, actions, menu };
+  return { el, title, actions };
 }
 
 
@@ -460,7 +420,6 @@ export const WorkspacePrimitives = Object.freeze({
   createSurface,
   createBlankSurface,
   createSurfaceHeader,
-  createHeaderMenu,
   createCard,
   createAction,
   createActionBar,
