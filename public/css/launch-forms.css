@@ -209,6 +209,9 @@
   /* Unfiled reads as something different: a faint accent shade in place of the grey. */
   .wv-list[data-unfiled] { background: color-mix(in srgb, var(--accent) 7%, var(--panel)); }
   .wv > .work-overlay { padding: var(--space-5) var(--space-6); box-sizing: border-box; }
+  /* The full overlay over any surface's content: the host becomes the layer's box. */
+  .wk-surface-content:has(> .work-overlay) { position: relative; }
+  .wk-surface-content > .work-overlay { padding: var(--space-5) var(--space-6); box-sizing: border-box; }
   @container stone-work-surface-seat (max-width: 40rem) {
     .wk-surface-content.sws-host { padding-inline: var(--space-6); }
     .sws { gap: var(--space-6); }

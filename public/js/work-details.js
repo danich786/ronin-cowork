@@ -78,6 +78,9 @@ function overlay(host, draw, { through = [], save = null, assign = null, context
   return layer;
 }
 
+/** THE FULL OVERLAY as a location (PATTERNS.md): any surface lays a reader or a form over itself with
+ * the same chrome and the same Close. `draw(layer, through)` paints into the layer. */
+export const fullOverlay = overlay;
 /** A group of items (listDetail) as an overlay: Add puts a new item where the group sits. */
 export function listOverlay(host, fields, options = {}) {
   return overlay(host, (layer, actions) => listDetail(layer, { ...fields, actions }), options);
