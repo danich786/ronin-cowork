@@ -188,6 +188,14 @@ export function tileMenu(tile) {
         run: () => tile.setOutput(value) })) },
     { items: [
       { glyph: '☰', label: t('me.ladder', 'Work record'), run: () => void openWorkRecord(tile) },
+      // The tracked documents, the same list the work record carries: one opens over the tile.
+      { glyph: '📄', label: t('me.docs', 'Docs'), kind: 'list', hint: String((tile.tegami?.docs || []).length || ''),
+        empty: t('me.docs_none', 'Nothing tracked yet. Ask this Agent to add its docs to its work record.'),
+        list: () => (tile.tegami?.docs || []).map((doc) => {
+          const path = typeof doc === 'string' ? doc : (doc.path || doc.file || doc.title || '');
+          const parts = path.split('/');
+          return { label: parts.pop(), hint: parts.slice(-2).join('/'), run: () => tile.openDoc(path) };
+        }) },
     ] },
     { foot: true, items: [
       { glyph: '×', label: t('me.kill', 'Delete or archive…'), run: () => tile.kill() },

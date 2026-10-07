@@ -1122,6 +1122,8 @@ The catalog entry goes. {dir} is not touched.
 - **me.kill:** Delete or archive…
 - **me.agent_title:** This Agent — work record, docs, file, mention, output, delete
 - **me.ladder:** Work record
+- **me.docs:** Docs
+- **me.docs_none:** Nothing tracked yet. Ask this Agent to add its docs to its work record.
 - **me.attach:** Send a file
 - **me.attach_hint:** or drag one onto the tile
 - **me.no_record:** This Agent has not written a work record yet.

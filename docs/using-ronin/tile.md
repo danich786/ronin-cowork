@@ -24,6 +24,7 @@ it; the arrow keys move through it.
 | @ Mention a session | Choose a session; its name goes into the message box |
 | Output | **Terminal Mirror** — the live terminal — or **Locked**, the same terminal to watch without typing into it. Not shown when this Agent has no Ronin Services |
 | ☰ Work record | Opens over the whole tile, leaving the terminal untouched beneath it: the Agent's task at hand, worktrees, Teams, progress and tracked documents. Press a document to open it over the tile; Close or Escape returns to the terminal |
+| 📄 Docs | The documents this Agent tracks, with how many; press one to open it over the tile |
 | × Delete or archive… | Open the archive/delete choices; it stays at the foot of the menu |
 
 The context gauge appears when Ronin has a reading from the session. An empty workspace
