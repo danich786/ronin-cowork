@@ -435,10 +435,10 @@ async function ackHolds(item: Pick<WorkItem, 'id' | 'title'>, from: Holder[], to
   const target = to ? holderLabel(to) : '';
   for (const holder of from) {
     if (holder.kind !== 'agent' || holderLabel(holder) === target) continue;
-    await ackRecord(holder.name, by, `${name} left your work record: ${to ? `now held by ${target}` : 'held by nobody'}`).catch(() => false);
+    await ackRecord(holder.name, by, `${name} left your work record: ${to ? `now held by ${target}` : 'held by nobody'}`);
   }
   if (to?.kind === 'agent' && !from.some((holder) => holderLabel(holder) === target)) {
-    await ackRecord(to.name, by, `${name} was added to your work record`).catch(() => false);
+    await ackRecord(to.name, by, `${name} was added to your work record`);
   }
 }
 

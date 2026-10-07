@@ -315,7 +315,7 @@ export async function writeTeams(name: string, tags: string[]): Promise<boolean>
  * notice. A write by the Agent itself is not acked. Returns whether one was queued. */
 export async function ackRecord(name: string, by: string, change: string): Promise<boolean> {
   if (by === name) return false;
-  await enqueueMessage(name, `${change} (by ${by || 'unknown'}). work-record read shows your record.`, 'house', 'Work record');
+  await enqueueMessage(name, `${change} (by ${by}). work-record read shows your record.`, 'house', 'Work record');
   return true;
 }
 
