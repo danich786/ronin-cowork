@@ -64,8 +64,9 @@ export function createBoardView() {
           const id = frame.param();
           const board = records.get(id) || { id, title: titles.get(id) || id, objective: '' };
           openConfiguration(view.el, { title: t('board.configuration_title', 'Configuration · {board}', { board: board.title }), rows: () => [
-            { label: t('team_config.title', 'Title'), value: board.title, save: saveField(id, 'title') },
-            { label: t('collection.objective', 'Objective'), value: board.objective || '', kind: 'long', save: saveField(id, 'objective') },
+            // after: nothing to re-read; the push repaints the board.
+            { label: t('team_config.title', 'Title'), value: board.title, save: saveField(id, 'title'), after: () => {} },
+            { label: t('collection.objective', 'Objective'), value: board.objective || '', kind: 'long', save: saveField(id, 'objective'), after: () => {} },
           ] });
         };
         return { ...view, menu: () => configurationGroup(configure) };
