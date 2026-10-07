@@ -132,6 +132,12 @@ one off in its declaration rather than hiding it with local CSS or querying head
 - The frame owns the selector's compact/expanded action and persists `selectorDensity`
   beside shape, selection, arrangement, and seats. Profiles do not build another toggle.
 
+A surface's header ends with its window control, −, which the Workbench seats. A surface
+that returns `menu: () => groups` from `create()` also gets **メ** seated before −: the same
+menu as a tile's (`js/menu.js`, the PATTERNS location "menu"), hung over that surface.
+Configuration items (Board, Team, Workspace) hang off it; a surface that returns no `menu`
+shows no メ.
+
 The definition's `create()` draws the stable shell. Its returned `show()` or `enter()`
 starts only that surface's reads. `leave()` parks active work and `destroy()` releases
 surface-lifetime resources. See [the common lifecycle](workspace-kit.md#lifecycle-contract).
