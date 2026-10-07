@@ -2,6 +2,7 @@
 import { request } from './request.js';
 import { sheet, toast } from './ui.js';
 import { S, SELECT_MOD, IS_MAC } from './state.js';
+import { closeMenu, menuOpen } from './menu.js';
 
 const actions = ['copy', 'clear', 'close', 'stop'];
 const shortcutActions = ['clear', 'close', 'stop'];
@@ -71,12 +72,12 @@ export function installTileControls(tile) {
       return;
     }
     const overlay = document.querySelector('.ui-sheet.open .ui-card');
-    const drop = document.querySelector('.tdrop.open');
+    const drop = menuOpen();
     if (overlay || drop) {
       if (e.key === 'Escape' && !e.isComposing) {
         e.preventDefault(); e.stopImmediatePropagation();
         if (overlay) overlay.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
-        else drop.classList.remove('open');
+        else closeMenu();
       } else if (matchedControl(e, config?.bindings)) {
         e.preventDefault(); e.stopImmediatePropagation();
       }

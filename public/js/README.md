@@ -90,8 +90,9 @@ below describes implementation ownership; use the surface index above to find a 
 | `system.js` | `buildSystem` — ⚙ System: release identity, updates, appearance, log out |
 | `shingo.js` | SHINGO 信号 — the expanded work-record reading and its age helpers |
 | `tile.js` / `surface-host.js` | `class Tile` — one cell of the coworkspace; its surface host owns the catalogued sibling tenants and names the one active tenant |
-| `tilehead.js` | `buildTileHead` — the cell's chrome, one table and a loop: name, Work Record, output, mentions, Docs, status, and window controls |
-| `output.js` | the six Output names and the per-tile selector |
+| `tilehead.js` | `buildTileHead` — the cell's chrome, one table and a loop: name, reading toggle, メ, window control; `tileMenu` — the tile's menu (send a file, mention, output, work record, delete or archive) |
+| `menu.js` | `createMenuButton`, `openMenu`, `closeMenu`, `menuOpen` — THE MENU location's one owner: an overlay hung off its メ control over the surface it heads; groups of rows (action, radio, drill-in list), a drawn reading, a pinned foot |
+| `output.js` | `OUTPUTS` — the Output names the menu offers |
 | `tapeview.js` | **RIREKI's client render** — the 🔓 view: transcript, folds, live frame, scroll anchoring, paging |
 | `tapefold.js` | `groupRecs` — the fold rule, pure (tested: `tests/tape-fold.test.js`) |
 | `termview.js` | the 🔒 view — the untouched `tmux attach` xterm mirror, and touch drag-scroll |
@@ -100,10 +101,9 @@ below describes implementation ownership; use the surface index above to find a 
 | `composer-rules.js` | `sendComposerMessage`, `settleComposer` — HTTP message send and box settlement (tested: `tests/composer-parcel.test.js`) |
 | `dvr.js` | `dvrStep` — the unlocked input rule, pure (tested: `tests/dvr.test.js`) |
 | `ansi.js` | `ANSI_RE` — its own module so the tape's pure logic loads outside a browser |
-| `tiledrop.js` | `isCoarse`, `makeDrop` — the coarse-pointer sheet primitives (the hoisted phone header is gone; the phone has its own shell) |
 | `phone.js` | THE MOBILE DOCUMENT's entry module — `mobile.html` boots it, never `main.js`: Teams → a Team (Agents \| Docs) → one Agent's tile, hash-routed (`#/t/…` `#/d/…` `#/s/…`); the server sends that document at `/m`, and at `/` to a phone |
 | `keysrow.js` | `buildKeysRow` — Esc/Tab/Shift-Tab/arrows/⤓ docked on every coarse tile's composer |
-| `tilementions.js` | `buildTileMentions` — the @ button on a tile head; click or drag a live session name into the composer |
+| `tilementions.js` | `insertMention`, `MENTION_MIME` — a session name into this tile's composer, from the menu or a drag |
 | `team-arrange.js` | `parseDraft`, `createArranger` — the team page's one controller: a draft (what changes; the rest stays) from a button or from an agent's `edges page`, run through the page's own verbs |
 | `team-kanban.js` | `createTeamKanban` — the Team Kanban read: five responsive columns from the team's derived project JSON; a drop sends one move request and writes no project data |
 | `team-members.js` | `buildTeamMembers`, `agentTitle`, `configSignature` — the member list shared by the Commons Roster tab and the league surfaces, and the changed-only fingerprint that keeps Configuration from redrawing an unchanged Team |

@@ -7,7 +7,7 @@ the tile takes the file itself. Three ways in, all on the Agent's [tile](tile.md
 |---|---|
 | **Drag** | Drag a file onto the tile. The tile outlines while you hover; the file uploads when you let go. No click needed. |
 | **Paste** | Paste while the clipboard holds an image or a file (a screenshot, a copied file). Pasting text is unchanged. |
-| **📎** | Press the paperclip in the tile header to choose a file: Finder on a computer, the photo library on a phone. On a phone or tablet it is in the メ menu. |
+| **📎** | Choose **📎 Send a file** in the tile's メ menu: Finder on a computer, the photo library on a phone. |
 
 ## Where it goes
 

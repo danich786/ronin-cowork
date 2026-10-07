@@ -4,8 +4,7 @@ import { buildSessionPicker } from './session-picker.js';
 import { PAD_CODE, firePadBinding, padBinds, padChord } from './pad.js';
 import { buildPadPanel } from './padpanel.js';
 import { buildNotePanel } from './panels.js';
-import { IS_TOUCH, S, tiles } from './state.js';
-import { isCoarse } from './tiledrop.js';
+import { IS_TOUCH, S, isCoarse, tiles } from './state.js';
 import { t } from './lexicon.js';
 
 export function build() {

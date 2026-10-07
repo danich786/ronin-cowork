@@ -14,22 +14,11 @@ import { t } from './lexicon.js';
  * RIREKI_CLEANLINESS.md, the Koshi redirect. The client half below is left standing for
  * that, inert while nothing can select it.
  */
-function OUTPUTS() {
+export function OUTPUTS() {
   return [
     ['locked', t('output.locked', 'Locked')],
     ['terminal_mirror', t('output.terminal_mirror', 'Terminal Mirror')],
   ];
-}
-
-/** Build the one per-tile control. Server capability is applied by Tile.syncOutput(). */
-export function makeOutput(tile) {
-  const el = document.createElement('select');
-  el.className = 'output';
-  el.setAttribute('aria-label', t('output.aria', 'Output'));
-  el.title = t('output.title', 'Output shown in this tile');
-  for (const [value, label] of OUTPUTS()) el.add(new Option(label, value));
-  el.addEventListener('change', () => tile.setOutput(el.value));
-  return { el };
 }
 
 export async function refreshKaki(tile, request, create, force = false) {

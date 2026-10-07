@@ -1064,8 +1064,6 @@ The catalog entry goes. {dir} is not touched.
 ## output — output.js (the RIREKI view picker)
 - **output.locked:** Locked
 - **output.terminal_mirror:** Terminal Mirror
-- **output.aria:** Output
-- **output.title:** Output shown in this tile
 
 ## bar — viewport.js (the layout button)
 
@@ -1095,20 +1093,9 @@ The catalog entry goes. {dir} is not touched.
 - **head.rename_quiet:** Rename session — no session in this tile yet
 - **head.rename_prompt:** Edit Agent title
 - **head.rename_failed:** Could not rename session: {reason}
-- **head.work_record_help:** View repositories, current action, and the work record
-- **head.work_record_quiet:** View Work Record — no Agent in this workspace
-- **head.output_help:** Output — live terminal or one of RIREKI’s unlocked views
-- **head.mention_help:** Mention another session — choose a name to add it to the message box
-- **head.mention_quiet:** Mentions — no session in this tile yet
 - **head.gauge_help:** Context gauge — how full this session's context window is, read off the pane's own status line. Hidden until there is a reading.
-- **head.docs_help:** This Agent's tracked docs — open one over this tile
-- **head.docs_quiet:** This Agent's docs — no Agent in this workspace
-- **head.docs_read:** Docs — {n} tracked by this Agent. Open one over this tile.
-- **head.docs_none:** Docs — this Agent is tracking none yet.
 - **head.minimize_help:** Close this view — the Agent keeps running
 - **head.minimize_quiet:** Close view — no Agent in this workspace
-- **head.kill_help:** Delete or archive this Agent
-- **head.kill_quiet:** Delete or archive Agent — no Agent in this workspace
 
 ## pad — pad.js (the pad's widget captions)
 - **pad.w_encoder:** encoder — volume and play/pause; it speaks media-key only, so it cannot drive Ronin
@@ -1130,14 +1117,17 @@ The catalog entry goes. {dir} is not touched.
 - **bar.shape_two:** Two workspaces — click for four
 - **bar.shape_four:** Four workspaces — click for two
 
-## me — tiledrop.js (the メ sheet)
+## me — tilehead.js (the メ menu, js/menu.js)
 - **me.ladder:** Work record
-- **me.mention:** Mention session
-- **me.docs:** Docs
-- **me.kill:** Kill session
+- **me.mention:** Mention a session
+- **me.kill:** Delete or archive…
 - **me.output:** Output
-- **me.minimize:** Minimize
-- **me.agent_title:** This Agent — work record, docs, output, close
+- **me.agent_title:** This Agent — work record, docs, file, mention, output, delete
+- **me.attach:** Send a file
+- **me.attach_hint:** or drag one onto the tile
+- **me.no_record:** This Agent has not written a work record yet.
+- **head.menu_quiet:** Menu — no Agent in this workspace
+- **menu.empty:** Nothing here yet.
 - **me.title:** This session — status, work record, groups, docs, note, control
 
 ## keys — keysrow.js (the composer's keys row)
@@ -1155,7 +1145,6 @@ The catalog entry goes. {dir} is not touched.
 - **phone.agents:** Agents
 - **phone.docs:** Docs
 - **phone.back:** Back
-- **phone.me_title:** This Agent — work record, docs, output, close
 
 ## new_team — new-team-launch.js (the transaction's own sentences)
 
@@ -1182,12 +1171,6 @@ The catalog entry goes. {dir} is not touched.
 ## league — league-board.js (the League board)
 - **league.no_members:** No live members
 
-## docs — tiledocs.js
-- **docs.empty_session:** Nothing tracked yet. Ask this Agent to update its Work Record with the docs it is tracking; they will appear here.
-
-## head — tilementions.js
-- **head.mention_aria:** Mention another session
-
 ## workspace — workspace-layouts.js
 - **workspace.resize:** Resize {column}
 
@@ -1197,9 +1180,6 @@ The catalog entry goes. {dir} is not touched.
 
 ## tile — the prompt, the ended line, the picker tooltips
 - **tile.session_ended:** session ended.
-- **output.title_off:** Output — Locked only. Ronin Services is off for this Agent.
-- **output.title_locked:** Output — Locked only. Ronin Services is not installed.
-- **output.title_choose:** Output — the live terminal, or Locked to watch without typing
 
 ## tape — the summary default and the alt note
 - **tape.no_summary:** No summary has been written yet.
