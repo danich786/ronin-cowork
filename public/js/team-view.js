@@ -4,12 +4,19 @@
  * old Team (cowork-view.js) stands; it takes the `team` word when it replaces it. The route
  * names the Team. Cards, as today's Team workbench has them: the Agents' tiles with the lead
  * kept hot, the Commons, Team Chart, Work (the Trello view and Work Items behind one toggle),
- * the Team profile, New Agent, and the composition reader the roster opens. Not yet here: Mika's help, the arranger (`edges
+ * the Team profile, New Agent, and the composition reader the roster opens. Configuration is
+ * an item on the Commons' メ opening the full overlay with Grey form rows that each save
+ * themselves (PUT /api/team-rosters/:name); it is no Commons tab here (owner, 2026-10-07). Not yet here: Mika's help, the arranger (`edges
  * page`), Work Items and Task Manager (they retire into the board). Each change of row in
  * UI_STRUCTURE.md is its own hand-in from here.
  */
 import { createTenantFrame } from './tenant-frame.js';
 import { createTeamCommonsSurface, readingsOf } from './team-commons-surface.js';
+import { configurationGroup, openConfiguration } from './configuration-overlay.js';
+import { KINDS, OUTPUT, REACH, RECRUIT, kindWord, modelRows, providerRows } from './team-configuration.js';
+import { loadProviderCatalog, mandateWord } from './form-steps.js';
+import { loadProjects, projectData } from './home.js';
+import { request } from './request.js';
 import { createTeamChartSurface } from './team-chart-surface.js';
 import { createWorkViewsSurface } from './work-views-surface.js';
 import { createWorkItemsSurface } from './work-items-surface.js';
@@ -55,8 +62,47 @@ function openTeam(name) {
 }
 const teamDefaultsRequest = (name) => ({ destination: 'team-next', param: name, mode: 'replace', state: {
   count: 2, selected: 'workspace1',
-  seats: { workspace1: { type: WB.commons, tab: 'team-configuration' }, workspace2: DISMISSED_WORKSPACE },
+  seats: { workspace1: { type: WB.commons }, workspace2: DISMISSED_WORKSPACE },
 } });
+const bucket = (value) => (value && typeof value === 'object' && !Array.isArray(value) ? value : {});
+const asList = (value) => (Array.isArray(value) ? value : []);
+const rootRows = () => (projectData || []).filter((root) => !root.archived).map((root) => ({ v: root.name, l: root.title || root.name }));
+function saveRoster(name, fields) {
+  return request(`/api/team-rosters/${encodeURIComponent(name)}`, { method: 'PUT', json: fields });
+}
+/** THE TEAM'S CONFIGURATION ROWS, each saving itself. The store merges a roster field by
+ *  field but writes agent_defaults whole, so those rows send the merged object; permissions
+ *  is never carried (ruled out of agent_defaults). Read at open from the roster as pushed. */
+function teamRows(roster) {
+  const name = roster.name;
+  const landed = () => {}; // after a save: the rosters push repaints; nothing to re-read here
+  const defaults = bucket(roster.agent_defaults);
+  const repos = asList(roster.repos).filter((repo) => repo !== roster.project_root);
+  const withDefaults = (patch) => saveRoster(name, { agent_defaults: { ...defaults, permissions: undefined, ...patch } });
+  return [
+    { label: t('team_config.title', 'Title'), value: roster.title || '', save: (value) => saveRoster(name, { title: value }), after: landed },
+    { label: t('team_config.objective', 'Purpose'), value: roster.objective || '', kind: 'long', save: (value) => saveRoster(name, { objective: value }), after: landed },
+    { label: t('team_config.kind', 'Kind'), fields: [{ key: 'kind', label: t('team_config.kind', 'Kind'), options: KINDS.map((v) => ({ v, l: kindWord(v) })) }],
+      value: { kind: roster.kind || 'open' }, save: (value) => saveRoster(name, { kind: value.kind }), after: landed },
+    { label: t('where.label', 'Where it works'), fields: [
+      { key: 'root', label: t('where.born_in', 'Born in'), blank: t('team_config.default', 'Default'), options: rootRows },
+      { key: 'repos', label: t('where.additional', 'Additional workspaces'), many: true, after: 'root', options: (value) => rootRows().filter((row) => row.v !== value.root) },
+    ], value: { root: roster.project_root || '', repos }, save: (value) => saveRoster(name, { project_root: value.root || '', repos: asList(value.repos).filter((repo) => repo !== value.root) }), after: landed },
+    { label: t('new_agent.model_package', 'Model'), fields: [
+      { key: 'provider', label: t('team_config.provider', 'Provider'), blank: t('team_config.default', 'Default'), options: providerRows },
+      { key: 'model', label: t('team_config.model', 'Model'), blank: t('team_config.default', 'Default'), after: 'provider', options: (value) => modelRows(value.provider) },
+    ], value: { provider: defaults.provider || '', model: defaults.model || '' }, save: (value) => withDefaults({ provider: value.provider || '', model: value.model || '' }), after: landed },
+    { label: t('mandate', 'Mandate'), fields: [
+      { key: 'reach', label: t('team_config.reach', 'Reach'), options: REACH.map((v) => ({ v, l: mandateWord(v) })) },
+      { key: 'recruit', label: t('team_config.recruit', 'Recruit'), options: RECRUIT.map((v) => ({ v, l: mandateWord(v) })) },
+      { key: 'output', label: t('team_config.output', 'Output'), many: true, options: OUTPUT.map((v) => ({ v, l: mandateWord(v) })) },
+    ], value: { reach: defaults.reach || 'open', recruit: defaults.recruit || 'open', output: [defaults.output || 'open'].flat().filter(Boolean) },
+    save: (value) => withDefaults({ reach: value.reach, recruit: value.recruit, output: value.output }), after: landed },
+    { label: t('launch_mode.head', 'Launch mode'), fields: [{ key: 'launch_mode', label: t('launch_mode.head', 'Launch mode'), options: [
+      { v: 'configured', l: t('launch_mode.configured', 'Native') }, { v: 'live_dangerously', l: t('launch_mode.live', 'Dangerously') },
+    ] }], value: { launch_mode: defaults.launch_mode || 'configured' }, save: (value) => withDefaults({ launch_mode: value.launch_mode }), after: landed },
+  ];
+}
 const deskDefaultsRequest = () => ({ destination: 'campaign', mode: 'replace', state: {
   count: 2, selected: 'workspace1', seats: { workspace1: 'campaign.defaults', workspace2: 'setup.launch-own' },
 } });
@@ -94,14 +140,22 @@ export function createTeamView() {
         }),
         agent: () => '',
         teamCommons: (seat) => {
-          commonsBySeat[seat] ||= createTeamCommonsSurface({
-            team, context: frame.context, idPrefix: seat,
-            onSelect: (member) => frame.place(WB.agentComposition, frame.opposite(seat), { key: member.name }),
-            onOpen: (member) => openAgent(member.name),
-            onAddLead: () => newAgentAt(frame.opposite(seat), { prompt: t('league.add_lead_prompt', 'Join this Team as its team lead.'), teamLead: true }),
-            onClose: (member) => retireSession(member.name, `commons-${seat}-${member.name}`),
-            onSaved: () => S.refreshWorkspaceHeader?.(),
-          });
+          if (!commonsBySeat[seat]) {
+            const commons = createTeamCommonsSurface({
+              team, context: frame.context, idPrefix: seat,
+              onSelect: (member) => frame.place(WB.agentComposition, frame.opposite(seat), { key: member.name }),
+              onOpen: (member) => openAgent(member.name),
+              onAddLead: () => newAgentAt(frame.opposite(seat), { prompt: t('league.add_lead_prompt', 'Join this Team as its team lead.'), teamLead: true }),
+              onClose: (member) => retireSession(member.name, `commons-${seat}-${member.name}`),
+            });
+            // Configuration: an item on the Commons' メ; the rows need the provider and folder catalogs first.
+            const configure = async () => {
+              await Promise.all([loadProviderCatalog(), loadProjects()]);
+              const roster = teamByName(team());
+              openConfiguration(commons.el, { title: t('team_config.configuration_title', 'Configuration · {team}', { team: readableTeam(team()) }), rows: () => teamRows(roster) });
+            };
+            commonsBySeat[seat] = { ...commons, menu: () => configurationGroup(() => void configure()) };
+          }
           return commonsBySeat[seat];
         },
         chartTeams: () => (team() ? [{ key: team(), label: t('team_chart.title', 'Team Chart') }] : []),
@@ -150,7 +204,7 @@ export function createTeamView() {
               deskDefaultsUrl: () => workbenchLaunchUrl(deskDefaultsRequest()),
               openTeamDefaults: (name) => {
                 if (!name) return;
-                if (name === team()) frame.place(WB.commons, frame.opposite(seat), { tab: 'team-configuration' });
+                if (name === team()) frame.place(WB.commons, frame.opposite(seat));
                 else openWorkbenchTab(teamDefaultsRequest(name));
               },
               openDeskDefaults: () => openWorkbenchTab(deskDefaultsRequest()),
