@@ -124,7 +124,6 @@ export function openMenu({ anchor, host, title = '', groups = [], onClose = () =
   };
 
   function close() {
-    if (current?.panel !== panel) return;
     current = null;
     document.removeEventListener('pointerdown', outside, true);
     panel.remove();
@@ -133,7 +132,6 @@ export function openMenu({ anchor, host, title = '', groups = [], onClose = () =
   }
 
   paint();
-  if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
   host.append(panel);
   // Under the control, right edges aligned, inside the host. A control outside the host
   // (the phone's bar over its tile) hangs the menu from the host's top edge.
@@ -149,7 +147,7 @@ export function openMenu({ anchor, host, title = '', groups = [], onClose = () =
   panel.tabIndex = -1;
   panel.addEventListener('keydown', onKey);
   panel.addEventListener('click', (event) => event.stopPropagation());
-  setTimeout(() => document.addEventListener('pointerdown', outside, true), 0);
+  document.addEventListener('pointerdown', outside, true);
   first();
   return { el: panel, close };
 }
