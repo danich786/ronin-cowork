@@ -183,11 +183,14 @@ Manager. Who's Launch opens this Team. The bar's island is the editable tab name
 view that offers `tabName`, so every tenant on the frame has it as the old Team does
 (`workspace-header.js`).
 
-**Board** (`board`, param the board's item id) and **Workspace** (`workspace`, param the
-folder name) stand raw: one card, Reading (`reading-surface.js`, type `tenant.reading`),
-the tenant's collection reading painted whole in workspace 1, workspace 2 dismissed. Each
-later row of their tables in `UI_STRUCTURE.md` is its own hand-in that adds one card. The
-Board's bar name is the board's title once its reading arrives.
+**Board** (`board`, param the board's item id) opens on the Board pattern: `work-views-surface.js`
+with a `board` scope, WS1, that one board drawn by status or as its one list, its reading
+arriving by push (the work-items want by board) and repainting on every change, Add
+starting on it and no Add board (PATTERNS.md, "Board tenant: the board itself"; owner,
+2026-10-07). The bar name is the board's title off that reading. **Workspace** (`workspace`,
+param the folder name) still stands raw: one card, Reading (`reading-surface.js`, type
+`tenant.reading`), the tenant's collection reading painted whole in WS1. Each later row of
+their tables in `PATTERNS.md` is its own hand-in that adds or replaces one card.
 
 **The Next root** (`next`, `next-home.js`) is the temporary door to the new set: Ronin
 Home's shape with four doors, Collections, Team, Board, Workspace, and under each the names

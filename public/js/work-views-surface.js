@@ -22,6 +22,7 @@ import { PROJECT_STAGES } from './team-kanban.js';
 import { NEW_BOARD, draftOverlay, itemOverlay, listOverlay } from './work-details.js';
 import { request } from './request.js';
 import { carryItem } from './team-drag.js';
+import { readingKey, subscribeWorkItems } from './collection-reading.js';
 import { boardStages, holderName } from './work-readings.js';
 import { t } from './lexicon.js';
 
@@ -32,8 +33,11 @@ const stageName = (key) => PROJECT_STAGES.find((stage) => stage.key === key)?.la
 
 /** `holderTeam(holder)` names the Team a holder works in; `openTeam(team)` opens its workbench;
  * `team`, on a Team's workbench, reads that Team's boards from the server and holds new boards;
- * `leadOf(team)` names its lead, whose board is the Team's second choice for Add. */
-export function createWorkViewsSurface({ holderTeam = () => '', openTeam = () => {}, team = '', leadOf = () => '' } = {}) {
+ * `leadOf(team)` names its lead, whose board is the Team's second choice for Add. `board`, on
+ * the Board tenant (a board id, or a function naming it), draws that one board: its reading
+ * arrives by push (the work-items want by board; owner, 2026-10-07), Add starts on it, and
+ * there is no Add board. `onRead(boards)` hears each reading, for the tenant's bar name. */
+export function createWorkViewsSurface({ holderTeam = () => '', openTeam = () => {}, team = '', leadOf = () => '', board = '', onRead = () => {} } = {}) {
   const { createSurface, createAction } = WorkspaceKit.primitives;
   let view = 'status';
   let boards = [];
@@ -141,7 +145,9 @@ export function createWorkViewsSurface({ holderTeam = () => '', openTeam = () =>
    * (the form's default). Several of one kind: the oldest. Cowork/Desk start at Unfiled. */
   const unfiledId = () => boards.find((entry) => entry.board.title === 'Unfiled')?.board.id || '';
   const oldest = (rows) => rows.sort((a, b) => String(a.created?.at || '').localeCompare(String(b.created?.at || '')))[0];
+  const boardId = () => (typeof board === 'function' ? board() : board) || '';
   const target = () => {
+    if (boardId()) return boardId();
     if (!team) return '';
     const roots = boards.map((entry) => entry.board);
     const lead = leadOf(team);
@@ -167,12 +173,27 @@ export function createWorkViewsSurface({ holderTeam = () => '', openTeam = () =>
     }));
     else row.replaceChildren(...unfiledLast(boards).map((entry) => list(entry.board.title, entry.size, () => openItem(entry.board),
       entry.stages.map((row) => group(stageName(row.stage), row.items, () => openStatus(row.stage, entry.board, row.items))), { parent: entry.board.id })),
-    // Add board, after the last board: the Add form with New board chosen, held by this Team on a Team's workbench.
-    press('wv-add-board', [el('i', 'wv-add-mark', '+'), el('span', null, t('work_views.add_board', 'Add board'))],
-      () => { lift(); draftOverlay(root, { parent: NEW_BOARD, team, changed }); }));
+    // Add board, after the last board: the Add form with New board chosen, held by this Team on a Team's workbench. One board has no Add board.
+    ...(boardId() ? [] : [press('wv-add-board', [el('i', 'wv-add-mark', '+'), el('span', null, t('work_views.add_board', 'Add board'))],
+      () => { lift(); draftOverlay(root, { parent: NEW_BOARD, team, changed }); })]));
   };
 
+  // One board hears its reading from the store (the root and every item under it) and
+  // repaints on each push; a changed board id resubscribes. A write needs no re-read.
+  let stop = null, heard = '';
+  const listen = () => {
+    const id = boardId();
+    const key = readingKey('work-items', { board: id });
+    if (stop && key === heard) return;
+    stop?.(); heard = key;
+    stop = subscribeWorkItems({ board: id }, (reading) => {
+      boards = boardStages(reading?.items || [], STAGE_KEYS);
+      paint();
+      onRead(boards);
+    });
+  };
   async function refresh() {
+    if (boardId()) return;
     // A Team reads its boards from the server (its team reading's `boards`); Cowork/Desk read every item.
     const read = await request(team ? `/api/work-items?team=${encodeURIComponent(team)}` : '/api/work-items', { cache: 'no-store' });
     if (!read.ok) return;
@@ -182,6 +203,8 @@ export function createWorkViewsSurface({ holderTeam = () => '', openTeam = () =>
   paint();
   return {
     el: surface.el,
-    show: () => void refresh(),
+    show: () => { if (boardId()) listen(); else void refresh(); },
+    leave: () => { stop?.(); stop = null; heard = ''; },
+    destroy: () => { stop?.(); stop = null; heard = ''; },
   };
 }
