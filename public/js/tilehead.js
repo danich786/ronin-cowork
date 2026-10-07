@@ -169,8 +169,9 @@ export function buildTileHead(tile) {
 }
 
 /**
- * THE TILE'S MENU, top to bottom: what you do to this Agent, its work record, and Delete
- * or archive held at the foot. Read at each press, so it is never stale.
+ * THE TILE'S MENU, top to bottom: what you do to this Agent, its work record, its
+ * configuration and docs, and Delete or archive held at the foot. Read at each press, so it
+ * is never stale.
  */
 export function tileMenu(tile) {
   const outputs = OUTPUTS().filter(([value]) => !S.streamOff || value === 'locked');
@@ -188,6 +189,8 @@ export function tileMenu(tile) {
         run: () => tile.setOutput(value) })) },
     { items: [
       { glyph: '☰', label: t('me.ladder', 'Work record'), run: () => void openWorkRecord(tile) },
+      { glyph: '⚙', label: t('me.configuration', 'Configuration'), hint: t('me.configuration_hint', 'mandate, Behaviors'),
+        run: () => void openConfiguration(tile) },
       // The tracked documents, the same list the work record carries: one opens over the tile.
       { glyph: '📄', label: t('me.docs', 'Docs'), kind: 'list', hint: String((tile.tegami?.docs || []).length || ''),
         empty: t('me.docs_none', 'Nothing tracked yet. Ask this Agent to add its docs to its work record.'),
@@ -204,15 +207,13 @@ export function tileMenu(tile) {
 }
 
 /**
- * THE WORK RECORD as a full overlay over the tile's body (owner, 2026-10-07: "a full overlay
- * and not mess with the content underneath"): the terminal stays as it was beneath it.
- * This session's desks are read once, as it opens. A tracked document pressed opens over
- * the tile in the record's place; Close or Escape lifts it.
+ * A READ OVER THE TILE: the full overlay (work-details.js fullOverlay) over the tile's body,
+ * with a head of its title and Close; the terminal stays as it was beneath it (owner,
+ * 2026-10-07: "a full overlay and not mess with the content underneath"). `fill(layer)`
+ * draws the rest. Loaded on first open: the overlay's module draws the kit.
  */
-async function openWorkRecord(tile) {
-  // Loaded on first open: the overlay's module draws the kit, which a tile need not carry.
-  const [{ fullOverlay }, desks] = await Promise.all([import('./work-details.js'),
-    tile.tegami ? readDesks(tile.session) : null]);
+async function overTile(tile, title, fill, options = {}) {
+  const { fullOverlay } = await import('./work-details.js');
   tile.body.querySelector(':scope > .work-overlay')?.remove();
   const layer = fullOverlay(tile.body, (box, through) => {
     const head = document.createElement('div');
@@ -220,15 +221,31 @@ async function openWorkRecord(tile) {
     const tools = document.createElement('div');
     tools.className = 'wk-surface-header-actions';
     tools.append(...through.map((item) => item?.el ?? item));
-    head.append(Object.assign(document.createElement('h2'), { textContent: t('me.ladder', 'Work record') }), tools);
+    head.append(Object.assign(document.createElement('h2'), { textContent: title }), tools);
     box.append(head);
-    if (!tile.tegami) {
-      box.append(Object.assign(document.createElement('p'), { className: 'menu-empty',
-        textContent: t('me.no_record', 'This Agent has not written a work record yet.') }));
-      return;
-    }
-    box.append(buildLadder(tile.tegami, desks, { openDoc: (path) => { layer?.remove(); tile.openDoc(path); } }));
-  });
+  }, options);
+  fill(layer);
+  return layer;
+}
+
+/** The work record: this session's desks read once, as it opens; a tracked document pressed
+ *  opens over the tile in the record's place. */
+async function openWorkRecord(tile) {
+  const desks = tile.tegami ? await readDesks(tile.session) : null;
+  const layer = await overTile(tile, t('me.ladder', 'Work record'), (box) => box.append(tile.tegami
+    ? buildLadder(tile.tegami, desks, { openDoc: (path) => { layer.remove(); tile.openDoc(path); } })
+    : Object.assign(document.createElement('p'), { className: 'menu-empty',
+      textContent: t('me.no_record', 'This Agent has not written a work record yet.') })));
   // Open ON the rung you are standing on: a long ladder scrolls, and rung 1 hides it.
   layer.querySelector('.sl-row.now')?.scrollIntoView({ block: 'center' });
+}
+
+/** The Agent's configuration: the composition reader the Team profile already shows —
+ *  mandate, Behaviors, and the birth record — over the tile. */
+async function openConfiguration(tile) {
+  const { createAgentCompositionReader } = await import('./agent-composition.js');
+  const reader = createAgentCompositionReader(tile.session);
+  await overTile(tile, t('me.configuration', 'Configuration'), (box) => box.append(reader.el),
+    { closed: reader.destroy });
+  void reader.show();
 }

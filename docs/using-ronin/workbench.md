@@ -181,7 +181,7 @@ header back. Tap it again and the header returns exactly as it was.
 
 An Agent's head keeps the same depth as the surface heads beside it, and stays one row. It
 shows the Agent's name, its reading toggle, **メ** and −. メ opens one menu over the tile —
-send a file, mention, output, the work record (a full overlay over the tile), its docs, and Delete or archive —
+send a file, mention, output, the work record and the Agent's configuration (each a full overlay over the tile), its docs, and Delete or archive —
 the same menu on a computer, a tablet and a phone. A choice that has nothing to offer, such
 as Output with no Services, is left out rather than shown blank.
 

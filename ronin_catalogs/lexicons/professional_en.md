@@ -1123,6 +1123,8 @@ The catalog entry goes. {dir} is not touched.
 - **me.agent_title:** This Agent — work record, docs, file, mention, output, delete
 - **me.ladder:** Work record
 - **me.docs:** Docs
+- **me.configuration:** Configuration
+- **me.configuration_hint:** mandate, Behaviors
 - **me.docs_none:** Nothing tracked yet. Ask this Agent to add its docs to its work record.
 - **me.attach:** Send a file
 - **me.attach_hint:** or drag one onto the tile
