@@ -203,7 +203,12 @@ an item on that surface's メ (the menu, `menu.js`, seated by the Workbench when
 hands over `menu: () => groups`) opening the full overlay (`fullOverlay`, `work-details.js`)
 with Grey form rows (`saveRow`, `save-row.js`) for title and objective, each saving itself
 by `PUT /api/work-items/:id`; the push repaints the board after. `configuration-overlay.js`
-is the one glue for that, shared by Board, Workspace and Team.
+is the one glue for that, shared by Board, Workspace and Team. **Workspace configuration** is the
+same on the Teams and boards surface's メ: rows for title, remit, match, docs and plans, each
+`PUT /api/project-roots/:name` with that one field (the store merges field by field; lists are
+comma strings), seeded from the folder catalog the page holds and re-read after a save
+(`loadProjects`, `home.js`). `memory` is stored but not served by that catalog, so it has no
+row until the route serves it.
 
 **Workspace** (`workspace`, param the folder name) opens on **Teams and boards**
 (`workspace-teams-surface.js`, type `workspace.teams`) in workspace 1 and **Docs and repos**
