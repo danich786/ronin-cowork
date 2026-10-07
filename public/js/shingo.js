@@ -54,7 +54,7 @@ export function taskAtHand(letter) {
  *   │   └────────── done or not
  *   └────────────── you are here
  */
-export function buildLadder(letter, deskEntry = null) {
+export function buildLadder(letter, deskEntry = null, { openDoc = null } = {}) {
   const box = document.createElement('div');
   box.className = 'shingo-ladder';
   if (!letter) return box;
@@ -151,9 +151,16 @@ export function buildLadder(letter, deskEntry = null) {
   const docs = section(t('ladder.tracked_documents', 'Tracked documents'), 'sl-docs');
   if (letter.docs?.length) {
     for (const item of letter.docs) {
-      const row = document.createElement('p');
+      // Where the reader can open a document (the tile's menu), each one is a press.
+      const row = document.createElement(openDoc ? 'button' : 'p');
       row.textContent = typeof item === 'string' ? item : (item.path || item.file || item.title || '');
       row.title = row.textContent;
+      if (openDoc) {
+        const path = row.textContent;
+        row.type = 'button';
+        row.className = 'sl-doc';
+        row.addEventListener('click', () => openDoc(path));
+      }
       docs.appendChild(row);
     }
   } else {

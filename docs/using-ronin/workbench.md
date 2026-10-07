@@ -179,10 +179,10 @@ so it is always within reach. It is deliberately a little in the way — it is h
 header back. Tap it again and the header returns exactly as it was.
 
 An Agent's head keeps the same depth as the surface heads beside it, and stays one row. It
-shows the Agent's name, its reading toggle, and **メ** — one menu holding that Agent's work
-record, docs, mention, output, minimise and close, the same sheet the phone uses. A control
-that has nothing to offer, such as Output with no Services, leaves the sheet rather than
-sitting there blank.
+shows the Agent's name, its reading toggle, **メ** and −. メ opens one menu over the tile —
+send a file, mention, output, the work record with its documents, and Delete or archive —
+the same menu on a computer, a tablet and a phone. A choice that has nothing to offer, such
+as Output with no Services, is left out rather than shown blank.
 
 The reading toggle is a toggle, never a row in the menu. Each press moves on through the
 readings this screen offers, and past the last one it returns to the terminal. A desk walks

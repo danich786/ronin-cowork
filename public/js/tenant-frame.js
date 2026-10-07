@@ -21,9 +21,8 @@ import { createFeedbackSurface } from './feedback.js';
 import { acceptDrops as acceptSessionDrops } from './team-drag.js';
 import { installBehaviourReader } from './behaviour-reader.js';
 import { store } from './store.js';
-import { S } from './state.js';
+import { S, isCoarse } from './state.js';
 import { t } from './lexicon.js';
-import { isCoarse } from './tiledrop.js';
 import { workbenchView } from './workspace-contract.js';
 import { registerWorkbenchCatalog, WORKBENCH_TYPES as WB_TYPES } from './workbench-catalog.js';
 

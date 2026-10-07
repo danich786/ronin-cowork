@@ -6,6 +6,9 @@ import { tabTitle } from './workspace.js';
 // Touch device (iPhone/iPad): a tap must NOT auto-focus the terminal (which pops
 // the keyboard); scrolling is driven by drag + buttons that inject wheel events.
 export const IS_TOUCH = window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+/** Only run where the STYLESHEET agrees. IS_TOUCH is broader (it also accepts a bare
+ *  `ontouchstart`); where the two disagree, layout follows the stylesheet. */
+export const isCoarse = () => window.matchMedia('(pointer: coarse)').matches;
 export const IS_MAC = ['Macintosh', 'MacIntel', 'MacPPC', 'Mac68K'].includes(navigator.platform);
 /** The modifier's name, for anything that has to SAY it. */
 export const SELECT_MOD = IS_MAC ? '⌥ Option' : '⇧ Shift';

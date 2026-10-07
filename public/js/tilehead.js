@@ -1,12 +1,12 @@
 /* part of the ronin-cowork client — see js/README.md */
 import { makeGauge, setInert } from './widgets.js';
-import { clampTip } from './shingo.js';
-import { buildTileDocs } from './tiledocs.js';
-import { buildTileMentions } from './tilementions.js';
+import { insertMention } from './tilementions.js';
 import { pickFile } from './tilefiles.js';
-import { serviceMissing } from './state.js';
-import { makeOutput } from './output.js';
-import { makeDrop } from './tiledrop.js';
+import { S, serviceMissing } from './state.js';
+import { OUTPUTS } from './output.js';
+import { createMenuButton, closeMenu } from './menu.js';
+import { buildLadder } from './shingo.js';
+import { readDesks } from './desks.js';
 import { t } from './lexicon.js';
 
 /**
@@ -31,12 +31,6 @@ const HEADER = () => {
   // happens by placing or dragging a roster card into the workspace, never in its head.
   { key: 'sessionName', tag: 'span', cls: 'sess' },
 
-  { key: 'workRecordBtn', cls: 'work-record',
-    text: t('head.work_record', 'Work Record'), needs: 'session',
-    help: t('head.work_record_help', 'Repositories, current action, and work record'),
-    quiet: t('head.work_record_quiet', 'Work Record — no Agent in this workspace'),
-    on: (tile) => tile.toggleLadder() },
-
   { grow: true },
 
   { key: 'transcriptBtn', cls: 'transcript-toggle', text: t('transcript.toggle', 'Transcript'), needs: 'session',
@@ -53,14 +47,6 @@ const HEADER = () => {
     },
     on: (tile) => tile.toggleTranscript() },
 
-  // OUTPUT IN THE HEAD. The owner moved the RIREKI choices into the terminal header ("… I
-  // want to be able to switch between locked and the different versions of unlocked to see
-  // how this looks"). Ugly for now, by the owner's own word — a select with a word in it
-  // among glyph buttons — and the trade is that the RIREKI flavours are one click away on
-  // every tile while they are being judged.
-  { key: 'outputEl', widget: (tile) => makeOutput(tile),
-    help: t('head.output_help', 'Output — live terminal or one of RIREKI’s unlocked views') },
-
   // Hidden until there is a reading — a plain shell pane has no context, and that is fine.
   //
   // A LIVE READING BEHIND A CLICK, which is normally the wrong trade — a gauge you have
@@ -72,36 +58,18 @@ const HEADER = () => {
     widget: () => makeGauge('ctx'),
     help: t('head.gauge_help', "Context gauge — how full this session's context window is, read off the pane's own status line. Hidden until there is a reading.") },
 
-  { key: 'mentionBtn', needs: 'session',
-    widget: (tile) => buildTileMentions(tile),
-    help: t('head.mention_help', 'Mention another session — choose a name to add it to the message box'),
-    quiet: t('head.mention_quiet', 'Mentions — no session in this tile yet') },
+  // THE MENU (owner, 2026-10-07: "an overlay of sorts itself … include most buttons from
+  // the current tile header", and "also to be included in your menu view is the work
+  // record"). Everything about this Agent that is not the reading toggle or the window
+  // lives in it: see tileMenu below. One control, the same on a desk, a tablet and a phone.
+  { key: 'menuBtn', needs: 'session',
+    widget: (tile) => createMenuButton({
+      title: t('me.agent_title', 'This Agent — work record, docs, file, mention, output, delete'),
+      host: () => tile.el, groups: () => tileMenu(tile) }),
+    help: t('me.agent_title', 'This Agent — work record, docs, file, mention, output, delete'),
+    quiet: t('head.menu_quiet', 'Menu — no Agent in this workspace') },
 
-  // Drag or paste is the main way to hand this Agent a file; the paperclip is for when you cannot.
-  { key: 'attachBtn', cls: 'attach', text: '📎', needs: 'session',
-    help: t('head.attach_help', 'Send a file to this Agent — or drag or paste one on the tile'),
-    quiet: t('head.attach_quiet', 'Send a file — no Agent in this workspace'),
-    on: (tile) => pickFile(tile) },
-
-  { key: 'docsBtn', needs: 'session',
-    widget: (tile) => buildTileDocs(tile),
-    help: t('head.docs_help', "This Agent's tracked docs — open one over this tile"),
-    quiet: t('head.docs_quiet', "This Agent's docs — no Agent in this workspace"),
-    read: (tile, el) => {
-      const n = ((tile.session && tile.tegami?.docs) || []).length;
-      el.classList.toggle('has-docs', !!n);
-      return n
-        ? t('head.docs_read', 'Docs — {n} tracked by this Agent. Open one over this tile.', { n })
-        : t('head.docs_none', 'Docs — this Agent is tracking none yet.');
-    } },
-
-  // Window acts terminate the header at its outside edge: times opens the existing
-  // retirement sheet and minus stops viewing. Killing is not reimplemented here.
-  { key: 'killBtn', cls: 'window-control kill', text: '×', needs: 'session',
-    help: t('head.kill_help', 'Delete or archive this Agent'),
-    quiet: t('head.kill_quiet', 'Delete or archive Agent — no Agent in this workspace'),
-    on: (tile) => tile.kill() },
-
+  // The window control terminates the header at its outside edge: minus stops viewing.
   { key: 'minimizeBtn', cls: 'window-control minimize', text: '−', needs: 'session',
     help: t('head.minimize_help', 'Close this view — the Agent keeps running'),
     quiet: t('head.minimize_quiet', 'Close view — no Agent in this workspace'),
@@ -176,7 +144,7 @@ export function buildTileHead(tile) {
       head.append(Object.assign(document.createElement('span'), { className: 'grow' }));
       continue;
     }
-    // Four controls are built by their own module and come back as {el, set}; the rest
+    // The gauge and the menu are built by their own modules and come back as {el}; the rest
     // are a tag and a glyph. Either way what lands in `out` is what tile.js already
     // expects — the widget object where there is one, the element where there is not.
     const made = row.widget ? row.widget(tile) : null;
@@ -196,26 +164,47 @@ export function buildTileHead(tile) {
     if (row.on) node.addEventListener('click', () => pressable(row, tile) && row.on(tile, node));
     head.append(node);
     out[row.key] = made ?? node;
-    // Controls with a menu hang it off the header rather than inside the button.
-    if (made?.menu) head.append(made.menu);
-  }
-  // WIDE TOUCH PUTS THE AGENT'S TOOLS IN ONE PLACE, the way the phone does: the head is
-  // the Agent's name, its reading toggle, and メ. A fold that hid the tools behind a
-  // chevron only traded one tap for another and left the head a different depth from the
-  // surface heads beside it (owner, 2026-09-23). The toggle stays a toggle and never
-  // becomes a row in a menu — the same ruling the phone document already carries.
-  if (window.matchMedia('(pointer: coarse) and (min-width: 681px)').matches) {
-    const sheet = makeDrop('メ', t('me.agent_title', 'This Agent — work record, docs, output, close'), 'me');
-    const row = (key, label, mode) => { if (out[key]?.el || out[key]) sheet.addRow(out[key]?.el ?? out[key], label, mode); };
-    row('workRecordBtn', t('me.ladder', 'Work record'));
-    row('docsBtn', t('me.docs', 'Docs'));
-    row('attachBtn', t('me.attach', 'Send a file'));
-    row('mentionBtn', t('me.mention', 'Mention session'));
-    row('outputEl', t('me.output', 'Output'), 'stay');
-    row('minimizeBtn', t('me.minimize', 'Minimize'));
-    row('killBtn', t('me.kill', 'Kill session'));
-    head.append(sheet.btn, sheet.menu);
-    out.meSheet = sheet;
   }
   return out;
+}
+
+/**
+ * THE TILE'S MENU, top to bottom: what you do to this Agent, then its work record (the
+ * ladder, with its tracked documents — one press opens one over the tile), and Delete or
+ * archive held at the foot. Read at each press, so it is never stale; the work record reads
+ * this session's desks once, as it opens, exactly as the old ladder did.
+ */
+export function tileMenu(tile) {
+  const outputs = OUTPUTS().filter(([value]) => !S.streamOff || value === 'locked');
+  return [
+    { items: [
+      { glyph: '📎', label: t('me.attach', 'Send a file'), hint: t('me.attach_hint', 'or drag one onto the tile'),
+        run: () => pickFile(tile) },
+      { glyph: '@', label: t('me.mention', 'Mention a session'), kind: 'list',
+        list: () => S.sessions.filter((row) => row.name !== tile.session)
+          .map((row) => ({ label: row.name, run: () => insertMention(tile, row.name) })) },
+    ] },
+    // Without Services there is nothing to choose: every unlocked view is RIREKI's.
+    tile.servicesOff() || outputs.length < 2 ? null : { label: t('me.output', 'Output'),
+      items: outputs.map(([value, label]) => ({ kind: 'radio', label, checked: tile.output === value,
+        run: () => tile.setOutput(value) })) },
+    { label: t('me.ladder', 'Work record'), draw: (box) => drawWorkRecord(tile, box) },
+    { foot: true, items: [
+      { glyph: '×', label: t('me.kill', 'Delete or archive…'), run: () => tile.kill() },
+    ] },
+  ];
+}
+
+async function drawWorkRecord(tile, box) {
+  if (!tile.tegami) {
+    box.append(Object.assign(document.createElement('p'), { className: 'menu-empty',
+      textContent: t('me.no_record', 'This Agent has not written a work record yet.') }));
+    return;
+  }
+  const session = tile.session;
+  const desks = await readDesks(session);
+  if (!box.isConnected || tile.session !== session) return;
+  box.append(buildLadder(tile.tegami, desks, { openDoc: (path) => { closeMenu(); tile.openDoc(path); } }));
+  // Open ON the rung you are standing on: a long ladder scrolls, and rung 1 hides it.
+  box.querySelector('.sl-row.now')?.scrollIntoView({ block: 'center' });
 }

@@ -8,14 +8,23 @@ column, or drag its card into the workspace where you want to see it.
 | Control | What it does |
 |---|---|
 | Title / ⛩ | Edit the Agent's displayed title; its session name remains its identity |
-| Work Record | Open the Agent's objective, work, and tracked repositories |
-| Output | **Terminal Mirror** — the live terminal — or **Locked**, the same terminal to watch without typing into it |
 | Transcript / Chat · Notes · Work · All · Term | When Terminal transcript is active, cycle from the terminal through ever fuller readings of the Agent's conversation and back |
-| Mention | Add another session's name to the message box |
-| 📎 | Send a file to this Agent from Finder, or the photo library on a phone — see [Share a file with an Agent](share-a-file.md) |
-| Docs | Open documents tracked by this Agent, and files handed to it |
-| × | Open the archive/delete choices |
+| メ | Open the menu for this Agent (below) |
 | − | Close this view while the Agent keeps running |
+
+## The menu
+
+**メ** opens a menu over the tile, hung under the button. It is the same menu on a
+computer, a tablet and a phone. Press outside it, press Escape, or press メ again to close
+it; the arrow keys move through it.
+
+| Item | What it does |
+|---|---|
+| 📎 Send a file | Send a file from Finder, or the photo library on a phone — see [Share a file with an Agent](share-a-file.md) |
+| @ Mention a session | Choose a session; its name goes into the message box |
+| Output | **Terminal Mirror** — the live terminal — or **Locked**, the same terminal to watch without typing into it. Not shown when this Agent has no Ronin Services |
+| Work record | The Agent's task at hand, worktrees, Teams, progress and tracked documents. Press a document to open it over the tile |
+| × Delete or archive… | Open the archive/delete choices; it stays at the foot of the menu |
 
 The context gauge appears when Ronin has a reading from the session. An empty workspace
 has no Agent for session-specific actions to operate on.
@@ -38,7 +47,7 @@ see [Archived sessions](archived-sessions.md).
 
 ## Share a file with an Agent
 
-Drag a file onto the tile, paste an image or file on it, or press **📎**: the file is saved
+Drag a file onto the tile, paste an image or file on it, or choose **📎 Send a file** in メ: the file is saved
 in the session's `drop/` folder, listed on Docs, and its path typed into the Agent's input
 without Enter. A work item dragged onto the tile types its reference (id and title) the
 same way. See [Share a file with an Agent](share-a-file.md).

@@ -901,90 +901,10 @@ body {
   }
 }
 
-.tile-head select.tmention-btn {
-  flex: 0 0 auto;
-  width: 26px;
-  min-width: 0;
-  height: 24px;
-  padding: 0;
-  appearance: none;
-  -webkit-appearance: none;
-  background: var(--bg);
-  border-color: var(--muted);
-  color: var(--fg);
-  font-size: var(--text-3);
-  line-height: 22px;
-  text-align: center;
-  text-align-last: center;
-  cursor: pointer;
-}
-.tile-head select.tmention-btn:hover { border-color: var(--accent); }
-.tile-head select.tmention-btn:active { color: var(--accent); }
 .tile .tile-body[data-drop-text='true'] .composer textarea { border-color: var(--accent); }
 .tile .tile-body[data-drop-text='true'] { outline: var(--edge) dashed var(--accent); outline-offset: calc(-1 * var(--edge)); }
 
 
-.tdocs {
-  display: none;
-  position: absolute;
-  top: 100%;
-  right: 6px;
-  z-index: 12;
-  width: min(360px, calc(100% - 12px));
-  max-height: 60vh;
-  overflow-y: auto;
-  background: var(--panel);
-  border: var(--edge) solid var(--line);
-  border-radius: var(--radius-lg);
-  padding: var(--space-3);
-  box-shadow: var(--shadow-sheet);
-}
-.tdocs.open {
-  display: block;
-}
-
-.tdocs .tdocs-row {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-4);
-  width: 100%;
-  height: auto;
-  padding: var(--space-4) var(--space-5);
-  margin-bottom: var(--space-2);
-  text-align: left;
-  background: var(--raise);
-  border: var(--edge) solid var(--line);
-  border-radius: var(--radius-md);
-  color: var(--fg);
-  font-size: var(--text-4);
-  cursor: pointer;
-}
-.tdocs .tdocs-row:last-child {
-  margin-bottom: 0;
-}
-.tdocs .tdocs-row b {
-  color: var(--fg-strong);
-  font-weight: 600;
-}
-
-.tdocs .tdocs-row span {
-  color: var(--muted);
-  font-size: var(--text-2);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.tdocs-empty {
-  color: var(--muted);
-  font-size: var(--text-3);
-  line-height: 1.45;
-  padding: var(--space-4) var(--space-3);
-}
-
-.tile-head button.tdocs-btn.has-docs {
-  color: var(--accent);
-  border-color: var(--accent);
-}
 
 .tile-doc-view {
   display: none;
@@ -1595,8 +1515,7 @@ body {
 @media (pointer: coarse) {
 
   .tile-head button,
-  .tile-head button.torii,
-  .tile-head select.tmention-btn {
+  .tile-head button.torii {
     width: 34px;
     height: 32px;
     padding: 0;
@@ -1604,9 +1523,6 @@ body {
     border-radius: var(--radius-sm);
   }
 
-  .tile-head select.tmention-btn {
-    line-height: 30px;
-  }
   .tile-head .sess {
     max-width: 50%;
   }
@@ -4268,86 +4184,11 @@ button.wb-door:hover b {
     white-space: nowrap;
   }
 
-  .tdrop {
-    display: none;
-    position: absolute;
-    top: 100%;
-    right: 6px;
-    z-index: 14;
-    min-width: 200px;
-    max-height: 70vh;
-    overflow-y: auto;
-    padding: var(--space-3);
-    background: color-mix(in srgb, var(--panel) 88%, transparent);
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
-    border: var(--edge) solid var(--line);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-sheet);
-  }
-  .tdrop.open {
-    display: block;
-  }
-  .tdrop-row {
-    display: flex;
-    align-items: center;
-    gap: var(--space-5);
-
-    min-height: 44px;
-    padding: 0 var(--space-3);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-  }
-  /* A row whose control has taken itself away is not a row. Without Services there is
-     nothing to choose, so the Output select hides itself (Tile.syncOutput) — the word
-     beside it has to go with it rather than leaving a blank line in the sheet. */
-  .tdrop-row:has(> [hidden]) {
-    display: none;
-  }
-  .tdrop-row:active {
-    background: var(--line);
-  }
-
-  .tdrop-row.inert {
-    cursor: default;
-    padding-bottom: var(--space-2);
-    margin-bottom: var(--space-2);
-    border-bottom: var(--edge) solid var(--line);
-    border-radius: 0;
-  }
-  .tdrop-row.inert:active {
-    background: transparent;
-  }
-  .tdrop-row > span {
-    flex: 1;
-    color: var(--fg);
-    font-size: var(--text-6);
-    white-space: nowrap;
-  }
-
-  .tdrop-row > span.tdrop-status {
-    color: var(--muted);
-    font-size: var(--text-4);
-  }
-
-  .tdrop-row:has(> [hidden]) {
-    display: none;
-  }
 }
 
 
 
-.tile select.output {
-  width: 148px;
-  border: var(--edge) solid var(--line);
-  border-radius: var(--radius-xs);
-  color: var(--fg);
-  background: var(--well);
-  font: var(--text-2)/1.2 var(--font-mono);
-  padding: var(--space-1) var(--space-2);
-}
 
-.tile-head select.output { width: auto; flex: 0 0 5rem; min-width: 0; }
 /* One width across Term · Chat · Notes · Work · All, so the head does not jump as you
    cycle — but sized to those words. It was 5.7rem, cut for "Transcript", and rendered at
    91px while the widest of them needs 41px: more than twice the button the text asked for
@@ -4438,9 +4279,6 @@ button.wb-door:hover b {
 .tile.transcript-on .dvr-strip,
 .tile.transcript-on .tapejump,
 .tile.transcript-on .termjump { display: none; }
-@media (pointer: coarse) {
-  .tile select.output { width: 44px; height: 40px; padding: 0; flex: 0 0 44px; }
-}
 .kaki-controls { display: none; gap: var(--space-3); align-items: center; margin-bottom: var(--space-4); }
 .kaki-controls.show { display: flex; }
 .kaki-controls button, .kaki-controls select {
@@ -4717,16 +4555,70 @@ button.wb-door:hover b {
 }
 
 
-.tile-head button.work-record {
-  flex: 0 0 auto;
-  width: auto;
-  min-width: 0;
-  padding: var(--space-2) var(--space-4);
-  white-space: nowrap;
+
+/* THE MENU (js/menu.js) — the location "menu": an overlay hung off its メ control, over
+   the surface that control heads. Kit tokens only, the partial overlay's frame. */
+.tile-head button.menu-btn { font-weight: 600; }
+.tile-head button.menu-btn[aria-expanded='true'] { border-color: var(--accent); color: var(--accent); }
+.menu {
+  position: absolute;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: min(26rem, calc(100% - 12px));
+  overflow: hidden;
+  background: var(--panel);
+  border: var(--edge) solid var(--line-2);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sheet);
+  font-size: var(--text-3);
 }
-.tile-head button.work-record.open {
-  border-color: var(--accent);
-  color: var(--accent);
+.menu:focus { outline: none; }
+.menu-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: var(--space-2) 0; }
+.menu-foot { flex: 0 0 auto; border-top: var(--edge) solid var(--line); padding: var(--space-2) 0; }
+.menu-foot[hidden] { display: none; }
+.menu-group + .menu-group { margin-top: var(--space-2); border-top: var(--edge) solid var(--line); padding-top: var(--space-2); }
+.menu-group-label { padding: var(--space-3) var(--space-6) var(--space-2); font-size: var(--form-key); font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.menu-item {
+  display: grid;
+  grid-template-columns: 1.5rem minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-4);
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 32px;
+  padding: 0 var(--space-6);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.menu-item:focus { outline: none; }
+.menu-item:hover, .menu-item:focus-visible { background: var(--raise); }
+.menu-glyph { color: var(--muted); text-align: center; }
+.menu-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu-hint { color: var(--dim); font-size: var(--text-2); white-space: nowrap; }
+.menu-more { color: var(--muted); }
+.menu-item[aria-checked='true'] .menu-label { color: var(--fg-strong); font-weight: 600; }
+.menu-item[aria-checked='true'] .menu-glyph { color: var(--kaki); }
+.menu-item[aria-disabled='true'] { opacity: .45; cursor: default; }
+.menu-item[aria-disabled='true']:hover { background: transparent; }
+.menu-back .menu-label { color: var(--fg-strong); font-weight: 600; }
+.menu-foot .menu-item, .menu-foot .menu-glyph { color: var(--bad-soft); }
+.menu-foot .menu-item:hover, .menu-foot .menu-item:focus-visible { background: var(--bad-ground); color: var(--bad-fg); }
+.menu-empty { margin: 0; padding: var(--space-3) var(--space-6); color: var(--muted); }
+.menu-reading { padding: 0 var(--space-6) var(--space-3); }
+.menu-reading > .menu-empty { padding: var(--space-2) 0; }
+.menu .shingo-ladder { max-height: none; overflow: visible; border: 0; padding: 0; background: transparent; }
+.menu .shingo-ladder .sl-doc { display: block; width: 100%; overflow: hidden; padding: 0; border: 0; background: none; color: var(--fg); font: inherit; text-align: left; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.menu .shingo-ladder .sl-doc:hover, .menu .shingo-ladder .sl-doc:focus-visible { color: var(--accent); outline: none; }
+.menu .shingo-ladder .sl-doc + .sl-doc { margin-top: var(--space-2); }
+@media (pointer: coarse) {
+  .menu-item { min-height: 44px; font-size: var(--text-5); }
 }
 
 .shingo-ladder {
@@ -6495,7 +6387,7 @@ button.wk-card { cursor: pointer; font-family: var(--font-ui); }
   color: var(--on-strong);
 }
 
-#phone .ph-bar .tdrop-btn {
+#phone .ph-bar .menu-btn {
   flex: 0 0 auto;
   height: 40px;
   min-width: 44px;
@@ -6509,7 +6401,7 @@ button.wk-card { cursor: pointer; font-family: var(--font-ui); }
   border-color: color-mix(in srgb, var(--kaki) 55%, transparent);
   color: var(--kaki-lift);
 }
-#phone .ph-bar .tdrop-btn:active {
+#phone .ph-bar .menu-btn:active {
   background: var(--kaki);
   border-color: var(--kaki);
   color: var(--on-strong);
