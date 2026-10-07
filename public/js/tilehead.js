@@ -185,10 +185,10 @@ export function tileMenu(tile) {
           .map((row) => ({ label: row.name, run: () => insertMention(tile, row.name) })) },
     ] },
     // Without Services there is nothing to choose: every unlocked view is RIREKI's.
-    tile.servicesOff() || outputs.length < 2 ? null : { label: t('me.output', 'Output'),
+    tile.servicesOff() || outputs.length < 2 ? null : {
       items: outputs.map(([value, label]) => ({ kind: 'radio', label, checked: tile.output === value,
         run: () => tile.setOutput(value) })) },
-    { label: t('me.ladder', 'Work record'), draw: (box) => drawWorkRecord(tile, box) },
+    { draw: (box) => drawWorkRecord(tile, box) },
     { foot: true, items: [
       { glyph: '×', label: t('me.kill', 'Delete or archive…'), run: () => tile.kill() },
     ] },

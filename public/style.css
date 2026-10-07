@@ -4579,7 +4579,6 @@ button.wb-door:hover b {
 .menu-foot { flex: 0 0 auto; border-top: var(--edge) solid var(--line); padding: var(--space-2) 0; }
 .menu-foot[hidden] { display: none; }
 .menu-group + .menu-group { margin-top: var(--space-2); border-top: var(--edge) solid var(--line); padding-top: var(--space-2); }
-.menu-group-label { padding: var(--space-3) var(--space-6) var(--space-2); font-size: var(--form-key); font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .menu-item {
   display: grid;
   grid-template-columns: 1.5rem minmax(0, 1fr) auto auto;

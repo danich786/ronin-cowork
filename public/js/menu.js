@@ -6,7 +6,7 @@
  * than its host. One menu on the page at a time.
  *
  * The menu draws its own rows from data; it never borrows the head's buttons. A group is
- * `{ label?, items?, draw?, foot? }`:
+ * `{ items?, draw?, foot? }`, divided from the next by a hairline only, never a word:
  *   items  rows: { glyph, label, hint, run, kind, checked, quiet, list, empty }
  *          kind 'action' (default) runs and closes · 'radio' one of the group, aria-checked ·
  *          'list' drills in: its rows replace the menu's, with a Back row; never a flyout.
@@ -78,7 +78,6 @@ export function openMenu({ anchor, host, title = '', groups = [], onClose = () =
 
   const group = (spec, into) => {
     const box = el('div', 'menu-group');
-    if (spec.label) box.append(el('div', 'menu-group-label', spec.label));
     const radio = spec.items?.some((item) => item.kind === 'radio');
     for (const item of spec.items || []) box.append(row(item, { radio }));
     if (spec.draw) { const reading = el('div', 'menu-reading'); box.append(reading); spec.draw(reading, { close }); }

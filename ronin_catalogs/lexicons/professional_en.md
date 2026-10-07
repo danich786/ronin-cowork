@@ -1118,10 +1118,8 @@ The catalog entry goes. {dir} is not touched.
 - **bar.shape_four:** Four workspaces — click for two
 
 ## me — tilehead.js (the メ menu, js/menu.js)
-- **me.ladder:** Work record
 - **me.mention:** Mention a session
 - **me.kill:** Delete or archive…
-- **me.output:** Output
 - **me.agent_title:** This Agent — work record, docs, file, mention, output, delete
 - **me.attach:** Send a file
 - **me.attach_hint:** or drag one onto the tile
