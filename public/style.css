@@ -4610,12 +4610,18 @@ button.wb-door:hover b {
 .menu-foot .menu-item, .menu-foot .menu-glyph { color: var(--bad-soft); }
 .menu-foot .menu-item:hover, .menu-foot .menu-item:focus-visible { background: var(--bad-ground); color: var(--bad-fg); }
 .menu-empty { margin: 0; padding: var(--space-3) var(--space-6); color: var(--muted); }
-.menu-reading { padding: 0 var(--space-6) var(--space-3); }
-.menu-reading > .menu-empty { padding: var(--space-2) 0; }
-.menu .shingo-ladder { max-height: none; overflow: visible; border: 0; padding: 0; background: transparent; }
-.menu .shingo-ladder .sl-doc { display: block; width: 100%; overflow: hidden; padding: 0; border: 0; background: none; color: var(--fg); font: inherit; text-align: left; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
-.menu .shingo-ladder .sl-doc:hover, .menu .shingo-ladder .sl-doc:focus-visible { color: var(--accent); outline: none; }
-.menu .shingo-ladder .sl-doc + .sl-doc { margin-top: var(--space-2); }
+/* The work record: the full overlay (work-details.js) over the tile's body, the terminal
+   untouched beneath it. */
+.tile-body > .work-overlay { position: absolute; inset: 0; z-index: 14; overflow-y: auto; box-sizing: border-box; padding: var(--space-5) var(--space-6); background: var(--panel); }
+.tile-body > .work-overlay .menu-empty { padding: var(--space-2) 0; }
+.tile-record-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-5); }
+.tile-record-head > h2 { margin: 0; color: var(--fg-strong); font-size: var(--text-8); font-weight: 600; }
+.tile-record-head .wk-action { padding: var(--space-2) var(--space-4); border: var(--edge) solid var(--line); border-radius: var(--radius-sm); background: transparent; color: var(--fg); font: inherit; cursor: pointer; }
+.tile-record-head .wk-action:hover { border-color: var(--accent); color: var(--accent); }
+.tile-body > .work-overlay .shingo-ladder { max-height: none; overflow: visible; border: 0; padding: 0; background: transparent; }
+.shingo-ladder .sl-doc { display: block; width: 100%; overflow: hidden; padding: 0; border: 0; background: none; color: var(--fg); font: inherit; text-align: left; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.shingo-ladder .sl-doc:hover, .shingo-ladder .sl-doc:focus-visible { color: var(--accent); outline: none; }
+.shingo-ladder .sl-doc + .sl-doc { margin-top: var(--space-2); }
 @media (pointer: coarse) {
   .menu-item { min-height: 44px; font-size: var(--text-5); }
 }

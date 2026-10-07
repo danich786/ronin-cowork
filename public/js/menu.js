@@ -3,15 +3,15 @@
  * THE MENU — the location "menu" (PATTERNS.md), and its one owner (owner, 2026-10-07: "an
  * overlay of sorts itself … more pro"). One control, メ, opens an overlay hung off it, over
  * the surface that control heads: right-aligned under the control, never wider or taller
- * than its host. One menu on the page at a time.
+ * than its host. One menu on the page at a time. A row that opens a read or a form opens
+ * it in the full overlay (work-details.js fullOverlay), never inside the menu.
  *
  * The menu draws its own rows from data; it never borrows the head's buttons. A group is
- * `{ items?, draw?, foot? }`, divided from the next by a hairline only, never a word:
+ * `{ items?, foot? }`, divided from the next by a hairline only, never a word:
  *   items  rows: { glyph, label, hint, run, kind, checked, quiet, list, empty }
  *          kind 'action' (default) runs and closes · 'radio' one of the group, aria-checked ·
  *          'list' drills in: its rows replace the menu's, with a Back row; never a flyout.
  *          `quiet` is the reason a row cannot run; it is shown, and the row does nothing.
- *   draw   a reading drawn into the group (the tile's work record): draw(box, { close }).
  *   foot   the group stays at the bottom while the rest scrolls (Delete or archive).
  * It closes on a row, a press outside, Escape (focus back to the control), or the control.
  */
@@ -80,7 +80,6 @@ export function openMenu({ anchor, host, title = '', groups = [], onClose = () =
     const box = el('div', 'menu-group');
     const radio = spec.items?.some((item) => item.kind === 'radio');
     for (const item of spec.items || []) box.append(row(item, { radio }));
-    if (spec.draw) { const reading = el('div', 'menu-reading'); box.append(reading); spec.draw(reading, { close }); }
     into.append(box);
   };
 

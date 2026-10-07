@@ -217,8 +217,10 @@ export class Tile {
     syncTileHead(this);
   }
 
+  /** The menu, and the work record's full overlay over the body (js/tilehead.js). */
   clearOverlays() {
     closeMenu();
+    this.body.querySelector(':scope > .work-overlay')?.remove();
   }
 
   /** Open one tracked document over this Agent; closing it reveals the live pane again. */
@@ -580,7 +582,7 @@ export class Tile {
     this.syncHeader();
     this.gauge.set(null);
     this.tegami = null;
-    closeMenu();
+    this.clearOverlays();
     this.setDot('off');
     this.term.reset();
     this.syncEmpty();

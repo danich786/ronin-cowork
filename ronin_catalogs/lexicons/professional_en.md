@@ -1121,6 +1121,7 @@ The catalog entry goes. {dir} is not touched.
 - **me.mention:** Mention a session
 - **me.kill:** Delete or archive…
 - **me.agent_title:** This Agent — work record, docs, file, mention, output, delete
+- **me.ladder:** Work record
 - **me.attach:** Send a file
 - **me.attach_hint:** or drag one onto the tile
 - **me.no_record:** This Agent has not written a work record yet.

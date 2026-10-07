@@ -4,7 +4,7 @@ import { insertMention } from './tilementions.js';
 import { pickFile } from './tilefiles.js';
 import { S, serviceMissing } from './state.js';
 import { OUTPUTS } from './output.js';
-import { createMenuButton, closeMenu } from './menu.js';
+import { createMenuButton } from './menu.js';
 import { buildLadder } from './shingo.js';
 import { readDesks } from './desks.js';
 import { t } from './lexicon.js';
@@ -169,10 +169,8 @@ export function buildTileHead(tile) {
 }
 
 /**
- * THE TILE'S MENU, top to bottom: what you do to this Agent, then its work record (the
- * ladder, with its tracked documents — one press opens one over the tile), and Delete or
- * archive held at the foot. Read at each press, so it is never stale; the work record reads
- * this session's desks once, as it opens, exactly as the old ladder did.
+ * THE TILE'S MENU, top to bottom: what you do to this Agent, its work record, and Delete
+ * or archive held at the foot. Read at each press, so it is never stale.
  */
 export function tileMenu(tile) {
   const outputs = OUTPUTS().filter(([value]) => !S.streamOff || value === 'locked');
@@ -188,23 +186,43 @@ export function tileMenu(tile) {
     tile.servicesOff() || outputs.length < 2 ? null : {
       items: outputs.map(([value, label]) => ({ kind: 'radio', label, checked: tile.output === value,
         run: () => tile.setOutput(value) })) },
-    { draw: (box) => drawWorkRecord(tile, box) },
+    { items: [
+      { glyph: '☰', label: t('me.ladder', 'Work record'), run: () => void openWorkRecord(tile) },
+    ] },
     { foot: true, items: [
       { glyph: '×', label: t('me.kill', 'Delete or archive…'), run: () => tile.kill() },
     ] },
   ];
 }
 
-async function drawWorkRecord(tile, box) {
-  if (!tile.tegami) {
-    box.append(Object.assign(document.createElement('p'), { className: 'menu-empty',
-      textContent: t('me.no_record', 'This Agent has not written a work record yet.') }));
-    return;
-  }
+/**
+ * THE WORK RECORD as a full overlay over the tile's body (owner, 2026-10-07: "a full overlay
+ * and not mess with the content underneath"): the terminal stays as it was beneath it.
+ * This session's desks are read once, as it opens. A tracked document pressed opens over
+ * the tile in the record's place; Close or Escape lifts it.
+ */
+async function openWorkRecord(tile) {
   const session = tile.session;
-  const desks = await readDesks(session);
-  if (!box.isConnected || tile.session !== session) return;
-  box.append(buildLadder(tile.tegami, desks, { openDoc: (path) => { closeMenu(); tile.openDoc(path); } }));
+  // Loaded on first open: the overlay's module draws the kit, which a tile need not carry.
+  const [{ fullOverlay }, desks] = await Promise.all([import('./work-details.js'),
+    tile.tegami ? readDesks(session) : null]);
+  if (tile.session !== session) return;
+  tile.body.querySelector(':scope > .work-overlay')?.remove();
+  const layer = fullOverlay(tile.body, (box, through) => {
+    const head = document.createElement('div');
+    head.className = 'tile-record-head';
+    const tools = document.createElement('div');
+    tools.className = 'wk-surface-header-actions';
+    tools.append(...through.map((item) => item?.el ?? item));
+    head.append(Object.assign(document.createElement('h2'), { textContent: t('me.ladder', 'Work record') }), tools);
+    box.append(head);
+    if (!tile.tegami) {
+      box.append(Object.assign(document.createElement('p'), { className: 'menu-empty',
+        textContent: t('me.no_record', 'This Agent has not written a work record yet.') }));
+      return;
+    }
+    box.append(buildLadder(tile.tegami, desks, { openDoc: (path) => { layer?.remove(); tile.openDoc(path); } }));
+  });
   // Open ON the rung you are standing on: a long ladder scrolls, and rung 1 hides it.
-  box.querySelector('.sl-row.now')?.scrollIntoView({ block: 'center' });
+  layer.querySelector('.sl-row.now')?.scrollIntoView({ block: 'center' });
 }
