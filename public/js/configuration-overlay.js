@@ -8,6 +8,7 @@
  */
 import { fullOverlay } from './work-details.js';
 import { saveRow } from './save-row.js';
+import { field } from './ui.js';
 import { t } from './lexicon.js';
 
 const el = (tag, cls = '', text = '') => {
@@ -43,9 +44,18 @@ export function openConfiguration(surfaceEl, { title, rows }) {
     tools.append(...through.flatMap((item) => (item?.el ? [item.el] : item instanceof Node ? [item] : [])));
     head.append(el('h2', '', title), tools);
     const form = el('div', 'tw-config cfg-rows');
+    // Each row is drawn here, as Machine settings draws its own: the kit's labelled field with
+    // its status line; saveRow is the commit, run when the control changes.
     for (const row of rows()) {
-      const made = saveRow({ label: row.label, control: control(row), note: row.note || '', save: row.save, after: row.after || null });
-      if (made.el) form.append(made.el);
+      const input = control(row);
+      const labelled = field(input, { label: row.label, sr: false });
+      labelled.el.classList.add('st-field');
+      if (row.note) labelled.say(row.note);
+      const line = el('div', 'st-row');
+      line.append(labelled.el);
+      const commit = saveRow({ say: (state, message) => labelled.say(message, state === 'invalid'), save: row.save, after: row.after });
+      input.addEventListener('change', () => void commit(input.value));
+      form.append(line);
     }
     layer.append(head, form);
   });
