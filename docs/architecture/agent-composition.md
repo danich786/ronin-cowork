@@ -120,10 +120,10 @@ method:
 An inherited mandate is a default. An explicit assignment mandate wins.
 
 The current mandate lives in the work record (`writeMandate`, `src/tegami.ts`); the birth
-mandate stays in the birth record. A change by anyone but the Agent is pushed to it as one
-line through the message queue, each axis that moved before → after and who moved it
-(`ackRecord`, owner 2026-10-07: a write to an Agent's work record by someone else is acked,
-never left for the Agent to notice). `work-record read` shows the current value.
+mandate stays in the birth record. A newborn's mandate is chosen at creation and carried in
+its birth brief, never written after birth. A later change by anyone but the Agent pushes it
+one fixed line, "Your work record changed; please read it (work-record read)." (`ackRecord`,
+owner 2026-10-07); the record says what changed.
 
 Mandate teaching is part of the Ronin floor for every Cowork Agent. It is not selectable
 and must not appear among elective behaviors. This value-plus-teaching pattern is

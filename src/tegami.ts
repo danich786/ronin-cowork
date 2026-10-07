@@ -310,29 +310,21 @@ export async function writeTeams(name: string, tags: string[]): Promise<boolean>
   return true;
 }
 
-/** THE ACK (owner, 2026-10-07): a write to an Agent's work record by anyone else is pushed
- * to the Agent as one line, what changed and who changed it; never left for the Agent to
- * notice. A write by the Agent itself is not acked. Returns whether one was queued. */
-export async function ackRecord(name: string, by: string, change: string): Promise<boolean> {
-  if (by === name) return false;
-  await enqueueMessage(name, `${change} (by ${by}). work-record read shows your record.`, 'house', 'Work record');
-  return true;
+/** THE ACK (owner, 2026-10-07): a write to an Agent's work record by anyone else pushes it one
+ * fixed line; the Agent reads its record. A write by the Agent itself is not acked. */
+export async function ackRecord(name: string, by: string): Promise<void> {
+  if (by !== name) await enqueueMessage(name, 'Your work record changed; please read it (work-record read).', 'house', 'Work record');
 }
 
-const AXES = [['reach', 'Reach'], ['recruit', 'Recruit'], ['output', 'Output']] as const;
-const axis = (value: string | string[]): string => [value].flat().join(', ');
-
-/** Change only the current mandate in an Agent-authored work record. Birth remains immutable.
- * The Agent is acked with each axis that moved, before → after. */
-export async function writeMandate(name: string, current: Mandate, by: string): Promise<{ mandate: Mandate; acked: boolean }> {
+/** Change only the current mandate in an Agent-authored work record. Birth remains immutable. */
+export async function writeMandate(name: string, current: Mandate, by: string): Promise<Mandate> {
   const file = tegamiPath(await sessionKey(name));
   const text = await fs.readFile(file, 'utf8');
   const parsed = letterBlock(text);
   if (!parsed) throw new Error(`@${name} has no readable work record`);
-  const before = mandate(parsed.body.mandate);
   const next = mandate(current);
   parsed.body.mandate = next;
   await replaceLetterBlock(file, text, parsed, parsed.body);
-  const moved = AXES.filter(([key]) => axis(before[key]) !== axis(next[key])).map(([key, label]) => `${label} ${axis(before[key])} → ${axis(next[key])}`);
-  return { mandate: next, acked: moved.length ? await ackRecord(name, by, `Your mandate changed: ${moved.join('; ')}`) : false };
+  await ackRecord(name, by);
+  return next;
 }

@@ -180,7 +180,7 @@ export function registerSessions(app: express.Express): void {
     if (!(await sessionExists(name))) return res.status(404).json({ error: 'No such session.' });
     try {
       const saved = await writeMandate(name, mandate(req.body), callerOf(req));
-      res.json({ ok: true, mandate: saved.mandate, queued: saved.acked });
+      res.json({ ok: true, mandate: saved });
     } catch (e) { res.status(409).json({ error: String((e as Error)?.message ?? e) }); }
   });
 

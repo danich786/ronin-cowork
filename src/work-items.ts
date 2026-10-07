@@ -284,7 +284,7 @@ export async function createItemUnlocked(input: NewItem, by: string): Promise<Ac
   const list = input.holder ? await listFor(input.holder) : null;
   const folded = item.parent ? await foldIntoFirstChild(item.parent, item, by) : '';
   await save(item);
-  if (list) { await list.set([...list.holds, item.id]); await ackHolds(item, [], input.holder ?? null, by); }
+  if (list) { await list.set([...list.holds, item.id]); await ackHolds([input.holder ?? null], by); }
   const line = lineOf(by, 'create', { to: input.holder ? holderLabel(input.holder) : 'none', note: [item.title, item.parent ? `under ${item.parent}` : 'a board of its own', folded].filter(Boolean).join('; ') });
   item.trail.push(line);
   await save(item);
@@ -428,26 +428,17 @@ async function takeOffEveryList(id: string, except?: Holder): Promise<Holder[]> 
 
 const labels = (holders: Holder[]): string => holders.length ? holders.map(holderLabel).join(', ') : 'none';
 
-/** The ack to every Agent whose record a hold move changed (tegami.ts ackRecord): the one it
- * came to, and each it left; a Team's record is its roster, not an Agent's work record. */
-async function ackHolds(item: Pick<WorkItem, 'id' | 'title'>, from: Holder[], to: Holder | null, by: string): Promise<void> {
-  const name = `${item.id} "${item.title}"`;
-  const target = to ? holderLabel(to) : '';
-  for (const holder of from) {
-    if (holder.kind !== 'agent' || holderLabel(holder) === target) continue;
-    await ackRecord(holder.name, by, `${name} left your work record: ${to ? `now held by ${target}` : 'held by nobody'}`);
-  }
-  if (to?.kind === 'agent' && !from.some((holder) => holderLabel(holder) === target)) {
-    await ackRecord(to.name, by, `${name} was added to your work record`);
-  }
+/** The ack (tegami.ts ackRecord) to every Agent whose holds this move changed; a Team's holds are its roster. */
+async function ackHolds(holders: Array<Holder | null>, by: string): Promise<void> {
+  for (const name of new Set(holders.filter((holder) => holder?.kind === 'agent').map((holder) => holder!.name))) await ackRecord(name, by);
 }
 
 export async function assignUnlocked(id: string, to: Holder, by: string, note?: string): Promise<Acknowledged> {
-  const item = await load(id);
+  await load(id);
   const target = await listFor(to);
   const from = await takeOffEveryList(id, to);
   if (!target.holds.includes(id)) await target.set([...target.holds, id]);
-  await ackHolds(item, from, to, by);
+  await ackHolds([...from, to], by);
   return appendTrail(id, by, () => ({ op: 'assign', from: labels(from), to: holderLabel(to), note }));
 }
 
@@ -456,9 +447,9 @@ export const assignItem = (id: string, to: Holder, by: string, note?: string) =>
 /** Park: the id leaves every list. It is found again under its parent, or unassigned. */
 export function releaseItem(id: string, by: string, note?: string): Promise<Acknowledged> {
   return withIssuer(async () => {
-    const item = await load(id);
+    await load(id);
     const from = await takeOffEveryList(id);
-    await ackHolds(item, from, null, by);
+    await ackHolds(from, by);
     return appendTrail(id, by, () => ({ op: 'release', from: labels(from), to: 'none', note }));
   });
 }
@@ -473,7 +464,7 @@ export function restoreItem(id: string, team: string, by: string): Promise<Ackno
     const target = await listFor(to);
     const from = await takeOffEveryList(id, to);
     if (!target.holds.includes(id)) await target.set([...target.holds, id]);
-    await ackHolds(before, from, to, by);
+    await ackHolds([...from, to], by);
     return appendTrail(id, by, (item) => {
       const note = item.stage === stage ? 'restored' : `restored; stage ${item.stage} → ${stage}`;
       item.stage = stage;

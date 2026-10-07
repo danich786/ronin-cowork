@@ -119,9 +119,9 @@ folding its ladder into it. Nesting under a held board queues the holder (or a h
 Team's lead) one message through the message queue. Assign moves an id
 between lists and release takes it off every list, under the store's one issuer lock, so
 two concurrent assigns leave one holder. An item that comes to or leaves an Agent's list
-by anyone else's hand (create with a holder, assign, release, restore) acks that Agent one
-line naming the item and where it went (`ackHolds` → `ackRecord`, `src/tegami.ts`; owner
-2026-10-07); an Agent's own move is not acked. The Agent's ladder and documents are its focus
+by anyone else's hand (create with a holder, assign, release, restore) pushes that Agent the
+one fixed work-record ack (`ackRecord`, `src/tegami.ts`; owner 2026-10-07); an Agent's own
+move is not acked. The Agent's ladder and documents are its focus
 item's. Readings are derived in `src/work-items-read.ts` and never stored: an Agent's
 (`GET /api/work-items?session=`), a Team's (`?team=`: the Team's holds and its members',
 children after parents, plus `boards`: every item on the Team's boards and on the Unfiled
