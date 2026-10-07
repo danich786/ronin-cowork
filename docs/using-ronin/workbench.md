@@ -53,6 +53,7 @@ unfiled work can be taken on from there; a board added there is held by the Team
 Board view, drag an item onto another board's list to move it there (what is under it comes
 with it), or onto empty space to make it a board of its own: that is how work leaves
 Unfiled. On a Team's workbench a board made that way is held by the Team if nobody held it.
+In Status view, drag an item onto another stage's list to move it to that stage.
 An item's **Assign** can also give it to a Team. Press a list's name, a
 group's name or an item to open it over the lists. Its buttons at the top right are **Save** (once there is something to
 save), **Assign** (pick the Agent or Team that holds it), **Add** (a new item, starting where you

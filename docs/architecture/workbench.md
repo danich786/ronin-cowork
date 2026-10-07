@@ -36,7 +36,8 @@ every item; a Team workbench draws the server's `?team=` reading `boards` (its b
 Unfiled) and filters nothing in the browser. In Board view an item card drags onto another
 board's list (one reparent call under that board; its children come with it) or onto empty
 row space (reparent to none: a root); on a Team workbench a root made that way is then
-assigned to the Team when it had no holder. The store writes each move's trail line. Every press opens an overlay
+assigned to the Team when it had no holder. In Status view an item card drags onto another
+stage's list (one `POST /api/work-items/:id/stage` call with that stage). The store writes each move's trail line. Every press opens an overlay
 from `work-details.js`, whose one utility sits top right: Save (only while there is
 something to save), Assign, Add (the Add form as an overlay, placed where it was pressed),
 Close. The Add form, the same wherever Add appears, asks title, objective, status and

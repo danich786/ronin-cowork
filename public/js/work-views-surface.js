@@ -12,7 +12,8 @@
  * holds, its name and count at the head, Add at the foot; in Board view, Add board after
  * the last board. A board is a root item and its items are every item under it. In Board
  * view an item drags onto another board's list (it moves there) or onto empty space (it
- * becomes a board of its own). Press a list head, a subtitle or an item and its overlay
+ * becomes a board of its own); in Status view it drags onto another stage's list (its stage
+ * is written). Press a list head, a subtitle or an item and its overlay
  * lies over the lists (the item overlay for a board or an item, the status's items in their
  * context for a status). Close or Escape lifts it.
  */
@@ -81,11 +82,11 @@ export function createWorkViewsSurface({ holderTeam = () => '', openTeam = () =>
     const mark = who ? el('span', 'wv-holder', who.slice(0, 1).toUpperCase()) : null;
     if (mark) mark.title = who;
     const button = press('wv-item', [el('span', 'wv-label', item.title), mark].filter(Boolean), () => openItem(item));
-    // Every card drags onto a tile as the item's reference; in Board view it also moves between lists.
+    // Every card drags onto a tile as the item's reference; it also moves between lists (board or stage).
     button.draggable = true;
     button.addEventListener('dragstart', (event) => {
       carryItem(event.dataTransfer, item);
-      if (view === 'board') event.dataTransfer?.setData('text/plain', item.id);
+      event.dataTransfer?.setData('text/plain', item.id);
     });
     return button;
   };
@@ -102,16 +103,16 @@ export function createWorkViewsSurface({ holderTeam = () => '', openTeam = () =>
     const add = press('wv-add', [el('i', 'wv-add-mark', '+'), el('span', null, t('work_views.add', 'Add a work item'))],
       () => { lift(); draftOverlay(root, { ...context, parent: context.parent || target(), changed }); });
     column.append(press('wv-list-head', [el('span', 'wv-label', label), el('span', 'wv-count', String(n))], action), ...groups, add);
-    // Board view: an item dropped on another board's list moves under that board.
-    if (view === 'board') {
-      column.addEventListener('dragover', (event) => { event.preventDefault(); column.classList.add('over'); });
-      column.addEventListener('dragleave', () => column.classList.remove('over'));
-      column.addEventListener('drop', (event) => {
-        event.preventDefault(); event.stopPropagation(); column.classList.remove('over');
-        const id = event.dataTransfer?.getData('text/plain') || '';
-        if (id && boardOf.get(id) !== context.parent) void move(id, context.parent);
-      });
-    }
+    // An item dropped on another list: in Board view it moves under that board; in Status view its stage is written.
+    column.addEventListener('dragover', (event) => { event.preventDefault(); column.classList.add('over'); });
+    column.addEventListener('dragleave', () => column.classList.remove('over'));
+    column.addEventListener('drop', (event) => {
+      event.preventDefault(); event.stopPropagation(); column.classList.remove('over');
+      const id = event.dataTransfer?.getData('text/plain') || '';
+      if (!itemsById.has(id)) return;
+      if (view === 'board' && boardOf.get(id) !== context.parent) void move(id, context.parent);
+      if (view === 'status' && itemsById.get(id)?.stage !== context.stage) void setStage(id, context.stage);
+    });
     return column;
   };
 
@@ -126,6 +127,12 @@ export function createWorkViewsSurface({ holderTeam = () => '', openTeam = () =>
     if (moved.ok && !parent && team && !itemsById.get(id)?.holder) {
       await request(`/api/work-items/${encodeURIComponent(id)}/assign`, { method: 'POST', json: { team } });
     }
+    changed();
+  };
+  /* DRAG IN STATUS VIEW. Onto another stage's list: one stage call through the store's
+   * route, which writes the trail line. */
+  const setStage = async (id, key) => {
+    await request(`/api/work-items/${encodeURIComponent(id)}/stage`, { method: 'POST', json: { stage: key } });
     changed();
   };
   row.addEventListener('dragover', (event) => { if (view === 'board') event.preventDefault(); });
