@@ -68,7 +68,8 @@ Teams working in the folders you pick, one or several. Press a Team for a short 
 the stones, its Agents and its boards, and **Launch** to open the Team's tab. Press a bar and a
 small window opens beside it with a short read: an Agent's role and what it is doing now, a
 board's objective and items, an item's description and status. **Open** in a board's window
-places the work-item surface in the other workspace. Drag a board onto another Team to give it to that Team. Drag **Add +**, beside Under each
+places the work-item surface in the other workspace. Drag a board onto another Team to give it to that Team, or an Agent onto another Team to
+move the Agent there. Drag **Add +**, beside Under each
 Team, onto a Team to add a board or an Agent to it, whichever is showing; a small window
 opens over the Team with the form. Changing them happens on the Team's own workbench.
 

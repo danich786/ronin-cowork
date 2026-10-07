@@ -37,13 +37,15 @@ export function whoRows(reading = {}, { under = 'boards', membersOf = () => [] }
 
 /**
  * What dropping `moved` on `target` means on Who, or '' when nothing: a board onto another
- * Team gives it to that Team; the Add block onto a Team adds to it (owner, 2026-10-07). Those are the moves here (owner, 2026-10-04: Agents move on
- * the Team roster, items on What). `moved` is { kind, id, team }: what is dragged and the
+ * Team gives it to that Team; an Agent onto another Team moves the Agent there (leaving the
+ * Team it was under); the Add block onto a Team adds to it (owner, 2026-10-07). Items move on
+ * What. `moved` is { kind, id, team }: what is dragged and the
  * Team it was under; `target` is a row ({ kind, id }).
  */
 export function whoMove(moved, target) {
   if (!moved || !target) return '';
   if (target.kind === 'team' && moved.kind === 'board' && moved.team !== target.id) return 'assign';
+  if (target.kind === 'team' && moved.kind === 'agent' && moved.team !== target.id) return 'join';
   if (target.kind === 'team' && moved.kind === 'add') return 'add';
   return '';
 }

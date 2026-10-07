@@ -62,7 +62,8 @@ each a press to its description, status and holder, with one door, Open, inside 
 which lifts it and places the work-item surface in the other workspace (the Trello view until
 the What door exists); an item to its description, status and holder. The same read opens
 from the thin open's bars. The drags are a board onto another Team (`whoMove`:
-assign) and the Add block beside Under each Team onto a Team stone (`whoMove`: add), which
+assign), an Agent onto another Team (`whoMove`: join, one write through
+`moveTeamMembership`, leaving the Team it was under; owner 2026-10-07) and the Add block beside Under each Team onto a Team stone (`whoMove`: add), which
 opens a partial overlay (`partial-overlay.js`: a small window inside the surface under its
 anchor, Close, Escape or a press outside lifts it) holding the add form for what is showing:
 the draft form for a new board held by the Team, or the Agent picker the Team profile's plus
