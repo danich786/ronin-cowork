@@ -45,6 +45,13 @@ inventory. Use those ids with `--provider` and `--model`; display names are for 
 CLI-supported names already stored in settings, such as Claude's `sonnet`, also pass
 through unchanged. The tool does not maintain a separate alias map.
 
+A newborn's mandate is chosen at creation and carried in its birth brief, never written
+after birth: `session_create <name> --reach execute --recruit nobody --output code` (the
+New Agent form passes the same `mandate`). Naming any axis sets the whole mandate, an axis
+left out taking its plain default (reach `plan`, recruit `propose agents`, output `open`);
+naming none inherits the Team's defaults. A later change goes through the mandate route,
+which acks the Agent one line.
+
 `session_set <name> --root <handle>` changes the recorded Workspace Folder; `--clear-root`
 clears it. The original birth directory and the running shell's directory remain as they
 were. Read the handle with `session_check <name>`. From inside the Agent's session, use
