@@ -67,8 +67,8 @@ export function createCampaignIdentitySurface(campaign) {
   // Every surface reads the one Desk name; tell them rather than making them poll.
   const announce = () => window.dispatchEvent(new CustomEvent('ronin:campaign-change', { detail: { name: title.control.value.trim() } }));
   for (const [key, entry] of [['title', title], ['description', description]]) {
-    const row = saveRow({ say: (state, message) => entry.f.setValidation(state, message), save: (value) => saveCampaign(campaign().id, { [key]: value }), after: announce });
-    entry.control.addEventListener('change', () => { if (campaign()) void row.commit(entry.control.value); });
+    const commit = saveRow({ say: (state, message) => entry.f.setValidation(state, message), save: (value) => saveCampaign(campaign().id, { [key]: value }), after: announce });
+    entry.control.addEventListener('change', () => { if (campaign()) void commit(entry.control.value); });
   }
 
   return {

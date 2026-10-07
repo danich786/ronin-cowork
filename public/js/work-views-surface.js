@@ -113,7 +113,6 @@ export function createWorkViewsSurface({ holderTeam = () => '', openTeam = () =>
     column.addEventListener('drop', (event) => {
       event.preventDefault(); event.stopPropagation(); column.classList.remove('over');
       const id = event.dataTransfer?.getData('text/plain') || '';
-      if (!itemsById.has(id)) return;
       if (view === 'board' && boardOf.get(id) !== context.parent) void move(id, context.parent);
       if (view === 'status' && itemsById.get(id)?.stage !== context.stage) void setStage(id, context.stage);
     });

@@ -1,6 +1,6 @@
 /* part of the ronin-cowork client — see js/README.md */
 import { request } from './request.js';
-import { button, status } from './ui.js';
+import { button, field, status } from './ui.js';
 import { pm, getPath, currentOf, optionsOf, pickerProvider, toRequest } from './machine-settings-schema.js';
 import { servicesCard } from './services-card.js';
 import { t } from './lexicon.js';
@@ -72,6 +72,14 @@ export function buildMachineSettings(root, isShowing) {
     const req = toRequest(rec.schema, f, value);
     return request(req.route, { method: req.method, json: req.json });
   };
+  /** A question row: the ask() question, and its status line under it. */
+  const noteRow = (question, note) => {
+    const el = document.createElement('div'); el.className = 'st-row';
+    const line = document.createElement('p'); line.className = 'st-note'; line.setAttribute('role', 'status');
+    line.textContent = note;
+    el.append(question, line);
+    return { el, say: (state, message) => { line.textContent = message; line.classList.toggle('bad', state === 'invalid'); } };
+  };
 
   /** A measured row: what the box said, with no control at all. */
   const obsRow = (label, value, note) => {
@@ -118,7 +126,6 @@ export function buildMachineSettings(root, isShowing) {
     let picked = fixed
       ? { provider: fixed, model: String(stored ?? '') }
       : { provider: String(stored?.provider || ''), model: String(stored?.model || '') };
-    let row = null;
     const catalog = providerCatalog().rows;
     const providers = catalog.filter((item, index) => catalog.findIndex((other) => other.provider === item.provider) === index);
     const reason = (item) => item.off
@@ -136,10 +143,11 @@ export function buildMachineSettings(root, isShowing) {
         picked = { provider: fixed || value.provider || '', model: value.model || '' };
         const { provider, model } = picked;
         if (!fixed && provider && !model) return row.say('pending', t('settei.pick_model', 'choose a model to save'));
-        void row.commit(fixed ? model : (model ? pm(picked) : ''));
+        void commit(fixed ? model : (model ? pm(picked) : ''));
       },
     });
-    row = saveRow({ question: pair.el, note: f.aside || '', save: write(f), after: reread });
+    const row = noteRow(pair.el, f.aside || '');
+    const commit = saveRow({ say: row.say, save: write(f), after: reread });
     return row.el;
   };
 
@@ -151,12 +159,12 @@ export function buildMachineSettings(root, isShowing) {
     const ctx = { record: rec, deskProfiles };
     if (f.kind === 'select') {
       const baseNote = [f.note ? String(getPath(rec, f.note) ?? '') : '', cur === '' && f.fallback ? t('settei.unset_using', 'unset — using {value}', { value: getPath(rec, f.fallback) ?? '' }) : '', f.aside || ''].filter(Boolean).join(' · ');
-      let row = null;
       const question = ask([{ group: '', fields: [{ key: f.id, label: f.short ?? f.label, blank: t('settei.none_set', '— none set —'), options: optionsOf(f, ctx).map((o) => ({ v: o.value, l: o.label })) }] }], {
         value: { [f.id]: cur },
-        onChange: (value) => void row.commit(value[f.id]),
+        onChange: (value) => void commit(value[f.id]),
       });
-      row = saveRow({ question: question.el, note: baseNote, save: write(f), after: reread });
+      const row = noteRow(question.el, baseNote);
+      const commit = saveRow({ say: row.say, save: write(f), after: reread });
       return row.el;
     }
     const control = f.kind === 'number'
@@ -167,7 +175,14 @@ export function buildMachineSettings(root, isShowing) {
     // A fallback in force is visible — a default is never passed off as an answer.
     if (cur === '' && f.fallback) notes.push(t('settei.unset_using', 'unset — using {value}', { value: getPath(rec, f.fallback) ?? '' }));
     if (f.aside) notes.push(f.aside);
-    return saveRow({ label: f.short ?? f.label, control, note: notes.filter(Boolean).join(' · '), save: write(f), after: reread }).el;
+    const row = document.createElement('div'); row.className = 'st-row';
+    const labelled = field(control, { label: f.short ?? f.label, sr: false });
+    labelled.el.classList.add('st-field');
+    labelled.say(notes.filter(Boolean).join(' · '));
+    row.append(labelled.el);
+    const commit = saveRow({ say: (state, message) => labelled.say(message, state === 'invalid'), save: write(f), after: reread });
+    control.addEventListener('change', () => void commit(control.value));
+    return row;
   };
 
   let card = null; // the Services card of the last render; a new render closes it first
