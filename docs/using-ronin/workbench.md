@@ -75,7 +75,8 @@ opens over the Team with the form. Changing them happens on the Team's own workb
 
 On the Collections workbench the **What: Your Boards** card is the boards door: one stone per
 board, Unfiled last, and under each its items, or the Agents on it, as **Under each board**
-chooses. Press a board for a short read beside the stones and **Open** to place the board in
+chooses. **Workspace** and **Status** at the top narrow the boards to the folders and stages
+you pick, one or several. Press a board for a short read beside the stones and **Open** to place the board in
 the other workspace. Press a bar for a small window with its read. Drag an item onto another
 board to move it there.
 

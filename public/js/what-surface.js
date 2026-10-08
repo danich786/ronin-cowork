@@ -4,7 +4,8 @@
  * (COLLECTIONS_DIRECTION.md; PATTERNS.md rows "Collections (What)"; lead 2026-10-08).
  *
  *   Head          the door's name.
- *   Question      Under each board: Items or Agents, the two-answer flip Who uses.
+ *   Questions     Workspace (Who's, any number) and Status (any of the stages), both narrowing
+ *                 through the collection want; and Under each board: Items or Agents.
  *   Stones        boards, name only, Unfiled last.
  *   Bars          the board's items by title, or the Agents on it.
  *   Board pressed the thin open beside the rail: objective, its items by title, the Agents on
@@ -14,15 +15,15 @@
  *                 status, holder; an Agent — the items it holds on this board.
  *   Drag          an item bar onto another board stone reparents it there.
  *
- * Reading: the collection push (collection-reading.js), the whole campaign; the browser
- * requests, filters and joins nothing. `whatRows` (what-rows.js) is the pure mapping.
+ * Reading: the collection push (collection-reading.js), wanted with the chosen workspaces and
+ * stages; the browser requests, filters and joins nothing. `whatRows` (what-rows.js) is the pure mapping.
  */
 import { WorkspaceKit } from './workspace-kit.js';
 import { createCollectionPhalanx } from './collection-phalanx.js';
-import { subscribeCollection } from './collection-reading.js';
+import { readingKey, subscribeCollection } from './collection-reading.js';
 import { itemsOnBoardHeldBy, whatMove, whatRows } from './what-rows.js';
 import { holderName } from './work-readings.js';
-import { stageLabel } from './team-kanban.js';
+import { PROJECT_STAGES, stageLabel } from './team-kanban.js';
 import { openPartialOverlay } from './partial-overlay.js';
 import { ask } from './ask.js';
 import { request } from './request.js';
@@ -37,12 +38,24 @@ export function createWhatSurface({ openBoard = () => {} } = {}) {
   const surface = createSurface({ label: t('collection.what', 'What: Your Boards'), className: 'what-surface' });
   const DRAG = 'application/x-ronin-what';
 
+  // Three questions (owner, 2026-10-08): Workspace, as Who's (any number; none is all), and
+  // Status (any of the six stages; none is all), both narrowing through the collection want —
+  // the server narrows, the browser filters nothing; and Under each board: Items or Agents.
+  let chosen = []; // the workspaces chosen
+  let stages = []; // the stages chosen
   let under = 'items';
   const filter = ask([{ fields: [
+    { key: 'root', label: t('collection.workspace', 'Workspace'), blank: t('collection.all_workspaces', 'All workspaces'), many: true, options: [] },
+    { key: 'stage', label: t('collection.status', 'Status'), blank: t('collection.all_statuses', 'All statuses'), many: true, options: PROJECT_STAGES.map((row) => ({ v: row.key, l: row.label })) },
     { key: 'under', label: t('collection.under_each_board', 'Under each board'), options: [
       { v: 'items', l: t('collection.under_items', 'Items') }, { v: 'agents', l: t('collection.under_agents', 'Agents') },
     ] },
-  ] }], { value: { under }, density: 'tight', onChange: ({ under: next }) => { under = next === 'agents' ? 'agents' : 'items'; if (last) paint(last); } });
+  ] }], { value: { root: [], stage: [], under }, density: 'tight', onChange: ({ root: nextRoots, stage: nextStages, under: next }) => {
+    chosen = (nextRoots || []).map(String); stages = (nextStages || []).map(String);
+    under = next === 'agents' ? 'agents' : 'items';
+    listen();
+    if (last) paint(last);
+  } });
   const questions = el('div', 'who-questions'); questions.append(filter.el);
 
   /* ---------- a bar pressed: its read in a partial overlay hung off the bar ---------- */
@@ -116,9 +129,10 @@ export function createWhatSurface({ openBoard = () => {} } = {}) {
     }),
   }));
 
-  /* ---------- the reading: the collection push ---------- */
+  /* ---------- the reading: the collection push, wanted with the questions' answers ---------- */
   let shown = '';
   let last = null;
+  let roots = null; // every folder, from the first unfiltered reading, so a filter keeps offering them all
   const paint = (data) => {
     last = data;
     const next = whatRows(data, { under, labels: { unfiled: t('work_nav.draft_unfiled', 'Unfiled') } });
@@ -128,10 +142,28 @@ export function createWhatSurface({ openBoard = () => {} } = {}) {
     phalanx.setItems(wire(next));
   };
   let stop = null;
+  let heard = ''; // the key subscribed to, so a changed answer resubscribes and the same one does not
+  let entered = false;
+  const listen = () => {
+    if (!entered) return;
+    const wanted = { root: chosen, stage: stages };
+    const key = readingKey('collection', wanted);
+    if (stop && key === heard) return;
+    stop?.();
+    heard = key;
+    stop = subscribeCollection(wanted, (reading) => {
+      surface.setState();
+      const data = reading || {};
+      if ((!chosen.length && !stages.length) || !roots) roots = data.roots || [];
+      filter.options('root', roots.map((row) => ({ v: row.name, l: row.name })));
+      paint({ ...data, roots });
+    });
+  };
+  const quiet = () => { stop?.(); stop = null; heard = ''; };
   return {
     el: surface.el,
-    show: () => { stop ??= subscribeCollection({}, (reading) => { surface.setState(); paint(reading || {}); }); },
-    leave: () => { stop?.(); stop = null; },
-    destroy: () => { stop?.(); stop = null; filter.destroy?.(); phalanx.destroy(); },
+    show: () => { entered = true; listen(); },
+    leave: () => { entered = false; quiet(); },
+    destroy: () => { entered = false; quiet(); filter.destroy?.(); phalanx.destroy(); },
   };
 }

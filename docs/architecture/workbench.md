@@ -71,9 +71,10 @@ uses (`createAgentPicker`, team-profile.js) — owner, 2026-10-07. `who-rows.js`
 
 What (`collection.what`, `what-surface.js`) is the boards door of the collections tenant
 (lead 2026-10-08, to PATTERNS.md's "Collections (What)" rows): Who's shape over boards. It
-hears the collection push for the whole campaign (`collection-reading.js`) and requests,
-filters and joins nothing. One question, Under each board: Items or Agents (the two-answer
-flip). One stone per board, name only, Unfiled last; under it the board's items by title, or
+hears the collection push (`collection-reading.js`), wanted with its questions' answers, and
+requests, filters and joins nothing. Three questions: Workspace, as Who's (a many-of, none is
+all, `root` on the want); Status (a many-of the six stages, none is all, `stage` on the want;
+owner 2026-10-08); and Under each board: Items or Agents (the two-answer flip). One stone per board, name only, Unfiled last; under it the board's items by title, or
 the Agents on it. A board pressed is the thin open: objective, its items and Agents as bars,
 and one door, Open, which places the Board (the Trello view) in the opposite workspace. A bar
 pressed opens its read in the partial overlay: an item's description, status and holder; an
