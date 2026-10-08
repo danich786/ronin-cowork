@@ -69,6 +69,17 @@ anchor, Close, Escape or a press outside lifts it) holding the add form for what
 the draft form for a new board held by the Team, or the Agent picker the Team profile's plus
 uses (`createAgentPicker`, team-profile.js) — owner, 2026-10-07. `who-rows.js` is the pure mapping, under test.
 
+What (`collection.what`, `what-surface.js`) is the boards door of the collections tenant
+(lead 2026-10-08, to PATTERNS.md's "Collections (What)" rows): Who's shape over boards. It
+hears the collection push for the whole campaign (`collection-reading.js`) and requests,
+filters and joins nothing. One question, Under each board: Items or Agents (the two-answer
+flip). One stone per board, name only, Unfiled last; under it the board's items by title, or
+the Agents on it. A board pressed is the thin open: objective, its items and Agents as bars,
+and one door, Open, which places the Board (the Trello view) in the opposite workspace. A bar
+pressed opens its read in the partial overlay: an item's description, status and holder; an
+Agent's items on this board. The one drag is an item bar onto another board stone
+(`whatMove`: reparent, one write). `what-rows.js` is the pure mapping, under test.
+
 **The phalanx and its fork** (owner ruling, 2026-10-03). `phalanx.js` is the stone work
 surface as it was, its geometry untouched: Settings (Presets, Workspace Folders, Model
 Providers, Setup), Team Chart, Work Items and the Trello view's overlays draw with it.
