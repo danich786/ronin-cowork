@@ -212,7 +212,7 @@ Trello view (placed by a board's Open, never offered), Document and Feedback. **
 stones, and under each its Teams or its boards (a one-of-two question, as Who's); a folder
 pressed is its thin open (name, path); a bar pressed opens its read in a partial overlay with
 Workspace WS1's reads (`boardRead`, `teamRead`), a Team's door Launch, a board's door Open
-into the opposite workspace. Nothing adds or moves on Where. Launch on Who opens
+laying that board's Trello view over the surface (`board-overlay.js`). Nothing adds or moves on Where. Launch on Who opens
 the old Team tab until `team-next` stands.
 
 **Team** (`team-next`, param the Team; it takes the `team` word when it replaces the old

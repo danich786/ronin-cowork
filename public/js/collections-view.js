@@ -62,7 +62,7 @@ export function createCollectionsView() {
         return whatBySeat[id];
       },
       where: (id) => {
-        whereBySeat[id] ||= createWhereSurface({ openTeam, openBoard: () => frame.place(WORKBENCH_TYPES.workViews, frame.opposite(id)) });
+        whereBySeat[id] ||= createWhereSurface({ openTeam, openBoard });
         return whereBySeat[id];
       },
       collectionNew: () => createCollectionNewSurface(),

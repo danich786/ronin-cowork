@@ -9,8 +9,9 @@
  *   Folder pressed  the thin open: its name and path.
  *   Bar pressed   its read in a partial overlay hung off the bar, with the reads Workspace
  *                 WS1 uses (workspace-teams-surface.js): a Team's objective and its door,
- *                 Launch; a board's objective and items, and its door, Open, into the
- *                 opposite workspace. Nothing adds or moves here.
+ *                 Launch; a board's objective and items, and its door, Open, which lays
+ *                 that board's Trello view over this surface (board-overlay.js). Nothing
+ *                 adds or moves here.
  *
  * Reading: the collection push, unfiltered (collection-reading.js); a folder's `teams` and
  * `boards` come resolved on its row, and the browser joins nothing.
@@ -38,7 +39,7 @@ export function whereRows(reading = {}, under = 'teams') {
   }));
 }
 
-/** `openTeam(name)` opens the Team's tab; `openBoard(board)` places the board's surface opposite. */
+/** `openTeam(name)` opens the Team's tab; `openBoard(board, host)` lays that board's Trello view over `host` (board-overlay.js). */
 export function createWhereSurface({ openTeam = () => {}, openBoard = () => {} } = {}) {
   const { createSurface, createAction } = WorkspaceKit.primitives;
   const surface = createSurface({ label: t('collection.where', 'Where: Your Workspaces'), className: 'who-surface' });
@@ -63,7 +64,7 @@ export function createWhereSurface({ openTeam = () => {}, openBoard = () => {} }
     openPartialOverlay(surface.content, { anchor: bar, title: item.label, onClose: () => bar.setAttribute('aria-pressed', 'false'),
       draw: (body, { lift }) => {
         if (item.kind === 'team') teamRead(body, item.team, createAction({ label: t('league.launch_team', 'Launch'), launch: true, size: 'compact', action: () => { lift(); openTeam(item.team.name); } }).el);
-        else boardRead(body, item.board, createAction({ label: t('collection.open', 'Open'), size: 'compact', action: () => { lift(); openBoard(item.board); } }).el);
+        else boardRead(body, item.board, createAction({ label: t('collection.open', 'Open'), size: 'compact', action: () => { lift(); openBoard(item.board, surface.content); } }).el);
       } });
   };
   const phalanx = createCollectionPhalanx({ className: 'who-phalanx', items: [], renderDetail, press });
