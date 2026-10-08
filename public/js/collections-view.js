@@ -2,13 +2,14 @@
 /**
  * COLLECTIONS — the thin tenant on the tenant frame (js/tenant-frame.js): find work, add
  * work, reassign work (samurai_lab COLLECTIONS_DIRECTION.md). Its tenant is the campaign,
- * the one machine campaign when the route names none — the "all" layer. Cards: Who and
- * Where; What and New follow, one hand-in each. No tiles. The old Teams collection (#/cowork,
- * cowork-view.js) stands beside it until this one replaces it.
+ * the one machine campaign when the route names none — the "all" layer. Cards: Who, Where
+ * and New (js/collection-new.js); What follows. No tiles. The old Teams collection
+ * (#/cowork, cowork-view.js) stands beside it until this one replaces it.
  */
 import { createTenantFrame } from './tenant-frame.js';
 import { createWhoSurface } from './who-surface.js';
 import { createWhereSurface } from './where-surface.js';
+import { createCollectionNewSurface } from './collection-new.js';
 import { createWorkViewsSurface } from './work-views-surface.js';
 import { membersOfTeam, teamsFromState } from './team-controller.js';
 import { openWorkspaceTab } from './workspace.js';
@@ -53,6 +54,7 @@ export function createCollectionsView() {
         whereBySeat[id] ||= createWhereSurface({ openTeam, openBoard: () => frame.place(WORKBENCH_TYPES.workViews, frame.opposite(id)) });
         return whereBySeat[id];
       },
+      collectionNew: () => createCollectionNewSurface(),
       workViews: () => createWorkViewsSurface({ holderTeam, openTeam, team: '', leadOf }),
     }),
     destroy: () => { for (const surface of [...Object.values(whoBySeat), ...Object.values(whereBySeat)]) surface.destroy?.(); },

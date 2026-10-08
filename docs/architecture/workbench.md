@@ -179,7 +179,10 @@ requests, filters and joins nothing; no new file may name `/api/collection` or
 routes on entry until their rows are ordered.
 
 **Collections** (`collections`, param the campaign; the one machine campaign when absent):
-first open is Who in workspace 1 and workspace 2 dismissed. Its profile is Who, Where, the
+first open is Who in workspace 1 and workspace 2 dismissed. Its profile is Who, Where, New
+(`collection.new`, `collection-new.js`: one ask.js question, the kind, mounting the existing
+form for it — `draftItem`, `draftItem` on New board, the embedded New Agent and New Team as
+Setup's Launch your own mounts them), the
 Trello view (placed by a board's Open, never offered), Document and Feedback. **Where**
 (`where-surface.js`, type `collection.where`) reads the unfiltered collection push: folder
 stones, and under each its Teams or its boards (a one-of-two question, as Who's); a folder
