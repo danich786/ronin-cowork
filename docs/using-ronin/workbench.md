@@ -38,7 +38,7 @@ not four layout systems.
 | Team | that Team's Agents, Commons, Trello view, and launch surface |
 | Agent | Self, Documents, Team membership, and separate Task Managers for the Agent's Teams |
 | Setup | pinned Presets plus Register, providers, roots, Services, gbrain, and Templates |
-| Collections (new) | Who: Your Teams; **New**: choose Work item, Board, Agent or Team and its own form appears beneath — Add's form, the same form starting on New board, New Agent, New Team; What and Where as they arrive. Reached from **Next** on Ronin Home, the temporary door to the new workbench while it is built beside the old one |
+| Collections (new) | Who: Your Teams; Where: Your Workspaces; **New**: choose Work item, Board, Agent or Team and its own form appears beneath — Add's form, the same form starting on New board, New Agent, New Team; What as it arrives. Reached from **Next** on Ronin Home, the temporary door to the new workbench while it is built beside the old one |
 
 On the Cowork and Desk workbenches one card reads the work items: **Trello view**. The button at its top left says which
 view you are in, **View by: Status** or **View by: Board**, and switches to the other. It is laid out like a
