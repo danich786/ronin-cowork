@@ -190,8 +190,16 @@ requests, filters and joins nothing; no new file may name `/api/collection` or
 routes on entry until their rows are ordered.
 
 **Collections** (`collections`, param the campaign; the one machine campaign when absent):
-first open is Who in workspace 1 and workspace 2 dismissed. Its profile is Who, the Trello
-view (placed by a board's Open, never offered), Document and Feedback. Launch on Who opens
+first open is Who in workspace 1 and workspace 2 dismissed. Its profile is Who, Where, New
+(`collection.new`, `collection-new.js`: one ask.js question, the kind, mounting the existing
+form for it — `draftItem`, `draftItem` on New board, the embedded New Agent and New Team as
+Setup's Launch your own mounts them), the
+Trello view (placed by a board's Open, never offered), Document and Feedback. **Where**
+(`where-surface.js`, type `collection.where`) reads the unfiltered collection push: folder
+stones, and under each its Teams or its boards (a one-of-two question, as Who's); a folder
+pressed is its thin open (name, path); a bar pressed opens its read in a partial overlay with
+Workspace WS1's reads (`boardRead`, `teamRead`), a Team's door Launch, a board's door Open
+into the opposite workspace. Nothing adds or moves on Where. Launch on Who opens
 the old Team tab until `team-next` stands.
 
 **Team** (`team-next`, param the Team; it takes the `team` word when it replaces the old
@@ -230,8 +238,9 @@ its own `PUT /api/team-rosters/:name` (the store merges a roster field by field 
 (`workspace-docs-surface.js`, type `workspace.docs`) in workspace 2. Teams and boards is
 the collection push for `root=<folder>` drawn with the collection phalanx and Who's mapping
 (`who-rows.js`). Stones are the Teams whose folders include this one; bars are their boards;
-a Team pressed opens its thin open (objective, one door, Launch); a bar pressed expands in
-place (a board's objective and items by title, an item's description, status and holder).
+a Team pressed opens its thin open (objective, one door, Launch); a bar pressed opens its
+read in a partial overlay (`partial-overlay.js`, as on Who: a board's objective and items by
+title, an item's description, status and holder).
 Docs and repos is two lists of title-only rows (`itemLine` with `bar: false`): the folder's
 registered docs and plans, and the repos its Teams list, both carried on the reading's
 `roots` (`docs`, `repos`).

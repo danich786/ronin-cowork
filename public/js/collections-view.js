@@ -2,13 +2,15 @@
 /**
  * COLLECTIONS — the thin tenant on the tenant frame (js/tenant-frame.js): find work, add
  * work, reassign work (samurai_lab COLLECTIONS_DIRECTION.md). Its tenant is the campaign,
- * the one machine campaign when the route names none — the "all" layer. Cards: Who, What;
- * Where and New follow, one hand-in each. No tiles. The old Teams collection (#/cowork,
- * cowork-view.js) stands beside it until this one replaces it.
+ * the one machine campaign when the route names none — the "all" layer. Cards: Who, What,
+ * Where and New (js/collection-new.js). No tiles. The old Teams collection
+ * (#/cowork, cowork-view.js) stands beside it until this one replaces it.
  */
 import { createTenantFrame } from './tenant-frame.js';
 import { createWhoSurface } from './who-surface.js';
 import { createWhatSurface } from './what-surface.js';
+import { createWhereSurface } from './where-surface.js';
+import { createCollectionNewSurface } from './collection-new.js';
 import { createWorkViewsSurface } from './work-views-surface.js';
 import { membersOfTeam, teamsFromState } from './team-controller.js';
 import { openWorkspaceTab } from './workspace.js';
@@ -34,6 +36,7 @@ function holderTeam(holder) {
 export function createCollectionsView() {
   const whoBySeat = {};
   const whatBySeat = {};
+  const whereBySeat = {};
   return createTenantFrame({
     key: 'collections',
     profile: WORKBENCH_PROFILES.collections,
@@ -53,8 +56,13 @@ export function createCollectionsView() {
         whatBySeat[id] ||= createWhatSurface({ openBoard: () => frame.place(WORKBENCH_TYPES.workViews, frame.opposite(id)) });
         return whatBySeat[id];
       },
+      where: (id) => {
+        whereBySeat[id] ||= createWhereSurface({ openTeam, openBoard: () => frame.place(WORKBENCH_TYPES.workViews, frame.opposite(id)) });
+        return whereBySeat[id];
+      },
+      collectionNew: () => createCollectionNewSurface(),
       workViews: () => createWorkViewsSurface({ holderTeam, openTeam, team: '', leadOf }),
     }),
-    destroy: () => { for (const card of [...Object.values(whoBySeat), ...Object.values(whatBySeat)]) card.destroy?.(); },
+    destroy: () => { for (const surface of [...Object.values(whoBySeat), ...Object.values(whatBySeat), ...Object.values(whereBySeat)]) surface.destroy?.(); },
   });
 }

@@ -6,8 +6,9 @@
  *   Stones        the Teams whose folders include this one, name only.
  *   Bars          each Team's boards, title only (who-rows.js, the same mapping as Who).
  *   Team pressed  the thin open: name, objective, and one door, Launch.
- *   Bar pressed   the fork's expand: a board's objective and its items by title; an item's
- *                 description, status and holder.
+ *   Bar pressed   its read in a partial overlay hung off the bar (partial-overlay.js, as on
+ *                 Who): a board's objective and items by title; an item's description,
+ *                 status and holder. Where (where-surface.js) draws its bars with the same reads.
  *
  * Reading: the collection push for `root=<folder>` (collection-reading.js); the browser
  * filters and joins nothing.
@@ -19,9 +20,32 @@ import { whoRows } from './who-rows.js';
 import { holderName } from './work-readings.js';
 import { stageLabel } from './team-kanban.js';
 import { t } from './lexicon.js';
+import { openPartialOverlay } from './partial-overlay.js';
 
 export const WORKSPACE_TEAMS_TYPE = 'workspace.teams';
 const el = (tag, cls = '', text = '') => { const out = document.createElement(tag); if (cls) out.className = cls; if (text) out.textContent = text; return out; };
+
+/* ---------- the reads a bar opens, shared with Where ---------- */
+export const readLines = (host, rows) => { for (const [label, text] of rows) { const line = el('div', 'cph-read-line'); line.append(el('b', '', label), document.createTextNode(text)); host.append(line); } };
+const itemLines = (row) => [
+  [t('collection.description', 'Description'), row.objective || t('collection.none', 'None')],
+  [t('collection.status', 'Status'), stageLabel(row.stage)],
+  [t('collection.holder', 'Holder'), holderName(row.holder) || t('collection.nobody', 'nobody')],
+];
+/** A board: its objective and its items by title; `door` (an action's el) sits at the foot. */
+export function boardRead(host, board, door = null) {
+  readLines(host, [[t('collection.objective', 'Objective'), board.objective || t('collection.none', 'None')]]);
+  const titles = el('div', 'cph-read-items');
+  for (const row of board.stages.flatMap((stage) => stage.items)) titles.append(el('span', 'cph-read-item', row.title));
+  if (!titles.childElementCount) titles.append(el('span', 'who-open-none', t('collection.board_empty', 'Nothing under this board yet.')));
+  host.append(titles);
+  if (door) host.append(door);
+}
+/** A Team: its objective; `door` (Launch) at the foot. */
+export function teamRead(host, team, door = null) {
+  readLines(host, [[t('collection.objective', 'Objective'), team.objective || t('collection.none', 'None')]]);
+  if (door) host.append(door);
+}
 
 /** `folder()` is read at each show, so one surface follows its tenant's param; `openTeam(name)` launches the Team's tab. */
 export function createWorkspaceTeamsSurface({ folder, openTeam = () => {} }) {
@@ -39,22 +63,12 @@ export function createWorkspaceTeamsSurface({ folder, openTeam = () => {} }) {
     if (item.team.objective) box.append(el('p', 'who-open-objective', item.team.objective));
     host.append(box);
   };
-  const lines = (host, rows) => { for (const [label, text] of rows) { const line = el('div', 'cph-expand-line'); line.append(el('b', '', label), document.createTextNode(text)); host.append(line); } };
-  const itemRead = (row) => [
-    [t('collection.description', 'Description'), row.objective || t('collection.none', 'None')],
-    [t('collection.status', 'Status'), stageLabel(row.stage)],
-    [t('collection.holder', 'Holder'), holderName(row.holder) || t('collection.nobody', 'nobody')],
-  ];
-  const expand = (item, host) => {
-    if (item.kind === 'item') { lines(host, itemRead(item.item)); return; }
-    if (item.kind !== 'board') return;
-    lines(host, [[t('collection.objective', 'Objective'), item.board.objective || t('collection.none', 'None')]]);
-    const titles = el('div', 'cph-expand-items');
-    for (const row of item.board.stages.flatMap((stage) => stage.items)) titles.append(el('span', 'cph-expand-item', row.title));
-    if (!titles.childElementCount) titles.append(el('span', 'who-open-none', t('collection.board_empty', 'Nothing under this board yet.')));
-    host.append(titles);
+  const press = (item, bar) => {
+    bar.setAttribute('aria-pressed', 'true');
+    openPartialOverlay(surface.content, { anchor: bar, title: item.label, onClose: () => bar.setAttribute('aria-pressed', 'false'),
+      draw: (body) => (item.kind === 'board' ? boardRead(body, item.board) : readLines(body, itemLines(item.item))) });
   };
-  const phalanx = createCollectionPhalanx({ className: 'who-phalanx', items: [], renderDetail, expand });
+  const phalanx = createCollectionPhalanx({ className: 'who-phalanx', items: [], renderDetail, press });
   phalanx.mount(surface.content);
 
   let shown = '';
