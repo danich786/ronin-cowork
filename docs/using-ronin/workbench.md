@@ -69,9 +69,8 @@ the stones, its Agents and its boards, and **Launch** to open the Team's tab. Pr
 small window opens beside it with a short read: an Agent's role and what it is doing now, a
 board's objective and items, an item's description and status. **Open** in a board's window
 places the work-item surface in the other workspace. Drag a board onto another Team to give it to that Team, or an Agent onto another Team to
-move the Agent there. Drag **Add +**, beside Under each
-Team, onto a Team to add a board or an Agent to it, whichever is showing; a small window
-opens over the Team with the form. Changing them happens on the Team's own workbench.
+move the Agent there. **Add new** at the top asks Board or
+Agent; drag it onto a Team and a small window opens over the Team with that form. Changing them happens on the Team's own workbench.
 
 On the Collections workbench the **What: Your Boards** card is the boards door: one stone per
 board, Unfiled last, and under each the statuses it has work at, or the Agents on it, as

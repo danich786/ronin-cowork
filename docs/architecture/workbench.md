@@ -63,10 +63,11 @@ which lifts it and places the work-item surface in the other workspace (the Trel
 the What door exists); an item to its description, status and holder. The same read opens
 from the thin open's bars. The drags are a board onto another Team (`whoMove`:
 assign), an Agent onto another Team (`whoMove`: join, one write through
-`moveTeamMembership`, leaving the Team it was under; owner 2026-10-07) and the Add block beside Under each Team onto a Team stone (`whoMove`: add), which
+`moveTeamMembership`, leaving the Team it was under; owner 2026-10-07) and the Add new question's stone (Board or Agent, a one-of-two beside Under each
+Team; owner 2026-10-08) onto a Team stone (`whoMove`: add, carrying which), which
 opens a partial overlay (`partial-overlay.js`: a small window inside the surface under its
-anchor, Close, Escape or a press outside lifts it) holding the add form for what is showing:
-the draft form for a new board held by the Team, or the Agent picker the Team profile's plus
+anchor, Close, Escape or a press outside lifts it) holding the form for what the question says, never
+Under each Team's answer: the draft form for a new board held by the Team, or the Agent picker the Team profile's plus
 uses (`createAgentPicker`, team-profile.js) — owner, 2026-10-07. `who-rows.js` is the pure mapping, under test.
 
 What (`collection.what`, `what-surface.js`) is the boards door of the collections tenant

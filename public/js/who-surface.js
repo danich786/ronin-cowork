@@ -17,9 +17,9 @@
  *                 description, status and holder, and one door, Open, which places the
  *                 work-item surface beside this one; an item — description, status, holder.
  *   Drag          a board onto another Team; an Agent onto another Team, which moves it there
- *                 (owner, 2026-10-07). The Add block beside Under each Team, dragged onto
- *                 a Team stone, opens a partial overlay with the add form for what is showing
- *                 (a board, or an Agent) — owner, 2026-10-07.
+ *                 (owner, 2026-10-07). The Add new question (Board or Agent) beside Under each
+ *                 Team: its stone dragged onto a Team stone opens a partial overlay with that
+ *                 form for the Team — owner, 2026-10-08.
  *
  * Reading: GET /api/collection (src/collection-read.ts), one request, every chosen workspace
  * as ?root=. `whoRows` (who-rows.js) is the pure mapping.
@@ -58,28 +58,31 @@ export function createWhoSurface({ openTeam = () => {}, openBoard = () => {}, on
     { key: 'under', label: t('collection.under_each_team', 'Under each Team'), options: [
       { v: 'boards', l: t('collection.under_boards', 'Boards') }, { v: 'agents', l: t('collection.under_agents', 'Agents') },
     ] },
-  ] }], { value: { root: [], under }, density: 'tight', onChange: ({ root: nextRoots, under: nextUnder }) => {
+    // Add new: Board or Agent (owner, 2026-10-08); the stone drags onto a Team stone and that
+    // one's form opens there. What it adds is its own answer, never Under each Team's.
+    { key: 'add', label: t('collection.add_new', 'Add new'), options: [
+      { v: 'board', l: t('collection.add_board', 'Board') }, { v: 'agent', l: t('collection.add_agent', 'Agent') },
+    ] },
+  ] }], { value: { root: [], under, add: 'board' }, density: 'tight', onChange: ({ root: nextRoots, under: nextUnder, add: nextAdd }) => {
     const next = (nextRoots || []).map(String);
     const rootsMoved = next.join('\n') !== chosen.join('\n');
-    chosen = next; under = nextUnder === 'agents' ? 'agents' : 'boards';
+    chosen = next; under = nextUnder === 'agents' ? 'agents' : 'boards'; adding = nextAdd === 'agent' ? 'agent' : 'board';
     if (rootsMoved) void read(); else if (last) paint(last);
   } });
+  let adding = 'board';
 
-  // THE ADD BLOCK (owner, 2026-10-07): beside Under each Team, drawn as the questions are.
-  // Dragged onto a Team stone it opens a partial overlay over the stone with the add form for
-  // what is showing: a board (the draft form, a new board held by the Team) or an Agent (the
-  // picker the Team profile's plus uses).
-  const add = el('div', 'who-add'); add.draggable = true;
-  add.setAttribute('role', 'button'); add.tabIndex = 0;
-  add.append(el('small', 'ask-label', t('collection.add_hint', 'Drag onto a Team')), el('b', 'ask-reading', t('collection.add', 'Add +')));
-  add.addEventListener('dragstart', (event) => carry(event.dataTransfer, { kind: 'add' }, 'copy'));
-  const questions = el('div', 'who-questions'); questions.append(filter.el, add);
-  const addTo = (team, anchor) => {
+  // THE ADD STONE drags (owner, 2026-10-08): the Add new question's own stone, made draggable
+  // as the pointer lands on it (the ask repaints its stones, so the mark is put on at the
+  // press), carries what to add; dropped on a Team stone it opens that one's form there.
+  const addStone = (node) => node?.closest?.('[data-ask-key="add"]');
+  filter.el.addEventListener('pointerdown', (event) => { const stone = addStone(event.target); if (stone) stone.draggable = true; });
+  filter.el.addEventListener('dragstart', (event) => { if (addStone(event.target)) carry(event.dataTransfer, { kind: 'add', what: adding }, 'copy'); });
+  const addTo = (team, anchor, what) => {
     const name = String(team.label || team.id);
     openPartialOverlay(surface.content, { anchor,
-      title: under === 'agents' ? t('collection.add_agent_to', 'Add an Agent to {team}', { team: name }) : t('collection.add_board_to', 'New board for {team}', { team: name }),
+      title: what === 'agent' ? t('collection.add_agent_to', 'Add an Agent to {team}', { team: name }) : t('collection.add_board_to', 'New board for {team}', { team: name }),
       draw: (body, { lift }) => {
-        if (under === 'agents') { body.append(createAgentPicker(team.id, { onNewAgent, failed: (result) => { if (!result.ok) surface.setState('failed', result.message || ''); }, joined: () => { lift(); void read(); } })); return; }
+        if (what === 'agent') { body.append(createAgentPicker(team.id, { onNewAgent, failed: (result) => { if (!result.ok) surface.setState('failed', result.message || ''); }, joined: () => { lift(); void read(); } })); return; }
         draftItem(body, { heading: '', parent: NEW_BOARD, team: team.id, save: async (fields) => {
           const made = await request('/api/work-items', { method: 'POST', json: fields });
           if (!made.ok) return made.message;
@@ -170,7 +173,7 @@ export function createWhoSurface({ openTeam = () => {}, openBoard = () => {}, on
     }
   };
   const phalanx = createCollectionPhalanx({ className: 'who-phalanx', items: [], renderDetail, press });
-  phalanx.mount(surface.content, { before: [questions] });
+  phalanx.mount(surface.content, { before: [filter.el] });
 
   /* ---------- the drops on a Team stone: a board (from Who's bars or What's stones, the one payload,
    * collection-drag.js), an Agent, or the Add block; whoMove says what each means ---------- */
@@ -183,7 +186,7 @@ export function createWhoSurface({ openTeam = () => {}, openBoard = () => {}, on
         event.preventDefault(); event.stopPropagation(); event.currentTarget.classList.remove('cph-over');
         const moved = carried(event);
         const move = whoMove(moved, team);
-        if (move === 'add') { addTo(team, event.currentTarget); return; }
+        if (move === 'add') { addTo(team, event.currentTarget, moved.what); return; }
         if (!move) return;
         // One write each: a board is assigned; an Agent leaves the Team it was under and joins this one.
         const result = move === 'join'

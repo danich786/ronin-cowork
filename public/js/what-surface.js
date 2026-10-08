@@ -58,7 +58,6 @@ export function createWhatSurface({ openBoard = () => {} } = {}) {
     listen();
     if (last) paint(last);
   } });
-  const questions = el('div', 'who-questions'); questions.append(filter.el);
 
   /* ---------- a bar pressed: its read in a partial overlay hung off the bar ---------- */
   const read1 = (host, lines) => { for (const [label, text] of lines) { if (!text) continue; const line = el('div', 'cph-read-line'); line.append(el('b', '', label), document.createTextNode(text)); host.append(line); } };
@@ -121,7 +120,7 @@ export function createWhatSurface({ openBoard = () => {} } = {}) {
     host.append(box);
   };
   const phalanx = createCollectionPhalanx({ className: 'what-phalanx', items: [], renderDetail, press });
-  phalanx.mount(surface.content, { before: [questions] });
+  phalanx.mount(surface.content, { before: [filter.el] });
 
   /* ---------- the drag: an item bar onto another board stone ---------- */
   const wire = (boards) => boards.map((board) => ({
