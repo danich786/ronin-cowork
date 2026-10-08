@@ -66,7 +66,8 @@ export function createCollectionNewSurface() {
 
   return {
     el: surface.el,
-    show: (detail = {}) => { if (detail.kind && FORMS[detail.kind]) { kind.set({ kind: detail.kind }); mount(detail.kind, detail); } },
+    // A placement names its kind (Who's Agent drop) or not (the selector card): the card's first kind then.
+    show: ({ kind: chosen = 'item', ...detail } = {}) => { kind.set({ kind: chosen }); mount(chosen, detail); },
     destroy: () => { unmount(); kind.destroy(); },
   };
 }
