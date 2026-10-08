@@ -75,8 +75,10 @@ hears the collection push (`collection-reading.js`), wanted with its questions' 
 requests, filters and joins nothing. Three questions: Workspace, as Who's (a many-of, none is
 all, `root` on the want); Status (a many-of the six stages, none is all, `stage` on the want;
 owner 2026-10-08); and Under each board: Items or Agents (the two-answer flip). One stone per board, name only, Unfiled last; under it the board's items by title, or
-the Agents on it. A board pressed is the thin open: objective, its items and Agents as bars,
-and one door, Open, which places the Board (the Trello view) in the opposite workspace. A bar
+the Agents on it. A board pressed is the thin open: objective, its items and Agents as bars
+(labels in sentence case, muted), and one door, Open, which places the Board (the Trello view) in the opposite workspace. With a board open the rail lists its items in status groups, in stage
+order, a light hairline between groups and no group words (`data-cph-first` on each group's
+first bar, from `whatRows`); the Status question narrows the rail too, through the want. A bar
 pressed opens its read in the partial overlay: an item's description, status and holder; an
 Agent's items on this board. The drags are an item bar onto another board stone
 (`whatMove`: reparent, one write) and a board stone onto a Team stone on Who in the other

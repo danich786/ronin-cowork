@@ -107,6 +107,9 @@
   .cph-read-more[hidden] { display: none; }
   .partial-overlay-body > .wk-action { justify-self: start; }
   .cph .sws-stone[data-cph-depth][aria-pressed='true'] { border-color: var(--kaki); }
+  /* In the rail, a board's items stand in status groups, in stage order, a light hairline between
+     groups and no group words (owner, 2026-10-08); the mark is the first bar of each group. */
+  .cph[data-open='true'] .sws-stone[data-cph-first='true']:not(.sws-back + .sws-stone) { margin-top: var(--space-6); border-top: var(--edge) solid var(--line); padding-top: var(--space-5); }
   /* The question row: the ask and the Add block side by side, the block drawn as a question
      stone (same box, dashed, kaki) so the row reads as one; it drags, it does not open. */
   .who-questions { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-7) var(--space-8); }
@@ -130,7 +133,7 @@
   .who-open-list { display: grid; gap: var(--space-3); }
   .who-open-list > .sws-stone { width: 100%; }
   .who-open-list > .cph-expand { margin-top: calc(-1 * var(--space-1)); }
-  .who-open-label { margin-bottom: var(--space-1); font-size: var(--form-key); font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .who-open-label { margin-bottom: var(--space-1); font-size: var(--form-key); font-weight: 500; color: var(--muted); }
   .who-open-none { font-size: var(--form-note); color: var(--dim); }
   .cph .sws-detail .tk-line { grid-template-columns: minmax(0, 1fr) auto var(--hr-stack); padding: var(--space-5) var(--space-3); cursor: pointer; }
   .cph .sws-detail .tk-line + .tk-line { border-top: var(--edge) solid var(--line-2); }

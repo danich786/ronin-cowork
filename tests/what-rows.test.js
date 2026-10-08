@@ -19,6 +19,7 @@ test('What: one stone per board, Unfiled last; under each its items by title, ev
   assert.deepEqual(rows.map((row) => [row.id, row.kind, row.label]), [['w1', 'board', 'Upgrade'], ['w2', 'board', 'Unfiled']]);
   assert.deepEqual(rows[0].items.map((row) => [row.id, row.kind, row.label, row.board, row.state]), [['w10', 'item', 'Idea', 'w1', undefined], ['w6', 'item', 'Done one', 'w1', undefined]]);
   assert.deepEqual(rows[1].items.map((row) => row.id), ['w9']);
+  assert.deepEqual(rows[0].items.map((row) => row.attrs?.['data-cph-first'] || ''), ['true', 'true'], 'the first item of each status group is marked');
 });
 
 test('What: under each board, the Agents on it instead', () => {
