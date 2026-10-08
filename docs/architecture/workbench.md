@@ -78,8 +78,12 @@ owner 2026-10-08); and Under each board: Items or Agents (the two-answer flip). 
 the Agents on it. A board pressed is the thin open: objective, its items and Agents as bars,
 and one door, Open, which places the Board (the Trello view) in the opposite workspace. A bar
 pressed opens its read in the partial overlay: an item's description, status and holder; an
-Agent's items on this board. The one drag is an item bar onto another board stone
-(`whatMove`: reparent, one write). `what-rows.js` is the pure mapping, under test.
+Agent's items on this board. The drags are an item bar onto another board stone
+(`whatMove`: reparent, one write) and a board stone onto a Team stone on Who in the other
+workspace, which assigns the board to that Team through Who's own drop handler. Every
+collection drag carries the one payload (`collection-drag.js`: `{ kind, id, team?, board? }`
+under one type), so a Team stone and a board stone each read the same thing and their rules
+say what it means there (owner, 2026-10-08). `what-rows.js` is the pure mapping, under test.
 
 **The phalanx and its fork** (owner ruling, 2026-10-03). `phalanx.js` is the stone work
 surface as it was, its geometry untouched: Settings (Presets, Workspace Folders, Model

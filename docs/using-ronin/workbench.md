@@ -78,7 +78,8 @@ board, Unfiled last, and under each its items, or the Agents on it, as **Under e
 chooses. **Workspace** and **Status** at the top narrow the boards to the folders and stages
 you pick, one or several. Press a board for a short read beside the stones and **Open** to place the board in
 the other workspace. Press a bar for a small window with its read. Drag an item onto another
-board to move it there.
+board to move it there, or a board onto a Team on Who, in the other workspace, to give it
+to that Team.
 
 Adding another tenant or profile adds no layout implementation. Adding another surface
 registers a per-workspace factory in the shared library; any profile may name that type.

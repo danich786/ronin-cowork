@@ -13,7 +13,8 @@
  *                 opposite workspace.
  *   Bar pressed   its read in a partial overlay hung off the bar: an item — description,
  *                 status, holder; an Agent — the items it holds on this board.
- *   Drag          an item bar onto another board stone reparents it there.
+ *   Drag          an item bar onto another board stone reparents it there; a board stone onto a
+ *                 Team stone on Who (either workspace) assigns the board to that Team.
  *
  * Reading: the collection push (collection-reading.js), wanted with the chosen workspaces and
  * stages; the browser requests, filters and joins nothing. `whatRows` (what-rows.js) is the pure mapping.
@@ -25,6 +26,7 @@ import { itemsOnBoardHeldBy, whatMove, whatRows } from './what-rows.js';
 import { holderName } from './work-readings.js';
 import { PROJECT_STAGES, stageLabel } from './team-kanban.js';
 import { openPartialOverlay } from './partial-overlay.js';
+import { carried, carries, carry } from './collection-drag.js';
 import { ask } from './ask.js';
 import { request } from './request.js';
 import { t } from './lexicon.js';
@@ -36,7 +38,6 @@ const el = (tag, cls = '', text = '') => { const out = document.createElement(ta
 export function createWhatSurface({ openBoard = () => {} } = {}) {
   const { createSurface, createAction } = WorkspaceKit.primitives;
   const surface = createSurface({ label: t('collection.what', 'What: Your Boards'), className: 'what-surface' });
-  const DRAG = 'application/x-ronin-what';
 
   // Three questions (owner, 2026-10-08): Workspace, as Who's (any number; none is all), and
   // Status (any of the six stages; none is all), both narrowing through the collection want —
@@ -109,11 +110,14 @@ export function createWhatSurface({ openBoard = () => {} } = {}) {
   phalanx.mount(surface.content, { before: [questions] });
 
   /* ---------- the drag: an item bar onto another board stone ---------- */
-  const carried = (event) => { try { return JSON.parse(event.dataTransfer?.getData(DRAG) || 'null'); } catch { return null; } };
   const wire = (boards) => boards.map((board) => ({
     ...board,
+    // A board stone drags too: onto a Team stone on Who, in either workspace, it is that
+    // Team's (the one payload; Who's Team stone reads it as its own board drag).
+    draggable: true,
     events: {
-      dragover: (event) => { if (!event.dataTransfer?.types?.includes(DRAG)) return; event.preventDefault(); event.currentTarget.classList.add('cph-over'); },
+      dragstart: (event) => carry(event.dataTransfer, { kind: 'board', id: board.id, team: board.board.teams[0] || '' }),
+      dragover: (event) => { if (!carries(event)) return; event.preventDefault(); event.currentTarget.classList.add('cph-over'); },
       dragleave: (event) => event.currentTarget.classList.remove('cph-over'),
       drop: async (event) => {
         event.preventDefault(); event.stopPropagation(); event.currentTarget.classList.remove('cph-over');
@@ -125,7 +129,7 @@ export function createWhatSurface({ openBoard = () => {} } = {}) {
     },
     items: (board.items || []).map((row) => row.kind !== 'item' ? row : {
       ...row, draggable: true,
-      events: { dragstart: (event) => { event.dataTransfer.setData(DRAG, JSON.stringify({ kind: 'item', id: row.id, board: board.id })); event.dataTransfer.effectAllowed = 'move'; } },
+      events: { dragstart: (event) => carry(event.dataTransfer, { kind: 'item', id: row.id, board: board.id }) },
     }),
   }));
 

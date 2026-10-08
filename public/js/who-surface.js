@@ -29,6 +29,7 @@ import { createCollectionPhalanx } from './collection-phalanx.js';
 import { membersOfTeam, moveTeamMembership, subscribe } from './team-controller.js';
 import { subscribe as subscribeStore } from './store.js';
 import { carryItem } from './team-drag.js';
+import { carried, carries, carry } from './collection-drag.js';
 import { itemsHeldBy, whoMove, whoRows } from './who-rows.js';
 import { agentTitle, currentWorkStep } from './team-members.js';
 import { stanceLabel } from './home.js';
@@ -48,7 +49,6 @@ const el = (tag, cls = '', text = '') => { const out = document.createElement(ta
 export function createWhoSurface({ openTeam = () => {}, openBoard = () => {}, onNewAgent = () => {} } = {}) {
   const { createSurface, createAction } = WorkspaceKit.primitives;
   const surface = createSurface({ label: t('collection.who', 'Who: Your Teams'), className: 'who-surface' });
-  const DRAG = 'application/x-ronin-who'; // what a drag on this surface carries
 
   // The two questions: the workspaces (any number; none is all), and what stacks under each Team.
   let chosen = [];
@@ -72,7 +72,7 @@ export function createWhoSurface({ openTeam = () => {}, openBoard = () => {}, on
   const add = el('div', 'who-add'); add.draggable = true;
   add.setAttribute('role', 'button'); add.tabIndex = 0;
   add.append(el('small', 'ask-label', t('collection.add_hint', 'Drag onto a Team')), el('b', 'ask-reading', t('collection.add', 'Add +')));
-  add.addEventListener('dragstart', (event) => { event.dataTransfer.setData(DRAG, JSON.stringify({ kind: 'add' })); event.dataTransfer.effectAllowed = 'copy'; });
+  add.addEventListener('dragstart', (event) => carry(event.dataTransfer, { kind: 'add' }, 'copy'));
   const questions = el('div', 'who-questions'); questions.append(filter.el, add);
   const addTo = (team, anchor) => {
     const name = String(team.label || team.id);
@@ -172,12 +172,12 @@ export function createWhoSurface({ openTeam = () => {}, openBoard = () => {}, on
   const phalanx = createCollectionPhalanx({ className: 'who-phalanx', items: [], renderDetail, press });
   phalanx.mount(surface.content, { before: [questions] });
 
-  /* ---------- the drags: a board or an Agent onto another Team; the Add block onto a Team ---------- */
-  const carried = (event) => { try { return JSON.parse(event.dataTransfer?.getData(DRAG) || 'null'); } catch { return null; } };
+  /* ---------- the drops on a Team stone: a board (from Who's bars or What's stones, the one payload,
+   * collection-drag.js), an Agent, or the Add block; whoMove says what each means ---------- */
   const wire = (teams) => teams.map((team) => ({
     ...team,
     events: {
-      dragover: (event) => { if (!event.dataTransfer?.types?.includes(DRAG)) return; event.preventDefault(); event.currentTarget.classList.add('cph-over'); },
+      dragover: (event) => { if (!carries(event)) return; event.preventDefault(); event.currentTarget.classList.add('cph-over'); },
       dragleave: (event) => event.currentTarget.classList.remove('cph-over'),
       drop: async (event) => {
         event.preventDefault(); event.stopPropagation(); event.currentTarget.classList.remove('cph-over');
@@ -195,11 +195,11 @@ export function createWhoSurface({ openTeam = () => {}, openBoard = () => {}, on
     },
     items: (team.items || []).map((row) => row.kind === 'board' ? {
       ...row, draggable: true,
-      events: { dragstart: (event) => { event.dataTransfer.setData(DRAG, JSON.stringify({ kind: 'board', id: row.id, team: team.id })); carryItem(event.dataTransfer, { id: row.id, title: row.label }); event.dataTransfer.effectAllowed = 'move'; } },
+      events: { dragstart: (event) => { carry(event.dataTransfer, { kind: 'board', id: row.id, team: team.id }); carryItem(event.dataTransfer, { id: row.id, title: row.label }); } },
     } : row.kind === 'agent' ? {
       // An Agent bar drags onto another Team stone and moves there (owner, 2026-10-07).
       ...row, draggable: true,
-      events: { dragstart: (event) => { event.dataTransfer.setData(DRAG, JSON.stringify({ kind: 'agent', id: row.agent.name, team: team.id })); event.dataTransfer.effectAllowed = 'move'; } },
+      events: { dragstart: (event) => carry(event.dataTransfer, { kind: 'agent', id: row.agent.name, team: team.id }) },
     } : row),
   }));
 
