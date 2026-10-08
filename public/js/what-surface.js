@@ -46,8 +46,8 @@ export function createWhatSurface({ openBoard = () => {} } = {}) {
   let stages = []; // the stages chosen
   let under = 'items';
   const filter = ask([{ fields: [
-    { key: 'root', label: t('collection.workspace', 'Workspace'), blank: t('collection.all_workspaces', 'All workspaces'), many: true, options: [] },
-    { key: 'stage', label: t('collection.status', 'Status'), blank: t('collection.all_statuses', 'All statuses'), many: true, options: PROJECT_STAGES.map((row) => ({ v: row.key, l: row.label })) },
+    { key: 'root', label: t('collection.workspace', 'Workspace'), blank: t('collection.all', 'All'), many: true, options: [] },
+    { key: 'stage', label: t('collection.status', 'Status'), blank: t('collection.all', 'All'), many: true, options: PROJECT_STAGES.map((row) => ({ v: row.key, l: row.label })) },
     { key: 'under', label: t('collection.under_each_board', 'Under each board'), options: [
       { v: 'items', l: t('collection.under_items', 'Items') }, { v: 'agents', l: t('collection.under_agents', 'Agents') },
     ] },

@@ -54,7 +54,7 @@ export function createWhoSurface({ openTeam = () => {}, openBoard = () => {}, on
   let chosen = [];
   let under = 'boards';
   const filter = ask([{ fields: [
-    { key: 'root', label: t('collection.workspace', 'Workspace'), blank: t('collection.all_workspaces', 'All workspaces'), many: true, options: [] },
+    { key: 'root', label: t('collection.workspace', 'Workspace'), blank: t('collection.all', 'All'), many: true, options: [] },
     { key: 'under', label: t('collection.under_each_team', 'Under each Team'), options: [
       { v: 'boards', l: t('collection.under_boards', 'Boards') }, { v: 'agents', l: t('collection.under_agents', 'Agents') },
     ] },
