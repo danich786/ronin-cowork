@@ -74,13 +74,13 @@ What (`collection.what`, `what-surface.js`) is the boards door of the collection
 hears the collection push (`collection-reading.js`), wanted with its questions' answers, and
 requests, filters and joins nothing. Three questions: Workspace, as Who's (a many-of, none is
 all, `root` on the want); Status (a many-of the six stages, none is all, `stage` on the want;
-owner 2026-10-08); and Under each board: Items or Agents (the two-answer flip). One stone per board, name only, Unfiled last; under it the board's items by title, or
-the Agents on it. A board pressed is the thin open: objective, its items and Agents as bars
-(labels in sentence case, muted), and one door, Open, which places the Board (the Trello view) in the opposite workspace. With a board open the rail lists its items in status groups, in stage
-order, a light hairline between groups and no group words (`data-cph-first` on each group's
-first bar, from `whatRows`); the Status question narrows the rail too, through the want. A bar
-pressed opens its read in the partial overlay: an item's description, status and holder; an
-Agent's items on this board. The drags are an item bar onto another board stone
+owner 2026-10-08); and Under each board: Items or Agents (the two-answer flip). One stone per board, name only, Unfiled last; under it the statuses the board has
+items at, in stage order (each status's items beneath, folded), or the Agents on it. A board pressed is the thin open: objective, its items and Agents as bars
+(labels in sentence case, muted), and one door, Open, which places the Board (the Trello view) in the opposite workspace. With a board open the rail lists its statuses (owner, 2026-10-08);
+a status pressed narrows the thin open to that status's items, pressed again it shows all;
+the Status question narrows the rail too, through the want. An item bar in the thin open, or
+an Agent bar, opens its read in the partial overlay: an item's description, status and
+holder; an Agent's items on this board. The drags are an item bar onto another board stone
 (`whatMove`: reparent, one write) and a board stone onto a Team stone on Who in the other
 workspace, which assigns the board to that Team through Who's own drop handler. Every
 collection drag carries the one payload (`collection-drag.js`: `{ kind, id, team?, board? }`

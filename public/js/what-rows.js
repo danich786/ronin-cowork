@@ -4,8 +4,9 @@ import { holderName } from './work-readings.js';
 
 /**
  * The stones: every board the reading names, Unfiled last. Under each, `under` chooses what
- * stacks: 'items' (every item under the board, by stage in the reading's order, the first of
- * each stage marked `data-cph-first` so a rail divides the groups; title only) or 'agents' (the Agents
+ * stacks: 'items' (one row per status the board has items at, in the reading's stage order,
+ * each with its items beneath; owner 2026-10-08: the rail lists statuses, the detail the
+ * items) or 'agents' (the Agents
  * on the board, the session names the reading gives). A bar is its title and nothing else
  * (owner, 2026-10-04: a table of contents, never a reading of everything).
  */
@@ -18,11 +19,11 @@ export function whatRows(reading = {}, { under = 'items', labels = {} } = {}) {
     label: board.title,
     items: under === 'agents'
       ? (board.agents || []).map((name) => ({ id: `agent:${board.id}:${name}`, kind: 'agent', agent: { name }, board: board.id, className: 'what-agent', label: name }))
-      : (board.stages || []).flatMap((stage) => stage.items.map((item, index) => ({
-        id: item.id, kind: 'item', item, board: board.id, className: 'what-item', label: item.title,
-        // The first of each status group carries the mark the rail divides on (stage order is the reading's).
-        ...(index === 0 ? { attrs: { 'data-cph-first': 'true' } } : {}),
-      }))),
+      : (board.stages || []).map((stage) => ({
+        id: `${board.id}:${stage.stage}`, kind: 'status', stage: stage.stage, board: board.id, className: 'what-status',
+        label: (labels.stage || ((key) => key))(stage.stage),
+        items: stage.items.map((item) => ({ id: item.id, kind: 'item', item, board: board.id, className: 'what-item', label: item.title })),
+      })),
   }));
 }
 

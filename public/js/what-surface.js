@@ -7,12 +7,13 @@
  *   Questions     Workspace (Who's, any number) and Status (any of the stages), both narrowing
  *                 through the collection want; and Under each board: Items or Agents.
  *   Stones        boards, name only, Unfiled last.
- *   Bars          the board's items by title, or the Agents on it.
+ *   Bars          the statuses the board has items at (stage order), or the Agents on it.
  *   Board pressed the thin open beside the rail: objective, its items by title, the Agents on
  *                 it, and one door, Open, which places the Board (the Trello view) in the
  *                 opposite workspace.
- *   Bar pressed   its read in a partial overlay hung off the bar: an item — description,
- *                 status, holder; an Agent — the items it holds on this board.
+ *   Status pressed the thin open narrows to that status's items; pressed again, all.
+ *   Bar pressed   its read in a partial overlay hung off the bar: an item (in the thin open) —
+ *                 description, status, holder; an Agent — the items it holds on this board.
  *   Drag          an item bar onto another board stone reparents it there; a board stone onto a
  *                 Team stone on Who (either workspace) assigns the board to that Team.
  *
@@ -71,7 +72,16 @@ export function createWhatSurface({ openBoard = () => {} } = {}) {
       read1(host, [[t('collection.holds', 'Holds'), itemsOnBoardHeldBy(board, item.agent.name).map((row) => row.title).join(' · ') || t('collection.none', 'None')]]);
     }
   };
+  // A status in the rail narrows the open board's detail to its items; pressed again, all
+  // (owner, 2026-10-08). Any other bar opens its read in the partial overlay.
+  let chosenStatus = '';
   const press = (item, bar) => {
+    if (item.kind === 'status') {
+      chosenStatus = chosenStatus === item.stage ? '' : item.stage;
+      phalanx.refreshDetail(); // repaints the rail too, so the pressed mark goes on after
+      for (const row of phalanx.el.querySelectorAll('.sws-stone.what-status')) row.setAttribute('aria-pressed', String(row.dataset.swsId === item.id && Boolean(chosenStatus)));
+      return;
+    }
     bar.setAttribute('aria-pressed', 'true');
     openPartialOverlay(surface.content, { anchor: bar, title: item.label, draw: (body) => readOf(item, body), onClose: () => bar.setAttribute('aria-pressed', 'false') });
   };
@@ -91,8 +101,10 @@ export function createWhatSurface({ openBoard = () => {} } = {}) {
     for (const row of rows) box.append(bar(row));
     return box;
   };
+  let openBoardId = '';
   const renderDetail = (item, host) => {
     if (item.kind !== 'board') return;
+    if (item.id !== openBoardId) { openBoardId = item.id; chosenStatus = ''; }
     const box = el('div', 'who-open');
     const head = el('div', 'who-open-head');
     const open = createAction({ label: t('collection.open', 'Open'), size: 'compact', action: () => openBoard(item.board) });
@@ -100,8 +112,10 @@ export function createWhatSurface({ openBoard = () => {} } = {}) {
     box.append(head);
     if (item.board.objective) box.append(el('p', 'who-open-objective', item.board.objective));
     const one = { boards: [item.board] };
+    const statuses = whatRows(one, { under: 'items', labels: { stage: stageLabel } })[0]?.items || [];
+    const items = statuses.filter((row) => !chosenStatus || row.stage === chosenStatus).flatMap((row) => row.items);
     box.append(
-      list(t('collection.items', 'Items'), whatRows(one, { under: 'items' })[0]?.items || []),
+      list(chosenStatus ? stageLabel(chosenStatus) : t('collection.items', 'Items'), items),
       list(t('league.agents', 'Agents'), whatRows(one, { under: 'agents' })[0]?.items || []),
     );
     host.append(box);
@@ -127,9 +141,9 @@ export function createWhatSurface({ openBoard = () => {} } = {}) {
         if (!result.ok) surface.setState('failed', result.message || '');
       },
     },
-    items: (board.items || []).map((row) => row.kind !== 'item' ? row : {
-      ...row, draggable: true,
-      events: { dragstart: (event) => carry(event.dataTransfer, { kind: 'item', id: row.id, board: board.id }) },
+    items: (board.items || []).map((row) => row.kind !== 'status' ? row : {
+      ...row,
+      items: (row.items || []).map((item) => ({ ...item, draggable: true, events: { dragstart: (event) => carry(event.dataTransfer, { kind: 'item', id: item.id, board: board.id }) } })),
     }),
   }));
 
@@ -139,7 +153,7 @@ export function createWhatSurface({ openBoard = () => {} } = {}) {
   let roots = null; // every folder, from the first unfiltered reading, so a filter keeps offering them all
   const paint = (data) => {
     last = data;
-    const next = whatRows(data, { under, labels: { unfiled: t('work_nav.draft_unfiled', 'Unfiled') } });
+    const next = whatRows(data, { under, labels: { unfiled: t('work_nav.draft_unfiled', 'Unfiled'), stage: stageLabel } });
     const signature = JSON.stringify(next);
     if (signature === shown) return;
     shown = signature;

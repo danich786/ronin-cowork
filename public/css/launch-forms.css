@@ -107,9 +107,6 @@
   .cph-read-more[hidden] { display: none; }
   .partial-overlay-body > .wk-action { justify-self: start; }
   .cph .sws-stone[data-cph-depth][aria-pressed='true'] { border-color: var(--kaki); }
-  /* In the rail, a board's items stand in status groups, in stage order, a light hairline between
-     groups and no group words (owner, 2026-10-08); the mark is the first bar of each group. */
-  .cph[data-open='true'] .sws-stone[data-cph-first='true']:not(.sws-back + .sws-stone) { margin-top: var(--space-6); border-top: var(--edge) solid var(--line); padding-top: var(--space-5); }
   /* The question row: the ask and the Add block side by side, the block drawn as a question
      stone (same box, dashed, kaki) so the row reads as one; it drags, it does not open. */
   .who-questions { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-7) var(--space-8); }
