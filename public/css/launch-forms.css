@@ -111,6 +111,7 @@
   .who-surface .ask-stone[data-ask-key='add'] { cursor: grab; }
   /* The partial overlay: a small window inside the surface, hung off its anchor. */
   .cph-host { position: relative; }
+  .cph-host > .work-overlay { overflow: auto; padding: var(--space-5) var(--space-6); box-sizing: border-box; }
   .partial-overlay { position: absolute; z-index: 3; box-sizing: border-box; width: min(24rem, 100%); border: var(--edge) solid var(--line-2); border-radius: var(--radius-sm); background: var(--panel); box-shadow: var(--shadow-sheet); padding: var(--space-5) var(--space-6) var(--space-6); }
   .partial-overlay-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-4); }
   .partial-overlay-title { font-size: var(--text-5); font-weight: 600; color: var(--fg-strong); }

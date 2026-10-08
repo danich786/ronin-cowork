@@ -34,23 +34,21 @@ export function createCollectionNewSurface() {
     } });
     return () => {};
   };
-  const launch = (view, detail = {}) => {
+  const launch = (view) => {
     host.append(view.el);
-    void view.enter(detail);
+    void view.enter({});
     return () => { view.destroy?.(); };
   };
   const FORMS = {
     item: () => item(t('work.draft', 'New item'), ''),
     board: () => item(t('work_nav.draft_new_board', 'New board'), NEW_BOARD),
-    agent: (detail) => launch(createEmbeddedNewAgentView(WorkspaceKit, {}), detail),
+    agent: () => launch(createEmbeddedNewAgentView(WorkspaceKit, {})),
     team: () => launch(createEmbeddedNewTeamFormView(WorkspaceKit, {})),
   };
-  // `detail` rides into the form: Who's Add new → Agent, dropped on a Team, opens the Agent
-  // kind here with that Team already answered (owner, 2026-10-08).
-  const mount = (chosen, detail = {}) => {
+  const mount = (chosen) => {
     unmount();
     host.replaceChildren();
-    unmount = FORMS[chosen](detail);
+    unmount = FORMS[chosen]();
   };
 
   const kind = ask([{ fields: [
@@ -66,8 +64,6 @@ export function createCollectionNewSurface() {
 
   return {
     el: surface.el,
-    // A placement names its kind (Who's Agent drop) or not (the selector card): the card's first kind then.
-    show: ({ kind: chosen = 'item', ...detail } = {}) => { kind.set({ kind: chosen }); mount(chosen, detail); },
     destroy: () => { unmount(); kind.destroy(); },
   };
 }

@@ -39,13 +39,14 @@ import { ask } from './ask.js';
 import { request } from './request.js';
 import { t } from './lexicon.js';
 import { openPartialOverlay } from './partial-overlay.js';
-import { NEW_BOARD, draftItem } from './work-details.js';
+import { NEW_BOARD, draftItem, fullOverlay } from './work-details.js';
+import { createEmbeddedNewAgentView } from './new-agent.js';
 
 export const WHO_TYPE = 'collection.who';
 const el = (tag, cls = '', text = '') => { const out = document.createElement(tag); if (cls) out.className = cls; if (text) out.textContent = text; return out; };
 
-/** `openTeam(name)` opens the Team's tab; `openBoard(board)` places the work-item surface beside; `onNewAgent(team)` opens the New Agent form for the Team. */
-export function createWhoSurface({ openTeam = () => {}, openBoard = () => {}, onNewAgent = () => {} } = {}) {
+/** `openTeam(name)` opens the Team's tab; `openBoard(board)` places the work-item surface beside. */
+export function createWhoSurface({ openTeam = () => {}, openBoard = () => {} } = {}) {
   const { createSurface, createAction } = WorkspaceKit.primitives;
   const surface = createSurface({ label: t('collection.who', 'Who: Your Teams'), className: 'who-surface' });
 
@@ -76,12 +77,23 @@ export function createWhoSurface({ openTeam = () => {}, openBoard = () => {}, on
   const addStone = (node) => node?.closest?.('[data-ask-key="add"]');
   filter.el.addEventListener('pointerdown', (event) => { const stone = addStone(event.target); if (stone) stone.draggable = true; });
   filter.el.addEventListener('dragstart', (event) => { if (addStone(event.target)) carry(event.dataTransfer, { kind: 'add', what: adding }, 'copy'); });
-  // Agent: the New Agent form opens beside, with the Team answered (owner, 2026-10-08: one
-  // step, no picking an Agent that already runs — that is the drag's job). Board: the draft
-  // form in a partial overlay over the Team.
+  // Agent (owner, 2026-10-08): the existing New Agent form, Team answered, in a FULL OVERLAY
+  // over Who; Launch creates the Agent and the overlay closes; nothing opens, the Agent appears
+  // under its Team by the push. Board: the draft form in a partial overlay over the Team.
+  const newAgentOver = (team) => {
+    let layer = null;
+    const view = createEmbeddedNewAgentView(WorkspaceKit, { team: () => team.id, connect: async () => {}, consumed: () => { layer?.remove(); view.destroy?.(); } });
+    layer = fullOverlay(surface.content, (host, through) => {
+      const head = el('div', 'league-team-detail-head');
+      const tools = el('div', 'wk-surface-header-actions'); tools.append(...through);
+      head.append(el('h2', '', t('collection.new_agent_for', 'New Agent for {team}', { team: String(team.label || team.id) })), tools);
+      host.append(head, view.el);
+      void view.enter({ team: team.id });
+    }, { closed: () => view.destroy?.() });
+  };
   const addTo = (team, anchor, what) => {
     const name = String(team.label || team.id);
-    if (what === 'agent') { onNewAgent(team.id); return; }
+    if (what === 'agent') { newAgentOver(team); return; }
     openPartialOverlay(surface.content, { anchor,
       title: t('collection.add_board_to', 'New board for {team}', { team: name }),
       draw: (body, { lift }) => {

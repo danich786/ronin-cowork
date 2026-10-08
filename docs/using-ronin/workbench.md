@@ -71,7 +71,8 @@ board's objective and items, an item's description and status. **Open** in a boa
 places the work-item surface in the other workspace. Drag a board onto another Team to give it to that Team, or an Agent onto another Team to
 move the Agent there. **Drag new onto a Team** at the top asks
 Board or Agent; drag it onto a Team. A board opens its form in a small window over the Team;
-an Agent opens the New Agent form beside, with the Team already chosen. Changing them happens on the Team's own workbench.
+an Agent opens the New Agent form over Who, with the Team already chosen; Launch starts it
+and you stay on Who. Changing them happens on the Team's own workbench.
 
 On the Collections workbench the **What: Your Boards** card is the boards door: one stone per
 board, Unfiled last, and under each its items, or the Agents on it, as **Under each board**
