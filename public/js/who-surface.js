@@ -39,13 +39,12 @@ import { ask } from './ask.js';
 import { request } from './request.js';
 import { t } from './lexicon.js';
 import { openPartialOverlay } from './partial-overlay.js';
-import { createAgentPicker } from './team-profile.js';
 import { NEW_BOARD, draftItem } from './work-details.js';
 
 export const WHO_TYPE = 'collection.who';
 const el = (tag, cls = '', text = '') => { const out = document.createElement(tag); if (cls) out.className = cls; if (text) out.textContent = text; return out; };
 
-/** `openTeam(name)` opens the Team's tab; `openBoard(board)` places the work-item surface beside this one. */
+/** `openTeam(name)` opens the Team's tab; `openBoard(board)` places the work-item surface beside; `onNewAgent(team)` opens the New Agent form for the Team. */
 export function createWhoSurface({ openTeam = () => {}, openBoard = () => {}, onNewAgent = () => {} } = {}) {
   const { createSurface, createAction } = WorkspaceKit.primitives;
   const surface = createSurface({ label: t('collection.who', 'Who: Your Teams'), className: 'who-surface' });
@@ -60,7 +59,7 @@ export function createWhoSurface({ openTeam = () => {}, openBoard = () => {}, on
     ] },
     // Add new: Board or Agent (owner, 2026-10-08); the stone drags onto a Team stone and that
     // one's form opens there. What it adds is its own answer, never Under each Team's.
-    { key: 'add', label: t('collection.add_new', 'Add new'), options: [
+    { key: 'add', label: t('collection.add_new', 'Drag new onto a Team'), options: [
       { v: 'board', l: t('collection.add_board', 'Board') }, { v: 'agent', l: t('collection.add_agent', 'Agent') },
     ] },
   ] }], { value: { root: [], under, add: 'board' }, density: 'tight', onChange: ({ root: nextRoots, under: nextUnder, add: nextAdd }) => {
@@ -77,12 +76,15 @@ export function createWhoSurface({ openTeam = () => {}, openBoard = () => {}, on
   const addStone = (node) => node?.closest?.('[data-ask-key="add"]');
   filter.el.addEventListener('pointerdown', (event) => { const stone = addStone(event.target); if (stone) stone.draggable = true; });
   filter.el.addEventListener('dragstart', (event) => { if (addStone(event.target)) carry(event.dataTransfer, { kind: 'add', what: adding }, 'copy'); });
+  // Agent: the New Agent form opens beside, with the Team answered (owner, 2026-10-08: one
+  // step, no picking an Agent that already runs — that is the drag's job). Board: the draft
+  // form in a partial overlay over the Team.
   const addTo = (team, anchor, what) => {
     const name = String(team.label || team.id);
+    if (what === 'agent') { onNewAgent(team.id); return; }
     openPartialOverlay(surface.content, { anchor,
-      title: what === 'agent' ? t('collection.add_agent_to', 'Add an Agent to {team}', { team: name }) : t('collection.add_board_to', 'New board for {team}', { team: name }),
+      title: t('collection.add_board_to', 'New board for {team}', { team: name }),
       draw: (body, { lift }) => {
-        if (what === 'agent') { body.append(createAgentPicker(team.id, { onNewAgent, failed: (result) => { if (!result.ok) surface.setState('failed', result.message || ''); }, joined: () => { lift(); void read(); } })); return; }
         draftItem(body, { heading: '', parent: NEW_BOARD, team: team.id, save: async (fields) => {
           const made = await request('/api/work-items', { method: 'POST', json: fields });
           if (!made.ok) return made.message;

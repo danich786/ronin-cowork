@@ -49,7 +49,8 @@ export function createCollectionsView() {
     firstOpen: () => ({ workspace1: WORKBENCH_TYPES.who, workspace2: DISMISSED_WORKSPACE }),
     cards: (frame) => ({
       who: (id) => {
-        whoBySeat[id] ||= createWhoSurface({ openTeam, openBoard: () => frame.place(WORKBENCH_TYPES.workViews, frame.opposite(id)) });
+        whoBySeat[id] ||= createWhoSurface({ openTeam, openBoard: () => frame.place(WORKBENCH_TYPES.workViews, frame.opposite(id)),
+          onNewAgent: (team) => frame.place(WORKBENCH_TYPES.collectionNew, frame.opposite(id), { kind: 'agent', team }) });
         return whoBySeat[id];
       },
       what: (id) => {

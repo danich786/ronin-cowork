@@ -34,21 +34,23 @@ export function createCollectionNewSurface() {
     } });
     return () => {};
   };
-  const launch = (view) => {
+  const launch = (view, detail = {}) => {
     host.append(view.el);
-    void view.enter({});
+    void view.enter(detail);
     return () => { view.destroy?.(); };
   };
   const FORMS = {
     item: () => item(t('work.draft', 'New item'), ''),
     board: () => item(t('work_nav.draft_new_board', 'New board'), NEW_BOARD),
-    agent: () => launch(createEmbeddedNewAgentView(WorkspaceKit, {})),
+    agent: (detail) => launch(createEmbeddedNewAgentView(WorkspaceKit, {}), detail),
     team: () => launch(createEmbeddedNewTeamFormView(WorkspaceKit, {})),
   };
-  const mount = (chosen) => {
+  // `detail` rides into the form: Who's Add new → Agent, dropped on a Team, opens the Agent
+  // kind here with that Team already answered (owner, 2026-10-08).
+  const mount = (chosen, detail = {}) => {
     unmount();
     host.replaceChildren();
-    unmount = FORMS[chosen]();
+    unmount = FORMS[chosen](detail);
   };
 
   const kind = ask([{ fields: [
@@ -64,6 +66,7 @@ export function createCollectionNewSurface() {
 
   return {
     el: surface.el,
+    show: (detail = {}) => { if (detail.kind && FORMS[detail.kind]) { kind.set({ kind: detail.kind }); mount(detail.kind, detail); } },
     destroy: () => { unmount(); kind.destroy(); },
   };
 }

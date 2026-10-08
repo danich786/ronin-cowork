@@ -66,9 +66,10 @@ assign), an Agent onto another Team (`whoMove`: join, one write through
 `moveTeamMembership`, leaving the Team it was under; owner 2026-10-07) and the Add new question's stone (Board or Agent, a one-of-two beside Under each
 Team; owner 2026-10-08) onto a Team stone (`whoMove`: add, carrying which), which
 opens a partial overlay (`partial-overlay.js`: a small window inside the surface under its
-anchor, Close, Escape or a press outside lifts it) holding the form for what the question says, never
-Under each Team's answer: the draft form for a new board held by the Team, or the Agent picker the Team profile's plus
-uses (`createAgentPicker`, team-profile.js) — owner, 2026-10-07. `who-rows.js` is the pure mapping, under test.
+anchor, Close, Escape or a press outside lifts it) holding the draft form for a new board held by the Team; Agent opens the New card beside on
+the Agent kind with the Team answered (`collection-new.js` `show(detail)`), one step, no
+picker (owner, 2026-10-08: an Agent that already runs joins by drag). The question's label
+says to drag: "Drag new onto a Team". `who-rows.js` is the pure mapping, under test.
 
 What (`collection.what`, `what-surface.js`) is the boards door of the collections tenant
 (lead 2026-10-08, to PATTERNS.md's "Collections (What)" rows): Who's shape over boards. It
