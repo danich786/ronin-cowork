@@ -22,7 +22,7 @@ const eventClients = new Set<WebSocket>();
  * answers that one connection with the message every connection is sent on a write.
  *
  * READINGS are asked for with a filter and kept for the connection that asked:
- *   {t:'want', resource:'collection', campaign?, team?, board?, root?[]}
+ *   {t:'want', resource:'collection', campaign?, team?, board?, root?[], stage?[]}
  *     → {t:'collection', filter, teams, boards, roots}   collectionReading (src/collection-read.ts)
  *   {t:'want', resource:'work-items', team?, board?}
  *     → {t:'work-items', filter, items, …}               wantedItemsReading (src/work-items-read.ts)
@@ -48,7 +48,7 @@ export interface Feed {
   collection: (filter: CollectionWant) => Promise<Record<string, unknown> | null>;
   workItems: (filter: ItemsWant) => Promise<Record<string, unknown> | null>;
 }
-export interface CollectionWant { campaign?: string; team?: string; board?: string; root?: string[] }
+export interface CollectionWant { campaign?: string; team?: string; board?: string; root?: string[]; stage?: string[] }
 export interface ItemsWant { team?: string; board?: string }
 const empty: Feed = {
   list: listSessions, home: async () => [], teams: async () => [], messages: async () => [],
@@ -228,8 +228,9 @@ const words = (value: unknown): string | undefined => typeof value === 'string' 
 // The filter a want names, in one fixed order so the same filter is the same key.
 function wantedReading(msg: Record<string, unknown>): { resource: 'collection' | 'work-items'; filter: CollectionWant | ItemsWant } | null {
   if (msg.resource === 'collection') {
-    const root = [...new Set((Array.isArray(msg.root) ? msg.root : [msg.root]).map(words).filter((name): name is string => Boolean(name)))];
-    const filter: CollectionWant = { campaign: words(msg.campaign), team: words(msg.team), board: words(msg.board), ...(root.length ? { root } : {}) };
+    const many = (value: unknown) => [...new Set((Array.isArray(value) ? value : [value]).map(words).filter((name): name is string => Boolean(name)))];
+    const root = many(msg.root), stage = many(msg.stage);
+    const filter: CollectionWant = { campaign: words(msg.campaign), team: words(msg.team), board: words(msg.board), ...(root.length ? { root } : {}), ...(stage.length ? { stage } : {}) };
     return { resource: 'collection', filter: JSON.parse(JSON.stringify(filter)) as CollectionWant };
   }
   if (msg.resource === 'work-items') {
@@ -288,7 +289,7 @@ export function handleEvents(ws: WebSocket): void {
   // The one thing a browser says on this socket. Everything else it sends is ignored: this
   // is a feed, and an unknown message from a client is not a reason to drop the connection.
   ws.on('message', (raw) => {
-    let msg: { t?: string; session?: unknown; reading?: unknown; resource?: unknown; board?: unknown; team?: unknown; id?: unknown; campaign?: unknown; root?: unknown };
+    let msg: { t?: string; session?: unknown; reading?: unknown; resource?: unknown; board?: unknown; team?: unknown; id?: unknown; campaign?: unknown; root?: unknown; stage?: unknown };
     try {
       msg = JSON.parse(String(raw)) as typeof msg;
     } catch {
