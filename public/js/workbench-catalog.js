@@ -14,6 +14,7 @@ import { TEAM_CHART_TYPE } from './team-chart-surface.js';
 import { WORK_ITEMS_TYPE } from './work-items-surface.js';
 import { WORK_VIEWS_TYPE } from './work-views-surface.js';
 import { WHO_TYPE } from './who-surface.js';
+import { WHERE_TYPE } from './where-surface.js';
 import { READING_TYPE } from './reading-surface.js';
 import { WORKSPACE_TEAMS_TYPE } from './workspace-teams-surface.js';
 import { WORKSPACE_DOCS_TYPE } from './workspace-docs-surface.js';
@@ -23,7 +24,7 @@ export const WORKBENCH_PROFILES = Object.freeze({ campaign: 'campaign', launch: 
 export const WORKBENCH_TYPES = Object.freeze({
   document: 'document', terminal: 'session.terminal', behaviours: BEHAVIOUR_SURFACE_TYPE, feedback: FEEDBACK_TYPE,
   launchTeam: 'launch.team', launchAgent: 'launch.agent', launchHelp: 'launch.help',
-  commons: 'team.commons', teamChart: TEAM_CHART_TYPE, kanban: 'team.kanban', workItems: WORK_ITEMS_TYPE, workViews: WORK_VIEWS_TYPE, who: WHO_TYPE, reading: READING_TYPE, workspaceTeams: WORKSPACE_TEAMS_TYPE, workspaceDocs: WORKSPACE_DOCS_TYPE, teamWork: WORK_SURFACES_TYPE, taskStatus: 'task-manager.status', taskProject: 'task-manager.project', cron: 'cowork.cron-jobs',
+  commons: 'team.commons', teamChart: TEAM_CHART_TYPE, kanban: 'team.kanban', workItems: WORK_ITEMS_TYPE, workViews: WORK_VIEWS_TYPE, who: WHO_TYPE, where: WHERE_TYPE, reading: READING_TYPE, workspaceTeams: WORKSPACE_TEAMS_TYPE, workspaceDocs: WORKSPACE_DOCS_TYPE, teamWork: WORK_SURFACES_TYPE, taskStatus: 'task-manager.status', taskProject: 'task-manager.project', cron: 'cowork.cron-jobs',
   roster: 'cowork.team-roster', sessionRoster: 'cowork.session-roster', newTeamForm: 'cowork.new-team-form', newAgent: 'session.new-agent',
   team: 'team.profile', teamProfile: 'team-next.profile', archives: 'cowork.archives',
   agentDocuments: 'agent.documents', agentTeams: 'agent.team-membership', agentTasks: 'agent.task-manager', agentComposition: AGENT_COMPOSITION_TYPE,
@@ -52,6 +53,8 @@ export function registerWorkbenchCatalog() {
   add({ type: WORKBENCH_TYPES.workViews, header: 'surface', className: 'wk-selector-utility', label: () => t('work_views.title', 'Trello view'), summary: () => t('work_views.summary', 'Every board\'s items by status or by board'), create: ({ environment }) => environment.workViews() });
   // Who: the Teams door of the collections workbench; What and Where follow on the same stones.
   add({ type: WORKBENCH_TYPES.who, header: 'surface', className: 'wk-selector-utility', label: () => t('collection.who', 'Who: Your Teams'), summary: () => t('collection.who_summary', 'Every Team with its boards and items, by workspace'), create: ({ workspace, environment }) => environment.who(workspace) });
+  // Where: the workspace-folder door of the collections workbench, on the same stones as Who.
+  add({ type: WORKBENCH_TYPES.where, header: 'surface', className: 'wk-selector-utility', label: () => t('collection.where', 'Where: Your Workspaces'), summary: () => t('collection.where_summary', 'Every workspace folder with its Teams or its boards'), create: ({ workspace, environment }) => environment.where(workspace) });
   // Work on the Team tenant: one card, two layers behind a toggle (the Trello view and Work Items as they are).
   add({ type: WORKBENCH_TYPES.teamWork, header: 'surface', className: 'wk-selector-utility', label: () => t('team.work_card', 'Work'), summary: () => t('team.work_summary', 'Trello view and Work Items, one at a time'), create: ({ workspace, environment }) => environment.work(workspace) });
   add({ type: WORKBENCH_TYPES.reading, header: 'surface', className: 'wk-selector-utility', label: () => t('tenant.reading', 'Reading'), summary: () => t('tenant.reading_summary', 'The record, raw, until its surfaces are placed'), create: ({ workspace, environment }) => environment.reading(workspace) });
@@ -90,7 +93,7 @@ export function registerWorkbenchCatalog() {
   profiles.define(WORKBENCH_PROFILES.desk, [WORKBENCH_TYPES.who, WORKBENCH_TYPES.roster, WORKBENCH_TYPES.sessionRoster, WORKBENCH_TYPES.workViews, WORKBENCH_TYPES.taskStatus, WORKBENCH_TYPES.taskProject, WORKBENCH_TYPES.cron, WORKBENCH_TYPES.team, WORKBENCH_TYPES.terminal, WORKBENCH_TYPES.newTeamForm, WORKBENCH_TYPES.newAgent, WORKBENCH_TYPES.archives, WORKBENCH_TYPES.document, BEHAVIOUR_SURFACE_TYPE, PRESETS_TYPE, FEEDBACK_TYPE]);
   // Collections (the thin tenant on the tenant frame): Who; What, Where and New follow. The
   // Trello view is placeable by a board's Open but not offered (collections-view.js filters it).
-  profiles.define(WORKBENCH_PROFILES.collections, [WORKBENCH_TYPES.who, WORKBENCH_TYPES.workViews, WORKBENCH_TYPES.document, FEEDBACK_TYPE]);
+  profiles.define(WORKBENCH_PROFILES.collections, [WORKBENCH_TYPES.who, WORKBENCH_TYPES.where, WORKBENCH_TYPES.workViews, WORKBENCH_TYPES.document, FEEDBACK_TYPE]);
   // Board stands raw: the tenant's reading in its place; Workspace has its Teams and boards, and its docs and repos. Their rows come one card per hand-in.
   profiles.define(WORKBENCH_PROFILES.teamNext, [WORKBENCH_TYPES.commons, WORKBENCH_TYPES.teamChart, WORKBENCH_TYPES.teamWork, WORKBENCH_TYPES.teamProfile, WORKBENCH_TYPES.terminal, WORKBENCH_TYPES.agentComposition, WORKBENCH_TYPES.newAgent, BEHAVIOUR_SURFACE_TYPE, FEEDBACK_TYPE]);
   profiles.define(WORKBENCH_PROFILES.board, [WORKBENCH_TYPES.workViews, WORKBENCH_TYPES.document, FEEDBACK_TYPE]);

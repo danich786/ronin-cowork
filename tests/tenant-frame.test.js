@@ -45,7 +45,7 @@ test('the tenant frame is the one seat machinery; tenants are thin files over it
 });
 
 test('only the reading seam calls the collection route among the new files', async () => {
-  for (const file of ['tenant-frame.js', 'collections-view.js', 'team-view.js', 'team-commons-surface.js', 'board-view.js', 'workspace-view.js', 'workspace-teams-surface.js', 'workspace-docs-surface.js', 'reading-surface.js', 'next-home.js']) {
+  for (const file of ['tenant-frame.js', 'collections-view.js', 'team-view.js', 'team-commons-surface.js', 'board-view.js', 'workspace-view.js', 'workspace-teams-surface.js', 'where-surface.js', 'workspace-docs-surface.js', 'reading-surface.js', 'next-home.js']) {
     assert.doesNotMatch(await source(file), /\/api\/collection|\/api\/work-items/, `${file} reads through collection-reading.js`);
   }
 });
