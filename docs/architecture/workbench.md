@@ -25,8 +25,12 @@ the stone open at that level returns with it. Consumers never restyle the rest g
 Trello view (`work.views`, `work-views-surface.js`) is the Cowork/Desk work-item card, over
 GET `/api/work-items` (every item with its holder), with no phalanx, organised as a Trello board: its top-left button names the view and switches
 it. Status lays one fixed-width list per stage, grouping under an underlined subtitle per
-board that board's items (every descendant, `boardStages`) at that stage; Board lays one
-list per board with a subtitle per stage it has items at. Each list carries its count at the
+board that board's items (every descendant, `boardStages`) at that stage (one board alone has
+no subtitle: its items sit straight in the list); Board lays one
+list per board with a subtitle per stage it has items at. The lists are one drawing,
+`createLists(root, scope)`, exported: the surface draws both views with it, and a board's
+Open on a collection door draws that one board's stage lists with it (`board-overlay.js`;
+owner 2026-10-08: the lists only, no nested surface, header or View-by). Each list carries its count at the
 head and Add at the foot (the Add form, started in that list); Board view ends with Add board
 (the Add form with New board chosen, held by the Team on a Team workbench). Board view puts
 Unfiled last, in its own accent shade. On a Team, Add with no board of its own to start on
@@ -59,8 +63,11 @@ expand in place; the fork hands the press to the consumer through `press(item, b
 Agent to its role, what it is working on now (the home row's work
 record and stance) and the items it holds; a board to its objective and its items by title,
 each a press to its description, status and holder, with one door, Open, inside the window,
-which lifts it and lays that one board's Trello view (the Board tenant's board-scoped view) in
-a full overlay over Who (`board-overlay.js`; owner 2026-10-08, one rule for every door); an item to its description, status and holder. The same read opens
+which lifts it and lays that board's lists in a full overlay over Who (`board-overlay.js`;
+owner 2026-10-08, one rule for every door: the board's title and Close at the head, under it
+the stage lists side by side, Idea to Done, each holding the board's items at that stage as
+cards with Add at the foot, a card dragged onto another list writing its stage — the Trello
+view's own `createLists`, repainted by the work-items push for that board); an item to its description, status and holder. The same read opens
 from the thin open's bars. The drags are a board onto another Team (`whoMove`:
 assign), an Agent onto another Team (`whoMove`: join, one write through
 `moveTeamMembership`, leaving the Team it was under; owner 2026-10-07) and the Add new question's stone (Board or Agent, a one-of-two beside Under each
@@ -79,8 +86,8 @@ requests, filters and joins nothing. Three questions: Workspace, as Who's (a man
 all, `root` on the want); Status (a many-of the six stages, none is all, `stage` on the want;
 owner 2026-10-08); and Under each board: Items or Agents (the two-answer flip). One stone per board, name only, Unfiled last; under it the board's items by title,
 or the Agents on it. A board pressed is the thin open: objective, its items and Agents as bars
-(labels in sentence case, muted), and one door, Open, which lays that board's Trello view in a full overlay over What
-(`board-overlay.js`). A board pressed into swaps that board's children for its statuses
+(labels in sentence case, muted), and one door, Open, which lays that board's lists in a full overlay over What
+(`board-overlay.js`, as Who's). A board pressed into swaps that board's children for its statuses
 (`whatStatuses`, never the rest children) and goes down, so the rail lists the statuses the
 board has items at, in stage order; back at the top the items return (owner, 2026-10-08).
 A status pressed narrows the thin open to that status's items, pressed again it shows all;
@@ -206,13 +213,13 @@ routes on entry until their rows are ordered.
 first open is Who in workspace 1 and workspace 2 dismissed. Its profile is Who, Where, New
 (`collection.new`, `collection-new.js`: one ask.js question, the kind, mounting the existing
 form for it — `draftItem`, `draftItem` on New board, the embedded New Agent and New Team as
-Setup's Launch your own mounts them), the
-Trello view (placed by a board's Open, never offered), Document and Feedback. **Where**
+Setup's Launch your own mounts them), Document and Feedback; the Trello view is never a card here
+(a board's Open lays the board's lists over the door, `board-overlay.js`). **Where**
 (`where-surface.js`, type `collection.where`) reads the unfiltered collection push: folder
 stones, and under each its Teams or its boards (a one-of-two question, as Who's); a folder
 pressed is its thin open (name, path); a bar pressed opens its read in a partial overlay with
 Workspace WS1's reads (`boardRead`, `teamRead`), a Team's door Launch, a board's door Open
-laying that board's Trello view over the surface (`board-overlay.js`). Nothing adds or moves on Where. Launch on Who opens
+laying that board's lists over the surface (`board-overlay.js`, as Who's). Nothing adds or moves on Where. Launch on Who opens
 the old Team tab until `team-next` stands.
 
 **Team** (`team-next`, param the Team; it takes the `team` word when it replaces the old

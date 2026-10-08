@@ -99,7 +99,7 @@ export function registerWorkbenchCatalog() {
   profiles.define(WORKBENCH_PROFILES.desk, [WORKBENCH_TYPES.who, WORKBENCH_TYPES.roster, WORKBENCH_TYPES.sessionRoster, WORKBENCH_TYPES.workViews, WORKBENCH_TYPES.taskStatus, WORKBENCH_TYPES.taskProject, WORKBENCH_TYPES.cron, WORKBENCH_TYPES.team, WORKBENCH_TYPES.terminal, WORKBENCH_TYPES.newTeamForm, WORKBENCH_TYPES.newAgent, WORKBENCH_TYPES.archives, WORKBENCH_TYPES.document, BEHAVIOUR_SURFACE_TYPE, PRESETS_TYPE, FEEDBACK_TYPE]);
   // Collections (the thin tenant on the tenant frame): Who, What, Where and New. The
   // Trello view is placeable by a board's Open but not offered (collections-view.js filters it).
-  profiles.define(WORKBENCH_PROFILES.collections, [WORKBENCH_TYPES.who, WORKBENCH_TYPES.what, WORKBENCH_TYPES.where, WORKBENCH_TYPES.collectionNew, WORKBENCH_TYPES.workViews, WORKBENCH_TYPES.document, FEEDBACK_TYPE]);
+  profiles.define(WORKBENCH_PROFILES.collections, [WORKBENCH_TYPES.who, WORKBENCH_TYPES.what, WORKBENCH_TYPES.where, WORKBENCH_TYPES.collectionNew, WORKBENCH_TYPES.document, FEEDBACK_TYPE]);
   // Board stands raw: the tenant's reading in its place; Workspace has its Teams and boards, and its docs and repos. Their rows come one card per hand-in.
   profiles.define(WORKBENCH_PROFILES.teamNext, [WORKBENCH_TYPES.commons, WORKBENCH_TYPES.teamChart, WORKBENCH_TYPES.teamWork, WORKBENCH_TYPES.teamProfile, WORKBENCH_TYPES.terminal, WORKBENCH_TYPES.agentComposition, WORKBENCH_TYPES.newAgent, BEHAVIOUR_SURFACE_TYPE, FEEDBACK_TYPE]);
   profiles.define(WORKBENCH_PROFILES.board, [WORKBENCH_TYPES.workViews, WORKBENCH_TYPES.document, FEEDBACK_TYPE]);

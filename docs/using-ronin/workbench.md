@@ -68,7 +68,9 @@ Teams working in the folders you pick, one or several. Press a Team for a short 
 the stones, its Agents and its boards, and **Launch** to open the Team's tab. Press a bar and a
 small window opens beside it with a short read: an Agent's role and what it is doing now, a
 board's objective and items, an item's description and status. **Open** in a board's window
-lays that board over Who; Close brings you back. Drag a board onto another Team to give it to that Team, or an Agent onto another Team to
+lays the board's lists over Who, one list per status from Idea to Done with its items as cards:
+press a card to read it, Add at the foot of a list to add an item there, drag a card onto another
+list to change its status. Close brings you back. Drag a board onto another Team to give it to that Team, or an Agent onto another Team to
 move the Agent there. **Drag new onto a Team** at the top asks
 Board or Agent; drag it onto a Team. A board opens its form in a small window over the Team;
 an Agent opens the New Agent form over Who, with the Team already chosen; Launch starts it
@@ -78,8 +80,8 @@ On the Collections workbench the **What: Your Boards** card is the boards door: 
 board, Unfiled last, and under each its items, or the Agents on it, as **Under each board**
 chooses. Press a board and the rail lists the statuses it has work at; press a status to see
 only its items, and again for all. **Workspace** and **Status** at the top narrow the boards to the folders and stages
-you pick, one or several. Press a board for a short read beside the stones and **Open** to lay the board over What;
-Close brings you back. Press a bar for a small window with its read. Drag an item onto another
+you pick, one or several. Press a board for a short read beside the stones and **Open** to lay the board's lists over What,
+as on Who; Close brings you back. Press a bar for a small window with its read. Drag an item onto another
 board to move it there, or a board onto a Team on Who, in the other workspace, to give it
 to that Team.
 
