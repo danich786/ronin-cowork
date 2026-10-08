@@ -3,6 +3,7 @@
 import { createWorkItemsSurface } from './work-items-surface.js';
 import { createWorkViewsSurface } from './work-views-surface.js';
 import { createWhoSurface } from './who-surface.js';
+import { openBoardOver } from './board-overlay.js';
 import { createTeamProfile } from './team-profile.js';
 import { itemOverlay } from './work-details.js';
 import { WorkspaceKit } from './workspace-kit.js';
@@ -292,9 +293,8 @@ export function createCoworkView(options = {}) {
       lead: (project) => membersOfTeam(project.team).find((member) => member.team_lead)?.name || '',
       openOwner: (name) => openAgentWorkbench(name),
     }),
-    // Who: one per seat. Launch opens the Team's tab; a board's Open places the work-item
-    // surface beside it (the Trello view until the What door exists).
-    who: (id) => { whoBySeat[id] ||= createWhoSurface({ openTeam, openBoard: () => bench.place(WB_TYPES.workViews, oppositeSeat(id)) }); return whoBySeat[id]; },
+    // Who: one per seat. Launch opens the Team's tab; a board's Open lays its Trello view over Who.
+    who: (id) => { whoBySeat[id] ||= createWhoSurface({ openTeam, openBoard: (board, host) => openBoardOver(host, board, { holderTeam: holderTeamOf, openTeam, leadOf: (name) => membersOfTeam(name).find((member) => member.team_lead)?.name || '' }) }); return whoBySeat[id]; },
     workViews: () => createWorkViewsSurface({
       holderTeam: holderTeamOf, openTeam: (name) => openWorkspaceTab('team', name), team: campaign || team === UNASSIGNED ? '' : team,
       leadOf: (name) => membersOfTeam(name).find((member) => member.team_lead)?.name || '',

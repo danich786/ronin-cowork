@@ -12,6 +12,7 @@ import { createWhatSurface } from './what-surface.js';
 import { createWhereSurface } from './where-surface.js';
 import { createCollectionNewSurface } from './collection-new.js';
 import { createWorkViewsSurface } from './work-views-surface.js';
+import { openBoardOver } from './board-overlay.js';
 import { membersOfTeam, teamsFromState } from './team-controller.js';
 import { openWorkspaceTab } from './workspace.js';
 import { t } from './lexicon.js';
@@ -33,6 +34,10 @@ function holderTeam(holder) {
   return teamsFromState().find((row) => membersOfTeam(row.name).some((member) => member.name === agent))?.name || '';
 }
 
+// A board's Open (owner, 2026-10-08): that board's Trello view in a full overlay over the
+// surface it was opened from; never the opposite workspace.
+const openBoard = (board, host) => openBoardOver(host, board, { holderTeam, openTeam, leadOf });
+
 export function createCollectionsView() {
   const whoBySeat = {};
   const whatBySeat = {};
@@ -44,16 +49,16 @@ export function createCollectionsView() {
     label: () => t('collections.title', 'Collections'),
     name: () => t('collections.title', 'Collections'),
     homeCard: WORKBENCH_TYPES.who,
-    // A board's Open places the Trello view beside Who (until What exists); it is never a card here.
+    // The Trello view is never a card here (a board's Open lays it over the surface).
     selectorFilter: (type) => type !== WORKBENCH_TYPES.workViews,
     firstOpen: () => ({ workspace1: WORKBENCH_TYPES.who, workspace2: DISMISSED_WORKSPACE }),
     cards: (frame) => ({
       who: (id) => {
-        whoBySeat[id] ||= createWhoSurface({ openTeam, openBoard: () => frame.place(WORKBENCH_TYPES.workViews, frame.opposite(id)) });
+        whoBySeat[id] ||= createWhoSurface({ openTeam, openBoard });
         return whoBySeat[id];
       },
       what: (id) => {
-        whatBySeat[id] ||= createWhatSurface({ openBoard: () => frame.place(WORKBENCH_TYPES.workViews, frame.opposite(id)) });
+        whatBySeat[id] ||= createWhatSurface({ openBoard });
         return whatBySeat[id];
       },
       where: (id) => {

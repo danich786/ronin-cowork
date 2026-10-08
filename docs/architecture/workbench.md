@@ -59,8 +59,8 @@ expand in place; the fork hands the press to the consumer through `press(item, b
 Agent to its role, what it is working on now (the home row's work
 record and stance) and the items it holds; a board to its objective and its items by title,
 each a press to its description, status and holder, with one door, Open, inside the window,
-which lifts it and places the work-item surface in the other workspace (the Trello view until
-the What door exists); an item to its description, status and holder. The same read opens
+which lifts it and lays that one board's Trello view (the Board tenant's board-scoped view) in
+a full overlay over Who (`board-overlay.js`; owner 2026-10-08, one rule for every door); an item to its description, status and holder. The same read opens
 from the thin open's bars. The drags are a board onto another Team (`whoMove`:
 assign), an Agent onto another Team (`whoMove`: join, one write through
 `moveTeamMembership`, leaving the Team it was under; owner 2026-10-07) and the Add new question's stone (Board or Agent, a one-of-two beside Under each
@@ -79,7 +79,8 @@ requests, filters and joins nothing. Three questions: Workspace, as Who's (a man
 all, `root` on the want); Status (a many-of the six stages, none is all, `stage` on the want;
 owner 2026-10-08); and Under each board: Items or Agents (the two-answer flip). One stone per board, name only, Unfiled last; under it the board's items by title,
 or the Agents on it. A board pressed is the thin open: objective, its items and Agents as bars
-(labels in sentence case, muted), and one door, Open, which places the Board (the Trello view) in the opposite workspace. A board pressed into swaps that board's children for its statuses
+(labels in sentence case, muted), and one door, Open, which lays that board's Trello view in a full overlay over What
+(`board-overlay.js`). A board pressed into swaps that board's children for its statuses
 (`whatStatuses`, never the rest children) and goes down, so the rail lists the statuses the
 board has items at, in stage order; back at the top the items return (owner, 2026-10-08).
 A status pressed narrows the thin open to that status's items, pressed again it shows all;

@@ -10,8 +10,7 @@
  *   Bars          the board's items by title, or the Agents on it; pressed into a board, the
  *                 rail lists the statuses the board has items at, in stage order.
  *   Board pressed the thin open beside the rail: objective, its items by title, the Agents on
- *                 it, and one door, Open, which places the Board (the Trello view) in the
- *                 opposite workspace.
+ *                 it, and one door, Open, which lays the board's Trello view over this surface.
  *   Status pressed the thin open narrows to that status's items; pressed again, all.
  *   Bar pressed   its read in a partial overlay hung off the bar: an item (in the thin open) —
  *                 description, status, holder; an Agent — the items it holds on this board.
@@ -36,7 +35,7 @@ import { t } from './lexicon.js';
 export const WHAT_TYPE = 'collection.what';
 const el = (tag, cls = '', text = '') => { const out = document.createElement(tag); if (cls) out.className = cls; if (text) out.textContent = text; return out; };
 
-/** `openBoard(board)` places the Board surface in the opposite workspace. */
+/** `openBoard(board, host)` lays that board's Trello view over `host` (board-overlay.js). */
 export function createWhatSurface({ openBoard = () => {} } = {}) {
   const { createSurface, createAction } = WorkspaceKit.primitives;
   const surface = createSurface({ label: t('collection.what', 'What: Your Boards'), className: 'what-surface' });
@@ -107,7 +106,7 @@ export function createWhatSurface({ openBoard = () => {} } = {}) {
     if (item.id !== openBoardId) { openBoardId = item.id; chosenStatus = ''; }
     const box = el('div', 'who-open');
     const head = el('div', 'who-open-head');
-    const open = createAction({ label: t('collection.open', 'Open'), size: 'compact', action: () => openBoard(item.board) });
+    const open = createAction({ label: t('collection.open', 'Open'), size: 'compact', action: () => openBoard(item.board, surface.content) });
     head.append(el('h2', '', item.label), open.el);
     box.append(head);
     if (item.board.objective) box.append(el('p', 'who-open-objective', item.board.objective));

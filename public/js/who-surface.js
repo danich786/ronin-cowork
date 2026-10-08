@@ -14,8 +14,8 @@
  *                 owner 2026-10-07, replacing the expand in place), one format:
  *                 an Agent — its role, what it is working on now, the items it holds;
  *                 a board — its objective and its items by title, each a press to its own
- *                 description, status and holder, and one door, Open, which places the
- *                 work-item surface beside this one; an item — description, status, holder.
+ *                 description, status and holder, and one door, Open, which lays that board's
+ *                 Trello view over this surface; an item — description, status, holder.
  *   Drag          a board onto another Team; an Agent onto another Team, which moves it there
  *                 (owner, 2026-10-07). The Add new question (Board or Agent) beside Under each
  *                 Team: its stone dragged onto a Team stone opens a partial overlay with that
@@ -45,7 +45,7 @@ import { createEmbeddedNewAgentView } from './new-agent.js';
 export const WHO_TYPE = 'collection.who';
 const el = (tag, cls = '', text = '') => { const out = document.createElement(tag); if (cls) out.className = cls; if (text) out.textContent = text; return out; };
 
-/** `openTeam(name)` opens the Team's tab; `openBoard(board)` places the work-item surface beside. */
+/** `openTeam(name)` opens the Team's tab; `openBoard(board, host)` lays that board's Trello view over `host` (board-overlay.js). */
 export function createWhoSurface({ openTeam = () => {}, openBoard = () => {} } = {}) {
   const { createSurface, createAction } = WorkspaceKit.primitives;
   const surface = createSurface({ label: t('collection.who', 'Who: Your Teams'), className: 'who-surface' });
@@ -178,7 +178,7 @@ export function createWhoSurface({ openTeam = () => {}, openBoard = () => {} } =
       }
       if (!items.length) titles.append(el('span', 'who-open-none', t('collection.board_empty', 'Nothing under this board yet.')));
       host.append(titles);
-      const open = createAction({ label: t('collection.open', 'Open'), size: 'compact', action: () => { lift(); openBoard(item.board); } });
+      const open = createAction({ label: t('collection.open', 'Open'), size: 'compact', action: () => { lift(); openBoard(item.board, surface.content); } });
       host.append(open.el);
       return;
     }
