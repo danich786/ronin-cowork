@@ -73,9 +73,9 @@ move the Agent there. **Add new** at the top asks Board or
 Agent; drag it onto a Team and a small window opens over the Team with that form. Changing them happens on the Team's own workbench.
 
 On the Collections workbench the **What: Your Boards** card is the boards door: one stone per
-board, Unfiled last, and under each the statuses it has work at, or the Agents on it, as
-**Under each board** chooses. With a board open, press a status to see only its items, and
-again for all. **Workspace** and **Status** at the top narrow the boards to the folders and stages
+board, Unfiled last, and under each its items, or the Agents on it, as **Under each board**
+chooses. Press a board and the rail lists the statuses it has work at; press a status to see
+only its items, and again for all. **Workspace** and **Status** at the top narrow the boards to the folders and stages
 you pick, one or several. Press a board for a short read beside the stones and **Open** to place the board in
 the other workspace. Press a bar for a small window with its read. Drag an item onto another
 board to move it there, or a board onto a Team on Who, in the other workspace, to give it

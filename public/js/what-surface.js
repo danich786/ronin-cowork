@@ -7,7 +7,8 @@
  *   Questions     Workspace (Who's, any number) and Status (any of the stages), both narrowing
  *                 through the collection want; and Under each board: Items or Agents.
  *   Stones        boards, name only, Unfiled last.
- *   Bars          the statuses the board has items at (stage order), or the Agents on it.
+ *   Bars          the board's items by title, or the Agents on it; pressed into a board, the
+ *                 rail lists the statuses the board has items at, in stage order.
  *   Board pressed the thin open beside the rail: objective, its items by title, the Agents on
  *                 it, and one door, Open, which places the Board (the Trello view) in the
  *                 opposite workspace.
@@ -23,7 +24,7 @@
 import { WorkspaceKit } from './workspace-kit.js';
 import { createCollectionPhalanx } from './collection-phalanx.js';
 import { readingKey, subscribeCollection } from './collection-reading.js';
-import { itemsOnBoardHeldBy, whatMove, whatRows } from './what-rows.js';
+import { itemsOnBoardHeldBy, whatMove, whatRows, whatStatuses } from './what-rows.js';
 import { holderName } from './work-readings.js';
 import { PROJECT_STAGES, stageLabel } from './team-kanban.js';
 import { openPartialOverlay } from './partial-overlay.js';
@@ -111,15 +112,21 @@ export function createWhatSurface({ openBoard = () => {} } = {}) {
     box.append(head);
     if (item.board.objective) box.append(el('p', 'who-open-objective', item.board.objective));
     const one = { boards: [item.board] };
-    const statuses = whatRows(one, { under: 'items', labels: { stage: stageLabel } })[0]?.items || [];
-    const items = statuses.filter((row) => !chosenStatus || row.stage === chosenStatus).flatMap((row) => row.items);
+    const items = (whatRows(one, { under: 'items' })[0]?.items || []).filter((row) => !chosenStatus || row.item.stage === chosenStatus);
     box.append(
       list(chosenStatus ? stageLabel(chosenStatus) : t('collection.items', 'Items'), items),
       list(t('league.agents', 'Agents'), whatRows(one, { under: 'agents' })[0]?.items || []),
     );
     host.append(box);
   };
-  const phalanx = createCollectionPhalanx({ className: 'what-phalanx', items: [], renderDetail, press });
+  // THE RAIL LISTS STATUSES, THE REST LISTS ITEMS (lead, 2026-10-08). A board stone pressed
+  // swaps that board's children for its statuses, then goes down; back at the top, the rest
+  // rows return. A new reading while open keeps the swap for the open board.
+  let restRows = [];
+  const railRows = () => { const open = phalanx.level(); return restRows.map((row) => row.id === open?.id ? { ...row, items: whatStatuses(row.board, { labels: { stage: stageLabel } }) } : row); };
+  const pressInto = (id) => { phalanx.setItems(wire(restRows.map((row) => row.id === id ? { ...row, items: whatStatuses(row.board, { labels: { stage: stageLabel } }) } : row))); phalanx.down(id); };
+  const phalanx = createCollectionPhalanx({ className: 'what-phalanx', items: [], renderDetail, press,
+    onSelectionChange: () => { if (!phalanx.level()) phalanx.setItems(wire(restRows)); } });
   phalanx.mount(surface.content, { before: [filter.el] });
 
   /* ---------- the drag: an item bar onto another board stone ---------- */
@@ -129,6 +136,7 @@ export function createWhatSurface({ openBoard = () => {} } = {}) {
     // Team's (the one payload; Who's Team stone reads it as its own board drag).
     draggable: true,
     events: {
+      click: (event) => { event.stopImmediatePropagation(); pressInto(board.id); },
       dragstart: (event) => carry(event.dataTransfer, { kind: 'board', id: board.id, team: board.board.teams[0] || '' }),
       dragover: (event) => { if (!carries(event)) return; event.preventDefault(); event.currentTarget.classList.add('cph-over'); },
       dragleave: (event) => event.currentTarget.classList.remove('cph-over'),
@@ -140,9 +148,9 @@ export function createWhatSurface({ openBoard = () => {} } = {}) {
         if (!result.ok) surface.setState('failed', result.message || '');
       },
     },
-    items: (board.items || []).map((row) => row.kind !== 'status' ? row : {
-      ...row,
-      items: (row.items || []).map((item) => ({ ...item, draggable: true, events: { dragstart: (event) => carry(event.dataTransfer, { kind: 'item', id: item.id, board: board.id }) } })),
+    items: (board.items || []).map((row) => row.kind !== 'item' ? row : {
+      ...row, draggable: true,
+      events: { dragstart: (event) => carry(event.dataTransfer, { kind: 'item', id: row.id, board: board.id }) },
     }),
   }));
 
@@ -152,11 +160,11 @@ export function createWhatSurface({ openBoard = () => {} } = {}) {
   let roots = null; // every folder, from the first unfiltered reading, so a filter keeps offering them all
   const paint = (data) => {
     last = data;
-    const next = whatRows(data, { under, labels: { unfiled: t('work_nav.draft_unfiled', 'Unfiled'), stage: stageLabel } });
-    const signature = JSON.stringify(next);
+    restRows = whatRows(data, { under, labels: { unfiled: t('work_nav.draft_unfiled', 'Unfiled') } });
+    const signature = JSON.stringify(restRows);
     if (signature === shown) return;
     shown = signature;
-    phalanx.setItems(wire(next));
+    phalanx.setItems(wire(phalanx.level() ? railRows() : restRows));
   };
   let stop = null;
   let heard = ''; // the key subscribed to, so a changed answer resubscribes and the same one does not

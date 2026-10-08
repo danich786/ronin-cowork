@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-const { whatRows, whatMove, itemsOnBoardHeldBy } = await import('../public/js/what-rows.js');
+const { whatRows, whatMove, whatStatuses, itemsOnBoardHeldBy } = await import('../public/js/what-rows.js');
 
 // The collection push's shape (src/collection-read.ts).
 const reading = {
@@ -14,12 +14,18 @@ const reading = {
   roots: [],
 };
 
-test('What: one stone per board, Unfiled last; under each the statuses it has items at, each with its items beneath, every bar its title alone', () => {
-  const rows = whatRows(reading, { labels: { stage: (key) => key[0] + key.slice(1).toLowerCase() } });
+test('What: one stone per board, Unfiled last; at rest under each its items by title, every bar its title alone', () => {
+  const rows = whatRows(reading);
   assert.deepEqual(rows.map((row) => [row.id, row.kind, row.label]), [['w1', 'board', 'Upgrade'], ['w2', 'board', 'Unfiled']]);
-  assert.deepEqual(rows[0].items.map((row) => [row.id, row.kind, row.label, row.stage, row.state]), [['w1:IDEA', 'status', 'Idea', 'IDEA', undefined], ['w1:DONE', 'status', 'Done', 'DONE', undefined]]);
-  assert.deepEqual(rows[0].items[1].items.map((row) => [row.id, row.kind, row.label, row.board]), [['w6', 'item', 'Done one', 'w1']]);
-  assert.deepEqual(rows[1].items.map((row) => row.id), ['w2:PLAN']);
+  assert.deepEqual(rows[0].items.map((row) => [row.id, row.kind, row.label, row.board, row.state]), [['w10', 'item', 'Idea', 'w1', undefined], ['w6', 'item', 'Done one', 'w1', undefined]]);
+  assert.deepEqual(rows[1].items.map((row) => row.id), ['w9']);
+  assert.ok(!rows.some((row) => row.items.some((bar) => bar.kind === 'status')), 'no status under a stone at rest');
+});
+
+test('What: a board pressed into gives its rail the statuses it has items at, in stage order, one row each', () => {
+  const statuses = whatStatuses(reading.boards[1], { labels: { stage: (key) => key[0] + key.slice(1).toLowerCase() } });
+  assert.deepEqual(statuses.map((row) => [row.id, row.kind, row.label, row.stage, row.board]), [['w1:IDEA', 'status', 'Idea', 'IDEA', 'w1'], ['w1:DONE', 'status', 'Done', 'DONE', 'w1']]);
+  assert.deepEqual(whatStatuses(undefined), []);
 });
 
 test('What: under each board, the Agents on it instead', () => {
