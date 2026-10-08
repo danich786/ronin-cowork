@@ -70,7 +70,8 @@ function overlay(host, draw, { through = [], save = null, assign = null, context
   ].filter(Boolean).map((action) => action.el));
   draw(layer, [...through, utility]);
   save?.watch((dirty) => saveAction.setDisabled(!dirty));
-  layer.addEventListener('keydown', (event) => { if (event.key === 'Escape') close(); });
+  // Escape lifts this layer only: an overlay inside another (an item in a board's overlay) leaves the outer one.
+  layer.addEventListener('keydown', (event) => { if (event.key === 'Escape') { event.stopPropagation(); close(); } });
   host.append(layer);
   // Keys land in the overlay (Escape is its Close): in its first field, else on the layer.
   layer.tabIndex = -1;

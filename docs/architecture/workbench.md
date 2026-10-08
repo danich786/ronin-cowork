@@ -102,7 +102,9 @@ say what it means there (owner, 2026-10-08). `what-rows.js` is the pure mapping,
 
 **The phalanx and its fork** (owner ruling, 2026-10-03). `phalanx.js` is the stone work
 surface as it was, its geometry untouched: Settings (Presets, Workspace Folders, Model
-Providers, Setup), Team Chart, Work Items and the Trello view's overlays draw with it.
+Providers, Setup), Team Chart, Work Items and the Trello view's overlays draw with it. Escape
+lifts only the layer it is pressed in: an item overlay inside a board's overlay leaves the
+board's overlay standing (2026-10-08).
 `collection-phalanx.js` is the fork for the collection doors, built on `createPhalanx`
 (the same stones, rail, detail and way back, nothing copied): blocks centred at wide
 spacing, each stone's children stacked under it as one-line bars (no connector line), an empty
