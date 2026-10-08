@@ -5,7 +5,7 @@
  * Board pattern (work-views-surface.js) for that one board (PATTERNS.md, Board tenant: the
  * board itself; owner, 2026-10-07). Configuration is an item on that surface's メ opening the
  * full overlay with Grey form rows: title and objective, each saving itself
- * (PUT /api/work-items/:id). The item and the holders' tiles follow, one row per hand-in.
+ * (each a PUT of that field on the work-item route). The item and the holders' tiles follow, one row per hand-in.
  */
 import { createTenantFrame } from './tenant-frame.js';
 import { createWorkViewsSurface } from './work-views-surface.js';
