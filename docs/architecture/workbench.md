@@ -179,7 +179,10 @@ requests, filters and joins nothing; no new file may name `/api/collection` or
 routes on entry until their rows are ordered.
 
 **Collections** (`collections`, param the campaign; the one machine campaign when absent):
-first open is Who in workspace 1 and workspace 2 dismissed. Its profile is Who, the Trello
+first open is Who in workspace 1 and workspace 2 dismissed. Its profile is Who, New
+(`collection.new`, `collection-new.js`: one ask.js question, the kind, mounting the existing
+form for it — `draftItem`, `draftItem` on New board, the embedded New Agent and New Team as
+Setup's Launch your own mounts them), the Trello
 view (placed by a board's Open, never offered), Document and Feedback. Launch on Who opens
 the old Team tab until `team-next` stands.
 
