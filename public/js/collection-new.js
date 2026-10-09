@@ -11,6 +11,7 @@ import { draftItem, NEW_BOARD } from './work-details.js';
 import { createEmbeddedNewAgentView } from './new-agent.js';
 import { createEmbeddedNewTeamFormView } from './new-team-form.js';
 import { request } from './request.js';
+import { subscribeCollection } from './collection-reading.js';
 import { t } from './lexicon.js';
 
 export const COLLECTION_NEW_TYPE = 'collection.new';
@@ -21,12 +22,16 @@ export function createCollectionNewSurface() {
   const host = document.createElement('div');
   host.className = 'collection-new-form';
   let unmount = () => {};
+  // The boards Add's form offers, off the collection reading this card holds (owner,
+  // 2026-10-09: one reading per tenant); a form takes the boards held when it mounts.
+  let boards = [];
+  const stop = subscribeCollection({}, (reading) => { boards = reading?.boards || []; });
 
   // Add's form, as draftOverlay saves it: a made item clears the form for the next.
   const item = (heading, parent) => {
     let form = null;
     const save = createAction({ label: t('work_overlay.save', 'Save'), size: 'compact', action: () => void form.submit() });
-    form = draftItem(host, { heading, parent, actions: [save], save: async (fields) => {
+    form = draftItem(host, { heading, parent, boards, actions: [save], save: async (fields) => {
       const made = await request('/api/work-items', { method: 'POST', json: fields });
       if (!made.ok) return made.message;
       mount(kind.value().kind);
@@ -64,6 +69,6 @@ export function createCollectionNewSurface() {
 
   return {
     el: surface.el,
-    destroy: () => { unmount(); kind.destroy(); },
+    destroy: () => { stop(); unmount(); kind.destroy(); },
   };
 }
