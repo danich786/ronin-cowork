@@ -7,8 +7,9 @@
  * Agent), the Launch mark at the right; pressing the name opens the Agent's
  * profile in place under it, the same reader the rail opens — then one section per board the
  * Team works on, titled with the board's name, its items as lines, then Configuration. No
- * numbering. Built from the Team's collection reading (GET /api/collection?team=, its boards
- * with their holders), the Team controller's members, and the pieces that exist: createStep,
+ * numbering. Built from the Team's collection reading (the collection want narrowed to the
+ * Team, pushed into the one store and heard through collection-reading.js: its boards with
+ * their holders; owner, 2026-10-09), the Team controller's members, and the pieces that exist: createStep,
  * itemLine, the composition reader, the Team configuration form, ask for the plus. `openItem`
  * hears an item line pressed; Who selects the item's stone, a surface opens the item overlay.
  */
@@ -20,7 +21,7 @@ import { itemsHeldBy } from './who-rows.js';
 import { createAgentCompositionReader } from './agent-composition.js';
 import { renderTeamConfiguration, teamConfigurationMeta } from './team-configuration.js';
 import { deleteTeamRoster, membersOfTeam, sessionsAvailableToTeam, setTeamLead, setTeamMembership, subscribe, teamByName } from './team-controller.js';
-import { request } from './request.js';
+import { subscribeCollection } from './collection-reading.js';
 import { agentTitle } from './team-members.js';
 import { stanceLabel } from './home.js';
 import { subscribe as subscribeStore } from './store.js';
@@ -110,17 +111,8 @@ export function createTeamProfile(name, { openTeam = () => {}, openAgent = () =>
   const boardHost = el('div', 'wtd-boards');
   main.append(agents.el, boardHost, config.el);
 
-  let boards = []; // the Team's boards, from its collection reading
+  let boards = []; // the Team's boards, off its collection reading as last pushed
   const teamBoards = () => boards;
-  let readingWork = null;
-  const readWork = async () => {
-    readingWork?.abort();
-    const controller = new AbortController(); readingWork = controller;
-    const result = await request(`/api/collection?team=${encodeURIComponent(name)}`, { cache: 'no-store', signal: controller.signal });
-    if (controller.signal.aborted || !result.ok) return;
-    boards = (result.data.boards || []).filter((board) => board.teams?.includes(name));
-    paintAgents(); paintBoards(); paintFolds();
-  };
   const paintFolds = () => {
     agents.setCollapsed(folded.agents, t('league.agent_count', '{count} Agents', { count: membersOfTeam(name).length }));
     config.setCollapsed(folded.config, teamConfigurationMeta(teamByName(name)));
@@ -176,19 +168,15 @@ export function createTeamProfile(name, { openTeam = () => {}, openAgent = () =>
     renderTeamConfiguration(fields, { ...current, durable: true }, { createAction, onSaved: paintConfig });
   };
   // Membership and the record follow the Team controller; the live dots follow the store's
-  // home rows; the boards are read again whenever membership moves.
-  let seenMembers = '';
-  const render = () => {
-    paintConfig();
-    const members = JSON.stringify(membersOfTeam(name).map((member) => [member.name, member.team_lead]));
-    if (members !== seenMembers) { seenMembers = members; void readWork(); }
-    paintAgents(); paintBoards(); paintFolds();
-  };
+  // home rows; the boards follow the Team's collection reading, which the server pushes
+  // again whenever rosters or items move.
+  const render = () => { paintConfig(); paintAgents(); paintBoards(); paintFolds(); };
   const stopTeams = subscribe(render);
+  const stopWork = subscribeCollection({ team: name }, (reading) => { boards = reading?.boards || []; paintAgents(); paintBoards(); paintFolds(); });
   const stopRows = subscribeStore('home', (rows) => { stances = new Map((rows || []).map((row) => [row.name, row.stance])); paintStances(); });
   render();
   return {
     el: box, title, objective, controls: [launch], main, status, render,
-    destroy: () => { stopTeams?.(); stopRows?.(); readingWork?.abort(); for (const reader of readers.values()) reader.destroy(); readers.clear(); box.remove(); },
+    destroy: () => { stopTeams?.(); stopRows?.(); stopWork(); for (const reader of readers.values()) reader.destroy(); readers.clear(); box.remove(); },
   };
 }

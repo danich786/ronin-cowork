@@ -47,7 +47,7 @@ test('the tenant frame is the one seat machinery; tenants are thin files over it
 
 // The browser READS through the one seam; a write goes to its route (a PUT, POST or DELETE on that line).
 test('only the reading seam reads the collection and work-items routes among the new files', async () => {
-  for (const file of ['tenant-frame.js', 'collections-view.js', 'team-view.js', 'team-commons-surface.js', 'board-view.js', 'workspace-view.js', 'workspace-teams-surface.js', 'where-surface.js', 'workspace-docs-surface.js', 'reading-surface.js', 'next-home.js']) {
+  for (const file of ['tenant-frame.js', 'collections-view.js', 'team-view.js', 'team-commons-surface.js', 'board-view.js', 'workspace-view.js', 'workspace-teams-surface.js', 'where-surface.js', 'workspace-docs-surface.js', 'reading-surface.js', 'next-home.js', 'team-profile.js']) {
     assert.doesNotMatch(await source(file), /\/api\/(collection|work-items)(?![^\n]*method: '(PUT|POST|DELETE)')/, `${file} reads through collection-reading.js`);
   }
 });
