@@ -76,7 +76,7 @@ test('team-next offers Work as one surface over both engines, and the place is H
   assert.match(work, /key: 'view'/);
   assert.match(work, /key: 'board', label: t\('collection\.board', 'Board'\), blank: t\('collection\.all', 'All'\), many: true/, "the Board question is Who's Workspace question");
   assert.match(work, /createLists\(trello/);
-  assert.match(work, /createItemsBoard\(itemsHost/);
+  assert.match(work, /createItemsBoard\(\{ lead/);
   assert.match(work, /subscribeCollection\(\{ board: chosen \}/);
   assert.doesNotMatch(work, /request\(|subscribeWorkItems/, 'the Work card reads the collection push only (owner, 2026-10-09)');
   assert.match(header, /const editable = Boolean\(active\?\.view\?\.tabName\) && !\(active\?\.id === 'team' && !active\.param\)/);

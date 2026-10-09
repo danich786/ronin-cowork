@@ -48,8 +48,9 @@ export function createWorkSurfaces({ team = () => '', holderTeam = () => '', ope
   const body = el('div', 'work-body');
   const trello = el('div', 'wv');
   const lists = createLists(trello, { holderTeam, openTeam, team: team(), leadOf });
-  const itemsHost = el('div', 'work-items-board');
-  const board = createItemsBoard(itemsHost, { lead: () => leadOf(team()), openOwner });
+  const itemsHost = el('div', 'work-items-board sws-host');
+  const board = createItemsBoard({ lead: () => leadOf(team()), openOwner });
+  itemsHost.append(board.el, board.notice);
   body.append(trello, itemsHost);
   surface.content.append(filter.el, body);
   let boards = []; // the chosen boards, the lists' shape

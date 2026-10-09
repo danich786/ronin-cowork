@@ -16,10 +16,11 @@ const el = (tag, cls = '', text = '') => {
   const out = document.createElement(tag); out.className = cls; out.textContent = text; return out;
 };
 
-/** THE BOARD, drawn into `host`: the stones by stage in the grouped Phalanx, a notice line
- * under it, `paint(projects)` the normalised projects (projectsForScope). `lead(project)` names
- * the lead to ask when the Team holds it; `openOwner(name)` opens the holder. */
-export function createItemsBoard(host, options = {}) {
+/** THE BOARD: the stones by stage in the grouped Phalanx (`el`), a notice line (`notice`),
+ * `paint(projects)` the normalised projects (projectsForScope). `mount(seat, { after })` seats
+ * it as a surface's content; the Work card appends `el` and `notice` where it draws. `lead(project)`
+ * names the lead to ask when the Team holds it; `openOwner(name)` opens the holder. */
+export function createItemsBoard(options = {}) {
   const { createAction, createActionBar } = WorkspaceKit.primitives;
   let projects = [];
   const asked = new Map();
@@ -65,7 +66,6 @@ export function createItemsBoard(host, options = {}) {
       label: t('team_kanban.open_owner', 'Open @{name}', { name: owner }), action: () => options.openOwner?.(owner),
     })] }).el);
   } });
-  phalanx.mount(host, { after: [notice] });
   const paint = () => phalanx.setItems(projects.map((project) => {
     const pending = asked.get(project.id);
     if (pending && pending.stage !== project.stage) asked.delete(project.id);
@@ -91,7 +91,9 @@ export function createItemsBoard(host, options = {}) {
     };
   }));
   return {
+    el: phalanx.el,
     notice,
+    mount: (seat, placing) => phalanx.mount(seat, placing),
     paint: (rows) => { projects = rows; paint(); },
     setDensity: (density) => phalanx.setDensity(density),
     destroy: () => phalanx.destroy(),
@@ -108,8 +110,9 @@ export function createWorkItemsSurface(options = {}) {
     board.setDensity(full ? 'full' : 'compact');
   } });
   const surface = createSurface({ label: t('work_items.title', 'Work Items'), className: 'work-items-surface', actions: [refreshAction, density] });
-  const board = createItemsBoard(surface.content, options);
+  const board = createItemsBoard(options);
   const { notice } = board;
+  board.mount(surface.content, { after: [notice] });
   async function refresh() {
     read?.abort();
     const controller = new AbortController(); read = controller;
