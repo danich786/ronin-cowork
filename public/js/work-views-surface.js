@@ -1,6 +1,6 @@
 /* part of the ronin-cowork client — see js/README.md */
 /**
- * TRELLO VIEW — every board's items read two ways, off GET /api/work-items. No phalanx. The
+ * TRELLO VIEW — every board's items read two ways, off the collection push. No phalanx. The
  * button at the top left reads "View by: Status" or "View by: Board"; pressing it switches.
  *
  *   Status   one list per stage across the top; in each, every board with items at that
@@ -29,7 +29,7 @@ import { NEW_BOARD, draftOverlay, itemOverlay, listOverlay } from './work-detail
 import { request } from './request.js';
 import { carryItem } from './team-drag.js';
 import { readingKey, subscribeCollection } from './collection-reading.js';
-import { boardStages, collectionBoards, holderName } from './work-readings.js';
+import { collectionBoards, holderName } from './work-readings.js';
 import { t } from './lexicon.js';
 
 export const WORK_VIEWS_TYPE = 'work.views';
@@ -40,14 +40,16 @@ const stageName = (key) => PROJECT_STAGES.find((stage) => stage.key === key)?.la
 /**
  * THE LISTS — cards, groups and lists drawn into `root` (a `.wv` box; the row of lists is
  * appended to it), the drag between lists, and the overlays laid over `root`. `paint(view,
- * boards)` draws the boards — `boardStages`'s shape, { board, stages, size }, as `boardStages`
- * makes it from items or `collectionBoards` from a collection reading — in Status or Board view. `holderTeam(holder)` names the Team a holder works in;
+ * boards)` draws the boards — { board, stages, size } each, as `collectionBoards` makes them
+ * from a collection reading — in Status or Board view. `holderTeam(holder)` names the Team a holder works in;
  * `openTeam(team)` opens its workbench; `team`, on a Team's workbench, holds a board dragged
  * onto empty space; `leadOf(team)` names its lead, whose board is the Team's second choice for
  * Add; `boardId()` names the one board drawn, when one is: Add starts on it and there is no
- * Add board; `changed()` hears every write, for a reader that is not pushed to read again.
+ * Add board.
  */
-export function createLists(root, { holderTeam = () => '', openTeam = () => {}, team = '', leadOf = () => '', boardId = () => '', changed = () => {} } = {}) {
+export function createLists(root, { holderTeam = () => '', openTeam = () => {}, team = '', leadOf = () => '', boardId = () => '' } = {}) {
+  // A write shows itself when the reading is pushed again: nothing here reads after it.
+  const changed = () => {};
   const { createAction } = WorkspaceKit.primitives;
   let view = 'status';
   let boards = [];
@@ -189,12 +191,13 @@ export function createLists(root, { holderTeam = () => '', openTeam = () => {}, 
 }
 
 /** `holderTeam(holder)` names the Team a holder works in; `openTeam(team)` opens its workbench;
- * `team`, on a Team's workbench, reads that Team's boards from the server and holds new boards;
+ * `team`, on a Team's workbench, narrows the reading to that Team's boards and holds new boards;
  * `leadOf(team)` names its lead, whose board is the Team's second choice for Add. `board`, on
-* the Board tenant (a board id, or a function naming it), draws that one board: its reading
- * arrives by push (the collection reading, board=[id]: `boards[].stages` carries the items
- * with their holders; owner, 2026-10-09, one reading per tenant), Add starts on it, and
- * there is no Add board. `onRead(boards)` hears each reading, for the tenant's bar name. */
+ * the Board tenant (a board id, or a function naming it), draws that one board, Add starts on
+ * it, and there is no Add board. The reading is the collection push (owner, 2026-10-09, one
+ * reading per tenant): wanted with board=[id] on the Board tenant, team= on a Team, nothing
+ * on Cowork/Desk; `boards[].stages` carries the items with their holders. `onRead(boards)`
+ * hears each reading, for the tenant's bar name. */
 export function createWorkViewsSurface({ holderTeam = () => '', openTeam = () => {}, team = '', leadOf = () => '', board = '', onRead = () => {} } = {}) {
   const { createSurface, createAction } = WorkspaceKit.primitives;
   let view = 'status';
@@ -207,8 +210,7 @@ export function createWorkViewsSurface({ holderTeam = () => '', openTeam = () =>
   root.append(head);
   surface.content.append(root);
   const boardId = () => (typeof board === 'function' ? board() : board) || '';
-  // No wording on the surface: a write shows itself when the lists are read again.
-  const lists = createLists(root, { holderTeam, openTeam, team, leadOf, boardId, changed: () => void refresh() });
+  const lists = createLists(root, { holderTeam, openTeam, team, leadOf, boardId });
 
   const paint = () => {
     toggle.el.textContent = t('work_views.view_by', 'View by: {view}', { view: view === 'status' ? t('work_views.status', 'Status') : t('work_views.board', 'Board') });
@@ -216,33 +218,26 @@ export function createWorkViewsSurface({ holderTeam = () => '', openTeam = () =>
     lists.paint(view, boards);
   };
 
-  // One board hears its collection reading from the store and repaints on each push; a
+  // The surface hears its collection reading from the store and repaints on each push: the
+  // one board's on the Board tenant, the Team's on a Team, every board's on Cowork/Desk; a
   // changed board id resubscribes. A write needs no re-read. The reading's boards are the
   // lists' shape through `collectionBoards`.
   let stop = null, heard = '';
   const listen = () => {
-    const id = boardId();
-    const key = readingKey('collection', { board: id });
+    const wanted = { board: boardId(), team };
+    const key = readingKey('collection', wanted);
     if (stop && key === heard) return;
     stop?.(); heard = key;
-    stop = subscribeCollection({ board: id }, (reading) => {
+    stop = subscribeCollection(wanted, (reading) => {
       boards = collectionBoards(reading);
       paint();
       onRead(boards);
     });
   };
-  async function refresh() {
-    if (boardId()) return;
-    // A Team reads its boards from the server (its team reading's `boards`); Cowork/Desk read every item.
-    const read = await request(team ? `/api/work-items?team=${encodeURIComponent(team)}` : '/api/work-items', { cache: 'no-store' });
-    if (!read.ok) return;
-    boards = boardStages((team ? read.data.boards : read.data.items) || [], STAGE_KEYS);
-    paint();
-  }
   paint();
   return {
     el: surface.el,
-    show: () => { if (boardId()) listen(); else void refresh(); },
+    show: listen,
     leave: () => { stop?.(); stop = null; heard = ''; },
     destroy: () => { stop?.(); stop = null; heard = ''; },
   };
