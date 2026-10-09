@@ -242,12 +242,13 @@ It reads the collection push only (one reading per tenant): unfiltered for the q
 boards and the Team's own, and wanted with the chosen boards for the body — `board` is a
 list on the collection want — and requests nothing), the Team profile as a card, New Agent, and the composition
 reader the roster opens. Not yet on it: Mika's help, the arranger (`edges page`), Task
-Manager. Who's Launch opens this Team. On every tenant of the frame the bar's place is
-navigation, not a breadcrumb (owner, 2026-10-09): **Home**, a plain link to Ronin Home in
-the bar's link style, then where you are — `Team: <name>`, `Board: <title>`,
-`Workspace: <name>`, `Collections`. The frame composes the words once from the tenant's
-`name` (`tenant-frame.js` `place`; the name of nothing is the kind word) and
-`workspace-header.js` draws them. The old workbenches keep their editable tab name.
+Manager. Who's Launch opens this Team. On every tenant of the frame the bar's LEFT
+breadcrumb is navigation (owner, 2026-10-09): the brand's link worded **Home**, then where
+you are — `Team: <title>`, `Board: <title>`, `Workspace: <title>`, `Collections` — in the
+`#viewcrumb` slot where the old workbenches show Teams. The frame composes the words once
+from the tenant's `name` (`tenant-frame.js` `place`; the name of nothing is the kind word)
+and `workspace-header.js` draws them. The centred island is the editable tab name on the
+frame tenants as on the old Team; the old workbenches are untouched.
 
 **Board** (`board`, param the board's item id) opens on the Board pattern: `work-views-surface.js`
 with a `board` scope, WS1, that one board drawn by status or as its one list, its reading
