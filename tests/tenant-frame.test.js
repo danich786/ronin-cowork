@@ -26,7 +26,6 @@ test('a reading key is the server spelling of its filter', () => {
   assert.equal(readingKey('collection', { stage: ['DONE', ' BUILD', 'DONE', ''], root: ['a'] }), 'collection:{"root":["a"],"stage":["DONE","BUILD"]}', 'stage rides after root, normalised as root is (surface_push, 2026-10-08)');
   assert.equal(readingKey('collection', { board: ' w3 ', root: 'one' }), 'collection:{"board":["w3"],"root":["one"]}', 'a collection board is a list, as root is (surface_push, 2026-10-09)');
   assert.equal(readingKey('collection', { board: ['w2', ' w1', 'w2', ''] }), 'collection:{"board":["w2","w1"]}');
-  assert.equal(readingKey('work-items', { board: 'w1', team: 'surface' }), 'work-items:{"team":"surface","board":"w1"}');
 });
 
 test('the tenant frame is the one seat machinery; tenants are thin files over it and cowork-view is untouched', async () => {
@@ -78,7 +77,7 @@ test('team-next offers Work as one surface over both engines, the left breadcrum
   assert.match(work, /createLists\(trello/);
   assert.match(work, /createItemsBoard\(\{ lead/);
   assert.match(work, /subscribeCollection\(\{ board: chosen \}/);
-  assert.doesNotMatch(work, /request\(|subscribeWorkItems/, 'the Work card reads the collection push only (owner, 2026-10-09)');
+  assert.doesNotMatch(work, /request\(/, 'the Work card reads the collection push only (owner, 2026-10-09)');
   assert.match(header, /const editable = Boolean\(active\?\.view\?\.tabName\) && !\(active\?\.id === 'team' && !active\.param\)/);
   assert.match(frame, /place: \(\) => \[name\(''\), param && name\(\)\]\.filter\(Boolean\)\.join\(': '\)/);
   assert.match(frame, /tabName: \{\n\s+get: \(\) => ctx\?\.viewState\(tenant\.key\)\?\.tabName \|\| name\(\)/);

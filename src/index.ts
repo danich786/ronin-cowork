@@ -59,7 +59,6 @@ import { isValidTeam, listAllJobs, listJobs } from './jikan.js';
 import { isValidBoardName, seedHouseBoard, WIPEBOARD_DIR } from './wipeboards.js';
 import { handleEvents, pushJikan, pushMessages, pushReadings, pushWipeboard, startSessionsBroadcast, watchStore } from './ws/events.js';
 import { collectionReading } from './collection-read.js';
-import { wantedItemsReading } from './work-items-read.js';
 import { USER_CATALOGS_DIR } from './project-roots.js';
 import { tmux as tmuxClient } from './tmux-client.js';
 import { handlePty } from './ws/pty.js';
@@ -438,7 +437,6 @@ startSessionsBroadcast({
   github: { attached: githubSetupAttached, answer: githubSetupAnswer },
   shutdown: shutdownOperation,
   collection: async (filter) => ({ ...(await collectionReading(filter)) }),
-  workItems: wantedItemsReading,
 });
 watchStore(WIPEBOARD_DIR, (file) => { void pushWipeboard(file.split('/')[0]!); });
 watchStore(storeDir('jikan'), (file) => { if (file.endsWith('.md')) void pushJikan(file.slice(0, -3)); });
@@ -447,7 +445,7 @@ watchStore(storeDir('message_queue'), () => { void pushMessages(); });
 // them from the tick).
 watchStore(storeDir('work_items'), () => { void pushReadings(); });
 watchStore(storeDir('team_rosters'), () => { void pushReadings(); });
-watchStore(USER_CATALOGS_DIR, (file) => { if (file === 'PROJECT_ROOTS.md') void pushReadings('collection'); });
+watchStore(USER_CATALOGS_DIR, (file) => { if (file === 'PROJECT_ROOTS.md') void pushReadings(); });
 void seedHouseBoard().catch((e) => console.error('[tmux-ronin] house board seed failed:', e));
 
 void publishMax();

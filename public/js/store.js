@@ -58,13 +58,13 @@ const WANTED = { wipeboard: 'board', jikan: 'team' };
 // to the connections holding that filter (src/ws/events.ts). The key is the resource and the
 // filter's JSON in the server's own order (campaign, team, board, root, stage), so `readingKey`
 // is the one way to spell it.
-const READINGS = { collection: ['campaign', 'team', 'board', 'root', 'stage'], 'work-items': ['team', 'board'] };
+const READINGS = { collection: ['campaign', 'team', 'board', 'root', 'stage'] };
 const word = (value) => (typeof value === 'string' && value.trim() ? value.trim() : undefined);
 export function readingFilter(resource, filter = {}) {
   const out = {};
   for (const field of READINGS[resource] || []) {
-    if (field === 'root' || field === 'stage' || (resource === 'collection' && field === 'board')) {
-      // A list (a collection's board too), normalised as the server does: trimmed, empties dropped, deduplicated, left out when empty.
+    if (field === 'board' || field === 'root' || field === 'stage') {
+      // A list, normalised as the server does: trimmed, empties dropped, deduplicated, left out when empty.
       const list = [...new Set([filter[field]].flat().map(word).filter(Boolean))];
       if (list.length) out[field] = list;
     } else if (word(filter[field])) out[field] = word(filter[field]);

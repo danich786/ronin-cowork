@@ -24,8 +24,6 @@ const eventClients = new Set<WebSocket>();
  * READINGS are asked for with a filter and kept for the connection that asked:
  *   {t:'want', resource:'collection', campaign?, team?, board?[], root?[], stage?[]}
  *     → {t:'collection', filter, teams, boards, roots}   collectionReading (src/collection-read.ts)
- *   {t:'want', resource:'work-items', team?, board?}
- *     → {t:'work-items', filter, items, …}               wantedItemsReading (src/work-items-read.ts)
  * The reading is sent whole on the want, then again to every connection holding that filter
  * whenever an input moves it (an item, a roster, a workspace folder, the session list) and
  * only when its text changed. Each filter a connection wants is kept until it closes.
@@ -46,14 +44,12 @@ export interface Feed {
   github: { attached: () => Promise<boolean>; answer: () => Promise<unknown> };
   shutdown: (id: string) => object | null;
   collection: (filter: CollectionWant) => Promise<Record<string, unknown> | null>;
-  workItems: (filter: ItemsWant) => Promise<Record<string, unknown> | null>;
 }
 export interface CollectionWant { campaign?: string; team?: string; board?: string[]; root?: string[]; stage?: string[] }
-export interface ItemsWant { team?: string; board?: string }
 const empty: Feed = {
   list: listSessions, home: async () => [], teams: async () => [], messages: async () => [],
   wipeboard: async () => null, jikan: async () => null, github: { attached: async () => false, answer: async () => null },
-  shutdown: () => null, collection: async () => null, workItems: async () => null,
+  shutdown: () => null, collection: async () => null,
 };
 let feed: Feed = empty;
 let lastSessions = '';
@@ -79,7 +75,7 @@ let ticking: Promise<Tick> | undefined;
 let teamsRead: Promise<void> = Promise.resolve();
 // The readings wanted with a filter: by key (resource and filter text), the filter and the
 // connections that hold it.
-const readings = new Map<string, { resource: 'collection' | 'work-items'; filter: CollectionWant | ItemsWant; sockets: Set<WebSocket> }>();
+const readings = new Map<string, { filter: CollectionWant; sockets: Set<WebSocket> }>();
 
 // The fields the UI paints: `activity` moves on every keystroke and nothing under public/
 // shows it, and a row's stance `at` is the same; neither makes a push on its own.
@@ -206,9 +202,9 @@ export function pushJikan(team: string): Promise<void> {
     readThenSend(`jikan:${key}`, () => jikanMessage(key), sendChanged(`jikan:${key}`)))).then(() => undefined);
 }
 
-const readingMessage = async (resource: 'collection' | 'work-items', filter: CollectionWant | ItemsWant) => {
-  const answer = await (resource === 'collection' ? feed.collection(filter as CollectionWant) : feed.workItems(filter as ItemsWant)).catch(() => null);
-  return answer && { t: resource, filter, ...answer };
+const readingMessage = async (filter: CollectionWant) => {
+  const answer = await feed.collection(filter).catch(() => null);
+  return answer && { t: 'collection', filter, ...answer };
 };
 // Sent to the connections holding this filter, when it moved since the last one sent.
 const sendReading = (key: string) => (msg: Record<string, unknown>) => {
@@ -217,36 +213,28 @@ const sendReading = (key: string) => (msg: Record<string, unknown>) => {
   lastSent.set(key, text);
   for (const ws of readings.get(key)?.sockets ?? []) if (ws.readyState === ws.OPEN) ws.send(text);
 };
-// After an input of the readings changed: every held filter of that resource is read again
-// and sent where it moved. Called with no resource, both.
-export function pushReadings(resource?: 'collection' | 'work-items'): Promise<void> {
-  return Promise.all([...readings].filter(([, held]) => !resource || held.resource === resource)
-    .map(([key, held]) => readThenSend(key, () => readingMessage(held.resource, held.filter), sendReading(key)))).then(() => undefined);
+// After an input of the readings changed: every held filter is read again and sent where it moved.
+export function pushReadings(): Promise<void> {
+  return Promise.all([...readings].map(([key, held]) => readThenSend(key, () => readingMessage(held.filter), sendReading(key)))).then(() => undefined);
 }
 
 const words = (value: unknown): string | undefined => typeof value === 'string' && value.trim() ? value.trim() : undefined;
 // A list field: a string is a one-item list; trimmed, deduplicated, empties dropped.
 const many = (value: unknown) => [...new Set((Array.isArray(value) ? value : [value]).map(words).filter((name): name is string => Boolean(name)))];
 // The filter a want names, in one fixed order so the same filter is the same key.
-function wantedReading(msg: Record<string, unknown>): { resource: 'collection' | 'work-items'; filter: CollectionWant | ItemsWant } | null {
-  if (msg.resource === 'collection') {
-    const board = many(msg.board), root = many(msg.root), stage = many(msg.stage);
-    const filter: CollectionWant = { campaign: words(msg.campaign), team: words(msg.team), ...(board.length ? { board } : {}), ...(root.length ? { root } : {}), ...(stage.length ? { stage } : {}) };
-    return { resource: 'collection', filter: JSON.parse(JSON.stringify(filter)) as CollectionWant };
-  }
-  if (msg.resource === 'work-items') {
-    const filter: ItemsWant = { team: words(msg.team), board: words(msg.board) };
-    return { resource: 'work-items', filter: JSON.parse(JSON.stringify(filter)) as ItemsWant };
-  }
-  return null;
+function wantedReading(msg: Record<string, unknown>): CollectionWant | null {
+  if (msg.resource !== 'collection') return null;
+  const board = many(msg.board), root = many(msg.root), stage = many(msg.stage);
+  const filter: CollectionWant = { campaign: words(msg.campaign), team: words(msg.team), ...(board.length ? { board } : {}), ...(root.length ? { root } : {}), ...(stage.length ? { stage } : {}) };
+  return JSON.parse(JSON.stringify(filter)) as CollectionWant;
 }
-function holdReading(ws: WebSocket, wanted: { resource: 'collection' | 'work-items'; filter: CollectionWant | ItemsWant }): void {
-  const key = `${wanted.resource}:${JSON.stringify(wanted.filter)}`;
-  const held = readings.get(key) ?? { ...wanted, sockets: new Set<WebSocket>() };
+function holdReading(ws: WebSocket, filter: CollectionWant): void {
+  const key = `collection:${JSON.stringify(filter)}`;
+  const held = readings.get(key) ?? { filter, sockets: new Set<WebSocket>() };
   held.sockets.add(ws);
   readings.set(key, held);
   // This connection is sent the reading now; the others holding it only if it moved.
-  void readingMessage(wanted.resource, wanted.filter).then((msg) => {
+  void readingMessage(filter).then((msg) => {
     if (!msg) return;
     const text = JSON.stringify(msg);
     if (ws.readyState === ws.OPEN) ws.send(text);
