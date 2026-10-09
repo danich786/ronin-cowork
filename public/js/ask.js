@@ -9,7 +9,7 @@
  *
  * A field is a READING STONE (140 × 48: label over answer). Click it and a TRAY opens under
  * its group, holding option stones in one of two fixed shapes — the SQUARE (85, a glyph and
- * a ruled word) or the RECTANGLE (140 × 48, a name and one short word). A stone carries a
+ * a ruled word) or the RECTANGLE (140 wide, at least 48 tall: it grows to a two-line name, never clips it). A stone carries a
  * name, never a sentence: the CAPTION line under the tray carries the sentence, the facts,
  * and the reason a stone is greyed. A SWITCH is the reading stone with a track; it flips and
  * opens nothing. GROUPS keep together and stack as a group. Names break at their joints.

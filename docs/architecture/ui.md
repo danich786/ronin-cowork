@@ -593,7 +593,7 @@ contributors do not need that history to implement a question.
 
 **The rule.** A field is a **reading stone** — 140 × 48 px, label over answer — that opens a
 **tray** of stones under its group in one of two fixed shapes: the **square** (85 px, a glyph
-and a ruled word) or the **rectangle** (140 × 48, a name and one short word). A stone carries
+and a ruled word) or the **rectangle** (140 wide, at least 48 tall: it grows to fit a two-line name, never clips it; a name and one short word). A stone carries
 a name, never a sentence; the **caption** line under the tray carries the sentence, the
 facts, and the reason a stone is greyed. A **switch** is the reading stone with a track. Fields
 sit in named **groups** that keep together and stack as a group; nothing stretches with the
