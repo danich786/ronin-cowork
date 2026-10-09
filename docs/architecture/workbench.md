@@ -248,7 +248,8 @@ the bar's link style, then where you are — `Team: <name>`, `Board: <title>`,
 
 **Board** (`board`, param the board's item id) opens on the Board pattern: `work-views-surface.js`
 with a `board` scope, WS1, that one board drawn by status or as its one list, its reading
-arriving by push (the work-items want by board) and repainting on every change, Add
+arriving by push (the collection reading narrowed to `board=[id]`, its `boards[].stages`
+carrying the items with their holders; owner, 2026-10-09: one reading per tenant) and repainting on every change, Add
 starting on it and no Add board (PATTERNS.md, "Board tenant: the board itself"; owner,
 2026-10-07). The bar name is the board's title off that reading. **Board configuration** is
 an item on that surface's メ (the menu, `menu.js`, seated by the Workbench when a surface
