@@ -24,7 +24,7 @@ test('a reading key is the server spelling of its filter', () => {
   assert.equal(readingKey('collection'), 'collection:{}');
   assert.equal(readingKey('collection', { root: ['b', 'a', 'b', ''], team: ' surface ', campaign: 'c 1', agent: 'x' }), 'collection:{"campaign":"c 1","team":"surface","root":["b","a"]}');
   assert.equal(readingKey('collection', { stage: ['DONE', ' BUILD', 'DONE', ''], root: ['a'] }), 'collection:{"root":["a"],"stage":["DONE","BUILD"]}', 'stage rides after root, normalised as root is (surface_push, 2026-10-08)');
-  assert.equal(readingKey('collection', { board: 'w3', root: 'one' }), 'collection:{"board":["w3"],"root":["one"]}', 'board is a list on the collection want (lead, 2026-10-09)');
+  assert.equal(readingKey('collection', { board: ' w3 ', root: 'one' }), 'collection:{"board":["w3"],"root":["one"]}', 'a collection board is a list, as root is (surface_push, 2026-10-09)');
   assert.equal(readingKey('collection', { board: ['w2', ' w1', 'w2', ''] }), 'collection:{"board":["w2","w1"]}');
   assert.equal(readingKey('work-items', { board: 'w1', team: 'surface' }), 'work-items:{"team":"surface","board":"w1"}');
 });
@@ -62,11 +62,13 @@ test('the Team profile card belongs to team-next only', async () => {
   assert.doesNotMatch(catalog, /WORKBENCH_PROFILES\.(cowork|desk|team|agent), \[[^\n]*teamProfile/);
 });
 
-// Owner 2026-10-07: on team-next the Trello view and Work Items are one card, Work, with a
-// toggle between the two existing surfaces; and the island is the tab name for any view
-// that offers one, so the tenants on the frame have it as the old Team does.
-test('team-next offers Work as one surface with one header over both engines, and the island follows tabName', async () => {
-  const [catalog, teamView, work, header] = await Promise.all([source('workbench-catalog.js'), source('team-view.js'), source('work-surfaces.js'), source('workspace-header.js')]);
+// Owner 2026-10-09: on team-next the Trello view and Work Items are one card, Work: one
+// surface, one header, two questions, both engines drawn in its body over the collection
+// reading. Owner 2026-10-09: the bar's place on every tenant of the frame is navigation —
+// Home, then 'Team: <name>' — drawn once in the frame from the tenant's name; the old
+// workbenches keep their editable tab name.
+test('team-next offers Work as one surface over both engines, and the place is Home then the tenant', async () => {
+  const [catalog, teamView, work, header, frame] = await Promise.all([source('workbench-catalog.js'), source('team-view.js'), source('work-surfaces.js'), source('workspace-header.js'), source('tenant-frame.js')]);
   assert.match(catalog, /WORKBENCH_PROFILES\.teamNext, \[[^\n]*WORKBENCH_TYPES\.teamWork/);
   assert.doesNotMatch(catalog, /WORKBENCH_PROFILES\.teamNext, \[[^\n]*WORKBENCH_TYPES\.workViews/);
   assert.match(teamView, /createWorkSurfaces\(\{ team, holderTeam, openTeam, leadOf, openOwner: openAgent \}\)/);
@@ -78,4 +80,7 @@ test('team-next offers Work as one surface with one header over both engines, an
   assert.match(work, /subscribeCollection\(\{ board: chosen \}/);
   assert.doesNotMatch(work, /request\(|subscribeWorkItems/, 'the Work card reads the collection push only (owner, 2026-10-09)');
   assert.match(header, /const editable = Boolean\(active\?\.view\?\.tabName\) && !\(active\?\.id === 'team' && !active\.param\)/);
+  assert.match(frame, /place: \(\) => \[name\(''\), param && name\(\)\]\.filter\(Boolean\)\.join\(': '\)/);
+  assert.doesNotMatch(frame, /tabName/);
+  assert.match(header, /active\?\.view\?\.place\)[\s\S]*className = 'ui-bar-nav'[\s\S]*t\('bar\.home', 'Home'\)[\s\S]*plainRoute\(root\)[\s\S]*active\.view\.place\(\)/);
 });

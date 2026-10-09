@@ -187,7 +187,7 @@ Three layers:
 1. **Kit frame**, `workbench.js`, as above: selector, cells, placement, arrangement, memory.
 2. **Tenant frame**, `tenant-frame.js`, built once: the four terminal seats and their warm
    pools, placing a session or a surface into a cell and remembering it for refresh, the
-   common cards (terminal, document, feedback), the bar name and tab name. Lifted as a copy
+   common cards (terminal, document, feedback), the bar's place and the tab title. Lifted as a copy
    from `cowork-view.js`. Not in it: Mika, the arranger, Commons; a tenant that needs one
    adds it.
 3. **A thin tenant file** over it, tens of lines: `key` (the destination id, which is also
@@ -200,7 +200,7 @@ Three layers:
 tenant's reading is the collection reading (`src/collection-read.ts`) narrowed by campaign,
 team, board or root, or the work-items reading for a Team or a board. A consumer subscribes
 through `collection-reading.js`, the one seam, with its filter; the store sends
-`{t:'want', resource:'collection', campaign?, team?, board?, root?[], stage?[]}` or
+`{t:'want', resource:'collection', campaign?, team?, board?[], root?[], stage?[]}` or
 `{t:'want', resource:'work-items', team?, board?}` on `/events` (the table in
 [the tmux connection](tmux-connection.md)) and holds the answer under
 `readingKey(resource, filter)`, the server's own spelling: the resource, then the filter's
@@ -239,9 +239,12 @@ It reads the collection push only (one reading per tenant): unfiltered for the q
 boards and the Team's own, and wanted with the chosen boards for the body — `board` is a
 list on the collection want — and requests nothing), the Team profile as a card, New Agent, and the composition
 reader the roster opens. Not yet on it: Mika's help, the arranger (`edges page`), Task
-Manager. Who's Launch opens this Team. The bar's island is the editable tab name for any
-view that offers `tabName`, so every tenant on the frame has it as the old Team does
-(`workspace-header.js`).
+Manager. Who's Launch opens this Team. On every tenant of the frame the bar's place is
+navigation, not a breadcrumb (owner, 2026-10-09): **Home**, a plain link to Ronin Home in
+the bar's link style, then where you are — `Team: <name>`, `Board: <title>`,
+`Workspace: <name>`, `Collections`. The frame composes the words once from the tenant's
+`name` (`tenant-frame.js` `place`; the name of nothing is the kind word) and
+`workspace-header.js` draws them. The old workbenches keep their editable tab name.
 
 **Board** (`board`, param the board's item id) opens on the Board pattern: `work-views-surface.js`
 with a `board` scope, WS1, that one board drawn by status or as its one list, its reading

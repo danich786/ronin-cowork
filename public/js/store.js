@@ -63,8 +63,8 @@ const word = (value) => (typeof value === 'string' && value.trim() ? value.trim(
 export function readingFilter(resource, filter = {}) {
   const out = {};
   for (const field of READINGS[resource] || []) {
-    if (field === 'root' || field === 'stage') {
-      // A list, normalised as the server does: trimmed, empties dropped, deduplicated, left out when empty.
+    if (field === 'root' || field === 'stage' || (resource === 'collection' && field === 'board')) {
+      // A list (a collection's board too), normalised as the server does: trimmed, empties dropped, deduplicated, left out when empty.
       const list = [...new Set([filter[field]].flat().map(word).filter(Boolean))];
       if (list.length) out[field] = list;
     } else if (word(filter[field])) out[field] = word(filter[field]);
