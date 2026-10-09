@@ -25,7 +25,8 @@ test('a reading key is the server spelling of its filter', () => {
   assert.equal(readingKey('collection', { root: ['b', 'a', 'b', ''], team: ' surface ', campaign: 'c 1', agent: 'x' }), 'collection:{"campaign":"c 1","team":"surface","root":["b","a"]}');
   assert.equal(readingKey('collection', { stage: ['DONE', ' BUILD', 'DONE', ''], root: ['a'] }), 'collection:{"root":["a"],"stage":["DONE","BUILD"]}', 'stage rides after root, normalised as root is (surface_push, 2026-10-08)');
   assert.equal(readingKey('collection', { board: 'w3', root: 'one' }), 'collection:{"board":"w3","root":["one"]}');
-  assert.equal(readingKey('work-items', { board: 'w1', team: 'surface' }), 'work-items:{"team":"surface","board":"w1"}');
+  assert.equal(readingKey('work-items', { board: ' w3 ' }), 'work-items:{"board":["w3"]}', 'a work-items board is a list, as root is (surface_push, 2026-10-09)');
+  assert.equal(readingKey('work-items', { board: 'w1', team: 'surface' }), 'work-items:{"team":"surface","board":["w1"]}');
 });
 
 test('the tenant frame is the one seat machinery; tenants are thin files over it and cowork-view is untouched', async () => {

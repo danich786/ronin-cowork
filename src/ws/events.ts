@@ -24,7 +24,7 @@ const eventClients = new Set<WebSocket>();
  * READINGS are asked for with a filter and kept for the connection that asked:
  *   {t:'want', resource:'collection', campaign?, team?, board?, root?[], stage?[]}
  *     → {t:'collection', filter, teams, boards, roots}   collectionReading (src/collection-read.ts)
- *   {t:'want', resource:'work-items', team?, board?}
+ *   {t:'want', resource:'work-items', team?, board?[]}
  *     → {t:'work-items', filter, items, …}               wantedItemsReading (src/work-items-read.ts)
  * The reading is sent whole on the want, then again to every connection holding that filter
  * whenever an input moves it (an item, a roster, a workspace folder, the session list) and
@@ -49,7 +49,7 @@ export interface Feed {
   workItems: (filter: ItemsWant) => Promise<Record<string, unknown> | null>;
 }
 export interface CollectionWant { campaign?: string; team?: string; board?: string; root?: string[]; stage?: string[] }
-export interface ItemsWant { team?: string; board?: string }
+export interface ItemsWant { team?: string; board?: string[] }
 const empty: Feed = {
   list: listSessions, home: async () => [], teams: async () => [], messages: async () => [],
   wipeboard: async () => null, jikan: async () => null, github: { attached: async () => false, answer: async () => null },
@@ -207,7 +207,7 @@ export function pushJikan(team: string): Promise<void> {
 }
 
 const readingMessage = async (resource: 'collection' | 'work-items', filter: CollectionWant | ItemsWant) => {
-  const answer = await (resource === 'collection' ? feed.collection(filter) : feed.workItems(filter)).catch(() => null);
+  const answer = await (resource === 'collection' ? feed.collection(filter as CollectionWant) : feed.workItems(filter as ItemsWant)).catch(() => null);
   return answer && { t: resource, filter, ...answer };
 };
 // Sent to the connections holding this filter, when it moved since the last one sent.
@@ -225,16 +225,18 @@ export function pushReadings(resource?: 'collection' | 'work-items'): Promise<vo
 }
 
 const words = (value: unknown): string | undefined => typeof value === 'string' && value.trim() ? value.trim() : undefined;
+// A list field: a string is a one-item list; trimmed, deduplicated, empties dropped.
+const many = (value: unknown) => [...new Set((Array.isArray(value) ? value : [value]).map(words).filter((name): name is string => Boolean(name)))];
 // The filter a want names, in one fixed order so the same filter is the same key.
 function wantedReading(msg: Record<string, unknown>): { resource: 'collection' | 'work-items'; filter: CollectionWant | ItemsWant } | null {
   if (msg.resource === 'collection') {
-    const many = (value: unknown) => [...new Set((Array.isArray(value) ? value : [value]).map(words).filter((name): name is string => Boolean(name)))];
     const root = many(msg.root), stage = many(msg.stage);
     const filter: CollectionWant = { campaign: words(msg.campaign), team: words(msg.team), board: words(msg.board), ...(root.length ? { root } : {}), ...(stage.length ? { stage } : {}) };
     return { resource: 'collection', filter: JSON.parse(JSON.stringify(filter)) as CollectionWant };
   }
   if (msg.resource === 'work-items') {
-    const filter: ItemsWant = { team: words(msg.team), board: words(msg.board) };
+    const board = many(msg.board);
+    const filter: ItemsWant = { team: words(msg.team), ...(board.length ? { board } : {}) };
     return { resource: 'work-items', filter: JSON.parse(JSON.stringify(filter)) as ItemsWant };
   }
   return null;
