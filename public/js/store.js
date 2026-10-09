@@ -59,13 +59,12 @@ const WANTED = { wipeboard: 'board', jikan: 'team' };
 // filter's JSON in the server's own order (campaign, team, board, root, stage), so `readingKey`
 // is the one way to spell it.
 const READINGS = { collection: ['campaign', 'team', 'board', 'root', 'stage'], 'work-items': ['team', 'board'] };
-const LISTS = { collection: ['root', 'stage'], 'work-items': ['board'] };
 const word = (value) => (typeof value === 'string' && value.trim() ? value.trim() : undefined);
 export function readingFilter(resource, filter = {}) {
   const out = {};
   for (const field of READINGS[resource] || []) {
-    if (LISTS[resource].includes(field)) {
-      // A list, normalised as the server does: trimmed, empties dropped, deduplicated, left out when empty.
+    if (field === 'root' || field === 'stage' || (resource === 'collection' && field === 'board')) {
+      // A list (a collection's board too), normalised as the server does: trimmed, empties dropped, deduplicated, left out when empty.
       const list = [...new Set([filter[field]].flat().map(word).filter(Boolean))];
       if (list.length) out[field] = list;
     } else if (word(filter[field])) out[field] = word(filter[field]);

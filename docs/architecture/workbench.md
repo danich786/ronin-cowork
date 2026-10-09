@@ -200,7 +200,7 @@ Three layers:
 tenant's reading is the collection reading (`src/collection-read.ts`) narrowed by campaign,
 team, board or root, or the work-items reading for a Team or a board. A consumer subscribes
 through `collection-reading.js`, the one seam, with its filter; the store sends
-`{t:'want', resource:'collection', campaign?, team?, board?, root?[], stage?[]}` or
+`{t:'want', resource:'collection', campaign?, team?, board?[], root?[], stage?[]}` or
 `{t:'want', resource:'work-items', team?, board?}` on `/events` (the table in
 [the tmux connection](tmux-connection.md)) and holds the answer under
 `readingKey(resource, filter)`, the server's own spelling: the resource, then the filter's
