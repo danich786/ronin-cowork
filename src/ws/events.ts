@@ -22,9 +22,9 @@ const eventClients = new Set<WebSocket>();
  * answers that one connection with the message every connection is sent on a write.
  *
  * READINGS are asked for with a filter and kept for the connection that asked:
- *   {t:'want', resource:'collection', campaign?, team?, board?, root?[], stage?[]}
+ *   {t:'want', resource:'collection', campaign?, team?, board?[], root?[], stage?[]}
  *     → {t:'collection', filter, teams, boards, roots}   collectionReading (src/collection-read.ts)
- *   {t:'want', resource:'work-items', team?, board?[]}
+ *   {t:'want', resource:'work-items', team?, board?}
  *     → {t:'work-items', filter, items, …}               wantedItemsReading (src/work-items-read.ts)
  * The reading is sent whole on the want, then again to every connection holding that filter
  * whenever an input moves it (an item, a roster, a workspace folder, the session list) and
@@ -48,8 +48,8 @@ export interface Feed {
   collection: (filter: CollectionWant) => Promise<Record<string, unknown> | null>;
   workItems: (filter: ItemsWant) => Promise<Record<string, unknown> | null>;
 }
-export interface CollectionWant { campaign?: string; team?: string; board?: string; root?: string[]; stage?: string[] }
-export interface ItemsWant { team?: string; board?: string[] }
+export interface CollectionWant { campaign?: string; team?: string; board?: string[]; root?: string[]; stage?: string[] }
+export interface ItemsWant { team?: string; board?: string }
 const empty: Feed = {
   list: listSessions, home: async () => [], teams: async () => [], messages: async () => [],
   wipeboard: async () => null, jikan: async () => null, github: { attached: async () => false, answer: async () => null },
@@ -230,13 +230,12 @@ const many = (value: unknown) => [...new Set((Array.isArray(value) ? value : [va
 // The filter a want names, in one fixed order so the same filter is the same key.
 function wantedReading(msg: Record<string, unknown>): { resource: 'collection' | 'work-items'; filter: CollectionWant | ItemsWant } | null {
   if (msg.resource === 'collection') {
-    const root = many(msg.root), stage = many(msg.stage);
-    const filter: CollectionWant = { campaign: words(msg.campaign), team: words(msg.team), board: words(msg.board), ...(root.length ? { root } : {}), ...(stage.length ? { stage } : {}) };
+    const board = many(msg.board), root = many(msg.root), stage = many(msg.stage);
+    const filter: CollectionWant = { campaign: words(msg.campaign), team: words(msg.team), ...(board.length ? { board } : {}), ...(root.length ? { root } : {}), ...(stage.length ? { stage } : {}) };
     return { resource: 'collection', filter: JSON.parse(JSON.stringify(filter)) as CollectionWant };
   }
   if (msg.resource === 'work-items') {
-    const board = many(msg.board);
-    const filter: ItemsWant = { team: words(msg.team), ...(board.length ? { board } : {}) };
+    const filter: ItemsWant = { team: words(msg.team), board: words(msg.board) };
     return { resource: 'work-items', filter: JSON.parse(JSON.stringify(filter)) as ItemsWant };
   }
   return null;
