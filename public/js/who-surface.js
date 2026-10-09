@@ -21,8 +21,9 @@
  *                 Team: its stone dragged onto a Team stone opens a partial overlay with that
  *                 form for the Team — owner, 2026-10-08.
  *
- * Reading: GET /api/collection (src/collection-read.ts), one request, every chosen workspace
- * as ?root=. `whoRows` (who-rows.js) is the pure mapping.
+ * Reading: the collection push (collection-reading.js), wanted with the chosen workspaces
+ * (root=); the browser requests, filters and joins nothing (owner, 2026-10-09: one reading per
+ * tenant). `whoRows` (who-rows.js) is the pure mapping.
  */
 import { WorkspaceKit } from './workspace-kit.js';
 import { createCollectionPhalanx } from './collection-phalanx.js';
@@ -37,6 +38,7 @@ import { holderName } from './work-readings.js';
 import { stageLabel } from './team-kanban.js';
 import { ask } from './ask.js';
 import { request } from './request.js';
+import { readingKey, subscribeCollection } from './collection-reading.js';
 import { t } from './lexicon.js';
 import { openPartialOverlay } from './partial-overlay.js';
 import { NEW_BOARD, draftItem, fullOverlay } from './work-details.js';
@@ -67,7 +69,7 @@ export function createWhoSurface({ openTeam = () => {}, openBoard = () => {} } =
     const next = (nextRoots || []).map(String);
     const rootsMoved = next.join('\n') !== chosen.join('\n');
     chosen = next; under = nextUnder === 'agents' ? 'agents' : 'boards'; adding = nextAdd === 'agent' ? 'agent' : 'board';
-    if (rootsMoved) void read(); else if (last) paint(last);
+    if (rootsMoved) listen(); else if (last) paint(last);
   } });
   let adding = 'board';
 
@@ -97,10 +99,10 @@ export function createWhoSurface({ openTeam = () => {}, openBoard = () => {} } =
     openPartialOverlay(surface.content, { anchor,
       title: t('collection.add_board_to', 'New board for {team}', { team: name }),
       draw: (body, { lift }) => {
-        draftItem(body, { heading: '', parent: NEW_BOARD, team: team.id, save: async (fields) => {
+        draftItem(body, { heading: '', parent: NEW_BOARD, team: team.id, boards: last?.boards || [], save: async (fields) => {
           const made = await request('/api/work-items', { method: 'POST', json: fields });
           if (!made.ok) return made.message;
-          lift(); void read(); return '';
+          lift(); return '';
         } });
       } });
   };
@@ -206,8 +208,7 @@ export function createWhoSurface({ openTeam = () => {}, openBoard = () => {} } =
         const result = move === 'join'
           ? await moveTeamMembership(moved.id, moved.team, team.id)
           : await request(`/api/work-items/${encodeURIComponent(moved.id)}/assign`, { method: 'POST', json: { team: team.id } });
-        if (!result.ok) { surface.setState('failed', result.message || ''); return; }
-        void read();
+        if (!result.ok) surface.setState('failed', result.message || '');
       },
     },
     items: (team.items || []).map((row) => row.kind === 'board' ? {
@@ -220,9 +221,8 @@ export function createWhoSurface({ openTeam = () => {}, openBoard = () => {} } =
     } : row),
   }));
 
-  /* ---------- the reading ---------- */
+  /* ---------- the reading: the collection push, wanted with the chosen workspaces ---------- */
   let shown = '';
-  let reading = null;
   let last = null; // the reading last painted
   let roots = null; // every folder, from the first unfiltered reading, so a filter keeps offering them all
   const paint = (data) => {
@@ -234,24 +234,31 @@ export function createWhoSurface({ openTeam = () => {}, openBoard = () => {} } =
     phalanx.setItems(wire(next));
     filter.options('root', (data.roots || []).map((row) => ({ v: row.name, l: row.name })));
   };
-  async function read() {
-    reading?.abort();
-    const controller = new AbortController(); reading = controller;
-    const query = chosen.map((root) => `root=${encodeURIComponent(root)}`).join('&');
-    const result = await request(`/api/collection${query ? `?${query}` : ''}`, { cache: 'no-store', signal: controller.signal });
-    if (controller.signal.aborted) return;
-    if (!result.ok) { surface.setState('failed', result.message || ''); return; }
-    surface.setState();
-    if (!chosen.length || !roots) roots = result.data.roots || [];
-    paint({ ...result.data, roots });
-  }
+  let stop = null;
+  let heard = ''; // the key subscribed to, so a changed answer resubscribes and the same one does not
   let entered = false;
-  const stopTeams = subscribe(() => { if (entered) void read(); });
+  const listen = () => {
+    if (!entered) return;
+    const wanted = { root: chosen };
+    const key = readingKey('collection', wanted);
+    if (stop && key === heard) return;
+    stop?.();
+    heard = key;
+    stop = subscribeCollection(wanted, (reading) => {
+      surface.setState();
+      const data = reading || {};
+      if (!chosen.length || !roots) roots = data.roots || [];
+      paint({ ...data, roots });
+    });
+  };
+  const quiet = () => { stop?.(); stop = null; heard = ''; };
+  // A roster change repaints the rows from the reading last pushed (the members under each Team).
+  const stopTeams = subscribe(() => { if (entered && last) { shown = ''; paint(last); } });
   const stopRows = subscribeStore('home', (list) => { rows = new Map((list || []).map((row) => [row.name, row])); });
   return {
     el: surface.el,
-    show: () => { entered = true; void read(); },
-    leave: () => { entered = false; reading?.abort(); },
-    destroy: () => { entered = false; reading?.abort(); stopTeams?.(); stopRows?.(); filter.destroy?.(); phalanx.destroy(); },
+    show: () => { entered = true; listen(); },
+    leave: () => { entered = false; quiet(); },
+    destroy: () => { entered = false; quiet(); stopTeams?.(); stopRows?.(); filter.destroy?.(); phalanx.destroy(); },
   };
 }

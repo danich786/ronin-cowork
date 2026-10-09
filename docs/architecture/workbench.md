@@ -51,8 +51,9 @@ Unfiled, the default. Assign holds the item by an Agent or a Team.
 Who (`collection.who`, `who-surface.js`) is the Teams door of the collections workbench,
 built to the direction doc (samurai_lab `wip/buildouts/COLLECTIONS_DIRECTION.md`, owner
 2026-10-04): the collection finds work, adds work and reassigns work; detail, configuration
-and editing live on a workbench. Its reading is one request, GET `/api/collection`
-(`src/collection-read.ts`), every chosen workspace as `?root=`; the browser joins nothing.
+and editing live on a workbench. Its reading is the collection push (`collection-reading.js`),
+wanted with the chosen workspaces as `root`; the browser requests, filters and joins nothing
+(owner 2026-10-09, one reading per tenant). A write shows itself when the reading is pushed again.
 Two `ask()` questions: Workspace (a many-of, none is all) and Under each Team (Boards or
 Agents, a one-of-two that flips on press). One stone per Team, name only; under it the
 boards or the Agents as bars, title only. A Team pressed is the thin open beside the rail:
@@ -208,8 +209,8 @@ JSON in field order, trimmed, empties dropped, roots deduped. The server pushes 
 again to every connection holding that filter whenever an input moves; an absent campaign is
 the one machine campaign, and Teams, folders and boards outside it are left out. The browser
 requests, filters and joins nothing; no new file may name `/api/collection` or
-`/api/work-items` (`tests/tenant-frame.test.js`). Who and the Trello view still read those
-routes on entry until their rows are ordered.
+`/api/work-items` (`tests/tenant-frame.test.js`). The Trello view's Cowork/Desk card still
+requests `/api/work-items` on entry until its row is ordered.
 
 **Collections** (`collections`, param the campaign; the one machine campaign when absent):
 first open is Who in workspace 1 and workspace 2 dismissed. Its profile is Who, Where, New
