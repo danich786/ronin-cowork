@@ -13,11 +13,11 @@ export function installWorkspaceHeader(workspace) {
   const ronin = document.getElementById('brandbtn');
   const separator = document.getElementById('coworkssep');
   const coworkers = document.getElementById('coworksbtn');
-  // THE LEFT BREADCRUMB is the navigation. On a tenant of the tenant frame (`place`) it reads
-  // Home — the brand's link, worded Home — then where you are: 'Team: Front 2' (owner,
-  // 2026-10-09). Everywhere else it is the brand and Teams, as it was.
-  const word = ronin?.querySelector('.brand-word');
-  const brandWord = word?.textContent || '';
+  // THE LEFT BREADCRUMB is the navigation. On a tenant of the tenant frame (`place`) the bar
+  // reads, after the brand as it always is: • Home • 'Team: Front 2' (owner, 2026-10-09).
+  // Everywhere else it is the brand and Teams, as it was.
+  const home = document.getElementById('homebtn');
+  const placeSeparator = document.getElementById('placesep');
   const crumb = document.getElementById('viewcrumb');
   // THE PLACE is the label inside the centred scope island. Its solid colour stands
   // apart from the tinted Workbench headers below it.
@@ -34,6 +34,7 @@ export function installWorkspaceHeader(workspace) {
     action();
   };
   ronin?.addEventListener('click', plainRoute(root));
+  home?.addEventListener('click', plainRoute(root));
   coworkers?.addEventListener('click', plainRoute(() => workspace.navigate('cowork')));
 
   const refresh = () => {
@@ -43,8 +44,9 @@ export function installWorkspaceHeader(workspace) {
     else delete document.documentElement.dataset.workbench;
     const landing = !active || active.id === 'home';
     const placed = active?.view?.place ? active.view.place() : '';
-    if (word) word.textContent = placed ? t('bar.home', 'Home') : brandWord;
     if (separator) separator.hidden = landing;
+    if (home) { home.textContent = t('bar.home', 'Home'); home.hidden = !placed; }
+    if (placeSeparator) placeSeparator.hidden = !placed;
     if (coworkers) {
       coworkers.hidden = landing || Boolean(placed);
       coworkers.href = workbenchLaunchUrl({ destination: 'cowork', mode: 'overlay' });

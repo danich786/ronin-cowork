@@ -81,7 +81,8 @@ test('team-next offers Work as one surface over both engines, the left breadcrum
   assert.match(header, /const editable = Boolean\(active\?\.view\?\.tabName\) && !\(active\?\.id === 'team' && !active\.param\)/);
   assert.match(frame, /place: \(\) => \[name\(''\), param && name\(\)\]\.filter\(Boolean\)\.join\(': '\)/);
   assert.match(frame, /tabName: \{\n\s+get: \(\) => ctx\?\.viewState\(tenant\.key\)\?\.tabName \|\| name\(\)/);
-  assert.match(header, /word\.textContent = placed \? t\('bar\.home', 'Home'\) : brandWord/);
+  assert.match(header, /home\.textContent = t\('bar\.home', 'Home'\); home\.hidden = !placed/);
+  assert.doesNotMatch(header, /brand-word|brandWord/, 'the brand is never reworded');
   assert.match(header, /coworkers\.hidden = landing \|\| Boolean\(placed\)/);
   assert.match(header, /crumb\.textContent = placed; crumb\.hidden = !placed/);
   assert.doesNotMatch(header, /place\.replaceChildren\(home/);
