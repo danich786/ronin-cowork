@@ -23,7 +23,9 @@ becomes its level in full density, a level becomes its selected stone in compact
 the stone open at that level returns with it. Consumers never restyle the rest geometry.
 
 Trello view (`work.views`, `work-views-surface.js`) is the Cowork/Desk work-item card, over
-GET `/api/work-items` (every item with its holder), with no phalanx, organised as a Trello board: its top-left button names the view and switches
+the collection push (every board with its items by stage and their holders; owner 2026-10-09,
+one reading per tenant: wanted with `team` on a Team, `board` on the Board tenant, nothing on
+Cowork/Desk), with no phalanx, organised as a Trello board: its top-left button names the view and switches
 it. Status lays one fixed-width list per stage, grouping under an underlined subtitle per
 board that board's items (every descendant, `boardStages`) at that stage (one board alone has
 no subtitle: its items sit straight in the list); Board lays one
@@ -35,9 +37,9 @@ head and Add at the foot (the Add form, started in that list); Board view ends w
 (the Add form with New board chosen, held by the Team on a Team workbench). Board view puts
 Unfiled last, in its own accent shade. On a Team, Add with no board of its own to start on
 defaults to the Team's target board, read off `boards` and never stored: the oldest root the
-Team holds, else the oldest its lead holds, else Unfiled. Cowork/Desk read
-every item; a Team workbench draws the server's `?team=` reading `boards` (its boards and
-Unfiled) and filters nothing in the browser. In Board view an item card drags onto another
+Team holds, else the oldest its lead holds, else Unfiled. Cowork/Desk draw every board the
+reading gives; a Team workbench draws the reading wanted with its Team and filters nothing in
+the browser; a write shows itself when the reading is pushed again. In Board view an item card drags onto another
 board's list (one reparent call under that board; its children come with it) or onto empty
 row space (reparent to none: a root); on a Team workbench a root made that way is then
 assigned to the Team when it had no holder. In Status view an item card drags onto another
@@ -209,8 +211,8 @@ JSON in field order, trimmed, empties dropped, roots deduped. The server pushes 
 again to every connection holding that filter whenever an input moves; an absent campaign is
 the one machine campaign, and Teams, folders and boards outside it are left out. The browser
 requests, filters and joins nothing; no new file may name `/api/collection` or
-`/api/work-items` (`tests/tenant-frame.test.js`). The Trello view's Cowork/Desk card still
-requests `/api/work-items` on entry until its row is ordered.
+`/api/work-items` (`tests/tenant-frame.test.js`); Who, What, Where, the Work card, the Trello
+view and the board overlay all read the collection push.
 
 **Collections** (`collections`, param the campaign; the one machine campaign when absent):
 first open is Who in workspace 1 and workspace 2 dismissed. Its profile is Who, Where, New
