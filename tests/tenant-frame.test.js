@@ -64,10 +64,10 @@ test('the Team profile card belongs to team-next only', async () => {
 
 // Owner 2026-10-09: on team-next the Trello view and Work Items are one card, Work: one
 // surface, one header, two questions, both engines drawn in its body over the collection
-// reading. Owner 2026-10-09: the bar's place on every tenant of the frame is navigation —
-// Home, then 'Team: <name>' — drawn once in the frame from the tenant's name; the old
-// workbenches keep their editable tab name.
-test('team-next offers Work as one surface over both engines, and the place is Home then the tenant', async () => {
+// reading. Owner 2026-10-09: the LEFT breadcrumb on every tenant of the frame is navigation —
+// Home, then 'Team: <title>' — drawn once in the frame from the tenant's name; the island stays the editable tab name; the old
+// workbenches untouched.
+test('team-next offers Work as one surface over both engines, the left breadcrumb is Home then the tenant, and the island is the tab name', async () => {
   const [catalog, teamView, work, header, frame] = await Promise.all([source('workbench-catalog.js'), source('team-view.js'), source('work-surfaces.js'), source('workspace-header.js'), source('tenant-frame.js')]);
   assert.match(catalog, /WORKBENCH_PROFILES\.teamNext, \[[^\n]*WORKBENCH_TYPES\.teamWork/);
   assert.doesNotMatch(catalog, /WORKBENCH_PROFILES\.teamNext, \[[^\n]*WORKBENCH_TYPES\.workViews/);
@@ -81,6 +81,9 @@ test('team-next offers Work as one surface over both engines, and the place is H
   assert.doesNotMatch(work, /request\(|subscribeWorkItems/, 'the Work card reads the collection push only (owner, 2026-10-09)');
   assert.match(header, /const editable = Boolean\(active\?\.view\?\.tabName\) && !\(active\?\.id === 'team' && !active\.param\)/);
   assert.match(frame, /place: \(\) => \[name\(''\), param && name\(\)\]\.filter\(Boolean\)\.join\(': '\)/);
-  assert.doesNotMatch(frame, /tabName/);
-  assert.match(header, /active\?\.view\?\.place\)[\s\S]*className = 'ui-bar-nav'[\s\S]*t\('bar\.home', 'Home'\)[\s\S]*plainRoute\(root\)[\s\S]*active\.view\.place\(\)/);
+  assert.match(frame, /tabName: \{\n\s+get: \(\) => ctx\?\.viewState\(tenant\.key\)\?\.tabName \|\| name\(\)/);
+  assert.match(header, /word\.textContent = placed \? t\('bar\.home', 'Home'\) : brandWord/);
+  assert.match(header, /coworkers\.hidden = landing \|\| Boolean\(placed\)/);
+  assert.match(header, /crumb\.textContent = placed; crumb\.hidden = !placed/);
+  assert.doesNotMatch(header, /place\.replaceChildren\(home/);
 });

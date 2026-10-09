@@ -15,6 +15,7 @@ import { openWorkspaceTab } from './workspace.js';
 import { configurationGroup, openConfiguration } from './configuration-overlay.js';
 import { loadProjects, projectData } from './home.js';
 import { request } from './request.js';
+import { S } from './state.js';
 import { t } from './lexicon.js';
 import { WORKBENCH_PROFILES } from './workbench-catalog.js';
 
@@ -32,7 +33,7 @@ export function createWorkspaceView() {
     profile: WORKBENCH_PROFILES.workspace,
     glyph: '⌂',
     label: () => t('next.workspace', 'Workspace'),
-    name: (folder) => folder || t('next.workspace', 'Workspace'),
+    name: (folder) => (projectData || []).find((row) => row.name === folder)?.title || folder || t('next.workspace', 'Workspace'),
     homeCard: WORKSPACE_TEAMS_TYPE,
     firstOpen: () => ({ workspace1: WORKSPACE_TEAMS_TYPE, workspace2: WORKSPACE_DOCS_TYPE }),
     cards: (frame) => ({
@@ -61,6 +62,8 @@ export function createWorkspaceView() {
         return docsBySeat[seat];
       },
     }),
+    // The folder catalog names the title the breadcrumb and island read; a direct open loads it first.
+    enter: () => { void loadProjects().then(() => S.refreshWorkspaceHeader?.()); },
     destroy: () => { for (const surface of [...Object.values(bySeat), ...Object.values(docsBySeat)]) surface.destroy(); },
   });
 }

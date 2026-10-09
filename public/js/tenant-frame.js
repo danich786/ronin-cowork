@@ -41,7 +41,7 @@ const OPPOSITE = { workspace1: 'workspace2', workspace2: 'workspace1', workspace
  *   profile    the WORKBENCH_PROFILES word naming the cards it may place
  *   glyph      the bar glyph
  *   label()    the selector's title
- *   name(param) the tab title; name('') is the kind word (Team, Board, Workspace, Collections)
+ *   name(param) the title: the tab's, the island's default and the breadcrumb's; name('') is the kind word (Team, Board, Workspace, Collections)
  *   homeCard   the card Feedback returns to
  *   firstOpen(param)  the seats a fresh open gets
  *   cards(frame)      the environment entries its cards are made from
@@ -226,10 +226,18 @@ export function createTenantFrame(tenant) {
     glyph: tenant.glyph,
     ...workbenchView(tenant.key),
     arrangement: bench.arrangement,
-    title: ({ param: p }) => name(p || param),
-    // THE PLACE IS NAVIGATION, NOT A BREADCRUMB (owner, 2026-10-09): the kind word, then the
-    // name when the tenant has one — 'Team: Surface', 'Board: Release', 'Collections'. The
-    // header draws it after its Home link (workspace-header.js).
+    title: ({ param: p, viewState }) => {
+      const own = viewState?.(tenant.key)?.tabName;
+      return own ? { bare: own } : name(p || param);
+    },
+    tabName: {
+      get: () => ctx?.viewState(tenant.key)?.tabName || name(),
+      placeholder: () => name(),
+      set: (value) => { ctx?.patchViewState(tenant.key, { tabName: String(value || '').trim() }); },
+    },
+    // THE LEFT BREADCRUMB IS NAVIGATION (owner, 2026-10-09): after Home, the kind word, then
+    // the title when the tenant has one — 'Team: Front 2', 'Board: Release', 'Collections'.
+    // workspace-header.js draws it; the island stays the editable tab name.
     place: () => [name(''), param && name()].filter(Boolean).join(': '),
     placeFeedback: () => bench.place(WB_TYPES.feedback, bench.selected()),
     mount: (_host, context) => { ctx = context; },
@@ -252,7 +260,7 @@ export function createTenantFrame(tenant) {
       hearSessions?.();
       if (tenant.sessions) {
         // Tiles follow the live sessions and the rosters: a member arriving or leaving reseats.
-        const follow = () => { if (entered) { syncPools(); seatRemembered(); bench.refreshSelector(); } };
+        const follow = () => { if (entered) { syncPools(); seatRemembered(); bench.refreshSelector(); S.refreshWorkspaceHeader?.(); } };
         const stops = [store.subscribe('sessions', follow), store.subscribe('teams', follow)];
         hearSessions = () => { for (const stop of stops) stop(); };
       } else hearSessions = null;
