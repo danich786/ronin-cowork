@@ -67,7 +67,7 @@ which lifts it and lays that board's lists in a full overlay over Who (`board-ov
 owner 2026-10-08, one rule for every door: the board's title and Close at the head, under it
 the stage lists side by side, Idea to Done, each holding the board's items at that stage as
 cards with Add at the foot, a card dragged onto another list writing its stage — the Trello
-view's own `createLists`, repainted by the work-items push for that board); an item to its description, status and holder. The same read opens
+view's own `createLists`, repainted by the collection push wanted with that board); an item to its description, status and holder. The same read opens
 from the thin open's bars. The drags are a board onto another Team (`whoMove`:
 assign), an Agent onto another Team (`whoMove`: join, one write through
 `moveTeamMembership`, leaving the Team it was under; owner 2026-10-07) and the Add new question's stone (Board or Agent, a one-of-two beside Under each
@@ -227,9 +227,17 @@ the old Team tab until `team-next` stands.
 **Team** (`team-next`, param the Team; it takes the `team` word when it replaces the old
 Team) is `team-view.js` over the frame: the members' tiles with the lead pinned hot and
 seated on a first visit, the Commons as one self-painting surface (`team-commons-surface.js`,
-lifted from `cowork-view.js`), Team Chart, **Work** (`work-surfaces.js`: one card whose
-surface toggles between the Trello view and the Work Items board, each the existing surface
-unchanged; owner, 2026-10-07), the Team profile as a card, New Agent, and the composition
+lifted from `cowork-view.js`), Team Chart, **Work** (`work-surfaces.js`: one surface, one
+header; owner, 2026-10-09. Two questions at its head, as Who's: View, Trello view or Work
+Items, the two-answer flip; and Board, Who's Workspace question copied — a many-of over every
+board, from the unfiltered collection reading, answered at first with the Team's boards from
+the Team's collection reading and changeable to any, none is all. The body draws the chosen
+boards' items with the engines and no nested surface: `createLists` for the Trello view, its
+Status view, or `createItemsBoard`, the Work Items board's own drawing exported from
+`work-items-surface.js`, stones by stage with the drag that asks the holder to move an item.
+It reads the collection push only (one reading per tenant): unfiltered for the question's
+boards and the Team's own, and wanted with the chosen boards for the body — `board` is a
+list on the collection want — and requests nothing), the Team profile as a card, New Agent, and the composition
 reader the roster opens. Not yet on it: Mika's help, the arranger (`edges page`), Task
 Manager. Who's Launch opens this Team. On every tenant of the frame the bar's place is
 navigation, not a breadcrumb (owner, 2026-10-09): **Home**, a plain link to Ronin Home in

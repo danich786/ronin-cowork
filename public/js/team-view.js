@@ -18,8 +18,6 @@ import { loadProviderCatalog, mandateWord } from './form-steps.js';
 import { loadProjects, projectData } from './home.js';
 import { request } from './request.js';
 import { createTeamChartSurface } from './team-chart-surface.js';
-import { createWorkViewsSurface } from './work-views-surface.js';
-import { createWorkItemsSurface } from './work-items-surface.js';
 import { createWorkSurfaces } from './work-surfaces.js';
 import { createTeamProfile } from './team-profile.js';
 import { itemOverlay } from './work-details.js';
@@ -165,14 +163,7 @@ export function createTeamView() {
           onAddLead: (name) => newAgentAt(frame.opposite(seat), { team: name, teamLead: true }),
         }),
         work: (seat) => {
-          workBySeat[seat] ||= createWorkSurfaces({
-            trello: () => createWorkViewsSurface({ holderTeam, openTeam, team: team(), leadOf }),
-            workItems: () => createWorkItemsSurface({
-              scope: () => ({ kind: 'team', team: team() }),
-              lead: (project) => leadOf(project.team),
-              openOwner: openAgent,
-            }),
-          });
+          workBySeat[seat] ||= createWorkSurfaces({ team, holderTeam, openTeam, leadOf, openOwner: openAgent });
           return workBySeat[seat];
         },
         composition: (detail = {}) => createAgentCompositionSurface(detail.key),

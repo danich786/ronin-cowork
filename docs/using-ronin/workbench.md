@@ -35,7 +35,7 @@ not four layout systems.
 |---|---|
 | Campaign | Campaign settings and Campaign-level resources |
 | Teams collection | Teams, Agents, shared resources, and creation surfaces available in the selected Campaign context |
-| Team | that Team's Agents, Commons, Trello view, and launch surface |
+| Team | that Team's Agents, Commons, Work (the Trello view or the Work Items board over the boards you pick), and launch surface |
 | Agent | Self, Documents, Team membership, and separate Task Managers for the Agent's Teams |
 | Setup | pinned Presets plus Register, providers, roots, Services, gbrain, and Templates |
 | Collections (new) | Who: Your Teams; Where: Your Workspaces; **New**: choose Work item, Board, Agent or Team and its own form appears beneath — Add's form, the same form starting on New board, New Agent, New Team; What as it arrives. Reached from **Next** on Ronin Home, the temporary door to the new workbench while it is built beside the old one |

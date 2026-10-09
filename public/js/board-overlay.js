@@ -5,14 +5,16 @@
  * from. The overlay's head is the board's title and Close; under it the stage lists side by
  * side, Idea to Done, each holding that board's items at that stage as cards with Add at the
  * foot, and a card dragged onto another list writes its stage: the Trello view's own drawing
- * (`createLists`, work-views-surface.js), nothing else of that surface. The board's items
- * arrive by push (the work-items want by board) and repaint the lists; Close lifts the
- * overlay and the subscription with it. Nothing is placed in the opposite workspace.
+ * (`createLists`, work-views-surface.js), nothing else of that surface. The board arrives by
+ * push, the collection reading wanted with that board (owner, 2026-10-09: one reading, the
+ * collection's), and repaints the lists; Close lifts the overlay and the subscription with
+ * it. Nothing is placed in the opposite workspace.
  */
 import { el } from './form-steps.js';
 import { createLists } from './work-views-surface.js';
 import { fullOverlay } from './work-details.js';
-import { subscribeWorkItems } from './collection-reading.js';
+import { subscribeCollection } from './collection-reading.js';
+import { collectionBoards } from './work-readings.js';
 
 /** Lay the board's lists over `host`. `scope` is what the lists need: holderTeam, openTeam, leadOf. */
 export function openBoardOver(host, board, scope = {}) {
@@ -24,6 +26,6 @@ export function openBoardOver(host, board, scope = {}) {
     const root = el('div', 'wv');
     layer.append(head, root);
     const lists = createLists(root, { ...scope, boardId: () => board.id });
-    stop = subscribeWorkItems({ board: board.id }, (reading) => lists.paint('status', reading?.items || []));
+    stop = subscribeCollection({ board: board.id }, (reading) => lists.paint('status', collectionBoards(reading)));
   }, { closed: () => stop?.() });
 }
