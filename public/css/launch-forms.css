@@ -109,6 +109,11 @@
   .cph .sws-stone[data-cph-depth][aria-pressed='true'] { border-color: var(--kaki); }
   /* The Who head is one ask: Workspace, Under each Team, Add new — one gap, one height, one baseline. */
   .who-surface .ask-stone[data-ask-key='add'] { cursor: grab; }
+  /* The Work card (work-surfaces.js): the two questions at the head, the chosen engine's body under them. */
+  .work-surfaces .wk-surface-content { display: flex; flex-direction: column; gap: var(--space-5); min-height: 0; overflow: hidden; padding: var(--space-6) var(--space-11); box-sizing: border-box; }
+  .work-body { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; position: relative; }
+  .work-body > [hidden] { display: none; }
+  .work-body > .wv { flex: 1 1 auto; min-height: 0; height: auto; padding: 0; }
   /* The partial overlay: a small window inside the surface, hung off its anchor. */
   .cph-host { position: relative; }
   .cph-host > .work-overlay { overflow: auto; padding: var(--space-5) var(--space-6); box-sizing: border-box; }
