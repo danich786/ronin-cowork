@@ -41,7 +41,7 @@ const OPPOSITE = { workspace1: 'workspace2', workspace2: 'workspace1', workspace
  *   profile    the WORKBENCH_PROFILES word naming the cards it may place
  *   glyph      the bar glyph
  *   label()    the selector's title
- *   name(param) the bar name and tab title
+ *   name(param) the tab title; name('') is the kind word (Team, Board, Workspace, Collections)
  *   homeCard   the card Feedback returns to
  *   firstOpen(param)  the seats a fresh open gets
  *   cards(frame)      the environment entries its cards are made from
@@ -226,15 +226,11 @@ export function createTenantFrame(tenant) {
     glyph: tenant.glyph,
     ...workbenchView(tenant.key),
     arrangement: bench.arrangement,
-    title: ({ param: p, viewState }) => {
-      const own = viewState?.(tenant.key)?.tabName;
-      return own ? { bare: own } : name(p || param);
-    },
-    tabName: {
-      get: () => ctx?.viewState(tenant.key)?.tabName || name(),
-      placeholder: () => name(),
-      set: (value) => { ctx?.patchViewState(tenant.key, { tabName: String(value || '').trim() }); },
-    },
+    title: ({ param: p }) => name(p || param),
+    // THE PLACE IS NAVIGATION, NOT A BREADCRUMB (owner, 2026-10-09): the kind word, then the
+    // name when the tenant has one — 'Team: Surface', 'Board: Release', 'Collections'. The
+    // header draws it after its Home link (workspace-header.js).
+    place: () => [name(''), param && name()].filter(Boolean).join(': '),
     placeFeedback: () => bench.place(WB_TYPES.feedback, bench.selected()),
     mount: (_host, context) => { ctx = context; },
     enter: (context) => {

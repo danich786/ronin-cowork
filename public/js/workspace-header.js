@@ -43,8 +43,8 @@ export function installWorkspaceHeader(workspace) {
     }
     if (place) {
       // The island is the editable tab name for any view that offers one (`tabName`): the
-      // old Team, Teams and Desk, and every tenant on the tenant frame. A Team page with no
-      // Team named offers nothing to name.
+      // old Team, Teams and Desk. A Team page with no Team named offers nothing to name.
+      // The tenants on the frame offer `place` instead, below.
       const editable = Boolean(active?.view?.tabName) && !(active?.id === 'team' && !active.param);
       if (editable) {
         // ViewHost has already seated the existing tab-name input here. Leave it intact:
@@ -63,6 +63,20 @@ export function installWorkspaceHeader(workspace) {
         place.append(toggle);
       } else if (active?.id === 'launch') {
         place.textContent = t('campaign_home.launch', 'New Project');
+        place.title = '';
+      } else if (active?.view?.place) {
+        // THE TENANT FRAME'S PLACE: 'Home', the bar's plain link to Ronin Home, then where
+        // you are, in the frame's words (tenant-frame.js `place`; owner, 2026-10-09).
+        const home = document.createElement('a');
+        home.className = 'ui-bar-nav';
+        home.href = './';
+        home.textContent = t('bar.home', 'Home');
+        home.addEventListener('click', plainRoute(root));
+        const separator = document.createElement('span');
+        separator.className = 'ui-bar-separator';
+        separator.setAttribute('aria-hidden', 'true');
+        separator.textContent = ' • ';
+        place.replaceChildren(home, separator, document.createTextNode(active.view.place()));
         place.title = '';
       } else if (active?.view?.island) {
         place.textContent = typeof active.view.island === 'function'
