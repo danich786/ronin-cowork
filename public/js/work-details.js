@@ -10,7 +10,7 @@ import { WorkspaceKit } from './workspace-kit.js';
 import { createStep, el } from './form-steps.js';
 import { PROJECT_STAGES, itemLine } from './team-kanban.js';
 import { buildLadder } from './shingo.js';
-import { boardChoices, holderName } from './work-readings.js';
+import { holderName } from './work-readings.js';
 import { ask } from './ask.js';
 import { request } from './request.js';
 import { S } from './state.js';
@@ -116,12 +116,13 @@ export function itemOverlay(host, item, options = {}) {
   }, { ...options, assign });
 }
 
-/** Add's form as an overlay: Save makes the item, and is live once the item has a title. */
-export function draftOverlay(host, { stage = 'IDEA', parent = '', team = '', changed = () => {}, closed = () => {} } = {}) {
+/** Add's form as an overlay: Save makes the item, and is live once the item has a title.
+ *  `boards` are the boards the opening surface holds off its reading; the form reads nothing. */
+export function draftOverlay(host, { stage = 'IDEA', parent = '', team = '', boards = [], changed = () => {}, closed = () => {} } = {}) {
   let form = null;
   const save = { watch: (hear) => form.onDirty(hear), run: () => form.submit() };
   return overlay(host, (layer, actions) => {
-    form = draftItem(layer, { heading: t('work.draft', 'New item'), stage, parent, team, actions, save: async (fields) => {
+    form = draftItem(layer, { heading: t('work.draft', 'New item'), stage, parent, team, boards, actions, save: async (fields) => {
       const made = await request('/api/work-items', { method: 'POST', json: fields });
       if (!made.ok) return made.message;
       layer.remove();
@@ -150,9 +151,12 @@ export const NEW_BOARD = ' new board';
 
 /** Add's form: the kit's title and objective fields, then the item's status and the board it
  * goes under: an existing board, a new board of its own, or Unfiled (the default).
- * `stage` and `parent` are where Add was pressed; `team`, when given, holds the new item. Enter saves (Shift+Enter
- * is a new line in the objective). `save(fields)` answers a sentence when it failed. */
-export function draftItem(host, { heading, stage = 'IDEA', parent = '', team = '', save, actions = [] }) {
+ * `stage` and `parent` are where Add was pressed; `team`, when given, holds the new item;
+ * `boards` are the boards the opening surface holds off its collection reading (`{ id, title }`
+ * each) — the form subscribes to nothing and reads no route (owner, 2026-10-09: one reading
+ * per tenant). Enter saves (Shift+Enter is a new line in the objective). `save(fields)` answers
+ * a sentence when it failed. */
+export function draftItem(host, { heading, stage = 'IDEA', parent = '', team = '', boards = [], save, actions = [] }) {
   const { createField } = WorkspaceKit.primitives;
   const box = detailBox(host, { title: heading, actions });
   const title = el('input'); title.type = 'text';
@@ -161,19 +165,13 @@ export function draftItem(host, { heading, stage = 'IDEA', parent = '', team = '
   const objectiveField = createField({ label: t('work_nav.draft_objective', 'Objective'), control: objective });
   const picks = ask([{ fields: [
     { key: 'stage', label: t('work_nav.draft_stage', 'Status'), options: PROJECT_STAGES.map((row) => ({ v: row.key, l: row.label })) },
-    { key: 'parent', label: t('work_nav.draft_board', 'Board'), blank: t('work_nav.draft_unfiled', 'Unfiled'), options: [] },
-  ] }], { value: { stage, parent }, density: 'tight' });
-  // Unfiled (the blank, the default) is the store's own root of that name, so it is not
-  // offered twice; New board makes the item a root of its own.
-  void request('/api/work-items', { cache: 'no-store' }).then((read) => {
-    if (!read.ok) return;
-    const items = read.data.items || [];
-    const unfiled = items.find((item) => item.parent === null && item.title === 'Unfiled')?.id;
-    picks.options('parent', [
-      ...boardChoices(items, '').filter((row) => row.id !== unfiled).map((row) => ({ v: row.id, l: row.label })),
+    // Unfiled (the blank, the default) is the store's own root of that name, so it is not
+    // offered twice; New board makes the item a root of its own.
+    { key: 'parent', label: t('work_nav.draft_board', 'Board'), blank: t('work_nav.draft_unfiled', 'Unfiled'), options: [
+      ...boards.filter((board) => board.title !== 'Unfiled').map((board) => ({ v: board.id, l: board.title })),
       { v: NEW_BOARD, l: t('work_nav.draft_new_board', 'New board') },
-    ]);
-  });
+    ] },
+  ] }], { value: { stage, parent }, density: 'tight' });
   const submit = async () => {
     if (!title.value.trim()) { title.focus(); return; }
     titleField.setValidation('', '');

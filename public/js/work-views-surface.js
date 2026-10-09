@@ -106,7 +106,7 @@ export function createLists(root, { holderTeam = () => '', openTeam = () => {}, 
     const column = el('section', 'wv-list');
     if (context.parent && context.parent === unfiledId()) column.dataset.unfiled = '';
     const add = press('wv-add', [el('i', 'wv-add-mark', '+'), el('span', null, t('work_views.add', 'Add a work item'))],
-      () => { lift(); draftOverlay(root, { ...context, parent: context.parent || target(), changed }); });
+      () => { lift(); draftOverlay(root, { ...context, parent: context.parent || target(), boards: boards.map((entry) => entry.board), changed }); });
     column.append(press('wv-list-head', [el('span', 'wv-label', label), el('span', 'wv-count', String(n))], action), ...groups, add);
     // An item dropped on another list: in Board view it moves under that board; in Status view its stage is written.
     column.addEventListener('dragover', (event) => { event.preventDefault(); column.classList.add('over'); });
@@ -183,7 +183,7 @@ export function createLists(root, { holderTeam = () => '', openTeam = () => {}, 
       entry.stages.map((row) => group(stageName(row.stage), row.items, () => openStatus(row.stage, entry.board, row.items))), { parent: entry.board.id })),
     // Add board, after the last board: the Add form with New board chosen, held by this Team on a Team's workbench. One board has no Add board.
     ...(boardId() ? [] : [press('wv-add-board', [el('i', 'wv-add-mark', '+'), el('span', null, t('work_views.add_board', 'Add board'))],
-      () => { lift(); draftOverlay(root, { parent: NEW_BOARD, team, changed }); })]));
+      () => { lift(); draftOverlay(root, { parent: NEW_BOARD, team, boards: boards.map((entry) => entry.board), changed }); })]));
     return boards;
   };
   return { paint };

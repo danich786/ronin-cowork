@@ -215,7 +215,9 @@ routes on entry until their rows are ordered.
 first open is Who in workspace 1 and workspace 2 dismissed. Its profile is Who, Where, New
 (`collection.new`, `collection-new.js`: one ask.js question, the kind, mounting the existing
 form for it — `draftItem`, `draftItem` on New board, the embedded New Agent and New Team as
-Setup's Launch your own mounts them), Document and Feedback; the Trello view is never a card here
+Setup's Launch your own mounts them; Add's form takes the boards the opening surface holds
+off its collection reading, `boards`, and reads no route: owner, 2026-10-09, one reading per
+tenant), Document and Feedback; the Trello view is never a card here
 (a board's Open lays the board's lists over the door, `board-overlay.js`). **Where**
 (`where-surface.js`, type `collection.where`) reads the unfiltered collection push: folder
 stones, and under each its Teams or its boards (a one-of-two question, as Who's); a folder
