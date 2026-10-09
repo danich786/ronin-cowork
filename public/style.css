@@ -489,6 +489,8 @@ body {
   text-align: center;
 }
 .ui-bar-place-toggle { cursor: pointer; }
+.ui-bar-place .ui-bar-nav { color: inherit; font-size: inherit; }
+.ui-bar-place .ui-bar-nav:hover { color: inherit; text-decoration: underline; }
 .ui-bar-place-toggle:focus-visible,
 .ui-bar-place .wk-tab-name:focus-visible {
   outline: var(--edge-2) solid currentColor;

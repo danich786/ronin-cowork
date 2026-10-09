@@ -63,10 +63,11 @@ test('the Team profile card belongs to team-next only', async () => {
 });
 
 // Owner 2026-10-07: on team-next the Trello view and Work Items are one card, Work, with a
-// toggle between the two existing surfaces; and the island is the tab name for any view
-// that offers one, so the tenants on the frame have it as the old Team does.
-test('team-next offers Work as one card over both existing surfaces, and the island follows tabName', async () => {
-  const [catalog, teamView, work, header] = await Promise.all([source('workbench-catalog.js'), source('team-view.js'), source('work-surfaces.js'), source('workspace-header.js')]);
+// toggle between the two existing surfaces. Owner 2026-10-09: the bar's place on every tenant
+// of the frame is navigation — Home, then 'Team: <name>' — drawn once in the frame from the
+// tenant's name; the old workbenches keep their editable tab name.
+test('team-next offers Work as one card over both existing surfaces, and the place is Home then the tenant', async () => {
+  const [catalog, teamView, work, header, frame] = await Promise.all([source('workbench-catalog.js'), source('team-view.js'), source('work-surfaces.js'), source('workspace-header.js'), source('tenant-frame.js')]);
   assert.match(catalog, /WORKBENCH_PROFILES\.teamNext, \[[^\n]*WORKBENCH_TYPES\.teamWork/);
   assert.doesNotMatch(catalog, /WORKBENCH_PROFILES\.teamNext, \[[^\n]*WORKBENCH_TYPES\.workViews/);
   assert.match(teamView, /createWorkSurfaces\(\{/);
@@ -74,4 +75,7 @@ test('team-next offers Work as one card over both existing surfaces, and the isl
   assert.match(teamView, /workItems: \(\) => createWorkItemsSurface\(/);
   assert.match(work, /ask\(\[\{ fields: \[\{ key: 'layer'/);
   assert.match(header, /const editable = Boolean\(active\?\.view\?\.tabName\) && !\(active\?\.id === 'team' && !active\.param\)/);
+  assert.match(frame, /place: \(\) => \[name\(''\), param && name\(\)\]\.filter\(Boolean\)\.join\(': '\)/);
+  assert.doesNotMatch(frame, /tabName/);
+  assert.match(header, /active\?\.view\?\.place\)[\s\S]*className = 'ui-bar-nav'[\s\S]*t\('bar\.home', 'Home'\)[\s\S]*plainRoute\(root\)[\s\S]*active\.view\.place\(\)/);
 });
