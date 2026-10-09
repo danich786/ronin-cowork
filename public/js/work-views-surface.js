@@ -28,7 +28,7 @@ import { PROJECT_STAGES } from './team-kanban.js';
 import { NEW_BOARD, draftOverlay, itemOverlay, listOverlay } from './work-details.js';
 import { request } from './request.js';
 import { carryItem } from './team-drag.js';
-import { readingKey, subscribeWorkItems } from './collection-reading.js';
+import { readingKey, subscribeCollection } from './collection-reading.js';
 import { boardStages, holderName } from './work-readings.js';
 import { t } from './lexicon.js';
 
@@ -192,8 +192,9 @@ export function createLists(root, { holderTeam = () => '', openTeam = () => {}, 
 /** `holderTeam(holder)` names the Team a holder works in; `openTeam(team)` opens its workbench;
  * `team`, on a Team's workbench, reads that Team's boards from the server and holds new boards;
  * `leadOf(team)` names its lead, whose board is the Team's second choice for Add. `board`, on
- * the Board tenant (a board id, or a function naming it), draws that one board: its reading
- * arrives by push (the work-items want by board; owner, 2026-10-07), Add starts on it, and
+* the Board tenant (a board id, or a function naming it), draws that one board: its reading
+ * arrives by push (the collection reading, board=[id]: `boards[].stages` carries the items
+ * with their holders; owner, 2026-10-09, one reading per tenant), Add starts on it, and
  * there is no Add board. `onRead(boards)` hears each reading, for the tenant's bar name. */
 export function createWorkViewsSurface({ holderTeam = () => '', openTeam = () => {}, team = '', leadOf = () => '', board = '', onRead = () => {} } = {}) {
   const { createSurface, createAction } = WorkspaceKit.primitives;
@@ -216,16 +217,17 @@ export function createWorkViewsSurface({ holderTeam = () => '', openTeam = () =>
     return lists.paint(view, items);
   };
 
-  // One board hears its reading from the store (the root and every item under it) and
-  // repaints on each push; a changed board id resubscribes. A write needs no re-read.
+  // One board hears its collection reading from the store and repaints on each push; a
+  // changed board id resubscribes. A write needs no re-read. The reading's board is the
+  // root with its items staged under it; the lists take the root and its items as one list.
   let stop = null, heard = '';
   const listen = () => {
     const id = boardId();
-    const key = readingKey('work-items', { board: id });
+    const key = readingKey('collection', { board: id });
     if (stop && key === heard) return;
     stop?.(); heard = key;
-    stop = subscribeWorkItems({ board: id }, (reading) => {
-      items = reading?.items || [];
+    stop = subscribeCollection({ board: id }, (reading) => {
+      items = (reading?.boards || []).flatMap((board) => [board, ...board.stages.flatMap((stage) => stage.items)]);
       onRead(paint());
     });
   };
