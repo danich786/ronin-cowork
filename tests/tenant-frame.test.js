@@ -25,6 +25,7 @@ test('a reading key is the server spelling of its filter', () => {
   assert.equal(readingKey('collection', { root: ['b', 'a', 'b', ''], team: ' surface ', campaign: 'c 1', agent: 'x' }), 'collection:{"campaign":"c 1","team":"surface","root":["b","a"]}');
   assert.equal(readingKey('collection', { stage: ['DONE', ' BUILD', 'DONE', ''], root: ['a'] }), 'collection:{"root":["a"],"stage":["DONE","BUILD"]}', 'stage rides after root, normalised as root is (surface_push, 2026-10-08)');
   assert.equal(readingKey('collection', { board: ' w3 ', root: 'one' }), 'collection:{"board":["w3"],"root":["one"]}', 'a collection board is a list, as root is (surface_push, 2026-10-09)');
+  assert.equal(readingKey('collection', { board: ['w2', ' w1', 'w2', ''] }), 'collection:{"board":["w2","w1"]}');
   assert.equal(readingKey('work-items', { board: 'w1', team: 'surface' }), 'work-items:{"team":"surface","board":"w1"}');
 });
 
@@ -61,18 +62,23 @@ test('the Team profile card belongs to team-next only', async () => {
   assert.doesNotMatch(catalog, /WORKBENCH_PROFILES\.(cowork|desk|team|agent), \[[^\n]*teamProfile/);
 });
 
-// Owner 2026-10-07: on team-next the Trello view and Work Items are one card, Work, with a
-// toggle between the two existing surfaces. Owner 2026-10-09: the bar's place on every tenant
-// of the frame is navigation — Home, then 'Team: <name>' — drawn once in the frame from the
-// tenant's name; the old workbenches keep their editable tab name.
-test('team-next offers Work as one card over both existing surfaces, and the place is Home then the tenant', async () => {
+// Owner 2026-10-09: on team-next the Trello view and Work Items are one card, Work: one
+// surface, one header, two questions, both engines drawn in its body over the collection
+// reading. Owner 2026-10-09: the bar's place on every tenant of the frame is navigation —
+// Home, then 'Team: <name>' — drawn once in the frame from the tenant's name; the old
+// workbenches keep their editable tab name.
+test('team-next offers Work as one surface over both engines, and the place is Home then the tenant', async () => {
   const [catalog, teamView, work, header, frame] = await Promise.all([source('workbench-catalog.js'), source('team-view.js'), source('work-surfaces.js'), source('workspace-header.js'), source('tenant-frame.js')]);
   assert.match(catalog, /WORKBENCH_PROFILES\.teamNext, \[[^\n]*WORKBENCH_TYPES\.teamWork/);
   assert.doesNotMatch(catalog, /WORKBENCH_PROFILES\.teamNext, \[[^\n]*WORKBENCH_TYPES\.workViews/);
-  assert.match(teamView, /createWorkSurfaces\(\{/);
-  assert.match(teamView, /trello: \(\) => createWorkViewsSurface\(/);
-  assert.match(teamView, /workItems: \(\) => createWorkItemsSurface\(/);
-  assert.match(work, /ask\(\[\{ fields: \[\{ key: 'layer'/);
+  assert.match(teamView, /createWorkSurfaces\(\{ team, holderTeam, openTeam, leadOf, openOwner: openAgent \}\)/);
+  assert.doesNotMatch(teamView, /createWorkViewsSurface|createWorkItemsSurface/, 'no surface nests in the Work card (owner, 2026-10-09)');
+  assert.match(work, /key: 'view'/);
+  assert.match(work, /key: 'board', label: t\('collection\.board', 'Board'\), blank: t\('collection\.all', 'All'\), many: true/, "the Board question is Who's Workspace question");
+  assert.match(work, /createLists\(trello/);
+  assert.match(work, /createItemsBoard\(\{ lead/);
+  assert.match(work, /subscribeCollection\(\{ board: chosen \}/);
+  assert.doesNotMatch(work, /request\(|subscribeWorkItems/, 'the Work card reads the collection push only (owner, 2026-10-09)');
   assert.match(header, /const editable = Boolean\(active\?\.view\?\.tabName\) && !\(active\?\.id === 'team' && !active\.param\)/);
   assert.match(frame, /place: \(\) => \[name\(''\), param && name\(\)\]\.filter\(Boolean\)\.join\(': '\)/);
   assert.doesNotMatch(frame, /tabName/);

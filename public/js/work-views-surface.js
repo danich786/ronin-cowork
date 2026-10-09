@@ -29,7 +29,7 @@ import { NEW_BOARD, draftOverlay, itemOverlay, listOverlay } from './work-detail
 import { request } from './request.js';
 import { carryItem } from './team-drag.js';
 import { readingKey, subscribeCollection } from './collection-reading.js';
-import { boardStages, holderName } from './work-readings.js';
+import { boardStages, collectionBoards, holderName } from './work-readings.js';
 import { t } from './lexicon.js';
 
 export const WORK_VIEWS_TYPE = 'work.views';
@@ -40,8 +40,8 @@ const stageName = (key) => PROJECT_STAGES.find((stage) => stage.key === key)?.la
 /**
  * THE LISTS — cards, groups and lists drawn into `root` (a `.wv` box; the row of lists is
  * appended to it), the drag between lists, and the overlays laid over `root`. `paint(view,
- * items)` draws the items (every board with every item under it) in Status or Board view and
- * returns the boards it drew. `holderTeam(holder)` names the Team a holder works in;
+ * boards)` draws the boards — `boardStages`'s shape, { board, stages, size }, as `boardStages`
+ * makes it from items or `collectionBoards` from a collection reading — in Status or Board view. `holderTeam(holder)` names the Team a holder works in;
  * `openTeam(team)` opens its workbench; `team`, on a Team's workbench, holds a board dragged
  * onto empty space; `leadOf(team)` names its lead, whose board is the Team's second choice for
  * Add; `boardId()` names the one board drawn, when one is: Add starts on it and there is no
@@ -163,9 +163,9 @@ export function createLists(root, { holderTeam = () => '', openTeam = () => {}, 
   /** Board view: Unfiled at the far right, every other board in store order left of it. */
   const unfiledLast = (rows) => [...rows.filter((entry) => entry.board.id !== unfiledId()), ...rows.filter((entry) => entry.board.id === unfiledId())];
 
-  const paint = (next, items) => {
+  const paint = (next, rows) => {
     view = next;
-    boards = boardStages(items, STAGE_KEYS);
+    boards = rows;
     lift();
     root.dataset.view = view;
     row.scrollLeft = 0;
@@ -184,7 +184,6 @@ export function createLists(root, { holderTeam = () => '', openTeam = () => {}, 
     // Add board, after the last board: the Add form with New board chosen, held by this Team on a Team's workbench. One board has no Add board.
     ...(boardId() ? [] : [press('wv-add-board', [el('i', 'wv-add-mark', '+'), el('span', null, t('work_views.add_board', 'Add board'))],
       () => { lift(); draftOverlay(root, { parent: NEW_BOARD, team, boards: boards.map((entry) => entry.board), changed }); })]));
-    return boards;
   };
   return { paint };
 }
@@ -199,7 +198,7 @@ export function createLists(root, { holderTeam = () => '', openTeam = () => {}, 
 export function createWorkViewsSurface({ holderTeam = () => '', openTeam = () => {}, team = '', leadOf = () => '', board = '', onRead = () => {} } = {}) {
   const { createSurface, createAction } = WorkspaceKit.primitives;
   let view = 'status';
-  let items = [];
+  let boards = [];
   const surface = createSurface({ label: t('work_views.title', 'Trello view'), className: 'work-views-surface' });
   const root = el('div', 'wv');
   const toggle = createAction({ size: 'compact', className: 'wv-toggle', action: () => { view = view === 'status' ? 'board' : 'status'; paint(); } });
@@ -214,12 +213,12 @@ export function createWorkViewsSurface({ holderTeam = () => '', openTeam = () =>
   const paint = () => {
     toggle.el.textContent = t('work_views.view_by', 'View by: {view}', { view: view === 'status' ? t('work_views.status', 'Status') : t('work_views.board', 'Board') });
     toggle.el.title = view === 'status' ? t('work_views.to_board', 'Showing Status. Press for Board.') : t('work_views.to_status', 'Showing Board. Press for Status.');
-    return lists.paint(view, items);
+    lists.paint(view, boards);
   };
 
   // One board hears its collection reading from the store and repaints on each push; a
-  // changed board id resubscribes. A write needs no re-read. The reading's board is the
-  // root with its items staged under it; the lists take the root and its items as one list.
+  // changed board id resubscribes. A write needs no re-read. The reading's boards are the
+  // lists' shape through `collectionBoards`.
   let stop = null, heard = '';
   const listen = () => {
     const id = boardId();
@@ -227,8 +226,9 @@ export function createWorkViewsSurface({ holderTeam = () => '', openTeam = () =>
     if (stop && key === heard) return;
     stop?.(); heard = key;
     stop = subscribeCollection({ board: id }, (reading) => {
-      items = (reading?.boards || []).flatMap((board) => [board, ...board.stages.flatMap((stage) => stage.items)]);
-      onRead(paint());
+      boards = collectionBoards(reading);
+      paint();
+      onRead(boards);
     });
   };
   async function refresh() {
@@ -236,7 +236,7 @@ export function createWorkViewsSurface({ holderTeam = () => '', openTeam = () =>
     // A Team reads its boards from the server (its team reading's `boards`); Cowork/Desk read every item.
     const read = await request(team ? `/api/work-items?team=${encodeURIComponent(team)}` : '/api/work-items', { cache: 'no-store' });
     if (!read.ok) return;
-    items = (team ? read.data.boards : read.data.items) || [];
+    boards = boardStages((team ? read.data.boards : read.data.items) || [], STAGE_KEYS);
     paint();
   }
   paint();
