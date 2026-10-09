@@ -29,6 +29,11 @@ export const holderName = (holder) => String(holder || '').replace(/^(agent|team
 
 /** Every board with its items (every descendant) by stage, in the order `stages` gives,
  * keeping only the stages it has items at: { board, stages: [{ stage, items }], size }. */
+/** The collection reading's boards (`boards[]`, each the board item with its `stages`) in the
+ * shape the Trello view's lists draw (`boardStages`'s): { board, stages, size }. */
+export const collectionBoards = (reading) => (reading?.boards || []).map((row) => ({
+  board: row, stages: row.stages || [], size: (row.stages || []).reduce((sum, stage) => sum + stage.items.length, 0),
+}));
 export const boardStages = (items, stages) => boardTree(items).map((root) => {
   const under = [];
   const walk = (branch) => { for (const child of branch.items) { under.push(child.item); walk(child); } };

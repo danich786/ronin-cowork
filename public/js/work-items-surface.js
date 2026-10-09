@@ -1,4 +1,7 @@
-/* Work Items: Project stones and their reading inside the standard Phalanx. */
+/* Work Items: Project stones and their reading inside the standard Phalanx. The board itself
+ * (stones by stage, a stone's reading, a drag onto another stage asking the holder to move it)
+ * is `createItemsBoard`, exported: this surface draws with it over its own request, and the
+ * Team's Work card (work-surfaces.js) draws with it over the work-items push. One drawing. */
 import { WorkspaceKit } from './workspace-kit.js';
 import { carryItem } from './team-drag.js';
 import { createPhalanx } from './phalanx.js';
@@ -13,18 +16,14 @@ const el = (tag, cls = '', text = '') => {
   const out = document.createElement(tag); out.className = cls; out.textContent = text; return out;
 };
 
-export function createWorkItemsSurface(options = {}) {
-  const { createSurface, createAction, createActionBar } = WorkspaceKit.primitives;
-  let projects = [], entered = false, read = null, full = false;
+/** THE BOARD, drawn into `host`: the stones by stage in the grouped Phalanx, a notice line
+ * under it, `paint(projects)` the normalised projects (projectsForScope). `lead(project)` names
+ * the lead to ask when the Team holds it; `openOwner(name)` opens the holder. */
+export function createItemsBoard(host, options = {}) {
+  const { createAction, createActionBar } = WorkspaceKit.primitives;
+  let projects = [];
   const asked = new Map();
   const holder = (project) => holderOf(project, options.lead?.(project) || '');
-  const refreshAction = createAction({ label: t('work_items.refresh', 'Refresh Work Items'), action: () => void refresh() });
-  const density = createAction({ label: t('work_items.details', 'Show stone details'), selected: false, action: () => {
-    full = !full;
-    density.el.setAttribute('aria-pressed', String(full));
-    phalanx.setDensity(full ? 'full' : 'compact');
-  } });
-  const surface = createSurface({ label: t('work_items.title', 'Work Items'), className: 'work-items-surface', actions: [refreshAction, density] });
   const notice = el('p', 'wi-notice'); notice.setAttribute('role', 'status');
 
   const clearDrag = () => {
@@ -66,7 +65,7 @@ export function createWorkItemsSurface(options = {}) {
       label: t('team_kanban.open_owner', 'Open @{name}', { name: owner }), action: () => options.openOwner?.(owner),
     })] }).el);
   } });
-  phalanx.mount(surface.content, { after: [notice] });
+  phalanx.mount(host, { after: [notice] });
   const paint = () => phalanx.setItems(projects.map((project) => {
     const pending = asked.get(project.id);
     if (pending && pending.stage !== project.stage) asked.delete(project.id);
@@ -91,6 +90,26 @@ export function createWorkItemsSurface(options = {}) {
       },
     };
   }));
+  return {
+    notice,
+    paint: (rows) => { projects = rows; paint(); },
+    setDensity: (density) => phalanx.setDensity(density),
+    destroy: () => phalanx.destroy(),
+  };
+}
+
+export function createWorkItemsSurface(options = {}) {
+  const { createSurface, createAction } = WorkspaceKit.primitives;
+  let entered = false, read = null, full = false;
+  const refreshAction = createAction({ label: t('work_items.refresh', 'Refresh Work Items'), action: () => void refresh() });
+  const density = createAction({ label: t('work_items.details', 'Show stone details'), selected: false, action: () => {
+    full = !full;
+    density.el.setAttribute('aria-pressed', String(full));
+    board.setDensity(full ? 'full' : 'compact');
+  } });
+  const surface = createSurface({ label: t('work_items.title', 'Work Items'), className: 'work-items-surface', actions: [refreshAction, density] });
+  const board = createItemsBoard(surface.content, options);
+  const { notice } = board;
   async function refresh() {
     read?.abort();
     const controller = new AbortController(); read = controller;
@@ -105,15 +124,15 @@ export function createWorkItemsSurface(options = {}) {
       notice.textContent = t('work_items.failed', 'Could not load Work Items.'); return;
     }
     const availability = kanbanAvailability(installed.data);
-    if (!availability.available) { projects = []; paint(); notice.textContent = availability.message; return; }
-    projects = projectsForScope(results.flatMap((result, index) => (result.data.items || []).map((project) => ({ ...project, team: result.data.team || scope.teams[index] }))), scope);
-    paint(); notice.textContent = '';
+    if (!availability.available) { board.paint([]); notice.textContent = availability.message; return; }
+    board.paint(projectsForScope(results.flatMap((result, index) => (result.data.items || []).map((project) => ({ ...project, team: result.data.team || scope.teams[index] }))), scope));
+    notice.textContent = '';
   }
   const stop = subscribe(() => { if (entered) void refresh(); });
   return {
     el: surface.el,
     show: () => { entered = true; void refresh(); },
     leave: () => { entered = false; read?.abort(); },
-    destroy: () => { entered = false; read?.abort(); stop(); phalanx.destroy(); },
+    destroy: () => { entered = false; read?.abort(); stop(); board.destroy(); },
   };
 }
