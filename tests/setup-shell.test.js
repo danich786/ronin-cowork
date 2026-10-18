@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { setupDefaultView } from '../public/js/campaign-home.js';
+import { setupDefaultView } from '../public/js/campaigns.js';
 import { workspaceHeaderAppearance } from '../public/js/workspace-header.js';
 
 const source = async (path) => readFile(new URL(`../public/${path}`, import.meta.url), 'utf8');
@@ -14,21 +14,18 @@ test('Ronin Home routes the Machine door from persisted Campaign Setup answers',
   } } } }), 'campaign');
 });
 
-test('Ronin Home opens Desk as its operational tenant while Team and Agent use the collection chooser', async () => {
+test('Ronin Home has three doors — Models, Workspaces, Teams — each a full overlay over Home (owner, 2026-10-18)', async () => {
   const home = await source('js/campaign-home.js');
   assert.match(home, /Ronin Home/);
-  assert.match(home, /campaign_home\.desk', 'Desk'/);
-  assert.match(home, /campaign_home\.team', 'Team'/);
-  assert.match(home, /campaign_home\.agent', 'Agent'/);
+  assert.match(home, /key: 'models'[^\n]*'Models'/);
+  assert.match(home, /key: 'workspaces'[^\n]*'Workspaces'/);
+  assert.match(home, /key: 'teams'[^\n]*'Teams'/);
   assert.match(home, /campaign_home\.settings', 'Settings'/);
-  assert.match(home, /key: 'desk', route: 'desk'/);
-  assert.match(home, /key: 'team', route: 'cowork'/);
-  assert.match(home, /key: 'agent', route: 'cowork'/);
-  assert.doesNotMatch(home, /data-door=['"]campaign/);
-  assert.match(home, /request\('\/api\/setup\/runtime'/);
-  assert.match(home, /activatedCount < 1/);
-  assert.match(home, /aria-disabled/);
-  assert.match(home, /Activate one model provider in Machine Setup/);
+  assert.match(home, /models: \(\) => lay\([^\n]*createProviderSurface\(/, 'Models is the Model Providers surface, reused');
+  assert.match(home, /workspaces: \(\) => lay\([^\n]*createWorkspaceFoldersSurface\(/, 'Workspaces is the Workspace Folders surface, reused');
+  assert.match(home, /teams: \(\) => openTeamsOver\(root\)/, "Teams is collection_view's overlay over Home's element");
+  assert.match(home, /fullOverlay\(root, \(layer, through\)/);
+  assert.doesNotMatch(home, /api\/setup\/runtime|data-unavailable|workbenchLaunchUrl/, 'no provider gate, no navigation out of Home');
 });
 
 test('Ronin Home and Setup share the same persisted light and dark control', async () => {

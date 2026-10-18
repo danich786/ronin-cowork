@@ -140,6 +140,14 @@ status as its own reads return.
 6. Async enrichment must not discard edits made after the first paint. Generation or
    ownership checks prevent stale responses from repainting replaced surfaces.
 
+**Ronin Home** (`campaign-home.js`; owner, 2026-10-18) has three doors — **Models**,
+**Workspaces**, **Teams** — each a full overlay over Home (`fullOverlay`, `work-details.js`;
+the layer fills `main.ch-view`): a gateway to edit or to enter, never a destination of its own.
+Models lays the Model Providers surface (`provider-surface.js`) and Workspaces the Workspace
+Folders surface (`workspace-folders-surface.js`), each exactly as Settings seats it, destroyed
+with the layer; Teams calls `openTeamsOver(host)` from `teams-overlay.js`, which lays the
+Teams stones over Home and, from a stone, launches the Team page in a new tab.
+
 Campaign Defaults is the reference case. Its saved values are already in
 `campaign.config.defaults`, so it paints them immediately. Model choices come from the
 provider catalog and selectable Behaviors come from `/api/campaign-default-options`.
