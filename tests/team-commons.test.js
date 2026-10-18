@@ -31,10 +31,10 @@ test('Task Manager stays a registered standalone surface; the Team selector no l
   assert.match(view, /workspace\.tab_task_manager', 'Task Manager'/);
 });
 
-test('Roster remains a roster while Team Chart is a standalone Phalanx surface', async () => {
-  const [view, members, retirement, css, workbench, coworkRoster, composition, catalog, chart, phalanx, kotoba] = await Promise.all([
+test('Roster remains a roster; the Team page selector is Commons, Agents, New Agent (owner, 2026-10-18)', async () => {
+  const [view, members, retirement, css, workbench, coworkRoster, composition, catalog, phalanx, kotoba] = await Promise.all([
     source('public/js/cowork-view.js'), source('public/js/team-members.js'), source('public/js/session-retire.js'), source('public/css/team-workspace.css'), source('public/js/workbench.js'), source('public/js/team-roster-surface.js'),
-    source('public/js/agent-composition.js'), source('public/js/workbench-catalog.js'), source('public/js/team-chart-surface.js'), source('public/js/phalanx.js'), source('KOTOBA.md'),
+    source('public/js/agent-composition.js'), source('public/js/workbench-catalog.js'), source('public/js/phalanx.js'), source('KOTOBA.md'),
   ]);
   assert.match(view, /workspace1: 'workspace2', workspace2: 'workspace1', workspace3: 'workspace4', workspace4: 'workspace3'/);
   assert.match(view, /openOwner: \(name\) => arrange\(\{ \[oppositeSeat\(id\)\]: \{ session: name \} \}\)/);
@@ -60,7 +60,6 @@ test('Roster remains a roster while Team Chart is a standalone Phalanx surface',
   assert.match(members, /let density = 'compact', selected/);
   assert.doesNotMatch(members, /orgButton|org_reading/, 'Roster does not privately retain the chart reading');
   assert.match(members, /options\.onSelect\?\.\(member\)/);
-  assert.doesNotMatch(chart, /onSelect|Agent details/, 'Team Chart selection stays inside its Phalanx detail');
   assert.match(catalog, /agentComposition: AGENT_COMPOSITION_TYPE/);
   assert.match(catalog, /WORKBENCH_PROFILES\.team[^\n]*WORKBENCH_TYPES\.agentComposition/);
   assert.match(composition, /\/api\/sessions\/\$\{encodeURIComponent\(agent\)\}\/composition/);
@@ -73,23 +72,8 @@ test('Roster remains a roster while Team Chart is a standalone Phalanx surface',
   assert.match(view, /onAddLead: \(\) => bench\.place\(WB_TYPES\.newAgent, oppositeSeat\(id\), \{[\s\S]*teamLead: true/);
   assert.match(await source('public/js/new-agent.js'), /if \(detail\?\.teamLead === true\) draft\.teamLead = true/);
   assert.doesNotMatch(coworkRoster, /org_reading|buildTeamMembers/);
-  assert.match(chart, /export const TEAM_CHART_TYPE = 'team\.chart'/);
-  assert.match(chart, /createPhalanx\(/);
-  assert.match(chart, /createAgentCompositionReader\(member\.name/);
-  assert.match(chart, /host\.append\(profile\.el\)/);
-  assert.match(chart, /return profile\.destroy/);
-  assert.match(chart, /group: t\('league\.team_lead', 'Team Lead'\)/);
-  assert.match(chart, /group: t\('league\.agents', 'Agents'\)/);
-  assert.match(chart, /onAddLead\?\.\(teamName\(\)\)/);
   assert.match(phalanx, /export function createPhalanx/);
   assert.match(kotoba, /\| Phalanx \| A shared collection surface:/);
-  assert.match(catalog, /teamChart: TEAM_CHART_TYPE/);
-  assert.match(catalog, /discover: \(_t, environment\) => environment\.chartTeams\(\)/);
-  assert.doesNotMatch(catalog, /WORKBENCH_PROFILES\.cowork[^\n]*WORKBENCH_TYPES\.teamChart/, 'Team Chart stays out of the Cowork selector (c5015105)');
-  assert.match(catalog, /WORKBENCH_PROFILES\.team[^\n]*WORKBENCH_TYPES\.teamChart/);
-  assert.match(view, /chartTeams: \(\) => !campaign && team[\s\S]*Team Chart/, 'only a Team page discovers its own chart');
-  assert.match(view, /teamChart: \(id, detail = \{\}\) => createTeamChartSurface/);
-  assert.match(view, /team: \(\) => detail\.key \|\| team/);
   assert.match(members, /if \(reading\.description\) detail\.append/);
   assert.match(view, /campaign \? \{ action: \(\) => openAgentWorkbench\(member\.name\) \} : \{\}/, 'Team selector cards keep their default placement action');
   // Owner 2026-09-28: one reading of Teams. A pressed stone opens the Team profile inside the
@@ -99,6 +83,9 @@ test('Roster remains a roster while Team Chart is a standalone Phalanx surface',
   assert.match(view, /createTeamRosterSurface\(\{\s*teamDetail: \(name\) => leagueTeamDetail\(name, id\)/);
   assert.doesNotMatch(view, /gear/);
   assert.match(catalog, /type: WORKBENCH_TYPES\.team, header: 'surface', discover: \(\) => \[\]/, 'the selector offers no per-Team card');
+  assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.team, \[WORKBENCH_TYPES\.commons, WORKBENCH_TYPES\.terminal, WORKBENCH_TYPES\.newAgent, WORKBENCH_TYPES\.agentComposition, BEHAVIOUR_SURFACE_TYPE, FEEDBACK_TYPE\]\)/, 'the Team page selector: Commons, Agents, New Agent; the rest placeable only');
+  assert.doesNotMatch(catalog + view, /teamChart|TEAM_CHART/, 'Team Chart is gone');
+  assert.doesNotMatch(view, /workItemOffers|createWorkItemsSurface/, 'the Team page offers no Work Items card; the Agent workbench keeps its own');
   // Owner 2026-09-28: the roster that existed (js/roster.js) is back on Cowork and Desk, as it was.
   assert.match(catalog, /WORKBENCH_PROFILES\.cowork, \[[^\n]*WORKBENCH_TYPES\.sessionRoster/);
   assert.match(catalog, /WORKBENCH_PROFILES\.desk, \[[^\n]*WORKBENCH_TYPES\.sessionRoster/);
