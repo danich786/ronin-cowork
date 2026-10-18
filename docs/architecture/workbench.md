@@ -50,52 +50,11 @@ Close. The Add form, the same wherever Add appears, asks title, objective, statu
 board: an existing board, New board (`root: true` on the create route: a root of its own) or
 Unfiled, the default. Assign holds the item by an Agent or a Team.
 
-Who (`collection.who`, `who-surface.js`) is the Teams door of the collections workbench,
-built to the direction doc (samurai_lab `wip/buildouts/COLLECTIONS_DIRECTION.md`, owner
-2026-10-04): the collection finds work, adds work and reassigns work; detail, configuration
-and editing live on a workbench. Its reading is the collection push (`collection-reading.js`),
-wanted with the chosen workspaces as `root`; the browser requests, filters and joins nothing
-(owner 2026-10-09, one reading per tenant). A write shows itself when the reading is pushed again.
-Two `ask()` questions: Workspace (a many-of, none is all) and Under each Team (Boards or
-Agents, a one-of-two that flips on press). One stone per Team, name only; under it the
-boards or the Agents as bars, title only. A Team pressed is the thin open beside the rail:
-objective, Agents with 人 on the lead, boards by name, and one door, Launch, which opens the
-Team's tab (Who is the only door that launches Team tabs). A bar pressed opens its read in a
-partial overlay hung off the bar (`partial-overlay.js`; owner 2026-10-07, replacing the
-expand in place; the fork hands the press to the consumer through `press(item, bar)`): an
-Agent to its role, what it is working on now (the home row's work
-record and stance) and the items it holds; a board to its objective and its items by title,
-each a press to its description, status and holder, with one door, Open, inside the window,
-which lifts it and lays that board's lists in a full overlay over Who (`board-overlay.js`;
-owner 2026-10-08, one rule for every door: the board's title and Close at the head, under it
-the stage lists side by side, Idea to Done, each holding the board's items at that stage as
-cards with Add at the foot, a card dragged onto another list writing its stage — the Trello
-view's own `createLists`, repainted by the collection push wanted with that board); an item to its description, status and holder. The same read opens
-from the thin open's bars. The drags are a board onto another Team (`whoMove`:
-assign), an Agent onto another Team (`whoMove`: join, one write through
-`moveTeamMembership`, leaving the Team it was under; owner 2026-10-07) and the Add new question's stone (Board or Agent, a one-of-two beside Under each
-Team; owner 2026-10-08) onto a Team stone (`whoMove`: add, carrying which), which
-opens a partial overlay (`partial-overlay.js`: a small window inside the surface under its
-anchor, Close, Escape or a press outside lifts it) holding the draft form for a new board held by the Team; Agent opens the existing New Agent form,
-Team answered, in a full overlay over Who (`fullOverlay`, work-details.js); Launch creates the
-Agent and the overlay closes, nothing opens, and the Agent appears under its Team by the push
-(owner, 2026-10-08; an Agent that already runs joins by drag). The question's label
-says to drag: "Drag new onto a Team". `who-rows.js` is the pure mapping, under test.
-
-**The phalanx and its fork** (owner ruling, 2026-10-03). `phalanx.js` is the stone work
+**The phalanx** (owner ruling, 2026-10-03). `phalanx.js` is the stone work
 surface as it was, its geometry untouched: Settings (Presets, Workspace Folders, Model
 Providers, Setup), Team Chart, Work Items and the Trello view's overlays draw with it. Escape
 lifts only the layer it is pressed in: an item overlay inside a board's overlay leaves the
 board's overlay standing (2026-10-08).
-`collection-phalanx.js` is the fork for the collection doors, built on `createPhalanx`
-(the same stones, rail, detail and way back, nothing copied): blocks centred at wide
-spacing, each stone's children stacked under it as one-line bars (no connector line), an empty
-stack drawing nothing, grandchildren folded away (`data-cph-depth`, set by the fork through
-`attrs`), a header that fits its question, and a bar pressed expanding in place through the
-consumer's `expand(item, host)` instead of selecting or going a level down; what is expanded
-survives a repaint.
-Its root wears `.cph` and its host `.cph-host`; every rule is under that prefix. Who draws
-with the fork; What and Where will.
 
 Task Manager keeps its board and status/Project drill-downs for the Agent's Task Manager;
 its selector card is no longer offered on the Cowork, Desk or Team workbenches. The older
@@ -311,7 +270,7 @@ independent and must not hold the frame.
 
 | Surface | Required data and owner |
 |---|---|
-| Team roster / Team profile | Team records and live session-derived membership; the roster's Phalanx is Cowork/Desk's only discovery of Teams (no per-Team selector cards); its detail, a placed Team profile and Who's stone detail paint one body, `createTeamProfile` in `team-profile.js` (owner, 2026-10-03: one Team profile format): head with Launch; Agents, each a block with 人 and name (its stance the line's title, no bullet), the items it holds as lines beneath (status word beside the bar, no holder) and the Launch mark at the right, the name opening the Agent's composition reader in place under it; the blocks rebuild only when members, held items or an open profile moved, so a store push never flashes an open profile or the plus's picker; one section per board the Team works on (its collection reading, `?team=`), its items as lines; Configuration with Delete team; no numbering; the plus adds an Agent. An item line pressed selects the item's stone on Who and opens the item overlay on a surface |
+| Team roster / Team profile | Team records and live session-derived membership; the roster's Phalanx is Cowork/Desk's only discovery of Teams (no per-Team selector cards); its detail and a placed Team profile paint one body (`leagueTeamBody` in `cowork-view.js`) |
 | Team Chart | Selected Team membership and lead designation; Phalanx owns collection and selection geometry, and its in-place detail embeds the canonical Agent composition reader plus the secondary Launch action |
 | Team roster (`cowork.session-roster`) | `js/roster.js` restored as consumed before the Phalanx port: Team records, live sessions and pushed home rows; its desk column stays empty now that desks are read when the ladder opens |
 | Agent terminal | selected session plus terminal transport; other sessions are not mounted for it |

@@ -60,21 +60,6 @@ pressed) and **Close**; Escape closes it too. Wherever you add an item, you give
 objective, status and board: an existing board, **New board** (the item becomes a board of
 its own) or **Unfiled**, the default, for work nobody has filed yet.
 
-On the Cowork and Desk workbenches the **Who: Your Teams** card is the Teams door of the
-collection: one stone per Team, and under each stone the boards that Team works on, or its
-Agents, as **Under each Team** at the top chooses. **Workspace** narrows the stones to the
-Teams working in the folders you pick, one or several. Press a Team for a short read beside
-the stones, its Agents and its boards, and **Launch** to open the Team's tab. Press a bar and a
-small window opens beside it with a short read: an Agent's role and what it is doing now, a
-board's objective and items, an item's description and status. **Open** in a board's window
-lays the board's lists over Who, one list per status from Idea to Done with its items as cards:
-press a card to read it, Add at the foot of a list to add an item there, drag a card onto another
-list to change its status. Close brings you back. Drag a board onto another Team to give it to that Team, or an Agent onto another Team to
-move the Agent there. **Drag new onto a Team** at the top asks
-Board or Agent; drag it onto a Team. A board opens its form in a small window over the Team;
-an Agent opens the New Agent form over Who, with the Team already chosen; Launch starts it
-and you stay on Who. Changing them happens on the Team's own workbench.
-
 Adding another tenant or profile adds no layout implementation. Adding another surface
 registers a per-workspace factory in the shared library; any profile may name that type.
 
