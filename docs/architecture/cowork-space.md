@@ -119,6 +119,14 @@ It has three direct doors: **Machine Settings**, **Teams**, and **New Project**.
 the collection of Teams and Agents. New Project starts a new Team or Agent; it does not add
 or edit Workspace Folders. The live owner is `public/js/campaign-home.js`.
 
+The Teams door lays the Teams overlay over Home (`public/js/teams-overlay.js`,
+`openTeamsOver(host)`, the one seam Home calls): a full overlay of Phalanx A/B stones of
+Teams, name only, with a Workspace question (many-of, blank All) and a Show question (Theme,
+State, Agents, Items; Theme on by default) at its top. It reads the teams push, each roster
+row carrying the Team's board and items, through the Team projection in
+`team-controller.js`, and requests nothing. A stone pressed lays the Team's read over it;
+the 人 mark in the stone's corner, and Launch in the read, open the Team page in a new tab.
+
 There is no Campaign picker, default star, archive action or New Campaign footer.
 
 The live owner is `public/js/campaign-home.js`.

@@ -74,6 +74,12 @@
   /* Its utility, small at the top right: Close. */
   .work-overlay-utility { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); }
   .work-overlay:focus { outline: none; }
+  /* The Teams overlay over Home (js/teams-overlay.js): head, the two questions, the stones;
+     the Team's read is a second overlay over it. The 人 mark sits in the stone's corner. */
+  .teams-overlay, .teams-overlay-read { display: flex; flex-direction: column; gap: var(--space-5); padding: var(--space-6) var(--space-11); box-sizing: border-box; }
+  .teams-overlay > .sws-host { flex: 1 1 auto; }
+  .sws-stone > .teams-overlay-launch { position: absolute; inset-block-start: var(--space-4); inset-inline-end: var(--space-4); cursor: pointer; }
+  .teams-overlay-line { display: flex; gap: var(--space-3); font-size: var(--form-input); line-height: 1.45; }
   @container stone-work-surface-seat (max-width: 40rem) {
     .wk-surface-content.sws-host { padding-inline: var(--space-6); }
     .sws { gap: var(--space-6); }
