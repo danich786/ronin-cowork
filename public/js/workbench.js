@@ -3,7 +3,6 @@
 import { createWorkbenchLayout } from './workspace-layouts.js';
 import { WorkspacePrimitives } from './workspace-primitives.js';
 import { buildHints } from './terminal-controls.js';
-import { createMenuButton } from './menu.js';
 import { t } from './lexicon.js';
 
 const WORKBENCH_IDS = Object.freeze(['workspace1', 'workspace2', 'workspace3', 'workspace4']);
@@ -243,11 +242,6 @@ export function createWorkbench(options = {}) {
       const host = definition.header === 'tabs'
         ? value.el.querySelector(':scope > .wk-tabset-bar .wk-tabset-actions')
         : value.el.querySelector(':scope > .wk-surface-header .wk-surface-header-actions');
-      // THE WS HEADER'S MENU: the same メ as a tile's (js/menu.js), seated before − when
-      // the surface hands over its groups as `menu` (configuration hangs off it).
-      if (host && typeof value.menu === 'function') {
-        host.append(createMenuButton({ title: t('workspace.menu', 'This workspace'), host: () => value.el, groups: value.menu }).el);
-      }
       if (host) {
         const title = t('workspace.close_surface', 'Close this work surface');
         const dismissAction = WorkspacePrimitives.createAction({

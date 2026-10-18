@@ -14,21 +14,14 @@ import { TEAM_CHART_TYPE } from './team-chart-surface.js';
 import { WORK_ITEMS_TYPE } from './work-items-surface.js';
 import { WORK_VIEWS_TYPE } from './work-views-surface.js';
 import { WHO_TYPE } from './who-surface.js';
-import { WHAT_TYPE } from './what-surface.js';
-import { WHERE_TYPE } from './where-surface.js';
-import { COLLECTION_NEW_TYPE } from './collection-new.js';
-import { READING_TYPE } from './reading-surface.js';
-import { WORKSPACE_TEAMS_TYPE } from './workspace-teams-surface.js';
-import { WORKSPACE_DOCS_TYPE } from './workspace-docs-surface.js';
-import { WORK_SURFACES_TYPE } from './work-surfaces.js';
 
-export const WORKBENCH_PROFILES = Object.freeze({ campaign: 'campaign', launch: 'launch', desk: 'desk', cowork: 'cowork', team: 'team', agent: 'agent', collections: 'collections', board: 'board', workspace: 'workspace', teamNext: 'team-next' });
+export const WORKBENCH_PROFILES = Object.freeze({ campaign: 'campaign', launch: 'launch', desk: 'desk', cowork: 'cowork', team: 'team', agent: 'agent' });
 export const WORKBENCH_TYPES = Object.freeze({
   document: 'document', terminal: 'session.terminal', behaviours: BEHAVIOUR_SURFACE_TYPE, feedback: FEEDBACK_TYPE,
   launchTeam: 'launch.team', launchAgent: 'launch.agent', launchHelp: 'launch.help',
-  commons: 'team.commons', teamChart: TEAM_CHART_TYPE, kanban: 'team.kanban', workItems: WORK_ITEMS_TYPE, workViews: WORK_VIEWS_TYPE, who: WHO_TYPE, what: WHAT_TYPE, where: WHERE_TYPE, collectionNew: COLLECTION_NEW_TYPE, reading: READING_TYPE, workspaceTeams: WORKSPACE_TEAMS_TYPE, workspaceDocs: WORKSPACE_DOCS_TYPE, teamWork: WORK_SURFACES_TYPE, taskStatus: 'task-manager.status', taskProject: 'task-manager.project', cron: 'cowork.cron-jobs',
+  commons: 'team.commons', teamChart: TEAM_CHART_TYPE, kanban: 'team.kanban', workItems: WORK_ITEMS_TYPE, workViews: WORK_VIEWS_TYPE, who: WHO_TYPE, taskStatus: 'task-manager.status', taskProject: 'task-manager.project', cron: 'cowork.cron-jobs',
   roster: 'cowork.team-roster', sessionRoster: 'cowork.session-roster', newTeamForm: 'cowork.new-team-form', newAgent: 'session.new-agent',
-  team: 'team.profile', teamProfile: 'team-next.profile', archives: 'cowork.archives',
+  team: 'team.profile', archives: 'cowork.archives',
   agentDocuments: 'agent.documents', agentTeams: 'agent.team-membership', agentTasks: 'agent.task-manager', agentComposition: AGENT_COMPOSITION_TYPE,
   campaignMachine: 'campaign.machine', campaignDefaults: 'campaign.defaults', campaignRoots: 'campaign.project-roots',
   campaignIdentity: 'campaign.identity', campaignInstallations: 'campaign.installations', campaignProfile: 'campaign.desk-profile', campaignCreate: 'campaign.new',
@@ -53,21 +46,7 @@ export function registerWorkbenchCatalog() {
   add({ type: WORKBENCH_TYPES.kanban, header: 'surface', className: 'wk-selector-utility', label: () => t('workspace.tab_task_manager', 'Task Manager'), discover: (_t, e) => e.kanbanOffers(), create: ({ workspace, environment }) => environment.teamKanban(workspace) });
   add({ type: WORKBENCH_TYPES.workItems, header: 'surface', className: 'wk-selector-utility', label: () => t('work_items.title', 'Work Items'), discover: (_t, e) => e.workItemOffers(), create: ({ environment }) => environment.workItems() });
   add({ type: WORKBENCH_TYPES.workViews, header: 'surface', className: 'wk-selector-utility', label: () => t('work_views.title', 'Trello view'), summary: () => t('work_views.summary', 'Every board\'s items by status or by board'), create: ({ environment }) => environment.workViews() });
-  // Who: the Teams door of the collections workbench; What and Where follow on the same stones.
   add({ type: WORKBENCH_TYPES.who, header: 'surface', className: 'wk-selector-utility', label: () => t('collection.who', 'Who: Your Teams'), summary: () => t('collection.who_summary', 'Every Team with its boards and items, by workspace'), create: ({ workspace, environment }) => environment.who(workspace) });
-  // What: the boards door, on the collections tenant only.
-  add({ type: WORKBENCH_TYPES.what, header: 'surface', className: 'wk-selector-utility', label: () => t('collection.what', 'What: Your Boards'), summary: () => t('collection.what_summary', 'Every board with its items and Agents'), create: ({ workspace, environment }) => environment.what(workspace) });
-  // Where: the workspace-folder door of the collections workbench, on the same stones as Who.
-  add({ type: WORKBENCH_TYPES.where, header: 'surface', className: 'wk-selector-utility', label: () => t('collection.where', 'Where: Your Workspaces'), summary: () => t('collection.where_summary', 'Every workspace folder with its Teams or its boards'), create: ({ workspace, environment }) => environment.where(workspace) });
-  // New: the add door of the collections workbench — the kind, then that kind's own form.
-  add({ type: WORKBENCH_TYPES.collectionNew, header: 'surface', className: 'wk-selector-utility', label: () => t('collection.new', 'New'), summary: () => t('collection.new_summary', 'A work item, a board, an Agent or a Team'), variant: 'dotted', create: ({ environment }) => environment.collectionNew() });
-  // Work on the Team tenant: one card, two layers behind a toggle (the Trello view and Work Items as they are).
-  add({ type: WORKBENCH_TYPES.teamWork, header: 'surface', className: 'wk-selector-utility', label: () => t('team.work_card', 'Work'), summary: () => t('team.work_summary', 'Trello view and Work Items, one at a time'), create: ({ workspace, environment }) => environment.work(workspace) });
-  add({ type: WORKBENCH_TYPES.reading, header: 'surface', className: 'wk-selector-utility', label: () => t('tenant.reading', 'Reading'), summary: () => t('tenant.reading_summary', 'The record, raw, until its surfaces are placed'), create: ({ workspace, environment }) => environment.reading(workspace) });
-  // The Workspace tenant's WS1: the Teams in the folder and their boards (Phalanx C/D).
-  add({ type: WORKBENCH_TYPES.workspaceTeams, header: 'surface', className: 'wk-selector-utility', label: () => t('workspace.teams', 'Teams and boards'), summary: () => t('workspace.teams_summary', 'The Teams working in this folder, with their boards'), create: ({ workspace, environment }) => environment.workspaceTeams(workspace) });
-  // The Workspace tenant's WS2: the folder's docs and its Teams' repos (Rows).
-  add({ type: WORKBENCH_TYPES.workspaceDocs, header: 'surface', className: 'wk-selector-utility', label: () => t('workspace.docs', 'Docs and repos'), summary: () => t('workspace.docs_summary', 'The folder\'s docs and the repos its Teams list'), create: ({ workspace, environment }) => environment.workspaceDocs(workspace) });
   add({ type: WORKBENCH_TYPES.taskStatus, header: 'surface', discover: () => [], create: ({ workspace, detail, environment }) => environment.taskStatus(workspace, detail) });
   add({ type: WORKBENCH_TYPES.taskProject, header: 'surface', discover: () => [], create: ({ workspace, detail, environment }) => environment.taskProject(workspace, detail) });
   via(WORKBENCH_TYPES.roster, 'surface', 'roster', { className: 'wk-selector-utility', label: () => t('campaign.coworks', 'Teams') });
@@ -78,10 +57,6 @@ export function registerWorkbenchCatalog() {
   via(WORKBENCH_TYPES.archives, 'surface', 'archives', { className: 'wk-selector-utility', label: () => t('archives.card', 'Rehydrate Archived'), variant: 'dotted' });
   // The Teams Phalanx is the discovery; a dragged stone places the Team profile.
   add({ type: WORKBENCH_TYPES.team, header: 'surface', discover: () => [], create: ({ workspace, detail, environment }) => environment.team(workspace, detail) });
-  // On the Team tenant (team-next) the one Team profile is a card of its own type; Cowork and
-  // Desk offer no per-Team card (owner, 2026-09-28).
-  add({ type: WORKBENCH_TYPES.teamProfile, header: 'surface', className: 'wk-selector-utility', label: () => t('team.profile_card', 'Team profile'), summary: () => t('team.profile_summary', 'Objective, Agents and the items they hold, boards, configuration'),
-    discover: (tenant) => (tenant?.param?.() ? [{ key: tenant.param() }] : []), create: ({ workspace, detail, environment }) => environment.team(workspace, detail) });
   add({ type: WORKBENCH_TYPES.agentDocuments, header: 'surface', className: 'wk-selector-utility', label: () => t('workspace.tab_docs', 'Documents'), summary: () => t('agent.documents_summary', 'Documents tracked by this Agent'), discover: (_t, e) => [{ key: e.agent() }], create: ({ workspace, detail, environment }) => environment.documents(workspace, detail) });
   add({ type: WORKBENCH_TYPES.agentTeams, header: 'surface', className: 'wk-selector-utility', label: () => t('agent.team_membership', 'Team membership'), summary: () => t('agent.team_membership_summary', 'Add or remove this Agent from installed Teams'), discover: (_t, e) => [{ key: e.agent() }], create: ({ workspace, detail, environment }) => environment.teams(workspace, detail) });
   add({ type: WORKBENCH_TYPES.agentTasks, header: 'surface', className: 'wk-selector-utility', label: () => t('workspace.tab_task_manager', 'Task Manager'), discover: (_t, e) => e.taskOffers(), create: ({ workspace, detail, environment }) => environment.tasks(workspace, detail) });
@@ -97,13 +72,6 @@ export function registerWorkbenchCatalog() {
   profiles.define(WORKBENCH_PROFILES.launch, [WORKBENCH_TYPES.launchTeam, WORKBENCH_TYPES.launchAgent, WORKBENCH_TYPES.launchHelp, BEHAVIOUR_SURFACE_TYPE, WORKBENCH_TYPES.document, FEEDBACK_TYPE]);
   profiles.define(WORKBENCH_PROFILES.cowork, [WORKBENCH_TYPES.who, WORKBENCH_TYPES.roster, WORKBENCH_TYPES.sessionRoster, WORKBENCH_TYPES.workViews, WORKBENCH_TYPES.taskStatus, WORKBENCH_TYPES.taskProject, WORKBENCH_TYPES.cron, WORKBENCH_TYPES.team, WORKBENCH_TYPES.terminal, WORKBENCH_TYPES.newTeamForm, WORKBENCH_TYPES.newAgent, WORKBENCH_TYPES.archives, WORKBENCH_TYPES.document, BEHAVIOUR_SURFACE_TYPE, PRESETS_TYPE, FEEDBACK_TYPE]);
   profiles.define(WORKBENCH_PROFILES.desk, [WORKBENCH_TYPES.who, WORKBENCH_TYPES.roster, WORKBENCH_TYPES.sessionRoster, WORKBENCH_TYPES.workViews, WORKBENCH_TYPES.taskStatus, WORKBENCH_TYPES.taskProject, WORKBENCH_TYPES.cron, WORKBENCH_TYPES.team, WORKBENCH_TYPES.terminal, WORKBENCH_TYPES.newTeamForm, WORKBENCH_TYPES.newAgent, WORKBENCH_TYPES.archives, WORKBENCH_TYPES.document, BEHAVIOUR_SURFACE_TYPE, PRESETS_TYPE, FEEDBACK_TYPE]);
-  // Collections (the thin tenant on the tenant frame): Who, What, Where and New. The
-  // Trello view is placeable by a board's Open but not offered (collections-view.js filters it).
-  profiles.define(WORKBENCH_PROFILES.collections, [WORKBENCH_TYPES.who, WORKBENCH_TYPES.what, WORKBENCH_TYPES.where, WORKBENCH_TYPES.collectionNew, WORKBENCH_TYPES.document, FEEDBACK_TYPE]);
-  // Board stands raw: the tenant's reading in its place; Workspace has its Teams and boards, and its docs and repos. Their rows come one card per hand-in.
-  profiles.define(WORKBENCH_PROFILES.teamNext, [WORKBENCH_TYPES.commons, WORKBENCH_TYPES.teamChart, WORKBENCH_TYPES.teamWork, WORKBENCH_TYPES.teamProfile, WORKBENCH_TYPES.terminal, WORKBENCH_TYPES.agentComposition, WORKBENCH_TYPES.newAgent, BEHAVIOUR_SURFACE_TYPE, FEEDBACK_TYPE]);
-  profiles.define(WORKBENCH_PROFILES.board, [WORKBENCH_TYPES.workViews, WORKBENCH_TYPES.document, FEEDBACK_TYPE]);
-  profiles.define(WORKBENCH_PROFILES.workspace, [WORKBENCH_TYPES.workspaceTeams, WORKBENCH_TYPES.workspaceDocs, WORKBENCH_TYPES.document, FEEDBACK_TYPE]);
   profiles.define(WORKBENCH_PROFILES.team, [WORKBENCH_TYPES.commons, WORKBENCH_TYPES.teamChart, WORKBENCH_TYPES.workItems, WORKBENCH_TYPES.workViews, WORKBENCH_TYPES.taskStatus, WORKBENCH_TYPES.taskProject, WORKBENCH_TYPES.terminal, WORKBENCH_TYPES.agentComposition, WORKBENCH_TYPES.newAgent, BEHAVIOUR_SURFACE_TYPE, FEEDBACK_TYPE]);
   profiles.define(WORKBENCH_PROFILES.agent, [WORKBENCH_TYPES.terminal, WORKBENCH_TYPES.agentComposition, WORKBENCH_TYPES.agentDocuments, WORKBENCH_TYPES.agentTeams, WORKBENCH_TYPES.agentTasks, WORKBENCH_TYPES.workItems, WORKBENCH_TYPES.taskStatus, WORKBENCH_TYPES.taskProject, WORKBENCH_TYPES.document, FEEDBACK_TYPE]);
   profiles.define(WORKBENCH_PROFILES.campaign, [WORKBENCH_TYPES.terminal, WORKBENCH_TYPES.campaignMachine, BEHAVIOUR_SURFACE_TYPE, PASSWORD_SURFACE_TYPE, WORKBENCH_TYPES.campaignInstallations, PROVIDER_SURFACE_TYPE, SETUP_SURFACE_TYPES.register, FEEDBACK_TYPE, WORKBENCH_TYPES.campaignIdentity, WORKBENCH_TYPES.campaignDefaults, WORKBENCH_TYPES.campaignRoots, SETUP_SURFACE_TYPES.launchOwn, WORKBENCH_TYPES.document, ...(MULTIPLE_CAMPAIGNS_ENABLED ? [WORKBENCH_TYPES.campaignCreate] : [])]);

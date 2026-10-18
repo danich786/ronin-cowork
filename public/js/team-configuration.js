@@ -15,25 +15,24 @@ const el = (tag, cls, text) => { const node = document.createElement(tag); if (c
 const bucket = (value) => value && typeof value === 'object' && !Array.isArray(value) ? value : {};
 const list = (value) => Array.isArray(value) ? value : [];
 
-export const KINDS = ['open', 'coding', 'work', 'personal', 'household', 'social', 'school'];
-export const kindWord = (value) => ({
+const kindWord = (value) => ({
   open: t('campaign_view.option_open', 'Open'), coding: t('team_config.kind_coding', 'Coding'), work: t('team_config.kind_work', 'Work'), personal: t('team_config.kind_personal', 'Personal'),
   household: t('team_config.kind_household', 'Household'), social: t('team_config.kind_social', 'Social'), school: t('team_config.kind_school', 'School'),
 })[value] || value;
-export const REACH = ['open', 'discuss', 'plan', 'execute'];
-export const RECRUIT = ['open', 'nobody', 'propose agents', 'staff agents'];
-export const OUTPUT = ['open', 'a plan', 'ideas', 'code', 'an artifact', 'the team'];
+const REACH = ['open', 'discuss', 'plan', 'execute'];
+const RECRUIT = ['open', 'nobody', 'propose agents', 'staff agents'];
+const OUTPUT = ['open', 'a plan', 'ideas', 'code', 'an artifact', 'the team'];
 
 /** The provider and model rows as every ask() consumer reads them: the one catalog, reasons only. */
 const reason = (row) => (row.off
   ? t('forms.reason_turned_off', 'turned off')
   : t('forms.reason_not_on_machine', 'not on this machine'));
-export const providerRows = () => {
+const providerRows = () => {
   const rows = providerCatalog().rows;
   return rows.filter((row, index) => rows.findIndex((other) => other.provider === row.provider) === index)
     .map((row) => ({ v: row.provider, l: row.provider_label || row.provider, off: row.operational ? '' : reason(row) }));
 };
-export const modelRows = (provider) => providerCatalog().rows.filter((row) => row.provider === provider)
+const modelRows = (provider) => providerCatalog().rows.filter((row) => row.provider === provider)
   .map((row) => ({ v: row.model, l: modelLabel(row), word: tierWord(row.tier), sub: row.cost || '', off: row.selectable ? '' : reason(row) }));
 
 /** The form's one-line answer when its step is folded: kind · provider / model. */

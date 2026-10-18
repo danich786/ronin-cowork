@@ -13,12 +13,6 @@ export function installWorkspaceHeader(workspace) {
   const ronin = document.getElementById('brandbtn');
   const separator = document.getElementById('coworkssep');
   const coworkers = document.getElementById('coworksbtn');
-  // THE LEFT BREADCRUMB is the navigation. On a tenant of the tenant frame (`place`) the bar
-  // reads, after the brand as it always is: • Home • 'Team: Front 2' (owner, 2026-10-09).
-  // Everywhere else it is the brand and Teams, as it was.
-  const home = document.getElementById('homebtn');
-  const placeSeparator = document.getElementById('placesep');
-  const crumb = document.getElementById('viewcrumb');
   // THE PLACE is the label inside the centred scope island. Its solid colour stands
   // apart from the tinted Workbench headers below it.
   const place = document.getElementById('viewplace');
@@ -34,7 +28,6 @@ export function installWorkspaceHeader(workspace) {
     action();
   };
   ronin?.addEventListener('click', plainRoute(root));
-  home?.addEventListener('click', plainRoute(root));
   coworkers?.addEventListener('click', plainRoute(() => workspace.navigate('cowork')));
 
   const refresh = () => {
@@ -43,18 +36,14 @@ export function installWorkspaceHeader(workspace) {
     if (appearance) document.documentElement.dataset.workbench = appearance;
     else delete document.documentElement.dataset.workbench;
     const landing = !active || active.id === 'home';
-    const placed = active?.view?.place ? active.view.place() : '';
     if (separator) separator.hidden = landing;
-    if (home) { home.textContent = t('bar.home', 'Home'); home.hidden = !placed; }
-    if (placeSeparator) placeSeparator.hidden = !placed;
     if (coworkers) {
-      coworkers.hidden = landing || Boolean(placed);
+      coworkers.hidden = landing;
       coworkers.href = workbenchLaunchUrl({ destination: 'cowork', mode: 'overlay' });
     }
-    if (crumb) { crumb.textContent = placed; crumb.hidden = !placed; }
     if (place) {
       // The island is the editable tab name for any view that offers one (`tabName`): the
-      // old Team, Teams and Desk, and every tenant on the tenant frame. A Team page with no
+      // old Team, Teams and Desk. A Team page with no
       // Team named offers nothing to name.
       const editable = Boolean(active?.view?.tabName) && !(active?.id === 'team' && !active.param);
       if (editable) {

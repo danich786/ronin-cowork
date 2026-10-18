@@ -82,27 +82,6 @@ Agent and the overlay closes, nothing opens, and the Agent appears under its Tea
 (owner, 2026-10-08; an Agent that already runs joins by drag). The question's label
 says to drag: "Drag new onto a Team". `who-rows.js` is the pure mapping, under test.
 
-What (`collection.what`, `what-surface.js`) is the boards door of the collections tenant
-(lead 2026-10-08, to PATTERNS.md's "Collections (What)" rows): Who's shape over boards. It
-hears the collection push (`collection-reading.js`), wanted with its questions' answers, and
-requests, filters and joins nothing. Three questions: Workspace, as Who's (a many-of, none is
-all, `root` on the want); Status (a many-of the six stages, none is all, `stage` on the want;
-owner 2026-10-08); and Under each board: Items or Agents (the two-answer flip). One stone per board, name only, Unfiled last; under it the board's items by title,
-or the Agents on it. A board pressed is the thin open: objective, its items and Agents as bars
-(labels in sentence case, muted), and one door, Open, which lays that board's lists in a full overlay over What
-(`board-overlay.js`, as Who's). A board pressed into swaps that board's children for its statuses
-(`whatStatuses`, never the rest children) and goes down, so the rail lists the statuses the
-board has items at, in stage order; back at the top the items return (owner, 2026-10-08).
-A status pressed narrows the thin open to that status's items, pressed again it shows all;
-the Status question narrows the rail too, through the want. An item bar in the thin open, or
-an Agent bar, opens its read in the partial overlay: an item's description, status and
-holder; an Agent's items on this board. The drags are an item bar onto another board stone
-(`whatMove`: reparent, one write) and a board stone onto a Team stone on Who in the other
-workspace, which assigns the board to that Team through Who's own drop handler. Every
-collection drag carries the one payload (`collection-drag.js`: `{ kind, id, team?, board? }`
-under one type), so a Team stone and a board stone each read the same thing and their rules
-say what it means there (owner, 2026-10-08). `what-rows.js` is the pure mapping, under test.
-
 **The phalanx and its fork** (owner ruling, 2026-10-03). `phalanx.js` is the stone work
 surface as it was, its geometry untouched: Settings (Presets, Workspace Folders, Model
 Providers, Setup), Team Chart, Work Items and the Trello view's overlays draw with it. Escape
@@ -168,133 +147,11 @@ one off in its declaration rather than hiding it with local CSS or querying head
 - The frame owns the selector's compact/expanded action and persists `selectorDensity`
   beside shape, selection, arrangement, and seats. Profiles do not build another toggle.
 
-A surface's header ends with its window control, −, which the Workbench seats. A surface
-that returns `menu: () => groups` from `create()` also gets **メ** seated before −: the same
-menu as a tile's (`js/menu.js`, the PATTERNS location "menu"), hung over that surface.
-Configuration items (Board, Team, Workspace) hang off it; a surface that returns no `menu`
-shows no メ.
+A surface's header ends with its window control, −, which the Workbench seats.
 
 The definition's `create()` draws the stable shell. Its returned `show()` or `enter()`
 starts only that surface's reads. `leave()` parks active work and `destroy()` releases
 surface-lifetime resources. See [the common lifecycle](workspace-kit.md#lifecycle-contract).
-
-## The tenant frame and thin tenants (the new workbench)
-
-Owner ruling, 2026-10-06 (samurai_lab `wip/buildouts/UI_STRUCTURE.md`, `WORKBENCH_SKELETON.md`):
-one workbench format, and a named workbench is a **tenant** that exposes cards. The build
-stands beside the old destinations and replaces them tenant by tenant; `cowork-view.js`,
-`desk-view.js` and `agent-view.js` are not edited meanwhile and go when replaced.
-
-Three layers:
-
-1. **Kit frame**, `workbench.js`, as above: selector, cells, placement, arrangement, memory.
-2. **Tenant frame**, `tenant-frame.js`, built once: the four terminal seats and their warm
-   pools, placing a session or a surface into a cell and remembering it for refresh, the
-   common cards (terminal, document, feedback), the bar's place and the tab title. Lifted as a copy
-   from `cowork-view.js`. Not in it: Mika, the arranger, Commons; a tenant that needs one
-   adds it.
-3. **A thin tenant file** over it, tens of lines: `key` (the destination id, which is also
-   the appearance), `profile`, `glyph`, `label`, `name`, `homeCard`, `firstOpen(param)`,
-   `cards(frame)` (its environment entries), optional `sessions(param)`, `selectorFilter`
-   and lifecycle hooks. `collections-view.js` is the first; `team-next`, `board` and
-   `workspace` follow, one hand-in each.
-
-**The server resolves the tenant, into the store** (w12, both halves landed 2026-10-07). A
-tenant's reading is the collection reading (`src/collection-read.ts`) narrowed by campaign,
-team, board, root or stage (owner, 2026-10-09: one reading per tenant, one source of truth;
-it carries every board's items with their holders). A consumer subscribes
-through `collection-reading.js`, the one seam, with its filter; the store sends
-`{t:'want', resource:'collection', campaign?, team?, board?[], root?[], stage?[]}` on `/events` (the table in
-[the tmux connection](tmux-connection.md)) and holds the answer under
-`readingKey(resource, filter)`, the server's own spelling: the resource, then the filter's
-JSON in field order, trimmed, empties dropped, roots deduped. The server pushes the reading
-again to every connection holding that filter whenever an input moves; an absent campaign is
-the one machine campaign, and Teams, folders and boards outside it are left out. The browser
-requests, filters and joins nothing; no new file may name `/api/collection` or
-`/api/work-items` (`tests/tenant-frame.test.js`); Who, What, Where, the Work card, the Trello
-view and the board overlay all read the collection push.
-
-**Collections** (`collections`, param the campaign; the one machine campaign when absent):
-first open is Who in workspace 1 and workspace 2 dismissed. Its profile is Who, Where, New
-(`collection.new`, `collection-new.js`: one ask.js question, the kind, mounting the existing
-form for it — `draftItem`, `draftItem` on New board, the embedded New Agent and New Team as
-Setup's Launch your own mounts them; Add's form takes the boards the opening surface holds
-off its collection reading, `boards`, and reads no route: owner, 2026-10-09, one reading per
-tenant), Document and Feedback; the Trello view is never a card here
-(a board's Open lays the board's lists over the door, `board-overlay.js`). **Where**
-(`where-surface.js`, type `collection.where`) reads the unfiltered collection push: folder
-stones, and under each its Teams or its boards (a one-of-two question, as Who's); a folder
-pressed is its thin open (name, path); a bar pressed opens its read in a partial overlay with
-Workspace WS1's reads (`boardRead`, `teamRead`), a Team's door Launch, a board's door Open
-laying that board's lists over the surface (`board-overlay.js`, as Who's). Nothing adds or moves on Where. Launch on Who opens
-the old Team tab until `team-next` stands.
-
-**Team** (`team-next`, param the Team; it takes the `team` word when it replaces the old
-Team) is `team-view.js` over the frame: the members' tiles with the lead pinned hot and
-seated on a first visit, the Commons as one self-painting surface (`team-commons-surface.js`,
-lifted from `cowork-view.js`), Team Chart, **Work** (`work-surfaces.js`: one surface, one
-header; owner, 2026-10-09. Two questions at its head, as Who's: View, Trello view or Work
-Items, the two-answer flip; and Board, Who's Workspace question copied — a many-of over every
-board, from the unfiltered collection reading, answered at first with the Team's boards from
-the Team's collection reading and changeable to any, none is all. The body draws the chosen
-boards' items with the engines and no nested surface: `createLists` for the Trello view, its
-Status view, or `createItemsBoard`, the Work Items board's own drawing exported from
-`work-items-surface.js`, stones by stage with the drag that asks the holder to move an item.
-It reads the collection push only (one reading per tenant): unfiltered for the question's
-boards and the Team's own, and wanted with the chosen boards for the body — `board` is a
-list on the collection want — and requests nothing), the Team profile as a card, New Agent, and the composition
-reader the roster opens. Not yet on it: Mika's help, the arranger (`edges page`), Task
-Manager. Who's Launch opens this Team. On every tenant of the frame the bar's LEFT
-breadcrumb is navigation (owner, 2026-10-09): the logo and RoninCowork as on every page, then
-` • Home • <place>` — **Home** a plain link to Ronin Home, the place `Team: <title>`,
-`Board: <title>`, `Workspace: <title>` or `Collections` — in the slot where the old
-workbenches show Teams (`#homebtn`, `#placesep`, `#viewcrumb`). The frame composes the words once
-from the tenant's `name` (`tenant-frame.js` `place`; the name of nothing is the kind word)
-and `workspace-header.js` draws them. The centred island is the editable tab name on the
-frame tenants as on the old Team; the old workbenches are untouched.
-
-**Board** (`board`, param the board's item id) opens on the Board pattern: `work-views-surface.js`
-with a `board` scope, WS1, that one board drawn by status or as its one list, its reading
-arriving by push (the collection reading narrowed to `board=[id]`, its `boards[].stages`
-carrying the items with their holders; owner, 2026-10-09: one reading per tenant) and repainting on every change, Add
-starting on it and no Add board (PATTERNS.md, "Board tenant: the board itself"; owner,
-2026-10-07). The bar name is the board's title off that reading. **Board configuration** is
-an item on that surface's メ (the menu, `menu.js`, seated by the Workbench when a surface
-hands over `menu: () => groups`) opening the full overlay (`fullOverlay`, `work-details.js`)
-with Grey form rows (`saveRow`, `save-row.js`) for title and objective, each saving itself
-by `PUT /api/work-items/:id`; the push repaints the board after. `configuration-overlay.js`
-is the one glue for that, shared by Board, Workspace and Team. **Workspace configuration** is the
-same on the Teams and boards surface's メ: rows for title, remit, memory, match, docs and plans, each
-`PUT /api/project-roots/:name` with that one field (the store merges field by field; lists are
-comma strings), seeded from the folder catalog the page holds and re-read after a save
-(`loadProjects`, `home.js`; the catalog carries `memory` since 892f0aba). **Team configuration** on
-`team-next` is the same on the Commons' メ, replacing the Commons' Configuration tab there
-(the old Team keeps its tab): rows for title, purpose, kind, where it works, model, mandate
-and launch mode, the enumerations as `ask()` question rows that commit on change, each row
-its own `PUT /api/team-rosters/:name` (the store merges a roster field by field and writes
-`agent_defaults` whole, so those rows send the merged object).
-
-**Workspace** (`workspace`, param the folder name) opens on **Teams and boards**
-(`workspace-teams-surface.js`, type `workspace.teams`) in workspace 1 and **Docs and repos**
-(`workspace-docs-surface.js`, type `workspace.docs`) in workspace 2. Teams and boards is
-the collection push for `root=<folder>` drawn with the collection phalanx and Who's mapping
-(`who-rows.js`). Stones are the Teams whose folders include this one; bars are their boards;
-a Team pressed opens its thin open (objective, one door, Launch); a bar pressed opens its
-read in a partial overlay (`partial-overlay.js`, as on Who: a board's objective and items by
-title, an item's description, status and holder).
-Docs and repos is two lists of title-only rows (`itemLine` with `bar: false`): the folder's
-registered docs and plans, and the repos its Teams list, both carried on the reading's
-`roots` (`docs`, `repos`).
-
-Each later row of their tables in the Lab's `PATTERNS.md` is its own hand-in that adds one
-card.
-
-**The Next root** (`next`, `next-home.js`) is the temporary door to the new set: Ronin
-Home's shape with four doors, Collections, Team, Board, Workspace, and under each the names
-it can open from the unfiltered collection reading. A door whose tenant is not registered
-yet is closed and says so; `main.js` names the standing ones. Ronin Home carries one
-**Next** link beside Settings. Root, route and link go in one commit when the four tenants
-replace Home's three doors.
 
 ## The surface map and live arrangement
 

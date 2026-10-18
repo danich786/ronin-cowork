@@ -35,10 +35,9 @@ not four layout systems.
 |---|---|
 | Campaign | Campaign settings and Campaign-level resources |
 | Teams collection | Teams, Agents, shared resources, and creation surfaces available in the selected Campaign context |
-| Team | that Team's Agents, Commons, Work (the Trello view or the Work Items board over the boards you pick), and launch surface |
+| Team | that Team's Agents, Commons, Trello view, and launch surface |
 | Agent | Self, Documents, Team membership, and separate Task Managers for the Agent's Teams |
 | Setup | pinned Presets plus Register, providers, roots, Services, gbrain, and Templates |
-| Collections (new) | Who: Your Teams; Where: Your Workspaces; **New**: choose Work item, Board, Agent or Team and its own form appears beneath — Add's form, the same form starting on New board, New Agent, New Team; What as it arrives. Reached from **Next** on Ronin Home, the temporary door to the new workbench while it is built beside the old one |
 
 On the Cowork and Desk workbenches one card reads the work items: **Trello view**. The button at its top left says which
 view you are in, **View by: Status** or **View by: Board**, and switches to the other. It is laid out like a
@@ -75,15 +74,6 @@ move the Agent there. **Drag new onto a Team** at the top asks
 Board or Agent; drag it onto a Team. A board opens its form in a small window over the Team;
 an Agent opens the New Agent form over Who, with the Team already chosen; Launch starts it
 and you stay on Who. Changing them happens on the Team's own workbench.
-
-On the Collections workbench the **What: Your Boards** card is the boards door: one stone per
-board, Unfiled last, and under each its items, or the Agents on it, as **Under each board**
-chooses. Press a board and the rail lists the statuses it has work at; press a status to see
-only its items, and again for all. **Workspace** and **Status** at the top narrow the boards to the folders and stages
-you pick, one or several. Press a board for a short read beside the stones and **Open** to lay the board's lists over What,
-as on Who; Close brings you back. Press a bar for a small window with its read. Drag an item onto another
-board to move it there, or a board onto a Team on Who, in the other workspace, to give it
-to that Team.
 
 Adding another tenant or profile adds no layout implementation. Adding another surface
 registers a per-workspace factory in the shared library; any profile may name that type.
