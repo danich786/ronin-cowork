@@ -35,30 +35,9 @@ not four layout systems.
 |---|---|
 | Campaign | Campaign settings and Campaign-level resources |
 | Teams collection | Teams, Agents, shared resources, and creation surfaces available in the selected Campaign context |
-| Team | that Team's Agents, Commons, Trello view, and launch surface |
+| Team | that Team's Agents, Commons, Work Items, and launch surface |
 | Agent | Self, Documents, Team membership, and separate Task Managers for the Agent's Teams |
 | Setup | pinned Presets plus Register, providers, roots, Services, gbrain, and Templates |
-
-On the Cowork and Desk workbenches one card reads the work items: **Trello view**. The button at its top left says which
-view you are in, **View by: Status** or **View by: Board**, and switches to the other. It is laid out like a
-Trello board: Status shows one list per stage, its items grouped under each board's name;
-Board shows one list per board, its items grouped under each stage's name. Each list shows
-its count at the head and **Add a work item** at the foot, which starts the new item in that
-list. In Board view, **Unfiled** always sits at the far right in its own shade, and **Add
-board** after the boards starts a new one. On a Team's workbench, Add starts on the Team's
-own board (else its lead's, else Unfiled); you can still pick any board. On a Team's
-workbench the card shows the boards that Team and its Agents work on, plus **Unfiled**, so
-unfiled work can be taken on from there; a board added there is held by the Team. In
-Board view, drag an item onto another board's list to move it there (what is under it comes
-with it), or onto empty space to make it a board of its own: that is how work leaves
-Unfiled. On a Team's workbench a board made that way is held by the Team if nobody held it.
-In Status view, drag an item onto another stage's list to move it to that stage.
-An item's **Assign** can also give it to a Team. Press a list's name, a
-group's name or an item to open it over the lists. Its buttons at the top right are **Save** (once there is something to
-save), **Assign** (pick the Agent or Team that holds it), **Add** (a new item, starting where you
-pressed) and **Close**; Escape closes it too. Wherever you add an item, you give its title,
-objective, status and board: an existing board, **New board** (the item becomes a board of
-its own) or **Unfiled**, the default, for work nobody has filed yet.
 
 Adding another tenant or profile adds no layout implementation. Adding another surface
 registers a per-workspace factory in the shared library; any profile may name that type.

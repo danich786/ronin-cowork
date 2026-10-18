@@ -38,9 +38,9 @@ test('Cowork launches use the standalone handoff while Team launches retain in-p
   assert.match(text, /connect: campaign \? null : \(name\) => connectSession\(name, id\)/);
 });
 
-test('Teams opens its roster and New Team form in the two default workspaces; Desk opens Work items second', async () => {
+test('Teams opens its roster and New Team form in the two default workspaces; Desk leaves the second blank', async () => {
   const text = await source('cowork-view.js');
-  assert.match(text, /seats: campaign \? \{ workspace1: WB_TYPES\.roster, workspace2: desk \? WB_TYPES\.workViews : WB_TYPES\.newTeamForm \} : \{\}/);
+  assert.match(text, /seats: campaign \? \{ workspace1: WB_TYPES\.roster, \.\.\.\(desk \? \{\} : \{ workspace2: WB_TYPES\.newTeamForm \}\) \} : \{\}/);
 });
 
 test('Cowork no longer offers Task Manager on its selector; all scopes can still place drill-down surfaces', async () => {
@@ -67,6 +67,6 @@ test('Desk owns an operational destination and first-opens Teams beside Work ite
   assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.desk/);
   assert.match(view, /const desk = options\.kind === 'desk'/);
   assert.match(view, /profile: desk \? WB_PROFILES\.desk : campaign \? WB_PROFILES\.cowork/);
-  assert.match(view, /workspace1: WB_TYPES\.roster, workspace2: desk \? WB_TYPES\.workViews : WB_TYPES\.newTeamForm/);
+  assert.match(view, /workspace1: WB_TYPES\.roster, \.\.\.\(desk \? \{\} : \{ workspace2: WB_TYPES\.newTeamForm \}\)/);
   assert.match(view, /workbenchView\(desk \? 'desk' : campaign \? 'cowork' : 'team'\)/);
 });

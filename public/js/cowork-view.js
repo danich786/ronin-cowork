@@ -1,7 +1,6 @@
 /* part of the ronin-cowork client — see js/README.md */
 /** Workbench; its Campaign, Cowork or Team scope limits what cards are offered. */
 import { createWorkItemsSurface } from './work-items-surface.js';
-import { createWorkViewsSurface } from './work-views-surface.js';
 import { WorkspaceKit } from './workspace-kit.js';
 import { deleteTeamRoster, membersOfTeam, sessionsAvailableToTeam, setTeamLead, setTeamMembership, subscribe, teamByName, teamsFromState, unassignedSessions, UNASSIGNED } from './team-controller.js';
 import { createNewTeamFormView } from './new-team-form.js';
@@ -260,9 +259,6 @@ export function createCoworkView(options = {}) {
     const room = buildArchives({ connect: (name) => connectSession(name, id) }, host);
     return [id, { el: surface.el, room }];
   })) : {};
-  // The Team a work item's holder works in: the holding Team, or the Team of the holding Agent.
-  const holderTeamOf = (holder) => holder.startsWith('team:') ? holder.slice(5)
-    : holder.startsWith('agent:') ? teamsFromState().find((row) => membersOfTeam(row.name).some((member) => member.name === holder.slice(6)))?.name || '' : '';
   const environment = {
     feedback: (workspace) => createFeedbackSurface(() => bench.place(campaign ? WB_TYPES.roster : WB_TYPES.commons, workspace)),
     teamCommons: (id) => ({ el: commonsFor(id).el, show: (detail = {}) => { const item = commonsFor(id); if (!detail.doc && !detail.tab) item.attendQueueOnOpen(); item.channels.enter(ctx); if (detail.doc) { item.channels.select('docs'); void item.docs.open(detail.doc); } else if (detail.tab) item.channels.select(detail.tab); } }),
@@ -288,10 +284,6 @@ export function createCoworkView(options = {}) {
         : { kind: 'team', team: team === UNASSIGNED ? '' : team },
       lead: (project) => membersOfTeam(project.team).find((member) => member.team_lead)?.name || '',
       openOwner: (name) => openAgentWorkbench(name),
-    }),
-    workViews: () => createWorkViewsSurface({
-      holderTeam: holderTeamOf, openTeam: (name) => openWorkspaceTab('team', name), team: campaign || team === UNASSIGNED ? '' : team,
-      leadOf: (name) => membersOfTeam(name).find((member) => member.team_lead)?.name || '',
     }),
     teamKanban: (id) => taskManagerFor(id),
     taskStatus: (id, detail) => taskManagerFor(id, { ...detail, view: 'status' }),
@@ -915,7 +907,7 @@ export function createCoworkView(options = {}) {
       team = campaign ? '' : context.param;
       const { state: entry } = context.workbenchEntry({ count: 2, selected: 'workspace1',
         arrangement: normalizeWorkbenchState(null, bench.declaration).arrangement,
-        seats: campaign ? { workspace1: WB_TYPES.roster, workspace2: desk ? WB_TYPES.workViews : WB_TYPES.newTeamForm } : {} });
+        seats: campaign ? { workspace1: WB_TYPES.roster, ...(desk ? {} : { workspace2: WB_TYPES.newTeamForm }) } : {} });
       setBarLabel();
       const typed = normalizeWorkbenchState(entry, bench.declaration);
       remembered = { ...typed.seats };

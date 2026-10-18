@@ -22,43 +22,14 @@ density you were in. Switching density keeps the selection: a selected stone wit
 becomes its level in full density, a level becomes its selected stone in compact, and
 the stone open at that level returns with it. Consumers never restyle the rest geometry.
 
-Trello view (`work.views`, `work-views-surface.js`) is the Cowork/Desk work-item card, over
-the collection push (every board with its items by stage and their holders; owner 2026-10-09,
-one reading per tenant: wanted with `team` on a Team, `board` on the Board tenant, nothing on
-Cowork/Desk), with no phalanx, organised as a Trello board: its top-left button names the view and switches
-it. Status lays one fixed-width list per stage, grouping under an underlined subtitle per
-board that board's items (every descendant, `boardStages`) at that stage (one board alone has
-no subtitle: its items sit straight in the list); Board lays one
-list per board with a subtitle per stage it has items at. The lists are one drawing,
-`createLists(root, scope)`, exported: the surface draws both views with it, and a board's
-Open on a collection door draws that one board's stage lists with it (`board-overlay.js`;
-owner 2026-10-08: the lists only, no nested surface, header or View-by). Each list carries its count at the
-head and Add at the foot (the Add form, started in that list); Board view ends with Add board
-(the Add form with New board chosen, held by the Team on a Team workbench). Board view puts
-Unfiled last, in its own accent shade. On a Team, Add with no board of its own to start on
-defaults to the Team's target board, read off `boards` and never stored: the oldest root the
-Team holds, else the oldest its lead holds, else Unfiled. Cowork/Desk draw every board the
-reading gives; a Team workbench draws the reading wanted with its Team and filters nothing in
-the browser; a write shows itself when the reading is pushed again. In Board view an item card drags onto another
-board's list (one reparent call under that board; its children come with it) or onto empty
-row space (reparent to none: a root); on a Team workbench a root made that way is then
-assigned to the Team when it had no holder. In Status view an item card drags onto another
-stage's list (one `POST /api/work-items/:id/stage` call with that stage). The store writes each move's trail line. Every press opens an overlay
-from `work-details.js`, whose one utility sits top right: Save (only while there is
-something to save), Assign, Add (the Add form as an overlay, placed where it was pressed),
-Close. The Add form, the same wherever Add appears, asks title, objective, status and
-board: an existing board, New board (`root: true` on the create route: a root of its own) or
-Unfiled, the default. Assign holds the item by an Agent or a Team.
-
 **The phalanx** (owner ruling, 2026-10-03). `phalanx.js` is the stone work
 surface as it was, its geometry untouched: Settings (Presets, Workspace Folders, Model
-Providers, Setup), Team Chart, Work Items and the Trello view's overlays draw with it. Escape
-lifts only the layer it is pressed in: an item overlay inside a board's overlay leaves the
-board's overlay standing (2026-10-08).
+Providers, Setup), Team Chart and Work Items draw with it. Escape lifts only the layer it
+is pressed in (2026-10-08).
 
 Task Manager keeps its board and status/Project drill-downs for the Agent's Task Manager;
 its selector card is no longer offered on the Cowork, Desk or Team workbenches. The older
-Work Items board (`work-items`) stays on the Team workbench beside Trello view and in the
+Work Items board (`work-items`) stays on the Team workbench and in the
 Agent's; Team reads its selected Team, Agent filters to Projects held by that Agent.
 
 Work Items mounts `createPhalanx` directly in the standard surface content seat. Each
@@ -201,7 +172,7 @@ restoration branches.
 | Destination | First open | Notable structured opening |
 |---|---|---|
 | Ronin Settings | Defaults in workspace 1; Workspace Folders in workspace 2 | **Desk defaults** replaces the seats with Defaults and Launch your own |
-| Desk | Teams overview in workspace 1; Trello view in workspace 2 | Status and Project drill-downs retain the Desk tenant |
+| Desk | Teams overview in workspace 1; workspace 2 blank | Status and Project drill-downs retain the Desk tenant |
 | New Project | New Agent in workspace 1 | Links may replace or overlay New Agent/New Team and carry prompt or template detail |
 | Ronin Setup | Garden in workspace 1; active journey surface in workspace 2 | Journey actions select a Setup surface without another restoration path |
 | Cowork / Team | Fresh empty/member seating rules; refresh restores this instance | Team Configuration, documents, commons tabs, and New Agent may be addressed in seat detail |
