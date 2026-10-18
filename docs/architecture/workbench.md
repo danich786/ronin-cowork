@@ -24,13 +24,18 @@ the stone open at that level returns with it. Consumers never restyle the rest g
 
 **The phalanx** (owner ruling, 2026-10-03). `phalanx.js` is the stone work
 surface as it was, its geometry untouched: Settings (Presets, Workspace Folders, Model
-Providers, Setup), Team Chart and Work Items draw with it. Escape lifts only the layer it
+Providers, Setup) and the Agent workbench's Work Items draw with it. Escape lifts only the layer it
 is pressed in (2026-10-08).
 
 Task Manager keeps its board and status/Project drill-downs for the Agent's Task Manager;
 its selector card is no longer offered on the Cowork, Desk or Team workbenches. The older
-Work Items board (`work-items`) stays on the Team workbench and in the
-Agent's; Team reads its selected Team, Agent filters to Projects held by that Agent.
+Work Items board (`work-items`) stays on the Agent's workbench, filtered to Projects held by
+that Agent. **The Team page** (owner, 2026-10-18) is the old Team workbench opening on the
+lead's tile in workspace 1 with workspace 2 blank; its selector holds Commons, the Agents,
+New Agent and the hints (Agent vocabulary, Session controls). Team Chart and the Team's Work
+Items card are deleted; the composition reader, Behaviors and Feedback stay in the profile
+only so the roster, New Agent's Customize Behaviors and the bar's Feedback can place them.
+Launch of a Team is always a new tab (`openWorkspaceTab`).
 
 Work Items mounts `createPhalanx` directly in the standard surface content seat. Each
 Project is a selectable stone in Ideas, Planning, Building, Landing, Done order. Selection
@@ -242,7 +247,6 @@ independent and must not hold the frame.
 | Surface | Required data and owner |
 |---|---|
 | Team roster / Team profile | Team records and live session-derived membership; the roster's Phalanx is Cowork/Desk's only discovery of Teams (no per-Team selector cards); its detail and a placed Team profile paint one body (`leagueTeamBody` in `cowork-view.js`) |
-| Team Chart | Selected Team membership and lead designation; Phalanx owns collection and selection geometry, and its in-place detail embeds the canonical Agent composition reader plus the secondary Launch action |
 | Team roster (`cowork.session-roster`) | `js/roster.js` restored as consumed before the Phalanx port: Team records, live sessions and pushed home rows; its desk column stays empty now that desks are read when the ladder opens |
 | Agent terminal | selected session plus terminal transport; other sessions are not mounted for it |
 | Commons | only the selected tab enters: Roster, Docs, Wipeboard, Messages, Configuration, or another registered room |
