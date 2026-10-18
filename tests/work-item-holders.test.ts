@@ -27,7 +27,7 @@ process.env.RONIN_SESSION_DIR = path.join(temp, 'sessions');
 const items = await import('../src/work-items.js');
 const { createTeamRoster, readTeamRoster } = await import('../src/team-rosters.js');
 const { readLetterHolds, seedTegami } = await import('../src/tegami.js');
-const { everyItemReading, teamReading, unassignedReading } = await import('../src/work-items-read.js');
+const { everyItemReading, teamBoard, teamReading, unassignedReading } = await import('../src/work-items-read.js');
 
 await createTeamRoster('crew', { objective: 'hold things' });
 await seedTegami('ann');
@@ -141,6 +141,22 @@ test('readings: the team reads its own holds and its members\' holds, children a
   assert.ok(!unassigned.includes(overall.id));
   const every = new Map((await everyItemReading()).map((item) => [item.id, item.holder]));
   assert.deepEqual([overall.id, piece.id, parked.id, nested.id].map((id) => every.get(id)), ['team:readers', 'agent:reader_a', '', ''], 'every item names the holder it is found on');
+});
+
+test('the Team\'s board: the root the Team holds, else the root its lead holds, else null; an item under a board is never it', async () => {
+  await createTeamRoster('boarders', { objective: 'board us' });
+  await seedTegami('cap');
+  await seedTegami('deck');
+  const boarders = { kind: 'team', name: 'boarders' } as const;
+  const sessions = [{ name: 'cap', key: 'cap', tags: ['boarders'] }, { name: 'deck', key: 'deck', tags: ['boarders'] }];
+  const filed = (await items.createItem({ title: 'filed under Unfiled', holder: boarders }, 'lead')).item;
+  assert.equal(teamBoard(await teamReading('boarders', sessions), 'cap'), null, 'an item under the Unfiled board is not a board');
+  const capBoard = (await items.createItem({ title: 'cap board', root: true, holder: { kind: 'agent', name: 'cap' } }, 'lead')).item;
+  assert.equal(teamBoard(await teamReading('boarders', sessions), 'deck'), null, 'another member\'s root is not the lead\'s');
+  assert.equal(teamBoard(await teamReading('boarders', sessions), 'cap')?.id, capBoard.id, 'no Team root: the lead\'s root');
+  const teamBoardItem = (await items.createItem({ title: 'team board', root: true, holder: boarders }, 'lead')).item;
+  assert.equal(teamBoard(await teamReading('boarders', sessions), 'cap')?.id, teamBoardItem.id, 'the Team\'s own root comes first');
+  assert.notEqual(filed.parent, null);
 });
 
 test('nesting under a held board queues its holder exactly one message; under an unheld board, none', async () => {

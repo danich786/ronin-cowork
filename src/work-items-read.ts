@@ -10,7 +10,7 @@
  */
 import { readLetterHolds } from './tegami.js';
 import { sessionKey } from './session-dir.js';
-import { readTeamRoster } from './team-rosters.js';
+import { readTeamRoster, type TeamRoster } from './team-rosters.js';
 import { listSessions } from './tmux.js';
 import { WorkItemMissing, heldIds, holderLabel, listItems, readItem, unfiledBoard, type Rung, type WorkItem } from './work-items.js';
 
@@ -70,6 +70,12 @@ function byParent(items: HeldItem[]): HeldItem[] {
 export async function teamReading(team: string, sessions?: Array<{ name: string; key: string; tags: string[] }>): Promise<TeamReading> {
   const roster = await readTeamRoster(team);
   if (!roster) throw new WorkItemMissing(`Team "${team}" has no roster.`);
+  return rosterReading(roster, sessions);
+}
+
+/** The Team reading from a roster already in hand: the teams push builds one per roster. */
+export async function rosterReading(roster: Pick<TeamRoster, 'name' | 'objective' | 'holds'>, sessions?: Array<{ name: string; key: string; tags: string[] }>): Promise<TeamReading> {
+  const team = roster.name;
   const members = (sessions ?? await listSessions()).filter((session) => session.tags.includes(team));
   const lists: Array<{ holder: string; ids: string[] }> = [{ holder: `team:${team}`, ids: roster.holds }];
   for (const member of members) lists.push({ holder: `agent:${member.name}`, ids: (await readLetterHolds(member.key))?.holds ?? [] });
@@ -79,6 +85,13 @@ export async function teamReading(team: string, sessions?: Array<{ name: string;
   }
   return { holder: `team:${team}`, team, objective: roster.objective, items: byParent(items), boards: await teamBoards(team, sessions ?? await listSessions()) };
 }
+
+/** THE TEAM'S BOARD (owner, 2026-10-18): the root the Team holds, else the root its lead
+ * holds; none is null. What the teams push carries as `board`, and State on the Teams overlay. */
+export const teamBoard = (reading: TeamReading, lead: string): HeldItem | null =>
+  reading.items.find((item) => !item.parent && item.holder === reading.holder)
+  ?? reading.items.find((item) => !item.parent && item.holder === `agent:${lead}`)
+  ?? null;
 
 /* THE BOARD → TEAMS RULE, the one place it lives. A board is a root item with every item
  * under it. Its Teams come from the holders on the root and on every item under it: team:<name>

@@ -8,6 +8,7 @@ import {
   keepCurrentLine, type Acknowledged, type Holder, type TrailLine,
 } from '../work-items.js';
 import { agentReading, everyItemReading, teamReading, unassignedReading } from '../work-items-read.js';
+import { pushTeams } from '../ws/events.js';
 
 const text = (value: unknown): string | undefined => typeof value === 'string' ? value : value === undefined || value === null ? undefined : String(value);
 
@@ -58,6 +59,13 @@ const guarded = (handler: Handler): express.RequestHandler => (req, res) => {
 };
 
 export function registerWorkItems(app: express.Express): void {
+  // Every write here moves what the teams push carries (a Team's board and items), so the
+  // server pushes the rosters again after it, as the roster routes do (teams-api.ts).
+  app.use('/api/work-items', (req, res, next) => {
+    if (req.method !== 'GET') res.on('finish', () => { if (res.statusCode < 400) void pushTeams(); });
+    next();
+  });
+
   app.get('/api/work-items', guarded(async (req, res) => {
     // The readings: ?session= (agent), ?team= (team), ?unassigned=1; otherwise every item
     // with its holder.
