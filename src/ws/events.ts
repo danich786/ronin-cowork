@@ -21,13 +21,6 @@ const eventClients = new Set<WebSocket>();
  * connection. A board's or a Team's cron jobs are asked for: {t:'want', resource, board|team}
  * answers that one connection with the message every connection is sent on a write.
  *
- * READINGS are asked for with a filter and kept for the connection that asked:
- *   {t:'want', resource:'collection', campaign?, team?, board?[], root?[], stage?[]}
- *     → {t:'collection', filter, teams, boards, roots}   collectionReading (src/collection-read.ts)
- * The reading is sent whole on the want, then again to every connection holding that filter
- * whenever an input moves it (an item, a roster, a workspace folder, the session list) and
- * only when its text changed. Each filter a connection wants is kept until it closes.
- *
  * NO POLLING FOR DATA: the browser never asks for a resource on a clock (owner, 2026-09-29).
  * The one clock the browser hears is {t:'beat'}, every BEAT_MS to every connection, carrying
  * nothing: a tab's socket only listens, so without it a link that died under the tab looks
@@ -43,13 +36,11 @@ export interface Feed {
   jikan: (team: string) => Promise<unknown[] | null>;
   github: { attached: () => Promise<boolean>; answer: () => Promise<unknown> };
   shutdown: (id: string) => object | null;
-  collection: (filter: CollectionWant) => Promise<Record<string, unknown> | null>;
 }
-export interface CollectionWant { campaign?: string; team?: string; board?: string[]; root?: string[]; stage?: string[] }
 const empty: Feed = {
   list: listSessions, home: async () => [], teams: async () => [], messages: async () => [],
   wipeboard: async () => null, jikan: async () => null, github: { attached: async () => false, answer: async () => null },
-  shutdown: () => null, collection: async () => null,
+  shutdown: () => null,
 };
 let feed: Feed = empty;
 let lastSessions = '';
@@ -73,9 +64,6 @@ type Tick = { reached: Map<string, ReadonlySet<WebSocket>> };
 let ticking: Promise<Tick> | undefined;
 // Roster reads run in write order, so an older read never lands after a newer one.
 let teamsRead: Promise<void> = Promise.resolve();
-// The readings wanted with a filter: by key (resource and filter text), the filter and the
-// connections that hold it.
-const readings = new Map<string, { filter: CollectionWant; sockets: Set<WebSocket> }>();
 
 // The fields the UI paints: `activity` moves on every keystroke and nothing under public/
 // shows it, and a row's stance `at` is the same; neither makes a push on its own.
@@ -94,7 +82,6 @@ export function feedEvents(next: Partial<Feed>): void {
   lastSent.clear();
   reads.clear();
   waiting.clear();
-  readings.clear();
   teamsRead = Promise.resolve();
 }
 
@@ -123,7 +110,6 @@ export function tick(): Promise<Tick> {
     if (signature !== lastSessions) {
       lastSessions = signature;
       send({ t: 'sessions', list: sessions });
-      void pushReadings();
     }
     const rows = await feed.home(sessions).catch(() => undefined);
     if (rows && homeSignature(rows) !== lastHome) {
@@ -202,54 +188,6 @@ export function pushJikan(team: string): Promise<void> {
     readThenSend(`jikan:${key}`, () => jikanMessage(key), sendChanged(`jikan:${key}`)))).then(() => undefined);
 }
 
-const readingMessage = async (filter: CollectionWant) => {
-  const answer = await feed.collection(filter).catch(() => null);
-  return answer && { t: 'collection', filter, ...answer };
-};
-// Sent to the connections holding this filter, when it moved since the last one sent.
-const sendReading = (key: string) => (msg: Record<string, unknown>) => {
-  const text = JSON.stringify(msg);
-  if (lastSent.get(key) === text) return;
-  lastSent.set(key, text);
-  for (const ws of readings.get(key)?.sockets ?? []) if (ws.readyState === ws.OPEN) ws.send(text);
-};
-// After an input of the readings changed: every held filter is read again and sent where it moved.
-export function pushReadings(): Promise<void> {
-  return Promise.all([...readings].map(([key, held]) => readThenSend(key, () => readingMessage(held.filter), sendReading(key)))).then(() => undefined);
-}
-
-const words = (value: unknown): string | undefined => typeof value === 'string' && value.trim() ? value.trim() : undefined;
-// A list field: a string is a one-item list; trimmed, deduplicated, empties dropped.
-const many = (value: unknown) => [...new Set((Array.isArray(value) ? value : [value]).map(words).filter((name): name is string => Boolean(name)))];
-// The filter a want names, in one fixed order so the same filter is the same key.
-function wantedReading(msg: Record<string, unknown>): CollectionWant | null {
-  if (msg.resource !== 'collection') return null;
-  const board = many(msg.board), root = many(msg.root), stage = many(msg.stage);
-  const filter: CollectionWant = { campaign: words(msg.campaign), team: words(msg.team), ...(board.length ? { board } : {}), ...(root.length ? { root } : {}), ...(stage.length ? { stage } : {}) };
-  return JSON.parse(JSON.stringify(filter)) as CollectionWant;
-}
-function holdReading(ws: WebSocket, filter: CollectionWant): void {
-  const key = `collection:${JSON.stringify(filter)}`;
-  const held = readings.get(key) ?? { filter, sockets: new Set<WebSocket>() };
-  held.sockets.add(ws);
-  readings.set(key, held);
-  // This connection is sent the reading now; the others holding it only if it moved.
-  void readingMessage(filter).then((msg) => {
-    if (!msg) return;
-    const text = JSON.stringify(msg);
-    if (ws.readyState === ws.OPEN) ws.send(text);
-    if (lastSent.get(key) === text) return;
-    lastSent.set(key, text);
-    for (const other of held.sockets) if (other !== ws && other.readyState === other.OPEN) other.send(text);
-  });
-}
-function dropReadings(ws: WebSocket): void {
-  for (const [key, held] of readings) {
-    held.sockets.delete(ws);
-    if (!held.sockets.size) { readings.delete(key); lastSent.delete(key); }
-  }
-}
-
 // The store folders are the whole truth for boards, cron jobs and the message queue, and
 // every writer (a route, a CLI child, the server itself) changes a file in them. The server
 // watches each and pushes the resource the changed file names.
@@ -272,13 +210,13 @@ const SESSION_NOTIFICATIONS = [
 
 export function handleEvents(ws: WebSocket): void {
   eventClients.add(ws);
-  const drop = () => { eventClients.delete(ws); unwatch(ws); dropReadings(ws); };
+  const drop = () => { eventClients.delete(ws); unwatch(ws); };
   ws.on('close', drop);
   ws.on('error', drop);
   // The one thing a browser says on this socket. Everything else it sends is ignored: this
   // is a feed, and an unknown message from a client is not a reason to drop the connection.
   ws.on('message', (raw) => {
-    let msg: { t?: string; session?: unknown; reading?: unknown; resource?: unknown; board?: unknown; team?: unknown; id?: unknown; campaign?: unknown; root?: unknown; stage?: unknown };
+    let msg: { t?: string; session?: unknown; reading?: unknown; resource?: unknown; board?: unknown; team?: unknown; id?: unknown };
     try {
       msg = JSON.parse(String(raw)) as typeof msg;
     } catch {
@@ -288,8 +226,6 @@ export function handleEvents(ws: WebSocket): void {
     // mid-shutdown asks for that shutdown; the answer is the same message a change sends, on
     // this socket, in order with every push after it.
     if (msg?.t === 'want') {
-      const reading = wantedReading(msg);
-      if (reading) return holdReading(ws, reading);
       const shutdown = msg.resource === 'shutdown' && typeof msg.id === 'string' ? feed.shutdown(msg.id) : null;
       const answer = msg.resource === 'wipeboard' && typeof msg.board === 'string' ? wipeboardMessage(msg.board)
         : msg.resource === 'jikan' && typeof msg.team === 'string' ? jikanMessage(msg.team)

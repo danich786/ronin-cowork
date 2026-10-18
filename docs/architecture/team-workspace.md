@@ -133,19 +133,7 @@ Deleted Agent's holds are released with a `holder-ended` trail line on each item
 item and every item under it; its Teams come from the holders on the root and on every item
 under it, `team:<name>` directly and `agent:<name>` through that Agent's Team tags, so an
 Agent in two Teams brings the board to both. The Unfiled board has no Team. A Team's
-`boards` and the collection reading both read this rule.
-
-**The collection reading** (`GET /api/collection`, `src/collection-read.ts`) joins Who, What
-and Where, derived and never stored. It answers `teams` (`name, title, objective, lead,
-agents, roots, repos, boards, items`: the item count on its boards), `boards` (the root item
-with `holder, teams, agents, roots` and `stages: [{ stage, items }]`, non-empty stages only)
-and `roots` (`name, path, docs, repos, teams, boards`; docs are the folder's registered docs and plans, repos the repos its Teams list). A Team's folders are its roster's `project_root`
-and `repos` that are registered workspace folders; a board's folders come through its
-Teams, and the Unfiled board has none. Optional filters narrow every list together:
-`team` (its folders and boards), `root` (one folder or several, repeated `root=a&root=b` or
-comma-separated `root=a,b`: the union of the Teams in them and the boards they hold, each once),
-`board` (its Teams and folders), `agent` (boards narrowed to the items that Agent holds,
-Teams to its Teams) and `stage` (items at that stage). Worktrees are not part of it.
+`boards` read this rule.
 
 **Team Configuration** (`public/js/team-configuration.js`) is the commons tab that edits
 that record and nothing else — never membership or the lead. It is drawn in the same format

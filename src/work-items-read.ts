@@ -83,8 +83,8 @@ export async function teamReading(team: string, sessions?: Array<{ name: string;
 /* THE BOARD → TEAMS RULE, the one place it lives. A board is a root item with every item
  * under it. Its Teams come from the holders on the root and on every item under it: team:<name>
  * directly, agent:<name> through that Agent's Team tags (an Agent in two Teams brings the board
- * to both). The Unfiled board belongs to no Team. A Team's boards (its reading's `boards`) and
- * the collection reading's joins both read this. */
+ * to both). The Unfiled board belongs to no Team. A Team's boards (its reading's `boards`) read
+ * this. */
 export interface BoardReading {
   board: HeldItem;
   /** Every item under the board, the root itself excluded. */
