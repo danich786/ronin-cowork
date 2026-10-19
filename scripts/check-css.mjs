@@ -32,7 +32,8 @@ function block(source, marker) {
 }
 
 const index = fs.readFileSync(path.join(PUB, 'index.html'), 'utf8');
-const linkedStyles = [...index.matchAll(/<link\s+[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)["']/g)].map((match) => match[1]);
+// index.html links every sheet under the asset fingerprint (src/index.ts rewrites the placeholder); the sheet's path is what is checked.
+const linkedStyles = [...index.matchAll(/<link\s+[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)["']/g)].map((match) => match[1].replace(/^\/__RONIN_ASSET_VERSION__\//, ''));
 const rootFeatureSheets = fs.readdirSync(PUB).filter((file) => file.endsWith('.css') && !['style.css', 'workspace-kit.css'].includes(file));
 for (const file of rootFeatureSheets) problems.push(`${file} is a feature stylesheet outside public/css/`);
 for (const file of featurePaths) {
