@@ -127,6 +127,15 @@ row carrying the Team's board and items, through the Team projection in
 `team-controller.js`, and requests nothing. A stone pressed lays the Team's read over it;
 the 人 mark in the stone's corner, and Launch in the read, open the Team page in a new tab.
 
+**The Teams workbench** (owner, 2026-10-19; supersedes the overlay, which goes once Home's
+door opens the workbench): the Teams door opens a workbench in the same tab, the bar reading
+Home • Teams. `public/js/teams-surface.js` gives it its two surfaces on the ordinary contract:
+`createTeamsSurface({ onOpen })` in workspace 1, the same stones under the same two questions
+(the questions in the stone surface's header slot), a stone pressed calling `onOpen(name)`;
+and `createTeamReadSurface(name)` in workspace 2, the Team's read — Theme, State, Agents —
+with Launch in its header. The destination (`teams.stones`, `teams.read` in the catalog;
+its selector offers New Team) places them. The same teams push, no requests.
+
 There is no Campaign picker, default star, archive action or New Campaign footer.
 
 The live owner is `public/js/campaign-home.js`.

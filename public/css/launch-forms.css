@@ -80,6 +80,10 @@
   .teams-overlay > .sws-host { flex: 1 1 auto; }
   .sws-stone > .teams-overlay-launch { position: absolute; inset-block-start: var(--space-4); inset-inline-end: var(--space-4); cursor: pointer; }
   .teams-overlay-line { display: flex; gap: var(--space-3); font-size: var(--form-input); line-height: 1.45; }
+  /* The Teams workbench's surfaces (js/teams-surface.js): the 人 launch in a stone's corner, the Team's read lines in WS2. */
+  .sws-stone > .teams-launch { position: absolute; inset-block-start: var(--space-4); inset-inline-end: var(--space-4); cursor: pointer; }
+  .teams-read-lines { display: flex; flex-direction: column; gap: var(--space-3); }
+  .teams-read-line { display: flex; gap: var(--space-3); font-size: var(--form-input); line-height: 1.45; }
   @container stone-work-surface-seat (max-width: 40rem) {
     .wk-surface-content.sws-host { padding-inline: var(--space-6); }
     .sws { gap: var(--space-6); }
