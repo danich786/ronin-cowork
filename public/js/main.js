@@ -18,6 +18,7 @@ import { createCoworkView } from './cowork-view.js';
 import { createDeskView } from './desk-view.js';
 import { createAgentView } from './agent-view.js';
 import { createCampaignHome } from './campaign-home.js';
+import { createModelsView, createTeamsView, createWorkspacesView } from './door-workbenches.js';
 import { createCampaignView } from './campaign-view.js';
 import { createSetupView } from './setup-view.js';
 import { createLaunchView } from './launch-view.js';
@@ -115,6 +116,10 @@ async function init() {
   // page failing must cost the owner a page, never their terminals. `safeView` is this
   // one, so its own failure is reported rather than looping.
   guard('register the Ronin Home destination', () => workspace.register('home', createCampaignHome()));
+  // Home's three doors, each a workbench of its own in the same tab (owner, 2026-10-19).
+  guard('register the Models destination', () => workspace.register('models', createModelsView()));
+  guard('register the Workspaces destination', () => workspace.register('workspaces', createWorkspacesView()));
+  guard('register the Teams destination', () => workspace.register('teams', createTeamsView()));
   // the same workbench, selector column, persistence, recall and drag/drop as the Cowork
   // space, offering a Campaign's own configuration instead of its Coworks and Agents.
   guard('register the Campaign destination', () => workspace.register('campaign', createCampaignView()));

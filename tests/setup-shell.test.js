@@ -14,18 +14,25 @@ test('Ronin Home routes the Machine door from persisted Campaign Setup answers',
   } } } }), 'campaign');
 });
 
-test('Ronin Home has three doors — Models, Workspaces, Teams — each a full overlay over Home (owner, 2026-10-18)', async () => {
-  const home = await source('js/campaign-home.js');
+test('Ronin Home has three doors — Models, Workspaces, Teams — each opening its own workbench in the same tab (owner, 2026-10-19)', async () => {
+  const [home, doors, catalog, contract, header, main] = await Promise.all([
+    source('js/campaign-home.js'), source('js/door-workbenches.js'), source('js/workbench-catalog.js'), source('js/workspace-contract.js'), source('js/workspace-header.js'), source('js/main.js'),
+  ]);
   assert.match(home, /Ronin Home/);
-  assert.match(home, /key: 'models'[^\n]*'Models'/);
-  assert.match(home, /key: 'workspaces'[^\n]*'Workspaces'/);
-  assert.match(home, /key: 'teams'[^\n]*'Teams'/);
+  for (const key of ['models', 'workspaces', 'teams']) {
+    assert.match(home, new RegExp(`key: '${key}', route: '${key}'`), `the ${key} door navigates to its own destination`);
+    assert.match(main, new RegExp(`workspace\\.register\\('${key}', `), `the ${key} destination is registered`);
+    assert.match(contract, new RegExp(`'${key}'`), `${key} is a Workbench appearance, so the tab machinery applies`);
+  }
+  assert.match(home, /ctx\?\.navigate\(route\)/, 'a plain press opens the workbench in this tab');
   assert.match(home, /campaign_home\.settings', 'Settings'/);
-  assert.match(home, /models: \(\) => lay\([^\n]*createProviderSurface\(/, 'Models is the Model Providers surface, reused');
-  assert.match(home, /workspaces: \(\) => lay\([^\n]*createWorkspaceFoldersSurface\(/, 'Workspaces is the Workspace Folders surface, reused');
-  assert.match(home, /teams: \(\) => openTeamsOver\(root\)/, "Teams is collection_view's overlay over Home's element");
-  assert.match(home, /fullOverlay\(root, \(layer, through\)/);
-  assert.doesNotMatch(home, /api\/setup\/runtime|data-unavailable|workbenchLaunchUrl/, 'no provider gate, no navigation out of Home');
+  assert.doesNotMatch(home, /fullOverlay|openTeamsOver|work-overlay|api\/setup\/runtime/, 'no overlays over Home, no provider gate');
+  assert.match(doors, /seat: PROVIDER_SURFACE_TYPE, cards: false/, 'Models seats the Model Providers surface, no selector cards');
+  assert.match(doors, /seat: WORKBENCH_TYPES\.campaignRoots, cards: false/, 'Workspaces seats the Workspace Folders surface, no selector cards');
+  assert.match(doors, /seat: WORKBENCH_TYPES\.teams,/, "Teams seats collection_view's stones");
+  assert.match(doors, /bench\(\)\.place\(WORKBENCH_TYPES\.teamRead, 'workspace2', \{ key: name \}\)/, 'a stone pressed places the Team\u2019s read in Workspace 2');
+  assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.teams, \[WORKBENCH_TYPES\.teams, WORKBENCH_TYPES\.teamRead, WORKBENCH_TYPES\.newTeamForm\]\)/, 'the Teams selector offers New Team');
+  assert.match(header, /home\.hidden = !placed/, 'the bar reads RoninCowork • Home • <door>, Home the way back');
 });
 
 test('Ronin Home and Setup share the same persisted light and dark control', async () => {

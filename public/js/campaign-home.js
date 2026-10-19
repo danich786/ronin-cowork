@@ -1,21 +1,17 @@
 /* part of the ronin-cowork client — see js/README.md */
 /**
  * RONIN HOME — the quiet root arrival and three doors out of it: Models, Workspaces, Teams
- * (PATTERNS.md, Home; owner, 2026-10-18). Each opens a full overlay over Home: a gateway to
- * edit or to enter, never a destination of its own. Models is the Model Providers surface
- * and Workspaces the Workspace Folders surface, each reused as it is; Teams is
- * collection_view's teams-overlay.js, which lays itself over Home.
+ * (PATTERNS.md, Home; owner, 2026-10-19). Home stays a page; each door opens its own
+ * workbench in this tab (door-workbenches.js), the bar reading RoninCowork • Home • <door>
+ * with Home the way back. A door is a link: a plain press navigates here, a modified press
+ * opens the workbench in a new tab.
  */
 import { t } from './lexicon.js';
 import { createReleaseUpdateController, packageReading } from './release-update-controller.js';
 import { createSenmaida } from './senmaida.js';
 import { createThemeToggle } from './theme-toggle.js';
 import { campaignById, loadCampaigns, normalizeSelection, setupDefaultView } from './campaigns.js';
-import { fullOverlay } from './work-details.js';
-import { createProviderSurface } from './provider-surface.js';
-import { createProviderSetupSessionMount } from './provider-setup-session.js';
-import { createWorkspaceFoldersSurface } from './workspace-folders-surface.js';
-import { openTeamsOver } from './teams-overlay.js';
+import { workbenchLaunchUrl } from './workspace.js';
 
 const el = (tag, cls, text) => {
   const out = document.createElement(tag);
@@ -26,9 +22,9 @@ const el = (tag, cls, text) => {
 
 function DOORS() {
   return [
-    { key: 'models', glyph: '✶', name: t('campaign_home.models', 'Models'), is: t('campaign_home.models_is', 'Model providers on this machine: install, sign in, choose') },
-    { key: 'workspaces', glyph: '⌂', name: t('campaign_home.workspaces', 'Workspaces'), is: t('campaign_home.workspaces_is', 'The folders your Teams work in') },
-    { key: 'teams', glyph: '人人', name: t('campaign_home.teams', 'Teams'), is: t('campaign_home.teams_is', 'Your Teams; open one to its page') },
+    { key: 'models', route: 'models', glyph: '✶', name: t('campaign_home.models', 'Models'), is: t('campaign_home.models_is', 'Model providers on this machine: install, sign in, choose') },
+    { key: 'workspaces', route: 'workspaces', glyph: '⌂', name: t('campaign_home.workspaces', 'Workspaces'), is: t('campaign_home.workspaces_is', 'The folders your Teams work in') },
+    { key: 'teams', route: 'teams', glyph: '人人', name: t('campaign_home.teams', 'Teams'), is: t('campaign_home.teams_is', 'Your Teams; open one to its page') },
   ];
 }
 
@@ -76,37 +72,19 @@ export function createCampaignHome() {
   let entered = false;
   let setupCampaign = null;
 
-  // A DOOR LAYS ITS SURFACE OVER HOME: the overlay's head names the door and holds its Close;
-  // the surface beneath is the one Settings seats, shown as it shows there, destroyed with the layer.
-  const lay = (title, make) => {
-    root.querySelector(':scope > .work-overlay')?.remove();
-    let surface = null;
-    fullOverlay(root, (layer, through) => {
-      const head = el('div', 'league-team-detail-head');
-      const tools = el('div', 'wk-surface-header-actions');
-      tools.append(...through);
-      head.append(el('h2', null, title), tools);
-      surface = make();
-      layer.append(head, surface.el);
-      void surface.show?.();
-    }, { closed: () => surface?.destroy?.() });
-  };
-  const open = {
-    models: () => lay(t('campaign_home.models', 'Models'), () => createProviderSurface({
-      workspace: 'workspace1', detail: {}, environment: { ...createProviderSetupSessionMount(), setupRuntime: null },
-    })),
-    workspaces: () => lay(t('campaign_home.workspaces', 'Workspaces'), () => createWorkspaceFoldersSurface({
-      campaignId: () => setupCampaign?.id || '', connected: (host) => host.isConnected, presentation: 'stones', workspace: 'workspace1',
-    })),
-    teams: () => openTeamsOver(root),
-  };
-
+  // A DOOR IS A LINK to its workbench: pressed, it navigates this tab; with a modifier it
+  // opens the workbench in a new tab through the same request the bar's doors carry.
   for (const door of DOORS()) {
-    const card = el('button', 'ch-door');
-    card.type = 'button';
+    const route = door.route;
+    const card = el('a', 'ch-door');
     card.dataset.door = door.key;
+    card.href = workbenchLaunchUrl({ destination: route, mode: 'overlay' });
     card.append(doorGlyph(door.glyph), el('h2', null, door.name), el('p', 'ch-is', door.is));
-    card.addEventListener('click', () => open[door.key]());
+    card.addEventListener('click', (event) => {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      ctx?.navigate(route);
+    });
     doors.append(card);
   }
 

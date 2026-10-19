@@ -95,12 +95,15 @@ Rules that make them peers:
 
 ### The bar's navigation
 
-The left side keeps the RoninCowork brand and a Teams door. A neutral island is cut into
-the top edge of the screen and names the active Workbench scope:
+The left side keeps the RoninCowork brand and a Teams door. On one of Home's three
+workbenches it reads the way back and the door instead: RoninCowork • Home • Models,
+Workspaces or Teams (Home returns to the landing). A neutral island is cut into the top
+edge of the screen and names the active Workbench scope:
 
 ```text
 RoninCowork  •  Teams              Teams                         <verbs>
 RoninCowork  •  Teams            Sea Settle                      <verbs>
+RoninCowork  •  Home  •  Models                                  <verbs>
 ```
 
 The root landing and Machine Settings have no island. Campaign reads *Campaign*, Teams
@@ -115,26 +118,14 @@ else does.
 ### The root landing
 
 The bare `/` route is the landing, not a remembered workspace and not a Campaign editor.
-It has three direct doors: **Machine Settings**, **Teams**, and **New Project**. Teams opens
-the collection of Teams and Agents. New Project starts a new Team or Agent; it does not add
-or edit Workspace Folders. The live owner is `public/js/campaign-home.js`.
-
-The Teams door lays the Teams overlay over Home (`public/js/teams-overlay.js`,
-`openTeamsOver(host)`, the one seam Home calls): a full overlay of Phalanx A/B stones of
-Teams, name only, with a Workspace question (many-of, blank All) and a Show question (Theme,
-State, Agents, Items; Theme on by default) at its top. It reads the teams push, each roster
-row carrying the Team's board and items, through the Team projection in
-`team-controller.js`, and requests nothing. A stone pressed lays the Team's read over it;
-the 人 mark in the stone's corner, and Launch in the read, open the Team page in a new tab.
-
-**The Teams workbench** (owner, 2026-10-19; supersedes the overlay, which goes once Home's
-door opens the workbench): the Teams door opens a workbench in the same tab, the bar reading
-Home • Teams. `public/js/teams-surface.js` gives it its two surfaces on the ordinary contract:
-`createTeamsSurface({ onOpen })` in workspace 1, the same stones under the same two questions
-(the questions in the stone surface's header slot), a stone pressed calling `onOpen(name)`;
-and `createTeamReadSurface(name)` in workspace 2, the Team's read — Theme, State, Agents —
-with Launch in its header. The destination (`teams.stones`, `teams.read` in the catalog;
-its selector offers New Team) places them. The same teams push, no requests.
+It has three doors — **Models**, **Workspaces**, **Teams** — each opening its own Workbench in
+the same tab (`public/js/door-workbenches.js`; owner, 2026-10-19). Models is the Model Providers
+surface and Workspaces the Workspace Folders surface, each in Workspace 1 with an empty
+selector; Teams is `teams-surface.js`'s stones of Teams in Workspace 1, name only, with a
+Workspace question (many-of, blank All) and a Show question (Theme, State, Agents, Items; Theme
+on by default) at its top, New Team in the selector. A stone pressed places the Team's read in
+Workspace 2 (Theme, State, Agents, Launch); the 人 mark in the stone's corner, and Launch, open
+the Team page in a new tab. The live owner of the landing is `public/js/campaign-home.js`.
 
 There is no Campaign picker, default star, archive action or New Campaign footer.
 

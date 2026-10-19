@@ -16,6 +16,11 @@ export function installWorkspaceHeader(workspace) {
   // THE PLACE is the label inside the centred scope island. Its solid colour stands
   // apart from the tinted Workbench headers below it.
   const place = document.getElementById('viewplace');
+  // HOME'S DOORS (owner, 2026-10-19): a view that names its place (`place`) reads
+  // RoninCowork • Home • <place>, Home the way back; the Teams door of the bar steps aside.
+  const home = document.getElementById('homebtn');
+  const placeSeparator = document.getElementById('placesep');
+  const crumb = document.getElementById('viewcrumb');
 
   const root = () => {
     history.pushState(null, '', location.pathname + location.search);
@@ -28,6 +33,7 @@ export function installWorkspaceHeader(workspace) {
     action();
   };
   ronin?.addEventListener('click', plainRoute(root));
+  home?.addEventListener('click', plainRoute(root));
   coworkers?.addEventListener('click', plainRoute(() => workspace.navigate('cowork')));
 
   const refresh = () => {
@@ -36,9 +42,13 @@ export function installWorkspaceHeader(workspace) {
     if (appearance) document.documentElement.dataset.workbench = appearance;
     else delete document.documentElement.dataset.workbench;
     const landing = !active || active.id === 'home';
+    const placed = active?.view?.place ? active.view.place() : '';
     if (separator) separator.hidden = landing;
+    if (home) { home.textContent = t('bar.home', 'Home'); home.hidden = !placed; }
+    if (placeSeparator) placeSeparator.hidden = !placed;
+    if (crumb) { crumb.textContent = placed; crumb.hidden = !placed; }
     if (coworkers) {
-      coworkers.hidden = landing;
+      coworkers.hidden = landing || Boolean(placed);
       coworkers.href = workbenchLaunchUrl({ destination: 'cowork', mode: 'overlay' });
     }
     if (place) {

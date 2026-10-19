@@ -68,8 +68,6 @@
   .ch-door[data-door='models'] { --ch-tone: var(--kaki); }
   .ch-door[data-door='workspaces'] { --ch-tone: var(--accent-2); }
   .ch-door[data-door='teams'] { --ch-tone: var(--ok-2); }
-  /* A door's overlay fills Home, the tile's overlay rule copied (work-details.js lays it). */
-  .ch-view > .work-overlay { position: absolute; inset: 0; z-index: 14; overflow-y: auto; box-sizing: border-box; padding: var(--space-5) var(--space-6); background: var(--panel); }
 
   .ch-door:hover {
     border-color: var(--ch-edge-hover);

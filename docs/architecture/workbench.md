@@ -140,13 +140,15 @@ status as its own reads return.
 6. Async enrichment must not discard edits made after the first paint. Generation or
    ownership checks prevent stale responses from repainting replaced surfaces.
 
-**Ronin Home** (`campaign-home.js`; owner, 2026-10-18) has three doors — **Models**,
-**Workspaces**, **Teams** — each a full overlay over Home (`fullOverlay`, `work-details.js`;
-the layer fills `main.ch-view`): a gateway to edit or to enter, never a destination of its own.
-Models lays the Model Providers surface (`provider-surface.js`) and Workspaces the Workspace
-Folders surface (`workspace-folders-surface.js`), each exactly as Settings seats it, destroyed
-with the layer; Teams calls `openTeamsOver(host)` from `teams-overlay.js`, which lays the
-Teams stones over Home and, from a stone, launches the Team page in a new tab.
+**Ronin Home** (`campaign-home.js`; owner, 2026-10-19) stays a page, not a Workbench, with three
+doors — **Models**, **Workspaces**, **Teams** — each a link to a Workbench destination of its own,
+opened in the same tab (a modified press opens a new tab through `workbenchLaunchUrl`). The
+three destinations are one shape (`door-workbenches.js`): the Kit Workbench on a profile of the
+door's surfaces, the door's surface seated in Workspace 1 on first open. Models seats the Model
+Providers surface and Workspaces the Workspace Folders surface, each as Settings seats them,
+with no selector cards for now (`selectorFilter`); Teams seats `teams-surface.js`'s stones, a
+stone pressed placing the Team's read in Workspace 2, and offers New Team. The bar reads
+RoninCowork • Home • <door>, Home the way back (`workspace-header.js`, the view's `place`).
 
 Campaign Defaults is the reference case. Its saved values are already in
 `campaign.config.defaults`, so it paints them immediately. Model choices come from the

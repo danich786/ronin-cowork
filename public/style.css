@@ -333,7 +333,7 @@
   --term-input-fg: #2c2e36;
 }
 
-:root:is([data-workbench='campaign'], [data-workbench='setup'], [data-workbench='launch']) {
+:root:is([data-workbench='campaign'], [data-workbench='setup'], [data-workbench='launch'], [data-workbench='models'], [data-workbench='workspaces']) {
   --cowork-head-bg: var(--scope-campaign-head-bg);
   --cowork-head-line: var(--scope-graphite);
   --cowork-surface-head-edge: var(--space-1);
@@ -347,7 +347,7 @@
   --cowork-head-fg: var(--scope-head-fg);
   --cowork-head-muted: var(--scope-head-muted);
 }
-:root[data-workbench='cowork'] {
+:root:is([data-workbench='cowork'], [data-workbench='teams']) {
   --cowork-head-bg: var(--scope-teams-head-bg);
   --cowork-head-line: var(--aiiro);
   --cowork-surface-head-edge: var(--space-1);

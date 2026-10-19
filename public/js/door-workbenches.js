@@ -1,0 +1,112 @@
+/* part of the ronin-cowork client — see js/README.md */
+/**
+ * THE THREE WORKBENCHES HOME'S DOORS OPEN (owner, 2026-10-19; PATTERNS.md Home): Models,
+ * Workspaces, Teams — each a destination of its own, opened in the same tab, the bar reading
+ * RoninCowork • Home • <door>, Home the way back. One shape for the three: the Kit workbench
+ * on a profile of the door's surfaces (workbench-catalog.js), the door's surface seated in
+ * Workspace 1 on first open. Models seats the Model Providers surface and Workspaces the
+ * Workspace Folders surface, each as Settings seats it, with no selector cards for now;
+ * Teams seats collection_view's stones (teams-surface.js), a stone pressed placing the
+ * Team's read in Workspace 2, and offers New Team.
+ */
+import { WorkspaceKit } from './workspace-kit.js';
+import { t } from './lexicon.js';
+import { workbenchView } from './workspace-contract.js';
+import { registerWorkbenchCatalog, WORKBENCH_PROFILES, WORKBENCH_TYPES } from './workbench-catalog.js';
+import { PROVIDER_SURFACE_TYPE } from './provider-surface.js';
+import { createProviderSetupSessionMount } from './provider-setup-session.js';
+import { createWorkspaceFoldersSurface } from './workspace-folders-surface.js';
+import { campaignById, loadCampaigns, normalizeSelection } from './campaigns.js';
+import { createNewTeamFormView } from './new-team-form.js';
+import { createTeamReadSurface, createTeamsSurface } from './teams-surface.js';
+
+const blank = (id) => WorkspaceKit.primitives.createBlankSurface(id.replace('workspace', 'Workspace ')).el;
+
+/**
+ * One door's workbench. `seat` is the type Workspace 1 holds on first open; `environment`
+ * builds the surfaces' resident data over the bench; `cards` false leaves the selector
+ * without cards; `loaded` is a read the seats are re-placed after (the folders need the
+ * Campaign); `destroy` lets the surfaces go with the view.
+ */
+function doorWorkbench({ id, profile, label, seat, environment, cards = true, loaded = null, destroy = () => {} }) {
+  registerWorkbenchCatalog();
+  const { normalizeWorkbenchState } = WorkspaceKit.contract;
+  let ctx = null, entered = false, bench = null;
+  const save = () => ctx?.patchViewState(id, bench.snapshot());
+  const reseat = () => {
+    for (const [workspace, held] of Object.entries(bench.snapshot().seats)) {
+      const type = typeof held === 'object' ? held.type : held;
+      if (type) bench.place(type, workspace, typeof held === 'object' ? held : {});
+    }
+  };
+  bench = WorkspaceKit.workbench.create({
+    profile, tenant: { kind: id }, environment: environment({ bench: () => bench, entered: () => entered, ctx: () => ctx }),
+    defaultNode: blank, label, ...(cards ? {} : { selectorFilter: () => false }), onStateChange: save, onPlacement: save,
+  });
+  return {
+    el: bench.host, ...workbenchView(id, { header: { feedback: false } }), arrangement: bench.arrangement,
+    title: () => label, place: () => label,
+    mount: (_host, context) => { ctx = context; },
+    enter: (context) => {
+      ctx = context; entered = true;
+      const { state: entry } = context.workbenchEntry({
+        count: 2, selected: 'workspace1',
+        arrangement: normalizeWorkbenchState(null, bench.declaration).arrangement,
+        seats: { workspace1: seat },
+      });
+      const typed = normalizeWorkbenchState(entry, bench.declaration);
+      bench.enter({ ...typed, ...entry });
+      for (const workspace of bench.ids) {
+        const held = typed.seats[workspace];
+        const type = typeof held === 'object' ? held.type : held;
+        if (WorkspaceKit.workbench.library.has(type)) bench.place(type, workspace, typeof held === 'object' ? held : {});
+      }
+      bench.refreshSelector(); save();
+      if (loaded) void loaded().then(() => { if (entered) reseat(); });
+    },
+    leave: () => { entered = false; bench.leave(); },
+    destroy: () => { entered = false; destroy(); bench.leave(); ctx = null; },
+  };
+}
+
+/** Models: the Model Providers surface in Workspace 1, its sign-in tile mounted as on Setup. */
+export function createModelsView() {
+  const providerSessions = createProviderSetupSessionMount();
+  return doorWorkbench({
+    id: 'models', profile: WORKBENCH_PROFILES.models, label: t('campaign_home.models', 'Models'), seat: PROVIDER_SURFACE_TYPE, cards: false,
+    environment: () => ({ setupRuntime: null, mountProviderSetupSession: providerSessions.mountProviderSetupSession }),
+    destroy: () => providerSessions.destroyAll(),
+  });
+}
+
+/** Workspaces: the Workspace Folders surface in Workspace 1, over the Campaign this tab looks at. */
+export function createWorkspacesView() {
+  const campaign = (ctx) => campaignById(normalizeSelection(ctx()?.state?.campaignSelection).primary_campaign_id);
+  return doorWorkbench({
+    id: 'workspaces', profile: WORKBENCH_PROFILES.workspaces, label: t('campaign_home.workspaces', 'Workspaces'), seat: WORKBENCH_TYPES.campaignRoots, cards: false,
+    loaded: loadCampaigns,
+    environment: ({ entered, ctx }) => ({
+      campaignRoots: ({ workspace }) => createWorkspaceFoldersSurface({
+        campaignId: () => campaign(ctx)?.id || '', connected: (host) => entered() && host.isConnected, presentation: 'stones', workspace,
+      }),
+    }),
+  });
+}
+
+/** Teams: collection_view's stones in Workspace 1, a stone's read in Workspace 2, New Team offered. */
+export function createTeamsView() {
+  const made = [];
+  const keep = (surface) => { made.push(surface); return surface; };
+  return doorWorkbench({
+    id: 'teams', profile: WORKBENCH_PROFILES.teams, label: t('campaign.coworks', 'Teams'), seat: WORKBENCH_TYPES.teams,
+    environment: ({ bench }) => ({
+      teams: () => keep(createTeamsSurface({ onOpen: (name) => bench().place(WORKBENCH_TYPES.teamRead, 'workspace2', { key: name }) })),
+      teamRead: (_workspace, detail) => keep(createTeamReadSurface(detail.key)),
+      newTeamForm: (_workspace, consumed) => {
+        const view = createNewTeamFormView(WorkspaceKit, { consumed, created: () => bench().refreshSelector() });
+        return { el: view.el, show: () => void view.enter() };
+      },
+    }),
+    destroy: () => { for (const surface of made.splice(0)) surface.destroy?.(); },
+  });
+}

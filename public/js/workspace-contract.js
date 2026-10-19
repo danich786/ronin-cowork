@@ -12,7 +12,7 @@ export const WORKBENCH_HEADER = Object.freeze({
   services: true,
   feedback: true,
 });
-export const WORKBENCH_APPEARANCES = Object.freeze(['campaign', 'setup', 'launch', 'desk', 'cowork', 'team', 'agent']);
+export const WORKBENCH_APPEARANCES = Object.freeze(['campaign', 'setup', 'launch', 'desk', 'cowork', 'team', 'agent', 'models', 'workspaces', 'teams']);
 
 /** One declaration for every managed Workbench's application chrome. Feature views
  * provide content and, when useful, an island reading; the base owns capabilities and
