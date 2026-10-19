@@ -439,9 +439,12 @@ export function createCoworkView(options = {}) {
     syncPools(membersOfTeam(team));
     return putSession(name, id);
   };
-  /** The seat back, with nothing in it: its tiles go; the lead comes back warm on the next paint. */
+  /** The seat back, with nothing in it: its tiles go, its members stay (destroyAll takes the
+   *  pool's seats with the tiles, so the roster is read again at once — a card pressed before
+   *  the next push found no seat and showed nothing); the lead comes back warm. */
   const emptySeat = (id) => {
     seats[id].pool.destroyAll();
+    syncPools(restorationMembers());
     remembered[id] = DISMISSED_WORKSPACE;
     bench.restoreDefault(id);
     delete seats[id].surface.el.dataset.workbenchSurface;

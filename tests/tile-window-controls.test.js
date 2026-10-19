@@ -67,6 +67,10 @@ test('managed workspaces empty their seat and both empty views use the subdued R
   assert.match(cowork, /onMinimize: \(\) => emptySeat\(id\)/);
   const emptySeat = cowork.slice(cowork.indexOf('const emptySeat ='), cowork.indexOf('const putTerminal ='));
   assert.ok(emptySeat.indexOf('pool.destroyAll()') < emptySeat.indexOf('remembered[id] = DISMISSED_WORKSPACE'));
+  // destroyAll takes the pool's seats with the tiles; an Agent card pressed before the next push
+  // then found no seat, showed nothing, and place() threw 'did not render its terminal Workbench
+  // header' (owner, 2026-10-19). The roster is read again at once.
+  assert.ok(emptySeat.indexOf('pool.destroyAll()') < emptySeat.indexOf('syncPools(restorationMembers())') && emptySeat.indexOf('syncPools(restorationMembers())') < emptySeat.indexOf('remembered[id] = DISMISSED_WORKSPACE'), 'an emptied seat re-reads its members before anything else');
   assert.ok(emptySeat.indexOf('remembered[id] = DISMISSED_WORKSPACE') < emptySeat.indexOf('bench.restoreDefault(id)'));
   // Tolerant of layout: what matters is that the host hands its onMinimize to the Tile,
   // not whether the options sit on one line (fb952d2e wrapped them to add transcriptCache).
