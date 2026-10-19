@@ -127,6 +127,11 @@ on by default) at its top, New Team in the selector. A stone pressed places the 
 Workspace 2 (Theme, State, Agents, Launch); the 人 mark in the stone's corner, and Launch, open
 the Team page in a new tab.
 
+The current root — Ronin Home as it was before 2026-10-18, with doors into the Desk, Team and
+Agent Workbenches — stays at `#/current` (`public/js/current-home.js`) while pieces move from it
+to the new Home. One plain toggle in the bar, the same spot on both pages, swaps the two in one
+press: Current on the new Home, Next on the current one.
+
 There is no Campaign picker, default star, archive action or New Campaign footer.
 
 The live owner is `public/js/campaign-home.js`.

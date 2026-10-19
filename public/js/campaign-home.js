@@ -4,7 +4,10 @@
  * (PATTERNS.md, Home; owner, 2026-10-19). Home stays a page; each door opens its own
  * workbench in this tab (door-workbenches.js), the bar reading RoninCowork • Home • <door>
  * with Home the way back. A door is a link: a plain press navigates here, a modified press
- * opens the workbench in a new tab.
+ * opens the workbench in a new tab. TWO ROOTS (owner, 2026-10-19): this is the default root;
+ * the current root (current-home.js, Home as it was before 2026-10-18) keeps its own address,
+ * and one plain toggle in the bar, the same spot on each, swaps between them while pieces move
+ * from Current to Next: it reads Current here and Next there.
  */
 import { t } from './lexicon.js';
 import { createReleaseUpdateController, packageReading } from './release-update-controller.js';
@@ -28,6 +31,19 @@ function DOORS() {
   ];
 }
 
+/** THE ROOT TOGGLE: a plain bar link to the other root, one press; a modified press is the browser's. */
+export function createRootToggle({ route, label, navigate }) {
+  const link = el('a', 'ui-bar-nav', label());
+  link.href = `#/${route}`;
+  link.dataset.rootToggle = route;
+  link.addEventListener('click', (event) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    navigate(route);
+  });
+  return link;
+}
+
 function doorGlyph(glyph) {
   const host = el('span', 'ch-glyph');
   host.setAttribute('aria-hidden', 'true');
@@ -37,6 +53,7 @@ function doorGlyph(glyph) {
 
 export function createCampaignHome() {
   const themeToggle = createThemeToggle();
+  const rootToggle = createRootToggle({ route: 'current', label: () => t('campaign_home.current', 'Current'), navigate: (route) => ctx?.navigate(route) });
   const root = el('main', 'ch-view');
   root.append(createSenmaida('page', 'ch-horizon'));
   const frame = el('div', 'ch-frame');
@@ -117,7 +134,7 @@ export function createCampaignHome() {
     el: root,
     glyph: '⛩',
     title: () => t('campaign_home.ronin_home', 'Ronin Home'),
-    header: { actions: [themeToggle] },
+    header: { leading: [rootToggle], actions: [themeToggle] },
     enter: (context) => {
       ctx = context;
       entered = true;

@@ -35,13 +35,28 @@ test('Ronin Home has three doors — Models, Workspaces, Teams — each opening 
   assert.match(header, /home\.hidden = !placed/, 'the bar reads RoninCowork • Home • <door>, Home the way back');
 });
 
+test('two roots: the default Home and the current Home at #/current, one bar toggle between them (owner, 2026-10-19)', async () => {
+  const [home, current, main, header, style] = await Promise.all([
+    source('js/campaign-home.js'), source('js/current-home.js'), source('js/main.js'), source('js/workspace-header.js'), source('css/campaign-home.css'),
+  ]);
+  assert.match(main, /workspace\.register\('home', createCampaignHome\(\)\)/, 'the default root is the three-door page');
+  assert.match(main, /workspace\.register\('current', createCurrentHome\(\)\)/, 'the current root keeps its own address');
+  for (const key of ['desk', 'team', 'agent']) assert.match(current, new RegExp(`key: '${key}', route: '`), `the current root keeps its ${key} door`);
+  assert.match(current, /api\/setup\/runtime/, 'the current root keeps its provider gate as it was');
+  assert.match(home, /createRootToggle\(\{ route: 'current', label: \(\) => t\('campaign_home\.current', 'Current'\)/, 'the new Home reads Current');
+  assert.match(current, /createRootToggle\(\{ route: 'home', label: \(\) => t\('campaign_home\.next', 'Next'\)/, 'the current Home reads Next');
+  for (const page of [home, current]) assert.match(page, /header: \{ leading: \[rootToggle\], actions: \[themeToggle\] \}/, 'the toggle sits in the same bar spot on each');
+  assert.match(header, /active\.id === 'home' \|\| active\.id === 'current'/, 'both roots are landings to the bar');
+  for (const key of ['desk', 'team', 'agent']) assert.match(style, new RegExp(`\\.ch-door\\[data-door='${key}'\\]`), `the ${key} door keeps its tone`);
+});
+
 test('Ronin Home and Setup share the same persisted light and dark control', async () => {
   const [home, setup, toggle, workspace, ram, services, contract] = await Promise.all([
     source('js/campaign-home.js'), source('js/setup-view.js'), source('js/theme-toggle.js'),
     source('js/workspace.js'), source('js/ramrpm.js'), source('js/services-activation.js'), source('js/workspace-contract.js'),
   ]);
   assert.match(home, /const themeToggle = createThemeToggle\(\)/);
-  assert.match(home, /header: \{ actions: \[themeToggle\] \}/);
+  assert.match(home, /header: \{ leading: \[rootToggle\], actions: \[themeToggle\] \}/);
   assert.doesNotMatch(home, /ronin-home-active/);
   assert.match(setup, /const themeToggle = createThemeToggle\(\)/);
   assert.match(setup, /workbenchView\('setup'/);

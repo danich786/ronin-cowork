@@ -150,6 +150,13 @@ with no selector cards for now (`selectorFilter`); Teams seats `teams-surface.js
 stone pressed placing the Team's read in Workspace 2, and offers New Team. The bar reads
 RoninCowork • Home • <door>, Home the way back (`workspace-header.js`, the view's `place`).
 
+**Two roots** (owner, 2026-10-19). The default root — what opens, what Home links to — is that
+three-door page. The current root, Ronin Home as it stood before 2026-10-18 with its doors into
+the Desk, Team and Agent Workbenches, is copied back from git unchanged (`current-home.js`) and
+keeps its own address, `#/current`, while pieces move from Current to Next; nothing of it is
+deleted. One plain toggle in the bar, the same spot on each (the view's leading slot), swaps
+between them in one press: it reads **Current** on the new Home and **Next** on the current one.
+
 Campaign Defaults is the reference case. Its saved values are already in
 `campaign.config.defaults`, so it paints them immediately. Model choices come from the
 provider catalog and selectable Behaviors come from `/api/campaign-default-options`.
