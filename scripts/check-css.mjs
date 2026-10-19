@@ -70,6 +70,7 @@ for (const file of featurePaths) {
   if (!completeLayer) problems.push(`${path.relative(ROOT, file)} must contain only one @layer app block`);
   for (const [i, line] of clean.split('\n').entries()) {
     if (/^\s*--[\w-]+\s*:/.test(line)) continue;
+    if (/^\s*@(?:media|container)\b/.test(line)) continue; // a breakpoint's prelude cannot read a token
     if (/(?<![\w.-])\d+(?:\.\d+)?(?:px|rem|em)\b|var\([^)]*,/.test(line)) {
       problems.push(`${path.relative(ROOT, file)}:${i + 1} raw visual measurement — use an existing design token: ${line.trim()}`);
     }

@@ -138,6 +138,10 @@
   .ch-update-package { display: flex; flex-wrap: wrap; justify-content: flex-start; align-items: center; gap: var(--space-4); }
   .ch-update-package + .ch-update-package { margin-top: var(--space-3); }
   .ch-update-reading[data-state='available'] { color: var(--accent); }
+  @media (max-width: 720px), (max-height: 600px) {
+    .ch-view { grid-template-rows: 1fr auto; gap: var(--space-7); }
+    .ch-release { position: static; justify-self: end; align-self: end; max-width: 100%; }
+  }
   .ch-update { padding: 0; border: 0; background: transparent; color: var(--muted); font: inherit; cursor: pointer; }
   .ch-update:hover, .ch-update:focus-visible { color: var(--fg-strong); }
   .ch-update:disabled, .ch-update[aria-disabled="true"] { cursor: default; color: var(--dim); }
