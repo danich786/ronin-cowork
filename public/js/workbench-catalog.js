@@ -22,6 +22,7 @@ export const WORKBENCH_TYPES = Object.freeze({
   agentDocuments: 'agent.documents', agentTeams: 'agent.team-membership', agentTasks: 'agent.task-manager', agentComposition: AGENT_COMPOSITION_TYPE,
   campaignMachine: 'campaign.machine', campaignDefaults: 'campaign.defaults', campaignRoots: 'campaign.project-roots',
   campaignIdentity: 'campaign.identity', campaignInstallations: 'campaign.installations', campaignProfile: 'campaign.desk-profile', campaignCreate: 'campaign.new',
+  modelStones: 'models.stones', modelProvider: 'models.provider',
 });
 
 let registered = false;
@@ -78,7 +79,11 @@ export function registerWorkbenchCatalog() {
   profiles.define(WORKBENCH_PROFILES.campaign, [WORKBENCH_TYPES.terminal, WORKBENCH_TYPES.campaignMachine, BEHAVIOUR_SURFACE_TYPE, PASSWORD_SURFACE_TYPE, WORKBENCH_TYPES.campaignInstallations, PROVIDER_SURFACE_TYPE, SETUP_SURFACE_TYPES.register, FEEDBACK_TYPE, WORKBENCH_TYPES.campaignIdentity, WORKBENCH_TYPES.campaignDefaults, WORKBENCH_TYPES.campaignRoots, SETUP_SURFACE_TYPES.launchOwn, WORKBENCH_TYPES.document, ...(MULTIPLE_CAMPAIGNS_ENABLED ? [WORKBENCH_TYPES.campaignCreate] : [])]);
   // HOME'S THREE DOORS (owner, 2026-10-19; door-workbenches.js): Models and Workspaces hold the
   // one surface each, Settings' own, no selector cards for now; Teams offers New Team.
-  profiles.define(WORKBENCH_PROFILES.models, [PROVIDER_SURFACE_TYPE]);
+  // THE MODELS WORKBENCH (owner, 2026-10-19): its own stones in Workspace 1; one provider whole in a
+  // workspace, placed by a dragged stone or its selector card (models-surface.js).
+  add({ type: WORKBENCH_TYPES.modelStones, header: 'surface', discover: () => [], create: ({ workspace, environment }) => environment.modelStones(workspace) });
+  add({ type: WORKBENCH_TYPES.modelProvider, header: 'surface', discover: (_t, e) => e.providers(), create: ({ workspace, detail, environment }) => environment.modelProvider(workspace, detail) });
+  profiles.define(WORKBENCH_PROFILES.models, [WORKBENCH_TYPES.modelStones, WORKBENCH_TYPES.modelProvider]);
   profiles.define(WORKBENCH_PROFILES.workspaces, [WORKBENCH_TYPES.campaignRoots]);
   profiles.define(WORKBENCH_PROFILES.teams, [WORKBENCH_TYPES.teams, WORKBENCH_TYPES.teamRead, WORKBENCH_TYPES.newTeamForm]);
   registered = true;

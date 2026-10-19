@@ -4,8 +4,9 @@
  * Workspaces, Teams — each a destination of its own, opened in the same tab, the bar reading
  * RoninCowork • Home • <door>, Home the way back. One shape for the three: the Kit workbench
  * on a profile of the door's surfaces (workbench-catalog.js), the door's surface seated in
- * Workspace 1 on first open. Models seats the Model Providers surface and Workspaces the
- * Workspace Folders surface, each as Settings seats it, with no selector cards for now;
+ * Workspace 1 on first open. Models seats its own stones of providers (models-surface.js), a
+ * stone dragged into a workspace or a selector card placing that provider whole; Workspaces
+ * seats the Workspace Folders surface as Settings seats it, with no selector cards for now;
  * Teams seats collection_view's stones (teams-surface.js), a stone pressed placing the
  * Team's read in Workspace 2, and offers New Team.
  */
@@ -13,8 +14,9 @@ import { WorkspaceKit } from './workspace-kit.js';
 import { t } from './lexicon.js';
 import { workbenchView } from './workspace-contract.js';
 import { registerWorkbenchCatalog, WORKBENCH_PROFILES, WORKBENCH_TYPES } from './workbench-catalog.js';
-import { PROVIDER_SURFACE_TYPE } from './provider-surface.js';
 import { createProviderSetupSessionMount } from './provider-setup-session.js';
+import { loadProviderCatalog } from './form-steps.js';
+import { createModelProvider, createModelStones, providerOffers } from './models-surface.js';
 import { createWorkspaceFoldersSurface } from './workspace-folders-surface.js';
 import { campaignById, loadCampaigns, normalizeSelection } from './campaigns.js';
 import { createNewTeamFormView } from './new-team-form.js';
@@ -69,13 +71,25 @@ function doorWorkbench({ id, profile, label, seat, environment, cards = true, lo
   };
 }
 
-/** Models: the Model Providers surface in Workspace 1, its sign-in tile mounted as on Setup. */
+/** Models: the stones of providers in Workspace 1, a provider whole where a stone is dropped or its card
+ * placed, one card per provider; the sign-in tile mounted as on Setup. */
 export function createModelsView() {
   const providerSessions = createProviderSetupSessionMount();
+  const made = [];
+  const keep = (surface) => { made.push(surface); return surface; };
   return doorWorkbench({
-    id: 'models', profile: WORKBENCH_PROFILES.models, label: t('campaign_home.models', 'Models'), seat: PROVIDER_SURFACE_TYPE, cards: false,
-    environment: () => ({ setupRuntime: null, mountProviderSetupSession: providerSessions.mountProviderSetupSession }),
-    destroy: () => providerSessions.destroyAll(),
+    id: 'models', profile: WORKBENCH_PROFILES.models, label: t('campaign_home.models', 'Models'), seat: WORKBENCH_TYPES.modelStones,
+    loaded: loadProviderCatalog,
+    environment: ({ bench }) => {
+      const environment = {
+        setupRuntime: null, mountProviderSetupSession: providerSessions.mountProviderSetupSession,
+        providers: providerOffers,
+        modelStones: (workspace) => keep(createModelStones({ workspace, detail: {}, environment, workbench: bench() })),
+        modelProvider: (workspace, detail) => keep(createModelProvider(detail.key, { workspace, detail, environment, workbench: bench() })),
+      };
+      return environment;
+    },
+    destroy: () => { for (const surface of made.splice(0)) surface.destroy?.(); providerSessions.destroyAll(); },
   });
 }
 
