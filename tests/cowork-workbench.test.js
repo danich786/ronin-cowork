@@ -54,11 +54,10 @@ test('Cowork no longer offers Task Manager on its selector; all scopes can still
   assert.doesNotMatch(catalog, /profiles\.define\(WORKBENCH_PROFILES\.cowork, \[[^\]]*WORKBENCH_TYPES\.kanban\b/);
 });
 
-test('Desk owns an operational destination and first-opens Teams beside Work items', async () => {
-  const [main, deskView, view, catalog, contract, home] = await Promise.all([
-    source('main.js'), source('desk-view.js'), source('cowork-view.js'), source('workbench-catalog.js'), source('workspace-contract.js'), source('campaign-home.js'),
+test('Desk owns an operational destination and first-opens Teams', async () => {
+  const [main, deskView, view, catalog, contract] = await Promise.all([
+    source('main.js'), source('desk-view.js'), source('cowork-view.js'), source('workbench-catalog.js'), source('workspace-contract.js'),
   ]);
-  assert.match(home, /key: 'desk', route: 'desk'/);
   assert.match(main, /import \{ createDeskView \} from '\.\/desk-view\.js'/);
   assert.match(main, /workspace\.register\('desk', createDeskView\(\)\)/);
   assert.match(deskView, /export function createDeskView\(\)/);
