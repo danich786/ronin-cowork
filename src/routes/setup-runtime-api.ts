@@ -12,7 +12,6 @@ import {
   setupRuntimeAnswer,
   saveProviderSignIn,
   createMorningBriefSchedule,
-  morningBriefSchedules,
   writeSetupPreferences,
   githubSetupAnswer,
   openGithubInstall,
@@ -141,14 +140,6 @@ export function registerSetupRuntime(app: express.Express): void {
       await closeProviderLogin(String(req.params.provider));
       // A sign-in closed without Done may still have left the CLI's credential file: measure.
       res.json({ ok: true, closed: true, activation_recorded: false, attachment: null, runtime: await answer(await measureAndRecordProviders()) });
-    } catch (error) {
-      res.status(400).json({ error: errMsg(error) });
-    }
-  });
-
-  app.get('/api/setup/morning-brief/schedules', async (req, res) => {
-    try {
-      res.json(await morningBriefSchedules(String(req.query.team ?? '')));
     } catch (error) {
       res.status(400).json({ error: errMsg(error) });
     }

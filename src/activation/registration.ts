@@ -153,22 +153,6 @@ export async function submitRegistration(input: Record<string, unknown>): Promis
   });
 }
 
-export async function updateCommunication(input: Record<string, unknown>): Promise<RegistrationRecord> {
-  const current = await readRegistration();
-  if (!current.submitted_at) throw new Error('Register before updating communication preferences.');
-  const none = input.no_communication === true;
-  return writeRegistration({
-    ...current,
-    communication: {
-      newsletter: none ? false : input.newsletter === true,
-      release_updates: none ? false : input.release_updates === true,
-      follow_up: none ? [] : list(input.follow_up),
-      no_communication: none,
-    },
-    updated_at: new Date().toISOString(),
-  });
-}
-
 export async function registrationAnswer() {
   const [record, activation, entitled] = await Promise.all([
     readRegistration(), readActivation(), isEntitled().catch(() => false),

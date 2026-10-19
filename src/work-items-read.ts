@@ -141,13 +141,6 @@ async function teamBoards(team: string, sessions: Array<{ name: string; tags: st
     .flatMap((reading) => [reading.board, ...reading.items]);
 }
 
-export async function unassignedReading(): Promise<WorkItem[]> {
-  const unfiled = await unfiledBoard();
-  if (!unfiled) return [];
-  const held = await heldIds();
-  return (await listItems()).filter((item) => item.parent === unfiled.id && !held.has(item.id));
-}
-
 export async function everyItemReading(): Promise<HeldItem[]> {
   await unfiledBoard(); // a former "Common" root is renamed before it is read
   const held = await heldIds();

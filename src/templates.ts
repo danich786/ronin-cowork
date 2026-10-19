@@ -1,4 +1,4 @@
-import { access, mkdir, rename, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import {
   listAgentTemplates,
@@ -8,9 +8,6 @@ import {
   type TeamTemplateRow,
 } from './resource-adapters.js';
 import { storeDir } from './resources.js';
-import { STOCK_DIR } from './resources.js';
-
-const STOCK_TEMPLATES = path.join(STOCK_DIR, 'templates');
 
 const isValidToken = (s: string): boolean => /^[a-z0-9][a-z0-9_-]{0,63}$/.test(s);
 const KINDS = ['coding', 'work', 'personal', 'household', 'social', 'school'];
@@ -151,19 +148,4 @@ export async function saveTeamTemplate(body: TeamTemplateSave): Promise<TeamTemp
   const back = (await listTeamTemplates()).find((row) => row.name === token);
   if (!back) throw new Error(`Refused: "${token}" does not read back after the save.`);
   return back;
-}
-
-export async function removeUserTemplate(shelf: 'agents' | 'teams', name: string): Promise<{ removed: string; shipped_back: boolean }> {
-  const token = words(name, 64).toLowerCase();
-  if (!isValidToken(token)) throw new Error('A template name is lowercase letters, digits, _ and -.');
-  const file = path.join(storeDir('catalogs'), 'templates', shelf, `${token}.md`);
-  try {
-    await unlink(file);
-  } catch (e) {
-    if ((e as NodeJS.ErrnoException).code === 'ENOENT') throw new Error(`"${token}" is not one of yours on the ${shelf} shelf — a shipped box cannot be removed, only shadowed or hidden.`);
-    throw e;
-  }
-  const stock = path.join(STOCK_TEMPLATES, shelf, `${token}.md`);
-  const shippedBack = await access(stock).then(() => true, () => false);
-  return { removed: token, shipped_back: shippedBack };
 }

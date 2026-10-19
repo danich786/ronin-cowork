@@ -12,7 +12,7 @@ import { runCommand } from './send.js';
 import { execFile as run, SpawnBrokerError } from './spawn-broker.js';
 import { collectBirthLines } from './sockets.js';
 import { killSessionTree, sessionExists } from './tmux.js';
-import { addJob, isValidTeam, listJobs, type Job } from './jikan.js';
+import { addJob, type Job } from './jikan.js';
 import type { InstalledAnswer } from './routes/installed-api.js';
 
 import { createSetupSession, setupAttachment, PROVIDER_SETUP_TEAM, type SetupSessionPrimitives } from './setup-session.js';
@@ -670,7 +670,3 @@ export async function createMorningBriefSchedule(draft: MorningBriefScheduleDraf
   return { team, job };
 }
 
-export async function morningBriefSchedules(team: string): Promise<{ team: string; schedules: Job[] }> {
-  if (!isValidTeam(team)) throw new Error('A team name is lowercase letters, digits, _ and -.');
-  return { team, schedules: await listJobs(team) };
-}

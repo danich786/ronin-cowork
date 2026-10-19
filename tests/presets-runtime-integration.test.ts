@@ -71,8 +71,8 @@ test('Morning Brief launch persists and returns a real JIKAN job', async () => {
   assert.equal(result.ok, true);
   assert.equal(result.data.schedule.job.to, 'lead');
   assert.equal(result.data.schedule.job.state, 'active');
-  const stored = await runtime.morningBriefSchedules(result.data.team);
-  assert.deepEqual(stored.schedules.map((job) => job.id), [result.data.schedule.job.id]);
+  const { listJobs } = await import('../src/jikan.js');
+  assert.deepEqual((await listJobs(result.data.team)).map((job) => job.id), [result.data.schedule.job.id]);
 });
 
 test.after(async () => { await rm(box, { recursive: true, force: true }); });

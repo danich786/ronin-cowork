@@ -36,7 +36,6 @@ export const S = {
   sessions: [], // [{name, windows, attached, created}]
   active: null,
   dictation: null, // the ONE mic currently listening { listening, stop } — see voice.js
-  notePanel: null, // shared per-session note editor { open(session), close } — all devices
   padPanel: null, // Work Louder pad panel { open, close, isOpen, hit } — all devices (owner override)
   locked: !IS_TOUCH, // DEFAULT for a NEW tile only — the switch itself is per-tile now
   output: IS_TOUCH ? 'terminal_mirror' : 'locked',

@@ -17,7 +17,7 @@ import { assertSameCampaignRoot, campaignFilter, campaignResolver, initialCampai
 import { retireTeam } from '../team-retire.js';
 import { readCampaign } from '../campaigns.js';
 import { teamAgentDefaults } from '../agent-defaults.js';
-import { rosterReading, teamBoard, type HeldItem } from '../work-items-read.js';
+import { rosterReading, teamBoard } from '../work-items-read.js';
 
 const errMsg = (e: unknown): string => String((e as Error)?.message ?? e);
 
@@ -99,10 +99,9 @@ function editOf(body: unknown): RosterEdit {
 }
 
 // What GET /api/team-rosters answers, and, for this machine's Campaign, what /events pushes
-// as {t:'teams', rosters}. Each row carries the Team's work as the Teams overlay reads it
-// (owner, 2026-10-18): `board`, the Team's board by the rule in work-items-read.ts, and
-// `items`, the items the Team and its members hold, each with its holder.
-const line = ({ id, title, status, stage }: HeldItem) => ({ id, title, status, stage });
+// as {t:'teams', rosters}. Each row carries the Team's work as the Teams workbench reads it
+// (owner, 2026-10-18): `board`, the Team's board by the rule in work-items-read.ts, its title
+// and status, and `items`, the titles of the items the Team and its members hold.
 export async function teamRosters(named: string[] = []): Promise<unknown[]> {
   const resolve = await campaignResolver();
   const wanted = named.length ? named : [await machineCampaignId()].filter(Boolean);
@@ -116,9 +115,8 @@ export async function teamRosters(named: string[] = []): Promise<unknown[]> {
       return {
         ...r,
         campaign_id: resolve(r.campaign_id),
-        wipeboard_exists: await boardExists(r.wipeboard),
-        board: board && line(board),
-        items: reading.items.map((item) => ({ ...line(item), holder: item.holder })),
+        board: board && { title: board.title, status: board.status },
+        items: reading.items.map(({ title }) => ({ title })),
       };
     }),
   );

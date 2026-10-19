@@ -459,8 +459,8 @@ test('Morning Brief scheduling creates active lead jobs for each preset cadence'
   assert.ok(schedules.every((schedule) => schedule.job.to === 'lead'));
   assert.ok(schedules.every((schedule) => schedule.job.state === 'active'));
   assert.ok(schedules.every((schedule) => schedule.job.due));
-  const read = await runtime.morningBriefSchedules('morning_brief');
-  assert.deepEqual(read.schedules.map((job) => job.when), ['daily 07:00', 'daily 08:00', 'weekdays 08:00']);
+  const { listJobs } = await import('../src/jikan.js');
+  assert.deepEqual((await listJobs('morning_brief')).map((job) => job.when), ['daily 07:00', 'daily 08:00', 'weekdays 08:00']);
 });
 
 test('Setup kinds are canonical runtime facts and persist without replacing setup state', async () => {

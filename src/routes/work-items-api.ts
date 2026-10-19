@@ -7,7 +7,7 @@ import {
   assignItem, createItem, editItem, focusItem, holderLabel, holdersOf, readItem, releaseItem, reparentItem, restoreItem, returnItem, placeFocus, writeFocusDocs, writeFocusLadder,
   keepCurrentLine, type Acknowledged, type Holder, type TrailLine,
 } from '../work-items.js';
-import { agentReading, everyItemReading, teamReading, unassignedReading } from '../work-items-read.js';
+import { agentReading, teamReading } from '../work-items-read.js';
 import { pushTeams } from '../ws/events.js';
 
 const text = (value: unknown): string | undefined => typeof value === 'string' ? value : value === undefined || value === null ? undefined : String(value);
@@ -67,14 +67,12 @@ export function registerWorkItems(app: express.Express): void {
   });
 
   app.get('/api/work-items', guarded(async (req, res) => {
-    // The readings: ?session= (agent), ?team= (team), ?unassigned=1; otherwise every item
-    // with its holder.
+    // The readings: ?session= (agent) or ?team= (team).
     const team = text(req.query.team)?.trim();
     const session = text(req.query.session)?.trim();
     if (session) return res.json({ ok: true, ...(await agentReading(session)) });
     if (team) return res.json({ ok: true, ...(await teamReading(team)) });
-    if (req.query.unassigned !== undefined) return res.json({ ok: true, items: await unassignedReading() });
-    res.json({ ok: true, items: await everyItemReading() });
+    res.status(400).json({ error: 'Name a reading: ?team=<team> or ?session=<name>.' });
   }));
 
   app.post('/api/work-items', guarded(async (req, res) => {

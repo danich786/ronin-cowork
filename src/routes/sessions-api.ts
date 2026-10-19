@@ -489,20 +489,6 @@ export function registerSessions(app: express.Express): void {
     });
   }
 
-  app.get('/api/teams', async (_req, res) => {
-    try {
-      const teams: Record<string, string[]> = {};
-      const leaders: Record<string, string[]> = {};
-      for (const s of await listSessions()) {
-        for (const t of s.tags) (teams[t] ||= []).push(s.name);
-        for (const t of s.leads) (leaders[t] ||= []).push(s.name);
-      }
-      res.json({ teams, leaders });
-    } catch (e) {
-      res.status(500).json({ error: String((e as Error)?.message ?? e) });
-    }
-  });
-
   app.post('/api/sessions/:name/team_lead', async (req, res) => {
     const { name } = req.params;
     if (!isValidName(name)) return res.status(400).json({ error: 'Invalid name.' });
@@ -535,13 +521,6 @@ export function registerSessions(app: express.Express): void {
     } catch (e) {
       res.status(500).json({ error: String((e as Error)?.message ?? e) });
     }
-  });
-
-  app.get('/api/sessions/:name/team_lead', async (req, res) => {
-    const { name } = req.params;
-    if (!isValidName(name)) return res.status(400).json({ error: 'Invalid name.' });
-    if (!(await sessionExists(name))) return res.status(404).json({ error: 'No such session.' });
-    res.json({ team_lead: await getLeads(name) });
   });
 
   app.post('/api/sessions/:name/send', async (req, res) => {

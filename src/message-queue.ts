@@ -63,7 +63,6 @@ export async function enqueueMessage(target: string, text: string, source: Messa
   return item;
 }
 
-export async function dismissMessage(id: string): Promise<boolean> { return remove(id); }
 export async function dismissMessages(ids: readonly string[]): Promise<{ dismissed: string[]; not_found: string[] }> {
   const dismissed: string[] = [];
   const not_found: string[] = [];
