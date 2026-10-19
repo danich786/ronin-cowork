@@ -43,5 +43,9 @@ export function parseImports(src) {
 }
 
 export function parseExports(src) {
-  return [...src.matchAll(/^export\s+(?:const|let|var|function|async function|class)\s+([\w$]+)/gm)].map((m) => m[1]);
+  const declared = [...src.matchAll(/^export\s+(?:const|let|var|function|async function|class)\s+([\w$]+)/gm)].map((m) => m[1]);
+  // `export { a as b }` and `export const { a, b } = …` name their exports in a list.
+  const listed = [...src.matchAll(/^export\s+(?:(?:const|let|var)\s+)?\{([^}]*)\}/gm)]
+    .flatMap((m) => m[1].split(',').map((s) => s.trim().split(/\s+as\s+|\s*:\s*/).pop()).filter(Boolean));
+  return [...declared, ...listed];
 }

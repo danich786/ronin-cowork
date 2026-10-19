@@ -16,13 +16,10 @@ import { installServicesStatus } from './services-activation.js';
 import { createWorkspace } from './workspace.js';
 import { createCoworkView } from './cowork-view.js';
 import { createDeskView } from './desk-view.js';
-import { createCollectionsView } from './collections-view.js';
-import { createNextHome } from './next-home.js';
-import { createBoardView } from './board-view.js';
-import { createWorkspaceView } from './workspace-view.js';
-import { createTeamView } from './team-view.js';
 import { createAgentView } from './agent-view.js';
 import { createCampaignHome } from './campaign-home.js';
+import { createCurrentHome } from './current-home.js';
+import { createModelsView, createTeamsView, createWorkspacesView } from './door-workbenches.js';
 import { createCampaignView } from './campaign-view.js';
 import { createSetupView } from './setup-view.js';
 import { createLaunchView } from './launch-view.js';
@@ -41,14 +38,13 @@ async function init() {
   // that predates the field, or a failed fetch, reads as "on": unchanged behavior,
   // and an unreachable server is reported by the session-list step below.
   {
-    const [v, installed] = await Promise.all([request('/api/version'), request('/api/installed', { cache: 'no-store' })]);
+    const v = await request('/api/version');
     if (v.ok && v.data.stream === false) {
       S.streamOff = true;
       S.locked = true;
       S.output = 'locked';
     }
     if (v.ok && Array.isArray(v.data.services)) S.services = v.data.services;
-    if (installed.ok) S.installedServices = installed.data?.services || null;
     // A failed read means an old operator or an unreachable server — the first reads
     // as "everything on", the second is reported by the session-list step below.
   }
@@ -120,13 +116,12 @@ async function init() {
   // page failing must cost the owner a page, never their terminals. `safeView` is this
   // one, so its own failure is reported rather than looping.
   guard('register the Ronin Home destination', () => workspace.register('home', createCampaignHome()));
-  // THE NEW WORKBENCH (owner, 2026-10-06): tenants on the one tenant frame, reached from the
-  // temporary Next root. Each tenant is named here as it comes to stand; the root marks the rest.
-  guard('register the Collections destination', () => workspace.register('collections', createCollectionsView()));
-  guard('register the Team tenant (team-next)', () => workspace.register('team-next', createTeamView()));
-  guard('register the Board destination', () => workspace.register('board', createBoardView()));
-  guard('register the Workspace destination', () => workspace.register('workspace', createWorkspaceView()));
-  guard('register the Next root', () => workspace.register('next', createNextHome({ standing: ['collections', 'team-next', 'board', 'workspace'] })));
+  // The current root, Home as it was before 2026-10-18, at its own address (owner, 2026-10-19).
+  guard('register the Current root destination', () => workspace.register('current', createCurrentHome()));
+  // Home's three doors, each a workbench of its own in the same tab (owner, 2026-10-19).
+  guard('register the Models destination', () => workspace.register('models', createModelsView()));
+  guard('register the Workspaces destination', () => workspace.register('workspaces', createWorkspacesView()));
+  guard('register the Teams destination', () => workspace.register('teams', createTeamsView()));
   // the same workbench, selector column, persistence, recall and drag/drop as the Cowork
   // space, offering a Campaign's own configuration instead of its Coworks and Agents.
   guard('register the Campaign destination', () => workspace.register('campaign', createCampaignView()));

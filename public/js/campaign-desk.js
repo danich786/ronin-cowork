@@ -1,10 +1,5 @@
 /* part of the ronin-cowork client — see js/README.md */
 import { t } from './lexicon.js';
-import { deskProfiles } from './desk-profile.js';
-import { saveCampaign } from './campaigns.js';
-import { WorkspaceKit } from './workspace-kit.js';
-import { listSkins, setSkin } from './skins.js';
-import { applyTheme, setCampaignTheme } from './theme.js';
 
 const el = (tag, cls, text) => {
   const out = document.createElement(tag);
@@ -13,7 +8,7 @@ const el = (tag, cls, text) => {
   return out;
 };
 
-/** One choice: its name and pills on the left, what it does on the right. Shared by the desk and roots surfaces. */
+/** One choice: its name and pills on the left, what it does on the right. */
 export const choice = (name, options, current, why, onPick) => {
   const row = el('div', 'cv-choice');
   const left = el('div', 'cv-choice-pick');
@@ -34,141 +29,3 @@ export const choice = (name, options, current, why, onPick) => {
   row.append(left, el('p', 'cv-choice-why', why));
   return row;
 };
-
-/** A skin token, said as a word: `stock` → Stock. The catalog's labels are these. */
-export const skinWord = (skin) => (skin ? skin[0].toUpperCase() + skin.slice(1) : '');
-/** A rireki_view token, in the words the Output picker already uses — one literal key each, so the gate can see them. */
-const tileWord = (view) => ({
-  locked: t('output.locked', 'Locked'),
-  terminal_mirror: t('output.terminal_mirror', 'Terminal Mirror'),
-}[view] || view);
-
-export function createDeskProfileSurface(campaign) {
-  const { createSurface, createNotice, setSurfaceState, createAction } = WorkspaceKit.primitives;
-  // The option lists, read at paint so the lexicon is up (KOKUGO § 5). Output is the two
-  // positions that can be produced; the tape projections left the offer on 2026-09-23.
-  const OUTPUTS = () => [
-    { value: 'terminal_mirror', label: tileWord('terminal_mirror') },
-    { value: 'locked', label: tileWord('locked') },
-  ];
-  const THEMES = () => [
-    { value: 'light', label: t('campaign_view.theme_light', 'Light') },
-    { value: 'dark', label: t('campaign_view.theme_dark', 'Dark') },
-    { value: 'automatic', label: t('campaign_view.theme_auto', 'Automatic') },
-  ];
-  const KINDS = () => [
-    { value: 'coding', label: t('kind.coding', 'coding') },
-    { value: 'work', label: t('kind.work', 'work') },
-    { value: 'personal', label: t('kind.personal', 'personal') },
-    { value: 'household', label: t('kind.household', 'household') },
-    { value: 'social', label: t('kind.social', 'social') },
-    { value: 'school', label: t('kind.school', 'school') },
-  ];
-  const label = t('cowork.tab_profile', 'Desk profile');
-  // gone. Revert beside it drops the draft. Both act on closures defined below.
-  const applyAct = createAction({ label: t('campaign_view.apply', 'Apply'), kind: 'primary', disabled: true, action: () => void apply() });
-  const revertAct = createAction({ label: t('campaign_view.revert', 'Revert'), disabled: true, action: () => revert() });
-  const surface = createSurface({ label, className: 'cv-surface', actions: [revertAct, applyAct] });
-  const body = el('div', 'cv-body');
-  surface.content.append(body);
-  let skins = [];
-
-  let picked = ''; // the preset staged into the draft, not yet applied
-  let draft = {}; // the staged desk — what every control below edits
-  const FIELDS = ['skin', 'theme', 'theme_mobile', 'rireki_view', 'lexicon'];
-  // 'automatic' and '' both mean the house default; records written before the staged
-  // surface may carry either spelling, so the draft and the dirt test speak ''.
-  const norm = (v) => (v === 'automatic' ? '' : v || '');
-  const seed = () => { const d = campaign()?.desk || {}; draft = Object.fromEntries(FIELDS.map((f) => [f, norm(d[f])])); picked = ''; };
-  const isDirty = () => { const d = campaign()?.desk || {}; return !!picked || FIELDS.some((f) => norm(draft[f]) !== norm(d[f])); };
-  /** Apply sits opaque while clean and goes bright kiiro the moment the draft moves. */
-  const arm = () => { const dirty = isDirty(); applyAct.setDisabled(!dirty); revertAct.setDisabled(!dirty); applyAct.el.dataset.attention = String(dirty); };
-
-  const notice = createNotice();
-  const apply = async () => {
-    const row = campaign();
-    if (!row || !isDirty()) return;
-    notice.set('info', t('campaign.saving', 'saving…'));
-    // ONE write: the server applies the staged preset's template first, then the draft
-    // on top (campaign-config.writeCampaign), so provenance and the owner's explicit
-    // rows land together.
-    const r = await saveCampaign(row.id, { ...(picked ? { desk_profile: picked } : {}), desk: { ...draft } });
-    notice.set(r.ok ? 'success' : 'failed', r.ok ? t('campaign_view.applied', 'applied — every component below is now this Campaign’s own') : r.message);
-    if (!r.ok) return;
-    seed();
-    wear(campaign()?.desk);
-    arm();
-    paint();
-  };
-  const revert = () => { seed(); arm(); paint(); };
-  /** The page wears the Campaign's desk when Apply lands — never mid-edit. */
-  const wear = (desk) => {
-    if (desk?.skin) setSkin(desk.skin);
-    // The saved themes become the system's word (both surfaces), and this page repaints
-    // under it — theme.js resolves the right one for the surface it is on, and its
-    // storage listener carries the save to pages already open. Known one-time flicker:
-    // a first visit with an empty tmuxgrid.theme.system* cache paints light and
-    // corrects here when the served value arrives; boot-pending covers full boots.
-    setCampaignTheme(desk || null);
-    applyTheme();
-  };
-
-
-  function paint() {
-    const row = campaign();
-    body.replaceChildren();
-    if (!row) return setSurfaceState(surface.el, 'empty', t('campaign_view.none_selected', 'No Campaign selected.'));
-    setSurfaceState(surface.el, null, '');
-    const desk = row.desk || {};
-
-    // PRESETS — pills that STAGE. Pressing one fills the draft with the preset's
-    // components so the rows below preview it; nothing saves until the header's Apply.
-    const presets = el('div', 'cv-presets');
-    presets.append(el('span', 'cv-eyebrow', t('campaign_view.presets', 'Presets')));
-    const pills = el('div', 'cv-pills');
-    for (const p of deskProfiles()) {
-      const b = el('button', 'cv-pill', p.label || p.name);
-      b.type = 'button';
-      b.setAttribute('aria-pressed', String((picked || row.desk_profile) === p.name));
-      if (p.name === row.desk_profile && !picked) b.append(el('small', 'cv-pill-tag', t('campaign_view.applied_tag', 'applied')));
-      b.title = p.blurb || '';
-      b.addEventListener('click', () => {
-        picked = picked === p.name ? '' : p.name;
-        if (picked) { for (const f of FIELDS) draft[f] = p[f] || ''; } else seed();
-        arm();
-        paint(); // calm now: staging wears nothing, so the repaint only re-marks rows
-      });
-      pills.append(b);
-    }
-    presets.append(pills, el('p', 'cv-note', t('campaign_view.presets_help', 'A preset copies all of its components into this Campaign. Change any one of them afterwards; the preset is not consulted again.')));
-    body.append(presets);
-
-    // The rows read and edit the DRAFT. A tap marks its own row and arms Apply — no
-    // repaint, no save, no mid-edit wear (the flash @mobile measured on the iPad).
-    body.append(
-      choice(t('campaign_view.skin', 'Skin'), skins.map((s) => ({ value: s.name, label: s.label || s.name })), draft.skin || '',
-        t('campaign_view.skin_help', 'The look — colours, corners, faces.'), (v) => { draft.skin = v; arm(); }),
-      choice(t('campaign_view.theme', 'Theme'), THEMES(), draft.theme || 'automatic',
-        t('campaign_view.theme_help', 'Light or dark for pointer surfaces; Automatic is the house default — light.'), (v) => { draft.theme = v === 'automatic' ? '' : v; arm(); }),
-      // the desktop is dark, and both are the Campaign's word — no per-device fiddling.
-      choice(t('campaign_view.theme_mobile', 'Theme (mobile)'), THEMES(), draft.theme_mobile || 'automatic',
-        t('campaign_view.theme_mobile_help', 'Light or dark for touch surfaces — iPad and phone; Automatic is the house default — light.'), (v) => { draft.theme_mobile = v === 'automatic' ? '' : v; arm(); }),
-      choice(t('campaign_view.output', 'Output'), OUTPUTS(), draft.rireki_view || '',
-        t('campaign_view.output_help', 'What an Agent’s tile shows by default: the live Terminal Mirror, or Locked to watch without typing.'), (v) => { draft.rireki_view = v; arm(); }),
-      choice(t('campaign_view.lexicon', 'Lexicon'), [{ value: draft.lexicon || '', label: draft.lexicon || t('settei.none_set', '— none set —') }], draft.lexicon || '',
-        t('campaign_view.lexicon_help', 'The words. Held to one lexicon for now, so nothing on this page is offered.'), null),
-      // team_arrangement is in the record but not offered: the Workbench remembers its own
-      notice.el,
-    );
-  }
-
-  return {
-    el: surface.el,
-    enter: () => {
-      seed();
-      arm();
-      paint();
-      if (!skins.length) void listSkins().then((rows) => { skins = rows; paint(); });
-    },
-  };
-}

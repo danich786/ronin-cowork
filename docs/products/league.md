@@ -14,7 +14,6 @@ shown on the Ronin Desk: role, SHINGO, status, context, desk state and model sta
 in each row. Selecting an Agent connects it in the active workspace; dropping an Agent on
 a Team heading adds that membership through the canonical Teams API.
 
-The Campaign selector groups its cards into collapsible Views, Teams and New sections.
 Ronin Desk is not offered here; its card and shared workspace surface live in the Campaign
 workbench at `#/campaign`.
 
@@ -33,4 +32,4 @@ depth is the same `--row-head` as a terminal Tile and a Commons tab strip. Team 
 New Agent, the Team roster and blank Workspace use the same frame.
 
 There is no League destination or parallel workspace implementation. The legacy
-`#/league-workspace` and temporary `#/campaign` hashes migrate to `#/cowork`.
+`#/league-workspace` hash migrates to `#/cowork`.

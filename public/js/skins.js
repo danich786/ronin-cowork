@@ -69,17 +69,3 @@ export async function followProfileSkin(name) {
   applySkin(skin || { tokens: {}, light: {}, dark: {} });
   applyTheme();
 }
-
-/** Choose one. Persisted per device, like the theme — the same kind of fact. */
-export function setSkin(skin) {
-  if (!skin || skin.name === 'stock') localStorage.removeItem(LS_SKIN);
-  else localStorage.setItem(LS_SKIN, skin.name);
-  applySkin(skin);
-  /* THE TERMINALS HAVE TO BE TOLD. Every other surface is plain CSS and follows a token the
-   * moment it changes; a live xterm holds its palette as a JS object and only re-reads on
-   * `applyTheme`. Without this, a skin naming a --term-* colour would land everywhere
-   * except the one pane the owner is actually looking at, and would then appear to work
-   * after the next unrelated light/dark flip — the kind of half-applied that reads as a
-   * ghost. Cheap and idempotent: applyTheme re-resolves and re-pushes. */
-  applyTheme();
-}

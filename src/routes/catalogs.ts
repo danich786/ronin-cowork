@@ -8,9 +8,7 @@ import { activeDeskProfileName, listDeskProfiles } from '../desk-profiles.js';
 import { initialCampaign, readCampaign } from '../campaigns.js';
 import { listWays } from '../resources.js';
 import { listSessionReadings } from '../session-readings.js';
-import { listAgentAvailability } from '../agents.js';
-import { dispatchInstall } from '../agent-install.js';
-import { listProviderCatalog, providerCatalogAnswer } from '../model-providers.js';
+import { providerCatalogAnswer } from '../model-providers.js';
 import { readProviderSummary } from '../provider-summary.js';
 import {
   listProjectRoots,
@@ -18,7 +16,6 @@ import {
   removeProjectRoot,
   repoFacts,
   checkProjectRootGitAccess,
-  suggestDirs,
   isValidRootName,
   type RootField,
 } from '../project-roots.js';
@@ -26,12 +23,8 @@ import { campaignResolver, machineCampaignId } from '../campaign-scope.js';
 import { arrangementProfile, readArrangement, setArrangementProfile, validateArrangementProfile } from '../desks/arrangement.js';
 import {
   listSavedLaunches,
-  saveLaunch,
-  removeLaunch,
   seedUserCatalog,
   isShadowable,
-  isValidLaunchName,
-  savedLaunchFields,
 } from '../resources.js';
 import {
   listBehaviours,
@@ -40,7 +33,7 @@ import {
   listTeamTemplates,
 } from '../resource-adapters.js';
 import { availableBehaviours } from '../instruction-cascade.js';
-import { removeUserTemplate, saveAgentTemplate, saveTeamTemplate } from '../templates.js';
+import { saveAgentTemplate, saveTeamTemplate } from '../templates.js';
 import { browseFolders, createFolder, withRegisteredRoots } from '../folder-browser.js';
 import {
   BehaviourDocumentError,
@@ -193,7 +186,7 @@ export function registerCatalogs(app: express.Express): void {
     const dir = String(req.query.dir ?? '').trim();
     if (!dir) return res.status(400).json({ error: 'A directory is required.' });
     try {
-      const facts = await repoFacts({ name: 'candidate', title: '', dir, remit: '', match: [], docs: [], plans: [], archived: false, campaign_id: '' });
+      const facts = await repoFacts({ name: 'candidate', title: '', dir, memory: '', remit: '', match: [], docs: [], plans: [], archived: false, campaign_id: '' });
       const arrangement = facts.repo ? await readArrangement('candidate', facts.dir).catch(() => null) : null;
       res.json({
         ...facts,
@@ -217,14 +210,6 @@ export function registerCatalogs(app: express.Express): void {
     }
   });
 
-  app.get('/api/project-roots/suggest', async (req, res) => {
-    try {
-      res.json({ dirs: await suggestDirs(String(req.query.prefix ?? '')) });
-    } catch (e) {
-      res.status(500).json({ error: errMsg(e) });
-    }
-  });
-
   app.post('/api/project-roots', async (req, res) => {
     const name = String(req.body?.name ?? '').trim().toLowerCase();
     if (!isValidRootName(name)) return res.status(400).json({ error: 'ID: lowercase letters, digits, - and _.' });
@@ -234,7 +219,7 @@ export function registerCatalogs(app: express.Express): void {
       if ((await listProjectRoots()).some((r) => r.name === name)) {
         return res.status(409).json({ error: `"${name}" is already in the catalog.` });
       }
-      const facts = await repoFacts({ name, title: fields.title ?? '', dir: fields.dir, remit: '', match: [], docs: [], plans: [], archived: false, campaign_id: '' });
+      const facts = await repoFacts({ name, title: fields.title ?? '', dir: fields.dir, memory: '', remit: '', match: [], docs: [], plans: [], archived: false, campaign_id: '' });
       if (facts.repo && req.body?.profile !== undefined) validateArrangementProfile(req.body.profile);
       const currentProfile = facts.repo && req.body?.profile !== undefined
         ? arrangementProfile(await readArrangement(name, fields.dir)) : null;
@@ -301,29 +286,6 @@ export function registerCatalogs(app: express.Express): void {
     }
   });
 
-  app.get('/api/agents', async (_req, res) => {
-    try {
-      // The CLI registry says what is installed; the catalog says whose it is.
-      const [agents, catalog] = await Promise.all([listAgentAvailability(), listProviderCatalog()]);
-      res.json(agents.map((agent) => ({ ...agent, from: catalog.find((entry) => entry.cli === agent.id)?.label ?? '' })));
-    } catch (e) {
-      res.status(500).json({ error: errMsg(e) });
-    }
-  });
-
-  app.post('/api/install', async (req, res) => {
-    const raw = Array.isArray(req.body?.items) ? req.body.items : null;
-    if (!raw) return res.status(400).json({ error: 'Send { items: [{ kind, name }] }.' });
-    const items = (raw as Array<Record<string, unknown>>)
-      .map((i) => ({ kind: String(i?.kind ?? '').trim(), name: String(i?.name ?? '').trim() }))
-      .filter((i) => i.kind && i.name);
-    try {
-      res.json(await dispatchInstall(items));
-    } catch (e) {
-      res.status(500).json({ error: errMsg(e) });
-    }
-  });
-
   app.get('/api/installations', async (_req, res) => {
     try { res.json(await listInstallations()); }
     catch (e) { res.status(500).json({ error: errMsg(e) }); }
@@ -362,16 +324,6 @@ export function registerCatalogs(app: express.Express): void {
       res.status(400).json({ error: errMsg(e) });
     }
   });
-  app.delete('/api/templates/:shelf/:name', async (req, res) => {
-    const shelf = String(req.params.shelf);
-    if (shelf !== 'agents' && shelf !== 'teams') return res.status(400).json({ error: 'A shelf is agents or teams.' });
-    try {
-      res.json({ ok: true, ...(await removeUserTemplate(shelf, String(req.params.name))) });
-    } catch (e) {
-      res.status(400).json({ error: errMsg(e) });
-    }
-  });
-
   app.get('/api/desk-profiles', async (_req, res) => {
     try {
       res.json({
@@ -406,29 +358,6 @@ export function registerCatalogs(app: express.Express): void {
       res.json(await listSavedLaunches());
     } catch (e) {
       res.status(500).json({ error: errMsg(e) });
-    }
-  });
-
-  app.post('/api/saved-launches', async (req, res) => {
-    const name = String(req.body?.name ?? '').trim().toLowerCase();
-    if (!isValidLaunchName(name)) return res.status(400).json({ error: 'Handle: lowercase letters, digits, - and _.' });
-    const fields = savedLaunchFields(req.body);
-    const legacy = (req.body as Record<string, unknown>)?.group;
-    if (!fields.team && typeof legacy === 'string') fields.team = legacy.trim().slice(0, 500);
-    try {
-      await saveLaunch(name, fields);
-      res.json({ ok: true });
-    } catch (e) {
-      res.status(400).json({ error: errMsg(e) });
-    }
-  });
-
-  app.delete('/api/saved-launches/:name', async (req, res) => {
-    try {
-      await removeLaunch(req.params.name);
-      res.json({ ok: true });
-    } catch (e) {
-      res.status(400).json({ error: errMsg(e) });
     }
   });
 

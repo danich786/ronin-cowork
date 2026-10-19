@@ -69,7 +69,7 @@ exist. Adding a mechanical item later is one row, not a code path.
   each with its how. Empty reads "nothing — your choices are satisfied."
 - **The landing** — the mechanical items are already running in their own tiles by the
   time it opens; the strip carries the `owner` and `agent` remainder.
-- **"Start your setup session"** — beneath the box (and on ＋ New) whenever an agent
+- **"Start your setup session"** — beneath the box whenever an agent
   CLI exists and the box is non-empty. One press seats 新 Atarashi with a one-line
   pointer; **the seat reads `GET /api/machine-settings` itself at start**, so it works the same
   fresh list you are looking at — nothing composed, parked, or stale.

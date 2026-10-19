@@ -3,9 +3,7 @@ import { guard } from './errors.js';
 import { buildSessionPicker } from './session-picker.js';
 import { PAD_CODE, firePadBinding, padBinds, padChord } from './pad.js';
 import { buildPadPanel } from './padpanel.js';
-import { buildNotePanel } from './panels.js';
-import { IS_TOUCH, S, tiles } from './state.js';
-import { isCoarse } from './tiledrop.js';
+import { IS_TOUCH, S, isCoarse, tiles } from './state.js';
 import { t } from './lexicon.js';
 
 export function build() {
@@ -74,8 +72,8 @@ export function build() {
         // not cost a mouse trip. Falls back to the first visible
         // tile so it works before you have clicked into anything.
         if (e.code === 'KeyN') {
-          // ⌃⇧N is the keyboard's ＋ New session: a workspace surface on the discovery workbench
-          // (team-view.js), the tile's launcher on the parked grid page.
+          // ⌃⇧N is the keyboard's New Agent, where the workbench offers one (cowork-view.js
+          // sets S.showNewSession).
           if (!S.showNewSession) return;
           S.showNewSession();
           e.preventDefault();
@@ -118,11 +116,8 @@ export function build() {
   // have to look somewhere else to find out. Each tile head carries its own switch, next
   // to that tile's other controls, showing that tile's state. See Tile.setLocked.
 
-  // Per-session note editor (📝 on each tile head) — works the same on desktop and touch.
-  guard('note panel', buildNotePanel);
-  // Commons is still the tile head's ⛩, the brand mark and ⌃⇧C; Mika is the `mika` tool
-  // and the desk's own asks; the pad panel opens from a row on the ⚙ Admin Desk
-  // (js/cowork-commons.js) and its physical keys never needed the button.
+  // Mika is the `mika` tool and the desk's own asks; the pad panel opens from the Keypad
+  // row of the commons (js/cowork-commons.js) and its physical keys never needed a button.
   // Work Louder pad — both surfaces (owner override). The
   // physical pad fires bound terminal/navigation keys whether or not the panel is open.
   // Session switcher — the pad key's list (also usable with plain ↑↓/↵ once open).

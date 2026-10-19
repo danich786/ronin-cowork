@@ -1,5 +1,5 @@
 import type express from 'express';
-import { isValidName, listSessions, sessionExists, teamsInPlay } from '../tmux.js';
+import { listSessions, sessionExists, teamsInPlay } from '../tmux.js';
 import { enqueueMessage } from '../message-queue.js';
 import {
   appendPost,
@@ -7,22 +7,17 @@ import {
   boardPath,
   ensureBoard,
   isValidBoardName,
-  listBoardFiles,
   ownerAuthor,
   postNotice,
   readBoard,
   reapBoard,
   reapPosts,
-  setBrief,
   teamJoinNotice,
   teamLeaveNotice,
-  boardOfTeam,
   teamOfBoard,
   teamStub,
-  unreadFor,
   type Post,
 } from '../wipeboards.js';
-import { sessionKey } from '../session-dir.js';
 import { listTeamRosters } from '../team-rosters.js';
 import { readWipeboardSettings } from '../machine-state.js';
 import { count } from '../counts.js';
@@ -110,49 +105,12 @@ export async function wipeboardAnswer(name: string, limit: number): Promise<Reco
     await ensureBoard(name, teamStub(team));
   }
   await sweep(name, team);
-  if (!(await boardExists(name))) {
-    return { name, brief: '', posts: [], newest: '', file: boardPath(name), members: [], kind: team ? 'team' : 'custom', reaped: true };
-  }
-  const [board, members] = await Promise.all([readBoard(name), boardMembers(name, team)]);
-  const older = board.posts.length > limit;
-  const posts = board.posts.slice(-limit);
-  return {
-    name: board.name,
-    brief: board.brief,
-    posts,
-    newest: board.posts.length ? board.posts[board.posts.length - 1].id : '',
-    file: boardPath(name),
-    members,
-    kind: team ? 'team' : 'custom',
-    more: older,
-  };
+  if (!(await boardExists(name))) return { posts: [], more: false };
+  const { posts } = await readBoard(name);
+  return { posts: posts.slice(-limit), more: posts.length > limit };
 }
 
 export function registerWipeboards(app: express.Express): void {
-  app.get('/api/wipeboards', async (_req, res) => {
-    try {
-      const sessions = await listSessions();
-      const live = new Map<string, number>(); // team -> member count
-      for (const s of sessions) for (const t of s.tags) live.set(t, (live.get(t) ?? 0) + 1);
-      const rows = new Map<string, { name: string; members: number; kind: 'team' | 'custom'; team?: string }>();
-      for (const [team, members] of live) {
-        const id = await boardOfTeam(team);
-        rows.set(id, { name: id, members, kind: 'team', team });
-      }
-      for (const n of await listBoardFiles()) {
-        if (rows.has(n)) continue;
-        const team = await teamOfBoard(n);
-        rows.set(n, team
-          ? { name: n, members: live.get(team) ?? 0, kind: 'team', team }
-          : { name: n, members: 0, kind: 'custom' });
-      }
-      const boards = [...rows.values()].sort((a, b) => a.name.localeCompare(b.name));
-      res.json({ boards });
-    } catch (e) {
-      res.status(500).json({ error: String((e as Error)?.message ?? e) });
-    }
-  });
-
   app.post('/api/wipeboards/:name/post', async (req, res) => {
     const { name } = req.params;
     if (!isValidBoardName(name)) return res.status(400).json({ error: 'Invalid board name.' });
@@ -181,37 +139,6 @@ export function registerWipeboards(app: express.Express): void {
       res.status(500).json({ error: String((e as Error)?.message ?? e) });
     }
   });
-
-  app.get('/api/wipeboards/:name/unread', async (req, res) => {
-    const { name } = req.params;
-    const session = String(req.query.session ?? '').trim();
-    if (!isValidBoardName(name)) return res.status(400).json({ error: 'Invalid board name.' });
-    if (!isValidName(session)) return res.status(400).json({ error: 'Name a session.' });
-    try {
-      if (!(await boardExists(name))) return res.json({ name, session, posts: [] });
-      const posts = await unreadFor(name, await sessionKey(session), `@${session}`);
-      res.json({ name, session, posts });
-    } catch (e) {
-      res.status(500).json({ error: String((e as Error)?.message ?? e) });
-    }
-  });
-
-  app.put('/api/wipeboards/:name/brief', async (req, res) => {
-    const { name } = req.params;
-    if (!isValidBoardName(name)) return res.status(400).json({ error: 'Invalid board name.' });
-    if (!(await boardExists(name))) {
-      const team = await teamBehind(name);
-      if (!team) return res.status(404).json({ error: 'No such wipeboard.' });
-      await ensureBoard(name, teamStub(team));
-    }
-    try {
-      await setBrief(name, String(req.body?.brief ?? '').slice(0, 8000));
-      res.json({ ok: true });
-    } catch (e) {
-      res.status(500).json({ error: String((e as Error)?.message ?? e) });
-    }
-  });
-
 }
 
 export async function announceTeamChanges(

@@ -10,7 +10,6 @@ import { storeDir } from './resources.js';
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 export const BUNDLE_FORMAT = 'ronin-bundle/1';
-export const LIBRARY_FORMAT = 'ronin-library/1';
 
 export type BundleStore = 'catalogs' | 'ways' | 'library' | 'tools';
 export type BundleCatalog = 'TOOLS.md' | 'MODEL_PROVIDERS.md';
@@ -51,11 +50,6 @@ export interface LibraryCard {
   sha256: string;
   bytes: number;
   holds: Record<string, number>;
-}
-
-export interface LibraryIndex {
-  format: typeof LIBRARY_FORMAT;
-  bundles: LibraryCard[];
 }
 
 const TOKEN = /^[a-z0-9][a-z0-9_-]{0,63}$/;
@@ -178,35 +172,6 @@ export function bundleHolds(bundle: Bundle): Record<string, number> {
   }
   for (const e of bundle.entries) bump(e.catalog === 'TOOLS.md' ? 'tools' : 'providers');
   return holds;
-}
-
-export function parseLibraryIndex(raw: unknown): LibraryIndex {
-  const i = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
-  if (i.format !== LIBRARY_FORMAT) throw new Error(`Not a template library: format is not ${LIBRARY_FORMAT}.`);
-  const bundles: LibraryCard[] = [];
-  for (const raw of Array.isArray(i.bundles) ? i.bundles : []) {
-    const c = (raw ?? {}) as Record<string, unknown>;
-    const name = words(c.name, 64).toLowerCase();
-    const url = str(c.url, 300);
-    if (!TOKEN.test(name) || !url || url.includes('..') || /^[a-z]+:/i.test(url) || url.startsWith('/')) continue;
-    const holds: Record<string, number> = {};
-    for (const [k, v] of Object.entries((c.holds && typeof c.holds === 'object' ? c.holds : {}) as Record<string, unknown>)) {
-      if (typeof v === 'number' && /^[a-z_]{1,24}$/.test(k)) holds[k] = v;
-    }
-    bundles.push({
-      name,
-      label: words(c.label, 100) || name,
-      art: words(c.art, 8),
-      blurb: words(c.blurb, 200),
-      kinds: (Array.isArray(c.kinds) ? c.kinds : []).map((k) => words(k, 16)).filter((k) => KINDS.includes(k)),
-      version: words(c.version, 32),
-      url,
-      sha256: /^[0-9a-f]{64}$/.test(str(c.sha256, 64)) ? str(c.sha256, 64) : '',
-      bytes: typeof c.bytes === 'number' ? c.bytes : 0,
-      holds,
-    });
-  }
-  return { format: LIBRARY_FORMAT, bundles };
 }
 
 export type Verdict =

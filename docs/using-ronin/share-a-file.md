@@ -7,7 +7,7 @@ the tile takes the file itself. Three ways in, all on the Agent's [tile](tile.md
 |---|---|
 | **Drag** | Drag a file onto the tile. The tile outlines while you hover; the file uploads when you let go. No click needed. |
 | **Paste** | Paste while the clipboard holds an image or a file (a screenshot, a copied file). Pasting text is unchanged. |
-| **📎** | Press the paperclip in the tile header to choose a file: Finder on a computer, the photo library on a phone. On a phone or tablet it is in the メ menu. |
+| **📎** | Choose **📎 Send a file** in the tile's メ menu: Finder on a computer, the photo library on a phone. |
 
 ## Where it goes
 
@@ -25,9 +25,8 @@ had half typed stays, with the path added after it.
 
 ## A work item, the same way
 
-Drag a work item onto a tile: a card on the Trello view, a stone on Work Items, or a board
-or item under a Team on Who. Its reference, the id and the title in square brackets
-(`[w6 "Work items surface: Status / Board toggle"]`), is typed into the Agent's input without Enter, after anything you
+Drag a work item onto a tile: a stone on Work Items. Its reference, the id and the title in square brackets
+(`[w6 "Fix the login redirect"]`), is typed into the Agent's input without Enter, after anything you
 had typed, so you ask about it around it. Nothing is saved: it is a reference, not a file.
 Dragging an item within its own surface still moves it as before; only a drop on a tile
 types the reference.

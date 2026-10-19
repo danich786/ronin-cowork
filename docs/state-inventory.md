@@ -51,7 +51,7 @@ Live runtime identity also includes the session key resolved by
 the session lifecycle, not a new JSON roster. Tests use the managed test-server helper.
 
 The [Work Record surface](contributor-map.md#work-record) owns the authored account.
-[Coordination](coordination-trace.md) and [Team Kanban](using-ronin/team-kanban.md) connect it
+[Coordination](coordination-trace.md) and [Task Manager](using-ronin/team-kanban.md) connect it
 to other authorities without becoming another writer.
 
 When adding durable state, update this inventory and the nearest implementation contract.

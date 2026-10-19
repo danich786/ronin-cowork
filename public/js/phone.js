@@ -7,8 +7,8 @@
  * (src/index.ts), so the first frame the browser paints is already the mobile bar.
  *
  * Three screens, one at a time: Teams → a Team (Agents | Docs) → one Agent's tile. On the
- * tile the head is hidden and the bar's one メ sheet holds the head's own controls,
- * RELOCATED not cloned, so every handler and live widget keeps the owner it always had.
+ * tile the head is hidden and the bar carries the head's reading toggle and メ control,
+ * RELOCATED not cloned; メ opens the same menu as on a desk (js/menu.js).
  */
 import { trackAppHeight } from './appheight.js';
 import { request } from './request.js';
@@ -19,7 +19,7 @@ import { membersOfTeam, subscribe, teamByName, teamsFromState, UNASSIGNED, unass
 import { loadProjects, projectData } from './home.js';
 import { buildDocs } from './docs.js';
 import { createTerminalTileHost } from './terminal-tile-host.js';
-import { makeDrop } from './tiledrop.js';
+import { closeMenu } from './menu.js';
 import { S } from './state.js';
 import { t } from './lexicon.js';
 import { WorkspaceKit } from './workspace-kit.js';
@@ -96,7 +96,6 @@ export async function buildPhone() {
   let agentsPainted = ''; // what the Agents screen last drew — identical readings skip the repaint
   let host = null; // the one terminal host, alive only on the terminal screen
   let stageTile = null; // the mounted tile inside it — its transcript mode is remembered on close
-  let sheet = null; // its メ sheet — dies with the host
   let docsView = null; // the Docs screen's editor — asked before it is left, in case of unsaved typing
   const transcriptModeKey = 'ronin.phone.transcript-modes';
   let savedTranscriptModes = {};
@@ -291,21 +290,12 @@ export async function buildPhone() {
     }
     tile.composer?.el.querySelector('.keysrow')?.append(feedbackAction);
 
-    sheet = makeDrop('メ', t('phone.me_title', 'This Agent — work record, docs, output, close'), 'me');
-    const node = (key) => tile[key]?.el ?? tile[key];
-    const transcriptBtn = node('transcriptBtn');
+    const transcriptBtn = tile.transcriptBtn;
     transcriptBtn.addEventListener('click', () => rememberTranscriptMode(session, tile.transcriptOn));
-    sheet.addRow(node('workRecordBtn'), t('me.ladder', 'Work record'));
-    sheet.addRow(node('docsBtn'), t('me.docs', 'Docs'));
-    sheet.addRow(node('attachBtn'), t('me.attach', 'Send a file'));
-    // No Services, no choice: the Output row only exists where an unlocked view does.
-    if (!tile.servicesOff()) sheet.addRow(node('outputEl'), t('me.output', 'Output'), 'stay');
-    sheet.addRow(node('killBtn'), 'Close');
 
-    // The 📄 menu hangs off the hidden tile head; here it hangs off the bar.
-    //
-    // So does the reading toggle, and it is a toggle here rather than a dial: the owner's
-    // ruling of 2026-09-23 is Term or Chat on a phone, in the head where the desktop keeps
+    // The tile's メ control moves from the hidden tile head to the bar; its menu still
+    // hangs over the tile (js/menu.js). So does the reading toggle, and it is a toggle
+    // here rather than a dial: the owner's ruling of 2026-09-23 is Term or Chat on a phone, in the head where the desktop keeps
     // it, never a row in a menu ("It should have the same toggle as the desktop"). The
     // button is the tile head's own — hidden when the route offers this Agent nothing,
     // opaque when it has nothing yet, naming where you are, exactly as on the desktop.
@@ -313,15 +303,12 @@ export async function buildPhone() {
       backLink(teamHash(team)),
       el('span', 'ph-title', agentLabel(S.sessions.find((row) => row.name === session) || { name: session })),
       transcriptBtn,
-      sheet.btn,
-      sheet.menu,
-      tile.docsBtn.menu,
+      tile.menuBtn.el,
     );
   };
   const closeTerminal = () => {
     if (stageTile?.session) rememberTranscriptMode(stageTile.session, stageTile.transcriptOn);
-    sheet?.close();
-    sheet = null;
+    closeMenu();
     host?.destroy();
     host?.el.remove();
     host = null;
@@ -371,14 +358,13 @@ export async function buildPhone() {
   // Ask the operator which optional surfaces are plugged in BEFORE a tile is born, the
   // way main.js does: `stream:false` means the 🔓 views are off and every tile is 🔒.
   {
-    const [v, installed] = await Promise.all([request('/api/version'), request('/api/installed', { cache: 'no-store' })]);
+    const v = await request('/api/version');
     if (v.ok && v.data.stream === false) {
       S.streamOff = true;
       S.locked = true;
       S.output = 'locked';
     }
     if (v.ok && Array.isArray(v.data.services)) S.services = v.data.services;
-    if (installed.ok) S.installedServices = installed.data?.services || null;
   }
   // A tile address mounts its tile now: the terminal attaches by name and needs no list.
   if (route.screen === 'terminal') guard('phone paint', render);

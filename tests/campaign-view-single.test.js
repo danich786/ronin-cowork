@@ -12,7 +12,7 @@ test('the Campaign page has one switch for offering New Campaign', async () => {
   assert.match(campaigns, /export const MULTIPLE_CAMPAIGNS_ENABLED = false;/);
   assert.match(catalog, /if \(MULTIPLE_CAMPAIGNS_ENABLED\) campaign\(WORKBENCH_TYPES\.campaignCreate/);
   assert.match(catalog, /\.\.\.\(MULTIPLE_CAMPAIGNS_ENABLED \? \[WORKBENCH_TYPES\.campaignCreate\] : \[\]\)/);
-  for (const type of ['Identity', 'Profile', 'Installations', 'Defaults']) {
+  for (const type of ['Identity', 'Installations', 'Defaults']) {
     assert.match(catalog, new RegExp(`campaign\\(WORKBENCH_TYPES\\.campaign${type}`));
   }
   assert.match(source, /registerWorkbenchCatalog\(\)/);
@@ -23,12 +23,12 @@ test('the Campaign page has one switch for offering New Campaign', async () => {
   assert.match(setupSurfaces, /providerSurfaceDefinition\(\),/, 'Setup surfaces register the one shared provider definition');
 });
 
-test('the home page routes its three work doors and resolves the fixed Campaign setup state', async () => {
+test('the home page has its three doors and resolves the fixed Campaign setup state', async () => {
   const source = await readFile(new URL('../public/js/campaign-home.js', import.meta.url), 'utf8');
-  for (const key of ['desk', 'team', 'agent']) assert.match(source, new RegExp(`key: '${key}'`));
+  for (const key of ['models', 'workspaces', 'teams']) assert.match(source, new RegExp(`key: '${key}'`));
   assert.doesNotMatch(source, /key: 'campaign', route: 'campaign'/);
   assert.doesNotMatch(source, /\bcreateCampaign\b|campaign_ids|archiveCampaign|New Campaign/);
-  assert.match(source, /export const setupDefaultView/);
+  assert.match(source, /setupDefaultView \} from '\.\/campaigns\.js'/, 'the Setup-or-Settings reading lives with the campaigns, node-safe for tests');
   assert.match(source, /setupDefaultView\(setupCampaign\)/, 'the fixed Campaign still chooses Setup from persisted progress');
 });
 

@@ -85,12 +85,10 @@ everyone, because "all agents should see that". The quiet default is
 for agents.
 
 **Where the owner meets a board: the team page.** Opening a team shows its board as the
-Wipeboard channel — the thread and the owner's composer, nothing else; the Brief lives in
-Team Configuration. The slice is `public/js/team-wipeboard.js`, documented in
+Wipeboard tab of the Team's Commons — the thread and the owner's composer, nothing else;
+the Brief is the board's own `brief.md`. The slice is `public/js/team-wipeboard.js`, documented in
 `docs/architecture/team-workspace.md`; opening it materializes the board server-side, so it never shows
-a void — an empty thread is the conversation that has not started yet. The old ▤ commons
-tab predates the transport model and was retired in favor of the team
-page; it is not updated and goes with the new UI's arrival.
+a void — an empty thread is the conversation that has not started yet.
 
 **An addressed post is not a private message.** Everyone on the board still receives it on
 their next check, and the lead was interrupted besides. An empty `--to` is refused rather

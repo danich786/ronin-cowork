@@ -20,7 +20,7 @@ import { getTags } from './tmux.js';
 import { enqueueMessage } from './message-queue.js';
 import { findLeads } from './desks/lead.js';
 import { listTeamRosters, readTeamRoster, writeTeamRoster } from './team-rosters.js';
-import { listLetterHolds, readLetterHolds, seedTegami, writeLetterAt, writeLetterHolds } from './tegami.js';
+import { ackRecord, listLetterHolds, readLetterHolds, seedTegami, writeLetterAt, writeLetterHolds } from './tegami.js';
 
 export const ITEM_STAGES = ['IDEA', 'PLAN', 'BUILD', 'REVIEW', 'LAND', 'DONE'] as const;
 export const ITEM_EXITS = ['none', 'agent', 'lead', 'user'] as const;
@@ -284,7 +284,7 @@ export async function createItemUnlocked(input: NewItem, by: string): Promise<Ac
   const list = input.holder ? await listFor(input.holder) : null;
   const folded = item.parent ? await foldIntoFirstChild(item.parent, item, by) : '';
   await save(item);
-  if (list) await list.set([...list.holds, item.id]);
+  if (list) { await list.set([...list.holds, item.id]); await ackHolds([input.holder ?? null], by); }
   const line = lineOf(by, 'create', { to: input.holder ? holderLabel(input.holder) : 'none', note: [item.title, item.parent ? `under ${item.parent}` : 'a board of its own', folded].filter(Boolean).join('; ') });
   item.trail.push(line);
   await save(item);
@@ -428,11 +428,17 @@ async function takeOffEveryList(id: string, except?: Holder): Promise<Holder[]> 
 
 const labels = (holders: Holder[]): string => holders.length ? holders.map(holderLabel).join(', ') : 'none';
 
+/** The ack (tegami.ts ackRecord) to every Agent whose holds this move changed; a Team's holds are its roster. */
+async function ackHolds(holders: Array<Holder | null>, by: string): Promise<void> {
+  for (const name of new Set(holders.filter((holder) => holder?.kind === 'agent').map((holder) => holder!.name))) await ackRecord(name, by);
+}
+
 export async function assignUnlocked(id: string, to: Holder, by: string, note?: string): Promise<Acknowledged> {
   await load(id);
   const target = await listFor(to);
   const from = await takeOffEveryList(id, to);
   if (!target.holds.includes(id)) await target.set([...target.holds, id]);
+  await ackHolds([...from, to], by);
   return appendTrail(id, by, () => ({ op: 'assign', from: labels(from), to: holderLabel(to), note }));
 }
 
@@ -443,6 +449,7 @@ export function releaseItem(id: string, by: string, note?: string): Promise<Ackn
   return withIssuer(async () => {
     await load(id);
     const from = await takeOffEveryList(id);
+    await ackHolds(from, by);
     return appendTrail(id, by, () => ({ op: 'release', from: labels(from), to: 'none', note }));
   });
 }
@@ -457,6 +464,7 @@ export function restoreItem(id: string, team: string, by: string): Promise<Ackno
     const target = await listFor(to);
     const from = await takeOffEveryList(id, to);
     if (!target.holds.includes(id)) await target.set([...target.holds, id]);
+    await ackHolds([...from, to], by);
     return appendTrail(id, by, (item) => {
       const note = item.stage === stage ? 'restored' : `restored; stage ${item.stage} → ${stage}`;
       item.stage = stage;

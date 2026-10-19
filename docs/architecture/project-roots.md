@@ -5,7 +5,7 @@ A Workspace Folder is Ronin's record for **where work happens**. Its stable
 an optional display title, an existing directory, the project's remit and matching words,
 its session-boot shelf,
 and its memory keys. The internal/API field carrying that handle is `project_root`. The
-new-session launcher, Admin Desk, session identity, and recall all resolve that one handle.
+New Agent form, the Workspaces door, session identity, and recall all resolve that one handle.
 The title is presentation only: changing it never changes the handle,
 directory, session identity, or repository identity.
 
@@ -43,7 +43,7 @@ state: Ronin creates and reads it, but keeps it outside a product git checkout s
 cannot replace the owner's directories. It is part of the running Ronin installation. It is
 not a second product catalog and should not be committed to `ronin-cowork`.
 
-The API and Admin Desk are co-editors of this markdown file. Use the API for ordinary changes
+The API and the Workspaces surfaces are co-editors of this markdown file. Use the API for ordinary changes
 because it validates the handle, directory, and resulting document atomically. Do not add an
 owner directory to the shipped catalog.
 
@@ -61,7 +61,7 @@ POST /api/project-roots includes it in Ronin
           ↓
 GET /api/project-roots/detail proves disk + git facts
           ↓
-Admin Desk and ＋ New show the project
+Workspaces and New Agent show the project
 ```
 
 ## Behavior A — include an existing directory
@@ -130,7 +130,7 @@ Content-Type: application/json
 }
 ```
 
-The Admin Desk's **Workspace folders** control and the `machine-settings project-root`
+The **Workspaces** surfaces and the `machine-settings project-root`
 tool use this same endpoint. They are preferred human-facing paths. Editing the owner catalog by hand remains an
 emergency/advanced path, not a separate workflow.
 
@@ -141,12 +141,12 @@ the owner intended to edit it. A validation refusal is an answer; do not bypass 
 
 Inclusion is not complete until all of these agree:
 
-1. `GET /api/project-roots` contains the handle (`name` on the wire), title, and directory;
+1. `GET /api/project-roots` contains the handle (`name` on the wire), title, directory, and `memory` (as stored, blank when unset);
    this is the launcher's live list.
 2. `GET /api/project-roots/detail` reports `exists: true`. For a repository, its live `remote`
    and `branch` match git; these facts are read from disk and are never copied into the catalog.
-3. Admin Desk → **Workspace folders** shows the entry without an excluded/archived state.
-4. **＋ New** offers the Workspace Folder; a test session launched with it starts in the recorded
+3. Ronin Home → **Workspaces** shows the entry without an excluded/archived state.
+4. **New Agent** offers the Workspace Folder; a test session launched with it starts in the recorded
    directory and carries `@ronin-project_root=<workspace-folder-handle>`.
 
 If API verification succeeds but the browser is stale, reload the surface; do not create a
@@ -231,7 +231,7 @@ points**: merged into, never edited in place, and the only two lines that reach 
 The normal review PR is **`dev → master`**, and it carries the team-promotion receipt that
 proved the PR's head commit (`docs/development/release.md`). Do not push per-feature, per-agent, phase,
 remediation, or topic branches to the remote; merged PR head branches accumulating beside
-`dev` and `master` are repository clutter and make Admin Desk look as though unfinished work
+`dev` and `master` are repository clutter and make Workspaces look as though unfinished work
 remains.
 
 The Workspace Folder editor reads these four profile fields live from `RONIN_REPO`. `mode=reviewed`
@@ -280,7 +280,7 @@ preserve the unsquashed history. Read the repository’s declared arrangement; t
 ## Edit, archive and exclude
 
 - `PUT /api/project-roots/:name` edits only named fields and preserves the rest of the block.
-- `archived: yes` removes a root from the new-session picker while retaining it in Admin Desk.
+- `archived: yes` removes a root from the New Agent picker while keeping its entry in the catalog.
 - `DELETE /api/project-roots/:name` removes the catalog block only. It never deletes the directory
   or GitHub repository.
 - In Ronin Setup → Workspace folders, the selected folder's head line offers **Edit**, **Archive**

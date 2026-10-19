@@ -32,7 +32,8 @@ function block(source, marker) {
 }
 
 const index = fs.readFileSync(path.join(PUB, 'index.html'), 'utf8');
-const linkedStyles = [...index.matchAll(/<link\s+[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)["']/g)].map((match) => match[1]);
+// index.html links every sheet under the asset fingerprint (src/index.ts rewrites the placeholder); the sheet's path is what is checked.
+const linkedStyles = [...index.matchAll(/<link\s+[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)["']/g)].map((match) => match[1].replace(/^\/__RONIN_ASSET_VERSION__\//, ''));
 const rootFeatureSheets = fs.readdirSync(PUB).filter((file) => file.endsWith('.css') && !['style.css', 'workspace-kit.css'].includes(file));
 for (const file of rootFeatureSheets) problems.push(`${file} is a feature stylesheet outside public/css/`);
 for (const file of featurePaths) {
@@ -69,6 +70,7 @@ for (const file of featurePaths) {
   if (!completeLayer) problems.push(`${path.relative(ROOT, file)} must contain only one @layer app block`);
   for (const [i, line] of clean.split('\n').entries()) {
     if (/^\s*--[\w-]+\s*:/.test(line)) continue;
+    if (/^\s*@(?:media|container)\b/.test(line)) continue; // a breakpoint's prelude cannot read a token
     if (/(?<![\w.-])\d+(?:\.\d+)?(?:px|rem|em)\b|var\([^)]*,/.test(line)) {
       problems.push(`${path.relative(ROOT, file)}:${i + 1} raw visual measurement — use an existing design token: ${line.trim()}`);
     }

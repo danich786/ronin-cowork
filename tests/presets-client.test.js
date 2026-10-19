@@ -101,7 +101,6 @@ test('the approved resting-stone lines are verbatim and every stone has a glyph'
 });
 
 test('a non-core replacement receives only universal actions and ordinary launch', () => {
-  assert.deepEqual(presets.presetActions('dinner_party'), ['user_message', 'launch']);
   assert.equal(presets.buildLaunchPlan({ handle: 'dinner_party', shelf: 'teams' }, 'Hello', {}).treatment, null);
   assert.equal(presets.seatingPlan('dinner_party', { sessions: [{ name: 'real' }] }), null);
 });
@@ -112,7 +111,6 @@ test('Bare Metal starts with two rows that carry no provider or model, and three
   assert.deepEqual(presets.initialControls('ronin_team').sessions.map(({ name, team_lead }) => [name, team_lead === true]), [
     ['team_lead', true], ['agent_1', false], ['agent_2', false],
   ]);
-  assert.deepEqual([0, 1, 2, 3, 4].map(presets.bareMetalWorkspaceCount), [1, 1, 2, 4, 4]);
   assert.equal(presets.initialControls('ronin_team').root, 'ronin_lab', 'Ronin Team starts in Ronin Lab');
 });
 
@@ -349,9 +347,8 @@ test('Code Stack Eval keeps ticked folders on Apply and evaluates the chosen one
   assert.match(source, /workspaceFoldersAction\(environment, 'Manage workspace folders'\)/);
 });
 
-test('the launched team page preserves Commons selections and moves legacy Task Manager placements', async () => {
+test('the launched team page preserves Commons selections', async () => {
   const source = await readFile(new URL('../public/js/cowork-view.js', import.meta.url), 'utf8');
-  assert.match(source, /token\.type === WB_TYPES\.commons && token\.tab === 'kanban'\s*\? \{ type: WB_TYPES\.kanban, detail: \{\} \}/);
   assert.match(source, /type: token\.type, detail: \{ key: token\.key \|\| '', root: token\.root \|\| '', path: token\.path \|\| '', \.\.\.\(token\.tab \? \{ tab: token\.tab \} : \{\}\), \.\.\.\(token\.doc \? \{ doc: token\.doc \} : \{\}\) \}/);
   const health = presets.seatingPlan('health_and_fitness', { team: 'health', sessions: [{ name: 'head_coach' }, { name: 'nutritionist' }] });
   assert.equal(health.seats[1].tab, 'wipeboard');

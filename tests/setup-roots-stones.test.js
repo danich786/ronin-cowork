@@ -95,7 +95,7 @@ test('roots adapt the real project-root detail and Add form to the shared stone 
 
 test('the selected folder is one page: a head line with every action, then Summary, Folder, Repository', async () => {
   const roots = await source('public/js/projectroots.js');
-  const detail = roots.slice(roots.indexOf('function detail(r)'), roots.indexOf('function render()'));
+  const detail = roots.slice(roots.indexOf('function detail(r)'), roots.indexOf('function addCard()'));
   assert.match(detail, /make\('article', 'pr-detail'\)/);
   assert.match(detail, /d\.dataset\.mode = editing === r\.name \? 'edit' : 'read'/);
   assert.match(detail, /make\('p', 'pr-detail-state', words\.join\(' · '\)\)/, 'one measured state line');
@@ -171,7 +171,7 @@ test('roots carry no parallel stone DOM or CSS presentation and the detail rhyth
   assert.match(css, /\.setup-roots-stones \.sws-stone\[aria-pressed='true'\] \{[^}]*border-color: var\(--kaki\);[^}]*background: var\(--accent-soft\);[^}]*color: var\(--fg-strong\)/, 'only the selected stone receives the highlight');
   assert.match(css, /\.pr-detail-head \{[^}]*border-bottom: var\(--edge-2\) solid var\(--kaki\)/, 'one kaki rule closes the head');
   assert.match(css, /\.pr-detail-heading \{[^}]*justify-content: space-between/, 'the head line carries the name and its actions, as Presets does');
-  const detailCss = css.slice(css.indexOf("/* Setup's selected folder"), css.indexOf('.cv-worktrees-default {'));
+  const detailCss = css.slice(css.indexOf("/* Setup's selected folder"), css.indexOf('.pr-block {'));
   assert.doesNotMatch(detailCss, /--text-(?:[1-3]|[6-9]|10)\b/, 'only 14px body and 13px notes inside the detail');
   assert.doesNotMatch(detailCss, /font-mono|var\(--ok\)|@container roots-detail/, 'no second face, no green, labels never stack over values');
   assert.match(detailCss, /\.pr-detail \.pr-f input,\s*\.pr-detail \.pr-f select \{[^}]*border: 0;[^}]*background: var\(--well\)[^}]*font: inherit/, 'fields are drawn as Presets fields, never browser defaults');

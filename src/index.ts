@@ -45,7 +45,6 @@ import { measureAndRecordProviders } from './provider-summary.js';
 import { migrateCampaignScope } from './campaign-scope.js';
 import { registerUpdate } from './routes/update-api.js';
 import { registerMachineRestart } from './routes/machine-restart-api.js';
-import { registerLibrary } from './routes/library-api.js';
 import { registerJikan, startHouseJikan } from './routes/jikan-api.js';
 import { registerInstalled } from './routes/installed-api.js';
 import { registerVersion } from './routes/version.js';
@@ -57,10 +56,7 @@ import { registerCli } from './routes/cli-api.js';
 import { listQueuedMessages, startMessageQueue } from './message-queue.js';
 import { isValidTeam, listAllJobs, listJobs } from './jikan.js';
 import { isValidBoardName, seedHouseBoard, WIPEBOARD_DIR } from './wipeboards.js';
-import { handleEvents, pushJikan, pushMessages, pushReadings, pushWipeboard, startSessionsBroadcast, watchStore } from './ws/events.js';
-import { collectionReading } from './collection-read.js';
-import { wantedItemsReading } from './work-items-read.js';
-import { USER_CATALOGS_DIR } from './project-roots.js';
+import { handleEvents, pushJikan, pushMessages, pushWipeboard, startSessionsBroadcast, watchStore } from './ws/events.js';
 import { tmux as tmuxClient } from './tmux-client.js';
 import { handlePty } from './ws/pty.js';
 import { originAllowed, allowedOrigins } from './ws/origin.js';
@@ -240,7 +236,6 @@ registerTeamPage(app); // /api/teams/:team/page — the team page's view, and dr
 registerVersion(app); // /api/version — release string, or the commit this process started from — src/routes/version.ts
 registerUpdate(app); // /api/update/* — the ⚙ gear's check + run, press-only — src/routes/update-api.ts
 registerMachineRestart(app); // /api/machine/restart — the Setup Services Restart press; answers, then runs ronin-host restart — src/routes/machine-restart-api.ts
-registerLibrary(app); // /api/library* — the template library: index and bundles off the site on a press, install into the owner's stores — src/routes/library-api.ts
 registerMachineSettings(app); // /api/machine-settings — the install record, and writes BY NAME only — src/routes/machine-settings-api.ts
 registerCampaigns(app); // /api/campaigns* — the durable record of each body of work — src/routes/campaigns-api.ts
 startTomodachiSender(); // AGERU's weekly packet actually leaves here — src/activation/tomodachi.ts
@@ -437,17 +432,10 @@ startSessionsBroadcast({
   jikan: (team) => team === '*' ? listAllJobs() : isValidTeam(team) ? listJobs(team) : Promise.resolve(null),
   github: { attached: githubSetupAttached, answer: githubSetupAnswer },
   shutdown: shutdownOperation,
-  collection: async (filter) => ({ ...(await collectionReading(filter)) }),
-  workItems: wantedItemsReading,
 });
 watchStore(WIPEBOARD_DIR, (file) => { void pushWipeboard(file.split('/')[0]!); });
 watchStore(storeDir('jikan'), (file) => { if (file.endsWith('.md')) void pushJikan(file.slice(0, -3)); });
 watchStore(storeDir('message_queue'), () => { void pushMessages(); });
-// The readings' inputs: work items, Team rosters, the workspace folder catalog (sessions move
-// them from the tick).
-watchStore(storeDir('work_items'), () => { void pushReadings(); });
-watchStore(storeDir('team_rosters'), () => { void pushReadings(); });
-watchStore(USER_CATALOGS_DIR, (file) => { if (file === 'PROJECT_ROOTS.md') void pushReadings('collection'); });
 void seedHouseBoard().catch((e) => console.error('[tmux-ronin] house board seed failed:', e));
 
 void publishMax();

@@ -1,4 +1,4 @@
-import { mkdir, readdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
 import { execFile as execFileP } from './spawn-broker.js';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -25,6 +25,7 @@ export interface ProjectRootInfo {
   name: string;
   title: string;
   dir: string;
+  memory: string;
   match: string[];
   remit: string;
   docs: string[];
@@ -87,6 +88,7 @@ function parseRoots(raw: string): ProjectRootInfo[] {
       name,
       title: field('title'),
       dir: expand(dir),
+      memory: field('memory'),
       match: field('match')
         .split(',')
         .map((m) => m.trim())
@@ -294,24 +296,4 @@ export async function checkProjectRootGitAccess(root: ProjectRootInfo): Promise<
       checked_at,
     };
   }
-}
-
-export async function suggestDirs(prefixRaw: string): Promise<string[]> {
-  const prefix = expand(String(prefixRaw ?? '').trim() || '~/');
-  const endsSep = prefix.endsWith(path.sep);
-  const parent = endsSep ? prefix : path.dirname(prefix);
-  const frag = endsSep ? '' : path.basename(prefix);
-  let entries;
-  try {
-    entries = await readdir(parent, { withFileTypes: true });
-  } catch {
-    return []; // an unreadable or half-typed parent suggests nothing, never errors
-  }
-  return entries
-    .filter((d) => d.isDirectory())
-    .map((d) => d.name)
-    .filter((n) => n.startsWith(frag) && (frag.startsWith('.') || !n.startsWith('.')))
-    .sort()
-    .slice(0, 20)
-    .map((n) => path.join(parent, n));
 }

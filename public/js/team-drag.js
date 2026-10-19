@@ -11,7 +11,7 @@ export const itemReference = (item) => `[${item.id} ${JSON.stringify(String(item
 export function carryItem(dataTransfer, item) { dataTransfer?.setData(ITEM_MIME, itemReference(item)); }
 
 /** Let `node` accept a dragged session; `seatOf()` names the workspace it stands for and
- *  `onDrop(name, id)` is what a landing means (team-view.js arranges it). */
+ *  `onDrop(name, id)` is what a landing means (cowork-view.js arranges it). */
 export function acceptDrops(node, seatOf, onDrop) {
   node.addEventListener('dragover', (event) => {
     if (![...event.dataTransfer.types].includes(DRAG_TYPE)) return;

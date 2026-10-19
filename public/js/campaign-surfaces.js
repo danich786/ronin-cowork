@@ -20,6 +20,7 @@ import { deskProfiles } from './desk-profile.js';
 import { MULTIPLE_CAMPAIGNS_ENABLED, saveCampaign } from './campaigns.js';
 import { WorkspaceKit } from './workspace-kit.js';
 import { request } from './request.js';
+import { saveRow } from './save-row.js';
 
 const el = (tag, cls, text) => {
   const out = document.createElement(tag);
@@ -62,17 +63,13 @@ export function createCampaignIdentitySurface(campaign) {
     id.control.tabIndex = -1;
   }
 
-  const save = async (fields, f) => {
-    const row = campaign();
-    if (!row) return;
-    f.setValidation('pending', t('campaign.saving', 'saving…'));
-    const r = await saveCampaign(row.id, fields);
-    f.setValidation(r.ok ? 'valid' : 'invalid', r.ok ? t('settei.saved', 'saved') : r.message);
-    // Every surface reads the one Desk name; tell them rather than making them poll.
-    if (r.ok) window.dispatchEvent(new CustomEvent('ronin:campaign-change', { detail: { name: title.control.value.trim() } }));
-  };
-  title.control.addEventListener('change', () => void save({ title: title.control.value }, title.f));
-  description.control.addEventListener('change', () => void save({ description: description.control.value }, description.f));
+  // Each field saves itself (save-row.js) into the field's own validation line.
+  // Every surface reads the one Desk name; tell them rather than making them poll.
+  const announce = () => window.dispatchEvent(new CustomEvent('ronin:campaign-change', { detail: { name: title.control.value.trim() } }));
+  for (const [key, entry] of [['title', title], ['description', description]]) {
+    const commit = saveRow({ say: (state, message) => entry.f.setValidation(state, message), save: (value) => saveCampaign(campaign().id, { [key]: value }), after: announce });
+    entry.control.addEventListener('change', () => { if (campaign()) void commit(entry.control.value); });
+  }
 
   return {
     el: surface.el,

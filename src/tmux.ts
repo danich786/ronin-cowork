@@ -20,7 +20,6 @@ export interface SessionInfo {
   windows: number;
   attached: boolean;
   created: number;
-  hasNote: boolean;
   tags: string[];
   leads: string[];
   key: string;
@@ -32,7 +31,6 @@ export interface SessionInfo {
   rireki: boolean;
 }
 
-const NOTE_OPT = '@ronin_note';
 const TITLE_OPT = '@ronin-title';
 
 const TAGS_OPT = '@ronin-tags';
@@ -78,20 +76,19 @@ export async function listSessions(): Promise<SessionInfo[]> {
     const stdout = await tmux.run([
       'list-sessions',
       '-F',
-      `#{session_name}\t#{${TITLE_OPT}}\t#{session_windows}\t#{?session_attached,1,0}\t#{session_created}\t#{?${NOTE_OPT},1,0}\t#{${TAGS_OPT}}\t#{${LEAD_OPT}}\t#{@ronin-key}\t#{${AGENT_OPT}}\t#{${CAMPAIGN_OPT}}\t#{${RIREKI_OPT}}\t#{window_activity}\t#{@ronin-identity}`,
+      `#{session_name}\t#{${TITLE_OPT}}\t#{session_windows}\t#{?session_attached,1,0}\t#{session_created}\t#{${TAGS_OPT}}\t#{${LEAD_OPT}}\t#{@ronin-key}\t#{${AGENT_OPT}}\t#{${CAMPAIGN_OPT}}\t#{${RIREKI_OPT}}\t#{window_activity}\t#{@ronin-identity}`,
     ]);
     return stdout
       .split('\n')
       .filter(Boolean)
       .map((line) => {
-        const [name, title, windows, attached, created, hasNote, tags, leads, key, agent, campaign, rireki, activity, identity] = line.split('\t');
+        const [name, title, windows, attached, created, tags, leads, key, agent, campaign, rireki, activity, identity] = line.split('\t');
         return {
           name,
           title: title?.trim() || '',
           windows: Number(windows) || 0,
           attached: attached === '1',
           created: Number(created) || 0,
-          hasNote: hasNote === '1',
           tags: parseTags(tags),
           leads: parseTags(leads),
           key: key?.trim() || `${name}-${Number(created) || 0}`,
@@ -234,23 +231,6 @@ export async function sessionOfPane(paneId: string): Promise<string | null> {
     return owners.find((s) => !s.startsWith(config.viewerPrefix)) ?? owners[0];
   } catch {
     return null; // no server, no panes — nothing to end
-  }
-}
-
-export async function getNote(name: string): Promise<string> {
-  try {
-    const stdout = await tmux.run(['show-options', '-t', exactPane(name), '-qv', NOTE_OPT]);
-    return stdout.replace(/\n$/, ''); // show-options appends one trailing newline
-  } catch {
-    return '';
-  }
-}
-
-export async function setNote(name: string, text: string): Promise<void> {
-  if (text.trim()) {
-    await tmux.run(['set-option', '-t', exactPane(name), NOTE_OPT, text]);
-  } else {
-    await tmux.run(['set-option', '-t', exactPane(name), '-u', NOTE_OPT]).catch(() => {});
   }
 }
 

@@ -6,6 +6,7 @@ import { servicesCard } from './services-card.js';
 import { t } from './lexicon.js';
 import { loadProviderCatalog, providerCatalog, modelLabel } from './form-steps.js';
 import { ask } from './ask.js';
+import { saveRow } from './save-row.js';
 
 /* ---------- ⚙ CONFIGURATION — what this install IS, in one room ----------
  *
@@ -63,25 +64,21 @@ export function buildMachineSettings(root, isShowing) {
     body.appendChild(g);
   };
 
-  /** An editable row: label, control, and the field's own status line. */
-  const setRow = (label, control, hint, save) => {
-    const row = document.createElement('div');
-    row.className = 'st-row';
-    const f = field(control, { label, sr: false });
-    f.el.classList.add('st-field');
-    if (hint) f.say(hint);
-    const commit = async () => {
-      f.say(t('settei.saving', 'saving…'));
-      const r = await save(control.value);
-      if (!r.ok) return f.say(r.message, true);
-      f.say(t('settei.saved', 'saved'));
-      // The record is the authority on what a save produced — a fallback in force is
-      // not the same as the value typed, and only a re-read knows which is showing.
-      await load({ quiet: true });
-    };
-    control.addEventListener('change', () => void commit());
-    row.appendChild(f.el);
-    return row;
+  /** An editable row saves itself (save-row.js); the re-read after it is this room's, because
+   *  a fallback in force is not the same as the value typed and only the record knows which shows. */
+  const reread = () => load({ quiet: true });
+  /** One schema row's write, through the route the registry names for it. */
+  const write = (f) => (value) => {
+    const req = toRequest(rec.schema, f, value);
+    return request(req.route, { method: req.method, json: req.json });
+  };
+  /** A question row: the ask() question, and its status line under it. */
+  const noteRow = (question, note) => {
+    const el = document.createElement('div'); el.className = 'st-row';
+    const line = document.createElement('p'); line.className = 'st-note'; line.setAttribute('role', 'status');
+    line.textContent = note;
+    el.append(question, line);
+    return { el, say: (state, message) => { line.textContent = message; line.classList.toggle('bad', state === 'invalid'); } };
   };
 
   /** A measured row: what the box said, with no control at all. */
@@ -126,12 +123,9 @@ export function buildMachineSettings(root, isShowing) {
    */
   const pickerRow = (f, { fixed }) => {
     const stored = getPath(rec, f.from);
-    const picked = fixed
+    let picked = fixed
       ? { provider: fixed, model: String(stored ?? '') }
       : { provider: String(stored?.provider || ''), model: String(stored?.model || '') };
-    const row = document.createElement('div'); row.className = 'st-row';
-    const note = document.createElement('p'); note.className = 'st-note'; note.setAttribute('role', 'status');
-    if (f.aside) note.textContent = f.aside;
     const catalog = providerCatalog().rows;
     const providers = catalog.filter((item, index) => catalog.findIndex((other) => other.provider === item.provider) === index);
     const reason = (item) => item.off
@@ -145,21 +139,16 @@ export function buildMachineSettings(root, isShowing) {
     ];
     const pair = ask([{ group: fixed ? '' : t('new_agent.model_package', 'Model'), fields }], {
       value: picked,
-      onChange: async (value) => {
+      onChange: (value) => {
         picked = { provider: fixed || value.provider || '', model: value.model || '' };
         const { provider, model } = picked;
-        if (!fixed && provider && !model) return say(t('settei.pick_model', 'choose a model to save'));
-        say(t('settei.saving', 'saving…'));
-        const req = toRequest(rec.schema, f, fixed ? model : (model ? pm(picked) : ''));
-        const r = await request(req.route, { method: req.method, json: req.json });
-        if (!r.ok) return say(r.message, true);
-        say(t('settei.saved', 'saved'));
-        await load({ quiet: true });
+        if (!fixed && provider && !model) return row.say('pending', t('settei.pick_model', 'choose a model to save'));
+        void commit(fixed ? model : (model ? pm(picked) : ''));
       },
     });
-    const say = (message, bad = false) => { note.textContent = message; note.classList.toggle('bad', bad); };
-    row.append(pair.el, note);
-    return row;
+    const row = noteRow(pair.el, f.aside || '');
+    const commit = saveRow({ say: row.say, save: write(f), after: reread });
+    return row.el;
   };
 
   /** One registry row in, one saving ⚙ row out — the only place a `kind` is read. */
@@ -169,21 +158,14 @@ export function buildMachineSettings(root, isShowing) {
     const cur = currentOf(f, { record: rec });
     const ctx = { record: rec, deskProfiles };
     if (f.kind === 'select') {
-      const row = document.createElement('div'); row.className = 'st-row';
-      const notes = document.createElement('p'); notes.className = 'st-note'; notes.setAttribute('role', 'status');
       const baseNote = [f.note ? String(getPath(rec, f.note) ?? '') : '', cur === '' && f.fallback ? t('settei.unset_using', 'unset — using {value}', { value: getPath(rec, f.fallback) ?? '' }) : '', f.aside || ''].filter(Boolean).join(' · ');
-      notes.textContent = baseNote;
       const question = ask([{ group: '', fields: [{ key: f.id, label: f.short ?? f.label, blank: t('settei.none_set', '— none set —'), options: optionsOf(f, ctx).map((o) => ({ v: o.value, l: o.label })) }] }], {
         value: { [f.id]: cur },
-        onChange: async (value) => {
-          notes.textContent = t('settei.saving', 'saving…');
-          const req = toRequest(rec.schema, f, value[f.id]);
-          const result = await request(req.route, { method: req.method, json: req.json });
-          if (!result.ok) { notes.textContent = result.message; notes.classList.add('bad'); return; }
-          notes.classList.remove('bad'); notes.textContent = t('settei.saved', 'saved'); await load({ quiet: true });
-        },
+        onChange: (value) => void commit(value[f.id]),
       });
-      row.append(question.el, notes); return row;
+      const row = noteRow(question.el, baseNote);
+      const commit = saveRow({ say: row.say, save: write(f), after: reread });
+      return row.el;
     }
     const control = f.kind === 'number'
       ? input(cur, { type: 'number', cls: 'st-num', min: f.min })
@@ -193,10 +175,14 @@ export function buildMachineSettings(root, isShowing) {
     // A fallback in force is visible — a default is never passed off as an answer.
     if (cur === '' && f.fallback) notes.push(t('settei.unset_using', 'unset — using {value}', { value: getPath(rec, f.fallback) ?? '' }));
     if (f.aside) notes.push(f.aside);
-    return setRow(f.short ?? f.label, control, notes.filter(Boolean).join(' · '), (v) => {
-      const req = toRequest(rec.schema, f, v);
-      return request(req.route, { method: req.method, json: req.json });
-    });
+    const row = document.createElement('div'); row.className = 'st-row';
+    const labelled = field(control, { label: f.short ?? f.label, sr: false });
+    labelled.el.classList.add('st-field');
+    labelled.say(notes.filter(Boolean).join(' · '));
+    row.append(labelled.el);
+    const commit = saveRow({ say: (state, message) => labelled.say(message, state === 'invalid'), save: write(f), after: reread });
+    control.addEventListener('change', () => void commit(control.value));
+    return row;
   };
 
   let card = null; // the Services card of the last render; a new render closes it first

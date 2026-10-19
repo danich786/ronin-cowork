@@ -8,11 +8,3 @@ export const SETUP_SCENES = Object.freeze([
   { id: 'bounty', label: 'Bounty Program', type: 'setup.bounty', canvas: 'library.setup.bounty' },
   { id: 'launch', label: 'Launch', type: 'setup.launch-own', canvas: 'library.setup.launch' },
 ].map((scene, index) => Object.freeze({ ...scene, number: index + 1 })));
-
-export function setupJourney(sceneOverride = 0) {
-  const requested = Number(sceneOverride);
-  const number = Number.isInteger(requested) && requested >= 1 && requested <= SETUP_SCENES.length
-    ? requested
-    : 1;
-  return SETUP_SCENES[number - 1];
-}

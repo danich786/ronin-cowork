@@ -1,7 +1,7 @@
 # Get started — from the private URL to one working Agent
 
 This guide is for an outside Agent helping the owner after installation. The one first-run
-door is [Ronin Setup](setup-workbench.md), opened from **Machine Settings** at `#/setup`.
+door is [Ronin Setup](setup-workbench.md), opened from Ronin Home's **Settings** button at `#/setup`.
 Stay beside the owner, establish one provider, prove one harmless exchange, and then hand
 off. Do not answer owner choices, enter credentials, or promise behavior the screen does
 not show.
@@ -13,11 +13,11 @@ access is controlled by Tailscale. Confirm who its access rules permit to reach 
 If those facts are not known, return to
 [the install checks](install.md#5-verify-the-running-install).
 
-Open the printed URL. Ronin Home is the landing page; **Machine Settings** opens Ronin
-Setup while the machine has zero or one activated provider. Its two-workspace setup view
-pins Presets beside Register, Model providers, Workspace folders, Services, gbrain, and
-Templates. These surfaces show measured state and save each choice where it lives; there
-is no separate first-run form or one-time Save.
+Open the printed URL. Ronin Home is the landing page; its **Settings** button opens Ronin
+Setup until Setup's steps are answered. Its two-workspace setup view seats the Garden beside
+Model providers, Register, Workspace folders, Installations, Password and Launch. These
+surfaces show measured state and save each choice where it lives; there is no separate
+first-run form or one-time Save.
 
 ## Establish one provider
 
@@ -38,7 +38,7 @@ the proof launch.
 
 ## Prove one working Agent
 
-1. In **＋ New**, choose the Workspace folder and one available provider/model.
+1. In **New Agent**, choose the Workspace folder and one available provider/model.
 2. Launch the Agent and wait for its ready prompt.
 3. If authentication is requested, return to the provider route and retry after the owner
    completes it.
@@ -56,6 +56,6 @@ the owner's choice.
 
 ## Hand off
 
-Show the owner **＋ New**, the roster, and [how to find work in the Workbench](../using-ronin/workbench.md).
+Show the owner Ronin Home's doors, **New Agent**, and [how to find work in the Workbench](../using-ronin/workbench.md).
 The outside Agent's installation job ends only after one successful exchange or an honest
 blocked report naming the missing provider capability.

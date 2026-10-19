@@ -10,23 +10,20 @@ import { PASSWORD_SURFACE_TYPE, registerPasswordSurface } from './password-surfa
 import { PROVIDER_SURFACE_TYPE } from './provider-surface.js';
 import { MULTIPLE_CAMPAIGNS_ENABLED } from './campaigns.js';
 import { AGENT_COMPOSITION_TYPE } from './agent-composition.js';
-import { TEAM_CHART_TYPE } from './team-chart-surface.js';
 import { WORK_ITEMS_TYPE } from './work-items-surface.js';
-import { WORK_VIEWS_TYPE } from './work-views-surface.js';
-import { WHO_TYPE } from './who-surface.js';
-import { READING_TYPE } from './reading-surface.js';
-import { WORK_SURFACES_TYPE } from './work-surfaces.js';
 
-export const WORKBENCH_PROFILES = Object.freeze({ campaign: 'campaign', launch: 'launch', desk: 'desk', cowork: 'cowork', team: 'team', agent: 'agent', collections: 'collections', board: 'board', workspace: 'workspace', teamNext: 'team-next' });
+export const WORKBENCH_PROFILES = Object.freeze({ campaign: 'campaign', launch: 'launch', desk: 'desk', cowork: 'cowork', team: 'team', agent: 'agent', models: 'models', workspaces: 'workspaces', teams: 'teams' });
 export const WORKBENCH_TYPES = Object.freeze({
   document: 'document', terminal: 'session.terminal', behaviours: BEHAVIOUR_SURFACE_TYPE, feedback: FEEDBACK_TYPE,
   launchTeam: 'launch.team', launchAgent: 'launch.agent', launchHelp: 'launch.help',
-  commons: 'team.commons', teamChart: TEAM_CHART_TYPE, kanban: 'team.kanban', workItems: WORK_ITEMS_TYPE, workViews: WORK_VIEWS_TYPE, who: WHO_TYPE, reading: READING_TYPE, teamWork: WORK_SURFACES_TYPE, taskStatus: 'task-manager.status', taskProject: 'task-manager.project', cron: 'cowork.cron-jobs',
+  commons: 'team.commons', workItems: WORK_ITEMS_TYPE, taskStatus: 'task-manager.status', taskProject: 'task-manager.project', cron: 'cowork.cron-jobs',
   roster: 'cowork.team-roster', sessionRoster: 'cowork.session-roster', newTeamForm: 'cowork.new-team-form', newAgent: 'session.new-agent',
-  team: 'team.profile', teamProfile: 'team-next.profile', archives: 'cowork.archives',
+  team: 'team.profile', archives: 'cowork.archives', teams: 'teams.stones', teamRead: 'teams.read',
   agentDocuments: 'agent.documents', agentTeams: 'agent.team-membership', agentTasks: 'agent.task-manager', agentComposition: AGENT_COMPOSITION_TYPE,
   campaignMachine: 'campaign.machine', campaignDefaults: 'campaign.defaults', campaignRoots: 'campaign.project-roots',
-  campaignIdentity: 'campaign.identity', campaignInstallations: 'campaign.installations', campaignProfile: 'campaign.desk-profile', campaignCreate: 'campaign.new',
+  campaignIdentity: 'campaign.identity', campaignInstallations: 'campaign.installations', campaignCreate: 'campaign.new',
+  modelStones: 'models.stones', modelProvider: 'models.provider',
+  folderStones: 'workspaces.stones', folder: 'workspaces.folder', folderNew: 'workspaces.new', folderGithub: 'workspaces.github', folderClone: 'workspaces.clone',
 });
 
 let registered = false;
@@ -44,15 +41,7 @@ export function registerWorkbenchCatalog() {
   via(WORKBENCH_TYPES.launchAgent, 'surface', 'agent', { label: () => t('launch.new_agent', 'New Agent'), summary: () => t('launch.new_agent_summary', 'Start an Agent in a Team or on its own.') });
   via(WORKBENCH_TYPES.launchHelp, 'surface', 'help', { label: () => t('help.title', 'Help'), summary: () => t('help.card_summary', 'What each step means, beside the step you are on.'), variant: 'dotted' });
   via(WORKBENCH_TYPES.commons, 'tabs', 'teamCommons', { className: 'wk-selector-utility', label: () => t('team.commons_card', 'Commons'), summary: () => t('team.commons_summary', 'See Roster / Docs / Wipeboard / Messages / Configuration') });
-  add({ type: WORKBENCH_TYPES.teamChart, header: 'surface', className: 'wk-selector-utility', label: () => t('team_chart.title', 'Team Chart'), summary: () => t('team_chart.summary', 'Team lead and Agents in a selectable organizational Phalanx'), discover: (_t, environment) => environment.chartTeams(), create: ({ workspace, detail, environment }) => environment.teamChart(workspace, detail) });
-  add({ type: WORKBENCH_TYPES.kanban, header: 'surface', className: 'wk-selector-utility', label: () => t('workspace.tab_task_manager', 'Task Manager'), discover: (_t, e) => e.kanbanOffers(), create: ({ workspace, environment }) => environment.teamKanban(workspace) });
   add({ type: WORKBENCH_TYPES.workItems, header: 'surface', className: 'wk-selector-utility', label: () => t('work_items.title', 'Work Items'), discover: (_t, e) => e.workItemOffers(), create: ({ environment }) => environment.workItems() });
-  add({ type: WORKBENCH_TYPES.workViews, header: 'surface', className: 'wk-selector-utility', label: () => t('work_views.title', 'Trello view'), summary: () => t('work_views.summary', 'Every board\'s items by status or by board'), create: ({ environment }) => environment.workViews() });
-  // Who: the Teams door of the collections workbench; What and Where follow on the same stones.
-  add({ type: WORKBENCH_TYPES.who, header: 'surface', className: 'wk-selector-utility', label: () => t('collection.who', 'Who: Your Teams'), summary: () => t('collection.who_summary', 'Every Team with its boards and items, by workspace'), create: ({ workspace, environment }) => environment.who(workspace) });
-  // Work on the Team tenant: one card, two layers behind a toggle (the Trello view and Work Items as they are).
-  add({ type: WORKBENCH_TYPES.teamWork, header: 'surface', className: 'wk-selector-utility', label: () => t('team.work_card', 'Work'), summary: () => t('team.work_summary', 'Trello view and Work Items, one at a time'), create: ({ workspace, environment }) => environment.work(workspace) });
-  add({ type: WORKBENCH_TYPES.reading, header: 'surface', className: 'wk-selector-utility', label: () => t('tenant.reading', 'Reading'), summary: () => t('tenant.reading_summary', 'The record, raw, until its surfaces are placed'), create: ({ workspace, environment }) => environment.reading(workspace) });
   add({ type: WORKBENCH_TYPES.taskStatus, header: 'surface', discover: () => [], create: ({ workspace, detail, environment }) => environment.taskStatus(workspace, detail) });
   add({ type: WORKBENCH_TYPES.taskProject, header: 'surface', discover: () => [], create: ({ workspace, detail, environment }) => environment.taskProject(workspace, detail) });
   via(WORKBENCH_TYPES.roster, 'surface', 'roster', { className: 'wk-selector-utility', label: () => t('campaign.coworks', 'Teams') });
@@ -61,36 +50,48 @@ export function registerWorkbenchCatalog() {
   add({ type: WORKBENCH_TYPES.newTeamForm, header: 'surface', className: 'wk-selector-utility wk-selector-group-after', label: () => t('new_team.title', 'New Team'), summary: () => t('new_team.card_summary', 'Template · kit · lead — the drawn form.'), variant: 'dotted', create: ({ workspace, environment, consumed }) => environment.newTeamForm(workspace, consumed) });
   add({ type: WORKBENCH_TYPES.newAgent, header: 'surface', className: 'wk-selector-utility', label: () => t('new_agent.title', 'New Agent'), summary: () => t('new_agent.card_summary', 'Session type first — the drawn launch form.'), variant: 'dotted', create: ({ workspace, environment, consumed }) => environment.newAgent(workspace, consumed) });
   via(WORKBENCH_TYPES.archives, 'surface', 'archives', { className: 'wk-selector-utility', label: () => t('archives.card', 'Rehydrate Archived'), variant: 'dotted' });
+  // THE TEAMS WORKBENCH (owner, 2026-10-19): the stones in Workspace 1 and, from a stone, the
+  // Team's read in Workspace 2 (teams-surface.js). Neither is a card; the door seats the stones.
+  add({ type: WORKBENCH_TYPES.teams, header: 'surface', discover: () => [], create: ({ workspace, environment }) => environment.teams(workspace) });
+  add({ type: WORKBENCH_TYPES.teamRead, header: 'surface', discover: () => [], create: ({ workspace, detail, environment }) => environment.teamRead(workspace, detail) });
   // The Teams Phalanx is the discovery; a dragged stone places the Team profile.
   add({ type: WORKBENCH_TYPES.team, header: 'surface', discover: () => [], create: ({ workspace, detail, environment }) => environment.team(workspace, detail) });
-  // On the Team tenant (team-next) the one Team profile is a card of its own type; Cowork and
-  // Desk offer no per-Team card (owner, 2026-09-28).
-  add({ type: WORKBENCH_TYPES.teamProfile, header: 'surface', className: 'wk-selector-utility', label: () => t('team.profile_card', 'Team profile'), summary: () => t('team.profile_summary', 'Objective, Agents and the items they hold, boards, configuration'),
-    discover: (tenant) => (tenant?.param?.() ? [{ key: tenant.param() }] : []), create: ({ workspace, detail, environment }) => environment.team(workspace, detail) });
   add({ type: WORKBENCH_TYPES.agentDocuments, header: 'surface', className: 'wk-selector-utility', label: () => t('workspace.tab_docs', 'Documents'), summary: () => t('agent.documents_summary', 'Documents tracked by this Agent'), discover: (_t, e) => [{ key: e.agent() }], create: ({ workspace, detail, environment }) => environment.documents(workspace, detail) });
   add({ type: WORKBENCH_TYPES.agentTeams, header: 'surface', className: 'wk-selector-utility', label: () => t('agent.team_membership', 'Team membership'), summary: () => t('agent.team_membership_summary', 'Add or remove this Agent from installed Teams'), discover: (_t, e) => [{ key: e.agent() }], create: ({ workspace, detail, environment }) => environment.teams(workspace, detail) });
   add({ type: WORKBENCH_TYPES.agentTasks, header: 'surface', className: 'wk-selector-utility', label: () => t('workspace.tab_task_manager', 'Task Manager'), discover: (_t, e) => e.taskOffers(), create: ({ workspace, detail, environment }) => environment.tasks(workspace, detail) });
   add({ type: WORKBENCH_TYPES.agentComposition, header: 'surface', className: 'wk-selector-utility', label: () => t('agent_composition.title', 'Agent composition'), summary: () => t('agent_composition.summary', 'Birth brief, mandate, and Behaviors beside current facts'), discover: (_t, e) => { const key = e.agent?.(); return key ? [{ key }] : []; }, create: ({ detail, environment }) => environment.composition(detail) });
   const campaign = (type, header, label, method, summary = null, extra = {}) => add({ type, header, ...extra, label, ...(summary ? { summary: (_t, e) => summary(e) } : {}), create: (context) => context.environment[method](context) });
   campaign(WORKBENCH_TYPES.campaignIdentity, 'surface', () => t('campaign', 'Desk'), 'campaignIdentity', (e) => e.identitySummary());
-  campaign(WORKBENCH_TYPES.campaignProfile, 'surface', () => t('cowork.tab_profile', 'Desk profile'), 'campaignProfile', (e) => e.profileSummary());
   campaign(WORKBENCH_TYPES.campaignRoots, 'surface', () => t('campaign_view.workspaces', 'Workspaces'), 'campaignRoots', (e) => e.rootsSummary());
   campaign(WORKBENCH_TYPES.campaignDefaults, 'surface', () => t('campaign_view.agent_defaults', 'Team and Agent defaults'), 'campaignDefaults', (e) => e.defaultsSummary());
   campaign(WORKBENCH_TYPES.campaignInstallations, 'surface', () => t('campaign_view.installations', 'Installations'), 'campaignInstallations', (e) => e.installationsSummary());
   campaign(WORKBENCH_TYPES.campaignMachine, 'tabs', () => t('campaign_view.machine', 'Machine'), 'campaignMachine', () => t('campaign_view.machine_summary', 'Themes · Desk · Account · Archived · Messages · Help desk · Keypad.'));
   if (MULTIPLE_CAMPAIGNS_ENABLED) campaign(WORKBENCH_TYPES.campaignCreate, 'surface', () => t('campaign.new', 'New Desk'), 'campaignCreate', () => t('campaign_view.new_summary', 'Set the stage. It creates no Team and launches no Agent.'), { variant: 'dotted' });
   profiles.define(WORKBENCH_PROFILES.launch, [WORKBENCH_TYPES.launchTeam, WORKBENCH_TYPES.launchAgent, WORKBENCH_TYPES.launchHelp, BEHAVIOUR_SURFACE_TYPE, WORKBENCH_TYPES.document, FEEDBACK_TYPE]);
-  profiles.define(WORKBENCH_PROFILES.cowork, [WORKBENCH_TYPES.who, WORKBENCH_TYPES.roster, WORKBENCH_TYPES.sessionRoster, WORKBENCH_TYPES.workViews, WORKBENCH_TYPES.taskStatus, WORKBENCH_TYPES.taskProject, WORKBENCH_TYPES.cron, WORKBENCH_TYPES.team, WORKBENCH_TYPES.terminal, WORKBENCH_TYPES.newTeamForm, WORKBENCH_TYPES.newAgent, WORKBENCH_TYPES.archives, WORKBENCH_TYPES.document, BEHAVIOUR_SURFACE_TYPE, PRESETS_TYPE, FEEDBACK_TYPE]);
-  profiles.define(WORKBENCH_PROFILES.desk, [WORKBENCH_TYPES.who, WORKBENCH_TYPES.roster, WORKBENCH_TYPES.sessionRoster, WORKBENCH_TYPES.workViews, WORKBENCH_TYPES.taskStatus, WORKBENCH_TYPES.taskProject, WORKBENCH_TYPES.cron, WORKBENCH_TYPES.team, WORKBENCH_TYPES.terminal, WORKBENCH_TYPES.newTeamForm, WORKBENCH_TYPES.newAgent, WORKBENCH_TYPES.archives, WORKBENCH_TYPES.document, BEHAVIOUR_SURFACE_TYPE, PRESETS_TYPE, FEEDBACK_TYPE]);
-  // Collections (the thin tenant on the tenant frame): Who; What, Where and New follow. The
-  // Trello view is placeable by a board's Open but not offered (collections-view.js filters it).
-  profiles.define(WORKBENCH_PROFILES.collections, [WORKBENCH_TYPES.who, WORKBENCH_TYPES.workViews, WORKBENCH_TYPES.document, FEEDBACK_TYPE]);
-  // Board and Workspace stand raw: the tenant's reading in its place; their rows come one card per hand-in.
-  profiles.define(WORKBENCH_PROFILES.teamNext, [WORKBENCH_TYPES.commons, WORKBENCH_TYPES.teamChart, WORKBENCH_TYPES.teamWork, WORKBENCH_TYPES.teamProfile, WORKBENCH_TYPES.terminal, WORKBENCH_TYPES.agentComposition, WORKBENCH_TYPES.newAgent, BEHAVIOUR_SURFACE_TYPE, FEEDBACK_TYPE]);
-  profiles.define(WORKBENCH_PROFILES.board, [WORKBENCH_TYPES.reading, WORKBENCH_TYPES.document, FEEDBACK_TYPE]);
-  profiles.define(WORKBENCH_PROFILES.workspace, [WORKBENCH_TYPES.reading, WORKBENCH_TYPES.document, FEEDBACK_TYPE]);
-  profiles.define(WORKBENCH_PROFILES.team, [WORKBENCH_TYPES.commons, WORKBENCH_TYPES.teamChart, WORKBENCH_TYPES.workItems, WORKBENCH_TYPES.workViews, WORKBENCH_TYPES.taskStatus, WORKBENCH_TYPES.taskProject, WORKBENCH_TYPES.terminal, WORKBENCH_TYPES.agentComposition, WORKBENCH_TYPES.newAgent, BEHAVIOUR_SURFACE_TYPE, FEEDBACK_TYPE]);
+  profiles.define(WORKBENCH_PROFILES.cowork, [WORKBENCH_TYPES.roster, WORKBENCH_TYPES.sessionRoster, WORKBENCH_TYPES.cron, WORKBENCH_TYPES.team, WORKBENCH_TYPES.terminal, WORKBENCH_TYPES.newTeamForm, WORKBENCH_TYPES.newAgent, WORKBENCH_TYPES.archives, WORKBENCH_TYPES.document, BEHAVIOUR_SURFACE_TYPE, PRESETS_TYPE, FEEDBACK_TYPE]);
+  profiles.define(WORKBENCH_PROFILES.desk, [WORKBENCH_TYPES.roster, WORKBENCH_TYPES.sessionRoster, WORKBENCH_TYPES.cron, WORKBENCH_TYPES.team, WORKBENCH_TYPES.terminal, WORKBENCH_TYPES.newTeamForm, WORKBENCH_TYPES.newAgent, WORKBENCH_TYPES.archives, WORKBENCH_TYPES.document, BEHAVIOUR_SURFACE_TYPE, PRESETS_TYPE, FEEDBACK_TYPE]);
+  // THE TEAM PAGE (owner, 2026-10-18): the selector holds Commons, the Agents, New Agent and the
+  // hints (Agent vocabulary, Session controls — the selector's own, workbench.js). The composition
+  // reader, Behaviors and Feedback stay placeable: the roster, New Agent and the bar place them.
+  profiles.define(WORKBENCH_PROFILES.team, [WORKBENCH_TYPES.commons, WORKBENCH_TYPES.terminal, WORKBENCH_TYPES.newAgent, WORKBENCH_TYPES.agentComposition, BEHAVIOUR_SURFACE_TYPE, FEEDBACK_TYPE]);
   profiles.define(WORKBENCH_PROFILES.agent, [WORKBENCH_TYPES.terminal, WORKBENCH_TYPES.agentComposition, WORKBENCH_TYPES.agentDocuments, WORKBENCH_TYPES.agentTeams, WORKBENCH_TYPES.agentTasks, WORKBENCH_TYPES.workItems, WORKBENCH_TYPES.taskStatus, WORKBENCH_TYPES.taskProject, WORKBENCH_TYPES.document, FEEDBACK_TYPE]);
   profiles.define(WORKBENCH_PROFILES.campaign, [WORKBENCH_TYPES.terminal, WORKBENCH_TYPES.campaignMachine, BEHAVIOUR_SURFACE_TYPE, PASSWORD_SURFACE_TYPE, WORKBENCH_TYPES.campaignInstallations, PROVIDER_SURFACE_TYPE, SETUP_SURFACE_TYPES.register, FEEDBACK_TYPE, WORKBENCH_TYPES.campaignIdentity, WORKBENCH_TYPES.campaignDefaults, WORKBENCH_TYPES.campaignRoots, SETUP_SURFACE_TYPES.launchOwn, WORKBENCH_TYPES.document, ...(MULTIPLE_CAMPAIGNS_ENABLED ? [WORKBENCH_TYPES.campaignCreate] : [])]);
+  // HOME'S THREE DOORS (owner, 2026-10-19; door-workbenches.js): Models and Workspaces hold the
+  // one surface each, Settings' own, no selector cards for now; Teams offers New Team.
+  // THE MODELS WORKBENCH (owner, 2026-10-19): its own stones in Workspace 1; one provider whole in a
+  // workspace, placed by a dragged stone or its selector card (models-surface.js).
+  add({ type: WORKBENCH_TYPES.modelStones, header: 'surface', discover: () => [], create: ({ workspace, environment }) => environment.modelStones(workspace) });
+  add({ type: WORKBENCH_TYPES.modelProvider, header: 'surface', discover: (_t, e) => e.providers(), create: ({ workspace, detail, environment }) => environment.modelProvider(workspace, detail) });
+  profiles.define(WORKBENCH_PROFILES.models, [WORKBENCH_TYPES.modelStones, WORKBENCH_TYPES.modelProvider]);
+  // THE WORKSPACES WORKBENCH (owner, 2026-10-19): its own stones of folders in Workspace 1; one folder
+  // whole in a workspace, placed by a dragged stone or its selector card; the three admin doors are
+  // dotted cards, the New Agent format (workspaces-surface.js).
+  add({ type: WORKBENCH_TYPES.folderStones, header: 'surface', discover: () => [], create: ({ workspace, environment }) => environment.folderStones(workspace) });
+  add({ type: WORKBENCH_TYPES.folder, header: 'surface', discover: (_t, e) => e.folders(), create: ({ workspace, detail, environment }) => environment.folder(workspace, detail) });
+  add({ type: WORKBENCH_TYPES.folderNew, header: 'surface', className: 'wk-selector-utility', label: () => t('roots.add_stone', 'Add a workspace'), summary: () => t('roots.keep_hint', 'Keep a folder on this machine for Teams and Agents to start in.'), variant: 'dotted', create: ({ workspace, environment }) => environment.folderNew(workspace) });
+  add({ type: WORKBENCH_TYPES.folderGithub, header: 'surface', className: 'wk-selector-utility', label: () => t('roots.github_auth_stone', 'GitHub CLI'), summary: () => t('roots.github_auth_state', 'Connect account'), variant: 'dotted', create: ({ workspace, environment }) => environment.folderGithub(workspace) });
+  add({ type: WORKBENCH_TYPES.folderClone, header: 'surface', className: 'wk-selector-utility', label: () => t('roots.github_clone_stone', 'Clone a repository'), summary: () => t('roots.github_clone_ready_state', 'Uses existing Git access'), variant: 'dotted', create: ({ workspace, environment }) => environment.folderClone(workspace) });
+  profiles.define(WORKBENCH_PROFILES.workspaces, [WORKBENCH_TYPES.folderStones, WORKBENCH_TYPES.folder, WORKBENCH_TYPES.folderNew, WORKBENCH_TYPES.folderGithub, WORKBENCH_TYPES.folderClone]);
+  profiles.define(WORKBENCH_PROFILES.teams, [WORKBENCH_TYPES.teams, WORKBENCH_TYPES.teamRead, WORKBENCH_TYPES.newTeamForm]);
   registered = true;
 }

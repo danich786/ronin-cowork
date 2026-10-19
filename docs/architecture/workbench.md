@@ -22,65 +22,20 @@ density you were in. Switching density keeps the selection: a selected stone wit
 becomes its level in full density, a level becomes its selected stone in compact, and
 the stone open at that level returns with it. Consumers never restyle the rest geometry.
 
-Trello view (`work.views`, `work-views-surface.js`) is the Cowork/Desk work-item card, over
-GET `/api/work-items` (every item with its holder), with no phalanx, organised as a Trello board: its top-left button names the view and switches
-it. Status lays one fixed-width list per stage, grouping under an underlined subtitle per
-board that board's items (every descendant, `boardStages`) at that stage; Board lays one
-list per board with a subtitle per stage it has items at. Each list carries its count at the
-head and Add at the foot (the Add form, started in that list); Board view ends with Add board
-(the Add form with New board chosen, held by the Team on a Team workbench). Board view puts
-Unfiled last, in its own accent shade. On a Team, Add with no board of its own to start on
-defaults to the Team's target board, read off `boards` and never stored: the oldest root the
-Team holds, else the oldest its lead holds, else Unfiled. Cowork/Desk read
-every item; a Team workbench draws the server's `?team=` reading `boards` (its boards and
-Unfiled) and filters nothing in the browser. In Board view an item card drags onto another
-board's list (one reparent call under that board; its children come with it) or onto empty
-row space (reparent to none: a root); on a Team workbench a root made that way is then
-assigned to the Team when it had no holder. The store writes each move's trail line. Every press opens an overlay
-from `work-details.js`, whose one utility sits top right: Save (only while there is
-something to save), Assign, Add (the Add form as an overlay, placed where it was pressed),
-Close. The Add form, the same wherever Add appears, asks title, objective, status and
-board: an existing board, New board (`root: true` on the create route: a root of its own) or
-Unfiled, the default. Assign holds the item by an Agent or a Team.
-
-Who (`collection.who`, `who-surface.js`) is the Teams door of the collections workbench,
-built to the direction doc (samurai_lab `wip/buildouts/COLLECTIONS_DIRECTION.md`, owner
-2026-10-04): the collection finds work, adds work and reassigns work; detail, configuration
-and editing live on a workbench. Its reading is one request, GET `/api/collection`
-(`src/collection-read.ts`), every chosen workspace as `?root=`; the browser joins nothing.
-Two `ask()` questions: Workspace (a many-of, none is all) and Under each Team (Boards or
-Agents, a one-of-two that flips on press). One stone per Team, name only; under it the
-boards or the Agents as bars, title only. A Team pressed is the thin open beside the rail:
-objective, Agents with 人 on the lead, boards by name, and one door, Launch, which opens the
-Team's tab (Who is the only door that launches Team tabs). A bar pressed expands in place
-(the fork's `expand`): an Agent to its role, what it is working on now (the home row's work
-record and stance) and the items it holds; a board to its objective and its items by title,
-each a press to its description, status and holder, with one door, Open, which places the
-work-item surface in the other workspace (the Trello view until the What door exists); an
-item to its description, status and holder. The drags are a board onto another Team (`whoMove`:
-assign) and the Add block beside Under each Team onto a Team stone (`whoMove`: add), which
-opens a partial overlay (`partial-overlay.js`: a small window inside the surface under its
-anchor, Close, Escape or a press outside lifts it) holding the add form for what is showing:
-the draft form for a new board held by the Team, or the Agent picker the Team profile's plus
-uses (`createAgentPicker`, team-profile.js) — owner, 2026-10-07. `who-rows.js` is the pure mapping, under test.
-
-**The phalanx and its fork** (owner ruling, 2026-10-03). `phalanx.js` is the stone work
+**The phalanx** (owner ruling, 2026-10-03). `phalanx.js` is the stone work
 surface as it was, its geometry untouched: Settings (Presets, Workspace Folders, Model
-Providers, Setup), Team Chart, Work Items and the Trello view's overlays draw with it.
-`collection-phalanx.js` is the fork for the collection doors, built on `createPhalanx`
-(the same stones, rail, detail and way back, nothing copied): blocks centred at wide
-spacing, each stone's children stacked under it as one-line bars (no connector line), an empty
-stack drawing nothing, grandchildren folded away (`data-cph-depth`, set by the fork through
-`attrs`), a header that fits its question, and a bar pressed expanding in place through the
-consumer's `expand(item, host)` instead of selecting or going a level down; what is expanded
-survives a repaint.
-Its root wears `.cph` and its host `.cph-host`; every rule is under that prefix. Who draws
-with the fork; What and Where will.
+Providers, Setup) and the Agent workbench's Work Items draw with it. Escape lifts only the layer it
+is pressed in (2026-10-08).
 
 Task Manager keeps its board and status/Project drill-downs for the Agent's Task Manager;
 its selector card is no longer offered on the Cowork, Desk or Team workbenches. The older
-Work Items board (`work-items`) stays on the Team workbench beside Trello view and in the
-Agent's; Team reads its selected Team, Agent filters to Projects held by that Agent.
+Work Items board (`work-items`) stays on the Agent's workbench, filtered to Projects held by
+that Agent. **The Team page** (owner, 2026-10-18) is the old Team workbench opening on the
+lead's tile in workspace 1 with workspace 2 blank; its selector holds Commons, the Agents,
+New Agent and the hints (Agent vocabulary, Session controls). Team Chart and the Team's Work
+Items card are deleted; the composition reader, Behaviors and Feedback stay in the profile
+only so the roster, New Agent's Customize Behaviors and the bar's Feedback can place them.
+Launch of a Team is always a new tab (`openWorkspaceTab`).
 
 Work Items mounts `createPhalanx` directly in the standard surface content seat. Each
 Project is a selectable stone in Ideas, Planning, Building, Landing, Done order. Selection
@@ -98,14 +53,16 @@ so the normal selection, rail, detail, Escape, and focus-return behavior applies
 
 `public/js/workbench.js` owns the shared library and frame.
 `public/js/workbench-catalog.js` is the canonical registration and profile catalog for
-Ronin Settings, New Project, Cowork, Team, and Agent. Destination modules provide tenant
+Ronin Settings, New Project, Desk, Cowork, Team, Agent, and Home's Models, Workspaces and
+Teams doors. Destination modules provide tenant
 data and surface factories through their environment; they do not register another copy
 of those types or profile lists. Ronin Setup's ordered journey profile remains with its
 Setup controller because journey progress, rather than destination choice, determines it.
 
 `workbenchView(appearance, options)` in `public/js/workspace-contract.js` is the one
 application-chrome declaration. It supplies the shared header capabilities and one of the
-explicit Campaign, Setup, New Project, Cowork, Team, or Agent appearances; a view may also
+explicit Campaign, Setup, New Project (`launch`), Desk, Cowork, Team, Agent, Models,
+Workspaces or Teams appearances; a view may also
 supply its dynamic-island reading. `workspace-header.js` applies that declaration, while
 surface factories remain ignorant of header colour.
 
@@ -127,74 +84,11 @@ one off in its declaration rather than hiding it with local CSS or querying head
 - The frame owns the selector's compact/expanded action and persists `selectorDensity`
   beside shape, selection, arrangement, and seats. Profiles do not build another toggle.
 
+A surface's header ends with its window control, −, which the Workbench seats.
+
 The definition's `create()` draws the stable shell. Its returned `show()` or `enter()`
 starts only that surface's reads. `leave()` parks active work and `destroy()` releases
 surface-lifetime resources. See [the common lifecycle](workspace-kit.md#lifecycle-contract).
-
-## The tenant frame and thin tenants (the new workbench)
-
-Owner ruling, 2026-10-06 (samurai_lab `wip/buildouts/UI_STRUCTURE.md`, `WORKBENCH_SKELETON.md`):
-one workbench format, and a named workbench is a **tenant** that exposes cards. The build
-stands beside the old destinations and replaces them tenant by tenant; `cowork-view.js`,
-`desk-view.js` and `agent-view.js` are not edited meanwhile and go when replaced.
-
-Three layers:
-
-1. **Kit frame**, `workbench.js`, as above: selector, cells, placement, arrangement, memory.
-2. **Tenant frame**, `tenant-frame.js`, built once: the four terminal seats and their warm
-   pools, placing a session or a surface into a cell and remembering it for refresh, the
-   common cards (terminal, document, feedback), the bar name and tab name. Lifted as a copy
-   from `cowork-view.js`. Not in it: Mika, the arranger, Commons; a tenant that needs one
-   adds it.
-3. **A thin tenant file** over it, tens of lines: `key` (the destination id, which is also
-   the appearance), `profile`, `glyph`, `label`, `name`, `homeCard`, `firstOpen(param)`,
-   `cards(frame)` (its environment entries), optional `sessions(param)`, `selectorFilter`
-   and lifecycle hooks. `collections-view.js` is the first; `team-next`, `board` and
-   `workspace` follow, one hand-in each.
-
-**The server resolves the tenant, into the store** (w12, both halves landed 2026-10-07). A
-tenant's reading is the collection reading (`src/collection-read.ts`) narrowed by campaign,
-team, board or root, or the work-items reading for a Team or a board. A consumer subscribes
-through `collection-reading.js`, the one seam, with its filter; the store sends
-`{t:'want', resource:'collection', campaign?, team?, board?, root?[]}` or
-`{t:'want', resource:'work-items', team?, board?}` on `/events` (the table in
-[the tmux connection](tmux-connection.md)) and holds the answer under
-`readingKey(resource, filter)`, the server's own spelling: the resource, then the filter's
-JSON in field order, trimmed, empties dropped, roots deduped. The server pushes the reading
-again to every connection holding that filter whenever an input moves; an absent campaign is
-the one machine campaign, and Teams, folders and boards outside it are left out. The browser
-requests, filters and joins nothing; no new file may name `/api/collection` or
-`/api/work-items` (`tests/tenant-frame.test.js`). Who and the Trello view still read those
-routes on entry until their rows are ordered.
-
-**Collections** (`collections`, param the campaign; the one machine campaign when absent):
-first open is Who in workspace 1 and workspace 2 dismissed. Its profile is Who, the Trello
-view (placed by a board's Open, never offered), Document and Feedback. Launch on Who opens
-the old Team tab until `team-next` stands.
-
-**Team** (`team-next`, param the Team; it takes the `team` word when it replaces the old
-Team) is `team-view.js` over the frame: the members' tiles with the lead pinned hot and
-seated on a first visit, the Commons as one self-painting surface (`team-commons-surface.js`,
-lifted from `cowork-view.js`), Team Chart, **Work** (`work-surfaces.js`: one card whose
-surface toggles between the Trello view and the Work Items board, each the existing surface
-unchanged; owner, 2026-10-07), the Team profile as a card, New Agent, and the composition
-reader the roster opens. Not yet on it: Mika's help, the arranger (`edges page`), Task
-Manager. Who's Launch opens this Team. The bar's island is the editable tab name for any
-view that offers `tabName`, so every tenant on the frame has it as the old Team does
-(`workspace-header.js`).
-
-**Board** (`board`, param the board's item id) and **Workspace** (`workspace`, param the
-folder name) stand raw: one card, Reading (`reading-surface.js`, type `tenant.reading`),
-the tenant's collection reading painted whole in workspace 1, workspace 2 dismissed. Each
-later row of their tables in `UI_STRUCTURE.md` is its own hand-in that adds one card. The
-Board's bar name is the board's title once its reading arrives.
-
-**The Next root** (`next`, `next-home.js`) is the temporary door to the new set: Ronin
-Home's shape with four doors, Collections, Team, Board, Workspace, and under each the names
-it can open from the unfiltered collection reading. A door whose tenant is not registered
-yet is closed and says so; `main.js` names the standing ones. Ronin Home carries one
-**Next** link beside Settings. Root, route and link go in one commit when the four tenants
-replace Home's three doors.
 
 ## The surface map and live arrangement
 
@@ -248,6 +142,32 @@ status as its own reads return.
 6. Async enrichment must not discard edits made after the first paint. Generation or
    ownership checks prevent stale responses from repainting replaced surfaces.
 
+**Ronin Home** (`campaign-home.js`; owner, 2026-10-19) stays a page, not a Workbench, with three
+doors — **Models**, **Workspaces**, **Teams** — each a link to a Workbench destination of its own,
+opened in the same tab (a modified press opens a new tab through `workbenchLaunchUrl`). The
+three destinations are one shape (`door-workbenches.js`): the Kit Workbench on a profile of the
+door's surfaces, the door's surface seated in Workspace 1 on first open. Models seats its own
+stones of providers (`models-surface.js`, `models.stones`): a stone pressed opens the provider's
+page beside the rail; a stone dragged into a workspace, or the provider's selector card, places
+the provider there whole (`models.provider`), the page with no rail. Settings' Model Providers
+surface is untouched; both draw with the one drawing `provider-surface.js` exports
+(`createProviderDrawing`, `providerStones`) over the same record and measure. Workspaces seats
+its own stones of folders the same way (`workspaces-surface.js`, `workspaces.stones`; a dropped
+stone or a folder's card places the folder whole, `workspaces.folder`), its three admin doors —
+Add a workspace, GitHub CLI, Clone a repository — dotted selector cards in the New Agent format,
+the folder they add taking their workspace; Settings' Workspace Folders surface is untouched,
+both drawing with `projectroots.js`'s exported drawing (`createRootDrawing`, `rootStone`) over
+one read per bench (`createRootsReading`, the detail route). Teams seats `teams-surface.js`'s stones, a stone pressed placing the Team's
+read in Workspace 2, and offers New Team. The bar reads
+RoninCowork • Home • <door>, Home the way back (`workspace-header.js`, the view's `place`).
+
+**Two roots** (owner, 2026-10-19). The default root — what opens, what Home links to — is that
+three-door page. The current root, Ronin Home as it stood before 2026-10-18 with its doors into
+the Desk, Team and Agent Workbenches, is copied back from git unchanged (`current-home.js`) and
+keeps its own address, `#/current`, while pieces move from Current to Next; nothing of it is
+deleted. One plain toggle in the bar, the same spot on each (the view's leading slot), swaps
+between them in one press: it reads **Current** on the new Home and **Next** on the current one.
+
 Campaign Defaults is the reference case. Its saved values are already in
 `campaign.config.defaults`, so it paints them immediately. Model choices come from the
 provider catalog and selectable Behaviors come from `/api/campaign-default-options`.
@@ -285,7 +205,7 @@ restoration branches.
 | Destination | First open | Notable structured opening |
 |---|---|---|
 | Ronin Settings | Defaults in workspace 1; Workspace Folders in workspace 2 | **Desk defaults** replaces the seats with Defaults and Launch your own |
-| Desk | Teams overview in workspace 1; Trello view in workspace 2 | Status and Project drill-downs retain the Desk tenant |
+| Desk | Teams roster in workspace 1; workspace 2 blank | — |
 | New Project | New Agent in workspace 1 | Links may replace or overlay New Agent/New Team and carry prompt or template detail |
 | Ronin Setup | Garden in workspace 1; active journey surface in workspace 2 | Journey actions select a Setup surface without another restoration path |
 | Cowork / Team | Fresh empty/member seating rules; refresh restores this instance | Team Configuration, documents, commons tabs, and New Agent may be addressed in seat detail |
@@ -305,7 +225,6 @@ page-wide progressive gate is deleted.
 | Surface | Required data and owner |
 |---|---|
 | Desk | selected Desk record already held by the tenant |
-| Desk profile | selected Desk record; skin catalog enriches choices after paint |
 | Defaults | `campaign.config.defaults` immediately; provider catalog and Campaign-default options afterward |
 | Workspace Folders | its own root-detail read; repository facts belong here, not in its discovery summary |
 | Installations | installation catalog and installed facts; Desk values come from the tenant |
@@ -354,16 +273,35 @@ independent and must not hold the frame.
 
 | Surface | Required data and owner |
 |---|---|
-| Team roster / Team profile | Team records and live session-derived membership; the roster's Phalanx is Cowork/Desk's only discovery of Teams (no per-Team selector cards); its detail, a placed Team profile and Who's stone detail paint one body, `createTeamProfile` in `team-profile.js` (owner, 2026-10-03: one Team profile format): head with Launch; Agents, each a block with 人 and name (its stance the line's title, no bullet), the items it holds as lines beneath (status word beside the bar, no holder) and the Launch mark at the right, the name opening the Agent's composition reader in place under it; the blocks rebuild only when members, held items or an open profile moved, so a store push never flashes an open profile or the plus's picker; one section per board the Team works on (its collection reading, `?team=`), its items as lines; Configuration with Delete team; no numbering; the plus adds an Agent. An item line pressed selects the item's stone on Who and opens the item overlay on a surface |
-| Team Chart | Selected Team membership and lead designation; Phalanx owns collection and selection geometry, and its in-place detail embeds the canonical Agent composition reader plus the secondary Launch action |
+| Team roster / Team profile | Team records and live session-derived membership; the roster's Phalanx is Cowork/Desk's only discovery of Teams (no per-Team selector cards); its detail and a placed Team profile paint one body (`leagueTeamBody` in `cowork-view.js`) |
 | Team roster (`cowork.session-roster`) | `js/roster.js` restored as consumed before the Phalanx port: Team records, live sessions and pushed home rows; its desk column stays empty now that desks are read when the ladder opens |
 | Agent terminal | selected session plus terminal transport; other sessions are not mounted for it |
-| Commons | only the selected tab enters: Roster, Docs, Wipeboard, Messages, Configuration, or another registered room |
-| Task Manager | Desk scope aggregates the canonical per-Team Project readings; Team scope reads the selected Team; status and Project drill-downs are independently placeable surfaces carrying the same tenant |
+| Commons | only the selected tab enters: Roster, Docs, Wipeboard, Messages, Cron jobs or Configuration |
 | Cron jobs | scheduled messages for the addressed Team or collection scope |
 | New Agent / New Team | canonical launch form and its dependencies listed above |
 | Archived sessions | archive manifests when shown |
 | Presets / Document / Feedback | the shared surface's own reads |
+
+### Models (`models` profile)
+
+The door's own destination over the provider drawing Settings and Setup share.
+
+| Surface | Required data and owner |
+|---|---|
+| Model stones (`models.stones`) | the recorded provider summary and catalog through `recordRuntime()`; a measure only on a press, as on Settings |
+| Model provider (`models.provider`) | the same record for the one provider named in its detail; its selector cards come from `providerOffers()` over the same record |
+
+### Workspaces (`workspaces` profile)
+
+The door's own destination over the folder drawing Settings and Setup share, one read of the
+folders per bench (`/api/project-roots/detail`) that every surface on it hears.
+
+| Surface | Required data and owner |
+|---|---|
+| Folder stones (`workspaces.stones`) | the bench's folder read; its selector cards (`folderOffers`) read the same |
+| Folder (`workspaces.folder`) | the one folder named in its detail from the same read; its writes re-read it for every surface |
+| Add a workspace (`workspaces.new`) | the add form's own reads (inspect, suggest) and the Campaign id; the folder it adds takes its workspace |
+| GitHub CLI / Clone a repository (`workspaces.github`, `workspaces.clone`) | the GitHub setup read and session attachment `github-workspace-setup.js` owns, one instance per bench |
 
 ### Agent (`agent` profile)
 

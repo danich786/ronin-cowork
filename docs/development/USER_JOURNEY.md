@@ -63,7 +63,7 @@ available for launching work.
 
 ### First Agent
 
-The owner opens **＋ New**, chooses a Workspace folder and an activated provider/model, and
+The owner opens **New Agent**, chooses a Workspace folder and an activated provider/model, and
 launches an Agent. Provider installation or sign-in continues in its own visible tile when
 needed. Success is a live Agent returning a harmless test response, not merely an existing
 process or model label.

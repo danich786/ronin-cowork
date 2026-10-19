@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { setupDefaultView } from '../public/js/campaign-home.js';
+import { setupDefaultView } from '../public/js/campaigns.js';
 import { workspaceHeaderAppearance } from '../public/js/workspace-header.js';
 
 const source = async (path) => readFile(new URL(`../public/${path}`, import.meta.url), 'utf8');
@@ -14,21 +14,41 @@ test('Ronin Home routes the Machine door from persisted Campaign Setup answers',
   } } } }), 'campaign');
 });
 
-test('Ronin Home opens Desk as its operational tenant while Team and Agent use the collection chooser', async () => {
-  const home = await source('js/campaign-home.js');
+test('Ronin Home has three doors — Models, Workspaces, Teams — each opening its own workbench in the same tab (owner, 2026-10-19)', async () => {
+  const [home, doors, catalog, contract, header, main] = await Promise.all([
+    source('js/campaign-home.js'), source('js/door-workbenches.js'), source('js/workbench-catalog.js'), source('js/workspace-contract.js'), source('js/workspace-header.js'), source('js/main.js'),
+  ]);
   assert.match(home, /Ronin Home/);
-  assert.match(home, /campaign_home\.desk', 'Desk'/);
-  assert.match(home, /campaign_home\.team', 'Team'/);
-  assert.match(home, /campaign_home\.agent', 'Agent'/);
+  for (const key of ['models', 'workspaces', 'teams']) {
+    assert.match(home, new RegExp(`key: '${key}', route: '${key}'`), `the ${key} door navigates to its own destination`);
+    assert.match(main, new RegExp(`workspace\\.register\\('${key}', `), `the ${key} destination is registered`);
+    assert.match(contract, new RegExp(`'${key}'`), `${key} is a Workbench appearance, so the tab machinery applies`);
+  }
+  assert.match(home, /ctx\?\.navigate\(route\)/, 'a plain press opens the workbench in this tab');
   assert.match(home, /campaign_home\.settings', 'Settings'/);
-  assert.match(home, /key: 'desk', route: 'desk'/);
-  assert.match(home, /key: 'team', route: 'cowork'/);
-  assert.match(home, /key: 'agent', route: 'cowork'/);
-  assert.doesNotMatch(home, /data-door=['"]campaign/);
-  assert.match(home, /request\('\/api\/setup\/runtime'/);
-  assert.match(home, /activatedCount < 1/);
-  assert.match(home, /aria-disabled/);
-  assert.match(home, /Activate one model provider in Machine Setup/);
+  assert.match(doors, /seat: WORKBENCH_TYPES\.modelStones,/, 'Models seats its own stones of providers');
+  assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.models, \[WORKBENCH_TYPES\.modelStones, WORKBENCH_TYPES\.modelProvider\]\)/, 'a provider whole is placeable on Models, by a dragged stone or its card');
+  assert.match(doors, /seat: WORKBENCH_TYPES\.folderStones,/, 'Workspaces seats its own stones of folders');
+  assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.workspaces, \[WORKBENCH_TYPES\.folderStones, WORKBENCH_TYPES\.folder, WORKBENCH_TYPES\.folderNew, WORKBENCH_TYPES\.folderGithub, WORKBENCH_TYPES\.folderClone\]\)/, 'a folder whole and the three admin doors are placeable on Workspaces');
+  assert.match(doors, /seat: WORKBENCH_TYPES\.teams,/, 'Teams seats its own stones of Teams');
+  assert.match(doors, /bench\(\)\.place\(WORKBENCH_TYPES\.teamRead, 'workspace2', \{ key: name \}\)/, 'a stone pressed places the Team\u2019s read in Workspace 2');
+  assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.teams, \[WORKBENCH_TYPES\.teams, WORKBENCH_TYPES\.teamRead, WORKBENCH_TYPES\.newTeamForm\]\)/, 'the Teams selector offers New Team');
+  assert.match(header, /home\.hidden = !placed/, 'the bar reads RoninCowork • Home • <door>, Home the way back');
+});
+
+test('two roots: the default Home and the current Home at #/current, one bar toggle between them (owner, 2026-10-19)', async () => {
+  const [home, current, main, header, style] = await Promise.all([
+    source('js/campaign-home.js'), source('js/current-home.js'), source('js/main.js'), source('js/workspace-header.js'), source('css/campaign-home.css'),
+  ]);
+  assert.match(main, /workspace\.register\('home', createCampaignHome\(\)\)/, 'the default root is the three-door page');
+  assert.match(main, /workspace\.register\('current', createCurrentHome\(\)\)/, 'the current root keeps its own address');
+  for (const key of ['desk', 'team', 'agent']) assert.match(current, new RegExp(`key: '${key}', route: '`), `the current root keeps its ${key} door`);
+  assert.match(current, /api\/setup\/runtime/, 'the current root keeps its provider gate as it was');
+  assert.match(home, /createRootToggle\(\{ route: 'current', label: \(\) => t\('campaign_home\.current', 'Current'\)/, 'the new Home reads Current');
+  assert.match(current, /createRootToggle\(\{ route: 'home', label: \(\) => t\('campaign_home\.next', 'Next'\)/, 'the current Home reads Next');
+  for (const page of [home, current]) assert.match(page, /header: \{ leading: \[rootToggle\], actions: \[themeToggle\] \}/, 'the toggle sits in the same bar spot on each');
+  assert.match(header, /active\.id === 'home' \|\| active\.id === 'current'/, 'both roots are landings to the bar');
+  for (const key of ['desk', 'team', 'agent']) assert.match(style, new RegExp(`\\.ch-door\\[data-door='${key}'\\]`), `the ${key} door keeps its tone`);
 });
 
 test('Ronin Home and Setup share the same persisted light and dark control', async () => {
@@ -37,7 +57,7 @@ test('Ronin Home and Setup share the same persisted light and dark control', asy
     source('js/workspace.js'), source('js/ramrpm.js'), source('js/services-activation.js'), source('js/workspace-contract.js'),
   ]);
   assert.match(home, /const themeToggle = createThemeToggle\(\)/);
-  assert.match(home, /header: \{ actions: \[themeToggle\] \}/);
+  assert.match(home, /header: \{ leading: \[rootToggle\], actions: \[themeToggle\] \}/);
   assert.doesNotMatch(home, /ronin-home-active/);
   assert.match(setup, /const themeToggle = createThemeToggle\(\)/);
   assert.match(setup, /workbenchView\('setup'/);
@@ -101,7 +121,7 @@ test('launch actions reuse the nin mark, never the Team Roster torii, and open t
   }
 });
 
-test('a newly raised Team opens its tenant before Agent birth and clears the inherited tab name', async () => {
+test('a newly raised Team opens its Team page before Agent birth and clears the inherited tab name', async () => {
   const [form, handoff] = await Promise.all([source('js/new-team-form.js'), source('js/launch-handoff.js')]);
   assert.match(form, /openLaunchHandoff\(\{ team: name, sessions: picks \}, launchTab\);[\s\S]*await launchTeamAgents\(request, name, picks\)/);
   assert.match(handoff, /destination: 'team'[\s\S]*mode: 'replace'[\s\S]*tabName: ''/);

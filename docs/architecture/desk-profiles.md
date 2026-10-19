@@ -2,7 +2,7 @@
 
 **skin** (the look — `SKINS.md`, tokens only, unchanged by this), which **theme**,
 which **lexicon** (the words — `docs/architecture/lexicons.md`), which **campaign kind** the board
-opens on, the **Team page's default arrangement**, and the RIREKI **detail level** a new
+opens on, and the RIREKI **detail level** a new
 tile shows. **A desk_profile is not a skin; each one has a skin and theme.** It is configuration,
 never a step in any run.
 
@@ -37,11 +37,10 @@ renders exactly as before.
 
 | Field | Read by | When |
 |---|---|---|
-| `skin` | `public/js/skins.js` | at boot: the profile's skin is put up and mirrored to the device cache; a device may still pick another skin in ⚙, which wins on that device until the next profile pick |
+| `skin` | `public/js/skins.js` | at boot: the profile's skin is put up and mirrored to the device cache |
 | `theme` | root presentation boot | `light`, `dark`, or `automatic`, resolved before reveal |
 | `lexicon` | `public/js/lexicon.js` | at boot and on a pick; every `t()` |
 | `rireki_view` | `public/js/desk-profile.js` → `S.output` | a NEW tile's Output, when nothing was saved for it; a tile's own choice is never overwritten |
-| `team_arrangement` | `public/js/cowork-view.js` | the Team cowork view, when a tab has no arrangement of its own |
 
-The ⚙ desk's picker beside the skins presents rows with blurbs and `origin` and writes
-the registry leaf.
+The Desk surface on Ronin Settings (`public/js/campaign-surfaces.js`) picks a profile from
+its **Desk profile** field.

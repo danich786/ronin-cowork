@@ -254,11 +254,11 @@ the same control with the provider select dropped. The registry's seeds read the
 rows: `models:first` is the marked default of the first launchable provider, `models:light`
 the first launchable **light** row — there is no name-pattern for "cheap".
 
-## The Model providers surface, on two seats
+## The Model providers surface
 
-One surface (`public/js/provider-surface.js`), one definition under one type, seated by two
-selector cards: Ronin Setup's **Model providers** and Ronin Settings' **Model providers**
-open the same thing, and both cards read *N providers · M models · K activated here ·
+One drawing (`public/js/provider-surface.js`), seated by two selector cards — Ronin Setup's
+**Model providers** and Ronin Settings' **Model providers** — and drawn by Home's **Models**
+door as one stone per provider (`public/js/models-surface.js`). The two cards read *N providers · M models · K activated here ·
 catalog updated <date>*. At the top sits the one door: **Refresh all model providers**,
 with *Last ran <date>* beside it, or *Never run — every provider offers Native only until
 it runs*. It is the owner's press, never a timer: it measures the machine, reads every
@@ -439,7 +439,7 @@ the shipped catalog.
 7. Run `npm run check:catalogs` and the focused provider tests affected by the change.
    Leave full `npm run verify` to the lead's combined gate unless an earlier run is
    explicitly requested ([verification guidance](../development/verification.md)).
-8. Launch every new row through ＋ New session. Confirm the receipt's command, the agent
+8. Launch every new row through New Agent. Confirm the receipt's command, the agent
    and model visible in the tile, and the complete startup request received by the agent.
 
 

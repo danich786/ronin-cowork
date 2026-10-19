@@ -1,10 +1,5 @@
-/* Runtime-checked workspace state and navigation values for Kit consumers. */
+/* Runtime-checked workspace state values for Kit consumers. */
 import { migrateWorkbenchState } from './workspace-arrangement.js';
-export const WORKSPACE_DESTINATIONS = Object.freeze([
-  'campaign', 'desk', 'cowork', 'team', 'agent', 'customize', 'commons', 'configuration',
-  // The new workbench's tenants (owner, 2026-10-06), on the tenant frame; `next` is their root.
-  'collections', 'team-next', 'board', 'workspace', 'next',
-]);
 
 /** Shared header capabilities for a movable workbench. Static views opt into only
  * what they own; undeclared capabilities stay absent. */
@@ -14,7 +9,7 @@ export const WORKBENCH_HEADER = Object.freeze({
   services: true,
   feedback: true,
 });
-export const WORKBENCH_APPEARANCES = Object.freeze(['campaign', 'setup', 'launch', 'desk', 'cowork', 'team', 'agent', 'collections', 'team-next', 'board', 'workspace']);
+export const WORKBENCH_APPEARANCES = Object.freeze(['campaign', 'setup', 'launch', 'desk', 'cowork', 'team', 'agent', 'models', 'workspaces', 'teams']);
 
 /** One declaration for every managed Workbench's application chrome. Feature views
  * provide content and, when useful, an island reading; the base owns capabilities and
@@ -33,23 +28,12 @@ export const UTILITY_HEADER = Object.freeze({
   feedback: true,
 });
 
-const destinationSet = new Set(WORKSPACE_DESTINATIONS);
 const text = (value) => typeof value === 'string' ? value : '';
 
 // Persisted seat value for an intentional blank. Absence still means an uninitialized
 // workspace whose owning view may seed a default on first entry.
 export const DISMISSED_WORKSPACE = '@empty';
 export const workspaceMaySeedDefault = (remembered) => remembered !== DISMISSED_WORKSPACE;
-
-export function workspaceTarget(view, param = '') {
-  if (!destinationSet.has(view)) throw new Error(`Unknown workspace destination: ${view}`);
-  return Object.freeze({ view, param: text(param) });
-}
-
-export function navigateWorkspace(context, target, options = {}) {
-  if (!target || !destinationSet.has(target.view)) throw new Error('Invalid workspace navigation target.');
-  return context.navigate(target.view, { ...options, param: text(target.param) });
-}
 
 export function normalizeWorkbenchState(viewState = null, declaration = null) {
   const view = viewState && typeof viewState === 'object' ? viewState : {};

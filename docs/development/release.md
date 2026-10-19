@@ -68,7 +68,8 @@ verifies a checksum.
 ## Installing and updating (the consuming half)
 
 One implementation, `bin/ronin-update`, behind two doors: the terminal, and the
-⚙ System pane in the commons (whose buttons run the same script). The layout it
+**Release & update** row of the Account rail (`public/js/cowork-commons.js`) and Ronin
+Home's update line, whose buttons run the same script. The layout it
 manages, under an install home named once at first install (`--home`):
 
 ```
@@ -104,11 +105,12 @@ previous unpacked release and restarts. Running it again rolls forward.
 (docs/repo-to-operator.md). If a release changes `deploy/`, the updater says so —
 run `./setup.sh` from `current` to re-render them.
 
-## The ⚙ gear
+## Release & update
 
-The commons' ⚙ System pane shows what this install runs and holds two buttons:
-**Check for updates** (the one outbound ask this product makes to the release feed —
-on press only, never on a timer or at boot) and **Update to vX** (runs
+The Account rail's **Release & update** row, and the update line under Ronin Home's doors,
+show what this install runs and hold the buttons: **Check for updates** (the one outbound
+ask this product makes to the release feed — on press only, never on a timer or at boot)
+and **Update Cowork** / **Update Services**, shown when the check names a release (runs
 `bin/ronin-update` in a transient systemd unit, so the update survives the operator
 restart it performs). It shows what changed and never acts unasked. Completion is
 `/api/version` answering the new release; the page reloads itself when it sees it.

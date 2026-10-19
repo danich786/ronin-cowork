@@ -3,9 +3,8 @@ import { setSessionTitle } from './api.js';
 import { request } from './request.js';
 import { toast } from './ui.js';
 import { retireSession } from './session-retire.js';
-import { IS_TOUCH, S, saveState, serviceParked, tiles, WHEEL_DOWN } from './state.js';
+import { IS_TOUCH, S, isCoarse, saveState, tiles, WHEEL_DOWN } from './state.js';
 import { guard } from './errors.js';
-import { buildLadder } from './shingo.js';
 import { buildTileHead, syncTileHead } from './tilehead.js';
 import { installTextDrops } from './tiledroptext.js';
 import { installFileDrops } from './tilefiles.js';
@@ -18,9 +17,8 @@ import { buildComposer } from './composer.js';
 import { sendComposerMessage } from './composer-rules.js';
 import { buildKeysRow } from './keysrow.js';
 import { buildTileDocView } from './tile-doc-view.js';
-import { isCoarse } from './tiledrop.js';
 import { refreshKaki, setKakiPolicy } from './output.js';
-import { readDesks } from './desks.js';
+import { closeMenu } from './menu.js';
 import { get, subscribe } from './store.js';
 import { t } from './lexicon.js';
 import { makeTileTranscript } from './tile-transcript.js';
@@ -58,8 +56,8 @@ export class Tile {
     // The header — the session name, readings, and buttons. Construction only;
     // every callback in it lands back here.
     // Every control the table declared, under the name the table gave it. Held as
-    // references rather than re-queried: on touch these nodes are RELOCATED into the app
-    // bar (js/tiledrop.js), and a later `querySelector` on the tile would find nothing.
+    // references rather than re-queried: the phone moves the menu control into its bar
+    // (js/phone.js), and a later `querySelector` on the tile would find nothing.
     Object.assign(this, buildTileHead(this));
     this.surfaceHost = createSurfaceHost(this.body, TILE_SURFACES, 'term');
     this.onMinimize = typeof options.onMinimize === 'function' ? options.onMinimize : null;
@@ -86,11 +84,9 @@ export class Tile {
     });
     this.body.append(this.transcriptView.el);
 
-    // SHINGO 信号: this session's ladder, read off its TEGAMI. The chip (built with the
-    // header) is the indicator; tapping it is ALWAYS the ladder, gate or not.
-    // Read-only — nothing here can touch the session.
+    // SHINGO 信号: this session's ladder, read off its TEGAMI. The menu draws it as the
+    // work record (js/tilehead.js tileMenu). Read-only — nothing here can touch the session.
     this.tegami = null;
-    this.ladderOpen = false;
 
     // 🔒 THE LOCKED VIEW — xterm, opened into the body after the panel.
     this.term = new TermView(this.body, {
@@ -212,44 +208,19 @@ export class Tile {
 
   /**
    * Read the session's letter off its row. A mechanical read and nothing else: no check, no
-   * proof, no disagreement with what the agent wrote. Null = no ladder up, chip hides.
-   * The desks beside it in the ladder are not on the row: `openLadder` reads this session's
-   * once, when the ladder opens, and paints what that read answers (js/desks.js).
+   * proof, no disagreement with what the agent wrote. Null = no work record yet.
+   * The desks beside it are not on the row: the menu reads this session's once, as it
+   * opens (js/desks.js). An open menu is a snapshot; reopening it draws the latest.
    */
   refreshTegami() {
     this.tegami = this.homeRow()?.tegami || null;
-    // A tile switched to a session with no docs must not keep 📄 lit for the last one.
     syncTileHead(this);
-    // An open Work Record is a reading snapshot. Replacing it on each push flashes the
-    // panel and resets the owner's scroll position. Keep the value held; closing and
-    // reopening the panel draws the latest one.
-    if (!this.tegami) this.closeLadder();
   }
 
-  toggleLadder() {
-    if (this.ladderOpen) this.closeLadder();
-    else void this.openLadder();
-  }
-
-  /** This session's desks are read when the ladder opens — one read of `/api/desks?session=`, fresh at open. */
-  async openLadder() {
-    const desks = await readDesks(this.session);
-    this.ladderOpen = true;
-    this.drawLadder(desks);
-  }
-
-  closeLadder() {
-    this.ladderOpen = false;
-    this.el.querySelector('.shingo-ladder')?.remove();
-    this.workRecordBtn.classList.remove('open');
-    this.workRecordBtn.setAttribute('aria-expanded', 'false');
-  }
-
+  /** The menu, and the work record's full overlay over the body (js/tilehead.js). */
   clearOverlays() {
-    this.closeLadder();
-    document
-      .querySelectorAll('.tdrop.open')
-      .forEach((m) => m.classList.remove('open'));
+    closeMenu();
+    this.body.querySelector(':scope > .work-overlay')?.remove();
   }
 
   /** Open one tracked document over this Agent; closing it reveals the live pane again. */
@@ -265,19 +236,6 @@ export class Tile {
       : this.transcriptOn ? 'chat'
         : this.tapeMode ? 'tape' : 'term';
     this.surfaceHost.select(surface);
-  }
-
-  /** Unroll the ladder under the header — same data as the chip, at full zoom. */
-  drawLadder(desks) {
-    this.el.querySelector('.shingo-ladder')?.remove();
-    const box = buildLadder(this.tegami, desks);
-    this.el.querySelector('.tile-head').after(box);
-    this.workRecordBtn.classList.add('open');
-    this.workRecordBtn.setAttribute('aria-expanded', 'true');
-    // Open ON the rung you are standing on. A long ladder scrolls, and opening it at
-    // rung 1 hides the one thing you opened it for — the band, and any gate near it.
-    const now = box.querySelector('.sl-row.now');
-    if (now) now.scrollIntoView({ block: 'center' });
   }
 
   /**
@@ -549,26 +507,10 @@ export class Tile {
     return row?.rireki === false;
   }
 
+  /** Without Services for this Agent there is nothing but Locked; the menu then offers no
+   *  Output choice at all (js/tilehead.js tileMenu). */
   syncOutput() {
-    // The widget comes back as {el} like every built control — resolve it the same way
-    // syncTileHead does, so this works whichever shape landed on the key.
-    const sel = this.outputEl?.el ?? this.outputEl;
-    if (!sel || !sel.options) return;
-    const off = this.servicesOff();
-    if (off && this.output !== 'locked') { this.setOutput('locked'); return; }
-    sel.value = this.output;
-    // Without Services there is nothing to choose — every unlocked source is RIREKI's,
-    // so a one-option dropdown is noise and the control disappears whole.
-    sel.hidden = off;
-    for (const option of [...sel.options])
-      if (S.streamOff && option.value !== 'locked') option.remove();
-    const transcriptPark = serviceParked('rireki');
-    sel.title = S.streamOff
-      ? transcriptPark
-        ? t('output.title_campaign_off', 'Output — Locked only. Ronin Services is off for this Campaign.')
-        : t('output.title_locked', 'Output — Locked only. Ronin Services is not installed.')
-      : off ? t('output.title_off', 'Output — Locked only. Ronin Services is off for this Agent.')
-      : t('output.title_choose', 'Output — choose the live terminal or a RIREKI view');
+    if (this.servicesOff() && this.output !== 'locked') this.setOutput('locked');
   }
 
   setFooter(pct, model) {
@@ -640,7 +582,7 @@ export class Tile {
     this.syncHeader();
     this.gauge.set(null);
     this.tegami = null;
-    this.closeLadder();
+    this.clearOverlays();
     this.setDot('off');
     this.term.reset();
     this.syncEmpty();

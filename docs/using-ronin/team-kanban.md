@@ -1,9 +1,9 @@
-# Team Kanban
+# Task Manager
 
-Team Kanban (the Task Manager) is the six-column view of a Team's work items: Idea, Plan,
-Build, Review, Land, and Done. Open it from the Team Kanban card in the workspace selector
-or the Kanban tab in Team Commons. Both surfaces render the Team's reading, which Team
-Leads read with `team member status <team>`. Run `team --help` for the live surface.
+The Task Manager is the six-column view of work items: Idea, Plan, Build, Review, Land, and
+Done. It lives on the Agent workbench: open it from the Task Manager card in the selector,
+and it shows the Agent's Projects across its Teams. Team Leads read a Team's reading with
+`team member status <team>`. Run `team --help` for the live surface.
 
 The Task Manager is a reading, not another store. A work item is stored once, and a Team holds a
 list of item ids; so does each Agent. The Team's reading is the items the Team holds plus
@@ -13,7 +13,7 @@ the Unfiled board that nobody holds is unassigned and is not on any Team's readi
 [work records and projects](work-record.md) for the item's shape, stages, ladder, exit,
 and status.
 
-Team Kanban is available while Ronin Services and its Task manager component are enabled.
+The Task Manager is available while Ronin Services and its Task manager component are enabled.
 The `team project` and `work-record project` tools move the same items without Services.
 
 ## Land and Done are moved by receipts
@@ -36,7 +36,7 @@ Agent holder opens that Agent's tile in the workspace.
 
 ## Optional Trello adapter
 
-Trello is an optional integration boundary, not the Team Kanban source of truth. An item
+Trello is an optional integration boundary, not the Task Manager's source of truth. An item
 carries `external` ids for connected tools, and a connector reaches the same
 `/api/work-items` routes as every tool: parent and child map to the tool's structure,
 stage to its list or status, and holding to its assignee only where a Ronin Agent maps to

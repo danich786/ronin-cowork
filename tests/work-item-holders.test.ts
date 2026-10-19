@@ -27,7 +27,7 @@ process.env.RONIN_SESSION_DIR = path.join(temp, 'sessions');
 const items = await import('../src/work-items.js');
 const { createTeamRoster, readTeamRoster } = await import('../src/team-rosters.js');
 const { readLetterHolds, seedTegami } = await import('../src/tegami.js');
-const { everyItemReading, teamReading, unassignedReading } = await import('../src/work-items-read.js');
+const { everyItemReading, teamBoard, teamReading } = await import('../src/work-items-read.js');
 
 await createTeamRoster('crew', { objective: 'hold things' });
 await seedTegami('ann');
@@ -117,11 +117,10 @@ test('an ended Agent orphans nothing: each item gets holder-ended and is found u
   assert.deepEqual(await listsHolding(child.id), []);
   assert.deepEqual(await listsHolding(loose.id), []);
   assert.equal((await items.readItem(child.id))!.parent, parent.id, 'still found under its parent');
-  assert.ok((await unassignedReading()).some((item) => item.id === loose.id), 'on the Unfiled board, held by nobody: unassigned');
   assert.deepEqual(await items.releaseHolder('gone', 'gone', 'again'), [], 'a second end finds nothing to release');
 });
 
-test('readings: the team reads its own holds and its members\' holds, children after parents; unassigned is the Unfiled board\'s unheld items', async () => {
+test('readings: the team reads its own holds and its members\' holds, children after parents', async () => {
   await createTeamRoster('readers', { objective: 'read us' });
   await seedTegami('reader_a');
   const readers = { kind: 'team', name: 'readers' } as const;
@@ -135,17 +134,29 @@ test('readings: the team reads its own holds and its members\' holds, children a
   assert.deepEqual(reading.items.map((item) => [item.id, item.holder]), [
     [overall.id, 'team:readers'], [piece.id, 'agent:reader_a'], [other.id, 'team:readers'],
   ]);
-  const unassigned = (await unassignedReading()).map((item) => item.id);
-  assert.ok(unassigned.includes(parked.id));
-  assert.ok(!unassigned.includes(nested.id), 'an unheld child of another board is found under it, not unassigned');
-  assert.ok(!unassigned.includes(overall.id));
   const every = new Map((await everyItemReading()).map((item) => [item.id, item.holder]));
   assert.deepEqual([overall.id, piece.id, parked.id, nested.id].map((id) => every.get(id)), ['team:readers', 'agent:reader_a', '', ''], 'every item names the holder it is found on');
 });
 
+test('the Team\'s board: the root the Team holds, else the root its lead holds, else null; an item under a board is never it', async () => {
+  await createTeamRoster('boarders', { objective: 'board us' });
+  await seedTegami('cap');
+  await seedTegami('deck');
+  const boarders = { kind: 'team', name: 'boarders' } as const;
+  const sessions = [{ name: 'cap', key: 'cap', tags: ['boarders'] }, { name: 'deck', key: 'deck', tags: ['boarders'] }];
+  const filed = (await items.createItem({ title: 'filed under Unfiled', holder: boarders }, 'lead')).item;
+  assert.equal(teamBoard(await teamReading('boarders', sessions), 'cap'), null, 'an item under the Unfiled board is not a board');
+  const capBoard = (await items.createItem({ title: 'cap board', root: true, holder: { kind: 'agent', name: 'cap' } }, 'lead')).item;
+  assert.equal(teamBoard(await teamReading('boarders', sessions), 'deck'), null, 'another member\'s root is not the lead\'s');
+  assert.equal(teamBoard(await teamReading('boarders', sessions), 'cap')?.id, capBoard.id, 'no Team root: the lead\'s root');
+  const teamBoardItem = (await items.createItem({ title: 'team board', root: true, holder: boarders }, 'lead')).item;
+  assert.equal(teamBoard(await teamReading('boarders', sessions), 'cap')?.id, teamBoardItem.id, 'the Team\'s own root comes first');
+  assert.notEqual(filed.parent, null);
+});
+
 test('nesting under a held board queues its holder exactly one message; under an unheld board, none', async () => {
-  const { listQueuedMessages, dismissMessage } = await import('../src/message-queue.js');
-  const clear = async () => { for (const message of await listQueuedMessages()) await dismissMessage(message.id); };
+  const { listQueuedMessages, dismissMessages } = await import('../src/message-queue.js');
+  const clear = async () => { await dismissMessages((await listQueuedMessages()).map((message) => message.id)); };
   await clear();
   await seedTegami('boarder');
   const held = (await items.createItem({ title: 'held board', holder: { kind: 'agent', name: 'boarder' } }, 'lead')).item;

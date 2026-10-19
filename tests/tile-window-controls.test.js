@@ -6,28 +6,15 @@ const read = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
 test('the tile corner exposes minimize and retirement through the existing Tile boundaries', async () => {
   const [head, tile] = await Promise.all([read('public/js/tilehead.js'), read('public/js/tile.js')]);
-  assert.match(head, /key: 'killBtn',[^\n]+text: '×'/);
-  assert.match(head, /on: \(tile\) => tile\.kill\(\)/);
+  // Delete or archive is the menu's foot; minus is the head's last control.
+  assert.match(head, /run: \(\) => tile\.kill\(\)/);
   assert.match(head, /key: 'minimizeBtn',[^\n]+text: '−'/);
   assert.match(head, /on: \(tile\) => tile\.minimize\(\)/);
-  assert.ok(head.indexOf("key: 'mentionBtn'") < head.indexOf("key: 'docsBtn'"), 'session picker precedes Docs');
-  assert.ok(head.indexOf("key: 'docsBtn'") < head.indexOf("key: 'killBtn'"), 'Docs precedes the window controls');
-  assert.ok(head.indexOf("key: 'killBtn'") < head.indexOf("key: 'minimizeBtn'"), 'close precedes minimize like the window controls it follows');
-  assert.equal(head.indexOf("key:", head.indexOf("key: 'minimizeBtn'") + 1), -1, 'no control follows the window controls');
+  const table = head.slice(0, head.indexOf('export function tileMenu'));
+  assert.equal(table.indexOf("key:", table.indexOf("key: 'minimizeBtn'") + 1), -1, 'no control follows the window control');
   assert.doesNotMatch(head, /text: '🗑'/);
   assert.match(tile, /if \(this\.onMinimize\) this\.onMinimize\(this\);\s*else this\.detach\(\)/);
   assert.match(tile, /retireSession\(name, this\.retirementId/);
-});
-
-test('the tile header exposes Docs directly without the old control and note menu', async () => {
-  const [head, tile, phone] = await Promise.all([
-    read('public/js/tilehead.js'), read('public/js/tile.js'), read('public/js/phone.js'),
-  ]);
-  assert.match(head, /key: 'workRecordBtn',[\s\S]*text: t\('head\.work_record', 'Work Record'\)/);
-  assert.match(head, /key: 'docsBtn', needs: 'session'/);
-  assert.doesNotMatch(head, /buildTileMore|key: 'moreBtn'|key: 'dial'|key: 'noteBtn'/);
-  assert.doesNotMatch(tile, /refreshControl|pickControl|openNote/);
-  assert.doesNotMatch(phone, /node\('noteBtn'\)|node\('dial'\)/);
 });
 
 test('the Torii rename prompt keeps the immutable Agent ID visible', async () => {
@@ -36,7 +23,7 @@ test('the Torii rename prompt keeps the immutable Agent ID visible', async () =>
   assert.match(tile, /setSessionTitle\(session, wanted\.trim\(\)\)/);
 });
 
-test('wide touch puts the Agent tools behind one menu instead of folding the head', async () => {
+test('every tile puts the Agent tools behind one menu instead of folding the head', async () => {
   const [style, head] = await Promise.all([read('public/style.css'), read('public/js/tilehead.js')]);
   // The list of workbench kinds is allowed to grow — 60b7ff7b added 'desk'. What this
   // guards is that the control is scoped to workbench kinds, not the exact membership.
@@ -46,13 +33,11 @@ test('wide touch puts the Agent tools behind one menu instead of folding the hea
   // a different depth from the surface heads beside it.
   assert.doesNotMatch(style, /tile-head-collapse|tile\.header-collapsed/);
   assert.doesNotMatch(head, /tile-head-collapse|header-collapsed/);
-  // One menu, the way the phone already does it.
-  assert.match(head, /makeDrop\('メ'/);
-  for (const key of ['workRecordBtn', 'docsBtn', 'mentionBtn', 'outputEl', 'minimizeBtn', 'killBtn']) {
-    assert.match(head, new RegExp(`row\\('${key}'`), `${key} belongs in the メ sheet`);
-  }
-  // The reading toggle stays a toggle and never becomes a row in a menu.
-  assert.doesNotMatch(head, /row\('transcriptBtn'/);
+  // One menu, the same on a desk, a tablet and a phone (js/menu.js).
+  assert.match(head, /key: 'menuBtn'/);
+  // The reading toggle stays a toggle in the head and never becomes a row in a menu.
+  assert.match(head, /key: 'transcriptBtn'/);
+  assert.doesNotMatch(head.slice(head.indexOf('export function tileMenu')), /toggleTranscript/);
   // ONE BAND DEPTH ACROSS THE ROW. The Kit's depth is already on .tile-head; the defect
   // was the wide-touch block overriding it to 38px against the surface head's 45px, so
   // what this guards is that nothing here restates or shrinks the band again.
@@ -73,6 +58,10 @@ test('managed workspaces empty their seat and both empty views use the subdued R
   assert.match(cowork, /onMinimize: \(\) => emptySeat\(id\)/);
   const emptySeat = cowork.slice(cowork.indexOf('const emptySeat ='), cowork.indexOf('const putTerminal ='));
   assert.ok(emptySeat.indexOf('pool.destroyAll()') < emptySeat.indexOf('remembered[id] = DISMISSED_WORKSPACE'));
+  // destroyAll takes the pool's seats with the tiles; an Agent card pressed before the next push
+  // then found no seat, showed nothing, and place() threw 'did not render its terminal Workbench
+  // header' (owner, 2026-10-19). The roster is read again at once.
+  assert.ok(emptySeat.indexOf('pool.destroyAll()') < emptySeat.indexOf('syncPools(restorationMembers())') && emptySeat.indexOf('syncPools(restorationMembers())') < emptySeat.indexOf('remembered[id] = DISMISSED_WORKSPACE'), 'an emptied seat re-reads its members before anything else');
   assert.ok(emptySeat.indexOf('remembered[id] = DISMISSED_WORKSPACE') < emptySeat.indexOf('bench.restoreDefault(id)'));
   // Tolerant of layout: what matters is that the host hands its onMinimize to the Tile,
   // not whether the options sit on one line (fb952d2e wrapped them to add transcriptCache).
@@ -147,17 +136,13 @@ test('one rule for every touch screen, and the level always indexes the cycle', 
 });
 
 
-test('the メ sheet holds Output for a Services-bound Agent and withdraws it for one without', async () => {
-  const [tile, style] = await Promise.all([read('public/js/tile.js'), read('public/style.css')]);
+test('the メ menu holds Output for a Services-bound Agent and withdraws it for one without', async () => {
+  const [tile, head] = await Promise.all([read('public/js/tile.js'), read('public/js/tilehead.js')]);
   // Services being ON for the desk is not the same question as Services being on for THIS
   // Agent: the roster row carries rireki per session, and an Agent born before Rireki was
   // activated answers false while every newer one answers true. Both must read correctly.
   const off = tile.slice(tile.indexOf('servicesOff() {'), tile.indexOf('syncOutput() {'));
   assert.match(off, /S\.streamOff/, 'the Campaign switch still wins');
   assert.match(off, /row\?\.rireki === false/, 'otherwise it is this Agent\'s own answer');
-  const sync = tile.slice(tile.indexOf('syncOutput() {'));
-  assert.match(sync, /sel\.hidden = off;/, 'the control withdraws itself when there is nothing to choose');
-  // And the word beside it goes with it, so the sheet never shows a blank line. Without
-  // this the row stayed, holding a hidden select and a label for a control that is gone.
-  assert.match(style, /\.tdrop-row:has\(> \[hidden\]\) \{\s*display: none;/);
+  assert.match(head, /tile\.servicesOff\(\) \|\| outputs\.length < 2 \? null/, 'no Output group when there is nothing to choose');
 });

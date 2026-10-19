@@ -6,6 +6,9 @@ import { tabTitle } from './workspace.js';
 // Touch device (iPhone/iPad): a tap must NOT auto-focus the terminal (which pops
 // the keyboard); scrolling is driven by drag + buttons that inject wheel events.
 export const IS_TOUCH = window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+/** Only run where the STYLESHEET agrees. IS_TOUCH is broader (it also accepts a bare
+ *  `ontouchstart`); where the two disagree, layout follows the stylesheet. */
+export const isCoarse = () => window.matchMedia('(pointer: coarse)').matches;
 export const IS_MAC = ['Macintosh', 'MacIntel', 'MacPPC', 'Mac68K'].includes(navigator.platform);
 /** The modifier's name, for anything that has to SAY it. */
 export const SELECT_MOD = IS_MAC ? '⌥ Option' : '⇧ Shift';
@@ -33,7 +36,6 @@ export const S = {
   sessions: [], // [{name, windows, attached, created}]
   active: null,
   dictation: null, // the ONE mic currently listening { listening, stop } — see voice.js
-  notePanel: null, // shared per-session note editor { open(session), close } — all devices
   padPanel: null, // Work Louder pad panel { open, close, isOpen, hit } — all devices (owner override)
   locked: !IS_TOUCH, // DEFAULT for a NEW tile only — the switch itself is per-tile now
   output: IS_TOUCH ? 'terminal_mirror' : 'locked',
@@ -46,7 +48,6 @@ export const S = {
   // koe | gbrain), or null when the operator predates the field. A surface owned by a service
   // not on the roster is drawn opaque-and-inert and never fetched (sockets.ts's rule).
   services: null,
-  installedServices: null, // /api/installed services: disk/loaded/parked explains optional-part absence
   sessPicker: null, // pad-key session switcher { open, close, isOpen, move, commit }
   workspace: null, // AppShell runtime; the one writer for destination/workspace state
   refreshWorkspaceHeader: null, // breadcrumb repaint after Campaign selection changes
@@ -71,8 +72,6 @@ const PANE_SERVICE = { hotwords: 'koe', stats: 'counting', koshi: 'koshi', gbrai
  * function, and the pane map is now only a lookup table.
  */
 export const serviceMissing = (svc) => !!svc && Array.isArray(S.services) && !S.services.includes(svc);
-export const serviceParked = (svc) => Array.isArray(S.installedServices?.parked)
-  ? S.installedServices.parked.find((part) => part?.name === svc) || null : null;
 
 /** Is the service that owns this commons PANE absent? A pane not listed is core. */
 export const serviceOff = (pane) => serviceMissing(PANE_SERVICE[pane]);

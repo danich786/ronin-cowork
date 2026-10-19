@@ -2,11 +2,6 @@
  * are linked? Campaign availability/default switches are rendered beside these facts. */
 import { t } from './lexicon.js';
 
-export const GBRAIN_SETUP_STATES = Object.freeze([
-  'reading', 'services_needed', 'services_off', 'not_installed', 'installing', 'install_failed', 'removing',
-  'provider_first', 'ready', 'stopped', 'unreadable',
-]);
-
 const action = (id, label, place = 'installed') => ({ id, label, place });
 
 /** The plain name of an account gbrain can link, by its integration id; the label otherwise. */

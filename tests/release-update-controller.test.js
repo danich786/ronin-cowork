@@ -1,11 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createReleaseUpdateController, packageReading, releaseIdentity } from '../public/js/release-update-controller.js';
+import { createReleaseUpdateController, packageReading } from '../public/js/release-update-controller.js';
 
 test('identity and package facts stay honest and independent', () => {
-  assert.equal(releaseIdentity({release:'v2.3.1'}), 'v2.3.1');
-  assert.equal(releaseIdentity({commit:'abc'}), 'Dev checkout · abc');
-  assert.equal(releaseIdentity(null), 'Version unavailable');
   assert.equal(packageReading({latest:null,upToDate:true}).state,'unknown');
   assert.equal(packageReading({installed:'v2',latest:'v2',upToDate:true}).state,'current');
   assert.equal(packageReading({installed:'v1',latest:'v2',upToDate:false}).available,true);

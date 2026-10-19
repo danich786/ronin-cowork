@@ -14,7 +14,7 @@ import path from 'node:path';
 const root = await mkdtemp(path.join(tmpdir(), 'ronin-bundles-'));
 process.env.RONIN_USER_ROOT = path.join(root, 'user');
 process.env.RONIN_DATA_ROOT = path.join(root, 'data');
-const { installBundle, packBundle, parseBundle, parseLibraryIndex, planInstall, libraryCard, bundleHolds, BUNDLE_FORMAT, LIBRARY_FORMAT } =
+const { installBundle, packBundle, parseBundle, planInstall, libraryCard, bundleHolds, BUNDLE_FORMAT } =
   await import('../src/bundles.js');
 const { listTeamTemplates, listBehaviours } = await import('../src/resource-adapters.js');
 const { resolveBehaviourBooks } = await import('../src/behaviours.js');
@@ -178,9 +178,6 @@ test('a pack carries back out what the owner\'s copies hold, and reads as a bund
   const card = libraryCard(packed, text, 'bundles/weekly_review.json');
   assert.equal(card.sha256.length, 64);
   assert.deepEqual(card.holds, { teams: 1, tools: 2, ways: 2 });
-  const index = parseLibraryIndex({ format: LIBRARY_FORMAT, bundles: [card, { name: 'evil', url: 'https://elsewhere.example/x.json' }, { name: 'up', url: '../x.json' }] });
-  assert.deepEqual(index.bundles.map((c) => c.name), ['weekly_review'], 'a card pointing off the library is dropped');
-  assert.throws(() => parseLibraryIndex({ format: 'nope' }), /not ronin-library\/1/);
 });
 
 test.after(async () => {

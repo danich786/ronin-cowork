@@ -228,11 +228,6 @@ export async function readBrief(name: string): Promise<string> {
   }
 }
 
-export async function setBrief(name: string, brief: string): Promise<void> {
-  await ensureBoard(name);
-  await atomicWrite(briefPath(name), `# wipeboard: ${name}\n\n## Brief\n\n${brief.trim()}\n`);
-}
-
 export async function readCursor(name: string, sessionKey: string): Promise<string | null> {
   try {
     const raw = await readFile(path.join(readDir(name), sessionKey), 'utf8');

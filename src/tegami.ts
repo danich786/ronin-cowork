@@ -5,6 +5,7 @@ import { RIREKI_DIR, sessionKey } from './session-dir.js';
 import { readTeamRoster } from './team-rosters.js';
 import type { SessionInfo } from './tmux.js';
 import { mandate, type Mandate } from './agent-defaults.js';
+import { enqueueMessage } from './message-queue.js';
 
 export interface TegamiCheckout {
   repo: string;
@@ -309,8 +310,14 @@ export async function writeTeams(name: string, tags: string[]): Promise<boolean>
   return true;
 }
 
+/** THE ACK (owner, 2026-10-07): a write to an Agent's work record by anyone else pushes it one
+ * fixed line; the Agent reads its record. A write by the Agent itself is not acked. */
+export async function ackRecord(name: string, by: string): Promise<void> {
+  if (by !== name) await enqueueMessage(name, 'Your work record changed; please read it (work-record read).', 'house', 'Work record');
+}
+
 /** Change only the current mandate in an Agent-authored work record. Birth remains immutable. */
-export async function writeMandate(name: string, current: Mandate): Promise<Mandate> {
+export async function writeMandate(name: string, current: Mandate, by: string): Promise<Mandate> {
   const file = tegamiPath(await sessionKey(name));
   const text = await fs.readFile(file, 'utf8');
   const parsed = letterBlock(text);
@@ -318,5 +325,6 @@ export async function writeMandate(name: string, current: Mandate): Promise<Mand
   const next = mandate(current);
   parsed.body.mandate = next;
   await replaceLetterBlock(file, text, parsed, parsed.body);
+  await ackRecord(name, by);
   return next;
 }

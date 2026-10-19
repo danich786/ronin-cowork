@@ -21,15 +21,13 @@ const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 /** A Tile's own methods over the parts they paint, standing in for the DOM it would build. */
 function fakeTile(session) {
   const tile = Object.create(Tile.prototype);
-  const painted = { gauge: [], footer: [], closed: 0 };
+  const painted = { gauge: [], footer: [] };
   Object.assign(tile, {
     session,
     headHelp: {},
-    ladderOpen: false,
     gauge: { set: (value) => painted.gauge.push(value) },
     transcriptView: { setStance: (stance) => { painted.stance = stance; } },
     setFooter: (pct, model) => painted.footer.push([pct, model]),
-    closeLadder: () => { painted.closed += 1; },
   });
   return { tile, painted };
 }
@@ -48,11 +46,10 @@ test('a tile paints its gauge and work record from the pushed home row, and asks
   assert.deepEqual(tile.tegami, letter);
   assert.equal(painted.stance, 'working', 'the reading\'s stance is the row\'s');
 
-  // The next push moves the reading; the letter going away closes the ladder.
+  // The next push moves the reading; the letter going away goes from the tile too.
   store.receive({ t: 'home', rows: [{ name: 'alpha', ctx: 57, model: 'opus', stance: 'replying' }] });
   assert.equal(painted.gauge.at(-1), 57);
   assert.equal(tile.tegami, null);
-  assert.ok(painted.closed >= 1);
 
   // CLOSE: an unsubscribed tile hears nothing more.
   const heard = painted.gauge.length;
@@ -63,22 +60,13 @@ test('a tile paints its gauge and work record from the pushed home row, and asks
   assert.deepEqual(asked, [], 'no request: not /ctx, not /tegami, nothing');
 });
 
-test('opening the ladder reads one session\'s desks, once; a push asks nothing', async () => {
+test('a pushed row costs the tile no request at all', () => {
   const { tile } = fakeTile('alpha');
-  Object.assign(tile, { drawLadder(desks) { this.drawn = desks; } });
   tile.subscribeHome();
   asked.length = 0;
-
   store.receive({ t: 'home', rows: [{ name: 'alpha', ctx: 12, model: 'opus', tegami: { docs: [] } }] });
   store.receive({ t: 'home', rows: [{ name: 'alpha', ctx: 13, model: 'opus', tegami: { docs: [] } }] });
-  assert.deepEqual(asked, [], 'a pushed row costs the tile no request at all');
-
-  answer = { alpha: { desks: [{ repo: 'ronin_cowork', branch: 'team/front-2/front2_tile' }] } };
-  tile.toggleLadder();
-  await settle();
-  assert.deepEqual(asked, ['/api/desks?session=alpha'], 'the ladder reads its own session\'s desks when it opens, once');
-  assert.equal(tile.ladderOpen, true);
-  assert.deepEqual(tile.drawn, answer.alpha);
+  assert.deepEqual(asked, []);
   tile.unsubscribeHome();
 });
 

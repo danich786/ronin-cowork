@@ -6,7 +6,6 @@ import {
   getLeads,
   getWipeboards,
   getProviderSessionId,
-  getNote,
   getCampaign,
   getProjectRoot,
   getTags,
@@ -16,7 +15,6 @@ import {
   sessionExists,
   sessionOfPane,
   setLeads,
-  setNote,
   setProjectRoot,
   setTags,
   setWipeboards,
@@ -30,11 +28,12 @@ import {
   stopSessionTree,
 } from '../tmux.js';
 import { enqueueMessage } from '../message-queue.js';
+import { callerOf } from './work-items-api.js';
 import { sessionKey } from '../session-dir.js';
 import { isValidRootName, listProjectRoots } from '../project-roots.js';
 import { expandLookup } from '../lookup.js';
 import { count } from '../counts.js';
-import { broadcastEvent } from '../ws/events.js';
+import { broadcastEvent, pushTeams } from '../ws/events.js';
 import { announceTeamChanges } from './wipeboards-api.js';
 import { writeMandate, writeTeams } from '../tegami.js';
 import { conditionalBehaviourPath, resolveBehaviourBooks } from '../behaviours.js';
@@ -178,9 +177,8 @@ export function registerSessions(app: express.Express): void {
     if (!isValidName(name)) return res.status(400).json({ error: 'Invalid name.' });
     if (!(await sessionExists(name))) return res.status(404).json({ error: 'No such session.' });
     try {
-      const saved = await writeMandate(name, mandate(req.body));
-      const item = await enqueueMessage(name, `Your current mandate changed. Your birth mandate remains part of your immutable birth record.\n\nReach: ${saved.reach}\nRecruit: ${saved.recruit}\nOutput: ${saved.output.join(', ')}`, 'owner');
-      res.json({ ok: true, mandate: saved, queued: true, message: item });
+      const saved = await writeMandate(name, mandate(req.body), callerOf(req));
+      res.json({ ok: true, mandate: saved });
     } catch (e) { res.status(409).json({ error: String((e as Error)?.message ?? e) }); }
   });
 
@@ -212,7 +210,7 @@ export function registerSessions(app: express.Express): void {
         version: 1, id: key, name, key, archived_at: new Date().toISOString(), cwd: runtime.cwd,
         identity: (await listSessions()).find((s) => s.name === name)?.identity,
         agent: provider.agent, provider_session_id: provider.id, tags: await getTags(name), leads: await getLeads(name),
-        wipeboards: await getWipeboards(name), note: await getNote(name), project_root: await getProjectRoot(name),
+        wipeboards: await getWipeboards(name), project_root: await getProjectRoot(name),
       };
       await writeArchive(archived);
       try { await stopSessionTree(name); }
@@ -242,7 +240,6 @@ export function registerSessions(app: express.Express): void {
         await setTags(archived.name, archived.tags);
         await setLeads(archived.name, archived.leads);
         await setWipeboards(archived.name, archived.wipeboards);
-        await setNote(archived.name, archived.note);
         await setProjectRoot(archived.name, archived.project_root);
         if (archived.identity) await setSessionIdentity(archived.name, archived.identity);
         else await setLaunchStamp(archived.name, archived.agent);
@@ -421,26 +418,6 @@ export function registerSessions(app: express.Express): void {
     }
   });
 
-  app.get('/api/sessions/:name/note', async (req, res) => {
-    const { name } = req.params;
-    if (!isValidName(name)) return res.status(400).json({ error: 'Invalid name.' });
-    if (!(await sessionExists(name))) return res.status(404).json({ error: 'No such session.' });
-    res.json({ note: await getNote(name) });
-  });
-
-  app.post('/api/sessions/:name/note', async (req, res) => {
-    const { name } = req.params;
-    if (!isValidName(name)) return res.status(400).json({ error: 'Invalid name.' });
-    if (!(await sessionExists(name))) return res.status(404).json({ error: 'No such session.' });
-    const note = String(req.body?.note ?? '').slice(0, 8000); // a post-it, not a doc
-    try {
-      await setNote(name, note);
-      res.json({ ok: true });
-    } catch (e) {
-      res.status(500).json({ error: String((e as Error)?.message ?? e) });
-    }
-  });
-
   const saveMembership = async (name: string, wanted: unknown) => {
     const list = (Array.isArray(wanted) ? wanted.map(String) : String(wanted ?? '').split(',')).slice(0, 16);
     const valid = new Set((await listTeamRosters()).filter((team) => team.state !== 'archived').map((team) => team.name));
@@ -458,6 +435,13 @@ export function registerSessions(app: express.Express): void {
     if (!isValidName(name)) return res.status(400).json({ error: 'Invalid name.' });
     if (!(await sessionExists(name))) return res.status(404).json({ error: 'No such session.' });
     res.json({ teams: await getTags(name) });
+  });
+
+  // A membership or lead change moves what the teams push carries (whose items a Team's
+  // row lists, whose board is its lead's), so the rosters are pushed again after it.
+  app.use(['/api/sessions/:name/teams', '/api/sessions/:name/team_lead'], (req, res, next) => {
+    if (req.method !== 'GET') res.on('finish', () => { if (res.statusCode < 400) void pushTeams(); });
+    next();
   });
 
   app.put('/api/sessions/:name/teams', async (req, res) => {
@@ -481,20 +465,6 @@ export function registerSessions(app: express.Express): void {
       });
     });
   }
-
-  app.get('/api/teams', async (_req, res) => {
-    try {
-      const teams: Record<string, string[]> = {};
-      const leaders: Record<string, string[]> = {};
-      for (const s of await listSessions()) {
-        for (const t of s.tags) (teams[t] ||= []).push(s.name);
-        for (const t of s.leads) (leaders[t] ||= []).push(s.name);
-      }
-      res.json({ teams, leaders });
-    } catch (e) {
-      res.status(500).json({ error: String((e as Error)?.message ?? e) });
-    }
-  });
 
   app.post('/api/sessions/:name/team_lead', async (req, res) => {
     const { name } = req.params;
@@ -528,13 +498,6 @@ export function registerSessions(app: express.Express): void {
     } catch (e) {
       res.status(500).json({ error: String((e as Error)?.message ?? e) });
     }
-  });
-
-  app.get('/api/sessions/:name/team_lead', async (req, res) => {
-    const { name } = req.params;
-    if (!isValidName(name)) return res.status(400).json({ error: 'Invalid name.' });
-    if (!(await sessionExists(name))) return res.status(404).json({ error: 'No such session.' });
-    res.json({ team_lead: await getLeads(name) });
   });
 
   app.post('/api/sessions/:name/send', async (req, res) => {

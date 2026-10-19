@@ -62,6 +62,7 @@ const walk = (n) => {
   if (seen.has(n) || !mod[n]) return;
   seen.add(n);
   for (const i of mod[n].imports) walk(i.from);
+  for (const [, from] of mod[n].raw.matchAll(/import\('\.\/([\w-]+)\.js'\)/g)) walk(from); // a lazy import reaches too
 };
 for (const entry of ENTRIES) walk(entry);
 for (const name of Object.keys(mod)) {

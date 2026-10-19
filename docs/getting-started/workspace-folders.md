@@ -9,13 +9,13 @@ You need at least one before an Agent has anywhere to work. One is enough to sta
 
 ## Add one
 
-Open **Workspace folders** in [Ronin Setup](setup-workbench.md), or the
-Workspace Folders page in cowork commons afterwards. You give two things:
+Open **Workspace folders** in [Ronin Setup](setup-workbench.md), or afterwards the
+**Workspaces** door on Ronin Home or **Workspaces** on Ronin Settings. You give two things:
 
 | You give | What it is |
 |---|---|
 | A directory | An existing folder on this machine, or a repository you clone through GitHub. |
-| A name | What you will see in the launcher and on an Agent's record. Presentation only. |
+| A name | What you will see in the New Agent form and on an Agent's record. Presentation only. |
 
 The name is free to change later. Changing it never moves the directory, never renames the
 folder on disk, and never changes the identity of any Agent already working there.

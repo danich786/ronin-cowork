@@ -38,35 +38,22 @@ test('Cowork launches use the standalone handoff while Team launches retain in-p
   assert.match(text, /connect: campaign \? null : \(name\) => connectSession\(name, id\)/);
 });
 
-test('Teams opens its roster and New Team form in the two default workspaces; Desk opens Work items second', async () => {
+test('Teams opens its roster and New Team form in the two default workspaces; Desk leaves the second blank', async () => {
   const text = await source('cowork-view.js');
-  assert.match(text, /seats: campaign \? \{ workspace1: WB_TYPES\.roster, workspace2: desk \? WB_TYPES\.workViews : WB_TYPES\.newTeamForm \} : \{\}/);
+  assert.match(text, /seats: campaign \? \{ workspace1: WB_TYPES\.roster, \.\.\.\(desk \? \{\} : \{ workspace2: WB_TYPES\.newTeamForm \}\) \} : \{\}/);
 });
 
-test('Cowork no longer offers Task Manager on its selector; all scopes can still place drill-down surfaces', async () => {
-  const [text, catalog] = await Promise.all([source('cowork-view.js'), source('workbench-catalog.js')]);
-  assert.match(text, /kind: 'desk', teams: \(\) => teamsFromState\(\)/);
-  assert.match(text, /taskStatus: \(id, detail\)/);
-  assert.match(text, /taskProject: \(id, detail\)/);
-  assert.match(catalog, /taskStatus: 'task-manager\.status'/);
-  assert.match(catalog, /taskProject: 'task-manager\.project'/);
-  assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.cowork, \[[^\]]*WORKBENCH_TYPES\.taskStatus[^\]]*WORKBENCH_TYPES\.taskProject/);
-  assert.doesNotMatch(catalog, /profiles\.define\(WORKBENCH_PROFILES\.cowork, \[[^\]]*WORKBENCH_TYPES\.kanban\b/);
-});
-
-test('Desk owns an operational destination and first-opens Teams beside Work items', async () => {
-  const [main, deskView, view, catalog, contract, home] = await Promise.all([
-    source('main.js'), source('desk-view.js'), source('cowork-view.js'), source('workbench-catalog.js'), source('workspace-contract.js'), source('campaign-home.js'),
+test('Desk owns an operational destination and first-opens Teams', async () => {
+  const [main, deskView, view, catalog] = await Promise.all([
+    source('main.js'), source('desk-view.js'), source('cowork-view.js'), source('workbench-catalog.js'),
   ]);
-  assert.match(home, /key: 'desk', route: 'desk'/);
   assert.match(main, /import \{ createDeskView \} from '\.\/desk-view\.js'/);
   assert.match(main, /workspace\.register\('desk', createDeskView\(\)\)/);
   assert.match(deskView, /export function createDeskView\(\)/);
-  assert.match(contract, /'campaign', 'desk', 'cowork'/);
   assert.match(catalog, /desk: 'desk'/);
   assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.desk/);
   assert.match(view, /const desk = options\.kind === 'desk'/);
   assert.match(view, /profile: desk \? WB_PROFILES\.desk : campaign \? WB_PROFILES\.cowork/);
-  assert.match(view, /workspace1: WB_TYPES\.roster, workspace2: desk \? WB_TYPES\.workViews : WB_TYPES\.newTeamForm/);
+  assert.match(view, /workspace1: WB_TYPES\.roster, \.\.\.\(desk \? \{\} : \{ workspace2: WB_TYPES\.newTeamForm \}\)/);
   assert.match(view, /workbenchView\(desk \? 'desk' : campaign \? 'cowork' : 'team'\)/);
 });

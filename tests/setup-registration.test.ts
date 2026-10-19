@@ -9,7 +9,7 @@ process.env.RONIN_CONFIG_DIR = path.join(root, 'config');
 process.env.RONIN_SERVICES_SECRETS_DIR = path.join(root, 'secrets');
 process.env.RONIN_WAYS_DIR = path.join(root, 'ways');
 
-const { deleteRegistration, readRegistration, registrationAnswer, submitRegistration, updateCommunication } = await import('../src/activation/registration.js');
+const { deleteRegistration, readRegistration, registrationAnswer, submitRegistration } = await import('../src/activation/registration.js');
 const { putEntitlementToken, getEntitlementToken } = await import('../src/activation/secrets.js');
 
 test('registration begins optional with communication explicitly off', async () => {
@@ -63,16 +63,6 @@ test('anonymous registration needs no email and keeps a stable outgoing packet i
   assert.equal((await registrationAnswer()).status, 'anonymous');
 });
 
-test('communication remains independent and No communication clears other choices', async () => {
-  let record = await updateCommunication({ newsletter: true, release_updates: true, follow_up: ['research'] });
-  assert.equal(record.communication.newsletter, true);
-  assert.equal(record.communication.no_communication, false);
-  record = await updateCommunication({ newsletter: true, release_updates: true, follow_up: ['research'], no_communication: true });
-  assert.deepEqual(record.communication, {
-    newsletter: false, release_updates: false, follow_up: [], no_communication: true,
-  });
-});
-
 test('registration rejects a missing or malformed email', async () => {
   await assert.rejects(submitRegistration({ email: 'not-an-email' }), /valid email/);
 });
@@ -102,14 +92,12 @@ test('Setup keeps Campaign Templates out and opens Presets only from Launch Your
 });
 
 test('provider discovery is catalog-driven and a keyed surface resolves only its provider', async () => {
-  const { providerOffers, providerFromRuntime } = await import('../public/js/setup-provider-state.js');
+  const { providerFromRuntime } = await import('../public/js/setup-provider-state.js');
   const providers = [
     ['anthropic', 'Claude'], ['openai', 'Codex'], ['hermes', 'Hermes'],
     ['grok', 'Grok'], ['gemini', 'Gemini'], ['future_cli', 'Future CLI'],
   ].map(([id, label], index) => ({ id, label, state: index ? 'installed' : 'activated' }));
   const runtime = { providers };
-  assert.deepEqual(providerOffers(runtime).map((offer) => offer.label), providers.map((provider) => provider.label));
-  assert.ok(providerOffers(runtime).every((offer) => offer.groupKey === 'setup.providers'));
   assert.equal(providerFromRuntime(runtime, 'future_cli')?.label, 'Future CLI');
   assert.equal(providerFromRuntime(runtime, 'openai')?.label, 'Codex');
 });
@@ -187,8 +175,6 @@ test('Register presents one open profile flow with card choices and anonymous de
   assert.match(source, /registration_confirmation', 'Registration confirmation'/);
   assert.match(source, /Required only if you want to install Ronin Services\./);
   assert.match(source, /identity\.dataset\.tone = current\?\.status === 'pending' \? 'pending' : 'ok'/);
-  assert.match(css, /\.setup-register-compact \{ container: setup-register \/ inline-size;/, 'Register sizes its pairs from its own width');
-  assert.match(css, /@container setup-register \(min-width: 40rem\)/);
   assert.match(css, /\.setup-register-group \{[^}]*border-top: var\(--edge-2\) solid var\(--kaki\)/, 'groups open with a kaki rule');
   assert.doesNotMatch(css, /\.setup-register-group \{[^}]*(?:border: var\(--edge\)|background: var\(--panel\))/, 'groups are not boxes');
   for (const label of ['With email', 'Anonymous', 'No thank you', 'Work from anywhere', 'Multiple providers without lock-in', 'Agents with team coordination skills']) assert.match(source, new RegExp(label));
@@ -306,7 +292,7 @@ test('the Services mark is a constructed RS monogram in the house hexagon, blue 
 });
 
 test('Services setup model keeps installation and registration as separate facts and shapes three steps', async () => {
-  const { SERVICES_SETUP_STATES, servicesSetupModel } = await import('../public/js/services-setup-state.js');
+  const { servicesSetupModel } = await import('../public/js/services-setup-state.js');
   const reg = (status: string, extra: Record<string, unknown> = {}) => ({ ok: true, data: { status, services_entitled: false, ...extra } });
   const entitled = (extra: Record<string, unknown> = {}) => reg('registered', { services_entitled: true, ...extra });
   const inst = (services: Record<string, unknown> = {}) => ({ ok: true, data: { services: { installed: false, activated: false, switched_on: false, restart_needed: false, parts: [], loaded: [], ...services } } });
@@ -328,7 +314,6 @@ test('Services setup model keeps installation and registration as separate facts
     ['restart_needed', reg('optional'), here({ switched_on: true, restart_needed: true }), act('not_requested'), 'restart needed', 'Switched on · not yet running', 'register:Register:register install:Done:done switch:Turn off:switch_off restart:Restart:restart'],
     ['active', entitled(), here({ switched_on: true }), act('installed'), 'active', 'Active on this Cowork', 'register:Done:done install:Done:done switch:Turn off:switch_off'],
   ];
-  assert.deepEqual(cases.map(([state]) => state).sort(), [...SERVICES_SETUP_STATES].sort());
   for (const [state, registration, installed, activation, summary, status, steps] of cases) {
     const model = servicesSetupModel(registration as never, installed as never, activation as never);
     assert.equal(model.state, state);
@@ -370,7 +355,7 @@ test('Services setup model keeps installation and registration as separate facts
 });
 
 test('Setup gbrain answers its measured facts plainly with at most one action per state', async () => {
-  const { GBRAIN_SETUP_STATES, gbrainSetupModel, gbrainAccounts } = await import('../public/js/gbrain-setup-state.js');
+  const { gbrainSetupModel, gbrainAccounts } = await import('../public/js/gbrain-setup-state.js');
   const snapshot = (over: Record<string, unknown> = {}) => ({
     ok: true, status: 200,
     data: {
@@ -404,7 +389,6 @@ test('Setup gbrain answers its measured facts plainly with at most one action pe
     ['ready', snapshot(), one, 'Installed · running', 'start_assistant', 'running', true],
     ['stopped', snapshot({ process: { state: 'stopped', health: 'unreachable', version: null } }), { installed: true, active: false }, 'Installed · not running', 'check_assistant', 'installed', true],
   ];
-  assert.deepEqual(cases.map(([state]) => state).sort(), [...GBRAIN_SETUP_STATES].sort());
   for (const [state, result, availability, answer, action, summary, installed] of cases) {
     const model = gbrainSetupModel(result as never, availability as never);
     assert.equal(model.state, state);

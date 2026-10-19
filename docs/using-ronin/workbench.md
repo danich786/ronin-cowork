@@ -1,9 +1,10 @@
 # Workbench — finding and arranging your work
 
 A **workbench** is one fixed page format: two or four workspaces and one discovery column.
-Ronin has Campaign, Cowork, Team, and Setup workbenches. Setup fixes Presets in workspace 1
-and opens its ordered selector surfaces in workspace 2; the other workbenches retain their
-ordinary two/four arrangement.
+Ronin has Campaign (Settings), Setup, New Project, Desk, Cowork, Team and Agent workbenches,
+plus the Models, Workspaces and Teams workbenches Ronin Home's doors open. Setup seats its
+Garden in workspace 1 and opens its ordered selector surfaces in workspace 2; the other
+workbenches retain their ordinary two/four arrangement.
 
 This is the guide for an Agent using Ronin. It explains where things are and how to find
 them. The implemented builder contract lives in Ronin Cowork's
@@ -23,8 +24,8 @@ If this guide and [KOTOBA](../../KOTOBA.md) disagree, flag the difference. Do no
 
 ## Library, profile, tenant
 
-The four destinations reuse one Workbench implementation; they are profiles and tenants,
-not four layout systems.
+Every destination reuses one Workbench implementation; they are profiles and tenants,
+not separate layout systems.
 
 - `Workbench.library` is the one reusable catalog of surface types.
 - `Workbench.profile(name)` lists which library types the selector may expose.
@@ -35,41 +36,9 @@ not four layout systems.
 |---|---|
 | Campaign | Campaign settings and Campaign-level resources |
 | Teams collection | Teams, Agents, shared resources, and creation surfaces available in the selected Campaign context |
-| Team | that Team's Agents, Commons, Trello view, and launch surface |
+| Team | that Team's Agents, Commons, New Agent and Agent composition |
 | Agent | Self, Documents, Team membership, and separate Task Managers for the Agent's Teams |
-| Setup | pinned Presets plus Register, providers, roots, Services, gbrain, and Templates |
-| Collections (new) | Who: Your Teams; What, Where and New as they arrive. Reached from **Next** on Ronin Home, the temporary door to the new workbench while it is built beside the old one |
-
-On the Cowork and Desk workbenches one card reads the work items: **Trello view**. The button at its top left says which
-view you are in, **View by: Status** or **View by: Board**, and switches to the other. It is laid out like a
-Trello board: Status shows one list per stage, its items grouped under each board's name;
-Board shows one list per board, its items grouped under each stage's name. Each list shows
-its count at the head and **Add a work item** at the foot, which starts the new item in that
-list. In Board view, **Unfiled** always sits at the far right in its own shade, and **Add
-board** after the boards starts a new one. On a Team's workbench, Add starts on the Team's
-own board (else its lead's, else Unfiled); you can still pick any board. On a Team's
-workbench the card shows the boards that Team and its Agents work on, plus **Unfiled**, so
-unfiled work can be taken on from there; a board added there is held by the Team. In
-Board view, drag an item onto another board's list to move it there (what is under it comes
-with it), or onto empty space to make it a board of its own: that is how work leaves
-Unfiled. On a Team's workbench a board made that way is held by the Team if nobody held it.
-An item's **Assign** can also give it to a Team. Press a list's name, a
-group's name or an item to open it over the lists. Its buttons at the top right are **Save** (once there is something to
-save), **Assign** (pick the Agent or Team that holds it), **Add** (a new item, starting where you
-pressed) and **Close**; Escape closes it too. Wherever you add an item, you give its title,
-objective, status and board: an existing board, **New board** (the item becomes a board of
-its own) or **Unfiled**, the default, for work nobody has filed yet.
-
-On the Cowork and Desk workbenches the **Who: Your Teams** card is the Teams door of the
-collection: one stone per Team, and under each stone the boards that Team works on, or its
-Agents, as **Under each Team** at the top chooses. **Workspace** narrows the stones to the
-Teams working in the folders you pick, one or several. Press a Team for a short read beside
-the stones, its Agents and its boards, and **Launch** to open the Team's tab. Press a bar for
-a short read under it: an Agent's role and what it is doing now, a board's objective and
-items, an item's description and status. **Open** on a board places the work-item surface in
-the other workspace. Drag a board onto another Team to give it to that Team. Drag **Add +**, beside Under each
-Team, onto a Team to add a board or an Agent to it, whichever is showing; a small window
-opens over the Team with the form. Changing them happens on the Team's own workbench.
+| Setup | the Garden plus Model providers, Register, Workspace folders, Installations, Password and Launch |
 
 Adding another tenant or profile adds no layout implementation. Adding another surface
 registers a per-workspace factory in the shared library; any profile may name that type.
@@ -178,10 +147,10 @@ so it is always within reach. It is deliberately a little in the way — it is h
 header back. Tap it again and the header returns exactly as it was.
 
 An Agent's head keeps the same depth as the surface heads beside it, and stays one row. It
-shows the Agent's name, its reading toggle, and **メ** — one menu holding that Agent's work
-record, docs, mention, output, minimise and close, the same sheet the phone uses. A control
-that has nothing to offer, such as Output with no Services, leaves the sheet rather than
-sitting there blank.
+shows the Agent's name, its reading toggle, **メ** and −. メ opens one menu over the tile —
+send a file, mention, output, the work record and the Agent's configuration (each a full overlay over the tile), its docs, and Delete or archive —
+the same menu on a computer, a tablet and a phone. A choice that has nothing to offer, such
+as Output with no Services, is left out rather than shown blank.
 
 The reading toggle is a toggle, never a row in the menu. Each press moves on through the
 readings this screen offers, and past the last one it returns to the terminal. A desk walks

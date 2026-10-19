@@ -12,20 +12,16 @@ mockup. It does not own feature meaning, Team membership, New Team transactions,
 protocols, or product-specific validation. Visual similarity is not architectural
 convergence: consumers must use the actual shared contracts.
 
-**Sessions remains a first-class destination.** Its raw terminal Tile grid and 1, 2, and 4
-Tile layouts remain supported product behavior. Workspace Kit views coexist with Sessions
-in the shared `ViewHost`; they never replace, wrap, or reinterpret the Sessions grid.
-
 ## Canonical implementation map
 
 | Contract | Canonical source | Owns |
 |---|---|---|
 | Kit facade | `public/js/workspace-kit.js` | The single `WorkspaceKit` namespace and Kit stylesheet loading |
-| Primitives | `public/js/workspace-primitives.js` | Surface, Card, actions, metadata, forms, fields, notices, ExplorerRail, Channel Surface and standard states |
-| Layouts | `public/js/workspace-layouts.js` | LeagueBoard, managed Workbench, SessionGrid, Explorer and New Team compositions |
+| Primitives | `public/js/workspace-primitives.js` | Surface, Card, actions, metadata, forms, fields, notices, ExplorerRail, the layout map, the tab name and standard states |
+| Layouts | `public/js/workspace-layouts.js` | The Workbench layout and the Explorer composition |
 | Adapters | `public/js/workspace-adapters.js` | Room workspace adapters and terminal Tile-host export |
 | Terminal host | `public/js/terminal-tile-host.js` | The one Tile transport/render/focus/fit/composer lifecycle seam |
-| Routing/state contract | `public/js/workspace-contract.js` | Destinations, typed navigation and Team workspace-state normalization |
+| Routing/state contract | `public/js/workspace-contract.js` | Workbench appearances and headers, `DISMISSED_WORKSPACE`, `workspaceMaySeedDefault` and workspace-state normalization |
 | ViewHost/state | `public/js/workspace.js` | Registration, navigation, titles, history, per-tab state and lifecycle |
 | Team projection | `public/js/team-controller.js` | Durable roster refresh and live session-derived membership selectors |
 | Foundation CSS | `public/style.css`, `public/workspace-kit.css` | Tokens, primitives, named geometry and responsive machinery |
@@ -37,10 +33,16 @@ Consume the facade where possible:
 const { createSurface, createCard, createAction } = WorkspaceKit.primitives;
 const { library, profiles, create } = WorkspaceKit.workbench;
 const { createTerminalTileHost } = WorkspaceKit.adapters;
-const { workspaceTarget, navigateWorkspace, normalizeWorkbenchState } = WorkspaceKit.contract;
+const { DISMISSED_WORKSPACE, normalizeWorkbenchState, workspaceMaySeedDefault } = WorkspaceKit.contract;
 ```
 
 Current load-bearing contracts:
+
+- **The full overlay** is the location of that name in the Lab's `PATTERNS.md`:
+  `fullOverlay(host, draw, { closed })` from `work-details.js`, the one layer over a
+  surface's content with the one Close; the content positions itself as the layer's box.
+  The menu location is being found once, for the tile header and the workspace header
+  alike (surface_menu, 2026-10-07); nothing in the Kit draws a menu until it is.
 
 Workbench profiles, per-surface data requirements, restoration, and structured launches
 are specified together in [Workbench construction](workbench.md). This page owns the Kit
@@ -61,7 +63,7 @@ beneath that contract.
   which the ViewHost draws into the bar's `#viewmap` slot for any registered view that
   exposes `arrangement` — click shows/hides a slot, drag within the map reorders, keyboard
   works. Nothing in the frame, the map, or the ViewHost knows a slot's name or meaning.
-  Beside it, the bar's `#viewname` slot takes the **tab name** (`createTabName`): a view
+  Beside it, the bar's `#viewplace` slot takes the **tab name** (`createTabName`): a view
   that exposes `tabName` (`{ get, placeholder, set }`) gets one text field, and what is
   typed becomes the browser tab's title through the view's own `title()`; the Team page
   offers it, defaulting to the team and persisted per tab.
@@ -70,8 +72,8 @@ beneath that contract.
   called per workspace/resource; returning one node for two workspaces is refused. The
   selector and drag/drop both call this same placement path.
 - `createTerminalTileHost({ mode, actions })` and `createTabbedSurface({ actions })`
-  take consumer actions for their own header row (a tile head, a tab bar) — the Team
-  page's C/T flip rides there, so no feature reaches into a Tile. A tabbed surface keeps
+  take consumer actions for their own header row (a tile head, a tab bar), so no feature
+  reaches into a Tile. A tabbed surface keeps
   its actions in `.wk-tabset-actions`; nothing is interleaved into the tab row.
 - `createTerminalTileHost({ mode: 'full' | 'reduced' })` is the only terminal host. Full
   mode preserves the genuine existing Tile—including header, Torii, controls,
@@ -96,7 +98,7 @@ beneath that contract.
 - ExplorerRail currently routes both programmatic `setSections()` reconciliation and user
   selection through `select()`, so both invoke `onSelect`. This is a known contract defect,
   not permission for new consumers to add another rail or selection engine.
-- Navigation uses `workspaceTarget()` and `navigateWorkspace()`. Views use shell state,
+- Navigation goes through the ViewHost (`workspace.js`). Views use shell state,
   `viewState()` and `patchViewState()` rather than private history or storage engines.
   Cross-tab Workbench doors use `openWorkbenchTab()`; destinations consume and resolve its
   one-shot state before restoration. Feature modules do not seed another tab's storage or
@@ -180,17 +182,13 @@ npm run byoin             # user-customization guard-rail check
 Ordinary Kit legs use direct dogfood and scoped diagnostic evidence, not BYOIN. One
 designated integrator runs the check once on the exact release candidate.
 `scripts/check-css.mjs` guards CSS. Staging
-`scripts/smoke-ui.mjs` owns dev-only workspace/skin evidence; default live smoke must not
-pretend unlanded routes exist. `scripts/visual-ui.mjs` measures declared compositions. A
+`scripts/smoke-ui.mjs` renders the desktop Team page and the phone document. `scripts/visual-ui.mjs` measures declared compositions. A
 SKIP is unverified, never a pass.
 
 ## Known open seams
 
-- Sessions continues to own its compatibility 1/2/4 raw Tile grid. Any future Team
-  Sessions-mode composition must reuse genuine Tiles without weakening that destination.
 - Commons and Configuration use room workspace adapters while compatibility builders still
   exist. Adapt those builders; do not rewrite their behavior under Kit work.
-- Chat is intentionally empty and inert; there is no protocol to infer.
 - Reduced terminal-host composition is supported, but proving it must not alter full Tile.
 - Registration idioms may differ where reachability/lifecycle are correct. Normalize only
   for a demonstrated defect.

@@ -19,6 +19,8 @@ import path from 'node:path';
 const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ronin-wipeboard-test-'));
 process.env.RONIN_WIPEBOARDS_DIR = root;
 const W = await import('../src/wipeboards.js');
+// The Brief is the owner's hand-written section of the board's brief.md.
+const writeBrief = (name: string, brief: string) => fs.writeFile(path.join(W.boardPath(name), 'brief.md'), `# wipeboard: ${name}\n\n## Brief\n\n${brief}\n`);
 
 /** Members as the reaper wants them: a name and the durable session key beside it. */
 const members = (...names: string[]) => names.map((n) => ({ name: n, key: `${n}-1787240000` }));
@@ -250,7 +252,7 @@ test('ttl 0 means never reap on age — the owner\'s off switch', async () => {
 
 test('the Brief is never reaped', async () => {
   await W.ensureBoard('reap5');
-  await W.setBrief('reap5', 'what this is for');
+  await writeBrief('reap5', 'what this is for');
   await W.appendPost('reap5', '@a', 'x');
   await W.reapPosts('reap5', { members: members('a'), now: Date.now() + 49 * HOUR });
   assert.equal((await W.readBoard('reap5')).brief, 'what this is for');
@@ -269,7 +271,7 @@ test('a wipeboard nothing points at is removed whole', async () => {
 
 test('a Brief the owner wrote keeps the wipeboard, permanently', async () => {
   await W.ensureBoard('authored', W.teamStub('authored'));
-  await W.setBrief('authored', 'the owner cared enough to write this');
+  await writeBrief('authored', 'the owner cared enough to write this');
   assert.equal(await W.reapBoard('authored', dead), false);
   assert.equal(await W.boardExists('authored'), true);
 });
@@ -300,24 +302,6 @@ test('the house wipeboard is never removed', async () => {
 });
 
 /* -------------------------------------------------------------------- writes are safe */
-
-test('writing the Brief cannot lose a post — the Brief is not in the thread any more', async () => {
-  await W.ensureBoard('race');
-  const briefs = ['rewritten under a hundred concurrent posts', 'and again'];
-  await Promise.all([
-    ...Array.from({ length: 100 }, (_, i) => W.appendPost('race', '@a', `post ${i}`)),
-    ...briefs.map((b) => W.setBrief('race', b)),
-  ]);
-  const board = await W.readBoard('race');
-  // THE CONTRACT: rewriting the Brief cannot cost a post. It used to be able to — the
-  // Brief lived in the same file as the thread and was written whole.
-  assert.equal(board.posts.length, 100, 'every post survived the Brief rewrites');
-  // And the contract stops there. Two Brief writes racing have NO ordering between them,
-  // so which one wins is not a promise this module makes; what IS promised is that the
-  // winner is whole. Asserting a winner asserted an ordering concurrency never offered,
-  // and duly failed about one run in eight.
-  assert.ok(briefs.includes(board.brief), `the Brief is one whole value, not a torn mix: ${board.brief}`);
-});
 
 test('no partial post is ever observable — temp files are never listed as posts', async () => {
   await W.ensureBoard('atomic');
@@ -411,7 +395,7 @@ test('ensureRosterBoard is idempotent and never replaces what is there', async (
   await writeRoster('gamma', 'gamma-talk');
   await W.ensureRosterBoard('gamma');
   await W.appendPost('gamma-talk', '@a', 'said something');
-  await W.setBrief('gamma-talk', 'the owner wrote this');
+  await writeBrief('gamma-talk', 'the owner wrote this');
   await W.ensureRosterBoard('gamma');
   const board = await W.readBoard('gamma-talk');
   assert.equal(board.posts.length, 1, 'the thread survived');

@@ -191,7 +191,7 @@ the computer running Ronin.
 ## 5. Verify the running install
 
 Confirm the owner can open the appropriate printed address from their intended device,
-then continue into Machine Settings.
+then continue into Ronin Setup from Ronin Home's **Settings** button.
 
 Run `bin/ronin-doctor` on either platform. On Linux, preserve evidence that the
 installed copy is the one answering:
@@ -231,7 +231,7 @@ holder's cgroup ends in `ronin.service` or is explicitly recorded as `unknown`.
 ## 6. Continue through first use
 
 Help the owner open the appropriate printed URL on their own device. A fresh install opens Ronin Home;
-Machine Settings opens Ronin Setup. Continue with [Get started](get-started.md): establish
+its **Settings** button opens Ronin Setup. Continue with [Get started](get-started.md): establish
 one provider using
 [Provider sign-in](provider-sign-in.md), and prove one harmless Agent exchange.
 
