@@ -101,7 +101,6 @@ test('the approved resting-stone lines are verbatim and every stone has a glyph'
 });
 
 test('a non-core replacement receives only universal actions and ordinary launch', () => {
-  assert.deepEqual(presets.presetActions('dinner_party'), ['user_message', 'launch']);
   assert.equal(presets.buildLaunchPlan({ handle: 'dinner_party', shelf: 'teams' }, 'Hello', {}).treatment, null);
   assert.equal(presets.seatingPlan('dinner_party', { sessions: [{ name: 'real' }] }), null);
 });
@@ -112,7 +111,6 @@ test('Bare Metal starts with two rows that carry no provider or model, and three
   assert.deepEqual(presets.initialControls('ronin_team').sessions.map(({ name, team_lead }) => [name, team_lead === true]), [
     ['team_lead', true], ['agent_1', false], ['agent_2', false],
   ]);
-  assert.deepEqual([0, 1, 2, 3, 4].map(presets.bareMetalWorkspaceCount), [1, 1, 2, 4, 4]);
   assert.equal(presets.initialControls('ronin_team').root, 'ronin_lab', 'Ronin Team starts in Ronin Lab');
 });
 

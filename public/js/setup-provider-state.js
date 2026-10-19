@@ -1,18 +1,4 @@
 /* Pure provider discovery and explicit attachment seams for Ronin Setup. */
-export function providerOffers(runtime) {
-  const providers = Array.isArray(runtime?.providers) ? runtime.providers : [];
-  return providers.filter((provider) => provider?.id).map((provider) => {
-    return {
-      key: String(provider.id),
-      provider: String(provider.id),
-      label: provider.label || provider.id,
-      summary: provider.state || 'absent',
-      metadata: provider.path ? [provider.path] : [],
-      groupKey: 'setup.providers',
-    };
-  });
-}
-
 export function providerFromRuntime(runtime, key) {
   return (Array.isArray(runtime?.providers) ? runtime.providers : []).find((provider) => provider?.id === key) || null;
 }

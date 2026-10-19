@@ -45,7 +45,7 @@ async function fixture(
         res.end(JSON.stringify({ ok: true, name: stated.name ?? 'unused', receipt: { team: stated.team } }));
         return;
       }
-      if (req.method === 'POST' && req.url?.startsWith('/api/sessions/')) {
+      if ((req.method === 'POST' || req.method === 'PUT') && req.url?.startsWith('/api/sessions/')) {
         res.end(JSON.stringify({ ok: true }));
         return;
       }
@@ -204,7 +204,7 @@ test('updating safely JSON-encodes accepted Team names and lead payloads', async
   assert.match(result.output, /UPDATED active team=design-review_2 人=design-review_2/);
   assert.deepEqual(f.requests.map(({ method, url, body }) => ({ method, url, body: body ? JSON.parse(body) : null })), [
     { method: 'GET', url: '/api/sessions', body: null },
-    { method: 'POST', url: '/api/sessions/active/tags', body: { tags: 'design-review_2' } },
+    { method: 'PUT', url: '/api/sessions/active/teams', body: { teams: ['design-review_2'] } },
     { method: 'POST', url: '/api/sessions/active/team_lead', body: { teams: ['design-review_2'] } },
   ]);
 });

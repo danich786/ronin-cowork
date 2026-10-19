@@ -60,10 +60,8 @@ for s in json.load(sys.stdin):
 
 did=""
 if [ -n "$TEAM" ]; then
-  tags=$(printf '%s' "$live" | python3 -c 'import sys,json; print(",".join(json.load(sys.stdin).get("tags") or []))')
-  case ",$tags," in *",$TEAM,"*) ;; *) tags="${tags:+$tags,}$TEAM" ;; esac
-  body=$(TAGS="$tags" python3 -c 'import json,os; print(json.dumps({"tags": os.environ["TAGS"]}))')
-  out=$(api -X POST --data "$body" "$url/api/sessions/$NAME/tags") || die "UNREACHABLE: Ronin did not answer at $url" 5
+  body=$(printf '%s' "$live" | TEAM="$TEAM" python3 -c 'import sys,json,os; t=json.load(sys.stdin).get("tags") or []; print(json.dumps({"teams": t if os.environ["TEAM"] in t else t+[os.environ["TEAM"]]}))')
+  out=$(api -X PUT --data "$body" "$url/api/sessions/$NAME/teams") || die "UNREACHABLE: Ronin did not answer at $url" 5
   printf '%s' "$out" | grep -q '"ok":true' || die "REFUSED: $(printf '%s' "$out" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("error","?"))' 2>/dev/null)" 4
   did="$did team=$TEAM"
 fi

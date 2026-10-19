@@ -89,7 +89,7 @@ export function renderKindPills(host, preference, { lead = '' } = {}) {
   return { el: row, destroy: stop };
 }
 
-const treatment = (controls, launchShape, seats) => Object.freeze({ controls: Object.freeze(controls), launchShape, seats });
+const treatment = (launchShape, seats) => Object.freeze({ launchShape, seats });
 // THE TEAM PAGE A BARE METAL OR RONIN TEAM OPENS ON: an agent in workspace 1, the team's
 // configuration from the commons in workspace 2, the other agents in 3 and 4, with the
 // centre selector kept narrow so the agents have the room.
@@ -111,30 +111,28 @@ const agentsAroundConfiguration = ({ sessions: born = [], team = '' }) => {
   };
 };
 const CORE_PRESET_TREATMENTS = Object.freeze({
-  bare_metal: treatment(['sessions'], 'team', (receipt) => agentsAroundConfiguration(receipt)),
-  ronin_team: treatment(['sessions'], 'team', (receipt) => agentsAroundConfiguration(receipt)),
-  staff_my_codebase: treatment(['root'], 'team', () => ({ count: 2, seats: [] })),
-  develop_new_project: treatment(['root', 'workstreams'], 'team', ({ sessions = [] }) => ({ count: sessions.length >= 3 ? 4 : 2, seats: sessions.map((session, index) => ({ workspace: `workspace${index + 1}`, type: 'session', key: session.name })) })),
-  personal_assistant: treatment(['assistant_mode', 'specialists'], 'choice', ({ sessions = [] }) => ({ count: sessions.length >= 3 ? 4 : Math.max(1, sessions.length), seats: sessions.map((session, index) => ({ workspace: `workspace${index + 1}`, type: 'session', key: session.name })) })),
-  health_and_fitness: treatment(['roles'], 'team', ({ sessions = [], team = '' }) => ({ count: 4, seats: [
+  bare_metal: treatment('team', (receipt) => agentsAroundConfiguration(receipt)),
+  ronin_team: treatment('team', (receipt) => agentsAroundConfiguration(receipt)),
+  staff_my_codebase: treatment('team', () => ({ count: 2, seats: [] })),
+  develop_new_project: treatment('team', ({ sessions = [] }) => ({ count: sessions.length >= 3 ? 4 : 2, seats: sessions.map((session, index) => ({ workspace: `workspace${index + 1}`, type: 'session', key: session.name })) })),
+  personal_assistant: treatment('choice', ({ sessions = [] }) => ({ count: sessions.length >= 3 ? 4 : Math.max(1, sessions.length), seats: sessions.map((session, index) => ({ workspace: `workspace${index + 1}`, type: 'session', key: session.name })) })),
+  health_and_fitness: treatment('team', ({ sessions = [], team = '' }) => ({ count: 4, seats: [
     sessions.find((row) => /head[_ -]coach/i.test(row.name)) && { workspace: 'workspace1', type: 'session', key: sessions.find((row) => /head[_ -]coach/i.test(row.name)).name },
     team && { workspace: 'workspace2', type: 'team.commons', key: team, tab: 'wipeboard' },
     ...sessions.filter((row) => !/head[_ -]coach/i.test(row.name)).slice(0, 2).map((row, index) => ({ workspace: `workspace${index + 3}`, type: 'session', key: row.name })),
   ].filter(Boolean) })),
-  morning_brief: treatment(['schedule', 'roles'], 'team', ({ sessions = [], team = '', document = '' }) => ({ count: 4, seats: [
+  morning_brief: treatment('team', ({ sessions = [], team = '', document = '' }) => ({ count: 4, seats: [
     sessions[0] && { workspace: 'workspace1', type: 'session', key: sessions[0].name },
     team && { workspace: 'workspace2', type: 'team.commons', key: team, tab: 'cron-jobs' },
     document && { workspace: 'workspace3', type: 'document', key: document },
   ].filter(Boolean) })),
-  agent_editable_doc: treatment(['root', 'document'], 'agent', ({ sessions = [], document = '', root = '' }) => ({ count: 2, seats: [
+  agent_editable_doc: treatment('agent', ({ sessions = [], document = '', root = '' }) => ({ count: 2, seats: [
     sessions[0] && { workspace: 'workspace1', type: 'session', key: sessions[0].name },
     document && root && { workspace: 'workspace2', type: 'document', key: document, root, path: document },
   ].filter(Boolean) })),
 });
 
 export const isCorePreset = (handle) => Object.hasOwn(CORE_PRESET_TREATMENTS, String(handle || ''));
-export const bareMetalWorkspaceCount = (count) => count <= 1 ? 1 : count === 2 ? 2 : 4;
-export const presetActions = (handle) => ['user_message', 'launch', ...(isCorePreset(handle) ? CORE_PRESET_TREATMENTS[handle].controls : [])];
 function firstActivatableProvider(runtime = {}) {
   return (Array.isArray(runtime.providers) ? runtime.providers : []).find((provider) => {
     if (!provider?.id || provider.activated === true || provider.blocked) return false;

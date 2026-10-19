@@ -162,17 +162,7 @@ test('a provider the owner turned off is greyed with that word — never the fal
   }
 });
 
-test('the registry seeds name catalog rows by tier, and only rows this machine can launch', async () => {
-  await loadProviderCatalog();
-  const rows = providerCatalog().rows;
-  assert.equal(schema.seedRow('models:first', rows).model, 'native');
-  assert.equal(schema.seedRow('models:light', rows).model, 'native', 'no launchable light row: Native stands');
-  const allOn = rows.map((row) => ({ ...row, operational: true, selectable: true }));
-  assert.equal(schema.seedRow('models:first', allOn).model, 'native');
-  assert.equal(schema.seedRow('models:light', allOn).model, 'haiku');
-  assert.equal(schema.seedRow('models:first', []), null);
-  assert.equal(schema.initialOf({ seed: 'models:light' }, { record: {}, rows: allOn }), 'anthropic\thaiku');
-  assert.equal(schema.initialOf({ seed: 'models:first' }, { record: {}, rows: [] }), '');
+test('the registry names the picker a field draws', () => {
   assert.deepEqual(schema.pickerProvider({ options: 'models' }), { fixed: '' });
   assert.deepEqual(schema.pickerProvider({ options: 'models_for:openai' }), { fixed: 'openai' });
   assert.equal(schema.pickerProvider({ options: 'desk_profiles' }), null);

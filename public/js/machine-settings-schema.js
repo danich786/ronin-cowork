@@ -3,8 +3,8 @@
 /* THE SCHEMA VOCABULARY — the interpreter both settei surfaces share.
  *
  * The record's `schema` block (src/machine-settings.ts MACHINE_SETTINGS_SCHEMA) declares every askable
- * leaf as data; this module knows how to READ that vocabulary — paths, seeds, option
- * sources, value shapes, the omission rule — and deliberately knows NO field. A field
+ * leaf as data; this module knows how to READ that vocabulary — paths, option
+ * sources, value shapes — and deliberately knows NO field. A field
  * name appearing in this file would be the second declaration the registry exists to
  * end. The Machine Settings renderer owns furniture and layout; this
  * owns meaning.
@@ -17,20 +17,6 @@
 /** A provider·model value is one string so it survives a plain <option> and a text field. */
 export const pm = (s) => s.provider + '\t' + s.model;
 const splitPm = (v) => String(v || '').split('\t');
-
-/**
- * THE ROW A SEED NAMES, from the catalog alone. `models:first` is the catalog default of
- * the first provider this machine can launch; `models:light` is the first launchable row
- * in the light tier — the cheap seat Mika should take — else the first. Null when the
- * machine can launch nothing: a seed never names a model the box cannot run.
- */
-export function seedRow(seed, rows = []) {
-  const on = (Array.isArray(rows) ? rows : []).filter((row) => row?.operational);
-  if (!on.length) return null;
-  const first = on.find((row) => row.provider === on[0].provider && row.default) ?? on[0];
-  if (seed === 'models:light') return on.find((row) => row.tier === 'light') ?? first;
-  return first;
-}
 
 /** One path into the record, or undefined. Paths are the registry's own. */
 export function getPath(obj, path) {
@@ -48,17 +34,6 @@ export function currentOf(f, ctx) {
     return v.provider && v.model ? pm(v) : '';
   }
   return String(v);
-}
-
-/** What the setup view starts a control on: the answer if given, else the seed. */
-export function initialOf(f, ctx) {
-  const cur = currentOf(f, ctx);
-  if (cur !== '') return cur;
-  if (f.seed === 'home') return ctx.home ?? '';
-  if (f.seed === 'models:first' || f.seed === 'models:light') { const row = seedRow(f.seed, ctx.rows); return row ? pm(row) : ''; }
-  if (f.seed === 'sessions:estimate') return String(ctx.sessionEstimate ?? 0);
-  if (f.seed === 'open' || f.seed === 'control') return f.seed;
-  return '';
 }
 
 /**
@@ -82,13 +57,6 @@ export function pickerProvider(f) {
   return null;
 }
 
-/** Would this value be omitted from a save? The one rule the registry ever declares. */
-function omitted(f, v) {
-  if (f.omit !== 'blank') return false;
-  if (f.shape === 'provider-model') return !splitPm(v)[1];
-  return !String(v ?? '').trim();
-}
-
 /** One field's value, shaped for the wire. */
 function shaped(f, v) {
   if (f.shape === 'provider-model') {
@@ -106,31 +74,6 @@ function land(body, key, value) {
   let o = body;
   for (const p of parts.slice(0, -1)) o = o[p] ??= {};
   o[parts[parts.length - 1]] = value;
-}
-
-/**
- * Answers in, requests out — one body per family, so a route is called ONCE however
- * many fields feed it, which is what makes adding a field to an existing family free.
- */
-export function toRequests(schema, values) {
-  const byFamily = new Map();
-  const body = (fam) => {
-    if (!byFamily.has(fam)) byFamily.set(fam, {});
-    return byFamily.get(fam);
-  };
-
-  for (const f of schema.fields) {
-    const v = values[f.id];
-    if (v === undefined || omitted(f, v)) continue;
-    land(body(f.lands.family), f.lands.key, shaped(f, v));
-  }
-
-  return [...byFamily.entries()].map(([fam, json]) => ({
-    family: fam,
-    route: '/api/machine-settings',
-    method: 'PATCH',
-    json: { family: fam, value: json },
-  }));
 }
 
 /** The request for ONE field's answer — how ⚙ saves a row by itself. */

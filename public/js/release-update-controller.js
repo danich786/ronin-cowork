@@ -2,10 +2,6 @@
 import { request } from './request.js';
 import { t } from './lexicon.js';
 
-export function releaseIdentity(version) {
-  return version?.release || (version?.commit ? `Dev checkout · ${version.commit}${version.dirty ? ' (dirty)' : ''}` : 'Version unavailable');
-}
-
 export function packageReading(fact) {
   if (!fact?.installed) return { state: 'unknown', text: 'Installed version unavailable · Update status unavailable', available: false };
   if (!fact.latest || typeof fact.upToDate !== 'boolean') return { state: 'unknown', text: `Installed ${fact.installed} · Update status unavailable`, available: false };

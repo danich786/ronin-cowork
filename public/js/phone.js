@@ -358,14 +358,13 @@ export async function buildPhone() {
   // Ask the operator which optional surfaces are plugged in BEFORE a tile is born, the
   // way main.js does: `stream:false` means the 🔓 views are off and every tile is 🔒.
   {
-    const [v, installed] = await Promise.all([request('/api/version'), request('/api/installed', { cache: 'no-store' })]);
+    const v = await request('/api/version');
     if (v.ok && v.data.stream === false) {
       S.streamOff = true;
       S.locked = true;
       S.output = 'locked';
     }
     if (v.ok && Array.isArray(v.data.services)) S.services = v.data.services;
-    if (installed.ok) S.installedServices = installed.data?.services || null;
   }
   // A tile address mounts its tile now: the terminal attaches by name and needs no list.
   if (route.screen === 'terminal') guard('phone paint', render);

@@ -15,4 +15,3 @@ export function setupSteps(payload) {
 }
 
 export const firstUnansweredSetupStep = (payload) => setupSteps(payload).find((step) => !step.answered)?.id || '';
-export const setupIsComplete = (payload) => firstUnansweredSetupStep(payload) === '';

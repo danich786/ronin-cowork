@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { firstUnansweredSetupStep, setupIsComplete, setupSteps } from '../public/js/setup-progress.js';
+import { firstUnansweredSetupStep, setupSteps } from '../public/js/setup-progress.js';
 
 test('Setup progress paints only the server-owned five-step payload', () => {
   const progress = { steps: [
@@ -9,12 +9,11 @@ test('Setup progress paints only the server-owned five-step payload', () => {
     { id: 'password', number: 5, answered: true }, { id: 'unknown', number: 6, answered: true },
   ] };
   assert.deepEqual(setupSteps(progress).map(({ id, number, answered }) => ({ id, number, answered })), progress.steps.slice(0, 5));
-  assert.equal(setupIsComplete(progress), true);
+  assert.equal(firstUnansweredSetupStep(progress), '');
 });
 
 test('first unanswered follows the payload and never reads machine readiness', () => {
   const progress = { steps: [{ id: 'provider', answered: true }, { id: 'register', answered: true }] };
   assert.equal(firstUnansweredSetupStep(progress), 'workspace');
-  assert.equal(setupIsComplete(progress), false);
   assert.equal(firstUnansweredSetupStep({ activated_count: 4 }), 'provider');
 });

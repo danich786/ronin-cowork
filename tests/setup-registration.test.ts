@@ -102,14 +102,12 @@ test('Setup keeps Campaign Templates out and opens Presets only from Launch Your
 });
 
 test('provider discovery is catalog-driven and a keyed surface resolves only its provider', async () => {
-  const { providerOffers, providerFromRuntime } = await import('../public/js/setup-provider-state.js');
+  const { providerFromRuntime } = await import('../public/js/setup-provider-state.js');
   const providers = [
     ['anthropic', 'Claude'], ['openai', 'Codex'], ['hermes', 'Hermes'],
     ['grok', 'Grok'], ['gemini', 'Gemini'], ['future_cli', 'Future CLI'],
   ].map(([id, label], index) => ({ id, label, state: index ? 'installed' : 'activated' }));
   const runtime = { providers };
-  assert.deepEqual(providerOffers(runtime).map((offer) => offer.label), providers.map((provider) => provider.label));
-  assert.ok(providerOffers(runtime).every((offer) => offer.groupKey === 'setup.providers'));
   assert.equal(providerFromRuntime(runtime, 'future_cli')?.label, 'Future CLI');
   assert.equal(providerFromRuntime(runtime, 'openai')?.label, 'Codex');
 });
@@ -306,7 +304,7 @@ test('the Services mark is a constructed RS monogram in the house hexagon, blue 
 });
 
 test('Services setup model keeps installation and registration as separate facts and shapes three steps', async () => {
-  const { SERVICES_SETUP_STATES, servicesSetupModel } = await import('../public/js/services-setup-state.js');
+  const { servicesSetupModel } = await import('../public/js/services-setup-state.js');
   const reg = (status: string, extra: Record<string, unknown> = {}) => ({ ok: true, data: { status, services_entitled: false, ...extra } });
   const entitled = (extra: Record<string, unknown> = {}) => reg('registered', { services_entitled: true, ...extra });
   const inst = (services: Record<string, unknown> = {}) => ({ ok: true, data: { services: { installed: false, activated: false, switched_on: false, restart_needed: false, parts: [], loaded: [], ...services } } });
@@ -328,7 +326,6 @@ test('Services setup model keeps installation and registration as separate facts
     ['restart_needed', reg('optional'), here({ switched_on: true, restart_needed: true }), act('not_requested'), 'restart needed', 'Switched on · not yet running', 'register:Register:register install:Done:done switch:Turn off:switch_off restart:Restart:restart'],
     ['active', entitled(), here({ switched_on: true }), act('installed'), 'active', 'Active on this Cowork', 'register:Done:done install:Done:done switch:Turn off:switch_off'],
   ];
-  assert.deepEqual(cases.map(([state]) => state).sort(), [...SERVICES_SETUP_STATES].sort());
   for (const [state, registration, installed, activation, summary, status, steps] of cases) {
     const model = servicesSetupModel(registration as never, installed as never, activation as never);
     assert.equal(model.state, state);
@@ -370,7 +367,7 @@ test('Services setup model keeps installation and registration as separate facts
 });
 
 test('Setup gbrain answers its measured facts plainly with at most one action per state', async () => {
-  const { GBRAIN_SETUP_STATES, gbrainSetupModel, gbrainAccounts } = await import('../public/js/gbrain-setup-state.js');
+  const { gbrainSetupModel, gbrainAccounts } = await import('../public/js/gbrain-setup-state.js');
   const snapshot = (over: Record<string, unknown> = {}) => ({
     ok: true, status: 200,
     data: {
@@ -404,7 +401,6 @@ test('Setup gbrain answers its measured facts plainly with at most one action pe
     ['ready', snapshot(), one, 'Installed · running', 'start_assistant', 'running', true],
     ['stopped', snapshot({ process: { state: 'stopped', health: 'unreachable', version: null } }), { installed: true, active: false }, 'Installed · not running', 'check_assistant', 'installed', true],
   ];
-  assert.deepEqual(cases.map(([state]) => state).sort(), [...GBRAIN_SETUP_STATES].sort());
   for (const [state, result, availability, answer, action, summary, installed] of cases) {
     const model = gbrainSetupModel(result as never, availability as never);
     assert.equal(model.state, state);

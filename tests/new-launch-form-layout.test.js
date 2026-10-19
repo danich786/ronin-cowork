@@ -154,7 +154,6 @@ test('collapsible steps expose one full-width disclosure row and Team defaults u
   assert.match(team, /const stepKit = createStep\(\{ n: 6, key: 'kit', title:[^}]+\}\);/);
   assert.match(team, /const FOLDS = \['lead'\]/);
   assert.doesNotMatch(team, /stepDefaults\.body\.append/);
-  assert.doesNotMatch(team, /createBand/);
   assert.match(agents, /if \(editor\) host\.append\(paintEditor\(\)\);[\s\S]*createAction\(\{ label:[\s\S]*＋ Add Agent/);
 });
 
@@ -182,7 +181,7 @@ test('Add Agent confirms a draft into a compact row with the one selector utilit
   assert.doesNotMatch(agents, /forms\.provider_off|forms\.provider_turned_off|machine\?\.state|modelWord\([^)]*\)\.split/);
   assert.match(agents, /box\.append\(actions\.el, field/);
   assert.doesNotMatch(agents, /wk-button/);
-  assert.doesNotMatch(agents, /dialRow|providerModelPair|type = 'checkbox'|aria-pressed/);
+  assert.doesNotMatch(agents, /providerModelPair|type = 'checkbox'|aria-pressed/);
   assert.match(agents, /provider: row\.provider/);
   assert.match(agents, /model: row\.model/);
   assert.match(agents, /instructions: row\.assignment\.trim\(\)/);
@@ -231,7 +230,7 @@ test('New Team routes each selector region through ask() and leaves Templates br
   assert.match(form, /tierWord\(row\.tier\)/);
   assert.doesNotMatch(form, /forms\.provider_off|forms\.provider_turned_off|machine\?\.state|modelWord\([^)]*\)\.split/);
   assert.match(form, /templateTray\(offered\(\)/);
-  assert.doesNotMatch(form, /kindTiles|providerModelPair|mandateSelect|dialRowMulti|wayTiles|bookShelves|createWhereItWorks|fs-routine/);
+  assert.doesNotMatch(form, /kindTiles|providerModelPair|createWhereItWorks|fs-routine/);
   assert.doesNotMatch(form, /draft\.dial|value\('dial'\)/, 'New Team stores the fixed Control default without presenting or seeding a dial');
 });
 
