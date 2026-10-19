@@ -18,11 +18,7 @@ const layout = (name, surfaces) => {
   return el;
 };
 
-const createSessionGrid = (tiles = null) => layout('session-grid', { tiles });
 const createExplorerLayout = (rail = null, content = null) => layout('explorer-layout', { rail, content });
-// One Surface: the Team definition. New Team creates a durable record and hands the
-// workspace to the Team it made, so there is no second stage and no transaction region.
-const createNewTeamLayout = (definition = null) => layout('new-team-layout', { definition });
 
 /**
  * THE MANAGED WORKBENCH — N slots, arranged.
@@ -222,7 +218,5 @@ export function createWorkbenchLayout(options = {}) {
 }
 
 export const WorkspaceLayouts = Object.freeze({
-  createSessionGrid,
   createExplorerLayout,
-  createNewTeamLayout,
 });

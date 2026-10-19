@@ -185,8 +185,6 @@ test('Register presents one open profile flow with card choices and anonymous de
   assert.match(source, /registration_confirmation', 'Registration confirmation'/);
   assert.match(source, /Required only if you want to install Ronin Services\./);
   assert.match(source, /identity\.dataset\.tone = current\?\.status === 'pending' \? 'pending' : 'ok'/);
-  assert.match(css, /\.setup-register-compact \{ container: setup-register \/ inline-size;/, 'Register sizes its pairs from its own width');
-  assert.match(css, /@container setup-register \(min-width: 40rem\)/);
   assert.match(css, /\.setup-register-group \{[^}]*border-top: var\(--edge-2\) solid var\(--kaki\)/, 'groups open with a kaki rule');
   assert.doesNotMatch(css, /\.setup-register-group \{[^}]*(?:border: var\(--edge\)|background: var\(--panel\))/, 'groups are not boxes');
   for (const label of ['With email', 'Anonymous', 'No thank you', 'Work from anywhere', 'Multiple providers without lock-in', 'Agents with team coordination skills']) assert.match(source, new RegExp(label));

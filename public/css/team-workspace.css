@@ -1,40 +1,17 @@
 
 @layer app {
-  .tw-cards[hidden], .tw-config[hidden] { display: none; }
-
-  .tw-cards { display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-4); }
-  .tw-cards [data-inert='true'] { cursor: default; }
-  .tw-cards > [draggable='true'] { cursor: grab; }
-  .tw-selector-group { border-bottom: var(--edge) solid var(--line); }
-  .tw-selector-group > summary { padding: var(--space-2) 0; color: var(--fg-strong); cursor: pointer; }
-  .tw-selector-group-cards { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-2) 0 var(--space-4); }
-  .tw-selector-group-cards > [draggable='true'] { cursor: grab; }
-  .league-drag-card { cursor: grab; }
-  .team-templates { display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-5); overflow-y: auto; }
-  .team-template-add { display: flex; gap: var(--space-3); }
-  .team-template-add input { flex: 1 1 auto; min-width: 0; }
-  .team-template-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
-  .team-template-card { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-4); border: var(--edge) solid var(--line); border-radius: var(--radius-sm); background: var(--raise); }
-  .team-template-actions { display: flex; gap: var(--space-2); }
-  .team-template-note, .team-template-empty { color: var(--muted); }
-
-  .tw-commons-card { padding-top: var(--space-2); padding-bottom: var(--space-2); }
+  .tw-config[hidden] { display: none; }
 
   .tw-terminal[data-drop-ready='true'] { outline: var(--edge-2) solid var(--kaki); outline-offset: calc(-1 * var(--edge-2)); }
 
   .tw-blank { height: 100%; border: 0; border-radius: 0; background: transparent; }
-  .tw-blank-word { margin: auto; font-size: var(--text-3); color: var(--muted); }
-
-  .tw-new-body { flex: 1; min-height: 0; overflow-y: auto; }
-
-  .tw-new-body .home-null { display: flex; }
 
   .tw-note { padding: var(--space-6) var(--space-7); color: var(--muted); font-size: var(--text-3); }
   .team-roster-detail { margin: var(--space-4); overflow-y: auto; }
   .home-live { width: 6px; height: 6px; justify-self: center; border-radius: var(--radius-round); background: var(--line-2); }
   .home-live[data-stance='working'], .home-live[data-stance='replying'] { background: var(--ok-2); }
   .home-live[data-stance='asking'], .home-live[data-stance='awaiting_you'] { background: var(--kaki); }
-  .team-roster-detail .home-maxrow, .team-roster-detail .home-group-add { display: none; }
+  .team-roster-detail .home-group-add { display: none; }
   /* The restored roster's ⑂ desk column is always empty now (js/desks.js); its track goes so the
      names keep their width in a workspace narrower than the row's fixed columns. */
   .team-roster-detail .home-row { grid-template-columns: var(--hr-mark) minmax(0, 1fr) var(--hr-shingo) var(--hr-status) var(--hr-ctx) var(--hr-stack); }
@@ -125,19 +102,10 @@
   .tw-config-actions { display: flex; justify-content: flex-end; align-items: center; gap: var(--space-4); }
   .tw-config-status, .tw-config-empty { color: var(--muted); }
   .tw-config-form > .ask { max-width: 100%; }
-  .tw-config-note { margin: 0; color: var(--muted); line-height: 1.5; }
-  .tw-worktrees-mode { grid-column: 1 / -1; display: flex; flex-direction: column; gap: var(--space-1); border-left: var(--edge-2) solid var(--kiiro); background: color-mix(in srgb, var(--panel) 90%, var(--kiiro)); padding: var(--space-3) var(--space-4); }
-  .tw-worktrees-mode b { color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
-  .tw-worktrees-mode strong { color: var(--fg-strong); }
-  .tw-worktrees-mode small { color: var(--muted); line-height: 1.4; }
 
   .tw-config, .league-team-edit-content { font-size: var(--form-input); }
-  .tw-worktrees-mode b { font-size: var(--form-key); }
-  .tw-worktrees-mode strong, .tw-config-check span, .league-team-member-words strong, .league-team-add select, .tw-config-actions { font-size: var(--form-input); }
-  .tw-config-note, .tw-worktrees-mode small, .tw-config-status, .league-team-member-words span, .league-team-empty { font-size: var(--form-note); }
-  .tw-config-check { display: flex; align-items: center; gap: var(--space-3); color: var(--fg-strong); }
-  .tw-config-check input { accent-color: var(--accent); }
-
+  .league-team-member-words strong, .league-team-add select, .tw-config-actions { font-size: var(--form-input); }
+  .tw-config-status, .league-team-member-words span, .league-team-empty { font-size: var(--form-note); }
 
   .league-team-edit-content { display: flex; flex-direction: column; gap: var(--space-10); }
   /* The Team opens beside its stone top-down: head, Agents, Work, Configuration. One
@@ -175,15 +143,9 @@
   .league-team-roster { display: flex; flex-direction: column; min-height: 0; }
   .league-team-roster-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-4); border-bottom: var(--edge) solid var(--line-2); padding-bottom: var(--space-3); }
   .league-team-roster-title { margin: 0; color: var(--fg-strong); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
-  .league-team-people-tools, .league-team-view-toggle { display: flex; align-items: center; gap: var(--space-2); }
+  .league-team-people-tools { display: flex; align-items: center; gap: var(--space-2); }
   .league-team-density { inline-size: var(--space-8); padding-inline: 0; }
   .league-team-member[data-selected='true'] { box-shadow: inset var(--edge-2) 0 var(--kaki); background: var(--raise); }
-  .league-team-org { display: grid; gap: var(--space-6); }
-  .league-team-org-leads { position: relative; width: 100%; margin-inline: auto; }
-  .league-team-org-leads::after { position: absolute; inset-block-end: calc(-1 * var(--space-6)); inset-inline-start: 50%; block-size: var(--space-6); border-inline-start: var(--edge) solid var(--line-2); content: ''; }
-  .league-team-org-unplaced { border-top: var(--edge) solid var(--line-2); padding-top: var(--space-4); }
-  .league-team-org-unplaced h4 { margin: 0; color: var(--fg-strong); }
-  .league-team-org-unplaced > p { margin: var(--space-1) 0 var(--space-3); color: var(--muted); font-size: var(--form-note); }
   .league-team-lead-empty { border: var(--edge) dashed var(--line-2); background: var(--well); padding: var(--space-4); }
   .league-team-lead-empty > strong { color: var(--fg-strong); }
   .league-team-lead-empty > p { margin: var(--space-2) 0 var(--space-4); color: var(--muted); }
@@ -220,11 +182,9 @@
   .league-team-add { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-3); margin-top: var(--space-5); }
   .league-team-add select { min-width: 0; border: var(--edge) solid var(--line-2); border-radius: var(--radius-sm); background: var(--bg-2); color: var(--fg); padding: var(--space-3) var(--space-4); font: inherit; }
 
-
   .tw-docs { display: flex; height: 100%; }
   .tw-docs .dc-empty { color: var(--fg-strong); font-size: var(--text-4); }
   .tw-docs .dc-work-record-note { margin-top: var(--space-2); border-top: var(--edge) solid var(--line); padding-top: var(--space-4); color: var(--fg); }
-
 
   .twb { display: flex; flex-direction: column; min-height: 0; height: 100%; }
   .twb-thread { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-5) var(--space-6); }
@@ -237,39 +197,8 @@
   .twb-compose { display: flex; gap: var(--space-3); padding: var(--space-4) var(--space-6); border-top: var(--edge) solid var(--line-2); }
   .twb-compose textarea { flex: 1 1 auto; resize: vertical; }
 
-
-
-
-  .aa-form { display: flex; flex-direction: column; gap: var(--space-6); margin-bottom: var(--space-7); font-size: var(--text-3); }
-  .aa-control { box-sizing: border-box; width: 100%; min-width: 0; }
-
-  .aa-short-control { height: calc(var(--space-11) + (2 * var(--space-2))); }
-  .aa-form textarea { min-height: calc(var(--space-12) * 2); resize: vertical; }
-
-  .aa-top { display: grid; grid-template-columns: repeat(auto-fit, minmax(calc(var(--space-12) * 6), 1fr)); gap: var(--space-6); align-items: start; }
   .aa-col { display: flex; flex-direction: column; gap: var(--space-6); min-width: 0; }
   .aa-col[hidden] { display: none; }
-  .aa-lead-choice { display: flex; align-items: flex-start; gap: var(--space-3); border: var(--edge) solid var(--line-2); border-radius: var(--radius-xs); background: var(--well); color: var(--fg); padding: var(--space-3) var(--space-4); cursor: pointer; }
-  .aa-lead-choice input { flex: none; margin-top: var(--space-1); accent-color: var(--kaki); }
-  .aa-lead-choice span { display: grid; gap: var(--space-1); }
-  .aa-lead-choice b { color: var(--fg-strong); font-size: var(--text-3); }
-  .aa-lead-choice small { color: var(--muted); font-size: var(--text-2); line-height: 1.4; }
-  .aa-head { margin: var(--space-3) 0 0; color: var(--muted); font-size: var(--text-1); text-transform: uppercase; letter-spacing: .07em; }
-  .aa-deskline { border-left: var(--edge-2) solid var(--kiiro); background: color-mix(in srgb, var(--panel) 90%, var(--kiiro)); padding: var(--space-3) var(--space-4); color: var(--muted); display: flex; flex-direction: column; gap: var(--space-1); }
-  .aa-deskline b { color: var(--muted); font-size: var(--text-2); text-transform: uppercase; letter-spacing: .04em; }
-  .aa-deskline strong { color: var(--fg-strong); font-size: var(--text-3); }
-  .aa-deskline small { font-size: var(--text-2); line-height: 1.4; }
-  .aa-worktrees-toggle { align-self: flex-start; }
-  .aa-deskline[hidden] { display: none; }
-  .aa-alternative { margin: 0 0 var(--space-4); color: var(--muted); font-size: var(--text-2); }
-  .aa-alternative a { color: var(--accent); }
-  .aa-box { width: var(--space-7); height: var(--space-7); border: var(--edge) solid var(--line-3); background: var(--panel); }
-
-  .aa-fixed { display: grid; grid-template-columns: calc(var(--space-12) * 2.5) minmax(0, 1fr); gap: var(--space-2) var(--space-5); align-items: baseline; margin: 0; border-top: var(--edge) solid var(--line); padding-top: var(--space-6); }
-  .aa-fixed dt { color: var(--muted); font-size: var(--text-1); text-transform: uppercase; letter-spacing: .06em; }
-  .aa-fixed dd { margin: 0; color: var(--fg-strong); font-size: var(--text-2); min-width: 0; }
-  .aa-from { color: var(--muted); font-size: var(--text-1); margin-left: var(--space-3); }
-
 
 }
 

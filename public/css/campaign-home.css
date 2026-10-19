@@ -152,26 +152,13 @@
   .ch-update-answer[data-state='failed'] { color: var(--bad); }
   .ch-update-answer[data-state='available'] { color: var(--accent); }
 
-
-  .cv-view {
-    --cv-blank-h: 120px;
-    --cv-cup: 0;
-    height: 100%;
-    min-height: 0;
-    overflow: hidden;
-  }
-  .cv-surface, .cv-blank { display: flex; flex-direction: column; min-height: 0; }
-  .cv-blank { min-height: var(--cv-blank-h); }
-  .cv-blank-content { display: flex; align-items: center; justify-content: center; }
-  .cv-blank-word { margin: 0; color: var(--dim); font-size: var(--text-3); }
-
+  .cv-surface { display: flex; flex-direction: column; min-height: 0; }
 
   .cv-body { display: flex; flex-direction: column; gap: var(--space-6); padding: var(--space-8); }
   .cv-field { display: flex; flex-direction: column; gap: var(--space-2); }
   .cv-input {
     padding: var(--space-4);
     border: var(--edge) solid var(--line-2);
-    border-radius: var(--cv-cup);
     background: var(--well);
     color: var(--fg);
     font-family: var(--font-ui);
@@ -179,7 +166,6 @@
   }
   .cv-input:focus { border-color: var(--accent); outline: none; }
   .cv-input[readonly] { color: var(--muted); background: var(--bg-2); cursor: default; }
-  .cv-cards { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-5); }
   .cv-actions { display: flex; justify-content: flex-end; gap: var(--space-4); }
   .cv-button {
     padding: var(--space-3) var(--space-6);
@@ -192,25 +178,10 @@
   }
   .cv-button[data-primary='true'] { border-color: var(--accent); color: var(--accent); }
   .cv-button:hover { border-color: var(--accent); color: var(--fg-strong); }
-  .cv-empty { margin: 0; padding: var(--space-5); font-size: var(--text-3); color: var(--muted); }
   .cv-note { margin: 0; font-size: var(--text-3); line-height: 1.5; color: var(--muted); }
-  .cv-pre { margin: 0; padding: var(--space-4); border-radius: var(--radius-xs); background: var(--well); color: var(--fg); font-size: var(--text-2); line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
   .cv-eyebrow { font-size: var(--text-2); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-  .cv-body > .cv-cards { padding: 0; }
-
-  .cv-table { width: 100%; border-collapse: collapse; font-size: var(--text-3); }
-  .cv-table th { text-align: left; padding: var(--space-2) var(--space-3); color: var(--muted); font-weight: 600; border-bottom: var(--edge) solid var(--line); }
-  .cv-table td { padding: var(--space-3); vertical-align: middle; border-bottom: var(--edge) solid var(--line); }
-  .cv-table td b { color: var(--fg-strong); font-weight: 600; }
-  .cv-table .cv-input { width: 100%; }
-  .cv-from { display: block; margin-top: var(--space-1); font-size: var(--text-2); color: var(--muted); }
 
   .cv-presets { display: flex; flex-direction: column; gap: var(--space-3); padding-bottom: var(--space-5); border-bottom: var(--edge) solid var(--line); }
-  .cv-install { display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-3); }
-  .cv-install .cv-actions { justify-content: flex-start; align-items: center; }
-  .cv-install .cv-input { max-width: 28ch; }
-  .cv-sell summary { cursor: pointer; font-size: var(--text-2); color: var(--muted); }
-  .cv-sell ul { margin: var(--space-2) 0 0; padding-left: var(--space-6); font-size: var(--text-3); line-height: 1.5; color: var(--fg); }
   .cv-pills { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
   .cv-pill {
     display: inline-flex; align-items: center; gap: var(--space-2);
@@ -227,25 +198,10 @@
   .cv-choice-name { font-weight: 600; color: var(--fg-strong); }
   .cv-choice-why { margin: 0; font-size: var(--text-3); line-height: 1.5; color: var(--muted); }
 
-  .cv-switch { display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--text-3); color: var(--fg-strong); cursor: pointer; }
-  .cv-switch input { accent-color: var(--accent); }
-  .cv-routine-control { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); }
   .cv-defaults-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-5); }
   .cv-defaults-form > .ask,
   .cv-defaults-form > .cv-default-field { grid-column: 1 / -1; }
   .cv-default-field { display: flex; flex-direction: column; gap: var(--space-2); color: var(--muted); font-size: var(--text-3); }
-  .cv-default-label { color: var(--fg-strong); font-weight: 600; }
-  .cv-multi { position: relative; }
-  .cv-multi > summary { list-style-position: inside; cursor: pointer; color: var(--fg); }
-  .cv-multi-menu {
-    position: absolute; z-index: 2; inset: calc(100% + var(--space-1)) 0 auto;
-    display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-3);
-    border: var(--edge) solid var(--line-2); border-radius: var(--cv-cup); background: var(--well);
-    box-shadow: var(--shadow-menu); color: var(--fg);
-  }
-  .cv-multi-option { display: flex; align-items: center; gap: var(--space-2); cursor: pointer; }
-  .cv-multi-option input { accent-color: var(--accent); }
   .cv-default-field textarea { min-height: calc(var(--space-12) * 2); resize: vertical; }
   .cv-default-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; align-items: center; gap: var(--space-4); }
-  .cv-state { font-size: var(--text-3); color: var(--muted); }
 }

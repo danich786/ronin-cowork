@@ -104,7 +104,6 @@
   .ask[data-density='tight'] .ask-label { font-size: var(--text-2); line-height: 1; }
   .ask[data-density='tight'] .ask-reading { line-height: 1.2; }
   .ask-tray[data-density='tight'] { gap: var(--space-3); padding: var(--space-4); }
-  .ask[data-density='tight'] .ask-extras { gap: var(--space-1); }
 
   .ask-stone:focus-visible, .ask-opt:focus-visible, .ask-filter:focus-visible { outline: var(--edge-2) solid var(--kaki); outline-offset: 1px; }
   @media (prefers-reduced-motion: reduce) { .ask-track, .ask-track::after { transition: none; } }

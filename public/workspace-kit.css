@@ -42,7 +42,6 @@
   .wk-terminal-host { width: 100%; height: 100%; min-width: 0; min-height: 0; }
   .wk-terminal-host > .tile { width: 100%; height: 100%; }
   .wk-terminal-host[data-mode='reduced'] .tile-head { display: none; }
-  .wk-league-board [data-surface='cards'] { display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); gap: var(--space-6); align-content: start; }
   .wk-workbench-host { display: flex; height: 100%; min-height: 0; gap: var(--space-3); }
   .wk-workbench-host > .wk-workbench-layout { flex: 1 1 auto; min-width: 0; position: relative; }
   .wk-workbench-layout > .wk-layout-surface { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
@@ -111,7 +110,6 @@
   .wk-view-leading:empty { display: none; }
   .wk-view-actions:empty { display: none; }
 
-  .wk-view-name:empty { display: none; }
   .wk-tab-name { width: 12rem; max-width: 30vw; height: 1.75rem; padding: 0 var(--space-3); border: var(--edge) solid var(--line-2); border-radius: var(--radius-xs); background: var(--well); color: var(--fg-strong); font: inherit; font-size: var(--text-3); }
   .wk-tab-name::placeholder { color: var(--muted); }
   .wk-tab-name:focus-visible { outline: var(--edge) solid var(--focus-ring); outline-offset: 1px; }
@@ -200,7 +198,6 @@
   .wk-layout-surface[data-width='compact'] .wk-card { padding: var(--space-3); }
   .wk-layout-surface[data-width='compact'] .wk-card-summary, .wk-layout-surface[data-width='compact'] .wk-card-meta { display: none; }
   .wk-layout-surface[data-width='compact'] .wk-card-heading { font-size: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .wk-new-team-layout { grid-template-columns: minmax(0, 1fr); align-items: start; }
   /* PHONE FIRST PAINT. At phone width the stacked shape is the default for every
      workbench layout, the pre-script boot skeleton in index.html included, so the first
      frame the browser paints is already the phone presentation. No script-set attribute
@@ -211,7 +208,6 @@
 
   @media (max-width: 680px) {
     body:has([data-workspace-view='setup']:not([hidden])) #bar .brand-word { display: none; }
-    .wk-league-board [data-surface='cards'] { grid-template-columns: 1fr; }
     .wk-workbench-host { flex-direction: column; }
     .wk-workbench-splitter { display: none; }
     .wk-workbench-layout:not([data-responsive='desktop']) { display: flex; flex-direction: column; overflow: auto; scroll-snap-type: y proximity; }
@@ -219,7 +215,5 @@
     .wk-workbench-layout:not([data-responsive='desktop'])[data-workbench-profile='setup'] { scroll-snap-type: none; }
     .wk-workbench-layout:not([data-responsive='desktop'])[data-workbench-profile='setup'] > .wk-layout-surface { flex: 0 0 auto; width: 100%; scroll-snap-align: none; }
     .wk-workbench-layout[data-workbench-profile='setup'] .wk-workbench-column { height: calc(100dvh - var(--row-head) - var(--space-6)); min-height: 0; }
-    .wk-new-team-layout { display: flex; flex-direction: column; overflow: auto; }
-    .wk-new-team-layout > .wk-layout-surface { flex: 0 0 auto; width: 100%; }
   }
 }
