@@ -13,7 +13,7 @@
  * Reading: the teams push, each roster row carrying its board and items (teams-api.ts),
  * through the Team projection (team-controller.js) with the sessions push for Agents. The
  * browser requests nothing; a write shows itself when the rosters are pushed again.
- * teams-overlay-rows.js is the pure mapping. Both surfaces keep the ordinary contract
+ * teams-surface-rows.js is the pure mapping. Both surfaces keep the ordinary contract
  * ({ el, show, destroy }); destroy lifts the subscription.
  */
 import { WorkspaceKit } from './workspace-kit.js';
@@ -22,14 +22,14 @@ import { createPhalanx } from './phalanx.js';
 import { ask } from './ask.js';
 import { membersOfTeam, subscribe, teamsFromState } from './team-controller.js';
 import { openWorkspaceTab } from './workspace.js';
-import { teamsOverlayRows, workspaces } from './teams-overlay-rows.js';
+import { teamsRows, workspaces } from './teams-surface-rows.js';
 import { t } from './lexicon.js';
 
 const SHOW = ['theme', 'state', 'agents', 'items'];
 const launch = (team) => openWorkspaceTab('team', team);
 const rosters = () => teamsFromState().filter((team) => team.durable);
-const words = () => ({ theme: t('teams_overlay.theme', 'Theme'), state: t('teams_overlay.state', 'State'), agents: t('league.agents', 'Agents'), items: t('teams_overlay.items', 'Items') });
-const rowOf = (id) => teamsOverlayRows(rosters(), membersOfTeam).find((entry) => entry.id === id);
+const words = () => ({ theme: t('teams_surface.theme', 'Theme'), state: t('teams_surface.state', 'State'), agents: t('league.agents', 'Agents'), items: t('teams_surface.items', 'Items') });
+const rowOf = (id) => teamsRows(rosters(), membersOfTeam).find((entry) => entry.id === id);
 
 /** WS1: the stones of Teams under the Workspace and Show questions. A stone pressed calls `onOpen(name)`. */
 export function createTeamsSurface({ onOpen = () => {} } = {}) {
@@ -42,7 +42,7 @@ export function createTeamsSurface({ onOpen = () => {} } = {}) {
     const node = ninMark('wk-launch-mark teams-launch');
     node.removeAttribute('aria-hidden');
     node.setAttribute('role', 'link');
-    node.setAttribute('aria-label', t('teams_overlay.launch', 'Launch'));
+    node.setAttribute('aria-label', t('teams_surface.launch', 'Launch'));
     node.addEventListener('click', (event) => { event.stopPropagation(); launch(team); });
     return node;
   };
@@ -55,8 +55,8 @@ export function createTeamsSurface({ onOpen = () => {} } = {}) {
 
   const surface = createSurface({ label: t('campaign.coworks', 'Teams'), className: 'teams-surface' });
   const filter = ask([{ fields: [
-    { key: 'root', label: t('teams_overlay.workspace', 'Workspace'), blank: t('teams_overlay.all', 'All'), many: true, options: [] },
-    { key: 'show', label: t('teams_overlay.show', 'Show'), many: true, options: SHOW.map((key) => ({ v: key, l: word[key] })) },
+    { key: 'root', label: t('teams_surface.workspace', 'Workspace'), blank: t('teams_surface.all', 'All'), many: true, options: [] },
+    { key: 'show', label: t('teams_surface.show', 'Show'), many: true, options: SHOW.map((key) => ({ v: key, l: word[key] })) },
   ] }], { value: { root: roots, show }, density: 'tight', onChange: ({ root: nextRoots, show: nextShow }) => {
     roots = (nextRoots || []).map(String);
     show = (nextShow || []).map(String);
@@ -68,7 +68,7 @@ export function createTeamsSurface({ onOpen = () => {} } = {}) {
   /* ---------- the reading: the Team projection, painted on every publish ---------- */
   const paint = () => {
     filter.options('root', workspaces(rosters()).map((name) => ({ v: name, l: name })));
-    stones.setItems(teamsOverlayRows(rosters(), membersOfTeam, { roots }).map((row) => ({
+    stones.setItems(teamsRows(rosters(), membersOfTeam, { roots }).map((row) => ({
       id: row.id,
       label: row.label,
       marker: mark(row.id),
@@ -85,7 +85,7 @@ export function createTeamsSurface({ onOpen = () => {} } = {}) {
 export function createTeamReadSurface(name) {
   const { createSurface, createAction } = WorkspaceKit.primitives;
   const word = words();
-  const launchAct = createAction({ label: t('teams_overlay.launch', 'Launch'), size: 'compact', action: () => launch(name) });
+  const launchAct = createAction({ label: t('teams_surface.launch', 'Launch'), size: 'compact', action: () => launch(name) });
   const surface = createSurface({ label: rowOf(name)?.label || name, className: 'teams-read', actions: [launchAct] });
   const lines = el('div', 'teams-read-lines');
   surface.content.append(lines);
