@@ -39,15 +39,15 @@ on its own `#!/usr/bin/env node`.
 
 ## The door
 
-    POST /api/install     { items: [{ kind, name }] }
+    POST /api/setup/providers/:provider/install
 
+Setup's Install press calls `dispatchInstall([{ kind: 'agent', name }])` (`src/agent-install.ts`).
 `kind` is the registry's own verb (`docs/architecture/wanted-needed.md`), so the day a second kind
 becomes mechanical it is one branch in the operation and no change at any caller. Today
 only `agent` is; anything else is refused out loud rather than quietly dropped.
 
-It answers with what it **started**, never with what it achieved — a session per item, and
-a per-item outcome. 200 even when every item is refused: a refusal is an answer, it is per
-item, and the caller reads the list either way.
+It answers with what it **started**, never with what it achieved: the outcome, and a 400
+with the reason when the install is refused.
 
 ## One session per item, and the tile is the window
 

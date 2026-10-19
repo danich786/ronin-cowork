@@ -115,15 +115,7 @@ nothing paints exactly this.
 - **roster.no_sessions:** no sessions yet
 
 ## panels — panels.js (the session note and session teams sheets)
-- **panels.note_sheet:** Session note
 - **panels.save:** Save
-- **panels.close:** Close
-- **panels.note_placeholder:** What's this session working on?
-- **panels.note:** session note
-- **panels.loading:** loading…
-- **panels.load_failed:** could not load — {message}
-- **panels.saving:** saving…
-- **panels.not_saved:** not saved — {message}
 
 ## commons — commons.js (the commons shell: tab strip and frame)
 - **commons.tab_off:** {tab} — off, this service is not installed.

@@ -9,7 +9,7 @@ process.env.RONIN_CONFIG_DIR = path.join(root, 'config');
 process.env.RONIN_SERVICES_SECRETS_DIR = path.join(root, 'secrets');
 process.env.RONIN_WAYS_DIR = path.join(root, 'ways');
 
-const { deleteRegistration, readRegistration, registrationAnswer, submitRegistration, updateCommunication } = await import('../src/activation/registration.js');
+const { deleteRegistration, readRegistration, registrationAnswer, submitRegistration } = await import('../src/activation/registration.js');
 const { putEntitlementToken, getEntitlementToken } = await import('../src/activation/secrets.js');
 
 test('registration begins optional with communication explicitly off', async () => {
@@ -61,16 +61,6 @@ test('anonymous registration needs no email and keeps a stable outgoing packet i
   record = await submitRegistration({ identity_mode: 'anonymous', intended_use: ['coding'] });
   assert.equal(record.anonymous_packet_id, packetId);
   assert.equal((await registrationAnswer()).status, 'anonymous');
-});
-
-test('communication remains independent and No communication clears other choices', async () => {
-  let record = await updateCommunication({ newsletter: true, release_updates: true, follow_up: ['research'] });
-  assert.equal(record.communication.newsletter, true);
-  assert.equal(record.communication.no_communication, false);
-  record = await updateCommunication({ newsletter: true, release_updates: true, follow_up: ['research'], no_communication: true });
-  assert.deepEqual(record.communication, {
-    newsletter: false, release_updates: false, follow_up: [], no_communication: true,
-  });
 });
 
 test('registration rejects a missing or malformed email', async () => {

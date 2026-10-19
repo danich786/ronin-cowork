@@ -3,7 +3,6 @@ import { guard } from './errors.js';
 import { buildSessionPicker } from './session-picker.js';
 import { PAD_CODE, firePadBinding, padBinds, padChord } from './pad.js';
 import { buildPadPanel } from './padpanel.js';
-import { buildNotePanel } from './panels.js';
 import { IS_TOUCH, S, isCoarse, tiles } from './state.js';
 import { t } from './lexicon.js';
 
@@ -118,7 +117,6 @@ export function build() {
   // to that tile's other controls, showing that tile's state. See Tile.setLocked.
 
   // Per-session note editor (📝 on each tile head) — works the same on desktop and touch.
-  guard('note panel', buildNotePanel);
   // Commons is still the tile head's ⛩, the brand mark and ⌃⇧C; Mika is the `mika` tool
   // and the desk's own asks; the pad panel opens from a row on the ⚙ Admin Desk
   // (js/cowork-commons.js) and its physical keys never needed the button.

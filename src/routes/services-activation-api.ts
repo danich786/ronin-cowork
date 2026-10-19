@@ -1,6 +1,6 @@
 import type express from 'express';
 import { readEgress } from '../activation/egress.js';
-import { listReceipts, sendDuePackets } from '../activation/tomodachi.js';
+import { listReceipts } from '../activation/tomodachi.js';
 import { listServices, listServiceFailures } from '../sockets.js';
 import {
   cancel, changeAddress, FlowError, poll, request, resend, isEntitled,
@@ -8,7 +8,7 @@ import {
 import { publicState, readState, writeState } from '../activation/state.js';
 import { runUpdater } from '../update-run.js';
 import { buildKansou, sendKansou } from '../activation/kansou.js';
-import { registrationAnswer, submitRegistration, updateCommunication } from '../activation/registration.js';
+import { registrationAnswer, submitRegistration } from '../activation/registration.js';
 import { deleteRegistration } from '../activation/registration.js';
 import { installedAnswer } from './installed-api.js';
 import { broadcastEvent, listening } from '../ws/events.js';
@@ -166,15 +166,6 @@ export function registerServicesActivation(app: express.Express): void {
     }
   });
 
-  app.patch('/api/setup/registration/communication', async (req, res) => {
-    try {
-      await updateCommunication((req.body ?? {}) as Record<string, unknown>);
-      res.json(await registrationAnswer());
-    } catch (error) {
-      res.status(400).json({ error: error instanceof Error ? error.message : 'Preferences were not saved.' });
-    }
-  });
-
   app.post('/api/setup/registration/recovery', async (req, res) => {
     const action = str((req.body as { action?: unknown })?.action);
     try {
@@ -225,10 +216,6 @@ export function registerServicesActivation(app: express.Express): void {
       if (state.stage === 'verified') await startInstall();
       res.json(await servicesSetupAnswer());
     } catch (e) { fail(res, e); }
-  });
-
-  app.post('/api/services/tomodachi/send', async (_req, res) => {
-    res.json(await sendDuePackets());
   });
 
   app.post('/api/services/install', async (_req, res) => {

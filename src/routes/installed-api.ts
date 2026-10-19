@@ -72,13 +72,6 @@ export async function installedAnswer(): Promise<InstalledAnswer> {
   };
 }
 
-/** One sentence on Ronin Services for a door that needs it — accurate to the three facts. */
-export async function servicesStatusSentence(): Promise<string> {
-  const a = await installedAnswer();
-  if (a.services.installed) return `Ronin Services is installed on this box (${a.services.parts.join(', ')}).`;
-  return 'Ronin Services is not installed on this box. The Campaign page → Routines and Installs, on the Ronin Services row, is where it starts: an email and a confirmation.';
-}
-
 export function registerInstalled(app: express.Express): void {
   app.get('/api/installed', async (_req, res) => {
     try {
