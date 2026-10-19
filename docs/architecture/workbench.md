@@ -144,10 +144,19 @@ status as its own reads return.
 doors — **Models**, **Workspaces**, **Teams** — each a link to a Workbench destination of its own,
 opened in the same tab (a modified press opens a new tab through `workbenchLaunchUrl`). The
 three destinations are one shape (`door-workbenches.js`): the Kit Workbench on a profile of the
-door's surfaces, the door's surface seated in Workspace 1 on first open. Models seats the Model
-Providers surface and Workspaces the Workspace Folders surface, each as Settings seats them,
-with no selector cards for now (`selectorFilter`); Teams seats `teams-surface.js`'s stones, a
-stone pressed placing the Team's read in Workspace 2, and offers New Team. The bar reads
+door's surfaces, the door's surface seated in Workspace 1 on first open. Models seats its own
+stones of providers (`models-surface.js`, `models.stones`): a stone pressed opens the provider's
+page beside the rail; a stone dragged into a workspace, or the provider's selector card, places
+the provider there whole (`models.provider`), the page with no rail. Settings' Model Providers
+surface is untouched; both draw with the one drawing `provider-surface.js` exports
+(`createProviderDrawing`, `providerStones`) over the same record and measure. Workspaces seats
+its own stones of folders the same way (`workspaces-surface.js`, `workspaces.stones`; a dropped
+stone or a folder's card places the folder whole, `workspaces.folder`), its three admin doors —
+Add a workspace, GitHub CLI, Clone a repository — dotted selector cards in the New Agent format,
+the folder they add taking their workspace; Settings' Workspace Folders surface is untouched,
+both drawing with `projectroots.js`'s exported drawing (`createRootDrawing`, `rootStone`) over
+one read per bench (`createRootsReading`, the detail route). Teams seats `teams-surface.js`'s stones, a stone pressed placing the Team's
+read in Workspace 2, and offers New Team. The bar reads
 RoninCowork • Home • <door>, Home the way back (`workspace-header.js`, the view's `place`).
 
 **Two roots** (owner, 2026-10-19). The default root — what opens, what Home links to — is that
@@ -272,6 +281,27 @@ independent and must not hold the frame.
 | New Agent / New Team | canonical launch form and its dependencies listed above |
 | Archived sessions | archive manifests when shown |
 | Presets / Document / Feedback | the shared surface's own reads |
+
+### Models (`models` profile)
+
+The door's own destination over the provider drawing Settings and Setup share.
+
+| Surface | Required data and owner |
+|---|---|
+| Model stones (`models.stones`) | the recorded provider summary and catalog through `recordRuntime()`; a measure only on a press, as on Settings |
+| Model provider (`models.provider`) | the same record for the one provider named in its detail; its selector cards come from `providerOffers()` over the same record |
+
+### Workspaces (`workspaces` profile)
+
+The door's own destination over the folder drawing Settings and Setup share, one read of the
+folders per bench (`/api/project-roots/detail`) that every surface on it hears.
+
+| Surface | Required data and owner |
+|---|---|
+| Folder stones (`workspaces.stones`) | the bench's folder read; its selector cards (`folderOffers`) read the same |
+| Folder (`workspaces.folder`) | the one folder named in its detail from the same read; its writes re-read it for every surface |
+| Add a workspace (`workspaces.new`) | the add form's own reads (inspect, suggest) and the Campaign id; the folder it adds takes its workspace |
+| GitHub CLI / Clone a repository (`workspaces.github`, `workspaces.clone`) | the GitHub setup read and session attachment `github-workspace-setup.js` owns, one instance per bench |
 
 ### Agent (`agent` profile)
 

@@ -95,7 +95,7 @@ test('roots adapt the real project-root detail and Add form to the shared stone 
 
 test('the selected folder is one page: a head line with every action, then Summary, Folder, Repository', async () => {
   const roots = await source('public/js/projectroots.js');
-  const detail = roots.slice(roots.indexOf('function detail(r)'), roots.indexOf('function render()'));
+  const detail = roots.slice(roots.indexOf('function detail(r)'), roots.indexOf('function addCard()'));
   assert.match(detail, /make\('article', 'pr-detail'\)/);
   assert.match(detail, /d\.dataset\.mode = editing === r\.name \? 'edit' : 'read'/);
   assert.match(detail, /make\('p', 'pr-detail-state', words\.join\(' · '\)\)/, 'one measured state line');

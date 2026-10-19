@@ -22,6 +22,8 @@ export const WORKBENCH_TYPES = Object.freeze({
   agentDocuments: 'agent.documents', agentTeams: 'agent.team-membership', agentTasks: 'agent.task-manager', agentComposition: AGENT_COMPOSITION_TYPE,
   campaignMachine: 'campaign.machine', campaignDefaults: 'campaign.defaults', campaignRoots: 'campaign.project-roots',
   campaignIdentity: 'campaign.identity', campaignInstallations: 'campaign.installations', campaignCreate: 'campaign.new',
+  modelStones: 'models.stones', modelProvider: 'models.provider',
+  folderStones: 'workspaces.stones', folder: 'workspaces.folder', folderNew: 'workspaces.new', folderGithub: 'workspaces.github', folderClone: 'workspaces.clone',
 });
 
 let registered = false;
@@ -76,8 +78,20 @@ export function registerWorkbenchCatalog() {
   profiles.define(WORKBENCH_PROFILES.campaign, [WORKBENCH_TYPES.terminal, WORKBENCH_TYPES.campaignMachine, BEHAVIOUR_SURFACE_TYPE, PASSWORD_SURFACE_TYPE, WORKBENCH_TYPES.campaignInstallations, PROVIDER_SURFACE_TYPE, SETUP_SURFACE_TYPES.register, FEEDBACK_TYPE, WORKBENCH_TYPES.campaignIdentity, WORKBENCH_TYPES.campaignDefaults, WORKBENCH_TYPES.campaignRoots, SETUP_SURFACE_TYPES.launchOwn, WORKBENCH_TYPES.document, ...(MULTIPLE_CAMPAIGNS_ENABLED ? [WORKBENCH_TYPES.campaignCreate] : [])]);
   // HOME'S THREE DOORS (owner, 2026-10-19; door-workbenches.js): Models and Workspaces hold the
   // one surface each, Settings' own, no selector cards for now; Teams offers New Team.
-  profiles.define(WORKBENCH_PROFILES.models, [PROVIDER_SURFACE_TYPE]);
-  profiles.define(WORKBENCH_PROFILES.workspaces, [WORKBENCH_TYPES.campaignRoots]);
+  // THE MODELS WORKBENCH (owner, 2026-10-19): its own stones in Workspace 1; one provider whole in a
+  // workspace, placed by a dragged stone or its selector card (models-surface.js).
+  add({ type: WORKBENCH_TYPES.modelStones, header: 'surface', discover: () => [], create: ({ workspace, environment }) => environment.modelStones(workspace) });
+  add({ type: WORKBENCH_TYPES.modelProvider, header: 'surface', discover: (_t, e) => e.providers(), create: ({ workspace, detail, environment }) => environment.modelProvider(workspace, detail) });
+  profiles.define(WORKBENCH_PROFILES.models, [WORKBENCH_TYPES.modelStones, WORKBENCH_TYPES.modelProvider]);
+  // THE WORKSPACES WORKBENCH (owner, 2026-10-19): its own stones of folders in Workspace 1; one folder
+  // whole in a workspace, placed by a dragged stone or its selector card; the three admin doors are
+  // dotted cards, the New Agent format (workspaces-surface.js).
+  add({ type: WORKBENCH_TYPES.folderStones, header: 'surface', discover: () => [], create: ({ workspace, environment }) => environment.folderStones(workspace) });
+  add({ type: WORKBENCH_TYPES.folder, header: 'surface', discover: (_t, e) => e.folders(), create: ({ workspace, detail, environment }) => environment.folder(workspace, detail) });
+  add({ type: WORKBENCH_TYPES.folderNew, header: 'surface', className: 'wk-selector-utility', label: () => t('roots.add_stone', 'Add a workspace'), summary: () => t('roots.keep_hint', 'Keep a folder on this machine for Teams and Agents to start in.'), variant: 'dotted', create: ({ workspace, environment }) => environment.folderNew(workspace) });
+  add({ type: WORKBENCH_TYPES.folderGithub, header: 'surface', className: 'wk-selector-utility', label: () => t('roots.github_auth_stone', 'GitHub CLI'), summary: () => t('roots.github_auth_state', 'Connect account'), variant: 'dotted', create: ({ workspace, environment }) => environment.folderGithub(workspace) });
+  add({ type: WORKBENCH_TYPES.folderClone, header: 'surface', className: 'wk-selector-utility', label: () => t('roots.github_clone_stone', 'Clone a repository'), summary: () => t('roots.github_clone_ready_state', 'Uses existing Git access'), variant: 'dotted', create: ({ workspace, environment }) => environment.folderClone(workspace) });
+  profiles.define(WORKBENCH_PROFILES.workspaces, [WORKBENCH_TYPES.folderStones, WORKBENCH_TYPES.folder, WORKBENCH_TYPES.folderNew, WORKBENCH_TYPES.folderGithub, WORKBENCH_TYPES.folderClone]);
   profiles.define(WORKBENCH_PROFILES.teams, [WORKBENCH_TYPES.teams, WORKBENCH_TYPES.teamRead, WORKBENCH_TYPES.newTeamForm]);
   registered = true;
 }
