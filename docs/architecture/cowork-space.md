@@ -126,6 +126,8 @@ Workspace question (many-of, blank All) and a Show question (Theme, State, Agent
 on by default) at its top, New Team in the selector. A stone pressed places the Team's read in
 Workspace 2 (Theme, State, Agents, Launch); the 人 mark in the stone's corner, and Launch, open
 the Team page in a new tab.
+Until one model provider is activated the three doors are locked and say so (the gate the old
+root had); Settings, the live stone, opens Setup until its five answers are recorded.
 
 The current root — Ronin Home as it was before 2026-10-18, with doors into the Desk, Team and
 Agent Workbenches — stays at `#/current` (`public/js/current-home.js`) while pieces move from it

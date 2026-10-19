@@ -160,6 +160,9 @@ both drawing with `projectroots.js`'s exported drawing (`createRootDrawing`, `ro
 one read per bench (`createRootsReading`, the detail route). Teams seats `teams-surface.js`'s stones, a stone pressed placing the Team's
 read in Workspace 2, and offers New Team. The bar reads
 RoninCowork • Home • <door>, Home the way back (`workspace-header.js`, the view's `place`).
+The gate (owner, 2026-10-19): as on the old root, the three doors are locked until one model
+provider is activated (`/api/setup/runtime`'s `activated_count`), each saying so under its name,
+and Settings is the one live stone — a new user's way in is Setup.
 
 **Two roots** (owner, 2026-10-19). The default root — what opens, what Home links to — is that
 three-door page. The current root, Ronin Home as it stood before 2026-10-18 with its doors into

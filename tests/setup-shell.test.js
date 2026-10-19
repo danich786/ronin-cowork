@@ -25,6 +25,12 @@ test('Ronin Home has three doors — Models, Workspaces, Teams — each opening 
     assert.match(contract, new RegExp(`'${key}'`), `${key} is a Workbench appearance, so the tab machinery applies`);
   }
   assert.match(home, /ctx\?\.navigate\(route\)/, 'a plain press opens the workbench in this tab');
+  // THE GATE (owner, 2026-10-19): as on the old root, the doors are locked until one model
+  // provider is activated and Settings is the one live stone, so a new user's way in is Setup.
+  assert.match(home, /const locked = !runtimeKnown \|\| activatedCount < 1;/, 'the doors lock until a provider is activated');
+  assert.match(home, /if \(locked\) return;\s*ctx\?\.navigate\(route\)/, 'a locked door does not open');
+  assert.match(home, /request\('\/api\/setup\/runtime', \{ cache: 'no-store' \}\)/, 'the gate reads the runtime once on enter');
+  assert.match(home, /setup\.provider_gate/, 'a locked door says where the way in is');
   assert.match(home, /campaign_home\.settings', 'Settings'/);
   assert.match(doors, /seat: WORKBENCH_TYPES\.modelStones,/, 'Models seats its own stones of providers');
   assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.models, \[WORKBENCH_TYPES\.modelStones, WORKBENCH_TYPES\.modelProvider\]\)/, 'a provider whole is placeable on Models, by a dragged stone or its card');

@@ -4,12 +4,15 @@
  * (PATTERNS.md, Home; owner, 2026-10-19). Home stays a page; each door opens its own
  * workbench in this tab (door-workbenches.js), the bar reading RoninCowork • Home • <door>
  * with Home the way back. A door is a link: a plain press navigates here, a modified press
- * opens the workbench in a new tab. TWO ROOTS (owner, 2026-10-19): this is the default root;
+ * opens the workbench in a new tab. THE GATE (owner, 2026-10-19, "let's have the gate"): as on
+ * the old root, the doors are locked until one model provider is activated, Settings the one
+ * live stone, so a new user's way in is Setup. TWO ROOTS (owner, 2026-10-19): this is the default root;
  * the current root (current-home.js, Home as it was before 2026-10-18) keeps its own address,
  * and one plain toggle in the bar, the same spot on each, swaps between them while pieces move
  * from Current to Next: it reads Current here and Next there.
  */
 import { t } from './lexicon.js';
+import { request } from './request.js';
 import { createReleaseUpdateController, packageReading } from './release-update-controller.js';
 import { createSenmaida } from './senmaida.js';
 import { createThemeToggle } from './theme-toggle.js';
@@ -87,22 +90,35 @@ export function createCampaignHome() {
 
   let ctx = null;
   let entered = false;
+  let activatedCount = 0;
+  let runtimeKnown = false;
   let setupCampaign = null;
 
   // A DOOR IS A LINK to its workbench: pressed, it navigates this tab; with a modifier it
-  // opens the workbench in a new tab through the same request the bar's doors carry.
-  for (const door of DOORS()) {
-    const route = door.route;
-    const card = el('a', 'ch-door');
-    card.dataset.door = door.key;
-    card.href = workbenchLaunchUrl({ destination: route, mode: 'overlay' });
-    card.append(doorGlyph(door.glyph), el('h2', null, door.name), el('p', 'ch-is', door.is));
-    card.addEventListener('click', (event) => {
-      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-      event.preventDefault();
-      ctx?.navigate(route);
-    });
-    doors.append(card);
+  // opens the workbench in a new tab through the same request the bar's doors carry. Until
+  // one model provider is activated the door is locked and says where the way in is.
+  function paintDoors() {
+    doors.replaceChildren();
+    for (const door of DOORS()) {
+      const card = el('a', 'ch-door');
+      const locked = !runtimeKnown || activatedCount < 1;
+      const route = door.route;
+      card.href = workbenchLaunchUrl({ destination: route, mode: 'overlay' });
+      card.dataset.door = door.key;
+      if (locked) {
+        card.dataset.unavailable = 'true';
+        card.setAttribute('aria-disabled', 'true');
+      }
+      card.append(doorGlyph(door.glyph), el('h2', null, door.name), el('p', 'ch-is', door.is));
+      if (locked) card.append(el('p', 'ch-gate', t('setup.provider_gate', 'Activate one model provider in Machine Setup to use this.')));
+      card.addEventListener('click', (event) => {
+        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        if (locked) return;
+        ctx?.navigate(route);
+      });
+      doors.append(card);
+    }
   }
 
   settings.addEventListener('click', () => {
@@ -138,9 +154,13 @@ export function createCampaignHome() {
     enter: (context) => {
       ctx = context;
       entered = true;
-      void loadCampaigns().then(() => {
+      paintDoors();
+      void Promise.all([request('/api/setup/runtime', { cache: 'no-store' }), loadCampaigns()]).then(([result]) => {
         if (!entered) return;
+        runtimeKnown = result.ok;
+        activatedCount = result.ok ? Number(result.data?.activated_count) || 0 : 0;
         setupCampaign = campaignById(normalizeSelection(ctx?.state?.campaignSelection).primary_campaign_id);
+        paintDoors();
       });
     },
     leave: () => { entered = false; },
