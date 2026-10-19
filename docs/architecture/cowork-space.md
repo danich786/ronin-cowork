@@ -119,9 +119,11 @@ else does.
 
 The bare `/` route is the landing, not a remembered workspace and not a Campaign editor.
 It has three doors — **Models**, **Workspaces**, **Teams** — each opening its own Workbench in
-the same tab (`public/js/door-workbenches.js`; owner, 2026-10-19). Models is the Model Providers
-surface and Workspaces the Workspace Folders surface, each in Workspace 1 with an empty
-selector; Teams is `teams-surface.js`'s stones of Teams in Workspace 1, name only, with a
+the same tab (`public/js/door-workbenches.js`; owner, 2026-10-19). Models is its own stones of
+providers in Workspace 1 (`models-surface.js`): a stone dragged into a workspace, or its selector
+card, places that provider's page there whole, no rail; Settings' Model Providers surface stays
+as it is, both drawing with the one exported drawing. Workspaces is the Workspace Folders
+surface in Workspace 1 with an empty selector; Teams is `teams-surface.js`'s stones of Teams in Workspace 1, name only, with a
 Workspace question (many-of, blank All) and a Show question (Theme, State, Agents, Items; Theme
 on by default) at its top, New Team in the selector. A stone pressed places the Team's read in
 Workspace 2 (Theme, State, Agents, Launch); the 人 mark in the stone's corner, and Launch, open

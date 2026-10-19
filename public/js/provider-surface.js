@@ -69,16 +69,142 @@ export function providersSummary(catalog) {
   return yours ? t('setup_surface.providers_summary_yours', '{dated} · {n} yours', { dated, n: yours }) : dated;
 }
 
+/** The recorded summary as a runtime: the record every reader takes, before any measure lands. */
+export const recordRuntime = () => {
+  const read = providerCatalog();
+  const providers = Array.isArray(read.machine) ? read.machine : [];
+  return {
+    providers,
+    activated_count: providers.filter((provider) => provider?.activated === true).length,
+    measured_at: read.measured_at || '',
+    refreshed_at: read.refreshed_at || '',
+  };
+};
+
+/** A catalog provider no registry CLI serves is a stone of its own, keyed by its vendor id. */
+const catalogOnly = (runtime) => {
+  const known = new Set((runtime.providers || []).map((provider) => provider?.id));
+  return (providerCatalog().providers || []).filter((entry) => !known.has(entry.cli));
+};
+
+/** THE STONES, one builder (owner, 2026-10-19): every CLI the runtime knows wearing its measured
+ * state, then every catalog provider no CLI serves. The Settings surface, the Models workbench
+ * and its selector cards all read this. */
+export function providerStones(runtime) {
+  const rows = providerCatalog().rows;
+  const providers = (Array.isArray(runtime.providers) ? runtime.providers : []).filter((provider) => provider?.id);
+  const stoneOf = (id, label, secondary, state, activated, marker = null) => ({ id, label, secondary, state, marker, className: 'setup-provider-stone', attrs: { 'data-provider': id, 'data-activated': String(activated) } });
+  const items = [
+    ...providers.map((provider) => {
+      const own = rows.filter((row) => row.cli === provider.id);
+      const vendor = own[0]?.provider_label || provider.from || '';
+      const entry = (providerCatalog().providers || []).find((candidate) => candidate.cli === provider.id);
+      return stoneOf(String(provider.id), provider.label || provider.id, own.length ? t('setup_surface.provider_models_n', '{vendor} · {n} models', { vendor, n: own.length }) : vendor, providerPresentation(provider).inventoryState, provider.activated === true, createStatusMarker(entry?.maturity));
+    }),
+    ...catalogOnly(runtime).map((entry) => ({
+      ...stoneOf(entry.provider, entry.label, entry.models.length ? t('setup_surface.provider_models_n', '{vendor} · {n} models', { vendor: entry.label, n: entry.models.length }) : '', entry.models.length ? t('setup_surface.no_cli_state', 'No CLI') : '', false, createStatusMarker(entry.maturity)),
+      disabled: entry.models.length === 0,
+    })),
+  ];
+  return items;
+}
+
 export function createProviderSurface(context) {
   const out = WorkspaceKit.primitives.createSurface({ label: t('setup_surface.providers', 'Model providers'), className: 'setup-surface setup-provider-surface' });
   const action = (label, kind, onClick) => { const made = WorkspaceKit.primitives.createAction({ label, kind, action: onClick }); return made.el ?? made; };
-  const yesNo = (on) => (on ? t('setup_surface.yes', 'yes') : t('setup_surface.no', 'no'));
   const notice = el('p', 'setup-fine setup-provider-notice'); notice.hidden = true;
   const mikaAvailability = el('p', 'setup-fine setup-mika-availability');
   let opened = String(context.detail?.provider || context.detail?.key || '');
   let firstProviderId = '';
-  let alignedProvider = '';
   let openFirstWhenReady = false;
+  const drawing = createProviderDrawing(context, { repaint: () => repaint(), say: (text, bad) => say(text, bad) });
+  const stones = createPhalanx({
+    selectedId: opened,
+    className: 'setup-provider-stones',
+    renderDetail: (item, host) => drawing.paintProvider(item.id, host),
+    onSelectionChange: (id) => { opened = String(id || ''); if (!id) drawing.closed(); },
+  });
+  const controller = Object.freeze({
+    openFirst: () => {
+      if (firstProviderId) stones.select(firstProviderId, { focus: true });
+      else openFirstWhenReady = true;
+    },
+  });
+  context.environment?.onProviderSurface?.(controller);
+  /**
+   * REFRESH ALL — the one door that reads model lists (owner, 2026-09-25): every activated
+   * CLI's own list, and the newest release of each, in one press. Never on a timer. The
+   * line beside it says when it last ran, so the owner knows how fresh every list is.
+   */
+  const refreshBar = el('div', 'setup-provider-refresh');
+  const lastRan = el('p', 'setup-fine setup-provider-last-ran');
+  const refreshAll = action(t('setup_surface.refresh_all', 'Refresh all model providers'), '', async () => {
+    refreshAll.disabled = true;
+    refreshAll.textContent = t('setup_surface.refreshing_all', 'Refreshing…');
+    const ok = await drawing.measure(true);
+    refreshAll.disabled = false;
+    refreshAll.textContent = t('setup_surface.refresh_all', 'Refresh all model providers');
+    if (!ok) paintLastRan();
+  });
+  const paintLastRan = () => {
+    const when = String(drawing.runtime().refreshed_at || providerCatalog().refreshed_at || '');
+    lastRan.textContent = when
+      ? t('setup_surface.last_ran', 'Last ran {date}', { date: when })
+      : t('setup_surface.never_ran', 'Never run — every provider offers Native only until it runs.');
+  };
+  refreshAll.classList.add('setup-provider-refresh-all');
+  refreshBar.append(refreshAll, lastRan);
+  const zone = context.environment?.answerSetupStep ? createSetupZone() : null;
+  /** Step 1 states one machine fact: whether any provider on this machine is signed in. */
+  const paintZone = (activated) => {
+    if (!zone) return;
+    // Answered is the checkmark's own condition, so the zone and the card cannot disagree.
+    if (setupStep(context.environment, 'provider')?.answered) { zone.paint(); return; }
+    zone.paint(activated > 0
+      ? { state: 'Provider signed in and authenticated.', picks: [] }
+      : { state: 'No provider found on this machine.', picks: [{ label: 'Sign in a provider', action: () => controller.openFirst() }] });
+  };
+  stones.mount(out.content, { before: [...(zone ? [zone.el] : []), refreshBar], after: [mikaAvailability, notice] });
+  const say = (text, bad = false) => { notice.className = `${bad ? 'setup-notice bad' : 'setup-fine'} setup-provider-notice`; notice.textContent = text; notice.hidden = !text; };
+  /** The surface's frame from the drawing's runtime: the zone, the dates, the stones, the selector. */
+  const repaint = () => {
+    const runtime = drawing.runtime();
+    const activatedNow = Number(runtime.activated_count || 0);
+    paintZone(activatedNow);
+    paintLastRan();
+    mikaAvailability.hidden = activatedNow === 0;
+    mikaAvailability.textContent = activatedNow === 1
+      ? t('setup_surface.one_model_signed_in', '1 model signed in')
+      : activatedNow > 1 ? t('setup_surface.models_signed_in', '{count} models signed in', { count: activatedNow }) : '';
+    context.workbench?.refreshSelector?.();
+    const items = drawing.stones();
+    firstProviderId = String(items[0]?.id || '');
+    say(items.length ? '' : t('setup_surface.no_catalog', 'No model providers are in the catalog on this machine.'));
+    stones.setItems(items);
+    if (openFirstWhenReady && firstProviderId) {
+      openFirstWhenReady = false;
+      stones.select(firstProviderId, { focus: true });
+    }
+  };
+  const stopProgressRefresh = context.environment?.onSetupProgress?.(() => { void drawing.showRecord(); }) || (() => {});
+  return {
+    el: out.el,
+    show: async () => { await drawing.showRecord(); },
+    destroy: () => { stopProgressRefresh(); context.environment?.onProviderSurface?.(null); drawing.destroy(); stones.destroy(); },
+  };
+}
+
+/**
+ * THE PROVIDER DRAWING, exported once (owner, 2026-10-19): a provider's page — YOURS, the three
+ * steps with the native sign-in tile, then THE CATALOG — and the frame read behind it (the record,
+ * then any measure), drawn the same wherever a provider is read: the Settings and Setup surface
+ * and the Models workbench call this. `repaint()` is the host's: it paints from `runtime()` and
+ * `stones()` whenever the frame moves; `say(text, bad)` is the host's notice line.
+ */
+export function createProviderDrawing(context, { repaint, say = () => {} }) {
+  const action = (label, kind, onClick) => { const made = WorkspaceKit.primitives.createAction({ label, kind, action: onClick }); return made.el ?? made; };
+  const yesNo = (on) => (on ? t('setup_surface.yes', 'yes') : t('setup_surface.no', 'no'));
+  let alignedProvider = '';
   let mounted = null;
   let signInForm = null;
   const authenticationDrafts = new Map();
@@ -124,12 +250,6 @@ export function createProviderSurface(context) {
     if (provider.askable === false) return t('setup_surface.installed_unaskable', 'Installed {version} · latest unknown: no package source to ask', { version }) + where;
     return t('setup_surface.installed_version', 'Installed {version}', { version }) + where;
   };
-  /** A catalog provider no registry CLI serves is a stone of its own, keyed by its vendor id. */
-  const catalogOnly = () => {
-    const known = new Set((runtime.providers || []).map((provider) => provider?.id));
-    return (providerCatalog().providers || []).filter((entry) => !known.has(entry.cli));
-  };
-
   /* ---- 1 · YOURS: the three steps, exactly as the runtime row measures them ---- */
   const paintYours = (provider, host) => {
     const steps = providerReadiness(provider);
@@ -400,101 +520,17 @@ export function createProviderSurface(context) {
     return () => disposeMount();
   };
 
-  const stones = createPhalanx({
-    selectedId: opened,
-    className: 'setup-provider-stones',
-    renderDetail: (item, host) => paintProvider(item.id, host),
-    onSelectionChange: (id) => { opened = String(id || ''); if (!id) alignedProvider = ''; },
-  });
-  const controller = Object.freeze({
-    openFirst: () => {
-      if (firstProviderId) stones.select(firstProviderId, { focus: true });
-      else openFirstWhenReady = true;
-    },
-  });
-  context.environment?.onProviderSurface?.(controller);
-  /**
-   * REFRESH ALL — the one door that reads model lists (owner, 2026-09-25): every activated
-   * CLI's own list, and the newest release of each, in one press. Never on a timer. The
-   * line beside it says when it last ran, so the owner knows how fresh every list is.
-   */
-  const refreshBar = el('div', 'setup-provider-refresh');
-  const lastRan = el('p', 'setup-fine setup-provider-last-ran');
-  const refreshAll = action(t('setup_surface.refresh_all', 'Refresh all model providers'), '', async () => {
-    refreshAll.disabled = true;
-    refreshAll.textContent = t('setup_surface.refreshing_all', 'Refreshing…');
-    const ok = await measure(true);
-    refreshAll.disabled = false;
-    refreshAll.textContent = t('setup_surface.refresh_all', 'Refresh all model providers');
-    if (!ok) paintLastRan();
-  });
-  const paintLastRan = () => {
-    const when = String(runtime.refreshed_at || providerCatalog().refreshed_at || '');
-    lastRan.textContent = when
-      ? t('setup_surface.last_ran', 'Last ran {date}', { date: when })
-      : t('setup_surface.never_ran', 'Never run — every provider offers Native only until it runs.');
-  };
-  refreshAll.classList.add('setup-provider-refresh-all');
-  refreshBar.append(refreshAll, lastRan);
-  const zone = context.environment?.answerSetupStep ? createSetupZone() : null;
-  /** Step 1 states one machine fact: whether any provider on this machine is signed in. */
-  const paintZone = (activated) => {
-    if (!zone) return;
-    // Answered is the checkmark's own condition, so the zone and the card cannot disagree.
-    if (setupStep(context.environment, 'provider')?.answered) { zone.paint(); return; }
-    zone.paint(activated > 0
-      ? { state: 'Provider signed in and authenticated.', picks: [] }
-      : { state: 'No provider found on this machine.', picks: [{ label: 'Sign in a provider', action: () => controller.openFirst() }] });
-  };
-  stones.mount(out.content, { before: [...(zone ? [zone.el] : []), refreshBar], after: [mikaAvailability, notice] });
-  const say = (text, bad = false) => { notice.className = `${bad ? 'setup-notice bad' : 'setup-fine'} setup-provider-notice`; notice.textContent = text; notice.hidden = !text; };
   /** The frame from whatever `runtime` holds now: the record, or the measure once it lands. */
   const paintFrom = async () => {
     disposeMount();
     context.environment.setupRuntime = runtime;
-    const activatedNow = Number(runtime.activated_count || 0);
-    paintZone(activatedNow);
-    paintLastRan();
     context.environment.onSetupRuntime?.(runtime);
-    mikaAvailability.hidden = activatedNow === 0;
-    mikaAvailability.textContent = activatedNow === 1
-      ? t('setup_surface.one_model_signed_in', '1 model signed in')
-      : activatedNow > 1 ? t('setup_surface.models_signed_in', '{count} models signed in', { count: activatedNow }) : '';
-    context.workbench?.refreshSelector?.();
-    const rows = providerCatalog().rows;
-    const providers = (Array.isArray(runtime.providers) ? runtime.providers : []).filter((provider) => provider?.id);
-    const stoneOf = (id, label, secondary, state, activated, marker = null) => ({ id, label, secondary, state, marker, className: 'setup-provider-stone', attrs: { 'data-provider': id, 'data-activated': String(activated) } });
-    const items = [
-      ...providers.map((provider) => {
-        const own = rows.filter((row) => row.cli === provider.id);
-        const vendor = own[0]?.provider_label || provider.from || '';
-        const entry = (providerCatalog().providers || []).find((candidate) => candidate.cli === provider.id);
-        return stoneOf(String(provider.id), provider.label || provider.id, own.length ? t('setup_surface.provider_models_n', '{vendor} · {n} models', { vendor, n: own.length }) : vendor, providerPresentation(provider).inventoryState, provider.activated === true, createStatusMarker(entry?.maturity));
-      }),
-      ...catalogOnly().map((entry) => ({
-        ...stoneOf(entry.provider, entry.label, entry.models.length ? t('setup_surface.provider_models_n', '{vendor} · {n} models', { vendor: entry.label, n: entry.models.length }) : '', entry.models.length ? t('setup_surface.no_cli_state', 'No CLI') : '', false, createStatusMarker(entry.maturity)),
-        disabled: entry.models.length === 0,
-      })),
-    ];
-    firstProviderId = String(items[0]?.id || '');
-    say(items.length ? '' : t('setup_surface.no_catalog', 'No model providers are in the catalog on this machine.'));
-    stones.setItems(items);
-    if (openFirstWhenReady && firstProviderId) {
-      openFirstWhenReady = false;
-      stones.select(firstProviderId, { focus: true });
-    }
+    await repaint();
   };
   /** The first frame: the recorded summary, through the one picker's read, at once. */
   const showRecord = async () => {
     await loadProviderCatalog();
-    const read = providerCatalog();
-    const providers = Array.isArray(read.machine) ? read.machine : [];
-    runtime = {
-      providers,
-      activated_count: providers.filter((provider) => provider?.activated === true).length,
-      measured_at: read.measured_at || '',
-      refreshed_at: read.refreshed_at || '',
-    };
+    runtime = recordRuntime();
     await paintFrom();
   };
   /** Refresh all is the owner's press; a plain repaint reads the record. Setup scans live above both. */
@@ -508,10 +544,12 @@ export function createProviderSurface(context) {
   };
   /** After a press: repaint the record; Setup progress performs any completion scan. */
   const paint = async (refresh = false) => { await showRecord(); return measure(refresh); };
-  const stopProgressRefresh = context.environment?.onSetupProgress?.(() => { void showRecord(); }) || (() => {});
   return {
-    el: out.el,
-    show: async () => { await showRecord(); },
-    destroy: () => { stopProgressRefresh(); context.environment?.onProviderSurface?.(null); disposeMount(); stones.destroy(); },
+    paintProvider, paint, showRecord, measure,
+    /** The open page is gone: the next one scrolls to its current step afresh. */
+    closed: () => { alignedProvider = ''; },
+    runtime: () => runtime,
+    stones: () => providerStones(runtime),
+    destroy: () => disposeMount(),
   };
 }
