@@ -182,8 +182,7 @@ npm run byoin             # user-customization guard-rail check
 Ordinary Kit legs use direct dogfood and scoped diagnostic evidence, not BYOIN. One
 designated integrator runs the check once on the exact release candidate.
 `scripts/check-css.mjs` guards CSS. Staging
-`scripts/smoke-ui.mjs` owns dev-only workspace/skin evidence; default live smoke must not
-pretend unlanded routes exist. `scripts/visual-ui.mjs` measures declared compositions. A
+`scripts/smoke-ui.mjs` renders the desktop Team page and the phone document. `scripts/visual-ui.mjs` measures declared compositions. A
 SKIP is unverified, never a pass.
 
 ## Known open seams

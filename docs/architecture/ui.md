@@ -443,11 +443,9 @@ reserving a gutter.
 
 `check-modules` (cycles across the whole graph, orphans, resolution, top-level import
 use, the 700-line ceiling) · `check-css` (colour spelled once; app patches no
-primitive and shadows no token; the contrast floor, both themes) · `check-tips` (hover/focus help stays absent) · `smoke-ui` (desktop +
-phone render, the journey probes, and an axe scan at three states — serious/critical
-fail; color-contrast is excluded there because contrast policy is check-css's tiered
-floor, including the documented sub-AA `--muted` secondary tier the density ruling
-keeps until H2) · `visual-ui` (the composition fingerprint: chrome geometry and
+primitive and shadows no token; the contrast floor, both themes) · `check-tips` (hover/focus help stays absent) · `smoke-ui` (the desktop
+Team page renders its tiles, seats and paints the gate's own probe session, and opens
+Configuration; the phone gets the mobile document's bar on its first paint) · `visual-ui` (the composition fingerprint: chrome geometry and
 resolved colours against a checked-in baseline, both themes; `--update` is the
 reviewed way to accept an intended change) · `tests/` (the pure contracts:
 `request-shape.test.js`, `auth.test.ts`, `dvr.test.js`, `tape-fold.test.js`).

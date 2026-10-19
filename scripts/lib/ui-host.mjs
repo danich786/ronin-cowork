@@ -52,17 +52,3 @@ export async function loadPlaywright() {
   }
   return null;
 }
-
-export async function loadAxeSource() {
-  const { readFileSync } = await import('node:fs');
-  const candidates = [
-    process.env.RONIN_AXE_PATH,
-    `${HOST_TOOLS}/node_modules/axe-core/axe.min.js`,
-  ];
-  for (const p of candidates) {
-    try {
-      if (p) return readFileSync(p, 'utf8');
-    } catch { /* try the next */ }
-  }
-  return null;
-}
