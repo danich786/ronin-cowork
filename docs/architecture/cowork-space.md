@@ -125,7 +125,7 @@ selector; Teams is `teams-surface.js`'s stones of Teams in Workspace 1, name onl
 Workspace question (many-of, blank All) and a Show question (Theme, State, Agents, Items; Theme
 on by default) at its top, New Team in the selector. A stone pressed places the Team's read in
 Workspace 2 (Theme, State, Agents, Launch); the 人 mark in the stone's corner, and Launch, open
-the Team page in a new tab. The live owner of the landing is `public/js/campaign-home.js`.
+the Team page in a new tab.
 
 There is no Campaign picker, default star, archive action or New Campaign footer.
 
