@@ -20,7 +20,6 @@ export interface ArchivedSession {
   tags: string[];
   leads: string[];
   wipeboards: string[];
-  note: string;
   project_root: string;
 }
 

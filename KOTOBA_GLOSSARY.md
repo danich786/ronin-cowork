@@ -62,7 +62,6 @@ runtime parts, while Agent capabilities teach tools (`docs/architecture/tool-sur
 | `project_root` | **workspace folder**<!--g:glossary.project_root--> | A registered folder Ronin may work in. Not a numbered browser workspace. |
 | `desk_profile` | **desk profile**<!--g:glossary.desk_profile--> | The owner's standing defaults: skin, words, layout. |
 | harakiri | **harakiri**<!--g:glossary.harakiri--> | A session ends itself. |
-| `@ronin_note` | **Note**<!--g:glossary.note--> | The owner's one line about a session. |
 | Desk | **Desk** | The engagement context containing Teams, Agents, and work. It is not a Git worktree. |
 | worktree | **worktree** | A private working folder and branch with explicit custody for managed repository work. |
 | hand-in | **hand in** | Admit committed work to Team review. Never say “push.” |

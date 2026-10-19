@@ -6,7 +6,6 @@ import {
   getLeads,
   getWipeboards,
   getProviderSessionId,
-  getNote,
   getCampaign,
   getProjectRoot,
   getTags,
@@ -16,7 +15,6 @@ import {
   sessionExists,
   sessionOfPane,
   setLeads,
-  setNote,
   setProjectRoot,
   setTags,
   setWipeboards,
@@ -212,7 +210,7 @@ export function registerSessions(app: express.Express): void {
         version: 1, id: key, name, key, archived_at: new Date().toISOString(), cwd: runtime.cwd,
         identity: (await listSessions()).find((s) => s.name === name)?.identity,
         agent: provider.agent, provider_session_id: provider.id, tags: await getTags(name), leads: await getLeads(name),
-        wipeboards: await getWipeboards(name), note: await getNote(name), project_root: await getProjectRoot(name),
+        wipeboards: await getWipeboards(name), project_root: await getProjectRoot(name),
       };
       await writeArchive(archived);
       try { await stopSessionTree(name); }
@@ -242,7 +240,6 @@ export function registerSessions(app: express.Express): void {
         await setTags(archived.name, archived.tags);
         await setLeads(archived.name, archived.leads);
         await setWipeboards(archived.name, archived.wipeboards);
-        await setNote(archived.name, archived.note);
         await setProjectRoot(archived.name, archived.project_root);
         if (archived.identity) await setSessionIdentity(archived.name, archived.identity);
         else await setLaunchStamp(archived.name, archived.agent);
@@ -416,26 +413,6 @@ export function registerSessions(app: express.Express): void {
     }
     try {
       res.json({ ok: true, project_root: await setProjectRoot(name, root) });
-    } catch (e) {
-      res.status(500).json({ error: String((e as Error)?.message ?? e) });
-    }
-  });
-
-  app.get('/api/sessions/:name/note', async (req, res) => {
-    const { name } = req.params;
-    if (!isValidName(name)) return res.status(400).json({ error: 'Invalid name.' });
-    if (!(await sessionExists(name))) return res.status(404).json({ error: 'No such session.' });
-    res.json({ note: await getNote(name) });
-  });
-
-  app.post('/api/sessions/:name/note', async (req, res) => {
-    const { name } = req.params;
-    if (!isValidName(name)) return res.status(400).json({ error: 'Invalid name.' });
-    if (!(await sessionExists(name))) return res.status(404).json({ error: 'No such session.' });
-    const note = String(req.body?.note ?? '').slice(0, 8000); // a post-it, not a doc
-    try {
-      await setNote(name, note);
-      res.json({ ok: true });
     } catch (e) {
       res.status(500).json({ error: String((e as Error)?.message ?? e) });
     }

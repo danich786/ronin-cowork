@@ -114,7 +114,7 @@ nothing paints exactly this.
 - **roster.no_team:** no team
 - **roster.no_sessions:** no sessions yet
 
-## panels — panels.js (the session note and session teams sheets)
+## panels — the shared Save word
 - **panels.save:** Save
 
 ## commons — commons.js (the commons shell: tab strip and frame)
@@ -1299,7 +1299,6 @@ The catalog entry goes. {dir} is not touched.
 - **glossary.hotwords:** Hotwords
 - **glossary.project_root:** workspace folder
 - **glossary.team:** Team
-- **glossary.note:** Note
 - **glossary.work_record:** work record
 - **glossary.memory:** memory
 - **glossary.stats:** Stats

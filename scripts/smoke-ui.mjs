@@ -90,7 +90,7 @@ function startProbe() {
     return false;
   }
   tmux(['set-option', '-t', PROBE, '@ronin-control', 'user']);
-  tmux(['set-option', '-t', PROBE, '@ronin_note', 'throwaway — the render gate, killed when it finishes']);
+  tmux(['set-option', '-t', PROBE, '@ronin-gate-probe', 'throwaway — the render gate, killed when it finishes']);
   for (let i = 0; i < 30; i++) tmux(['send-keys', '-t', PROBE, `echo ${BANNER} ${i}`, 'Enter']);
   return true;
 }
@@ -100,7 +100,7 @@ function stopProbe({ stale = false } = {}) {
   // sessions. Killing only the root leaves those grouped sessions alive, so every UI
   // gate can add another "Gate Probe" to the owner's server. At startup, also retire a
   // prior crashed gate, but only when its exact private marker proves ownership.
-  const rows = tmux(['list-sessions', '-F', '#{session_name}\t#{session_group}\t#{@ronin_note}']) || '';
+  const rows = tmux(['list-sessions', '-F', '#{session_name}\t#{session_group}\t#{@ronin-gate-probe}']) || '';
   const parsed = rows.split('\n').map((line) => line.split('\t'));
   const roots = new Set(parsed
     .filter(([name, , note]) => name === PROBE || (stale && /^gate_probe_\d+$/.test(name) && note === 'throwaway — the render gate, killed when it finishes'))
@@ -640,39 +640,6 @@ async function checkJourneys(page, label, jsErrors) {
     await page.waitForTimeout(200);
   }
 
-  const TYPED = 'typed by the gate — must survive the failure';
-  const errsBefore = jsErrors.length;
-  await page.route('**/note', (route) =>
-    route.request().method() === 'POST'
-      ? route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ error: 'gate-injected failure' }) })
-      : route.continue(),
-  );
-  await page.locator('.tile .tile-head button.tmore-btn').first().click();
-  await page.locator('.tile .tile-head button.note').first().click();
-  try {
-    await page.waitForSelector('#notesheet.open textarea:not([disabled])', { timeout: 4000 });
-    await page.locator('#notesheet textarea').fill(TYPED);
-    await page.evaluate(() => {
-      [...document.querySelectorAll('#notesheet .ns-bar button')].find((b) => b.textContent === 'Save')?.click();
-    });
-    await page.waitForTimeout(400);
-    const after = await page.evaluate(() => ({
-      open: document.getElementById('notesheet')?.classList.contains('open'),
-      text: document.querySelector('#notesheet textarea')?.value,
-      said: document.querySelector('#notesheet .ns-msg')?.textContent || '',
-    }));
-    if (after.open && after.text === TYPED && /not saved/.test(after.said)) {
-      ok(`${label}: a failed save keeps the sheet open, keeps the text, and says why`);
-    } else {
-      bad(`${label}: failed-save contract broken — open=${after.open} textKept=${after.text === TYPED} said="${after.said}"`);
-    }
-  } catch {
-    bad(`${label}: the note sheet did not open for the failed-save journey`);
-  }
-  await page.unroute('**/note');
-  for (let i = jsErrors.length - 1; i >= errsBefore; i--) {
-    if (/Failed to load resource.*500/.test(jsErrors[i])) jsErrors.splice(i, 1);
-  }
   await page.keyboard.press('Escape');
 
   const sessionsReading = () => page.evaluate(() => ({
