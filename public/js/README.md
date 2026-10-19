@@ -41,9 +41,9 @@ changing persistence. Browser state is presentation, not a second server authori
 | Ronin Settings / Campaign | [campaign-view.js](campaign-view.js), [campaign-surfaces.js](campaign-surfaces.js), [behaviour-surface.js](behaviour-surface.js) | [campaigns-api.ts](../../src/routes/campaigns-api.ts), [catalogs.ts](../../src/routes/catalogs.ts) | [campaigns.ts](../../src/campaigns.ts), [machine-settings.ts](../../src/machine-settings.ts), [behaviour-documents.ts](../../src/behaviour-documents.ts) | [campaign-config.test.ts](../../tests/campaign-config.test.ts), [campaign-view-single.test.js](../../tests/campaign-view-single.test.js), [behaviour-documents.test.ts](../../tests/behaviour-documents.test.ts) |
 | Cowork workbench | [cowork-view.js](cowork-view.js), [workbench.js](workbench.js) | [launch.ts](../../src/routes/launch.ts) builds the home rows; [events.ts](../../src/ws/events.ts) pushes them | [tmux.ts](../../src/tmux.ts), [team-rosters.ts](../../src/team-rosters.ts); [store.js](store.js) holds the pushed rows, [home.js](home.js) reads them | [cowork-workbench.test.js](../../tests/cowork-workbench.test.js), [home-roster.test.ts](../../tests/home-roster.test.ts) |
 | Team workbench / Configuration | [team-controller.js](team-controller.js) (the projection of the store's pushed `teams` and `sessions`), [team-configuration.js](team-configuration.js) | [teams-api.ts](../../src/routes/teams-api.ts), [sessions-api.ts](../../src/routes/sessions-api.ts); [events.ts](../../src/ws/events.ts) pushes both | [team-rosters.ts](../../src/team-rosters.ts) for Team facts; [tmux.ts](../../src/tmux.ts) for membership | [team-configuration.test.js](../../tests/team-configuration.test.js), [team-rosters.test.ts](../../tests/team-rosters.test.ts) |
-| Agent workbench | [agent-view.js](agent-view.js), [workbench.js](workbench.js) | [sessions-api.ts](../../src/routes/sessions-api.ts), [teams-api.ts](../../src/routes/teams-api.ts) | [tmux.ts](../../src/tmux.ts) for Self/membership; Team Kanban remains a derived reading | [agent-workbench.test.js](../../tests/agent-workbench.test.js), [workbench-launch.test.js](../../tests/workbench-launch.test.js) |
+| Agent workbench | [agent-view.js](agent-view.js), [workbench.js](workbench.js) | [sessions-api.ts](../../src/routes/sessions-api.ts), [teams-api.ts](../../src/routes/teams-api.ts) | [tmux.ts](../../src/tmux.ts) for Self/membership; the Task Manager is a derived reading | [agent-workbench.test.js](../../tests/agent-workbench.test.js), [workbench-launch.test.js](../../tests/workbench-launch.test.js) |
 | Team coordination tabs | [team-wipeboard.js](team-wipeboard.js), [team-jikan.js](team-jikan.js), [message-queue.js](message-queue.js), each painting the store's pushed thread, jobs or queue | [wipeboards-api.ts](../../src/routes/wipeboards-api.ts), [jikan-api.ts](../../src/routes/jikan-api.ts), [messages-api.ts](../../src/routes/messages-api.ts) | [wipeboards.ts](../../src/wipeboards.ts), [jikan.ts](../../src/jikan.ts), [message-queue.ts](../../src/message-queue.ts) | [wipeboards.test.ts](../../tests/wipeboards.test.ts), [team-jikan-client.test.js](../../tests/team-jikan-client.test.js), [message-queue.test.ts](../../tests/message-queue.test.ts), [pushed-surfaces.test.js](../../tests/pushed-surfaces.test.js) |
-| Work Record / Team Kanban | [shingo.js](shingo.js), [team-kanban.js](team-kanban.js) | the tile reads the `tegami` on its home row from [store.js](store.js); the Task Manager reads `GET /api/work-items?team=` | [Work Record code path](../../docs/contributor-map.md#work-record); the Team's reading of its work items | [work-record.test.ts](../../tests/work-record.test.ts), [team-kanban.test.js](../../tests/team-kanban.test.js) |
+| Work Record / Task Manager | [shingo.js](shingo.js), [team-kanban.js](team-kanban.js) | the tile reads the `tegami` on its home row from [store.js](store.js); the Task Manager reads `GET /api/work-items?team=` | [Work Record code path](../../docs/contributor-map.md#work-record); the Team's reading of its work items | [work-record.test.ts](../../tests/work-record.test.ts), [team-kanban.test.js](../../tests/team-kanban.test.js) |
 | Agent tile | [tile.js](tile.js), [termview.js](termview.js), [composer.js](composer.js), [tilewire.js](tilewire.js) | [sessions-api.ts](../../src/routes/sessions-api.ts), [pty.ts](../../src/ws/pty.ts) | [tmux-client.ts](../../src/tmux-client.ts), [message-queue.ts](../../src/message-queue.ts) | [composer-parcel.test.js](../../tests/composer-parcel.test.js), [terminal-control-session.test.ts](../../tests/terminal-control-session.test.ts) |
 | Phone | [phone.js](phone.js), shared tile modules | [index.ts](../../src/index.ts) serves `mobile.html`; same feature routes as desktop | Same authorities as each feature above; [state.js](state.js) holds browser state | [mobile-document.test.js](../../tests/mobile-document.test.js), affected shared-module test |
 | New Agent / Team | [new-agent.js](new-agent.js), [new-team-form.js](new-team-form.js), [launch-view.js](launch-view.js) | [launch.ts](../../src/routes/launch.ts), [teams-api.ts](../../src/routes/teams-api.ts) | [agent-defaults.ts](../../src/agent-defaults.ts), [spawn.ts](../../src/spawn.ts), [team-rosters.ts](../../src/team-rosters.ts) | [new-launch-form-layout.test.js](../../tests/new-launch-form-layout.test.js), [launch-seed.test.ts](../../tests/launch-seed.test.ts) |
@@ -62,10 +62,10 @@ below describes implementation ownership; use the surface index above to find a 
 
 | Module | What it owns |
 |---|---|
-| `state.js` | DOM handle, constants, `tiles`, the shared-state object `S`, save/load |
-| `errors.js` | `showFailure`, `guard`, `deadTile` — the containment layer |
+| `state.js` | constants, `tiles`, the shared-state object `S`, `saveState` |
+| `errors.js` | `showFailure`, `clearFailure`, `guard` — the containment layer |
 | `request.js` | the ONE transport contract — every JSON call's "what happened" |
-| `ui.js` | the primitives: sheet, toast, field, status, button, tabs (docs/architecture/ui.md) |
+| `ui.js` | the primitives: sheet, confirmDialog, toast, attention, field, status, button (docs/architecture/ui.md) |
 | `terminal-controls.js` | Copy, Clear, Close, Stop: shared interception, mobile buttons, and Hints (docs/using-ronin/terminal-controls.md) |
 | `theme.js` | dark/light: the saved choice, `termTheme()` read off the CSS tokens, the flip |
 | `api.js` | `reconcileSessions` (the one writer of `S.sessions`) and the `/api/sessions` write calls |
@@ -89,7 +89,7 @@ below describes implementation ownership; use the surface index above to find a 
 | `gbrain.js` | gbrain's Ronin Setup work surface: installed, accounts linked, one next step; the install's progress arrives as `{t:'gbrain', snapshot}` |
 | `gbrain-setup-state.js` | the Ronin Setup gbrain surface's state: one status, one next line, at most one action from the snapshot |
 | `services-setup-state.js` | the Ronin Setup Services surface's state: registration, installed facts and the activation record → one status, one next line, at most one action |
-| `system.js` | `buildSystem` — ⚙ System: release identity, updates, appearance, log out |
+| `system.js` | `buildSystemPanel` — the Account tab's Release & update and Log out rooms (release identity, updates, log out, passkeys) in `cowork-commons.js` |
 | `shingo.js` | SHINGO 信号 — the expanded work-record reading and its age helpers |
 | `tile.js` / `surface-host.js` | `class Tile` — one cell of the coworkspace; its surface host owns the catalogued sibling tenants and names the one active tenant |
 | `tilehead.js` | `buildTileHead` — the cell's chrome, one table and a loop: name, reading toggle, メ, window control; `tileMenu` — the tile's menu (send a file, mention, output, work record, configuration, docs, delete or archive); reads open in the full overlay over the tile body (`overTile`) |
@@ -107,22 +107,21 @@ below describes implementation ownership; use the surface index above to find a 
 | `keysrow.js` | `buildKeysRow` — Esc/Tab/Shift-Tab/arrows/⤓ docked on every coarse tile's composer |
 | `tilementions.js` | `insertMention`, `MENTION_MIME` — a session name into this tile's composer, from the menu or a drag |
 | `team-arrange.js` | `parseDraft`, `createArranger` — the team page's one controller: a draft (what changes; the rest stays) from a button or from an agent's `edges page`, run through the page's own verbs |
-| `team-kanban.js` | `createTeamKanban` — the Team Kanban read: five responsive columns from the team's derived project JSON; a drop sends one move request and writes no project data |
+| `team-kanban.js` | `createTeamKanban` — the Agent workbench's Task Manager read: six stage columns from the derived project JSON; a drop sends one move request and writes no project data |
 | `team-members.js` | `buildTeamMembers`, `agentTitle`, `configSignature` — the member list shared by the Commons Roster tab and the league surfaces, and the changed-only fingerprint that keeps Configuration from redrawing an unchanged Team |
 | `voice.js` | dictation: `wireDictation` (the 🎤 on the tile's compose box) |
-| `panels.js` | `buildNotePanel` 📝 (on `ui.sheet`), `toClipboard` |
+| `panels.js` | `toClipboard` |
 | `session-picker.js` | `buildSessionPicker` — the pad key's session switcher (on `ui.sheet`) |
 | `pad.js` | keypad — bindings, chords, firing |
 | `padpanel.js` | keypad — the ▦ panel and ask-on-press (both on `ui.sheet`) |
 | `weblink.js` | keypad — WebHID programming of the device |
-| `layout.js` | `build`, `buildDrawers` — assembling the page |
+| `layout.js` | `build`, `trimBarForTouch` — assembling the page |
 | `main.js` | `init` and the boot call |
 | `tips.js` | system-wide tooltip suppression; title text survives only as accessible labels while the house help panel is disabled |
 | `mika.js` | `askMika` — the way to the house assistant |
 | `provenance.js` | the ◆/◈ marks — a catalog entry that is yours |
 
-Module size and dependency checks keep ownership visible: `check-modules` checks the client
-and `scripts/check-src.mjs` checks the server. A tile composes its header, terminal or
+Module size and dependency checks keep ownership visible: `check-modules` checks the client. A tile composes its header, terminal or
 transcript view, and socket; those modules own their respective machinery.
 
 The keypad's user-facing controls are documented in
@@ -140,13 +139,12 @@ module writes** — put it on `S`.
 
 **2. No import cycles.** There are none today, and that is checked, not hoped: the split
 was computed from the code with comments and string literals stripped, and cycles were
-removed by moving the shared thing rather than by importing both ways. `setLayout` got
-its own module for exactly this reason (`events`, `pad` and `layout` all need it).
-If you find yourself wanting a back-edge, move the shared function down instead.
+removed by moving the shared thing rather than by importing both ways. If you find yourself wanting a back-edge, move the shared function down instead.
 
 **3. Transport goes through `request.js`.** Every JSON call uses `request()` and decides
-what its failure MEANS itself; no feature spells `fetch(` (the two documented exceptions:
-`voice.js` posts an audio blob, `stats.js` beacons a counter). Dialog-shaped surfaces use
+what its failure MEANS itself; no feature spells `fetch(` (the documented exceptions:
+`voice.js` posts an audio blob, `lexicon.js` reads word catalogs, `message-queue.js`
+dismisses messages, `setup-surfaces.js` reads an SVG mark). Dialog-shaped surfaces use
 `ui.sheet`; one-shot outcomes use `ui.toast`. The contract is `docs/architecture/ui.md`.
 
 **4. Never reference an imported binding at module top level.** Everything cross-module
@@ -161,7 +159,7 @@ scoped diagnostic evidence needed for the leg. It does not run BYOIN around comm
 pushes, or service restarts. At the release boundary, the designated integrator chooses the
 appropriate one-time BYOIN mode for the exact candidate; `--ui` drives desktop and phone
 rendering. Whether a browser exists is a fact about that verification host, and a browser
-SKIP remains unverified. `docs/test-protocols.md` is the cadence contract.
+SKIP remains unverified. [Verification guidance](../../docs/development/verification.md) is the cadence contract.
 
 **A passing gate is not "the change is right."** It says the page loaded, threw nothing, and
 painted a live pane. The phone pass is Safari's engine at phone geometry — not a device, so

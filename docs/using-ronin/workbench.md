@@ -1,9 +1,10 @@
 # Workbench — finding and arranging your work
 
 A **workbench** is one fixed page format: two or four workspaces and one discovery column.
-Ronin has Campaign, Cowork, Team, and Setup workbenches. Setup fixes Presets in workspace 1
-and opens its ordered selector surfaces in workspace 2; the other workbenches retain their
-ordinary two/four arrangement.
+Ronin has Campaign (Settings), Setup, New Project, Desk, Cowork, Team and Agent workbenches,
+plus the Models, Workspaces and Teams workbenches Ronin Home's doors open. Setup seats its
+Garden in workspace 1 and opens its ordered selector surfaces in workspace 2; the other
+workbenches retain their ordinary two/four arrangement.
 
 This is the guide for an Agent using Ronin. It explains where things are and how to find
 them. The implemented builder contract lives in Ronin Cowork's
@@ -23,8 +24,8 @@ If this guide and [KOTOBA](../../KOTOBA.md) disagree, flag the difference. Do no
 
 ## Library, profile, tenant
 
-The four destinations reuse one Workbench implementation; they are profiles and tenants,
-not four layout systems.
+Every destination reuses one Workbench implementation; they are profiles and tenants,
+not separate layout systems.
 
 - `Workbench.library` is the one reusable catalog of surface types.
 - `Workbench.profile(name)` lists which library types the selector may expose.
@@ -35,9 +36,9 @@ not four layout systems.
 |---|---|
 | Campaign | Campaign settings and Campaign-level resources |
 | Teams collection | Teams, Agents, shared resources, and creation surfaces available in the selected Campaign context |
-| Team | that Team's Agents, Commons, Work Items, and launch surface |
+| Team | that Team's Agents, Commons, New Agent and Agent composition |
 | Agent | Self, Documents, Team membership, and separate Task Managers for the Agent's Teams |
-| Setup | pinned Presets plus Register, providers, roots, Services, gbrain, and Templates |
+| Setup | the Garden plus Model providers, Register, Workspace folders, Installations, Password and Launch |
 
 Adding another tenant or profile adds no layout implementation. Adding another surface
 registers a per-workspace factory in the shared library; any profile may name that type.

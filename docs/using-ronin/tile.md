@@ -75,7 +75,7 @@ On a phone the button sits in the bar at the top, because the tile's own header 
 screen there, and it is a two-state toggle: **Term** or **Chat**. The fuller readings are a
 desk thing; a thumb wants the conversation or the terminal.
 
-The Output selector beside it is a different question — whether this tile's terminal takes
+Output, a row on the tile's メ menu, is a different question — whether this tile's terminal takes
 your typing — and it offers Terminal Mirror or Locked. It once listed Detailed, Condensed,
 Cherry Pick and Agent Summary as well: those were views of a recording Ronin no longer
 makes, so choosing one showed an empty tile. They have left the list, not the source; if

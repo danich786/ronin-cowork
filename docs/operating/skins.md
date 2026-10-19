@@ -2,16 +2,16 @@
 
 > **Voice: relay.** Written for the agent to walk a person through, not to follow itself.
 
-## Two controls, one room
+## Two controls
 
-**⚙ Admin Desk → Appearance.** Both live there, and they are independent:
+They are independent:
 
 | control | what it decides | where it is kept |
 |---|---|---|
-| the **light/dark** button | which shell you are in | per device. The default follows the machine's own setting, live — flip your Mac and Ronin flips. Pressing it pins; pressing back to match resumes following |
-| the **skin** list | corners, spacing, type, fonts, motion — and colour if a skin says so | per device |
+| the **light/dark** toggle (◐/☀ in the Home and Setup headers) | which shell you are in | per device. The default follows the machine's own setting, live — flip your Mac and Ronin flips. Pressing it pins; pressing back to match resumes following |
+| the **Desk profile** field on Ronin Settings' Desk surface | the skin the profile wears: corners, spacing, type, fonts, motion — and colour if a skin says so | the Campaign |
 
-Nothing else has to be set for either. If nobody ever opens this room, the shell follows
+Nothing else has to be set for either. If nobody ever touches them, the shell follows
 the machine and the skin is Stock, which is the shipped look.
 
 ## Writing your own skin
@@ -69,7 +69,7 @@ carries the measured table.
 
 The skin decides how Ronin *looks*; a **lexicon** decides what it *says* (`docs/architecture/lexicons.md`,
 `docs/products/kokugo.md`). Both hang off a **desk profile** (`ronin_catalogs/desk_profiles/`), which is
-what a person actually picks in ⚙ Admin Desk → Appearance. Same shadowing rule as everything
+what a person actually picks in the Desk profile field on Ronin Settings' Desk surface. Same shadowing rule as everything
 in the catalogs store: a file of ours of the same name is replaced whole; a new name is new.
 
 1. **The words.** `ronin-store catalogs` → `lexicons/<name>_<lang>.md` (the language is in the

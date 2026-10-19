@@ -53,14 +53,16 @@ so the normal selection, rail, detail, Escape, and focus-return behavior applies
 
 `public/js/workbench.js` owns the shared library and frame.
 `public/js/workbench-catalog.js` is the canonical registration and profile catalog for
-Ronin Settings, New Project, Cowork, Team, and Agent. Destination modules provide tenant
+Ronin Settings, New Project, Desk, Cowork, Team, Agent, and Home's Models, Workspaces and
+Teams doors. Destination modules provide tenant
 data and surface factories through their environment; they do not register another copy
 of those types or profile lists. Ronin Setup's ordered journey profile remains with its
 Setup controller because journey progress, rather than destination choice, determines it.
 
 `workbenchView(appearance, options)` in `public/js/workspace-contract.js` is the one
 application-chrome declaration. It supplies the shared header capabilities and one of the
-explicit Campaign, Setup, New Project, Cowork, Team, or Agent appearances; a view may also
+explicit Campaign, Setup, New Project (`launch`), Desk, Cowork, Team, Agent, Models,
+Workspaces or Teams appearances; a view may also
 supply its dynamic-island reading. `workspace-header.js` applies that declaration, while
 surface factories remain ignorant of header colour.
 
@@ -203,7 +205,7 @@ restoration branches.
 | Destination | First open | Notable structured opening |
 |---|---|---|
 | Ronin Settings | Defaults in workspace 1; Workspace Folders in workspace 2 | **Desk defaults** replaces the seats with Defaults and Launch your own |
-| Desk | Teams overview in workspace 1; workspace 2 blank | Status and Project drill-downs retain the Desk tenant |
+| Desk | Teams roster in workspace 1; workspace 2 blank | — |
 | New Project | New Agent in workspace 1 | Links may replace or overlay New Agent/New Team and carry prompt or template detail |
 | Ronin Setup | Garden in workspace 1; active journey surface in workspace 2 | Journey actions select a Setup surface without another restoration path |
 | Cowork / Team | Fresh empty/member seating rules; refresh restores this instance | Team Configuration, documents, commons tabs, and New Agent may be addressed in seat detail |
@@ -223,7 +225,6 @@ page-wide progressive gate is deleted.
 | Surface | Required data and owner |
 |---|---|
 | Desk | selected Desk record already held by the tenant |
-| Desk profile | selected Desk record; skin catalog enriches choices after paint |
 | Defaults | `campaign.config.defaults` immediately; provider catalog and Campaign-default options afterward |
 | Workspace Folders | its own root-detail read; repository facts belong here, not in its discovery summary |
 | Installations | installation catalog and installed facts; Desk values come from the tenant |
@@ -275,8 +276,7 @@ independent and must not hold the frame.
 | Team roster / Team profile | Team records and live session-derived membership; the roster's Phalanx is Cowork/Desk's only discovery of Teams (no per-Team selector cards); its detail and a placed Team profile paint one body (`leagueTeamBody` in `cowork-view.js`) |
 | Team roster (`cowork.session-roster`) | `js/roster.js` restored as consumed before the Phalanx port: Team records, live sessions and pushed home rows; its desk column stays empty now that desks are read when the ladder opens |
 | Agent terminal | selected session plus terminal transport; other sessions are not mounted for it |
-| Commons | only the selected tab enters: Roster, Docs, Wipeboard, Messages, Configuration, or another registered room |
-| Task Manager | Desk scope aggregates the canonical per-Team Project readings; Team scope reads the selected Team; status and Project drill-downs are independently placeable surfaces carrying the same tenant |
+| Commons | only the selected tab enters: Roster, Docs, Wipeboard, Messages, Cron jobs or Configuration |
 | Cron jobs | scheduled messages for the addressed Team or collection scope |
 | New Agent / New Team | canonical launch form and its dependencies listed above |
 | Archived sessions | archive manifests when shown |

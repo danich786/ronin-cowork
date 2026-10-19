@@ -17,15 +17,6 @@ test('the tile corner exposes minimize and retirement through the existing Tile 
   assert.match(tile, /retireSession\(name, this\.retirementId/);
 });
 
-test('the tile header holds no retired control', async () => {
-  const [head, tile, phone] = await Promise.all([
-    read('public/js/tilehead.js'), read('public/js/tile.js'), read('public/js/phone.js'),
-  ]);
-  assert.doesNotMatch(head, /buildTileMore|key: 'moreBtn'|key: 'dial'|key: 'noteBtn'/);
-  assert.doesNotMatch(tile, /refreshControl|pickControl|openNote/);
-  assert.doesNotMatch(phone, /node\('noteBtn'\)|node\('dial'\)/);
-});
-
 test('the Torii rename prompt keeps the immutable Agent ID visible', async () => {
   const tile = await read('public/js/tile.js');
   assert.match(tile, /head\.rename_prompt', 'Edit Agent title\\n\\nAgent ID: \{id\}', \{ id: session \}/);

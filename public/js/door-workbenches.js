@@ -8,7 +8,7 @@
  * stone dragged into a workspace or a selector card placing that provider whole; Workspaces
  * seats its own stones of folders (workspaces-surface.js) the same way, its three admin doors
  * dotted selector cards;
- * Teams seats collection_view's stones (teams-surface.js), a stone pressed placing the
+ * Teams seats its own stones of Teams (teams-surface.js), a stone pressed placing the
  * Team's read in Workspace 2, and offers New Team.
  */
 import { WorkspaceKit } from './workspace-kit.js';
@@ -131,7 +131,7 @@ export function createWorkspacesView() {
   });
 }
 
-/** Teams: collection_view's stones in Workspace 1, a stone's read in Workspace 2, New Team offered. */
+/** Teams: its stones of Teams in Workspace 1, a stone's read in Workspace 2, New Team offered. */
 export function createTeamsView() {
   const made = [];
   const keep = (surface) => { made.push(surface); return surface; };

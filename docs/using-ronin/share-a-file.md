@@ -26,7 +26,7 @@ had half typed stays, with the path added after it.
 ## A work item, the same way
 
 Drag a work item onto a tile: a stone on Work Items. Its reference, the id and the title in square brackets
-(`[w6 "Work items surface: Status / Board toggle"]`), is typed into the Agent's input without Enter, after anything you
+(`[w6 "Fix the login redirect"]`), is typed into the Agent's input without Enter, after anything you
 had typed, so you ask about it around it. Nothing is saved: it is a reference, not a file.
 Dragging an item within its own surface still moves it as before; only a drop on a tile
 types the reference.

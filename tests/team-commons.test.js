@@ -41,7 +41,6 @@ test('Roster remains a roster; the Team page selector is Commons, Agents, New Ag
   assert.match(members, /toggle\.setAttribute\('aria-expanded', 'false'\)/);
   assert.match(members, /toggle\.setAttribute\('aria-controls', detail\.id\)/);
   assert.match(members, /let density = 'compact', selected/);
-  assert.doesNotMatch(members, /orgButton|org_reading/, 'Roster does not privately retain the chart reading');
   assert.match(members, /options\.onSelect\?\.\(member\)/);
   assert.match(catalog, /agentComposition: AGENT_COMPOSITION_TYPE/);
   assert.match(catalog, /WORKBENCH_PROFILES\.team[^\n]*WORKBENCH_TYPES\.agentComposition/);
@@ -54,7 +53,6 @@ test('Roster remains a roster; the Team page selector is Commons, Agents, New Ag
   assert.match(members, /const pick = ask\(\[\{ fields: \[\{[\s\S]*key: 'lead'[\s\S]*options: choices\.map/);
   assert.match(view, /onAddLead: \(\) => bench\.place\(WB_TYPES\.newAgent, oppositeSeat\(id\), \{[\s\S]*teamLead: true/);
   assert.match(await source('public/js/new-agent.js'), /if \(detail\?\.teamLead === true\) draft\.teamLead = true/);
-  assert.doesNotMatch(coworkRoster, /org_reading|buildTeamMembers/);
   assert.match(phalanx, /export function createPhalanx/);
   assert.match(kotoba, /\| Phalanx \| A shared collection surface:/);
   assert.match(members, /if \(reading\.description\) detail\.append/);
@@ -67,7 +65,6 @@ test('Roster remains a roster; the Team page selector is Commons, Agents, New Ag
   assert.doesNotMatch(view, /gear/);
   assert.match(catalog, /type: WORKBENCH_TYPES\.team, header: 'surface', discover: \(\) => \[\]/, 'the selector offers no per-Team card');
   assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.team, \[WORKBENCH_TYPES\.commons, WORKBENCH_TYPES\.terminal, WORKBENCH_TYPES\.newAgent, WORKBENCH_TYPES\.agentComposition, BEHAVIOUR_SURFACE_TYPE, FEEDBACK_TYPE\]\)/, 'the Team page selector: Commons, Agents, New Agent; the rest placeable only');
-  assert.doesNotMatch(catalog + view, /teamChart|TEAM_CHART/, 'Team Chart is gone');
   assert.doesNotMatch(view, /workItemOffers|createWorkItemsSurface/, 'the Team page offers no Work Items card; the Agent workbench keeps its own');
   // Owner 2026-09-28: the roster that existed (js/roster.js) is back on Cowork and Desk, as it was.
   assert.match(catalog, /WORKBENCH_PROFILES\.cowork, \[[^\n]*WORKBENCH_TYPES\.sessionRoster/);

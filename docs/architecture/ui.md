@@ -109,9 +109,8 @@ competing with it. The whole feature is one catalog, one route and thirty lines 
 it is the dividend of the token work above, not a second system.
 
 **The escape hatch costs you a name.** A one-off MEASUREMENT is not a rung and must not
-become one — `--tape-clearance` (the composer's height, so the last transcript line is not
-hidden), `--ptr-len`/`--ptr-wide` (the dial needle's geometry, three numbers that must move
-together), `--fr-gutter` (first-load is a document, not the app grid). A `--name:` line is
+become one — `--ptr-len`/`--ptr-wide` (the dial needle's geometry, numbers that must move
+together). A `--name:` line is
 the one legal home for a raw value, so naming it satisfies the gate *and* says what the
 number is. `0` is always legal: the absence of a value is not a value.
 
@@ -153,7 +152,8 @@ colour and motion intensify only while the owner-triggered check or installation
 
 Two shells, same roles: `:root` is dark, `:root[data-theme='light']` remaps. **The
 default FOLLOWS THE DEVICE** (`prefers-color-scheme`, live — flip the Mac and Ronin
-the ⚙ System sheet: flipping away from the device's mode pins the shell; flipping
+follows). The ◐/☀ toggle in the Home and Setup headers (`theme-toggle.js`) flips it:
+flipping away from the device's mode pins the shell; flipping
 back to match re-arms following — no third control exists (`theme.js setTheme`).
 Per device (localStorage `tmuxgrid.theme`); `index.html` resolves the choice inline
 before first paint. One resolved palette feeds CSS, xterm and the browser's
@@ -219,7 +219,8 @@ consumer is a program this repo does not ship.
 Every JSON call goes through `request()` (`public/js/request.js`) and gets one answer
 shape: `{ok, status, data}` or `{ok:false, kind, message, retryable}`. It never throws
 for a transport outcome, never toasts, never retries a mutation, and knows no Ronin
-vocabulary. Documented exceptions: `voice.js` (audio blob), `stats.js` (beacon).
+vocabulary. Documented exceptions: `voice.js` (audio blob), `lexicon.js` (word catalogs),
+`message-queue.js` (dismissal), `setup-surfaces.js` (an SVG mark).
 
 The failure kinds are `network` (it never reached Ronin), `abort` (the caller cancelled),
 `http` (Ronin answered with a failing status — the status is the story, whatever the body
@@ -236,14 +237,14 @@ Where a failure LANDS is a product decision, by scope:
 
 | Scope | Surface | Rule |
 |---|---|---|
-| field/form | the form's own notice line (`.ks-err`, `.ns-msg`, `.tg-msg`) | typed work survives; the sheet/form stays open |
-| pane | the pane's empty/error line (`.pr-empty`, `.wb-empty`, …) | navigation survives; retry is re-entering |
+| field/form | the form's own notice line | typed work survives; the sheet/form stays open |
+| pane | the pane's empty/error line (`.pr-empty`, …) | navigation survives; retry is re-entering |
 | tile-scoped act | the toast (`ui.toast`) | an alert would steal the keyboard from a live pane |
 | roster freshness | the stale line (`.home-stale`) | stale-and-labelled beats empty-and-silent |
 | application fault | `#failbar` (`errors.js`) | unchanged: the last line of defence, technical, loud |
 
 A failed save must never close the editor and look successful; a failed load must never
-leave an enabled empty editor (Docs and Notes both enforce this); a failed refresh
+leave an enabled empty editor (Docs enforces this); a failed refresh
 keeps the last good data and says so.
 
 Native dialogs: `confirm()` is the destructive-confirm primitive (kill session, discard
@@ -342,8 +343,9 @@ desktop composition happened not to unmount it.
 
 - **Sheet/dialog** — `ui.sheet` (`public/js/ui.js`): scrim + card, `role=dialog`,
   focus enters the first field (never on touch — the iOS keyboard), Tab is contained,
-  Escape and the backdrop dismiss, and focus RETURNS to the opener. Consumers: Notes,
-  come across — the pad's ▦ panel and its ask-on-press prompt. The prompt is the one
+  Escape and the backdrop dismiss, and focus RETURNS to the opener. Consumers: the
+  session picker, session retirement, terminal copy, and the pad's ▦ panel and its
+  ask-on-press prompt. The prompt is the one
   surface that overrides the touch rule and focuses its field anyway: it has nothing
   to read, it IS the field. Nothing hand-rolls a sheet any more.
   `.focus()` guarded on `isConnected`, and neither half was the question: `.focus()` is a
@@ -361,21 +363,14 @@ desktop composition happened not to unmount it.
   handler and moves focus to the nearest focusable ancestor of what was pressed — the scrim
   is a bare `div`, so that is `<body>`, arriving right after the restore and undoing it.
   The pointer's default is cancelled, so the restore is the last word, for every consumer,
-  ⚙ System and the session switcher included.
+  the session picker included.
   A primitive with no consumer is deleted, not parked — the tape is in git. The dismissal
   grammar is not repealed: the menu (`menu.js`) carries it in its own code, and
   the day a bar control drops a menu again it comes back to `ui.js` rather than being
   hand-rolled at the call site.
-  **Weighed again the same day and still not restored.** メ on the tile header now drops
-  the six controls that used to end the row (`public/js/tilemore.js`, docs/using-ronin/tile.md); it
-  follows the adjacent header-menu grammar, and the reason is mechanical rather than
-  taste. The drops that hang off a tile header close each other with a `.open` **class**
-  sweep, while `popover()` hid with the `hidden` **attribute**. Restoring the
-  primitive for one of two adjacent header dropdowns and not the other would be a third
-  convention, not a shared one. What that call site DOES carry is the half of `popover()`
-  that was about access: `aria-haspopup` / `aria-expanded` on the opener, and focus back
-  on it when the drop closes under the keyboard. The paragraph above still stands, and it
-  is about the BAR; a tile header is not the bar.
+  メ on the tile header drops its menu through `menu.js` (docs/using-ronin/tile.md), which
+  carries `aria-haspopup` / `aria-expanded` on the opener and returns focus to it when the
+  drop closes under the keyboard.
 - **Toast** — `ui.toast`: one chip, `role=status`, errors hold longer than successes.
 - **Attention flash** — `ui.attention`: one bounded, central kaki cue with `role=status`;
   it never steals focus and names the surface where the owner action is waiting.
@@ -383,13 +378,14 @@ desktop composition happened not to unmount it.
   `display: contents` so the layout it sits in does not move. Labels are
   screen-reader-only by default (the cockpit's density keeps placeholders as the
   visual); the message doubles as `aria-describedby`/`aria-invalid`. Consumers:
-  launcher, hotwords, tags, notes, wipeboard.
+  hotwords, machine settings, system, services card, campaign surfaces, team jikan.
 - **Async status** — `ui.status`: the one spelling of loading…/saved/not-saved-and-why,
-  `role=status`, hidden when empty, kinds `busy/ok/bad`. Consumers: launcher, hotwords,
-  notes, tags, docs, koshi, roots, system.
-- **Tabs** — `ui.tabs`: tablist/tab roles, `aria-selected`, roving tabindex, arrow keys
-  over a strip that already exists; activation stays a click, because entering a room
-  starts its fetches. Consumers: the Commons strip, the Stats windows.
+  `role=status`, hidden when empty, kinds `busy/ok/bad`. Consumers: hotwords, docs,
+  koshi, roots, folder picker, machine panel and settings, services card, system.
+- **Confirm** — `ui.confirmDialog`: a labelled confirm/cancel dialog. Consumers: roots,
+  folder picker.
+- **Tabs** — tab strips come from WorkspaceKit's `createTabbedSurface`; the Commons strip
+  is one.
 - **Button** — `ui.button`: `type=button` + label + help in one call; sugar with a
   guarantee.
 
@@ -401,79 +397,18 @@ The precedence and ownership of first-open defaults, remembered refresh state, a
 one-shot structured launches live in
 [Workbench construction](workbench.md#entry-refresh-and-intentional-launch).
 
-The retired embedded Commons' rooms lived in one pane registry consumed by its tab
-strip. A row carried a full label and an optional compact label for the
-402px strip, and a hint. A new room is one registry row plus one feature module;
-service gating stays `serviceOff()` in `state.js`.
+The Team destination's Commons (`cowork-view.js`: Roster, Docs, Wipeboard, Messages, Cron
+jobs, Configuration) and the Campaign's Machine surface (`cowork-commons.js`: Themes, Desk,
+Account, Archived, Messages, Help desk, Keypad) are workspace surfaces, never overlays, and
+both draw their strip with WorkspaceKit's `createTabbedSurface`. Each tab builds its room on
+first entry, because entering a room starts its fetches. Install-level facts — configuration,
+release and update, hotwords, Koshi, log out and passkeys — are rows of the Account tab's
+rail (`system.js` `buildSystemPanel`), drawn once rather than per tile.
 
-**The bar is a DESTINATION, the strip is the choosing.**
-⛩ Commons is one press and lands on ⌂ Roster — "the main tab in the Commons and first
-port of call on hitting the Commons". It dropped a registry-fed popover of every room
-until then; the menu is gone, glyph and all (き → ⛩, the house mark for "open the
-Commons"). **The known cost, taken with eyes open: the bar no longer reaches a SPECIFIC
-room in one press.** That is the trade, not an oversight — do not reinstate the menu as
-a fallback. ONE surface reads the registry now: the tab strip. The registry still exists
-as a registry because the drift it was written against — two hand-kept lists of rooms —
-is what happens the moment a second surface needs them.
-
-The retired embedded Commons was the control-plane shell only; the roster and launcher were rooms
-like Wipeboard and Docs (`roster.js`, and a launcher module retired with the ＋ New board
-
-⚙ Account is deliberately NOT a room: install-level facts (release, updates,
-appearance, log out) are page-level, so ONE control in the bar opens one sheet
-(`system.js`) — a room meant four copies, one per tile.
-shape**: the owner wants an Accounts tab in the Commons eventually, backed by SETTEI.
-Only the label moved — the fields such a room would hold (owner name, entitlement) are
-exactly what SETTEI has not settled, and an empty room is four empty copies of the
-ruling above. Build it when SETTEI lands and there is content for it.
-On touch the control relocates into the ニ sheet like the other bar verbs. The Commons
-tab strip scrolls at every width — a 4-up desktop tile is narrower than the row of
-rooms, and clipping the tail is how a tab goes quietly missing.
-
-SESSIONS and six about the INSTALL. Ten measured 871px against a 609px tile, and the
-⚙ Configuration rename (67px → 107px) pushed even a 1920 display 10px over — so it scrolled
-at every width there was. Length was the symptom; the defect was that the six were drawn in
-**every sessionless tile**, four copies of facts with one value. The house had already ruled
-that line once, for the gear — *release, update, appearance and log out are the install's,
-not a tile's* — and the six were on the wrong side of it.
-
-**`cowork_commons`**'s (`js/cowork-commons.js`, `docs/using-ronin/cowork-space.md`) — a workspace
-surface with six tabs, never an overlay: ⚙ places it in the workspace you are in on the
-workbench, and shows it at full width as the `cowork` destination on the parked grid
-page. The rest of this section is the desk's history. The desk was a
-TILE, not a page-level sheet (owner: *"page level surface? cant it just be a tile?"*): the
-copies were never about a surface being able to live in a tile, they were about six rooms
-being drawn in every empty one whether or not anyone wanted them. A tile is also a full
-pane, which is why ⚙ Configuration became a room instead of staying in the gear's sheet — a
-sheet would have re-lost that. It has **no tile header**: every control up there acts on a
-session. Its own ✕ is **undo** — back to the terminal when the tile has a session, back to
-the Commons when it does not, and the Commons is also the fallback if the session died while
-the desk was up, because an empty tile has nothing behind its overlays. ⚙ toggles, the lesson
-⛩ already learned. The rail is **glyphs + labels** with a collapse button: the
-`@container tile` query says how a name lays out (beside its glyph, or stacked at 70px in a
-4-up), the button says whether names show at all.
-
-**Historical rule:** one registry gave every row a `surface` — `commons` or
-`desk` — and each surface filters to its own. That is the same file that exists because the
-strip and the old き menu drifted; a row now states which surface owns it, so they cannot.
-
-**How you know the strip has more on it: a fade, not a scrollbar**. Ten rooms plus the ✕ is
-831px against a 599px desktop tile, so a third of the strip is off-screen at any moment.
-The bar used to be that signal on a mouse, drawn across the bottom edge of a 26px strip
-on overflow, with a permanently reserved `scrollbar-gutter` behind it to stop the strip's
-height flapping. It is off at every width now: each end of the strip fades out when there
-were tabs behind it, the embedded shell wrote `data-edge` from the scroll position, and the
-stylesheet owns the look. Nothing draws, so the height is constant without reserving
-anything. Selecting a pane also scrolls its tab back onto the strip — a room can be
-entered from somewhere other than its own tab (⚙ Configuration from first-run, ▧ Docs from the
-tile's 📄), and the strip must not disagree with the pane.
-
-Keypad, Mika Assist, New and the 1·2·4 count all left the bar by the owner's word: the
-Commons is the tile's ⛩ and ⌃⇧C on the parked grid page, Mika is the `mika` tool, Keypad
-and Roster are tabs of the cowork commons, a new session is a workspace surface (＋ Add
-team member, ⌃⇧N), and the space's shape is the roster's `2 | 4`. The `min-width` rule
-stays so a second verb, if one returns, sits in the same box. The grid count is exempt: it is a number, not a verb. At ≤680px the
-words go and the width goes with them (a genuine shell change, so a `@media` query).
+**How you know the strip has more on it: a fade, not a scrollbar.** The strip scrolls at
+every width; each end fades out when there are tabs behind it (`data-edge` on
+`.wk-tabset-scroller`), and the stylesheet owns the look, so the height is constant without
+reserving a gutter.
 
 ## Keyboard and focus
 
@@ -501,9 +436,8 @@ words go and the width goes with them (a genuine shell change, so a `@media` que
   to hover or keyboard focus without a new owner ruling. Shortcuts remain owned by their
   handlers in `layout.js`, not by tooltip text.
 - Escape closes the topmost transient surface, everywhere. A capture-phase Escape listener
-  (the tile drops, the job menu) has to YIELD while a modal sheet is up over it, or being
-  first in the propagation order quietly makes it topmost when it is not — メ's drop, which
-  down (`public/js/tilemore.js`, docs/using-ronin/tile.md).
+  (the tile drops) has to YIELD while a modal sheet is up over it, or being first in the
+  propagation order quietly makes it topmost when it is not.
 
 ## Structure gates
 
@@ -520,7 +454,7 @@ reviewed way to accept an intended change) · `tests/` (the pure contracts:
 
 ## Agents are data, not branches
 
-The launcher renders `session_launch_spec` cells; providers and agent CLIs arrive as
+Launches read session launch specs (`src/spawn.ts`); providers and agent CLIs arrive as
 catalog rows (`ronin_catalogs/PROJECT_ROOTS.md` — each populated cell is a
 provider/model/cmd triple; the standing write-up of that contract rides the owner's
 model-providers doc, in flight beside this), never as UI branches. Future agent forms
@@ -551,8 +485,8 @@ prints as step 2. Rather than hiding a button that would do nothing,
 derived per request from `Host` (`RONIN_RP_ID` overrides it for a proxy that rewrites
 Host), so one build serves every install.
 
-**Registration is behind the gate, spending is in front.** A passkey is added from ⚙
-System (`public/js/system.js`) after proving you are already the owner; the login page
+**Registration is behind the gate, spending is in front.** A passkey is added from the
+Account rail's Log out row (`public/js/system.js`) after proving you are already the owner; the login page
 can only use one. There is deliberately no unauthenticated registration route.
 `bin/ronin-recovery` calls the authenticated operator HTTP surface to mint a one-shot
 code, valid 30 minutes, for the case where a
@@ -575,7 +509,7 @@ opening `https://<magicdns>:4810` and pressing the button once:
   It is built to refuse loudly rather than guess — if `Host` arrives as the IP the
   endpoint returns a plain-English refusal and the page shows it — and `RONIN_RP_ID` is
   the escape hatch. One glance at the first real attempt closes this.
-- **whether registration from ⚙ System and login from `/login` actually complete.**
+- **whether registration from the Account rail and login from `/login` actually complete.**
 
 So: do not describe passkeys as working, and do not rebuild this because it looks
 unfinished — it is finished and unproven, which is a different thing. The gap is one

@@ -2,7 +2,7 @@
 
 > **The page format is the `workbench`** — the team was its first tenant, not its
 > definition. The surface map and the names (workspace · selector column · terminal_tile ·
-> team_commons · cowork_commons · surface head) are `docs/using-ronin/cowork-space.md`; this file stays
+> team_commons · cowork_commons · surface head) are `docs/architecture/cowork-space.md`; this file stays
 > the implementation record of the team's use of it.
 
 This is the current contract for the Team destination. It describes what is landed on
@@ -10,11 +10,11 @@ This is the current contract for the Team destination. It describes what is land
 
 ## Purpose and non-goals
 
-`#/team/:name` is the Team workbench: **two workspaces around the Team roster.** Each
-workspace holds exactly one thing — a member's full terminal Tile, or the Commons
-(chat · wipeboard · docs · configuration) — and trades between them with one button in
-its header row: **C** on a Tile's head, **T** on the commons' tab strip. The three
-columns are shown, hidden and reordered from a small **layout map** in the app bar.
+`#/team/:name` is the Team workbench: **two workspaces around the Team's selector.** The
+selector holds the Commons, the Agents, New Agent and the hints. Each workspace holds
+exactly one thing — a member's full terminal Tile, the Commons (roster · docs · wipeboard ·
+messages · cron jobs · configuration), New Agent or an Agent's composition — placed from
+the selector by click or drag. The three columns are shown, hidden and reordered from a small **layout map** in the app bar.
 
 Team composes existing Ronin machinery. It does not create a second terminal, Team store,
 workspace shell, or control system. Specifically:
@@ -23,15 +23,13 @@ workspace shell, or control system. Specifically:
   one seam that touches a Tile is `createTerminalTileHost({ actions })`;
 - never create another transport, composer, output selector, or terminal lifecycle;
 - never infer membership from a durable roster — membership is live and session-owned;
-- never improvise a Chat protocol — Chat is reserved, empty, and inert;
 - never make Configuration authoritative for membership or leadership; those live in Roster;
-- never move Kit layout, splitter, responsive, or persistence behavior into Team;
-- never replace or narrow the existing Sessions destination.
+- never move Kit layout, splitter, responsive, or persistence behavior into Team.
 
 ## Destination boundary
 
-`#/team/:name` is the terminal-bearing cowork-space destination. The former raw Sessions
-one on leave so no transport survives outside the entered destination.
+`#/team/:name` is the terminal-bearing cowork-space destination. It closes every Tile
+on leave so no transport survives outside the entered destination.
 
 ## `#/team/:name` user flow
 
@@ -45,23 +43,19 @@ one on leave so no transport survives outside the entered destination.
    projected from sessions whose tags contain the Team name. Membership stays live
    while the page is open: the events feed pushes on tag and lead changes, and the page
    repaints (seats, cards, configuration) whenever the member set or the 人 changes.
-5. Each workspace gets back what it remembered. With nothing remembered: the **人** (the
-   designated lead) left, the commons right. A remembered member the roster no longer has
+5. Each workspace gets back what it remembered. With nothing remembered, the **人** (the
+   designated lead) takes the first empty workspace. A remembered member the roster no longer has
    is waited for while the roster is still arriving, then let go.
-6. The roster renders one card per member and a `＋ Add Agent to Team` card. A card
+6. The selector renders the Commons card, one card per member, and the New Agent card. A member card
    is a **reading**: Agent title, 人, SHINGO chip, status (ready · thinking · awaiting
    input), model, ⛽ context, attached — read off the store's home row: handed over
    on entry, then again each time the server pushes a change. Leaving unsubscribes.
-7. **Click a card** and its Tile goes into the workspace last touched (the one carrying
-   the Sessions grid's `.tile.active` highlight); **drag a card** onto a workspace and it
+7. **Click a card** and its Tile goes into the workspace last touched; **drag a card** onto a workspace and it
    goes there. Arrow keys walk the cards; Enter picks.
-8. **C** on a Tile's head trades the commons into that workspace; **T** on the commons
-   trades the terminal back. A workspace with no member seated shows an empty Tile —
-   head row and C, no session — never a blank box.
-9. The two workspaces are **not connected**: each has its own warm pool of Tiles. The
+8. The two workspaces are **not connected**: each has its own warm pool of Tiles. The
    same session may be up in both. Cap 2 per workspace (four in all); the lead is pinned
    hot in workspace 1.
-10. Leaving, changing Team, losing membership, or destroying closes and destroys every
+9. Leaving, changing Team, losing membership, or destroying closes and destroys every
     Tile of the page. No transport survives outside the entered Team destination.
 
 The Team name is the destination title; the favicon carries the Ronin house identity.
@@ -73,8 +67,7 @@ Persistence is per browser tab (sessionStorage); one tab is one team.
 ## The page takes instructions (`edges page`)
 
 Everything that changes the page goes through one controller, `arrange(draft)` in
-`cowork-view.js`, built by `createArranger` (`team-arrange.js`). The C/T buttons and the
-roster cards call it — and so does a **draft** an agent hands in with `edges page`
+`cowork-view.js`, built by `createArranger` (`team-arrange.js`). The selector cards call it — and so does a **draft** an agent hands in with `edges page`
 (`ronin_bin/`, catalogued in `ronin_catalogs/TOOLS.md`). The tool's bare form prints the view (the roster;
 each tab on the team; which workspace the owner is typing in; which shows the agent;
 what each holds); its other form takes `key=value` words naming only what should
@@ -160,7 +153,7 @@ not thrown away; the Coworks page's copy of the tab keeps the same rule. **Save*
   prewarm, cap. No renderer, cache, or socket engine.
 - `public/js/team-wipeboard.js` — the commons' roster-resolved wipeboard thread.
 - `public/js/team-configuration.js` — the Configuration tab: the record's questions as `ask()` specs, and Save.
-- `public/css/team-workspace.css` — roster header, cards, flip button, configuration.
+- `public/css/team-workspace.css` — roster header, cards, configuration.
 - `src/routes/team-page-api.ts` — the page's view and drafts; `src/ws/events.ts`
   `broadcastEvent`.
 - `ronin_bin/edges page` — the agent's tool.
@@ -203,7 +196,7 @@ pointer handlers, width state, or geometry CSS.
 
 `public/workspace-kit.css` owns `.wk-workbench-*`, `.wk-layout-*`, `.wk-tabset-*`, the
 layout map, and the compact-card rule. `public/css/team-workspace.css` styles Team semantics only: the
-roster header, cards, the C/T button, configuration readings, drop targets. It must not
+roster header, cards, configuration readings, drop targets. It must not
 select `.wk-*` internals or restyle `.tile-head`.
 
 ## Existing Tile and header contract
@@ -221,9 +214,9 @@ workspace 1 and kept hot from entry; hovering a card pre-warms it in the workspa
 click would land in. Leaving destroys every host and every empty Tile; re-entry rebuilds
 from what the tab remembered.
 
-## Channel Surface
+## Commons tabs
 
-- **Chat** — reserved, empty, inert.
+- **Roster** — the members' rows (`team-members.js`), with Make Lead.
 - **Wipeboard** — the real Team thread and owner composer; the roster's `wipeboard` id or
   the Team name. Entering asks the server for the thread over the socket; the thread and
   every later post arrive by push until the tab is left.
@@ -235,19 +228,17 @@ from what the tab remembered.
 - **Configuration** — a compact editor for the durable `team_roster`: its stable
   Cowork ID as a reading, plus editable readable title, purpose and launch defaults. Membership remains on
   Agents and is deliberately absent from this form.
-
-The tab bar carries **T** in its actions slot through `createTabbedSurface({ actions })`.
+- **Cron jobs** — the Team's scheduled messages (`team-jikan.js`).
 
 ### The three headers
 
 A tile's head, the commons' tab strip and the roster's head share one depth, the
-`--row-head` token in `style.css` (41px). **C** on a tile head is sized by the head's own
-A tile head wraps rather than clips when its workspace is squeezed, so the picker stays
-readable and every control — C included — stays reachable at the workspace floor.
+`--row-head` token in `style.css` (41px). A tile head wraps rather than clips when its
+workspace is squeezed, so every control stays reachable at the workspace floor.
 
 ## Verified behavior and commands
 
-the layout map · `dfc627f`/`8d1758b`/`085426b` discrete workspaces, C/T, KISS ·
+the layout map · `dfc627f`/`8d1758b`/`085426b` discrete workspaces, KISS ·
 `08c6813` end-to-end review · `272428c` roster readings · `4b42d44` 人 from the tile,
 keyboard · `5acb840` `edges page` · `a6819eb` the roster in its view · `041206a`
 `+show_file` on the team page · `02f288b` live membership seats and unseats ·
@@ -260,17 +251,15 @@ The designated integrator runs one BYOIN mode on the release candidate; a SKIP i
 
 ## Known limits
 
-- `＋ Add Agent to Team` opens the Add Agent form in the workspace you place it in. The
+- New Agent opens the New Agent form in the workspace you place it in. The
   born Agent takes that same workspace, in this tab; no new tab opens. If the launch
   receipt carries a desk or lead note, the form stays so the note can be read, and the
   newborn is on the roster one click away (owner ruling 2026-09-08).
 - Team Configuration edits roster metadata but never the Cowork ID; that stable address
   is pinned by live Agent membership and lead pointers. Membership itself is still edited
   from roster drag/drop, never stored on the roster.
-- Chat is intentionally empty.
 - No cherry-pick/summary reading on the cards: no service puts such a field on the
   home row.
-- There is no Team-scoped 1/2/4 mode. Sessions retains its separate raw grid.
 - The workspace selects the session it shows. The current Tile header displays its
   session name; roster placement and drag/drop change the selection.
 - `src/` changes need `ronin-host restart` (`tsx`, no watch); `public/` is live.
@@ -283,15 +272,13 @@ Buildouts, temporary preview addresses, and session handoffs belong in the creat
 
 ## Manual verification
 
-1. Open a rostered `#/team/:name`; confirm the lead's Tile left, the commons right, the
-   roster between, the layout map in the bar.
+1. Open a rostered `#/team/:name`; confirm the lead's Tile in a workspace, the selector
+   beside it, the layout map in the bar.
 2. Click the map's rectangles: columns hide and return; drag one past another: columns
    reorder; reload: it holds.
 3. Pull each splitter: both workspaces move by the same amount; squeeze the roster: it goes
    to names only.
 4. Click a card: its Tile lands in the highlighted workspace; drag a card onto the other:
    it lands there; the same session in both.
-5. C on a Tile: the commons trades in; T: the terminal trades back with its session.
-6. From a member's shell: `edges page` prints the view; a draft moves the page and the
+5. From a member's shell: `edges page` prints the view; a draft moves the page and the
    roster header says who.
-7. Open Sessions and exercise raw 1/2/4 layouts; confirm exactly four Tiles.

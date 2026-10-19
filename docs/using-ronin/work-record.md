@@ -2,7 +2,7 @@
 
 A work record says what an Agent is doing now: its objective, repositories, the work items
 it holds, and its focus. The ladder and the documents live on the work item the Agent is
-on. The Team Kanban is a reading of the same items; there is no stored board to reconcile.
+on. The Task Manager is a reading of the same items; there is no stored board to reconcile.
 
 Use the shipped `work-record` command exposed to your session. `work-record --help` is the
 canonical command vocabulary; there are no legacy reader or writer aliases.
