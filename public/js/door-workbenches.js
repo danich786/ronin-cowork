@@ -6,7 +6,8 @@
  * on a profile of the door's surfaces (workbench-catalog.js), the door's surface seated in
  * Workspace 1 on first open. Models seats its own stones of providers (models-surface.js), a
  * stone dragged into a workspace or a selector card placing that provider whole; Workspaces
- * seats the Workspace Folders surface as Settings seats it, with no selector cards for now;
+ * seats its own stones of folders (workspaces-surface.js) the same way, its three admin doors
+ * dotted selector cards;
  * Teams seats collection_view's stones (teams-surface.js), a stone pressed placing the
  * Team's read in Workspace 2, and offers New Team.
  */
@@ -17,7 +18,8 @@ import { registerWorkbenchCatalog, WORKBENCH_PROFILES, WORKBENCH_TYPES } from '.
 import { createProviderSetupSessionMount } from './provider-setup-session.js';
 import { loadProviderCatalog } from './form-steps.js';
 import { createModelProvider, createModelStones, providerOffers } from './models-surface.js';
-import { createWorkspaceFoldersSurface } from './workspace-folders-surface.js';
+import { createGithubWorkspaceSetup } from './github-workspace-setup.js';
+import { createFolder, createFolderClone, createFolderGithub, createFolderNew, createFolderStones, createRootsReading, folderOffers } from './workspaces-surface.js';
 import { campaignById, loadCampaigns, normalizeSelection } from './campaigns.js';
 import { createNewTeamFormView } from './new-team-form.js';
 import { createTeamReadSurface, createTeamsSurface } from './teams-surface.js';
@@ -93,17 +95,39 @@ export function createModelsView() {
   });
 }
 
-/** Workspaces: the Workspace Folders surface in Workspace 1, over the Campaign this tab looks at. */
+/** Workspaces: the stones of folders in Workspace 1 over the Campaign this tab looks at, a folder whole where a
+ * stone is dropped or its card placed, one card per folder; Add a workspace, GitHub CLI and Clone a repository
+ * as dotted cards, the folder they add taking their workspace. One read of the folders for the whole bench. */
 export function createWorkspacesView() {
   const campaign = (ctx) => campaignById(normalizeSelection(ctx()?.state?.campaignSelection).primary_campaign_id);
+  const providerSessions = createProviderSetupSessionMount();
+  const reading = createRootsReading();
+  const made = [];
+  const keep = (surface) => { made.push(surface); return surface; };
+  let github = null;
+  let cloneSeat = 'workspace2';
   return doorWorkbench({
-    id: 'workspaces', profile: WORKBENCH_PROFILES.workspaces, label: t('campaign_home.workspaces', 'Workspaces'), seat: WORKBENCH_TYPES.campaignRoots, cards: false,
+    id: 'workspaces', profile: WORKBENCH_PROFILES.workspaces, label: t('campaign_home.workspaces', 'Workspaces'), seat: WORKBENCH_TYPES.folderStones,
     loaded: loadCampaigns,
-    environment: ({ entered, ctx }) => ({
-      campaignRoots: ({ workspace }) => createWorkspaceFoldersSurface({
-        campaignId: () => campaign(ctx)?.id || '', connected: (host) => entered() && host.isConnected, presentation: 'stones', workspace,
-      }),
-    }),
+    environment: ({ bench, ctx }) => {
+      const campaignId = () => campaign(ctx)?.id || '';
+      const placeFolder = (name, workspace) => bench().place(WORKBENCH_TYPES.folder, workspace, { key: name });
+      const environment = {
+        mountProviderSetupSession: providerSessions.mountProviderSetupSession,
+        folders: () => folderOffers(reading),
+        folderStones: () => keep(createFolderStones({ reading, campaignId, workbench: bench() })),
+        folder: (_workspace, detail) => keep(createFolder(detail.key, { reading, campaignId })),
+        folderNew: (workspace) => keep(createFolderNew({ reading, campaignId, placeFolder: (name) => placeFolder(name, workspace) })),
+        folderGithub: () => keep(createFolderGithub(github ??= boxes())),
+        folderClone: (workspace) => { cloneSeat = workspace; return keep(createFolderClone(github ??= boxes())); },
+      };
+      const boxes = () => createGithubWorkspaceSetup({
+        environment, workspace: 'workspace2',
+        onCloned: async (root) => { await reading.read(); if (root?.name) placeFolder(root.name, cloneSeat); },
+      });
+      return environment;
+    },
+    destroy: () => { for (const surface of made.splice(0)) surface.destroy?.(); github?.destroy(); github = null; providerSessions.destroyAll(); },
   });
 }
 

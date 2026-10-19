@@ -29,7 +29,8 @@ test('Ronin Home has three doors — Models, Workspaces, Teams — each opening 
   assert.doesNotMatch(home, /fullOverlay|openTeamsOver|work-overlay|api\/setup\/runtime/, 'no overlays over Home, no provider gate');
   assert.match(doors, /seat: WORKBENCH_TYPES\.modelStones,/, 'Models seats its own stones of providers');
   assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.models, \[WORKBENCH_TYPES\.modelStones, WORKBENCH_TYPES\.modelProvider\]\)/, 'a provider whole is placeable on Models, by a dragged stone or its card');
-  assert.match(doors, /seat: WORKBENCH_TYPES\.campaignRoots, cards: false/, 'Workspaces seats the Workspace Folders surface, no selector cards');
+  assert.match(doors, /seat: WORKBENCH_TYPES\.folderStones,/, 'Workspaces seats its own stones of folders');
+  assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.workspaces, \[WORKBENCH_TYPES\.folderStones, WORKBENCH_TYPES\.folder, WORKBENCH_TYPES\.folderNew, WORKBENCH_TYPES\.folderGithub, WORKBENCH_TYPES\.folderClone\]\)/, 'a folder whole and the three admin doors are placeable on Workspaces');
   assert.match(doors, /seat: WORKBENCH_TYPES\.teams,/, "Teams seats collection_view's stones");
   assert.match(doors, /bench\(\)\.place\(WORKBENCH_TYPES\.teamRead, 'workspace2', \{ key: name \}\)/, 'a stone pressed places the Team\u2019s read in Workspace 2');
   assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.teams, \[WORKBENCH_TYPES\.teams, WORKBENCH_TYPES\.teamRead, WORKBENCH_TYPES\.newTeamForm\]\)/, 'the Teams selector offers New Team');

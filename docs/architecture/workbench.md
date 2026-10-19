@@ -150,8 +150,12 @@ page beside the rail; a stone dragged into a workspace, or the provider's select
 the provider there whole (`models.provider`), the page with no rail. Settings' Model Providers
 surface is untouched; both draw with the one drawing `provider-surface.js` exports
 (`createProviderDrawing`, `providerStones`) over the same record and measure. Workspaces seats
-the Workspace Folders surface as Settings seats it, with no selector cards for now
-(`selectorFilter`); Teams seats `teams-surface.js`'s stones, a stone pressed placing the Team's
+its own stones of folders the same way (`workspaces-surface.js`, `workspaces.stones`; a dropped
+stone or a folder's card places the folder whole, `workspaces.folder`), its three admin doors —
+Add a workspace, GitHub CLI, Clone a repository — dotted selector cards in the New Agent format,
+the folder they add taking their workspace; Settings' Workspace Folders surface is untouched,
+both drawing with `projectroots.js`'s exported drawing (`createRootDrawing`, `rootStone`) over
+one read per bench (`createRootsReading`, the detail route). Teams seats `teams-surface.js`'s stones, a stone pressed placing the Team's
 read in Workspace 2, and offers New Team. The bar reads
 RoninCowork • Home • <door>, Home the way back (`workspace-header.js`, the view's `place`).
 
@@ -286,6 +290,18 @@ The door's own destination over the provider drawing Settings and Setup share.
 |---|---|
 | Model stones (`models.stones`) | the recorded provider summary and catalog through `recordRuntime()`; a measure only on a press, as on Settings |
 | Model provider (`models.provider`) | the same record for the one provider named in its detail; its selector cards come from `providerOffers()` over the same record |
+
+### Workspaces (`workspaces` profile)
+
+The door's own destination over the folder drawing Settings and Setup share, one read of the
+folders per bench (`/api/project-roots/detail`) that every surface on it hears.
+
+| Surface | Required data and owner |
+|---|---|
+| Folder stones (`workspaces.stones`) | the bench's folder read; its selector cards (`folderOffers`) read the same |
+| Folder (`workspaces.folder`) | the one folder named in its detail from the same read; its writes re-read it for every surface |
+| Add a workspace (`workspaces.new`) | the add form's own reads (inspect, suggest) and the Campaign id; the folder it adds takes its workspace |
+| GitHub CLI / Clone a repository (`workspaces.github`, `workspaces.clone`) | the GitHub setup read and session attachment `github-workspace-setup.js` owns, one instance per bench |
 
 ### Agent (`agent` profile)
 

@@ -9,14 +9,42 @@ import { createPhalanx } from './phalanx.js';
 import { ask } from './ask.js';
 import { finalizeTeamName, sanitizeTeamName } from './new-team-draft.js';
 
+/** The add stone's handle: `editing` while the add form is open; no root has it. */
+export const NEW = '\0new';
+
+const stoneState = (r) => {
+  if (r.archived) return t('roots.chip_archived', 'Archived');
+  if (!r.facts?.exists) return t('roots.stone_missing', 'Folder missing');
+  if (!r.facts.repo) return t('roots.stone_plain_folder', 'Plain folder');
+  if (!r.facts.repo.remote) return t('roots.stone_repo_no_remote', 'Repository · no remote');
+  return r.arrangement?.source !== 'absent' && r.repo_profile?.worktrees === 'enabled'
+    ? t('roots.stone_repo_worktrees', 'Repository · Worktrees')
+    : t('roots.stone_repo_checkout', 'Repository · checkout');
+};
+
+/** A folder's stone: its name, the measured word under it, the classes the stone styles read.
+ * The Settings and Setup surface, the Workspaces workbench and its selector cards all read this. */
+export const rootStone = (r) => ({
+  id: r.name,
+  label: r.title || r.name,
+  state: stoneState(r),
+  className: [!r.facts?.exists ? 'gone' : '', r.archived ? 'archived' : ''].filter(Boolean).join(' '),
+});
+
 export function buildProjectRoots(root, isShowing, campaignId = () => '', options = {}) {
   const { createAction } = WorkspaceKit.primitives;
-  const NEW = '\0new'; // `editing` when the add card's form is open — no root has this handle
   const stones = options.presentation === 'stones';
   let data = null; // { roots: [...], untagged: n }
-  let editing = null; // handle of the block whose form is open
-  const gitAccess = new Map(); // measured for this page only; credentials remain owned by Git
-  const checkingGitAccess = new Set();
+  let stoneSurface = null;
+  const drawing = createRootDrawing({
+    stones, campaignId, refresh, render, say: (message, bad) => say(message, bad),
+    select: (id) => stoneSurface?.select(id),
+    refreshDetail: () => { if (stoneSurface) stoneSurface.refreshDetail(); else render(); },
+    focusStone: (id) => [...stoneSurface.el.querySelectorAll('[data-sws-id]')].find((button) => button.dataset.swsId === id)?.focus(),
+    focusForm: () => stoneSurface.el.querySelector('.pr-detail .pr-form input:not([disabled])')?.focus(),
+    report: (node) => (stones ? messages : list).prepend(node),
+  });
+  const { block, detail, addCard } = drawing;
 
   const head = document.createElement('div');
   head.className = 'pr-head';
@@ -24,7 +52,7 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
   count.className = 'pr-count';
   const openAdd = stones ? null : createAction({ label: t('roots.add', '＋ Add workspace folder'), kind: 'primary', title: t('roots.add_hint', 'Choose or create a folder on this machine where Agents should start.') }).el;
   openAdd?.addEventListener('click', () => {
-    editing = NEW;
+    drawing.edit(NEW);
     render();
   });
   if (!stones) head.append(openAdd, count);
@@ -34,19 +62,18 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
   const messages = document.createElement('div');
   messages.className = 'pr-status';
   messages.setAttribute('role', 'status');
-  let stoneSurface = null;
   if (stones) {
     stoneSurface = createPhalanx({
       className: 'setup-roots-stones',
       onSelectionChange: (id) => {
-        if (id !== editing) editing = null;
+        if (id !== drawing.editing()) drawing.edit(null);
         if (data?.roots?.some((entry) => entry.name === id)) options.onSelection?.(id);
       },
       renderDetail: (item, host) => {
         host.scrollTop = 0; // a new page starts at its head, whatever the last one was scrolled to
         if (typeof item.renderDetail === 'function') return item.renderDetail(host);
         if (item.id === NEW) {
-          editing = NEW;
+          drawing.edit(NEW);
           host.append(addCard());
         }
         else {
@@ -62,7 +89,7 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
     const output = stones ? messages : list;
     output.innerHTML = '';
     if (stones) {
-      editing = null;
+      drawing.edit(null);
       stoneSurface.setItems([]).select('');
     }
     const p = document.createElement('div');
@@ -80,6 +107,62 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
     data = r.data;
     render();
   }
+
+  function render() {
+    if (!data) return;
+    list.innerHTML = '';
+    messages.replaceChildren();
+    const roots = [...data.roots].sort((a, b) => (a.archived ? 1 : 0) - (b.archived ? 1 : 0));
+    const archived = roots.filter((r) => r.archived).length;
+    const live = roots.length - archived;
+    count.textContent =
+      (live === 1 ? t('roots.count_one', '{n} workspace folder', { n: live }) : t('roots.count_many', '{n} workspace folders', { n: live })) +
+      (archived ? ' · ' + t('roots.count_archived', '{n} archived', { n: archived }) : '');
+    if (!roots.length) (stones ? messages : list).appendChild(document.createElement('div')).textContent = t('roots.empty', 'No workspace folders yet. Choose or create the first one above.');
+    if (!stones) {
+      if (drawing.editing() === NEW) list.appendChild(addCard());
+      for (const r of roots) list.appendChild(block(r));
+      return;
+    }
+    // Add a workspace leads the collection (Glen, 2026-09-07): adding is the thing people do.
+    stoneSurface.setItems([{
+      id: NEW,
+      label: t('roots.add_stone', 'Add a workspace'),
+      glyph: '+',
+      className: 'setup-roots-add-stone',
+      attrs: { title: t('roots.keep_hint', 'Keep a folder on this machine for Teams and Agents to start in.') },
+    }, ...(options.extraItems || []), ...roots.map(rootStone)]);
+  }
+
+  say(t('roots.loading', 'loading…'));
+  return {
+    enter() {
+      void refresh();
+    },
+    refresh,
+    updateExtraItems() {
+      stoneSurface?.updateItems(options.extraItems || []);
+    },
+    select(id, options) {
+      stoneSurface?.select(id, options);
+    },
+  };
+}
+
+/**
+ * THE FOLDER DRAWING, exported once (owner, 2026-10-19): the add form, the edit form, a
+ * folder's detail page, the Campaign block and a folder's stone state, drawn the same
+ * wherever a folder is read — Setup, Settings and the Workspaces workbench call this. `deps`
+ * is what the drawing needs from its host: `refresh()` re-reads and repaints, `render()`
+ * repaints, `say(message, bad)` is the host's status line, `select(id)`, `refreshDetail()`,
+ * `focusStone(id)`, `focusForm()` and `report(node)` reach the host's stones and detail.
+ */
+export function createRootDrawing(deps) {
+  const { createAction } = WorkspaceKit.primitives;
+  const { stones, campaignId } = deps;
+  let editing = null; // handle of the block whose form is open
+  const gitAccess = new Map(); // measured for this page only; credentials remain owned by Git
+  const checkingGitAccess = new Set();
 
   /* -- the form: EDIT on a block that exists, ADD inside the card at the end (`creating`),
    * where the Workspace Folder handle is the one field typed this once. -- */
@@ -229,11 +312,11 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
       editing = null;
       if (stones) {
         if (creating) {
-          stoneSurface.select('');
-          [...stoneSurface.el.querySelectorAll('[data-sws-id]')].find((button) => button.dataset.swsId === NEW)?.focus();
+          deps.select('');
+          deps.focusStone(NEW);
         }
-        else stoneSurface.refreshDetail();
-      } else render();
+        else deps.refreshDetail();
+      } else deps.render();
     });
     save.addEventListener('click', async () => {
       const body = {};
@@ -307,15 +390,15 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
       }
       editing = null;
       await loadProjects(); // the launcher's picker reads the same catalog
-      await refresh();
-      if (stones) stoneSurface.select(name);
+      await deps.refresh();
+      if (stones) deps.select(name);
       if (changedDuringSave) {
         const report = document.createElement('p');
         report.className = 'pr-empty bad';
         report.setAttribute('role', 'status');
         const actual = changedBefore ? JSON.stringify(changedBefore) : 'unknown';
         report.textContent = t('roots.profile_changed_report', 'RONIN_REPO changed while this form was open. The profile at save time was {actual}. Your settings were saved; review the repository profile.', { actual });
-        (stones ? messages : list).prepend(report);
+        deps.report(report);
       }
     });
     return f;
@@ -387,7 +470,7 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
     const edit = createAction({ label: t('roots.edit', 'edit') }).el;
     edit.addEventListener('click', () => {
       editing = editing === r.name ? null : r.name;
-      render();
+      deps.render();
     });
     const { shelve, drop } = maintenance(r);
     acts.append(edit, shelve, drop);
@@ -416,12 +499,12 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
         json: { archived: !r.archived },
       });
       if (!res.ok) {
-        say(t('roots.archive_failed', 'could not archive it — {message}', { message: res.message }), true);
+        deps.say(t('roots.archive_failed', 'could not archive it — {message}', { message: res.message }), true);
         shelve.disabled = false;
         return;
       }
       await loadProjects();
-      await refresh();
+      await deps.refresh();
     });
     const drop = createAction({ label: stones ? t('roots.exclude_folder', 'Exclude') : t('roots.exclude', 'exclude'), kind: 'danger', title: t('roots.exclude_title', 'Remove it from the catalog. Nothing on disk is touched.') }).el;
     drop.addEventListener('click', async () => {
@@ -435,12 +518,12 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
       const res = await request('/api/project-roots/' + encodeURIComponent(r.name), { method: 'DELETE' });
       if (!res.ok) {
         // On the pane's own empty/error line, not a browser alert.
-        say(t('roots.exclude_failed', 'could not exclude it — {message}', { message: res.message }), true);
+        deps.say(t('roots.exclude_failed', 'could not exclude it — {message}', { message: res.message }), true);
         drop.disabled = false;
         return;
       }
       await loadProjects();
-      await refresh();
+      await deps.refresh();
     });
     return { shelve, drop };
   }
@@ -501,8 +584,8 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
     const edit = createAction({ label: t('roots.edit_folder', 'Edit'), kind: 'primary', title: t('roots.edit_folder_title', 'Change the summary, shelves, match words, or repository workflow.') }).el;
     edit.addEventListener('click', () => {
       editing = r.name;
-      stoneSurface.refreshDetail();
-      stoneSurface.el.querySelector('.pr-detail .pr-form input:not([disabled])')?.focus();
+      deps.refreshDetail();
+      deps.focusForm();
     });
     const { shelve, drop } = maintenance(r);
     go.append(edit, shelve, drop);
@@ -559,13 +642,13 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
       check.addEventListener('click', async () => {
         if (checkingGitAccess.has(r.name)) return;
         checkingGitAccess.add(r.name);
-        if (stoneSurface) stoneSurface.refreshDetail(); else render();
+        deps.refreshDetail();
         const result = await request(`/api/project-roots/${encodeURIComponent(r.name)}/git-access`, { method: 'POST' });
         gitAccess.set(r.name, result.ok
           ? { state: result.data?.state || 'check_failed', message: result.data?.message || '' }
           : { state: 'check_failed', message: result.message });
         checkingGitAccess.delete(r.name);
-        if (stoneSurface) stoneSurface.refreshDetail(); else render();
+        deps.refreshDetail();
       });
       accessBody.append(accessState, accessMessage, check);
       d.append(section(t('roots.git_access', 'Git access'), accessBody));
@@ -574,46 +657,6 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
       d.append(section(t('roots.section_repository', 'Repository'), make('p', 'pr-fine', t('roots.repository_none', 'Not a Git repository. A workspace folder does not need to be one.'))));
     }
     return d;
-  }
-
-  function render() {
-    if (!data) return;
-    list.innerHTML = '';
-    messages.replaceChildren();
-    const roots = [...data.roots].sort((a, b) => (a.archived ? 1 : 0) - (b.archived ? 1 : 0));
-    const archived = roots.filter((r) => r.archived).length;
-    const live = roots.length - archived;
-    count.textContent =
-      (live === 1 ? t('roots.count_one', '{n} workspace folder', { n: live }) : t('roots.count_many', '{n} workspace folders', { n: live })) +
-      (archived ? ' · ' + t('roots.count_archived', '{n} archived', { n: archived }) : '');
-    if (!roots.length) (stones ? messages : list).appendChild(document.createElement('div')).textContent = t('roots.empty', 'No workspace folders yet. Choose or create the first one above.');
-    if (!stones) {
-      if (editing === NEW) list.appendChild(addCard());
-      for (const r of roots) list.appendChild(block(r));
-      return;
-    }
-    const stoneState = (r) => {
-      if (r.archived) return t('roots.chip_archived', 'Archived');
-      if (!r.facts?.exists) return t('roots.stone_missing', 'Folder missing');
-      if (!r.facts.repo) return t('roots.stone_plain_folder', 'Plain folder');
-      if (!r.facts.repo.remote) return t('roots.stone_repo_no_remote', 'Repository · no remote');
-      return r.arrangement?.source !== 'absent' && r.repo_profile?.worktrees === 'enabled'
-        ? t('roots.stone_repo_worktrees', 'Repository · Worktrees')
-        : t('roots.stone_repo_checkout', 'Repository · checkout');
-    };
-    // Add a workspace leads the collection (Glen, 2026-09-07): adding is the thing people do.
-    stoneSurface.setItems([{
-      id: NEW,
-      label: t('roots.add_stone', 'Add a workspace'),
-      glyph: '+',
-      className: 'setup-roots-add-stone',
-      attrs: { title: t('roots.keep_hint', 'Keep a folder on this machine for Teams and Agents to start in.') },
-    }, ...(options.extraItems || []), ...roots.map((r) => ({
-      id: r.name,
-      label: r.title || r.name,
-      state: stoneState(r),
-      className: [!r.facts?.exists ? 'gone' : '', r.archived ? 'archived' : ''].filter(Boolean).join(' '),
-    }))]);
   }
 
   /** The last card in the list: the same shape as a root, and the place a new one is typed. */
@@ -657,17 +700,5 @@ export function buildProjectRoots(root, isShowing, campaignId = () => '', option
     return b;
   }
 
-  say(t('roots.loading', 'loading…'));
-  return {
-    enter() {
-      void refresh();
-    },
-    refresh,
-    updateExtraItems() {
-      stoneSurface?.updateItems(options.extraItems || []);
-    },
-    select(id, options) {
-      stoneSurface?.select(id, options);
-    },
-  };
+  return { form, block, detail, addCard, editing: () => editing, edit: (handle) => { editing = handle; } };
 }
