@@ -15,29 +15,12 @@ test('Commons opens on its separate Roster and keeps Configuration separate', as
   assert.doesNotMatch(view, /commons\.config\.replaceChildren\(members, config\)/);
 });
 
-test('Task Manager stays a registered standalone surface; the Team selector no longer offers it', async () => {
-  const [view, catalog] = await Promise.all([
-    source('public/js/cowork-view.js'), source('public/js/workbench-catalog.js'),
-  ]);
-  assert.match(catalog, /kanban: 'team\.kanban'/);
-  assert.match(catalog, /type: WORKBENCH_TYPES\.kanban, header: 'surface'[\s\S]*e\.kanbanOffers\(\)/);
-  assert.doesNotMatch(catalog, /WORKBENCH_PROFILES\.team, \[[^\]]*WORKBENCH_TYPES\.kanban\b/);
-  assert.match(view, /request\('\/api\/installed'/);
-  assert.match(view, /kanbanOffers: \(\) => kanbanGate\.available \? \[\{/);
-  assert.match(view, /teamKanban: \(id\) => taskManagerFor\(id\)/);
-  assert.match(view, /taskManagerBySeat\[cacheKey\] = \{ el: surface\.el, manager, show: \(\) => manager\.enter\(\), leave: \(\) => manager\.leave\(\) \}/);
-  assert.doesNotMatch(view, /\{ id: 'kanban', label:/);
-  assert.match(view, /for \(const surface of Object\.values\(taskManagerBySeat\)\) surface\.manager\.leave\(\)/);
-  assert.match(view, /workspace\.tab_task_manager', 'Task Manager'/);
-});
-
 test('Roster remains a roster; the Team page selector is Commons, Agents, New Agent (owner, 2026-10-18)', async () => {
   const [view, members, retirement, css, workbench, coworkRoster, composition, catalog, phalanx, kotoba] = await Promise.all([
     source('public/js/cowork-view.js'), source('public/js/team-members.js'), source('public/js/session-retire.js'), source('public/css/team-workspace.css'), source('public/js/workbench.js'), source('public/js/team-roster-surface.js'),
     source('public/js/agent-composition.js'), source('public/js/workbench-catalog.js'), source('public/js/phalanx.js'), source('KOTOBA.md'),
   ]);
   assert.match(view, /workspace1: 'workspace2', workspace2: 'workspace1', workspace3: 'workspace4', workspace4: 'workspace3'/);
-  assert.match(view, /openOwner: \(name\) => arrange\(\{ \[oppositeSeat\(id\)\]: \{ session: name \} \}\)/);
   assert.match(view, /onOpen: \(member\) => openAgentWorkbench\(member\.name\)/);
   assert.match(view, /function openAgentWorkbench\(name\)[\s\S]*reserveWorkspaceTab\(\)[\s\S]*openWorkspaceTab\('agent', name, tab\)/);
   assert.match(view, /reading: readingsOf/);

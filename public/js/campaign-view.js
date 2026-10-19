@@ -4,12 +4,10 @@ import { WorkspaceKit } from './workspace-kit.js';
 import { t } from './lexicon.js';
 import { MULTIPLE_CAMPAIGNS_ENABLED, campaignById, campaignOf, createCampaign, loadCampaigns, normalizeSelection } from './campaigns.js';
 import { createCampaignIdentitySurface, createNewCampaignSurface } from './campaign-surfaces.js';
-import { createDeskProfileSurface, skinWord } from './campaign-desk.js';
 import { createAgentDefaultsSurface, defaultsSummary } from './campaign-defaults.js';
 import { createInstallationsSurface, installationsSummary } from './campaign-installations.js';
 import { createProviderSetupSessionMount } from './provider-setup-session.js';
 import { createWorkspaceFoldersSurface } from './workspace-folders-surface.js';
-import { deskProfiles } from './desk-profile.js';
 import { request } from './request.js';
 import { coworkCommons } from './cowork-commons.js';
 import { createFeedbackSurface, FEEDBACK_TYPE } from './feedback.js';
@@ -43,13 +41,6 @@ const enterable = (surface) => ({ el: surface.el, show: () => surface.enter() })
  */
 const currently = {
   identity: (e) => e.selected()?.description || t('campaign_view.no_description', 'No description yet.'),
-  profile: (e) => {
-    const row = e.selected();
-    const p = deskProfiles().find((x) => x.name === row?.desk_profile);
-    const skin = skinWord(row?.desk?.skin || p?.skin || '');
-    if (!p && !skin) return t('campaign_view.no_profile', 'As stock — none chosen.');
-    return [p?.label || p?.name, skin].filter(Boolean).join(' · ');
-  },
   roots: (e) => {
     const n = e.roots();
     if (n === null) return t('campaign_view.roots_summary', 'The folders this Campaign is allowed to work in.');
@@ -89,12 +80,10 @@ export function createCampaignView() {
     /** How many live roots belong to the selected Campaign; null before the first read. */
     roots: () => (rootsHere === null ? null : rootsHere.filter((root) => !root.archived && campaignOf(root) === selected()?.id).length),
     identitySummary: () => currently.identity(environment),
-    profileSummary: () => currently.profile(environment),
     rootsSummary: () => currently.roots(environment),
     defaultsSummary: () => currently.defaults(environment),
     installationsSummary: () => installationsSummary(selected()),
     campaignIdentity: () => enterable(createCampaignIdentitySurface(selected)),
-    campaignProfile: () => enterable(createDeskProfileSurface(selected)),
     campaignRoots: ({ workspace }) => createWorkspaceFoldersSurface({
       campaignId: () => selected()?.id || '',
       connected: (host) => entered && host.isConnected,

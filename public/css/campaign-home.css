@@ -179,9 +179,7 @@
   .cv-button[data-primary='true'] { border-color: var(--accent); color: var(--accent); }
   .cv-button:hover { border-color: var(--accent); color: var(--fg-strong); }
   .cv-note { margin: 0; font-size: var(--text-3); line-height: 1.5; color: var(--muted); }
-  .cv-eyebrow { font-size: var(--text-2); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 
-  .cv-presets { display: flex; flex-direction: column; gap: var(--space-3); padding-bottom: var(--space-5); border-bottom: var(--edge) solid var(--line); }
   .cv-pills { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
   .cv-pill {
     display: inline-flex; align-items: center; gap: var(--space-2);

@@ -347,9 +347,8 @@ test('Code Stack Eval keeps ticked folders on Apply and evaluates the chosen one
   assert.match(source, /workspaceFoldersAction\(environment, 'Manage workspace folders'\)/);
 });
 
-test('the launched team page preserves Commons selections and moves legacy Task Manager placements', async () => {
+test('the launched team page preserves Commons selections', async () => {
   const source = await readFile(new URL('../public/js/cowork-view.js', import.meta.url), 'utf8');
-  assert.match(source, /token\.type === WB_TYPES\.commons && token\.tab === 'kanban'\s*\? \{ type: WB_TYPES\.kanban, detail: \{\} \}/);
   assert.match(source, /type: token\.type, detail: \{ key: token\.key \|\| '', root: token\.root \|\| '', path: token\.path \|\| '', \.\.\.\(token\.tab \? \{ tab: token\.tab \} : \{\}\), \.\.\.\(token\.doc \? \{ doc: token\.doc \} : \{\}\) \}/);
   const health = presets.seatingPlan('health_and_fitness', { team: 'health', sessions: [{ name: 'head_coach' }, { name: 'nutritionist' }] });
   assert.equal(health.seats[1].tab, 'wipeboard');

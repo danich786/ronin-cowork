@@ -12,7 +12,7 @@ test('the Campaign page has one switch for offering New Campaign', async () => {
   assert.match(campaigns, /export const MULTIPLE_CAMPAIGNS_ENABLED = false;/);
   assert.match(catalog, /if \(MULTIPLE_CAMPAIGNS_ENABLED\) campaign\(WORKBENCH_TYPES\.campaignCreate/);
   assert.match(catalog, /\.\.\.\(MULTIPLE_CAMPAIGNS_ENABLED \? \[WORKBENCH_TYPES\.campaignCreate\] : \[\]\)/);
-  for (const type of ['Identity', 'Profile', 'Installations', 'Defaults']) {
+  for (const type of ['Identity', 'Installations', 'Defaults']) {
     assert.match(catalog, new RegExp(`campaign\\(WORKBENCH_TYPES\\.campaign${type}`));
   }
   assert.match(source, /registerWorkbenchCatalog\(\)/);

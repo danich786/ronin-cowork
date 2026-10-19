@@ -35,7 +35,7 @@ import { createMikaHelpPanel } from './mika.js';
 import { retireSession } from './session-retire.js';
 import { installBehaviourReader } from './behaviour-reader.js';
 import { BEHAVIOUR_SURFACE_TYPE } from './behaviour-surface.js';
-import { createTeamKanban, holderOf, itemLine, kanbanAvailability, KANBAN_NOT_INSTALLED } from './team-kanban.js';
+import { holderOf, itemLine } from './team-kanban.js';
 import { ask } from './ask.js';
 import { registerWorkbenchCatalog, WORKBENCH_PROFILES as WB_PROFILES, WORKBENCH_TYPES as WB_TYPES } from './workbench-catalog.js';
 import { createAgentCompositionSurface } from './agent-composition.js';
@@ -68,8 +68,6 @@ export function createCoworkView(options = {}) {
   let loaded = ''; // the team whose roster reading is currently drawn
   let unsubscribe = null;
   let entered = false;
-  let kanbanGate = { available: false, message: KANBAN_NOT_INSTALLED };
-  let updateKanbanAvailability = () => {};
   let lastSeat = 'workspace1'; // the workspace last touched — where the next card lands
   const readableTeam = (name) => String(teamByName(name)?.title ?? '').trim() || name;
   const setBarLabel = () => S.refreshWorkspaceHeader?.();
@@ -209,27 +207,6 @@ export function createCoworkView(options = {}) {
     }
     return commonsBySeat[id];
   };
-  const taskManagerBySeat = {};
-  const taskManagerFor = (id, detail = {}) => {
-    const cacheKey = `${id}\0${detail.view || 'overview'}\0${detail.stage || detail.project || ''}`;
-    if (!taskManagerBySeat[cacheKey]) {
-      const surface = createSurface({ label: detail.view === 'project' ? t('team_kanban.project', 'Project') : detail.view === 'status' ? t('team_kanban.status_projects', 'Projects by status') : t('workspace.tab_task_manager', 'Task Manager'), className: 'tw-kanban' });
-      const taskScope = detail.scope || (campaign
-        ? { kind: 'desk', teams: () => teamsFromState().filter((item) => !item.holding).map((item) => item.name) }
-        : { kind: 'team', team: team === UNASSIGNED ? '' : team });
-      const manager = createTeamKanban({
-        scope: taskScope, view: detail.view, detail,
-        lead: (project) => membersOfTeam(project?.team || team).find((member) => member.team_lead)?.name || '',
-        openOwner: (name) => arrange({ [oppositeSeat(id)]: { session: name } }),
-        openSurface: (view, next) => bench.place(view === 'status' ? WB_TYPES.taskStatus : WB_TYPES.taskProject, oppositeSeat(id), { ...next, view }),
-      });
-      if (!detail.scope && !campaign) manager.setTeam(team === UNASSIGNED ? '' : team);
-      manager.setAvailability(kanbanGate);
-      surface.content.append(manager.el);
-      taskManagerBySeat[cacheKey] = { el: surface.el, manager, show: () => manager.enter(), leave: () => manager.leave() };
-    }
-    return taskManagerBySeat[cacheKey];
-  };
   const extras = new Set();
   // its roster exists, so the form that made it hands the workspace over to it and goes
   // back to empty. Staffing happens from inside the Team, through Add Agent.
@@ -260,13 +237,6 @@ export function createCoworkView(options = {}) {
   const environment = {
     feedback: (workspace) => createFeedbackSurface(() => bench.place(campaign ? WB_TYPES.roster : WB_TYPES.commons, workspace)),
     teamCommons: (id) => ({ el: commonsFor(id).el, show: (detail = {}) => { const item = commonsFor(id); if (!detail.doc && !detail.tab) item.attendQueueOnOpen(); item.channels.enter(ctx); if (detail.doc) { item.channels.select('docs'); void item.docs.open(detail.doc); } else if (detail.tab) item.channels.select(detail.tab); } }),
-    kanbanOffers: () => kanbanGate.available ? [{
-      label: t('workspace.tab_task_manager', 'Task Manager'),
-      summary: campaign ? t('team_kanban.desk_summary', 'Projects across this Desk’s Teams and Agents') : t('team_kanban.card_summary', 'The Team’s work, from Ideas through Done'),
-    }] : [],
-    teamKanban: (id) => taskManagerFor(id),
-    taskStatus: (id, detail) => taskManagerFor(id, { ...detail, view: 'status' }),
-    taskProject: (id, detail) => taskManagerFor(id, { ...detail, view: 'project' }),
     terminal: (id, detail) => ({ el: seats[id].surface.el, show: () => putSession(detail.key, id) }),
     agent: () => '',
     composition: (detail = {}) => createAgentCompositionSurface(detail.key),
@@ -345,18 +315,6 @@ export function createCoworkView(options = {}) {
       remember();
     },
   });
-  updateKanbanAvailability = (next) => {
-    kanbanGate = next?.available === true
-      ? { available: true, message: '' }
-      : { available: false, message: String(next?.message || KANBAN_NOT_INSTALLED) };
-    for (const surface of Object.values(taskManagerBySeat)) surface.manager.setAvailability(kanbanGate);
-    bench.refreshSelector();
-  };
-  updateKanbanAvailability(kanbanGate);
-  const readKanbanAvailability = async () => {
-    const result = await request('/api/installed', { cache: 'no-store' });
-    updateKanbanAvailability(result.ok ? kanbanAvailability(result.data) : { available: false, message: KANBAN_NOT_INSTALLED });
-  };
   installBehaviourReader(bench, WB_TYPES.document);
   rosterTitle = bench.selectorHeader?.title ?? null;
   if (campaign) {
@@ -400,9 +358,7 @@ export function createCoworkView(options = {}) {
   // A remembered surface keeps its tab and document too: a preset seats the commons on
   // the Wipeboard or Cron jobs, and a document beside its agent, in the tab it opens.
   const surfaceRequest = (token) => token && typeof token === 'object'
-    ? token.type === WB_TYPES.commons && token.tab === 'kanban'
-      ? { type: WB_TYPES.kanban, detail: {} }
-      : { type: token.type, detail: { key: token.key || '', root: token.root || '', path: token.path || '', ...(token.tab ? { tab: token.tab } : {}), ...(token.doc ? { doc: token.doc } : {}) } }
+    ? { type: token.type, detail: { key: token.key || '', root: token.root || '', path: token.path || '', ...(token.tab ? { tab: token.tab } : {}), ...(token.doc ? { doc: token.doc } : {}) } }
     : { type: token || '', detail: {} };
   /** A surface other than the seat's own is in this workspace. */
   const surfaceIn = (id) => !bench?.isDefault(id);
@@ -423,9 +379,7 @@ export function createCoworkView(options = {}) {
   const lead = () => membersOfTeam(team).find((m) => m.team_lead)?.name || '';
   const oppositeSeat = (id) => ({ workspace1: 'workspace2', workspace2: 'workspace1', workspace3: 'workspace4', workspace4: 'workspace3' })[id] || 'workspace1';
 
-  const putCommons = (id, tab = '', doc = '') => tab === 'kanban'
-    ? putSurface(WB_TYPES.kanban, id)
-    : putSurface(WB_TYPES.commons, id, tab, doc);
+  const putCommons = (id, tab = '', doc = '') => putSurface(WB_TYPES.commons, id, tab, doc);
   // `edges page … workspace1=new` still says "the door work starts at"; that door is
   // the drawn New Agent now (TOOLS.md's `new` word is unchanged for the owner).
   const putNew = (id) => putSurface(WB_TYPES.newAgent, id);
@@ -832,10 +786,6 @@ export function createCoworkView(options = {}) {
       // JIKAN is by active team: the tag-only or durable team, and its live members for the To list.
       commons.jikan.setTeam(team === UNASSIGNED ? '' : team, members.map((m) => m.name));
     }
-    for (const surface of Object.values(taskManagerBySeat)) {
-      if (campaign) void surface.manager.refresh();
-      else surface.manager.setTeam(team === UNASSIGNED ? '' : team);
-    }
   };
   painterReady = true;
 
@@ -883,7 +833,6 @@ export function createCoworkView(options = {}) {
     enter: (context) => {
       ctx = context;
       entered = true;
-      void readKanbanAvailability();
       seenConfig = ''; // a fresh entry always paints the configuration once
       for (const seat of Object.values(seats)) seat.pool.destroyAll();
       team = campaign ? '' : context.param;
@@ -924,7 +873,6 @@ export function createCoworkView(options = {}) {
       // No transport survives outside the entered Team destination.
       for (const seat of Object.values(seats)) { seat.pool.destroyAll(); seat.empty?.destroy(); seat.empty = null; }
       for (const commons of builtCommons()) commons.channels.leave();
-      for (const surface of Object.values(taskManagerBySeat)) surface.manager.leave();
       S.showNewSession = null;
       S.connectSession = null;
       bench.leave();
@@ -938,7 +886,6 @@ export function createCoworkView(options = {}) {
       helpPanel.destroy();
       for (const seat of Object.values(seats)) { seat.pool.destroyAll(); seat.empty?.destroy(); }
       for (const commons of builtCommons()) commons.channels.destroy();
-      for (const surface of Object.values(taskManagerBySeat)) surface.manager.destroy();
       for (const view of Object.values(newAgentBySeat)) view.destroy();
     },
   };

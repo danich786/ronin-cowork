@@ -12,7 +12,6 @@ nothing paints exactly this.
 - **add_agent.instruction:** instruction
 - **add_agent.instruction_placeholder:** what this Agent should do
 - **add_agent.actions:** Launch actions
-- **add_agent.start:** Start
 - **add_agent.starting:** Starting…
 - **add_agent.started:** Started {name}
 - **add_agent.started_note:** Started {name} — {note}
@@ -26,7 +25,6 @@ nothing paints exactly this.
 - **campaign.description:** Description
 - **campaign.description_placeholder:** What this desk is for
 - **campaign.coworks:** Teams
-- **campaign.cowork:** Team
 - **campaign.new:** New Desk
 - **campaign.create:** Create Desk
 - **campaign.saving:** saving…
@@ -87,7 +85,6 @@ nothing paints exactly this.
 - **desk.profile_not_saved:** desk profile not saved — {message}
 - **desk.check_updates:** Check for updates
 - **desk.check_updates_title:** Ask the release feeds what the latest versions are — both packages, only when pressed
-- **desk.update:** Update
 - **desk.log_out:** Log out
 - **desk.log_out_title:** End this device’s session — the next visit asks for the password
 - **desk.unreachable:** unreachable
@@ -112,7 +109,6 @@ nothing paints exactly this.
 - **roster.team_name_rule:** use letters, digits, - or _
 - **roster.drag_into:** drag a session into {team}
 - **roster.leads:** 人 leads {teams}
-- **roster.no_role_yet:** has not said what it is doing yet
 - **roster.stale:** ⚠ roster may be stale — {fault}
 - **roster.drop_here:** Drop a session here to add it to {team}
 - **roster.no_team:** no team
@@ -138,34 +134,19 @@ nothing paints exactly this.
 - **campaign_view.new_summary:** Set the stage. It creates no Team and launches no Agent.
 - **campaign_view.none_selected:** No Desk selected.
 - **campaign_view.no_description:** No description yet.
-- **campaign_view.no_profile:** As stock — none chosen.
 - **campaign_view.roots_n:** {n} roots
 - **campaign_view.roots_none:** None — an Agent here has nowhere to work.
 - **campaign_view.name_help:** On the door, the browser tab and the address.
 - **campaign_view.description_help:** What this body of work is for. Shown on its card.
 - **campaign_view.head:** Desk: {name}
-- **campaign_view.presets:** Presets
-- **campaign_view.presets_help:** A preset copies all of its components into this Campaign. Change any one of them afterwards; the preset is not consulted again.
-- **campaign_view.apply:** Apply
-- **campaign_view.revert:** Revert
-- **campaign_view.applied:** applied — every component below is now this Campaign’s own
-- **campaign_view.applied_tag:** applied
-- **campaign_view.skin:** Skin
-- **campaign_view.skin_help:** The look — colours, corners, faces.
-- **campaign_view.theme:** Theme
 - **campaign_view.theme_desktop:** Desktop
 - **campaign_view.theme_help:** Light or dark for pointer surfaces; Automatic is the house default — light.
 - **campaign_view.theme_mobile:** Theme (mobile)
 - **campaign_view.theme_mobile_help:** Light or dark for touch surfaces — iPad and phone; Automatic is the house default — light.
 - **campaign_view.theme_light:** Light
 - **campaign_view.theme_dark:** Dark
-- **campaign_view.theme_auto:** Automatic
-- **campaign_view.output:** Output
-- **campaign_view.output_help:** What an Agent’s tile shows. Terminal Mirror is the one that ships; Detailed, Condensed and Cherry Pick arrive with Ronin Services.
 - **campaign_view.with_services:** Ronin Services
 - **campaign_view.services_title:** Arrives with Ronin Services.
-- **campaign_view.lexicon:** Lexicon
-- **campaign_view.lexicon_help:** The words. Held to one lexicon for now, so nothing on this page is offered.
 - **campaign_view.id:** Id
 - **campaign_view.id_help:** Fixed once created — printed on every record that points here, so it cannot change.
 - **campaign_view.agent_defaults:** Team and Agent defaults
@@ -264,8 +245,6 @@ nothing paints exactly this.
 - **new_team.agents_meta:** {n} agents
 - **new_team.agent_name:** name
 - **new_team.agent_name_taken:** Nothing was created. Choose another name for: {names}.
-- **new_team.agent_assignment:** what this Agent does
-- **new_team.agent_drop:** Remove this Agent
 - **new_team.agent_add:** ＋ Add an Agent
 - **new_team.readable:** Title
 
@@ -330,7 +309,6 @@ nothing paints exactly this.
 - **team.project_root:** Workspace folder
 - **new_team.team_actions:** Team actions
 - **team.team:** Team
-- **team.roster:** Roster
 - **new_team.name_invalid:** Lowercase letters, digits, _ and - only.
 - **new_team.root_default:** — the box’s default —
 - **new_team.title:** New Team
@@ -357,7 +335,6 @@ nothing paints exactly this.
 - **setup_surface.preferred_feature_short:** Capability
 - **setup_surface.reasons_short:** Describes you
 - **setup_surface.run_location_short:** Install on
-- **setup_surface.user_intro:** Introduce yourself to your Cowork Agents (up to two short lines)
 - **ask.none:** None
 - **ask.chosen:** {n} chosen
 - **ask.find:** type to find
@@ -443,7 +420,6 @@ nothing paints exactly this.
 
 ## team — team-view.js (the Team page)
 - **work_items.title:** Work Items
-- **work_items.intro:** Select a work item to read its Project. Drag between stages to request a move.
 - **work_items.refresh:** Refresh Work Items
 - **work_items.details:** Show stone details
 - **work_items.loading:** Loading Work Items…
@@ -464,8 +440,6 @@ nothing paints exactly this.
 - **team_kanban.open_owner:** Open @{name}
 - **team_kanban.waiting:** waiting on
 - **team_kanban.asked:** asked
-- **team_kanban.desk_summary:** Projects across this Desk’s Teams and Agents
-- **team.lead:** Team lead
 - **team.workspace_1:** Workspace 1
 - **team.workspace_2:** Workspace 2
 - **team.commons_card:** Commons
@@ -620,7 +594,6 @@ nothing paints exactly this.
 - **pad.key_title:** key {chord}
 - **pad.unbound:** — unbound —
 - **pad.group_keys:** ⌨ keys (to the active tile)
-- **pad.active_tile:** ▸ active tile
 - **pad.press_to_capture:** press the pad key to capture…
 - **pad.program:** ⚙ Program pad…
 - **pad.write:** Write
@@ -910,7 +883,6 @@ The catalog entry goes. {dir} is not touched.
 - **customize.handoff_ask_agent:** Ask your agent to add one.
 
 ## pane — panes.js (the pane registry's tab labels)
-- **pane.docs:** ▧ Docs
 - **pane.settei:** Configuration
 - **pane.hotwords:** Hotwords
 - **pane.koshi:** Koshi
@@ -1131,7 +1103,6 @@ The catalog entry goes. {dir} is not touched.
 - **me.no_record:** This Agent has not written a work record yet.
 - **head.menu_quiet:** Menu — no Agent in this workspace
 - **menu.empty:** Nothing here yet.
-- **me.title:** This session — status, work record, groups, docs, note, control
 
 ## keys — keysrow.js (the composer's keys row)
 - **keys.escape_face:** Esc
@@ -1265,7 +1236,6 @@ The catalog entry goes. {dir} is not touched.
 - **team_jikan.remove_confirm:** Remove this job?
 - **team_jikan.all_teams_summary:** Scheduled messages across every team
 - **team_jikan.none:** No jobs yet. Choose New job to schedule a message.
-- **team_jikan.remove:** Remove
 
 ## workspace — workspace-primitives.js (the Kit's own words)
 - **team_config.no_roster:** This Team has no saved record.
@@ -1387,7 +1357,6 @@ The catalog entry goes. {dir} is not touched.
 - **agent.team_membership_summary:** Add or remove this Agent from installed Teams
 - **agent.join_team:** Join
 - **agent.no_teams:** No Teams are installed.
-- **agent.team_tasks:** {team} Task Manager
 - **agent.team_tasks_summary:** Projects held by {team}
 - **customize.desk_profiles:** Desk profiles
 - **customize.desk_profiles_blurb:** Your standing defaults for the surfaces you work at — a skin, a lexicon, a campaign kind, a Team page arrangement. Choosing one is a setting, on the gear.

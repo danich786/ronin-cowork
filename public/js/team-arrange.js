@@ -3,7 +3,7 @@ import { request } from './request.js';
 
 const COLUMNS = ['workspace1', 'roster', 'workspace2'];
 const WORKSPACES = ['workspace1', 'workspace2', 'workspace3', 'workspace4'];
-const TABS = { wipeboard: 'wipeboard', docs: 'docs', kanban: 'kanban', config: 'team-configuration', 'team-configuration': 'team-configuration' };
+const TABS = { wipeboard: 'wipeboard', docs: 'docs', config: 'team-configuration', 'team-configuration': 'team-configuration' };
 
 /** Tokens (`key=value`) → { draft, errors }. Unknown words are errors, not guesses. */
 export function parseDraft(tokens = [], me = '') {

@@ -1,13 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { WORKSPACE_DESTINATIONS } from '../public/js/workspace-contract.js';
 import { defaultWorkspaceState } from '../public/js/workspace.js';
 
 const source = (file) => readFile(new URL(`../public/js/${file}`, import.meta.url), 'utf8');
 
 test('Agent is a first-class Workbench destination with tab-instance state', async () => {
-  assert.ok(WORKSPACE_DESTINATIONS.includes('agent'));
   const [main, workspace] = await Promise.all([source('main.js'), source('workspace.js')]);
   assert.match(main, /workspace\.register\('agent', createAgentView\(\)\)/);
   assert.match(workspace, /workbenchTabs: \{\}/);

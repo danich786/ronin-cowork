@@ -82,19 +82,13 @@ test('nothing selected is marked with an underline, and the bar keeps one centre
   assert.doesNotMatch(block, /font-weight: 700/, 'attention never changes a label\'s weight');
 });
 
-test('Commons builds on first use and Task Manager has its own surface', async () => {
+test('Commons builds on first use', async () => {
   const view = await source('public/js/cowork-view.js');
-  const catalog = await source('public/js/workbench-catalog.js');
   assert.match(view, /const commonsFor = \(id\) => \{/);
   assert.doesNotMatch(view, /Object\.fromEntries\(Object\.keys\(seats\)\.map\(\(id\) => \[id, createTeamCommons\(id\)\]\)\)/,
     'four seats do not build every Commons room at construction');
   assert.match(view, /teamCommons: \(id\) => \(\{ el: commonsFor\(id\)\.el/);
   assert.match(view, /made\.channels\.mount\(ctx\)/);
-  assert.match(catalog, /type: WORKBENCH_TYPES\.kanban, header: 'surface'/);
-  assert.match(view, /taskManagerBySeat\[cacheKey\] = \{ el: surface\.el, manager, show: \(\) => manager\.enter\(\), leave: \(\) => manager\.leave\(\) \}/);
-  assert.match(view, /for \(const surface of Object\.values\(taskManagerBySeat\)\) surface\.manager\.setAvailability\(kanbanGate\)/);
-  assert.match(view, /token\.type === WB_TYPES\.commons && token\.tab === 'kanban'/);
-  assert.doesNotMatch(view, /\{ id: 'kanban', label:/);
   assert.match(view, /if \(painterReady\) \{\s*seenConfig = '';\s*seenRecord = '';\s*paint\(\);/);
   // Every loop that pushes a reading walks the seats that exist, never the four names.
   assert.doesNotMatch(view, /Object\.values\(teamCommons\)/);
