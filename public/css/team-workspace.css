@@ -164,8 +164,13 @@
   .league-team-member-detail[hidden] { display: none; }
   .league-team-member-items { display: flex; flex-direction: column; }
   .league-team-member-items:empty { display: none; }
-  .league-team-member-id, .league-team-member-status { margin: 0; color: var(--muted); font-size: var(--form-note); }
+  .league-team-member-status { margin: 0; color: var(--muted); font-size: var(--form-note); }
   .league-team-member-status:empty { display: none; }
+  /* The items an opened row holds sit flush with its lines: no mark column here. */
+  .league-team-member-items .tk-line { grid-template-columns: minmax(0, 1fr) var(--hr-shingo) var(--hr-stack); padding-inline: 0; }
+  .league-team-member-items .tk-line-title { grid-column: 1; }
+  .league-team-member-items .tk-line-holder { grid-column: 2; }
+  .league-team-member-items .tk-stage-bar { grid-column: 3; }
   .league-team-empty { margin: 0; border-bottom: var(--edge) solid var(--line); padding: var(--space-5) 0; }
   .league-team-add { margin-top: var(--space-5); }
 
@@ -194,10 +199,13 @@
      the tile pads it, an opened roster row does not. */
   .ac-body { display: flex; flex-direction: column; min-width: 0; }
   .agent-composition .ac-body { padding: var(--space-5); }
-  .ac-status, .ac-list { margin: 0; font-size: var(--form-note); }
-  .ac-status { color: var(--muted); }
-  .ac-status:empty { display: none; }
+  /* One type scale in the body: every line reads at the form's input size (the stones' readings,
+     the item lines, the buttons); only the stones' own labels and a status word are notes. */
+  .ac-line, .ac-list, .ac-brief { margin: 0; font-size: var(--form-input); line-height: 1.5; overflow-wrap: anywhere; }
+  .ac-line { color: var(--muted); }
   .ac-list { color: var(--fg); }
-  .ac-brief { max-height: 18rem; overflow: auto; margin: 0; border: var(--edge) solid var(--line); padding: var(--space-3); color: var(--fg); font: inherit; font-size: var(--form-note); white-space: pre-wrap; }
+  .ac-status { margin: 0; color: var(--muted); font-size: var(--form-note); }
+  .ac-status:empty { display: none; }
+  .ac-brief { max-height: 18rem; overflow: auto; border: var(--edge) solid var(--line-2); border-radius: var(--radius-xs); background: var(--well); padding: var(--space-4); color: var(--fg); font-family: inherit; white-space: pre-wrap; }
   .ac-mandate, .ac-add { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: var(--space-3); }
 }

@@ -79,21 +79,21 @@ export const buildTeamMembers = (name, options = {}) => {
     detail.id = `team-member-${options.idPrefix || name}-${member.name}-actions`;
     toggle.setAttribute('aria-controls', detail.id);
     const work = createStep({ key: 'work', title: t('league.work', 'Work') });
-    if (reading.description) work.body.append(el('p', 'fs-step-help', [reading.step, reading.description].filter(Boolean).join(' · ')));
+    if (reading.description) work.body.append(el('p', 'ac-line', [reading.step, reading.description].filter(Boolean).join(' · ')));
     const items = el('div', 'league-team-member-items'); work.body.append(items);
     const word = el('p', 'league-team-member-status');
     const composition = createAgentCompositionReader(member.name, { setState: (_state, message) => { word.textContent = message || ''; } });
-    const rename = createAction({ label: t('league.rename_agent', 'Rename'), size: 'compact', action: async () => {
+    const rename = createAction({ label: t('league.rename_agent', 'Rename'), action: async () => {
       const currentTitle = agentTitle(member);
       const wanted = window.prompt(t('league.rename_agent_prompt', 'Edit Agent title'), currentTitle);
       if (wanted == null || wanted.trim() === currentTitle) return;
       try { await setSessionTitle(member.name, wanted.trim()); options.onChanged?.(); }
       catch (error) { options.onFailed?.(t('head.rename_failed', 'Could not rename session: {reason}', { reason: error.message })); }
     } });
-    const lead = createAction({ label: member.team_lead ? t('league.team_lead', 'Team Lead') : t('league.make_team_lead', 'Make Lead'), size: 'compact', selected: member.team_lead, action: async () => { const result = await setTeamLead(member.name, name, !member.team_lead); if (!result.ok) return options.onFailed?.(result.message); options.onChanged?.(); } });
-    const eject = createAction({ label: t('league.remove_member', 'Remove'), title: t('league.remove_named_member', 'Remove {name} from this team', { name: member.name }), size: 'compact', action: async () => { const result = await setTeamMembership(member.name, name, false); if (!result.ok) return options.onFailed?.(result.message); options.onChanged?.(); } });
-    const close = options.onClose ? createAction({ label: t('league.close_agent', 'Close'), title: t('league.close_named_agent', 'Close {name}', { name: member.name }), size: 'compact', action: () => options.onClose(member) }) : null;
-    detail.append(el('p', 'league-team-member-id', `${agentName(member)} · @${member.name}`), work.el, composition.el, word, createActionBar({ className: 'league-team-member-actions', actions: [rename, lead, eject, close] }).el);
+    const lead = createAction({ label: member.team_lead ? t('league.team_lead', 'Team Lead') : t('league.make_team_lead', 'Make Lead'), selected: member.team_lead, action: async () => { const result = await setTeamLead(member.name, name, !member.team_lead); if (!result.ok) return options.onFailed?.(result.message); options.onChanged?.(); } });
+    const eject = createAction({ label: t('league.remove_member', 'Remove'), title: t('league.remove_named_member', 'Remove {name} from this team', { name: member.name }), action: async () => { const result = await setTeamMembership(member.name, name, false); if (!result.ok) return options.onFailed?.(result.message); options.onChanged?.(); } });
+    const close = options.onClose ? createAction({ label: t('league.close_agent', 'Close'), title: t('league.close_named_agent', 'Close {name}', { name: member.name }), action: () => options.onClose(member) }) : null;
+    detail.append(el('p', 'ac-line', `${agentName(member)} · @${member.name}`), work.el, composition.el, word, createActionBar({ className: 'league-team-member-actions', actions: [rename, lead, eject, close] }).el);
     const open = (expanded) => {
       detail.hidden = !expanded;
       toggle.setAttribute('aria-expanded', String(expanded));
@@ -113,7 +113,7 @@ export const buildTeamMembers = (name, options = {}) => {
   // Agents join a Team by dragging; the foot starts a new one — the New Agent form with this
   // Team chosen, opened the way the selector's New Agent card opens it.
   const foot = el('div', 'league-team-add');
-  foot.append(createAction({ label: t('new_agent.title', 'New Agent'), size: 'compact', action: () => options.onNew?.() }).el);
+  foot.append(createAction({ label: t('new_agent.title', 'New Agent'), action: () => options.onNew?.() }).el);
   roster.append(foot);
   return roster;
 };

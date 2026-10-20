@@ -39,7 +39,7 @@ export function createAgentCompositionReader(agent, { setState = () => {} } = {}
     const brief = section('brief', t('agent_composition.brief', 'Brief'));
     brief.append(
       el('pre', 'ac-brief', data.birth.brief || t('agent_composition.no_brief', 'No saved brief.')),
-      el('p', 'fs-step-help', t('agent_composition.born_with', 'Born with {mandate} · {behaviours}', { mandate: mandateLine(data.birth.mandate), behaviours: behaviourList(data.birth.behaviours) })),
+      el('p', 'ac-line', t('agent_composition.born_with', 'Born with {mandate} · {behaviours}', { mandate: mandateLine(data.birth.mandate), behaviours: behaviourList(data.birth.behaviours) })),
     );
     const mandate = section('mandate', t('mandate', 'Mandate'));
     const form = el('form', 'ac-mandate');
@@ -60,7 +60,7 @@ export function createAgentCompositionReader(agent, { setState = () => {} } = {}
       add.addEventListener('click', async () => { add.disabled = true; const changed = await request(`/api/sessions/${encodeURIComponent(agent)}/composition/behaviours`, { method: 'POST', json: picker.value() }); add.disabled = false; addStatus.textContent = changed.ok ? t('agent_composition.behavior_queued', 'Teaching queued for the Agent.') : changed.message; if (changed.ok) void load(); });
       const row = el('div', 'ac-add'); row.append(picker.el, add); behaviours.append(row, addStatus);
     }
-    else behaviours.append(el('p', 'fs-step-help', t('agent_composition.no_additions', 'No further optional Behaviors are available.')));
+    else behaviours.append(el('p', 'ac-line', t('agent_composition.no_additions', 'No further optional Behaviors are available.')));
   };
   return { el: body, show: load, destroy: () => { for (const question of questions) question.destroy(); questions = []; } };
 }
