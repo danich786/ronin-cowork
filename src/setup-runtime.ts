@@ -85,8 +85,6 @@ export interface SetupProviderState {
   /** Turned off by the owner: Ronin is not using this provider. The sign-in is kept; live tiles run on. */
   off: boolean;
   off_at: string | null;
-  /** Catalog cells this CLI can launch; zero means it cannot count as activated. */
-  models: number;
   /** What the installed CLI said it is; null when not installed or it would not say. */
   version: string | null;
   /** Its own model list as Refresh all last read it, with the date and the CLI version; null until read, or when not activated. */
@@ -230,8 +228,7 @@ export async function setupRuntimeAnswer(
     const offSince = offAt(section, agent.id);
     const isInstalled = summary.installed.includes(agent.id);
     const signedIn = isInstalled && summary.signed_in.includes(agent.id);
-    const models = entry?.models.length ?? 0;
-    const activated = isInstalled && offSince === null && (completed !== null || signedIn) && models > 0;
+    const activated = isInstalled && offSince === null && (completed !== null || signedIn) && entry?.launchable === true;
     // Not activated: nothing was asked and nothing is offered — Installed, and stop. A
     // version from an earlier measurement is not printed as though it were current.
     const version = activated ? summary.versions?.[agent.id] ?? null : null;
@@ -255,7 +252,6 @@ export async function setupRuntimeAnswer(
       activated_at: completed,
       off: offSince !== null,
       off_at: offSince,
-      models,
       version,
       model_list: activated ? summary.models?.[agent.id] ?? null : null,
       latest: latest?.version ?? null,

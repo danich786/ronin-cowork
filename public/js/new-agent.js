@@ -8,7 +8,7 @@ import { t } from './lexicon.js';
 import { ask } from './ask.js';
 import { finalizeTeamName, isValidTeamName, sanitizeTeamName } from './new-team-draft.js';
 import {
-  createStep, el, kindTiles, loadProviderCatalog, mandateWord, modelLabel, providerCatalog, readingRows, tagRow, templateTray, tierWord,
+  createStep, el, kindTiles, loadProviderCatalog, mandateWord, modelLabel, priceText, providerCatalog, readingRows, tagRow, templateTray, tierWord,
 } from './form-steps.js';
 import { openLaunchHandoff } from './launch-handoff.js';
 import { closeWorkspaceTab, reserveWorkspaceTab, workbenchLaunchUrl } from './workspace.js';
@@ -232,7 +232,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
       return { v: row.provider, l: row.cli_label || row.provider_label || row.provider, off: unavailable || undefined };
     });
   const modelRows = (provider) => providerCatalog().rows.filter((row) => row.provider === provider).map((row) => ({
-    v: row.model, l: modelLabel(row), word: tierWord(row.tier), sub: row.cost || '',
+    v: row.model, l: modelLabel(row), word: tierWord(row.tier), sub: priceText(row.info),
     off: row.selectable ? undefined : row.off ? t('forms.reason_turned_off', 'turned off') : t('forms.reason_not_on_machine', 'not on this machine'),
   }));
   const teamChoice = () => draft.teamMode === 'new' ? 'new' : draft.teamMode === 'none' ? 'none' : 'current';

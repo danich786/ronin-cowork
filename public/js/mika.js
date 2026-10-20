@@ -66,10 +66,11 @@ const OPENED_FROM_BAR =
  * (it waits out a trust dialog and re-types until the text is visibly there). A session
  * already up is sent to. Same request either way — she cannot tell how she got it.
  *
+ * With no tile the request is delivered and nothing is shown: the caller says where she answers.
  * Returns true if she was started by this call; the caller says so, not us.
  */
 export async function askMika(tile, ask) {
-  if (!tile) return false;
+  if (!tile && !ask) return false;
   let born = false;
   try {
     if (!S.sessions.some((s) => s.name === MIKA)) {
@@ -89,7 +90,7 @@ export async function askMika(tile, ask) {
         json: { text: ask },
       });
     }
-    tile.connect(MIKA);
+    tile?.connect(MIKA);
     return born;
   } catch (e) {
     showFailure('mika', e);

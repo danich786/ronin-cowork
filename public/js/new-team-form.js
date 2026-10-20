@@ -10,7 +10,7 @@ import { agentPicks, agentRow, createAgentRows } from './team-agents.js';
 import { openLaunchHandoff } from './launch-handoff.js';
 import { launchTeamAgents } from './team-loader.js';
 import {
-  createStep, el, loadProviderCatalog, mandateWord, modelLabel, providerCatalog, readingRows, tagRow, templateTray, tierWord,
+  createStep, el, loadProviderCatalog, mandateWord, modelLabel, priceText, providerCatalog, readingRows, tagRow, templateTray, tierWord,
 } from './form-steps.js';
 import { closeWorkspaceTab, reserveWorkspaceTab } from './workspace.js';
 
@@ -70,7 +70,7 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
       return { v: row.provider, l: row.cli_label || row.provider_label || row.provider, off: unavailable || undefined };
     });
   const modelRows = (provider) => providerCatalog().rows.filter((row) => row.provider === provider).map((row) => ({
-    v: row.model, l: modelLabel(row), word: tierWord(row.tier), sub: row.cost || '',
+    v: row.model, l: modelLabel(row), word: tierWord(row.tier), sub: priceText(row.info),
     off: row.selectable ? undefined : row.off ? t('forms.reason_turned_off', 'turned off') : t('forms.reason_not_on_machine', 'not on this machine'),
   }));
 

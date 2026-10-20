@@ -18,7 +18,8 @@
  *      asked, the newest release its package source lists; an **Update** control runs the
  *      registry's update line in a tile as Install does — the owner's press, never Ronin's.
  *   2. THE CATALOG — the three measured facts, dated, then every model the catalog lists
- *      for this provider: tier, cost as read, good at, not good at, the default marked.
+ *      for this provider: tier, price, context, release date and description from the
+ *      accepted model info (models.dev), the default marked.
  *
  * The Setup progress resource owns measurement. This surface paints the Campaign's dated
  * provider summary, which every reader takes from the record; the catalog rows come from the one
@@ -36,7 +37,7 @@ import { createSetupZone, setupStep } from './setup-zone.js';
 import { request } from './request.js';
 import { WorkspaceKit } from './workspace-kit.js';
 import { createPhalanx } from './phalanx.js';
-import { loadProviderCatalog, modelLabel, providerCatalog, tierWord } from './form-steps.js';
+import { loadProviderCatalog, modelLabel, priceText, providerCatalog, tierWord } from './form-steps.js';
 import { mountProviderAttachment, providerFromRuntime, providerPresentation, providerReadiness } from './setup-provider-state.js';
 import { createStatusMarker } from './status-marker.js';
 
@@ -56,7 +57,7 @@ export function providerSurfaceDefinition() {
   };
 }
 
-/** The card's line on both seats: the catalog's counts, this machine's, and the catalog's date. */
+/** The card's line on both seats: the catalog's counts, this machine's, and when its model info was fetched. */
 export function providersSummary(catalog) {
   if (!catalog?.loaded) return t('setup_surface.providers_summary_unread', 'Every provider and model Ronin offers, and what this machine has.');
   const rows = catalog.rows;
@@ -64,8 +65,8 @@ export function providersSummary(catalog) {
   const activated = new Set(rows.filter((row) => row.operational).map((row) => row.provider)).size;
   const counts = t('setup_surface.providers_summary', '{providers} providers · {models} models · {activated} activated here', { providers, models: rows.length, activated });
   const yours = new Set(rows.filter((row) => row.origin === 'user').map((row) => row.provider)).size;
-  const stockDate = catalog.stock_updated || catalog.updated;
-  const dated = stockDate ? t('setup_surface.providers_summary_dated', '{counts} · catalog updated {date}', { counts, date: stockDate }) : counts;
+  const fetched = String(catalog.model_info?.fetched_at || '').slice(0, 10);
+  const dated = fetched ? t('setup_surface.providers_summary_dated', '{counts} · model info from {date}', { counts, date: fetched }) : counts;
   return yours ? t('setup_surface.providers_summary_yours', '{dated} · {n} yours', { dated, n: yours }) : dated;
 }
 
@@ -224,19 +225,21 @@ export function createProviderDrawing(context, { repaint, say = () => {} }) {
     mounted = null;
   };
   /**
-   * WHICH LAYER a provider's section came from, said in words — the whole point of the
-   * overlay. A shadow nobody can see is what the surface used to be. The cost is said
-   * too: a user section replaces the shipped one whole, so one edited price forks the
-   * vendor's section until the owner takes the next shipped update.
+   * WHERE the table's words come from, said in words: the provider's section (shipped, or
+   * the owner's copy laid over it), and the model info — models.dev, fetched when, and
+   * whether it is the shipped snapshot or the update the owner accepted.
    */
   const provenance = (rows) => {
     const first = rows[0];
     if (!first) return '';
-    const read = providerCatalog();
-    const unstated = t('setup_surface.catalog_date_unstated', 'date not stated');
-    if (first.origin !== 'user') return t('setup_surface.section_shipped', 'Shipped catalog · updated {date}', { date: read.stock_updated || unstated });
-    if (first.shadowed) return t('setup_surface.section_yours_shadowed', 'Your copy of this section (updated {yours}) replaces the shipped one (updated {stock}). It stays yours until you take the next shipped update: one edited price forks the whole section.', { yours: read.updated || unstated, stock: read.stock_updated || unstated });
-    return t('setup_surface.section_yours_new', 'Yours · not in the shipped catalog (your copy updated {yours})', { yours: read.updated || unstated });
+    const info = providerCatalog().model_info ?? {};
+    const date = String(info.fetched_at || '').slice(0, 10) || t('setup_surface.catalog_date_unstated', 'date not stated');
+    const source = info.origin === 'user'
+      ? t('setup_surface.info_accepted', 'Model info from models.dev, fetched {date}, accepted by you', { date })
+      : t('setup_surface.info_shipped', 'Model info from models.dev, fetched {date}, shipped with Ronin', { date });
+    if (first.origin !== 'user') return source;
+    if (first.shadowed) return t('setup_surface.section_yours_shadowed', 'Your copy of this section replaces the shipped one. {source}', { source });
+    return t('setup_surface.section_yours_new', 'Yours · not in the shipped catalog. {source}', { source });
   };
   /** A path with the home directory folded to ~, for a line meant to be read. */
   const homely = (path) => String(path || '').replace(/^\/home\/[^/]+|^\/Users\/[^/]+/, '~');
@@ -483,7 +486,7 @@ export function createProviderDrawing(context, { repaint, say = () => {} }) {
     section.append(from);
     const table = el('table', 'setup-provider-models');
     const headRow = el('tr');
-    for (const text of [t('setup_surface.col_model', 'Model'), t('setup_surface.col_tier', 'Tier'), t('setup_surface.col_cost', 'Cost'), t('setup_surface.col_good_at', 'Good at'), t('setup_surface.col_not_good_at', 'Not good at')]) headRow.append(el('th', null, text));
+    for (const text of [t('setup_surface.col_model', 'Model'), t('setup_surface.col_tier', 'Tier'), t('setup_surface.col_cost', 'Price'), t('setup_surface.col_context', 'Context'), t('setup_surface.col_released', 'Released'), t('setup_surface.col_description', 'Description')]) headRow.append(el('th', null, text));
     const thead = el('thead'); thead.append(headRow);
     const body = el('tbody');
     for (const row of rows) {
@@ -494,7 +497,10 @@ export function createProviderDrawing(context, { repaint, say = () => {} }) {
       const name = el('td'); name.append(el('b', null, modelLabel(row)));
       if (row.default) name.append(el('span', 'setup-provider-default', t('setup_surface.model_default_mark', 'the default')));
       if (row.model !== 'native') name.append(el('span', 'setup-provider-model-id', row.model));
-      line.append(name, el('td', 'setup-provider-tier', tierWord(row.tier)), el('td', null, row.cost || ''), el('td', null, row.good_at || ''), el('td', null, row.not_good_at || ''));
+      const info = row.info;
+      const context = info?.limit?.context ? t('setup_surface.context_tokens', '{n}K tokens', { n: Math.round(info.limit.context / 1000) }) : '';
+      const description = row.model === 'native' ? t('setup_surface.native_description', 'The CLI chooses its own configured or current default model.') : info?.description || '';
+      line.append(name, el('td', 'setup-provider-tier', tierWord(row.tier)), el('td', null, priceText(info)), el('td', null, context), el('td', null, info?.release_date || ''), el('td', null, description));
       body.append(line);
     }
     table.append(thead, body);

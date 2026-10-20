@@ -4174,6 +4174,10 @@ body {
 /* Refresh all: the one control that reads every activated CLI's model list and asks outside this machine (each CLI's package source). It sits once, at the top, with the date it last ran. */
 .setup-provider-refresh { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3) var(--space-5); margin: var(--space-4) 0 var(--space-5); }
 .setup-provider-last-ran { margin: 0; }
+/* Model info's review under Refresh all: the changes, then Accept · Discard · Ask Mika. */
+.models-refresh-update { display: grid; gap: var(--space-4); min-width: 0; }
+.models-info-choices { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.models-info-change { white-space: nowrap; }
 /* A stone's detail is two sections, top to bottom: Yours (the steps), then The catalog. */
 .setup-provider-yours, .setup-provider-catalog { display: grid; gap: var(--space-5); min-width: 0; }
 .setup-provider-catalog { margin-top: var(--space-8); padding-top: var(--space-7); border-top: var(--edge) solid var(--line); }
