@@ -118,7 +118,6 @@ export function createCoworkView(options = {}) {
   const rosterNote = el('span', 'tw-roster-note');
   const mikaHelp = createAction({ label: t('mika.help', 'ミ Help'), size: 'compact', className: 'tw-mika-help' });
   let helpPanel = null;
-  let rosterTitle = null;
 
   const service = (node) => ({ el: node, mount: () => {}, enter: () => {}, leave: () => {}, destroy: () => {} });
   // Each workspace owns its rendered Commons instance and local presentation state.
@@ -304,8 +303,6 @@ export function createCoworkView(options = {}) {
     tenant: { kind: campaign ? 'cowork' : 'team', team: () => team }, environment,
     defaultNode: (id) => seats[id].surface.el,
     label: campaign ? teamsLabel : t('team.roster_title', 'Team Roster'),
-    // While ミ Help is open the column is Mika's, and every repaint says so.
-    title: () => helpPanel?.isOpen() ? t('mika.header', 'Mika, your helpful assistant') : campaign ? teamsLabel : t('team.roster_title', 'Roster'),
     actions: [rosterNote], deferSelector: true,
     selectorFilter: (type) => type !== BEHAVIOUR_SURFACE_TYPE,
     installDrop: (cell, id) => acceptSessionDrops(cell, () => id, (name, at) => arrange({ [at]: { session: name } })),
@@ -316,7 +313,6 @@ export function createCoworkView(options = {}) {
     },
   });
   installBehaviourReader(bench, WB_TYPES.document);
-  rosterTitle = bench.selectorHeader?.title ?? null;
   if (campaign) {
     const selector = bench.host.querySelector('.wk-workbench-selector');
     selector?.setAttribute('role', 'navigation');
@@ -328,7 +324,7 @@ export function createCoworkView(options = {}) {
   // card under Ronin Helpers is the other door: the same session as a normal tile.
   helpPanel = createMikaHelpPanel({
     selector: bench.host.querySelector('.wk-workbench-selector'),
-    header: bench.selectorHeader, refreshHeader: () => bench.refreshSelector(),
+    header: bench.selectorHeader,
     createAction, t, helpButton: mikaHelp.el,
     ready: async () => {
       const result = await readyMika('help');
@@ -712,7 +708,6 @@ export function createCoworkView(options = {}) {
     };
   };
   function renderCards() {
-    if (rosterTitle) rosterTitle.textContent = campaign ? teamsLabel : t('team.roster_title', 'Roster');
     bench.refreshSelector();
   }
 
@@ -799,7 +794,6 @@ export function createCoworkView(options = {}) {
     }
     loaded = name;
     setBarLabel();
-    rosterTitle.textContent = t('team.roster_title', 'Roster');
     paint();
   }
 

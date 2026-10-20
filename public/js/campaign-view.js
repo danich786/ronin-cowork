@@ -145,7 +145,7 @@ export function createCampaignView() {
   const openSetup = () => ctx?.navigate('setup');
   const mikaHelp = WorkspaceKit.primitives.createAction({ label: t('mika.help', 'ミ Help'), size: 'compact' });
   let helpPanel = null;
-  bench = WorkspaceKit.workbench.create({ profile: PROFILE, tenant: { kind: 'campaign', selected }, environment, defaultNode: blank, label: t('campaign.settings_short_title', 'Settings'), title: () => helpPanel?.isOpen() ? t('mika.header', 'Mika, your helpful assistant') : t('campaign.settings_short_title', 'Settings'), actions: [mikaHelp], selectorCurrent: 'placed', onSelectorRefresh: (cards) => {
+  bench = WorkspaceKit.workbench.create({ profile: PROFILE, tenant: { kind: 'campaign', selected }, environment, defaultNode: blank, label: t('campaign.settings_short_title', 'Settings'), actions: [mikaHelp], selectorCurrent: 'placed', onSelectorRefresh: (cards) => {
     for (const [type, label] of [
       [TYPES.machine, t('campaign_view.machine_settings', 'Machine Settings')],
       [TYPES.identity, t('campaign_view.desk_settings', 'Desk Settings')],
@@ -161,7 +161,7 @@ export function createCampaignView() {
   installBehaviourReader(bench, TYPES.document);
   helpPanel = createMikaHelpPanel({
     selector: bench.host.querySelector('.wk-workbench-selector'), header: bench.selectorHeader,
-    refreshHeader: () => bench.refreshSelector(), createAction: WorkspaceKit.primitives.createAction,
+    createAction: WorkspaceKit.primitives.createAction,
     t, helpButton: mikaHelp.el,
     ready: async () => { const ready = await readyMika('help'); if (!ready || (!ready.ok && ready.data?.state !== 'action_required')) return false; mikaPool.sync([MIKA_SESSION]); return true; },
     borrow: () => mikaPool.borrow(MIKA_SESSION), release: () => mikaPool.releaseBorrow(MIKA_SESSION),

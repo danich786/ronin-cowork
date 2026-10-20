@@ -108,11 +108,11 @@ export async function askMika(tile, ask) {
  * `ready()` is the caller's readiness check (it returns truthy when she may be shown),
  * `borrow()` returns her tile's element, `release()` gives it back.
  */
-export function createMikaHelpPanel({ selector, header, refreshHeader, createAction, t, ready, borrow, release, helpButton, view, place }) {
+export function createMikaHelpPanel({ selector, header, createAction, t, ready, borrow, release, helpButton, view, place }) {
   const cards = selector?.querySelector('.wk-workbench-selector-cards') || null;
   // The column is hers alone: no bar, no greeting, and the borrowed tile's head and
-  // composer are hidden by the panel's own CSS. The selector HEADER carries the
-  // conversation's title and its Close, where ミ Help was (owner, 2026-09-09).
+  // composer are hidden by the panel's own CSS. The selector HEADER carries her Close,
+  // where ミ Help was (owner, 2026-09-09); it names nothing (owner, 2026-10-20).
   const panel = document.createElement('section');
   panel.className = 'setup-mika-panel';
   panel.hidden = true;
@@ -152,7 +152,6 @@ export function createMikaHelpPanel({ selector, header, refreshHeader, createAct
     close.el.hidden = true;
     if (helpButton) helpButton.hidden = false;
     if (headerEl) { headerEl.draggable = false; headerEl.classList.remove('wk-mika-handle'); }
-    refreshHeader?.(); // the roster's own title comes back
     helpButton?.focus();
   };
   const openHelp = async () => {
@@ -160,7 +159,6 @@ export function createMikaHelpPanel({ selector, header, refreshHeader, createAct
     open = true;
     if (cards) cards.hidden = true;
     panel.hidden = false;
-    if (header?.title) header.title.textContent = t('mika.header', 'Mika, your helpful assistant');
     if (helpButton) helpButton.hidden = true;
     close.el.hidden = false;
     if (headerEl) { headerEl.draggable = true; headerEl.classList.add('wk-mika-handle'); headerEl.title = t('mika.drag_hint', 'Drag onto a workspace to move Mika there'); }
@@ -170,8 +168,6 @@ export function createMikaHelpPanel({ selector, header, refreshHeader, createAct
     let ok = false;
     try { ok = await ready(); } catch (_) { ok = false; }
     if (!open) return; // closed while she was starting
-    // A roster repaint while she started may have restored the roster's own title.
-    if (header?.title) header.title.textContent = t('mika.header', 'Mika, your helpful assistant');
     if (!ok) { loading.textContent = t('mika.start_refused', 'Mika couldn’t start. Try again.'); return; }
     const host = borrow();
     if (host) stage.replaceChildren(host);
