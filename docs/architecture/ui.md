@@ -150,7 +150,11 @@ The roles, defined in `public/style.css`:
   token audit deleted it rather than leave a dead semantic layer to mislead.
 - elevation: `--scrim`, `--shadow-menu`, `--shadow-sheet` — the whole vocabulary
 - terminal: the `--term-*` block — xterm's palette and the tape/composer surfaces,
-  read back into JS by `termTheme()` (`public/js/theme.js`), never restated
+  read back into JS by `termTheme()` (`public/js/theme.js`), never restated. **Every
+  `--term-*` token is the designer's, the 16 ANSI slots and `--term-cube` included**; the
+  rules below (bright white is the strongest mark; on paper every slot clears 3:1) are what a
+  new value must keep, and `check-css` holds the terminal's text pairs to the floor in both
+  themes
 
 **Kaki is the brand**: every primary and attention FILL reads
 `--kaki`/`--on-strong`, or `--kaki-fill`/`--kaki-fill-ink` where a small mark must pass on
