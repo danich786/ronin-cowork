@@ -68,15 +68,20 @@ and could not get a radius right.
 | motion | `--motion-quick/settle/slow/hint`, `--ease` | four speeds; nothing animates for decoration |
 | elevation | `--scrim` `--shadow-menu` `--shadow-sheet` | |
 | bar navigation | `--bar-nav-bg/fg/hover/focus` · `--bar-value-fg` | the shared clickable label and its non-clickable context value |
+| header colour | `--head-admin-*` `--head-teams-*` `--head-team-*` · `--head-attention` | each workbench scope's header: `bg` `fg` `muted` `line` `edge` |
 
 Each Workbench view uses `workbenchView()` to declare its appearance and shared header
 capabilities to the outer ViewHost. `workspace-header.js`
 applies that declaration once; workspace and selector headers inherit it, while individual
 work surfaces remain ignorant of colour and the application bar's dynamic island stays
-neutral. Campaign, Setup, and New Project use graphite, the Cowork collection uses aiiro,
-and Team and Agent Workbenches use the established `--cowork-head-*` kaki-orange family.
-Dark mode mixes 24% of collection colour into the header ground; light mode uses a solid
-fill. Routes and surface factories set no colour, and the root landing clears the treatment.
+neutral. **Header colours are tokens, one set per scope:** `--head-admin-*` (graphite:
+Campaign, Setup, New Project, Models, Workspaces), `--head-teams-*` (aiiro: the Cowork
+collection) and `--head-team-*` (kaki: Team and Agent Workbenches), each `bg` `fg` `muted`
+`line` `edge`, plus `--head-attention`. Dark mode mixes 24% of collection colour into the
+header ground; light mode uses a solid fill. The per-workbench switch sits in `@layer ui`
+under internal names (`--current-head-*`): it only picks a scope, so a skin or a designer
+edits the scope's token and never the switch. Routes and surface factories set no colour,
+and the root landing clears the treatment.
 
 These are **theme-independent** and defined once: a square corner is square in both shells.
 Only the colour roles are redefined under `:root[data-theme='light']`.
@@ -129,9 +134,10 @@ The roles, defined in `public/style.css`:
 - edges: `--line` · `--line-2` · `--line-3` (three weights, hairline → emphasized)
 - text: `--fg-strong` · `--fg` · `--muted` · `--muted-2` · `--dim` (zero-state)
 - meaning: `--accent` (attention/identity) · `--accent-2` (reference) · `--ok`/`--ok-2` ·
-  `--warn` (needs you) · the `--bad-*` family (wrong, in grades) · `--info`
+  `--warn` (needs you) · the `--bad-*` family (wrong, in grades) · `--info` · work-item status
+  `--ok-2` / `--status-yellow` / `--status-red`
 - house: `--kaki` (the Ronin identity mark; this session; heightened access/visibility) ·
-  `--aiiro` (Ronin navigation and selection) — Kojin's fixed palette, borrowed. The kaki
+  `--aiiro` (Ronin navigation and selection) · `--graphite` (the admin header) — Kojin's fixed palette, borrowed. The kaki
   identity ruling is the open hexagonal **hito** mark; using the same colour for heightened
   action connects “this needs you” to the house without making every Ronin surface kaki.
   Heightened surfaces read `--kaki`/`--kaki-lift` directly — the `--heighten-*` alias

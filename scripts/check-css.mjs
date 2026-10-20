@@ -228,8 +228,8 @@ const FLOOR = [
   ['--info', '--bg', 3], ['--ok', '--bg', 3],
   ['--on-strong', '--kaki', 3], // the メ fill — 21px bold, large-text tier
   ['--bad-fg', '--bad-ground', 7],
-  ['--cowork-head-fg', '--cowork-head-bg', 7], ['--cowork-head-muted', '--cowork-head-bg', 4.5],
-  ['--cowork-head-attention', '--cowork-head-bg', 4.5],
+  ['--head-team-fg', '--head-team-bg', 7], ['--head-team-muted', '--head-team-bg', 4.5],
+  ['--head-attention', '--head-team-bg', 4.5],
   ['--term-fg', '--term-bg', 7], ['--term-tape-fg', '--term-tape-bg', 7], ['--term-input-fg', '--term-well', 7],
 ];
 for (const [name, toks] of [['dark', darkTokens], ['light', lightTokens]]) {

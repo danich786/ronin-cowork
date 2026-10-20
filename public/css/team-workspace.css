@@ -50,8 +50,8 @@
   .tk-legend span { display: inline-flex; align-items: center; gap: var(--space-2); }
   .tk-dot { width: var(--space-3); height: var(--space-3); background: var(--line-2); }
   .tk-dot.green { background: var(--ok-2); }
-  .tk-dot.yellow { background: var(--kanban-yellow); }
-  .tk-dot.red { background: var(--kanban-red); }
+  .tk-dot.yellow { background: var(--status-yellow); }
+  .tk-dot.red { background: var(--status-red); }
   .tk-notice { flex: 1 1 auto; min-width: 0; margin: 0; color: var(--muted); font-size: var(--text-3); }
   .tk-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(var(--tk-column-min), 1fr)); gap: var(--space-4); min-width: 0; padding: var(--space-4) var(--space-5) var(--space-5); }
   .tk-unavailable { margin: 0; color: var(--muted); }
@@ -73,8 +73,8 @@
   .tk-card:active { cursor: grabbing; }
   .tk-card.dragging { opacity: .45; }
   .tk-card[data-status='green'] { border-left-color: var(--ok-2); }
-  .tk-card[data-status='yellow'] { border-left-color: var(--kanban-yellow); }
-  .tk-card[data-status='red'] { border-left-color: var(--kanban-red); }
+  .tk-card[data-status='yellow'] { border-left-color: var(--status-yellow); }
+  .tk-card[data-status='red'] { border-left-color: var(--status-red); }
   .tk-board.dragging .tk-column.means { border-color: var(--accent); border-style: dashed; background: var(--raise); }
   .tk-column.over { border-color: var(--accent); background: var(--raise); }
   .tk-drop-hint { display: none; margin: 0; padding: var(--space-2) var(--space-4) 0; color: var(--accent); font-size: var(--text-3); }
@@ -135,9 +135,9 @@
   .tk-stage-bar { grid-column: 4; justify-self: end; display: inline-flex; gap: var(--space-1); }
   .tk-stage-bar > i { width: var(--space-5); height: var(--space-2); border: var(--edge) solid var(--line-2); }
   .tk-stage-bar > i.past { border-color: var(--fg); background: var(--fg); }
-  .tk-stage-bar > i.now { border-color: transparent; background: var(--kanban-yellow); }
+  .tk-stage-bar > i.now { border-color: transparent; background: var(--status-yellow); }
   .tk-stage-bar > i.now.green { background: var(--ok-2); }
-  .tk-stage-bar > i.now.red { background: var(--kanban-red); }
+  .tk-stage-bar > i.now.red { background: var(--status-red); }
   .league-team-roster, .league-team-config { flex: 0 0 auto; }
   .league-team-roster { display: flex; flex-direction: column; min-height: 0; }
   .league-team-roster-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-4); border-bottom: var(--edge) solid var(--line-2); padding-bottom: var(--space-3); }

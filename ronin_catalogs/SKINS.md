@@ -22,8 +22,9 @@
 > | `- **light--bg:** #fffdf8` | the light shell only |
 >
 > **A token we rename keeps working here.** A skin naming an old name (`--muted-3`, `--setup-mark`,
-> `--gc-cta-bg`, `--gc-cta-ink`, `--kanban-green`, `--kiiro`, `--kaki-hint`) paints the
-> token that replaced it; spell the new name and it wins.
+> `--gc-cta-bg`, `--gc-cta-ink`, `--kanban-*`, `--kiiro`, `--kaki-hint`, `--scope-*`,
+> `--team-workbench-head-*`, `--cowork-head-*`) paints the token that replaced it; spell the
+> new name and it wins. A `--cowork-head-*` name paints that part of all three header scopes.
 >
 > **Light and dark are an axis INSIDE a skin, not a thing a skin fights.** A shape skin
 > names the bare form and is done — a corner is the same corner in either shell. A COLOUR

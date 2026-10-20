@@ -36,21 +36,9 @@
   --ok: #b5bd68;
   --ok-2: #7fd4a8;
   --warn: #f0c674;
-  --kanban-yellow: #e0c060;
-  --kanban-red: #e0705f;
+  --status-yellow: #e0c060;
+  --status-red: #e0705f;
 
-  --team-workbench-head-bg: #6f300e;
-  --team-workbench-head-fg: var(--on-strong);
-  --team-workbench-head-muted: #d9b8ab;
-  --team-workbench-head-line: var(--define-line);
-
-  --cowork-head-bg: var(--team-workbench-head-bg);
-  --cowork-head-fg: var(--team-workbench-head-fg);
-  --cowork-head-muted: var(--team-workbench-head-muted);
-  --cowork-head-attention: #e0af68;
-
-  --cowork-head-line: var(--team-workbench-head-line);
-  --cowork-surface-head-edge: var(--edge);
   --bad: #cc6666;
   --bad-soft: #e6a1a1;
   --bad-deep: #a33c33;
@@ -181,12 +169,25 @@
   --bar-brand-mark-h: 27px;
   --bar-brand-track: -0.005em;
 
-  /* Workbench scope headers; the individual Team keeps the established kaki family. */
-  --scope-graphite: #3b3d42;
-  --scope-campaign-head-bg: color-mix(in srgb, var(--scope-graphite) 24%, var(--bg-2));
-  --scope-teams-head-bg: color-mix(in srgb, var(--aiiro) 24%, var(--bg-2));
-  --scope-head-fg: var(--fg-strong);
-  --scope-head-muted: var(--muted-2);
+  /* Header colours, one set per scope: admin (Setup, Home, Models, Workspaces, Settings) is
+     graphite, Teams is aiiro, a Team or Agent is kaki. The workbench switch reads these. */
+  --graphite: #3b3d42;
+  --head-admin-bg: color-mix(in srgb, var(--graphite) 24%, var(--bg-2));
+  --head-admin-fg: var(--fg-strong);
+  --head-admin-muted: var(--muted-2);
+  --head-admin-line: var(--graphite);
+  --head-admin-edge: var(--space-1);
+  --head-teams-bg: color-mix(in srgb, var(--aiiro) 24%, var(--bg-2));
+  --head-teams-fg: var(--fg-strong);
+  --head-teams-muted: var(--muted-2);
+  --head-teams-line: var(--aiiro);
+  --head-teams-edge: var(--space-1);
+  --head-team-bg: #6f300e;
+  --head-team-fg: var(--on-strong);
+  --head-team-muted: #d9b8ab;
+  --head-team-line: var(--define-line);
+  --head-team-edge: var(--edge);
+  --head-attention: #e0af68;
 
   --edge: 1px;
   --edge-2: 2px;
@@ -201,10 +202,10 @@
 :root[data-theme='light'] {
 
   --kaki-tint: #f2a566;
-  --team-workbench-head-bg: var(--kaki-tint);
-  --team-workbench-head-fg: #201a0e;
-  --team-workbench-head-muted: #4f2e1b;
-  --cowork-head-attention: #7a2f10;
+  --head-team-bg: var(--kaki-tint);
+  --head-team-fg: #201a0e;
+  --head-team-muted: #4f2e1b;
+  --head-attention: #7a2f10;
   --bg: #f4f2ec;
   --bg-2: #eae7df;
   --panel: #ffffff;
@@ -224,8 +225,8 @@
   --ok: #5c7a1d;
   --ok-2: #1e7a4c;
   --warn: #9a7b00;
-  --kanban-yellow: #c9a227;
-  --kanban-red: #b8362a;
+  --status-yellow: #c9a227;
+  --status-red: #b8362a;
   --bad: #b04343;
   --bad-soft: #8f3a3a;
   --bad-deep: #a33c33;
@@ -245,10 +246,12 @@
   --ch-horizon-opacity: .85;
 
   /* Light mode uses the selected full-fill treatment for collection scopes. */
-  --scope-campaign-head-bg: var(--scope-graphite);
-  --scope-teams-head-bg: var(--aiiro);
-  --scope-head-fg: var(--on-strong);
-  --scope-head-muted: color-mix(in srgb, var(--on-strong) 78%, transparent);
+  --head-admin-bg: var(--graphite);
+  --head-admin-fg: var(--on-strong);
+  --head-admin-muted: color-mix(in srgb, var(--on-strong) 78%, transparent);
+  --head-teams-bg: var(--aiiro);
+  --head-teams-fg: var(--on-strong);
+  --head-teams-muted: color-mix(in srgb, var(--on-strong) 78%, transparent);
 
   --term-cube: invert;
   --term-bg: #faf8f2;
@@ -285,28 +288,6 @@
   --term-well: #ffffff;
   --term-input-line: #c8c2b2;
   --term-input-fg: #2c2e36;
-}
-
-:root:is([data-workbench='campaign'], [data-workbench='setup'], [data-workbench='launch'], [data-workbench='models'], [data-workbench='workspaces']) {
-  --cowork-head-bg: var(--scope-campaign-head-bg);
-  --cowork-head-line: var(--scope-graphite);
-  --cowork-surface-head-edge: var(--space-1);
-  --cowork-head-fg: var(--scope-head-fg);
-  --cowork-head-muted: var(--scope-head-muted);
-}
-:root:is([data-workbench='cowork'], [data-workbench='teams']) {
-  --cowork-head-bg: var(--scope-teams-head-bg);
-  --cowork-head-line: var(--aiiro);
-  --cowork-surface-head-edge: var(--space-1);
-  --cowork-head-fg: var(--scope-head-fg);
-  --cowork-head-muted: var(--scope-head-muted);
-}
-:root:is([data-workbench='team'], [data-workbench='agent']) {
-  --cowork-head-bg: var(--team-workbench-head-bg);
-  --cowork-head-line: var(--team-workbench-head-line);
-  --cowork-surface-head-edge: var(--edge);
-  --cowork-head-fg: var(--team-workbench-head-fg);
-  --cowork-head-muted: var(--team-workbench-head-muted);
 }
 
 :focus-visible {
@@ -368,6 +349,32 @@ body {
   top: var(--app-top, 0px);
   height: var(--app-h, 100dvh);
   overflow: hidden;
+}
+}
+
+@layer ui {
+/* THE WORKBENCH SWITCH, not a design token: it picks one scope's header colours for the
+   workbench on screen. Edit the --head-<scope>-* tokens, never these. */
+:root {
+  --current-head-bg: var(--head-team-bg);
+  --current-head-fg: var(--head-team-fg);
+  --current-head-muted: var(--head-team-muted);
+  --current-head-line: var(--head-team-line);
+  --current-head-edge: var(--head-team-edge);
+}
+:root:is([data-workbench='campaign'], [data-workbench='setup'], [data-workbench='launch'], [data-workbench='models'], [data-workbench='workspaces']) {
+  --current-head-bg: var(--head-admin-bg);
+  --current-head-fg: var(--head-admin-fg);
+  --current-head-muted: var(--head-admin-muted);
+  --current-head-line: var(--head-admin-line);
+  --current-head-edge: var(--head-admin-edge);
+}
+:root:is([data-workbench='cowork'], [data-workbench='teams']) {
+  --current-head-bg: var(--head-teams-bg);
+  --current-head-fg: var(--head-teams-fg);
+  --current-head-muted: var(--head-teams-muted);
+  --current-head-line: var(--head-teams-line);
+  --current-head-edge: var(--head-teams-edge);
 }
 }
 
@@ -1033,8 +1040,8 @@ body {
   padding: var(--space-3) var(--space-4);
   min-height: var(--row-head);
 
-  background: var(--cowork-head-bg);
-  border-bottom: var(--edge) solid var(--cowork-head-line);
+  background: var(--current-head-bg);
+  border-bottom: var(--edge) solid var(--current-head-line);
   flex: 0 0 auto;
   font-family: var(--workbench-head-font);
   font-size: var(--workbench-head-size);
@@ -1048,7 +1055,7 @@ body {
   flex: 0 1 auto;
   min-width: 6rem;
   padding: var(--space-2) var(--space-3);
-  color: var(--cowork-head-fg);
+  color: var(--current-head-fg);
   font-family: var(--workbench-head-font);
   font-size: var(--workbench-head-size);
   font-weight: var(--workbench-head-weight);

@@ -6,31 +6,51 @@ const LS_SKIN = 'tmuxgrid.skin';
 const STYLE_ID = 'skin';
 
 // A SKIN OF YOURS MAY NAME A TOKEN WE RENAMED (store-move rule): read the old name as the
-// new one, and let the new name win where a skin spells both. DARK_ONLY names were read
+// new one(s), and let a new name win where a skin spells both. A runtime header name a skin
+// used to set painted every scope, so it still names all three. DARK_ONLY names were read
 // only by the dark shell, so they keep painting there and nowhere else.
+const heads = (part) => ['admin', 'teams', 'team'].map((scope) => `--head-${scope}-${part}`);
 const RENAMED = {
-  '--muted-3': '--muted',
-  '--kanban-green': '--ok-2',
-  '--setup-mark': '--kaki-fill',
-  '--gc-cta-bg': '--kaki-fill',
-  '--gc-cta-ink': '--kaki-fill-ink',
+  '--muted-3': ['--muted'],
+  '--kanban-green': ['--ok-2'],
+  '--kanban-yellow': ['--status-yellow'],
+  '--kanban-red': ['--status-red'],
+  '--setup-mark': ['--kaki-fill'],
+  '--gc-cta-bg': ['--kaki-fill'],
+  '--gc-cta-ink': ['--kaki-fill-ink'],
+  '--scope-graphite': ['--graphite'],
+  '--scope-campaign-head-bg': ['--head-admin-bg'],
+  '--scope-teams-head-bg': ['--head-teams-bg'],
+  '--scope-head-fg': ['--head-admin-fg', '--head-teams-fg'],
+  '--scope-head-muted': ['--head-admin-muted', '--head-teams-muted'],
+  '--team-workbench-head-bg': ['--head-team-bg'],
+  '--team-workbench-head-fg': ['--head-team-fg'],
+  '--team-workbench-head-muted': ['--head-team-muted'],
+  '--team-workbench-head-line': ['--head-team-line'],
+  '--cowork-head-bg': heads('bg'),
+  '--cowork-head-fg': heads('fg'),
+  '--cowork-head-muted': heads('muted'),
+  '--cowork-head-line': heads('line'),
+  '--cowork-surface-head-edge': heads('edge'),
+  '--cowork-head-attention': ['--head-attention'],
 };
 const DARK_ONLY = {
-  '--kiiro': '--cowork-head-attention',
-  '--kaki-hint': '--team-workbench-head-bg',
+  '--kiiro': '--head-attention',
+  '--kaki-hint': '--head-team-bg',
 };
 
 function currentNames(skin) {
   const out = { tokens: {}, dark: {}, light: {} };
-  const put = (shell, k, v) => {
-    const into = out[shell];
-    const name = RENAMED[k] || k;
-    if (name === k || !(name in into)) into[name] = v;
-  };
+  const spelled = (shell, name) => name in (skin?.[shell] || {});
   for (const shell of ['tokens', 'dark', 'light']) {
     for (const [k, v] of Object.entries(skin?.[shell] || {})) {
-      if (!DARK_ONLY[k]) put(shell, k, v);
-      else if (shell !== 'light' && !(DARK_ONLY[k] in (skin.dark || {}))) out.dark[DARK_ONLY[k]] = v;
+      if (DARK_ONLY[k]) {
+        if (shell !== 'light' && !spelled('dark', DARK_ONLY[k])) out.dark[DARK_ONLY[k]] = v;
+        continue;
+      }
+      for (const name of RENAMED[k] || [k]) {
+        if (name === k || !spelled(shell, name)) out[shell][name] = v;
+      }
     }
   }
   return out;
