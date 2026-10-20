@@ -28,7 +28,7 @@ Providers, Setup) and the Agent workbench's Work Items draw with it. Escape lift
 is pressed in (2026-10-08).
 
 Task Manager keeps its board and status/Project drill-downs for the Agent's Task Manager;
-its selector card is no longer offered on the Cowork, Desk or Team workbenches. The older
+its selector card is no longer offered on the Cowork or Team workbenches. The older
 Work Items board (`work-items`) stays on the Agent's workbench, filtered to Projects held by
 that Agent. **The Team page** (owner, 2026-10-18) is the old Team workbench opening on the
 lead's tile in workspace 1 with workspace 2 blank; its selector holds Commons, the Agents,
@@ -53,16 +53,16 @@ so the normal selection, rail, detail, Escape, and focus-return behavior applies
 
 `public/js/workbench.js` owns the shared library and frame.
 `public/js/workbench-catalog.js` is the canonical registration and profile catalog for
-Ronin Settings, New Project, Desk, Cowork, Team, Agent, and Home's Models, Workspaces and
-Teams doors. Destination modules provide tenant
+Ronin Settings, New Project, Cowork, Team, Agent, and Home's Models and Workspaces
+doors. Destination modules provide tenant
 data and surface factories through their environment; they do not register another copy
 of those types or profile lists. Ronin Setup's ordered journey profile remains with its
 Setup controller because journey progress, rather than destination choice, determines it.
 
 `workbenchView(appearance, options)` in `public/js/workspace-contract.js` is the one
 application-chrome declaration. It supplies the shared header capabilities and one of the
-explicit Campaign, Setup, New Project (`launch`), Desk, Cowork, Team, Agent, Models,
-Workspaces or Teams appearances; a view may also
+explicit Campaign, Setup, New Project (`launch`), Cowork, Team, Agent, Models or
+Workspaces appearances; a view may also
 supply its dynamic-island reading. `workspace-header.js` applies that declaration, while
 surface factories remain ignorant of header colour.
 
@@ -75,7 +75,7 @@ one off in its declaration rather than hiding it with local CSS or querying head
 - A **library definition** gives one stable type a header kind, discovery reading, and
   `create(context)` factory.
 - A **profile** lists the library types one destination may place.
-- A **tenant** supplies scope such as a Desk, Teams collection, or Team. It filters and
+- A **tenant** supplies scope such as a Teams collection or Team. It filters and
   parameterizes definitions; it does not create another Workbench implementation.
 - An **instance** belongs to one workspace and optional resource key. The same type in
   two workspaces creates two rendered instances; data authorities may still be shared.
@@ -176,7 +176,9 @@ and Settings is the one live stone — a new user's way in is Setup.
 
 **Two roots** (owner, 2026-10-19). The default root — what opens, what Home links to — is that
 three-door page. The current root, Ronin Home as it stood before 2026-10-18 with its doors into
-the Desk, Team and Agent Workbenches, is copied back from git unchanged (`current-home.js`) and
+the Desk, Team and Agent Workbenches, is copied back from git (`current-home.js`; its Desk door opens
+the Teams workbench at `#/cowork` since the Desk workbench, a card-for-card duplicate of Cowork, was
+deleted on 2026-10-20) and
 keeps its own address, `#/current`, while pieces move from Current to Next; nothing of it is
 deleted. One plain toggle in the bar, the same spot on each (the view's leading slot), swaps
 between them in one press: it reads **Current** on the new Home and **Next** on the current one.
@@ -218,7 +220,6 @@ restoration branches.
 | Destination | First open | Notable structured opening |
 |---|---|---|
 | Ronin Settings | Defaults in workspace 1; Workspace Folders in workspace 2 | **Desk defaults** replaces the seats with Defaults and Launch your own |
-| Desk | Teams roster in workspace 1; workspace 2 blank | — |
 | New Project | New Agent in workspace 1 | Links may replace or overlay New Agent/New Team and carry prompt or template detail |
 | Ronin Setup | Garden in workspace 1; active journey surface in workspace 2 | Journey actions select a Setup surface without another restoration path |
 | Cowork / Team | Fresh empty/member seating rules; refresh restores this instance | Team Configuration, documents, commons tabs, and New Agent may be addressed in seat detail |
@@ -276,17 +277,17 @@ independently.
 | Launch your own | no launch data until Agent, Team, or Preset is selected; that embedded form then owns its reads |
 | Presets | preset catalog plus provider/root choices required by the selected preset |
 
-### Desk, Cowork, and Team (`desk`, `cowork`, and `team` profiles)
+### Cowork and Team (`cowork` and `team` profiles)
 
-Desk is a first-class Workbench profile and tenant with its own restoration namespace and
-first-open map; it is not a renamed Cowork entry. Desk and Cowork reuse aggregate surface
-implementations, while Team addresses one Team. Sessions and Team records are legitimate
+Cowork is the Teams workbench (`#/cowork`), the one aggregate surface over every Team; Team
+addresses one Team. (The Desk workbench, a card-for-card duplicate of Cowork, was deleted on
+2026-10-20; the desk PROFILE — skins, words, layout — is a different thing and stays.) Sessions and Team records are legitimate
 entry data because they are the discovery cards and seats. Optional feature status is
 independent and must not hold the frame.
 
 | Surface | Required data and owner |
 |---|---|
-| Team roster / Team profile | Team records and live session-derived membership; the roster's Phalanx is Cowork/Desk's only discovery of Teams (no per-Team selector cards); its detail and a placed Team profile paint one body (`leagueTeamBody` in `cowork-view.js`) |
+| Team roster / Team profile | Team records and live session-derived membership; the roster's Phalanx is Cowork's only discovery of Teams (no per-Team selector cards); its detail and a placed Team profile paint one body (`leagueTeamBody` in `cowork-view.js`) |
 | Team roster (`cowork.session-roster`) | `js/roster.js` restored as consumed before the Phalanx port: Team records, live sessions and pushed home rows; its desk column stays empty now that desks are read when the ladder opens |
 | Agent terminal | selected session plus terminal transport; other sessions are not mounted for it |
 | Commons | only the selected tab enters: Roster, Docs, Wipeboard, Messages, Cron jobs or Configuration |

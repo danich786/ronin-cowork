@@ -68,7 +68,7 @@ test('Roster remains a roster; the Team page selector is Commons, Agents, New Ag
   assert.doesNotMatch(view, /workItemOffers|createWorkItemsSurface/, 'the Team page offers no Work Items card; the Agent workbench keeps its own');
   // Owner 2026-09-28: the roster that existed (js/roster.js) is back on Cowork and Desk, as it was.
   assert.match(catalog, /WORKBENCH_PROFILES\.cowork, \[[^\n]*WORKBENCH_TYPES\.sessionRoster/);
-  assert.match(catalog, /WORKBENCH_PROFILES\.desk, \[[^\n]*WORKBENCH_TYPES\.sessionRoster/);
+  assert.match(catalog, /WORKBENCH_PROFILES\.cowork, \[[^\n]*WORKBENCH_TYPES\.sessionRoster/);
   assert.match(view, /createRosterSurface\(\{ onOpen: openAgentWorkbench \}\)/, 'the restored roster opens an Agent in its own tab, as before');
   assert.match(workbench, /card\.el\.addEventListener\('dragstart',[\s\S]*JSON\.stringify\(\{ type: definition\.type, detail \}\)/, 'drag still carries the terminal surface and Agent resource to a workspace');
   assert.match(css, /\.league-team-member-actions \{[^}]*flex-wrap: wrap;[^}]*justify-content: flex-end;/);

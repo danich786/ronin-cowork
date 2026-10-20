@@ -101,7 +101,7 @@ test('card expansion and owner opening are sibling controls, never nested intera
 });
 
 test('Task Manager scope derives Team lists, keeps the items an Agent holds, and reads evidence off the trail', () => {
-  assert.deepEqual(taskManagerScope({ kind: 'desk', teams: () => ['alpha', 'beta', 'alpha'] }), { kind: 'desk', teams: ['alpha', 'beta'], agent: '' });
+  assert.deepEqual(taskManagerScope({ kind: 'cowork', teams: () => ['alpha', 'beta', 'alpha'] }), { kind: 'team', teams: ['alpha', 'beta'], agent: '' });
   const scope = taskManagerScope({ kind: 'agent', agent: 'surface-tasks', teams: ['surface', 'other'] });
   assert.deepEqual(scope, { kind: 'agent', teams: ['surface', 'other'], agent: 'surface-tasks' });
   const rows = projectsForScope([

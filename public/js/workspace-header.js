@@ -3,20 +3,17 @@ import { t } from './lexicon.js';
 import { workbenchLaunchUrl } from './workspace.js';
 
 /** The one navigation header shared by every Ronin workspace. */
-const readable = (name = '') => String(name).split(/[_-]+/).filter(Boolean)
-  .map((part) => part[0]?.toUpperCase() + part.slice(1)).join(' ');
-
 /** The active Workbench declares its appearance; routes and surfaces never infer it. */
 export const workspaceHeaderAppearance = (active) => active?.view?.appearance || '';
 
 export function installWorkspaceHeader(workspace) {
-  const ronin = document.getElementById('brandbtn');
   const separator = document.getElementById('coworkssep');
   const coworkers = document.getElementById('coworksbtn');
   // THE PLACE is the label inside the centred scope island. Its solid colour stands
   // apart from the tinted Workbench headers below it.
   const place = document.getElementById('viewplace');
-  // THE CRUMB (owner, 2026-10-20): off the landing it reads RoninCowork • Home, then the Teams
+  // THE CRUMB (owner, 2026-10-20): the brand is a plain mark and word, never a link. Off the
+  // landing the crumb reads RoninCowork • Home, then the Teams
   // door (#/cowork, the Teams workbench), then a view's own place (`place`) last. A Team page
   // sits under Teams — RoninCowork • Home • Teams • <Team title>; any other view naming a
   // place sits under Home alone — RoninCowork • Home • <place>.
@@ -35,7 +32,6 @@ export function installWorkspaceHeader(workspace) {
     event.preventDefault();
     action();
   };
-  ronin?.addEventListener('click', plainRoute(root));
   home?.addEventListener('click', plainRoute(root));
   coworkers?.addEventListener('click', plainRoute(() => workspace.navigate('cowork')));
 
