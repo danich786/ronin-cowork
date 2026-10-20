@@ -162,7 +162,7 @@ test('the base Workbench owns selector density for every profile', async () => {
     source('js/workbench.js'), source('js/workspace-contract.js'), source('workspace-kit.css'),
   ]);
   assert.match(contract, /workbenchView\(appearance, options = \{\}\)/);
-  assert.match(workbench, /headers: \{ selector: \{ actions: \[densityToggle, \.\.\.\(options\.actions \|\| \[\]\)\] \} \}/);
+  assert.match(workbench, /headers: \{ selector: \{ label: '', actions: \[densityToggle, \.\.\.\(options\.actions \|\| \[\]\)\] \} \}/);
   assert.match(workbench, /snapshot = \(\) => \(\{ count, selected, selectorDensity,/);
   assert.match(kitCss, /\.wk-workbench-host\[data-selector-density='thin'\]/);
 });
