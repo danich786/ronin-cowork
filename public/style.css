@@ -324,13 +324,6 @@
   --cowork-head-fg: var(--scope-head-fg);
   --cowork-head-muted: var(--scope-head-muted);
 }
-:root[data-workbench='desk'] {
-  --cowork-head-bg: var(--scope-campaign-head-bg);
-  --cowork-head-line: var(--scope-graphite);
-  --cowork-surface-head-edge: var(--space-1);
-  --cowork-head-fg: var(--scope-head-fg);
-  --cowork-head-muted: var(--scope-head-muted);
-}
 :root:is([data-workbench='cowork'], [data-workbench='teams']) {
   --cowork-head-bg: var(--scope-teams-head-bg);
   --cowork-head-line: var(--aiiro);
@@ -692,7 +685,6 @@ body {
   letter-spacing: 0.3px;
   padding: 0;
   color: var(--fg);
-  text-decoration: none;
 }
 #bar .brand-mark { display: block; width: auto; height: var(--bar-brand-mark-h); }
 #bar .brand-word {
@@ -700,17 +692,6 @@ body {
   font-size: var(--text-9);
   font-weight: 600;
   letter-spacing: var(--bar-brand-track);
-}
-#bar .brand-home,
-#bar .brand-home:hover,
-#bar .brand-home:active { color: var(--kaki); }
-#bar .brand:active {
-  color: var(--accent);
-}
-@media (hover: hover) and (pointer: fine) {
-  #bar .brand:hover {
-    color: var(--accent);
-  }
 }
 #bar .grow {
   flex: 1;
@@ -4895,7 +4876,7 @@ html[data-screen='inside'] #phone .ph-bar .ph-title[data-boot='inside'] { displa
   #bar > .wk-view-map { margin-left: auto; }
   /* Keyed on the control, not on its parent: the caret is styled the same whether it is
      riding the island or docked over the work surfaces below. */
-  :root:is([data-workbench='team'], [data-workbench='cowork'], [data-workbench='desk']) .app-header-collapse {
+  :root:is([data-workbench='team'], [data-workbench='cowork']) .app-header-collapse {
     display: inline-flex;
     flex: 0 0 auto;
     align-items: center;
@@ -4911,7 +4892,7 @@ html[data-screen='inside'] #phone .ph-bar .ph-title[data-boot='inside'] { displa
   /* Riding the island, the caret IS the island: its own ink on its own surface, not a
      second chip floating inside the slab. Scoped like the rule above so it out-ranks the
      shared panel treatment that suits a tile head but not a dark island. */
-  :root:is([data-workbench='team'], [data-workbench='cowork'], [data-workbench='desk']) .view-island > .app-header-collapse {
+  :root:is([data-workbench='team'], [data-workbench='cowork']) .view-island > .app-header-collapse {
     position: relative;
     z-index: 1;
     margin-left: var(--space-2);

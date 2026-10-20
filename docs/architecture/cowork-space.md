@@ -91,8 +91,9 @@ Rules that make them peers:
 
 ### The bar's navigation
 
-The left side is the crumb (owner, 2026-10-20): the RoninCowork brand, Home (`#/home`), the Teams
-door (`#/cowork`, the Teams workbench), and on a Team page the Team's title last. A view naming its
+The left side is the crumb (owner, 2026-10-20): the RoninCowork brand (a plain mark and word, not a
+link), Home (`#/home`), the Teams door (`#/cowork`, the Teams workbench), and on a Team page the
+Team's title last (its id read as words when it has no title). A view naming its
 own place (Models, Workspaces) reads it after Home instead of the Teams door. A neutral island is cut
 into the top edge of the screen and names the active Workbench scope:
 
@@ -127,7 +128,8 @@ Until one model provider is activated the three doors are locked and say so (the
 root had); Settings, the live stone, opens Setup until its five answers are recorded.
 
 The current root — Ronin Home as it was before 2026-10-18, with doors into the Desk, Team and
-Agent Workbenches — stays at `#/current` (`public/js/current-home.js`) while pieces move from it
+Agent Workbenches (Desk and Team both open the Teams workbench at `#/cowork`; the Desk workbench
+was deleted on 2026-10-20) — stays at `#/current` (`public/js/current-home.js`) while pieces move from it
 to the new Home. One plain toggle in the bar, the same spot on both pages, swaps the two in one
 press: Current on the new Home, Next on the current one.
 

@@ -54,7 +54,6 @@
     <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/customize-resources.js" />
     <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/customize.js" />
     <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/desk-profile.js" />
-    <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/desk-view.js" />
     <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/desks.js" />
     <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/docs.js" />
     <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/document-links.js" />
@@ -190,10 +189,11 @@
   </head>
   <body>
     <header id="bar">
-      <a id="brandbtn" class="brand brand-home ui-bar-nav" href="./" aria-label="Ronin">
+      <!-- The brand is a plain mark and word, not a link; Home is the link (owner, 2026-10-20). -->
+      <span id="brandbtn" class="brand">
         <img class="brand-mark" src="brand/nin-mark.svg" alt="" />
         <span class="brand-word">RoninCowork</span>
-      </a>
+      </span>
       <!-- The crumb (owner, 2026-10-20): RoninCowork • Home • Teams • <Team title>; Home to #/home,
            Teams to the Teams workbench at #/cowork, a view's own place last. js/workspace-header.js. -->
       <span id="homesep" class="ui-bar-separator" aria-hidden="true" hidden>•</span>
