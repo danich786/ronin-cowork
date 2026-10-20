@@ -12,7 +12,8 @@
  *   from the accepted copy. Nothing reads it but the review (the Model refresh surface, or
  *   an Agent pointed at the file). Only Accept makes it the copy Ronin uses.
  *
- * One fetch, on Refresh all only (the owner's press, never a timer), one egress line. The
+ * One fetch, on Refresh all only (the owner's press, never a timer), one egress line —
+ * the door's second step, on its own route after the CLIs' lists are read. The
  * fetch keeps only the providers the catalog names, only their models with tool use, and
  * only the fields below; the rest of the 5.8 MB never touches disk.
  */
@@ -23,6 +24,9 @@ import { STOCK_DIR, storeDir } from './resources.js';
 import { appendEgress, type EgressLine } from './activation/egress.js';
 
 export const MODEL_INFO_SOURCE = 'https://models.dev/api.json';
+/** Where the source is kept and under what licence: said beside every fetch. */
+export const MODEL_INFO_REPOSITORY = 'https://github.com/anomalyco/models.dev';
+export const MODEL_INFO_LICENCE = 'MIT';
 export const MODEL_INFO_FILE = 'MODEL_INFO.json';
 const PENDING_FILE = 'MODEL_INFO.pending.json';
 const CHECK_FILE = 'MODEL_INFO.check.json';
@@ -226,16 +230,29 @@ export async function discardModelInfo(): Promise<void> {
   await rm(pendingModelInfoPath(), { force: true });
 }
 
-/** What the review reads: the copy in use, the update waiting with its changes, the last check. */
+/** How many models a copy holds per provider key. */
+const kept = (file: ModelInfoFile): Record<string, number> =>
+  Object.fromEntries(Object.entries(file.providers).map(([key, models]) => [key, Object.keys(models).length]));
+
+/** What the review reads: the source, the copy in use, the update waiting with its changes and its models, the last check. */
 export async function modelInfoReview(): Promise<{
-  using: { origin: 'user' | 'stock'; fetched_at: string; path: string };
-  pending: { fetched_at: string; path: string; changes: ModelInfoChange[] } | null;
+  source: { url: string; repository: string; licence: string };
+  using: { origin: 'user' | 'stock'; fetched_at: string; path: string; kept: Record<string, number> };
+  pending: { fetched_at: string; path: string; sha256: string; kept: Record<string, number>; changes: ModelInfoChange[]; models: ModelInfoFile['providers'] } | null;
   check: ModelInfoCheck | null;
 }> {
   const [using, pending, check] = await Promise.all([readModelInfo(), readPendingModelInfo(), readModelInfoCheck()]);
+  const changes = pending ? diffModelInfo(using.providers, pending.providers) : [];
+  // The changed models whole, from both copies, so the review draws a model as the table does.
+  const models: ModelInfoFile['providers'] = {};
+  for (const { provider, model } of changes) {
+    const info = pending?.providers[provider]?.[model] ?? using.providers[provider]?.[model];
+    if (info) (models[provider] ??= {})[model] = info;
+  }
   return {
-    using: { origin: using.origin, fetched_at: using.fetched_at, path: using.origin === 'user' ? acceptedModelInfoPath() : SHIPPED_MODEL_INFO },
-    pending: pending ? { fetched_at: pending.fetched_at, path: pendingModelInfoPath(), changes: diffModelInfo(using.providers, pending.providers) } : null,
+    source: { url: MODEL_INFO_SOURCE, repository: MODEL_INFO_REPOSITORY, licence: MODEL_INFO_LICENCE },
+    using: { origin: using.origin, fetched_at: using.fetched_at, path: using.origin === 'user' ? acceptedModelInfoPath() : SHIPPED_MODEL_INFO, kept: kept(using) },
+    pending: pending ? { fetched_at: pending.fetched_at, path: pendingModelInfoPath(), sha256: pending.sha256, kept: kept(pending), changes, models } : null,
     check,
   };
 }

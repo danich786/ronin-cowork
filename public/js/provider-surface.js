@@ -37,7 +37,7 @@ import { createSetupZone, setupStep } from './setup-zone.js';
 import { request } from './request.js';
 import { WorkspaceKit } from './workspace-kit.js';
 import { createPhalanx } from './phalanx.js';
-import { loadProviderCatalog, modelLabel, priceText, providerCatalog, tierWord } from './form-steps.js';
+import { dayTime, loadProviderCatalog, modelLabel, priceText, providerCatalog, tierWord } from './form-steps.js';
 import { mountProviderAttachment, providerFromRuntime, providerPresentation, providerReadiness } from './setup-provider-state.js';
 import { createStatusMarker } from './status-marker.js';
 
@@ -180,22 +180,58 @@ export function createProviderSurface(context) {
  * Model refresh surface press the same control over the same drawing; `paint()` is the
  * host's, called whenever the frame moves.
  */
-export function createRefreshAll(drawing) {
+/**
+ * ONE STEP, the shape every provider flow draws (the provider page's three, Model refresh's
+ * three): a mark that says done, current, failed or its number; the label with its state
+ * beside it; at most one short line; then its controls. `copy` takes any further lines.
+ */
+export function stepItem({ key, n, label, state = '', detail = '', status = '', done = false, current = false, failed = false }) {
+  const item = el('li', 'setup-provider-step');
+  item.dataset.step = key; item.dataset.status = status;
+  item.dataset.done = String(done === true); item.dataset.current = String(current === true); item.dataset.failed = String(failed === true);
+  const mark = el('span', 'setup-provider-mark', done ? '✓' : failed ? '!' : String(n));
+  mark.setAttribute('aria-hidden', 'true');
+  const copy = el('div', 'setup-provider-copy');
+  const title = el('div', 'setup-provider-title');
+  title.append(el('strong', 'setup-provider-label', label), el('span', 'setup-provider-state', state));
+  copy.append(title);
+  if (detail) copy.append(el('p', 'setup-provider-note', detail));
+  const controls = el('div', 'setup-provider-control');
+  item.append(mark, copy, controls);
+  return { item, copy, controls };
+}
+
+/**
+ * REFRESH ALL — one door, two steps run in order and said as they run (owner, 2026-10-20):
+ * the CLIs' own model lists (and npm for their newest releases), then model info from
+ * models.dev on its own route. `onStep(key, state, answer)` hears each step start and end
+ * (`lists` | `info`, `running` | `done` | `failed`); a host that draws the steps listens.
+ */
+export function createRefreshAll(drawing, { onStep = () => {} } = {}) {
   const bar = el('div', 'setup-provider-refresh');
   const lastRan = el('p', 'setup-fine setup-provider-last-ran');
   const made = WorkspaceKit.primitives.createAction({ label: t('setup_surface.refresh_all', 'Refresh all model providers'), kind: '', action: async () => {
     button.disabled = true;
-    button.textContent = t('setup_surface.refreshing_all', 'Refreshing…');
+    button.textContent = t('setup_surface.refreshing_lists', 'Reading model lists…');
+    onStep('lists', 'running');
     const ok = await drawing.measure(true);
+    onStep('lists', ok ? 'done' : 'failed');
+    if (ok) {
+      button.textContent = t('setup_surface.refreshing_info', 'Fetching model info…');
+      onStep('info', 'running');
+      const checked = await request('/api/model-info/check', { method: 'POST', json: {} });
+      if (checked.ok) await loadProviderCatalog();
+      onStep('info', checked.ok ? 'done' : 'failed', checked.ok ? checked.data : checked.message);
+    }
     button.disabled = false;
     button.textContent = t('setup_surface.refresh_all', 'Refresh all model providers');
-    if (!ok) paint();
+    paint();
   } });
   const button = made.el ?? made;
   const paint = () => {
     const when = String(drawing.runtime().refreshed_at || providerCatalog().refreshed_at || '');
     lastRan.textContent = when
-      ? t('setup_surface.last_ran', 'Last ran {date}', { date: when })
+      ? t('setup_surface.last_ran', 'Last ran {date}', { date: dayTime(when) })
       : t('setup_surface.never_ran', 'Never run — every provider offers Native only until it runs.');
   };
   button.classList.add('setup-provider-refresh-all');
@@ -341,21 +377,10 @@ export function createProviderDrawing(context, { repaint, say = () => {} }) {
     // with its measured state beside it; at most one short line; then a control of one size.
     // Only the current step's control is the kaki primary.
     const stepRow = (step, state) => {
-      const item = el('li', 'setup-provider-step');
-      item.dataset.step = step.key; item.dataset.status = step.status;
-      item.dataset.done = String(step.done === true); item.dataset.current = String(step.current === true);
-      const mark = el('span', 'setup-provider-mark', step.done ? '✓' : String(steps.indexOf(step) + 1));
-      mark.setAttribute('aria-hidden', 'true');
-      const copy = el('div', 'setup-provider-copy');
-      const title = el('div', 'setup-provider-title');
-      title.append(el('strong', 'setup-provider-label', step.label), el('span', 'setup-provider-state', state));
-      copy.append(title);
-      if (step.detail) copy.append(el('p', 'setup-provider-note', step.detail));
-      if (step.command) copy.append(el('code', 'setup-provider-command', step.command));
-      const controls = el('div', 'setup-provider-control');
-      item.append(mark, copy, controls);
-      flow.append(item);
-      return { item, controls };
+      const made = stepItem({ ...step, n: steps.indexOf(step) + 1, state });
+      if (step.command) made.copy.append(el('code', 'setup-provider-command', step.command));
+      flow.append(made.item);
+      return made;
     };
     const control = (step, label, onClick) => {
       const made = action(label, step.current ? 'primary' : '', onClick);

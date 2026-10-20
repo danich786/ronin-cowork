@@ -273,10 +273,7 @@ test('Refresh all reads every activated CLI\'s list again and asks npm; an ordin
   assert.deepEqual(plain.models, { claude: { read_at: '2026-09-20T06:15:44.600Z', by: '2.1.281', rows: [{ id: 'claude-opus-5', name: 'Opus 5' }] } }, 'the recorded list rides along unchanged');
   assert.equal(plain.refreshed_at, '');
   assert.deepEqual(plain.latest, { claude: { version: '2.1.282', checked_at: 'old' } }, 'and so does the last npm answer');
-  const checked: string[][] = [];
-  const press = (now: string) => ({ ...ops(now, reads), modelInfo: async (keys: readonly string[]) => { checked.push([...keys]); return { at: now, outcome: 'same' as const, say: 'no changes' }; } });
-  const pressed = await summary.refreshProviders({}, press('2026-09-25T18:00:00.000Z'), latest);
-  assert.deepEqual(checked, [['anthropic', 'openai', 'google', 'xai']], 'the same press asks models.dev once, for the catalog\'s providers');
+  const pressed = await summary.refreshProviders({}, ops('2026-09-25T18:00:00.000Z', reads), latest);
   assert.deepEqual(reads, ['claude@2.1.282', 'codex@0.157.0'], 'every activated CLI is read, stamped with the version just measured');
   assert.deepEqual(pressed.models, {
     claude: { read_at: '2026-09-25T18:00:00.000Z', by: '2.1.282', rows: [{ id: 'claude-new', name: 'Claude Code New' }] },
@@ -288,7 +285,7 @@ test('Refresh all reads every activated CLI\'s list again and asks npm; an ordin
   const again = await summary.measureAndRecordProviders({}, ops('2026-09-25T19:00:00.000Z', reads));
   assert.deepEqual(again.models, pressed.models);
   assert.equal(again.refreshed_at, '2026-09-25T18:00:00.000Z', 'the last Refresh all date survives an ordinary measure');
-  const off = await summary.refreshProviders({ providers: { codex: { off_at: '2026-09-25T19:30:00.000Z' } } }, press('2026-09-25T20:00:00.000Z'), latest);
+  const off = await summary.refreshProviders({ providers: { codex: { off_at: '2026-09-25T19:30:00.000Z' } } }, ops('2026-09-25T20:00:00.000Z', reads), latest);
   assert.deepEqual(Object.keys(off.models), ['claude'], 'a provider turned off gets nothing spent on it, and its list goes with it');
   assert.deepEqual(off.off, ['codex']);
 });

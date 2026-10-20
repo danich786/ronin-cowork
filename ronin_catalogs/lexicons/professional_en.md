@@ -1391,7 +1391,6 @@ The catalog entry goes. {dir} is not touched.
 - **setup_surface.no_cli_state:** No CLI
 - **setup_surface.no_models:** The catalog lists no models for this provider.
 - **setup_surface.refresh_all:** Refresh all model providers
-- **setup_surface.refreshing_all:** Refreshing…
 - **setup_surface.last_ran:** Last ran {date}
 - **setup_surface.never_ran:** Never run — every provider offers Native only until it runs.
 - **setup_surface.models_read:** Model list read {date} by {cli} {version}

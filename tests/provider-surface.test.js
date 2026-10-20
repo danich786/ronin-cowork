@@ -358,9 +358,10 @@ test('Refresh all sits once at the top with the date it last ran, and is the one
     button.click();
     assert.equal(button.disabled, true);
     await settle();
-    assert.equal(calls[0], 'POST /api/setup/providers/refresh', 'the one door that reads model lists and asks npm');
+    assert.equal(calls[0], 'POST /api/setup/providers/refresh', 'the one door: first the model lists and npm');
+    assert.ok(calls.includes('POST /api/model-info/check'), 'then model info, on its own route');
     assert.equal(button.disabled, false);
-    assert.equal(byClass(bar, 'setup-provider-last-ran')[0].textContent, 'Last ran 2026-09-25T18:00:00.000Z');
+    assert.match(byClass(bar, 'setup-provider-last-ran')[0].textContent, /^Last ran 25 Sep 2026, \d\d:\d\d$/);
   } finally {
     machine = savedMachine;
   }

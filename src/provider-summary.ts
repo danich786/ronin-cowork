@@ -20,7 +20,6 @@ import { readFile, readdir, stat } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { appendEgress, type EgressLine } from './activation/egress.js';
-import { checkModelInfo, type ModelInfoCheck } from './model-info.js';
 import { AGENTS, listAgentAvailability, type AgentAvailability, type ModelsSource } from './agents.js';
 import { execFile } from './spawn-broker.js';
 import { ensureInitialCampaign, initialCampaign, writeCampaignProviders } from './campaigns.js';
@@ -77,8 +76,6 @@ export interface MeasureOps {
   now?: () => string;
   /** What the installed CLI printed to the registry's version argv, given its path; '' when it would not say. The first dotted number in it is the version. */
   version?: (path: string, argv: readonly string[]) => Promise<string>;
-  /** Refresh all's models.dev step, given the providers' models.dev keys (tests stand one in). */
-  modelInfo?: (keys: readonly string[]) => Promise<ModelInfoCheck>;
   /** The CLI's own model list, read on Refresh all only. */
   models?: (agent: Agent, options: ReadModelsOptions) => Promise<ModelList>;
 }
@@ -288,9 +285,8 @@ export async function measureAndRecordProviders(section?: SetupSection, ops: Mea
 /**
  * REFRESH ALL — the owner's press. The same machine facts, then every activated CLI's own
  * model list read again through the reader its registry entry names, then npm asked for
- * each activated CLI's newest release (one outbound request each, on the egress record),
- * then models.dev fetched once for the catalog's providers: an update that differs from the
- * accepted model info waits for the owner's Accept (`src/model-info.ts`).
+ * each activated CLI's newest release (one outbound request each, on the egress record).
+ * The same door's second step is models.dev, on its own route (`src/model-info.ts`).
  * A CLI not activated gets nothing spent on it; its old list, if any, is dropped with it.
  */
 export async function refreshProviders(section?: SetupSection, ops: MeasureOps = {}, latest: LatestOps = {}): Promise<ProviderSummary> {
@@ -301,7 +297,6 @@ export async function refreshProviders(section?: SetupSection, ops: MeasureOps =
     .map(async (agent) => [agent.id, await read(agent, { file: summary.paths[agent.id] ?? '', version: summary.versions[agent.id] ?? '', now })] as const));
   for (const [id, list] of lists) summary.models[id] = list;
   summary.latest = await latestVersions(summary.operational, latest);
-  await (ops.modelInfo ?? checkModelInfo)((ops.catalog ?? await listProviderCatalog()).flatMap((entry) => entry.models_dev ? [entry.models_dev] : []));
   summary.refreshed_at = now();
   await recordProviderSummary(summary);
   return summary;

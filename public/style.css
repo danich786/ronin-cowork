@@ -4174,10 +4174,6 @@ body {
 /* Refresh all: the one control that reads every activated CLI's model list and asks outside this machine (each CLI's package source). It sits once, at the top, with the date it last ran. */
 .setup-provider-refresh { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3) var(--space-5); margin: var(--space-4) 0 var(--space-5); }
 .setup-provider-last-ran { margin: 0; }
-/* Model info's review under Refresh all: the changes, then Accept · Discard · Ask Mika. */
-.models-refresh-update { display: grid; gap: var(--space-4); min-width: 0; }
-.models-info-choices { display: flex; flex-wrap: wrap; gap: var(--space-3); }
-.models-info-change { white-space: nowrap; }
 /* A stone's detail is two sections, top to bottom: Yours (the steps), then The catalog. */
 .setup-provider-yours, .setup-provider-catalog { display: grid; gap: var(--space-5); min-width: 0; }
 .setup-provider-catalog { margin-top: var(--space-8); padding-top: var(--space-7); border-top: var(--edge) solid var(--line); }
@@ -4223,6 +4219,18 @@ body {
 .setup-provider-state { color: var(--muted); font-size: var(--text-5); }
 .setup-provider-step[data-current='true'] .setup-provider-state { color: var(--kaki); }
 .setup-provider-step[data-done='true'] .setup-provider-state { color: var(--ok-2); }
+.setup-provider-step[data-failed='true'] .setup-provider-mark { border-color: var(--bad); color: var(--bad); }
+.setup-provider-step[data-failed='true'] .setup-provider-state { color: var(--bad); }
+/* Model refresh: the door's three steps, each line a quiet label and its value; the review in the provider table's columns. */
+.models-refresh-line { display: grid; grid-template-columns: 10rem minmax(0, 1fr); gap: var(--space-4); }
+.models-refresh-key { color: var(--muted); }
+.models-review th:nth-child(1) { width: 24%; }
+.models-review th:nth-child(2) { width: 22%; }
+.models-review th:nth-child(3) { width: 11%; }
+.models-review th:nth-child(4) { width: 15%; }
+.models-review td:nth-child(3) { white-space: nowrap; }
+.models-review tr[data-change='removed'] td { color: var(--muted); }
+.models-review tr[data-change='removed'] :is(b, .setup-provider-model-id), .models-review tr[data-change='removed'] td:not(:first-child) { text-decoration: line-through; }
 .setup-provider-note { margin: 0; color: var(--muted-2); font-size: var(--text-5); line-height: 1.45; overflow-wrap: anywhere; }
 .setup-provider-command { color: var(--muted-2); font: var(--text-3) var(--font-mono); overflow-wrap: anywhere; }
 .setup-provider-control { display: flex; flex-wrap: wrap; gap: var(--space-3); min-width: 0; grid-column: 2; }

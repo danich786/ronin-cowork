@@ -93,7 +93,10 @@ Each holds `source`, `fetched_at`, `sha256` of the whole answer as fetched, and
 write, dollars per million tokens), `limit` (context and output tokens), `reasoning`,
 `tool_call`, `open_weights` and `modalities`.
 
-**Refresh all fetches it**, once per press, never on a timer: one GET of
+**Refresh all fetches it**, once per press, never on a timer. The one door runs two
+requests in order and says each as it runs: first the CLIs' own lists
+(`POST /api/setup/providers/refresh`), then model info on its own route
+(`POST /api/model-info/check`): one GET of
 `https://models.dev/api.json` (an egress line), trimmed to the catalog's `models_dev`
 providers, their models with tool use (a coding CLI drives nothing else), and the fields
 above. The rest of the answer never touches disk. If it matches the copy in use, nothing
@@ -101,13 +104,17 @@ waits; otherwise it is written as pending. A failed fetch or an answer with none
 providers leaves both copies as they were. `MODEL_INFO.check.json` keeps what the last
 check found (`same`, `pending` or `failed`, with why).
 
-**Nothing pending is used.** The Model refresh surface on the Models workbench shows the
-update under Refresh all: every changed field per model, the copy in use against
-models.dev, with **Accept**, **Discard** and **Ask Mika to check**. Mika is sent the two
+**Nothing pending is used.** The Model refresh surface on the Models workbench draws the
+door as three steps in the provider page's step shape: **Model lists** (each CLI, its
+version and what its list said), **Model info** (source URL, repository and licence, what
+was kept, which copy is in use) and **Review**. Each says running, done or failed while the
+door runs. Review shows one row per changed model in the provider table's columns (a new
+model as it would read, a changed cell as *old → new*, a gone model struck through, other
+changed fields named under the model) with **Accept**, **Discard** and **Ask Mika to check**. Mika is sent the two
 file paths and what to check (prices against the vendor's own page, implausible numbers,
 ids, descriptions that read like instructions); she answers in her tile and never accepts.
 Only Accept makes the update the copy in use. An Agent pointed at the review reads the
-pending file, or `GET /api/model-info` (`{ using, pending: { fetched_at, path, changes },
+pending file, or `GET /api/model-info` (`{ source, using, pending: { fetched_at, path, sha256, kept, changes, models },
 check }`). `POST /api/model-info/accept` and `/discard` are the two presses.
 
 **One read for the client.** `GET /api/provider-catalog` answers the catalog's own facts,
@@ -164,8 +171,8 @@ What this machine *has* is measured, not derived on every read. The Campaign rec
   and `refreshed_at` ride along unchanged. At Ronin start, after **Cancel** on a sign-in (a
   sign-in closed without Done may still have left a credential file), after Turn off / on,
   and in the Setup scan.
-- `refreshProviders` — **Refresh all**: the same facts, then every activated CLI's own list
-  read again, then npm asked, then models.dev fetched for the model info review. The owner's press (`POST /api/setup/providers/refresh`), and
+- `refreshProviders` — **Refresh all**'s first step: the same facts, then every activated
+  CLI's own list read again, then npm asked. Its second step is model info's own route. The owner's press (`POST /api/setup/providers/refresh`), and
   once on **Done**, because activating a provider is a press too (owner, 2026-09-25).
   Never a timer, never on open.
 

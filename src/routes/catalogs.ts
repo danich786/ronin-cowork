@@ -8,8 +8,8 @@ import { activeDeskProfileName, listDeskProfiles } from '../desk-profiles.js';
 import { initialCampaign, readCampaign } from '../campaigns.js';
 import { listWays } from '../resources.js';
 import { listSessionReadings } from '../session-readings.js';
-import { providerCatalogAnswer } from '../model-providers.js';
-import { acceptModelInfo, discardModelInfo, modelInfoReview } from '../model-info.js';
+import { listProviderCatalog, providerCatalogAnswer } from '../model-providers.js';
+import { acceptModelInfo, checkModelInfo, discardModelInfo, modelInfoReview } from '../model-info.js';
 import { readProviderSummary } from '../provider-summary.js';
 import {
   listProjectRoots,
@@ -292,6 +292,15 @@ export function registerCatalogs(app: express.Express): void {
   app.get('/api/model-info', async (_req, res) => {
     try { res.json(await modelInfoReview()); }
     catch (e) { res.status(500).json({ error: errMsg(e) }); }
+  });
+  // Refresh all's second step, after the CLIs' lists: fetch models.dev for the catalog's
+  // providers and leave an update waiting when it differs. The owner's press, never a timer.
+  app.post('/api/model-info/check', async (_req, res) => {
+    try {
+      const keys = (await listProviderCatalog()).flatMap((entry) => entry.models_dev ? [entry.models_dev] : []);
+      await checkModelInfo(keys);
+      res.json(await modelInfoReview());
+    } catch (e) { res.status(500).json({ error: errMsg(e) }); }
   });
   app.post('/api/model-info/accept', async (_req, res) => {
     try {

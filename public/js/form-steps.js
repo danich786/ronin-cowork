@@ -188,6 +188,17 @@ export function tierWord(tier) {
   return { light: t('forms.tier_light', 'light'), standard: t('forms.tier_standard', 'standard'), frontier: t('forms.tier_frontier', 'frontier') }[tier] || String(tier || '');
 }
 
+/** An ISO moment as people read it, `20 Oct 2026, 17:35`; a bare day as `19 Feb 2026`; '' when unreadable. */
+export function dayTime(iso) {
+  const text = String(iso || '');
+  const at = new Date(text);
+  if (!text || Number.isNaN(at.getTime())) return '';
+  const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return `${at.getUTCDate()} ${month[at.getUTCMonth()]} ${at.getUTCFullYear()}`;
+  const two = (n) => String(n).padStart(2, '0');
+  return `${at.getDate()} ${month[at.getMonth()]} ${at.getFullYear()}, ${two(at.getHours())}:${two(at.getMinutes())}`;
+}
+
 /** A model's list price from its model info, `$4 in · $20 out per M tokens`; '' when it has none. */
 export function priceText(info) {
   const cost = info?.cost ?? {};
