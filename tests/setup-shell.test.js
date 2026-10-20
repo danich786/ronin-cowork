@@ -14,7 +14,7 @@ test('Ronin Home routes the Machine door from persisted Campaign Setup answers',
   } } } }), 'campaign');
 });
 
-test('Ronin Home has three doors — Models, Workspaces, Teams — each opening its own workbench in the same tab (owner, 2026-10-19)', async () => {
+test('Ronin Home\u2019s Models and Workspaces doors each open their own workbench in the same tab; Teams opens the Teams workbench at #/cowork (owner, 2026-10-19, 2026-10-20)', async () => {
   const [home, doors, catalog, contract, header, main, cowork] = await Promise.all([
     source('js/campaign-home.js'), source('js/door-workbenches.js'), source('js/workbench-catalog.js'), source('js/workspace-contract.js'), source('js/workspace-header.js'), source('js/main.js'), source('js/cowork-view.js'),
   ]);
@@ -36,9 +36,6 @@ test('Ronin Home has three doors — Models, Workspaces, Teams — each opening 
   assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.models, \[WORKBENCH_TYPES\.modelStones, WORKBENCH_TYPES\.modelProvider\]\)/, 'a provider whole is placeable on Models, by a dragged stone or its card');
   assert.match(doors, /seat: WORKBENCH_TYPES\.folderStones,/, 'Workspaces seats its own stones of folders');
   assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.workspaces, \[WORKBENCH_TYPES\.folderStones, WORKBENCH_TYPES\.folder, WORKBENCH_TYPES\.folderNew, WORKBENCH_TYPES\.folderGithub, WORKBENCH_TYPES\.folderClone\]\)/, 'a folder whole and the three admin doors are placeable on Workspaces');
-  assert.match(doors, /seat: WORKBENCH_TYPES\.teams,/, 'Teams seats its own stones of Teams');
-  assert.match(doors, /bench\(\)\.place\(WORKBENCH_TYPES\.teamRead, 'workspace2', \{ key: name \}\)/, 'a stone pressed places the Team\u2019s read in Workspace 2');
-  assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.teams, \[WORKBENCH_TYPES\.teams, WORKBENCH_TYPES\.teamRead, WORKBENCH_TYPES\.newTeamForm\]\)/, 'the Teams selector offers New Team');
   assert.match(home, /key: 'teams', route: 'cowork'/, 'the Teams door opens the Teams workbench at #/cowork (owner, 2026-10-20)');
   // The crumb (owner, 2026-10-20): RoninCowork • Home • Teams • <Team title>; before, a Team page read
   // 'RoninCowork • Teams' with no Home and no name, and Home's doors hid the Teams step.
