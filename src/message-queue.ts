@@ -7,7 +7,7 @@ import { deliverForce, deliverSafe } from './send.js';
 import { onClock } from './jikan.js';
 
 export type MessageState = 'pending' | 'stuck' | 'failed' | 'target_missing';
-export type MessageSource = 'tell' | 'wipeboard_notice' | 'owner' | 'house' | 'jikan';
+export type MessageSource = 'tell' | 'wipeboard_notice' | 'channel_notice' | 'owner' | 'house' | 'jikan';
 
 export interface QueuedMessage {
   id: string;
@@ -93,12 +93,12 @@ export async function pendingTellsFrom(from: string, target: string): Promise<Qu
 }
 
 const sourceFrom = (source: MessageSource): string => ({
-  tell: 'Agent', wipeboard_notice: 'Wipeboard', owner: 'Owner', house: 'Ronin House', jikan: 'Cron jobs',
+  tell: 'Agent', wipeboard_notice: 'Wipeboard', channel_notice: 'Channel', owner: 'Owner', house: 'Ronin House', jikan: 'Cron jobs',
 })[source];
 
-export async function enqueueMessage(target: string, text: string, source: MessageSource, from = sourceFrom(source)): Promise<QueuedMessage> {
+export async function enqueueMessage(target: string, text: string, source: MessageSource, from = sourceFrom(source), expectedKey?: string): Promise<QueuedMessage> {
   const targetSession = (await listSessions()).find((session) => session.name === target);
-  if (!targetSession) throw new MessageRefused(target);
+  if (!targetSession || (expectedKey && targetSession.key !== expectedKey)) throw new MessageRefused(target);
   const now = Date.now();
   const at = new Date(now).toISOString();
   const item: QueuedMessage = {

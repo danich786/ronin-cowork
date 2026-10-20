@@ -56,6 +56,7 @@ Macro, action, SOP, and Agent role are not additional composition layers. “Act
 | Project | Work with stable identity, an objective, and a completion condition; Team-held and Agent-held records have explicit custody ([Team Kanban](docs/using-ronin/team-kanban.md)) |
 | Team Kanban | A derived view of Projects and delivery evidence, never another workflow store |
 | Wipeboard / message queue / Cron jobs | Team announcements, pending session delivery, and scheduled requests; distinct stores and delivery lifecycles |
+| Channel | A persistent Team-scoped conversation with independent session subscriptions and an optional external chat binding; distinct from a UI tab container ([Channels](docs/architecture/channels.md)) |
 | Ronin Lab | A Workspace Folder for ideas, research, plans, and notes across or before projects; users and Ronin creators each have their own Lab, rather than a code repository for one specific project |
 | Workspace Folder (`project_root`) | A registered folder Ronin may work in; not a browser workspace ([Workspace folders](docs/architecture/project-roots.md)) |
 | Managed desk | Private worktree and branch with explicit custody; distinct from the UI's desk/settings and a desk profile ([Worktrees](docs/architecture/worktrees.md)) |

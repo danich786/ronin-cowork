@@ -16,13 +16,24 @@ things at once, and the kernel holds all four:
   exits 78 so the unit stops instead of retrying. A test copy runs under its own
   `RONIN_DATA_ROOT` and never meets the live door.
 
-Only the **box instance** binds it — the entry point, under `NODE_ENV=production`, outside
+Only the **box instance** binds the default socket — the entry point, under `NODE_ENV=production`, outside
 the unit test runner — after its HTTP listener is up. Before binding it connects first: a
 file nobody answers behind (left by a crash) is unlinked and replaced; a live one is the
 sibling refusal above. On `SIGINT`/`SIGTERM` the process removes the socket it bound and
 nothing else, so a dev run or a test stopping on the same box leaves the live operator
-exactly as it found it. `npm run dev`, a hand-started `npx tsx src/index.ts` and the test
-runner bind nothing at all.
+exactly as it found it. `npm run dev` and a hand-started `npx tsx src/index.ts` bind nothing
+unless explicitly configured with `RONIN_DEV_SOCKET`. That opt-in must be an absolute
+path different from the default operator socket, ideally inside a private
+checkout-specific directory. It uses the same mode-0600 socket, mode-0700 directory,
+collision refusal, and owned-only cleanup. The test runner never binds, even when that
+setting is inherited.
+
+New Agents receive the bound development path as `RONIN_SOCKET`. Already-running Agents
+retain their birth environment; use an explicit `RONIN_SOCKET=/absolute/dev/path.sock`
+on their commands, with `RONIN_URL` unset or empty. The development setting controls
+server binding only; clients never silently switch from the installed instance to dev.
+This isolates the connection, not all stores: separate data roots are still required
+when complete runtime/store isolation is desired.
 
 This replaced the tmux server option `@ronin-operator` on 2026-09-05. That option was
 memory of a tmux server that could be replaced under the operator, writable by any process
@@ -45,7 +56,7 @@ Resolution order, the same in both readers:
    a cron job, a shell over SSH, the owner at a prompt.
 
 The two readers are `src/cli-http.ts`, which every TypeScript command (`worktree-desk`,
-`edges wipeboard`, `edges send`, `edges schedule`, promotion, recovery, bundle, auth) goes
+`edges wipeboard`, `edges channel`, `edges send`, `edges schedule`, promotion, recovery, bundle, auth) goes
 through, and `ronin_bin/ronin-url` with its sourced sibling `ronin_bin/ronin-http.sh`, which
 the zero-dependency shell tools (`session_create`, `session_end`, `session_check`,
 `session_set`,
@@ -81,7 +92,7 @@ directory of the session-commands store, and prepends that directory — then Ro
 and Update put a CLI, so that a CLI named inside a tile is the one Ronin installed and not an
 older system copy — to the environment given directly to tmux and the Agent process. Ordinary non-interactive descendants inherit
 it; they do not source `.bashrc`, `.profile`, or another owner shell file. That directory's
-name is also how `work-record read`, `work-record update_record` and `edges page` learn which session they
+name is also how `work-record read`, `work-record update_record`, `edges page`, and `edges channel` learn which session they
 act for when the calling shell is not inside tmux and carries neither `TMUX_PANE` nor
 `$TMUX`; the name is accepted only when it is a live session. An Agent born with Ronin Base
 off therefore does not receive Base commands such as `work-record update_record`, `session_create`, or

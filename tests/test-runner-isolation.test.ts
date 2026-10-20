@@ -36,7 +36,8 @@ test('importing the server under the unit runner never publishes operator option
   await assert.rejects(fs.stat(path.join(fixture, 'data', 'run', 'ronin.sock')), { code: 'ENOENT' });
 });
 
-test('a scratch entry point inherited from a tmux pane never publishes its address', async (t) => {
+for (const developmentSocket of [false, true]) {
+test(`a scratch entry point ${developmentSocket ? 'binds and cleans only its explicit development socket' : 'binds no socket by default'}`, async (t) => {
   const fixture = await fs.mkdtemp(path.join(os.tmpdir(), 'ronin-index-scratch-'));
   t.after(() => fs.rm(fixture, { recursive: true, force: true }));
   const log = path.join(fixture, 'tmux.log');
@@ -48,6 +49,8 @@ test('a scratch entry point inherited from a tmux pane never publishes its addre
     BIND: '127.0.0.1',
     PORT: '0',
     NODE_ENV: 'development',
+    RONIN_DEV_SOCKET: developmentSocket ? path.join(fixture, 'dev.sock') : '',
+    RONIN_SLACK_CREDENTIALS_FILE: '',
     RONIN_DATA_ROOT: path.join(fixture, 'data'),
     RONIN_TMUX_LOG: log,
     TMUX: '/tmp/tmux-live/default,1,0',
@@ -75,14 +78,19 @@ test('a scratch entry point inherited from a tmux pane never publishes its addre
       reject(new Error(`scratch server exited before listening (${code})`));
     });
   });
-  // A dev run (`npm run dev`, a hand start, this) is not the box instance: it binds no
-  // socket in its data root, and stopping it — the SIGTERM every `tsx watch` save sends —
-  // must reach for nothing shared. Until 2026-09-05 this exact stop erased the live
-  // operator's address from the tmux server for every tool on the box.
+  // Development never binds the default door. An opt-in gets its own private door,
+  // and shutdown removes only that one.
   await assert.rejects(fs.stat(path.join(fixture, 'data', 'run', 'ronin.sock')), { code: 'ENOENT' });
+  if (developmentSocket) {
+    const info = await fs.stat(env.RONIN_DEV_SOCKET);
+    assert.equal(info.isSocket(), true);
+    assert.equal(info.mode & 0o777, 0o600);
+  }
   child.kill('SIGTERM');
   await new Promise((resolve) => child.once('exit', resolve));
+  if (developmentSocket) await assert.rejects(fs.stat(env.RONIN_DEV_SOCKET), { code: 'ENOENT' });
   const calls = await fs.readFile(log, 'utf8').catch(() => '');
   assert.doesNotMatch(calls, /set-option .*@ronin-(?:operator|url|cli-token)/);
   assert.doesNotMatch(calls, /set-option -s -u/);
 });
+}

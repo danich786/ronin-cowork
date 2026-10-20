@@ -14,6 +14,7 @@ Usage:
   edges read [session [text|since|raw|scroll|voice] [argument...]]
   edges team [team]
   edges wipeboard [arguments...]
+  edges channel [list|read <channel>|post <channel> [--reply-to <message-id>] <text...>|unsubscribe <channel>]
   edges page [--team <team>] [key=value ...]
   edges schedule [arguments...]
 
@@ -39,6 +40,7 @@ case "$1" in
   read) shift; exec "$HERE/.edges-read" "$@" ;;
   team) shift; exec "$HERE/.edges-team" "$@" ;;
   wipeboard) shift; exec "$HERE/.edges-wipeboard" "$@" ;;
+  channel) shift; cd "$HERE/.." || exit 1; exec node --import tsx src/channel-cli.ts "$@" ;;
   page) shift; exec "$HERE/.edges-page" "$@" ;;
   schedule) shift; exec "$HERE/.edges-schedule" "$@" ;;
   *) echo "edges: unknown subcommand '$1'. Run edges --help." >&2; exit 2 ;;

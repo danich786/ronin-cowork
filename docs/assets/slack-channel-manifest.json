@@ -1,0 +1,29 @@
+{
+  "display_information": {
+    "name": "Ronin Channels",
+    "description": "Connect Slack conversations to shared Ronin channels"
+  },
+  "features": {
+    "bot_user": {
+      "display_name": "Ronin",
+      "always_online": false
+    }
+  },
+  "oauth_config": {
+    "scopes": {
+      "bot": [
+        "channels:history",
+        "channels:read",
+        "groups:history",
+        "groups:read",
+        "chat:write"
+      ]
+    }
+  },
+  "settings": {
+    "socket_mode_enabled": true,
+    "event_subscriptions": {
+      "bot_events": ["message.channels", "message.groups"]
+    }
+  }
+}

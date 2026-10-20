@@ -8,16 +8,24 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import express from 'express';
 import { registerCli } from '../src/routes/cli-api.js';
+import { callerSession } from '../src/cli-http.js';
 
 const pexec = promisify(execFile);
 const ROOT = process.cwd();
-const TOOLS = ['wipeboard', 'desk', 'promotion', 'jikan', 'bundle', 'recovery', 'auth', 'message'];
+const TOOLS = ['wipeboard', 'channel', 'desk', 'promotion', 'jikan', 'bundle', 'recovery', 'auth', 'message'];
+
+test('a projected tool path supplies session identity when Agent runners drop tmux variables', () => {
+  assert.equal(callerSession({ RONIN_TOOL_INVOKED: '/data/session-commands/test_agent_2/edges' }), 'test_agent_2');
+  assert.equal(callerSession({ RONIN_SESSION: 'explicit', RONIN_TOOL_INVOKED: '/data/session-commands/other/edges' }), 'explicit');
+  assert.equal(callerSession({ RONIN_TOOL_INVOKED: '/repo/ronin_bin/edges' }), '');
+  assert.equal(callerSession({}), '');
+});
 
 test('every CLI is only the shared HTTP client', async () => {
   for (const tool of TOOLS) {
     const source = await readFile(path.join(ROOT, 'src', `${tool}-cli.ts`), 'utf8');
     assert.match(source, /from '\.\/cli-http\.js'/);
-    assert.match(source, new RegExp(`runCli\\('${tool}'`));
+    assert.match(source, new RegExp(`(?:runCli|cliRequest)\\('${tool}'`));
     assert.doesNotMatch(source, /from '\.\/(wipeboards|desks|promotion|jikan|bundles|passkey|auth|message-queue)\.js'/);
   }
 });

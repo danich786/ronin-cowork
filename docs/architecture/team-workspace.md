@@ -191,6 +191,10 @@ from what the tab remembered.
 
 ## Channel Surface
 
+The live Commons also mounts **Channels**, persistent conversations with independent
+session subscriptions and optional Slack bindings. See [Channels](channels.md).
+This messaging object is distinct from the generic tabbed “Channel Surface” UI primitive.
+
 - **Chat** — reserved, empty, inert.
 - **Wipeboard** — the real Team thread and owner composer; the roster's `wipeboard` id or
   the Team name; polled only while entered.

@@ -32,6 +32,20 @@ export function operatorSocketPath(env: NodeJS.ProcessEnv = process.env): string
   return path.join(rootDir('data', env), 'run', 'ronin.sock');
 }
 
+/** Development must opt in to its own door, never the default installed socket.
+ * Clients still use RONIN_SOCKET; newborns receive the bound path through birthEnv. */
+export function serverOperatorSocketPath(isEntryPoint: boolean, env: NodeJS.ProcessEnv = process.env): string | undefined {
+  if (!isEntryPoint || env.RONIN_TEST_RUNNER === '1') return undefined;
+  if (env.NODE_ENV === 'production') return operatorSocketPath(env);
+  const development = env.RONIN_DEV_SOCKET?.trim();
+  if (!development) return undefined;
+  const installed = operatorSocketPath({ ...env, RONIN_SOCKET: '' });
+  if (!path.isAbsolute(development) || path.resolve(development) === path.resolve(installed)) {
+    throw new Error('RONIN_DEV_SOCKET must be an absolute path separate from the default operator socket.');
+  }
+  return path.normalize(development);
+}
+
 export type SocketProbe = 'absent' | 'stale' | 'live';
 
 /** What is at the path: nothing, a file nobody listens on, or a listening operator. */
@@ -47,12 +61,17 @@ export function probeOperatorSocket(socketPath: string): Promise<SocketProbe> {
   });
 }
 
-/** The two refusals a reader can give, one sentence each, so "never started" and
- *  "stopped" stop wearing the same words. Shared by the TypeScript client; `ronin-url`
- *  says the same two things in shell. */
+/** Distinguish an absent/stale operator from denied access. A sandbox permission
+ * error is not evidence that the server stopped. */
 export function socketRefusal(code: string | undefined, socketPath: string): string {
+  if (code === 'EPERM' || code === 'EACCES') {
+    return `access to Ronin's socket at ${socketPath} was denied (${code}).\nOS permissions or the Agent sandbox may block this connection. Request approval to retry with socket access; do not restart Ronin or weaken socket permissions.`;
+  }
   if (code === 'ENOENT') {
     return `no Ronin has started on this box (no socket at ${socketPath}).\nStart Ronin, or set RONIN_URL for a development/test target.`;
+  }
+  if (code !== 'ECONNREFUSED' && code !== 'ENOTSOCK') {
+    return `could not connect to Ronin's socket at ${socketPath} (${code ?? 'unknown error'}).`;
   }
   return `Ronin is not running (socket at ${socketPath}, nobody listening).\njournalctl --user -u ronin.service -n 50 says why; start it with: systemctl --user start ronin`;
 }
@@ -96,8 +115,8 @@ export interface BoundOperatorSocket {
 }
 
 let bound: string | undefined;
-/** The path this process is answering on, or undefined when it bound none — a dev run,
- *  a test runner. The launch route hands it to newborns; a process that did not bind
+/** The path this process is answering on, or undefined when it bound none — an
+ *  unconfigured dev run or test runner. The launch route hands it to newborns; a process that did not bind
  *  tells them nothing, and their tools use the default path. */
 export const boundOperatorSocket = (): string | undefined => bound;
 

@@ -1,8 +1,21 @@
 import 'dotenv/config';
 import http from 'node:http';
+import path from 'node:path';
 import { operatorSocketPath, socketRefusal } from './operator-socket.js';
 
 export interface CliReply { stdout: string; stderr: string; exit: number }
+
+/** A projected command is reached as <session-commands>/<session>/<tool>. Some Agent
+ * runners drop TMUX_PANE and RONIN_SESSION, but tool-count preserves that invoked path.
+ * The operator still accepts the candidate only when it names a live session. */
+export function callerSession(env: NodeJS.ProcessEnv = process.env): string {
+  const explicit = env.RONIN_SESSION?.trim();
+  if (explicit) return explicit;
+  const invoked = env.RONIN_TOOL_INVOKED?.trim();
+  if (!invoked) return '';
+  const candidate = path.basename(path.dirname(invoked));
+  return candidate && !['ronin_bin', 'bin'].includes(candidate) ? candidate : '';
+}
 
 /** Where a command goes. `RONIN_URL` is the explicit development/test target over HTTP,
  *  with `RONIN_CLI_TOKEN` as its credential; otherwise the operator's own socket, whose
@@ -45,7 +58,7 @@ async function overHttp(target: { url: string; token: string }, route: string, p
 
 export async function cliRequest(tool: string, args = process.argv.slice(2), input?: string): Promise<CliReply> {
   const target = operatorTarget();
-  const payload = JSON.stringify({ args, input, counted: process.env.RONIN_TOOL_COUNTED === '1', session: process.env.RONIN_SESSION ?? '', pane: process.env.TMUX_PANE ?? '' });
+  const payload = JSON.stringify({ args, input, counted: process.env.RONIN_TOOL_COUNTED === '1', session: callerSession(), pane: process.env.TMUX_PANE ?? '' });
   const route = `/api/cli/${tool}`;
   const raw = target.kind === 'socket' ? await overSocket(target.path, route, payload) : await overHttp(target, route, payload);
   let body: CliReply & { error?: string };

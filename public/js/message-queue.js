@@ -24,6 +24,7 @@ function typeOf(source) {
   return ({
     tell: t('messages.type_tell', 'Agent tell'),
     wipeboard_notice: t('messages.type_wipeboard', 'Wipeboard notification'),
+    channel_notice: t('messages.type_channel', 'Channel notification'),
     owner: t('messages.type_owner', 'Owner message'),
     house: t('messages.type_house', 'House message'),
     jikan: t('messages.type_jikan', 'Cron job'),

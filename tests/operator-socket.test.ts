@@ -4,7 +4,7 @@ import http from 'node:http';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { bindOperatorSocket, boundOperatorSocket, isOperatorPeer, operatorSocketPath, probeOperatorSocket, SiblingAlive, socketRefusal } from '../src/operator-socket.js';
+import { bindOperatorSocket, boundOperatorSocket, isOperatorPeer, operatorSocketPath, serverOperatorSocketPath, probeOperatorSocket, SiblingAlive, socketRefusal } from '../src/operator-socket.js';
 
 /* The operator's door is a Unix socket in the data root (wip/buildouts/RONIN_ADDRESS.md).
  * These pin the facts a later edit would silently undo: the kernel refuses a second
@@ -34,6 +34,17 @@ test('the socket path follows the data root, and RONIN_SOCKET (told at birth) wi
   assert.equal(operatorSocketPath({ RONIN_DATA_ROOT: '/scratch/data' }), '/scratch/data/run/ronin.sock');
   assert.equal(operatorSocketPath({ RONIN_DATA_ROOT: '/scratch/data', RONIN_SOCKET: '/born/with/this.sock' }), '/born/with/this.sock');
   assert.equal(operatorSocketPath({}), path.join(os.homedir(), '.ronin', 'run', 'ronin.sock'));
+});
+
+test('development sockets are explicit, separate, and never bound by imports or unit runners', () => {
+  const env = { NODE_ENV: 'development', RONIN_DATA_ROOT: '/scratch/data', RONIN_DEV_SOCKET: '/scratch/dev/run/operator.sock' };
+  assert.equal(serverOperatorSocketPath(true, { NODE_ENV: 'development' }), undefined);
+  assert.equal(serverOperatorSocketPath(true, env), env.RONIN_DEV_SOCKET);
+  assert.equal(serverOperatorSocketPath(false, env), undefined);
+  assert.equal(serverOperatorSocketPath(true, { ...env, RONIN_TEST_RUNNER: '1' }), undefined);
+  assert.throws(() => serverOperatorSocketPath(true, { ...env, RONIN_DEV_SOCKET: 'relative.sock' }), /absolute path/);
+  assert.throws(() => serverOperatorSocketPath(true, { ...env, RONIN_DEV_SOCKET: '/scratch/data/run/ronin.sock' }), /separate/);
+  assert.equal(serverOperatorSocketPath(true, { ...env, NODE_ENV: 'production' }), '/scratch/data/run/ronin.sock');
 });
 
 test('a second Ronin on a live socket is refused and the live socket survives; a peer needs no bearer', async (t) => {
@@ -79,4 +90,15 @@ test('the two refusals are two sentences', () => {
   assert.match(socketRefusal('ENOENT', '/x/ronin.sock'), /no Ronin has started on this box \(no socket at \/x\/ronin.sock\)/);
   assert.match(socketRefusal('ECONNREFUSED', '/x/ronin.sock'), /Ronin is not running \(socket at \/x\/ronin.sock, nobody listening\)/);
   assert.notEqual(socketRefusal('ENOENT', '/x/ronin.sock'), socketRefusal('ECONNREFUSED', '/x/ronin.sock'));
+});
+
+test('permission denials and unknown socket failures never claim Ronin is stopped', () => {
+  for (const code of ['EPERM', 'EACCES']) {
+    const message = socketRefusal(code, '/x/ronin.sock');
+    assert.match(message, /access .* was denied/);
+    assert.match(message, /Request approval/);
+    assert.doesNotMatch(message, /nobody listening|systemctl/);
+  }
+  assert.match(socketRefusal('ETIMEDOUT', '/x/ronin.sock'), /ETIMEDOUT/);
+  assert.doesNotMatch(socketRefusal('ETIMEDOUT', '/x/ronin.sock'), /not running/);
 });

@@ -21,7 +21,7 @@ import {
   verifyRecord,
 } from './auth.js';
 import { cleanupViewers, listSessions } from './tmux.js';
-import { bindOperatorSocket, isOperatorPeer, operatorSocketPath, SiblingAlive, type BoundOperatorSocket } from './operator-socket.js';
+import { bindOperatorSocket, isOperatorPeer, serverOperatorSocketPath, SiblingAlive, type BoundOperatorSocket } from './operator-socket.js';
 import { addressRefusal, EXIT_ADDRESS_UNUSABLE } from './bind-refusal.js';
 import { publishMax, publishOwner } from './machine-state.js';
 import { registerCatalogs } from './routes/catalogs.js';
@@ -48,6 +48,7 @@ import { registerVersion } from './routes/version.js';
 import { registerWipeboards } from './routes/wipeboards-api.js';
 import { registerTerminalControls } from './terminal-controls.js';
 import { registerMessages } from './routes/messages-api.js';
+import { channelRuntime } from './channels-runtime.js';
 import { countBrowserTool } from './tool-call-api.js';
 import { registerCli } from './routes/cli-api.js';
 import { startMessageQueue } from './message-queue.js';
@@ -78,9 +79,8 @@ const PUBLIC = path.join(ROOT, 'public');
 const NM = path.join(ROOT, 'node_modules');
 const isEntryPoint = !!process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url;
 if (isEntryPoint) await migrateSopsToBehaviours();
-const isBoxInstance = isEntryPoint
-  && process.env.NODE_ENV === 'production'
-  && process.env.RONIN_TEST_RUNNER !== '1';
+// Dev opts in with RONIN_DEV_SOCKET; it never claims the installed default door.
+const socketToBind = serverOperatorSocketPath(isEntryPoint);
 if (isEntryPoint) startSpawnBroker(); // before routes, services, caches, and server state make this process large
 
 const app = express();
@@ -299,6 +299,7 @@ registerSessions(app); // per-session: kill/harakiri, meta, ctx, tegami, send �
 registerWipeboards(app); // /api/wipeboards* — src/routes/wipeboards-api.ts
 registerTerminalControls(app);
 registerMessages(app); // /api/messages* — durable inbound session delivery
+const channels = channelRuntime(app);
 registerCli(app); // /api/cli/:tool — command-line faces of operator verbs
 startMessageQueue();
 
@@ -438,20 +439,22 @@ if (bindSource !== 'env') {
 
 let operatorSocket: BoundOperatorSocket | undefined;
 server.listen(config.port, config.bind, async () => {
-  if (isBoxInstance) {
+  await channels.start();
+  if (socketToBind) {
     // The agent tools' door: a Unix socket in the data root, bound by the box instance
-    // only. A second Ronin answering there is a collision, and like an occupied port it
+    // or an explicitly configured private development socket. A second Ronin answering
+    // there is a collision, and like an occupied port it
     // exits 78 so the unit stops instead of retrying into the same wall every RestartSec.
     try {
-      operatorSocket = await bindOperatorSocket(app, operatorSocketPath());
+      operatorSocket = await bindOperatorSocket(app, socketToBind);
       console.log(`[tmux-ronin] agent tools answer at ${operatorSocket.path}`);
     } catch (e) {
       if (e instanceof SiblingAlive) {
         console.error(`[tmux-ronin] ${e.message}, so this Ronin did not start.`);
-        console.error('[tmux-ronin] Stop the other one, or give this one its own RONIN_DATA_ROOT, then: systemctl --user restart ronin');
+        console.error('[tmux-ronin] Choose a separate socket/data root for this instance; the existing operator was not changed.');
         process.exit(EXIT_ADDRESS_UNUSABLE);
       }
-      console.error(`[tmux-ronin] could not bind ${operatorSocketPath()}: ${String((e as Error).message ?? e)}. Agent tools require RONIN_URL until this is fixed.`);
+      console.error(`[tmux-ronin] could not bind ${socketToBind}: ${String((e as Error).message ?? e)}. Agent tools require an authenticated RONIN_URL until this is fixed.`);
     }
   }
   console.log(
@@ -465,6 +468,7 @@ server.listen(config.port, config.bind, async () => {
 
 for (const sig of ['SIGINT', 'SIGTERM'] as const) {
   process.on(sig, () => {
+    channels.stop();
     stopBootHooks();
     stopSpawnBroker();
     setTimeout(() => process.exit(0), 2000).unref();

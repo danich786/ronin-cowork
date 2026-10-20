@@ -14,6 +14,7 @@ route depends on the task, not on who is reading.
 | Choose where Ronin works | [Workspace Folders](getting-started/workspace-folders.md) |
 | Start a Team | [New Team](using-ronin/new-team.md) |
 | Track work and coordinate Agents | [Work record](using-ronin/work-record.md), [Team Kanban](using-ronin/team-kanban.md), and [wipeboards](using-ronin/wipeboards.md) |
+| Connect Slack to shared Agent conversations | [Channels setup and use](using-ronin/channels.md), [architecture and future adapters](architecture/channels.md) |
 | Stop, clear, copy, or close | [Terminal controls](using-ronin/terminal-controls.md) |
 | Archive or restore an Agent | [Archived sessions](using-ronin/archived-sessions.md) |
 | Use a private branch and hand work in | [Managed desks](using-ronin/desks.md) |

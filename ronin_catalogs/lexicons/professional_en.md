@@ -1980,3 +1980,88 @@ The catalog entry goes. {dir} is not touched.
 - **setup_surface.authentication_title_hint:** Choose a title
 
 - **setup_surface.title_before_done:** To finish, give this authentication a title.
+## channels — external chat connections
+
+- **channels.tab:** Channels
+- **channels.select:** Ronin channel
+- **channels.id:** New channel ID
+- **channels.title:** Channel title
+- **channels.create:** Create channel
+- **channels.slack_id:** Slack channel ID (C… or G…)
+- **channels.connect:** Connect Slack
+- **channels.disconnect:** Disconnect Slack
+- **channels.archive:** Archive channel
+- **channels.restore:** Restore channel
+- **channels.agent:** Team Agent
+- **channels.write:** Allow replies to external chat
+- **channels.notify:** Notify about new messages
+- **channels.subscribe:** Save subscription
+- **channels.messages:** Conversation
+- **channels.say:** Write a message…
+- **channels.reply:** Reply to message
+- **channels.send:** Send
+- **channels.slack:** Slack
+- **channels.connected:** Connected
+- **channels.disconnected:** Disconnected
+- **channels.setup:** Slack is not configured. Follow docs/using-ronin/channels.md to set server credentials.
+- **channels.local:** Local Ronin channel; no external chat connected
+- **channels.writer:** read/write
+- **channels.reader:** read only
+- **channels.notified:** notifications on
+- **channels.quiet:** quiet
+- **channels.unsubscribe:** Unsubscribe
+- **channels.new_message:** New message
+- **channels.retry_uncertain:** Retry (may duplicate; check Slack first)
+- **channels.retry:** Retry delivery
+- **channels.dismiss:** Dismiss outbound delivery
+- **channels.heading:** Shared channels
+- **channels.intro:** Connect a Team conversation to Slack, then choose which Agents can read, receive notices, and reply.
+- **channels.current:** Current channel
+- **channels.new:** New Ronin channel
+- **channels.id_example:** for example: chat-with-ronin
+- **channels.title_example:** for example: Customer support
+- **channels.id_label:** Ronin channel ID
+- **channels.id_help:** Not the Slack ID. Use lowercase letters, numbers, hyphens, or underscores. Agents use this in commands.
+- **channels.title_label:** Display name
+- **channels.title_help:** The friendly name people see in Ronin.
+- **channels.empty_title:** Create the Team’s first channel
+- **channels.empty_help:** A Ronin channel keeps shared history and Agent subscriptions. Connecting Slack is optional.
+- **channels.slack_connection:** Slack connection
+- **channels.slack_help:** Messages flow both ways only after this Ronin channel is connected to a Slack channel.
+- **channels.slack_id_example:** C0123456789
+- **channels.slack_id_label:** Slack channel ID
+- **channels.slack_id_help:** Find it at the end of the Slack channel URL.
+- **channels.agent_access:** Agent access
+- **channels.agent_help:** Subscribe Agents individually. Reading, notifications, and permission to reply are separate choices.
+- **channels.write_short:** Can reply
+- **channels.write_help:** Allows explicit posts to Slack.
+- **channels.notify_short:** Notify
+- **channels.notify_help:** Sends a pointer through Messages.
+- **channels.explicit:** Only explicit posts are sent to Slack. Agent terminal output stays private.
+- **channels.no_messages:** No messages yet
+- **channels.no_messages_help:** Post here or send a message in the connected Slack channel.
+- **channels.say_long:** Post to this channel and its connected external chat
+- **channels.reply_label:** Reply to
+- **channels.compose:** Send a message
+- **channels.reconnecting:** Connection interrupted. Ronin will retry automatically.
+- **channels.slack_connected:** Slack connected
+- **channels.slack_disconnected:** Slack disconnected
+- **channels.slack_unconfigured:** Slack not configured
+- **channels.workspace:** Workspace
+- **channels.setup_short:** Complete the server setup to connect Slack.
+- **channels.archived:** Archived
+- **channels.active:** Active
+- **channels.slack_linked:** Slack linked
+- **channels.slack_channel:** Slack channel
+- **channels.local_badge:** Local only
+- **channels.no_agents:** No Agents subscribed yet.
+- **channels.one_message:** 1 message
+- **channels.message_count:** messages
+- **channels.slack_person:** Slack user
+- **channels.from_slack:** From Slack
+- **channels.from_ronin:** From Ronin
+- **channels.thread_reply:** Thread reply
+- **channels.sent:** Sent
+- **channels.slack_id_mistake:** That looks like a Slack channel ID. Choose a Ronin ID such as chat-with-ronin; connect Slack after creating it.
+- **channels.id_invalid:** Use 1–64 lowercase letters, numbers, hyphens, or underscores for the Ronin channel ID.
+- **messages.type_channel:** Channel notification

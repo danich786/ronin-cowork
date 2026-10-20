@@ -27,6 +27,7 @@ export const STORES: readonly Store[] = [
   store('library', 'user', 'library'),
   store('session_boot', 'user', 'session_boot'),
   store('wipeboards', 'user', 'wipeboards'),
+  store('channels', 'user', 'channels'),
   store('jikan', 'user', 'jikan'),
   store('team_rosters', 'user', 'team_rosters'),
   store('desks', 'user', 'desks'),
