@@ -50,6 +50,7 @@ export function createTeamRosterSurface({ teamDetail } = {}) {
     return node;
   };
   // What Show picks, as the branch rows under the stone: one per value, its kind in the state line.
+  // Nothing picked: no rows carry items and the stones rest in the ordinary grid, a press selecting.
   const branch = (team, kind, value, n = 0) => ({ id: `${team}:${kind}:${n}`, label: value, state: word[kind], team });
   const under = (row) => [
     ...(show.includes('theme') && row.theme ? [branch(row.id, 'theme', row.theme)] : []),
@@ -65,7 +66,7 @@ export function createTeamRosterSurface({ teamDetail } = {}) {
     }).filter((team) => rows.has(team.name)).map((team) => {
       const name = String(team.title ?? '').trim() || team.name;
       return {
-        id: team.name, label: name, marker: mark(team.name), items: under(rows.get(team.name)),
+        id: team.name, label: name, marker: mark(team.name), ...(show.length ? { items: under(rows.get(team.name)) } : {}),
         draggable: true,
         events: { dragstart: (event) => {
           event.dataTransfer.setData(SURFACE_DRAG, JSON.stringify({ type: WORKBENCH_TYPES.team, detail: { key: team.name } }));
