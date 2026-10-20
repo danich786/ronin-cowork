@@ -49,7 +49,7 @@ export function createTeamRosterSurface({ teamDetail } = {}) {
     return node;
   };
   // What Show picks, under the stone (owner, 2026-10-20): Theme and State plain muted lines, the
-  // row's notes (Theme wraps, clamped to three lines; the whole is in the Team's detail); each Agent
+  // row's notes (Theme wraps, clamped to six lines; the whole is in the Team's detail); each Agent
   // and each Item a branch row, its kind in the state line. Nothing picked: no row carries items or
   // notes and the stones rest in the ordinary grid, a press selecting.
   const branch = (team, kind, value, n = 0) => ({ id: `${team}:${kind}:${n}`, label: value, state: word[kind], team });
