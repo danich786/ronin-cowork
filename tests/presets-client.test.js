@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 class FakeNode {
-  constructor(tag = '') { this.tagName = tag.toUpperCase(); this.dataset = {}; this.children = []; this.listeners = {}; this.attributes = {}; this._text = ''; this.disabled = false; }
+  constructor(tag = '') { this.tagName = tag.toUpperCase(); this.dataset = {}; this.children = []; this.listeners = {}; this.attributes = {}; this._text = ''; this.disabled = false; this.style = { setProperty: (name, value) => { this.style[name] = value; } }; }
   append(...nodes) { this.children.push(...nodes.flat().filter(Boolean)); }
   replaceChildren(...nodes) { this.children = []; this.append(...nodes); }
   setAttribute(name, value) { this.attributes[name] = String(value); }
