@@ -58,6 +58,8 @@
   .sws-branch-column > .sws-branch-stone { flex: none; width: 100%; aspect-ratio: auto; padding: var(--space-2) var(--space-3); }
   .sws-branch-column .sws-label { margin-top: 0; font-size: var(--text-4); font-weight: 500; }
   .sws-branch-count { color: var(--muted); font-size: var(--form-note); }
+  /* A row's notes under its stone: plain muted text, wrapping, clamped to three lines (the ask-name clamp). */
+  .sws-branch-note { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; width: var(--sws-stone); margin: 0; overflow: hidden; overflow-wrap: anywhere; color: var(--muted); font-size: var(--form-note); line-height: 1.4; }
   .wi-phalanx[data-density='compact'] .sws-secondary, .wi-phalanx[data-density='compact'] .sws-state { display: none; }
   .wi-project-green::before { background: var(--kanban-green); }
   .wi-project-yellow::before { background: var(--kanban-yellow); }

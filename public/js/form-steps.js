@@ -36,8 +36,10 @@ export function createStep({ n, key, title, onToggle = null }) {
   const chev = el('span', 'fs-chev', '');
   const sum = el('span', 'fs-sum');
   sum.hidden = true;
-  // A section inside a step is unnumbered (owner, 2026-10-20): no `n`, no number; only the outer steps number.
-  head.append(...(n == null ? [] : [el('span', 'fs-step-n', String(n))]), el('h3', null, title), sum);
+  // A section inside a step is unnumbered (owner, 2026-10-20): no `n`, no number in the head; only
+  // the outer steps number, and only a numbered head is renumbered.
+  const num = el('span', 'fs-step-n', String(n ?? ''));
+  head.append(...(n == null ? [] : [num]), el('h3', null, title), sum);
   const body = el('div', 'fs-step-body');
   box.append(head, body);
   if (onToggle) {
