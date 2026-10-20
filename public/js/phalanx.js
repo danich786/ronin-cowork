@@ -23,7 +23,8 @@ const descendants = (row) => (row.items || []).flatMap((child) => [{ ...child, i
  * stone with items does not select: the phalanx goes one level down, that stone's items
  * (every descendant) become the stones in the rail and the stone itself is the level's
  * detail until one of them is pressed. At rest in full density each such stone shows its
- * items under it, drawn as `branches` says: 'column' stacks them under the stone,
+ * items under it (no row with items or notes, the ordinary grid) — its `notes`, plain muted lines,
+ * first — drawn as `branches` says: 'column' stacks them under the stone,
  * 'chart' lays one column per direct child with grandchildren stacked under their parent
  * (a chart deeper than CHART_DEPTH folds grandchildren into a count until pressed).
  *
@@ -126,7 +127,7 @@ export function createPhalanx({ items = [], selectedId = '', renderDetail, onSel
   /** A top stone at rest in full density with its items under it. */
   const branchOf = (item, button) => {
     const box = element('div', 'sws-branch');
-    box.append(button);
+    box.append(button, ...(item.notes || []).filter(Boolean).map((text) => element('p', 'sws-branch-note', String(text))));
     const topId = String(item.id);
     const child = (row, { folded = 0 } = {}) => {
       const node = stone(row, { branch: true });
@@ -197,7 +198,9 @@ export function createPhalanx({ items = [], selectedId = '', renderDetail, onSel
       for (const [eventName, callback] of Object.entries(group.events || {})) section.addEventListener(eventName, (event) => callback(event, group, api));
       grid.append(section); hosts.set(id, stones);
     }
-    const branching = Boolean(branches) && full() && atRest();
+    // Branches draw only while a shown row carries items or notes: rows with none rest in the ordinary grid.
+    const carries = (item) => Array.isArray(item.items) || (item.notes || []).some(Boolean);
+    const branching = Boolean(branches) && full() && atRest() && shown.some(carries);
     root.dataset.branching = String(branching);
     let previousGroup = null;
     for (const item of shown) {
@@ -219,7 +222,7 @@ export function createPhalanx({ items = [], selectedId = '', renderDetail, onSel
         buttonFor(id)?.focus();
         notify();
       });
-      const placed = branching && Array.isArray(item.items) ? branchOf(item, button) : button;
+      const placed = branching && carries(item) ? branchOf(item, button) : button;
       const groupId = String(typeof item.group === 'object' ? item.group.id : item.group || '');
       (hosts.get(groupId) || grid).append(placed);
     }
