@@ -64,6 +64,9 @@
 
   --kaki-fill-hover: var(--kaki-lift);
 
+  /* THE TERMINAL'S COLOURS ARE THE DESIGNER'S, the 16 ANSI slots included. What keeps agent
+     CLIs readable is the contrast floor in scripts/check-css.mjs, which measures whatever
+     values are chosen; ui.md "Theme" says what each slot must stay. */
   --term-cube: standard;
   --term-bg: #0b0e14;
   --term-fg: #c5c8c6;
