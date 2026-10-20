@@ -1,8 +1,8 @@
 /* part of the ronin-cowork client — see js/README.md */
 /**
- * THE TEAMS SURFACE'S ROWS — the pure mapping from the pushed rosters (each with its `board`
- * and `items`, teams-api.ts) and the Team projection's members to what the overlay draws.
- * No DOM, no store: teams-surface.js paints, this says what.
+ * THE TEAMS CARD'S ROWS — the pure mapping from the pushed rosters (each with its `board`
+ * and `items`, teams-api.ts) and the Team projection's members to what the stones carry.
+ * No DOM, no store: team-roster-surface.js paints, this says what.
  */
 
 /** The workspace folders the rosters name, each once, for the Workspace question. */

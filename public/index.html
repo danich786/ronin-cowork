@@ -54,7 +54,6 @@
     <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/customize-resources.js" />
     <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/customize.js" />
     <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/desk-profile.js" />
-    <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/desk-view.js" />
     <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/desks.js" />
     <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/docs.js" />
     <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/document-links.js" />
@@ -153,7 +152,6 @@
     <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/team-terminal-pool.js" />
     <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/team-wipeboard.js" />
     <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/teams-surface-rows.js" />
-    <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/teams-surface.js" />
     <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/terminal-controls.js" />
     <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/terminal-input.js" />
     <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/terminal-tile-host.js" />
@@ -190,14 +188,17 @@
   </head>
   <body>
     <header id="bar">
-      <a id="brandbtn" class="brand brand-home ui-bar-nav" href="./" aria-label="Ronin">
+      <!-- The brand is a plain mark and word, not a link; Home is the link (owner, 2026-10-20). -->
+      <span id="brandbtn" class="brand">
         <img class="brand-mark" src="brand/nin-mark.svg" alt="" />
         <span class="brand-word">RoninCowork</span>
-      </a>
+      </span>
+      <!-- The crumb (owner, 2026-10-20): RoninCowork • Home • Teams • <Team title>; Home to #/home,
+           Teams to the Teams workbench at #/cowork, a view's own place last. js/workspace-header.js. -->
+      <span id="homesep" class="ui-bar-separator" aria-hidden="true" hidden>•</span>
+      <a id="homebtn" class="ui-bar-nav" href="./" data-t="bar.home" hidden>Home</a>
       <span id="coworkssep" class="ui-bar-separator" aria-hidden="true" hidden>•</span>
       <a id="coworksbtn" class="ui-bar-nav" href="#/cowork" data-t="campaign.coworks" hidden>Teams</a>
-      <!-- Home's doors: RoninCowork • Home • Models / Workspaces / Teams, Home the way back. js/workspace-header.js. -->
-      <a id="homebtn" class="ui-bar-nav" href="./" data-t="bar.home" hidden>Home</a>
       <span id="placesep" class="ui-bar-separator" aria-hidden="true" hidden>•</span>
       <span id="viewcrumb" class="ui-bar-value" hidden></span>
       <button id="servicesstate" class="services-state" type="button" hidden aria-expanded="false"></button>

@@ -14,26 +14,34 @@ test('Ronin Home routes the Machine door from persisted Campaign Setup answers',
   } } } }), 'campaign');
 });
 
-test('Ronin Home has three doors — Models, Workspaces, Teams — each opening its own workbench in the same tab (owner, 2026-10-19)', async () => {
-  const [home, doors, catalog, contract, header, main] = await Promise.all([
-    source('js/campaign-home.js'), source('js/door-workbenches.js'), source('js/workbench-catalog.js'), source('js/workspace-contract.js'), source('js/workspace-header.js'), source('js/main.js'),
+test('Ronin Home\u2019s Models and Workspaces doors each open their own workbench in the same tab; Teams opens the Teams workbench at #/cowork (owner, 2026-10-19, 2026-10-20)', async () => {
+  const [home, doors, catalog, contract, header, main, cowork] = await Promise.all([
+    source('js/campaign-home.js'), source('js/door-workbenches.js'), source('js/workbench-catalog.js'), source('js/workspace-contract.js'), source('js/workspace-header.js'), source('js/main.js'), source('js/cowork-view.js'),
   ]);
   assert.match(home, /Ronin Home/);
-  for (const key of ['models', 'workspaces', 'teams']) {
+  for (const key of ['models', 'workspaces']) {
     assert.match(home, new RegExp(`key: '${key}', route: '${key}'`), `the ${key} door navigates to its own destination`);
     assert.match(main, new RegExp(`workspace\\.register\\('${key}', `), `the ${key} destination is registered`);
     assert.match(contract, new RegExp(`'${key}'`), `${key} is a Workbench appearance, so the tab machinery applies`);
   }
   assert.match(home, /ctx\?\.navigate\(route\)/, 'a plain press opens the workbench in this tab');
+  // THE GATE (owner, 2026-10-19): as on the old root, the doors are locked until one model
+  // provider is activated and Settings is the one live stone, so a new user's way in is Setup.
+  assert.match(home, /const locked = !runtimeKnown \|\| activatedCount < 1;/, 'the doors lock until a provider is activated');
+  assert.match(home, /if \(locked\) return;\s*ctx\?\.navigate\(route\)/, 'a locked door does not open');
+  assert.match(home, /request\('\/api\/setup\/runtime', \{ cache: 'no-store' \}\)/, 'the gate reads the runtime once on enter');
+  assert.match(home, /setup\.provider_gate/, 'a locked door says where the way in is');
   assert.match(home, /campaign_home\.settings', 'Settings'/);
   assert.match(doors, /seat: WORKBENCH_TYPES\.modelStones,/, 'Models seats its own stones of providers');
   assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.models, \[WORKBENCH_TYPES\.modelStones, WORKBENCH_TYPES\.modelProvider\]\)/, 'a provider whole is placeable on Models, by a dragged stone or its card');
   assert.match(doors, /seat: WORKBENCH_TYPES\.folderStones,/, 'Workspaces seats its own stones of folders');
   assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.workspaces, \[WORKBENCH_TYPES\.folderStones, WORKBENCH_TYPES\.folder, WORKBENCH_TYPES\.folderNew, WORKBENCH_TYPES\.folderGithub, WORKBENCH_TYPES\.folderClone\]\)/, 'a folder whole and the three admin doors are placeable on Workspaces');
-  assert.match(doors, /seat: WORKBENCH_TYPES\.teams,/, 'Teams seats its own stones of Teams');
-  assert.match(doors, /bench\(\)\.place\(WORKBENCH_TYPES\.teamRead, 'workspace2', \{ key: name \}\)/, 'a stone pressed places the Team\u2019s read in Workspace 2');
-  assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.teams, \[WORKBENCH_TYPES\.teams, WORKBENCH_TYPES\.teamRead, WORKBENCH_TYPES\.newTeamForm\]\)/, 'the Teams selector offers New Team');
-  assert.match(header, /home\.hidden = !placed/, 'the bar reads RoninCowork • Home • <door>, Home the way back');
+  assert.match(home, /key: 'teams', route: 'cowork'/, 'the Teams door opens the Teams workbench at #/cowork (owner, 2026-10-20)');
+  // The crumb (owner, 2026-10-20): RoninCowork • Home • Teams • <Team title>; before, a Team page read
+  // 'RoninCowork • Teams' with no Home and no name, and Home's doors hid the Teams step.
+  assert.match(header, /home\.hidden = landing/, 'Home stands in the bar everywhere off the landing');
+  assert.match(header, /const underTeams = !landing && \(!placed \|\| active\.id === 'team'\)/, 'a Team page sits under Teams; another placed view under Home alone');
+  assert.match(cowork, /place: \(\) => campaign \? '' : readableTeam\(team\)/, 'a Team page ends the crumb with the Team title');
 });
 
 test('two roots: the default Home and the current Home at #/current, one bar toggle between them (owner, 2026-10-19)', async () => {
@@ -154,7 +162,7 @@ test('the base Workbench owns selector density for every profile', async () => {
     source('js/workbench.js'), source('js/workspace-contract.js'), source('workspace-kit.css'),
   ]);
   assert.match(contract, /workbenchView\(appearance, options = \{\}\)/);
-  assert.match(workbench, /headers: \{ selector: \{ actions: \[densityToggle, \.\.\.\(options\.actions \|\| \[\]\)\] \} \}/);
+  assert.match(workbench, /headers: \{ selector: \{ label: '', actions: \[densityToggle, \.\.\.\(options\.actions \|\| \[\]\)\] \} \}/);
   assert.match(workbench, /snapshot = \(\) => \(\{ count, selected, selectorDensity,/);
   assert.match(kitCss, /\.wk-workbench-host\[data-selector-density='thin'\]/);
 });

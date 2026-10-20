@@ -48,9 +48,8 @@ const el = (tag, cls, text) => {
 };
 export function createCoworkView(options = {}) {
   registerWorkbenchCatalog();
-  const desk = options.kind === 'desk';
-  const campaign = desk || options.kind === 'cowork';
-  const viewKey = desk ? 'desk' : campaign ? 'cowork' : 'team';
+  const campaign = options.kind === 'cowork';
+  const viewKey = campaign ? 'cowork' : 'team';
   const teamsLabel = t('campaign.coworks', 'Teams');
   const { createSurface, createTabbedSurface, createAction, createActionBar } = WorkspaceKit.primitives;
   const { createTerminalTileHost } = WorkspaceKit.adapters;
@@ -69,7 +68,8 @@ export function createCoworkView(options = {}) {
   let unsubscribe = null;
   let entered = false;
   let lastSeat = 'workspace1'; // the workspace last touched — where the next card lands
-  const readableTeam = (name) => String(teamByName(name)?.title ?? '').trim() || name;
+  // The Team's title, or its id read as words ('sea_settle' → 'Sea Settle') when it has none.
+  const readableTeam = (name) => String(teamByName(name)?.title ?? '').trim() || String(name).split(/[_-]+/).filter(Boolean).map((part) => part[0].toUpperCase() + part.slice(1)).join(' ');
   const setBarLabel = () => S.refreshWorkspaceHeader?.();
 
   /* ---------- the workspaces: two seats, the roster between them, one commons ---------- */
@@ -118,7 +118,6 @@ export function createCoworkView(options = {}) {
   const rosterNote = el('span', 'tw-roster-note');
   const mikaHelp = createAction({ label: t('mika.help', 'ミ Help'), size: 'compact', className: 'tw-mika-help' });
   let helpPanel = null;
-  let rosterTitle = null;
 
   const service = (node) => ({ el: node, mount: () => {}, enter: () => {}, leave: () => {}, destroy: () => {} });
   // Each workspace owns its rendered Commons instance and local presentation state.
@@ -300,12 +299,10 @@ export function createCoworkView(options = {}) {
     }),
   };
   bench = WorkspaceKit.workbench.create({
-    profile: desk ? WB_PROFILES.desk : campaign ? WB_PROFILES.cowork : WB_PROFILES.team,
-    tenant: { kind: desk ? 'desk' : campaign ? 'cowork' : 'team', team: () => team }, environment,
+    profile: campaign ? WB_PROFILES.cowork : WB_PROFILES.team,
+    tenant: { kind: campaign ? 'cowork' : 'team', team: () => team }, environment,
     defaultNode: (id) => seats[id].surface.el,
     label: campaign ? teamsLabel : t('team.roster_title', 'Team Roster'),
-    // While ミ Help is open the column is Mika's, and every repaint says so.
-    title: () => helpPanel?.isOpen() ? t('mika.header', 'Mika, your helpful assistant') : campaign ? teamsLabel : t('team.roster_title', 'Roster'),
     actions: [rosterNote], deferSelector: true,
     selectorFilter: (type) => type !== BEHAVIOUR_SURFACE_TYPE,
     installDrop: (cell, id) => acceptSessionDrops(cell, () => id, (name, at) => arrange({ [at]: { session: name } })),
@@ -316,7 +313,6 @@ export function createCoworkView(options = {}) {
     },
   });
   installBehaviourReader(bench, WB_TYPES.document);
-  rosterTitle = bench.selectorHeader?.title ?? null;
   if (campaign) {
     const selector = bench.host.querySelector('.wk-workbench-selector');
     selector?.setAttribute('role', 'navigation');
@@ -328,7 +324,7 @@ export function createCoworkView(options = {}) {
   // card under Ronin Helpers is the other door: the same session as a normal tile.
   helpPanel = createMikaHelpPanel({
     selector: bench.host.querySelector('.wk-workbench-selector'),
-    header: bench.selectorHeader, refreshHeader: () => bench.refreshSelector(),
+    header: bench.selectorHeader,
     createAction, t, helpButton: mikaHelp.el,
     ready: async () => {
       const result = await readyMika('help');
@@ -343,7 +339,7 @@ export function createCoworkView(options = {}) {
     release: () => seats.workspace2.pool.releaseBorrow('mika_agent'),
     place: (id, surface) => { if (seats[id]) putSurface(surface, id); },
     view: () => ({
-      workbench: desk ? 'desk' : campaign ? 'cowork' : 'team', team: campaign ? '' : team, selected: bench.selected(),
+      workbench: campaign ? 'cowork' : 'team', team: campaign ? '' : team, selected: bench.selected(),
       workspaces: Object.fromEntries(bench.visibleIds().map((id) => {
         const held = holds(id);
         const shown = held && typeof held === 'object' ? [held.type, held.key].filter(Boolean).join(':') : held ? (surfaceIn(id) ? held : `session:${held}`) : 'empty';
@@ -712,7 +708,6 @@ export function createCoworkView(options = {}) {
     };
   };
   function renderCards() {
-    if (rosterTitle) rosterTitle.textContent = campaign ? teamsLabel : t('team.roster_title', 'Roster');
     bench.refreshSelector();
   }
 
@@ -799,24 +794,25 @@ export function createCoworkView(options = {}) {
     }
     loaded = name;
     setBarLabel();
-    rosterTitle.textContent = t('team.roster_title', 'Roster');
     paint();
   }
 
   return {
-    el: root, glyph: campaign ? '⛩' : '人', ...workbenchView(desk ? 'desk' : campaign ? 'cowork' : 'team'),
+    el: root, glyph: campaign ? '⛩' : '人', ...workbenchView(campaign ? 'cowork' : 'team'),
     // The ViewHost draws the Kit's layout map in the bar for this while the view is active.
     arrangement: bench.arrangement,
+    // The crumb's last step on a Team page: RoninCowork • Home • Teams • <Team title> (owner, 2026-10-20).
+    place: () => campaign ? '' : readableTeam(team),
     // The owner's per-tab name; Teams defaults to its page name, a Team to the Team name.
     title: ({ param, viewState }) => {
-      const fallback = desk ? t('campaign_home.desk', 'Desk') : campaign ? teamsLabel : (readableTeam(param || team) || t('team.team', 'Team'));
+      const fallback = campaign ? teamsLabel : (readableTeam(param || team) || t('team.team', 'Team'));
       const name = viewState?.(viewKey)?.tabName;
       return name ? { bare: name } : fallback;
     },
     tabName: {
       // The island edits the name it owns; a default is a real value, selectable and editable.
-      get: () => ctx?.viewState(viewKey)?.tabName || (desk ? t('campaign_home.desk', 'Desk') : campaign ? teamsLabel : readableTeam(team) || t('team.team', 'Team')),
-      placeholder: () => desk ? t('campaign_home.desk', 'Desk') : campaign ? teamsLabel : readableTeam(team) || t('team.team', 'Team'),
+      get: () => ctx?.viewState(viewKey)?.tabName || (campaign ? teamsLabel : readableTeam(team) || t('team.team', 'Team')),
+      placeholder: () => campaign ? teamsLabel : readableTeam(team) || t('team.team', 'Team'),
       set: (value) => { ctx?.patchViewState(viewKey, { tabName: String(value || '').trim() }); },
     },
     placeFeedback: () => bench.place(WB_TYPES.feedback, bench.selected()),
@@ -838,7 +834,7 @@ export function createCoworkView(options = {}) {
       team = campaign ? '' : context.param;
       const { state: entry } = context.workbenchEntry({ count: 2, selected: 'workspace1',
         arrangement: normalizeWorkbenchState(null, bench.declaration).arrangement,
-        seats: campaign ? { workspace1: WB_TYPES.roster, ...(desk ? {} : { workspace2: WB_TYPES.newTeamForm }) } : {} });
+        seats: campaign ? { workspace1: WB_TYPES.roster, workspace2: WB_TYPES.newTeamForm } : {} });
       setBarLabel();
       const typed = normalizeWorkbenchState(entry, bench.declaration);
       remembered = { ...typed.seats };

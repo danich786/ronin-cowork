@@ -59,7 +59,7 @@ test('Roster remains a roster; the Team page selector is Commons, Agents, New Ag
   assert.match(view, /campaign \? \{ action: \(\) => openAgentWorkbench\(member\.name\) \} : \{\}/, 'Team selector cards keep their default placement action');
   // Owner 2026-09-28: one reading of Teams. A pressed stone opens the Team profile inside the
   // Phalanx detail (never elsewhere), from the same body the placed Team profile paints.
-  assert.match(coworkRoster, /createPhalanx\(\{ className: 'team-roster-phalanx', items: \[\], renderDetail \}\)/);
+  assert.match(coworkRoster, /createPhalanx\(\{ className: 'team-roster-phalanx', items: \[\], renderDetail, branches: 'column' \}\)/);
   assert.doesNotMatch(coworkRoster, /action:/, 'a Teams stone selects; it never navigates');
   assert.match(view, /createTeamRosterSurface\(\{\s*teamDetail: \(name\) => leagueTeamDetail\(name, id\)/);
   assert.doesNotMatch(view, /gear/);
@@ -68,7 +68,7 @@ test('Roster remains a roster; the Team page selector is Commons, Agents, New Ag
   assert.doesNotMatch(view, /workItemOffers|createWorkItemsSurface/, 'the Team page offers no Work Items card; the Agent workbench keeps its own');
   // Owner 2026-09-28: the roster that existed (js/roster.js) is back on Cowork and Desk, as it was.
   assert.match(catalog, /WORKBENCH_PROFILES\.cowork, \[[^\n]*WORKBENCH_TYPES\.sessionRoster/);
-  assert.match(catalog, /WORKBENCH_PROFILES\.desk, \[[^\n]*WORKBENCH_TYPES\.sessionRoster/);
+  assert.match(catalog, /WORKBENCH_PROFILES\.cowork, \[[^\n]*WORKBENCH_TYPES\.sessionRoster/);
   assert.match(view, /createRosterSurface\(\{ onOpen: openAgentWorkbench \}\)/, 'the restored roster opens an Agent in its own tab, as before');
   assert.match(workbench, /card\.el\.addEventListener\('dragstart',[\s\S]*JSON\.stringify\(\{ type: definition\.type, detail \}\)/, 'drag still carries the terminal surface and Agent resource to a workspace');
   assert.match(css, /\.league-team-member-actions \{[^}]*flex-wrap: wrap;[^}]*justify-content: flex-end;/);

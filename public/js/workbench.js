@@ -66,7 +66,7 @@ export function createWorkbench(options = {}) {
 
   const defaults = {}, cells = {}, columns = { workspace1: node('div', 'wk-workbench-column'), workspace2: node('div', 'wk-workbench-column') };
   const instances = new Map(), instanceNodes = new WeakMap(), instanceDetails = new WeakMap();
-  let selected = 'workspace1', count = 2, restoring = false, selectorTitle = null;
+  let selected = 'workspace1', count = 2, restoring = false;
   const visibleIds = () => WORKBENCH_IDS.filter((id) => count === 4 || !LOWER.has(id));
   const holding = (id) => cells[id]?.firstElementChild ?? null;
   const remember = () => {
@@ -126,7 +126,8 @@ export function createWorkbench(options = {}) {
   const layout = createWorkbenchLayout({
     declaration,
     surfaces: { workspace1: columns.workspace1, selector, workspace2: columns.workspace2 },
-    headers: { selector: { actions: [densityToggle, ...(options.actions || [])] } },
+    // The selector's head is empty but for its controls (owner, 2026-10-20): no title on any workbench.
+    headers: { selector: { label: '', actions: [densityToggle, ...(options.actions || [])] } },
     onStateChange: remember,
   });
   layout.el.dataset.workbenchProfile = profile.name;
@@ -278,7 +279,6 @@ export function createWorkbench(options = {}) {
     return [id, key ? { type, key, ...(['root', 'path', 'tab', 'doc'].reduce((kept, field) => detail[field] ? { ...kept, [field]: detail[field] } : kept, {})) } : type];
   })) });
   const refreshSelector = () => {
-    if (selectorTitle) selectorTitle.textContent = options.title?.(tenant) || options.label || profile.name;
     selectorCards.replaceChildren();
     const renderedGroups = new Set();
     for (const { definition, offer } of allowed()) {
@@ -330,7 +330,6 @@ export function createWorkbench(options = {}) {
     select, setCount, setSelectorDensity, selectorDensity: () => selectorDensity, placeNode, restoreDefault, dismiss, isDefault: (id) => holding(id) === defaults[id],
     instance, place, typeAt, resourceAt, locations, snapshot, refreshSelector, enter, leave,
   };
-  selectorTitle = api.selectorHeader?.title || null;
   if (!options.deferSelector) refreshSelector();
   return Object.freeze(api);
 }

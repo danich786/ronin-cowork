@@ -1,15 +1,14 @@
 /* part of the ronin-cowork client — see js/README.md */
 /**
- * THE THREE WORKBENCHES HOME'S DOORS OPEN (owner, 2026-10-19; PATTERNS.md Home): Models,
- * Workspaces, Teams — each a destination of its own, opened in the same tab, the bar reading
- * RoninCowork • Home • <door>, Home the way back. One shape for the three: the Kit workbench
+ * THE TWO WORKBENCHES HOME'S DOORS OPEN (owner, 2026-10-19; PATTERNS.md Home): Models and
+ * Workspaces — each a destination of its own, opened in the same tab, the bar reading
+ * RoninCowork • Home • <door>, Home the way back (the Teams door opens the Cowork workbench,
+ * cowork-view.js; owner, 2026-10-20). One shape for the two: the Kit workbench
  * on a profile of the door's surfaces (workbench-catalog.js), the door's surface seated in
  * Workspace 1 on first open. Models seats its own stones of providers (models-surface.js), a
  * stone dragged into a workspace or a selector card placing that provider whole; Workspaces
  * seats its own stones of folders (workspaces-surface.js) the same way, its three admin doors
- * dotted selector cards;
- * Teams seats its own stones of Teams (teams-surface.js), a stone pressed placing the
- * Team's read in Workspace 2, and offers New Team.
+ * dotted selector cards.
  */
 import { WorkspaceKit } from './workspace-kit.js';
 import { t } from './lexicon.js';
@@ -21,8 +20,6 @@ import { createModelProvider, createModelStones, providerOffers } from './models
 import { createGithubWorkspaceSetup } from './github-workspace-setup.js';
 import { createFolder, createFolderClone, createFolderGithub, createFolderNew, createFolderStones, createRootsReading, folderOffers } from './workspaces-surface.js';
 import { campaignById, loadCampaigns, normalizeSelection } from './campaigns.js';
-import { createNewTeamFormView } from './new-team-form.js';
-import { createTeamReadSurface, createTeamsSurface } from './teams-surface.js';
 
 const blank = (id) => WorkspaceKit.primitives.createBlankSurface(id.replace('workspace', 'Workspace ')).el;
 
@@ -128,23 +125,5 @@ export function createWorkspacesView() {
       return environment;
     },
     destroy: () => { for (const surface of made.splice(0)) surface.destroy?.(); github?.destroy(); github = null; providerSessions.destroyAll(); },
-  });
-}
-
-/** Teams: its stones of Teams in Workspace 1, a stone's read in Workspace 2, New Team offered. */
-export function createTeamsView() {
-  const made = [];
-  const keep = (surface) => { made.push(surface); return surface; };
-  return doorWorkbench({
-    id: 'teams', profile: WORKBENCH_PROFILES.teams, label: t('campaign.coworks', 'Teams'), seat: WORKBENCH_TYPES.teams,
-    environment: ({ bench }) => ({
-      teams: () => keep(createTeamsSurface({ onOpen: (name) => bench().place(WORKBENCH_TYPES.teamRead, 'workspace2', { key: name }) })),
-      teamRead: (_workspace, detail) => keep(createTeamReadSurface(detail.key)),
-      newTeamForm: (_workspace, consumed) => {
-        const view = createNewTeamFormView(WorkspaceKit, { consumed, created: () => bench().refreshSelector() });
-        return { el: view.el, show: () => void view.enter() };
-      },
-    }),
-    destroy: () => { for (const surface of made.splice(0)) surface.destroy?.(); },
   });
 }

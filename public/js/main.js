@@ -15,11 +15,10 @@ import { installTips } from './tips.js';
 import { installServicesStatus } from './services-activation.js';
 import { createWorkspace } from './workspace.js';
 import { createCoworkView } from './cowork-view.js';
-import { createDeskView } from './desk-view.js';
 import { createAgentView } from './agent-view.js';
 import { createCampaignHome } from './campaign-home.js';
 import { createCurrentHome } from './current-home.js';
-import { createModelsView, createTeamsView, createWorkspacesView } from './door-workbenches.js';
+import { createModelsView, createWorkspacesView } from './door-workbenches.js';
 import { createCampaignView } from './campaign-view.js';
 import { createSetupView } from './setup-view.js';
 import { createLaunchView } from './launch-view.js';
@@ -105,9 +104,6 @@ async function init() {
   guard('register the Customize destination', () => installCustomize(workspace));
   // Cowork collection and Team detail are two scopes of the same discovery workbench.
   guard('register the Cowork destination', () => workspace.register('cowork', createCoworkView({ kind: 'cowork' })));
-  // Desk is an operational tenant, not the Cowork chooser and not Settings. It shares
-  // the aggregate surface family while owning its first-open seating and restoration.
-  guard('register the Desk destination', () => workspace.register('desk', createDeskView()));
   // A standalone Agent is a first-class Workbench tenant. Launch handoff opens this
   // destination; Setup does not own a private redirect or seating path.
   guard('register the Agent destination', () => workspace.register('agent', createAgentView()));
@@ -118,10 +114,9 @@ async function init() {
   guard('register the Ronin Home destination', () => workspace.register('home', createCampaignHome()));
   // The current root, Home as it was before 2026-10-18, at its own address (owner, 2026-10-19).
   guard('register the Current root destination', () => workspace.register('current', createCurrentHome()));
-  // Home's three doors, each a workbench of its own in the same tab (owner, 2026-10-19).
+  // Home's Models and Workspaces doors, each a workbench of its own in the same tab (owner, 2026-10-19).
   guard('register the Models destination', () => workspace.register('models', createModelsView()));
   guard('register the Workspaces destination', () => workspace.register('workspaces', createWorkspacesView()));
-  guard('register the Teams destination', () => workspace.register('teams', createTeamsView()));
   // the same workbench, selector column, persistence, recall and drag/drop as the Cowork
   // space, offering a Campaign's own configuration instead of its Coworks and Agents.
   guard('register the Campaign destination', () => workspace.register('campaign', createCampaignView()));

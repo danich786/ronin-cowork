@@ -91,15 +91,16 @@ Rules that make them peers:
 
 ### The bar's navigation
 
-The left side keeps the RoninCowork brand and a Teams door. On one of Home's three
-workbenches it reads the way back and the door instead: RoninCowork • Home • Models,
-Workspaces or Teams (Home returns to the landing). A neutral island is cut into the top
-edge of the screen and names the active Workbench scope:
+The left side is the crumb (owner, 2026-10-20): the RoninCowork brand (a plain mark and word, not a
+link), Home (`#/home`), the Teams door (`#/cowork`, the Teams workbench), and on a Team page the
+Team's title last (its id read as words when it has no title). A view naming its
+own place (Models, Workspaces) reads it after Home instead of the Teams door. A neutral island is cut
+into the top edge of the screen and names the active Workbench scope:
 
 ```text
-RoninCowork  •  Teams              Teams                         <verbs>
-RoninCowork  •  Teams            Sea Settle                      <verbs>
-RoninCowork  •  Home  •  Models                                  <verbs>
+RoninCowork  •  Home  •  Teams                   Teams                         <verbs>
+RoninCowork  •  Home  •  Teams  •  Sea Settle  Sea Settle                      <verbs>
+RoninCowork  •  Home  •  Models                                                <verbs>
 ```
 
 The root landing and Machine Settings have no island. Campaign reads *Campaign*, Teams
@@ -121,14 +122,20 @@ card, places that provider's page there whole, no rail; Settings' Model Provider
 as it is, both drawing with the one exported drawing. Workspaces is its own stones of folders in
 Workspace 1 the same way (`workspaces-surface.js`), one card per folder and three dotted cards —
 Add a workspace, GitHub CLI, Clone a repository — the folder they add taking their workspace;
-Settings' Workspace Folders surface stays as it is. Teams is `teams-surface.js`'s stones of Teams in Workspace 1, name only, with a
-Workspace question (many-of, blank All) and a Show question (Theme, State, Agents, Items; Theme
-on by default) at its top, New Team in the selector. A stone pressed places the Team's read in
-Workspace 2 (Theme, State, Agents, Launch); the 人 mark in the stone's corner, and Launch, open
-the Team page in a new tab.
+Settings' Workspace Folders surface stays as it is. Teams opens the Teams workbench at `#/cowork`
+(`cowork-view.js`; owner, 2026-10-20), the one Teams workbench: its Teams card
+(`team-roster-surface.js`) carries a Workspace question (many-of, blank All) and a Show question
+(Theme, State, Agents, Items; Theme on by default) above its stones, each stone the Team's name
+with what Show picks under it as the phalanx's branch rows (Theme one row, State one row, each
+Agent a row with the lead first, each Item a row); the 人 mark in a stone's corner opens the
+Team page in a new tab; its selector offers Team roster, Cron jobs, New Team, New Agent and
+Rehydrate Archived.
+Until one model provider is activated the three doors are locked and say so (the gate the old
+root had); Settings, the live stone, opens Setup until its five answers are recorded.
 
 The current root — Ronin Home as it was before 2026-10-18, with doors into the Desk, Team and
-Agent Workbenches — stays at `#/current` (`public/js/current-home.js`) while pieces move from it
+Agent Workbenches (Desk and Team both open the Teams workbench at `#/cowork`; the Desk workbench
+was deleted on 2026-10-20) — stays at `#/current` (`public/js/current-home.js`) while pieces move from it
 to the new Home. One plain toggle in the bar, the same spot on both pages, swaps the two in one
 press: Current on the new Home, Next on the current one.
 

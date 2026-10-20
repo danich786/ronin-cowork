@@ -9,7 +9,7 @@ import { readFile } from 'node:fs/promises';
  * through the environment), then The catalog (the dated facts and the model table).
  */
 class FakeNode {
-  constructor(tag = '') { this.tagName = tag.toUpperCase(); this.dataset = {}; this.children = []; this.listeners = {}; this.attributes = {}; this._text = ''; this.disabled = false; this.className = ''; this.hidden = false; }
+  constructor(tag = '') { this.tagName = tag.toUpperCase(); this.dataset = {}; this.children = []; this.listeners = {}; this.attributes = {}; this._text = ''; this.disabled = false; this.className = ''; this.hidden = false; this.style = { setProperty: (name, value) => { this.style[name] = value; } }; }
   append(...nodes) { this.children.push(...nodes.flat().filter(Boolean).map((node) => typeof node === 'string' ? Object.assign(new FakeNode('#text'), { textContent: node }) : node)); }
   replaceChildren(...nodes) { this.children = []; this.append(...nodes); }
   add(node) { this.append(node); }

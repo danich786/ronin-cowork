@@ -3,21 +3,21 @@ import { t } from './lexicon.js';
 import { workbenchLaunchUrl } from './workspace.js';
 
 /** The one navigation header shared by every Ronin workspace. */
-const readable = (name = '') => String(name).split(/[_-]+/).filter(Boolean)
-  .map((part) => part[0]?.toUpperCase() + part.slice(1)).join(' ');
-
 /** The active Workbench declares its appearance; routes and surfaces never infer it. */
 export const workspaceHeaderAppearance = (active) => active?.view?.appearance || '';
 
 export function installWorkspaceHeader(workspace) {
-  const ronin = document.getElementById('brandbtn');
   const separator = document.getElementById('coworkssep');
   const coworkers = document.getElementById('coworksbtn');
   // THE PLACE is the label inside the centred scope island. Its solid colour stands
   // apart from the tinted Workbench headers below it.
   const place = document.getElementById('viewplace');
-  // HOME'S DOORS (owner, 2026-10-19): a view that names its place (`place`) reads
-  // RoninCowork • Home • <place>, Home the way back; the Teams door of the bar steps aside.
+  // THE CRUMB (owner, 2026-10-20): the brand is a plain mark and word, never a link. Off the
+  // landing the crumb reads RoninCowork • Home, then the Teams
+  // door (#/cowork, the Teams workbench), then a view's own place (`place`) last. A Team page
+  // sits under Teams — RoninCowork • Home • Teams • <Team title>; any other view naming a
+  // place sits under Home alone — RoninCowork • Home • <place>.
+  const homeSeparator = document.getElementById('homesep');
   const home = document.getElementById('homebtn');
   const placeSeparator = document.getElementById('placesep');
   const crumb = document.getElementById('viewcrumb');
@@ -32,7 +32,6 @@ export function installWorkspaceHeader(workspace) {
     event.preventDefault();
     action();
   };
-  ronin?.addEventListener('click', plainRoute(root));
   home?.addEventListener('click', plainRoute(root));
   coworkers?.addEventListener('click', plainRoute(() => workspace.navigate('cowork')));
 
@@ -43,14 +42,16 @@ export function installWorkspaceHeader(workspace) {
     else delete document.documentElement.dataset.workbench;
     const landing = !active || active.id === 'home' || active.id === 'current';
     const placed = active?.view?.place ? active.view.place() : '';
-    if (separator) separator.hidden = landing;
-    if (home) { home.textContent = t('bar.home', 'Home'); home.hidden = !placed; }
-    if (placeSeparator) placeSeparator.hidden = !placed;
-    if (crumb) { crumb.textContent = placed; crumb.hidden = !placed; }
+    const underTeams = !landing && (!placed || active.id === 'team');
+    if (homeSeparator) homeSeparator.hidden = landing;
+    if (home) { home.textContent = t('bar.home', 'Home'); home.hidden = landing; }
+    if (separator) separator.hidden = !underTeams;
     if (coworkers) {
-      coworkers.hidden = landing || Boolean(placed);
+      coworkers.hidden = !underTeams;
       coworkers.href = workbenchLaunchUrl({ destination: 'cowork', mode: 'overlay' });
     }
+    if (placeSeparator) placeSeparator.hidden = !placed;
+    if (crumb) { crumb.textContent = placed; crumb.hidden = !placed; }
     if (place) {
       // The island is the editable tab name for any view that offers one (`tabName`): the
       // old Team, Teams and Desk. A Team page with no

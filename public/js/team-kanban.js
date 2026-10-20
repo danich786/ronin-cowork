@@ -18,7 +18,7 @@ export const KANBAN_NOT_INSTALLED = 'Unavailable.';
 export const KANBAN_CAMPAIGN_OFF = 'Unavailable.';
 
 export const taskManagerScope = (value = {}) => {
-  const kind = ['desk', 'team', 'agent'].includes(value.kind) ? value.kind : 'team';
+  const kind = ['team', 'agent'].includes(value.kind) ? value.kind : 'team';
   const teams = [...new Set((typeof value.teams === 'function' ? value.teams() : value.teams || [value.team]).map(String).filter(Boolean))];
   return { kind, teams, agent: kind === 'agent' ? String(value.agent || '') : '' };
 };
