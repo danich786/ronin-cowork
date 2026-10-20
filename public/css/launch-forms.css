@@ -1,8 +1,12 @@
 
 @layer app {
 
-  .sws-host { --sws-header-height: clamp(6rem, 15dvh, 9rem); display: flex; flex: 1 1 auto; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; gap: 0; }
-  .wk-surface-content.sws-host { overflow: hidden; padding: var(--space-6) var(--space-11); container: stone-work-surface-seat / inline-size; }
+  .sws-host {
+    --sws-header-height: clamp(6rem, 15dvh, 9rem);
+  }
+  .sws-host { display: flex; flex: 1 1 auto; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; gap: 0; }
+  /* .sws-host twice: the surface content it sits on, at the specificity that seat needs */
+  .sws-host.sws-host { overflow: hidden; padding: var(--space-6) var(--space-11); container: stone-work-surface-seat / inline-size; }
   .sws-host > .sws { flex: 1 1 auto; }
   .sws-host > :not(.sws) { font-size: var(--form-note); line-height: var(--leading-body); }
   .sws-header { display: flex; flex: 0 0 var(--sws-header-height); align-items: flex-start; min-width: 0; block-size: var(--sws-header-height); overflow: auto; }
@@ -10,6 +14,12 @@
   .sws-header::-webkit-scrollbar { display: none; }
   .sws-header > * { margin-block: 0; }
   .sws-footer[hidden] { display: none; }
+  .sws {
+    --sws-detail-measure: 42rem; /* an opened stone's reading width */
+  }
+  .sws-grid {
+    --sws-rows: 1; /* the phalanx writes the real count on the grid */
+  }
   .sws { --sws-stone: var(--setup-stone-size); --sws-gap: var(--space-8); display: flex; flex: 1 1 auto; align-items: stretch; min-height: 0; gap: var(--space-11); container: setup-stone-work-surface / inline-size; }
   .sws-rail { flex: none; min-height: 0; overflow-y: auto; padding: var(--edge-2); }
   .sws:not([data-open='true']) .sws-rail { display: flex; flex: 1 1 auto; align-items: flex-start; justify-content: center; min-width: 0; }
@@ -53,7 +63,7 @@
   /* Column branches: the stones and their cells on one grid — a column per stone, a grid row
      per cell (--sws-rows, set by the phalanx), each branch a subgrid of those rows, so a topic's
      cells start where the previous row's tallest cell ends (owner, 2026-10-20). */
-  .sws[data-branching='true'] .sws-grid { display: grid; grid-auto-flow: column; grid-auto-columns: var(--sws-stone); grid-template-rows: repeat(var(--sws-rows, 1), auto); width: 100%; min-width: 0; justify-content: flex-start; align-items: start; overflow-x: auto; }
+  .sws[data-branching='true'] .sws-grid { display: grid; grid-auto-flow: column; grid-auto-columns: var(--sws-stone); grid-template-rows: repeat(var(--sws-rows), auto); width: 100%; min-width: 0; justify-content: flex-start; align-items: start; overflow-x: auto; }
   .sws[data-branching='true'][data-branches='chart'] .sws-grid { display: flex; flex-wrap: nowrap; align-items: flex-start; }
   .sws-branch { display: grid; grid-template-rows: subgrid; grid-row: 1 / -1; gap: var(--space-3); }
   .sws[data-branches='chart'] .sws-branch { display: flex; flex: none; flex-direction: column; }
@@ -84,16 +94,16 @@
   /* The Teams card's stones (js/team-roster-surface.js): the 人 launch in a stone's corner. */
   .sws-stone > .teams-launch { position: absolute; inset-block-start: var(--space-4); inset-inline-end: var(--space-4); cursor: pointer; }
   @container stone-work-surface-seat (max-width: 40rem) {
-    .wk-surface-content.sws-host { padding-inline: var(--space-6); }
+    .sws-host.sws-host { padding-inline: var(--space-6); }
     .sws { gap: var(--space-6); }
   }
   @container stone-work-surface-seat (min-width: 44rem) {
-    .wk-surface-content.sws-host { padding-inline: calc(var(--space-12) + var(--space-7)); }
+    .sws-host.sws-host { padding-inline: calc(var(--space-12) + var(--space-7)); }
     .sws[data-open='true'] { justify-content: center; gap: var(--space-12); }
-    .sws[data-open='true'] .sws-detail { max-width: 42rem; }
+    .sws[data-open='true'] .sws-detail { max-width: var(--sws-detail-measure); }
   }
   @container stone-work-surface-seat (min-width: 64rem) {
-    .wk-surface-content.sws-host { padding-inline: calc(var(--space-12) * 2); }
+    .sws-host.sws-host { padding-inline: calc(var(--space-12) * 2); }
     .sws[data-open='true'] { gap: calc(var(--space-12) + var(--space-7)); }
   }
 
@@ -140,7 +150,10 @@
   .sp-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: var(--space-4); border: var(--edge) solid var(--line-3); border-radius: var(--radius-hair); padding: var(--space-3) var(--space-5); }
   .sp-row-ask { grid-template-columns: minmax(calc(var(--space-12) * 2.5), .7fr) minmax(0, 1fr) auto; align-items: start; }
   .sp-row-ask textarea { min-width: 0; resize: vertical; border: 0; background: transparent; color: var(--fg-strong); padding: var(--space-2) 0; font: inherit; line-height: var(--leading-body); }
-  .sp-row-ask[data-editing='true'] textarea { min-height: calc(3 * 1.45em + var(--space-4)); }
+  .sp-row-ask[data-editing='true'] textarea {
+    --sp-ask-rows: calc(3 * var(--leading-body) * 1em); /* three lines of its own text */
+    min-height: calc(var(--sp-ask-rows) + var(--space-4));
+  }
   .sp-row input { min-width: 0; border: 0; background: transparent; color: var(--fg-strong); padding: var(--space-2) 0; font: inherit; }
   .sp-row .fs-pair { display: flex; gap: var(--space-3); min-width: 0; }
   .sp-row .fs-pair select { max-width: calc(var(--space-12) * 5); border: 0; border-bottom: var(--edge) solid transparent; background: transparent; color: var(--accent); padding: var(--space-2) 0; font: inherit; }
@@ -164,8 +177,8 @@
   .sp-launch { font-size: inherit; }
 
   .ntf-form, .ntf-actions { font-size: var(--form-input); }
-  .na-surface > .wk-surface-header,
-  .ntf-surface > .wk-surface-header { position: sticky; top: 0; z-index: 4; }
+  .na-surface > .launch-form-head,
+  .ntf-surface > .launch-form-head { position: sticky; top: 0; z-index: 4; }
   .launch-form-embed { display: flex; flex-direction: column; min-width: 0; overflow: visible; }
   .launch-form-embed-actions { position: sticky; top: 0; z-index: 4; display: flex; justify-content: flex-end; background: var(--panel); padding-bottom: var(--space-3); }
   .ntf-foot { font-size: var(--form-note); }
@@ -267,11 +280,11 @@
 
   .na-omitted { margin: 0; color: var(--dim); font-size: var(--form-note); }
   .na-omitted[hidden] { display: none; }
-  .na-surface :is(.wk-field, .ask)[hidden] { display: none; }
-  .na-name-required > .wk-field-label { color: var(--accent); }
+  .na-surface :is(.na-field, .ask)[hidden] { display: none; }
+  .na-name-required > .na-name-label { color: var(--accent); }
   .na-identity-row { display: flex; flex-wrap: wrap; gap: var(--space-4) var(--space-8); align-items: flex-end; }
   .na-identity-row > .na-name-required { flex: 1 1 calc(var(--space-12) * 8); min-width: 0; }
-  .na-name-required > .wk-field-control { box-sizing: border-box; height: 40px; }
+  .na-name-required > .na-name-input { box-sizing: border-box; height: var(--field-tall); }
   .na-team-questions { flex: 0 0 auto; }
   .na-surface textarea { min-height: calc(var(--space-12) * 3); resize: vertical; }
   .na-note { margin: var(--space-4) 0 0; color: var(--dim); font-size: var(--form-note); }

@@ -653,7 +653,7 @@ export function createCoworkView(options = {}) {
     const status = el('p', 'league-team-detail-state'); status.setAttribute('role', 'status'); status.hidden = true;
     const team = leagueTeamBody(name, { seat, say: (state, message) => { status.hidden = state !== 'failed'; status.textContent = state === 'failed' ? message : ''; } });
     const head = el('div', 'league-team-detail-head');
-    const actions = el('div', 'wk-surface-header-actions'); actions.append(...team.controls.map((control) => control.el));
+    const actions = el('div', 'wk-surface-header-actions league-team-detail-actions'); actions.append(...team.controls.map((control) => control.el));
     head.append(team.title, actions, team.objective);
     box.append(head, status, team.main);
     return { el: box, render: team.render };

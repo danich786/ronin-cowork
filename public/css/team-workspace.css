@@ -8,7 +8,10 @@
 
   .tw-note { padding: var(--space-6) var(--space-7); color: var(--muted); font-size: var(--text-3); }
   .team-roster-detail { margin: var(--space-4); overflow-y: auto; }
-  .home-live { width: 6px; height: 6px; justify-self: center; border-radius: var(--radius-round); background: var(--line-2); }
+  .home-live {
+    --home-live-dot: 6px;
+  }
+  .home-live { width: var(--home-live-dot); height: var(--home-live-dot); justify-self: center; border-radius: var(--radius-round); background: var(--line-2); }
   .home-live[data-stance='working'], .home-live[data-stance='replying'] { background: var(--ok-2); }
   .home-live[data-stance='asking'], .home-live[data-stance='awaiting_you'] { background: var(--kaki); }
   .team-roster-detail .home-group-add { display: none; }
@@ -32,10 +35,16 @@
     --tk-control-size: var(--space-8);
     height: 100%; min-height: 0; overflow: auto; background: var(--bg-2); container: team-kanban / inline-size;
   }
-  .tk-header { box-sizing: border-box; position: sticky; top: 0; z-index: 1; display: flex; flex-direction: column; block-size: clamp(6rem, 15dvh, 9rem); min-inline-size: 0; padding: var(--space-4) var(--space-5); border-bottom: var(--edge) solid var(--line); background: var(--bg-2); }
+  .tk-header {
+    --tk-header-height: clamp(6rem, 15dvh, 9rem); /* the stone work surface's header band */
+  }
+  .tk-header { box-sizing: border-box; position: sticky; top: 0; z-index: 1; display: flex; flex-direction: column; block-size: var(--tk-header-height); min-inline-size: 0; padding: var(--space-4) var(--space-5); border-bottom: var(--edge) solid var(--line); background: var(--bg-2); }
   .tk-header[data-expanded='false'] { block-size: auto; }
   .tk-header-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
-  .tk-beta { display: inline-flex; align-items: center; min-height: 2.25rem; box-sizing: border-box; border: var(--edge) solid var(--kaki); border-radius: var(--radius-xs); background: var(--raise); color: var(--fg-strong); padding: var(--space-2) var(--space-4); font: inherit; font-size: var(--text-4); font-weight: var(--weight-strong); letter-spacing: var(--tk-heading-track); text-transform: uppercase; }
+  .tk-beta {
+    --tk-beta-h: 2.25rem;
+  }
+  .tk-beta { display: inline-flex; align-items: center; min-height: var(--tk-beta-h); box-sizing: border-box; border: var(--edge) solid var(--kaki); border-radius: var(--radius-xs); background: var(--raise); color: var(--fg-strong); padding: var(--space-2) var(--space-4); font: inherit; font-size: var(--text-4); font-weight: var(--weight-strong); letter-spacing: var(--tk-heading-track); text-transform: uppercase; }
   .tk-header-toggle { border: 0; border-radius: 0; padding: var(--space-2); background: transparent; color: var(--muted); font: inherit; font-size: var(--text-2); font-weight: var(--weight-regular); cursor: pointer; }
   .tk-header-toggle:hover { color: var(--fg); }
   .tk-header-toggle:focus-visible { outline: var(--edge-2) solid var(--kaki); outline-offset: var(--space-1); }
@@ -95,8 +104,8 @@
      only the identity line is its own: Team ID · Title · Kind, one height, the Kind tray hosted by the line. */
   .tw-config-form { min-width: 0; }
   .tw-config-identity { display: flex; flex-wrap: wrap; gap: var(--space-4) var(--space-6); align-items: flex-end; }
-  .tw-config-identity > .wk-field { flex: 1 1 calc(var(--space-12) * 2.5); min-width: 0; } /* the pair shares a line with Kind when the workspace is wide; at the commons’ own width Kind drops beneath, as on New Team */
-  .tw-config-identity > .wk-field > .wk-field-control { box-sizing: border-box; height: 40px; }
+  .tw-config-identity > .tw-config-field { flex: 1 1 calc(var(--space-12) * 2.5); min-width: 0; } /* the pair shares a line with Kind when the workspace is wide; at the commons’ own width Kind drops beneath, as on New Team */
+  .tw-config-identity > .tw-config-field > .tw-config-control { box-sizing: border-box; height: var(--field-tall); }
   .tw-config-identity > .ask { flex: 0 0 auto; }
   .tw-config-id { color: var(--muted); }
   .tw-config-actions { display: flex; justify-content: flex-end; align-items: center; gap: var(--space-4); }
@@ -114,7 +123,7 @@
   .league-team-row, .tk-line { display: grid; grid-template-columns: var(--hr-mark) minmax(0, 1fr) var(--hr-shingo) var(--hr-stack); align-items: center; gap: var(--space-4); padding: var(--space-1) var(--space-2); font-size: var(--text-4); }
   .league-team-detail-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: var(--space-4); }
   .league-team-detail-head > h2 { grid-column: 1; grid-row: 1; margin: 0; color: var(--fg-strong); font-size: var(--text-8); font-weight: var(--weight-strong); }
-  .league-team-detail-head > .wk-surface-header-actions { grid-column: 2; grid-row: 1; }
+  .league-team-detail-head > .league-team-detail-actions { grid-column: 2; grid-row: 1; }
   .league-team-objective { grid-column: 1 / -1; font-size: var(--text-4); margin: 0; overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
   .league-team-objective[hidden] { display: none; }
   .league-team-detail-state { margin: 0; color: var(--bad); }
@@ -151,8 +160,14 @@
   .league-team-member-title { overflow: hidden; color: var(--fg-strong); font-weight: inherit; text-overflow: ellipsis; white-space: nowrap; }
   .league-team-empty { color: var(--muted); }
   .league-team-member-actions { flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); }
-  .league-team-member-toggle { display: grid; grid-template-columns: minmax(10rem, 1fr) minmax(0, 2.4fr) 1.25rem; align-items: center; gap: var(--space-4); width: 100%; min-width: 0; border: 0; background: transparent; color: inherit; padding: var(--space-3) 0; text-align: left; cursor: pointer; font: inherit; }
-  .league-team-member-reading { display: grid; grid-template-columns: minmax(0, 1fr) 4.5rem 3.25rem 4.75rem; align-items: center; gap: var(--space-3); min-width: 0; }
+  .league-team-member-toggle {
+    --ltm-toggle-cols: minmax(10rem, 1fr) minmax(0, 2.4fr) 1.25rem; /* name, reading, chevron */
+  }
+  .league-team-member-toggle { display: grid; grid-template-columns: var(--ltm-toggle-cols); align-items: center; gap: var(--space-4); width: 100%; min-width: 0; border: 0; background: transparent; color: inherit; padding: var(--space-3) 0; text-align: left; cursor: pointer; font: inherit; }
+  .league-team-member-reading {
+    --ltm-reading-cols: minmax(0, 1fr) 4.5rem 3.25rem 4.75rem;
+  }
+  .league-team-member-reading { display: grid; grid-template-columns: var(--ltm-reading-cols); align-items: center; gap: var(--space-3); min-width: 0; }
   .league-team-member-reading span { overflow: hidden; color: var(--muted); font-size: var(--form-note); text-overflow: ellipsis; white-space: nowrap; }
   .league-team-member-step { grid-column: 1; }
   .league-team-member-state { grid-column: 2; }
@@ -192,9 +207,6 @@
   .aa-col { display: flex; flex-direction: column; gap: var(--space-6); min-width: 0; }
   .aa-col[hidden] { display: none; }
 
-}
-
-@layer app {
   /* The one composition body (owner, 2026-10-20): the kit's unnumbered sections, no boxes;
      the tile pads it, an opened roster row does not. */
   .ac-body { display: flex; flex-direction: column; min-width: 0; }
@@ -206,6 +218,9 @@
   .ac-list { color: var(--fg); }
   .ac-status { margin: 0; color: var(--muted); font-size: var(--form-note); }
   .ac-status:empty { display: none; }
-  .ac-brief { max-height: 18rem; overflow: auto; border: var(--edge) solid var(--line-2); border-radius: var(--radius-xs); background: var(--well); padding: var(--space-4); color: var(--fg); font-family: inherit; white-space: pre-wrap; }
+  .ac-brief {
+    --ac-brief-h: 18rem;
+  }
+  .ac-brief { max-height: var(--ac-brief-h); overflow: auto; border: var(--edge) solid var(--line-2); border-radius: var(--radius-xs); background: var(--well); padding: var(--space-4); color: var(--fg); font-family: inherit; white-space: pre-wrap; }
   .ac-mandate, .ac-add { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: var(--space-3); }
 }

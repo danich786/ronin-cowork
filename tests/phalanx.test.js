@@ -113,18 +113,20 @@ test('shared status markers are compact, token-driven, and can be placed on any 
 test('consumers cannot override the shared hidden detail or stone geometry', async () => {
   const css = await readFile(new URL('../public/css/launch-forms.css', import.meta.url), 'utf8');
   assert.doesNotMatch(css, /\.sp-work-surface \.sws-detail/);
-  assert.match(css, /\.wk-surface-content\.sws-host \{[^}]*padding: var\(--space-6\) var\(--space-11\);[^}]*container: stone-work-surface-seat/);
+  assert.match(css, /\.sws-host\.sws-host \{[^}]*padding: var\(--space-6\) var\(--space-11\);[^}]*container: stone-work-surface-seat/);
   assert.match(css, /\.sws \{[^}]*gap: var\(--space-11\)/);
-  assert.match(css, /\.sws-host \{[^}]*--sws-header-height: clamp\(6rem, 15dvh, 9rem\)[^}]*gap: 0/);
+  assert.match(css, /\.sws-host \{\s*--sws-header-height: clamp\(6rem, 15dvh, 9rem\);\s*\}/);
+  assert.match(css, /\.sws-host \{ display: flex;[^}]*gap: 0/);
   assert.match(css, /\.sws-header \{[^}]*flex: 0 0 var\(--sws-header-height\)[^}]*align-items: flex-start[^}]*block-size: var\(--sws-header-height\)[^}]*overflow: auto/);
   assert.match(css, /\.sws-host:has\(> \.sws\[data-open='true'\]\) > \.sws-header \{ display: none; \}/);
   assert.match(css, /\.sws:not\(\[data-open='true'\]\) \.sws-rail \{[^}]*align-items: flex-start[^}]*justify-content: center[^}]*\}/);
   assert.doesNotMatch(css, /\.sws:not\(\[data-open='true'\]\) \.sws-rail \{[^}]*padding-top/);
   assert.match(css, /\.sws-stone \{[^}]*flex: 0 0 min\(100%, var\(--sws-stone\)\)[^}]*width: min\(100%, var\(--sws-stone\)\)/);
-  assert.match(css, /@container stone-work-surface-seat \(max-width: 40rem\)[\s\S]*?\.wk-surface-content\.sws-host \{ padding-inline: var\(--space-6\); \}/);
-  assert.match(css, /@container stone-work-surface-seat \(min-width: 44rem\)[\s\S]*?\.wk-surface-content\.sws-host \{ padding-inline: calc\(var\(--space-12\) \+ var\(--space-7\)\); \}/);
-  assert.match(css, /\.sws\[data-open='true'\] \.sws-detail \{ max-width: 42rem; \}/);
-  assert.match(css, /@container stone-work-surface-seat \(min-width: 64rem\)[\s\S]*?\.wk-surface-content\.sws-host \{ padding-inline: calc\(var\(--space-12\) \* 2\); \}/);
+  assert.match(css, /@container stone-work-surface-seat \(max-width: 40rem\)[\s\S]*?\.sws-host\.sws-host \{ padding-inline: var\(--space-6\); \}/);
+  assert.match(css, /@container stone-work-surface-seat \(min-width: 44rem\)[\s\S]*?\.sws-host\.sws-host \{ padding-inline: calc\(var\(--space-12\) \+ var\(--space-7\)\); \}/);
+  assert.match(css, /\.sws\[data-open='true'\] \.sws-detail \{ max-width: var\(--sws-detail-measure\); \}/);
+  assert.match(css, /--sws-detail-measure: 42rem;/);
+  assert.match(css, /@container stone-work-surface-seat \(min-width: 64rem\)[\s\S]*?\.sws-host\.sws-host \{ padding-inline: calc\(var\(--space-12\) \* 2\); \}/);
   assert.match(css, /\.sws\[data-open='true'\] \{ gap: calc\(var\(--space-12\) \+ var\(--space-7\)\); \}/);
   assert.doesNotMatch(css, /\.setup-provider-stones \.sws-(?:rail|grid|detail)/);
   assert.doesNotMatch(css, /\.setup-roots-stones \.sws-(?:rail|grid|detail)/);

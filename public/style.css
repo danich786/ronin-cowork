@@ -386,6 +386,7 @@ body {
 :root {
   --row-head: calc(var(--space-11) + var(--space-6) + var(--edge)); /* the Kit's header row */
   --setup-stone-size: calc(var(--space-12) * 2 + var(--space-11) + var(--space-10));
+  --field-tall: 40px; /* a form's tall field: New Agent's name, the Team ID */
   --bar-brand-mark-h: 27px;
   --bar-brand-track: -0.005em;
   --gc-motif-opacity: .95;
@@ -4484,7 +4485,7 @@ button.wk-card { cursor: pointer; font-family: var(--font-ui); }
 .tile.keys-on:not(.tape-on) .tile-body {
   /* FitAddon reads computed height: give it the content area, excluding controls. */
   box-sizing: content-box;
-  padding-bottom: var(--composer-clearance, 0px);
+  padding-bottom: var(--composer-clearance, 0);
 }
 
 @media (max-width: 680px) {
@@ -4808,8 +4809,10 @@ html[data-screen='inside'] #phone .ph-bar .ph-title[data-boot='inside'] { displa
   margin: var(--space-4);
 }
 #phone .dc-text {
-  /* iOS zooms the whole viewport when a focused editor is smaller than 16px. */
-  font-size: 16px;
+  /* iOS zooms the whole viewport when a focused editor is smaller than 16px. A contract,
+     not a rung: it must not follow a skin's type scale. */
+  --ios-no-zoom: 16px;
+  font-size: var(--ios-no-zoom);
 }
 #phone .tile-transcript-stance {
   min-height: 24px;
