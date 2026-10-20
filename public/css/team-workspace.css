@@ -49,7 +49,7 @@
   .tk-legend { display: flex; flex: none; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-4) var(--space-6); color: var(--muted); font-size: var(--text-3); }
   .tk-legend span { display: inline-flex; align-items: center; gap: var(--space-2); }
   .tk-dot { width: var(--space-3); height: var(--space-3); background: var(--line-2); }
-  .tk-dot.green { background: var(--kanban-green); }
+  .tk-dot.green { background: var(--ok-2); }
   .tk-dot.yellow { background: var(--kanban-yellow); }
   .tk-dot.red { background: var(--kanban-red); }
   .tk-notice { flex: 1 1 auto; min-width: 0; margin: 0; color: var(--muted); font-size: var(--text-3); }
@@ -72,7 +72,7 @@
   .tk-card.open { height: var(--tk-card-open); }
   .tk-card:active { cursor: grabbing; }
   .tk-card.dragging { opacity: .45; }
-  .tk-card[data-status='green'] { border-left-color: var(--kanban-green); }
+  .tk-card[data-status='green'] { border-left-color: var(--ok-2); }
   .tk-card[data-status='yellow'] { border-left-color: var(--kanban-yellow); }
   .tk-card[data-status='red'] { border-left-color: var(--kanban-red); }
   .tk-board.dragging .tk-column.means { border-color: var(--accent); border-style: dashed; background: var(--raise); }
@@ -86,7 +86,7 @@
   .tk-outcome { max-height: calc(var(--tk-outcome-line) * 2); overflow: hidden; margin-top: var(--space-1); color: var(--muted); font-size: var(--text-3); line-height: var(--tk-outcome-line); }
   .tk-evidence { margin: var(--space-2) 0 0; overflow-wrap: anywhere; color: var(--dim); font-size: var(--text-2); }
   .tk-card-row { min-height: var(--tk-card-meta-line); align-items: center; gap: var(--space-2); margin-top: var(--space-3); padding-top: 0; font-size: var(--text-3); }
-  .tk-waiting { color: var(--kanban-green); }
+  .tk-waiting { color: var(--ok-2); }
   .tk-asked { color: var(--muted); }
   .tk-owner, .tk-project-open { border: 0; border-bottom: var(--edge) dotted currentColor; border-radius: 0; padding: 0; background: transparent; color: var(--accent-2); font: inherit; }
   .tk-owner:hover, .tk-project-open:hover { border-bottom-style: solid; }
@@ -136,7 +136,7 @@
   .tk-stage-bar > i { width: var(--space-5); height: var(--space-2); border: var(--edge) solid var(--line-2); }
   .tk-stage-bar > i.past { border-color: var(--fg); background: var(--fg); }
   .tk-stage-bar > i.now { border-color: transparent; background: var(--kanban-yellow); }
-  .tk-stage-bar > i.now.green { background: var(--kanban-green); }
+  .tk-stage-bar > i.now.green { background: var(--ok-2); }
   .tk-stage-bar > i.now.red { background: var(--kanban-red); }
   .league-team-roster, .league-team-config { flex: 0 0 auto; }
   .league-team-roster { display: flex; flex-direction: column; min-height: 0; }

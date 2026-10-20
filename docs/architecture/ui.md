@@ -65,7 +65,7 @@ and could not get a radius right.
 | type | `--text-1` … `--text-10`, `--text-micro` | `--text-3` (12px) is this app's body, not a caption — Ronin is dense on purpose |
 | voice | `--font-ui` `--font-mono` `--font-term` | **three roles, not two.** `--font-term` is what xterm renders (`js/termview.js` reads it via `termFace()`), and the tape, composer and jump button must match it glyph-for-glyph or a wrapped line stops lining up |
 | edge | `--edge` `--edge-2` | border widths — a heavier-lined theme is one edit, not four hundred |
-| motion | `--motion-quick/settle/slow/hint`, `--ease` `--ease-out` | four speeds; nothing animates for decoration |
+| motion | `--motion-quick/settle/slow/hint`, `--ease` | four speeds; nothing animates for decoration |
 | elevation | `--scrim` `--shadow-menu` `--shadow-sheet` | |
 | bar navigation | `--bar-nav-bg/fg/hover/focus` · `--bar-value-fg` | the shared clickable label and its non-clickable context value |
 
@@ -106,7 +106,9 @@ which because only a skin of ours that you replaced can silently stop tracking a
 **A token a skin names is chosen for both shells** — light and dark are themes, a skin is a
 skin — which is why the shipped skins stay off colour and compose with the flip instead of
 competing with it. The whole feature is one catalog, one route and thirty lines of client;
-it is the dividend of the token work above, not a second system.
+it is the dividend of the token work above, not a second system. **A renamed token keeps
+working in a skin of yours:** `skins.js` reads the old name as the new one (`RENAMED`), and
+the new name wins where a skin spells both.
 
 **The escape hatch costs you a name.** A one-off MEASUREMENT is not a rung and must not
 become one — `--ptr-len`/`--ptr-wide` (the dial needle's geometry, numbers that must move
@@ -125,9 +127,9 @@ The roles, defined in `public/style.css`:
 
 - surfaces: `--bg` (canvas) · `--bg-2` (bar) · `--panel` · `--raise` · `--well` (inputs)
 - edges: `--line` · `--line-2` · `--line-3` (three weights, hairline → emphasized)
-- text: `--fg-strong` · `--fg` · `--muted` · `--muted-2` · `--muted-3` · `--dim` (zero-state)
+- text: `--fg-strong` · `--fg` · `--muted` · `--muted-2` · `--dim` (zero-state)
 - meaning: `--accent` (attention/identity) · `--accent-2` (reference) · `--ok`/`--ok-2` ·
-  `--warn` (needs you) · the `--bad-*` family (wrong, in grades) · `--info` · `--action`
+  `--warn` (needs you) · the `--bad-*` family (wrong, in grades) · `--info`
 - house: `--kaki` (the Ronin identity mark; this session; heightened access/visibility) ·
   `--aiiro` (Ronin navigation and selection) — Kojin's fixed palette, borrowed. The kaki
   identity ruling is the open hexagonal **hito** mark; using the same colour for heightened
@@ -139,7 +141,8 @@ The roles, defined in `public/style.css`:
   read back into JS by `termTheme()` (`public/js/theme.js`), never restated
 
 **Kaki is the brand**: every primary and attention FILL reads
-`--kaki`/`--on-strong`. Amber (`--kiiro`, `--accent`, `--warn`) is the supporting
+`--kaki`/`--on-strong`, or `--kaki-fill`/`--kaki-fill-ink` where a small mark must pass on
+white. Amber (`--accent`, `--warn`) is the supporting
 family — the band's derived shades, edges, rings and warning ink; red is only ever wrong.
 `--bad` is never used categorically in charts (the `--k-*` job colours exist for that).
 

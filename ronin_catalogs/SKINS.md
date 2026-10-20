@@ -21,6 +21,10 @@
 > | `- **dark--bg:** #05070a` | the dark shell only |
 > | `- **light--bg:** #fffdf8` | the light shell only |
 >
+> **A token we rename keeps working here.** A skin naming an old name (`--muted-3`, `--setup-mark`,
+> `--gc-cta-bg`, `--gc-cta-ink`, `--kanban-green`, `--kiiro`, `--kaki-hint`) paints the
+> token that replaced it; spell the new name and it wins.
+>
 > **Light and dark are an axis INSIDE a skin, not a thing a skin fights.** A shape skin
 > names the bare form and is done — a corner is the same corner in either shell. A COLOUR
 > skin gives both faces, so the flip keeps working: it is still the theme's job to say which

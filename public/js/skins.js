@@ -5,12 +5,44 @@ import { applyTheme } from './theme.js';
 const LS_SKIN = 'tmuxgrid.skin';
 const STYLE_ID = 'skin';
 
+// A SKIN OF YOURS MAY NAME A TOKEN WE RENAMED (store-move rule): read the old name as the
+// new one, and let the new name win where a skin spells both. DARK_ONLY names were read
+// only by the dark shell, so they keep painting there and nowhere else.
+const RENAMED = {
+  '--muted-3': '--muted',
+  '--kanban-green': '--ok-2',
+  '--setup-mark': '--kaki-fill',
+  '--gc-cta-bg': '--kaki-fill',
+  '--gc-cta-ink': '--kaki-fill-ink',
+};
+const DARK_ONLY = {
+  '--kiiro': '--cowork-head-attention',
+  '--kaki-hint': '--team-workbench-head-bg',
+};
+
+function currentNames(skin) {
+  const out = { tokens: {}, dark: {}, light: {} };
+  const put = (shell, k, v) => {
+    const into = out[shell];
+    const name = RENAMED[k] || k;
+    if (name === k || !(name in into)) into[name] = v;
+  };
+  for (const shell of ['tokens', 'dark', 'light']) {
+    for (const [k, v] of Object.entries(skin?.[shell] || {})) {
+      if (!DARK_ONLY[k]) put(shell, k, v);
+      else if (shell !== 'light' && !(DARK_ONLY[k] in (skin.dark || {}))) out.dark[DARK_ONLY[k]] = v;
+    }
+  }
+  return out;
+}
+
 /**
  * Paint one skin's tokens, replacing whatever was up. `tokens` empty (the `stock` entry
  * names none) leaves an empty block, which is the correct no-op: the shipped values win
  * because nothing overrides them.
  */
-function applySkin(skin) {
+function applySkin(found) {
+  const skin = currentNames(found);
   let el = document.getElementById(STYLE_ID);
   if (!el) {
     el = document.createElement('style');
