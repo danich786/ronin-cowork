@@ -161,7 +161,8 @@ The roles, defined in `public/style.css`:
 `--kaki`/`--on-strong`, or `--kaki-fill`/`--kaki-fill-ink` where a small mark must pass on
 white. Amber (`--accent`, `--warn`) is the supporting
 family — the band's derived shades, edges, rings and warning ink; red is only ever wrong.
-`--bad` is never used categorically in charts (the `--k-*` job colours exist for that).
+`--bad` is never used categorically in charts: the Stats chart draws its series from the
+meaning colours (`--accent-2`, `--accent`, `--ok`, `--warn`, `--dim`).
 
 **Services Check status is kakiiro.** It is the owner's deliberate outbound check after
 email confirmation, so its primary button uses `--kaki` with `--kaki-lift` on hover. The
@@ -483,9 +484,9 @@ agent is behind a pane.
 ## Login
 
 `/login` (`public/login.html`) is the one pre-auth page: self-contained on purpose,
-same visual language, same theme switch. It cannot fetch `style.css` before auth, so the
-`/login` route writes style.css's two foundations `:root` blocks into it on each request: the
-same token values, never a copy. A skin does not reach it. The shared Password work surface in Setup and
+same visual language, same theme switch. It links `/style.css`, the one file served before
+auth (it holds no secret), so it wears the same token values and keeps no copy. A skin does
+not reach it. The shared Password work surface in Setup and
 Settings enables, changes and disables the saved browser password; changing it replaces
 the current browser's session while ending every other browser session. The host-side
 `bin/ronin-passwd` remains an independent set/clear authority. Password fields do not echo.

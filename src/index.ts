@@ -132,27 +132,7 @@ function issueSession(res: express.Response): boolean {
   return true;
 }
 
-// The login page is served before auth, so it cannot fetch style.css. It wears the same
-// token values: the two foundations :root blocks are written into it on each request.
-function foundationRoots(css: string): string {
-  const at = css.indexOf('@layer foundations {');
-  const blockAt = (marker: string): string => {
-    const start = css.indexOf(marker, at);
-    if (at === -1 || start === -1) return '';
-    let depth = 0;
-    for (let i = css.indexOf('{', start); i < css.length; i++) {
-      if (css[i] === '{') depth++;
-      else if (css[i] === '}' && --depth === 0) return css.slice(start, i + 1);
-    }
-    return '';
-  };
-  return `${blockAt(':root {')}\n${blockAt(":root[data-theme='light'] {")}`;
-}
-app.get('/login', (_req, res) => {
-  const page = fs.readFileSync(path.join(PUBLIC, 'login.html'), 'utf8');
-  const tokens = foundationRoots(fs.readFileSync(path.join(PUBLIC, 'style.css'), 'utf8'));
-  res.type('html').send(page.replace('/* __RONIN_TOKENS__ */', () => tokens));
-});
+app.get('/login', (_req, res) => res.sendFile(path.join(PUBLIC, 'login.html')));
 registerPasskeyLogin(app, issueSession); // /api/passkey/{options,login,recover} — src/routes/passkey-api.ts
 app.post('/api/login', async (req, res) => {
   const rec = authRecord();
@@ -174,6 +154,8 @@ app.post('/api/logout', (_req, res) => {
 });
 
 app.use('/brand', express.static(path.join(PUBLIC, 'brand')));
+// The token sheet holds no secret; the login page links it so it wears the same values.
+app.get('/style.css', (_req, res) => res.sendFile(path.join(PUBLIC, 'style.css')));
 
 app.use((req, res, next) => {
   // A peer on the operator's own socket is the user: the 0600 mode was the credential.
