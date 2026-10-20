@@ -21,7 +21,6 @@ test('Roster remains a roster; the Team page selector is Commons, Agents, New Ag
     source('public/js/agent-composition.js'), source('public/js/workbench-catalog.js'), source('public/js/phalanx.js'), source('KOTOBA.md'),
   ]);
   assert.match(view, /workspace1: 'workspace2', workspace2: 'workspace1', workspace3: 'workspace4', workspace4: 'workspace3'/);
-  assert.match(view, /onOpen: \(member\) => openAgentWorkbench\(member\.name\)/);
   assert.match(view, /function openAgentWorkbench\(name\)[\s\S]*reserveWorkspaceTab\(\)[\s\S]*openWorkspaceTab\('agent', name, tab\)/);
   assert.match(view, /reading: readingsOf/);
   assert.match(view, /configSignature\(team\) \+ JSON\.stringify\(members\.map\(\(member\) => readingsOf\(member\)\.lines\)\)/);
@@ -30,8 +29,10 @@ test('Roster remains a roster; the Team page selector is Commons, Agents, New Ag
   assert.match(view, /const record = JSON\.stringify\(roster \|\| null\);/);
   assert.match(view, /if \(!recordMoved\) continue;\s*\n\s*if \(!roster\) \{ renderTeamConfiguration/);
   assert.match(view, /onClose: \(member\) => retireSession\(member\.name/);
-  assert.match(members, /actions: \[launch, rename, lead, eject, close\]/);
-  assert.match(members, /label: t\('league\.launch_agent', 'Launch'\)/);
+  // Owner 2026-10-20: no Launch on a roster row; the caret opens the one composition body.
+  assert.match(members, /actions: \[rename, lead, eject, close\]/);
+  assert.doesNotMatch(members, /league\.launch_agent/);
+  assert.match(members, /createAgentCompositionReader\(member\.name/);
   assert.match(css, /\.league-team-member-detail\[hidden\] \{ display: none; \}/);
   assert.match(members, /toggle\.setAttribute\('aria-controls', detail\.id\)/);
   assert.match(catalog, /agentComposition: AGENT_COMPOSITION_TYPE/);
@@ -43,7 +44,7 @@ test('Roster remains a roster; the Team page selector is Commons, Agents, New Ag
   assert.match(view, /onNew: \(\) => bench\.place\(WB_TYPES\.newAgent, oppositeSeat\(id\)\)/);
   assert.doesNotMatch(view, /onSelect: \(member\) => bench\.place/);
   assert.match(members, /toggle\.addEventListener\('click', \(\) => open\(detail\.hidden\)\)/);
-  assert.match(members, /type: WORKBENCH_TYPES\.agentComposition, detail: \{ key: member\.name \}/);
+  assert.match(members, /type: WORKBENCH_TYPES\.terminal, detail: \{ key: member\.name \}/);
   assert.doesNotMatch(members, /sessionsAvailableToTeam|new Option\(/);
   assert.match(await source('public/js/new-agent.js'), /if \(detail\?\.teamLead === true\) draft\.teamLead = true/);
   assert.match(phalanx, /export function createPhalanx/);

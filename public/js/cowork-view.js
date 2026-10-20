@@ -723,7 +723,6 @@ export function createCoworkView(options = {}) {
         onFailed: (message) => commons.channels.setState('failed', message),
         idPrefix: id,
         reading: readingsOf,
-        onOpen: (member) => openAgentWorkbench(member.name),
         // The roster's New Agent opens the form with this Team chosen (the view's `team`).
         onNew: () => bench.place(WB_TYPES.newAgent, oppositeSeat(id)),
         onClose: (member) => retireSession(member.name, `commons-${id}-${member.name}`),

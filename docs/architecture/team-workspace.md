@@ -219,9 +219,12 @@ from what the tab remembered.
 
 - **Roster** — one line per member (`team-members.js`): 人 and the Agent's title, its live
   reading, a caret. Pressing the row opens it in place to the Agent's read — role, what it
-  is working on, the items it holds (`/api/work-items?session=`), its @id — with the member
-  action bar (Launch · Rename · Make Lead · Remove · Close) under it; pressing again folds
-  it. Dragging a row onto a workspace places the Agent's tile. Agents join a Team by
+  is working on, the items it holds (`/api/work-items?session=`), then the full configuration
+  (the composition body `agent-composition.js` exports, the one body the composition tile
+  paints: At birth, Current effective facts with Save, Behaviors), its @id — with the member
+  action bar (Rename · Make Lead · Remove · Close) under it; pressing again folds it. No
+  Launch on a row: dragging a row onto a workspace opens the Agent there, its own tile
+  (`session.terminal`), as the Team page's Agent card places it. Agents join a Team by
   dragging, so the foot holds one **New Agent** button, which opens the New Agent form with
   this Team chosen the way the selector's New Agent card does (owner, 2026-10-20).
 - **Wipeboard** — the real Team thread and owner composer; the roster's `wipeboard` id or

@@ -164,7 +164,8 @@
   .league-team-member-detail[hidden] { display: none; }
   .league-team-member-read { display: flex; flex-direction: column; gap: var(--space-2); color: var(--muted); font-size: var(--form-note); line-height: 1.4; }
   .league-team-member-items { display: flex; flex-direction: column; }
-  .league-team-member-id { color: var(--muted); font-size: var(--form-note); }
+  .league-team-member-id, .league-team-member-status { margin: 0; color: var(--muted); font-size: var(--form-note); }
+  .league-team-member-status:empty { display: none; }
   .league-team-empty { margin: 0; border-bottom: var(--edge) solid var(--line); padding: var(--space-5) 0; }
   .league-team-add { margin-top: var(--space-5); }
 

@@ -1,13 +1,16 @@
 /* part of the ronin-cowork client — see js/README.md */
 /** The Team member list on the Commons roster: one line per Agent (人 first for the lead);
  *  a pressed row opens in place to the Agent's read — role, what it is working on, the
- *  items it holds, its @id — with the member action bar under it; pressed again it folds.
- *  Dragging a row onto a workspace places the Agent's tile. The foot opens New Agent. */
+ *  items it holds, then the composition body the composition tile paints (one body), its
+ *  @id — with the member action bar under it; pressed again it folds. No Launch on a row:
+ *  dragging a row onto a workspace opens the Agent there (owner, 2026-10-20). The foot
+ *  opens New Agent. */
 import { WorkspaceKit } from './workspace-kit.js';
 import { membersOfTeam, setTeamLead, setTeamMembership, teamByName } from './team-controller.js';
 import { setSessionTitle } from './api.js';
 import { request } from './request.js';
 import { itemLine } from './team-kanban.js';
+import { createAgentCompositionReader } from './agent-composition.js';
 import { SURFACE_DRAG } from './workbench.js';
 import { WORKBENCH_TYPES } from './workbench-catalog.js';
 import { t } from './lexicon.js';
@@ -47,10 +50,11 @@ export const buildTeamMembers = (name, options = {}) => {
   const memberRow = (member) => {
     const row = el('article', 'league-team-member');
     row.dataset.session = member.name;
-    // Placing the Agent's tile is a drag — the row onto a workspace — as a selector card is.
+    // Opening the Agent is a drag — the row onto a workspace — the Agent's own tile, as the
+    // Team page's Agent card places it; never a new tab from here.
     row.draggable = true;
     row.addEventListener('dragstart', (event) => {
-      event.dataTransfer.setData(SURFACE_DRAG, JSON.stringify({ type: WORKBENCH_TYPES.agentComposition, detail: { key: member.name } }));
+      event.dataTransfer.setData(SURFACE_DRAG, JSON.stringify({ type: WORKBENCH_TYPES.terminal, detail: { key: member.name } }));
       event.dataTransfer.setData('text/plain', agentTitle(member)); event.dataTransfer.effectAllowed = 'copy';
     });
     const identity = el('div', 'league-team-member-identity');
@@ -75,7 +79,9 @@ export const buildTeamMembers = (name, options = {}) => {
     read.append(el('span', null, agentName(member)));
     if (reading.description) read.append(el('span', null, [reading.step, reading.description].filter(Boolean).join(' · ')));
     const items = el('div', 'league-team-member-items'); read.append(items);
-    const launch = options.onOpen ? createAction({ label: t('league.launch_agent', 'Launch'), size: 'compact', action: () => options.onOpen(member) }) : null;
+    // The full configuration: the composition body the composition tile paints, read on open.
+    const word = el('p', 'league-team-member-status');
+    const composition = createAgentCompositionReader(member.name, { setState: (_state, message) => { word.textContent = message || ''; } });
     const rename = createAction({ label: t('league.rename_agent', 'Rename'), size: 'compact', action: async () => {
       const currentTitle = agentTitle(member);
       const wanted = window.prompt(t('league.rename_agent_prompt', 'Edit Agent title'), currentTitle);
@@ -86,13 +92,15 @@ export const buildTeamMembers = (name, options = {}) => {
     const lead = createAction({ label: member.team_lead ? t('league.team_lead', 'Team Lead') : t('league.make_team_lead', 'Make Lead'), size: 'compact', selected: member.team_lead, action: async () => { const result = await setTeamLead(member.name, name, !member.team_lead); if (!result.ok) return options.onFailed?.(result.message); options.onChanged?.(); } });
     const eject = createAction({ label: t('league.remove_member', 'Remove'), title: t('league.remove_named_member', 'Remove {name} from this team', { name: member.name }), size: 'compact', action: async () => { const result = await setTeamMembership(member.name, name, false); if (!result.ok) return options.onFailed?.(result.message); options.onChanged?.(); } });
     const close = options.onClose ? createAction({ label: t('league.close_agent', 'Close'), title: t('league.close_named_agent', 'Close {name}', { name: member.name }), size: 'compact', action: () => options.onClose(member) }) : null;
-    detail.append(read, el('span', 'league-team-member-id', `@${member.name}`), createActionBar({ className: 'league-team-member-actions', actions: [launch, rename, lead, eject, close] }).el);
+    detail.append(read, composition.el, word, el('span', 'league-team-member-id', `@${member.name}`), createActionBar({ className: 'league-team-member-actions', actions: [rename, lead, eject, close] }).el);
     const open = (expanded) => {
       detail.hidden = !expanded;
       toggle.setAttribute('aria-expanded', String(expanded));
       toggle.setAttribute('aria-label', t(expanded ? 'league.collapse_agent' : 'league.expand_agent', expanded ? 'Collapse {name}' : 'Expand {name}', { name: agentTitle(member) }));
       disclosure.textContent = expanded ? '⌃' : '⌄';
-      if (expanded) void itemsHeld(member).then((list) => items.replaceChildren(...list.map((item) => itemLine(item))));
+      if (!expanded) return;
+      void itemsHeld(member).then((list) => items.replaceChildren(...list.map((item) => itemLine(item))));
+      void composition.show();
     };
     toggle.addEventListener('click', () => open(detail.hidden));
     open(false);
