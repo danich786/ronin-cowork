@@ -62,11 +62,7 @@
   --kaki-fill: var(--kaki);
   --kaki-fill-ink: var(--bg);
 
-  /* Garden Canvas: the horizon is quieter on a cream ground. */
-  --gc-cta-bg-hover: var(--kaki-lift);
-  --gc-motif-opacity: .95;
-  --gc-motif-wash: 10%;
-  --ch-horizon-opacity: .9;
+  --kaki-fill-hover: var(--kaki-lift);
 
   --term-cube: standard;
   --term-bg: #0b0e14;
@@ -125,10 +121,6 @@
   --space-11: 28px;
   --space-12: 34px;
 
-  --row-head: calc(var(--space-11) + var(--space-6) + var(--edge));
-  --setup-stone-size: calc(var(--space-12) * 2 + var(--space-11) + var(--space-10));
-  --setup-stone-gap: var(--space-8);
-
   --workbench-head-font: var(--font-ui);
   --workbench-head-size: var(--text-5);
   --workbench-head-weight: 700;
@@ -166,8 +158,6 @@
   /* The dynamic island belongs to the application bar, not the Workbench below it. */
   --bar-place-bg: #090a0c;
   --bar-place-fg: var(--on-strong);
-  --bar-brand-mark-h: 27px;
-  --bar-brand-track: -0.005em;
 
   /* Header colours, one set per scope: admin (Setup, Home, Models, Workspaces, Settings) is
      graphite, Teams is aiiro, a Team or Agent is kaki. The workbench switch reads these. */
@@ -240,10 +230,7 @@
   --kaki-lift: #a34e2f;
   --kaki-fill: var(--kaki-lift);
   --kaki-fill-ink: var(--on-strong);
-  --gc-cta-bg-hover: color-mix(in srgb, var(--kaki-lift) 86%, #000);
-  --gc-motif-opacity: .5;
-  --gc-motif-wash: 8%;
-  --ch-horizon-opacity: .85;
+  --kaki-fill-hover: color-mix(in srgb, var(--kaki-lift) 86%, #000);
 
   /* Light mode uses the selected full-fill treatment for collection scopes. */
   --head-admin-bg: var(--graphite);
@@ -375,6 +362,24 @@ body {
   --current-head-muted: var(--head-teams-muted);
   --current-head-line: var(--head-teams-line);
   --current-head-edge: var(--head-teams-edge);
+}
+
+/* ONE SURFACE'S MEASUREMENTS, not design tokens: numbers measured for one place, named so
+   the number says what it is. */
+:root {
+  --row-head: calc(var(--space-11) + var(--space-6) + var(--edge)); /* the Kit's header row */
+  --setup-stone-size: calc(var(--space-12) * 2 + var(--space-11) + var(--space-10));
+  --bar-brand-mark-h: 27px;
+  --bar-brand-track: -0.005em;
+  --gc-motif-opacity: .95;
+  --gc-motif-wash: 10%;
+  --ch-horizon-opacity: .9;
+}
+/* Garden Canvas and the Home horizon are quieter on a cream ground. */
+:root[data-theme='light'] {
+  --gc-motif-opacity: .5;
+  --gc-motif-wash: 8%;
+  --ch-horizon-opacity: .85;
 }
 }
 

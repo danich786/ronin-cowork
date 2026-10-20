@@ -22,7 +22,7 @@
 > | `- **light--bg:** #fffdf8` | the light shell only |
 >
 > **A token we rename keeps working here.** A skin naming an old name (`--muted-3`, `--setup-mark`,
-> `--gc-cta-bg`, `--gc-cta-ink`, `--kanban-*`, `--kiiro`, `--kaki-hint`, `--scope-*`,
+> `--gc-cta-bg`, `--gc-cta-ink`, `--gc-cta-bg-hover`, `--kanban-*`, `--kiiro`, `--kaki-hint`, `--scope-*`,
 > `--team-workbench-head-*`, `--cowork-head-*`) paints the token that replaced it; spell the
 > new name and it wins. A `--cowork-head-*` name paints that part of all three header scopes.
 >

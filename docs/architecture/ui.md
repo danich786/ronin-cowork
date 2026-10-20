@@ -119,7 +119,10 @@ the new name wins where a skin spells both.
 become one — `--ptr-len`/`--ptr-wide` (the dial needle's geometry, numbers that must move
 together). A `--name:` line is
 the one legal home for a raw value, so naming it satisfies the gate *and* says what the
-number is. `0` is always legal: the absence of a value is not a value.
+number is. A measurement more than one sheet reads, or one tuned per shell (`--row-head`,
+`--gc-motif-*`, `--ch-horizon-opacity`, `--bar-brand-*`, `--setup-stone-size`), lives in
+style.css's measurements block under `@layer ui`, never in `@layer foundations`: foundations
+holds only tokens a designer may change. `0` is always legal: the absence of a value is not a value.
 
 ## Colour
 
