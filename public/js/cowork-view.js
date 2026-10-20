@@ -744,12 +744,9 @@ export function createCoworkView(options = {}) {
         onFailed: (message) => commons.channels.setState('failed', message),
         idPrefix: id,
         reading: readingsOf,
-        onSelect: (member) => bench.place(WB_TYPES.agentComposition, oppositeSeat(id), { key: member.name }),
         onOpen: (member) => openAgentWorkbench(member.name),
-        onAddLead: () => bench.place(WB_TYPES.newAgent, oppositeSeat(id), {
-          prompt: t('league.add_lead_prompt', 'Join this Team as its team lead.'),
-          teamLead: true,
-        }),
+        // The roster's New Agent opens the form with this Team chosen (the view's `team`).
+        onNew: () => bench.place(WB_TYPES.newAgent, oppositeSeat(id)),
         onClose: (member) => retireSession(member.name, `commons-${id}-${member.name}`),
       });
       commons.roster.replaceChildren(members);
