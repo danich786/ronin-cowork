@@ -193,10 +193,12 @@
         <img class="brand-mark" src="brand/nin-mark.svg" alt="" />
         <span class="brand-word">RoninCowork</span>
       </a>
+      <!-- The crumb (owner, 2026-10-20): RoninCowork • Home • Teams • <Team title>; Home to #/home,
+           Teams to the Teams workbench at #/cowork, a view's own place last. js/workspace-header.js. -->
+      <span id="homesep" class="ui-bar-separator" aria-hidden="true" hidden>•</span>
+      <a id="homebtn" class="ui-bar-nav" href="./" data-t="bar.home" hidden>Home</a>
       <span id="coworkssep" class="ui-bar-separator" aria-hidden="true" hidden>•</span>
       <a id="coworksbtn" class="ui-bar-nav" href="#/cowork" data-t="campaign.coworks" hidden>Teams</a>
-      <!-- Home's doors: RoninCowork • Home • Models / Workspaces / Teams, Home the way back. js/workspace-header.js. -->
-      <a id="homebtn" class="ui-bar-nav" href="./" data-t="bar.home" hidden>Home</a>
       <span id="placesep" class="ui-bar-separator" aria-hidden="true" hidden>•</span>
       <span id="viewcrumb" class="ui-bar-value" hidden></span>
       <button id="servicesstate" class="services-state" type="button" hidden aria-expanded="false"></button>

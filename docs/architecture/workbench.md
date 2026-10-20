@@ -143,10 +143,11 @@ status as its own reads return.
    ownership checks prevent stale responses from repainting replaced surfaces.
 
 **Ronin Home** (`campaign-home.js`; owner, 2026-10-19) stays a page, not a Workbench, with three
-doors — **Models**, **Workspaces**, **Teams** — each a link to a Workbench destination, opened in
-the same tab (a modified press opens a new tab through `workbenchLaunchUrl`). Models and
-Workspaces are destinations of their own, one shape (`door-workbenches.js`): the Kit Workbench
-on a profile of the door's surfaces, the door's surface seated in Workspace 1 on first open. Models seats its own
+doors — **Models**, **Workspaces**, **Teams** — each a link to a Workbench destination of its own,
+opened in the same tab (a modified press opens a new tab through `workbenchLaunchUrl`). The
+Teams door opens the Teams workbench (`#/cowork`, `cowork-view.js`; owner, 2026-10-20). Models and
+Workspaces are one shape (`door-workbenches.js`): the Kit Workbench on a profile of the
+door's surfaces, the door's surface seated in Workspace 1 on first open. Models seats its own
 stones of providers (`models-surface.js`, `models.stones`): a stone pressed opens the provider's
 page beside the rail; a stone dragged into a workspace, or the provider's selector card, places
 the provider there whole (`models.provider`), the page with no rail. Settings' Model Providers
@@ -157,13 +158,15 @@ stone or a folder's card places the folder whole, `workspaces.folder`), its thre
 Add a workspace, GitHub CLI, Clone a repository — dotted selector cards in the New Agent format,
 the folder they add taking their workspace; Settings' Workspace Folders surface is untouched,
 both drawing with `projectroots.js`'s exported drawing (`createRootDrawing`, `rootStone`) over
-one read per bench (`createRootsReading`, the detail route). Teams is the Cowork Workbench
-(`#/cowork`, one Teams workbench; owner, 2026-10-20): its Teams card's stones carry, above them,
-the Workspace question (many-of, blank All) and the Show question (Theme on; State, Agents,
-Items), what Show picks hanging under each stone (`team-roster-surface.js` over
-`teams-surface-rows.js`, the pushed rosters' `board` and `items`), and the 人 mark in a stone's
-corner opens the Team page in a new tab. The bar reads
-RoninCowork • Home • <door>, Home the way back (`workspace-header.js`, the view's `place`).
+one read per bench (`createRootsReading`, the detail route). The bar's crumb (`workspace-header.js`;
+owner, 2026-10-20) reads RoninCowork • Home • Teams • <Team title> on a Team page, Home to `#/home`,
+Teams to `#/cowork`; the Teams workbench ends at Teams, and a view naming its own `place` (Models,
+Workspaces) reads RoninCowork • Home • <place>.
+The Teams workbench's Teams card (`team-roster-surface.js`; owner, 2026-10-20) carries, above its
+stones, the Workspace question (many-of, blank All) and the Show question (Theme on; State,
+Agents, Items); each stone is the Team's name with what Show picks under it as the phalanx's
+branch rows (`branches: 'column'`; `teams-surface-rows.js` over the pushed rosters' `board` and
+`items`), and the 人 mark in a stone's corner opens the Team page in a new tab.
 The gate (owner, 2026-10-19): as on the old root, the three doors are locked until one model
 provider is activated (`/api/setup/runtime`'s `activated_count`), each saying so under its name,
 and Settings is the one live stone — a new user's way in is Setup.

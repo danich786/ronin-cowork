@@ -59,7 +59,7 @@ test('Roster remains a roster; the Team page selector is Commons, Agents, New Ag
   assert.match(view, /campaign \? \{ action: \(\) => openAgentWorkbench\(member\.name\) \} : \{\}/, 'Team selector cards keep their default placement action');
   // Owner 2026-09-28: one reading of Teams. A pressed stone opens the Team profile inside the
   // Phalanx detail (never elsewhere), from the same body the placed Team profile paints.
-  assert.match(coworkRoster, /createPhalanx\(\{ className: 'team-roster-phalanx', items: \[\], renderDetail \}\)/);
+  assert.match(coworkRoster, /createPhalanx\(\{ className: 'team-roster-phalanx', items: \[\], renderDetail, branches: 'column' \}\)/);
   assert.doesNotMatch(coworkRoster, /action:/, 'a Teams stone selects; it never navigates');
   assert.match(view, /createTeamRosterSurface\(\{\s*teamDetail: \(name\) => leagueTeamDetail\(name, id\)/);
   assert.doesNotMatch(view, /gear/);
