@@ -43,7 +43,7 @@ input; identical subject names across directories do not make the documents inte
 | `desk_profiles/` | `home.md`, `league.md`, `professional.md`, `terminal.md`, `vibe_code.md`. | Named presentation and workspace defaults copied into Campaign configuration. |
 | `lexicons/` | `home_en.md`, `league_en.md`, `professional_en.md`, `terminal_en.md`, `vibe_code_en.md`. | Surface-language overrides; `professional_en.md` is the complete floor. |
 | `templates/` | `teams/*.md` plus its `README.md`. | Authored starting compositions offered as reusable choices, not runtime authority. |
-| catalog root | `MODEL_PROVIDERS.md`, `PROJECT_ROOTS.md`, `SKINS.md`, `TOOLS.md`. | Flat stock registries whose formats do not need another grouping directory. `TOOLS.md` inventories executable operations; capability files select and teach them. |
+| catalog root | `MODEL_PROVIDERS.md`, `MODEL_INFO.json`, `PROJECT_ROOTS.md`, `SKINS.md`, `TOOLS.md`. | Flat stock registries whose formats do not need another grouping directory. `TOOLS.md` inventories executable operations; capability files select and teach them. |
 
 Every subdirectory has a `README.md` for its exact file format. This map owns location and
 inventory; the child README owns schema. When a file is added, moved, or removed, update

@@ -1384,8 +1384,8 @@ The catalog entry goes. {dir} is not touched.
 - **setup_surface.providers:** Model providers
 - **setup_surface.providers_summary_unread:** Every provider and model Ronin offers, and what this machine has.
 - **setup_surface.providers_summary:** {providers} providers · {models} models · {activated} activated here
-- **setup_surface.providers_summary_dated:** {counts} · catalog updated {date}
-- **setup_surface.catalog_date_unstated:** Date not stated
+- **setup_surface.providers_summary_dated:** {counts} · model info from {date}
+- **setup_surface.catalog_date_unstated:** date not stated
 - **setup_surface.section_yours:** Yours
 - **setup_surface.no_cli:** No CLI in Ronin’s registry serves this provider, so it cannot be installed or signed in here.
 - **setup_surface.no_cli_state:** No CLI
@@ -1404,9 +1404,10 @@ The catalog entry goes. {dir} is not touched.
 - **setup_surface.no:** no
 - **setup_surface.col_model:** Model
 - **setup_surface.col_tier:** Tier
-- **setup_surface.col_cost:** Cost
-- **setup_surface.col_good_at:** Good at
-- **setup_surface.col_not_good_at:** Not good at
+- **setup_surface.col_cost:** Price
+- **setup_surface.col_context:** Context
+- **setup_surface.col_released:** Released
+- **setup_surface.col_description:** Description
 - **setup_surface.model_default_mark:** the default
 
 ## Provider sign-in record

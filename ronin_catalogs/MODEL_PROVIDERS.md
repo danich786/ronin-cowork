@@ -1,34 +1,20 @@
 # MODEL_PROVIDERS — the provider catalog (stock; yours shadows it)
 
 > **This file is stock, and an upgrade replaces it.** It is the one record of every model
-> provider Ronin offers and optional descriptive metadata for
-> models Ronin knows how to describe. The signed-in provider CLI owns the live model
+> provider Ronin offers: the vendor id a launch names, the CLI that serves it, the family
+> words that give each model its tier, and the key its models are filed under at
+> models.dev. It holds no model facts. The signed-in provider CLI owns the live model
 > list; **Refresh all** on the Model providers surface reads each activated CLI's own list
-> into the Campaign record. Pickers and launches use that list — the CLI's model ids and
-> its own display names — enriched by the row of the same id here. Nothing in here executes.
+> into the Campaign record. What each model is — its name, description, prices, limits and
+> dates — is **model info**, fetched from models.dev by the same press and used only once
+> the owner accepts it (`ronin_catalogs/MODEL_INFO.json` is the snapshot a release ships).
+> Nothing in here executes.
 >
-> **To keep names fresh without a code release,** copy this file to your catalogs store
+> **To change a section without a code release,** copy this file to your catalogs store
 > (`$(ronin-store catalogs)/MODEL_PROVIDERS.md`) and edit it there. Each provider section in the owner copy
 > replaces that provider section; other shipped providers keep receiving updates; an upgrade never touches it.
 
-- **updated:** 2026-09-25
-
-## Keeping it fresh
-
-Everything below is descriptive metadata, not an availability list: prices and the words
-about what each known model is good at were read on the date above.
-The stock catalog is refreshed with each Ronin release (the release order in
-`docs/development/tarball.md` has the step: re-read prices and models, bump `updated`). A shadow copy
-in your catalogs store is yours to refresh, and carries its own `updated` line. Ronin
-shows the date it has, stale or not; it never hides it and never guesses a newer one.
-
 ## How to read a provider
-
-The file's own header field:
-
-| Field | Meaning |
-|---|---|
-| `updated` | the day this catalog's models, prices and descriptions were last read from the public record, `YYYY-MM-DD` |
 
 One `### <Vendor label>` section per provider. Its fields:
 
@@ -36,36 +22,26 @@ One `### <Vendor label>` section per provider. Its fields:
 |---|---|
 | `provider` | the vendor id a launch names (`anthropic`, `openai`, …) and the key of `agents.sessions.by_provider` |
 | `cli` | the id of the CLI that serves it in `src/agents.ts` (`claude`, `codex`, …) — the join between this catalog and what the machine measures |
+| `models_dev` | optional: the provider key models.dev files this vendor's models under; a provider without one shows no model info |
 | `transcript_source` | dated descriptive journal location and write discipline; availability requires a supported adapter and verified launch identity, not merely a file at that path |
-| `maturity` | optional display status: `beta` or `comingSoon`; a provider with no model rows remains visible only as an unavailable catalog card |
-| `families` | optional, space-separated `word=tier` pairs: the vendor's durable family names. A model the CLI lists that no row below describes takes the tier of the longest family word standing whole in its id, so a new generation keeps its band before this file catches up |
-
-Then one table, one row per model id. The picker's order is the CLI's own; this table's
-order is only for reading:
-
-| Column | Meaning |
-|---|---|
-| `model` | the full model id passed to the CLI, unchanged — the one key; the name shown beside it is the CLI's own |
-| `tier` | **light** · **standard** · **frontier**: the cost and capability band, as the vendor prices it |
-| `cost` | the vendor's public list price per million tokens, input · output, with the month it was read — a reading, not a contract |
-| `good at` · `not good at` | one line each, from the vendor's own positioning and the public record |
+| `maturity` | optional display status: `beta` or `comingSoon`; a `comingSoon` provider is shown and never launched |
+| `families` | space-separated `word=tier` pairs, tier **light** · **standard** · **frontier**: a model the CLI lists takes the tier of the longest word standing whole in its id, else in its models.dev family, so a new generation keeps its band the day it is listed |
 
 Transcript-source observations above were recorded by the transcript investigation on
-2026-09-22; they do not update the dated price/model research. Mint/claim capability
-belongs only to `docs/agents/<cli>.md` and is not duplicated in this catalog.
+2026-09-22. Mint/claim capability belongs only to `docs/agents/<cli>.md` and is not
+duplicated in this catalog.
 
-Adding a provider is a section; adding model metadata is a row; never a code path. The
-matching `docs/agents/<cli>.md` page owns bare, model, dangerous and resume commands. Model:
-Native is always offered, is every provider's default, and means no model override. A model
-is offered when the CLI's list read by Refresh all reports its id, whether or not a row here
-describes it; a row enriches, never grants availability. A provider that fills no `light`
-row simply offers none. Prices move: the date beside each cost says when it was read, and
-a stale reading is dated, never guessed.
+Adding a provider is a section, never a code path. The matching `docs/agents/<cli>.md`
+page owns bare, model, dangerous and resume commands. Model: Native is always offered, is
+every provider's default, and means no model override. A model is offered when the CLI's
+list read by Refresh all reports its id; model info enriches it, never grants
+availability.
 
 ### Anthropic
 
 - **provider:** `anthropic`
 - **cli:** `claude`
+- **models_dev:** `anthropic`
 - **transcript_source:** Observed 2026-09-22: `~/.claude/projects/<cwd-slug>/<uuid>.jsonl`; one record per completed message. Journal adapter exists; exact launch identity is required.
 - **families:** `haiku=light sonnet=standard opus=frontier fable=frontier`
 
@@ -73,18 +49,12 @@ Ronin offers what Claude Code's own picker offers: its catalog's `main` section.
 generations it files under `overflow` are still served but not offered. Saved CLI names such
 as `sonnet` pass through unchanged and are never rewritten by Ronin.
 
-| model | tier | cost | good at | not good at |
-|---|---|---|---|---|
-| `claude-opus-5-5` | frontier | $4 in · $20 out per M tokens (2026-09) | long agentic coding runs, hard reasoning, large refactors across a repository; the Opus line's current model | quick throwaway questions where its price and latency buy nothing |
-| `claude-fable-5-1` | frontier | $10 in · $50 out per M tokens (2026-06) | the hardest multi-step reasoning and long-horizon work; thinking is always on | cheap or latency-bound loops, and any task Opus already finishes reliably |
-| `claude-sonnet-5-5` | standard | $2 in · $10 out per M tokens (2026-10) | everyday coding, agent and review work at a fraction of the frontier price; the Sonnet line's current model | the deepest reasoning chains, where the frontier rows pull ahead |
-| `claude-haiku-4-5-20251001` | light | $1 in · $5 out per M tokens (2026-06) | fast sub-agents, classification, summaries and high-volume routine work | large refactors and subtle multi-file reasoning |
-
 ### OpenAI
 
 - **provider:** `openai`
 - **cli:** `codex`
-- **families:** `astra=frontier sol=frontier terra=standard luna=light`
+- **models_dev:** `openai`
+- **families:** `astra=frontier sol=frontier terra=standard luna=light spark=light`
 - **transcript_source:** Observed 2026-09-22: `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl`; ordinal-sequenced records with a session metadata header. Journal adapter exists; fresh Ronin launches isolate the journal home; the id comes from its header.
 
 Model ids are passed unchanged to Codex's `--model` option. Sol, Terra and Luna are
@@ -92,63 +62,42 @@ OpenAI's durable capability tiers; the generation number moves on its own cadenc
 Availability belongs to the owner's OpenAI account: a model the account cannot use is
 refused by Codex in the new tile, and Ronin never substitutes.
 
-| model | tier | cost | good at | not good at |
-|---|---|---|---|---|
-| `gpt-6-astra` | frontier | $10 in · $50 out per M tokens (2026-09) | the hardest end-to-end reasoning, coding, computer use, research and document creation | routine or bulk work where Sol or Terra burns less of the Codex subscription allowance |
-| `gpt-5.6-sol` | frontier | $5 in · $30 out per M tokens (2026-09) | the hardest coding and reasoning work; OpenAI's flagship tier | bulk or latency-sensitive loops where Terra matches it for less |
-| `gpt-5.6-terra` | standard | $2 in · $12 out per M tokens (2026-09) | everyday agentic coding at roughly half the flagship price | the very hardest problems, where Sol still leads |
-| `gpt-5.6-luna` | light | $0.20 in · $1.20 out per M tokens (2026-09) | fast, cheap sub-agents, drafts and high-volume routine tasks | deep multi-step reasoning and large refactors |
-| `gpt-5.3-codex-spark` | light | ChatGPT Pro research preview · separate usage limits (2026-09) | near-instant, real-time iteration on code | deep reasoning, non-text work, API-key launches, or accounts whose Codex model list does not include it |
-
 ### Google
 
 - **provider:** `google`
 - **cli:** `gemini`
+- **models_dev:** `google`
 - **families:** `pro=frontier flash=standard flash-lite=light`
 - **transcript_source:** Observed 2026-09-22: `~/.gemini/tmp/<project>/chats/session-*.jsonl`; appended `$set` mutations replace the complete messages array. An adapter must apply mutations and diff messages, not map each line to a message; not implemented here.
 
 Model ids are passed unchanged to Gemini CLI's `--model` option. The free tier serves
-Flash models only; Pro needs a paid plan. These cells are written from Google's published CLI
-reference and price list and have not yet been exercised end to end through Ronin; the
-first real launch of each is the proof, per `docs/architecture/model-providers.md`.
-
-| model | tier | cost | good at | not good at |
-|---|---|---|---|---|
-| `gemini-3.1-pro` | frontier | $2 in · $12 out per M tokens, more above 200K context (2026-09) | long-context reasoning over very large inputs, multimodal work | the free tier, which does not serve it |
-| `gemini-3.8-flash` | standard | $0.75 in · $3.75 out per M tokens, promotional to 2026-12 (2026-09) | fast everyday coding and chat on the free tier | the deepest reasoning, where Pro leads |
-| `gemini-2.5-flash-lite` | light | $0.10 in · $0.40 out per M tokens (2026-09) | the cheapest high-volume classification and summaries | agentic coding of any depth |
+Flash models only; Pro needs a paid plan. Not yet exercised end to end through Ronin; the
+first real launch of each model is the proof, per `docs/architecture/model-providers.md`.
 
 ### xAI
 
 - **provider:** `xai`
 - **cli:** `grok`
+- **models_dev:** `xai`
+- **families:** `grok-4.7=frontier grok-4.6=frontier grok-4.5=standard grok-4.3=standard`
 - **transcript_source:** No conversation journal found in the 2026-09-22 investigation. The sessions SQLite file was an empty FTS index; memtrace was memory profiling and logs/unified.jsonl telemetry. No transcript adapter available.
 
 Model ids are passed unchanged to Grok Build's `-m` option. Its Agent page maps
 Dangerously to Grok's canonical `--always-approve` spelling.
-Written from xAI's published CLI overview and price list, not yet exercised through Ronin.
-
-| model | tier | cost | good at | not good at |
-|---|---|---|---|---|
-| `grok-4.6` | frontier | $2 in · $6 out per M tokens, double above 200K context (2026-09) | long-running agents, coding and research with a 500K context | the cheapest bulk work, where 4.3 costs less |
-| `grok-4.3` | standard | $1.25 in · $2.50 out per M tokens (2026-09) | everyday coding and chat at a low price | the hardest reasoning, where 4.6 leads |
+xAI names no durable family, so its families are the versions themselves. Not yet
+exercised through Ronin.
 
 ### Nous Research
 
 - **provider:** `nous`
 - **cli:** `hermes`
+- **families:** `405b=standard 36b=light`
 - **transcript_source:** Not established by the 2026-09-22 transcript investigation; no transcript availability promised.
 
-Hermes Agent runs any provider; these rows are its own Hermes models through the Nous
-Portal (`hermes setup --portal` signs in). Model ids are passed unchanged to
-`hermes chat -m`. Its Agent page maps Dangerously to Hermes's `--yolo` spelling.
-Written from Nous's published CLI reference; the Portal lists no public per-token price,
-and none of these cells has yet been exercised through Ronin.
-
-| model | tier | cost | good at | not good at |
-|---|---|---|---|---|
-| `nousresearch/hermes-4-405b` | standard | Nous Portal subscription; no public per-token list price (2026-09) | open-weight reasoning and tool use with a steerable persona | frontier-class coding, where the closed flagships lead |
-| `nousresearch/hermes-4.3-36b` | light | Nous Portal subscription; no public per-token list price (2026-09) | fast open-weight chat and light agent work; runs locally on modest hardware | large refactors and long agentic runs |
+Hermes Agent runs any provider; its own Hermes models come through the Nous Portal
+(`hermes setup --portal` signs in). Model ids are passed unchanged to `hermes chat -m`.
+Its Agent page maps Dangerously to Hermes's `--yolo` spelling. models.dev does not list
+the Nous Portal, so these models show no model info. Not yet exercised through Ronin.
 
 ### OpenRouter
 
@@ -157,11 +106,11 @@ and none of these cells has yet been exercised through Ronin.
 - **transcript_source:** No launchable CLI integration or verified transcript source declared.
 - **maturity:** `comingSoon`
 
-OpenRouter is listed for visibility only. It has no model rows yet, so it is not offered
-by model selectors and cannot be launched.
+OpenRouter is listed for visibility only: it is not offered by model selectors and
+cannot be launched.
 
 Other providers (pi, perplexity, …) arrive the same way: a contributor PR adding a
-section, or a row in your own shadow copy.
+section, or a section in your own shadow copy.
 
 **Other launch settings** a spawn may carry (not role-level; chosen per session):
 launch mode (`configured` / `live_dangerously`).

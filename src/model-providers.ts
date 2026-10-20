@@ -6,17 +6,18 @@
  * - THE CATALOG (`ronin_catalogs/MODEL_PROVIDERS.md`, stock; the owner's copy in the
  *   catalogs store is an OVERLAY on it, merged per `### <Vendor>` section and keyed by
  *   the section's `provider` id — `docs/architecture/shadowing.md`). It joins the vendor
- *   id a launch names to the CLI that serves it (`src/agents.ts`), and carries
- *   descriptive metadata per model id: tier, a dated cost reading, good at, not good at.
- *   It never says what is available.
+ *   id a launch names to the CLI that serves it (`src/agents.ts`), the family words that
+ *   give a model its tier, and the models.dev key its model info is filed under. It never
+ *   says what is available, and it carries no model facts: those are MODEL INFO
+ *   (`src/model-info.ts`), fetched from models.dev and used once the owner accepts it.
  * - THE CAMPAIGN'S PROVIDER SUMMARY: what this machine measured, dated, hung on the
  *   Campaign record. Its `models` are each activated CLI's own list, read on Refresh all
  *   and never guessed. The CLI is the one source of truth for what can be launched.
  *
  * `providerRows` is the one join: Native first, then every model the CLI listed, in the
  * CLI's order, each with its `model` (the id every launch uses) and `name` (the CLI's
- * own display name, which carries the version — "Opus 5.5"), enriched by the catalog row
- * of the same id when there is one. Launches, Mika, machine settings and every picker read
+ * own display name, which carries the version — "Opus 5.5"), enriched by the model info
+ * of the same id when there is some. Launches, Mika, machine settings and every picker read
  * these rows; no client joins anything.
  */
 import { readFile, stat } from 'node:fs/promises';
@@ -24,22 +25,12 @@ import path from 'node:path';
 import { mergeSections, readUserCatalog, STOCK_DIR, storeDir, type CatalogSection, type Origin } from './resources.js';
 import { commandText, readAgentLaunches, renderLaunch, type AgentLaunches } from './agent-launches.js';
 import { AGENTS } from './agents.js';
+import { readModelInfo, type ModelInfo, type ModelInfoFile } from './model-info.js';
 
 export const CATALOG_FILE = 'MODEL_PROVIDERS.md';
 export const TIERS = ['light', 'standard', 'frontier'] as const;
 export type Tier = typeof TIERS[number];
 export const NATIVE_MODEL = 'native';
-
-/** One catalog row: descriptive metadata for a model id, keyed by the id the CLI reports. */
-export interface CatalogModel {
-  /** The full model id passed to the CLI, unchanged. */
-  model: string;
-  tier: Tier;
-  /** The vendor's public list price, dated — a reading, not a contract. */
-  cost: string;
-  good_at: string;
-  not_good_at: string;
-}
 
 export interface ProviderCatalogEntry {
   provider: string;
@@ -52,10 +43,13 @@ export interface ProviderCatalogEntry {
   shadowed: boolean;
   /** Optional display status for a provider that is beta or not offered yet. */
   maturity?: string;
-  models: CatalogModel[];
+  /** False for a `comingSoon` section: shown, never launched. */
+  launchable: boolean;
+  /** The provider key models.dev files this vendor's models under; absent when it lists none. */
+  models_dev?: string;
   /**
-   * The vendor's durable family words and their tiers (`sonnet=standard`), for a listed id
-   * no row describes yet: a new generation keeps its band before the catalog catches up.
+   * The vendor's durable family words and their tiers (`sonnet=standard`): a listed id's
+   * tier, so a new generation keeps its band the day its CLI lists it.
    */
   families?: Array<{ family: string; tier: Tier }>;
 }
@@ -65,10 +59,6 @@ export interface ProviderCatalog {
   origin: Origin;
   /** The owner's copy when there is one, else the stock file. */
   path: string;
-  /** The `updated` day of the file at `path`, `YYYY-MM-DD`; '' when it carries none — never borrowed from the other layer. */
-  updated: string;
-  /** The stock file's own `updated` day, whichever layer `path` names. */
-  stock_updated: string;
   providers: ProviderCatalogEntry[];
   /** Shipped providers the owner's copy withdrew with `- **hidden:** yes`. */
   withdrawn: Array<{ provider: string; label: string }>;
@@ -87,13 +77,12 @@ export interface SessionLaunchSpec {
   /** The complete interactive command for this model. */
   cmd: string;
   dangerousCmd?: string;
-  /** '' for a listed model the catalog has no row for. */
+  /** The tier of its family word; '' when the provider declares none that fits. */
   tier: Tier | '';
   /** Native: the row a launch naming this provider and no model gets when no preference is set. */
   default: boolean;
-  cost: string;
-  good_at: string;
-  not_good_at: string;
+  /** What the accepted model info says of this id; null for Native and for an id it does not list. */
+  info: ModelInfo | null;
 }
 
 /** A joined row as the client paints it: the launch spec plus what this machine can do with it. */
@@ -109,7 +98,7 @@ export interface ProviderRow extends SessionLaunchSpec {
   shadowed: boolean;
 }
 
-export interface ProviderRows extends Omit<ProviderCatalogEntry, 'models'> {
+export interface ProviderRows extends ProviderCatalogEntry {
   cli_label: string;
   operational: boolean;
   off: boolean;
@@ -122,21 +111,16 @@ export interface ProviderRows extends Omit<ProviderCatalogEntry, 'models'> {
 
 /** What `GET /api/provider-catalog` answers: the catalog's own facts, and the joined rows. */
 export interface ProviderCatalogAnswer extends Omit<ProviderCatalog, 'providers'> {
+  /** The model info in use: the owner's accepted copy or the shipped snapshot, and when it was fetched. */
+  model_info: { origin: 'user' | 'stock'; fetched_at: string };
   measured_at: string;
   /** When Refresh all last read every activated CLI's list; '' when never. */
   refreshed_at: string;
   providers: ProviderRows[];
 }
 
-const cellsOf = (line: string): string[] => {
-  const c = line.split('|').map((s) => s.trim());
-  return c[0] === '' && c[c.length - 1] === '' ? c.slice(1, -1) : c;
-};
-const unquote = (s: string): string => s.replace(/^`(.*)`$/s, '$1').trim();
-const isSeparator = (cells: string[]): boolean => cells.every((c) => /^:?-+:?$/.test(c));
 const field = (section: string, key: string): string | undefined =>
   new RegExp(`^-\\s*\\*\\*${key}:\\*\\*\\s*\`(.+)\`\\s*$`, 'm').exec(section)?.[1]?.trim();
-const asTier = (value: string): Tier => (TIERS as readonly string[]).includes(value) ? value as Tier : 'standard';
 const isTier = (value: string): value is Tier => (TIERS as readonly string[]).includes(value);
 
 /** `haiku=light sonnet=standard …` as pairs; a word with no known tier is dropped. */
@@ -154,12 +138,6 @@ export function familyTier(id: string, families: ProviderCatalogEntry['families'
     .sort((a, b) => b.family.length - a.family.length)
     .find(({ family }) => new RegExp(`(^|[-._/])${escape(family)}($|[-._/])`, 'i').test(id));
   return hit?.tier ?? '';
-}
-
-/** The header's `- **updated:** YYYY-MM-DD`, read before the first provider section; '' when absent. */
-export function catalogUpdated(raw: string): string {
-  const preamble = raw.split(/^### /m)[0] ?? '';
-  return /^-\s*\*\*updated:\*\*\s*(\d{4}-\d{2}-\d{2})\s*$/m.exec(preamble)?.[1] ?? '';
 }
 
 /**
@@ -209,36 +187,11 @@ export function parseProviderCatalog(raw: string, origin: Origin = 'stock'): Pro
     if (!label || !provider || !cli) continue;
     const maturity = field(section, 'maturity');
     const families = parseFamilies(field(section, 'families'));
-    const rows = new Map<string, Record<string, string>>();
-    let header: string[] = [];
-    for (const line of section.split('\n')) {
-      if (!line.includes('|')) { header = []; continue; }
-      const cells = cellsOf(line);
-      if (cells.length < 2) continue;
-      if (/^model$/i.test(cells[0])) { header = cells.map((c) => c.toLowerCase()); continue; }
-      if (!header.length || isSeparator(cells)) continue;
-      const model = unquote(cells[0]);
-      if (!model) continue;
-      const row = rows.get(model) ?? {};
-      header.slice(1).forEach((name, i) => {
-        const value = cells[i + 1];
-        if (value !== undefined && value !== '') row[name] = value;
-      });
-      rows.set(model, row);
-    }
-    const models: CatalogModel[] = [];
-    for (const [model, row] of rows) {
-      models.push({
-        model,
-        tier: asTier((row.tier ?? '').toLowerCase()),
-        cost: row.cost ?? '',
-        good_at: row['good at'] ?? '',
-        not_good_at: row['not good at'] ?? '',
-      });
-    }
+    const modelsDev = field(section, 'models_dev');
     out.push({
-      provider, cli, label, origin, shadowed: false, models,
+      provider, cli, label, origin, shadowed: false, launchable: maturity !== 'comingSoon',
       ...(maturity ? { maturity } : {}),
+      ...(modelsDev ? { models_dev: modelsDev } : {}),
       ...(families.length ? { families } : {}),
     });
   }
@@ -279,8 +232,6 @@ export async function readProviderCatalog(): Promise<ProviderCatalog> {
   return {
     origin: hasUser ? 'user' : 'stock',
     path: hasUser ? user : STOCK_CATALOG_MD,
-    updated: catalogUpdated(hasUser ? userRaw : stockRaw),
-    stock_updated: catalogUpdated(stockRaw),
     providers,
     withdrawn,
   };
@@ -439,8 +390,6 @@ export function newerVersion(installed: string, candidate: string): boolean {
 /* ---------------------------------------------------------------------------------- */
 
 const NATIVE_NAME = 'Native';
-const NATIVE_GOOD_AT = 'the CLI choosing its own configured or current default model';
-const NATIVE_NOT_GOOD_AT = 'pinning a particular model';
 /** A model id goes into a command line: only the characters CLIs actually use in one. */
 const SAFE_MODEL_ID = /^[A-Za-z0-9._:/-]+$/;
 
@@ -451,12 +400,13 @@ async function grammarOf(cli: string): Promise<AgentLaunches | null> {
 
 /**
  * Every provider with its joined rows: Native first, then each model the CLI listed, in
- * the CLI's order, enriched by the catalog row of the same id. Providers this machine can
+ * the CLI's order, enriched by the model info of the same id. Providers this machine can
  * launch come first; catalog order holds within each group. A provider whose CLI has no
  * Agent page has no rows at all.
  */
-export async function providerRows(summary: ProviderSummary | null, catalog?: ProviderCatalogEntry[]): Promise<ProviderRows[]> {
+export async function providerRows(summary: ProviderSummary | null, catalog?: ProviderCatalogEntry[], info?: ModelInfoFile): Promise<ProviderRows[]> {
   const entries = catalog ?? await listProviderCatalog();
+  const facts = (info ?? await readModelInfo()).providers;
   const operational = new Set(summary?.operational ?? []);
   const turnedOff = new Set(summary?.off ?? []);
   const joined = await Promise.all(entries.map(async (entry): Promise<ProviderRows> => {
@@ -467,7 +417,7 @@ export async function providerRows(summary: ProviderSummary | null, catalog?: Pr
       provider: entry.provider, cli: entry.cli, provider_label: entry.label, cli_label: agent?.label ?? entry.cli,
       operational: on, off, selectable: on, origin: entry.origin, shadowed: entry.shadowed,
     };
-    const grammar = entry.models.length ? await grammarOf(entry.cli) : null;
+    const grammar = entry.launchable ? await grammarOf(entry.cli) : null;
     const models: ProviderRow[] = [];
     let launch: Pick<ProviderRows, 'native' | 'nativeDangerousCmd' | 'launch_modes'> = {};
     if (grammar) {
@@ -482,21 +432,21 @@ export async function providerRows(summary: ProviderSummary | null, catalog?: Pr
       models.push({
         ...base, model: NATIVE_MODEL, name: NATIVE_NAME, cmd: native,
         ...(launch.nativeDangerousCmd ? { dangerousCmd: launch.nativeDangerousCmd } : {}),
-        tier: '', default: true, cost: '', good_at: NATIVE_GOOD_AT, not_good_at: NATIVE_NOT_GOOD_AT,
+        tier: '', default: true, info: null,
       });
-      const known = new Map(entry.models.map((row) => [row.model, row]));
+      const known = entry.models_dev ? facts[entry.models_dev] ?? {} : {};
       for (const listed of summary?.models?.[entry.cli]?.rows ?? []) {
         if (!SAFE_MODEL_ID.test(listed.id)) continue;
-        const meta = known.get(listed.id);
+        const meta = Object.hasOwn(known, listed.id) ? known[listed.id] : null;
         models.push({
           ...base, model: listed.id, name: listed.name || listed.id,
           cmd: commandText(renderLaunch(grammar.model, values(listed.id))),
           ...(grammar.modelDangerously.length ? { dangerousCmd: commandText(renderLaunch(grammar.modelDangerously, values(listed.id))) } : {}),
-          tier: meta?.tier ?? familyTier(listed.id, entry.families), default: false, cost: meta?.cost ?? '', good_at: meta?.good_at ?? '', not_good_at: meta?.not_good_at ?? '',
+          tier: familyTier(listed.id, entry.families) || familyTier(meta?.family ?? '', entry.families), default: false, info: meta,
         });
       }
     }
-    const { models: _catalogModels, families: _families, ...rest } = entry;
+    const { families: _families, ...rest } = entry;
     return { ...rest, cli_label: base.cli_label, operational: on, off, ...launch, models };
   }));
   return [...joined.filter((entry) => entry.operational), ...joined.filter((entry) => !entry.operational)];
@@ -509,13 +459,14 @@ export async function listSessionLaunchSpecs(summary: ProviderSummary | null = n
 
 /** The one catalog read for the client: the catalog's own facts, the dates, and the joined rows. */
 export async function providerCatalogAnswer(summary: ProviderSummary | null): Promise<ProviderCatalogAnswer> {
-  const catalog = await readProviderCatalog();
+  const [catalog, info] = await Promise.all([readProviderCatalog(), readModelInfo()]);
   const { providers: _entries, ...facts } = catalog;
   return {
     ...facts,
+    model_info: { origin: info.origin, fetched_at: info.fetched_at },
     measured_at: summary?.measured_at ?? '',
     refreshed_at: summary?.refreshed_at ?? '',
-    providers: await providerRows(summary, catalog.providers),
+    providers: await providerRows(summary, catalog.providers, info),
   };
 }
 

@@ -21,9 +21,9 @@ done
 
 This proves only whether a CLI is found. Ronin deliberately does not treat installation as
 authentication. The provider catalog (`ronin_catalogs/MODEL_PROVIDERS.md`) lists every
-provider and model Ronin offers; beside each, Ronin Setup shows what this machine has. The
-Google, xAI and Nous rows are written from their vendors' CLI references and have not yet
-been launched end to end through Ronin.
+provider Ronin offers; beside each, Ronin Setup shows what this machine has. The models are
+the ones each signed-in CLI lists, described by the model info Ronin takes from models.dev.
+Google, xAI and Nous have not yet been launched end to end through Ronin.
 
 An installed provider whose own credential file is on this machine (Claude Code's
 `~/.claude/.credentials.json`, Codex's `~/.codex/auth.json`, Gemini CLI's

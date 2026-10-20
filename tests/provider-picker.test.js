@@ -47,7 +47,7 @@ const GOOGLE = { provider: 'google', cli: 'gemini', native: 'gemini', label: 'Go
 // GET /api/provider-catalog: the catalog's origin and date, the record's dates, and one
 // entry per provider with its joined rows — launchable providers first. Anthropic is
 // installed but not activated here: its list was read once, so its rows are greyed, not hidden.
-const door = (anthropicOff = false) => ({ origin: 'stock', path: '/stock/MODEL_PROVIDERS.md', updated: '2026-09-08', stock_updated: '2026-09-08', withdrawn: [], measured_at: '2026-09-08T11:00:00.000Z', refreshed_at: '2026-09-08T10:00:00.000Z', providers: [
+const door = (anthropicOff = false) => ({ origin: 'stock', path: '/stock/MODEL_PROVIDERS.md', model_info: { origin: 'stock', fetched_at: '2026-09-08T10:00:00.000Z' }, withdrawn: [], measured_at: '2026-09-08T11:00:00.000Z', refreshed_at: '2026-09-08T10:00:00.000Z', providers: [
   joined(OPENAI, true, [['gpt-5.6-sol', 'GPT-5.6-Sol']]),
   joined(ANTHROPIC, false, [['opus', 'Opus 5'], ['haiku', 'Haiku 4.5']], anthropicOff),
   joined(GOOGLE, false),
@@ -76,7 +76,7 @@ test('the picker reads the two doors itself; the rows arrive joined, launchable 
   assert.equal(catalog.measured_at, MACHINE.measured_at);
   assert.equal(catalog.refreshed_at, '2026-09-08T10:00:00.000Z', 'when Refresh all last read every list rides with the read');
   assert.equal(catalog.origin, 'stock');
-  assert.equal(catalog.updated, '2026-09-08', 'the catalog is a snapshot: its date rides with it');
+  assert.deepEqual(catalog.model_info, { origin: 'stock', fetched_at: '2026-09-08T10:00:00.000Z' }, 'the model info in use: whose copy, and when it was fetched');
   assert.equal(providerCatalog(), catalog);
   assert.deepEqual(catalog.rows.map((row) => `${row.provider}/${row.model}`), ['openai/native', 'openai/gpt-5.6-sol', 'anthropic/native', 'anthropic/opus', 'anthropic/haiku', 'google/native'], 'exactly the server\'s rows, in the server\'s order');
   assert.deepEqual(catalog.rows.map((row) => row.operational), [true, true, false, false, false, false]);

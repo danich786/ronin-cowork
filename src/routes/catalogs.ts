@@ -9,6 +9,7 @@ import { initialCampaign, readCampaign } from '../campaigns.js';
 import { listWays } from '../resources.js';
 import { listSessionReadings } from '../session-readings.js';
 import { providerCatalogAnswer } from '../model-providers.js';
+import { acceptModelInfo, discardModelInfo, modelInfoReview } from '../model-info.js';
 import { readProviderSummary } from '../provider-summary.js';
 import {
   listProjectRoots,
@@ -276,7 +277,7 @@ export function registerCatalogs(app: express.Express): void {
     }
   });
 
-  // The one catalog read for the client: origin, path, the header's updated day, the dates
+  // The one catalog read for the client: origin, path, the model info's date, the dates
   // of the record, and every provider with its joined rows — Native, then what its CLI lists.
   app.get('/api/provider-catalog', async (_req, res) => {
     try {
@@ -284,6 +285,23 @@ export function registerCatalogs(app: express.Express): void {
     } catch (e) {
       res.status(500).json({ error: errMsg(e) });
     }
+  });
+
+  // MODEL INFO's review (src/model-info.ts): the copy in use, the update Refresh all left
+  // waiting with its changes, the last check. Only Accept makes the update the copy in use.
+  app.get('/api/model-info', async (_req, res) => {
+    try { res.json(await modelInfoReview()); }
+    catch (e) { res.status(500).json({ error: errMsg(e) }); }
+  });
+  app.post('/api/model-info/accept', async (_req, res) => {
+    try {
+      if (!await acceptModelInfo()) return res.status(409).json({ error: 'No model info update is waiting.' });
+      res.json(await modelInfoReview());
+    } catch (e) { res.status(500).json({ error: errMsg(e) }); }
+  });
+  app.post('/api/model-info/discard', async (_req, res) => {
+    try { await discardModelInfo(); res.json(await modelInfoReview()); }
+    catch (e) { res.status(500).json({ error: errMsg(e) }); }
   });
 
   app.get('/api/installations', async (_req, res) => {
