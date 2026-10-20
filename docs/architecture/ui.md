@@ -62,7 +62,10 @@ and could not get a radius right.
 |---|---|---|
 | shape | `--radius-hair/xs/sm/md/lg/xl` + `--radius-pill` `--radius-round` | corners. `md` unless you have a reason. `pill`/`round` are shapes, so squaring the app leaves a dot a dot |
 | space | `--space-1` … `--space-12` (2px ladder) | padding, margin, gap. `--space-4` (8px) is the house default |
-| type | `--text-1` … `--text-10`, `--text-micro` | `--text-3` (12px) is this app's body, not a caption — Ronin is dense on purpose |
+| type | `--text-1` (9) · `--text-micro` (10) · `--text-2` … `--text-10` (11 to 26) | `--text-3` (12px) is this app's body, not a caption — Ronin is dense on purpose. Micro sits between 1 and 2 by size; the numbers stay so no sheet changes size silently |
+| weight | `--weight-regular/medium/strong/bold` (400 500 600 700) | four and only four; `strong` is the house emphasis |
+| leading | `--leading-none/tight/body/loose` (1 1.2 1.45 1.6) | every line-height reads one |
+| tracking | `--tracking-tight` `--tracking-wide` (em) | every letter-spacing reads one, or is `0` |
 | voice | `--font-ui` `--font-mono` `--font-term` | **three roles, not two.** `--font-term` is what xterm renders (`js/termview.js` reads it via `termFace()`), and the tape, composer and jump button must match it glyph-for-glyph or a wrapped line stops lining up |
 | edge | `--edge` `--edge-2` | border widths — a heavier-lined theme is one edit, not four hundred |
 | motion | `--motion-quick/settle/slow/hint`, `--ease` | four speeds; nothing animates for decoration |
