@@ -144,7 +144,8 @@ The roles, defined in `public/style.css`:
   `--ok-2` / `--status-yellow` / `--status-red`
 - house: `--kaki` (the Ronin identity mark; this session; heightened access/visibility) ·
   `--aiiro` (Ronin navigation and selection) · `--graphite` (the admin header) — Kojin's fixed palette, borrowed. The kaki
-  identity ruling is the open hexagonal **hito** mark; using the same colour for heightened
+  identity ruling is the open hexagonal **hito** mark, drawn in `--kaki` (`ninMark()`), so a
+  skin that moves the brand moves the mark; using the same colour for heightened
   action connects “this needs you” to the house without making every Ronin surface kaki.
   Heightened surfaces read `--kaki`/`--kaki-lift` directly — the `--heighten-*` alias
   token audit deleted it rather than leave a dead semantic layer to mislead.
@@ -482,7 +483,9 @@ agent is behind a pane.
 ## Login
 
 `/login` (`public/login.html`) is the one pre-auth page: self-contained on purpose,
-same visual language, same theme switch. The shared Password work surface in Setup and
+same visual language, same theme switch. It cannot fetch `style.css` before auth, so the
+`/login` route writes style.css's two foundations `:root` blocks into it on each request: the
+same token values, never a copy. A skin does not reach it. The shared Password work surface in Setup and
 Settings enables, changes and disables the saved browser password; changing it replaces
 the current browser's session while ending every other browser session. The host-side
 `bin/ronin-passwd` remains an independent set/clear authority. Password fields do not echo.

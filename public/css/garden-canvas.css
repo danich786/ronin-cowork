@@ -18,6 +18,7 @@
     --gc-heading-lh: var(--leading-tight);
     --gc-heading-track: var(--tracking-tight);
     --gc-body-lh: var(--leading-loose);
+    --gc-hito-ease: cubic-bezier(.4, .1, .3, 1); /* the hito's walk */
     --gc-mark: 16px;
     --gc-mark-weight: 2px;
     --gc-glyph: 16px;
@@ -43,7 +44,7 @@
   .garden-canvas-mark { position: absolute; inset: auto 0 0; width: 100%; height: var(--gc-horizon); color: var(--kaki); opacity: var(--gc-motif-opacity); z-index: -1; pointer-events: none; }
   /* The figure is its own fixed-size element, placed by percentage, so it walks
      the flat bund as the column widens instead of scaling with it. */
-  .garden-canvas-hito { position: absolute; bottom: var(--gc-hito-stand); left: var(--gc-hito-walk); width: var(--gc-hito-w); height: var(--gc-hito-h); color: var(--kaki); opacity: var(--gc-motif-opacity); z-index: -1; pointer-events: none; transition: left 520ms cubic-bezier(.4, .1, .3, 1); }
+  .garden-canvas-hito { position: absolute; bottom: var(--gc-hito-stand); left: var(--gc-hito-walk); width: var(--gc-hito-w); height: var(--gc-hito-h); color: var(--kaki); opacity: var(--gc-motif-opacity); z-index: -1; pointer-events: none; transition: left var(--motion-slow) var(--gc-hito-ease); }
 
   /* Reading order. The region keys are frozen as question · cta · copy · media,
      so the order the owner reads in is set here and nowhere else. */
@@ -96,20 +97,20 @@
   textarea.garden-question-input { resize: vertical; min-height: calc(var(--space-12) * 2); }
 
   /* The only filled kaki on the surface, sized to its label. */
-  .garden-cta { justify-self: start; display: inline-flex; align-items: center; gap: var(--space-5); padding: var(--space-6) var(--space-9); border: var(--edge) solid transparent; border-radius: var(--radius-md); background: var(--kaki-fill); color: var(--kaki-fill-ink); font: inherit; font-size: var(--text-5); font-weight: var(--weight-strong); text-align: left; cursor: pointer; transition: background 140ms ease; }
-  .garden-cta::after { content: ''; flex: none; width: var(--gc-glyph); height: var(--gc-glyph); background: currentColor; transition: transform 160ms ease; -webkit-mask: var(--gc-icon-chevron) center / contain no-repeat; mask: var(--gc-icon-chevron) center / contain no-repeat; }
+  .garden-cta { justify-self: start; display: inline-flex; align-items: center; gap: var(--space-5); padding: var(--space-6) var(--space-9); border: var(--edge) solid transparent; border-radius: var(--radius-md); background: var(--kaki-fill); color: var(--kaki-fill-ink); font: inherit; font-size: var(--text-5); font-weight: var(--weight-strong); text-align: left; cursor: pointer; transition: background var(--motion-quick) var(--ease); }
+  .garden-cta::after { content: ''; flex: none; width: var(--gc-glyph); height: var(--gc-glyph); background: currentColor; transition: transform var(--motion-quick) var(--ease); -webkit-mask: var(--gc-icon-chevron) center / contain no-repeat; mask: var(--gc-icon-chevron) center / contain no-repeat; }
   .garden-cta:hover { background: var(--kaki-fill-hover); }
   .garden-cta:hover::after { transform: translateX(var(--gc-nudge)); }
 
   /* A row per item, stacked full width: the owner is choosing what to open, and
      the kind decides whether they have two minutes or ten. */
   .garden-media-list { display: grid; gap: var(--space-4); max-width: var(--gc-measure); }
-  .garden-media-choice { display: grid; grid-template-columns: var(--gc-glyph) minmax(0, 1fr) var(--gc-glyph); align-items: center; column-gap: var(--space-7); width: 100%; padding: var(--gc-row-pad); border: var(--edge) solid var(--line); border-radius: var(--radius-md); background: transparent; color: var(--fg); font: inherit; text-align: left; cursor: pointer; transition: background 140ms ease, border-color 140ms ease; }
+  .garden-media-choice { display: grid; grid-template-columns: var(--gc-glyph) minmax(0, 1fr) var(--gc-glyph); align-items: center; column-gap: var(--space-7); width: 100%; padding: var(--gc-row-pad); border: var(--edge) solid var(--line); border-radius: var(--radius-md); background: transparent; color: var(--fg); font: inherit; text-align: left; cursor: pointer; transition: background var(--motion-quick) var(--ease), border-color var(--motion-quick) var(--ease); }
   .garden-media-choice::before, .garden-media-choice::after { content: ''; grid-row: 1 / -1; width: var(--gc-glyph); height: var(--gc-glyph); background: currentColor; }
   .garden-media-choice::before { grid-column: 1; color: var(--gc-kind-ink); -webkit-mask: var(--gc-icon-doc) center / contain no-repeat; mask: var(--gc-icon-doc) center / contain no-repeat; }
   .garden-media-choice[data-kind='video']::before { -webkit-mask-image: var(--gc-icon-video); mask-image: var(--gc-icon-video); }
   .garden-media-choice[data-kind='url']::before { -webkit-mask-image: var(--gc-icon-link); mask-image: var(--gc-icon-link); }
-  .garden-media-choice::after { grid-column: 3; color: var(--dim); transition: transform 160ms ease, color 140ms ease; -webkit-mask: var(--gc-icon-chevron) center / contain no-repeat; mask: var(--gc-icon-chevron) center / contain no-repeat; }
+  .garden-media-choice::after { grid-column: 3; color: var(--dim); transition: transform var(--motion-quick) var(--ease), color var(--motion-quick) var(--ease); -webkit-mask: var(--gc-icon-chevron) center / contain no-repeat; mask: var(--gc-icon-chevron) center / contain no-repeat; }
   .garden-media-choice > * { grid-column: 2; min-width: 0; }
   .garden-media-choice strong { color: var(--fg-strong); font-size: var(--text-4); font-weight: var(--weight-strong); }
   .garden-media-choice span { color: var(--muted); font-size: var(--text-2); line-height: var(--leading-body); }

@@ -34,8 +34,10 @@ test('the inline copy is the master file\'s paths, exactly', async () => {
   const mark = ninMark();
   assert.equal(mark.getAttribute('viewBox'), '0 0 120 104');
   assert.match(master, /viewBox="0 0 120 104"/);
-  const paths = (markup) => [...markup.matchAll(/<path [^>]*\/>/g)].map((m) => m[0]);
+  // The geometry is the master's; the paint is --kaki here, so a skin moves the inline mark.
+  const paths = (markup) => [...markup.matchAll(/<path [^>]*\bd="([^"]+)"[^>]*\/>/g)].map((m) => m[1]);
   assert.deepEqual(paths(mark.innerHTML), paths(master), 'when the mark moves, copy its paths here too');
+  assert.doesNotMatch(mark.innerHTML, /#[0-9a-f]{3,6}/i, 'the inline mark paints with the token, not a hex');
   assert.doesNotMatch(mark.innerHTML, /id=/, 'no ids: the mark repeats on one page');
 });
 
