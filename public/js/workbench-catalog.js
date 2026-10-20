@@ -77,14 +77,15 @@ export function registerWorkbenchCatalog() {
   // THE MODELS WORKBENCH (owner, 2026-10-19): its own stones in Workspace 1; one provider whole in a
   // workspace, placed by a dragged stone or its selector card (models-surface.js). THE CARDS FOLLOW THE
   // TEAM PAGE (owner, 2026-10-20): a provider's or folder's card is an entity card like an Agent's
-  // (wk-selector-entity, the terminal's class); the three admin doors are dotted like New Agent.
-  add({ type: WORKBENCH_TYPES.modelStones, header: 'surface', discover: () => [], create: ({ workspace, environment }) => environment.modelStones(workspace) });
+  // (wk-selector-entity, the terminal's class); the three admin doors are dotted like New Agent; the
+  // stones surface heads the selector as a solid card, as the Teams card heads the Cowork selector.
+  add({ type: WORKBENCH_TYPES.modelStones, header: 'surface', className: 'wk-selector-utility', label: () => t('campaign_home.models', 'Models'), create: ({ workspace, environment }) => environment.modelStones(workspace) });
   add({ type: WORKBENCH_TYPES.modelProvider, header: 'surface', className: 'wk-selector-entity', discover: (_t, e) => e.providers(), create: ({ workspace, detail, environment }) => environment.modelProvider(workspace, detail) });
   profiles.define(WORKBENCH_PROFILES.models, [WORKBENCH_TYPES.modelStones, WORKBENCH_TYPES.modelProvider]);
   // THE WORKSPACES WORKBENCH (owner, 2026-10-19): its own stones of folders in Workspace 1; one folder
   // whole in a workspace, placed by a dragged stone or its selector card; the three admin doors are
   // dotted cards, the New Agent format (workspaces-surface.js).
-  add({ type: WORKBENCH_TYPES.folderStones, header: 'surface', discover: () => [], create: ({ workspace, environment }) => environment.folderStones(workspace) });
+  add({ type: WORKBENCH_TYPES.folderStones, header: 'surface', className: 'wk-selector-utility', label: () => t('campaign_home.workspaces', 'Workspaces'), create: ({ workspace, environment }) => environment.folderStones(workspace) });
   add({ type: WORKBENCH_TYPES.folder, header: 'surface', className: 'wk-selector-entity', discover: (_t, e) => e.folders(), create: ({ workspace, detail, environment }) => environment.folder(workspace, detail) });
   add({ type: WORKBENCH_TYPES.folderNew, header: 'surface', className: 'wk-selector-utility', label: () => t('roots.add_stone', 'Add a workspace'), summary: () => t('roots.keep_hint', 'Keep a folder on this machine for Teams and Agents to start in.'), variant: 'dotted', create: ({ workspace, environment }) => environment.folderNew(workspace) });
   add({ type: WORKBENCH_TYPES.folderGithub, header: 'surface', className: 'wk-selector-utility', label: () => t('roots.github_auth_stone', 'GitHub CLI'), summary: () => t('roots.github_auth_state', 'Connect account'), variant: 'dotted', create: ({ workspace, environment }) => environment.folderGithub(workspace) });

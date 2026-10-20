@@ -152,7 +152,8 @@ stones of providers (`models-surface.js`, `models.stones`): a stone pressed open
 page beside the rail; a stone dragged into a workspace, or the provider's selector card, places
 the provider there whole (`models.provider`), the page with no rail. The cards follow the Team page
 (owner, 2026-10-20): a provider's or a folder's card is an entity card like an Agent's
-(`wk-selector-entity`), the three admin doors dotted like New Agent. Settings' Model Providers
+(`wk-selector-entity`), the three admin doors dotted like New Agent, and the stones surface heads
+the selector as a solid card (Models, Workspaces) as the Teams card heads the Cowork selector. Settings' Model Providers
 surface is untouched; both draw with the one drawing `provider-surface.js` exports
 (`createProviderDrawing`, `providerStones`) over the same record and measure. Workspaces seats
 its own stones of folders the same way (`workspaces-surface.js`, `workspaces.stones`; a dropped
