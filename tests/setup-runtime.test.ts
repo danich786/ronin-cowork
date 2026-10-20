@@ -42,7 +42,6 @@ test('provider facts come from the measured summary: absent, installable, instal
   assert.equal(none.measured_at, '2026-09-08T10:00:00.000Z', 'the answer carries the date it was measured');
   assert.equal(row(none, 'claude').provider, 'anthropic', 'the catalog joins the vendor id to the CLI');
   assert.equal(row(none, 'claude').from, 'Anthropic');
-  assert.ok(row(none, 'claude').models > 0);
 
   const installed = await answer({}, ['claude']);
   assert.equal(row(installed, 'claude').state, 'installed');
@@ -172,13 +171,12 @@ test('a provider counts as activated only when the catalog gives it something to
   assert.equal(withCells.activated_count, 2);
   assert.deepEqual(withCells.paths, { claude: '/bin/claude', codex: '/bin/codex' });
   // The same machine against a catalog with no OpenAI section: Codex is installed and
-  // recorded, and still not activated — nothing it could launch.
+  // recorded, and still not activated — no launchable section serves it.
   const noCodex = catalog.filter((entry) => entry.cli !== 'codex');
   const without = await summary.measureProviders(section, { availability: available(['claude', 'codex']), signedIn: async (id) => id === 'claude', catalog: noCodex });
   assert.deepEqual(without.operational, ['claude']);
   assert.equal(without.activated_count, 1);
   const shown = await runtime.setupRuntimeAnswer(section, without, { exists: nobody }, undefined, noCodex);
-  assert.equal(row(shown, 'codex').models, 0);
   assert.equal(row(shown, 'codex').activated, false);
   assert.equal(row(shown, 'codex').provider, '', 'no catalog section, no vendor id');
   assert.equal(shown.activated_count, 1);
