@@ -4222,6 +4222,11 @@ body {
 .setup-provider-step[data-failed='true'] .setup-provider-mark { border-color: var(--bad); color: var(--bad); }
 .setup-provider-step[data-failed='true'] .setup-provider-state { color: var(--bad); }
 /* Model refresh: the door's three steps, each line a quiet label and its value; the review in the provider table's columns. */
+/* Each step: title, then its description, then a block of facts or the review table, each group spaced apart. */
+.models-refresh-steps { margin-top: var(--space-8); }
+.models-refresh-steps .setup-provider-copy { gap: var(--space-6); }
+.models-refresh-steps .setup-provider-control { margin-top: var(--space-6); }
+.models-refresh-facts { display: grid; gap: var(--space-1); }
 .models-refresh-line { display: grid; grid-template-columns: 10rem minmax(0, 1fr); gap: var(--space-4); }
 .models-refresh-key { color: var(--muted); }
 .models-review th:nth-child(1) { width: 24%; }

@@ -126,6 +126,11 @@ const line = (label, ...value) => {
   p.append(el('span', 'models-refresh-key', label), text);
   return p;
 };
+/** A step's facts: one block under its description, a row per fact. */
+const factsOf = (made) => {
+  if (!made.facts) { made.facts = el('div', 'models-refresh-facts'); made.copy.append(made.facts); }
+  return made.facts;
+};
 const link = (href, text) => { const a = el('a', null, text); a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer'; return a; };
 
 /** Step 1: each CLI and what its own list said, from the record the door just wrote. */
@@ -143,7 +148,7 @@ function listsStep(runtime, state) {
       : list?.unavailable ? list.unavailable
       : list ? t('models.lists_count', '{n} models', { n: list.rows?.length ?? 0 }) + newer
       : t('models.lists_not_read', 'not read yet');
-    made.copy.append(line(`${provider.label || provider.id}${version}`, said));
+    factsOf(made).append(line(`${provider.label || provider.id}${version}`, said));
   }
   return made.item;
 }
@@ -158,17 +163,17 @@ function infoStep(review, state, failure) {
     detail: t('models.info_detail', 'Names, descriptions, prices and limits for those models, from the public models.dev catalog.') });
   const source = review?.source;
   if (source) {
-    made.copy.append(line(t('models.info_source', 'Source'), link(source.url, source.url.replace(/^https:\/\//, '')),
-      ' · ', link(source.repository, source.repository.replace(/^https:\/\//, '')), ` · ${source.licence}`));
+    factsOf(made).append(line(t('models.info_source', 'Source'), link(source.url, source.url.replace(/^https:\/\//, ''))));
+    factsOf(made).append(line(t('models.info_repository', 'Repository'), link(source.repository, source.repository.replace(/^https:\/\//, '')), ` · ${source.licence}`));
   }
-  if (failed) made.copy.append(line(t('models.info_why', 'Why'), failure || check?.say || ''));
+  if (failed) factsOf(made).append(line(t('models.info_why', 'Why'), failure || check?.say || ''));
   const labels = Object.fromEntries((providerCatalog().providers || []).map((p) => [p.models_dev, p.label]));
   const kept = review?.pending?.kept ?? review?.using?.kept ?? {};
   const keptText = Object.entries(kept).map(([key, n]) => `${labels[key] || key} ${n}`).join(' · ');
-  if (keptText) made.copy.append(line(t('models.info_kept', 'Kept'), t('models.info_kept_text', '{list} — the models that use tools', { list: keptText })));
+  if (keptText) factsOf(made).append(line(t('models.info_kept', 'Kept'), t('models.info_kept_text', '{list} — the models that use tools', { list: keptText })));
   const using = review?.using;
   if (using) {
-    made.copy.append(line(t('models.info_in_use', 'In use'), using.origin === 'user'
+    factsOf(made).append(line(t('models.info_in_use', 'In use'), using.origin === 'user'
       ? t('models.info_in_use_user', 'accepted by you, fetched {date}', { date: dayTime(using.fetched_at) })
       : t('models.info_in_use_stock', 'shipped with Ronin, fetched {date}', { date: dayTime(using.fetched_at) })));
   }
@@ -219,11 +224,15 @@ function reviewStep(review, live, { send, say }) {
     const other = change.change === 'changed' ? change.fields.filter((f) => !SHOWN.has(f.field)).map((f) => `${fieldWord(f.field)} ${f.was ?? '—'} → ${f.now ?? '—'}`) : [];
     if (other.length) name.append(el('span', 'setup-provider-default', other.join(' · ')));
     const changed = change.change === 'changed';
-    const priceWas = priceOf({ input: was('cost.input', info.cost?.input), output: was('cost.output', info.cost?.output) });
+    const inWas = was('cost.input', info.cost?.input); const outWas = was('cost.output', info.cost?.output);
+    const side = (old, now) => (old !== now ? `$${old ?? '—'} → $${now ?? '—'}` : `$${now}`);
+    const price = changed && (by['cost.input'] || by['cost.output'])
+      ? `${side(inWas, info.cost?.input)} in · ${side(outWas, info.cost?.output)} out`
+      : priceOf(info.cost);
     const contextWas = contextOf({ context: was('limit.context', info.limit?.context) });
     row.append(
       name,
-      el('td', null, cell(priceWas, priceOf(info.cost), changed)),
+      el('td', null, price),
       el('td', null, cell(contextWas, contextOf(info.limit), changed)),
       el('td', null, cell(dayTime(was('release_date', info.release_date)), dayTime(info.release_date), changed)),
       el('td', null, cell(was('description', info.description), info.description, changed)),
