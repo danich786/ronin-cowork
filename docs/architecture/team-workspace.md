@@ -221,8 +221,9 @@ from what the tab remembered.
   reading, a caret. Pressing the row opens it in place to the Agent's read — role, what it
   is working on, the items it holds (`/api/work-items?session=`), then the full configuration
   (the composition body `agent-composition.js` exports, the one body the composition tile
-  paints: At birth, Current effective facts with Save, Behaviors), its @id — with the member
-  action bar (Rename · Make Lead · Remove · Close) under it; pressing again folds it. No
+  paints) — all as the launch forms' unnumbered sections: one identity line (role · @id),
+  **Work**, **Brief** (born with …), **Mandate** with Save, **Behaviors** with Add — with the
+  member action bar (Rename · Make Lead · Remove · Close) under it; pressing again folds it. No
   Launch on a row: dragging a row onto a workspace opens the Agent there, its own tile
   (`session.terminal`), as the Team page's Agent card places it. Agents join a Team by
   dragging, so the foot holds one **New Agent** button, which opens the New Agent form with

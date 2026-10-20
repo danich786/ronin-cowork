@@ -11,6 +11,7 @@ import { setSessionTitle } from './api.js';
 import { request } from './request.js';
 import { itemLine } from './team-kanban.js';
 import { createAgentCompositionReader } from './agent-composition.js';
+import { createStep } from './form-steps.js';
 import { SURFACE_DRAG } from './workbench.js';
 import { WORKBENCH_TYPES } from './workbench-catalog.js';
 import { t } from './lexicon.js';
@@ -71,15 +72,15 @@ export const buildTeamMembers = (name, options = {}) => {
     const disclosure = el('span', 'league-team-member-disclosure'); disclosure.setAttribute('aria-hidden', 'true');
     const toggle = el('button', 'league-team-member-toggle'); toggle.type = 'button';
     toggle.append(identity, status, disclosure);
-    // The read: role, what it is working on, the items it holds; then the id, then the acts.
+    // The opened row, top to bottom, in the launch forms' format (owner, 2026-10-20): one
+    // identity line (role · @id); Work — what it is working on, the items it holds; then the
+    // composition body the composition tile paints (Brief, Mandate, Behaviors); then the acts.
     const detail = el('div', 'league-team-member-detail');
     detail.id = `team-member-${options.idPrefix || name}-${member.name}-actions`;
     toggle.setAttribute('aria-controls', detail.id);
-    const read = el('div', 'league-team-member-read');
-    read.append(el('span', null, agentName(member)));
-    if (reading.description) read.append(el('span', null, [reading.step, reading.description].filter(Boolean).join(' · ')));
-    const items = el('div', 'league-team-member-items'); read.append(items);
-    // The full configuration: the composition body the composition tile paints, read on open.
+    const work = createStep({ key: 'work', title: t('league.work', 'Work') });
+    if (reading.description) work.body.append(el('p', 'fs-step-help', [reading.step, reading.description].filter(Boolean).join(' · ')));
+    const items = el('div', 'league-team-member-items'); work.body.append(items);
     const word = el('p', 'league-team-member-status');
     const composition = createAgentCompositionReader(member.name, { setState: (_state, message) => { word.textContent = message || ''; } });
     const rename = createAction({ label: t('league.rename_agent', 'Rename'), size: 'compact', action: async () => {
@@ -92,7 +93,7 @@ export const buildTeamMembers = (name, options = {}) => {
     const lead = createAction({ label: member.team_lead ? t('league.team_lead', 'Team Lead') : t('league.make_team_lead', 'Make Lead'), size: 'compact', selected: member.team_lead, action: async () => { const result = await setTeamLead(member.name, name, !member.team_lead); if (!result.ok) return options.onFailed?.(result.message); options.onChanged?.(); } });
     const eject = createAction({ label: t('league.remove_member', 'Remove'), title: t('league.remove_named_member', 'Remove {name} from this team', { name: member.name }), size: 'compact', action: async () => { const result = await setTeamMembership(member.name, name, false); if (!result.ok) return options.onFailed?.(result.message); options.onChanged?.(); } });
     const close = options.onClose ? createAction({ label: t('league.close_agent', 'Close'), title: t('league.close_named_agent', 'Close {name}', { name: member.name }), size: 'compact', action: () => options.onClose(member) }) : null;
-    detail.append(read, composition.el, word, el('span', 'league-team-member-id', `@${member.name}`), createActionBar({ className: 'league-team-member-actions', actions: [rename, lead, eject, close] }).el);
+    detail.append(el('p', 'league-team-member-id', `${agentName(member)} · @${member.name}`), work.el, composition.el, word, createActionBar({ className: 'league-team-member-actions', actions: [rename, lead, eject, close] }).el);
     const open = (expanded) => {
       detail.hidden = !expanded;
       toggle.setAttribute('aria-expanded', String(expanded));

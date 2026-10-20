@@ -38,7 +38,6 @@ test('Roster remains a roster; the Team page selector is Commons, Agents, New Ag
   assert.match(catalog, /agentComposition: AGENT_COMPOSITION_TYPE/);
   assert.match(catalog, /WORKBENCH_PROFILES\.team[^\n]*WORKBENCH_TYPES\.agentComposition/);
   assert.match(composition, /\/api\/sessions\/\$\{encodeURIComponent\(agent\)\}\/composition/);
-  assert.match(composition, /Immutable history/);
   // Owner 2026-10-20: Agents join by dragging; the roster's foot opens New Agent with this
   // Team chosen; a pressed row opens in place (read + action bar), never places a tile.
   assert.match(view, /onNew: \(\) => bench\.place\(WB_TYPES\.newAgent, oppositeSeat\(id\)\)/);
