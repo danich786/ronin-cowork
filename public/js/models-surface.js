@@ -12,7 +12,7 @@
 import { WorkspaceKit } from './workspace-kit.js';
 import { el } from './form-steps.js';
 import { createPhalanx } from './phalanx.js';
-import { createProviderDrawing, providerStones, recordRuntime } from './provider-surface.js';
+import { createProviderDrawing, createRefreshAll, providerStones, recordRuntime } from './provider-surface.js';
 import { SURFACE_DRAG } from './workbench.js';
 import { WORKBENCH_TYPES } from './workbench-catalog.js';
 import { t } from './lexicon.js';
@@ -54,6 +54,28 @@ export function createModelStones(context) {
     el: out.el,
     show: async () => { await drawing.showRecord(); },
     destroy: () => { drawing.destroy(); stones.destroy(); },
+  };
+}
+
+/** The Model refresh surface (owner, 2026-10-20): the Refresh all control Settings' provider
+ *  surface carries, over the same drawing, with its last-ran line and notice. The Models stones
+ *  carry no refresh door; this card does. */
+export function createModelRefresh(context) {
+  const { createSurface } = WorkspaceKit.primitives;
+  const out = createSurface({ label: t('models.refresh', 'Model refresh'), className: 'setup-surface models-refresh' });
+  const notice = el('p', 'setup-fine setup-provider-notice'); notice.hidden = true;
+  const say = (text, bad = false) => { notice.className = `${bad ? 'setup-notice bad' : 'setup-fine'} setup-provider-notice`; notice.textContent = text; notice.hidden = !text; };
+  const drawing = createProviderDrawing(context, { repaint: () => repaint(), say });
+  const refresh = createRefreshAll(drawing);
+  // The slot under the control is model_catalog's: the models.dev update waiting, its diff,
+  // Accept / Discard / Ask Mika to check (owner, 2026-10-20). Empty until then.
+  const update = el('div', 'models-refresh-update');
+  out.content.append(refresh.el, notice, update);
+  const repaint = () => { refresh.paint(); context.workbench?.refreshSelector?.(); };
+  return {
+    el: out.el,
+    show: async () => { await drawing.showRecord(); },
+    destroy: () => { drawing.destroy(); },
   };
 }
 

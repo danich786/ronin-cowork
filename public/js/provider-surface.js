@@ -111,7 +111,6 @@ export function providerStones(runtime) {
 
 export function createProviderSurface(context) {
   const out = WorkspaceKit.primitives.createSurface({ label: t('setup_surface.providers', 'Model providers'), className: 'setup-surface setup-provider-surface' });
-  const action = (label, kind, onClick) => { const made = WorkspaceKit.primitives.createAction({ label, kind, action: onClick }); return made.el ?? made; };
   const notice = el('p', 'setup-fine setup-provider-notice'); notice.hidden = true;
   const mikaAvailability = el('p', 'setup-fine setup-mika-availability');
   let opened = String(context.detail?.provider || context.detail?.key || '');
@@ -131,29 +130,7 @@ export function createProviderSurface(context) {
     },
   });
   context.environment?.onProviderSurface?.(controller);
-  /**
-   * REFRESH ALL — the one door that reads model lists (owner, 2026-09-25): every activated
-   * CLI's own list, and the newest release of each, in one press. Never on a timer. The
-   * line beside it says when it last ran, so the owner knows how fresh every list is.
-   */
-  const refreshBar = el('div', 'setup-provider-refresh');
-  const lastRan = el('p', 'setup-fine setup-provider-last-ran');
-  const refreshAll = action(t('setup_surface.refresh_all', 'Refresh all model providers'), '', async () => {
-    refreshAll.disabled = true;
-    refreshAll.textContent = t('setup_surface.refreshing_all', 'Refreshing…');
-    const ok = await drawing.measure(true);
-    refreshAll.disabled = false;
-    refreshAll.textContent = t('setup_surface.refresh_all', 'Refresh all model providers');
-    if (!ok) paintLastRan();
-  });
-  const paintLastRan = () => {
-    const when = String(drawing.runtime().refreshed_at || providerCatalog().refreshed_at || '');
-    lastRan.textContent = when
-      ? t('setup_surface.last_ran', 'Last ran {date}', { date: when })
-      : t('setup_surface.never_ran', 'Never run — every provider offers Native only until it runs.');
-  };
-  refreshAll.classList.add('setup-provider-refresh-all');
-  refreshBar.append(refreshAll, lastRan);
+  const refresh = createRefreshAll(drawing);
   const zone = context.environment?.answerSetupStep ? createSetupZone() : null;
   /** Step 1 states one machine fact: whether any provider on this machine is signed in. */
   const paintZone = (activated) => {
@@ -164,14 +141,14 @@ export function createProviderSurface(context) {
       ? { state: 'Provider signed in and authenticated.', picks: [] }
       : { state: 'No provider found on this machine.', picks: [{ label: 'Sign in a provider', action: () => controller.openFirst() }] });
   };
-  stones.mount(out.content, { before: [...(zone ? [zone.el] : []), refreshBar], after: [mikaAvailability, notice] });
+  stones.mount(out.content, { before: [...(zone ? [zone.el] : []), refresh.el], after: [mikaAvailability, notice] });
   const say = (text, bad = false) => { notice.className = `${bad ? 'setup-notice bad' : 'setup-fine'} setup-provider-notice`; notice.textContent = text; notice.hidden = !text; };
   /** The surface's frame from the drawing's runtime: the zone, the dates, the stones, the selector. */
   const repaint = () => {
     const runtime = drawing.runtime();
     const activatedNow = Number(runtime.activated_count || 0);
     paintZone(activatedNow);
-    paintLastRan();
+    refresh.paint();
     mikaAvailability.hidden = activatedNow === 0;
     mikaAvailability.textContent = activatedNow === 1
       ? t('setup_surface.one_model_signed_in', '1 model signed in')
@@ -192,6 +169,37 @@ export function createProviderSurface(context) {
     show: async () => { await drawing.showRecord(); },
     destroy: () => { stopProgressRefresh(); context.environment?.onProviderSurface?.(null); drawing.destroy(); stones.destroy(); },
   };
+}
+
+/**
+ * REFRESH ALL — the one door that reads model lists (owner, 2026-09-25): every activated
+ * CLI's own list, and the newest release of each, in one press. Never on a timer. The
+ * line beside it says when it last ran, so the owner knows how fresh every list is.
+ * Exported once (owner, 2026-10-20): Settings' provider surface and the Models workbench's
+ * Model refresh surface press the same control over the same drawing; `paint()` is the
+ * host's, called whenever the frame moves.
+ */
+export function createRefreshAll(drawing) {
+  const bar = el('div', 'setup-provider-refresh');
+  const lastRan = el('p', 'setup-fine setup-provider-last-ran');
+  const made = WorkspaceKit.primitives.createAction({ label: t('setup_surface.refresh_all', 'Refresh all model providers'), kind: '', action: async () => {
+    button.disabled = true;
+    button.textContent = t('setup_surface.refreshing_all', 'Refreshing…');
+    const ok = await drawing.measure(true);
+    button.disabled = false;
+    button.textContent = t('setup_surface.refresh_all', 'Refresh all model providers');
+    if (!ok) paint();
+  } });
+  const button = made.el ?? made;
+  const paint = () => {
+    const when = String(drawing.runtime().refreshed_at || providerCatalog().refreshed_at || '');
+    lastRan.textContent = when
+      ? t('setup_surface.last_ran', 'Last ran {date}', { date: when })
+      : t('setup_surface.never_ran', 'Never run — every provider offers Native only until it runs.');
+  };
+  button.classList.add('setup-provider-refresh-all');
+  bar.append(button, lastRan);
+  return { el: bar, paint };
 }
 
 /**
