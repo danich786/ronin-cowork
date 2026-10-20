@@ -807,6 +807,8 @@ export function createCoworkView(options = {}) {
     el: root, glyph: campaign ? '⛩' : '人', ...workbenchView(desk ? 'desk' : campaign ? 'cowork' : 'team'),
     // The ViewHost draws the Kit's layout map in the bar for this while the view is active.
     arrangement: bench.arrangement,
+    // The crumb's last step on a Team page: RoninCowork • Home • Teams • <Team title> (owner, 2026-10-20).
+    place: () => campaign ? '' : readableTeam(team),
     // The owner's per-tab name; Teams defaults to its page name, a Team to the Team name.
     title: ({ param, viewState }) => {
       const fallback = desk ? t('campaign_home.desk', 'Desk') : campaign ? teamsLabel : (readableTeam(param || team) || t('team.team', 'Team'));

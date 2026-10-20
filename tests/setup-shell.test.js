@@ -15,11 +15,11 @@ test('Ronin Home routes the Machine door from persisted Campaign Setup answers',
 });
 
 test('Ronin Home has three doors — Models, Workspaces, Teams — each opening its own workbench in the same tab (owner, 2026-10-19)', async () => {
-  const [home, doors, catalog, contract, header, main] = await Promise.all([
-    source('js/campaign-home.js'), source('js/door-workbenches.js'), source('js/workbench-catalog.js'), source('js/workspace-contract.js'), source('js/workspace-header.js'), source('js/main.js'),
+  const [home, doors, catalog, contract, header, main, cowork] = await Promise.all([
+    source('js/campaign-home.js'), source('js/door-workbenches.js'), source('js/workbench-catalog.js'), source('js/workspace-contract.js'), source('js/workspace-header.js'), source('js/main.js'), source('js/cowork-view.js'),
   ]);
   assert.match(home, /Ronin Home/);
-  for (const key of ['models', 'workspaces', 'teams']) {
+  for (const key of ['models', 'workspaces']) {
     assert.match(home, new RegExp(`key: '${key}', route: '${key}'`), `the ${key} door navigates to its own destination`);
     assert.match(main, new RegExp(`workspace\\.register\\('${key}', `), `the ${key} destination is registered`);
     assert.match(contract, new RegExp(`'${key}'`), `${key} is a Workbench appearance, so the tab machinery applies`);
@@ -39,7 +39,12 @@ test('Ronin Home has three doors — Models, Workspaces, Teams — each opening 
   assert.match(doors, /seat: WORKBENCH_TYPES\.teams,/, 'Teams seats its own stones of Teams');
   assert.match(doors, /bench\(\)\.place\(WORKBENCH_TYPES\.teamRead, 'workspace2', \{ key: name \}\)/, 'a stone pressed places the Team\u2019s read in Workspace 2');
   assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.teams, \[WORKBENCH_TYPES\.teams, WORKBENCH_TYPES\.teamRead, WORKBENCH_TYPES\.newTeamForm\]\)/, 'the Teams selector offers New Team');
-  assert.match(header, /home\.hidden = !placed/, 'the bar reads RoninCowork • Home • <door>, Home the way back');
+  assert.match(home, /key: 'teams', route: 'cowork'/, 'the Teams door opens the Teams workbench at #/cowork (owner, 2026-10-20)');
+  // The crumb (owner, 2026-10-20): RoninCowork • Home • Teams • <Team title>; before, a Team page read
+  // 'RoninCowork • Teams' with no Home and no name, and Home's doors hid the Teams step.
+  assert.match(header, /home\.hidden = landing/, 'Home stands in the bar everywhere off the landing');
+  assert.match(header, /const underTeams = !landing && \(!placed \|\| active\.id === 'team'\)/, 'a Team page sits under Teams; another placed view under Home alone');
+  assert.match(cowork, /place: \(\) => campaign \? '' : readableTeam\(team\)/, 'a Team page ends the crumb with the Team title');
 });
 
 test('two roots: the default Home and the current Home at #/current, one bar toggle between them (owner, 2026-10-19)', async () => {
