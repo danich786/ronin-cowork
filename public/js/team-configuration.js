@@ -8,7 +8,7 @@ import { t } from './lexicon.js';
 import { request } from './request.js';
 import { ask } from './ask.js';
 import { ruledRows } from './glyphs.js';
-import { createStep, loadProviderCatalog, mandateWord, modelLabel, providerCatalog, tierWord } from './form-steps.js';
+import { createStep, loadProviderCatalog, mandateWord, modelLabel, priceText, providerCatalog, tierWord } from './form-steps.js';
 import { WorkspacePrimitives } from './workspace-primitives.js';
 
 const el = (tag, cls, text) => { const node = document.createElement(tag); if (cls) node.className = cls; if (text != null) node.textContent = String(text); return node; };
@@ -33,7 +33,7 @@ const providerRows = () => {
     .map((row) => ({ v: row.provider, l: row.provider_label || row.provider, off: row.operational ? '' : reason(row) }));
 };
 const modelRows = (provider) => providerCatalog().rows.filter((row) => row.provider === provider)
-  .map((row) => ({ v: row.model, l: modelLabel(row), word: tierWord(row.tier), sub: row.cost || '', off: row.selectable ? '' : reason(row) }));
+  .map((row) => ({ v: row.model, l: modelLabel(row), word: tierWord(row.tier), sub: priceText(row.info), off: row.selectable ? '' : reason(row) }));
 
 /** The form's one-line answer when its step is folded: kind · provider / model. */
 export function teamConfigurationMeta(roster) {

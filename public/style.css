@@ -22,7 +22,6 @@
      read, so it stays at 6:1 or better on the panel; dim, the placeholder grey, at 3.5:1. */
   --muted: #949eb0;
   --muted-2: #8fa3c8;
-  --muted-3: #8797b5;
   --dim: #68718a;
 
   --accent: #e0af68;
@@ -34,31 +33,12 @@
   --accent-deep: #d8a13a;
 
   --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
-  --ok-soft: color-mix(in srgb, var(--ok) 22%, transparent);
   --ok: #b5bd68;
   --ok-2: #7fd4a8;
   --warn: #f0c674;
-  --kanban-green: #7fd4a8;
-  --kanban-yellow: #e0c060;
-  --kanban-red: #e0705f;
+  --status-yellow: #e0c060;
+  --status-red: #e0705f;
 
-  --kiiro: #e0af68;
-
-  --kaki-hint: #6f300e;
-  --kaki-tint: #f2a566;
-
-  --team-workbench-head-bg: var(--kaki-hint);
-  --team-workbench-head-fg: var(--on-strong);
-  --team-workbench-head-muted: #d9b8ab;
-  --team-workbench-head-line: var(--define-line);
-
-  --cowork-head-bg: var(--team-workbench-head-bg);
-  --cowork-head-fg: var(--team-workbench-head-fg);
-  --cowork-head-muted: var(--team-workbench-head-muted);
-  --cowork-head-attention: var(--kiiro);
-
-  --cowork-head-line: var(--team-workbench-head-line);
-  --cowork-surface-head-edge: var(--edge);
   --bad: #cc6666;
   --bad-soft: #e6a1a1;
   --bad-deep: #a33c33;
@@ -66,13 +46,6 @@
   --bad-ground: #3a1416;
   --bad-fg: #f2d6d6;
   --info: #6ea8fe;
-  --action: #2f6fd0;
-  --action-2: #4f9bff;
-  --rec: #c0392b;
-  --affirm-bg: #1d3a27;
-  --affirm-border: #2f6b3f;
-  --affirm-fg: #d6f5df;
-  --on-accent: #000;
   --on-strong: #fff;
   --chart-ink: rgb(11 14 20 / 82%);
 
@@ -84,15 +57,12 @@
   --kaki-lift: #e08163;
   --aiiro: #274a78;
 
-  /* The answered mark on the Setup step bar. Same reason as the Garden Canvas below:
-     kaki on white fails at small sizes, so the light skin fills with the deeper
-     kaki-lift. */
-  --setup-mark: var(--kaki);
+  /* The kaki fill and its ink: the Setup step bar's answered mark and the Garden Canvas
+     button. Kaki on white fails at small sizes, so light fills with the deeper kaki-lift. */
+  --kaki-fill: var(--kaki);
+  --kaki-fill-ink: var(--bg);
 
-  /* Garden Canvas. Kaki on white fails at 14px, so the light skin fills with
-     the deeper kaki-lift; the horizon is quieter on a cream ground. */
-  --gc-cta-bg: var(--kaki);
-  --gc-cta-ink: var(--bg);
+  /* Garden Canvas: the horizon is quieter on a cream ground. */
   --gc-cta-bg-hover: var(--kaki-lift);
   --gc-motif-opacity: .95;
   --gc-motif-wash: 10%;
@@ -199,13 +169,25 @@
   --bar-brand-mark-h: 27px;
   --bar-brand-track: -0.005em;
 
-  /* Workbench scope headers; the individual Team keeps the established kaki family. */
-  --scope-graphite: #3b3d42;
-  --scope-campaign-head-bg: color-mix(in srgb, var(--scope-graphite) 24%, var(--bg-2));
-  --scope-teams-head-bg: color-mix(in srgb, var(--aiiro) 24%, var(--bg-2));
-  --scope-head-line: color-mix(in srgb, var(--define-line) 72%, var(--line));
-  --scope-head-fg: var(--fg-strong);
-  --scope-head-muted: var(--muted-2);
+  /* Header colours, one set per scope: admin (Setup, Home, Models, Workspaces, Settings) is
+     graphite, Teams is aiiro, a Team or Agent is kaki. The workbench switch reads these. */
+  --graphite: #3b3d42;
+  --head-admin-bg: color-mix(in srgb, var(--graphite) 24%, var(--bg-2));
+  --head-admin-fg: var(--fg-strong);
+  --head-admin-muted: var(--muted-2);
+  --head-admin-line: var(--graphite);
+  --head-admin-edge: var(--space-1);
+  --head-teams-bg: color-mix(in srgb, var(--aiiro) 24%, var(--bg-2));
+  --head-teams-fg: var(--fg-strong);
+  --head-teams-muted: var(--muted-2);
+  --head-teams-line: var(--aiiro);
+  --head-teams-edge: var(--space-1);
+  --head-team-bg: #6f300e;
+  --head-team-fg: var(--on-strong);
+  --head-team-muted: #d9b8ab;
+  --head-team-line: var(--define-line);
+  --head-team-edge: var(--edge);
+  --head-attention: #e0af68;
 
   --edge: 1px;
   --edge-2: 2px;
@@ -215,15 +197,15 @@
   --motion-slow: 600ms;
   --motion-hint: 900ms;
   --ease: ease;
-  --ease-out: ease-out;
 }
 
 :root[data-theme='light'] {
 
-  --team-workbench-head-bg: var(--kaki-tint);
-  --team-workbench-head-fg: #201a0e;
-  --team-workbench-head-muted: #4f2e1b;
-  --cowork-head-attention: #7a2f10;
+  --kaki-tint: #f2a566;
+  --head-team-bg: var(--kaki-tint);
+  --head-team-fg: #201a0e;
+  --head-team-muted: #4f2e1b;
+  --head-attention: #7a2f10;
   --bg: #f4f2ec;
   --bg-2: #eae7df;
   --panel: #ffffff;
@@ -236,7 +218,6 @@
   --fg: #2c2e36;
   --muted: #585e6e;
   --muted-2: #5a617a;
-  --muted-3: #585e6e;
   --dim: #857f73;
   --accent: #a06b1a;
   --accent-2: #3f6a95;
@@ -244,9 +225,8 @@
   --ok: #5c7a1d;
   --ok-2: #1e7a4c;
   --warn: #9a7b00;
-  --kanban-green: #1e7a4c;
-  --kanban-yellow: #c9a227;
-  --kanban-red: #b8362a;
+  --status-yellow: #c9a227;
+  --status-red: #b8362a;
   --bad: #b04343;
   --bad-soft: #8f3a3a;
   --bad-deep: #a33c33;
@@ -254,31 +234,24 @@
   --bad-ground: #f7e2e2;
   --bad-fg: #6a1f1f;
   --info: #1f5fc9;
-  --action: #1f5fc9;
-  --action-2: #174a9e;
-  --affirm-bg: #e3f2e6;
-  --affirm-border: #4f9762;
-  --affirm-fg: #1b4a2a;
-  --on-accent: #fff;
   --scrim: rgb(0 0 0 / 35%);
   --shadow-menu: 0 8px 24px rgb(30 30 30 / 18%);
   --shadow-sheet: 0 12px 34px rgb(30 30 30 / 22%);
   --kaki-lift: #a34e2f;
-  --setup-mark: var(--kaki-lift);
-
-  --gc-cta-bg: var(--kaki-lift);
-  --gc-cta-ink: var(--on-strong);
+  --kaki-fill: var(--kaki-lift);
+  --kaki-fill-ink: var(--on-strong);
   --gc-cta-bg-hover: color-mix(in srgb, var(--kaki-lift) 86%, #000);
   --gc-motif-opacity: .5;
   --gc-motif-wash: 8%;
   --ch-horizon-opacity: .85;
 
   /* Light mode uses the selected full-fill treatment for collection scopes. */
-  --scope-campaign-head-bg: var(--scope-graphite);
-  --scope-teams-head-bg: var(--aiiro);
-  --scope-head-line: color-mix(in srgb, var(--scope-graphite) 78%, #000);
-  --scope-head-fg: var(--on-strong);
-  --scope-head-muted: color-mix(in srgb, var(--on-strong) 78%, transparent);
+  --head-admin-bg: var(--graphite);
+  --head-admin-fg: var(--on-strong);
+  --head-admin-muted: color-mix(in srgb, var(--on-strong) 78%, transparent);
+  --head-teams-bg: var(--aiiro);
+  --head-teams-fg: var(--on-strong);
+  --head-teams-muted: color-mix(in srgb, var(--on-strong) 78%, transparent);
 
   --term-cube: invert;
   --term-bg: #faf8f2;
@@ -315,28 +288,6 @@
   --term-well: #ffffff;
   --term-input-line: #c8c2b2;
   --term-input-fg: #2c2e36;
-}
-
-:root:is([data-workbench='campaign'], [data-workbench='setup'], [data-workbench='launch'], [data-workbench='models'], [data-workbench='workspaces']) {
-  --cowork-head-bg: var(--scope-campaign-head-bg);
-  --cowork-head-line: var(--scope-graphite);
-  --cowork-surface-head-edge: var(--space-1);
-  --cowork-head-fg: var(--scope-head-fg);
-  --cowork-head-muted: var(--scope-head-muted);
-}
-:root:is([data-workbench='cowork'], [data-workbench='teams']) {
-  --cowork-head-bg: var(--scope-teams-head-bg);
-  --cowork-head-line: var(--aiiro);
-  --cowork-surface-head-edge: var(--space-1);
-  --cowork-head-fg: var(--scope-head-fg);
-  --cowork-head-muted: var(--scope-head-muted);
-}
-:root:is([data-workbench='team'], [data-workbench='agent']) {
-  --cowork-head-bg: var(--team-workbench-head-bg);
-  --cowork-head-line: var(--team-workbench-head-line);
-  --cowork-surface-head-edge: var(--edge);
-  --cowork-head-fg: var(--team-workbench-head-fg);
-  --cowork-head-muted: var(--team-workbench-head-muted);
 }
 
 :focus-visible {
@@ -398,6 +349,32 @@ body {
   top: var(--app-top, 0px);
   height: var(--app-h, 100dvh);
   overflow: hidden;
+}
+}
+
+@layer ui {
+/* THE WORKBENCH SWITCH, not a design token: it picks one scope's header colours for the
+   workbench on screen. Edit the --head-<scope>-* tokens, never these. */
+:root {
+  --current-head-bg: var(--head-team-bg);
+  --current-head-fg: var(--head-team-fg);
+  --current-head-muted: var(--head-team-muted);
+  --current-head-line: var(--head-team-line);
+  --current-head-edge: var(--head-team-edge);
+}
+:root:is([data-workbench='campaign'], [data-workbench='setup'], [data-workbench='launch'], [data-workbench='models'], [data-workbench='workspaces']) {
+  --current-head-bg: var(--head-admin-bg);
+  --current-head-fg: var(--head-admin-fg);
+  --current-head-muted: var(--head-admin-muted);
+  --current-head-line: var(--head-admin-line);
+  --current-head-edge: var(--head-admin-edge);
+}
+:root:is([data-workbench='cowork'], [data-workbench='teams']) {
+  --current-head-bg: var(--head-teams-bg);
+  --current-head-fg: var(--head-teams-fg);
+  --current-head-muted: var(--head-teams-muted);
+  --current-head-line: var(--head-teams-line);
+  --current-head-edge: var(--head-teams-edge);
 }
 }
 
@@ -1063,8 +1040,8 @@ body {
   padding: var(--space-3) var(--space-4);
   min-height: var(--row-head);
 
-  background: var(--cowork-head-bg);
-  border-bottom: var(--edge) solid var(--cowork-head-line);
+  background: var(--current-head-bg);
+  border-bottom: var(--edge) solid var(--current-head-line);
   flex: 0 0 auto;
   font-family: var(--workbench-head-font);
   font-size: var(--workbench-head-size);
@@ -1078,7 +1055,7 @@ body {
   flex: 0 1 auto;
   min-width: 6rem;
   padding: var(--space-2) var(--space-3);
-  color: var(--cowork-head-fg);
+  color: var(--current-head-fg);
   font-family: var(--workbench-head-font);
   font-size: var(--workbench-head-size);
   font-weight: var(--workbench-head-weight);
@@ -1522,7 +1499,7 @@ body {
   border: var(--edge) solid transparent;
   border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--muted-3);
+  color: var(--muted);
   font-size: var(--text-3);
   line-height: 1;
   padding: var(--space-2) var(--space-3);
@@ -1767,7 +1744,7 @@ body {
   color: var(--bad);
 }
 .st-stamp {
-  color: var(--muted-3);
+  color: var(--muted);
   font-size: var(--text-2);
   font-variant-numeric: tabular-nums;
 }
@@ -1776,7 +1753,7 @@ body {
   flex-direction: column;
 }
 .st-grp {
-  color: var(--muted-3);
+  color: var(--muted);
   font-size: var(--text-2);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1803,11 +1780,11 @@ body {
   overflow-wrap: anywhere;
 }
 .st-note {
-  color: var(--muted-3);
+  color: var(--muted);
   margin-left: var(--space-4);
 }
 .st-link {
-  color: var(--muted-3);
+  color: var(--muted);
   font-size: var(--text-3);
 }
 
@@ -2269,7 +2246,7 @@ body {
 }
 .pr-detail .pr-f select { color: var(--accent); }
 .pr-detail .pr-f input:disabled { color: var(--muted-2); }
-.pr-detail .pr-f input::placeholder { color: var(--muted-3); }
+.pr-detail .pr-f input::placeholder { color: var(--muted); }
 .pr-block {
   border: var(--edge) solid var(--line-2);
   border-radius: var(--radius-sm);
@@ -2328,7 +2305,7 @@ body {
   color: var(--muted-2);
 }
 .pr-chip.muted {
-  color: var(--muted-3);
+  color: var(--muted);
 }
 .pr-chip.bad {
   color: var(--bad-soft);
@@ -2426,7 +2403,7 @@ body {
   font-size: var(--text-3);
 }
 .pr-empty {
-  color: var(--muted-3);
+  color: var(--muted);
   font-size: var(--text-3);
   padding: var(--space-4) var(--space-1);
 }
@@ -4219,6 +4196,23 @@ body {
 .setup-provider-state { color: var(--muted); font-size: var(--text-5); }
 .setup-provider-step[data-current='true'] .setup-provider-state { color: var(--kaki); }
 .setup-provider-step[data-done='true'] .setup-provider-state { color: var(--ok-2); }
+.setup-provider-step[data-failed='true'] .setup-provider-mark { border-color: var(--bad); color: var(--bad); }
+.setup-provider-step[data-failed='true'] .setup-provider-state { color: var(--bad); }
+/* Model refresh: the door's three steps, each line a quiet label and its value; the review in the provider table's columns. */
+/* Each step: title, then its description, then a block of facts or the review table, each group spaced apart. */
+.models-refresh-steps { margin-top: var(--space-8); }
+.models-refresh-steps .setup-provider-copy { gap: var(--space-6); }
+.models-refresh-steps .setup-provider-control { margin-top: var(--space-6); }
+.models-refresh-facts { display: grid; gap: var(--space-1); }
+.models-refresh-line { display: grid; grid-template-columns: 10rem minmax(0, 1fr); gap: var(--space-4); }
+.models-refresh-key { color: var(--muted); }
+.models-review th:nth-child(1) { width: 24%; }
+.models-review th:nth-child(2) { width: 22%; }
+.models-review th:nth-child(3) { width: 11%; }
+.models-review th:nth-child(4) { width: 15%; }
+.models-review td:nth-child(3) { white-space: nowrap; }
+.models-review tr[data-change='removed'] td { color: var(--muted); }
+.models-review tr[data-change='removed'] :is(b, .setup-provider-model-id), .models-review tr[data-change='removed'] td:not(:first-child) { text-decoration: line-through; }
 .setup-provider-note { margin: 0; color: var(--muted-2); font-size: var(--text-5); line-height: 1.45; overflow-wrap: anywhere; }
 .setup-provider-command { color: var(--muted-2); font: var(--text-3) var(--font-mono); overflow-wrap: anywhere; }
 .setup-provider-control { display: flex; flex-wrap: wrap; gap: var(--space-3); min-width: 0; grid-column: 2; }
@@ -4252,15 +4246,15 @@ body {
 .setup-steps-header { display: inline-flex; align-items: center; }
 .setup-scan { display: inline-flex; align-items: center; gap: var(--space-4); margin-left: var(--space-6); }
 .setup-scan-button { display: grid; place-items: center; width: var(--space-10); height: var(--space-10); flex: 0 0 auto; border: var(--edge) solid var(--line-2); border-radius: var(--radius-round); background: transparent; color: var(--muted); padding: 0; cursor: pointer; }
-.setup-scan-button:hover { border-color: var(--setup-mark); color: var(--setup-mark); }
+.setup-scan-button:hover { border-color: var(--kaki-fill); color: var(--kaki-fill); }
 .setup-scan-button svg { width: var(--space-7); height: var(--space-7); display: block; }
-.setup-scan[data-state='scanning'] .setup-scan-button { border-color: var(--setup-mark); color: var(--setup-mark); }
+.setup-scan[data-state='scanning'] .setup-scan-button { border-color: var(--kaki-fill); color: var(--kaki-fill); }
 .setup-scan[data-state='scanning'] .setup-scan-button svg { animation: setup-scan-spin 1.1s linear infinite; }
 .setup-scan[data-state='failed'] .setup-scan-button { border-color: var(--bad); color: var(--bad-soft); }
 @keyframes setup-scan-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .setup-scan[data-state='scanning'] .setup-scan-button svg { animation: none; } }
 .setup-scan-word { color: var(--muted); font-size: var(--text-2); white-space: nowrap; }
-.setup-scan[data-state='scanning'] .setup-scan-word { color: var(--setup-mark); }
+.setup-scan[data-state='scanning'] .setup-scan-word { color: var(--kaki-fill); }
 .setup-scan[data-state='failed'] .setup-scan-word { color: var(--bad-soft); }
 .setup-scan-word:empty { display: none; }
 /* THE SETUP HEADER ZONE. It sits in the work surface's own content box and adds no inset of
@@ -4295,9 +4289,9 @@ body {
 .setup-steps-mark { display: grid; place-items: center; flex: 0 0 auto; width: var(--slab-w); height: var(--slab); box-sizing: border-box; border: var(--edge) solid var(--line-2); border-radius: var(--radius-hair); background: transparent; color: var(--muted); font-size: var(--slab-type); font-weight: 650; line-height: 1; font-variant-numeric: tabular-nums; transform: skewX(var(--skew)); transition: background-color var(--motion-quick) var(--ease), border-color var(--motion-quick) var(--ease), color var(--motion-quick) var(--ease); }
 /* The numeral stands upright inside the leaning mark. */
 .setup-steps-mark::before { content: attr(data-n); display: block; transform: skewX(calc(-1 * var(--skew))); }
-.setup-steps-mark[data-answered='true'] { border-color: var(--setup-mark); background: var(--setup-mark); color: var(--on-strong); }
+.setup-steps-mark[data-answered='true'] { border-color: var(--kaki-fill); background: var(--kaki-fill); color: var(--on-strong); }
 /* The step Setup lands on: hollow, kaki-edged. Colour and edge, never an underline. */
-.setup-steps-mark[data-next='true'] { border-color: var(--setup-mark); color: var(--setup-mark); }
+.setup-steps-mark[data-next='true'] { border-color: var(--kaki-fill); color: var(--kaki-fill); }
 
 /* THE DOOR BACK TO SETUP, at the head of Machine Settings. A selector card like any other,
    so hover, focus ring and both densities come for free. The word sits left, the marks sit
@@ -4316,7 +4310,7 @@ body {
 /* COMPLETE IS TWO WORDS. No bar: five filled marks on a finished card say nothing the
    sentence does not. The card also drops to the utility edge, so finished Setup stops
    asking for attention without leaving the column. */
-.setup-return-done { color: var(--setup-mark); }
+.setup-return-done { color: var(--kaki-fill); }
 @media (max-width: 700px) {
   .setup-surface-body { padding: var(--space-4) 0; }
   .setup-services-benefit { grid-template-columns: 1fr; }

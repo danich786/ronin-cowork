@@ -49,9 +49,9 @@
   .tk-legend { display: flex; flex: none; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-4) var(--space-6); color: var(--muted); font-size: var(--text-3); }
   .tk-legend span { display: inline-flex; align-items: center; gap: var(--space-2); }
   .tk-dot { width: var(--space-3); height: var(--space-3); background: var(--line-2); }
-  .tk-dot.green { background: var(--kanban-green); }
-  .tk-dot.yellow { background: var(--kanban-yellow); }
-  .tk-dot.red { background: var(--kanban-red); }
+  .tk-dot.green { background: var(--ok-2); }
+  .tk-dot.yellow { background: var(--status-yellow); }
+  .tk-dot.red { background: var(--status-red); }
   .tk-notice { flex: 1 1 auto; min-width: 0; margin: 0; color: var(--muted); font-size: var(--text-3); }
   .tk-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(var(--tk-column-min), 1fr)); gap: var(--space-4); min-width: 0; padding: var(--space-4) var(--space-5) var(--space-5); }
   .tk-unavailable { margin: 0; color: var(--muted); }
@@ -72,9 +72,9 @@
   .tk-card.open { height: var(--tk-card-open); }
   .tk-card:active { cursor: grabbing; }
   .tk-card.dragging { opacity: .45; }
-  .tk-card[data-status='green'] { border-left-color: var(--kanban-green); }
-  .tk-card[data-status='yellow'] { border-left-color: var(--kanban-yellow); }
-  .tk-card[data-status='red'] { border-left-color: var(--kanban-red); }
+  .tk-card[data-status='green'] { border-left-color: var(--ok-2); }
+  .tk-card[data-status='yellow'] { border-left-color: var(--status-yellow); }
+  .tk-card[data-status='red'] { border-left-color: var(--status-red); }
   .tk-board.dragging .tk-column.means { border-color: var(--accent); border-style: dashed; background: var(--raise); }
   .tk-column.over { border-color: var(--accent); background: var(--raise); }
   .tk-drop-hint { display: none; margin: 0; padding: var(--space-2) var(--space-4) 0; color: var(--accent); font-size: var(--text-3); }
@@ -86,7 +86,7 @@
   .tk-outcome { max-height: calc(var(--tk-outcome-line) * 2); overflow: hidden; margin-top: var(--space-1); color: var(--muted); font-size: var(--text-3); line-height: var(--tk-outcome-line); }
   .tk-evidence { margin: var(--space-2) 0 0; overflow-wrap: anywhere; color: var(--dim); font-size: var(--text-2); }
   .tk-card-row { min-height: var(--tk-card-meta-line); align-items: center; gap: var(--space-2); margin-top: var(--space-3); padding-top: 0; font-size: var(--text-3); }
-  .tk-waiting { color: var(--kanban-green); }
+  .tk-waiting { color: var(--ok-2); }
   .tk-asked { color: var(--muted); }
   .tk-owner, .tk-project-open { border: 0; border-bottom: var(--edge) dotted currentColor; border-radius: 0; padding: 0; background: transparent; color: var(--accent-2); font: inherit; }
   .tk-owner:hover, .tk-project-open:hover { border-bottom-style: solid; }
@@ -104,8 +104,8 @@
   .tw-config-form > .ask { max-width: 100%; }
 
   .tw-config, .league-team-edit-content { font-size: var(--form-input); }
-  .league-team-member-words strong, .league-team-add select, .tw-config-actions { font-size: var(--form-input); }
-  .tw-config-status, .league-team-member-words span, .league-team-empty { font-size: var(--form-note); }
+  .league-team-member-title, .tw-config-actions { font-size: var(--form-input); }
+  .tw-config-status, .league-team-empty { font-size: var(--form-note); }
 
   .league-team-edit-content { display: flex; flex-direction: column; gap: var(--space-10); }
   /* The Team opens beside its stone top-down: head, Agents, Work, Configuration. One
@@ -129,39 +129,29 @@
   .league-team-agent-name { grid-column: 2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .league-team-agent-lead { margin-inline-end: var(--space-3); color: var(--accent); }
   .league-team-agent-holds { margin-inline-start: var(--space-3); color: var(--muted); }
-  .league-team-agent-plus { min-height: 36px; color: var(--accent); }
   .tk-line-title { grid-column: 2; }
   .tk-line-holder { grid-column: 3; color: var(--muted); }
   .tk-line-title, .tk-line-holder { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .tk-stage-bar { grid-column: 4; justify-self: end; display: inline-flex; gap: var(--space-1); }
   .tk-stage-bar > i { width: var(--space-5); height: var(--space-2); border: var(--edge) solid var(--line-2); }
   .tk-stage-bar > i.past { border-color: var(--fg); background: var(--fg); }
-  .tk-stage-bar > i.now { border-color: transparent; background: var(--kanban-yellow); }
-  .tk-stage-bar > i.now.green { background: var(--kanban-green); }
-  .tk-stage-bar > i.now.red { background: var(--kanban-red); }
+  .tk-stage-bar > i.now { border-color: transparent; background: var(--status-yellow); }
+  .tk-stage-bar > i.now.green { background: var(--ok-2); }
+  .tk-stage-bar > i.now.red { background: var(--status-red); }
   .league-team-roster, .league-team-config { flex: 0 0 auto; }
   .league-team-roster { display: flex; flex-direction: column; min-height: 0; }
   .league-team-roster-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-4); border-bottom: var(--edge) solid var(--line-2); padding-bottom: var(--space-3); }
   .league-team-roster-title { margin: 0; color: var(--fg-strong); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
-  .league-team-people-tools { display: flex; align-items: center; gap: var(--space-2); }
-  .league-team-density { inline-size: var(--space-8); padding-inline: 0; }
-  .league-team-member[data-selected='true'] { box-shadow: inset var(--edge-2) 0 var(--kaki); background: var(--raise); }
-  .league-team-lead-empty { border: var(--edge) dashed var(--line-2); background: var(--well); padding: var(--space-4); }
-  .league-team-lead-empty > strong { color: var(--fg-strong); }
-  .league-team-lead-empty > p { margin: var(--space-2) 0 var(--space-4); color: var(--muted); }
-  .league-team-lead-empty-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
-  .league-team-lead-empty-actions > .ask { min-width: 0; flex: 1 1 calc(var(--space-12) * 4); }
-  .league-team-member { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--space-5); border-bottom: var(--edge) solid var(--line); padding: var(--space-2) 0; }
+  /* One line per Agent — 人 and title, the live reading, the caret. The pressed row opens in
+     place to the Agent's read: role, what it is working on, the items it holds, its @id,
+     and the member action bar under them (owner, 2026-10-20). */
+  .league-team-member { border-bottom: var(--edge) solid var(--line); }
   .league-team-member-identity { display: flex; align-items: center; min-width: 0; gap: var(--space-3); }
   .league-team-member-mark { width: var(--space-6); color: var(--kaki); font-size: var(--text-5); line-height: 1; text-align: center; }
-  .league-team-member-words { display: flex; flex-direction: column; min-width: 0; gap: var(--space-1); line-height: 1.1; }
-  .league-team-member-words strong { overflow: hidden; color: var(--fg-strong); font-weight: inherit; text-overflow: ellipsis; white-space: nowrap; }
-  .league-team-member-words span, .league-team-empty { color: var(--muted); }
+  .league-team-member-title { overflow: hidden; color: var(--fg-strong); font-weight: inherit; text-overflow: ellipsis; white-space: nowrap; }
+  .league-team-empty { color: var(--muted); }
   .league-team-member-actions { flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); }
-  .league-team-member-live { display: block; padding: 0; }
-  .league-team-member-main { display: block; }
   .league-team-member-toggle { display: grid; grid-template-columns: minmax(10rem, 1fr) minmax(0, 2.4fr) 1.25rem; align-items: center; gap: var(--space-4); width: 100%; min-width: 0; border: 0; background: transparent; color: inherit; padding: var(--space-3) 0; text-align: left; cursor: pointer; font: inherit; }
-  .league-team-member-toggle .league-team-member-words { display: flex; }
   .league-team-member-reading { display: grid; grid-template-columns: minmax(0, 1fr) 4.5rem 3.25rem 4.75rem; align-items: center; gap: var(--space-3); min-width: 0; }
   .league-team-member-reading span { overflow: hidden; color: var(--muted); font-size: var(--form-note); text-overflow: ellipsis; white-space: nowrap; }
   .league-team-member-step { grid-column: 1; }
@@ -170,17 +160,19 @@
   .league-team-member-model { grid-column: 4; }
   .league-team-member-state { color: var(--ok) !important; }
   .league-team-member-disclosure { color: var(--muted); font-size: var(--text-4); line-height: 1; text-align: center; }
-  .league-team-member-detail { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--space-5); border-top: var(--edge) solid var(--line); padding: var(--space-3) 0 var(--space-2); }
+  .league-team-member-detail { display: flex; flex-direction: column; gap: var(--space-3); border-top: var(--edge) solid var(--line); padding: var(--space-3) 0 var(--space-2); }
   .league-team-member-detail[hidden] { display: none; }
-  .league-team-roster[data-density='compact'] .league-team-member-reading { grid-template-columns: minmax(0, 1fr) calc(var(--space-12) * 1.5); }
-  .league-team-roster[data-density='compact'] .league-team-member-ctx,
-  .league-team-roster[data-density='compact'] .league-team-member-model,
-  .league-team-roster[data-density='compact'] .league-team-member-words span { display: none; }
-  .league-team-member-detail > .league-team-member-actions { grid-column: 2; }
-  .league-team-member-description { margin: 0; color: var(--fg); font-size: var(--form-note); line-height: 1.4; }
+  .league-team-member-items { display: flex; flex-direction: column; }
+  .league-team-member-items:empty { display: none; }
+  .league-team-member-status { margin: 0; color: var(--muted); font-size: var(--form-note); }
+  .league-team-member-status:empty { display: none; }
+  /* The items an opened row holds sit flush with its lines: no mark column here. */
+  .league-team-member-items .tk-line { grid-template-columns: minmax(0, 1fr) var(--hr-shingo) var(--hr-stack); padding-inline: 0; }
+  .league-team-member-items .tk-line-title { grid-column: 1; }
+  .league-team-member-items .tk-line-holder { grid-column: 2; }
+  .league-team-member-items .tk-stage-bar { grid-column: 3; }
   .league-team-empty { margin: 0; border-bottom: var(--edge) solid var(--line); padding: var(--space-5) 0; }
-  .league-team-add { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-3); margin-top: var(--space-5); }
-  .league-team-add select { min-width: 0; border: var(--edge) solid var(--line-2); border-radius: var(--radius-sm); background: var(--bg-2); color: var(--fg); padding: var(--space-3) var(--space-4); font: inherit; }
+  .league-team-add { margin-top: var(--space-5); }
 
   .tw-docs { display: flex; height: 100%; }
   .tw-docs .dc-empty { color: var(--fg-strong); font-size: var(--text-4); }
@@ -203,18 +195,17 @@
 }
 
 @layer app {
-  .ac-body { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: var(--space-6); padding: var(--space-5); }
-  .ac-section { min-width: 0; border: var(--edge) solid var(--line); background: var(--well); padding: var(--space-5); }
-  .ac-section h3, .ac-section h4 { color: var(--fg-strong); }
-  .ac-section h3 { margin: 0 0 var(--space-2); }
-  .ac-section h4 { margin: var(--space-5) 0 var(--space-2); }
-  .ac-birth { border-left: var(--edge-2) solid var(--accent-2); }
-  .ac-note, .ac-status { color: var(--muted); font-size: var(--text-3); }
-  .ac-facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-2) var(--space-4); }
-  .ac-facts dt { color: var(--muted); }
-  .ac-facts dd { margin: 0; overflow-wrap: anywhere; color: var(--fg-strong); }
-  .ac-brief { max-height: 18rem; overflow: auto; margin: 0; border: var(--edge) solid var(--line); padding: var(--space-3); color: var(--fg); font: inherit; white-space: pre-wrap; }
-  .ac-mandate, .ac-behaviours { display: grid; gap: var(--space-4); }
-  .ac-mandate > .wk-action { justify-self: end; }
-  .ac-add { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: var(--space-3); }
+  /* The one composition body (owner, 2026-10-20): the kit's unnumbered sections, no boxes;
+     the tile pads it, an opened roster row does not. */
+  .ac-body { display: flex; flex-direction: column; min-width: 0; }
+  .agent-composition .ac-body { padding: var(--space-5); }
+  /* One type scale in the body: every line reads at the form's input size (the stones' readings,
+     the item lines, the buttons); only the stones' own labels and a status word are notes. */
+  .ac-line, .ac-list, .ac-brief { margin: 0; font-size: var(--form-input); line-height: 1.5; overflow-wrap: anywhere; }
+  .ac-line { color: var(--muted); }
+  .ac-list { color: var(--fg); }
+  .ac-status { margin: 0; color: var(--muted); font-size: var(--form-note); }
+  .ac-status:empty { display: none; }
+  .ac-brief { max-height: 18rem; overflow: auto; border: var(--edge) solid var(--line-2); border-radius: var(--radius-xs); background: var(--well); padding: var(--space-4); color: var(--fg); font-family: inherit; white-space: pre-wrap; }
+  .ac-mandate, .ac-add { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: var(--space-3); }
 }

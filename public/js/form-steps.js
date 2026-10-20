@@ -156,7 +156,7 @@ export function templateTray(rows, current, onPick, { includeOwn = true } = {}) 
  * `loadProviderCatalog()` when it is shown and paints from `providerCatalog()`; a picker
  * built before the first read paints again when it lands.
  */
-let catalog = { rows: [], providers: [], machine: [], measured_at: '', refreshed_at: '', origin: '', updated: '', stock_updated: '', withdrawn: [], loaded: false };
+let catalog = { rows: [], providers: [], machine: [], measured_at: '', refreshed_at: '', origin: '', model_info: { origin: '', fetched_at: '' }, withdrawn: [], loaded: false };
 let inflight = null;
 const NATIVE_MODEL = 'native';
 
@@ -169,8 +169,8 @@ export function loadProviderCatalog() {
       rows: providers.flatMap((entry) => (Array.isArray(entry?.models) ? entry.models : [])), providers, machine,
       measured_at: read.ok ? String(read.data?.measured_at || '') : '',
       refreshed_at: read.ok ? String(read.data?.refreshed_at || '') : '',
-      origin: read.ok ? String(read.data?.origin || '') : '', updated: read.ok ? String(read.data?.updated || '') : '',
-      stock_updated: read.ok ? String(read.data?.stock_updated || '') : '',
+      origin: read.ok ? String(read.data?.origin || '') : '',
+      model_info: { origin: String(read.data?.model_info?.origin || ''), fetched_at: String(read.data?.model_info?.fetched_at || '') },
       withdrawn: read.ok && Array.isArray(read.data?.withdrawn) ? read.data.withdrawn : [],
       loaded: true,
     };
@@ -180,7 +180,7 @@ export function loadProviderCatalog() {
   return inflight;
 }
 
-/** What every reader paints from: `{ rows, providers, machine, measured_at, refreshed_at, origin, updated, stock_updated, withdrawn, loaded }`. */
+/** What every reader paints from: `{ rows, providers, machine, measured_at, refreshed_at, origin, model_info, withdrawn, loaded }`. */
 export const providerCatalog = () => catalog;
 
 /** light · standard · frontier, in the person's words. */
@@ -188,9 +188,27 @@ export function tierWord(tier) {
   return { light: t('forms.tier_light', 'light'), standard: t('forms.tier_standard', 'standard'), frontier: t('forms.tier_frontier', 'frontier') }[tier] || String(tier || '');
 }
 
+/** An ISO moment as people read it, `20 Oct 2026, 17:35`; a bare day as `19 Feb 2026`; '' when unreadable. */
+export function dayTime(iso) {
+  const text = String(iso || '');
+  const at = new Date(text);
+  if (!text || Number.isNaN(at.getTime())) return '';
+  const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return `${at.getUTCDate()} ${month[at.getUTCMonth()]} ${at.getUTCFullYear()}`;
+  const two = (n) => String(n).padStart(2, '0');
+  return `${at.getDate()} ${month[at.getMonth()]} ${at.getFullYear()}, ${two(at.getHours())}:${two(at.getMinutes())}`;
+}
+
+/** A model's list price from its model info, `$4 in · $20 out per M tokens`; '' when it has none. */
+export function priceText(info) {
+  const cost = info?.cost ?? {};
+  if (typeof cost.input !== 'number' || typeof cost.output !== 'number') return '';
+  return t('forms.model_price', '${input} in · ${output} out per M tokens', { input: cost.input, output: cost.output });
+}
+
 /**
  * One model as an option reads: its name and its tier, and stops there. A picker is for
- * choosing, not for reading: the long good-at / not-good-at description belongs to the
+ * choosing, not for reading: the model's description belongs to the
  * Campaign's Model providers surface, where there is room for the whole table. In an
  * option it is a sentence squeezed into a line that cannot show it.
  */

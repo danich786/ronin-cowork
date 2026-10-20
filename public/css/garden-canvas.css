@@ -96,7 +96,7 @@
   textarea.garden-question-input { resize: vertical; min-height: calc(var(--space-12) * 2); }
 
   /* The only filled kaki on the surface, sized to its label. */
-  .garden-cta { justify-self: start; display: inline-flex; align-items: center; gap: var(--space-5); padding: var(--space-6) var(--space-9); border: var(--edge) solid transparent; border-radius: var(--radius-md); background: var(--gc-cta-bg); color: var(--gc-cta-ink); font: inherit; font-size: var(--text-5); font-weight: 650; text-align: left; cursor: pointer; transition: background 140ms ease; }
+  .garden-cta { justify-self: start; display: inline-flex; align-items: center; gap: var(--space-5); padding: var(--space-6) var(--space-9); border: var(--edge) solid transparent; border-radius: var(--radius-md); background: var(--kaki-fill); color: var(--kaki-fill-ink); font: inherit; font-size: var(--text-5); font-weight: 650; text-align: left; cursor: pointer; transition: background 140ms ease; }
   .garden-cta::after { content: ''; flex: none; width: var(--gc-glyph); height: var(--gc-glyph); background: currentColor; transition: transform 160ms ease; -webkit-mask: var(--gc-icon-chevron) center / contain no-repeat; mask: var(--gc-icon-chevron) center / contain no-repeat; }
   .garden-cta:hover { background: var(--gc-cta-bg-hover); }
   .garden-cta:hover::after { transform: translateX(var(--gc-nudge)); }

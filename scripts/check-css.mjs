@@ -226,11 +226,10 @@ const FLOOR = [
   ['--muted', '--bg', 3.5], ['--muted', '--panel', 3.5], ['--muted-2', '--panel', 4.5],
   ['--accent', '--bg', 3], ['--warn', '--bg', 3], ['--bad', '--bg', 3], ['--bad-soft', '--bg', 3],
   ['--info', '--bg', 3], ['--ok', '--bg', 3],
-  ['--on-accent', '--accent', 4.5], ['--on-strong', '--action', 4.5],
   ['--on-strong', '--kaki', 3], // the メ fill — 21px bold, large-text tier
-  ['--bad-fg', '--bad-ground', 7], ['--affirm-fg', '--affirm-bg', 7],
-  ['--cowork-head-fg', '--cowork-head-bg', 7], ['--cowork-head-muted', '--cowork-head-bg', 4.5],
-  ['--cowork-head-attention', '--cowork-head-bg', 4.5],
+  ['--bad-fg', '--bad-ground', 7],
+  ['--head-team-fg', '--head-team-bg', 7], ['--head-team-muted', '--head-team-bg', 4.5],
+  ['--head-attention', '--head-team-bg', 4.5],
   ['--term-fg', '--term-bg', 7], ['--term-tape-fg', '--term-tape-bg', 7], ['--term-input-fg', '--term-well', 7],
 ];
 for (const [name, toks] of [['dark', darkTokens], ['light', lightTokens]]) {

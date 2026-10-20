@@ -38,14 +38,14 @@ test('GET /api/provider-catalog is the catalog object, whole and dated', async (
   assert.deepEqual(body, JSON.parse(JSON.stringify(await providerCatalogAnswer(null))), 'the client reads exactly what the server joins; this box has no record, so nothing is listed');
   assert.equal(body.origin, 'stock');
   assert.equal(body.path, STOCK_CATALOG_MD);
-  assert.match(body.updated, /^\d{4}-\d{2}-\d{2}$/);
-  assert.deepEqual(Object.keys(body).sort(), ['measured_at', 'origin', 'path', 'providers', 'refreshed_at', 'stock_updated', 'updated', 'withdrawn']);
-  assert.equal(body.stock_updated, body.updated, 'no owner copy: the one date is the shipped one');
+  assert.deepEqual(Object.keys(body).sort(), ['measured_at', 'model_info', 'origin', 'path', 'providers', 'refreshed_at', 'withdrawn']);
+  assert.equal(body.model_info.origin, 'stock', 'nothing accepted: the shipped model info, dated');
+  assert.match(body.model_info.fetched_at, /^\d{4}-\d{2}-\d{2}T/);
   assert.equal(body.refreshed_at, '', 'never refreshed, and said so');
   assert.deepEqual(body.withdrawn, []);
   assert.ok(body.providers.length >= 5);
   for (const entry of body.providers) {
-    assert.deepEqual(Object.keys(entry).filter((key) => !['maturity', 'native', 'nativeDangerousCmd', 'launch_modes'].includes(key)).sort(), ['cli', 'cli_label', 'label', 'models', 'off', 'operational', 'origin', 'provider', 'shadowed']);
+    assert.deepEqual(Object.keys(entry).filter((key) => !['maturity', 'native', 'nativeDangerousCmd', 'launch_modes'].includes(key)).sort(), ['cli', 'cli_label', 'label', 'launchable', 'models', 'models_dev', 'off', 'operational', 'origin', 'provider', 'shadowed'].filter((key) => key !== 'models_dev' || entry.models_dev));
     assert.equal(entry.origin, 'stock');
     assert.equal(entry.operational, false);
     if (entry.maturity === 'comingSoon') assert.deepEqual(entry.models, [], `${entry.label} is visible but unavailable`);

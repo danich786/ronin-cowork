@@ -181,7 +181,7 @@ export async function measureProviders(section: SetupSection, ops: MeasureOps = 
   for (const agent of available) if (agent.installed && agent.path) paths[agent.id] = agent.path;
   const signed_in: string[] = [];
   for (const agent of AGENTS) if (await signedIn(agent.id)) signed_in.push(agent.id);
-  const launchable = new Set(catalog.filter((entry) => entry.models.length > 0).map((entry) => entry.cli));
+  const launchable = new Set(catalog.filter((entry) => entry.launchable).map((entry) => entry.cli));
   const operational = installed.filter((cli) =>
     offAt(section, cli) === null && (signed_in.includes(cli) || activatedAt(section, cli) !== null) && launchable.has(cli));
   // THE OWNER'S RULE (2026-09-09): a provider that is not activated gets nothing spent on
@@ -286,6 +286,7 @@ export async function measureAndRecordProviders(section?: SetupSection, ops: Mea
  * REFRESH ALL — the owner's press. The same machine facts, then every activated CLI's own
  * model list read again through the reader its registry entry names, then npm asked for
  * each activated CLI's newest release (one outbound request each, on the egress record).
+ * The same door's second step is models.dev, on its own route (`src/model-info.ts`).
  * A CLI not activated gets nothing spent on it; its old list, if any, is dropped with it.
  */
 export async function refreshProviders(section?: SetupSection, ops: MeasureOps = {}, latest: LatestOps = {}): Promise<ProviderSummary> {

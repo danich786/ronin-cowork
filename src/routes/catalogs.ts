@@ -8,7 +8,8 @@ import { activeDeskProfileName, listDeskProfiles } from '../desk-profiles.js';
 import { initialCampaign, readCampaign } from '../campaigns.js';
 import { listWays } from '../resources.js';
 import { listSessionReadings } from '../session-readings.js';
-import { providerCatalogAnswer } from '../model-providers.js';
+import { listProviderCatalog, providerCatalogAnswer } from '../model-providers.js';
+import { acceptModelInfo, checkModelInfo, discardModelInfo, modelInfoReview } from '../model-info.js';
 import { readProviderSummary } from '../provider-summary.js';
 import {
   listProjectRoots,
@@ -276,7 +277,7 @@ export function registerCatalogs(app: express.Express): void {
     }
   });
 
-  // The one catalog read for the client: origin, path, the header's updated day, the dates
+  // The one catalog read for the client: origin, path, the model info's date, the dates
   // of the record, and every provider with its joined rows — Native, then what its CLI lists.
   app.get('/api/provider-catalog', async (_req, res) => {
     try {
@@ -284,6 +285,32 @@ export function registerCatalogs(app: express.Express): void {
     } catch (e) {
       res.status(500).json({ error: errMsg(e) });
     }
+  });
+
+  // MODEL INFO's review (src/model-info.ts): the copy in use, the update Refresh all left
+  // waiting with its changes, the last check. Only Accept makes the update the copy in use.
+  app.get('/api/model-info', async (_req, res) => {
+    try { res.json(await modelInfoReview()); }
+    catch (e) { res.status(500).json({ error: errMsg(e) }); }
+  });
+  // Refresh all's second step, after the CLIs' lists: fetch models.dev for the catalog's
+  // providers and leave an update waiting when it differs. The owner's press, never a timer.
+  app.post('/api/model-info/check', async (_req, res) => {
+    try {
+      const keys = (await listProviderCatalog()).flatMap((entry) => entry.models_dev ? [entry.models_dev] : []);
+      await checkModelInfo(keys);
+      res.json(await modelInfoReview());
+    } catch (e) { res.status(500).json({ error: errMsg(e) }); }
+  });
+  app.post('/api/model-info/accept', async (_req, res) => {
+    try {
+      if (!await acceptModelInfo()) return res.status(409).json({ error: 'No model info update is waiting.' });
+      res.json(await modelInfoReview());
+    } catch (e) { res.status(500).json({ error: errMsg(e) }); }
+  });
+  app.post('/api/model-info/discard', async (_req, res) => {
+    try { await discardModelInfo(); res.json(await modelInfoReview()); }
+    catch (e) { res.status(500).json({ error: errMsg(e) }); }
   });
 
   app.get('/api/installations', async (_req, res) => {

@@ -22,7 +22,7 @@ export const WORKBENCH_TYPES = Object.freeze({
   agentDocuments: 'agent.documents', agentTeams: 'agent.team-membership', agentTasks: 'agent.task-manager', agentComposition: AGENT_COMPOSITION_TYPE,
   campaignMachine: 'campaign.machine', campaignDefaults: 'campaign.defaults', campaignRoots: 'campaign.project-roots',
   campaignIdentity: 'campaign.identity', campaignInstallations: 'campaign.installations', campaignCreate: 'campaign.new',
-  modelStones: 'models.stones', modelProvider: 'models.provider',
+  modelStones: 'models.stones', modelRefresh: 'models.refresh', modelProvider: 'models.provider',
   folderStones: 'workspaces.stones', folder: 'workspaces.folder', folderNew: 'workspaces.new', folderGithub: 'workspaces.github', folderClone: 'workspaces.clone',
 });
 
@@ -79,8 +79,10 @@ export function registerWorkbenchCatalog() {
   // (wk-selector-entity, the terminal's class); the three admin doors are dotted like New Agent; the
   // stones surface heads the selector as a solid card, as the Teams card heads the Cowork selector.
   add({ type: WORKBENCH_TYPES.modelStones, header: 'surface', className: 'wk-selector-utility', label: () => t('campaign_home.models', 'Models'), create: ({ workspace, environment }) => environment.modelStones(workspace) });
+  // Model refresh (owner, 2026-10-20): the Refresh all door the Models stones do not carry, a solid utility card after Models.
+  add({ type: WORKBENCH_TYPES.modelRefresh, header: 'surface', className: 'wk-selector-utility', label: () => t('models.refresh', 'Model refresh'), create: ({ workspace, environment }) => environment.modelRefresh(workspace) });
   add({ type: WORKBENCH_TYPES.modelProvider, header: 'surface', className: 'wk-selector-entity', discover: (_t, e) => e.providers(), create: ({ workspace, detail, environment }) => environment.modelProvider(workspace, detail) });
-  profiles.define(WORKBENCH_PROFILES.models, [WORKBENCH_TYPES.modelStones, WORKBENCH_TYPES.modelProvider]);
+  profiles.define(WORKBENCH_PROFILES.models, [WORKBENCH_TYPES.modelStones, WORKBENCH_TYPES.modelRefresh, WORKBENCH_TYPES.modelProvider]);
   // THE WORKSPACES WORKBENCH (owner, 2026-10-19): its own stones of folders in Workspace 1; one folder
   // whole in a workspace, placed by a dragged stone or its selector card; the three admin doors are
   // dotted cards, the New Agent format (workspaces-surface.js).

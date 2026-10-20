@@ -1,7 +1,7 @@
 /* part of the ronin-cowork client — see js/README.md */
 /** Workbench; its Campaign, Cowork or Team scope limits what cards are offered. */
 import { WorkspaceKit } from './workspace-kit.js';
-import { deleteTeamRoster, membersOfTeam, sessionsAvailableToTeam, setTeamLead, setTeamMembership, subscribe, teamByName, teamsFromState, unassignedSessions, UNASSIGNED } from './team-controller.js';
+import { deleteTeamRoster, membersOfTeam, subscribe, teamByName, teamsFromState, unassignedSessions, UNASSIGNED } from './team-controller.js';
 import { createNewTeamFormView } from './new-team-form.js';
 import { createNewAgentView } from './new-agent.js';
 import { createTeamRosterSurface } from './team-roster-surface.js';
@@ -36,7 +36,6 @@ import { retireSession } from './session-retire.js';
 import { installBehaviourReader } from './behaviour-reader.js';
 import { BEHAVIOUR_SURFACE_TYPE } from './behaviour-surface.js';
 import { holderOf, itemLine } from './team-kanban.js';
-import { ask } from './ask.js';
 import { registerWorkbenchCatalog, WORKBENCH_PROFILES as WB_PROFILES, WORKBENCH_TYPES as WB_TYPES } from './workbench-catalog.js';
 import { createAgentCompositionSurface } from './agent-composition.js';
 
@@ -573,25 +572,6 @@ export function createCoworkView(options = {}) {
     const main = el('div', 'league-team-edit-content');
     main.append(...(holding ? [steps.agents.el] : [steps.agents.el, steps.work.el, steps.config.el]));
     let held = new Map(); // agent name -> titles of the items it holds, from the Team reading
-    const failed = (result) => { if (!result.ok) say('failed', result.message); else say(); };
-    // THE PLUS does what the two selects did: assign an Agent already running, or start a new
-    // one. With no lead, whoever it brings in leads.
-    const plus = () => {
-      const lead = membersOfTeam(name).some((member) => member.team_lead);
-      const choices = lead ? sessionsAvailableToTeam(name) : [...membersOfTeam(name), ...sessionsAvailableToTeam(name)];
-      const NEW = ' new';
-      const pick = ask([{ fields: [{
-        key: 'agent', label: lead ? t('league.add_agent', 'Add an Agent') : t('league.choose_lead', 'Choose an Agent as team lead'),
-        blank: lead ? t('league.add_agent', 'Add an Agent') : t('league.choose_lead', 'Choose an Agent as team lead'),
-        options: [...choices.map((member) => ({ v: member.name, l: agentTitle(member) })), { v: NEW, l: t('league.add_lead_agent', 'Add new Agent') }],
-      }] }], { density: 'tight', onChange: async ({ agent }) => {
-        if (!agent) return;
-        if (agent === NEW) { bench.place(WB_TYPES.newAgent, oppositeSeat(seat), { team: name, ...(lead ? {} : { teamLead: true }) }); return; }
-        const joined = membersOfTeam(name).some((member) => member.name === agent) ? { ok: true } : await setTeamMembership(agent, name, true);
-        failed(joined.ok && !lead ? await setTeamLead(agent, name, true) : joined);
-      } });
-      return pick.el;
-    };
     const paintAgents = () => {
       const list = el('div');
       for (const member of membersOfTeam(name)) {
@@ -607,12 +587,11 @@ export function createCoworkView(options = {}) {
         list.append(row);
       }
       if (!holding) {
-        // The ＋ is a row of its own: its glyph stands where a name stands.
-        const add = el('button', 'league-team-row league-team-agent league-team-agent-plus');
-        add.append(el('span'), el('span', 'league-team-agent-name', '+'));
-        add.type = 'button'; add.setAttribute('aria-label', t('league.add_agent', 'Add an Agent'));
-        add.addEventListener('click', () => add.replaceWith(plus()));
-        list.append(add);
+        // Agents join a Team by dragging; the foot starts a new one — the New Agent form with
+        // this Team chosen, as the Commons roster's New Agent does (owner, 2026-10-20).
+        const foot = el('div', 'league-team-add');
+        foot.append(createAction({ label: t('new_agent.title', 'New Agent'), size: 'compact', action: () => bench.place(WB_TYPES.newAgent, oppositeSeat(seat), { team: name }) }).el);
+        list.append(foot);
       }
       agents.replaceChildren(...list.children);
     };
@@ -744,12 +723,8 @@ export function createCoworkView(options = {}) {
         onFailed: (message) => commons.channels.setState('failed', message),
         idPrefix: id,
         reading: readingsOf,
-        onSelect: (member) => bench.place(WB_TYPES.agentComposition, oppositeSeat(id), { key: member.name }),
-        onOpen: (member) => openAgentWorkbench(member.name),
-        onAddLead: () => bench.place(WB_TYPES.newAgent, oppositeSeat(id), {
-          prompt: t('league.add_lead_prompt', 'Join this Team as its team lead.'),
-          teamLead: true,
-        }),
+        // The roster's New Agent opens the form with this Team chosen (the view's `team`).
+        onNew: () => bench.place(WB_TYPES.newAgent, oppositeSeat(id)),
         onClose: (member) => retireSession(member.name, `commons-${id}-${member.name}`),
       });
       commons.roster.replaceChildren(members);

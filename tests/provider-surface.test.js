@@ -36,18 +36,18 @@ const joined = (entry, on, listed = []) => {
   const base = { provider: entry.provider, cli: entry.cli, provider_label: entry.label, cli_label: entry.cli_label || entry.label, operational: on, off: entry.off === true, selectable: on, origin: entry.origin || 'stock', shadowed: entry.shadowed === true };
   const meta = new Map((entry.models || []).map((row) => [row.model, row]));
   return { origin: 'stock', shadowed: false, ...entry, cli_label: base.cli_label, operational: on, off: base.off, launch_modes: ['configured'], models: [
-    { ...base, model: 'native', name: 'Native', cmd: entry.native, tier: '', default: true, cost: '', good_at: 'the CLI choosing its own configured or current default model', not_good_at: 'pinning a particular model' },
-    ...listed.map(([id, name]) => ({ ...base, model: id, name, cmd: `${entry.native} --model ${id}`, tier: meta.get(id)?.tier || '', default: false, cost: meta.get(id)?.cost || '', good_at: meta.get(id)?.good_at || '', not_good_at: meta.get(id)?.not_good_at || '' })),
+    { ...base, model: 'native', name: 'Native', cmd: entry.native, tier: '', default: true, info: null },
+    ...listed.map(([id, name]) => ({ ...base, model: id, name, cmd: `${entry.native} --model ${id}`, tier: meta.get(id)?.tier || '', default: false, info: meta.get(id)?.info ?? null })),
   ] };
 };
 const ANTHROPIC = { provider: 'anthropic', cli: 'claude', native: 'claude', label: 'Anthropic', cli_label: 'Claude Code', models: [
-  { model: 'opus', tier: 'frontier', cost: '$5 in · $25 out per M tokens (2026-06)', good_at: 'long agentic coding runs', not_good_at: 'quick throwaway questions' },
-  { model: 'haiku', tier: 'light', cost: '$1 in · $5 out per M tokens (2026-06)', good_at: 'fast sub-agents', not_good_at: 'large refactors' },
+  { model: 'opus', tier: 'frontier', info: { cost: { input: 5, output: 25 }, limit: { context: 1000000 }, release_date: '2026-07-24', description: 'long agentic coding runs' } },
+  { model: 'haiku', tier: 'light', info: { cost: { input: 1, output: 5 }, limit: {}, release_date: '', description: 'fast sub-agents' } },
 ] };
 const OPENAI = { provider: 'openai', cli: 'codex', native: 'codex', label: 'OpenAI', cli_label: 'Codex', models: [{ model: 'gpt-5.6-sol', tier: 'frontier', cost: '$5 in · $30 out per M tokens (2026-09)', good_at: 'the hardest coding', not_good_at: 'bulk loops' }] };
 const PI = { provider: 'pi', cli: 'pi', native: 'pi', label: 'Pi', cli_label: 'pi', models: [{ model: 'pi-1', tier: 'standard', cost: 'free (2026-09)', good_at: 'chat', not_good_at: 'code' }] };
 const OPENROUTER = { provider: 'openrouter', cli: 'openrouter', cli_label: 'openrouter', label: 'OpenRouter', maturity: 'comingSoon', origin: 'stock', shadowed: false, operational: false, off: false, models: [] };
-const stockCatalog = () => ({ origin: 'stock', path: '/stock/MODEL_PROVIDERS.md', updated: '2026-09-08', stock_updated: '2026-09-08', withdrawn: [], measured_at: '2026-09-08T11:00:00.000Z', refreshed_at: '', providers: [
+const stockCatalog = () => ({ origin: 'stock', path: '/stock/MODEL_PROVIDERS.md', model_info: { origin: 'stock', fetched_at: '2026-09-08T10:00:00.000Z' }, withdrawn: [], measured_at: '2026-09-08T11:00:00.000Z', refreshed_at: '', providers: [
   joined(ANTHROPIC, true, [['opus', 'Opus 5'], ['haiku', 'Haiku 4.5']]),
   joined(OPENAI, false),
   joined(PI, false),
@@ -131,7 +131,7 @@ test('showing the surface paints the recorded inventory without starting a secon
   assert.equal(byClass(stones[4], 'status-marker')[0].textContent, 'Coming soon');
   assert.equal(byClass(made.el, 'setup-provider-dates').length, 0, 'application updates do not belong on provider setup');
   assert.equal(byClass(made.el, 'setup-provider-intro').length, 0);
-  assert.equal(surface.providersSummary((await import('../public/js/form-steps.js')).providerCatalog()), '3 providers · 5 models · 1 activated here · catalog updated 2026-09-08');
+  assert.equal(surface.providersSummary((await import('../public/js/form-steps.js')).providerCatalog()), '3 providers · 5 models · 1 activated here · model info from 2026-09-08');
 });
 
 test('a stone opens Yours — the three steps as Setup measures them — then The catalog with the dated facts and the model table', async () => {
@@ -166,7 +166,7 @@ test('a stone opens Yours — the three steps as Setup measures them — then Th
   assert.equal(calls[0], 'POST /api/setup/providers/claude/update');
   assert.equal(section.className, 'setup-provider-catalog');
   assert.equal(byClass(section, 'setup-provider-eyebrow')[0].textContent, 'Models');
-  assert.equal(byClass(section, 'setup-provider-provenance')[0].textContent, 'Shipped catalog · updated 2026-09-08', 'the section says which layer it came from');
+  assert.equal(byClass(section, 'setup-provider-provenance')[0].textContent, 'Model info from models.dev, fetched 2026-09-08, shipped with Ronin', 'the section says where its words came from');
   // The switch, on the Ready step: Turn off with the sentence that says what it does and does not do.
   const ready = steps[2];
   const turnOff = byClass(ready, 'setup-provider-turn-off')[0];
@@ -182,13 +182,13 @@ test('a stone opens Yours — the three steps as Setup measures them — then Th
   assert.equal(byClass(section, 'setup-provider-list-state')[0].textContent, 'Model list read 2026-09-08T06:00:00.000Z by Claude Code 2.1.263', 'when the list was read and by which CLI version — no per-provider Refresh');
   assert.deepEqual(byClass(section, 'setup-provider-model-tools'), []);
   const table = byClass(section, 'setup-provider-models')[0];
-  assert.deepEqual(walk(table).filter((node) => node.tagName === 'TH').map((node) => node.textContent), ['Model', 'Tier', 'Cost', 'Good at', 'Not good at']);
+  assert.deepEqual(walk(table).filter((node) => node.tagName === 'TH').map((node) => node.textContent), ['Model', 'Tier', 'Price', 'Context', 'Released', 'Description']);
   const rows = walk(table).filter((node) => node.tagName === 'TR' && node.dataset.model);
   // Two names in the Model cell: the CLI's own name in bold, the id every launch uses beneath.
   assert.deepEqual(rows.map((row) => row.children.map((cell) => cell.textContent)), [
-    ['Nativethe default', '', '', 'the CLI choosing its own configured or current default model', 'pinning a particular model'],
-    ['Opus 5opus', 'frontier', '$5 in · $25 out per M tokens (2026-06)', 'long agentic coding runs', 'quick throwaway questions'],
-    ['Haiku 4.5haiku', 'light', '$1 in · $5 out per M tokens (2026-06)', 'fast sub-agents', 'large refactors'],
+    ['Nativethe default', '', '', '', '', 'The CLI chooses its own configured or current default model.'],
+    ['Opus 5opus', 'frontier', '$5 in · $25 out per M tokens', '1000K tokens', '2026-07-24', 'long agentic coding runs'],
+    ['Haiku 4.5haiku', 'light', '$1 in · $5 out per M tokens', '', '', 'fast sub-agents'],
   ]);
   assert.deepEqual(rows.slice(1).map((row) => byClass(row, 'setup-provider-model-id')[0].textContent), ['opus', 'haiku']);
   assert.ok(byClass(section, 'setup-provider-table')[0], 'the table scrolls in its own box');
@@ -358,9 +358,10 @@ test('Refresh all sits once at the top with the date it last ran, and is the one
     button.click();
     assert.equal(button.disabled, true);
     await settle();
-    assert.equal(calls[0], 'POST /api/setup/providers/refresh', 'the one door that reads model lists and asks npm');
+    assert.equal(calls[0], 'POST /api/setup/providers/refresh', 'the one door: first the model lists and npm');
+    assert.ok(calls.includes('POST /api/model-info/check'), 'then model info, on its own route');
     assert.equal(button.disabled, false);
-    assert.equal(byClass(bar, 'setup-provider-last-ran')[0].textContent, 'Last ran 2026-09-25T18:00:00.000Z');
+    assert.match(byClass(bar, 'setup-provider-last-ran')[0].textContent, /^Last ran 25 Sep 2026, \d\d:\d\d$/);
   } finally {
     machine = savedMachine;
   }
@@ -368,7 +369,7 @@ test('Refresh all sits once at the top with the date it last ran, and is the one
 
 test('an unmeasured machine and the owner\'s catalog copy remain factual in provider detail', async () => {
   machine = { providers: [] };
-  catalog = { ...stockCatalog(), origin: 'user', updated: '2026-10-01', withdrawn: [{ provider: 'xai', label: 'xAI' }], providers: [
+  catalog = { ...stockCatalog(), origin: 'user', model_info: { origin: 'user', fetched_at: '2026-10-01T09:00:00.000Z' }, withdrawn: [{ provider: 'xai', label: 'xAI' }], providers: [
     joined({ ...ANTHROPIC, origin: 'user', shadowed: true }, false),
     joined(OPENAI, false),
     joined({ ...PI, origin: 'user', shadowed: false }, false),
@@ -376,13 +377,13 @@ test('an unmeasured machine and the owner\'s catalog copy remain factual in prov
   const made = surface.createProviderSurface(context());
   await made.show(); await settle();
   assert.equal(byClass(made.el, 'setup-provider-dates').length, 0);
-  assert.equal(surface.providersSummary((await import('../public/js/form-steps.js')).providerCatalog()), '3 providers · 3 models · 0 activated here · catalog updated 2026-09-08 · 2 yours');
+  assert.equal(surface.providersSummary((await import('../public/js/form-steps.js')).providerCatalog()), '3 providers · 3 models · 0 activated here · model info from 2026-10-01 · 2 yours');
   byClass(made.el, 'sws-stone')[0].click();
   const from = byClass(made.el, 'setup-provider-provenance')[0];
   assert.equal(from.dataset.origin, 'user'); assert.equal(from.dataset.shadowed, 'true');
-  assert.equal(from.textContent, 'Your copy of this section (updated 2026-10-01) replaces the shipped one (updated 2026-09-08). It stays yours until you take the next shipped update: one edited price forks the whole section.');
+  assert.equal(from.textContent, 'Your copy of this section replaces the shipped one. Model info from models.dev, fetched 2026-10-01, accepted by you');
   byClass(made.el, 'sws-stone')[2].click();
-  assert.equal(byClass(made.el, 'setup-provider-provenance')[0].textContent, 'Yours · not in the shipped catalog (your copy updated 2026-10-01)');
+  assert.equal(byClass(made.el, 'setup-provider-provenance')[0].textContent, 'Yours · not in the shipped catalog. Model info from models.dev, fetched 2026-10-01, accepted by you');
   assert.deepEqual(byClass(made.el, 'sws-stone').map((stone) => stone.attributes['data-provider']), ['anthropic', 'openai', 'pi'], 'with no registry rows every catalog provider is a stone of its own');
 });
 

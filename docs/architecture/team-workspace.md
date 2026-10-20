@@ -86,9 +86,10 @@ does not read a roster `members` field. Membership is many-to-many and session-o
 Team may exist from tags alone; removing a tag removes membership without killing the
 session. The **人** is a separate, hand-set designation (`leads`), set by the owner in three
 places, all through `POST /api/sessions/:name/team_lead`: the member rows
-`team-members.js` draws — **Team commons → Roster**, where each row carries **Make Lead**
-(the lead's reads *Team Lead*), and the same rows on a team's profile on the Coworks page.
-There is no lead control on a Tile, on the launch forms, or on the Configuration tab.
+`team-members.js` draws — **Team commons → Roster**, where a pressed row opens in place and
+its action bar carries **Make Lead** (the lead's reads *Team Lead*) — and the same rows on
+a team's profile on the Coworks page. There is no lead control on a Tile, on the launch
+forms, or on the Configuration tab.
 
 ### Durable Team record
 
@@ -216,7 +217,17 @@ from what the tab remembered.
 
 ## Commons tabs
 
-- **Roster** — the members' rows (`team-members.js`), with Make Lead.
+- **Roster** — one line per member (`team-members.js`): 人 and the Agent's title, its live
+  reading, a caret. Pressing the row opens it in place to the Agent's read — role, what it
+  is working on, the items it holds (`/api/work-items?session=`), then the full configuration
+  (the composition body `agent-composition.js` exports, the one body the composition tile
+  paints) — all as the launch forms' unnumbered sections: one identity line (role · @id),
+  **Work**, **Brief** (born with …), **Mandate** with Save, **Behaviors** with Add — with the
+  member action bar (Rename · Make Lead · Remove · Close) under it; pressing again folds it. No
+  Launch on a row: dragging a row onto a workspace opens the Agent there, its own tile
+  (`session.terminal`), as the Team page's Agent card places it. Agents join a Team by
+  dragging, so the foot holds one **New Agent** button, which opens the New Agent form with
+  this Team chosen the way the selector's New Agent card does (owner, 2026-10-20).
 - **Wipeboard** — the real Team thread and owner composer; the roster's `wipeboard` id or
   the Team name. Entering asks the server for the thread over the socket; the thread and
   every later post arrive by push until the tab is left.

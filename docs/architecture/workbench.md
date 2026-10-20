@@ -153,9 +153,12 @@ page beside the rail; a stone dragged into a workspace, or the provider's select
 the provider there whole (`models.provider`), the page with no rail. The cards follow the Team page
 (owner, 2026-10-20): a provider's or a folder's card is an entity card like an Agent's
 (`wk-selector-entity`), the three admin doors dotted like New Agent, and the stones surface heads
-the selector as a solid card (Models, Workspaces) as the Teams card heads the Cowork selector. Settings' Model Providers
-surface is untouched; both draw with the one drawing `provider-surface.js` exports
-(`createProviderDrawing`, `providerStones`) over the same record and measure. Workspaces seats
+the selector as a solid card (Models, Workspaces) as the Teams card heads the Cowork selector. The Models stones carry
+no refresh door; the selector's second card, **Model refresh** (`models.refresh`, solid utility, after Models), does:
+its surface is the Refresh all control Settings' provider surface carries — the one `createRefreshAll` export, its
+last-ran line and notice — with an empty slot under it for the models.dev update (owner, 2026-10-20). Settings' Model
+Providers surface is untouched; all draw with the one drawing `provider-surface.js` exports
+(`createProviderDrawing`, `createRefreshAll`, `providerStones`) over the same record and measure. Workspaces seats
 its own stones of folders the same way (`workspaces-surface.js`, `workspaces.stones`; a dropped
 stone or a folder's card places the folder whole, `workspaces.folder`), its three admin doors —
 Add a workspace, GitHub CLI, Clone a repository — dotted selector cards in the New Agent format,
@@ -305,6 +308,7 @@ The door's own destination over the provider drawing Settings and Setup share.
 | Surface | Required data and owner |
 |---|---|
 | Model stones (`models.stones`) | the recorded provider summary and catalog through `recordRuntime()`; a measure only on a press, as on Settings |
+| Model refresh (`models.refresh`) | the same record; the Refresh all press (`/api/setup/providers/refresh`) through the shared drawing's measure; the slot under it is the models.dev update's |
 | Model provider (`models.provider`) | the same record for the one provider named in its detail; its selector cards come from `providerOffers()` over the same record |
 
 ### Workspaces (`workspaces` profile)

@@ -18,7 +18,8 @@
  *      asked, the newest release its package source lists; an **Update** control runs the
  *      registry's update line in a tile as Install does — the owner's press, never Ronin's.
  *   2. THE CATALOG — the three measured facts, dated, then every model the catalog lists
- *      for this provider: tier, cost as read, good at, not good at, the default marked.
+ *      for this provider: tier, price, context, release date and description from the
+ *      accepted model info (models.dev), the default marked.
  *
  * The Setup progress resource owns measurement. This surface paints the Campaign's dated
  * provider summary, which every reader takes from the record; the catalog rows come from the one
@@ -36,7 +37,7 @@ import { createSetupZone, setupStep } from './setup-zone.js';
 import { request } from './request.js';
 import { WorkspaceKit } from './workspace-kit.js';
 import { createPhalanx } from './phalanx.js';
-import { loadProviderCatalog, modelLabel, providerCatalog, tierWord } from './form-steps.js';
+import { dayTime, loadProviderCatalog, modelLabel, priceText, providerCatalog, tierWord } from './form-steps.js';
 import { mountProviderAttachment, providerFromRuntime, providerPresentation, providerReadiness } from './setup-provider-state.js';
 import { createStatusMarker } from './status-marker.js';
 
@@ -56,7 +57,7 @@ export function providerSurfaceDefinition() {
   };
 }
 
-/** The card's line on both seats: the catalog's counts, this machine's, and the catalog's date. */
+/** The card's line on both seats: the catalog's counts, this machine's, and when its model info was fetched. */
 export function providersSummary(catalog) {
   if (!catalog?.loaded) return t('setup_surface.providers_summary_unread', 'Every provider and model Ronin offers, and what this machine has.');
   const rows = catalog.rows;
@@ -64,8 +65,8 @@ export function providersSummary(catalog) {
   const activated = new Set(rows.filter((row) => row.operational).map((row) => row.provider)).size;
   const counts = t('setup_surface.providers_summary', '{providers} providers · {models} models · {activated} activated here', { providers, models: rows.length, activated });
   const yours = new Set(rows.filter((row) => row.origin === 'user').map((row) => row.provider)).size;
-  const stockDate = catalog.stock_updated || catalog.updated;
-  const dated = stockDate ? t('setup_surface.providers_summary_dated', '{counts} · catalog updated {date}', { counts, date: stockDate }) : counts;
+  const fetched = String(catalog.model_info?.fetched_at || '').slice(0, 10);
+  const dated = fetched ? t('setup_surface.providers_summary_dated', '{counts} · model info from {date}', { counts, date: fetched }) : counts;
   return yours ? t('setup_surface.providers_summary_yours', '{dated} · {n} yours', { dated, n: yours }) : dated;
 }
 
@@ -111,7 +112,6 @@ export function providerStones(runtime) {
 
 export function createProviderSurface(context) {
   const out = WorkspaceKit.primitives.createSurface({ label: t('setup_surface.providers', 'Model providers'), className: 'setup-surface setup-provider-surface' });
-  const action = (label, kind, onClick) => { const made = WorkspaceKit.primitives.createAction({ label, kind, action: onClick }); return made.el ?? made; };
   const notice = el('p', 'setup-fine setup-provider-notice'); notice.hidden = true;
   const mikaAvailability = el('p', 'setup-fine setup-mika-availability');
   let opened = String(context.detail?.provider || context.detail?.key || '');
@@ -131,29 +131,7 @@ export function createProviderSurface(context) {
     },
   });
   context.environment?.onProviderSurface?.(controller);
-  /**
-   * REFRESH ALL — the one door that reads model lists (owner, 2026-09-25): every activated
-   * CLI's own list, and the newest release of each, in one press. Never on a timer. The
-   * line beside it says when it last ran, so the owner knows how fresh every list is.
-   */
-  const refreshBar = el('div', 'setup-provider-refresh');
-  const lastRan = el('p', 'setup-fine setup-provider-last-ran');
-  const refreshAll = action(t('setup_surface.refresh_all', 'Refresh all model providers'), '', async () => {
-    refreshAll.disabled = true;
-    refreshAll.textContent = t('setup_surface.refreshing_all', 'Refreshing…');
-    const ok = await drawing.measure(true);
-    refreshAll.disabled = false;
-    refreshAll.textContent = t('setup_surface.refresh_all', 'Refresh all model providers');
-    if (!ok) paintLastRan();
-  });
-  const paintLastRan = () => {
-    const when = String(drawing.runtime().refreshed_at || providerCatalog().refreshed_at || '');
-    lastRan.textContent = when
-      ? t('setup_surface.last_ran', 'Last ran {date}', { date: when })
-      : t('setup_surface.never_ran', 'Never run — every provider offers Native only until it runs.');
-  };
-  refreshAll.classList.add('setup-provider-refresh-all');
-  refreshBar.append(refreshAll, lastRan);
+  const refresh = createRefreshAll(drawing);
   const zone = context.environment?.answerSetupStep ? createSetupZone() : null;
   /** Step 1 states one machine fact: whether any provider on this machine is signed in. */
   const paintZone = (activated) => {
@@ -164,14 +142,14 @@ export function createProviderSurface(context) {
       ? { state: 'Provider signed in and authenticated.', picks: [] }
       : { state: 'No provider found on this machine.', picks: [{ label: 'Sign in a provider', action: () => controller.openFirst() }] });
   };
-  stones.mount(out.content, { before: [...(zone ? [zone.el] : []), refreshBar], after: [mikaAvailability, notice] });
+  stones.mount(out.content, { before: [...(zone ? [zone.el] : []), refresh.el], after: [mikaAvailability, notice] });
   const say = (text, bad = false) => { notice.className = `${bad ? 'setup-notice bad' : 'setup-fine'} setup-provider-notice`; notice.textContent = text; notice.hidden = !text; };
   /** The surface's frame from the drawing's runtime: the zone, the dates, the stones, the selector. */
   const repaint = () => {
     const runtime = drawing.runtime();
     const activatedNow = Number(runtime.activated_count || 0);
     paintZone(activatedNow);
-    paintLastRan();
+    refresh.paint();
     mikaAvailability.hidden = activatedNow === 0;
     mikaAvailability.textContent = activatedNow === 1
       ? t('setup_surface.one_model_signed_in', '1 model signed in')
@@ -192,6 +170,73 @@ export function createProviderSurface(context) {
     show: async () => { await drawing.showRecord(); },
     destroy: () => { stopProgressRefresh(); context.environment?.onProviderSurface?.(null); drawing.destroy(); stones.destroy(); },
   };
+}
+
+/**
+ * REFRESH ALL — the one door that reads model lists (owner, 2026-09-25): every activated
+ * CLI's own list, and the newest release of each, in one press. Never on a timer. The
+ * line beside it says when it last ran, so the owner knows how fresh every list is.
+ * Exported once (owner, 2026-10-20): Settings' provider surface and the Models workbench's
+ * Model refresh surface press the same control over the same drawing; `paint()` is the
+ * host's, called whenever the frame moves.
+ */
+/**
+ * ONE STEP, the shape every provider flow draws (the provider page's three, Model refresh's
+ * three): a mark that says done, current, failed or its number; the label with its state
+ * beside it; at most one short line; then its controls. `copy` takes any further lines.
+ */
+export function stepItem({ key, n, label, state = '', detail = '', status = '', done = false, current = false, failed = false }) {
+  const item = el('li', 'setup-provider-step');
+  item.dataset.step = key; item.dataset.status = status;
+  item.dataset.done = String(done === true); item.dataset.current = String(current === true); item.dataset.failed = String(failed === true);
+  const mark = el('span', 'setup-provider-mark', done ? '✓' : failed ? '!' : String(n));
+  mark.setAttribute('aria-hidden', 'true');
+  const copy = el('div', 'setup-provider-copy');
+  const title = el('div', 'setup-provider-title');
+  title.append(el('strong', 'setup-provider-label', label), el('span', 'setup-provider-state', state));
+  copy.append(title);
+  if (detail) copy.append(el('p', 'setup-provider-note', detail));
+  const controls = el('div', 'setup-provider-control');
+  item.append(mark, copy, controls);
+  return { item, copy, controls };
+}
+
+/**
+ * REFRESH ALL — one door, two steps run in order and said as they run (owner, 2026-10-20):
+ * the CLIs' own model lists (and npm for their newest releases), then model info from
+ * models.dev on its own route. `onStep(key, state, answer)` hears each step start and end
+ * (`lists` | `info`, `running` | `done` | `failed`); a host that draws the steps listens.
+ */
+export function createRefreshAll(drawing, { onStep = () => {} } = {}) {
+  const bar = el('div', 'setup-provider-refresh');
+  const lastRan = el('p', 'setup-fine setup-provider-last-ran');
+  const made = WorkspaceKit.primitives.createAction({ label: t('setup_surface.refresh_all', 'Refresh all model providers'), kind: '', action: async () => {
+    button.disabled = true;
+    button.textContent = t('setup_surface.refreshing_lists', 'Reading model lists…');
+    onStep('lists', 'running');
+    const ok = await drawing.measure(true);
+    onStep('lists', ok ? 'done' : 'failed');
+    if (ok) {
+      button.textContent = t('setup_surface.refreshing_info', 'Fetching model info…');
+      onStep('info', 'running');
+      const checked = await request('/api/model-info/check', { method: 'POST', json: {} });
+      if (checked.ok) await loadProviderCatalog();
+      onStep('info', checked.ok ? 'done' : 'failed', checked.ok ? checked.data : checked.message);
+    }
+    button.disabled = false;
+    button.textContent = t('setup_surface.refresh_all', 'Refresh all model providers');
+    paint();
+  } });
+  const button = made.el ?? made;
+  const paint = () => {
+    const when = String(drawing.runtime().refreshed_at || providerCatalog().refreshed_at || '');
+    lastRan.textContent = when
+      ? t('setup_surface.last_ran', 'Last ran {date}', { date: dayTime(when) })
+      : t('setup_surface.never_ran', 'Never run — every provider offers Native only until it runs.');
+  };
+  button.classList.add('setup-provider-refresh-all');
+  bar.append(button, lastRan);
+  return { el: bar, paint };
 }
 
 /**
@@ -216,19 +261,21 @@ export function createProviderDrawing(context, { repaint, say = () => {} }) {
     mounted = null;
   };
   /**
-   * WHICH LAYER a provider's section came from, said in words — the whole point of the
-   * overlay. A shadow nobody can see is what the surface used to be. The cost is said
-   * too: a user section replaces the shipped one whole, so one edited price forks the
-   * vendor's section until the owner takes the next shipped update.
+   * WHERE the table's words come from, said in words: the provider's section (shipped, or
+   * the owner's copy laid over it), and the model info — models.dev, fetched when, and
+   * whether it is the shipped snapshot or the update the owner accepted.
    */
   const provenance = (rows) => {
     const first = rows[0];
     if (!first) return '';
-    const read = providerCatalog();
-    const unstated = t('setup_surface.catalog_date_unstated', 'date not stated');
-    if (first.origin !== 'user') return t('setup_surface.section_shipped', 'Shipped catalog · updated {date}', { date: read.stock_updated || unstated });
-    if (first.shadowed) return t('setup_surface.section_yours_shadowed', 'Your copy of this section (updated {yours}) replaces the shipped one (updated {stock}). It stays yours until you take the next shipped update: one edited price forks the whole section.', { yours: read.updated || unstated, stock: read.stock_updated || unstated });
-    return t('setup_surface.section_yours_new', 'Yours · not in the shipped catalog (your copy updated {yours})', { yours: read.updated || unstated });
+    const info = providerCatalog().model_info ?? {};
+    const date = String(info.fetched_at || '').slice(0, 10) || t('setup_surface.catalog_date_unstated', 'date not stated');
+    const source = info.origin === 'user'
+      ? t('setup_surface.info_accepted', 'Model info from models.dev, fetched {date}, accepted by you', { date })
+      : t('setup_surface.info_shipped', 'Model info from models.dev, fetched {date}, shipped with Ronin', { date });
+    if (first.origin !== 'user') return source;
+    if (first.shadowed) return t('setup_surface.section_yours_shadowed', 'Your copy of this section replaces the shipped one. {source}', { source });
+    return t('setup_surface.section_yours_new', 'Yours · not in the shipped catalog. {source}', { source });
   };
   /** A path with the home directory folded to ~, for a line meant to be read. */
   const homely = (path) => String(path || '').replace(/^\/home\/[^/]+|^\/Users\/[^/]+/, '~');
@@ -330,21 +377,10 @@ export function createProviderDrawing(context, { repaint, say = () => {} }) {
     // with its measured state beside it; at most one short line; then a control of one size.
     // Only the current step's control is the kaki primary.
     const stepRow = (step, state) => {
-      const item = el('li', 'setup-provider-step');
-      item.dataset.step = step.key; item.dataset.status = step.status;
-      item.dataset.done = String(step.done === true); item.dataset.current = String(step.current === true);
-      const mark = el('span', 'setup-provider-mark', step.done ? '✓' : String(steps.indexOf(step) + 1));
-      mark.setAttribute('aria-hidden', 'true');
-      const copy = el('div', 'setup-provider-copy');
-      const title = el('div', 'setup-provider-title');
-      title.append(el('strong', 'setup-provider-label', step.label), el('span', 'setup-provider-state', state));
-      copy.append(title);
-      if (step.detail) copy.append(el('p', 'setup-provider-note', step.detail));
-      if (step.command) copy.append(el('code', 'setup-provider-command', step.command));
-      const controls = el('div', 'setup-provider-control');
-      item.append(mark, copy, controls);
-      flow.append(item);
-      return { item, controls };
+      const made = stepItem({ ...step, n: steps.indexOf(step) + 1, state });
+      if (step.command) made.copy.append(el('code', 'setup-provider-command', step.command));
+      flow.append(made.item);
+      return made;
     };
     const control = (step, label, onClick) => {
       const made = action(label, step.current ? 'primary' : '', onClick);
@@ -475,7 +511,7 @@ export function createProviderDrawing(context, { repaint, say = () => {} }) {
     section.append(from);
     const table = el('table', 'setup-provider-models');
     const headRow = el('tr');
-    for (const text of [t('setup_surface.col_model', 'Model'), t('setup_surface.col_tier', 'Tier'), t('setup_surface.col_cost', 'Cost'), t('setup_surface.col_good_at', 'Good at'), t('setup_surface.col_not_good_at', 'Not good at')]) headRow.append(el('th', null, text));
+    for (const text of [t('setup_surface.col_model', 'Model'), t('setup_surface.col_tier', 'Tier'), t('setup_surface.col_cost', 'Price'), t('setup_surface.col_context', 'Context'), t('setup_surface.col_released', 'Released'), t('setup_surface.col_description', 'Description')]) headRow.append(el('th', null, text));
     const thead = el('thead'); thead.append(headRow);
     const body = el('tbody');
     for (const row of rows) {
@@ -486,7 +522,10 @@ export function createProviderDrawing(context, { repaint, say = () => {} }) {
       const name = el('td'); name.append(el('b', null, modelLabel(row)));
       if (row.default) name.append(el('span', 'setup-provider-default', t('setup_surface.model_default_mark', 'the default')));
       if (row.model !== 'native') name.append(el('span', 'setup-provider-model-id', row.model));
-      line.append(name, el('td', 'setup-provider-tier', tierWord(row.tier)), el('td', null, row.cost || ''), el('td', null, row.good_at || ''), el('td', null, row.not_good_at || ''));
+      const info = row.info;
+      const context = info?.limit?.context ? t('setup_surface.context_tokens', '{n}K tokens', { n: Math.round(info.limit.context / 1000) }) : '';
+      const description = row.model === 'native' ? t('setup_surface.native_description', 'The CLI chooses its own configured or current default model.') : info?.description || '';
+      line.append(name, el('td', 'setup-provider-tier', tierWord(row.tier)), el('td', null, priceText(info)), el('td', null, context), el('td', null, info?.release_date || ''), el('td', null, description));
       body.append(line);
     }
     table.append(thead, body);

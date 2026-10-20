@@ -74,7 +74,7 @@ test('nothing selected is marked with an underline, and the bar keeps one centre
   // The selected tab covers the band's rule with a shadow, which costs no layout — a
   // negative margin made its box taller than its neighbours and moved its label off
   // their centre line.
-  assert.match(block, /\[aria-selected='true'\][^}]*box-shadow: 0 var\(--cowork-surface-head-edge\) 0 var\(--panel\)/);
+  assert.match(block, /\[aria-selected='true'\][^}]*box-shadow: 0 var\(--current-head-edge\) 0 var\(--panel\)/);
   assert.doesNotMatch(block, /\.wk-tabset-tab \{[^}]*margin-bottom/, 'no negative margin on a tab');
   assert.doesNotMatch(block, /\.wk-tabset-actions \{[^}]*padding-bottom/, 'symmetric padding, or it centres elsewhere');
   // The bar carries tabs and actions. The surface's name is not drawn in it.

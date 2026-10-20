@@ -60,7 +60,7 @@ Until then, the Agent pages retain them under upstream alternatives for drift re
 ## Resolution
 
 ```text
-MODEL_PROVIDERS.md provider + model facts
+MODEL_PROVIDERS.md provider facts + accepted model info (models.dev)
   → docs/agents/<cli>.md command grammar
   → GET /api/provider-catalog resolved commands and supported launch modes
   → New Agent provider, model and launch-mode choices
