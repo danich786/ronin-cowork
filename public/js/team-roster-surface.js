@@ -17,9 +17,10 @@ const words = () => ({ theme: t('teams_surface.theme', 'Theme'), state: t('teams
 /**
  * A stone per Team, the name only, under two questions (owner, 2026-10-20; ask.js): Workspace,
  * many-of, blank All, narrows the stones to the Teams in those workspace folders; Show, many-of,
- * Theme on by default, says what hangs under each stone (phalanx.js, `branches: 'column'`):
- * Theme, the roster objective, and State, the status of the Team's board (no board, nothing), as
- * plain lines; each Agent a branch row, the lead first; each Item a branch row. The rows are teams-surface-rows.js over the pushed rosters (each with its `board` and
+ * Theme on by default, says what hangs under each stone, a cell per topic laid as rows across
+ * the stones (phalanx.js, `branches: 'column'`): Theme, the roster objective, and State, the
+ * status of the Team's board (no board, blank), plain text; each Agent a branch row, the lead
+ * first; each Item a branch row. The rows are teams-surface-rows.js over the pushed rosters (each with its `board` and
  * `items`, teams-api.ts) and the Team projection's members. The 人 mark in a stone's corner
  * opens the Team page in a new tab. The stone's detail is the Team profile the card opened
  * (`teamDetail`, the cowork view's one renderer), the level's detail when the stone is pressed
@@ -48,16 +49,18 @@ export function createTeamRosterSurface({ teamDetail } = {}) {
     node.addEventListener('click', (event) => { event.stopPropagation(); openWorkspaceTab('team', team); });
     return node;
   };
-  // What Show picks, under the stone (owner, 2026-10-20): Theme and State plain muted lines, the
-  // row's notes (Theme wraps, clamped to six lines; the whole is in the Team's detail); each Agent
-  // and each Item a branch row, its kind in the state line. Nothing picked: no row carries items or
-  // notes and the stones rest in the ordinary grid, a press selecting.
+  // What Show picks, under the stone (owner, 2026-10-20): one cell per picked topic in Show's
+  // order, the same under every stone so the phalanx lays them as rows across the stones —
+  // Theme and State plain muted text (Theme wraps, clamped; the whole is in the Team's detail);
+  // Agents and Items branch rows, the kind in each row's state line. Nothing picked: no row
+  // carries anything and the stones rest in the ordinary grid, a press selecting.
   const branch = (team, kind, value, n = 0) => ({ id: `${team}:${kind}:${n}`, label: value, state: word[kind], team });
-  const notes = (row) => [show.includes('theme') ? row.theme : '', show.includes('state') ? row.state : ''];
-  const under = (row) => [
-    ...(show.includes('agents') ? row.agents.map((name, n) => branch(row.id, 'agents', name, n)) : []),
-    ...(show.includes('items') ? row.items.map((title, n) => branch(row.id, 'items', title, n)) : []),
-  ];
+  const cell = (row, kind) => ({
+    theme: () => row.theme, state: () => row.state,
+    agents: () => row.agents.map((name, n) => branch(row.id, 'agents', name, n)),
+    items: () => row.items.map((title, n) => branch(row.id, 'items', title, n)),
+  })[kind]();
+  const under = (row) => SHOW.filter((kind) => show.includes(kind)).map((kind) => cell(row, kind));
   const items = () => {
     const rows = new Map(teamsRows(teamsFromState(), membersOfTeam, { roots }).map((row) => [row.id, row]));
     return orderCoworkTeams(teamsFromState(), {
@@ -66,7 +69,7 @@ export function createTeamRosterSurface({ teamDetail } = {}) {
     }).filter((team) => rows.has(team.name)).map((team) => {
       const name = String(team.title ?? '').trim() || team.name;
       return {
-        id: team.name, label: name, marker: mark(team.name), ...(show.length ? { items: under(rows.get(team.name)), notes: notes(rows.get(team.name)) } : {}),
+        id: team.name, label: name, marker: mark(team.name), ...(show.length ? { under: under(rows.get(team.name)) } : {}),
         draggable: true,
         events: { dragstart: (event) => {
           event.dataTransfer.setData(SURFACE_DRAG, JSON.stringify({ type: WORKBENCH_TYPES.team, detail: { key: team.name } }));
@@ -88,7 +91,7 @@ export function createTeamRosterSurface({ teamDetail } = {}) {
   const paint = () => {
     filter.options('root', workspaces(teamsFromState()).map((root) => ({ v: root, l: root })));
     const next = items();
-    const signature = JSON.stringify(next.map(({ id, label: name, items: under, notes: lines }) => [id, name, under, lines]));
+    const signature = JSON.stringify(next.map(({ id, label: name, under: below }) => [id, name, below]));
     if (signature !== shown) { shown = signature; stones.setItems(next); }
   };
   const stop = subscribe(paint);

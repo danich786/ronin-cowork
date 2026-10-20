@@ -11,22 +11,31 @@ let nextDetailId = 0;
 /** A chart whose child columns stack deeper than this folds its grandchildren into counts. */
 export const CHART_DEPTH = 4;
 
+/** The rows under a row: its `items`, or the rows of its `under` cells (a text cell holds none). */
+const rowsUnder = (row) => Array.isArray(row.items) ? row.items : (row.under || []).flatMap((cell) => Array.isArray(cell) ? cell : []);
 /** Every descendant of a row, depth first, as plain stones (a level is one level). */
-const descendants = (row) => (row.items || []).flatMap((child) => [{ ...child, items: undefined }, ...descendants(child)]);
+const descendants = (row) => rowsUnder(row).flatMap((child) => [{ ...child, items: undefined, under: undefined }, ...descendants(child)]);
+/** A row carries something under its stone: items, or `under` cells. */
+const carries = (row) => Array.isArray(row.items) || Array.isArray(row.under);
+/** What draws under a row's stone, cell by cell: a text cell (plain muted lines) or a rows cell. */
+const cells = (row) => Array.isArray(row.under) ? row.under : Array.isArray(row.items) ? [descendants(row)] : [];
 
 /**
  * The shared collection surface: a responsive phalanx at rest and a one-stone
  * rail beside the consumer's real detail when selected. Its top area starts empty;
  * consumers supply `before` content only when an explicit surface design calls for it.
  *
- * LEVELS. A row may carry `items` (rows, nested as deep as they go). In full density a
- * stone with items does not select: the phalanx goes one level down, that stone's items
- * (every descendant) become the stones in the rail and the stone itself is the level's
- * detail until one of them is pressed. At rest in full density each such stone shows its
- * items under it (no row with items or notes, the ordinary grid) — its `notes`, plain muted lines,
- * first — drawn as `branches` says: 'column' stacks them under the stone,
- * 'chart' lays one column per direct child with grandchildren stacked under their parent
- * (a chart deeper than CHART_DEPTH folds grandchildren into a count until pressed).
+ * LEVELS. A row may carry `items` (rows, nested as deep as they go), or `under`: cells in
+ * topic order, each a string (plain muted lines) or rows. In full density a stone with
+ * rows under it does not select: the phalanx goes one level down, those rows (every
+ * descendant) become the stones in the rail and the stone itself is the level's detail
+ * until one of them is pressed. At rest in full density each such stone shows what it
+ * carries under it (no row carrying anything, the ordinary grid), drawn as `branches`
+ * says: 'column' lays the stones and their cells on one grid — one column per stone, one
+ * grid row per cell, so the same topic starts at the same height under every stone
+ * (owner, 2026-10-20); 'chart' lays one column per direct child with grandchildren
+ * stacked under their parent (a chart deeper than CHART_DEPTH folds grandchildren into a
+ * count until pressed).
  *
  * THE WAY BACK is one, from any depth: Escape, or the back stone at the head of a level,
  * returns to the top view with just the stones and nothing selected, in the density you
@@ -127,7 +136,7 @@ export function createPhalanx({ items = [], selectedId = '', renderDetail, onSel
   /** A top stone at rest in full density with its items under it. */
   const branchOf = (item, button) => {
     const box = element('div', 'sws-branch');
-    box.append(button, ...(item.notes || []).filter(Boolean).map((text) => element('p', 'sws-branch-note', String(text))));
+    box.append(button);
     const topId = String(item.id);
     const child = (row, { folded = 0 } = {}) => {
       const node = stone(row, { branch: true });
@@ -140,8 +149,8 @@ export function createPhalanx({ items = [], selectedId = '', renderDetail, onSel
     };
     if (branches === 'chart') {
       const columns = element('div', 'sws-branch-row');
-      const deep = (item.items || []).some((row) => descendants(row).length > CHART_DEPTH);
-      for (const row of item.items || []) {
+      const deep = rowsUnder(item).some((row) => descendants(row).length > CHART_DEPTH);
+      for (const row of rowsUnder(item)) {
         const column = element('div', 'sws-branch-column');
         const below = descendants(row);
         const fold = deep && below.length && !unfolded.has(String(row.id));
@@ -151,9 +160,12 @@ export function createPhalanx({ items = [], selectedId = '', renderDetail, onSel
       }
       box.append(columns);
     } else {
-      const column = element('div', 'sws-branch-column');
-      for (const row of descendants(item)) column.append(child(row));
-      box.append(column);
+      for (const cell of cells(item)) {
+        if (!Array.isArray(cell)) { box.append(element('p', 'sws-branch-note', String(cell ?? ''))); continue; }
+        const column = element('div', 'sws-branch-column');
+        for (const row of descendants({ items: cell })) column.append(child(row));
+        box.append(column);
+      }
     }
     return box;
   };
@@ -198,10 +210,11 @@ export function createPhalanx({ items = [], selectedId = '', renderDetail, onSel
       for (const [eventName, callback] of Object.entries(group.events || {})) section.addEventListener(eventName, (event) => callback(event, group, api));
       grid.append(section); hosts.set(id, stones);
     }
-    // Branches draw only while a shown row carries items or notes: rows with none rest in the ordinary grid.
-    const carries = (item) => Array.isArray(item.items) || (item.notes || []).some(Boolean);
+    // Branches draw only while a shown row carries something: rows with nothing rest in the ordinary grid.
     const branching = Boolean(branches) && full() && atRest() && shown.some(carries);
     root.dataset.branching = String(branching);
+    // The grid's rows: the stones, then one per cell, as many as the fullest stone carries.
+    grid.style.setProperty('--sws-rows', String(1 + Math.max(0, ...shown.map((item) => cells(item).length))));
     let previousGroup = null;
     for (const item of shown) {
       // Existing consumers use inline group headings without declared group sections.
@@ -213,7 +226,7 @@ export function createPhalanx({ items = [], selectedId = '', renderDetail, onSel
       const button = stone(item);
       button.addEventListener('click', () => {
         if (typeof item.action === 'function') { item.action(item, api); return; }
-        if (full() && Array.isArray(item.items) && !path.length) { down(id); return; }
+        if (full() && carries(item) && !path.length) { down(id); return; }
         restoreId = id;
         restoreElement = null;
         externalDetail = null;
@@ -300,7 +313,7 @@ export function createPhalanx({ items = [], selectedId = '', renderDetail, onSel
         levelOpen = { owner: String(owner.id), id: selected };
         path = [];
         selected = String(owner.id);
-      } else if (full() && Array.isArray(find(rows, selected)?.items)) {
+      } else if (full() && carries(find(rows, selected) || {})) {
         path = [selected];
         selected = levelOpen.owner === selected ? levelOpen.id : '';
       } else if (!(branches && atRest())) return api;

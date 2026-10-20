@@ -50,8 +50,13 @@
   /* Branches (full density, at rest; js/phalanx.js): each stone with its items under it, the
      row of branches scrolling sideways. 'column' stacks the items; 'chart' is one column
      per direct child with grandchildren stacked under it. */
-  .sws[data-branching='true'] .sws-grid { width: 100%; min-width: 0; flex-wrap: nowrap; justify-content: flex-start; align-items: flex-start; overflow-x: auto; }
-  .sws-branch { display: flex; flex: none; flex-direction: column; gap: var(--space-3); }
+  /* Column branches: the stones and their cells on one grid — a column per stone, a grid row
+     per cell (--sws-rows, set by the phalanx), each branch a subgrid of those rows, so a topic's
+     cells start where the previous row's tallest cell ends (owner, 2026-10-20). */
+  .sws[data-branching='true'] .sws-grid { display: grid; grid-auto-flow: column; grid-auto-columns: var(--sws-stone); grid-template-rows: repeat(var(--sws-rows, 1), auto); width: 100%; min-width: 0; justify-content: flex-start; align-items: start; overflow-x: auto; }
+  .sws[data-branching='true'][data-branches='chart'] .sws-grid { display: flex; flex-wrap: nowrap; align-items: flex-start; }
+  .sws-branch { display: grid; grid-template-rows: subgrid; grid-row: 1 / -1; gap: var(--space-3); }
+  .sws[data-branches='chart'] .sws-branch { display: flex; flex: none; flex-direction: column; }
   .sws-branch-row { display: flex; gap: var(--space-3); }
   .sws-branch > .sws-stone { flex: none; width: var(--sws-stone); }
   .sws-branch-column { display: flex; flex: none; flex-direction: column; width: var(--sws-stone); gap: var(--space-1); }

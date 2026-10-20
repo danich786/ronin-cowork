@@ -167,9 +167,11 @@ Teams to `#/cowork`; the Teams workbench ends at Teams, and a view naming its ow
 Workspaces) reads RoninCowork • Home • <place>.
 The Teams workbench's Teams card (`team-roster-surface.js`; owner, 2026-10-20) carries, above its
 stones, the Workspace question (many-of, blank All) and the Show question (Theme on; State,
-Agents, Items); each stone is the Team's name with what Show picks under it as the phalanx's
-branch rows (`branches: 'column'`; `teams-surface-rows.js` over the pushed rosters' `board` and
-`items`), and the 人 mark in a stone's corner opens the Team page in a new tab.
+Agents, Items); each stone is the Team's name with what Show picks under it, a cell per picked
+topic in Show's order, the phalanx laying the stones and their cells on one grid so each topic is
+a row aligned across the stones (`branches: 'column'`, a row's `under`; `teams-surface-rows.js`
+over the pushed rosters' `board` and `items`): Theme and State plain clamped text, each Agent and
+each Item a branch row; the 人 mark in a stone's corner opens the Team page in a new tab.
 The gate (owner, 2026-10-19): as on the old root, the three doors are locked until one model
 provider is activated (`/api/setup/runtime`'s `activated_count`), each saying so under its name,
 and Settings is the one live stone — a new user's way in is Setup.
