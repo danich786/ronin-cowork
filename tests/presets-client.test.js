@@ -227,7 +227,7 @@ test('Bare Metal keeps two real tile layouts, compact rows, separated sections, 
   assert.match(css, /\.sp-select \{[^}]*font-size: inherit/);
   assert.match(css, /\.sp-lead \{[^}]*font-size: inherit/);
   assert.match(css, /\.sp-controls > \.sp-section:not\(:first-child\), \.sp-controls \+ \.sp-section \{[^}]*margin-top: var\(--space-9\);[^}]*border-top[^}]*padding-top: var\(--space-9\)/);
-  assert.match(css, /\.sp-field-label, \.sp-control-label \{[^}]*font-weight: 600/);
+  assert.match(css, /\.sp-field-label, \.sp-control-label \{[^}]*font-weight: var\(--weight-strong\)/);
   assert.match(css, /\.sp-rows \{[^}]*gap: var\(--space-2\)/);
 });
 
@@ -373,7 +373,7 @@ test('a stone gate reads the runtime the Setup view keeps current, and the held 
   const launch = nodes.find((node) => node.tagName === 'BUTTON' && node.textContent === 'Launch');
   assert.equal(launch.dataset.held, undefined);
   const css = await readFile(new URL('../public/css/launch-forms.css', import.meta.url), 'utf8');
-  assert.match(css, /\.sp-warning \{ margin: var\(--space-6\) 0 var\(--space-7\);[^}]*padding: var\(--space-3\) var\(--space-5\);[^}]*font-size: var\(--text-5\); line-height: 1\.6; \}/);
+  assert.match(css, /\.sp-warning \{ margin: var\(--space-6\) 0 var\(--space-7\);[^}]*padding: var\(--space-3\) var\(--space-5\);[^}]*font-size: var\(--text-5\); line-height: var\(--leading-loose\); \}/);
 });
 
 test('a row asks for provider and dependent model from the shared catalog', async () => {

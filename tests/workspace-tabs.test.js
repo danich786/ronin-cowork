@@ -79,7 +79,7 @@ test('nothing selected is marked with an underline, and the bar keeps one centre
   assert.doesNotMatch(block, /\.wk-tabset-actions \{[^}]*padding-bottom/, 'symmetric padding, or it centres elsewhere');
   // The bar carries tabs and actions. The surface's name is not drawn in it.
   assert.ok(!block.includes('.wk-tabset-word'));
-  assert.doesNotMatch(block, /font-weight: 700/, 'attention never changes a label\'s weight');
+  assert.doesNotMatch(block, /font-weight: (?:700|var\(--weight-bold\))/, 'attention never changes a label\'s weight');
 });
 
 test('Commons builds on first use', async () => {

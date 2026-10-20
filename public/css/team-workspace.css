@@ -21,22 +21,22 @@
   /* Team Kanban is a read. Its only write path is a move request to the holder. */
   .tk-kanban {
     --tk-notice-line: 1.5em;
-    --tk-heading-track: .04em;
+    --tk-heading-track: var(--tracking-wide);
     --tk-card-meta-line: 1em;
     --tk-column-min: 230px;
     --tk-column-height: 300px;
     --tk-column-head: 56px;
     --tk-card-closed: 64px;
     --tk-card-open: 168px;
-    --tk-outcome-line: 1.35em;
+    --tk-outcome-line: calc(var(--leading-body) * 1em);
     --tk-control-size: var(--space-8);
     height: 100%; min-height: 0; overflow: auto; background: var(--bg-2); container: team-kanban / inline-size;
   }
   .tk-header { box-sizing: border-box; position: sticky; top: 0; z-index: 1; display: flex; flex-direction: column; block-size: clamp(6rem, 15dvh, 9rem); min-inline-size: 0; padding: var(--space-4) var(--space-5); border-bottom: var(--edge) solid var(--line); background: var(--bg-2); }
   .tk-header[data-expanded='false'] { block-size: auto; }
   .tk-header-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
-  .tk-beta { display: inline-flex; align-items: center; min-height: 2.25rem; box-sizing: border-box; border: var(--edge) solid var(--kaki); border-radius: var(--radius-xs); background: var(--raise); color: var(--fg-strong); padding: var(--space-2) var(--space-4); font: inherit; font-size: var(--text-4); font-weight: 600; letter-spacing: var(--tk-heading-track); text-transform: uppercase; }
-  .tk-header-toggle { border: 0; border-radius: 0; padding: var(--space-2); background: transparent; color: var(--muted); font: inherit; font-size: var(--text-2); font-weight: 400; cursor: pointer; }
+  .tk-beta { display: inline-flex; align-items: center; min-height: 2.25rem; box-sizing: border-box; border: var(--edge) solid var(--kaki); border-radius: var(--radius-xs); background: var(--raise); color: var(--fg-strong); padding: var(--space-2) var(--space-4); font: inherit; font-size: var(--text-4); font-weight: var(--weight-strong); letter-spacing: var(--tk-heading-track); text-transform: uppercase; }
+  .tk-header-toggle { border: 0; border-radius: 0; padding: var(--space-2); background: transparent; color: var(--muted); font: inherit; font-size: var(--text-2); font-weight: var(--weight-regular); cursor: pointer; }
   .tk-header-toggle:hover { color: var(--fg); }
   .tk-header-toggle:focus-visible { outline: var(--edge-2) solid var(--kaki); outline-offset: var(--space-1); }
   .tk-header-message { min-height: 0; overflow-y: auto; margin: var(--space-4) 0 0; color: var(--fg); font-size: var(--text-4); }
@@ -56,7 +56,7 @@
   .tk-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(var(--tk-column-min), 1fr)); gap: var(--space-4); min-width: 0; padding: var(--space-4) var(--space-5) var(--space-5); }
   .tk-unavailable { margin: 0; color: var(--muted); }
   .tk-column { display: flex; height: var(--tk-column-height); min-width: 0; flex-direction: column; border: var(--edge) solid var(--line); background: var(--well); transition: border-color var(--motion-quick) var(--ease), background var(--motion-quick) var(--ease); }
-  .tk-column > h3 { box-sizing: border-box; display: grid; height: var(--tk-column-head); flex: none; gap: var(--space-1); margin: 0; border-bottom: var(--edge) solid var(--line); padding: var(--space-3) var(--space-4); color: var(--muted); font-size: var(--text-3); font-weight: 650; letter-spacing: var(--tk-heading-track); text-transform: uppercase; }
+  .tk-column > h3 { box-sizing: border-box; display: grid; height: var(--tk-column-head); flex: none; gap: var(--space-1); margin: 0; border-bottom: var(--edge) solid var(--line); padding: var(--space-3) var(--space-4); color: var(--muted); font-size: var(--text-3); font-weight: var(--weight-strong); letter-spacing: var(--tk-heading-track); text-transform: uppercase; }
   .tk-column-open, .tk-back { border: 0; border-bottom: var(--edge) dotted currentColor; border-radius: 0; padding: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
   .tk-back { grid-column: 1 / -1; justify-self: start; margin-bottom: var(--space-2); color: var(--accent-2); }
   .tk-project-detail { padding: var(--space-5); border: var(--edge) solid var(--line); background: var(--well); }
@@ -65,7 +65,7 @@
   .tk-project-facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-2) var(--space-5); }
   .tk-project-facts dt { color: var(--muted); }
   .tk-project-facts dd { margin: 0; color: var(--fg-strong); overflow-wrap: anywhere; }
-  .tk-column-worker { color: var(--dim); font-size: var(--text-2); font-weight: 500; letter-spacing: 0; text-transform: none; }
+  .tk-column-worker { color: var(--dim); font-size: var(--text-2); font-weight: var(--weight-medium); letter-spacing: 0; text-transform: none; }
   .tk-cards { display: flex; min-height: 0; flex: 1 1 auto; flex-direction: column; gap: var(--space-3); overflow-y: auto; padding: var(--space-3); }
   .tk-empty { margin: 0; padding: var(--space-3); color: var(--dim); font-size: var(--text-3); font-style: italic; }
   .tk-card { box-sizing: border-box; width: 100%; height: var(--tk-card-closed); min-width: 0; overflow: hidden; border-left: var(--space-2) solid var(--line-2); border-radius: 0; padding: var(--space-3) var(--space-4); cursor: grab; }
@@ -113,7 +113,7 @@
   .league-team-detail, .league-team-detail .league-team-edit-content { display: flex; flex-direction: column; gap: var(--space-6); }
   .league-team-row, .tk-line { display: grid; grid-template-columns: var(--hr-mark) minmax(0, 1fr) var(--hr-shingo) var(--hr-stack); align-items: center; gap: var(--space-4); padding: var(--space-1) var(--space-2); font-size: var(--text-4); }
   .league-team-detail-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: var(--space-4); }
-  .league-team-detail-head > h2 { grid-column: 1; grid-row: 1; margin: 0; color: var(--fg-strong); font-size: var(--text-8); font-weight: 600; }
+  .league-team-detail-head > h2 { grid-column: 1; grid-row: 1; margin: 0; color: var(--fg-strong); font-size: var(--text-8); font-weight: var(--weight-strong); }
   .league-team-detail-head > .wk-surface-header-actions { grid-column: 2; grid-row: 1; }
   .league-team-objective { grid-column: 1 / -1; font-size: var(--text-4); margin: 0; overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
   .league-team-objective[hidden] { display: none; }
@@ -141,13 +141,13 @@
   .league-team-roster, .league-team-config { flex: 0 0 auto; }
   .league-team-roster { display: flex; flex-direction: column; min-height: 0; }
   .league-team-roster-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-4); border-bottom: var(--edge) solid var(--line-2); padding-bottom: var(--space-3); }
-  .league-team-roster-title { margin: 0; color: var(--fg-strong); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+  .league-team-roster-title { margin: 0; color: var(--fg-strong); font-weight: var(--weight-strong); letter-spacing: var(--tracking-wide); text-transform: uppercase; }
   /* One line per Agent — 人 and title, the live reading, the caret. The pressed row opens in
      place to the Agent's read: role, what it is working on, the items it holds, its @id,
      and the member action bar under them (owner, 2026-10-20). */
   .league-team-member { border-bottom: var(--edge) solid var(--line); }
   .league-team-member-identity { display: flex; align-items: center; min-width: 0; gap: var(--space-3); }
-  .league-team-member-mark { width: var(--space-6); color: var(--kaki); font-size: var(--text-5); line-height: 1; text-align: center; }
+  .league-team-member-mark { width: var(--space-6); color: var(--kaki); font-size: var(--text-5); line-height: var(--leading-none); text-align: center; }
   .league-team-member-title { overflow: hidden; color: var(--fg-strong); font-weight: inherit; text-overflow: ellipsis; white-space: nowrap; }
   .league-team-empty { color: var(--muted); }
   .league-team-member-actions { flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); }
@@ -159,7 +159,7 @@
   .league-team-member-ctx { grid-column: 3; }
   .league-team-member-model { grid-column: 4; }
   .league-team-member-state { color: var(--ok) !important; }
-  .league-team-member-disclosure { color: var(--muted); font-size: var(--text-4); line-height: 1; text-align: center; }
+  .league-team-member-disclosure { color: var(--muted); font-size: var(--text-4); line-height: var(--leading-none); text-align: center; }
   .league-team-member-detail { display: flex; flex-direction: column; gap: var(--space-3); border-top: var(--edge) solid var(--line); padding: var(--space-3) 0 var(--space-2); }
   .league-team-member-detail[hidden] { display: none; }
   .league-team-member-items { display: flex; flex-direction: column; }
@@ -201,7 +201,7 @@
   .agent-composition .ac-body { padding: var(--space-5); }
   /* One type scale in the body: every line reads at the form's input size (the stones' readings,
      the item lines, the buttons); only the stones' own labels and a status word are notes. */
-  .ac-line, .ac-list, .ac-brief { margin: 0; font-size: var(--form-input); line-height: 1.5; overflow-wrap: anywhere; }
+  .ac-line, .ac-list, .ac-brief { margin: 0; font-size: var(--form-input); line-height: var(--leading-body); overflow-wrap: anywhere; }
   .ac-line { color: var(--muted); }
   .ac-list { color: var(--fg); }
   .ac-status { margin: 0; color: var(--muted); font-size: var(--form-note); }
