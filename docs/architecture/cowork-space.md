@@ -121,11 +121,12 @@ card, places that provider's page there whole, no rail; Settings' Model Provider
 as it is, both drawing with the one exported drawing. Workspaces is its own stones of folders in
 Workspace 1 the same way (`workspaces-surface.js`), one card per folder and three dotted cards —
 Add a workspace, GitHub CLI, Clone a repository — the folder they add taking their workspace;
-Settings' Workspace Folders surface stays as it is. Teams is `teams-surface.js`'s stones of Teams in Workspace 1, name only, with a
-Workspace question (many-of, blank All) and a Show question (Theme, State, Agents, Items; Theme
-on by default) at its top, New Team in the selector. A stone pressed places the Team's read in
-Workspace 2 (Theme, State, Agents, Launch); the 人 mark in the stone's corner, and Launch, open
-the Team page in a new tab.
+Settings' Workspace Folders surface stays as it is. Teams is the Cowork workbench (`#/cowork`;
+owner, 2026-10-20): its Teams card (`team-roster-surface.js`) carries a Workspace question
+(many-of, blank All) and a Show question (Theme, State, Agents, Items; Theme on by default)
+above its stones, what Show picks hanging under each stone; the 人 mark in a stone's corner
+opens the Team page in a new tab; its selector offers Team roster, Cron jobs, New Team, New
+Agent and Rehydrate Archived.
 Until one model provider is activated the three doors are locked and say so (the gate the old
 root had); Settings, the live stone, opens Setup until its five answers are recorded.
 

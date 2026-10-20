@@ -14,12 +14,12 @@ test('Ronin Home routes the Machine door from persisted Campaign Setup answers',
   } } } }), 'campaign');
 });
 
-test('Ronin Home has three doors — Models, Workspaces, Teams — each opening its own workbench in the same tab (owner, 2026-10-19)', async () => {
+test('Ronin Home\u2019s Models and Workspaces doors each open their own workbench in the same tab; Teams opens the Cowork workbench (owner, 2026-10-19, 2026-10-20)', async () => {
   const [home, doors, catalog, contract, header, main] = await Promise.all([
     source('js/campaign-home.js'), source('js/door-workbenches.js'), source('js/workbench-catalog.js'), source('js/workspace-contract.js'), source('js/workspace-header.js'), source('js/main.js'),
   ]);
   assert.match(home, /Ronin Home/);
-  for (const key of ['models', 'workspaces', 'teams']) {
+  for (const key of ['models', 'workspaces']) {
     assert.match(home, new RegExp(`key: '${key}', route: '${key}'`), `the ${key} door navigates to its own destination`);
     assert.match(main, new RegExp(`workspace\\.register\\('${key}', `), `the ${key} destination is registered`);
     assert.match(contract, new RegExp(`'${key}'`), `${key} is a Workbench appearance, so the tab machinery applies`);
@@ -36,9 +36,6 @@ test('Ronin Home has three doors — Models, Workspaces, Teams — each opening 
   assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.models, \[WORKBENCH_TYPES\.modelStones, WORKBENCH_TYPES\.modelProvider\]\)/, 'a provider whole is placeable on Models, by a dragged stone or its card');
   assert.match(doors, /seat: WORKBENCH_TYPES\.folderStones,/, 'Workspaces seats its own stones of folders');
   assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.workspaces, \[WORKBENCH_TYPES\.folderStones, WORKBENCH_TYPES\.folder, WORKBENCH_TYPES\.folderNew, WORKBENCH_TYPES\.folderGithub, WORKBENCH_TYPES\.folderClone\]\)/, 'a folder whole and the three admin doors are placeable on Workspaces');
-  assert.match(doors, /seat: WORKBENCH_TYPES\.teams,/, 'Teams seats its own stones of Teams');
-  assert.match(doors, /bench\(\)\.place\(WORKBENCH_TYPES\.teamRead, 'workspace2', \{ key: name \}\)/, 'a stone pressed places the Team\u2019s read in Workspace 2');
-  assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.teams, \[WORKBENCH_TYPES\.teams, WORKBENCH_TYPES\.teamRead, WORKBENCH_TYPES\.newTeamForm\]\)/, 'the Teams selector offers New Team');
   assert.match(header, /home\.hidden = !placed/, 'the bar reads RoninCowork • Home • <door>, Home the way back');
 });
 

@@ -19,7 +19,7 @@ import { createDeskView } from './desk-view.js';
 import { createAgentView } from './agent-view.js';
 import { createCampaignHome } from './campaign-home.js';
 import { createCurrentHome } from './current-home.js';
-import { createModelsView, createTeamsView, createWorkspacesView } from './door-workbenches.js';
+import { createModelsView, createWorkspacesView } from './door-workbenches.js';
 import { createCampaignView } from './campaign-view.js';
 import { createSetupView } from './setup-view.js';
 import { createLaunchView } from './launch-view.js';
@@ -118,10 +118,9 @@ async function init() {
   guard('register the Ronin Home destination', () => workspace.register('home', createCampaignHome()));
   // The current root, Home as it was before 2026-10-18, at its own address (owner, 2026-10-19).
   guard('register the Current root destination', () => workspace.register('current', createCurrentHome()));
-  // Home's three doors, each a workbench of its own in the same tab (owner, 2026-10-19).
+  // Home's Models and Workspaces doors, each a workbench of its own in the same tab (owner, 2026-10-19).
   guard('register the Models destination', () => workspace.register('models', createModelsView()));
   guard('register the Workspaces destination', () => workspace.register('workspaces', createWorkspacesView()));
-  guard('register the Teams destination', () => workspace.register('teams', createTeamsView()));
   // the same workbench, selector column, persistence, recall and drag/drop as the Cowork
   // space, offering a Campaign's own configuration instead of its Coworks and Agents.
   guard('register the Campaign destination', () => workspace.register('campaign', createCampaignView()));
