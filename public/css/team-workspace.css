@@ -118,12 +118,12 @@
   .league-team-objective { grid-column: 1 / -1; font-size: var(--text-4); margin: 0; overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
   .league-team-objective[hidden] { display: none; }
   .league-team-detail-state { margin: 0; color: var(--bad); }
-  .league-team-detail .league-team-step-body { gap: 0; }
-  /* Under step 3 the configuration form's own sections keep their titles, not their numbers. */
-  .league-team-detail .league-team-step-body .fs-step .fs-step-n { display: none; }
-  /* The Team's three steps open their bodies under the head, full width: beside a label
-     column a workspace this narrow leaves the rows' name column nothing. */
-  .league-team-detail .fs-step:has(> .fs-step-head) > .fs-step-body.league-team-step-body { grid-column: 1 / -1; }
+  .league-team-step-body { gap: 0; }
+  /* The Team's three steps open their bodies under the head, full width, in the stone's detail
+     and in the placed profile alike: beside a label column a workspace this narrow leaves the
+     rows' name column nothing, and Configuration's unnumbered sections (team-configuration.js)
+     align to the step's left edge, no second indent (owner, 2026-10-20). */
+  .fs-step:has(> .fs-step-head.fs-togglable) > .fs-step-body.league-team-step-body { grid-column: 1 / -1; }
   .league-team-agent { width: 100%; border: 0; border-radius: var(--radius-hair); background: transparent; color: var(--fg); font-family: inherit; text-align: left; cursor: pointer; }
   .league-team-agent:hover { background: var(--bg-2); }
   .league-team-agent-name { grid-column: 2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

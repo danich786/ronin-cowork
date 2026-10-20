@@ -56,8 +56,8 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
     const defaults = bucket(roster.agent_defaults);
     const form = el('form', 'ntf-form tw-config-form');
 
-    /* ---- step 1 · Team: ID, Title and Kind on one line, then Purpose — the New Team form's own head ---- */
-    const stepTeam = createStep({ n: 1, key: 'team', title: t('team_config.team_step', 'Team') });
+    /* ---- Team (an unnumbered section inside the Team's Configuration step): ID, Title and Kind on one line, then Purpose — the New Team form's own head ---- */
+    const stepTeam = createStep({ key: 'team', title: t('team_config.team_step', 'Team') });
     const idInput = el('input', 'tw-config-id'); idInput.type = 'text'; idInput.name = 'name'; idInput.value = roster.name; idInput.disabled = true;
     const title = el('input'); title.type = 'text'; title.name = 'title'; title.spellcheck = false; title.value = roster.title || '';
     const identity = el('div', 'tw-config-identity');
@@ -70,8 +70,8 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
     stepTeam.body.append(identity, createField({ label: t('team_config.objective', 'Purpose'), control: objective }).el);
     form.append(stepTeam.el);
 
-    /* ---- step 2 · New Agent defaults: what the next Agent starts from, never the Team's own behaviour ---- */
-    const stepDefaults = createStep({ n: 2, key: 'defaults', title: t('team_config.agent_defaults', 'New Agent defaults') });
+    /* ---- New Agent defaults (unnumbered): what the next Agent starts from, never the Team's own behaviour ---- */
+    const stepDefaults = createStep({ key: 'defaults', title: t('team_config.agent_defaults', 'New Agent defaults') });
     stepDefaults.body.append(el('p', 'fs-step-help', t('team_config.next_form', 'What each new Agent on this Team starts from. Nothing live changes.')));
     const branches = { ...bucket(roster.branches) };
     const rootWasDesk = list(roster.repos).includes(roster.project_root); // a birthplace that is also a desk stays one
