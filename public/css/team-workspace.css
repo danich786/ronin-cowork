@@ -129,7 +129,6 @@
   .league-team-agent-name { grid-column: 2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .league-team-agent-lead { margin-inline-end: var(--space-3); color: var(--accent); }
   .league-team-agent-holds { margin-inline-start: var(--space-3); color: var(--muted); }
-  .league-team-agent-plus { min-height: 36px; color: var(--accent); }
   .tk-line-title { grid-column: 2; }
   .tk-line-holder { grid-column: 3; color: var(--muted); }
   .tk-line-title, .tk-line-holder { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
