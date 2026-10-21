@@ -131,7 +131,7 @@ Agent a row with the lead first, each Item a row); the 人 mark in a stone's cor
 Team page in a new tab; its selector offers Team roster, Cron jobs, New Team, New Agent and
 Rehydrate Archived.
 Help (owner, 2026-10-21) seats the help outline (`help-outline.js`, `help.outline`: the docs/ guides
-as two lists, 'Start here: 4 things you need to know' numbered 1-4 above 'Everything else' in quieter grouped rows, a pressed page read beside the rail through
+'START HERE: 4 things you need to know' numbered 1-4, then the other groups as quieter rows, a pressed page read beside the rail through
 `/api/file?product=1`) in Workspace 1 and Mika (`help.mika`) in Workspace 2, her tile opened on its
 reading (`createMikaTilePool({ opensOn: 'reading' })`); both are solid cards.
 Until one model provider is activated the Models, Workspaces and Teams doors are locked; Help stays

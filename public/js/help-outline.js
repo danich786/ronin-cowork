@@ -2,9 +2,9 @@
 /**
  * THE HELP OUTLINE (owner, 2026-10-21): Workspace 1 of the Help workbench. The pages are the
  * user docs in docs/, read through the same door Setup's guides use (/api/file?product=1),
- * never copies. Two lists (owner, 2026-10-21): 'Start here', the four things numbered 1-4 and
- * the only emphasised part, then 'Everything else', quieter rows grouped for specific questions
- * (an FAQ group joins as it grows); Mika in Workspace 2 answers what no page does. One stone
+ * never copies. 'START HERE: 4 things you need to know', the four numbered 1-4, then the rest as
+ * quieter rows under their groups (an FAQ group joins as it grows); said once each (owner,
+ * 2026-10-21). Mika in Workspace 2 answers what no page does. One stone
  * surface: press a page, the stones go to the rail and the page reads beside them; a link to
  * another guide opens that guide in the same place.
  */
@@ -19,7 +19,7 @@ const el = (tag, cls, text) => { const out = document.createElement(tag); if (cl
 
 /** The outline: each page is a doc path, in the order a new user meets them. */
 function PAGES() {
-  const four = { id: 'four', label: t('help_outline.four', 'Start here: 4 things you need to know') };
+  const four = { id: 'four', label: t('help_outline.start_here', 'Start here:'), secondary: t('help_outline.four', '4 things you need to know') };
   const start = { id: 'start', label: t('help_outline.start', 'Getting started') };
   const using = { id: 'using', label: t('help_outline.using', 'Using Ronin') };
   const first = (n, path, label) => ({ id: path, group: four, label, path, glyph: String(n), className: 'help-outline-first' });
@@ -55,16 +55,8 @@ export function createHelpOutline() {
     if (known && !fragment) stones.select(path);
     else stones.openDetail({ ...(known || { id: path, label: path.split('/').pop(), path }), fragment });
   };
-  // The two lists' words, put back after every paint: the four's one line, and the heading
-  // over the rest.
-  const label = () => {
-    const four = stones.el.querySelector('[data-sws-group="four"]');
-    if (four) four.querySelector('.sws-group-hint').textContent = t('help_outline.read_first', 'Read these first');
-    const rest = stones.el.querySelector('[data-sws-group="start"]');
-    if (rest && !rest.previousElementSibling?.classList.contains('help-outline-else')) rest.before(el('h2', 'help-outline-else', t('help_outline.everything_else', 'Everything else')));
-  };
   const stones = createPhalanx({
-    items: pages, className: 'help-outline-stones', onSelectionChange: () => label(), grouped: { groups: [...new Map(pages.map((item) => [item.group.id, item.group])).values()] },
+    items: pages, className: 'help-outline-stones', grouped: { groups: [...new Map(pages.map((item) => [item.group.id, item.group])).values()] },
     renderDetail: (item, host) => {
       host.scrollTop = 0;
       const page = el('article', 'help-outline-page', t('docs.loading', 'loading…'));
@@ -87,6 +79,5 @@ export function createHelpOutline() {
     },
   });
   stones.mount(out.content);
-  label();
   return { el: out.el, destroy: () => stones.destroy() };
 }
