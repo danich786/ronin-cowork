@@ -161,7 +161,7 @@ Providers surface is untouched; all draw with the one drawing `provider-surface.
 (`createProviderDrawing`, `createRefreshAll`, `providerStones`) over the same record and measure. Workspaces seats
 its own stones of folders the same way (`workspaces-surface.js`, `workspaces.stones`; a dropped
 stone or a folder's card places the folder whole, `workspaces.folder`), its three admin doors —
-Add a workspace, GitHub CLI, Clone a repository — dotted selector cards in the New Agent format,
+Add a workspace (`workspace-add.js`: one surface, three method cards deciding its sections; the old form stays beside it as "Add a workspace (old form)" while the owner compares), GitHub CLI, Clone a repository — dotted selector cards in the New Agent format,
 the folder they add taking their workspace; Settings' Workspace Folders surface is untouched,
 both drawing with `projectroots.js`'s exported drawing (`createRootDrawing`, `rootStone`) over
 one read per bench (`createRootsReading`, the detail route). The bar's crumb (`workspace-header.js`;
@@ -320,7 +320,8 @@ folders per bench (`/api/project-roots/detail`) that every surface on it hears.
 |---|---|
 | Folder stones (`workspaces.stones`) | the bench's folder read; its selector cards (`folderOffers`) read the same |
 | Folder (`workspaces.folder`) | the one folder named in its detail from the same read; its writes re-read it for every surface |
-| Add a workspace (`workspaces.new`) | the add form's own reads (inspect, suggest) and the Campaign id; the folder it adds takes its workspace |
+| Add a workspace (`workspaces.add`, `workspace-add.js`) | one surface in the launch forms' sections: section 1 is three cards, the method (New folder · A folder on this machine · From GitHub), and the card chosen decides the sections under it (Name and Where; Folder, Name, How Agents work here; Repository, Name, How Agents work here). Reads the folders (`/api/folders`), inspect, the GitHub sign-in state; writes `/api/folders`, `/api/project-roots`, the clone route and the repo profile. The folder it adds takes its workspace. Owner, 2026-10-21; Lab wip/buildouts/ADD_A_WORKSPACE.md |
+| Add a workspace (old form) (`workspaces.new`) | the add form `projectroots.js` draws, kept beside the new one while the owner compares them; the folder it adds takes its workspace |
 | GitHub CLI / Clone a repository (`workspaces.github`, `workspaces.clone`) | the GitHub setup read and session attachment `github-workspace-setup.js` owns, one instance per bench |
 
 ### Agent (`agent` profile)

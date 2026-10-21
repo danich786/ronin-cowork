@@ -23,7 +23,7 @@ export const WORKBENCH_TYPES = Object.freeze({
   campaignMachine: 'campaign.machine', campaignDefaults: 'campaign.defaults', campaignRoots: 'campaign.project-roots',
   campaignIdentity: 'campaign.identity', campaignInstallations: 'campaign.installations', campaignCreate: 'campaign.new',
   modelStones: 'models.stones', modelRefresh: 'models.refresh', modelProvider: 'models.provider',
-  folderStones: 'workspaces.stones', folder: 'workspaces.folder', folderNew: 'workspaces.new', folderGithub: 'workspaces.github', folderClone: 'workspaces.clone',
+  folderStones: 'workspaces.stones', folder: 'workspaces.folder', folderAdd: 'workspaces.add', folderNew: 'workspaces.new', folderGithub: 'workspaces.github', folderClone: 'workspaces.clone',
 });
 
 let registered = false;
@@ -88,9 +88,10 @@ export function registerWorkbenchCatalog() {
   // dotted cards, the New Agent format (workspaces-surface.js).
   add({ type: WORKBENCH_TYPES.folderStones, header: 'surface', className: 'wk-selector-utility', label: () => t('campaign_home.workspaces', 'Workspaces'), create: ({ workspace, environment }) => environment.folderStones(workspace) });
   add({ type: WORKBENCH_TYPES.folder, header: 'surface', className: 'wk-selector-entity', discover: (_t, e) => e.folders(), create: ({ workspace, detail, environment }) => environment.folder(workspace, detail) });
-  add({ type: WORKBENCH_TYPES.folderNew, header: 'surface', className: 'wk-selector-utility', label: () => t('roots.add_stone', 'Add a workspace'), summary: () => t('roots.keep_hint', 'Keep a folder on this machine for Teams and Agents to start in.'), variant: 'dotted', create: ({ workspace, environment }) => environment.folderNew(workspace) });
+  add({ type: WORKBENCH_TYPES.folderAdd, header: 'surface', className: 'wk-selector-utility', label: () => t('roots.add_stone', 'Add a workspace'), summary: () => t('workspace_add.card_summary', 'A new folder, a folder on this machine, or a GitHub repository.'), variant: 'dotted', create: ({ workspace, environment }) => environment.folderAdd(workspace) });
+  add({ type: WORKBENCH_TYPES.folderNew, header: 'surface', className: 'wk-selector-utility', label: () => t('roots.add_stone_old', 'Add a workspace (old form)'), summary: () => t('roots.keep_hint', 'Keep a folder on this machine for Teams and Agents to start in.'), variant: 'dotted', create: ({ workspace, environment }) => environment.folderNew(workspace) });
   add({ type: WORKBENCH_TYPES.folderGithub, header: 'surface', className: 'wk-selector-utility', label: () => t('roots.github_auth_stone', 'GitHub CLI'), summary: () => t('roots.github_auth_state', 'Connect account'), variant: 'dotted', create: ({ workspace, environment }) => environment.folderGithub(workspace) });
   add({ type: WORKBENCH_TYPES.folderClone, header: 'surface', className: 'wk-selector-utility', label: () => t('roots.github_clone_stone', 'Clone a repository'), summary: () => t('roots.github_clone_ready_state', 'Uses existing Git access'), variant: 'dotted', create: ({ workspace, environment }) => environment.folderClone(workspace) });
-  profiles.define(WORKBENCH_PROFILES.workspaces, [WORKBENCH_TYPES.folderStones, WORKBENCH_TYPES.folder, WORKBENCH_TYPES.folderNew, WORKBENCH_TYPES.folderGithub, WORKBENCH_TYPES.folderClone]);
+  profiles.define(WORKBENCH_PROFILES.workspaces, [WORKBENCH_TYPES.folderStones, WORKBENCH_TYPES.folder, WORKBENCH_TYPES.folderAdd, WORKBENCH_TYPES.folderNew, WORKBENCH_TYPES.folderGithub, WORKBENCH_TYPES.folderClone]);
   registered = true;
 }

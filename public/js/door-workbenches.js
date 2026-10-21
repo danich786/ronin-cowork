@@ -19,6 +19,7 @@ import { loadProviderCatalog } from './form-steps.js';
 import { createModelProvider, createModelRefresh, createModelStones, providerOffers } from './models-surface.js';
 import { createGithubWorkspaceSetup } from './github-workspace-setup.js';
 import { createFolder, createFolderClone, createFolderGithub, createFolderNew, createFolderStones, createRootsReading, folderOffers } from './workspaces-surface.js';
+import { createWorkspaceAdd } from './workspace-add.js';
 import { campaignById, loadCampaigns, normalizeSelection } from './campaigns.js';
 
 const blank = (id) => WorkspaceKit.primitives.createBlankSurface(id.replace('workspace', 'Workspace ')).el;
@@ -116,6 +117,7 @@ export function createWorkspacesView() {
         folderStones: () => keep(createFolderStones({ reading, campaignId, workbench: bench() })),
         folder: (_workspace, detail) => keep(createFolder(detail.key, { reading, campaignId })),
         folderNew: (workspace) => keep(createFolderNew({ reading, campaignId, placeFolder: (name) => placeFolder(name, workspace) })),
+        folderAdd: (workspace) => keep(createWorkspaceAdd({ campaignId, placeFolder: async (name) => { await reading.read(); placeFolder(name, workspace); }, signIn: () => bench().place(WORKBENCH_TYPES.folderGithub, workspace === 'workspace1' ? 'workspace2' : 'workspace1') })),
         folderGithub: () => keep(createFolderGithub(github ??= boxes())),
         folderClone: (workspace) => { cloneSeat = workspace; return keep(createFolderClone(github ??= boxes())); },
       };

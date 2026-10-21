@@ -350,4 +350,16 @@
   .markdown-reader a { color: var(--kaki); }
   .bh-status[data-bad='true'] { color: var(--bad); }
 
+
+  /* Add a workspace (workspace-add.js): the launch forms' sections; the browser's rows are the folder picker's. */
+  .wa-surface > .wk-surface-content { padding: 0 var(--space-inset); }
+  .wa-browser { display: flex; flex-direction: column; gap: var(--space-row); min-width: 0; }
+  .wa-browser .folder-list { max-height: 18rem; overflow: auto; }
+  .wa-form > .fs-step:nth-last-child(1 of :not([hidden])) { border-bottom: 0; }
+  .wa-reading { color: var(--fg); }
+  .wa-link { border: 0; background: transparent; padding: 0; color: var(--link); font: inherit; cursor: pointer; }
+  .wa-status { margin: 0; padding: var(--space-row) 0 var(--space-inset); color: var(--muted); font-size: var(--form-note); }
+  .wa-status:empty { display: none; }
+  .wa-status[data-kind='bad'] { color: var(--bad); }
+
 }
