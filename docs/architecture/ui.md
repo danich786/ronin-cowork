@@ -182,7 +182,13 @@ The roles, defined in `public/style.css`:
   `--term-*` token is the designer's, the 16 ANSI slots and `--term-cube` included**; the
   rules below (bright white is the strongest mark; on paper every slot clears 3:1) are what a
   new value must keep, and `check-css` holds the terminal's text pairs to the floor in both
-  themes
+  themes. **The terminal's surfaces are the UI's, not copies** (owner, cut 11): `--term-bg`
+  reads `--bg` on the dark shell and `--panel` on the light one, and the tape, panel, well,
+  lines, ink and muted read `--bg-2`, `--well`, `--line`/`--line-2`, `--fg`/`--fg-strong` and
+  `--muted` in both shells, so a retuned neutral moves the terminal with it. Only true
+  terminal values keep a hex: the ANSI hues, the cursor, the selection, and bright black,
+  the shading band an agent CLI draws behind the person's messages (a neutral grey, never
+  warm)
 
 **Kaki is the brand**: every primary and attention FILL reads
 `--kaki`/`--on-strong`, or `--kaki-fill`/`--kaki-fill-ink` where a small mark must pass on
@@ -224,8 +230,10 @@ scheme, two grounds. Two departures from stock, both forced by the paper:
   is not legible.
 - **ANSI white is not white.** Dark schemes map 7/15 to the foreground, so `\e[97m`
   gets the strongest ink. Map that literally on paper and the text disappears — the
-  fault Solarized Light is known for. Here 7 is a mid grey and 15 is near-black, so
+  fault Solarized Light is known for. Here 7 is `--fg` and 15 is `--fg-strong`, so
   bright white stays the strongest mark, which is the role the emitting code means.
+  Bright black (8) is the exception to 3:1: agent CLIs paint it as a BACKGROUND band, so
+  it is a light neutral that `--term-fg` reads on.
 
 half a terminal palette; the other 240 are the xterm cube, and a program that addresses
 those was left painting for a ground that had gone. `theme.js` generates all 240

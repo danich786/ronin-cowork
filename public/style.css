@@ -68,8 +68,8 @@
      values are chosen; ui.md "Theme" says what each slot must stay. */
   --term-cube: standard;
   --term-size: 13px; /* xterm, the tape and the composer: one size, glyph for glyph (js/theme.js) */
-  --term-bg: #0b0e14;
-  --term-fg: #c5c8c6;
+  --term-bg: var(--bg);
+  --term-fg: var(--fg);
   --term-cursor: #e0af68;
   --term-selection: #2a3145;
   --term-ansi-black: #1d1f21;
@@ -79,7 +79,7 @@
   --term-ansi-blue: #81a2be;
   --term-ansi-magenta: #b294bb;
   --term-ansi-cyan: #8abeb7;
-  --term-ansi-white: #c5c8c6;
+  --term-ansi-white: var(--fg);
   --term-ansi-br-black: #6b7488;
   --term-ansi-br-red: #d54e53;
   --term-ansi-br-green: #b9ca4a;
@@ -88,19 +88,20 @@
   --term-ansi-br-magenta: #c397d8;
   --term-ansi-br-cyan: #70c0b1;
   --term-ansi-br-white: #eaeaea;
-  --term-tape-bg: #0f1216;
-  --term-tape-fg: #d6dae0;
-  --term-tape-line: #3a4450;
-  --term-tape-line-2: #4a5561;
-  --term-tape-muted: #8b98a5;
-  --term-tape-muted-2: #b7c2cc;
-  --term-jump-bg: rgb(30 36 44 / 92%);
-  --term-jump-bg-2: rgb(44 52 62 / 95%);
-  --term-panel: #11151b;
-  --term-panel-line: #26303c;
-  --term-well: #0d1116;
-  --term-input-line: #2b3644;
-  --term-input-fg: #e6eaf0;
+  /* the terminal's surfaces READ the UI's, in both shells: one neutral family, no copies */
+  --term-tape-bg: var(--term-bg);
+  --term-tape-fg: var(--fg);
+  --term-tape-line: var(--line);
+  --term-tape-line-2: var(--line-2);
+  --term-tape-muted: var(--muted);
+  --term-tape-muted-2: var(--fg);
+  --term-jump-bg: color-mix(in srgb, var(--term-bg) 92%, transparent);
+  --term-jump-bg-2: color-mix(in srgb, var(--term-panel) 95%, transparent);
+  --term-panel: var(--bg-2);
+  --term-panel-line: var(--line);
+  --term-well: var(--well);
+  --term-input-line: var(--line);
+  --term-input-fg: var(--fg-strong);
 
   /* ROLES, NOT RULERS (owner, cut 10): every token here names what it is FOR. Pick by meaning;
      docs/architecture/ui.md has the role table. There is no numbered scale to reach for. */
@@ -207,11 +208,11 @@
   --head-team-fg: #201a0e;
   --head-team-muted: #4f2e1b;
   --head-attention: #7a2f10;
-  --bg: #f4f2ec;
-  --bg-2: #eae7df;
+  --bg: #f2f3f5;
+  --bg-2: #e6e7eb;
   --panel: #ffffff;
-  --raise: #f1efe8;
-  --well: #f7f5ef;
+  --raise: #eff0f3;
+  --well: #f7f8fa;
   --line: #afb2be;
   --line-2: #9094a5;
   --line-3: #797e93;
@@ -251,8 +252,7 @@
   --head-teams-muted: color-mix(in srgb, var(--on-strong) 78%, transparent);
 
   --term-cube: invert;
-  --term-bg: #faf8f2;
-  --term-fg: #2e302c;
+  --term-bg: var(--panel);
   --term-cursor: #a06b1a;
   --term-selection: #d8e2f2;
   --term-ansi-black: #1d1f21;
@@ -262,29 +262,16 @@
   --term-ansi-blue: #2f5f9e;
   --term-ansi-magenta: #7a4d9c;
   --term-ansi-cyan: #2c7a7a;
-  --term-ansi-white: #2e302c;
+  --term-ansi-white: var(--fg);
 
-  --term-ansi-br-black: #dcd8ce;
+  --term-ansi-br-black: #dfe1e6; /* the band behind the person's messages: a neutral grey, no yellow */
   --term-ansi-br-red: #d13b3b;
   --term-ansi-br-green: #6f8f28;
   --term-ansi-br-yellow: #b08c00;
   --term-ansi-br-blue: #3f79c0;
   --term-ansi-br-magenta: #9060b8;
   --term-ansi-br-cyan: #35908f;
-  --term-ansi-br-white: #14150f;
-  --term-tape-bg: #fdfcf8;
-  --term-tape-fg: #2c2e36;
-  --term-tape-line: #c8c2b2;
-  --term-tape-line-2: #b3ac9a;
-  --term-tape-muted: #6d7284;
-  --term-tape-muted-2: #4a4f5e;
-  --term-jump-bg: rgb(250 248 242 / 92%);
-  --term-jump-bg-2: rgb(238 235 226 / 95%);
-  --term-panel: #f1efe8;
-  --term-panel-line: #d9d4c8;
-  --term-well: #ffffff;
-  --term-input-line: #c8c2b2;
-  --term-input-fg: #2c2e36;
+  --term-ansi-br-white: var(--fg-strong);
 }
 
 :focus-visible {
