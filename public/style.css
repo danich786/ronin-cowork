@@ -349,7 +349,7 @@ body {
   --current-head-line: var(--head-team-line);
   --current-head-edge: var(--head-team-edge);
 }
-:root:is([data-workbench='campaign'], [data-workbench='setup'], [data-workbench='launch'], [data-workbench='models'], [data-workbench='workspaces']) {
+:root:is([data-workbench='campaign'], [data-workbench='setup'], [data-workbench='launch'], [data-workbench='models'], [data-workbench='workspaces'], [data-workbench='help']) {
   --current-head-bg: var(--head-admin-bg);
   --current-head-fg: var(--head-admin-fg);
   --current-head-muted: var(--head-admin-muted);

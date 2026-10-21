@@ -115,7 +115,7 @@ else does.
 ### The root landing
 
 The bare `/` route is the landing, not a remembered workspace and not a Campaign editor.
-It has three doors — **Models**, **Workspaces**, **Teams** — each opening its own Workbench in
+It has four doors — **Models**, **Workspaces**, **Teams**, **Help** — each opening its own Workbench in
 the same tab (`public/js/door-workbenches.js`; owner, 2026-10-19). Models is its own stones of
 providers in Workspace 1 (`models-surface.js`): a stone dragged into a workspace, or its selector
 card, places that provider's page there whole, no rail; Settings' Model Providers surface stays
@@ -130,7 +130,11 @@ with what Show picks under it as the phalanx's branch rows (Theme one row, State
 Agent a row with the lead first, each Item a row); the 人 mark in a stone's corner opens the
 Team page in a new tab; its selector offers Team roster, Cron jobs, New Team, New Agent and
 Rehydrate Archived.
-Until one model provider is activated the three doors are locked and say so (the gate the old
+Help (owner, 2026-10-21) seats the help outline (`help-outline.js`, `help.outline`: the docs/ guides
+as grouped stones, '4 Things You Need to Know' first, a pressed page read beside the rail through
+`/api/file?product=1`) in Workspace 1 and Mika (`help.mika`) in Workspace 2, her tile opened on its
+reading (`createMikaTilePool({ opensOn: 'reading' })`); both are solid cards.
+Until one model provider is activated the four doors are locked and say so (the gate the old
 root had); Settings, the live stone, opens Setup until its five answers are recorded.
 
 The current root — Ronin Home as it was before 2026-10-18, with doors into the Desk, Team and

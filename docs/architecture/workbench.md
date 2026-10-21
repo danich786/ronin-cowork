@@ -143,7 +143,7 @@ status as its own reads return.
    ownership checks prevent stale responses from repainting replaced surfaces.
 
 **Ronin Home** (`campaign-home.js`; owner, 2026-10-19) stays a page, not a Workbench, with three
-doors — **Models**, **Workspaces**, **Teams** — each a link to a Workbench destination of its own,
+doors — **Models**, **Workspaces**, **Teams**, **Help** — each a link to a Workbench destination of its own,
 opened in the same tab (a modified press opens a new tab through `workbenchLaunchUrl`). The
 Teams door opens the Teams workbench (`#/cowork`, `cowork-view.js`; owner, 2026-10-20). Models and
 Workspaces are one shape (`door-workbenches.js`): the Kit Workbench on a profile of the
@@ -178,7 +178,11 @@ topic in Show's order, the phalanx laying the stones and their cells on one grid
 a row aligned across the stones (`branches: 'column'`, a row's `under`; `teams-surface-rows.js`
 over the pushed rosters' `board` and `items`): Theme and State plain clamped text, each Agent and
 each Item a branch row; the 人 mark in a stone's corner opens the Team page in a new tab.
-The gate (owner, 2026-10-19): as on the old root, the three doors are locked until one model
+Help (owner, 2026-10-21) is the same door shape seating two workspaces: the help outline
+(`help.outline`, `help-outline.js`) in Workspace 1 and Mika (`help.mika`) in Workspace 2. A Tile
+built with `opensOn: 'reading'` spends the touch screens' open-on-the-reading intention on a desk too,
+and before her record has anything in it; a Mika born by the seat gets a fresh tile once she is up.
+The gate (owner, 2026-10-19): as on the old root, the four doors are locked until one model
 provider is activated (`/api/setup/runtime`'s `activated_count`), each saying so under its name,
 and Settings is the one live stone — a new user's way in is Setup.
 

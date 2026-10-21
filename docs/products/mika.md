@@ -2,7 +2,9 @@
 
 Mika is the installed assistant for questions about Ronin: finding a setting, understanding
 what the screen shows, or preparing a change. Ask in plain language through the Help entry
-where offered, or use `mika "your question"` when the tool is available.
+where offered, or use `mika "your question"` when the tool is available. The **Help** door on
+Ronin Home opens her beside the guides, on her Chat reading rather than her terminal; that
+needs Ronin Services' transcripts, and without them her tile opens on the terminal.
 
 Mika runs as an Agent session using an available provider. Provider availability and the
 installed capability determine whether it can start; a Help entry alone is not proof that

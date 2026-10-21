@@ -1,7 +1,7 @@
 /* part of the ronin-cowork client — see js/README.md */
 /**
- * RONIN HOME — the quiet root arrival and three doors out of it: Models, Workspaces, Teams
- * (PATTERNS.md, Home; owner, 2026-10-19). Home stays a page; each door opens its own
+ * RONIN HOME — the quiet root arrival and its doors out: Models, Workspaces, Teams
+ * (PATTERNS.md, Home; owner, 2026-10-19), and Help (owner, 2026-10-21). Home stays a page; each door opens its own
  * workbench in this tab (door-workbenches.js), the bar reading RoninCowork • Home • <door>
  * with Home the way back. A door is a link: a plain press navigates here, a modified press
  * opens the workbench in a new tab. THE GATE (owner, 2026-10-19, "let's have the gate"): as on
@@ -31,6 +31,7 @@ function DOORS() {
     { key: 'models', route: 'models', glyph: '✶', name: t('campaign_home.models', 'Models'), is: t('campaign_home.models_is', 'Model providers on this machine: install, sign in, choose') },
     { key: 'workspaces', route: 'workspaces', glyph: '⌂', name: t('campaign_home.workspaces', 'Workspaces'), is: t('campaign_home.workspaces_is', 'The folders your Teams work in') },
     { key: 'teams', route: 'cowork', glyph: '人人', name: t('campaign_home.teams', 'Teams'), is: t('campaign_home.teams_is', 'Your Teams; open one to its page') },
+    { key: 'help', route: 'help', glyph: 'ミ', name: t('campaign_home.help', 'Help'), is: t('campaign_home.help_is', 'The guides, and Mika to ask') },
   ];
 }
 

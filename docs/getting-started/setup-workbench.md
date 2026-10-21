@@ -6,7 +6,7 @@ specification first.
 
 ## Where it is
 
-**Ronin Home** has three doors — **Models**, **Workspaces** and **Teams** — and a
+**Ronin Home** has four doors — **Models**, **Workspaces**, **Teams** and **Help** — and a
 **Settings** button. Settings opens **Ronin Setup**, this guide, until each of Setup's five
 steps has been answered, and **Ronin Settings**, the full configuration workbench, after
 that. The older Home at `#/current` keeps its **Desk**, **Team** and **Agent** doors, which

@@ -106,7 +106,7 @@ capabilities to the outer ViewHost. `workspace-header.js`
 applies that declaration once; workspace and selector headers inherit it, while individual
 work surfaces remain ignorant of colour and the application bar's dynamic island stays
 neutral. **Header colours are tokens, one set per scope:** `--head-admin-*` (graphite:
-Campaign, Setup, New Project, Models, Workspaces), `--head-teams-*` (aiiro: the Cowork
+Campaign, Setup, New Project, Models, Workspaces, Help), `--head-teams-*` (aiiro: the Cowork
 collection) and `--head-team-*` (kaki: Team and Agent Workbenches), each `bg` `fg` `muted`
 `line` `edge`, plus `--head-attention`. Dark mode mixes 24% of collection colour into the
 header ground; light mode uses a solid fill. The per-workbench switch sits in `@layer ui`

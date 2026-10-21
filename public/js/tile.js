@@ -45,6 +45,9 @@ export class Tile {
     this.transcriptState = null; // the route's last word on this Agent: available, empty, reason
     this.transcriptWantFirst = false; // pressed before the readings were known: move to the first once they are
     this.transcriptWantChat = false; // touch: open on the reading once the route says this Agent has one
+    // A seat that is a conversation (Help's Mika) opens on the reading on a desk too, and
+    // before anything is said: the entry box beside it is the way in.
+    this.opensOnReading = options.opensOn === 'reading';
     this.pending = ''; // UNLOCKED: locally-parked typed text (sent as one parcel on Enter)
     this.strip = null; // the thin bar showing this.pending over the tile
     this.composer = null; // the unlocked tile's text entry (built on first use)
@@ -327,7 +330,7 @@ export class Tile {
     // the transcript on and the intention is dropped rather than fighting the press.
     if (this.transcriptWantChat) {
       this.transcriptWantChat = false;
-      if (!this.transcriptOn && state.available && !state.empty && this.transcriptCycle().length) {
+      if (!this.transcriptOn && state.available && (this.opensOnReading || !state.empty) && this.transcriptCycle().length) {
         this.toggleTranscript();
         return;
       }
@@ -635,7 +638,7 @@ export class Tile {
     // desk's way in. Held as an intention rather than acted on here, because only the
     // route can say whether THIS Agent has a record — the probe above is already on its
     // way, and onTranscriptState spends the intention when the answer lands.
-    if (changed) this.transcriptWantChat = isCoarse() && this.transcriptAvailable();
+    if (changed) this.transcriptWantChat = (this.opensOnReading || isCoarse()) && this.transcriptAvailable();
     this.sessionKey = S.sessions.find((row) => row.name === session)?.key;
     this.syncEmpty();
     // The Services answer is per session. A tile that held an unlocked view for one Agent
