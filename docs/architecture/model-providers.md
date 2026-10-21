@@ -257,7 +257,7 @@ in ⚙ Configuration — the schema's `models` section, two views of one setting
 | Default | Key | Read by |
 |---|---|---|
 | Agent model | `sessions.default` | `spawn.ts` / `launch-command.ts` for every launch that names neither provider nor model; `launch-seed.ts`; Mika's provider |
-| Team lead model | `sessions.lead` | the same, for a launch with `team` and `team_lead` (`sessionsFor`); none set = the Agent model |
+| Team lead model | `sessions.lead` | the same, for a launch with `team` and `team_lead` (`sessionsFor`), and `GET /api/launch-seed?lead=1`, which New Agent re-reads when Make team lead changes so its Default names the model that launches; none set = the Agent model |
 | Mika model level | `jobs.mikaassist.level` | `mika-runtime.ts`: the Agent model's provider, Light → Standard → Frontier upward |
 | Preferred model per provider | `sessions.by_provider.<id>` | a launch that names a provider but no model (Configuration only) |
 

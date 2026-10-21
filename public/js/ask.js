@@ -7,6 +7,7 @@
  *   ask([{ group, fields: [{ key, label, options, blank?, many?, switch?, shape?, after?, row?, word?, then? }] }],
  *       { value, onChange, density, trayHost, exposed })  →  { el, value(), set(key, v) | set({...}), options(key, rows), disable(key, reason), show(keys|null), open(key), close(), destroy() }
  *
+ * `blank` is a word or a function answering one (read at each paint).
  * A field is a READING STONE (140 × 48: label over answer). Click it and a TRAY opens under
  * its group, holding option stones in one of two fixed shapes — the SQUARE (85, a glyph and
  * a ruled word) or the RECTANGLE (140 wide, at least 48 tall: it grows to a two-line name, never clips it). A stone carries a
@@ -90,6 +91,8 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
   const childrenOf = (field) => fields.filter((child) => child.parent === field.key);
   const activeChild = (field) => childrenOf(field).find((child) => String(child.when) === String(state[field.key])) || null;
   const answered = (field) => (field.many ? state[field.key].length > 0 : state[field.key] !== '' && state[field.key] != null);
+  // A blank may be a function: the word for "no answer" can depend on what the form has read.
+  const blankOf = (field) => (typeof field.blank === 'function' ? field.blank() : field.blank);
   const byKey = (key) => fields.find((field) => field.key === key) || null;
   const state = {};
   for (const field of fields) state[field.key] = field.switch ? Boolean(value[field.key]) : field.many ? [...(value[field.key] || [])] : (value[field.key] ?? '');
@@ -175,12 +178,12 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     const b = el('b', 'ask-reading');
     if (field.switch) { b.textContent = field.switch[cur ? 0 : 1]; if (field.word) b.append(el('i', 'ask-fact', field.word)); return b; }
     if (field.many) {
-      if (!cur.length) { b.className += ' ask-blank'; b.textContent = field.blank ?? t('ask.none', 'None'); }
+      if (!cur.length) { b.className += ' ask-blank'; b.textContent = blankOf(field) ?? t('ask.none', 'None'); }
       else if (cur.length <= 2) b.textContent = cur.map((v) => rowFor(field, v)?.l ?? v).join(', ');
       else b.textContent = t('ask.chosen', '{n} chosen', { n: cur.length });
       return b;
     }
-    if (cur === '' || cur == null) { b.className += ' ask-blank'; b.textContent = field.blank ?? t('ask.none', 'None'); return b; }
+    if (cur === '' || cur == null) { b.className += ' ask-blank'; b.textContent = blankOf(field) ?? t('ask.none', 'None'); return b; }
     const child = activeChild(field);
     if (child && answered(child)) return reading(child);
     // The reading is the answer and nothing else; a row's short word lives on its rectangle.
@@ -276,7 +279,7 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
           return;
         }
         const shown = rows.filter((row) => f !== target || !filter || `${row.l} ${row.sub || ''} ${row.word || ''}`.toLowerCase().includes(filter));
-        const items = [...(!f.many && f.blank != null ? [{ v: '', l: f.blank, blank: true }] : []), ...shown];
+        const items = [...(!f.many && f.blank != null ? [{ v: '', l: blankOf(f), blank: true }] : []), ...shown];
         for (const row of items) {
           const opt = optionStone(f, row, say);
           if (row.read || row.edit || row.view) {

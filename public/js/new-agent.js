@@ -295,6 +295,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     }
     if ('reach' in value) { draft.reach = value.reach; draft.recruit = value.recruit; draft.output = value.output; }
     if ('teamLead' in value) draft.teamLead = value.teamLead === true;
+    if (key === 'teamLead') void loadSeed();
     if ('root' in value) { draft.root = value.root; draft.repos = [...value.repos]; }
     if ('launchMode' in value) draft.launchMode = value.launchMode;
     if (key === 'provider' || key === 'model') touched.model = true;
@@ -317,9 +318,16 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     }
     paintDefaultsNote(); paintFoot(); paintActions();
   };
+  /** What Default launches (Models > Defaults: a Team lead's own pair when the seed was read for one). */
+  const defaultWord = () => {
+    const provider = seed?.seeds?.provider?.value || ''; const model = seed?.seeds?.model?.value || '';
+    const row = providerCatalog().rows.find((item) => item.provider === provider && item.model === model);
+    const named = row ? modelLabel(row) : model || providerCatalog().providers.find((item) => item.provider === provider)?.label || '';
+    return named ? t('new_agent.default_named', 'Default · {model}', { model: named }) : t('forms.default', 'Default');
+  };
   const questions = ask([
     { group: t('new_agent.model_package', 'Model'), fields: [
-      { key: 'provider', label: t('forms.provider', 'Model provider'), blank: t('forms.default', 'Default'), options: providerRows },
+      { key: 'provider', label: t('forms.provider', 'Model provider'), blank: defaultWord, options: providerRows },
       { key: 'model', label: t('forms.model', 'Model'), blank: t('forms.default', 'Default'), after: 'provider', options: (value) => modelRows(value.provider) },
       { key: 'teamLead', label: t('new_agent.make_team_lead', 'Make team lead'), switch: [t('forms.on', 'On'), t('forms.off', 'Off')] },
     ] },
@@ -432,7 +440,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     if (isCowork() && draft.books.length) rows.push([t('behaviours', 'Behaviours'), tagRow(draft.books.map((text) => ({ text, on: true })))]);
     rows.push([t('launch_mode.head', 'launch mode'), launchModes().find((row) => row.v === draft.launchMode)?.l || draft.launchMode]);
     rows.push([t('add_agent.place', 'place'), draft.root]);
-    if (hasAgent()) rows.push([t('forms.model', 'model'), draft.provider ? `${draft.provider}${draft.model ? ` / ${modelLabel(draft)}` : ''}` : t('forms.default', 'default')]);
+    if (hasAgent()) rows.push([t('forms.model', 'model'), draft.provider ? `${draft.provider}${draft.model ? ` / ${modelLabel(draft)}` : ''}` : defaultWord()]);
     return rows;
   }
   function paintFoot() {
@@ -574,9 +582,17 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
 
   /** The level above answers — the team's when one is chosen, the campaign's otherwise —
    *  and lands only on fields no hand has touched. */
+  /** The seed's door: the chosen Team's, and a Team lead's pair when Make team lead is on. */
+  const seedUrl = () => {
+    const query = new URLSearchParams();
+    if (draft.teamMode === 'existing' && draft.team) query.set('team', draft.team);
+    if (draft.teamLead && draft.teamMode !== 'none') query.set('lead', '1');
+    const text = query.toString();
+    return `/api/launch-seed${text ? `?${text}` : ''}`;
+  };
   async function loadSeed() {
     const team = draft.teamMode === 'existing' ? draft.team : '';
-    const answer = await request(`/api/launch-seed${team ? `?team=${encodeURIComponent(team)}` : ''}`);
+    const answer = await request(seedUrl());
     if (!answer.ok) return;
     seed = answer.data || null;
     const value = (field) => seed?.seeds?.[field]?.value;
@@ -603,8 +619,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     paintFoot();
   }
   const refreshBehaviours = async () => {
-    const team = draft.teamMode === 'existing' ? draft.team : '';
-    const result = await request(`/api/launch-seed${team ? `?team=${encodeURIComponent(team)}` : ''}`);
+    const result = await request(seedUrl());
     if (!result.ok || !seed) return;
     seed = { ...seed, behaviours: result.data?.behaviours || [] };
     paintShelves();
