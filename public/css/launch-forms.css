@@ -355,6 +355,7 @@
   .wa-surface > .wk-surface-content { padding: 0 var(--space-inset); }
   .wa-browser { display: flex; flex-direction: column; gap: var(--space-row); min-width: 0; }
   .wa-browser .folder-list { max-height: 18rem; overflow: auto; }
+  .wa-browser .folder-open:hover { background: var(--selected); }
   .wa-form > .fs-step:nth-last-child(1 of :not([hidden])) { border-bottom: 0; }
   .wa-reading { color: var(--fg); }
   .wa-link { border: 0; background: transparent; padding: 0; color: var(--link); font: inherit; cursor: pointer; }

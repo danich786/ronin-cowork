@@ -134,7 +134,8 @@ The **Workspaces** surfaces and the `machine-settings project-root`
 tool use this same endpoint. They are preferred human-facing paths. Editing the owner catalog by hand remains an
 emergency/advanced path, not a separate workflow.
 
-`409` means the handle already exists: inspect and use `PUT /api/project-roots/:name` only if
+`409` means the handle already exists, or the folder is already a workspace under another handle
+(one folder, one workspace): inspect and use `PUT /api/project-roots/:name` only if
 the owner intended to edit it. A validation refusal is an answer; do not bypass it by hand-editing.
 
 ### 4. Verify all four surfaces

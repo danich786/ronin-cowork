@@ -32,7 +32,8 @@ const howWord = (key, stable) => key === 'desks'
   : t('workspace_add.how_folder_read', 'Everyone in this one folder · {branch}', { branch: stable || 'main' });
 const nameOf = (dir) => finalizeTeamName(sanitizeTeamName(String(dir || '').split('/').filter(Boolean).pop() || '')).slice(0, 32);
 
-/** The folders on this machine from the home folder: crumbs and one list; `choose` adds the verb. */
+/** The folders on this machine from the home folder: crumbs and one list; `choose` adds the verb.
+ *  A folder that is already a workspace is left out, and so is everything inside it: one folder, one workspace. */
 function browser({ choose, onChoose, onMove }) {
   const shell = el('div', 'wa-browser');
   const crumbs = el('div', 'folder-crumbs');
@@ -51,20 +52,20 @@ function browser({ choose, onChoose, onMove }) {
     let at = home;
     for (const part of current === home ? [] : current.slice(home.length + 1).split('/')) { crumbs.append(document.createTextNode('/')); at += '/' + part; crumb(part, at); }
     list.replaceChildren();
-    for (const folder of result.data.folders) {
+    const folders = result.data.folders.filter((folder) => !folder.registered_root);
+    for (const folder of folders) {
       const row = el('div', 'folder-row');
-      const open = el('button', 'folder-open', `▸ ${folder.name}`); open.type = 'button'; open.addEventListener('click', () => load(folder.dir));
-      const note = [folder.repository ? t('workspace_add.git', 'Git') : '', folder.registered_root ? t('workspace_add.already', 'already a workspace') : ''].filter(Boolean).join(' · ');
-      if (note) open.append(el('small', 'folder-kind', note));
+      const open = el('button', 'folder-open', folder.name); open.type = 'button'; open.addEventListener('click', () => load(folder.dir));
+      if (folder.repository) open.append(el('small', 'folder-kind', t('workspace_add.git', 'Git')));
       row.append(open);
-      if (choose && !folder.registered_root) {
+      if (choose) {
         const pick = el('button', 'folder-choose', t('workspace_add.choose', 'Choose')); pick.type = 'button';
         pick.addEventListener('click', () => onChoose(folder.dir));
         row.append(pick);
       }
       list.append(row);
     }
-    if (!result.data.folders.length) list.append(el('span', 'folder-empty', t('folders.empty', 'No matching folders here.')));
+    if (!folders.length) list.append(el('span', 'folder-empty', t('folders.empty', 'No matching folders here.')));
   };
   void load('');
   return { el: shell, current: () => current };
