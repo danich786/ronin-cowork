@@ -168,7 +168,7 @@ try {
       await page.locator('.selector').evaluate(el=>el.style.width='320px');
       assert.equal(await page.locator('.session-control-hints summary').evaluate(el=>el.getBoundingClientRect().bottom <= el.closest('.terminal-hints').getBoundingClientRect().bottom),true);
       assert.equal(await page.locator('.terminal-hint-row strong').first().evaluate(el=>getComputedStyle(el).fontWeight),'700');
-      assert.equal(await page.locator('.terminal-hints').evaluate(el=>getComputedStyle(el).fontSize),await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--text-3').trim()));
+      assert.equal(await page.locator('.terminal-hints').evaluate(el=>getComputedStyle(el).fontSize),await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--text-body').trim()));
       }
       if (mobile) await page.locator('.keysrow [data-terminal-action]').filter({hasText:/^Clear$/}).click();
       else await page.locator('.composer textarea').press('Control+Shift+Backspace');

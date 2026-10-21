@@ -35,7 +35,7 @@ import { expandLookup } from '../lookup.js';
 import { count } from '../counts.js';
 import { broadcastEvent, pushTeams } from '../ws/events.js';
 import { announceTeamChanges } from './wipeboards-api.js';
-import { writeMandate, writeTeams } from '../tegami.js';
+import { memberEnded, teamChanged, writeConfiguration, writeMandate, writeTeams } from '../tegami.js';
 import { conditionalBehaviourPath, resolveBehaviourBooks } from '../behaviours.js';
 import { addCurrentBehaviour, readAgentComposition } from '../agent-composition.js';
 import { mandate } from '../agent-defaults.js';
@@ -93,9 +93,10 @@ async function openDeskRefusal(name: string): Promise<string> {
     : '';
 }
 
-/** The ending Agent's holds are released; an end never fails on it. */
+/** The ending Agent's holds are released and its leads' members lists drop it; an end never fails on either. */
 async function releaseHolds(name: string, key: string, how: string): Promise<void> {
   await releaseHolder(name, key, how).catch((e) => console.error(`[ronin] releasing ${name}'s work items:`, e));
+  await memberEnded(name).catch(() => {});
 }
 
 async function performAgentShutdown(name: string, progress: (value: ShutdownProgress) => void): Promise<string[]> {
@@ -145,6 +146,10 @@ async function prepareSessionEnding(
   if (decision.response) res.json(decision.response);
   return { proceed: decision.proceed, acknowledgement: decision.acknowledgement };
 }
+
+/** The Teams one side has and the other lacks. */
+const moved = (before: string[], after: string[]): string[] =>
+  [...after.filter((t) => !before.includes(t)), ...before.filter((t) => !after.includes(t))];
 
 export function registerSessions(app: express.Express): void {
   app.get('/api/sessions/:name/composition', async (req, res) => {
@@ -245,11 +250,13 @@ export function registerSessions(app: express.Express): void {
         else await setLaunchStamp(archived.name, archived.agent);
         await setProviderSessionId(archived.name, archived.provider_session_id);
         await writeTeams(archived.name, archived.tags);
+        await writeConfiguration(archived.name).catch(() => {});
       } catch (e) {
         await stopSessionTree(archived.name);
         throw e;
       }
       await removeArchive(archived.id); // only after runtime and all metadata are restored
+      await teamChanged(archived.tags, callerOf(req), archived.name).catch(() => {});
       res.json({ ok: true, name: archived.name });
     } catch (e) {
       const code = (e as NodeJS.ErrnoException)?.code;
@@ -363,6 +370,7 @@ export function registerSessions(app: express.Express): void {
     if (!(await sessionExists(name))) return res.status(404).json({ error: 'No such session.' });
     try {
       await setSessionTitle(name, title);
+      await writeConfiguration(name, callerOf(req)).catch(() => {});
       res.json({ ok: true, name, title });
     } catch (e) {
       res.status(400).json({ error: String((e as Error)?.message ?? e) });
@@ -412,13 +420,15 @@ export function registerSessions(app: express.Express): void {
       return res.status(404).json({ error: `"${root}" is not in the catalog.` });
     }
     try {
-      res.json({ ok: true, project_root: await setProjectRoot(name, root) });
+      const project_root = await setProjectRoot(name, root);
+      await writeConfiguration(name, callerOf(req)).catch(() => {});
+      res.json({ ok: true, project_root });
     } catch (e) {
       res.status(500).json({ error: String((e as Error)?.message ?? e) });
     }
   });
 
-  const saveMembership = async (name: string, wanted: unknown) => {
+  const saveMembership = async (name: string, wanted: unknown, by: string) => {
     const list = (Array.isArray(wanted) ? wanted.map(String) : String(wanted ?? '').split(',')).slice(0, 16);
     const valid = new Set((await listTeamRosters()).filter((team) => team.state !== 'archived').map((team) => team.name));
     const unknown = list.filter((team) => !valid.has(team));
@@ -427,7 +437,7 @@ export function registerSessions(app: express.Express): void {
     const before = await getTags(name), teams = await setTags(name, list);
     const leads = await getLeads(name), keptLeads = leads.filter((team) => teams.includes(team));
     if (keptLeads.length !== leads.length) await setLeads(name, keptLeads);
-    await writeTeams(name, teams).catch(() => {});
+    await teamChanged(moved(before, teams), by, name).catch(() => {});
     return { teams, notices: await announceTeamChanges(name, before, teams) };
   };
   app.get('/api/sessions/:name/teams', async (req, res) => {
@@ -450,7 +460,7 @@ export function registerSessions(app: express.Express): void {
     if (!(await sessionExists(name))) return res.status(404).json({ error: 'No such session.' });
     try {
       count('team.membership.set');
-      res.json({ ok: true, ...(await saveMembership(name, req.body?.teams)) });
+      res.json({ ok: true, ...(await saveMembership(name, req.body?.teams, callerOf(req))) });
     } catch (e) {
       res.status(400).json({ error: String((e as Error)?.message ?? e) });
     }
@@ -485,7 +495,7 @@ export function registerSessions(app: express.Express): void {
         await announceTeamChanges(name, tagsBefore, tags).catch(() => {});
       }
       const leads = await setLeads(name, wanted);
-      await writeTeams(name, tags).catch(() => {});
+      await teamChanged([...moved(tagsBefore, tags), ...moved(before, leads)], callerOf(req), name).catch(() => {});
       count('lead.set', { n: leads.length });
       const fresh = leads.filter((t) => !before.includes(t));
       let delivered: string | null = null;

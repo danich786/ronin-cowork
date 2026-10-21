@@ -62,11 +62,13 @@ done
 . "$TOOL_DIR/ronin-http.sh"
 ronin_connect || exit $?
 
-body=$(NAME="$NAME" OBJ="$OBJ" ROLE="$ROLE" ROOT="$ROOT" REPOS="$REPOS" BRANCH="$BRANCH" \
+BY=$(ronin_session_me 2>/dev/null) || BY=""
+body=$(BY="$BY" NAME="$NAME" OBJ="$OBJ" ROLE="$ROLE" ROOT="$ROOT" REPOS="$REPOS" BRANCH="$BRANCH" \
        BOARD="$BOARD" STATE="$STATE" ADD="$ADD" CAMPAIGN_DEFAULTS="$CAMPAIGN_DEFAULTS" python3 - <<'PY'
 import json, os
 e = os.environ
 b = {"name": e["NAME"]}
+if e["BY"]: b["by"] = e["BY"]  # the lead editing its own roster is not acked
 for k, v in (("objective", "OBJ"), ("team_role", "ROLE"), ("project_root", "ROOT"),
              ("branch", "BRANCH"), ("wipeboard", "BOARD"), ("state", "STATE")):
     if e[v]: b[k] = e[v]

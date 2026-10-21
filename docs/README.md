@@ -7,6 +7,7 @@ route depends on the task, not on who is reading.
 
 | I want to… | Read |
 |---|---|
+| Learn the four things a new user needs | [Team Lead and edges](using-ronin/team-lead-and-edges.md), [work records](using-ronin/what-agents-write-down.md), [tools](using-ronin/agent-tools.md), and [customizing](getting-started/customize.md); all four head the **Help** door on Ronin Home |
 | Understand Ronin and decide whether it fits | [Ronin overview](../README.md) and [machine and work boundaries](getting-started/how-ronin-protects-you.md) |
 | Choose a machine and install Ronin | [Prepare a machine](getting-started/rent-a-machine.md), then [install](getting-started/install.md) |
 | Finish setup and start one working Agent | [Get started](getting-started/get-started.md), [Ronin Setup](getting-started/setup-workbench.md), and [provider sign-in](getting-started/provider-sign-in.md) |

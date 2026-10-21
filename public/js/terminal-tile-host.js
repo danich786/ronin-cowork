@@ -15,6 +15,7 @@ export function createTerminalTileHost(options = {}) {
     tile = new Tile({
       onMinimize: options.onMinimize,
       transcriptCache: options.transcriptCache,
+      opensOn: options.opensOn,
     });
     tiles.push(tile);
     tile.el.classList.add('wk-hosted-tile');

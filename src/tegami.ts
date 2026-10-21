@@ -3,7 +3,7 @@ import path from 'node:path';
 import { execFile } from './spawn-broker.js';
 import { RIREKI_DIR, sessionKey } from './session-dir.js';
 import { readTeamRoster } from './team-rosters.js';
-import type { SessionInfo } from './tmux.js';
+import { getProjectRoot, listSessions, type SessionInfo } from './tmux.js';
 import { mandate, type Mandate } from './agent-defaults.js';
 import { enqueueMessage } from './message-queue.js';
 
@@ -48,14 +48,23 @@ export function tegamiPath(key: string): string {
 
 export interface TeamEntry {
   team: string;
+  team_role: 'lead' | 'member';
   objective: string;
+  /** Only in a lead's own entry: every session on the Team, leads marked. */
+  members?: string[];
 }
 
-export async function deriveTeams(tags: string[]): Promise<TeamEntry[]> {
+export async function deriveTeams(name: string, tags: string[]): Promise<TeamEntry[]> {
+  const sessions = await listSessions();
+  const leads = sessions.find((s) => s.name === name)?.leads ?? [];
   return Promise.all(
     tags.map(async (team) => {
       const r = await readTeamRoster(team).catch(() => null);
-      return { team, objective: r?.objective ?? '' };
+      const entry: TeamEntry = { team, team_role: leads.includes(team) ? 'lead' : 'member', objective: r?.objective ?? '' };
+      if (entry.team_role === 'lead') {
+        entry.members = sessions.filter((s) => s.tags.includes(team)).map((s) => (s.leads.includes(team) ? `${s.name} (lead)` : s.name));
+      }
+      return entry;
     }),
   );
 }
@@ -76,9 +85,11 @@ function seedShell(
 > poor quality.
 >
 > YOUR **teams** block is DERIVED and not yours to write: one entry per team you are on —
-> the team's name and its objective, read live from the team rosters.
-> \`work-record update_record\` regenerates it on every save and a tag change refreshes it, so reread
-> your letter to see a team objective that moved. A session on no team is a rōnin, which
+> the team's name, your role on it and its objective, from the team rosters; a Team lead's
+> entry also lists the members. Ronin writes it again whenever a roster or a membership
+> changes and tells you with a one-line notice; reread your letter then. YOUR
+> **configuration** line is derived the same way: the title and Workspace Folder Ronin keeps
+> for you. A session on no team is a rōnin, which
 > is an ordinary state and not a gap.
 >
 > YOUR **repos** list is started from the checkout the new-session box put you in. It is
@@ -274,40 +285,44 @@ export async function withAxes(list: SessionInfo[]): Promise<SessionWithAxes[]> 
   );
 }
 
-export async function writeTeams(name: string, tags: string[]): Promise<boolean> {
+/** Write one Ronin-derived key of this session's record. Returns whether it changed; with
+ * `by`, a change by anyone else is acked. */
+async function writeDerived(name: string, key: string, value: unknown, by: string): Promise<boolean> {
   const file = tegamiPath(await sessionKey(name));
-  let text: string;
-  try {
-    text = await fs.readFile(file, 'utf8');
-  } catch {
-    return false;
-  }
-  const block = text.match(/```(?:json)?\s*\n([\s\S]*?)\n```/);
-  if (!block) return false;
-  const body = block[1];
-  let parsed: Record<string, unknown>;
-  try {
-    parsed = JSON.parse(body) as Record<string, unknown>;
-  } catch {
-    return false;
-  }
-  const teams = await deriveTeams(tags);
-  parsed['teams'] = teams;
-  const key = /"teams"\s*:\s*(\[[^\]]*(?:\{[^}]*\}[^\]]*)*\])/;
-  const value = JSON.stringify(teams);
-  const next = key.test(body)
-    ? body.replace(key, `"teams": ${value}`)
-    : body.replace(/\{/, `{ "teams": ${value},`);
-  try {
-    JSON.parse(next);
-  } catch {
-    return false;
-  }
-  const out = text.slice(0, block.index!) + block[0].replace(body, next) + text.slice(block.index! + block[0].length);
-  const tmp = `${file}.teams`;
-  await fs.writeFile(tmp, out, 'utf8');
-  await fs.rename(tmp, file);
+  const text = await fs.readFile(file, 'utf8').catch(() => '');
+  const parsed = letterBlock(text);
+  if (!parsed || JSON.stringify(parsed.body[key] ?? null) === JSON.stringify(value)) return false;
+  await replaceLetterBlock(file, text, parsed, { ...parsed.body, [key]: value });
+  await ackRecord(name, by);
   return true;
+}
+
+/** Derive this session's teams block again. */
+export async function writeTeams(name: string, tags: string[], by = name): Promise<boolean> {
+  return writeDerived(name, 'teams', await deriveTeams(name, tags), by);
+}
+
+/** The configuration line (owner, 2026-10-21): the title and Workspace Folder Ronin keeps for
+ * this Agent. Behaviors are not here; adding one sends its own message with the teaching. */
+export async function writeConfiguration(name: string, by = name): Promise<boolean> {
+  const title = (await listSessions()).find((s) => s.name === name)?.title ?? '';
+  return writeDerived(name, 'configuration', { title, project_root: await getProjectRoot(name) }, by);
+}
+
+/** A Team changed (owner, 2026-10-21): its roster was written, or `moved` joined, left or was
+ * made lead. Every record on it is derived again; each one that changed is acked, and the
+ * lead's is acked on every change, since the lead keeps the Team. */
+export async function teamChanged(teams: string[], by: string, moved = ''): Promise<void> {
+  for (const s of await listSessions()) {
+    const lead = s.leads.some((t) => teams.includes(t));
+    if (!lead && s.name !== moved && !s.tags.some((t) => teams.includes(t))) continue;
+    if (!(await writeTeams(s.name, s.tags, by)) && lead) await ackRecord(s.name, by);
+  }
+}
+
+/** `name` ended: every lead's members list is derived again, and a lead whose list lost it is acked. */
+export async function memberEnded(name: string): Promise<void> {
+  for (const s of await listSessions()) if (s.leads.length) await writeTeams(s.name, s.tags, name);
 }
 
 /** THE ACK (owner, 2026-10-07): a write to an Agent's work record by anyone else pushes it one

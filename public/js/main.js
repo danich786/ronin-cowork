@@ -18,7 +18,7 @@ import { createCoworkView } from './cowork-view.js';
 import { createAgentView } from './agent-view.js';
 import { createCampaignHome } from './campaign-home.js';
 import { createCurrentHome } from './current-home.js';
-import { createModelsView, createWorkspacesView } from './door-workbenches.js';
+import { createHelpView, createModelsView, createWorkspacesView } from './door-workbenches.js';
 import { createCampaignView } from './campaign-view.js';
 import { createSetupView } from './setup-view.js';
 import { createLaunchView } from './launch-view.js';
@@ -117,6 +117,7 @@ async function init() {
   // Home's Models and Workspaces doors, each a workbench of its own in the same tab (owner, 2026-10-19).
   guard('register the Models destination', () => workspace.register('models', createModelsView()));
   guard('register the Workspaces destination', () => workspace.register('workspaces', createWorkspacesView()));
+  guard('register the Help destination', () => workspace.register('help', createHelpView()));
   // the same workbench, selector column, persistence, recall and drag/drop as the Cowork
   // space, offering a Campaign's own configuration instead of its Coworks and Agents.
   guard('register the Campaign destination', () => workspace.register('campaign', createCampaignView()));
@@ -128,7 +129,7 @@ async function init() {
   // THE DESKTOP FIRST PAINT ends here: the route's real workspace is mounted and the
   // header now belongs to it. Session discovery, event wiring and home catalogs below
   // enrich that workspace; none decides which surface the person is looking at. Keeping
-  // the veil over those reads exposed only the light canvas (--bg, the beige flash) on
+  // the veil over those reads exposed only the bare canvas (--surface) on
   // every reload, sometimes for seconds on a busy box. The desktop must not make
   // network readiness a paint boundary.
   reveal();

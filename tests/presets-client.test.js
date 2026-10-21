@@ -219,16 +219,16 @@ test('Bare Metal keeps two real tile layouts, compact rows, separated sections, 
   ]);
   assert.match(source, /key: 'tiles'.*v: 2.*v: 4/);
   assert.doesNotMatch(source, /Customize this|\[1, 2, 4\]/);
-  assert.match(css, /\.sp-choice-panel \{[^}]*font-size: var\(--text-5\)/);
+  assert.match(css, /\.sp-choice-panel \{[^}]*font-size: var\(--text-body\)/);
   assert.match(source, /const wrap = el\('label', 'sp-field sp-section'\)/);
   assert.match(source, /const section = \(label, prompt, \.\.\.content\)/);
-  assert.match(css, /\.sp-field \{[^}]*gap: var\(--space-5\)/);
+  assert.match(css, /\.sp-field \{[^}]*gap: var\(--space-paragraph\)/);
   assert.match(css, /\.sp-section\[hidden\] \{ display: none; \}/);
   assert.match(css, /\.sp-select \{[^}]*font-size: inherit/);
   assert.match(css, /\.sp-lead \{[^}]*font-size: inherit/);
-  assert.match(css, /\.sp-controls > \.sp-section:not\(:first-child\), \.sp-controls \+ \.sp-section \{[^}]*margin-top: var\(--space-9\);[^}]*border-top[^}]*padding-top: var\(--space-9\)/);
+  assert.match(css, /\.sp-controls > \.sp-section:not\(:first-child\), \.sp-controls \+ \.sp-section \{[^}]*margin-top: calc\(var\(--space-section\) \/ 2\);[^}]*border-top[^}]*padding-top: calc\(var\(--space-section\) \/ 2\)/);
   assert.match(css, /\.sp-field-label, \.sp-control-label \{[^}]*font-weight: var\(--weight-strong\)/);
-  assert.match(css, /\.sp-rows \{[^}]*gap: var\(--space-2\)/);
+  assert.match(css, /\.sp-rows \{[^}]*gap: var\(--space-row\)/);
 });
 
 test('Personal Assistant hides the whole Recruit section until Chief of Staff is selected', async () => {
@@ -373,7 +373,7 @@ test('a stone gate reads the runtime the Setup view keeps current, and the held 
   const launch = nodes.find((node) => node.tagName === 'BUTTON' && node.textContent === 'Launch');
   assert.equal(launch.dataset.held, undefined);
   const css = await readFile(new URL('../public/css/launch-forms.css', import.meta.url), 'utf8');
-  assert.match(css, /\.sp-warning \{ margin: var\(--space-6\) 0 var\(--space-7\);[^}]*padding: var\(--space-3\) var\(--space-5\);[^}]*font-size: var\(--text-5\); line-height: var\(--leading-loose\); \}/);
+  assert.match(css, /\.sp-warning \{ margin: var\(--space-subsection\) 0 var\(--space-subsection\);[^}]*padding: var\(--space-row\) var\(--space-inline\);[^}]*font-size: var\(--text-body\); line-height: var\(--leading-body\); \}/);
 });
 
 test('a row asks for provider and dependent model from the shared catalog', async () => {

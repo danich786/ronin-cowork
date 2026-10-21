@@ -2,7 +2,10 @@
 
 A **workbench** is one fixed page format: two or four workspaces and one discovery column.
 Ronin has Campaign (Settings), Setup, New Project, Desk, Cowork, Team and Agent workbenches,
-plus the Models, Workspaces and Teams workbenches Ronin Home's doors open. Setup seats its
+plus the Models, Workspaces, Teams and Help workbenches Ronin Home's doors open. Help seats the
+guides in workspace 1, *Start here: 4 things you need to know* first, and Mika
+in workspace 2, opened on her Chat reading so you talk to her as a conversation. Help opens before
+any model provider is set up; Mika needs one and says so until then. Setup seats its
 Garden in workspace 1 and opens its ordered selector surfaces in workspace 2; the other
 workbenches retain their ordinary two/four arrangement.
 

@@ -1,67 +1,67 @@
 
 @layer app {
 
-  .wk-action-bar { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-3); }
+  .wk-action-bar { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-inline); }
 
-  .wk-surface-header { display: flex; flex: 0 0 auto; align-items: center; gap: var(--space-4); min-height: var(--row-head); padding: var(--space-3) var(--space-4); border-bottom: var(--current-head-edge) solid var(--current-head-line); background: var(--current-head-bg); color: var(--current-head-fg); font-family: var(--workbench-head-font); font-size: var(--workbench-head-size); line-height: var(--workbench-head-line); }
+  .wk-surface-header { display: flex; flex: 0 0 auto; align-items: center; gap: var(--space-inline); min-height: var(--row-head); padding: 0 var(--space-inline); border-bottom: var(--current-head-edge) solid var(--current-head-line); background: var(--current-head-bg); /* where you are: the scope's header */ color: var(--current-head-fg); font-family: var(--workbench-head-font); font-size: var(--workbench-head-size); line-height: var(--workbench-head-line); }
   .wk-surface-header-title { min-width: 0; overflow: hidden; font-weight: var(--workbench-head-weight); text-overflow: ellipsis; white-space: nowrap; }
-  .wk-surface-header-actions { display: flex; align-items: center; gap: var(--space-3); margin-left: auto; }
+  .wk-surface-header-actions { display: flex; align-items: center; gap: var(--space-inline); margin-left: auto; }
 
-  .wk-surface-header .wk-action { min-height: 0; padding: var(--space-2) var(--space-4); font-size: var(--text-3); }
-  .wk-action { min-height: 2.25rem; border: var(--edge) solid var(--line-2); border-radius: var(--radius-xs); background: var(--raise); color: var(--fg); padding: var(--space-3) var(--space-5); font: inherit; cursor: pointer; transition: border-color var(--motion-quick) var(--ease), background-color var(--motion-quick) var(--ease), color var(--motion-quick) var(--ease); }
-  .wk-action:hover:not(:disabled) { border-color: var(--kaki); background: var(--accent-soft); color: var(--fg-strong); }
-  .wk-action[data-launch='true'] { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); }
+  .wk-surface-header .wk-action { min-height: var(--control-height-small); padding: var(--space-row) var(--space-control); }
+  .wk-action { min-height: var(--control-height); border: var(--edge) solid var(--line-2); border-radius: var(--radius-small); background: var(--surface); color: var(--fg); padding: var(--space-row) var(--space-control); font: inherit; font-size: var(--text-label); cursor: pointer; transition: border-color var(--motion-quick) var(--ease), background-color var(--motion-quick) var(--ease), color var(--motion-quick) var(--ease); }
+  .wk-action:hover:not(:disabled) { border-color: var(--kaki); background: var(--selected); /* the one you are on, have chosen, or are dropping onto */ color: var(--fg-strong); }
+  .wk-action[data-launch='true'] { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-inline); }
   .wk-launch-mark { width: 1.25em; height: 1.25em; flex: 0 0 auto; }
 
-  .wk-action[data-kind='primary'] { border-color: var(--kaki); background: var(--kaki); color: var(--on-strong); }
-  .wk-action[data-kind='primary']:hover:not(:disabled) { background: var(--kaki-lift); color: var(--on-strong); }
-  .wk-action[data-launch='true'] { border-color: var(--kaki); background: var(--raise); color: var(--fg-strong); }
-  .wk-action[data-launch='true']:hover { background: var(--accent-soft); color: var(--kaki); }
+  .wk-action[data-kind='primary'] { border-color: var(--kaki); background: var(--kaki); /* kaki: the action, or what needs you */ color: var(--on-strong); }
+  .wk-action[data-kind='primary']:hover:not(:disabled) { background: var(--kaki-lift); /* kaki: the action, or what needs you */ color: var(--on-strong); }
+  .wk-action[data-launch='true'] { border-color: var(--kaki); background: var(--surface); color: var(--fg-strong); }
+  .wk-action[data-launch='true']:hover { background: var(--selected); /* the one you are on, have chosen, or are dropping onto */ color: var(--kaki); }
 
-  .wk-action[data-attention='true'] { border-color: var(--kaki); background: var(--kaki); color: var(--on-strong); font-weight: var(--weight-bold); }
+  .wk-action[data-attention='true'] { border-color: var(--kaki); background: var(--kaki); /* kaki: the action, or what needs you */ color: var(--on-strong); font-weight: var(--weight-strong); }
   .wk-action[data-kind='danger'] { border-color: var(--bad); color: var(--bad-soft); }
-  .wk-action[data-kind='danger']:hover:not(:disabled) { border-color: var(--bad-deep); background: var(--bad-ground); color: var(--bad-fg); }
-  .wk-action[data-size='compact'] { min-height: var(--space-11); padding: var(--space-2) var(--space-4); font-size: var(--text-3); }
-  .wk-surface-header .wk-action[data-size='compact'] { min-height: 0; }
-  .wk-action[aria-pressed='true'] { border-color: var(--kaki); background: var(--raise); color: var(--kaki); }
+  .wk-action[data-kind='danger']:hover:not(:disabled) { border-color: var(--bad-deep); background: var(--bad-ground); /* status: something is wrong */ color: var(--bad-fg); }
+  /* compact is a height, never a text size: every action reads --text-label */
+  .wk-action[data-size='compact'] { min-height: var(--control-height-small); padding: var(--space-row) var(--space-control); }
+  .wk-action[aria-pressed='true'] { border-color: var(--kaki); background: var(--selected); /* the one you are on, have chosen, or are dropping onto */ color: var(--kaki); }
   .wk-action:disabled { opacity: .5; cursor: default; }
-  .wk-metadata { display: grid; grid-template-columns: minmax(7rem, auto) minmax(0, 1fr); gap: var(--space-3) var(--space-5); margin: 0; }
+  .wk-metadata { display: grid; grid-template-columns: minmax(7rem, auto) minmax(0, 1fr); gap: var(--space-row) var(--space-inline); margin: 0; }
   .wk-metadata-key { color: var(--muted); }
   .wk-metadata-value { min-width: 0; margin: 0; color: var(--fg); overflow-wrap: anywhere; }
-  .wk-surface:not([data-flush='true']) > .wk-surface-content { padding: var(--space-6); }
+  .wk-surface:not([data-flush='true']) > .wk-surface-content { padding: var(--space-inset); }
 
-  .wk-field { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+  .wk-field { display: flex; flex-direction: column; gap: var(--space-row); min-width: 0; }
   .wk-field-label { color: var(--fg-strong); font-weight: var(--weight-strong); }
   .wk-field-control { font: inherit; }
-  .wk-field-description { margin: 0; color: var(--muted); font-size: var(--text-3); line-height: var(--leading-body); }
+  .wk-field-description { margin: 0; color: var(--muted); font-size: var(--text-body); line-height: var(--leading-body); }
   .wk-field-description:empty { display: none; }
-  .wk-field-validation { margin: 0; color: var(--muted); font-size: var(--text-3); }
+  .wk-field-validation { margin: 0; color: var(--muted); font-size: var(--text-body); }
   .wk-field[data-validation='valid'] .wk-field-validation { color: var(--ok); }
   .wk-field[data-validation='invalid'] .wk-field-validation { color: var(--bad); }
   .wk-field[data-validation='warning'] .wk-field-validation { color: var(--warn); }
   .wk-terminal-host { width: 100%; height: 100%; min-width: 0; min-height: 0; }
   .wk-terminal-host > .tile { width: 100%; height: 100%; }
   .wk-terminal-host[data-mode='reduced'] .tile-head { display: none; }
-  .wk-workbench-host { display: flex; height: 100%; min-height: 0; gap: var(--space-3); }
+  .wk-workbench-host { display: flex; height: 100%; min-height: 0; gap: var(--space-inline); }
   .wk-workbench-host > .wk-workbench-layout { flex: 1 1 auto; min-width: 0; position: relative; }
   .wk-workbench-layout > .wk-layout-surface { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
   .wk-workbench-slot-content { display: flex; flex: 1 1 auto; min-width: 0; min-height: 0; }
   .wk-workbench-slot-content > * { flex: 1 1 auto; min-width: 0; min-height: 0; }
-  .wk-workbench-column { display: grid; grid-template-rows: minmax(0, 1fr); gap: var(--space-3); min-height: 0; height: 100%; }
+  .wk-workbench-column { display: grid; grid-template-rows: minmax(0, 1fr); gap: var(--space-row); min-height: 0; height: 100%; }
   .wk-workbench-column[data-count='4'] { grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
   .wk-workbench-cell { display: flex; min-height: 0; min-width: 0; }
   .wk-workbench-cell[hidden] { display: none; }
   .wk-workbench-cell > * { flex: 1 1 auto; min-height: 0; min-width: 0; }
   .wk-workbench-cell.wk-workbench-selected { outline: var(--edge) solid var(--accent); outline-offset: calc(-1 * var(--edge)); }
 
-  .wk-workbench-selector { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
+  .wk-workbench-selector { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; background: var(--selector-bg); }
   .wk-workbench-selector > .wk-workbench-selector-cards { flex: 1 1 auto; min-width: 0; min-height: 0; }
-  .wk-workbench-selector-cards { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4); overflow-y: auto; }
+  .wk-workbench-selector-cards { display: flex; flex-direction: column; gap: var(--space-row); padding: var(--space-inline); overflow-y: auto; }
   .wk-workbench-selector-cards[hidden] { display: none; }
-  .wk-workbench-host[data-selector-density='thin'] .wk-workbench-selector-cards > .wk-card { padding: var(--space-3) var(--space-4); }
+  .wk-workbench-host[data-selector-density='thin'] .wk-workbench-selector-cards > .wk-card { padding: var(--space-row) var(--space-inline); }
   .wk-workbench-host[data-selector-density='thin'] .wk-workbench-selector-cards > .wk-card .wk-card-summary,
   .wk-workbench-host[data-selector-density='thin'] .wk-workbench-selector-cards > .wk-card .wk-card-meta { display: none; }
-  .tw-agent-density-lines { display: grid; width: var(--space-6); gap: var(--space-1); }
+  .tw-agent-density-lines { display: grid; width: 12px; gap: var(--space-row); }
   .tw-agent-density-lines i { display: block; height: var(--edge-2); border-radius: var(--edge); background: currentColor; }
   .tw-agent-density[data-lines='one'] .tw-agent-density-lines i:last-child { display: none; }
 
@@ -69,7 +69,7 @@
   .wk-workbench-selector-cards .wk-selector-entity { border-color: var(--kaki); box-shadow: inset var(--edge-2) 0 var(--kaki); }
   .wk-workbench-selector-cards .wk-selector-utility + .wk-selector-entity,
   .wk-workbench-selector-cards .wk-selector-entity + .wk-selector-utility,
-  .wk-workbench-selector-cards .wk-selector-group-after { margin-top: var(--space-5); }
+  .wk-workbench-selector-cards .wk-selector-group-after { margin-top: var(--space-paragraph); }
 
   /* A stone work surface owns its two scroll regions; its outer surface must not
      grow or scroll around them. The immediate host also fills the available seat. */
@@ -80,7 +80,7 @@
   /* RONIN SETUP keeps the workbench: framed workspaces, the scope-coloured header strip,
      the selector's framed cards, and the current-card mark. */
   .wk-workbench-layout[data-workbench-profile='setup'] .wk-selector-group,
-  .wk-workbench-layout[data-workbench-profile='campaign'] .wk-selector-group { margin: var(--space-5) var(--space-2) var(--space-2); color: var(--muted); font-size: var(--text-2); font-weight: var(--weight-strong); letter-spacing: var(--tracking-wide); text-transform: uppercase; }
+  .wk-workbench-layout[data-workbench-profile='campaign'] .wk-selector-group { margin: var(--space-paragraph) var(--space-inline) var(--space-row); color: var(--muted); font-size: var(--text-small); font-weight: var(--weight-strong); letter-spacing: var(--tracking-wide); text-transform: uppercase; }
   .wk-workbench-layout[data-workbench-profile='setup'] .wk-workbench-selector-cards .wk-card[aria-current='page'] { border-color: var(--kaki); box-shadow: inset var(--edge-2) 0 var(--kaki); }
   body:has([data-workspace-view='setup']:not([hidden])) #shapecycle { display: none; }
   /* ミ Help: Mika alone in the selector column — the conversation's text and nothing
@@ -97,27 +97,27 @@
   .wk-surface-header.wk-mika-handle:active { cursor: grabbing; }
 
   .team-agent-card .wk-card-summary { color: var(--fg-strong); font-weight: var(--weight-strong); }
-  .team-agent-card .wk-card-meta { display: grid; gap: var(--space-2); margin-top: 0; padding-top: var(--space-3); }
+  .team-agent-card .wk-card-meta { display: grid; gap: var(--space-row); margin-top: 0; padding-top: var(--space-row); }
   .team-agent-card .wk-card-meta > span { display: block; min-width: 0; overflow-wrap: anywhere; }
-  .team-agent-card .wk-card-meta > span:first-child { color: var(--fg); font-size: var(--text-3); line-height: var(--leading-body); }
+  .team-agent-card .wk-card-meta > span:first-child { color: var(--fg); font-size: var(--text-body); line-height: var(--leading-body); }
 
   .wk-workbench-splitter { position: absolute; top: 0; bottom: 0; width: .625rem; margin-left: -.3125rem; cursor: col-resize; touch-action: none; z-index: 2; }
   .wk-workbench-splitter[hidden] { display: none; }
-  .wk-workbench-splitter::after { content: ''; position: absolute; inset: 0 .25rem; border-radius: var(--radius-xs); background: var(--line-2); opacity: .45; }
-  .wk-workbench-splitter:hover::after, .wk-workbench-splitter[data-dragging='true']::after, .wk-workbench-splitter:focus-visible::after { background: var(--aiiro); opacity: 1; }
+  .wk-workbench-splitter::after { content: ''; position: absolute; inset: 0 .25rem; border-radius: var(--radius-small); background: var(--line-2); /* the splitter you can drag */ opacity: .45; }
+  .wk-workbench-splitter:hover::after, .wk-workbench-splitter[data-dragging='true']::after, .wk-workbench-splitter:focus-visible::after { background: var(--aiiro); /* aiiro: the chosen place, or the edge you are dragging */ opacity: 1; }
 
   .wk-view-map:empty { display: none; }
   .wk-view-leading:empty { display: none; }
   .wk-view-actions:empty { display: none; }
 
-  .wk-tab-name { width: 12rem; max-width: 30vw; height: 1.75rem; padding: 0 var(--space-3); border: var(--edge) solid var(--line-2); border-radius: var(--radius-xs); background: var(--well); color: var(--fg-strong); font: inherit; font-size: var(--text-3); }
+  .wk-tab-name { width: 12rem; max-width: 30vw; height: var(--control-height-small); padding: 0 var(--space-control); border: var(--edge) solid var(--line-2); border-radius: var(--radius-small); background: var(--inset); color: var(--fg-strong); font: inherit; font-size: var(--text-body); }
   .wk-tab-name::placeholder { color: var(--muted); }
-  .wk-tab-name:focus-visible { outline: var(--edge) solid var(--focus-ring); outline-offset: 1px; }
+  .wk-tab-name:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: var(--focus-offset); }
   /* In THE PLACE this is the island itself, not a form field laid over it. Keep the
      established island at rest and reveal editability through its focus ring. This
      lives in the Kit's layer so the generic field treatment cannot win by layer order. */
   .ui-bar-place .wk-tab-name { width: 100%; max-width: none; height: auto; padding: 0; border: 0; border-radius: 0; background: transparent; color: inherit; font: inherit; text-align: center; }
-  .ui-bar-place .wk-tab-name:focus-visible { outline: var(--edge-2) solid currentColor; outline-offset: var(--space-1); border-radius: var(--radius-xs); }
+  .ui-bar-place .wk-tab-name:focus-visible { outline: var(--focus-width) solid currentColor; outline-offset: var(--focus-offset); border-radius: var(--radius-small); }
 
   /* ── THE TAB SET ──────────────────────────────────────────────────────────────────
      SELECTED IS A SHAPE, NOT A LINE (owner, 2026-09-19). The bar is the surface's warm
@@ -126,58 +126,58 @@
      one continuous surface and it is the only tab with no line under it. Nothing here
      underlines anything, and nothing changes size when a tab lights up — colour only,
      so the row never reflows under the pointer. */
-  .wk-tabset > .wk-tabset-bar { display: flex; flex: 0 0 auto; align-items: stretch; gap: var(--space-4); min-height: var(--row-head); padding: var(--space-3) var(--space-4) 0; background: var(--current-head-bg); border-bottom: var(--current-head-edge) solid var(--current-head-line); font-family: var(--workbench-head-font); font-size: var(--workbench-head-size); line-height: var(--workbench-head-line); }
+  .wk-tabset > .wk-tabset-bar { display: flex; flex: 0 0 auto; align-items: stretch; gap: var(--space-inline); min-height: var(--row-head); padding: var(--space-row) var(--space-inline) 0; background: var(--current-head-bg); /* where you are: the scope's header */ border-bottom: var(--current-head-edge) solid var(--current-head-line); font-family: var(--workbench-head-font); font-size: var(--workbench-head-size); line-height: var(--workbench-head-line); }
 
   /* The scroller holds the tabs and two edge overlays. The overlays are absolute so they
      take no layout width: a mask that pushed the tabs would change what is cut. */
   .wk-tabset-scroller { position: relative; display: flex; flex: 1 1 auto; min-width: 0; }
   .wk-tabset-scroll { flex: 1 1 auto; min-width: 0; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scrollbar-width: none; }
   .wk-tabset-scroll::-webkit-scrollbar { display: none; }
-  .wk-tabset-row { display: flex; align-items: stretch; gap: var(--space-2); height: 100%; }
+  .wk-tabset-row { display: flex; align-items: stretch; gap: var(--space-inline); height: 100%; }
 
-  .wk-tabset-tab { position: relative; flex: 0 0 auto; display: inline-flex; align-items: center; gap: var(--space-2); scroll-snap-align: start; border: var(--edge) solid transparent; border-bottom: var(--current-head-edge) solid transparent; border-radius: var(--radius-md) var(--radius-md) 0 0; background: transparent; color: var(--current-head-muted); padding: var(--space-3) var(--space-6); font: inherit; white-space: nowrap; cursor: pointer; transition: background-color var(--motion-quick) var(--ease), border-color var(--motion-quick) var(--ease), color var(--motion-quick) var(--ease); }
+  .wk-tabset-tab { position: relative; flex: 0 0 auto; display: inline-flex; align-items: center; gap: var(--space-inline); scroll-snap-align: start; border: var(--edge) solid transparent; border-bottom: var(--current-head-edge) solid transparent; border-radius: var(--radius-small) var(--radius-small) 0 0; background: transparent; color: var(--current-head-muted); padding: var(--space-row) var(--space-control); font: inherit; white-space: nowrap; cursor: pointer; transition: background-color var(--motion-quick) var(--ease), border-color var(--motion-quick) var(--ease), color var(--motion-quick) var(--ease); }
   .wk-tabset-tab[hidden] { display: none; }
-  .wk-tabset-tab:hover:not(:disabled):not([aria-selected='true']) { background: color-mix(in srgb, var(--panel) 45%, transparent); color: var(--current-head-fg); }
+  .wk-tabset-tab:hover:not(:disabled):not([aria-selected='true']) { background: color-mix(in srgb, var(--surface) 45%, transparent); /* the tab under the pointer, lifted out of its header */ color: var(--current-head-fg); }
   /* The selected tab IS the panel: same fill, and its bottom edge painted in that fill
      so it erases the band's line beneath it. */
-  .wk-tabset-tab[aria-selected='true'] { background: var(--panel); color: var(--fg-strong); border-color: var(--kaki); box-shadow: 0 var(--current-head-edge) 0 var(--panel); }
+  .wk-tabset-tab[aria-selected='true'] { background: var(--surface); color: var(--fg-strong); border-color: var(--kaki); box-shadow: 0 var(--current-head-edge) 0 var(--surface); }
   .wk-tabset-tab:disabled { opacity: .5; cursor: default; }
-  .wk-tabset-tab:focus-visible { outline: var(--edge-2) solid var(--focus-ring); outline-offset: calc(-1 * var(--edge-2)); }
+  .wk-tabset-tab:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: calc(-1 * var(--focus-width)); }
 
   /* A BADGE IS INFORMATION; ATTENTION IS EMPHASIS ON IT. A tab holding something that
      can be counted says the number, and attention colours that number — a bare mark that
      needs explaining has failed. The dot is only for a tab with nothing to count.
      Neither is ever a weight change: bolding the label widened it and shoved every tab
      to its right sideways. */
-  .wk-tabset-badge { border-radius: var(--radius-pill); background: var(--well); color: var(--muted); padding: var(--space-1) var(--space-3); font-size: var(--text-1); font-variant-numeric: tabular-nums; }
+  .wk-tabset-badge { border-radius: var(--radius-pill); background: var(--inset); color: var(--muted); padding: var(--space-row) var(--space-inline); font-size: var(--text-small); font-variant-numeric: tabular-nums; }
   .wk-tabset-badge[hidden], .wk-tabset-badge:empty { display: none; }
-  .wk-tabset-tab[data-attention='true'] .wk-tabset-badge { background: var(--head-attention); color: var(--panel); }
-  .wk-tabset-tab[data-attention='true'][aria-selected='true'] .wk-tabset-badge { background: var(--kaki); color: var(--on-strong); }
+  .wk-tabset-tab[data-attention='true'] .wk-tabset-badge { background: var(--head-attention); /* needs you */ color: var(--surface); }
+  .wk-tabset-tab[data-attention='true'][aria-selected='true'] .wk-tabset-badge { background: var(--kaki); /* kaki: the action, or what needs you */ color: var(--on-strong); }
   /* The corner mark takes no layout space, so a tab with no count never changes width. */
-  .wk-tabset-dot { position: absolute; top: var(--space-2); right: var(--space-3); width: var(--space-3); height: var(--space-3); border-radius: var(--radius-pill); background: transparent; }
-  .wk-tabset-tab[data-attention='true']:has(.wk-tabset-badge[hidden], .wk-tabset-badge:empty) .wk-tabset-dot { background: var(--head-attention); }
-  .wk-tabset-tab[data-attention='true'][aria-selected='true']:has(.wk-tabset-badge[hidden], .wk-tabset-badge:empty) .wk-tabset-dot { background: var(--kaki); }
+  .wk-tabset-dot { position: absolute; top: 4px; right: 6px; width: 6px; height: 6px; border-radius: var(--radius-pill); background: transparent; }
+  .wk-tabset-tab[data-attention='true']:has(.wk-tabset-badge[hidden], .wk-tabset-badge:empty) .wk-tabset-dot { background: var(--head-attention); /* needs you */ }
+  .wk-tabset-tab[data-attention='true'][aria-selected='true']:has(.wk-tabset-badge[hidden], .wk-tabset-badge:empty) .wk-tabset-dot { background: var(--kaki); /* kaki: the action, or what needs you */ }
 
   /* BOTH CUT EDGES SAY SO. The gradient fades the tabs into the band exactly where they
      are cut; the chevron inside it is the only way a pointer with no horizontal wheel
      can reach a tab that has scrolled off, so it is drawn on hover devices only. */
-  .wk-tabset-edge { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; width: var(--space-11); opacity: 0; transition: opacity var(--motion-quick) var(--ease); pointer-events: none; }
-  .wk-tabset-edge[data-side='left'] { left: 0; justify-content: flex-start; background: linear-gradient(to right, var(--current-head-bg), transparent); }
-  .wk-tabset-edge[data-side='right'] { right: 0; justify-content: flex-end; background: linear-gradient(to left, var(--current-head-bg), transparent); }
+  .wk-tabset-edge { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; width: 28px; opacity: 0; transition: opacity var(--motion-quick) var(--ease); pointer-events: none; }
+  .wk-tabset-edge[data-side='left'] { left: 0; justify-content: flex-start; background: linear-gradient(to right, var(--current-head-bg), transparent); /* more tabs this way, fading into the header */ }
+  .wk-tabset-edge[data-side='right'] { right: 0; justify-content: flex-end; background: linear-gradient(to left, var(--current-head-bg), transparent); /* more tabs this way, fading into the header */ }
   .wk-tabset-scroller[data-edge='left'] .wk-tabset-edge[data-side='left'],
   .wk-tabset-scroller[data-edge='right'] .wk-tabset-edge[data-side='right'],
   .wk-tabset-scroller[data-edge='both'] .wk-tabset-edge { opacity: 1; }
-  .wk-tabset-chevron { display: none; border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--current-head-fg); padding: 0 var(--space-2); font: inherit; line-height: var(--leading-none); cursor: pointer; }
+  .wk-tabset-chevron { display: none; border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--current-head-fg); padding: 0 var(--space-inline); font: inherit; line-height: var(--leading-none); cursor: pointer; }
   @media (hover: hover) {
     .wk-tabset-scroller[data-edge='left'] .wk-tabset-edge[data-side='left'] .wk-tabset-chevron,
     .wk-tabset-scroller[data-edge='right'] .wk-tabset-edge[data-side='right'] .wk-tabset-chevron,
     .wk-tabset-scroller[data-edge='both'] .wk-tabset-chevron { display: block; pointer-events: auto; }
   }
 
-  .wk-tabset-actions { display: flex; align-items: center; flex: 0 0 auto; gap: var(--space-3); }
+  .wk-tabset-actions { display: flex; align-items: center; flex: 0 0 auto; gap: var(--space-inline); }
   .wk-tabset-actions:empty { display: none; }
-  .wk-tabset-actions .wk-action { min-height: 0; padding: var(--space-2) var(--space-4); font-size: var(--text-3); }
-  .wk-surface-dismiss { font-size: var(--text-4); line-height: var(--leading-none); }
+  .wk-tabset-actions .wk-action { min-height: var(--control-height-small); padding: var(--space-row) var(--space-control); }
+  .wk-surface-dismiss { line-height: var(--leading-none); }
 
   /* The panel owns fill and one scroll region; what it holds keeps its own padding. */
   .wk-tabset > .wk-surface-content { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
@@ -186,18 +186,18 @@
   .wk-tabset-panel[data-flush='true'] { overflow: hidden; }
 
   @media (pointer: coarse) {
-    .wk-tabset > .wk-tabset-bar { --band: calc(32px + 2 * var(--space-3) + var(--edge)); min-height: var(--band); }
+    .wk-tabset > .wk-tabset-bar { --band: calc(44px + var(--edge)); min-height: var(--band); }
   }
 
-  .wk-layout-map { display: flex; align-items: stretch; gap: var(--space-1); height: 1.5rem; width: 4.5rem; padding: var(--space-1); border: var(--edge) solid var(--line-2); border-radius: var(--radius-xs); background: var(--well); }
-  .wk-layout-map-slot { flex: 1 1 auto; min-width: .5rem; border: var(--edge) solid var(--line-2); border-radius: var(--radius-xs); background: var(--raise); padding: 0; cursor: pointer; touch-action: none; }
-  .wk-layout-map-slot[aria-checked='true'] { background: var(--aiiro); border-color: var(--aiiro); }
+  .wk-layout-map { display: flex; align-items: stretch; gap: var(--meter-gap); height: 1.5rem; width: 4.5rem; padding: var(--meter-gap); border: var(--edge) solid var(--line-2); border-radius: var(--radius-small); background: var(--inset); }
+  .wk-layout-map-slot { flex: 1 1 auto; min-width: .5rem; border: var(--edge) solid var(--line-2); border-radius: var(--radius-small); background: var(--surface); padding: 0; cursor: pointer; touch-action: none; }
+  .wk-layout-map-slot[aria-checked='true'] { background: var(--aiiro); /* aiiro: the chosen place, or the edge you are dragging */ border-color: var(--aiiro); }
   .wk-layout-map-slot[data-dragging='true'] { opacity: .6; }
-  .wk-layout-map-slot:focus-visible { outline: var(--edge) solid var(--focus-ring); outline-offset: 1px; }
+  .wk-layout-map-slot:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: var(--focus-offset); }
 
-  .wk-layout-surface[data-width='compact'] .wk-card { padding: var(--space-3); }
+  .wk-layout-surface[data-width='compact'] .wk-card { padding: var(--space-inline); }
   .wk-layout-surface[data-width='compact'] .wk-card-summary, .wk-layout-surface[data-width='compact'] .wk-card-meta { display: none; }
-  .wk-layout-surface[data-width='compact'] .wk-card-heading { font-size: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .wk-layout-surface[data-width='compact'] .wk-card-heading { font-size: var(--text-body); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   /* PHONE FIRST PAINT. At phone width the stacked shape is the default for every
      workbench layout, the pre-script boot skeleton in index.html included, so the first
      frame the browser paints is already the phone presentation. No script-set attribute
@@ -214,6 +214,6 @@
     .wk-workbench-layout:not([data-responsive='desktop']) > .wk-layout-surface { flex: 1 0 80%; scroll-snap-align: start; }
     .wk-workbench-layout:not([data-responsive='desktop'])[data-workbench-profile='setup'] { scroll-snap-type: none; }
     .wk-workbench-layout:not([data-responsive='desktop'])[data-workbench-profile='setup'] > .wk-layout-surface { flex: 0 0 auto; width: 100%; scroll-snap-align: none; }
-    .wk-workbench-layout[data-workbench-profile='setup'] .wk-workbench-column { height: calc(100dvh - var(--row-head) - var(--space-6)); min-height: 0; }
+    .wk-workbench-layout[data-workbench-profile='setup'] .wk-workbench-column { height: calc(100dvh - var(--row-head) - var(--space-inset)); min-height: 0; }
   }
 }

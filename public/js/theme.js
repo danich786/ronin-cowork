@@ -52,7 +52,7 @@ export function termFace() {
   return {
     fontFamily: cs.getPropertyValue('--font-term').trim(),
     // parseFloat, because xterm wants a NUMBER and the token is a length ('13px').
-    fontSize: parseFloat(cs.getPropertyValue('--text-4')),
+    fontSize: parseFloat(cs.getPropertyValue('--term-size')),
   };
 }
 
@@ -138,7 +138,7 @@ export function applyTheme(name) {
   document.documentElement.dataset.theme = resolvedTheme(choice);
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) {
-    const bar = getComputedStyle(document.documentElement).getPropertyValue('--bg-2').trim();
+    const bar = getComputedStyle(document.documentElement).getPropertyValue('--surface').trim();
     if (bar) meta.content = bar;
   }
   // Live terminals re-read the palette; tape/composer surfaces are plain CSS and

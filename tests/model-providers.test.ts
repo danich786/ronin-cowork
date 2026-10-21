@@ -317,9 +317,10 @@ test('latest is asked only of a CLI whose install line names an npm package, and
 test('the start-up measure follows the Campaign record and its migration, never beside them, and reads no list', async () => {
   // Both the summary write and the scope migration read-modify-write the campaigns section
   // of machine settings; run concurrently on a fresh install, one write is lost. The chain
-  // in src/index.ts is the seam, so it is pinned here.
+  // in src/index.ts is the seam, so it is pinned here. The Desk model move also rewrites
+  // machine settings, so it sits in the same chain, before the measure.
   const source = await readFile(new URL('../src/index.ts', import.meta.url), 'utf8');
-  assert.match(source, /ensureInitialCampaign\(\)\s*\.then\(\(\) => migrateCampaignScope\(\)\)\s*\.then\(\(\) => \(isEntryPoint \? measureAndRecordProviders\(\) : undefined\)\)/);
+  assert.match(source, /ensureInitialCampaign\(\)\s*\.then\(\(\) => migrateCampaignScope\(\)\)\s*\.then\(\(\) => moveDeskModelDefault\(\)\)\s*\.then\(\(\) => \(isEntryPoint \? measureAndRecordProviders\(\) : undefined\)\)/);
   assert.equal(source.match(/measureAndRecordProviders\(\)/g)?.length, 1, 'measured at start in one place only');
   assert.doesNotMatch(source, /refreshProviders/, 'Refresh all is the owner\'s press, never start-up');
   const progress = await readFile(new URL('../src/setup-progress.ts', import.meta.url), 'utf8');

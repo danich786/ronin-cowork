@@ -20,7 +20,7 @@ import { getTags } from './tmux.js';
 import { enqueueMessage } from './message-queue.js';
 import { findLeads } from './desks/lead.js';
 import { listTeamRosters, readTeamRoster, writeTeamRoster } from './team-rosters.js';
-import { ackRecord, listLetterHolds, readLetterHolds, seedTegami, writeLetterAt, writeLetterHolds } from './tegami.js';
+import { ackRecord, listLetterHolds, teamChanged, readLetterHolds, seedTegami, writeLetterAt, writeLetterHolds } from './tegami.js';
 
 export const ITEM_STAGES = ['IDEA', 'PLAN', 'BUILD', 'REVIEW', 'LAND', 'DONE'] as const;
 export const ITEM_EXITS = ['none', 'agent', 'lead', 'user'] as const;
@@ -428,9 +428,14 @@ async function takeOffEveryList(id: string, except?: Holder): Promise<Holder[]> 
 
 const labels = (holders: Holder[]): string => holders.length ? holders.map(holderLabel).join(', ') : 'none';
 
-/** The ack (tegami.ts ackRecord) to every Agent whose holds this move changed; a Team's holds are its roster. */
+/** The ack (tegami.ts ackRecord) to every Agent whose holds this move changed; a Team's holds are its roster, so its lead's. */
 async function ackHolds(holders: Array<Holder | null>, by: string): Promise<void> {
-  for (const name of new Set(holders.filter((holder) => holder?.kind === 'agent').map((holder) => holder!.name))) await ackRecord(name, by);
+  const seen = new Set<string>();
+  for (const holder of holders) {
+    if (!holder || seen.has(holderLabel(holder))) continue;
+    seen.add(holderLabel(holder));
+    await (holder.kind === 'agent' ? ackRecord(holder.name, by) : teamChanged([holder.name], by));
+  }
 }
 
 export async function assignUnlocked(id: string, to: Holder, by: string, note?: string): Promise<Acknowledged> {

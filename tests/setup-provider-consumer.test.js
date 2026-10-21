@@ -150,9 +150,9 @@ test('provider steps adapt to the shared stone surface width with one control si
   assert.match(css, /\.setup-provider-action \{[^}]*flex: 0 0 10rem/);
   assert.match(css, /@container setup-stone-work-surface \(min-width: [^)]+\) \{\s*\.setup-provider-step \{[^}]*grid-template-columns: auto minmax\(0, 1fr\) auto/);
   assert.doesNotMatch(css, /@media \(max-width: 700px\) \{\s*\.setup-provider-step/);
-  assert.match(css, /\.setup-provider-head h2 \{[^}]*font-size: var\(--text-9\)/);
-  assert.match(css, /\.setup-provider-label \{[^}]*font-size: var\(--text-7\)/);
-  assert.match(css, /\.setup-provider-note \{[^}]*font-size: var\(--text-5\)/);
+  assert.match(css, /\.setup-provider-head h2 \{[^}]*font-size: var\(--text-display\)/);
+  assert.match(css, /\.setup-provider-label \{[^}]*font-size: var\(--text-heading\)/);
+  assert.match(css, /\.setup-provider-note \{[^}]*font-size: var\(--text-body\)/);
   assert.match(css, /\.setup-provider-control > \.setup-provider-action:disabled \{[^}]*background: transparent/);
   assert.match(css, /\.setup-provider-terminal \{[^}]*height: min\(30rem, 50dvh\); min-height: 0/);
   assert.match(css, /\.setup-provider-terminal \.tile > \.tile-head \{ display: none; \}/);

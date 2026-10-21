@@ -3,6 +3,7 @@ import { defaultAgentCommand } from './agents.js';
 
 export interface SessionsDefaults {
   default?: { provider?: string; model?: string };
+  lead?: { provider?: string; model?: string };
   by_provider?: Record<string, string | null>;
 }
 
@@ -31,28 +32,12 @@ const passthroughModel = (specs: readonly SessionLaunchSpec[], value: string): s
   return argv ? `${argv[1]}${value}${argv[3]}` : undefined;
 };
 
-export interface MergedSessionsDefaults {
-  sessions: SessionsDefaults;
-  defaultOwn: boolean;
-  providerOwn: (provider: string) => boolean;
-}
-
-const str = (v: unknown): string => (typeof v === 'string' ? v.trim() : '');
-const bucket = (v: unknown): Record<string, unknown> =>
-  v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
-
-export function mergeSessionDefaults(house: SessionsDefaults | undefined, campaign: unknown): MergedSessionsDefaults {
-  const mine = bucket(campaign);
-  const provider = str(mine.provider);
-  const model = str(mine.model);
-  const defaultOwn = !!(provider && model);
-  const by_provider: Record<string, string | null> = { ...(house?.by_provider ?? {}) };
-  if (defaultOwn) by_provider[provider] = model;
-  return {
-    sessions: { default: defaultOwn ? { provider, model } : house?.default, by_provider },
-    defaultOwn,
-    providerOwn: (p) => defaultOwn && p === provider,
-  };
+/**
+ * THE MODEL DEFAULTS (owner, 2026-10-21; Models > Defaults): one record, ⚙ agents.sessions.
+ * `default` is what a new Agent gets; `lead` what a new Team lead gets, blank = the Agent's.
+ */
+export function sessionsFor(house: SessionsDefaults | undefined, lead: boolean): SessionsDefaults {
+  return lead && house?.lead?.provider ? { ...house, default: house.lead } : house ?? {};
 }
 
 export function resolveLaunchCommand(req: CommandRequest): { cmd: string; source: CommandSource } {

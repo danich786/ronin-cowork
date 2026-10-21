@@ -106,7 +106,7 @@ RoninCowork  •  Home  •  Models                                             
 The root landing and Machine Settings have no island. Campaign reads *Campaign*, Teams
 reads *Teams*, and one Team uses only its readable name. The neutral island does not carry
 the scope colour: graphite, aiiro and kaki belong to the Workbench headers below it. It is
-a place reading, never a button, and uses the same `--radius-lg` lower corners as the
+a place reading, never a button, and uses the same `--radius-large` lower corners as the
 Workspace Kit surfaces. Doors consume the shared
 `.ui-bar-nav` primitive and the place consumes `.ui-bar-place` from `docs/architecture/ui.md`; a
 feature must not restyle either. `js/workspace-header.js` writes the place; nothing
@@ -115,7 +115,7 @@ else does.
 ### The root landing
 
 The bare `/` route is the landing, not a remembered workspace and not a Campaign editor.
-It has three doors — **Models**, **Workspaces**, **Teams** — each opening its own Workbench in
+It has four doors — **Models**, **Workspaces**, **Teams**, **Help** — each opening its own Workbench in
 the same tab (`public/js/door-workbenches.js`; owner, 2026-10-19). Models is its own stones of
 providers in Workspace 1 (`models-surface.js`): a stone dragged into a workspace, or its selector
 card, places that provider's page there whole, no rail; Settings' Model Providers surface stays
@@ -130,7 +130,12 @@ with what Show picks under it as the phalanx's branch rows (Theme one row, State
 Agent a row with the lead first, each Item a row); the 人 mark in a stone's corner opens the
 Team page in a new tab; its selector offers Team roster, Cron jobs, New Team, New Agent and
 Rehydrate Archived.
-Until one model provider is activated the three doors are locked and say so (the gate the old
+Help (owner, 2026-10-21) seats the help outline (`help-outline.js`, `help.outline`: the docs/ guides
+'START HERE: 4 things you need to know' numbered 1-4, then the other groups as quieter rows, a pressed page read beside the rail through
+`/api/file?product=1`) in Workspace 1 and Mika (`help.mika`) in Workspace 2, her tile opened on its
+reading (`createMikaTilePool({ opensOn: 'reading' })`); both are solid cards.
+Until one model provider is activated the Models, Workspaces and Teams doors are locked; Help stays
+open, its Mika seat saying in one line that she needs a provider, pointing to Setup, and say so (the gate the old
 root had); Settings, the live stone, opens Setup until its five answers are recorded.
 
 The current root — Ronin Home as it was before 2026-10-18, with doors into the Desk, Team and

@@ -42,7 +42,7 @@ import { registerMachineSettings } from './routes/machine-settings-api.js';
 import { registerCampaigns } from './routes/campaigns-api.js';
 import { ensureInitialCampaign } from './campaigns.js';
 import { measureAndRecordProviders } from './provider-summary.js';
-import { migrateCampaignScope } from './campaign-scope.js';
+import { migrateCampaignScope, moveDeskModelDefault } from './campaign-scope.js';
 import { registerUpdate } from './routes/update-api.js';
 import { registerMachineRestart } from './routes/machine-restart-api.js';
 import { registerJikan, startHouseJikan } from './routes/jikan-api.js';
@@ -254,6 +254,7 @@ if (isEntryPoint) void ensureInstalledRoots().catch((error) => console.error(`[s
 // section, and side by side one of them would lose its write on a fresh install.
 const campaignStart = ensureInitialCampaign()
   .then(() => migrateCampaignScope())
+  .then(() => moveDeskModelDefault())
   .then(() => (isEntryPoint ? measureAndRecordProviders() : undefined))
   .catch((error) => console.error(`[setup] campaign start: ${(error as Error).message}`));
 

@@ -6,21 +6,21 @@
 
   .tw-blank { height: 100%; border: 0; border-radius: 0; background: transparent; }
 
-  .tw-note { padding: var(--space-6) var(--space-7); color: var(--muted); font-size: var(--text-3); }
-  .team-roster-detail { margin: var(--space-4); overflow-y: auto; }
+  .tw-note { padding: var(--space-inset) var(--space-inset); color: var(--muted); font-size: var(--text-body); }
+  .team-roster-detail { margin: var(--space-paragraph); overflow-y: auto; }
   .home-live {
     --home-live-dot: 6px;
   }
-  .home-live { width: var(--home-live-dot); height: var(--home-live-dot); justify-self: center; border-radius: var(--radius-round); background: var(--line-2); }
-  .home-live[data-stance='working'], .home-live[data-stance='replying'] { background: var(--ok-2); }
-  .home-live[data-stance='asking'], .home-live[data-stance='awaiting_you'] { background: var(--kaki); }
+  .home-live { width: var(--home-live-dot); height: var(--home-live-dot); justify-self: center; border-radius: var(--radius-round); background: var(--line-2); /* status: not live */ }
+  .home-live[data-stance='working'], .home-live[data-stance='replying'] { background: var(--ok-2); /* status: under way or done */ }
+  .home-live[data-stance='asking'], .home-live[data-stance='awaiting_you'] { background: var(--kaki); /* kaki: the action, or what needs you */ }
   .team-roster-detail .home-group-add { display: none; }
   /* The restored roster's ⑂ desk column is always empty now (js/desks.js); its track goes so the
      names keep their width in a workspace narrower than the row's fixed columns. */
   .team-roster-detail .home-row { grid-template-columns: var(--hr-mark) minmax(0, 1fr) var(--hr-shingo) var(--hr-status) var(--hr-ctx) var(--hr-stack); }
   .team-roster-detail .home-row > .home-stack { grid-column: 6; }
   .home-grp-actions.tile-head { min-height: 0; padding: 0; border: 0; background: transparent; flex-wrap: nowrap; }
-  .tw-config { display: flex; flex-direction: column; gap: var(--space-10); padding: var(--space-6) var(--space-7); overflow-y: auto; }
+  .tw-config { display: flex; flex-direction: column; gap: var(--space-section); padding: var(--space-inset) var(--space-inset); overflow-y: auto; }
   /* Team Kanban is a read. Its only write path is a move request to the holder. */
   .tk-kanban {
     --tk-notice-line: 1.5em;
@@ -32,69 +32,71 @@
     --tk-card-closed: 64px;
     --tk-card-open: 168px;
     --tk-outcome-line: calc(var(--leading-body) * 1em);
-    --tk-control-size: var(--space-8);
-    height: 100%; min-height: 0; overflow: auto; background: var(--bg-2); container: team-kanban / inline-size;
+    --tk-control-size: 16px;
+    --tk-dot: 6px;
+    --tk-card-bar: 4px; /* a card's state stripe */
+    height: 100%; min-height: 0; overflow: auto; background: var(--surface); container: team-kanban / inline-size;
   }
   .tk-header {
     --tk-header-height: clamp(6rem, 15dvh, 9rem); /* the stone work surface's header band */
   }
-  .tk-header { box-sizing: border-box; position: sticky; top: 0; z-index: 1; display: flex; flex-direction: column; block-size: var(--tk-header-height); min-inline-size: 0; padding: var(--space-4) var(--space-5); border-bottom: var(--edge) solid var(--line); background: var(--bg-2); }
+  .tk-header { box-sizing: border-box; position: sticky; top: 0; z-index: 1; display: flex; flex-direction: column; block-size: var(--tk-header-height); min-inline-size: 0; padding: var(--space-paragraph) var(--space-inline); border-bottom: var(--edge) solid var(--line); background: var(--surface); }
   .tk-header[data-expanded='false'] { block-size: auto; }
-  .tk-header-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
+  .tk-header-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-inline); }
   .tk-beta {
     --tk-beta-h: 2.25rem;
   }
-  .tk-beta { display: inline-flex; align-items: center; min-height: var(--tk-beta-h); box-sizing: border-box; border: var(--edge) solid var(--kaki); border-radius: var(--radius-xs); background: var(--raise); color: var(--fg-strong); padding: var(--space-2) var(--space-4); font: inherit; font-size: var(--text-4); font-weight: var(--weight-strong); letter-spacing: var(--tk-heading-track); text-transform: uppercase; }
-  .tk-header-toggle { border: 0; border-radius: 0; padding: var(--space-2); background: transparent; color: var(--muted); font: inherit; font-size: var(--text-2); font-weight: var(--weight-regular); cursor: pointer; }
+  .tk-beta { display: inline-flex; align-items: center; min-height: var(--tk-beta-h); box-sizing: border-box; border: var(--edge) solid var(--kaki); border-radius: var(--radius-small); background: var(--surface); color: var(--fg-strong); padding: var(--space-row) var(--space-inline); font: inherit; font-size: var(--text-body); font-weight: var(--weight-strong); letter-spacing: var(--tk-heading-track); text-transform: uppercase; }
+  .tk-header-toggle { border: 0; border-radius: 0; padding: var(--space-control); background: transparent; color: var(--muted); font: inherit; font-size: var(--text-small); font-weight: var(--weight-regular); cursor: pointer; }
   .tk-header-toggle:hover { color: var(--fg); }
-  .tk-header-toggle:focus-visible { outline: var(--edge-2) solid var(--kaki); outline-offset: var(--space-1); }
-  .tk-header-message { min-height: 0; overflow-y: auto; margin: var(--space-4) 0 0; color: var(--fg); font-size: var(--text-4); }
+  .tk-header-toggle:focus-visible { outline: var(--focus-width) solid var(--kaki); outline-offset: var(--focus-offset); }
+  .tk-header-message { min-height: 0; overflow-y: auto; margin: var(--space-paragraph) 0 0; color: var(--fg); font-size: var(--text-label); }
   .tk-header-message[hidden] { display: none; }
-  .tk-topline { display: flex; align-items: center; gap: var(--space-6); min-height: var(--tk-notice-line); padding: var(--space-4) var(--space-5) 0; }
+  .tk-topline { display: flex; align-items: center; gap: var(--space-inline); min-height: var(--tk-notice-line); padding: var(--space-paragraph) var(--space-inline) 0; }
   .tk-topline[hidden] { display: none; }
-  .tk-controls { display: flex; flex: none; align-items: center; gap: var(--space-2); }
+  .tk-controls { display: flex; flex: none; align-items: center; gap: var(--space-inline); }
   .tk-refresh, .tk-fold { display: grid; width: var(--tk-control-size); height: var(--tk-control-size); place-items: center; border: var(--edge) solid var(--line); border-radius: 0; padding: 0; background: transparent; color: var(--muted); }
   .tk-refresh:hover, .tk-fold:hover { border-color: var(--accent); color: var(--fg); }
-  .tk-legend { display: flex; flex: none; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-4) var(--space-6); color: var(--muted); font-size: var(--text-3); }
-  .tk-legend span { display: inline-flex; align-items: center; gap: var(--space-2); }
-  .tk-dot { width: var(--space-3); height: var(--space-3); background: var(--line-2); }
-  .tk-dot.green { background: var(--ok-2); }
-  .tk-dot.yellow { background: var(--status-yellow); }
-  .tk-dot.red { background: var(--status-red); }
-  .tk-notice { flex: 1 1 auto; min-width: 0; margin: 0; color: var(--muted); font-size: var(--text-3); }
-  .tk-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(var(--tk-column-min), 1fr)); gap: var(--space-4); min-width: 0; padding: var(--space-4) var(--space-5) var(--space-5); }
+  .tk-legend { display: flex; flex: none; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-paragraph) var(--space-inline); color: var(--muted); font-size: var(--text-body); }
+  .tk-legend span { display: inline-flex; align-items: center; gap: var(--space-inline); }
+  .tk-dot { width: var(--tk-dot); height: var(--tk-dot); background: var(--line-2); /* status: none yet */ }
+  .tk-dot.green { background: var(--ok-2); /* status: under way or done */ }
+  .tk-dot.yellow { background: var(--status-yellow); /* status: waiting / stuck */ }
+  .tk-dot.red { background: var(--status-red); /* status: waiting / stuck */ }
+  .tk-notice { flex: 1 1 auto; min-width: 0; margin: 0; color: var(--muted); font-size: var(--text-body); }
+  .tk-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(var(--tk-column-min), 1fr)); gap: var(--space-paragraph) var(--space-inline); min-width: 0; padding: var(--space-paragraph) var(--space-inline) var(--space-paragraph); }
   .tk-unavailable { margin: 0; color: var(--muted); }
-  .tk-column { display: flex; height: var(--tk-column-height); min-width: 0; flex-direction: column; border: var(--edge) solid var(--line); background: var(--well); transition: border-color var(--motion-quick) var(--ease), background var(--motion-quick) var(--ease); }
-  .tk-column > h3 { box-sizing: border-box; display: grid; height: var(--tk-column-head); flex: none; gap: var(--space-1); margin: 0; border-bottom: var(--edge) solid var(--line); padding: var(--space-3) var(--space-4); color: var(--muted); font-size: var(--text-3); font-weight: var(--weight-strong); letter-spacing: var(--tk-heading-track); text-transform: uppercase; }
+  .tk-column { display: flex; height: var(--tk-column-height); min-width: 0; flex-direction: column; border: var(--edge) solid var(--line); background: var(--inset); transition: border-color var(--motion-quick) var(--ease), background var(--motion-quick) var(--ease); }
+  .tk-column > h3 { box-sizing: border-box; display: grid; height: var(--tk-column-head); flex: none; gap: var(--space-row); margin: 0; border-bottom: var(--edge) solid var(--line); padding: var(--space-row) var(--space-inline); color: var(--muted); font-size: var(--text-body); font-weight: var(--weight-strong); letter-spacing: var(--tk-heading-track); text-transform: uppercase; }
   .tk-column-open, .tk-back { border: 0; border-bottom: var(--edge) dotted currentColor; border-radius: 0; padding: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
-  .tk-back { grid-column: 1 / -1; justify-self: start; margin-bottom: var(--space-2); color: var(--accent-2); }
-  .tk-project-detail { padding: var(--space-5); border: var(--edge) solid var(--line); background: var(--well); }
-  .tk-project-detail h2 { margin: var(--space-5) 0 var(--space-2); color: var(--fg-strong); }
-  .tk-project-id { color: var(--muted); font-size: var(--text-3); }
-  .tk-project-facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-2) var(--space-5); }
+  .tk-back { grid-column: 1 / -1; justify-self: start; margin-bottom: var(--space-row); color: var(--accent-2); }
+  .tk-project-detail { padding: var(--space-inset); border: var(--edge) solid var(--line); background: var(--inset); }
+  .tk-project-detail h2 { margin: var(--space-paragraph) 0 var(--space-row); color: var(--fg-strong); }
+  .tk-project-id { color: var(--muted); font-size: var(--text-body); }
+  .tk-project-facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-row) var(--space-inline); }
   .tk-project-facts dt { color: var(--muted); }
   .tk-project-facts dd { margin: 0; color: var(--fg-strong); overflow-wrap: anywhere; }
-  .tk-column-worker { color: var(--dim); font-size: var(--text-2); font-weight: var(--weight-medium); letter-spacing: 0; text-transform: none; }
-  .tk-cards { display: flex; min-height: 0; flex: 1 1 auto; flex-direction: column; gap: var(--space-3); overflow-y: auto; padding: var(--space-3); }
-  .tk-empty { margin: 0; padding: var(--space-3); color: var(--dim); font-size: var(--text-3); font-style: italic; }
-  .tk-card { box-sizing: border-box; width: 100%; height: var(--tk-card-closed); min-width: 0; overflow: hidden; border-left: var(--space-2) solid var(--line-2); border-radius: 0; padding: var(--space-3) var(--space-4); cursor: grab; }
+  .tk-column-worker { color: var(--muted); font-size: var(--text-small); font-weight: var(--weight-regular); letter-spacing: 0; text-transform: none; }
+  .tk-cards { display: flex; min-height: 0; flex: 1 1 auto; flex-direction: column; gap: var(--space-row); overflow-y: auto; padding: var(--space-inline); }
+  .tk-empty { margin: 0; padding: var(--space-inline); color: var(--muted); font-size: var(--text-body); font-style: italic; }
+  .tk-card { box-sizing: border-box; width: 100%; height: var(--tk-card-closed); min-width: 0; overflow: hidden; border-left: var(--tk-card-bar) solid var(--line-2); border-radius: 0; padding: var(--space-row) var(--space-inline); cursor: grab; }
   .tk-card.open { height: var(--tk-card-open); }
   .tk-card:active { cursor: grabbing; }
   .tk-card.dragging { opacity: .45; }
   .tk-card[data-status='green'] { border-left-color: var(--ok-2); }
   .tk-card[data-status='yellow'] { border-left-color: var(--status-yellow); }
   .tk-card[data-status='red'] { border-left-color: var(--status-red); }
-  .tk-board.dragging .tk-column.means { border-color: var(--accent); border-style: dashed; background: var(--raise); }
-  .tk-column.over { border-color: var(--accent); background: var(--raise); }
-  .tk-drop-hint { display: none; margin: 0; padding: var(--space-2) var(--space-4) 0; color: var(--accent); font-size: var(--text-3); }
+  .tk-board.dragging .tk-column.means { border-color: var(--accent); border-style: dashed; background: var(--selected); /* the one you are on, have chosen, or are dropping onto */ }
+  .tk-column.over { border-color: var(--accent); background: var(--selected); /* the one you are on, have chosen, or are dropping onto */ }
+  .tk-drop-hint { display: none; margin: 0; padding: var(--space-row) var(--space-inline) 0; color: var(--accent); font-size: var(--text-body); }
   .tk-board.dragging .tk-column.means .tk-drop-hint { display: block; }
   .tk-card-toggle { display: block; width: 100%; border: 0; padding: 0; background: transparent; color: inherit; text-align: left; }
-  .tk-title { display: block; font-size: var(--text-4); overflow-wrap: anywhere; }
+  .tk-title { display: block; font-size: var(--text-label); overflow-wrap: anywhere; }
   .tk-details { display: none; }
   .tk-card.open .tk-details { display: block; }
-  .tk-outcome { max-height: calc(var(--tk-outcome-line) * 2); overflow: hidden; margin-top: var(--space-1); color: var(--muted); font-size: var(--text-3); line-height: var(--tk-outcome-line); }
-  .tk-evidence { margin: var(--space-2) 0 0; overflow-wrap: anywhere; color: var(--dim); font-size: var(--text-2); }
-  .tk-card-row { min-height: var(--tk-card-meta-line); align-items: center; gap: var(--space-2); margin-top: var(--space-3); padding-top: 0; font-size: var(--text-3); }
+  .tk-outcome { max-height: calc(var(--tk-outcome-line) * 2); overflow: hidden; margin-top: var(--space-row); color: var(--muted); font-size: var(--text-body); line-height: var(--tk-outcome-line); }
+  .tk-evidence { margin: var(--space-row) 0 0; overflow-wrap: anywhere; color: var(--muted); font-size: var(--text-small); }
+  .tk-card-row { min-height: var(--tk-card-meta-line); align-items: center; gap: var(--space-inline); margin-top: var(--space-row); padding-top: 0; font-size: var(--text-body); }
   .tk-waiting { color: var(--ok-2); }
   .tk-asked { color: var(--muted); }
   .tk-owner, .tk-project-open { border: 0; border-bottom: var(--edge) dotted currentColor; border-radius: 0; padding: 0; background: transparent; color: var(--accent-2); font: inherit; }
@@ -103,12 +105,15 @@
   /* The tab is drawn on the launch forms' furniture (launch-forms.css: .ntf-form, .fs-step, .wk-field);
      only the identity line is its own: Team ID · Title · Kind, one height, the Kind tray hosted by the line. */
   .tw-config-form { min-width: 0; }
-  .tw-config-identity { display: flex; flex-wrap: wrap; gap: var(--space-4) var(--space-6); align-items: flex-end; }
-  .tw-config-identity > .tw-config-field { flex: 1 1 calc(var(--space-12) * 2.5); min-width: 0; } /* the pair shares a line with Kind when the workspace is wide; at the commons’ own width Kind drops beneath, as on New Team */
+  .tw-config-identity { display: flex; flex-wrap: wrap; gap: var(--space-paragraph) var(--space-inline); align-items: flex-end; }
+  .tw-config-identity {
+    --tw-config-field-min: 85px;
+  }
+  .tw-config-identity > .tw-config-field { flex: 1 1 var(--tw-config-field-min); min-width: 0; } /* the pair shares a line with Kind when the workspace is wide; at the commons’ own width Kind drops beneath, as on New Team */
   .tw-config-identity > .tw-config-field > .tw-config-control { box-sizing: border-box; height: var(--field-tall); }
   .tw-config-identity > .ask { flex: 0 0 auto; }
   .tw-config-id { color: var(--muted); }
-  .tw-config-actions { display: flex; justify-content: flex-end; align-items: center; gap: var(--space-4); }
+  .tw-config-actions { display: flex; justify-content: flex-end; align-items: center; gap: var(--space-inline); }
   .tw-config-status, .tw-config-empty { color: var(--muted); }
   .tw-config-form > .ask { max-width: 100%; }
 
@@ -116,15 +121,15 @@
   .league-team-member-title, .tw-config-actions { font-size: var(--form-input); }
   .tw-config-status, .league-team-empty { font-size: var(--form-note); }
 
-  .league-team-edit-content { display: flex; flex-direction: column; gap: var(--space-10); }
+  .league-team-edit-content { display: flex; flex-direction: column; gap: var(--space-section); }
   /* The Team opens beside its stone top-down: head, Agents, Work, Configuration. One
      heading style, one body style, tight lists. The phalanx owns the stones' geometry. */
-  .league-team-detail, .league-team-detail .league-team-edit-content { display: flex; flex-direction: column; gap: var(--space-6); }
-  .league-team-row, .tk-line { display: grid; grid-template-columns: var(--hr-mark) minmax(0, 1fr) var(--hr-shingo) var(--hr-stack); align-items: center; gap: var(--space-4); padding: var(--space-1) var(--space-2); font-size: var(--text-4); }
-  .league-team-detail-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: var(--space-4); }
-  .league-team-detail-head > h2 { grid-column: 1; grid-row: 1; margin: 0; color: var(--fg-strong); font-size: var(--text-8); font-weight: var(--weight-strong); }
+  .league-team-detail, .league-team-detail .league-team-edit-content { display: flex; flex-direction: column; gap: var(--space-subsection); }
+  .league-team-row, .tk-line { display: grid; grid-template-columns: var(--hr-mark) minmax(0, 1fr) var(--hr-shingo) var(--hr-stack); align-items: center; gap: var(--space-paragraph) var(--space-inline); padding: var(--space-row) var(--space-inline); font-size: var(--text-body); }
+  .league-team-detail-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: var(--space-inline); }
+  .league-team-detail-head > h2 { grid-column: 1; grid-row: 1; margin: 0; color: var(--fg-strong); font-size: var(--text-heading); font-weight: var(--weight-strong); }
   .league-team-detail-head > .league-team-detail-actions { grid-column: 2; grid-row: 1; }
-  .league-team-objective { grid-column: 1 / -1; font-size: var(--text-4); margin: 0; overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+  .league-team-objective { grid-column: 1 / -1; font-size: var(--text-body); margin: 0; overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
   .league-team-objective[hidden] { display: none; }
   .league-team-detail-state { margin: 0; color: var(--bad); }
   .league-team-step-body { gap: 0; }
@@ -134,48 +139,55 @@
      align to the step's left edge, no second indent (owner, 2026-10-20). */
   .fs-step:has(> .fs-step-head.fs-togglable) > .fs-step-body.league-team-step-body { grid-column: 1 / -1; }
   .league-team-agent { width: 100%; border: 0; border-radius: var(--radius-hair); background: transparent; color: var(--fg); font-family: inherit; text-align: left; cursor: pointer; }
-  .league-team-agent:hover { background: var(--bg-2); }
+  .league-team-agent:hover { background: var(--surface); }
   .league-team-agent-name { grid-column: 2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .league-team-agent-lead { margin-inline-end: var(--space-3); color: var(--accent); }
-  .league-team-agent-holds { margin-inline-start: var(--space-3); color: var(--muted); }
+  .league-team-agent-lead { margin-inline-end: var(--space-inline); color: var(--accent); }
+  .league-team-agent-holds { margin-inline-start: var(--space-inline); color: var(--muted); }
   .tk-line-title { grid-column: 2; }
   .tk-line-holder { grid-column: 3; color: var(--muted); }
   .tk-line-title, .tk-line-holder { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .tk-stage-bar { grid-column: 4; justify-self: end; display: inline-flex; gap: var(--space-1); }
-  .tk-stage-bar > i { width: var(--space-5); height: var(--space-2); border: var(--edge) solid var(--line-2); }
-  .tk-stage-bar > i.past { border-color: var(--fg); background: var(--fg); }
-  .tk-stage-bar > i.now { border-color: transparent; background: var(--status-yellow); }
-  .tk-stage-bar > i.now.green { background: var(--ok-2); }
-  .tk-stage-bar > i.now.red { background: var(--status-red); }
+  .tk-stage-bar { grid-column: 4; justify-self: end; display: inline-flex; gap: var(--meter-gap); }
+  .tk-stage-bar {
+    --tk-stage-w: 10px;
+    --tk-stage-h: 4px;
+  }
+  .tk-stage-bar > i { width: var(--tk-stage-w); height: var(--tk-stage-h); border: var(--edge) solid var(--line-2); }
+  .tk-stage-bar > i.past { border-color: var(--fg); background: var(--fg); /* a stage already passed */ }
+  .tk-stage-bar > i.now { border-color: transparent; background: var(--status-yellow); /* status: waiting / stuck */ }
+  .tk-stage-bar > i.now.green { background: var(--ok-2); /* status: under way or done */ }
+  .tk-stage-bar > i.now.red { background: var(--status-red); /* status: waiting / stuck */ }
   .league-team-roster, .league-team-config { flex: 0 0 auto; }
   .league-team-roster { display: flex; flex-direction: column; min-height: 0; }
-  .league-team-roster-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-4); border-bottom: var(--edge) solid var(--line-2); padding-bottom: var(--space-3); }
+  .league-team-roster-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-inline); margin-bottom: var(--space-paragraph); border-bottom: var(--edge) solid var(--line-2); padding-bottom: var(--space-row); }
   .league-team-roster-title { margin: 0; color: var(--fg-strong); font-weight: var(--weight-strong); letter-spacing: var(--tracking-wide); text-transform: uppercase; }
   /* One line per Agent — 人 and title, the live reading, the caret. The pressed row opens in
      place to the Agent's read: role, what it is working on, the items it holds, its @id,
      and the member action bar under them (owner, 2026-10-20). */
   .league-team-member { border-bottom: var(--edge) solid var(--line); }
-  .league-team-member-identity { display: flex; align-items: center; min-width: 0; gap: var(--space-3); }
-  .league-team-member-mark { width: var(--space-6); color: var(--kaki); font-size: var(--text-5); line-height: var(--leading-none); text-align: center; }
+  .league-team-member-identity { display: flex; align-items: center; min-width: 0; gap: var(--space-inline); }
+  .league-team-member-mark {
+    --league-mark-w: 12px;
+  }
+  .league-team-member-mark { width: var(--league-mark-w); color: var(--kaki); font-size: var(--text-body); line-height: var(--leading-none); text-align: center; }
   .league-team-member-title { overflow: hidden; color: var(--fg-strong); font-weight: inherit; text-overflow: ellipsis; white-space: nowrap; }
   .league-team-empty { color: var(--muted); }
-  .league-team-member-actions { flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); }
+  .league-team-member-actions { flex-wrap: wrap; justify-content: flex-end; gap: var(--space-inline); }
   .league-team-member-toggle {
     --ltm-toggle-cols: minmax(10rem, 1fr) minmax(0, 2.4fr) 1.25rem; /* name, reading, chevron */
   }
-  .league-team-member-toggle { display: grid; grid-template-columns: var(--ltm-toggle-cols); align-items: center; gap: var(--space-4); width: 100%; min-width: 0; border: 0; background: transparent; color: inherit; padding: var(--space-3) 0; text-align: left; cursor: pointer; font: inherit; }
+  .league-team-member-toggle { display: grid; grid-template-columns: var(--ltm-toggle-cols); align-items: center; gap: var(--space-inline); width: 100%; min-width: 0; border: 0; background: transparent; color: inherit; padding: var(--space-row) 0; text-align: left; cursor: pointer; font: inherit; }
   .league-team-member-reading {
     --ltm-reading-cols: minmax(0, 1fr) 4.5rem 3.25rem 4.75rem;
   }
-  .league-team-member-reading { display: grid; grid-template-columns: var(--ltm-reading-cols); align-items: center; gap: var(--space-3); min-width: 0; }
+  .league-team-member-reading { display: grid; grid-template-columns: var(--ltm-reading-cols); align-items: center; gap: var(--space-inline); min-width: 0; }
   .league-team-member-reading span { overflow: hidden; color: var(--muted); font-size: var(--form-note); text-overflow: ellipsis; white-space: nowrap; }
   .league-team-member-step { grid-column: 1; }
   .league-team-member-state { grid-column: 2; }
   .league-team-member-ctx { grid-column: 3; }
   .league-team-member-model { grid-column: 4; }
   .league-team-member-state { color: var(--ok) !important; }
-  .league-team-member-disclosure { color: var(--muted); font-size: var(--text-4); line-height: var(--leading-none); text-align: center; }
-  .league-team-member-detail { display: flex; flex-direction: column; gap: var(--space-3); border-top: var(--edge) solid var(--line); padding: var(--space-3) 0 var(--space-2); }
+  .league-team-member-disclosure { color: var(--muted); font-size: var(--text-body); line-height: var(--leading-none); text-align: center; }
+  .league-team-member-detail { display: flex; flex-direction: column; gap: var(--space-row); border-top: var(--edge) solid var(--line); padding: var(--space-row) 0 var(--space-row); }
   .league-team-member-detail[hidden] { display: none; }
   .league-team-member-items { display: flex; flex-direction: column; }
   .league-team-member-items:empty { display: none; }
@@ -186,31 +198,31 @@
   .league-team-member-items .tk-line-title { grid-column: 1; }
   .league-team-member-items .tk-line-holder { grid-column: 2; }
   .league-team-member-items .tk-stage-bar { grid-column: 3; }
-  .league-team-empty { margin: 0; border-bottom: var(--edge) solid var(--line); padding: var(--space-5) 0; }
-  .league-team-add { margin-top: var(--space-5); }
+  .league-team-empty { margin: 0; border-bottom: var(--edge) solid var(--line); padding: var(--space-inset) 0; }
+  .league-team-add { margin-top: var(--space-paragraph); }
 
   .tw-docs { display: flex; height: 100%; }
-  .tw-docs .dc-empty { color: var(--fg-strong); font-size: var(--text-4); }
-  .tw-docs .dc-work-record-note { margin-top: var(--space-2); border-top: var(--edge) solid var(--line); padding-top: var(--space-4); color: var(--fg); }
+  .tw-docs .dc-empty { color: var(--fg-strong); font-size: var(--text-body); }
+  .tw-docs .dc-work-record-note { margin-top: var(--space-row); border-top: var(--edge) solid var(--line); padding-top: var(--space-paragraph); color: var(--fg); }
 
   .twb { display: flex; flex-direction: column; min-height: 0; height: 100%; }
-  .twb-thread { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-5) var(--space-6); }
-  .twb-post { display: flex; flex-direction: column; gap: var(--space-2); font-size: var(--text-3); }
+  .twb-thread { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: var(--space-paragraph); padding: var(--space-inset) var(--space-inset); }
+  .twb-post { display: flex; flex-direction: column; gap: var(--space-row); font-size: var(--text-body); }
   .twb-post.owner .twb-head { color: var(--fg-strong); }
   .twb-post.system { color: var(--muted); }
   .twb-head { color: var(--muted); }
   .twb-text { white-space: pre-wrap; overflow-wrap: anywhere; }
-  .twb-cleared { color: var(--muted); font-size: var(--text-2); }
-  .twb-compose { display: flex; gap: var(--space-3); padding: var(--space-4) var(--space-6); border-top: var(--edge) solid var(--line-2); }
+  .twb-cleared { color: var(--muted); font-size: var(--text-small); }
+  .twb-compose { display: flex; gap: var(--space-inline); padding: var(--space-paragraph) var(--space-inline); border-top: var(--edge) solid var(--line-2); }
   .twb-compose textarea { flex: 1 1 auto; resize: vertical; }
 
-  .aa-col { display: flex; flex-direction: column; gap: var(--space-6); min-width: 0; }
+  .aa-col { display: flex; flex-direction: column; gap: var(--space-subsection); min-width: 0; }
   .aa-col[hidden] { display: none; }
 
   /* The one composition body (owner, 2026-10-20): the kit's unnumbered sections, no boxes;
      the tile pads it, an opened roster row does not. */
   .ac-body { display: flex; flex-direction: column; min-width: 0; }
-  .agent-composition .ac-body { padding: var(--space-5); }
+  .agent-composition .ac-body { padding: var(--space-inset); }
   /* One type scale in the body: every line reads at the form's input size (the stones' readings,
      the item lines, the buttons); only the stones' own labels and a status word are notes. */
   .ac-line, .ac-list, .ac-brief { margin: 0; font-size: var(--form-input); line-height: var(--leading-body); overflow-wrap: anywhere; }
@@ -221,6 +233,6 @@
   .ac-brief {
     --ac-brief-h: 18rem;
   }
-  .ac-brief { max-height: var(--ac-brief-h); overflow: auto; border: var(--edge) solid var(--line-2); border-radius: var(--radius-xs); background: var(--well); padding: var(--space-4); color: var(--fg); font-family: inherit; white-space: pre-wrap; }
-  .ac-mandate, .ac-add { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: var(--space-3); }
+  .ac-brief { max-height: var(--ac-brief-h); overflow: auto; border: var(--edge) solid var(--line-2); border-radius: var(--radius-small); background: var(--inset); padding: var(--space-inline); color: var(--fg); font-family: inherit; white-space: pre-wrap; }
+  .ac-mandate, .ac-add { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: var(--space-row) var(--space-inline); }
 }

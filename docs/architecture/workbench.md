@@ -143,7 +143,7 @@ status as its own reads return.
    ownership checks prevent stale responses from repainting replaced surfaces.
 
 **Ronin Home** (`campaign-home.js`; owner, 2026-10-19) stays a page, not a Workbench, with three
-doors — **Models**, **Workspaces**, **Teams** — each a link to a Workbench destination of its own,
+doors — **Models**, **Workspaces**, **Teams**, **Help** — each a link to a Workbench destination of its own,
 opened in the same tab (a modified press opens a new tab through `workbenchLaunchUrl`). The
 Teams door opens the Teams workbench (`#/cowork`, `cowork-view.js`; owner, 2026-10-20). Models and
 Workspaces are one shape (`door-workbenches.js`): the Kit Workbench on a profile of the
@@ -156,12 +156,15 @@ the provider there whole (`models.provider`), the page with no rail. The cards f
 the selector as a solid card (Models, Workspaces) as the Teams card heads the Cowork selector. The Models stones carry
 no refresh door; the selector's second card, **Model refresh** (`models.refresh`, solid utility, after Models), does:
 its surface is the Refresh all control Settings' provider surface carries — the one `createRefreshAll` export, its
-last-ran line and notice — with an empty slot under it for the models.dev update (owner, 2026-10-20). Settings' Model
+last-ran line and notice — with an empty slot under it for the models.dev update (owner, 2026-10-20). The third card,
+**Defaults** (`models.defaults`, solid utility, after Model refresh; owner, 2026-10-21), sets the model a new Agent,
+a new Team lead and Mika start on: ⚙ Configuration's own `models` section drawn alone (`buildMachineSettings(…, { only:
+'models' })`), each row saving itself — one record, two views. Settings' Model
 Providers surface is untouched; all draw with the one drawing `provider-surface.js` exports
 (`createProviderDrawing`, `createRefreshAll`, `providerStones`) over the same record and measure. Workspaces seats
 its own stones of folders the same way (`workspaces-surface.js`, `workspaces.stones`; a dropped
 stone or a folder's card places the folder whole, `workspaces.folder`), its three admin doors —
-Add a workspace, GitHub CLI, Clone a repository — dotted selector cards in the New Agent format,
+Add a workspace (`workspace-add.js`: one surface, three method cards deciding its sections; the old form stays beside it as "Add a workspace (old form)" while the owner compares), GitHub CLI, Clone a repository — dotted selector cards in the New Agent format,
 the folder they add taking their workspace; Settings' Workspace Folders surface is untouched,
 both drawing with `projectroots.js`'s exported drawing (`createRootDrawing`, `rootStone`) over
 one read per bench (`createRootsReading`, the detail route). The bar's crumb (`workspace-header.js`;
@@ -175,7 +178,12 @@ topic in Show's order, the phalanx laying the stones and their cells on one grid
 a row aligned across the stones (`branches: 'column'`, a row's `under`; `teams-surface-rows.js`
 over the pushed rosters' `board` and `items`): Theme and State plain clamped text, each Agent and
 each Item a branch row; the 人 mark in a stone's corner opens the Team page in a new tab.
-The gate (owner, 2026-10-19): as on the old root, the three doors are locked until one model
+Help (owner, 2026-10-21) is the same door shape seating two workspaces: the help outline
+(`help.outline`, `help-outline.js`) in Workspace 1 and Mika (`help.mika`) in Workspace 2. A Tile
+built with `opensOn: 'reading'` spends the touch screens' open-on-the-reading intention on a desk too,
+and before her record has anything in it; a Mika born by the seat gets a fresh tile once she is up.
+The gate (owner, 2026-10-19): as on the old root, the Models, Workspaces and Teams doors are locked (Help
+stays open, owner 2026-10-21; with no provider its Mika seat is one line pointing to Setup) until one model
 provider is activated (`/api/setup/runtime`'s `activated_count`), each saying so under its name,
 and Settings is the one live stone — a new user's way in is Setup.
 
@@ -309,6 +317,7 @@ The door's own destination over the provider drawing Settings and Setup share.
 |---|---|
 | Model stones (`models.stones`) | the recorded provider summary and catalog through `recordRuntime()`; a measure only on a press, as on Settings |
 | Model refresh (`models.refresh`) | the same record; the Refresh all press (`/api/setup/providers/refresh`) through the shared drawing's measure; the slot under it is the models.dev update's |
+| Defaults (`models.defaults`) | `GET /api/machine-settings`, the schema's `models` section; each row PATCHes `agents` (`sessions.default`, `sessions.lead`, `jobs.mikaassist.level`) |
 | Model provider (`models.provider`) | the same record for the one provider named in its detail; its selector cards come from `providerOffers()` over the same record |
 
 ### Workspaces (`workspaces` profile)
@@ -320,7 +329,8 @@ folders per bench (`/api/project-roots/detail`) that every surface on it hears.
 |---|---|
 | Folder stones (`workspaces.stones`) | the bench's folder read; its selector cards (`folderOffers`) read the same |
 | Folder (`workspaces.folder`) | the one folder named in its detail from the same read; its writes re-read it for every surface |
-| Add a workspace (`workspaces.new`) | the add form's own reads (inspect, suggest) and the Campaign id; the folder it adds takes its workspace |
+| Add a workspace (`workspaces.add`, `workspace-add.js`) | one surface in the launch forms' sections: section 1 is three cards, the method (New folder · A folder on this machine · From GitHub), and the card chosen decides the sections under it (Name and Where; Folder, Name, How Agents work here; Repository, Name, How Agents work here; that section says in a line what each option is). Reads the folders (`/api/folders`; a folder that is already a workspace is left out, with everything inside it, until the discreet Show all under the list), inspect, the GitHub sign-in state; writes `/api/folders`, `/api/project-roots`, the clone route and the repo profile. The folder it adds takes its workspace. Owner, 2026-10-21; Lab wip/buildouts/ADD_A_WORKSPACE.md |
+| Add a workspace (old form) (`workspaces.new`) | the add form `projectroots.js` draws, kept beside the new one while the owner compares them; the folder it adds takes its workspace |
 | GitHub CLI / Clone a repository (`workspaces.github`, `workspaces.clone`) | the GitHub setup read and session attachment `github-workspace-setup.js` owns, one instance per bench |
 
 ### Agent (`agent` profile)

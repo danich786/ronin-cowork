@@ -27,15 +27,17 @@ test('Ronin Home\u2019s Models and Workspaces doors each open their own workbenc
   assert.match(home, /ctx\?\.navigate\(route\)/, 'a plain press opens the workbench in this tab');
   // THE GATE (owner, 2026-10-19): as on the old root, the doors are locked until one model
   // provider is activated and Settings is the one live stone, so a new user's way in is Setup.
-  assert.match(home, /const locked = !runtimeKnown \|\| activatedCount < 1;/, 'the doors lock until a provider is activated');
+  // Help is outside the gate: a new user needs it before Setup (owner, 2026-10-21).
+  assert.match(home, /const locked = door\.gated !== false && \(!runtimeKnown \|\| activatedCount < 1\);/, 'the doors lock until a provider is activated');
+  assert.match(home, /key: 'help'[^\n]*gated: false/, 'Help opens before a provider');
   assert.match(home, /if \(locked\) return;\s*ctx\?\.navigate\(route\)/, 'a locked door does not open');
   assert.match(home, /request\('\/api\/setup\/runtime', \{ cache: 'no-store' \}\)/, 'the gate reads the runtime once on enter');
   assert.match(home, /setup\.provider_gate/, 'a locked door says where the way in is');
   assert.match(home, /campaign_home\.settings', 'Settings'/);
   assert.match(doors, /seat: WORKBENCH_TYPES\.modelStones,/, 'Models seats its own stones of providers');
-  assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.models, \[WORKBENCH_TYPES\.modelStones, WORKBENCH_TYPES\.modelRefresh, WORKBENCH_TYPES\.modelProvider\]\)/, 'Model refresh follows Models; a provider whole is placeable on Models, by a dragged stone or its card');
+  assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.models, \[WORKBENCH_TYPES\.modelStones, WORKBENCH_TYPES\.modelRefresh, WORKBENCH_TYPES\.modelDefaults, WORKBENCH_TYPES\.modelProvider\]\)/, 'Model refresh then Defaults follow Models; a provider whole is placeable on Models, by a dragged stone or its card');
   assert.match(doors, /seat: WORKBENCH_TYPES\.folderStones,/, 'Workspaces seats its own stones of folders');
-  assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.workspaces, \[WORKBENCH_TYPES\.folderStones, WORKBENCH_TYPES\.folder, WORKBENCH_TYPES\.folderNew, WORKBENCH_TYPES\.folderGithub, WORKBENCH_TYPES\.folderClone\]\)/, 'a folder whole and the three admin doors are placeable on Workspaces');
+  assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.workspaces, \[WORKBENCH_TYPES\.folderStones, WORKBENCH_TYPES\.folder, WORKBENCH_TYPES\.folderAdd, WORKBENCH_TYPES\.folderNew, WORKBENCH_TYPES\.folderGithub, WORKBENCH_TYPES\.folderClone\]\)/, 'a folder whole and the three admin doors are placeable on Workspaces');
   assert.match(home, /key: 'teams', route: 'cowork'/, 'the Teams door opens the Teams workbench at #/cowork (owner, 2026-10-20)');
   // The crumb (owner, 2026-10-20): RoninCowork • Home • Teams • <Team title>; before, a Team page read
   // 'RoninCowork • Teams' with no Home and no name, and Home's doors hid the Teams step.
@@ -108,7 +110,7 @@ test('Setup hints start collapsed without inheriting another workbench preferenc
 
 test('phone Setup workspaces keep one common viewport height for stone rail scrolling', async () => {
   const kit = await source('workspace-kit.css');
-  assert.match(kit, /data-workbench-profile='setup'\] \.wk-workbench-column \{ height: calc\(100dvh - var\(--row-head\) - var\(--space-6\)\); min-height: 0; \}/);
+  assert.match(kit, /data-workbench-profile='setup'\] \.wk-workbench-column \{ height: calc\(100dvh - var\(--row-head\) - var\(--space-inset\)\); min-height: 0; \}/);
   assert.match(kit, /\.wk-surface-content:has\(\.sws\) \{ display: flex; flex-direction: column; overflow: hidden; \}/);
   assert.match(kit, /\.wk-surface-content:has\(\.sws\) > :has\(> \.sws\) \{ flex: 1 1 auto; min-height: 0; \}/);
   assert.doesNotMatch(kit, /data-workbench-profile='setup'\] \.wk-workbench-column \{ height: auto; \}/);
@@ -121,7 +123,7 @@ test('launch actions reuse the nin mark, never the Team Roster torii, and open t
     source('js/workspace.js'), source('js/new-agent.js'), source('js/new-team-form.js'),
   ]);
   assert.match(primitives, /el\.append\(ninMark\('wk-launch-mark'\)/);
-  assert.match(kit, /\.wk-action\[data-launch='true'\] \{ border-color: var\(--kaki\); background: var\(--raise\);/);
+  assert.match(kit, /\.wk-action\[data-launch='true'\] \{ border-color: var\(--kaki\); background: var\(--surface\);/);
   assert.match(workspace, /window\.open\(url\.href, '_blank', 'noopener'\)/);
   for (const caller of [agent, team]) {
     assert.match(caller, /launch: true/);

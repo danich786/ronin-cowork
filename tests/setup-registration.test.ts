@@ -159,8 +159,8 @@ test('Register presents one open profile flow with card choices and anonymous de
   assert.doesNotMatch(source, /Which of these things Ronin does would you appreciate most\?/);
   assert.doesNotMatch(source, /setup-register-half/, 'About you stacks its questions at every width');
   assert.doesNotMatch(css, /@container setup-register[^}]*\.setup-register-group \{ grid-template-columns: repeat\(2/, 'groups never split into two columns');
-  assert.match(css, /\.setup-register-group > :not\(h3\) \+ :not\(h3\) \{ margin-top: var\(--space-6\); \}/, 'questions breathe more than the lines inside them');
-  assert.match(css, /\.setup-register-check \{[^}]*padding: var\(--space-1\) 0;/, 'checklist lines sit tight');
+  assert.match(css, /\.setup-register-group > :not\(h3\) \+ :not\(h3\) \{ margin-top: var\(--space-subsection\); \}/, 'questions breathe more than the lines inside them');
+  assert.match(css, /\.setup-register-check \{[^}]*padding: var\(--space-row\) 0;/, 'checklist lines sit tight');
   assert.doesNotMatch(source, /Why is that useful to you\?/);
   for (const reason of ['own_instructions', 'no_collisions']) assert.match(source, new RegExp(`\\['${reason}', `));
   assert.match(source, /reads by default/);

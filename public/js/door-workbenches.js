@@ -8,7 +8,9 @@
  * Workspace 1 on first open. Models seats its own stones of providers (models-surface.js), a
  * stone dragged into a workspace or a selector card placing that provider whole; Workspaces
  * seats its own stones of folders (workspaces-surface.js) the same way, its three admin doors
- * dotted selector cards.
+ * dotted selector cards. Help (owner, 2026-10-21) seats the help outline in Workspace 1 and Mika
+ * in Workspace 2, her ordinary tile opened on her reading: a chat, not a terminal. Help is outside
+ * Home's provider gate; with no provider Mika's seat says so in one line instead of her tile.
  */
 import { WorkspaceKit } from './workspace-kit.js';
 import { t } from './lexicon.js';
@@ -16,20 +18,27 @@ import { workbenchView } from './workspace-contract.js';
 import { registerWorkbenchCatalog, WORKBENCH_PROFILES, WORKBENCH_TYPES } from './workbench-catalog.js';
 import { createProviderSetupSessionMount } from './provider-setup-session.js';
 import { loadProviderCatalog } from './form-steps.js';
-import { createModelProvider, createModelRefresh, createModelStones, providerOffers } from './models-surface.js';
+import { createModelDefaults, createModelProvider, createModelRefresh, createModelStones, providerOffers } from './models-surface.js';
 import { createGithubWorkspaceSetup } from './github-workspace-setup.js';
 import { createFolder, createFolderClone, createFolderGithub, createFolderNew, createFolderStones, createRootsReading, folderOffers } from './workspaces-surface.js';
+import { createWorkspaceAdd } from './workspace-add.js';
 import { campaignById, loadCampaigns, normalizeSelection } from './campaigns.js';
+import { createHelpOutline } from './help-outline.js';
+import { createMikaTilePool } from './mika.js';
+import { readyMika } from './mika-ready.js';
+import { S } from './state.js';
+import { request } from './request.js';
 
 const blank = (id) => WorkspaceKit.primitives.createBlankSurface(id.replace('workspace', 'Workspace ')).el;
 
 /**
- * One door's workbench. `seat` is the type Workspace 1 holds on first open; `environment`
+ * One door's workbench. `seat` is the type Workspace 1 holds on first open (`seats` names every
+ * workspace's when there is more than one); `environment`
  * builds the surfaces' resident data over the bench; `cards` false leaves the selector
  * without cards; `loaded` is a read the seats are re-placed after (the folders need the
  * Campaign); `destroy` lets the surfaces go with the view.
  */
-function doorWorkbench({ id, profile, label, seat, environment, cards = true, loaded = null, destroy = () => {} }) {
+function doorWorkbench({ id, profile, label, seat, seats = { workspace1: seat }, environment, cards = true, loaded = null, destroy = () => {} }) {
   registerWorkbenchCatalog();
   const { normalizeWorkbenchState } = WorkspaceKit.contract;
   let ctx = null, entered = false, bench = null;
@@ -53,7 +62,7 @@ function doorWorkbench({ id, profile, label, seat, environment, cards = true, lo
       const { state: entry } = context.workbenchEntry({
         count: 2, selected: 'workspace1',
         arrangement: normalizeWorkbenchState(null, bench.declaration).arrangement,
-        seats: { workspace1: seat },
+        seats,
       });
       const typed = normalizeWorkbenchState(entry, bench.declaration);
       bench.enter({ ...typed, ...entry });
@@ -85,6 +94,7 @@ export function createModelsView() {
         providers: providerOffers,
         modelStones: (workspace) => keep(createModelStones({ workspace, detail: {}, environment, workbench: bench() })),
         modelRefresh: (workspace) => keep(createModelRefresh({ workspace, detail: {}, environment, workbench: bench() })),
+        modelDefaults: () => createModelDefaults(),
         modelProvider: (workspace, detail) => keep(createModelProvider(detail.key, { workspace, detail, environment, workbench: bench() })),
       };
       return environment;
@@ -116,6 +126,7 @@ export function createWorkspacesView() {
         folderStones: () => keep(createFolderStones({ reading, campaignId, workbench: bench() })),
         folder: (_workspace, detail) => keep(createFolder(detail.key, { reading, campaignId })),
         folderNew: (workspace) => keep(createFolderNew({ reading, campaignId, placeFolder: (name) => placeFolder(name, workspace) })),
+        folderAdd: (workspace) => keep(createWorkspaceAdd({ campaignId, placeFolder: async (name) => { await reading.read(); placeFolder(name, workspace); }, signIn: () => bench().place(WORKBENCH_TYPES.folderGithub, workspace === 'workspace1' ? 'workspace2' : 'workspace1') })),
         folderGithub: () => keep(createFolderGithub(github ??= boxes())),
         folderClone: (workspace) => { cloneSeat = workspace; return keep(createFolderClone(github ??= boxes())); },
       };
@@ -126,5 +137,51 @@ export function createWorkspacesView() {
       return environment;
     },
     destroy: () => { for (const surface of made.splice(0)) surface.destroy?.(); github?.destroy(); github = null; providerSessions.destroyAll(); },
+  });
+}
+
+/** Help: the help outline in Workspace 1, Mika in Workspace 2 opened on her reading; both solid cards.
+ * Seating her starts her the way her Settings card does, once Home's fact says a provider is activated. */
+export function createHelpView() {
+  const MIKA = 'mika_agent';
+  const { surface: mikaSurface, pool: mikaPool } = createMikaTilePool({ opensOn: 'reading' });
+  const outlines = [];
+  const none = document.createElement('p');
+  none.className = 'help-mika-none';
+  none.hidden = true;
+  const setup = Object.assign(document.createElement('a'), { href: '#/setup', textContent: t('help_outline.mika_setup', 'Setup') });
+  none.append(t('help_outline.mika_needs_provider', 'Mika needs a model provider. Activate one in '), setup, '.');
+  mikaSurface.content.append(none);
+  // A terminal seat carries a tile head from the moment it is placed; until the provider read
+  // answers (or when it says none) that head is an unconnected tile, kept out of sight.
+  let standIn = null;
+  // Her tile is up at once. If she was not running, the tile is made again once she is, so it
+  // asks her new record for the reading.
+  const seatMika = () => {
+    const born = S.sessions.some((session) => session.name === MIKA);
+    mikaPool.sync([MIKA]);
+    mikaPool.show(MIKA, false);
+    void readyMika('help').then((ready) => {
+      if (born || !ready || (!ready.ok && ready.data?.state !== 'action_required')) return;
+      mikaPool.sync([]);
+      mikaPool.sync([MIKA]);
+      mikaPool.show(MIKA, false);
+    });
+  };
+  return doorWorkbench({
+    id: 'help', profile: WORKBENCH_PROFILES.help, label: t('campaign_home.help', 'Help'),
+    seats: { workspace1: WORKBENCH_TYPES.helpOutline, workspace2: WORKBENCH_TYPES.helpMika },
+    environment: () => ({
+      helpOutline: () => { const outline = createHelpOutline(); outlines.push(outline); return outline; },
+      helpMika: () => ({ el: mikaSurface.el, show: () => {
+        if (!standIn) { standIn = WorkspaceKit.adapters.createTerminalTileHost({ mode: 'full' }); mikaSurface.content.append(standIn.el); standIn.mount(''); standIn.hide(); }
+        void request('/api/setup/runtime', { cache: 'no-store' }).then((result) => {
+          const activated = result.ok && Number(result.data?.activated_count) > 0;
+          none.hidden = activated;
+          if (activated) seatMika();
+        });
+      } }),
+    }),
+    destroy: () => { for (const outline of outlines.splice(0)) outline.destroy(); mikaPool.destroyAll(); standIn?.destroy(); standIn = null; },
   });
 }

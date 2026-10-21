@@ -34,6 +34,27 @@ const RENAMED = {
   '--cowork-head-line': heads('line'),
   '--cowork-surface-head-edge': heads('edge'),
   '--cowork-head-attention': ['--head-attention'],
+  // cut 10: the rulers became roles. An old rung paints the roles it mostly served.
+  '--muted-2': ['--muted'],
+  '--dim': ['--muted'],
+  '--text-1': ['--text-small'], '--text-micro': ['--text-small'], '--text-2': ['--text-small'],
+  '--text-3': ['--text-body'], '--text-4': ['--text-body', '--term-size'], '--text-5': ['--text-label'],
+  '--text-6': ['--text-heading'], '--text-7': ['--text-heading'], '--text-8': ['--text-heading'],
+  '--text-9': ['--text-display'], '--text-10': ['--text-display'],
+  '--space-1': ['--space-row'], '--space-2': ['--space-row'],
+  '--space-3': ['--space-inline'], '--space-4': ['--space-inline', '--space-paragraph'], '--space-5': ['--space-control'],
+  '--space-6': ['--space-inset'], '--space-7': ['--space-inset'], '--space-8': ['--space-subsection'],
+  '--space-9': ['--space-section'], '--space-10': ['--space-section'], '--space-11': ['--space-section'], '--space-12': ['--space-section'],
+  '--radius-xs': ['--radius-small'], '--radius-sm': ['--radius-small'],
+  '--radius-md': ['--radius-large'], '--radius-lg': ['--radius-large'], '--radius-xl': ['--radius-large'],
+  '--weight-medium': ['--weight-strong'],
+  '--leading-loose': ['--leading-body'],
+  // cut 13: two neutral surfaces. --panel was the base and --well the inside; --bg, --bg-2 and
+  // --raise were shades with no purpose left, so a skin's --panel/--well carry its look over.
+  '--panel': ['--surface'], '--well': ['--inset'],
+  '--bg': [], '--bg-2': [], '--raise': [],
+  '--term-panel': [], '--term-well': [], '--term-tape-bg': [], '--term-jump-bg': [], '--term-jump-bg-2': [],
+  '--accent-soft': [],
 };
 const DARK_ONLY = {
   '--kiiro': '--head-attention',
