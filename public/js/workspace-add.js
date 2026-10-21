@@ -85,6 +85,7 @@ export function createWorkspaceAdd({ campaignId, placeFolder, signIn }) {
   const add = createAction({ label: t('roots.add_save', 'Add'), launch: true, size: 'compact', disabled: true, action: () => void doAdd() });
   const surface = createSurface({ label: t('roots.add_stone', 'Add a workspace'), className: 'setup-surface wa-surface', actions: [add] });
   surface.header?.el.classList.add('launch-form-head');
+  surface.content.classList.add('wa-content');
   const form = el('div', 'fs-steps wa-form');
   const word = status('wa-status');
   surface.content.append(form, word.el);
