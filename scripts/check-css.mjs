@@ -230,7 +230,7 @@ const FLOOR = [
   ['--bad-fg', '--bad-ground', 7],
   ['--head-team-fg', '--head-team-bg', 7], ['--head-team-muted', '--head-team-bg', 4.5],
   ['--head-attention', '--head-team-bg', 4.5],
-  ['--term-fg', '--term-bg', 7], ['--term-tape-fg', '--term-tape-bg', 7], ['--term-input-fg', '--term-well', 7],
+  ['--term-fg', '--term-bg', 7], ['--term-fg', '--term-ansi-br-black', 7], ['--term-tape-fg', '--term-tape-bg', 7], ['--term-input-fg', '--term-well', 7],
 ];
 for (const [name, toks] of [['dark', darkTokens], ['light', lightTokens]]) {
   for (const [fg, bg, floor] of FLOOR) {

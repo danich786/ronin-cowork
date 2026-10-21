@@ -80,7 +80,7 @@
   --term-ansi-magenta: #b294bb;
   --term-ansi-cyan: #8abeb7;
   --term-ansi-white: var(--fg);
-  --term-ansi-br-black: #6b7488;
+  --term-ansi-br-black: #252d40; /* the band behind the person's messages: a dark neutral --term-fg reads on */
   --term-ansi-br-red: #d54e53;
   --term-ansi-br-green: #b9ca4a;
   --term-ansi-br-yellow: #e7c547;
@@ -325,6 +325,8 @@ body {
 body {
   display: flex;
   flex-direction: column;
+  /* text is body unless it says otherwise: nothing inherits the browser's 16px */
+  font-size: var(--text-body);
   /* THE APPLICATION IS THE VISIBLE RECTANGLE — where it is as well as how big
      (js/appheight.js). Fixed to the top of the visible window rather than the top of the
      page, because iOS pans one without the other; `top`, never a transform, since a
@@ -655,6 +657,7 @@ body {
 #bar {
   display: flex;
   align-items: center;
+  font-size: var(--bar-nav-size); /* the bar's words are navigation */
   gap: var(--space-inline);
   padding: var(--space-paragraph) var(--space-inline);
   padding-top: max(var(--space-inline), env(safe-area-inset-top));

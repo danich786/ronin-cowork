@@ -74,7 +74,8 @@ and could not get a radius right.
 **Roles, not rulers (owner, cut 10).** There is no numbered scale: a ruler of eleven sizes only
 moves the arbitrary pick from the CSS into the token. Choose by what the thing IS. When a
 surface has no heading or section structure to tell you, pick the nearest meaning and say so in
-a comment.
+a comment. `body` is `--text-body`, so un-sized text is body; anything larger names its role
+(the top bar names `--bar-nav-size`, a stone's launch mark `--text-heading`, since `1.25em` of it).
 
 | You are spacing or sizing… | Token |
 |---|---|
@@ -233,7 +234,9 @@ scheme, two grounds. Two departures from stock, both forced by the paper:
   fault Solarized Light is known for. Here 7 is `--fg` and 15 is `--fg-strong`, so
   bright white stays the strongest mark, which is the role the emitting code means.
   Bright black (8) is the exception to 3:1: agent CLIs paint it as a BACKGROUND band, so
-  it is a light neutral that `--term-fg` reads on.
+  in both shells it is a neutral near the surface (light grey on paper, a dark band near
+  `--raise` on the dark shell) that `--term-fg` reads on at the 7:1 floor, which `check-css`
+  holds. The cost is `\e[90m` dim text, which fades in both shells.
 
 half a terminal palette; the other 240 are the xterm cube, and a program that addresses
 those was left painting for a ground that had gone. `theme.js` generates all 240

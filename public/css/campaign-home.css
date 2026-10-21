@@ -140,6 +140,7 @@
     background: var(--panel);
     color: var(--muted);
     font: inherit;
+    font-size: var(--text-label);
     cursor: pointer;
   }
   .ch-settings:hover, .ch-settings:focus-visible { border-color: var(--kaki); color: var(--fg-strong); }
