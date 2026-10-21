@@ -39,7 +39,7 @@ import { saveRow } from './save-row.js';
  * more than a generic renderer could say. Layout — which schema section lands in
  * which group — is this room's own furniture.
  */
-export function buildMachineSettings(root, isShowing) {
+export function buildMachineSettings(root, isShowing, { only = null } = {}) {
   let rec = null;
   let deskProfiles = []; // /api/desk-profiles — the ⚙ select's options (R38)
 
@@ -137,7 +137,7 @@ export function buildMachineSettings(root, isShowing) {
       { key: 'provider', label: t('forms.provider', 'Model provider'), blank: t('settei.none_set', '— none set —'), options: providers.map((item) => ({ v: item.provider, l: item.provider_label, off: item.operational ? '' : reason(item) })) },
       { key: 'model', label: t('forms.model', 'Model'), blank: t('settei.none_set', '— none set —'), after: 'provider', options: (value) => catalog.filter((item) => item.provider === value.provider).map((item) => ({ v: item.model, l: modelLabel(item), word: item.tier, sub: item.cost || '', off: item.selectable ? '' : reason(item) })) },
     ];
-    const pair = ask([{ group: fixed ? '' : t('new_agent.model_package', 'Model'), fields }], {
+    const pair = ask([{ group: fixed ? '' : f.label, fields }], {
       value: picked,
       onChange: (value) => {
         picked = { provider: fixed || value.provider || '', model: value.model || '' };
@@ -192,6 +192,14 @@ export function buildMachineSettings(root, isShowing) {
     const m = observed.machine;
     const fieldsIn = (test) => schema.fields.filter(test).map(schemaRow);
 
+    // One section drawn alone, where another surface shows the same rows (Models > Defaults).
+    if (only) {
+      blurb.textContent = schema.sections.find((s) => s.id === only)?.lede ?? '';
+      stamp.textContent = '';
+      for (const row of fieldsIn((f) => f.sec === only && f.lands)) body.appendChild(row);
+      return;
+    }
+
     blurb.textContent = t('settei.blurb', 'What this install is set to — and what it is running on.');
     stamp.textContent = t('settei.measured', 'measured {time}', { time: new Date(observed.observed_at).toLocaleString() });
 
@@ -238,7 +246,7 @@ export function buildMachineSettings(root, isShowing) {
 
     /* how work gets a model */
     group(t('settei.group_models', 'how work gets a model'));
-    for (const row of fieldsIn((f) => f.sec === 'defaults' && f.lands?.family === 'agents')) body.appendChild(row);
+    for (const row of fieldsIn((f) => (f.sec === 'models' || f.sec === 'defaults') && f.lands?.family === 'agents')) body.appendChild(row);
     // Jobs the registry already edits above render once, not twice.
     const managed = new Set(
       schema.fields.map((f) => f.lands?.key).filter((k) => k?.startsWith('jobs.')).map((k) => k.split('.')[1]),

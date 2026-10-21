@@ -92,13 +92,11 @@ test('every question is an ERABI stone whose reading is the saved answer', async
   renderTeamConfiguration(host, roster);
   const form = await painted(host);
   assert.deepEqual(form.all('ask-stone').map((node) => node.dataset.askKey), [
-    'kind', 'root', 'repos', 'provider', 'model', 'reach', 'recruit', 'output', 'launch_mode',
+    'kind', 'root', 'repos', 'reach', 'recruit', 'output', 'launch_mode',
   ], 'the stones in the tab’s order: Kind on the head line, then the New Agent defaults; no behaviour or Control stone');
   assert.equal(readingOf(form, 'root'), 'Ronin Cowork', 'Born in reads the Workspace Folder’s title');
   assert.equal(readingOf(form, 'repos'), 'Ronin Services');
   assert.equal(readingOf(form, 'kind'), 'Coding');
-  assert.equal(readingOf(form, 'provider'), 'OpenAI');
-  assert.equal(readingOf(form, 'model'), 'GPT-5.6-Sol', 'the reading shows the CLI\'s own name; the saved value stays the id');
   assert.equal(readingOf(form, 'reach'), 'Plan');
   assert.equal(readingOf(form, 'launch_mode'), 'Dangerously');
 });
@@ -123,7 +121,7 @@ test('the tab is the launch forms’ format: step 1 Team (ID · Title · Kind, t
   assert.equal(purpose.one('wk-field-control').value, 'Polish.');
   const defaults = form.all('fs-step')[1];
   assert.match(defaults.one('fs-step-help').textContent, /each new Agent on this Team starts from/);
-  assert.deepEqual(defaults.all('ask-group-head').map((node) => node.textContent), ['Where it works', 'Model', 'Mandate', 'Launch mode'], 'everything under Purpose is a New Agent default');
+  assert.deepEqual(defaults.all('ask-group-head').map((node) => node.textContent), ['Where it works', 'Mandate', 'Launch mode'], 'everything under Purpose is a New Agent default');
   assert.equal(form.all('wk-field-label').some((node) => /References/.test(node.textContent)), false, 'no references — that field left the shape');
   for (const node of form.walk()) {
     assert.notEqual(node.tagName, 'SELECT', 'no native select');
@@ -161,7 +159,7 @@ test('Save leaves behaviours untouched and carries agent defaults without permis
   assert.equal('behaviours' in body, false, 'behaviours are not sent, so the store carries them');
   assert.equal(body.agent_defaults.note, 'carried', 'a key the tab does not draw is carried');
   assert.equal('permissions' in body.agent_defaults, false, 'the retired key is not rewritten');
-  assert.equal(body.agent_defaults.model, 'gpt-5.6-sol');
+  assert.equal('model' in body.agent_defaults || 'provider' in body.agent_defaults, false, 'the model is Models > Defaults\', not the Team\'s (owner, 2026-10-21)');
   assert.deepEqual(body.agent_defaults.output, ['open']);
   assert.ok(savedRoster, 'onSaved received the server’s roster');
   assert.equal(form.one('tw-config-status').textContent, 'Saved');

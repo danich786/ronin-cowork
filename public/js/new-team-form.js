@@ -10,7 +10,7 @@ import { agentPicks, agentRow, createAgentRows } from './team-agents.js';
 import { openLaunchHandoff } from './launch-handoff.js';
 import { launchTeamAgents } from './team-loader.js';
 import {
-  createStep, el, loadProviderCatalog, mandateWord, modelLabel, priceText, providerCatalog, readingRows, tagRow, templateTray, tierWord,
+  createStep, el, loadProviderCatalog, mandateWord, providerCatalog, readingRows, tagRow, templateTray,
 } from './form-steps.js';
 import { closeWorkspaceTab, reserveWorkspaceTab } from './workspace.js';
 
@@ -26,7 +26,7 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
     template: '', templateName: '', title: '',
     name: '', kind: 'open', objective: '',
     root: '', repos: [], branches: {},
-    provider: '', model: '', reach: 'open', recruit: 'open', output: ['open'],
+    reach: 'open', recruit: 'open', output: ['open'],
     books: [], launchMode: 'configured',
     // The Agents this Team is raised with.
     agents: [],
@@ -62,18 +62,8 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
   const templateRow = () => templates.find((row) => row.name === draft.template) || null;
   const offered = () => (draft.kind === 'open' ? templates : templates.filter((row) => row.kinds.includes(draft.kind)));
   const availableBehaviours = () => (seed?.behaviours || []).filter((row) => row.available === true);
-  const providerRows = () => providerCatalog().rows
-    .filter((row, at, all) => all.findIndex((other) => other.provider === row.provider) === at)
-    .map((row) => {
-      const unavailable = row.operational ? '' : row.off
-        ? t('forms.reason_turned_off', 'turned off')
-        : t('forms.reason_not_on_machine', 'not on this machine');
-      return { v: row.provider, l: row.cli_label || row.provider_label || row.provider, off: unavailable || undefined };
-    });
-  const modelRows = (provider) => providerCatalog().rows.filter((row) => row.provider === provider).map((row) => ({
-    v: row.model, l: modelLabel(row), word: tierWord(row.tier), sub: priceText(row.info),
-    off: row.selectable ? undefined : row.off ? t('forms.reason_turned_off', 'turned off') : t('forms.reason_not_on_machine', 'not on this machine'),
-  }));
+  // The provider the next Agent defaults to (Models > Defaults): which launch modes it offers.
+  const defaultProvider = () => seed?.seeds?.provider?.value || '';
 
   /** What a template authors, as one string — the dirty test compares against it. */
   const authored = () => JSON.stringify({
@@ -234,21 +224,17 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
   };
   let reposTouched = false;
   const whereQuestions = ask([
-    { group: t('new_agent.model_package', 'Model'), fields: [
-      { key: 'provider', label: t('forms.provider', 'Model provider'), blank: t('forms.default', 'Default'), options: providerRows },
-      { key: 'model', label: t('forms.model', 'Model'), blank: t('forms.default', 'Default'), after: 'provider', options: (value) => modelRows(value.provider) },
-    ] },
     { group: t('where.label', 'Where it works'), fields: [
       { key: 'root', label: t('where.born_in', 'Born in'), blank: t('new_team.root_default', 'The box’s default'), options: () => rootRows() },
       { key: 'repos', label: t('new_agent.workspaces', 'Workspaces'), many: true,
         options: () => rootRows(true), row: branchField },
     ] },
   ], {
-    value: { provider: draft.provider, model: draft.model, root: draft.root, repos: draft.repos },
+    value: { root: draft.root, repos: draft.repos },
     className: 'ntf-where-questions',
     density: 'tight',
     onChange: (value, key) => {
-      draft.provider = value.provider; draft.model = value.model; draft.root = value.root;
+      draft.root = value.root;
       draft.repos = value.repos;
       if (key === 'repos') reposTouched = true;
       // Born in is where the Team works until the hand picks Workspaces itself.
@@ -262,7 +248,6 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
   });
   stepWhere.body.append(whereQuestions.el);
   function paintRoots() {
-    whereQuestions.set('provider', draft.provider); whereQuestions.set('model', draft.model);
     whereQuestions.set('root', draft.root); whereQuestions.set('repos', draft.repos);
   }
   const whereSummary = () => t('where.summary', 'born in {root} · {repos}', {
@@ -287,7 +272,7 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
   /* Launch mode is an agent default like the model: it lands in the next Agent form and
      the hand has the last word. js/new-agent.js carries the whole argument. */
   const LAUNCH_MODES = () => {
-    const supported = providerCatalog().providers.find((row) => row.provider === draft.provider)?.launch_modes || ['configured'];
+    const supported = providerCatalog().providers.find((row) => row.provider === defaultProvider())?.launch_modes || ['configured'];
     return [{ key: 'configured', label: t('launch_mode.configured', 'Native'),
       sub: t('launch_mode.configured_sub', 'Do not override the provider CLI’s approval behavior. Model selection is separate.') },
     ...(supported.includes('live_dangerously') ? [{ key: 'live_dangerously', label: t('launch_mode.live', 'Dangerously'),
@@ -297,7 +282,7 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
   let kitQuestions = null;
   let kitSignature = '';
   function paintKitQuestions() {
-    const signature = JSON.stringify([availableBehaviours().map((row) => row.name), draft.provider, LAUNCH_MODES().map((row) => row.key)]);
+    const signature = JSON.stringify([availableBehaviours().map((row) => row.name), defaultProvider(), LAUNCH_MODES().map((row) => row.key)]);
     if (!LAUNCH_MODES().some((row) => row.key === draft.launchMode)) draft.launchMode = 'configured';
     if (signature !== kitSignature) {
       kitQuestions?.destroy();
@@ -380,12 +365,11 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
     foot.append(readingRows([
       [t('kind', 'Kind'), draft.kind],
       [t('behaviours', 'Behaviours'), draft.books.length ? tagRow(draft.books.map((text) => ({ text, on: true }))) : ''],
-      [t('forms.model', 'model'), draft.provider ? `${draft.provider}${draft.model ? ` / ${modelLabel(draft)}` : ''}` : t('forms.default', 'default')],
       [t('launch_mode.head', 'launch mode'), LAUNCH_MODES().find((row) => row.key === draft.launchMode)?.label || draft.launchMode],
       [t('mandate', 'Mandate'), `${draft.reach} · ${draft.recruit} · ${draft.output.join(', ')}`],
       [t('add_agent.still_asked', 'still asked'), tagRow([
         t('session_type', 'Session type'), t('add_agent.name', 'name'), t('add_agent.instruction', 'instruction'),
-        ...(draft.provider ? [] : [t('forms.model', 'model')]),
+        t('forms.model', 'model'),
       ])],
     ]));
   }
@@ -430,7 +414,6 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
     branches: draft.branches,
     behaviours: { selected: [...draft.books], required: [] },
     agent_defaults: {
-      provider: draft.provider, model: draft.model,
       reach: draft.reach, recruit: draft.recruit, output: draft.output,
       launch_mode: draft.launchMode,
     },
@@ -560,8 +543,6 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
     const value = (field) => seed.seeds?.[field]?.value;
     draft.root = value('project_root') || '';
     draft.repos = Array.isArray(value('repos')) ? [...value('repos')] : [];
-    draft.provider = value('provider') || '';
-    draft.model = value('model') || '';
     for (const key of ['reach', 'recruit']) {
       if (value(key)) draft[key] = value(key);
     }

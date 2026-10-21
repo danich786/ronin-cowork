@@ -392,6 +392,7 @@ const typedStr = (v: unknown): string | null =>
 
 const sessionDefaults = (v: unknown): Record<string, unknown> => ({
   default: (v as Record<string, unknown>)?.default ?? { provider: null, model: null },
+  lead: (v as Record<string, unknown>)?.lead ?? { provider: null, model: null },
   by_provider: (v as Record<string, unknown>)?.by_provider ?? {},
 });
 
@@ -786,7 +787,11 @@ export const MACHINE_SETTINGS_WRITERS = {
     const prior = await readAgentsSection();
     const incomingSessions = (body.sessions ?? {}) as Record<string, unknown>;
     const priorSessions = (prior.sessions ?? {}) as Record<string, unknown>;
-    const incomingDefault = (incomingSessions.default ?? {}) as Record<string, unknown>;
+    const pair = (incoming: unknown, prior: unknown) => {
+      if (incoming === undefined) return prior ?? { provider: null, model: null };
+      const named = (incoming ?? {}) as Record<string, unknown>;
+      return { provider: editString(named.provider) ?? null, model: editString(named.model) ?? null };
+    };
     const priorByProvider = (priorSessions.by_provider ?? {}) as Record<string, unknown>;
     const byProvider = { ...priorByProvider };
     for (const [provider, model] of Object.entries(
@@ -812,12 +817,8 @@ export const MACHINE_SETTINGS_WRITERS = {
     }
     await writeAgentsSection({
       sessions: body.sessions === undefined ? priorSessions : {
-        default: incomingSessions.default === undefined
-          ? (priorSessions.default ?? { provider: null, model: null })
-          : {
-              provider: editString(incomingDefault.provider) ?? null,
-              model: editString(incomingDefault.model) ?? null,
-            },
+        default: pair(incomingSessions.default, priorSessions.default),
+        lead: pair(incomingSessions.lead, priorSessions.lead),
         by_provider: byProvider,
       },
       jobs: body.jobs === undefined ? prior.jobs : jobs,

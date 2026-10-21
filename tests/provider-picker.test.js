@@ -173,7 +173,8 @@ test('no client module keeps its own provider or model list, join, or vendor nam
   for (const file of ['campaign-defaults.js', 'team-configuration.js', 'machine-settings.js', 'presets.js', 'new-agent.js', 'new-team-form.js', 'team-agents.js', 'provider-surface.js']) {
     const source = await read(file);
     if (source.includes("from './ask.js'")) assert.match(source, /ask\(/, `${file} asks through the one selector utility`);
-    assert.match(source, /providerCatalog\(\)|providerModelPair/, `${file} reads or calls the shared provider catalog`);
+    // The Desk and Team defaults carry no model since Models > Defaults (owner, 2026-10-21).
+    if (!['campaign-defaults.js', 'team-configuration.js'].includes(file)) assert.match(source, /providerCatalog\(\)|providerModelPair/, `${file} reads or calls the shared provider catalog`);
     assert.doesNotMatch(source, /session-launch-specs|launchSpecData|launchTable|new Option\([^)]*\b(?:provider|model)\b|Claude Code|Codex|anthropic|openai/, `${file} keeps no copy`);
     assert.doesNotMatch(source, /model_list_current|\.listed\b|display_id|provider-inventory/, `${file} carries nothing of the client join that went away on 2026-09-25`);
   }

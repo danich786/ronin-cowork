@@ -76,3 +76,13 @@ test('unsettled Campaign and Team inputs seed no elective behaviours', () => {
   const seed = resolveLaunchSeed({ ...sources(oldTeam), campaign: oldCampaign });
   assert.deepEqual(seed.seeds.behaviours.value, []);
 });
+
+test('a Team lead seed shows the lead pair; an Agent seed the Agent pair; no lead pair = the Agent pair', () => {
+  const both = { default: { provider: 'anthropic', model: 'sonnet' }, lead: { provider: 'openai', model: 'gpt-lead' } };
+  const lead = resolveLaunchSeed({ ...sources(team), sessions: both, lead: true });
+  assert.deepEqual([lead.seeds.provider.value, lead.seeds.model.value], ['openai', 'gpt-lead']);
+  const agent = resolveLaunchSeed({ ...sources(team), sessions: both });
+  assert.deepEqual([agent.seeds.provider.value, agent.seeds.model.value], ['anthropic', 'sonnet'], 'the Desk pair (openai/gpt) is not read');
+  const unset = resolveLaunchSeed({ ...sources(team), lead: true });
+  assert.deepEqual([unset.seeds.provider.value, unset.seeds.model.value], ['anthropic', 'sonnet']);
+});

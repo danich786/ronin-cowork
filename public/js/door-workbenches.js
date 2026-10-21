@@ -16,7 +16,7 @@ import { workbenchView } from './workspace-contract.js';
 import { registerWorkbenchCatalog, WORKBENCH_PROFILES, WORKBENCH_TYPES } from './workbench-catalog.js';
 import { createProviderSetupSessionMount } from './provider-setup-session.js';
 import { loadProviderCatalog } from './form-steps.js';
-import { createModelProvider, createModelRefresh, createModelStones, providerOffers } from './models-surface.js';
+import { createModelDefaults, createModelProvider, createModelRefresh, createModelStones, providerOffers } from './models-surface.js';
 import { createGithubWorkspaceSetup } from './github-workspace-setup.js';
 import { createFolder, createFolderClone, createFolderGithub, createFolderNew, createFolderStones, createRootsReading, folderOffers } from './workspaces-surface.js';
 import { createWorkspaceAdd } from './workspace-add.js';
@@ -86,6 +86,7 @@ export function createModelsView() {
         providers: providerOffers,
         modelStones: (workspace) => keep(createModelStones({ workspace, detail: {}, environment, workbench: bench() })),
         modelRefresh: (workspace) => keep(createModelRefresh({ workspace, detail: {}, environment, workbench: bench() })),
+        modelDefaults: () => createModelDefaults(),
         modelProvider: (workspace, detail) => keep(createModelProvider(detail.key, { workspace, detail, environment, workbench: bench() })),
       };
       return environment;

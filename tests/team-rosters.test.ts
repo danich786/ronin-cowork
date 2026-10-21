@@ -52,7 +52,7 @@ test('the settled nested shapes round-trip, and an edit touches only what it sta
   assert.deepEqual((await writeTeamRoster('alpha', { holds: ['w3', 'w9'] })).holds, ['w3', 'w9'], 'holds round-trip');
   assert.deepEqual(r.behaviours, { selected: [], required: [] });
   assert.deepEqual(r.agent_defaults, {
-    provider: 'anthropic', model: 'opus', reach: 'execute', recruit: 'nobody',
+    reach: 'execute', recruit: 'nobody',
     output: ['code'], launch_mode: 'configured',
   });
 });
