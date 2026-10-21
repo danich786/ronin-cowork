@@ -136,8 +136,8 @@ as New Agent and New Team (owner, 2026-09-13): the launch forms' numbered steps
 density. **Step 1 · Team** — one line holding **Team ID** (read, not edited), **Title** and
 **Kind** (squares with the shared glyphs), then **Purpose**. **Step 2 · New Agent defaults**
 — what the next Agent on this Team starts from, never the Team's own behaviour: **Where it
-works** (Born in · Additional workspaces, with a branch line for each checkout), **Model**,
-**Mandate** and **Launch mode**. Features and behaviours are not asked on this tab; the
+works** (Born in · Additional workspaces, with a branch line for each checkout), **Mandate**
+and **Launch mode**. The model is not a Team's: Models > Defaults sets it. Features and behaviours are not asked on this tab; the
 record keeps whatever it has. ERABI takes no foreign DOM: the entries sit beside the stones. The tab repaints only when the saved record changes —
 never on a member's status tick or a session coming and going — so an edit in progress is
 not thrown away; the Coworks page's copy of the tab keeps the same rule. **Save** PUTs the whole record to

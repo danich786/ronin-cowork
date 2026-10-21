@@ -294,6 +294,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
         roster,
         roots,
         sessions: agents.sessions as SessionsDefaults | undefined,
+        lead: req.query.lead === '1',
         installations,
         behaviours,
       });

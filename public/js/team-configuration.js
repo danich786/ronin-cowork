@@ -8,7 +8,7 @@ import { t } from './lexicon.js';
 import { request } from './request.js';
 import { ask } from './ask.js';
 import { ruledRows } from './glyphs.js';
-import { createStep, loadProviderCatalog, mandateWord, modelLabel, priceText, providerCatalog, tierWord } from './form-steps.js';
+import { createStep, mandateWord } from './form-steps.js';
 import { WorkspacePrimitives } from './workspace-primitives.js';
 
 const el = (tag, cls, text) => { const node = document.createElement(tag); if (cls) node.className = cls; if (text != null) node.textContent = String(text); return node; };
@@ -23,22 +23,9 @@ const REACH = ['open', 'discuss', 'plan', 'execute'];
 const RECRUIT = ['open', 'nobody', 'propose agents', 'staff agents'];
 const OUTPUT = ['open', 'a plan', 'ideas', 'code', 'an artifact', 'the team'];
 
-/** The provider and model rows as every ask() consumer reads them: the one catalog, reasons only. */
-const reason = (row) => (row.off
-  ? t('forms.reason_turned_off', 'turned off')
-  : t('forms.reason_not_on_machine', 'not on this machine'));
-const providerRows = () => {
-  const rows = providerCatalog().rows;
-  return rows.filter((row, index) => rows.findIndex((other) => other.provider === row.provider) === index)
-    .map((row) => ({ v: row.provider, l: row.provider_label || row.provider, off: row.operational ? '' : reason(row) }));
-};
-const modelRows = (provider) => providerCatalog().rows.filter((row) => row.provider === provider)
-  .map((row) => ({ v: row.model, l: modelLabel(row), word: tierWord(row.tier), sub: priceText(row.info), off: row.selectable ? '' : reason(row) }));
-
-/** The form's one-line answer when its step is folded: kind · provider / model. */
+/** The form's one-line answer when its step is folded: its kind. The model is Models > Defaults' (owner, 2026-10-21). */
 export function teamConfigurationMeta(roster) {
-  const defaults = bucket(roster?.agent_defaults);
-  return [kindWord(roster?.kind || 'open'), [defaults.provider, defaults.model].filter(Boolean).join(' / ')].filter(Boolean).join(' · ');
+  return kindWord(roster?.kind || 'open');
 }
 
 export function renderTeamConfiguration(host, roster, optionsArg = {}) {
@@ -51,7 +38,7 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
   // only on real change now, so a commons waiting off-screen must receive its form here —
   // nothing will render it again when it is placed. A superseded render's host is a
   // discarded node; painting it is invisible and cheap.
-  void Promise.all([loadProviderCatalog(), request('/api/project-roots/detail')]).then(([, rootResult]) => {
+  void request('/api/project-roots/detail').then((rootResult) => {
     const roots = rootResult.ok && Array.isArray(rootResult.data?.roots) ? rootResult.data.roots.filter((root) => !root.archived) : [];
     const defaults = bucket(roster.agent_defaults);
     const form = el('form', 'ntf-form tw-config-form');
@@ -100,10 +87,6 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
         { key: 'root', label: t('where.born_in', 'Born in'), blank: t('team_config.default', 'Default'), options: rootRows },
         { key: 'repos', label: t('where.additional', 'Additional workspaces'), many: true, after: 'root', options: (value) => rootRows().filter((row) => row.v !== value.root), row: branchLine },
       ] },
-      { group: t('new_agent.model_package', 'Model'), fields: [
-        { key: 'provider', label: t('team_config.provider', 'Provider'), blank: t('team_config.default', 'Default'), options: providerRows },
-        { key: 'model', label: t('team_config.model', 'Model'), blank: t('team_config.default', 'Default'), after: 'provider', options: (value) => modelRows(value.provider) },
-      ] },
       { group: t('mandate', 'Mandate'), fields: [
         { key: 'reach', label: t('team_config.reach', 'Reach'), options: REACH.map((v) => ({ v, l: mandateWord(v) })) },
         { key: 'recruit', label: t('team_config.recruit', 'Recruit'), options: RECRUIT.map((v) => ({ v, l: mandateWord(v) })) },
@@ -114,7 +97,6 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
       ] },
     ], { value: {
       root: roster.project_root || '', repos: list(roster.repos).filter((name) => name !== roster.project_root),
-      provider: defaults.provider || '', model: defaults.model || '',
       reach: defaults.reach || 'open', recruit: defaults.recruit || 'open', output: [defaults.output || 'open'].flat().filter(Boolean),
       launch_mode: defaults.launch_mode || 'configured',
     }, density: 'tight', trayHost: defaultsRow });
@@ -131,9 +113,9 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
         title: title.value, kind: kind.value().kind, objective: objective.value, project_root: picked.root, repos,
         branches: Object.fromEntries(repos.filter((name) => !worktrees(name) && branches[name]).map((name) => [name, branches[name]])),
         // Spread what was read so a key this card does not draw is carried rather than
-        // dropped — but NOT `permissions`, which is ruled out of agent_defaults entirely;
-        // spreading it would rewrite a retired field on every save.
-        agent_defaults: { ...defaults, permissions: undefined, provider: picked.provider, model: picked.model, reach: picked.reach, recruit: picked.recruit, output: picked.output, launch_mode: picked.launch_mode },
+        // dropped — but NOT `permissions` or the model, which are ruled out of agent_defaults;
+        // spreading them would rewrite a retired field on every save.
+        agent_defaults: { ...defaults, permissions: undefined, provider: undefined, model: undefined, reach: picked.reach, recruit: picked.recruit, output: picked.output, launch_mode: picked.launch_mode },
       } });
       status.textContent = saved.ok ? t('team_config.saved', 'Saved') : saved.message; if (saveAction) saveAction.setDisabled(false); else save.disabled = false; if (saved.ok) optionsArg.onSaved?.(saved.data.roster);
     });

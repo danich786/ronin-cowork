@@ -3,7 +3,6 @@
 import { t } from './lexicon.js';
 import { saveCampaign } from './campaigns.js';
 import { WorkspaceKit } from './workspace-kit.js';
-import { loadProviderCatalog, providerCatalog, modelLabel } from './form-steps.js';
 import { ask } from './ask.js';
 import { request } from './request.js';
 
@@ -36,11 +35,7 @@ export function createAgentDefaultsSurface(campaign) {
     const questionsRow = el('div', 'cv-default-field');
     const notice = createNotice();
     body.append(el('p', 'cv-note', t('campaign_view.defaults_help', 'These defaults land in the next Team or Agent form that opens. They remain editable there; nothing live changes.')));
-    const catalog = providerCatalog().rows;
-    const providers = catalog.filter((row, index) => catalog.findIndex((other) => other.provider === row.provider) === index);
-    const reason = (providerRow) => providerRow.off
-      ? t('forms.reason_turned_off', 'turned off')
-      : t('forms.reason_not_on_machine', 'not on this machine');
+    body.append(el('p', 'cv-note', t('campaign_view.defaults_models', 'Models are set in Models > Defaults.')));
     const availableNames = new Set(list(seed?.available));
     const availableBehaviours = list(seed?.behaviours).filter((behaviour) => availableNames.has(behaviour.name));
     const rootRows = roots.filter((root) => !root.archived).map((root) => ({
@@ -49,7 +44,6 @@ export function createAgentDefaultsSurface(campaign) {
     }));
     let picked = edited || {
       root: String(cowork.project_root || ''), repos: list(cowork.repos),
-      provider: String(current.provider || ''), model: String(current.model || ''),
       reach: current.reach || CHOICES.reach[0], recruit: current.recruit || CHOICES.recruit[0],
       output: list(current.output), launch_mode: current.launch_mode || CHOICES.launch_mode[0],
       behaviours: list(current.behaviours),
@@ -58,10 +52,6 @@ export function createAgentDefaultsSurface(campaign) {
       { group: t('where.label', 'Where it works'), fields: [
         { key: 'root', label: t('where.born_in', 'Born in'), blank: t('team_config.default', 'Default'), options: rootRows },
         { key: 'repos', label: t('new_agent.workspaces', 'Workspaces'), many: true, after: 'root', options: rootRows },
-      ] },
-      { group: t('new_agent.model_package', 'Model'), fields: [
-        { key: 'provider', label: t('campaign_view.col_provider', 'Provider'), blank: t('campaign_view.provider_default', 'Default provider'), options: providers.map((row) => ({ v: row.provider, l: row.provider_label, off: row.operational ? '' : reason(row) })) },
-        { key: 'model', label: t('campaign_view.col_model', 'Preferred model'), blank: t('campaign_view.model_default', 'Default model'), after: 'provider', options: (value) => catalog.filter((row) => row.provider === value.provider).map((row) => ({ v: row.model, l: modelLabel(row), word: row.tier, sub: row.cost || '', off: row.selectable ? '' : reason(row) })) },
       ] },
       { group: t('mandate', 'Mandate'), fields: [
         { key: 'reach', label: t('campaign_view.default_reach', 'Reach'), options: CHOICES.reach.map((value) => ({ v: value, l: optionLabel(value) })) },
@@ -101,15 +91,13 @@ export function createAgentDefaultsSurface(campaign) {
     paint();
     if (!campaign()) return;
     void Promise.all([
-      loadProviderCatalog(),
       request(`/api/campaign-default-options?campaign_id=${encodeURIComponent(campaign()?.id || '')}`),
       request(`/api/project-roots/detail?campaign_id=${encodeURIComponent(campaign()?.id || '')}`),
-    ]).then(([, options, folders]) => { if (current === generation) paint(options.ok ? options.data : null, folders.ok ? list(folders.data?.roots) : []); });
+    ]).then(([options, folders]) => { if (current === generation) paint(options.ok ? options.data : null, folders.ok ? list(folders.data?.roots) : []); });
   } };
 }
 
 export function defaultsSummary(campaign) {
   const defaults = bucket(campaign?.config?.defaults);
-  const model = [defaults.provider, defaults.model ? modelLabel(defaults) : ''].filter(Boolean).join(' · ') || t('campaign_view.provider_default', 'Default provider');
-  return t('campaign_view.defaults_summary', '{model} · {reach}', { model, reach: defaults.reach || 'open' });
+  return t('campaign_view.defaults_reach', 'Reach {reach}', { reach: defaults.reach || 'open' });
 }
