@@ -131,10 +131,11 @@ Agent a row with the lead first, each Item a row); the 人 mark in a stone's cor
 Team page in a new tab; its selector offers Team roster, Cron jobs, New Team, New Agent and
 Rehydrate Archived.
 Help (owner, 2026-10-21) seats the help outline (`help-outline.js`, `help.outline`: the docs/ guides
-as grouped stones, '4 Things You Need to Know' first, a pressed page read beside the rail through
+as two lists, 'Start here: 4 things you need to know' numbered 1-4 above 'Everything else' in quieter grouped rows, a pressed page read beside the rail through
 `/api/file?product=1`) in Workspace 1 and Mika (`help.mika`) in Workspace 2, her tile opened on its
 reading (`createMikaTilePool({ opensOn: 'reading' })`); both are solid cards.
-Until one model provider is activated the four doors are locked and say so (the gate the old
+Until one model provider is activated the Models, Workspaces and Teams doors are locked; Help stays
+open, its Mika seat saying in one line that she needs a provider, pointing to Setup, and say so (the gate the old
 root had); Settings, the live stone, opens Setup until its five answers are recorded.
 
 The current root — Ronin Home as it was before 2026-10-18, with doors into the Desk, Team and

@@ -2,9 +2,11 @@
 /**
  * THE HELP OUTLINE (owner, 2026-10-21): Workspace 1 of the Help workbench. The pages are the
  * user docs in docs/, read through the same door Setup's guides use (/api/file?product=1),
- * never copies. '4 Things You Need to Know' heads the outline. One stone surface: press a
- * page, the stones go to the rail and the page reads beside them; a link to another guide
- * opens that guide in the same place.
+ * never copies. Two lists (owner, 2026-10-21): 'Start here', the four things numbered 1-4 and
+ * the only emphasised part, then 'Everything else', quieter rows grouped for specific questions
+ * (an FAQ group joins as it grows); Mika in Workspace 2 answers what no page does. One stone
+ * surface: press a page, the stones go to the rail and the page reads beside them; a link to
+ * another guide opens that guide in the same place.
  */
 import { WorkspaceKit } from './workspace-kit.js';
 import { createPhalanx } from './phalanx.js';
@@ -17,15 +19,16 @@ const el = (tag, cls, text) => { const out = document.createElement(tag); if (cl
 
 /** The outline: each page is a doc path, in the order a new user meets them. */
 function PAGES() {
-  const four = { id: 'four', label: t('help_outline.four', '4 Things You Need to Know') };
+  const four = { id: 'four', label: t('help_outline.four', 'Start here: 4 things you need to know') };
   const start = { id: 'start', label: t('help_outline.start', 'Getting started') };
   const using = { id: 'using', label: t('help_outline.using', 'Using Ronin') };
-  const page = (group, path, label) => ({ id: path, group, label, path });
+  const first = (n, path, label) => ({ id: path, group: four, label, path, glyph: String(n), className: 'help-outline-first' });
+  const page = (group, path, label) => ({ id: path, group, label, path, className: 'help-outline-row' });
   return [
-    page(four, 'docs/using-ronin/team-lead-and-edges.md', t('help_outline.lead', 'Team Lead and edges')),
-    page(four, 'docs/using-ronin/what-agents-write-down.md', t('help_outline.records', 'Work records')),
-    page(four, 'docs/using-ronin/agent-tools.md', t('help_outline.tools', 'Tools')),
-    page(four, 'docs/getting-started/customize.md', t('help_outline.customize', 'Customizing your Ronin')),
+    first(1, 'docs/using-ronin/team-lead-and-edges.md', t('help_outline.lead', 'Team Lead and edges')),
+    first(2, 'docs/using-ronin/what-agents-write-down.md', t('help_outline.records', 'Work records')),
+    first(3, 'docs/using-ronin/agent-tools.md', t('help_outline.tools', 'Tools')),
+    first(4, 'docs/getting-started/customize.md', t('help_outline.customize', 'Customizing your Ronin')),
     page(start, 'docs/getting-started/get-started.md', t('help_outline.get_started', 'Get started')),
     page(start, 'docs/getting-started/setup-workbench.md', t('help_outline.setup', 'Ronin Setup')),
     page(start, 'docs/getting-started/provider-sign-in.md', t('help_outline.sign_in', 'Provider sign-in')),
@@ -52,8 +55,16 @@ export function createHelpOutline() {
     if (known && !fragment) stones.select(path);
     else stones.openDetail({ ...(known || { id: path, label: path.split('/').pop(), path }), fragment });
   };
+  // The two lists' words, put back after every paint: the four's one line, and the heading
+  // over the rest.
+  const label = () => {
+    const four = stones.el.querySelector('[data-sws-group="four"]');
+    if (four) four.querySelector('.sws-group-hint').textContent = t('help_outline.read_first', 'Read these first');
+    const rest = stones.el.querySelector('[data-sws-group="start"]');
+    if (rest && !rest.previousElementSibling?.classList.contains('help-outline-else')) rest.before(el('h2', 'help-outline-else', t('help_outline.everything_else', 'Everything else')));
+  };
   const stones = createPhalanx({
-    items: pages, grouped: { groups: [...new Map(pages.map((item) => [item.group.id, item.group])).values()] },
+    items: pages, className: 'help-outline-stones', onSelectionChange: () => label(), grouped: { groups: [...new Map(pages.map((item) => [item.group.id, item.group])).values()] },
     renderDetail: (item, host) => {
       host.scrollTop = 0;
       const page = el('article', 'help-outline-page', t('docs.loading', 'loading…'));
@@ -76,5 +87,6 @@ export function createHelpOutline() {
     },
   });
   stones.mount(out.content);
+  label();
   return { el: out.el, destroy: () => stones.destroy() };
 }

@@ -6,7 +6,8 @@
  * with Home the way back. A door is a link: a plain press navigates here, a modified press
  * opens the workbench in a new tab. THE GATE (owner, 2026-10-19, "let's have the gate"): as on
  * the old root, the doors are locked until one model provider is activated, Settings the one
- * live stone, so a new user's way in is Setup. TWO ROOTS (owner, 2026-10-19): this is the default root;
+ * live stone, so a new user's way in is Setup. Help is the one door outside the gate: a new user
+ * needs it before Setup (owner, 2026-10-21). TWO ROOTS (owner, 2026-10-19): this is the default root;
  * the current root (current-home.js, Home as it was before 2026-10-18) keeps its own address,
  * and one plain toggle in the bar, the same spot on each, swaps between them while pieces move
  * from Current to Next: it reads Current here and Next there.
@@ -31,7 +32,7 @@ function DOORS() {
     { key: 'models', route: 'models', glyph: '✶', name: t('campaign_home.models', 'Models'), is: t('campaign_home.models_is', 'Model providers on this machine: install, sign in, choose') },
     { key: 'workspaces', route: 'workspaces', glyph: '⌂', name: t('campaign_home.workspaces', 'Workspaces'), is: t('campaign_home.workspaces_is', 'The folders your Teams work in') },
     { key: 'teams', route: 'cowork', glyph: '人人', name: t('campaign_home.teams', 'Teams'), is: t('campaign_home.teams_is', 'Your Teams; open one to its page') },
-    { key: 'help', route: 'help', glyph: 'ミ', name: t('campaign_home.help', 'Help'), is: t('campaign_home.help_is', 'The guides, and Mika to ask') },
+    { key: 'help', route: 'help', glyph: 'ミ', name: t('campaign_home.help', 'Help'), is: t('campaign_home.help_is', 'The guides, and Mika to ask'), gated: false },
   ];
 }
 
@@ -102,7 +103,7 @@ export function createCampaignHome() {
     doors.replaceChildren();
     for (const door of DOORS()) {
       const card = el('a', 'ch-door');
-      const locked = !runtimeKnown || activatedCount < 1;
+      const locked = door.gated !== false && (!runtimeKnown || activatedCount < 1);
       const route = door.route;
       card.href = workbenchLaunchUrl({ destination: route, mode: 'overlay' });
       card.dataset.door = door.key;

@@ -9,7 +9,8 @@
  * stone dragged into a workspace or a selector card placing that provider whole; Workspaces
  * seats its own stones of folders (workspaces-surface.js) the same way, its three admin doors
  * dotted selector cards. Help (owner, 2026-10-21) seats the help outline in Workspace 1 and Mika
- * in Workspace 2, her ordinary tile opened on her reading: a chat, not a terminal.
+ * in Workspace 2, her ordinary tile opened on her reading: a chat, not a terminal. Help is outside
+ * Home's provider gate; with no provider Mika's seat says so in one line instead of her tile.
  */
 import { WorkspaceKit } from './workspace-kit.js';
 import { t } from './lexicon.js';
@@ -26,6 +27,7 @@ import { createHelpOutline } from './help-outline.js';
 import { createMikaTilePool } from './mika.js';
 import { readyMika } from './mika-ready.js';
 import { S } from './state.js';
+import { request } from './request.js';
 
 const blank = (id) => WorkspaceKit.primitives.createBlankSurface(id.replace('workspace', 'Workspace ')).el;
 
@@ -139,30 +141,47 @@ export function createWorkspacesView() {
 }
 
 /** Help: the help outline in Workspace 1, Mika in Workspace 2 opened on her reading; both solid cards.
- * Seating her starts her the way her Settings card does. */
+ * Seating her starts her the way her Settings card does, once Home's fact says a provider is activated. */
 export function createHelpView() {
   const MIKA = 'mika_agent';
   const { surface: mikaSurface, pool: mikaPool } = createMikaTilePool({ opensOn: 'reading' });
   const outlines = [];
+  const none = document.createElement('p');
+  none.className = 'help-mika-none';
+  none.hidden = true;
+  const setup = Object.assign(document.createElement('a'), { href: '#/setup', textContent: t('help_outline.mika_setup', 'Setup') });
+  none.append(t('help_outline.mika_needs_provider', 'Mika needs a model provider. Activate one in '), setup, '.');
+  mikaSurface.content.append(none);
+  // A terminal seat carries a tile head from the moment it is placed; until the provider read
+  // answers (or when it says none) that head is an unconnected tile, kept out of sight.
+  let standIn = null;
+  // Her tile is up at once. If she was not running, the tile is made again once she is, so it
+  // asks her new record for the reading.
+  const seatMika = () => {
+    const born = S.sessions.some((session) => session.name === MIKA);
+    mikaPool.sync([MIKA]);
+    mikaPool.show(MIKA, false);
+    void readyMika('help').then((ready) => {
+      if (born || !ready || (!ready.ok && ready.data?.state !== 'action_required')) return;
+      mikaPool.sync([]);
+      mikaPool.sync([MIKA]);
+      mikaPool.show(MIKA, false);
+    });
+  };
   return doorWorkbench({
     id: 'help', profile: WORKBENCH_PROFILES.help, label: t('campaign_home.help', 'Help'),
     seats: { workspace1: WORKBENCH_TYPES.helpOutline, workspace2: WORKBENCH_TYPES.helpMika },
     environment: () => ({
       helpOutline: () => { const outline = createHelpOutline(); outlines.push(outline); return outline; },
-      // Her tile is up at once (a terminal seat carries its head). If she was not running, the
-      // tile is made again once she is, so it asks her new record for the reading.
       helpMika: () => ({ el: mikaSurface.el, show: () => {
-        const born = S.sessions.some((session) => session.name === MIKA);
-        mikaPool.sync([MIKA]);
-        mikaPool.show(MIKA, false);
-        void readyMika('help').then((ready) => {
-          if (born || !ready || (!ready.ok && ready.data?.state !== 'action_required')) return;
-          mikaPool.sync([]);
-          mikaPool.sync([MIKA]);
-          mikaPool.show(MIKA, false);
+        if (!standIn) { standIn = WorkspaceKit.adapters.createTerminalTileHost({ mode: 'full' }); mikaSurface.content.append(standIn.el); standIn.mount(''); standIn.hide(); }
+        void request('/api/setup/runtime', { cache: 'no-store' }).then((result) => {
+          const activated = result.ok && Number(result.data?.activated_count) > 0;
+          none.hidden = activated;
+          if (activated) seatMika();
         });
       } }),
     }),
-    destroy: () => { for (const outline of outlines.splice(0)) outline.destroy(); mikaPool.destroyAll(); },
+    destroy: () => { for (const outline of outlines.splice(0)) outline.destroy(); mikaPool.destroyAll(); standIn?.destroy(); standIn = null; },
   });
 }

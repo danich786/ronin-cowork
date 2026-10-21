@@ -4952,3 +4952,21 @@ html[data-screen='inside'] #phone .ph-bar .ph-title[data-boot='inside'] { displa
     max-width: none;
   }
 }
+
+/* THE HELP OUTLINE (help-outline.js; owner, 2026-10-21): two lists. 'Start here' is the only
+   emphasised part, its four stones numbered; 'Everything else' is quieter rows. */
+@layer app {
+  .help-outline-stones [data-sws-group='four'] > .sws-group-heading { color: var(--fg-strong); text-transform: none; letter-spacing: normal; font-size: var(--text-label); }
+  .help-outline-stones [data-sws-group='four'] > .sws-group-hint { margin: 0; color: var(--fg); font-size: var(--text-body); }
+  .help-outline-stones .help-outline-first .sws-glyph { font-size: var(--text-display); font-style: normal; color: var(--fg-strong); }
+  .help-outline-stones .help-outline-else { flex: 0 0 100%; margin: var(--space-section) 0 0; color: var(--muted); font-size: var(--text-label); font-weight: var(--weight-regular); }
+  .help-outline-stones .sws-stone.help-outline-row { aspect-ratio: auto; flex-basis: 100%; width: 100%; padding: var(--space-row) var(--space-control); border-color: transparent; color: var(--muted); }
+  .help-outline-stones .sws-stone.help-outline-row::before { display: none; }
+  .help-outline-stones .sws-stone.help-outline-row:hover, .help-outline-stones .sws-stone.help-outline-row[aria-pressed='true'] { background: var(--selected); color: var(--fg); }
+  .help-outline-stones .help-outline-row .sws-label { font-weight: var(--weight-regular); }
+  .help-outline-stones [data-sws-group]:not([data-sws-group='four']) > .sws-group-stones { gap: 0; }
+}
+@layer app {
+  .help-mika-none { margin: 0; padding: var(--space-inset); color: var(--fg); font-size: var(--text-body); }
+  .help-mika-none a { color: var(--link); }
+}

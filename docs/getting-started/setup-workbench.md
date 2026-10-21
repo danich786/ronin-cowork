@@ -11,7 +11,8 @@ specification first.
 steps has been answered, and **Ronin Settings**, the full configuration workbench, after
 that. The older Home at `#/current` keeps its **Desk**, **Team** and **Agent** doors, which
 stay unavailable until one model provider is activated. The place name in the
-top bar switches between them without reloading.
+top bar switches between them without reloading. Models, Workspaces and Teams wait for a model provider too; Help
+is open from the start.
 
 ### Going back to Setup
 
