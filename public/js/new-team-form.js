@@ -224,9 +224,8 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
   objectiveInput.addEventListener('input', () => { draft.objective = objectiveInput.value; paintFoot(); });
   stepTop.body.append(createField({ label: t('new_team.instructions', 'Team instructions'), control: objectiveInput }).el);
 
-  /* ---- step 3 · Workspace: the Team, its roster and its lead work here (owner, 2026-10-21: named on the
-     form, not folded into Agent defaults) ---- */
-  const stepWhere = createStep({ n: 3, key: 'where', title: t('new_team.workspace', 'Workspace') });
+  /* ---- the Workspace, under the name and instructions in section 2 (owner, 2026-10-21: "We include
+     the workspace in the new team"), not folded into Agent defaults ---- */
   const rootRows = (additional = false) => roots.filter((row) => !additional || row.repo !== false).map((row) => ({
     v: row.name, l: row.name,
   }));
@@ -242,7 +241,7 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
   };
   let reposTouched = false;
   const whereQuestions = ask([
-    { group: t('where.label', 'Where it works'), fields: [
+    { group: t('new_team.workspace', 'Workspace'), fields: [
       { key: 'root', label: t('where.born_in', 'Born in'), blank: t('new_team.root_default', 'The box’s default'), options: () => rootRows() },
       { key: 'repos', label: t('new_agent.workspaces', 'Workspaces'), many: true,
         options: () => rootRows(true), row: branchField },
@@ -264,7 +263,7 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
       paintFoot();
     },
   });
-  stepWhere.body.append(whereQuestions.el);
+  stepTop.body.append(whereQuestions.el);
   function paintRoots() {
     whereQuestions.set('root', draft.root); whereQuestions.set('repos', draft.repos);
   }
@@ -348,13 +347,13 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
 
   /* ---- the collapse rules: a template's answers fold; the header opens them ---- */
   const FOLDS = ['lead'];
-  const steps = { setup: stepSetup, top: stepTop, lead: stepLead, defaults: null, where: stepWhere, kit: stepKit };
+  const steps = { setup: stepSetup, top: stepTop, lead: stepLead, defaults: null, kit: stepKit };
   function toggle(key) {
     if (draft.expanded[key]) delete draft.expanded[key];
     else draft.expanded[key] = true;
     paintFolds();
   }
-  const plan = () => ['setup', 'top', 'where', 'lead', 'defaults', 'kit'];
+  const plan = () => ['setup', 'top', 'lead', 'defaults', 'kit'];
   const meta = {
     lead: () => t('new_team.agents_meta', '{n} agents', { n: draft.agents.length }),
   };
@@ -607,7 +606,7 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
   } });
   stepPayload.body.append(foot, saveRow.el);
   stepPayload.setCollapsed(true, t('forms.payload_summary', 'Review what Launch will create'), true);
-  form.append(stepSetup.el, stepTop.el, stepWhere.el, stepLead.el, stepDefaults.el, stepKit.el, stepPayload.el);
+  form.append(stepSetup.el, stepTop.el, stepLead.el, stepDefaults.el, stepKit.el, stepPayload.el);
   surface.content.append(form, notice.el);
 
   return {

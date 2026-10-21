@@ -122,7 +122,7 @@ test('the old New Agent selector implementation and CSS are deleted', async () =
 
 test('New Team folds Kind and Template into one optional first row', async () => {
   const [form, agents] = await Promise.all([source('new-team-form.js'), source('team-agents.js')]);
-  assert.match(form, /\['setup', 'top', 'where', 'lead', 'defaults', 'kit'\]/, 'the Workspace sits before Agents, outside the defaults fold (owner, 2026-10-21)');
+  assert.match(form, /\['setup', 'top', 'lead', 'defaults', 'kit'\]/, 'the Workspace is in section 2 under the name and instructions, not a section and not in the defaults fold (owner, 2026-10-21)');
   assert.match(form, /key: 'setup', title: t\('new_team\.kind_template', 'Kind & Template'\), onToggle/);
   assert.match(form, /stepSetup\.body\.append\(kindHost,[\s\S]*trayHost\)/);
   assert.match(form, /stepSetup\.setCollapsed\(!setupOpen,[\s\S]*Optional — Kind and Template/);
@@ -150,7 +150,7 @@ test('collapsible steps expose one full-width disclosure row and Team defaults u
   assert.match(team, /key: 'defaults'.*Agent defaults/);
   assert.match(team, /Settings inherited by Agents launched in this Team/);
   assert.match(team, /steps\.kit\.el\.hidden = !defaultsOpen/);
-  assert.match(team, /const stepWhere = createStep\(\{ n: 3, key: 'where', title:[^}]+\}\);/);
+  assert.match(team, /stepTop\.body\.append\(whereQuestions\.el\)/, 'the Workspace stones live in section 2');
   assert.match(team, /const stepKit = createStep\(\{ n: 6, key: 'kit', title:[^}]+\}\);/);
   assert.match(team, /const FOLDS = \['lead'\]/);
   assert.doesNotMatch(team, /stepDefaults\.body\.append/);

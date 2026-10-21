@@ -13,8 +13,8 @@ team name>_lead` (the first word ends at the first `-` or `_`); the name follows
 while it still reads as the previous name's lead, so an edited name stays, and the row is
 removed like any other. Its provider and model stay blank, which for a lead is the Team lead
 model on Models > Defaults. Clearing the template, or the form, seeds the lead again; a template
-with Agents brings its own cast. The Workspace section (Born in, Workspaces) sits between Name
-and Agents on the form, not inside the Agent defaults fold: the roster and its lead are read
+with Agents brings its own cast. The Workspace stones (Born in, Workspaces) sit in section 2 under
+the name and instructions, not inside the Agent defaults fold: the roster and its lead are read
 against a named Workspace (owner, 2026-10-21). On Launch it reserves a browser tab and validates Agent names before the first
 write. It creates the Team through `POST /api/team-rosters`; only a successful create
 reaches the Agent loader. That prevents a rejected duplicate Team create from launching
