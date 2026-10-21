@@ -602,12 +602,10 @@ export async function cloneGithubWorkspace(repository: unknown): Promise<{ name:
 }
 
 /** A new folder's repository, created on GitHub with the GitHub CLI: origin set, the first commit pushed.
- *  The folder stays whatever happens; the one line thrown says what failed. */
+ *  The folder stays whatever happens; the one line thrown is git's or gh's own message. No pre-checks:
+ *  a folder that is not a repository says so itself. */
 export async function createGithubRepository(dirRaw: unknown, visibilityRaw: unknown): Promise<{ repository: string; url: string }> {
   const dir = path.resolve(typeof dirRaw === 'string' ? dirRaw.trim() : '');
-  const relative = path.relative(os.homedir(), dir);
-  if (!dir || relative.startsWith('..') || path.isAbsolute(relative)) throw new Error('Choose a folder inside your home directory.');
-  if (!(await exists(path.join(dir, '.git')))) throw new Error(`${dir} is not a Git repository.`);
   const visibility = visibilityRaw === 'public' ? 'public' : 'private';
   const gh = await discoverExecutable('gh');
   if (!gh) throw new Error('GitHub CLI is not installed on this machine.');
@@ -616,7 +614,7 @@ export async function createGithubRepository(dirRaw: unknown, visibilityRaw: unk
     const detail = error && typeof error === 'object' && 'stderr' in error ? String(error.stderr || '') : error instanceof Error ? error.message : '';
     return detail.replace(/[\r\n]+/g, ' ').trim().slice(0, 300);
   };
-  // gh pushes commits, so a fresh folder gets its first one: a README that names it.
+  // gh pushes commits, so a fresh folder gets its first one: a README that names it (the identity ensureRepository uses).
   const committed = await git(dir, ['rev-parse', '--verify', '--quiet', 'HEAD']).then(() => true, () => false);
   if (!committed) {
     const readme = path.join(dir, 'README.md');
