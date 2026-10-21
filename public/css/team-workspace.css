@@ -47,7 +47,7 @@
   .tk-beta { display: inline-flex; align-items: center; min-height: var(--tk-beta-h); box-sizing: border-box; border: var(--edge) solid var(--kaki); border-radius: var(--radius-xs); background: var(--raise); color: var(--fg-strong); padding: var(--space-2) var(--space-4); font: inherit; font-size: var(--text-4); font-weight: var(--weight-strong); letter-spacing: var(--tk-heading-track); text-transform: uppercase; }
   .tk-header-toggle { border: 0; border-radius: 0; padding: var(--space-2); background: transparent; color: var(--muted); font: inherit; font-size: var(--text-2); font-weight: var(--weight-regular); cursor: pointer; }
   .tk-header-toggle:hover { color: var(--fg); }
-  .tk-header-toggle:focus-visible { outline: var(--edge-2) solid var(--kaki); outline-offset: var(--space-1); }
+  .tk-header-toggle:focus-visible { outline: var(--focus-width) solid var(--kaki); outline-offset: var(--focus-offset); }
   .tk-header-message { min-height: 0; overflow-y: auto; margin: var(--space-4) 0 0; color: var(--fg); font-size: var(--text-4); }
   .tk-header-message[hidden] { display: none; }
   .tk-topline { display: flex; align-items: center; gap: var(--space-6); min-height: var(--tk-notice-line); padding: var(--space-4) var(--space-5) 0; }

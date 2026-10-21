@@ -68,6 +68,8 @@ and could not get a radius right.
 | tracking | `--tracking-tight` `--tracking-wide` (em) | every letter-spacing reads one, or is `0` |
 | voice | `--font-ui` `--font-mono` `--font-term` | **three roles, not two.** `--font-term` is what xterm renders (`js/termview.js` reads it via `termFace()`), and the tape, composer and jump button must match it glyph-for-glyph or a wrapped line stops lining up |
 | edge | `--edge` `--edge-2` | border widths — a heavier-lined theme is one edit, not four hundred |
+| control | `--control-height` (2.25rem) · `--control-height-small` (28px) | every button, input, select and menu item is one of these two heights, never its own. Small is the deliberate case: compact actions, header and tab-bar actions, menu items, the composer. `--row-head` is a small control plus its band, so header actions never move the phalanx. Exceptions keep their own size on purpose: the touch sizes under `pointer: coarse` and `#phone`, the top bar's chrome, square icon buttons (width and height together), and `--field-tall`, which matches the ask stone beside it |
+| focus | `--focus-width` · `--focus-offset` (2px · 2px) | every `:focus-visible` ring; an inset ring (a clipped tab) offsets by `calc(-1 * var(--focus-width))`. Selection and drop outlines are states, not focus, and keep `--edge` |
 | motion | `--motion-quick/settle/slow/hint`, `--ease` | four speeds; nothing animates for decoration |
 | elevation | `--scrim` `--shadow-menu` `--shadow-sheet` | |
 | bar navigation | `--bar-nav-bg/fg/hover/focus` · `--bar-value-fg` | the shared clickable label and its non-clickable context value |
@@ -433,7 +435,7 @@ reserving a gutter.
 
 ## Keyboard and focus
 
-- One `:focus-visible` ring, universal, in foundations. Pointer users never see it.
+- One `:focus-visible` ring, universal, in foundations, `--focus-width` wide at `--focus-offset`; a component that draws its own ring reads the same two. Pointer users never see it.
 - Inert-but-explaining controls use `setInert` (`widgets.js`) — dimmed, hoverable,
   `aria-disabled`, the reason in the help text. `disabled` is for controls whose
   explanation is unnecessary.

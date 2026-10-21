@@ -119,7 +119,7 @@
   .ask[data-density='tight'] .ask-reading { line-height: var(--leading-tight); }
   .ask-tray[data-density='tight'] { gap: var(--space-3); padding: var(--space-4); }
 
-  .ask-stone:focus-visible, .ask-opt:focus-visible, .ask-filter:focus-visible { outline: var(--edge-2) solid var(--kaki); outline-offset: var(--edge); }
+  .ask-stone:focus-visible, .ask-opt:focus-visible, .ask-filter:focus-visible { outline: var(--focus-width) solid var(--kaki); outline-offset: var(--focus-offset); }
   @media (prefers-reduced-motion: reduce) { .ask-track, .ask-track::after { transition: none; } }
 
 }

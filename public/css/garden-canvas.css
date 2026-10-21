@@ -93,7 +93,7 @@
   .garden-question-label { display: grid; gap: var(--space-5); max-width: var(--gc-measure); color: var(--fg-strong); font-size: var(--text-4); font-weight: var(--weight-strong); }
   .garden-question-input { width: 100%; padding: var(--space-6) var(--space-7); border: var(--edge) solid var(--line-2); border-radius: var(--radius-md); background: var(--well); color: var(--fg); font: inherit; font-weight: var(--weight-regular); }
   .garden-question-input::placeholder { color: var(--dim); }
-  .garden-question-input:focus-visible { border-color: var(--kaki); outline: var(--edge-2) solid color-mix(in srgb, var(--kaki) 55%, transparent); outline-offset: var(--edge); }
+  .garden-question-input:focus-visible { border-color: var(--kaki); outline: var(--focus-width) solid color-mix(in srgb, var(--kaki) 55%, transparent); outline-offset: var(--focus-offset); }
   textarea.garden-question-input { resize: vertical; min-height: calc(var(--space-12) * 2); }
 
   /* The only filled kaki on the surface, sized to its label. */
