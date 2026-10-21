@@ -280,11 +280,6 @@
 /* a link is aiiro, never the browser's #0000ee; a component that colours its own link says so */
 a { color: var(--link); }
 
-/* a native control draws in the browser's own font (13.33px Arial) unless told: every control
-   reads the page's, and a button's text is the one control role, --text-label, in every size */
-button, input, select, textarea { font: inherit; }
-button { font-size: var(--text-label); }
-
 * {
   box-sizing: border-box;
 }
@@ -3521,7 +3516,7 @@ body {
 .tile-body > .work-overlay .menu-empty { padding: var(--space-row) 0; }
 .tile-record-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-inline); margin-bottom: var(--space-paragraph); }
 .tile-record-head > h2 { margin: 0; color: var(--fg-strong); font-size: var(--text-heading); font-weight: var(--weight-strong); }
-.tile-record-head .wk-action { padding: var(--space-row) var(--space-control); border: var(--edge) solid var(--line); border-radius: var(--radius-small); background: transparent; color: var(--fg); cursor: pointer; }
+.tile-record-head .wk-action { padding: var(--space-row) var(--space-control); border: var(--edge) solid var(--line); border-radius: var(--radius-small); background: transparent; color: var(--fg); font: inherit; cursor: pointer; }
 .tile-record-head .wk-action:hover { border-color: var(--accent); color: var(--accent); }
 .tile-body > .work-overlay .shingo-ladder { max-height: none; overflow: visible; border: 0; padding: 0; background: transparent; }
 .shingo-ladder .sl-doc { display: block; width: 100%; overflow: hidden; padding: 0; border: 0; background: none; color: var(--fg); font: inherit; text-align: left; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
@@ -4348,7 +4343,7 @@ body {
 .wk-surface[data-state='stale'] > .wk-state { color: var(--warn); }
 .wk-surface[data-state='unavailable'], .wk-surface[data-state='inert'] { opacity: .58; pointer-events: none; }
 .wk-card { display: flex; flex-direction: column; min-width: 0; border: var(--edge) solid var(--line); border-radius: var(--radius-large); background: var(--surface); color: var(--fg); padding: var(--space-inset); text-align: left; }
-button.wk-card { cursor: pointer; }
+button.wk-card { cursor: pointer; font-family: var(--font-ui); }
 .wk-card:hover, .wk-card[aria-pressed='true'] { border-color: var(--kaki); }
 .wk-workbench-selector-cards > .wk-card[aria-current='page'] {
   border-color: var(--kaki);

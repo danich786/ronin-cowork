@@ -7,7 +7,7 @@
   .wk-surface-header-title { min-width: 0; overflow: hidden; font-weight: var(--workbench-head-weight); text-overflow: ellipsis; white-space: nowrap; }
   .wk-surface-header-actions { display: flex; align-items: center; gap: var(--space-inline); margin-left: auto; }
 
-  .wk-surface-header .wk-action { min-height: var(--control-height-small); padding: var(--space-row) var(--space-control); }
+  .wk-surface-header .wk-action { min-height: var(--control-height-small); padding: var(--space-row) var(--space-control); font-size: var(--text-body); }
   .wk-action { min-height: var(--control-height); border: var(--edge) solid var(--line-2); border-radius: var(--radius-small); background: var(--surface); color: var(--fg); padding: var(--space-row) var(--space-control); font: inherit; font-size: var(--text-label); cursor: pointer; transition: border-color var(--motion-quick) var(--ease), background-color var(--motion-quick) var(--ease), color var(--motion-quick) var(--ease); }
   .wk-action:hover:not(:disabled) { border-color: var(--kaki); background: var(--selected); /* the one you are on, have chosen, or are dropping onto */ color: var(--fg-strong); }
   .wk-action[data-launch='true'] { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-inline); }
@@ -21,8 +21,7 @@
   .wk-action[data-attention='true'] { border-color: var(--kaki); background: var(--kaki); /* kaki: the action, or what needs you */ color: var(--on-strong); font-weight: var(--weight-strong); }
   .wk-action[data-kind='danger'] { border-color: var(--bad); color: var(--bad-soft); }
   .wk-action[data-kind='danger']:hover:not(:disabled) { border-color: var(--bad-deep); background: var(--bad-ground); /* status: something is wrong */ color: var(--bad-fg); }
-  /* compact is a height, never a text size: every action reads --text-label */
-  .wk-action[data-size='compact'] { min-height: var(--control-height-small); padding: var(--space-row) var(--space-control); }
+  .wk-action[data-size='compact'] { min-height: var(--control-height-small); padding: var(--space-row) var(--space-control); font-size: var(--text-body); }
   .wk-action[aria-pressed='true'] { border-color: var(--kaki); background: var(--selected); /* the one you are on, have chosen, or are dropping onto */ color: var(--kaki); }
   .wk-action:disabled { opacity: .5; cursor: default; }
   .wk-metadata { display: grid; grid-template-columns: minmax(7rem, auto) minmax(0, 1fr); gap: var(--space-row) var(--space-inline); margin: 0; }
@@ -176,8 +175,8 @@
 
   .wk-tabset-actions { display: flex; align-items: center; flex: 0 0 auto; gap: var(--space-inline); }
   .wk-tabset-actions:empty { display: none; }
-  .wk-tabset-actions .wk-action { min-height: var(--control-height-small); padding: var(--space-row) var(--space-control); }
-  .wk-surface-dismiss { line-height: var(--leading-none); }
+  .wk-tabset-actions .wk-action { min-height: var(--control-height-small); padding: var(--space-row) var(--space-control); font-size: var(--text-body); }
+  .wk-surface-dismiss { font-size: var(--text-body); line-height: var(--leading-none); }
 
   /* The panel owns fill and one scroll region; what it holds keeps its own padding. */
   .wk-tabset > .wk-surface-content { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
