@@ -6,8 +6,11 @@ template or make your own, and give the Team a name and objective.
 ## Set up the work
 
 Choose the Workspace Folder and repositories the Team will use. Set the guidance and mandate
-for this work; the model a new Agent or Team lead gets is set on **Models > Defaults**. Add the Agents you want to launch with the
-Team, with their names and assignments, then press **Launch**.
+for this work; the model a new Agent or Team lead gets is set on **Models > Defaults**. The Team starts
+with its lead already in the Agents list, named after the first word of the Team name (`front-2`
+gives `front_lead`); the name follows the Team name as you type until you edit it, and the lead can
+be removed like any Agent. Add the other Agents you want to launch with the Team, with their names
+and assignments, then press **Launch**.
 
 Names must use lowercase letters, digits, underscores, and hyphens. If an Agent name is
 already in use, the form asks for a different name before it creates the Team.

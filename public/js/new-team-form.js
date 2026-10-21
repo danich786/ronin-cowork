@@ -22,6 +22,11 @@ const KINDS = ['coding', 'work', 'personal', 'household', 'social', 'school'];
 export function createNewTeamFormView(kit, { created = null, consumed = null, embedded = false } = {}) {
   const { createSurface, createAction, createActionBar, createField, createNotice } = kit.primitives;
 
+  // A Team starts with its lead (owner, 2026-10-21): one Agent marked team lead, named
+  // <first word of the team name>_lead — front-2 → front_lead. The name follows the Team
+  // name as it is typed until the person edits the Agent's name; the row goes like any other.
+  const leadName = (teamName) => { const first = finalizeTeamName(teamName).split(/[_-]+/).filter(Boolean)[0]; return first ? `${first}_lead` : ''; };
+  const seededAgents = (teamName = '') => [{ ...agentRow(), name: leadName(teamName), team_lead: true }];
   const draft = {
     template: '', templateName: '', title: '',
     name: '', kind: 'open', objective: '',
@@ -29,8 +34,16 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
     reach: 'open', recruit: 'open', output: ['open'],
     books: [], launchMode: 'configured',
     // The Agents this Team is raised with.
-    agents: [],
+    agents: seededAgents(),
     expanded: {},
+  };
+  // The lead whose name still reads as the old team name's lead takes the new one; an edited name stays.
+  const followLead = (before) => {
+    const was = leadName(before);
+    const now = leadName(draft.name);
+    if (was === now) return; // nothing to follow: a repaint here would pull the rows out from under a click
+    for (const row of draft.agents) if (row.team_lead && row.name === was) row.name = now;
+    agents.paint();
   };
   let seed = null;          // the campaign's answers, once the door has spoken
   let templates = [];
@@ -83,7 +96,7 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
       draft.objective = '';
       objectiveInput.value = '';
       draft.books = [...(seed?.seeds?.behaviours?.value || [])].filter((name) => (seed?.available || []).includes(name));
-      draft.agents = [];
+      draft.agents = seededAgents(draft.name);
       for (const key of ['reach', 'recruit']) draft[key] = seed?.seeds?.[key]?.value || 'open';
       draft.output = [seed?.seeds?.output?.value || 'open'].flat().filter(Boolean);
       snapshot = '';
@@ -158,7 +171,9 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
       nameInput.value = clean;
       nameInput.setSelectionRange(caret, caret);
     }
+    const before = draft.name;
     draft.name = nameInput.value;
+    followLead(before);
     paintName();
     paintTitle();
     paintFoot();
@@ -169,7 +184,9 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
   nameInput.addEventListener('blur', () => {
     const settled = finalizeTeamName(nameInput.value);
     if (settled !== nameInput.value) nameInput.value = settled;
+    const before = draft.name;
     draft.name = settled;
+    followLead(before);
     paintName();
     paintTitle();
     paintFoot();
@@ -207,8 +224,9 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
   objectiveInput.addEventListener('input', () => { draft.objective = objectiveInput.value; paintFoot(); });
   stepTop.body.append(createField({ label: t('new_team.instructions', 'Team instructions'), control: objectiveInput }).el);
 
-  /* ---- step 4 · Where ---- */
-  const stepWhere = createStep({ n: 5, key: 'where', title: t('new_team.who_where', 'Who and where') });
+  /* ---- step 3 · Workspace: the Team, its roster and its lead work here (owner, 2026-10-21: named on the
+     form, not folded into Agent defaults) ---- */
+  const stepWhere = createStep({ n: 3, key: 'where', title: t('new_team.workspace', 'Workspace') });
   const rootRows = (additional = false) => roots.filter((row) => !additional || row.repo !== false).map((row) => ({
     v: row.name, l: row.name,
   }));
@@ -336,7 +354,7 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
     else draft.expanded[key] = true;
     paintFolds();
   }
-  const plan = () => ['setup', 'top', 'lead', 'defaults', 'where', 'kit'];
+  const plan = () => ['setup', 'top', 'where', 'lead', 'defaults', 'kit'];
   const meta = {
     lead: () => t('new_team.agents_meta', '{n} agents', { n: draft.agents.length }),
   };
@@ -525,7 +543,7 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
     draft.repos = []; draft.branches = {};
     reposTouched = false;
     draft.books = [];
-    draft.agents = [];
+    draft.agents = seededAgents();
     draft.expanded = {};
     setupOpen = false;
     snapshot = '';
@@ -558,7 +576,7 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
     stepPayload.setNumber(plan().length + 1);
     stepSetup.setCollapsed(!setupOpen, t('new_team.kind_template_summary', 'Optional — Kind and Template'), true);
     stepDefaults.setCollapsed(!defaultsOpen, t('new_team.defaults_summary', 'Settings inherited by Agents launched in this Team'), true);
-    for (const key of ['where', 'kit']) steps[key].el.hidden = !defaultsOpen;
+    steps.kit.el.hidden = !defaultsOpen;
     stepPayload.setCollapsed(!payloadOpen, t('forms.payload_summary', 'Review what Launch will create'), true);
     paintTray();
     paintKinds();
@@ -589,7 +607,7 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
   } });
   stepPayload.body.append(foot, saveRow.el);
   stepPayload.setCollapsed(true, t('forms.payload_summary', 'Review what Launch will create'), true);
-  form.append(stepSetup.el, stepTop.el, stepLead.el, stepDefaults.el, stepWhere.el, stepKit.el, stepPayload.el);
+  form.append(stepSetup.el, stepTop.el, stepWhere.el, stepLead.el, stepDefaults.el, stepKit.el, stepPayload.el);
   surface.content.append(form, notice.el);
 
   return {
