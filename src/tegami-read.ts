@@ -14,7 +14,7 @@ export interface Tegami {
   repos: { repo: string; branch: string }[];
   /** The focus item and, when placed, the rung and leg on its ladder. */
   at: { item?: string; rung?: number; leg?: number } | null;
-  teams: { team: string; team_role: string; objective: string }[];
+  teams: { team: string; team_role: string; objective: string; members?: string[] }[];
   ladder_state: string;
   /** The focus item's ladder: an Agent's ladder is the ladder of the item it is on. */
   ladder: Rung[];
@@ -118,7 +118,10 @@ export async function readTegami(name: string): Promise<Tegami | null> {
             if (!x || typeof x !== 'object') return [];
             const t = x as Record<string, unknown>;
             return typeof t.team === 'string'
-              ? [{ team: t.team, team_role: String(t.team_role ?? ''), objective: String(t.objective ?? '') }]
+              ? [{
+                  team: t.team, team_role: String(t.team_role ?? ''), objective: String(t.objective ?? ''),
+                  ...(Array.isArray(t.members) ? { members: t.members.map(String) } : {}),
+                }]
               : [];
           })
         : [],

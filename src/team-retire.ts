@@ -7,7 +7,7 @@ import { resolveEndingRequest } from './desks/ending-response.js';
 
 export type TeamRetireDisposition = 'inspect' | 'prompt' | 'ignore';
 
-export async function retireTeam(name: string, disposition: TeamRetireDisposition = 'inspect'): Promise<Record<string, unknown>> {
+export async function retireTeam(name: string, disposition: TeamRetireDisposition = 'inspect', by = 'owner'): Promise<Record<string, unknown>> {
   if (disposition === 'inspect') {
     return { ok: true, inspected: name, ending: await inspectTeamEnding(name) };
   }
@@ -31,7 +31,7 @@ export async function retireTeam(name: string, disposition: TeamRetireDispositio
     const teams = await setTags(session.name, session.tags.filter((team) => team !== name));
     const leads = await getLeads(session.name);
     if (leads.includes(name)) await setLeads(session.name, leads.filter((team) => team !== name));
-    await writeTeams(session.name, teams).catch(() => {});
+    await writeTeams(session.name, teams, by).catch(() => {});
     await announceTeamChanges(session.name, session.tags, teams).catch(() => {});
   }
   return { ok: true, retired: name, ...(acknowledgement ? { worktree_acknowledgement: acknowledgement } : {}) };

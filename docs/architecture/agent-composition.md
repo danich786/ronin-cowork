@@ -125,6 +125,15 @@ its birth brief, never written after birth. A later change by anyone but the Age
 one fixed line, "Your work record changed; please read it (work-record read)." (`ackRecord`,
 owner 2026-10-07); the record says what changed.
 
+The record's `teams` block is Ronin's, one entry per Team: `team`, `team_role` (lead or
+member) and the roster's `objective`; a lead's entry also lists `members`, leads marked
+"(lead)". `teamChanged` (`src/tegami.ts`) derives it again on every roster write (objective,
+title, defaults, holds, anything `PUT /api/team` or `PUT /api/team-rosters/:name` changes),
+on a join, a leave, a lead change, a restore and a Team retire; `memberEnded` drops an ended
+Agent from its leads' lists. Each record that changed gets the one-line ack, and the lead
+gets it on every roster change; never for the Agent's own change. `work-record
+update_record` carries the block through and `work-record read` shows it as stored.
+
 Mandate teaching is part of the Ronin floor for every Cowork Agent. It is not selectable
 and must not appear among elective behaviors. This value-plus-teaching pattern is
 fundamental to composition: stating a fact is insufficient when the Agent has not also
