@@ -34,7 +34,7 @@ test('Setup GitHub lifecycle uses only a published session and hands success to 
   assert.match(github, /const install = action\([^\n]+, 'primary'\)/);
   assert.match(github, /const remove = action\([^\n]+, 'danger'\)/);
   assert.match(github, /const cloneButton = action\([^\n]+, 'primary'\)/);
-  assert.match(kit, /\.wk-action:hover:not\(:disabled\) \{[^}]*border-color: var\(--kaki\);[^}]*background: var\(--accent-soft\)/, 'ordinary actions visibly respond to a pointer');
+  assert.match(kit, /\.wk-action:hover:not\(:disabled\) \{[^}]*border-color: var\(--kaki\);[^}]*background: var\(--selected\)/, 'ordinary actions visibly respond to a pointer');
   assert.match(kit, /\.wk-action\[data-kind='primary'\]:hover:not\(:disabled\) \{[^}]*background: var\(--kaki-lift\)/, 'primary actions lift on hover');
   assert.match(github, /attachment\?\.type !== 'session' \|\| !attachment\.key/);
   assert.match(github, /mountAttachment\(result\.data\.attachment\)/, 're-entering resumes the published temporary session');
@@ -166,15 +166,15 @@ test('roots carry no parallel stone DOM or CSS presentation and the detail rhyth
   assert.doesNotMatch(css, /\.setup-roots-stones \.sws-(rail|grid|detail|host)\b/, 'no consumer override of the shared rail, grid, or detail geometry');
   assert.match(css, /\.setup-roots-stones \.sws-stone\.archived \.sws-state/);
   assert.doesNotMatch(css, /\.setup-roots-stones \.sws-stone\.archived \.sws-state\s*\{[^}]*?(?:border|border-radius|background|padding):/);
-  assert.match(css, /\.setup-roots-stones \.setup-roots-add-stone \{[^}]*border-style: dashed;[^}]*background: var\(--panel\);[^}]*color: var\(--fg\)/, 'Add is neutral until selected');
+  assert.match(css, /\.setup-roots-stones \.setup-roots-add-stone \{[^}]*border-style: dashed;[^}]*background: var\(--surface\);[^}]*color: var\(--fg\)/, 'Add is neutral until selected');
   assert.doesNotMatch(css, /\.setup-roots-stones \.setup-roots-add-stone \.sws-glyph/, 'both add-action plus glyphs inherit the shared accent');
-  assert.match(css, /\.setup-roots-stones \.sws-stone\[aria-pressed='true'\] \{[^}]*border-color: var\(--kaki\);[^}]*background: var\(--accent-soft\);[^}]*color: var\(--fg-strong\)/, 'only the selected stone receives the highlight');
+  assert.match(css, /\.setup-roots-stones \.sws-stone\[aria-pressed='true'\] \{[^}]*border-color: var\(--kaki\);[^}]*background: var\(--selected\);[^}]*color: var\(--fg-strong\)/, 'only the selected stone receives the highlight');
   assert.match(css, /\.pr-detail-head \{[^}]*border-bottom: var\(--edge-2\) solid var\(--kaki\)/, 'one kaki rule closes the head');
   assert.match(css, /\.pr-detail-heading \{[^}]*justify-content: space-between/, 'the head line carries the name and its actions, as Presets does');
   const detailCss = css.slice(css.indexOf("/* Setup's selected folder"), css.indexOf('.pr-block {'));
   assert.doesNotMatch(detailCss, /--text-(?:[1-3]|[6-9]|10)\b/, 'only 14px body and 13px notes inside the detail');
   assert.doesNotMatch(detailCss, /font-mono|var\(--ok\)|@container roots-detail/, 'no second face, no green, labels never stack over values');
-  assert.match(detailCss, /\.pr-detail \.pr-f input,\s*\.pr-detail \.pr-f select \{[^}]*border: 0;[^}]*background: var\(--well\)[^}]*font: inherit/, 'fields are drawn as Presets fields, never browser defaults');
+  assert.match(detailCss, /\.pr-detail \.pr-f input,\s*\.pr-detail \.pr-f select \{[^}]*border: 0;[^}]*background: var\(--inset\)[^}]*font: inherit/, 'fields are drawn as Presets fields, never browser defaults');
   assert.match(css, /\.pr-detail \{[^}]*font-size: var\(--text-body\)/);
   assert.match(css, /\.pr-detail \.pr-group \{[^}]*border: 0/, 'no boxes inside the detail');
   assert.match(roots, /go\.append\(f\.querySelector\('\.pr-frow'\)\); \/\/ Add and Cancel on the head line/);

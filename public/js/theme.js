@@ -138,7 +138,7 @@ export function applyTheme(name) {
   document.documentElement.dataset.theme = resolvedTheme(choice);
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) {
-    const bar = getComputedStyle(document.documentElement).getPropertyValue('--bg-2').trim();
+    const bar = getComputedStyle(document.documentElement).getPropertyValue('--surface').trim();
     if (bar) meta.content = bar;
   }
   // Live terminals re-read the palette; tape/composer surfaces are plain CSS and

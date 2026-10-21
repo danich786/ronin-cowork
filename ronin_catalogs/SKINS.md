@@ -18,13 +18,13 @@
 > | spelling | applies |
 > |---|---|
 > | `- **--radius-large:** 0` | **both shells** — shape, space, type and motion want this |
-> | `- **dark--bg:** #05070a` | the dark shell only |
-> | `- **light--bg:** #fffdf8` | the light shell only |
+> | `- **dark--surface:** #05070a` | the dark shell only |
+> | `- **light--surface:** #fffdf8` | the light shell only |
 >
 > **A token we rename keeps working here.** A skin naming an old name (`--muted-3`, `--setup-mark`,
 > `--gc-cta-bg`, `--gc-cta-ink`, `--gc-cta-bg-hover`, `--kanban-*`, `--kiiro`, `--kaki-hint`, `--scope-*`,
 > `--team-workbench-head-*`, `--cowork-head-*`, `--muted-2`, `--dim`, and the old rulers `--text-1`…`--text-10`,
-> `--text-micro`, `--space-1`…`--space-12`, `--radius-xs/sm/md/lg/xl`, `--weight-medium`, `--leading-loose`) paints
+> `--text-micro`, `--space-1`…`--space-12`, `--radius-xs/sm/md/lg/xl`, `--weight-medium`, `--leading-loose`, `--panel` → `--surface`, `--well` → `--inset`) paints
 > the token that replaced it; spell the new name and it wins. A `--cowork-head-*` name paints that part of all three
 > header scopes; an old ruler rung paints the roles it mostly served (`public/js/skins.js` lists them). The roles
 > themselves, and which one is for what, are in `docs/architecture/ui.md`.
@@ -45,7 +45,7 @@
 > 1. **It is the FLOOR, and a floor that has to be fetched is not one.** On a first-ever
 >    visit, with cleared storage, or with the tailnet flaky, the page paints correctly today
 >    with no JS having run at all. Move the shipped palette here and there is nothing to
->    fall back to — not a flash of dark, a flash of *nothing*, with every `var(--bg)`
+>    fall back to — not a flash of dark, a flash of *nothing*, with every `var(--surface)`
 >    resolving to empty. Same law as stock ⊕ user in `docs/architecture/shadowing.md`: the stock layer
 >    exists to be there before anything else is.
 > 2. **Keeping a floor AND a copy here would be the same palette spelled twice** — the exact
@@ -67,11 +67,8 @@
 - **--font-ui:** "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif
 - **--radius-small:** 2px
 - **--radius-large:** 4px
-- **light--bg:** #f6f1e7
-- **light--bg-2:** #efe8db
-- **light--panel:** #fffcf6
-- **light--raise:** #f3ece0
-- **light--well:** #fbf7ef
+- **light--surface:** #fffcf6
+- **light--inset:** #fbf7ef
 - **light--line:** #e5dccb
 - **light--line-2:** #ddd2bd
 - **light--line-3:** #c3b499
@@ -82,11 +79,8 @@
 - **light--kaki-lift:** #965127
 - **light--kaki-tint:** #d6a98d
 - **light--aiiro:** #5c7d6a
-- **dark--bg:** #0d0b09
-- **dark--bg-2:** #14110d
-- **dark--panel:** #1a1611
-- **dark--raise:** #221d16
-- **dark--well:** #100d0a
+- **dark--surface:** #1a1611
+- **dark--inset:** #100d0a
 - **dark--line:** #2a241c
 - **dark--line-2:** #372f24
 - **dark--line-3:** #4d4334
@@ -102,11 +96,8 @@
 - **blurb:** The lobby. Near-black, bright cyan and magenta, every corner cut square — the gamer one, goofy on purpose.
 - **--radius-small:** 0
 - **--radius-large:** 0
-- **dark--bg:** #07090f
-- **dark--bg-2:** #0c111c
-- **dark--panel:** #111827
-- **dark--raise:** #16203a
-- **dark--well:** #050810
+- **dark--surface:** #111827
+- **dark--inset:** #050810
 - **dark--line:** #1a2438
 - **dark--line-2:** #23324d
 - **dark--line-3:** #35476b
@@ -116,11 +107,8 @@
 - **dark--kaki:** #3ee6ff
 - **dark--kaki-lift:** #65ebff
 - **dark--aiiro:** #ff3ea5
-- **light--bg:** #eef3ff
-- **light--bg-2:** #e2eafb
-- **light--panel:** #ffffff
-- **light--raise:** #f3f7ff
-- **light--well:** #f7f9ff
+- **light--surface:** #ffffff
+- **light--inset:** #f7f9ff
 - **light--line:** #cfdaf2
 - **light--line-2:** #b7c6ea
 - **light--line-3:** #8fa4d6

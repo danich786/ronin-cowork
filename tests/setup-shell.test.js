@@ -121,7 +121,7 @@ test('launch actions reuse the nin mark, never the Team Roster torii, and open t
     source('js/workspace.js'), source('js/new-agent.js'), source('js/new-team-form.js'),
   ]);
   assert.match(primitives, /el\.append\(ninMark\('wk-launch-mark'\)/);
-  assert.match(kit, /\.wk-action\[data-launch='true'\] \{ border-color: var\(--kaki\); background: var\(--raise\);/);
+  assert.match(kit, /\.wk-action\[data-launch='true'\] \{ border-color: var\(--kaki\); background: var\(--surface\);/);
   assert.match(workspace, /window\.open\(url\.href, '_blank', 'noopener'\)/);
   for (const caller of [agent, team]) {
     assert.match(caller, /launch: true/);

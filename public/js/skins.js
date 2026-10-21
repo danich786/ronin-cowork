@@ -49,6 +49,12 @@ const RENAMED = {
   '--radius-md': ['--radius-large'], '--radius-lg': ['--radius-large'], '--radius-xl': ['--radius-large'],
   '--weight-medium': ['--weight-strong'],
   '--leading-loose': ['--leading-body'],
+  // cut 13: two neutral surfaces. --panel was the base and --well the inside; --bg, --bg-2 and
+  // --raise were shades with no purpose left, so a skin's --panel/--well carry its look over.
+  '--panel': ['--surface'], '--well': ['--inset'],
+  '--bg': [], '--bg-2': [], '--raise': [],
+  '--term-panel': [], '--term-well': [], '--term-tape-bg': [], '--term-jump-bg': [], '--term-jump-bg-2': [],
+  '--accent-soft': [],
 };
 const DARK_ONLY = {
   '--kiiro': '--head-attention',

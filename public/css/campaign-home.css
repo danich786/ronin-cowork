@@ -47,7 +47,7 @@
     min-height: var(--ch-door-h);
     border: var(--edge) solid var(--line-2);
     border-radius: var(--ch-box);
-    background: var(--panel);
+    background: var(--surface);
     transition:
       border-color var(--motion-quick) var(--ease),
       transform var(--motion-quick) var(--ease),
@@ -67,7 +67,7 @@
     inset: 0 auto 0 0;
     width: var(--edge-2);
     border-radius: var(--ch-box) 0 0 var(--ch-box);
-    background: var(--ch-tone);
+    background: var(--ch-tone); /* the door's colour names where it leads */
   }
   .ch-door[data-door='models'] { --ch-tone: var(--kaki); }
   .ch-door[data-door='workspaces'] { --ch-tone: var(--accent-2); }
@@ -137,7 +137,7 @@
     padding: var(--space-row) var(--space-inline);
     border: var(--edge) solid var(--line-2);
     border-radius: var(--radius-large);
-    background: var(--panel);
+    background: var(--surface);
     color: var(--muted);
     font: inherit;
     font-size: var(--text-label);
@@ -164,13 +164,13 @@
   .cv-input {
     padding: var(--space-inline);
     border: var(--edge) solid var(--line-2);
-    background: var(--well);
+    background: var(--inset);
     color: var(--fg);
     font-family: var(--font-ui);
     font-size: var(--text-body);
   }
   .cv-input:focus { border-color: var(--accent); outline: none; }
-  .cv-input[readonly] { color: var(--muted); background: var(--bg-2); cursor: default; }
+  .cv-input[readonly] { color: var(--muted); background: var(--surface); cursor: default; }
   .cv-actions { display: flex; justify-content: flex-end; gap: var(--space-inline); }
   .cv-button {
     padding: var(--space-row) var(--space-inline);
@@ -193,7 +193,7 @@
     background: transparent; color: var(--muted); font: inherit; font-size: var(--text-body); cursor: pointer;
   }
   .cv-pill:hover { border-color: var(--line-3); color: var(--fg-strong); }
-  .cv-pill[aria-pressed='true'] { border-color: var(--kaki); background: var(--raise); color: var(--fg-strong); }
+  .cv-pill[aria-pressed='true'] { border-color: var(--kaki); background: var(--selected); /* the one you are on, have chosen, or are dropping onto */ color: var(--fg-strong); }
   .cv-pill:disabled { cursor: default; opacity: .6; }
   .cv-pill-tag { font-size: var(--text-small); letter-spacing: var(--tracking-wide); text-transform: uppercase; color: var(--muted); }
   .cv-choice { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--space-subsection) var(--space-inline); align-items: start; padding: var(--space-row) 0; border-bottom: var(--edge) solid var(--line); }

@@ -1,6 +1,6 @@
 @layer app {
-  .fb-bar-action { border-color: var(--kaki); background: var(--raise); color: var(--fg); }
-  .fb-bar-action:hover { background: var(--bg-2); color: var(--kaki); }
+  .fb-bar-action { border-color: var(--kaki); background: var(--surface); color: var(--fg); }
+  .fb-bar-action:hover { background: var(--surface); color: var(--kaki); }
   .fb-surface-content { overflow-y: auto; }
   .fb-form { margin: 0 auto; }
   .fb-fields { display: flex; flex-direction: column; gap: var(--space-subsection); }

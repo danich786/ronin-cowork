@@ -128,7 +128,7 @@ async function init() {
   // THE DESKTOP FIRST PAINT ends here: the route's real workspace is mounted and the
   // header now belongs to it. Session discovery, event wiring and home catalogs below
   // enrich that workspace; none decides which surface the person is looking at. Keeping
-  // the veil over those reads exposed only the light canvas (--bg, the beige flash) on
+  // the veil over those reads exposed only the bare canvas (--surface) on
   // every reload, sometimes for seconds on a busy box. The desktop must not make
   // network readiness a paint boundary.
   reveal();

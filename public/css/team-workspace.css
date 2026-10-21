@@ -11,9 +11,9 @@
   .home-live {
     --home-live-dot: 6px;
   }
-  .home-live { width: var(--home-live-dot); height: var(--home-live-dot); justify-self: center; border-radius: var(--radius-round); background: var(--line-2); }
-  .home-live[data-stance='working'], .home-live[data-stance='replying'] { background: var(--ok-2); }
-  .home-live[data-stance='asking'], .home-live[data-stance='awaiting_you'] { background: var(--kaki); }
+  .home-live { width: var(--home-live-dot); height: var(--home-live-dot); justify-self: center; border-radius: var(--radius-round); background: var(--line-2); /* status: not live */ }
+  .home-live[data-stance='working'], .home-live[data-stance='replying'] { background: var(--ok-2); /* status: under way or done */ }
+  .home-live[data-stance='asking'], .home-live[data-stance='awaiting_you'] { background: var(--kaki); /* kaki: the action, or what needs you */ }
   .team-roster-detail .home-group-add { display: none; }
   /* The restored roster's ⑂ desk column is always empty now (js/desks.js); its track goes so the
      names keep their width in a workspace narrower than the row's fixed columns. */
@@ -35,18 +35,18 @@
     --tk-control-size: 16px;
     --tk-dot: 6px;
     --tk-card-bar: 4px; /* a card's state stripe */
-    height: 100%; min-height: 0; overflow: auto; background: var(--bg-2); container: team-kanban / inline-size;
+    height: 100%; min-height: 0; overflow: auto; background: var(--surface); container: team-kanban / inline-size;
   }
   .tk-header {
     --tk-header-height: clamp(6rem, 15dvh, 9rem); /* the stone work surface's header band */
   }
-  .tk-header { box-sizing: border-box; position: sticky; top: 0; z-index: 1; display: flex; flex-direction: column; block-size: var(--tk-header-height); min-inline-size: 0; padding: var(--space-paragraph) var(--space-inline); border-bottom: var(--edge) solid var(--line); background: var(--bg-2); }
+  .tk-header { box-sizing: border-box; position: sticky; top: 0; z-index: 1; display: flex; flex-direction: column; block-size: var(--tk-header-height); min-inline-size: 0; padding: var(--space-paragraph) var(--space-inline); border-bottom: var(--edge) solid var(--line); background: var(--surface); }
   .tk-header[data-expanded='false'] { block-size: auto; }
   .tk-header-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-inline); }
   .tk-beta {
     --tk-beta-h: 2.25rem;
   }
-  .tk-beta { display: inline-flex; align-items: center; min-height: var(--tk-beta-h); box-sizing: border-box; border: var(--edge) solid var(--kaki); border-radius: var(--radius-small); background: var(--raise); color: var(--fg-strong); padding: var(--space-row) var(--space-inline); font: inherit; font-size: var(--text-body); font-weight: var(--weight-strong); letter-spacing: var(--tk-heading-track); text-transform: uppercase; }
+  .tk-beta { display: inline-flex; align-items: center; min-height: var(--tk-beta-h); box-sizing: border-box; border: var(--edge) solid var(--kaki); border-radius: var(--radius-small); background: var(--surface); color: var(--fg-strong); padding: var(--space-row) var(--space-inline); font: inherit; font-size: var(--text-body); font-weight: var(--weight-strong); letter-spacing: var(--tk-heading-track); text-transform: uppercase; }
   .tk-header-toggle { border: 0; border-radius: 0; padding: var(--space-control); background: transparent; color: var(--muted); font: inherit; font-size: var(--text-small); font-weight: var(--weight-regular); cursor: pointer; }
   .tk-header-toggle:hover { color: var(--fg); }
   .tk-header-toggle:focus-visible { outline: var(--focus-width) solid var(--kaki); outline-offset: var(--focus-offset); }
@@ -59,18 +59,18 @@
   .tk-refresh:hover, .tk-fold:hover { border-color: var(--accent); color: var(--fg); }
   .tk-legend { display: flex; flex: none; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-paragraph) var(--space-inline); color: var(--muted); font-size: var(--text-body); }
   .tk-legend span { display: inline-flex; align-items: center; gap: var(--space-inline); }
-  .tk-dot { width: var(--tk-dot); height: var(--tk-dot); background: var(--line-2); }
-  .tk-dot.green { background: var(--ok-2); }
-  .tk-dot.yellow { background: var(--status-yellow); }
-  .tk-dot.red { background: var(--status-red); }
+  .tk-dot { width: var(--tk-dot); height: var(--tk-dot); background: var(--line-2); /* status: none yet */ }
+  .tk-dot.green { background: var(--ok-2); /* status: under way or done */ }
+  .tk-dot.yellow { background: var(--status-yellow); /* status: waiting / stuck */ }
+  .tk-dot.red { background: var(--status-red); /* status: waiting / stuck */ }
   .tk-notice { flex: 1 1 auto; min-width: 0; margin: 0; color: var(--muted); font-size: var(--text-body); }
   .tk-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(var(--tk-column-min), 1fr)); gap: var(--space-paragraph) var(--space-inline); min-width: 0; padding: var(--space-paragraph) var(--space-inline) var(--space-paragraph); }
   .tk-unavailable { margin: 0; color: var(--muted); }
-  .tk-column { display: flex; height: var(--tk-column-height); min-width: 0; flex-direction: column; border: var(--edge) solid var(--line); background: var(--well); transition: border-color var(--motion-quick) var(--ease), background var(--motion-quick) var(--ease); }
+  .tk-column { display: flex; height: var(--tk-column-height); min-width: 0; flex-direction: column; border: var(--edge) solid var(--line); background: var(--inset); transition: border-color var(--motion-quick) var(--ease), background var(--motion-quick) var(--ease); }
   .tk-column > h3 { box-sizing: border-box; display: grid; height: var(--tk-column-head); flex: none; gap: var(--space-row); margin: 0; border-bottom: var(--edge) solid var(--line); padding: var(--space-row) var(--space-inline); color: var(--muted); font-size: var(--text-body); font-weight: var(--weight-strong); letter-spacing: var(--tk-heading-track); text-transform: uppercase; }
   .tk-column-open, .tk-back { border: 0; border-bottom: var(--edge) dotted currentColor; border-radius: 0; padding: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
   .tk-back { grid-column: 1 / -1; justify-self: start; margin-bottom: var(--space-row); color: var(--accent-2); }
-  .tk-project-detail { padding: var(--space-inset); border: var(--edge) solid var(--line); background: var(--well); }
+  .tk-project-detail { padding: var(--space-inset); border: var(--edge) solid var(--line); background: var(--inset); }
   .tk-project-detail h2 { margin: var(--space-paragraph) 0 var(--space-row); color: var(--fg-strong); }
   .tk-project-id { color: var(--muted); font-size: var(--text-body); }
   .tk-project-facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-row) var(--space-inline); }
@@ -86,8 +86,8 @@
   .tk-card[data-status='green'] { border-left-color: var(--ok-2); }
   .tk-card[data-status='yellow'] { border-left-color: var(--status-yellow); }
   .tk-card[data-status='red'] { border-left-color: var(--status-red); }
-  .tk-board.dragging .tk-column.means { border-color: var(--accent); border-style: dashed; background: var(--raise); }
-  .tk-column.over { border-color: var(--accent); background: var(--raise); }
+  .tk-board.dragging .tk-column.means { border-color: var(--accent); border-style: dashed; background: var(--selected); /* the one you are on, have chosen, or are dropping onto */ }
+  .tk-column.over { border-color: var(--accent); background: var(--selected); /* the one you are on, have chosen, or are dropping onto */ }
   .tk-drop-hint { display: none; margin: 0; padding: var(--space-row) var(--space-inline) 0; color: var(--accent); font-size: var(--text-body); }
   .tk-board.dragging .tk-column.means .tk-drop-hint { display: block; }
   .tk-card-toggle { display: block; width: 100%; border: 0; padding: 0; background: transparent; color: inherit; text-align: left; }
@@ -139,7 +139,7 @@
      align to the step's left edge, no second indent (owner, 2026-10-20). */
   .fs-step:has(> .fs-step-head.fs-togglable) > .fs-step-body.league-team-step-body { grid-column: 1 / -1; }
   .league-team-agent { width: 100%; border: 0; border-radius: var(--radius-hair); background: transparent; color: var(--fg); font-family: inherit; text-align: left; cursor: pointer; }
-  .league-team-agent:hover { background: var(--bg-2); }
+  .league-team-agent:hover { background: var(--surface); }
   .league-team-agent-name { grid-column: 2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .league-team-agent-lead { margin-inline-end: var(--space-inline); color: var(--accent); }
   .league-team-agent-holds { margin-inline-start: var(--space-inline); color: var(--muted); }
@@ -152,10 +152,10 @@
     --tk-stage-h: 4px;
   }
   .tk-stage-bar > i { width: var(--tk-stage-w); height: var(--tk-stage-h); border: var(--edge) solid var(--line-2); }
-  .tk-stage-bar > i.past { border-color: var(--fg); background: var(--fg); }
-  .tk-stage-bar > i.now { border-color: transparent; background: var(--status-yellow); }
-  .tk-stage-bar > i.now.green { background: var(--ok-2); }
-  .tk-stage-bar > i.now.red { background: var(--status-red); }
+  .tk-stage-bar > i.past { border-color: var(--fg); background: var(--fg); /* a stage already passed */ }
+  .tk-stage-bar > i.now { border-color: transparent; background: var(--status-yellow); /* status: waiting / stuck */ }
+  .tk-stage-bar > i.now.green { background: var(--ok-2); /* status: under way or done */ }
+  .tk-stage-bar > i.now.red { background: var(--status-red); /* status: waiting / stuck */ }
   .league-team-roster, .league-team-config { flex: 0 0 auto; }
   .league-team-roster { display: flex; flex-direction: column; min-height: 0; }
   .league-team-roster-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-inline); margin-bottom: var(--space-paragraph); border-bottom: var(--edge) solid var(--line-2); padding-bottom: var(--space-row); }
@@ -233,6 +233,6 @@
   .ac-brief {
     --ac-brief-h: 18rem;
   }
-  .ac-brief { max-height: var(--ac-brief-h); overflow: auto; border: var(--edge) solid var(--line-2); border-radius: var(--radius-small); background: var(--well); padding: var(--space-inline); color: var(--fg); font-family: inherit; white-space: pre-wrap; }
+  .ac-brief { max-height: var(--ac-brief-h); overflow: auto; border: var(--edge) solid var(--line-2); border-radius: var(--radius-small); background: var(--inset); padding: var(--space-inline); color: var(--fg); font-family: inherit; white-space: pre-wrap; }
   .ac-mandate, .ac-add { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: var(--space-row) var(--space-inline); }
 }

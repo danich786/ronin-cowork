@@ -221,16 +221,17 @@ function ratio(fg, bg, toks) {
   return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
 }
 const FLOOR = [
-  ['--fg', '--bg', 7], ['--fg', '--bg-2', 7], ['--fg', '--panel', 7], ['--fg', '--raise', 7], ['--fg', '--well', 7],
-  ['--fg-strong', '--panel', 7], ['--fg-strong', '--raise', 7], ['--fg-strong', '--well', 7],
-  ['--muted', '--bg', 3.5], ['--muted', '--panel', 4.5], ['--link', '--panel', 4.5],
-  ['--accent', '--bg', 3], ['--warn', '--bg', 3], ['--bad', '--bg', 3], ['--bad-soft', '--bg', 3],
-  ['--info', '--bg', 3], ['--ok', '--bg', 3],
+  ['--fg', '--surface', 7], ['--fg', '--inset', 7], ['--fg-strong', '--surface', 7], ['--fg-strong', '--inset', 7],
+  ['--muted', '--surface', 4.5], ['--muted', '--inset', 3.5], ['--link', '--surface', 4.5],
+  ['--accent', '--surface', 3], ['--warn', '--surface', 3], ['--bad', '--surface', 3], ['--bad-soft', '--surface', 3],
+  ['--info', '--surface', 3], ['--ok', '--surface', 3],
+  ['--accent', '--inset', 3], ['--warn', '--inset', 3], ['--bad', '--inset', 3], ['--bad-soft', '--inset', 3],
+  ['--info', '--inset', 3], ['--ok', '--inset', 3],
   ['--on-strong', '--kaki', 3], // the メ fill — 21px bold, large-text tier
   ['--bad-fg', '--bad-ground', 7],
   ['--head-team-fg', '--head-team-bg', 7], ['--head-team-muted', '--head-team-bg', 4.5],
   ['--head-attention', '--head-team-bg', 4.5],
-  ['--term-fg', '--term-bg', 7], ['--term-fg', '--term-ansi-br-black', 7], ['--term-tape-fg', '--term-tape-bg', 7], ['--term-input-fg', '--term-well', 7],
+  ['--term-fg', '--term-bg', 7], ['--term-fg', '--term-ansi-br-black', 7], ['--term-tape-fg', '--term-bg', 7], ['--term-input-fg', '--inset', 7],
 ];
 for (const [name, toks] of [['dark', darkTokens], ['light', lightTokens]]) {
   for (const [fg, bg, floor] of FLOOR) {

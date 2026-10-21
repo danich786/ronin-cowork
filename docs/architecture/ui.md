@@ -164,7 +164,26 @@ The same gate holds a **contrast floor** for the named role pairs in both themes
 floors set from the measured palette, so a token edit that dims text fails the build.
 The roles, defined in `public/style.css`:
 
-- surfaces: `--bg` (canvas) · `--bg-2` (bar) · `--panel` · `--raise` · `--well` (inputs)
+- surfaces: **two, and nothing else neutral paints a background** (owner, cut 13: "if we
+  can't explain why a colour is there, don't do it"). `--surface` is the one base: the top
+  bar, the gutters, the selector, cards, Commons, collection pages, and every tile in every
+  view (Term, Chat, Notes, Work, All, tape, keys, jump), so switching a tile's view never
+  changes its ground. `--inset` is set INSIDE the base so it reads as inside: an input, a code
+  block, an open document, a nested panel such as a kanban column or an ask tray. Lines and
+  borders separate; shades do not. `--bg`, `--bg-2`, `--panel`, `--raise`, `--well` and the
+  terminal's own surface copies are gone (`skins.js` reads `--panel` as `--surface` and
+  `--well` as `--inset`).
+  The main places keep their own token, each `var(--surface)` by default, so a designer
+  changes one place or the base: `--bar-bg` (the top bar), `--workbench-bg` (the page behind
+  the workspaces), `--selector-bg` (the selector column) and `--tile-bg` (every agent tile in
+  every view; `--term-bg` reads it). No per-card or per-panel tokens beyond these: small
+  parts read `--surface` or `--inset` directly.
+- **Every other background says why, where it is set**, as a one-line comment: the scope
+  headers (where you are), kaki fills (the action, or what needs you), status (ok, warn,
+  bad), the scrim, and `--selected`, the one interaction fill: the row, stone or card you
+  are on, have chosen, or are dropping onto (a kaki wash over `--surface`; hover, focus,
+  pressed, current and drop targets all read it). One you cannot explain goes to
+  `--surface` or transparent.
 - edges: `--line` · `--line-2` · `--line-3` (three weights, hairline → emphasized)
 - text: `--fg-strong` · `--fg` · `--muted` (one grey: `--muted-2` and `--dim` merged into it) · `--link` (aiiro, lifted on the dark shell)
 - meaning: `--accent` (attention/identity) · `--accent-2` (reference) · `--ok`/`--ok-2` ·
@@ -184,9 +203,8 @@ The roles, defined in `public/style.css`:
   rules below (bright white is the strongest mark; on paper every slot clears 3:1) are what a
   new value must keep, and `check-css` holds the terminal's text pairs to the floor in both
   themes. **The terminal's surfaces are the UI's, not copies** (owner, cut 11): `--term-bg`
-  reads `--bg` on the dark shell and `--panel` on the light one, and the tape, panel, well,
-  lines, ink and muted read `--bg-2`, `--well`, `--line`/`--line-2`, `--fg`/`--fg-strong` and
-  `--muted` in both shells, so a retuned neutral moves the terminal with it. Only true
+  is `--surface` (xterm reads it), the composer's input is `--inset`, and the tape's lines,
+  ink and muted read `--line`/`--line-2`, `--fg`/`--fg-strong` and `--muted` in both shells, so a retuned neutral moves the terminal with it. Only true
   terminal values keep a hex: the ANSI hues, the cursor, the selection, and bright black,
   the shading band an agent CLI draws behind the person's messages (a neutral grey, never
   warm)
@@ -235,7 +253,7 @@ scheme, two grounds. Two departures from stock, both forced by the paper:
   bright white stays the strongest mark, which is the role the emitting code means.
   Bright black (8) is the exception to 3:1: agent CLIs paint it as a BACKGROUND band, so
   in both shells it is a neutral near the surface (light grey on paper, a dark band near
-  `--raise` on the dark shell) that `--term-fg` reads on at the 7:1 floor, which `check-css`
+  `--surface` on the dark shell) that `--term-fg` reads on at the 7:1 floor, which `check-css`
   holds. The cost is `\e[90m` dim text, which fades in both shells.
 
 half a terminal palette; the other 240 are the xterm cube, and a program that addresses
