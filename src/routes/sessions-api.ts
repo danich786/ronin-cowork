@@ -35,7 +35,7 @@ import { expandLookup } from '../lookup.js';
 import { count } from '../counts.js';
 import { broadcastEvent, pushTeams } from '../ws/events.js';
 import { announceTeamChanges } from './wipeboards-api.js';
-import { memberEnded, teamChanged, writeMandate, writeTeams } from '../tegami.js';
+import { memberEnded, teamChanged, writeConfiguration, writeMandate, writeTeams } from '../tegami.js';
 import { conditionalBehaviourPath, resolveBehaviourBooks } from '../behaviours.js';
 import { addCurrentBehaviour, readAgentComposition } from '../agent-composition.js';
 import { mandate } from '../agent-defaults.js';
@@ -250,6 +250,7 @@ export function registerSessions(app: express.Express): void {
         else await setLaunchStamp(archived.name, archived.agent);
         await setProviderSessionId(archived.name, archived.provider_session_id);
         await writeTeams(archived.name, archived.tags);
+        await writeConfiguration(archived.name).catch(() => {});
       } catch (e) {
         await stopSessionTree(archived.name);
         throw e;
@@ -369,6 +370,7 @@ export function registerSessions(app: express.Express): void {
     if (!(await sessionExists(name))) return res.status(404).json({ error: 'No such session.' });
     try {
       await setSessionTitle(name, title);
+      await writeConfiguration(name, callerOf(req)).catch(() => {});
       res.json({ ok: true, name, title });
     } catch (e) {
       res.status(400).json({ error: String((e as Error)?.message ?? e) });
@@ -418,7 +420,9 @@ export function registerSessions(app: express.Express): void {
       return res.status(404).json({ error: `"${root}" is not in the catalog.` });
     }
     try {
-      res.json({ ok: true, project_root: await setProjectRoot(name, root) });
+      const project_root = await setProjectRoot(name, root);
+      await writeConfiguration(name, callerOf(req)).catch(() => {});
+      res.json({ ok: true, project_root });
     } catch (e) {
       res.status(500).json({ error: String((e as Error)?.message ?? e) });
     }
