@@ -5,8 +5,8 @@ template or make your own, and give the Team a name and objective.
 
 ## Set up the work
 
-Choose the Workspace Folder and repositories the Team will use. Set the provider and
-model, guidance, and mandate for this work. Add the Agents you want to launch with the
+Choose the Workspace Folder and repositories the Team will use. Set the guidance and mandate
+for this work; the model a new Agent or Team lead gets is set on **Models > Defaults**. Add the Agents you want to launch with the
 Team, with their names and assignments, then press **Launch**.
 
 Names must use lowercase letters, digits, underscores, and hyphens. If an Agent name is

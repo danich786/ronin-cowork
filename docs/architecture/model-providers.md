@@ -248,12 +248,29 @@ MODEL_PROVIDERS.md facts + docs/agents/<cli>.md commands
   → submit it and verify that it left the prompt
 ```
 
+## Model defaults
+
+One record says what model a launch gets when its form says Default (owner, 2026-10-21):
+⚙ `agents.sessions` in `machine_settings.json`, set on **Models > Defaults** and shown again
+in ⚙ Configuration — the schema's `models` section, two views of one setting.
+
+| Default | Key | Read by |
+|---|---|---|
+| Agent model | `sessions.default` | `spawn.ts` / `launch-command.ts` for every launch that names neither provider nor model; `launch-seed.ts`; Mika's provider |
+| Team lead model | `sessions.lead` | the same, for a launch with `team` and `team_lead` (`sessionsFor`); none set = the Agent model |
+| Mika model level | `jobs.mikaassist.level` | `mika-runtime.ts`: the Agent model's provider, Light → Standard → Frontier upward |
+| Preferred model per provider | `sessions.by_provider.<id>` | a launch that names a provider but no model (Configuration only) |
+
+A Desk's `defaults.provider/model` used to outrank `sessions.default`; at start
+`moveDeskModelDefault` (`campaign-scope.ts`) copies a set pair there once and clears it on the
+Desk. A Team's `agent_defaults` carries no model.
+
 ## The one picker
 
 Every place the product asks *which provider, and which model* is one control:
 `providerModelPair` in `public/js/form-steps.js`. New Agent, New Team, Add Agent to Team,
-the Campaign's Team and Agent defaults, Team Configuration, ⚙ Configuration (the general default,
-each provider's preferred model, and Mika's row), cowork setup and the Presets rows all call
+⚙ Configuration and Models > Defaults (the Agent and Team lead models, each provider's
+preferred model, and Mika's row), cowork setup and the Presets rows all call
 it; none keeps a list, a join or a vendor's name of its own. The picker reads the rows the
 server joined (`GET /api/provider-catalog`) and what this machine measured of each CLI
 (`GET /api/setup/runtime`, which answers from the Campaign's recorded summary and never

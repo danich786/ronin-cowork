@@ -8,6 +8,7 @@
  *   provider's page beside the rail; a stone dragged into a workspace places the provider
  *   there whole (`createModelProvider`), no rail, the whole workspace to its page.
  *   The selector lists one card per provider (`providerOffers`), each placing that surface.
+ *   `createModelDefaults`: the model a new Agent, a new Team lead and Mika start on.
  */
 import { WorkspaceKit } from './workspace-kit.js';
 import { dayTime, el, loadProviderCatalog, providerCatalog } from './form-steps.js';
@@ -18,6 +19,7 @@ import { WORKBENCH_TYPES } from './workbench-catalog.js';
 import { t } from './lexicon.js';
 import { request } from './request.js';
 import { askMika } from './mika.js';
+import { buildMachineSettings } from './machine-settings.js';
 
 /** The selector's cards: one per provider, from the record every reader takes. */
 export const providerOffers = () => providerStones(recordRuntime()).map(({ id, label, secondary }) => ({ key: id, label, summary: secondary }));
@@ -111,6 +113,18 @@ export function createModelRefresh(context) {
     },
     destroy: () => { drawing.destroy(); },
   };
+}
+
+/**
+ * THE MODEL DEFAULTS SURFACE (owner, 2026-10-21): Agent, Team lead and Mika, each row saving
+ * itself. It is ⚙ Configuration's own `models` section drawn alone: one record
+ * (agents.sessions, jobs.mikaassist), two views, never two settings.
+ */
+export function createModelDefaults() {
+  const { createSurface } = WorkspaceKit.primitives;
+  const out = createSurface({ label: t('models.defaults', 'Defaults'), className: 'setup-surface models-defaults' });
+  const room = buildMachineSettings(out.content, () => true, { only: 'models' });
+  return { el: out.el, show: () => room.enter() };
 }
 
 /** A step's state while the door runs, else what the record says. */

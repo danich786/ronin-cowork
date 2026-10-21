@@ -33,7 +33,7 @@ test('Ronin Home\u2019s Models and Workspaces doors each open their own workbenc
   assert.match(home, /setup\.provider_gate/, 'a locked door says where the way in is');
   assert.match(home, /campaign_home\.settings', 'Settings'/);
   assert.match(doors, /seat: WORKBENCH_TYPES\.modelStones,/, 'Models seats its own stones of providers');
-  assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.models, \[WORKBENCH_TYPES\.modelStones, WORKBENCH_TYPES\.modelRefresh, WORKBENCH_TYPES\.modelProvider\]\)/, 'Model refresh follows Models; a provider whole is placeable on Models, by a dragged stone or its card');
+  assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.models, \[WORKBENCH_TYPES\.modelStones, WORKBENCH_TYPES\.modelRefresh, WORKBENCH_TYPES\.modelDefaults, WORKBENCH_TYPES\.modelProvider\]\)/, 'Model refresh then Defaults follow Models; a provider whole is placeable on Models, by a dragged stone or its card');
   assert.match(doors, /seat: WORKBENCH_TYPES\.folderStones,/, 'Workspaces seats its own stones of folders');
   assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.workspaces, \[WORKBENCH_TYPES\.folderStones, WORKBENCH_TYPES\.folder, WORKBENCH_TYPES\.folderAdd, WORKBENCH_TYPES\.folderNew, WORKBENCH_TYPES\.folderGithub, WORKBENCH_TYPES\.folderClone\]\)/, 'a folder whole and the three admin doors are placeable on Workspaces');
   assert.match(home, /key: 'teams', route: 'cowork'/, 'the Teams door opens the Teams workbench at #/cowork (owner, 2026-10-20)');

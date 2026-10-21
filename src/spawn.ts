@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { mergeSessionDefaults, resolveLaunchCommand, type SessionsDefaults } from './launch-command.js';
+import { resolveLaunchCommand, sessionsFor, type SessionsDefaults } from './launch-command.js';
 import { REPO_ROOT } from './resources.js';
 import { bootFiles, ensureShelf } from './birth-readme.js';
 import { listProjectRoots, USER_PROJECT_ROOTS_MD, type ProjectRootInfo } from './project-roots.js';
@@ -247,6 +247,7 @@ export async function resolveForm(
         roster,
         roots,
         sessions: agentsSet.sessions as SessionsDefaults | undefined,
+        lead: !!form.team && !!form.team_lead,
         installations: installationCatalog,
         behaviours: behaviourCatalog,
       })
@@ -289,8 +290,7 @@ export async function resolveForm(
     : { contributions: [], selected: [], undelivered: [], behaviour_layer: 'campaign' as const };
   const installations = resolveInstallations(installationCatalog, campaign?.config.installations);
   const contributions = form.house_seat === 'mika' ? [] : [CORE_CONTRIBUTION, ...cascade.contributions];
-  const merged = mergeSessionDefaults(agentsSet.sessions as SessionsDefaults | undefined, campaign?.config.defaults);
-  const sessionsSet = merged.sessions;
+  const sessionsSet = sessionsFor(agentsSet.sessions as SessionsDefaults | undefined, !!form.team && !!form.team_lead);
   const chosen = resolveLaunchCommand({
     agent,
     cmd: form.cmd,
@@ -336,7 +336,7 @@ export async function resolveForm(
   const cmdSource: StatedBy[] = chosen.source === 'explicit_launch'
     ? explicit
     : chosen.source === 'settei_provider'
-      ? [{ layer: 'system', source: form.provider && merged.providerOwn(form.provider) ? `#/campaign (${campaign?.id ?? form.campaign_id}: defaults)` : '⚙ Configuration (agents.sessions)' }]
+      ? [{ layer: 'system', source: '⚙ Configuration (agents.sessions)' }]
       : system;
   const unique = (...groups: StatedBy[][]): StatedBy[] => {
     const seen = new Set<string>();

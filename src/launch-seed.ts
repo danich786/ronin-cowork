@@ -1,6 +1,6 @@
 import type { CampaignConfig } from './campaigns.js';
 import type { BehaviourRow, InstallationRow } from './resource-adapters.js';
-import type { SessionsDefaults } from './launch-command.js';
+import { sessionsFor, type SessionsDefaults } from './launch-command.js';
 import type { StatedBy } from './launch-profile.js';
 import type { ProjectRootInfo } from './project-roots.js';
 import { availableBehaviours, resolveContributions, type ResolvedContribution } from './instruction-cascade.js';
@@ -16,6 +16,8 @@ export interface LaunchSeed {
 export interface LaunchSeedSources {
   campaign: CampaignConfig; roster: TeamRoster | null; roots: ProjectRootInfo[];
   sessions: SessionsDefaults | undefined; installations: InstallationRow[]; behaviours: BehaviourRow[];
+  /** A Team lead's launch: the lead pair, when one is set. */
+  lead?: boolean;
 }
 export function shownLaunchSeed(seed: LaunchSeed): LaunchSeed {
   const { ...seeds } = seed.seeds;
@@ -45,8 +47,8 @@ export function resolveLaunchSeed(s: LaunchSeedSources): LaunchSeed & { resolved
     s.installations, s.campaign.config.installations, s.behaviours, available,
     campaignBehaviours, t ? [...new Set([...selectedBehaviours, ...required])] : undefined,
   );
-  const pair = c.provider && c.model ? c : s.sessions?.default;
-  const pairSource = c.provider && c.model ? campaignBy(s.campaign.id, 'defaults.provider/model') : installation('Model providers');
+  const pair = sessionsFor(s.sessions, !!s.lead).default;
+  const pairSource = installation('Models > Defaults');
   const behaviourSource = t ? teamBy(t) : campaignBy(s.campaign.id, 'defaults.behaviours');
   return {
     campaign_id: s.campaign.id,

@@ -80,45 +80,46 @@ test('the three ways an agent may ask, against one configuration', async () => {
   assert.equal(new Set([lazy.cmd, vendor.cmd, named.cmd]).size, 3);
 });
 
-test('Campaign Agent defaults answer before install defaults, and an explicit ask still wins', async () => {
-  // CAMPAIGN_WORKBENCH leg 4b (2026-08-30): the Campaign's `config.agent_defaults` is the
-  // The settled Campaign pair answers where it has an answer and ⚙ answers the rest.
+test('Models > Defaults: a Team lead takes the lead model, an Agent the Agent model, and a Desk pair no longer outranks them', async () => {
+  // Owner, 2026-10-21: one record (agents.sessions) says what Default means; `lead` is the
+  // Team lead's, blank = the Agent's. A Desk pair left in a Campaign is not read at launch.
   await agents({
     default: { provider: 'openai', model: 'gpt-5.6-sol' },
+    lead: { provider: 'anthropic', model: 'claude-opus-5' },
     by_provider: { anthropic: 'claude-fable-5-1', openai: 'gpt-5.6-terra' },
   });
   const file = path.join(temp, 'config', 'machine_settings.json');
   const document = JSON.parse(await fs.readFile(file, 'utf8'));
-  document.campaigns = { work: {
-    title: 'Work',
-    providers,
-    config: { defaults: { provider: 'anthropic', model: 'claude-opus-5' } },
-  } };
+  document.campaigns = { work: { title: 'Work', providers, config: { defaults: { provider: 'anthropic', model: 'claude-haiku-4-5-20251001' } } } };
   await fs.writeFile(file, JSON.stringify(document));
-  // Nothing named: the Campaign's default pair, not ⚙'s.
-  const inherited = await resolveForm(launch({ campaign_id: 'work' }), new Set());
-  assert.ok(inherited.cmd.startsWith('claude --model claude-opus-5'), inherited.cmd);
-  // A provider named: the Campaign's own row for it, and the reading says so.
-  const vendor = await resolveForm(launch({ campaign_id: 'work', provider: 'anthropic' }), new Set());
-  assert.ok(vendor.cmd.startsWith('claude --model claude-opus-5'), vendor.cmd);
-  assert.deepEqual(vendor.stated_by.cmd, [{ layer: 'system', source: '#/campaign (work: defaults)' }]);
-  // A provider the Campaign has no row for: ⚙'s row, and the reading says ⚙.
-  const theirs = await resolveForm(launch({ campaign_id: 'work', provider: 'openai' }), new Set());
-  assert.ok(theirs.cmd.startsWith('codex --model gpt-5.6-terra'), theirs.cmd);
-  assert.deepEqual(theirs.stated_by.cmd, [{ layer: 'system', source: '⚙ Configuration (agents.sessions)' }]);
-  // An explicit model still wins over everything.
-  const explicit = await resolveForm(launch({ campaign_id: 'work', model: 'gpt-5.6-terra' }), new Set());
+  const agent = await resolveForm(launch({ campaign_id: 'work' }), new Set());
+  assert.ok(agent.cmd.startsWith('codex --model gpt-5.6-sol'), agent.cmd);
+  const lead = await resolveForm(launch({ campaign_id: 'work', team: 'crew', team_lead: true }), new Set());
+  assert.ok(lead.cmd.startsWith('claude --model claude-opus-5'), lead.cmd);
+  const member = await resolveForm(launch({ campaign_id: 'work', team: 'crew' }), new Set());
+  assert.ok(member.cmd.startsWith('codex --model gpt-5.6-sol'), member.cmd);
+  const explicit = await resolveForm(launch({ campaign_id: 'work', team: 'crew', team_lead: true, model: 'gpt-5.6-terra' }), new Set());
   assert.ok(explicit.cmd.startsWith('codex --model gpt-5.6-terra'), explicit.cmd);
-  // A half-pair is no default: ⚙'s pair answers, and the Campaign is not guessed for.
-  const withHalf = JSON.parse(await fs.readFile(file, 'utf8'));
-  withHalf.campaigns.half = {
-    providers,
-    title: 'Half',
-    config: { defaults: { provider: 'anthropic' } },
-  };
-  await fs.writeFile(file, JSON.stringify(withHalf));
-  const half = await resolveForm(launch({ campaign_id: 'half' }), new Set());
-  assert.ok(half.cmd.startsWith('codex --model gpt-5.6-sol'), half.cmd);
+  // No lead model set: the lead gets the Agent model.
+  await agents({ default: { provider: 'openai', model: 'gpt-5.6-sol' } });
+  const unset = await resolveForm(launch({ team: 'crew', team_lead: true }), new Set());
+  assert.ok(unset.cmd.startsWith('codex --model gpt-5.6-sol'), unset.cmd);
+});
+
+test('a Desk pair saved before Models > Defaults moves to agents.sessions.default once, and leaves the Desk', async () => {
+  const { moveDeskModelDefault } = await import('../src/campaign-scope.js');
+  await agents({ default: { provider: 'openai', model: 'gpt-5.6-sol' }, lead: { provider: 'openai', model: 'gpt-5.5' } });
+  const file = path.join(temp, 'config', 'machine_settings.json');
+  const document = JSON.parse(await fs.readFile(file, 'utf8'));
+  document.campaigns.home_machine.config = { defaults: { provider: 'anthropic', model: 'claude-opus-5', reach: 'execute' } };
+  await fs.writeFile(file, JSON.stringify(document));
+  assert.equal(await moveDeskModelDefault(), 'home_machine');
+  const after = JSON.parse(await fs.readFile(file, 'utf8'));
+  assert.deepEqual(after.agents.sessions.default, { provider: 'anthropic', model: 'claude-opus-5' }, 'the pair that was in force');
+  assert.deepEqual(after.agents.sessions.lead, { provider: 'openai', model: 'gpt-5.5' }, 'the rest of the record stays');
+  assert.equal(after.campaigns.home_machine.config.defaults.model, '', 'cleared on the Desk');
+  assert.equal(after.campaigns.home_machine.config.defaults.reach, 'execute', 'the Desk keeps its other defaults');
+  assert.equal(await moveDeskModelDefault(), '', 'once');
 });
 
 test("the owner's scenario: default is OpenAI, the launch says anthropic, and it gets anthropic's preferred model", async () => {

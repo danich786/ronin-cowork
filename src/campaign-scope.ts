@@ -1,6 +1,7 @@
 import { access, mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { initialCampaign, listCampaigns } from './campaigns.js';
+import { initialCampaign, listCampaigns, writeCampaign } from './campaigns.js';
+import { readAgentsSection, writeAgentsSection } from './machine-state.js';
 import { listProjectRoots, upsertProjectRoot } from './project-roots.js';
 import { listTeamRosters, teamRosterFile } from './team-rosters.js';
 import { getCampaign, listSessions, setCampaign } from './tmux.js';
@@ -111,4 +112,23 @@ export async function migrateCampaignScope(): Promise<CampaignScopeMigration> {
   }
 
   return done;
+}
+
+/**
+ * THE DESK'S MODEL PAIR MOVES (owner, 2026-10-21; Models > Defaults): the model a new Agent
+ * gets lives in one record, ⚙ agents.sessions.default. A Desk pair saved before then
+ * outranked it at every launch, so it is copied there once, as it was in force, and
+ * cleared on the Desk. Returns the Desk it came from, '' when there was none.
+ */
+export async function moveDeskModelDefault(): Promise<string> {
+  for (const campaign of await listCampaigns()) {
+    const { provider, model } = campaign.config.defaults;
+    if (!provider || !model) continue;
+    const agents = await readAgentsSection();
+    const sessions = agents.sessions && typeof agents.sessions === 'object' ? agents.sessions as Record<string, unknown> : {};
+    await writeAgentsSection({ ...agents, sessions: { ...sessions, default: { provider, model } } });
+    await writeCampaign(campaign.id, { config: { defaults: { ...campaign.config.defaults, provider: '', model: '' } } });
+    return campaign.id;
+  }
+  return '';
 }

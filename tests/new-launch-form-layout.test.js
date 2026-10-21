@@ -217,7 +217,6 @@ test('New Team routes each selector region through ask() and leaves Templates br
   assert.match(form, /const whereQuestions = ask\(/);
   assert.match(form, /kitQuestions = ask\(/);
   assert.match(form, /key: 'launchMode', label: t\('launch_mode\.mode', 'Mode'\)/);
-  assert.match(form, /after: 'provider'/);
   assert.doesNotMatch(form, /after: 'root'/, 'Workspaces never depends on Born in: picking Born in must default it, not clear it');
   assert.match(form, /key === 'root' && !reposTouched/);
   assert.match(form, /row: branchField/);
@@ -227,7 +226,6 @@ test('New Team routes each selector region through ask() and leaves Templates br
   assert.match(form, /trayHost: kitHost/, 'launch mode opens below the full kit row without moving Behaviours');
   assert.match(form, /many: true, shape: 'tall', options: shelfRows/);
   assert.equal((form.match(/density: 'tight'/g) || []).length, 2, 'both defaults regions use launch density');
-  assert.match(form, /tierWord\(row\.tier\)/);
   assert.doesNotMatch(form, /forms\.provider_off|forms\.provider_turned_off|machine\?\.state|modelWord\([^)]*\)\.split/);
   assert.match(form, /templateTray\(offered\(\)/);
   assert.doesNotMatch(form, /kindTiles|providerModelPair|createWhereItWorks|fs-routine/);

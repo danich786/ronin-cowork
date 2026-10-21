@@ -52,7 +52,7 @@ test('POST /api/team-rosters creates a Team from its name alone', async () => {
   assert.equal(body.roster.branch, 'dev');
   assert.deepEqual(body.roster.behaviours, { selected: ['gbrain'], required: [] });
   assert.deepEqual(body.roster.agent_defaults, {
-    provider: 'openai', model: 'gpt-test', reach: 'execute', recruit: 'nobody', output: ['code'],
+    reach: 'execute', recruit: 'nobody', output: ['code'],
     launch_mode: 'configured',
   });
 });
@@ -68,7 +68,7 @@ test('PUT /api/team creates with Campaign defaults, then omission on update pres
   assert.deepEqual(first.roster.repos, ['ronin_cowork']);
   assert.equal(first.roster.branch, 'dev');
   assert.deepEqual(first.roster.behaviours.selected, ['gbrain']);
-  assert.equal(first.roster.agent_defaults.model, 'gpt-test');
+  assert.equal(first.roster.agent_defaults.recruit, 'nobody');
 
   const updated = await fetch(`${base}/api/team`, {
     method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'tool_team', objective: 'second' }),
@@ -81,7 +81,7 @@ test('PUT /api/team creates with Campaign defaults, then omission on update pres
   assert.deepEqual(second.roster.repos, ['ronin_cowork']);
   assert.equal(second.roster.branch, 'dev');
   assert.deepEqual(second.roster.behaviours.selected, ['gbrain']);
-  assert.equal(second.roster.agent_defaults.model, 'gpt-test');
+  assert.equal(second.roster.agent_defaults.recruit, 'nobody');
 });
 
 test('PUT /api/team reapplies Campaign defaults to an existing Team only when explicitly requested', async () => {
@@ -93,7 +93,7 @@ test('PUT /api/team reapplies Campaign defaults to an existing Team only when ex
   const body = await response.json() as { created: boolean; roster: Record<string, any> };
   assert.equal(body.created, false);
   assert.deepEqual(body.roster.behaviours.selected, ['ronin_host'], 'an explicit choice remains final');
-  assert.equal(body.roster.agent_defaults.model, 'gpt-test');
+  assert.equal(body.roster.agent_defaults.recruit, 'nobody');
 });
 
 test('POST /api/team-rosters overlays explicit choices on Campaign defaults', async () => {
@@ -106,7 +106,7 @@ test('POST /api/team-rosters overlays explicit choices on Campaign defaults', as
   const body = await response.json() as { roster: Record<string, any> };
   assert.deepEqual(body.roster.behaviours.selected, ['ronin_host']);
   assert.equal(body.roster.agent_defaults.reach, 'discuss');
-  assert.equal(body.roster.agent_defaults.model, 'gpt-test');
+  assert.equal(body.roster.agent_defaults.recruit, 'nobody');
 });
 
 test('the seed door tolerates a pre-cut behaviour shape without inventing an elective mandate', async () => {
