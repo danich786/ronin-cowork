@@ -134,6 +134,12 @@ Agent from its leads' lists. Each record that changed gets the one-line ack, and
 gets it on every roster change; never for the Agent's own change. `work-record
 update_record` carries the block through and `work-record read` shows it as stored.
 
+The record's `configuration` line is Ronin's too: `{ title, project_root }`, written by
+`writeConfiguration` at birth, on a restore, and on `PUT /api/sessions/:name/title` and
+`POST /api/sessions/:name/project-root`, which ack it to the Agent unless the Agent made
+the change. Adding a Behavior sends its own message carrying the teaching, which is the
+notification. Brief and model have no write after birth.
+
 Mandate teaching is part of the Ronin floor for every Cowork Agent. It is not selectable
 and must not appear among elective behaviors. This value-plus-teaching pattern is
 fundamental to composition: stating a fact is insufficient when the Agent has not also

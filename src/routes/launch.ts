@@ -25,7 +25,7 @@ import { scanContext, scanModel } from '../ctx.js';
 import { count } from '../counts.js';
 import { listTeamRosters } from '../team-rosters.js';
 import { announceTeamChanges } from './wipeboards-api.js';
-import { checkoutAt, deriveTeams, parkBrief, seedTegami, teamChanged, withAxes, type SessionWithAxes } from '../tegami.js';
+import { checkoutAt, deriveTeams, parkBrief, seedTegami, teamChanged, withAxes, writeConfiguration, type SessionWithAxes } from '../tegami.js';
 import { writeFocusLadder } from '../work-items.js';
 import { collectBirthLines, collectRowFields } from '../sockets.js';
 import { broadcastEvent, listening, pushTeams } from '../ws/events.js';
@@ -482,6 +482,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
         resolved.mandate,
       );
       }
+      await writeConfiguration(resolved.name).catch(() => {});
       if (resolved.tags.length) await teamChanged(resolved.tags, resolved.name).catch(() => {});
     } catch (e) {
       if (birthDir && !runtimeBorn) await rm(birthDir, { recursive: true, force: true });

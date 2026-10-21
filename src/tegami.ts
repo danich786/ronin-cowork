@@ -3,7 +3,7 @@ import path from 'node:path';
 import { execFile } from './spawn-broker.js';
 import { RIREKI_DIR, sessionKey } from './session-dir.js';
 import { readTeamRoster } from './team-rosters.js';
-import { listSessions, type SessionInfo } from './tmux.js';
+import { getProjectRoot, listSessions, type SessionInfo } from './tmux.js';
 import { mandate, type Mandate } from './agent-defaults.js';
 import { enqueueMessage } from './message-queue.js';
 
@@ -87,7 +87,9 @@ function seedShell(
 > YOUR **teams** block is DERIVED and not yours to write: one entry per team you are on —
 > the team's name, your role on it and its objective, from the team rosters; a Team lead's
 > entry also lists the members. Ronin writes it again whenever a roster or a membership
-> changes and tells you with a one-line notice; reread your letter then. A session on no team is a rōnin, which
+> changes and tells you with a one-line notice; reread your letter then. YOUR
+> **configuration** line is derived the same way: the title and Workspace Folder Ronin keeps
+> for you. A session on no team is a rōnin, which
 > is an ordinary state and not a gap.
 >
 > YOUR **repos** list is started from the checkout the new-session box put you in. It is
@@ -283,18 +285,28 @@ export async function withAxes(list: SessionInfo[]): Promise<SessionWithAxes[]> 
   );
 }
 
-/** Derive this session's teams block again. Returns whether it changed; with `by`, a change
- * by anyone else is acked. */
-export async function writeTeams(name: string, tags: string[], by = name): Promise<boolean> {
+/** Write one Ronin-derived key of this session's record. Returns whether it changed; with
+ * `by`, a change by anyone else is acked. */
+async function writeDerived(name: string, key: string, value: unknown, by: string): Promise<boolean> {
   const file = tegamiPath(await sessionKey(name));
   const text = await fs.readFile(file, 'utf8').catch(() => '');
   const parsed = letterBlock(text);
-  if (!parsed) return false;
-  const teams = await deriveTeams(name, tags);
-  if (JSON.stringify(parsed.body.teams ?? null) === JSON.stringify(teams)) return false;
-  await replaceLetterBlock(file, text, parsed, { ...parsed.body, teams });
+  if (!parsed || JSON.stringify(parsed.body[key] ?? null) === JSON.stringify(value)) return false;
+  await replaceLetterBlock(file, text, parsed, { ...parsed.body, [key]: value });
   await ackRecord(name, by);
   return true;
+}
+
+/** Derive this session's teams block again. */
+export async function writeTeams(name: string, tags: string[], by = name): Promise<boolean> {
+  return writeDerived(name, 'teams', await deriveTeams(name, tags), by);
+}
+
+/** The configuration line (owner, 2026-10-21): the title and Workspace Folder Ronin keeps for
+ * this Agent. Behaviors are not here; adding one sends its own message with the teaching. */
+export async function writeConfiguration(name: string, by = name): Promise<boolean> {
+  const title = (await listSessions()).find((s) => s.name === name)?.title ?? '';
+  return writeDerived(name, 'configuration', { title, project_root: await getProjectRoot(name) }, by);
 }
 
 /** A Team changed (owner, 2026-10-21): its roster was written, or `moved` joined, left or was
