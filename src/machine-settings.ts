@@ -228,7 +228,6 @@ export const config = {
   user: process.env.GRID_USER ?? '',
   pass: process.env.GRID_PASS ?? '',
   windowSize: process.env.TMUX_WINDOW_SIZE?.trim() || 'latest',
-  mouse: process.env.TMUX_MOUSE?.trim() || 'off',
   viewerPrefix: 'grid_',
   newSessionDir: process.env.RONIN_NEW_SESSION_DIR?.trim() || `${process.env.HOME}`,
   scribeUrl: process.env.SCRIBE_URL?.trim() ?? 'http://127.0.0.1:3004',

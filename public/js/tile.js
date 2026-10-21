@@ -138,8 +138,8 @@ export class Tile {
       // A drag that was meant to be a copy and silently was not — say the key.
       this.term.wireCopyHint({ isLocked: () => this.locked });
     }
-    // The mirror's own ↓ latest (both pointers): with viewer mouse off the wheel scrolls
-    // xterm's local buffer, which no server-side jump can end — the pill is the way back.
+    // The mirror's own ↓ latest (both pointers): the way back from a scrolled-back tile,
+    // whether the wheel moved xterm's local buffer or the server put the pane in copy mode.
     this.term.wireJumpPill({ jump: () => this.jumpLatest() });
     // The wheel is xterm's in both modes: locked, it scrolls xterm's local buffer (or
     // reaches an app that tracks the mouse); tape-fed, the browser scrolls the plain div.

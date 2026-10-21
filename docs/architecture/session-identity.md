@@ -50,7 +50,7 @@ Ronin wires up **a second set to the same aerial** — tmux's grouped-session fe
 gives a new session its own screen size, its own scroll position and its own options while
 sharing the original's windows.
 
-That second set is the viewer. `createViewer()` in `src/tmux.ts` builds it with
+That second set is the viewer. `createViewer()` in `src/viewer.ts` builds it with
 `tmux new-session -t`, then dresses it for a browser: no status bar (tmux's bar would show
 the throwaway's name, which means nothing to you), mouse scrolling on, and a fixed size
 policy so a phone tile cannot resize what a laptop tile is watching.

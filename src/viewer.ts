@@ -111,7 +111,10 @@ export async function createViewer(target: string, tag: string): Promise<string>
   await tmux.run(['set-option', '-t', exactPane(viewer), VIEWER_OPT, viewerOwner()]);
   await tmux.run(['set-option', '-t', exactPane(viewer), 'window-size', config.windowSize]).catch(() => {});
   await tmux.run(['set-option', '-t', exactPane(viewer), 'destroy-unattached', 'off']).catch(() => {});
-  await tmux.run(['set-option', '-t', exactPane(viewer), 'mouse', config.mouse]).catch(() => {});
+  // Mouse on is the scroll: only then does the tile's xterm send wheel reports for
+  // tileInputAction to turn into copy mode. Off, xterm (on tmux's alternate screen) sends
+  // each notch as Up/Down, which the Agent's CLI takes as prompt history.
+  await tmux.run(['set-option', '-t', exactPane(viewer), 'mouse', 'on']).catch(() => {});
   await tmux.run(['set-option', '-t', exactPane(viewer), 'status', 'off']).catch(() => {});
   return viewer;
 }
