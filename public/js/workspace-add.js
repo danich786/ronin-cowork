@@ -33,7 +33,7 @@ const howWord = (key, stable) => key === 'desks'
 const nameOf = (dir) => finalizeTeamName(sanitizeTeamName(String(dir || '').split('/').filter(Boolean).pop() || '')).slice(0, 32);
 
 /** The folders on this machine from the home folder: crumbs and one list; `choose` adds the verb.
- *  A folder that is already a workspace is left out, and so is everything inside it: one folder, one workspace. */
+ *  A folder that is already a workspace is left out, and so is everything inside it. */
 function browser({ choose, onChoose, onMove }) {
   const shell = el('div', 'wa-browser');
   const crumbs = el('div', 'folder-crumbs');

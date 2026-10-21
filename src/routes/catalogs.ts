@@ -1,6 +1,5 @@
 import { stat } from 'node:fs/promises';
 import { homedir } from 'node:os';
-import { resolve } from 'node:path';
 import type express from 'express';
 import { projectRootsOfSessions } from '../tmux.js';
 import { listSkins } from '../skin-catalog.js';
@@ -218,12 +217,9 @@ export function registerCatalogs(app: express.Express): void {
     const fields = bodyFields(req.body);
     if (!fields.dir) return res.status(400).json({ error: 'A directory is required.' });
     try {
-      const roots = await listProjectRoots();
-      if (roots.some((r) => r.name === name)) {
+      if ((await listProjectRoots()).some((r) => r.name === name)) {
         return res.status(409).json({ error: `"${name}" is already in the catalog.` });
       }
-      const taken = roots.find((r) => resolve(r.dir) === resolve(fields.dir ?? ''));
-      if (taken) return res.status(409).json({ error: `That folder is already the workspace "${taken.name}".` });
       const facts = await repoFacts({ name, title: fields.title ?? '', dir: fields.dir, memory: '', remit: '', match: [], docs: [], plans: [], archived: false, campaign_id: '' });
       if (facts.repo && req.body?.profile !== undefined) validateArrangementProfile(req.body.profile);
       const currentProfile = facts.repo && req.body?.profile !== undefined

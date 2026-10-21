@@ -46,16 +46,6 @@ test('registers a declared repository without confirmation fields or rewriting R
   assert.equal(await readFile(path.join(dir, 'RONIN_REPO'), 'utf8'), declaration);
 });
 
-test('one folder, one workspace: a second name for the same folder is refused', async () => {
-  const dir = await repo('once');
-  const first = await send('/api/project-roots', 'POST', { name: 'once', dir });
-  assert.equal(first.status, 200, first.body.error);
-  const again = await send('/api/project-roots', 'POST', { name: 'twice', dir: `${dir}/` });
-  assert.equal(again.status, 409);
-  assert.match(String(again.body.error), /already the workspace "once"/);
-  assert.equal((await listProjectRoots()).filter((r) => r.dir === dir).length, 1);
-});
-
 test('accepts an explicit repository profile without a confirmation flag or before value', async () => {
   const dir = await repo('profiled');
   const created = await send('/api/project-roots', 'POST', {
