@@ -175,7 +175,7 @@ test('roots carry no parallel stone DOM or CSS presentation and the detail rhyth
   assert.doesNotMatch(detailCss, /--text-(?:[1-3]|[6-9]|10)\b/, 'only 14px body and 13px notes inside the detail');
   assert.doesNotMatch(detailCss, /font-mono|var\(--ok\)|@container roots-detail/, 'no second face, no green, labels never stack over values');
   assert.match(detailCss, /\.pr-detail \.pr-f input,\s*\.pr-detail \.pr-f select \{[^}]*border: 0;[^}]*background: var\(--well\)[^}]*font: inherit/, 'fields are drawn as Presets fields, never browser defaults');
-  assert.match(css, /\.pr-detail \{[^}]*font-size: var\(--text-5\)/);
+  assert.match(css, /\.pr-detail \{[^}]*font-size: var\(--text-body\)/);
   assert.match(css, /\.pr-detail \.pr-group \{[^}]*border: 0/, 'no boxes inside the detail');
   assert.match(roots, /go\.append\(f\.querySelector\('\.pr-frow'\)\); \/\/ Add and Cancel on the head line/);
 });

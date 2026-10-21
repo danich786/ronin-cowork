@@ -70,7 +70,7 @@ test('nothing selected is marked with an underline, and the bar keeps one centre
   const block = kit.slice(kit.indexOf('.wk-tabset'), kit.indexOf('.wk-layout-map {'));
   assert.ok(block.includes('.wk-tabset-tab['), 'the tab set rules live in the Kit sheet');
   assert.doesNotMatch(block, /text-decoration|border-bottom:[^;]*var\(--kaki\)/, 'no underline marks a selection');
-  assert.doesNotMatch(block, /inset 0 calc\(-1 \* var\(--space-1\)\) 0/, 'the old accent underline does not follow the strip');
+  assert.doesNotMatch(block, /inset 0 calc\(-1 \* var\(--edge-2\)\) 0/, 'the old accent underline does not follow the strip');
   // The selected tab covers the band's rule with a shadow, which costs no layout — a
   // negative margin made its box taller than its neighbours and moved its label off
   // their centre line.

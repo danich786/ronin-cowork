@@ -17,14 +17,17 @@
 >
 > | spelling | applies |
 > |---|---|
-> | `- **--radius-md:** 0` | **both shells** — shape, space, type and motion want this |
+> | `- **--radius-large:** 0` | **both shells** — shape, space, type and motion want this |
 > | `- **dark--bg:** #05070a` | the dark shell only |
 > | `- **light--bg:** #fffdf8` | the light shell only |
 >
 > **A token we rename keeps working here.** A skin naming an old name (`--muted-3`, `--setup-mark`,
 > `--gc-cta-bg`, `--gc-cta-ink`, `--gc-cta-bg-hover`, `--kanban-*`, `--kiiro`, `--kaki-hint`, `--scope-*`,
-> `--team-workbench-head-*`, `--cowork-head-*`) paints the token that replaced it; spell the
-> new name and it wins. A `--cowork-head-*` name paints that part of all three header scopes.
+> `--team-workbench-head-*`, `--cowork-head-*`, `--muted-2`, `--dim`, and the old rulers `--text-1`…`--text-10`,
+> `--text-micro`, `--space-1`…`--space-12`, `--radius-xs/sm/md/lg/xl`, `--weight-medium`, `--leading-loose`) paints
+> the token that replaced it; spell the new name and it wins. A `--cowork-head-*` name paints that part of all three
+> header scopes; an old ruler rung paints the roles it mostly served (`public/js/skins.js` lists them). The roles
+> themselves, and which one is for what, are in `docs/architecture/ui.md`.
 >
 > **Light and dark are an axis INSIDE a skin, not a thing a skin fights.** A shape skin
 > names the bare form and is done — a corner is the same corner in either shell. A COLOUR
@@ -62,8 +65,8 @@
 - **label:** Paper
 - **blurb:** The household. A serif, warm paper under the light, coffee under the dark — the words read like a book, not a console.
 - **--font-ui:** "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif
-- **--radius-md:** 2px
-- **--radius-lg:** 4px
+- **--radius-small:** 2px
+- **--radius-large:** 4px
 - **light--bg:** #f6f1e7
 - **light--bg-2:** #efe8db
 - **light--panel:** #fffcf6
@@ -75,8 +78,6 @@
 - **light--fg-strong:** #2d2721
 - **light--fg:** #4a4038
 - **light--muted:** #7d7264
-- **light--muted-2:** #635a4e
-- **light--dim:** #b3a793
 - **light--kaki:** #b5622f
 - **light--kaki-lift:** #965127
 - **light--kaki-tint:** #d6a98d
@@ -92,8 +93,6 @@
 - **dark--fg-strong:** #efe6d6
 - **dark--fg:** #d6cbb8
 - **dark--muted:** #8c7f6c
-- **dark--muted-2:** #b0a28c
-- **dark--dim:** #5a5044
 - **dark--kaki:** #d3804f
 - **dark--kaki-lift:** #dc9972
 - **dark--aiiro:** #8fb39d
@@ -101,11 +100,8 @@
 ## square
 - **label:** Square
 - **blurb:** The lobby. Near-black, bright cyan and magenta, every corner cut square — the gamer one, goofy on purpose.
-- **--radius-xs:** 0
-- **--radius-sm:** 0
-- **--radius-md:** 0
-- **--radius-lg:** 0
-- **--radius-xl:** 0
+- **--radius-small:** 0
+- **--radius-large:** 0
 - **dark--bg:** #07090f
 - **dark--bg-2:** #0c111c
 - **dark--panel:** #111827
@@ -117,8 +113,6 @@
 - **dark--fg-strong:** #eaf4ff
 - **dark--fg:** #c4d4e8
 - **dark--muted:** #6b7f9e
-- **dark--muted-2:** #8fa5c4
-- **dark--dim:** #3d4d68
 - **dark--kaki:** #3ee6ff
 - **dark--kaki-lift:** #65ebff
 - **dark--aiiro:** #ff3ea5
@@ -133,8 +127,6 @@
 - **light--fg-strong:** #0b1430
 - **light--fg:** #2a3757
 - **light--muted:** #5e6f96
-- **light--muted-2:** #43537a
-- **light--dim:** #a9b6d6
 - **light--kaki:** #0891b2
 - **light--kaki-lift:** #077894
 - **light--kaki-tint:** #77c3d5
@@ -144,5 +136,4 @@
 - **label:** All mono
 - **blurb:** The shell speaks in the terminal's own face, corners squared. Everything reads as one machine.
 - **--font-ui:** Menlo, 'DejaVu Sans Mono', Consolas, monospace
-- **--radius-md:** 0
-- **--radius-lg:** 0
+- **--radius-large:** 0

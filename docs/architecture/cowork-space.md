@@ -106,7 +106,7 @@ RoninCowork  •  Home  •  Models                                             
 The root landing and Machine Settings have no island. Campaign reads *Campaign*, Teams
 reads *Teams*, and one Team uses only its readable name. The neutral island does not carry
 the scope colour: graphite, aiiro and kaki belong to the Workbench headers below it. It is
-a place reading, never a button, and uses the same `--radius-lg` lower corners as the
+a place reading, never a button, and uses the same `--radius-large` lower corners as the
 Workspace Kit surfaces. Doors consume the shared
 `.ui-bar-nav` primitive and the place consumes `.ui-bar-place` from `docs/architecture/ui.md`; a
 feature must not restyle either. `js/workspace-header.js` writes the place; nothing

@@ -223,7 +223,7 @@ function ratio(fg, bg, toks) {
 const FLOOR = [
   ['--fg', '--bg', 7], ['--fg', '--bg-2', 7], ['--fg', '--panel', 7], ['--fg', '--raise', 7], ['--fg', '--well', 7],
   ['--fg-strong', '--panel', 7], ['--fg-strong', '--raise', 7], ['--fg-strong', '--well', 7],
-  ['--muted', '--bg', 3.5], ['--muted', '--panel', 3.5], ['--muted-2', '--panel', 4.5],
+  ['--muted', '--bg', 3.5], ['--muted', '--panel', 4.5], ['--link', '--panel', 4.5],
   ['--accent', '--bg', 3], ['--warn', '--bg', 3], ['--bad', '--bg', 3], ['--bad-soft', '--bg', 3],
   ['--info', '--bg', 3], ['--ok', '--bg', 3],
   ['--on-strong', '--kaki', 3], // the メ fill — 21px bold, large-text tier

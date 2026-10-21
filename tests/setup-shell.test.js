@@ -108,7 +108,7 @@ test('Setup hints start collapsed without inheriting another workbench preferenc
 
 test('phone Setup workspaces keep one common viewport height for stone rail scrolling', async () => {
   const kit = await source('workspace-kit.css');
-  assert.match(kit, /data-workbench-profile='setup'\] \.wk-workbench-column \{ height: calc\(100dvh - var\(--row-head\) - var\(--space-6\)\); min-height: 0; \}/);
+  assert.match(kit, /data-workbench-profile='setup'\] \.wk-workbench-column \{ height: calc\(100dvh - var\(--row-head\) - var\(--space-inset\)\); min-height: 0; \}/);
   assert.match(kit, /\.wk-surface-content:has\(\.sws\) \{ display: flex; flex-direction: column; overflow: hidden; \}/);
   assert.match(kit, /\.wk-surface-content:has\(\.sws\) > :has\(> \.sws\) \{ flex: 1 1 auto; min-height: 0; \}/);
   assert.doesNotMatch(kit, /data-workbench-profile='setup'\] \.wk-workbench-column \{ height: auto; \}/);

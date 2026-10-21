@@ -52,7 +52,7 @@ export function termFace() {
   return {
     fontFamily: cs.getPropertyValue('--font-term').trim(),
     // parseFloat, because xterm wants a NUMBER and the token is a length ('13px').
-    fontSize: parseFloat(cs.getPropertyValue('--text-4')),
+    fontSize: parseFloat(cs.getPropertyValue('--term-size')),
   };
 }
 

@@ -16,7 +16,7 @@ export class TermView {
     this.body = body;
     this.term = new Terminal({
       // Face AND palette both resolved from the stylesheet (js/theme.js) — spelled once,
-      // and is not any more: --font-term and --text-4.
+      // and is not any more: --font-term and --term-size.
       ...termFace(),
       theme: termTheme(),
       cursorBlink: true,

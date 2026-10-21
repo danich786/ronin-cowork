@@ -24,7 +24,7 @@ It does not exist until you make it. **An update never touches it.** The shipped
 ## mine
 - **label:** Mine
 - **blurb:** One line saying what it does — this is what the picker shows.
-- **--radius-md:** 0
+- **--radius-large:** 0
 - **dark--bg:** #05070a
 - **light--bg:** #fffdf8
 ```
@@ -33,7 +33,7 @@ Three spellings, and the prefix is which shell:
 
 | spelling | applies |
 |---|---|
-| `- **--radius-md:** 0` | **both shells** — shape, space, type and motion want this |
+| `- **--radius-large:** 0` | **both shells** — shape, space, type and motion want this |
 | `- **dark--bg:** …` | the dark shell only |
 | `- **light--bg:** …` | the light shell only |
 

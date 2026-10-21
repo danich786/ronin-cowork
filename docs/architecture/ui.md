@@ -36,7 +36,7 @@ declared first:
 - **ui** also owns the app-bar navigation set: `.ui-bar-nav` is a clickable label,
   `.ui-bar-value` is the plain loaded value beside it, and `.ui-bar-place` is the neutral
   island cut into the top edge that names which Workbench the doors led to. Its visible
-  lower corners use the Workspace Kit surface radius (`--radius-lg`). Native button
+  lower corners use the Workspace Kit surface radius (`--radius-large`). Native button
   chrome and feature-local bar styling are forbidden.
 - **app** — every composition and feature rule, in source order.
 
@@ -60,16 +60,41 @@ and could not get a radius right.
 
 | Family | Tokens | What it governs |
 |---|---|---|
-| shape | `--radius-hair/xs/sm/md/lg/xl` + `--radius-pill` `--radius-round` | corners. `md` unless you have a reason. `pill`/`round` are shapes, so squaring the app leaves a dot a dot |
-| space | `--space-1` … `--space-12` (2px ladder) | padding, margin, gap. `--space-4` (8px) is the house default |
-| type | `--text-1` (9) · `--text-micro` (10) · `--text-2` … `--text-10` (11 to 26) | `--text-3` (12px) is this app's body, not a caption — Ronin is dense on purpose. Micro sits between 1 and 2 by size; the numbers stay so no sheet changes size silently |
-| weight | `--weight-regular/medium/strong/bold` (400 500 600 700) | four and only four; `strong` is the house emphasis |
-| leading | `--leading-none/tight/body/loose` (1 1.2 1.45 1.6) | every line-height reads one |
+| shape | `--radius-hair` · `--radius-small` (4) · `--radius-large` (8) · `--radius-pill` · `--radius-round` | small for controls, chips and fields; large for panels, cards and sheets; hair for a hairline frame. `pill`/`round` are shapes, so squaring the app leaves a dot a dot |
+| type | `--text-small` 11 · `--text-body` 12 · `--text-label` 14 · `--text-heading` 16 · `--text-display` 20 | see the role table below. The form aliases read them: `--form-head`/`--form-key` → label, `--form-input` → body, `--form-note` → small. `--term-size` (13) is the terminal's own: xterm, the tape and the composer, glyph for glyph |
+| weight | `--weight-regular` · `--weight-strong` · `--weight-bold` (400 600 700) | regular for text, strong for emphasis and names; **bold only for headers** (the Kit's header band, a page's title) |
+| leading | `--leading-tight` (1.2) · `--leading-body` (1.45) · `--leading-none` (1) | line spacing INSIDE one paragraph or label, never the space between blocks: tight for labels and headings, body for running text, none only for a glyph's own box |
+| space | `--space-row` 4 · `--space-paragraph` 8 · `--space-subsection` 16 · `--space-section` 24 · `--space-inline` 8 · `--space-inset` 12 · `--space-control` 10 | see the role table below |
 | tracking | `--tracking-tight` `--tracking-wide` (em) | every letter-spacing reads one, or is `0` |
 | voice | `--font-ui` `--font-mono` `--font-term` | **three roles, not two.** `--font-term` is what xterm renders (`js/termview.js` reads it via `termFace()`), and the tape, composer and jump button must match it glyph-for-glyph or a wrapped line stops lining up |
 | edge | `--edge` `--edge-2` | border widths — a heavier-lined theme is one edit, not four hundred |
 | control | `--control-height` (2.25rem) · `--control-height-small` (28px) | every button, input, select and menu item is one of these two heights, never its own. Small is the deliberate case: compact actions, header and tab-bar actions, menu items, the composer. `--row-head` is a small control plus its band, so header actions never move the phalanx. Exceptions keep their own size on purpose: the touch sizes under `pointer: coarse` and `#phone`, the top bar's chrome, square icon buttons (width and height together), and `--field-tall`, which matches the ask stone beside it |
 | focus | `--focus-width` · `--focus-offset` (2px · 2px) | every `:focus-visible` ring; an inset ring (a clipped tab) offsets by `calc(-1 * var(--focus-width))`. Selection and drop outlines are states, not focus, and keep `--edge` |
+
+**Roles, not rulers (owner, cut 10).** There is no numbered scale: a ruler of eleven sizes only
+moves the arbitrary pick from the CSS into the token. Choose by what the thing IS. When a
+surface has no heading or section structure to tell you, pick the nearest meaning and say so in
+a comment.
+
+| You are spacing or sizing… | Token |
+|---|---|
+| lines inside one paragraph or label | `--leading-body` (running text) · `--leading-tight` (a label, a heading) |
+| rows of a list or a fact table | `--space-row` |
+| paragraphs; a heading and its text | `--space-paragraph` |
+| subsections of a page (a group of fields, a step's parts) | `--space-subsection` |
+| sections of a page (Model refresh's three steps, a form's parts) | `--space-section` |
+| things on one line (a glyph and its word, buttons in a row, grid columns) | `--space-inline` |
+| inside a panel or card | `--space-inset` |
+| inside a button or input (beside its text) | `--space-control`; the height comes from `--control-height` |
+| notes, ids, captions, meta | `--text-small` |
+| running text, values, table cells | `--text-body` |
+| names, keys, field labels, control text | `--text-label` |
+| a section's heading | `--text-heading` |
+| a page's title, a glyph | `--text-display` |
+| text | `--fg-strong` (headings, names) · `--fg` (text) · `--muted` (everything secondary) · `--link` (a link, aiiro) |
+
+A gap between a meter's bars, a map's slots or a mark and its word is geometry, not rhythm:
+`--meter-gap`. Widths, offsets and grid columns are measurements: name them (below).
 | motion | `--motion-quick/settle/slow/hint`, `--ease` | four speeds; nothing animates for decoration |
 | elevation | `--scrim` `--shadow-menu` `--shadow-sheet` | |
 | bar navigation | `--bar-nav-bg/fg/hover/focus` · `--bar-value-fg` | the shared clickable label and its non-clickable context value |
@@ -125,7 +150,8 @@ become one — `--ptr-len`/`--ptr-wide` (the dial needle's geometry, numbers tha
 together). A `--name:` line is
 the one legal home for a raw value, so naming it satisfies the gate *and* says what the
 number is. A measurement more than one sheet reads, or one tuned per shell (`--row-head`,
-`--gc-motif-*`, `--ch-horizon-opacity`, `--bar-brand-*`, `--setup-stone-size`), lives in
+`--gc-motif-*`, `--ch-horizon-opacity`, `--bar-brand-*`, `--setup-stone-size`, `--note-field-h`,
+`--meter-gap`, `--tile-body-pad`), lives in
 style.css's measurements block under `@layer ui`, never in `@layer foundations`: foundations
 holds only tokens a designer may change. `0` is always legal: the absence of a value is not a value.
 
@@ -135,12 +161,11 @@ Colour is spelled once, in tokens, and `scripts/check-css.mjs` fails the build o
 colour anywhere but a `--token:` definition (the allowlist is empty and stays empty).
 The same gate holds a **contrast floor** for the named role pairs in both themes —
 floors set from the measured palette, so a token edit that dims text fails the build.
-`--dim` is excluded by design: it is the zero-state colour, decorative by definition.
 The roles, defined in `public/style.css`:
 
 - surfaces: `--bg` (canvas) · `--bg-2` (bar) · `--panel` · `--raise` · `--well` (inputs)
 - edges: `--line` · `--line-2` · `--line-3` (three weights, hairline → emphasized)
-- text: `--fg-strong` · `--fg` · `--muted` · `--muted-2` · `--dim` (zero-state)
+- text: `--fg-strong` · `--fg` · `--muted` (one grey: `--muted-2` and `--dim` merged into it) · `--link` (aiiro, lifted on the dark shell)
 - meaning: `--accent` (attention/identity) · `--accent-2` (reference) · `--ok`/`--ok-2` ·
   `--warn` (needs you) · the `--bad-*` family (wrong, in grades) · `--info` · work-item status
   `--ok-2` / `--status-yellow` / `--status-red`
@@ -164,7 +189,7 @@ The roles, defined in `public/style.css`:
 white. Amber (`--accent`, `--warn`) is the supporting
 family — the band's derived shades, edges, rings and warning ink; red is only ever wrong.
 `--bad` is never used categorically in charts: the Stats chart draws its series from the
-meaning colours (`--accent-2`, `--accent`, `--ok`, `--warn`, `--dim`).
+meaning colours (`--accent-2`, `--accent`, `--ok`, `--warn`, `--muted`).
 
 **Services Check status is kakiiro.** It is the owner's deliberate outbound check after
 email confirmation, so its primary button uses `--kaki` with `--kaki-lift` on hover. The

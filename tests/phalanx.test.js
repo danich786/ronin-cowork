@@ -104,17 +104,17 @@ test('shared status markers are compact, token-driven, and can be placed on any 
   assert.equal(marker.textContent, 'Beta');
   assert.equal(marker.dataset.status, 'beta');
   const css = await readFile(new URL('../public/css/launch-forms.css', import.meta.url), 'utf8');
-  assert.match(css, /\.status-marker \{[^}]*color: var\(--kaki\);[^}]*font-size: var\(--text-1\)/);
-  assert.match(css, /\.status-marker::before \{[^}]*width: var\(--space-1\);[^}]*background: currentColor/);
+  assert.match(css, /\.status-marker \{[^}]*color: var\(--kaki\);[^}]*font-size: var\(--text-small\)/);
+  assert.match(css, /\.status-marker::before \{[^}]*width: var\(--sws-dot\);[^}]*background: currentColor/);
   assert.doesNotMatch(css, /\.status-marker \{[^}]*border(?:-radius)?:/);
-  assert.match(css, /\.sws-stone > \.status-marker \{[^}]*position: absolute;[^}]*inset-block-start: var\(--space-4\);[^}]*inset-inline-end: var\(--space-4\)/);
+  assert.match(css, /\.sws-stone > \.status-marker \{[^}]*position: absolute;[^}]*inset-block-start: var\(--sws-corner\);[^}]*inset-inline-end: var\(--sws-corner\)/);
 });
 
 test('consumers cannot override the shared hidden detail or stone geometry', async () => {
   const css = await readFile(new URL('../public/css/launch-forms.css', import.meta.url), 'utf8');
   assert.doesNotMatch(css, /\.sp-work-surface \.sws-detail/);
-  assert.match(css, /\.sws-host\.sws-host \{[^}]*padding: var\(--space-6\) var\(--space-11\);[^}]*container: stone-work-surface-seat/);
-  assert.match(css, /\.sws \{[^}]*gap: var\(--space-11\)/);
+  assert.match(css, /\.sws-host\.sws-host \{[^}]*padding: var\(--space-inset\) var\(--sws-gutter-s\);[^}]*container: stone-work-surface-seat/);
+  assert.match(css, /\.sws \{[^}]*gap: var\(--sws-gutter-s\)/);
   assert.match(css, /\.sws-host \{\s*--sws-header-height: clamp\(6rem, 15dvh, 9rem\);\s*\}/);
   assert.match(css, /\.sws-host \{ display: flex;[^}]*gap: 0/);
   assert.match(css, /\.sws-header \{[^}]*flex: 0 0 var\(--sws-header-height\)[^}]*align-items: flex-start[^}]*block-size: var\(--sws-header-height\)[^}]*overflow: auto/);
@@ -122,12 +122,12 @@ test('consumers cannot override the shared hidden detail or stone geometry', asy
   assert.match(css, /\.sws:not\(\[data-open='true'\]\) \.sws-rail \{[^}]*align-items: flex-start[^}]*justify-content: center[^}]*\}/);
   assert.doesNotMatch(css, /\.sws:not\(\[data-open='true'\]\) \.sws-rail \{[^}]*padding-top/);
   assert.match(css, /\.sws-stone \{[^}]*flex: 0 0 min\(100%, var\(--sws-stone\)\)[^}]*width: min\(100%, var\(--sws-stone\)\)/);
-  assert.match(css, /@container stone-work-surface-seat \(max-width: 40rem\)[\s\S]*?\.sws-host\.sws-host \{ padding-inline: var\(--space-6\); \}/);
-  assert.match(css, /@container stone-work-surface-seat \(min-width: 44rem\)[\s\S]*?\.sws-host\.sws-host \{ padding-inline: calc\(var\(--space-12\) \+ var\(--space-7\)\); \}/);
+  assert.match(css, /@container stone-work-surface-seat \(max-width: 40rem\)[\s\S]*?\.sws-host\.sws-host \{ padding-inline: var\(--space-inset\); \}/);
+  assert.match(css, /@container stone-work-surface-seat \(min-width: 44rem\)[\s\S]*?\.sws-host\.sws-host \{ padding-inline: var\(--sws-pad-m\); \}/);
   assert.match(css, /\.sws\[data-open='true'\] \.sws-detail \{ max-width: var\(--sws-detail-measure\); \}/);
   assert.match(css, /--sws-detail-measure: 42rem;/);
-  assert.match(css, /@container stone-work-surface-seat \(min-width: 64rem\)[\s\S]*?\.sws-host\.sws-host \{ padding-inline: calc\(var\(--space-12\) \* 2\); \}/);
-  assert.match(css, /\.sws\[data-open='true'\] \{ gap: calc\(var\(--space-12\) \+ var\(--space-7\)\); \}/);
+  assert.match(css, /@container stone-work-surface-seat \(min-width: 64rem\)[\s\S]*?\.sws-host\.sws-host \{ padding-inline: var\(--sws-pad-l\); \}/);
+  assert.match(css, /\.sws\[data-open='true'\] \{ gap: var\(--sws-gutter-l\); \}/);
   assert.doesNotMatch(css, /\.setup-provider-stones \.sws-(?:rail|grid|detail)/);
   assert.doesNotMatch(css, /\.setup-roots-stones \.sws-(?:rail|grid|detail)/);
 });
