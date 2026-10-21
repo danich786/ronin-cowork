@@ -80,7 +80,7 @@ function browser({ choose, onChoose, onMove }) {
 
 export function createWorkspaceAdd({ campaignId, placeFolder, signIn }) {
   const { createAction, createField, createSurface } = WorkspaceKit.primitives;
-  const draft = { method: 'new', dir: '', repository: '', name: '', nameTouched: false, repo: null, profile: null, how: 'desks', where: '' };
+  const draft = { method: 'new', dir: '', repository: '', name: '', nameTouched: false, repo: null, profile: null, how: 'desks', where: '', publish: false, visibility: 'private' };
 
   const add = createAction({ label: t('roots.add_save', 'Add'), launch: true, size: 'compact', disabled: true, action: () => void doAdd() });
   const surface = createSurface({ label: t('roots.add_stone', 'Add a workspace'), className: 'setup-surface wa-surface', actions: [add] });
@@ -118,6 +118,17 @@ export function createWorkspaceAdd({ campaignId, placeFolder, signIn }) {
   const whereReading = el('p', 'fs-step-help');
   let picker = null;
   let placer = null;
+  // A new folder with a repository on GitHub (owner, 2026-10-21: "new folder with git repo to be added"):
+  // off by default; on, it asks private or public and needs the GitHub sign-in.
+  const publishQuestion = ask([{ fields: [
+    { key: 'publish', label: t('workspace_add.publish', 'On GitHub'), switch: [t('forms.on', 'On'), t('forms.off', 'Off')] },
+    { key: 'visibility', label: t('workspace_add.visibility', 'Visibility'), options: [
+      { v: 'private', l: t('workspace_add.private', 'Private'), sub: t('workspace_add.private_sub', 'Only you and the people you invite can see it.') },
+      { v: 'public', l: t('workspace_add.public', 'Public'), sub: t('workspace_add.public_sub', 'Anyone can see it.') },
+    ] },
+  ] }], { value: { publish: draft.publish, visibility: draft.visibility }, density: 'tight', onChange: (value) => { draft.publish = value.publish === true; draft.visibility = value.visibility || 'private'; paint(); } });
+  const publishHelp = el('p', 'fs-step-help', t('workspace_add.publish_help', 'Also create it on GitHub: a repository under your account, origin set, the first commit pushed.'));
+  const publishSignin = el('p', 'fs-step-help wa-signin');
 
   /* ---- Repository (github) ---- */
   const stepRepo = createStep({ n: 2, key: 'repository', title: t('workspace_add.repository', 'Repository') });
@@ -132,15 +143,19 @@ export function createWorkspaceAdd({ campaignId, placeFolder, signIn }) {
     github = result.ok ? result.data : null;
     paintSignin();
   };
-  const paintSignin = () => {
-    signin.replaceChildren();
+  const paintSigninInto = (target, needs) => {
+    target.replaceChildren();
     if (!github) return;
-    if (github.authenticated) { signin.textContent = t('workspace_add.signed_in', 'Signed in to GitHub as {account}.', { account: github.account }); return; }
-    signin.append(document.createTextNode(t('workspace_add.private_needs', 'Private repositories need a sign-in · ')));
+    if (github.authenticated) { target.textContent = t('workspace_add.signed_in', 'Signed in to GitHub as {account}.', { account: github.account }); return; }
+    target.append(document.createTextNode(needs));
     const link = el('button', 'wa-link', github.installed ? t('workspace_add.sign_in', 'Sign in to GitHub') : t('workspace_add.install_sign_in', 'Install GitHub CLI and sign in'));
     link.type = 'button';
     link.addEventListener('click', () => signIn());
-    signin.append(link);
+    target.append(link);
+  };
+  const paintSignin = () => {
+    paintSigninInto(signin, t('workspace_add.private_needs', 'Private repositories need a sign-in · '));
+    paintSigninInto(publishSignin, t('workspace_add.publish_needs', 'Creating it on GitHub needs a sign-in · '));
   };
 
   /* ---- Name ---- */
@@ -173,9 +188,9 @@ export function createWorkspaceAdd({ campaignId, placeFolder, signIn }) {
   form.append(stepHow.el, stepFolder.el, stepWhere.el, stepRepo.el, stepName.el, stepAgents.el);
 
   const reset = () => {
-    Object.assign(draft, { dir: '', repository: '', name: '', nameTouched: false, repo: null, profile: null, how: 'desks', where: '' });
+    Object.assign(draft, { dir: '', repository: '', name: '', nameTouched: false, repo: null, profile: null, how: 'desks', where: '', publish: false, visibility: 'private' });
     repoInput.value = ''; nameInput.value = ''; reading.textContent = '';
-    howQuestion.set('how', 'desks');
+    howQuestion.set('how', 'desks'); publishQuestion.set({ publish: false, visibility: 'private' });
     picker = null; placer = null;
     stepFolder.body.replaceChildren(); stepWhere.body.replaceChildren();
   };
@@ -198,7 +213,7 @@ export function createWorkspaceAdd({ campaignId, placeFolder, signIn }) {
     paint();
   };
 
-  const hasGit = () => draft.method === 'github' || (draft.method === 'here' && !!draft.repo);
+  const hasGit = () => draft.method !== 'here' || !!draft.repo; // a new folder starts as a repository; a found one may be
   const ready = () => !!draft.name && (draft.method === 'new' ? !!draft.where : draft.method === 'here' ? !!draft.dir : !!draft.repository);
   const paintAdd = () => add.setDisabled(!ready());
 
@@ -218,9 +233,11 @@ export function createWorkspaceAdd({ campaignId, placeFolder, signIn }) {
     }
     if (fresh && !placer) {
       placer = browser({ choose: false, onMove: (dir) => { draft.where = dir; whereReading.textContent = t('workspace_add.where_read', 'The new folder goes in {dir}', { dir }); paintAdd(); } });
-      stepWhere.body.replaceChildren(el('p', 'fs-step-help', t('workspace_add.where_help', 'Open a folder to put it there; Home is fine.')), placer.el, whereReading);
+      stepWhere.body.replaceChildren(el('p', 'fs-step-help', t('workspace_add.where_help', 'Open a folder to put it there; Home is fine.')), placer.el, whereReading, publishQuestion.el, publishHelp, publishSignin);
     }
-    if (git && !github) void readGithub();
+    publishQuestion.show(draft.publish ? null : ['publish']);
+    publishSignin.hidden = !draft.publish;
+    if ((git || (fresh && draft.publish)) && !github) void readGithub();
     if (nameInput.value !== draft.name) nameInput.value = draft.name;
     let n = 2;
     for (const step of form.querySelectorAll('.fs-step')) if (!step.hidden) [stepFolder, stepWhere, stepRepo, stepName, stepAgents].find((s) => s.el === step)?.setNumber(n++);
@@ -249,9 +266,14 @@ export function createWorkspaceAdd({ campaignId, placeFolder, signIn }) {
         if (!result.ok) { word.say(result.message, 'bad'); paintAdd(); return; }
         dir = result.data.dir;
       }
-      const git = draft.method === 'here' && draft.repo;
-      const profile = git ? { ...HOW[draft.how], stable: draft.how === 'folder' ? (draft.repo.branch || 'main') : HOW.desks.stable } : null;
+      const git = draft.method === 'new' || draft.repo;
+      const profile = git ? { ...HOW[draft.how], stable: draft.how === 'folder' ? (draft.repo?.branch || 'main') : HOW.desks.stable } : null;
       result = await request('/api/project-roots', { method: 'POST', json: { name, dir, campaign_id: campaignId(), ...(profile ? { profile, before: draft.profile || HOW.folder } : {}) } });
+      if (result.ok && draft.method === 'new' && draft.publish) {
+        // The folder is a workspace already; if GitHub refuses, the line says so and the folder stays.
+        const created = await request('/api/setup/github/create', { method: 'POST', json: { dir, visibility: draft.visibility } });
+        if (!created.ok) { word.say(created.message, 'bad'); await loadProjects(); paintAdd(); return; }
+      }
     }
     if (!result.ok) { word.say(result.message, 'bad'); paintAdd(); return; }
     word.say(t('workspace_add.added', 'Added.'), '');
@@ -260,5 +282,5 @@ export function createWorkspaceAdd({ campaignId, placeFolder, signIn }) {
   }
 
   paint();
-  return { el: surface.el, show: () => {}, destroy: () => howQuestion.destroy?.() };
+  return { el: surface.el, show: () => {}, destroy: () => { howQuestion.destroy?.(); publishQuestion.destroy?.(); } };
 }
