@@ -4953,11 +4953,11 @@ html[data-screen='inside'] #phone .ph-bar .ph-title[data-boot='inside'] { displa
   }
 }
 
-/* THE HELP OUTLINE (help-outline.js; owner, 2026-10-21): START HERE: "4 things you need to know"
+/* THE HELP OUTLINE (help-outline.js; owner, 2026-10-21): Start here: 4 things you need to know
    over four numbered stones; the other groups quieter rows. */
 @layer app {
   .help-outline-stones [data-sws-group='four'] > .sws-group-heading { justify-content: flex-start; }
-  .help-outline-stones [data-sws-group='four'] .sws-group-secondary { font: inherit; text-transform: none; letter-spacing: normal; }
+  .help-outline-stones [data-sws-group='four'] .sws-group-secondary { font: inherit; }
   .help-outline-stones .sws-group-hint { display: none; }
   .help-outline-stones .help-outline-first .sws-glyph { font-size: var(--text-display); font-style: normal; color: var(--fg-strong); }
   .help-outline-stones .sws-stone.help-outline-row { aspect-ratio: auto; flex-basis: 100%; width: 100%; padding: var(--space-row) var(--space-control); border-color: transparent; color: var(--muted); }

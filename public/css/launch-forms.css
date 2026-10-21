@@ -37,7 +37,7 @@
   .sws-grid { display: flex; flex-wrap: wrap; justify-content: center; width: min(100%, calc(var(--sws-stone) * 3 + var(--sws-gap) * 2)); gap: var(--sws-gap); }
   .sws-group { display: flex; flex: 0 0 100%; flex-direction: column; gap: var(--space-row); min-width: 0; margin: var(--space-paragraph) 0 0; }
   .sws-group:first-child { margin-top: 0; }
-  .sws-group-heading { display: flex; width: 100%; justify-content: space-between; gap: var(--space-inline); margin: 0; border: 0; border-bottom: var(--edge) solid var(--line-2); border-radius: 0; background: transparent; color: var(--muted); padding: 0 0 var(--space-row); font: inherit; font-size: var(--form-key); font-weight: var(--weight-strong); letter-spacing: var(--tracking-wide); text-align: left; text-transform: uppercase; }
+  .sws-group-heading { display: flex; width: 100%; justify-content: space-between; gap: var(--space-inline); margin: 0; border: 0; border-bottom: var(--edge) solid var(--line-2); border-radius: 0; background: transparent; color: var(--muted); padding: 0 0 var(--space-row); font: inherit; font-size: var(--form-key); font-weight: var(--weight-strong); text-align: left; }
   button.sws-group-heading { cursor: pointer; }
   .sws-grid > .sws-group-heading { margin-top: var(--space-paragraph); }
   .sws-grid > .sws-group-heading:first-child { margin-top: 0; }
