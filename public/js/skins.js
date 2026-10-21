@@ -18,6 +18,7 @@ const RENAMED = {
   '--setup-mark': ['--kaki-fill'],
   '--gc-cta-bg': ['--kaki-fill'],
   '--gc-cta-ink': ['--kaki-fill-ink'],
+  '--gc-cta-bg-hover': ['--kaki-fill-hover'],
   '--scope-graphite': ['--graphite'],
   '--scope-campaign-head-bg': ['--head-admin-bg'],
   '--scope-teams-head-bg': ['--head-teams-bg'],

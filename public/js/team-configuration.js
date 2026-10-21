@@ -64,7 +64,13 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
     const kind = ask([{ group: t('team_config.kind', 'Kind'), fields: [
       { key: 'kind', label: t('team_config.kind', 'Kind'), shape: 'square', options: ruledRows('kind', ['open', 'coding', 'work', 'personal', 'household', 'social', 'school'], kindWord) },
     ] }], { value: { kind: roster.kind || 'open' }, density: 'tight', trayHost: identity });
-    identity.append(createField({ label: t('team_config.cowork_id', 'Team ID'), control: idInput }).el, createField({ label: t('team_config.title', 'Title'), control: title }).el, kind.el);
+    const identityField = (label, control) => {
+      control.classList.add('tw-config-control');
+      const field = createField({ label, control }).el;
+      field.classList.add('tw-config-field');
+      return field;
+    };
+    identity.append(identityField(t('team_config.cowork_id', 'Team ID'), idInput), identityField(t('team_config.title', 'Title'), title), kind.el);
     const objective = el('textarea'); objective.name = 'objective'; objective.rows = 3; objective.value = roster.objective || '';
     objective.placeholder = t('new_team.objective_placeholder', 'what this team is for');
     stepTeam.body.append(identity, createField({ label: t('team_config.objective', 'Purpose'), control: objective }).el);

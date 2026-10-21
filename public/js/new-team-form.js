@@ -47,6 +47,7 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
     action: () => void doRaise(),
   });
   const surface = createSurface({ label: t('new_team.title', 'New Team'), className: 'ntf-surface', actions: [raise], header: !embedded });
+  surface.header?.el.classList.add('launch-form-head'); // the form's own head, sticky (launch-forms.css)
   const notice = createNotice();
   if (embedded) {
     surface.content.classList.add('ntf-surface', 'launch-form-embed');

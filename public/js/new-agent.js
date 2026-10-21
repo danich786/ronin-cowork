@@ -75,6 +75,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     action: () => void doStart(),
   });
   const surface = createSurface({ label: t('new_agent.title', 'New Agent'), className: 'na-surface', actions: [start], header: !embedded });
+  surface.header?.el.classList.add('launch-form-head'); // the form's own head, sticky (launch-forms.css)
   const notice = createNotice();
   if (embedded) {
     surface.content.classList.add('na-surface', 'launch-form-embed');
@@ -157,8 +158,11 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     leanNote.textContent = t('new_agent.bare_note', 'A bare-metal Agent takes no kind, no mandate and no loadout.');
   }
   const topLeft = el('div', 'aa-col');
-  const nameField = createField({ label: t('new_agent.name_required', 'Name · required'), control: nameInput }).el;
+  const name = createField({ label: t('new_agent.name_required', 'Name · required'), control: nameInput });
+  const nameField = name.el;
   nameField.classList.add('na-name-required');
+  name.label.classList.add('na-name-label');
+  nameInput.classList.add('na-name-input');
   topLeft.append(nameField, leanNote);
   stepTop.body.append(topLeft);
 
@@ -220,6 +224,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     paintActions();
   });
   const instructionsField = createField({ label: t('new_agent.instructions', 'Instructions'), control: instructionsInput }).el;
+  instructionsField.classList.add('na-field');
   stepTop.body.append(instructionsField);
 
   /* ---- The one question utility: Model, Mandate, Team, and Where it works. ---- */

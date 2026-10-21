@@ -18,7 +18,7 @@
   .wk-action[data-launch='true'] { border-color: var(--kaki); background: var(--raise); color: var(--fg-strong); }
   .wk-action[data-launch='true']:hover { background: var(--accent-soft); color: var(--kaki); }
 
-  .wk-action[data-attention='true'] { border-color: var(--kaki); background: var(--kaki); color: var(--on-strong); font-weight: 700; }
+  .wk-action[data-attention='true'] { border-color: var(--kaki); background: var(--kaki); color: var(--on-strong); font-weight: var(--weight-bold); }
   .wk-action[data-kind='danger'] { border-color: var(--bad); color: var(--bad-soft); }
   .wk-action[data-kind='danger']:hover:not(:disabled) { border-color: var(--bad-deep); background: var(--bad-ground); color: var(--bad-fg); }
   .wk-action[data-size='compact'] { min-height: var(--space-11); padding: var(--space-2) var(--space-4); font-size: var(--text-3); }
@@ -31,9 +31,9 @@
   .wk-surface:not([data-flush='true']) > .wk-surface-content { padding: var(--space-6); }
 
   .wk-field { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
-  .wk-field-label { color: var(--fg-strong); font-weight: 600; }
+  .wk-field-label { color: var(--fg-strong); font-weight: var(--weight-strong); }
   .wk-field-control { font: inherit; }
-  .wk-field-description { margin: 0; color: var(--muted); font-size: var(--text-3); line-height: 1.5; }
+  .wk-field-description { margin: 0; color: var(--muted); font-size: var(--text-3); line-height: var(--leading-body); }
   .wk-field-description:empty { display: none; }
   .wk-field-validation { margin: 0; color: var(--muted); font-size: var(--text-3); }
   .wk-field[data-validation='valid'] .wk-field-validation { color: var(--ok); }
@@ -80,7 +80,7 @@
   /* RONIN SETUP keeps the workbench: framed workspaces, the scope-coloured header strip,
      the selector's framed cards, and the current-card mark. */
   .wk-workbench-layout[data-workbench-profile='setup'] .wk-selector-group,
-  .wk-workbench-layout[data-workbench-profile='campaign'] .wk-selector-group { margin: var(--space-5) var(--space-2) var(--space-2); color: var(--muted); font-size: var(--text-2); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+  .wk-workbench-layout[data-workbench-profile='campaign'] .wk-selector-group { margin: var(--space-5) var(--space-2) var(--space-2); color: var(--muted); font-size: var(--text-2); font-weight: var(--weight-strong); letter-spacing: var(--tracking-wide); text-transform: uppercase; }
   .wk-workbench-layout[data-workbench-profile='setup'] .wk-workbench-selector-cards .wk-card[aria-current='page'] { border-color: var(--kaki); box-shadow: inset var(--edge-2) 0 var(--kaki); }
   body:has([data-workspace-view='setup']:not([hidden])) #shapecycle { display: none; }
   /* ミ Help: Mika alone in the selector column — the conversation's text and nothing
@@ -96,10 +96,10 @@
   .wk-surface-header.wk-mika-handle { cursor: grab; }
   .wk-surface-header.wk-mika-handle:active { cursor: grabbing; }
 
-  .team-agent-card .wk-card-summary { color: var(--fg-strong); font-weight: 600; }
+  .team-agent-card .wk-card-summary { color: var(--fg-strong); font-weight: var(--weight-strong); }
   .team-agent-card .wk-card-meta { display: grid; gap: var(--space-2); margin-top: 0; padding-top: var(--space-3); }
   .team-agent-card .wk-card-meta > span { display: block; min-width: 0; overflow-wrap: anywhere; }
-  .team-agent-card .wk-card-meta > span:first-child { color: var(--fg); font-size: var(--text-3); line-height: 1.45; }
+  .team-agent-card .wk-card-meta > span:first-child { color: var(--fg); font-size: var(--text-3); line-height: var(--leading-body); }
 
   .wk-workbench-splitter { position: absolute; top: 0; bottom: 0; width: .625rem; margin-left: -.3125rem; cursor: col-resize; touch-action: none; z-index: 2; }
   .wk-workbench-splitter[hidden] { display: none; }
@@ -167,7 +167,7 @@
   .wk-tabset-scroller[data-edge='left'] .wk-tabset-edge[data-side='left'],
   .wk-tabset-scroller[data-edge='right'] .wk-tabset-edge[data-side='right'],
   .wk-tabset-scroller[data-edge='both'] .wk-tabset-edge { opacity: 1; }
-  .wk-tabset-chevron { display: none; border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--current-head-fg); padding: 0 var(--space-2); font: inherit; line-height: 1; cursor: pointer; }
+  .wk-tabset-chevron { display: none; border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--current-head-fg); padding: 0 var(--space-2); font: inherit; line-height: var(--leading-none); cursor: pointer; }
   @media (hover: hover) {
     .wk-tabset-scroller[data-edge='left'] .wk-tabset-edge[data-side='left'] .wk-tabset-chevron,
     .wk-tabset-scroller[data-edge='right'] .wk-tabset-edge[data-side='right'] .wk-tabset-chevron,
@@ -177,7 +177,7 @@
   .wk-tabset-actions { display: flex; align-items: center; flex: 0 0 auto; gap: var(--space-3); }
   .wk-tabset-actions:empty { display: none; }
   .wk-tabset-actions .wk-action { min-height: 0; padding: var(--space-2) var(--space-4); font-size: var(--text-3); }
-  .wk-surface-dismiss { font-size: var(--text-4); line-height: 1; }
+  .wk-surface-dismiss { font-size: var(--text-4); line-height: var(--leading-none); }
 
   /* The panel owns fill and one scroll region; what it holds keeps its own padding. */
   .wk-tabset > .wk-surface-content { display: flex; flex-direction: column; padding: 0; overflow: hidden; }

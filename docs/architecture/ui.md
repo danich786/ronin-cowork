@@ -62,7 +62,10 @@ and could not get a radius right.
 |---|---|---|
 | shape | `--radius-hair/xs/sm/md/lg/xl` + `--radius-pill` `--radius-round` | corners. `md` unless you have a reason. `pill`/`round` are shapes, so squaring the app leaves a dot a dot |
 | space | `--space-1` … `--space-12` (2px ladder) | padding, margin, gap. `--space-4` (8px) is the house default |
-| type | `--text-1` … `--text-10`, `--text-micro` | `--text-3` (12px) is this app's body, not a caption — Ronin is dense on purpose |
+| type | `--text-1` (9) · `--text-micro` (10) · `--text-2` … `--text-10` (11 to 26) | `--text-3` (12px) is this app's body, not a caption — Ronin is dense on purpose. Micro sits between 1 and 2 by size; the numbers stay so no sheet changes size silently |
+| weight | `--weight-regular/medium/strong/bold` (400 500 600 700) | four and only four; `strong` is the house emphasis |
+| leading | `--leading-none/tight/body/loose` (1 1.2 1.45 1.6) | every line-height reads one |
+| tracking | `--tracking-tight` `--tracking-wide` (em) | every letter-spacing reads one, or is `0` |
 | voice | `--font-ui` `--font-mono` `--font-term` | **three roles, not two.** `--font-term` is what xterm renders (`js/termview.js` reads it via `termFace()`), and the tape, composer and jump button must match it glyph-for-glyph or a wrapped line stops lining up |
 | edge | `--edge` `--edge-2` | border widths — a heavier-lined theme is one edit, not four hundred |
 | motion | `--motion-quick/settle/slow/hint`, `--ease` | four speeds; nothing animates for decoration |
@@ -119,7 +122,10 @@ the new name wins where a skin spells both.
 become one — `--ptr-len`/`--ptr-wide` (the dial needle's geometry, numbers that must move
 together). A `--name:` line is
 the one legal home for a raw value, so naming it satisfies the gate *and* says what the
-number is. `0` is always legal: the absence of a value is not a value.
+number is. A measurement more than one sheet reads, or one tuned per shell (`--row-head`,
+`--gc-motif-*`, `--ch-horizon-opacity`, `--bar-brand-*`, `--setup-stone-size`), lives in
+style.css's measurements block under `@layer ui`, never in `@layer foundations`: foundations
+holds only tokens a designer may change. `0` is always legal: the absence of a value is not a value.
 
 ## Colour
 
@@ -138,19 +144,25 @@ The roles, defined in `public/style.css`:
   `--ok-2` / `--status-yellow` / `--status-red`
 - house: `--kaki` (the Ronin identity mark; this session; heightened access/visibility) ·
   `--aiiro` (Ronin navigation and selection) · `--graphite` (the admin header) — Kojin's fixed palette, borrowed. The kaki
-  identity ruling is the open hexagonal **hito** mark; using the same colour for heightened
+  identity ruling is the open hexagonal **hito** mark, drawn in `--kaki` (`ninMark()`), so a
+  skin that moves the brand moves the mark; using the same colour for heightened
   action connects “this needs you” to the house without making every Ronin surface kaki.
   Heightened surfaces read `--kaki`/`--kaki-lift` directly — the `--heighten-*` alias
   token audit deleted it rather than leave a dead semantic layer to mislead.
 - elevation: `--scrim`, `--shadow-menu`, `--shadow-sheet` — the whole vocabulary
 - terminal: the `--term-*` block — xterm's palette and the tape/composer surfaces,
-  read back into JS by `termTheme()` (`public/js/theme.js`), never restated
+  read back into JS by `termTheme()` (`public/js/theme.js`), never restated. **Every
+  `--term-*` token is the designer's, the 16 ANSI slots and `--term-cube` included**; the
+  rules below (bright white is the strongest mark; on paper every slot clears 3:1) are what a
+  new value must keep, and `check-css` holds the terminal's text pairs to the floor in both
+  themes
 
 **Kaki is the brand**: every primary and attention FILL reads
 `--kaki`/`--on-strong`, or `--kaki-fill`/`--kaki-fill-ink` where a small mark must pass on
 white. Amber (`--accent`, `--warn`) is the supporting
 family — the band's derived shades, edges, rings and warning ink; red is only ever wrong.
-`--bad` is never used categorically in charts (the `--k-*` job colours exist for that).
+`--bad` is never used categorically in charts: the Stats chart draws its series from the
+meaning colours (`--accent-2`, `--accent`, `--ok`, `--warn`, `--dim`).
 
 **Services Check status is kakiiro.** It is the owner's deliberate outbound check after
 email confirmation, so its primary button uses `--kaki` with `--kaki-lift` on hover. The
@@ -472,7 +484,9 @@ agent is behind a pane.
 ## Login
 
 `/login` (`public/login.html`) is the one pre-auth page: self-contained on purpose,
-same visual language, same theme switch. The shared Password work surface in Setup and
+same visual language, same theme switch. It links `/style.css`, the one file served before
+auth (it holds no secret), so it wears the same token values and keeps no copy. A skin does
+not reach it. The shared Password work surface in Setup and
 Settings enables, changes and disables the saved browser password; changing it replaces
 the current browser's session while ending every other browser session. The host-side
 `bin/ronin-passwd` remains an independent set/clear authority. Password fields do not echo.

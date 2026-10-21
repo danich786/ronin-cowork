@@ -15,9 +15,10 @@
     --gc-measure: 27rem;
     --gc-heading-measure: 19ch;
     --gc-heading-size: var(--text-10);
-    --gc-heading-lh: 1.18;
-    --gc-heading-track: -0.013em;
-    --gc-body-lh: 1.66;
+    --gc-heading-lh: var(--leading-tight);
+    --gc-heading-track: var(--tracking-tight);
+    --gc-body-lh: var(--leading-loose);
+    --gc-hito-ease: cubic-bezier(.4, .1, .3, 1); /* the hito's walk */
     --gc-mark: 16px;
     --gc-mark-weight: 2px;
     --gc-glyph: 16px;
@@ -43,7 +44,7 @@
   .garden-canvas-mark { position: absolute; inset: auto 0 0; width: 100%; height: var(--gc-horizon); color: var(--kaki); opacity: var(--gc-motif-opacity); z-index: -1; pointer-events: none; }
   /* The figure is its own fixed-size element, placed by percentage, so it walks
      the flat bund as the column widens instead of scaling with it. */
-  .garden-canvas-hito { position: absolute; bottom: var(--gc-hito-stand); left: var(--gc-hito-walk); width: var(--gc-hito-w); height: var(--gc-hito-h); color: var(--kaki); opacity: var(--gc-motif-opacity); z-index: -1; pointer-events: none; transition: left 520ms cubic-bezier(.4, .1, .3, 1); }
+  .garden-canvas-hito { position: absolute; bottom: var(--gc-hito-stand); left: var(--gc-hito-walk); width: var(--gc-hito-w); height: var(--gc-hito-h); color: var(--kaki); opacity: var(--gc-motif-opacity); z-index: -1; pointer-events: none; transition: left var(--motion-slow) var(--gc-hito-ease); }
 
   /* Reading order. The region keys are frozen as question · cta · copy · media,
      so the order the owner reads in is set here and nowhere else. */
@@ -65,11 +66,11 @@
   .garden-copy-eyebrow + .garden-copy-stamp, .garden-copy-heading + .garden-copy-stamp, .garden-copy-body + .garden-copy-stamp { margin-top: var(--gc-step-tight); }
   .garden-copy-item:first-child + .garden-copy-item { margin-top: var(--gc-step-tight); }
 
-  .garden-copy-eyebrow { display: flex; align-items: center; gap: var(--space-5); color: var(--kaki-lift); font-size: var(--text-2); font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
+  .garden-copy-eyebrow { display: flex; align-items: center; gap: var(--space-5); color: var(--kaki-lift); font-size: var(--text-2); font-weight: var(--weight-bold); letter-spacing: var(--tracking-wide); text-transform: uppercase; }
   .garden-copy-eyebrow::before { content: ''; flex: none; width: var(--gc-mark); height: var(--gc-mark-weight); background: var(--kaki); }
-  .garden-copy-heading { color: var(--fg-strong); font-size: var(--gc-heading-size); font-weight: 550; line-height: var(--gc-heading-lh); letter-spacing: var(--gc-heading-track); text-wrap: balance; max-width: var(--gc-heading-measure); }
+  .garden-copy-heading { color: var(--fg-strong); font-size: var(--gc-heading-size); font-weight: var(--weight-strong); line-height: var(--gc-heading-lh); letter-spacing: var(--gc-heading-track); text-wrap: balance; max-width: var(--gc-heading-measure); }
   .garden-copy-body { color: var(--fg); font-size: var(--text-5); line-height: var(--gc-body-lh); max-width: var(--gc-measure); }
-  .garden-copy-stamp { color: var(--dim); font-size: var(--text-2); line-height: 1.45; }
+  .garden-copy-stamp { color: var(--dim); font-size: var(--text-2); line-height: var(--leading-body); }
 
   /* One heading rank per canvas. The title block keeps it; every other kind is
      body rank. Kind is a closed set from the normalizer, so it is taken as
@@ -77,7 +78,7 @@
   .garden-copy-item[data-kind='instruction'] { grid-template-columns: var(--gc-mark) minmax(0, 1fr); column-gap: var(--space-6); }
   .garden-copy-item[data-kind='instruction']::before { content: ''; grid-row: 1; width: var(--gc-mark); height: var(--gc-mark-weight); margin-top: .75em; background: var(--kaki); }
   .garden-copy-item[data-kind='instruction'] > * { grid-column: 2; }
-  .garden-copy-item:not([data-kind='title']) .garden-copy-heading { font-size: var(--text-4); font-weight: 650; line-height: 1.45; letter-spacing: 0; max-width: var(--gc-measure); }
+  .garden-copy-item:not([data-kind='title']) .garden-copy-heading { font-size: var(--text-4); font-weight: var(--weight-strong); line-height: var(--leading-body); letter-spacing: 0; max-width: var(--gc-measure); }
   .garden-copy-item:not([data-kind='title']) .garden-copy-eyebrow::before { display: none; }
 
   /* A note is an aside; a response is painted rather than authored. Neither
@@ -89,30 +90,30 @@
   .garden-copy-item[data-age='fading'] { opacity: var(--gc-stale); }
   .garden-copy-item[data-age='fading'] .garden-copy-stamp { color: var(--kaki-lift); }
 
-  .garden-question-label { display: grid; gap: var(--space-5); max-width: var(--gc-measure); color: var(--fg-strong); font-size: var(--text-4); font-weight: 600; }
-  .garden-question-input { width: 100%; padding: var(--space-6) var(--space-7); border: var(--edge) solid var(--line-2); border-radius: var(--radius-md); background: var(--well); color: var(--fg); font: inherit; font-weight: 400; }
+  .garden-question-label { display: grid; gap: var(--space-5); max-width: var(--gc-measure); color: var(--fg-strong); font-size: var(--text-4); font-weight: var(--weight-strong); }
+  .garden-question-input { width: 100%; padding: var(--space-6) var(--space-7); border: var(--edge) solid var(--line-2); border-radius: var(--radius-md); background: var(--well); color: var(--fg); font: inherit; font-weight: var(--weight-regular); }
   .garden-question-input::placeholder { color: var(--dim); }
   .garden-question-input:focus-visible { border-color: var(--kaki); outline: var(--edge-2) solid color-mix(in srgb, var(--kaki) 55%, transparent); outline-offset: var(--edge); }
   textarea.garden-question-input { resize: vertical; min-height: calc(var(--space-12) * 2); }
 
   /* The only filled kaki on the surface, sized to its label. */
-  .garden-cta { justify-self: start; display: inline-flex; align-items: center; gap: var(--space-5); padding: var(--space-6) var(--space-9); border: var(--edge) solid transparent; border-radius: var(--radius-md); background: var(--kaki-fill); color: var(--kaki-fill-ink); font: inherit; font-size: var(--text-5); font-weight: 650; text-align: left; cursor: pointer; transition: background 140ms ease; }
-  .garden-cta::after { content: ''; flex: none; width: var(--gc-glyph); height: var(--gc-glyph); background: currentColor; transition: transform 160ms ease; -webkit-mask: var(--gc-icon-chevron) center / contain no-repeat; mask: var(--gc-icon-chevron) center / contain no-repeat; }
-  .garden-cta:hover { background: var(--gc-cta-bg-hover); }
+  .garden-cta { justify-self: start; display: inline-flex; align-items: center; gap: var(--space-5); padding: var(--space-6) var(--space-9); border: var(--edge) solid transparent; border-radius: var(--radius-md); background: var(--kaki-fill); color: var(--kaki-fill-ink); font: inherit; font-size: var(--text-5); font-weight: var(--weight-strong); text-align: left; cursor: pointer; transition: background var(--motion-quick) var(--ease); }
+  .garden-cta::after { content: ''; flex: none; width: var(--gc-glyph); height: var(--gc-glyph); background: currentColor; transition: transform var(--motion-quick) var(--ease); -webkit-mask: var(--gc-icon-chevron) center / contain no-repeat; mask: var(--gc-icon-chevron) center / contain no-repeat; }
+  .garden-cta:hover { background: var(--kaki-fill-hover); }
   .garden-cta:hover::after { transform: translateX(var(--gc-nudge)); }
 
   /* A row per item, stacked full width: the owner is choosing what to open, and
      the kind decides whether they have two minutes or ten. */
   .garden-media-list { display: grid; gap: var(--space-4); max-width: var(--gc-measure); }
-  .garden-media-choice { display: grid; grid-template-columns: var(--gc-glyph) minmax(0, 1fr) var(--gc-glyph); align-items: center; column-gap: var(--space-7); width: 100%; padding: var(--gc-row-pad); border: var(--edge) solid var(--line); border-radius: var(--radius-md); background: transparent; color: var(--fg); font: inherit; text-align: left; cursor: pointer; transition: background 140ms ease, border-color 140ms ease; }
+  .garden-media-choice { display: grid; grid-template-columns: var(--gc-glyph) minmax(0, 1fr) var(--gc-glyph); align-items: center; column-gap: var(--space-7); width: 100%; padding: var(--gc-row-pad); border: var(--edge) solid var(--line); border-radius: var(--radius-md); background: transparent; color: var(--fg); font: inherit; text-align: left; cursor: pointer; transition: background var(--motion-quick) var(--ease), border-color var(--motion-quick) var(--ease); }
   .garden-media-choice::before, .garden-media-choice::after { content: ''; grid-row: 1 / -1; width: var(--gc-glyph); height: var(--gc-glyph); background: currentColor; }
   .garden-media-choice::before { grid-column: 1; color: var(--gc-kind-ink); -webkit-mask: var(--gc-icon-doc) center / contain no-repeat; mask: var(--gc-icon-doc) center / contain no-repeat; }
   .garden-media-choice[data-kind='video']::before { -webkit-mask-image: var(--gc-icon-video); mask-image: var(--gc-icon-video); }
   .garden-media-choice[data-kind='url']::before { -webkit-mask-image: var(--gc-icon-link); mask-image: var(--gc-icon-link); }
-  .garden-media-choice::after { grid-column: 3; color: var(--dim); transition: transform 160ms ease, color 140ms ease; -webkit-mask: var(--gc-icon-chevron) center / contain no-repeat; mask: var(--gc-icon-chevron) center / contain no-repeat; }
+  .garden-media-choice::after { grid-column: 3; color: var(--dim); transition: transform var(--motion-quick) var(--ease), color var(--motion-quick) var(--ease); -webkit-mask: var(--gc-icon-chevron) center / contain no-repeat; mask: var(--gc-icon-chevron) center / contain no-repeat; }
   .garden-media-choice > * { grid-column: 2; min-width: 0; }
-  .garden-media-choice strong { color: var(--fg-strong); font-size: var(--text-4); font-weight: 600; }
-  .garden-media-choice span { color: var(--muted); font-size: var(--text-2); line-height: 1.45; }
+  .garden-media-choice strong { color: var(--fg-strong); font-size: var(--text-4); font-weight: var(--weight-strong); }
+  .garden-media-choice span { color: var(--muted); font-size: var(--text-2); line-height: var(--leading-body); }
   .garden-media-choice strong + span { margin-top: var(--space-1); }
   .garden-media-choice:hover { background: var(--raise); border-color: var(--line-2); }
   .garden-media-choice:hover::after { transform: translateX(var(--gc-nudge)); color: var(--kaki-lift); }
@@ -127,16 +128,23 @@
   .garden-media-overlay[hidden] { display: none; }
   .garden-media-close { justify-self: end; border: var(--edge) solid var(--line-2); border-radius: var(--radius-pill); background: var(--raise); color: var(--fg-strong); padding: var(--space-3) var(--space-5); cursor: pointer; }
   .garden-media-body { display: grid; grid-template-rows: auto auto minmax(0, 1fr); min-height: 0; gap: var(--space-6); }
-  .garden-media-body h2 { margin: 0; color: var(--fg-strong); font-size: var(--text-9); font-weight: 600; line-height: 1.25; letter-spacing: -.012em; }
+  .garden-media-body h2 { margin: 0; color: var(--fg-strong); font-size: var(--text-9); font-weight: var(--weight-strong); line-height: var(--leading-tight); letter-spacing: var(--tracking-tight); }
   .garden-media-frame, .garden-media-video { width: 100%; height: 100%; min-height: 0; border: var(--edge) solid var(--line); border-radius: var(--radius-md); background: var(--panel); }
-  .garden-media-doc { min-height: 0; overflow: auto; color: var(--fg); font-size: var(--text-3); line-height: 1.7; }
-  .markdown-reader { max-width: 72ch; margin: 0 auto; }
+  .garden-media-doc { min-height: 0; overflow: auto; color: var(--fg); font-size: var(--text-3); line-height: var(--leading-loose); }
+  .markdown-reader {
+    --md-head-gap: 1.4em; /* em: each gap follows its own element's size */
+    --md-para-gap: 1em;
+    --md-indent: 1.6em;
+    --md-quote-indent: 1em;
+    max-width: 72ch;
+    margin: 0 auto;
+  }
   .markdown-reader > :first-child { margin-top: 0; }
   .markdown-reader > :last-child { margin-bottom: 0; }
-  .markdown-reader :is(h1, h2, h3, h4, h5, h6) { margin: 1.4em 0 .45em; color: var(--fg-strong); line-height: 1.2; }
-  .markdown-reader :is(p, ul, ol, blockquote, pre) { margin: 0 0 1em; }
-  .markdown-reader :is(ul, ol) { padding-left: 1.6em; }
-  .markdown-reader blockquote { padding-left: 1em; border-left: var(--edge) solid var(--line); color: var(--muted-2); }
+  .markdown-reader :is(h1, h2, h3, h4, h5, h6) { margin: var(--md-head-gap) 0 .45em; color: var(--fg-strong); line-height: var(--leading-tight); }
+  .markdown-reader :is(p, ul, ol, blockquote, pre) { margin: 0 0 var(--md-para-gap); }
+  .markdown-reader :is(ul, ol) { padding-left: var(--md-indent); }
+  .markdown-reader blockquote { padding-left: var(--md-quote-indent); border-left: var(--edge) solid var(--line); color: var(--muted-2); }
   .markdown-reader :not(pre) > code { padding: .1em .35em; border-radius: var(--radius-hair); background: var(--well); font-family: var(--font-mono); }
   .markdown-reader pre { overflow: auto; padding: var(--space-5); border-radius: var(--radius-xs); background: var(--well); white-space: pre; }
   .markdown-reader pre code { font-family: var(--font-mono); }

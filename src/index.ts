@@ -154,6 +154,8 @@ app.post('/api/logout', (_req, res) => {
 });
 
 app.use('/brand', express.static(path.join(PUBLIC, 'brand')));
+// The token sheet holds no secret; the login page links it so it wears the same values.
+app.get('/style.css', (_req, res) => res.sendFile(path.join(PUBLIC, 'style.css')));
 
 app.use((req, res, next) => {
   // A peer on the operator's own socket is the user: the 0600 mode was the credential.

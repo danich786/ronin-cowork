@@ -22,7 +22,7 @@
 > | `- **light--bg:** #fffdf8` | the light shell only |
 >
 > **A token we rename keeps working here.** A skin naming an old name (`--muted-3`, `--setup-mark`,
-> `--gc-cta-bg`, `--gc-cta-ink`, `--kanban-*`, `--kiiro`, `--kaki-hint`, `--scope-*`,
+> `--gc-cta-bg`, `--gc-cta-ink`, `--gc-cta-bg-hover`, `--kanban-*`, `--kiiro`, `--kaki-hint`, `--scope-*`,
 > `--team-workbench-head-*`, `--cowork-head-*`) paints the token that replaced it; spell the
 > new name and it wins. A `--cowork-head-*` name paints that part of all three header scopes.
 >
@@ -78,6 +78,8 @@
 - **light--muted-2:** #635a4e
 - **light--dim:** #b3a793
 - **light--kaki:** #b5622f
+- **light--kaki-lift:** #965127
+- **light--kaki-tint:** #d6a98d
 - **light--aiiro:** #5c7d6a
 - **dark--bg:** #0d0b09
 - **dark--bg-2:** #14110d
@@ -93,6 +95,7 @@
 - **dark--muted-2:** #b0a28c
 - **dark--dim:** #5a5044
 - **dark--kaki:** #d3804f
+- **dark--kaki-lift:** #dc9972
 - **dark--aiiro:** #8fb39d
 
 ## square
@@ -117,6 +120,7 @@
 - **dark--muted-2:** #8fa5c4
 - **dark--dim:** #3d4d68
 - **dark--kaki:** #3ee6ff
+- **dark--kaki-lift:** #65ebff
 - **dark--aiiro:** #ff3ea5
 - **light--bg:** #eef3ff
 - **light--bg-2:** #e2eafb
@@ -132,6 +136,8 @@
 - **light--muted-2:** #43537a
 - **light--dim:** #a9b6d6
 - **light--kaki:** #0891b2
+- **light--kaki-lift:** #077894
+- **light--kaki-tint:** #77c3d5
 - **light--aiiro:** #db2777
 
 ## mono

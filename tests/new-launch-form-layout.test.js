@@ -113,7 +113,7 @@ test('the old New Agent selector implementation and CSS are deleted', async () =
   assert.doesNotMatch(parts, /providerModelStones/);
   await assert.rejects(source('where-it-works.js'), 'the details popover is gone: Where it works is two ERABI questions everywhere');
   assert.doesNotMatch(css, /na-choice-stone|na-stone|na-mandate-grid|na-model-picker|na-workspace-stone/);
-  assert.match(css, /\.na-surface :is\(\.wk-field, \.ask\)\[hidden\] \{ display: none; \}/);
+  assert.match(css, /\.na-surface :is\(\.na-field, \.ask\)\[hidden\] \{ display: none; \}/);
   assert.match(css, /\.na-defaults-links a \{ color: inherit; font: inherit; text-decoration: none; \}/,
     'defaults remain links without browser link typography');
   assert.match(askCss, /\.ask\[data-exposed='true'\] \.ask-tall \{ height: calc\(var\(--ask-h\) \* 2\); overflow: hidden; \}/,
