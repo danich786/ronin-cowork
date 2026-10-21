@@ -33,14 +33,17 @@ const howWord = (key, stable) => key === 'desks'
 const nameOf = (dir) => finalizeTeamName(sanitizeTeamName(String(dir || '').split('/').filter(Boolean).pop() || '')).slice(0, 32);
 
 /** The folders on this machine from the home folder: crumbs and one list; `choose` adds the verb.
- *  A folder that is already a workspace is left out, and so is everything inside it. */
+ *  A folder that is already a workspace is left out, and so is everything inside it, until Show all. */
 function browser({ choose, onChoose, onMove }) {
   const shell = el('div', 'wa-browser');
   const crumbs = el('div', 'folder-crumbs');
   const list = el('div', 'folder-list');
-  shell.append(crumbs, list);
+  const more = el('button', 'wa-link folder-all'); more.type = 'button';
+  shell.append(crumbs, list, more);
   let current = '';
   let home = '';
+  let all = false;
+  more.addEventListener('click', () => { all = !all; void load(); });
   const load = async (dir = current) => {
     const result = await request(`/api/folders?${new URLSearchParams(dir ? { dir } : {})}`, { cache: 'no-store' });
     if (!result.ok) { list.replaceChildren(el('span', 'bad', result.message)); return; }
@@ -52,13 +55,14 @@ function browser({ choose, onChoose, onMove }) {
     let at = home;
     for (const part of current === home ? [] : current.slice(home.length + 1).split('/')) { crumbs.append(document.createTextNode('/')); at += '/' + part; crumb(part, at); }
     list.replaceChildren();
-    const folders = result.data.folders.filter((folder) => !folder.registered_root);
+    const folders = result.data.folders.filter((folder) => all || !folder.registered_root);
     for (const folder of folders) {
       const row = el('div', 'folder-row');
       const open = el('button', 'folder-open', folder.name); open.type = 'button'; open.addEventListener('click', () => load(folder.dir));
-      if (folder.repository) open.append(el('small', 'folder-kind', t('workspace_add.git', 'Git')));
+      const note = [folder.repository ? t('workspace_add.git', 'Git') : '', folder.registered_root ? t('workspace_add.already', 'already a workspace') : ''].filter(Boolean).join(' · ');
+      if (note) open.append(el('small', 'folder-kind', note));
       row.append(open);
-      if (choose) {
+      if (choose && !folder.registered_root) {
         const pick = el('button', 'folder-choose', t('workspace_add.choose', 'Choose')); pick.type = 'button';
         pick.addEventListener('click', () => onChoose(folder.dir));
         row.append(pick);
@@ -66,6 +70,9 @@ function browser({ choose, onChoose, onMove }) {
       list.append(row);
     }
     if (!folders.length) list.append(el('span', 'folder-empty', t('folders.empty', 'No matching folders here.')));
+    const hidden = result.data.folders.length - folders.length;
+    more.hidden = !hidden && !all;
+    more.textContent = all ? t('workspace_add.show_fewer', 'Show fewer') : t('workspace_add.show_all', 'Show all · {n} already a workspace', { n: hidden });
   };
   void load('');
   return { el: shell, current: () => current };
@@ -151,11 +158,16 @@ export function createWorkspaceAdd({ campaignId, placeFolder, signIn }) {
   /* ---- How Agents work here: one question, folded ---- */
   let howOpen = false;
   const stepAgents = createStep({ n: 4, key: 'agents', title: t('workspace_add.agents', 'How Agents work here'), onToggle: () => { howOpen = !howOpen; paint(); } });
-  const howQuestion = ask([{ fields: [{ key: 'how', label: t('workspace_add.agents_label', 'Agents work'), options: [
+  const HOW_OPTIONS = [
     { v: 'desks', l: t('workspace_add.how_desks', 'Own desks'), sub: t('workspace_add.how_desks_sub', 'Each Agent in its own desk; work is reviewed before it lands: hand-ins on dev, the lead promotes to master.') },
     { v: 'folder', l: t('workspace_add.how_folder', 'One folder'), sub: t('workspace_add.how_folder_sub', 'Everyone works in this one folder on its branch; no review.') },
-  ] }] }], { value: { how: draft.how }, density: 'tight', onChange: (value) => { draft.how = value.how; paint(); } });
-  stepAgents.body.append(howQuestion.el);
+  ];
+  const howQuestion = ask([{ fields: [{ key: 'how', label: t('workspace_add.agents_label', 'Agents work'), options: HOW_OPTIONS }] }],
+    { value: { how: draft.how }, density: 'tight', onChange: (value) => { draft.how = value.how; paint(); } });
+  // The stone carries the name; the line under it says what each option is, so the open section reads without opening the tray.
+  const howHelp = el('p', 'fs-step-help');
+  HOW_OPTIONS.forEach((option, i) => { if (i) howHelp.append(el('br')); howHelp.append(el('b', null, `${option.l} · `), option.sub); });
+  stepAgents.body.append(howQuestion.el, howHelp);
 
   form.append(stepHow.el, stepFolder.el, stepWhere.el, stepRepo.el, stepName.el, stepAgents.el);
 
