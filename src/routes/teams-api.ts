@@ -10,7 +10,8 @@ import {
 import { boardExists } from '../wipeboards.js';
 import { count } from '../counts.js';
 import { getTags, listSessions, setTags } from '../tmux.js';
-import { writeTeams } from '../tegami.js';
+import { teamChanged } from '../tegami.js';
+import { callerOf } from './work-items-api.js';
 import { announceTeamChanges } from './wipeboards-api.js';
 import { pushTeams } from '../ws/events.js';
 import { assertSameCampaignRoot, campaignFilter, campaignResolver, initialCampaignId, machineCampaignId } from '../campaign-scope.js';
@@ -174,7 +175,9 @@ export function registerTeams(app: express.Express): void {
 
   app.put('/api/team-rosters/:name', async (req, res) => {
     try {
-      res.json({ ok: true, roster: await writeTeamRoster(req.params.name, editOf(req.body)) });
+      const roster = await writeTeamRoster(req.params.name, editOf(req.body));
+      await teamChanged([roster.name], callerOf(req)).catch(() => {});
+      res.json({ ok: true, roster });
     } catch (e) {
       res.status(400).json({ error: errMsg(e) });
     }
@@ -183,7 +186,7 @@ export function registerTeams(app: express.Express): void {
   app.delete('/api/team-rosters/:name', async (req, res) => {
     try {
       const disposition = String(req.body?.worktree_disposition ?? 'inspect').trim().toLowerCase();
-      const result = await retireTeam(req.params.name, disposition === 'prompt' || disposition === 'ignore' ? disposition : 'inspect');
+      const result = await retireTeam(req.params.name, disposition === 'prompt' || disposition === 'ignore' ? disposition : 'inspect', callerOf(req));
       if (result.ok !== true) return res.json(result);
       count('team.dissolve');
       res.json(result);
@@ -222,9 +225,9 @@ export function registerTeams(app: express.Express): void {
         if (before.includes(name)) continue;
         const after = await setTags(s, [...before, name].slice(0, 16));
         await announceTeamChanges(s, before, after).catch(() => {});
-        await writeTeams(s, after).catch(() => {});
         added.push(s);
       }
+      await teamChanged([name], callerOf(req)).catch(() => {});
       res.json({ ok: true, created: !existing, roster, added, not_live: notLive });
     } catch (e) {
       res.status(400).json({ error: errMsg(e) });

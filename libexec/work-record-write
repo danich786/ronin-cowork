@@ -433,34 +433,6 @@ print(json.dumps(l) if l is not None else ""); print(json.dumps(d))') || exit 3
   BODY=$(printf '%s\n' "$SPLIT" | sed -n 2p)
 fi
 
-# THE TEAMS DERIVATION — tags in, roster facts out, fresh on every save. The letter's
-# "teams" block is machinery-owned (R35): one entry per team this session is on, with
-# the team_role and objective read from the team_rosters store at this moment. That is
-# how a changed team objective reaches an agent on its next reread — no push, no
-# injection, just a derivation that is never stale by more than one save. Exact-match
-# tag read, same discipline as key_of: show-options -t prefix-matches and must not be
-# trusted with a bare name.
-TEAM_TAGS=$(tmux list-sessions -F '#{session_name}	#{@ronin-tags}' 2>/dev/null   | awk -F'	' -v n="$NAME" '$1==n {print $2; exit}')
-RONIN_TEAMS_JSON=$(python3 - "$("$STORE" team_rosters 2>/dev/null || true)" "$TEAM_TAGS" <<'TEAMS'
-import json, os, re, sys
-roster_dir, raw = sys.argv[1], sys.argv[2]
-out = []
-for team in [t.strip() for t in raw.split(",") if t.strip()]:
-    entry = {"team": team, "team_role": "", "objective": ""}
-    try:
-        text = open(os.path.join(roster_dir, team + ".md")).read()
-        for key in ("team_role", "objective"):
-            m = re.search(r"^-\s*\*\*%s:\*\*\s*(.*)$" % key, text, re.M)
-            if m and m.group(1).strip() not in ("", "—", "-"):
-                entry[key] = m.group(1).strip()
-    except OSError:
-        pass  # a tag-only team has no roster yet; membership is real all the same
-    out.append(entry)
-print(json.dumps(out))
-TEAMS
-) || RONIN_TEAMS_JSON="[]"
-export RONIN_TEAMS_JSON
-
 # Validate the shape and normalise the spacing, so what lands on disk is what the tile
 # will read. Rejects rather than silently dropping: an unknown key is either a typo or a
 # word we retired, and both are worth being told about.
@@ -597,19 +569,10 @@ prev = json.loads(open(sys.argv[1]).read()) if len(sys.argv) > 1 else {}
 at = prev.get("at")
 if not isinstance(at, dict):
     at = None
-# "teams" IS DERIVED, NEVER TAKEN FROM THE BLOCK — the same contract as "at" and "holds"
-# but stronger: it is regenerated fresh on every save, from the tags this session
-# carries and the team rosters those tags name. That is what makes a changed team
-# objective reach the agent on its next reread, with no push and no injection. The
-# sources arrive from bash via RONIN_TEAMS_JSON (computed right before this runs);
-# an empty derivation is an empty list — a ronin, which is an ordinary state.
-import os as _os
-try:
-    _teams = json.loads(_os.environ.get("RONIN_TEAMS_JSON") or "[]")
-    if not isinstance(_teams, list):
-        _teams = []
-except Exception:
-    _teams = []
+# "teams" IS DERIVED, NEVER TAKEN FROM THE BLOCK — the same contract as "at" and "holds":
+# Ronin writes it whenever a roster or a membership changes (tegami.ts teamChanged) and
+# this save carries it through untouched. An empty list is a ronin, an ordinary state.
+_teams = prev.get("teams") if isinstance(prev.get("teams"), list) else []
 out = {"objective": d.get("objective", ""),
        "mandate": mandate,
        "teams": _teams,

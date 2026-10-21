@@ -25,7 +25,7 @@ import { scanContext, scanModel } from '../ctx.js';
 import { count } from '../counts.js';
 import { listTeamRosters } from '../team-rosters.js';
 import { announceTeamChanges } from './wipeboards-api.js';
-import { checkoutAt, deriveTeams, parkBrief, seedTegami, withAxes, type SessionWithAxes } from '../tegami.js';
+import { checkoutAt, deriveTeams, parkBrief, seedTegami, teamChanged, withAxes, type SessionWithAxes } from '../tegami.js';
 import { writeFocusLadder } from '../work-items.js';
 import { collectBirthLines, collectRowFields } from '../sockets.js';
 import { broadcastEvent, listening, pushTeams } from '../ws/events.js';
@@ -478,10 +478,11 @@ export function registerLaunch(app: express.Express): LaunchControl {
           resolved.assignment?.desks.length
             ? resolved.assignment.desks.map((d) => ({ repo: d.repo, branch: d.branch, worktree: d.worktree, line: d.line }))
             : await checkoutAt(resolved.dir),
-        await deriveTeams(resolved.tags),
+        await deriveTeams(resolved.name, resolved.tags),
         resolved.mandate,
       );
       }
+      if (resolved.tags.length) await teamChanged(resolved.tags, resolved.name).catch(() => {});
     } catch (e) {
       if (birthDir && !runtimeBorn) await rm(birthDir, { recursive: true, force: true });
       void appendLaunchLedger(form, resolved, false);
