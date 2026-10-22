@@ -179,12 +179,15 @@ const lineOf = (by: string, op: TrailOp, extra: Omit<TrailLine, 'at' | 'by' | 'o
 /** Read, change, append one trail line, write. Runs inside the issuer lock. */
 const answer = (item: WorkItem, line: TrailLine): Acknowledged => ({ item, line });
 
+/** A change by anyone but the holding Agent pushes that Agent the one work-record ack
+ * (ackRecord skips the Agent's own writes). */
 export async function appendTrail(id: string, by: string, change: (item: WorkItem) => Omit<TrailLine, 'at' | 'by'>): Promise<Acknowledged> {
   const item = await load(id);
   const { op, ...extra } = change(item);
   const line = lineOf(by, op, extra);
   item.trail.push(line);
   await save(item);
+  for (const holder of await holdersOf(id)) if (holder.kind === 'agent') await ackRecord(holder.name, by);
   return answer(item, line);
 }
 
@@ -424,7 +427,8 @@ export async function assignUnlocked(id: string, to: Holder, by: string, note?: 
   const target = await listFor(to);
   const from = await takeOffEveryList(id, to);
   if (!target.holds.includes(id)) await target.set([...target.holds, id]);
-  await ackHolds([...from, to], by);
+  // An Agent receiving it is acked by the trail line below; a Team's lead and those it left, here.
+  await ackHolds([...from, to].filter((holder) => holder.kind !== 'agent' || holderLabel(holder) !== holderLabel(to)), by);
   return appendTrail(id, by, () => ({ op: 'assign', from: labels(from), to: holderLabel(to), note }));
 }
 
@@ -545,11 +549,12 @@ export function releaseHolder(session: string, key: string, how: string): Promis
     const letter = await readLetterHolds(key);
     if (!letter?.holds.length) return [];
     const released: Acknowledged[] = [];
+    // Off the list first, so the ended Agent is not acked for its own release.
+    await writeLetterHolds(key, []);
     for (const id of letter.holds) {
       if (!(await readItem(id))) continue;
       released.push(await appendTrail(id, 'ronin', () => ({ op: 'holder-ended', from: `agent:${session}`, to: 'none', note: how })));
     }
-    await writeLetterHolds(key, []);
     return released;
   });
 }
