@@ -94,7 +94,7 @@ export function registerWorkItems(app: express.Express): void {
   app.get('/api/work-items/:id', guarded(async (req, res) => {
     const item = await readItem(req.params.id);
     if (!item) throw new WorkItemMissing(`No work item ${req.params.id}.`);
-    // Jira's read: the fields, comments, attachments (docs), links both ways and history (trail).
+    // Jira's read: the fields, comments, attachments, links both ways and history (trail).
     const all = await listItems();
     const children = all.filter((other) => other.parent === item.id);
     const inward = all.flatMap((other) => other.links.filter((link) => link.to === item.id).map((link) => ({ type: link.type, from: other.id })));
@@ -137,9 +137,9 @@ export function registerWorkItems(app: express.Express): void {
     acknowledge(res, await linkItem(req.params.id, text(req.body?.type)?.trim() ?? '', text(req.body?.to)?.trim() ?? '', callerOf(req), remove));
   }));
   app.delete('/api/work-items/:id', guarded(async (req, res) => {
-    const { gone, orphaned } = await deleteItem(req.params.id, callerOf(req));
-    const subtasks = gone.slice(1);
-    res.json({ ok: true, deleted: gone, ...(orphaned.length ? { no_parent: orphaned } : {}),
+    const { deleted, orphaned } = await deleteItem(req.params.id, callerOf(req));
+    const subtasks = deleted.slice(1);
+    res.json({ ok: true, deleted, ...(orphaned.length ? { no_parent: orphaned } : {}),
       acknowledgement: [`${req.params.id} was deleted`, subtasks.length ? `with its subtasks ${subtasks.join(', ')}` : '', orphaned.length ? `${orphaned.join(', ')} now ${orphaned.length === 1 ? 'has' : 'have'} no parent` : ''].filter(Boolean).join('; ') });
   }));
   app.post('/api/work-items/:id/comment', guarded(async (req, res) => {

@@ -90,17 +90,17 @@ test('card expansion and owner opening are sibling controls, never nested intera
   assert.match(moduleSource, /if \(!event\.target\.closest\('button'\)\) navigate\('project', project\.id\)/);
 });
 
-test('Task Manager scope derives Team lists, keeps the items an Agent holds, and reads comments, older evidence lines first', () => {
+test('Task Manager scope derives Team lists, keeps the items an Agent holds, and reads its comments', () => {
   assert.deepEqual(taskManagerScope({ kind: 'cowork', teams: () => ['alpha', 'beta', 'alpha'] }), { kind: 'team', teams: ['alpha', 'beta'], agent: '' });
   const scope = taskManagerScope({ kind: 'agent', agent: 'surface-tasks', teams: ['surface', 'other'] });
   assert.deepEqual(scope, { kind: 'agent', teams: ['surface', 'other'], agent: 'surface-tasks' });
   const rows = projectsForScope([
-    project({ id: 'w2', holder: 'agent:surface-tasks', trail: [{ op: 'create', note: 'x' }, { op: 'evidence', note: 'commit abc' }], comments: [{ by: 'lead', at: '2026-10-22T00:00:00Z', text: 'looks right' }] }),
+    project({ id: 'w2', holder: 'agent:surface-tasks', trail: [{ op: 'create', note: 'x' }], comments: [{ by: 'lead', at: '2026-10-22T00:00:00Z', text: 'looks right' }] }),
     project({ id: 'w2', holder: 'agent:surface-tasks' }),
     project({ id: 'w3', holder: 'agent:someone-else' }),
   ], scope);
   assert.deepEqual(rows.map((item) => item.id), ['w2']);
-  assert.deepEqual(rows[0].comments, ['commit abc', 'looks right']);
+  assert.deepEqual(rows[0].comments, ['looks right']);
 });
 
 test('status and Project drill-downs are standalone Workbench surface types', () => {

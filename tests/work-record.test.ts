@@ -60,11 +60,11 @@ test('help is side-effect-free and actionable', () => {
   assert.match(direct.stderr, /work-record update_record --objective <text>/);
 });
 
-test('letter verbs edit one field each, carry the holds through, and drop an old focus', (t) => {
+test('letter verbs edit one field each and carry the holds through', (t) => {
   const f = fixture();
   t.after(() => rmSync(f.dir, { recursive: true, force: true }));
   run(f.env, [], JSON.stringify({ objective: 'start' }));
-  // Ronin moves holds; the Agent's own saves carry them untouched. An old "at" goes.
+  // Ronin moves holds; the Agent's own saves carry them untouched.
   const text = readFileSync(f.letter, 'utf8').replace('"objective": "start"', '"objective": "start", "holds": ["w4", "w7"], "at": { "item": "w7", "rung": 2 }');
   writeFileSync(f.letter, text);
   run(f.env, ['--objective', 'the new sentence']);
@@ -165,19 +165,4 @@ test('the invocation path names the session when tmux does not, and never a gues
   const read = execFileSync(projected('probe', 'work-record'), ['read', '--json'], { encoding: 'utf8', env: noTmux, stdio: ['pipe', 'pipe', 'pipe'] });
   assert.equal((JSON.parse(read) as Block).objective, 'through my own directory');
   refused(reader, ['read', '--json']);
-});
-
-test('a letter teaching a gone command is read and saved with the current teaching lines', (t) => {
-  const f = fixture();
-  t.after(() => rmSync(f.dir, { recursive: true, force: true }));
-  run(f.env, [], JSON.stringify({ objective: 'start' }));
-  const current = readFileSync(path.join(root, 'libexec', 'work-record-letter.md'), 'utf8').trimEnd();
-  const old = readFileSync(f.letter, 'utf8').replace(current, '> Your ladder: `item plan <id> --phase …`; `item focus <id>`.');
-  writeFileSync(f.letter, old);
-  const shown = execFileSync(tool, ['read'], { encoding: 'utf8', env: f.env });
-  assert.ok(shown.includes(current) && !shown.includes('item plan'), 'read shows the teaching as it is now');
-  run(f.env, ['--objective', 'next']);
-  const saved = readFileSync(f.letter, 'utf8');
-  assert.ok(saved.includes(current) && !saved.includes('item plan'), 'a save writes the teaching as it is now');
-  assert.equal(block(f.letter).objective, 'next');
 });

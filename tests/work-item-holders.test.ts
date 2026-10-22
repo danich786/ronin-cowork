@@ -1,6 +1,6 @@
 /**
  * HOLDING — lists of item ids on Teams and Agents, never copies of items.
- * Checks from WORK_ITEM_STORE.md cut 2: two concurrent assigns of one id leave it on
+ * Checks: two concurrent assigns of one id leave it on
  * exactly one list; release leaves it on none.
  */
 import test from 'node:test';

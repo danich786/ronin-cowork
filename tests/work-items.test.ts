@@ -1,9 +1,9 @@
 /**
  * THE WORK ITEM STORE — one item, stored once, every change a trail line.
- * Checks from WORK_ITEM_STORE.md cut 1 and WORK_ITEM_BUILDOUT.md (the Jira shape): a write
- * reads back; concurrent trail appends all land; level defaults one below the parent; a move
- * that would put anything below -1 is refused ("can't go there"), children following; an old file reads in the new
- * shape; the one migration; the routes answer with the item as it now is.
+ * Checks against the Jira shape (Lab JIRA_SHAPE.md): a write reads back; concurrent trail
+ * appends all land; level defaults one below the parent; a move that would put anything
+ * below -1 is refused ("can't go there"), children following; the one migration; the
+ * routes answer with the item as it now is.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -42,18 +42,6 @@ test('level defaults one below the parent and adding a child never changes it', 
   assert.equal((await items.readItem(leaf.id))!.level, 0);
 });
 
-test('an item has no ladder: an old file carrying one reads without it, and its next write drops it', async () => {
-  const id = 'w9001';
-  await fs.writeFile(path.join(temp, `${id}.json`), JSON.stringify({
-    id, title: 'Laddered', objective: '', level: 0, status: 'BUILD', flagged: false, parent: null,
-    ladder: [{ phase: 'Old', legs: [] }], docs: [], external: {}, trail: [], created: { at: '2026-10-01T00:00:00Z', by: 'old' },
-  }));
-  assert.equal('ladder' in (await items.readItem(id))!, false);
-  await items.editItem(id, { objective: 'now' }, 'probe');
-  assert.equal('ladder' in JSON.parse(await fs.readFile(path.join(temp, `${id}.json`), 'utf8')), false);
-  await fs.unlink(path.join(temp, `${id}.json`));
-});
-
 test('edit --parent is the move: the level follows, other fields ride the same line', async () => {
   const epic = (await items.createItem({ title: 'Epic', level: 1 }, 'probe')).item;
   const story = (await items.createItem({ title: 'Story' }, 'probe')).item;
@@ -73,11 +61,11 @@ test('comment --edit changes comment n; attach and remove a document; link block
   const doc = path.join(temp, 'attached.md');
   await fs.writeFile(doc, '# doc\n');
   assert.equal(items.didLine(await items.attachDoc(item.id, doc, 'probe')), `${item.id} has ${doc} attached`);
-  assert.equal(items.didLine(await items.attachDoc(item.id, doc, 'probe', true)), `${item.id} no longer has ${doc} attached`);
-  assert.deepEqual((await items.readItem(item.id))!.docs, []);
+  assert.equal(items.didLine(await items.attachDoc(item.id, doc, 'probe', true)), `${item.id} has ${doc} removed`);
+  assert.deepEqual((await items.readItem(item.id))!.attachments, []);
   assert.equal(items.didLine(await items.linkItem(item.id, 'blocks', other.id, 'probe')), `${item.id} blocks ${other.id}`);
   assert.equal(items.didLine(await items.linkItem(item.id, 'relates', other.id, 'probe')), `${item.id} relates to ${other.id}`);
-  assert.equal(items.didLine(await items.linkItem(item.id, 'blocks', other.id, 'probe', true)), `${item.id} no longer blocks ${other.id}`);
+  assert.equal(items.didLine(await items.linkItem(item.id, 'blocks', other.id, 'probe', true)), `${item.id} blocks ${other.id}: link removed`);
   assert.deepEqual((await items.readItem(item.id))!.links, [{ type: 'relates', to: other.id }]);
   await assert.rejects(items.linkItem(item.id, 'duplicates', other.id, 'probe'), /blocks or relates/);
 });
@@ -89,10 +77,10 @@ test('delete, as Jira: its subtasks go with it, an epic\'s children are left wit
   const keeper = (await items.createItem({ title: 'Survives', parent: epic.id }, 'probe')).item;
   const linker = (await items.createItem({ title: 'Links in' }, 'probe')).item;
   await items.linkItem(linker.id, 'blocks', story.id, 'probe');
-  assert.deepEqual(await items.deleteItem(story.id, 'probe'), { gone: [story.id, sub.id], orphaned: [] });
+  assert.deepEqual(await items.deleteItem(story.id, 'probe'), { deleted: [story.id, sub.id], orphaned: [] });
   assert.equal(await items.readItem(sub.id), null);
   assert.deepEqual((await items.readItem(linker.id))!.links, []);
-  assert.deepEqual(await items.deleteItem(epic.id, 'probe'), { gone: [epic.id], orphaned: [keeper.id] });
+  assert.deepEqual(await items.deleteItem(epic.id, 'probe'), { deleted: [epic.id], orphaned: [keeper.id] });
   assert.equal((await items.readItem(keeper.id))!.parent, null);
 });
 
@@ -132,20 +120,6 @@ test('create → read round-trips the whole shape, with one create line', async 
   const onDisk = JSON.parse(await fs.readFile(path.join(temp, `${item.id}.json`), 'utf8'));
   assert.deepEqual(onDisk, item, 'one JSON file per item, trail inside it');
   assert.equal('stage' in onDisk || 'exit' in onDisk, false);
-});
-
-test('an old file reads in the new shape and is written in it on its next write', async () => {
-  const id = 'w9000';
-  await fs.writeFile(path.join(temp, `${id}.json`), JSON.stringify({
-    id, title: 'Old', objective: '', stage: 'BUILD', exit: 'lead', status: 'red', kind: 'task', parent: null,
-    ladder: [], docs: [], external: {}, trail: [], created: { at: '2026-10-01T00:00:00Z', by: 'old' },
-  }));
-  const read = (await items.readItem(id))!;
-  assert.deepEqual([read.status, read.flagged, read.level, read.kind, 'exit' in read, 'stage' in read], ['BUILD', true, 0, 'task', false, false]);
-  await items.editItem(id, { objective: 'now' }, 'probe');
-  const onDisk = JSON.parse(await fs.readFile(path.join(temp, `${id}.json`), 'utf8'));
-  assert.deepEqual([onDisk.status, onDisk.flagged, 'stage' in onDisk, 'exit' in onDisk], ['BUILD', true, false, false]);
-  await fs.unlink(path.join(temp, `${id}.json`));
 });
 
 test('one global issuer: concurrent creates never share an id', async () => {
@@ -205,22 +179,22 @@ test('the one rule: nothing goes below -1; the item takes its level and its chil
   await assert.rejects(items.editItem(epic.id, { level: -1 }, 'p'), { message: `${epic.id} can't go there.` });
 });
 
-test('the one migration: stage → status, red → flagged, exit gone, levels from children, Unfiled gone', async () => {
+test('the one migration: stage → status, red → flagged, exit and ladder dropped, evidence a comment, levels from children, Unfiled out', async () => {
   const store = await fs.mkdtemp(path.join(os.tmpdir(), 'ronin-migrate-'));
   const old = (id: string, fields: Record<string, unknown>) => fs.writeFile(path.join(store, `${id}.json`), JSON.stringify({
     id, title: id, objective: '', stage: 'IDEA', exit: 'none', status: 'yellow', parent: null, ladder: [], docs: [], external: {}, trail: [], created: { at: '', by: '' }, ...fields,
   }));
   await old('w1', { title: 'Unfiled' });
-  await old('w2', { parent: 'w1', stage: 'BUILD', status: 'red', kind: 'bug' });
-  await old('w3', { stage: 'PLAN' });
+  await old('w2', { parent: 'w1', stage: 'BUILD', status: 'red', kind: 'bug', docs: ['/plan.md'] });
+  await old('w3', { stage: 'PLAN', trail: [{ at: '2026-10-01T00:00:00Z', by: 'ann', op: 'evidence', note: 'commit abc' }] });
   await old('w4', { parent: 'w3', status: 'green', exit: 'lead', ladder: [{ phase: 'Old', legs: [] }] });
   process.env.RONIN_WORK_ITEMS_DIR = store;
   try {
     const done = await items.migrateItems('probe');
     assert.deepEqual([done.before, done.after, done.removed, done.migrated], [4, 3, ['w1'], ['w2', 'w3', 'w4']]);
     const [w2, w3, w4] = await Promise.all(['w2', 'w3', 'w4'].map(async (id) => JSON.parse(await fs.readFile(path.join(store, `${id}.json`), 'utf8'))));
-    assert.deepEqual([w2.parent, w2.status, w2.flagged, w2.level, w2.kind, 'exit' in w2, 'stage' in w2], [null, 'BUILD', true, 0, 'bug', false, false]);
-    assert.deepEqual([w3.level, w3.status], [1, 'PLAN']);
+    assert.deepEqual([w2.parent, w2.status, w2.flagged, w2.level, w2.kind, 'exit' in w2, 'stage' in w2, 'docs' in w2, w2.attachments], [null, 'BUILD', true, 0, 'bug', false, false, false, ['/plan.md']]);
+    assert.deepEqual([w3.level, w3.status, w3.comments, w3.trail[0].op], [1, 'PLAN', [{ by: 'ann', at: '2026-10-01T00:00:00Z', text: 'commit abc' }], 'comment']);
     assert.deepEqual([w4.level, w4.flagged, w4.parent, 'ladder' in w4], [0, false, 'w3', false]);
     assert.deepEqual((await items.migrateItems('probe')).migrated, [], 'a second run changes nothing');
   } finally {

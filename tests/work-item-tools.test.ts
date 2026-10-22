@@ -1,7 +1,7 @@
 /**
- * `item …` against the real /api/work-items routes (WORK_ITEM_BUILDOUT cut 3): each act
+ * `item …` against the real /api/work-items routes (Lab JIRA_SHAPE.md): each act
  * names its item and leaves exactly one trail line; no tool refuses a caller for not being
- * the holder; the old `team item` and `work-record item` families are gone.
+ * the holder; `item` is the one tool for work items.
  *
  * The routes run in this process on a free port (RONIN_URL). The tools see a fake tmux
  * answering for a session called "probe"; this process sees no tmux server at all, so its
@@ -107,7 +107,7 @@ test('item acts, each naming its item, one trail line each', async () => {
   const doc = path.join(dir, 'plan.md');
   writeFileSync(doc, '# plan\n');
   await oneLine(id, ['attach', id, doc]);
-  assert.deepEqual((await readItem(id))!.docs, [doc]);
+  assert.deepEqual((await readItem(id))!.attachments, [doc]);
   const missing = await run('item', ['attach', id, path.join(dir, 'nope.md')]);
   assert.match(missing.stderr, /no such file/);
 
@@ -123,7 +123,7 @@ test('item acts, each naming its item, one trail line each', async () => {
   assert.deepEqual([moved.op, moved.to, (await readItem(loose))!.level], ['move', epic, 0]);
   assert.equal((await oneLine(peer, ['link', peer, 'blocks', loose])).note, `blocks ${loose}`);
   assert.match(await tool('item', ['read', loose]), new RegExp(`"from": "${peer}"`));
-  assert.equal((await oneLine(peer, ['link', peer, 'blocks', loose, '--remove'])).note, `no longer blocks ${loose}`);
+  assert.equal((await oneLine(peer, ['link', peer, 'blocks', loose, '--remove'])).note, `blocks ${loose}: link removed`);
 
   const listed = JSON.parse(await tool('item', ['search', '--parent', epic])) as { items: Array<{ id: string }> };
   assert.deepEqual(listed.items.map((item) => item.id).sort(), [id, loose].sort());
@@ -131,16 +131,14 @@ test('item acts, each naming its item, one trail line each', async () => {
   assert.ok(roots.items.length && roots.items.every((item) => item.parent === null && item.status === 'IDEA'));
   assert.match(await tool('item', ['delete', id]), new RegExp(`^${id} was deleted; with its subtasks ${sub}`));
   assert.equal(await readItem(sub), null);
-  for (const gone of ['move', 'list', 'doc', 'plan', 'focus', 'evidence', 'write']) assert.equal((await run('item', [gone, loose])).status, 2, `item ${gone} is gone`);
+  for (const verb of ['move', 'list', 'doc', 'plan', 'focus', 'evidence', 'write']) assert.equal((await run('item', [verb, loose])).status, 2, `item ${verb} is not an act`);
 });
 
-test('the old families are gone: no team item, no work-record item, no editing through focus', async () => {
+test('item is the one tool for work items: team and work-record have no item acts', async () => {
   assert.notEqual((await run('team', ['item', 'read', 'w1'])).status, 0);
   assert.notEqual((await run('work-record', ['item', 'read', 'w1'])).status, 0);
   assert.notEqual((await run('work-record', ['document', 'add', path.join(dir, 'plan.md')])).status, 0);
-  const ladder = await run('work-record', ['update_record', '--phase', 'p']);
-  assert.notEqual(ladder.status, 0);
-  assert.match(ladder.stderr, /item attach <id>/);
+  assert.notEqual((await run('work-record', ['update_record', '--phase', 'p'])).status, 0);
 });
 
 test('an id no route can hold answers "No work item <id>", and a reply that is not JSON names its HTTP status', async () => {

@@ -43,11 +43,8 @@ const node = (tag, cls, text) => {
   return out;
 };
 export const stageLabel = (key) => COLUMNS[INDEX[key]]?.label || key;
-/** The item's comments, after the evidence lines older trails carry (a comment replaced them). */
-export const commentsOf = (value) => [
-  ...(Array.isArray(value?.trail) ? value.trail.filter((line) => line?.op === 'evidence').map((line) => String(line.note || '')) : []),
-  ...(Array.isArray(value?.comments) ? value.comments.map((comment) => String(comment?.text || '')) : []),
-];
+/** The item's comments, as text. */
+export const commentsOf = (value) => (Array.isArray(value?.comments) ? value.comments : []).map((comment) => String(comment?.text || ''));
 const normalizedProject = (value) => ({
   ...value,
   id: String(value?.id || ''),

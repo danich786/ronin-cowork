@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { execFile } from './spawn-broker.js';
@@ -7,7 +6,6 @@ import { readTeamRoster } from './team-rosters.js';
 import { getProjectRoot, listSessions, type SessionInfo } from './tmux.js';
 import { mandate, type Mandate } from './agent-defaults.js';
 import { enqueueMessage } from './message-queue.js';
-import { REPO_ROOT } from './resources.js';
 
 export interface TegamiCheckout {
   repo: string;
@@ -71,24 +69,29 @@ export async function deriveTeams(name: string, tags: string[]): Promise<TeamEnt
   );
 }
 
-/** THE TEACHING LINES live in one file and come from it on every write, Ronin's and the
- * Agent's (libexec/work-record-write), and on every read (libexec/work-record-read), so no
- * letter keeps teaching a command that has gone. */
-export const LETTER_TEACHING = readFileSync(path.join(REPO_ROOT, 'libexec', 'work-record-letter.md'), 'utf8').trimEnd();
-
-const letterText = (name: string, body: string): string => `# TEGAMI — ${name}\n${LETTER_TEACHING}\n\n\`\`\`json\n${body}\n\`\`\`\n`;
-
 function seedShell(
   name: string,
   repos: TegamiCheckout[],
   teams: TeamEntry[],
   sessionMandate: Mandate,
 ): string {
-  return letterText(name, `{ "objective": "",
+  return `# TEGAMI — ${name}
+> Your work record is what the owner reads on your tile. Keep it true.
+> - **objective:** one sentence on what you are doing now:
+>   \`work-record update_record --objective "…"\`.
+> - **repos:** the worktrees and branches you work in: \`work-record workspace add|remove\`.
+> - **holds:** the work items you hold; their status shows here. Work items:
+>   the Work Item capability.
+> - **teams**, **configuration:** Ronin writes these and tells you when they change.
+
+\`\`\`json
+{ "objective": "",
   "mandate": ${JSON.stringify(sessionMandate)},
   "teams": ${JSON.stringify(teams)},
   "repos": ${JSON.stringify(repos.filter((checkout) => checkout.repo || checkout.branch))},
-  "holds": [] }`);
+  "holds": [] }
+\`\`\`
+`;
 }
 
 function letterBlock(text: string): { match: RegExpMatchArray; body: Record<string, unknown> } | null {
@@ -106,9 +109,9 @@ function letterBlock(text: string): { match: RegExpMatchArray; body: Record<stri
 
 async function replaceLetterBlock(file: string, text: string, parsed: ReturnType<typeof letterBlock>, body: Record<string, unknown>): Promise<void> {
   if (!parsed) throw new Error('work record has no valid JSON block');
-  // The whole letter is written again: its block, and the teaching lines as they are now.
-  const name = text.match(/^# TEGAMI — (.+)$/m)?.[1]?.trim() || path.basename(path.dirname(file));
-  const out = letterText(name, JSON.stringify(body, null, 2));
+  const block = JSON.stringify(body, null, 2);
+  const start = parsed.match.index! + parsed.match[0].indexOf(parsed.match[1]);
+  const out = text.slice(0, start) + block + text.slice(start + parsed.match[1].length);
   const tmp = `${file}.project.${process.pid}`;
   await fs.writeFile(tmp, out, 'utf8');
   await fs.rename(tmp, file);
@@ -142,14 +145,13 @@ export async function listLetterHolds(): Promise<LetterHolds[]> {
   return letters.filter((letter): letter is LetterHolds => letter !== null);
 }
 
-/** Replace one letter's holder list. An old focus (`at`, from when items had ladders) goes. */
+/** Replace one letter's holder list. */
 export async function writeLetterHolds(key: string, holds: string[]): Promise<LetterHolds> {
   const file = tegamiPath(key);
   const text = await fs.readFile(file, 'utf8');
   const parsed = letterBlock(text);
   if (!parsed) throw new Error(`the work record at ${file} has no readable JSON block`);
   parsed.body.holds = holds;
-  delete parsed.body.at;
   await replaceLetterBlock(file, text, parsed, parsed.body);
   return holdsOfBody(key, text, parsed.body);
 }

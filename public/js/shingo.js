@@ -17,11 +17,8 @@ export function clampTip(s, room = 120) {
   return s.length > room ? s.slice(0, room - 1) + '…' : s;
 }
 
-/** An item's comments, after the evidence lines older trails carry (a comment replaced them). */
-const commentsOf = (item) => [
-  ...(item.trail || []).filter((line) => line.op === 'evidence').map((line) => line.note),
-  ...(item.comments || []).map((comment) => comment.text),
-];
+/** An item's comments, as text. */
+const commentsOf = (item) => (item.comments || []).map((comment) => comment.text);
 
 /** The work record: what the Agent is doing, the items it holds with their status, where
  *  it works, its Teams and its documents. */

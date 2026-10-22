@@ -1,7 +1,7 @@
 /**
  * TEGAMI-READ — core's reader of an Agent's work record, the one behind View Work Record.
  * The letter gives objective, mandate, repos and holds; the items held (with their status)
- * and their docs are read from the work item store. Pinned: the fence is optional, the chip
+ * and their attachments are read from the work item store. Pinned: the fence is optional, the chip
  * is the held items with their status, on_tangent outranks it, and the doc list only lists
  * what exists. There is no ladder: Jira has none.
  */
@@ -35,7 +35,7 @@ async function writeLetter(name: string, block: string): Promise<void> {
     `# TEGAMI — ${name}\n> prose the parser must ignore\n\n\`\`\`json\n${block}\n\`\`\`\n`,
   );
 }
-const item = async (title: string, docs: string[] = []) => (await createItem({ title, docs }, 'test')).item.id;
+const item = async (title: string, docs: string[] = []) => (await createItem({ title, attachments: docs }, 'test')).item.id;
 
 test('a missing letter reads as null, not an error', async () => {
   assert.equal(await readTegami('tegami-read-nobody'), null);
@@ -68,7 +68,7 @@ test('on_tangent outranks the items held', async () => {
   assert.equal(t.chip.text, '↳ on tangent');
 });
 
-test('docs are the README and every held item\'s docs, only what exists', async () => {
+test('docs are the README and every held item\'s attachments, only what exists', async () => {
   const name = 'tegami-read-docs';
   const real = path.join(temp, 'a-real-doc.md');
   const second = path.join(temp, 'second.md');
