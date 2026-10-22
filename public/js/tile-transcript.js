@@ -108,6 +108,9 @@ export function makeTileTranscript({ read = request, watch = watchTranscript, on
       stanceNode = null;
       return;
     }
+    // A view at the end follows the dots there: they carry a section's space above them, so
+    // appended under a reader at the bottom they would land below the fold.
+    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 40;
     if (!stanceNode) {
       stanceNode = document.createElement('div');
       stanceNode.className = 'tile-transcript-stance';
@@ -125,6 +128,7 @@ export function makeTileTranscript({ read = request, watch = watchTranscript, on
     }
     // Always last: records append above it, so the end of the conversation stays the end.
     el.append(stanceNode);
+    if (atBottom) el.scrollTop = el.scrollHeight;
   }
 
   function stop() {
