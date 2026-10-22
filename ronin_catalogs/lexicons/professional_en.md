@@ -426,11 +426,12 @@ nothing paints exactly this.
 - **team_kanban.project_missing:** This work item is not in the current scope.
 - **team_kanban.stage:** Status
 - **team_kanban.holder:** Holder
-- **team_kanban.progress:** Progress
-- **team_kanban.next:** Next
+- **team_kanban.parent:** Parent
+- **team_kanban.no_parent:** no parent
+- **team_kanban.nobody:** nobody
+- **team_kanban.flagged:** flagged
 - **team_kanban.evidence:** Evidence
 - **team_kanban.open_owner:** Open @{name}
-- **team_kanban.waiting:** waiting on
 - **team_kanban.asked:** asked
 - **team.workspace_1:** Workspace 1
 - **team.workspace_2:** Workspace 2
@@ -816,7 +817,7 @@ The catalog entry goes. {dir} is not touched.
 - **docs.loading:** loading…
 - **docs.saving:** saving…
 - **docs.saved:** saved
-- **docs.work_record_note:** Ask an agent to list a document with work-record document add <path>. If a document is missing, ask the agent to update its work record.
+- **docs.work_record_note:** Ask an agent to list a document with item doc <id> add <path>. If a document is missing, ask the agent to update its work record.
 
 ## roots — the count line and chips
 - **roots.chip_archived:** archived
@@ -1124,7 +1125,7 @@ The catalog entry goes. {dir} is not touched.
 
 ## docs — the empty line and count
 - **docs.empty_team:** No tracked documents.
-- **docs.empty:** No session has listed a doc yet. An agent lists one with: work-record document add <path>
+- **docs.empty:** No session has listed a doc yet. An agent lists one with: item doc <id> add <path>
 - **docs.count_one:** 1 doc
 - **docs.count_many:** {n} docs
 

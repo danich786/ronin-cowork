@@ -5,13 +5,13 @@ connects the authored record to Team custody and delivery evidence; it is not a 
 surface or a new work-record store. The Task Manager derives a view of those authorities.
 
 1. **Objective enters the Team.** The Team lead records an idea as a work item the Team holds.
-   The item has stable identity, outcome, stage, and provenance.
+   The item has stable identity, outcome, status, and provenance.
 2. **Assignment is accepted.** A visible Agent is launched or assigned with the objective,
    Campaign/Team context, Workspace Folder handle, mandate, behaviors, capabilities, and repository
    placement resolved before birth.
 3. **The Agent owns its work.** Assignment transfers a Team-held work item into the Agent's
-   work record. `work-record item create` is the other entry when work arrives without
-   a Team-held item; `write` updates the held item. Stable identity and provenance
+   work record. `item create` then `item assign <id> <agent>` is the other entry when work
+   arrives without a Team-held item; `item write` updates it. Stable identity and provenance
    survive custody changes; there is no second shared mutable checklist.
 4. **Work produces evidence.** The Agent keeps its record current and commits coherent desk
    checkpoints. Tests, documents, decisions, and exact commits become evidence.

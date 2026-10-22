@@ -34,7 +34,8 @@ These exact files are the source catalog for the virtual `YOUR TOOLS` view:
 | Group | File | Scope |
 |---|---|---|
 | Core | `edges.md` | live cross-session and Team communication/read tool |
-| Core | `work-record.md` | live personal record, document, and held work item tool |
+| Core | `work-record.md` | live personal record tool: objective, repositories, ladder state |
+| Core | `work-item.md` | live work item tool: every act on a named item |
 | Core | `agent_session.md` | live Agent/session inspection and lifecycle tools |
 | Core | `worktree-desk.md` | live worktree tool and managed-worktree teaching available to every Cowork Agent |
 | Core | `machine-settings.md` | typed Campaign, installation, provider, and machine settings |

@@ -1,81 +1,33 @@
 # Work Record
 - **label:** Work Record
-- **blurb:** How do I keep my current work, documents, and the work items I hold truthful?
+- **blurb:** How do I keep my objective, repositories and place on the ladder truthful?
 - **class:** cowork
 - **requires:** —
 - **order:** 20
 
-Reach for this bundle when your task, position, documents, or a work item you hold changes:
-it is the one record the owner reads on your tile and roster. Your ladder and your documents
-live on the work item you are on; your record keeps your objective, repositories, the ids
-you hold, and your focus.
+Reach for this bundle when your objective, your repositories, or whether you are on your
+ladder changes: it is the one record the owner reads on your tile and roster. The record
+keeps what is about you: your objective, repositories, the ids you hold, and your focus.
+Work items, with their ladders and documents, are the `item` tool's, the item always named.
 
-**Show docs** means list the documents of the items you hold. **Update work record** means
-record current progress, position, and next steps through the typed dispatcher.
+**Show docs** means list the documents of the items you hold: `work-record read` shows them. **Update work record** means
+record your current objective and repositories through the typed dispatcher.
 
-**Live tool:** the shipped `work-record` dispatcher owns record fields and reaches work items
-(ladder, documents, work items) through `/api/work-items`.
+**Live tool:** the shipped `work-record` dispatcher owns the record's fields; `work-record
+read` also shows the items you hold and your focus item's ladder, from `/api/work-items`.
 
 ## Tools
 
 | Tool | Authority | Teach | Help |
 |---|---|---|---|
-| `work-record update_record` | write: objective and repositories on the record; ladder and position on the focus item | priority | `work-record --help` |
-| `work-record workspace list|add|remove` | read/write: repositories this Agent records as current work; accepts a handle or full URL and a separate branch | priority | `work-record workspace --help` |
-| `work-record document add` | write: list one document on the focus item, visible in Docs | priority | `work-record --help` |
-| `work-record item create` | create: one work item held by this Agent | priority | `work-record --help` |
-| `work-record item read` | read: one work item and who holds it | priority | `work-record --help` |
-| `work-record item write` | write: one work item's typed fields and evidence, one trail line | priority | `work-record --help` |
-| `work-record item return` | write: give an item back to this Agent's Team | priority | `work-record item --help` |
-| `work-record item backlog` | write: park an item, held by nobody | priority | `work-record item --help` |
-| `work-record item done` | write: move an item to stage DONE | priority | `work-record item --help` |
-| `work-record read` | read: the record, the items held, and the focus item's ladder | | `work-record --help` |
-| `work-record document list` | read: documents of every item held | | `work-record --help` |
-| `work-record document remove` | write: take a document off the focus item | | `work-record --help` |
-| `work-record item list` | read: the items this Agent holds | | `work-record --help` |
-| `team item list` | read: the Team's reading; the same dispatcher also exposes the Team's item operations | | `team --help` |
+| `work-record update_record` | write: objective, repositories and ladder state on the record | priority | `work-record --help` |
+| `work-record workspace` | read/write: list, add or remove repositories this Agent records as current work; accepts a handle or full URL and a separate branch | priority | `work-record workspace --help` |
+| `work-record read` | read: the record, the items held and the focus item's ladder | priority | `work-record --help` |
 
-## Work items
+## The record and the items
 
-A work item is one object with a stable id (`w12`), stored once. Holding is a list of ids on
-each Agent and Team; assigning moves the id and never the item, so nothing is ever copied.
-Every change is made by a tool and appends one line to the item's trail naming who called.
-Holding is how work is found, never permission: any Agent may change any item, and the trail
-says who.
-
-`item create` makes an item held by you; ids come from one global issuer and are never
-chosen. Read the returned id, then use `work-record item read <id>` and the verbs shown
-by `work-record item --help`. Every acknowledgement answers with the item as it now is and
-ends with the item and the write that keeps it current; read it before your next act.
-
-An item carries:
-
-| Field | Values | Meaning |
-|---|---|---|
-| `stage` | `IDEA` · `PLAN` · `BUILD` · `REVIEW` · `LAND` · `DONE` | a mark on the item |
-| `exit` | `none` · `agent` · `lead` · `user` | who the item is waiting on to move |
-| `status` | `green` · `yellow` · `red` | how the held work is going |
-| `parent` | an item id | the one item it sits under: the Unfiled epic unless another was named |
-| `kind` | `story` · `task` · `bug` | a label for an item without children; unset reads as task |
-
-Use the intent verbs when they say what happened more plainly than raw fields:
-`working <id>` means yellow with the Agent acting next and makes it your focus;
-`ready <id> --for lead|user` means green and names the next actor; `stuck <id>` means red
-while the Agent retains the next move; `blocked <id> --on lead|user` means red and names who
-must act; `advance <id> --to <stage>` changes only the stage. Evidence is a fact with its
-receipt: `item write <id> --evidence "<fact>"`, alone or with other fields in one call.
-
-An item with children is an epic, read by its children; one without is a story, task or
-bug (its `kind`) and carries the ladder, and every acknowledgement says which ("w7 is an
-epic, 3 items", "w9 is a task at plan, 2 legs"). When a leaf gains its first child its
-ladder folds into that child. Nesting an item under an epic someone holds sends that holder
-one message; the Unfiled epic is held by nobody and notifies nobody.
-
-Two tools move stage from receipts: a hand-in naming the item moves it to LAND, and a
-promotion moves the items on its hand-ins to DONE. `return` gives an item back to your Team,
-`backlog` parks it, `done` moves it to DONE.
-
-Your ladder is your focus item's: `update_record --phase|--leg|--gate|--done …` writes it,
-and holding nothing, your first ladder or document write makes one item for you. Phases
-and legs are never items. Handoffs are documents on an item; there is no separate handoff
-command. Reporting an outcome is ordinary responsibility, not an operation.
+The record holds your objective, mandate, repositories, the Teams you are on (derived), the
+ids of the items you hold and your focus. Your ladder is your focus item's: `item focus
+<id>` chooses it and `item plan <id>` writes it. `work-record update_record --on_tangent`
+says you stepped off it, `--on_track` that you are back. Reporting an outcome is ordinary
+responsibility, not an operation.

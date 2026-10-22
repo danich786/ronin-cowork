@@ -50,20 +50,19 @@ const normalizedProject = (value) => ({
   objective: String(value?.objective || ''),
   evidence: Array.isArray(value?.trail) ? value.trail.filter((line) => line?.op === 'evidence').map((line) => String(line.note || '')) : [],
   holder: String(value?.holder || ''),
-  stage: INDEX[value?.stage] == null ? 'IDEA' : value.stage,
-  exit: String(value?.exit || 'none'),
-  status: ['green', 'yellow', 'red'].includes(value?.status) ? value.status : 'yellow',
+  status: INDEX[value?.status] == null ? 'IDEA' : value.status,
+  flagged: value?.flagged === true,
+  parent: value?.parent ? String(value.parent) : '',
 });
 
-export const waitingOn = (project) => project.stage !== 'DONE'
-  && project.status === 'green'
-  && ['lead', 'user'].includes(project.exit) ? project.exit : '';
+/** Jira's flag: an impediment, marked the same way on every surface. */
+export const FLAG_MARK = '⚑';
 
 export function definedTargets(project) {
   const targets = new Set();
-  if (project.stage === 'DONE') return targets;
-  if (project.status === 'green' && COLUMNS[INDEX[project.stage] + 1]) targets.add(COLUMNS[INDEX[project.stage] + 1].key);
-  if (project.stage === 'PLAN') targets.add('IDEA');
+  if (project.status === 'DONE') return targets;
+  if (COLUMNS[INDEX[project.status] + 1]) targets.add(COLUMNS[INDEX[project.status] + 1].key);
+  if (project.status === 'PLAN') targets.add('IDEA');
   return targets;
 }
 
@@ -73,8 +72,8 @@ const meaningLine = (move) => move.text.split('meaning: ')[1]?.split('\n')[0] ||
 export const holderOf = (project, leadName) => project.holder.startsWith('agent:') ? project.holder.slice(6)
   : project.holder.startsWith('team:') ? leadName : '';
 
-/** One work item as one line: title, who holds it, and a stage bar (a segment per stage,
- * filled to its stage, the current one in its status colour). */
+/** One work item as one line: title, who holds it, and a status bar (a segment per column,
+ * filled to its status, the current one marked, red when flagged). */
 export function itemLine(value, { holder = '', stage = false } = {}) {
   const item = normalizedProject(value);
   const line = node('div', 'tk-line');
@@ -82,46 +81,42 @@ export function itemLine(value, { holder = '', stage = false } = {}) {
   line.dataset.item = item.id;
   line.append(node('span', 'tk-line-title', item.title));
   const bar = node('span', 'tk-stage-bar');
-  bar.title = `${stageLabel(item.stage)} · ${item.status}`;
+  bar.title = [stageLabel(item.status), item.flagged ? 'flagged' : ''].filter(Boolean).join(' · ');
   bar.setAttribute('aria-label', bar.title);
   COLUMNS.forEach((column, index) => {
-    const segment = node('i', index < INDEX[item.stage] ? 'past' : index === INDEX[item.stage] ? `now ${item.stage === 'DONE' ? 'green' : item.status}` : '');
+    const segment = node('i', index < INDEX[item.status] ? 'past' : index === INDEX[item.status] ? `now${item.flagged ? ' flagged' : ''}` : '');
     segment.title = column.label;
     bar.append(segment);
   });
   // `stage: true` says the status in a word beside the bar (the Team profile asked for it).
-  line.append(node('span', 'tk-line-holder', holder ? `@${holder}` : ''), ...(stage ? [node('span', 'tk-line-stage', stageLabel(item.stage))] : []), bar);
+  line.append(node('span', 'tk-line-holder', holder ? `@${holder}` : ''), ...(stage ? [node('span', 'tk-line-stage', stageLabel(item.status))] : []), bar);
   return line;
 }
 
 /** The exact one-message write path described by the Team Kanban concept. */
 export function moveMessage(project, toStage, leadName, now = new Date()) {
-  const fromIndex = INDEX[project.stage];
+  const fromIndex = INDEX[project.status];
   const toIndex = INDEX[toStage];
   const forward = toIndex === fromIndex + 1;
   const holder = holderOf(project, leadName) || leadName;
   const id = project.id;
   const at = now.toISOString().slice(0, 16) + 'Z';
   const head = `from @kanban (the Team Task Manager, moved by the user at ${at}):`;
-  const line = `MOVE ${id} "${project.title}" from ${stageLabel(project.stage)} (${project.status}, exit: ${project.exit}) to ${stageLabel(toStage)}`;
-  const byNote = project.exit !== 'user' && project.exit !== 'none' ? ` (exit named the ${project.exit}; the user dragged it)` : '';
+  const line = `MOVE ${id} "${project.title}" from ${stageLabel(project.status)}${project.flagged ? ' (flagged)' : ''} to ${stageLabel(toStage)}`;
   const result = (target, meaning, next) => ({ target, text: `${head}\n${line}\n  meaning: ${meaning}\n  next: ${next}` });
 
-  if (project.stage === 'PLAN' && toStage === 'IDEA') {
-    return result(leadName, 'return it to Idea; the Team holds it again.', `work-record item advance ${id} --to IDEA, then work-record item return ${id}`);
+  if (project.status === 'PLAN' && toStage === 'IDEA') {
+    return result(leadName, 'return it to Idea; the Team holds it again.', `item write ${id} --status IDEA, then item assign ${id} team:${project.team || '<team>'}`);
   }
   if (!forward) return { target: holder, text: `${head}\n${line}\n  meaning: no defined move; delivered as a plain request.` };
-  if (project.status !== 'green') {
-    return result(holder, `a request to move on, not an approval; the card is ${project.status === 'red' ? 'blocked' : 'being worked'}.`, 'your call — say why not, or set it green when it is ready.');
+  if (project.flagged) {
+    return result(holder, 'a request to move on, not an approval; the card is flagged.', `your call — say what stops it, or item write ${id} --flagged false when it is clear.`);
   }
-  if (project.stage === 'IDEA') return result(leadName, 'engage — the user wants this started.', `team item assign ${id} <session>, or raise an Agent for it`);
-  if (project.stage === 'PLAN') return result(holder, `the plan is agreed${byNote}; build.`, `work-record item advance ${id} --to BUILD`);
-  if (project.stage === 'BUILD') return result(holder, `show approved${byNote}; ready it for review.`, `work-record item advance ${id} --to REVIEW`);
-  if (project.stage === 'REVIEW') return result(holder, `review passed${byNote}; hand in.`, `worktree-desk hand-in <repo> --item ${id}   (the hand-in moves it to Land)`);
-  if (project.stage === 'LAND') {
-    const release = project.exit === 'user';
-    return result(leadName, `${release ? 'release — merge the dev → master pull request' : 'promote'}${byNote}.`, release ? 'open or merge the pull request' : `bin/ronin-promote ${project.team || '<team>'}   (the promotion moves it to Done)`);
-  }
+  if (project.status === 'IDEA') return result(leadName, 'engage — the user wants this started.', `item assign ${id} <session>, or raise an Agent for it`);
+  if (project.status === 'PLAN') return result(holder, 'the plan is agreed; build.', `item write ${id} --status BUILD`);
+  if (project.status === 'BUILD') return result(holder, 'show approved; ready it for review.', `item write ${id} --status REVIEW`);
+  if (project.status === 'REVIEW') return result(holder, 'review passed; hand in.', `worktree-desk hand-in <repo> --item ${id}   (the hand-in moves it to Land)`);
+  if (project.status === 'LAND') return result(leadName, 'promote.', `bin/ronin-promote ${project.team || '<team>'}   (the promotion moves it to Done)`);
   return { target: holder, text: `${head}\n${line}\n  meaning: delivered as a plain request.` };
 }
 
@@ -148,9 +143,7 @@ export function createTeamKanban(options = {}) {
   headerToggle.addEventListener('click', () => setHeaderExpanded(header.dataset.expanded !== 'true'));
   setHeaderExpanded(true);
   const legend = node('div', 'tk-legend');
-  for (const [status, label] of [['green', 'ready to move'], ['yellow', 'working'], ['red', 'blocked']]) {
-    const item = node('span'); item.append(node('i', `tk-dot ${status}`), document.createTextNode(label)); legend.append(item);
-  }
+  const flagLegend = node('span'); flagLegend.append(node('i', 'tk-dot flagged'), document.createTextNode(t('team_kanban.flagged', 'flagged'))); legend.append(flagLegend);
   const notice = node('p', 'tk-notice');
   notice.setAttribute('role', 'status');
   const controls = node('div', 'tk-controls');
@@ -209,7 +202,7 @@ export function createTeamKanban(options = {}) {
       detail.append(back);
       if (!project) detail.append(node('p', 'tk-empty', t('team_kanban.project_missing', 'This work item is not in the current scope.')));
       else {
-        appendProjectReading(detail, project, { holder: holderName(project), stage: stageLabel(project.stage), prefix: 'tk' });
+        appendProjectReading(detail, project, { holder: holderName(project), stage: stageLabel(project.status), prefix: 'tk' });
       }
       board.append(detail); return;
     }
@@ -218,7 +211,7 @@ export function createTeamKanban(options = {}) {
       const back = node('button', 'tk-back', t('team_kanban.back', 'Back to Task Manager')); back.type = 'button'; back.addEventListener('click', () => navigate('overview')); board.append(back);
     }
     for (const column of shownColumns) {
-      const columnProjects = projects.filter((project) => project.stage === column.key);
+      const columnProjects = projects.filter((project) => project.status === column.key);
       const section = node('section', 'tk-column');
       section.dataset.stage = column.key;
       const heading = node('h3');
@@ -234,7 +227,7 @@ export function createTeamKanban(options = {}) {
         card.dataset.project = project.id;
         const isOpen = allOpen || openCards.has(project.id);
         card.classList.toggle('open', isOpen);
-        if (project.stage !== 'DONE') card.dataset.status = project.status;
+        if (project.flagged) card.dataset.flagged = 'true';
         const toggle = node('button', 'tk-card-toggle');
         toggle.type = 'button';
         toggle.setAttribute('aria-expanded', String(isOpen));
@@ -244,8 +237,7 @@ export function createTeamKanban(options = {}) {
         details.append(node('p', 'wk-card-summary tk-outcome', project.objective));
         if (project.evidence.length) details.append(node('p', 'tk-evidence', project.evidence.join(' · ')));
         const row = node('div', 'wk-card-meta tk-card-row');
-        const wait = waitingOn(project);
-        if (wait) row.append(node('span', 'tk-waiting', wait));
+        if (project.flagged) row.append(node('span', 'tk-flag', `${FLAG_MARK} ${t('team_kanban.flagged', 'flagged')}`));
         const owner = holderName(project);
         if (owner) {
           const open = node('button', 'tk-owner', `@${owner}`);
@@ -254,7 +246,7 @@ export function createTeamKanban(options = {}) {
           row.append(open);
         }
         const pending = asked.get(project.id);
-        if (pending?.stage === project.stage) row.append(node('span', 'tk-asked', `asked @${pending.target}`));
+        if (pending?.stage === project.status) row.append(node('span', 'tk-asked', `asked @${pending.target}`));
         else if (pending) asked.delete(project.id);
         const openProject = node('button', 'tk-project-open', t('team_kanban.open_project', 'Open work item'));
         openProject.type = 'button'; openProject.addEventListener('click', () => navigate('project', project.id)); row.append(openProject);
@@ -297,7 +289,7 @@ export function createTeamKanban(options = {}) {
         event.preventDefault(); section.classList.remove('over');
         const id = event.dataTransfer?.getData('text/plain') || '';
         const project = projects.find((item) => item.id === id);
-        if (project && project.stage !== column.key) void sendMove(project, column.key);
+        if (project && project.status !== column.key) void sendMove(project, column.key);
       });
       board.append(section);
     }
@@ -312,7 +304,7 @@ export function createTeamKanban(options = {}) {
       notice.textContent = t('team_kanban.send_failed', 'The move request could not be sent.');
       return;
     }
-    asked.set(project.id, { stage: project.stage, target: move.target });
+    asked.set(project.id, { stage: project.status, target: move.target });
     notice.textContent = result.data.delivered
       ? t('team_kanban.delivered', 'Move request delivered to @{name}. The card moves when its record moves.', { name: move.target })
       : t('team_kanban.queued', 'Move request queued for @{name}. The card moves when its record moves.', { name: move.target });

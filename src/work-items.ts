@@ -4,36 +4,37 @@
  * The only module that reads or writes an item file. Everything else reaches items through
  * the /api/work-items routes (src/routes/work-items-api.ts), and every change here appends
  * exactly one line to the item's trail, naming who called. Nothing is locked against
- * anyone: holding is discovery, never permission. The one refusal is a reparent that would
- * form a cycle, answered REFUSED with the chain named.
+ * anyone: holding is discovery, never permission. One refusal: nothing goes below -1 (follow).
+ *
+ * THE SHAPE MATCHES JIRA (owner, 2026-10-22; samurai_lab WORK_ITEM_BUILDOUT.md). One object
+ * at every level: `level` 1 epic · 0 story/task/bug · -1 subtask, stored; `kind` a label;
+ * `status` the board column; `flagged` an impediment. An old file (stage, exit, a colour
+ * status) is read in the new shape and written in it on its next write.
  *
  * One file per item, <store>/<id>.json, written beside and renamed over. Ids come from one
  * global issuer (w1, w2, …) under one in-process lock that every write shares, so a trail
  * append is read, push, write with nobody in between.
  */
 import { existsSync, statSync } from 'node:fs';
-import { mkdir, readFile, readdir, rename, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { storeDir } from './resources.js';
 import { sessionKey } from './session-dir.js';
-import { getTags } from './tmux.js';
 import { enqueueMessage } from './message-queue.js';
 import { findLeads } from './desks/lead.js';
 import { listTeamRosters, readTeamRoster, writeTeamRoster } from './team-rosters.js';
-import { ackRecord, listLetterHolds, teamChanged, readLetterHolds, seedTegami, writeLetterAt, writeLetterHolds } from './tegami.js';
+import { ackRecord, listLetterHolds, teamChanged, readLetterHolds, seedTegami, writeLetterHolds } from './tegami.js';
 
-export const ITEM_STAGES = ['IDEA', 'PLAN', 'BUILD', 'REVIEW', 'LAND', 'DONE'] as const;
-export const ITEM_EXITS = ['none', 'agent', 'lead', 'user'] as const;
-export const ITEM_STATUSES = ['green', 'yellow', 'red'] as const;
-/** A childless item's kind (owner, 2026-10-22): a label only; the level comes from the shape. */
+export const ITEM_STATUSES = ['IDEA', 'PLAN', 'BUILD', 'REVIEW', 'LAND', 'DONE'] as const;
+/** A level-0 item's kind (owner, 2026-10-22): a label only; absent reads as blank. */
 export const ITEM_KINDS = ['story', 'task', 'bug'] as const;
+export const ITEM_LEVELS = [1, 0, -1] as const;
 export const RUNG_STATUSES = ['PLANNED', 'ACTIVE', 'DONE'] as const;
-export const TRAIL_OPS = ['create', 'assign', 'release', 'reparent', 'stage', 'status', 'exit', 'edit', 'evidence', 'holder-ended'] as const;
+export const TRAIL_OPS = ['create', 'assign', 'release', 'move', 'status', 'edit', 'evidence', 'holder-ended'] as const;
 
-export type ItemStage = typeof ITEM_STAGES[number];
-export type ItemExit = typeof ITEM_EXITS[number];
 export type ItemStatus = typeof ITEM_STATUSES[number];
 export type ItemKind = typeof ITEM_KINDS[number];
+export type ItemLevel = typeof ITEM_LEVELS[number];
 export type RungStatus = typeof RUNG_STATUSES[number];
 export type TrailOp = typeof TRAIL_OPS[number];
 
@@ -47,11 +48,12 @@ export interface WorkItem {
   id: string;
   title: string;
   objective: string;
-  stage: ItemStage;
-  exit: ItemExit;
-  status: ItemStatus;
-  /** Story, task or bug; absent reads as task. */
+  /** 1 epic · 0 story, task or bug · -1 subtask. A default at birth, never derived. */
+  level: ItemLevel;
+  /** Story, task or bug; absent reads as blank. */
   kind?: ItemKind;
+  status: ItemStatus;
+  flagged: boolean;
   parent: string | null;
   ladder: Rung[];
   docs: string[];
@@ -60,10 +62,9 @@ export interface WorkItem {
   created: { at: string; by: string };
 }
 
-/** What every write answers: the item as it now is, the line it appended, what the item
- * is (an epic has children and is read by them; a story, task or bug has none and carries
- * the ladder), and who was told of an arrival under their epic. */
-export interface Acknowledged { item: WorkItem; line: TrailLine; shape: string; notified?: string[] }
+/** What every write answers: the item as it now is, the line it appended, and who was told
+ * of an arrival. What the act did is read from the line (didLine). */
+export interface Acknowledged { item: WorkItem; line: TrailLine; notified?: string[] }
 
 export class WorkItemRefused extends Error {}
 export class WorkItemMissing extends Error {}
@@ -75,8 +76,8 @@ export const isItemId = (value: string): boolean => ID.test(value);
 const dir = () => storeDir('work_items');
 const fileOf = (id: string) => path.join(dir(), `${id}.json`);
 
-const member = <T extends readonly string[]>(values: T, value: unknown): value is T[number] =>
-  typeof value === 'string' && (values as readonly string[]).includes(value);
+const member = <T extends readonly unknown[]>(values: T, value: unknown): value is T[number] =>
+  (values as readonly unknown[]).includes(value);
 
 let tail: Promise<unknown> = Promise.resolve();
 /** The issuer lock. Every item and holder write runs inside it, one at a time. */
@@ -119,10 +120,25 @@ export function checkLadder(value: unknown): Rung[] {
   });
 }
 
+/** An item file in the shape it was written in, read in today's: `stage` is the status, a
+ * red colour is flagged, `exit` and the other colours go, no level reads 0. */
+export function inShape(raw: Record<string, unknown>): WorkItem {
+  const { stage, exit: _exit, status, flagged, level, kind, ...rest } = raw;
+  void _exit;
+  return {
+    ...(rest as unknown as WorkItem),
+    level: member(ITEM_LEVELS, level) ? level : 0,
+    ...(member(ITEM_KINDS, kind) ? { kind } : {}),
+    status: member(ITEM_STATUSES, status) ? status : member(ITEM_STATUSES, stage) ? stage : 'IDEA',
+    flagged: typeof flagged === 'boolean' ? flagged : status === 'red',
+    external: (rest.external && typeof rest.external === 'object' ? rest.external : {}) as External,
+  };
+}
+
 async function load(id: string): Promise<WorkItem> {
   if (!isItemId(id)) throw new WorkItemMissing(`"${id}" is not a work item id; ids look like w12.`);
   try {
-    return JSON.parse(await readFile(fileOf(id), 'utf8')) as WorkItem;
+    return inShape(JSON.parse(await readFile(fileOf(id), 'utf8')) as Record<string, unknown>);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') throw new WorkItemMissing(`No work item ${id}.`);
     throw error;
@@ -160,35 +176,26 @@ const lineOf = (by: string, op: TrailOp, extra: Omit<TrailLine, 'at' | 'by' | 'o
 });
 
 /** Read, change, append one trail line, write. Runs inside the issuer lock. */
-/** "w7 is an epic, 3 items" or "w9 is a task at plan, 2 legs": the level told by children,
- * the kind word by the label. */
-export async function kindOf(item: WorkItem): Promise<string> {
-  const children = (await listItems()).filter((other) => other.parent === item.id).length;
-  if (children) return `${item.id} is an epic, ${children} item${children === 1 ? '' : 's'}`;
-  const legs = item.ladder.reduce((sum, rung) => sum + (rung.legs?.length ?? 0), 0);
-  return `${item.id} is a ${item.kind ?? 'task'} at ${item.stage.toLowerCase()}, ${legs} leg${legs === 1 ? '' : 's'}`;
-}
+const answer = (item: WorkItem, line: TrailLine): Acknowledged => ({ item, line });
 
-const answer = async (item: WorkItem, line: TrailLine): Promise<Acknowledged> => ({ item, line, shape: await kindOf(item) });
-
+/** A change by anyone but the holding Agent pushes that Agent the one work-record ack
+ * (ackRecord skips the Agent's own writes). */
 export async function appendTrail(id: string, by: string, change: (item: WorkItem) => Omit<TrailLine, 'at' | 'by'>): Promise<Acknowledged> {
   const item = await load(id);
   const { op, ...extra } = change(item);
   const line = lineOf(by, op, extra);
   item.trail.push(line);
   await save(item);
+  for (const holder of await holdersOf(id)) if (holder.kind === 'agent') await ackRecord(holder.name, by);
   return answer(item, line);
 }
 
 export interface NewItem {
   title: string;
   objective?: string;
-  stage?: string;
-  exit?: string;
   status?: string;
   parent?: string | null;
-  /** An epic of its own: a root item, under nothing. */
-  root?: boolean;
+  level?: number;
   kind?: string;
   /** Held from birth by this Team or Agent, in the same call and the same trail line. */
   holder?: Holder;
@@ -196,74 +203,61 @@ export interface NewItem {
   docs?: string[];
 }
 
-function checkFields(fields: { stage?: unknown; exit?: unknown; status?: unknown; kind?: unknown }): void {
-  if (fields.kind !== undefined && !member(ITEM_KINDS, fields.kind)) throw new WorkItemBadInput(`kind must be one of ${ITEM_KINDS.join(', ')}.`);
-  if (fields.stage !== undefined && !member(ITEM_STAGES, fields.stage)) throw new WorkItemBadInput(`stage must be one of ${ITEM_STAGES.join(', ')}.`);
-  if (fields.exit !== undefined && !member(ITEM_EXITS, fields.exit)) throw new WorkItemBadInput(`exit must be one of ${ITEM_EXITS.join(', ')}.`);
+function checkFields(fields: { status?: unknown; kind?: unknown; level?: unknown; flagged?: unknown }): void {
+  if (fields.kind !== undefined && fields.kind !== '' && !member(ITEM_KINDS, fields.kind)) throw new WorkItemBadInput(`kind must be one of ${ITEM_KINDS.join(', ')}, or blank.`);
   if (fields.status !== undefined && !member(ITEM_STATUSES, fields.status)) throw new WorkItemBadInput(`status must be one of ${ITEM_STATUSES.join(', ')}.`);
+  if (fields.level !== undefined && !member(ITEM_LEVELS, fields.level)) throw new WorkItemBadInput('level must be 1, 0 or -1.');
+  if (fields.flagged !== undefined && typeof fields.flagged !== 'boolean') throw new WorkItemBadInput('flagged must be true or false.');
 }
 
-/* THE UNFILED EPIC. Every item is born under a parent: the one named, else the Unfiled
- * epic, a root item titled "Unfiled" and held by nobody; or, asked for, as a root of its own
- * (a new epic). Creating checks for Unfiled and makes it when it is missing, every time.
- * Until 2026-10-02 it was titled "Common": finding that root renames it in place, so the
- * epic and everything under it carry over and a second one is never made. */
-const UNFILED = 'Unfiled';
-const FORMER = 'Common';
+/** One below the parent, 0 with none (Jira's hierarchy). A default, never a guard. */
+const levelUnder = (parent: WorkItem | null): ItemLevel => parent ? (parent.level - 1) as ItemLevel : 0;
 
-/** The Unfiled epic, the former "Common" root renamed in place; null when neither exists. */
-async function findUnfiledUnlocked(by: string): Promise<WorkItem | null> {
-  const roots = (await listItems()).filter((item) => item.parent === null);
-  const found = roots.find((item) => item.title === UNFILED);
-  if (found) return found;
-  const former = roots.find((item) => item.title === FORMER);
-  if (!former) return null;
-  former.title = UNFILED;
-  former.trail.push(lineOf(by, 'edit', { note: `renamed ${FORMER} → ${UNFILED}` }));
-  await save(former);
-  return former;
+/** THE ONE RULE (owner, 2026-10-22): nothing goes below -1. On a create, move or level
+ * write the item takes its new level and its children follow, each one below its own
+ * parent; if any would land below -1 the act fails in one line: "w39 can't go there."
+ * Nothing else is checked. That covers anything under a subtask, a move under one's own
+ * descendant, and a move under oneself (the item becomes its own child, so the levels fall
+ * past -1). Returns the children whose level changes, with their new level. */
+async function follow(item: WorkItem, parent: string | null, level: number): Promise<Array<{ child: WorkItem; level: number }>> {
+  const all = (await listItems()).map((other) => other.id === item.id ? { ...other, parent } : other);
+  const out: Array<{ child: WorkItem; level: number }> = [];
+  const walk = (id: string, at: number): void => {
+    if (at < -1) throw new WorkItemRefused(`${item.id} can't go there.`);
+    for (const child of all.filter((other) => other.parent === id)) {
+      if (child.id !== item.id && child.level !== at - 1) out.push({ child, level: at - 1 });
+      walk(child.id, at - 1);
+    }
+  };
+  walk(item.id, level);
+  return out;
 }
 
-async function unfiledBoardUnlocked(by: string): Promise<string> {
-  const found = await findUnfiledUnlocked(by);
-  if (found) return found.id;
-  const epic = blank(UNFILED, by);
-  epic.id = await nextId();
-  epic.trail.push(lineOf(by, 'create', { to: 'none', note: 'the Unfiled epic' }));
-  await save(epic);
-  return epic.id;
+/** The children follow: each takes its new level, with one trail line saying why. */
+async function settle(moved: Array<{ child: WorkItem; level: number }>, item: WorkItem, by: string): Promise<void> {
+  for (const { child, level } of moved) {
+    const next = await load(child.id);
+    next.level = level as ItemLevel;
+    next.trail.push(lineOf(by, 'edit', { note: `level ${level}, following ${item.id}` }));
+    await save(next);
+  }
 }
-
-export const unfiledBoard = (): Promise<WorkItem | null> => withIssuer(() => findUnfiledUnlocked('house'));
 
 const blank = (title: string, by: string): WorkItem => ({
-  id: '', title, objective: '', stage: 'IDEA', exit: 'none', status: 'yellow', parent: null,
+  id: '', title, objective: '', level: 0, status: 'IDEA', flagged: false, parent: null,
   ladder: [], docs: [], external: {}, trail: [], created: { at: new Date().toISOString(), by: by.trim() || 'unknown' },
 });
 
-/** A leaf that gains its first child becomes an epic: its ladder folds into that child,
- * ahead of any ladder the child had, and the parent gets a line saying so. Returns the
- * note for the child's own line, or nothing when there was no ladder to fold. */
-async function foldIntoFirstChild(parentId: string, child: WorkItem, by: string): Promise<string> {
-  const parent = await load(parentId);
-  const siblings = (await listItems()).filter((item) => item.parent === parentId && item.id !== child.id);
-  if (siblings.length || !parent.ladder.length) return '';
-  child.ladder = [...parent.ladder, ...child.ladder];
-  parent.ladder = [];
-  parent.trail.push(lineOf(by, 'edit', { note: `ladder folded into ${child.id}, its first child` }));
-  await save(parent);
-  return `ladder folded in from ${parentId}`;
-}
-
-/** An arrival under a held epic is announced to its holder, one queued message: to the
- * Agent, or to a holding Team's lead. An epic held by nobody notifies nobody. */
-async function announceArrival(item: WorkItem): Promise<string[]> {
+/** An arrival under a held item is announced to its holder, one queued message: to the
+ * Agent, or to a holding Team's lead, never to whoever made the change. An item held by
+ * nobody notifies nobody. */
+async function announceArrival(item: WorkItem, by: string): Promise<string[]> {
   if (!item.parent) return [];
   const told: string[] = [];
   for (const holder of await holdersOf(item.parent)) {
     const targets = holder.kind === 'agent' ? [holder.name] : await findLeads(holder.name);
-    for (const target of targets) {
-      await enqueueMessage(target, `${item.id} ${item.title} was added under your epic ${item.parent}. Handle it as you see fit.`, 'house', 'Work items');
+    for (const target of targets.filter((name) => name !== by)) {
+      await enqueueMessage(target, `${item.id} ${item.title} was added under ${item.parent}, which you hold. Handle it as you see fit.`, 'house', 'Work items');
       told.push(target);
     }
   }
@@ -275,62 +269,70 @@ export async function createItemUnlocked(input: NewItem, by: string): Promise<Ac
   const title = String(input.title ?? '').trim();
   if (!title) throw new WorkItemBadInput('A work item needs a title.');
   checkFields(input);
-  if (input.parent) await load(input.parent);
-  // The parent first: making the Unfiled epic issues an id, and the item's comes after it.
-  const parent = input.root ? null : input.parent || await unfiledBoardUnlocked(by);
+  const parent = input.parent ? await load(input.parent) : null;
   const item: WorkItem = {
     ...blank(title, by),
     id: await nextId(),
     objective: String(input.objective ?? '').trim(),
-    stage: (input.stage as ItemStage | undefined) ?? 'IDEA',
-    exit: (input.exit as ItemExit | undefined) ?? 'none',
-    status: (input.status as ItemStatus | undefined) ?? 'yellow',
+    level: (input.level as ItemLevel | undefined) ?? levelUnder(parent),
     ...(input.kind ? { kind: input.kind as ItemKind } : {}),
-    parent,
+    status: (input.status as ItemStatus | undefined) ?? 'IDEA',
+    parent: parent?.id ?? null,
     ladder: input.ladder ?? [],
     docs: input.docs ?? [],
   };
+  await follow(item, item.parent, item.level);
   const list = input.holder ? await listFor(input.holder) : null;
-  const folded = item.parent ? await foldIntoFirstChild(item.parent, item, by) : '';
   await save(item);
   if (list) { await list.set([...list.holds, item.id]); await ackHolds([input.holder ?? null], by); }
-  const line = lineOf(by, 'create', { to: input.holder ? holderLabel(input.holder) : 'none', note: [item.title, item.parent ? `under ${item.parent}` : 'an epic of its own', folded].filter(Boolean).join('; ') });
+  const line = lineOf(by, 'create', { to: input.holder ? holderLabel(input.holder) : 'none', note: [item.title, item.parent ? `under ${item.parent}` : 'no parent'].join('; ') });
   item.trail.push(line);
   await save(item);
-  return { ...(await answer(item, line)), notified: await announceArrival(item) };
+  return { ...answer(item, line), notified: await announceArrival(item, by) };
 }
 
 export const createItem = (input: NewItem, by: string) => withIssuer(() => createItemUnlocked(input, by));
 
-export interface ItemEdit { title?: string; objective?: string; stage?: string; exit?: string; status?: string; kind?: string; ladder?: unknown; evidence?: string }
+export interface ItemEdit { title?: string; objective?: string; status?: string; level?: number; kind?: string; flagged?: boolean; external?: Partial<Record<keyof External, string>> }
 
-/** One call, one trail line. Evidence names the line when given (the fact, plus what else
- * changed); a lone stage, status or exit change is named by its own op; a status set with
- * an exit (working, ready, stuck, blocked) is one status line; anything else is edit. */
+/** One call, one trail line: a lone status change is named by its own op; anything else is edit. */
 export function editItem(id: string, edit: ItemEdit, by: string, note?: string): Promise<Acknowledged> {
   checkFields(edit);
-  const ladder = edit.ladder === undefined ? undefined : checkLadder(edit.ladder);
   if (edit.title !== undefined && !String(edit.title).trim()) throw new WorkItemBadInput('title cannot be empty.');
-  return withIssuer(() => appendTrail(id, by, (item) => {
-    const changed: string[] = [];
-    const before = { stage: item.stage, status: item.status, exit: item.exit };
-    if (edit.title !== undefined && edit.title.trim() !== item.title) { item.title = edit.title.trim(); changed.push('title'); }
-    if (edit.objective !== undefined && edit.objective.trim() !== item.objective) { item.objective = edit.objective.trim(); changed.push('objective'); }
-    if (ladder !== undefined) { item.ladder = ladder; changed.push('ladder'); }
-    if (edit.stage !== undefined && edit.stage !== item.stage) { item.stage = edit.stage as ItemStage; changed.push('stage'); }
-    if (edit.status !== undefined && edit.status !== item.status) { item.status = edit.status as ItemStatus; changed.push('status'); }
-    if (edit.exit !== undefined && edit.exit !== item.exit) { item.exit = edit.exit as ItemExit; changed.push('exit'); }
-    if (edit.kind !== undefined && edit.kind !== (item.kind ?? 'task')) { item.kind = edit.kind as ItemKind; changed.push('kind'); }
-    const said = note || undefined;
-    const evidence = edit.evidence?.trim();
-    if (evidence) return { op: 'evidence', note: [evidence, changed.length ? `also ${changed.join(', ')}` : ''].filter(Boolean).join('; ') };
-    if (changed.length === 1 && changed[0] === 'stage') return { op: 'stage', from: before.stage, to: item.stage, note: said };
-    if (changed.length === 1 && changed[0] === 'exit') return { op: 'exit', from: before.exit, to: item.exit, note: said };
-    if (changed.every((field) => field === 'status' || field === 'exit') && changed.includes('status')) {
-      return { op: 'status', from: before.status, to: item.status, note: [said, changed.includes('exit') ? `exit ${before.exit} → ${item.exit}` : ''].filter(Boolean).join('; ') };
-    }
-    return { op: 'edit', note: [said, changed.length ? changed.join(', ') : 'no change'].filter(Boolean).join('; ') };
-  }));
+  return withIssuer(async () => {
+    const current = await load(id);
+    const children = edit.level === undefined ? [] : await follow(current, current.parent, edit.level);
+    const done = await appendTrail(id, by, (item) => {
+      const changed: string[] = [];
+      const before = item.status;
+      if (edit.title !== undefined && edit.title.trim() !== item.title) { item.title = edit.title.trim(); changed.push('title'); }
+      if (edit.objective !== undefined && edit.objective.trim() !== item.objective) { item.objective = edit.objective.trim(); changed.push('objective'); }
+      if (edit.status !== undefined && edit.status !== item.status) { item.status = edit.status as ItemStatus; changed.push(`status ${item.status}`); }
+      if (edit.level !== undefined && edit.level !== item.level) { item.level = edit.level as ItemLevel; changed.push(`level ${item.level}`); }
+      if (edit.kind !== undefined && edit.kind !== (item.kind ?? '')) {
+        if (edit.kind) item.kind = edit.kind as ItemKind; else delete item.kind;
+        changed.push(`kind ${item.kind ?? 'blank'}`);
+      }
+      if (edit.flagged !== undefined && edit.flagged !== item.flagged) { item.flagged = edit.flagged; changed.push(edit.flagged ? 'flagged' : 'unflagged'); }
+      for (const [key, value] of Object.entries(edit.external ?? {}) as Array<[keyof External, string]>) {
+        if ((item.external[key] ?? '') === value.trim()) continue;
+        if (value.trim()) item.external[key] = value.trim(); else delete item.external[key];
+        changed.push(`${key} ${item.external[key] ?? 'cleared'}`);
+      }
+      const said = note || undefined;
+      if (changed.length === 1 && changed[0]!.startsWith('status ')) return { op: 'status', from: before, to: item.status, note: said };
+      return { op: 'edit', note: [said, changed.length ? changed.join(', ') : 'no change'].filter(Boolean).join('; ') };
+    });
+    await settle(children, done.item, by);
+    return done;
+  });
+}
+
+/** Evidence is a fact with its receipt: one trail line on the named item. */
+export function addEvidence(id: string, fact: string, by: string): Promise<Acknowledged> {
+  const text = String(fact ?? '').trim();
+  if (!text) throw new WorkItemBadInput('evidence needs the fact, with its receipt.');
+  return withIssuer(() => appendTrail(id, by, () => ({ op: 'evidence', note: text })));
 }
 
 /** Documents live on the item. Paths are absolute and must exist when listed. */
@@ -353,27 +355,28 @@ function applyDocs(item: WorkItem, { target, add }: { target: string; add: boole
   return { op: 'edit', note: `${add ? 'doc listed' : 'doc unlisted'}: ${target}` };
 }
 
-/** The one refusal: a parent chain may never come back to the item. */
-export function reparentItem(id: string, parent: string | null, by: string): Promise<Acknowledged> {
+export function writeDocs(id: string, change: { add?: string; remove?: string }, by: string): Promise<Acknowledged> {
+  const docs = docsChange(change);
+  return withIssuer(() => appendTrail(id, by, (item) => applyDocs(item, docs)));
+}
+
+/** MOVE (Jira's convert/move): the parent and the level change together, one below the new
+ * parent; with no parent the level stays. Its children follow (an epic with stories moved
+ * under an epic becomes 0, its stories -1), bound by the one rule (follow). */
+export function moveItem(id: string, parent: string | null, by: string): Promise<Acknowledged> {
   return withIssuer(async () => {
-    await load(id);
-    if (parent) {
-      const chain = [id];
-      let at: string | null = parent;
-      while (at) {
-        chain.push(at);
-        if (at === id) throw new WorkItemRefused(`REFUSED: ${id} under ${parent} would form a cycle: ${chain.join(' → ')}.`);
-        at = (await load(at)).parent;
-      }
-    }
     const child = await load(id);
-    const folded = parent ? await foldIntoFirstChild(parent, child, by) : '';
+    const under = parent ? await load(parent) : null;
+    const level = under ? levelUnder(under) : child.level;
+    const children = await follow(child, parent, level);
     const from = child.parent ?? 'none';
     child.parent = parent;
-    const line = lineOf(by, 'reparent', { from, to: parent ?? 'none', ...(folded ? { note: folded } : {}) });
+    child.level = level;
+    const line = lineOf(by, 'move', { from, to: parent ?? 'none', note: `level ${child.level}` });
     child.trail.push(line);
     await save(child);
-    return { ...(await answer(child, line)), notified: await announceArrival(child) };
+    await settle(children, child, by);
+    return { ...answer(child, line), notified: await announceArrival(child, by) };
   });
 }
 
@@ -453,7 +456,8 @@ export async function assignUnlocked(id: string, to: Holder, by: string, note?: 
   const target = await listFor(to);
   const from = await takeOffEveryList(id, to);
   if (!target.holds.includes(id)) await target.set([...target.holds, id]);
-  await ackHolds([...from, to], by);
+  // An Agent receiving it is acked by the trail line below; a Team's lead and those it left, here.
+  await ackHolds([...from, to].filter((holder) => holder.kind !== 'agent' || holderLabel(holder) !== holderLabel(to)), by);
   return appendTrail(id, by, () => ({ op: 'assign', from: labels(from), to: holderLabel(to), note }));
 }
 
@@ -469,33 +473,6 @@ export function releaseItem(id: string, by: string, note?: string): Promise<Ackn
   });
 }
 
-/** Back from DONE to the stage it left, held by the Team again: one call, one line. */
-export function restoreItem(id: string, team: string, by: string): Promise<Acknowledged> {
-  return withIssuer(async () => {
-    const before = await load(id);
-    const left = [...before.trail].reverse().find((line) => line.op === 'stage' && line.to === 'DONE')?.from;
-    const stage: ItemStage = before.stage !== 'DONE' ? before.stage : member(ITEM_STAGES, left) && left !== 'DONE' ? left : 'BUILD';
-    const to: Holder = { kind: 'team', name: team };
-    const target = await listFor(to);
-    const from = await takeOffEveryList(id, to);
-    if (!target.holds.includes(id)) await target.set([...target.holds, id]);
-    await ackHolds([...from, to], by);
-    return appendTrail(id, by, (item) => {
-      const note = item.stage === stage ? 'restored' : `restored; stage ${item.stage} → ${stage}`;
-      item.stage = stage;
-      return { op: 'assign', from: labels(from), to: holderLabel(to), note };
-    });
-  });
-}
-
-/** An Agent gives an item back: to the named Team, or to its one Team; with no Team to
- * give it to, the item is released and is found under its parent or unassigned. */
-export async function returnItem(id: string, session: string, by: string, team?: string): Promise<Acknowledged> {
-  const teams = team ? [team] : (await getTags(session).catch(() => [] as string[]));
-  if (teams.length === 1) return assignItem(id, { kind: 'team', name: teams[0]! }, by, `returned by ${session}`);
-  return releaseItem(id, by, teams.length ? `returned by ${session}; on ${teams.length} Teams, so released — name one with --team` : `returned by ${session}; on no Team, so released`);
-}
-
 /** Point an Agent's focus at an item it holds. The focus is the letter's, not the item's. */
 export async function focusItem(session: string, id: string): Promise<boolean> {
   return withIssuer(async () => {
@@ -507,26 +484,25 @@ export async function focusItem(session: string, id: string): Promise<boolean> {
   });
 }
 
-/** Acknowledgements nag, tools do not: every acknowledgement that touches an item ends
- * with this line, naming the item and the write that keeps its words current. */
-export function keepCurrentLine({ item, line, shape }: Acknowledged): string {
-  const what = line.op === 'stage' ? `moved to ${String(line.to).toLowerCase()}`
-    : line.op === 'assign' ? `is held by ${line.to}`
-      : line.op === 'release' || line.op === 'holder-ended' ? 'is held by nobody'
-        : line.op === 'create' ? 'was created'
-          : `changed (${line.op})`;
-  return `${item.id} ${what}; ${shape}. Keep it current: work-record item write ${item.id} --objective "<what it is now>" --evidence "<a fact with its receipt>"`;
+/** What the act did, read from its trail line alone: "w39 moved under w40, level -1",
+ * "w9 moved to BUILD", "w9 is held by agent:x", "w12 was created". Status, kind and level
+ * appear only when the act changed them. Every acknowledgement is this one line. */
+export function didLine({ item, line }: Acknowledged): string {
+  const what = line.op === 'status' ? `moved to ${line.to}`
+    : line.op === 'move' ? (line.to === 'none' ? `moved to no parent, ${line.note}` : `moved under ${line.to}, ${line.note}`)
+      : line.op === 'assign' ? `is held by ${line.to}`
+        : line.op === 'release' || line.op === 'holder-ended' ? 'is held by nobody'
+          : line.op === 'create' ? 'was created'
+            : line.op === 'evidence' ? `has evidence: ${line.note}`
+              : `changed: ${line.note ?? 'no change'}`;
+  return `${item.id} ${what}`;
 }
 
-/* THE LADDER LIVES ON THE ITEM. An Agent's ladder is the ladder of its focus item (the
- * letter's at.item, else the first item it holds). A write with nothing held creates one
- * item for it, held by the Agent, titled from its objective: no break. Phases and legs are
- * never items. */
+/* THE LADDER LIVES ON EVERY ITEM, children or not (owner, 2026-10-22: moving it to the
+ * first child was a bug). `item plan <id>` writes it, the item always named. An Agent's
+ * work record shows the ladder of its focus item. Phases and legs are never items. */
 
 export type LadderEdit = string[];
-
-const shapeOf = (ladder: Rung[]): string => JSON.stringify(ladder.map((r) =>
-  r.gate !== undefined ? ['gate', r.gate] : ['phase', r.phase, (r.legs ?? []).map((leg) => leg.title)]));
 
 /** The field verbs, applied in order: phase, gate, rung, leg, status, drop. Positions are
  * N or N.M as the rung sits on the ladder. Returns what each did. */
@@ -534,7 +510,7 @@ export function applyLadderEdits(ladder: Rung[], edits: LadderEdit[]): string[] 
   const said: string[] = [];
   const pos = (word: string, verb: string, want?: 'rung' | 'leg'): { rung: Rung; leg: Leg | null } => {
     const parts = String(word ?? '').split('.');
-    if (parts.length > 2 || !parts.every((part) => /^\d+$/.test(part))) throw new WorkItemBadInput(`${verb} takes a position as work-record read --rungs prints it — N or N.M — not "${word}".`);
+    if (parts.length > 2 || !parts.every((part) => /^\d+$/.test(part))) throw new WorkItemBadInput(`${verb} takes a position as item read prints it — N or N.M — not "${word}".`);
     const ri = Number(parts[0]);
     const li = parts[1] === undefined ? null : Number(parts[1]);
     if (ri < 1 || ri > ladder.length) throw new WorkItemBadInput(`${verb}: rung ${ri} is out of range (1..${ladder.length}).`);
@@ -579,98 +555,19 @@ export function applyLadderEdits(ladder: Rung[], edits: LadderEdit[]): string[] 
   return said;
 }
 
-interface Focus { key: string; objective: string; id: string | null }
-
-async function focusUnlocked(session: string): Promise<Focus> {
-  const key = await sessionKey(session);
-  const letter = await readLetterHolds(key) ?? (await seedTegami(session) ? await readLetterHolds(key) : null);
-  if (!letter) throw new WorkItemBadInput(`Agent "${session}" has no work record.`);
-  const at = typeof letter.at?.item === 'string' && letter.holds.includes(letter.at.item) ? letter.at.item : null;
-  return { key, objective: letter.objective, id: at ?? letter.holds[0] ?? null };
-}
-
-/** The item a write with nothing held makes: held by the Agent, titled from its objective. */
-async function firstItem(session: string, focus: Focus, by: string, fill: Pick<NewItem, 'ladder' | 'docs'>, said: string): Promise<Acknowledged> {
-  const made = await createItemUnlocked({
-    title: focus.objective.trim() || `${session}'s work`, objective: focus.objective, stage: 'BUILD', holder: { kind: 'agent', name: session }, ...fill,
-  }, by);
-  made.line.note = `${made.line.note}; ${said}`;
-  await save(made.item);
-  return made;
-}
-
 export interface LadderWrite { edits?: LadderEdit[]; ladder?: unknown }
 
-export function writeFocusLadder(session: string, change: LadderWrite, by: string): Promise<Acknowledged & { said: string[] }> {
+/** The verbs in order, or a whole ladder: one trail line on the named item. */
+export function writePlan(id: string, change: LadderWrite, by: string): Promise<Acknowledged & { said: string[] }> {
+  const whole = change.ladder === undefined ? undefined : checkLadder(change.ladder);
   return withIssuer(async () => {
-    const focus = await focusUnlocked(session);
-    const apply = (ladder: Rung[]): { ladder: Rung[]; said: string[] } => {
-      if (change.ladder !== undefined) {
-        const whole = checkLadder(change.ladder);
-        return { ladder: whole, said: [`ladder saved (${whole.length} rungs)`] };
-      }
-      const next = structuredClone(ladder);
-      return { ladder: next, said: applyLadderEdits(next, change.edits ?? []) };
-    };
-    if (!focus.id) {
-      const { ladder, said } = apply([]);
-      return { ...(await firstItem(session, focus, by, { ladder }, said.join('; '))), said };
-    }
     let said: string[] = [];
-    let moved = false;
-    const done = await appendTrail(focus.id, by, (item) => {
-      const next = apply(item.ladder);
-      moved = shapeOf(item.ladder) !== shapeOf(next.ladder);
-      item.ladder = next.ladder;
-      said = next.said;
+    const done = await appendTrail(id, by, (item) => {
+      if (whole) { item.ladder = whole; said = [`ladder saved (${whole.length} rungs)`]; }
+      else { const next = structuredClone(item.ladder); said = applyLadderEdits(next, change.edits ?? []); item.ladder = next; }
       return { op: 'edit', note: `ladder: ${said.join('; ')}` };
     });
-    // A position is an index into this ladder's shape: when the shape moves, it goes.
-    if (moved) await writeLetterAt(focus.key, { item: focus.id });
     return { ...done, said };
-  });
-}
-
-export function writeFocusDocs(session: string, change: { add?: string; remove?: string }, by: string): Promise<Acknowledged> {
-  const docs = docsChange(change);
-  return withIssuer(async () => {
-    const focus = await focusUnlocked(session);
-    if (focus.id) return appendTrail(focus.id, by, (item) => applyDocs(item, docs));
-    if (!docs.add) throw new WorkItemBadInput(`@${session} holds no work item, so no documents are listed.`);
-    return firstItem(session, focus, by, { docs: [docs.target] }, `doc listed: ${docs.target}`);
-  });
-}
-
-/** A monitor or lead places the Agent on its focus ladder. The marker carries the ladder:
- * everything before it reads DONE (never downgrading what the Agent marked), the marked
- * leg reads ACTIVE. `none` clears the position. */
-export function placeFocus(session: string, want: string, by: string): Promise<Acknowledged> {
-  return withIssuer(async () => {
-    const focus = await focusUnlocked(session);
-    if (!focus.id) throw new WorkItemBadInput(`@${session} holds no work item, so there is no ladder to place it on.`);
-    const id = focus.id;
-    let at: { item: string; rung?: number; leg?: number } = { item: id };
-    const done = await appendTrail(id, by, (item) => {
-      if (want === 'none') return { op: 'edit', note: 'position cleared' };
-      if (!/^\d+(\.\d+)?$/.test(want)) throw new WorkItemBadInput('--at takes a position from work-record read --rungs — N or N.M — or none.');
-      const [ri, li] = want.split('.').map(Number) as [number, number | undefined];
-      const rung = item.ladder[ri - 1];
-      if (!rung) throw new WorkItemBadInput(`rung ${ri} is out of range (1..${item.ladder.length}).`);
-      if (rung.gate !== undefined && li !== undefined) throw new WorkItemBadInput(`rung ${ri} is a gate — it has no legs, use --at ${ri}.`);
-      if (rung.gate === undefined && li === undefined) throw new WorkItemBadInput(`rung ${ri} is a phase — point at one of its legs, e.g. --at ${ri}.1.`);
-      if (li !== undefined && (li < 1 || li > (rung.legs ?? []).length)) throw new WorkItemBadInput(`rung ${ri} has ${(rung.legs ?? []).length} leg(s); ${li} is out of range.`);
-      item.ladder.forEach((r, i) => {
-        if (r.gate !== undefined) { if (i + 1 < ri) r.status = 'DONE'; return; }
-        (r.legs ?? []).forEach((leg, j) => {
-          if (i + 1 === ri && li === j + 1) leg.status = 'ACTIVE';
-          else if (leg.status !== 'DONE' && (i + 1 < ri || (i + 1 === ri && li !== undefined && j + 1 < li))) leg.status = 'DONE';
-        });
-      });
-      at = li === undefined ? { item: id, rung: ri } : { item: id, rung: ri, leg: li };
-      return { op: 'edit', note: `position ${want}` };
-    });
-    await writeLetterAt(focus.key, at);
-    return done;
   });
 }
 
@@ -681,11 +578,44 @@ export function releaseHolder(session: string, key: string, how: string): Promis
     const letter = await readLetterHolds(key);
     if (!letter?.holds.length) return [];
     const released: Acknowledged[] = [];
+    // Off the list first, so the ended Agent is not acked for its own release.
+    await writeLetterHolds(key, []);
     for (const id of letter.holds) {
       if (!(await readItem(id))) continue;
       released.push(await appendTrail(id, 'ronin', () => ({ op: 'holder-ended', from: `agent:${session}`, to: 'none', note: how })));
     }
-    await writeLetterHolds(key, []);
     return released;
+  });
+}
+
+/* THE ONE MIGRATION (WORK_ITEM_BUILDOUT cut 2): every item file in today's shape. stage →
+ * status, red → flagged, exit dropped; an item with children gets level 1, every other 0;
+ * the Unfiled epic (or the former "Common" root) goes and its items have no parent; kind
+ * stays as stored. An item already in shape is left alone, so a second run changes nothing.
+ * Holder lists are not touched: an id left on one names nothing and reads as nothing. */
+export function migrateItems(by = 'ronin'): Promise<{ before: number; after: number; migrated: string[]; removed: string[] }> {
+  return withIssuer(async () => {
+    let names: string[] = [];
+    try { names = await readdir(dir()); } catch { return { before: 0, after: 0, migrated: [], removed: [] }; }
+    const raws = new Map<string, Record<string, unknown>>();
+    for (const name of names) {
+      const id = name.endsWith('.json') ? name.slice(0, -5) : '';
+      if (isItemId(id)) raws.set(id, JSON.parse(await readFile(fileOf(id), 'utf8')) as Record<string, unknown>);
+    }
+    const before = raws.size;
+    const removed = [...raws].filter(([, raw]) => raw.parent === null && (raw.title === 'Unfiled' || raw.title === 'Common') && !('level' in raw)).map(([id]) => id);
+    for (const id of removed) { await rm(fileOf(id)); raws.delete(id); }
+    const parents = new Set([...raws.values()].map((raw) => raw.parent));
+    const migrated: string[] = [];
+    for (const [id, raw] of raws) {
+      const unfiled = removed.includes(String(raw.parent));
+      if ('level' in raw && 'flagged' in raw && !('stage' in raw) && !('exit' in raw) && !unfiled) continue;
+      const item = inShape({ ...raw, ...('level' in raw ? {} : { level: parents.has(id) ? 1 : 0 }) });
+      if (unfiled) item.parent = null;
+      item.trail.push(lineOf(by, 'edit', { note: `migrated to the Jira shape${unfiled ? `; ${raw.parent} (Unfiled) went, so no parent` : ''}` }));
+      await save(item);
+      migrated.push(id);
+    }
+    return { before, after: raws.size, migrated, removed };
   });
 }

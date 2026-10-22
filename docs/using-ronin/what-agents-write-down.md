@@ -7,7 +7,7 @@ what you read on its tile and in the roster to know what it is doing without ask
 
 - **What it is doing now**: its objective, in a line.
 - **Where it works**: the folders and repositories it has open.
-- **The work items it holds**: each one has an id like `w12`, a title, and a status colour: green going well, yellow in progress or waiting, red stuck.
+- **The work items it holds**: each one has an id like `w12`, a title, its status (the board's column), and a flag when something stands in its way.
 - **Its ladder**: the steps of the work, each marked done or active, so progress is visible at a glance.
 - **Its documents**: plans, notes and reports it wants you or the Team to read. They appear in the tile's Docs tab.
 
@@ -21,5 +21,5 @@ not match what it told you.
 ## Read more
 
 - [Work records and work items](work-record.md): the full reference
-- [Task Manager](team-kanban.md): the same work items on a board by stage
+- [Task Manager](team-kanban.md): the same work items on a board by status
 - [The tile](tile.md)

@@ -3,7 +3,7 @@ import { WorkspaceKit } from './workspace-kit.js';
 import { carryItem } from './team-drag.js';
 import { createPhalanx } from './phalanx.js';
 import { appendProjectReading } from './project-reading.js';
-import { PROJECT_STAGES, taskManagerScope, projectsForScope, kanbanAvailability, definedTargets, holderOf, moveMessage, waitingOn } from './team-kanban.js';
+import { PROJECT_STAGES, FLAG_MARK, taskManagerScope, projectsForScope, kanbanAvailability, definedTargets, holderOf, moveMessage } from './team-kanban.js';
 import { subscribe } from './team-controller.js';
 import { request } from './request.js';
 import { t } from './lexicon.js';
@@ -39,7 +39,7 @@ export function createWorkItemsSurface(options = {}) {
     notice.textContent = t('team_kanban.sending', 'Sending move request to @{name}…', { name: move.target });
     const result = await request('/api/messages', { method: 'POST', json: { target: move.target, text: move.text } });
     if (!result.ok) { notice.textContent = t('team_kanban.send_failed', 'The move request could not be sent.'); return; }
-    asked.set(project.id, { stage: project.stage, target: move.target });
+    asked.set(project.id, { stage: project.status, target: move.target });
     notice.textContent = result.data.delivered
       ? t('team_kanban.delivered', 'Move request delivered to @{name}. The card moves when its record moves.', { name: move.target })
       : t('team_kanban.queued', 'Move request queued for @{name}. The card moves when its record moves.', { name: move.target });
@@ -54,13 +54,13 @@ export function createWorkItemsSurface(options = {}) {
       drop: (event) => {
         event.preventDefault(); clearDrag();
         const project = projects.find((item) => item.id === event.dataTransfer?.getData('text/plain'));
-        if (project && project.stage !== stage.key) void sendMove(project, stage.key);
+        if (project && project.status !== stage.key) void sendMove(project, stage.key);
       },
     },
   }));
   const phalanx = createPhalanx({ grouped: { groups }, density: 'compact', className: 'wi-phalanx', renderDetail: (item, host) => {
     const project = item.project;
-    appendProjectReading(host, project, { holder: holder(project), stage: PROJECT_STAGES.find((stage) => stage.key === project.stage).label });
+    appendProjectReading(host, project, { holder: holder(project), stage: PROJECT_STAGES.find((stage) => stage.key === project.status).label });
     const owner = holder(project);
     if (owner) host.append(createActionBar({ actions: [createAction({
       label: t('team_kanban.open_owner', 'Open @{name}', { name: owner }), action: () => options.openOwner?.(owner),
@@ -69,12 +69,12 @@ export function createWorkItemsSurface(options = {}) {
   phalanx.mount(surface.content, { after: [notice] });
   const paint = () => phalanx.setItems(projects.map((project) => {
     const pending = asked.get(project.id);
-    if (pending && pending.stage !== project.stage) asked.delete(project.id);
-    const wait = waitingOn(project), owner = holder(project);
+    if (pending && pending.stage !== project.status) asked.delete(project.id);
+    const owner = holder(project);
     return {
-      id: project.id, group: project.stage, project, label: project.title, secondary: project.objective,
-      state: [owner ? `@${owner}` : '', wait ? `${t('team_kanban.waiting', 'waiting on')} ${wait}` : '', pending?.stage === project.stage ? `${t('team_kanban.asked', 'asked')} @${pending.target}` : ''].filter(Boolean).join(' · '),
-      className: project.stage === 'DONE' ? '' : `wi-project-${project.status}`,
+      id: project.id, group: project.status, project, label: project.title, secondary: project.objective,
+      state: [owner ? `@${owner}` : '', project.flagged ? `${FLAG_MARK} ${t('team_kanban.flagged', 'flagged')}` : '', pending?.stage === project.status ? `${t('team_kanban.asked', 'asked')} @${pending.target}` : ''].filter(Boolean).join(' · '),
+      className: project.flagged ? 'wi-project-flagged' : '',
       attrs: { 'data-project': project.id }, draggable: true,
       events: {
         dragstart: (event) => {

@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { definedTargets, holderOf, kanbanAvailability, KANBAN_NOT_INSTALLED, moveMessage, projectsForScope, taskManagerScope, waitingOn } from '../public/js/team-kanban.js';
+import { definedTargets, holderOf, kanbanAvailability, KANBAN_NOT_INSTALLED, moveMessage, projectsForScope, taskManagerScope } from '../public/js/team-kanban.js';
 
 // An item as the team reading serves it: the holder is the list it was found on.
 const project = (values = {}) => ({
   id: 'w7', title: 'Kanban tab', objective: 'Render it.', holder: 'agent:tab_cut', team: 'virtual',
-  stage: 'REVIEW', exit: 'user', status: 'green', trail: [], ...values,
+  status: 'REVIEW', flagged: false, trail: [], ...values,
 });
 const NOW = new Date('2026-09-13T13:02:00.000Z');
 const moduleSource = readFileSync(new URL('../public/js/team-kanban.js', import.meta.url), 'utf8');
@@ -25,43 +25,34 @@ test('the holder is read off the list the item was found on', () => {
   assert.equal(holderOf(project({ holder: '' }), 'lead_one'), '');
 });
 
-test('a green forward drop tells the holder the defined move, naming the verb that makes it', () => {
+test('a forward drop tells the holder the defined move, naming the item command that makes it', () => {
   const move = moveMessage(project(), 'LAND', 'kanban_revive', NOW);
   assert.equal(move.target, 'tab_cut');
   assert.match(move.text, /^from @kanban \(the Team Task Manager, moved by the user at 2026-09-13T13:02Z\):/);
-  assert.match(move.text, /MOVE w7 "Kanban tab" from Review \(green, exit: user\) to Land/);
+  assert.match(move.text, /MOVE w7 "Kanban tab" from Review to Land/);
   assert.match(move.text, /next: worktree-desk hand-in <repo> --item w7/);
-  assert.match(moveMessage(project({ stage: 'BUILD' }), 'REVIEW', 'kanban_revive', NOW).text, /next: work-record item advance w7 --to REVIEW/);
-  assert.match(moveMessage(project({ stage: 'PLAN' }), 'BUILD', 'kanban_revive', NOW).text, /next: work-record item advance w7 --to BUILD/);
+  assert.match(moveMessage(project({ status: 'BUILD' }), 'REVIEW', 'kanban_revive', NOW).text, /next: item write w7 --status REVIEW/);
+  assert.match(moveMessage(project({ status: 'PLAN' }), 'BUILD', 'kanban_revive', NOW).text, /next: item write w7 --status BUILD/);
 });
 
-test('Team-held and lead moves resolve to the lead; non-green drops remain requests', () => {
-  assert.equal(moveMessage(project({ holder: 'team:virtual', stage: 'IDEA', exit: 'lead' }), 'PLAN', 'kanban_revive', NOW).target, 'kanban_revive');
-  assert.match(moveMessage(project({ holder: 'team:virtual', stage: 'IDEA' }), 'PLAN', 'kanban_revive', NOW).text, /team item assign w7 <session>/);
-  const blocked = moveMessage(project({ status: 'red' }), 'LAND', 'kanban_revive', NOW);
-  assert.equal(blocked.target, 'tab_cut');
-  assert.match(blocked.text, /a request to move on, not an approval; the card is blocked/);
-  const returned = moveMessage(project({ stage: 'PLAN', status: 'yellow' }), 'IDEA', 'kanban_revive', NOW);
+test('Team-held and lead moves resolve to the lead; a flagged drop remains a request', () => {
+  assert.equal(moveMessage(project({ holder: 'team:virtual', status: 'IDEA' }), 'PLAN', 'kanban_revive', NOW).target, 'kanban_revive');
+  assert.match(moveMessage(project({ holder: 'team:virtual', status: 'IDEA' }), 'PLAN', 'kanban_revive', NOW).text, /item assign w7 <session>/);
+  const flagged = moveMessage(project({ flagged: true }), 'LAND', 'kanban_revive', NOW);
+  assert.equal(flagged.target, 'tab_cut');
+  assert.match(flagged.text, /the card is flagged/);
+  const returned = moveMessage(project({ status: 'PLAN' }), 'IDEA', 'kanban_revive', NOW);
   assert.equal(returned.target, 'kanban_revive');
-  const promoted = moveMessage(project({ stage: 'LAND', exit: 'lead' }), 'DONE', 'kanban_revive', NOW);
+  const promoted = moveMessage(project({ status: 'LAND' }), 'DONE', 'kanban_revive', NOW);
   assert.equal(promoted.target, 'kanban_revive');
   assert.match(promoted.text, /bin\/ronin-promote virtual/);
 });
 
 test('dragging marks only destinations with a defined meaning', () => {
-  assert.deepEqual([...definedTargets({ stage: 'IDEA', status: 'green' })], ['PLAN']);
-  assert.deepEqual([...definedTargets({ stage: 'PLAN', status: 'green' })], ['BUILD', 'IDEA']);
-  assert.deepEqual([...definedTargets({ stage: 'BUILD', status: 'green' })], ['REVIEW']);
-  assert.deepEqual([...definedTargets({ stage: 'BUILD', status: 'yellow' })], []);
-  assert.deepEqual([...definedTargets({ stage: 'DONE', status: 'green' })], []);
-});
-
-test('only green lead and user exits get a bare waiting word', () => {
-  assert.equal(waitingOn(project({ exit: 'lead' })), 'lead');
-  assert.equal(waitingOn(project({ exit: 'user' })), 'user');
-  assert.equal(waitingOn(project({ exit: 'agent' })), '');
-  assert.equal(waitingOn(project({ status: 'red', exit: 'lead' })), '');
-  assert.equal(waitingOn(project({ stage: 'DONE', exit: 'user' })), '');
+  assert.deepEqual([...definedTargets({ status: 'IDEA' })], ['PLAN']);
+  assert.deepEqual([...definedTargets({ status: 'PLAN' })], ['BUILD', 'IDEA']);
+  assert.deepEqual([...definedTargets({ status: 'BUILD', flagged: true })], ['REVIEW']);
+  assert.deepEqual([...definedTargets({ status: 'DONE' })], []);
 });
 
 test('the board stays square, fixed, manually refreshed, and free of pills and ellipses', () => {

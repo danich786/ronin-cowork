@@ -26,7 +26,8 @@ import { count } from '../counts.js';
 import { listTeamRosters } from '../team-rosters.js';
 import { announceTeamChanges } from './wipeboards-api.js';
 import { checkoutAt, deriveTeams, parkBrief, seedTegami, teamChanged, withAxes, writeConfiguration, type SessionWithAxes } from '../tegami.js';
-import { writeFocusLadder } from '../work-items.js';
+import { createItem } from '../work-items.js';
+import { callerOf } from './work-items-api.js';
 import { collectBirthLines, collectRowFields } from '../sockets.js';
 import { broadcastEvent, listening, pushTeams } from '../ws/events.js';
 import { prepareLaunchDesks } from '../launch-desks.js';
@@ -483,7 +484,9 @@ export function registerLaunch(app: express.Express): LaunchControl {
       );
       }
       await writeConfiguration(resolved.name).catch(() => {});
-      if (resolved.tags.length) await teamChanged(resolved.tags, resolved.name).catch(() => {});
+      // By whoever made the Agent (session_create's caller, else the browser's owner), so a
+      // lead who raises a member is not told of its own act.
+      if (resolved.tags.length) await teamChanged(resolved.tags, String(req.body?.caller ?? '').trim() || callerOf(req)).catch(() => {});
     } catch (e) {
       if (birthDir && !runtimeBorn) await rm(birthDir, { recursive: true, force: true });
       void appendLaunchLedger(form, resolved, false);
@@ -580,10 +583,10 @@ export function registerLaunch(app: express.Express): LaunchControl {
       const shelved = [launch.parked ? resolved.brief : '', birthLines].filter(Boolean).join('\n');
       if (!shelved) return;
       const at = await parkBrief(resolved.name, shelved);
-      // A brief that never reached the Agent is a gate the owner must see: it goes on the
-      // Agent's ladder, which (holding nothing yet) makes its first work item.
+      // A brief that never reached the Agent is a gate the owner must see: one work item,
+      // held by the Agent, its ladder that gate.
       if (at && launch.parked) {
-        await writeFocusLadder(resolved.name, { edits: [['gate', 'Your brief could not be handed to this agent at launch, so it is parked in brief.md beside this session. Read it there.']] }, 'ronin');
+        await createItem({ title: `${resolved.name}'s parked brief`, holder: { kind: 'agent', name: resolved.name }, ladder: [{ gate: 'Your brief could not be handed to this agent at launch, so it is parked in brief.md beside this session. Read it there.', status: 'PLANNED' }] }, 'ronin');
       }
     })().catch((e) => console.error(`[ronin] spawn ${resolved.name}:`, e));
   };

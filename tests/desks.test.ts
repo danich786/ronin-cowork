@@ -259,10 +259,9 @@ test('a hand-in with --item ends by naming the item and the write that keeps it 
     env: { ...process.env, RONIN_SESSION: 'reminder', RONIN_TEAMS: 'comp' },
   }).toString();
   const last = output.trimEnd().split('\n').at(-1)!;
-  assert.equal(last, `${item.id} moved to land; ${item.id} is a task at land, 0 legs. Keep it current: work-record item write ${item.id} --objective "<what it is now>" --evidence "<a fact with its receipt>"`);
+  assert.equal(last, `${item.id} moved to LAND`);
   assert.ok(output.indexOf('ACCEPTED cowork:team/comp/reminder') < output.indexOf(last));
-  assert.equal(output.split('Keep it current').length - 1, 1, 'one reminder, never a block');
-  assert.equal((await readItem(item.id))!.stage, 'LAND');
+  assert.equal((await readItem(item.id))!.status, 'LAND');
 });
 
 test('openDesk keeps managed branch names private and reports the checkout route for direct repositories', async () => {
@@ -319,16 +318,16 @@ test('handIn: the line advances by compare-and-swap to the candidate, its worktr
 });
 
 test('a hand-in naming a work item leaves one trail line and the item at LAND', async () => {
-  const { item } = await createItem({ title: 'Landing', stage: 'REVIEW' }, 'fable');
+  const { item } = await createItem({ title: 'Landing', status: 'REVIEW' }, 'fable');
   await commitFile(deskWorktree('cowork', 'team/comp/fable'), 'land.txt', 'land\n');
   const { outcomes, moved } = await handInAssignment({ desks: [{ repo: 'cowork', branch: 'team/comp/fable' }], projectId: item.id, session: 'fable' });
   assert.equal(outcomes[0]!.receipt.result, 'accepted', outcomes[0]!.receipt.reason);
   const back = (await readItem(item.id))!;
-  assert.equal(back.stage, 'LAND');
+  assert.equal(back.status, 'LAND');
   assert.equal(back.trail.length, 2, 'create, then exactly one line for the hand-in');
-  assert.deepEqual([back.trail[1]!.op, back.trail[1]!.from, back.trail[1]!.to, back.trail[1]!.by], ['stage', 'REVIEW', 'LAND', 'fable']);
+  assert.deepEqual([back.trail[1]!.op, back.trail[1]!.from, back.trail[1]!.to, back.trail[1]!.by], ['status', 'REVIEW', 'LAND', 'fable']);
   assert.equal(back.trail[1]!.note, `hand-in ${outcomes[0]!.receipt.id}`);
-  assert.equal(moved?.line.op, 'stage');
+  assert.equal(moved?.line.op, 'status');
 });
 
 test('handIn with no new desk delta is an accepted ordinary result and moves no work', async () => {
