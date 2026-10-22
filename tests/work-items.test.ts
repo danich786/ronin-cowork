@@ -197,7 +197,12 @@ test('routes acknowledge with the item and the appended line; refusals answer 40
     assert.equal(made.status, 200);
     const id = made.data.item.id as string;
     assert.equal(made.data.acknowledgement, `${id} was created`);
-    const moved = await call('PUT', `${base}/${id}`, { status: 'PLAN', flagged: 'true', jira: 'RON-1', by: 'probe' });
+    await call('PUT', `${base}/${id}`, { flagged: 'true', jira: 'RON-1', by: 'probe' });
+    const moved = await call('POST', `${base}/${id}/transition`, { status: 'PLAN', by: 'probe' });
+    assert.equal(moved.data.acknowledgement, `${id} moved to PLAN`);
+    assert.equal((await call('POST', `${base}/${id}/transition`, { status: 'IDEA', by: 'probe' })).data.item.status, 'IDEA', 'any status to any status');
+    await call('POST', `${base}/${id}/transition`, { status: 'PLAN', by: 'probe' });
+    assert.equal((await call('PUT', `${base}/${id}`, { status: 'DONE', by: 'probe' })).data.item.status, 'PLAN', 'edit does not set status');
     assert.deepEqual([moved.data.item.status, moved.data.item.flagged, moved.data.item.external.jira], ['PLAN', true, 'RON-1']);
     const child = await call('POST', base, { title: 'Child', parent: id, by: 'probe' });
     assert.equal(child.data.item.level, -1);
@@ -211,7 +216,7 @@ test('routes acknowledge with the item and the appended line; refusals answer 40
     assert.ok((await call('GET', `${base}?no_parent=1`)).data.items.some((item: { id: string }) => item.id === id));
     assert.ok((await call('GET', `${base}?parent=${id}`)).data.items.every((item: { parent: string }) => item.parent === id));
     assert.equal((await call('GET', `${base}/w999999`)).status, 404);
-    assert.equal((await call('PUT', `${base}/${id}`, { status: 'nope' })).status, 400);
+    assert.equal((await call('POST', `${base}/${id}/transition`, { status: 'nope' })).status, 400);
   } finally {
     server.close();
   }

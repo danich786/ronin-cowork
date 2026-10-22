@@ -111,15 +111,15 @@ export function moveMessage(project, toStage, leadName, now = new Date()) {
   const result = (target, meaning, next) => ({ target, text: `${head}\n${line}\n  meaning: ${meaning}\n  next: ${next}` });
 
   if (project.status === 'PLAN' && toStage === 'IDEA') {
-    return result(leadName, 'return it to Idea; the Team holds it again.', `item edit ${id} --status IDEA, then item assign ${id} team:${project.team || '<team>'}`);
+    return result(leadName, 'return it to Idea; the Team holds it again.', `item transition ${id} IDEA, then item assign ${id} team:${project.team || '<team>'}`);
   }
   if (!forward) return { target: holder, text: `${head}\n${line}\n  meaning: no defined move; delivered as a plain request.` };
   if (project.flagged) {
     return result(holder, 'a request to move on, not an approval; the card is flagged.', `your call — say what stops it, or item edit ${id} --flagged false when it is clear.`);
   }
   if (project.status === 'IDEA') return result(leadName, 'engage — the user wants this started.', `item assign ${id} <session>, or raise an Agent for it`);
-  if (project.status === 'PLAN') return result(holder, 'the plan is agreed; build.', `item edit ${id} --status BUILD`);
-  if (project.status === 'BUILD') return result(holder, 'show approved; ready it for review.', `item edit ${id} --status REVIEW`);
+  if (project.status === 'PLAN') return result(holder, 'the plan is agreed; build.', `item transition ${id} BUILD`);
+  if (project.status === 'BUILD') return result(holder, 'show approved; ready it for review.', `item transition ${id} REVIEW`);
   if (project.status === 'REVIEW') return result(holder, 'review passed; hand in.', `worktree-desk hand-in <repo> --item ${id}   (the hand-in moves it to Land)`);
   if (project.status === 'LAND') return result(leadName, 'promote.', `bin/ronin-promote ${project.team || '<team>'}   (the promotion moves it to Done)`);
   return { target: holder, text: `${head}\n${line}\n  meaning: delivered as a plain request.` };

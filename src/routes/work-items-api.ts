@@ -101,11 +101,17 @@ export function registerWorkItems(app: express.Express): void {
     const b = req.body ?? {};
     const external = Object.fromEntries((['jira', 'trello', 'github'] as const).filter((key) => b[key] !== undefined).map((key) => [key, text(b[key]) ?? '']));
     acknowledge(res, await editItem(req.params.id, {
-      title: text(b.title), objective: text(b.objective), status: text(b.status), kind: text(b.kind), level: levelOf(b.level), flagged: flagOf(b.flagged), priority: text(b.priority),
+      title: text(b.title), objective: text(b.objective), kind: text(b.kind), level: levelOf(b.level), flagged: flagOf(b.flagged), priority: text(b.priority),
       ...(Object.keys(external).length ? { external } : {}),
     }, callerOf(req), text(b.note)));
   }));
 
+  // Jira's transition: any status to any status, one trail line. Edit does not set it.
+  app.post('/api/work-items/:id/transition', guarded(async (req, res) => {
+    const status = text(req.body?.status)?.trim().toUpperCase();
+    if (!status) throw new WorkItemBadInput('name the status: IDEA, PLAN, BUILD, REVIEW, LAND or DONE.');
+    acknowledge(res, await editItem(req.params.id, { status }, callerOf(req), text(req.body?.note)));
+  }));
   app.post('/api/work-items/:id/move', guarded(async (req, res) => {
     const to = text(req.body?.parent)?.trim();
     acknowledge(res, await moveItem(req.params.id, to && to !== 'none' ? to : null, callerOf(req)));
@@ -141,7 +147,7 @@ export function registerWorkItems(app: express.Express): void {
   // Anything else under /api/work-items names no item (an id like surface/7 is not one):
   // a JSON 404 naming it, so a tool can say so rather than parse an HTML error page.
   app.all('/api/work-items/*', (req, res) => {
-    const id = req.path.slice('/api/work-items/'.length).replace(/\/(assign|move|plan|docs|comment|focus)$/, '');
+    const id = req.path.slice('/api/work-items/'.length).replace(/\/(assign|move|transition|plan|docs|comment|focus)$/, '');
     res.status(404).json({ ok: false, error: `No work item ${id}.` });
   });
 }

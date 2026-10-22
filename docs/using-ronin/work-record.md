@@ -69,7 +69,8 @@ item. **Parent** is one id on the item, or none. A Team holds; it does not conta
 item create --title "Agent-authored items" [--objective "…"] [--parent w3] [--level 1|0|-1] [--kind <type>]
 item read w12                       # with its children, if any
 item list [--team surface] [--holder builder] [--parent w3 | --no-parent]
-item edit w12 --status REVIEW --flagged true --priority High --jira RON-12
+item edit w12 --flagged true --priority High --jira RON-12
+item transition w12 REVIEW       # any status to any status, as Jira's transition
 item move w12 --to w3               # parent and level together; --to none keeps the level
 item assign w12 builder             # or team:surface, or none
 item comment w12 "commit 0123456789: store round-trips"

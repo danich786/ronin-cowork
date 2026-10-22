@@ -9,7 +9,8 @@ Usage:
   item create --title <t> [--objective <o>] [--parent <id>] [--level 1|0|-1] [--kind <type>]
   item read <id>
   item list [--team <t>] [--holder <name>] [--parent <id>|--no-parent]
-  item edit <id> --title|--objective|--status|--level|--kind|--flagged|--priority|--jira <value> ...
+  item edit <id> --title|--objective|--level|--kind|--flagged|--priority|--jira <value> ...
+  item transition <id> IDEA|PLAN|BUILD|REVIEW|LAND|DONE
   item move <id> --to <parent>|none
   item assign <id> <agent>|team:<name>|none
   item plan <id> --phase <t> | --gate <t> | --leg N <t> | --leg N.M <t> | --rung N <t>
@@ -58,7 +59,9 @@ id=${1:-}; [ -n "$id" ] || die "BAD-ARG: item $verb needs the item's id"; shift
 case "$verb" in
   read) [ "$#" -eq 0 ] || die 'BAD-ARG: item read takes only <id>'; ronin_item_call GET "/api/work-items/$id" ;;
   edit) [ "$#" -ge 2 ] || die 'BAD-ARG: item edit takes <id> --field <value> ...'
-    body=$(fields title,objective,status,level,kind,flagged,priority,jira,trello,github "$@") || exit 2; ronin_item_call PUT "/api/work-items/$id" "$body" ;;
+    body=$(fields title,objective,level,kind,flagged,priority,jira,trello,github "$@") || exit 2; ronin_item_call PUT "/api/work-items/$id" "$body" ;;
+  transition) [ "$#" -eq 1 ] || die 'BAD-ARG: item transition takes <id> <status>'
+    ronin_item_call POST "/api/work-items/$id/transition" "$(json status "$1")" ;;
   move) [ "$#" -eq 2 ] && [ "$1" = --to ] || die 'BAD-ARG: item move takes <id> --to <parent>|none'
     ronin_item_call POST "/api/work-items/$id/move" "$(json parent "$2")" ;;
   assign) [ "$#" -eq 1 ] || die 'BAD-ARG: item assign takes <id> <agent>|team:<name>|none'

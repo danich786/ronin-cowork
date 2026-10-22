@@ -31,8 +31,8 @@ test('a forward drop tells the holder the defined move, naming the item command 
   assert.match(move.text, /^from @kanban \(the Team Task Manager, moved by the user at 2026-09-13T13:02Z\):/);
   assert.match(move.text, /MOVE w7 "Kanban tab" from Review to Land/);
   assert.match(move.text, /next: worktree-desk hand-in <repo> --item w7/);
-  assert.match(moveMessage(project({ status: 'BUILD' }), 'REVIEW', 'kanban_revive', NOW).text, /next: item edit w7 --status REVIEW/);
-  assert.match(moveMessage(project({ status: 'PLAN' }), 'BUILD', 'kanban_revive', NOW).text, /next: item edit w7 --status BUILD/);
+  assert.match(moveMessage(project({ status: 'BUILD' }), 'REVIEW', 'kanban_revive', NOW).text, /next: item transition w7 REVIEW/);
+  assert.match(moveMessage(project({ status: 'PLAN' }), 'BUILD', 'kanban_revive', NOW).text, /next: item transition w7 BUILD/);
 });
 
 test('Team-held and lead moves resolve to the lead; a flagged drop remains a request', () => {
