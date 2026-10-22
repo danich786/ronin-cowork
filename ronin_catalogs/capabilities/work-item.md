@@ -42,8 +42,9 @@ same fields at every level; a field that means nothing at a level is simply unus
 | `external` | `jira` · `trello` · `github` keys | written with `item write <id> --jira <key>` |
 
 Adding a child never changes an item's level or its ladder. `item move <id> --to <parent>|none`
-sets the parent and the level in one act, as Jira's move does; an item with subtasks can't
-move. Stuck is `item write <id> --flagged true`.
+sets the parent and the level in one act, as Jira's move does; with no parent the level
+stays. An item with children moves with them as long as its level stays; a move that would
+change it is refused, and a subtask can't have children. Stuck is `item write <id> --flagged true`.
 
 Holding is a list of ids on each Agent and Team; `item assign` moves the id and never the
 item. Holding is how work is found, never permission: any Agent may change any item, and

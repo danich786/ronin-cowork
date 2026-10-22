@@ -111,8 +111,9 @@ test('item acts, each naming its item, one trail line each', async () => {
   assert.equal((await readItem(sub))!.level, -1);
   const children = JSON.parse(await tool('item', ['read', id])).children as Array<{ id: string }>;
   assert.deepEqual(children.map((child) => child.id), [sub]);
-  const stuck = await run('item', ['move', id, '--to', 'none']);
-  assert.deepEqual([stuck.status, stuck.stderr.trim()], [4, `${id} has subtasks and can't move.`]);
+  const peer = made(await tool('item', ['create', '--title', 'Peer']));
+  const stuck = await run('item', ['move', id, '--to', peer]);
+  assert.deepEqual([stuck.status, stuck.stderr.trim()], [4, `${id} has children and can't move.`]);
   const loose = made(await tool('item', ['create', '--title', 'Loose']));
   const moved = await oneLine(loose, ['move', loose, '--to', epic]);
   assert.deepEqual([moved.op, moved.to, (await readItem(loose))!.level], ['move', epic, 0]);
