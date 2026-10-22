@@ -7,8 +7,8 @@ two disagree, because they come from watching real sessions.
 Owner: write bullets here as you meet them. Ronin reads this file into Mika's README at
 her next birth, and it is on her Docs list, so it opens from her tile.
 
-- **An agent's Docs tab is empty.** The agent did not list its documents (`work-record
-  document add`). That is the agent's lapse, not the owner's. Tell the owner to type
+- **An agent's Docs tab is empty.** The agent did not list its documents (`item doc
+  <id> add`). That is the agent's lapse, not the owner's. Tell the owner to type
   `+show_file:` at that agent, which makes it list what it has open.
 - **Nudge agents to keep their work record current — the wink-wink.** Agents must update
   both their ladder and their tracked documents regularly, and they forget. When an owner is

@@ -43,7 +43,7 @@ moves all groups into the left rail and renders the item inside the same `sws-de
 it never opens another numbered workspace. `project-reading.js` holds the canonical
 work item reading used by both presentations, with each supplying its own styling classes.
 Work Items keeps normal Phalanx furniture, density controls, explicit holder opening,
-and message-only stage drops. It does not use Task Manager's board or beige furniture.
+and message-only status drops; a flagged item carries the ⚑ mark. It does not use Task Manager's board or beige furniture.
 
 The shared Phalanx accepts ordered `grouped.groups`, group/item event callbacks, item
 actions, and `setDensity`; Work Items stones deliberately supply no action callback,

@@ -20,9 +20,10 @@ forbids an installed tool or its `--help`.
 
 ### 1. Open the session in public
 
-Set the ladder with `work-record update_record`: one objective in the owner's words, a
-short ladder, one active rung, and the session job. Keep it current whenever the active
-rung or shape changes, and list every live document with `work-record document add` so the
+Set the objective with `work-record update_record` and the ladder with `item plan <id>`:
+one objective in the owner's words, a short ladder, one active rung, and the session job.
+Keep it current whenever the active rung or shape changes, and list every live document
+with `item doc <id> add` so the
 owner can open it without asking for a path. `work-record read` returns the visible status;
 the work record is not the plan, a transcript, or a second build-out document.
 
@@ -97,7 +98,7 @@ Finishing the work of a session, before it ends, leaves no essential knowledge i
 or in `wip/`:
 
 - delete the work's build-out and handoff documents, and remove them with
-  `work-record document remove`;
+  `item doc <id> remove`;
 - write or update a state-as-is page in `docs/`, or the README beside the thing, saying
   what exists and how it works now;
 - add the single manifest pointer when the project uses a manifest — one line, an index
