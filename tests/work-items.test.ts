@@ -2,7 +2,7 @@
  * THE WORK ITEM STORE — one item, stored once, every change a trail line.
  * Checks from WORK_ITEM_STORE.md cut 1 and WORK_ITEM_BUILDOUT.md (the Jira shape): a write
  * reads back; concurrent trail appends all land; level defaults one below the parent; a move
- * that changes the level of an item with children, or goes under a subtask, is refused; an old file reads in the new
+ * that breaks the one hierarchy rule is refused ("can't go there"); an old file reads in the new
  * shape; the one migration; the routes answer with the item as it now is.
  */
 import test from 'node:test';
@@ -111,7 +111,7 @@ test('each write appends exactly one line; external is writable', async () => {
   assert.throws(() => items.editItem(item.id, { status: 'SHIPPED' }, 'a'), /status must be one of IDEA, PLAN, BUILD, REVIEW, LAND, DONE/);
 });
 
-test('a move sets parent and level together; a level change with children, or a place under a subtask, is refused', async () => {
+test('a move sets parent and level together; the one rule refuses what would not sit one level below its parent', async () => {
   const a = (await items.createItem({ title: 'A', level: 1 }, 'p')).item;
   const b = (await items.createItem({ title: 'B', parent: a.id }, 'p')).item;
   const c = (await items.createItem({ title: 'C', parent: b.id }, 'p')).item;
@@ -120,11 +120,13 @@ test('a move sets parent and level together; a level change with children, or a 
   assert.deepEqual([story.item.parent, story.item.level, (await items.readItem(c.id))!.parent], [other.id, 0, b.id], 'a story moves to another epic, its subtasks with it');
   assert.equal((await items.moveItem(a.id, null, 'p')).item.level, 1, 'no parent keeps the level: an epic stays an epic');
   const story2 = (await items.createItem({ title: 'Story', parent: a.id }, 'p')).item;
-  await assert.rejects(items.moveItem(b.id, story2.id, 'p'), { message: `${b.id} has children and can't move.` });
+  await assert.rejects(items.moveItem(b.id, story2.id, 'p'), { message: `${b.id} can't go there.` });
   assert.equal((await items.readItem(b.id))!.parent, other.id, 'a refusal writes nothing');
-  await assert.rejects(items.createItem({ title: 'Under a subtask', parent: c.id }, 'p'), { message: `${c.id} is a subtask and can't have children.` });
+  await assert.rejects(items.editItem(b.id, { level: 1 }, 'p'), { message: `${b.id} can't go there.` });
+  await assert.rejects(items.createItem({ title: 'Under a subtask', parent: c.id }, 'p'), /^Error: w\d+ can't go there\.$/);
   const loose = (await items.createItem({ title: 'Loose' }, 'p')).item;
-  await assert.rejects(items.moveItem(loose.id, c.id, 'p'), { message: `${c.id} is a subtask and can't have children.` });
+  await assert.rejects(items.moveItem(loose.id, c.id, 'p'), { message: `${loose.id} can't go there.` });
+  await assert.rejects(items.moveItem(loose.id, loose.id, 'p'), { message: `${loose.id} can't go there.` }, 'nothing goes under itself');
   const moved = await items.moveItem(loose.id, a.id, 'p');
   assert.deepEqual([moved.item.parent, moved.item.level, moved.line.op], [a.id, 0, 'move']);
   const back = await items.moveItem(loose.id, null, 'p');
@@ -177,7 +179,7 @@ test('routes acknowledge with the item and the appended line; refusals answer 40
     assert.deepEqual((await call('GET', `${base}/${id}`)).data.children.map((item: { id: string }) => item.id), [child.data.item.id]);
     const peer = await call('POST', base, { title: 'Peer', by: 'probe' });
     const stuck = await call('POST', `${base}/${id}/move`, { parent: peer.data.item.id, by: 'probe' });
-    assert.deepEqual([stuck.status, stuck.data.error], [409, `${id} has children and can't move.`]);
+    assert.deepEqual([stuck.status, stuck.data.error], [409, `${id} can't go there.`]);
     const plan = await call('POST', `${base}/${id}/plan`, { edits: [['phase', 'One']], by: 'probe' });
     assert.equal(plan.data.item.ladder[0].phase, 'One');
     assert.equal((await call('POST', `${base}/${id}/evidence`, { text: 'a fact', by: 'probe' })).data.line.op, 'evidence');

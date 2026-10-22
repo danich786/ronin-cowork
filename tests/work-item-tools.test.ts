@@ -113,7 +113,7 @@ test('item acts, each naming its item, one trail line each', async () => {
   assert.deepEqual(children.map((child) => child.id), [sub]);
   const peer = made(await tool('item', ['create', '--title', 'Peer']));
   const stuck = await run('item', ['move', id, '--to', peer]);
-  assert.deepEqual([stuck.status, stuck.stderr.trim()], [4, `${id} has children and can't move.`]);
+  assert.deepEqual([stuck.status, stuck.stderr.trim()], [4, `${id} can't go there.`]);
   const loose = made(await tool('item', ['create', '--title', 'Loose']));
   const moved = await oneLine(loose, ['move', loose, '--to', epic]);
   assert.deepEqual([moved.op, moved.to, (await readItem(loose))!.level], ['move', epic, 0]);

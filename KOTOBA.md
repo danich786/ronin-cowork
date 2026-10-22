@@ -58,7 +58,7 @@ Macro, action, SOP, and Agent role are not additional composition layers. “Act
 | Level | Stored on the item: `1` epic, `0` story/task/bug, `-1` subtask. A new item is one below its parent, `0` with none; adding a child never changes it. A default, never a guard |
 | Epic | A work item at level 1. It keeps its own fields and ladder; its status is set by hand |
 | Story / Task / Bug | A work item at level 0; story, task and bug are its `kind`, a label, blank by default |
-| Subtask | A work item at level -1, under a level-0 item. A subtask can't have children, and a move can't change the level of an item with children |
+| Subtask | A work item at level -1, under a level-0 item. The one rule: an item sits one level below its parent, 1 to -1; a change that breaks it fails with "w39 can't go there." |
 | Status | The board's column: Idea, Plan, Build, Review, Land, Done. Formerly "stage" |
 | Flagged | An impediment on a work item, as Jira's flag. Replaces the red colour; the colours and `exit` are gone |
 | Team Kanban | The Team's reading of work items: what the Team and its members hold, children under their parent; a Team holds, it does not contain. Never another store ([Team Kanban](docs/using-ronin/team-kanban.md)) |

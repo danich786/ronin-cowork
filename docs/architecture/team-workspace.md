@@ -110,8 +110,9 @@ focus). The item matches Jira (owner, 2026-10-22; Lab `wip/buildouts/WORK_ITEM_B
 or 0 with none, and adding a child never changes it; `kind` is a label, blank by default;
 `status` is the board's column; `flagged` marks an impediment. Parent is one `parent` id on
 the item, or none, which is normal. Every item keeps its own ladder. A move (`moveItem`)
-sets parent and level together (no parent keeps the level) and is refused when it would
-change the level of an item with children; a create or move under a subtask is refused too. An arrival under a held item queues the holder (or a holding Team's lead) one
+sets parent and level together (no parent keeps the level). One rule binds a create, a move
+and a level write (`fits`): an item sits one level below its parent, 1 to -1, and a change
+that breaks it for the item or its children fails with "w39 can't go there." An arrival under a held item queues the holder (or a holding Team's lead) one
 message through the message queue. Old files are read in the new shape (`inShape`) and
 written in it on their next write; `migrateItems` runs once at start and removed the
 Unfiled epic, leaving its items with no parent. Assign moves an id

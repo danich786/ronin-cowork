@@ -43,8 +43,9 @@ same fields at every level; a field that means nothing at a level is simply unus
 
 Adding a child never changes an item's level or its ladder. `item move <id> --to <parent>|none`
 sets the parent and the level in one act, as Jira's move does; with no parent the level
-stays. An item with children moves with them as long as its level stays; a move that would
-change it is refused, and a subtask can't have children. Stuck is `item write <id> --flagged true`.
+stays. The one rule: an item sits one level below its parent, from 1 to -1; a create, move
+or level write that breaks it, for the item or its children, fails with "w39 can't go
+there." An item with children moves with them as long as its level stays. Stuck is `item write <id> --flagged true`.
 
 Holding is a list of ids on each Agent and Team; `item assign` moves the id and never the
 item. Holding is how work is found, never permission: any Agent may change any item, and
