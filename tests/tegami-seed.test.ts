@@ -11,7 +11,7 @@ import { promisify } from 'node:util';
  * session. */
 const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ronin-gate-test-'));
 process.env.RONIN_SESSION_DIR = root;
-const { checkoutAt, seedTegami, envWithoutGitLocation } = await import('../src/tegami.js');
+const { checkoutAt, seedTegami, envWithoutGitLocation, LETTER_TEACHING, writeLetterHolds } = await import('../src/tegami.js');
 const exec = promisify(execFile);
 
 const bodyOf = async (f: string) => JSON.parse((await fs.readFile(f, 'utf8')).match(/```json\n([\s\S]*?)\n```/)![1]);
@@ -57,4 +57,15 @@ test('a managed launch seeds every assigned worktree and line', async () => {
   const file = await seedTegami('multi_desk_seed', repos);
   assert.ok(file);
   assert.deepEqual((await bodyOf(file!)).repos, repos);
+});
+
+test('Ronin\'s own write puts the current teaching lines on a letter that still has old ones', async () => {
+  const file = (await seedTegami('old_teaching'))!;
+  const text = await fs.readFile(file, 'utf8');
+  assert.ok(text.includes(LETTER_TEACHING), 'a seed carries the teaching file');
+  await fs.writeFile(file, text.replace(LETTER_TEACHING, '> `item plan <id>` writes your ladder.'));
+  await writeLetterHolds(path.basename(path.dirname(file)), ['w1']);
+  const after = await fs.readFile(file, 'utf8');
+  assert.ok(after.includes(LETTER_TEACHING) && !after.includes('item plan'));
+  assert.deepEqual((await bodyOf(file)).holds, ['w1']);
 });
