@@ -9,7 +9,7 @@ Usage:
   item create --title <t> [--objective <o>] [--parent <id>] [--level 1|0|-1] [--kind <type>]
   item read <id>
   item list [--team <t>] [--holder <name>] [--parent <id>|--no-parent]
-  item write <id> --title|--objective|--status|--level|--kind|--flagged|--priority|--jira <value> ...
+  item edit <id> --title|--objective|--status|--level|--kind|--flagged|--priority|--jira <value> ...
   item move <id> --to <parent>|none
   item assign <id> <agent>|team:<name>|none
   item plan <id> --phase <t> | --gate <t> | --leg N <t> | --leg N.M <t> | --rung N <t>
@@ -19,9 +19,9 @@ Usage:
   item focus <id>
 level: 1 epic, 0 story/task/bug/feature, -1 subtask; a new item is one below its parent.
 The one rule: nothing goes below -1; children follow their parent ("w39 can't go there.").
-move sets parent and level together (to none, the level stays). assign: an Agent,
-team:<name> or none. focus picks which held item your work record shows.
---jira, --trello, --github set an external key; blank clears. Every write adds a trail line.
+move sets parent and level together (to none, the level stays). list narrows by Team,
+holder or parent. focus picks which held item your work record shows. --jira, --trello,
+--github set an external key; blank clears. Every change adds a trail line.
 Related: work-record --help; team --help
 EOF_USAGE
 }
@@ -57,7 +57,7 @@ esac
 id=${1:-}; [ -n "$id" ] || die "BAD-ARG: item $verb needs the item's id"; shift
 case "$verb" in
   read) [ "$#" -eq 0 ] || die 'BAD-ARG: item read takes only <id>'; ronin_item_call GET "/api/work-items/$id" ;;
-  write) [ "$#" -ge 2 ] || die 'BAD-ARG: item write takes <id> --field <value> ...'
+  edit) [ "$#" -ge 2 ] || die 'BAD-ARG: item edit takes <id> --field <value> ...'
     body=$(fields title,objective,status,level,kind,flagged,priority,jira,trello,github "$@") || exit 2; ronin_item_call PUT "/api/work-items/$id" "$body" ;;
   move) [ "$#" -eq 2 ] && [ "$1" = --to ] || die 'BAD-ARG: item move takes <id> --to <parent>|none'
     ronin_item_call POST "/api/work-items/$id/move" "$(json parent "$2")" ;;

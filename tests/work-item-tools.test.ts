@@ -94,11 +94,11 @@ test('item acts, each naming its item, one trail line each', async () => {
   assert.deepEqual((await readLetterHolds('probe'))!.holds, [id]);
   assert.equal((await oneLine(id, ['assign', id, 'team:crew'])).to, 'team:crew');
   assert.equal((await oneLine(id, ['assign', id, 'none'])).op, 'release');
-  assert.equal((await oneLine(id, ['write', id, '--status', 'DONE'])).to, 'DONE');
-  const flagged = await oneLine(id, ['write', id, '--flagged', 'true', '--jira', 'RON-7']);
+  assert.equal((await oneLine(id, ['edit', id, '--status', 'DONE'])).to, 'DONE');
+  const flagged = await oneLine(id, ['edit', id, '--flagged', 'true', '--jira', 'RON-7']);
   assert.deepEqual([flagged.op, (await readItem(id))!.flagged, (await readItem(id))!.external.jira], ['edit', true, 'RON-7']);
   assert.equal((await oneLine(id, ['comment', id, 'one remark'])).op, 'comment');
-  assert.equal((await oneLine(id, ['write', id, '--priority', 'Highest', '--kind', 'feature'])).note, 'kind feature, priority Highest');
+  assert.equal((await oneLine(id, ['edit', id, '--priority', 'Highest', '--kind', 'feature'])).note, 'kind feature, priority Highest');
   assert.equal((await oneLine(id, ['plan', id, '--phase', 'p', '--leg', '1', 'x', '--leg', '1', 'y', '--done', '1.1', '--active', '1.2'])).op, 'edit');
   assert.deepEqual((await readItem(id))!.ladder[0]!.legs, [{ title: 'x', status: 'DONE' }, { title: 'y', status: 'ACTIVE' }]);
   const doc = path.join(dir, 'plan.md');
@@ -148,7 +148,7 @@ test('the old families are gone: no team item, no work-record item, no editing t
 });
 
 test('an id no route can hold answers "No work item <id>", and a reply that is not JSON names its HTTP status', async () => {
-  for (const args of [['read', 'surface/7'], ['write', 'surface/7', '--status', 'DONE']]) {
+  for (const args of [['read', 'surface/7'], ['edit', 'surface/7', '--status', 'DONE']]) {
     const r = await run('item', args);
     assert.equal(r.status, 3, `item ${args.join(' ')}`);
     assert.equal(r.stderr.trim(), 'No work item surface/7.');

@@ -430,7 +430,7 @@ nothing paints exactly this.
 - **team_kanban.no_parent:** no parent
 - **team_kanban.nobody:** nobody
 - **team_kanban.flagged:** flagged
-- **team_kanban.evidence:** Evidence
+- **team_kanban.comments:** Comments
 - **team_kanban.open_owner:** Open @{name}
 - **team_kanban.asked:** asked
 - **team.workspace_1:** Workspace 1

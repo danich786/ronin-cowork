@@ -94,7 +94,7 @@
   .wi-project-facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-row) var(--space-inline); }
   .wi-project-facts dt { color: var(--muted); }
   .wi-project-facts dd { margin: 0; overflow-wrap: anywhere; }
-  .wi-outcome, .wi-evidence { overflow-wrap: anywhere; white-space: pre-wrap; }
+  .wi-outcome, .wi-comments { overflow-wrap: anywhere; white-space: pre-wrap; }
   /* The full overlay (js/work-details.js): one layer over a host, the tile its one user. */
   .work-overlay { position: absolute; inset: 0; overflow-y: auto; background: var(--surface); }
   /* Its utility, small at the top right: Close. */
