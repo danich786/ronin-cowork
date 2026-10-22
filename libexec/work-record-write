@@ -394,17 +394,34 @@ rm -f "$PREVF"
 
 [ -n "${BLOCK// /}" ] || die "work-record update_record: internal — validator produced nothing; letter untouched."
 
-# THE TEACHING LINES COME FROM ONE FILE, on every save, so no letter keeps teaching a
-# command that has gone. src/tegami.ts writes the same file's text on Ronin's writes.
-LETTER="$(cd "$(dirname "$SELF")/.." && pwd)/libexec/work-record-letter.md"
+# KEEP THE TEACHING LINES THAT ARE ALREADY THERE.
+#
+# The `>` block is wording the OWNER edits — he softened it once already — so this tool
+# carries forward whatever the file says rather than stamping its own copy back over
+# his. Only a letter with no teaching lines at all gets the stock ones, and the stock
+# text lives in ONE place (src/tegami.ts, the seeder) so there is nothing to drift.
+KEEP=$(awk '/^```/{exit} {print}' "$FILE" 2>/dev/null)
+case "$KEEP" in *'>'*) ;; *) KEEP="" ;; esac
 
 mkdir -p "$DIR"
 # Write beside, then rename: the tile may read this file at any moment, and a half-written
 # block would read as "no ladder" for exactly as long as the write took.
 TMP="$DIR/.tegami.$$"
 {
-  printf '# TEGAMI — %s\n' "$NAME"
-  cat "$LETTER"
+  if [ -n "$KEEP" ]; then
+    printf '%s\n' "$KEEP"
+  else
+    printf '# TEGAMI — %s\n' "$NAME"
+    cat <<'TEACH'
+> Your work record is what the owner reads on your tile. Keep it true.
+> - **objective:** one sentence on what you are doing now:
+>   `work-record update_record --objective "…"`.
+> - **repos:** the worktrees and branches you work in: `work-record workspace add|remove`.
+> - **holds:** the work items you hold; their status shows here. Work items:
+>   the Work Item capability.
+> - **teams**, **configuration:** Ronin writes these and tells you when they change.
+TEACH
+  fi
   printf '\n```json\n%s\n```\n' "$BLOCK"
 } > "$TMP"
 mv -f "$TMP" "$FILE"
