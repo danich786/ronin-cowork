@@ -78,7 +78,8 @@ export function makeTileTranscript({ read = request, watch = watchTranscript, on
       seq: Number(entry.dataset.seq),
       role: entry.dataset.role || '',
       kind: entry.dataset.kind || '',
-      text: entry.textContent || '',
+      text: entry.querySelector?.('.tile-transcript-para')
+        ? [...entry.children].map((para) => para.textContent).join('\n\n') : entry.textContent || '',
     })).filter((record) => Number.isFinite(record.seq));
     const key = cacheKey();
     cache.delete(key); // refresh insertion order as well as expiry: the limit is true LRU
@@ -153,7 +154,16 @@ export function makeTileTranscript({ read = request, watch = watchTranscript, on
     if (typeof rec.seq === 'number') entry.setAttribute('data-seq', String(rec.seq));
     entry.setAttribute('data-role', rec.role || '');
     entry.setAttribute('data-kind', rec.kind || '');
-    entry.textContent = rec.text || '';
+    // A blank line in what was written is a paragraph break, drawn as the paragraph space
+    // rather than one empty line; tool calls and code keep their text as it came.
+    const paras = rec.kind === 'act' || rec.kind === 'code' ? [] : String(rec.text || '').split(/\n[ \t]*\n\s*/).filter((part) => part.trim());
+    if (paras.length < 2) { entry.textContent = rec.text || ''; return entry; }
+    for (const part of paras) {
+      const para = document.createElement('p');
+      para.className = 'tile-transcript-para';
+      para.textContent = part;
+      entry.append(para);
+    }
     return entry;
   }
 

@@ -3143,26 +3143,32 @@ body {
   background: var(--tile-bg);
   font: var(--text-body)/var(--leading-body) var(--font-mono);
 }
+/*
+ * SPACE SAYS WHAT IT SEPARATES (owner, 2026-10-22: "one big, long series of lines"). Lines
+ * inside a paragraph sit at --leading-body; paragraphs inside a turn (a blank line in what
+ * was written, or the next message from the same speaker) at --space-paragraph; a change of
+ * speaker at --space-section. No rules between entries: the space does the breaking.
+ */
 .tile-transcript-entry {
-  border-bottom: var(--edge) solid var(--line);
-  /* The rule is transparent here so every line starts on the same left edge, whoever
-     said it — only its colour changes below. */
-  border-left: var(--edge-2) solid transparent;
-  padding: var(--space-row) 0 var(--space-row) var(--space-inline);
+  padding: var(--space-row) var(--space-inline);
+  color: var(--fg-strong);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+.tile-transcript-entry + .tile-transcript-entry { margin-top: var(--space-paragraph); }
+.tile-transcript-entry[data-role='user'] + .tile-transcript-entry:not([data-role='user']),
+.tile-transcript-entry:not([data-role='user']) + .tile-transcript-entry[data-role='user'] { margin-top: var(--space-section); }
+.tile-transcript-para { margin: 0; }
+.tile-transcript-para + .tile-transcript-para { margin-top: var(--space-paragraph); }
 /*
- * WHOSE LINE IS THIS. On a phone a conversation in one colour and one font is a wall, and
- * the owner could not tell his own words from the Agent's. So yours carry the house colour
- * on their edge and the faintest wash of it behind them, and stay heavier than the reply.
- * Shape, fill and weight — never an underline, and never a chat bubble: this is a record
- * being read, not a messaging app (owner, 2026-09-23).
+ * WHOSE LINE IS THIS. The Agent's turns are the reading, in the strongest ink; the person
+ * knows what they typed, so theirs read in --fg on the band the terminal draws behind the
+ * person's prompt. Band and space tell them apart, never weight, never an underline, never
+ * a chat bubble (owner, 2026-10-22; replaces the kaki wash and bold of 2026-09-23).
  */
 .tile-transcript-entry[data-role='user'] {
-  border-left-color: var(--kaki);
-  background: color-mix(in srgb, var(--kaki) 8%, transparent); /* the person's own line (owner ruling 2026-09-23, under review) */
-  font-weight: var(--weight-strong);
+  background: var(--term-ansi-br-black); /* the person's own turn: the terminal's prompt band */
+  color: var(--fg);
 }
 .tile-transcript-message { color: var(--muted); }
 
