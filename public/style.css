@@ -3184,7 +3184,10 @@ body {
   display: flex;
   align-items: center;
   gap: var(--space-inline);
-  padding: var(--space-paragraph) 0 var(--space-row) var(--space-inline);
+  /* A turn's worth of activity: the space of a change of speaker above, a paragraph's below
+     before the message box (owner, 2026-10-22: "runs into the dialog entry box"). */
+  margin: var(--space-section) 0 var(--space-paragraph);
+  padding: var(--space-row) 0 var(--space-row) var(--space-inline);
   color: var(--muted);
 }
 .tile-transcript-stance i {
