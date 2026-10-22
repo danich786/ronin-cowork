@@ -19,7 +19,7 @@ test('one composer send uses the HTTP message funnel with plain text, without a 
     return { status: 200, ok: true, text() { return this.json().then((b) => JSON.stringify(b)); }, json: async () => ({ ok: true, queued: true }) };
   };
   assert.equal((await sendComposerMessage('agent', 'one\ntwo')).ok, true);
-  assert.deepEqual(sent, [['/api/messages', 'POST', { target: 'agent', text: 'one\ntwo' }]]);
+  assert.deepEqual(sent, [['/api/messages', 'POST', { target: 'agent', text: 'one\ntwo', typed: true }]]);
 });
 
 test('accepted queued text belongs to the server; an unreachable server keeps the box', async (t) => {

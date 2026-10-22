@@ -17,6 +17,7 @@ const typeOf = (source) => ({
   tell: t('messages.type_tell', 'Agent tell'),
   wipeboard_notice: t('messages.type_wipeboard', 'Wipeboard notification'),
   owner: t('messages.type_owner', 'Owner message'),
+  typed: t('messages.type_typed', 'Typed in the Message box'),
   house: t('messages.type_house', 'House message'),
   jikan: t('messages.type_jikan', 'Cron job'),
 })[source] || source;
