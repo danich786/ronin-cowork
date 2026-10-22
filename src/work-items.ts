@@ -63,9 +63,9 @@ export interface WorkItem {
   created: { at: string; by: string };
 }
 
-/** What every write answers: the item as it now is, the line it appended, what the item
- * is ("w9 is a task at PLAN", "w7 is an epic at PLAN"), and who was told of an arrival. */
-export interface Acknowledged { item: WorkItem; line: TrailLine; shape: string; notified?: string[] }
+/** What every write answers: the item as it now is, the line it appended, and who was told
+ * of an arrival. What the act did is read from the line (didLine). */
+export interface Acknowledged { item: WorkItem; line: TrailLine; notified?: string[] }
 
 export class WorkItemRefused extends Error {}
 export class WorkItemMissing extends Error {}
@@ -176,15 +176,8 @@ const lineOf = (by: string, op: TrailOp, extra: Omit<TrailLine, 'at' | 'by' | 'o
   ...Object.fromEntries(Object.entries(extra).filter(([, value]) => value !== undefined && value !== '')),
 });
 
-/** "w7 is an epic at PLAN", "w9 is a task at PLAN", "w12 is a subtask at BUILD, flagged":
- * one line from the item alone, the same at every level. */
-export function kindOf(item: WorkItem): string {
-  const word = item.level === 1 ? 'an epic' : item.level === -1 ? 'a subtask' : item.kind ? `a ${item.kind}` : 'an item';
-  return `${item.id} is ${word} at ${item.status}${item.flagged ? ', flagged' : ''}`;
-}
-
 /** Read, change, append one trail line, write. Runs inside the issuer lock. */
-const answer = (item: WorkItem, line: TrailLine): Acknowledged => ({ item, line, shape: kindOf(item) });
+const answer = (item: WorkItem, line: TrailLine): Acknowledged => ({ item, line });
 
 export async function appendTrail(id: string, by: string, change: (item: WorkItem) => Omit<TrailLine, 'at' | 'by'>): Promise<Acknowledged> {
   const item = await load(id);
@@ -223,17 +216,15 @@ const blank = (title: string, by: string): WorkItem => ({
   ladder: [], docs: [], external: {}, trail: [], created: { at: new Date().toISOString(), by: by.trim() || 'unknown' },
 });
 
-/** An arrival under a held item is announced to its holder, one queued message saying what
- * arrived ("w12 is a subtask at IDEA"): to the Agent, or to a holding Team's lead. An item
- * held by nobody notifies nobody. */
+/** An arrival under a held item is announced to its holder, one queued message: to the
+ * Agent, or to a holding Team's lead. An item held by nobody notifies nobody. */
 async function announceArrival(item: WorkItem): Promise<string[]> {
   if (!item.parent) return [];
   const told: string[] = [];
-  const shape = kindOf(item);
   for (const holder of await holdersOf(item.parent)) {
     const targets = holder.kind === 'agent' ? [holder.name] : await findLeads(holder.name);
     for (const target of targets) {
-      await enqueueMessage(target, `${item.id} ${item.title} was added under ${item.parent}, which you hold: ${shape}. Handle it as you see fit.`, 'house', 'Work items');
+      await enqueueMessage(target, `${item.id} ${item.title} was added under ${item.parent}, which you hold. Handle it as you see fit.`, 'house', 'Work items');
       told.push(target);
     }
   }
@@ -279,20 +270,20 @@ export function editItem(id: string, edit: ItemEdit, by: string, note?: string):
     const before = item.status;
     if (edit.title !== undefined && edit.title.trim() !== item.title) { item.title = edit.title.trim(); changed.push('title'); }
     if (edit.objective !== undefined && edit.objective.trim() !== item.objective) { item.objective = edit.objective.trim(); changed.push('objective'); }
-    if (edit.status !== undefined && edit.status !== item.status) { item.status = edit.status as ItemStatus; changed.push('status'); }
-    if (edit.level !== undefined && edit.level !== item.level) { item.level = edit.level as ItemLevel; changed.push('level'); }
+    if (edit.status !== undefined && edit.status !== item.status) { item.status = edit.status as ItemStatus; changed.push(`status ${item.status}`); }
+    if (edit.level !== undefined && edit.level !== item.level) { item.level = edit.level as ItemLevel; changed.push(`level ${item.level}`); }
     if (edit.kind !== undefined && edit.kind !== (item.kind ?? '')) {
       if (edit.kind) item.kind = edit.kind as ItemKind; else delete item.kind;
-      changed.push('kind');
+      changed.push(`kind ${item.kind ?? 'blank'}`);
     }
     if (edit.flagged !== undefined && edit.flagged !== item.flagged) { item.flagged = edit.flagged; changed.push(edit.flagged ? 'flagged' : 'unflagged'); }
     for (const [key, value] of Object.entries(edit.external ?? {}) as Array<[keyof External, string]>) {
       if ((item.external[key] ?? '') === value.trim()) continue;
       if (value.trim()) item.external[key] = value.trim(); else delete item.external[key];
-      changed.push(key);
+      changed.push(`${key} ${item.external[key] ?? 'cleared'}`);
     }
     const said = note || undefined;
-    if (changed.length === 1 && changed[0] === 'status') return { op: 'status', from: before, to: item.status, note: said };
+    if (changed.length === 1 && changed[0]!.startsWith('status ')) return { op: 'status', from: before, to: item.status, note: said };
     return { op: 'edit', note: [said, changed.length ? changed.join(', ') : 'no change'].filter(Boolean).join('; ') };
   }));
 }
@@ -460,15 +451,18 @@ export async function focusItem(session: string, id: string): Promise<boolean> {
   });
 }
 
-/** Acknowledgements nag, tools do not: every acknowledgement that touches an item ends
- * with this line, naming the item and the writes that keep it current. */
-export function keepCurrentLine({ item, line, shape }: Acknowledged): string {
+/** What the act did, read from its trail line alone: "w39 moved under w40, level -1",
+ * "w9 moved to BUILD", "w9 is held by agent:x", "w12 was created". Status, kind and level
+ * appear only when the act changed them. Every acknowledgement is this one line. */
+export function didLine({ item, line }: Acknowledged): string {
   const what = line.op === 'status' ? `moved to ${line.to}`
-    : line.op === 'assign' ? `is held by ${line.to}`
-      : line.op === 'release' || line.op === 'holder-ended' ? 'is held by nobody'
-        : line.op === 'create' ? 'was created'
-          : `changed (${line.op})`;
-  return `${item.id} ${what}; ${shape}. Keep it current: item write ${item.id} --objective "<what it is now>"; item evidence ${item.id} "<a fact with its receipt>"`;
+    : line.op === 'move' ? (line.to === 'none' ? `moved to no parent, ${line.note}` : `moved under ${line.to}, ${line.note}`)
+      : line.op === 'assign' ? `is held by ${line.to}`
+        : line.op === 'release' || line.op === 'holder-ended' ? 'is held by nobody'
+          : line.op === 'create' ? 'was created'
+            : line.op === 'evidence' ? `has evidence: ${line.note}`
+              : `changed: ${line.note ?? 'no change'}`;
+  return `${item.id} ${what}`;
 }
 
 /* THE LADDER LIVES ON EVERY ITEM, children or not (owner, 2026-10-22: moving it to the

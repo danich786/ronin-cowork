@@ -6,7 +6,7 @@ import type express from 'express';
 import {
   WorkItemBadInput, WorkItemMissing, WorkItemRefused,
   addEvidence, assignItem, createItem, editItem, focusItem, holderLabel, holdersOf, listItems, moveItem, readItem, releaseItem, writeDocs, writePlan,
-  keepCurrentLine, type Acknowledged, type Holder, type TrailLine,
+  didLine, type Acknowledged, type Holder,
 } from '../work-items.js';
 import { agentReading, everyItemReading, teamReading, type HeldItem } from '../work-items-read.js';
 import { pushTeams } from '../ws/events.js';
@@ -20,18 +20,11 @@ export function callerOf(req: express.Request): string {
   return /^user_/.test(req.get('x-ronin-source') ?? '') ? 'owner' : 'unknown';
 }
 
-export const describeLine = (line: TrailLine): string => [
-  line.op,
-  line.from !== undefined || line.to !== undefined ? `${line.from ?? '—'} → ${line.to ?? '—'}` : '',
-  line.note ? `(${line.note})` : '',
-  `by ${line.by}`,
-].filter(Boolean).join(' ');
-
 export const acknowledge = (res: express.Response, done: Acknowledged, extra: Record<string, unknown> = {}) =>
   res.json({
-    ok: true, item: done.item, line: done.line, shape: done.shape, ...(done.notified?.length ? { notified: done.notified } : {}), ...extra,
-    acknowledgement: `Work item ${done.item.id} "${done.item.title}": ${describeLine(done.line)}. ${done.shape}.`
-      + `${done.notified?.length ? ` Told ${done.notified.map((name) => `@${name}`).join(', ')} of the arrival.` : ''}\n${keepCurrentLine(done)}`,
+    ok: true, item: done.item, line: done.line, ...(done.notified?.length ? { notified: done.notified } : {}), ...extra,
+    acknowledgement: didLine(done)
+      + `${done.notified?.length ? `\nTold ${done.notified.map((name) => `@${name}`).join(', ')} of the arrival.` : ''}`,
   });
 
 export function answerError(res: express.Response, error: unknown): void {

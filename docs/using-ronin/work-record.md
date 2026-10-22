@@ -75,18 +75,13 @@ item moved under another becomes a subtask. An item with subtasks can't move, in
 "w39 has subtasks and can't move." A move whose parent chain comes back to the item is
 refused with the chain named.
 
-Every acknowledgement answers with the item as it now is and the trail line it appended, and
-ends by naming the item and the writes that keep it current:
-
-```text
-w12 moved to LAND; w12 is a task at LAND. Keep it current: item write w12 --objective "<what it is now>"; item evidence w12 "<a fact with its receipt>"
-```
-
-It says what the item is, from the item alone: "w7 is an epic at PLAN", "w9 is a task at
-PLAN", "w12 is an item at IDEA" for a blank kind, and
-", flagged" when flagged. When an item arrives under one someone holds, by a create with a
+Every write answers with the item as it now is and the trail line it appended. Its
+acknowledgement is one line of what the act did, read from that trail line, and nothing
+after it: "w39 moved under w40, level -1", "w9 moved to BUILD", "w9 is held by agent:x",
+"w12 was created", "w12 changed: kind story, flagged". Status, kind and level appear only
+when the act changed them. When an item arrives under one someone holds, by a create with a
 parent or a move, that holder gets one message through the ordinary queue: "w9 Fix login
-was added under w7, which you hold: w9 is an item at IDEA. Handle it as you see fit." A
+was added under w7, which you hold. Handle it as you see fit." A
 Team holder's lead gets it. An item held by nobody notifies nobody.
 
 ## Receipts move Land and Done

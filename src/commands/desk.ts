@@ -14,7 +14,7 @@ import { arrangementOf } from '../desks/arrangement.js';
 import { randomUUID } from 'node:crypto';
 import { withManagedTransaction } from '../desks/lifecycle-ledger.js';
 import { shutdownAgent, ShutdownRefused } from '../desks/session-shutdown.js';
-import { keepCurrentLine, readItem } from '../work-items.js';
+import { didLine, readItem } from '../work-items.js';
 
 const out = (s = '') => process.stdout.write(s + '\n');
 function die(verdict: string, code: number): never {
@@ -225,7 +225,7 @@ async function main(): Promise<void> {
         }
         if (moved) {
           out(`Code handed in for ${projectId}: ${moved.line.op} ${moved.line.from ?? ''} → ${moved.line.to ?? ''} (${moved.line.note}).`);
-          out(keepCurrentLine(moved));
+          out(didLine(moved));
         }
         process.exit(worst);
       }
