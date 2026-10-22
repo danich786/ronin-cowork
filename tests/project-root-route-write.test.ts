@@ -87,6 +87,18 @@ test('rejects a malformed repository profile before adding a catalog entry', asy
   assert.equal((await listProjectRoots()).some((root) => root.name === 'invalid'), false);
 });
 
+test('init_git starts Git in a plain folder before the profile is applied', async () => {
+  const dir = path.join(box, 'plain');
+  await mkdir(dir);
+  const result = await send('/api/project-roots', 'POST', {
+    name: 'plain', dir, init_git: true,
+    profile: { mode: 'direct', working: '', stable: 'main', worktrees: 'disabled' },
+  });
+  assert.equal(result.status, 200);
+  assert.equal(execFileSync('git', ['-C', dir, 'rev-parse', '--is-inside-work-tree']).toString().trim(), 'true');
+  assert.deepEqual(result.body.repo_profile, { mode: 'direct', working: '', stable: 'main', worktrees: 'disabled' });
+});
+
 test.after(async () => {
   await new Promise<void>((resolve) => server.close(() => resolve()));
   await rm(box, { recursive: true, force: true });
