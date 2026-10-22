@@ -426,11 +426,12 @@ nothing paints exactly this.
 - **team_kanban.project_missing:** This work item is not in the current scope.
 - **team_kanban.stage:** Status
 - **team_kanban.holder:** Holder
-- **team_kanban.progress:** Progress
-- **team_kanban.next:** Next
+- **team_kanban.parent:** Parent
+- **team_kanban.no_parent:** no parent
+- **team_kanban.nobody:** nobody
+- **team_kanban.flagged:** flagged
 - **team_kanban.evidence:** Evidence
 - **team_kanban.open_owner:** Open @{name}
-- **team_kanban.waiting:** waiting on
 - **team_kanban.asked:** asked
 - **team.workspace_1:** Workspace 1
 - **team.workspace_2:** Workspace 2
