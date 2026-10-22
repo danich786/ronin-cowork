@@ -97,7 +97,8 @@ test('item acts, each naming its item, one trail line each', async () => {
   assert.equal((await oneLine(id, ['write', id, '--status', 'DONE'])).to, 'DONE');
   const flagged = await oneLine(id, ['write', id, '--flagged', 'true', '--jira', 'RON-7']);
   assert.deepEqual([flagged.op, (await readItem(id))!.flagged, (await readItem(id))!.external.jira], ['edit', true, 'RON-7']);
-  assert.equal((await oneLine(id, ['evidence', id, 'commit abc123'])).note, 'commit abc123');
+  assert.equal((await oneLine(id, ['comment', id, 'one remark'])).op, 'comment');
+  assert.equal((await oneLine(id, ['write', id, '--priority', 'Highest', '--kind', 'feature'])).note, 'kind feature, priority Highest');
   assert.equal((await oneLine(id, ['plan', id, '--phase', 'p', '--leg', '1', 'x', '--leg', '1', 'y', '--done', '1.1', '--active', '1.2'])).op, 'edit');
   assert.deepEqual((await readItem(id))!.ladder[0]!.legs, [{ title: 'x', status: 'DONE' }, { title: 'y', status: 'ACTIVE' }]);
   const doc = path.join(dir, 'plan.md');

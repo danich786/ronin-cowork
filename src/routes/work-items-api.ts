@@ -5,7 +5,7 @@
 import type express from 'express';
 import {
   WorkItemBadInput, WorkItemMissing, WorkItemRefused,
-  addEvidence, assignItem, createItem, editItem, focusItem, holderLabel, holdersOf, listItems, moveItem, readItem, releaseItem, writeDocs, writePlan,
+  addComment, assignItem, createItem, editItem, focusItem, holderLabel, holdersOf, listItems, moveItem, readItem, releaseItem, writeDocs, writePlan,
   didLine, type Acknowledged, type Holder,
 } from '../work-items.js';
 import { agentReading, everyItemReading, teamReading, type HeldItem } from '../work-items-read.js';
@@ -101,7 +101,7 @@ export function registerWorkItems(app: express.Express): void {
     const b = req.body ?? {};
     const external = Object.fromEntries((['jira', 'trello', 'github'] as const).filter((key) => b[key] !== undefined).map((key) => [key, text(b[key]) ?? '']));
     acknowledge(res, await editItem(req.params.id, {
-      title: text(b.title), objective: text(b.objective), status: text(b.status), kind: text(b.kind), level: levelOf(b.level), flagged: flagOf(b.flagged),
+      title: text(b.title), objective: text(b.objective), status: text(b.status), kind: text(b.kind), level: levelOf(b.level), flagged: flagOf(b.flagged), priority: text(b.priority),
       ...(Object.keys(external).length ? { external } : {}),
     }, callerOf(req), text(b.note)));
   }));
@@ -126,8 +126,8 @@ export function registerWorkItems(app: express.Express): void {
   app.post('/api/work-items/:id/docs', guarded(async (req, res) => {
     acknowledge(res, await writeDocs(req.params.id, { add: text(req.body?.add), remove: text(req.body?.remove) }, callerOf(req)));
   }));
-  app.post('/api/work-items/:id/evidence', guarded(async (req, res) => {
-    acknowledge(res, await addEvidence(req.params.id, text(req.body?.text) ?? '', callerOf(req)));
+  app.post('/api/work-items/:id/comment', guarded(async (req, res) => {
+    acknowledge(res, await addComment(req.params.id, text(req.body?.text) ?? '', callerOf(req)));
   }));
   // Which held item this Agent's work record shows. The focus is the letter's, not the item's.
   app.post('/api/work-items/:id/focus', guarded(async (req, res) => {
@@ -141,7 +141,7 @@ export function registerWorkItems(app: express.Express): void {
   // Anything else under /api/work-items names no item (an id like surface/7 is not one):
   // a JSON 404 naming it, so a tool can say so rather than parse an HTML error page.
   app.all('/api/work-items/*', (req, res) => {
-    const id = req.path.slice('/api/work-items/'.length).replace(/\/(assign|move|plan|docs|evidence|focus)$/, '');
+    const id = req.path.slice('/api/work-items/'.length).replace(/\/(assign|move|plan|docs|comment|focus)$/, '');
     res.status(404).json({ ok: false, error: `No work item ${id}.` });
   });
 }

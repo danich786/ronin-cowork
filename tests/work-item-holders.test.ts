@@ -197,6 +197,12 @@ test('a change by anyone but the holding Agent acks that Agent once; its own cha
   await items.editItem(item.id, { status: 'REVIEW' }, 'keeper');
   assert.equal(await acks(), 0, 'its own write is not acked');
   await clear();
+  await items.addComment(item.id, 'over to you', 'lead');
+  assert.equal(await acks(), 1, 'a comment by someone else is a change like any other');
+  await clear();
+  await items.addComment(item.id, 'noted', 'keeper');
+  assert.equal(await acks(), 0);
+  await clear();
 });
 
 test('an arrival made by the holder itself tells nobody', async () => {

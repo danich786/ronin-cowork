@@ -54,13 +54,15 @@ Macro, action, SOP, and Agent role are not additional composition layers. “Act
 | Team record (`team_roster`) | Durable Team identity, defaults, and held work; membership and leads derive from sessions ([Team workspace](docs/architecture/team-workspace.md)) |
 | Session | A running Cowork Agent, bare-metal Agent, or terminal; archived sessions have separate restore manifests ([Session identity](docs/architecture/session-identity.md)) |
 | Work record | An Agent's objective, repositories, the work items it holds, and its focus; the ladder it shows is the focus item's ([Work record](docs/using-ronin/work-record.md)) |
-| Work item | One object stored once by id, matching Jira: title, objective, `level`, `kind`, `status`, `flagged`, its own ladder, documents, `external` keys and a trail; **held by** one Team or Agent, or by nobody (`item assign` moves the id between holders' lists), and **under** one parent or none. Holding is never permission. The `item` tool does every act, the item named. Never called a project ([Work record](docs/using-ronin/work-record.md)) |
+| Work item | One object stored once by id, matching Jira: title, objective, `level`, `kind`, `status`, `flagged`, `priority`, `comments`, its own ladder, documents, `external` keys and a trail; **held by** one Team or Agent, or by nobody (`item assign` moves the id between holders' lists), and **under** one parent or none. Holding is never permission. The `item` tool does every act, the item named. Never called a project ([Work record](docs/using-ronin/work-record.md)) |
 | Level | Stored on the item: `1` epic, `0` story/task/bug, `-1` subtask. A new item is one below its parent, `0` with none; adding a child never changes it. A default, never a guard |
 | Epic | A work item at level 1. It keeps its own fields and ladder; its status is set by hand |
-| Story / Task / Bug | A work item at level 0; story, task and bug are its `kind`, a label, blank by default |
+| Story / Task / Bug | A work item at level 0; story, task, bug or feature is its `kind`, any work type name, blank by default, with no fixed list |
 | Subtask | A work item at level -1, under a level-0 item. The one rule: nothing goes below -1; children follow their parent's new level, and a change that would put any below -1 fails with "w39 can't go there." |
 | Status | The board's column: Idea, Plan, Build, Review, Land, Done. Formerly "stage" |
 | Flagged | An impediment on a work item, as Jira's flag. Replaces the red colour; the colours and `exit` are gone |
+| Priority | A work item's priority, as Jira's: any name, or blank. Set with `item write <id> --priority <name>` |
+| Comment | One remark on a work item, as Jira's: who, when and the text. `item comment <id> <text>` adds one; a comment by someone else tells the holding Agent its work record changed |
 | Team Kanban | The Team's reading of work items: what the Team and its members hold, children under their parent; a Team holds, it does not contain. Never another store ([Team Kanban](docs/using-ronin/team-kanban.md)) |
 | Board | A view of work items in columns by status, as in Jira and Trello: the Task Manager's six status columns. A board is never a work item |
 | Wipeboard / message queue / Cron jobs | Team announcements, pending session delivery, and scheduled requests; distinct stores and delivery lifecycles |
