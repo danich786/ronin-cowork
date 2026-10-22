@@ -127,7 +127,7 @@ export async function handInAssignment(assignment: { desks: Array<{ repo: string
   for (const d of assignment.desks) outcomes.push(await handIn(d.repo, d.branch, { projectId: assignment.projectId }));
   const accepted = outcomes.filter(({ receipt }) => receipt.result === 'accepted').map(({ receipt }) => receipt.id);
   const moved = assignment.projectId && accepted.length
-    ? await editItem(assignment.projectId, { stage: 'LAND' }, assignment.session, `hand-in ${accepted.join(', ')}`)
+    ? await editItem(assignment.projectId, { status: 'LAND' }, assignment.session, `hand-in ${accepted.join(', ')}`)
     : null;
   return { outcomes, moved };
 }
