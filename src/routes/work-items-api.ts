@@ -1,7 +1,7 @@
 /* /api/work-items* — the one door to the work item store (src/work-items.ts), and the
  * `item` tool's (ronin_bin/item): every act names its item. Every write acknowledges with
  * the item as it now is and the trail line it appended; the caller reads that before its
- * next act. The refusals (409) are a move that cycles and a move of an item with subtasks. */
+ * next act. The refusals (409): a level change for an item with children, a child for a subtask. */
 import type express from 'express';
 import {
   WorkItemBadInput, WorkItemMissing, WorkItemRefused,

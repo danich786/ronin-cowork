@@ -4,8 +4,8 @@
  * The only module that reads or writes an item file. Everything else reaches items through
  * the /api/work-items routes (src/routes/work-items-api.ts), and every change here appends
  * exactly one line to the item's trail, naming who called. Nothing is locked against
- * anyone: holding is discovery, never permission. Two refusals: a move that would form a
- * cycle, and a move of an item with subtasks.
+ * anyone: holding is discovery, never permission. Two refusals, as Jira's: a subtask can't
+ * have children, and a move can't change the level of an item that has children.
  *
  * THE SHAPE MATCHES JIRA (owner, 2026-10-22; samurai_lab WORK_ITEM_BUILDOUT.md). One object
  * at every level: `level` 1 epic · 0 story/task/bug · -1 subtask, stored; `kind` a label;
@@ -212,7 +212,12 @@ function checkFields(fields: { status?: unknown; kind?: unknown; level?: unknown
 }
 
 /** One below the parent, 0 with none (Jira's hierarchy). A default, never a guard. */
-const levelUnder = (parent: WorkItem | null): ItemLevel => parent ? (Math.max(-1, parent.level - 1) as ItemLevel) : 0;
+const levelUnder = (parent: WorkItem | null): ItemLevel => parent ? (parent.level - 1) as ItemLevel : 0;
+
+/** A subtask can't have children (Jira), in one plain line. */
+function underParent(parent: WorkItem | null): void {
+  if (parent?.level === -1) throw new WorkItemRefused(`${parent.id} is a subtask and can't have children.`);
+}
 
 const blank = (title: string, by: string): WorkItem => ({
   id: '', title, objective: '', level: 0, status: 'IDEA', flagged: false, parent: null,
@@ -241,6 +246,7 @@ export async function createItemUnlocked(input: NewItem, by: string): Promise<Ac
   if (!title) throw new WorkItemBadInput('A work item needs a title.');
   checkFields(input);
   const parent = input.parent ? await load(input.parent) : null;
+  underParent(parent);
   const item: WorkItem = {
     ...blank(title, by),
     id: await nextId(),
@@ -325,26 +331,19 @@ export function writeDocs(id: string, change: { add?: string; remove?: string },
 }
 
 /** MOVE (Jira's convert/move): the parent and the level change together, one below the new
- * parent, 0 with none. Refused: a parent chain that comes back to the item, and an item
- * with subtasks, in one plain line. */
+ * parent; with no parent the level stays. An item with children moves with them as long as
+ * its level stays (a story and its subtasks to another epic). Refused, in one plain line: a
+ * level change for an item with children, and a move under a subtask. */
 export function moveItem(id: string, parent: string | null, by: string): Promise<Acknowledged> {
   return withIssuer(async () => {
     const child = await load(id);
-    if ((await listItems()).some((item) => item.parent === id && item.level === -1)) throw new WorkItemRefused(`${id} has subtasks and can't move.`);
-    let under: WorkItem | null = null;
-    if (parent) {
-      under = await load(parent);
-      const chain = [id];
-      let at: string | null = parent;
-      while (at) {
-        chain.push(at);
-        if (at === id) throw new WorkItemRefused(`REFUSED: ${id} under ${parent} would form a cycle: ${chain.join(' → ')}.`);
-        at = (await load(at)).parent;
-      }
-    }
+    const under = parent ? await load(parent) : null;
+    underParent(under);
+    const level = under ? levelUnder(under) : child.level;
+    if (level !== child.level && (await listItems()).some((item) => item.parent === id)) throw new WorkItemRefused(`${id} has children and can't move.`);
     const from = child.parent ?? 'none';
     child.parent = parent;
-    child.level = levelUnder(under);
+    child.level = level;
     const line = lineOf(by, 'move', { from, to: parent ?? 'none', note: `level ${child.level}` });
     child.trail.push(line);
     await save(child);

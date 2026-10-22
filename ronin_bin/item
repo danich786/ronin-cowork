@@ -21,7 +21,8 @@ A work item (w12) is stored once and matches Jira. level: 1 epic, 0 story/task/b
 -1 subtask; a new item is one level below its parent, 0 with none. kind: story, task, bug
 or blank. status is the board's column: IDEA PLAN BUILD REVIEW LAND DONE. --flagged true
 marks an impediment. --jira (also --trello, --github) sets the external key; blank clears.
-move sets the parent and the level together; an item with subtasks can't move. assign
+move sets the parent and the level together (to none, the level stays); an item with
+children moves only at its own level, and a subtask can't have children. assign
 holds the item by an Agent, a Team, or nobody. plan writes the item's own ladder; plan
 verbs combine and apply in order. focus picks which held item your work record shows.
 Every write appends one trail line and answers with the item as it now is.

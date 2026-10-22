@@ -64,16 +64,18 @@ item create --title "Agent-authored items" [--objective "…"] [--parent w3] [--
 item read w12                       # with its children, if any
 item list [--team surface] [--holder builder] [--parent w3 | --no-parent]
 item write w12 --status REVIEW --flagged true --jira RON-12
-item move w12 --to w3               # parent and level together; --to none for no parent
+item move w12 --to w3               # parent and level together; --to none keeps the level
 item assign w12 builder             # or team:surface, or none
 item evidence w12 "commit 0123456789"
 ```
 
 A new item is held by nobody until it is assigned. `item move` is Jira's move: the parent
-and the level change in one act, one below the new parent or `0` with none, so any level-0
-item moved under another becomes a subtask. An item with subtasks can't move, in one line:
-"w39 has subtasks and can't move." A move whose parent chain comes back to the item is
-refused with the chain named.
+and the level change in one act, one below the new parent; with no parent the level stays.
+Any level-0 item moved under another becomes a subtask. An item with children moves with
+them as long as its level stays: a story and its subtasks go to another epic together. As
+in Jira, two acts are refused, each in one plain line: a move that would change the level
+of an item with children ("w39 has children and can't move."), and a child for a subtask,
+by a create or a move ("w12 is a subtask and can't have children.").
 
 Every write answers with the item as it now is and the trail line it appended. Its
 acknowledgement is one line of what the act did, read from that trail line, and nothing
