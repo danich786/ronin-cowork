@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+. "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/tool-count.sh" item "$@"
+set -u -o pipefail
+. "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"
+TOOL_DIR=$(dirname "$SELF")
+die() { echo "$1" >&2; exit "${2:-2}"; }
+usage() { cat <<'EOF_USAGE'
+Usage:
+  item create --title <t> [--objective <o>] [--parent <id>] [--level 1|0|-1] [--kind story|task|bug]
+  item read <id>
+  item list [--team <t>] [--holder <name>] [--parent <id>|--no-parent]
+  item write <id> --title|--objective|--status|--level|--kind|--flagged|--jira <value> ...
+  item move <id> --to <parent>|none
+  item assign <id> <agent>|team:<name>|none
+  item plan <id> --phase <t> | --gate <t> | --leg N <t> | --leg N.M <t> | --rung N <t>
+                 | --status N[.M] PLANNED|ACTIVE|DONE | --done N[.M] | --active N[.M] | --drop N[.M]
+  item doc <id> add|remove <path>
+  item evidence <id> <text>
+  item focus <id>
+A work item (w12) is stored once and matches Jira. level: 1 epic, 0 story/task/bug,
+-1 subtask; a new item is one level below its parent, 0 with none. kind: story, task, bug
+or blank. status is the board's column: IDEA PLAN BUILD REVIEW LAND DONE. --flagged true
+marks an impediment. --jira (also --trello, --github) sets the external key; blank clears.
+move sets the parent and the level together; an item with subtasks can't move. assign
+holds the item by an Agent, a Team, or nobody. plan writes the item's own ladder; plan
+verbs combine and apply in order. focus picks which held item your work record shows.
+Every write appends one trail line and answers with the item as it now is.
+Related: work-record --help; team --help
+EOF_USAGE
+}
+case "${1:-}" in -h|--help|'') [ "$#" -le 1 ] || die 'Run item --help.'; usage; [ "$#" -eq 1 ]; exit $?;; esac
+. "$TOOL_DIR/ronin-http.sh"
+ronin_connect || exit $?
+# The caller is named on every trail line: this session, or the shell user.
+BY=$(ronin_session_me 2>/dev/null || id -un)
+# --field value pairs, each from the allowed list, into one JSON body carrying who called.
+fields() { python3 -c 'import json,sys
+by, allowed, *a = sys.argv[1:]; d = {"by": by}; ok = allowed.split(",")
+while a:
+    k = a.pop(0)
+    if not k.startswith("--") or not a: sys.exit("BAD-ARG: fields go as --field <value> pairs")
+    if k[2:] not in ok: sys.exit("BAD-ARG: %s is not a field here; use %s" % (k, ", ".join("--" + f for f in ok)))
+    d[k[2:]] = a.pop(0)
+print(json.dumps(d))' "$BY" "$@"; }
+json() { python3 -c 'import json,sys; a=sys.argv[1:]; print(json.dumps(dict(zip(a[::2], a[1::2]))))' by "$BY" "$@"; }
+verb=$1; shift
+case "$verb" in
+  create) body=$(fields title,objective,parent,level,kind "$@") || exit 2; ronin_item_call POST /api/work-items "$body"; exit $? ;;
+  list)
+    q=''
+    while [ "$#" -gt 0 ]; do
+      case "$1" in
+        --team|--holder|--parent) [ -n "${2:-}" ] || die "BAD-ARG: $1 needs a value"; q="$q&${1#--}=$(python3 -c 'import sys,urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$2")"; shift 2 ;;
+        --no-parent) q="$q&no_parent=1"; shift ;;
+        *) die "BAD-ARG: item list takes --team, --holder, --parent or --no-parent, not $1" ;;
+      esac
+    done
+    ronin_item_call GET "/api/work-items?${q#&}"; exit $? ;;
+esac
+id=${1:-}; [ -n "$id" ] || die "BAD-ARG: item $verb needs the item's id"; shift
+case "$verb" in
+  read) [ "$#" -eq 0 ] || die 'BAD-ARG: item read takes only <id>'; ronin_item_call GET "/api/work-items/$id" ;;
+  write) [ "$#" -ge 2 ] || die 'BAD-ARG: item write takes <id> --field <value> ...'
+    body=$(fields title,objective,status,level,kind,flagged,jira,trello,github "$@") || exit 2; ronin_item_call PUT "/api/work-items/$id" "$body" ;;
+  move) [ "$#" -eq 2 ] && [ "$1" = --to ] || die 'BAD-ARG: item move takes <id> --to <parent>|none'
+    ronin_item_call POST "/api/work-items/$id/move" "$(json parent "$2")" ;;
+  assign) [ "$#" -eq 1 ] || die 'BAD-ARG: item assign takes <id> <agent>|team:<name>|none'
+    case "$1" in
+      none) to=$(python3 -c 'import json,sys; print(json.dumps({"by": sys.argv[1], "none": True}))' "$BY") ;;
+      team:*) to=$(json team "${1#team:}") ;;
+      *) to=$(json session "$1") ;;
+    esac
+    ronin_item_call POST "/api/work-items/$id/assign" "$to" ;;
+  plan) [ "$#" -ge 1 ] || die 'BAD-ARG: item plan takes <id> and ladder verbs; run item --help'
+    edits=$(python3 -c 'import json,sys
+a = sys.argv[1:]; out = []
+takes = {"--phase": 1, "--gate": 1, "--rung": 2, "--leg": 2, "--status": 2, "--done": 1, "--active": 1, "--drop": 1}
+while a:
+    k = a.pop(0)
+    if k not in takes or len(a) < takes[k]: sys.exit("BAD-ARG: %s is not a plan verb with its values; run item --help" % k)
+    vals = [a.pop(0) for _ in range(takes[k])]
+    if k == "--done": out.append(["status", vals[0], "DONE"])
+    elif k == "--active": out.append(["status", vals[0], "ACTIVE"])
+    else: out.append([k[2:]] + vals)
+print(json.dumps(out))' "$@") || exit 2
+    ronin_item_call POST "/api/work-items/$id/plan" "$(python3 -c 'import json,sys; print(json.dumps({"by": sys.argv[1], "edits": json.loads(sys.argv[2])}))' "$BY" "$edits")" ;;
+  doc) [ "$#" -eq 2 ] && { [ "$1" = add ] || [ "$1" = remove ]; } || die 'BAD-ARG: item doc takes <id> add|remove <path>'
+    # Resolved here, against the caller's cwd: the item stores the absolute path.
+    ronin_item_call POST "/api/work-items/$id/docs" "$(json "$1" "$(python3 -c 'import os,sys; print(os.path.abspath(os.path.expanduser(sys.argv[1])))' "$2")")" ;;
+  evidence) [ "$#" -eq 1 ] || die 'BAD-ARG: item evidence takes <id> <text>, the text quoted'
+    ronin_item_call POST "/api/work-items/$id/evidence" "$(json text "$1")" ;;
+  focus) [ "$#" -eq 0 ] || die 'BAD-ARG: item focus takes only <id>'
+    me=$(ronin_session_me) || die 'item focus: cannot tell which session this is' 3
+    ITEM_ACK_ONLY=1 ronin_item_call POST "/api/work-items/$id/focus" "$(json session "$me")" ;;
+  *) usage >&2; exit 2 ;;
+esac

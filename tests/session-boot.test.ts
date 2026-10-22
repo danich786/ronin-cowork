@@ -32,10 +32,10 @@ test('every assisted session is handed the tool overview built from its selected
     const text = await readFile(lesson, 'utf8');
     assert.equal(text, overview, 'the fragment is the rendered overview, byte for byte');
     // The lesson is derived from the folder: every stock bundle, its priority tools, its help route.
-    for (const label of ['Edges', 'Work Record', 'Agent session', 'Managed worktree', 'Machine settings', 'Cowork Team']) {
+    for (const label of ['Edges', 'Work Record', 'Work Item', 'Agent session', 'Managed worktree', 'Machine settings', 'Cowork Team']) {
       assert.match(text, new RegExp(`^### ${label}$`, 'm'));
     }
-    assert.match(text, /`work-record item create`/);
+    assert.match(text, /`item create`/);
     assert.match(text, /`session_check --help`/);
     assert.doesNotMatch(text, /\btejun(?:-[a-z]+|\b(?!_))|\+\w+:|MACROS/, 'no retired vocabulary reaches a newborn');
     // Fork/spawn belongs to the Agent session capability rather than universal boot noise.
@@ -100,6 +100,7 @@ test('every selector phrase has an exact meaning in floor or capability teaching
     'ronin_catalogs/capabilities/agent_session.md',
     'ronin_catalogs/capabilities/edges.md',
     'ronin_catalogs/capabilities/work-record.md',
+    'ronin_catalogs/capabilities/work-item.md',
     'ronin_catalogs/capabilities/cowork_team.md',
     'ronin_catalogs/capabilities/worktree-desk.md',
     'ronin_catalogs/behaviours/conditional/team-lead.md',
@@ -119,7 +120,7 @@ test('every selector phrase has an exact meaning in floor or capability teaching
   for (const term of terms) assert.match(teaching, new RegExp(`\\*\\*${escaped(term)}\\*\\*`, 'i'), `${term} needs an exact meaning`);
   assert.match(teaching, /AN OWNER ASKING FOR AN AGENT ALWAYS MEANS:[\s\S]*IT NEVER MEANS SPAWN A CLI-INTERNAL SUB-AGENT/);
   assert.match(teaching, /owner's wording does not\s+provoke it/);
-  for (const command of ['session_create', 'edges send', 'edges wipeboard', 'work-record document list', 'work-record update_record', 'team roster write', 'worktree-desk hand-in', 'bin/ronin-promote <team>', 'session_end']) {
+  for (const command of ['session_create', 'edges send', 'edges wipeboard', 'work-record read', 'item doc', 'work-record update_record', 'team roster write', 'worktree-desk hand-in', 'bin/ronin-promote <team>', 'session_end']) {
     assert.match(teaching, new RegExp(escaped(command)), `${command} needs to be named by its owner`);
   }
 });

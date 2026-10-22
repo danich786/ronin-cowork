@@ -1,8 +1,7 @@
 /**
- * `team item …` and `work-record item …` against the real /api/work-items routes.
- * Checks from WORK_ITEM_STORE.md cut 3: each tool call leaves exactly one trail line; no
- * tool refuses a caller for not being the holder; every acknowledgement names the item and
- * the write that keeps it current.
+ * `item …` against the real /api/work-items routes (WORK_ITEM_BUILDOUT cut 3): each act
+ * names its item and leaves exactly one trail line; no tool refuses a caller for not being
+ * the holder; the old `team item` and `work-record item` families are gone.
  *
  * The routes run in this process on a free port (RONIN_URL). The tools see a fake tmux
  * answering for a session called "probe"; this process sees no tmux server at all, so its
@@ -75,146 +74,81 @@ const tool = async (name: string, args: string[], as = 'probe', input?: string) 
 const trail = async (id: string) => (await readItem(id))!.trail;
 
 /** Run one tool call and prove it appended exactly one line, returning that line. */
-async function oneLine(id: string, name: string, args: string[]) {
+async function oneLine(id: string, args: string[], as = 'probe') {
   const before = (await trail(id)).length;
-  const out = await tool(name, args);
+  const out = await tool('item', args, as);
   const after = await trail(id);
-  assert.equal(after.length, before + 1, `${name} ${args.join(' ')} appended ${after.length - before} lines`);
-  assert.match(out, new RegExp(`${id} .*\\. Keep it current: work-record item write ${id} --objective`), 'the acknowledgement nags');
+  assert.equal(after.length, before + 1, `item ${args.join(' ')} appended ${after.length - before} lines`);
+  assert.match(out, new RegExp(`Keep it current: item write ${id} `), 'the acknowledgement nags');
   return after.at(-1)!;
 }
+const made = (out: string) => /Work item (w\d+)/.exec(out)![1]!;
 
-test('team item verbs: create, assign, return, backlog, done, restore, write, parent — one line each', async () => {
-  const created = await tool('team', ['item', 'create', 'crew', '--title', 'Overall', '--objective', 'The team item']);
-  const id = /Work item (w\d+)/.exec(created)![1]!;
-  assert.deepEqual((await trail(id)).map((line) => [line.op, line.to]), [['create', 'team:crew']]);
+test('item acts, each naming its item, one trail line each', async () => {
+  const epic = made(await tool('item', ['create', '--title', 'Overall', '--level', '1']));
+  assert.deepEqual([(await readItem(epic))!.level, (await trail(epic)).map((line) => [line.op, line.to])], [1, [['create', 'none']]]);
+  const id = made(await tool('item', ['create', '--title', 'Piece', '--objective', 'part', '--parent', epic, '--kind', 'task']));
+  assert.match(await tool('item', ['read', id]), /"level": 0/);
 
-  assert.equal((await oneLine(id, 'team', ['item', 'assign', id, 'probe'])).to, 'agent:probe');
+  assert.equal((await oneLine(id, ['assign', id, 'probe'])).to, 'agent:probe');
   assert.deepEqual((await readLetterHolds('probe'))!.holds, [id]);
-  assert.equal((await oneLine(id, 'team', ['item', 'return', 'crew', id])).to, 'team:crew');
-  assert.equal((await oneLine(id, 'team', ['item', 'backlog', id])).op, 'release');
-  assert.equal((await oneLine(id, 'team', ['item', 'done', id])).to, 'DONE');
-  const restored = await oneLine(id, 'team', ['item', 'restore', 'crew', id]);
-  assert.deepEqual([restored.op, restored.to], ['assign', 'team:crew']);
-  assert.equal((await readItem(id))!.stage, 'IDEA', 'restore returns the item to the stage it left');
-  assert.equal((await oneLine(id, 'team', ['item', 'write', id, '--objective', 'Sharper words'])).op, 'edit');
-
-  const child = /Work item (w\d+)/.exec(await tool('team', ['item', 'create', 'crew', '--title', 'Piece', '--objective', 'part']))![1]!;
-  assert.deepEqual([(await oneLine(child, 'team', ['item', 'parent', child, id])).to], [id]);
-  const cycle = await run('team', ['item', 'parent', id, child]);
-  assert.equal(cycle.status, 4);
-  assert.match(cycle.stderr, /^REFUSED: .* → /);
-  const listed = JSON.parse(await tool('team', ['item', 'list', 'crew'])) as { items: Array<{ id: string }> };
-  assert.ok(listed.items.some((item) => item.id === child));
-});
-
-test('work-record item verbs: one line each, and nobody is refused for not holding the item', async () => {
-  const created = await tool('work-record', ['item', 'create', '--title', 'Mine', '--objective', 'Do it']);
-  const id = /Work item (w\d+)/.exec(created)![1]!;
-  const item = (await readItem(id))!;
-  assert.deepEqual([item.stage, item.trail[0]!.by, item.trail[0]!.to], ['PLAN', 'probe', 'agent:probe']);
-
-  const working = await oneLine(id, 'work-record', ['item', 'working', id]);
-  assert.deepEqual([working.op, working.to], ['exit', 'agent'], 'a new item is already yellow, so only the exit moves');
-  assert.equal((await readLetterHolds('probe'))!.at?.item, id, 'working focuses the item');
-  assert.equal((await oneLine(id, 'work-record', ['item', 'ready', id, '--for', 'lead'])).to, 'green');
-  assert.equal((await oneLine(id, 'work-record', ['item', 'blocked', id, '--on', 'user'])).to, 'red');
-  assert.equal((await oneLine(id, 'work-record', ['item', 'advance', id, '--to', 'REVIEW'])).to, 'REVIEW');
-  const both = await oneLine(id, 'work-record', ['item', 'write', id, '--objective', 'Now this', '--evidence', 'commit abc123']);
-  assert.deepEqual([both.op, both.note], ['evidence', 'commit abc123; also objective']);
-  assert.equal((await oneLine(id, 'work-record', ['item', 'return', id, '--team', 'crew'])).to, 'team:crew');
-
-  // Held by the Team now, not by probe: probe still changes it, and the trail says so.
-  const other = await oneLine(id, 'work-record', ['item', 'stuck', id]);
-  assert.equal(other.by, 'probe');
-  assert.equal((await oneLine(id, 'work-record', ['item', 'backlog', id])).op, 'release');
-  assert.equal((await oneLine(id, 'work-record', ['item', 'done', id])).to, 'DONE');
-  assert.equal(JSON.parse(await tool('work-record', ['item', 'read', id])).id, id);
-
-  const bad = await run('work-record', ['item', 'ready', id, '--for', 'agent']);
-  assert.notEqual(bad.status, 0);
-  assert.match(bad.stderr, /--for lead\|user/);
-});
-
-test('a ladder write with nothing held creates one item held by the Agent, titled from its objective', async () => {
-  await tool('work-record', ['update_record', '--objective', 'Solo objective'], 'solo');
-  assert.deepEqual((await readLetterHolds('solo'))!.holds, []);
-  const out = await tool('work-record', ['update_record', '--phase', 'First phase', '--leg', '1', 'first leg'], 'solo');
-  const letter = (await readLetterHolds('solo'))!;
-  assert.equal(letter.holds.length, 1, 'exactly one item made');
-  const item = (await readItem(letter.holds[0]!))!;
-  assert.deepEqual([item.title, item.trail.length, item.trail[0]!.op, item.trail[0]!.to], ['Solo objective', 1, 'create', 'agent:solo']);
-  assert.deepEqual(item.ladder, [{ phase: 'First phase', status: 'PLANNED', legs: [{ title: 'first leg', status: 'PLANNED' }] }]);
-  assert.equal(letter.at?.item, item.id, 'the new item is the focus');
-  assert.match(out, /Keep it current/);
-  await tool('work-record', ['update_record', '--gate', 'owner go'], 'solo');
-  assert.equal((await readLetterHolds('solo'))!.holds.length, 1, 'the next write lands on it: no second item');
-});
-
-test('a ladder write with a focus item changes that item and nothing else, one line per write', async () => {
-  const a = /Work item (w\d+)/.exec(await tool('work-record', ['item', 'create', '--title', 'A', '--objective', 'a'], 'duo'))![1]!;
-  const b = /Work item (w\d+)/.exec(await tool('work-record', ['item', 'create', '--title', 'B', '--objective', 'b'], 'duo'))![1]!;
-  await tool('work-record', ['item', 'working', b], 'duo');
-  const before = structuredClone(await readItem(a));
-  const lines = (await trail(b)).length;
-  await tool('work-record', ['update_record', '--phase', 'p', '--leg', '1', 'x', '--leg', '1', 'y', '--done', '1.1', '--active', '1.2'], 'duo');
-  assert.deepEqual(await readItem(a), before, 'the other held item is untouched');
-  const item = (await readItem(b))!;
-  assert.equal(item.trail.length, lines + 1, 'five verbs, one request, one line');
-  assert.deepEqual(item.ladder[0]!.legs, [{ title: 'x', status: 'DONE' }, { title: 'y', status: 'ACTIVE' }]);
-
-  await tool('work-record', ['update_record', '--gate', 'wait', '--rung', '2', 'wait for owner', '--leg', '1.1', 'x renamed', '--status', '2', 'ACTIVE'], 'duo');
-  await tool('work-record', ['update_record', '--drop', '1.2'], 'duo');
-  assert.deepEqual((await readItem(b))!.ladder, [
-    { phase: 'p', status: 'PLANNED', legs: [{ title: 'x renamed', status: 'DONE' }] },
-    { gate: 'wait for owner', status: 'ACTIVE' },
-  ]);
-  const refused = await run('work-record', ['update_record', '--leg', '2', 'on a gate'], 'duo');
-  assert.equal(refused.status, 3);
-  assert.match(refused.stderr, /rung 2 is a gate/);
-  const rungs = await tool('work-record', ['read', '--rungs'], 'duo');
-  assert.match(rungs, /^1\s+phase p/m);
-  assert.match(rungs, /^2\s+GATE\s+wait for owner/m);
-});
-
-test('the marker places the Agent on its focus ladder and carries the ladder; a shape change clears it', async () => {
-  await tool('work-record', ['update_record'], 'mark', JSON.stringify({ objective: 'Marked', ladder: [
-    { gate: 'go', status: 'PLANNED' }, { phase: 'one', legs: [{ title: 'a' }, { title: 'b' }] },
-  ] }));
-  const id = (await readLetterHolds('mark'))!.holds[0]!;
-  await tool('work-record', ['update_record', '--session', 'mark', '--at', '2.2'], 'lead');
-  const item = (await readItem(id))!;
-  assert.deepEqual(item.ladder.map((r) => r.gate !== undefined ? r.status : r.legs!.map((l) => l.status)), ['DONE', ['DONE', 'ACTIVE']]);
-  assert.equal(item.trail.at(-1)!.by, 'lead');
-  assert.deepEqual((await readLetterHolds('mark'))!.at, { item: id, rung: 2, leg: 2 });
-  await tool('work-record', ['update_record', '--leg', '2.1', 'a, renamed'], 'mark');
-  assert.deepEqual((await readLetterHolds('mark'))!.at, { item: id }, 'a title edit is a shape change: the position goes');
-});
-
-test('docs live on the focus item and the Docs reading lists every held item\'s docs', async () => {
+  assert.equal((await oneLine(id, ['assign', id, 'team:crew'])).to, 'team:crew');
+  assert.equal((await oneLine(id, ['assign', id, 'none'])).op, 'release');
+  assert.equal((await oneLine(id, ['write', id, '--status', 'DONE'])).to, 'DONE');
+  const flagged = await oneLine(id, ['write', id, '--flagged', 'true', '--jira', 'RON-7']);
+  assert.deepEqual([flagged.op, (await readItem(id))!.flagged, (await readItem(id))!.external.jira], ['edit', true, 'RON-7']);
+  assert.equal((await oneLine(id, ['evidence', id, 'commit abc123'])).note, 'commit abc123');
+  assert.equal((await oneLine(id, ['plan', id, '--phase', 'p', '--leg', '1', 'x', '--leg', '1', 'y', '--done', '1.1', '--active', '1.2'])).op, 'edit');
+  assert.deepEqual((await readItem(id))!.ladder[0]!.legs, [{ title: 'x', status: 'DONE' }, { title: 'y', status: 'ACTIVE' }]);
   const doc = path.join(dir, 'plan.md');
   writeFileSync(doc, '# plan\n');
-  const other = path.join(dir, 'other.md');
-  writeFileSync(other, '# other\n');
-  await tool('work-record', ['document', 'add', doc], 'docs');
-  const first = (await readLetterHolds('docs'))!.holds[0]!;
-  assert.deepEqual((await readItem(first))!.docs, [doc], 'holding nothing, the first doc made an item');
-  const second = /Work item (w\d+)/.exec(await tool('work-record', ['item', 'create', '--title', 'Two', '--objective', 't'], 'docs'))![1]!;
-  await tool('work-record', ['item', 'working', second], 'docs');
-  await tool('work-record', ['document', 'add', other], 'docs');
-  assert.deepEqual((await readItem(second))!.docs, [other]);
-  assert.deepEqual(JSON.parse(await tool('work-record', ['document', 'list'], 'docs')).sort(), [doc, other].sort());
-  const missing = await run('work-record', ['document', 'add', path.join(dir, 'nope.md')], 'docs');
-  assert.notEqual(missing.status, 0);
+  await oneLine(id, ['doc', id, 'add', doc]);
+  assert.deepEqual((await readItem(id))!.docs, [doc]);
+  const missing = await run('item', ['doc', id, 'add', path.join(dir, 'nope.md')]);
   assert.match(missing.stderr, /no such file/);
-  await tool('work-record', ['document', 'remove', other], 'docs');
-  assert.deepEqual((await readItem(second))!.docs, []);
+
+  const sub = made(await tool('item', ['create', '--title', 'Sub', '--parent', id]));
+  assert.equal((await readItem(sub))!.level, -1);
+  const children = JSON.parse(await tool('item', ['read', id])).children as Array<{ id: string }>;
+  assert.deepEqual(children.map((child) => child.id), [sub]);
+  const stuck = await run('item', ['move', id, '--to', 'none']);
+  assert.deepEqual([stuck.status, stuck.stderr.trim()], [4, `${id} has subtasks and can't move.`]);
+  const loose = made(await tool('item', ['create', '--title', 'Loose']));
+  const moved = await oneLine(loose, ['move', loose, '--to', epic]);
+  assert.deepEqual([moved.op, moved.to, (await readItem(loose))!.level], ['move', epic, 0]);
+
+  const listed = JSON.parse(await tool('item', ['list', '--parent', epic])) as { items: Array<{ id: string }> };
+  assert.deepEqual(listed.items.map((item) => item.id).sort(), [id, loose].sort());
+  const roots = JSON.parse(await tool('item', ['list', '--no-parent'])) as { items: Array<{ parent: string | null }> };
+  assert.ok(roots.items.length && roots.items.every((item) => item.parent === null));
+});
+
+test('focus picks which held item the work record shows; held by someone else, it says so', async () => {
+  const a = made(await tool('item', ['create', '--title', 'A'], 'duo'));
+  const b = made(await tool('item', ['create', '--title', 'B'], 'duo'));
+  await seedTegami('duo');
+  await tool('item', ['assign', a, 'duo'], 'duo');
+  await tool('item', ['assign', b, 'duo'], 'duo');
+  assert.match(await tool('item', ['focus', b], 'duo'), new RegExp(`now shows ${b}`));
+  assert.equal((await readLetterHolds('duo'))!.at?.item, b);
+  const other = made(await tool('item', ['create', '--title', 'Not mine'], 'duo'));
+  assert.match(await tool('item', ['focus', other], 'duo'), /not held by @duo/);
+  assert.equal((await readLetterHolds('duo'))!.at?.item, b);
+});
+
+test('the old families are gone: no team item, no work-record item, no editing through focus', async () => {
+  assert.notEqual((await run('team', ['item', 'read', 'w1'])).status, 0);
+  assert.notEqual((await run('work-record', ['item', 'read', 'w1'])).status, 0);
+  assert.notEqual((await run('work-record', ['document', 'add', path.join(dir, 'plan.md')])).status, 0);
+  const ladder = await run('work-record', ['update_record', '--phase', 'p']);
+  assert.notEqual(ladder.status, 0);
+  assert.match(ladder.stderr, /item plan <id>/);
 });
 
 test('an id no route can hold answers "No work item <id>", and a reply that is not JSON names its HTTP status', async () => {
-  for (const [name, args] of [['team', ['item', 'read', 'surface/7']], ['work-record', ['item', 'done', 'surface/7']]] as const) {
-    const r = await run(name, [...args]);
-    assert.equal(r.status, 3, `${name} ${args.join(' ')}`);
+  for (const args of [['read', 'surface/7'], ['write', 'surface/7', '--status', 'DONE']]) {
+    const r = await run('item', args);
+    assert.equal(r.status, 3, `item ${args.join(' ')}`);
     assert.equal(r.stderr.trim(), 'No work item surface/7.');
   }
   const { createServer } = await import('node:http');
@@ -222,7 +156,7 @@ test('an id no route can hold answers "No work item <id>", and a reply that is n
   await new Promise<void>((resolve) => html.listen(0, '127.0.0.1', resolve));
   try {
     const r = await new Promise<{ status: number; stderr: string }>((resolve) => {
-      execFile(path.join(root, 'ronin_bin', 'team'), ['item', 'read', 'w1'], {
+      execFile(path.join(root, 'ronin_bin', 'item'), ['read', 'w1'], {
         encoding: 'utf8', env: { ...env, RONIN_URL: `http://127.0.0.1:${(html.address() as AddressInfo).port}` },
       }, (error, _stdout, stderr) => resolve({ status: error ? Number((error as { code?: number }).code ?? 1) : 0, stderr }));
     });

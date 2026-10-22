@@ -13,7 +13,7 @@ her next birth, and it is on her Docs list, so it opens from her tile.
 - **Nudge agents to keep their work record current — the wink-wink.** Agents must update
   both their ladder and their tracked documents regularly, and they forget. When an owner is
   puzzled by an agent's tile, the useful prompt is often: "ask the agent to update its work
-  record (`work-record update_record` for phase and legs; `work-record document add` for documents)."
+  record (`item plan <id>` for phase and legs; `item doc <id> add` for documents)."
   Say it plainly; it is the agent's job, and the owner prompting it is normal.
 - **A work record looks stale.** Agents are lazy about `work-record update_record`. The tile's View
   Work Record shows what the agent last wrote, not what it is doing; the live terminal is

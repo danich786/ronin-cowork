@@ -1,62 +1,31 @@
 #!/usr/bin/env bash
 # Internal write implementation for `work-record`.
-# Usage: work-record update_record < ladder.json                      your own, whole block on stdin
-#        work-record update_record --session <name> --at 2.3         rung 2, leg 3
-#        work-record update_record --session <name> --at 4            rung 4 (a gate)
-#        work-record update_record --session <name> --at none         nothing to point at
+# Usage: work-record update_record < record.json                      your own, whole block on stdin
 #        work-record update_record --on_tangent                       stepped off your ladder
 #        work-record update_record --on_track                         back on it
-#        work-record document add <path>                       list a doc you are working on
-#        work-record document remove <path>                     take it off the list
 #
 # WHERE THINGS LIVE. The letter (tegami.md) keeps objective, mandate, repos, holds,
-# ladder_state and at. The ladder and the documents live on the focus work item (at.item,
-# else the first item held), written through /api/work-items/focus/*: holding nothing, the
-# first ladder or doc write makes an item for this session. Every item write appends one
-# trail line naming who wrote it.
+# ladder_state and at. The ladder and the documents live on each work item and are written
+# by the item tool, the item always named (item plan <id>, item doc <id>); this tool keeps
+# only what is about the Agent.
 #
 # FIELD VERBS — one field, your own session, no block. Several may be combined in one
-# call; they apply in order. Letter verbs run through the same validator as a whole-block
-# save, so "at", "holds" and "teams" are carried through untouched; ladder verbs go to
-# the focus item in one request.
+# call; they apply in order, through the same validator as a whole-block save, so "at",
+# "holds" and "teams" are carried through untouched.
 #        work-record update_record --objective <text>                 your objective sentence
-#        work-record update_record --phase <title>                    append a phase rung
-#        work-record update_record --gate <text>                      append a gate rung
-#        work-record update_record --rung N <title>                   retitle rung N (phase or gate)
-#        work-record update_record --leg N <title>                    append a leg to phase N
-#        work-record update_record --leg N.M <title>                  retitle leg M of rung N
-#        work-record update_record --status N[.M] PLANNED|ACTIVE|DONE set one status
-#        work-record update_record --done N[.M]                       the same, DONE
-#        work-record update_record --active N[.M]                     the same, ACTIVE
-#        work-record update_record --drop N[.M]                       remove a rung or a leg
 #        work-record update_record --repo <repo>:<branch>             add or keep a checkout row
 #        work-record update_record --unrepo <repo>[:<branch>]         remove one
-#
-# THE MARKER FORM TAKES ONE POSITION AND NEVER JSON. The position is where the rung sits on
-# the focus item's ladder, as work-record read --rungs prints it. It is kept in the letter
-# as at.rung / at.leg, and it carries the ladder: rungs before it read DONE (never
-# downgrading what the Agent marked), the marked leg reads ACTIVE.
 #        cat <<'EOF' | work-record update_record
-#        { "objective": "…", "ladder": [ … ] }
+#        { "objective": "…", "repos": [ … ] }
 #        EOF
 #
 # NO SESSION ARGUMENT, BY DESIGN — yours is the only letter you can write, the tool
 # knows which pane it is running in, and you never learn the path. A session writes its own letter
 # and no one else's — same asymmetry as the dials (write own, read any at dial ≥ read).
 #
-# What you send is the block: { "objective": "…", "ladder": [ … ] }. The teaching lines
+# What you send is the block: { "objective": "…", "repos": [ … ] }. The teaching lines
 # are Ronin's and are rewritten every time, so you cannot lose them and need not preserve
-# them by hand.
-#
-# THE LADDER
-#   a rung is a GATE          { "gate": "go / no-go — …", "status": "ACTIVE" }
-#   or a PHASE holding legs   { "phase": "find the cause",
-#                               "legs": [ { "title": "…", "status": "DONE" } ] }
-#   statuses                  PLANNED · ACTIVE · DONE   (a gate you are AT is ACTIVE —
-#                             GATE is the rung kind, not a status)
-#
-# There is NO verification of what you claim. Mark a rung DONE and it is DONE — the
-# ladder is an outline of where you are, not evidence. What IS checked is the shape.
+# them by hand. What IS checked is the shape.
 set -u
 
 die() { printf '%s\n' "$*" >&2; exit 3; }
@@ -65,43 +34,17 @@ help() {
 work-record update_record — update the current session's work record
 
 Usage:
-  work-record item create --title <text> --objective <text> [--stage <stage>] [--parent <id>] [--kind story|task|bug]
-  work-record item write <id> --title|--objective|--stage|--exit|--status|--kind|--evidence <value> ...
-  work-record item write <id> --ladder <json>
-  work-record item working <id>
-  work-record item ready <id> --for lead|user
-  work-record item stuck <id>
-  work-record item blocked <id> --on lead|user
-  work-record item advance <id> --to IDEA|PLAN|BUILD|REVIEW|LAND|DONE
-  work-record item backlog <id>
-  work-record item done <id>
-  work-record item return <id> [--team <team>]
   work-record update_record --objective <text>
-  work-record update_record --phase <title> | --gate <text>
-  work-record update_record --leg N <title> | --leg N.M <title>
-  work-record update_record --status N[.M] PLANNED|ACTIVE|DONE
-  work-record update_record --done N[.M] | --active N[.M] | --drop N[.M]
   work-record update_record --repo <repo-or-url>[:<branch>] | --unrepo <repo-or-url>[:<branch>]
-  work-record document add <path> | --undoc <path>
   work-record update_record --on_tangent | --on_track
   work-record update_record < work-record.json
 
-Common tasks:
-  --objective changes the objective. --phase and --gate append rungs.
-  --leg N appends a leg; --leg N.M retitles it. Field updates may be combined.
-  --doc lists a working document for the owner. For repository URLs and branches, use
-  work-record workspace add|remove|list; its --branch flag avoids URL ambiguity.
-  A work item is stored once; you hold its id. One without children is a story, task
-  or bug (--kind, default task); one with children is an epic. return gives it to your Team,
-  backlog parks it (held by nobody), done moves it to stage DONE, working makes it your
-  focus. Every verb appends one line to the item's trail.
-
-Lead position (separate form; changes only another session's pointer):
-  work-record update_record --session <name> --at N[.M]
-  work-record update_record --session <name> --at none
+--objective changes the objective. For repository URLs and branches, use work-record
+workspace add|remove|list; its --branch flag avoids URL ambiguity. A work item's ladder,
+documents and fields are the item tool's, the item always named: item --help.
 
 The tool validates record shape but not progress claims. It never edits another
-session except for the separate --session/--at position form. Related: work-record read
+session. Related: work-record read; item --help
 EOF
 }
 
@@ -165,95 +108,27 @@ STORE="$(cd "$(dirname "$SELF")/../bin" && pwd)/ronin-store"
 [ -x "$STORE" ] || STORE=ronin-store
 SESSION_STORE="$("$STORE" session)"
 
-# ITEM VERBS — a work item is stored once, in the work item store. Every verb
-# is one request to /api/work-items; the server appends one trail line naming this session
-# and answers with the item as it now is, which is printed for you to read.
-if [ "${1-}" = item ]; then
-  shift; ITEM_VERB=${1-}; shift || true
-  case "$ITEM_VERB" in
-    create|read|list|write|working|ready|stuck|blocked|advance|backlog|done|return) ;;
-    *) die "work-record update_record: item takes create, read, list, write, working, ready, stuck, blocked, advance, backlog, done or return." ;;
-  esac
-  NAME=$(me) || exit 3
-  . "$TOOL_DIR/ronin-http.sh"
-  ronin_connect || exit $?
-  # --field value pairs -> one JSON body carrying who called.
-  fields() { python3 -c 'import json,sys
-by, allowed, *a = sys.argv[1:]; d = {"by": by}; ok = allowed.split(",")
-while a:
-    k = a.pop(0)
-    if not k.startswith("--") or not a: sys.exit("work-record update_record: fields go as --field <value> pairs.")
-    key = k[2:]
-    if key not in ok: sys.exit("work-record update_record: %s is not a field here; use %s." % (k, ", ".join("--" + f for f in ok)))
-    d[key] = a.pop(0)
-print(json.dumps(d))' "$NAME" "$@"; }
-  if [ "$ITEM_VERB" = create ]; then
-    BODY=$(fields title,objective,stage,parent,kind "$@") || exit 2
-    BODY=$(printf '%s' "$BODY" | python3 -c 'import json,sys; d=json.load(sys.stdin); d.setdefault("stage","PLAN"); d["session"]=sys.argv[1]
-if not d.get("title") or "objective" not in d: sys.exit("work-record update_record: item create needs --title and --objective.")
-print(json.dumps(d))' "$NAME") || exit 2
-    ronin_item_call POST /api/work-items "$BODY"; exit $?
-  fi
-  if [ "$ITEM_VERB" = list ]; then
-    [ "$#" -eq 0 ] || die "work-record update_record: item list takes nothing; it lists what you hold."
-    ronin_item_call GET "/api/work-items?session=$NAME"; exit $?
-  fi
-  ID=${1-}; shift || true
-  [ -n "$ID" ] || die "work-record update_record: item $ITEM_VERB needs an id."
-  one() { [ "$#" -eq 0 ] || die "work-record update_record: item $ITEM_VERB takes only <id>."; }
-  case "$ITEM_VERB" in
-    read)    one "$@"; ronin_item_call GET "/api/work-items/$ID" ;;
-    write)   [ "$#" -ge 2 ] || die "work-record update_record: item write takes <id> --field <value> ..."
-             ronin_item_call PUT "/api/work-items/$ID" "$(fields title,objective,stage,exit,status,kind,evidence,ladder "$@")" ;;
-    working) one "$@"; ronin_item_call POST "/api/work-items/$ID/status" "$(fields status,exit,focus --status yellow --exit agent --focus "$NAME")" ;;
-    stuck)   one "$@"; ronin_item_call POST "/api/work-items/$ID/status" "$(fields status,exit --status red --exit agent)" ;;
-    ready)   [ "${1-}" = --for ] && { [ "${2-}" = lead ] || [ "${2-}" = user ]; } && [ "$#" -eq 2 ] || die "work-record update_record: item ready takes <id> --for lead|user."
-             ronin_item_call POST "/api/work-items/$ID/status" "$(fields status,exit --status green --exit "$2")" ;;
-    blocked) [ "${1-}" = --on ] && { [ "${2-}" = lead ] || [ "${2-}" = user ]; } && [ "$#" -eq 2 ] || die "work-record update_record: item blocked takes <id> --on lead|user."
-             ronin_item_call POST "/api/work-items/$ID/status" "$(fields status,exit --status red --exit "$2")" ;;
-    advance) [ "${1-}" = --to ] && [ "$#" -eq 2 ] || die "work-record update_record: item advance takes <id> --to IDEA|PLAN|BUILD|REVIEW|LAND|DONE."
-             ronin_item_call POST "/api/work-items/$ID/stage" "$(fields stage --stage "$2")" ;;
-    done)    one "$@"; ronin_item_call POST "/api/work-items/$ID/stage" "$(fields stage --stage DONE)" ;;
-    backlog) one "$@"; ronin_item_call POST "/api/work-items/$ID/release" "$(fields)" ;;
-    return)  [ "$#" -eq 0 ] || { [ "$1" = --team ] && [ -n "${2-}" ] && [ "$#" -eq 2 ]; } || die "work-record update_record: item return takes <id> [--team <team>]."
-             ronin_item_call POST "/api/work-items/$ID/return" "$(fields session,team --session "$NAME" "$@")" ;;
-  esac
-  exit $?
-fi
-
-TARGET=""; ACTIVE=""; STATE=""; DOCADD=""; DOCDEL=""
+STATE=""
 # Field verbs collect here as "verb<US>arg<US>arg" and apply in order, after the parse.
 US=$(printf '\037'); EDITS=()
 need() { [ -n "${2-}" ] || die "work-record update_record: $1 needs a value: work-record update_record $1 $3"; }
 while [ $# -gt 0 ]; do
   case "$1" in
-    --session)    shift; TARGET=${1-} ;;
-    --at)         shift; ACTIVE=${1-} ;;
     --on_track)   STATE=on_track ;;
     --on_tangent) STATE=on_tangent ;;
-    # --doc, not --track: --on_track already exists and means something else entirely,
-    # and two flags a keystroke apart with unrelated meanings is a trap.
-    --doc)        shift; DOCADD=${1-} ;;
-    --undoc)      shift; DOCDEL=${1-} ;;
     --objective)  need "$1" "${2-}" "<text>";        EDITS+=("objective$US$2"); shift ;;
-    --phase)      need "$1" "${2-}" "<title>";       EDITS+=("phase$US$2"); shift ;;
-    --gate)       need "$1" "${2-}" "<text>";        EDITS+=("gate$US$2"); shift ;;
-    --rung)       need "$1" "${3-}" "N <title>";     EDITS+=("rung$US$2$US$3"); shift 2 ;;
-    --leg)        need "$1" "${3-}" "N[.M] <title>"; EDITS+=("leg$US$2$US$3"); shift 2 ;;
-    --status)     need "$1" "${3-}" "N[.M] <status>"; EDITS+=("status$US$2$US$3"); shift 2 ;;
-    --done)       need "$1" "${2-}" "N[.M]";         EDITS+=("status$US$2${US}DONE"); shift ;;
-    --active)     need "$1" "${2-}" "N[.M]";         EDITS+=("status$US$2${US}ACTIVE"); shift ;;
-    --drop)       need "$1" "${2-}" "N[.M]";         EDITS+=("drop$US$2"); shift ;;
     --repo)       need "$1" "${2-}" "<repo-or-url>[:<branch>]"; EDITS+=("repo$US$2"); shift ;;
     --unrepo)     need "$1" "${2-}" "<repo-or-url>[:<branch>]"; EDITS+=("unrepo$US$2"); shift ;;
     --repo-pair)  need "$1" "${2-}" "<repo-or-url> <branch>"; EDITS+=("repo-pair$US$2$US${3-}"); shift 2 ;;
     --unrepo-pair) need "$1" "${2-}" "<repo-or-url> <branch>"; EDITS+=("unrepo-pair$US$2$US${3-}"); shift 2 ;;
+    --phase|--gate|--rung|--leg|--status|--done|--active|--drop|--doc|--undoc|--session|--at)
+      die "work-record update_record: $1 is gone; a ladder or a document is written on the item it belongs to: item plan <id> … or item doc <id> add|remove <path>. Run item --help." ;;
     *) die "work-record update_record: unknown argument: $1. Run work-record update_record --help." ;;
   esac
   shift
 done
-if [ ${#EDITS[@]} -gt 0 ] && { [ -n "$TARGET" ] || [ -n "$ACTIVE" ] || [ -n "$STATE" ] || [ -n "$DOCADD" ] || [ -n "$DOCDEL" ]; }; then
-  die "work-record update_record: field verbs are your OWN letter and travel alone — not with --session/--at, --on_track/--on_tangent or --doc/--undoc."
+if [ ${#EDITS[@]} -gt 0 ] && [ -n "$STATE" ]; then
+  die "work-record update_record: field verbs travel alone — not with --on_track/--on_tangent."
 fi
 
 # THE STATE SWITCH — one word, your own session, no block.
@@ -263,7 +138,6 @@ fi
 # decoration; this one costs a word, which is the difference between a key that gets used
 # and a key that gets documented.
 if [ -n "$STATE" ]; then
-  [ -z "$TARGET" ] || die "work-record update_record: --on_track / --on_tangent are your OWN session only."
   NAME=$(me) || exit 3
   SFILE="$SESSION_STORE/$(key_of "$NAME")/tegami.md"
   [ -f "$SFILE" ] || die "work-record update_record: you have no letter yet."
@@ -293,70 +167,13 @@ STATEMARK
   exit 0
 fi
 
-# MDEDIT — YOUR DOC LIST. One path, your own session, no block. The list lives on your
-# focus work item, so a document travels with the work when it moves between Agents; the
-# Docs tab shows the documents of every item you hold. Holding nothing, listing your first
-# doc makes an item for you. See docs/using-ronin/work-record.md.
-#
-# The path is resolved HERE, against the Agent's cwd, because that is the only place a
-# relative path means what it says. What the item stores is always absolute.
-if [ -n "$DOCADD" ] || [ -n "$DOCDEL" ]; then
-  [ -z "$TARGET" ] || die "work-record update_record: --doc / --undoc are your OWN session only."
-  [ -z "$DOCADD" ] || [ -z "$DOCDEL" ] \
-    || die "work-record update_record: --doc and --undoc are separate calls — one path at a time."
-  NAME=$(me) || exit 3
-  . "$TOOL_DIR/ronin-http.sh"
-  ronin_connect || exit $?
-  BODY=$(python3 -c 'import json,os,sys; name,add,drop=sys.argv[1:]; key="add" if add else "remove"
-print(json.dumps({"session": name, "by": name, key: os.path.abspath(os.path.expanduser(add or drop))}))' "$NAME" "${DOCADD:-}" "${DOCDEL:-}")
-  ITEM_ACK_ONLY=1 ronin_item_call POST /api/work-items/focus/docs "$BODY"; exit $?
-fi
-
-# THE MARKER — a monitor or lead places a session on its focus item's ladder: one
-# position, never JSON. The marker carries the ladder with it (everything before it reads
-# DONE, never downgrading what the Agent marked; the marked leg reads ACTIVE), and the
-# position is kept in the session's letter as at.rung / at.leg. The item's trail says who.
-if [ -n "$TARGET" ] || [ -n "$ACTIVE" ]; then
-  [ -n "$TARGET" ] && [ -n "$ACTIVE" ] \
-    || die "work-record update_record: --session and --at go together: work-record update_record --session <name> --at <n>"
-  case "$ACTIVE" in
-    none) ;;
-    *[!0-9.]*|.*|*.|*.*.*|'') die "work-record update_record: --at takes a position from 'work-record read --rungs' — N or N.M — or 'none'." ;;
-  esac
-  BY=$(ronin_session_me 2>/dev/null || id -un)
-  . "$TOOL_DIR/ronin-http.sh"
-  ronin_connect || exit $?
-  BODY=$(python3 -c 'import json,sys; print(json.dumps({"session": sys.argv[1], "at": sys.argv[2], "by": sys.argv[3]}))' "$TARGET" "$ACTIVE" "$BY")
-  ITEM_ACK_ONLY=1 ronin_item_call POST /api/work-items/focus/at "$BODY"; exit $?
-fi
-
 # `|| exit 3` is the refusal itself: die inside $(…) ends only the subshell, and without it
 # the tool went on with an empty name, wrote <store>/tegami.md and reported the save.
 NAME=$(me) || exit 3
 DIR="$SESSION_STORE/$(key_of "$NAME")"
 FILE="$DIR/tegami.md"
 
-# THE LADDER VERBS go to your focus work item: the ladder lives on the item you are on.
-# One request carries them all, in order, and the item's trail gets one line. Holding
-# nothing, the first ladder write makes an item for you, titled from your objective, so
-# the letter is saved first when a call changes both.
-LADDER_EDITS='[]'; LETTER_EDITS=()
-for e in ${EDITS[@]+"${EDITS[@]}"}; do
-  case "${e%%"$US"*}" in
-    phase|gate|rung|leg|status|drop) LADDER_EDITS=$(python3 -c 'import json,sys; l=json.loads(sys.argv[1]); l.append(sys.argv[2].split("\037")); print(json.dumps(l))' "$LADDER_EDITS" "$e") ;;
-    *) LETTER_EDITS+=("$e") ;;
-  esac
-done
-send_ladder() {
-  . "$TOOL_DIR/ronin-http.sh"
-  ronin_connect || exit $?
-  ITEM_ACK_ONLY=1 ronin_item_call POST /api/work-items/focus/ladder "$(python3 -c 'import json,sys; d={"session": sys.argv[1], "by": sys.argv[1]}; d[sys.argv[2]]=json.loads(sys.argv[3]); print(json.dumps(d))' "$NAME" "$1" "$2")"
-}
-if [ ${#EDITS[@]} -gt 0 ] && [ ${#LETTER_EDITS[@]} -eq 0 ]; then
-  send_ladder edits "$LADDER_EDITS"; exit $?
-fi
-
-LADDER_BLOCK=""
+LETTER_EDITS=(${EDITS[@]+"${EDITS[@]}"})
 if [ ${#LETTER_EDITS[@]} -gt 0 ]; then
   # THE FIELD VERBS. Read the current block, apply each edit in order, and hand the result
   # to the validator below exactly as if the agent had sent it on stdin. One validator,
@@ -423,15 +240,6 @@ EDIT
 else
   BODY=$(cat)
   [ -n "${BODY// /}" ] || die "work-record update_record: nothing on stdin. Send the json block."
-  # A whole block's "ladder" goes to your focus work item; the rest is the letter.
-  SPLIT=$(printf '%s' "$BODY" | python3 -c 'import json,sys
-try: d=json.load(sys.stdin)
-except Exception as e: sys.exit("work-record update_record: that is not valid json — %s" % e)
-if not isinstance(d, dict): sys.exit("work-record update_record: the block must be an object: { \"objective\": …, \"ladder\": [ … ] }")
-l=d.pop("ladder", None)
-print(json.dumps(l) if l is not None else ""); print(json.dumps(d))') || exit 3
-  LADDER_BLOCK=$(printf '%s\n' "$SPLIT" | sed -n 1p)
-  BODY=$(printf '%s\n' "$SPLIT" | sed -n 2p)
 fi
 
 # Validate the shape and normalise the spacing, so what lands on disk is what the tile
@@ -491,7 +299,7 @@ if extra:
 if extra:
     sys.exit("work-record update_record: unknown key(s): " + ", ".join(extra) +
              "\n  A TEGAMI holds: objective, mandate, repos, and ladder_state when you are off it;"
-             "\n  your ladder lives on your focus work item."
+             "\n  a ladder lives on its work item: item plan <id>."
              "\n  (\"teams\" is machinery-derived; membership lives in your tags.)"
              "\n  asks / blocked / decided / handoff / plan / side_ladder / v were removed —"
              "\n  nothing reads them. Questions for the owner are a GATE rung; everything else"
@@ -619,7 +427,7 @@ TMP="$DIR/.tegami.$$"
     cat <<'TEACH'
 > **This is your work record.** Your objective, your repositories, and the work items you
 > hold. Your ladder lives on the item you are on: `work-record read` shows it and
-> `work-record update_record --phase|--leg|--gate|--done …` writes it. Keep both true.
+> `item plan <id> --phase|--leg|--gate|--done …` writes it. Keep both true.
 >
 > Your own words go in "objective" and "title". Nothing else is read, so nothing else
 > belongs here — findings go in your plan doc, cross-session findings on a wipeboard.
@@ -631,8 +439,3 @@ TEACH
 mv -f "$TMP" "$FILE"
 
 printf 'work-record update_record: @%s work record saved.\n' "$NAME"
-# Then the ladder, on the focus item: after the letter, so an item made for an Agent
-# holding nothing is titled from the objective this same call just set.
-if [ "$LADDER_EDITS" != '[]' ]; then send_ladder edits "$LADDER_EDITS"
-elif [ -n "$LADDER_BLOCK" ]; then send_ladder ladder "$LADDER_BLOCK"
-fi
