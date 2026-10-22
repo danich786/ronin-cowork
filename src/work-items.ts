@@ -4,8 +4,7 @@
  * The only module that reads or writes an item file. Everything else reaches items through
  * the /api/work-items routes (src/routes/work-items-api.ts), and every change here appends
  * exactly one line to the item's trail, naming who called. Nothing is locked against
- * anyone: holding is discovery, never permission. Two refusals, as Jira's: a subtask can't
- * have children, and a move can't change the level of an item that has children.
+ * anyone: holding is discovery, never permission. One refusal, Jira's hierarchy (fits).
  *
  * THE SHAPE MATCHES JIRA (owner, 2026-10-22; samurai_lab WORK_ITEM_BUILDOUT.md). One object
  * at every level: `level` 1 epic · 0 story/task/bug · -1 subtask, stored; `kind` a label;
@@ -214,9 +213,14 @@ function checkFields(fields: { status?: unknown; kind?: unknown; level?: unknown
 /** One below the parent, 0 with none (Jira's hierarchy). A default, never a guard. */
 const levelUnder = (parent: WorkItem | null): ItemLevel => parent ? (parent.level - 1) as ItemLevel : 0;
 
-/** A subtask can't have children (Jira), in one plain line. */
-function underParent(parent: WorkItem | null): void {
-  if (parent?.level === -1) throw new WorkItemRefused(`${parent.id} is a subtask and can't have children.`);
+/** THE ONE RULE (owner, 2026-10-22; Jira's hierarchy): an item sits one level below its
+ * parent, from 1 to -1. A create, move or level write that would break it, for the item or
+ * for its own children, fails in one line: "w39 can't go there." So nothing goes under a
+ * subtask, nothing under itself, and an item with children keeps its level. */
+async function fits(item: WorkItem, parent: WorkItem | null, level: number): Promise<void> {
+  const breaks = parent?.id === item.id || parent?.level === -1
+    || (level !== item.level && (await listItems()).some((other) => other.parent === item.id));
+  if (breaks) throw new WorkItemRefused(`${item.id} can't go there.`);
 }
 
 const blank = (title: string, by: string): WorkItem => ({
@@ -246,7 +250,6 @@ export async function createItemUnlocked(input: NewItem, by: string): Promise<Ac
   if (!title) throw new WorkItemBadInput('A work item needs a title.');
   checkFields(input);
   const parent = input.parent ? await load(input.parent) : null;
-  underParent(parent);
   const item: WorkItem = {
     ...blank(title, by),
     id: await nextId(),
@@ -258,6 +261,7 @@ export async function createItemUnlocked(input: NewItem, by: string): Promise<Ac
     ladder: input.ladder ?? [],
     docs: input.docs ?? [],
   };
+  await fits(item, parent, item.level);
   const list = input.holder ? await listFor(input.holder) : null;
   await save(item);
   if (list) { await list.set([...list.holds, item.id]); await ackHolds([input.holder ?? null], by); }
@@ -275,27 +279,33 @@ export interface ItemEdit { title?: string; objective?: string; status?: string;
 export function editItem(id: string, edit: ItemEdit, by: string, note?: string): Promise<Acknowledged> {
   checkFields(edit);
   if (edit.title !== undefined && !String(edit.title).trim()) throw new WorkItemBadInput('title cannot be empty.');
-  return withIssuer(() => appendTrail(id, by, (item) => {
-    const changed: string[] = [];
-    const before = item.status;
-    if (edit.title !== undefined && edit.title.trim() !== item.title) { item.title = edit.title.trim(); changed.push('title'); }
-    if (edit.objective !== undefined && edit.objective.trim() !== item.objective) { item.objective = edit.objective.trim(); changed.push('objective'); }
-    if (edit.status !== undefined && edit.status !== item.status) { item.status = edit.status as ItemStatus; changed.push(`status ${item.status}`); }
-    if (edit.level !== undefined && edit.level !== item.level) { item.level = edit.level as ItemLevel; changed.push(`level ${item.level}`); }
-    if (edit.kind !== undefined && edit.kind !== (item.kind ?? '')) {
-      if (edit.kind) item.kind = edit.kind as ItemKind; else delete item.kind;
-      changed.push(`kind ${item.kind ?? 'blank'}`);
+  return withIssuer(async () => {
+    if (edit.level !== undefined) {
+      const item = await load(id);
+      await fits(item, item.parent ? await load(item.parent) : null, edit.level);
     }
-    if (edit.flagged !== undefined && edit.flagged !== item.flagged) { item.flagged = edit.flagged; changed.push(edit.flagged ? 'flagged' : 'unflagged'); }
-    for (const [key, value] of Object.entries(edit.external ?? {}) as Array<[keyof External, string]>) {
-      if ((item.external[key] ?? '') === value.trim()) continue;
-      if (value.trim()) item.external[key] = value.trim(); else delete item.external[key];
-      changed.push(`${key} ${item.external[key] ?? 'cleared'}`);
-    }
-    const said = note || undefined;
-    if (changed.length === 1 && changed[0]!.startsWith('status ')) return { op: 'status', from: before, to: item.status, note: said };
-    return { op: 'edit', note: [said, changed.length ? changed.join(', ') : 'no change'].filter(Boolean).join('; ') };
-  }));
+    return appendTrail(id, by, (item) => {
+      const changed: string[] = [];
+      const before = item.status;
+      if (edit.title !== undefined && edit.title.trim() !== item.title) { item.title = edit.title.trim(); changed.push('title'); }
+      if (edit.objective !== undefined && edit.objective.trim() !== item.objective) { item.objective = edit.objective.trim(); changed.push('objective'); }
+      if (edit.status !== undefined && edit.status !== item.status) { item.status = edit.status as ItemStatus; changed.push(`status ${item.status}`); }
+      if (edit.level !== undefined && edit.level !== item.level) { item.level = edit.level as ItemLevel; changed.push(`level ${item.level}`); }
+      if (edit.kind !== undefined && edit.kind !== (item.kind ?? '')) {
+        if (edit.kind) item.kind = edit.kind as ItemKind; else delete item.kind;
+        changed.push(`kind ${item.kind ?? 'blank'}`);
+      }
+      if (edit.flagged !== undefined && edit.flagged !== item.flagged) { item.flagged = edit.flagged; changed.push(edit.flagged ? 'flagged' : 'unflagged'); }
+      for (const [key, value] of Object.entries(edit.external ?? {}) as Array<[keyof External, string]>) {
+        if ((item.external[key] ?? '') === value.trim()) continue;
+        if (value.trim()) item.external[key] = value.trim(); else delete item.external[key];
+        changed.push(`${key} ${item.external[key] ?? 'cleared'}`);
+      }
+      const said = note || undefined;
+      if (changed.length === 1 && changed[0]!.startsWith('status ')) return { op: 'status', from: before, to: item.status, note: said };
+      return { op: 'edit', note: [said, changed.length ? changed.join(', ') : 'no change'].filter(Boolean).join('; ') };
+    });
+  });
 }
 
 /** Evidence is a fact with its receipt: one trail line on the named item. */
@@ -332,15 +342,13 @@ export function writeDocs(id: string, change: { add?: string; remove?: string },
 
 /** MOVE (Jira's convert/move): the parent and the level change together, one below the new
  * parent; with no parent the level stays. An item with children moves with them as long as
- * its level stays (a story and its subtasks to another epic). Refused, in one plain line: a
- * level change for an item with children, and a move under a subtask. */
+ * its level stays (a story and its subtasks to another epic). Bound by the one rule (fits). */
 export function moveItem(id: string, parent: string | null, by: string): Promise<Acknowledged> {
   return withIssuer(async () => {
     const child = await load(id);
     const under = parent ? await load(parent) : null;
-    underParent(under);
     const level = under ? levelUnder(under) : child.level;
-    if (level !== child.level && (await listItems()).some((item) => item.parent === id)) throw new WorkItemRefused(`${id} has children and can't move.`);
+    await fits(child, under, level);
     const from = child.parent ?? 'none';
     child.parent = parent;
     child.level = level;

@@ -72,10 +72,12 @@ item evidence w12 "commit 0123456789"
 A new item is held by nobody until it is assigned. `item move` is Jira's move: the parent
 and the level change in one act, one below the new parent; with no parent the level stays.
 Any level-0 item moved under another becomes a subtask. An item with children moves with
-them as long as its level stays: a story and its subtasks go to another epic together. As
-in Jira, two acts are refused, each in one plain line: a move that would change the level
-of an item with children ("w39 has children and can't move."), and a child for a subtask,
-by a create or a move ("w12 is a subtask and can't have children.").
+them as long as its level stays: a story and its subtasks go to another epic together.
+
+**The one rule**, as in Jira: an item sits one level below its parent, from 1 to -1. A
+create, move or `item write --level` that would break it, for the item or for its own
+children, fails with one line: "w39 can't go there." So nothing goes under a subtask or
+under itself, and an item with children keeps its level.
 
 Every write answers with the item as it now is and the trail line it appended. Its
 acknowledgement is one line of what the act did, read from that trail line, and nothing
