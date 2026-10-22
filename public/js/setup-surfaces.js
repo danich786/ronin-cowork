@@ -49,7 +49,7 @@ const servicesReady = (runtime = {}) => runtime?.services?.active === true || ru
 
 const SERVICE_COMPONENTS = Object.freeze([
   { id: 'task_manager', label: 'Task manager', status: 'beta', needs: 'Adds a shared project board and quick summaries of active work.' },
-  { id: 'terminal_transcript', label: 'Terminal transcript', status: 'comingSoon', needs: 'Records terminal activity for transcript views and downstream summaries.' },
+  { id: 'terminal_transcript', label: 'Terminal transcript', status: 'beta', needs: 'Records terminal activity for transcript views and downstream summaries.' },
   { id: 'voice_hotwords', label: 'Voice & Hotwords', status: 'comingSoon', needs: 'Adds voice tools and corrections for words dictation commonly mishears.' },
   { id: 'usage_stats', label: 'Usage stats', status: 'beta', needs: 'Keeps local usage counts without storing transcript content.' },
   { id: 'machine_status', label: 'Machine status', status: 'beta', needs: 'Shows memory, swap and load for this box in the header.' },

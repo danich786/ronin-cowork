@@ -258,23 +258,13 @@ export class Tile {
   }
 
   /**
-   * The readings THIS surface walks, taken from the list the route published for this
-   * Agent. A desk walks all of them. A thumb does not want five detents: the phone is
-   * Terminal or Chat and nothing else, and a tablet is Terminal, Chat and Work — what the
-   * Agent said, and the record of what it did. Notes and the full record are a desk's
-   * business (owner, 2026-09-23).
-   *
-   * Named, never sliced by length: a reading added on the server joins the desk's cycle
-   * and leaves the thumb surfaces exactly as they were.
+   * The readings the button walks: the first one the route published for this Agent,
+   * Chat, and nothing else. Every surface is Term or Chat (owner, 2026-10-22: the desk's
+   * Notes, Work and All are not wanted on the tile; a thumb already had only Chat).
    */
   transcriptCycle() {
     const readings = Array.isArray(this.transcriptReadings) ? this.transcriptReadings : [];
-    // A thumb gets the terminal or the conversation and nothing else, on a tablet exactly
-    // as on a phone — there is no third press (owner, 2026-09-26). The tablet briefly had
-    // Work as well; one rule for every touch screen is both what was asked for and one
-    // fewer thing to keep in step, so the phone no longer needs a case of its own.
-    if (isCoarse()) return readings.slice(0, 1);
-    return readings;
+    return readings.slice(0, 1);
   }
 
   /**

@@ -8,7 +8,7 @@ column, or drag its card into the workspace where you want to see it.
 | Control | What it does |
 |---|---|
 | Title / ⛩ | Edit the Agent's displayed title; its session name remains its identity |
-| Transcript / Chat · Notes · Work · All · Term | When Terminal transcript is active, cycle from the terminal through ever fuller readings of the Agent's conversation and back |
+| Term / Chat | When Terminal transcript is active, switch between the terminal and the Agent's conversation |
 | メ | Open the menu for this Agent (below) |
 | − | Close this view while the Agent keeps running |
 
@@ -57,12 +57,8 @@ same way. See [Share a file with an Agent](share-a-file.md).
 ## Output availability
 
 The separate **Transcript** button appears when Ronin Services has loaded Terminal
-transcript. It cycles: **Term → Chat → Notes → Work → All → Term**, each press
-showing more of the record as the CLI itself wrote it; the button always names where you
-are now. Chat is the conversation alone;
-Notes adds the gaps and interruptions; Work adds each tool call as one line; All is
-everything, tool output included. The readings are the ones the server offers, so a new
-reading appears as a new step. The button is opaque when this Agent has nothing to show — born before Ronin
+transcript. It switches **Term → Chat → Term**; the button always names where you are
+now. Chat is the conversation alone, as the CLI itself wrote it. The button is opaque when this Agent has nothing to show — born before Ronin
 recorded launch identity, started outside Ronin, on a CLI with no readable journal, or
 simply nothing written yet; pressing it says which. Switching the service on later, or a restart, does not lose
 an Agent whose identity was recorded. **Term** returns to the normal interactive terminal.
