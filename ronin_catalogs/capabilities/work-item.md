@@ -48,7 +48,7 @@ move. Stuck is `item write <id> --flagged true`.
 Holding is a list of ids on each Agent and Team; `item assign` moves the id and never the
 item. Holding is how work is found, never permission: any Agent may change any item, and
 every write appends one trail line naming who called. Every acknowledgement answers with the
-item as it now is ("w9 is a task at PLAN", "w7 is an epic, 3 items") and ends with the writes
+item as it now is ("w9 is a task at PLAN", "w7 is an epic at PLAN") and ends with the writes
 that keep it current; read it before your next act.
 
 Two other tools move status from receipts: a hand-in naming the item moves it to LAND, and

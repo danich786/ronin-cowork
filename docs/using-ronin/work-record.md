@@ -82,10 +82,11 @@ ends by naming the item and the writes that keep it current:
 w12 moved to LAND; w12 is a task at LAND. Keep it current: item write w12 --objective "<what it is now>"; item evidence w12 "<a fact with its receipt>"
 ```
 
-It says what the item is: "w7 is an epic, 3 items", "w9 is a task at PLAN", and
+It says what the item is, from the item alone: "w7 is an epic at PLAN", "w9 is a task at
+PLAN", "w12 is an item at IDEA" for a blank kind, and
 ", flagged" when flagged. When an item arrives under one someone holds, by a create with a
 parent or a move, that holder gets one message through the ordinary queue: "w9 Fix login
-was added under w7, which you hold: w9 is a work item at IDEA. Handle it as you see fit." A
+was added under w7, which you hold: w9 is an item at IDEA. Handle it as you see fit." A
 Team holder's lead gets it. An item held by nobody notifies nobody.
 
 ## Receipts move Land and Done
