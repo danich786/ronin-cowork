@@ -8,8 +8,7 @@ what you read on its tile and in the roster to know what it is doing without ask
 - **What it is doing now**: its objective, in a line.
 - **Where it works**: the folders and repositories it has open.
 - **The work items it holds**: each one has an id like `w12`, a title, its status (the board's column), and a flag when something stands in its way.
-- **Its ladder**: the steps of the work, each marked done or active, so progress is visible at a glance.
-- **Its documents**: plans, notes and reports it wants you or the Team to read. They appear in the tile's Docs tab.
+- **Its documents**: plans, notes and reports it attaches to its work items for you or the Team to read. They appear in the tile's Docs tab.
 
 ## Why it matters
 

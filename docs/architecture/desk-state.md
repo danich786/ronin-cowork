@@ -43,7 +43,7 @@ moment it shows them.
 
 | Surface | Shows |
 |---|---|
-| Work Record ladder (tile) | the **Worktrees** section: each desk's worktree, branch, and line, read at open, not held: `GET /api/desks?session=<name>` when the ladder opens (`readDesks` in `public/js/desks.js`, called from `public/js/tilehead.js`); a session with no desk shows the repositories its record lists |
+| Work Record (tile) | the **Worktrees** section: each desk's worktree, branch, and line, read at open, not held: `GET /api/desks?session=<name>` when the work record opens (`readDesks` in `public/js/desks.js`, called from `public/js/tilehead.js`); a session with no desk shows the repositories its record lists |
 
 The API carries every path and SHA for anyone who asks.
 

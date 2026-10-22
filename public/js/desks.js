@@ -6,8 +6,8 @@
  * is changing. The server DERIVES every fact here from git and the desk registry at the
  * moment of asking — nothing an agent maintains in prose.
  *
- * ONE READER. The Work Record ladder shows the desks when it opens (js/tile.js
- * `openLadder`) and paints what this read answers. Desks are not a published resource:
+ * ONE READER. The Work Record shows the desks when it opens (js/tilehead.js
+ * `openWorkRecord`) and paints what this read answers. Desks are not a published resource:
  * nothing pushes them, the store does not hold them, and nothing keeps a clock for them,
  * so the reading is as fresh as the opening.
  */
@@ -20,7 +20,7 @@ export async function readDesks(session) {
 }
 
 // The restored roster (js/roster.js) keeps its ⑂ desk column. Desks are no longer pushed;
-// they are read when the ladder opens, so that column stays empty.
+// they are read when the work record opens, so that column stays empty.
 export const desksOf = () => null;
 export const refreshDesks = async () => false;
 export const deskLabel = () => '';

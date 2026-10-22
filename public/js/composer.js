@@ -125,14 +125,14 @@ export function buildComposer(body, hooks) {
   // the body, which this textarea sits in, and lands text here when the tile is unlocked.
   ta.addEventListener('focus', () => {
     hooks.activate();
-    // TOUCH: typing is the way back to the pane. The ladder and the letter cover
+    // TOUCH: typing is the way back to the pane. The work record and the letter cover
     // the transcript and are scrollable, so on a phone — where the keyboard then
     // takes the bottom half too — reaching for the text box with one of them open
     // left almost nothing of the session visible, and dismissing it meant finding
     // the right ✕ under the keyboard. Tapping into the box IS the dismissal.
     //
-    // Desktop keeps them: there is room for a ladder and an input at once, and
-    // reading the ladder while writing a reply to its gate is the normal case.
+    // Desktop keeps them: there is room for a work record and an input at once, and
+    // reading it while writing a reply is the normal case.
     if (IS_TOUCH) hooks.clearOverlays();
   });
   ta.addEventListener('keydown', (e) => {

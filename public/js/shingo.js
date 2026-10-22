@@ -1,60 +1,31 @@
 /* part of the ronin-cowork client — see js/README.md
  *
- * SHINGO (信号) — the session's ladder, made visible.
+ * SHINGO (信号) — the session's work record, made visible.
  *
  * Three surfaces, one payload, no second data path:
- *   the chip    a fixed-width readout in the tile header — position, or held
- *   the ladder  tap the chip and the whole thing unrolls over the pane
- *   the roster  the same fields as a row per session, in the commons ⌂ Roster
+ *   the chip    a fixed-width readout in the tile header: the items held, with their status
+ *   the record  the tile's Work record: the same, with each item's comments
+ *   the roster  the same chip as a row per session, in the commons ⌂ Roster
  *
- * The chip is the indicator; the click is ALWAYS the ladder. There is no gate view and
- * no detail view — one behaviour, nothing to learn.
- *
- * This is an OUTLINE INDICATOR, not a channel. It says moving / held / stopped somewhere
- * it shouldn'letter be. Titles are nice; they are not the point, and nothing is being passed
- * through here. Everything on this side is read-only: no element built in this module can
- * touch a session. A gate is answered by typing into the pane, like everything else.
+ * There is no ladder: a work item mirrors Jira, and Jira has none (owner, 2026-10-22).
+ * Everything on this side is read-only: no element built in this module can touch a
+ * session.
  */
 import { t } from './lexicon.js';
 
-/** ✓ done · □ not done. Two marks, no legend, and they belong to legs only.
- *  Statuses are PLANNED · ACTIVE · DONE; GATE is a rung KIND, never a status. */
-const MARK = { DONE: '✓', ACTIVE: '□', PLANNED: '□' };
-
-/** Ronin's gate — the you-are-here mark. Its own column, outside everything else. */
-const HERE = '⛩';
-
-/**
- * The header chip. Hidden until a ladder exists — a session that keeps no TEGAMI costs
- * nothing on screen, which is what keeps this optional in practice as well as in theory.
- */
 export function clampTip(s, room = 120) {
   return s.length > room ? s.slice(0, room - 1) + '…' : s;
 }
 
-export function taskAtHand(letter) {
-  return letter?.item
-    ? { objective: letter.item.objective, item: letter.item }
-    : { objective: letter?.objective || '', item: null };
-}
+/** An item's comments, after the evidence lines older trails carry (a comment replaced them). */
+const commentsOf = (item) => [
+  ...(item.trail || []).filter((line) => line.op === 'evidence').map((line) => line.note),
+  ...(item.comments || []).map((comment) => comment.text),
+];
 
-/**
- * The ladder — the same data the chip reads, at full zoom.
- *
- * ONE RUNG IS LIVE. You are waiting at the gate, or you are doing leg four; you cannot be
- * at both, and the ladder must never suggest otherwise. So exactly one row wears the
- * torii and the band, every other row is quiet, and a gate that is not holding anything
- * yet is drawn as plainly as a planned leg — amber is reserved for where the work is.
- *
- * Four columns, always in the same places, so the eye can run straight down any of them:
- *
- *   ⛩   □   4   seed letters, gate the staged client
- *   │   │   │   └── the agent's own words
- *   │   │   └────── which leg (the number the chip counts in)
- *   │   └────────── done or not
- *   └────────────── you are here
- */
-export function buildLadder(letter, deskEntry = null, { openDoc = null } = {}) {
+/** The work record: what the Agent is doing, the items it holds with their status, where
+ *  it works, its Teams and its documents. */
+export function buildWorkRecord(letter, deskEntry = null, { openDoc = null } = {}) {
   const box = document.createElement('div');
   box.className = 'shingo-ladder';
   if (!letter) return box;
@@ -69,26 +40,17 @@ export function buildLadder(letter, deskEntry = null, { openDoc = null } = {}) {
     return el;
   };
 
-  const firstOpen = letter.ladder?.find((rung) => rung.status !== 'DONE' || rung.legs?.some((leg) => leg.status !== 'DONE'));
-  const current = taskAtHand(letter);
-  const summaryText = current.item?.title || letter.chip?.text || (firstOpen?.gate !== undefined ? '⛩ ' + t('ladder.gate', 'GATE') : firstOpen?.phase || '');
-  if (summaryText) {
+  if (letter.chip?.text && letter.chip.text !== '—') {
     const summary = document.createElement('div');
-    summary.className = 'sl-summary' + (letter.chip?.gate || firstOpen?.gate !== undefined ? ' gate' : '');
-    summary.textContent = summaryText;
+    summary.className = 'sl-summary' + (letter.chip.gate ? ' gate' : '');
+    summary.textContent = letter.chip.text;
     box.appendChild(summary);
   }
 
   const task = section(t('ladder.task_at_hand', 'Task at hand'), 'sl-task');
   const objective = document.createElement('p');
-  objective.textContent = current.objective || t('ladder.task_unstated', 'No task stated in this work record.');
+  objective.textContent = letter.objective || t('ladder.task_unstated', 'No task stated in this work record.');
   task.appendChild(objective);
-  if (current.item) {
-    const state = document.createElement('p');
-    state.className = 'sl-action';
-    state.textContent = [current.item.id, current.item.status, current.item.flagged ? '⚑ flagged' : ''].filter(Boolean).join(' · ');
-    task.appendChild(state);
-  }
   if (letter.mandate) {
     const mandate = document.createElement('p');
     mandate.className = 'sl-action';
@@ -100,13 +62,38 @@ export function buildLadder(letter, deskEntry = null, { openDoc = null } = {}) {
     task.appendChild(mandate);
   }
 
-  // Parked, in the agent's own words. Sits above the objective because it changes what
-  // the whole ladder below it means: those statuses are true, they are just not moving.
   if (letter.ladder_state) {
     const sr = document.createElement('div');
     sr.className = 'sl-side';
     sr.textContent = '↳ ' + t('ladder.side', '{state} — the work record below is held, not stale', { state: letter.ladder_state.replace(/_/g, ' ') });
     box.appendChild(sr);
+  }
+
+  // The items held, each with its status and its comments.
+  const held = section(t('ladder.items', 'Work items'), 'sl-items');
+  if (letter.items?.length) {
+    for (const item of letter.items) {
+      const row = document.createElement('div');
+      row.className = 'sl-item' + (item.flagged ? ' flagged' : '');
+      const title = document.createElement('p');
+      title.textContent = item.title;
+      const state = document.createElement('p');
+      state.className = 'sl-action';
+      state.textContent = [item.id, item.status, item.flagged ? '⚑ ' + t('team_kanban.flagged', 'flagged') : ''].filter(Boolean).join(' · ');
+      row.append(title, state);
+      for (const text of commentsOf(item)) {
+        const comment = document.createElement('p');
+        comment.className = 'sl-comment';
+        comment.textContent = text;
+        row.appendChild(comment);
+      }
+      held.appendChild(row);
+    }
+  } else {
+    const empty = document.createElement('p');
+    empty.className = 'sl-empty';
+    empty.textContent = t('ladder.no_items', 'No work items held.');
+    held.appendChild(empty);
   }
 
   const desks = deskEntry?.desks || [];
@@ -168,166 +155,6 @@ export function buildLadder(letter, deskEntry = null, { openDoc = null } = {}) {
     empty.className = 'sl-empty';
     empty.textContent = t('ladder.docs_none', 'No tracked documents.');
     docs.appendChild(empty);
-  }
-
-  // Checkout facts remain useful before the session has drawn a ladder. The branch and
-  // repo header buttons open this panel, so returning early above would make both buttons
-  // open a panel that hid the very values they name.
-  if (!letter.ladder?.length && !letter.item) {
-    const empty = document.createElement('div');
-    empty.className = 'sl-empty';
-    empty.textContent = t('ladder.none', 'no work record yet');
-    box.appendChild(empty);
-    return box;
-  }
-
-  if (current.item) {
-    // The item's comments (older trails' evidence lines first), then the other items held;
-    // pressing one reads its ladder in place of this one.
-    const comments = [
-      ...(current.item.trail || []).filter((line) => line.op === 'evidence').map((line) => line.note),
-      ...(current.item.comments || []).map((comment) => comment.text),
-    ];
-    if (comments.length) {
-      const said = section(t('team_kanban.comments', 'Comments'), 'sl-progress sl-project');
-      for (const text of comments) {
-        const row = document.createElement('p');
-        row.className = 'sl-project-comment';
-        row.textContent = text;
-        said.appendChild(row);
-      }
-    }
-    const others = (letter.items || []).filter((item) => item.id !== current.item.id);
-    if (others.length) {
-      const progress = section(t('ladder.progress', 'Progress'), 'sl-progress sl-project');
-      const switcher = document.createElement('div');
-      switcher.className = 'sl-projects-other';
-      for (const item of others) {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.textContent = item.title;
-        button.addEventListener('click', () => {
-          box.replaceWith(buildLadder({ ...letter, item, ladder: item.ladder || [], at: null, chip: null }, deskEntry));
-        });
-        switcher.appendChild(button);
-      }
-      progress.appendChild(switcher);
-    }
-  }
-
-  if (!letter.ladder?.length) return box;
-  const progress = section(t('ladder.progress', 'Progress'), 'sl-progress');
-
-  /**
-   * One row. Only the torii column runs the whole ladder — the mark and the number
-   * belong to legs, so a gate or a phase heading does not reserve them and sit indented
-   * in front of columns it will never fill.
-   *
-   *   phase   Phase 1 · audit                          flush left, it is a heading
-   *   gate    ⛩ [GATE] go / no-go …                    torii column only
-   *   leg     ⛩  □  4  seed letters …                  all three
-   */
-  const row = ({ kind = 'leg', here = false, n = '', mark = '', text = '', cls = '' }) => {
-    const el = document.createElement('div');
-    el.className = 'sl-row sl-' + kind + (cls ? ' ' + cls : '') + (here ? ' now' : '');
-    const span = (c, v) => {
-      const x = document.createElement('span');
-      x.className = c;
-      x.textContent = v;
-      return x;
-    };
-    // Column order, fixed: torii · done-or-not · leg # · description.
-    if (kind !== 'phase') el.appendChild(span('sl-here', here ? HERE : ''));
-    if (kind === 'leg') el.append(span('sl-m', mark), span('sl-n', n));
-    el.appendChild(span('sl-letter', text));
-    return el;
-  };
-
-  // THE FRONTIER — the first rung not finished. The same rule the chip counts by, so the
-  // header and the ladder can never disagree about where the session is. Everything
-  // before it is history; everything after it is a plan, including any gate down there.
-  // A phase with NO legs is undetermined, not finished — `[].every()` is true, which
-  // would quietly mark an empty phase complete and walk the torii past it.
-  const finished = (r) =>
-    r.gate !== undefined
-      ? r.status === 'DONE'
-      : (r.legs || []).length > 0 && r.legs.every((l) => l.status === 'DONE');
-  let frontier = letter.ladder.findIndex((r) => !finished(r));
-
-  // THE POINTER WINS WHEN THERE IS ONE. `at` is a monitor's observation of where the
-  // session actually is — {rung} for a gate, {rung, leg} for a leg, positions in the
-  // letter as written. The frontier below is only what we infer from the agent's own
-  // statuses, used when nobody is pointing. Either way the checkmarks stay the agent's,
-  // which is the whole reason `at` is its own key.
-  let atRung = -1;
-  let atLeg = -1;
-  if (letter.at && Number.isInteger(letter.at.rung) && letter.at.rung >= 1 && letter.at.rung <= letter.ladder.length) {
-    atRung = letter.at.rung - 1;
-    atLeg = Number.isInteger(letter.at.leg) ? letter.at.leg - 1 : -1;
-    frontier = atRung;
-  }
-
-  let phaseNo = 0;
-  for (const [i, rung] of letter.ladder.entries()) {
-    const live = i === frontier;
-
-    if (rung.gate !== undefined) {
-      // A gate is told apart by being labelled a gate — no glyph of its own. A passed
-      // gate carries no mark either: a check beside "go / no-go" reads like a completed
-      // chore rather than a door you came through.
-      const g = row({ kind: 'gate', here: live, text: rung.gate, cls: 'st-' + (rung.status || 'GATE') });
-      const tag = document.createElement('span');
-      tag.className = 'sl-tag';
-      tag.textContent = t('ladder.gate', 'GATE');
-      g.querySelector('.sl-letter').before(tag);
-      progress.appendChild(g);
-      continue;
-    }
-
-    const legs = rung.legs || [];
-    phaseNo++;
-    if (rung.phase) {
-      // Phases are NUMBERED to match the chip: it says "phase 3 · 3/4", so there must be
-      // a Phase 3 with four legs and three checked, or the chip is a coordinate into a
-      // map with no grid on it. Gates are never numbered — they are not phases.
-      const done = legs.filter((l) => l.status === 'DONE').length;
-      const head = row({ kind: 'phase', text: 'Phase ' + phaseNo + ' · ' + rung.phase });
-      if (legs.length) {
-        const frac = document.createElement('span');
-        frac.className = 'sl-frac';
-        frac.textContent = done + '/' + legs.length;
-        head.appendChild(frac);
-      } else {
-        // The honesty rule: a phase whose legs are undetermined shows nothing under it.
-        const tail = document.createElement('i');
-        tail.className = 'sl-und';
-        tail.textContent = ' ' + t('ladder.legs_undetermined', '— legs undetermined');
-        head.querySelector('.sl-letter').appendChild(tail);
-      }
-      progress.appendChild(head);
-    }
-
-    // Inside the live phase the torii sits on the ACTIVE leg — or, if the agent marked
-    // none, on the first leg still open. In every other phase, nothing is lit.
-    let hereLeg = -1;
-    if (live) {
-      if (atLeg >= 0) hereLeg = atLeg;
-      else {
-        hereLeg = legs.findIndex((l) => l.status === 'ACTIVE');
-        if (hereLeg < 0) hereLeg = legs.findIndex((l) => l.status !== 'DONE');
-      }
-    }
-    legs.forEach((leg, j) => {
-      progress.appendChild(
-        row({
-          here: j === hereLeg,
-          n: String(j + 1),
-          mark: MARK[leg.status] || MARK.PLANNED,
-          text: leg.title,
-          cls: 'st-' + leg.status,
-        }),
-      );
-    });
   }
 
   return box;

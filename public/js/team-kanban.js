@@ -115,7 +115,7 @@ export function moveMessage(project, toStage, leadName, now = new Date()) {
   }
   if (!forward) return { target: holder, text: `${head}\n${line}\n  meaning: no defined move; delivered as a plain request.` };
   if (project.flagged) {
-    return result(holder, 'a request to move on, not an approval; the card is flagged.', `your call — say what stops it, or item edit ${id} --flagged false when it is clear.`);
+    return result(holder, 'a request to move on, not an approval; the card is flagged.', `your call — say what stops it, or item unflag ${id} when it is clear.`);
   }
   if (project.status === 'IDEA') return result(leadName, 'engage — the user wants this started.', `item assign ${id} <session>, or raise an Agent for it`);
   if (project.status === 'PLAN') return result(holder, 'the plan is agreed; build.', `item transition ${id} BUILD`);

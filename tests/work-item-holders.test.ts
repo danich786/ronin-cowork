@@ -1,7 +1,7 @@
 /**
  * HOLDING — lists of item ids on Teams and Agents, never copies of items.
  * Checks from WORK_ITEM_STORE.md cut 2: two concurrent assigns of one id leave it on
- * exactly one list; release leaves it on none; the Agent's focus follows what it holds.
+ * exactly one list; release leaves it on none.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -64,20 +64,15 @@ test('assign moves the id and never the item: content and parent stay put', asyn
   assert.equal(moved.item.title, 'piece');
 });
 
-test('release leaves the id on no list, and the focus follows what is held', async () => {
+test('release leaves the id on no list; the other held item stays', async () => {
   const first = (await items.createItem({ title: 'first' }, 'lead')).item;
   const second = (await items.createItem({ title: 'second' }, 'lead')).item;
   await items.assignItem(first.id, bo, 'lead');
   await items.assignItem(second.id, bo, 'lead');
-  let letter = (await readLetterHolds('bo'))!;
-  const focus = letter.at?.item;
-  assert.ok(focus === first.id || letter.holds.includes(String(focus)), 'focus is a held item');
-  const released = await items.releaseItem(String(focus), 'bo');
+  const released = await items.releaseItem(first.id, 'bo');
   assert.equal(released.line.op, 'release');
-  assert.deepEqual(await listsHolding(String(focus)), []);
-  letter = (await readLetterHolds('bo'))!;
-  assert.ok(!letter.holds.includes(String(focus)));
-  assert.ok(letter.holds.includes(String(letter.at?.item)), 'focus moved to an item still held');
+  assert.deepEqual(await listsHolding(first.id), []);
+  assert.ok((await readLetterHolds('bo'))!.holds.includes(second.id));
 });
 
 test('no permission: anyone may assign or release, and it is on the trail', async () => {
@@ -165,7 +160,7 @@ test('nesting under a held board queues its holder exactly one message; under an
 
   const piece = (await items.createItem({ title: 'piece' }, 'lead')).item;
   assert.deepEqual(await listQueuedMessages(), [], 'no parent: nobody is told');
-  const moved = await items.moveItem(piece.id, held.id, 'lead');
+  const moved = await items.editItem(piece.id, { parent: held.id }, 'lead');
   assert.deepEqual(moved.notified, ['boarder']);
   const queued = await listQueuedMessages();
   assert.equal(queued.length, 1);
@@ -173,7 +168,7 @@ test('nesting under a held board queues its holder exactly one message; under an
   assert.equal(queued[0]!.text, `${piece.id} piece was added under ${held.id}, which you hold. Handle it as you see fit.`);
   await clear();
 
-  assert.deepEqual((await items.moveItem(piece.id, unheld.id, 'lead')).notified, []);
+  assert.deepEqual((await items.editItem(piece.id, { parent: unheld.id }, 'lead')).notified, []);
   assert.deepEqual(await listQueuedMessages(), [], 'a board held by nobody notifies nobody');
   const born = await items.createItem({ title: 'born under', parent: held.id }, 'lead');
   assert.deepEqual(born.notified, ['boarder'], 'a create with a parent is announced the same way');

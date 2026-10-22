@@ -32,8 +32,8 @@ async function desksOf(session: string, locate: LocateRepo): Promise<SessionDesk
 }
 
 export function registerDesks(app: express.Express): void {
-  // One session's desks, keyed by its name ({} when it is not live): what a Work Record's
-  // ladder reads when it opens.
+  // One session's desks, keyed by its name ({} when it is not live): what a Work Record
+  // reads when it opens.
   app.get('/api/desks', async (req, res) => {
     const session = String(req.query.session ?? '').trim();
     try {

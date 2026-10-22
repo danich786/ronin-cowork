@@ -5,7 +5,7 @@ import { pickFile } from './tilefiles.js';
 import { S, serviceMissing } from './state.js';
 import { OUTPUTS } from './output.js';
 import { createMenuButton } from './menu.js';
-import { buildLadder } from './shingo.js';
+import { buildWorkRecord } from './shingo.js';
 import { readDesks } from './desks.js';
 import { t } from './lexicon.js';
 
@@ -233,11 +233,9 @@ async function overTile(tile, title, fill, options = {}) {
 async function openWorkRecord(tile) {
   const desks = tile.tegami ? await readDesks(tile.session) : null;
   const layer = await overTile(tile, t('me.ladder', 'Work record'), (box) => box.append(tile.tegami
-    ? buildLadder(tile.tegami, desks, { openDoc: (path) => { layer.remove(); tile.openDoc(path); } })
+    ? buildWorkRecord(tile.tegami, desks, { openDoc: (path) => { layer.remove(); tile.openDoc(path); } })
     : Object.assign(document.createElement('p'), { className: 'menu-empty',
       textContent: t('me.no_record', 'This Agent has not written a work record yet.') })));
-  // Open ON the rung you are standing on: a long ladder scrolls, and rung 1 hides it.
-  layer.querySelector('.sl-row.now')?.scrollIntoView({ block: 'center' });
 }
 
 /** The Agent's configuration: the composition reader the Team profile already shows —

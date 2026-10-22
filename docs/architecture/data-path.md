@@ -104,8 +104,8 @@ return {
   socket is closed and not yet reopened, desktop and phone, and clears it on open.
 
 What a surface reads at the moment it opens and does not hold is fine when it is not a
-published resource: a work record's desks are one `GET /api/desks?session=` at ladder
-open, because they are a git computation made for that moment. That is a snapshot, not a
+published resource: a work record's desks are one `GET /api/desks?session=` when the work
+record opens, because they are a git computation made for that moment. That is a snapshot, not a
 poll.
 
 ## The server side
