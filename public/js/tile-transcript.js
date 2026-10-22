@@ -35,6 +35,16 @@ export function makeTileTranscript({ read = request, watch = watchTranscript, on
   let probing = 0; // the live probe; hide() and a newer probe outdate an older one
   let stance = ''; // what the Agent is doing, as the roster row last said
   /*
+   * A READER AT THE END STAYS AT THE END. Where they are is read when they scroll, not at each
+   * change: by the time a record or the dots arrive, a longer draft or a smaller tile may
+   * already have shrunk the log under them, and a fresh reading would find them off the end.
+   * Every change of height then follows them there: a record, the dots, the asking words,
+   * the message box growing, the tile resizing.
+   */
+  let following = true;
+  const atEnd = () => el.scrollTop + el.clientHeight >= el.scrollHeight - 40;
+  const follow = () => { if (following) el.scrollTop = el.scrollHeight; };
+  /*
    * ONE ORDERED SET, AND EVERY CURSOR DERIVED FROM IT.
    *
    * Four sources feed this view — the opening page, a page from scrolling up, a catch-up
@@ -108,9 +118,6 @@ export function makeTileTranscript({ read = request, watch = watchTranscript, on
       stanceNode = null;
       return;
     }
-    // A view at the end follows the dots there: they carry a section's space above them, so
-    // appended under a reader at the bottom they would land below the fold.
-    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 40;
     if (!stanceNode) {
       stanceNode = document.createElement('div');
       stanceNode.className = 'tile-transcript-stance';
@@ -128,7 +135,7 @@ export function makeTileTranscript({ read = request, watch = watchTranscript, on
     }
     // Always last: records append above it, so the end of the conversation stays the end.
     el.append(stanceNode);
-    if (atBottom) el.scrollTop = el.scrollHeight;
+    follow();
   }
 
   function stop() {
@@ -209,7 +216,6 @@ export function makeTileTranscript({ read = request, watch = watchTranscript, on
 
   function merge(records) {
     if (!Array.isArray(records) || !records.length) return 0;
-    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 40;
     const taking = new Set(); // duplicates INSIDE one response are duplicates too
     const fresh = records
       .filter((rec) => {
@@ -231,7 +237,7 @@ export function makeTileTranscript({ read = request, watch = watchTranscript, on
       insertInOrder(entryFor(rec), rec.seq);
     }
     paintStance(); // the end-of-conversation indicator stays the end
-    if (atBottom) el.scrollTop = el.scrollHeight;
+    follow();
     return fresh.length;
   }
   const append = merge;
@@ -317,6 +323,7 @@ export function makeTileTranscript({ read = request, watch = watchTranscript, on
     owed = null;
     if (!rendered) message(t('transcript.empty', 'No transcript output yet.'));
     report(result.data, rendered ? 1 : 0);
+    following = true;
     el.scrollTop = el.scrollHeight; // the newest is what you opened for
   }
 
@@ -466,7 +473,7 @@ export function makeTileTranscript({ read = request, watch = watchTranscript, on
       lastState = saved.lastState || null;
       if (lastState) onState(lastState);
       if (!rendered) message(t('transcript.empty', 'No transcript output yet.'));
-      queueMicrotask(() => { if (active && session === name && reading === view) el.scrollTop = saved.scrollTop || 0; });
+      queueMicrotask(() => { if (active && session === name && reading === view) { el.scrollTop = saved.scrollTop || 0; following = atEnd(); } });
     } else {
       message(t('transcript.loading', 'Loading transcript…'));
     }
@@ -477,10 +484,14 @@ export function makeTileTranscript({ read = request, watch = watchTranscript, on
     else void open(generation);
   }
 
-  // Scrolled to the very top, with more conversation above: fetch it.
+  // Scrolled to the very top, with more conversation above: fetch it. Scrolled to the end:
+  // stay there.
   el.addEventListener?.('scroll', () => {
+    following = atEnd();
     if (el.scrollTop <= 0) void earlier(generation);
   });
+  // The log's own box changes too: the message box grows with a draft, the tile resizes.
+  if (globalThis.ResizeObserver) new ResizeObserver(follow).observe(el);
 
   /** Same Agent, another T-level: start the reading over from its first record. */
   function setReading(view) {

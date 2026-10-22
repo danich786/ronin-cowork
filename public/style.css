@@ -3132,10 +3132,22 @@ body {
 .tile-transcript-entry[data-kind='act'],
 .tile-transcript-entry[data-kind='code'] { color: var(--muted); font-family: var(--mono, monospace); font-size: 0.9em; }
 .tile .tile-transcript { display: none; }
+/* Chat is a column: the log that scrolls, then the message box. The log ends where the box
+   begins, so nothing of the conversation is ever under it and "at the end" is what you see
+   (owner, 2026-10-22: "there should never be screen under the dialog box"). */
+.tile-body[data-surface='chat'] {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+.tile .tile-body[data-surface='chat'] > .composer.show {
+  position: static;
+  flex: none;
+}
 .tile-body[data-surface='chat'] > .tile-transcript {
   display: block;
-  position: absolute;
-  inset: 0;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: auto;
   overscroll-behavior: contain;
   /* The end of the conversation keeps a subsection's room before the message box, whether the
@@ -3434,8 +3446,7 @@ body {
   cursor: pointer;
 }
 
-.tile.tape-on .tape,
-.tile.transcript-on .tile-transcript {
+.tile.tape-on .tape {
   bottom: var(--composer-clearance, 0px);
 }
 @media (pointer: coarse) {
