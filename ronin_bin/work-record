@@ -6,7 +6,7 @@ ROOT="$(cd "$(dirname "$SELF")/.." && pwd)"
 export WORK_RECORD_INVOKED="${BASH_SOURCE[0]}"
 usage() { cat <<'EOF'
 Usage:
-  work-record read [--json|--rungs] [--session <name>]
+  work-record read [--json] [--session <name>]
   work-record update_record --objective <text>
   work-record update_record --on_tangent | --on_track
   work-record update_record --repo <repo-or-url>[:<branch>] | --unrepo <repo-or-url>[:<branch>]
@@ -17,9 +17,8 @@ Workspace entries are the repositories this Agent records as current work. The r
 may be a registered handle or a URL. --branch is separate so URLs parse exactly. These
 entries do not change the Agent's birth directory or open a managed desk.
 Update fields are --objective, --repo, --unrepo, --on_tangent and --on_track. A whole
-JSON record is accepted on stdin. read shows the record, the items held and the focus
-item's ladder. Work items, their ladders and documents are the item tool's, the item
-always named: item --help.
+JSON record is accepted on stdin. read shows the record and the items held, each with
+its status. Work items and their attachments are the item tool's: item --help.
 Related: item --help; session_create --help; team --help
 EOF
 }

@@ -46,11 +46,12 @@ if d.get("error"):
     print(d["error"], file=sys.stderr); sys.exit(4 if d.get("refused") else 3)
 if d.get("acknowledgement"):
     print(d["acknowledgement"])
-    if os.environ.get("ITEM_ACK_ONLY") != "1": print(json.dumps(d.get("item"), indent=2, ensure_ascii=False))
+    if os.environ.get("ITEM_ACK_ONLY") != "1" and d.get("item"): print(json.dumps(d["item"], indent=2, ensure_ascii=False))
 else:
     d.pop("ok", None)
     out = d.get("item", d)
     if "held_by" in d: out = {**out, "held_by": d["held_by"]}
+    if "linked_from" in d: out = {**out, "linked_from": d["linked_from"]}
     if "children" in d: out = {**out, "children": [{k: c.get(k) for k in ("id", "title", "level", "kind", "priority", "status", "flagged")} for c in d["children"]]}
     print(json.dumps(out, indent=2, ensure_ascii=False))
 ' "$method $path"

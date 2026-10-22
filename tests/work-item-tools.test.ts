@@ -94,18 +94,21 @@ test('item acts, each naming its item, one trail line each', async () => {
   assert.deepEqual((await readLetterHolds('probe'))!.holds, [id]);
   assert.equal((await oneLine(id, ['assign', id, 'team:crew'])).to, 'team:crew');
   assert.equal((await oneLine(id, ['assign', id, 'none'])).op, 'release');
-  assert.equal((await oneLine(id, ['edit', id, '--status', 'DONE'])).to, 'DONE');
-  const flagged = await oneLine(id, ['edit', id, '--flagged', 'true', '--jira', 'RON-7']);
-  assert.deepEqual([flagged.op, (await readItem(id))!.flagged, (await readItem(id))!.external.jira], ['edit', true, 'RON-7']);
+  assert.equal((await oneLine(id, ['transition', id, 'DONE'])).to, 'DONE');
+  assert.equal((await run('item', ['edit', id, '--status', 'BUILD'])).status, 2, 'status is transition\'s, not edit\'s');
+  const flagged = await oneLine(id, ['flag', id, 'stuck on the API']);
+  assert.deepEqual([flagged.op, (await readItem(id))!.flagged, (await readItem(id))!.comments.at(-1)!.text], ['flag', true, 'stuck on the API']);
+  assert.equal((await oneLine(id, ['unflag', id])).to, 'false');
+  assert.equal((await run('item', ['edit', id, '--flagged', 'true'])).status, 2, 'flagging is its own act');
+  assert.equal((await oneLine(id, ['edit', id, '--jira', 'RON-7'])).note, 'jira RON-7');
   assert.equal((await oneLine(id, ['comment', id, 'one remark'])).op, 'comment');
   assert.equal((await oneLine(id, ['edit', id, '--priority', 'Highest', '--kind', 'feature'])).note, 'kind feature, priority Highest');
-  assert.equal((await oneLine(id, ['plan', id, '--phase', 'p', '--leg', '1', 'x', '--leg', '1', 'y', '--done', '1.1', '--active', '1.2'])).op, 'edit');
-  assert.deepEqual((await readItem(id))!.ladder[0]!.legs, [{ title: 'x', status: 'DONE' }, { title: 'y', status: 'ACTIVE' }]);
+  assert.equal((await oneLine(id, ['comment', id, '--edit', '2', 'one remark, fixed'])).from, '2');
   const doc = path.join(dir, 'plan.md');
   writeFileSync(doc, '# plan\n');
-  await oneLine(id, ['doc', id, 'add', doc]);
+  await oneLine(id, ['attach', id, doc]);
   assert.deepEqual((await readItem(id))!.docs, [doc]);
-  const missing = await run('item', ['doc', id, 'add', path.join(dir, 'nope.md')]);
+  const missing = await run('item', ['attach', id, path.join(dir, 'nope.md')]);
   assert.match(missing.stderr, /no such file/);
 
   const sub = made(await tool('item', ['create', '--title', 'Sub', '--parent', id]));
@@ -113,29 +116,22 @@ test('item acts, each naming its item, one trail line each', async () => {
   const children = JSON.parse(await tool('item', ['read', id])).children as Array<{ id: string }>;
   assert.deepEqual(children.map((child) => child.id), [sub]);
   const peer = made(await tool('item', ['create', '--title', 'Peer']));
-  const stuck = await run('item', ['move', id, '--to', peer]);
+  const stuck = await run('item', ['edit', id, '--parent', peer]);
   assert.deepEqual([stuck.status, stuck.stderr.trim()], [4, `${id} can't go there.`]);
   const loose = made(await tool('item', ['create', '--title', 'Loose']));
-  const moved = await oneLine(loose, ['move', loose, '--to', epic]);
+  const moved = await oneLine(loose, ['edit', loose, '--parent', epic]);
   assert.deepEqual([moved.op, moved.to, (await readItem(loose))!.level], ['move', epic, 0]);
+  assert.equal((await oneLine(peer, ['link', peer, 'blocks', loose])).note, `blocks ${loose}`);
+  assert.match(await tool('item', ['read', loose]), new RegExp(`"from": "${peer}"`));
+  assert.equal((await oneLine(peer, ['link', peer, 'blocks', loose, '--remove'])).note, `no longer blocks ${loose}`);
 
-  const listed = JSON.parse(await tool('item', ['list', '--parent', epic])) as { items: Array<{ id: string }> };
+  const listed = JSON.parse(await tool('item', ['search', '--parent', epic])) as { items: Array<{ id: string }> };
   assert.deepEqual(listed.items.map((item) => item.id).sort(), [id, loose].sort());
-  const roots = JSON.parse(await tool('item', ['list', '--no-parent'])) as { items: Array<{ parent: string | null }> };
-  assert.ok(roots.items.length && roots.items.every((item) => item.parent === null));
-});
-
-test('focus picks which held item the work record shows; held by someone else, it says so', async () => {
-  const a = made(await tool('item', ['create', '--title', 'A'], 'duo'));
-  const b = made(await tool('item', ['create', '--title', 'B'], 'duo'));
-  await seedTegami('duo');
-  await tool('item', ['assign', a, 'duo'], 'duo');
-  await tool('item', ['assign', b, 'duo'], 'duo');
-  assert.match(await tool('item', ['focus', b], 'duo'), new RegExp(`now shows ${b}`));
-  assert.equal((await readLetterHolds('duo'))!.at?.item, b);
-  const other = made(await tool('item', ['create', '--title', 'Not mine'], 'duo'));
-  assert.match(await tool('item', ['focus', other], 'duo'), /not held by @duo/);
-  assert.equal((await readLetterHolds('duo'))!.at?.item, b);
+  const roots = JSON.parse(await tool('item', ['search', '--no-parent', '--status', 'IDEA'])) as { items: Array<{ parent: string | null; status: string }> };
+  assert.ok(roots.items.length && roots.items.every((item) => item.parent === null && item.status === 'IDEA'));
+  assert.match(await tool('item', ['delete', id]), new RegExp(`^${id} was deleted; with its subtasks ${sub}`));
+  assert.equal(await readItem(sub), null);
+  for (const gone of ['move', 'list', 'doc', 'plan', 'focus', 'evidence', 'write']) assert.equal((await run('item', [gone, loose])).status, 2, `item ${gone} is gone`);
 });
 
 test('the old families are gone: no team item, no work-record item, no editing through focus', async () => {
@@ -144,11 +140,11 @@ test('the old families are gone: no team item, no work-record item, no editing t
   assert.notEqual((await run('work-record', ['document', 'add', path.join(dir, 'plan.md')])).status, 0);
   const ladder = await run('work-record', ['update_record', '--phase', 'p']);
   assert.notEqual(ladder.status, 0);
-  assert.match(ladder.stderr, /item plan <id>/);
+  assert.match(ladder.stderr, /item attach <id>/);
 });
 
 test('an id no route can hold answers "No work item <id>", and a reply that is not JSON names its HTTP status', async () => {
-  for (const args of [['read', 'surface/7'], ['edit', 'surface/7', '--status', 'DONE']]) {
+  for (const args of [['read', 'surface/7'], ['transition', 'surface/7', 'DONE']]) {
     const r = await run('item', args);
     assert.equal(r.status, 3, `item ${args.join(' ')}`);
     assert.equal(r.stderr.trim(), 'No work item surface/7.');

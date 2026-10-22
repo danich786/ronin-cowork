@@ -11,7 +11,7 @@ the items each of its members holds, each child listed after its parent where th
 made any. A card shows who holds it: the Team (worked by its lead) or one Agent, and a
 flagged item carries the flag mark ⚑. An item's reading names its parent, or "no parent".
 See [work records and work items](work-record.md) for the item's shape, level, kind,
-status, flag and ladder.
+status and flag.
 
 The Task Manager is available while Ronin Services and its Task manager component are enabled.
 The `item` tool moves the same items without Services.

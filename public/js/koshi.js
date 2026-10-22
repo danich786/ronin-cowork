@@ -55,7 +55,7 @@ export function buildKoshi(root, isShowing) {
     blurb.classList.remove('bad');
     blurb.textContent = data?.running
       ? t('koshi.blurb_running', 'Which model each Koshi job asks. Changes apply within a minute — no restart needed.')
-      : t('koshi.blurb_stopped', 'Koshi is NOT running. Nothing is watching any ladder.');
+      : t('koshi.blurb_stopped', 'Koshi is NOT running. Nothing is watching any work record.');
     blurb.classList.toggle('bad', !data?.running);
   };
 

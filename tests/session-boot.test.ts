@@ -120,7 +120,7 @@ test('every selector phrase has an exact meaning in floor or capability teaching
   for (const term of terms) assert.match(teaching, new RegExp(`\\*\\*${escaped(term)}\\*\\*`, 'i'), `${term} needs an exact meaning`);
   assert.match(teaching, /AN OWNER ASKING FOR AN AGENT ALWAYS MEANS:[\s\S]*IT NEVER MEANS SPAWN A CLI-INTERNAL SUB-AGENT/);
   assert.match(teaching, /owner's wording does not\s+provoke it/);
-  for (const command of ['session_create', 'edges send', 'edges wipeboard', 'work-record read', 'item doc', 'work-record update_record', 'team roster write', 'worktree-desk hand-in', 'bin/ronin-promote <team>', 'session_end']) {
+  for (const command of ['session_create', 'edges send', 'edges wipeboard', 'work-record read', 'item attach', 'work-record update_record', 'team roster write', 'worktree-desk hand-in', 'bin/ronin-promote <team>', 'session_end']) {
     assert.match(teaching, new RegExp(escaped(command)), `${command} needs to be named by its owner`);
   }
 });

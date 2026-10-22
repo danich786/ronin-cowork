@@ -15,8 +15,9 @@ const operations: Array<[string, RegExp, string]> = [
   ['PUT', /^\/api\/(team|team-rosters\/[^/]+)$/, 'team roster write'],
   ['POST', /^\/api\/work-items$/, 'item create'],
   ['PUT', /^\/api\/work-items\/[^/]+$/, 'item edit'],
-  ...['assign', 'move', 'plan', 'docs', 'comment', 'focus'].map(verb =>
-    ['POST', new RegExp('^/api/work-items/[^/]+/' + verb + '$'), 'item ' + (verb === 'docs' ? 'doc' : verb)] as [string, RegExp, string]),
+  ['DELETE', /^\/api\/work-items\/[^/]+$/, 'item delete'],
+  ...['assign', 'transition', 'flag', 'unflag', 'comment', 'attach', 'link'].map(verb =>
+    ['POST', new RegExp('^/api/work-items/[^/]+/' + verb + '$'), 'item ' + verb] as [string, RegExp, string]),
 ];
 export const countBrowserTool: RequestHandler = (req, _res, next) => {
   const source = req.get('x-ronin-source');

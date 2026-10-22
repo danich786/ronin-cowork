@@ -42,21 +42,68 @@ test('level defaults one below the parent and adding a child never changes it', 
   assert.equal((await items.readItem(leaf.id))!.level, 0);
 });
 
-test('the ladder stays on an item when it gains a child (the fold into the first child is gone)', async () => {
-  const epic = (await items.createItem({ title: 'Planned epic', level: 1 }, 'probe')).item;
-  await items.writePlan(epic.id, { edits: [['phase', 'Design'], ['leg', '1', 'Sketch']] }, 'probe');
-  const child = (await items.createItem({ title: 'First child', parent: epic.id }, 'probe')).item;
-  assert.deepEqual((await items.readItem(epic.id))!.ladder, [{ phase: 'Design', status: 'PLANNED', legs: [{ title: 'Sketch', status: 'PLANNED' }] }]);
-  assert.deepEqual((await items.readItem(child.id))!.ladder, []);
-  const other = (await items.createItem({ title: 'Moved in' }, 'probe')).item;
-  await items.moveItem(other.id, epic.id, 'probe');
-  assert.equal((await items.readItem(epic.id))!.ladder.length, 1, 'a move under it keeps it too');
+test('an item has no ladder: an old file carrying one reads without it, and its next write drops it', async () => {
+  const id = 'w9001';
+  await fs.writeFile(path.join(temp, `${id}.json`), JSON.stringify({
+    id, title: 'Laddered', objective: '', level: 0, status: 'BUILD', flagged: false, parent: null,
+    ladder: [{ phase: 'Old', legs: [] }], docs: [], external: {}, trail: [], created: { at: '2026-10-01T00:00:00Z', by: 'old' },
+  }));
+  assert.equal('ladder' in (await items.readItem(id))!, false);
+  await items.editItem(id, { objective: 'now' }, 'probe');
+  assert.equal('ladder' in JSON.parse(await fs.readFile(path.join(temp, `${id}.json`), 'utf8')), false);
+  await fs.unlink(path.join(temp, `${id}.json`));
+});
+
+test('edit --parent is the move: the level follows, other fields ride the same line', async () => {
+  const epic = (await items.createItem({ title: 'Epic', level: 1 }, 'probe')).item;
+  const story = (await items.createItem({ title: 'Story' }, 'probe')).item;
+  assert.equal(items.didLine(await items.editItem(story.id, { parent: epic.id }, 'probe')), `${story.id} moved under ${epic.id}, level 0`);
+  const both = await items.editItem(story.id, { parent: null, title: 'Story, loose' }, 'probe');
+  assert.equal(items.didLine(both), `${story.id} changed: parent none, title`);
+  assert.deepEqual([both.item.parent, both.item.level], [null, 0]);
+});
+
+test('comment --edit changes comment n; attach and remove a document; link blocks and relates', async () => {
+  const { item } = await items.createItem({ title: 'Linked' }, 'probe');
+  const other = (await items.createItem({ title: 'Held up' }, 'probe')).item;
+  await items.addComment(item.id, 'first', 'ann');
+  assert.equal(items.didLine(await items.editComment(item.id, 1, 'first, fixed', 'bo')), `${item.id} comment 1 was edited`);
+  assert.equal((await items.readItem(item.id))!.comments[0]!.text, 'first, fixed');
+  await assert.rejects(items.editComment(item.id, 2, 'x', 'bo'), /there is no comment 2/);
+  const doc = path.join(temp, 'attached.md');
+  await fs.writeFile(doc, '# doc\n');
+  assert.equal(items.didLine(await items.attachDoc(item.id, doc, 'probe')), `${item.id} has ${doc} attached`);
+  assert.equal(items.didLine(await items.attachDoc(item.id, doc, 'probe', true)), `${item.id} no longer has ${doc} attached`);
+  assert.deepEqual((await items.readItem(item.id))!.docs, []);
+  assert.equal(items.didLine(await items.linkItem(item.id, 'blocks', other.id, 'probe')), `${item.id} blocks ${other.id}`);
+  assert.equal(items.didLine(await items.linkItem(item.id, 'relates', other.id, 'probe')), `${item.id} relates to ${other.id}`);
+  assert.equal(items.didLine(await items.linkItem(item.id, 'blocks', other.id, 'probe', true)), `${item.id} no longer blocks ${other.id}`);
+  assert.deepEqual((await items.readItem(item.id))!.links, [{ type: 'relates', to: other.id }]);
+  await assert.rejects(items.linkItem(item.id, 'duplicates', other.id, 'probe'), /blocks or relates/);
+});
+
+test('delete, as Jira: its subtasks go with it, an epic\'s children are left with no parent, links to it go', async () => {
+  const epic = (await items.createItem({ title: 'Doomed epic', level: 1 }, 'probe')).item;
+  const story = (await items.createItem({ title: 'Doomed story', parent: epic.id }, 'probe')).item;
+  const sub = (await items.createItem({ title: 'Its subtask', parent: story.id }, 'probe')).item;
+  const keeper = (await items.createItem({ title: 'Survives', parent: epic.id }, 'probe')).item;
+  const linker = (await items.createItem({ title: 'Links in' }, 'probe')).item;
+  await items.linkItem(linker.id, 'blocks', story.id, 'probe');
+  assert.deepEqual(await items.deleteItem(story.id, 'probe'), { gone: [story.id, sub.id], orphaned: [] });
+  assert.equal(await items.readItem(sub.id), null);
+  assert.deepEqual((await items.readItem(linker.id))!.links, []);
+  assert.deepEqual(await items.deleteItem(epic.id, 'probe'), { gone: [epic.id], orphaned: [keeper.id] });
+  assert.equal((await items.readItem(keeper.id))!.parent, null);
 });
 
 test('kind is any work type name or blank; priority any name; the answer says only what the act changed', async () => {
   const bug = await items.createItem({ title: 'Crash', kind: 'bug' }, 'probe');
   assert.equal(items.didLine(bug), `${bug.item.id} was created`);
-  assert.equal(items.didLine(await items.editItem(bug.item.id, { kind: 'story', flagged: true }, 'probe')), `${bug.item.id} changed: kind story, flagged`);
+  assert.equal(items.didLine(await items.editItem(bug.item.id, { kind: 'story' }, 'probe')), `${bug.item.id} changed: kind story`);
+  const flagged = await items.flagItem(bug.item.id, true, 'waiting on Ana', 'probe');
+  assert.equal(items.didLine(flagged), `${bug.item.id} is flagged: waiting on Ana`);
+  assert.deepEqual([flagged.item.flagged, flagged.item.comments.map((comment) => comment.text)], [true, ['waiting on Ana']], 'the reason is an ordinary comment');
+  assert.equal(items.didLine(await items.flagItem(bug.item.id, false, undefined, 'probe')), `${bug.item.id} is unflagged`);
   assert.equal(items.didLine(await items.editItem(bug.item.id, { status: 'BUILD' }, 'probe')), `${bug.item.id} moved to BUILD`);
   assert.equal((await items.editItem(bug.item.id, { kind: '' }, 'probe')).item.kind, undefined);
   assert.equal((await items.createItem({ title: 'Odd', kind: 'feature' }, 'probe')).item.kind, 'feature');
@@ -130,26 +177,26 @@ test('the one rule: nothing goes below -1; the item takes its level and its chil
   const b = (await items.createItem({ title: 'B', parent: a.id }, 'p')).item;
   const c = (await items.createItem({ title: 'C', parent: b.id }, 'p')).item;
   const other = (await items.createItem({ title: 'Other epic', level: 1 }, 'p')).item;
-  const story = await items.moveItem(b.id, other.id, 'p');
+  const story = await items.editItem(b.id, { parent: other.id }, 'p');
   assert.deepEqual([story.item.parent, story.item.level, (await items.readItem(c.id))!.parent], [other.id, 0, b.id], 'a story moves to another epic, its subtasks with it');
-  assert.equal((await items.moveItem(a.id, null, 'p')).item.level, 1, 'no parent keeps the level: an epic stays an epic');
+  assert.equal((await items.editItem(a.id, { parent: null }, 'p')).item.level, 1, 'no parent keeps the level: an epic stays an epic');
   const story2 = (await items.createItem({ title: 'Story', parent: a.id }, 'p')).item;
-  await assert.rejects(items.moveItem(b.id, story2.id, 'p'), { message: `${b.id} can't go there.` }, 'its subtask would land at -2');
+  await assert.rejects(items.editItem(b.id, { parent: story2.id }, 'p'), { message: `${b.id} can't go there.` }, 'its subtask would land at -2');
   assert.deepEqual([(await items.readItem(b.id))!.parent, (await items.readItem(c.id))!.level], [other.id, -1], 'a refusal writes nothing');
   await assert.rejects(items.createItem({ title: 'Under a subtask', parent: c.id }, 'p'), /^Error: w\d+ can't go there\.$/);
   const loose = (await items.createItem({ title: 'Loose' }, 'p')).item;
-  await assert.rejects(items.moveItem(loose.id, c.id, 'p'), { message: `${loose.id} can't go there.` });
-  await assert.rejects(items.moveItem(loose.id, loose.id, 'p'), { message: `${loose.id} can't go there.` }, 'under itself it is its own child, and the levels fall past -1');
-  await assert.rejects(items.moveItem(other.id, c.id, 'p'), { message: `${other.id} can't go there.` }, 'nothing goes under its own descendant');
-  const moved = await items.moveItem(loose.id, a.id, 'p');
+  await assert.rejects(items.editItem(loose.id, { parent: c.id }, 'p'), { message: `${loose.id} can't go there.` });
+  await assert.rejects(items.editItem(loose.id, { parent: loose.id }, 'p'), { message: `${loose.id} can't go there.` }, 'under itself it is its own child, and the levels fall past -1');
+  await assert.rejects(items.editItem(other.id, { parent: c.id }, 'p'), { message: `${other.id} can't go there.` }, 'nothing goes under its own descendant');
+  const moved = await items.editItem(loose.id, { parent: a.id }, 'p');
   assert.deepEqual([moved.item.parent, moved.item.level, moved.line.op], [a.id, 0, 'move']);
-  const back = await items.moveItem(loose.id, null, 'p');
+  const back = await items.editItem(loose.id, { parent: null }, 'p');
   assert.deepEqual([back.item.parent, back.item.level], [null, 0]);
 
   // An epic with stories moved under an epic: the epic becomes 0, its stories -1.
   const epic = (await items.createItem({ title: 'Inner epic', level: 1 }, 'p')).item;
   const inner = (await items.createItem({ title: 'Inner story', parent: epic.id }, 'p')).item;
-  assert.equal((await items.moveItem(epic.id, a.id, 'p')).item.level, 0);
+  assert.equal((await items.editItem(epic.id, { parent: a.id }, 'p')).item.level, 0);
   const followed = (await items.readItem(inner.id))!;
   assert.deepEqual([followed.level, followed.trail.at(-1)!.note], [-1, `level -1, following ${epic.id}`]);
   // A level write: the children follow it too, and fail it below -1.
@@ -166,7 +213,7 @@ test('the one migration: stage → status, red → flagged, exit gone, levels fr
   await old('w1', { title: 'Unfiled' });
   await old('w2', { parent: 'w1', stage: 'BUILD', status: 'red', kind: 'bug' });
   await old('w3', { stage: 'PLAN' });
-  await old('w4', { parent: 'w3', status: 'green', exit: 'lead' });
+  await old('w4', { parent: 'w3', status: 'green', exit: 'lead', ladder: [{ phase: 'Old', legs: [] }] });
   process.env.RONIN_WORK_ITEMS_DIR = store;
   try {
     const done = await items.migrateItems('probe');
@@ -174,7 +221,7 @@ test('the one migration: stage → status, red → flagged, exit gone, levels fr
     const [w2, w3, w4] = await Promise.all(['w2', 'w3', 'w4'].map(async (id) => JSON.parse(await fs.readFile(path.join(store, `${id}.json`), 'utf8'))));
     assert.deepEqual([w2.parent, w2.status, w2.flagged, w2.level, w2.kind, 'exit' in w2, 'stage' in w2], [null, 'BUILD', true, 0, 'bug', false, false]);
     assert.deepEqual([w3.level, w3.status], [1, 'PLAN']);
-    assert.deepEqual([w4.level, w4.flagged, w4.parent], [0, false, 'w3']);
+    assert.deepEqual([w4.level, w4.flagged, w4.parent, 'ladder' in w4], [0, false, 'w3', false]);
     assert.deepEqual((await items.migrateItems('probe')).migrated, [], 'a second run changes nothing');
   } finally {
     process.env.RONIN_WORK_ITEMS_DIR = temp;
@@ -197,21 +244,32 @@ test('routes acknowledge with the item and the appended line; refusals answer 40
     assert.equal(made.status, 200);
     const id = made.data.item.id as string;
     assert.equal(made.data.acknowledgement, `${id} was created`);
-    const moved = await call('PUT', `${base}/${id}`, { status: 'PLAN', flagged: 'true', jira: 'RON-1', by: 'probe' });
+    await call('PUT', `${base}/${id}`, { jira: 'RON-1', by: 'probe' });
+    assert.equal((await call('POST', `${base}/${id}/flag`, { by: 'probe' })).data.acknowledgement, `${id} is flagged`);
+    const moved = await call('POST', `${base}/${id}/transition`, { status: 'PLAN', by: 'probe' });
+    assert.equal(moved.data.acknowledgement, `${id} moved to PLAN`);
+    assert.equal((await call('POST', `${base}/${id}/transition`, { status: 'IDEA', by: 'probe' })).data.item.status, 'IDEA', 'any status to any status');
+    await call('POST', `${base}/${id}/transition`, { status: 'PLAN', by: 'probe' });
+    assert.equal((await call('PUT', `${base}/${id}`, { status: 'DONE', by: 'probe' })).data.item.status, 'PLAN', 'edit does not set status');
     assert.deepEqual([moved.data.item.status, moved.data.item.flagged, moved.data.item.external.jira], ['PLAN', true, 'RON-1']);
     const child = await call('POST', base, { title: 'Child', parent: id, by: 'probe' });
     assert.equal(child.data.item.level, -1);
     assert.deepEqual((await call('GET', `${base}/${id}`)).data.children.map((item: { id: string }) => item.id), [child.data.item.id]);
     const peer = await call('POST', base, { title: 'Peer', by: 'probe' });
-    const stuck = await call('POST', `${base}/${id}/move`, { parent: peer.data.item.id, by: 'probe' });
+    const stuck = await call('PUT', `${base}/${id}`, { parent: peer.data.item.id, by: 'probe' });
     assert.deepEqual([stuck.status, stuck.data.error], [409, `${id} can't go there.`]);
-    const plan = await call('POST', `${base}/${id}/plan`, { edits: [['phase', 'One']], by: 'probe' });
-    assert.equal(plan.data.item.ladder[0].phase, 'One');
-    assert.equal((await call('POST', `${base}/${id}/comment`, { text: 'a fact', by: 'probe' })).data.line.op, 'comment');
-    assert.ok((await call('GET', `${base}?no_parent=1`)).data.items.some((item: { id: string }) => item.id === id));
-    assert.ok((await call('GET', `${base}?parent=${id}`)).data.items.every((item: { parent: string }) => item.parent === id));
+    assert.equal((await call('POST', `${base}/${peer.data.item.id}/link`, { type: 'blocks', to: id, by: 'probe' })).data.acknowledgement, `${peer.data.item.id} blocks ${id}`);
+    assert.deepEqual((await call('GET', `${base}/${id}`)).data.linked_from, [{ type: 'blocks', from: peer.data.item.id }]);
+    assert.ok((await call('GET', `${base}?status=plan&kind=task`)).data.items.every((item: { status: string; kind: string }) => item.status === 'PLAN' && item.kind === 'task'));
+    assert.equal((await call('DELETE', `${base}/${id}`, { by: 'probe' })).data.acknowledgement, `${id} was deleted; with its subtasks ${child.data.item.id}`);
+    assert.equal((await call('GET', `${base}/${id}`)).status, 404);
+    const kept = await call('POST', base, { title: 'Kept', by: 'probe' });
+    const keptId = kept.data.item.id as string;
+    assert.equal((await call('POST', `${base}/${keptId}/comment`, { text: 'a fact', by: 'probe' })).data.line.op, 'comment');
+    assert.equal((await call('POST', `${base}/${keptId}/comment`, { edit: '1', text: 'a fact, fixed', by: 'probe' })).data.acknowledgement, `${keptId} comment 1 was edited`);
+    assert.ok((await call('GET', `${base}?no_parent=1`)).data.items.some((item: { id: string }) => item.id === keptId));
     assert.equal((await call('GET', `${base}/w999999`)).status, 404);
-    assert.equal((await call('PUT', `${base}/${id}`, { status: 'nope' })).status, 400);
+    assert.equal((await call('POST', `${base}/${keptId}/transition`, { status: 'nope' })).status, 400);
   } finally {
     server.close();
   }

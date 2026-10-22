@@ -116,14 +116,14 @@ export function buildRoster(tile, host, options = {}) {
     const nm = document.createElement('b');
     nm.textContent = s.name;
     r.appendChild(nm);
-    // SHINGO on the roll call: position, or held. One amber row and you know where
-    // to click through — which is the whole reason the board exists.
-    if (s.tegami && s.tegami.chip && s.tegami.ladder?.length) {
+    // SHINGO on the roll call: the items held with their status; a flagged one is amber,
+    // and you know where to click through — which is the whole reason the board exists.
+    if (s.tegami && s.tegami.chip && s.tegami.items?.length) {
       const sg = document.createElement('span');
       sg.className = 'home-shingo' + (s.tegami.chip.gate ? ' gate' : '');
       // was already the touch spelling — "quiet" costs five characters on a row that has
       // none to spare, and a bare duration beside a position reads as one anyway — and
-      // the desktop had no better claim on the width. `phase 3 · leg 3/12 · 9h`.
+      // the desktop had no better claim on the width. `w12 BUILD · w14 PLAN · 9h`.
       const age = s.tegami.quietMs >= 60000 ? humanAge(s.tegami.quietMs) : '';
       sg.textContent = s.tegami.chip.text + (age ? ' · ' + age : '');
       // Agent-authored and unbounded — clamped for the fixed help box (see shingo.js).

@@ -1,13 +1,13 @@
 # Work records and work items
 
-A work record says what an Agent is doing now: its objective, repositories, the work items
-it holds, and its focus. The ladder and the documents live on work items. The Task
-Manager's board is a view of the same items by status; nothing is stored twice.
+A work record says what an Agent is doing now: its objective, repositories, and the work
+items it holds, each with its status. The Task Manager's board is a view of the same items
+by status; nothing is stored twice.
 
-Two shipped commands: `work-record` keeps what is about the Agent (objective, repositories,
-whether it is on its ladder), and `item` does every act on a work item, the item always
-named. `work-record --help` and `item --help` are the canonical vocabulary; there are no
-aliases.
+Two shipped commands: `work-record` keeps what is about the Agent (objective, repositories),
+and `item` does every act on a work item, the item always named. Its acts are Jira's item
+acts, one for each. `work-record --help` and `item --help` are the canonical vocabulary;
+there are no aliases.
 
 ## Work items
 
@@ -29,14 +29,8 @@ not holding an item: holding is how work is found, never permission.
     { "by": "lead", "at": "2026-09-28T15:06:02Z", "text": "Start with the store." }
   ],
   "parent": "w3",
-  "ladder": [
-    { "gate": "go / no-go", "status": "DONE" },
-    { "phase": "Build it", "status": "ACTIVE", "legs": [
-      { "title": "Store round-trips", "status": "DONE" },
-      { "title": "Focused checks pass", "status": "ACTIVE" }
-    ] }
-  ],
   "docs": ["/home/me/plans/AGENT_ITEMS.md"],
+  "links": [{ "type": "blocks", "to": "w14" }],
   "external": { "jira": "RON-12" },
   "trail": [
     { "at": "2026-09-28T15:02:11Z", "by": "lead", "op": "create", "to": "none", "note": "Agent-authored items; under w3" },
@@ -51,60 +45,71 @@ not holding an item: holding is how work is found, never permission.
 | `level` | `1` epic · `0` story, task or bug · `-1` subtask | stored; a new item is one level below its parent, `0` with none |
 | `kind` | any work type name (`story`, `task`, `bug`, `feature`, a site's own) · blank | the work type; blank unless you set it, no fixed list |
 | `status` | `IDEA` · `PLAN` · `BUILD` · `REVIEW` · `LAND` · `DONE` | the board's column |
-| `flagged` | `true` · `false` | an impediment, as Jira's flag |
+| `flagged` | `true` · `false` | an impediment, as Jira's flag; `item flag` / `item unflag` |
 | `priority` | any name · blank | as Jira's priority; `item edit <id> --priority <name>` |
 | `comments` | `{ by, at, text }` list | as Jira's comments; `item comment <id> <text>` adds one |
-| `parent` | an id, or none | none is normal |
+| `parent` | an id, or none | none is normal; `item edit <id> --parent <id>\|none` |
+| `docs` | absolute paths | attachments; `item attach <id> <path>` |
+| `links` | `{ type: blocks\|relates, to }` list | as Jira's issue links; `item link`; a read shows links in too |
 | `external` | `jira`, `trello`, `github` keys | written with `item edit <id> --jira <key>` |
 
 One object serves every level; a field that means nothing at a level is simply unused, as in
-Jira. An epic's status is set by hand. Adding a child never changes an item's level, and
-every item keeps its own ladder, children or not.
+Jira. An epic's status is set by hand. Adding a child never changes an item's level. There
+is no ladder: Jira has none.
 
 Two relations are kept apart. **Holding** (assign, held by) is a list of item ids on each
 Team and each Agent; assigning moves the id from one list to another and never touches the
 item. **Parent** is one id on the item, or none. A Team holds; it does not contain.
 
 ```text
-item create --title "Agent-authored items" [--objective "…"] [--parent w3] [--level 1|0|-1] [--kind <type>]
-item read w12                       # with its children, if any
-item list [--team surface] [--holder builder] [--parent w3 | --no-parent]
-item edit w12 --status REVIEW --flagged true --priority High --jira RON-12
-item move w12 --to w3               # parent and level together; --to none keeps the level
+item create --title "Agent-authored items" [--kind task] [--parent w3] [--level 1|0|-1] [--objective "…"] [--priority High]
+item read w12                       # fields, children, comments, attachments, links, history
+item search [--team surface] [--holder builder] [--parent w3 | --no-parent] [--status BUILD] [--kind bug]
+item edit w12 --priority High --jira RON-12
+item edit w12 --parent w3           # parent and level together; --parent none keeps the level
+item transition w12 REVIEW          # any status to any status, as Jira's transition
+item flag w12 "waiting on the API"  # Jira's Add flag; the reason is a comment. item unflag w12
 item assign w12 builder             # or team:surface, or none
 item comment w12 "commit 0123456789: store round-trips"
+item comment w12 --edit 1 "commit 0123456789: the store round-trips"
+item attach w12 docs/using-ronin/work-record.md     # --remove <path> takes it off
+item link w12 blocks w14            # or relates; --remove takes it off
+item delete w12                     # with its subtasks; an epic's other children lose the parent
 ```
 
-A new item is held by nobody until it is assigned. `item move` is Jira's move: the parent
-and the level change in one act, one below the new parent; with no parent the level stays.
-Any level-0 item moved under another becomes a subtask.
+A new item is held by nobody until it is assigned. Parent is a field, as in Jira:
+`item edit --parent` changes the parent and the level in one act, one below the new
+parent; with no parent the level stays. Any level-0 item moved under another becomes a
+subtask (Jira's convert to subtask).
 
-**The one rule: nothing goes below -1.** On a create, a move or `item edit --level`, the
-item takes its new level (one below its parent, or the level set) and its children follow,
-each one below its own parent. If any of them would land below -1, the act fails with one
-line: "w39 can't go there." Nothing else is checked. So nothing goes under a subtask, under
-its own descendant or under itself; a story and its subtasks move to another epic together;
-and an epic with stories moved under an epic becomes 0, its stories -1, each child with a
-trail line saying it followed.
+**The one rule: nothing goes below -1.** On a create, an `item edit --parent` or
+`--level`, the item takes its new level (one below its parent, or the level set) and its
+children follow, each one below its own parent. If any of them would land below -1, the
+act fails with one line: "w39 can't go there." Nothing else is checked. So nothing goes
+under a subtask, under its own descendant or under itself; a story and its subtasks move to
+another epic together; and an epic with stories moved under an epic becomes 0, its stories
+-1, each child with a trail line saying it followed.
 
-Every write answers with the item as it now is and the trail line it appended. Its
-acknowledgement is one line of what the act did, read from that trail line, and nothing
-after it: "w39 moved under w40, level -1", "w9 moved to BUILD", "w9 is held by agent:x",
-"w12 was created", "w12 changed: kind story, flagged", "w12 has a comment from lead: Start
-with the store." Status, kind and level appear only
-when the act changed them. When an item arrives under one someone holds, by a create with a
-parent or a move, that holder gets one message through the ordinary queue: "w9 Fix login
-was added under w7, which you hold. Handle it as you see fit." A
-Team holder's lead gets it. An item held by nobody notifies nobody. Any write by someone
-other than the holding Agent, a comment included, gives that Agent "Your work record
-changed"; its own writes tell nobody.
+`item delete` is Jira's delete: the item goes, and its subtasks with it; any other child is
+left with no parent, links to it go, and its holders let go of it.
+
+Every write answers with one line of what the act did, read from the trail line it
+appended, then the item as it now is: "w39 moved under w40, level -1", "w9 moved to BUILD",
+"w9 is held by agent:x", "w12 was created", "w12 changed: kind story", "w12 is flagged:
+waiting on the API", "w12 has a comment from lead: Start with the store.", "w12 blocks
+w14". Status, kind and level appear only when the act changed them. When an item arrives
+under one someone holds, by a create with a parent or an `item edit --parent`, that holder
+gets one message through the ordinary queue: "w9 Fix login was added under w7, which you
+hold. Handle it as you see fit." A Team holder's lead gets it. An item held by nobody
+notifies nobody. Any write by someone other than the holding Agent, a comment included,
+gives that Agent "Your work record changed"; its own writes tell nobody.
 
 ## Receipts move Land and Done
 
 Name the item on a hand-in with `worktree-desk hand-in <repo> --item <id>`. An accepted
 hand-in moves the item to LAND, with the receipt on its trail. A completed promotion moves
 every item named on the hand-ins it carries to DONE, with the promotion receipt. No
-association is guessed from focus, names, or repositories.
+association is guessed from names or repositories.
 
 A supporting Agent and an assignment are two operations owned by their tools:
 
@@ -113,33 +118,16 @@ session_create board_reader --prompt "Take w12 and read it with item read w12."
 item assign w12 board_reader
 ```
 
-## Ladders and documents live on items
+## Documents live on items
 
-Every item keeps its own ladder; `item plan` writes it, the item named. Your work record
-shows the ladder of your focus item, which `item focus` chooses among the items you hold:
-
-```text
-item plan w12 --phase "Build it" --leg 1 "Store round-trips"
-item plan w12 --done 1.1 --active 1.2
-item plan w12 --gate "owner go"
-item focus w12
-work-record read --rungs
-```
-
-Phases and legs are never items; only a lead breaking work up makes a piece its own item,
-with a parent. Documents live on items too, and travel with them when they move between
-Agents. The Docs tab lists your README and the documents of every item you hold:
-
-```text
-item doc w12 add docs/using-ronin/work-record.md
-item doc w12 remove docs/using-ronin/work-record.md
-```
+Documents are an item's attachments, and travel with it when it moves between Agents. The
+Docs tab lists your README and the documents of every item you hold: a document you did
+not attach is one the owner cannot reach.
 
 ## The work record
 
 ```text
 work-record update_record --objective "<sentence>"
-work-record update_record --on_tangent      # stepped off the ladder; --on_track when back
 work-record workspace add ronin_cowork --branch team/example/cut
 work-record workspace add https://github.com/ronincowork/samurai_lab.git --branch main
 work-record workspace list
@@ -158,8 +146,9 @@ parent. Restoring an archived Agent does not reclaim it.
 
 ## Items written before 2026-10-22
 
-Item files in the old shape (a `stage`, an `exit`, a green/yellow/red `status`) are read in
-the new one: `stage` is the status, red is flagged, and `exit` and the other colours go.
+Item files in the old shape (a `stage`, an `exit`, a green/yellow/red `status`, a ladder)
+are read in the new one: `stage` is the status, red is flagged, and `exit`, the other
+colours and the ladder go.
 They are written in the new shape on their next write. One migration at start rewrites the
 whole store that way, gives every item with children level 1 and every other level 0, and
 removes the Unfiled epic, leaving its items with no parent.

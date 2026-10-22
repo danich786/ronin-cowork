@@ -4,13 +4,12 @@
 #        work-record update_record --on_tangent                       stepped off your ladder
 #        work-record update_record --on_track                         back on it
 #
-# WHERE THINGS LIVE. The letter (tegami.md) keeps objective, mandate, repos, holds,
-# ladder_state and at. The ladder and the documents live on each work item and are written
-# by the item tool, the item always named (item plan <id>, item doc <id>); this tool keeps
-# only what is about the Agent.
+# WHERE THINGS LIVE. The letter (tegami.md) keeps objective, mandate, repos, holds and
+# ladder_state. Work items (no ladder: Jira has none) and their attachments are the item
+# tool's, the item always named; this tool keeps only what is about the Agent.
 #
 # FIELD VERBS — one field, your own session, no block. Several may be combined in one
-# call; they apply in order, through the same validator as a whole-block save, so "at",
+# call; they apply in order, through the same validator as a whole-block save, so
 # "holds" and "teams" are carried through untouched.
 #        work-record update_record --objective <text>                 your objective sentence
 #        work-record update_record --repo <repo>:<branch>             add or keep a checkout row
@@ -122,7 +121,7 @@ while [ $# -gt 0 ]; do
     --repo-pair)  need "$1" "${2-}" "<repo-or-url> <branch>"; EDITS+=("repo-pair$US$2$US${3-}"); shift 2 ;;
     --unrepo-pair) need "$1" "${2-}" "<repo-or-url> <branch>"; EDITS+=("unrepo-pair$US$2$US${3-}"); shift 2 ;;
     --phase|--gate|--rung|--leg|--status|--done|--active|--drop|--doc|--undoc|--session|--at)
-      die "work-record update_record: $1 is gone; a ladder or a document is written on the item it belongs to: item plan <id> … or item doc <id> add|remove <path>. Run item --help." ;;
+      die "work-record update_record: $1 is gone; there is no ladder (Jira has none), and a document is attached to its item: item attach <id> <path>. Run item --help." ;;
     *) die "work-record update_record: unknown argument: $1. Run work-record update_record --help." ;;
   esac
   shift
@@ -245,8 +244,8 @@ fi
 # Validate the shape and normalise the spacing, so what lands on disk is what the tile
 # will read. Rejects rather than silently dropping: an unknown key is either a typo or a
 # word we retired, and both are worth being told about.
-# The validator is handed the CURRENT block too, so it can carry "at" through without
-# the agent ever seeing it.
+# The validator is handed the CURRENT block too, so it can carry "holds", "teams" and
+# "configuration" through without the agent ever seeing them.
 PREV=$(awk '/^```/{f=!f; if(f) next; else exit} f' "$FILE" 2>/dev/null)
 PREVF=$(mktemp); printf '%s' "${PREV:-{\}}" > "$PREVF"
 BLOCK=$(printf '%s' "$BODY" | python3 -c '
@@ -255,25 +254,22 @@ ALLOWED   = {"objective", "mandate", "repos", "ladder_state"}
 # What is happening to the ladder AS A WHOLE — not a rung. Absent means "on_track", so
 # nothing has to be migrated and the normal case costs nobody a keystroke.
 #
-# There is no "on hold": waiting on a person is a GATE, and a second way to say the same
-# thing is how a format rots. Owner, ruling it out himself: "not on hold, because that is
-# a gate."
-LADDER_STATES = {"on_track", "on_tangent"}   # "at" is NOT yours — see below
+# There is no "on hold": waiting on a person is a flag and a comment on the item, and a
+# second way to say the same thing is how a format rots.
+LADDER_STATES = {"on_track", "on_tangent"}
 STATUSES  = {"PLANNED", "ACTIVE", "DONE"}
 try:
     d = json.load(sys.stdin)
 except Exception as e:
     sys.exit(f"work-record update_record: that is not valid json — {e}")
 if not isinstance(d, dict):
-    sys.exit("work-record update_record: the block must be an object: { \"objective\": …, \"ladder\": [ … ] }")
+    sys.exit("work-record update_record: the block must be an object: { \"objective\": …, \"repos\": [ … ] }")
 
 # REFUSED HERE, CARRIED THROUGH BELOW. Neither of these has the block as its door, and
 # each is named individually because the fix differs.
 NOT_YOURS = {
-    "at": "\"at\" is not yours to write.\n"
-          "  It is the pointer a monitor keeps at whichever rung is being worked on now.\n"
-          "  You own objective and ladder, including every status. Drop \"at\"\n"
-          "  and save again; whatever it holds is carried through for you.",
+    "at": "\"at\" is gone: work items have no ladder, so there is no position to keep.\n"
+          "  Drop \"at\" and save again.",
     "teams": "\"teams\" is not yours to write.\n"
           "  It is DERIVED: one entry per team you are on, which Ronin writes again when a\n"
           "  roster or a membership changes, with a one-line notice. Membership itself is\n"
@@ -298,18 +294,17 @@ if extra:
         extra = []
 if extra:
     sys.exit("work-record update_record: unknown key(s): " + ", ".join(extra) +
-             "\n  A TEGAMI holds: objective, mandate, repos, and ladder_state when you are off it;"
-             "\n  a ladder lives on its work item: item plan <id>."
+             "\n  A TEGAMI holds: objective, mandate and repos; work items belong to the item tool."
              "\n  (\"teams\" is machinery-derived; membership lives in your tags.)"
              "\n  asks / blocked / decided / handoff / plan / side_ladder / v were removed —"
-             "\n  nothing reads them. Questions for the owner are a GATE rung; everything else"
-             "\n  belongs in your plan doc or on a wipeboard.")
+             "\n  nothing reads them. A question for a person is a comment on the item; everything"
+             "\n  else belongs in your plan doc or on a wipeboard.")
 
 st_ = (d.get("ladder_state") or "").strip().lower()
 if st_ and st_ not in LADDER_STATES:
     if st_ in ("on_hold", "on hold"):
-        sys.exit("work-record update_record: ladder_state \"on hold\" — waiting on someone is a GATE rung,\n"
-                 "  which already says it and says WHAT you are waiting for. Use a gate.")
+        sys.exit("work-record update_record: ladder_state \"on hold\" — waiting on someone is a flag\n"
+                 "  on the item, saying WHAT you are waiting for: item flag <id> \"<why>\".")
     sys.exit("work-record update_record: ladder_state %r — use \"on_track\" (or leave it out) or \"on_tangent\"." % st_)
 
 mandate = d.get("mandate") or {}
@@ -374,13 +369,8 @@ for i, checkout in enumerate(repos, 1):
 # inside this single-quoted block, so the two halves would name different files — which
 # is how an empty ladder once got written over a real one. Notes go to stderr, so stdout
 # stays exactly the payload.
-# CARRY "at" THROUGH: the focus item and the position a monitor placed on its ladder.
-# An agent save never writes it and never wipes it.
 prev = json.loads(open(sys.argv[1]).read()) if len(sys.argv) > 1 else {}
-at = prev.get("at")
-if not isinstance(at, dict):
-    at = None
-# "teams" IS DERIVED, NEVER TAKEN FROM THE BLOCK — the same contract as "at" and "holds":
+# "teams" IS DERIVED, NEVER TAKEN FROM THE BLOCK — the same contract as "holds":
 # Ronin writes it whenever a roster or a membership changes (tegami.ts teamChanged) and
 # this save carries it through untouched. An empty list is a ronin, an ordinary state.
 _teams = prev.get("teams") if isinstance(prev.get("teams"), list) else []
@@ -398,8 +388,6 @@ if _holds:
 ls_ = (d.get("ladder_state") or "").strip().lower()
 if ls_ and ls_ != "on_track":
     out["ladder_state"] = ls_
-if at is not None:
-    out["at"] = at
 print(json.dumps(out, indent=2, ensure_ascii=False))
 ' "$PREVF") || { rm -f "$PREVF"; exit 3; }
 rm -f "$PREVF"
@@ -425,13 +413,13 @@ TMP="$DIR/.tegami.$$"
   else
     printf '# TEGAMI — %s\n' "$NAME"
     cat <<'TEACH'
-> **This is your work record.** Your objective, your repositories, and the work items you
-> hold. Your ladder lives on the item you are on: `work-record read` shows it and
-> `item plan <id> --phase|--leg|--gate|--done …` writes it. Keep both true.
->
-> Your own words go in "objective" and "title". Nothing else is read, so nothing else
-> belongs here — findings go in your plan doc, cross-session findings on a wipeboard.
-> Edit it with `work-record read` and `work-record update_record`; the location is Ronin's business.
+> Your work record is what the owner reads on your tile. Keep it true.
+> - **objective:** one sentence on what you are doing now:
+>   `work-record update_record --objective "…"`.
+> - **repos:** the worktrees and branches you work in: `work-record workspace add|remove`.
+> - **holds:** the work items you hold; their status shows here. Work items:
+>   the Work Item capability.
+> - **teams**, **configuration:** Ronin writes these and tells you when they change.
 TEACH
   fi
   printf '\n```json\n%s\n```\n' "$BLOCK"

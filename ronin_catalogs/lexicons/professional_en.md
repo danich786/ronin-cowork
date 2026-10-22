@@ -817,7 +817,7 @@ The catalog entry goes. {dir} is not touched.
 - **docs.loading:** loading…
 - **docs.saving:** saving…
 - **docs.saved:** saved
-- **docs.work_record_note:** Ask an agent to list a document with item doc <id> add <path>. If a document is missing, ask the agent to update its work record.
+- **docs.work_record_note:** Ask an agent to attach a document with item attach <id> <path>. If a document is missing, ask the agent to update its work record.
 
 ## roots — the count line and chips
 - **roots.chip_archived:** archived
@@ -925,7 +925,7 @@ The catalog entry goes. {dir} is not touched.
 - **tape.jump:** ↓ latest
 - **tape.fold_code:** ⌨ code
 
-## ladder — shingo.js (the ladder chip and panel)
+## ladder — shingo.js (the work record chip and panel)
 - **ladder.task_at_hand:** Task at hand
 - **ladder.task_unstated:** No task stated in this work record.
 - **ladder.worktrees:** Worktrees
@@ -933,10 +933,8 @@ The catalog entry goes. {dir} is not touched.
 - **ladder.coworks:** Teams
 - **ladder.tracked_documents:** Tracked documents
 - **ladder.docs_none:** No tracked documents.
-- **ladder.progress:** Progress
-- **ladder.none:** no work record yet
-- **ladder.gate:** GATE
-- **ladder.legs_undetermined:** — legs undetermined
+- **ladder.items:** Work items
+- **ladder.no_items:** No work items held.
 
 ## tile — tile.js (the Agent terminal tile)
 
@@ -1125,7 +1123,7 @@ The catalog entry goes. {dir} is not touched.
 
 ## docs — the empty line and count
 - **docs.empty_team:** No tracked documents.
-- **docs.empty:** No session has listed a doc yet. An agent lists one with: item doc <id> add <path>
+- **docs.empty:** No session has listed a doc yet. An agent attaches one with: item attach <id> <path>
 - **docs.count_one:** 1 doc
 - **docs.count_many:** {n} docs
 

@@ -3632,90 +3632,10 @@ body {
   margin-bottom: var(--space-row);
   border-bottom: var(--edge) solid var(--line);
 }
-.shingo-ladder .sl-row {
-  display: flex;
-  gap: var(--space-inline);
-  align-items: baseline;
-  white-space: nowrap;
-}
-
-.shingo-ladder .sl-here,
-.shingo-ladder .sl-m,
-.shingo-ladder .sl-n {
-  flex: 0 0 auto;
-  width: 14px;
-  text-align: center;
-}
-.shingo-ladder .sl-here {
-  color: var(--accent);
-}
-.shingo-ladder .sl-n {
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-
-.shingo-ladder .sl-m {
-  font-size: var(--text-body);
-  font-weight: var(--weight-strong);
-  line-height: var(--leading-none);
-  color: var(--muted);
-}
-.shingo-ladder .sl-t {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--muted);
-  flex: 0 1 auto;
-}
-.shingo-ladder .sl-phase {
-  margin-top: var(--space-row);
-}
-.shingo-ladder .sl-phase .sl-t {
-  color: var(--fg-strong);
-  font-weight: var(--weight-strong);
-}
-.shingo-ladder .sl-frac {
-  margin-left: auto;
-  padding-left: var(--space-inset);
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-.shingo-ladder .st-DONE .sl-m {
-  color: var(--ok);
-}
-
-.shingo-ladder .sl-row.now {
-  background: var(--selected); /* the one you are on, have chosen, or are dropping onto */
-  box-shadow: inset 2px 0 0 var(--accent);
-  margin: 0 calc(-1 * var(--space-inset));
-  padding: 0 var(--space-inset);
-}
-.shingo-ladder .sl-row.now .sl-t,
-.shingo-ladder .sl-row.now .sl-n,
-.shingo-ladder .sl-row.now .sl-m {
-  color: var(--accent);
-}
-.shingo-ladder .sl-row.now .sl-tag {
-  color: var(--accent);
-  border-color: var(--accent);
-}
-
-.shingo-ladder .sl-tag {
-  flex: 0 0 auto;
-  font-size: var(--text-small);
-  font-weight: var(--weight-strong);
-  letter-spacing: var(--tracking-wide);
-  border: var(--edge) solid var(--line-3);
-  background: transparent;
-  border-radius: var(--radius-small);
-  padding: var(--space-row) var(--space-inline);
-  color: var(--muted);
-}
-
-.shingo-ladder .sl-und {
-  color: var(--muted);
-  font-style: italic;
-  font-weight: var(--weight-regular);
-}
+.shingo-ladder .sl-item + .sl-item { margin-top: var(--space-row); }
+.shingo-ladder .sl-item .sl-action { color: var(--muted); }
+.shingo-ladder .sl-item.flagged .sl-action { color: var(--warn); }
+.shingo-ladder .sl-comment { color: var(--muted); padding-left: var(--space-inset); }
 .shingo-ladder .sl-empty,
 .shingo-ladder .sl-quiet {
   color: var(--muted);

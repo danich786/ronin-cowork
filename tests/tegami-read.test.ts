@@ -1,9 +1,9 @@
 /**
  * TEGAMI-READ — core's reader of an Agent's work record, the one behind View Work Record.
- * The letter gives objective, mandate, repos, holds and the position; the ladder is the
- * focus item's and the docs are every held item's, read from the work item store. Pinned:
- * the fence is optional, the position wins over inference, a frontier gate outranks phase
- * counting, on_tangent outranks position, and the doc list only lists what exists.
+ * The letter gives objective, mandate, repos and holds; the items held (with their status)
+ * and their docs are read from the work item store. Pinned: the fence is optional, the chip
+ * is the held items with their status, on_tangent outranks it, and the doc list only lists
+ * what exists. There is no ladder: Jira has none.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -24,8 +24,7 @@ process.env.RONIN_SESSION_DIR = temp;
 process.env.RONIN_WORK_ITEMS_DIR = path.join(temp, '.work-items');
 
 const { readTegami } = await import('../src/tegami-read.js');
-const { createItem } = await import('../src/work-items.js');
-type Rung = NonNullable<Parameters<typeof createItem>[0]['ladder']>[number];
+const { createItem, flagItem } = await import('../src/work-items.js');
 
 // No tmux server answers here, so a session key is its bare name and the letter is read
 // from <session store>/<name>/tegami.md.
@@ -36,46 +35,32 @@ async function writeLetter(name: string, block: string): Promise<void> {
     `# TEGAMI — ${name}\n> prose the parser must ignore\n\n\`\`\`json\n${block}\n\`\`\`\n`,
   );
 }
-const item = async (title: string, ladder: Rung[] = [], docs: string[] = []) => (await createItem({ title, ladder, docs }, 'test')).item.id;
+const item = async (title: string, docs: string[] = []) => (await createItem({ title, docs }, 'test')).item.id;
 
 test('a missing letter reads as null, not an error', async () => {
   assert.equal(await readTegami('tegami-read-nobody'), null);
 });
 
-test('holding nothing reads as no ladder and no item, not an invention', async () => {
+test('holding nothing reads as no items, not an invention', async () => {
   await writeLetter('tegami-read-empty', '{ "objective": "idle", "holds": [] }');
   const t = await readTegami('tegami-read-empty');
   assert.ok(t);
-  assert.deepEqual([t.ladder, t.items, t.item, t.chip.text], [[], [], null, '—']);
+  assert.deepEqual([t.items, t.chip.text, 'ladder' in t], [[], '—', false]);
 });
 
-test('the focus item gives the ladder: a gate at the frontier reads as held', async () => {
-  const id = await item('born', [{ gate: 'go / no-go — read the brief, report back, wait', status: 'ACTIVE' }]);
-  await writeLetter('tegami-read-born', `{ "objective": "prove the reader", "holds": ["${id}"] }`);
-  const t = await readTegami('tegami-read-born');
+test('the chip is the items held with their status; a flagged one marks it', async () => {
+  const ids = [await item('a'), await item('b'), await item('c'), await item('d')];
+  await flagItem(ids[1]!, true, undefined, 'test');
+  await writeLetter('tegami-read-held', `{ "objective": "", "holds": ${JSON.stringify(ids)}, "at": { "item": "${ids[0]}", "rung": 2 } }`);
+  const t = await readTegami('tegami-read-held');
   assert.ok(t);
-  assert.equal(t.item?.id, id);
-  assert.equal(t.chip.text, '⛩ GATE');
+  assert.equal(t.chip.text, `${ids[0]} IDEA · ⚑ ${ids[1]} IDEA · ${ids[2]} IDEA · +1`);
   assert.equal(t.chip.gate, true);
+  assert.deepEqual(t.holds, ids, 'an old "at" in the letter reads as nothing');
 });
 
-test('the position wins over inference, and legs render as position not score', async () => {
-  const other = await item('other', [{ gate: 'not this one', status: 'ACTIVE' }]);
-  const id = await item('fix', [
-    { phase: 'find it', legs: [{ title: 'a', status: 'DONE' }] },
-    { phase: 'fix it', legs: [{ title: 'b', status: 'DONE' }, { title: 'c', status: 'ACTIVE' }, { title: 'd', status: 'PLANNED' }] },
-  ]);
-  await writeLetter('tegami-read-at', `{ "objective": "", "holds": ["${other}", "${id}"], "at": { "item": "${id}", "rung": 2, "leg": 2 } }`);
-  const t = await readTegami('tegami-read-at');
-  assert.ok(t);
-  assert.equal(t.item?.id, id, 'at.item picks the focus among what is held');
-  assert.equal(t.chip.text, 'phase 2 · leg 2/3');
-  assert.deepEqual(t.at, { item: id, rung: 2, leg: 2 });
-  assert.deepEqual(t.holds, [other, id]);
-});
-
-test('on_tangent outranks position; on_track reads as on the ladder', async () => {
-  const id = await item('tangent', [{ phase: 'p', legs: [{ title: 'x', status: 'ACTIVE' }] }]);
+test('on_tangent outranks the items held', async () => {
+  const id = await item('tangent');
   await writeLetter('tegami-read-tangent', `{ "ladder_state": "on_tangent", "holds": ["${id}"] }`);
   const t = await readTegami('tegami-read-tangent');
   assert.ok(t);
@@ -89,8 +74,8 @@ test('docs are the README and every held item\'s docs, only what exists', async 
   const second = path.join(temp, 'second.md');
   await fs.writeFile(real, 'x');
   await fs.writeFile(second, 'y');
-  const one = await item('one', [], [real, path.join(temp, 'gone.md')]);
-  const two = await item('two', [], [second]);
+  const one = await item('one', [real, path.join(temp, 'gone.md')]);
+  const two = await item('two', [second]);
   await writeLetter(name, `{ "holds": ["${one}", "${two}"] }`);
   const readme = path.join(temp, name, 'README.md');
   await fs.writeFile(readme, '# Read first\n');

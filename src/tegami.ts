@@ -80,7 +80,7 @@ function seedShell(
 > - **objective:** one sentence on what you are doing now:
 >   \`work-record update_record --objective "…"\`.
 > - **repos:** the worktrees and branches you work in: \`work-record workspace add|remove\`.
-> - **holds:** the work items you hold; your focus item's plan shows here. Work items:
+> - **holds:** the work items you hold; their status shows here. Work items:
 >   the Work Item capability.
 > - **teams**, **configuration:** Ronin writes these and tells you when they change.
 
@@ -117,21 +117,19 @@ async function replaceLetterBlock(file: string, text: string, parsed: ReturnType
   await fs.rename(tmp, file);
 }
 
-/** One Agent's holder list, as its letter keeps it: work item ids, and `at.item`, the
- * focus. The items themselves live in the work item store. */
+/** One Agent's holder list, as its letter keeps it: work item ids. The items themselves
+ * live in the work item store. */
 export interface LetterHolds {
   key: string;
   name: string;
   objective: string;
   holds: string[];
-  at: Record<string, unknown> | null;
 }
 
 function holdsOfBody(key: string, text: string, body: Record<string, unknown>): LetterHolds {
   const name = text.match(/^# TEGAMI — (.+)$/m)?.[1]?.trim() || key;
   const holds = Array.isArray(body.holds) ? body.holds.filter((id): id is string => typeof id === 'string') : [];
-  const at = body.at && typeof body.at === 'object' && !Array.isArray(body.at) ? body.at as Record<string, unknown> : null;
-  return { key, name, objective: typeof body.objective === 'string' ? body.objective : '', holds, at };
+  return { key, name, objective: typeof body.objective === 'string' ? body.objective : '', holds };
 }
 
 export async function readLetterHolds(key: string): Promise<LetterHolds | null> {
@@ -147,33 +145,16 @@ export async function listLetterHolds(): Promise<LetterHolds[]> {
   return letters.filter((letter): letter is LetterHolds => letter !== null);
 }
 
-/** Replace one letter's holder list. The focus follows: to `focus` when named and held,
- * else it stays on an item still held, moves to the first held item, or goes. */
-export async function writeLetterHolds(key: string, holds: string[], focus?: string): Promise<LetterHolds> {
+/** Replace one letter's holder list. An old focus (`at`, from when items had ladders) goes. */
+export async function writeLetterHolds(key: string, holds: string[]): Promise<LetterHolds> {
   const file = tegamiPath(key);
   const text = await fs.readFile(file, 'utf8');
   const parsed = letterBlock(text);
   if (!parsed) throw new Error(`the work record at ${file} has no readable JSON block`);
   parsed.body.holds = holds;
-  const at = parsed.body.at && typeof parsed.body.at === 'object' ? parsed.body.at as Record<string, unknown> : null;
-  if (focus && holds.includes(focus) && at?.item !== focus) parsed.body.at = { item: focus };
-  else if (!at || typeof at.item !== 'string' || !holds.includes(at.item)) {
-    if (holds[0]) parsed.body.at = { item: holds[0] };
-    else delete parsed.body.at;
-  }
+  delete parsed.body.at;
   await replaceLetterBlock(file, text, parsed, parsed.body);
   return holdsOfBody(key, text, parsed.body);
-}
-
-/** Set the letter's position: the focus item and, when a monitor or lead placed it, the
- * rung and leg on that item's ladder. */
-export async function writeLetterAt(key: string, at: { item: string; rung?: number; leg?: number }): Promise<void> {
-  const file = tegamiPath(key);
-  const text = await fs.readFile(file, 'utf8');
-  const parsed = letterBlock(text);
-  if (!parsed) throw new Error(`the work record at ${file} has no readable JSON block`);
-  parsed.body.at = at;
-  await replaceLetterBlock(file, text, parsed, parsed.body);
 }
 
 export async function seedTegami(
