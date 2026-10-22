@@ -79,10 +79,10 @@ async function oneLine(id: string, args: string[], as = 'probe') {
   const out = await tool('item', args, as);
   const after = await trail(id);
   assert.equal(after.length, before + 1, `item ${args.join(' ')} appended ${after.length - before} lines`);
-  assert.match(out, new RegExp(`Keep it current: item write ${id} `), 'the acknowledgement nags');
+  assert.match(out, new RegExp(`^${id} `), 'the acknowledgement is the line of what the act did');
   return after.at(-1)!;
 }
-const made = (out: string) => /Work item (w\d+)/.exec(out)![1]!;
+const made = (out: string) => /^(w\d+) was created/m.exec(out)![1]!;
 
 test('item acts, each naming its item, one trail line each', async () => {
   const epic = made(await tool('item', ['create', '--title', 'Overall', '--level', '1']));

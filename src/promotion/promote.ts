@@ -4,7 +4,7 @@ import { healthCheck, notifyTeam, restartService, serviceStartedAfter } from './
 import { queuePromotionContinuation } from './continuation.js';
 import { houseSend } from '../desks/lead.js';
 import { receiptById } from '../desks/receipts.js';
-import { editItem, keepCurrentLine } from '../work-items.js';
+import { editItem, didLine } from '../work-items.js';
 import { REPO_ROOT } from '../resources.js';
 import {
   acquirePromotionLock, advanceState, anyAdvanced, lastGoodPromotion, listReceipts, newReceipt, newReceiptId, now, readReceipt, releasePromotionLock, writeReceipt, PROMOTION_LEDGER_DIR,
@@ -60,7 +60,7 @@ export async function announcePromotion(r: PromotionReceipt, primary: string, fx
   for (const { id } of associated) {
     try {
       const moved = await editItem(id, { status: 'DONE' }, r.by || 'promotion', `promotion ${r.id}`);
-      keep.set(id, keepCurrentLine(moved));
+      keep.set(id, didLine(moved));
       log(`  done  ${id}: ${moved.line.op} ${moved.line.from ?? ''} → ${moved.line.to ?? ''}`);
     } catch (e) {
       log(`  done  ${id}: not moved — ${(e as Error).message}`);

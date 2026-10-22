@@ -26,7 +26,7 @@ type Receipt = Parameters<typeof appendReceipt>[0];
 type Promotion = Parameters<typeof announcePromotion>[0];
 type Fx = Parameters<typeof announcePromotion>[2];
 
-test('promotion moves each carried item to DONE once and says how to keep it current', async () => {
+test('promotion moves each carried item to DONE once and says so', async () => {
   const { item } = await createItem({ title: 'Promoted', status: 'LAND' }, 'fable');
   await appendReceipt({
     id: 'hi_1', repo: 'cowork', line: 'team/comp/dev', desk: 'team/comp/fable', session: 'fable', result: 'accepted',
@@ -47,7 +47,7 @@ test('promotion moves each carried item to DONE once and says how to keep it cur
   assert.equal(back.status, 'DONE');
   assert.equal(back.trail.length, 2, 'create, then one line for the promotion');
   assert.deepEqual([back.trail[1]!.op, back.trail[1]!.from, back.trail[1]!.to, back.trail[1]!.note, back.trail[1]!.by], ['status', 'LAND', 'DONE', 'promotion promo_1', 'lead']);
-  const keep = `Keep it current: item write ${item.id}`;
+  const keep = `${item.id} moved to DONE.`;
   assert.equal(notices.length, 2);
   for (const text of notices) assert.ok(text.includes(keep), text);
 });

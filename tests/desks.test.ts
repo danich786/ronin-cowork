@@ -259,9 +259,8 @@ test('a hand-in with --item ends by naming the item and the write that keeps it 
     env: { ...process.env, RONIN_SESSION: 'reminder', RONIN_TEAMS: 'comp' },
   }).toString();
   const last = output.trimEnd().split('\n').at(-1)!;
-  assert.match(last, new RegExp(`^${item.id} moved to LAND; .*Keep it current: item write ${item.id} `));
+  assert.equal(last, `${item.id} moved to LAND`);
   assert.ok(output.indexOf('ACCEPTED cowork:team/comp/reminder') < output.indexOf(last));
-  assert.equal(output.split('Keep it current').length - 1, 1, 'one reminder, never a block');
   assert.equal((await readItem(item.id))!.status, 'LAND');
 });
 

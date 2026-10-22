@@ -28,7 +28,6 @@ const { registerWorkItems } = await import('../src/routes/work-items-api.js');
 test('no parent is normal: level 0, kind blank, nothing made to hold it', async () => {
   const first = await items.createItem({ title: 'First' }, 'probe');
   assert.deepEqual([first.item.parent, first.item.level, first.item.kind, first.item.status, first.item.flagged], [null, 0, undefined, 'IDEA', false]);
-  assert.equal(first.shape, `${first.item.id} is an item at IDEA`);
   assert.deepEqual((await items.listItems()).map((item) => item.id), [first.item.id], 'one create, one item');
 });
 
@@ -41,7 +40,6 @@ test('level defaults one below the parent and adding a child never changes it', 
   const leaf = (await items.createItem({ title: 'Leaf' }, 'probe')).item;
   await items.createItem({ title: 'Under the leaf', parent: leaf.id }, 'probe');
   assert.equal((await items.readItem(leaf.id))!.level, 0);
-  assert.equal((await items.readItem(epic.id)) && (await items.editItem(epic.id, { title: 'Epic' }, 'probe')).shape, `${epic.id} is an epic at IDEA`);
 });
 
 test('the ladder stays on an item when it gains a child (the fold into the first child is gone)', async () => {
@@ -55,10 +53,11 @@ test('the ladder stays on an item when it gains a child (the fold into the first
   assert.equal((await items.readItem(epic.id))!.ladder.length, 1, 'a move under it keeps it too');
 });
 
-test('kind is a label: story, task, bug or blank; the ack says it', async () => {
+test('kind is a label: story, task, bug or blank; the answer says only what the act changed', async () => {
   const bug = await items.createItem({ title: 'Crash', kind: 'bug' }, 'probe');
-  assert.equal(bug.shape, `${bug.item.id} is a bug at IDEA`);
-  assert.equal((await items.editItem(bug.item.id, { kind: 'story', flagged: true }, 'probe')).shape, `${bug.item.id} is a story at IDEA, flagged`);
+  assert.equal(items.didLine(bug), `${bug.item.id} was created`);
+  assert.equal(items.didLine(await items.editItem(bug.item.id, { kind: 'story', flagged: true }, 'probe')), `${bug.item.id} changed: kind story, flagged`);
+  assert.equal(items.didLine(await items.editItem(bug.item.id, { status: 'BUILD' }, 'probe')), `${bug.item.id} moved to BUILD`);
   assert.equal((await items.editItem(bug.item.id, { kind: '' }, 'probe')).item.kind, undefined);
   await assert.rejects(items.createItem({ title: 'Odd', kind: 'epic' }, 'probe'), /kind must be one of story, task, bug/);
 });
@@ -168,7 +167,7 @@ test('routes acknowledge with the item and the appended line; refusals answer 40
     const made = await call('POST', base, { title: 'Routed', objective: 'o', kind: 'task', by: 'probe' });
     assert.equal(made.status, 200);
     const id = made.data.item.id as string;
-    assert.match(made.data.acknowledgement, new RegExp(`${id} is a task at IDEA`));
+    assert.equal(made.data.acknowledgement, `${id} was created`);
     const moved = await call('PUT', `${base}/${id}`, { status: 'PLAN', flagged: 'true', jira: 'RON-1', by: 'probe' });
     assert.deepEqual([moved.data.item.status, moved.data.item.flagged, moved.data.item.external.jira], ['PLAN', true, 'RON-1']);
     const child = await call('POST', base, { title: 'Child', parent: id, by: 'probe' });
