@@ -103,7 +103,7 @@ many Agents it has, and its lead. Press a stone and the stones fold to the left 
 opens beside them: its title and objective with **Launch** (open the Team's own workbench),
 then three numbered steps. **1 Agents**: lead first, each with its live dot and what it holds,
 and **+** at the end to bring in an Agent already running or start a new one. **2 Work items**:
-one line per item with its holder and stage bar, the Team's own items first. **3
+one line per item with its holder and status bar (⚑ red when flagged), the Team's own items first. **3
 Configuration**, folded to its kind and model until you open it: the Team's configuration
 form, with **Delete team** at its foot. Each step folds or opens from its own heading. Press
 the stone again or Escape to go back. Drag a stone into another workspace to open the Team

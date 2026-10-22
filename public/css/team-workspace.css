@@ -60,9 +60,7 @@
   .tk-legend { display: flex; flex: none; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-paragraph) var(--space-inline); color: var(--muted); font-size: var(--text-body); }
   .tk-legend span { display: inline-flex; align-items: center; gap: var(--space-inline); }
   .tk-dot { width: var(--tk-dot); height: var(--tk-dot); background: var(--line-2); /* status: none yet */ }
-  .tk-dot.green { background: var(--ok-2); /* status: under way or done */ }
-  .tk-dot.yellow { background: var(--status-yellow); /* status: waiting / stuck */ }
-  .tk-dot.red { background: var(--status-red); /* status: waiting / stuck */ }
+  .tk-dot.flagged { background: var(--status-red); /* flagged: an impediment */ }
   .tk-notice { flex: 1 1 auto; min-width: 0; margin: 0; color: var(--muted); font-size: var(--text-body); }
   .tk-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(var(--tk-column-min), 1fr)); gap: var(--space-paragraph) var(--space-inline); min-width: 0; padding: var(--space-paragraph) var(--space-inline) var(--space-paragraph); }
   .tk-unavailable { margin: 0; color: var(--muted); }
@@ -83,9 +81,7 @@
   .tk-card.open { height: var(--tk-card-open); }
   .tk-card:active { cursor: grabbing; }
   .tk-card.dragging { opacity: .45; }
-  .tk-card[data-status='green'] { border-left-color: var(--ok-2); }
-  .tk-card[data-status='yellow'] { border-left-color: var(--status-yellow); }
-  .tk-card[data-status='red'] { border-left-color: var(--status-red); }
+  .tk-card[data-flagged='true'] { border-left-color: var(--status-red); /* flagged: an impediment */ }
   .tk-board.dragging .tk-column.means { border-color: var(--accent); border-style: dashed; background: var(--selected); /* the one you are on, have chosen, or are dropping onto */ }
   .tk-column.over { border-color: var(--accent); background: var(--selected); /* the one you are on, have chosen, or are dropping onto */ }
   .tk-drop-hint { display: none; margin: 0; padding: var(--space-row) var(--space-inline) 0; color: var(--accent); font-size: var(--text-body); }
@@ -97,7 +93,7 @@
   .tk-outcome { max-height: calc(var(--tk-outcome-line) * 2); overflow: hidden; margin-top: var(--space-row); color: var(--muted); font-size: var(--text-body); line-height: var(--tk-outcome-line); }
   .tk-evidence { margin: var(--space-row) 0 0; overflow-wrap: anywhere; color: var(--muted); font-size: var(--text-small); }
   .tk-card-row { min-height: var(--tk-card-meta-line); align-items: center; gap: var(--space-inline); margin-top: var(--space-row); padding-top: 0; font-size: var(--text-body); }
-  .tk-waiting { color: var(--ok-2); }
+  .tk-flag { color: var(--status-red); }
   .tk-asked { color: var(--muted); }
   .tk-owner, .tk-project-open { border: 0; border-bottom: var(--edge) dotted currentColor; border-radius: 0; padding: 0; background: transparent; color: var(--accent-2); font: inherit; }
   .tk-owner:hover, .tk-project-open:hover { border-bottom-style: solid; }
@@ -153,9 +149,8 @@
   }
   .tk-stage-bar > i { width: var(--tk-stage-w); height: var(--tk-stage-h); border: var(--edge) solid var(--line-2); }
   .tk-stage-bar > i.past { border-color: var(--fg); background: var(--fg); /* a stage already passed */ }
-  .tk-stage-bar > i.now { border-color: transparent; background: var(--status-yellow); /* status: waiting / stuck */ }
-  .tk-stage-bar > i.now.green { background: var(--ok-2); /* status: under way or done */ }
-  .tk-stage-bar > i.now.red { background: var(--status-red); /* status: waiting / stuck */ }
+  .tk-stage-bar > i.now { border-color: transparent; background: var(--ok-2); /* the column it is in */ }
+  .tk-stage-bar > i.now.flagged { background: var(--status-red); /* flagged: an impediment */ }
   .league-team-roster, .league-team-config { flex: 0 0 auto; }
   .league-team-roster { display: flex; flex-direction: column; min-height: 0; }
   .league-team-roster-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-inline); margin-bottom: var(--space-paragraph); border-bottom: var(--edge) solid var(--line-2); padding-bottom: var(--space-row); }

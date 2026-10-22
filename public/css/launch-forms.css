@@ -87,9 +87,7 @@
   /* A row's notes under its stone: plain muted text, wrapping, clamped to six lines (the ask-name clamp; owner, 2026-10-20). */
   .sws-branch-note { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; width: var(--sws-stone); margin: 0; overflow: hidden; overflow-wrap: anywhere; color: var(--muted); font-size: var(--form-note); line-height: var(--leading-body); }
   .wi-phalanx[data-density='compact'] .sws-secondary, .wi-phalanx[data-density='compact'] .sws-state { display: none; }
-  .wi-project-green::before { background: var(--ok-2); /* status: under way or done */ }
-  .wi-project-yellow::before { background: var(--status-yellow); /* status: waiting / stuck */ }
-  .wi-project-red::before { background: var(--status-red); /* status: waiting / stuck */ }
+  .wi-project-flagged::before { background: var(--status-red); /* flagged: an impediment */ }
   .wi-phalanx .sws-group.means { outline: var(--edge-2) dashed var(--accent); outline-offset: var(--edge-2); }
   .wi-phalanx .sws-group.over { outline: var(--edge-2) solid var(--accent); }
   .wi-project-id, .wi-notice { color: var(--muted); }

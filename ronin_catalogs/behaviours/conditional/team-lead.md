@@ -19,7 +19,7 @@ facts. Keep Team-wide decisions on the wipeboard and send one-to-one messages di
 Raise visible Agents one at a time with `session_create --prompt <purpose>`. A newborn
 resolves its own Campaign and Team context and reads its own packet; it does not inherit
 the caller's conversation. Create a Team-held work item before delegating substantial work,
-then move that one canonical item with `team item assign` rather than copying it.
+then move that one canonical item with `item assign <id> <agent>` rather than copying it.
 
 For code work, assign a managed worktree from `dev` for new work or from the Team line when the
 Agent is joining work already in flight. The desk source changes where the private branch

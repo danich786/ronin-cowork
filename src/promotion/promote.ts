@@ -59,7 +59,7 @@ export async function announcePromotion(r: PromotionReceipt, primary: string, fx
   const keep = new Map<string, string>();
   for (const { id } of associated) {
     try {
-      const moved = await editItem(id, { stage: 'DONE' }, r.by || 'promotion', `promotion ${r.id}`);
+      const moved = await editItem(id, { status: 'DONE' }, r.by || 'promotion', `promotion ${r.id}`);
       keep.set(id, keepCurrentLine(moved));
       log(`  done  ${id}: ${moved.line.op} ${moved.line.from ?? ''} → ${moved.line.to ?? ''}`);
     } catch (e) {

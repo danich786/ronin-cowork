@@ -86,7 +86,7 @@ export function buildLadder(letter, deskEntry = null, { openDoc = null } = {}) {
   if (current.item) {
     const state = document.createElement('p');
     state.className = 'sl-action';
-    state.textContent = [current.item.id, current.item.stage, current.item.status, current.item.exit !== 'none' ? `exit: ${current.item.exit}` : ''].filter(Boolean).join(' · ');
+    state.textContent = [current.item.id, current.item.status, current.item.flagged ? '⚑ flagged' : ''].filter(Boolean).join(' · ');
     task.appendChild(state);
   }
   if (letter.mandate) {

@@ -68,8 +68,10 @@ installation itself a behavior.
 
 - **Edges** — communication and coordination across Agents and Teams: `edges send`,
   `read`, `team`, `wipeboard`, `page`, `control`, and `schedule`.
-- **Work Record** — the Agent's work record, documents, and held work items:
-  `work-record read`, `update_record`, `document …`, and `item …`.
+- **Work Record** — the Agent's work record: `work-record read`, `update_record` and
+  `workspace …`.
+- **Work Item** — every act on a named work item: `item create`, `read`, `list`, `write`,
+  `move`, `assign`, `plan`, `doc`, `evidence` and `focus`.
 - **Session** — Agent creation, inspection, configuration, archive, restoration, and
   ending: `session_create`, `session_check`, `session_set`, `session_archive`,
   `session_restore`, and `session_end`.
@@ -78,9 +80,9 @@ installation itself a behavior.
   `reply`, and `repository-init`.
 - **Machine Settings** — Campaign, installation, provider, default, owner, and Workspace
   Folder configuration: `machine-settings …`.
-- **Team** — Team record, membership and lead designation, Team-held work items, assignment,
-  return, status, and Team forking: `team roster …`, `team item …`, `team member
-  status`, and Team-related `session_set` operations.
+- **Team** — Team record, membership and lead designation, the Team's reading of its work
+  items, and Team forking: `team roster …`, `team member status`, and Team-related
+  `session_set` operations.
 
 An installed extension may add another Tool capability, but a capability without a real
 tool is only proposed teaching and must not be presented as executable ability.

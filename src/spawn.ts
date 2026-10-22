@@ -37,7 +37,7 @@ const CHECKOUT_SOP = path.join(REPO_ROOT, 'ronin_catalogs', 'behaviours', 'condi
 const CORE_CONTRIBUTION: ResolvedContribution = {
   name: 'cowork_agent', origin: 'stock', shadowed: false, label: 'Cowork Agent', blurb: '',
   reading: [], reading_off: [],
-  tools: ['edges', 'session_create', 'session_end', 'session_archive', 'session_restore', 'session_check', 'session_set', 'work-record', 'ronin-url'],
+  tools: ['edges', 'session_create', 'session_end', 'session_archive', 'session_restore', 'session_check', 'session_set', 'work-record', 'item', 'ronin-url'],
   parts: [], enabled: true, stated_by: 'conditional', required_by: [],
 };
 
