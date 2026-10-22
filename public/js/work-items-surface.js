@@ -1,4 +1,4 @@
-/* Work Items: Project stones and their reading inside the standard Phalanx. */
+/* Work Items: work item stones and their reading inside the standard Phalanx. */
 import { WorkspaceKit } from './workspace-kit.js';
 import { carryItem } from './team-drag.js';
 import { createPhalanx } from './phalanx.js';
@@ -35,7 +35,7 @@ export function createWorkItemsSurface(options = {}) {
   };
   const sendMove = async (project, stage) => {
     const move = moveMessage(project, stage, options.lead?.(project) || '');
-    if (!move.target) { notice.textContent = t('team_kanban.no_target', 'This project has no live holder to ask.'); return; }
+    if (!move.target) { notice.textContent = t('team_kanban.no_target', 'This work item has no live holder to ask.'); return; }
     notice.textContent = t('team_kanban.sending', 'Sending move request to @{name}…', { name: move.target });
     const result = await request('/api/messages', { method: 'POST', json: { target: move.target, text: move.text } });
     if (!result.ok) { notice.textContent = t('team_kanban.send_failed', 'The move request could not be sent.'); return; }

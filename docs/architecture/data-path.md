@@ -47,7 +47,7 @@ snapshot: no browser reads these over REST.
 |---|---|---|
 | `{t:'sessions', list}` | the session listing with its Team and lead axes | a tmux notification, or a painted field moved on the tick |
 | `{t:'home', rows}` | one row per session: stance, model, context gauge, work record | a painted field moved on the tick |
-| `{t:'teams', rosters}` | the Team rosters, the shape of `GET /api/team-rosters`; each row carries the Team's `board` (the root it holds, else its lead's; none is null) and `items` (what the Team and its members hold, each with its holder), built server-side from the Team reading (`work-items-read.ts`) | a roster, project, work-item, membership or lead write |
+| `{t:'teams', rosters}` | the Team rosters, the shape of `GET /api/team-rosters`; each row carries the Team's `board`, its epic (the root it holds, else its lead's; none is null) and `items` (what the Team and its members hold, each with its holder), built server-side from the Team reading (`work-items-read.ts`) | a roster, work-item, membership or lead write |
 | `{t:'messages', list}` | the message queue | a file in the queue folder changed |
 | `{t:'memory', reading}` | the machine reading behind the memory gauge; `{off:true}` once when watching is off | the machine service's reading moved |
 
@@ -114,9 +114,9 @@ poll.
   connected, takes one session listing and builds `sessions` and `home` from it. Each is
   signed on the painted fields (`activity` and a stance's `at` are left out) and sent only
   when the signature moved. A connection that joins mid-tick is sent only what it missed.
-- **Write routes push.** Roster and project routes push `teams` after a successful write;
+- **Write routes push.** Roster routes push `teams` after a successful write;
   so do the work-item routes and a session's membership and lead routes, since a Team's
-  row carries its board and items.
+  row carries its epic and items.
   The action routes for Mika, shutdown, gbrain and the setups push their progress.
 - **Store folders are watched.** Boards, cron jobs and the message queue are files, and
   every writer — a route, a CLI tool in a child process, the server itself — changes a

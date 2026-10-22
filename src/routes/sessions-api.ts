@@ -448,7 +448,7 @@ export function registerSessions(app: express.Express): void {
   });
 
   // A membership or lead change moves what the teams push carries (whose items a Team's
-  // row lists, whose board is its lead's), so the rosters are pushed again after it.
+  // row lists, whose epic is its lead's), so the rosters are pushed again after it.
   app.use(['/api/sessions/:name/teams', '/api/sessions/:name/team_lead'], (req, res, next) => {
     if (req.method !== 'GET') res.on('finish', () => { if (res.statusCode < 400) void pushTeams(); });
     next();

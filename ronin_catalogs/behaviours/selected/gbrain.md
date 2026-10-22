@@ -49,7 +49,7 @@ installation is available. Changing the selection does not reconfigure a running
   on** — there is no per-session partition (a per-page `visibility` knob exists; use it
   for local-only facts). Never capture a secret, a credential, or another session's
   unpublished work. When in doubt, don't; TEGAMI is the place for your own working state.
-- **Project facts do not go here.** Read and write them through the Work Record's project
+- **Work item facts do not go here.** Read and write them through the Work Record's item
   tools. GBrain remains a separately selected facility; do not represent Work Record
   authority as a GBrain operation.
 

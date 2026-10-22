@@ -109,7 +109,7 @@ function seedShell(
 > them. Holding nothing, your first ladder write makes an item for you, held by you.
 >
 > YOUR **holds** are the work items you hold, by id. Assign, return and backlog move them;
-> \`work-record project list\` reads them.
+> \`work-record item list\` reads them.
 >
 > YOUR **ladder_state** — \`work-record update_record --on_tangent\` when you step off the ladder,
 > \`--on_track\` when you are back. Riffing, a side job, ten minutes in nobody's plan — all

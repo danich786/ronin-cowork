@@ -4,14 +4,14 @@ This supports surface seven, [Work Record](contributor-map.md#work-record). Coor
 connects the authored record to Team custody and delivery evidence; it is not a replacement
 surface or a new work-record store. The Task Manager derives a view of those authorities.
 
-1. **Objective enters the Team.** The Team lead records an idea or Project in the Team roster.
-   The Project has stable identity, outcome, stage, and provenance.
+1. **Objective enters the Team.** The Team lead records an idea as a work item the Team holds.
+   The item has stable identity, outcome, stage, and provenance.
 2. **Assignment is accepted.** A visible Agent is launched or assigned with the objective,
    Campaign/Team context, Workspace Folder handle, mandate, behaviors, capabilities, and repository
    placement resolved before birth.
-3. **The Agent owns its work.** Assignment transfers a Team-held Project into the Agent's
-   work record. `work-record project create` is the other entry when work arrives without
-   a Team-held Project; `write` updates the held Project. Stable identity and provenance
+3. **The Agent owns its work.** Assignment transfers a Team-held work item into the Agent's
+   work record. `work-record item create` is the other entry when work arrives without
+   a Team-held item; `write` updates the held item. Stable identity and provenance
    survive custody changes; there is no second shared mutable checklist.
 4. **Work produces evidence.** The Agent keeps its record current and commits coherent desk
    checkpoints. Tests, documents, decisions, and exact commits become evidence.
@@ -23,7 +23,7 @@ surface or a new work-record store. The Task Manager derives a view of those aut
 7. **The Task Manager reads the work items.** It shows what the Team and its members
    hold. A hand-in naming an item moves it to Land and a promotion moves it to Done, each a
    trail line naming its receipt. It never guesses from phase prose.
-8. **Completion closes the right records.** The Project moves to Done only when its definition
+8. **Completion closes the right records.** The work item moves to Done only when its definition
    of completion is met. Standing truth lands in code/docs; finished temporary plans are
    removed; desk and session cleanup follow their own explicit lifecycle.
 

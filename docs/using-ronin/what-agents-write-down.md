@@ -20,6 +20,6 @@ not match what it told you.
 
 ## Read more
 
-- [Work records and projects](work-record.md): the full reference
-- [Task Manager](team-kanban.md): the same work items as a board
+- [Work records and work items](work-record.md): the full reference
+- [Task Manager](team-kanban.md): the same work items on a board by stage
 - [The tile](tile.md)

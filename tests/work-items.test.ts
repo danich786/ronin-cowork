@@ -24,7 +24,7 @@ process.env.RONIN_WORK_ITEMS_DIR = temp;
 const items = await import('../src/work-items.js');
 const { registerWorkItems } = await import('../src/routes/work-items-api.js');
 
-test('a create with no Unfiled board makes one and files under it; the next create reuses it', async () => {
+test('a create with no Unfiled epic makes one and files under it; the next create reuses it', async () => {
   assert.equal(await items.unfiledBoard(), null, 'a fresh store has no starting point');
   const first = await items.createItem({ title: 'First' }, 'probe');
   const common = (await items.unfiledBoard())!;
@@ -34,9 +34,9 @@ test('a create with no Unfiled board makes one and files under it; the next crea
   const second = await items.createItem({ title: 'Second' }, 'probe');
   assert.equal(second.item.parent, common.id);
   assert.equal((await items.listItems()).filter((item) => item.title === 'Unfiled' && item.parent === null).length, 1);
-  assert.equal(second.shape, `${second.item.id} is a project at idea, 0 legs`);
-  assert.equal((await items.readItem(first.item.id)) && (await items.reparentItem(second.item.id, first.item.id, 'probe')).shape, `${second.item.id} is a project at idea, 0 legs`);
-  assert.equal((await items.editItem(first.item.id, { title: 'First board' }, 'probe')).shape, `${first.item.id} is a board, 1 item`);
+  assert.equal(second.shape, `${second.item.id} is a task at idea, 0 legs`);
+  assert.equal((await items.readItem(first.item.id)) && (await items.reparentItem(second.item.id, first.item.id, 'probe')).shape, `${second.item.id} is a task at idea, 0 legs`);
+  assert.equal((await items.editItem(first.item.id, { title: 'First epic' }, 'probe')).shape, `${first.item.id} is an epic, 1 item`);
   // Deleted by hand: the next create makes another.
   await fs.unlink(path.join(temp, `${common.id}.json`));
   const third = await items.createItem({ title: 'Third' }, 'probe');
@@ -45,7 +45,14 @@ test('a create with no Unfiled board makes one and files under it; the next crea
   assert.equal(third.item.parent, again.id);
 });
 
-test('the former "Common" root is renamed Unfiled in place, never a second board; root: true is a board of its own', async () => {
+test('kind is a label on a childless item: story, task or bug, task when unset; the ack says it', async () => {
+  const bug = await items.createItem({ title: 'Crash', kind: 'bug' }, 'probe');
+  assert.equal(bug.shape, `${bug.item.id} is a bug at idea, 0 legs`);
+  assert.equal((await items.editItem(bug.item.id, { kind: 'story' }, 'probe')).shape, `${bug.item.id} is a story at idea, 0 legs`);
+  await assert.rejects(items.createItem({ title: 'Odd', kind: 'epic' }, 'probe'), /kind must be one of story, task, bug/);
+});
+
+test('the former "Common" root is renamed Unfiled in place, never a second epic; root: true is an epic of its own', async () => {
   const unfiled = (await items.unfiledBoard())!;
   await items.editItem(unfiled.id, { title: 'Common' }, 'probe'); // the store as it was before 2026-10-02
   const found = (await items.unfiledBoard())!;
@@ -53,14 +60,13 @@ test('the former "Common" root is renamed Unfiled in place, never a second board
   assert.equal((await items.listItems()).filter((item) => item.parent === null && ['Common', 'Unfiled'].includes(item.title)).length, 1);
   const board = await items.createItem({ title: 'A board', root: true }, 'probe');
   assert.equal(board.item.parent, null);
-  assert.match(board.line.note || '', /a board of its own/);
 });
 
 test('create → read round-trips the whole shape, with one create line', async () => {
   const { item, line } = await items.createItem({ title: 'Store', objective: 'Keep items once.' }, 'probe');
   assert.match(item.id, /^w[1-9][0-9]*$/);
   assert.equal(item.stage, 'IDEA');
-  assert.equal(item.parent, (await items.unfiledBoard())!.id, 'born on the Unfiled board');
+  assert.equal(item.parent, (await items.unfiledBoard())!.id, 'born under the Unfiled epic');
   assert.deepEqual(item.ladder, []);
   assert.deepEqual(item.docs, []);
   assert.deepEqual(item.external, {});

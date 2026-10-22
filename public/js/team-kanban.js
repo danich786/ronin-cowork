@@ -46,7 +46,7 @@ export const stageLabel = (key) => COLUMNS[INDEX[key]]?.label || key;
 const normalizedProject = (value) => ({
   ...value,
   id: String(value?.id || ''),
-  title: String(value?.title || value?.id || 'Untitled project'),
+  title: String(value?.title || value?.id || 'Untitled work item'),
   objective: String(value?.objective || ''),
   evidence: Array.isArray(value?.trail) ? value.trail.filter((line) => line?.op === 'evidence').map((line) => String(line.note || '')) : [],
   holder: String(value?.holder || ''),
@@ -108,16 +108,16 @@ export function moveMessage(project, toStage, leadName, now = new Date()) {
   const result = (target, meaning, next) => ({ target, text: `${head}\n${line}\n  meaning: ${meaning}\n  next: ${next}` });
 
   if (project.stage === 'PLAN' && toStage === 'IDEA') {
-    return result(leadName, 'return it to Idea; the Team holds it again.', `work-record project advance ${id} --to IDEA, then work-record project return ${id}`);
+    return result(leadName, 'return it to Idea; the Team holds it again.', `work-record item advance ${id} --to IDEA, then work-record item return ${id}`);
   }
   if (!forward) return { target: holder, text: `${head}\n${line}\n  meaning: no defined move; delivered as a plain request.` };
   if (project.status !== 'green') {
     return result(holder, `a request to move on, not an approval; the card is ${project.status === 'red' ? 'blocked' : 'being worked'}.`, 'your call — say why not, or set it green when it is ready.');
   }
-  if (project.stage === 'IDEA') return result(leadName, 'engage — the user wants this started.', `team project assign ${id} <session>, or raise an Agent for it`);
-  if (project.stage === 'PLAN') return result(holder, `the plan is agreed${byNote}; build.`, `work-record project advance ${id} --to BUILD`);
-  if (project.stage === 'BUILD') return result(holder, `show approved${byNote}; ready it for review.`, `work-record project advance ${id} --to REVIEW`);
-  if (project.stage === 'REVIEW') return result(holder, `review passed${byNote}; hand in.`, `worktree-desk hand-in <repo> --project ${id}   (the hand-in moves it to Land)`);
+  if (project.stage === 'IDEA') return result(leadName, 'engage — the user wants this started.', `team item assign ${id} <session>, or raise an Agent for it`);
+  if (project.stage === 'PLAN') return result(holder, `the plan is agreed${byNote}; build.`, `work-record item advance ${id} --to BUILD`);
+  if (project.stage === 'BUILD') return result(holder, `show approved${byNote}; ready it for review.`, `work-record item advance ${id} --to REVIEW`);
+  if (project.stage === 'REVIEW') return result(holder, `review passed${byNote}; hand in.`, `worktree-desk hand-in <repo> --item ${id}   (the hand-in moves it to Land)`);
   if (project.stage === 'LAND') {
     const release = project.exit === 'user';
     return result(leadName, `${release ? 'release — merge the dev → master pull request' : 'promote'}${byNote}.`, release ? 'open or merge the pull request' : `bin/ronin-promote ${project.team || '<team>'}   (the promotion moves it to Done)`);
@@ -132,7 +132,7 @@ export function createTeamKanban(options = {}) {
   const beta = node('strong', 'tk-beta', t('team_kanban.beta', 'Beta'));
   const headerToggle = node('button', 'tk-header-toggle');
   headerToggle.type = 'button';
-  const headerMessage = node('p', 'tk-header-message', t('team_kanban.beta_message', 'Task Manager is in beta. Follow Projects from ideas to done using Tools and the Work Record. We’re making it easier for Agents to keep them current without forcing upkeep.'));
+  const headerMessage = node('p', 'tk-header-message', t('team_kanban.beta_message', 'Task Manager is in beta. Follow work items from ideas to done using Tools and the Work Record. We’re making it easier for Agents to keep them current without forcing upkeep.'));
   headerMessage.id = `tk-header-message-${++nextHeaderId}`;
   headerToggle.setAttribute('aria-controls', headerMessage.id);
   headerRow.append(beta, headerToggle);
@@ -179,7 +179,7 @@ export function createTeamKanban(options = {}) {
   let availability = { available: false, message: KANBAN_NOT_INSTALLED };
   let allOpen = false;
   const openCards = new Set();
-  const asked = new Map(); // id -> { stage, target }; never written to the project record
+  const asked = new Map(); // id -> { stage, target }; never written to the work item
   const leadName = (project) => String(options.lead?.(project) || '');
   const holderName = (project) => holderOf(project, leadName(project));
   const effectiveScope = () => scope.kind === 'team' && team ? taskManagerScope({ kind: 'team', team }) : taskManagerScope(scope);
@@ -207,7 +207,7 @@ export function createTeamKanban(options = {}) {
       const detail = node('article', 'tk-project-detail');
       const back = node('button', 'tk-back', t('team_kanban.back', 'Back to Task Manager')); back.type = 'button'; back.addEventListener('click', () => navigate('overview'));
       detail.append(back);
-      if (!project) detail.append(node('p', 'tk-empty', t('team_kanban.project_missing', 'This Project is not in the current scope.')));
+      if (!project) detail.append(node('p', 'tk-empty', t('team_kanban.project_missing', 'This work item is not in the current scope.')));
       else {
         appendProjectReading(detail, project, { holder: holderName(project), stage: stageLabel(project.stage), prefix: 'tk' });
       }
@@ -256,7 +256,7 @@ export function createTeamKanban(options = {}) {
         const pending = asked.get(project.id);
         if (pending?.stage === project.stage) row.append(node('span', 'tk-asked', `asked @${pending.target}`));
         else if (pending) asked.delete(project.id);
-        const openProject = node('button', 'tk-project-open', t('team_kanban.open_project', 'Open Project'));
+        const openProject = node('button', 'tk-project-open', t('team_kanban.open_project', 'Open work item'));
         openProject.type = 'button'; openProject.addEventListener('click', () => navigate('project', project.id)); row.append(openProject);
         card.append(details, row);
         const toggleOpen = () => {
@@ -305,7 +305,7 @@ export function createTeamKanban(options = {}) {
 
   const sendMove = async (project, toStage) => {
     const move = moveMessage(project, toStage, leadName(project));
-    if (!move.target) { notice.textContent = t('team_kanban.no_target', 'This project has no live holder to ask.'); return; }
+    if (!move.target) { notice.textContent = t('team_kanban.no_target', 'This work item has no live holder to ask.'); return; }
     notice.textContent = t('team_kanban.sending', 'Sending move request to @{name}…', { name: move.target });
     const result = await request('/api/messages', { method: 'POST', json: { target: move.target, text: move.text } });
     if (!result.ok) {

@@ -19,18 +19,18 @@ Usage:
   work-record document add <path>
   work-record document remove <path>
   work-record document list
-  work-record project create --title <text> --objective <text> [--stage <stage>] [--parent <id>]
-  work-record project read <id>
-  work-record project write <id> <options...>
-  work-record project working <id>
-  work-record project ready <id> --for lead|user
-  work-record project stuck <id>
-  work-record project blocked <id> --on lead|user
-  work-record project advance <id> --to IDEA|PLAN|BUILD|REVIEW|LAND|DONE
-  work-record project backlog <id>
-  work-record project done <id>
-  work-record project return <id> [--team <team>]
-  work-record project list
+  work-record item create --title <text> --objective <text> [--stage <stage>] [--parent <id>] [--kind story|task|bug]
+  work-record item read <id>
+  work-record item write <id> <options...>
+  work-record item working <id>
+  work-record item ready <id> --for lead|user
+  work-record item stuck <id>
+  work-record item blocked <id> --on lead|user
+  work-record item advance <id> --to IDEA|PLAN|BUILD|REVIEW|LAND|DONE
+  work-record item backlog <id>
+  work-record item done <id>
+  work-record item return <id> [--team <team>]
+  work-record item list
 Workspace entries are the repositories this Agent records as current work. The repository
 may be a registered handle or a URL. --branch is separate so URLs parse exactly. These
 entries do not change the Agent's birth directory or open a managed desk.
@@ -80,11 +80,11 @@ EOF
         if [ "$verb" = add ]; then write_impl --repo-pair "$repo" "$branch"; else write_impl --unrepo-pair "$repo" "$branch"; fi ;;
       *) usage >&2; exit 2 ;;
     esac ;;
-  project)
+  item)
     verb=${2:-}; shift 2 || true
     case "$verb" in
       -h|--help) usage ;;
-      create|read|list|write|working|ready|stuck|blocked|advance|backlog|done|return) write_impl project "$verb" "$@" ;;
+      create|read|list|write|working|ready|stuck|blocked|advance|backlog|done|return) write_impl item "$verb" "$@" ;;
       *) usage >&2; exit 2;; esac ;;
   *) usage >&2; exit 2;;
 esac

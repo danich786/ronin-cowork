@@ -106,10 +106,11 @@ A work item is stored once, one JSON file per id in the `work_items` data store,
 the item as it now is and the trail line appended. Holding is a list of ids on each holder:
 `holds` on the Team roster and in each Agent's letter (`tegami.md`, beside `at.item`, its
 focus). Parent and child is one `parent` id on the item: the one named at creation, else
-the Unfiled board (a root titled "Unfiled", held by nobody, made by the first create that
-finds it missing), or, with `root: true`, no parent at all: a new board. The board was titled
-"Common" until 2026-10-02; finding a root of that title renames it in place. An item with children is a board; a leaf gains its first child by
-folding its ladder into it. Nesting under a held board queues the holder (or a holding
+the Unfiled epic (a root titled "Unfiled", held by nobody, made by the first create that
+finds it missing), or, with `root: true`, no parent at all: a new epic. The epic was titled
+"Common" until 2026-10-02; finding a root of that title renames it in place. An item with
+children is an epic; one without is a story, task or bug (`kind`, a label, default task)
+and a leaf gains its first child by folding its ladder into it. Nesting under a held epic queues the holder (or a holding
 Team's lead) one message through the message queue. Assign moves an id
 between lists and release takes it off every list, under the store's one issuer lock, so
 two concurrent assigns leave one holder. An item that comes to or leaves an Agent's list
@@ -118,15 +119,15 @@ one fixed work-record ack (`ackRecord`, `src/tegami.ts`; owner 2026-10-07); an A
 move is not acked. A move on a Team's list is a roster change and acks its lead. The Agent's ladder and documents are its focus
 item's. Readings are derived in `src/work-items-read.ts` and never stored: an Agent's
 (`GET /api/work-items?session=`), a Team's (`?team=`: the Team's holds and its members',
-children after parents, plus `boards`: every item on the Team's boards and on the Unfiled
-board, each board whole), and unassigned (`?unassigned`: the Unfiled board's items that
+children after parents, plus `boards`: every item under the Team's epics and under the
+Unfiled epic, each epic whole), and unassigned (`?unassigned`: the Unfiled epic's items that
 nobody holds). An ending, archived, or Hard
 Deleted Agent's holds are released with a `holder-ended` trail line on each item.
 
-**Board → Teams, one rule** (`boardReadings` in `src/work-items-read.ts`): a board is a root
-item and every item under it; its Teams come from the holders on the root and on every item
+**Epic → Teams, one rule** (`boardReadings` in `src/work-items-read.ts`): an epic here is a
+root item and every item under it; its Teams come from the holders on the root and on every item
 under it, `team:<name>` directly and `agent:<name>` through that Agent's Team tags, so an
-Agent in two Teams brings the board to both. The Unfiled board has no Team. A Team's
+Agent in two Teams brings the epic to both. The Unfiled epic has no Team. A Team's
 `boards` read this rule.
 
 **Team Configuration** (`public/js/team-configuration.js`) is the commons tab that edits

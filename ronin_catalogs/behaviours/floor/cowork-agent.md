@@ -12,7 +12,7 @@ to the capability document for the tools that own them.
 
 Read the complete Build Brief before acting. Treat its assignment facts, applied Behaviors,
 and capability teaching as the authority for this session. Keep the Work Record truthful
-as the task, position, documents, repositories, or held Projects change.
+as the task, position, documents, repositories, or held work items change.
 
 Use Ronin's named tools for operations they own. If an unfamiliar tool is available, read
 its capability document and run its help before using it. If a named tool is unavailable,

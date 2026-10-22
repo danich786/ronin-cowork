@@ -126,7 +126,7 @@ these contracts without creating another authority.
 
 ## Work Record
 
-The Work Record is the Agent-authored account of its work, documents, Projects, and
+The Work Record is the Agent-authored account of its work, documents, work items, and
 completion evidence. Coordination mechanisms support this surface; they do not replace
 its name or become another work-record store.
 
@@ -135,7 +135,7 @@ its name or become another work-record store.
   [launch.ts](../src/routes/launch.ts) `homeRows`) → the tile's ladder
   ([tile.js](../public/js/tile.js), drawn by [shingo.js](../public/js/shingo.js)). Writes enter through
   [work-record](../ronin_bin/work-record) → [work-record-write](../libexec/work-record-write),
-  which updates the authored block atomically and sends ladder, document and project writes
+  which updates the authored block atomically and sends ladder, document and work item writes
   to [work-items-api.ts](../src/routes/work-items-api.ts). [work-items.ts](../src/work-items.ts)
   is the one door to the work item store; [work-items-read.ts](../src/work-items-read.ts)
   derives the Agent, Team and unassigned readings; [tegami.ts](../src/tegami.ts) seeds the

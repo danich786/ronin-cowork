@@ -66,7 +66,7 @@ const str = (v: string | true | undefined): string => (typeof v === 'string' ? v
 const USAGE = `usage: worktree-desk status [<repo[:branch]>] [--session s | --team t | --repo r]
        worktree-desk open <repo[:branch]> [--team t] [--session s] [--source dev|team]
        worktree-desk assign <repo[:branch]> --session s --team t [--source dev|team]
-       worktree-desk hand-in [<repo[:branch]>] [--assignment] [--project <team/id>]
+       worktree-desk hand-in [<repo[:branch]>] [--assignment] [--item <id>]
        worktree-desk sync [<repo[:branch]>] [--source dev|team|lead|<repo:branch>]
        worktree-desk close [<repo[:branch]>] [--with-session]
        worktree-desk handoff <repo[:branch]> --to <session[,session]>
@@ -195,8 +195,8 @@ async function main(): Promise<void> {
           targets = await mine(session, positional[0] ?? '');
           if (!targets.length) die(`NO-DESK: ${session} has no open worktree`, 3);
         } else targets = [await pickOne(session, positional[0] ?? '', 'hand-in')];
-        const projectId = str(flags.get('project'));
-        if (projectId && !(await readItem(projectId))) die(`NO-PROJECT: there is no work item ${projectId}`, 3);
+        const projectId = str(flags.get('item'));
+        if (projectId && !(await readItem(projectId))) die(`NO-ITEM: there is no work item ${projectId}`, 3);
         let worst = 0;
         const { outcomes, moved } = await handInAssignment({ desks: flags.get('assignment') ? targets : [targets[0]!], projectId, session });
         for (const [i, { receipt, notices, tidy }] of outcomes.entries()) {

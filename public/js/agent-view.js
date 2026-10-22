@@ -71,7 +71,7 @@ export function createAgentView() {
   const makeTaskManager = (id, detail = {}) => {
     const key = `${id}\0${detail.view || 'overview'}\0${detail.stage || detail.project || ''}`;
     if (tasks.has(key)) return tasks.get(key);
-    const surface = WorkspaceKit.primitives.createSurface({ label: detail.view === 'project' ? t('team_kanban.project', 'Project') : detail.view === 'status' ? t('team_kanban.status_projects', 'Projects by status') : t('workspace.tab_task_manager', 'Task Manager'), className: 'tw-kanban' });
+    const surface = WorkspaceKit.primitives.createSurface({ label: detail.view === 'project' ? t('team_kanban.project', 'Work item') : detail.view === 'status' ? t('team_kanban.status_projects', 'Work items by status') : t('workspace.tab_task_manager', 'Task Manager'), className: 'tw-kanban' });
     const scope = detail.scope || { kind: 'agent', agent, teams: () => memberships(agent) };
     const opposite = ({ workspace1: 'workspace2', workspace2: 'workspace1', workspace3: 'workspace4', workspace4: 'workspace3' })[id] || 'workspace1';
     const manager = createTeamKanban({ scope, view: detail.view, detail,
@@ -105,8 +105,8 @@ export function createAgentView() {
       if (!membership.has(key)) membership.set(key, createMembershipSurface(agent, () => { bench.refreshSelector(); for (const item of documents.values()) item.show(); }));
       return membership.get(key);
     },
-    taskOffers: () => memberships(agent).length ? [{ key: agent, label: t('workspace.tab_task_manager', 'Task Manager'), summary: t('agent.team_tasks_summary', 'Projects held by this Agent') }] : [],
-    workItemOffers: () => memberships(agent).length ? [{ label: t('work_items.title', 'Work Items'), summary: t('agent.team_tasks_summary', 'Projects held by this Agent') }] : [],
+    taskOffers: () => memberships(agent).length ? [{ key: agent, label: t('workspace.tab_task_manager', 'Task Manager'), summary: t('agent.team_tasks_summary', 'Work items held by this Agent') }] : [],
+    workItemOffers: () => memberships(agent).length ? [{ label: t('work_items.title', 'Work Items'), summary: t('agent.team_tasks_summary', 'Work items held by this Agent') }] : [],
     workItems: () => createWorkItemsSurface({
       scope: () => ({ kind: 'agent', agent, teams: memberships(agent) }),
       lead: (project) => membersOfTeam(project.team).find((member) => member.team_lead)?.name || '',

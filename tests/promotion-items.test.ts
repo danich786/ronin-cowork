@@ -47,7 +47,7 @@ test('promotion moves each carried item to DONE once and says how to keep it cur
   assert.equal(back.stage, 'DONE');
   assert.equal(back.trail.length, 2, 'create, then one line for the promotion');
   assert.deepEqual([back.trail[1]!.op, back.trail[1]!.from, back.trail[1]!.to, back.trail[1]!.note, back.trail[1]!.by], ['stage', 'LAND', 'DONE', 'promotion promo_1', 'lead']);
-  const keep = `${item.id} moved to done; ${item.id} is a project at done, 0 legs. Keep it current: work-record project write ${item.id}`;
+  const keep = `${item.id} moved to done; ${item.id} is a task at done, 0 legs. Keep it current: work-record item write ${item.id}`;
   assert.equal(notices.length, 2);
   for (const text of notices) assert.ok(text.includes(keep), text);
 });

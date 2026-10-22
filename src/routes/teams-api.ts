@@ -101,7 +101,7 @@ function editOf(body: unknown): RosterEdit {
 
 // What GET /api/team-rosters answers, and, for this machine's Campaign, what /events pushes
 // as {t:'teams', rosters}. Each row carries the Team's work as the Teams workbench reads it
-// (owner, 2026-10-18): `board`, the Team's board by the rule in work-items-read.ts, its title
+// (owner, 2026-10-18): `board`, the Team's epic by the rule in work-items-read.ts, its title
 // and status, and `items`, the titles of the items the Team and its members hold.
 export async function teamRosters(named: string[] = []): Promise<unknown[]> {
   const resolve = await campaignResolver();

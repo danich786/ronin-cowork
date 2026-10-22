@@ -65,17 +65,17 @@ help() {
 work-record update_record — update the current session's work record
 
 Usage:
-  work-record project create --title <text> --objective <text> [--stage <stage>] [--parent <id>]
-  work-record project write <id> --title|--objective|--stage|--exit|--status|--evidence <value> ...
-  work-record project write <id> --ladder <json>
-  work-record project working <id>
-  work-record project ready <id> --for lead|user
-  work-record project stuck <id>
-  work-record project blocked <id> --on lead|user
-  work-record project advance <id> --to IDEA|PLAN|BUILD|REVIEW|LAND|DONE
-  work-record project backlog <id>
-  work-record project done <id>
-  work-record project return <id> [--team <team>]
+  work-record item create --title <text> --objective <text> [--stage <stage>] [--parent <id>] [--kind story|task|bug]
+  work-record item write <id> --title|--objective|--stage|--exit|--status|--kind|--evidence <value> ...
+  work-record item write <id> --ladder <json>
+  work-record item working <id>
+  work-record item ready <id> --for lead|user
+  work-record item stuck <id>
+  work-record item blocked <id> --on lead|user
+  work-record item advance <id> --to IDEA|PLAN|BUILD|REVIEW|LAND|DONE
+  work-record item backlog <id>
+  work-record item done <id>
+  work-record item return <id> [--team <team>]
   work-record update_record --objective <text>
   work-record update_record --phase <title> | --gate <text>
   work-record update_record --leg N <title> | --leg N.M <title>
@@ -91,7 +91,8 @@ Common tasks:
   --leg N appends a leg; --leg N.M retitles it. Field updates may be combined.
   --doc lists a working document for the owner. For repository URLs and branches, use
   work-record workspace add|remove|list; its --branch flag avoids URL ambiguity.
-  A project is a work item, stored once; you hold its id. return gives it to your Team,
+  A work item is stored once; you hold its id. One without children is a story, task
+  or bug (--kind, default task); one with children is an epic. return gives it to your Team,
   backlog parks it (held by nobody), done moves it to stage DONE, working makes it your
   focus. Every verb appends one line to the item's trail.
 
@@ -164,14 +165,14 @@ STORE="$(cd "$(dirname "$SELF")/../bin" && pwd)/ronin-store"
 [ -x "$STORE" ] || STORE=ronin-store
 SESSION_STORE="$("$STORE" session)"
 
-# PROJECT VERBS — a project is a work item, stored once in the work item store. Every verb
+# ITEM VERBS — a work item is stored once, in the work item store. Every verb
 # is one request to /api/work-items; the server appends one trail line naming this session
 # and answers with the item as it now is, which is printed for you to read.
-if [ "${1-}" = project ]; then
-  shift; PROJECT_VERB=${1-}; shift || true
-  case "$PROJECT_VERB" in
+if [ "${1-}" = item ]; then
+  shift; ITEM_VERB=${1-}; shift || true
+  case "$ITEM_VERB" in
     create|read|list|write|working|ready|stuck|blocked|advance|backlog|done|return) ;;
-    *) die "work-record update_record: project takes create, read, list, write, working, ready, stuck, blocked, advance, backlog, done or return." ;;
+    *) die "work-record update_record: item takes create, read, list, write, working, ready, stuck, blocked, advance, backlog, done or return." ;;
   esac
   NAME=$(me) || exit 3
   . "$TOOL_DIR/ronin-http.sh"
@@ -186,35 +187,35 @@ while a:
     if key not in ok: sys.exit("work-record update_record: %s is not a field here; use %s." % (k, ", ".join("--" + f for f in ok)))
     d[key] = a.pop(0)
 print(json.dumps(d))' "$NAME" "$@"; }
-  if [ "$PROJECT_VERB" = create ]; then
-    BODY=$(fields title,objective,stage,parent "$@") || exit 2
+  if [ "$ITEM_VERB" = create ]; then
+    BODY=$(fields title,objective,stage,parent,kind "$@") || exit 2
     BODY=$(printf '%s' "$BODY" | python3 -c 'import json,sys; d=json.load(sys.stdin); d.setdefault("stage","PLAN"); d["session"]=sys.argv[1]
-if not d.get("title") or "objective" not in d: sys.exit("work-record update_record: project create needs --title and --objective.")
+if not d.get("title") or "objective" not in d: sys.exit("work-record update_record: item create needs --title and --objective.")
 print(json.dumps(d))' "$NAME") || exit 2
     ronin_item_call POST /api/work-items "$BODY"; exit $?
   fi
-  if [ "$PROJECT_VERB" = list ]; then
-    [ "$#" -eq 0 ] || die "work-record update_record: project list takes nothing; it lists what you hold."
+  if [ "$ITEM_VERB" = list ]; then
+    [ "$#" -eq 0 ] || die "work-record update_record: item list takes nothing; it lists what you hold."
     ronin_item_call GET "/api/work-items?session=$NAME"; exit $?
   fi
   ID=${1-}; shift || true
-  [ -n "$ID" ] || die "work-record update_record: project $PROJECT_VERB needs an id."
-  one() { [ "$#" -eq 0 ] || die "work-record update_record: project $PROJECT_VERB takes only <id>."; }
-  case "$PROJECT_VERB" in
+  [ -n "$ID" ] || die "work-record update_record: item $ITEM_VERB needs an id."
+  one() { [ "$#" -eq 0 ] || die "work-record update_record: item $ITEM_VERB takes only <id>."; }
+  case "$ITEM_VERB" in
     read)    one "$@"; ronin_item_call GET "/api/work-items/$ID" ;;
-    write)   [ "$#" -ge 2 ] || die "work-record update_record: project write takes <id> --field <value> ..."
-             ronin_item_call PUT "/api/work-items/$ID" "$(fields title,objective,stage,exit,status,evidence,ladder "$@")" ;;
+    write)   [ "$#" -ge 2 ] || die "work-record update_record: item write takes <id> --field <value> ..."
+             ronin_item_call PUT "/api/work-items/$ID" "$(fields title,objective,stage,exit,status,kind,evidence,ladder "$@")" ;;
     working) one "$@"; ronin_item_call POST "/api/work-items/$ID/status" "$(fields status,exit,focus --status yellow --exit agent --focus "$NAME")" ;;
     stuck)   one "$@"; ronin_item_call POST "/api/work-items/$ID/status" "$(fields status,exit --status red --exit agent)" ;;
-    ready)   [ "${1-}" = --for ] && { [ "${2-}" = lead ] || [ "${2-}" = user ]; } && [ "$#" -eq 2 ] || die "work-record update_record: project ready takes <id> --for lead|user."
+    ready)   [ "${1-}" = --for ] && { [ "${2-}" = lead ] || [ "${2-}" = user ]; } && [ "$#" -eq 2 ] || die "work-record update_record: item ready takes <id> --for lead|user."
              ronin_item_call POST "/api/work-items/$ID/status" "$(fields status,exit --status green --exit "$2")" ;;
-    blocked) [ "${1-}" = --on ] && { [ "${2-}" = lead ] || [ "${2-}" = user ]; } && [ "$#" -eq 2 ] || die "work-record update_record: project blocked takes <id> --on lead|user."
+    blocked) [ "${1-}" = --on ] && { [ "${2-}" = lead ] || [ "${2-}" = user ]; } && [ "$#" -eq 2 ] || die "work-record update_record: item blocked takes <id> --on lead|user."
              ronin_item_call POST "/api/work-items/$ID/status" "$(fields status,exit --status red --exit "$2")" ;;
-    advance) [ "${1-}" = --to ] && [ "$#" -eq 2 ] || die "work-record update_record: project advance takes <id> --to IDEA|PLAN|BUILD|REVIEW|LAND|DONE."
+    advance) [ "${1-}" = --to ] && [ "$#" -eq 2 ] || die "work-record update_record: item advance takes <id> --to IDEA|PLAN|BUILD|REVIEW|LAND|DONE."
              ronin_item_call POST "/api/work-items/$ID/stage" "$(fields stage --stage "$2")" ;;
     done)    one "$@"; ronin_item_call POST "/api/work-items/$ID/stage" "$(fields stage --stage DONE)" ;;
     backlog) one "$@"; ronin_item_call POST "/api/work-items/$ID/release" "$(fields)" ;;
-    return)  [ "$#" -eq 0 ] || { [ "$1" = --team ] && [ -n "${2-}" ] && [ "$#" -eq 2 ]; } || die "work-record update_record: project return takes <id> [--team <team>]."
+    return)  [ "$#" -eq 0 ] || { [ "$1" = --team ] && [ -n "${2-}" ] && [ "$#" -eq 2 ]; } || die "work-record update_record: item return takes <id> [--team <team>]."
              ronin_item_call POST "/api/work-items/$ID/return" "$(fields session,team --session "$NAME" "$@")" ;;
   esac
   exit $?

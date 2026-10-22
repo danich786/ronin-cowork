@@ -35,7 +35,7 @@ test('every assisted session is handed the tool overview built from its selected
     for (const label of ['Edges', 'Work Record', 'Agent session', 'Managed worktree', 'Machine settings', 'Cowork Team']) {
       assert.match(text, new RegExp(`^### ${label}$`, 'm'));
     }
-    assert.match(text, /`work-record project create`/);
+    assert.match(text, /`work-record item create`/);
     assert.match(text, /`session_check --help`/);
     assert.doesNotMatch(text, /\btejun(?:-[a-z]+|\b(?!_))|\+\w+:|MACROS/, 'no retired vocabulary reaches a newborn');
     // Fork/spawn belongs to the Agent session capability rather than universal boot noise.

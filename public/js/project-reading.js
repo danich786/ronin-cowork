@@ -1,4 +1,4 @@
-/* The canonical Project reading, shared by Task Manager and Work Items. */
+/* The canonical work item reading, shared by Task Manager and Work Items. */
 import { t } from './lexicon.js';
 
 const node = (tag, cls, text) => {

@@ -27,9 +27,9 @@ surface as it was, its geometry untouched: Settings (Presets, Workspace Folders,
 Providers, Setup) and the Agent workbench's Work Items draw with it. Escape lifts only the layer it
 is pressed in (2026-10-08).
 
-Task Manager keeps its board and status/Project drill-downs for the Agent's Task Manager;
+Task Manager keeps its board and status/work item drill-downs for the Agent's Task Manager;
 its selector card is no longer offered on the Cowork or Team workbenches. The older
-Work Items board (`work-items`) stays on the Agent's workbench, filtered to Projects held by
+Work Items board (`work-items`) stays on the Agent's workbench, filtered to work items held by
 that Agent. **The Team page** (owner, 2026-10-18) is the old Team workbench opening on the
 lead's tile in workspace 1 with workspace 2 blank; its selector holds Commons, the Agents,
 New Agent and the hints (Agent vocabulary, Session controls). Team Chart and the Team's Work
@@ -38,10 +38,10 @@ only so the roster, New Agent's Customize Behaviors and the bar's Feedback can p
 Launch of a Team is always a new tab (`openWorkspaceTab`).
 
 Work Items mounts `createPhalanx` directly in the standard surface content seat. Each
-Project is a selectable stone in Ideas, Planning, Building, Landing, Done order. Selection
-moves all groups into the left rail and renders the Project inside the same `sws-detail`;
+work item is a selectable stone in Ideas, Planning, Building, Landing, Done order. Selection
+moves all groups into the left rail and renders the item inside the same `sws-detail`;
 it never opens another numbered workspace. `project-reading.js` holds the canonical
-Project reading used by both presentations, with each supplying its own styling classes.
+work item reading used by both presentations, with each supplying its own styling classes.
 Work Items keeps normal Phalanx furniture, density controls, explicit holder opening,
 and message-only stage drops. It does not use Task Manager's board or beige furniture.
 
@@ -176,7 +176,7 @@ stones, the Workspace question (many-of, blank All) and the Show question (Theme
 Agents, Items); each stone is the Team's name with what Show picks under it, a cell per picked
 topic in Show's order, the phalanx laying the stones and their cells on one grid so each topic is
 a row aligned across the stones (`branches: 'column'`, a row's `under`; `teams-surface-rows.js`
-over the pushed rosters' `board` and `items`): Theme and State plain clamped text, each Agent and
+over the pushed rosters' `board` (the Team's epic) and `items`): Theme and State plain clamped text, each Agent and
 each Item a branch row; the 人 mark in a stone's corner opens the Team page in a new tab.
 Help (owner, 2026-10-21) is the same door shape seating two workspaces: the help outline
 (`help.outline`, `help-outline.js`) in Workspace 1 and Mika (`help.mika`) in Workspace 2. A Tile
@@ -342,9 +342,9 @@ service reads finish. Team membership and Task Manager choices enrich independen
 |---|---|
 | Self | route Agent plus the shared terminal host and transport |
 | Agent Documents | the Agent's tracked documents in one untabbed work surface |
-| Agent Task Manager | the route Agent's Projects across its current Teams, filtered by the canonical holder returned with each Team Project reading |
+| Agent Task Manager | the route Agent's work items across its current Teams, filtered by the canonical holder returned with each Team work item reading |
 | Team membership | Team records and live session tags from `team-controller.js`; writes use the canonical session-membership route |
-| Status / Project drill-down | the same Agent tenant and Team reads as Task Manager; each is an independently placeable surface and writes no Project data |
+| Status / work item drill-down | the same Agent tenant and Team reads as Task Manager; each is an independently placeable surface and writes no work item data |
 | Document / Feedback | each shared surface's own read or submission |
 
 ## Change checklist

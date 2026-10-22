@@ -1,13 +1,13 @@
-# Work records and projects
+# Work records and work items
 
 A work record says what an Agent is doing now: its objective, repositories, the work items
 it holds, and its focus. The ladder and the documents live on the work item the Agent is
-on. The Task Manager is a reading of the same items; there is no stored board to reconcile.
+on. The Task Manager's board is a view of the same items by stage; nothing is stored twice.
 
 Use the shipped `work-record` command exposed to your session. `work-record --help` is the
 canonical command vocabulary; there are no legacy reader or writer aliases.
 
-## A project is a work item
+## Work items
 
 A work item is stored once, keyed by its id (`w12`), and changed only by tools. Every change
 appends one line to its trail naming who made it. Nobody is refused for not holding an item:
@@ -16,11 +16,12 @@ holding is how work is found, never permission.
 ```json
 {
   "id": "w12",
-  "title": "Agent-authored projects",
-  "objective": "Create collision-free projects.",
+  "title": "Agent-authored items",
+  "objective": "Create collision-free work items.",
   "stage": "BUILD",
   "exit": "agent",
   "status": "yellow",
+  "kind": "task",
   "parent": "w3",
   "ladder": [
     { "gate": "go / no-go", "status": "DONE" },
@@ -29,10 +30,10 @@ holding is how work is found, never permission.
       { "title": "Focused checks pass", "status": "ACTIVE" }
     ] }
   ],
-  "docs": ["/home/me/plans/AGENT_PROJECTS.md"],
+  "docs": ["/home/me/plans/AGENT_ITEMS.md"],
   "external": {},
   "trail": [
-    { "at": "2026-09-28T15:02:11Z", "by": "lead", "op": "create", "to": "team:surface", "note": "Agent-authored projects" },
+    { "at": "2026-09-28T15:02:11Z", "by": "lead", "op": "create", "to": "team:surface", "note": "Agent-authored items" },
     { "at": "2026-09-28T15:04:40Z", "by": "lead", "op": "assign", "from": "team:surface", "to": "agent:builder" }
   ],
   "created": { "at": "2026-09-28T15:02:11Z", "by": "lead" }
@@ -45,34 +46,36 @@ the item. **Parent and child** (nest, parent) is one parent id on the item; a re
 that would form a cycle is the one refusal, answered `REFUSED` with the chain named. A Team
 holds; it does not contain.
 
-Every item is born under a parent: the one you name, else the **Unfiled board**, a root item
+Every item is born under a parent: the one you name, else the **Unfiled epic**, a root item
 titled "Unfiled" and held by nobody (it was called "Common" before, and is renamed in place).
-Creating checks for the Unfiled board and makes it if it
-is missing, so there is no other starting point and no install step. `team project parent
+Creating checks for the Unfiled epic and makes it if it
+is missing, so there is no other starting point and no install step. `team item parent
 <id> none` lifts an item out to be its own root.
 
-An item with children is a **board**, read by its children; a leaf is a **project** and
-carries the ladder. Every acknowledgement says which ("w7 is a board, 3 items", "w9 is a
-project at plan, 2 legs"). When a leaf gains its first child, its ladder folds into that
+An item with children is an **epic**, read by its children. One without children is a
+**story**, **task** or **bug** and carries the ladder: those are kinds at one level, a label
+set with `--kind` on create or write (default task), while the level comes from the shape.
+Every acknowledgement says which ("w7 is an epic, 3 items", "w9 is a task at plan, 2
+legs"). When a leaf gains its first child, its ladder folds into that
 child, ahead of any ladder the child had, with a trail line on both.
 
-When an item is nested under a board that someone holds, by a create with a parent or a
+When an item is nested under an epic that someone holds, by a create with a parent or a
 reparent, that holder gets one message through the ordinary queue: "w9 Fix login was added
-under your board w7. Handle it as you see fit." A Team holder's lead gets it. A board held
-by nobody, such as the Unfiled board, notifies nobody.
+under your epic w7. Handle it as you see fit." A Team holder's lead gets it. An epic held
+by nobody, such as the Unfiled epic, notifies nobody.
 
 Create an item held by yourself, or by a Team:
 
 ```text
-work-record project create --title "Agent-authored projects" --objective "…" [--parent w3]
-team project create surface --title "Agent-authored projects" --objective "…"
+work-record item create --title "Agent-authored items" --objective "…" [--parent w3] [--kind bug]
+team item create surface --title "Agent-authored items" --objective "…"
 ```
 
 Every acknowledgement answers with the item as it now is and the trail line it appended, and
 ends by naming the item and the write that keeps it current:
 
 ```text
-w12 moved to land; w12 is a project at land, 2 legs. Keep it current: work-record project write w12 --objective "<what it is now>" --evidence "<a fact with its receipt>"
+w12 moved to land; w12 is a task at land, 2 legs. Keep it current: work-record item write w12 --objective "<what it is now>" --evidence "<a fact with its receipt>"
 ```
 
 ## Stage, exit, and status
@@ -88,34 +91,34 @@ Write one or several fields in one call; it is one trail line. Evidence is a fac
 receipt, such as a commit or a hand-in, and is kept as an `evidence` line on the trail:
 
 ```text
-work-record project write w12 --objective "Sharper words" --evidence "commit 0123456789"
-work-record project write w12 --status green --exit lead
+work-record item write w12 --objective "Sharper words" --evidence "commit 0123456789"
+work-record item write w12 --status green --exit lead
 ```
 
 Prefer the lifecycle verbs when they express the whole intent:
 
 ```text
-work-record project working w12            # yellow, exit agent, and your focus
-work-record project ready w12 --for user   # green, exit user
-work-record project stuck w12              # red, exit agent
-work-record project blocked w12 --on lead  # red, exit lead
-work-record project advance w12 --to REVIEW
-work-record project return w12 [--team surface]
-work-record project backlog w12
-work-record project done w12
-work-record project read w12
-work-record project list
+work-record item working w12            # yellow, exit agent, and your focus
+work-record item ready w12 --for user   # green, exit user
+work-record item stuck w12              # red, exit agent
+work-record item blocked w12 --on lead  # red, exit lead
+work-record item advance w12 --to REVIEW
+work-record item return w12 [--team surface]
+work-record item backlog w12
+work-record item done w12
+work-record item read w12
+work-record item list
 ```
 
 `return` gives the item to your Team (name it with `--team` when you are on several);
 `backlog` parks it, held by nobody; `done` moves it to stage DONE. The Team verbs are
-`team project assign <id> <session>`, `return <team> <id>`, `backlog <id>`, `done <id>`,
+`team item assign <id> <session>`, `return <team> <id>`, `backlog <id>`, `done <id>`,
 `restore <team> <id>` (back from DONE to the stage it left, held by the Team), and
 `parent <id> <parent-id>|none`.
 
 ## Receipts move Land and Done
 
-Name the item on a hand-in with `worktree-desk hand-in <repo> --project <id>`. An accepted
+Name the item on a hand-in with `worktree-desk hand-in <repo> --item <id>`. An accepted
 hand-in moves the item to LAND, with the receipt on its trail. A completed promotion moves
 every item named on the hand-ins it carries to DONE, with the promotion receipt. No
 association is guessed from focus, names, or repositories.
@@ -123,8 +126,8 @@ association is guessed from focus, names, or repositories.
 A supporting Agent and an assignment are two operations owned by their tools:
 
 ```text
-session_create board_reader --prompt "Take w12 and read it with work-record project read w12."
-team project assign w12 board_reader
+session_create board_reader --prompt "Take w12 and read it with work-record item read w12."
+team item assign w12 board_reader
 ```
 
 ## The ladder is the focus item's
@@ -163,6 +166,6 @@ session's recorded Workspace Folder. Neither edit changes its birth directory or
 a managed desk. These fields locate work; they do not replace commits, hand-ins, or evidence.
 
 When an Agent ends, is archived, or is Hard Deleted, what it held is released: each item
-gets a `holder-ended` line and is found again under its parent (on the Unfiled board, that is
+gets a `holder-ended` line and is found again under its parent (under the Unfiled epic, that is
 unassigned). Restoring an
 archived Agent does not reclaim it.

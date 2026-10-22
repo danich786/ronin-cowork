@@ -10,7 +10,7 @@ export const workspaces = (rosters) => [...new Set(rosters.map((team) => team.pr
 
 /**
  * One row per Team in the chosen workspaces (none chosen is all): its name and title,
- * Theme (the roster objective), State (the status of the Team's board; no board is blank),
+ * Theme (the roster objective), State (the status of the Team's epic; no epic is blank),
  * the Agents on it (lead first, as `membersOf` orders them) and the titles of its items.
  */
 export function teamsRows(rosters, membersOf, { roots = [] } = {}) {

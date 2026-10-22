@@ -59,7 +59,7 @@ const guarded = (handler: Handler): express.RequestHandler => (req, res) => {
 };
 
 export function registerWorkItems(app: express.Express): void {
-  // Every write here moves what the teams push carries (a Team's board and items), so the
+  // Every write here moves what the teams push carries (a Team's epic and items), so the
   // server pushes the rosters again after it, as the roster routes do (teams-api.ts).
   app.use('/api/work-items', (req, res, next) => {
     if (req.method !== 'GET') res.on('finish', () => { if (res.statusCode < 400) void pushTeams(); });
@@ -78,7 +78,7 @@ export function registerWorkItems(app: express.Express): void {
   app.post('/api/work-items', guarded(async (req, res) => {
     const b = req.body ?? {};
     acknowledge(res, await createItem({
-      title: text(b.title) ?? '', objective: text(b.objective), stage: text(b.stage), exit: text(b.exit), status: text(b.status), parent: text(b.parent) || null, root: b.root === true,
+      title: text(b.title) ?? '', objective: text(b.objective), stage: text(b.stage), exit: text(b.exit), status: text(b.status), kind: text(b.kind), parent: text(b.parent) || null, root: b.root === true,
       ...(b.team || b.session ? { holder: holderFrom(b) } : {}),
     }, callerOf(req)));
   }));
@@ -111,7 +111,7 @@ export function registerWorkItems(app: express.Express): void {
   app.put('/api/work-items/:id', guarded(async (req, res) => {
     const b = req.body ?? {};
     acknowledge(res, await editItem(req.params.id, {
-      title: text(b.title), objective: text(b.objective), stage: text(b.stage), status: text(b.status), exit: text(b.exit), evidence: text(b.evidence),
+      title: text(b.title), objective: text(b.objective), stage: text(b.stage), status: text(b.status), exit: text(b.exit), kind: text(b.kind), evidence: text(b.evidence),
       ...(b.ladder !== undefined ? { ladder: typeof b.ladder === 'string' ? parsed(b.ladder) : b.ladder } : {}),
     }, callerOf(req), text(b.note)));
   }));

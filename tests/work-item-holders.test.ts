@@ -145,7 +145,7 @@ test('the Team\'s board: the root the Team holds, else the root its lead holds, 
   const boarders = { kind: 'team', name: 'boarders' } as const;
   const sessions = [{ name: 'cap', key: 'cap', tags: ['boarders'] }, { name: 'deck', key: 'deck', tags: ['boarders'] }];
   const filed = (await items.createItem({ title: 'filed under Unfiled', holder: boarders }, 'lead')).item;
-  assert.equal(teamBoard(await teamReading('boarders', sessions), 'cap'), null, 'an item under the Unfiled board is not a board');
+  assert.equal(teamBoard(await teamReading('boarders', sessions), 'cap'), null, 'an item under the Unfiled epic is not a Team epic');
   const capBoard = (await items.createItem({ title: 'cap board', root: true, holder: { kind: 'agent', name: 'cap' } }, 'lead')).item;
   assert.equal(teamBoard(await teamReading('boarders', sessions), 'deck'), null, 'another member\'s root is not the lead\'s');
   assert.equal(teamBoard(await teamReading('boarders', sessions), 'cap')?.id, capBoard.id, 'no Team root: the lead\'s root');
@@ -164,13 +164,13 @@ test('nesting under a held board queues its holder exactly one message; under an
   await clear();
 
   const piece = (await items.createItem({ title: 'piece' }, 'lead')).item;
-  assert.deepEqual(await listQueuedMessages(), [], 'the Unfiled board is held by nobody: nobody is told');
+  assert.deepEqual(await listQueuedMessages(), [], 'the Unfiled epic is held by nobody: nobody is told');
   const moved = await items.reparentItem(piece.id, held.id, 'lead');
   assert.deepEqual(moved.notified, ['boarder']);
   const queued = await listQueuedMessages();
   assert.equal(queued.length, 1);
   assert.equal(queued[0]!.target, 'boarder');
-  assert.equal(queued[0]!.text, `${piece.id} piece was added under your board ${held.id}. Handle it as you see fit.`);
+  assert.equal(queued[0]!.text, `${piece.id} piece was added under your epic ${held.id}. Handle it as you see fit.`);
   await clear();
 
   assert.deepEqual((await items.reparentItem(piece.id, unheld.id, 'lead')).notified, []);
@@ -192,8 +192,8 @@ test('a leaf\'s ladder folds into its first child, with a line on both; a second
   const board = (await items.readItem(leaf.id))!;
   assert.deepEqual(board.ladder, [], 'the parent\'s ladder empties');
   assert.equal(board.trail.at(-1)!.note, `ladder folded into ${first.id}, its first child`);
-  assert.equal(moved.shape, `${first.id} is a project at idea, 2 legs`);
+  assert.equal(moved.shape, `${first.id} is a task at idea, 2 legs`);
   const second = await items.createItem({ title: 'second child', parent: leaf.id }, 'lead');
   assert.deepEqual(second.item.ladder, []);
-  assert.equal(await items.kindOf((await items.readItem(leaf.id))!), `${leaf.id} is a board, 2 items`);
+  assert.equal(await items.kindOf((await items.readItem(leaf.id))!), `${leaf.id} is an epic, 2 items`);
 });

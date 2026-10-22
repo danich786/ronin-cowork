@@ -36,7 +36,7 @@ Agent needs to use it correctly:
 | Behavior | floor, matched conditional, selected, or sought awareness | full teaching for applied scopes; generated title, summary, and path only for sought |
 | Mandate | Reach, Recruit, and Output values | base Ronin mandate teaching supplied to every Cowork Agent |
 | Skill | installed provider-native package | its provider-native instructions, derived from Ronin-owned sources |
-| Assignment | objective, work, and concrete designations | brief, Team/project context, and applicable behavior teaching |
+| Assignment | objective, work, and concrete designations | brief, Team and Workspace context, and applicable behavior teaching |
 
 The receipt should make both sides inspectable. A named value without its necessary
 teaching is an incomplete composition; teaching must not silently replace or invent the
@@ -68,8 +68,8 @@ installation itself a behavior.
 
 - **Edges** — communication and coordination across Agents and Teams: `edges send`,
   `read`, `team`, `wipeboard`, `page`, `control`, and `schedule`.
-- **Work Record** — the Agent's work record, documents, and held Projects:
-  `work-record read`, `update_record`, `document …`, and `project …`.
+- **Work Record** — the Agent's work record, documents, and held work items:
+  `work-record read`, `update_record`, `document …`, and `item …`.
 - **Session** — Agent creation, inspection, configuration, archive, restoration, and
   ending: `session_create`, `session_check`, `session_set`, `session_archive`,
   `session_restore`, and `session_end`.
@@ -78,8 +78,8 @@ installation itself a behavior.
   `reply`, and `repository-init`.
 - **Machine Settings** — Campaign, installation, provider, default, owner, and Workspace
   Folder configuration: `machine-settings …`.
-- **Team** — Team record, membership and lead designation, Team-held Projects, assignment,
-  return, status, and Team forking: `team roster …`, `team project …`, `team member
+- **Team** — Team record, membership and lead designation, Team-held work items, assignment,
+  return, status, and Team forking: `team roster …`, `team item …`, `team member
   status`, and Team-related `session_set` operations.
 
 An installed extension may add another Tool capability, but a capability without a real

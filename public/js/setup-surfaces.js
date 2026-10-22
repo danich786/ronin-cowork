@@ -48,12 +48,12 @@ const action = (label, kind, onClick) => {
 const servicesReady = (runtime = {}) => runtime?.services?.active === true || runtime?.services?.installed === true || runtime?.services?.switched_on === true;
 
 const SERVICE_COMPONENTS = Object.freeze([
-  { id: 'task_manager', label: 'Task manager', status: 'beta', needs: 'Adds a shared project board and quick summaries of active work.' },
+  { id: 'task_manager', label: 'Task manager', status: 'beta', needs: 'Adds a board of work items by stage and quick summaries of active work.' },
   { id: 'terminal_transcript', label: 'Terminal transcript', status: 'beta', needs: 'Records terminal activity for transcript views and downstream summaries.' },
   { id: 'voice_hotwords', label: 'Voice & Hotwords', status: 'comingSoon', needs: 'Adds voice tools and corrections for words dictation commonly mishears.' },
   { id: 'usage_stats', label: 'Usage stats', status: 'beta', needs: 'Keeps local usage counts without storing transcript content.' },
   { id: 'machine_status', label: 'Machine status', status: 'beta', needs: 'Shows memory, swap and load for this box in the header.' },
-  { id: 'project_coordinator', label: 'Project coordinator', status: 'beta', needs: 'Watches active projects and prompts Agents to keep status and summaries current.' },
+  { id: 'project_coordinator', label: 'Project coordinator', status: 'beta', needs: 'Watches active work items and prompts Agents to keep status and summaries current.' },
   { id: 'local_weights', label: 'Local weights', status: 'beta', needs: 'Provides locally stored model weights for features that need them.' },
 ]);
 

@@ -417,13 +417,13 @@ nothing paints exactly this.
 - **work_items.loading:** Loading Work Items…
 - **work_items.failed:** Could not load Work Items.
 - **team_kanban.beta:** Beta
-- **team_kanban.beta_message:** Task Manager is in beta. Follow Projects from ideas to done using Tools and the Work Record. We’re making it easier for Agents to keep them current without forcing upkeep.
+- **team_kanban.beta_message:** Task Manager is in beta. Follow work items from ideas to done using Tools and the Work Record. We’re making it easier for Agents to keep them current without forcing upkeep.
 - **team_kanban.header_collapse:** Collapse
 - **team_kanban.header_expand:** Expand
 - **team_kanban.back:** Back to Task Manager
-- **team_kanban.project:** Project
-- **team_kanban.status_projects:** Projects by status
-- **team_kanban.project_missing:** This Project is not in the current scope.
+- **team_kanban.project:** Work item
+- **team_kanban.status_projects:** Work items by status
+- **team_kanban.project_missing:** This work item is not in the current scope.
 - **team_kanban.stage:** Status
 - **team_kanban.holder:** Holder
 - **team_kanban.progress:** Progress
@@ -1348,7 +1348,7 @@ The catalog entry goes. {dir} is not touched.
 - **agent.team_membership_summary:** Add or remove this Agent from installed Teams
 - **agent.join_team:** Join
 - **agent.no_teams:** No Teams are installed.
-- **agent.team_tasks_summary:** Projects held by {team}
+- **agent.team_tasks_summary:** Work items held by {team}
 - **customize.desk_profiles:** Desk profiles
 - **customize.desk_profiles_blurb:** Your standing defaults for the surfaces you work at — a skin, a lexicon, a campaign kind, a Team page arrangement. Choosing one is a setting, on the gear.
 - **customize.lexicons:** Lexicons

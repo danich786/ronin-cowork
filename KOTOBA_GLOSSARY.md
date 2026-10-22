@@ -53,7 +53,8 @@ runtime parts, while Agent capabilities teach tools (`docs/architecture/tool-sur
 |---|---|---|
 | team | **Team**<!--g:glossary.team--> | A set of sessions working together. |
 | Ronin Lab | **Ronin Lab** | A place for ideas, research, plans, and notes before or across projects. The creators’ Lab is their own instance. |
-| `team_roster` | **Team record**<!--g:glossary.team_roster--> | Team identity, defaults, and held Projects. Members and leads derive from sessions. |
+| `team_roster` | **Team record**<!--g:glossary.team_roster--> | Team identity, defaults, and held work items. Members and leads derive from sessions. |
+| `wN` | **work item** | Stored once by id. With children it is an **epic**; without, a **story**, **task** or **bug** (its kind; default task). Never "project". A **board** is the status-column view of work items, never an item. |
 | `team_lead` | **team lead · 人**<!--g:glossary.team_lead--> | Set by hand, never inferred from what a session does. |
 | `session_type` | **session type**<!--g:glossary.session_type--> | **Cowork Agent**<!--g:glossary.cowork_agent--> with its resolved Agent composition · **bare-metal Agent**<!--g:glossary.bare_metal_agent--> a CLI started without it · **terminal**<!--g:glossary.terminal--> a shell with no agent. |
 | `session_mandate` | **mandate**<!--g:glossary.mandate--> | **Reach**<!--g:glossary.reach--> how far an Agent goes · **Recruit**<!--g:glossary.recruit--> how it builds a Team · **Output**<!--g:glossary.output--> what it hands back. |

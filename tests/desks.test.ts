@@ -248,18 +248,18 @@ test('accepted hand-ins discover an explicit managed repo outside the team roste
   assert.deepEqual(await acceptedLinesForTeam('comp'), [{ repo: 'services', line: 'team/comp/dev' }]);
 });
 
-test('a hand-in with --project ends by naming the item and the write that keeps it current', async () => {
+test('a hand-in with --item ends by naming the item and the write that keeps it current', async () => {
   const desk = await openDesk({ repo: 'cowork', session: 'reminder', team: 'comp' });
   await commitFile(desk.worktree, 'reminder.txt', 'hand this in\n');
   const { item } = await createItem({ title: 'Reminded' }, 'reminder');
   const output = execFileSync(process.execPath, [
-    '--import', 'tsx', path.resolve('src/commands/desk.ts'), 'hand-in', 'cowork', '--project', item.id,
+    '--import', 'tsx', path.resolve('src/commands/desk.ts'), 'hand-in', 'cowork', '--item', item.id,
   ], {
     cwd: path.resolve('.'),
     env: { ...process.env, RONIN_SESSION: 'reminder', RONIN_TEAMS: 'comp' },
   }).toString();
   const last = output.trimEnd().split('\n').at(-1)!;
-  assert.equal(last, `${item.id} moved to land; ${item.id} is a project at land, 0 legs. Keep it current: work-record project write ${item.id} --objective "<what it is now>" --evidence "<a fact with its receipt>"`);
+  assert.equal(last, `${item.id} moved to land; ${item.id} is a task at land, 0 legs. Keep it current: work-record item write ${item.id} --objective "<what it is now>" --evidence "<a fact with its receipt>"`);
   assert.ok(output.indexOf('ACCEPTED cowork:team/comp/reminder') < output.indexOf(last));
   assert.equal(output.split('Keep it current').length - 1, 1, 'one reminder, never a block');
   assert.equal((await readItem(item.id))!.stage, 'LAND');

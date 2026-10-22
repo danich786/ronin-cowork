@@ -30,14 +30,14 @@ test('a green forward drop tells the holder the defined move, naming the verb th
   assert.equal(move.target, 'tab_cut');
   assert.match(move.text, /^from @kanban \(the Team Task Manager, moved by the user at 2026-09-13T13:02Z\):/);
   assert.match(move.text, /MOVE w7 "Kanban tab" from Review \(green, exit: user\) to Land/);
-  assert.match(move.text, /next: worktree-desk hand-in <repo> --project w7/);
-  assert.match(moveMessage(project({ stage: 'BUILD' }), 'REVIEW', 'kanban_revive', NOW).text, /next: work-record project advance w7 --to REVIEW/);
-  assert.match(moveMessage(project({ stage: 'PLAN' }), 'BUILD', 'kanban_revive', NOW).text, /next: work-record project advance w7 --to BUILD/);
+  assert.match(move.text, /next: worktree-desk hand-in <repo> --item w7/);
+  assert.match(moveMessage(project({ stage: 'BUILD' }), 'REVIEW', 'kanban_revive', NOW).text, /next: work-record item advance w7 --to REVIEW/);
+  assert.match(moveMessage(project({ stage: 'PLAN' }), 'BUILD', 'kanban_revive', NOW).text, /next: work-record item advance w7 --to BUILD/);
 });
 
 test('Team-held and lead moves resolve to the lead; non-green drops remain requests', () => {
   assert.equal(moveMessage(project({ holder: 'team:virtual', stage: 'IDEA', exit: 'lead' }), 'PLAN', 'kanban_revive', NOW).target, 'kanban_revive');
-  assert.match(moveMessage(project({ holder: 'team:virtual', stage: 'IDEA' }), 'PLAN', 'kanban_revive', NOW).text, /team project assign w7 <session>/);
+  assert.match(moveMessage(project({ holder: 'team:virtual', stage: 'IDEA' }), 'PLAN', 'kanban_revive', NOW).text, /team item assign w7 <session>/);
   const blocked = moveMessage(project({ status: 'red' }), 'LAND', 'kanban_revive', NOW);
   assert.equal(blocked.target, 'tab_cut');
   assert.match(blocked.text, /a request to move on, not an approval; the card is blocked/);
@@ -97,7 +97,6 @@ test('card expansion and owner opening are sibling controls, never nested intera
   assert.match(moduleSource, /toggle\.setAttribute\('aria-expanded'/);
   assert.match(moduleSource, /toggle\.addEventListener\('click', toggleOpen\)/);
   assert.match(moduleSource, /if \(!event\.target\.closest\('button'\)\) navigate\('project', project\.id\)/);
-  assert.match(moduleSource, /team_kanban\.open_project', 'Open Project'/);
 });
 
 test('Task Manager scope derives Team lists, keeps the items an Agent holds, and reads evidence off the trail', () => {

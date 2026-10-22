@@ -131,7 +131,7 @@ its job is waiting is house machinery (the same footing as Koshi's marker and
 `work-record update_record --at`), not an agent driving a session. The queue holds a
 notice while it sees a human draft or dialog, then makes one best-effort attempt.
 
-`worktree-desk hand-in <desk> --project <id>` records an explicit work item id on an
+`worktree-desk hand-in <desk> --item <id>` records an explicit work item id on an
 accepted receipt and moves that item to LAND once, the accepted receipts on its trail
 (`handInAssignment` in [hand-in.ts](../../src/desks/hand-in.ts)). A completed promotion
 moves every item named on the hand-ins it carries to DONE with its receipt

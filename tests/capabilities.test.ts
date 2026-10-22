@@ -225,16 +225,16 @@ test('the stock capability documents are well-formed and carry no retired vocabu
   // Project create is first-class and priority. Session creation is universal; the Team
   // bundle names that boundary but does not duplicate the Session tool row.
   const priority = (name: string) => by[name].tools.filter((tool) => tool.priority).map((tool) => tool.command);
-  assert.deepEqual(priority('work-record'), ['work-record update_record', 'work-record document add', 'work-record project create', 'work-record project read', 'work-record project write', 'work-record project return', 'work-record project backlog', 'work-record project done']);
+  assert.deepEqual(priority('work-record'), ['work-record update_record', 'work-record document add', 'work-record item create', 'work-record item read', 'work-record item write', 'work-record item return', 'work-record item backlog', 'work-record item done']);
   assert.deepEqual(priority('edges'), ['edges send', 'edges wipeboard', 'edges read', 'edges team']);
   assert.deepEqual(priority('worktree-desk'), ['worktree-desk status', 'worktree-desk sync', 'worktree-desk hand-in']);
   assert.deepEqual(priority('agent_session'), ['session_check', 'session_create']);
   assert.ok(by.agent_session.tools.some((tool) => tool.name === 'session_set'));
   assert.deepEqual(priority('cowork_team'), [
-    'team roster read', 'team project create',
-    'team project read', 'team project list', 'team project write',
-    'team project assign', 'team project return', 'team project backlog',
-    'team project done', 'team project restore', 'team member status',
+    'team roster read', 'team item create',
+    'team item read', 'team item list', 'team item write',
+    'team item assign', 'team item return', 'team item backlog',
+    'team item done', 'team item restore', 'team member status',
   ]);
   assert.ok(!by.cowork_team.tools.some((tool) => tool.name === 'session_create'), 'Cowork Team does not duplicate Agent session creation');
   assert.match(await readFile(by['work-record'].file, 'utf8'), /`exit`[\s\S]*`none` · `agent` · `lead` · `user`[\s\S]*`status`[\s\S]*`green` · `yellow` · `red`/);
