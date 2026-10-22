@@ -28,7 +28,7 @@ const { registerWorkItems } = await import('../src/routes/work-items-api.js');
 test('no parent is normal: level 0, kind blank, nothing made to hold it', async () => {
   const first = await items.createItem({ title: 'First' }, 'probe');
   assert.deepEqual([first.item.parent, first.item.level, first.item.kind, first.item.status, first.item.flagged], [null, 0, undefined, 'IDEA', false]);
-  assert.equal(first.shape, `${first.item.id} is a work item at IDEA`);
+  assert.equal(first.shape, `${first.item.id} is an item at IDEA`);
   assert.deepEqual((await items.listItems()).map((item) => item.id), [first.item.id], 'one create, one item');
 });
 
@@ -41,7 +41,7 @@ test('level defaults one below the parent and adding a child never changes it', 
   const leaf = (await items.createItem({ title: 'Leaf' }, 'probe')).item;
   await items.createItem({ title: 'Under the leaf', parent: leaf.id }, 'probe');
   assert.equal((await items.readItem(leaf.id))!.level, 0);
-  assert.equal((await items.readItem(epic.id)) && (await items.editItem(epic.id, { title: 'Epic' }, 'probe')).shape, `${epic.id} is an epic, 1 item`);
+  assert.equal((await items.readItem(epic.id)) && (await items.editItem(epic.id, { title: 'Epic' }, 'probe')).shape, `${epic.id} is an epic at IDEA`);
 });
 
 test('the ladder stays on an item when it gains a child (the fold into the first child is gone)', async () => {

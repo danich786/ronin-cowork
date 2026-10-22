@@ -64,7 +64,7 @@ export interface WorkItem {
 }
 
 /** What every write answers: the item as it now is, the line it appended, what the item
- * is ("w9 is a task at PLAN", "w7 is an epic, 3 items"), and who was told of an arrival. */
+ * is ("w9 is a task at PLAN", "w7 is an epic at PLAN"), and who was told of an arrival. */
 export interface Acknowledged { item: WorkItem; line: TrailLine; shape: string; notified?: string[] }
 
 export class WorkItemRefused extends Error {}
@@ -176,20 +176,15 @@ const lineOf = (by: string, op: TrailOp, extra: Omit<TrailLine, 'at' | 'by' | 'o
   ...Object.fromEntries(Object.entries(extra).filter(([, value]) => value !== undefined && value !== '')),
 });
 
-/** "w7 is an epic, 3 items", "w9 is a task at PLAN", "w12 is a subtask at BUILD, flagged":
- * the level and kind as stored, the children counted. */
-export async function kindOf(item: WorkItem): Promise<string> {
-  const flag = item.flagged ? ', flagged' : '';
-  if (item.level === 1) {
-    const children = (await listItems()).filter((other) => other.parent === item.id).length;
-    return `${item.id} is an epic, ${children} item${children === 1 ? '' : 's'}${flag}`;
-  }
-  const word = item.level === -1 ? 'subtask' : item.kind ?? 'work item';
-  return `${item.id} is a ${word} at ${item.status}${flag}`;
+/** "w7 is an epic at PLAN", "w9 is a task at PLAN", "w12 is a subtask at BUILD, flagged":
+ * one line from the item alone, the same at every level. */
+export function kindOf(item: WorkItem): string {
+  const word = item.level === 1 ? 'an epic' : item.level === -1 ? 'a subtask' : item.kind ? `a ${item.kind}` : 'an item';
+  return `${item.id} is ${word} at ${item.status}${item.flagged ? ', flagged' : ''}`;
 }
 
 /** Read, change, append one trail line, write. Runs inside the issuer lock. */
-const answer = async (item: WorkItem, line: TrailLine): Promise<Acknowledged> => ({ item, line, shape: await kindOf(item) });
+const answer = (item: WorkItem, line: TrailLine): Acknowledged => ({ item, line, shape: kindOf(item) });
 
 export async function appendTrail(id: string, by: string, change: (item: WorkItem) => Omit<TrailLine, 'at' | 'by'>): Promise<Acknowledged> {
   const item = await load(id);
@@ -234,7 +229,7 @@ const blank = (title: string, by: string): WorkItem => ({
 async function announceArrival(item: WorkItem): Promise<string[]> {
   if (!item.parent) return [];
   const told: string[] = [];
-  const shape = await kindOf(item);
+  const shape = kindOf(item);
   for (const holder of await holdersOf(item.parent)) {
     const targets = holder.kind === 'agent' ? [holder.name] : await findLeads(holder.name);
     for (const target of targets) {
@@ -268,7 +263,7 @@ export async function createItemUnlocked(input: NewItem, by: string): Promise<Ac
   const line = lineOf(by, 'create', { to: input.holder ? holderLabel(input.holder) : 'none', note: [item.title, item.parent ? `under ${item.parent}` : 'no parent'].join('; ') });
   item.trail.push(line);
   await save(item);
-  return { ...(await answer(item, line)), notified: await announceArrival(item) };
+  return { ...answer(item, line), notified: await announceArrival(item) };
 }
 
 export const createItem = (input: NewItem, by: string) => withIssuer(() => createItemUnlocked(input, by));
@@ -358,7 +353,7 @@ export function moveItem(id: string, parent: string | null, by: string): Promise
     const line = lineOf(by, 'move', { from, to: parent ?? 'none', note: `level ${child.level}` });
     child.trail.push(line);
     await save(child);
-    return { ...(await answer(child, line)), notified: await announceArrival(child) };
+    return { ...answer(child, line), notified: await announceArrival(child) };
   });
 }
 
