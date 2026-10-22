@@ -180,3 +180,21 @@ test('nesting under a held board queues its holder exactly one message; under an
   assert.equal((await listQueuedMessages()).length, 1);
   await clear();
 });
+
+test('a change by anyone but the holding Agent acks that Agent once; its own change, never', async () => {
+  const { listQueuedMessages, dismissMessages } = await import('../src/message-queue.js');
+  const clear = async () => { await dismissMessages((await listQueuedMessages()).map((message) => message.id)); };
+  await seedTegami('keeper');
+  const item = (await items.createItem({ title: 'kept' }, 'lead')).item;
+  await clear();
+  const acks = async () => (await listQueuedMessages()).filter((message) => message.target === 'keeper' && /Your work record changed/.test(message.text)).length;
+  await items.assignItem(item.id, { kind: 'agent', name: 'keeper' }, 'lead');
+  assert.equal(await acks(), 1, 'an assign by someone else: one ack, not two');
+  await clear();
+  await items.editItem(item.id, { status: 'BUILD' }, 'lead');
+  assert.equal(await acks(), 1);
+  await clear();
+  await items.editItem(item.id, { status: 'REVIEW' }, 'keeper');
+  assert.equal(await acks(), 0, 'its own write is not acked');
+  await clear();
+});
