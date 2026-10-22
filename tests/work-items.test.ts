@@ -2,7 +2,7 @@
  * THE WORK ITEM STORE — one item, stored once, every change a trail line.
  * Checks from WORK_ITEM_STORE.md cut 1 and WORK_ITEM_BUILDOUT.md (the Jira shape): a write
  * reads back; concurrent trail appends all land; level defaults one below the parent; a move
- * that breaks the one hierarchy rule is refused ("can't go there"); an old file reads in the new
+ * that would put anything below -1 is refused ("can't go there"), children following; an old file reads in the new
  * shape; the one migration; the routes answer with the item as it now is.
  */
 import test from 'node:test';
@@ -111,7 +111,7 @@ test('each write appends exactly one line; external is writable', async () => {
   assert.throws(() => items.editItem(item.id, { status: 'SHIPPED' }, 'a'), /status must be one of IDEA, PLAN, BUILD, REVIEW, LAND, DONE/);
 });
 
-test('a move sets parent and level together; the one rule refuses what would not sit one level below its parent', async () => {
+test('the one rule: nothing goes below -1; the item takes its level and its children follow', async () => {
   const a = (await items.createItem({ title: 'A', level: 1 }, 'p')).item;
   const b = (await items.createItem({ title: 'B', parent: a.id }, 'p')).item;
   const c = (await items.createItem({ title: 'C', parent: b.id }, 'p')).item;
@@ -120,17 +120,28 @@ test('a move sets parent and level together; the one rule refuses what would not
   assert.deepEqual([story.item.parent, story.item.level, (await items.readItem(c.id))!.parent], [other.id, 0, b.id], 'a story moves to another epic, its subtasks with it');
   assert.equal((await items.moveItem(a.id, null, 'p')).item.level, 1, 'no parent keeps the level: an epic stays an epic');
   const story2 = (await items.createItem({ title: 'Story', parent: a.id }, 'p')).item;
-  await assert.rejects(items.moveItem(b.id, story2.id, 'p'), { message: `${b.id} can't go there.` });
-  assert.equal((await items.readItem(b.id))!.parent, other.id, 'a refusal writes nothing');
-  await assert.rejects(items.editItem(b.id, { level: 1 }, 'p'), { message: `${b.id} can't go there.` });
+  await assert.rejects(items.moveItem(b.id, story2.id, 'p'), { message: `${b.id} can't go there.` }, 'its subtask would land at -2');
+  assert.deepEqual([(await items.readItem(b.id))!.parent, (await items.readItem(c.id))!.level], [other.id, -1], 'a refusal writes nothing');
   await assert.rejects(items.createItem({ title: 'Under a subtask', parent: c.id }, 'p'), /^Error: w\d+ can't go there\.$/);
   const loose = (await items.createItem({ title: 'Loose' }, 'p')).item;
   await assert.rejects(items.moveItem(loose.id, c.id, 'p'), { message: `${loose.id} can't go there.` });
-  await assert.rejects(items.moveItem(loose.id, loose.id, 'p'), { message: `${loose.id} can't go there.` }, 'nothing goes under itself');
+  await assert.rejects(items.moveItem(loose.id, loose.id, 'p'), { message: `${loose.id} can't go there.` }, 'under itself it is its own child, and the levels fall past -1');
+  await assert.rejects(items.moveItem(other.id, c.id, 'p'), { message: `${other.id} can't go there.` }, 'nothing goes under its own descendant');
   const moved = await items.moveItem(loose.id, a.id, 'p');
   assert.deepEqual([moved.item.parent, moved.item.level, moved.line.op], [a.id, 0, 'move']);
   const back = await items.moveItem(loose.id, null, 'p');
   assert.deepEqual([back.item.parent, back.item.level], [null, 0]);
+
+  // An epic with stories moved under an epic: the epic becomes 0, its stories -1.
+  const epic = (await items.createItem({ title: 'Inner epic', level: 1 }, 'p')).item;
+  const inner = (await items.createItem({ title: 'Inner story', parent: epic.id }, 'p')).item;
+  assert.equal((await items.moveItem(epic.id, a.id, 'p')).item.level, 0);
+  const followed = (await items.readItem(inner.id))!;
+  assert.deepEqual([followed.level, followed.trail.at(-1)!.note], [-1, `level -1, following ${epic.id}`]);
+  // A level write: the children follow it too, and fail it below -1.
+  assert.equal((await items.editItem(b.id, { level: 1 }, 'p')).item.level, 1);
+  assert.equal((await items.readItem(c.id))!.level, 0);
+  await assert.rejects(items.editItem(epic.id, { level: -1 }, 'p'), { message: `${epic.id} can't go there.` });
 });
 
 test('the one migration: stage → status, red → flagged, exit gone, levels from children, Unfiled gone', async () => {
