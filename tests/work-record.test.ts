@@ -166,3 +166,18 @@ test('the invocation path names the session when tmux does not, and never a gues
   assert.equal((JSON.parse(read) as Block).objective, 'through my own directory');
   refused(reader, ['read', '--json']);
 });
+
+test('a letter teaching a gone command is read and saved with the current teaching lines', (t) => {
+  const f = fixture();
+  t.after(() => rmSync(f.dir, { recursive: true, force: true }));
+  run(f.env, [], JSON.stringify({ objective: 'start' }));
+  const current = readFileSync(path.join(root, 'libexec', 'work-record-letter.md'), 'utf8').trimEnd();
+  const old = readFileSync(f.letter, 'utf8').replace(current, '> Your ladder: `item plan <id> --phase …`; `item focus <id>`.');
+  writeFileSync(f.letter, old);
+  const shown = execFileSync(tool, ['read'], { encoding: 'utf8', env: f.env });
+  assert.ok(shown.includes(current) && !shown.includes('item plan'), 'read shows the teaching as it is now');
+  run(f.env, ['--objective', 'next']);
+  const saved = readFileSync(f.letter, 'utf8');
+  assert.ok(saved.includes(current) && !saved.includes('item plan'), 'a save writes the teaching as it is now');
+  assert.equal(block(f.letter).objective, 'next');
+});

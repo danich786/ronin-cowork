@@ -131,7 +131,11 @@ if r.get("ok"):
 print(json.dumps(d, indent=2, ensure_ascii=False))
 '
 else
-  cat "$FILE"
+  # The teaching lines as they are now (libexec/work-record-letter.md), whatever the file
+  # still says, then the letter's own block.
+  head -n 1 "$FILE"
+  cat "$(cd "$(dirname "$SELF")/.." && pwd)/libexec/work-record-letter.md"
+  printf '\n```json\n%s\n```\n' "$BLOCK"
   python3 -c '
 import json, os
 try: r = json.loads(os.environ["READING"])
