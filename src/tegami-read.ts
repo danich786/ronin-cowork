@@ -96,7 +96,7 @@ export async function readTegami(name: string): Promise<Tegami | null> {
       ladder_state: off,
       holds: reading.items.map((item) => item.id),
       items: reading.items,
-      docs: await readDocs([path.join(sessionDir(key), 'README.md'), ...reading.docs, ...(await dropped(key))]),
+      docs: await readDocs([path.join(sessionDir(key), 'README.md'), ...reading.attachments, ...(await dropped(key))]),
       chip: chipFor(reading.items, off),
       quietMs: Date.now() - stat.mtimeMs,
     };

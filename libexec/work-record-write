@@ -120,8 +120,6 @@ while [ $# -gt 0 ]; do
     --unrepo)     need "$1" "${2-}" "<repo-or-url>[:<branch>]"; EDITS+=("unrepo$US$2"); shift ;;
     --repo-pair)  need "$1" "${2-}" "<repo-or-url> <branch>"; EDITS+=("repo-pair$US$2$US${3-}"); shift 2 ;;
     --unrepo-pair) need "$1" "${2-}" "<repo-or-url> <branch>"; EDITS+=("unrepo-pair$US$2$US${3-}"); shift 2 ;;
-    --phase|--gate|--rung|--leg|--status|--done|--active|--drop|--doc|--undoc|--session|--at)
-      die "work-record update_record: $1 is gone; there is no ladder (Jira has none), and a document is attached to its item: item attach <id> <path>. Run item --help." ;;
     *) die "work-record update_record: unknown argument: $1. Run work-record update_record --help." ;;
   esac
   shift
@@ -268,8 +266,6 @@ if not isinstance(d, dict):
 # REFUSED HERE, CARRIED THROUGH BELOW. Neither of these has the block as its door, and
 # each is named individually because the fix differs.
 NOT_YOURS = {
-    "at": "\"at\" is gone: work items have no ladder, so there is no position to keep.\n"
-          "  Drop \"at\" and save again.",
     "teams": "\"teams\" is not yours to write.\n"
           "  It is DERIVED: one entry per team you are on, which Ronin writes again when a\n"
           "  roster or a membership changes, with a one-line notice. Membership itself is\n"

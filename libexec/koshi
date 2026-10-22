@@ -9,10 +9,8 @@
 # already tapes every pane whatever the dial says.
 #
 # WHAT IT DOES: follows every session's tape (RIREKI is the wake — nothing polls tmux),
-# decodes the arriving lines and notices when a turn ended. It used to ask a model which
-# rung of a session's ladder it was on, write that position and nudge a stale ladder;
-# work items have no ladder now (they mirror Jira, which has none: WORK_ITEM_BUILDOUT,
-# 2026-10-22), so Koshi asks nothing, writes nothing and says nothing.
+# decodes the arriving lines and notices when a turn ended. It asks nothing, writes
+# nothing and says nothing.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 exec npx --prefix "$HERE" tsx "$HERE/src/services/koshi/koshi.ts" "$@"

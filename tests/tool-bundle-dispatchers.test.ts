@@ -8,8 +8,8 @@ const root = path.resolve(import.meta.dirname, '..');
 test('Work Record and Team are the only public names for their migrated surfaces', async () => {
   const work = await readFile(path.join(root, 'ronin_bin', 'work-record'), 'utf8');
   for (const route of ['read', 'update_record', 'workspace']) assert.match(work, new RegExp(`^  ${route}\\)`, 'm'));
-  // Work items are the item tool's alone (WORK_ITEM_BUILDOUT): no item or document family here.
-  for (const gone of ['item', 'document']) assert.doesNotMatch(work, new RegExp(`^  ${gone}\\)`, 'm'));
+  // Work items are the item tool's alone (Lab JIRA_SHAPE.md): no item or document family here.
+  for (const family of ['item', 'document']) assert.doesNotMatch(work, new RegExp(`^  ${family}\\)`, 'm'));
   assert.match(work, /add\|remove\)/);
   assert.match(work, /list\)/);
 

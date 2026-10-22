@@ -105,7 +105,7 @@ A work item is stored once, one JSON file per id in the `work_items` data store,
 `/api/work-items` routes (`src/routes/work-items-api.ts`), which answer every write with
 the item as it now is and the trail line appended. Holding is a list of ids on each holder:
 `holds` on the Team roster and in each Agent's letter (`tegami.md`, beside `at.item`, its
-focus). The item matches Jira (owner, 2026-10-22; Lab `wip/buildouts/WORK_ITEM_BUILDOUT.md`):
+focus). The item matches Jira (Lab `JIRA_SHAPE.md`):
 `level` is stored (1 epic, 0 story/task/bug, -1 subtask), one below the parent at creation
 or 0 with none, and adding a child never changes it; `kind` is a label, blank by default;
 `status` is the board's column; `flagged` marks an impediment. Parent is one `parent` id on
@@ -115,9 +115,8 @@ keeps the level). One rule binds a create, a parent change and a level write (`f
 children follow, each one below its own parent (`settle` writes them, a trail line each);
 if any would land below -1 the act fails with "w39 can't go there." A move under oneself
 makes the item its own child, so its levels fall past -1 and it fails the same way. An arrival under a held item queues the holder (or a holding Team's lead) one
-message through the message queue. Old files are read in the new shape (`inShape`) and
-written in it on their next write; `migrateItems` runs once at start and removed the
-Unfiled epic, leaving its items with no parent. Assign moves an id
+message through the message queue. Every item file is in the Jira shape;
+`migrateItems` at first start is the one code that converts a store to it. Assign moves an id
 between lists and release takes it off every list, under the store's one issuer lock, so
 two concurrent assigns leave one holder. An item that comes to or leaves an Agent's list
 by anyone else's hand (create with a holder, assign, release) pushes that Agent the

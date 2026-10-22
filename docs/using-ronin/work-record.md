@@ -29,7 +29,7 @@ not holding an item: holding is how work is found, never permission.
     { "by": "lead", "at": "2026-09-28T15:06:02Z", "text": "Start with the store." }
   ],
   "parent": "w3",
-  "docs": ["/home/me/plans/AGENT_ITEMS.md"],
+  "attachments": ["/home/me/plans/AGENT_ITEMS.md"],
   "links": [{ "type": "blocks", "to": "w14" }],
   "external": { "jira": "RON-12" },
   "trail": [
@@ -49,7 +49,7 @@ not holding an item: holding is how work is found, never permission.
 | `priority` | any name · blank | as Jira's priority; `item edit <id> --priority <name>` |
 | `comments` | `{ by, at, text }` list | as Jira's comments; `item comment <id> <text>` adds one |
 | `parent` | an id, or none | none is normal; `item edit <id> --parent <id>\|none` |
-| `docs` | absolute paths | attachments; `item attach <id> <path>` |
+| `attachments` | absolute paths | as Jira's attachments; `item attach <id> <path>` |
 | `links` | `{ type: blocks\|relates, to }` list | as Jira's issue links; `item link`; a read shows links in too |
 | `external` | `jira`, `trello`, `github` keys | written with `item edit <id> --jira <key>` |
 
@@ -97,7 +97,7 @@ Every write answers with one line of what the act did, read from the trail line 
 appended, then the item as it now is: "w39 moved under w40, level -1", "w9 moved to BUILD",
 "w9 is held by agent:x", "w12 was created", "w12 changed: kind story", "w12 is flagged:
 waiting on the API", "w12 has a comment from lead: Start with the store.", "w12 blocks
-w14". Status, kind and level appear only when the act changed them. When an item arrives
+w14", "w12 has /home/me/plans/AGENT_ITEMS.md removed". Status, kind and level appear only when the act changed them. When an item arrives
 under one someone holds, by a create with a parent or an `item edit --parent`, that holder
 gets one message through the ordinary queue: "w9 Fix login was added under w7, which you
 hold. Handle it as you see fit." A Team holder's lead gets it. An item held by nobody
@@ -143,12 +143,3 @@ a managed desk. These fields locate work; they do not replace commits, hand-ins,
 When an Agent ends, is archived, or is Hard Deleted, what it held is released: each item
 gets a `holder-ended` line and is held by nobody, found again under its parent or with no
 parent. Restoring an archived Agent does not reclaim it.
-
-## Items written before 2026-10-22
-
-Item files in the old shape (a `stage`, an `exit`, a green/yellow/red `status`, a ladder)
-are read in the new one: `stage` is the status, red is flagged, and `exit`, the other
-colours and the ladder go.
-They are written in the new shape on their next write. One migration at start rewrites the
-whole store that way, gives every item with children level 1 and every other level 0, and
-removes the Unfiled epic, leaving its items with no parent.

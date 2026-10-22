@@ -145,14 +145,13 @@ export async function listLetterHolds(): Promise<LetterHolds[]> {
   return letters.filter((letter): letter is LetterHolds => letter !== null);
 }
 
-/** Replace one letter's holder list. An old focus (`at`, from when items had ladders) goes. */
+/** Replace one letter's holder list. */
 export async function writeLetterHolds(key: string, holds: string[]): Promise<LetterHolds> {
   const file = tegamiPath(key);
   const text = await fs.readFile(file, 'utf8');
   const parsed = letterBlock(text);
   if (!parsed) throw new Error(`the work record at ${file} has no readable JSON block`);
   parsed.body.holds = holds;
-  delete parsed.body.at;
   await replaceLetterBlock(file, text, parsed, parsed.body);
   return holdsOfBody(key, text, parsed.body);
 }

@@ -6,11 +6,10 @@
  * exactly one line to the item's trail, naming who called. Nothing is locked against
  * anyone: holding is discovery, never permission. One refusal: nothing goes below -1 (follow).
  *
- * THE SHAPE MATCHES JIRA (owner, 2026-10-22; samurai_lab WORK_ITEM_BUILDOUT.md). One object
+ * THE SHAPE MATCHES JIRA (samurai_lab JIRA_SHAPE.md). One object
  * at every level: `level` 1 epic · 0 story/task/bug · -1 subtask, stored; `kind` any work
  * type name; `status` the board column; `flagged` an impediment; `priority` any name;
- * `comments` a list; `links` blocks or relates; no ladder (Jira has none). An old file (stage,
- * exit, a colour status, a ladder) is read in the new shape and written in it on its next write.
+ * `comments` a list; `links` blocks or relates.
  *
  * One file per item, <store>/<id>.json, written beside and renamed over. Ids come from one
  * global issuer (w1, w2, …) under one in-process lock that every write shares, so a trail
@@ -29,8 +28,7 @@ import { ackRecord, listLetterHolds, teamChanged, readLetterHolds, seedTegami, w
 export const ITEM_STATUSES = ['IDEA', 'PLAN', 'BUILD', 'REVIEW', 'LAND', 'DONE'] as const;
 export const ITEM_LEVELS = [1, 0, -1] as const;
 export const LINK_TYPES = ['blocks', 'relates'] as const;
-/** `evidence` is only read: older trails carry it; a comment replaced it (Jira has comments). */
-export const TRAIL_OPS = ['create', 'assign', 'release', 'move', 'status', 'edit', 'evidence', 'comment', 'flag', 'attach', 'link', 'holder-ended'] as const;
+export const TRAIL_OPS = ['create', 'assign', 'release', 'move', 'status', 'edit', 'comment', 'flag', 'attach', 'link', 'holder-ended'] as const;
 
 export type ItemStatus = typeof ITEM_STATUSES[number];
 export type ItemLevel = typeof ITEM_LEVELS[number];
@@ -57,8 +55,8 @@ export interface WorkItem {
   priority?: string;
   comments: Comment[];
   parent: string | null;
-  /** Attachments: absolute paths. */
-  docs: string[];
+  /** Absolute paths, as Jira's attachments. */
+  attachments: string[];
   links: Link[];
   external: External;
   trail: TrailLine[];
@@ -99,28 +97,10 @@ async function save(item: WorkItem): Promise<void> {
   await rename(tmp, target);
 }
 
-/** An item file in the shape it was written in, read in today's: `stage` is the status, a
- * red colour is flagged, `exit`, the other colours and the ladder go, no level reads 0. */
-export function inShape(raw: Record<string, unknown>): WorkItem {
-  const { stage, exit: _exit, ladder: _ladder, status, flagged, level, kind, priority, comments, links, ...rest } = raw;
-  void _exit; void _ladder;
-  return {
-    ...(rest as unknown as WorkItem),
-    level: member(ITEM_LEVELS, level) ? level : 0,
-    ...(typeof kind === 'string' && kind ? { kind } : {}),
-    ...(typeof priority === 'string' && priority ? { priority } : {}),
-    comments: Array.isArray(comments) ? comments as Comment[] : [],
-    links: Array.isArray(links) ? links as Link[] : [],
-    status: member(ITEM_STATUSES, status) ? status : member(ITEM_STATUSES, stage) ? stage : 'IDEA',
-    flagged: typeof flagged === 'boolean' ? flagged : status === 'red',
-    external: (rest.external && typeof rest.external === 'object' ? rest.external : {}) as External,
-  };
-}
-
 async function load(id: string): Promise<WorkItem> {
   if (!isItemId(id)) throw new WorkItemMissing(`"${id}" is not a work item id; ids look like w12.`);
   try {
-    return inShape(JSON.parse(await readFile(fileOf(id), 'utf8')) as Record<string, unknown>);
+    return JSON.parse(await readFile(fileOf(id), 'utf8')) as WorkItem;
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') throw new WorkItemMissing(`No work item ${id}.`);
     throw error;
@@ -186,7 +166,7 @@ export interface NewItem {
   /** Held from birth by this Team or Agent, in the same call and the same trail line. */
   holder?: Holder;
   priority?: string;
-  docs?: string[];
+  attachments?: string[];
 }
 
 function checkFields(fields: { status?: unknown; level?: unknown }): void {
@@ -229,7 +209,7 @@ async function settle(moved: Array<{ child: WorkItem; level: number }>, item: Wo
 
 const blank = (title: string, by: string): WorkItem => ({
   id: '', title, objective: '', level: 0, status: 'IDEA', flagged: false, comments: [], parent: null,
-  docs: [], links: [], external: {}, trail: [], created: { at: new Date().toISOString(), by: by.trim() || 'unknown' },
+  attachments: [], links: [], external: {}, trail: [], created: { at: new Date().toISOString(), by: by.trim() || 'unknown' },
 });
 
 /** An arrival under a held item is announced to its holder, one queued message: to the
@@ -263,7 +243,7 @@ export async function createItemUnlocked(input: NewItem, by: string): Promise<Ac
     status: (input.status as ItemStatus | undefined) ?? 'IDEA',
     ...(input.priority?.trim() ? { priority: input.priority.trim() } : {}),
     parent: parent?.id ?? null,
-    docs: input.docs ?? [],
+    attachments: input.attachments ?? [],
   };
   await follow(item, item.parent, item.level);
   const list = input.holder ? await listFor(input.holder) : null;
@@ -349,7 +329,7 @@ export async function flagItem(id: string, flagged: boolean, reason: string | un
   }));
 }
 
-/** Change comment n (from 1), as Jira's comment edit; the trail keeps what it now says. */
+/** Change comment n (from 1), as Jira's comment edit; the trail line carries the new text. */
 export async function editComment(id: string, n: number, words: string, by: string): Promise<Acknowledged> {
   const text = String(words ?? '').trim();
   if (!text) throw new WorkItemBadInput('a comment needs its text.');
@@ -377,8 +357,8 @@ function attachment(target: string, remove: boolean): string {
 export async function attachDoc(id: string, target: string, by: string, remove = false): Promise<Acknowledged> {
   const at = attachment(target, remove);
   return withIssuer(() => appendTrail(id, by, (item) => {
-    const kept = item.docs.filter((doc) => doc !== at);
-    item.docs = remove ? kept : [at, ...kept];
+    const kept = item.attachments.filter((doc) => doc !== at);
+    item.attachments = remove ? kept : [at, ...kept];
     return { op: 'attach', to: at, ...(remove ? { from: 'removed' } : {}) };
   }));
 }
@@ -394,7 +374,7 @@ export async function linkItem(id: string, type: string, to: string, by: string,
       if (remove) item.links = item.links.filter((link) => !same(link));
       else if (!item.links.some(same)) item.links.push({ type, to });
       const phrase = type === 'blocks' ? `blocks ${to}` : `relates to ${to}`;
-      return { op: 'link', to, note: remove ? `no longer ${phrase}` : phrase };
+      return { op: 'link', to, note: remove ? `${phrase}: link removed` : phrase };
     });
   });
 }
@@ -402,20 +382,20 @@ export async function linkItem(id: string, type: string, to: string, by: string,
 /** Jira's delete. The item goes, and with it its subtasks (as Jira deletes an issue's
  * subtasks); any other child is left with no parent (as an epic's children are). Links to
  * it go, every holder lets go of it, and each holding Agent is told. */
-export function deleteItem(id: string, by: string): Promise<{ gone: string[]; orphaned: string[] }> {
+export function deleteItem(id: string, by: string): Promise<{ deleted: string[]; orphaned: string[] }> {
   return withIssuer(async () => {
     await load(id);
     const all = await listItems();
-    const gone: string[] = [];
+    const deleted: string[] = [];
     const collect = (at: string): void => {
-      gone.push(at);
-      for (const child of all.filter((other) => other.parent === at && other.level === -1 && !gone.includes(other.id))) collect(child.id);
+      deleted.push(at);
+      for (const child of all.filter((other) => other.parent === at && other.level === -1 && !deleted.includes(other.id))) collect(child.id);
     };
     collect(id);
     const orphaned: string[] = [];
-    for (const other of all.filter((item) => !gone.includes(item.id))) {
-      const orphan = other.parent !== null && gone.includes(other.parent);
-      const links = other.links.filter((link) => !gone.includes(link.to));
+    for (const other of all.filter((item) => !deleted.includes(item.id))) {
+      const orphan = other.parent !== null && deleted.includes(other.parent);
+      const links = other.links.filter((link) => !deleted.includes(link.to));
       if (!orphan && links.length === other.links.length) continue;
       if (orphan) {
         other.trail.push(lineOf(by, 'move', { from: other.parent!, to: 'none', note: `level ${other.level}; ${other.parent} was deleted` }));
@@ -427,11 +407,11 @@ export function deleteItem(id: string, by: string): Promise<{ gone: string[]; or
       await save(other);
       await ackHolders(other.id, by);
     }
-    for (const at of gone) {
+    for (const at of deleted) {
       await ackHolds(await takeOffEveryList(at), by);
       await rm(fileOf(at));
     }
-    return { gone, orphaned };
+    return { deleted, orphaned };
   });
 }
 
@@ -539,7 +519,7 @@ export function didLine({ item, line }: Acknowledged): string {
           : line.op === 'create' ? 'was created'
               : line.op === 'comment' ? (line.from ? `comment ${line.from} was edited` : `has a comment from ${line.by}: ${line.note}`)
               : line.op === 'flag' ? `is ${line.to === 'true' ? 'flagged' : 'unflagged'}${line.note ? `: ${line.note}` : ''}`
-              : line.op === 'attach' ? (line.from === 'removed' ? `no longer has ${line.to} attached` : `has ${line.to} attached`)
+              : line.op === 'attach' ? (line.from === 'removed' ? `has ${line.to} removed` : `has ${line.to} attached`)
               : line.op === 'link' ? `${line.note}`
               : `changed: ${line.note ?? 'no change'}`;
   return `${item.id} ${what}`;
@@ -562,11 +542,40 @@ export function releaseHolder(session: string, key: string, how: string): Promis
   });
 }
 
-/* THE ONE MIGRATION (WORK_ITEM_BUILDOUT cut 2): every item file in today's shape. stage →
- * status, red → flagged, exit and the ladder dropped; an item with children gets level 1, every other 0;
- * the Unfiled epic (or the former "Common" root) goes and its items have no parent; kind
- * stays as stored. An item already in shape is left alone, so a second run changes nothing.
- * Holder lists are not touched: an id left on one names nothing and reads as nothing. */
+/** The one place that knows the shape items had before 2026-10-22, for the migration
+ * (Lab JIRA_SHAPE.md): `stage` is the status, a red colour is flagged, `exit`, the other colours and the
+ * ladder are dropped, `docs` is `attachments`, an evidence line on the trail is a comment,
+ * no level reads 0. */
+function toShape(raw: Record<string, unknown>): WorkItem {
+  const { stage, exit: _exit, ladder: _ladder, docs, attachments, status, flagged, level, kind, priority, comments, links, trail, ...rest } = raw;
+  void _exit; void _ladder;
+  const lines = (Array.isArray(trail) ? trail : []) as TrailLine[];
+  const evidence = lines.filter((line) => (line.op as string) === 'evidence');
+  return {
+    ...(rest as unknown as WorkItem),
+    level: member(ITEM_LEVELS, level) ? level : 0,
+    ...(typeof kind === 'string' && kind ? { kind } : {}),
+    ...(typeof priority === 'string' && priority ? { priority } : {}),
+    comments: [...(Array.isArray(comments) ? comments as Comment[] : []), ...evidence.map((line) => ({ by: line.by, at: line.at, text: line.note ?? '' }))],
+    attachments: (Array.isArray(attachments) ? attachments : Array.isArray(docs) ? docs : []) as string[],
+    links: Array.isArray(links) ? links as Link[] : [],
+    status: member(ITEM_STATUSES, status) ? status : member(ITEM_STATUSES, stage) ? stage : 'IDEA',
+    flagged: typeof flagged === 'boolean' ? flagged : status === 'red',
+    external: (rest.external && typeof rest.external === 'object' ? rest.external : {}) as External,
+    trail: lines.map((line) => (line.op as string) === 'evidence' ? { ...line, op: 'comment' } : line),
+  };
+}
+
+const inJiraShape = (raw: Record<string, unknown>): boolean =>
+  'level' in raw && 'flagged' in raw && Array.isArray(raw.comments) && Array.isArray(raw.links) && Array.isArray(raw.attachments)
+  && !('docs' in raw) && !('stage' in raw) && !('exit' in raw) && !('ladder' in raw)
+  && !(Array.isArray(raw.trail) && raw.trail.some((line) => (line as TrailLine | null)?.op as string === 'evidence'));
+
+/* THE ONE MIGRATION (Lab JIRA_SHAPE.md), at first start: every item file in the Jira
+ * shape (toShape); an item with children gets level 1, every other 0; the Unfiled epic (or
+ * the "Common" root) goes and its items have no parent; kind stays as stored. An item
+ * already in shape is left alone, so a second run changes nothing. After it, only the Jira
+ * shape exists. Holder lists are not touched: an id left on one names nothing. */
 export function migrateItems(by = 'ronin'): Promise<{ before: number; after: number; migrated: string[]; removed: string[] }> {
   return withIssuer(async () => {
     let names: string[] = [];
@@ -583,10 +592,10 @@ export function migrateItems(by = 'ronin'): Promise<{ before: number; after: num
     const migrated: string[] = [];
     for (const [id, raw] of raws) {
       const unfiled = removed.includes(String(raw.parent));
-      if ('level' in raw && 'flagged' in raw && !('stage' in raw) && !('exit' in raw) && !('ladder' in raw) && !unfiled) continue;
-      const item = inShape({ ...raw, ...('level' in raw ? {} : { level: parents.has(id) ? 1 : 0 }) });
+      if (inJiraShape(raw) && !unfiled) continue;
+      const item = toShape({ ...raw, ...('level' in raw ? {} : { level: parents.has(id) ? 1 : 0 }) });
       if (unfiled) item.parent = null;
-      item.trail.push(lineOf(by, 'edit', { note: `migrated to the Jira shape${unfiled ? `; ${raw.parent} (Unfiled) went, so no parent` : ''}` }));
+      item.trail.push(lineOf(by, 'edit', { note: `migrated to the Jira shape${unfiled ? `; ${raw.parent} (Unfiled) was removed, so no parent` : ''}` }));
       await save(item);
       migrated.push(id);
     }

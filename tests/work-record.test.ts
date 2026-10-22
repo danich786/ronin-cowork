@@ -60,11 +60,11 @@ test('help is side-effect-free and actionable', () => {
   assert.match(direct.stderr, /work-record update_record --objective <text>/);
 });
 
-test('letter verbs edit one field each, carry the holds through, and drop an old focus', (t) => {
+test('letter verbs edit one field each and carry the holds through', (t) => {
   const f = fixture();
   t.after(() => rmSync(f.dir, { recursive: true, force: true }));
   run(f.env, [], JSON.stringify({ objective: 'start' }));
-  // Ronin moves holds; the Agent's own saves carry them untouched. An old "at" goes.
+  // Ronin moves holds; the Agent's own saves carry them untouched.
   const text = readFileSync(f.letter, 'utf8').replace('"objective": "start"', '"objective": "start", "holds": ["w4", "w7"], "at": { "item": "w7", "rung": 2 }');
   writeFileSync(f.letter, text);
   run(f.env, ['--objective', 'the new sentence']);
