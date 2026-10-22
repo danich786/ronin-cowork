@@ -4,7 +4,7 @@
  * The only module that reads or writes an item file. Everything else reaches items through
  * the /api/work-items routes (src/routes/work-items-api.ts), and every change here appends
  * exactly one line to the item's trail, naming who called. Nothing is locked against
- * anyone: holding is discovery, never permission. One refusal, Jira's hierarchy (fits).
+ * anyone: holding is discovery, never permission. One refusal: nothing goes below -1 (follow).
  *
  * THE SHAPE MATCHES JIRA (owner, 2026-10-22; samurai_lab WORK_ITEM_BUILDOUT.md). One object
  * at every level: `level` 1 epic · 0 story/task/bug · -1 subtask, stored; `kind` a label;
@@ -213,14 +213,34 @@ function checkFields(fields: { status?: unknown; kind?: unknown; level?: unknown
 /** One below the parent, 0 with none (Jira's hierarchy). A default, never a guard. */
 const levelUnder = (parent: WorkItem | null): ItemLevel => parent ? (parent.level - 1) as ItemLevel : 0;
 
-/** THE ONE RULE (owner, 2026-10-22; Jira's hierarchy): an item sits one level below its
- * parent, from 1 to -1. A create, move or level write that would break it, for the item or
- * for its own children, fails in one line: "w39 can't go there." So nothing goes under a
- * subtask, nothing under itself, and an item with children keeps its level. */
-async function fits(item: WorkItem, parent: WorkItem | null, level: number): Promise<void> {
-  const breaks = parent?.id === item.id || parent?.level === -1
-    || (level !== item.level && (await listItems()).some((other) => other.parent === item.id));
-  if (breaks) throw new WorkItemRefused(`${item.id} can't go there.`);
+/** THE ONE RULE (owner, 2026-10-22): nothing goes below -1. On a create, move or level
+ * write the item takes its new level and its children follow, each one below its own
+ * parent; if any would land below -1 the act fails in one line: "w39 can't go there."
+ * Nothing else is checked. That covers anything under a subtask, a move under one's own
+ * descendant, and a move under oneself (the item becomes its own child, so the levels fall
+ * past -1). Returns the children whose level changes, with their new level. */
+async function follow(item: WorkItem, parent: string | null, level: number): Promise<Array<{ child: WorkItem; level: number }>> {
+  const all = (await listItems()).map((other) => other.id === item.id ? { ...other, parent } : other);
+  const out: Array<{ child: WorkItem; level: number }> = [];
+  const walk = (id: string, at: number): void => {
+    if (at < -1) throw new WorkItemRefused(`${item.id} can't go there.`);
+    for (const child of all.filter((other) => other.parent === id)) {
+      if (child.id !== item.id && child.level !== at - 1) out.push({ child, level: at - 1 });
+      walk(child.id, at - 1);
+    }
+  };
+  walk(item.id, level);
+  return out;
+}
+
+/** The children follow: each takes its new level, with one trail line saying why. */
+async function settle(moved: Array<{ child: WorkItem; level: number }>, item: WorkItem, by: string): Promise<void> {
+  for (const { child, level } of moved) {
+    const next = await load(child.id);
+    next.level = level as ItemLevel;
+    next.trail.push(lineOf(by, 'edit', { note: `level ${level}, following ${item.id}` }));
+    await save(next);
+  }
 }
 
 const blank = (title: string, by: string): WorkItem => ({
@@ -261,7 +281,7 @@ export async function createItemUnlocked(input: NewItem, by: string): Promise<Ac
     ladder: input.ladder ?? [],
     docs: input.docs ?? [],
   };
-  await fits(item, parent, item.level);
+  await follow(item, item.parent, item.level);
   const list = input.holder ? await listFor(input.holder) : null;
   await save(item);
   if (list) { await list.set([...list.holds, item.id]); await ackHolds([input.holder ?? null], by); }
@@ -280,11 +300,9 @@ export function editItem(id: string, edit: ItemEdit, by: string, note?: string):
   checkFields(edit);
   if (edit.title !== undefined && !String(edit.title).trim()) throw new WorkItemBadInput('title cannot be empty.');
   return withIssuer(async () => {
-    if (edit.level !== undefined) {
-      const item = await load(id);
-      await fits(item, item.parent ? await load(item.parent) : null, edit.level);
-    }
-    return appendTrail(id, by, (item) => {
+    const current = await load(id);
+    const children = edit.level === undefined ? [] : await follow(current, current.parent, edit.level);
+    const done = await appendTrail(id, by, (item) => {
       const changed: string[] = [];
       const before = item.status;
       if (edit.title !== undefined && edit.title.trim() !== item.title) { item.title = edit.title.trim(); changed.push('title'); }
@@ -305,6 +323,8 @@ export function editItem(id: string, edit: ItemEdit, by: string, note?: string):
       if (changed.length === 1 && changed[0]!.startsWith('status ')) return { op: 'status', from: before, to: item.status, note: said };
       return { op: 'edit', note: [said, changed.length ? changed.join(', ') : 'no change'].filter(Boolean).join('; ') };
     });
+    await settle(children, done.item, by);
+    return done;
   });
 }
 
@@ -341,20 +361,21 @@ export function writeDocs(id: string, change: { add?: string; remove?: string },
 }
 
 /** MOVE (Jira's convert/move): the parent and the level change together, one below the new
- * parent; with no parent the level stays. An item with children moves with them as long as
- * its level stays (a story and its subtasks to another epic). Bound by the one rule (fits). */
+ * parent; with no parent the level stays. Its children follow (an epic with stories moved
+ * under an epic becomes 0, its stories -1), bound by the one rule (follow). */
 export function moveItem(id: string, parent: string | null, by: string): Promise<Acknowledged> {
   return withIssuer(async () => {
     const child = await load(id);
     const under = parent ? await load(parent) : null;
     const level = under ? levelUnder(under) : child.level;
-    await fits(child, under, level);
+    const children = await follow(child, parent, level);
     const from = child.parent ?? 'none';
     child.parent = parent;
     child.level = level;
     const line = lineOf(by, 'move', { from, to: parent ?? 'none', note: `level ${child.level}` });
     child.trail.push(line);
     await save(child);
+    await settle(children, child, by);
     return { ...answer(child, line), notified: await announceArrival(child, by) };
   });
 }
