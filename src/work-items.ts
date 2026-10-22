@@ -228,15 +228,17 @@ const blank = (title: string, by: string): WorkItem => ({
   ladder: [], docs: [], external: {}, trail: [], created: { at: new Date().toISOString(), by: by.trim() || 'unknown' },
 });
 
-/** An arrival under a held epic is announced to its holder, one queued message: to the
- * Agent, or to a holding Team's lead. An epic held by nobody notifies nobody. */
+/** An arrival under a held item is announced to its holder, one queued message saying what
+ * arrived ("w12 is a subtask at IDEA"): to the Agent, or to a holding Team's lead. An item
+ * held by nobody notifies nobody. */
 async function announceArrival(item: WorkItem): Promise<string[]> {
   if (!item.parent) return [];
   const told: string[] = [];
+  const shape = await kindOf(item);
   for (const holder of await holdersOf(item.parent)) {
     const targets = holder.kind === 'agent' ? [holder.name] : await findLeads(holder.name);
     for (const target of targets) {
-      await enqueueMessage(target, `${item.id} ${item.title} was added under your epic ${item.parent}. Handle it as you see fit.`, 'house', 'Work items');
+      await enqueueMessage(target, `${item.id} ${item.title} was added under ${item.parent}, which you hold: ${shape}. Handle it as you see fit.`, 'house', 'Work items');
       told.push(target);
     }
   }

@@ -170,7 +170,7 @@ test('nesting under a held board queues its holder exactly one message; under an
   const queued = await listQueuedMessages();
   assert.equal(queued.length, 1);
   assert.equal(queued[0]!.target, 'boarder');
-  assert.equal(queued[0]!.text, `${piece.id} piece was added under your epic ${held.id}. Handle it as you see fit.`);
+  assert.match(queued[0]!.text, new RegExp(`^${piece.id} piece was added under ${held.id}, which you hold: ${piece.id} is a subtask at IDEA\\.`));
   await clear();
 
   assert.deepEqual((await items.moveItem(piece.id, unheld.id, 'lead')).notified, []);
