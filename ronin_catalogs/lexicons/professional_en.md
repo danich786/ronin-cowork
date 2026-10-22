@@ -898,6 +898,7 @@ The catalog entry goes. {dir} is not touched.
 - **messages.type_tell:** Agent tell
 - **messages.type_wipeboard:** Wipeboard notification
 - **messages.type_owner:** Owner message
+- **messages.type_typed:** Typed in the Message box
 - **messages.type_house:** House message
 - **messages.type_jikan:** Cron job
 - **messages.dismiss:** Dismiss

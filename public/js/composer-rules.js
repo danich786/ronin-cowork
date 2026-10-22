@@ -19,9 +19,10 @@ export function settleComposer(outcome, sent, boxNow) {
   return { clear: false, why: (outcome && outcome.why) || 'refused' };
 }
 
-/** Every complete message enters the same queue. Never append a terminal Enter here. */
+/** Every complete message enters the same queue. Never append a terminal Enter here.
+ *  `typed`: the person is at this Agent's keyboard, so it arrives with no From line. */
 export async function sendComposerMessage(target, text) {
-  const result = await request('/api/messages', { method: 'POST', json: { target, text } });
+  const result = await request('/api/messages', { method: 'POST', json: { target, text, typed: true } });
   if (!result.ok) return { ok: false, why: result.message };
   // Once accepted, the queue owns the only copy.
   return { ok: result.data.ok === true, why: 'refused' };

@@ -7,7 +7,8 @@ export function registerMessages(app: Express): void {
     const target = String(req.body?.target ?? '');
     const text = String(req.body?.text ?? '');
     if (!isValidName(target) || !text.trim()) return res.status(400).json({ error: 'A valid target and message are required.' });
-    const item = await enqueueMessage(target, text, 'owner');
+    // The tile's Message box says it is the person typing; every other caller is Ronin on their behalf.
+    const item = await enqueueMessage(target, text, req.body?.typed === true ? 'typed' : 'owner');
     res.json({ ok: true, queued: true, message: item });
   });
   app.delete('/api/messages', async (req, res) => {
