@@ -27,6 +27,7 @@ import { listTeamRosters } from '../team-rosters.js';
 import { announceTeamChanges } from './wipeboards-api.js';
 import { checkoutAt, deriveTeams, parkBrief, seedTegami, teamChanged, withAxes, writeConfiguration, type SessionWithAxes } from '../tegami.js';
 import { createItem } from '../work-items.js';
+import { callerOf } from './work-items-api.js';
 import { collectBirthLines, collectRowFields } from '../sockets.js';
 import { broadcastEvent, listening, pushTeams } from '../ws/events.js';
 import { prepareLaunchDesks } from '../launch-desks.js';
@@ -483,7 +484,9 @@ export function registerLaunch(app: express.Express): LaunchControl {
       );
       }
       await writeConfiguration(resolved.name).catch(() => {});
-      if (resolved.tags.length) await teamChanged(resolved.tags, resolved.name).catch(() => {});
+      // By whoever made the Agent (session_create's caller, else the browser's owner), so a
+      // lead who raises a member is not told of its own act.
+      if (resolved.tags.length) await teamChanged(resolved.tags, String(req.body?.caller ?? '').trim() || callerOf(req)).catch(() => {});
     } catch (e) {
       if (birthDir && !runtimeBorn) await rm(birthDir, { recursive: true, force: true });
       void appendLaunchLedger(form, resolved, false);

@@ -220,13 +220,14 @@ const blank = (title: string, by: string): WorkItem => ({
 });
 
 /** An arrival under a held item is announced to its holder, one queued message: to the
- * Agent, or to a holding Team's lead. An item held by nobody notifies nobody. */
-async function announceArrival(item: WorkItem): Promise<string[]> {
+ * Agent, or to a holding Team's lead, never to whoever made the change. An item held by
+ * nobody notifies nobody. */
+async function announceArrival(item: WorkItem, by: string): Promise<string[]> {
   if (!item.parent) return [];
   const told: string[] = [];
   for (const holder of await holdersOf(item.parent)) {
     const targets = holder.kind === 'agent' ? [holder.name] : await findLeads(holder.name);
-    for (const target of targets) {
+    for (const target of targets.filter((name) => name !== by)) {
       await enqueueMessage(target, `${item.id} ${item.title} was added under ${item.parent}, which you hold. Handle it as you see fit.`, 'house', 'Work items');
       told.push(target);
     }
@@ -257,7 +258,7 @@ export async function createItemUnlocked(input: NewItem, by: string): Promise<Ac
   const line = lineOf(by, 'create', { to: input.holder ? holderLabel(input.holder) : 'none', note: [item.title, item.parent ? `under ${item.parent}` : 'no parent'].join('; ') });
   item.trail.push(line);
   await save(item);
-  return { ...answer(item, line), notified: await announceArrival(item) };
+  return { ...answer(item, line), notified: await announceArrival(item, by) };
 }
 
 export const createItem = (input: NewItem, by: string) => withIssuer(() => createItemUnlocked(input, by));
@@ -347,7 +348,7 @@ export function moveItem(id: string, parent: string | null, by: string): Promise
     const line = lineOf(by, 'move', { from, to: parent ?? 'none', note: `level ${child.level}` });
     child.trail.push(line);
     await save(child);
-    return { ...answer(child, line), notified: await announceArrival(child) };
+    return { ...answer(child, line), notified: await announceArrival(child, by) };
   });
 }
 

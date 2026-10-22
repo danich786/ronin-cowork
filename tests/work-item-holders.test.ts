@@ -198,3 +198,10 @@ test('a change by anyone but the holding Agent acks that Agent once; its own cha
   assert.equal(await acks(), 0, 'its own write is not acked');
   await clear();
 });
+
+test('an arrival made by the holder itself tells nobody', async () => {
+  await seedTegami('maker');
+  const parent = (await items.createItem({ title: 'mine', holder: { kind: 'agent', name: 'maker' } }, 'lead')).item;
+  assert.deepEqual((await items.createItem({ title: 'my own child', parent: parent.id }, 'maker')).notified, []);
+  assert.deepEqual((await items.createItem({ title: 'someone else\'s', parent: parent.id }, 'lead')).notified, ['maker']);
+});
