@@ -182,32 +182,36 @@ export function buildLadder(letter, deskEntry = null, { openDoc = null } = {}) {
   }
 
   if (current.item) {
-    // The item's evidence (trail lines written with --evidence) and the other items held;
+    // The item's comments (older trails' evidence lines first), then the other items held;
     // pressing one reads its ladder in place of this one.
-    const evidence = (current.item.trail || []).filter((line) => line.op === 'evidence');
-    const others = (letter.items || []).filter((item) => item.id !== current.item.id);
-    if (evidence.length || others.length) {
-      const progress = section(t('ladder.progress', 'Progress'), 'sl-progress sl-project');
-      for (const line of evidence) {
+    const comments = [
+      ...(current.item.trail || []).filter((line) => line.op === 'evidence').map((line) => line.note),
+      ...(current.item.comments || []).map((comment) => comment.text),
+    ];
+    if (comments.length) {
+      const said = section(t('team_kanban.comments', 'Comments'), 'sl-progress sl-project');
+      for (const text of comments) {
         const row = document.createElement('p');
-        row.className = 'sl-project-evidence';
-        row.textContent = line.note;
-        progress.appendChild(row);
+        row.className = 'sl-project-comment';
+        row.textContent = text;
+        said.appendChild(row);
       }
-      if (others.length) {
-        const switcher = document.createElement('div');
-        switcher.className = 'sl-projects-other';
-        for (const item of others) {
-          const button = document.createElement('button');
-          button.type = 'button';
-          button.textContent = item.title;
-          button.addEventListener('click', () => {
-            box.replaceWith(buildLadder({ ...letter, item, ladder: item.ladder || [], at: null, chip: null }, deskEntry));
-          });
-          switcher.appendChild(button);
-        }
-        progress.appendChild(switcher);
+    }
+    const others = (letter.items || []).filter((item) => item.id !== current.item.id);
+    if (others.length) {
+      const progress = section(t('ladder.progress', 'Progress'), 'sl-progress sl-project');
+      const switcher = document.createElement('div');
+      switcher.className = 'sl-projects-other';
+      for (const item of others) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = item.title;
+        button.addEventListener('click', () => {
+          box.replaceWith(buildLadder({ ...letter, item, ladder: item.ladder || [], at: null, chip: null }, deskEntry));
+        });
+        switcher.appendChild(button);
       }
+      progress.appendChild(switcher);
     }
   }
 

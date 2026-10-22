@@ -14,7 +14,7 @@ const operations: Array<[string, RegExp, string]> = [
   ['POST', /^\/api\/team-rosters$/, 'team roster write'],
   ['PUT', /^\/api\/(team|team-rosters\/[^/]+)$/, 'team roster write'],
   ['POST', /^\/api\/work-items$/, 'item create'],
-  ['PUT', /^\/api\/work-items\/[^/]+$/, 'item write'],
+  ['PUT', /^\/api\/work-items\/[^/]+$/, 'item edit'],
   ...['assign', 'move', 'plan', 'docs', 'comment', 'focus'].map(verb =>
     ['POST', new RegExp('^/api/work-items/[^/]+/' + verb + '$'), 'item ' + (verb === 'docs' ? 'doc' : verb)] as [string, RegExp, string]),
 ];

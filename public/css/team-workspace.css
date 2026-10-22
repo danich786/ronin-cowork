@@ -91,7 +91,7 @@
   .tk-details { display: none; }
   .tk-card.open .tk-details { display: block; }
   .tk-outcome { max-height: calc(var(--tk-outcome-line) * 2); overflow: hidden; margin-top: var(--space-row); color: var(--muted); font-size: var(--text-body); line-height: var(--tk-outcome-line); }
-  .tk-evidence { margin: var(--space-row) 0 0; overflow-wrap: anywhere; color: var(--muted); font-size: var(--text-small); }
+  .tk-comments { margin: var(--space-row) 0 0; overflow-wrap: anywhere; color: var(--muted); font-size: var(--text-small); }
   .tk-card-row { min-height: var(--tk-card-meta-line); align-items: center; gap: var(--space-inline); margin-top: var(--space-row); padding-top: 0; font-size: var(--text-body); }
   .tk-flag { color: var(--status-red); }
   .tk-asked { color: var(--muted); }

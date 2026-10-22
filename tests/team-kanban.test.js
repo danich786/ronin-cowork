@@ -31,8 +31,8 @@ test('a forward drop tells the holder the defined move, naming the item command 
   assert.match(move.text, /^from @kanban \(the Team Task Manager, moved by the user at 2026-09-13T13:02Z\):/);
   assert.match(move.text, /MOVE w7 "Kanban tab" from Review to Land/);
   assert.match(move.text, /next: worktree-desk hand-in <repo> --item w7/);
-  assert.match(moveMessage(project({ status: 'BUILD' }), 'REVIEW', 'kanban_revive', NOW).text, /next: item write w7 --status REVIEW/);
-  assert.match(moveMessage(project({ status: 'PLAN' }), 'BUILD', 'kanban_revive', NOW).text, /next: item write w7 --status BUILD/);
+  assert.match(moveMessage(project({ status: 'BUILD' }), 'REVIEW', 'kanban_revive', NOW).text, /next: item edit w7 --status REVIEW/);
+  assert.match(moveMessage(project({ status: 'PLAN' }), 'BUILD', 'kanban_revive', NOW).text, /next: item edit w7 --status BUILD/);
 });
 
 test('Team-held and lead moves resolve to the lead; a flagged drop remains a request', () => {
@@ -90,17 +90,17 @@ test('card expansion and owner opening are sibling controls, never nested intera
   assert.match(moduleSource, /if \(!event\.target\.closest\('button'\)\) navigate\('project', project\.id\)/);
 });
 
-test('Task Manager scope derives Team lists, keeps the items an Agent holds, and reads evidence off the trail', () => {
+test('Task Manager scope derives Team lists, keeps the items an Agent holds, and reads comments, older evidence lines first', () => {
   assert.deepEqual(taskManagerScope({ kind: 'cowork', teams: () => ['alpha', 'beta', 'alpha'] }), { kind: 'team', teams: ['alpha', 'beta'], agent: '' });
   const scope = taskManagerScope({ kind: 'agent', agent: 'surface-tasks', teams: ['surface', 'other'] });
   assert.deepEqual(scope, { kind: 'agent', teams: ['surface', 'other'], agent: 'surface-tasks' });
   const rows = projectsForScope([
-    project({ id: 'w2', holder: 'agent:surface-tasks', trail: [{ op: 'create', note: 'x' }, { op: 'evidence', note: 'commit abc' }] }),
+    project({ id: 'w2', holder: 'agent:surface-tasks', trail: [{ op: 'create', note: 'x' }, { op: 'evidence', note: 'commit abc' }], comments: [{ by: 'lead', at: '2026-10-22T00:00:00Z', text: 'looks right' }] }),
     project({ id: 'w2', holder: 'agent:surface-tasks' }),
     project({ id: 'w3', holder: 'agent:someone-else' }),
   ], scope);
   assert.deepEqual(rows.map((item) => item.id), ['w2']);
-  assert.deepEqual(rows[0].evidence, ['commit abc']);
+  assert.deepEqual(rows[0].comments, ['commit abc', 'looks right']);
 });
 
 test('status and Project drill-downs are standalone Workbench surface types', () => {

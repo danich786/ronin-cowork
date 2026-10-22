@@ -204,7 +204,7 @@ async function main(): Promise<void> {
           out(`${receipt.result.toUpperCase()} ${deskId(d)} → ${d.line}${receipt.result === 'accepted' ? ` now ${receipt.line_sha.slice(0, 10)}` : ''}${receipt.reason ? ` — ${receipt.reason}` : ''}${receipt.conflict_files.length ? ` — files: ${receipt.conflict_files.join(', ')}` : ''}  [${receipt.id}]`);
           for (const n of notices) if (n.kind !== 'adopted' || n.desk === d.branch) out(noticeLine(n));
           if (receipt.result === 'accepted' && tidy.desk) {
-            if (!projectId) out('  Code handed in. No work item was named; nothing moved stage.');
+            if (!projectId) out('  Code handed in. No work item was named; no status moved.');
             out(`  worktree is ${tidy.desk.ahead === 0 ? 'level with the line' : `${tidy.desk.ahead} commit(s) ahead of the line`}`);
             out(tidy.unsaved_files.length ? `  not handed in: ${tidy.unsaved_files.join(', ')}` : '  no unsaved or untracked files');
             out(`  NEXT: line moved; run worktree-desk status ${deskId(d)}; if it reports a dev update, run worktree-desk sync ${deskId(d)}`);

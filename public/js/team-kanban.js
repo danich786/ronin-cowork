@@ -43,12 +43,17 @@ const node = (tag, cls, text) => {
   return out;
 };
 export const stageLabel = (key) => COLUMNS[INDEX[key]]?.label || key;
+/** The item's comments, after the evidence lines older trails carry (a comment replaced them). */
+export const commentsOf = (value) => [
+  ...(Array.isArray(value?.trail) ? value.trail.filter((line) => line?.op === 'evidence').map((line) => String(line.note || '')) : []),
+  ...(Array.isArray(value?.comments) ? value.comments.map((comment) => String(comment?.text || '')) : []),
+];
 const normalizedProject = (value) => ({
   ...value,
   id: String(value?.id || ''),
   title: String(value?.title || value?.id || 'Untitled work item'),
   objective: String(value?.objective || ''),
-  evidence: Array.isArray(value?.trail) ? value.trail.filter((line) => line?.op === 'evidence').map((line) => String(line.note || '')) : [],
+  comments: commentsOf(value),
   holder: String(value?.holder || ''),
   status: INDEX[value?.status] == null ? 'IDEA' : value.status,
   flagged: value?.flagged === true,
@@ -106,15 +111,15 @@ export function moveMessage(project, toStage, leadName, now = new Date()) {
   const result = (target, meaning, next) => ({ target, text: `${head}\n${line}\n  meaning: ${meaning}\n  next: ${next}` });
 
   if (project.status === 'PLAN' && toStage === 'IDEA') {
-    return result(leadName, 'return it to Idea; the Team holds it again.', `item write ${id} --status IDEA, then item assign ${id} team:${project.team || '<team>'}`);
+    return result(leadName, 'return it to Idea; the Team holds it again.', `item edit ${id} --status IDEA, then item assign ${id} team:${project.team || '<team>'}`);
   }
   if (!forward) return { target: holder, text: `${head}\n${line}\n  meaning: no defined move; delivered as a plain request.` };
   if (project.flagged) {
-    return result(holder, 'a request to move on, not an approval; the card is flagged.', `your call — say what stops it, or item write ${id} --flagged false when it is clear.`);
+    return result(holder, 'a request to move on, not an approval; the card is flagged.', `your call — say what stops it, or item edit ${id} --flagged false when it is clear.`);
   }
   if (project.status === 'IDEA') return result(leadName, 'engage — the user wants this started.', `item assign ${id} <session>, or raise an Agent for it`);
-  if (project.status === 'PLAN') return result(holder, 'the plan is agreed; build.', `item write ${id} --status BUILD`);
-  if (project.status === 'BUILD') return result(holder, 'show approved; ready it for review.', `item write ${id} --status REVIEW`);
+  if (project.status === 'PLAN') return result(holder, 'the plan is agreed; build.', `item edit ${id} --status BUILD`);
+  if (project.status === 'BUILD') return result(holder, 'show approved; ready it for review.', `item edit ${id} --status REVIEW`);
   if (project.status === 'REVIEW') return result(holder, 'review passed; hand in.', `worktree-desk hand-in <repo> --item ${id}   (the hand-in moves it to Land)`);
   if (project.status === 'LAND') return result(leadName, 'promote.', `bin/ronin-promote ${project.team || '<team>'}   (the promotion moves it to Done)`);
   return { target: holder, text: `${head}\n${line}\n  meaning: delivered as a plain request.` };
@@ -235,7 +240,7 @@ export function createTeamKanban(options = {}) {
         card.append(toggle);
         const details = node('div', 'tk-details');
         details.append(node('p', 'wk-card-summary tk-outcome', project.objective));
-        if (project.evidence.length) details.append(node('p', 'tk-evidence', project.evidence.join(' · ')));
+        if (project.comments.length) details.append(node('p', 'tk-comments', project.comments.join(' · ')));
         const row = node('div', 'wk-card-meta tk-card-row');
         if (project.flagged) row.append(node('span', 'tk-flag', `${FLAG_MARK} ${t('team_kanban.flagged', 'flagged')}`));
         const owner = holderName(project);

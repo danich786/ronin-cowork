@@ -17,5 +17,5 @@ export function appendProjectReading(host, project, { holder, stage, prefix = 'w
     [t('team_kanban.parent', 'Parent'), project.parent || t('team_kanban.no_parent', 'no parent')],
   ]) facts.append(node('dt', '', label), node('dd', '', value));
   host.append(facts);
-  if (project.evidence.length) host.append(node('h3', '', t('team_kanban.evidence', 'Evidence')), node('p', `${prefix}-evidence`, project.evidence.join(' · ')));
+  if (project.comments.length) host.append(node('h3', '', t('team_kanban.comments', 'Comments')), node('p', `${prefix}-comments`, project.comments.join(' · ')));
 }

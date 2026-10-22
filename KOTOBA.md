@@ -61,7 +61,7 @@ Macro, action, SOP, and Agent role are not additional composition layers. “Act
 | Subtask | A work item at level -1, under a level-0 item. The one rule: nothing goes below -1; children follow their parent's new level, and a change that would put any below -1 fails with "w39 can't go there." |
 | Status | The board's column: Idea, Plan, Build, Review, Land, Done. Formerly "stage" |
 | Flagged | An impediment on a work item, as Jira's flag. Replaces the red colour; the colours and `exit` are gone |
-| Priority | A work item's priority, as Jira's: any name, or blank. Set with `item write <id> --priority <name>` |
+| Priority | A work item's priority, as Jira's: any name, or blank. Set with `item edit <id> --priority <name>` |
 | Comment | One remark on a work item, as Jira's: who, when and the text. `item comment <id> <text>` adds one; a comment by someone else tells the holding Agent its work record changed |
 | Team Kanban | The Team's reading of work items: what the Team and its members hold, children under their parent; a Team holds, it does not contain. Never another store ([Team Kanban](docs/using-ronin/team-kanban.md)) |
 | Board | A view of work items in columns by status, as in Jira and Trello: the Task Manager's six status columns. A board is never a work item |

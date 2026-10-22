@@ -11,7 +11,7 @@ surface or a new work-record store. The Task Manager derives a view of those aut
    placement resolved before birth.
 3. **The Agent owns its work.** Assignment transfers a Team-held work item into the Agent's
    work record. `item create` then `item assign <id> <agent>` is the other entry when work
-   arrives without a Team-held item; `item write` updates it. Stable identity and provenance
+   arrives without a Team-held item; `item edit` updates it. Stable identity and provenance
    survive custody changes; there is no second shared mutable checklist.
 4. **Work produces evidence.** The Agent keeps its record current and commits coherent desk
    checkpoints. Tests, documents, decisions, and exact commits become evidence.

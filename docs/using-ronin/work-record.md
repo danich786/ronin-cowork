@@ -52,10 +52,10 @@ not holding an item: holding is how work is found, never permission.
 | `kind` | any work type name (`story`, `task`, `bug`, `feature`, a site's own) · blank | the work type; blank unless you set it, no fixed list |
 | `status` | `IDEA` · `PLAN` · `BUILD` · `REVIEW` · `LAND` · `DONE` | the board's column |
 | `flagged` | `true` · `false` | an impediment, as Jira's flag |
-| `priority` | any name · blank | as Jira's priority; `item write <id> --priority <name>` |
+| `priority` | any name · blank | as Jira's priority; `item edit <id> --priority <name>` |
 | `comments` | `{ by, at, text }` list | as Jira's comments; `item comment <id> <text>` adds one |
 | `parent` | an id, or none | none is normal |
-| `external` | `jira`, `trello`, `github` keys | written with `item write <id> --jira <key>` |
+| `external` | `jira`, `trello`, `github` keys | written with `item edit <id> --jira <key>` |
 
 One object serves every level; a field that means nothing at a level is simply unused, as in
 Jira. An epic's status is set by hand. Adding a child never changes an item's level, and
@@ -69,7 +69,7 @@ item. **Parent** is one id on the item, or none. A Team holds; it does not conta
 item create --title "Agent-authored items" [--objective "…"] [--parent w3] [--level 1|0|-1] [--kind <type>]
 item read w12                       # with its children, if any
 item list [--team surface] [--holder builder] [--parent w3 | --no-parent]
-item write w12 --status REVIEW --flagged true --priority High --jira RON-12
+item edit w12 --status REVIEW --flagged true --priority High --jira RON-12
 item move w12 --to w3               # parent and level together; --to none keeps the level
 item assign w12 builder             # or team:surface, or none
 item comment w12 "commit 0123456789: store round-trips"
@@ -79,7 +79,7 @@ A new item is held by nobody until it is assigned. `item move` is Jira's move: t
 and the level change in one act, one below the new parent; with no parent the level stays.
 Any level-0 item moved under another becomes a subtask.
 
-**The one rule: nothing goes below -1.** On a create, a move or `item write --level`, the
+**The one rule: nothing goes below -1.** On a create, a move or `item edit --level`, the
 item takes its new level (one below its parent, or the level set) and its children follow,
 each one below its own parent. If any of them would land below -1, the act fails with one
 line: "w39 can't go there." Nothing else is checked. So nothing goes under a subtask, under
