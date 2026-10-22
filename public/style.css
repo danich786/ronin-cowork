@@ -3147,7 +3147,7 @@ body {
  * SPACE SAYS WHAT IT SEPARATES (owner, 2026-10-22: "one big, long series of lines"). Lines
  * inside a paragraph sit at --leading-body; paragraphs inside a turn (a blank line in what
  * was written, or the next message from the same speaker) at --space-paragraph; a change of
- * speaker at --space-section. No rules between entries: the space does the breaking.
+ * speaker at --space-subsection. No rules between entries: the space does the breaking.
  */
 .tile-transcript-entry {
   padding: var(--space-row) var(--space-inline);
@@ -3157,7 +3157,10 @@ body {
 }
 .tile-transcript-entry + .tile-transcript-entry { margin-top: var(--space-paragraph); }
 .tile-transcript-entry[data-role='user'] + .tile-transcript-entry:not([data-role='user']),
-.tile-transcript-entry:not([data-role='user']) + .tile-transcript-entry[data-role='user'] { margin-top: var(--space-section); }
+.tile-transcript-entry:not([data-role='user']) + .tile-transcript-entry[data-role='user'] { margin-top: var(--space-subsection); }
+/* The end of the conversation keeps a paragraph's room before the message box, whether the
+   last thing is a line or the working dots. */
+.tile-transcript > :last-child { margin-bottom: var(--space-paragraph); }
 .tile-transcript-para { margin: 0; }
 .tile-transcript-para + .tile-transcript-para { margin-top: var(--space-paragraph); }
 /*
@@ -3184,9 +3187,9 @@ body {
   display: flex;
   align-items: center;
   gap: var(--space-inline);
-  /* A turn's worth of activity: the space of a change of speaker above, a paragraph's below
-     before the message box (owner, 2026-10-22: "runs into the dialog entry box"). */
-  margin: var(--space-section) 0 var(--space-paragraph);
+  /* A turn's worth of activity: a section's space above, and below it the paragraph's room
+     every last line keeps before the message box (owner, 2026-10-22: "runs into the dialog entry box"). */
+  margin-top: var(--space-section);
   padding: var(--space-row) 0 var(--space-row) var(--space-inline);
   color: var(--muted);
 }
