@@ -53,13 +53,26 @@ test('the ladder stays on an item when it gains a child (the fold into the first
   assert.equal((await items.readItem(epic.id))!.ladder.length, 1, 'a move under it keeps it too');
 });
 
-test('kind is a label: story, task, bug or blank; the answer says only what the act changed', async () => {
+test('kind is any work type name or blank; priority any name; the answer says only what the act changed', async () => {
   const bug = await items.createItem({ title: 'Crash', kind: 'bug' }, 'probe');
   assert.equal(items.didLine(bug), `${bug.item.id} was created`);
   assert.equal(items.didLine(await items.editItem(bug.item.id, { kind: 'story', flagged: true }, 'probe')), `${bug.item.id} changed: kind story, flagged`);
   assert.equal(items.didLine(await items.editItem(bug.item.id, { status: 'BUILD' }, 'probe')), `${bug.item.id} moved to BUILD`);
   assert.equal((await items.editItem(bug.item.id, { kind: '' }, 'probe')).item.kind, undefined);
-  await assert.rejects(items.createItem({ title: 'Odd', kind: 'epic' }, 'probe'), /kind must be one of story, task, bug/);
+  assert.equal((await items.createItem({ title: 'Odd', kind: 'feature' }, 'probe')).item.kind, 'feature');
+  assert.equal(items.didLine(await items.editItem(bug.item.id, { priority: 'High' }, 'probe')), `${bug.item.id} changed: priority High`);
+  assert.equal((await items.editItem(bug.item.id, { priority: '' }, 'probe')).item.priority, undefined);
+});
+
+test('a comment is { by, at, text } on the item, with one trail line', async () => {
+  const { item } = await items.createItem({ title: 'Talked about' }, 'probe');
+  const done = await items.addComment(item.id, 'Looks right to me.', 'reviewer');
+  assert.equal(items.didLine(done), `${item.id} has a comment from reviewer: Looks right to me.`);
+  const back = (await items.readItem(item.id))!;
+  assert.deepEqual(back.comments.map(({ by, text }) => [by, text]), [['reviewer', 'Looks right to me.']]);
+  assert.match(back.comments[0]!.at, /^\d{4}-/);
+  assert.deepEqual(back.trail.map((line) => line.op), ['create', 'comment']);
+  await assert.rejects(items.addComment(item.id, '  ', 'reviewer'), { message: 'a comment needs its text.' });
 });
 
 test('create → read round-trips the whole shape, with one create line', async () => {
@@ -95,9 +108,10 @@ test('one global issuer: concurrent creates never share an id', async () => {
 
 test('trail append is atomic under concurrent writers: every line lands', async () => {
   const { item } = await items.createItem({ title: 'Busy' }, 'probe');
-  await Promise.all(Array.from({ length: 25 }, (_, i) => items.addEvidence(item.id, `fact ${i}`, `writer${i}`)));
+  await Promise.all(Array.from({ length: 25 }, (_, i) => items.addComment(item.id, `fact ${i}`, `writer${i}`)));
   const back = (await items.readItem(item.id))!;
-  assert.equal(back.trail.filter((line) => line.op === 'evidence').length, 25);
+  assert.equal(back.trail.filter((line) => line.op === 'comment').length, 25);
+  assert.equal(back.comments.length, 25);
   assert.equal(new Set(back.trail.map((line) => line.note)).size, 26);
 });
 
@@ -193,7 +207,7 @@ test('routes acknowledge with the item and the appended line; refusals answer 40
     assert.deepEqual([stuck.status, stuck.data.error], [409, `${id} can't go there.`]);
     const plan = await call('POST', `${base}/${id}/plan`, { edits: [['phase', 'One']], by: 'probe' });
     assert.equal(plan.data.item.ladder[0].phase, 'One');
-    assert.equal((await call('POST', `${base}/${id}/evidence`, { text: 'a fact', by: 'probe' })).data.line.op, 'evidence');
+    assert.equal((await call('POST', `${base}/${id}/comment`, { text: 'a fact', by: 'probe' })).data.line.op, 'comment');
     assert.ok((await call('GET', `${base}?no_parent=1`)).data.items.some((item: { id: string }) => item.id === id));
     assert.ok((await call('GET', `${base}?parent=${id}`)).data.items.every((item: { parent: string }) => item.parent === id));
     assert.equal((await call('GET', `${base}/w999999`)).status, 404);

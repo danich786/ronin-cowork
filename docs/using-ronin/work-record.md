@@ -24,6 +24,10 @@ not holding an item: holding is how work is found, never permission.
   "kind": "task",
   "status": "BUILD",
   "flagged": false,
+  "priority": "High",
+  "comments": [
+    { "by": "lead", "at": "2026-09-28T15:06:02Z", "text": "Start with the store." }
+  ],
   "parent": "w3",
   "ladder": [
     { "gate": "go / no-go", "status": "DONE" },
@@ -45,9 +49,11 @@ not holding an item: holding is how work is found, never permission.
 | Field | Values | Meaning |
 |---|---|---|
 | `level` | `1` epic · `0` story, task or bug · `-1` subtask | stored; a new item is one level below its parent, `0` with none |
-| `kind` | `story` · `task` · `bug` · blank | a label; blank unless you set it |
+| `kind` | any work type name (`story`, `task`, `bug`, `feature`, a site's own) · blank | the work type; blank unless you set it, no fixed list |
 | `status` | `IDEA` · `PLAN` · `BUILD` · `REVIEW` · `LAND` · `DONE` | the board's column |
 | `flagged` | `true` · `false` | an impediment, as Jira's flag |
+| `priority` | any name · blank | as Jira's priority; `item write <id> --priority <name>` |
+| `comments` | `{ by, at, text }` list | as Jira's comments; `item comment <id> <text>` adds one |
 | `parent` | an id, or none | none is normal |
 | `external` | `jira`, `trello`, `github` keys | written with `item write <id> --jira <key>` |
 
@@ -60,13 +66,13 @@ Team and each Agent; assigning moves the id from one list to another and never t
 item. **Parent** is one id on the item, or none. A Team holds; it does not contain.
 
 ```text
-item create --title "Agent-authored items" [--objective "…"] [--parent w3] [--level 1|0|-1] [--kind story|task|bug]
+item create --title "Agent-authored items" [--objective "…"] [--parent w3] [--level 1|0|-1] [--kind <type>]
 item read w12                       # with its children, if any
 item list [--team surface] [--holder builder] [--parent w3 | --no-parent]
-item write w12 --status REVIEW --flagged true --jira RON-12
+item write w12 --status REVIEW --flagged true --priority High --jira RON-12
 item move w12 --to w3               # parent and level together; --to none keeps the level
 item assign w12 builder             # or team:surface, or none
-item evidence w12 "commit 0123456789"
+item comment w12 "commit 0123456789: store round-trips"
 ```
 
 A new item is held by nobody until it is assigned. `item move` is Jira's move: the parent
@@ -84,11 +90,14 @@ trail line saying it followed.
 Every write answers with the item as it now is and the trail line it appended. Its
 acknowledgement is one line of what the act did, read from that trail line, and nothing
 after it: "w39 moved under w40, level -1", "w9 moved to BUILD", "w9 is held by agent:x",
-"w12 was created", "w12 changed: kind story, flagged". Status, kind and level appear only
+"w12 was created", "w12 changed: kind story, flagged", "w12 has a comment from lead: Start
+with the store." Status, kind and level appear only
 when the act changed them. When an item arrives under one someone holds, by a create with a
 parent or a move, that holder gets one message through the ordinary queue: "w9 Fix login
 was added under w7, which you hold. Handle it as you see fit." A
-Team holder's lead gets it. An item held by nobody notifies nobody.
+Team holder's lead gets it. An item held by nobody notifies nobody. Any write by someone
+other than the holding Agent, a comment included, gives that Agent "Your work record
+changed"; its own writes tell nobody.
 
 ## Receipts move Land and Done
 

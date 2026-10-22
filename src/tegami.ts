@@ -76,57 +76,13 @@ function seedShell(
   sessionMandate: Mandate,
 ): string {
   return `# TEGAMI — ${name}
-> **This is your work record, and your ladder is a good way to communicate that you understand
-> your role, the input you need from the user, and your planned phases and legs.** What you
-> keep is shown on the user's tile and on their session_roster for quick reference. Keep it
-> true and save it when it changes — a stale ladder is worse than none.
->
-> At the end of a turn, consider updating it with \`work-record update_record\`. Not keeping it current is
-> poor quality.
->
-> YOUR **teams** block is DERIVED and not yours to write: one entry per team you are on —
-> the team's name, your role on it and its objective, from the team rosters; a Team lead's
-> entry also lists the members. Ronin writes it again whenever a roster or a membership
-> changes and tells you with a one-line notice; reread your letter then. YOUR
-> **configuration** line is derived the same way: the title and Workspace Folder Ronin keeps
-> for you. A session on no team is a rōnin, which
-> is an ordinary state and not a gap.
->
-> YOUR **repos** list is started from the checkout the new-session box put you in. It is
-> not limited to that project_root: add, remove, or change entries as you work across other
-> repositories. Keep every worktree and branch current. The worktree is the important
-> live coordinate: it tells the owner which private worktree this session is actually using;
-> the branch remains supporting Git detail.
-> \`work-record workspace list|add|remove\` edits these entries; use \`--branch\` separately
-> for a URL. This record does not change where your shell was born or open a desk.
->
-> YOUR **ladder** lives on the work item you are on — your focus, \`at.item\` — not in this
-> file: \`work-record read\` shows it, \`item plan <id>\` writes it, and \`item focus <id>\`
-> picks which held item that is. Every item keeps its own ladder. Phases hold legs. Name a
-> phase before you know its legs; a phase with nothing under it yet is normal. Leave out
-> what you cannot see: a short ladder is a true ladder, and a guessed one is a lie.
-> Statuses are \`PLANNED\` · \`ACTIVE\` · \`DONE\`, **one ACTIVE at a time**. Add a gate
-> wherever the work genuinely stops and needs someone — that is how the owner knows you want
-> them.
->
-> YOUR **holds** are the work items you hold, by id. \`item assign\` moves them;
-> \`work-record read\` lists them. The \`item\` tool does every act on a work item, the item
-> always named: \`item --help\`.
->
-> YOUR **ladder_state** — \`work-record update_record --on_tangent\` when you step off the ladder,
-> \`--on_track\` when you are back. Riffing, a side job, ten minutes in nobody's plan — all
-> normal, and your plan is not dead while you are away from it.
->
-> YOUR DOCS — the buildouts, handoffs and plans — live on work items too.
-> \`item doc <id> add <path>\` puts one on an item; \`item doc <id> remove <path>\` takes it
-> off. The owner opens them from the ▧ Docs tab, which lists the documents of every item you
-> hold, so **a doc you did not list is a doc they cannot reach without asking you for the
-> path.**
->
-> Your own words go in "objective". Read it with \`work-record read\`. **Change one field with
-> one call**: \`work-record update_record --objective "<sentence>"\`.
-> \`work-record update_record < block.json\` replaces the whole authored block. Where the file
-> lives is Ronin's business.
+> Your work record is what the owner reads on your tile. Keep it true.
+> - **objective:** one sentence on what you are doing now:
+>   \`work-record update_record --objective "…"\`.
+> - **repos:** the worktrees and branches you work in: \`work-record workspace add|remove\`.
+> - **holds:** the work items you hold; your focus item's ladder shows here. Work items:
+>   the Work Item capability.
+> - **teams**, **configuration:** Ronin writes these and tells you when they change.
 
 \`\`\`json
 { "objective": "",

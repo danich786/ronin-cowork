@@ -7,8 +7,9 @@
  * anyone: holding is discovery, never permission. One refusal: nothing goes below -1 (follow).
  *
  * THE SHAPE MATCHES JIRA (owner, 2026-10-22; samurai_lab WORK_ITEM_BUILDOUT.md). One object
- * at every level: `level` 1 epic · 0 story/task/bug · -1 subtask, stored; `kind` a label;
- * `status` the board column; `flagged` an impediment. An old file (stage, exit, a colour
+ * at every level: `level` 1 epic · 0 story/task/bug · -1 subtask, stored; `kind` any work
+ * type name; `status` the board column; `flagged` an impediment; `priority` any name;
+ * `comments` a list. An old file (stage, exit, a colour
  * status) is read in the new shape and written in it on its next write.
  *
  * One file per item, <store>/<id>.json, written beside and renamed over. Ids come from one
@@ -26,14 +27,12 @@ import { listTeamRosters, readTeamRoster, writeTeamRoster } from './team-rosters
 import { ackRecord, listLetterHolds, teamChanged, readLetterHolds, seedTegami, writeLetterHolds } from './tegami.js';
 
 export const ITEM_STATUSES = ['IDEA', 'PLAN', 'BUILD', 'REVIEW', 'LAND', 'DONE'] as const;
-/** A level-0 item's kind (owner, 2026-10-22): a label only; absent reads as blank. */
-export const ITEM_KINDS = ['story', 'task', 'bug'] as const;
 export const ITEM_LEVELS = [1, 0, -1] as const;
 export const RUNG_STATUSES = ['PLANNED', 'ACTIVE', 'DONE'] as const;
-export const TRAIL_OPS = ['create', 'assign', 'release', 'move', 'status', 'edit', 'evidence', 'holder-ended'] as const;
+/** `evidence` is only read: older trails carry it; a comment replaced it (Jira has comments). */
+export const TRAIL_OPS = ['create', 'assign', 'release', 'move', 'status', 'edit', 'evidence', 'comment', 'holder-ended'] as const;
 
 export type ItemStatus = typeof ITEM_STATUSES[number];
-export type ItemKind = typeof ITEM_KINDS[number];
 export type ItemLevel = typeof ITEM_LEVELS[number];
 export type RungStatus = typeof RUNG_STATUSES[number];
 export type TrailOp = typeof TRAIL_OPS[number];
@@ -43,6 +42,7 @@ export interface Leg { title: string; status: RungStatus }
 export interface Rung { phase?: string; gate?: string; status?: RungStatus; legs?: Leg[] }
 export interface TrailLine { at: string; by: string; op: TrailOp; from?: string; to?: string; note?: string }
 export interface External { trello?: string; jira?: string; github?: string }
+export interface Comment { by: string; at: string; text: string }
 
 export interface WorkItem {
   id: string;
@@ -50,10 +50,13 @@ export interface WorkItem {
   objective: string;
   /** 1 epic · 0 story, task or bug · -1 subtask. A default at birth, never derived. */
   level: ItemLevel;
-  /** Story, task or bug; absent reads as blank. */
-  kind?: ItemKind;
+  /** Any work type name (story, task, bug, feature, a site's own); absent reads as blank. */
+  kind?: string;
   status: ItemStatus;
   flagged: boolean;
+  /** Any priority name; absent reads as blank. */
+  priority?: string;
+  comments: Comment[];
   parent: string | null;
   ladder: Rung[];
   docs: string[];
@@ -123,12 +126,14 @@ export function checkLadder(value: unknown): Rung[] {
 /** An item file in the shape it was written in, read in today's: `stage` is the status, a
  * red colour is flagged, `exit` and the other colours go, no level reads 0. */
 export function inShape(raw: Record<string, unknown>): WorkItem {
-  const { stage, exit: _exit, status, flagged, level, kind, ...rest } = raw;
+  const { stage, exit: _exit, status, flagged, level, kind, priority, comments, ...rest } = raw;
   void _exit;
   return {
     ...(rest as unknown as WorkItem),
     level: member(ITEM_LEVELS, level) ? level : 0,
-    ...(member(ITEM_KINDS, kind) ? { kind } : {}),
+    ...(typeof kind === 'string' && kind ? { kind } : {}),
+    ...(typeof priority === 'string' && priority ? { priority } : {}),
+    comments: Array.isArray(comments) ? comments as Comment[] : [],
     status: member(ITEM_STATUSES, status) ? status : member(ITEM_STATUSES, stage) ? stage : 'IDEA',
     flagged: typeof flagged === 'boolean' ? flagged : status === 'red',
     external: (rest.external && typeof rest.external === 'object' ? rest.external : {}) as External,
@@ -203,8 +208,7 @@ export interface NewItem {
   docs?: string[];
 }
 
-function checkFields(fields: { status?: unknown; kind?: unknown; level?: unknown; flagged?: unknown }): void {
-  if (fields.kind !== undefined && fields.kind !== '' && !member(ITEM_KINDS, fields.kind)) throw new WorkItemBadInput(`kind must be one of ${ITEM_KINDS.join(', ')}, or blank.`);
+function checkFields(fields: { status?: unknown; level?: unknown; flagged?: unknown }): void {
   if (fields.status !== undefined && !member(ITEM_STATUSES, fields.status)) throw new WorkItemBadInput(`status must be one of ${ITEM_STATUSES.join(', ')}.`);
   if (fields.level !== undefined && !member(ITEM_LEVELS, fields.level)) throw new WorkItemBadInput('level must be 1, 0 or -1.');
   if (fields.flagged !== undefined && typeof fields.flagged !== 'boolean') throw new WorkItemBadInput('flagged must be true or false.');
@@ -244,7 +248,7 @@ async function settle(moved: Array<{ child: WorkItem; level: number }>, item: Wo
 }
 
 const blank = (title: string, by: string): WorkItem => ({
-  id: '', title, objective: '', level: 0, status: 'IDEA', flagged: false, parent: null,
+  id: '', title, objective: '', level: 0, status: 'IDEA', flagged: false, comments: [], parent: null,
   ladder: [], docs: [], external: {}, trail: [], created: { at: new Date().toISOString(), by: by.trim() || 'unknown' },
 });
 
@@ -275,7 +279,7 @@ export async function createItemUnlocked(input: NewItem, by: string): Promise<Ac
     id: await nextId(),
     objective: String(input.objective ?? '').trim(),
     level: (input.level as ItemLevel | undefined) ?? levelUnder(parent),
-    ...(input.kind ? { kind: input.kind as ItemKind } : {}),
+    ...(input.kind?.trim() ? { kind: input.kind.trim() } : {}),
     status: (input.status as ItemStatus | undefined) ?? 'IDEA',
     parent: parent?.id ?? null,
     ladder: input.ladder ?? [],
@@ -293,7 +297,7 @@ export async function createItemUnlocked(input: NewItem, by: string): Promise<Ac
 
 export const createItem = (input: NewItem, by: string) => withIssuer(() => createItemUnlocked(input, by));
 
-export interface ItemEdit { title?: string; objective?: string; status?: string; level?: number; kind?: string; flagged?: boolean; external?: Partial<Record<keyof External, string>> }
+export interface ItemEdit { title?: string; objective?: string; status?: string; level?: number; kind?: string; flagged?: boolean; priority?: string; external?: Partial<Record<keyof External, string>> }
 
 /** One call, one trail line: a lone status change is named by its own op; anything else is edit. */
 export function editItem(id: string, edit: ItemEdit, by: string, note?: string): Promise<Acknowledged> {
@@ -309,9 +313,11 @@ export function editItem(id: string, edit: ItemEdit, by: string, note?: string):
       if (edit.objective !== undefined && edit.objective.trim() !== item.objective) { item.objective = edit.objective.trim(); changed.push('objective'); }
       if (edit.status !== undefined && edit.status !== item.status) { item.status = edit.status as ItemStatus; changed.push(`status ${item.status}`); }
       if (edit.level !== undefined && edit.level !== item.level) { item.level = edit.level as ItemLevel; changed.push(`level ${item.level}`); }
-      if (edit.kind !== undefined && edit.kind !== (item.kind ?? '')) {
-        if (edit.kind) item.kind = edit.kind as ItemKind; else delete item.kind;
-        changed.push(`kind ${item.kind ?? 'blank'}`);
+      for (const key of ['kind', 'priority'] as const) {
+        const value = edit[key]?.trim();
+        if (value === undefined || value === (item[key] ?? '')) continue;
+        if (value) item[key] = value; else delete item[key];
+        changed.push(`${key} ${item[key] ?? 'blank'}`);
       }
       if (edit.flagged !== undefined && edit.flagged !== item.flagged) { item.flagged = edit.flagged; changed.push(edit.flagged ? 'flagged' : 'unflagged'); }
       for (const [key, value] of Object.entries(edit.external ?? {}) as Array<[keyof External, string]>) {
@@ -328,11 +334,14 @@ export function editItem(id: string, edit: ItemEdit, by: string, note?: string):
   });
 }
 
-/** Evidence is a fact with its receipt: one trail line on the named item. */
-export function addEvidence(id: string, fact: string, by: string): Promise<Acknowledged> {
-  const text = String(fact ?? '').trim();
-  if (!text) throw new WorkItemBadInput('evidence needs the fact, with its receipt.');
-  return withIssuer(() => appendTrail(id, by, () => ({ op: 'evidence', note: text })));
+/** A comment, as Jira's: who, when, what. One trail line, so the holder hears of it like any write. */
+export async function addComment(id: string, words: string, by: string): Promise<Acknowledged> {
+  const text = String(words ?? '').trim();
+  if (!text) throw new WorkItemBadInput('a comment needs its text.');
+  return withIssuer(() => appendTrail(id, by, (item) => {
+    item.comments.push({ by: by.trim() || 'unknown', at: new Date().toISOString(), text });
+    return { op: 'comment', note: text };
+  }));
 }
 
 /** Documents live on the item. Paths are absolute and must exist when listed. */
@@ -493,7 +502,7 @@ export function didLine({ item, line }: Acknowledged): string {
       : line.op === 'assign' ? `is held by ${line.to}`
         : line.op === 'release' || line.op === 'holder-ended' ? 'is held by nobody'
           : line.op === 'create' ? 'was created'
-            : line.op === 'evidence' ? `has evidence: ${line.note}`
+              : line.op === 'comment' ? `has a comment from ${line.by}: ${line.note}`
               : `changed: ${line.note ?? 'no change'}`;
   return `${item.id} ${what}`;
 }

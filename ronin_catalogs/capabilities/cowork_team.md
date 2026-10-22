@@ -36,14 +36,13 @@ not duplicate them. Read-only Team enumeration belongs to `edges team`.
 |---|---|
 | Team record read and update | the roster's objective and launch defaults; the Team page derives membership from sessions |
 | Team work items | items the Team holds: `item assign <id> team:<name>` gives one to the Team, `item assign <id> <agent>` to a member, `item assign <id> none` parks it. Lead ideas are items the Team holds, not a separate file or pool |
-| Member and item status | the Team's reading: what the Team and each member hold, each item with its `level`, `kind`, `status` (the board's column) and `flagged` |
+| Member and item status | the Team's reading: what the Team and each member hold; the item itself is the Work Item capability's |
 | Agent configuration | create visibly with universal `session_create`, then inspect and configure Team, lead, or Workspace Folder handle through universal `session_check` and `session_set` |
 | Team broadcasts | the wipeboard for everything the whole Team must see; one-on-one goes directly to the session |
 
-Holding is how work is found, never permission. A hand-in naming an item moves it to LAND;
-a promotion moves the items on its hand-ins to DONE. When an Agent ends, what it held is
+Holding is how work is found, never permission. When an Agent ends, what it held is
 released, held by nobody, and found under its parent or with no parent. The work item
-itself is taught by the Work Item capability (`item --help`).
+itself is the Work Item capability's.
 
 Team membership and Team lead are session facts changed through `session_set`. Lead is an
 explicit designation, never inferred from capability selection or from using this tool.

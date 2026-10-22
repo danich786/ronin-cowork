@@ -6,27 +6,22 @@ TOOL_DIR=$(dirname "$SELF")
 die() { echo "$1" >&2; exit "${2:-2}"; }
 usage() { cat <<'EOF_USAGE'
 Usage:
-  item create --title <t> [--objective <o>] [--parent <id>] [--level 1|0|-1] [--kind story|task|bug]
+  item create --title <t> [--objective <o>] [--parent <id>] [--level 1|0|-1] [--kind <type>]
   item read <id>
   item list [--team <t>] [--holder <name>] [--parent <id>|--no-parent]
-  item write <id> --title|--objective|--status|--level|--kind|--flagged|--jira <value> ...
+  item write <id> --title|--objective|--status|--level|--kind|--flagged|--priority|--jira <value> ...
   item move <id> --to <parent>|none
   item assign <id> <agent>|team:<name>|none
   item plan <id> --phase <t> | --gate <t> | --leg N <t> | --leg N.M <t> | --rung N <t>
                  | --status N[.M] PLANNED|ACTIVE|DONE | --done N[.M] | --active N[.M] | --drop N[.M]
   item doc <id> add|remove <path>
-  item evidence <id> <text>
+  item comment <id> <text>
   item focus <id>
-A work item (w12) is stored once and matches Jira. level: 1 epic, 0 story/task/bug,
--1 subtask; a new item is one level below its parent, 0 with none. kind: story, task, bug
-or blank. status is the board's column: IDEA PLAN BUILD REVIEW LAND DONE. --flagged true
-marks an impediment. --jira (also --trello, --github) sets the external key; blank clears.
-move sets the parent and the level together (to none, the level stays). The one rule:
-nothing goes below -1. On a create, move or level write the children follow, each one
-below its own parent; if any would land below -1 it fails with "w39 can't go there." assign
-holds the item by an Agent, a Team, or nobody. plan writes the item's own ladder; plan
-verbs combine and apply in order. focus picks which held item your work record shows.
-Every write appends one trail line and answers with the item as it now is.
+level: 1 epic, 0 story/task/bug/feature, -1 subtask; a new item is one below its parent.
+The one rule: nothing goes below -1; children follow their parent ("w39 can't go there.").
+move sets parent and level together (to none, the level stays). assign: an Agent,
+team:<name> or none. focus picks which held item your work record shows.
+--jira, --trello, --github set an external key; blank clears. Every write adds a trail line.
 Related: work-record --help; team --help
 EOF_USAGE
 }
@@ -63,7 +58,7 @@ id=${1:-}; [ -n "$id" ] || die "BAD-ARG: item $verb needs the item's id"; shift
 case "$verb" in
   read) [ "$#" -eq 0 ] || die 'BAD-ARG: item read takes only <id>'; ronin_item_call GET "/api/work-items/$id" ;;
   write) [ "$#" -ge 2 ] || die 'BAD-ARG: item write takes <id> --field <value> ...'
-    body=$(fields title,objective,status,level,kind,flagged,jira,trello,github "$@") || exit 2; ronin_item_call PUT "/api/work-items/$id" "$body" ;;
+    body=$(fields title,objective,status,level,kind,flagged,priority,jira,trello,github "$@") || exit 2; ronin_item_call PUT "/api/work-items/$id" "$body" ;;
   move) [ "$#" -eq 2 ] && [ "$1" = --to ] || die 'BAD-ARG: item move takes <id> --to <parent>|none'
     ronin_item_call POST "/api/work-items/$id/move" "$(json parent "$2")" ;;
   assign) [ "$#" -eq 1 ] || die 'BAD-ARG: item assign takes <id> <agent>|team:<name>|none'
@@ -89,8 +84,8 @@ print(json.dumps(out))' "$@") || exit 2
   doc) [ "$#" -eq 2 ] && { [ "$1" = add ] || [ "$1" = remove ]; } || die 'BAD-ARG: item doc takes <id> add|remove <path>'
     # Resolved here, against the caller's cwd: the item stores the absolute path.
     ronin_item_call POST "/api/work-items/$id/docs" "$(json "$1" "$(python3 -c 'import os,sys; print(os.path.abspath(os.path.expanduser(sys.argv[1])))' "$2")")" ;;
-  evidence) [ "$#" -eq 1 ] || die 'BAD-ARG: item evidence takes <id> <text>, the text quoted'
-    ronin_item_call POST "/api/work-items/$id/evidence" "$(json text "$1")" ;;
+  comment) [ "$#" -eq 1 ] || die 'BAD-ARG: item comment takes <id> <text>, the text quoted'
+    ronin_item_call POST "/api/work-items/$id/comment" "$(json text "$1")" ;;
   focus) [ "$#" -eq 0 ] || die 'BAD-ARG: item focus takes only <id>'
     me=$(ronin_session_me) || die 'item focus: cannot tell which session this is' 3
     ITEM_ACK_ONLY=1 ronin_item_call POST "/api/work-items/$id/focus" "$(json session "$me")" ;;
