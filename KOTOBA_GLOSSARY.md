@@ -14,7 +14,7 @@ runtime parts, while Agent capabilities teach tools (`docs/architecture/tool-sur
 | You will see | Say | What it is |
 |---|---|---|
 | JIKAN | **Cron jobs**<!--g:glossary.cron_jobs--> | Scheduled requests to a named Agent or Team lead. Say "schedule a request". |
-| MICHI · TEGAMI · SHINGO | **work record**<!--g:glossary.work_record--> | The session's objective, repositories and the work items it holds, with their status. Say "update your work record". |
+| TEGAMI | **work record**<!--g:glossary.work_record--> | The session's objective, repositories and the work items it holds, with their status. Say "update your work record". |
 | RIREKI | the recording | Optional journal transcripts in Services, available when the session has a supported launch binding. Terminal output remains a separate view. |
 | OBOERU | **memory**<!--g:glossary.memory--> | Notes that outlive the session that wrote them. |
 | TOMODACHI · SOROBAN | **Stats**<!--g:glossary.stats--> | Counts of what sessions did, never content. |
@@ -54,7 +54,7 @@ runtime parts, while Agent capabilities teach tools (`docs/architecture/tool-sur
 | team | **Team**<!--g:glossary.team--> | A set of sessions working together. |
 | Ronin Lab | **Ronin Lab** | A place for ideas, research, plans, and notes before or across projects. The creators’ Lab is their own instance. |
 | `team_roster` | **Team record**<!--g:glossary.team_roster--> | Team identity, defaults, and held work items. Members and leads derive from sessions. |
-| `wN` | **work item** | Stored once by id, matching Jira. Its level is an **epic** (1), a **story**, **task**, **bug** or any other work type (0, its kind; blank by default, no fixed list) or a **subtask** (-1). Its status is the board's column; **flagged** marks an impediment (`item flag`); **priority** is any name; **comments** are who, when and the text. Never "project". A **board** is the status-column view of work items, never an item. |
+| `wN` | **work item** | Stored once by id, matching Jira. Its level is an **epic** (1), a **story**, **task**, **bug** or any other work type (0, its kind; blank by default, no fixed list) or a **subtask** (-1). Its status is the item's state; **flagged** marks an impediment (`item flag`); **priority** is any name; **comments** are who, when and the text. Never "project". Ronin has no board: boards live in Jira or Trello. |
 | `team_lead` | **team lead · 人**<!--g:glossary.team_lead--> | Set by hand, never inferred from what a session does. |
 | `session_type` | **session type**<!--g:glossary.session_type--> | **Cowork Agent**<!--g:glossary.cowork_agent--> with its resolved Agent composition · **bare-metal Agent**<!--g:glossary.bare_metal_agent--> a CLI started without it · **terminal**<!--g:glossary.terminal--> a shell with no agent. |
 | `session_mandate` | **mandate**<!--g:glossary.mandate--> | **Reach**<!--g:glossary.reach--> how far an Agent goes · **Recruit**<!--g:glossary.recruit--> how it builds a Team · **Output**<!--g:glossary.output--> what it hands back. |

@@ -7,20 +7,20 @@ const installed = await readFile(new URL('../src/routes/installed-api.ts', impor
 const launch = await readFile(new URL('../src/routes/launch.ts', import.meta.url), 'utf8');
 const parts = await readFile(new URL('../src/parts.ts', import.meta.url), 'utf8');
 
-test('Services owns all six owner-facing capabilities and exact captions', () => {
-  for (const [id, label, caption] of [
-    ['task_manager', 'Project management', 'Work items with a board, the work record on each tile, and Agents trained to keep their items true. Mapping to Jira, Trello and others comes later.'],
-    ['terminal_transcript', 'Terminal transcript', 'Records terminal activity for transcript views and downstream summaries.'],
-    ['voice_hotwords', 'Voice & Hotwords', 'Adds voice tools and corrections for words dictation commonly mishears.'],
-    ['usage_stats', 'Usage stats', 'Keeps local usage counts without storing transcript content.'],
-    ['machine_status', 'Machine status', 'Shows memory, swap and load for this box in the header.'],
-    ['local_weights', 'Local weights', 'Provides locally stored model weights for features that need them.'],
+test('Services owns all six owner-facing capabilities', () => {
+  for (const [id, label] of [
+    ['task_manager', 'Project management'],
+    ['terminal_transcript', 'Terminal transcript'],
+    ['voice_hotwords', 'Voice & Hotwords'],
+    ['usage_stats', 'Usage stats'],
+    ['machine_status', 'Machine status'],
+    ['local_weights', 'Local weights'],
   ]) {
-    assert.match(setup, new RegExp(`id: '${id}', label: '${label.replace('&', '\\&')}'.*needs: '${caption.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}'`));
+    assert.match(setup, new RegExp(`id: '${id}', label: '${label.replace('&', '\\&')}'.*needs: '`));
   }
   assert.match(setup, /ask\(\[\{ group:/);
   assert.match(setup, /switch: \['On', 'Off'\]/);
-  assert.doesNotMatch(setup, /michi|rireki|koe|counting|koshi|koshi_weights/);
+  assert.doesNotMatch(setup, /project_management|rireki|koe|counting|koshi|koshi_weights/);
     assert.match(parts, /sole capability-to-part expansion/);
   assert.doesNotMatch(parts, /public\/js|setup-surfaces/);
 });

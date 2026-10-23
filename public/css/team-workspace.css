@@ -17,87 +17,10 @@
   .team-roster-detail .home-group-add { display: none; }
   /* The restored roster's ⑂ desk column is always empty now (js/desks.js); its track goes so the
      names keep their width in a workspace narrower than the row's fixed columns. */
-  .team-roster-detail .home-row { grid-template-columns: var(--hr-mark) minmax(0, 1fr) var(--hr-shingo) var(--hr-status) var(--hr-ctx) var(--hr-stack); }
+  .team-roster-detail .home-row { grid-template-columns: var(--hr-mark) minmax(0, 1fr) var(--hr-record) var(--hr-status) var(--hr-ctx) var(--hr-stack); }
   .team-roster-detail .home-row > .home-stack { grid-column: 6; }
   .home-grp-actions.tile-head { min-height: 0; padding: 0; border: 0; background: transparent; flex-wrap: nowrap; }
   .tw-config { display: flex; flex-direction: column; gap: var(--space-section); padding: var(--space-inset) var(--space-inset); overflow-y: auto; }
-  /* Team Kanban is a read. Its only write path is a move request to the holder. */
-  .tk-kanban {
-    --tk-notice-line: 1.5em;
-    --tk-heading-track: var(--tracking-wide);
-    --tk-card-meta-line: 1em;
-    --tk-column-min: 230px;
-    --tk-column-height: 300px;
-    --tk-column-head: 56px;
-    --tk-card-closed: 64px;
-    --tk-card-open: 168px;
-    --tk-outcome-line: calc(var(--leading-body) * 1em);
-    --tk-control-size: 16px;
-    --tk-dot: 6px;
-    --tk-card-bar: 4px; /* a card's state stripe */
-    height: 100%; min-height: 0; overflow: auto; background: var(--surface); container: team-kanban / inline-size;
-  }
-  .tk-header {
-    --tk-header-height: clamp(6rem, 15dvh, 9rem); /* the stone work surface's header band */
-  }
-  .tk-header { box-sizing: border-box; position: sticky; top: 0; z-index: 1; display: flex; flex-direction: column; block-size: var(--tk-header-height); min-inline-size: 0; padding: var(--space-paragraph) var(--space-inline); border-bottom: var(--edge) solid var(--line); background: var(--surface); }
-  .tk-header[data-expanded='false'] { block-size: auto; }
-  .tk-header-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-inline); }
-  .tk-beta {
-    --tk-beta-h: 2.25rem;
-  }
-  .tk-beta { display: inline-flex; align-items: center; min-height: var(--tk-beta-h); box-sizing: border-box; border: var(--edge) solid var(--kaki); border-radius: var(--radius-small); background: var(--surface); color: var(--fg-strong); padding: var(--space-row) var(--space-inline); font: inherit; font-size: var(--text-body); font-weight: var(--weight-strong); letter-spacing: var(--tk-heading-track); text-transform: uppercase; }
-  .tk-header-toggle { border: 0; border-radius: 0; padding: var(--space-control); background: transparent; color: var(--muted); font: inherit; font-size: var(--text-small); font-weight: var(--weight-regular); cursor: pointer; }
-  .tk-header-toggle:hover { color: var(--fg); }
-  .tk-header-toggle:focus-visible { outline: var(--focus-width) solid var(--kaki); outline-offset: var(--focus-offset); }
-  .tk-header-message { min-height: 0; overflow-y: auto; margin: var(--space-paragraph) 0 0; color: var(--fg); font-size: var(--text-label); }
-  .tk-header-message[hidden] { display: none; }
-  .tk-topline { display: flex; align-items: center; gap: var(--space-inline); min-height: var(--tk-notice-line); padding: var(--space-paragraph) var(--space-inline) 0; }
-  .tk-topline[hidden] { display: none; }
-  .tk-controls { display: flex; flex: none; align-items: center; gap: var(--space-inline); }
-  .tk-refresh, .tk-fold { display: grid; width: var(--tk-control-size); height: var(--tk-control-size); place-items: center; border: var(--edge) solid var(--line); border-radius: 0; padding: 0; background: transparent; color: var(--muted); }
-  .tk-refresh:hover, .tk-fold:hover { border-color: var(--accent); color: var(--fg); }
-  .tk-legend { display: flex; flex: none; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-paragraph) var(--space-inline); color: var(--muted); font-size: var(--text-body); }
-  .tk-legend span { display: inline-flex; align-items: center; gap: var(--space-inline); }
-  .tk-dot { width: var(--tk-dot); height: var(--tk-dot); background: var(--line-2); /* status: none yet */ }
-  .tk-dot.flagged { background: var(--status-red); /* flagged: an impediment */ }
-  .tk-notice { flex: 1 1 auto; min-width: 0; margin: 0; color: var(--muted); font-size: var(--text-body); }
-  .tk-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(var(--tk-column-min), 1fr)); gap: var(--space-paragraph) var(--space-inline); min-width: 0; padding: var(--space-paragraph) var(--space-inline) var(--space-paragraph); }
-  .tk-unavailable { margin: 0; color: var(--muted); }
-  .tk-column { display: flex; height: var(--tk-column-height); min-width: 0; flex-direction: column; border: var(--edge) solid var(--line); background: var(--inset); transition: border-color var(--motion-quick) var(--ease), background var(--motion-quick) var(--ease); }
-  .tk-column > h3 { box-sizing: border-box; display: grid; height: var(--tk-column-head); flex: none; gap: var(--space-row); margin: 0; border-bottom: var(--edge) solid var(--line); padding: var(--space-row) var(--space-inline); color: var(--muted); font-size: var(--text-body); font-weight: var(--weight-strong); letter-spacing: var(--tk-heading-track); text-transform: uppercase; }
-  .tk-column-open, .tk-back { border: 0; border-bottom: var(--edge) dotted currentColor; border-radius: 0; padding: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
-  .tk-back { grid-column: 1 / -1; justify-self: start; margin-bottom: var(--space-row); color: var(--accent-2); }
-  .tk-project-detail { padding: var(--space-inset); border: var(--edge) solid var(--line); background: var(--inset); }
-  .tk-project-detail h2 { margin: var(--space-paragraph) 0 var(--space-row); color: var(--fg-strong); }
-  .tk-project-id { color: var(--muted); font-size: var(--text-body); }
-  .tk-project-facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-row) var(--space-inline); }
-  .tk-project-facts dt { color: var(--muted); }
-  .tk-project-facts dd { margin: 0; color: var(--fg-strong); overflow-wrap: anywhere; }
-  .tk-column-worker { color: var(--muted); font-size: var(--text-small); font-weight: var(--weight-regular); letter-spacing: 0; text-transform: none; }
-  .tk-cards { display: flex; min-height: 0; flex: 1 1 auto; flex-direction: column; gap: var(--space-row); overflow-y: auto; padding: var(--space-inline); }
-  .tk-empty { margin: 0; padding: var(--space-inline); color: var(--muted); font-size: var(--text-body); font-style: italic; }
-  .tk-card { box-sizing: border-box; width: 100%; height: var(--tk-card-closed); min-width: 0; overflow: hidden; border-left: var(--tk-card-bar) solid var(--line-2); border-radius: 0; padding: var(--space-row) var(--space-inline); cursor: grab; }
-  .tk-card.open { height: var(--tk-card-open); }
-  .tk-card:active { cursor: grabbing; }
-  .tk-card.dragging { opacity: .45; }
-  .tk-card[data-flagged='true'] { border-left-color: var(--status-red); /* flagged: an impediment */ }
-  .tk-board.dragging .tk-column.means { border-color: var(--accent); border-style: dashed; background: var(--selected); /* the one you are on, have chosen, or are dropping onto */ }
-  .tk-column.over { border-color: var(--accent); background: var(--selected); /* the one you are on, have chosen, or are dropping onto */ }
-  .tk-drop-hint { display: none; margin: 0; padding: var(--space-row) var(--space-inline) 0; color: var(--accent); font-size: var(--text-body); }
-  .tk-board.dragging .tk-column.means .tk-drop-hint { display: block; }
-  .tk-card-toggle { display: block; width: 100%; border: 0; padding: 0; background: transparent; color: inherit; text-align: left; }
-  .tk-title { display: block; font-size: var(--text-label); overflow-wrap: anywhere; }
-  .tk-details { display: none; }
-  .tk-card.open .tk-details { display: block; }
-  .tk-outcome { max-height: calc(var(--tk-outcome-line) * 2); overflow: hidden; margin-top: var(--space-row); color: var(--muted); font-size: var(--text-body); line-height: var(--tk-outcome-line); }
-  .tk-comments { margin: var(--space-row) 0 0; overflow-wrap: anywhere; color: var(--muted); font-size: var(--text-small); }
-  .tk-card-row { min-height: var(--tk-card-meta-line); align-items: center; gap: var(--space-inline); margin-top: var(--space-row); padding-top: 0; font-size: var(--text-body); }
-  .tk-flag { color: var(--status-red); }
-  .tk-asked { color: var(--muted); }
-  .tk-owner, .tk-project-open { border: 0; border-bottom: var(--edge) dotted currentColor; border-radius: 0; padding: 0; background: transparent; color: var(--accent-2); font: inherit; }
-  .tk-owner:hover, .tk-project-open:hover { border-bottom-style: solid; }
-  .tk-project-open { margin-left: auto; }
   /* The tab is drawn on the launch forms' furniture (launch-forms.css: .ntf-form, .fs-step, .wk-field);
      only the identity line is its own: Team ID · Title · Kind, one height, the Kind tray hosted by the line. */
   .tw-config-form { min-width: 0; }
@@ -121,7 +44,7 @@
   /* The Team opens beside its stone top-down: head, Agents, Work, Configuration. One
      heading style, one body style, tight lists. The phalanx owns the stones' geometry. */
   .league-team-detail, .league-team-detail .league-team-edit-content { display: flex; flex-direction: column; gap: var(--space-subsection); }
-  .league-team-row, .tk-line { display: grid; grid-template-columns: var(--hr-mark) minmax(0, 1fr) var(--hr-shingo) var(--hr-stack); align-items: center; gap: var(--space-paragraph) var(--space-inline); padding: var(--space-row) var(--space-inline); font-size: var(--text-body); }
+  .league-team-row { display: grid; grid-template-columns: var(--hr-mark) minmax(0, 1fr) var(--hr-record) var(--hr-stack); align-items: center; gap: var(--space-paragraph) var(--space-inline); padding: var(--space-row) var(--space-inline); font-size: var(--text-body); }
   .league-team-detail-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: var(--space-inline); }
   .league-team-detail-head > h2 { grid-column: 1; grid-row: 1; margin: 0; color: var(--fg-strong); font-size: var(--text-heading); font-weight: var(--weight-strong); }
   .league-team-detail-head > .league-team-detail-actions { grid-column: 2; grid-row: 1; }
@@ -139,18 +62,6 @@
   .league-team-agent-name { grid-column: 2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .league-team-agent-lead { margin-inline-end: var(--space-inline); color: var(--accent); }
   .league-team-agent-holds { margin-inline-start: var(--space-inline); color: var(--muted); }
-  .tk-line-title { grid-column: 2; }
-  .tk-line-holder { grid-column: 3; color: var(--muted); }
-  .tk-line-title, .tk-line-holder { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .tk-stage-bar { grid-column: 4; justify-self: end; display: inline-flex; gap: var(--meter-gap); }
-  .tk-stage-bar {
-    --tk-stage-w: 10px;
-    --tk-stage-h: 4px;
-  }
-  .tk-stage-bar > i { width: var(--tk-stage-w); height: var(--tk-stage-h); border: var(--edge) solid var(--line-2); }
-  .tk-stage-bar > i.past { border-color: var(--fg); background: var(--fg); /* a stage already passed */ }
-  .tk-stage-bar > i.now { border-color: transparent; background: var(--ok-2); /* the column it is in */ }
-  .tk-stage-bar > i.now.flagged { background: var(--status-red); /* flagged: an impediment */ }
   .league-team-roster, .league-team-config { flex: 0 0 auto; }
   .league-team-roster { display: flex; flex-direction: column; min-height: 0; }
   .league-team-roster-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-inline); margin-bottom: var(--space-paragraph); border-bottom: var(--edge) solid var(--line-2); padding-bottom: var(--space-row); }
@@ -188,11 +99,6 @@
   .league-team-member-items:empty { display: none; }
   .league-team-member-status { margin: 0; color: var(--muted); font-size: var(--form-note); }
   .league-team-member-status:empty { display: none; }
-  /* The items an opened row holds sit flush with its lines: no mark column here. */
-  .league-team-member-items .tk-line { grid-template-columns: minmax(0, 1fr) var(--hr-shingo) var(--hr-stack); padding-inline: 0; }
-  .league-team-member-items .tk-line-title { grid-column: 1; }
-  .league-team-member-items .tk-line-holder { grid-column: 2; }
-  .league-team-member-items .tk-stage-bar { grid-column: 3; }
   .league-team-empty { margin: 0; border-bottom: var(--edge) solid var(--line); padding: var(--space-inset) 0; }
   .league-team-add { margin-top: var(--space-paragraph); }
 

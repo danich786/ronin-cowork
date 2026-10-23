@@ -86,15 +86,15 @@
   .sws-branch-count { color: var(--muted); font-size: var(--form-note); }
   /* A row's notes under its stone: plain muted text, wrapping, clamped to six lines (the ask-name clamp; owner, 2026-10-20). */
   .sws-branch-note { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; width: var(--sws-stone); margin: 0; overflow: hidden; overflow-wrap: anywhere; color: var(--muted); font-size: var(--form-note); line-height: var(--leading-body); }
-  .wi-phalanx[data-density='compact'] .sws-secondary, .wi-phalanx[data-density='compact'] .sws-state { display: none; }
-  .wi-project-flagged::before { background: var(--status-red); /* flagged: an impediment */ }
-  .wi-phalanx .sws-group.means { outline: var(--edge-2) dashed var(--accent); outline-offset: var(--edge-2); }
-  .wi-phalanx .sws-group.over { outline: var(--edge-2) solid var(--accent); }
-  .wi-project-id, .wi-notice { color: var(--muted); }
-  .wi-project-facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-row) var(--space-inline); }
-  .wi-project-facts dt { color: var(--muted); }
-  .wi-project-facts dd { margin: 0; overflow-wrap: anywhere; }
-  .wi-outcome, .wi-comments { overflow-wrap: anywhere; white-space: pre-wrap; }
+  .wi-flagged::before { background: var(--status-red); /* flagged: an impediment */ }
+  .wi-meta, .wi-notice, .wi-when { color: var(--muted); }
+  .wi-facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-row) var(--space-inline); }
+  .wi-facts dt { color: var(--muted); }
+  .wi-facts dd { margin: 0; overflow-wrap: anywhere; }
+  .wi-objective, .wi-text { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+  .wi-list { display: flex; flex-direction: column; gap: var(--space-row); margin: 0; padding: 0; list-style: none; }
+  .wi-attachment { padding: 0; border: 0; background: none; color: var(--accent-2); font: inherit; text-align: left; cursor: pointer; }
+  .wi-attachment:hover, .wi-attachment:focus-visible { color: var(--accent); }
   /* The full overlay (js/work-details.js): one layer over a host, the tile its one user. */
   .work-overlay { position: absolute; inset: 0; overflow-y: auto; background: var(--surface); }
   /* Its utility, small at the top right: Close. */

@@ -9,7 +9,7 @@ import { WorkspaceKit } from './workspace-kit.js';
 import { membersOfTeam, setTeamLead, setTeamMembership, teamByName } from './team-controller.js';
 import { setSessionTitle } from './api.js';
 import { request } from './request.js';
-import { itemLine } from './team-kanban.js';
+import { createItemPhalanx } from './work-items-surface.js';
 import { createAgentCompositionReader } from './agent-composition.js';
 import { createStep } from './form-steps.js';
 import { SURFACE_DRAG } from './workbench.js';
@@ -80,7 +80,7 @@ export const buildTeamMembers = (name, options = {}) => {
     toggle.setAttribute('aria-controls', detail.id);
     const work = createStep({ key: 'work', title: t('league.work', 'Work') });
     if (reading.description) work.body.append(el('p', 'ac-line', [reading.step, reading.description].filter(Boolean).join(' · ')));
-    const items = el('div', 'league-team-member-items'); work.body.append(items);
+    const items = createItemPhalanx({ holder: () => member.name, className: 'league-team-member-items' }); work.body.append(items.el);
     const word = el('p', 'league-team-member-status');
     const composition = createAgentCompositionReader(member.name, { setState: (_state, message) => { word.textContent = message || ''; } });
     const rename = createAction({ label: t('league.rename_agent', 'Rename'), action: async () => {
@@ -100,7 +100,7 @@ export const buildTeamMembers = (name, options = {}) => {
       toggle.setAttribute('aria-label', t(expanded ? 'league.collapse_agent' : 'league.expand_agent', expanded ? 'Collapse {name}' : 'Expand {name}', { name: agentTitle(member) }));
       disclosure.textContent = expanded ? '⌃' : '⌄';
       if (!expanded) return;
-      void itemsHeld(member).then((list) => items.replaceChildren(...list.map((item) => itemLine(item))));
+      void itemsHeld(member).then((list) => items.setItems(list));
       void composition.show();
     };
     toggle.addEventListener('click', () => open(detail.hidden));

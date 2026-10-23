@@ -48,7 +48,7 @@ const action = (label, kind, onClick) => {
 const servicesReady = (runtime = {}) => runtime?.services?.active === true || runtime?.services?.installed === true || runtime?.services?.switched_on === true;
 
 const SERVICE_COMPONENTS = Object.freeze([
-  { id: 'task_manager', label: 'Project management', status: 'beta', needs: 'Work items with a board, the work record on each tile, and Agents trained to keep their items true. Mapping to Jira, Trello and others comes later.' },
+  { id: 'task_manager', label: 'Project management', status: 'beta', needs: 'Work items, the work record on each tile, and Agents trained to keep their items true. Mapping to Jira, Trello and others comes later.' },
   { id: 'terminal_transcript', label: 'Terminal transcript', status: 'beta', needs: 'Records terminal activity for transcript views and downstream summaries.' },
   { id: 'voice_hotwords', label: 'Voice & Hotwords', status: 'comingSoon', needs: 'Adds voice tools and corrections for words dictation commonly mishears.' },
   { id: 'usage_stats', label: 'Usage stats', status: 'beta', needs: 'Keeps local usage counts without storing transcript content.' },

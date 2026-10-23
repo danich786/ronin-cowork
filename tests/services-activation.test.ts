@@ -177,7 +177,7 @@ test('a service that was there and did not load is recorded, not only logged', a
 
   // The verdict the watcher applies: whole means something loaded AND nothing failed.
   const whole = (loaded: string[], fails: unknown[]): boolean => loaded.length > 0 && fails.length === 0;
-  assert.equal(whole(['counting', 'koe', 'koshi', 'michi', 'rireki'], failed), false,
+  assert.equal(whole(['counting', 'koe', 'koshi', 'project_management', 'rireki'], failed), false,
     'five of seven is not installed — this is the exact state the walk found');
   assert.equal(whole([], []), false, 'nothing installed is not installed either');
   assert.equal(whole(listServices(), []), listServices().length > 0);

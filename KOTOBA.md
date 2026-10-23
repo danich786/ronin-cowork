@@ -103,7 +103,7 @@ use the glossary's plain terms. **Koshi** is an existing UI name and an explicit
 
 | Name | Current meaning |
 |---|---|
-| MICHI / TEGAMI / SHINGO | Work-record service contribution / stored record / UI reading |
+| TEGAMI | The stored work record letter; the Project management part (`project_management`) serves it and the tile reads it |
 | RIREKI | Optional transcript service: reads provider journals through launch identity into the per-session transcript and serves its readings. The former terminal recorder is retained on disk as the future source for CLIs with no journal |
 | OBOERU | Memory terminology; not an active part in the Services manifest |
 | TOMODACHI / SOROBAN | Stats and counting contracts |

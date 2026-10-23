@@ -2,7 +2,7 @@
  * TEGAMI-READ — core's reader of an Agent's work record, the one behind View Work Record.
  * The letter gives objective, mandate, repos and holds; the items held (with their status)
  * and their attachments are read from the work item store. Pinned: the fence is optional, the chip
- * is the held items with their status, on_tangent outranks it, and the doc list only lists
+ * is the held items with their status, and the doc list only lists
  * what exists. There is no ladder: Jira has none.
  */
 import test from 'node:test';
@@ -57,15 +57,6 @@ test('the chip is the items held with their status; a flagged one marks it', asy
   assert.equal(t.chip.text, `${ids[0]} IDEA · ⚑ ${ids[1]} IDEA · ${ids[2]} IDEA · +1`);
   assert.equal(t.chip.gate, true);
   assert.deepEqual(t.holds, ids, 'an old "at" in the letter reads as nothing');
-});
-
-test('on_tangent outranks the items held', async () => {
-  const id = await item('tangent');
-  await writeLetter('tegami-read-tangent', `{ "ladder_state": "on_tangent", "holds": ["${id}"] }`);
-  const t = await readTegami('tegami-read-tangent');
-  assert.ok(t);
-  assert.equal(t.ladder_state, 'on_tangent');
-  assert.equal(t.chip.text, '↳ on tangent');
 });
 
 test('docs are the README and every held item\'s attachments, only what exists', async () => {

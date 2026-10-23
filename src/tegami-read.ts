@@ -6,14 +6,11 @@ import { agentReading } from './work-items-read.js';
 import type { WorkItem } from './work-items.js';
 import { mandate, type Mandate } from './agent-defaults.js';
 
-const ON_TRACK = 'on_track';
-
 export interface Tegami {
   objective: string;
   mandate: Mandate;
   repos: { repo: string; branch: string }[];
   teams: { team: string; team_role: string; objective: string; members?: string[] }[];
-  ladder_state: string;
   holds: string[];
   /** The items held, each with its status: what the tile and the roster show. */
   items: WorkItem[];
@@ -50,8 +47,7 @@ async function dropped(key: string): Promise<string[]> {
 
 /** The tile's and the roster's readout: the items held with their status (a flag marks an
  * impediment), the first three named and the rest counted. */
-export function chipFor(items: WorkItem[], state: string): { text: string; gate: boolean } {
-  if (state) return { text: `↳ ${state.replace(/_/g, ' ')}`, gate: false };
+export function chipFor(items: WorkItem[]): { text: string; gate: boolean } {
   if (!items.length) return { text: '—', gate: false };
   const named = items.slice(0, 3).map((item) => `${item.flagged ? '⚑ ' : ''}${item.id} ${item.status}`);
   const more = items.length > 3 ? [`+${items.length - 3}`] : [];
@@ -67,8 +63,6 @@ export async function readTegami(name: string): Promise<Tegami | null> {
     if (!block || typeof block !== 'object') return null;
     const b = block as Record<string, unknown>;
     const reading = await agentReading(name);
-    const state = String(b.ladder_state ?? '').trim().toLowerCase();
-    const off = state && state !== ON_TRACK ? state : '';
     return {
       objective: String(b.objective ?? ''),
       mandate: mandate(b.mandate),
@@ -93,11 +87,10 @@ export async function readTegami(name: string): Promise<Tegami | null> {
               : [];
           })
         : [],
-      ladder_state: off,
       holds: reading.items.map((item) => item.id),
       items: reading.items,
       docs: await readDocs([path.join(sessionDir(key), 'README.md'), ...reading.attachments, ...(await dropped(key))]),
-      chip: chipFor(reading.items, off),
+      chip: chipFor(reading.items),
       quietMs: Date.now() - stat.mtimeMs,
     };
   } catch {

@@ -47,7 +47,7 @@ on leave so no transport survives outside the entered destination.
    designated lead) takes the first empty workspace. A remembered member the roster no longer has
    is waited for while the roster is still arriving, then let go.
 6. The selector renders the Commons card, one card per member, and the New Agent card. A member card
-   is a **reading**: Agent title, 人, SHINGO chip, status (ready · thinking · awaiting
+   is a **reading**: Agent title, 人, work record chip, status (ready · thinking · awaiting
    input), model, ⛽ context, attached — read off the store's home row: handed over
    on entry, then again each time the server pushes a change. Leaving unsubscribes.
 7. **Click a card** and its Tile goes into the workspace last touched; **drag a card** onto a workspace and it
@@ -108,7 +108,7 @@ the item as it now is and the trail line appended. Holding is a list of ids on e
 focus). The item matches Jira (Lab `JIRA_SHAPE.md`):
 `level` is stored (1 epic, 0 story/task/bug, -1 subtask), one below the parent at creation
 or 0 with none, and adding a child never changes it; `kind` is a label, blank by default;
-`status` is the board's column; `flagged` marks an impediment. Parent is one `parent` id on
+`status` is the item's state; `flagged` marks an impediment. Parent is one `parent` id on
 the item, or none, which is normal. There is no ladder: Jira has none. Parent is a field:
 `item edit --parent` (`editItem` with `parent`) sets parent and level together (no parent
 keeps the level). One rule binds a create, a parent change and a level write (`follow`): nothing goes below -1. The item takes its new level and its

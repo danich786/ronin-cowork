@@ -2,11 +2,9 @@
 import { createWorkItemsSurface } from './work-items-surface.js';
 import { WorkspaceKit } from './workspace-kit.js';
 import { createWarmTerminalPool } from './team-terminal-pool.js';
-import { createTeamKanban, kanbanAvailability, KANBAN_NOT_INSTALLED } from './team-kanban.js';
 import { membersOfTeam, setTeamMembership, subscribe, teamsFromState } from './team-controller.js';
 import { buildDocs, createDocumentWorkspaceAdapter } from './docs.js';
 import { createFeedbackSurface } from './feedback.js';
-import { request } from './request.js';
 import { S } from './state.js';
 import { t } from './lexicon.js';
 import { workbenchView, DISMISSED_WORKSPACE } from './workspace-contract.js';
@@ -15,7 +13,7 @@ import { registerWorkbenchCatalog, WORKBENCH_PROFILES, WORKBENCH_TYPES } from '.
 import { createAgentCompositionSurface } from './agent-composition.js';
 
 const PROFILE = WORKBENCH_PROFILES.agent;
-const TYPES = Object.freeze({ self: WORKBENCH_TYPES.terminal, composition: WORKBENCH_TYPES.agentComposition, documents: WORKBENCH_TYPES.agentDocuments, teams: WORKBENCH_TYPES.agentTeams, tasks: WORKBENCH_TYPES.agentTasks, document: WORKBENCH_TYPES.document, feedback: WORKBENCH_TYPES.feedback });
+const TYPES = Object.freeze({ self: WORKBENCH_TYPES.terminal, composition: WORKBENCH_TYPES.agentComposition, documents: WORKBENCH_TYPES.agentDocuments, teams: WORKBENCH_TYPES.agentTeams, document: WORKBENCH_TYPES.document, feedback: WORKBENCH_TYPES.feedback });
 const el = (tag, cls = '', text = '') => { const out = document.createElement(tag); if (cls) out.className = cls; if (text) out.textContent = text; return out; };
 const memberships = (name) => (S.sessions.find((row) => row.name === name)?.tags || []).map(String).sort();
 
@@ -53,7 +51,6 @@ export function createAgentView() {
   const root = el('main', 'tw-view agent-workbench');
   const seats = {};
   let bench = null, context = null, agent = '', unsubscribe = null, entered = false;
-  let availability = { available: false, message: KANBAN_NOT_INSTALLED };
 
   const blank = (id) => {
     const surface = WorkspaceKit.primitives.createSurface({ label: t('team.workspace_blank', 'Workspace'), className: 'tw-blank' });
@@ -67,20 +64,8 @@ export function createAgentView() {
     seats[id] = { surface, pool, blank: blank(id) };
   }
 
-  const documents = new Map(), membership = new Map(), tasks = new Map();
-  const makeTaskManager = (id, detail = {}) => {
-    const key = `${id}\0${detail.view || 'overview'}\0${detail.stage || detail.project || ''}`;
-    if (tasks.has(key)) return tasks.get(key);
-    const surface = WorkspaceKit.primitives.createSurface({ label: detail.view === 'project' ? t('team_kanban.project', 'Work item') : detail.view === 'status' ? t('team_kanban.status_projects', 'Work items by status') : t('workspace.tab_task_manager', 'Board'), className: 'tw-kanban' });
-    const scope = detail.scope || { kind: 'agent', agent, teams: () => memberships(agent) };
-    const opposite = ({ workspace1: 'workspace2', workspace2: 'workspace1', workspace3: 'workspace4', workspace4: 'workspace3' })[id] || 'workspace1';
-    const manager = createTeamKanban({ scope, view: detail.view, detail,
-      openOwner: (name) => name === agent && bench.place(TYPES.self, bench.selected(), { key: agent }),
-      openSurface: (view, next) => bench.place(view === 'status' ? WORKBENCH_TYPES.taskStatus : WORKBENCH_TYPES.taskProject, opposite, { ...next, view }),
-    });
-    manager.setAvailability(availability); surface.content.append(manager.el);
-    const made = { el: surface.el, show: () => manager.enter(), manager }; tasks.set(key, made); return made;
-  };
+  const documents = new Map(), membership = new Map();
+  const opposite = (id) => ({ workspace1: 'workspace2', workspace2: 'workspace1', workspace3: 'workspace4', workspace4: 'workspace3' })[id] || 'workspace1';
   const makeDocuments = (id, name = agent) => {
     const key = `${id}\0${name}`;
     if (documents.has(key)) return documents.get(key);
@@ -105,16 +90,12 @@ export function createAgentView() {
       if (!membership.has(key)) membership.set(key, createMembershipSurface(agent, () => { bench.refreshSelector(); for (const item of documents.values()) item.show(); }));
       return membership.get(key);
     },
-    taskOffers: () => memberships(agent).length ? [{ key: agent, label: t('workspace.tab_task_manager', 'Board'), summary: t('agent.team_tasks_summary', 'Work items held by this Agent') }] : [],
     workItemOffers: () => memberships(agent).length ? [{ label: t('work_items.title', 'Work Items'), summary: t('agent.team_tasks_summary', 'Work items held by this Agent') }] : [],
     workItems: () => createWorkItemsSurface({
       scope: () => ({ kind: 'agent', agent, teams: memberships(agent) }),
       lead: (project) => membersOfTeam(project.team).find((member) => member.team_lead)?.name || '',
-      openOwner: (name) => name === agent && bench.place(TYPES.self, bench.selected(), { key: agent }),
+      openAttachment: (path) => bench.place(TYPES.document, opposite(bench.selected()), { path }),
     }),
-    tasks: (id, detail) => makeTaskManager(id, detail),
-    taskStatus: (id, detail) => makeTaskManager(id, { ...detail, view: 'status' }),
-    taskProject: (id, detail) => makeTaskManager(id, { ...detail, view: 'project' }),
     document: (detail = {}) => createDocumentWorkspaceAdapter({ root: detail.root, path: detail.path || detail.key }),
     feedback: () => createFeedbackSurface(() => bench.place(TYPES.documents, bench.selected(), { key: agent })),
   };
@@ -128,11 +109,6 @@ export function createAgentView() {
   const remember = (snapshot = bench.snapshot(), change = null) => {
     if (change?.dismissed) snapshot = { ...snapshot, seats: { ...snapshot.seats, [change.dismissed]: DISMISSED_WORKSPACE } };
     context?.patchViewState('agent', snapshot);
-  };
-  const refreshAvailability = async () => {
-    const result = await request('/api/installed', { cache: 'no-store' });
-    availability = result.ok ? kanbanAvailability(result.data) : { available: false, message: KANBAN_NOT_INSTALLED };
-    for (const item of tasks.values()) item.manager.setAvailability(availability);
   };
   const restore = () => {
     const defaults = { count: 2, selected: 'workspace1',
@@ -158,7 +134,6 @@ export function createAgentView() {
       context = ctx; agent = ctx.param; entered = true;
       for (const seat of Object.values(seats)) seat.pool.sync([agent]);
       restore();
-      void refreshAvailability().then(() => { if (!entered) return; bench.refreshSelector(); for (const item of membership.values()) item.render(); });
     },
     leave: () => { entered = false; bench.leave(); for (const item of documents.values()) item.leave(); for (const seat of Object.values(seats)) seat.pool.destroyAll(); },
     destroy: () => { entered = false; unsubscribe?.(); for (const item of documents.values()) item.leave(); for (const seat of Object.values(seats)) seat.pool.destroyAll(); },

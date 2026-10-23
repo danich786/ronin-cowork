@@ -87,7 +87,7 @@ export class Tile {
     });
     this.body.append(this.transcriptView.el);
 
-    // SHINGO 信号: this session's work record and the items it holds, read off its TEGAMI. The menu draws it as the
+    // The work record: this session's and the items it holds, read off its TEGAMI. The menu draws it as the
     // work record (js/tilehead.js tileMenu). Read-only — nothing here can touch the session.
     this.tegami = null;
 

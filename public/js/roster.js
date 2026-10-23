@@ -15,7 +15,7 @@
 import { request } from './request.js';
 import { homeData, homeFault, stanceLabel } from './home.js';
 import { S, tiles } from './state.js';
-import { clampTip, humanAge } from './shingo.js';
+import { clampTip, humanAge } from './work-record.js';
 import { t } from './lexicon.js';
 import { deskLabel, deskReadout, deskTip, desksOf, refreshDesks } from './desks.js';
 import { partitionRosterGroups, rosterGroups, teamTag } from './roster-groups.js';
@@ -75,9 +75,9 @@ export function buildRoster(tile, host, options = {}) {
     render();
   });
 
-  // the right — the SHINGO chip, the status word, the ⛽ reading — sits at the SAME x on
+  // the right — the work record chip, the status word, the ⛽ reading — sits at the SAME x on
   // every row, so the eye runs straight down a column instead of hunting for where each
-  // reading landed. A session with no ladder leaves the ladder's slot EMPTY; it does not
+  // reading landed. A session with no work record leaves the chip's slot EMPTY; it does not
   // pull the context reading left. That was the whole complaint: right-aligned flow meant
   // no two rows agreed on where anything was, and a list you cannot scan down is a list
   // you have to read one row at a time.
@@ -116,17 +116,17 @@ export function buildRoster(tile, host, options = {}) {
     const nm = document.createElement('b');
     nm.textContent = s.name;
     r.appendChild(nm);
-    // SHINGO on the roll call: the items held with their status; a flagged one is amber,
+    // The work record chip on the roll call: the items held with their status; a flagged one is amber,
     // and you know where to click through — which is the whole reason the board exists.
     if (s.tegami && s.tegami.chip && s.tegami.items?.length) {
       const sg = document.createElement('span');
-      sg.className = 'home-shingo' + (s.tegami.chip.gate ? ' gate' : '');
+      sg.className = 'home-record' + (s.tegami.chip.gate ? ' gate' : '');
       // was already the touch spelling — "quiet" costs five characters on a row that has
       // none to spare, and a bare duration beside a position reads as one anyway — and
       // the desktop had no better claim on the width. `w12 BUILD · w14 PLAN · 9h`.
       const age = s.tegami.quietMs >= 60000 ? humanAge(s.tegami.quietMs) : '';
       sg.textContent = s.tegami.chip.text + (age ? ' · ' + age : '');
-      // Agent-authored and unbounded — clamped for the fixed help box (see shingo.js).
+      // Agent-authored and unbounded — clamped for the fixed help box (see work-record.js).
       sg.title = s.tegami.objective ? clampTip(s.tegami.objective) : '';
       r.appendChild(sg);
     }
@@ -175,7 +175,7 @@ export function buildRoster(tile, host, options = {}) {
     // a mid-session model switch instead of remembering the launch.
     //
     // A MISSING FACT IS SIMPLY ABSENT — no `undefined`, no `unknown`, no dash. The roster's
-    // own rule, from the SHINGO chip (js/shingo.js): "an absent chip costs the owner
+    // own rule, from the work record chip (js/work-record.js): "an absent chip costs the owner
     // nothing and stops a dash-plus-age pretending to be a position". A dash here would
     // read as a state a session is IN rather than as a thing nobody has said.
     //

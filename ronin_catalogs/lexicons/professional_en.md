@@ -413,26 +413,19 @@ nothing paints exactly this.
 ## team — team-view.js (the Team page)
 - **work_items.title:** Work Items
 - **work_items.refresh:** Refresh Work Items
-- **work_items.details:** Show stone details
 - **work_items.loading:** Loading Work Items…
 - **work_items.failed:** Could not load Work Items.
-- **team_kanban.beta:** Beta
-- **team_kanban.beta_message:** Board is in beta. Follow work items from ideas to done using Tools and the Work Record. We’re making it easier for Agents to keep them current without forcing upkeep.
-- **team_kanban.header_collapse:** Collapse
-- **team_kanban.header_expand:** Expand
-- **team_kanban.back:** Back to the Board
-- **team_kanban.project:** Work item
-- **team_kanban.status_projects:** Work items by status
-- **team_kanban.project_missing:** This work item is not in the current scope.
-- **team_kanban.stage:** Status
-- **team_kanban.holder:** Holder
-- **team_kanban.parent:** Parent
-- **team_kanban.no_parent:** no parent
-- **team_kanban.nobody:** nobody
-- **team_kanban.flagged:** flagged
-- **team_kanban.comments:** Comments
-- **team_kanban.open_owner:** Open @{name}
-- **team_kanban.asked:** asked
+- **work_items.unavailable:** Unavailable.
+- **work_items.no_epic:** No epic
+- **work_items.flagged:** flagged
+- **work_items.priority:** Priority
+- **work_items.holder:** Holder
+- **work_items.nobody:** nobody
+- **work_items.parent:** Parent
+- **work_items.comments:** Comments
+- **work_items.attachments:** Attachments
+- **work_items.links:** Links
+- **work_items.history:** History
 - **team.workspace_1:** Workspace 1
 - **team.workspace_2:** Workspace 2
 - **team.commons_card:** Commons
@@ -925,16 +918,14 @@ The catalog entry goes. {dir} is not touched.
 - **tape.jump:** ↓ latest
 - **tape.fold_code:** ⌨ code
 
-## ladder — shingo.js (the work record chip and panel)
-- **ladder.task_at_hand:** Task at hand
-- **ladder.task_unstated:** No task stated in this work record.
-- **ladder.worktrees:** Worktrees
-- **ladder.branch:** Branch
-- **ladder.coworks:** Teams
-- **ladder.tracked_documents:** Tracked documents
-- **ladder.docs_none:** No tracked documents.
-- **ladder.items:** Work items
-- **ladder.no_items:** No work items held.
+## work_record — work-record.js (the work record chip and panel)
+- **work_record.items:** Work items
+- **work_record.no_items:** No work items held.
+- **work_record.task_at_hand:** Task at hand
+- **work_record.task_unstated:** No task stated in this work record.
+- **work_record.worktrees:** Worktrees
+- **work_record.branch:** Branch
+- **work_record.teams:** Teams
 
 ## tile — tile.js (the Agent terminal tile)
 
@@ -1085,11 +1076,11 @@ The catalog entry goes. {dir} is not touched.
 - **me.mention:** Mention a session
 - **me.kill:** Delete or archive…
 - **me.agent_title:** This Agent — work record, docs, file, mention, output, delete
-- **me.ladder:** Work record
+- **me.work_record:** Work record
 - **me.docs:** Docs
 - **me.configuration:** Configuration
 - **me.configuration_hint:** mandate, Behaviors
-- **me.docs_none:** Nothing tracked yet. Ask this Agent to add its docs to its work record.
+- **me.docs_none:** No attachments on the items this Agent holds.
 - **me.attach:** Send a file
 - **me.attach_hint:** or drag one onto the tile
 - **me.no_record:** This Agent has not written a work record yet.
@@ -1168,9 +1159,6 @@ The catalog entry goes. {dir} is not touched.
 - **hotwords.none:** no words yet — dictation runs unbiased
 - **hotwords.own_list:** ◆ your list — an upgrade cannot touch it, and will not add to it either
 - **hotwords.stock_list:** Ronin's stock list — your first edit makes a copy that is yours
-
-## ladder — the chip tooltip and side line
-- **ladder.side:** {state} — the work record below is held, not stale
 
 ## errors — main.js (the session-list failure)
 

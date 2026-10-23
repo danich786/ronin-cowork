@@ -23,9 +23,9 @@ it; the arrow keys move through it.
 | 📎 Send a file | Send a file from Finder, or the photo library on a phone — see [Share a file with an Agent](share-a-file.md) |
 | @ Mention a session | Choose a session; its name goes into the message box |
 | Output | **Terminal Mirror** — the live terminal — or **Locked**, the same terminal to watch without typing into it. Not shown when this Agent has no Ronin Services |
-| ☰ Work record | Opens over the whole tile, leaving the terminal untouched beneath it: the Agent's task at hand, worktrees, Teams, progress and tracked documents. Press a document to open it over the tile; Close or Escape returns to the terminal |
+| ☰ Work record | Opens over the whole tile, leaving the terminal untouched beneath it: the work items it holds first, each with its status, flag and attachments, then its task at hand, worktrees and Teams. Press an attachment to open it over the tile; Close or Escape returns to the terminal |
 | ⚙ Configuration | Opens over the whole tile: the Agent's mandate (Reach, Recruit, Output) to change and save, its Behaviors with Add Behavior, what it was given at birth, and **Resend birth brief**: Ronin rebuilds the brief from today's files the way birth does and tells the Agent once to read it (after compaction, or for an Agent born before a change) |
-| 📄 Docs | The documents this Agent tracks, with how many; press one to open it over the tile |
+| 📄 Docs | The attachments of the work items this Agent holds, with how many; press one to open it over the tile |
 | × Delete or archive… | Open the archive/delete choices; it stays at the foot of the menu |
 
 The context gauge appears when Ronin has a reading from the session. An empty workspace
@@ -50,7 +50,7 @@ see [Archived sessions](archived-sessions.md).
 ## Share a file with an Agent
 
 Drag a file onto the tile, paste an image or file on it, or choose **📎 Send a file** in メ: the file is saved
-in the session's `drop/` folder, listed on Docs, and its path typed into the Agent's input
+in the session's `drop/` folder, listed in the Agent's Documents, and its path typed into the Agent's input
 without Enter. A work item dragged onto the tile types its reference (id and title) the
 same way. See [Share a file with an Agent](share-a-file.md).
 

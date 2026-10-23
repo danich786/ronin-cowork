@@ -40,7 +40,7 @@ not separate layout systems.
 | Campaign | Campaign settings and Campaign-level resources |
 | Teams collection | Teams, Agents, shared resources, and creation surfaces available in the selected Campaign context |
 | Team | that Team's Agents, Commons, New Agent and Agent composition |
-| Agent | Self, Documents, Team membership, and separate Boards for the Agent's Teams |
+| Agent | Self, Documents, Team membership, and Work Items: the work items the Agent holds across its Teams |
 | Setup | the Garden plus Model providers, Register, Workspace folders, Installations, Password and Launch |
 
 Adding another tenant or profile adds no layout implementation. Adding another surface

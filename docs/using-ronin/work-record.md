@@ -1,8 +1,8 @@
 # Work records and work items
 
 A work record says what an Agent is doing now: its objective, repositories, and the work
-items it holds, each with its status. The Board is a view of the same items
-by status; nothing is stored twice.
+items it holds, each with its status. Ronin has no board: a user who wants one uses Jira
+or Trello.
 
 Two shipped commands: `work-record` keeps what is about the Agent (objective, repositories),
 and `item` does every act on a work item, the item always named. Its acts are Jira's item
@@ -44,7 +44,7 @@ not holding an item: holding is how work is found, never permission.
 |---|---|---|
 | `level` | `1` epic · `0` story, task or bug · `-1` subtask | stored; a new item is one level below its parent, `0` with none |
 | `kind` | any work type name (`story`, `task`, `bug`, `feature`, a site's own) · blank | the work type; blank unless you set it, no fixed list |
-| `status` | `IDEA` · `PLAN` · `BUILD` · `REVIEW` · `LAND` · `DONE` | the board's column |
+| `status` | `IDEA` · `PLAN` · `BUILD` · `REVIEW` · `LAND` · `DONE` | the item's state |
 | `flagged` | `true` · `false` | an impediment, as Jira's flag; `item flag` / `item unflag` |
 | `priority` | any name · blank | as Jira's priority; `item edit <id> --priority <name>` |
 | `comments` | `{ by, at, text }` list | as Jira's comments; `item comment <id> <text>` adds one |
@@ -104,6 +104,20 @@ hold. Handle it as you see fit." A Team holder's lead gets it. An item held by n
 notifies nobody. Any write by someone other than the holding Agent, a comment included,
 gives that Agent "Your work record changed"; its own writes tell nobody.
 
+## Where you read them
+
+- **Work Items** on the Agent workbench: the items the Agent holds across its Teams.
+- **Work items** in a Team on the Teams workbench, and under an opened Agent on the Team
+  roster.
+- The tile's **☰ Work record**: the held items first, each with its status, flag and
+  attachments, then the objective, worktrees and Teams. **📄 Docs** lists the held items'
+  attachments.
+
+Items show as stones grouped by parent: each epic, then its items, each followed by its
+subtasks. A stone shows the id, title, kind, status and ⚑ when flagged; press one to read
+its objective, priority, comments, attachments (each opens), links and history beside the
+stones. These are readings: every change goes through the `item` tool.
+
 ## Receipts move Land and Done
 
 Name the item on a hand-in with `worktree-desk hand-in <repo> --item <id>`. An accepted
@@ -121,7 +135,7 @@ item assign w12 board_reader
 ## Documents live on items
 
 Documents are an item's attachments, and travel with it when it moves between Agents. The
-Docs tab lists your README and the documents of every item you hold: a document you did
+tile's Docs lists the attachments of every item you hold: a document you did
 not attach is one the owner cannot reach.
 
 ## The work record

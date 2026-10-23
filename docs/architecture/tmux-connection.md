@@ -98,7 +98,7 @@ The Services parts live under `src/services/` (a placed copy; see the services r
 
 - An installation claims the parts it runs — `- **parts:** …` in
   `ronin_catalogs/installations/<name>.md`; Ronin Services claims `counting, kanban, koe,
-  koshi, koshi_weights, machine, michi, rireki`, and the `gbrain` installation claims
+  koshi, koshi_weights, machine, project_management, rireki`, and the `gbrain` installation claims
   `gbrain`. A claimed part loads only while that installation is on. Off means the part is
   never imported: no timers, no routes, no recorder, and `/api/version` reports
   `stream: false`, so every tile is Locked.

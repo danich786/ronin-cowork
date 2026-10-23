@@ -14,7 +14,7 @@ the tile takes the file itself. Three ways in, all on the Agent's [tile](tile.md
 - The file is saved in the Agent's own session folder, under `drop/`
   (`~/.ronin/sessions/<session>/drop/`), its name cleaned and a timestamp in front.
 - Any type, up to **25 MB**. The upload uses the same browser login as the rest of Ronin.
-- It appears on the Agent's **Docs** list. Images, PDFs and other non-text files open there
+- It appears in the Agent's **Documents** on its workbench. Images, PDFs and other non-text files open there
   as themselves.
 
 ## What the Agent sees

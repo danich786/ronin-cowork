@@ -1,15 +1,14 @@
 # Project management
 
 - **label:** Project management (beta)
-- **blurb:** Run your work as work items on the board, kept true as you go.
+- **blurb:** Run your work as work items, kept true as you go.
 - **installation:** task_manager
 - **order:** 20
 - **scope:** conditional
 - **requires:** project_management
 
-Your work items are the board people read. Anyone reading them should know where your work
-is without asking you, so keep them true as you go, never only at the end. This guide
-teaches how to work with them. `item --help` has the exact syntax.
+Anyone reading your work items should know where your work is without asking you, so keep
+them true as you go, never only at the end. This guide teaches how to work with them. `item --help` has the exact syntax.
 
 ## The structure
 
@@ -36,10 +35,10 @@ No parent is normal. Not every task belongs to an epic.
 
 ## The fields
 
-- **title**: a short name anyone can read on the board.
+- **title**: a short name anyone can read at a glance.
 - **objective**: what done looks like. Change it when the job changes.
 - **kind**: the label at level 0 (`--kind bug`).
-- **status**: the board column the item is in.
+- **status**: the item's state.
 - **flagged**: the item is stuck. The reason is a comment.
 - **priority**: any name your Team uses, or blank.
 - **comments**: who, when and what. The running account of the work.
@@ -50,7 +49,7 @@ No parent is normal. Not every task belongs to an epic.
 Every change adds a line to the item's history. `item read <id>` shows it all: fields,
 children, comments, attachments, links and history.
 
-## Status: the board's columns
+## Status: the item's state
 
 | Status | Means |
 |---|---|
@@ -61,8 +60,8 @@ children, comments, attachments, links and history.
 | LAND | Handed in to the Team line. |
 | DONE | Promoted. |
 
-You move your items yourself with `item transition <id> <status>`. Any column to any
-column is allowed. Two moves are made for you: a hand-in that names the item
+You move your items yourself with `item transition <id> <status>`. Any status to any
+status is allowed. Two moves are made for you: a hand-in that names the item
 (`worktree-desk hand-in <repo> --item <id>`) moves it to LAND, and the promotion that
 carries that hand-in moves it to DONE. A hand-in that names no item moves no status.
 
@@ -76,7 +75,7 @@ item transition w12 BUILD
 ```
 
 **Big work is broken down.** Give each step its own subtask and move each one through its
-own status. The board then shows how far along you are.
+own status. Anyone reading the epic then sees how far along you are.
 
 ```
 item create --parent w12 --title "Write the migration"
@@ -165,5 +164,5 @@ Your own changes notify nobody. If someone needs to know, tell them.
 - Don't do work without an item. If there is none, create one and assign it to yourself.
 - Don't keep work only in your head or in your chat. If it matters, it is on the item:
   a comment, an attachment, a subtask or a status.
-- Don't leave an item in a column it has left. Move it when the work moves.
+- Don't leave an item in a status it has left. Move it when the work moves.
 - Don't delete to tidy. `item delete <id>` removes the item and its subtasks for everyone.

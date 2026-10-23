@@ -35,14 +35,14 @@ those. The kind names are the space's own.
 | create one | `item create --title <t> --kind task\|bug\|story\|feature`. Add `--parent <id>` when you know where it belongs: under an epic it is work, under a task it is a subtask. With no parent it is work with no epic yet. |
 | edit it | `item edit <id> --objective <o> --priority <p> --parent <id>` |
 | flag it | `item flag <id> "<why>"` when stuck; `item unflag <id>` when clear |
-| transition it | `item transition <id> BUILD`: moves it to a status, the next column on the board |
+| transition it | `item transition <id> BUILD`: moves it to a status |
 | comment on it | `item comment <id> <text>`: how you answer a person, from Jira or Ronin |
 | assign it | `item assign <id> <agent>` |
 | attach a document | `item attach <id> <path>`: the owner reaches only the documents you attach |
 | link it | `item link <id> blocks <id>`: it holds up another item |
 | find items | `item search --team <t>` and other filters |
 
-Status is the board's column: IDEA PLAN BUILD REVIEW LAND DONE; any transition is allowed. Stuck is
+Status is the item's state: IDEA PLAN BUILD REVIEW LAND DONE; any transition is allowed. Stuck is
 `item flag`. When someone else changes an item you hold, Ronin tells you: read it,
 then edit or comment. Epics are made by leads (`--level 1`). Everything else:
 `item --help`.

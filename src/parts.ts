@@ -47,7 +47,7 @@ export interface PartsPlan<T extends { name: string; parked?: string }> {
 /** The server-only expansion from saved capability choices to implementation parts.
  * Parts carry no switches of their own and this module never imports the UI catalog. */
 export const SERVICE_CAPABILITY_PARTS = Object.freeze({
-  task_manager: ['michi'],
+  task_manager: ['project_management'],
   terminal_transcript: ['rireki'],
   voice_hotwords: ['koe'],
   usage_stats: ['counting'],

@@ -8,7 +8,7 @@
  *
  * THE SHAPE MATCHES JIRA (samurai_lab JIRA_SHAPE.md). One object
  * at every level: `level` 1 epic · 0 story/task/bug · -1 subtask, stored; `kind` any work
- * type name; `status` the board column; `flagged` an impediment; `priority` any name;
+ * type name; `status` the item's state; `flagged` an impediment; `priority` any name;
  * `comments` a list; `links` blocks or relates.
  *
  * One file per item, <store>/<id>.json, written beside and renamed over. Ids come from one

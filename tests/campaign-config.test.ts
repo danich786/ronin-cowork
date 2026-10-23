@@ -31,7 +31,7 @@ test('a pre-installation-cascade campaign gets stock defaults without a rewrite'
   const old = JSON.stringify({ campaigns: { home_machine: {
     id: 'home_machine', title: 'Ronin Home', desk: {}, config: {
       defaults: { behaviours: [] },
-      services: { parts: { michi: true, kanban: false, rireki: true, koe: true, koshi_weights: true } },
+      services: { parts: { project_management: true, kanban: false, rireki: true, koe: true, koshi_weights: true } },
     },
   }, kanban_only: {
     id: 'kanban_only', title: 'Kanban only', desk: {}, config: { services: { parts: { kanban: true } } },
@@ -85,7 +85,7 @@ test('campaigns share the machine configuration document', async () => {
     local_weights: false,
   });
   await writeCampaign('alpha', { config: { services: { parts: {
-    michi: true, rireki: true, task_manager: false, usage_stats: true, future_capability: true,
+    project_management: true, rireki: true, task_manager: false, usage_stats: true, future_capability: true,
   } } } });
   assert.deepEqual((await readCampaign('alpha'))?.config.services.parts, {
     future_capability: true,

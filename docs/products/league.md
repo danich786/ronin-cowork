@@ -10,7 +10,7 @@ It uses the shared `workbench` format: the same workspaces, two/four shape,
 discovery column, placement, drag/drop,
 recall, sizing and lifecycle as `kind: 'team'`. Its selector exposes one Team roster,
 Teams, New Team and New Agent. The roster is the detailed grouped Agent list formerly
-shown on the Ronin Desk: role, SHINGO, status, context, desk state and model stay aligned
+shown on the Ronin Desk: role, work record chip, status, context, desk state and model stay aligned
 in each row. Selecting an Agent connects it in the active workspace; dropping an Agent on
 a Team heading adds that membership through the canonical Teams API.
 

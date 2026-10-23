@@ -27,27 +27,25 @@ surface as it was, its geometry untouched: Settings (Presets, Workspace Folders,
 Providers, Setup) and the Agent workbench's Work Items draw with it. Escape lifts only the layer it
 is pressed in (2026-10-08).
 
-Board keeps its board and status/work item drill-downs for the Agent's Board;
-its selector card is no longer offered on the Cowork or Team workbenches. The older
-Work Items board (`work-items`) stays on the Agent's workbench, filtered to work items held by
-that Agent. **The Team page** (owner, 2026-10-18) is the old Team workbench opening on the
+Ronin has no board (owner, 2026-10-23): a board is Jira's or Trello's. Work Items
+(`work-items`) stays on the Agent's workbench, filtered to the work items held by that
+Agent. **The Team page** (owner, 2026-10-18) is the old Team workbench opening on the
 lead's tile in workspace 1 with workspace 2 blank; its selector holds Commons, the Agents,
 New Agent and the hints (Agent vocabulary, Session controls). Team Chart and the Team's Work
 Items card are deleted; the composition reader, Behaviors and Feedback stay in the profile
 only so the roster, New Agent's Customize Behaviors and the bar's Feedback can place them.
 Launch of a Team is always a new tab (`openWorkspaceTab`).
 
-Work Items mounts `createPhalanx` directly in the standard surface content seat. Each
-work item is a selectable stone in Ideas, Planning, Building, Landing, Done order. Selection
-moves all groups into the left rail and renders the item inside the same `sws-detail`;
-it never opens another numbered workspace. `project-reading.js` holds the canonical
-work item reading used by both presentations, with each supplying its own styling classes.
-Work Items keeps normal Phalanx furniture, density controls, explicit holder opening,
-and message-only status drops; a flagged item carries the ⚑ mark. It does not use the Board or beige furniture.
-
-The shared Phalanx accepts ordered `grouped.groups`, group/item event callbacks, item
-actions, and `setDensity`; Work Items stones deliberately supply no action callback,
-so the normal selection, rail, detail, Escape, and focus-return behavior applies.
+Work items read as phalanx stones (`createItemPhalanx` in `work-items-surface.js`), on the
+Agent's Work Items surface, a Team's Work items step on the Teams workbench and an opened
+member on the Team roster. Stones group by parent: each epic heads its group, then its
+items, each followed by its subtasks; items under no epic group under *No epic*. A stone
+shows the title, the holder, and id · kind · status with ⚑ when flagged. Pressing one moves
+the stones to the rail and renders its reading inside the same `sws-detail`: objective,
+priority, holder, parent, comments, attachments (each opens as a document beside it),
+links and history. It is a reading: changes go through the `item` tool. The stones supply
+no action callback, so the normal selection, rail, detail, Escape and focus-return
+behavior applies; dragging a stone onto a tile hands the Agent the item's reference.
 
 ## Library, profile, tenant, instance
 
@@ -336,15 +334,14 @@ folders per bench (`/api/project-roots/detail`) that every surface on it hears.
 ### Agent (`agent` profile)
 
 The route parameter is the tenant Agent. Its terminal can paint before Team and optional
-service reads finish. Team membership and Board choices enrich independently.
+service reads finish. Team membership and Work Items enrich independently.
 
 | Surface | Required data and owner |
 |---|---|
 | Self | route Agent plus the shared terminal host and transport |
 | Agent Documents | the Agent's tracked documents in one untabbed work surface |
-| Agent Board | the route Agent's work items across its current Teams, filtered by the canonical holder returned with each Team work item reading |
+| Work Items | the route Agent's work items across its current Teams, filtered by the canonical holder returned with each Team work item reading |
 | Team membership | Team records and live session tags from `team-controller.js`; writes use the canonical session-membership route |
-| Status / work item drill-down | the same Agent tenant and Team reads as Board; each is an independently placeable surface and writes no work item data |
 | Document / Feedback | each shared surface's own read or submission |
 
 ## Change checklist
