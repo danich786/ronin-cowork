@@ -20,10 +20,10 @@ forbids an installed tool or its `--help`.
 
 ### 1. Open the session in public
 
-Set the ladder with `work-record update_record`: one objective in the owner's words, a
-short ladder, one active rung, and the session job. Keep it current whenever the active
-rung or shape changes, and list every live document with `work-record document add` so the
-owner can open it without asking for a path. `work-record read` returns the visible status;
+Set the objective with `work-record update_record`: one objective in the owner's words and
+the session job. Keep the items you hold current with `item transition` and `item flag`,
+and attach every live document with `item attach <id> <path>` so the owner can open it
+without asking for a path. `work-record read` returns the visible status;
 the work record is not the plan, a transcript, or a second build-out document.
 
 A gate is how you ask for the owner. Put one wherever the work genuinely stops and needs a
@@ -49,7 +49,7 @@ The exact document contract lives in `ronin_library/documents.md`.
 **Visible delegation — give the work its own session. AN OWNER ASKING FOR AN AGENT ALWAYS
 MEANS `session_create`; IT NEVER MEANS SPAWN A CLI-INTERNAL SUB-AGENT.** “Agent,” “new
 agent,” “fork,” and “fork it” do not request or authorize spawning. They mean a visible
-**Ronin session** on the roster, with its own tile, ladder, and life, addressable by name
+**Ronin session** on the roster, with its own tile, work record, and life, addressable by name
 after this conversation ends. Internal spawning is the CLI's own implementation choice
 only when independently allowed; the owner's wording does not provoke it.
 
@@ -97,7 +97,7 @@ Finishing the work of a session, before it ends, leaves no essential knowledge i
 or in `wip/`:
 
 - delete the work's build-out and handoff documents, and remove them with
-  `work-record document remove`;
+  `item attach <id> --remove <path>`;
 - write or update a state-as-is page in `docs/`, or the README beside the thing, saying
   what exists and how it works now;
 - add the single manifest pointer when the project uses a manifest — one line, an index

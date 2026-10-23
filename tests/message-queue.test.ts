@@ -40,6 +40,8 @@ test('queue delivery names the recorded actor and channel without changing the s
     'From Ronin House [House notice]:\nPlease review the boundary.');
   assert.equal(q.deliveryText({ ...item, source: 'owner', from: 'Owner' }),
     'From Owner [Ronin Box]:\nPlease review the boundary.');
+  assert.equal(q.deliveryText({ ...item, source: 'typed', from: 'Owner' }), 'Please review the boundary.',
+    'what the person typed in the Message box arrives as if typed into the terminal');
   assert.equal(q.deliveryText({ ...item, source: 'jikan', from: 'Cron jobs' }),
     'From Cron jobs [Scheduled job]:\nPlease review the boundary.');
 });

@@ -87,7 +87,7 @@ export class Tile {
     });
     this.body.append(this.transcriptView.el);
 
-    // SHINGO 信号: this session's ladder, read off its TEGAMI. The menu draws it as the
+    // The work record: this session's and the items it holds, read off its TEGAMI. The menu draws it as the
     // work record (js/tilehead.js tileMenu). Read-only — nothing here can touch the session.
     this.tegami = null;
 
@@ -138,8 +138,8 @@ export class Tile {
       // A drag that was meant to be a copy and silently was not — say the key.
       this.term.wireCopyHint({ isLocked: () => this.locked });
     }
-    // The mirror's own ↓ latest (both pointers): with viewer mouse off the wheel scrolls
-    // xterm's local buffer, which no server-side jump can end — the pill is the way back.
+    // The mirror's own ↓ latest (both pointers): the way back from a scrolled-back tile,
+    // whether the wheel moved xterm's local buffer or the server put the pane in copy mode.
     this.term.wireJumpPill({ jump: () => this.jumpLatest() });
     // The wheel is xterm's in both modes: locked, it scrolls xterm's local buffer (or
     // reaches an app that tracks the mouse); tape-fed, the browser scrolls the plain div.
@@ -258,23 +258,13 @@ export class Tile {
   }
 
   /**
-   * The readings THIS surface walks, taken from the list the route published for this
-   * Agent. A desk walks all of them. A thumb does not want five detents: the phone is
-   * Terminal or Chat and nothing else, and a tablet is Terminal, Chat and Work — what the
-   * Agent said, and the record of what it did. Notes and the full record are a desk's
-   * business (owner, 2026-09-23).
-   *
-   * Named, never sliced by length: a reading added on the server joins the desk's cycle
-   * and leaves the thumb surfaces exactly as they were.
+   * The readings the button walks: the first one the route published for this Agent,
+   * Chat, and nothing else. Every surface is Term or Chat (owner, 2026-10-22: the desk's
+   * Notes, Work and All are not wanted on the tile; a thumb already had only Chat).
    */
   transcriptCycle() {
     const readings = Array.isArray(this.transcriptReadings) ? this.transcriptReadings : [];
-    // A thumb gets the terminal or the conversation and nothing else, on a tablet exactly
-    // as on a phone — there is no third press (owner, 2026-09-26). The tablet briefly had
-    // Work as well; one rule for every touch screen is both what was asked for and one
-    // fewer thing to keep in step, so the phone no longer needs a case of its own.
-    if (isCoarse()) return readings.slice(0, 1);
-    return readings;
+    return readings.slice(0, 1);
   }
 
   /**

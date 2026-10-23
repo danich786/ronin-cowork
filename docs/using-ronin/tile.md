@@ -8,7 +8,7 @@ column, or drag its card into the workspace where you want to see it.
 | Control | What it does |
 |---|---|
 | Title / ⛩ | Edit the Agent's displayed title; its session name remains its identity |
-| Transcript / Chat · Notes · Work · All · Term | When Terminal transcript is active, cycle from the terminal through ever fuller readings of the Agent's conversation and back |
+| Term / Chat | When Terminal transcript is active, switch between the terminal and the Agent's conversation |
 | メ | Open the menu for this Agent (below) |
 | − | Close this view while the Agent keeps running |
 
@@ -23,9 +23,9 @@ it; the arrow keys move through it.
 | 📎 Send a file | Send a file from Finder, or the photo library on a phone — see [Share a file with an Agent](share-a-file.md) |
 | @ Mention a session | Choose a session; its name goes into the message box |
 | Output | **Terminal Mirror** — the live terminal — or **Locked**, the same terminal to watch without typing into it. Not shown when this Agent has no Ronin Services |
-| ☰ Work record | Opens over the whole tile, leaving the terminal untouched beneath it: the Agent's task at hand, worktrees, Teams, progress and tracked documents. Press a document to open it over the tile; Close or Escape returns to the terminal |
-| ⚙ Configuration | Opens over the whole tile: the Agent's mandate (Reach, Recruit, Output) to change and save, its Behaviors with Add Behavior, and what it was given at birth |
-| 📄 Docs | The documents this Agent tracks, with how many; press one to open it over the tile |
+| ☰ Work record | Opens over the whole tile, leaving the terminal untouched beneath it: the work items it holds first, each with its status, flag and attachments, then its task at hand, worktrees and Teams. Press an attachment to open it over the tile; Close or Escape returns to the terminal |
+| ⚙ Configuration | Opens over the whole tile: the Agent's mandate (Reach, Recruit, Output) to change and save, its Behaviors with Add Behavior, what it was given at birth, and **Resend birth brief**: Ronin rebuilds the brief from today's files the way birth does and tells the Agent once to read it (after compaction, or for an Agent born before a change) |
+| 📄 Docs | The attachments of the work items this Agent holds, with how many; press one to open it over the tile |
 | × Delete or archive… | Open the archive/delete choices; it stays at the foot of the menu |
 
 The context gauge appears when Ronin has a reading from the session. An empty workspace
@@ -50,26 +50,25 @@ see [Archived sessions](archived-sessions.md).
 ## Share a file with an Agent
 
 Drag a file onto the tile, paste an image or file on it, or choose **📎 Send a file** in メ: the file is saved
-in the session's `drop/` folder, listed on Docs, and its path typed into the Agent's input
+in the session's `drop/` folder, listed in the Agent's Documents, and its path typed into the Agent's input
 without Enter. A work item dragged onto the tile types its reference (id and title) the
 same way. See [Share a file with an Agent](share-a-file.md).
 
 ## Output availability
 
 The separate **Transcript** button appears when Ronin Services has loaded Terminal
-transcript. It cycles: **Term → Chat → Notes → Work → All → Term**, each press
-showing more of the record as the CLI itself wrote it; the button always names where you
-are now. Chat is the conversation alone;
-Notes adds the gaps and interruptions; Work adds each tool call as one line; All is
-everything, tool output included. The readings are the ones the server offers, so a new
-reading appears as a new step. The button is opaque when this Agent has nothing to show — born before Ronin
+transcript. It switches **Term → Chat → Term**; the button always names where you are
+now. Chat is the conversation alone, as the CLI itself wrote it. The button is opaque when this Agent has nothing to show — born before Ronin
 recorded launch identity, started outside Ronin, on a CLI with no readable journal, or
 simply nothing written yet; pressing it says which. Switching the service on later, or a restart, does not lose
 an Agent whose identity was recorded. **Term** returns to the normal interactive terminal.
 
 While you are reading any of the readings, the message box stays with you: the record
 itself is read-only, but the Agent is live, and the box below it talks to the Agent the
-same way it does over the terminal.
+same way it does over the terminal. In Chat the conversation ends where the box begins, so
+nothing is ever hidden under it. If you are at the end you stay at the end: a new line, the
+dots, a draft growing to several lines or the tile changing size never push the last line
+out of view. Scroll up and it leaves you where you are.
 
 On a phone the button sits in the bar at the top, because the tile's own header is not on
 screen there, and it is a two-state toggle: **Term** or **Chat**. The fuller readings are a

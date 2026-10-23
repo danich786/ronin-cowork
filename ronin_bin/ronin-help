@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+. "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/tool-count.sh" ronin-help "$@"
+# ronin-help — the user docs the Help workbench shows, read from the install; no server.
+# The topics are Help's own list (public/js/help-outline.js); TOPICS below only gives the
+# pages whose file name is not already the short name. A word that is no topic is looked
+# up in KOTOBA_GLOSSARY.md.
+set -u -o pipefail
+. "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"
+ROOT=$(cd "$(dirname "$SELF")/.." && pwd)
+OUTLINE=$ROOT/public/js/help-outline.js
+
+usage() { cat <<'EOF_USAGE'
+Usage:
+  ronin-help            the topics: the four must-reads first, then the rest of Help
+  ronin-help <topic>    that topic's document, whole (e.g. edges, work-items, desks)
+  ronin-help <word>     a Ronin word's row or section in the KOTOBA glossary
+EOF_USAGE
+}
+
+# Short name -> doc file name, for the pages whose file name is not the topic.
+TOPICS='edges team-lead-and-edges
+work-record what-agents-write-down
+tools agent-tools
+customizing customize'
+
+# Help's pages in Help's order: <topic> TAB <path> TAB <group> TAB <label>.
+pages() {
+  awk -v topics="$TOPICS" '
+    BEGIN { n = split(topics, rows, "\n"); for (i = 1; i <= n; i++) { split(rows[i], kv, " "); short[kv[2]] = kv[1] } }
+    /^ *const [a-z]+ = \{ id: / { name = $2; label = $0; sub(/.*, '\''/, "", label); sub(/'\''.*/, "", label); group[name] = label; next }
+    /^ *(first|page)\(/ {
+      path = $0; sub(/^[^'\'']*'\''/, "", path); sub(/'\''.*/, "", path)
+      label = $0; sub(/'\''\)\),?$/, "", label); sub(/.*'\''/, "", label)
+      if ($0 ~ /^ *first\(/) g = "Start here: 4 things you need to know"
+      else { g = $0; sub(/^ *page\(/, "", g); sub(/,.*/, "", g); g = group[g] }
+      file = path; sub(/.*\//, "", file); sub(/\.md$/, "", file)
+      printf "%s\t%s\t%s\t%s\n", (file in short ? short[file] : file), path, g, label
+    }' "$OUTLINE"
+}
+
+case "${1:-}" in -h|--help) usage; exit 0;; esac
+[ "$#" -le 1 ] || { echo 'One topic or word at a time; run ronin-help --help.' >&2; exit 2; }
+[ -f "$OUTLINE" ] || { echo "No Help outline in this install ($OUTLINE)." >&2; exit 4; }
+
+if [ "$#" -eq 0 ]; then
+  pages | awk -F'\t' '$3 != g { g = $3; printf "%s%s\n", (NR > 1 ? "\n" : ""), g } { printf "  %-20s %s\n", $1, $4 }'
+  echo
+  echo 'ronin-help <topic> prints one whole; ronin-help <word> looks up a Ronin word.'
+  exit 0
+fi
+
+want=$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')
+path=$(pages | awk -F'\t' -v w="$want" '$1 == w { print $2; exit }')
+if [ -n "$path" ]; then
+  cat "$ROOT/$path"
+  exit 0
+fi
+
+# Not a topic: the install's glossary, never a session's birth render (that one is frozen
+# at birth and goes stale).
+found=$(sed 's/<!--g:[^>]*-->//g' "$ROOT/KOTOBA_GLOSSARY.md" | awk -v w="$want" '
+  /^## / { section = $0; head = ""; inside = (index(tolower($0), w) > 0); if (inside) print; next }
+  inside { print; next }
+  /^\| You will see/ { head = $0; next }
+  /^\|---/ { head = head "\n" $0; next }
+  /^\| / { split($0, cell, "|") }
+  /^\| / && index(tolower(cell[2] "|" cell[3]), w) {
+    if (section != shown) { print section; print head; shown = section }
+    print
+  }')
+if [ -n "$found" ]; then printf '%s\n' "$found"; exit 0; fi
+echo "No topic or glossary word matches \"$1\"; run ronin-help for the topics."
+exit 3

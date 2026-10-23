@@ -47,18 +47,12 @@ const run = (env: NodeJS.ProcessEnv, args: string[], input?: string) =>
           : ['update_record', ...args],
     { encoding: 'utf8', env, input, stdio: ['pipe', 'pipe', 'pipe'] });
 
-test('help is side-effect-free, actionable, and separates lead positioning', () => {
+test('help is side-effect-free and actionable', () => {
   for (const flag of ['--help', '-h']) {
     const r = spawnSync(tool, [flag], { encoding: 'utf8', env: { ...process.env, TMUX: '', TMUX_PANE: '' } });
     assert.equal(r.status, 0, r.stderr);
-    assert.match(r.stdout, /document add/);
     assert.match(r.stdout, /--objective <text>/);
-    assert.match(r.stdout, /--phase <title>/);
-    assert.match(r.stdout, /--leg N <title>/);
-    assert.match(r.stdout, /--status N\[\.M\] PLANNED\|ACTIVE\|DONE/);
     assert.match(r.stdout, /workspace add <repo-or-url> \[--branch <branch>\]/);
-    assert.match(r.stdout, /Lead positioning is a separate form/);
-    assert.match(r.stdout, /--session <name> --at N\[\.M\]/);
     assert.doesNotMatch(r.stderr, /cannot tell which session/);
   }
   const direct = spawnSync(tool, ['--objective', 'not an alias'], { encoding: 'utf8', env: { ...process.env, TMUX: '', TMUX_PANE: '' } });
@@ -66,18 +60,18 @@ test('help is side-effect-free, actionable, and separates lead positioning', () 
   assert.match(direct.stderr, /work-record update_record --objective <text>/);
 });
 
-test('letter verbs edit one field each and carry the holds and the focus through', (t) => {
+test('letter verbs edit one field each and carry the holds through', (t) => {
   const f = fixture();
   t.after(() => rmSync(f.dir, { recursive: true, force: true }));
   run(f.env, [], JSON.stringify({ objective: 'start' }));
-  // Ronin moves holds and the focus; the Agent's own saves must carry them untouched.
+  // Ronin moves holds; the Agent's own saves carry them untouched.
   const text = readFileSync(f.letter, 'utf8').replace('"objective": "start"', '"objective": "start", "holds": ["w4", "w7"], "at": { "item": "w7", "rung": 2 }');
   writeFileSync(f.letter, text);
   run(f.env, ['--objective', 'the new sentence']);
   let b = block(f.letter);
   assert.equal(b.objective, 'the new sentence');
   assert.deepEqual(b.holds, ['w4', 'w7']);
-  assert.deepEqual(b.at, { item: 'w7', rung: 2 });
+  assert.equal('at' in b, false);
 
   run(f.env, ['--repo', 'ronin_cowork:team/x', '--repo', 'ronin_cowork:team/x', '--unrepo', 'nothing:here']);
   assert.deepEqual(block(f.letter).repos, [{ repo: 'ronin_cowork', branch: 'team/x' }], 'a repo row is kept once');
@@ -128,7 +122,7 @@ test('letter verbs refuse a missing value and mixing with the other forms', (t) 
     return r.stderr;
   };
   assert.match(refuse(['--objective']), /--objective needs a value/);
-  assert.match(refuse(['--objective', 'x', '--doc', 'README.md']), /travel alone/);
+  assert.match(refuse(['--objective', 'x', '--on_track']), /travel alone/);
   assert.equal(block(f.letter).objective, 'start', 'a refused verb leaves the letter untouched');
 });
 

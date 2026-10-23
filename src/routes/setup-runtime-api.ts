@@ -19,6 +19,7 @@ import {
   closeGithubLogin,
   removeGithubAuthentication,
   cloneGithubWorkspace,
+  createGithubRepository,
   openGitSetupSession,
   closeGitSetupSession,
 } from '../setup-runtime.js';
@@ -195,6 +196,11 @@ export function registerSetupRuntime(app: express.Express): void {
 
   app.post('/api/setup/github/clone', async (req, res) => {
     try { res.json({ ok: true, workspace: await cloneGithubWorkspace(req.body?.repository) }); }
+    catch (error) { res.status(400).json({ error: errMsg(error) }); }
+  });
+
+  app.post('/api/setup/github/create', async (req, res) => {
+    try { res.json({ ok: true, ...(await createGithubRepository(req.body?.dir, req.body?.visibility)) }); }
     catch (error) { res.status(400).json({ error: errMsg(error) }); }
   });
 

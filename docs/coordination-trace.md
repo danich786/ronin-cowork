@@ -2,16 +2,16 @@
 
 This supports surface seven, [Work Record](contributor-map.md#work-record). Coordination
 connects the authored record to Team custody and delivery evidence; it is not a replacement
-surface or a new work-record store. The Task Manager derives a view of those authorities.
+surface or a new work-record store.
 
-1. **Objective enters the Team.** The Team lead records an idea or Project in the Team roster.
-   The Project has stable identity, outcome, stage, and provenance.
+1. **Objective enters the Team.** The Team lead records an idea as a work item the Team holds.
+   The item has stable identity, outcome, status, and provenance.
 2. **Assignment is accepted.** A visible Agent is launched or assigned with the objective,
    Campaign/Team context, Workspace Folder handle, mandate, behaviors, capabilities, and repository
    placement resolved before birth.
-3. **The Agent owns its work.** Assignment transfers a Team-held Project into the Agent's
-   work record. `work-record project create` is the other entry when work arrives without
-   a Team-held Project; `write` updates the held Project. Stable identity and provenance
+3. **The Agent owns its work.** Assignment transfers a Team-held work item into the Agent's
+   work record. `item create` then `item assign <id> <agent>` is the other entry when work
+   arrives without a Team-held item; `item edit` updates it. Stable identity and provenance
    survive custody changes; there is no second shared mutable checklist.
 4. **Work produces evidence.** The Agent keeps its record current and commits coherent desk
    checkpoints. Tests, documents, decisions, and exact commits become evidence.
@@ -20,10 +20,10 @@ surface or a new work-record store. The Task Manager derives a view of those aut
 6. **Review and promotion remain distinct.** The Team lead reviews the exact candidate. Team
    promotion verifies and admits the Team line to global `dev`; release review later moves
    `dev` to the stable line.
-7. **The Task Manager reads the work items.** It shows what the Team and its members
+7. **Work Items reads the work items.** It shows what the Team and its members
    hold. A hand-in naming an item moves it to Land and a promotion moves it to Done, each a
    trail line naming its receipt. It never guesses from phase prose.
-8. **Completion closes the right records.** The Project moves to Done only when its definition
+8. **Completion closes the right records.** The work item moves to Done only when its definition
    of completion is met. Standing truth lands in code/docs; finished temporary plans are
    removed; desk and session cleanup follow their own explicit lifecycle.
 
@@ -40,4 +40,4 @@ their private task progression merely to prove activity.
 | Messages / wipeboards / Cron jobs | Their writers and APIs in the [state inventory](state-inventory.md) | [message-queue.test.ts](../tests/message-queue.test.ts), [wipeboards.test.ts](../tests/wipeboards.test.ts), [team-jikan-client.test.js](../tests/team-jikan-client.test.js) |
 | Private worktree → hand-in | [worktree-desk](../ronin_bin/worktree-desk) → [commands/desk.ts](../src/commands/desk.ts) → [hand-in.ts](../src/desks/hand-in.ts) | [desks.test.ts](../tests/desks.test.ts) |
 | Team review → global dev | [promote.ts](../src/promotion/promote.ts), [receipts.ts](../src/promotion/receipts.ts) | [promotion.test.ts](../tests/promotion.test.ts) |
-| Task Manager reading | [work-items-read.ts](../src/work-items-read.ts) `teamReading` → `GET /api/work-items?team=` → [team-kanban.js](../public/js/team-kanban.js) | [work-item-holders.test.ts](../tests/work-item-holders.test.ts), [team-kanban.test.js](../tests/team-kanban.test.js) |
+| Work items reading | [work-items-read.ts](../src/work-items-read.ts) `teamReading` → `GET /api/work-items?team=` → [work-items-surface.js](../public/js/work-items-surface.js) | [work-item-holders.test.ts](../tests/work-item-holders.test.ts) |

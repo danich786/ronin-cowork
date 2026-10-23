@@ -110,8 +110,9 @@ on the real shelf:
   workbenches and their surfaces, the tile head's buttons, Locked and Unlocked, copy and paste.
 - **`all/KOTOBA_GLOSSARY.md`** — the house names (TEGAMI, RIREKI, the wipeboard …) and the
   plain word to say for each, so no Japanese leaks from the tools to the person. Rendered at
-  birth with the owner's desk words (`renderGlossary`; `docs/products/kokugo.md` §8) and compiled
-  **last**: reference, not rules.
+  birth with the owner's desk words (`renderGlossary`; `docs/products/kokugo.md` §8) beside the
+  packet; the packet carries only `WORDS.md`, **last**: one line naming `ronin-help <word>`,
+  which reads the install's glossary.
 - **`CAPABILITIES.md`** — no template: rendered whole at birth by `renderCapabilitiesOverview`
   from the capability documents the launch resolver selected (`src/capabilities.ts`). One
   entry per selected bundle: its title, blurb, the priority tools that exist on this box with

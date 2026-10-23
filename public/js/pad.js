@@ -155,7 +155,7 @@ export function firePadBinding(bind) {
     if (!k) return;
     if (k.scroll) {
       // Encoder detents: locked = inject wheel events ONLY when the app listens for
-      // mouse (otherwise they land as typed input under viewer mouse off — see
+      // mouse (otherwise they land as typed input — see
       // termview.mouseTracking), else scroll xterm's local buffer; unlocked =
       // scrub the local DVR — same split as touch drag-scroll.
       if (!S.active) return;

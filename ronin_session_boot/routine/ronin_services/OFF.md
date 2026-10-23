@@ -4,7 +4,6 @@ Ronin Services is **off** for this Agent, so the owner is running on the free fl
 
 - **Catch-up reads the pane, not the record.** Without RIREKI's durable session record, `edges read` falls back to a live pane capture, and nothing survives a closed tile or a restart.
 - **The terminal on a phone is the raw one.** Locked view uses a separate input box and can be laggy on a slow link. Readable transcripts need Terminal transcript switched on; with Services off there is none.
-- **Work records go stale.** Agents are lazy about updating their own status. With Services, Koshi keeps every session's status current with a cheap model and presents it usefully on the roster and the tile.
 - **No voice out or stats history.** Readable transcripts need the Terminal transcript switch; off means none.
 - **No template library.** The Campaign page's Templates card shows the shelf Ronin keeps and grows — teams, agents, and the books and tools they use — but *Check the library* is opaque without Services; only the handful of templates that ship inside Ronin are on the launch forms. The owner can still make their own templates, and their agent can still file books beside them.
 

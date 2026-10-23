@@ -3,10 +3,10 @@
 - **blurb:** Adds optional shared capabilities such as project coordination, local usage information, machine status, and Voice features. You choose which available capabilities run; items marked Coming soon cannot be enabled.
 - **effect:** system
 - **provides:** —
-- **reading:** routine/ronin_services/SERVICES_ABILITIES.md
+- **reading:** —
 - **reading_off:** routine/ronin_services/OFF.md
 - **ways:** —
 - **tools:** —
-- **parts:** counting, koe, koshi, koshi_weights, machine, michi, rireki
+- **parts:** counting, koe, koshi, koshi_weights, machine, project_management, rireki
 - **requires:** —
 - **order:** 30

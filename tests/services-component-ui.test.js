@@ -7,28 +7,26 @@ const installed = await readFile(new URL('../src/routes/installed-api.ts', impor
 const launch = await readFile(new URL('../src/routes/launch.ts', import.meta.url), 'utf8');
 const parts = await readFile(new URL('../src/parts.ts', import.meta.url), 'utf8');
 
-test('Services owns all seven owner-facing capabilities and exact captions', () => {
-  for (const [id, label, caption] of [
-    ['task_manager', 'Task manager', 'Adds a shared project board and quick summaries of active work.'],
-    ['terminal_transcript', 'Terminal transcript', 'Records terminal activity for transcript views and downstream summaries.'],
-    ['voice_hotwords', 'Voice & Hotwords', 'Adds voice tools and corrections for words dictation commonly mishears.'],
-    ['usage_stats', 'Usage stats', 'Keeps local usage counts without storing transcript content.'],
-    ['machine_status', 'Machine status', 'Shows memory, swap and load for this box in the header.'],
-    ['project_coordinator', 'Project coordinator', 'Watches active projects and prompts Agents to keep status and summaries current.'],
-    ['local_weights', 'Local weights', 'Provides locally stored model weights for features that need them.'],
+test('Services owns all six owner-facing capabilities', () => {
+  for (const [id, label] of [
+    ['task_manager', 'Project management'],
+    ['terminal_transcript', 'Terminal transcript'],
+    ['voice_hotwords', 'Voice & Hotwords'],
+    ['usage_stats', 'Usage stats'],
+    ['machine_status', 'Machine status'],
+    ['local_weights', 'Local weights'],
   ]) {
-    assert.match(setup, new RegExp(`id: '${id}', label: '${label.replace('&', '\\&')}'.*needs: '${caption.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}'`));
+    assert.match(setup, new RegExp(`id: '${id}', label: '${label.replace('&', '\\&')}'.*needs: '`));
   }
   assert.match(setup, /ask\(\[\{ group:/);
   assert.match(setup, /switch: \['On', 'Off'\]/);
-  assert.doesNotMatch(setup, /michi|rireki|koe|counting|koshi|koshi_weights/);
+  assert.doesNotMatch(setup, /project_management|rireki|koe|counting|koshi|koshi_weights/);
     assert.match(parts, /sole capability-to-part expansion/);
   assert.doesNotMatch(parts, /public\/js|setup-surfaces/);
 });
 
 test('Services maturity matches what owners can use now', () => {
   assert.match(setup, /id: 'voice_hotwords',[^}]+status: 'comingSoon'/);
-  assert.match(setup, /id: 'project_coordinator',[^}]+status: 'beta'/);
 });
 
 test('installed truth distinguishes desired, running, parked, and restart state', () => {

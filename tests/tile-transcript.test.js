@@ -134,7 +134,7 @@ const TERM = 'Term';
 const READINGS = [{ name: 'chat', label: 'Chat' }, { name: 'notes', label: 'Notes' }, { name: 'work', label: 'Work' }, { name: 'all', label: 'All' }];
 const withReadings = (records, view) => ({ ok: true, data: { available: true, records, since: 1, seq: 1, view, readings: READINGS } });
 
-test('the button cycles Term → Chat → Notes → Work → All → Term over the readings the route published', async () => {
+test('the button cycles Term → Chat → Term, whatever else the route published', async () => {
   const shown = [];
   const tile = {
     session: 'agent', transcriptOn: false, transcriptLevel: -1, transcriptReadings: [], transcriptState: null,
@@ -153,13 +153,10 @@ test('the button cycles Term → Chat → Notes → Work → All → Term over t
   Tile.prototype.onTranscriptState.call(tile, { available: true, empty: false, reason: '', readings: READINGS, view: 'notes' });
   assert.equal(label(), 'Chat');
   assert.deepEqual(shown.at(-1), ['set', 'chat']);
-  toggle(); assert.equal(label(), 'Notes');
-  toggle(); assert.equal(label(), 'Work');
-  toggle(); assert.equal(label(), 'All');
   toggle();
-  assert.equal(tile.transcriptOn, false);
+  assert.equal(tile.transcriptOn, false, 'the second press comes straight back to Term');
   assert.equal(label(), TERM, 'the button names where you are, not where a press goes');
-  assert.deepEqual(shown.slice(1), [['set', 'chat'], ['set', 'notes'], ['set', 'work'], ['set', 'all'], ['hide']]);
+  assert.deepEqual(shown.slice(1), [['set', 'chat'], ['hide']], 'it never walks to Notes, Work or All');
   // With the readings known (a probe answered), the way in is Chat.
   toggle();
   assert.equal(label(), 'Chat');
@@ -277,10 +274,6 @@ test('on a phone the cycle is two states: Term and the conversation, from the ro
     assert.equal(tile.transcriptOn, false, 'the second press comes straight back to Term');
     assert.equal(label(), TERM);
     assert.deepEqual(shown, [['show', 'chat'], ['hide']], 'it never walks to Notes');
-    // The same tile on a desk keeps every reading the route published.
-    globalThis.window.matchMedia = fine;
-    toggle(); toggle();
-    assert.equal(label(), 'Notes');
   } finally { globalThis.window.matchMedia = fine; }
 });
 

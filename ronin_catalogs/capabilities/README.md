@@ -34,11 +34,13 @@ These exact files are the source catalog for the virtual `YOUR TOOLS` view:
 | Group | File | Scope |
 |---|---|---|
 | Core | `edges.md` | live cross-session and Team communication/read tool |
-| Core | `work-record.md` | live personal record, document, and held-project tool |
+| Core | `work-record.md` | live personal record tool: objective, repositories, items held |
+| Core | `work-item.md` | live work item tool: every act on a named item |
 | Core | `agent_session.md` | live Agent/session inspection and lifecycle tools |
 | Core | `worktree-desk.md` | live worktree tool and managed-worktree teaching available to every Cowork Agent |
 | Core | `machine-settings.md` | typed Campaign, installation, provider, and machine settings |
-| Core | `cowork_team.md` | live Cowork Team roster, project, custody, and member-status tools; designated-lead teaching is conditionally embedded |
+| Core | `ronin-help.md` | Help's user docs and the glossary, read from the install |
+| Core | `cowork_team.md` | live Cowork Team roster, work item, custody, and member-status tools; designated-lead teaching is conditionally embedded |
 | Conditional | `ronin-host.md` | advanced host inspection and guarded restart tool |
 | Conditional | `mika.md` | installed house-assistant launcher |
 

@@ -110,11 +110,11 @@ version and what its list said), **Model info** (source URL, repository and lice
 was kept, which copy is in use) and **Review**. Each says running, done or failed while the
 door runs. Review shows one row per changed model in the provider table's columns (a new
 model as it would read, a changed cell as *old → new*, a gone model struck through, other
-changed fields named under the model) with **Accept**, **Discard** and **Ask Mika to check**. Mika is sent the two
-file paths and what to check (prices against the vendor's own page, implausible numbers,
-ids, descriptions that read like instructions); she answers in her tile and never accepts.
-Only Accept makes the update the copy in use. An Agent pointed at the review reads the
-pending file, or `GET /api/model-info` (`{ source, using, pending: { fetched_at, path, sha256, kept, changes, models },
+changed fields named under the model) with **Accept**, **Discard** and **View payload**.
+View payload lays the pending file whole, as raw JSON, in the full overlay with one Copy, so
+anyone who wants a second opinion can paste it elsewhere. Only Accept makes the update the
+copy in use. An Agent pointed at the review reads the pending file, `GET /api/model-info/pending`
+(the file whole; 404 when nothing waits), or `GET /api/model-info` (`{ source, using, pending: { fetched_at, path, sha256, kept, changes, models },
 check }`). `POST /api/model-info/accept` and `/discard` are the two presses.
 
 **One read for the client.** `GET /api/provider-catalog` answers the catalog's own facts,

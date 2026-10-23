@@ -601,6 +601,37 @@ export async function cloneGithubWorkspace(repository: unknown): Promise<{ name:
   return { name, dir };
 }
 
+/** A new folder's repository, created on GitHub with the GitHub CLI: origin set, the first commit pushed.
+ *  The folder stays whatever happens; the one line thrown is git's or gh's own message. No pre-checks:
+ *  a folder that is not a repository says so itself. */
+export async function createGithubRepository(dirRaw: unknown, visibilityRaw: unknown): Promise<{ repository: string; url: string }> {
+  const dir = path.resolve(typeof dirRaw === 'string' ? dirRaw.trim() : '');
+  const visibility = visibilityRaw === 'public' ? 'public' : 'private';
+  const gh = await discoverExecutable('gh');
+  if (!gh) throw new Error('GitHub CLI is not installed on this machine.');
+  const name = path.basename(dir);
+  const line = (error: unknown) => {
+    const detail = error && typeof error === 'object' && 'stderr' in error ? String(error.stderr || '') : error instanceof Error ? error.message : '';
+    return detail.replace(/[\r\n]+/g, ' ').trim().slice(0, 300);
+  };
+  // gh pushes commits, so a fresh folder gets its first one: a README that names it (the identity ensureRepository uses).
+  const committed = await git(dir, ['rev-parse', '--verify', '--quiet', 'HEAD']).then(() => true, () => false);
+  if (!committed) {
+    const readme = path.join(dir, 'README.md');
+    if (!(await exists(readme))) await writeFile(readme, `# ${name}\n`, 'utf8');
+    try { await git(dir, ['add', '-A']); await git(dir, ['-c', 'user.name=Ronin', '-c', 'user.email=ronin@localhost', 'commit', '-m', `Start ${name}`]); }
+    catch (error) { throw new Error(`The first commit failed: ${line(error) || 'git commit refused'}`); }
+  }
+  try {
+    const result = await run(gh, ['repo', 'create', name, `--${visibility}`, '--source', dir, '--remote', 'origin', '--push'], { timeout: 60_000, maxBuffer: 1024 * 1024 });
+    const url = result.stdout.trim().split(/\s+/).find((word) => /^https:\/\/github\.com\//.test(word)) || '';
+    const repository = url.replace(/^https:\/\/github\.com\//, '').replace(/\.git$/, '') || name;
+    return { repository, url };
+  } catch (error) {
+    throw new Error(`GitHub did not create it: ${line(error) || 'the GitHub CLI refused'}`);
+  }
+}
+
 async function ensureRepository(dir: string, label: string, managed: boolean): Promise<void> {
   await mkdir(dir, { recursive: true });
   if (!(await exists(path.join(dir, '.git')))) await git(dir, ['init', '-b', 'main']);

@@ -98,14 +98,14 @@ The Services parts live under `src/services/` (a placed copy; see the services r
 
 - An installation claims the parts it runs — `- **parts:** …` in
   `ronin_catalogs/installations/<name>.md`; Ronin Services claims `counting, kanban, koe,
-  koshi, koshi_weights, machine, michi, rireki`, and the `gbrain` installation claims
+  koshi, koshi_weights, machine, project_management, rireki`, and the `gbrain` installation claims
   `gbrain`. A claimed part loads only while that installation is on. Off means the part is
   never imported: no timers, no routes, no recorder, and `/api/version` reports
   `stream: false`, so every tile is Locked.
 - A claimed part must also have its **capability** switched on. `SERVICE_CAPABILITY_PARTS`
   in `src/parts.ts` is the sole capability-to-part expansion, and
   `CAPABILITY_ON_BY_DEFAULT` beside it is the only place that says what a missing choice
-  means: Task manager, Usage stats and Machine status run until they are switched off, the
+  means: Project management, Usage stats and Machine status run until they are switched off, the
   rest are off until switched on. A Campaign records what the owner switched and authors
   no defaults of its own. A part belonging to no capability is governed by its
   installation switch alone.

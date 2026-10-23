@@ -119,14 +119,8 @@ test('a UI diagnostic asks the host contract where Ronin answers instead of gues
   assert.ok(checked.includes('ipad-header-ui.mjs'), 'the iPad header diagnostic is covered');
 });
 
-test('one rule for every touch screen, and the level always indexes the cycle', async () => {
+test('the level always indexes the cycle', async () => {
   const tile = await read('public/js/tile.js');
-  const cycle = tile.slice(tile.indexOf('transcriptCycle() {'), tile.indexOf('toggleTranscript()'));
-  // A thumb gets Terminal or the conversation, phone and tablet alike (owner, 2026-09-26).
-  // The tablet briefly had Work as a third state; there is no surface-specific case left.
-  assert.match(cycle, /if \(isCoarse\(\)\) return readings\.slice\(0, 1\);/);
-  assert.doesNotMatch(cycle, /getElementById\('phone'\)/, 'the phone needs no case of its own');
-  assert.match(cycle, /return readings;/, 'a desk still walks every reading the route published');
   // What source text uniquely guards: the level indexes the CYCLE, never the route's full
   // list. Mixing the two drifts the button's label away from the reading on screen.
   for (const site of ['const readings = this.transcriptCycle();', 'const cycle = this.transcriptCycle();', 'this.transcriptCycle()[this.transcriptLevel]']) {

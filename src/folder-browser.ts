@@ -58,6 +58,13 @@ export async function browseFolders(raw: string, options: { hidden?: boolean; qu
   return { home: HOME, dir, parent: dir === HOME ? null : path.dirname(dir), folders };
 }
 
+/** Git starts in a folder that has none (Add a workspace: "On this machine"); a folder that has it is left as it is. */
+export async function startGit(dirRaw: string): Promise<void> {
+  const dir = path.resolve(String(dirRaw || ''));
+  if (await stat(path.join(dir, '.git')).then(() => true, () => false)) return;
+  await execFileP('git', ['init', '-b', 'main', dir], { timeout: 10_000 });
+}
+
 export async function createFolder(parentRaw: string, nameRaw: string, initGit = false): Promise<{ dir: string; git: boolean }> {
   const parent = await safeDirectory(parentRaw || HOME);
   const name = String(nameRaw ?? '').trim();

@@ -45,7 +45,7 @@ table was shelved as vocabulary; nothing objected, because no test read the real
 
 - `all/RONIN_UTILITY.md` — where everything is in the coworkspace and how the owner drives it.
 - `all/KOTOBA_GLOSSARY.md` — the house names and the plain word to say for each, rendered at
-  birth with the owner's desk words.
+  birth with the owner's desk words beside the packet; the packet carries a pointer to it.
 - `CAPABILITIES.md` has no template. At birth Ronin renders it from the capability documents
   the launch resolver selected (`ronin_catalogs/capabilities/`) — the priority tools that
   exist on this box, `--help`, and each full document's path — and includes it in the

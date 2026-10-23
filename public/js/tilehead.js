@@ -5,7 +5,7 @@ import { pickFile } from './tilefiles.js';
 import { S, serviceMissing } from './state.js';
 import { OUTPUTS } from './output.js';
 import { createMenuButton } from './menu.js';
-import { buildLadder } from './shingo.js';
+import { buildWorkRecord, heldAttachments } from './work-record.js';
 import { readDesks } from './desks.js';
 import { t } from './lexicon.js';
 
@@ -188,14 +188,13 @@ export function tileMenu(tile) {
       items: outputs.map(([value, label]) => ({ kind: 'radio', label, checked: tile.output === value,
         run: () => tile.setOutput(value) })) },
     { items: [
-      { glyph: '☰', label: t('me.ladder', 'Work record'), run: () => void openWorkRecord(tile) },
+      { glyph: '☰', label: t('me.work_record', 'Work record'), run: () => void openWorkRecord(tile) },
       { glyph: '⚙', label: t('me.configuration', 'Configuration'), hint: t('me.configuration_hint', 'mandate, Behaviors'),
         run: () => void openConfiguration(tile) },
-      // The tracked documents, the same list the work record carries: one opens over the tile.
-      { glyph: '📄', label: t('me.docs', 'Docs'), kind: 'list', hint: String((tile.tegami?.docs || []).length || ''),
-        empty: t('me.docs_none', 'Nothing tracked yet. Ask this Agent to add its docs to its work record.'),
-        list: () => (tile.tegami?.docs || []).map((doc) => {
-          const path = typeof doc === 'string' ? doc : (doc.path || doc.file || doc.title || '');
+      // The held items' attachments, the same ones the work record lists: one opens over the tile.
+      { glyph: '📄', label: t('me.docs', 'Docs'), kind: 'list', hint: String(heldAttachments(tile.tegami).length || ''),
+        empty: t('me.docs_none', 'No attachments on the items this Agent holds.'),
+        list: () => heldAttachments(tile.tegami).map((path) => {
           const parts = path.split('/');
           return { label: parts.pop(), hint: parts.slice(-2).join('/'), run: () => tile.openDoc(path) };
         }) },
@@ -228,16 +227,14 @@ async function overTile(tile, title, fill, options = {}) {
   return layer;
 }
 
-/** The work record: this session's desks read once, as it opens; a tracked document pressed
+/** The work record: this session's desks read once, as it opens; an attachment pressed
  *  opens over the tile in the record's place. */
 async function openWorkRecord(tile) {
   const desks = tile.tegami ? await readDesks(tile.session) : null;
-  const layer = await overTile(tile, t('me.ladder', 'Work record'), (box) => box.append(tile.tegami
-    ? buildLadder(tile.tegami, desks, { openDoc: (path) => { layer.remove(); tile.openDoc(path); } })
+  const layer = await overTile(tile, t('me.work_record', 'Work record'), (box) => box.append(tile.tegami
+    ? buildWorkRecord(tile.tegami, desks, { openDoc: (path) => { layer.remove(); tile.openDoc(path); } })
     : Object.assign(document.createElement('p'), { className: 'menu-empty',
       textContent: t('me.no_record', 'This Agent has not written a work record yet.') })));
-  // Open ON the rung you are standing on: a long ladder scrolls, and rung 1 hides it.
-  layer.querySelector('.sl-row.now')?.scrollIntoView({ block: 'center' });
 }
 
 /** The Agent's configuration: the composition reader the Team profile already shows —

@@ -6,7 +6,8 @@ import { listSessions } from './tmux.js';
 import { deliverForce, deliverSafe } from './send.js';
 import { onClock } from './jikan.js';
 
-export type MessageSource = 'tell' | 'wipeboard_notice' | 'owner' | 'house' | 'jikan';
+/** `typed` is the person at this Agent's own Message box; `owner` is Ronin writing on their behalf. */
+export type MessageSource = 'tell' | 'wipeboard_notice' | 'owner' | 'typed' | 'house' | 'jikan';
 export interface QueuedMessage { id: string; from: string; target: string; text: string; source: MessageSource; created_at: string }
 
 const DIR = storeDir('message_queue');
@@ -16,15 +17,18 @@ const validId = (id: string) => /^[a-f0-9-]{36}$/.test(id);
 let processing = false;
 
 const sourceFrom = (source: MessageSource): string => ({
-  tell: 'Agent', wipeboard_notice: 'Wipeboard', owner: 'Owner', house: 'Ronin House', jikan: 'Cron jobs',
+  tell: 'Agent', wipeboard_notice: 'Wipeboard', owner: 'Owner', typed: 'Owner', house: 'Ronin House', jikan: 'Cron jobs',
 })[source];
 
 const channelOf = (source: MessageSource): string => ({
-  tell: 'Tell', wipeboard_notice: 'Wipeboard notice', owner: 'Ronin Box', house: 'House notice', jikan: 'Scheduled job',
+  tell: 'Tell', wipeboard_notice: 'Wipeboard notice', owner: 'Ronin Box', typed: 'Message box', house: 'House notice', jikan: 'Scheduled job',
 })[source];
 
-/** Every queued message carries the recorded actor and channel into the recipient's prompt. */
+/** Every queued message carries the recorded actor and channel into the recipient's prompt,
+ *  except what the person typed in this Agent's own Message box: that arrives exactly as if
+ *  typed into the terminal (owner, 2026-10-22). */
 export function deliveryText(item: Pick<QueuedMessage, 'source' | 'from' | 'text'>): string {
+  if (item.source === 'typed') return item.text;
   const recorded = String(item.from || '').replace(/[\r\n\t]/g, ' ').trim().slice(0, 80);
   const from = item.source === 'tell'
     ? (recorded && recorded !== 'Agent' ? `@${recorded.replace(/^@/, '')}` : 'an unidentified Agent')

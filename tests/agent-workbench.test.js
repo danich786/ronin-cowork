@@ -12,23 +12,19 @@ test('Agent is a first-class Workbench destination with tab-instance state', asy
   assert.deepEqual(defaultWorkspaceState().workbenchTabs, {});
 });
 
-test('Agent profile reuses Self, pure Documents, membership, Task Manager and generic surfaces', async () => {
-  const [text, catalog] = await Promise.all([source('agent-view.js'), source('workbench-catalog.js')]);
+test('Agent profile reuses Self, pure Documents, membership, Work Items and generic surfaces', async () => {
+  const text = await source('agent-view.js');
   assert.match(text, /self: WORKBENCH_TYPES\.terminal/);
   assert.match(text, /documents: WORKBENCH_TYPES\.agentDocuments/);
   assert.match(text, /teams: WORKBENCH_TYPES\.agentTeams/);
-  assert.match(text, /tasks: WORKBENCH_TYPES\.agentTasks/);
   assert.match(text, /registerWorkbenchCatalog\(\)/);
   assert.doesNotMatch(text, /profiles\.define|library\.register/, 'Agent owns no private profile or catalog');
-  assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.agent, \[[^\]]*WORKBENCH_TYPES\.agentTasks[^\]]*WORKBENCH_TYPES\.taskStatus[^\]]*WORKBENCH_TYPES\.taskProject/);
   assert.match(text, /sessions: \(\) => agent \? \[\{ key: agent, label: t\('agent\.self', 'Self'\) \}\] : \[\]/);
   assert.match(text, /terminal: \(id\) =>/);
   assert.match(text, /pool\.show\(agent, false\)/, 'the route Agent owns the terminal');
   assert.match(text, /createWarmTerminalPool/);
   assert.doesNotMatch(text, /createTabbedSurface/);
   assert.match(text, /createSurface\(\{ label: t\('workspace\.tab_docs', 'Documents'\)/);
-  assert.match(text, /createTeamKanban/);
-  assert.match(text, /kind: 'agent', agent, teams: \(\) => memberships\(agent\)/);
   assert.match(text, /setTeamMembership/);
   assert.doesNotMatch(text, /request\([^\n]*\/teams[^\n]*membership/);
 });

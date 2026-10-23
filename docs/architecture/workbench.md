@@ -27,27 +27,25 @@ surface as it was, its geometry untouched: Settings (Presets, Workspace Folders,
 Providers, Setup) and the Agent workbench's Work Items draw with it. Escape lifts only the layer it
 is pressed in (2026-10-08).
 
-Task Manager keeps its board and status/Project drill-downs for the Agent's Task Manager;
-its selector card is no longer offered on the Cowork or Team workbenches. The older
-Work Items board (`work-items`) stays on the Agent's workbench, filtered to Projects held by
-that Agent. **The Team page** (owner, 2026-10-18) is the old Team workbench opening on the
+Ronin has no board (owner, 2026-10-23): a board is Jira's or Trello's. Work Items
+(`work-items`) stays on the Agent's workbench, filtered to the work items held by that
+Agent. **The Team page** (owner, 2026-10-18) is the old Team workbench opening on the
 lead's tile in workspace 1 with workspace 2 blank; its selector holds Commons, the Agents,
 New Agent and the hints (Agent vocabulary, Session controls). Team Chart and the Team's Work
 Items card are deleted; the composition reader, Behaviors and Feedback stay in the profile
 only so the roster, New Agent's Customize Behaviors and the bar's Feedback can place them.
 Launch of a Team is always a new tab (`openWorkspaceTab`).
 
-Work Items mounts `createPhalanx` directly in the standard surface content seat. Each
-Project is a selectable stone in Ideas, Planning, Building, Landing, Done order. Selection
-moves all groups into the left rail and renders the Project inside the same `sws-detail`;
-it never opens another numbered workspace. `project-reading.js` holds the canonical
-Project reading used by both presentations, with each supplying its own styling classes.
-Work Items keeps normal Phalanx furniture, density controls, explicit holder opening,
-and message-only stage drops. It does not use Task Manager's board or beige furniture.
-
-The shared Phalanx accepts ordered `grouped.groups`, group/item event callbacks, item
-actions, and `setDensity`; Work Items stones deliberately supply no action callback,
-so the normal selection, rail, detail, Escape, and focus-return behavior applies.
+Work items read as phalanx stones (`createItemPhalanx` in `work-items-surface.js`), on the
+Agent's Work Items surface, a Team's Work items step on the Teams workbench and an opened
+member on the Team roster. Stones group by parent: each epic heads its group, then its
+items, each followed by its subtasks; items under no epic group under *No epic*. A stone
+shows the title, the holder, and id · kind · status with ⚑ when flagged. Pressing one moves
+the stones to the rail and renders its reading inside the same `sws-detail`: objective,
+priority, holder, parent, comments, attachments (each opens as a document beside it),
+links and history. It is a reading: changes go through the `item` tool. The stones supply
+no action callback, so the normal selection, rail, detail, Escape and focus-return
+behavior applies; dragging a stone onto a tile hands the Agent the item's reference.
 
 ## Library, profile, tenant, instance
 
@@ -164,7 +162,7 @@ Providers surface is untouched; all draw with the one drawing `provider-surface.
 (`createProviderDrawing`, `createRefreshAll`, `providerStones`) over the same record and measure. Workspaces seats
 its own stones of folders the same way (`workspaces-surface.js`, `workspaces.stones`; a dropped
 stone or a folder's card places the folder whole, `workspaces.folder`), its three admin doors —
-Add a workspace (`workspace-add.js`: one surface, three method cards deciding its sections; the old form stays beside it as "Add a workspace (old form)" while the owner compares), GitHub CLI, Clone a repository — dotted selector cards in the New Agent format,
+Add a workspace (`workspace-add.js`: one surface, four sections the same in every path — How, Name, Where, Git; the old form stays beside it as "Add a workspace (old form)" while the owner compares), GitHub CLI, Clone a repository — dotted selector cards in the New Agent format,
 the folder they add taking their workspace; Settings' Workspace Folders surface is untouched,
 both drawing with `projectroots.js`'s exported drawing (`createRootDrawing`, `rootStone`) over
 one read per bench (`createRootsReading`, the detail route). The bar's crumb (`workspace-header.js`;
@@ -176,7 +174,7 @@ stones, the Workspace question (many-of, blank All) and the Show question (Theme
 Agents, Items); each stone is the Team's name with what Show picks under it, a cell per picked
 topic in Show's order, the phalanx laying the stones and their cells on one grid so each topic is
 a row aligned across the stones (`branches: 'column'`, a row's `under`; `teams-surface-rows.js`
-over the pushed rosters' `board` and `items`): Theme and State plain clamped text, each Agent and
+over the pushed rosters' `board` (the Team's epic) and `items`): Theme and State plain clamped text, each Agent and
 each Item a branch row; the 人 mark in a stone's corner opens the Team page in a new tab.
 Help (owner, 2026-10-21) is the same door shape seating two workspaces: the help outline
 (`help.outline`, `help-outline.js`) in Workspace 1 and Mika (`help.mika`) in Workspace 2. A Tile
@@ -301,7 +299,7 @@ independent and must not hold the frame.
 | Surface | Required data and owner |
 |---|---|
 | Team roster / Team profile | Team records and live session-derived membership; the roster's Phalanx is Cowork's only discovery of Teams (no per-Team selector cards); its detail and a placed Team profile paint one body (`leagueTeamBody` in `cowork-view.js`) |
-| Team roster (`cowork.session-roster`) | `js/roster.js` restored as consumed before the Phalanx port: Team records, live sessions and pushed home rows; its desk column stays empty now that desks are read when the ladder opens |
+| Team roster (`cowork.session-roster`) | `js/roster.js` restored as consumed before the Phalanx port: Team records, live sessions and pushed home rows; its desk column stays empty: desks are read when the work record opens |
 | Agent terminal | selected session plus terminal transport; other sessions are not mounted for it |
 | Commons | only the selected tab enters: Roster, Docs, Wipeboard, Messages, Cron jobs or Configuration |
 | Cron jobs | scheduled messages for the addressed Team or collection scope |
@@ -329,22 +327,21 @@ folders per bench (`/api/project-roots/detail`) that every surface on it hears.
 |---|---|
 | Folder stones (`workspaces.stones`) | the bench's folder read; its selector cards (`folderOffers`) read the same |
 | Folder (`workspaces.folder`) | the one folder named in its detail from the same read; its writes re-read it for every surface |
-| Add a workspace (`workspaces.add`, `workspace-add.js`) | one surface in the launch forms' sections: section 1 is three cards, the method (New folder · A folder on this machine · From GitHub), and the card chosen decides the sections under it (Name and Where; Folder, Name, How Agents work here; Repository, Name, How Agents work here; that section says in a line what each option is). Reads the folders (`/api/folders`; a folder that is already a workspace is left out, with everything inside it, until the discreet Show all under the list), inspect, the GitHub sign-in state; writes `/api/folders`, `/api/project-roots`, the clone route and the repo profile. The folder it adds takes its workspace. Owner, 2026-10-21; Lab wip/buildouts/ADD_A_WORKSPACE.md |
+| Add a workspace (`workspaces.add`, `workspace-add.js`) | one surface in the launch forms' sections, four in every path: 1 How (three cards: New folder · A folder on this machine · From GitHub), 2 Name (prefilled from the folder or repository), 3 Where (location only: where the new folder goes, the folder you choose, or the repository and where it lands), 4 Git. Git reads a folder that already has Git in one line (`Git · on this machine`, `Git · GitHub owner/repo`; a GitHub clone too) and asks nothing; otherwise one question, None · On this machine · On this machine and GitHub (default On this machine), and the answer decides whether Git starts. Inside it, only when Git is on: How Agents work here (Own desks · One folder), folded with its default and a line per option; only for "and GitHub": Private/Public and the sign-in line. None is an ordinary folder. Reads the folders (`/api/folders`; a folder that is already a workspace is left out, with everything inside it, until the discreet Show all under the list), inspect, the GitHub sign-in state; writes `/api/folders`, `/api/project-roots` (`init_git` starts Git in the folder before its profile is read), the clone route, `/api/setup/github/create` and the repo profile. The folder it adds takes its workspace. Owner, 2026-10-21/22; Lab wip/buildouts/ADD_A_WORKSPACE.md |
 | Add a workspace (old form) (`workspaces.new`) | the add form `projectroots.js` draws, kept beside the new one while the owner compares them; the folder it adds takes its workspace |
 | GitHub CLI / Clone a repository (`workspaces.github`, `workspaces.clone`) | the GitHub setup read and session attachment `github-workspace-setup.js` owns, one instance per bench |
 
 ### Agent (`agent` profile)
 
 The route parameter is the tenant Agent. Its terminal can paint before Team and optional
-service reads finish. Team membership and Task Manager choices enrich independently.
+service reads finish. Team membership and Work Items enrich independently.
 
 | Surface | Required data and owner |
 |---|---|
 | Self | route Agent plus the shared terminal host and transport |
 | Agent Documents | the Agent's tracked documents in one untabbed work surface |
-| Agent Task Manager | the route Agent's Projects across its current Teams, filtered by the canonical holder returned with each Team Project reading |
+| Work Items | the route Agent's work items across its current Teams, filtered by the canonical holder returned with each Team work item reading |
 | Team membership | Team records and live session tags from `team-controller.js`; writes use the canonical session-membership route |
-| Status / Project drill-down | the same Agent tenant and Team reads as Task Manager; each is an independently placeable surface and writes no Project data |
 | Document / Feedback | each shared surface's own read or submission |
 
 ## Change checklist

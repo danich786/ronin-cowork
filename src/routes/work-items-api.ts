@@ -1,13 +1,14 @@
-/* /api/work-items* — the one door to the work item store (src/work-items.ts).
- * Every write acknowledges with the item as it now is and the trail line it appended; the
- * caller reads that before its next act. The only refusal is a reparent cycle (409). */
+/* /api/work-items* — the one door to the work item store (src/work-items.ts), and the
+ * `item` tool's (ronin_bin/item): every act names its item. Every write acknowledges with
+ * the item as it now is and the trail line it appended; the caller reads that before its
+ * next act. The one refusal (409) is the rule that nothing goes below -1: "w39 can't go there." */
 import type express from 'express';
 import {
   WorkItemBadInput, WorkItemMissing, WorkItemRefused,
-  assignItem, createItem, editItem, focusItem, holderLabel, holdersOf, readItem, releaseItem, reparentItem, restoreItem, returnItem, placeFocus, writeFocusDocs, writeFocusLadder,
-  keepCurrentLine, type Acknowledged, type Holder, type TrailLine,
+  addComment, assignItem, attachDoc, createItem, deleteItem, editComment, editItem, flagItem, holderLabel, holdersOf, linkItem, listItems, readItem, releaseItem,
+  didLine, type Acknowledged, type Holder, type WorkItem,
 } from '../work-items.js';
-import { agentReading, teamReading } from '../work-items-read.js';
+import { agentReading, everyItemReading, teamReading } from '../work-items-read.js';
 import { pushTeams } from '../ws/events.js';
 
 const text = (value: unknown): string | undefined => typeof value === 'string' ? value : value === undefined || value === null ? undefined : String(value);
@@ -19,18 +20,11 @@ export function callerOf(req: express.Request): string {
   return /^user_/.test(req.get('x-ronin-source') ?? '') ? 'owner' : 'unknown';
 }
 
-export const describeLine = (line: TrailLine): string => [
-  line.op,
-  line.from !== undefined || line.to !== undefined ? `${line.from ?? '—'} → ${line.to ?? '—'}` : '',
-  line.note ? `(${line.note})` : '',
-  `by ${line.by}`,
-].filter(Boolean).join(' ');
-
 export const acknowledge = (res: express.Response, done: Acknowledged, extra: Record<string, unknown> = {}) =>
   res.json({
-    ok: true, item: done.item, line: done.line, shape: done.shape, ...(done.notified?.length ? { notified: done.notified } : {}), ...extra,
-    acknowledgement: `Work item ${done.item.id} "${done.item.title}": ${describeLine(done.line)}. Stage ${done.item.stage}, status ${done.item.status}, exit ${done.item.exit}.`
-      + `${done.notified?.length ? ` Told ${done.notified.map((name) => `@${name}`).join(', ')} of the arrival.` : ''}\n${keepCurrentLine(done)}`,
+    ok: true, item: done.item, line: done.line, ...(done.notified?.length ? { notified: done.notified } : {}), ...extra,
+    acknowledgement: didLine(done)
+      + `${done.notified?.length ? `\nTold ${done.notified.map((name) => `@${name}`).join(', ')} of the arrival.` : ''}`,
   });
 
 export function answerError(res: express.Response, error: unknown): void {
@@ -49,9 +43,10 @@ export function holderFrom(body: Record<string, unknown> | undefined): Holder {
   return team ? { kind: 'team', name: team } : { kind: 'agent', name: session! };
 }
 
-const parsed = (value: string): unknown => {
-  try { return JSON.parse(value); } catch (error) { throw new WorkItemBadInput(`--ladder is not valid JSON — ${(error as Error).message}`); }
-};
+/** The tool sends words: "-1" is a level. Anything else is passed on as it came, for the store to name. */
+const levelOf = (value: unknown): number | undefined => value === undefined || value === null || value === '' ? undefined : /^-?\d+$/.test(String(value)) ? Number(value) : value as number;
+/** "none" or blank is no parent. */
+const parentOf = (value: unknown): string | null => { const id = text(value)?.trim(); return id && id !== 'none' ? id : null; };
 
 type Handler = (req: express.Request, res: express.Response) => Promise<unknown>;
 const guarded = (handler: Handler): express.RequestHandler => (req, res) => {
@@ -59,7 +54,7 @@ const guarded = (handler: Handler): express.RequestHandler => (req, res) => {
 };
 
 export function registerWorkItems(app: express.Express): void {
-  // Every write here moves what the teams push carries (a Team's board and items), so the
+  // Every write here moves what the teams push carries (a Team's epic and items), so the
   // server pushes the rosters again after it, as the roster routes do (teams-api.ts).
   app.use('/api/work-items', (req, res, next) => {
     if (req.method !== 'GET') res.on('finish', () => { if (res.statusCode < 400) void pushTeams(); });
@@ -67,88 +62,97 @@ export function registerWorkItems(app: express.Express): void {
   });
 
   app.get('/api/work-items', guarded(async (req, res) => {
-    // The readings: ?session= (agent) or ?team= (team).
+    // Search (Jira's JQL, as filters): ?session= (an Agent's), ?team= (a Team's), or every
+    // item; each narrowed by ?holder=<name>, ?parent=<id>, ?no_parent=1, ?status=, ?kind=.
     const team = text(req.query.team)?.trim();
     const session = text(req.query.session)?.trim();
-    if (session) return res.json({ ok: true, ...(await agentReading(session)) });
-    if (team) return res.json({ ok: true, ...(await teamReading(team)) });
-    res.status(400).json({ error: 'Name a reading: ?team=<team> or ?session=<name>.' });
+    const holder = text(req.query.holder)?.trim();
+    const parent = text(req.query.parent)?.trim();
+    const orphans = Boolean(text(req.query.no_parent));
+    const status = text(req.query.status)?.trim().toUpperCase();
+    const kind = text(req.query.kind)?.trim();
+    const narrow = <T extends WorkItem & { holder?: string }>(items: T[]): T[] => items.filter((item) =>
+      (!holder || item.holder === `agent:${holder}` || item.holder === `team:${holder}` || item.holder === holder)
+      && (!parent || item.parent === parent) && (!orphans || !item.parent)
+      && (!status || item.status === status) && (!kind || (item.kind ?? '') === kind));
+    if (session) { const reading = await agentReading(session); return res.json({ ok: true, ...reading, items: narrow(reading.items) }); }
+    if (team) {
+      const reading = await teamReading(team);
+      return res.json({ ok: true, ...reading, items: narrow(reading.items) });
+    }
+    res.json({ ok: true, items: narrow(await everyItemReading()) });
   }));
 
   app.post('/api/work-items', guarded(async (req, res) => {
     const b = req.body ?? {};
     acknowledge(res, await createItem({
-      title: text(b.title) ?? '', objective: text(b.objective), stage: text(b.stage), exit: text(b.exit), status: text(b.status), parent: text(b.parent) || null, root: b.root === true,
+      title: text(b.title) ?? '', objective: text(b.objective), status: text(b.status), kind: text(b.kind), level: levelOf(b.level), priority: text(b.priority), parent: text(b.parent) || null,
       ...(b.team || b.session ? { holder: holderFrom(b) } : {}),
     }, callerOf(req)));
-  }));
-
-  // The Agent's focus item: its ladder, its docs, and a placed position. With nothing held,
-  // a ladder or doc write creates the item (held by the Agent, titled from its objective).
-  const sessionOf = (req: express.Request): string => {
-    const session = text(req.body?.session)?.trim();
-    if (!session) throw new WorkItemBadInput('name the session whose focus item this is.');
-    return session;
-  };
-  app.post('/api/work-items/focus/ladder', guarded(async (req, res) => {
-    const b = req.body ?? {};
-    const done = await writeFocusLadder(sessionOf(req), { edits: Array.isArray(b.edits) ? b.edits.map((edit: unknown[]) => edit.map(String)) : undefined, ladder: b.ladder }, callerOf(req));
-    acknowledge(res, done, { said: done.said });
-  }));
-  app.post('/api/work-items/focus/docs', guarded(async (req, res) => {
-    acknowledge(res, await writeFocusDocs(sessionOf(req), { add: text(req.body?.add), remove: text(req.body?.remove) }, callerOf(req)));
-  }));
-  app.post('/api/work-items/focus/at', guarded(async (req, res) => {
-    acknowledge(res, await placeFocus(sessionOf(req), text(req.body?.at)?.trim() ?? '', callerOf(req)));
   }));
 
   app.get('/api/work-items/:id', guarded(async (req, res) => {
     const item = await readItem(req.params.id);
     if (!item) throw new WorkItemMissing(`No work item ${req.params.id}.`);
-    res.json({ ok: true, item, held_by: (await holdersOf(item.id)).map(holderLabel) });
+    // Jira's read: the fields, comments, attachments, links both ways and history (trail).
+    const all = await listItems();
+    const children = all.filter((other) => other.parent === item.id);
+    const inward = all.flatMap((other) => other.links.filter((link) => link.to === item.id).map((link) => ({ type: link.type, from: other.id })));
+    res.json({ ok: true, item, held_by: (await holdersOf(item.id)).map(holderLabel), ...(children.length ? { children } : {}), ...(inward.length ? { linked_from: inward } : {}) });
   }));
 
   app.put('/api/work-items/:id', guarded(async (req, res) => {
     const b = req.body ?? {};
+    const external = Object.fromEntries((['jira', 'trello', 'github'] as const).filter((key) => b[key] !== undefined).map((key) => [key, text(b[key]) ?? '']));
     acknowledge(res, await editItem(req.params.id, {
-      title: text(b.title), objective: text(b.objective), stage: text(b.stage), status: text(b.status), exit: text(b.exit), evidence: text(b.evidence),
-      ...(b.ladder !== undefined ? { ladder: typeof b.ladder === 'string' ? parsed(b.ladder) : b.ladder } : {}),
+      title: text(b.title), objective: text(b.objective), kind: text(b.kind), level: levelOf(b.level), priority: text(b.priority),
+      ...(b.parent !== undefined ? { parent: parentOf(b.parent) } : {}),
+      ...(Object.keys(external).length ? { external } : {}),
     }, callerOf(req), text(b.note)));
   }));
 
-  app.post('/api/work-items/:id/stage', guarded(async (req, res) => {
-    acknowledge(res, await editItem(req.params.id, { stage: text(req.body?.stage) ?? '' }, callerOf(req), text(req.body?.note)));
+  // Jira's transition: any status to any status, one trail line. Edit does not set it.
+  app.post('/api/work-items/:id/transition', guarded(async (req, res) => {
+    const status = text(req.body?.status)?.trim().toUpperCase();
+    if (!status) throw new WorkItemBadInput('name the status: IDEA, PLAN, BUILD, REVIEW, LAND or DONE.');
+    acknowledge(res, await editItem(req.params.id, { status }, callerOf(req), text(req.body?.note)));
   }));
-  // `focus` names the Agent whose focus moves to this item when it holds it ("working").
-  app.post('/api/work-items/:id/status', guarded(async (req, res) => {
-    const done = await editItem(req.params.id, { status: text(req.body?.status) ?? '', exit: text(req.body?.exit) }, callerOf(req), text(req.body?.note));
-    const focus = text(req.body?.focus)?.trim();
-    acknowledge(res, done, focus ? { focus: await focusItem(focus, req.params.id) ? req.params.id : 'unchanged: not held by ' + focus } : {});
-  }));
+  // A holder: { team }, { session }, or { none: true } for held by nobody.
   app.post('/api/work-items/:id/assign', guarded(async (req, res) => {
+    if (req.body?.none === true || req.body?.none === 'true') return acknowledge(res, await releaseItem(req.params.id, callerOf(req), text(req.body?.note)));
     acknowledge(res, await assignItem(req.params.id, holderFrom(req.body), callerOf(req), text(req.body?.note)));
   }));
-  app.post('/api/work-items/:id/release', guarded(async (req, res) => {
-    acknowledge(res, await releaseItem(req.params.id, callerOf(req), text(req.body?.note)));
+  // Jira's Add flag / Remove flag; { comment } is the reason, kept as a comment.
+  for (const [verb, flagged] of [['flag', true], ['unflag', false]] as const) {
+    app.post(`/api/work-items/:id/${verb}`, guarded(async (req, res) => {
+      acknowledge(res, await flagItem(req.params.id, flagged, text(req.body?.comment), callerOf(req)));
+    }));
+  }
+  app.post('/api/work-items/:id/attach', guarded(async (req, res) => {
+    const remove = req.body?.remove === true || req.body?.remove === 'true';
+    acknowledge(res, await attachDoc(req.params.id, text(req.body?.path) ?? '', callerOf(req), remove));
   }));
-  app.post('/api/work-items/:id/return', guarded(async (req, res) => {
-    const session = text(req.body?.session)?.trim();
-    if (!session) throw new WorkItemBadInput('return needs the session giving the item back.');
-    acknowledge(res, await returnItem(req.params.id, session, callerOf(req), text(req.body?.team)?.trim() || undefined));
+  app.post('/api/work-items/:id/link', guarded(async (req, res) => {
+    const remove = req.body?.remove === true || req.body?.remove === 'true';
+    acknowledge(res, await linkItem(req.params.id, text(req.body?.type)?.trim() ?? '', text(req.body?.to)?.trim() ?? '', callerOf(req), remove));
   }));
-  app.post('/api/work-items/:id/restore', guarded(async (req, res) => {
-    const team = text(req.body?.team)?.trim();
-    if (!team) throw new WorkItemBadInput('restore needs the team that holds the item again.');
-    acknowledge(res, await restoreItem(req.params.id, team, callerOf(req)));
+  app.delete('/api/work-items/:id', guarded(async (req, res) => {
+    const { deleted, orphaned } = await deleteItem(req.params.id, callerOf(req));
+    const subtasks = deleted.slice(1);
+    res.json({ ok: true, deleted, ...(orphaned.length ? { no_parent: orphaned } : {}),
+      acknowledgement: [`${req.params.id} was deleted`, subtasks.length ? `with its subtasks ${subtasks.join(', ')}` : '', orphaned.length ? `${orphaned.join(', ')} now ${orphaned.length === 1 ? 'has' : 'have'} no parent` : ''].filter(Boolean).join('; ') });
   }));
-  app.post('/api/work-items/:id/reparent', guarded(async (req, res) => {
-    acknowledge(res, await reparentItem(req.params.id, text(req.body?.parent) || null, callerOf(req)));
+  app.post('/api/work-items/:id/comment', guarded(async (req, res) => {
+    // { text } adds one; { edit: n, text } changes comment n, as Jira's comment edit.
+    const n = text(req.body?.edit);
+    acknowledge(res, n ? await editComment(req.params.id, Number(n), text(req.body?.text) ?? '', callerOf(req))
+      : await addComment(req.params.id, text(req.body?.text) ?? '', callerOf(req)));
   }));
 
   // Anything else under /api/work-items names no item (an id like surface/7 is not one):
   // a JSON 404 naming it, so a tool can say so rather than parse an HTML error page.
   app.all('/api/work-items/*', (req, res) => {
-    const id = req.path.slice('/api/work-items/'.length).replace(/\/(assign|release|return|restore|reparent|stage|status)$/, '');
+    const id = req.path.slice('/api/work-items/'.length).replace(/\/(assign|transition|flag|unflag|attach|link|comment)$/, '');
     res.status(404).json({ ok: false, error: `No work item ${id}.` });
   });
 }

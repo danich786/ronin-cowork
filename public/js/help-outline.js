@@ -39,8 +39,9 @@ function PAGES() {
     page(using, 'docs/using-ronin/terminal-controls.md', t('help_outline.controls', 'Terminal controls')),
     page(using, 'docs/using-ronin/new-team.md', t('help_outline.new_team', 'New Team')),
     page(using, 'docs/using-ronin/share-a-file.md', t('help_outline.share', 'Share a file')),
+    page(using, 'docs/using-ronin/work-items.md', t('help_outline.work_items', 'Work items')),
     page(using, 'docs/using-ronin/wipeboards.md', t('help_outline.wipeboards', 'Wipeboards')),
-    page(using, 'docs/using-ronin/team-kanban.md', t('help_outline.kanban', 'Task Manager')),
+    page(using, 'docs/using-ronin/desks.md', t('help_outline.desks', 'Managed worktrees')),
     page(using, 'docs/using-ronin/archived-sessions.md', t('help_outline.archived', 'Archived sessions')),
     page(using, 'docs/using-ronin/feedback.md', t('help_outline.feedback', 'Feedback')),
   ];

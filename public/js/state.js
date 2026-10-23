@@ -44,7 +44,7 @@ export const S = {
   // lock button is inert and opaque: the surface says "not plugged in", not "broken".
   // Set once at boot from /api/version (main.js); false is the full install's answer.
   streamOff: false,
-  // Registered service names from the same answer (michi | koshi | rireki | counting |
+  // Registered service names from the same answer (project_management | koshi | rireki | counting |
   // koe | gbrain), or null when the operator predates the field. A surface owned by a service
   // not on the roster is drawn opaque-and-inert and never fetched (sockets.ts's rule).
   services: null,
@@ -66,9 +66,9 @@ const PANE_SERVICE = { hotwords: 'koe', stats: 'counting', koshi: 'koshi', gbrai
  *
  * This is the primitive; `serviceOff` below is the pane-shaped question asked in terms
  * of it. They were separate, and the difference bit: `serviceOff` takes a PANE name, so
- * `serviceOff('michi')` looked exactly like a service check, found no pane by that name,
- * and quietly answered "present" — leaving a michi-only button lit on a build with no
- * michi. A third spelling of the same test lived inline in tile.js. One question, one
+ * `serviceOff('rireki')` looked exactly like a service check, found no pane by that name,
+ * and quietly answered "present" — leaving a service-only button lit on a build without
+ * it. A third spelling of the same test lived inline in tile.js. One question, one
  * function, and the pane map is now only a lookup table.
  */
 export const serviceMissing = (svc) => !!svc && Array.isArray(S.services) && !S.services.includes(svc);

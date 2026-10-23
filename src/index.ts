@@ -77,6 +77,7 @@ import { registerSetupRuntime } from './routes/setup-runtime-api.js';
 import { registerSetupProgress } from './routes/setup-progress-api.js';
 import { registerMikaContext } from './mika-context.js';
 import { migrateSopsToBehaviours } from './behaviour-store-migration.js';
+import { migrateItems } from './work-items.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
@@ -84,6 +85,10 @@ const PUBLIC = path.join(ROOT, 'public');
 const NM = path.join(ROOT, 'node_modules');
 const isEntryPoint = !!process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url;
 if (isEntryPoint) await migrateSopsToBehaviours();
+// Work items in the Jira shape (Lab JIRA_SHAPE.md); a store already in shape is left alone.
+if (isEntryPoint) await migrateItems().then((done) => {
+  if (done.migrated.length || done.removed.length) console.log(`[work-items] migrated ${done.migrated.length} of ${done.before} items; removed ${done.removed.join(', ') || 'none'}; ${done.after} remain`);
+}).catch((error) => console.error(`[work-items] migration: ${(error as Error).message}`));
 const isBoxInstance = isEntryPoint
   && process.env.NODE_ENV === 'production'
   && process.env.RONIN_TEST_RUNNER !== '1';

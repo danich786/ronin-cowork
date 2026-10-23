@@ -57,7 +57,7 @@ Rules that make them peers:
 
 - **No flip on any head**: the team commons is the FIRST CARD of the
   selector and goes into a workspace like any card — click for the selected cell, drag onto
-  any cell. The SHINGO light signal sits at the far RIGHT of a tile head.
+  any cell. The work record chip sits at the far RIGHT of a tile head.
 - **A cell owns selection and drops, whatever it holds**: a card dropped on
   any workspace clobbers what is there — session, commons, form, anything to come.
   Nothing per surface: a surface is one stable type in `js/workbench-catalog.js`, and a

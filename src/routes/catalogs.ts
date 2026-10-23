@@ -9,7 +9,7 @@ import { initialCampaign, readCampaign } from '../campaigns.js';
 import { listWays } from '../resources.js';
 import { listSessionReadings } from '../session-readings.js';
 import { listProviderCatalog, providerCatalogAnswer } from '../model-providers.js';
-import { acceptModelInfo, checkModelInfo, discardModelInfo, modelInfoReview } from '../model-info.js';
+import { acceptModelInfo, checkModelInfo, discardModelInfo, modelInfoReview, readPendingModelInfo } from '../model-info.js';
 import { readProviderSummary } from '../provider-summary.js';
 import {
   listProjectRoots,
@@ -35,7 +35,7 @@ import {
 } from '../resource-adapters.js';
 import { availableBehaviours } from '../instruction-cascade.js';
 import { saveAgentTemplate, saveTeamTemplate } from '../templates.js';
-import { browseFolders, createFolder, withRegisteredRoots } from '../folder-browser.js';
+import { browseFolders, createFolder, startGit, withRegisteredRoots } from '../folder-browser.js';
 import {
   BehaviourDocumentError,
   createBehaviourDocument,
@@ -220,6 +220,7 @@ export function registerCatalogs(app: express.Express): void {
       if ((await listProjectRoots()).some((r) => r.name === name)) {
         return res.status(409).json({ error: `"${name}" is already in the catalog.` });
       }
+      if (req.body?.init_git === true) await startGit(fields.dir); // the folder gets Git before its profile is read
       const facts = await repoFacts({ name, title: fields.title ?? '', dir: fields.dir, memory: '', remit: '', match: [], docs: [], plans: [], archived: false, campaign_id: '' });
       if (facts.repo && req.body?.profile !== undefined) validateArrangementProfile(req.body.profile);
       const currentProfile = facts.repo && req.body?.profile !== undefined
@@ -292,6 +293,14 @@ export function registerCatalogs(app: express.Express): void {
   app.get('/api/model-info', async (_req, res) => {
     try { res.json(await modelInfoReview()); }
     catch (e) { res.status(500).json({ error: errMsg(e) }); }
+  });
+  // The update waiting, whole, as fetched: View payload shows it.
+  app.get('/api/model-info/pending', async (_req, res) => {
+    try {
+      const pending = await readPendingModelInfo();
+      if (!pending) return res.status(404).json({ error: 'No model info update is waiting.' });
+      res.json(pending);
+    } catch (e) { res.status(500).json({ error: errMsg(e) }); }
   });
   // Refresh all's second step, after the CLIs' lists: fetch models.dev for the catalog's
   // providers and leave an update waiting when it differs. The owner's press, never a timer.

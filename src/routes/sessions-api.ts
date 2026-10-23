@@ -38,6 +38,7 @@ import { announceTeamChanges } from './wipeboards-api.js';
 import { memberEnded, teamChanged, writeConfiguration, writeMandate, writeTeams } from '../tegami.js';
 import { conditionalBehaviourPath, resolveBehaviourBooks } from '../behaviours.js';
 import { addCurrentBehaviour, readAgentComposition } from '../agent-composition.js';
+import { resendBirthBrief } from '../birth-resend.js';
 import { mandate } from '../agent-defaults.js';
 import { readFile } from 'node:fs/promises';
 import { emitSessionEnd } from '../sockets.js';
@@ -175,6 +176,14 @@ export function registerSessions(app: express.Express): void {
       if (!added.added) return res.status(409).json({ error: 'That Behavior is already part of the current composition.' });
       res.json({ ok: true, queued: true, behaviour: { name: row.book, path: row.file }, message: added.delivery });
     } catch (e) { res.status(500).json({ error: String((e as Error)?.message ?? e) }); }
+  });
+
+  app.post('/api/sessions/:name/composition/brief', async (req, res) => {
+    const { name } = req.params;
+    if (!isValidName(name)) return res.status(400).json({ error: 'Invalid name.' });
+    if (!(await sessionExists(name))) return res.status(404).json({ error: 'No such session.' });
+    try { res.json({ ok: true, queued: true, ...await resendBirthBrief(name) }); }
+    catch (e) { res.status(500).json({ error: String((e as Error)?.message ?? e) }); }
   });
 
   app.put('/api/sessions/:name/composition/mandate', async (req, res) => {
@@ -448,7 +457,7 @@ export function registerSessions(app: express.Express): void {
   });
 
   // A membership or lead change moves what the teams push carries (whose items a Team's
-  // row lists, whose board is its lead's), so the rosters are pushed again after it.
+  // row lists, whose epic is its lead's), so the rosters are pushed again after it.
   app.use(['/api/sessions/:name/teams', '/api/sessions/:name/team_lead'], (req, res, next) => {
     if (req.method !== 'GET') res.on('finish', () => { if (res.statusCode < 400) void pushTeams(); });
     next();

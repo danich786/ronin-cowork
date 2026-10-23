@@ -35,7 +35,7 @@ import { createMikaHelpPanel } from './mika.js';
 import { retireSession } from './session-retire.js';
 import { installBehaviourReader } from './behaviour-reader.js';
 import { BEHAVIOUR_SURFACE_TYPE } from './behaviour-surface.js';
-import { holderOf, itemLine } from './team-kanban.js';
+import { createItemPhalanx, holderOf } from './work-items-surface.js';
 import { registerWorkbenchCatalog, WORKBENCH_PROFILES as WB_PROFILES, WORKBENCH_TYPES as WB_TYPES } from './workbench-catalog.js';
 import { createAgentCompositionSurface } from './agent-composition.js';
 
@@ -536,7 +536,7 @@ export function createCoworkView(options = {}) {
   };
   const disarmPrewarm = () => window.clearTimeout(dwellTimer);
 
-  // A MEMBER'S READINGS ride its home row: MICHI's SHINGO chip, the status, the
+  // A MEMBER'S READINGS ride its home row: the work record chip, the status, the
   // model, the context gauge. The store hands them
   // over on entry and again each time the server pushes a change; nothing is guessed when a
   // reading is absent. RIREKI's cherry-pick or summary joins the row when the service
@@ -561,6 +561,11 @@ export function createCoworkView(options = {}) {
     const step = (n, key, text) => { steps[key] = createStep({ n, key, title: text, onToggle: () => fold(key) }); steps[key].body.classList.add('league-team-step-body'); return steps[key]; };
     const agents = step(1, 'agents', t('league.agents', 'Agents')).body;
     const work = step(2, 'work', t('league.work_items', 'Work items')).body;
+    const stones = createItemPhalanx({
+      holder: (item) => holderOf(item, membersOfTeam(name).find((member) => member.team_lead)?.name || ''),
+      openAttachment: (path) => bench.place(WB_TYPES.document, oppositeSeat(seat), { path }),
+    });
+    work.append(stones.el);
     const config = step(3, 'config', t('workspace.tab_team_configuration', 'Configuration')).body;
     let workCount = 0;
     const paintFolds = () => {
@@ -599,13 +604,10 @@ export function createCoworkView(options = {}) {
       if (holding) return;
       const result = await request(`/api/work-items?team=${encodeURIComponent(name)}`, { cache: 'no-store' });
       const items = result.ok && Array.isArray(result.data.items) ? result.data.items : [];
-      const own = `team:${name}`;
-      const ordered = [...items.filter((item) => item.holder === own), ...items.filter((item) => item.holder !== own)];
-      const lead = membersOfTeam(name).find((member) => member.team_lead)?.name || '';
       held = new Map();
       for (const item of items) if (item.holder.startsWith('agent:')) held.set(item.holder.slice(6), [...(held.get(item.holder.slice(6)) || []), item.title]);
-      workCount = ordered.length;
-      work.replaceChildren(...ordered.map((item) => itemLine(item, { holder: holderOf({ holder: item.holder }, lead) })));
+      workCount = items.length;
+      stones.setItems(items);
       paintAgents(); paintFolds();
     };
     // Same contract as renderConfig below: every publish lands here, so the body only

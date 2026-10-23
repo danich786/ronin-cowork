@@ -14,7 +14,7 @@ import { arrangementOf } from '../desks/arrangement.js';
 import { randomUUID } from 'node:crypto';
 import { withManagedTransaction } from '../desks/lifecycle-ledger.js';
 import { shutdownAgent, ShutdownRefused } from '../desks/session-shutdown.js';
-import { keepCurrentLine, readItem } from '../work-items.js';
+import { didLine, readItem } from '../work-items.js';
 
 const out = (s = '') => process.stdout.write(s + '\n');
 function die(verdict: string, code: number): never {
@@ -66,7 +66,7 @@ const str = (v: string | true | undefined): string => (typeof v === 'string' ? v
 const USAGE = `usage: worktree-desk status [<repo[:branch]>] [--session s | --team t | --repo r]
        worktree-desk open <repo[:branch]> [--team t] [--session s] [--source dev|team]
        worktree-desk assign <repo[:branch]> --session s --team t [--source dev|team]
-       worktree-desk hand-in [<repo[:branch]>] [--assignment] [--project <team/id>]
+       worktree-desk hand-in [<repo[:branch]>] [--assignment] [--item <id>]
        worktree-desk sync [<repo[:branch]>] [--source dev|team|lead|<repo:branch>]
        worktree-desk close [<repo[:branch]>] [--with-session]
        worktree-desk handoff <repo[:branch]> --to <session[,session]>
@@ -195,8 +195,8 @@ async function main(): Promise<void> {
           targets = await mine(session, positional[0] ?? '');
           if (!targets.length) die(`NO-DESK: ${session} has no open worktree`, 3);
         } else targets = [await pickOne(session, positional[0] ?? '', 'hand-in')];
-        const projectId = str(flags.get('project'));
-        if (projectId && !(await readItem(projectId))) die(`NO-PROJECT: there is no work item ${projectId}`, 3);
+        const projectId = str(flags.get('item'));
+        if (projectId && !(await readItem(projectId))) die(`NO-ITEM: there is no work item ${projectId}`, 3);
         let worst = 0;
         const { outcomes, moved } = await handInAssignment({ desks: flags.get('assignment') ? targets : [targets[0]!], projectId, session });
         for (const [i, { receipt, notices, tidy }] of outcomes.entries()) {
@@ -204,7 +204,7 @@ async function main(): Promise<void> {
           out(`${receipt.result.toUpperCase()} ${deskId(d)} → ${d.line}${receipt.result === 'accepted' ? ` now ${receipt.line_sha.slice(0, 10)}` : ''}${receipt.reason ? ` — ${receipt.reason}` : ''}${receipt.conflict_files.length ? ` — files: ${receipt.conflict_files.join(', ')}` : ''}  [${receipt.id}]`);
           for (const n of notices) if (n.kind !== 'adopted' || n.desk === d.branch) out(noticeLine(n));
           if (receipt.result === 'accepted' && tidy.desk) {
-            if (!projectId) out('  Code handed in. No work item was named; nothing moved stage.');
+            if (!projectId) out('  Code handed in. No work item was named; no status moved.');
             out(`  worktree is ${tidy.desk.ahead === 0 ? 'level with the line' : `${tidy.desk.ahead} commit(s) ahead of the line`}`);
             out(tidy.unsaved_files.length ? `  not handed in: ${tidy.unsaved_files.join(', ')}` : '  no unsaved or untracked files');
             out(`  NEXT: line moved; run worktree-desk status ${deskId(d)}; if it reports a dev update, run worktree-desk sync ${deskId(d)}`);
@@ -225,7 +225,7 @@ async function main(): Promise<void> {
         }
         if (moved) {
           out(`Code handed in for ${projectId}: ${moved.line.op} ${moved.line.from ?? ''} → ${moved.line.to ?? ''} (${moved.line.note}).`);
-          out(keepCurrentLine(moved));
+          out(didLine(moved));
         }
         process.exit(worst);
       }

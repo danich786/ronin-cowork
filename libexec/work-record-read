@@ -2,18 +2,12 @@
 # Internal read implementation for `work-record`.
 # Usage: work-record read                      your letter, teaching lines and all
 #        work-record read --json               just the block, for a machine
-#        work-record read --rungs              the markable positions, numbered
 #        work-record read --session <name> …   another session (dial 👁 read or 🤖 write)
-#
-# --rungs prints the positions a marker can point at, AS THEY SIT IN THE LETTER: a gate
-# is rung N, a leg is N.M. Deliberately not an index into a flattened list — that number
-# is invisible to a human reading the file, and `at` has to be checkable by eye.
-# `work-record update_record --at` takes exactly one of these.
 #
 # NO ARGUMENTS, BY DESIGN. You do not name a session and you do not learn a path: the
 # tool knows which pane it is running in, and where the file lives is Ronin's business.
 # Both facts have already moved once. An agent that memorised either would keep using it
-# afterwards, which is how a wrong path becomes a wrong ladder becomes a tile that lies —
+# afterwards, which is how a wrong path becomes a wrong record becomes a tile that lies —
 # and coordinators had begun pasting shell incantations to derive session keys by hand.
 #
 # Read-only. `work-record update_record` is the other half, and there is no third tool.
@@ -25,18 +19,17 @@ help() {
 work-record read — read a session's work record
 
 Usage:
-  work-record project read <id>
   work-record read
   work-record read --json
-  work-record read --rungs
-  work-record read --session <name> [--json|--rungs]
+  work-record read --session <name> [--json]
 
 Common tasks:
-  Use the bare form for the complete record, --json for its data block, and
-  --rungs for positions accepted by work-record update_record --session <name> --at N[.M].
+  Use the bare form for the complete record with the items held and their status,
+  and --json for its data block.
 
 This tool reads records; it does not author progress. Reading may refresh the
-machine-owned Team summary in the record. Related: work-record update_record --help
+machine-owned Team summary in the record. Related: work-record update_record --help;
+item read <id>
 EOF
 }
 case "${1-}" in
@@ -94,7 +87,6 @@ TARGET=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --json)    MODE=json ;;
-    --rungs)   MODE=rungs ;;
     --session) shift; TARGET=${1-} ;;
     *) die "work-record read: unknown argument: $1. Run work-record read --help." ;;
   esac
@@ -114,8 +106,8 @@ STORE="$(cd "$(dirname "$SELF")/../bin" && pwd)/ronin-store"
 FILE="$("$STORE" session)/$(key_of "$NAME")/tegami.md"
 [ -f "$FILE" ] || die "work-record read: @$NAME has no letter yet — Ronin seeds one within a minute."
 
-# THE AGENT READING — what this session holds, its focus item's ladder, and every held
-# item's docs — comes from Ronin, derived from the work item store, never from this file.
+# THE AGENT READING — what this session holds, with each item's status, and every held
+# item's attachments — comes from Ronin, derived from the work item store, never from this file.
 TOOL_DIR="$(cd "$(dirname "$SELF")/../ronin_bin" && pwd)"
 . "$TOOL_DIR/ronin-http.sh"
 READING='{}'
@@ -124,34 +116,9 @@ if ronin_connect 2>/dev/null; then
 fi
 export READING
 BLOCK=$(awk '/^```/{f=!f; if(f) next; else exit} f' "$FILE")
-if [ "$MODE" = rungs ]; then
-  # The flat, numbered list of markable positions on the focus item's ladder. A phase is a
-  # grouping, not a place to stand, so it is shown for context but never numbered.
-  python3 -c '
-import json, os, sys
-try: r = json.loads(os.environ["READING"])
-except Exception: r = {}
-if not r.get("ok"): sys.exit("work-record read: Ronin did not answer with this session'"'"'s work items.")
-at = r.get("at") or {}
-ar, al = at.get("rung"), at.get("leg")
-n = 0
-for ri, rung in enumerate(r.get("ladder") or [], 1):
-    if "gate" in rung:
-        here = "<-- at" if ar == ri and al is None else ""
-        print("%-7s GATE  %s   [%s] %s" % (ri, rung.get("gate", ""), rung.get("status", ""), here))
-        n += 1
-    else:
-        print("%-7s phase %s" % (ri, rung.get("phase", "")))
-        for li, leg in enumerate(rung.get("legs") or [], 1):
-            here = "<-- at" if ar == ri and al == li else ""
-            print("%-7s leg   %s   [%s] %s" % ("%d.%d" % (ri, li), leg.get("title", ""), leg.get("status", "PLANNED"), here))
-            n += 1
-if not n:
-    print("(no markable rungs)")
-'
-elif [ "$MODE" = json ]; then
-  # The letter block with the reading beside it: "ladder" and "docs" are the focus item'"'"'s
-  # and the held items'"'"', "items" what is held. Derived, never written back.
+if [ "$MODE" = json ]; then
+  # The letter block with the reading beside it: "items" what is held, "attachments"
+  # theirs. Derived, never written back.
   printf '%s' "$BLOCK" | python3 -c '
 import json, os, sys
 try: d = json.load(sys.stdin)
@@ -159,9 +126,8 @@ except Exception: sys.exit("work-record read: the letter block does not parse")
 try: r = json.loads(os.environ["READING"])
 except Exception: r = {}
 if r.get("ok"):
-    d["ladder"] = r.get("ladder") or []
-    d["docs"] = r.get("docs") or []
-    d["items"] = [{k: i.get(k) for k in ("id", "title", "stage", "status", "exit", "parent")} for i in r.get("items") or []]
+    d["attachments"] = r.get("attachments") or []
+    d["items"] = [{k: i.get(k) for k in ("id", "title", "level", "kind", "status", "flagged", "parent")} for i in r.get("items") or []]
 print(json.dumps(d, indent=2, ensure_ascii=False))
 '
 else
@@ -171,13 +137,12 @@ import json, os
 try: r = json.loads(os.environ["READING"])
 except Exception: r = {}
 if not r.get("ok"):
-    print("\n(Ronin did not answer: the ladder on your work items is not shown.)"); raise SystemExit
+    print("\n(Ronin did not answer: the work items you hold are not shown.)"); raise SystemExit
 items = r.get("items") or []
-print("\n## Work items you hold" if items else "\n## You hold no work items — your first ladder write makes one")
+print("\n## Work items you hold" if items else "\n## You hold no work items — item create, then item assign <id> <you>")
 for i in items:
-    mark = "  <- focus" if i.get("id") == r.get("focus") else ""
-    print("- %s %s · %s · %s · exit %s%s" % (i["id"], i["title"], i["stage"], i["status"], i["exit"], mark))
-if r.get("ladder"):
-    print("\n```json\n%s\n```" % json.dumps({"ladder": r["ladder"], "docs": r.get("docs") or []}, indent=2, ensure_ascii=False))
+    print("- %s %s · %s%s" % (i["id"], i["title"], i["status"], " · flagged" if i.get("flagged") else ""))
+if r.get("attachments"):
+    print("\n## Attachments\n" + "\n".join("- " + doc for doc in r["attachments"]))
 '
 fi

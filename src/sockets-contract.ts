@@ -88,6 +88,6 @@ export interface Sockets {
 }
 
 export interface ServiceRegistration {
-  name: string; // the service folder name: michi | koshi | rireki | counting | koe | gbrain
+  name: string; // the service folder name: project_management | koshi | rireki | counting | koe | gbrain
   register(sockets: Sockets): void;
 }

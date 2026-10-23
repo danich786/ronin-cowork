@@ -19,7 +19,7 @@ const words = () => ({ theme: t('teams_surface.theme', 'Theme'), state: t('teams
  * many-of, blank All, narrows the stones to the Teams in those workspace folders; Show, many-of,
  * Theme on by default, says what hangs under each stone, a cell per topic laid as rows across
  * the stones (phalanx.js, `branches: 'column'`): Theme, the roster objective, and State, the
- * status of the Team's board (no board, blank), plain text; each Agent a branch row, the lead
+ * status of the Team's epic (no epic, blank), plain text; each Agent a branch row, the lead
  * first; each Item a branch row. The rows are teams-surface-rows.js over the pushed rosters (each with its `board` and
  * `items`, teams-api.ts) and the Team projection's members. The 人 mark in a stone's corner
  * opens the Team page in a new tab. The stone's detail is the Team profile the card opened

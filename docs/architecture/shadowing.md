@@ -46,7 +46,7 @@ file happens to define every stock name.
 
 **Deliberately not shadowable:**
 
-- **MICHI and TEGAMI** — session data in the session store, not stock catalogs. There is
+- **The work record (TEGAMI)** — session data in the session store, not stock catalogs. There is
   no shipped version to win over.
 - **Your `PROJECT_ROOTS.md`** — already user scope. The shipped file keeps only the
   project_root contract; the providers and models it once carried are `MODEL_PROVIDERS.md`.

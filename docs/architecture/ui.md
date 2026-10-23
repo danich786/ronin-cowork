@@ -337,7 +337,11 @@ z-index or maintain a second visibility flag. Navigation chooses a tenant. It do
 construct another viewer for the same work.
 
 The invariant is deliberately small: **one host, catalogued sibling tenants, one active
-tenant**. A tenant owns its enter/leave boundary and may refuse departure (Docs does so for
+tenant**. Chat lays its tile out as a column, the log that scrolls and then the composer in
+flow, so the log ends where the composer begins; Term and the tape still reserve
+`--composer-clearance` under an overlaid composer. The log keeps a reader at its end through
+one `following` flag read on scroll and a ResizeObserver on the log's own box
+(`js/tile-transcript.js`). A tenant owns its enter/leave boundary and may refuse departure (Docs does so for
 unsaved edits). Focus, sizing and teardown follow the active tenant. Adding a work surface
 means registering another sibling with the host, not adding another overlay condition to
 the shell.

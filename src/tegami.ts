@@ -76,57 +76,13 @@ function seedShell(
   sessionMandate: Mandate,
 ): string {
   return `# TEGAMI — ${name}
-> **This is your work record, and your ladder is a good way to communicate that you understand
-> your role, the input you need from the user, and your planned phases and legs.** What you
-> keep is shown on the user's tile and on their session_roster for quick reference. Keep it
-> true and save it when it changes — a stale ladder is worse than none.
->
-> At the end of a turn, consider updating it with \`work-record update_record\`. Not keeping it current is
-> poor quality.
->
-> YOUR **teams** block is DERIVED and not yours to write: one entry per team you are on —
-> the team's name, your role on it and its objective, from the team rosters; a Team lead's
-> entry also lists the members. Ronin writes it again whenever a roster or a membership
-> changes and tells you with a one-line notice; reread your letter then. YOUR
-> **configuration** line is derived the same way: the title and Workspace Folder Ronin keeps
-> for you. A session on no team is a rōnin, which
-> is an ordinary state and not a gap.
->
-> YOUR **repos** list is started from the checkout the new-session box put you in. It is
-> not limited to that project_root: add, remove, or change entries as you work across other
-> repositories. Keep every worktree and branch current. The worktree is the important
-> live coordinate: it tells the owner which private worktree this session is actually using;
-> the branch remains supporting Git detail.
-> \`work-record workspace list|add|remove\` edits these entries; use \`--branch\` separately
-> for a URL. This record does not change where your shell was born or open a desk.
->
-> YOUR **ladder** lives on the work item you are on — your focus, \`at.item\` — not in this
-> file: \`work-record read\` shows it. The rungs, and which one you are on. Phases hold legs.
-> Name a phase before you know its legs; a phase with nothing under it yet is normal. Leave
-> out what you cannot see: a short ladder is a true ladder, and a guessed one is a lie.
-> Statuses are \`PLANNED\` · \`ACTIVE\` · \`DONE\`, **one ACTIVE at a time**. Add a gate
-> wherever the work genuinely stops and needs someone — that is how the owner knows you want
-> them. Holding nothing, your first ladder write makes an item for you, held by you.
->
-> YOUR **holds** are the work items you hold, by id. Assign, return and backlog move them;
-> \`work-record project list\` reads them.
->
-> YOUR **ladder_state** — \`work-record update_record --on_tangent\` when you step off the ladder,
-> \`--on_track\` when you are back. Riffing, a side job, ten minutes in nobody's plan — all
-> normal, and your plan is not dead while you are away from it.
->
-> YOUR DOCS — the buildouts, handoffs and plans — live on your focus item too.
-> \`work-record document add <path>\` puts one on it; \`work-record document remove
-> <path>\` takes it off. The owner opens them from the ▧ Docs tab, which lists the documents
-> of every item you hold, so **a doc you did not list is a doc they cannot reach without
-> asking you for the path.**
->
-> Your own words go in "objective" and "title". Read it with \`work-record read\`. **Change one
-> field with one call**: \`work-record update_record --objective "<sentence>"\` · \`--phase "<title>"\` ·
-> \`--leg N "<title>"\` · \`--done N.M\` · \`--gate "<what you wait for>"\` · \`--rung N\`,
-> \`--leg N.M\` to retitle · \`--drop N[.M]\`. Verbs combine in one
-> call. \`work-record update_record < block.json\` replaces the whole authored block. Where the file lives
-> is Ronin's business.
+> Your work record is what the owner reads on your tile. Keep it true.
+> - **objective:** one sentence on what you are doing now:
+>   \`work-record update_record --objective "…"\`.
+> - **repos:** the worktrees and branches you work in: \`work-record workspace add|remove\`.
+> - **holds:** the work items you hold; their status shows here. Work items:
+>   the Work Item capability.
+> - **teams**, **configuration:** Ronin writes these and tells you when they change.
 
 \`\`\`json
 { "objective": "",
@@ -161,21 +117,19 @@ async function replaceLetterBlock(file: string, text: string, parsed: ReturnType
   await fs.rename(tmp, file);
 }
 
-/** One Agent's holder list, as its letter keeps it: work item ids, and `at.item`, the
- * focus. The items themselves live in the work item store. */
+/** One Agent's holder list, as its letter keeps it: work item ids. The items themselves
+ * live in the work item store. */
 export interface LetterHolds {
   key: string;
   name: string;
   objective: string;
   holds: string[];
-  at: Record<string, unknown> | null;
 }
 
 function holdsOfBody(key: string, text: string, body: Record<string, unknown>): LetterHolds {
   const name = text.match(/^# TEGAMI — (.+)$/m)?.[1]?.trim() || key;
   const holds = Array.isArray(body.holds) ? body.holds.filter((id): id is string => typeof id === 'string') : [];
-  const at = body.at && typeof body.at === 'object' && !Array.isArray(body.at) ? body.at as Record<string, unknown> : null;
-  return { key, name, objective: typeof body.objective === 'string' ? body.objective : '', holds, at };
+  return { key, name, objective: typeof body.objective === 'string' ? body.objective : '', holds };
 }
 
 export async function readLetterHolds(key: string): Promise<LetterHolds | null> {
@@ -191,33 +145,15 @@ export async function listLetterHolds(): Promise<LetterHolds[]> {
   return letters.filter((letter): letter is LetterHolds => letter !== null);
 }
 
-/** Replace one letter's holder list. The focus follows: to `focus` when named and held,
- * else it stays on an item still held, moves to the first held item, or goes. */
-export async function writeLetterHolds(key: string, holds: string[], focus?: string): Promise<LetterHolds> {
+/** Replace one letter's holder list. */
+export async function writeLetterHolds(key: string, holds: string[]): Promise<LetterHolds> {
   const file = tegamiPath(key);
   const text = await fs.readFile(file, 'utf8');
   const parsed = letterBlock(text);
   if (!parsed) throw new Error(`the work record at ${file} has no readable JSON block`);
   parsed.body.holds = holds;
-  const at = parsed.body.at && typeof parsed.body.at === 'object' ? parsed.body.at as Record<string, unknown> : null;
-  if (focus && holds.includes(focus) && at?.item !== focus) parsed.body.at = { item: focus };
-  else if (!at || typeof at.item !== 'string' || !holds.includes(at.item)) {
-    if (holds[0]) parsed.body.at = { item: holds[0] };
-    else delete parsed.body.at;
-  }
   await replaceLetterBlock(file, text, parsed, parsed.body);
   return holdsOfBody(key, text, parsed.body);
-}
-
-/** Set the letter's position: the focus item and, when a monitor or lead placed it, the
- * rung and leg on that item's ladder. */
-export async function writeLetterAt(key: string, at: { item: string; rung?: number; leg?: number }): Promise<void> {
-  const file = tegamiPath(key);
-  const text = await fs.readFile(file, 'utf8');
-  const parsed = letterBlock(text);
-  if (!parsed) throw new Error(`the work record at ${file} has no readable JSON block`);
-  parsed.body.at = at;
-  await replaceLetterBlock(file, text, parsed, parsed.body);
 }
 
 export async function seedTegami(

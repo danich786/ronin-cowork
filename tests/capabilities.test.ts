@@ -197,9 +197,9 @@ test('the folder is the catalog: an owner file shadows a stock name whole, a new
 
 test('the stock capability documents are well-formed and carry no retired vocabulary', async () => {
   const files = (await readdir(STOCK)).filter((name) => name.endsWith('.md') && name !== 'README.md').sort();
-  assert.deepEqual(files, ['agent_session.md', 'cowork_team.md', 'edges.md', 'machine-settings.md', 'mika.md', 'ronin-host.md', 'work-record.md', 'worktree-desk.md']);
+  assert.deepEqual(files, ['agent_session.md', 'cowork_team.md', 'edges.md', 'machine-settings.md', 'mika.md', 'ronin-help.md', 'ronin-host.md', 'work-item.md', 'work-record.md', 'worktree-desk.md']);
   const rows = await withUserCatalogs(() => listCapabilities());
-  assert.deepEqual(rows.map((item) => item.name), ['edges', 'work-record', 'agent_session', 'worktree-desk', 'machine-settings', 'cowork_team', 'ronin-host', 'mika'], 'ordered by `order`');
+  assert.deepEqual(rows.map((item) => item.name), ['edges', 'work-record', 'work-item', 'agent_session', 'worktree-desk', 'machine-settings', 'cowork_team', 'ronin-host', 'mika', 'ronin-help'], 'ordered by `order`');
   for (const item of rows) {
     const text = await readFile(item.file, 'utf8');
     assert.ok(item.label && item.blurb, `${item.name} has a label and a blurb`);
@@ -225,20 +225,14 @@ test('the stock capability documents are well-formed and carry no retired vocabu
   // Project create is first-class and priority. Session creation is universal; the Team
   // bundle names that boundary but does not duplicate the Session tool row.
   const priority = (name: string) => by[name].tools.filter((tool) => tool.priority).map((tool) => tool.command);
-  assert.deepEqual(priority('work-record'), ['work-record update_record', 'work-record document add', 'work-record project create', 'work-record project read', 'work-record project write', 'work-record project return', 'work-record project backlog', 'work-record project done']);
+  assert.deepEqual(priority('work-record'), ['work-record update_record', 'work-record workspace', 'work-record read']);
+  assert.deepEqual(priority('work-item'), ['item create', 'item read', 'item search', 'item edit', 'item transition', 'item flag', 'item unflag', 'item assign', 'item comment', 'item attach', 'item link', 'item delete']);
   assert.deepEqual(priority('edges'), ['edges send', 'edges wipeboard', 'edges read', 'edges team']);
   assert.deepEqual(priority('worktree-desk'), ['worktree-desk status', 'worktree-desk sync', 'worktree-desk hand-in']);
   assert.deepEqual(priority('agent_session'), ['session_check', 'session_create']);
   assert.ok(by.agent_session.tools.some((tool) => tool.name === 'session_set'));
-  assert.deepEqual(priority('cowork_team'), [
-    'team roster read', 'team project create',
-    'team project read', 'team project list', 'team project write',
-    'team project assign', 'team project return', 'team project backlog',
-    'team project done', 'team project restore', 'team member status',
-  ]);
+  assert.deepEqual(priority('cowork_team'), ['team roster read', 'team member status']);
   assert.ok(!by.cowork_team.tools.some((tool) => tool.name === 'session_create'), 'Cowork Team does not duplicate Agent session creation');
-  assert.match(await readFile(by['work-record'].file, 'utf8'), /`exit`[\s\S]*`none` · `agent` · `lead` · `user`[\s\S]*`status`[\s\S]*`green` · `yellow` · `red`/);
-  assert.match(await readFile(by.cowork_team.file, 'utf8'), /Assign and return/);
   const machine = await readFile(by['machine-settings'].file, 'utf8');
   assert.match(machine, /canonical Campaign\/provider model\s+catalog used by the UI dropdowns/);
   assert.doesNotMatch(machine, /gpt-|claude-|gemini-|sonnet|opus/i, 'the capability carries no maintained model IDs');

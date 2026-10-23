@@ -104,14 +104,14 @@ export async function handlePty(ws: WebSocket, url: URL): Promise<void> {
       term.write(msg.d);
     } else if (msg.t === 'm' && typeof msg.d === 'string' && typeof msg.id === 'string') {
       // Already-open tabs may still use the old parcel frame after an upgrade.
-      // Translate it into the same owner send; new clients use POST /api/messages.
+      // Translate it into the same Message box send; new clients use POST /api/messages.
       const { id, d } = msg;
       const answer = (outcome: { ok: boolean; why?: string }) => {
         if (ws.readyState === ws.OPEN) ws.send(JSON.stringify({ t: 'm', id, ...outcome }));
       };
       inputQueue = inputQueue.then(async () => {
         if (closed) { answer({ ok: false, why: 'the terminal is gone' }); return; }
-        await enqueueMessage(session, d.replace(/\r$/, ''), 'owner');
+        await enqueueMessage(session, d.replace(/\r$/, ''), 'typed');
         answer({ ok: true });
       }).catch((e) => answer({ ok: false, why: String((e as Error).message ?? e) }));
     } else if (msg.t === 'i' && typeof msg.d === 'string') {

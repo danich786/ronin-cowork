@@ -47,7 +47,7 @@ on leave so no transport survives outside the entered destination.
    designated lead) takes the first empty workspace. A remembered member the roster no longer has
    is waited for while the roster is still arriving, then let go.
 6. The selector renders the Commons card, one card per member, and the New Agent card. A member card
-   is a **reading**: Agent title, 人, SHINGO chip, status (ready · thinking · awaiting
+   is a **reading**: Agent title, 人, work record chip, status (ready · thinking · awaiting
    input), model, ⛽ context, attached — read off the store's home row: handed over
    on entry, then again each time the server pushes a change. Leaving unsubscribes.
 7. **Click a card** and its Tile goes into the workspace last touched; **drag a card** onto a workspace and it
@@ -105,28 +105,36 @@ A work item is stored once, one JSON file per id in the `work_items` data store,
 `/api/work-items` routes (`src/routes/work-items-api.ts`), which answer every write with
 the item as it now is and the trail line appended. Holding is a list of ids on each holder:
 `holds` on the Team roster and in each Agent's letter (`tegami.md`, beside `at.item`, its
-focus). Parent and child is one `parent` id on the item: the one named at creation, else
-the Unfiled board (a root titled "Unfiled", held by nobody, made by the first create that
-finds it missing), or, with `root: true`, no parent at all: a new board. The board was titled
-"Common" until 2026-10-02; finding a root of that title renames it in place. An item with children is a board; a leaf gains its first child by
-folding its ladder into it. Nesting under a held board queues the holder (or a holding
-Team's lead) one message through the message queue. Assign moves an id
+focus). The item matches Jira (Lab `JIRA_SHAPE.md`):
+`level` is stored (1 epic, 0 story/task/bug, -1 subtask), one below the parent at creation
+or 0 with none, and adding a child never changes it; `kind` is a label, blank by default;
+`status` is the item's state; `flagged` marks an impediment. Parent is one `parent` id on
+the item, or none, which is normal. There is no ladder: Jira has none. Parent is a field:
+`item edit --parent` (`editItem` with `parent`) sets parent and level together (no parent
+keeps the level). One rule binds a create, a parent change and a level write (`follow`): nothing goes below -1. The item takes its new level and its
+children follow, each one below its own parent (`settle` writes them, a trail line each);
+if any would land below -1 the act fails with "w39 can't go there." A move under oneself
+makes the item its own child, so its levels fall past -1 and it fails the same way. An arrival under a held item queues the holder (or a holding Team's lead) one
+message through the message queue. Every item file is in the Jira shape;
+`migrateItems` at first start is the one code that converts a store to it. Assign moves an id
 between lists and release takes it off every list, under the store's one issuer lock, so
 two concurrent assigns leave one holder. An item that comes to or leaves an Agent's list
-by anyone else's hand (create with a holder, assign, release, restore) pushes that Agent the
+by anyone else's hand (create with a holder, assign, release) pushes that Agent the
 one fixed work-record ack (`ackRecord`, `src/tegami.ts`; owner 2026-10-07); an Agent's own
-move is not acked. A move on a Team's list is a roster change and acks its lead. The Agent's ladder and documents are its focus
-item's. Readings are derived in `src/work-items-read.ts` and never stored: an Agent's
+move is not acked. A move on a Team's list is a roster change and acks its lead. Every act
+names its item, one per Jira item act (`item --help`); the Agent's work record shows the
+items it holds, each with its status. `deleteItem` is Jira's delete: the item and its
+subtasks go, other children lose the parent, links to it go. Readings are derived in `src/work-items-read.ts` and never stored: an Agent's
 (`GET /api/work-items?session=`), a Team's (`?team=`: the Team's holds and its members',
-children after parents, plus `boards`: every item on the Team's boards and on the Unfiled
-board, each board whole), and unassigned (`?unassigned`: the Unfiled board's items that
-nobody holds). An ending, archived, or Hard
+children after parents, plus `boards`: every item under the Team's epics and under the
+roots no Team reaches, each whole), and every item (no query), each narrowed by `holder`,
+`parent` or `no_parent`. An ending, archived, or Hard
 Deleted Agent's holds are released with a `holder-ended` trail line on each item.
 
-**Board → Teams, one rule** (`boardReadings` in `src/work-items-read.ts`): a board is a root
-item and every item under it; its Teams come from the holders on the root and on every item
+**Epic → Teams, one rule** (`boardReadings` in `src/work-items-read.ts`): an epic here is a
+root item and every item under it; its Teams come from the holders on the root and on every item
 under it, `team:<name>` directly and `agent:<name>` through that Agent's Team tags, so an
-Agent in two Teams brings the board to both. The Unfiled board has no Team. A Team's
+Agent in two Teams brings the epic to both. A root nobody's work reaches has no Team. A Team's
 `boards` read this rule.
 
 **Team Configuration** (`public/js/team-configuration.js`) is the commons tab that edits

@@ -3,24 +3,17 @@ import path from 'node:path';
 import { sessionDir, sessionKey } from './session-dir.js';
 import { tegamiPath } from './tegami.js';
 import { agentReading } from './work-items-read.js';
-import type { Rung, WorkItem } from './work-items.js';
+import type { WorkItem } from './work-items.js';
 import { mandate, type Mandate } from './agent-defaults.js';
-
-const ON_TRACK = 'on_track';
 
 export interface Tegami {
   objective: string;
   mandate: Mandate;
   repos: { repo: string; branch: string }[];
-  /** The focus item and, when placed, the rung and leg on its ladder. */
-  at: { item?: string; rung?: number; leg?: number } | null;
   teams: { team: string; team_role: string; objective: string; members?: string[] }[];
-  ladder_state: string;
-  /** The focus item's ladder: an Agent's ladder is the ladder of the item it is on. */
-  ladder: Rung[];
   holds: string[];
+  /** The items held, each with its status: what the tile and the roster show. */
   items: WorkItem[];
-  item: WorkItem | null;
   /** The session's README, the documents of every item it holds, and files dropped on it. */
   docs: string[];
   chip: { text: string; gate: boolean };
@@ -34,7 +27,7 @@ function extractBlock(text: string): unknown | null {
   try {
     return JSON.parse(candidate);
   } catch {
-    return null; // malformed reads as "no ladder", never as an error the view has to carry
+    return null; // malformed reads as "no record", never as an error the view has to carry
   }
 }
 
@@ -52,41 +45,13 @@ async function dropped(key: string): Promise<string[]> {
   return names.filter((n) => !n.startsWith('.')).sort().map((n) => path.join(dir, n));
 }
 
-function chipFor(
-  ladder: Rung[],
-  at: { rung?: number; leg?: number } | null,
-  state: string,
-): { text: string; gate: boolean } {
-  if (state) return { text: `↳ ${state.replace(/_/g, ' ')}`, gate: false };
-  if (!ladder.length) return { text: '—', gate: false };
-
-  if (at && at.rung !== undefined && at.rung >= 1 && at.rung <= ladder.length) {
-    const r = ladder[at.rung - 1];
-    if (r.gate !== undefined) return { text: '⛩ GATE', gate: true };
-    const legs = r.legs || [];
-    const phaseNo = ladder.slice(0, at.rung).filter((x) => x.phase !== undefined).length;
-    if (phaseNo) {
-      const frac = legs.length && at.leg ? ` · leg ${at.leg}/${legs.length}` : '';
-      return { text: `phase ${phaseNo}${frac}`, gate: false };
-    }
-  }
-
-  const finished = (r: Rung) =>
-    r.gate !== undefined ? r.status === 'DONE' : (r.legs || []).length > 0 && r.legs!.every((l) => l.status === 'DONE');
-  const frontier = ladder.find((r) => !finished(r));
-  if (frontier && frontier.gate !== undefined) return { text: '⛩ GATE', gate: true };
-
-  const phases = ladder.filter((r) => r.phase !== undefined);
-  if (!phases.length) return { text: '—', gate: false };
-
-  let idx = phases.findIndex((p) => (p.legs || []).some((l) => l.status === 'ACTIVE'));
-  if (idx < 0) idx = phases.findIndex((p) => (p.legs || []).some((l) => l.status !== 'DONE'));
-  if (idx < 0) idx = phases.length - 1;
-
-  const legs = phases[idx].legs || [];
-  const done = legs.filter((l) => l.status === 'DONE').length;
-  const frac = legs.length ? ` · ${done}/${legs.length}` : '';
-  return { text: `phase ${idx + 1}${frac}`, gate: false };
+/** The tile's and the roster's readout: the items held with their status (a flag marks an
+ * impediment), the first three named and the rest counted. */
+export function chipFor(items: WorkItem[]): { text: string; gate: boolean } {
+  if (!items.length) return { text: '—', gate: false };
+  const named = items.slice(0, 3).map((item) => `${item.flagged ? '⚑ ' : ''}${item.id} ${item.status}`);
+  const more = items.length > 3 ? [`+${items.length - 3}`] : [];
+  return { text: [...named, ...more].join(' · '), gate: items.some((item) => item.flagged) };
 }
 
 export async function readTegami(name: string): Promise<Tegami | null> {
@@ -98,9 +63,6 @@ export async function readTegami(name: string): Promise<Tegami | null> {
     if (!block || typeof block !== 'object') return null;
     const b = block as Record<string, unknown>;
     const reading = await agentReading(name);
-    const at = reading.focus ? { item: reading.focus, ...(reading.at ?? {}) } : null;
-    const state = String(b.ladder_state ?? '').trim().toLowerCase();
-    const off = state && state !== ON_TRACK ? state : '';
     return {
       objective: String(b.objective ?? ''),
       mandate: mandate(b.mandate),
@@ -125,17 +87,13 @@ export async function readTegami(name: string): Promise<Tegami | null> {
               : [];
           })
         : [],
-      ladder_state: off,
-      at,
-      ladder: reading.ladder,
       holds: reading.items.map((item) => item.id),
       items: reading.items,
-      item: reading.items.find((item) => item.id === reading.focus) ?? null,
-      docs: await readDocs([path.join(sessionDir(key), 'README.md'), ...reading.docs, ...(await dropped(key))]),
-      chip: chipFor(reading.ladder, reading.at, off),
+      docs: await readDocs([path.join(sessionDir(key), 'README.md'), ...reading.attachments, ...(await dropped(key))]),
+      chip: chipFor(reading.items),
       quietMs: Date.now() - stat.mtimeMs,
     };
   } catch {
-    return null; // no directory, no file, no ladder. All the same answer.
+    return null; // no directory, no file, no record. All the same answer.
   }
 }

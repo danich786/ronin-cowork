@@ -1,6 +1,6 @@
 /* part of the ronin-cowork client — see js/README.md */
 import { deleteArchivedSession, fetchArchivedSessions, rehydrateSession } from './api.js';
-import { humanAge } from './shingo.js';
+import { humanAge } from './work-record.js';
 import { toast } from './ui.js';
 import { t } from './lexicon.js';
 

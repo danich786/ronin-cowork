@@ -20,8 +20,11 @@ fails after confirmation, retry installation; you do not need to request another
 
 Registration comes first: Ronin Services cannot be installed without it. Installing and
 switching on are the steps after. Once a feature is installed and switched on it works —
-nothing asks for the registration credential a second time. Task manager, Usage stats and
-Machine status are on unless you switch them off; the rest start off. Choosing
+nothing asks for the registration credential a second time. Project management, Usage stats and
+Machine status are on unless you switch them off; the rest start off. Project management is work
+items with a board, the work record on each tile, and Agents trained to keep their items
+true (the conditional Project management Behavior). Mapping to Jira, Trello and others
+comes later. Choosing
 **No communication** changes communication preferences, not entitlement.
 
 The operator restart is separate from your Agent terminal sessions. After a restart, check

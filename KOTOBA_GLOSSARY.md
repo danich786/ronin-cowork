@@ -14,11 +14,11 @@ runtime parts, while Agent capabilities teach tools (`docs/architecture/tool-sur
 | You will see | Say | What it is |
 |---|---|---|
 | JIKAN | **Cron jobs**<!--g:glossary.cron_jobs--> | Scheduled requests to a named Agent or Team lead. Say "schedule a request". |
-| MICHI · TEGAMI · SHINGO · `ladder` | **work record**<!--g:glossary.work_record--> | The session's authored work and evidence. Say "update your work record". |
+| TEGAMI | **work record**<!--g:glossary.work_record--> | The session's objective, repositories and the work items it holds, with their status. Say "update your work record". |
 | RIREKI | the recording | Optional journal transcripts in Services, available when the session has a supported launch binding. Terminal output remains a separate view. |
 | OBOERU | **memory**<!--g:glossary.memory--> | Notes that outlive the session that wrote them. |
 | TOMODACHI · SOROBAN | **Stats**<!--g:glossary.stats--> | Counts of what sessions did, never content. |
-| KOSHI | Koshi | Ronin's helper agents; this name is on screen. |
+| KOSHI | Koshi | Ronin's helper jobs, parked; the Koshi tab under Account names the model each would ask. |
 | KOE | **Hotwords**<!--g:glossary.hotwords--> | The dictation glossary. The mic is Voice; implementation ownership is in KOTOBA. |
 | SETTEI | **Configuration**<!--g:glossary.configuration--> | Settings for the relevant scope. The gear opens cowork commons. |
 | AGERU | **what gets sent**<!--g:glossary.packet--> · **where Ronin has connected**<!--g:glossary.egress_log--> | Ronin HQ packets and request history. Model-provider traffic is separate, not in this record. |
@@ -42,9 +42,9 @@ runtime parts, while Agent capabilities teach tools (`docs/architecture/tool-sur
 | `cowork_commons` | **cowork commons**<!--g:glossary.cowork_commons--> | Machine, account, desk profile, Workspace Folders. |
 | `admin_desk` | **the desk**<!--g:glossary.desk--> | Everything about this install, behind ⚙. |
 | `commons_tab` | **tab**<!--g:glossary.tab--> | One section of a commons. Never "pane" or "panel". |
-| `session_roster` | **the roster**<!--g:glossary.roster--> | Every session on the machine. Never "the board". |
+| `session_roster` | **the roster**<!--g:glossary.roster--> | Every session on the machine. |
 | `MDEDIT` | **the Docs tab**<!--g:glossary.docs--> | The session's listed documents. Say "list a doc". |
-| `wipeboard` | **wipeboard**<!--g:glossary.wipeboard--> | A team's shared board file. Never "the board". |
+| `wipeboard` | **wipeboard**<!--g:glossary.wipeboard--> | A Team's shared notes, for what everyone must see; posts expire once read. |
 | 🔒 / 🔓 | **Locked / Unlocked**<!--g:glossary.locked--> | Whether this view is attached to the live session. |
 
 ## Sessions and teams
@@ -53,7 +53,8 @@ runtime parts, while Agent capabilities teach tools (`docs/architecture/tool-sur
 |---|---|---|
 | team | **Team**<!--g:glossary.team--> | A set of sessions working together. |
 | Ronin Lab | **Ronin Lab** | A place for ideas, research, plans, and notes before or across projects. The creators’ Lab is their own instance. |
-| `team_roster` | **Team record**<!--g:glossary.team_roster--> | Team identity, defaults, and held Projects. Members and leads derive from sessions. |
+| `team_roster` | **Team record**<!--g:glossary.team_roster--> | Team identity, defaults, and held work items. Members and leads derive from sessions. |
+| `wN` | **work item** | Stored once by id, matching Jira. Its level is an **epic** (1), a **story**, **task**, **bug** or any other work type (0, its kind; blank by default, no fixed list) or a **subtask** (-1). Its status is the item's state; **flagged** marks an impediment (`item flag`); **priority** is any name; **comments** are who, when and the text. Never "project". Ronin has no board: boards live in Jira or Trello. |
 | `team_lead` | **team lead · 人**<!--g:glossary.team_lead--> | Set by hand, never inferred from what a session does. |
 | `session_type` | **session type**<!--g:glossary.session_type--> | **Cowork Agent**<!--g:glossary.cowork_agent--> with its resolved Agent composition · **bare-metal Agent**<!--g:glossary.bare_metal_agent--> a CLI started without it · **terminal**<!--g:glossary.terminal--> a shell with no agent. |
 | `session_mandate` | **mandate**<!--g:glossary.mandate--> | **Reach**<!--g:glossary.reach--> how far an Agent goes · **Recruit**<!--g:glossary.recruit--> how it builds a Team · **Output**<!--g:glossary.output--> what it hands back. |
