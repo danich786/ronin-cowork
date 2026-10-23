@@ -2,7 +2,7 @@
 
 - **label:** Epic agent
 - **blurb:** Hold one epic for the Steerco and see the work under it through.
-- **installation:** task_manager
+- **installation:** —
 - **order:** 40
 - **scope:** selected
 

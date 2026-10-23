@@ -2,7 +2,7 @@
 
 - **label:** Steerco manager
 - **blurb:** Place the work items that reach Ronin with its teams, and keep each one true to its source.
-- **installation:** task_manager
+- **installation:** —
 - **order:** 40
 - **scope:** selected
 
