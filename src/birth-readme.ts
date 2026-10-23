@@ -131,15 +131,14 @@ async function cachedReading(name: string, text: string, session = ''): Promise<
 
 /**
  * THE GLOSSARY STAYS ON DISK (owner, 2026-10-23: keep the brief light). It is rendered beside
- * the packet and the packet carries only WORDS.md, which names where it is.
+ * the packet, where `ronin-help <word>` reads it, and the packet carries only WORDS.md.
  */
 export const WORDS_READING = 'WORDS.md';
 
-const wordsPointer = (glossary: string): string => [
+const WORDS_POINTER = [
   '# Words with the owner',
   '',
-  'Use plain words with the owner. When you meet a Ronin name you do not know, look it up',
-  `with \`ronin-help <word>\`; the glossary itself is \`${glossary}\`.`,
+  'Use plain words with the owner. A Ronin word you do not know: `ronin-help <word>`.',
   '',
 ].join('\n');
 
@@ -218,8 +217,8 @@ export async function bootFiles(
   if (capabilitiesOverview !== undefined) files.push(await cachedReading(CAPABILITIES_READING, capabilitiesOverview, session));
   if (soughtOverview !== undefined) files.push(await cachedReading(SOUGHT_READING, soughtOverview, session));
   for (const template of universal.filter(isGlossary)) {
-    const glossary = await cachedReading(GLOSSARY, await renderGlossaryReading(template), session);
-    files.push(await cachedReading(WORDS_READING, wordsPointer(glossary), session));
+    await cachedReading(GLOSSARY, await renderGlossaryReading(template), session);
+    files.push(await cachedReading(WORDS_READING, WORDS_POINTER, session));
   }
   return files;
 }

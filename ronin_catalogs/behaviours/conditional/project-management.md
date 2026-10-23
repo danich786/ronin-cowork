@@ -64,3 +64,5 @@ how you reply to a person. Your own changes notify nobody: tell whoever needs to
 - Don't keep work only in your head or chat: put it on the item.
 - Don't leave an item in a status the work has left.
 - Don't delete to tidy: `item delete` removes the item and its subtasks for everyone.
+
+More: `ronin-help work-items`

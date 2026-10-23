@@ -111,7 +111,8 @@ on the real shelf:
 - **`all/KOTOBA_GLOSSARY.md`** — the house names (TEGAMI, RIREKI, the wipeboard …) and the
   plain word to say for each, so no Japanese leaks from the tools to the person. Rendered at
   birth with the owner's desk words (`renderGlossary`; `docs/products/kokugo.md` §8) beside the
-  packet, which carries only `WORDS.md`, **last**: a short pointer to it.
+  packet, where `ronin-help <word>` reads it; the packet carries only `WORDS.md`, **last**:
+  one line naming that tool.
 - **`CAPABILITIES.md`** — no template: rendered whole at birth by `renderCapabilitiesOverview`
   from the capability documents the launch resolver selected (`src/capabilities.ts`). One
   entry per selected bundle: its title, blurb, the priority tools that exist on this box with

@@ -171,11 +171,10 @@ test('the real stock shelf compiles to one read: contracts first, glossary point
     assert.match(firstWindow, /do not reproduce its guarded operation/);
     assert.match(firstWindow, /Read the roster and wipeboard before directing work/);
     assert.match(firstWindow, /ronin_catalogs\/behaviours\/conditional\/worktree-root\.md/);
-    // The glossary stays on disk, rendered: the packet names it and does not carry it.
+    // The glossary stays on disk, rendered where ronin-help reads it; the packet points at the tool.
     assert.doesNotMatch(text, /^## KOTOBA_GLOSSARY/m);
-    const glossaryPath = text.match(/the glossary itself is `([^`]+)`/)?.[1];
-    assert.ok(glossaryPath, 'the pointer names the glossary');
-    const glossaryText = await readFile(glossaryPath, 'utf8');
+    assert.match(text, /`ronin-help <word>`/);
+    const glossaryText = await readFile(path.join(temp, 'generated', 'sessions', 'newborn', 'KOTOBA_GLOSSARY.md'), 'utf8');
     assert.doesNotMatch(glossaryText, /<!--g:/);
     assert.match(glossaryText, /Rendered for/);
     // The packet ends by naming itself, and the brief's sentence says so, with the size.

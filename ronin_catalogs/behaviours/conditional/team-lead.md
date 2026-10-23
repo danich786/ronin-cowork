@@ -27,3 +27,5 @@ Agent is joining work already in flight. The desk source changes where the priva
 starts, not where it hands in. Review coherent Team work, ask the owner before promotion,
 and promote the Team line once rather than landing a refactor piecemeal. **Promote** means
 move reviewed Team code to global `dev` with `bin/ronin-promote <team>` on the owner's word.
+
+More: `ronin-help edges`

@@ -21,3 +21,5 @@ through the typed dispatcher.
 | `work-record update_record` | write: objective and repositories on the record | priority | `work-record --help` |
 | `work-record workspace` | read/write: list, add or remove repositories this Agent records as current work; accepts a handle or full URL and a separate branch | priority | `work-record workspace --help` |
 | `work-record read` | read: the record and the items held, with their status | priority | `work-record --help` |
+
+More: `ronin-help work-record`

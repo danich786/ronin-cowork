@@ -34,3 +34,5 @@ certified worktrees and ends the Agent together.
 `worktree-desk discard` refuses an occupied worktree, names the Agent standing there, and
 deletes nothing. Use Hard Delete when the intention is to remove the Agent and its worktrees
 together.
+
+More: `ronin-help desks`

@@ -8,12 +8,13 @@ birth: **tools** it can run, and **behaviours** that guide how it works.
 Tools do jobs and report what happened. Every Cowork Agent has:
 
 - **edges**: message another Agent, post to the Team's wipeboard, read another Agent's record. See [Team Lead and edges](team-lead-and-edges.md).
-- **work-record** and **item**: keep its own record and the work items it holds. See [work records](what-agents-write-down.md).
+- **work-record** and **item**: keep its own record and the work items it holds. See [work records](what-agents-write-down.md) and [work items](work-items.md).
 - **session tools**: check on an Agent, archive one, or end one; a Team lead can also start one.
 - **team**: read the Team's record.
 - **worktree-desk**: a private folder and branch for code, and a hand-in when the work is ready for review. See [managed worktrees](desks.md).
 - **machine-settings** and **ronin-host**: read this machine's settings and health.
 - **mika**: ask Mika, the house assistant.
+- **ronin-help**: the pages you are reading now, and the meaning of a Ronin word: `ronin-help` lists the topics, `ronin-help <topic>` prints one, `ronin-help <word>` looks a word up.
 
 The provider's own tools (reading files, running commands, searching) are there too;
 Ronin adds to them and takes nothing away.

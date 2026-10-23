@@ -46,3 +46,5 @@ Status is the item's state: IDEA PLAN BUILD REVIEW LAND DONE; any transition is 
 `item flag`. When someone else changes an item you hold, Ronin tells you: read it,
 then edit or comment. Epics are made by leads (`--level 1`). Everything else:
 `item --help`.
+
+More: `ronin-help work-items`
