@@ -38,9 +38,9 @@ ronin_item_call() {
   local args=(-sS -m 30 "${RONIN_CURL[@]+"${RONIN_CURL[@]}"}" -X "$method")
   [ -z "$body" ] || args+=(-H 'content-type: application/json' --data "$body")
   out=$(curl "${args[@]}" -w '\n%{http_code}' "$url$path") || { echo "UNREACHABLE: Ronin did not answer at $url" >&2; return 5; }
-  REPLY_STATUS=${out##*$'\n'} REPLY_JSON=${out%$'\n'*} python3 -c '
+  printf '%s' "${out%$'\n'*}" | REPLY_STATUS=${out##*$'\n'} python3 -c '
 import json, os, sys
-try: d = json.loads(os.environ["REPLY_JSON"])
+try: d = json.loads(sys.stdin.read())
 except Exception: print("HTTP %s: Ronin answered %s without JSON" % (os.environ["REPLY_STATUS"], sys.argv[1]), file=sys.stderr); sys.exit(3)
 if d.get("error"):
     print(d["error"], file=sys.stderr); sys.exit(4 if d.get("refused") else 3)
