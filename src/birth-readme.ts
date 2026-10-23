@@ -28,9 +28,10 @@ const GLOSSARY = 'KOTOBA_GLOSSARY.md';
  * `tests/session-boot.test.ts` holds the real stock shelf to it. Bytes are the hard cap.
  * Lines are the habit: the fullest stock birth compiles to ~420 lines with the Routine
  * contracts inside the first 250, and the ceiling stops the next shelf addition from
- * quietly pushing them out again.
+ * quietly pushing them out again. Raised to 600 on 2026-10-23: the owner asked for the
+ * full Project management brief (~170 lines), on by default, which takes the packet to ~540.
  */
-export const PACKET_BUDGET = { bytes: 30_000, lines: 450 } as const;
+export const PACKET_BUDGET = { bytes: 30_000, lines: 600 } as const;
 
 /** The packet's last line. A newborn that can quote it has seen the whole packet. */
 export function packetEndLine(session: string): string {

@@ -3,7 +3,7 @@
 - **label:** Project management (beta)
 - **blurb:** Run your work as work items, kept true as you go.
 - **installation:** task_manager
-- **order:** 20
+- **order:** 40
 - **scope:** conditional
 - **requires:** project_management
 
