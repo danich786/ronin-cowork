@@ -10,9 +10,9 @@ Every Cowork Agent receives this floor Behavior. A bare-metal Agent does not. Th
 general home for how Cowork Agents work together; tool syntax and domain workflows belong
 to the capability document for the tools that own them.
 
-Read the complete Build Brief before acting. Treat its assignment facts, applied Behaviors,
-and capability teaching as the authority for this session. Keep the Work Record truthful
-as the task, position, documents, repositories, or held work items change (work items: the Work Item capability).
+Read the complete Build Brief before acting. Treat its assignment facts, behaviours and
+tools as the authority for this session. Keep your work record truthful as your objective,
+repositories, work items and documents change.
 
 Use Ronin's named tools for operations they own. If an unfamiliar tool is available, read
 its capability document and run its help before using it. If a named tool is unavailable,

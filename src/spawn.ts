@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { resolveLaunchCommand, sessionsFor, type SessionsDefaults } from './launch-command.js';
 import { REPO_ROOT } from './resources.js';
-import { bootFiles, ensureShelf } from './birth-readme.js';
+import { WORDS_READING, bootFiles, ensureShelf } from './birth-readme.js';
 import { listProjectRoots, USER_PROJECT_ROOTS_MD, type ProjectRootInfo } from './project-roots.js';
 import { listSessionLaunchSpecs } from './model-providers.js';
 import { agentSpec } from './agents.js';
@@ -406,9 +406,9 @@ export async function resolveForm(
   // "Full document" line, not as shelf cards: the packet has a one-read budget and the
   // fullest stock birth already sits within 2 KB of it with the overview inlined.
   const appliedBehaviours = [...floorBehaviours, ...conditionalBehaviours, ...resolvedBehaviours.delivered];
-  const glossaryReading = shelfReading.filter((file) => path.basename(file) === 'KOTOBA_GLOSSARY.md');
-  const backgroundReading = shelfReading.filter((file) => path.basename(file) !== 'KOTOBA_GLOSSARY.md');
-  // Working guidance comes first; Session Boot is background. Keep the rendered glossary
+  const glossaryReading = shelfReading.filter((file) => path.basename(file) === WORDS_READING);
+  const backgroundReading = shelfReading.filter((file) => path.basename(file) !== WORDS_READING);
+  // Working guidance comes first; Session Boot is background. Keep the glossary pointer
   // last because it is reference and the least costly part of a truncated first window.
   const completeReading = [
     ...appliedBehaviours.map((book) => book.file),

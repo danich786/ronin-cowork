@@ -26,12 +26,11 @@ const GLOSSARY = 'KOTOBA_GLOSSARY.md';
  * 0.151.0, Claude Code 2.1.260) after a 121 KB packet cost a session its instructions.
  * The compiled packet must fit the smallest of those, so one read is the whole packet;
  * `tests/session-boot.test.ts` holds the real stock shelf to it. Bytes are the hard cap.
- * Lines are the habit: the fullest stock birth compiles to ~420 lines with the Routine
+ * Lines are the habit: the fullest stock birth compiles to ~350 lines with the Routine
  * contracts inside the first 250, and the ceiling stops the next shelf addition from
- * quietly pushing them out again. Raised to 600 on 2026-10-23: the owner asked for the
- * full Project management brief (~170 lines), on by default, which takes the packet to ~540.
+ * quietly pushing them out again.
  */
-export const PACKET_BUDGET = { bytes: 30_000, lines: 600 } as const;
+export const PACKET_BUDGET = { bytes: 30_000, lines: 380 } as const;
 
 /** The packet's last line. A newborn that can quote it has seen the whole packet. */
 export function packetEndLine(session: string): string {
@@ -119,10 +118,10 @@ export async function renderGlossary(template: string): Promise<string> {
   return head.test(body) ? body.replace(head, `${GLOSSARY_HEAD_START}\n> ${line}\n${GLOSSARY_HEAD_END}`) : body;
 }
 
-async function glossaryReading(templatePath: string, session = ''): Promise<string> {
-  const text = await renderGlossaryReading(templatePath);
+/** A generated fragment, written to the session's cache so the compiler inlines it like any shelf file. */
+async function cachedReading(name: string, text: string, session = ''): Promise<string> {
   const dir = session ? path.join(storeDir('session_boot_cache'), 'sessions', session) : storeDir('session_boot_cache');
-  const target = path.join(dir, GLOSSARY);
+  const target = path.join(dir, name);
   const temp = `${target}.${process.pid}.${randomUUID()}.tmp`;
   await mkdir(dir, { recursive: true });
   await writeFile(temp, text);
@@ -131,30 +130,18 @@ async function glossaryReading(templatePath: string, session = ''): Promise<stri
 }
 
 /**
- * THE TOOL OVERVIEW, as a generated fragment. Rendered by `renderCapabilitiesOverview`
- * from the capability documents the launch resolver selected; written beside the glossary
- * so the compiler inlines it like any other shelf teaching. The selected documents
- * themselves ride in as shelf cards, so the overview is a front door, never a second copy.
+ * THE GLOSSARY STAYS ON DISK (owner, 2026-10-23: keep the brief light). It is rendered beside
+ * the packet and the packet carries only WORDS.md, which names where it is.
  */
-async function capabilitiesReading(text: string, session = ''): Promise<string> {
-  const dir = session ? path.join(storeDir('session_boot_cache'), 'sessions', session) : storeDir('session_boot_cache');
-  const target = path.join(dir, CAPABILITIES_READING);
-  const temp = `${target}.${process.pid}.${randomUUID()}.tmp`;
-  await mkdir(dir, { recursive: true });
-  await writeFile(temp, text);
-  await rename(temp, target);
-  return target;
-}
+export const WORDS_READING = 'WORDS.md';
 
-async function soughtReading(text: string, session = ''): Promise<string> {
-  const dir = session ? path.join(storeDir('session_boot_cache'), 'sessions', session) : storeDir('session_boot_cache');
-  const target = path.join(dir, SOUGHT_READING);
-  const temp = `${target}.${process.pid}.${randomUUID()}.tmp`;
-  await mkdir(dir, { recursive: true });
-  await writeFile(temp, text);
-  await rename(temp, target);
-  return target;
-}
+const wordsPointer = (glossary: string): string => [
+  '# Words with the owner',
+  '',
+  'Use plain words with the owner. When you meet a Ronin name you do not know, look it up',
+  `with \`ronin-help <word>\`; the glossary itself is \`${glossary}\`.`,
+  '',
+].join('\n');
 
 export async function ensureShelf(roots: string[] = []): Promise<void> {
   const base = userShelf();
@@ -208,7 +195,7 @@ export async function bootFiles(
   // READING ORDER. What a session must OBEY comes first — the Routine contracts (fork
   // versus spawn, the desk, never `git push`) — then the maps, then the owner's root shelf,
   // then the tool overview built from the selected capability documents, and the glossary
-  // last: it is reference, and the least costly thing to miss. A newborn that reads only
+  // pointer last: it is reference, and the least costly thing to miss. A newborn that reads only
   // its first window reads the rules.
   // (Owner's ruling 2026-09-04, after a lexicon inlined ahead of the contracts pushed
   // them past line 1,997 of a 121 KB packet.)
@@ -228,9 +215,12 @@ export async function bootFiles(
     seen.add(key);
     files.push(file);
   }
-  if (capabilitiesOverview !== undefined) files.push(await capabilitiesReading(capabilitiesOverview, session));
-  if (soughtOverview !== undefined) files.push(await soughtReading(soughtOverview, session));
-  for (const template of universal.filter(isGlossary)) files.push(await glossaryReading(template, session));
+  if (capabilitiesOverview !== undefined) files.push(await cachedReading(CAPABILITIES_READING, capabilitiesOverview, session));
+  if (soughtOverview !== undefined) files.push(await cachedReading(SOUGHT_READING, soughtOverview, session));
+  for (const template of universal.filter(isGlossary)) {
+    const glossary = await cachedReading(GLOSSARY, await renderGlossaryReading(template), session);
+    files.push(await cachedReading(WORDS_READING, wordsPointer(glossary), session));
+  }
   return files;
 }
 

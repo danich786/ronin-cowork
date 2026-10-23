@@ -75,7 +75,7 @@ test('the universal shelf carries vocabulary and navigation, not optional abilit
     // universal set. A blank axis omits only its own level.
     const boot = await bootFiles('');
     const names = boot.map((file) => path.basename(file));
-    for (const required of ['RONIN_UTILITY.md', 'KOTOBA_GLOSSARY.md']) {
+    for (const required of ['RONIN_UTILITY.md', 'WORDS.md']) {
       assert.ok(names.includes(required), `the universal boot shelf should contain ${required}`);
     }
     assert.ok(!names.includes('README.md'), 'the documentation map is not universal birth reading');
@@ -125,7 +125,7 @@ test('every selector phrase has an exact meaning in floor or capability teaching
   }
 });
 
-test('the real stock shelf compiles to one read: contracts first, glossary last, under the one-read budget', async () => {
+test('the real stock shelf compiles to one read: contracts first, glossary pointer last, under the one-read budget', async () => {
   // Every CLI a newborn may be caps a single read (Codex ~10k tokens of shell output;
   // Claude Code 30,000 chars per Bash call, 25,000 tokens per Read) and both models open a
   // file in a window of ~250 lines. The compiled packet is the whole of what a newborn is
@@ -149,7 +149,6 @@ test('the real stock shelf compiles to one read: contracts first, glossary last,
       ...await resolveConditionalBehaviours({ arrangement: 'managed', team: true, lead: true, project_management: true }),
     ].map((row) => row.file);
     const boot = [...applied, ...await bootFiles('', [
-      'routine/ronin_services/SERVICES_ABILITIES.md',
       'routine/ronin_host/HOST_ABILITIES.md',
     ], await fullOverview(), 'newborn')];
     const target = await compileBirthReadmeAt(path.join(temp, 'session'), boot, 'newborn', isShelfTeaching);
@@ -163,20 +162,22 @@ test('the real stock shelf compiles to one read: contracts first, glossary last,
     const at = (re: RegExp) => { const i = text.search(re); assert.ok(i >= 0, `${re} is in the packet`); return i; };
     const contracts = at(/^## Cowork Agent/m);
     const map = at(/^## Ronin usage reference/m);
-    const glossary = at(/^## KOTOBA_GLOSSARY/m);
     assert.ok(contracts < map, 'the core contract comes before the documentation map');
-    assert.ok(glossary > at(/^## YOUR TOOLS/m), 'the glossary is last');
     assert.ok(at(/^## YOUR TOOLS/m) > map, 'the tool overview follows the maps');
-    assert.equal(text.lastIndexOf('\n## '), text.lastIndexOf('\n## KOTOBA_GLOSSARY'), 'nothing follows the glossary');
+    assert.equal(text.lastIndexOf('\n## '), text.lastIndexOf('\n## Words with the owner'), 'the glossary pointer is last');
     // The two rules a newborn most often breaks sit inside the first window it opens.
     const firstWindow = text.split('\n').slice(0, 250).join('\n');
     assert.match(firstWindow, /Read the complete Build Brief before acting/);
     assert.match(firstWindow, /do not reproduce its guarded operation/);
     assert.match(firstWindow, /Read the roster and wipeboard before directing work/);
     assert.match(firstWindow, /ronin_catalogs\/behaviours\/conditional\/worktree-root\.md/);
-    // The glossary arrived rendered: markers gone, header rewritten.
-    assert.doesNotMatch(text, /<!--g:/);
-    assert.match(text, /Rendered for/);
+    // The glossary stays on disk, rendered: the packet names it and does not carry it.
+    assert.doesNotMatch(text, /^## KOTOBA_GLOSSARY/m);
+    const glossaryPath = text.match(/the glossary itself is `([^`]+)`/)?.[1];
+    assert.ok(glossaryPath, 'the pointer names the glossary');
+    const glossaryText = await readFile(glossaryPath, 'utf8');
+    assert.doesNotMatch(glossaryText, /<!--g:/);
+    assert.match(glossaryText, /Rendered for/);
     // The packet ends by naming itself, and the brief's sentence says so, with the size.
     assert.equal(text.trimEnd().split('\n').pop(), packetEndLine('newborn'));
     const packet = await describePacket(target, 'newborn');
@@ -199,28 +200,19 @@ test('the real stock shelf compiles to one read: contracts first, glossary last,
 
 test('floor and capability teaching own ordinary work; system reading stays installation-selected', async () => {
   const repo = path.join(path.dirname(new URL(import.meta.url).pathname), '..');
-  const [cowork, sessions, edges, services, worktrees, machine] = await Promise.all([
+  const [cowork, sessions, edges, worktrees, machine] = await Promise.all([
     readFile(path.join(repo, 'ronin_catalogs', 'behaviours', 'floor', 'cowork-agent.md'), 'utf8'),
     readFile(path.join(repo, 'ronin_catalogs', 'capabilities', 'agent_session.md'), 'utf8'),
     readFile(path.join(repo, 'ronin_catalogs', 'capabilities', 'edges.md'), 'utf8'),
-    readFile(path.join(repo, 'ronin_session_boot', 'routine', 'ronin_services', 'SERVICES_ABILITIES.md'), 'utf8'),
     readFile(path.join(repo, 'ronin_catalogs/behaviours', 'conditional', 'worktree-root.md'), 'utf8'),
     readFile(path.join(repo, 'ronin_session_boot', 'routine', 'ronin_host', 'HOST_ABILITIES.md'), 'utf8'),
   ]);
 
-  assert.match(cowork, /Keep the Work Record truthful/);
+  assert.match(cowork, /Keep your work record truthful/);
   assert.match(cowork, /do not reproduce its guarded operation/);
   assert.match(sessions, /Fork[\s\S]*fork it[\s\S]*session_create/i);
   assert.match(edges, /edges wipeboard/);
   assert.match(edges, /edges read/);
-  // Meaning, not sentences (owner, 2026-09-22): the Services teaching tells an Agent that a
-  // transcript exists, where it comes from, and that a live pane is not it.
-  assert.match(services, /Terminal transcript/);
-  assert.match(services, /journal|\/transcript/);
-  assert.match(services, /live pane/);
-  assert.match(services, /Koshi\*\* is Ronin's assisted administrative behavior/);
-  assert.match(services, /Voice\*\* turns the owner's speech into text/);
-  assert.match(services, /Hotwords\*\* are the owner's dictation\s+glossary/);
   assert.match(worktrees, /worktree-desk status --assignment/);
   assert.match(worktrees, /worktree-desk hand-in/);
   assert.match(worktrees, /session_end/);
