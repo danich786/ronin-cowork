@@ -105,7 +105,7 @@ The Services parts live under `src/services/` (a placed copy; see the services r
 - A claimed part must also have its **capability** switched on. `SERVICE_CAPABILITY_PARTS`
   in `src/parts.ts` is the sole capability-to-part expansion, and
   `CAPABILITY_ON_BY_DEFAULT` beside it is the only place that says what a missing choice
-  means: Task manager, Usage stats and Machine status run until they are switched off, the
+  means: Project management, Usage stats and Machine status run until they are switched off, the
   rest are off until switched on. A Campaign records what the owner switched and authors
   no defaults of its own. A part belonging to no capability is governed by its
   installation switch alone.

@@ -372,7 +372,12 @@ export async function resolveForm(
     : { delivered: [], ignored: [] };
   const floorBehaviours = coworkAgent && agent ? await resolveFloorBehaviours() : [];
   const conditionalBehaviours = coworkAgent && agent
-    ? await resolveConditionalBehaviours({ arrangement, team: !!form.team, lead: !!form.team_lead && !!form.team })
+    ? await resolveConditionalBehaviours({
+        arrangement,
+        team: !!form.team,
+        lead: !!form.team_lead && !!form.team,
+        project_management: campaign?.config.services.parts.task_manager === true,
+      })
     : [];
   const soughtBehaviours = coworkAgent && agent ? await resolveSoughtBehaviours() : [];
   // CAPABILITY BUNDLES: the folder decides what exists, and facts select the knowledge.

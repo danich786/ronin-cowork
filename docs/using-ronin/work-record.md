@@ -1,7 +1,7 @@
 # Work records and work items
 
 A work record says what an Agent is doing now: its objective, repositories, and the work
-items it holds, each with its status. The Task Manager's board is a view of the same items
+items it holds, each with its status. The Board is a view of the same items
 by status; nothing is stored twice.
 
 Two shipped commands: `work-record` keeps what is about the Agent (objective, repositories),

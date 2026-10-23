@@ -146,7 +146,7 @@ test('the real stock shelf compiles to one read: contracts first, glossary last,
     // with every listed tool present.
     const applied = [
       ...await resolveFloorBehaviours(),
-      ...await resolveConditionalBehaviours({ arrangement: 'managed', team: true, lead: true }),
+      ...await resolveConditionalBehaviours({ arrangement: 'managed', team: true, lead: true, project_management: true }),
     ].map((row) => row.file);
     const boot = [...applied, ...await bootFiles('', [
       'routine/ronin_services/SERVICES_ABILITIES.md',

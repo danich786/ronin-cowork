@@ -7,14 +7,13 @@ const installed = await readFile(new URL('../src/routes/installed-api.ts', impor
 const launch = await readFile(new URL('../src/routes/launch.ts', import.meta.url), 'utf8');
 const parts = await readFile(new URL('../src/parts.ts', import.meta.url), 'utf8');
 
-test('Services owns all seven owner-facing capabilities and exact captions', () => {
+test('Services owns all six owner-facing capabilities and exact captions', () => {
   for (const [id, label, caption] of [
-    ['task_manager', 'Task manager', 'Adds a board of work items by stage and quick summaries of active work.'],
+    ['task_manager', 'Project management', 'Work items with a board, the work record on each tile, and Agents trained to keep their items true. Mapping to Jira, Trello and others comes later.'],
     ['terminal_transcript', 'Terminal transcript', 'Records terminal activity for transcript views and downstream summaries.'],
     ['voice_hotwords', 'Voice & Hotwords', 'Adds voice tools and corrections for words dictation commonly mishears.'],
     ['usage_stats', 'Usage stats', 'Keeps local usage counts without storing transcript content.'],
     ['machine_status', 'Machine status', 'Shows memory, swap and load for this box in the header.'],
-    ['project_coordinator', 'Project coordinator', 'Watches active work items and prompts Agents to keep status and summaries current.'],
     ['local_weights', 'Local weights', 'Provides locally stored model weights for features that need them.'],
   ]) {
     assert.match(setup, new RegExp(`id: '${id}', label: '${label.replace('&', '\\&')}'.*needs: '${caption.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}'`));
@@ -28,7 +27,6 @@ test('Services owns all seven owner-facing capabilities and exact captions', () 
 
 test('Services maturity matches what owners can use now', () => {
   assert.match(setup, /id: 'voice_hotwords',[^}]+status: 'comingSoon'/);
-  assert.match(setup, /id: 'project_coordinator',[^}]+status: 'beta'/);
 });
 
 test('installed truth distinguishes desired, running, parked, and restart state', () => {

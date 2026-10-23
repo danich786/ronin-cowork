@@ -30,6 +30,6 @@ leads. An Agent can belong to more than one Team. Changing membership does not r
 Agent or replace the instructions it received at birth.
 
 Use the Team's [workbench](workbench.md) to open its Agents and Commons. Coordinate through
-[work records](work-record.md), [Task Manager](team-kanban.md), and [wipeboards](wipeboards.md).
+[work records](work-record.md), [Board](team-kanban.md), and [wipeboards](wipeboards.md).
 
 Contributors: [New Team construction](../architecture/new-team.md).

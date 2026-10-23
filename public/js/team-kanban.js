@@ -103,7 +103,7 @@ export function moveMessage(project, toStage, leadName, now = new Date()) {
   const holder = holderOf(project, leadName) || leadName;
   const id = project.id;
   const at = now.toISOString().slice(0, 16) + 'Z';
-  const head = `from @kanban (the Team Task Manager, moved by the user at ${at}):`;
+  const head = `from @kanban (the Team Board, moved by the user at ${at}):`;
   const line = `MOVE ${id} "${project.title}" from ${stageLabel(project.status)}${project.flagged ? ' (flagged)' : ''} to ${stageLabel(toStage)}`;
   const result = (target, meaning, next) => ({ target, text: `${head}\n${line}\n  meaning: ${meaning}\n  next: ${next}` });
 
@@ -129,7 +129,7 @@ export function createTeamKanban(options = {}) {
   const beta = node('strong', 'tk-beta', t('team_kanban.beta', 'Beta'));
   const headerToggle = node('button', 'tk-header-toggle');
   headerToggle.type = 'button';
-  const headerMessage = node('p', 'tk-header-message', t('team_kanban.beta_message', 'Task Manager is in beta. Follow work items from ideas to done using Tools and the Work Record. We’re making it easier for Agents to keep them current without forcing upkeep.'));
+  const headerMessage = node('p', 'tk-header-message', t('team_kanban.beta_message', 'Board is in beta. Follow work items from ideas to done using Tools and the Work Record. We’re making it easier for Agents to keep them current without forcing upkeep.'));
   headerMessage.id = `tk-header-message-${++nextHeaderId}`;
   headerToggle.setAttribute('aria-controls', headerMessage.id);
   headerRow.append(beta, headerToggle);
@@ -151,7 +151,7 @@ export function createTeamKanban(options = {}) {
   const controls = node('div', 'tk-controls');
   const refreshButton = node('button', 'tk-refresh', '↻');
   refreshButton.type = 'button';
-  refreshButton.setAttribute('aria-label', 'Refresh Task Manager');
+  refreshButton.setAttribute('aria-label', 'Refresh Board');
   const foldButton = node('button', 'tw-agent-density tk-fold');
   foldButton.type = 'button';
   const foldLines = node('span', 'tw-agent-density-lines');
@@ -200,7 +200,7 @@ export function createTeamKanban(options = {}) {
     if (view === 'project') {
       const project = projects.find((item) => item.id === viewKey);
       const detail = node('article', 'tk-project-detail');
-      const back = node('button', 'tk-back', t('team_kanban.back', 'Back to Task Manager')); back.type = 'button'; back.addEventListener('click', () => navigate('overview'));
+      const back = node('button', 'tk-back', t('team_kanban.back', 'Back to the Board')); back.type = 'button'; back.addEventListener('click', () => navigate('overview'));
       detail.append(back);
       if (!project) detail.append(node('p', 'tk-empty', t('team_kanban.project_missing', 'This work item is not in the current scope.')));
       else {
@@ -210,7 +210,7 @@ export function createTeamKanban(options = {}) {
     }
     const shownColumns = view === 'status' ? COLUMNS.filter((column) => column.key === viewKey) : COLUMNS;
     if (view === 'status') {
-      const back = node('button', 'tk-back', t('team_kanban.back', 'Back to Task Manager')); back.type = 'button'; back.addEventListener('click', () => navigate('overview')); board.append(back);
+      const back = node('button', 'tk-back', t('team_kanban.back', 'Back to the Board')); back.type = 'button'; back.addEventListener('click', () => navigate('overview')); board.append(back);
     }
     for (const column of shownColumns) {
       const columnProjects = projects.filter((project) => project.status === column.key);
@@ -322,7 +322,7 @@ export function createTeamKanban(options = {}) {
       return;
     }
     const requestedScope = effectiveScope();
-    notice.textContent = t('team_kanban.loading', 'Loading Task Manager…');
+    notice.textContent = t('team_kanban.loading', 'Loading the Board…');
     loading = Promise.all(requestedScope.teams.map((name) => request(`/api/work-items?team=${encodeURIComponent(name)}`, { cache: 'no-store' })));
     const results = await loading;
     loading = null;
@@ -333,7 +333,7 @@ export function createTeamKanban(options = {}) {
         .map((project) => ({ ...project, team: String(result.data.team || requestedScope.teams[index] || '') }))), requestedScope);
       notice.textContent = '';
     } else {
-      notice.textContent = t('team_kanban.failed', 'Could not load Task Manager.');
+      notice.textContent = t('team_kanban.failed', 'Could not load the Board.');
     }
     render();
   };

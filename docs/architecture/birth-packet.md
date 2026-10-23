@@ -70,7 +70,7 @@ The directory is the delivery scope:
 | Scope | Inclusion mechanism | Result |
 |---|---|---|
 | `floor/` | Every resolved file, automatically | Applied to every Cowork Agent. |
-| `conditional/` | A file is applied when all of its authored `requires:` predicates match the resolved launch facts. | Applied only to matching Agents; for example Team-lead teaching follows the explicit lead designation. |
+| `conditional/` | A file is applied when all of its authored `requires:` predicates match the resolved launch facts. | Applied only to matching Agents; for example Team-lead teaching follows the explicit lead designation. Predicates: `arrangement:<managed\|checkout\|none>`, `team`, `lead`, and `project_management` (the Campaign's Project management part, `services.parts.task_manager`, is on). |
 | `selected/` | Explicit Agent selection, or an inherited Team then Campaign default, after availability resolution. | The chosen files are applied; invalid or unavailable names do not silently become teaching. |
 | `sought/` | Every resolved file contributes to a generated virtual index; no maintained list. | Awareness only. The source files are not applied. |
 
@@ -201,6 +201,14 @@ not permission for the stock packet to remain oversized.
 `over_budget` state. When the launch profile requests acknowledgement, the Agent is asked
 to quote the terminator. The receipt records what Ronin emitted; the acknowledgement is
 evidence that the newborn reached the end before acting.
+
+## 8. Resend
+
+**Resend birth brief** in the Agent's Configuration (`POST /api/sessions/<name>/composition/brief`,
+[birth-resend.ts](../../src/birth-resend.ts)) runs the same resolution on today's files and
+today's facts (Team, lead designation, Campaign switches, current mandate and Behaviors),
+compiles over the session README, and queues one message: read it. The birth receipt is
+not rewritten.
 
 ## Change checkpoint
 

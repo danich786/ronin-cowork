@@ -27,7 +27,7 @@ surface as it was, its geometry untouched: Settings (Presets, Workspace Folders,
 Providers, Setup) and the Agent workbench's Work Items draw with it. Escape lifts only the layer it
 is pressed in (2026-10-08).
 
-Task Manager keeps its board and status/work item drill-downs for the Agent's Task Manager;
+Board keeps its board and status/work item drill-downs for the Agent's Board;
 its selector card is no longer offered on the Cowork or Team workbenches. The older
 Work Items board (`work-items`) stays on the Agent's workbench, filtered to work items held by
 that Agent. **The Team page** (owner, 2026-10-18) is the old Team workbench opening on the
@@ -43,7 +43,7 @@ moves all groups into the left rail and renders the item inside the same `sws-de
 it never opens another numbered workspace. `project-reading.js` holds the canonical
 work item reading used by both presentations, with each supplying its own styling classes.
 Work Items keeps normal Phalanx furniture, density controls, explicit holder opening,
-and message-only status drops; a flagged item carries the ⚑ mark. It does not use Task Manager's board or beige furniture.
+and message-only status drops; a flagged item carries the ⚑ mark. It does not use the Board or beige furniture.
 
 The shared Phalanx accepts ordered `grouped.groups`, group/item event callbacks, item
 actions, and `setDensity`; Work Items stones deliberately supply no action callback,
@@ -336,15 +336,15 @@ folders per bench (`/api/project-roots/detail`) that every surface on it hears.
 ### Agent (`agent` profile)
 
 The route parameter is the tenant Agent. Its terminal can paint before Team and optional
-service reads finish. Team membership and Task Manager choices enrich independently.
+service reads finish. Team membership and Board choices enrich independently.
 
 | Surface | Required data and owner |
 |---|---|
 | Self | route Agent plus the shared terminal host and transport |
 | Agent Documents | the Agent's tracked documents in one untabbed work surface |
-| Agent Task Manager | the route Agent's work items across its current Teams, filtered by the canonical holder returned with each Team work item reading |
+| Agent Board | the route Agent's work items across its current Teams, filtered by the canonical holder returned with each Team work item reading |
 | Team membership | Team records and live session tags from `team-controller.js`; writes use the canonical session-membership route |
-| Status / work item drill-down | the same Agent tenant and Team reads as Task Manager; each is an independently placeable surface and writes no work item data |
+| Status / work item drill-down | the same Agent tenant and Team reads as Board; each is an independently placeable surface and writes no work item data |
 | Document / Feedback | each shared surface's own read or submission |
 
 ## Change checklist

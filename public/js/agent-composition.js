@@ -41,6 +41,10 @@ export function createAgentCompositionReader(agent, { setState = () => {} } = {}
       el('pre', 'ac-brief', data.birth.brief || t('agent_composition.no_brief', 'No saved brief.')),
       el('p', 'ac-line', t('agent_composition.born_with', 'Born with {mandate} · {behaviours}', { mandate: mandateLine(data.birth.mandate), behaviours: behaviourList(data.birth.behaviours) })),
     );
+    // Rebuilt from today's files the way birth builds it; the Agent is told once to read it.
+    const resend = el('button', 'wk-action', t('agent_composition.resend_brief', 'Resend birth brief')); resend.type = 'button'; const resendStatus = el('p', 'ac-status');
+    resend.addEventListener('click', async () => { resend.disabled = true; const sent = await request(`/api/sessions/${encodeURIComponent(agent)}/composition/brief`, { method: 'POST', json: {} }); resend.disabled = false; resendStatus.textContent = sent.ok ? t('agent_composition.brief_queued', 'Birth brief rebuilt; the Agent is told to read it.') : sent.message; });
+    brief.append(resend, resendStatus);
     const mandate = section('mandate', t('mandate', 'Mandate'));
     const form = el('form', 'ac-mandate');
     const question = ask([{ fields: [

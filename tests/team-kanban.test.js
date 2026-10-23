@@ -12,7 +12,7 @@ const NOW = new Date('2026-09-13T13:02:00.000Z');
 const moduleSource = readFileSync(new URL('../public/js/team-kanban.js', import.meta.url), 'utf8');
 const workspaceCss = readFileSync(new URL('../public/css/team-workspace.css', import.meta.url), 'utf8');
 
-test('availability is the Task Manager capability, desired and running', () => {
+test('availability is the Board capability, desired and running', () => {
   assert.deepEqual(kanbanAvailability({ services: { capabilities: { desired: { task_manager: true }, running: ['task_manager'] } } }), { available: true, message: '' });
   assert.deepEqual(kanbanAvailability({ services: { capabilities: { desired: { task_manager: false }, running: ['task_manager'] } } }), { available: false, message: 'Unavailable.' });
   assert.deepEqual(kanbanAvailability({ services: { capabilities: { desired: { task_manager: true }, running: [] } } }), { available: false, message: 'Unavailable.' });
@@ -28,7 +28,7 @@ test('the holder is read off the list the item was found on', () => {
 test('a forward drop tells the holder the defined move, naming the item command that makes it', () => {
   const move = moveMessage(project(), 'LAND', 'kanban_revive', NOW);
   assert.equal(move.target, 'tab_cut');
-  assert.match(move.text, /^from @kanban \(the Team Task Manager, moved by the user at 2026-09-13T13:02Z\):/);
+  assert.match(move.text, /^from @kanban \(the Team Board, moved by the user at 2026-09-13T13:02Z\):/);
   assert.match(move.text, /MOVE w7 "Kanban tab" from Review to Land/);
   assert.match(move.text, /next: worktree-desk hand-in <repo> --item w7/);
   assert.match(moveMessage(project({ status: 'BUILD' }), 'REVIEW', 'kanban_revive', NOW).text, /next: item transition w7 REVIEW/);
@@ -68,7 +68,7 @@ test('the board stays square, fixed, manually refreshed, and free of pills and e
   assert.match(moduleSource, /tw-agent-density-lines/);
 });
 
-test('the beta notice sits in a collapsible Task Manager header zone', () => {
+test('the beta notice sits in a collapsible Board header zone', () => {
   assert.doesNotMatch(moduleSource, /createSurfaceHeader/);
   assert.match(moduleSource, /const header = node\('div', 'tk-header'/);
   assert.match(moduleSource, /const beta = node\('strong', 'tk-beta'/);
@@ -90,7 +90,7 @@ test('card expansion and owner opening are sibling controls, never nested intera
   assert.match(moduleSource, /if \(!event\.target\.closest\('button'\)\) navigate\('project', project\.id\)/);
 });
 
-test('Task Manager scope derives Team lists, keeps the items an Agent holds, and reads its comments', () => {
+test('Board scope derives Team lists, keeps the items an Agent holds, and reads its comments', () => {
   assert.deepEqual(taskManagerScope({ kind: 'cowork', teams: () => ['alpha', 'beta', 'alpha'] }), { kind: 'team', teams: ['alpha', 'beta'], agent: '' });
   const scope = taskManagerScope({ kind: 'agent', agent: 'surface-tasks', teams: ['surface', 'other'] });
   assert.deepEqual(scope, { kind: 'agent', teams: ['surface', 'other'], agent: 'surface-tasks' });

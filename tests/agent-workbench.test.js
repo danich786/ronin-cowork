@@ -12,7 +12,7 @@ test('Agent is a first-class Workbench destination with tab-instance state', asy
   assert.deepEqual(defaultWorkspaceState().workbenchTabs, {});
 });
 
-test('Agent profile reuses Self, pure Documents, membership, Task Manager and generic surfaces', async () => {
+test('Agent profile reuses Self, pure Documents, membership, Board and generic surfaces', async () => {
   const [text, catalog] = await Promise.all([source('agent-view.js'), source('workbench-catalog.js')]);
   assert.match(text, /self: WORKBENCH_TYPES\.terminal/);
   assert.match(text, /documents: WORKBENCH_TYPES\.agentDocuments/);

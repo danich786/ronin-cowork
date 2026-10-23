@@ -29,7 +29,7 @@ test('selection falls back rather than leaving the surface blank', () => {
   assert.equal(chooseTab('kanban', tabs), 'roster', 'an unavailable tab falls back');
   assert.equal(chooseTab('nothing-of-the-sort', tabs), 'roster');
   assert.equal(chooseTab(undefined, tabs), 'roster');
-  // A Task Manager that has not been installed leaves the row with one real tab.
+  // A Board that has not been installed leaves the row with one real tab.
   assert.equal(chooseTab('kanban', [{ id: 'kanban', disabled: true }]), '');
 });
 

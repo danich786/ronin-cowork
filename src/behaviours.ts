@@ -49,6 +49,8 @@ export interface BehaviourFacts {
   arrangement: 'managed' | 'checkout' | 'none';
   team: boolean;
   lead: boolean;
+  /** The Campaign's Project management switch: the Services part `task_manager`. */
+  project_management: boolean;
 }
 
 const conditionHolds = (requirement: string, facts: BehaviourFacts): boolean => {
@@ -56,6 +58,7 @@ const conditionHolds = (requirement: string, facts: BehaviourFacts): boolean => 
   if (kind === 'arrangement') return facts.arrangement === value;
   if (kind === 'team') return facts.team;
   if (kind === 'lead') return facts.lead;
+  if (kind === 'project_management') return facts.project_management;
   return false;
 };
 

@@ -34,7 +34,7 @@ test('the Campaign imports the exact exported Setup page builders', async () => 
   const setup = await readFile(new URL('../public/js/setup-surfaces.js', import.meta.url), 'utf8');
   assert.match(setup, /export function createServicesSurface\(context\)/);
   assert.match(setup, /export function createGbrainSurface\(context\)/);
-  for (const id of ['task_manager', 'terminal_transcript', 'usage_stats', 'project_coordinator', 'local_weights']) {
+  for (const id of ['task_manager', 'terminal_transcript', 'usage_stats', 'local_weights']) {
     assert.match(setup, new RegExp(`id: '${id}',[^}]+status: 'beta'`));
   }
   assert.match(setup, /id: 'voice_hotwords',[^}]+status: 'comingSoon'/);

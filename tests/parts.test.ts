@@ -14,12 +14,13 @@ const installations = [
   { name: 'ronin_services', parts: ['counting', 'koe', 'koshi', 'koshi_weights', 'michi', 'rireki'] },
   { name: 'gbrain', parts: [] },
 ];
-const onDisk = ['counting', 'gbrain', 'koe', 'koshi', 'koshi_weights', 'machine', 'michi', 'rireki'].map((name) => ({ name }));
+// Koshi carries its own PARKED.md (parked until v2); no capability maps it.
+const onDisk = ['counting', 'gbrain', 'koe', 'koshi', 'koshi_weights', 'machine', 'michi', 'rireki'].map((name) => (name === 'koshi' ? { name, parked: 'Koshi is parked until v2.' } : { name }));
 
 test('Services off parks every part the installation claims; unclaimed parts still load', () => {
   const plan = partsToLoad(onDisk, installations, { ronin_services: false }, { task_manager: true, voice_hotwords: true, terminal_transcript: true });
   assert.deepEqual(plan.load.map((p) => p.name), ['gbrain', 'machine']);
-  assert.deepEqual(plan.parked, ['counting', 'koe', 'koshi', 'koshi_weights', 'michi', 'rireki'].map((name) => ({ name, installation: 'ronin_services', reason: 'master_off' })));
+  assert.deepEqual(plan.parked.map(({ name, reason }) => ({ name, reason })), ['counting', 'koe', 'koshi', 'koshi_weights', 'michi', 'rireki'].map((name) => ({ name, reason: name === 'koshi' ? 'Koshi is parked until v2.' : 'master_off' })));
 });
 
 test('Services on loads only selected claimed parts and never their siblings', () => {
@@ -27,7 +28,7 @@ test('Services on loads only selected claimed parts and never their siblings', (
   const plan = partsToLoad(onDisk, installations, { ronin_services: true }, { task_manager: true });
   assert.deepEqual(plan.load.map((p) => p.name), ['counting', 'gbrain', 'machine', 'michi']);
   assert.deepEqual(plan.parked.map(({ name, reason }) => ({ name, reason })),
-    ['koe', 'koshi', 'koshi_weights', 'rireki'].map((name) => ({ name, reason: 'component_off' })));
+    ['koe', 'koshi', 'koshi_weights', 'rireki'].map((name) => ({ name, reason: name === 'koshi' ? 'Koshi is parked until v2.' : 'component_off' })));
   assert.deepEqual(plan.capabilities.find(({ name }) => name === 'task_manager'), {
     name: 'task_manager', parts: ['michi'],
   });

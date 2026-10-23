@@ -66,7 +66,6 @@ test('campaigns share the machine configuration document', async () => {
     voice_hotwords: false,
     usage_stats: true,
     machine_status: true,
-    project_coordinator: false,
     local_weights: false,
   }, 'new Campaigns make every capability default explicit; Machine status alone starts on');
   assert.equal((await readCampaign('alpha'))?.title, 'Alpha');
@@ -83,7 +82,6 @@ test('campaigns share the machine configuration document', async () => {
     voice_hotwords: false,
     usage_stats: true,
     machine_status: true,
-    project_coordinator: false,
     local_weights: false,
   });
   await writeCampaign('alpha', { config: { services: { parts: {
@@ -96,7 +94,6 @@ test('campaigns share the machine configuration document', async () => {
     voice_hotwords: false,
     usage_stats: true,
     machine_status: true,
-    project_coordinator: false,
     local_weights: false,
   }, 'an explicit mixed map drops raw ids, completes every capability, and preserves only unknown keys');
   assert.equal(edited?.created_at, created.created_at);

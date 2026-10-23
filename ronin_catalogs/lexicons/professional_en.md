@@ -417,10 +417,10 @@ nothing paints exactly this.
 - **work_items.loading:** Loading Work Items…
 - **work_items.failed:** Could not load Work Items.
 - **team_kanban.beta:** Beta
-- **team_kanban.beta_message:** Task Manager is in beta. Follow work items from ideas to done using Tools and the Work Record. We’re making it easier for Agents to keep them current without forcing upkeep.
+- **team_kanban.beta_message:** Board is in beta. Follow work items from ideas to done using Tools and the Work Record. We’re making it easier for Agents to keep them current without forcing upkeep.
 - **team_kanban.header_collapse:** Collapse
 - **team_kanban.header_expand:** Expand
-- **team_kanban.back:** Back to Task Manager
+- **team_kanban.back:** Back to the Board
 - **team_kanban.project:** Work item
 - **team_kanban.status_projects:** Work items by status
 - **team_kanban.project_missing:** This work item is not in the current scope.

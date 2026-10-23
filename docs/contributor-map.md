@@ -141,7 +141,7 @@ its name or become another work-record store.
   derives the Agent, Team and unassigned readings; [tegami.ts](../src/tegami.ts) seeds the
   record and keeps its holder list.
 - Supporting trace: [coordination](coordination-trace.md) links Team custody, messages,
-  wipeboards, schedules, desks, hand-in, and promotion. [Task Manager](using-ronin/team-kanban.md)
+  wipeboards, schedules, desks, hand-in, and promotion. [Board](using-ronin/team-kanban.md)
   is the Team's reading of the work items it and its members hold.
 - Tests: [work-record.test.ts](../tests/work-record.test.ts),
   [tegami-read.test.ts](../tests/tegami-read.test.ts), [team-kanban.test.js](../tests/team-kanban.test.js),
