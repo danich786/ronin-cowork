@@ -100,6 +100,8 @@
   /* Its utility, small at the top right: Close. */
   .work-overlay-utility { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-inline); }
   .work-overlay:focus { outline: none; }
+  /* Model refresh's View payload (js/models-surface.js): the pending file as raw JSON, wrapped. */
+  .models-payload { margin: 0; padding: var(--space-inline); white-space: pre-wrap; overflow-wrap: anywhere; }
   /* The Teams card's stones (js/team-roster-surface.js): the 人 launch in a stone's corner. */
   .sws-stone > .teams-launch { position: absolute; inset-block-start: var(--sws-corner); inset-inline-end: var(--sws-corner); font-size: var(--text-heading); cursor: pointer; } /* the mark is 1.25em of this */
   @container stone-work-surface-seat (max-width: 40rem) {
