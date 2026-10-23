@@ -56,12 +56,9 @@ if [ -n "$path" ]; then
   exit 0
 fi
 
-# Not a topic: the glossary. This session's copy is rendered in the owner's desk words;
-# from a plain shell, the install's template is the glossary.
-glossary=$ROOT/ronin_session_boot/all/KOTOBA_GLOSSARY.md
-me=$(ronin_session_me 2>/dev/null) && [ -f "$("$ROOT/bin/ronin-store" session_boot_cache 2>/dev/null)/sessions/$me/KOTOBA_GLOSSARY.md" ] \
-  && glossary=$("$ROOT/bin/ronin-store" session_boot_cache)/sessions/$me/KOTOBA_GLOSSARY.md
-found=$(sed 's/<!--g:[^>]*-->//g' "$glossary" | awk -v w="$want" '
+# Not a topic: the install's glossary, never a session's birth render (that one is frozen
+# at birth and goes stale).
+found=$(sed 's/<!--g:[^>]*-->//g' "$ROOT/KOTOBA_GLOSSARY.md" | awk -v w="$want" '
   /^## / { section = $0; head = ""; inside = (index(tolower($0), w) > 0); if (inside) print; next }
   inside { print; next }
   /^\| You will see/ { head = $0; next }

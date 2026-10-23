@@ -18,7 +18,7 @@ runtime parts, while Agent capabilities teach tools (`docs/architecture/tool-sur
 | RIREKI | the recording | Optional journal transcripts in Services, available when the session has a supported launch binding. Terminal output remains a separate view. |
 | OBOERU | **memory**<!--g:glossary.memory--> | Notes that outlive the session that wrote them. |
 | TOMODACHI · SOROBAN | **Stats**<!--g:glossary.stats--> | Counts of what sessions did, never content. |
-| KOSHI | Koshi | Ronin's helper agents; this name is on screen. |
+| KOSHI | Koshi | Ronin's helper jobs, parked; the Koshi tab under Account names the model each would ask. |
 | KOE | **Hotwords**<!--g:glossary.hotwords--> | The dictation glossary. The mic is Voice; implementation ownership is in KOTOBA. |
 | SETTEI | **Configuration**<!--g:glossary.configuration--> | Settings for the relevant scope. The gear opens cowork commons. |
 | AGERU | **what gets sent**<!--g:glossary.packet--> · **where Ronin has connected**<!--g:glossary.egress_log--> | Ronin HQ packets and request history. Model-provider traffic is separate, not in this record. |
@@ -42,9 +42,9 @@ runtime parts, while Agent capabilities teach tools (`docs/architecture/tool-sur
 | `cowork_commons` | **cowork commons**<!--g:glossary.cowork_commons--> | Machine, account, desk profile, Workspace Folders. |
 | `admin_desk` | **the desk**<!--g:glossary.desk--> | Everything about this install, behind ⚙. |
 | `commons_tab` | **tab**<!--g:glossary.tab--> | One section of a commons. Never "pane" or "panel". |
-| `session_roster` | **the roster**<!--g:glossary.roster--> | Every session on the machine. Never "the board". |
+| `session_roster` | **the roster**<!--g:glossary.roster--> | Every session on the machine. |
 | `MDEDIT` | **the Docs tab**<!--g:glossary.docs--> | The session's listed documents. Say "list a doc". |
-| `wipeboard` | **wipeboard**<!--g:glossary.wipeboard--> | A team's shared board file. Never "the board". |
+| `wipeboard` | **wipeboard**<!--g:glossary.wipeboard--> | A Team's shared notes, for what everyone must see; posts expire once read. |
 | 🔒 / 🔓 | **Locked / Unlocked**<!--g:glossary.locked--> | Whether this view is attached to the live session. |
 
 ## Sessions and teams

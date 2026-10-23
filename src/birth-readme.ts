@@ -131,7 +131,8 @@ async function cachedReading(name: string, text: string, session = ''): Promise<
 
 /**
  * THE GLOSSARY STAYS ON DISK (owner, 2026-10-23: keep the brief light). It is rendered beside
- * the packet, where `ronin-help <word>` reads it, and the packet carries only WORDS.md.
+ * the packet; the packet carries only WORDS.md, which names `ronin-help <word>` (it reads the
+ * install's glossary, current where a birth render is not).
  */
 export const WORDS_READING = 'WORDS.md';
 

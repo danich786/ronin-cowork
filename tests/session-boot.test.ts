@@ -171,7 +171,7 @@ test('the real stock shelf compiles to one read: contracts first, glossary point
     assert.match(firstWindow, /do not reproduce its guarded operation/);
     assert.match(firstWindow, /Read the roster and wipeboard before directing work/);
     assert.match(firstWindow, /ronin_catalogs\/behaviours\/conditional\/worktree-root\.md/);
-    // The glossary stays on disk, rendered where ronin-help reads it; the packet points at the tool.
+    // The glossary stays on disk, rendered beside the packet; the packet points at the tool.
     assert.doesNotMatch(text, /^## KOTOBA_GLOSSARY/m);
     assert.match(text, /`ronin-help <word>`/);
     const glossaryText = await readFile(path.join(temp, 'generated', 'sessions', 'newborn', 'KOTOBA_GLOSSARY.md'), 'utf8');

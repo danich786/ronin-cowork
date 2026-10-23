@@ -53,18 +53,18 @@ Macro, action, SOP, and Agent role are not additional composition layers. “Act
 | Team (`team`) | A group of sessions; stock UI says Team, with Team Commons for its shared surfaces |
 | Team record (`team_roster`) | Durable Team identity, defaults, and held work; membership and leads derive from sessions ([Team workspace](docs/architecture/team-workspace.md)) |
 | Session | A running Cowork Agent, bare-metal Agent, or terminal; archived sessions have separate restore manifests ([Session identity](docs/architecture/session-identity.md)) |
-| Work record | An Agent's objective, repositories, and the work items it holds, each with its status; there is no ladder ([Work record](docs/using-ronin/work-record.md)) |
-| Work item | One object stored once by id, matching Jira: title, objective, `level`, `kind`, `status`, `flagged`, `priority`, `comments`, `attachments`, `links`, `external` keys and a trail; no ladder, as Jira has none; **held by** one Team or Agent, or by nobody (`item assign` moves the id between holders' lists), and **under** one parent or none. Holding is never permission. The `item` tool does Jira's item acts (create, read, search, edit, transition, flag, assign, comment, attach, link, delete), the item named. Never called a project ([Work record](docs/using-ronin/work-record.md)) |
+| Work record | An Agent's objective, repositories, and the work items it holds, each with its status ([Work records](docs/using-ronin/what-agents-write-down.md)) |
+| Work item | One object stored once by id, matching Jira: title, objective, `level`, `kind`, `status`, `flagged`, `priority`, `comments`, `attachments`, `links`, `external` keys and a trail; **held by** one Team or Agent, or by nobody (`item assign` moves the id between holders' lists), and **under** one parent or none. Holding is never permission. The `item` tool does Jira's item acts (create, read, search, edit, transition, flag, assign, comment, attach, link, delete), the item named. Never called a project ([Work items](docs/using-ronin/work-items.md)) |
 | Level | Stored on the item: `1` epic, `0` story/task/bug, `-1` subtask. A new item is one below its parent, `0` with none; adding a child never changes it. A default, never a guard |
 | Epic | A work item at level 1. It keeps its own fields; its status is set by hand |
 | Story / Task / Bug | A work item at level 0; story, task, bug or feature is its `kind`, any work type name, blank by default, with no fixed list |
 | Subtask | A work item at level -1, under a level-0 item. The one rule: nothing goes below -1; children follow their parent's new level, and a change that would put any below -1 fails with "w39 can't go there." |
-| Status | The board's column: Idea, Plan, Build, Review, Land, Done; `item transition <id> <status>`, any to any |
+| Status | A work item's state: IDEA, PLAN, BUILD, REVIEW, LAND, DONE; `item transition <id> <status>`, any to any; a hand-in naming the item moves it to LAND, the promotion carrying it to DONE |
 | Flagged | An impediment on a work item, as Jira's flag: `item flag <id> "<why>"`, the reason kept as a comment; `item unflag <id>` |
 | Priority | A work item's priority, as Jira's: any name, or blank. Set with `item edit <id> --priority <name>` |
 | Comment | One remark on a work item, as Jira's: who, when and the text. `item comment <id> <text>` adds one and `--edit <n>` changes one; a comment by someone else tells the holding Agent its work record changed |
-| Team Kanban | The Team's reading of work items: what the Team and its members hold, children under their parent; a Team holds, it does not contain. Never another store ([Team Kanban](docs/using-ronin/team-kanban.md)) |
-| Board | A view of work items in columns by status, as in Jira and Trello: the Task Manager's six status columns. A board is never a work item |
+| Team work items | The work items a Team and its members hold, children under their parent, read in the Team's Work items; a Team holds, it does not contain. Never another store ([Work items](docs/using-ronin/work-items.md)) |
+| Board | Ronin has none; a user who wants one uses Jira or Trello |
 | Wipeboard / message queue / Cron jobs | Team announcements, pending session delivery, and scheduled requests; distinct stores and delivery lifecycles |
 | Ronin Lab | A Workspace Folder for ideas, research, plans, and notes across or before projects; users and Ronin creators each have their own Lab, rather than a code repository for one specific project |
 | Workspace Folder (`project_root`) | A registered folder Ronin may work in; not a browser workspace ([Workspace folders](docs/architecture/project-roots.md)) |
@@ -76,7 +76,7 @@ Macro, action, SOP, and Agent role are not additional composition layers. “Act
 | Chat view (`chat_view`) | Only what the person and the Agent said; what Koe speaks; the only reading on a phone ([Tile](docs/using-ronin/tile.md)) |
 | Notes view (`notes_view`) | Chat plus the gaps: session start, interruption, segment seams ([Tile](docs/using-ronin/tile.md)) |
 | Work view (`work_view`) | Notes plus each tool call and code block as one line, output collapsed ([Tile](docs/using-ronin/tile.md)) |
-| All view (`all_view`) | Everything the journal holds, injected lines and tool output included; the evidence view ([Tile](docs/using-ronin/tile.md)) |
+| All view (`all_view`) | Everything the journal holds, injected lines and tool output included; the complete view ([Tile](docs/using-ronin/tile.md)) |
 | Term (`term_view`) | The live terminal in the tile; not a reading, and what the view toggle returns to ([Tile](docs/using-ronin/tile.md)) |
 | View toggle (`view_toggle`) | The tile-head control cycling `term_view` → `chat_view` → `notes_view` → `work_view` → `all_view` → `term_view` on a desk, and `term_view` ↔ `chat_view` on a phone; it names where you are, goes opaque when the Agent has nothing to show, and says why on press ([Tile](docs/using-ronin/tile.md)) |
 | Agent stance (`agent_stance`) | What an Agent is doing now: working, replying, awaiting you, asking, unknown. Derived by the backend and sent; the tile never infers it ([Tile](docs/using-ronin/tile.md)) |
@@ -88,8 +88,8 @@ Macro, action, SOP, and Agent role are not additional composition layers. “Act
 | Service part | Optional runtime module with one `register(sockets)` entry; canonical source is in `ronin_services` |
 | Socket | Cowork-owned extension interface; missing Services is a supported configuration ([Connector contract](https://github.com/ronincowork/ronin-services/blob/dev/connector-contract.md)) |
 | Service capability | A selectable Services feature expanded to runtime parts by `src/parts.ts`; distinct from an Agent's tool capability bundle |
-| Parked part | Present on disk but not loaded, because of its marker or startup selection; not evidence of a running feature |
-| Authority / projection | The writer-owned truth / a derived reading of it; browser caches and Kanban do not become additional server authorities |
+| Parked part | Present on disk but not loaded, because of its marker or startup selection; the feature does not run |
+| Authority / projection | The writer-owned truth / a derived reading of it; browser caches and readings such as Work items do not become additional server authorities |
 | Store / shadow | A resolved persistence location / owner resources replacing shipped resources according to their format ([Shadowing](docs/architecture/shadowing.md)) |
 
 The Services repository's `services.json` maps parts to routes and resources. Its connector
@@ -107,7 +107,7 @@ use the glossary's plain terms. **Koshi** is an existing UI name and an explicit
 | RIREKI | Optional transcript service: reads provider journals through launch identity into the per-session transcript and serves its readings. The former terminal recorder is retained on disk as the future source for CLIs with no journal |
 | OBOERU | Memory terminology; not an active part in the Services manifest |
 | TOMODACHI / SOROBAN | Stats and counting contracts |
-| KOSHI | Ronin's helper agents |
+| KOSHI | Ronin's helper jobs; parked, with the Koshi tab naming each job's model |
 | KOE | Hotwords part; dictation's HTTP relay is currently in the counting part |
 | SETTEI | Configuration terminology |
 | AGERU | Ronin HQ request transport and its egress record; model-provider traffic is separate ([Services activation](docs/getting-started/services-activation.md)) |
