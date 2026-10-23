@@ -25,9 +25,7 @@ and `terminal_en` (near-empty on purpose — the words grow as the surfaces sett
 at a time, with no code).
 
 prefixed key names a catalog entry's label by its token (`kind.household`,
-`role.DraftPlan`, `behaviour.<t>`); a `glossary.*` key is a word an agent
-says to a person for a house term; the boot shelf renders `KOTOBA_GLOSSARY.md` from those
-keys at session birth — the lexicon itself is never birth reading. A key may carry
+`role.DraftPlan`, `behaviour.<t>`). The lexicon is never birth reading. A key may carry
 dots; `isKeyLine` in `src/resources.ts` accepts them.
 
 ## The chain, one rule

@@ -56,9 +56,8 @@ if [ -n "$path" ]; then
   exit 0
 fi
 
-# Not a topic: the install's glossary, never a session's birth render (that one is frozen
-# at birth and goes stale).
-found=$(sed 's/<!--g:[^>]*-->//g' "$ROOT/KOTOBA_GLOSSARY.md" | awk -v w="$want" '
+# Not a topic: the install's glossary, printed without its <!--g:...--> marks and RENDERED_FOR block.
+found=$(sed -e 's/<!--g:[^>]*-->//g' -e '/<!-- RENDERED_FOR:START -->/,/<!-- RENDERED_FOR:END -->/d' "$ROOT/KOTOBA_GLOSSARY.md" | awk -v w="$want" '
   /^## / { section = $0; head = ""; inside = (index(tolower($0), w) > 0); if (inside) print; next }
   inside { print; next }
   /^\| You will see/ { head = $0; next }

@@ -6,7 +6,7 @@ capabilities teach; behaviors guide; skills adapt; UIs call. Services capabiliti
 runtime parts, while Agent capabilities teach tools (`docs/architecture/tool-surface.md`).
 
 <!-- RENDERED_FOR:START -->
-> Template. A session receives this rendered with the owner's own desk words.
+> The plain words. `ronin-help <word>` prints this page without these comments or the word marks.
 <!-- RENDERED_FOR:END -->
 
 ## The names

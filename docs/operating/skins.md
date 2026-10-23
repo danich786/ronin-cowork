@@ -74,8 +74,7 @@ in the catalogs store: a file of ours of the same name is replaced whole; a new 
    name). Format: `ronin_catalogs/lexicons/README.md`. Say only what changes — everything
    else falls through to `professional_en`, the floor. Every key that can be changed, with
    every shipped lexicon's word beside it, is `npm run kokugo:table` (a report generated on
-   demand and never committed); a `glossary.*` key
-   changes the word an agent says to the person for a house term, nothing on screen.
+   demand and never committed).
 
    ```markdown
    # mine_en
@@ -83,14 +82,13 @@ in the catalogs store: a file of ours of the same name is replaced whole; a new 
    - **blurb:** My words.
    - **base:** professional_en
    - **roster.no_team:** freelancers
-   - **glossary.wipeboard:** the noticeboard
    ```
 
 2. **The profile.** `ronin-store catalogs` → `desk_profiles/<name>.md` naming it
    (`- **lexicon:** mine_en`, plus the skin and the rest; format in that directory's
    README) — or copy one of ours (`home.md`) and change its `lexicon:` line.
 3. **Pick it** in ⚙ → Appearance → desk profile, and reload. Surfaces take the words on
-   their next paint; sessions born after the pick get the glossary rendered in those words.
+   their next paint.
 4. **Check it**: a key the floor lacks changes nothing, silently, so compare your file
    with the floor: `npm run kokugo:table` writes every key across the lexicons side by side
    to `docs/kokugo-table.md`. The Customize view lists both shelves (Presentation → Desk

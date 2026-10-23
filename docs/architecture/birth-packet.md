@@ -108,7 +108,7 @@ Session Boot contributes only applicable resolved files:
 
 | Source | Inclusion mechanism |
 |---|---|
-| `all/` | Every Cowork Agent. This stock shelf is intentionally limited to Ronin Utility and the rendered KOTOBA glossary. |
+| `all/` | Every Cowork Agent. This stock shelf is intentionally limited to Ronin Utility and the KOTOBA glossary, which the packet replaces with `WORDS.md`. |
 | `routine/...` | Exact files named by enabled or disabled installation/feature contribution declarations. |
 | `<service>_connected/` and `house/` | Declared directory or file references selected by their feature or house facts. The legacy connected name does not assert runtime health. |
 | Owner `root/<project_root>/` | Live contents for the resolved project root. Stock cannot define owner project roots. |
@@ -130,7 +130,7 @@ uses these delivery depths:
 | Selected Behavior | **Shelf card** | Title, first useful prose sentence (at most 180 characters), and resolved path. The Agent opens the full file when needed. |
 | Sought Behavior | **Generated awareness entry** | Title, first useful prose sentence (at most 180 characters), and resolved path inside virtual `SOUGHT.md`. It is explicitly not an instruction to follow now. |
 | Selected capability | **Generated tool projection** | Label, blurb, projected priority commands with shortened authority, unique help routes, and the full capability-document path inside virtual `CAPABILITIES.md`. The full document is not copied or added again as a shelf card. |
-| Session Boot `all/`, routine, connected, and house teaching | **Full inline text** | The complete resolved file. The glossary is rendered with the active desk lexicon first. |
+| Session Boot `all/`, routine, connected, and house teaching | **Full inline text** | The complete resolved file. |
 | Owner project-root document | **Shelf card** | Title, first useful prose sentence, and resolved path. |
 | Explicit seed outside an inline teaching location | **Shelf card** | Title, first useful prose sentence, and resolved path. |
 
@@ -151,7 +151,7 @@ The resolved source order is:
 6. owner project-root material;
 7. generated capability overview;
 8. generated sought-awareness overview, when the shelf is non-empty;
-9. rendered KOTOBA glossary;
+9. `WORDS.md`, the glossary pointer;
 10. explicit launch seeds.
 
 The compiler converts non-inline sources into the single **On your shelf** table before
@@ -159,7 +159,7 @@ the inline sections. It resolves real paths and includes the same underlying sou
 once, even when two coordinates or symlinks lead to it. A source that disappears between
 resolution and compilation is omitted; stale content is never substituted.
 
-The glossary remains the last inline background section because it is reference and the
+`WORDS.md` remains the last inline background section because it is reference and the
 least costly material to miss in a truncated first window. Explicit seeds may add cards
 after resolution, but they do not turn ordinary project documents into inline authority.
 

@@ -8,11 +8,11 @@ behavior and implementation; this page names them without copying their rules.
 | Source | Owns |
 |---|---|
 | This page | Canonical terms, distinctions, and the contract for each |
-| [Stock lexicon](ronin_catalogs/lexicons/professional_en.md) | Default UI strings, including `glossary.*` words; other lexicons may replace wording |
-| [Agent glossary](KOTOBA_GLOSSARY.md) | How an Agent refers to those concepts when speaking to the owner; keyed words render from the desk lexicon at birth |
+| [Stock lexicon](ronin_catalogs/lexicons/professional_en.md) | Default UI strings; other lexicons may replace wording |
+| [Agent glossary](KOTOBA_GLOSSARY.md) | How an Agent refers to those concepts when speaking to the owner; `ronin-help <word>` prints it |
 
 Change a meaning here and in its owning contract together. Change a displayed word in the
-lexicon and the glossary's stock fallback together. A lexicon changes wording, never saved
+lexicon and the glossary together. A lexicon changes wording, never saved
 identity, authority, or behavior. Historical vocabulary in another repository is not a
 second authority for current Cowork or Services.
 

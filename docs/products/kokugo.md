@@ -147,17 +147,8 @@ reads these attributes as keys the client reads.
 Use the glossary's plain words for internal names (TEGAMI, RIREKI …) when speaking to the
 owner; Koshi is the existing UI-name exception. Tools and contributor docs can use exact
 identifiers. [KOTOBA_GLOSSARY.md](../../KOTOBA_GLOSSARY.md) is where a session learns which word to
-SAY for each — and since the desk profile decides what the person is looking at, that
-page is rendered per session. Its keyed cells are `**word**<!--g:glossary.key-->`; the
-words live in the lexicon under `glossary.*` (floor: the plain English the glossary
-carries); **no surface reads them** — the one consumer is the boot shelf, which renders
-the glossary at session birth from the active profile's resolved lexicon
-(`src/birth-readme.ts`, `renderGlossary`) with a header line saying which profile it was
-rendered for. One-time, by ruling: a profile changed mid-session is not re-read.
-
-Adding a row to the glossary means marking its UI word and adding the `glossary.*` line
-to the floor; a profile's word for it is one line in that profile's lexicon
-(`home_en`: `glossary.team` → *Staff*).
+SAY for each, in plain words. A session reads it through `ronin-help <word>`, which prints
+the install's glossary without its `<!--g:...-->` marks and RENDERED_FOR block.
 
 ## 9 · Checking your work
 

@@ -38,14 +38,14 @@ README beside a session's letter is the only document the newborn is asked to op
 ## What ships
 
 Two universal background sources and two generated fragments — the tool overview and the
-rendered glossary — compiled in reading order and held to a
+glossary pointer `WORDS.md` — compiled in reading order and held to a
 one-read budget by
 `tests/session-boot.test.ts` (a 121 KB packet was born on 2026-09-03 when a UI string
 table was shelved as vocabulary; nothing objected, because no test read the real shelf):
 
 - `all/RONIN_UTILITY.md` — where everything is in the coworkspace and how the owner drives it.
-- `all/KOTOBA_GLOSSARY.md` — the house names and the plain word to say for each, rendered at
-  birth with the owner's desk words beside the packet; the packet carries a pointer to it.
+- `all/KOTOBA_GLOSSARY.md` — the house names and the plain word to say for each; the packet carries a pointer to it, and `ronin-help <word>`
+  prints it.
 - `CAPABILITIES.md` has no template. At birth Ronin renders it from the capability documents
   the launch resolver selected (`ronin_catalogs/capabilities/`) — the priority tools that
   exist on this box, `--help`, and each full document's path — and includes it in the
