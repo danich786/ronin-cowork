@@ -7,6 +7,8 @@ const routes = await readFile(new URL('../src/routes/sessions-api.ts', import.me
 const behaviours = await readFile(new URL('../src/behaviours.ts', import.meta.url), 'utf8');
 const configuration = await readFile(new URL('../src/agent-configuration.ts', import.meta.url), 'utf8');
 const tegami = await readFile(new URL('../src/tegami.ts', import.meta.url), 'utf8');
+const members = await readFile(new URL('../public/js/team-members.js', import.meta.url), 'utf8');
+const tilehead = await readFile(new URL('../public/js/tilehead.js', import.meta.url), 'utf8');
 
 test('Agent composition uses the shared selector and preserves many-valued Output', () => {
   assert.match(ui, /import \{ ask \} from '\.\/ask\.js'/);
@@ -21,8 +23,12 @@ test('Agent composition uses the shared selector and preserves many-valued Outpu
 // built from the facts and the reading alone: nothing launch-related is in its way.
 test('Configuration is one act: Update writes, rebuilds the brief through the reading alone, and tells the Agent once', () => {
   assert.match(ui, /\/configuration`, \{ method: 'PUT', json: value\(\) \}/);
-  assert.match(ui, /update\.disabled = JSON\.stringify\(value\(\)\) === loaded/);
-  assert.match(ui, /key: 'behaviours'.*many: true/, 'Chosen is the ticks, the whole list');
+  assert.match(ui, /action\.el\.disabled = JSON\.stringify\(value\(\)\) === loaded/);
+  assert.match(ui, /key: 'behaviours'.*many: true, options:/, 'Chosen is the New Agent form\'s tick list, the whole list');
+  assert.match(ui, /className: 'na-behaviour-readonly'/, 'Always and Because are the same list, read only');
+  assert.match(ui, /return \{ el: body, action, show: load/, 'the host places Update in its one action row');
+  assert.match(members, /actions: \[composition\.action, rename, lead, eject, close\]/);
+  assert.match(tilehead, /\{ closed: reader\.destroy, actions: \[reader\.action\] \}/);
   assert.doesNotMatch(ui, /composition\/brief|composition\/mandate|composition\/behaviours|resend/i);
   assert.match(routes, /app\.put\('\/api\/sessions\/:name\/configuration'/);
   assert.doesNotMatch(routes, /composition\/brief|composition\/mandate|composition\/behaviours/);
