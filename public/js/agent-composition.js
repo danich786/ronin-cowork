@@ -28,7 +28,7 @@ function behaviourList(items) {
   return items?.length ? items.map((row) => row.name).join(', ') : t('agent_composition.none', 'None');
 }
 // A behaviour as the launch forms list it: the label, a few words under it, its page to read.
-const behaviourRow = (row, sub, disabled = false) => ({ v: row.name, l: row.label || row.name, sub, read: row.path, disabled });
+const behaviourRow = (row, sub) => ({ v: row.name, l: row.label || row.name, sub, read: row.path });
 
 /**
  * THE ONE COMPOSITION BODY (owner, 2026-10-20): the composition tile and an opened Commons
@@ -73,16 +73,20 @@ export function createAgentCompositionReader(agent, { setState = () => {} } = {}
     ] }], { value: data.current.mandate, density: 'tight', onChange: refresh }); questions.push(mandateQuestion);
     mandate.append(mandateQuestion.el);
     const behaviours = section('behaviours', t('behaviours', 'Behaviors'));
-    // The New Agent form's lists (new-agent.js paintShelves), as rows: Always and Because read only, Chosen the ticks.
+    // Always and Because are read only: the kit's reading rows, a line per behaviour (the reason
+    // for Because, "since birth" on one the Agent was not born with). Only Chosen is stones — the
+    // New Agent form's tick list (new-agent.js paintShelves), a chosen one in the kit's selected fill.
     const sends = data.sends?.rows || [];
+    const lines = (list, text) => { if (!list.length) return ''; const box = el('div'); for (const row of list) box.append(el('div', null, text(row))); return box; };
     const since = (row) => (row.since_birth ? t('agent_composition.since_birth', 'since birth') : '');
-    const readonly = (label, key, list, sub) => ask([{ group: label, fields: [{ key, label, many: true, options: list.map((row) => behaviourRow(row, sub(row), true)) }] }], { value: { [key]: [] }, className: 'na-behaviour-readonly', density: 'tight', exposed: true });
-    const always = readonly(t('agent_composition.always', 'Always'), 'always', sends.filter((row) => row.scope === 'floor'), (row) => row.blurb || '');
-    const because = readonly(t('agent_composition.because', 'Because'), 'because', sends.filter((row) => row.scope === 'conditional'), (row) => [reasonWords(row.requires), since(row)].filter(Boolean).join(' · '));
+    behaviours.append(readingRows([
+      [t('agent_composition.always', 'Always'), lines(sends.filter((row) => row.scope === 'floor'), (row) => row.label || row.name)],
+      [t('agent_composition.because', 'Because'), lines(sends.filter((row) => row.scope === 'conditional'), (row) => { const name = row.label || row.name; const reason = reasonWords(row.requires); return [name, reason === name ? '' : reason, since(row)].filter(Boolean).join(' · '); })],
+    ]));
     const chosenNow = data.current.behaviours.map((row) => row.name).filter((name) => data.available_behaviours.some((row) => row.name === name));
     const chosen = ask([{ group: t('agent_composition.chosen', 'Chosen'), fields: [{ key: 'behaviours', label: t('agent_composition.chosen', 'Chosen'), many: true, options: data.available_behaviours.map((row) => behaviourRow(row, row.blurb || '')) }] }], { value: { behaviours: chosenNow }, density: 'tight', exposed: true, onChange: refresh });
-    questions.push(always, because, chosen);
-    const lists = el('div', 'na-behaviour-sections'); lists.append(always.el, because.el, chosen.el); behaviours.append(lists);
+    questions.push(chosen);
+    behaviours.append(chosen.el);
     if (data.sends?.error) behaviours.append(el('p', 'ac-status', data.sends.error));
     body.append(notice.el);
     value = () => ({ mandate: mandateQuestion.value(), behaviours: chosen.value().behaviours || [] });

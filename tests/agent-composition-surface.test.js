@@ -25,7 +25,7 @@ test('Configuration is one act: Update writes, rebuilds the brief through the re
   assert.match(ui, /\/configuration`, \{ method: 'PUT', json: value\(\) \}/);
   assert.match(ui, /action\.el\.disabled = JSON\.stringify\(value\(\)\) === loaded/);
   assert.match(ui, /key: 'behaviours'.*many: true, options:/, 'Chosen is the New Agent form\'s tick list, the whole list');
-  assert.match(ui, /className: 'na-behaviour-readonly'/, 'Always and Because are the same list, read only');
+  assert.match(ui, /readingRows\(\[\s*\[t\('agent_composition\.always'/, 'Always and Because are the kit\'s reading rows, read only; only Chosen is stones');
   assert.match(ui, /return \{ el: body, action, show: load/, 'the host places Update in its one action row');
   assert.match(members, /actions: \[composition\.action, rename, lead, eject, close\]/);
   assert.match(tilehead, /\{ closed: reader\.destroy, actions: \[reader\.action\] \}/);
