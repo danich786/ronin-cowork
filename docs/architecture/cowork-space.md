@@ -94,7 +94,9 @@ Rules that make them peers:
 The left side is the crumb (owner, 2026-10-20): the RoninCowork brand (a plain mark and word, not a
 link), then after a gap (`--space-subsection`, no dot; owner, 2026-10-24) Home (`#/home`), the Teams
 door (`#/cowork`, the Teams workbench), and on a Team page the Team's title last (its id read as
-words when it has no title), dots between the crumbs. A view naming its own place (Models,
+words when it has no title), dots between the crumbs, the crumbs' smaller type on the brand's
+baseline (`.bar-crumb`, one baseline-aligned group centred in the bar; owner, 2026-10-24). A view
+naming its own place (Models,
 Workspaces, Help, Setup, Settings; owner, 2026-10-24 for the last two) reads it after Home instead
 of the Teams door. A neutral island is cut into the
 top edge of the screen and names the active Workbench scope:
