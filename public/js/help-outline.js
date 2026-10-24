@@ -3,9 +3,9 @@
  * THE HELP OUTLINE (owner, 2026-10-21; 2026-10-24): Workspace 1 of the Help workbench. The pages are
  * the user docs in docs/, read through the same door Setup's guides use (/api/file?product=1),
  * never copies. The header leads with what Ronin is for (one line on a phone); then 'START HERE:
- * 4 things you need to know', the four numbered 1-4, each opening to Return and its page as a Team's
- * stone does, then Getting started and Using Ronin as two stones that open to their pages (the
- * phalanx's levels). Mika in Workspace 2 answers what no page
+ * 4 things you need to know', the four, then Getting started and Using Ronin; each of the six opens
+ * one level down (the phalanx's levels), Return and its pages in the rail — the four's level is the
+ * four — with the page being read pressed. Mika in Workspace 2 answers what no page
  * does. One stone surface: press a page, the stones go to the rail and the page reads beside them;
  * a link to another guide opens that guide in the same place. Every page stone drags into a
  * workspace, where it reads whole (createHelpPage).
@@ -37,16 +37,19 @@ const draggable = (row) => ({
 function PAGES() {
   const four = { id: 'four', label: t('help_outline.start_here', 'Start here:'), secondary: t('help_outline.four', '4 things you need to know') };
   const more = { id: 'more', label: t('help_outline.more', 'Everything else') };
-  // Each of the four is a level of its own, as a Team's stone is: pressed, Return and its page.
-  const first = (n, path, label) => draggable({ id: path, group: four, label, path, items: [], glyph: String(n), className: 'help-outline-first' });
   const page = (path, label) => draggable({ id: path, label, path });
-  // A shelf opens on its first page, pressed, so the page being read is always the stone that shows it.
-  const shelf = (id, label, items) => ({ id, group: more, label, items, action: (row, api) => api.down(row.id, { select: row.items[0].id }) });
+  // A shelf opens one level down on a page of it, pressed, so the page being read is always the stone
+  // that shows it: its own page for one of the four (their level is the four), else its first.
+  const enter = (row, api) => api.down(row.id, { select: row.path || row.items[0].id });
+  const shelf = (id, label, items) => ({ id, group: more, label, items, action: enter });
+  const musts = [
+    page('docs/using-ronin/team-lead-and-edges.md', t('help_outline.lead', 'Team Lead and edges')),
+    page('docs/using-ronin/what-agents-write-down.md', t('help_outline.records', 'Work records')),
+    page('docs/using-ronin/agent-tools.md', t('help_outline.tools', 'Tools')),
+    page('docs/getting-started/customize.md', t('help_outline.customize', 'Customizing your Ronin')),
+  ];
   return [
-    first(1, 'docs/using-ronin/team-lead-and-edges.md', t('help_outline.lead', 'Team Lead and edges')),
-    first(2, 'docs/using-ronin/what-agents-write-down.md', t('help_outline.records', 'Work records')),
-    first(3, 'docs/using-ronin/agent-tools.md', t('help_outline.tools', 'Tools')),
-    first(4, 'docs/getting-started/customize.md', t('help_outline.customize', 'Customizing your Ronin')),
+    ...musts.map((must) => ({ ...must, group: four, items: musts, action: enter })),
     shelf('start', t('help_outline.start', 'Getting started'), [
       page('docs/getting-started/get-started.md', t('help_outline.get_started', 'Get started')),
       page('docs/getting-started/setup-workbench.md', t('help_outline.setup', 'Ronin Setup')),
@@ -90,26 +93,29 @@ function readPage(item, host, onLink) {
   return page;
 }
 
-/** Every page of the outline, wherever it sits, with the shelf it sits on. */
-const allPages = (rows) => rows.flatMap((row) => row.items?.length ? row.items.map((item) => ({ item, shelf: row })) : [{ item: row, shelf: null }]);
+/** Every page of the outline with the shelf it opens on: one of the four opens on its own stone. */
+const allPages = (rows) => rows.flatMap((row) => row.items.map((item) => ({ item, shelf: row })));
+const findPage = (rows, path) => {
+  const all = allPages(rows).filter(({ item }) => item.path === path);
+  return all.find(({ shelf }) => shelf.id === path) || all[0];
+};
 
 /** `onRead(label)` hears each page the outline reads: a pressed stone or a followed link. */
 export function createHelpOutline({ onRead = () => {} } = {}) {
   const out = WorkspaceKit.primitives.createSurface({ label: t('help_outline.title', 'Help'), className: 'help-outline' });
   const pages = PAGES();
   const open = (path, fragment = '') => {
-    const found = allPages(pages).find(({ item }) => item.path === path);
+    const found = findPage(pages, path);
     if (!found || fragment) { stones.openDetail({ ...(found?.item || { id: path, label: path.split('/').pop(), path }), fragment }); return; }
     const at = stones.level();
-    if (found.shelf && at?.id === found.shelf.id) stones.select(path);
-    else if (found.shelf) { if (at) stones.top(); stones.down(found.shelf.id, { select: path }); }
-    else if (at?.id !== path) { if (at) stones.top(); stones.down(path); }
+    if (at?.items.some((item) => item.path === path)) stones.select(path);
+    else { if (at) stones.top(); stones.down(found.shelf.id, { select: path }); }
   };
   const stones = createPhalanx({
     items: pages, className: 'help-outline-stones', grouped: { groups: [...new Map(pages.map((item) => [item.group.id, item.group])).values()] },
     renderDetail: (item, host) => {
       host.scrollTop = 0;
-      const page = item.items?.length ? item.items[0] : item; // a shelf whose page was pressed off still reads its first
+      const page = item.path ? item : item.items[0]; // a shelf whose page was pressed off still reads its own, or its first
       readPage(page, host, open);
       onRead(page.label);
     },
@@ -126,7 +132,7 @@ export function createHelpOutline({ onRead = () => {} } = {}) {
 /** One help page whole in a workspace, placed by a dragged stone; a link reads the linked guide here. */
 export function createHelpPage(path) {
   const { createSurface } = WorkspaceKit.primitives;
-  const label = (target) => allPages(PAGES()).find(({ item }) => item.path === target)?.item.label || target.split('/').pop();
+  const label = (target) => findPage(PAGES(), target)?.item.label || target.split('/').pop();
   const out = createSurface({ label: label(path), className: 'help-page' });
   const show = (target, fragment = '') => {
     out.header.title.textContent = label(target);
