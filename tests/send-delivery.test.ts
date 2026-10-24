@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { deliverSafe, deliverForce, parsePrompt, type PaneIO } from '../src/send.js';
+import { deliverSafe, deliverForce, IMAGE_ENTER_DELAY_MS, parsePrompt, type PaneIO } from '../src/send.js';
 
 function pane(screen: string) {
   const calls: string[] = [];
@@ -54,6 +54,17 @@ test('force and composer delivery never read the screen; multiline text stays on
   io.read = async () => { throw new Error('no preflight'); };
   assert.equal((await deliverForce('agent', 'one\ntwo', io)).delivered, true);
   assert.deepEqual(calls, ['type:one\ntwo', 'Enter']);
+});
+
+test('a line ending in an image path gets one more Enter after the delay; plain text gets one', async () => {
+  const image = pane('❯');
+  const started = Date.now();
+  await deliverForce('agent', 'Screenshot:\n/tmp/shot.png\nParked.', image.io);
+  assert.deepEqual(image.calls, ['type:Screenshot:\n/tmp/shot.png\nParked.', 'Enter', 'Enter']);
+  assert.ok(Date.now() - started >= IMAGE_ENTER_DELAY_MS - 50);
+  const plain = pane('❯');
+  await deliverForce('agent', 'see /tmp/shot.png (mid-line)', plain.io);
+  assert.deepEqual(plain.calls, ['type:see /tmp/shot.png (mid-line)', 'Enter']);
 });
 
 test('unknown and busy empty screens do not prevent delivery', async () => {
