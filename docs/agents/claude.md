@@ -40,8 +40,8 @@ not aliases for the two supported launch modes.
 
 Claude accepts the initial brief positionally. Ronin allocates a conversation UUID at
 launch and uses it for archive/resume; the registry owns the arguments. Credential
-locations are registry data. [Provider sign-in](../getting-started/provider-sign-in.md) owns the owner
-handoff and credential-handling rules.
+locations are registry data. [Install, step 6](../getting-started/install.md#provider-sign-in-rules) owns the owner
+handoff and credential-handling rules for a helping Agent.
 
 Dangerously uses the complete command declared above. Ronin does not alter MCP configuration at
 Agent launch; Claude starts with its ordinary command and reads its own user configuration.
