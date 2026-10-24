@@ -14,9 +14,10 @@ import { sessionDir, sessionKey } from './session-dir.js';
 import { resolveForm } from './spawn.js';
 import { getCampaign, getLeads, getProjectRoot, getTags } from './tmux.js';
 
-type Receipt = { team?: string; cmd?: string; kind?: string };
+type Receipt = { team?: string; cmd?: string; kind?: string; behaviours?: Array<{ book?: string }> };
 
-export async function resendBirthBrief(name: string): Promise<{ readme: string }> {
+/** The one resend resolution: today's files over the Agent's current facts. */
+async function resendResolution(name: string) {
   const dir = sessionDir(await sessionKey(name));
   const receipt = JSON.parse(await readFile(path.join(dir, 'birth-receipt.json'), 'utf8')) as Receipt;
   const [composition, tags, leads, projectRoot, campaign, catalog] = await Promise.all([
@@ -36,6 +37,30 @@ export async function resendBirthBrief(name: string): Promise<{ readme: string }
     mandate: composition.current.mandate,
     behaviours: composition.current.behaviours.map((row) => row.name).filter((book) => selected.has(book)),
   }, new Set());
+  return { dir, receipt, catalog, resolved };
+}
+
+/**
+ * WHAT A RESEND WOULD SEND (owner, 2026-10-24): every behaviour in the rebuilt brief, as
+ * Always (floor), Because (a conditional whose requirements hold now) or Chosen.
+ * `since_birth` marks a conditional the birth receipt lacks: a resend would add it.
+ */
+export async function resendBehaviours(name: string) {
+  const { receipt, catalog, resolved } = await resendResolution(name);
+  const born = new Set((receipt.behaviours ?? []).map((row) => row.book));
+  const rows = new Map(catalog.map((row) => [row.name, row]));
+  return resolved.behaviours.flatMap((delivered) => {
+    const row = rows.get(delivered.book.replace(/^ways:/, ''));
+    if (!row) return [];
+    return [{
+      name: row.name, label: row.label, blurb: row.blurb, path: row.page, scope: row.scope, requires: row.requires,
+      since_birth: row.scope === 'conditional' && !born.has(row.name),
+    }];
+  });
+}
+
+export async function resendBirthBrief(name: string): Promise<{ readme: string }> {
+  const { dir, resolved } = await resendResolution(name);
   const readme = await compileBirthReadmeAt(dir, resolved.birth_reading, name, isShelfTeaching);
   await enqueueMessage(name, `Your birth brief was rebuilt from today's files. Read ${readme} now, top to bottom; it ends with the line "${packetEndLine(name)}".`, 'house');
   return { readme };

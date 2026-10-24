@@ -38,7 +38,7 @@ import { announceTeamChanges } from './wipeboards-api.js';
 import { memberEnded, teamChanged, writeConfiguration, writeMandate, writeTeams } from '../tegami.js';
 import { conditionalBehaviourPath, resolveBehaviourBooks } from '../behaviours.js';
 import { addCurrentBehaviour, readAgentComposition } from '../agent-composition.js';
-import { resendBirthBrief } from '../birth-resend.js';
+import { resendBehaviours, resendBirthBrief } from '../birth-resend.js';
 import { mandate } from '../agent-defaults.js';
 import { readFile } from 'node:fs/promises';
 import { emitSessionEnd } from '../sockets.js';
@@ -157,7 +157,11 @@ export function registerSessions(app: express.Express): void {
     const { name } = req.params;
     if (!isValidName(name)) return res.status(400).json({ error: 'Invalid name.' });
     if (!(await sessionExists(name))) return res.status(404).json({ error: 'No such session.' });
-    try { res.json(await readAgentComposition(name)); }
+    try {
+      // The brief a resend would send, so the overlay shows every behaviour, not only the choices.
+      const sends = await resendBehaviours(name).then((rows) => ({ rows }), (e) => ({ error: String((e as Error)?.message ?? e) }));
+      res.json({ ...await readAgentComposition(name), sends });
+    }
     catch (e) { res.status(409).json({ error: String((e as Error)?.message ?? e) }); }
   });
 

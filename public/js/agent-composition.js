@@ -2,7 +2,7 @@ import { WorkspaceKit } from './workspace-kit.js';
 import { request } from './request.js';
 import { t } from './lexicon.js';
 import { ask } from './ask.js';
-import { createStep } from './form-steps.js';
+import { createStep, readingRows, tagRow } from './form-steps.js';
 
 export const AGENT_COMPOSITION_TYPE = 'agent.composition';
 const REACH = ['open', 'discuss', 'plan', 'execute'];
@@ -12,6 +12,30 @@ const el = (tag, cls = '', text = '') => { const node = document.createElement(t
 const rows = (values) => values.map((value) => ({ v: value, l: value }));
 function mandateLine(value) {
   return value ? [value.reach, value.recruit, ...(value.output || [])].filter(Boolean).join(' · ') : t('agent_composition.birth_unavailable', 'Unavailable in this legacy birth receipt');
+}
+// The few words a conditional behaviour gives as its reason; lead implies team.
+function reasonWords(requires) {
+  const words = {
+    'arrangement:managed': t('agent_composition.because_managed', 'Managed worktree'),
+    'arrangement:checkout': t('agent_composition.because_checkout', 'Shared checkout'),
+    team: t('agent_composition.because_team', 'On a Team'),
+    lead: t('agent_composition.because_lead', 'Team lead'),
+    project_management: t('agent_composition.because_project_management', 'Project management on'),
+  };
+  return requires.filter((need) => !(need === 'team' && requires.includes('lead'))).map((need) => words[need] || need).join(' · ');
+}
+function sendsRows(rows) {
+  // A conditional's reason names it ("Team lead"); "since birth" marks one a resend would add.
+  const tag = (row, reason = '') => ({
+    text: [reason || row.label || row.name, row.since_birth ? t('agent_composition.since_birth', 'since birth') : ''].filter(Boolean).join(' · '),
+    on: row.since_birth,
+  });
+  const none = t('agent_composition.none', 'None');
+  return readingRows([
+    [t('agent_composition.always', 'Always'), tagRow(rows.filter((row) => row.scope === 'floor').map((row) => tag(row)), none)],
+    [t('agent_composition.because', 'Because'), tagRow(rows.filter((row) => row.scope === 'conditional').map((row) => tag(row, reasonWords(row.requires))), none)],
+    [t('agent_composition.chosen', 'Chosen'), tagRow(rows.filter((row) => row.scope === 'selected').map((row) => tag(row)), none)],
+  ]);
 }
 function behaviourList(items) {
   return items?.length ? items.map((row) => row.name).join(', ') : t('agent_composition.none', 'None');
@@ -56,7 +80,9 @@ export function createAgentCompositionReader(agent, { setState = () => {} } = {}
     form.append(question.el, save); mandate.append(form, status);
     form.addEventListener('submit', async (event) => { event.preventDefault(); save.disabled = true; const changed = await request(`/api/sessions/${encodeURIComponent(agent)}/composition/mandate`, { method: 'PUT', json: question.value() }); save.disabled = false; status.textContent = changed.ok ? t('agent_composition.mandate_saved', 'Work record updated; notice queued.') : changed.message; if (changed.ok) void load(); });
     const behaviours = section('behaviours', t('behaviours', 'Behaviors'));
-    behaviours.append(el('p', 'ac-list', behaviourList(data.current.behaviours)));
+    // Every behaviour a resend would send (Always, Because, Chosen); only Chosen is editable.
+    behaviours.append(data.sends?.rows ? sendsRows(data.sends.rows) : el('p', 'ac-list', behaviourList(data.current.behaviours)));
+    if (data.sends?.error) behaviours.append(el('p', 'ac-status', data.sends.error));
     const available = data.available_behaviours.filter((row) => !data.current.behaviours.some((item) => item.name === row.name));
     if (available.length) {
       const picker = ask([{ fields: [{ key: 'name', label: t('agent_composition.add_behavior', 'Add Behavior'), options: available.map((row) => ({ v: row.name, l: row.label || row.name, sub: row.blurb, read: row.path })) }] }], { value: { name: available[0].name }, density: 'tight' }); questions.push(picker);

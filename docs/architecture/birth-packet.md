@@ -208,7 +208,10 @@ evidence that the newborn reached the end before acting.
 [birth-resend.ts](../../src/birth-resend.ts)) runs the same resolution on today's files and
 today's facts (Team, lead designation, Campaign switches, current mandate and Behaviors),
 compiles over the session README, and queues one message: read it. The birth receipt is
-not rewritten.
+not rewritten. The composition read (`GET /api/sessions/<name>/composition`) returns the
+same resolution's Behaviors as `sends` (floor, conditional with its `requires`, selected;
+`since_birth` on a conditional the receipt lacks), so Configuration shows exactly what a
+resend would send.
 
 ## Change checkpoint
 

@@ -24,7 +24,7 @@ it; the arrow keys move through it.
 | @ Mention a session | Choose a session; its name goes into the message box |
 | Output | **Terminal Mirror** — the live terminal — or **Locked**, the same terminal to watch without typing into it. Not shown when this Agent has no Ronin Services |
 | ☰ Work record | Opens over the whole tile, leaving the terminal untouched beneath it: the work items it holds first, each with its status, flag and attachments, then its task at hand, worktrees and Teams. Press an attachment to open it over the tile; Close or Escape returns to the terminal |
-| ⚙ Configuration | Opens over the whole tile: the Agent's mandate (Reach, Recruit, Output) to change and save, its Behaviors with Add Behavior, what it was given at birth, and **Resend birth brief**: Ronin rebuilds the brief from today's files the way birth does and tells the Agent once to read it (after compaction, or for an Agent born before a change) |
+| ⚙ Configuration | Opens over the whole tile: the Agent's mandate (Reach, Recruit, Output) to change and save, every Behavior a resend would send — **Always** (every Cowork Agent), **Because** (a condition that holds now, such as Team lead or Managed worktree; *since birth* marks one the Agent was not born with) and **Chosen**, with Add Behavior — what it was given at birth, and **Resend birth brief**: Ronin rebuilds the brief from today's files the way birth does and tells the Agent once to read it (after compaction, or for an Agent born before a change) |
 | 📄 Docs | The attachments of the work items this Agent holds, with how many; press one to open it over the tile |
 | × Delete or archive… | Open the archive/delete choices; it stays at the foot of the menu |
 
