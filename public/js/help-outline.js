@@ -3,8 +3,9 @@
  * THE HELP OUTLINE (owner, 2026-10-21; 2026-10-24): Workspace 1 of the Help workbench. The pages are
  * the user docs in docs/, read through the same door Setup's guides use (/api/file?product=1),
  * never copies. The header leads with what Ronin is for (one line on a phone); then 'START HERE:
- * 4 things you need to know', the four numbered 1-4, then Getting started and Using Ronin as two
- * stones that open to their pages (the phalanx's levels). Mika in Workspace 2 answers what no page
+ * 4 things you need to know', the four numbered 1-4, each opening to Return and its page as a Team's
+ * stone does, then Getting started and Using Ronin as two stones that open to their pages (the
+ * phalanx's levels). Mika in Workspace 2 answers what no page
  * does. One stone surface: press a page, the stones go to the rail and the page reads beside them;
  * a link to another guide opens that guide in the same place. Every page stone drags into a
  * workspace, where it reads whole (createHelpPage).
@@ -36,7 +37,8 @@ const draggable = (row) => ({
 function PAGES() {
   const four = { id: 'four', label: t('help_outline.start_here', 'Start here:'), secondary: t('help_outline.four', '4 things you need to know') };
   const more = { id: 'more', label: t('help_outline.more', 'Everything else') };
-  const first = (n, path, label) => draggable({ id: path, group: four, label, path, glyph: String(n), className: 'help-outline-first' });
+  // Each of the four is a level of its own, as a Team's stone is: pressed, Return and its page.
+  const first = (n, path, label) => draggable({ id: path, group: four, label, path, items: [], glyph: String(n), className: 'help-outline-first' });
   const page = (path, label) => draggable({ id: path, label, path });
   // A shelf opens on its first page, pressed, so the page being read is always the stone that shows it.
   const shelf = (id, label, items) => ({ id, group: more, label, items, action: (row, api) => api.down(row.id, { select: row.items[0].id }) });
@@ -89,7 +91,7 @@ function readPage(item, host, onLink) {
 }
 
 /** Every page of the outline, wherever it sits, with the shelf it sits on. */
-const allPages = (rows) => rows.flatMap((row) => row.items ? row.items.map((item) => ({ item, shelf: row })) : [{ item: row, shelf: null }]);
+const allPages = (rows) => rows.flatMap((row) => row.items?.length ? row.items.map((item) => ({ item, shelf: row })) : [{ item: row, shelf: null }]);
 
 export function createHelpOutline() {
   const out = WorkspaceKit.primitives.createSurface({ label: t('help_outline.title', 'Help'), className: 'help-outline' });
@@ -100,13 +102,13 @@ export function createHelpOutline() {
     const at = stones.level();
     if (found.shelf && at?.id === found.shelf.id) stones.select(path);
     else if (found.shelf) { if (at) stones.top(); stones.down(found.shelf.id, { select: path }); }
-    else { if (at) stones.top(); stones.select(path); }
+    else if (at?.id !== path) { if (at) stones.top(); stones.down(path); }
   };
   const stones = createPhalanx({
     items: pages, className: 'help-outline-stones', grouped: { groups: [...new Map(pages.map((item) => [item.group.id, item.group])).values()] },
     renderDetail: (item, host) => {
       host.scrollTop = 0;
-      readPage(item.items ? item.items[0] : item, host, open); // a shelf whose page was pressed off still reads its first
+      readPage(item.items?.length ? item.items[0] : item, host, open); // a shelf whose page was pressed off still reads its first
     },
   });
   const intro = el('div', 'sws-intro help-outline-intro');
