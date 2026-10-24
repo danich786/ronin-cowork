@@ -174,6 +174,7 @@ export function createCampaignView() {
   return {
     el: bench.host, glyph: '⛩', ...workbenchView('campaign'), arrangement: bench.arrangement,
     title: () => t('campaign.settings_short_title', 'Settings'),
+    place: () => t('campaign.settings_short_title', 'Settings'), // the crumb: Home • Settings (owner, 2026-10-24)
     placeFeedback: () => bench.place(FEEDBACK_TYPE, bench.selected()),
     mount: (_host, context) => { ctx = context; },
     enter: (context) => {
