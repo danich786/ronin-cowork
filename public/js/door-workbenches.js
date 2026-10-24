@@ -9,7 +9,7 @@
  * stone dragged into a workspace or a selector card placing that provider whole; Workspaces
  * seats its own stones of folders (workspaces-surface.js) the same way, its three admin doors
  * dotted selector cards. Help (owner, 2026-10-21) seats the help outline in Workspace 1 and Mika
- * in Workspace 2, her ordinary tile opened on her reading: a chat, not a terminal. Help is outside
+ * in Workspace 2 (a page stone dragged into a workspace reads that page there), her ordinary tile opened on her reading: a chat, not a terminal. Help is outside
  * Home's provider gate; with no provider Mika's seat says so in one line instead of her tile.
  */
 import { WorkspaceKit } from './workspace-kit.js';
@@ -23,7 +23,7 @@ import { createGithubWorkspaceSetup } from './github-workspace-setup.js';
 import { createFolder, createFolderClone, createFolderGithub, createFolderNew, createFolderStones, createRootsReading, folderOffers } from './workspaces-surface.js';
 import { createWorkspaceAdd } from './workspace-add.js';
 import { campaignById, loadCampaigns, normalizeSelection } from './campaigns.js';
-import { createHelpOutline } from './help-outline.js';
+import { createHelpOutline, createHelpPage } from './help-outline.js';
 import { createMikaTilePool } from './mika.js';
 import { readyMika } from './mika-ready.js';
 import { S } from './state.js';
@@ -173,6 +173,7 @@ export function createHelpView() {
     seats: { workspace1: WORKBENCH_TYPES.helpOutline, workspace2: WORKBENCH_TYPES.helpMika },
     environment: () => ({
       helpOutline: () => { const outline = createHelpOutline(); outlines.push(outline); return outline; },
+      helpPage: (detail = {}) => createHelpPage(String(detail.key || '')),
       helpMika: () => ({ el: mikaSurface.el, show: () => {
         if (!standIn) { standIn = WorkspaceKit.adapters.createTerminalTileHost({ mode: 'full' }); mikaSurface.content.append(standIn.el); standIn.mount(''); standIn.hide(); }
         void request('/api/setup/runtime', { cache: 'no-store' }).then((result) => {

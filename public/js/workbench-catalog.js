@@ -11,6 +11,7 @@ import { PROVIDER_SURFACE_TYPE } from './provider-surface.js';
 import { MULTIPLE_CAMPAIGNS_ENABLED } from './campaigns.js';
 import { AGENT_COMPOSITION_TYPE } from './agent-composition.js';
 import { WORK_ITEMS_TYPE } from './work-items-surface.js';
+import { HELP_PAGE_TYPE } from './help-outline.js';
 
 export const WORKBENCH_PROFILES = Object.freeze({ campaign: 'campaign', launch: 'launch', cowork: 'cowork', team: 'team', agent: 'agent', models: 'models', workspaces: 'workspaces', help: 'help' });
 export const WORKBENCH_TYPES = Object.freeze({
@@ -23,7 +24,7 @@ export const WORKBENCH_TYPES = Object.freeze({
   campaignMachine: 'campaign.machine', campaignDefaults: 'campaign.defaults', campaignRoots: 'campaign.project-roots',
   campaignIdentity: 'campaign.identity', campaignInstallations: 'campaign.installations', campaignCreate: 'campaign.new',
   modelStones: 'models.stones', modelRefresh: 'models.refresh', modelDefaults: 'models.defaults', modelProvider: 'models.provider',
-  helpOutline: 'help.outline', helpMika: 'help.mika',
+  helpOutline: 'help.outline', helpMika: 'help.mika', helpPage: HELP_PAGE_TYPE,
   folderStones: 'workspaces.stones', folder: 'workspaces.folder', folderAdd: 'workspaces.add', folderNew: 'workspaces.new', folderGithub: 'workspaces.github', folderClone: 'workspaces.clone',
 });
 
@@ -96,6 +97,8 @@ export function registerWorkbenchCatalog() {
   // THE HELP WORKBENCH (owner, 2026-10-21): the help outline and Mika in chat, both solid cards (door-workbenches.js).
   add({ type: WORKBENCH_TYPES.helpOutline, header: 'surface', className: 'wk-selector-utility', label: () => t('help_outline.title', 'Help'), summary: () => t('help_outline.summary', 'The guides, starting with the four things to know'), create: ({ environment }) => environment.helpOutline() });
   add({ type: WORKBENCH_TYPES.helpMika, header: 'terminal', className: 'wk-selector-utility', label: () => 'Mika', summary: () => t('help_outline.mika_summary', 'Ask in plain words'), create: ({ environment }) => environment.helpMika() });
-  profiles.define(WORKBENCH_PROFILES.help, [WORKBENCH_TYPES.helpOutline, WORKBENCH_TYPES.helpMika]);
+  // One help page whole in a workspace, placed by a dragged stone (help-outline.js); no selector cards.
+  add({ type: WORKBENCH_TYPES.helpPage, header: 'surface', label: () => t('help_outline.title', 'Help'), discover: () => [], create: ({ detail, environment }) => environment.helpPage(detail) });
+  profiles.define(WORKBENCH_PROFILES.help, [WORKBENCH_TYPES.helpOutline, WORKBENCH_TYPES.helpMika, WORKBENCH_TYPES.helpPage]);
   registered = true;
 }

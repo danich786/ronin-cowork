@@ -4876,18 +4876,22 @@ html[data-screen='inside'] #phone .ph-bar .ph-title[data-boot='inside'] { displa
   }
 }
 
-/* THE HELP OUTLINE (help-outline.js; owner, 2026-10-21): Start here: 4 things you need to know
-   over four numbered stones; the other groups quieter rows. */
+/* THE HELP OUTLINE (help-outline.js; owner, 2026-10-21, 2026-10-24): the header's headline and line
+   on the grid's width and left edge (the header sits outside the phalanx, so the grid's four-stone
+   width is said again here); a phone keeps the headline only. Start here: 4 things you need to know
+   over four numbered stones. */
 @layer app {
+  .help-outline .help-outline-intro { display: flex; flex-direction: column; justify-content: flex-end; gap: var(--space-paragraph); box-sizing: border-box; width: min(100%, calc(var(--setup-stone-size) * 4 + var(--space-subsection) * 3)); block-size: 100%; margin-inline: auto; padding-block-end: var(--space-paragraph); }
+  .help-outline .help-outline-intro h2 { margin: 0; color: var(--fg-strong); font-size: var(--text-display); font-weight: var(--weight-regular); line-height: var(--leading-tight); }
+  .help-outline .help-outline-intro p { margin: 0; color: var(--muted); font-size: var(--text-label); line-height: var(--leading-body); }
   .help-outline-stones [data-sws-group='four'] > .sws-group-heading { justify-content: flex-start; }
   .help-outline-stones [data-sws-group='four'] .sws-group-secondary { font: inherit; }
   .help-outline-stones .sws-group-hint { display: none; }
   .help-outline-stones .help-outline-first .sws-glyph { font-size: var(--text-display); font-style: normal; color: var(--fg-strong); }
-  .help-outline-stones .sws-stone.help-outline-row { aspect-ratio: auto; flex-basis: 100%; width: 100%; padding: var(--space-row) var(--space-control); border-color: transparent; color: var(--muted); }
-  .help-outline-stones .sws-stone.help-outline-row::before { display: none; }
-  .help-outline-stones .sws-stone.help-outline-row:hover, .help-outline-stones .sws-stone.help-outline-row[aria-pressed='true'] { background: var(--selected); color: var(--fg); }
-  .help-outline-stones .help-outline-row .sws-label { font-weight: var(--weight-regular); }
-  .help-outline-stones [data-sws-group]:not([data-sws-group='four']) > .sws-group-stones { gap: 0; }
+  .help-page .wk-surface-content { overflow: auto; padding: var(--space-inset); }
+}
+@media (max-width: 680px) {
+  .help-outline .help-outline-intro p { display: none; }
 }
 @layer app {
   .help-mika-none { margin: 0; padding: var(--space-inset); color: var(--fg); font-size: var(--text-body); }

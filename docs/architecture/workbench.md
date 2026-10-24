@@ -10,7 +10,8 @@ instances, and calls the placed instance's `show()` synchronously. The surface o
 smallest reads needed to paint itself.
 
 `public/js/phalanx.js` owns the shared Phalanx collection interaction: stones at rest,
-a selected-stone rail beside its detail, focus return, Escape, and responsive geometry.
+a selected-stone rail beside its detail, focus return, Escape, and responsive geometry (at rest
+up to four stones across, fewer as the seat narrows).
 Consumers supply items and detail content; they do not recreate that movement privately.
 A row may carry `items`. In full density pressing such a stone goes one level down: its
 descendants become the rail's stones and the stone is the level's detail until one is
@@ -177,7 +178,8 @@ a row aligned across the stones (`branches: 'column'`, a row's `under`; `teams-s
 over the pushed rosters' `board` (the Team's epic) and `items`): Theme and State plain clamped text, each Agent and
 each Item a branch row; the 人 mark in a stone's corner opens the Team page in a new tab.
 Help (owner, 2026-10-21) is the same door shape seating two workspaces: the help outline
-(`help.outline`, `help-outline.js`) in Workspace 1 and Mika (`help.mika`) in Workspace 2. A Tile
+(`help.outline`, `help-outline.js`) in Workspace 1 and Mika (`help.mika`) in Workspace 2. A page stone
+dragged into a workspace reads that page whole there (`help.page`, no selector card). A Tile
 built with `opensOn: 'reading'` spends the touch screens' open-on-the-reading intention on a desk too,
 and before her record has anything in it; a Mika born by the seat gets a fresh tile once she is up.
 The gate (owner, 2026-10-19): as on the old root, the Models, Workspaces and Teams doors are locked (Help
