@@ -77,21 +77,21 @@ export async function deliverSafe(name: string, text: string, onAttempt?: () => 
   return deliverForce(name, text, io);
 }
 
-/** A line ending in an image path. Claude Code turns that path into an [Image #N] chip
- * asynchronously, after the paste; an Enter arriving first finds an empty box and the
- * message sits unsubmitted. Such messages get one more Enter a second later. */
-const IMAGE_LINE = /\.(png|jpe?g|gif|webp)$/im;
-export const IMAGE_ENTER_DELAY_MS = 1_000;
+/** Every delivered message gets one more Enter a second after the first (owner's rule,
+ * 2026-10-24). Claude Code handles some pastes asynchronously: a long one becomes a
+ * [Pasted text #N] chip, an image path an [Image #N] chip, and no rule over the text says
+ * which; an Enter arriving before the chip finds an empty box and the message sits
+ * unsubmitted. On a box that did submit, the second Enter is a no-op. One timer, no pane
+ * read, no loop. */
+export const SECOND_ENTER_DELAY_MS = 1_000;
 
 /** Composer sends and the two-minute override use this same text-then-Enter operation.
  * Tmux completes the bracketed paste command before copy-mode cancellation and Enter. */
 export async function deliverForce(name: string, text: string, io: PaneIO = paneIO(name)): Promise<DeliveryResult> {
   await io.type(text);
   await io.enter();
-  if (IMAGE_LINE.test(text)) {
-    await new Promise((resolve) => setTimeout(resolve, IMAGE_ENTER_DELAY_MS));
-    await io.enter();
-  }
+  await new Promise((resolve) => setTimeout(resolve, SECOND_ENTER_DELAY_MS));
+  await io.enter();
   return { delivered: true, submitted: true, reason: 'text and Enter sent' };
 }
 

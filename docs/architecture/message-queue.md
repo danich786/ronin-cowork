@@ -17,10 +17,15 @@ uses `paste-buffer -p -r` to mark the paste boundary when the CLI requests brack
 paste and preserve embedded newlines. The buffer is deleted after use. Enter is sent
 separately, outside that boundary, as a real tmux `Enter` key action. Ronin first asks
 tmux to leave copy mode, ignores the harmless error when copy mode was not active, and
-then unconditionally sends Enter. A carriage return sent through
+then unconditionally sends Enter, and one second later sends Enter once more (owner,
+2026-10-24): the CLI handles some pastes asynchronously — a long one becomes a
+`[Pasted text #N]` chip, an image path an `[Image #N]` chip, and no rule over the text says
+which — so an Enter that arrives before the chip finds an empty box and the message sits
+unsubmitted; on a box that did submit, the second Enter is a no-op (Claude Code, Codex and
+Gemini CLI each ignore Enter on an empty composer). A carriage return sent through
 `paste-buffer` is still pasted data and is not a keypress. Raw `send-keys -l` does not
 mark a paste, and a fixed pause cannot repair either boundary. There are no screen checks between them, no
-fingerprints, no prompt-disappearance verification, and no repeated Enter loop.
+fingerprints, no prompt-disappearance verification, and no repeated Enter loop: one timer, two Enters.
 
 The worker deletes the letter after an attempt whether tmux accepts it or not. Delivery
 is best effort and never claims that the Agent processed the message.

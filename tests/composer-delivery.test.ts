@@ -63,7 +63,7 @@ test('one Ronin box request submits even if copy mode reopens after the paste', 
     'delivery leaves copy mode so the real Enter reaches the application');
 });
 
-test('complete messages preserve paste boundaries and one final Enter even when the reader is delayed', async (t) => {
+test('complete messages preserve paste boundaries and the Enter, then the second Enter, even when the reader is delayed', async (t) => {
   const server = await openTestServer('composer_paste_boundary', { onPath: true });
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ronin-paste-boundary-'));
   t.after(async () => { await closeTestServer(server); await fs.rm(root, { recursive: true, force: true }); });
@@ -88,11 +88,11 @@ test('complete messages preserve paste boundaries and one final Enter even when 
   try { assert.equal((await deliverForce('paste_target', text)).delivered, true); }
   finally { process.kill(pid, 'SIGCONT'); }
   let received = '';
-  for (let i = 0; i < 50; i++) {
+  for (let i = 0; i < 150; i++) {
     received = await fs.readFile(output, 'utf8').catch(() => '');
-    if (received.endsWith('\r')) break;
+    if (received.endsWith('\r\r')) break;
     await new Promise((resolve) => setTimeout(resolve, 20));
   }
-  assert.equal(received, `\x1b[200~${text}\x1b[201~\r`);
+  assert.equal(received, `\x1b[200~${text}\x1b[201~\r\r`, 'the paste, its Enter, and the second Enter a second later');
   assert.equal(await server.run('list-buffers', '-F', '#{buffer_name}'), '');
 });

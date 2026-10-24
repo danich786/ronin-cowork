@@ -38,11 +38,11 @@ test('birth records membership without terminal input; later joins still submit 
   assert.equal(later.birth_crew, 'queued');
   await processMessageQueue();
   let received = '';
-  for (let i = 0; i < 50; i++) {
+  for (let i = 0; i < 150; i++) {
     received = await fs.readFile(input, 'utf8').catch(() => '');
-    if (received.endsWith('\r')) break;
+    if (received.endsWith('\r\r')) break;
     await new Promise((resolve) => setTimeout(resolve, 20));
   }
   assert.match(received, /You're on the "birth_crew" team/);
-  assert.equal(received.match(/\r/g)?.length, 1, 'later notice ends with one Enter');
+  assert.equal(received.match(/\r/g)?.length, 2, 'later notice ends with its Enter and the second Enter a second later');
 });
