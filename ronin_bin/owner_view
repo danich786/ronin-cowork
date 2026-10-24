@@ -4,7 +4,7 @@
 #
 # Usage: owner_view <tab-id>      the tab id Help was opened in (your brief names it)
 # Exit 2 = not one tab id, 4 = no operator to ask, 5 = that tab's view is absent or stale
-# (open Help in the tab you mean and ask again).
+# (ask the owner to press a Help stone again in that tab, then ask again).
 set -u
 . "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"
 TOOL_DIR=$(dirname "$SELF")

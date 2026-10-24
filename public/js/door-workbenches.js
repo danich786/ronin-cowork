@@ -24,7 +24,7 @@ import { createFolder, createFolderClone, createFolderGithub, createFolderNew, c
 import { createWorkspaceAdd } from './workspace-add.js';
 import { campaignById, loadCampaigns, normalizeSelection } from './campaigns.js';
 import { createHelpOutline, createHelpPage } from './help-outline.js';
-import { createMikaTilePool } from './mika.js';
+import { createMikaTilePool, reportMikaView } from './mika.js';
 import { readyMika } from './mika-ready.js';
 import { S } from './state.js';
 import { request } from './request.js';
@@ -36,13 +36,19 @@ const blank = (id) => WorkspaceKit.primitives.createBlankSurface(id.replace('wor
  * workspace's when there is more than one); `environment`
  * builds the surfaces' resident data over the bench; `cards` false leaves the selector
  * without cards; `loaded` is a read the seats are re-placed after (the folders need the
- * Campaign); `destroy` lets the surfaces go with the view.
+ * Campaign); `reading` names the Help page being read; `destroy` lets the surfaces go with the view.
+ * Every change reports this tab's view for Mika's `owner_view`, as the other workbenches do.
  */
-function doorWorkbench({ id, profile, label, seat, seats = { workspace1: seat }, environment, cards = true, loaded = null, destroy = () => {} }) {
+function doorWorkbench({ id, profile, label, seat, seats = { workspace1: seat }, environment, cards = true, loaded = null, reading = () => '', destroy = () => {} }) {
   registerWorkbenchCatalog();
   const { normalizeWorkbenchState } = WorkspaceKit.contract;
   let ctx = null, entered = false, bench = null;
-  const save = () => ctx?.patchViewState(id, bench.snapshot());
+  const report = () => {
+    if (!entered) return;
+    const shown = (workspace) => [bench.typeAt(workspace), bench.resourceAt(workspace)].filter(Boolean).join(':') || 'empty';
+    void reportMikaView({ workbench: id, team: '', selected: bench.selected(), reading: reading(), workspaces: Object.fromEntries(bench.visibleIds().map((workspace) => [workspace, shown(workspace)])) });
+  };
+  const save = () => { ctx?.patchViewState(id, bench.snapshot()); report(); };
   const reseat = () => {
     for (const [workspace, held] of Object.entries(bench.snapshot().seats)) {
       const type = typeof held === 'object' ? held.type : held;
@@ -50,7 +56,7 @@ function doorWorkbench({ id, profile, label, seat, seats = { workspace1: seat },
     }
   };
   bench = WorkspaceKit.workbench.create({
-    profile, tenant: { kind: id }, environment: environment({ bench: () => bench, entered: () => entered, ctx: () => ctx }),
+    profile, tenant: { kind: id }, environment: environment({ bench: () => bench, entered: () => entered, ctx: () => ctx, report }),
     defaultNode: blank, label, ...(cards ? {} : { selectorFilter: () => false }), onStateChange: save, onPlacement: save,
   });
   return {
@@ -146,6 +152,7 @@ export function createHelpView() {
   const MIKA = 'mika_agent';
   const { surface: mikaSurface, pool: mikaPool } = createMikaTilePool({ opensOn: 'reading' });
   const outlines = [];
+  let reading = '';
   const none = document.createElement('p');
   none.className = 'help-mika-none';
   none.hidden = true;
@@ -171,8 +178,9 @@ export function createHelpView() {
   return doorWorkbench({
     id: 'help', profile: WORKBENCH_PROFILES.help, label: t('campaign_home.help', 'Help'),
     seats: { workspace1: WORKBENCH_TYPES.helpOutline, workspace2: WORKBENCH_TYPES.helpMika },
-    environment: () => ({
-      helpOutline: () => { const outline = createHelpOutline(); outlines.push(outline); return outline; },
+    reading: () => reading,
+    environment: ({ report }) => ({
+      helpOutline: () => { const outline = createHelpOutline({ onRead: (label) => { if (label !== reading) { reading = label; report(); } } }); outlines.push(outline); return outline; },
       helpPage: (detail = {}) => createHelpPage(String(detail.key || '')),
       helpMika: () => ({ el: mikaSurface.el, show: () => {
         if (!standIn) { standIn = WorkspaceKit.adapters.createTerminalTileHost({ mode: 'full' }); mikaSurface.content.append(standIn.el); standIn.mount(''); standIn.hide(); }

@@ -47,7 +47,7 @@ export function mikaTab() {
 }
 
 /** What this tab shows, for `owner_view`: best effort, never blocking Help. */
-async function reportMikaView(view) {
+export async function reportMikaView(view) {
   if (!view) return;
   try { await request(`/api/mika/context/${encodeURIComponent(mikaTab())}`, { method: 'PUT', json: { view } }); } catch (_) { /* Help does not wait on it */ }
 }

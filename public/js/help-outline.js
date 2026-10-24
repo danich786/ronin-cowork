@@ -93,7 +93,8 @@ function readPage(item, host, onLink) {
 /** Every page of the outline, wherever it sits, with the shelf it sits on. */
 const allPages = (rows) => rows.flatMap((row) => row.items?.length ? row.items.map((item) => ({ item, shelf: row })) : [{ item: row, shelf: null }]);
 
-export function createHelpOutline() {
+/** `onRead(label)` hears each page the outline reads: a pressed stone or a followed link. */
+export function createHelpOutline({ onRead = () => {} } = {}) {
   const out = WorkspaceKit.primitives.createSurface({ label: t('help_outline.title', 'Help'), className: 'help-outline' });
   const pages = PAGES();
   const open = (path, fragment = '') => {
@@ -108,7 +109,9 @@ export function createHelpOutline() {
     items: pages, className: 'help-outline-stones', grouped: { groups: [...new Map(pages.map((item) => [item.group.id, item.group])).values()] },
     renderDetail: (item, host) => {
       host.scrollTop = 0;
-      readPage(item.items?.length ? item.items[0] : item, host, open); // a shelf whose page was pressed off still reads its first
+      const page = item.items?.length ? item.items[0] : item; // a shelf whose page was pressed off still reads its first
+      readPage(page, host, open);
+      onRead(page.label);
     },
   });
   const intro = el('div', 'sws-intro help-outline-intro');
