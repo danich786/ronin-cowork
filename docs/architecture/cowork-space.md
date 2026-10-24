@@ -92,15 +92,16 @@ Rules that make them peers:
 ### The bar's navigation
 
 The left side is the crumb (owner, 2026-10-20): the RoninCowork brand (a plain mark and word, not a
-link), Home (`#/home`), the Teams door (`#/cowork`, the Teams workbench), and on a Team page the
-Team's title last (its id read as words when it has no title). A view naming its
-own place (Models, Workspaces) reads it after Home instead of the Teams door. A neutral island is cut
-into the top edge of the screen and names the active Workbench scope:
+link), then after a gap (`--space-subsection`, no dot; owner, 2026-10-24) Home (`#/home`), the Teams
+door (`#/cowork`, the Teams workbench), and on a Team page the Team's title last (its id read as
+words when it has no title), dots between the crumbs. A view naming its own place (Models,
+Workspaces, Help) reads it after Home instead of the Teams door. A neutral island is cut into the
+top edge of the screen and names the active Workbench scope:
 
 ```text
-RoninCowork  •  Home  •  Teams                   Teams                         <verbs>
-RoninCowork  •  Home  •  Teams  •  Sea Settle  Sea Settle                      <verbs>
-RoninCowork  •  Home  •  Models                                                <verbs>
+RoninCowork    Home  •  Teams                    Teams                         <verbs>
+RoninCowork    Home  •  Teams  •  Sea Settle   Sea Settle                      <verbs>
+RoninCowork    Home  •  Models                                                 <verbs>
 ```
 
 The root landing and Machine Settings have no island. Campaign reads *Campaign*, Teams

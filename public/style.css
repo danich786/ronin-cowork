@@ -672,6 +672,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: var(--space-inline);
+  margin-inline-end: var(--space-subsection); /* the brand stands apart from the crumbs: a gap, not a dot (owner, 2026-10-24) */
   font-weight: var(--weight-strong);
   letter-spacing: var(--tracking-wide);
   padding: 0;

@@ -17,7 +17,6 @@ export function installWorkspaceHeader(workspace) {
   // door (#/cowork, the Teams workbench), then a view's own place (`place`) last. A Team page
   // sits under Teams — RoninCowork • Home • Teams • <Team title>; any other view naming a
   // place sits under Home alone — RoninCowork • Home • <place>.
-  const homeSeparator = document.getElementById('homesep');
   const home = document.getElementById('homebtn');
   const placeSeparator = document.getElementById('placesep');
   const crumb = document.getElementById('viewcrumb');
@@ -43,7 +42,6 @@ export function installWorkspaceHeader(workspace) {
     const landing = !active || active.id === 'home' || active.id === 'current';
     const placed = active?.view?.place ? active.view.place() : '';
     const underTeams = !landing && (!placed || active.id === 'team');
-    if (homeSeparator) homeSeparator.hidden = landing;
     if (home) { home.textContent = t('bar.home', 'Home'); home.hidden = landing; }
     if (separator) separator.hidden = !underTeams;
     if (coworkers) {
