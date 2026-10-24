@@ -1,82 +1,55 @@
-# Workspace Folders — where Ronin works
+# Workspace folders
 
-Workspace Folders are your project roots — the known surfaces your Agents work on. A
-Workspace Folder is a real directory on this machine or a GitHub repository. When you start
-an Agent you choose one, and it becomes that Agent's ground: where it opens files, runs
-commands, and keeps its work.
+A workspace folder is where an Agent does its work: a project, a notes folder, a site. You
+pick one each time you start an Agent or a Team, and the Agent opens its files and runs
+its commands there.
 
-You need at least one before an Agent has anywhere to work. One is enough to start.
+Ronin starts you with two:
 
-## Add one
+- **Ronin Lab** — for ideas, research, assistants, and planning before a project exists.
+- **Project One** — for your first project.
 
-Open **Workspace folders** in [Ronin Setup](setup-workbench.md), or afterwards the
-**Workspaces** door on Ronin Home or **Workspaces** on Ronin Settings. You give two things:
+That's enough to start. Add your own whenever you have work somewhere else.
 
-| You give | What it is |
-|---|---|
-| A directory | An existing folder on this machine, or a repository you clone through GitHub. |
-| A name | What you will see in the New Agent form and on an Agent's record. Presentation only. |
+## Add a folder
 
-The name is free to change later. Changing it never moves the directory, never renames the
-folder on disk, and never changes the identity of any Agent already working there.
+Open **Workspace folders** in [Ronin Setup](setup-workbench.md), or the **Workspaces** door
+on Ronin Home.
 
-## GitHub repositories
+1. Press **Add a workspace**.
+2. Browse to the folder you want. Folders that are repositories are listed first.
+3. Press **Keep** beside it.
+4. Give it a name if you like, and press **Add**.
 
-Authenticate with GitHub from the same surface to work on remote repositories as well as
-folders already on this machine. Once authenticated you can clone a repository and register
-it in one step, and it becomes a Workspace Folder like any other.
+The name is only what you see in Ronin. Changing it later never moves or renames the folder.
 
-Local directories do not need this. Authenticate only when you want Ronin reaching
-repositories that are not already on the machine.
+## Bring in a GitHub repository
 
-## Choosing a folder
+To work on a repository that isn't on this machine yet, use the **GitHub CLI** stone:
+**Install**, then **Authenticate** to sign in to GitHub. Then press **Clone a repository**,
+pick it, and it becomes a workspace folder like any other.
 
-Point at the project you actually want worked on — the repository, the notes directory, the
-site. Prefer the folder you would open in an editor.
+Folders already on the machine don't need GitHub.
 
-A Workspace Folder can be a Git repository or a plain directory.
+## One copy, or one each
 
-## Desks or a shared checkout
+When the folder is a repository, you choose how Agents share it, under **Repository** when
+you add the folder or press **Edit** on it:
 
-When a Workspace Folder is a repository, you choose how Agents work inside it.
+- **Worktrees** — each Agent gets its own private copy and branch, and hands its work in
+  when it's done. Best for code, especially with several Agents at once. See
+  [Managed worktrees](../using-ronin/desks.md).
+- **Checkout** — every Agent works in the one folder. Best for notes, plans and research,
+  where one shared, current copy is what you want.
 
-| Choice | What each Agent gets | Suits |
-|---|---|---|
-| [Managed worktree](../using-ronin/desks.md) | Its own branch and working tree | Active code editing, and several Agents at once |
-| Shared checkout | The one working tree, on whatever branch it is on | Notes, research, plans, and reading |
+You can change your mind later.
 
-Prefer desks whenever the work is code and more than one Agent may touch it. Parallel
-Agents on one checkout share a single set of uncommitted changes, so one Agent's
-half-finished edit is visible to every other and easy to lose.
+## Removing a folder
 
-Prefer a shared checkout for a repository of documents rather than code — plans, notes,
-research, drafts and work in progress. A desk adds ceremony to every edit: a branch to
-open, work to commit, a hand-in, and a merge. For code that isolation is often worth it.
-For documents, the useful default is usually one current copy that everyone can read.
+Press a folder's stone. **Archive** takes it off the list you pick from when starting an
+Agent; **Exclude** removes it from Ronin altogether. Either way the folder and everything in
+it stay on disk, and Agents already working there keep going.
 
-A repository can change its mind. Start with a shared checkout and open desks later if the
-work turns into code, or switch back when one shared copy becomes more useful.
-
-You can register as many as you like, and the same machine can hold unrelated ones — a work
-repository, a personal notes folder, a site. Agents see only the one they were started in.
-
-## What this is and is not
-
-Registering a folder is how you **point** Ronin at work. It is a convenience and a record,
-not a sandbox: Ronin's tiles run as the account that installed Ronin, and that account's
-own file permissions are what actually limit reach. If you need a harder boundary, put it
-at the account or machine level — see
+A workspace folder tells your Agents where to work. It isn't a lock: Agents can reach
+whatever your account on this machine can. See
 [how Ronin protects your machine and work](how-ronin-protects-you.md).
-
-## Removing one
-
-Removing a Workspace Folder removes Ronin's record of it. It does not delete the directory
-or anything in it. Agents already running in that folder keep running; the folder simply
-stops being offered when you start something new.
-
-## Related
-
-- [Ronin Setup](setup-workbench.md) — the first-run door, and every page behind it
-- [Managed worktrees](../using-ronin/desks.md) — private branches for Agents in a repository
-- [Workspace Folders — construction](../architecture/project-roots.md) — the handle, the
-  record, and how session identity resolves it

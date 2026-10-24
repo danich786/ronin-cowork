@@ -1,60 +1,42 @@
 # Ronin Services
 
-Ronin Services adds optional capabilities to Cowork. You can use base Ronin without it.
-A capability listed in the source is not necessarily installed or running on your machine.
+Ronin Services adds optional features on top of Ronin: project management with work items
+and a board, terminal transcripts, usage stats, and more as they arrive. Ronin works fully
+without them. They're free once you register.
 
-## Install and switch on
+## Turn them on
 
-Open **Ronin Services** in [Ronin Setup](setup-workbench.md). The page shows separate facts:
+Open **Installations** in [Ronin Setup](setup-workbench.md) and press **Ronin Services**.
+You'll see three controls, done in order:
 
-| Control | Meaning |
-|---|---|
-| Register | Establish the identity used for Services entitlement; read the disclosure before sending |
-| Install | Download and install the Services package when the hosted install is available to this identity |
-| Turn on / Turn off | Choose whether Services is enabled; this does not remove the installed files |
-| Restart, when shown | Apply a change that requires the Ronin operator to restart |
+1. **Register** — give your email and open the confirmation link we send, on any device.
+   The page notices when you've confirmed; **Check status** asks again straight away.
+2. **Install** — downloads the Services package to this machine.
+3. **Switch on** — press **Turn on** to give Services to your new Teams and Agents.
 
-Follow the next action shown. If confirmation is pending, open the email on any device and
-return to **Check status**. Use Register to resend or correct the address. If installation
-fails after confirmation, retry installation; you do not need to request another identity.
+Each control reads **Done** once it is. If a **Restart** appears, press it; the page updates
+itself when Ronin is back.
 
-Registration comes first: Ronin Services cannot be installed without it. Installing and
-switching on are the steps after. Once a feature is installed and switched on it works —
-nothing asks for the registration credential a second time. Project management, Usage stats and
-Machine status are on unless you switch them off; the rest start off. Project management is work
-items with a board, the work record on each tile, and Agents trained to keep their items
-true (the conditional Project management Behavior). Mapping to Jira, Trello and others
-comes later. Choosing
-**No communication** changes communication preferences, not entitlement.
-
-The operator restart is separate from your Agent terminal sessions. After a restart, check
-the displayed Services state instead of assuming the switch alone proves a feature loaded.
-Terminal transcript reads the conversation the CLI itself writes and keeps a copy in the
-Agent's session folder; it needs both the package and the switch. Local weights are
-currently parked; do not rely on the package alone for an active local model service.
+Below the controls, each feature has its own switch. Project management, Usage stats and
+Machine status start on; the rest start off. Turn any of them on or off whenever you like.
 
 ## What is sent
 
-Registration sends the information disclosed by the form to Ronin HQ. Credentials used
-for Services stay on the machine's server side; they are not returned to the browser.
+Registering sends the answers on the form to Ronin HQ. Nothing else about you is attached.
 
-Registered Stats collects aggregate Ronin tool-use counts. It does not submit your code,
-prompts, filenames, messages, or conversation text. See the [Stats guide](https://github.com/ronincowork/ronin-services/blob/dev/docs/stats.md)
-for what is counted, when it is collected, and its limits.
+Usage stats send a weekly count of which Ronin tools were used. They never include your
+code, prompts, file names, messages or conversations. The
+[Stats guide](https://github.com/ronincowork/ronin-services/blob/dev/docs/stats.md) lists
+exactly what is counted.
 
-## Check connections and recover
+Choosing **No communication** on the form means we don't email you; it doesn't change what
+you can use.
 
-The Services connection record shows Ronin HQ requests, including failed attempts, with
-host, path, status, and timing. It omits request bodies, addresses, and tokens. This is
-not a record of your provider CLI's traffic or every network connection on the machine.
+## If something goes wrong
 
-| Situation | Next step |
-|---|---|
-| Confirmation has not arrived | Check the address; resend when the page allows it |
-| Confirmation expired | Request a fresh link |
-| HQ could not be reached | Use the displayed retry or Check status action; local Ronin remains usable |
-| Install failed | Retry installation using the existing confirmed identity |
-| Switch changed but feature is absent | Complete the indicated restart and check measured status |
-
-Contributors: [activation construction](../architecture/services-activation.md) and the
-[Services connector contract](https://github.com/ronincowork/ronin-services/blob/dev/connector-contract.md).
+- **No confirmation email** — check the address on **Register**, and resend.
+- **The link expired** — ask for a fresh one from **Register**.
+- **Ronin HQ can't be reached** — try again later; everything else in Ronin keeps working.
+- **Install failed** — press **Install** again; you don't need to register again.
+- **A feature you switched on isn't there** — press **Restart** if it's shown, then look
+  again.
