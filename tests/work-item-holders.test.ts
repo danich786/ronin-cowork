@@ -206,3 +206,8 @@ test('an arrival made by the holder itself tells nobody', async () => {
   assert.deepEqual((await items.createItem({ title: 'my own child', parent: parent.id }, 'maker')).notified, []);
   assert.deepEqual((await items.createItem({ title: 'someone else\'s', parent: parent.id }, 'lead')).notified, ['maker']);
 });
+
+test('session_create\'s caller survives the launch filter, so a lead is not told of its own birth', async () => {
+  const { acceptedLaunchBody } = await import('../src/routes/launch.js');
+  assert.equal(acceptedLaunchBody({ name: 'member', caller: 'lead' }).body.caller, 'lead');
+});
