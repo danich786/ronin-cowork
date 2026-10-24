@@ -4,6 +4,7 @@ import { workbenchView } from './workspace-contract.js';
 import { SETUP_SURFACE_TYPES, registerSetupSurfaces } from './setup-surfaces.js';
 import { createProviderSetupSessionMount } from './provider-setup-session.js';
 import { request } from './request.js';
+import { t } from './lexicon.js';
 import { SETUP_SCENES } from './setup-journey.js';
 import { GARDEN_CANVAS_TYPE, registerGardenCanvas } from './garden-canvas.js';
 import { localDocumentLink, productRepositoryHref } from './document-links.js';
@@ -283,6 +284,7 @@ export function createSetupView() {
     glyph: '人',
     ...workbenchView('setup', { header: { ram: false, feedback: false, leading: [setupStepsHeader], actions: [themeToggle] } }),
     title: () => 'Ronin Setup',
+    place: () => t('setup.short_title', 'Setup'), // the crumb: Home • Setup (owner, 2026-10-24)
     mount: (_host, context) => { ctx = context; },
     enter: async (context) => {
       const generation = ++enterGeneration;

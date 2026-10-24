@@ -169,8 +169,8 @@ both drawing with `projectroots.js`'s exported drawing (`createRootDrawing`, `ro
 one read per bench (`createRootsReading`, the detail route). The bar's crumb (`workspace-header.js`;
 owner, 2026-10-20) reads RoninCowork   Home • Teams • <Team title> on a Team page — a gap, not a dot,
 after the brand (`--space-subsection`; owner, 2026-10-24) — Home to `#/home`, Teams to `#/cowork`;
-the Teams workbench ends at Teams, and a view naming its own `place` (Models, Workspaces, Help)
-reads RoninCowork   Home • <place>.
+the Teams workbench ends at Teams, and a view naming its own `place` (Models, Workspaces, Help,
+Setup, Settings) reads RoninCowork   Home • <place>.
 The Teams workbench's Teams card (`team-roster-surface.js`; owner, 2026-10-20) carries, above its
 stones, the Workspace question (many-of, blank All) and the Show question (Theme on; State,
 Agents, Items); each stone is the Team's name with what Show picks under it, a cell per picked

@@ -95,7 +95,8 @@ The left side is the crumb (owner, 2026-10-20): the RoninCowork brand (a plain m
 link), then after a gap (`--space-subsection`, no dot; owner, 2026-10-24) Home (`#/home`), the Teams
 door (`#/cowork`, the Teams workbench), and on a Team page the Team's title last (its id read as
 words when it has no title), dots between the crumbs. A view naming its own place (Models,
-Workspaces, Help) reads it after Home instead of the Teams door. A neutral island is cut into the
+Workspaces, Help, Setup, Settings; owner, 2026-10-24 for the last two) reads it after Home instead
+of the Teams door. A neutral island is cut into the
 top edge of the screen and names the active Workbench scope:
 
 ```text
