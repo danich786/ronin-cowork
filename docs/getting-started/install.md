@@ -230,15 +230,73 @@ holder's cgroup ends in `ronin.service` or is explicitly recorded as `unknown`.
 
 ## 6. Continue through first use
 
-Help the owner open the appropriate printed URL on their own device. A fresh install opens Ronin Home;
-its **Settings** button opens Ronin Setup. Continue with [Get started](get-started.md): establish
-one provider using
-[Provider sign-in](provider-sign-in.md), and prove one harmless Agent exchange.
+Report the verified browser address and that Tailscale's access rules decide who can reach
+it; if either is unknown, return to [step 5](#5-verify-the-running-install). Then help the
+owner open it on their own device. A fresh install opens Ronin Home; its **Settings** button
+opens Ronin Setup. The owner's walkthrough is [Get started](get-started.md): one provider,
+one Workspace folder, one Agent that answers.
 
-Stay available as a plain terminal for diagnosis. Do not answer
-provider dialogs, or infer success from an installed CLI or a launched process. Hand off
-only after the Agent visibly responds, or report the exact blocking state and safe next
-action.
+Stay beside the owner as a plain terminal for diagnosis. Do not answer owner choices,
+enter credentials, or promise behavior the screen does not show. Ronin is usable without
+optional Services; do not configure every provider.
+
+### Provider sign-in rules
+
+The goal is one usable provider. The owner chooses the account and billing arrangement and
+performs every credential-bearing step: login, billing, device code, trust, or
+authorization dialog. You may inspect safe status, explain consequences, run a login
+command with approval, and verify the result. Never ask the owner to paste a key into chat
+or a recorded tile.
+
+- **Installed is not signed in.** From the same login shell a Ronin tile receives,
+  `for c in claude codex gemini grok hermes; do command -v "$c" || true; done` proves only
+  whether a CLI is found. The provider catalog (`ronin_catalogs/MODEL_PROVIDERS.md`) lists
+  what Ronin offers; **Model providers** shows what this machine has.
+- **Signed in is a file's existence.** A provider whose own credential file is present
+  (Claude Code `~/.claude/.credentials.json`, Codex `~/.codex/auth.json`, Gemini CLI
+  `~/.gemini/oauth_creds.json`, Grok `~/.grok/auth.json`) shows as signed in; Ronin reads
+  only that the file exists and does not recheck the account afterwards.
+- **Done records activation; Cancel does not.** Both measure the machine again.
+- **Ask about billing before login.** Subscription login or separately billed API access is
+  the owner's choice; never infer it from a model name. Environment variables can override
+  a subscription session and precedence is provider-specific: inspect names, never values.
+  For Anthropic, `ronin-host secrets` reports which credential would win in the shell it
+  checks, without printing it; a spawned tile may inherit a different service environment.
+  Resolve a conflict with the owner rather than dismissing the CLI's warning.
+- **CLI particulars** live in the [Codex](../agents/codex.md#sign-in-particulars) and
+  [Claude Code](../agents/claude.md#sign-in-particulars) integration pages. Gemini CLI, Grok
+  and Hermes have catalog rows but Google, xAI and Nous have not been launched end to end
+  through Ronin: do not invent a sign-in command or normalize one provider's status output
+  into another's. Hermes has no safe automatic installer in Ronin.
+
+### Workspace folder
+
+A configured folder is required for the proof launch. **Ronin Lab** and **Project One**
+exist on a fresh install; if the owner wants another, have them choose an existing folder
+under **Workspace folders**. Inspection is local and read-only; it does not create or clone
+a repository.
+
+### Prove one working Agent
+
+1. Under **Launch your own → Agent**, choose the Workspace folder and one activated
+   provider and model.
+2. Launch and wait for the Agent's ready prompt. If it asks for authentication, return to
+   **Model providers** and retry once the owner has completed it.
+3. Send a harmless prompt needing no private data or file change:
+   `Reply with exactly: Ronin Agent ready`
+
+Success means the tile stays running and visibly returns the requested response. A running
+process, a model label, or a cleared input line is not success. Record the Agent CLI,
+provider and model, and the observed response, never a credential.
+
+If launch fails, keep the tile and its exact message, confirm the CLI is installed, re-check
+provider status without exposing secrets, and switch provider only on the owner's choice.
+
+### Hand off
+
+Show the owner Ronin Home's doors and [the Workbench](../using-ronin/workbench.md). Your job
+ends after one successful exchange, or an honest blocked report naming the exact blocking
+state and the safe next action.
 
 **What you should see:** Ronin Setup opens, one provider is usable, and a newly created
 Agent visibly answers one harmless prompt. Anything not exercised stays "not tested."

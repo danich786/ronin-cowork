@@ -100,7 +100,8 @@ const findPage = (rows, path) => {
   return all.find(({ shelf }) => shelf.id === path) || all[0];
 };
 
-export function createHelpOutline() {
+/** `onRead(label)` hears each page the outline reads: a pressed stone or a followed link. */
+export function createHelpOutline({ onRead = () => {} } = {}) {
   const out = WorkspaceKit.primitives.createSurface({ label: t('help_outline.title', 'Help'), className: 'help-outline' });
   const pages = PAGES();
   const open = (path, fragment = '') => {
@@ -114,7 +115,9 @@ export function createHelpOutline() {
     items: pages, className: 'help-outline-stones', grouped: { groups: [...new Map(pages.map((item) => [item.group.id, item.group])).values()] },
     renderDetail: (item, host) => {
       host.scrollTop = 0;
-      readPage(item.path ? item : item.items[0], host, open); // a shelf whose page was pressed off still reads its own, or its first
+      const page = item.path ? item : item.items[0]; // a shelf whose page was pressed off still reads its own, or its first
+      readPage(page, host, open);
+      onRead(page.label);
     },
   });
   const intro = el('div', 'sws-intro help-outline-intro');

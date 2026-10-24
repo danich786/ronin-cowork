@@ -8,7 +8,7 @@ import { mikaHomeDir } from './mika-runtime.js';
 export const MIKA_VIEW_TTL_MS = 15 * 60_000;
 const TAB_RE = /^[A-Za-z0-9_-]{8,64}$/;
 export const isMikaTab = (value: unknown): value is string => typeof value === 'string' && TAB_RE.test(value);
-const WORKBENCHES = new Set(['campaign', 'cowork', 'team', 'setup', 'phone']);
+const WORKBENCHES = new Set(['campaign', 'cowork', 'team', 'setup', 'phone', 'help', 'models', 'workspaces']);
 const WORKSPACES = ['workspace1', 'workspace2', 'workspace3', 'workspace4'] as const;
 
 export interface MikaView {
@@ -16,6 +16,8 @@ export interface MikaView {
   team: string;
   selected: string;
   workspaces: Record<string, string>;
+  /** The Help page being read, on the Help workbench. */
+  reading: string;
 }
 
 interface StoredView { at: number; view: MikaView }
@@ -38,7 +40,7 @@ export function cleanMikaView(value: unknown): MikaView | null {
     const shown = text(source[name], 120);
     if (shown) workspaces[name] = shown;
   }
-  return { workbench, team: text(raw.team, 64), selected, workspaces };
+  return { workbench, team: text(raw.team, 64), selected, workspaces, reading: text(raw.reading, 80) };
 }
 
 export function putMikaView(tab: string, value: unknown, now = Date.now()): MikaView | null {
@@ -62,11 +64,13 @@ export function whereIsMika(tab: string, now = Date.now()): string | null {
   if (!view) return null;
   const place = view.workbench === 'team' && view.team
     ? `Team workbench “${view.team}”` : `${view.workbench[0].toUpperCase()}${view.workbench.slice(1)} workbench`;
-  const lines = [`You are helping from the ${place}.`];
+  const lines = [`You are helping from the ${place}${view.reading ? `, reading ${view.reading}` : ''}.`];
   for (const name of WORKSPACES) if (view.workspaces[name]) lines.push(`${name.replace('workspace', 'Workspace ')} shows ${view.workspaces[name]}.`);
   if (view.selected) lines.push(`The selected workspace is ${view.selected.replace('workspace', '')}.`);
   return lines.join('\n');
 }
+
+const STALE = 'That Help view is absent or stale. Ask the owner to press a Help stone again in the tab they mean, then ask again.';
 
 export function registerMikaContext(app: express.Express): void {
   app.post('/api/mika/source', async (req, res) => {
@@ -86,12 +90,12 @@ export function registerMikaContext(app: express.Express): void {
   });
   app.get('/api/mika/context/:tab', (req, res) => {
     const report = whereIsMika(req.params.tab);
-    if (!report) return res.status(404).json({ error: 'That Help view is absent or stale. Open Help in the tab you mean and try again.' });
+    if (!report) return res.status(404).json({ error: STALE });
     res.json({ ok: true, report });
   });
   app.post('/api/mika/context/:tab/show', (req, res) => {
     const view = getMikaView(req.params.tab);
-    if (!view) return res.status(404).json({ error: 'That Help view is absent or stale. Open Help in the tab you mean and try again.' });
+    if (!view) return res.status(404).json({ error: STALE });
     const surface = text(req.body?.surface, 80);
     if (!/^[a-z0-9@._:-]+$/i.test(surface)) return res.status(400).json({ error: 'Name one Ronin surface.' });
     const target = WORKSPACES.find((name) => name !== view.selected && view.workspaces[name] !== undefined);

@@ -99,7 +99,7 @@ async function deskNote(r: { assignment?: unknown; project_root?: string; agent?
 }
 
 const LAUNCH_KEYS = new Set([
-  'session_type', 'team', 'team_lead', 'instructions', 'prompt', 'name',
+  'session_type', 'team', 'team_lead', 'instructions', 'prompt', 'name', 'caller',
   'project_root', 'cmd', 'model', 'provider', 'mandate', 'campaign_id', 'launch_mode',
   'tags', 'seed', 'inject', 'reference', 'desk', 'repos',
   'kind', 'behaviours',

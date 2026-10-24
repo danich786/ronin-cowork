@@ -1,61 +1,52 @@
-# Get started — from the private URL to one working Agent
+# Get started
 
-This guide is for an outside Agent helping the owner after installation. The one first-run
-door is [Ronin Setup](setup-workbench.md), opened from Ronin Home's **Settings** button at `#/setup`.
-Stay beside the owner, establish one provider, prove one harmless exchange, and then hand
-off. Do not answer owner choices, enter credentials, or promise behavior the screen does
-not show.
+Three steps take you from a fresh Ronin to an Agent working for you: connect one model
+provider, choose a folder to work in, and start your first Agent. Your phone's browser
+works as well as your computer's.
 
-## Before opening the URL
+## Open Setup
 
-Report the verified `https://<machine>.<tailnet>.ts.net:4810` URL and explain that
-access is controlled by Tailscale. Confirm who its access rules permit to reach Ronin.
-If those facts are not known, return to
-[the install checks](install.md#5-verify-the-running-install).
+Open your Ronin address in the browser. You land on **Ronin Home**, with four doors —
+**Models**, **Workspaces**, **Teams** and **Help** — and a **Settings** button.
 
-Open the printed URL. Ronin Home is the landing page; its **Settings** button opens Ronin
-Setup until Setup's steps are answered. Its two-workspace setup view seats the Garden beside
-Model providers, Register, Workspace folders, Installations, Password and Launch. These
-surfaces show measured state and save each choice where it lives; there is no separate
-first-run form or one-time Save.
+Press **Settings**. Until you have finished it, Settings opens **Ronin Setup**: guidance
+on the left, the steps down the middle, and the step you are on to the right. The steps
+are **Model providers**, **Register**, **Workspace folders**, **Installations**,
+**Password** and **Launch your own**. A step gets a check once you have answered it,
+either by doing it or by saying not now.
 
-## Establish one provider
+## 1. Connect a model provider
 
-In **Ronin Setup → Model providers**, choose one Agent the owner wants and continue with
-[Provider sign-in](provider-sign-in.md). An installed CLI is not activation. After the
-owner completes its native flow, **Done / Close** records the explicit activation step;
-**Close** does not. A real launch remains the end-to-end proof.
+Choose **Model providers** and pick the Agent you want to use: Claude Code, Codex, Gemini
+CLI, and others. Install it if needed, then sign in with your own subscription or API
+account. One provider is enough to start. [Provider sign-in](provider-sign-in.md) walks
+through it.
 
-Do not configure every provider. Never answer a provider trust, login, billing, or
-authorization dialog for the owner. Ronin remains usable without optional Services.
+## 2. Choose where your Agents work
 
-## Add a Workspace folder
+Choose **Workspace folders**. Ronin already made two for you: **Ronin Lab**, for ideas,
+research and notes, and **Project One**, for a project. Use one of those, or add a folder
+you already work in. See [Workspace folders](workspace-folders.md).
 
-Open **Ronin Setup → Workspace folders** and follow [Workspace folders](../architecture/project-roots.md).
-Choose an existing folder where the owner intends Agents to work. Inspection is local and
-read-only; it does not create or clone a repository. A configured folder is required for
-the proof launch.
+## 3. Start your first Agent
 
-## Prove one working Agent
+Choose **Launch your own**, then **Agent**. Give it a name, pick the provider you just
+signed in and the folder it should work in, and press **Launch**. The Agent opens in a new
+tab, in its own tile.
 
-1. In **New Agent**, choose the Workspace folder and one available provider/model.
-2. Launch the Agent and wait for its ready prompt.
-3. If authentication is requested, return to the provider route and retry after the owner
-   completes it.
-4. Send a harmless prompt that needs no private data or file change, such as:
+## Say hello
 
-   > Reply with exactly: Ronin Agent ready
+Type a short message into the tile, such as:
 
-Success means the new tile remains running and visibly returns the requested response. A
-process existing, model label, or cleared input line alone is not success. Record the Agent
-CLI, provider/model selected, and observed response—never a credential.
+> Reply with exactly: Ronin Agent ready
 
-If launch fails, keep the tile and exact message available, confirm the CLI is installed,
-re-check provider status without exposing secrets, and use a different provider only with
-the owner's choice.
+When the Agent answers, you're running. From here, ask for real work, start a Team from
+the **Teams** door, or come back to [Ronin Setup](setup-workbench.md) for the optional steps.
 
-## Hand off
+If the Agent asks you to sign in, go back to **Model providers**, finish signing in, and
+launch again.
 
-Show the owner Ronin Home's doors, **New Agent**, and [how to find work in the Workbench](../using-ronin/workbench.md).
-The outside Agent's installation job ends only after one successful exchange or an honest
-blocked report naming the missing provider capability.
+## Next
+
+- [The Workbench](../using-ronin/workbench.md): find and arrange your work.
+- [The tile](../using-ronin/tile.md): what an Agent's tile shows you.
