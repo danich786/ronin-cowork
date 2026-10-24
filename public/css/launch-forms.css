@@ -51,6 +51,9 @@
   .sws-stone { position: relative; display: flex; flex: 0 0 min(100%, var(--sws-stone)); flex-direction: column; align-items: flex-start; width: min(100%, var(--sws-stone)); aspect-ratio: 1; overflow: hidden; border: var(--edge) solid var(--line-2); border-radius: var(--radius-hair); background: var(--surface); color: var(--fg); padding: var(--space-inset); cursor: pointer; text-align: left; font: inherit; transition: border-color var(--motion-quick) var(--ease), box-shadow var(--motion-quick) var(--ease), transform var(--motion-settle) var(--ease), opacity var(--motion-settle) var(--ease); }
   .sws-stone::before { content: ''; position: absolute; inset: 0 auto 0 0; width: var(--edge-2); background: var(--accent); /* the stone's edge, the phalanx's mark */ }
   .sws-stone[hidden] { display: none; }
+  /* The level's way back (phalanx.js): small, on the inset, never mistaken for a stone of the level. */
+  .sws-stone.sws-back { flex-basis: auto; aspect-ratio: auto; background: var(--inset); color: var(--muted); padding: var(--space-row) var(--space-inset); }
+  .sws-stone.sws-back::before { display: none; }
   .sws-stone:hover { border-color: var(--kaki); }
   .sws-stone[aria-pressed='true'] { border-color: var(--kaki); box-shadow: inset var(--edge-2) 0 var(--kaki); }
   .sws-stone[aria-pressed='true']::before { display: none; }

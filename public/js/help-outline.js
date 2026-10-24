@@ -38,7 +38,8 @@ function PAGES() {
   const more = { id: 'more', label: t('help_outline.more', 'Everything else') };
   const first = (n, path, label) => draggable({ id: path, group: four, label, path, glyph: String(n), className: 'help-outline-first' });
   const page = (path, label) => draggable({ id: path, label, path });
-  const shelf = (id, label, items) => ({ id, group: more, label, items });
+  // A shelf opens on its first page, pressed, so the page being read is always the stone that shows it.
+  const shelf = (id, label, items) => ({ id, group: more, label, items, action: (row, api) => api.down(row.id, { select: row.items[0].id }) });
   return [
     first(1, 'docs/using-ronin/team-lead-and-edges.md', t('help_outline.lead', 'Team Lead and edges')),
     first(2, 'docs/using-ronin/what-agents-write-down.md', t('help_outline.records', 'Work records')),
@@ -103,10 +104,9 @@ export function createHelpOutline() {
   };
   const stones = createPhalanx({
     items: pages, className: 'help-outline-stones', grouped: { groups: [...new Map(pages.map((item) => [item.group.id, item.group])).values()] },
-    // A shelf open before one of its pages is pressed reads its first page.
     renderDetail: (item, host) => {
       host.scrollTop = 0;
-      readPage(item.items ? item.items[0] : item, host, open);
+      readPage(item.items ? item.items[0] : item, host, open); // a shelf whose page was pressed off still reads its first
     },
   });
   const intro = el('div', 'sws-intro help-outline-intro');
