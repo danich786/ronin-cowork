@@ -25,7 +25,7 @@ function reasonWords(requires) {
   return requires.filter((need) => !(need === 'team' && requires.includes('lead'))).map((need) => words[need] || need).join(' · ');
 }
 function sendsRows(rows) {
-  // A conditional's reason names it ("Team lead"); "since birth" marks one a resend would add.
+  // A conditional's reason names it ("Team lead"); "since birth" marks one the Agent was not born with.
   const tag = (row, reason = '') => ({
     text: [reason || row.label || row.name, row.since_birth ? t('agent_composition.since_birth', 'since birth') : ''].filter(Boolean).join(' · '),
     on: row.since_birth,
@@ -34,7 +34,6 @@ function sendsRows(rows) {
   return readingRows([
     [t('agent_composition.always', 'Always'), tagRow(rows.filter((row) => row.scope === 'floor').map((row) => tag(row)), none)],
     [t('agent_composition.because', 'Because'), tagRow(rows.filter((row) => row.scope === 'conditional').map((row) => tag(row, reasonWords(row.requires))), none)],
-    [t('agent_composition.chosen', 'Chosen'), tagRow(rows.filter((row) => row.scope === 'selected').map((row) => tag(row)), none)],
   ]);
 }
 function behaviourList(items) {
@@ -44,8 +43,10 @@ function behaviourList(items) {
 /**
  * THE ONE COMPOSITION BODY (owner, 2026-10-20): the composition tile and an opened Commons
  * roster row paint it alike, as the kit's unnumbered sections (createStep) in the launch
- * forms' format — Brief (what it was born with, read only), Mandate (the effective facts,
- * Save beside them), Behaviors (the current list; the picker and Add on one row).
+ * forms' format — Brief (what it was born with, read only), Mandate, Behaviors (Always and
+ * Because as the brief carries them; Chosen as ticks) — and one act, UPDATE (owner,
+ * 2026-10-24): disabled until something changed; pressed, Ronin writes the configuration,
+ * builds the Agent a new brief and tells it once to read it. Its answer stays in the kit's notice.
  */
 export function createAgentCompositionReader(agent, { setState = () => {} } = {}) {
   const body = el('div', 'ac-body');
@@ -65,32 +66,36 @@ export function createAgentCompositionReader(agent, { setState = () => {} } = {}
       el('pre', 'ac-brief', data.birth.brief || t('agent_composition.no_brief', 'No saved brief.')),
       el('p', 'ac-line', t('agent_composition.born_with', 'Born with {mandate} · {behaviours}', { mandate: mandateLine(data.birth.mandate), behaviours: behaviourList(data.birth.behaviours) })),
     );
-    // Rebuilt from today's files the way birth builds it; the Agent is told once to read it.
-    const resend = el('button', 'wk-action', t('agent_composition.resend_brief', 'Resend birth brief')); resend.type = 'button'; const resendStatus = el('p', 'ac-status');
-    resend.addEventListener('click', async () => { resend.disabled = true; const sent = await request(`/api/sessions/${encodeURIComponent(agent)}/composition/brief`, { method: 'POST', json: {} }); resend.disabled = false; resendStatus.textContent = sent.ok ? t('agent_composition.brief_queued', 'Birth brief rebuilt; the Agent is told to read it.') : sent.message; });
-    brief.append(resend, resendStatus);
+    let refresh = () => {};
     const mandate = section('mandate', t('mandate', 'Mandate'));
-    const form = el('form', 'ac-mandate');
-    const question = ask([{ fields: [
+    const mandateQuestion = ask([{ fields: [
       { key: 'reach', label: t('team_config.reach', 'Reach'), options: rows(REACH) },
       { key: 'recruit', label: t('team_config.recruit', 'Recruit'), options: rows(RECRUIT) },
       { key: 'output', label: t('team_config.output', 'Output'), many: true, options: rows(OUTPUT) },
-    ] }], { value: data.current.mandate, density: 'tight' }); questions.push(question);
-    const save = el('button', 'wk-action', t('forms.save', 'Save')); save.type = 'submit'; const status = el('p', 'ac-status');
-    form.append(question.el, save); mandate.append(form, status);
-    form.addEventListener('submit', async (event) => { event.preventDefault(); save.disabled = true; const changed = await request(`/api/sessions/${encodeURIComponent(agent)}/composition/mandate`, { method: 'PUT', json: question.value() }); save.disabled = false; status.textContent = changed.ok ? t('agent_composition.mandate_saved', 'Work record updated; notice queued.') : changed.message; if (changed.ok) void load(); });
+    ] }], { value: data.current.mandate, density: 'tight', onChange: () => refresh() }); questions.push(mandateQuestion);
+    mandate.append(mandateQuestion.el);
     const behaviours = section('behaviours', t('behaviours', 'Behaviors'));
-    // Every behaviour a resend would send (Always, Because, Chosen); only Chosen is editable.
-    behaviours.append(data.sends?.rows ? sendsRows(data.sends.rows) : el('p', 'ac-list', behaviourList(data.current.behaviours)));
+    // Always and Because as the brief carries them; Chosen is the ticks, the whole list Update writes.
+    if (data.sends?.rows) behaviours.append(sendsRows(data.sends.rows));
     if (data.sends?.error) behaviours.append(el('p', 'ac-status', data.sends.error));
-    const available = data.available_behaviours.filter((row) => !data.current.behaviours.some((item) => item.name === row.name));
-    if (available.length) {
-      const picker = ask([{ fields: [{ key: 'name', label: t('agent_composition.add_behavior', 'Add Behavior'), options: available.map((row) => ({ v: row.name, l: row.label || row.name, sub: row.blurb, read: row.path })) }] }], { value: { name: available[0].name }, density: 'tight' }); questions.push(picker);
-      const add = el('button', 'wk-action', t('forms.add', 'Add')); add.type = 'button'; const addStatus = el('p', 'ac-status');
-      add.addEventListener('click', async () => { add.disabled = true; const changed = await request(`/api/sessions/${encodeURIComponent(agent)}/composition/behaviours`, { method: 'POST', json: picker.value() }); add.disabled = false; addStatus.textContent = changed.ok ? t('agent_composition.behavior_queued', 'Teaching queued for the Agent.') : changed.message; if (changed.ok) void load(); });
-      const row = el('div', 'ac-add'); row.append(picker.el, add); behaviours.append(row, addStatus);
-    }
-    else behaviours.append(el('p', 'ac-line', t('agent_composition.no_additions', 'No further optional Behaviors are available.')));
+    const chosenNow = data.current.behaviours.map((row) => row.name).filter((name) => data.available_behaviours.some((row) => row.name === name));
+    const chosenQuestion = ask([{ fields: [{ key: 'behaviours', label: t('agent_composition.chosen', 'Chosen'), many: true, options: data.available_behaviours.map((row) => ({ v: row.name, l: row.label || row.name, sub: row.blurb, read: row.path })) }] }], { value: { behaviours: chosenNow }, density: 'tight', onChange: () => refresh() }); questions.push(chosenQuestion);
+    behaviours.append(chosenQuestion.el);
+    // UPDATE: the one act over the whole body.
+    const update = el('button', 'wk-action', t('agent_composition.update', 'Update')); update.type = 'button';
+    const notice = WorkspaceKit.primitives.createNotice();
+    const value = () => ({ mandate: mandateQuestion.value(), behaviours: chosenQuestion.value().behaviours || [] });
+    let loaded = JSON.stringify(value());
+    refresh = () => { update.disabled = JSON.stringify(value()) === loaded; };
+    refresh();
+    update.addEventListener('click', async () => {
+      update.disabled = true; notice.set('info', t('agent_composition.updating', 'Updating…'));
+      const sent = await request(`/api/sessions/${encodeURIComponent(agent)}/configuration`, { method: 'PUT', json: value() });
+      if (!sent.ok) { notice.set('failed', sent.message); refresh(); return; }
+      loaded = JSON.stringify(value()); refresh();
+      notice.set('success', t('agent_composition.updated', 'Configuration updated; the Agent is told to read its new brief.'));
+    });
+    const act = el('div', 'ac-update'); act.append(update, notice.el); body.append(act);
   };
   return { el: body, show: load, destroy: () => { for (const question of questions) question.destroy(); questions = []; } };
 }
