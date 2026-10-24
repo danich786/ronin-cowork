@@ -4,8 +4,6 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { storeDir } from './resources.js';
 import { resolveFiles } from './resources.js';
-import { activeDeskProfileName, listDeskProfiles } from './desk-profiles.js';
-import { resolveLexicon } from './lexicon-catalog.js';
 import { CAPABILITIES_READING } from './capabilities.js';
 import { SOUGHT_READING } from './behaviours.js';
 
@@ -74,50 +72,6 @@ export function readFirstSentence(packet: PacketReport): string {
 
 const userShelf = () => storeDir('session_boot');
 
-/**
- * THE GLOSSARY, RENDERED FOR THE OWNER'S DESK (KOKUGO, owner's ruling 2026-08-27).
- *
- * KOTOBA_GLOSSARY.md tells a session which word to SAY to a person for a house term the
- * tools and docs use (TEGAMI, RIREKI, the wipeboard …). Those words are keys in the lexicon
- * under `glossary.*`, and no surface reads them — their one consumer is this render. Each
- * keyed cell is marked in the template as `**word**<!--g:glossary.key-->`; the active desk
- * profile's resolved lexicon replaces the word, and the marker is dropped so the session
- * reads a plain page. Stock (no profile, or a lexicon that does not answer) renders the
- * template's own words — the floor's floor, as everywhere else.
- *
- * ONE-TIME, BY RULING: rendered at birth, never re-read. A profile changed mid-session is
- * the owner's own problem.
- */
-const GLOSSARY_MARK = /\*\*([^*\n]+)\*\*<!--g:([\w.-]+)-->/g;
-const GLOSSARY_HEAD_START = '<!-- RENDERED_FOR:START -->';
-const GLOSSARY_HEAD_END = '<!-- RENDERED_FOR:END -->';
-
-export async function renderGlossaryReading(templatePath: string): Promise<string> {
-  return renderGlossary(await readFile(templatePath, 'utf8'));
-}
-
-/** The render itself, from template text — the inventory renders in memory from what it read. */
-export async function renderGlossary(template: string): Promise<string> {
-  let words: Record<string, string> = {};
-  let line = 'Rendered for the stock desk — no desk profile is chosen, so these are the plain words.';
-  try {
-    const name = await activeDeskProfileName();
-    const profile = name ? (await listDeskProfiles()).find((p) => p.name === name) : undefined;
-    const lexicon = profile?.lexicon ? await resolveLexicon(profile.lexicon) : undefined;
-    if (profile && lexicon) {
-      words = lexicon.words;
-      line = `Rendered for the owner's desk profile \`${profile.name}\` (${profile.label}) · lexicon \`${lexicon.name}\` — **these are the words the owner sees on screen and the words to use with them.** House names stay ours.`;
-    } else if (profile) {
-      line = `Rendered for the owner's desk profile \`${profile.name}\` — its lexicon did not answer, so these are the plain words.`;
-    }
-  } catch {
-    // A lexicon that cannot be read is stock; a session must never fail to launch over words.
-  }
-  const body = template.replace(GLOSSARY_MARK, (_m, literal: string, key: string) => `**${words[key] || literal}**`);
-  const head = new RegExp(`${GLOSSARY_HEAD_START}[\\s\\S]*?${GLOSSARY_HEAD_END}`);
-  return head.test(body) ? body.replace(head, `${GLOSSARY_HEAD_START}\n> ${line}\n${GLOSSARY_HEAD_END}`) : body;
-}
-
 /** A generated fragment, written to the session's cache so the compiler inlines it like any shelf file. */
 async function cachedReading(name: string, text: string, session = ''): Promise<string> {
   const dir = session ? path.join(storeDir('session_boot_cache'), 'sessions', session) : storeDir('session_boot_cache');
@@ -130,9 +84,8 @@ async function cachedReading(name: string, text: string, session = ''): Promise<
 }
 
 /**
- * THE GLOSSARY STAYS ON DISK (owner, 2026-10-23: keep the brief light). It is rendered beside
- * the packet; the packet carries only WORDS.md, which names `ronin-help <word>` (it reads the
- * install's glossary, current where a birth render is not).
+ * THE GLOSSARY STAYS OUT OF THE PACKET (owner, 2026-10-23: keep the brief light). The packet
+ * carries only WORDS.md, which names `ronin-help <word>`; that tool reads the install's glossary.
  */
 export const WORDS_READING = 'WORDS.md';
 
@@ -217,10 +170,7 @@ export async function bootFiles(
   }
   if (capabilitiesOverview !== undefined) files.push(await cachedReading(CAPABILITIES_READING, capabilitiesOverview, session));
   if (soughtOverview !== undefined) files.push(await cachedReading(SOUGHT_READING, soughtOverview, session));
-  for (const template of universal.filter(isGlossary)) {
-    await cachedReading(GLOSSARY, await renderGlossaryReading(template), session);
-    files.push(await cachedReading(WORDS_READING, WORDS_POINTER, session));
-  }
+  if (universal.some(isGlossary)) files.push(await cachedReading(WORDS_READING, WORDS_POINTER, session));
   return files;
 }
 

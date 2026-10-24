@@ -118,7 +118,7 @@ in `conditional/team-lead.md`; Team remains the tool capability in
 ### Session Boot
 
 `ronin_session_boot/all/` is deliberately small background material the owner should not
-need to compose: the rendered KOTOBA glossary and Ronin utility. Universal working rules
+need to compose: the KOTOBA glossary and Ronin utility. Universal working rules
 belong in the Behavior floor. Tool workflows belong in capabilities. Do not rebuild a
 second universal instruction shelf here.
 

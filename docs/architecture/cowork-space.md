@@ -92,15 +92,16 @@ Rules that make them peers:
 ### The bar's navigation
 
 The left side is the crumb (owner, 2026-10-20): the RoninCowork brand (a plain mark and word, not a
-link), Home (`#/home`), the Teams door (`#/cowork`, the Teams workbench), and on a Team page the
-Team's title last (its id read as words when it has no title). A view naming its
-own place (Models, Workspaces) reads it after Home instead of the Teams door. A neutral island is cut
-into the top edge of the screen and names the active Workbench scope:
+link), then after a gap (`--space-subsection`, no dot; owner, 2026-10-24) Home (`#/home`), the Teams
+door (`#/cowork`, the Teams workbench), and on a Team page the Team's title last (its id read as
+words when it has no title), dots between the crumbs. A view naming its own place (Models,
+Workspaces, Help) reads it after Home instead of the Teams door. A neutral island is cut into the
+top edge of the screen and names the active Workbench scope:
 
 ```text
-RoninCowork  •  Home  •  Teams                   Teams                         <verbs>
-RoninCowork  •  Home  •  Teams  •  Sea Settle  Sea Settle                      <verbs>
-RoninCowork  •  Home  •  Models                                                <verbs>
+RoninCowork    Home  •  Teams                    Teams                         <verbs>
+RoninCowork    Home  •  Teams  •  Sea Settle   Sea Settle                      <verbs>
+RoninCowork    Home  •  Models                                                 <verbs>
 ```
 
 The root landing and Machine Settings have no island. Campaign reads *Campaign*, Teams
@@ -131,7 +132,8 @@ Agent a row with the lead first, each Item a row); the 人 mark in a stone's cor
 Team page in a new tab; its selector offers Team roster, Cron jobs, New Team, New Agent and
 Rehydrate Archived.
 Help (owner, 2026-10-21) seats the help outline (`help-outline.js`, `help.outline`: the docs/ guides
-'START HERE: 4 things you need to know' numbered 1-4, then the other groups as quieter rows, a pressed page read beside the rail through
+under a headline of what Ronin is for (the headline alone on a phone); 'START HERE: 4 things you need to know' (the four), then
+Getting started and Using Ronin; each of the six opens one level down to Return and its pages (the four's level is the four), the page being read pressed; a pressed page read beside the rail through
 `/api/file?product=1`) in Workspace 1 and Mika (`help.mika`) in Workspace 2, her tile opened on its
 reading (`createMikaTilePool({ opensOn: 'reading' })`); both are solid cards.
 Until one model provider is activated the Models, Workspaces and Teams doors are locked; Help stays

@@ -1,69 +1,52 @@
-# Provider sign-in — establish one Agent without exposing credentials
+# Provider sign-in
 
-Related reference: [Agent controls and integration](../agents/README.md).
+Ronin runs the Agents you already pay for: Claude Code, Codex, Gemini CLI and others, each
+signed in with your own account. Nobody sits between you and the provider, and you can
+add another provider whenever you like. One is enough to start.
 
-The goal is one usable provider, not every integration. The owner chooses the account and
-billing arrangement and performs credential-bearing authorization. An Agent may inspect
-safe status, explain consequences, run a login command with approval, and verify the result;
-it never asks the owner to paste a key into chat or a recorded tile.
+## Pick a provider
 
-## First establish what exists
+Open **Model providers** in [Ronin Setup](setup-workbench.md), or from the **Models** door
+on Ronin Home. Each provider is a stone that says where it stands:
 
-Use **Ronin Setup → Model providers**. It distinguishes absent, installable, installed,
-login-open, and activated states without pretending to inspect account health. For an
-advanced shell check, inspect from the same login shell a Ronin tile receives:
+- **Not installed** — Ronin can install it for you.
+- **Manual install** — the provider needs a step Ronin won't guess; you get an
+  **Install guide** link instead.
+- **Needs sign-in** — installed, not yet signed in.
+- **Activated** — ready for your Agents.
+- **Off** — you turned it off; your sign-in is kept.
 
-```bash
-for command in claude codex gemini grok hermes; do
-  command -v "$command" 2>/dev/null || true
-done
-```
+Press a stone to open it. Its page has three steps: **Install**, **Authenticate** and
+**Ready**. Each gets a check when it's done.
 
-This proves only whether a CLI is found. Ronin deliberately does not treat installation as
-authentication. The provider catalog (`ronin_catalogs/MODEL_PROVIDERS.md`) lists every
-provider Ronin offers; beside each, Ronin Setup shows what this machine has. The models are
-the ones each signed-in CLI lists, described by the model info Ronin takes from models.dev.
-Google, xAI and Nous have not yet been launched end to end through Ronin.
+## Install
 
-An installed provider whose own credential file is on this machine (Claude Code's
-`~/.claude/.credentials.json`, Codex's `~/.codex/auth.json`, Gemini CLI's
-`~/.gemini/oauth_creds.json`, Grok Build's `~/.grok/auth.json`) shows as **Signed in**; Ronin
-reads only that the file exists. Otherwise **Authenticate** starts a temporary native setup
-session in a tile. The owner completes any credential, billing, device-login, or trust step
-there. **Done** records activation and closes the session; **Close** closes without
-activation. Both measure the machine again and write the Campaign's provider summary.
-Ronin does not continuously recheck the native account afterward: the summary is dated,
-and the Model providers surface measures again whenever it is opened.
+Press **Install**. The provider's own installer runs in a terminal right on the page, so you
+can watch it and answer anything it asks. When it finishes, Install gets its check.
 
-## Choose billing before login
+## Sign in
 
-Ask the owner whether this Agent should use an existing subscription login or separately
-billed API access. Do not infer the answer from a model name.
+Press **Authenticate**. The provider's own sign-in opens in the same place. Follow it: a
+browser login, a device code, or an API key, whichever you use with that provider.
 
-Environment variables can override a subscription session, but precedence is
-provider-specific. Inspect names without printing values and do not claim a universal
-credential winner. For Claude/Anthropic, `ronin-host secrets` reports the Anthropic credential
-that would win in the shell it checks and never prints its value; the spawned tile may
-inherit a different service environment. Resolve a conflict with the owner rather than
-dismissing the CLI warning.
+Under the terminal, give this sign-in a name you'll recognise, such as "Personal Claude" or
+"Work API", and choose its type: **Account / subscription**, **API key**,
+**Third-party service** or **Not signed in**. Then press **Done**. **Cancel** closes the
+terminal without finishing.
 
-## CLI-specific sign-in
+Enter passwords and keys only in the provider's own sign-in, never in a message to an
+Agent.
 
-Use the maintained [Codex](../agents/codex.md#sign-in-particulars) or
-[Claude Code](../agents/claude.md#sign-in-particulars) integration page for exact CLI
-mechanics. This page owns the shared owner handoff and credential-handling rules.
+## Ready
 
-## Other Agent CLIs
+When all three steps have checks, the provider is **Activated**. Under the steps you'll see
+the models it offers. **Refresh all model providers**, at the top, checks every provider
+again.
 
-Gemini CLI, Grok Build, and Hermes have rows in the provider catalog and rows in the Agent
-registry, but a catalog row and safe authentication evidence are not the same thing. Do not invent a sign-in command or normalize one provider's status output into
-another's. Follow current first-party CLI instructions, keep credentials with the owner,
-and report unsupported or unknowable states plainly. Hermes currently has no safe automatic
-installer in Ronin.
+To stop using a provider for a while, press **Turn off**. Agents already running keep going,
+and **Turn on** brings it back without signing in again.
 
-## Verify without reading a secret
+## Check it works
 
-A status command proves only what it explicitly reports. The universal end-to-end proof is
-a real launch through Ronin followed by the harmless exchange in
-[Get started](get-started.md#prove-one-working-agent). Record provider/model and observable
-success, not a token, account identifier, or authentication artifact.
+Start an Agent with this provider and say hello, as in [Get started](get-started.md#say-hello).
+An answer in the tile means you're done.

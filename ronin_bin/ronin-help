@@ -56,9 +56,8 @@ if [ -n "$path" ]; then
   exit 0
 fi
 
-# Not a topic: the install's glossary, never a session's birth render (that one is frozen
-# at birth and goes stale).
-found=$(sed 's/<!--g:[^>]*-->//g' "$ROOT/KOTOBA_GLOSSARY.md" | awk -v w="$want" '
+# Not a topic: the install's glossary.
+found=$(awk -v w="$want" '
   /^## / { section = $0; head = ""; inside = (index(tolower($0), w) > 0); if (inside) print; next }
   inside { print; next }
   /^\| You will see/ { head = $0; next }
@@ -67,7 +66,7 @@ found=$(sed 's/<!--g:[^>]*-->//g' "$ROOT/KOTOBA_GLOSSARY.md" | awk -v w="$want" 
   /^\| / && index(tolower(cell[2] "|" cell[3]), w) {
     if (section != shown) { print section; print head; shown = section }
     print
-  }')
+  }' "$ROOT/KOTOBA_GLOSSARY.md")
 if [ -n "$found" ]; then printf '%s\n' "$found"; exit 0; fi
 echo "No topic or glossary word matches \"$1\"; run ronin-help for the topics."
 exit 3

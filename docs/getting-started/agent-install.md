@@ -36,11 +36,10 @@ yourself; never paste a secret into an Agent conversation. **Done** measures the
 records activation. **Close** leaves the provider unactivated.
 
 When all three steps have checks, launch one Agent and send the harmless proof request in
-[Get started](get-started.md#prove-one-working-agent). That visible response—not an
+[Get started](get-started.md#say-hello). That visible response—not an
 installed command or a saved credential—is the end-to-end proof.
 
-For credential boundaries and provider-specific handoff, continue with
-[Provider sign-in](provider-sign-in.md).
+For the sign-in walkthrough, continue with [Provider sign-in](provider-sign-in.md).
 
 Contributors: [provider installation construction](../architecture/agent-install.md) and
 [provider registry](../architecture/model-providers.md).

@@ -10,14 +10,15 @@ instances, and calls the placed instance's `show()` synchronously. The surface o
 smallest reads needed to paint itself.
 
 `public/js/phalanx.js` owns the shared Phalanx collection interaction: stones at rest,
-a selected-stone rail beside its detail, focus return, Escape, and responsive geometry.
+a selected-stone rail beside its detail, focus return, Escape, and responsive geometry (at rest
+up to four stones across, fewer as the seat narrows).
 Consumers supply items and detail content; they do not recreate that movement privately.
 A row may carry `items`. In full density pressing such a stone goes one level down: its
 descendants become the rail's stones and the stone is the level's detail until one is
 pressed. At rest in full density `branches` draws those items under their stone
 (`'column'` stacks them; `'chart'` is one column per child with grandchildren stacked,
 folded into a count past `CHART_DEPTH` until pressed). There is one way back from any
-depth: Escape or the back stone returns to the top view, nothing selected, in the
+depth: Escape or the Return stone (small, on the inset) returns to the top view, nothing selected, in the
 density you were in. Switching density keeps the selection: a selected stone with items
 becomes its level in full density, a level becomes its selected stone in compact, and
 the stone open at that level returns with it. Consumers never restyle the rest geometry.
@@ -166,9 +167,10 @@ Add a workspace (`workspace-add.js`: one surface, four sections the same in ever
 the folder they add taking their workspace; Settings' Workspace Folders surface is untouched,
 both drawing with `projectroots.js`'s exported drawing (`createRootDrawing`, `rootStone`) over
 one read per bench (`createRootsReading`, the detail route). The bar's crumb (`workspace-header.js`;
-owner, 2026-10-20) reads RoninCowork • Home • Teams • <Team title> on a Team page, Home to `#/home`,
-Teams to `#/cowork`; the Teams workbench ends at Teams, and a view naming its own `place` (Models,
-Workspaces) reads RoninCowork • Home • <place>.
+owner, 2026-10-20) reads RoninCowork   Home • Teams • <Team title> on a Team page — a gap, not a dot,
+after the brand (`--space-subsection`; owner, 2026-10-24) — Home to `#/home`, Teams to `#/cowork`;
+the Teams workbench ends at Teams, and a view naming its own `place` (Models, Workspaces, Help)
+reads RoninCowork   Home • <place>.
 The Teams workbench's Teams card (`team-roster-surface.js`; owner, 2026-10-20) carries, above its
 stones, the Workspace question (many-of, blank All) and the Show question (Theme on; State,
 Agents, Items); each stone is the Team's name with what Show picks under it, a cell per picked
@@ -177,7 +179,8 @@ a row aligned across the stones (`branches: 'column'`, a row's `under`; `teams-s
 over the pushed rosters' `board` (the Team's epic) and `items`): Theme and State plain clamped text, each Agent and
 each Item a branch row; the 人 mark in a stone's corner opens the Team page in a new tab.
 Help (owner, 2026-10-21) is the same door shape seating two workspaces: the help outline
-(`help.outline`, `help-outline.js`) in Workspace 1 and Mika (`help.mika`) in Workspace 2. A Tile
+(`help.outline`, `help-outline.js`) in Workspace 1 and Mika (`help.mika`) in Workspace 2. A page stone
+dragged into a workspace reads that page whole there (`help.page`, no selector card). A Tile
 built with `opensOn: 'reading'` spends the touch screens' open-on-the-reading intention on a desk too,
 and before her record has anything in it; a Mika born by the seat gets a fresh tile once she is up.
 The gate (owner, 2026-10-19): as on the old root, the Models, Workspaces and Teams doors are locked (Help

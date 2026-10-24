@@ -37,7 +37,7 @@ const cells = (row) => Array.isArray(row.under) ? row.under : Array.isArray(row.
  * stacked under their parent (a chart deeper than CHART_DEPTH folds grandchildren into a
  * count until pressed).
  *
- * THE WAY BACK is one, from any depth: Escape, or the back stone at the head of a level,
+ * THE WAY BACK is one, from any depth: Escape, or the small Return stone at the head of a level,
  * returns to the top view with just the stones and nothing selected, in the density you
  * were in. Press-again still deselects where you are.
  */
@@ -179,12 +179,11 @@ export function createPhalanx({ items = [], selectedId = '', renderDetail, onSel
     root.dataset.open = String(Boolean(selected || externalDetail || owner));
     root.dataset.level = String(path.length);
     if (owner) {
+      // The way back is a small stone that says only Return, not another stone of the level.
       const back = element('button', 'sws-stone sws-back');
       back.type = 'button';
-      const glyph = element('i', 'sws-glyph', '←');
-      glyph.setAttribute('aria-hidden', 'true');
-      back.append(glyph, element('b', 'sws-label', owner.label || String(owner.id)));
-      back.setAttribute('aria-label', `Back to all · ${owner.label || owner.id}`);
+      back.append(element('b', 'sws-label', 'Return'));
+      back.setAttribute('aria-label', `Return to all · ${owner.label || owner.id}`);
       back.addEventListener('click', top);
       grid.append(back);
     }

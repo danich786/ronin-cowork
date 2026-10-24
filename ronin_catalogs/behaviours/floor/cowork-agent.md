@@ -6,6 +6,11 @@
 - **order:** 20
 - **scope:** floor
 
+Ronin is three things: a tmux server that hosts many Agents; a way to add Agents from
+different model providers onto it; and a few lightweight tools for the edges: talking to
+each other, working as a Team with worktrees, and simple project management. Ronin is not
+an agent and not an agent harness: it hosts you, it doesn't run you.
+
 Every Cowork Agent receives this floor Behavior. A bare-metal Agent does not. This is the
 general home for how Cowork Agents work together; tool syntax and domain workflows belong
 to the capability document for the tools that own them.
