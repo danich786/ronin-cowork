@@ -366,7 +366,7 @@
   .wa-browser .folder-all[hidden] { display: none; }
   .wa-form > .fs-step:nth-last-child(1 of :not([hidden])) { border-bottom: 0; }
   .wa-reading { color: var(--fg); }
-  .wa-link { border: 0; background: transparent; padding: 0; color: var(--link); font: inherit; cursor: pointer; }
+  .wa-link { border: 0; background: transparent; padding: 0; color: var(--link); font: inherit; text-align: start; cursor: pointer; } /* reads as text: a wrapped one starts each line at the start, as text does */
   .wa-status { margin: 0; padding: var(--space-row) 0 var(--space-inset); color: var(--muted); font-size: var(--form-note); }
   .wa-status:empty { display: none; }
   .wa-status[data-kind='bad'] { color: var(--bad); }

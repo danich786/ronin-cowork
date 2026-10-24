@@ -26,7 +26,8 @@ test('Configuration is what the Agent is set to and what you can change: one lis
   assert.match(ui, /\/configuration`, \{ method: 'PUT', json: value\(\) \}/);
   assert.match(ui, /action\.el\.disabled = JSON\.stringify\(value\(\)\) === loaded/);
   assert.match(ui, /body\.replaceChildren\(notice\.el\)/, 'the answer sits directly under the act');
-  assert.match(ui, /const list = readingRows\(\[\s*\.\.\.fixed\.map\(\(row\) => line\(row, tagRow\(\[why\(row\)\]\)\)\),\s*\.\.\.switches\.map/, 'one reading-row list of this Agent\'s behaviours: a reason tag or a switch');
+  assert.match(ui, /const list = readingRows\(\[\s*\.\.\.fixed\.map\(\(row\) => line\(row, el\('div', 'ac-line', why\(row\)\)\)\),\s*\.\.\.switches\.map/, 'one reading-row list of this Agent\'s behaviours: a plain reason or a switch');
+  assert.match(ui, /switch: true, compact: true/, 'the switch is the kit\'s compact one: the track alone, its label spoken');
   assert.match(ui, /switch: true/, 'an optional behaviour carries the kit\'s on/off switch');
   assert.match(ui, /'ronin:read-document'/, 'the name reads its page through the one reader');
   assert.doesNotMatch(ui, /agent_composition\.(brief|always|because|chosen)'|shape: 'tall'|exposed: true|composition\/brief|composition\/mandate|composition\/behaviours|resend/i);

@@ -2,7 +2,7 @@ import { WorkspaceKit } from './workspace-kit.js';
 import { request } from './request.js';
 import { t } from './lexicon.js';
 import { ask } from './ask.js';
-import { createStep, readingRows, tagRow } from './form-steps.js';
+import { createStep, readingRows } from './form-steps.js';
 
 export const AGENT_COMPOSITION_TYPE = 'agent.composition';
 const REACH = ['open', 'discuss', 'plan', 'execute'];
@@ -27,8 +27,8 @@ function reasonWords(requires) {
  * The composition tile and an opened Commons roster row paint it alike, as the kit's unnumbered
  * sections (createStep) in the launch forms' format: Mandate (the stones) and Behaviors — ONE list
  * of this Agent's behaviours, a reading row each: the name (press it to read its page), its line,
- * and in place of a control the reason as the kit's tag when it is not a choice ("every Cowork
- * Agent", "Team lead", "since birth"), or the kit's on/off switch when it is. UPDATE is the body's one act: the host puts
+ * and in place of a control the reason, plain and muted, when it is not a choice ("every Cowork
+ * Agent", "Team lead", "since birth"), or the kit's switch when it is. UPDATE is the body's one act: the host puts
  * `action` in its one action row as the primary; it wakes when something changed; pressed, Ronin
  * writes the configuration, builds the Agent a new brief and tells it once to read it. Its answer
  * sits first in the body, directly under the act.
@@ -69,17 +69,22 @@ export function createAgentCompositionReader(agent, { setState = () => {} } = {}
       return button;
     };
     const since = (row) => (row.since_birth ? t('agent_composition.since_birth', 'since birth') : '');
-    const why = (row) => (row.scope === 'floor' ? t('agent_composition.every_agent', 'every Cowork Agent') : [reasonWords(row.requires), since(row)].filter(Boolean).join(' · '));
+    // A conditional's reason; when the condition is the behaviour's own name, say only that it holds.
+    const why = (row) => {
+      if (row.scope === 'floor') return t('agent_composition.every_agent', 'every Cowork Agent');
+      const reason = reasonWords(row.requires);
+      return [reason === (row.label || row.name) ? t('agent_composition.holds_now', 'applies now') : reason, since(row)].filter(Boolean).join(' · ');
+    };
     const line = (row, control) => { const dd = el('div'); if (row.blurb) dd.append(el('div', 'ac-line', row.blurb)); dd.append(control); return [name(row), dd]; };
     const fixed = (data.sends?.rows || []).filter((row) => row.scope !== 'selected');
     const chosenNow = new Set(data.current.behaviours.map((row) => row.name));
     const switches = data.available_behaviours.map((row) => {
-      const given = ask([{ fields: [{ key: row.name, label: t('agent_composition.given', 'Given'), switch: true }] }], { value: { [row.name]: chosenNow.has(row.name) }, density: 'tight', onChange: refresh });
+      const given = ask([{ fields: [{ key: row.name, label: row.label || row.name, switch: true, compact: true }] }], { value: { [row.name]: chosenNow.has(row.name) }, density: 'tight', onChange: refresh });
       questions.push(given);
       return { row, given };
     });
     const list = readingRows([
-      ...fixed.map((row) => line(row, tagRow([why(row)]))),
+      ...fixed.map((row) => line(row, el('div', 'ac-line', why(row)))),
       ...switches.map(({ row, given }) => line(row, given.el)),
     ]);
     list.classList.add('ac-behaviours'); behaviours.append(list);
