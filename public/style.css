@@ -668,6 +668,14 @@ body {
   flex: 0 0 auto;
 }
 
+/* The crumb group: the brand and the crumbs share one baseline, the crumbs' smaller type sitting on
+   the brand's (owner, 2026-10-24); the group itself is centred in the bar like its neighbours. */
+#bar .bar-crumb {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-inline);
+  min-width: 0;
+}
 #bar .brand {
   display: inline-flex;
   align-items: center;
@@ -680,6 +688,7 @@ body {
 }
 #bar .brand-mark { display: block; width: auto; height: var(--bar-brand-mark-h); }
 #bar .brand-word {
+  align-self: baseline; /* the brand's baseline is the word's, not the mark's bottom edge */
   color: var(--fg-strong);
   font-size: var(--text-display);
   font-weight: var(--weight-strong);

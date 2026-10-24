@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { deliverSafe, deliverForce, IMAGE_ENTER_DELAY_MS, parsePrompt, type PaneIO } from '../src/send.js';
+import { deliverSafe, deliverForce, SECOND_ENTER_DELAY_MS, parsePrompt, type PaneIO } from '../src/send.js';
 
 function pane(screen: string) {
   const calls: string[] = [];
@@ -12,11 +12,11 @@ function pane(screen: string) {
   return { io, calls };
 }
 
-test('safe delivery checks once, then types and sends one separate Enter', async () => {
+test('safe delivery checks once, then types and sends Enter, and the second Enter after the delay', async () => {
   const { io, calls } = pane('❯');
   let attempts = 0;
   assert.equal((await deliverSafe('agent', 'hello', () => attempts++, io)).delivered, true);
-  assert.deepEqual(calls, ['read', 'type:hello', 'Enter']);
+  assert.deepEqual(calls, ['read', 'type:hello', 'Enter', 'Enter']);
   assert.equal(attempts, 1);
 });
 
@@ -46,25 +46,24 @@ test('once text is inserted, a changed screen cannot abandon Enter', async () =>
     io.read = async () => { throw new Error('must not inspect a dialog after typing'); };
   };
   assert.equal((await deliverSafe('agent', 'hello', undefined, io)).delivered, true);
-  assert.deepEqual(calls, ['read', 'type', 'Enter']);
+  assert.deepEqual(calls, ['read', 'type', 'Enter', 'Enter']);
 });
 
 test('force and composer delivery never read the screen; multiline text stays one write', async () => {
   const { io, calls } = pane('❯ someone is typing');
   io.read = async () => { throw new Error('no preflight'); };
   assert.equal((await deliverForce('agent', 'one\ntwo', io)).delivered, true);
-  assert.deepEqual(calls, ['type:one\ntwo', 'Enter']);
+  assert.deepEqual(calls, ['type:one\ntwo', 'Enter', 'Enter']);
 });
 
-test('a line ending in an image path gets one more Enter after the delay; plain text gets one', async () => {
-  const image = pane('❯');
+test('every message gets a second Enter after the delay: a chip pasted late finds it (owner, 2026-10-24)', async () => {
   const started = Date.now();
-  await deliverForce('agent', 'Screenshot:\n/tmp/shot.png\nParked.', image.io);
-  assert.deepEqual(image.calls, ['type:Screenshot:\n/tmp/shot.png\nParked.', 'Enter', 'Enter']);
-  assert.ok(Date.now() - started >= IMAGE_ENTER_DELAY_MS - 50);
-  const plain = pane('❯');
-  await deliverForce('agent', 'see /tmp/shot.png (mid-line)', plain.io);
-  assert.deepEqual(plain.calls, ['type:see /tmp/shot.png (mid-line)', 'Enter']);
+  for (const text of ['Screenshot:\n/tmp/shot.png\nParked.', 'a regex, /\\.(png)$/, as text', 'plain words, no path']) {
+    const { io, calls } = pane('❯');
+    await deliverForce('agent', text, io);
+    assert.deepEqual(calls, [`type:${text}`, 'Enter', 'Enter']);
+  }
+  assert.ok(Date.now() - started >= 3 * (SECOND_ENTER_DELAY_MS - 50));
 });
 
 test('unknown and busy empty screens do not prevent delivery', async () => {
