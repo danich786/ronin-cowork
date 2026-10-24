@@ -55,7 +55,7 @@
   .sws-stone.sws-back { flex-basis: auto; aspect-ratio: auto; background: var(--inset); color: var(--muted); padding: var(--space-row) var(--space-inset); }
   .sws-stone.sws-back::before { display: none; }
   .sws-stone:hover { border-color: var(--kaki); }
-  .sws-stone[aria-pressed='true'] { border-color: var(--kaki); box-shadow: inset var(--edge-2) 0 var(--kaki); }
+  .sws-stone[aria-pressed='true'] { border-color: var(--kaki); background: var(--selected); box-shadow: inset var(--edge-2) 0 var(--kaki); /* the one you are on: the one selected fill */ }
   .sws-stone[aria-pressed='true']::before { display: none; }
   .sws-stone:disabled { opacity: .48; cursor: default; }
   .sws-glyph { display: flex; width: var(--sws-glyph); height: var(--sws-glyph); color: var(--accent); font-style: normal; font-size: var(--text-display); font-weight: var(--weight-regular); line-height: var(--leading-none); }
