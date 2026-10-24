@@ -52,8 +52,6 @@ export async function readAgentComposition(name: string) {
   const bornMandate = birthMandateFromReceipt(receipt);
   return {
     birth: { mandate: bornMandate, behaviours: born, brief, provenance: receipt.stated_by ?? null },
-    // The packet the Agent reads (and Update rebuilds), named by its path.
-    readme: path.join(sessionDir(key), 'README.md'),
     current: { mandate: work.mandate, behaviours: await currentBehavioursAt(sessionDir(key), born) },
     available_behaviours: catalog.filter((row) => row.scope === 'selected').map((row) => ({ name: row.name, label: row.label, blurb: row.blurb, path: row.page })),
   };

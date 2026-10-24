@@ -2,7 +2,7 @@ import { WorkspaceKit } from './workspace-kit.js';
 import { request } from './request.js';
 import { t } from './lexicon.js';
 import { ask } from './ask.js';
-import { createStep, readingRows } from './form-steps.js';
+import { createStep, readingRows, tagRow } from './form-steps.js';
 
 export const AGENT_COMPOSITION_TYPE = 'agent.composition';
 const REACH = ['open', 'discuss', 'plan', 'execute'];
@@ -10,9 +10,6 @@ const RECRUIT = ['open', 'nobody', 'propose agents', 'staff agents'];
 const OUTPUT = ['open', 'ideas', 'a plan', 'code', 'an artifact', 'the team'];
 const el = (tag, cls = '', text = '') => { const node = document.createElement(tag); if (cls) node.className = cls; if (text) node.textContent = text; return node; };
 const rows = (values) => values.map((value) => ({ v: value, l: value }));
-function mandateLine(value) {
-  return value ? [value.reach, value.recruit, ...(value.output || [])].filter(Boolean).join(' · ') : t('agent_composition.birth_unavailable', 'Unavailable in this legacy birth receipt');
-}
 // The few words a conditional behaviour gives as its reason; lead implies team.
 function reasonWords(requires) {
   const words = {
@@ -24,20 +21,17 @@ function reasonWords(requires) {
   };
   return requires.filter((need) => !(need === 'team' && requires.includes('lead'))).map((need) => words[need] || need).join(' · ');
 }
-function behaviourList(items) {
-  return items?.length ? items.map((row) => row.name).join(', ') : t('agent_composition.none', 'None');
-}
-// A behaviour as the launch forms list it: the label, a few words under it, its page to read.
-const behaviourRow = (row, sub) => ({ v: row.name, l: row.label || row.name, sub, read: row.path });
 
 /**
- * THE ONE COMPOSITION BODY (owner, 2026-10-20): the composition tile and an opened Commons
- * roster row paint it alike, as the kit's unnumbered sections (createStep) in the launch
- * forms' format — Brief (the packet's path and what it was born with, read only), Mandate (the
- * stones), Behaviors (the New Agent form's lists: Always and Because read only, Chosen as ticks).
- * UPDATE (owner, 2026-10-24) is the body's one act: the host puts `action` in its one action
- * row as the primary; it wakes when something changed; pressed, Ronin writes the configuration,
- * builds the Agent a new brief and tells it once to read it; its answer stays in the kit's notice.
+ * THE ONE COMPOSITION BODY (owner, 2026-10-24): what this Agent is set to, and what you can change.
+ * The composition tile and an opened Commons roster row paint it alike, as the kit's unnumbered
+ * sections (createStep) in the launch forms' format: Mandate (the stones) and Behaviors — ONE list
+ * of this Agent's behaviours, a reading row each: the name (press it to read its page), its line,
+ * and in place of a control the reason as the kit's tag when it is not a choice ("every Cowork
+ * Agent", "Team lead", "since birth"), or the kit's on/off switch when it is. UPDATE is the body's one act: the host puts
+ * `action` in its one action row as the primary; it wakes when something changed; pressed, Ronin
+ * writes the configuration, builds the Agent a new brief and tells it once to read it. Its answer
+ * sits first in the body, directly under the act.
  */
 export function createAgentCompositionReader(agent, { setState = () => {} } = {}) {
   const { createAction, createNotice } = WorkspaceKit.primitives;
@@ -58,13 +52,8 @@ export function createAgentCompositionReader(agent, { setState = () => {} } = {}
     setState(null, ''); render(result.data);
   };
   const render = (data) => {
-    body.replaceChildren();
+    body.replaceChildren(notice.el);
     const section = (key, title) => { const step = createStep({ key, title }); body.append(step.el); return step.body; };
-    const brief = section('brief', t('agent_composition.brief', 'Brief'));
-    brief.append(readingRows([
-      [t('agent_composition.path', 'Path'), data.readme || ''],
-      [t('agent_composition.born_with_key', 'Born with'), `${mandateLine(data.birth.mandate)} · ${behaviourList(data.birth.behaviours)}`],
-    ]));
     const mandate = section('mandate', t('mandate', 'Mandate'));
     const mandateQuestion = ask([{ fields: [
       { key: 'reach', label: t('team_config.reach', 'Reach'), options: rows(REACH) },
@@ -73,23 +62,29 @@ export function createAgentCompositionReader(agent, { setState = () => {} } = {}
     ] }], { value: data.current.mandate, density: 'tight', onChange: refresh }); questions.push(mandateQuestion);
     mandate.append(mandateQuestion.el);
     const behaviours = section('behaviours', t('behaviours', 'Behaviors'));
-    // Always and Because are read only: the kit's reading rows, a line per behaviour (the reason
-    // for Because, "since birth" on one the Agent was not born with). Only Chosen is stones — the
-    // New Agent form's tick list (new-agent.js paintShelves), a chosen one in the kit's selected fill.
-    const sends = data.sends?.rows || [];
-    const lines = (list, text) => { if (!list.length) return ''; const box = el('div'); for (const row of list) box.append(el('div', null, text(row))); return box; };
+    // The name reads its page the way a stone's read glyph does: the same event, the same reader.
+    const name = (row) => {
+      const button = el('button', 'wa-link', row.label || row.name); button.type = 'button';
+      button.addEventListener('click', () => window.dispatchEvent(new CustomEvent('ronin:read-document', { detail: { path: row.path, source: body } })));
+      return button;
+    };
     const since = (row) => (row.since_birth ? t('agent_composition.since_birth', 'since birth') : '');
-    behaviours.append(readingRows([
-      [t('agent_composition.always', 'Always'), lines(sends.filter((row) => row.scope === 'floor'), (row) => row.label || row.name)],
-      [t('agent_composition.because', 'Because'), lines(sends.filter((row) => row.scope === 'conditional'), (row) => { const name = row.label || row.name; const reason = reasonWords(row.requires); return [name, reason === name ? '' : reason, since(row)].filter(Boolean).join(' · '); })],
-    ]));
-    const chosenNow = data.current.behaviours.map((row) => row.name).filter((name) => data.available_behaviours.some((row) => row.name === name));
-    const chosen = ask([{ group: t('agent_composition.chosen', 'Chosen'), fields: [{ key: 'behaviours', label: t('agent_composition.chosen', 'Chosen'), many: true, options: data.available_behaviours.map((row) => behaviourRow(row, row.blurb || '')) }] }], { value: { behaviours: chosenNow }, density: 'tight', exposed: true, onChange: refresh });
-    questions.push(chosen);
-    behaviours.append(chosen.el);
+    const why = (row) => (row.scope === 'floor' ? t('agent_composition.every_agent', 'every Cowork Agent') : [reasonWords(row.requires), since(row)].filter(Boolean).join(' · '));
+    const line = (row, control) => { const dd = el('div'); if (row.blurb) dd.append(el('div', 'ac-line', row.blurb)); dd.append(control); return [name(row), dd]; };
+    const fixed = (data.sends?.rows || []).filter((row) => row.scope !== 'selected');
+    const chosenNow = new Set(data.current.behaviours.map((row) => row.name));
+    const switches = data.available_behaviours.map((row) => {
+      const given = ask([{ fields: [{ key: row.name, label: t('agent_composition.given', 'Given'), switch: true }] }], { value: { [row.name]: chosenNow.has(row.name) }, density: 'tight', onChange: refresh });
+      questions.push(given);
+      return { row, given };
+    });
+    const list = readingRows([
+      ...fixed.map((row) => line(row, tagRow([why(row)]))),
+      ...switches.map(({ row, given }) => line(row, given.el)),
+    ]);
+    list.classList.add('ac-behaviours'); behaviours.append(list);
     if (data.sends?.error) behaviours.append(el('p', 'ac-status', data.sends.error));
-    body.append(notice.el);
-    value = () => ({ mandate: mandateQuestion.value(), behaviours: chosen.value().behaviours || [] });
+    value = () => ({ mandate: mandateQuestion.value(), behaviours: switches.filter(({ row, given }) => given.value()[row.name]).map(({ row }) => row.name) });
     loaded = JSON.stringify(value()); refresh();
   };
   action.el.addEventListener('click', async () => {
@@ -97,7 +92,7 @@ export function createAgentCompositionReader(agent, { setState = () => {} } = {}
     const sent = await request(`/api/sessions/${encodeURIComponent(agent)}/configuration`, { method: 'PUT', json: value() });
     if (!sent.ok) { notice.set('failed', sent.message); refresh(); return; }
     loaded = JSON.stringify(value()); refresh();
-    notice.set('success', t('agent_composition.updated', 'Configuration updated; the Agent is told to read its new brief.'));
+    notice.set('success', t('agent_composition.updated', 'The Agent has been sent its new brief.'));
   });
   return { el: body, action, show: load, destroy: () => { for (const question of questions) question.destroy(); questions = []; } };
 }
