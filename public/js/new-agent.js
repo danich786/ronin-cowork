@@ -53,7 +53,7 @@ function paintShelves(host, { rows = [], selected = [], onChange = () => {}, ope
   { value: { behaviours: selected }, density: 'tight', exposed: true, onChange: (value) => onChange([...value.behaviours]) });
   const fixed = (label, key, scope, why) => ask([{ group: label, fields: [{ key, label, many: true, shape: 'tall', filter: false,
     options: rows.filter((row) => row.scope === scope).map((item) => option(item, { disabled: true, sub: why(item) })) }] }],
-  { value: { [key]: [] }, className: 'na-behaviour-readonly', density: 'tight', exposed: true });
+  { value: { [key]: rows.filter((row) => row.scope === scope && row.on).map((row) => row.name) }, className: 'na-behaviour-readonly', density: 'tight', exposed: true });
   const automatic = fixed(`${t('behaviours.auto', 'All Cowork Agents')} (${t('behaviours.auto_included', 'All Ronin Agents include these')})`, 'automatic', 'floor', () => '');
   const conditional = fixed(t('behaviours.conditional', 'Conditional'), 'conditional', 'conditional', reason);
   const autoSection = el('div', 'na-behaviour-section');
@@ -345,6 +345,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
       }
       if (!configure) void loadSeed();
     }
+    if (configure && ['role', 'team', 'teamName'].includes(key)) paintBehaviourShelves();
     paintDefaultsNote(); paintFoot(); paintActions();
   };
   /** What Default launches (Models > Defaults: a Team lead's own pair when the seed was read for one). */
@@ -406,7 +407,13 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
 
   /* ---- 7 · Loadout ---- */
   const stepLoadout = createStep({ n: 7, key: 'loadout', title: t('behaviours', 'Behaviors'), onToggle: () => toggle('loadout') });
-  const behaviourRows = () => seed?.behaviours || [];
+  const behaviourRows = () => (seed?.behaviours || []).map((row) => {
+    if (!configure || row.scope !== 'conditional') return row;
+    if (row.requires?.includes('role:epic_lead')) return { ...row, on: draft.role === 'epic_lead' };
+    if (row.requires?.includes('role:coordinator')) return { ...row, on: draft.role === 'coordinator' };
+    if (row.requires?.includes('lead')) return { ...row, on: draft.role === 'lead' && !!chosenTeam() };
+    return row;
+  });
   const shelvesHost = el('div', 'na-behaviour-sections');
   const conditionReason = (row) => (row.requires || []).map((need) => ({
     'arrangement:managed': 'Managed worktree', 'arrangement:checkout': 'Shared checkout', team: 'On a Team', lead: 'Team lead',
@@ -718,7 +725,8 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     draft.reach = current.mandate.reach; draft.recruit = current.mandate.recruit; draft.output = [...current.mandate.output];
     draft.books = current.behaviours.map((row) => row.name);
     teams = data.available_teams || [];
-    seed = { behaviours: [...data.available_behaviours, ...(data.sends?.rows || []).filter((row) => row.scope !== 'selected').map((row) => ({ ...row, reading: row.path }))] };
+    const applied = new Set((data.sends?.rows || []).map((row) => row.name));
+    seed = { behaviours: data.available_behaviours.map((row) => ({ ...row, on: applied.has(row.name) })) };
     configured = JSON.stringify(configurationValue()); loaded = true; paint();
   }
   return {

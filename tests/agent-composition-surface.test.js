@@ -17,6 +17,9 @@ test('Configuration is the New Agent form in existing-Agent mode', () => {
   for (const field of ['provider', 'model', 'root', 'launchMode']) assert.match(form, new RegExp(`key: '${field}'[^\\n]*fixed: !!configure`));
   assert.match(form, /key: 'agentId'[\s\S]*fixed: true/);
   assert.match(form, /questions\.show\(\['provider', 'model', 'role', 'reach', 'recruit', 'output', 'root', 'launchMode'\]\)/);
+  assert.match(form, /row\.requires\?\.includes\('role:epic_lead'\)[\s\S]*draft\.role === 'epic_lead'/);
+  assert.match(form, /row\.requires\?\.includes\('role:coordinator'\)[\s\S]*draft\.role === 'coordinator'/);
+  assert.match(form, /row\.requires\?\.includes\('lead'\)[\s\S]*draft\.role === 'lead'/);
   assert.match(form, /request\(`\/api\/sessions\/\$\{encodeURIComponent\(configure\)\}\/composition`/);
   assert.match(form, /request\(`\/api\/sessions\/\$\{encodeURIComponent\(configure\)\}\/configuration`, \{ method: 'PUT', json: configurationValue\(\) \}\)/);
   assert.match(form, /if \(embedded && !configure\)/, 'Configuration puts no action in its body');
@@ -29,5 +32,6 @@ test('Send rebuilds one brief and sends one message', () => {
   assert.match(routes, /app\.put\('\/api\/sessions\/:name\/configuration'/);
   assert.equal((configuration.match(/enqueueMessage\(/g) || []).length, 1);
   assert.match(configuration, /resolveReading\(form, await resolveFacts\(form, new Set\(\)\)\)/);
+  assert.match(configuration, /writeCurrentRole\(name, next\.role\)[\s\S]*configurationReading\(name\)/, 'Send stores the role before rebuilding its conditional reading');
   for (const writer of ['writeObjective', 'setSessionTitle', 'setTags', 'setLeads', 'writeMandate', 'writeCurrentBehaviours', 'writeCurrentRole']) assert.match(configuration, new RegExp(writer));
 });

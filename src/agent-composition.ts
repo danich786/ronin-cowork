@@ -83,6 +83,9 @@ export async function readAgentComposition(name: string) {
       role, team: tags[0] ?? '', mandate: work.mandate, behaviours: currentBehaviours,
     },
     available_teams: teams.filter((row) => row.state !== 'archived').map((row) => ({ name: row.name, title: row.title, objective: row.objective })),
-    available_behaviours: catalog.filter((row) => row.scope === 'selected').map((row) => ({ name: row.name, label: row.label, blurb: row.blurb, reading: row.page, scope: row.scope, available: true, installation: row.installation })),
+    available_behaviours: catalog.map((row) => ({
+      name: row.name, label: row.label, blurb: row.blurb, reading: row.page, scope: row.scope,
+      requires: row.requires, available: row.scope === 'selected', installation: row.installation,
+    })),
   };
 }
