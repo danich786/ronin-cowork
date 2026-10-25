@@ -16,9 +16,9 @@ test('Commons opens on its separate Roster and keeps Configuration separate', as
 });
 
 test('Roster remains a roster; the Team page selector is Commons, Agents, New Agent (owner, 2026-10-18)', async () => {
-  const [view, members, retirement, css, workbench, coworkRoster, composition, catalog, phalanx, kotoba] = await Promise.all([
+  const [view, members, retirement, css, workbench, coworkRoster, composition, newAgent, catalog, phalanx, kotoba] = await Promise.all([
     source('public/js/cowork-view.js'), source('public/js/team-members.js'), source('public/js/session-retire.js'), source('public/css/team-workspace.css'), source('public/js/workbench.js'), source('public/js/team-roster-surface.js'),
-    source('public/js/agent-composition.js'), source('public/js/workbench-catalog.js'), source('public/js/phalanx.js'), source('KOTOBA.md'),
+    source('public/js/agent-composition.js'), source('public/js/new-agent.js'), source('public/js/workbench-catalog.js'), source('public/js/phalanx.js'), source('KOTOBA.md'),
   ]);
   assert.match(view, /workspace1: 'workspace2', workspace2: 'workspace1', workspace3: 'workspace4', workspace4: 'workspace3'/);
   assert.match(view, /function openAgentWorkbench\(name\)[\s\S]*reserveWorkspaceTab\(\)[\s\S]*openWorkspaceTab\('agent', name, tab\)/);
@@ -37,7 +37,8 @@ test('Roster remains a roster; the Team page selector is Commons, Agents, New Ag
   assert.match(members, /toggle\.setAttribute\('aria-controls', detail\.id\)/);
   assert.match(catalog, /agentComposition: AGENT_COMPOSITION_TYPE/);
   assert.match(catalog, /WORKBENCH_PROFILES\.team[^\n]*WORKBENCH_TYPES\.agentComposition/);
-  assert.match(composition, /\/api\/sessions\/\$\{encodeURIComponent\(agent\)\}\/composition/);
+  assert.match(composition, /createNewAgentView\(WorkspaceKit, \{ configure: agent/);
+  assert.match(newAgent, /\/api\/sessions\/\$\{encodeURIComponent\(configure\)\}\/composition/);
   // Owner 2026-10-20: Agents join by dragging; the roster's foot opens New Agent with this
   // Team chosen; a pressed row opens in place (read + action bar), never places a tile.
   assert.match(view, /onNew: \(\) => bench\.place\(WB_TYPES\.newAgent, oppositeSeat\(id\)\)/);
