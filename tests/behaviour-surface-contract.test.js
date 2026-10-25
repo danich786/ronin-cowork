@@ -45,4 +45,7 @@ test('New Agent offers the shared Behavior surface beside its optional choices',
   assert.doesNotMatch(agent, /sws-stone na-customize-behaviours/);
   assert.match(cowork, /openBehaviours: \(\) => bench\.place\(BEHAVIOUR_SURFACE_TYPE, oppositeSeat\(id\)\)/);
   assert.match(agent, /ronin:behaviours-changed/);
+  assert.match(agent, /shape: 'tall'/, 'New Agent and Configuration share the same large Behavior stones');
+  assert.match(agent, /read: item\.reading, view: item\.name/, 'every shared Behavior stone keeps its View action');
+  assert.doesNotMatch(agent, /links: !configure/, 'Configuration does not suppress the shared View action');
 });

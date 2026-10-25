@@ -413,7 +413,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     project_management: 'Project management on', 'role:epic_lead': 'Epic Lead role', 'role:coordinator': 'Coordinator role',
   })[need] || need).join(' · ');
   function paintBehaviourShelves() {
-    paintShelves(shelvesHost, { rows: behaviourRows(), selected: draft.books, openBehaviours: configure ? null : openBehaviours, links: !configure, reason: conditionReason, onChange: (books) => {
+    paintShelves(shelvesHost, { rows: behaviourRows(), selected: draft.books, openBehaviours: configure ? null : openBehaviours, reason: conditionReason, onChange: (books) => {
       draft.books = books; touched.books = true; paintFoot(); paintActions();
     } });
   }
