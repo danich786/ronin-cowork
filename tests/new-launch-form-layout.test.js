@@ -26,11 +26,12 @@ test('New Agent uses one ruled ask() spec after its three session types', async 
   assert.match(form, /Name · required/);
   assert.match(form, /group: t\('new_agent\.model_package', 'Model'\)/);
   assert.match(form, /after: 'provider'/);
-  assert.match(form, /group: t\('new_agent\.model_package', 'Model'\), fields: \[[\s\S]*key: 'provider'[\s\S]*key: 'model'[\s\S]*key: 'teamLead'[\s\S]*\] \},[\s\S]*group: t\('mandate', 'Mandate'\)/);
+  assert.match(form, /group: t\('new_agent\.model_package', 'Model'\), fields: \[[\s\S]*key: 'provider'[\s\S]*key: 'model'[\s\S]*key: 'role'[\s\S]*\] \},[\s\S]*group: t\('mandate', 'Mandate'\)/);
   assert.match(form, /group: t\('mandate', 'Mandate'\)/);
   assert.doesNotMatch(form, /key: '(?:reach|recruit|output)'[^\n]+shape: 'square'/);
   assert.match(form, /group: t\('squad', 'Team'\)/);
-  assert.match(form, /key: 'teamLead'.*Make team lead.*switch: \[t\('forms\.on', 'On'\), t\('forms\.off', 'Off'\)\]/);
+  assert.match(form, /key: 'role'[\s\S]*Coworker[\s\S]*Lead[\s\S]*Epic Lead[\s\S]*Coordinator/);
+  assert.doesNotMatch(form, /key: 'teamLead'/);
   assert.doesNotMatch(form, /switch: \[[^\]]+\], word:/);
   assert.match(form, /group: t\('where\.label', 'Where it works'\)/);
   assert.match(form, /group: t\('where\.label', 'Where it works'\), fields: \[[\s\S]*key: 'root'[\s\S]*key: 'repos'[\s\S]*key: 'launchMode'/);

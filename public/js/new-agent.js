@@ -72,7 +72,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
       name: '', kind: 'coding', kindTouched: false, provider: '', model: '', instructions: '',
       teamMode: entryTeam ? 'existing' : 'none', team: entryTeam || '', newTeam: '',
       reach: 'open', recruit: 'open', output: ['open'], launchMode: 'configured',
-      teamLead: false, role: 'coworker',
+      role: 'coworker',
       books: [], root: '', repos: [],
       expanded: {},
     };
@@ -322,9 +322,8 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
       if (!providerCatalog().providers.find((row) => row.provider === draft.provider)?.launch_modes?.includes(draft.launchMode)) draft.launchMode = 'configured';
     }
     if ('reach' in value) { draft.reach = value.reach; draft.recruit = value.recruit; draft.output = value.output; }
-    if ('teamLead' in value) draft.teamLead = value.teamLead === true;
     if ('role' in value) draft.role = value.role;
-    if (key === 'teamLead' && !configure) void loadSeed();
+    if (key === 'role' && !configure) void loadSeed();
     if ('root' in value) { draft.root = value.root; draft.repos = [...value.repos]; }
     if ('launchMode' in value) draft.launchMode = value.launchMode;
     if (key === 'provider' || key === 'model') touched.model = true;
@@ -345,7 +344,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
       }
       if (!configure) void loadSeed();
     }
-    if (configure && ['role', 'team', 'teamName'].includes(key)) paintBehaviourShelves();
+    if (['role', 'team', 'teamName'].includes(key)) paintBehaviourShelves();
     paintDefaultsNote(); paintFoot(); paintActions();
   };
   /** What Default launches (Models > Defaults: a Team lead's own pair when the seed was read for one). */
@@ -359,7 +358,6 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     { group: t('new_agent.model_package', 'Model'), fields: [
       { key: 'provider', label: t('forms.provider', 'Model provider'), blank: defaultWord, options: providerRows, fixed: !!configure },
       { key: 'model', label: t('forms.model', 'Model'), blank: t('forms.default', 'Default'), after: 'provider', options: (value) => modelRows(value.provider), fixed: !!configure },
-      { key: 'teamLead', label: t('new_agent.make_team_lead', 'Make team lead'), switch: [t('forms.on', 'On'), t('forms.off', 'Off')] },
       { key: 'role', label: t('agent_composition.role', 'Role'), options: [
         { v: 'coworker', l: 'Coworker' }, { v: 'lead', l: 'Lead' }, { v: 'epic_lead', l: 'Epic Lead' }, { v: 'coordinator', l: 'Coordinator' },
       ] },
@@ -375,7 +373,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
       { key: 'launchMode', label: t('launch_mode.mode', 'Mode'), options: launchModes, fixed: !!configure },
     ] },
   ], {
-    value: { provider: draft.provider, model: draft.model, reach: draft.reach, recruit: draft.recruit, output: draft.output, teamLead: draft.teamLead, role: draft.role, root: draft.root, repos: draft.repos, launchMode: draft.launchMode },
+    value: { provider: draft.provider, model: draft.model, reach: draft.reach, recruit: draft.recruit, output: draft.output, role: draft.role, root: draft.root, repos: draft.repos, launchMode: draft.launchMode },
     className: 'na-questions',
     density: 'tight',
     onChange: onQuestionChange,
@@ -400,7 +398,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     onChange: onQuestionChange,
   });
   const syncQuestions = () => {
-    questions.set({ provider: draft.provider, model: draft.model, reach: draft.reach, recruit: draft.recruit, output: draft.output, teamLead: draft.teamLead, role: draft.role, root: draft.root, repos: draft.repos || [], launchMode: draft.launchMode });
+    questions.set({ provider: draft.provider, model: draft.model, reach: draft.reach, recruit: draft.recruit, output: draft.output, role: draft.role, root: draft.root, repos: draft.repos || [], launchMode: draft.launchMode });
     teamQuestions.set({ team: teamChoice(), teamName: draft.team });
   };
   void loadProviderCatalog().then(() => questions.paint());
@@ -408,7 +406,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
   /* ---- 7 · Loadout ---- */
   const stepLoadout = createStep({ n: 7, key: 'loadout', title: t('behaviours', 'Behaviors'), onToggle: () => toggle('loadout') });
   const behaviourRows = () => (seed?.behaviours || []).map((row) => {
-    if (!configure || row.scope !== 'conditional') return row;
+    if (row.scope !== 'conditional') return row;
     if (row.requires?.includes('role:epic_lead')) return { ...row, on: draft.role === 'epic_lead' };
     if (row.requires?.includes('role:coordinator')) return { ...row, on: draft.role === 'coordinator' };
     if (row.requires?.includes('lead')) return { ...row, on: draft.role === 'lead' && !!chosenTeam() };
@@ -456,7 +454,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     ];
     if (isCowork()) {
       rows.push([t('mandate', 'Mandate'), `${draft.reach} · ${draft.recruit} · ${draft.output.join(', ')}`]);
-      rows.push([t('new_agent.make_team_lead', 'Make team lead'), draft.teamLead ? t('forms.on', 'On') : t('forms.off', 'Off')]);
+      rows.push([t('agent_composition.role', 'Role'), draft.role]);
     }
     if (isCowork() && draft.books.length) rows.push([t('behaviours', 'Behaviours'), tagRow(draft.books.map((text) => ({ text, on: true })))]);
     rows.push([t('launch_mode.head', 'launch mode'), launchModes().find((row) => row.v === draft.launchMode)?.l || draft.launchMode]);
@@ -561,7 +559,8 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
           instructions: draft.instructions.trim(), provider: draft.provider, model: draft.model,
           ...coworkWorkspacePayload(draft.repos),
           mandate: { reach: draft.reach, recruit: draft.recruit, output: draft.output },
-          team_lead: draft.teamLead,
+          team_lead: draft.role === 'lead',
+          role: draft.role,
           behaviours: [...draft.books],
           launch_mode: draft.launchMode,
           ...(draft.template ? { template: draft.template } : {}),
@@ -622,7 +621,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
   const seedUrl = () => {
     const query = new URLSearchParams();
     if (draft.teamMode === 'existing' && draft.team) query.set('team', draft.team);
-    if (draft.teamLead && draft.teamMode !== 'none') query.set('lead', '1');
+    if (draft.role === 'lead' && draft.teamMode !== 'none') query.set('lead', '1');
     const text = query.toString();
     return `/api/launch-seed${text ? `?${text}` : ''}`;
   };
@@ -720,7 +719,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     draft.provider = current.provider || ''; draft.model = current.model || ''; draft.root = current.project_root || '';
     draft.launchMode = current.launch_mode || 'configured';
     roots = draft.root ? [{ name: draft.root, title: '' }] : [];
-    draft.role = current.role || 'coworker'; draft.teamLead = draft.role === 'lead';
+    draft.role = current.role || 'coworker';
     draft.teamMode = current.team ? 'existing' : 'none'; draft.team = current.team || '';
     draft.reach = current.mandate.reach; draft.recruit = current.mandate.recruit; draft.output = [...current.mandate.output];
     draft.books = current.behaviours.map((row) => row.name);
@@ -735,7 +734,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
       if (configure) { await loadProviderCatalog(); await loadConfiguration(); return; }
       const entryTeam = String(detail?.team || (typeof team === 'function' ? team() : team) || '');
       if (entryTeam) { draft.teamMode = 'existing'; draft.team = entryTeam; }
-      if (detail?.teamLead === true) draft.teamLead = true;
+      if (detail?.teamLead === true) draft.role = 'lead';
       paint();
       const [tray, teamRows, rootRows] = await Promise.all([
         request('/api/templates/agents'),

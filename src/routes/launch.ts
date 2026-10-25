@@ -17,6 +17,7 @@ import { launchArgv } from '../agents.js';
 import { AtSessionMax, readAgentsSection } from '../machine-state.js';
 import { resolveForm, type SpawnForm } from '../spawn.js';
 import { appendLaunchLedger, persistBirthReceipt } from '../launch-ledger.js';
+import { writeCurrentRoleAt } from '../agent-composition.js';
 import { mandate } from '../agent-defaults.js';
 import { projectRoutineTools, type RoutineToolProjection } from '../routine-tools.js';
 import { asksForInput, classifyStatus, createActivityCache } from '../status.js';
@@ -99,7 +100,7 @@ async function deskNote(r: { assignment?: unknown; project_root?: string; agent?
 }
 
 const LAUNCH_KEYS = new Set([
-  'session_type', 'team', 'team_lead', 'instructions', 'prompt', 'name', 'caller',
+  'session_type', 'team', 'team_lead', 'role', 'instructions', 'prompt', 'name', 'caller',
   'project_root', 'cmd', 'model', 'provider', 'mandate', 'campaign_id', 'launch_mode',
   'tags', 'seed', 'inject', 'reference', 'desk', 'repos',
   'kind', 'behaviours',
@@ -142,13 +143,14 @@ export function acceptedLaunchBody(input: unknown): { body: Record<string, unkno
   if (body.kind !== undefined && (typeof body.kind !== 'string' || !KINDS.has(body.kind.trim()))) drop('kind');
   if (body.kind !== undefined) body.kind = String(body.kind).trim();
   if (body.behaviours !== undefined && !Array.isArray(body.behaviours)) drop('behaviours');
+  if (body.role !== undefined && !['coworker', 'lead', 'epic_lead', 'coordinator'].includes(String(body.role))) drop('role');
   if (body.template !== undefined && (typeof body.template !== 'string' || !/^[\w-]{1,64}$/.test(body.template.trim()))) drop('template');
   if (body.template !== undefined) body.template = String(body.template).trim();
 
   const inapplicable = sessionType === 'terminal'
-      ? ['provider', 'model', 'instructions', 'prompt', 'kind', 'mandate', 'behaviours', 'template', 'cmd', 'launch_mode', 'seed', 'inject', 'reference']
+      ? ['provider', 'model', 'instructions', 'prompt', 'kind', 'mandate', 'behaviours', 'template', 'cmd', 'launch_mode', 'seed', 'inject', 'reference', 'role']
     : sessionType === 'bare_metal_agent'
-      ? ['kind', 'mandate', 'behaviours', 'template', 'seed', 'inject', 'reference', 'team_lead']
+      ? ['kind', 'mandate', 'behaviours', 'template', 'seed', 'inject', 'reference', 'team_lead', 'role']
       : [];
   for (const key of inapplicable) drop(key);
   if (sessionType === 'bare_metal_agent' && body.desk === 'own') drop('desk');
@@ -159,11 +161,13 @@ export function acceptedLaunchBody(input: unknown): { body: Record<string, unkno
 export function spawnFormFromLaunchBody(body: Record<string, unknown>, houseSeat?: HouseSeat): SpawnForm {
   const sessionType = String(body.session_type);
   const team = String(body.team ?? '').trim();
+  const role = body.team_lead === true ? 'lead' : ['coworker', 'lead', 'epic_lead', 'coordinator'].includes(String(body.role)) ? String(body.role) as SpawnForm['role'] : 'coworker';
   return {
     session_type: sessionType as SpawnForm['session_type'],
     house_seat: houseSeat,
     team: team || undefined,
-    team_lead: body.team_lead === true,
+    team_lead: role === 'lead',
+    role,
     prompt: String(body.instructions ?? body.prompt ?? '').trim(),
     name: String(body.name ?? '').trim(),
     project_root: String(body.project_root ?? '').trim() || undefined,
@@ -377,6 +381,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
       birthKey = `${resolved.name}-${Date.now()}`;
       birthDir = sessionRecordDir(birthKey);
       try {
+        await writeCurrentRoleAt(birthDir, form.role ?? (form.team_lead ? 'lead' : 'coworker'));
         // Mika's README replaces the ordinary startup shelf: her rules, the Setup
         // walkthrough, and the generated source index — the complete, bounded map of her
         // admitted knowledge. Her typed brief stays two sentences; the reading is here.
@@ -521,6 +526,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
         cmd: resolved.cmd,
         tags: resolved.tags,
         team_lead: !!form.team_lead && !!resolved.team,
+        role: form.role ?? (form.team_lead ? 'lead' : 'coworker'),
         kind: resolved.kind,
         mandate: resolved.mandate,
         behaviours: resolved.behaviours,

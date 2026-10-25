@@ -7,6 +7,7 @@ const form = await readFile(new URL('../public/js/new-agent.js', import.meta.url
 const routes = await readFile(new URL('../src/routes/sessions-api.ts', import.meta.url), 'utf8');
 const configuration = await readFile(new URL('../src/agent-configuration.ts', import.meta.url), 'utf8');
 const tilehead = await readFile(new URL('../public/js/tilehead.js', import.meta.url), 'utf8');
+const launchRoute = await readFile(new URL('../src/routes/launch.ts', import.meta.url), 'utf8');
 
 test('Configuration is the New Agent form in existing-Agent mode', () => {
   assert.match(adapter, /createNewAgentView\(WorkspaceKit, \{ configure: agent, embedded: true \}\)/);
@@ -33,5 +34,6 @@ test('Send rebuilds one brief and sends one message', () => {
   assert.equal((configuration.match(/enqueueMessage\(/g) || []).length, 1);
   assert.match(configuration, /resolveReading\(form, await resolveFacts\(form, new Set\(\)\)\)/);
   assert.match(configuration, /writeCurrentRole\(name, next\.role\)[\s\S]*configurationReading\(name\)/, 'Send stores the role before rebuilding its conditional reading');
+  assert.match(launchRoute, /writeCurrentRoleAt\(birthDir,[^\n]+\)[\s\S]*compileBirthReadmeAt\(/, 'birth stores the role fact before compiling its first reading');
   for (const writer of ['writeObjective', 'setSessionTitle', 'setTags', 'setLeads', 'writeMandate', 'writeCurrentBehaviours', 'writeCurrentRole']) assert.match(configuration, new RegExp(writer));
 });

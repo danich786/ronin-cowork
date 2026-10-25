@@ -46,7 +46,7 @@ test('Roster remains a roster; the Team page selector is Commons, Agents, New Ag
   assert.match(members, /toggle\.addEventListener\('click', \(\) => open\(detail\.hidden\)\)/);
   assert.match(members, /type: WORKBENCH_TYPES\.terminal, detail: \{ key: member\.name \}/);
   assert.doesNotMatch(members, /sessionsAvailableToTeam|new Option\(/);
-  assert.match(await source('public/js/new-agent.js'), /if \(detail\?\.teamLead === true\) draft\.teamLead = true/);
+  assert.match(await source('public/js/new-agent.js'), /if \(detail\?\.teamLead === true\) draft\.role = 'lead'/);
   assert.match(phalanx, /export function createPhalanx/);
   assert.match(kotoba, /\| Phalanx \| A shared collection surface:/);
   assert.match(view, /campaign \? \{ action: \(\) => openAgentWorkbench\(member\.name\) \} : \{\}/, 'Team selector cards keep their default placement action');

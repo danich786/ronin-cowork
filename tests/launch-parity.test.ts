@@ -431,6 +431,13 @@ test('team_lead is explicit and applies its conditional Behavior at birth', asyn
   assert.ok(!ordinary.birth_reading.some((file) => file.endsWith('/conditional/team-lead.md')));
 });
 
+test('an explicit Role applies its conditional Behavior in the first birth reading', async () => {
+  const epic = await resolveForm(commonsForm({ role: 'epic_lead' }), new Set());
+  assert.ok(epic.birth_reading.some((file) => file.endsWith('/conditional/epic_agent.md')));
+  const coordinator = await resolveForm(commonsForm({ role: 'coordinator' }), new Set());
+  assert.ok(coordinator.birth_reading.some((file) => file.endsWith('/conditional/steerco_mgr.md')));
+});
+
 test('Mika house mechanics resolve explicitly', async () => {
   const mika = await resolveForm({
     house_seat: 'mika',

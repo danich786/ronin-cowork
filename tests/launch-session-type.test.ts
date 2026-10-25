@@ -124,6 +124,18 @@ test('settled launch enums are accepted and their retired keys are receipt-only'
   assert.deepEqual(terminal.ignored, ['launch_mode']);
 });
 
+test('Role is a Cowork birth fact and legacy team_lead still means Lead', () => {
+  const epic = acceptedLaunchBody({ name: 'proof', role: 'epic_lead' });
+  assert.equal(spawnFormFromLaunchBody(epic.body).role, 'epic_lead');
+  assert.equal(spawnFormFromLaunchBody(epic.body).team_lead, false);
+  const legacy = acceptedLaunchBody({ name: 'proof', team_lead: true });
+  assert.equal(spawnFormFromLaunchBody(legacy.body).role, 'lead');
+  assert.equal(spawnFormFromLaunchBody(legacy.body).team_lead, true);
+  const malformed = acceptedLaunchBody({ name: 'proof', role: 'helper' });
+  assert.equal(malformed.body.role, undefined);
+  assert.deepEqual(malformed.ignored, ['role']);
+});
+
 test('a template token is provenance input only on a cowork birth', () => {
   const accepted = acceptedLaunchBody({ name: 'proof', template: 'document_it' });
   assert.equal(accepted.body.template, 'document_it');

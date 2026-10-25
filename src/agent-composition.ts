@@ -55,7 +55,10 @@ async function currentRoleAt(dir: string, born: BehaviourRow[], leads: string[])
   return names.has('steerco_mgr') ? 'coordinator' : names.has('epic_agent') ? 'epic_lead' : leads.length ? 'lead' : 'coworker';
 }
 export async function writeCurrentRole(name: string, role: AgentRole): Promise<void> {
-  const target = roleFile(sessionDir(await sessionKey(name)));
+  return writeCurrentRoleAt(sessionDir(await sessionKey(name)), role);
+}
+export async function writeCurrentRoleAt(dir: string, role: AgentRole): Promise<void> {
+  const target = roleFile(dir);
   const temp = `${target}.${process.pid}.${Math.random().toString(36).slice(2)}.tmp`;
   await writeFile(temp, `${JSON.stringify(role)}\n`, 'utf8'); await rename(temp, target);
 }
