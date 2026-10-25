@@ -106,7 +106,7 @@
   .ask-opt[aria-disabled='true']:hover { border-color: var(--line-2); }
 
   /* the caption carries the sentence, the facts, and the reason a stone is greyed */
-  .ask-caption { margin: 0; min-height: var(--ask-note-h); color: var(--muted); font-size: var(--form-note); line-height: var(--leading-body); }
+  .ask-caption { margin: var(--space-paragraph) 0 0; min-height: var(--ask-note-h); color: var(--muted); font-size: var(--form-note); line-height: var(--leading-body); }
   .ask-caption b { color: var(--fg-strong); font-weight: var(--weight-strong); }
   .ask-extra { display: grid; grid-template-columns: var(--ask-w) minmax(0, 1fr); gap: var(--space-row) var(--space-inline); align-items: center; font-size: var(--form-note); color: var(--fg); }
   .ask-extra-name { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

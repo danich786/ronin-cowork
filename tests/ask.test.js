@@ -202,6 +202,8 @@ test('a square stone carries a glyph and a ruled word; the caption carries the s
   assert.equal(tray.one('ask-caption').textContent, '', 'a stone that is only its name says nothing in the caption');
   execute.fire('mouseenter');
   assert.equal(tray.one('ask-caption').textContent, 'Does the work.', 'the caption says the sentence alone, never the name');
+  execute.fire('mouseleave');
+  assert.equal(tray.one('ask-caption').textContent, '', 'the caption leaves with the pointer');
   form.el.fire('keydown', { key: 'Escape' });
   stoneFor(form, 'output').click();
   assert.equal(form.el.one('ask-tray').one('ask-caption'), null, 'a tray of plain words has no caption at all');
@@ -213,9 +215,12 @@ test('a greyed stone stays in the tray with its reason, and a click on it says w
   const gemini = optNamed(form, 'Gemini CLI');
   assert.equal(gemini.attributes['aria-disabled'], 'true');
   assert.equal(gemini.title, 'not on this machine');
+  gemini.fire('mouseenter');
+  assert.equal(form.el.one('ask-caption').textContent, 'not on this machine');
+  gemini.fire('mouseleave');
   gemini.click();
   assert.equal(form.value().provider, '');
-  assert.equal(form.el.one('ask-caption').textContent, 'not on this machine');
+  assert.equal(form.el.one('ask-caption').textContent, '', 'pressing a fixed stone does not pin its reason');
 });
 
 test('a switch is the reading stone with a track: it flips and opens nothing', () => {
@@ -243,6 +248,12 @@ test('past twelve options the tray grows a filter line', () => {
   const small = ask([{ fields: [{ key: 'reach', label: 'Reach', options: REACH }] }]);
   stoneFor(small, 'reach').click();
   assert.equal(small.el.one('ask-filter'), null, 'three rows bring none');
+});
+
+test('a caller may omit filtering from a deliberately open list', () => {
+  const options = Array.from({ length: 13 }, (_, i) => ({ v: String(i), l: `Option ${i}` }));
+  const form = ask([{ fields: [{ key: 'choice', label: 'Choice', many: true, filter: false, options }] }], { value: { choice: [] }, exposed: true });
+  assert.equal(form.el.one('ask-filter'), null);
 });
 
 test('the snake rule breaks a name after its joints, never mid-word', () => {

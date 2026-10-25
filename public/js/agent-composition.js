@@ -27,11 +27,11 @@ function reasonWords(requires) {
 }
 
 /** Agent, Mandate and Behaviors in the launch forms' createStep + ERABI format. The host
- * owns the only action, Send new brief; closing the surface simply destroys this draft. */
+ * owns the only configuration action, Send; closing the surface simply destroys this draft. */
 export function createAgentCompositionReader(agent, { setState = () => {} } = {}) {
   const { createAction, createField, createNotice } = WorkspaceKit.primitives;
   const body = el('div', 'ac-body');
-  const action = createAction({ label: t('agent_composition.send_brief', 'Send new brief'), kind: 'primary' });
+  const action = createAction({ label: t('agent_composition.send', 'Send'), kind: 'primary', size: 'compact' });
   const notice = createNotice();
   action.el.disabled = true;
   let questions = [];
@@ -52,17 +52,21 @@ export function createAgentCompositionReader(agent, { setState = () => {} } = {}
     const agentSection = section('agent', t('agent_composition.agent', 'Agent'));
     const objective = el('textarea'); objective.rows = 3; objective.value = data.current.objective || '';
     const title = el('input'); title.type = 'text'; title.value = data.current.title || agent;
-    const born = el('input'); born.type = 'text'; born.value = data.current.project_root || ''; born.disabled = true;
     for (const control of [objective, title]) control.addEventListener('input', refresh);
+    const bornWorkspace = data.current.project_root || '';
+    const bornQuestion = ask([{ group: t('agent_composition.born_workspace', 'Born workspace'), fields: [{
+      key: 'born_workspace', label: t('agent_composition.born_workspace', 'Born workspace'), many: true, filter: false,
+      options: bornWorkspace ? [{ v: bornWorkspace, l: bornWorkspace, off: t('agent_composition.born_fixed', 'where this Agent was born') }] : [],
+    }] }], { value: { born_workspace: bornWorkspace ? [bornWorkspace] : [] }, density: 'tight', exposed: true });
     const agentQuestions = ask([
       { group: t('agent_composition.role', 'Role'), fields: [{ key: 'role', label: t('agent_composition.role', 'Role'), options: ROLES }] },
       { group: t('agent_composition.team', 'Team'), fields: [{ key: 'team', label: t('agent_composition.team', 'Team'), blank: t('agent_composition.no_team', 'No Team'), options: (data.available_teams || []).map((row) => ({ v: row.name, l: row.title || row.name, sub: row.objective })) }] },
     ], { value: { role: data.current.role, team: data.current.team }, density: 'tight', onChange: refresh });
-    questions.push(agentQuestions);
+    questions.push(bornQuestion, agentQuestions);
     agentSection.append(
       createField({ label: t('agent_composition.objective', 'Objective'), control: objective }).el,
       createField({ label: t('agent_composition.agent_title', 'Title'), control: title }).el,
-      createField({ label: t('agent_composition.born_workspace', 'Born workspace'), control: born }).el,
+      bornQuestion.el,
       agentQuestions.el,
     );
     const mandate = section('mandate', t('mandate', 'Mandate'));
@@ -85,7 +89,7 @@ export function createAgentCompositionReader(agent, { setState = () => {} } = {}
     const fixedNames = fixed.map((row) => row.name);
     const selectedNames = data.current.behaviours.map((row) => row.name).filter((name) => optional.some((row) => row.name === name));
     const behaviourQuestion = ask([{ fields: [{
-      key: 'behaviours', label: t('behaviours', 'Behaviors'), many: true,
+      key: 'behaviours', label: t('behaviours', 'Behaviors'), many: true, filter: false,
       options: [
         ...fixed.map((row) => ({ v: row.name, l: row.label || row.name, sub: row.blurb, read: row.path, off: why(row) })),
         ...optional.map((row) => ({ v: row.name, l: row.label || row.name, sub: row.blurb, read: row.path })),

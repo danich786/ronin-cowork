@@ -19,12 +19,14 @@ test('Agent composition uses the shared selector and preserves many-valued Outpu
   assert.doesNotMatch(ui, /output\?\.\[0\]/);
 });
 
-test('Configuration shows every current field and has one Send new brief act', () => {
+test('Configuration shows every current field and has one Send act', () => {
   assert.match(ui, /\/configuration`, \{ method: 'PUT', json: value\(\) \}/);
   assert.match(ui, /action\.el\.disabled = JSON\.stringify\(value\(\)\) === loaded/);
-  assert.match(ui, /send_brief'.*'Send new brief'/);
+  assert.match(ui, /agent_composition\.send'.*'Send'.*size: 'compact'/);
   for (const field of ['objective', 'title', 'project_root', 'role', 'team', 'mandate', 'behaviours']) assert.match(ui, new RegExp(field));
   assert.match(ui, /key: 'behaviours'[\s\S]*many: true[\s\S]*exposed: true/, 'all Behaviors are open ERABI options');
+  assert.match(ui, /many: true, filter: false/, 'the opened Behavior list has no unnecessary search');
+  assert.match(ui, /key: 'born_workspace'[\s\S]*many: true, filter: false[\s\S]*off: t\('agent_composition\.born_fixed'/, 'Born workspace is one selected, fixed ERABI stone');
   assert.match(ui, /sub: row\.blurb, read: row\.path, off: why\(row\)/, 'fixed Behaviors retain blurb, read link and reason');
   assert.match(ui, /\.\.\.optional\.map\(\(row\) => \(\{ v: row\.name, l: row\.label \|\| row\.name, sub: row\.blurb, read: row\.path \}\)\)/, 'optional Behaviors retain blurb and read link');
   assert.doesNotMatch(ui, /forms\.(save|close|add)|composition\/brief|composition\/mandate|composition\/behaviours|resend/i);

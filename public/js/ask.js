@@ -4,7 +4,7 @@
  * owner's ruling 2026-09-12). A consumer writes a spec; this module draws it. Nothing spatial
  * is the consumer's: not the width, not the wrapping, not the shape, not what opens.
  *
- *   ask([{ group, fields: [{ key, label, options, blank?, many?, switch?, shape?, after?, row?, word?, then? }] }],
+ *   ask([{ group, fields: [{ key, label, options, blank?, many?, switch?, shape?, filter?, after?, row?, word?, then? }] }],
  *       { value, onChange, density, trayHost, exposed })  →  { el, value(), set(key, v) | set({...}), options(key, rows), disable(key, reason), show(keys|null), open(key), close(), destroy() }
  *
  * `blank` is a word or a function answering one (read at each paint).
@@ -166,8 +166,10 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     opt.append(name);
     if (field.shape === 'rect' && row.word) opt.append(el('small', 'ask-word', row.word));
     opt.addEventListener('mouseenter', () => say(row));
+    opt.addEventListener('mouseleave', () => say(null));
     opt.addEventListener('focus', () => say(row));
-    opt.addEventListener('click', () => { if (row.off || row.disabled) { say(row); return; } if (row.action) { row.action({ source: root, row }); return; } choose(field, row, opt); });
+    opt.addEventListener('blur', () => say(null));
+    opt.addEventListener('click', () => { if (row.off || row.disabled) return; if (row.action) { row.action({ source: root, row }); return; } choose(field, row, opt); });
     optionNodes.push({ field, row, node: opt });
     return opt;
   };
@@ -270,7 +272,8 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     const lineRows = field.many
       ? all.filter((row) => state[field.key].includes(row.v) && drawFor(row))
       : shown && !child ? all.filter((row) => String(row.v) === String(revealed) && drawFor(row)) : [];
-    const target = child && rowsOf(child).length > FILTER_FROM ? child : all.length > FILTER_FROM ? field : null;
+    const target = child && child.filter !== false && rowsOf(child).length > FILTER_FROM
+      ? child : field.filter !== false && all.length > FILTER_FROM ? field : null;
     const layerOf = (f) => {
       const options = el('div', 'ask-options');
       options.setAttribute('role', 'listbox');
@@ -326,8 +329,6 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
       find.addEventListener('input', () => { filter = find.value.trim().toLowerCase(); (target === field ? first : second).fill(); });
       box.append(find);
     }
-    const pressedIn = (f) => (f.many ? null : rowsOf(f).find((row) => String(row.v) === String(state[f.key])));
-    say((child && pressedIn(child)) || pressedIn(field) || null);
     box.append(first.options);
     if (second) box.append(second.el);
     const captioned = wordy(field) || (child && wordy(child));
