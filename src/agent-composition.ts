@@ -7,7 +7,7 @@ import { readTegami } from './tegami-read.js';
 import { getLeads, getProjectRoot, getTags, listSessions } from './tmux.js';
 import { listTeamRosters } from './team-rosters.js';
 
-type Receipt = { mandate?: unknown; behaviours?: Array<{ book?: string; file?: string }>; stated_by?: unknown };
+type Receipt = { mandate?: unknown; behaviours?: Array<{ book?: string; file?: string }>; launch_mode?: 'configured' | 'live_dangerously'; stated_by?: unknown };
 export const birthMandateFromReceipt = (receipt: Receipt) => receipt.mandate === undefined ? null : mandate(receipt.mandate);
 
 async function receiptFor(name: string): Promise<Receipt> {
@@ -79,6 +79,7 @@ export async function readAgentComposition(name: string) {
       objective: work.objective, title, project_root: projectRoot,
       session_type: session?.identity?.sessionType || 'cowork_agent',
       provider: session?.identity?.provider || '', model: session?.identity?.model || '',
+      launch_mode: receipt.launch_mode || 'configured',
       role, team: tags[0] ?? '', mandate: work.mandate, behaviours: currentBehaviours,
     },
     available_teams: teams.filter((row) => row.state !== 'archived').map((row) => ({ name: row.name, title: row.title, objective: row.objective })),

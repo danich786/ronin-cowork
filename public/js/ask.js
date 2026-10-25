@@ -19,7 +19,8 @@
  * is the reason the stone is greyed (disabled, never hidden), `glyph` sits on a square,
  * `word` is the rectangle's short second line (tier, worktree, checkout). `read` is a
  * document path; ERABI draws its separate read glyph and emits `ronin:read-document`.
- * `disabled` makes an option unavailable without inventing a visible reason.
+ * `disabled` makes an option unavailable without inventing a visible reason. `fixed` keeps
+ * the field's chosen reading in place as a selected, blocked stone and offers no tray.
  * `after` names the
  * field this one depends on: when that one changes, this answer clears and its options are
  * asked again. `row(option, value)` draws a control that belongs to a chosen option — a branch
@@ -210,6 +211,13 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     const button = el('button', 'ask-stone');
     button.type = 'button';
     button.dataset.askKey = field.key;
+    if (field.fixed) {
+      button.disabled = true;
+      button.setAttribute('aria-disabled', 'true');
+      button.setAttribute('aria-selected', 'true');
+      button.append(el('small', 'ask-label', field.label), reading(field));
+      return button;
+    }
     if (field.switch) {
       const on = Boolean(state[field.key]);
       button.className += ' ask-switch';

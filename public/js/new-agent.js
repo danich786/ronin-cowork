@@ -137,7 +137,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
   ];
   function paintTypes() {
     typeHost.replaceChildren();
-    for (const type of TYPES()) {
+    for (const type of TYPES().filter((row) => !configure || row.key === draft.type)) {
       const box = el('button', 'fs-way');
       box.type = 'button';
       box.disabled = !!configure;
@@ -188,6 +188,11 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
   nameInput.classList.add('na-name-input');
   topLeft.append(nameField, leanNote);
   stepTop.body.append(topLeft);
+
+  const agentIdentity = ask([{ fields: [{
+    key: 'agentId', label: t('add_agent.name', 'Name'), fixed: true,
+    options: [{ v: configure || '', l: configure || '' }],
+  }] }], { value: { agentId: configure || '' }, className: 'na-agent-identity', density: 'tight' });
 
   /* ---- Apply Template lives under the fourth session choice. ---- */
   function restoreTemplateDefaults() {
@@ -351,8 +356,8 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
   };
   const questions = ask([
     { group: t('new_agent.model_package', 'Model'), fields: [
-      { key: 'provider', label: t('forms.provider', 'Model provider'), blank: defaultWord, options: providerRows },
-      { key: 'model', label: t('forms.model', 'Model'), blank: t('forms.default', 'Default'), after: 'provider', options: (value) => modelRows(value.provider) },
+      { key: 'provider', label: t('forms.provider', 'Model provider'), blank: defaultWord, options: providerRows, fixed: !!configure },
+      { key: 'model', label: t('forms.model', 'Model'), blank: t('forms.default', 'Default'), after: 'provider', options: (value) => modelRows(value.provider), fixed: !!configure },
       { key: 'teamLead', label: t('new_agent.make_team_lead', 'Make team lead'), switch: [t('forms.on', 'On'), t('forms.off', 'Off')] },
       { key: 'role', label: t('agent_composition.role', 'Role'), options: [
         { v: 'coworker', l: 'Coworker' }, { v: 'lead', l: 'Lead' }, { v: 'epic_lead', l: 'Epic Lead' }, { v: 'coordinator', l: 'Coordinator' },
@@ -364,9 +369,9 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
       { key: 'output', label: t('output', 'Output'), many: true, options: mandateRows(OUTPUT) },
     ] },
     { group: t('where.label', 'Where it works'), fields: [
-      { key: 'root', label: t('where.born_in', 'Born in'), options: rootRows },
+      { key: 'root', label: t('where.born_in', 'Born in'), options: rootRows, fixed: !!configure },
       { key: 'repos', label: t('new_agent.workspaces', 'Workspaces'), many: true, options: rootRows },
-      { key: 'launchMode', label: t('launch_mode.mode', 'Mode'), options: launchModes },
+      { key: 'launchMode', label: t('launch_mode.mode', 'Mode'), options: launchModes, fixed: !!configure },
     ] },
   ], {
     value: { provider: draft.provider, model: draft.model, reach: draft.reach, recruit: draft.recruit, output: draft.output, teamLead: draft.teamLead, role: draft.role, root: draft.root, repos: draft.repos, launchMode: draft.launchMode },
@@ -657,7 +662,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     stepPayload.setNumber(order.length + 1);
     stepPayload.el.hidden = !!configure || draft.type === 'terminal';
     stepTop.el.querySelector('h3').textContent = hasAgent() ? t('new_agent.agent_body', 'Agent') : t('new_agent.name_required_step', 'Name · required');
-    if (configure) questions.show(['provider', 'model', 'role', 'reach', 'recruit', 'output', 'root']);
+    if (configure) questions.show(['provider', 'model', 'role', 'reach', 'recruit', 'output', 'root', 'launchMode']);
     else questions.show(draft.type === 'terminal' ? [] : draft.type === 'bare_metal_agent' ? ['provider', 'model', 'root', 'launchMode'] : null);
     teamQuestions.show(isCowork() ? null : ['team']);
     teamQuestions.el.hidden = false;
@@ -670,7 +675,6 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     paintKinds();
     paintTray();
     syncQuestions();
-    if (configure) for (const key of ['provider', 'model', 'root']) questions.disable(key, t('agent_composition.born_fixed', 'set at birth'));
     paintDefaultsNote();
     paintBehaviourShelves();
     paintFolds();
@@ -686,6 +690,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
   } });
   stepPayload.body.append(foot, actions.el);
   stepPayload.setCollapsed(true, null, true);
+  if (configure) identityRow.append(agentIdentity.el);
   identityRow.append(nameField, teamQuestions.el);
   stepTop.body.replaceChildren(identityRow, questions.el, defaultsNote, instructionsField);
   const form = el('div', 'ntf-form');
@@ -706,6 +711,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     draft.type = current.session_type || 'cowork_agent'; draft.name = current.title || configure; nameInput.value = draft.name;
     draft.instructions = current.objective || ''; instructionsInput.value = draft.instructions;
     draft.provider = current.provider || ''; draft.model = current.model || ''; draft.root = current.project_root || '';
+    draft.launchMode = current.launch_mode || 'configured';
     roots = draft.root ? [{ name: draft.root, title: '' }] : [];
     draft.role = current.role || 'coworker'; draft.teamLead = draft.role === 'lead';
     draft.teamMode = current.team ? 'existing' : 'none'; draft.team = current.team || '';
@@ -745,6 +751,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
       window.removeEventListener('ronin:behaviours-changed', refreshBehaviours);
       questions.destroy();
       teamQuestions.destroy();
+      agentIdentity.destroy();
     },
   };
 }

@@ -420,6 +420,20 @@ test('an explicit stone label survives when it matches its group head', () => {
   assert.equal(stoneFor(form, 'where').one('ask-label').textContent, 'Where will you install Ronin?');
 });
 
+test('a fixed answer is the selected blocked reading and offers no alternatives', () => {
+  const changes = [];
+  const form = ask([{ fields: [{ key: 'provider', label: 'Model provider', fixed: true, options: PROVIDERS }] }],
+    { value: { provider: 'openai' }, onChange: (value) => changes.push(value) });
+  const stone = stoneFor(form, 'provider');
+  assert.equal(stone.disabled, true);
+  assert.equal(stone.attributes['aria-disabled'], 'true');
+  assert.equal(stone.attributes['aria-selected'], 'true');
+  assert.equal(stone.one('ask-reading').textContent, 'Codex');
+  stone.click();
+  assert.equal(form.el.all('ask-tray').length, 0);
+  assert.deepEqual(changes, []);
+});
+
 test('a one-of-two question with no blank flips on press and opens no tray (owner, 2026-10-03)', async () => {
   const { ask } = await import('../public/js/ask.js');
   const changes = [];

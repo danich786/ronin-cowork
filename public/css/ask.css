@@ -33,7 +33,10 @@
     border: var(--edge) solid var(--line-2); border-left: var(--edge-2) solid var(--accent); border-radius: var(--radius-small); background: var(--inset); color: var(--fg);
     padding: var(--space-row) var(--space-control); cursor: pointer; text-align: left; font: inherit; font-size: var(--form-input); }
   .ask-stone:hover { border-color: var(--kaki); }
-  .ask-stone[aria-expanded='true'] { border-color: var(--kaki); border-left-color: var(--kaki); background: var(--selected); /* the one you are on, have chosen, or are dropping onto */ box-shadow: inset var(--edge-2) 0 var(--kaki); }
+  .ask-stone:is([aria-expanded='true'], [aria-selected='true']) { border-color: var(--kaki); border-left-color: var(--kaki); background: var(--selected); /* the one you are on, have chosen, or are dropping onto */ box-shadow: inset var(--edge-2) 0 var(--kaki); }
+  .ask-stone[aria-disabled='true'] { cursor: default; opacity: 1; }
+  .ask-stone[aria-disabled='true']:hover { border-color: var(--kaki); }
+  .ask-stone[aria-disabled='true']::after { content: none; }
   .ask-stone::after { content: '▾'; position: absolute; right: var(--ask-caret-x); bottom: var(--ask-caret-y); color: var(--accent); font-size: var(--text-small); }
   .ask-switch::after, .ask-switch .ask-reading { content: none; }
   .ask-label { display: block; overflow: hidden; color: var(--muted); font-size: var(--form-note); line-height: var(--leading-tight); text-overflow: ellipsis; white-space: nowrap; }
