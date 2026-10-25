@@ -164,14 +164,20 @@ export function registerSessions(app: express.Express): void {
     catch (e) { res.status(409).json({ error: String((e as Error)?.message ?? e) }); }
   });
 
-  // UPDATE (owner, 2026-10-24): the Configuration's one act — write the mandate and the whole
-  // chosen Behaviors list, rebuild the brief, tell the Agent once to read it.
+  // The Configuration's one act: write its existing authorities, rebuild the brief, tell once.
   app.put('/api/sessions/:name/configuration', async (req, res) => {
     const { name } = req.params;
     if (!isValidName(name)) return res.status(400).json({ error: 'Invalid name.' });
     if (!(await sessionExists(name))) return res.status(404).json({ error: 'No such session.' });
     const behaviours = Array.isArray(req.body?.behaviours) ? req.body.behaviours.map((row: unknown) => String(row ?? '').trim()).filter(Boolean) : [];
-    try { res.json({ ok: true, queued: true, ...await updateConfiguration(name, { mandate: mandate(req.body?.mandate), behaviours }) }); }
+    const role = ['coworker', 'lead', 'epic_lead', 'coordinator'].includes(req.body?.role) ? req.body.role : 'coworker';
+    const team = String(req.body?.team ?? '').trim();
+    const validTeams = new Set((await listTeamRosters()).filter((row) => row.state !== 'archived').map((row) => row.name));
+    if (team && !validTeams.has(team)) return res.status(400).json({ error: `Unknown Team: ${team}.` });
+    try { res.json({ ok: true, queued: true, ...await updateConfiguration(name, {
+      objective: String(req.body?.objective ?? ''), title: String(req.body?.title ?? ''), role, team,
+      mandate: mandate(req.body?.mandate), behaviours, by: callerOf(req),
+    }) }); }
     catch (e) { res.status(500).json({ error: String((e as Error)?.message ?? e) }); }
   });
 

@@ -2,12 +2,16 @@ import { WorkspaceKit } from './workspace-kit.js';
 import { request } from './request.js';
 import { t } from './lexicon.js';
 import { ask } from './ask.js';
-import { createStep, readingRows } from './form-steps.js';
+import { createStep } from './form-steps.js';
 
 export const AGENT_COMPOSITION_TYPE = 'agent.composition';
 const REACH = ['open', 'discuss', 'plan', 'execute'];
 const RECRUIT = ['open', 'nobody', 'propose agents', 'staff agents'];
 const OUTPUT = ['open', 'ideas', 'a plan', 'code', 'an artifact', 'the team'];
+const ROLES = [
+  { v: 'coworker', l: 'Coworker' }, { v: 'lead', l: 'Lead' },
+  { v: 'epic_lead', l: 'Epic Lead' }, { v: 'coordinator', l: 'Coordinator' },
+];
 const el = (tag, cls = '', text = '') => { const node = document.createElement(tag); if (cls) node.className = cls; if (text) node.textContent = text; return node; };
 const rows = (values) => values.map((value) => ({ v: value, l: value }));
 // The few words a conditional behaviour gives as its reason; lead implies team.
@@ -22,21 +26,12 @@ function reasonWords(requires) {
   return requires.filter((need) => !(need === 'team' && requires.includes('lead'))).map((need) => words[need] || need).join(' · ');
 }
 
-/**
- * THE ONE COMPOSITION BODY (owner, 2026-10-24): what this Agent is set to, and what you can change.
- * The composition tile and an opened Commons roster row paint it alike, as the kit's unnumbered
- * sections (createStep) in the launch forms' format: Mandate (the stones) and Behaviors — ONE list
- * of this Agent's behaviours, a reading row each: the name (press it to read its page), its line,
- * and in place of a control the reason, plain and muted, when it is not a choice ("every Cowork
- * Agent", "Team lead", "since birth"), or the kit's switch when it is. UPDATE is the body's one act: the host puts
- * `action` in its one action row as the primary; it wakes when something changed; pressed, Ronin
- * writes the configuration, builds the Agent a new brief and tells it once to read it. Its answer
- * sits first in the body, directly under the act.
- */
+/** Agent, Mandate and Behaviors in the launch forms' createStep + ERABI format. The host
+ * owns the only action, Send new brief; closing the surface simply destroys this draft. */
 export function createAgentCompositionReader(agent, { setState = () => {} } = {}) {
-  const { createAction, createNotice } = WorkspaceKit.primitives;
+  const { createAction, createField, createNotice } = WorkspaceKit.primitives;
   const body = el('div', 'ac-body');
-  const action = createAction({ label: t('agent_composition.update', 'Update'), kind: 'primary' });
+  const action = createAction({ label: t('agent_composition.send_brief', 'Send new brief'), kind: 'primary' });
   const notice = createNotice();
   action.el.disabled = true;
   let questions = [];
@@ -54,6 +49,22 @@ export function createAgentCompositionReader(agent, { setState = () => {} } = {}
   const render = (data) => {
     body.replaceChildren(notice.el);
     const section = (key, title) => { const step = createStep({ key, title }); body.append(step.el); return step.body; };
+    const agentSection = section('agent', t('agent_composition.agent', 'Agent'));
+    const objective = el('textarea'); objective.rows = 3; objective.value = data.current.objective || '';
+    const title = el('input'); title.type = 'text'; title.value = data.current.title || agent;
+    const born = el('input'); born.type = 'text'; born.value = data.current.project_root || ''; born.disabled = true;
+    for (const control of [objective, title]) control.addEventListener('input', refresh);
+    const agentQuestions = ask([
+      { group: t('agent_composition.role', 'Role'), fields: [{ key: 'role', label: t('agent_composition.role', 'Role'), options: ROLES }] },
+      { group: t('agent_composition.team', 'Team'), fields: [{ key: 'team', label: t('agent_composition.team', 'Team'), blank: t('agent_composition.no_team', 'No Team'), options: (data.available_teams || []).map((row) => ({ v: row.name, l: row.title || row.name, sub: row.objective })) }] },
+    ], { value: { role: data.current.role, team: data.current.team }, density: 'tight', onChange: refresh });
+    questions.push(agentQuestions);
+    agentSection.append(
+      createField({ label: t('agent_composition.objective', 'Objective'), control: objective }).el,
+      createField({ label: t('agent_composition.agent_title', 'Title'), control: title }).el,
+      createField({ label: t('agent_composition.born_workspace', 'Born workspace'), control: born }).el,
+      agentQuestions.el,
+    );
     const mandate = section('mandate', t('mandate', 'Mandate'));
     const mandateQuestion = ask([{ fields: [
       { key: 'reach', label: t('team_config.reach', 'Reach'), options: rows(REACH) },
@@ -62,12 +73,6 @@ export function createAgentCompositionReader(agent, { setState = () => {} } = {}
     ] }], { value: data.current.mandate, density: 'tight', onChange: refresh }); questions.push(mandateQuestion);
     mandate.append(mandateQuestion.el);
     const behaviours = section('behaviours', t('behaviours', 'Behaviors'));
-    // The name reads its page the way a stone's read glyph does: the same event, the same reader.
-    const name = (row) => {
-      const button = el('button', 'wa-link', row.label || row.name); button.type = 'button';
-      button.addEventListener('click', () => window.dispatchEvent(new CustomEvent('ronin:read-document', { detail: { path: row.path, source: body } })));
-      return button;
-    };
     const since = (row) => (row.since_birth ? t('agent_composition.since_birth', 'since birth') : '');
     // A conditional's reason; when the condition is the behaviour's own name, say only that it holds.
     const why = (row) => {
@@ -75,28 +80,31 @@ export function createAgentCompositionReader(agent, { setState = () => {} } = {}
       const reason = reasonWords(row.requires);
       return [reason === (row.label || row.name) ? t('agent_composition.holds_now', 'applies now') : reason, since(row)].filter(Boolean).join(' · ');
     };
-    const line = (row, control) => { const dd = el('div'); if (row.blurb) dd.append(el('div', 'ac-line', row.blurb)); dd.append(control); return [name(row), dd]; };
     const fixed = (data.sends?.rows || []).filter((row) => row.scope !== 'selected');
-    const chosenNow = new Set(data.current.behaviours.map((row) => row.name));
-    const switches = data.available_behaviours.map((row) => {
-      const given = ask([{ fields: [{ key: row.name, label: row.label || row.name, switch: true, compact: true }] }], { value: { [row.name]: chosenNow.has(row.name) }, density: 'tight', onChange: refresh });
-      questions.push(given);
-      return { row, given };
-    });
-    const list = readingRows([
-      ...fixed.map((row) => line(row, el('div', 'ac-line', why(row)))),
-      ...switches.map(({ row, given }) => line(row, given.el)),
-    ]);
-    list.classList.add('ac-behaviours'); behaviours.append(list);
+    const optional = data.available_behaviours.filter((row) => !['epic_agent', 'steerco_mgr'].includes(row.name));
+    const fixedNames = fixed.map((row) => row.name);
+    const selectedNames = data.current.behaviours.map((row) => row.name).filter((name) => optional.some((row) => row.name === name));
+    const behaviourQuestion = ask([{ fields: [{
+      key: 'behaviours', label: t('behaviours', 'Behaviors'), many: true,
+      options: [
+        ...fixed.map((row) => ({ v: row.name, l: row.label || row.name, sub: row.blurb, read: row.path, off: why(row) })),
+        ...optional.map((row) => ({ v: row.name, l: row.label || row.name, sub: row.blurb, read: row.path })),
+      ],
+    }] }], { value: { behaviours: [...fixedNames, ...selectedNames] }, density: 'tight', exposed: true, onChange: refresh });
+    questions.push(behaviourQuestion); behaviours.append(behaviourQuestion.el);
     if (data.sends?.error) behaviours.append(el('p', 'ac-status', data.sends.error));
-    value = () => ({ mandate: mandateQuestion.value(), behaviours: switches.filter(({ row, given }) => given.value()[row.name]).map(({ row }) => row.name) });
+    value = () => ({
+      objective: objective.value.trim(), title: title.value.trim(), ...agentQuestions.value(),
+      mandate: mandateQuestion.value(),
+      behaviours: behaviourQuestion.value().behaviours.filter((name) => optional.some((row) => row.name === name)),
+    });
     loaded = JSON.stringify(value()); refresh();
   };
   action.el.addEventListener('click', async () => {
     action.el.disabled = true; notice.set('info', t('agent_composition.updating', 'Updating…'));
     const sent = await request(`/api/sessions/${encodeURIComponent(agent)}/configuration`, { method: 'PUT', json: value() });
     if (!sent.ok) { notice.set('failed', sent.message); refresh(); return; }
-    loaded = JSON.stringify(value()); refresh();
+    await load();
     notice.set('success', t('agent_composition.updated', 'The Agent has been sent its new brief.'));
   });
   return { el: body, action, show: load, destroy: () => { for (const question of questions) question.destroy(); questions = []; } };

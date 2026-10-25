@@ -279,3 +279,16 @@ export async function writeMandate(name: string, current: Mandate): Promise<Mand
   await replaceLetterBlock(file, text, parsed, parsed.body);
   return next;
 }
+
+/** Change the Agent-authored objective through the Configuration surface. */
+export async function writeObjective(name: string, objective: string, by: string): Promise<string> {
+  const file = tegamiPath(await sessionKey(name));
+  const text = await fs.readFile(file, 'utf8');
+  const parsed = letterBlock(text);
+  if (!parsed) throw new Error(`@${name} has no readable work record`);
+  const next = objective.trim().slice(0, 2000);
+  parsed.body.objective = next;
+  await replaceLetterBlock(file, text, parsed, parsed.body);
+  await ackRecord(name, by);
+  return next;
+}

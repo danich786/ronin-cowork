@@ -4,6 +4,8 @@ import { mandate } from './agent-defaults.js';
 import { listBehaviours } from './resource-adapters.js';
 import { sessionDir, sessionKey } from './session-dir.js';
 import { readTegami } from './tegami-read.js';
+import { getLeads, getProjectRoot, getTags, listSessions } from './tmux.js';
+import { listTeamRosters } from './team-rosters.js';
 
 type Receipt = { mandate?: unknown; behaviours?: Array<{ book?: string; file?: string }>; stated_by?: unknown };
 export const birthMandateFromReceipt = (receipt: Receipt) => receipt.mandate === undefined ? null : mandate(receipt.mandate);
@@ -44,15 +46,25 @@ export async function writeCurrentBehaviours(name: string, rows: BehaviourRow[])
 
 export async function readAgentComposition(name: string) {
   const key = await sessionKey(name);
-  const [receipt, work, brief, catalog] = await Promise.all([
+  const [receipt, work, brief, catalog, sessions, teams, leads, tags, projectRoot] = await Promise.all([
     receiptFor(name), readTegami(name), readFile(path.join(sessionDir(key), 'brief.md'), 'utf8').catch(() => ''), listBehaviours(),
+    listSessions(), listTeamRosters(), getLeads(name), getTags(name), getProjectRoot(name),
   ]);
   if (!work) throw new Error(`@${name} has no readable work record`);
   const born = (receipt.behaviours ?? []).map((row) => ({ name: row.book ?? '', path: row.file ?? '' })).filter((row) => row.name);
   const bornMandate = birthMandateFromReceipt(receipt);
+  const currentBehaviours = await currentBehavioursAt(sessionDir(key), born);
+  const names = new Set(currentBehaviours.map((row) => row.name));
+  const role = names.has('steerco_mgr') ? 'coordinator' : names.has('epic_agent') ? 'epic_lead' : leads.length ? 'lead' : 'coworker';
+  const session = sessions.find((row) => row.name === name);
+  const title = session?.title || name.split(/[_-]+/).filter(Boolean).map((part) => part[0]?.toUpperCase() + part.slice(1)).join(' ');
   return {
     birth: { mandate: bornMandate, behaviours: born, brief, provenance: receipt.stated_by ?? null },
-    current: { mandate: work.mandate, behaviours: await currentBehavioursAt(sessionDir(key), born) },
+    current: {
+      objective: work.objective, title, project_root: projectRoot,
+      role, team: tags[0] ?? '', mandate: work.mandate, behaviours: currentBehaviours,
+    },
+    available_teams: teams.filter((row) => row.state !== 'archived').map((row) => ({ name: row.name, title: row.title, objective: row.objective })),
     available_behaviours: catalog.filter((row) => row.scope === 'selected').map((row) => ({ name: row.name, label: row.label, blurb: row.blurb, path: row.page })),
   };
 }
