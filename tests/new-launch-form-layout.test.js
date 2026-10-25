@@ -146,6 +146,8 @@ test('collapsible steps expose one full-width disclosure row and Team defaults u
   assert.match(steps, /forms\.expand', 'Expand'/);
   assert.match(steps, /forms\.collapse', 'Collapse'/);
   assert.match(css, /\.fs-togglable \{ grid-column: 1 \/ -1; width: 100%/);
+  assert.match(css, /\.fs-step:has\(> \.fs-step-head\.fs-togglable\) \{ border-bottom: var\(--edge\) solid var\(--line\); \}/);
+  assert.match(css, /\.fs-step\[data-collapsed='true'\]:has\(> \.fs-step-head\.fs-togglable\) \{ border-bottom: 0; \}/);
   assert.match(css, /\.na-team-questions \{ flex: 0 0 auto; \}/);
   assert.match(team, /key: 'defaults'.*Agent defaults/);
   assert.match(team, /Settings inherited by Agents launched in this Team/);
