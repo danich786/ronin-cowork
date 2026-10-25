@@ -27,8 +27,10 @@ test('Configuration shows every current field and has one Send act', () => {
   assert.match(ui, /key: 'behaviours'[\s\S]*many: true[\s\S]*exposed: true/, 'all Behaviors are open ERABI options');
   assert.match(ui, /many: true, filter: false/, 'the opened Behavior list has no unnecessary search');
   assert.match(ui, /key: 'born_workspace'[\s\S]*many: true, filter: false[\s\S]*off: t\('agent_composition\.born_fixed'/, 'Born workspace is one selected, fixed ERABI stone');
-  assert.match(ui, /sub: row\.blurb, read: row\.path, off: why\(row\)/, 'fixed Behaviors retain blurb, read link and reason');
-  assert.match(ui, /\.\.\.optional\.map\(\(row\) => \(\{ v: row\.name, l: row\.label \|\| row\.name, sub: row\.blurb, read: row\.path \}\)\)/, 'optional Behaviors retain blurb and read link');
+  assert.match(ui, /sub: row\.blurb, word: why\(row\), disabled: true/, 'fixed Behaviors are dimmed and state their reason');
+  assert.match(ui, /\.\.\.optional\.map\(\(row\) => \(\{ v: row\.name, l: row\.label \|\| row\.name, sub: row\.blurb \}\)\)/, 'optional Behaviors retain their blurb without a read glyph');
+  assert.match(ui, /'trello', 'perplexity', 'gbrain'/, 'integration-specific Behaviors stay out of this list');
+  assert.doesNotMatch(ui, /read: row\.path/, 'Behavior stones have no corner read control');
   assert.doesNotMatch(ui, /forms\.(save|close|add)|composition\/brief|composition\/mandate|composition\/behaviours|resend/i);
   assert.match(formSteps, /if \(label instanceof Node\) dt\.append\(label\)/, 'a reading-row key may be a Node, as its value may');
   assert.match(routes, /app\.put\('\/api\/sessions\/:name\/configuration'/);

@@ -59,8 +59,8 @@ export function createAgentCompositionReader(agent, { setState = () => {} } = {}
       options: bornWorkspace ? [{ v: bornWorkspace, l: bornWorkspace, off: t('agent_composition.born_fixed', 'where this Agent was born') }] : [],
     }] }], { value: { born_workspace: bornWorkspace ? [bornWorkspace] : [] }, density: 'tight', exposed: true });
     const agentQuestions = ask([
-      { group: t('agent_composition.role', 'Role'), fields: [{ key: 'role', label: t('agent_composition.role', 'Role'), options: ROLES }] },
-      { group: t('agent_composition.team', 'Team'), fields: [{ key: 'team', label: t('agent_composition.team', 'Team'), blank: t('agent_composition.no_team', 'No Team'), options: (data.available_teams || []).map((row) => ({ v: row.name, l: row.title || row.name, sub: row.objective })) }] },
+      { fields: [{ key: 'role', label: t('agent_composition.role', 'Role'), options: ROLES }] },
+      { fields: [{ key: 'team', label: t('agent_composition.team', 'Team'), blank: t('agent_composition.no_team', 'No Team'), options: (data.available_teams || []).map((row) => ({ v: row.name, l: row.title || row.name, sub: row.objective })) }] },
     ], { value: { role: data.current.role, team: data.current.team }, density: 'tight', onChange: refresh });
     questions.push(bornQuestion, agentQuestions);
     agentSection.append(
@@ -85,14 +85,15 @@ export function createAgentCompositionReader(agent, { setState = () => {} } = {}
       return [reason === (row.label || row.name) ? t('agent_composition.holds_now', 'applies now') : reason, since(row)].filter(Boolean).join(' · ');
     };
     const fixed = (data.sends?.rows || []).filter((row) => row.scope !== 'selected');
-    const optional = data.available_behaviours.filter((row) => !['epic_agent', 'steerco_mgr'].includes(row.name));
+    const hiddenBehaviours = new Set(['epic_agent', 'steerco_mgr', 'trello', 'perplexity', 'gbrain']);
+    const optional = data.available_behaviours.filter((row) => !hiddenBehaviours.has(row.name));
     const fixedNames = fixed.map((row) => row.name);
     const selectedNames = data.current.behaviours.map((row) => row.name).filter((name) => optional.some((row) => row.name === name));
     const behaviourQuestion = ask([{ fields: [{
       key: 'behaviours', label: t('behaviours', 'Behaviors'), many: true, filter: false,
       options: [
-        ...fixed.map((row) => ({ v: row.name, l: row.label || row.name, sub: row.blurb, read: row.path, off: why(row) })),
-        ...optional.map((row) => ({ v: row.name, l: row.label || row.name, sub: row.blurb, read: row.path })),
+        ...fixed.map((row) => ({ v: row.name, l: row.label || row.name, sub: row.blurb, word: why(row), disabled: true })),
+        ...optional.map((row) => ({ v: row.name, l: row.label || row.name, sub: row.blurb })),
       ],
     }] }], { value: { behaviours: [...fixedNames, ...selectedNames] }, density: 'tight', exposed: true, onChange: refresh });
     questions.push(behaviourQuestion); behaviours.append(behaviourQuestion.el);
