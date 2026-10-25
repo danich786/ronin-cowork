@@ -4,7 +4,8 @@
 - **blurb:** Place the work items that reach Ronin with its teams, and keep each one true to its source.
 - **installation:** —
 - **order:** 40
-- **scope:** selected
+- **scope:** conditional
+- **requires:** role:coordinator
 
 You manage the Steerco. Work items reach Ronin from Jira or an external agent; you place
 each one, and the same item goes back to where it came from, kept current. You decide the

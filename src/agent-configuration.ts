@@ -8,7 +8,7 @@
  */
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { readAgentComposition, writeCurrentBehaviours } from './agent-composition.js';
+import { readAgentComposition, writeCurrentBehaviours, writeCurrentRole } from './agent-composition.js';
 import type { Mandate } from './agent-defaults.js';
 import { compileBirthReadmeAt, isShelfTeaching, packetEndLine } from './birth-readme.js';
 import { enqueueMessage } from './message-queue.js';
@@ -39,6 +39,7 @@ async function configurationReading(name: string) {
     campaign_id: campaign || undefined,
     kind: receipt.kind,
     mandate: composition.current.mandate,
+    role: composition.current.role,
     behaviours: composition.current.behaviours.map((row) => row.name).filter((book) => selected.has(book)),
   };
   const reading = await resolveReading(form, await resolveFacts(form, new Set()));
@@ -73,9 +74,7 @@ type ConfigurationUpdate = {
 
 export async function updateConfiguration(name: string, next: ConfigurationUpdate): Promise<{ readme: string }> {
   const [catalog, before] = await Promise.all([listBehaviours(), readAgentComposition(name)]);
-  const roleBook = next.role === 'epic_lead' ? 'epic_agent' : next.role === 'coordinator' ? 'steerco_mgr' : '';
-  const selected = new Set(next.behaviours.filter((book) => !['epic_agent', 'steerco_mgr'].includes(book)));
-  if (roleBook) selected.add(roleBook);
+  const selected = new Set(next.behaviours);
   const chosen = catalog.filter((row) => row.scope === 'selected' && selected.has(row.name)).map((row) => ({ name: row.name, path: row.page }));
   const beforeTeams = await getTags(name);
   const teams = next.team ? [next.team] : [];
@@ -86,6 +85,7 @@ export async function updateConfiguration(name: string, next: ConfigurationUpdat
   const changedTeam = JSON.stringify(beforeTeams) !== JSON.stringify(teams) || JSON.stringify(beforeLeads) !== JSON.stringify(wantedLeads);
   if (JSON.stringify(beforeTeams) !== JSON.stringify(teams)) await setTags(name, teams);
   if (JSON.stringify(beforeLeads) !== JSON.stringify(wantedLeads)) await setLeads(name, wantedLeads);
+  if (before.current.role !== next.role) await writeCurrentRole(name, next.role);
   if (changedTeam) await teamChanged([...new Set([...beforeTeams, ...teams])], next.by, name).catch(() => {});
   if (JSON.stringify(before.current.mandate) !== JSON.stringify(next.mandate)) await writeMandate(name, next.mandate);
   if (JSON.stringify(before.current.behaviours.map((row) => row.name)) !== JSON.stringify(chosen.map((row) => row.name))) await writeCurrentBehaviours(name, chosen);

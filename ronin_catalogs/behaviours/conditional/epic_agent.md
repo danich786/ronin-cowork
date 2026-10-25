@@ -4,7 +4,8 @@
 - **blurb:** Hold one epic for the Steerco and see the work under it through.
 - **installation:** —
 - **order:** 40
-- **scope:** selected
+- **scope:** conditional
+- **requires:** role:epic_lead
 
 You hold one epic for the Steerco. Everything under it is yours to know of; you do the work
 yourself only when you hold it.

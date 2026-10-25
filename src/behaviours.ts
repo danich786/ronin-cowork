@@ -47,6 +47,7 @@ export async function resolveFloorBehaviours(): Promise<DeliveredBehaviour[]> {
 
 export interface BehaviourFacts {
   arrangement: 'managed' | 'checkout' | 'none';
+  role?: 'coworker' | 'lead' | 'epic_lead' | 'coordinator';
   team: boolean;
   lead: boolean;
   /** The Campaign's Project management switch: the Services part `task_manager`. */
@@ -56,6 +57,7 @@ export interface BehaviourFacts {
 const conditionHolds = (requirement: string, facts: BehaviourFacts): boolean => {
   const [kind, value = ''] = requirement.split(':').map((part) => part.trim());
   if (kind === 'arrangement') return facts.arrangement === value;
+  if (kind === 'role') return facts.role === value;
   if (kind === 'team') return facts.team;
   if (kind === 'lead') return facts.lead;
   if (kind === 'project_management') return facts.project_management;

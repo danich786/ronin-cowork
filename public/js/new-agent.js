@@ -12,6 +12,8 @@ import {
 } from './form-steps.js';
 import { openLaunchHandoff } from './launch-handoff.js';
 import { closeWorkspaceTab, reserveWorkspaceTab, workbenchLaunchUrl } from './workspace.js';
+import { paintShelves } from './agent-form-shared.js';
+export { fixedBirthStone, paintShelves } from './agent-form-shared.js';
 
 const REACH = ['open', 'discuss', 'plan', 'execute'];
 const RECRUIT = ['open', 'nobody', 'propose agents', 'staff agents'];
@@ -375,33 +377,10 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
   const stepLoadout = createStep({ n: 7, key: 'loadout', title: t('behaviours', 'Behaviors'), onToggle: () => toggle('loadout') });
   const behaviourRows = () => seed?.behaviours || [];
   const shelvesHost = el('div', 'na-behaviour-sections');
-  function paintShelves() {
-    const general = behaviourRows().filter((row) => row.scope === 'selected' && row.available === true && !row.installation);
-    const automatic = behaviourRows().filter((row) => row.scope === 'floor');
-    const conditional = behaviourRows().filter((row) => row.scope === 'conditional');
-    const row = (item, availability = '') => ({
-      v: item.name || '+', l: item.label || item.name,
-      sub: typeof availability === 'object' && Object.hasOwn(availability, 'sub') ? availability.sub : item.blurb || '', read: item.reading,
-      view: item.name ? { name: item.name, scope: item.scope } : null,
-      off: typeof availability === 'string' ? availability : availability.off || '',
-      disabled: typeof availability === 'object' && availability.disabled === true,
-    });
-    const picker = ask([{ group: t('behaviours.available', 'Optional'), fields: [{
-      key: 'behaviours', label: t('behaviours', 'Behaviours'), many: true, shape: 'tall',
-      options: [
-        ...general.map((item) => row(item, item.required ? t('team_config.required', 'Required for each new Agent') : '')),
-        ...(openBehaviours ? [{ v: '@customize', l: t('behaviours.customize', 'Customize Behaviors'), action: () => openBehaviours() }] : []),
-      ],
-    }] }], { value: { behaviours: draft.books }, density: 'tight', exposed: true, onChange: (value) => {
-      draft.books = [...value.behaviours]; touched.books = true; paintFoot();
+  function paintBehaviourShelves() {
+    paintShelves(shelvesHost, { rows: behaviourRows(), selected: draft.books, openBehaviours, onChange: (books) => {
+      draft.books = books; touched.books = true; paintFoot();
     } });
-    const readonly = (label, key, rows, reason) => ask([{ group: label, fields: [{ key, label, many: true, shape: 'tall', options: rows.map((item) => row(item, reason(item))) }] }], { value: { [key]: [] }, className: 'na-behaviour-readonly', density: 'tight', exposed: true });
-    const auto = readonly(`${t('behaviours.auto', 'All Cowork Agents')} (${t('behaviours.auto_included', 'All Ronin Agents include these')})`, 'automatic', automatic,
-      () => ({ disabled: true, sub: '' }));
-    const conditions = readonly(t('behaviours.conditional', 'Conditional'), 'conditional', conditional, () => ({ disabled: true, sub: '' }));
-    const autoSection = el('div', 'na-behaviour-section');
-    autoSection.append(auto.el, el('p', 'na-behaviour-note', t('behaviours.bare_metal_excludes', 'Exclude by using a bare metal Agent.')));
-    shelvesHost.replaceChildren(picker.el, autoSection, conditions.el);
   }
   stepLoadout.body.append(el('p', 'na-behaviour-intro', t('behaviours.intro', 'Behaviors are specific guidance given to Agents at birth.')), shelvesHost);
 
@@ -614,7 +593,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     syncQuestions();
     paintKinds();
     paintTray();
-    paintShelves();
+    paintBehaviourShelves();
     paintFolds();
     paintFoot();
   }
@@ -622,7 +601,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     const result = await request(seedUrl());
     if (!result.ok || !seed) return;
     seed = { ...seed, behaviours: result.data?.behaviours || [] };
-    paintShelves();
+    paintBehaviourShelves();
   };
   window.addEventListener('ronin:behaviours-changed', refreshBehaviours);
 
@@ -645,7 +624,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     paintTray();
     syncQuestions();
     paintDefaultsNote();
-    paintShelves();
+    paintBehaviourShelves();
     paintFolds();
     paintActions();
     paintFoot();

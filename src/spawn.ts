@@ -46,6 +46,7 @@ export interface SpawnForm {
   house_seat?: HouseSeat;
   team?: string;
   team_lead?: boolean;
+  role?: 'coworker' | 'lead' | 'epic_lead' | 'coordinator';
   model?: string;
   provider?: string;
   mandate?: Partial<Mandate>;
@@ -363,6 +364,7 @@ export async function resolveReading(form: SpawnForm, facts: LaunchFacts) {
   const conditionalBehaviours = coworkAgent && agent
     ? await resolveConditionalBehaviours({
         arrangement,
+        role: form.role ?? (form.team_lead ? 'lead' : 'coworker'),
         team: !!form.team,
         lead: !!form.team_lead && !!form.team,
         project_management: campaign?.config.services.parts.task_manager === true,

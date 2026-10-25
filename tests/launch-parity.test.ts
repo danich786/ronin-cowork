@@ -214,7 +214,7 @@ test('an unavailable gbrain changes teaching without changing the provider comma
     'no gbrain behaviour is delivered while its installation is off');
 });
 
-test('a selected gbrain changes teaching without changing the provider command', async () => {
+test('the gbrain installation stays separate from the Behaviour catalog', async () => {
   const cowork = await resolveForm(commonsForm({
     session_type: 'cowork_agent',
     campaign_id: 'gbrain_connected',
@@ -226,8 +226,8 @@ test('a selected gbrain changes teaching without changing the provider command',
 
   assert.equal(gbrain?.enabled, true, 'the receipt source says the gbrain installation is on');
   assert.equal(cowork.cmd, 'codex --model gpt-5.6-terra');
-  assert.ok(cowork.behaviours.some((behaviour) => behaviour.book === 'gbrain'),
-    'the selected gbrain behaviour is delivered');
+  assert.ok(!cowork.behaviours.some((behaviour) => behaviour.book === 'gbrain'),
+    'the installation does not inject a removed Behaviour');
 });
 
 test('and to the same role-free reading list — all + root, compiled once', async () => {

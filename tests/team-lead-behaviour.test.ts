@@ -21,6 +21,13 @@ test('Project management is one conditional Behavior selected only by the Campai
   assert.ok(!(await resolveConditionalBehaviours({ ...facts, project_management: false })).some((row) => row.book === 'project-management'));
 });
 
+test('Agent roles select their conditional brief', async () => {
+  const facts = { arrangement: 'none' as const, team: false, lead: false, project_management: false };
+  assert.ok((await resolveConditionalBehaviours({ ...facts, role: 'epic_lead' })).some((row) => row.book === 'epic_agent'));
+  assert.ok((await resolveConditionalBehaviours({ ...facts, role: 'coordinator' })).some((row) => row.book === 'steerco_mgr'));
+  assert.ok(!(await resolveConditionalBehaviours({ ...facts, role: 'coworker' })).some((row) => ['epic_agent', 'steerco_mgr'].includes(row.book)));
+});
+
 test('a later lead designation acknowledges the change with the resolved reading assignment', async () => {
   const reading = await conditionalBehaviourPath('team-lead');
   assert.equal(path.basename(reading ?? ''), 'team-lead.md');

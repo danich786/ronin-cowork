@@ -19,6 +19,7 @@ async function receiptFor(name: string): Promise<Receipt> {
  * additions to the birth list (composition-additions.json); a session that has that file and
  * not this one still reads as born plus additions. */
 const behavioursFile = (dir: string) => path.join(dir, 'composition-behaviours.json');
+const roleFile = (dir: string) => path.join(dir, 'composition-role.json');
 const additionsFile = (dir: string) => path.join(dir, 'composition-additions.json');
 type BehaviourRow = { name: string; path: string };
 async function rowsIn(file: string): Promise<BehaviourRow[] | null> {
@@ -44,6 +45,21 @@ export async function writeCurrentBehaviours(name: string, rows: BehaviourRow[])
   return writeCurrentBehavioursAt(sessionDir(await sessionKey(name)), rows);
 }
 
+type AgentRole = 'coworker' | 'lead' | 'epic_lead' | 'coordinator';
+async function currentRoleAt(dir: string, born: BehaviourRow[], leads: string[]): Promise<AgentRole> {
+  try {
+    const role = JSON.parse(await readFile(roleFile(dir), 'utf8')) as unknown;
+    if (['coworker', 'lead', 'epic_lead', 'coordinator'].includes(String(role))) return role as AgentRole;
+  } catch {}
+  const names = new Set(born.map((row) => row.name));
+  return names.has('steerco_mgr') ? 'coordinator' : names.has('epic_agent') ? 'epic_lead' : leads.length ? 'lead' : 'coworker';
+}
+export async function writeCurrentRole(name: string, role: AgentRole): Promise<void> {
+  const target = roleFile(sessionDir(await sessionKey(name)));
+  const temp = `${target}.${process.pid}.${Math.random().toString(36).slice(2)}.tmp`;
+  await writeFile(temp, `${JSON.stringify(role)}\n`, 'utf8'); await rename(temp, target);
+}
+
 export async function readAgentComposition(name: string) {
   const key = await sessionKey(name);
   const [receipt, work, brief, catalog, sessions, teams, leads, tags, projectRoot] = await Promise.all([
@@ -54,17 +70,18 @@ export async function readAgentComposition(name: string) {
   const born = (receipt.behaviours ?? []).map((row) => ({ name: row.book ?? '', path: row.file ?? '' })).filter((row) => row.name);
   const bornMandate = birthMandateFromReceipt(receipt);
   const currentBehaviours = await currentBehavioursAt(sessionDir(key), born);
-  const names = new Set(currentBehaviours.map((row) => row.name));
-  const role = names.has('steerco_mgr') ? 'coordinator' : names.has('epic_agent') ? 'epic_lead' : leads.length ? 'lead' : 'coworker';
+  const role = await currentRoleAt(sessionDir(key), born, leads);
   const session = sessions.find((row) => row.name === name);
   const title = session?.title || name.split(/[_-]+/).filter(Boolean).map((part) => part[0]?.toUpperCase() + part.slice(1)).join(' ');
   return {
     birth: { mandate: bornMandate, behaviours: born, brief, provenance: receipt.stated_by ?? null },
     current: {
       objective: work.objective, title, project_root: projectRoot,
+      session_type: session?.identity?.sessionType || 'cowork_agent',
+      provider: session?.identity?.provider || '', model: session?.identity?.model || '',
       role, team: tags[0] ?? '', mandate: work.mandate, behaviours: currentBehaviours,
     },
     available_teams: teams.filter((row) => row.state !== 'archived').map((row) => ({ name: row.name, title: row.title, objective: row.objective })),
-    available_behaviours: catalog.filter((row) => row.scope === 'selected').map((row) => ({ name: row.name, label: row.label, blurb: row.blurb, path: row.page })),
+    available_behaviours: catalog.filter((row) => row.scope === 'selected').map((row) => ({ name: row.name, label: row.label, blurb: row.blurb, reading: row.page, scope: row.scope, available: true, installation: row.installation })),
   };
 }
