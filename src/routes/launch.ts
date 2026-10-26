@@ -368,7 +368,6 @@ export function registerLaunch(app: express.Express): LaunchControl {
       birthKey = `${resolved.name}-${Date.now()}`;
       birthDir = sessionRecordDir(birthKey);
       try {
-        await writeCurrentRoleAt(birthDir, form.role ?? (form.team_lead ? 'lead' : 'coworker'));
         // Mika's README replaces the ordinary startup shelf: her rules, the Setup
         // walkthrough, and the generated source index — the complete, bounded map of her
         // admitted knowledge. Her typed brief stays two sentences; the reading is here.
@@ -394,6 +393,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
           resolved.name,
           (file) => file === mikaKnowledgeIndex || isShelfTeaching(file),
         );
+        await writeCurrentRoleAt(birthDir, form.role ?? (form.team_lead ? 'lead' : 'coworker'));
         const sourceSentence = `Read first: ${sources.join(', ')}.`;
         if (!resolved.brief.includes(sourceSentence)) {
           await rm(birthDir, { recursive: true, force: true });

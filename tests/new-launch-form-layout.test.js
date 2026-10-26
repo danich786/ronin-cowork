@@ -248,6 +248,8 @@ test('New Team checks names only for a cast and opens empty or partial Teams wit
   assert.doesNotMatch(form, /request\('\/api\/sessions'/);
   assert.match(form, /const launched = outcomes\.filter\(\(\{ result \}\) => result\?\.ok\)[\s\S]*result\.data\?\.name \|\| row\.name/);
   assert.match(form, /Team created\. Launched \{launched\} of \{total\} Agents: \{born\}\. Failed: \{names\}/);
+  assert.match(form, /refused\.map\(\(\{ row, result \}\) => `\$\{row\.name\}: \$\{result\?\.message/,
+    'a failed birth keeps the server reason beside the Agent name');
   assert.match(form, /openLaunchHandoff\(\{ team: name, sessions: picks \}, launchTab\);[\s\S]*await launchTeamAgents\(request, name, picks\)/,
     'the Team tab opens after its record and before its Agents');
   assert.match(form, /if \(refused\.length\) \{[\s\S]*return;/);
