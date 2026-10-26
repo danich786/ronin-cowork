@@ -19,15 +19,15 @@ ronin_session_me() {
   if [ -n "${TMUX_PANE:-}" ]; then
     win=$(tmux display-message -p -t "$TMUX_PANE" '#{window_id}' 2>/dev/null) || win=""
     if [ -n "$win" ]; then
-      s=$(tmux list-windows -a -F '#{session_name}\t#{window_id}' 2>/dev/null \
-          | awk -F'\t' -v w="$win" '$2==w && $1 !~ /^grid_/ {print $1; exit}')
+      s=$(tmux list-windows -a -F $'#{session_name}\t#{window_id}' 2>/dev/null \
+          | awk -F $'\t' -v w="$win" '$2==w && $1 !~ /^grid_/ {print $1; exit}')
       [ -n "$s" ] && { printf '%s\n' "$s"; return 0; }
     fi
   fi
   if [ -n "${TMUX:-}" ]; then
     sid=${TMUX##*,}
-    s=$(tmux list-sessions -F '#{session_id}\t#{session_name}' 2>/dev/null \
-        | awk -F'\t' -v i="\$$sid" '$1==i && $2 !~ /^grid_/ {print $2; exit}')
+    s=$(tmux list-sessions -F $'#{session_id}\t#{session_name}' 2>/dev/null \
+        | awk -F $'\t' -v i="\$$sid" '$1==i && $2 !~ /^grid_/ {print $2; exit}')
     [ -n "$s" ] && { printf '%s\n' "$s"; return 0; }
   fi
   return 1

@@ -132,3 +132,16 @@ test('a letter verb on a session with no letter yet starts one', (t) => {
   run(f.env, ['--objective', 'first words']);
   assert.equal(block(f.letter).objective, 'first words');
 });
+
+test('the session resolver parses tmux tab-separated rows', () => {
+  const resolver = execFileSync('bash', ['-c', `
+tmux() {
+  if [ "$1" = display-message ]; then printf '@7\\n'; else printf 'probe\\t@7\\n'; fi
+}
+export TMUX_PANE=%1
+unset TMUX
+. "$1"
+ronin_session_me
+`, 'bash', path.join(root, 'ronin_bin', 'tool-path.sh')], { encoding: 'utf8' });
+  assert.equal(resolver.trim(), 'probe');
+});
