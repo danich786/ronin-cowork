@@ -1,7 +1,7 @@
 /**
  * HOLDING — lists of item ids on Teams and Agents, never copies of items.
- * Checks: two concurrent assigns of one id leave it on
- * exactly one list; release leaves it on none.
+ * Checks: concurrent assigns add holders; handoff removes only the giver; release leaves
+ * it on none.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -40,26 +40,28 @@ async function listsHolding(id: string): Promise<string[]> {
   return (await items.holdersOf(id)).map(items.holderLabel).sort();
 }
 
-test('two concurrent assigns of one id leave it on exactly one list', async () => {
+test('two concurrent assigns of one id add every holder', async () => {
   for (let round = 0; round < 5; round++) {
     const { item } = await items.createItem({ title: `race ${round}` }, 'lead');
     await Promise.all([items.assignItem(item.id, ann, 'lead'), items.assignItem(item.id, bo, 'lead'), items.assignItem(item.id, team, 'lead')]);
     const held = await listsHolding(item.id);
-    assert.equal(held.length, 1, `round ${round}: ${held.join(', ')}`);
+    assert.deepEqual(held, ['agent:ann', 'agent:bo', 'team:crew'], `round ${round}`);
     const trail = (await items.readItem(item.id))!.trail.filter((line) => line.op === 'assign');
     assert.equal(trail.length, 3, 'every call acknowledged with its own line');
-    assert.equal(trail.at(-1)!.to, held[0], 'the last line names the holder that stands');
+    assert.equal(trail.at(-1)!.to, 'team:crew', 'the last line names the added holder');
   }
 });
 
-test('assign moves the id and never the item: content and parent stay put', async () => {
+test('assign adds a holder and handoff moves only the giver; content and parent stay put', async () => {
   const parent = (await items.createItem({ title: 'overall' }, 'lead')).item;
   const { item } = await items.createItem({ title: 'piece', parent: parent.id }, 'lead');
   await items.assignItem(item.id, team, 'lead');
   assert.ok((await readTeamRoster('crew'))!.holds.includes(item.id));
-  const moved = await items.assignItem(item.id, ann, 'lead');
-  assert.deepEqual([moved.line.from, moved.line.to], ['team:crew', 'agent:ann']);
-  assert.ok(!(await readTeamRoster('crew'))!.holds.includes(item.id));
+  await items.assignItem(item.id, ann, 'lead');
+  assert.deepEqual(await listsHolding(item.id), ['agent:ann', 'team:crew']);
+  const moved = await items.handoffItem(item.id, team, bo, 'lead');
+  assert.deepEqual([moved.line.from, moved.line.to], ['team:crew', 'agent:bo']);
+  assert.deepEqual(await listsHolding(item.id), ['agent:ann', 'agent:bo']);
   assert.equal(moved.item.parent, parent.id);
   assert.equal(moved.item.title, 'piece');
 });
@@ -82,7 +84,7 @@ test('no permission: anyone may assign or release, and it is on the trail', asyn
   assert.equal(back.line.by, 'a_passer_by');
 });
 
-test('the 2026-09-24 duplicate cannot recur: a return racing an assign leaves one item on one list', async () => {
+test('the 2026-09-24 duplicate cannot recur: concurrent holding changes never copy the item', async () => {
   // Old shape: a return wrote its stale Inbox back over a concurrent assignment and the
   // assigned Project existed twice (Inbox and the holder's record). Here there is one file
   // per id and holding is a list of ids, moved under one lock.
@@ -91,8 +93,8 @@ test('the 2026-09-24 duplicate cannot recur: a return racing an assign leaves on
   await items.assignItem(two.id, bo, 'lead');
   const before = (await items.listItems()).length;
   await Promise.all([items.assignItem(two.id, team, 'bo'), items.assignItem(one.id, ann, 'lead')]);
-  assert.deepEqual(await listsHolding(one.id), ['agent:ann']);
-  assert.deepEqual(await listsHolding(two.id), ['team:crew']);
+  assert.deepEqual(await listsHolding(one.id), ['agent:ann', 'team:crew']);
+  assert.deepEqual(await listsHolding(two.id), ['agent:bo', 'team:crew']);
   const all = await items.listItems();
   assert.equal(all.length, before, 'no second item was made');
   assert.equal(all.filter((item) => item.title === 'surface/1').length, 1);

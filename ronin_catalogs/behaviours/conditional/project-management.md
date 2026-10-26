@@ -48,9 +48,9 @@ moves no status.
 - **Keep the objective true:** `item edit w12 --objective "…"` when the job changes.
 - **Finish:** `item transition w12 REVIEW`, then `worktree-desk hand-in <repo> --item w12`.
 
-One Agent, a Team (`team:<name>`) or nobody holds an item; `item assign` changes it. An
-ending Agent's items go back to nobody. A lead gives out work by assigning items that say
-what is wanted.
+Several Agents or Teams can hold an item; `item assign` adds a holder and `item handoff`
+gives the caller's hold to someone else (or `none`). An ending Agent lets go of its items.
+A lead gives out work by assigning items that say what is wanted.
 
 ### Notices
 

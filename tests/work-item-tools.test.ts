@@ -93,7 +93,7 @@ test('item acts, each naming its item, one trail line each', async () => {
   assert.equal((await oneLine(id, ['assign', id, 'probe'])).to, 'agent:probe');
   assert.deepEqual((await readLetterHolds('probe'))!.holds, [id]);
   assert.equal((await oneLine(id, ['assign', id, 'team:crew'])).to, 'team:crew');
-  assert.equal((await oneLine(id, ['assign', id, 'none'])).op, 'release');
+  assert.equal((await oneLine(id, ['handoff', id, 'none'])).op, 'handoff');
   assert.equal((await oneLine(id, ['transition', id, 'DONE'])).to, 'DONE');
   assert.equal((await run('item', ['edit', id, '--status', 'BUILD'])).status, 2, 'status is transition\'s, not edit\'s');
   const flagged = await oneLine(id, ['flag', id, 'stuck on the API']);

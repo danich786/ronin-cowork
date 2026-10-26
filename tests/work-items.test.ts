@@ -25,9 +25,9 @@ process.env.RONIN_WORK_ITEMS_DIR = temp;
 const items = await import('../src/work-items.js');
 const { registerWorkItems } = await import('../src/routes/work-items-api.js');
 
-test('no parent is normal: level 0, kind blank, nothing made to hold it', async () => {
-  const first = await items.createItem({ title: 'First' }, 'probe');
-  assert.deepEqual([first.item.parent, first.item.level, first.item.kind, first.item.status, first.item.flagged], [null, 0, undefined, 'IDEA', false]);
+test('campaign is stored at creation; no parent is normal: level 0, kind blank, nothing made to hold it', async () => {
+  const first = await items.createItem({ title: 'First', campaign_id: 'alpha' }, 'probe');
+  assert.deepEqual([first.item.campaign_id, first.item.parent, first.item.level, first.item.kind, first.item.status, first.item.flagged], ['alpha', null, 0, undefined, 'IDEA', false]);
   assert.deepEqual((await items.listItems()).map((item) => item.id), [first.item.id], 'one create, one item');
 });
 
@@ -193,7 +193,7 @@ test('the one migration: stage → status, red → flagged, exit and ladder drop
     const done = await items.migrateItems('probe');
     assert.deepEqual([done.before, done.after, done.removed, done.migrated], [4, 3, ['w1'], ['w2', 'w3', 'w4']]);
     const [w2, w3, w4] = await Promise.all(['w2', 'w3', 'w4'].map(async (id) => JSON.parse(await fs.readFile(path.join(store, `${id}.json`), 'utf8'))));
-    assert.deepEqual([w2.parent, w2.status, w2.flagged, w2.level, w2.kind, 'exit' in w2, 'stage' in w2, 'docs' in w2, w2.attachments], [null, 'BUILD', true, 0, 'bug', false, false, false, ['/plan.md']]);
+    assert.deepEqual([w2.campaign_id, w2.parent, w2.status, w2.flagged, w2.level, w2.kind, 'exit' in w2, 'stage' in w2, 'docs' in w2, w2.attachments], ['home_machine', null, 'BUILD', true, 0, 'bug', false, false, false, ['/plan.md']]);
     assert.deepEqual([w3.level, w3.status, w3.comments, w3.trail[0].op], [1, 'PLAN', [{ by: 'ann', at: '2026-10-01T00:00:00Z', text: 'commit abc' }], 'comment']);
     assert.deepEqual([w4.level, w4.flagged, w4.parent, 'ladder' in w4], [0, false, 'w3', false]);
     assert.deepEqual((await items.migrateItems('probe')).migrated, [], 'a second run changes nothing');
@@ -235,6 +235,8 @@ test('routes acknowledge with the item and the appended line; refusals answer 40
     assert.equal((await call('POST', `${base}/${peer.data.item.id}/link`, { type: 'blocks', to: id, by: 'probe' })).data.acknowledgement, `${peer.data.item.id} blocks ${id}`);
     assert.deepEqual((await call('GET', `${base}/${id}`)).data.linked_from, [{ type: 'blocks', from: peer.data.item.id }]);
     assert.ok((await call('GET', `${base}?status=plan&kind=task`)).data.items.every((item: { status: string; kind: string }) => item.status === 'PLAN' && item.kind === 'task'));
+    const alpha = (await call('GET', `${base}?campaign=alpha`)).data.items as Array<{ campaign_id: string }>;
+    assert.ok(alpha.length && alpha.every((item) => item.campaign_id === 'alpha'));
     assert.equal((await call('DELETE', `${base}/${id}`, { by: 'probe' })).data.acknowledgement, `${id} was deleted; with its subtasks ${child.data.item.id}`);
     assert.equal((await call('GET', `${base}/${id}`)).status, 404);
     const kept = await call('POST', base, { title: 'Kept', by: 'probe' });

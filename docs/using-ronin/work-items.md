@@ -67,11 +67,12 @@ carries that hand-in moves it to DONE. A hand-in that names no item moves no sta
 ```text
 item create --title "…" [--kind task] [--parent w3] [--level 1|0|-1] [--objective "…"] [--priority High]
 item read w12                       # fields, children, comments, attachments, links, history
-item search [--team surface] [--holder builder] [--parent w3 | --no-parent] [--status BUILD] [--kind bug]
+item search [--campaign home_machine] [--team surface] [--holder builder] [--parent w3 | --no-parent] [--status BUILD] [--kind bug]
 item edit w12 --objective "…" --priority High --jira RON-12
 item transition w12 REVIEW
 item flag w12 "waiting on the API"  # item unflag w12 when clear
-item assign w12 builder             # or team:surface, or none
+item assign w12 builder             # adds builder; or team:surface
+item handoff w12 builder            # the giver comes off; or team:surface, or none
 item comment w12 "…"                # --edit <n> changes one
 item attach w12 docs/plan.md        # --remove <path> takes it off
 item link w12 blocks w14            # or relates; --remove takes it off
@@ -143,23 +144,24 @@ worktree-desk hand-in ronin_cowork --item w12
 
 ## Holding and assigning
 
-An item is held by an Agent, by a Team, or by nobody. A new item is held by nobody until
-it is assigned.
+An item can be held by several Agents and Teams, or by nobody. A new item is held by
+nobody until it is assigned.
 
 ```text
 item assign w12 builder         an Agent holds it
 item assign w12 team:surface    the Team holds it
-item assign w12 none            nobody holds it
+item handoff w12 builder        the giver comes off and builder goes on
+item handoff w12 none           the giver lets go
 ```
 
-One holder at a time; assigning takes the item off its last holder. When an Agent ends,
-the items it held go back to nobody.
+Assigning adds a holder and removes nobody. When an Agent ends, it lets go; other holders
+stay.
 
 A lead uses assign to give out work: an item for each member, or the Team for work not yet
 given to anyone. Before handing over an item, the lead makes sure it says what is wanted:
 a clear title and objective, a parent where one fits.
 
-To find work, search: `item search --holder <name>`, `--team <t>`, `--parent <id>`,
+To find work, search: `item search --campaign <id>`, `--holder <name>`, `--team <t>`, `--parent <id>`,
 `--no-parent`, `--status <s>`, `--kind <k>`.
 
 ## Notices
