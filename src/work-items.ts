@@ -630,8 +630,11 @@ export function migrateItems(by = 'ronin', campaign_id = 'home_machine'): Promis
     const migrated: string[] = [];
     for (const [id, raw] of raws) {
       const unfiled = removed.includes(String(raw.parent));
-      if (inJiraShape(raw) && raw.campaign_id === campaign_id && !unfiled) continue;
-      const item = toShape({ ...raw, ...('level' in raw ? {} : { level: parents.has(id) ? 1 : 0 }) }, campaign_id);
+      if (inJiraShape(raw) && 'campaign_id' in raw && !unfiled) continue;
+      const item = toShape(
+        { ...raw, ...('level' in raw ? {} : { level: parents.has(id) ? 1 : 0 }) },
+        typeof raw.campaign_id === 'string' ? raw.campaign_id : campaign_id,
+      );
       if (unfiled) item.parent = null;
       item.trail.push(lineOf(by, 'edit', { note: `migrated to the Jira shape${unfiled ? `; ${raw.parent} (Unfiled) was removed, so no parent` : ''}` }));
       await save(item);

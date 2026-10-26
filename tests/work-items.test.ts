@@ -202,6 +202,18 @@ test('the one migration: stage → status, red → flagged, exit and ladder drop
   }
 });
 
+test('the migration preserves an item already stamped with another campaign', async () => {
+  const store = await fs.mkdtemp(path.join(os.tmpdir(), 'ronin-migrate-campaign-'));
+  process.env.RONIN_WORK_ITEMS_DIR = store;
+  try {
+    const created = await items.createItem({ title: 'Elsewhere', campaign_id: 'campaign_x' }, 'probe');
+    assert.deepEqual((await items.migrateItems('probe')).migrated, []);
+    assert.equal((await items.readItem(created.item.id))!.campaign_id, 'campaign_x');
+  } finally {
+    process.env.RONIN_WORK_ITEMS_DIR = temp;
+  }
+});
+
 test('routes acknowledge with the item and the appended line; refusals answer 409', async () => {
   const app = express();
   app.use(express.json());
