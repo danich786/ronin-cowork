@@ -136,12 +136,25 @@ test('a letter verb on a session with no letter yet starts one', (t) => {
 test('the session resolver parses tmux tab-separated rows', () => {
   const resolver = execFileSync('bash', ['-c', `
 tmux() {
-  if [ "$1" = display-message ]; then printf '@7\\n'; else printf 'probe\\t@7\\n'; fi
+  case "$1" in
+    display-message) printf '@7\\n' ;;
+    list-windows)
+      [ "$4" = $'#{session_name}\\t#{window_id}' ] || return 1
+      printf 'pane-session\\t@7\\n'
+      ;;
+    list-sessions)
+      [ "$3" = $'#{session_id}\\t#{session_name}' ] || return 1
+      printf '$9\\tid-session\\n'
+      ;;
+  esac
 }
 export TMUX_PANE=%1
 unset TMUX
 . "$1"
 ronin_session_me
+unset TMUX_PANE
+export TMUX=/tmp/tmux,1,9
+ronin_session_me
 `, 'bash', path.join(root, 'ronin_bin', 'tool-path.sh')], { encoding: 'utf8' });
-  assert.equal(resolver.trim(), 'probe');
+  assert.deepEqual(resolver.trim().split('\n'), ['pane-session', 'id-session']);
 });
