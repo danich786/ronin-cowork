@@ -20,8 +20,8 @@ import type { Origin } from './resources.js';
  * without being renamed to either. Tool-free installation facts, working guidance, and
  * system explanation belong to their own shelves. Selection is a
  * predicate over launch facts and controls knowledge only. Every installed Cowork tool is
- * callable by every Cowork Agent; feature and integration tools are projected only when
- * their document is selected. The birth lesson names only selected knowledge.
+ * callable by every Cowork Agent; feature and integration facts decide whether their tools
+ * are taught. The birth lesson names only selected knowledge.
  */
 
 export type CapabilityClass = 'cowork' | 'feature' | 'integration';
@@ -187,7 +187,7 @@ export function availabilityReason(row: Pick<CapabilityRow, 'class' | 'requires'
   return selectionReason({ requires: row.requires.filter((requirement) => !knowledgeOnlyRequirement(requirement)) }, facts);
 }
 
-/** Where a projected tool comes from: the owner's tools store first, then the shipped shelf. */
+/** Whether a named tool is present in the owner's tools store or the shipped shelf. */
 export async function toolPresent(name: string): Promise<boolean> {
   if (!/^[a-z0-9][a-z0-9_.-]*$/i.test(name)) return false;
   for (const candidate of [path.join(storeDir('tools'), name), path.join(REPO_ROOT, 'ronin_bin', name)]) {
@@ -223,10 +223,6 @@ export async function resolveCapabilities(
 export const selectedCapabilities = (rows: readonly ResolvedCapability[]): ResolvedCapability[] =>
   rows.filter((row) => row.selected);
 
-/** The tools a birth projects onto PATH: all Cowork tools and enabled feature tools, once. */
-export const capabilityTools = (rows: readonly ResolvedCapability[]): string[] =>
-  [...new Set(rows.flatMap((row) => row.delivered))];
-
 export const CAPABILITIES_READING = 'CAPABILITIES.md';
 
 const LESSON =
@@ -236,9 +232,9 @@ const code = (text: string): string => `\`${text}\``;
 
 /**
  * THE VIRTUAL OVERVIEW — the one generated fragment of the packet. Derived from the selected
- * files and nothing else: title, opening summary, the priority tools that were projected
+ * files and nothing else: title, opening summary, the priority tools that are present
  * with their authority, the help routes, and the path of the full document (on the shelf
- * beside it). A bundle with no projected tool says so in one line; its document is the
+ * beside it). A bundle with no present tool says so in one line; its document is the
  * teaching.
  */
 export function renderCapabilitiesOverview(rows: readonly ResolvedCapability[]): string {
@@ -249,8 +245,8 @@ export function renderCapabilitiesOverview(rows: readonly ResolvedCapability[]):
     return lines.join('\n');
   }
   for (const row of selected) {
-    const projected = new Set(row.delivered);
-    const taught = row.tools.filter((tool) => projected.has(tool.name));
+    const available = new Set(row.delivered);
+    const taught = row.tools.filter((tool) => available.has(tool.name));
     lines.push(`### ${row.label}`);
     if (row.blurb) lines.push(row.blurb);
     if (taught.length) {
@@ -263,7 +259,7 @@ export function renderCapabilitiesOverview(rows: readonly ResolvedCapability[]):
       const help = [...new Set(taught.map((tool) => tool.help).filter(Boolean))];
       lines.push(`- **Help:** ${help.map(code).join(' · ')}`);
     } else {
-      lines.push('- **Tools:** none projected on this box yet — the document is the teaching.');
+      lines.push('- **Tools:** none available on this box yet — the document is the teaching.');
     }
     lines.push(`- **Full document:** ${code(row.file)}`, '');
   }

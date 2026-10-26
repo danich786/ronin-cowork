@@ -30,14 +30,13 @@ import {
 } from './behaviours.js';
 import { templateProvenance } from './template-provenance.js';
 import { profileDir, resolveHouseSeatProfile, type HouseSeat } from './house-seats.js';
-import { capabilityTools, renderCapabilitiesOverview, resolveCapabilities, type ResolvedCapability } from './capabilities.js';
+import { renderCapabilitiesOverview, resolveCapabilities, type ResolvedCapability } from './capabilities.js';
 
 const WORKTREE_SOP = path.join(REPO_ROOT, 'ronin_catalogs', 'behaviours', 'conditional', 'worktree-root.md');
 const CHECKOUT_SOP = path.join(REPO_ROOT, 'ronin_catalogs', 'behaviours', 'conditional', 'checkout.md');
 const CORE_CONTRIBUTION: ResolvedContribution = {
   name: 'cowork_agent', origin: 'stock', shadowed: false, label: 'Cowork Agent', blurb: '',
   reading: [], reading_off: [],
-  tools: ['edges', 'session_create', 'session_end', 'session_archive', 'session_restore', 'session_check', 'session_set', 'work-record', 'item', 'ronin-url'],
   parts: [], enabled: true, stated_by: 'conditional', required_by: [],
 };
 
@@ -101,8 +100,6 @@ export interface Resolved {
   installations: ResolvedInstallation[];
   /** Every capability document, selected or not, with the reason and the tools found. */
   capabilities: ResolvedCapability[];
-  /** Every installed Cowork tool plus enabled feature tools, projected onto PATH at birth. */
-  capability_tools: string[];
   stated_by: Record<string, StatedBy[]>;
 }
 
@@ -509,7 +506,6 @@ export async function resolveForm(
     contributions,
     installations,
     capabilities,
-    capability_tools: capabilityTools(capabilities),
     stated_by: {
       name: form.name ? explicit : system,
       dir: profile.dir ? profile.stated_by.dir : assignment ? system : rootSource,

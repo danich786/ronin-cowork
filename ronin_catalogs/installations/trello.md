@@ -7,7 +7,6 @@
 - **reading:** —
 - **reading_off:** —
 - **ways:** —
-- **tools:** —
 - **parts:** —
 - **requires:** ronin_services
 - **order:** 30

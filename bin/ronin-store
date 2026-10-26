@@ -25,7 +25,6 @@ TABLE="\
 session|data|sessions
 archived_sessions|data|archived-sessions
 session_boot_cache|data|session-boot
-session_commands|data|session-commands
 bench|data|bench
 telemetry|data|telemetry
 ageru|user|ageru

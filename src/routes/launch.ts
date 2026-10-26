@@ -1,5 +1,6 @@
 import type express from 'express';
 import { rm } from 'node:fs/promises';
+import path from 'node:path';
 import {
   capturePane,
   createSession,
@@ -19,7 +20,6 @@ import { resolveForm, type SpawnForm } from '../spawn.js';
 import { appendLaunchLedger, persistBirthReceipt } from '../launch-ledger.js';
 import { writeCurrentRoleAt } from '../agent-composition.js';
 import { mandate } from '../agent-defaults.js';
-import { projectRoutineTools, type RoutineToolProjection } from '../routine-tools.js';
 import { asksForInput, classifyStatus, createActivityCache } from '../status.js';
 import { scanContext, scanModel } from '../ctx.js';
 
@@ -50,36 +50,24 @@ import { ensureMikaHome, MIKA_PROMPTS, MikaUnavailable, mikaRulesSource, mikaSta
 import { compileMikaKnowledgeAt } from '../mika-knowledge.js';
 import { isMikaTab } from '../mika-context.js';
 import { ensureRoninHelpersTeam, recordRoninHelperWelcome, roninHelperWelcomeState, RONIN_HELPER_LOADER, RONIN_HELPERS_TEAM } from '../ronin-helper.js';
+import { REPO_ROOT, storeDir } from '../resources.js';
 
 const MIKA_SESSION = 'mika_agent' as const;
-/** Her three commands, projected first on PATH. */
-const MIKA_TOOLS = ['lookup', 'owner_view', 'show', 'machine-settings', 'session_create'] as const;
-/** The rest of her PATH: a working shell and coreutils, and nothing of Ronin's own bin —
- *  the first Mika was born with ONLY her tools dir on PATH, so her CLI could not run a
- *  shell at all and reported her tools missing (2026-09-09). */
-const MIKA_PARENT_PATH = '/usr/local/bin:/usr/bin:/bin';
 
-/** The environment a newborn is handed beyond what the pane inherits: its projected
- *  command PATH with Ronin's own install bin dir behind it, and the operator socket that
- *  launched it. Undefined when there is nothing to say, so `new-session` gets no empty `-e`.
+/** The environment a newborn is handed beyond what the pane inherits: every Agent sees
+ *  the same command locations, followed by Ronin's install bin and the parent PATH.
  *
  *  The install bin dir (`~/.local/bin`, where Install and Update put a CLI) is on every
  *  newborn's PATH because the pane inherits the server's environment, and a server started
  *  by systemd or npm has no `.profile` and so no `~/.local/bin` — so a tile launched by
  *  absolute path ran the CLI Ronin installed while `codex` typed by name inside it found an
- *  older system copy (2026-09-09). The session's own command directory stays first: its
- *  guards (the tmux shim) must win over anything. Running tiles are untouched. */
-export function birthEnv(toolPath?: string, socket?: string, installBin: string = agentBinDir(), parentPath: string = process.env.PATH ?? '', exactPath = false): Record<string, string> | undefined {
-  const env: Record<string, string> = {};
-  const has = (p: string) => p.split(':').includes(installBin);
-  if (toolPath) {
-    const [own, ...rest] = toolPath.split(':');
-    env.PATH = exactPath || has(toolPath) ? toolPath : [own, installBin, ...rest].filter(Boolean).join(':');
-  } else if (installBin && !has(parentPath)) {
-    env.PATH = [installBin, parentPath].filter(Boolean).join(':');
-  }
+ *  older system copy (2026-09-09). Running tiles are untouched. */
+export function birthEnv(socket?: string, installBin: string = agentBinDir(), parentPath: string = process.env.PATH ?? ''): Record<string, string> {
+  const fixed = [path.join(REPO_ROOT, 'bin', 'shim'), storeDir('tools'), path.join(REPO_ROOT, 'ronin_bin')];
+  const PATH = [...new Set([...fixed, installBin, ...parentPath.split(':')].filter(Boolean))].join(':');
+  const env: Record<string, string> = { PATH };
   if (socket) env[OPERATOR_SOCKET_ENV] = socket;
-  return Object.keys(env).length ? env : undefined;
+  return env;
 }
 
 async function birthCampaign(team: string, explicit = ''): Promise<string> {
@@ -347,7 +335,6 @@ export function registerLaunch(app: express.Express): LaunchControl {
 
     let resolved;
     let launch: { argv: string[]; parked: boolean } = { argv: [], parked: false };
-    let routineTools: RoutineToolProjection | null = null;
     let birthKey = '';
     let birthDir = '';
     let packet: PacketReport | undefined;
@@ -430,16 +417,6 @@ export function registerLaunch(app: express.Express): LaunchControl {
           error: `Could not find ${resolved.cmd.trim().split(/\s+/)[0]} on this machine. Install it from ⚙ Configuration, then launch again.`,
         });
       }
-      routineTools = resolved.agent
-        ? await projectRoutineTools(
-            resolved.name,
-            resolved.contributions,
-            houseSeat === 'mika' ? MIKA_PARENT_PATH : undefined,
-            houseSeat === 'mika'
-              ? { includeTmux: false, extraTools: [...MIKA_TOOLS] }
-              : { extraTools: resolved.capability_tools },
-          )
-        : null;
       const campaignId = resolved.session_type === 'bare_metal_agent'
         ? (form.campaign_id || await initialCampaignId())
         : await birthCampaign(resolved.team, form.campaign_id);
@@ -453,7 +430,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
         // Told at birth, the way tmux tells every shell where its server is: the socket
         // this operator bound. A process that bound none (a dev run) says nothing, and the
         // newborn's tools use the default path.
-        env: birthEnv(routineTools?.path, boundOperatorSocket(), agentBinDir(), process.env.PATH ?? '', houseSeat === 'mika'),
+        env: birthEnv(boundOperatorSocket(), agentBinDir(), process.env.PATH ?? ''),
         key: birthKey || undefined,
         // The Services switch as resolved for THIS Agent at birth (campaign < team < form):
         // off means RIREKI never records it. Set here and never again — nothing cascades
@@ -545,7 +522,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
         arrangement: resolved.work_locations.find((row) => row.repo === resolved.project_root)?.reason ?? '',
         desk_note: await deskNote(resolved),
         // The capability documents this birth read from the folder: which were selected,
-        // why the rest were not, and which listed tools the box could not project.
+        // why the rest were not, and which listed tools are present on this box.
         capabilities: resolved.capabilities.map((capability) => ({
           name: capability.name,
           selected: capability.selected,
@@ -553,19 +530,12 @@ export function registerLaunch(app: express.Express): LaunchControl {
           tools: capability.delivered,
           missing: capability.missing,
         })),
-        installations: resolved.installations.map((installation) => {
-          const missing = installation.enabled
-            ? [
-                ...installation.tools.filter((tool) => routineTools?.missing.includes(tool)).map((tool) => `tool:${tool}`),
-              ]
-            : [];
-          return {
-            name: installation.name,
-            on: installation.enabled,
-            delivered: installation.enabled && missing.length === 0,
-            missing,
-          };
-        }),
+        installations: resolved.installations.map((installation) => ({
+          name: installation.name,
+          on: installation.enabled,
+          delivered: installation.enabled,
+          missing: [],
+        })),
       };
       try {
         await persistBirthReceipt(resolved.name, receipt);

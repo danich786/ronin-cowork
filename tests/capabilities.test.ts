@@ -6,7 +6,6 @@ import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promis
 import {
   CAPABILITY_CLASSES,
   availabilityReason,
-  capabilityTools,
   checkRequirement,
   listCapabilities,
   parseToolsTable,
@@ -100,12 +99,11 @@ test('work context selects knowledge while Cowork tools stay available and featu
     ['host', false, 'behaviour ronin_host is not selected'],
     ['authority-only', false, 'not on a Team'],
   ]);
-  assert.deepEqual(capabilityTools(bare), ['edges', 'worktree-desk', 'session_create']);
   assert.deepEqual(bare[1].delivered, ['worktree-desk'], 'arrangement changes teaching, not Cowork tool availability');
   assert.deepEqual(bare[1].missing, []);
   assert.deepEqual(bare[2].delivered, ['session_create'], 'lead status changes teaching, not Cowork tool availability');
   assert.deepEqual(bare[2].missing, ['absent_tool']);
-  assert.deepEqual(bare[3].delivered, [], 'a disabled feature does not project its tool');
+  assert.deepEqual(bare[3].delivered, [], 'a disabled feature does not teach its tool');
   assert.match(availabilityReason(rows[3]!, { ...none, lead: true }), /behaviour ronin_host is not selected/,
     'work context cannot substitute for feature enablement');
 
@@ -114,7 +112,6 @@ test('work context selects knowledge while Cowork tools stay available and featu
     { rows, present: everything },
   );
   assert.ok(lead.every((item) => item.selected), lead.map((item) => `${item.name}:${item.reason}`).join(' '));
-  assert.deepEqual(capabilityTools(lead), ['edges', 'worktree-desk', 'session_create', 'host_survey']);
   const teamLead = lead.find((item) => item.name === 'team')!;
   assert.deepEqual(teamLead.delivered, ['session_create']);
   assert.deepEqual(teamLead.missing, ['absent_tool'], 'a listed tool the box lacks is recorded, never taught');
@@ -159,7 +156,7 @@ test('the overview is derived from selected knowledge, independent of universall
   assert.doesNotMatch(lead, /absent_tool/, 'a tool the box lacks is never advertised');
   assert.match(lead, /`session_create --help`/);
   const only = text.slice(onlyAt);
-  assert.match(only, /none projected on this box yet — the document is the teaching/);
+  assert.match(only, /none available on this box yet — the document is the teaching/);
   assert.doesNotMatch(only, /Priority/);
   assert.match(renderCapabilitiesOverview([]), /No capability bundle was selected/);
 });
@@ -191,7 +188,6 @@ test('the folder is the catalog: an owner file shadows a stock name whole, a new
     );
     assert.equal(resolved.find((item) => item.name === 'trello')?.selected, true);
     assert.equal(resolved.find((item) => item.name === 'edges')?.reason, 'not on a Team');
-    assert.deepEqual(capabilityTools(resolved), ['trello_cards']);
   });
 });
 

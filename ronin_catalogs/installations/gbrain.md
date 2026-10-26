@@ -7,7 +7,6 @@
 - **reading:** —
 - **reading_off:** —
 - **ways:** —
-- **tools:** —
 - **parts:** gbrain
 - **requires:** —
 - **order:** 20

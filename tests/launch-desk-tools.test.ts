@@ -68,20 +68,17 @@ const { resolveForm } = await import('../src/spawn.js');
 // The Team works in cowork; its papers, and this Agent's birth root, are the ronin_lab checkout.
 await createTeamRoster('papers', { objective: 'write it up from the code', project_root: 'ronin_lab', repos: ['cowork'], branch: '' });
 
-test('an Agent born in a checkout with a managed worktree is projected the worktree kit', async () => {
+test('an Agent born in a checkout with a managed worktree is taught the worktree kit', async () => {
   const resolved = await resolveForm({ project_root: 'ronin_lab', team: 'papers', prompt: 'Write it up.' }, new Set());
   assert.equal(resolved.project_root, 'ronin_lab', 'born in the checkout');
   assert.deepEqual(resolved.assignment?.desks.map((desk) => desk.repo), ['cowork'], 'assigned one desk in the managed repository');
   assert.ok(resolved.work_locations.some((row) => row.repo === 'cowork' && row.mode === 'managed'), 'the desk is a managed location');
   assert.match(resolved.brief, /hand in through worktree-desk/, 'the brief tells the Agent to use the desk tool');
   assert.equal(resolved.capabilities.find((row) => row.name === 'worktree-desk')?.selected, true, 'managed work selects desk teaching');
-  assert.ok(resolved.capability_tools.includes('worktree-desk'), `the Cowork desk tool is projected: ${JSON.stringify(resolved.capability_tools)}`);
-  assert.equal(resolved.capability_tools.filter((tool) => tool === 'worktree-desk').length, 1, 'one executable carries the whole desk kit');
 });
 
-test('an Agent born in a checkout with no desk still receives universal desk teaching and its tool', async () => {
+test('an Agent born in a checkout with no desk still receives universal desk teaching', async () => {
   const resolved = await resolveForm({ project_root: 'ronin_lab', prompt: 'Read the papers.' }, new Set());
   assert.equal(resolved.assignment, null);
   assert.equal(resolved.capabilities.find((row) => row.name === 'worktree-desk')?.selected, true, 'desk teaching is ready for later managed work');
-  assert.ok(resolved.capability_tools.includes('worktree-desk'), 'work context does not withhold an installed Cowork tool');
 });

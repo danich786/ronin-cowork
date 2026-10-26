@@ -132,37 +132,3 @@ test('a letter verb on a session with no letter yet starts one', (t) => {
   run(f.env, ['--objective', 'first words']);
   assert.equal(block(f.letter).objective, 'first words');
 });
-
-/* A born session reaches its tools through its own command directory,
- * <session-commands>/<session>/<tool>, and some agents' tool shells are not inside tmux
- * at all — no TMUX_PANE, no $TMUX. The directory name is then the one remaining truth
- * about who is calling, accepted only when it names a live session; by its real path the
- * parent is ronin_bin and the tool must still refuse. The refusal replaced a fallback
- * that wrote one session's ladder into another's letter, so both halves are pinned. */
-test('the invocation path names the session when tmux does not, and never a guess', (t) => {
-  const f = fixture();
-  t.after(() => rmSync(f.dir, { recursive: true, force: true }));
-  const noTmux = { ...f.env };
-  delete noTmux.TMUX_PANE; delete noTmux.TMUX;
-  const reader = path.join(root, 'ronin_bin', 'work-record');
-  const projected = (session: string, name: string) => {
-    mkdirSync(path.join(f.dir, 'session-commands', session), { recursive: true });
-    const link = path.join(f.dir, 'session-commands', session, name);
-    if (!existsSync(link)) symlinkSync(path.join(root, 'ronin_bin', name), link);
-    return link;
-  };
-  const refused = (bin: string, args: string[]) => {
-    const r = spawnSync(bin, args, { encoding: 'utf8', env: noTmux });
-    assert.equal(r.status, 3, `${bin} ${args.join(' ')} refused`);
-    assert.match(r.stderr, /cannot tell which session/);
-  };
-  refused(tool, ['update_record', '--objective', 'by its real path']);
-  refused(projected('nobody', 'work-record'), ['update_record', '--objective', 'through a directory naming no session']);
-  assert.deepEqual(readdirSync(path.join(f.dir, 'sessions')), [], 'a refusal writes nothing — not even a stray record at the store root');
-
-  execFileSync(projected('probe', 'work-record'), ['update_record', '--objective', 'through my own directory'], { encoding: 'utf8', env: noTmux, stdio: ['pipe', 'pipe', 'pipe'] });
-  assert.equal(block(f.letter).objective, 'through my own directory');
-  const read = execFileSync(projected('probe', 'work-record'), ['read', '--json'], { encoding: 'utf8', env: noTmux, stdio: ['pipe', 'pipe', 'pipe'] });
-  assert.equal((JSON.parse(read) as Block).objective, 'through my own directory');
-  refused(reader, ['read', '--json']);
-});

@@ -181,16 +181,17 @@ test('both Mika callers use the dedicated door and state no session_role', async
 
 test.after(() => server.close());
 
-/* A newborn's PATH: the session's own command directory first (its guards must win), then
- * Ronin's install bin dir, then what the pane inherits. The pane inherits the SERVER's
+/* A newborn's PATH: the shared shim, owner tools, and Ronin tools first, then Ronin's
+ * install bin dir and what the pane inherits. The pane inherits the SERVER's
  * environment, and a server started by systemd or npm has no .profile and so no
  * ~/.local/bin — so before this a tile launched by absolute path ran the CLI Ronin had
  * installed while `codex` typed by name inside it found an older system copy (2026-09-09). */
-test('a newborn gets Ronin\'s install bin dir on its PATH, behind its own commands, never twice', async () => {
+test('every newborn PATH carries the three shared tool locations in order', async () => {
   const { birthEnv } = await import('../src/routes/launch.js');
-  assert.deepEqual(birthEnv('/cmds/s1:/usr/bin', undefined, '/home/o/.local/bin', '/usr/bin'), { PATH: '/cmds/s1:/home/o/.local/bin:/usr/bin' });
-  assert.deepEqual(birthEnv(undefined, undefined, '/home/o/.local/bin', '/usr/bin:/bin'), { PATH: '/home/o/.local/bin:/usr/bin:/bin' }, 'no projected commands: still the bin dir, ahead of what the pane inherits');
-  assert.deepEqual(birthEnv('/cmds/s1:/home/o/.local/bin:/usr/bin', 'sock', '/home/o/.local/bin', '/usr/bin'), { PATH: '/cmds/s1:/home/o/.local/bin:/usr/bin', RONIN_SOCKET: 'sock' }, 'already there: left as it is');
-  assert.deepEqual(birthEnv(undefined, undefined, '/home/o/.local/bin', '/home/o/.local/bin:/usr/bin'), undefined, 'inherited PATH already carries it: nothing to say');
-  assert.deepEqual(birthEnv(undefined, 'sock', '', '/usr/bin'), { RONIN_SOCKET: 'sock' }, 'no bin dir known: PATH untouched');
+  const { REPO_ROOT, storeDir } = await import('../src/resources.js');
+  const shared = [`${REPO_ROOT}/bin/shim`, storeDir('tools'), `${REPO_ROOT}/ronin_bin`];
+  assert.deepEqual(birthEnv('sock', '/home/o/.local/bin', '/usr/bin:/bin'), {
+    PATH: [...shared, '/home/o/.local/bin', '/usr/bin', '/bin'].join(':'),
+    RONIN_SOCKET: 'sock',
+  });
 });
