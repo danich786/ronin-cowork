@@ -8,15 +8,16 @@
  */
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { readAgentComposition, writeCurrentBehaviours } from './agent-composition.js';
+import { readAgentComposition, writeCurrentBehaviours, writeCurrentRole } from './agent-composition.js';
 import type { Mandate } from './agent-defaults.js';
 import { compileBirthReadmeAt, isShelfTeaching, packetEndLine } from './birth-readme.js';
 import { enqueueMessage } from './message-queue.js';
 import { listBehaviours } from './resource-adapters.js';
 import { sessionDir, sessionKey } from './session-dir.js';
 import { resolveFacts, resolveReading, type SpawnForm } from './spawn.js';
-import { writeMandate } from './tegami.js';
-import { getCampaign, getLeads, getProjectRoot, getTags } from './tmux.js';
+import { teamChanged } from './tegami.js';
+import { writeMandate, writeObjective } from './tegami.js';
+import { getCampaign, getLeads, getProjectRoot, getTags, setLeads, setSessionTitle, setTags } from './tmux.js';
 
 type Receipt = { team?: string; kind?: string; behaviours?: Array<{ book?: string }> };
 
@@ -38,6 +39,7 @@ async function configurationReading(name: string) {
     campaign_id: campaign || undefined,
     kind: receipt.kind,
     mandate: composition.current.mandate,
+    role: composition.current.role,
     behaviours: composition.current.behaviours.map((row) => row.name).filter((book) => selected.has(book)),
   };
   const reading = await resolveReading(form, await resolveFacts(form, new Set()));
@@ -65,11 +67,28 @@ export async function configurationSends(name: string) {
 
 /** The one act: write, rebuild, tell once. `behaviours` is the whole chosen list; an unticked
  * behaviour simply is not in the new brief. */
-export async function updateConfiguration(name: string, next: { mandate: Mandate; behaviours: string[] }): Promise<{ readme: string }> {
-  const catalog = await listBehaviours();
-  const chosen = catalog.filter((row) => row.scope === 'selected' && next.behaviours.includes(row.name)).map((row) => ({ name: row.name, path: row.page }));
-  await writeMandate(name, next.mandate);
-  await writeCurrentBehaviours(name, chosen);
+type ConfigurationUpdate = {
+  objective: string; title: string; role: 'coworker' | 'lead' | 'epic_lead' | 'coordinator'; team: string;
+  mandate: Mandate; behaviours: string[]; by: string;
+};
+
+export async function updateConfiguration(name: string, next: ConfigurationUpdate): Promise<{ readme: string }> {
+  const [catalog, before] = await Promise.all([listBehaviours(), readAgentComposition(name)]);
+  const selected = new Set(next.behaviours);
+  const chosen = catalog.filter((row) => row.scope === 'selected' && selected.has(row.name)).map((row) => ({ name: row.name, path: row.page }));
+  const beforeTeams = await getTags(name);
+  const teams = next.team ? [next.team] : [];
+  const wantedLeads = next.role === 'lead' && next.team ? [next.team] : [];
+  const beforeLeads = await getLeads(name);
+  if (next.objective.trim() !== before.current.objective) await writeObjective(name, next.objective, next.by);
+  if (next.title.trim() !== before.current.title) await setSessionTitle(name, next.title);
+  const changedTeam = JSON.stringify(beforeTeams) !== JSON.stringify(teams) || JSON.stringify(beforeLeads) !== JSON.stringify(wantedLeads);
+  if (JSON.stringify(beforeTeams) !== JSON.stringify(teams)) await setTags(name, teams);
+  if (JSON.stringify(beforeLeads) !== JSON.stringify(wantedLeads)) await setLeads(name, wantedLeads);
+  if (before.current.role !== next.role) await writeCurrentRole(name, next.role);
+  if (changedTeam) await teamChanged([...new Set([...beforeTeams, ...teams])], next.by, name).catch(() => {});
+  if (JSON.stringify(before.current.mandate) !== JSON.stringify(next.mandate)) await writeMandate(name, next.mandate);
+  if (JSON.stringify(before.current.behaviours.map((row) => row.name)) !== JSON.stringify(chosen.map((row) => row.name))) await writeCurrentBehaviours(name, chosen);
   const { dir, reading } = await configurationReading(name);
   const readme = await compileBirthReadmeAt(dir, reading.birthReading, name, isShelfTeaching);
   await enqueueMessage(name, `Your configuration changed. Here is your new brief: ${readme}. Read it now, top to bottom; it ends with the line "${packetEndLine(name)}".`, 'house');

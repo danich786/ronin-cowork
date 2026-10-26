@@ -1,13 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { chmod, lstat, mkdtemp, readFile, readdir, stat, writeFile } from 'node:fs/promises';
+import { chmod, lstat, mkdtemp, readFile, stat, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { ensureMikaHome, mikaStartHerePath, mikaTipsSource } from '../src/mika-runtime.js';
 import { mkdir } from 'node:fs/promises';
 import { ensureRoninHelpersTeam, RONIN_HELPER_LOADER, RONIN_HELPERS_TEAM } from '../src/ronin-helper.js';
 import { mikaReadinessFromPane } from '../src/routes/launch.js';
-import { projectRoutineTools } from '../src/routine-tools.js';
 
 test('Mika home is a private stable store outside project-root selection', async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'ronin-mika-home-'));
@@ -113,32 +112,6 @@ test('Mika birth stays visible through the ordinary session Docs record', async 
   assert.match(launch, /rememberSessionKey\(resolved\.name, birthKey\)/);
   assert.match(launch, /resolved\.birth_reading = \[readme\]/);
   assert.match(tegami, /path\.join\(sessionDir\(key\), 'README\.md'\)/);
-});
-
-test('fresh Mika projection adds constrained settings and separately granted session creation', async () => {
-  const root = await mkdtemp(path.join(os.tmpdir(), 'ronin-mika-tools-'));
-  process.env.RONIN_SESSION_COMMANDS_DIR = path.join(root, 'commands');
-  const projected = await projectRoutineTools('mika', [], '/usr/local/bin:/usr/bin:/bin', {
-    includeTmux: false,
-    extraTools: ['lookup', 'owner_view', 'show', 'machine-settings', 'session_create'],
-  });
-  assert.deepEqual((await readdir(projected.dir)).sort(), ['lookup', 'machine-settings', 'owner_view', 'session_create', 'show']);
-  assert.deepEqual(projected.delivered.sort(), ['lookup', 'machine-settings', 'owner_view', 'session_create', 'show']);
-  assert.deepEqual(projected.missing, []);
-  assert.equal(projected.path, `${projected.dir}:/usr/local/bin:/usr/bin:/bin`, 'her tools first, then a shell she can actually run; nothing of Ronin\'s own bin');
-  delete process.env.RONIN_SESSION_COMMANDS_DIR;
-});
-
-test('the cold launch projects exactly her five tools without tool identity checks', async () => {
-  const launch = await readFile(new URL('../src/routes/launch.ts', import.meta.url), 'utf8');
-  const declaration = launch.match(/const MIKA_TOOLS = \[([^\]]+)\] as const/);
-  assert.ok(declaration, 'Mika has one explicit projected-tool set');
-  assert.deepEqual([...declaration[1].matchAll(/'([^']+)'/g)].map((match) => match[1]),
-    ['lookup', 'owner_view', 'show', 'machine-settings', 'session_create']);
-  assert.match(launch, /const MIKA_PARENT_PATH = '\/usr\/local\/bin:\/usr\/bin:\/bin'/);
-  assert.match(launch, /houseSeat === 'mika' \? MIKA_PARENT_PATH : undefined/);
-  assert.match(launch, /includeTmux: false, extraTools: \[\.\.\.MIKA_TOOLS\]/);
-  assert.doesNotMatch(launch, /RONIN_MACHINE_SETTINGS_AUTHORITY/);
 });
 
 test("the owner's tips come from their session-boot shadow when one exists, else the shipped file", async () => {

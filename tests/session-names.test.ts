@@ -67,17 +67,6 @@ test('the retired session command files do not exist and no shipped surface name
   assert.deepEqual(offenders, [], 'a retired name survives in a shipped file');
 });
 
-test('the base contribution projects the sole creation command with inspection and self-management', async () => {
-  const spawn = await readFile(path.join(root, 'src', 'spawn.ts'), 'utf8');
-  const base = /const CORE_CONTRIBUTION[\s\S]*?tools: \[([^\]]*)\]/.exec(spawn);
-  assert.ok(base, 'the base contribution lists its tools in src/spawn.ts');
-  const tools = [...base![1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
-  for (const name of ['session_check', 'session_set']) assert.ok(tools.includes(name), `${name} is in the base tool list`);
-  for (const name of LIFECYCLE) assert.ok(tools.includes(name), `${name} is in the base tool list`);
-  assert.ok(tools.includes('session_create'), 'session_create is the universal creation command');
-  for (const name of RETIRED) assert.ok(!tools.includes(name), `${name} is not in the base tool list`);
-});
-
 test('the catalog rows and the help of the family agree on the names', async () => {
   const catalog = await readFile(path.join(root, 'ronin_catalogs', 'TOOLS.md'), 'utf8');
   for (const name of [...FAMILY, ...LIFECYCLE]) assert.match(catalog, new RegExp(`^\\| \`${name}\` \\|`, 'm'), `${name} has a TOOLS.md row`);

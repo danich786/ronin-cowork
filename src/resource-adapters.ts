@@ -91,7 +91,6 @@ interface Row {
 export interface ContributionRow extends Pick<Row, 'name' | 'origin' | 'shadowed' | 'label' | 'blurb'> {
   reading: string[];
   reading_off: string[];
-  tools: string[];
   /** Services parts this contribution runs inside the server; loaded only while its switch is on. */
   parts: string[];
 }
@@ -132,7 +131,6 @@ const contribution = (d: Definition): ContributionRow => ({
   name: d.name, origin: d.origin, shadowed: d.shadowed,
   label: d.get('label') || d.name, blurb: d.get('blurb'),
   reading: splitDefinitionList(d.get('reading')), reading_off: splitDefinitionList(d.get('reading_off')),
-  tools: splitDefinitionList(d.get('tools')),
   parts: splitDefinitionList(d.get('parts')),
 });
 

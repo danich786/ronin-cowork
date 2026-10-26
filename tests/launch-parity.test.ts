@@ -214,7 +214,7 @@ test('an unavailable gbrain changes teaching without changing the provider comma
     'no gbrain behaviour is delivered while its installation is off');
 });
 
-test('a selected gbrain changes teaching without changing the provider command', async () => {
+test('the gbrain installation stays separate from the Behaviour catalog', async () => {
   const cowork = await resolveForm(commonsForm({
     session_type: 'cowork_agent',
     campaign_id: 'gbrain_connected',
@@ -226,8 +226,8 @@ test('a selected gbrain changes teaching without changing the provider command',
 
   assert.equal(gbrain?.enabled, true, 'the receipt source says the gbrain installation is on');
   assert.equal(cowork.cmd, 'codex --model gpt-5.6-terra');
-  assert.ok(cowork.behaviours.some((behaviour) => behaviour.book === 'gbrain'),
-    'the selected gbrain behaviour is delivered');
+  assert.ok(!cowork.behaviours.some((behaviour) => behaviour.book === 'gbrain'),
+    'the installation does not inject a removed Behaviour');
 });
 
 test('and to the same role-free reading list — all + root, compiled once', async () => {
@@ -429,6 +429,13 @@ test('team_lead is explicit and applies its conditional Behavior at birth', asyn
   assert.match(await fs.readFile(leadReading, 'utf8'), /immediate reading\s+assignment/);
   const ordinary = await resolveForm(commonsForm({ team: 'builders', team_lead: false }), new Set());
   assert.ok(!ordinary.birth_reading.some((file) => file.endsWith('/conditional/team-lead.md')));
+});
+
+test('an explicit Role applies its conditional Behavior in the first birth reading', async () => {
+  const epic = await resolveForm(commonsForm({ role: 'epic_lead' }), new Set());
+  assert.ok(epic.birth_reading.some((file) => file.endsWith('/conditional/epic_agent.md')));
+  const coordinator = await resolveForm(commonsForm({ role: 'coordinator' }), new Set());
+  assert.ok(coordinator.birth_reading.some((file) => file.endsWith('/conditional/steerco_mgr.md')));
 });
 
 test('Mika house mechanics resolve explicitly', async () => {

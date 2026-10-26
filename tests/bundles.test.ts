@@ -130,7 +130,6 @@ test('an install lands in the owner\'s stores, reads back, and is idempotent', a
   const books = await resolveBehaviourBooks(team?.behaviours ?? []);
   assert.equal(books.delivered[0]?.file, path.join(storeDir('ways'), 'selected/weekly_review.md'));
   const behaviour = (await listBehaviours()).find((row) => row.name === 'weekly_review');
-  assert.deepEqual(behaviour?.tools, ['tejun-review']);
   assert.equal(behaviour?.installation, '', 'the catalog dash means this behaviour needs no installation');
   const tool = await stat(path.join(storeDir('tools'), 'tejun-review'));
   assert.ok(tool.mode & 0o100, 'a bundled tool is executable');

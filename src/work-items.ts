@@ -24,11 +24,13 @@ import { enqueueMessage } from './message-queue.js';
 import { findLeads } from './desks/lead.js';
 import { listTeamRosters, readTeamRoster, writeTeamRoster } from './team-rosters.js';
 import { ackRecord, listLetterHolds, teamChanged, readLetterHolds, seedTegami, writeLetterHolds } from './tegami.js';
+import { initialCampaignId } from './campaign-scope.js';
+import { listSessions } from './tmux.js';
 
 export const ITEM_STATUSES = ['IDEA', 'PLAN', 'BUILD', 'REVIEW', 'LAND', 'DONE'] as const;
 export const ITEM_LEVELS = [1, 0, -1] as const;
 export const LINK_TYPES = ['blocks', 'relates'] as const;
-export const TRAIL_OPS = ['create', 'assign', 'release', 'move', 'status', 'edit', 'comment', 'flag', 'attach', 'link', 'holder-ended'] as const;
+export const TRAIL_OPS = ['create', 'assign', 'handoff', 'release', 'move', 'status', 'edit', 'comment', 'flag', 'attach', 'link', 'holder-ended'] as const;
 
 export type ItemStatus = typeof ITEM_STATUSES[number];
 export type ItemLevel = typeof ITEM_LEVELS[number];
@@ -43,6 +45,7 @@ export interface Link { type: LinkType; to: string }
 
 export interface WorkItem {
   id: string;
+  campaign_id: string;
   title: string;
   objective: string;
   /** 1 epic · 0 story, task or bug · -1 subtask. A default at birth, never derived. */
@@ -158,6 +161,7 @@ async function ackHolders(id: string, by: string): Promise<void> {
 
 export interface NewItem {
   title: string;
+  campaign_id?: string;
   objective?: string;
   status?: string;
   parent?: string | null;
@@ -208,7 +212,7 @@ async function settle(moved: Array<{ child: WorkItem; level: number }>, item: Wo
 }
 
 const blank = (title: string, by: string): WorkItem => ({
-  id: '', title, objective: '', level: 0, status: 'IDEA', flagged: false, comments: [], parent: null,
+  id: '', campaign_id: '', title, objective: '', level: 0, status: 'IDEA', flagged: false, comments: [], parent: null,
   attachments: [], links: [], external: {}, trail: [], created: { at: new Date().toISOString(), by: by.trim() || 'unknown' },
 });
 
@@ -228,6 +232,21 @@ async function announceArrival(item: WorkItem, by: string): Promise<string[]> {
   return told;
 }
 
+/** An unheld item belongs on its Campaign coordinator's list. The ordinary work-record
+ * acknowledgement is enough; with no coordinator, nobody is told. */
+async function announceUnheld(item: WorkItem, by: string): Promise<string[]> {
+  if ((await holdersOf(item.id)).length) return [];
+  const sessions = (await listSessions()).filter((session) => session.campaign_id === item.campaign_id);
+  const { readAgentComposition } = await import('./agent-composition.js');
+  for (const session of sessions) {
+    const role = await readAgentComposition(session.name).then((found) => found.current.role).catch(() => 'coworker');
+    if (role !== 'coordinator') continue;
+    await ackRecord(session.name, by);
+    return session.name === by ? [] : [session.name];
+  }
+  return [];
+}
+
 /** Issue an id and write the item. Unlocked: callers hold the issuer. */
 export async function createItemUnlocked(input: NewItem, by: string): Promise<Acknowledged> {
   const title = String(input.title ?? '').trim();
@@ -237,6 +256,7 @@ export async function createItemUnlocked(input: NewItem, by: string): Promise<Ac
   const item: WorkItem = {
     ...blank(title, by),
     id: await nextId(),
+    campaign_id: input.campaign_id ?? (await listSessions()).find((session) => session.name === by)?.campaign_id ?? await initialCampaignId(),
     objective: String(input.objective ?? '').trim(),
     level: (input.level as ItemLevel | undefined) ?? levelUnder(parent),
     ...(input.kind?.trim() ? { kind: input.kind.trim() } : {}),
@@ -252,7 +272,8 @@ export async function createItemUnlocked(input: NewItem, by: string): Promise<Ac
   const line = lineOf(by, 'create', { to: input.holder ? holderLabel(input.holder) : 'none', note: [item.title, item.parent ? `under ${item.parent}` : 'no parent'].join('; ') });
   item.trail.push(line);
   await save(item);
-  return { ...answer(item, line), notified: await announceArrival(item, by) };
+  const notified = [...new Set([...await announceArrival(item, by), ...await announceUnheld(item, by)])];
+  return { ...answer(item, line), notified };
 }
 
 export const createItem = (input: NewItem, by: string) => withIssuer(() => createItemUnlocked(input, by));
@@ -416,9 +437,8 @@ export function deleteItem(id: string, by: string): Promise<{ deleted: string[];
 }
 
 /* HOLDING — a list of item ids on each Team (roster.holds) and each Agent (the letter's
- * holds). Assignment moves an id between lists and never touches the item's content or
- * parent; release takes it off every list. Both run under the issuer lock, so two
- * concurrent assigns leave the id on exactly one list. */
+ * holds). Assignment adds an id; handoff removes the giver and adds the receiver. Neither
+ * touches the item's content or parent, and both run under the issuer lock. */
 
 export type Holder = { kind: 'team' | 'agent'; name: string };
 export const holderLabel = (holder: Holder): string => `${holder.kind}:${holder.name}`;
@@ -489,14 +509,30 @@ async function ackHolds(holders: Array<Holder | null>, by: string): Promise<void
 export async function assignUnlocked(id: string, to: Holder, by: string, note?: string): Promise<Acknowledged> {
   await load(id);
   const target = await listFor(to);
-  const from = await takeOffEveryList(id, to);
   if (!target.holds.includes(id)) await target.set([...target.holds, id]);
-  // An Agent receiving it is acked by the trail line below; a Team's lead and those it left, here.
-  await ackHolds([...from, to].filter((holder) => holder.kind !== 'agent' || holderLabel(holder) !== holderLabel(to)), by);
-  return appendTrail(id, by, () => ({ op: 'assign', from: labels(from), to: holderLabel(to), note }));
+  await ackHolds(to.kind === 'agent' ? [] : [to], by);
+  return appendTrail(id, by, () => ({ op: 'assign', to: holderLabel(to), note }));
 }
 
 export const assignItem = (id: string, to: Holder, by: string, note?: string) => withIssuer(() => assignUnlocked(id, to, by, note));
+
+/** The giver comes off and the receiver goes on in the same issuer step. `to` null is how
+ * a holder lets go; any other holders remain. */
+export function handoffItem(id: string, from: Holder, to: Holder | null, by: string, note?: string): Promise<Acknowledged> {
+  return withIssuer(async () => {
+    const item = await load(id);
+    const source = await listFor(from);
+    if (source.holds.includes(id)) await source.set(source.holds.filter((held) => held !== id));
+    if (to) {
+      const target = await listFor(to);
+      if (!target.holds.includes(id)) await target.set([...target.holds, id]);
+    }
+    await ackHolds([from, to].filter((holder) => holder?.kind !== 'agent' || holderLabel(holder) !== holderLabel(to ?? from)) as Holder[], by);
+    const done = await appendTrail(id, by, () => ({ op: 'handoff', from: holderLabel(from), to: to ? holderLabel(to) : 'none', note }));
+    const notified = await announceUnheld(item, by);
+    return notified.length ? { ...done, notified } : done;
+  });
+}
 
 /** Park: the id leaves every list. It is found again under its parent, or unassigned. */
 export function releaseItem(id: string, by: string, note?: string): Promise<Acknowledged> {
@@ -515,6 +551,7 @@ export function didLine({ item, line }: Acknowledged): string {
   const what = line.op === 'status' ? `moved to ${line.to}`
     : line.op === 'move' ? (line.to === 'none' ? `moved to no parent, ${line.note}` : `moved under ${line.to}, ${line.note}`)
       : line.op === 'assign' ? `is held by ${line.to}`
+        : line.op === 'handoff' ? (line.to === 'none' ? `${line.from} let go` : `was handed from ${line.from} to ${line.to}`)
         : line.op === 'release' || line.op === 'holder-ended' ? 'is held by nobody'
           : line.op === 'create' ? 'was created'
               : line.op === 'comment' ? (line.from ? `comment ${line.from} was edited` : `has a comment from ${line.by}: ${line.note}`)
@@ -546,13 +583,14 @@ export function releaseHolder(session: string, key: string, how: string): Promis
  * (Lab JIRA_SHAPE.md): `stage` is the status, a red colour is flagged, `exit`, the other colours and the
  * ladder are dropped, `docs` is `attachments`, an evidence line on the trail is a comment,
  * no level reads 0. */
-function toShape(raw: Record<string, unknown>): WorkItem {
+function toShape(raw: Record<string, unknown>, campaign_id: string): WorkItem {
   const { stage, exit: _exit, ladder: _ladder, docs, attachments, status, flagged, level, kind, priority, comments, links, trail, ...rest } = raw;
   void _exit; void _ladder;
   const lines = (Array.isArray(trail) ? trail : []) as TrailLine[];
   const evidence = lines.filter((line) => (line.op as string) === 'evidence');
   return {
     ...(rest as unknown as WorkItem),
+    campaign_id,
     level: member(ITEM_LEVELS, level) ? level : 0,
     ...(typeof kind === 'string' && kind ? { kind } : {}),
     ...(typeof priority === 'string' && priority ? { priority } : {}),
@@ -571,12 +609,12 @@ const inJiraShape = (raw: Record<string, unknown>): boolean =>
   && !('docs' in raw) && !('stage' in raw) && !('exit' in raw) && !('ladder' in raw)
   && !(Array.isArray(raw.trail) && raw.trail.some((line) => (line as TrailLine | null)?.op as string === 'evidence'));
 
-/* THE ONE MIGRATION (Lab JIRA_SHAPE.md), at first start: every item file in the Jira
+/* THE ONE MIGRATION (Lab JIRA_SHAPE.md and JIRA_RONIN_BRIDGE.md), at first start: every item file in the Jira
  * shape (toShape); an item with children gets level 1, every other 0; the Unfiled epic (or
  * the "Common" root) goes and its items have no parent; kind stays as stored. An item
- * already in shape is left alone, so a second run changes nothing. After it, only the Jira
- * shape exists. Holder lists are not touched: an id left on one names nothing. */
-export function migrateItems(by = 'ronin'): Promise<{ before: number; after: number; migrated: string[]; removed: string[] }> {
+ * already in shape is stamped home_machine once. After it, only the current shape exists;
+ * a second run changes nothing. Holder lists are not touched: an id left on one names nothing. */
+export function migrateItems(by = 'ronin', campaign_id = 'home_machine'): Promise<{ before: number; after: number; migrated: string[]; removed: string[] }> {
   return withIssuer(async () => {
     let names: string[] = [];
     try { names = await readdir(dir()); } catch { return { before: 0, after: 0, migrated: [], removed: [] }; }
@@ -592,8 +630,11 @@ export function migrateItems(by = 'ronin'): Promise<{ before: number; after: num
     const migrated: string[] = [];
     for (const [id, raw] of raws) {
       const unfiled = removed.includes(String(raw.parent));
-      if (inJiraShape(raw) && !unfiled) continue;
-      const item = toShape({ ...raw, ...('level' in raw ? {} : { level: parents.has(id) ? 1 : 0 }) });
+      if (inJiraShape(raw) && 'campaign_id' in raw && !unfiled) continue;
+      const item = toShape(
+        { ...raw, ...('level' in raw ? {} : { level: parents.has(id) ? 1 : 0 }) },
+        typeof raw.campaign_id === 'string' ? raw.campaign_id : campaign_id,
+      );
       if (unfiled) item.parent = null;
       item.trail.push(lineOf(by, 'edit', { note: `migrated to the Jira shape${unfiled ? `; ${raw.parent} (Unfiled) was removed, so no parent` : ''}` }));
       await save(item);

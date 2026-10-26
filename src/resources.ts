@@ -17,7 +17,6 @@ export const STORES: readonly Store[] = [
   store('session', 'data', 'sessions'),
   store('archived_sessions', 'data', 'archived-sessions'),
   store('session_boot_cache', 'data', 'session-boot'),
-  store('session_commands', 'data', 'session-commands'),
   store('bench', 'data', 'bench'),
   store('telemetry', 'data', 'telemetry'),
   store('ageru', 'user', 'ageru'),

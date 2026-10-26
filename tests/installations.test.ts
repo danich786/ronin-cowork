@@ -5,7 +5,7 @@ import type { InstallationRow } from '../src/resource-adapters.js';
 
 const installation = (name: string, requires: string[] = []): InstallationRow => ({
   name, origin: 'stock', shadowed: false, label: name, blurb: '',
-  reading: [], reading_off: [], tools: [], parts: [],
+  reading: [], reading_off: [], parts: [],
   effect: 'system', maturity: '', provides: [], requires,
 });
 

@@ -8,10 +8,11 @@ usage() { cat <<'EOF_USAGE'
 Usage:
   item create --title <t> [--kind <type>] [--parent <id>] [--level 1|0|-1] [--objective <o>] [--priority <p>]
   item read <id>
-  item search [--team <t>] [--holder <name>] [--parent <id>|--no-parent] [--status <s>] [--kind <k>]
+  item search [--campaign <id>] [--team <t>] [--holder <name>] [--parent <id>|--no-parent] [--status <s>] [--kind <k>]
   item edit <id> --title|--objective|--kind|--level|--parent <id|none>|--priority|--jira <value> ...
   item transition <id> IDEA|PLAN|BUILD|REVIEW|LAND|DONE
-  item assign <id> <agent>|team:<name>|none
+  item assign <id> <agent>|team:<name>
+  item handoff <id> <agent>|team:<name>|none
   item flag <id> [<why>]              item unflag <id> [<comment>]
   item comment <id> <text>            item comment <id> --edit <n> <text>
   item attach <id> <path>             item attach <id> --remove <path>
@@ -47,9 +48,9 @@ case "$verb" in
     q=''
     while [ "$#" -gt 0 ]; do
       case "$1" in
-        --team|--holder|--parent|--status|--kind) [ -n "${2:-}" ] || die "BAD-ARG: $1 needs a value"; q="$q&${1#--}=$(python3 -c 'import sys,urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$2")"; shift 2 ;;
+        --campaign|--team|--holder|--parent|--status|--kind) [ -n "${2:-}" ] || die "BAD-ARG: $1 needs a value"; q="$q&${1#--}=$(python3 -c 'import sys,urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$2")"; shift 2 ;;
         --no-parent) q="$q&no_parent=1"; shift ;;
-        *) die "BAD-ARG: item search takes --team, --holder, --parent, --no-parent, --status or --kind, not $1" ;;
+        *) die "BAD-ARG: item search takes --campaign, --team, --holder, --parent, --no-parent, --status or --kind, not $1" ;;
       esac
     done
     ronin_item_call GET "/api/work-items?${q#&}"; exit $? ;;
@@ -61,13 +62,20 @@ case "$verb" in
     body=$(fields title,objective,level,kind,parent,priority,jira,trello,github "$@") || exit 2; ronin_item_call PUT "/api/work-items/$id" "$body" ;;
   transition) [ "$#" -eq 1 ] || die 'BAD-ARG: item transition takes <id> <status>'
     ronin_item_call POST "/api/work-items/$id/transition" "$(json status "$1")" ;;
-  assign) [ "$#" -eq 1 ] || die 'BAD-ARG: item assign takes <id> <agent>|team:<name>|none'
+  assign) [ "$#" -eq 1 ] || die 'BAD-ARG: item assign takes <id> <agent>|team:<name>'
+    case "$1" in
+      none) die 'BAD-ARG: use item handoff <id> none to let go' ;;
+      team:*) to=$(json team "${1#team:}") ;;
+      *) to=$(json session "$1") ;;
+    esac
+    ronin_item_call POST "/api/work-items/$id/assign" "$to" ;;
+  handoff) [ "$#" -eq 1 ] || die 'BAD-ARG: item handoff takes <id> <agent>|team:<name>|none'
     case "$1" in
       none) to=$(python3 -c 'import json,sys; print(json.dumps({"by": sys.argv[1], "none": True}))' "$BY") ;;
       team:*) to=$(json team "${1#team:}") ;;
       *) to=$(json session "$1") ;;
     esac
-    ronin_item_call POST "/api/work-items/$id/assign" "$to" ;;
+    ronin_item_call POST "/api/work-items/$id/handoff" "$to" ;;
   comment)
     if [ "${1:-}" = --edit ]; then
       [ "$#" -eq 3 ] || die 'BAD-ARG: item comment takes <id> --edit <n> <text>, the text quoted'

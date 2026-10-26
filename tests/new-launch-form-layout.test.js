@@ -26,11 +26,12 @@ test('New Agent uses one ruled ask() spec after its three session types', async 
   assert.match(form, /Name · required/);
   assert.match(form, /group: t\('new_agent\.model_package', 'Model'\)/);
   assert.match(form, /after: 'provider'/);
-  assert.match(form, /group: t\('new_agent\.model_package', 'Model'\), fields: \[[\s\S]*key: 'provider'[\s\S]*key: 'model'[\s\S]*key: 'teamLead'[\s\S]*\] \},[\s\S]*group: t\('mandate', 'Mandate'\)/);
+  assert.match(form, /group: t\('new_agent\.model_package', 'Model'\), fields: \[[\s\S]*key: 'provider'[\s\S]*key: 'model'[\s\S]*key: 'role'[\s\S]*\] \},[\s\S]*group: t\('mandate', 'Mandate'\)/);
   assert.match(form, /group: t\('mandate', 'Mandate'\)/);
   assert.doesNotMatch(form, /key: '(?:reach|recruit|output)'[^\n]+shape: 'square'/);
   assert.match(form, /group: t\('squad', 'Team'\)/);
-  assert.match(form, /key: 'teamLead'.*Make team lead.*switch: \[t\('forms\.on', 'On'\), t\('forms\.off', 'Off'\)\]/);
+  assert.match(form, /key: 'role'[\s\S]*Coworker[\s\S]*Lead[\s\S]*Epic Lead[\s\S]*Coordinator/);
+  assert.doesNotMatch(form, /key: 'teamLead'/);
   assert.doesNotMatch(form, /switch: \[[^\]]+\], word:/);
   assert.match(form, /group: t\('where\.label', 'Where it works'\)/);
   assert.match(form, /group: t\('where\.label', 'Where it works'\), fields: \[[\s\S]*key: 'root'[\s\S]*key: 'repos'[\s\S]*key: 'launchMode'/);
@@ -146,6 +147,8 @@ test('collapsible steps expose one full-width disclosure row and Team defaults u
   assert.match(steps, /forms\.expand', 'Expand'/);
   assert.match(steps, /forms\.collapse', 'Collapse'/);
   assert.match(css, /\.fs-togglable \{ grid-column: 1 \/ -1; width: 100%/);
+  assert.match(css, /\.fs-step:has\(> \.fs-step-head\.fs-togglable\) \{ border-bottom: var\(--edge\) solid var\(--line\); \}/);
+  assert.match(css, /\.fs-step\[data-collapsed='true'\]:has\(> \.fs-step-head\.fs-togglable\) \{ border-bottom: 0; \}/);
   assert.match(css, /\.na-team-questions \{ flex: 0 0 auto; \}/);
   assert.match(team, /key: 'defaults'.*Agent defaults/);
   assert.match(team, /Settings inherited by Agents launched in this Team/);
@@ -245,6 +248,8 @@ test('New Team checks names only for a cast and opens empty or partial Teams wit
   assert.doesNotMatch(form, /request\('\/api\/sessions'/);
   assert.match(form, /const launched = outcomes\.filter\(\(\{ result \}\) => result\?\.ok\)[\s\S]*result\.data\?\.name \|\| row\.name/);
   assert.match(form, /Team created\. Launched \{launched\} of \{total\} Agents: \{born\}\. Failed: \{names\}/);
+  assert.match(form, /refused\.map\(\(\{ row, result \}\) => `\$\{row\.name\}: \$\{result\?\.message/,
+    'a failed birth keeps the server reason beside the Agent name');
   assert.match(form, /openLaunchHandoff\(\{ team: name, sessions: picks \}, launchTab\);[\s\S]*await launchTeamAgents\(request, name, picks\)/,
     'the Team tab opens after its record and before its Agents');
   assert.match(form, /if \(refused\.length\) \{[\s\S]*return;/);

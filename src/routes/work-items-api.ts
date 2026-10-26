@@ -5,7 +5,7 @@
 import type express from 'express';
 import {
   WorkItemBadInput, WorkItemMissing, WorkItemRefused,
-  addComment, assignItem, attachDoc, createItem, deleteItem, editComment, editItem, flagItem, holderLabel, holdersOf, linkItem, listItems, readItem, releaseItem,
+  addComment, assignItem, attachDoc, createItem, deleteItem, editComment, editItem, flagItem, handoffItem, holderLabel, holdersOf, linkItem, listItems, readItem,
   didLine, type Acknowledged, type Holder, type WorkItem,
 } from '../work-items.js';
 import { agentReading, everyItemReading, teamReading } from '../work-items-read.js';
@@ -71,10 +71,12 @@ export function registerWorkItems(app: express.Express): void {
     const orphans = Boolean(text(req.query.no_parent));
     const status = text(req.query.status)?.trim().toUpperCase();
     const kind = text(req.query.kind)?.trim();
+    const campaign = text(req.query.campaign)?.trim();
     const narrow = <T extends WorkItem & { holder?: string }>(items: T[]): T[] => items.filter((item) =>
       (!holder || item.holder === `agent:${holder}` || item.holder === `team:${holder}` || item.holder === holder)
       && (!parent || item.parent === parent) && (!orphans || !item.parent)
-      && (!status || item.status === status) && (!kind || (item.kind ?? '') === kind));
+      && (!status || item.status === status) && (!kind || (item.kind ?? '') === kind)
+      && (!campaign || item.campaign_id === campaign));
     if (session) { const reading = await agentReading(session); return res.json({ ok: true, ...reading, items: narrow(reading.items) }); }
     if (team) {
       const reading = await teamReading(team);
@@ -117,10 +119,15 @@ export function registerWorkItems(app: express.Express): void {
     if (!status) throw new WorkItemBadInput('name the status: IDEA, PLAN, BUILD, REVIEW, LAND or DONE.');
     acknowledge(res, await editItem(req.params.id, { status }, callerOf(req), text(req.body?.note)));
   }));
-  // A holder: { team }, { session }, or { none: true } for held by nobody.
+  // Assign adds a holder and removes nobody.
   app.post('/api/work-items/:id/assign', guarded(async (req, res) => {
-    if (req.body?.none === true || req.body?.none === 'true') return acknowledge(res, await releaseItem(req.params.id, callerOf(req), text(req.body?.note)));
     acknowledge(res, await assignItem(req.params.id, holderFrom(req.body), callerOf(req), text(req.body?.note)));
+  }));
+  // Handoff removes the calling Agent and adds the receiver; none only lets the caller go.
+  app.post('/api/work-items/:id/handoff', guarded(async (req, res) => {
+    const by = callerOf(req);
+    const to = req.body?.none === true || req.body?.none === 'true' ? null : holderFrom(req.body);
+    acknowledge(res, await handoffItem(req.params.id, { kind: 'agent', name: by }, to, by, text(req.body?.note)));
   }));
   // Jira's Add flag / Remove flag; { comment } is the reason, kept as a comment.
   for (const [verb, flagged] of [['flag', true], ['unflag', false]] as const) {
@@ -152,7 +159,7 @@ export function registerWorkItems(app: express.Express): void {
   // Anything else under /api/work-items names no item (an id like surface/7 is not one):
   // a JSON 404 naming it, so a tool can say so rather than parse an HTML error page.
   app.all('/api/work-items/*', (req, res) => {
-    const id = req.path.slice('/api/work-items/'.length).replace(/\/(assign|transition|flag|unflag|attach|link|comment)$/, '');
+    const id = req.path.slice('/api/work-items/'.length).replace(/\/(assign|handoff|transition|flag|unflag|attach|link|comment)$/, '');
     res.status(404).json({ ok: false, error: `No work item ${id}.` });
   });
 }

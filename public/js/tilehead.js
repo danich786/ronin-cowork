@@ -219,7 +219,7 @@ async function overTile(tile, title, fill, options = {}) {
     head.className = 'tile-record-head';
     const tools = document.createElement('div');
     tools.className = 'wk-surface-header-actions';
-    // The overlay's one action row: the reader's own acts first (Update), then Close.
+    // The overlay's one action row: the reader's own acts first (Send), then Close.
     tools.append(...(options.actions ?? []).map((item) => item?.el ?? item), ...through.map((item) => item?.el ?? item));
     head.append(Object.assign(document.createElement('h2'), { textContent: title }), tools);
     box.append(head);

@@ -25,7 +25,7 @@ test('the shipped agent shelf surfaces loadouts, and no team answers', async () 
   assert.equal(assistant?.label, 'Personal Assistant');
   assert.deepEqual(assistant?.mandate, { reach: 'execute', recruit: 'nobody', output: ['open'] });
   assert.equal(assistant?.team_mode, 'new', 'the assistant is born into its own team');
-  assert.deepEqual(assistant?.behaviours, ['gbrain']);
+  assert.deepEqual(assistant?.behaviours, []);
   const sysadmin = rows.find((row) => row.name === 'system_administrator');
   assert.deepEqual(sysadmin?.mandate, { reach: 'execute', recruit: 'nobody', output: ['open'] });
   // Tray order is the stated order:, so the assistant leads the shelf — and every box

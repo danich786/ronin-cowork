@@ -497,7 +497,7 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
         failed: refused.length,
         total: outcomes.length,
         born: born.length ? born.join(', ') : t('forms.none', 'none'),
-        names: refused.map(({ row }) => row.name).join(', '),
+        names: refused.map(({ row, result }) => `${row.name}: ${result?.message || t('forms.failed', 'failed')}`).join(', '),
       }));
       return;
     }
