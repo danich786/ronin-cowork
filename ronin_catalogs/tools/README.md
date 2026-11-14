@@ -10,7 +10,7 @@ Tools live in the repo's `ronin_bin/`, which `setup.sh` puts on PATH — call th
 Agents: prefer the tool over hand-rolled choreography; it reports the result in
 the vocabulary used throughout the coworkspace.
 
-[`docs/architecture/tool-surface.md`](../../docs/architecture/tool-surface.md) owns the architectural vocabulary, including the composite tool
+[`docs/architecture/brief.md`](../../docs/architecture/brief.md) owns the model and the composite tool
 boundary. Describe the public operation here, not its internal routes or modules.
 
 ## The header
@@ -38,7 +38,7 @@ Every file in `facts/`, `behaviours/` and `tools/` starts the same:
 | `order:` | all | its place in its section, lower first |
 
 Header lines run from the title to the first blank line; an unknown field is ignored and an
-unknown conditional never holds. The design is samurai_lab `wip/BRIEF_MODEL.md`.
+unknown conditional never holds. The model is [docs/architecture/brief.md](../../docs/architecture/brief.md).
 
 ## Adding a tool
 

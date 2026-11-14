@@ -38,7 +38,7 @@ change area to its code, UI, stores, Services, documentation, and tests.
 | Question | Reference |
 |---|---|
 | What do the names mean? | [KOTOBA](../KOTOBA.md) and [Agent glossary](../KOTOBA_GLOSSARY.md) |
-| How are tools and Agent instructions composed? | [Tools and capabilities](architecture/tool-surface.md), [Agent composition](architecture/agent-composition.md), and [birth packet](architecture/birth-packet.md) |
+| How are tools and Agent instructions composed? | [The brief](architecture/brief.md) |
 | How do configuration and owner customizations resolve? | [Installations](architecture/installations.md), [shadowing](architecture/shadowing.md), and [templates](architecture/templates.md) |
 | How is project management built, and who reads which brief? | [Project management: contents](architecture/project-management.md): briefs, tools, code and the Jira bridge |
 | Where do state and work live? | [State inventory](state-inventory.md), [coordination trace](coordination-trace.md), and [Workspace Folders](architecture/project-roots.md) |
