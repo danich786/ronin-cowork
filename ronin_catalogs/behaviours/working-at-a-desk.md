@@ -1,5 +1,5 @@
-# Managed worktree — get, update, and hand in
-- **seed:**
+# Working at a desk
+- **seed:** Work in your own worktree; keep it synced and hand it in with `worktree-desk hand-in`.
 - **when:** desk
 - **depth:** full
 - **order:** 45

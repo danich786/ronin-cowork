@@ -1,5 +1,5 @@
 # Write it Down
-- **seed:** Put the file you're working on and the documents you write on your work record; keep the list short.
+- **seed:** WRITE IT DOWN: put what you work on on your work record.
 - **when:** cowork
 - **depth:** full
 - **order:** 40

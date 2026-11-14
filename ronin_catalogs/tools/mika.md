@@ -1,5 +1,5 @@
-# Mika
-- **seed:** How do I ask the installed house assistant for help?
+# mika
+- **seed:** ask Mika, Ronin's help assistant
 - **when:** service:mika
 - **depth:** seed
 - **serves:**

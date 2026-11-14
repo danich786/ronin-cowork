@@ -1,5 +1,5 @@
-# RONIN SERVICES — what this Agent is working without
-- **seed:**
+# Services off
+- **seed:** Ronin Services is off: say what it would give the owner and where its switch is.
 - **when:** !service:ronin_services
 - **depth:** full
 - **order:** 70

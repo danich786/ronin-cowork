@@ -1,8 +1,8 @@
-# Machine settings
-- **seed:** How do I read or change Campaign defaults, installation choices, providers, and Workspace Folders?
+# machine-settings
+- **seed:** read or change Campaign defaults, providers and Workspace folders
 - **when:**
 - **depth:** seed
-- **serves:**
+- **serves:** mika
 - **order:** 50
 
 Reach for the settings tool when the owner asks what this box has, what the Campaign has switched on, what a new Team starts from, which providers and models exist, or which Workspace Folders Ronin may work in — and when they ask you to change one of those. It is independent of Ronin Host: the host's own operations (survey, accounts, secrets, restart) are the Host bundle's, not these.

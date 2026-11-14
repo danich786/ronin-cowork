@@ -1,9 +1,11 @@
 # owner_view
-- **seed:**
+- **seed:** what the owner is looking at in a browser tab
 - **when:**
 - **depth:** seed
 - **serves:** mika
 - **order:** 83
+
+Your brief names the tab Help was opened in. Use it before `show`.
 
 ## Usage
 

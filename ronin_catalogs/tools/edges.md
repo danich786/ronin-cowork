@@ -1,5 +1,5 @@
-# Edges
-- **seed:** How do I work across an Agent, Team, wipeboard, schedule, or visible workspace boundary?
+# edges
+- **seed:** message an Agent, post to the Team's wipeboard, read another session
 - **when:**
 - **depth:** seed
 - **serves:** cowork-agent

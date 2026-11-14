@@ -1,12 +1,11 @@
-# codebase_team — a team stands itself up around a codebase
-- **seed:**
+# Codebase team
+- **seed:** Stand a Team up around a codebase: one Agent per part, one coordinator.
 - **when:**
 - **depth:** none
 - **order:** 40
 - **hidden:** yes
 
-> Stock Behavior. Your own copy in the ways store (`ronin-store ways` → `codebase_team.md`)
-> replaces this file whole — a default, not law.
+> Stock behaviour. Your own `~/ronin/behaviours/codebase-team.md` replaces this file whole.
 > **Voice: agent.** Selected for the **codebase assessor** — the cast row of the *Staff
 > My Codebase* team template that surveys and staffs — and for any session handed this
 > book with the same job.

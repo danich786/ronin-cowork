@@ -1,5 +1,5 @@
 # Integrations
-- **seed:** Use any outside service a user connects the common way: its own tools, its keys, a PR, the preview, the record.
+- **seed:** Any outside service a user brings is used one common way: `ronin-help integrations`.
 - **when:**
 - **depth:** seed
 - **order:** 23

@@ -1,5 +1,5 @@
 # lookup
-- **seed:**
+- **seed:** print a Ronin document by its `mika-source:` id
 - **when:**
 - **depth:** seed
 - **serves:** mika

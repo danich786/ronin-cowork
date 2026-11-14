@@ -1,5 +1,5 @@
-# CHECKOUT — work on the repository's working line
-- **seed:**
+# Checkout
+- **seed:** You share the repository's checkout: say which files you will touch, and commit on its branch.
 - **when:** checkout
 - **depth:** full
 - **order:** 45

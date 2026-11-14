@@ -1,5 +1,5 @@
 # Team lead
-- **seed:** Lead the Team whose explicit lead designation selected this guidance.
+- **seed:** Lead your Team from its roster and wipeboard; raise Agents one at a time.
 - **when:** lead
 - **depth:** full
 - **order:** 30

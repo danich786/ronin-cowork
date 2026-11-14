@@ -1,5 +1,5 @@
 # preview
-- **seed:**
+- **seed:** find a pull request's preview link and put it on your work record
 - **when:**
 - **depth:** seed
 - **serves:** netlify-bridge

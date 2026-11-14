@@ -1,5 +1,5 @@
-# Work Record
-- **seed:** How do I keep my objective, repositories and documents truthful?
+# work-record
+- **seed:** keep your objective, repos and documents true
 - **when:**
 - **depth:** seed
 - **serves:** cowork-agent, write-it-down

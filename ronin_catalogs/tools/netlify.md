@@ -1,5 +1,5 @@
 # netlify
-- **seed:**
+- **seed:** Netlify sites, deploys, traffic, forms and variables, with the Workspace's token
 - **when:**
 - **depth:** seed
 - **serves:** netlify-bridge

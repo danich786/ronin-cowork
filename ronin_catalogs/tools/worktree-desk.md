@@ -1,5 +1,5 @@
-# Managed worktree
-- **seed:** How do I preserve and hand in repository work held in a managed worktree?
+# worktree-desk
+- **seed:** open, sync and hand in your worktree
 - **when:**
 - **depth:** seed
 - **serves:** working-at-a-desk, lead-worktrees

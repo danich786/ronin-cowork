@@ -1,5 +1,5 @@
-# Ronin Host
-- **seed:** How do I inspect or operate the machine underneath Ronin?
+# ronin-host
+- **seed:** measure the machine: what it is, its space, its account, which secrets exist
 - **when:**
 - **depth:** seed
 - **serves:**

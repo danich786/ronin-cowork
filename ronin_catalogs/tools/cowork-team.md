@@ -1,5 +1,5 @@
-# Cowork Team
-- **seed:** How do I create or inspect a Team, keep its record truthful, and read what it holds?
+# team
+- **seed:** create or read a Team's roster and what it holds
 - **when:**
 - **depth:** seed
 - **serves:** team-lead

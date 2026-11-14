@@ -1,8 +1,8 @@
-# Agent session
-- **seed:** How do I inspect or change an Agent's existence, and end my own safely?
+# session_*
+- **seed:** check, create, change, archive, restore and end Agent sessions; `session_create` rides Recruit: staff agents
 - **when:**
 - **depth:** seed
-- **serves:** cowork-agent, team-lead
+- **serves:** cowork-agent, team-lead, mika
 - **order:** 30
 
 Reach for the session tools when the question is about an Agent's existence rather than
