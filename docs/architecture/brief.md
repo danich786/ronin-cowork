@@ -236,10 +236,21 @@ Every tool is a command on your PATH; `<tool> --help` gives its syntax.
   an update reaches them.
 - **The birth receipt** (`birth-receipt.json`) records the brief's path, bytes, lines,
   terminator and over-budget state.
-- **An update** rebuilds the brief and, when it differs, sends the Agent "Your brief changed"
-  with the facts that changed and the behaviours and tools that came into play (at their
-  depth) or left it. A mandate change sends the new mandate only.
+- **An update** (`refreshBrief`, `src/agent-configuration.ts`) rebuilds the brief and, when it
+  differs from what the Agent was last told (its snapshot beside the brief), sends "Your brief
+  changed" with the facts that changed and the behaviours and tools that came into play (at
+  their depth) or left it, and the whole brief's path. A mandate change sends the new mandate
+  only. A layer change rebuilds every live Cowork Agent's brief (`refreshAllBriefs`).
+- **The first rebuild under this model** finds no snapshot, so a running Agent is sent its whole
+  brief once. **Send** on the New Agent form always resends it.
 - **The brief shows at the bottom of the work record** on the tile.
+
+**Start-up moves.** Once, at server start (`src/index.ts`, `src/behaviour-store-migration.ts`):
+the user's old `~/ronin/ways/<scope>/` files move into the flat `~/ronin/behaviours/` with the
+header (the user intro into `~/ronin/facts/user-intro.md`, Workspace shelf files into
+behaviours with `when: workspace:<ws>`), and old Team and Campaign behaviour lists become brief
+settings. A test that starts the server sets `RONIN_USER_ROOT`, `RONIN_DATA_ROOT` and `HOME` to
+its own folders, so these moves never touch the real stores.
 
 ## Where it is set in the UI
 
@@ -271,7 +282,8 @@ behaviours/  base-agent (full) · cowork-agent, write-it-down (cowork, full)
              team-lead, planning (lead) · lead-worktrees (lead, desk)
              project-management (pm, full) · pm-coworker · pm-lead · pm-epic-lead ·
              pm-traffic-control (pm, by role, full)
-             working-at-a-desk (desk) · checkout (checkout) · integrations
+             working-at-a-desk (desk) · checkout (checkout) · integrations (every
+             Agent, seed; brings `secret`, so keys are taught once)
              mika, install-check (mika) · services-off (!service:ronin_services) · using-ronin
              optional (depth none): team-work, more-checkpoints, working-with-the-user,
              visual-staging, codebase-team
