@@ -31,7 +31,7 @@ export function briefValue(raw = {}) {
 /** The integrations there are: every `integration:<name>` a file's `when:` names (a bridge's own files are its record). */
 export function integrationNames(catalog = []) {
   const names = new Set();
-  for (const row of catalog) for (const need of String(row.when || '').split(',')) {
+  for (const row of catalog) for (const need of [].concat(row.when || []).flatMap((w) => String(w).split(','))) {
     const match = need.trim().match(/^integration:(.+)$/);
     if (match) names.add(match[1]);
   }
@@ -56,7 +56,8 @@ function whyWord(need) {
     cowork: t('brief.why_cowork', 'every Cowork Agent'), lead: t('brief.why_lead', 'Team lead'), team: t('brief.why_team', 'on a Team'),
     desk: t('brief.why_desk', 'at a desk'), checkout: t('brief.why_checkout', 'in a checkout'), pm: t('brief.why_pm', 'project management on'),
     hosted: t('brief.why_hosted', 'hosted office'), 'new-owner': t('brief.why_new_owner', 'new owner'), owner: t('brief.why_owner', 'the owner'), member: t('brief.why_member', 'a member'),
-  })[need] || (need.startsWith('!') ? t('brief.why_not', 'not {what}', { what: whyWord(need.slice(1)) }) : need);
+  })[need] || (need.startsWith('!service:') ? t('brief.why_service_off', '{name} not running', { name: need.slice(9) })
+    : need.startsWith('!') ? t('brief.why_not', 'not {what}', { what: whyWord(need.slice(1)) }) : need);
 }
 export const whyText = (why = []) => (why.length ? why.map(whyWord).join(' · ') : t('brief.why_every', 'every Agent'));
 
@@ -91,13 +92,16 @@ export function paintBriefForm(host, { layer = 'agent', catalog = [], value = em
       : on ? t('brief.pm_on', 'Work items: the item model, and the guidance for this Agent’s role.') : t('brief.pm_off', 'No work items guidance.'));
   const pmNote = el('p', 'na-behaviour-note', pmWord(!!pmAbove || own.pm === true));
   // Off is only an answer where nothing above has it on; absent then means off.
-  const pm = ask([{ fields: [{ key: 'pm', label: t('brief.pm', 'Project management'), switch: [t('forms.on', 'On'), t('forms.off', 'Off')] }] }],
+  // The group carries the name, so it wraps; the switch is its track alone.
+  const pm = ask([{ group: t('brief.pm', 'Project management'), fields: [{ key: 'pm', label: t('brief.pm', 'Project management'), compact: true, switch: [t('forms.on', 'On'), t('forms.off', 'Off')] }] }],
     { value: { pm: !!pmAbove || own.pm === true }, density: 'tight', onChange: (next) => { if (next.pm) own.pm = true; else delete own.pm; pmNote.textContent = pmWord(next.pm); emit(); } });
   if (pmAbove) pm.disable('pm', pmWord(true));
   const integrationSection = el('div', 'na-behaviour-section');
-  integrationSection.append(el('p', 'na-behaviour-note', layer === 'agent'
+  const pmRow = el('div', 'brief-pm-row');
+  pmRow.append(pm.el, pmNote);
+  integrationSection.append(integrations.el, el('p', 'na-behaviour-note', layer === 'agent'
     ? t('brief.integrations_help', 'On from the Campaign, Workspace or Team, plus any you turn on for this Agent.')
-    : t('brief.integrations_help_layer', 'On here is on for everything below.')), integrations.el, pm.el, pmNote);
+    : t('brief.integrations_help_layer', 'On here is on for everything below.')), pmRow);
   parts.push(integrationSection);
 
   /* Add (an Agent's Optional): behaviours with a depth. */
@@ -118,18 +122,21 @@ export function paintBriefForm(host, { layer = 'agent', catalog = [], value = em
   { value: { add: own.brief.add.map((row) => row.name) }, density: 'tight', exposed: true,
     onChange: (next) => { own.brief.add = next.add.map((name) => ({ name, depth: depthOf(name) })); emit(); } });
   const addSection = el('div', 'na-behaviour-section');
-  addSection.append(el('p', 'na-behaviour-note', layer === 'agent' ? t('brief.optional_help', 'Behaviors added for this Agent only.') : t('brief.add_help', 'Brought in for every Agent below, at this depth.')), add.el);
+  addSection.append(add.el, el('p', 'na-behaviour-note', layer === 'agent' ? t('brief.optional_help', 'Behaviors added for this Agent only.') : t('brief.add_help', 'Brought in for every Agent below, at this depth.')));
   parts.push(addSection);
   const destroyers = [integrations, pm, add];
 
   if (layer === 'agent') {
     /* Comes with this Agent: the server's answer, read-only. */
-    const rows = inPlay.filter((row) => row.kind === 'behaviours' || row.kind === 'behaviour'); // a behaviour brings its tools; facts are the brief's own
-    const fixed = ask([{ group: t('behaviours.conditional', 'Comes with this Agent'), fields: [{ key: 'inPlay', label: t('behaviours', 'Behaviors'), many: true, shape: 'tall', filter: false,
-      options: rows.map((row) => option(named.get(row.name) || row, { l: row.title || row.name, sub: whyText(row.why), disabled: true })) }] }],
+    // A behaviour brings its tools; facts are the brief's own; what this Agent adds itself is under Optional.
+    const mine = (row) => (row.why || []).length > 0 && row.why.every((need) => need === 'add:agent');
+    const rows = inPlay.filter((row) => (row.kind === 'behaviours' || row.kind === 'behaviour') && !mine(row));
+    // The why is each stone's second line, always shown; the seed reads in the caption.
+    const fixed = ask([{ group: t('brief.comes', 'Comes with this Agent'), fields: [{ key: 'inPlay', label: t('behaviours', 'Behaviors'), many: true, shape: 'rect', filter: false,
+      options: rows.map((row) => option(named.get(row.name) || row, { l: row.title || row.name, word: whyText(row.why), disabled: true })) }] }],
     { value: { inPlay: rows.map((row) => row.name) }, className: 'na-behaviour-readonly', density: 'tight', exposed: true });
     const fixedSection = el('div', 'na-behaviour-section');
-    fixedSection.append(el('p', 'na-behaviour-note', t('brief.comes_help', 'What this Agent will be told anyway, and why. Read-only.')), fixed.el);
+    fixedSection.append(fixed.el, el('p', 'na-behaviour-note', t('brief.comes_help', 'What this Agent will be told anyway, and why. Read-only.')));
     parts.push(fixedSection);
     destroyers.push(fixed);
   } else {
@@ -139,7 +146,7 @@ export function paintBriefForm(host, { layer = 'agent', catalog = [], value = em
       const picker = ask([{ group, fields: [{ key, label: group, many: true, shape: 'tall', options: rows.map((row) => option(row, { word: row.kind })) }] }],
         { value: { [key]: own.brief[key] }, density: 'tight', onChange: (next) => { own.brief[key] = [...next[key]]; emit(); } });
       const section = el('div', 'na-behaviour-section');
-      section.append(el('p', 'na-behaviour-note', help), picker.el);
+      section.append(picker.el, el('p', 'na-behaviour-note', help));
       parts.push(section); destroyers.push(picker);
     };
     listField('block', t('brief.block', 'Block'), t('brief.block_help', 'Never told to any Agent below.'));
