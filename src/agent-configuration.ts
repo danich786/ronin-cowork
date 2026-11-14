@@ -1,80 +1,118 @@
 /**
- * UPDATE (owner, 2026-10-24): the Agent's Configuration is one act. Press Update and Ronin
- * writes the configuration — the mandate to the work record, the chosen Behaviors to the
- * composition — builds the Agent a new brief from today's files over those facts, and tells
- * it once: here is your new brief, read it. The brief is built from the facts and the reading
- * alone (resolveFacts, resolveReading): nothing about launching is in the way, so nothing
- * about launching can fail it.
+ * BRIEF UPDATES (wip/BRIEF_MODEL.md §5, §7). Any change to what an Agent's brief depends on
+ * rebuilds the brief from today's files over its record; when the brief came out different, the
+ * Agent is sent only the difference: the facts that changed, and the behaviours and tools that
+ * came into play or left it. Items and the objective are on the record but not in the brief, so
+ * they send nothing.
+ *
+ * UPDATE (owner, 2026-10-24) is one such change: the Configuration writes the record, then
+ * refreshes the brief.
  */
-import { readFile } from 'node:fs/promises';
+import { readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { readAgentComposition, writeCurrentBehaviours, writeCurrentRole } from './agent-composition.js';
+import { readAgentComposition, writeCurrentRole } from './agent-composition.js';
 import type { Mandate } from './agent-defaults.js';
-import { compileBirthBriefAt, isShelfTeaching, packetEndLine } from './birth-brief.js';
+import { describePacket, writeBriefPacketAt } from './birth-brief.js';
+import { readAgentBriefAt, writeAgentBriefAt, type AgentBrief, type ComposedBrief } from './brief-build.js';
+import { briefTold } from './brief-settings.js';
+import { briefChanges, briefSnapshot, type BriefSnapshot } from './brief.js';
 import { enqueueMessage } from './message-queue.js';
-import { listBehaviours } from './resource-adapters.js';
 import { sessionDir, sessionKey } from './session-dir.js';
-import { resolveFacts, resolveReading, type SpawnForm } from './spawn.js';
+import { resolveBriefFor, resolveFacts, type SpawnForm } from './spawn.js';
 import { teamChanged } from './tegami.js';
 import { writeMandate, writeObjective } from './tegami.js';
-import { getCampaign, getLeads, getProjectRoot, getTags, setLeads, setSessionTitle, setTags } from './tmux.js';
+import { getCampaign, getLeads, getTags, listSessions, setLeads, setSessionTitle, setTags } from './tmux.js';
 
-type Receipt = { team?: string; kind?: string; behaviours?: Array<{ book?: string }> };
+type Receipt = { team?: string; kind?: string; template?: string; told?: Array<{ name?: string }> };
 
-/** The reading the Agent's brief has today: its current facts over today's files. */
-async function configurationReading(name: string) {
+const snapshotFile = (dir: string): string => path.join(dir, 'brief-told.json');
+
+export async function readSnapshotAt(dir: string): Promise<BriefSnapshot | null> {
+  try { return JSON.parse(await readFile(snapshotFile(dir), 'utf8')) as BriefSnapshot; } catch { return null; }
+}
+
+export async function writeSnapshotAt(dir: string, composed: ComposedBrief): Promise<void> {
+  const target = snapshotFile(dir);
+  const temp = `${target}.${process.pid}.tmp`;
+  await writeFile(temp, `${JSON.stringify(briefSnapshot(composed.resolved, composed.record))}\n`, 'utf8');
+  await rename(temp, target);
+}
+
+/** The Agent's brief as its record stands now, over today's files. */
+export async function currentBrief(name: string): Promise<{ dir: string; composed: ComposedBrief }> {
   const dir = sessionDir(await sessionKey(name));
-  const receipt = JSON.parse(await readFile(path.join(dir, 'birth-receipt.json'), 'utf8')) as Receipt;
-  const [composition, tags, leads, projectRoot, campaign, catalog] = await Promise.all([
-    readAgentComposition(name), getTags(name), getLeads(name), getProjectRoot(name), getCampaign(name), listBehaviours(),
+  const receipt = JSON.parse(await readFile(path.join(dir, 'birth-receipt.json'), 'utf8').catch(() => '{}')) as Receipt;
+  const [composition, tags, leads, campaign, agent, sessions] = await Promise.all([
+    readAgentComposition(name), getTags(name), getLeads(name), getCampaign(name), readAgentBriefAt(dir), listSessions(),
   ]);
   const team = receipt.team && tags.includes(receipt.team) ? receipt.team : tags[0] ?? '';
-  const selected = new Set(catalog.filter((row) => row.scope === 'selected').map((row) => row.name));
+  const identity = sessions.find((row) => row.name === name)?.identity;
   const form: SpawnForm = {
     session_type: 'cowork_agent',
     name,
-    team,
+    team: team || undefined,
     team_lead: !!team && leads.includes(team),
     campaign_id: campaign || undefined,
     kind: receipt.kind,
+    template: receipt.template,
     mandate: composition.current.mandate,
     role: composition.current.role,
-    behaviours: composition.current.behaviours.map((row) => row.name).filter((book) => selected.has(book)),
+    ...agent,
   };
-  const reading = await resolveReading(form, await resolveFacts(form, new Set()));
-  return { dir, receipt, catalog, reading };
+  const facts = await resolveFacts(form, new Set());
+  const composed = await resolveBriefFor(form, facts, {
+    provider: identity?.provider ?? '', model: identity?.model ?? '', harness: identity?.cli ?? '',
+    launch_mode: composition.current.launch_mode,
+  });
+  if (!composed) throw new Error(`@${name} has no brief.`);
+  return { dir, composed };
+}
+
+/** Whether project management is on for an Agent (wip/BRIEF_MODEL.md §6); off when it has no readable record. */
+export async function projectManagementOn(name: string): Promise<boolean> {
+  try { return (await currentBrief(name)).composed.record.setting.pm; } catch { return false; }
+}
+
+/** What the brief carries now, each with why; `since_birth` marks what birth did not tell. */
+export async function configurationSends(name: string) {
+  const { dir, composed } = await currentBrief(name);
+  const born = await readSnapshotAt(dir);
+  return briefTold(composed.resolved).map((row) => ({ ...row, since_birth: !!born && row.kind !== 'facts' && !born.told[row.name] }));
 }
 
 /**
- * WHAT THE BRIEF CARRIES: every behaviour in it, as Always (floor), Because (a conditional
- * whose requirements hold now) or Chosen. `since_birth` marks a conditional the birth
- * receipt lacks: an Update would add it. The Configuration shows this list as its preview.
+ * Rebuild the Agent's brief; when it differs from what it was last told, write the new packet
+ * and send the difference once. Returns the packet path, and whether anything was sent.
  */
-export async function configurationSends(name: string) {
-  const { receipt, catalog, reading } = await configurationReading(name);
-  const born = new Set((receipt.behaviours ?? []).map((row) => row.book));
-  const rows = new Map(catalog.map((row) => [row.name, row]));
-  return reading.appliedBehaviours.flatMap((delivered) => {
-    const row = rows.get(delivered.book.replace(/^ways:/, ''));
-    if (!row) return [];
-    return [{
-      name: row.name, label: row.label, blurb: row.blurb, path: row.page, scope: row.scope, requires: row.requires,
-      since_birth: row.scope === 'conditional' && !born.has(row.name),
-    }];
-  });
+export async function refreshBrief(name: string): Promise<{ brief: string; sent: boolean }> {
+  const { dir, composed } = await currentBrief(name);
+  const before = await readSnapshotAt(dir) ?? { facts: {}, told: {} };
+  const changes = briefChanges(before, composed.resolved, composed.record);
+  const brief = await writeBriefPacketAt(dir, composed.text, name);
+  await writeSnapshotAt(dir, composed);
+  if (!changes) return { brief, sent: false };
+  const packet = await describePacket(brief, name);
+  await enqueueMessage(name, `Your brief changed:\n\n${changes}\n\nThe whole brief: ${brief} (ends with "${packet.terminator}").`, 'house');
+  return { brief, sent: true };
 }
 
-/** The one act: write, rebuild, tell once. `behaviours` is the whole chosen list; an unticked
- * behaviour simply is not in the new brief. */
+/** Rebuild every live Agent's brief, after a layer (user, Campaign, Workspace, Team) changed. */
+export async function refreshAllBriefs(): Promise<void> {
+  for (const session of await listSessions()) {
+    if ((session.identity?.sessionType || 'cowork_agent') !== 'cowork_agent') continue;
+    await refreshBrief(session.name).catch(() => {});
+  }
+}
+
 type ConfigurationUpdate = {
   objective: string; title: string; role: 'coworker' | 'lead' | 'epic_lead' | 'coordinator'; team: string;
-  mandate: Mandate; behaviours: string[]; by: string;
+  mandate: Mandate; agent: AgentBrief; by: string;
 };
 
-export async function updateConfiguration(name: string, next: ConfigurationUpdate): Promise<{ brief: string }> {
-  const [catalog, before] = await Promise.all([listBehaviours(), readAgentComposition(name)]);
-  const selected = new Set(next.behaviours);
-  const chosen = catalog.filter((row) => row.scope === 'selected' && selected.has(row.name)).map((row) => ({ name: row.name, path: row.page }));
+/** The one act: write the record, then refresh the brief. */
+export async function updateConfiguration(name: string, next: ConfigurationUpdate): Promise<{ brief: string; sent: boolean }> {
+  const before = await readAgentComposition(name);
+  const dir = sessionDir(await sessionKey(name));
   const beforeTeams = await getTags(name);
   const teams = next.team ? [next.team] : [];
   const wantedLeads = next.role === 'lead' && next.team ? [next.team] : [];
@@ -87,9 +125,6 @@ export async function updateConfiguration(name: string, next: ConfigurationUpdat
   if (before.current.role !== next.role) await writeCurrentRole(name, next.role);
   if (changedTeam) await teamChanged([...new Set([...beforeTeams, ...teams])], next.by, name).catch(() => {});
   if (JSON.stringify(before.current.mandate) !== JSON.stringify(next.mandate)) await writeMandate(name, next.mandate);
-  if (JSON.stringify(before.current.behaviours.map((row) => row.name)) !== JSON.stringify(chosen.map((row) => row.name))) await writeCurrentBehaviours(name, chosen);
-  const { dir, reading } = await configurationReading(name);
-  const brief = await compileBirthBriefAt(dir, reading.birthReading, name, isShelfTeaching);
-  await enqueueMessage(name, `Your configuration changed. Here is your new brief: ${brief}. Read it now, top to bottom; it ends with the line "${packetEndLine(name)}".`, 'house');
-  return { brief };
+  await writeAgentBriefAt(dir, next.agent);
+  return refreshBrief(name);
 }

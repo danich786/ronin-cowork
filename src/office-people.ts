@@ -74,3 +74,11 @@ export const roleOf = (email: string): string | null => members.get(email)?.role
 /** How a person is named to an Agent: "Ann Lee <a@x.com>, owner, X Ltd"; name, role, organization only when known. */
 export const personLabel = (p: Person): string =>
   [p.name ? `${p.name} <${p.email}>` : p.email, p.role, p.organization].filter(Boolean).join(', ');
+
+/** The office's whole list, for the brief's facts (wip/BRIEF_MODEL.md §5); empty self-hosted. */
+export const officePeople = (): Person[] => hosted
+  ? [...members].map(([email, details]) => ({ email, ...details }))
+  : [];
+
+/** Whether this Ronin is an office on an office park. */
+export const isHostedOffice = (): boolean => hosted;

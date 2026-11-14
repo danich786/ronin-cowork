@@ -2,17 +2,17 @@ import { createHash } from 'node:crypto';
 import { chmod, mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { resolveBehaviourBooks } from './behaviours.js';
+import { readCatalogs } from './catalog.js';
 import { STOCK_DIR, isShadowable, readCatalogSections, seedUserCatalog, splitSections } from './resources.js';
-import { findDefinition, readDefinitions } from './resource-adapters.js';
+import { findDefinition } from './resource-adapters.js';
 import { storeDir } from './resources.js';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 export const BUNDLE_FORMAT = 'ronin-bundle/1';
 
-export type BundleStore = 'catalogs' | 'ways' | 'library' | 'tools';
-export type BundleCatalog = 'TOOLS.md' | 'MODEL_PROVIDERS.md';
+export type BundleStore = 'catalogs' | 'facts' | 'behaviours' | 'library' | 'tools';
+export type BundleCatalog = 'MODEL_PROVIDERS.md';
 
 export interface BundleFile {
   store: BundleStore;
@@ -53,11 +53,11 @@ export interface LibraryCard {
 }
 
 const TOKEN = /^[a-z0-9][a-z0-9_-]{0,63}$/;
-const STORES: readonly BundleStore[] = ['catalogs', 'ways', 'library', 'tools'];
-const CATALOGS: readonly BundleCatalog[] = ['TOOLS.md', 'MODEL_PROVIDERS.md'];
+const STORES: readonly BundleStore[] = ['catalogs', 'facts', 'behaviours', 'library', 'tools'];
+const CATALOGS: readonly BundleCatalog[] = ['MODEL_PROVIDERS.md'];
 /** A provider section's id: `- **provider:** \`openai\`` — the key it merges by, since its heading is a vendor's name. */
 const providerIdOf = (section: string): string => /^-\s*\*\*provider:\*\*\s*`([^`]+)`\s*$/m.exec(section)?.[1]?.trim() ?? '';
-const CATALOG_DIRS = ['templates/agents', 'templates/teams', 'behaviours', 'desk_profiles', 'lexicons'];
+const CATALOG_DIRS = ['templates/agents', 'templates/teams', 'desk_profiles', 'lexicons'];
 const KINDS = ['coding', 'work', 'personal', 'household', 'social', 'school'];
 const GUARDS = ['tmux', 'systemctl', 'git'];
 
@@ -69,9 +69,10 @@ export const sha256 = (text: string): string => createHash('sha256').update(text
 function stockPathFor(file: Pick<BundleFile, 'store' | 'path'>): string {
   switch (file.store) {
     case 'catalogs': return path.join(STOCK_DIR, file.path);
-    case 'ways': return path.join(STOCK_DIR, 'behaviours', file.path);
+    case 'facts': return path.join(STOCK_DIR, 'facts', file.path);
+    case 'behaviours': return path.join(STOCK_DIR, 'behaviours', file.path);
     case 'library': return path.join(ROOT, 'ronin_library', file.path);
-    case 'tools': return path.join(ROOT, 'ronin_bin', file.path);
+    case 'tools': return file.path.endsWith('.md') ? path.join(STOCK_DIR, 'tools', file.path) : path.join(ROOT, 'ronin_bin', file.path);
   }
 }
 
@@ -83,7 +84,8 @@ function checkPath(store: BundleStore, p: string): string | null {
   const parts = p.split('/');
   if (parts.some((part) => !part || part.startsWith('.'))) return 'a path stays inside its store';
   if (store === 'tools') {
-    if (parts.length !== 1 || !TOKEN.test(p)) return 'a tool is one bare command name';
+    if (parts.length === 1 && p.endsWith('.md') && TOKEN.test(p.slice(0, -3))) return null;
+    if (parts.length !== 1 || !TOKEN.test(p)) return 'a tool is one bare command name, or its <name>.md file';
     if (GUARDS.includes(p)) return 'a bundle never supplies a guard';
     return null;
   }
@@ -95,10 +97,8 @@ function checkPath(store: BundleStore, p: string): string | null {
     if (!/^[\w-]{1,64}$/.test(stem)) return 'a definition is named by its token';
     return null;
   }
-  if (store === 'ways') {
-    if (parts.length !== 2 || !['floor', 'conditional', 'selected', 'sought'].includes(parts[0]) || !TOKEN.test(stem)) {
-      return 'a Behavior is one Markdown file under floor, conditional, selected, or sought';
-    }
+  if (store === 'facts' || store === 'behaviours') {
+    if (parts.length !== 1 || !TOKEN.test(stem)) return `a file in ${store} is one Markdown file, named by its token`;
     return null;
   }
   if (parts.length !== 1 || !TOKEN.test(stem)) return 'a book is one file, named by its token';
@@ -107,11 +107,6 @@ function checkPath(store: BundleStore, p: string): string | null {
 
 function checkEntry(entry: BundleEntry): string | null {
   if (!TOKEN.test(entry.name) && !/^[\w-]{1,64}$/.test(entry.name)) return 'an entry is named by its token';
-  if (entry.catalog === 'TOOLS.md') {
-    const m = /^\|\s*`([^`]+)`\s*\|\s*[a-z-]+\s*\|\s*.+?\s*\|\s*$/.exec(entry.text.trim());
-    if (!m || m[1] !== entry.name) return 'a TOOLS row names its executable in column one, on one line';
-    return null;
-  }
   if (entry.catalog === 'MODEL_PROVIDERS.md') {
     if (!/^###\s+\S/.test(entry.text.split('\n')[0] ?? '')) return 'a provider entry opens with its `### <Vendor>` heading';
     if (providerIdOf(entry.text) !== entry.name) return 'a provider entry is named by its `- **provider:** id`';
@@ -136,7 +131,7 @@ export function parseBundle(raw: unknown): Bundle {
     if (why) throw new Error(`"${name}": ${p || '(no path)'} — ${why}.`);
     if (typeof f.text !== 'string') throw new Error(`"${name}": ${p} carries no text.`);
     if (files.some((x) => x.store === store && x.path === p)) throw new Error(`"${name}": ${store}/${p} is listed twice.`);
-    files.push({ store, path: p, text: f.text, ...(store === 'tools' ? { executable: true } : {}) });
+    files.push({ store, path: p, text: f.text, ...(store === 'tools' && !p.endsWith('.md') ? { executable: true } : {}) });
   }
   const entries: BundleEntry[] = [];
   for (const raw of Array.isArray(b.entries) ? b.entries : []) {
@@ -170,7 +165,7 @@ export function bundleHolds(bundle: Bundle): Record<string, number> {
     if (f.store === 'catalogs') bump(f.path.startsWith('templates/teams/') ? 'teams' : f.path.startsWith('templates/agents/') ? 'agents' : f.path.split('/')[0]);
     else bump(f.store);
   }
-  for (const e of bundle.entries) bump(e.catalog === 'TOOLS.md' ? 'tools' : 'providers');
+  for (const _e of bundle.entries) bump('providers');
   return holds;
 }
 
@@ -215,11 +210,6 @@ async function planFile(f: BundleFile): Promise<PlanItem> {
 }
 
 function findEntry(raw: string, catalog: BundleCatalog, name: string): { text: string; start: number; end: number } | null {
-  if (catalog === 'TOOLS.md') {
-    const re = new RegExp(`^\\|\\s*\`${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\`\\s*\\|.*$`, 'm');
-    const m = re.exec(raw);
-    return m ? { text: m[0], start: m.index, end: m.index + m[0].length } : null;
-  }
   const footer = raw.search(/^---\s*$/m);
   const body = footer === -1 ? raw : raw.slice(0, footer);
   if (catalog === 'MODEL_PROVIDERS.md') {
@@ -250,9 +240,6 @@ async function planEntry(e: BundleEntry): Promise<PlanItem> {
     readOrNull(path.join(STOCK_DIR, e.catalog)),
     readOrNull(path.join(storeDir('catalogs'), e.catalog)),
   ]);
-  if (e.catalog === 'TOOLS.md' && stock && findEntry(stock, e.catalog, e.name)) {
-    return { ...item, verdict: 'refused', why: `${e.name} is one of Ronin's own tools; a bundle may add a command, never take one.` };
-  }
   const mine = own ? findEntry(own, e.catalog, e.name) : null;
   if (mine) return { ...item, verdict: same(mine.text, e.text) ? 'same-as-yours' : 'replaces-yours' };
   const theirs = stock ? findEntry(stock, e.catalog, e.name) : null;
@@ -285,16 +272,9 @@ async function writeWhole(target: string, text: string, executable: boolean): Pr
   await rename(tmp, target);
 }
 
-const TOOLS_HEAD = '| Tool | Operation | Usage |\n|---|---|---|';
-
 function mergeEntry(raw: string, e: BundleEntry): string {
   const have = findEntry(raw, e.catalog, e.name);
-  if (have) return raw.slice(0, have.start) + e.text.trimEnd() + (e.catalog === 'TOOLS.md' ? '' : '\n\n') + raw.slice(have.end).replace(/^\n+/, e.catalog === 'TOOLS.md' ? '\n' : '');
-  if (e.catalog === 'TOOLS.md') {
-    const trimmed = raw.trimEnd();
-    const hasTable = /^\|\s*Tool\s*\|/m.test(trimmed);
-    return `${trimmed}\n\n${hasTable ? '' : `${TOOLS_HEAD}\n`}${e.text.trim()}\n`.replace(/\n\n\n+/g, '\n\n');
-  }
+  if (have) return raw.slice(0, have.start) + e.text.trimEnd() + '\n\n' + raw.slice(have.end).replace(/^\n+/, '');
   const footer = raw.search(/^---\s*$/m);
   const block = `${e.text.trimEnd()}\n\n`;
   if (footer === -1) return `${raw.trimEnd()}\n\n${block}`;
@@ -333,7 +313,7 @@ export async function installBundle(bundle: Bundle, opts: { replace?: boolean } 
 export interface PackRequest {
   team: string;
   agents?: string[];
-  ways?: string[];
+  behaviours?: string[];
   library?: string[];
   tools?: string[];
   version?: string;
@@ -361,17 +341,15 @@ export async function packBundle(req: PackRequest): Promise<Bundle> {
     await addFile('catalogs', `templates/agents/${agent.name}.md`, agent.file);
     for (const b of agent.get('behaviours').split(',')) if (b.trim()) books.add(b.trim());
   }
-  for (const w of req.ways ?? []) books.add(`ways:${w}`);
+  for (const w of req.behaviours ?? []) books.add(w);
   const toolNames = new Set(req.tools ?? []);
-  for (const behaviour of await readDefinitions('behaviours')) {
+  const catalog = await readCatalogs();
+  for (const behaviour of catalog.behaviours) {
     if (!books.has(behaviour.name)) continue;
-    if (behaviour.origin === 'user') await addFile('ways', path.relative(storeDir('behaviours'), behaviour.file), behaviour.file);
-    for (const t of behaviour.get('tools').split(',')) if (t.trim() && t.trim() !== '—') toolNames.add(t.trim());
+    if (behaviour.origin === 'user') await addFile('behaviours', `${behaviour.name}.md`, behaviour.file);
+    for (const tool of catalog.tools) if (tool.serves.includes(behaviour.name) && tool.origin === 'user') toolNames.add(tool.name);
   }
-  const resolved = await resolveBehaviourBooks([...books]);
-  for (const b of resolved.delivered) {
-    if (b.file.startsWith(storeDir('behaviours'))) await addFile('ways', path.relative(storeDir('behaviours'), b.file), b.file);
-  }
+  for (const tool of catalog.tools) if (toolNames.has(tool.name) && tool.origin === 'user') await addFile('tools', `${tool.name}.md`, tool.file);
   for (const name of req.library ?? []) await addFile('library', `${name}.md`, path.join(storeDir('library'), `${name}.md`));
   for (const name of toolNames) {
     if (!TOKEN.test(name)) continue;
@@ -379,20 +357,12 @@ export async function packBundle(req: PackRequest): Promise<Bundle> {
   }
   const takeEntries = async (catalog: BundleCatalog, wanted: Set<string>) => {
     if (!wanted.size) return;
-    if (catalog === 'TOOLS.md') {
-      const own = await readOrNull(path.join(storeDir('catalogs'), catalog));
-      for (const name of wanted) {
-        const row = own ? findEntry(own, catalog, name) : null;
-        if (row) entries.set(`${catalog}:${name}`, { catalog, name, text: row.text.trim() });
-      }
-      return;
-    }
     for (const s of await readCatalogSections(catalog)) {
       if (s.origin !== 'user' || s.head !== s.name || !wanted.has(s.name)) continue;
       entries.set(`${catalog}:${s.name}`, { catalog, name: s.name, text: `## ${s.head}\n${s.lines.join('\n')}`.trimEnd() });
     }
   };
-  await takeEntries('TOOLS.md', toolNames);
+  void takeEntries;
   return parseBundle({
     format: BUNDLE_FORMAT,
     name: team.name,

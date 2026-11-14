@@ -4,9 +4,10 @@ import path from 'node:path';
 import { entryValue, isKeyLine } from './resources.js';
 import { storeDir } from './resources.js';
 import { teamAgentDefaults, type TeamAgentDefaults } from './agent-defaults.js';
+import type { BriefSettings } from './brief-record.js';
+import { layerOf } from './brief-settings.js';
 
 export type TeamKind = 'open' | 'coding' | 'work' | 'personal' | 'household' | 'social' | 'school';
-export interface TeamBehaviours { selected: string[]; required: string[] }
 
 export interface TeamRoster {
   name: string;
@@ -20,7 +21,10 @@ export interface TeamRoster {
   branches: Record<string, string>;
   wipeboard: string;
   state: 'active' | 'archived';
-  behaviours: TeamBehaviours;
+  /** This Team's brief settings, integrations and project management (wip/BRIEF_MODEL.md §6). */
+  brief: BriefSettings;
+  integrations: string[];
+  pm?: boolean;
   agent_defaults: TeamAgentDefaults;
   /** Work item ids this Team holds. The items live in the work item store. */
   holds: string[];
@@ -67,11 +71,7 @@ function parse(name: string, raw: string, campaign_id = ''): TeamRoster {
   const strings = (value: unknown, max: number): string[] => Array.isArray(value)
     ? value.map((entry) => typeof entry === 'string' ? entry.trim().slice(0, max) : '').filter((entry) => Boolean(entry) && entry !== 'mandates')
     : [];
-  const behaviourValue = json('behaviours');
-  const behaviourMap = behaviourValue && typeof behaviourValue === 'object' && !Array.isArray(behaviourValue)
-    ? behaviourValue as Record<string, unknown> : {};
-  const settled = lines.some((line) => /^\s*-\s*\*\*behaviours:\*\*/i.test(line))
-    && Array.isArray(behaviourMap.selected);
+  const layer = layerOf('team', { brief: json('brief'), integrations: json('integrations'), pm: json('pm') });
   const kind = get('kind');
   return {
     name,
@@ -85,9 +85,9 @@ function parse(name: string, raw: string, campaign_id = ''): TeamRoster {
     branches: stringMap(json('branches')),
     wipeboard: get('wipeboard') || name,
     state: /^archived$/i.test(get('state')) ? 'archived' : 'active',
-    behaviours: settled
-      ? { selected: strings(behaviourMap.selected, 160), required: strings(behaviourMap.required, 160) }
-      : { selected: [], required: [] },
+    brief: layer.brief,
+    integrations: layer.integrations,
+    ...(layer.pm !== undefined ? { pm: layer.pm } : {}),
     agent_defaults: teamAgentDefaults(json('agent_defaults')),
     // An id is on a list once (KAN-261): a list written twice by an old race reads clean.
     holds: [...new Set(strings(json('holds'), 32))],
@@ -166,7 +166,9 @@ export interface RosterEdit {
   branches?: Record<string, string>;
   wipeboard?: string;
   state?: 'active' | 'archived';
-  behaviours?: TeamBehaviours;
+  brief?: BriefSettings;
+  integrations?: string[];
+  pm?: boolean | null;
   agent_defaults?: Partial<TeamAgentDefaults>;
   holds?: string[];
   watches?: string[];
@@ -174,7 +176,7 @@ export interface RosterEdit {
 
 const KEYS: (keyof RosterEdit)[] = [
   'title', 'kind', 'objective', 'workspace', 'branch', 'branches', 'wipeboard', 'state',
-  'behaviours', 'agent_defaults', 'holds', 'watches',
+  'brief', 'integrations', 'pm', 'agent_defaults', 'holds', 'watches',
 ];
 
 function render(name: string, r: TeamRoster): string {
@@ -191,7 +193,9 @@ function render(name: string, r: TeamRoster): string {
     line('branches', JSON.stringify(r.branches)),
     line('wipeboard', r.wipeboard || name),
     line('state', r.state),
-    line('behaviours', JSON.stringify(r.behaviours)),
+    line('brief', JSON.stringify(r.brief)),
+    line('integrations', JSON.stringify(r.integrations)),
+    ...(r.pm !== undefined ? [line('pm', JSON.stringify(r.pm))] : []),
     line('agent_defaults', JSON.stringify(r.agent_defaults)),
     line('holds', JSON.stringify([...new Set(r.holds)])),
     line('watches', JSON.stringify([...new Set(r.watches)])),
@@ -227,9 +231,9 @@ export async function createTeamRoster(name: string, edit: RosterEdit, campaign_
     branches: edit.branches ?? {},
     wipeboard: edit.wipeboard || (await freeBoardToken(name, campaign_id)),
     state: edit.state ?? 'active',
-    behaviours: edit.behaviours
-      ? { selected: edit.behaviours.selected.filter((name) => name !== 'mandates'), required: edit.behaviours.required.filter((name) => name !== 'mandates') }
-      : { selected: [], required: [] },
+    brief: edit.brief ?? { add: [], block: [], only: [] },
+    integrations: edit.integrations ?? [],
+    ...(typeof edit.pm === 'boolean' ? { pm: edit.pm } : {}),
     agent_defaults: teamAgentDefaults(edit.agent_defaults),
     holds: edit.holds ?? [],
     watches: edit.watches ?? [],
@@ -250,19 +254,14 @@ export async function writeTeamRoster(name: string, edit: RosterEdit, campaign_i
   let raw = await readFile(teamRosterFile(name, where), 'utf8');
   // `references` left the shape 2026-09-13 (never used); an old file's line goes on the next edit.
   const lines = raw.split('\n').filter((l) => !/^-\s*\*\*references:\*\*/.test(l.trim()));
-  const normalizedEdit: RosterEdit = edit.behaviours
-    ? { ...edit, behaviours: {
-        selected: edit.behaviours.selected.filter((name) => name !== 'mandates'),
-        required: edit.behaviours.required.filter((name) => name !== 'mandates'),
-      } }
-    : edit;
+  const normalizedEdit: RosterEdit = edit;
   const merged: TeamRoster = {
     ...existing,
     ...Object.fromEntries(KEYS.filter((k) => normalizedEdit[k] !== undefined).map((k) => [k, normalizedEdit[k]])),
   } as TeamRoster;
   for (const k of KEYS) {
     if (normalizedEdit[k] === undefined) continue;
-    const nested = ['behaviours', 'agent_defaults', 'holds', 'watches'].includes(k);
+    const nested = ['brief', 'integrations', 'pm', 'agent_defaults', 'holds', 'watches'].includes(k);
     const v = nested ? JSON.stringify(normalizedEdit[k])
       : String(normalizedEdit[k] ?? '');
     const lineText = `- **${k}:** ${v || BLANK}`;

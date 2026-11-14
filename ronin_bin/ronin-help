@@ -57,14 +57,16 @@ if [ -n "$path" ]; then
   exit 0
 fi
 
-# Not a topic: a brief by its file name (ronin_catalogs/behaviours/<scope>/<name>.md), the
-# owner's copy in the ways store over stock.
+# Not a topic: a behaviour, tool or fact by its file name (ronin_catalogs/<kind>/<name>.md),
+# the user's copy (~/ronin/<kind>/<name>.md) over stock.
 name=${want%.md}
 case "$name" in */*|.*) name='';; esac
-WAYS=${RONIN_WAYS_DIR:-${RONIN_USER_ROOT:-$HOME/ronin}/ways}
+USER_ROOT=${RONIN_USER_ROOT:-$HOME/ronin}
 if [ -n "$name" ]; then
-  for scope in floor conditional selected sought; do
-    for file in "$WAYS/$scope/$name.md" "$ROOT/ronin_catalogs/behaviours/$scope/$name.md"; do
+  for kind in behaviours tools facts; do
+    store=$(printf '%s' "$kind" | tr '[:lower:]' '[:upper:]')
+    eval "dir=\${RONIN_${store}_DIR:-$USER_ROOT/$kind}"
+    for file in "$dir/$name.md" "$ROOT/ronin_catalogs/$kind/$name.md"; do
       if [ -f "$file" ]; then cat "$file"; exit 0; fi
     done
   done

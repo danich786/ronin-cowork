@@ -1,6 +1,7 @@
 import { chmod, mkdir, readdir, readFile, rename, rmdir, stat, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { rootDir, storeDir } from './resources.js';
+import { userIntroFact } from './user-intro.js';
 
 export interface BehaviourStoreMigration {
   moved: string[];
@@ -182,6 +183,58 @@ export async function migrateWaysToBehaviours(): Promise<BehaviourStoreMigration
   return done;
 }
 
-/** The user intro fact: the user's own text, told in full. */
-export const userIntroFact = (intro: string): string =>
-  `# User intro\n- **order:** 20\n\n${intro.trim()}\n`;
+// ── Brief settings (wip/BRIEF_MODEL.md §6), once at start: the old chosen-behaviour lists on
+// Team rosters and Campaign defaults become each layer's `brief.add`; project management,
+// once a chosen behaviour, becomes the layer's `pm` switch. No reader for the old shape stays.
+
+const RENAMED: Record<string, string> = { recruit: 'team-work', report_before_fixing: 'working-with-the-user' };
+const newName = (old: string): string => {
+  const bare = old.replace(/^ways:/, '').trim();
+  return RENAMED[bare] ?? bare.replace(/_/g, '-');
+};
+
+/** The old list as the new settings: `{ brief, pm }`. */
+export function briefFromOldList(names: readonly string[]): { brief: { add: Array<{ name: string }>; block: string[]; only: string[] }; pm?: true } {
+  const wanted = [...new Set(names.map(newName).filter((name) => name && name !== 'mandates'))];
+  const pm = wanted.includes('project-management');
+  return {
+    brief: { add: wanted.filter((name) => name !== 'project-management').map((name) => ({ name })), block: [], only: [] },
+    ...(pm ? { pm: true as const } : {}),
+  };
+}
+
+export async function migrateBriefSettings(): Promise<{ rosters: string[]; campaigns: string[] }> {
+  const done = { rosters: [] as string[], campaigns: [] as string[] };
+  const root = storeDir('team_rosters');
+  for (const { file, relative } of await walkMarkdown(root)) {
+    const text = await readFile(file, 'utf8');
+    const line = /^-\s*\*\*behaviours:\*\*\s*(.*)$/m.exec(text);
+    if (!line) continue;
+    let old: { selected?: unknown; required?: unknown } = {};
+    try { old = JSON.parse(line[1]) as typeof old; } catch { /* unreadable: nothing chosen */ }
+    const names = [...(Array.isArray(old.selected) ? old.selected : []), ...(Array.isArray(old.required) ? old.required : [])].map(String);
+    const next = briefFromOldList(names);
+    const lines = [`- **brief:** ${JSON.stringify(next.brief)}`, '- **integrations:** []', ...(next.pm ? ['- **pm:** true'] : [])];
+    const temporary = `${file}.migrating-${process.pid}`;
+    await writeFile(temporary, text.replace(line[0], lines.join('\n')));
+    await rename(temporary, file);
+    done.rosters.push(relative);
+  }
+  const { readMachineSettingsSection, writeMachineSettings } = await import('./machine-settings.js');
+  const campaigns = await readMachineSettingsSection<Record<string, Record<string, unknown>>>('campaigns', {});
+  let changed = false;
+  for (const [id, campaign] of Object.entries(campaigns)) {
+    const config = campaign?.config as Record<string, unknown> | undefined;
+    const defaults = config?.defaults as Record<string, unknown> | undefined;
+    if (!config || !defaults || !Object.prototype.hasOwnProperty.call(defaults, 'behaviours')) continue;
+    const next = briefFromOldList(Array.isArray(defaults.behaviours) ? defaults.behaviours.map(String) : []);
+    delete defaults.behaviours;
+    config.brief = next.brief;
+    config.integrations ??= [];
+    if (next.pm) config.pm = true;
+    changed = true;
+    done.campaigns.push(id);
+  }
+  if (changed) await writeMachineSettings('campaigns', { campaigns });
+  return done;
+}

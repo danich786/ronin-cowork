@@ -1,5 +1,5 @@
 import type express from 'express';
-import { rm } from 'node:fs/promises';
+import { readFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 import {
   capturePane,
@@ -16,7 +16,11 @@ import {
 } from '../tmux.js';
 import { launchArgv } from '../agents.js';
 import { AtSessionMax, readAgentsSection } from '../machine-state.js';
-import { resolveForm, type SpawnForm } from '../spawn.js';
+import { PACKET_PLACEHOLDER, resolveForm, type SpawnForm } from '../spawn.js';
+import { agentBriefOf, writeAgentBriefAt } from '../brief-build.js';
+import { briefTold } from '../brief-settings.js';
+import { writeSnapshotAt } from '../agent-configuration.js';
+import { HELP_LINE } from '../brief.js';
 import { appendLaunchLedger, persistBirthReceipt } from '../launch-ledger.js';
 import { writeCurrentRoleAt } from '../agent-composition.js';
 import { mandate } from '../agent-defaults.js';
@@ -36,11 +40,11 @@ import { readWorkspace } from '../workspaces.js';
 import { campaignResolver, initialCampaignId } from '../campaign-scope.js';
 import { readTeamRoster } from '../team-rosters.js';
 import { readCampaign } from '../campaigns.js';
-import { listBehaviours, listInstallations } from '../resource-adapters.js';
+import { listInstallations } from '../resource-adapters.js';
 import { agentBinDir } from '../agent-install.js';
 import { resolveLaunchSeed, shownLaunchSeed } from '../launch-seed.js';
 import type { SessionsDefaults } from '../launch-command.js';
-import { compileBirthBriefAt, describePacket, isShelfTeaching, readFirstSentence, type PacketReport } from '../birth-brief.js';
+import { describePacket, readFirstSentence, writeBriefPacketAt, type PacketReport } from '../birth-brief.js';
 import { rememberSessionKey, sessionDir as sessionRecordDir } from '../session-dir.js';
 import type { HouseSeat } from '../house-seats.js';
 import { readTegami } from '../tegami-read.js';
@@ -80,7 +84,7 @@ const LAUNCH_KEYS = new Set([
   'session_type', 'team', 'team_lead', 'role', 'instructions', 'prompt', 'name', 'caller',
   'cmd', 'model', 'provider', 'mandate', 'campaign_id',
   'tags', 'seed', 'inject', 'reference',
-  'kind', 'behaviours',
+  'kind', 'brief', 'integrations', 'pm',
   'template',
 ]);
 const RETURNED_LAUNCH_KEYS = new Set([
@@ -115,15 +119,14 @@ export function acceptedLaunchBody(input: unknown): { body: Record<string, unkno
   if (body.seed !== undefined && !Array.isArray(body.seed)) drop('seed');
   if (body.kind !== undefined && (typeof body.kind !== 'string' || !KINDS.has(body.kind.trim()))) drop('kind');
   if (body.kind !== undefined) body.kind = String(body.kind).trim();
-  if (body.behaviours !== undefined && !Array.isArray(body.behaviours)) drop('behaviours');
   if (body.role !== undefined && !['coworker', 'lead', 'epic_lead', 'coordinator'].includes(String(body.role))) drop('role');
   if (body.template !== undefined && (typeof body.template !== 'string' || !/^[\w-]{1,64}$/.test(body.template.trim()))) drop('template');
   if (body.template !== undefined) body.template = String(body.template).trim();
 
   const inapplicable = sessionType === 'terminal'
-      ? ['provider', 'model', 'instructions', 'prompt', 'kind', 'mandate', 'behaviours', 'template', 'cmd', 'seed', 'inject', 'reference', 'role']
+      ? ['provider', 'model', 'instructions', 'prompt', 'kind', 'mandate', 'brief', 'integrations', 'pm', 'template', 'cmd', 'seed', 'inject', 'reference', 'role']
     : sessionType === 'bare_metal_agent'
-      ? ['kind', 'mandate', 'behaviours', 'template', 'seed', 'inject', 'reference', 'team_lead', 'role']
+      ? ['kind', 'mandate', 'brief', 'integrations', 'pm', 'template', 'seed', 'inject', 'reference', 'team_lead', 'role']
       : [];
   for (const key of inapplicable) drop(key);
 
@@ -148,7 +151,7 @@ export function spawnFormFromLaunchBody(body: Record<string, unknown>, houseSeat
     mandate: sessionType === 'cowork_agent' && body.mandate !== undefined ? mandate(body.mandate) : undefined,
     campaign_id: String(body.campaign_id ?? '').trim() || undefined,
     kind: typeof body.kind === 'string' ? body.kind : undefined,
-    behaviours: Array.isArray(body.behaviours) ? body.behaviours.map(String) : undefined,
+    ...(sessionType === 'cowork_agent' ? agentBriefOf(body) : {}),
     template: typeof body.template === 'string' ? body.template : undefined,
     tags: Array.isArray(body.tags) ? body.tags.map(String) : [],
     seed: Array.isArray(body.seed) ? body.seed.map(String) : [],
@@ -246,24 +249,20 @@ export function registerLaunch(app: express.Express): LaunchControl {
       if (team && !/^[a-z0-9][a-z0-9_-]{0,63}$/.test(team)) {
         return res.status(400).json({ error: `A team name is lowercase letters, digits, _ and -: "${team}".` });
       }
-      const [roster, allRoots, agents, installations, behaviours, resolveCampaign] = await Promise.all([
+      const [roster, allRoots, agents, resolveCampaign] = await Promise.all([
         team ? readTeamRoster(team, campaign_id).then((found) => found ?? readTeamRoster(team, '')) : Promise.resolve(null),
         listProjectRoots(),
         readAgentsSection(),
-        listInstallations(),
-        listBehaviours(),
         campaignResolver(),
       ]);
       const roots = allRoots.filter((root) => resolveCampaign(root.campaign_id) === campaign_id);
       if (team && !roster) return res.status(404).json({ error: `Unknown Team "${team}" in Campaign "${campaign_id}".` });
-      const { resolved_contributions: _resolved, undelivered: _undelivered, ...seed } = resolveLaunchSeed({
+      const seed = resolveLaunchSeed({
         campaign,
         roster,
         workspace: roster?.workspace ? await readWorkspace(roster.campaign_id, roster.workspace) : null,
         sessions: agents.sessions as SessionsDefaults | undefined,
         lead: req.query.lead === '1',
-        installations,
-        behaviours,
       });
       res.json(shownLaunchSeed(seed));
     } catch (e) {
@@ -329,36 +328,20 @@ export function registerLaunch(app: express.Express): LaunchControl {
       birthKey = `${resolved.name}-${Date.now()}`;
       birthDir = sessionRecordDir(birthKey);
       try {
-        // Mika's reading is her briefs like any Agent's (floor, then hers under behaviours/);
-        // her own addition is the generated source index, the bounded map of her knowledge.
-        const resolvedSources = [...resolved.birth_reading];
-        const sources = [...resolvedSources];
-        let mikaKnowledgeIndex = '';
+        // The brief, generated (src/brief.ts). Mika's own addition is her generated source
+        // index, the bounded map of her knowledge, carried inside the packet before its end.
+        let text = resolved.composed?.text ?? '';
         if (houseSeat === 'mika') {
-          // A cold Mika launch publishes exactly one verified knowledge generation. The
-          // returned index is the only generation path handed into birth; later source
-          // opens resolve through mika-knowledge-current rather than caching this path.
-          const previousSentence = `Read first: ${resolvedSources.join(', ')}.`;
           const knowledge = await compileMikaKnowledgeAt(mikaHome);
-          mikaKnowledgeIndex = knowledge.index;
-          sources.push(mikaKnowledgeIndex);
-          resolved.brief = resolved.brief.replace(previousSentence, `Read first: ${sources.join(', ')}.`);
+          const index = (await readFile(knowledge.index, 'utf8')).trim();
+          text = text.replace(`\n${HELP_LINE}`, `\n${index}\n\n${HELP_LINE}`);
         }
-        const brief = await compileBirthBriefAt(
-          birthDir,
-          sources,
-          resolved.name,
-          (file) => file === mikaKnowledgeIndex || isShelfTeaching(file),
-        );
+        const brief = await writeBriefPacketAt(birthDir, text, resolved.name);
         await writeCurrentRoleAt(birthDir, form.role ?? (form.team_lead ? 'lead' : 'coworker'));
-        const sourceSentence = `Read first: ${sources.join(', ')}.`;
-        if (!resolved.brief.includes(sourceSentence)) {
-          await rm(birthDir, { recursive: true, force: true });
-          return res.status(500).json({ error: 'The birth reading was compiled, but its brief did not contain the resolved source list.' });
-        }
+        await writeAgentBriefAt(birthDir, agentBriefOf(form));
+        if (resolved.composed) await writeSnapshotAt(birthDir, resolved.composed);
         packet = await describePacket(brief, resolved.name);
-        resolved.brief = resolved.brief.replace(sourceSentence, readFirstSentence(packet));
-        resolved.birth_reading = [brief];
+        resolved.brief = resolved.brief.replace(PACKET_PLACEHOLDER, readFirstSentence(packet));
       } catch (e) {
         if (birthDir) await rm(birthDir, { recursive: true, force: true });
         return res.status(500).json({ error: `Could not compile this Agent's birth brief: ${String((e as Error)?.message ?? e)}` });
@@ -398,8 +381,8 @@ export function registerLaunch(app: express.Express): LaunchControl {
         // off means RIREKI never records it. Set here and never again — nothing cascades
         // onto a running session (owner, 2026-09-04). A terminal has no Routines and keeps
         // the recorder's own default.
-        rireki: resolved.contributions.length
-          ? resolved.contributions.some((contribution) => contribution.name === 'ronin_services' && contribution.enabled) && transcriptOn
+        rireki: houseSeat !== 'mika'
+          ? resolved.installations.some((installation) => installation.name === 'ronin_services' && installation.enabled) && transcriptOn
           : undefined,
         strictCwd: houseSeat === 'mika',
       });
@@ -465,10 +448,11 @@ export function registerLaunch(app: express.Express): LaunchControl {
         team_lead: !!form.team_lead && !!resolved.team,
         role: form.role ?? (form.team_lead ? 'lead' : 'coworker'),
         kind: resolved.kind,
+        template: form.template ?? '',
         mandate: resolved.mandate,
-        behaviours: resolved.behaviours,
+        // What the brief told, by name and depth, and why (wip/BRIEF_MODEL.md §6).
+        told: resolved.composed ? briefTold(resolved.composed.resolved) : [],
         ignored: [...new Set([...accepted.ignored, ...resolved.ignored])].sort(),
-        undelivered: [...new Set(resolved.undelivered)].sort(),
         stated_by: resolved.stated_by,
         ...(resolved.session_type === 'cowork_agent'
           ? { boot: { state: 'open', brief: launch.parked ? 'parked' : 'argv' } }
@@ -477,15 +461,6 @@ export function registerLaunch(app: express.Express): LaunchControl {
         // and whether one read delivers it. The receipt says what left; the tape says what
         // arrived (the ACK asks the newborn to quote the terminator).
         ...(packet ? { packet } : {}),
-        // The capability documents this birth read from the folder: which were selected,
-        // why the rest were not, and which listed tools are present on this box.
-        capabilities: resolved.capabilities.map((capability) => ({
-          name: capability.name,
-          selected: capability.selected,
-          reason: capability.reason,
-          tools: capability.delivered,
-          missing: capability.missing,
-        })),
         installations: resolved.installations.map((installation) => ({
           name: installation.name,
           on: installation.enabled,

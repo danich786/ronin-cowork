@@ -4,6 +4,7 @@ import { randomBytes } from 'node:crypto';
 import { storeDir } from '../resources.js';
 import { clearEntitlementToken, isEntitled } from './secrets.js';
 import { maskEmail, readState as readActivation, writeState as writeActivation } from './state.js';
+import { saveUserIntro } from '../user-intro.js';
 
 export type RegistrationStatus = 'optional' | 'anonymous' | 'registered';
 
@@ -64,7 +65,6 @@ const EMPTY: RegistrationRecord = {
 };
 
 const file = () => path.join(storeDir('config'), 'registration.json');
-const userIntroFile = () => path.join(storeDir('behaviours'), 'floor', 'user-intro.md');
 const text = (value: unknown, max = 240) => typeof value === 'string' ? value.trim().slice(0, max) : '';
 const userIntro = (value: unknown): string => typeof value === 'string'
   ? value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).slice(0, 2).map((line) => line.slice(0, 180)).join('\n')
@@ -96,23 +96,14 @@ async function writeRegistration(next: RegistrationRecord): Promise<Registration
   const tmp = `${target}.tmp`;
   await fs.writeFile(tmp, `${JSON.stringify(next, null, 2)}\n`, { mode: 0o600 });
   await fs.rename(tmp, target);
-  const introTarget = userIntroFile();
-  if (next.user_intro) {
-    await fs.mkdir(path.dirname(introTarget), { recursive: true });
-    const introTmp = `${introTarget}.tmp`;
-    const markdown = `# User intro\n\n- **label:** User intro\n- **blurb:** What the owner wants every Cowork Agent to know about them.\n- **installation:** —\n- **order:** 30\n- **scope:** floor\n\n## About the user\n\n${next.user_intro}\n`;
-    await fs.writeFile(introTmp, markdown, { mode: 0o600 });
-    await fs.rename(introTmp, introTarget);
-  } else {
-    await fs.rm(introTarget, { force: true });
-  }
+  await saveUserIntro(next.user_intro);
   return next;
 }
 
 export async function deleteRegistration(): Promise<void> {
   await Promise.all([
     fs.rm(file(), { force: true }),
-    fs.rm(userIntroFile(), { force: true }),
+    saveUserIntro(''),
     clearEntitlementToken(),
   ]);
   await writeActivation({
