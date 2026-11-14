@@ -43,7 +43,9 @@ was not told about can use it.
 ## The files and their header
 
 One flat folder per object. The file name (no `.md`, kebab-case) is the id that `when:`,
-`serves:`, brief settings and `ronin-help` use. Every file starts the same:
+`serves:`, brief settings and `ronin-help` use. Ids are one namespace across the three folders:
+no two files share a name (`tests/tool-list.test.ts` checks it), so a tool whose command is a
+behaviour's name takes another id (`ask-mika` is the `mika` command). Every file starts the same:
 
 ```
 # Write it Down
@@ -279,7 +281,7 @@ real stores.
 
 ```
 facts/       you, user, user-about, user-intro, people (hosted), ronin, workspace,
-             integrations, team (team), mandate (cowork), model, work, task
+             integrations-on, team (team), mandate (cowork), model, work, task
 behaviours/  base-agent (full) · cowork-agent, write-it-down (cowork, full)
              reach-*, recruit-*, output-* (mandate: one file per value)
              team-lead, planning (lead) · lead-worktrees (lead, desk)
@@ -294,8 +296,8 @@ behaviours/  base-agent (full) · cowork-agent, write-it-down (cowork, full)
              visual-staging, codebase-team
 tools/       edges, work-record, agent-session (session_*), cowork-team (team), plan,
              work-item (item), worktree-desk, secret, netlify, preview, lookup, show,
-             owner-view, mika, ronin-host, machine-settings, ronin-help ·
-             workspace (depth none until the command exists) ·
+             owner-view, ask-mika (mika), ronin-host, machine-settings, ronin-help ·
+             workspace-command (workspace; depth none until the command exists) ·
              ronin-team, ronin-desk-settle (house, depth none)
 ```
 

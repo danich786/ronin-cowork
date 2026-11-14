@@ -354,7 +354,7 @@ test('an ordinary assisted launch starts an agent with the full brief', async ()
   assert.ok(r.dir, 'a session is always born somewhere');
   assert.match(r.brief, /Read first:/, 'the prompt carries the read line');
   const told = r.composed!.resolved.behaviours.map((row) => row.name);
-  for (const name of ['base-agent', 'cowork-agent', 'mandates', 'write-it-down']) assert.ok(told.includes(name), name);
+  for (const name of ['base-agent', 'cowork-agent', 'reach-plan', 'write-it-down']) assert.ok(told.includes(name), name);
 });
 
 test('team_lead is explicit and brings its conditional behaviour at birth', async () => {
