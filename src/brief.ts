@@ -11,21 +11,58 @@ export const HELP_LINE = 'Every tool is a command on your PATH; `<tool> --help` 
 
 /**
  * A fact's `line:` with the record's values. `{a.b}` is the value; `{, a.b}` prints its lead
- * text only when the value is set; `{a.b?yes|no}` prints one text or the other.
+ * text only when the value is set; `{a.b?yes|no}` prints one text or the other. A segment
+ * (the text between `, ` or ` · ` outside braces) whose values are all empty is dropped with
+ * its separator: `User: {user.name}, {user.role}` with no name is `User: owner`. A line whose
+ * values are all empty is not printed.
  */
 export function fillLine(line: string, record: BriefRecord): string {
-  let placeholders = 0, filled = 0;
-  const text = line.replace(/\{([^{}]*)\}/g, (_all, inner: string) => {
+  const fill = (inner: string): { text: string; empty: boolean } => {
     const choice = /^([a-z_]+(?:\.[a-z_]+)*)\?([^|]*)\|?(.*)$/.exec(inner);
-    if (choice) { placeholders++; filled++; return recordValue(record, choice[1]) ? choice[2] : choice[3]; }
+    if (choice) return { text: recordValue(record, choice[1]) ? choice[2] : choice[3], empty: false };
     const m = /^(.*?)([a-z_]+(?:\.[a-z_]+)*)$/s.exec(inner);
-    if (!m) return `{${inner}}`;
+    if (!m) return { text: `{${inner}}`, empty: false };
     const value = recordValue(record, m[2]);
-    placeholders++;
-    if (value) filled++;
-    return value ? `${m[1]}${value}` : '';
-  }).trim();
-  return placeholders && !filled ? '' : text;
+    return { text: value ? `${m[1]}${value}` : '', empty: !value };
+  };
+  // The label ("User: ") stays with the line, not with its first segment.
+  const label = /^[^{:]*:\s+/.exec(line)?.[0] ?? '';
+  const rest = line.slice(label.length);
+  // Segments and their separators, split outside braces.
+  const pieces: Array<{ sep: string; text: string }> = [];
+  let sep = '', text = '', depth = 0;
+  for (let i = 0; i < rest.length; i++) {
+    const ch = rest[i];
+    if (ch === '{') depth++;
+    if (ch === '}') depth--;
+    const two = rest.slice(i, i + 2), three = rest.slice(i, i + 3);
+    if (!depth && (two === ', ' || three === ' · ')) {
+      pieces.push({ sep, text });
+      sep = two === ', ' ? two : three;
+      text = '';
+      i += sep.length - 1;
+      continue;
+    }
+    text += ch;
+  }
+  pieces.push({ sep, text });
+  let any = false, allEmpty = true;
+  const kept: Array<{ sep: string; text: string }> = [];
+  for (const piece of pieces) {
+    let holders = 0, empties = 0;
+    const filled = piece.text.replace(/\{([^{}]*)\}/g, (_all, inner: string) => {
+      const out = fill(inner);
+      holders++;
+      if (out.empty) empties++;
+      return out.text;
+    });
+    if (holders) any = true;
+    if (holders && empties < holders) allEmpty = false;
+    if (holders && empties === holders) continue;
+    kept.push({ sep: piece.sep, text: filled });
+  }
+  if (any && allEmpty) return '';
+  return `${label}${kept.map((piece, i) => (i ? piece.sep : '') + piece.text).join('')}`.trim();
 }
 
 const strip = (text: string): string => text.replace(/<!--[^]*?-->/g, '').trim();

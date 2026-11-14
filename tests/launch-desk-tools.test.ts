@@ -87,7 +87,8 @@ test('a Team Agent starts in Ronin house, its brief naming the repositories and 
   assert.match(work.repo_lines, /^- cowork .* — worktree: `worktree-desk open cowork`$/m, 'a managed repository is opened when needed');
   assert.match(work.repo_lines, /^- ronin_lab .* — shared checkout \(notes\)$/m);
   assert.ok(work.folder_lines.split('\n').includes(`- papers ${papers} — drafts`), 'a folder is a Workspace Folder, by name and path');
-  assert.ok(resolved.composed!.resolved.behaviours.some((row) => row.name === 'working-at-a-desk'), 'desk teaching is ready for managed work');
+  assert.equal(resolved.composed!.record.work.desk, false, 'managed repos are not a desk: a desk holds once one is cut');
+  assert.ok(!resolved.composed!.resolved.behaviours.some((row) => row.name === 'working-at-a-desk'), 'so no desk teaching at birth');
 });
 
 test('an Agent without a Team has no Workspace and starts in Ronin house', async () => {

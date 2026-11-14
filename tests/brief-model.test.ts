@@ -87,6 +87,9 @@ test('add, then block, then screen; a behaviour brings the tools that serve it',
   assert.deepEqual(names([layerOf('team', { brief: { add: ['extra', { name: 'pm', depth: 'full' }] } })]).behaviours, ['base:full', 'pm:full[item]', 'extra:seed']);
   assert.deepEqual(names([layerOf('agent', { brief: { block: ['pm'] } })]).behaviours, ['base:full'], 'a blocked behaviour takes its tools with it');
   assert.deepEqual(names([layerOf('campaign', { brief: { only: ['pm'] } }), layerOf('agent', { brief: { add: ['extra'] } })]), { behaviours: ['pm:seed[item]'], other: [] }, 'nothing below adds back what a screen left out');
+  assert.deepEqual(resolveBrief(CATALOG, record(), [layerOf('team', { brief: { only: ['base'] } })]).facts, [], 'a screen covers facts too');
+  assert.deepEqual(resolveBrief(CATALOG, record(), [layerOf('team', { brief: { only: ['base', 'user'] } })]).facts.map((row) => row.name), ['user']);
+  assert.deepEqual(resolveBrief(CATALOG, record(), [layerOf('agent', { brief: { block: ['user'] } })]).facts, [], 'a fact can be blocked');
   const why = resolveBrief(CATALOG, record({ team: 't', lead: true }), [layerOf('team', { brief: { add: ['extra'] } })]);
   assert.deepEqual(why.behaviours.map((row) => [row.name, row.why]), [['base', []], ['lead-ways', ['lead']], ['extra', ['add:team']]]);
 });
@@ -94,6 +97,10 @@ test('add, then block, then screen; a behaviour brings the tools that serve it',
 test('fact lines fill from the record; an all-empty line is not printed', () => {
   assert.equal(fillLine('User: {user.name}{, user.role}', record()), 'User: Glen, owner');
   assert.equal(fillLine('Team: {agent.team}{, agent.wipeboard}', record()), '');
+  const nameless = record();
+  nameless.user.name = '';
+  assert.equal(fillLine('User: {user.name}, {user.role}{, user.organisation}', nameless), 'User: owner', 'an empty value drops its segment');
+  assert.equal(fillLine('Workspace: {setting.workspace} · repos {work.repos}', record()), 'Workspace: w', 'and its separator');
   assert.equal(fillLine('Ronin: {setting.hosted?hosted|self-hosted}', record()), 'Ronin: self-hosted');
 });
 

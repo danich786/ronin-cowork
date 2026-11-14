@@ -13,8 +13,8 @@
  * Integrations and project management only add down the layers: on at a layer is on below
  * it, and Jira on is project management on. Files in play: each header's `when:` and
  * `depth:`, then every layer's add (the higher depth holds), then every block, then each
- * screen (`only`), which covers behaviours and tools: a behaviour let through brings the
- * tools that serve it. Facts are never screened. Hide, never guard: this decides only what
+ * screen (`only`), which covers facts, behaviours and tools: a behaviour let through brings
+ * the tools that serve it. Hide, never guard: this decides only what
  * an Agent is told.
  */
 import { readFile } from 'node:fs/promises';
@@ -135,11 +135,11 @@ export function resolveBrief(catalog: Catalog, record: BriefRecord, layers: read
   }
   // 3. Block, from every layer.
   for (const layer of layers) for (const name of layer.brief.block) told.delete(name);
-  // 4. Screens: each narrows; facts pass.
+  // 4. Screens: each narrows, facts included.
   for (const layer of layers) {
     if (!layer.brief.only.length) continue;
     const only = new Set(layer.brief.only);
-    for (const [name, row] of told) if (row.kind !== 'facts' && !only.has(name)) told.delete(name);
+    for (const [name] of told) if (!only.has(name)) told.delete(name);
   }
   // Tools that serve a behaviour in play come with it, unless blocked or screened out by name.
   const blocked = new Set(layers.flatMap((layer) => layer.brief.block));

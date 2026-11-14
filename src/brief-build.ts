@@ -13,6 +13,7 @@ import { isHostedOffice, officePeople } from './office-people.js';
 import { listTeamRosters } from './team-rosters.js';
 import type { LaunchFacts, SpawnForm } from './spawn.js';
 import { mandate } from './agent-defaults.js';
+import { listDeskRecords } from './desks/registry.js';
 
 /** The Agent's own layer, as a launch body or the work record carries it. */
 export interface AgentBrief { brief: BriefSettings; integrations: string[]; pm?: boolean }
@@ -106,7 +107,8 @@ export async function buildBriefRecord(form: SpawnForm, facts: LaunchFacts, on: 
       repo_lines: facts.repositories.map((repo) =>
         `- ${repo.name} ${repo.dir} — ${repo.managed ? `worktree: \`worktree-desk open ${repo.name}\`` : 'shared checkout'}${repo.note ? ` (${repo.note})` : ''}`).join('\n'),
       folder_lines: facts.folders.map((folder) => `- ${folder.name} ${folder.dir}${folder.note ? ` — ${folder.note}` : ''}`).join('\n'),
-      desk: form.desk ?? facts.arrangement === 'managed',
+      // A desk holds when one is cut for this Agent (its desk record), not when its repos could have one.
+      desk: form.desk ?? (await listDeskRecords({ owner: facts.name }).catch(() => [])).length > 0,
       checkout: form.checkout ?? facts.arrangement === 'checkout',
     },
   };

@@ -289,6 +289,7 @@ async function main(): Promise<void> {
           kept ||= o.action === 'kept';
           out(`${o.action.toUpperCase()} ${deskId(d)} — ${o.reason}`);
         }
+        await refreshBrief(session).catch(() => {});
         process.exit(kept ? 4 : 0);
       }
       case 'handoff': {
@@ -298,6 +299,7 @@ async function main(): Promise<void> {
         if (!to.length) die('NO-SUCCESSOR: say --to <session[,session]>', 2);
         const next = await handoffDesk(d.repo, d.branch, to);
         out(`HANDED-OFF ${deskId(d)} → ${to.join(', ')} at ${next.worktree}`);
+        for (const who of new Set([session, ...to])) await refreshBrief(who).catch(() => {});
         out(row(next));
         return;
       }
@@ -332,6 +334,7 @@ async function main(): Promise<void> {
           return saved;
         });
         out(`DISCARDED ${deskId(d)} — receipt ${receipt.id}`);
+        await refreshBrief(session).catch(() => {});
         return;
       }
       case 'reply': {
