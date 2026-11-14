@@ -20,7 +20,7 @@ export interface CampaignSettings {
   defaults: AgentDefaults;
   cowork_defaults: Record<string, unknown>;
   template_defaults: Record<string, unknown>;
-  /** The Campaign's brief settings, integrations and project management (wip/BRIEF_MODEL.md §6). */
+  /** The Campaign's brief settings, integrations and project management (docs/architecture/brief.md, Layers and brief settings). */
   brief: BriefSettings;
   integrations: string[];
   pm?: boolean;

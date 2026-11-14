@@ -66,7 +66,7 @@ export async function migrateSopsToBehaviours(): Promise<BehaviourStoreMigration
   return done;
 }
 
-// ── The ways store → behaviours and facts (wip/BRIEF_MODEL.md §3, §9), once at start ──
+// ── The ways store → behaviours and facts (docs/architecture/brief.md, The files and their header; The stock files), once at start ──
 
 const OLD_WHEN: Record<string, string> = {
   'arrangement:managed': 'desk', 'arrangement:checkout': 'checkout', new_owner: 'new-owner',
@@ -80,7 +80,7 @@ const firstSentence = (text: string): string => {
   return (paragraph.replace(/\s+/g, ' ').match(/^.*?[.!?](?=\s|$)/)?.[0] ?? paragraph.replace(/\s+/g, ' ')).trim();
 };
 
-/** An old behaviour file (label, blurb, scope, requires) in the §3 header. `when` adds conditionals. */
+/** An old behaviour file (label, blurb, scope, requires) in the header (docs/architecture/brief.md, The files and their header). `when` adds conditionals. */
 export function asCatalogBehaviour(name: string, text: string, scope: string, extraWhen: string[] = []): string {
   const lines = text.replace(/\r\n/g, '\n').split('\n');
   const key = (k: string): string => lines.find((l) => new RegExp(`^-\\s*\\*\\*${k}:\\*\\*`, 'i').test(l.trim()))
@@ -145,7 +145,7 @@ async function removeEmpty(dir: string): Promise<void> {
 }
 
 /**
- * One-way: `~/ronin/ways/<scope>/*.md` into the flat `~/ronin/behaviours/`, in the §3 header
+ * One-way: `~/ronin/ways/<scope>/*.md` into the flat `~/ronin/behaviours/`, in the header (docs/architecture/brief.md, The files and their header)
  * (the user intro into `~/ronin/facts/user-intro.md`), and the user's Workspace shelf files
  * `~/ronin/session_boot/root/<ws>/*.md` into behaviours with `when: workspace:<ws>`.
  * Symlinks on the shelf were the shelf's own pointers and are dropped.
@@ -190,7 +190,7 @@ export async function migrateWaysToBehaviours(): Promise<BehaviourStoreMigration
   return done;
 }
 
-// ── Brief settings (wip/BRIEF_MODEL.md §6), once at start: the old chosen-behaviour lists on
+// ── Brief settings (docs/architecture/brief.md, Layers and brief settings), once at start: the old chosen-behaviour lists on
 // Team rosters and Campaign defaults become each layer's `brief.add`; project management,
 // once a chosen behaviour, becomes the layer's `pm` switch. No reader for the old shape stays.
 

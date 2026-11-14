@@ -35,7 +35,7 @@ export interface SpawnForm {
   campaign_id?: string;
   kind?: string;
   template?: string; // preset is validated provenance only, never reapplied
-  /** The Agent's own brief settings, integrations and project management (wip/BRIEF_MODEL.md §6). */
+  /** The Agent's own brief settings, integrations and project management (docs/architecture/brief.md, Layers and brief settings). */
   brief?: BriefSettings;
   integrations?: string[];
   pm?: boolean;
@@ -98,7 +98,7 @@ const ACK_RULE =
 export const PACKET_PLACEHOLDER = 'Read first: <packet>.';
 
 /**
- * THE LAUNCH PROMPT (wip/BRIEF_MODEL.md §7): the read line, the task, and the acknowledgement
+ * THE LAUNCH PROMPT (docs/architecture/brief.md, The brief): the read line, the task, and the acknowledgement
  * rule where the launch profile asks for it. Team, mandate and Workspace are facts in the brief.
  */
 export function buildBrief(profile: LaunchProfile, form: SpawnForm, referenceDir?: string): string {

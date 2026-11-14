@@ -38,7 +38,7 @@ Every file in `facts/`, `behaviours/` and `tools/` starts the same:
 | `order:` | all | its place in its section, lower first |
 
 Header lines run from the title to the first blank line; an unknown field is ignored and an
-unknown conditional never holds. The design is samurai_lab `wip/BRIEF_MODEL.md`.
+unknown conditional never holds. The design is `docs/architecture/brief.md`.
 
 ## Adding a tool
 

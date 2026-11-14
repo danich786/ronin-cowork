@@ -21,7 +21,7 @@ export interface TeamRoster {
   branches: Record<string, string>;
   wipeboard: string;
   state: 'active' | 'archived';
-  /** This Team's brief settings, integrations and project management (wip/BRIEF_MODEL.md §6). */
+  /** This Team's brief settings, integrations and project management (docs/architecture/brief.md, Layers and brief settings). */
   brief: BriefSettings;
   integrations: string[];
   pm?: boolean;

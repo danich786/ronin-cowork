@@ -103,7 +103,7 @@ export const personByEmail = (email: string): Person | null => {
   return d ? { email: email.trim().toLowerCase(), ...d } : null;
 };
 
-/** The office's whole list, for the brief's facts (wip/BRIEF_MODEL.md §5); empty self-hosted. */
+/** The office's whole list, for the brief's facts (docs/architecture/brief.md, The work record is the source of truth); empty self-hosted. */
 export const officePeople = (): Person[] => hosted
   ? [...members].map(([email, details]) => ({ email, ...details }))
   : [];

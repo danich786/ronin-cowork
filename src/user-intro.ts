@@ -1,5 +1,5 @@
-/** THE USER INTRO — the user's own text about themself, a fact told in full (wip/BRIEF_MODEL.md
- * §9 file map): `~/ronin/facts/user-intro.md`, replacing the stock file by name. One writer. */
+/** THE USER INTRO — the user's own text about themself, a fact told in full
+ * (docs/architecture/brief.md, The stock files): `~/ronin/facts/user-intro.md`, replacing the stock file by name. One writer. */
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { parseCatalogFile } from './catalog.js';
