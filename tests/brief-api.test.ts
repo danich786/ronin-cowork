@@ -36,12 +36,12 @@ test('writing your own files: every save reads back what it wrote, one after ano
 test('the catalog carries each mandate value: its axis, its value, its order', async () => {
   const made = await fetch(`${base}/api/brief/files`, {
     method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ kind: 'behaviours', name: 'recruit-propose-agents', text: "# Propose agents\n- **seed:** Propose Agents; don't raise them.\n- **mandate:** recruit\n- **order:** 3\n" }),
+    body: JSON.stringify({ kind: 'behaviours', name: 'recruit-probe', text: "# Probe value\n- **seed:** Probe only.\n- **mandate:** recruit\n- **order:** 3\n" }),
   });
   assert.equal(made.status, 201);
   const catalog = await (await fetch(`${base}/api/brief/catalog`)).json() as Array<{ name: string; mandate: string; value: string; order: number | null }>;
-  const row = catalog.find((entry) => entry.name === 'recruit-propose-agents')!;
-  assert.deepEqual([row.mandate, row.value, row.order], ['recruit', 'propose agents', 3]);
+  const row = catalog.find((entry) => entry.name === 'recruit-probe')!;
+  assert.deepEqual([row.mandate, row.value, row.order], ['recruit', 'probe value', 3]);
   const plain = catalog.find((entry) => entry.name === 'probe-one')!;
   assert.deepEqual([plain.mandate, plain.value, plain.order], ['', '', null]);
 });

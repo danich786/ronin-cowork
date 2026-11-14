@@ -4,7 +4,7 @@
 - **effect:** system
 - **provides:** —
 - **reading:** —
-- **reading_off:** routine/ronin_services/OFF.md
+- **reading_off:** —
 - **ways:** —
 - **parts:** counting, gbrain, jira, koe, koshi, koshi_weights, machine, project_management, rireki
 - **requires:** —

@@ -1,9 +1,11 @@
 # plan
-- **seed:**
+- **seed:** list, read, write, park and order the Workspace's plans
 - **when:**
 - **depth:** seed
 - **serves:** planning
 - **order:** 35
+
+A plan write replaces the whole plan: read it first.
 
 ## Usage
 

@@ -1,5 +1,5 @@
-# Secret
-- **seed:** How do I get a password or key from the owner without it passing through chat?
+# secret
+- **seed:** get a password or key from the owner without it passing through chat
 - **when:**
 - **depth:** seed
 - **serves:** integrations

@@ -323,5 +323,5 @@ roster nests its storage where a root does not, is `docs/architecture/campaign-s
 - HTTP API and live facts: `src/routes/catalogs.ts`
 - Session identity: `src/tmux.ts` and `src/routes/sessions-api.ts`
 - Assisted owner workflow: `ronin_catalogs/capabilities/machine-settings.md`
-- Session-boot shelf: `docs/architecture/session-boot.md`
+- The brief: `docs/architecture/brief.md`
 - Owner configuration boundary: `docs/user-config.md`

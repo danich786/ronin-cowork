@@ -1,5 +1,5 @@
-# Ronin Help
-- **seed:** Where is the longer document on a Ronin topic, or the meaning of a Ronin word?
+# ronin-help
+- **seed:** the longer document on a topic, or a Ronin word
 - **when:**
 - **depth:** seed
 - **serves:**

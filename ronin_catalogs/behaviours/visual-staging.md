@@ -1,11 +1,10 @@
-# visual_staging — one disposable Team preview before hand-in
+# Visual staging
 - **seed:** Put visual work on one disposable Team preview for fast owner feedback.
 - **when:**
 - **depth:** none
 - **order:** 40
 
-> Stock Behavior. Your own copy in the ways store (`ronin-store ways` → `visual_staging.md`)
-> replaces this file whole — a default, not law.
+> Stock behaviour. Your own `~/ronin/behaviours/visual-staging.md` replaces this file whole.
 > **Voice: agent.** Written for every session on a Team that uses it, the lead included.
 
 Visual work may take a provisional lane before ordinary hand-in, so the owner presses on

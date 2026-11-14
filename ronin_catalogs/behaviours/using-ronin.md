@@ -1,5 +1,5 @@
-# Ronin usage reference
-- **seed:**
+# Using Ronin
+- **seed:** Where the guide is for each thing an owner does in Ronin.
 - **when:**
 - **depth:** full
 - **order:** 80

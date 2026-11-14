@@ -1,11 +1,11 @@
-# Ronin Host
-- **seed:** How do I inspect or operate the machine underneath Ronin?
+# ronin-host
+- **seed:** measure the machine: what it is, its space, its account, which secrets exist
 - **when:**
 - **depth:** seed
 - **serves:**
 - **order:** 70
 
-Reach for this bundle for measured machine facts, account state, secret presence, restart,
+Reach for `ronin-host` for measured machine facts, account state, secret presence, restart,
 or maintenance. Machine configuration belongs to Machine settings; neither authority grants the other.
 
 **Live tool:** `ronin-host --help` renders its fixed inspect, account, secrets, and restart subcommands.
@@ -14,8 +14,7 @@ Measurements are observations, not settings fields. Never write them or print cr
 
 # HOST ABILITIES — measure the box
 
-This reading belongs to the **Ronin Host** Routine. It teaches machine, account and store
-inspection backed by measured tools.
+Machine, account and store inspection, backed by measured tools.
 
 Facts about a machine are measured, never remembered: written paths, capacity, identities
 and installation state go stale.
@@ -29,10 +28,8 @@ and installation state go stale.
   path it prints for every command, `ronin-testserver close <name>` when done. Nothing else:
   a server you did not get that way is one you may not touch.
 
-Run the relevant tool before advising or changing machine-level state. If a Machine tool
-is absent from `PATH`, report that the behaviour was not delivered; do not improvise its
-guarded operation. The full procedures live in the Machine Behaviors and the corresponding
-rows of `ronin_catalogs/TOOLS.md`.
+Run the relevant tool before advising or changing machine-level state. If a machine tool
+is absent from `PATH`, report that; do not improvise its guarded operation.
 
 ## Usage
 

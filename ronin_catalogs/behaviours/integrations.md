@@ -1,5 +1,5 @@
 # Integrations
-- **seed:** Use any outside service a user connects the common way: its own tools, its keys, a PR, the preview, the record.
+- **seed:** Any outside service a user brings is used one common way: `ronin-help integrations`.
 - **when:**
 - **depth:** seed
 - **order:** 23
@@ -9,21 +9,15 @@ anything. You already know how to use the service. This says where things are an
 write down.
 
 ### Where things are
-- **The index:** one record per integration: what it is for, where its token lives, its
-  tools (its own CLI and API, and a bridge if Ronin has one). The shipped records are in
-  `../../integrations/` beside this brief (its `README.md` gives the fields); the ones
-  Agents add are in `~/ronin/catalogs/integrations/<provider>.md` (make the folder with
-  the first). Read it before you connect anything.
-- **Your Workspace's integrations:** `work-record workspace list` shows them. They live in
-  the Workspace record, `~/ronin/workspaces/<campaign>/<workspace>.json`, as
-  `"integrations": [{"provider": "<provider>"}]`; add a provider there (with any fact its
-  bridge reads, such as `"site"`), or the owner does it on the Workspace page.
-- **Keys:** one plain `.env` per provider per Campaign, in `~/ronin/services_secrets/`
-  (`<provider>-<campaign>.env`). For the provider's CLI, load it:
-  `set -a; . ~/ronin/services_secrets/<provider>-<campaign>.env; set +a`.
-  A new key goes in that file. Settings › Integrations shows what is set and what is missing.
-- **A bridge**, where Ronin has one, is the short way: it reads the same file, fills in the
-  account and the site, and trims the answer. Without one, call the provider's CLI or API.
+- **Your Workspace's integrations:** `work-record workspace list` shows them. The owner turns
+  one on for a Campaign, Workspace, Team or Agent; one that is on brings its bridge into your
+  brief.
+- **Keys:** never in chat. Ask for one with `secret ask <provider>-<key> --for "<what it is>"`
+  (`secret ask perplexity-api-key --for "Perplexity API key"`); the owner pastes it on your tile.
+  Use it by its file: `secret path <name>` gives the path to pass, or to read in your own
+  script. `secret ls` lists what is saved.
+- **A bridge**, where Ronin has one, is the short way: it reads the key, fills in the account
+  and the site, and trims the answer. Without one, call the provider's own CLI or API.
 
 ### The way
 1. Code goes through a PR: `gh pr create`. A host linked to the repo builds a preview by
@@ -32,9 +26,9 @@ write down.
 3. Ship when the person you work for says so: `gh pr merge`.
 4. A choice that depends on the work (where a preview's data comes from, which plan, which
    region): name the choices to the person you work for, and take the one they pick.
-5. Connect a new provider: its key in its `.env`, its record in the index. Connect a
-   provider with its record, never without one. Remove the record when it goes.
+5. Connect a new provider: its key through `secret`, and ask the owner to turn it on for the
+   Workspace.
 6. When your Workspace has a canvas, put it there: a link and one line.
 
 ### Don'ts
-- Don't print, paste or commit a key, or put one in a Workspace `.env`, a doc or a message.
+- Don't print, paste or commit a key, or put one in a `.env`, a doc or a message.

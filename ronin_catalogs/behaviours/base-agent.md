@@ -1,5 +1,5 @@
 # Base Agent
-- **seed:** What every Agent on Ronin is told, house Agents included.
+- **seed:** Ronin hosts you; it doesn't run you. Use its named tools for what they own.
 - **when:**
 - **depth:** full
 - **order:** 10

@@ -1,29 +1,29 @@
-# Work Item
-- **seed:** Run your work as work items: create, find, move, hand off, watch.
+# item
+- **seed:** create, find, move, hand off and comment on work items
 - **when:**
 - **depth:** seed
 - **serves:** project-management
 - **order:** 40
 
-## Tools
+## Commands
 
-| Tool | Authority | Teach | Help |
-|---|---|---|---|
-| `item create` | create: one work item under an epic, held by you (a lead's: by its Team); answers `created <id> under <parent>` | priority | `item --help` |
-| `item read` | read: one item with its children, comments, attachments, links and history | priority | `item --help` |
-| `item search` | read: items by Campaign, Team, holder, parent, status, kind, or `--text` in the title or objective | priority | `item --help` |
-| `item edit` | write: one item's fields; `--parent` moves it, the level following | priority | `item --help` |
-| `item transition` | write: the status of one or several items; a hand-in to In Review takes `--note`, the Handed in comment for the user | priority | `item --help` |
-| `item flag` | write: one or several items are stuck, with the reason as a comment | priority | `item --help` |
-| `item unflag` | write: one or several items are clear | priority | `item --help` |
-| `item handoff` | write: the giver comes off one or several items and the receiver (an Agent or `team:<name>`) goes on. The giver is you, with any Team of yours or of the receiver's that holds it; `--from` names it; `--keep-holding` keeps it on too | priority | `item --help` |
-| `item handover` | write: an ending Agent hands one or several items to its Team or an Agent, with where each stands and what is next (a Handover comment); `--to-do`, `--flag "<the question>"` | priority | `item --help` |
-| `item watch` | write: track one or several items without holding them; `item unwatch` stops | priority | `item --help` |
-| `item comment` | write: one comment, or `--edit <n>` changes one | priority | `item --help` |
-| `item attach` | write: attach or remove a document, visible in Docs | priority | `item --help` |
-| `item link` | write: a link by type name (Blocks, Relates, …) | priority | `item --help` |
-| `item archive` | write: one or several Done items off every list now, as five days Done does; `--done [--team <t>]` clears every Done item you or your Teams hold; an item not Done is refused | priority | `item --help` |
-| `item delete` | write: one or several items go, with their subtasks | priority | `item --help` |
+| Tool | Authority |
+|---|---|
+| `item create` | create: one work item under an epic, held by you (a lead's: by its Team); answers `created <id> under <parent>` |
+| `item read` | read: one item with its children, comments, attachments, links and history |
+| `item search` | read: items by Campaign, Team, holder, parent, status, kind, or `--text` in the title or objective |
+| `item edit` | write: one item's fields; `--parent` moves it, the level following |
+| `item transition` | write: the status of one or several items; a hand-in to In Review takes `--note`, the Handed in comment for the user |
+| `item flag` | write: one or several items are stuck, with the reason as a comment |
+| `item unflag` | write: one or several items are clear |
+| `item handoff` | write: the giver comes off one or several items and the receiver (an Agent or `team:<name>`) goes on. The giver is you, with any Team of yours or of the receiver's that holds it; `--from` names it; `--keep-holding` keeps it on too |
+| `item handover` | write: an ending Agent hands one or several items to its Team or an Agent, with where each stands and what is next (a Handover comment); `--to-do`, `--flag "<the question>"` |
+| `item watch` | write: track one or several items without holding them; `item unwatch` stops |
+| `item comment` | write: one comment, or `--edit <n>` changes one |
+| `item attach` | write: attach or remove a document, visible in Docs |
+| `item link` | write: a link by type name (Blocks, Relates, …) |
+| `item archive` | write: one or several Done items off every list now, as five days Done does; `--done [--team <t>]` clears every Done item you or your Teams hold; an item not Done is refused |
+| `item delete` | write: one or several items go, with their subtasks |
 
 ## Syntax
 
@@ -38,4 +38,4 @@ More: `ronin-help work-items`
 
 ## Usage
 
-Every act on a work item, the item always named: create, read, search, edit, transition, flag, unflag, handoff, comment, attach, link and delete. Taught by the Work Item capability; `item --help`.
+Every act on a work item, the item always named: create, read, search, edit, transition, flag, unflag, handoff, comment, attach, link and delete. `item --help`.

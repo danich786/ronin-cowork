@@ -1,5 +1,5 @@
 # ronin-team
-- **seed:**
+- **seed:** retire a Team (house maintenance)
 - **when:**
 - **depth:** none
 - **serves:**

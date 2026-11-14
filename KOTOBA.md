@@ -22,15 +22,25 @@ These terms follow [the brief](docs/architecture/brief.md).
 
 | Term | Meaning |
 |---|---|
-| Tool | Ronin executable authority; its help describes its callable contract |
+| Fact | What is true about the user and the Agent's situation, printed in the brief from the work record (`ronin_catalogs/facts/`) |
+| Tool | Ronin executable authority; its help describes its callable contract; its file in `ronin_catalogs/tools/` says what the brief tells about it |
 | Composite tool | A tool coordinating guarded operations under one contract |
-| Capability | Provider-neutral teaching that groups tools around an operational question |
-| Behavior (`behaviour` in paths and saved fields) | Provider-neutral working guidance, delivered as floor, conditional, selected, or sought |
-| Mandate | Reach, Recruit, and Output: the assignment's boundaries; its teaching is floor |
+| Behaviour | Provider-neutral working guidance an Agent follows (`ronin_catalogs/behaviours/`) |
+| Seed | The one line a behaviour or tool is told by: that it exists, and where to read more |
+| Depth | How much of a behaviour or tool an Agent is told: not told, seed, or full |
+| Full | The whole text, in the brief from the start |
+| Conditional | A value on the work record that a file's `when:` names: cowork, lead, desk, hosted, integration:<name> … |
+| Layer | Where brief settings are kept, widest first: user, Campaign, Workspace, Team, Agent |
+| Brief settings | A layer's three lists: add, block and only |
+| Block | Brief settings: takes facts, behaviours or tools out |
+| Screen (only) | Brief settings: when set, nothing else gets through, at that layer and below |
+| Brief | What an Agent is told: its facts, the behaviours in play with their tools, then other tools; rebuilt when its work record changes |
+| Work record | The session's record, and the source of every value its brief depends on |
+| Mandate | Reach, Recruit, and Output: the assignment's boundaries; told as a fact |
 | Skill | Provider-native teaching or adaptation, without unique Ronin business authority |
 | Assignment | The work and explicit designations given to an Agent, including Team lead |
-| Agent composition | Resolved tool capabilities, behaviors, mandate, skills, and assignment, with provenance and teaching |
-| Scope | Where a fact or rule applies; distinguish Desk/Team inheritance, behavior delivery scope, and resource storage/shadowing |
+| Agent composition | The facts, behaviours and tools an Agent is told, with its mandate and assignment |
+| Scope | Where a fact or rule applies; distinguish Desk/Team inheritance and resource storage/shadowing |
 | Installation | An installed facility that can make tools, guidance, or service parts available; see [Installations](docs/architecture/installations.md) |
 | Preset / template | Editable starting values for a launch; see [Templates](docs/architecture/templates.md) |
 

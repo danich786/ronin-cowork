@@ -1,5 +1,5 @@
 # ronin-desk-settle
-- **seed:**
+- **seed:** tidy worktree leftovers Ronin has no record of (house maintenance)
 - **when:**
 - **depth:** none
 - **serves:**

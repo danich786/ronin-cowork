@@ -1,8 +1,8 @@
-# Agent session
-- **seed:** How do I inspect or change an Agent's existence, and end my own safely?
+# session_*
+- **seed:** check, create, change, archive, restore and end Agent sessions; `session_create` rides Recruit: staff agents
 - **when:**
 - **depth:** seed
-- **serves:** cowork-agent, team-lead
+- **serves:** cowork-agent, team-lead, mika
 - **order:** 30
 
 Reach for the session tools when the question is about an Agent's existence rather than
@@ -17,7 +17,7 @@ provoke it. Supply the visible session's particular topic in its prompt.
 
 **Create new session (Agent)** means create that visible session with `session_create`.
 **Close session** means end this Agent safely with `session_end` after its custody
-preflight succeeds.
+preflight succeeds. Ending archives it, so `session_restore <archive-id>` brings it back.
 
 **Live tools:** every command in the table below ships in `ronin_bin/`.
 
@@ -25,10 +25,10 @@ preflight succeeds.
 surface. It does not inherit the caller's conversation or context: the caller supplies an
 explicit prompt, while the ordinary resolver selects Campaign and Team launch context.
 There is no dial option; creation does not change the caller, and the newborn reads its
-own resolved birth packet and prompt.
+own brief and prompt.
 
-Every documented `session_create` form is universal. Capability selection changes only
-which workflow knowledge is taught.
+Every documented `session_create` form works for every Agent; its brief changes only
+what it is told.
 `session_create --help` lists the exact model ids from each provider's refreshed CLI
 inventory. Use those ids with `--provider` and `--model`; display names are for the owner.
 CLI-supported names already stored in settings, such as Claude's `sonnet`, also pass
@@ -62,7 +62,7 @@ entries are its work record, not a command to open or close managed desks.
 ## Usage
 
 - `session_check`: **Read one live session by exact name.** An unused name reports `NO-SESSION`; this tool never creates or changes anything.
-- `session_create`: **Create one visible Agent through the ordinary launch resolver. AN OWNER ASKING FOR AN AGENT ALWAYS MEANS THIS VISIBLE SESSION; IT NEVER MEANS SPAWN A CLI-INTERNAL SUB-AGENT.** “Agent,” “new agent,” “fork,” and “fork it” do not request or authorize spawning. Supply the newborn's purpose explicitly with `--prompt`; only Campaign and Team launch context are resolved, never the caller's conversation. There is no dial option: the caller is unchanged and the newborn reads its own resolved birth packet. `session_create --help` dynamically renders provider/model choices and defaults from the canonical Campaign/provider catalog shared with UI dropdowns, so configuration changes require no maintained list. An existing name is refused rather than read or updated.
+- `session_create`: **Create one visible Agent through the ordinary launch resolver. AN OWNER ASKING FOR AN AGENT ALWAYS MEANS THIS VISIBLE SESSION; IT NEVER MEANS SPAWN A CLI-INTERNAL SUB-AGENT.** “Agent,” “new agent,” “fork,” and “fork it” do not request or authorize spawning. Supply the newborn's purpose explicitly with `--prompt`; only Campaign and Team launch context are resolved, never the caller's conversation. There is no dial option: the caller is unchanged and the newborn reads its own brief. `session_create --help` dynamically renders provider/model choices and defaults from the canonical Campaign/provider catalog shared with UI dropdowns, so configuration changes require no maintained list. An existing name is refused rather than read or updated.
 - `session_set`: **Change named facts on one existing live session.** It updates Team membership, lead designation, or Workspace Folder handle; a missing name is refused and the bare form points to `session_check`.
 - `session_archive`: `session_archive <session>` → `ARCHIVED <session> as <archive-id> — resumable`. Uses the existing live-session archive route; it never substitutes hard delete. Exit 2 = bad arguments, 4 = refused, 5 = unreachable.
 - `session_restore`: `session_restore <archive-id>` → `REHYDRATED <session>`; the id is session_archive's, or the one a lead's notice names after a `session_end`. Uses the existing provider-resume and metadata-restoration route; the manifest is removed only after restoration succeeds. Exit 2 = bad arguments, 4 = refused, 5 = unreachable.

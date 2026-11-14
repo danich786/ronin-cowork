@@ -1,11 +1,11 @@
-# Edges
-- **seed:** How do I work across an Agent, Team, wipeboard, schedule, or visible workspace boundary?
+# edges
+- **seed:** message an Agent, post to the Team's wipeboard, read another session
 - **when:**
 - **depth:** seed
 - **serves:** cowork-agent
 - **order:** 10
 
-Reach for this bundle whenever work crosses out of this session: one-to-one messaging,
+Reach for `edges` whenever work crosses out of this session: one-to-one messaging,
 Team-wide posts, another session's recent view, rosters, Team pages, schedules, or visible
 Control. Nothing here changes your own record; that belongs to Work Record.
 
@@ -32,8 +32,7 @@ command to learn.
 `edges control` reads a session's Control setting. Control is the owner's visible setting;
 no Agent operation raises another session's Control.
 
-Forking into a new Agent crosses a boundary too, but it belongs to the Session bundle,
-not here.
+Forking into a new Agent crosses a boundary too, but it is `session_create`'s, not here.
 
 ## Usage
 

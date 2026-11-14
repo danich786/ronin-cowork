@@ -43,7 +43,7 @@ text, byte for byte.
 ## T1 — always-taught
 
 The sources included in every assisted Agent's compiled birth brief. The brief names
-only that per-session `AGENT_BIRTH_BRIEF.md` (`docs/architecture/session-boot.md`):
+only that per-session `AGENT_BIRTH_BRIEF.md` (`docs/architecture/brief.md`):
 
 | File | Static / generated | What it is |
 |---|---|---|

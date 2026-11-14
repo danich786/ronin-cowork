@@ -1,7 +1,8 @@
 # Tools
 
 Something an Agent calls: one command, or a family (`session_*`). One Markdown file per
-tool; the file name (no `.md`) is its id. Every tool is on every Agent's PATH; what the brief
+tool; the file name (no `.md`) is its id, one namespace with `facts/` and `behaviours/` (the
+`mika` command's file is `ask-mika`). Every tool is on every Agent's PATH; what the brief
 says about it is its file. The user's own `~/ronin/tools/<id>.md`, beside the user's own
 executables, replaces the stock file whole or adds one.
 
