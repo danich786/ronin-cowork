@@ -28,7 +28,7 @@ export async function readDefinitions(kind: DefinitionKind): Promise<Definition[
   const resolver = kind === 'behaviours' ? resolveTreeFiles : resolveFiles;
   for (const file of await resolver({
     stock: path.join(STOCK_DIR, kind),
-    user: kind === 'behaviours' ? storeDir('ways') : path.join(storeDir('catalogs'), kind),
+    user: kind === 'behaviours' ? storeDir('behaviours') : path.join(storeDir('catalogs'), kind),
     include: isDefinitionFile,
     symlinks: true,
   })) {

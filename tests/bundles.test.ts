@@ -60,7 +60,7 @@ const bundle = () => parseBundle({
   version: '2026-09-03',
   files: [
     { store: 'catalogs', path: 'templates/teams/weekly_review.md', text: TEAM },
-    { store: 'ways', path: 'selected/weekly_review.md', text: BEHAVIOUR },
+    { store: 'behaviours', path: 'selected/weekly_review.md', text: BEHAVIOUR },
     { store: 'tools', path: 'tejun-review', text: TOOL },
   ],
   entries: [
@@ -71,11 +71,11 @@ const bundle = () => parseBundle({
 test('a bundle is held to its shape', () => {
   assert.throws(() => parseBundle({ format: 'x' }), /not ronin-bundle\/1/);
   assert.throws(() => parseBundle({ format: BUNDLE_FORMAT, name: 'Bad Name', files: [] }), /lowercase/);
-  assert.throws(() => parseBundle({ format: BUNDLE_FORMAT, name: 'x', files: [{ store: 'ways', path: '../etc/passwd.md', text: '' }] }), /inside its store/);
+  assert.throws(() => parseBundle({ format: BUNDLE_FORMAT, name: 'x', files: [{ store: 'behaviours', path: '../etc/passwd.md', text: '' }] }), /inside its store/);
   assert.throws(() => parseBundle({ format: BUNDLE_FORMAT, name: 'x', files: [{ store: 'catalogs', path: 'PROJECT_ROOTS.md', text: '' }] }), /catalog file sits on/);
   assert.throws(() => parseBundle({ format: BUNDLE_FORMAT, name: 'x', files: [{ store: 'tools', path: 'tmux', text: '' }] }), /never supplies a guard/);
-  assert.throws(() => parseBundle({ format: BUNDLE_FORMAT, name: 'x', files: [{ store: 'ways', path: 'selected/a.md', text: 'x' }], entries: [{ catalog: 'MACROS.md', name: 'a', text: '## a\n' }] }), /catalog is one of TOOLS\.md, MODEL_PROVIDERS\.md/);
-  assert.throws(() => parseBundle({ format: BUNDLE_FORMAT, name: 'x', files: [{ store: 'ways', path: 'selected/a.md', text: 'x' }], entries: [{ catalog: 'ACTIONS.md', name: 'a', text: '## a\n' }] }), /catalog is one of TOOLS\.md, MODEL_PROVIDERS\.md/);
+  assert.throws(() => parseBundle({ format: BUNDLE_FORMAT, name: 'x', files: [{ store: 'behaviours', path: 'selected/a.md', text: 'x' }], entries: [{ catalog: 'MACROS.md', name: 'a', text: '## a\n' }] }), /catalog is one of TOOLS\.md, MODEL_PROVIDERS\.md/);
+  assert.throws(() => parseBundle({ format: BUNDLE_FORMAT, name: 'x', files: [{ store: 'behaviours', path: 'selected/a.md', text: 'x' }], entries: [{ catalog: 'ACTIONS.md', name: 'a', text: '## a\n' }] }), /catalog is one of TOOLS\.md, MODEL_PROVIDERS\.md/);
   // The provider catalog is entry-merged too, per `### <Vendor>` section, named by the id it declares.
   const section = '### OpenAI\n\n- **provider:** `openai`\n- **cli:** `codex`\n\n| model | tier | default | cost | good at | not good at | launch |\n|---|---|---|---|---|---|---|\n| `gpt-7` | frontier | yes | $5 (2026-10) | a | b | `codex --model gpt-7` |\n';
   assert.throws(() => parseBundle({ format: BUNDLE_FORMAT, name: 'x', entries: [{ catalog: 'MODEL_PROVIDERS.md', name: 'other', text: section }] }), /named by its `- \*\*provider:\*\* id`/);
@@ -97,7 +97,7 @@ test('the plan says what an install would do, and a tool never replaces one of R
     files: [
       { store: 'catalogs', path: 'templates/teams/staff_my_codebase.md', text: stockTeam },
       { store: 'catalogs', path: 'templates/teams/dinner_party.md', text: '# Dinner Party\n- **label:** Mine\n' },
-      { store: 'ways', path: 'selected/brand_new.md', text: '# new\n' },
+      { store: 'behaviours', path: 'selected/brand_new.md', text: '# new\n' },
       { store: 'tools', path: 'edges', text: '#!/bin/sh\n' },
     ],
     entries: [
@@ -116,7 +116,7 @@ test('the plan says what an install would do, and a tool never replaces one of R
   assert.deepEqual(receipt.skipped.map((i) => i.path), ['templates/teams/staff_my_codebase.md']);
   assert.deepEqual(receipt.written.map((i) => i.path).sort(), ['review_tool', 'selected/brand_new.md', 'templates/teams/dinner_party.md']);
   await rm(storeDir('catalogs'), { recursive: true, force: true });
-  await rm(storeDir('ways'), { recursive: true, force: true });
+  await rm(storeDir('behaviours'), { recursive: true, force: true });
 });
 
 test('an install lands in the owner\'s stores, reads back, and is idempotent', async () => {
@@ -128,7 +128,7 @@ test('an install lands in the owner\'s stores, reads back, and is idempotent', a
   assert.equal(team?.agents[0]?.team_lead, true);
   assert.deepEqual(team?.behaviours, ['weekly_review']);
   const books = await resolveBehaviourBooks(team?.behaviours ?? []);
-  assert.equal(books.delivered[0]?.file, path.join(storeDir('ways'), 'selected/weekly_review.md'));
+  assert.equal(books.delivered[0]?.file, path.join(storeDir('behaviours'), 'selected/weekly_review.md'));
   const behaviour = (await listBehaviours()).find((row) => row.name === 'weekly_review');
   assert.equal(behaviour?.installation, '', 'the catalog dash means this behaviour needs no installation');
   const tool = await stat(path.join(storeDir('tools'), 'tejun-review'));
@@ -143,19 +143,19 @@ test('an install lands in the owner\'s stores, reads back, and is idempotent', a
   assert.ok(again.skipped.every((i) => i.verdict === 'same-as-yours'));
 
   // The owner edits their copy; the bundle does not write over it unless told to.
-  await writeFile(path.join(storeDir('ways'), 'selected/weekly_review.md'), '# mine now\n');
+  await writeFile(path.join(storeDir('behaviours'), 'selected/weekly_review.md'), '# mine now\n');
   const kept = await installBundle(bundle());
   assert.equal(kept.skipped.find((i) => i.path === 'selected/weekly_review.md')?.verdict, 'replaces-yours');
-  assert.equal(await readFile(path.join(storeDir('ways'), 'selected/weekly_review.md'), 'utf8'), '# mine now\n');
+  assert.equal(await readFile(path.join(storeDir('behaviours'), 'selected/weekly_review.md'), 'utf8'), '# mine now\n');
   const replaced = await installBundle(bundle(), { replace: true });
   assert.equal(replaced.written.find((i) => i.path === 'selected/weekly_review.md')?.verdict, 'replaces-yours');
-  assert.equal(await readFile(path.join(storeDir('ways'), 'selected/weekly_review.md'), 'utf8'), BEHAVIOUR);
+  assert.equal(await readFile(path.join(storeDir('behaviours'), 'selected/weekly_review.md'), 'utf8'), BEHAVIOUR);
 
 });
 
 test('a pack carries back out what the owner\'s copies hold, and reads as a bundle', async () => {
-  await mkdir(path.join(storeDir('ways'), 'selected'), { recursive: true });
-  await writeFile(path.join(storeDir('ways'), 'selected', 'my_way.md'), '# My way\n- **scope:** selected\n- **kinds:** work\n\nMine.\n');
+  await mkdir(path.join(storeDir('behaviours'), 'selected'), { recursive: true });
+  await writeFile(path.join(storeDir('behaviours'), 'selected', 'my_way.md'), '# My way\n- **scope:** selected\n- **kinds:** work\n\nMine.\n');
   const packed = await packBundle({ team: 'weekly_review', ways: ['my_way'], version: '2026-09-03' });
   const paths = packed.files.map((f) => `${f.store}:${f.path}`).sort();
   assert.deepEqual(paths, [

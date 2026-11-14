@@ -64,7 +64,7 @@ async function checkDefinitionsSurface(catalogsDir: string): Promise<void> {
     }
   }
 
-  const behaviourDir = storeDir('ways');
+  const behaviourDir = storeDir('behaviours');
   if (await exists(behaviourDir)) {
     const listed = new Set((await readDefinitions('behaviours')).filter((row) => row.origin === 'user').map((row) => path.resolve(row.file)));
     const walk = async (dir: string): Promise<void> => {
@@ -114,7 +114,7 @@ if (await exists(catalogsDir)) {
   }
   await checkDefinitionsSurface(catalogsDir);
 }
-await checkShadowStore('ways', 'ronin_catalogs/behaviours');
+await checkShadowStore('behaviours', 'ronin_catalogs/behaviours');
 await checkShadowStore('library', 'ronin_library');
 await checkShadowStore('session_boot', 'ronin_session_boot');
 

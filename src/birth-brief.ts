@@ -184,7 +184,7 @@ export function isShelfTeaching(file: string): boolean {
   const shelf = userShelf();
   if (under(shelf) && !under(path.join(shelf, 'root'))) return true;
   const behaviours = path.join(path.dirname(STOCK), 'ronin_catalogs', 'behaviours');
-  const ownerBehaviours = storeDir('ways');
+  const ownerBehaviours = storeDir('behaviours');
   return [behaviours, ownerBehaviours].some((root) =>
     under(path.join(root, 'floor')) || under(path.join(root, 'conditional')),
   );

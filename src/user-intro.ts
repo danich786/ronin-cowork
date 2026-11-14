@@ -3,7 +3,7 @@ import path from 'node:path';
 import { storeDir } from './resources.js';
 
 const target = () => process.env.RONIN_USER_INTRO_FILE?.trim()
-  || path.join(storeDir('ways'), 'floor', 'user intro.md');
+  || path.join(storeDir('behaviours'), 'floor', 'user intro.md');
 
 const clean = (value: unknown): string => typeof value === 'string'
   ? value.trim().replace(/\r\n?/g, '\n').slice(0, 600)

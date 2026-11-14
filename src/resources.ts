@@ -22,7 +22,8 @@ export const STORES: readonly Store[] = [
   store('ageru', 'user', 'ageru'),
   store('ledger', 'data', 'ledger'),
   store('message_queue', 'data', 'message-queue'),
-  store('ways', 'user', 'ways'),
+  store('behaviours', 'user', 'behaviours'),
+  store('facts', 'user', 'facts'),
   store('library', 'user', 'library'),
   store('session_boot', 'user', 'session_boot'),
   store('wipeboards', 'user', 'wipeboards'),
@@ -231,7 +232,7 @@ const WAY_KINDS = new Set(['coding', 'work', 'personal', 'household', 'social', 
 
 export async function listWays(): Promise<WayRow[]> {
   const files = await resolveTreeFiles({
-    stock: path.join(STOCK_DIR, 'behaviours'), store: 'ways',
+    stock: path.join(STOCK_DIR, 'behaviours'), store: 'behaviours',
     include: (name) => name.endsWith('.md') && name !== 'README.md',
   });
   return files.filter((file) => !/^-\s+\*\*hidden:\*\*\s*yes\s*$/mi.test(file.text)).map((file) => {
@@ -257,7 +258,7 @@ export async function listWays(): Promise<WayRow[]> {
 
 export async function wayFile(name: string, origin: Origin): Promise<string> {
   const row = (await resolveTreeFiles({
-    stock: path.join(STOCK_DIR, 'behaviours'), store: 'ways',
+    stock: path.join(STOCK_DIR, 'behaviours'), store: 'behaviours',
     include: (relative) => path.basename(relative) === `${name}.md`,
   })).find((file) => file.name === name && file.origin === origin);
   return row?.path ?? '';

@@ -5,7 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'ronin-behaviour-docs-'));
-process.env.RONIN_WAYS_DIR = path.join(root, 'ways');
+process.env.RONIN_BEHAVIOURS_DIR = path.join(root, 'ways');
 
 const {
   BehaviourDocumentError,
@@ -33,7 +33,7 @@ test('saving stock creates a whole-file owner shadow and never changes stock', a
   assert.equal(saved.origin, 'user');
   assert.equal(saved.shadowed, true);
   assert.equal(saved.text, text);
-  assert.equal(await readFile(path.join(process.env.RONIN_WAYS_DIR!, 'conditional', 'write_it_down.md'), 'utf8'), text);
+  assert.equal(await readFile(path.join(process.env.RONIN_BEHAVIOURS_DIR!, 'conditional', 'write_it_down.md'), 'utf8'), text);
 });
 
 test('Save As is create-only and rejects stock or owner collisions', async () => {
@@ -55,7 +55,7 @@ test('identity, scope metadata, and symlink owner targets are refused', async ()
   const text = '# Bad\n\n- **scope:** floor\n';
   await assert.rejects(() => createBehaviourDocument({ scope: 'selected', name: '../bad', text }), BehaviourDocumentError);
   await assert.rejects(() => createBehaviourDocument({ scope: 'selected', name: 'bad_scope', text }), BehaviourDocumentError);
-  const selected = path.join(process.env.RONIN_WAYS_DIR!, 'selected');
+  const selected = path.join(process.env.RONIN_BEHAVIOURS_DIR!, 'selected');
   await mkdir(selected, { recursive: true });
   const outside = path.join(root, 'outside.md');
   await writeFile(outside, '# Outside\n- **scope:** selected\n');

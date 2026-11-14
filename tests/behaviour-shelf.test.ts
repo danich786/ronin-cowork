@@ -9,15 +9,15 @@ import type express from 'express';
 
 test('Behavior shelf resolves owner additions and whole-file shadows with readable text', async () => {
   const temp = await mkdtemp(path.join(os.tmpdir(), 'ronin-sops-test-'));
-  const previous = process.env.RONIN_WAYS_DIR;
-  process.env.RONIN_WAYS_DIR = path.join(temp, 'sops');
+  const previous = process.env.RONIN_BEHAVIOURS_DIR;
+  process.env.RONIN_BEHAVIOURS_DIR = path.join(temp, 'sops');
   try {
-    await mkdir(path.join(process.env.RONIN_WAYS_DIR, 'selected'), { recursive: true });
-    await writeFile(path.join(process.env.RONIN_WAYS_DIR, 'selected', 'visual_staging.md'), '# My buildout\n\nOwner process.\n');
-    await writeFile(path.join(process.env.RONIN_WAYS_DIR, 'selected', 'local-only.md'), '# Local only\n\nMy own procedure.\n');
-    await writeFile(path.join(process.env.RONIN_WAYS_DIR, 'README.md'), '# Not an SOP\n');
+    await mkdir(path.join(process.env.RONIN_BEHAVIOURS_DIR, 'selected'), { recursive: true });
+    await writeFile(path.join(process.env.RONIN_BEHAVIOURS_DIR, 'selected', 'visual_staging.md'), '# My buildout\n\nOwner process.\n');
+    await writeFile(path.join(process.env.RONIN_BEHAVIOURS_DIR, 'selected', 'local-only.md'), '# Local only\n\nMy own procedure.\n');
+    await writeFile(path.join(process.env.RONIN_BEHAVIOURS_DIR, 'README.md'), '# Not an SOP\n');
     await writeFile(path.join(temp, 'outside.md'), '# Outside\n\nMust not be served.\n');
-    await symlink(path.join(temp, 'outside.md'), path.join(process.env.RONIN_WAYS_DIR, 'selected', 'linked.md'));
+    await symlink(path.join(temp, 'outside.md'), path.join(process.env.RONIN_BEHAVIOURS_DIR, 'selected', 'linked.md'));
 
     const rows = await listWays();
     const shadow = rows.find((row) => row.name === 'visual_staging');
@@ -33,24 +33,24 @@ test('Behavior shelf resolves owner additions and whole-file shadows with readab
     assert.equal(rows.some((row) => row.name === 'linked'), false);
     assert.equal(rows.filter((row) => row.name === 'visual_staging').length, 1);
   } finally {
-    if (previous === undefined) delete process.env.RONIN_WAYS_DIR;
-    else process.env.RONIN_WAYS_DIR = previous;
+    if (previous === undefined) delete process.env.RONIN_BEHAVIOURS_DIR;
+    else process.env.RONIN_BEHAVIOURS_DIR = previous;
     await rm(temp, { recursive: true, force: true });
   }
 });
 
 test('missing owner Behavior store is ordinary and leaves the stock shelf readable', async () => {
   const temp = await mkdtemp(path.join(os.tmpdir(), 'ronin-sops-test-'));
-  const previous = process.env.RONIN_WAYS_DIR;
-  process.env.RONIN_WAYS_DIR = path.join(temp, 'absent');
+  const previous = process.env.RONIN_BEHAVIOURS_DIR;
+  process.env.RONIN_BEHAVIOURS_DIR = path.join(temp, 'absent');
   try {
     const rows = await listWays();
     assert.ok(rows.length > 0);
     assert.ok(rows.every((row) => row.origin === 'stock' && !row.shadowed));
     assert.ok(rows.every((row) => row.content.length > 0));
   } finally {
-    if (previous === undefined) delete process.env.RONIN_WAYS_DIR;
-    else process.env.RONIN_WAYS_DIR = previous;
+    if (previous === undefined) delete process.env.RONIN_BEHAVIOURS_DIR;
+    else process.env.RONIN_BEHAVIOURS_DIR = previous;
     await rm(temp, { recursive: true, force: true });
   }
 });

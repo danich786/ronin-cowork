@@ -365,12 +365,12 @@ export async function packBundle(req: PackRequest): Promise<Bundle> {
   const toolNames = new Set(req.tools ?? []);
   for (const behaviour of await readDefinitions('behaviours')) {
     if (!books.has(behaviour.name)) continue;
-    if (behaviour.origin === 'user') await addFile('ways', path.relative(storeDir('ways'), behaviour.file), behaviour.file);
+    if (behaviour.origin === 'user') await addFile('ways', path.relative(storeDir('behaviours'), behaviour.file), behaviour.file);
     for (const t of behaviour.get('tools').split(',')) if (t.trim() && t.trim() !== '—') toolNames.add(t.trim());
   }
   const resolved = await resolveBehaviourBooks([...books]);
   for (const b of resolved.delivered) {
-    if (b.file.startsWith(storeDir('ways'))) await addFile('ways', path.relative(storeDir('ways'), b.file), b.file);
+    if (b.file.startsWith(storeDir('behaviours'))) await addFile('ways', path.relative(storeDir('behaviours'), b.file), b.file);
   }
   for (const name of req.library ?? []) await addFile('library', `${name}.md`, path.join(storeDir('library'), `${name}.md`));
   for (const name of toolNames) {

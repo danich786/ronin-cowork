@@ -136,10 +136,10 @@ test('the real stock shelf compiles to one read: contracts first, glossary point
   const temp = await mkdtemp(path.join(os.tmpdir(), 'ronin-session-boot-test-'));
   const oldCache = process.env.RONIN_SESSION_BOOT_CACHE_DIR;
   const oldShelf = process.env.RONIN_SESSION_BOOT_DIR;
-  const oldWays = process.env.RONIN_WAYS_DIR;
+  const oldWays = process.env.RONIN_BEHAVIOURS_DIR;
   process.env.RONIN_SESSION_BOOT_CACHE_DIR = path.join(temp, 'generated');
   process.env.RONIN_SESSION_BOOT_DIR = path.join(temp, 'shelf');
-  process.env.RONIN_WAYS_DIR = path.join(temp, 'ways');
+  process.env.RONIN_BEHAVIOURS_DIR = path.join(temp, 'ways');
   try {
     await mkdir(path.join(temp, 'ways', 'floor'), { recursive: true });
     await writeFile(path.join(temp, 'ways', 'floor', 'user-intro.md'), `# User intro\n\n- **scope:** floor\n\n## About the user\n\n${'a'.repeat(180)}\n${'b'.repeat(180)}\n`);
@@ -188,8 +188,8 @@ test('the real stock shelf compiles to one read: contracts first, glossary point
     else process.env.RONIN_SESSION_BOOT_CACHE_DIR = oldCache;
     if (oldShelf === undefined) delete process.env.RONIN_SESSION_BOOT_DIR;
     else process.env.RONIN_SESSION_BOOT_DIR = oldShelf;
-    if (oldWays === undefined) delete process.env.RONIN_WAYS_DIR;
-    else process.env.RONIN_WAYS_DIR = oldWays;
+    if (oldWays === undefined) delete process.env.RONIN_BEHAVIOURS_DIR;
+    else process.env.RONIN_BEHAVIOURS_DIR = oldWays;
     await rm(temp, { recursive: true, force: true });
   }
 });
@@ -351,9 +351,9 @@ test('the stock shelf, the owner shelf and generated fragments are teaching; the
   assert.equal(isShelfTeaching(path.join(repo, 'ronin_session_boot', 'all', 'SHELVES.md')), true);
   assert.equal(isShelfTeaching(path.join(storeDir('session_boot'), 'routine', 'ronin_base', 'OWN.md')), true);
   assert.equal(isShelfTeaching(path.join(storeDir('session_boot'), 'root', 'proj', 'KOTOBA.md')), false);
-  assert.equal(isShelfTeaching(path.join(storeDir('ways'), 'floor', 'owner-floor.md')), true);
-  assert.equal(isShelfTeaching(path.join(storeDir('ways'), 'conditional', 'owner-condition.md')), true);
-  assert.equal(isShelfTeaching(path.join(storeDir('ways'), 'selected', 'owner-choice.md')), false);
+  assert.equal(isShelfTeaching(path.join(storeDir('behaviours'), 'floor', 'owner-floor.md')), true);
+  assert.equal(isShelfTeaching(path.join(storeDir('behaviours'), 'conditional', 'owner-condition.md')), true);
+  assert.equal(isShelfTeaching(path.join(storeDir('behaviours'), 'selected', 'owner-choice.md')), false);
   assert.equal(isShelfTeaching('/somewhere/else/ways/book.md'), false);
 });
 

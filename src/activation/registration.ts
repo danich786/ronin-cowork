@@ -64,7 +64,7 @@ const EMPTY: RegistrationRecord = {
 };
 
 const file = () => path.join(storeDir('config'), 'registration.json');
-const userIntroFile = () => path.join(storeDir('ways'), 'floor', 'user-intro.md');
+const userIntroFile = () => path.join(storeDir('behaviours'), 'floor', 'user-intro.md');
 const text = (value: unknown, max = 240) => typeof value === 'string' ? value.trim().slice(0, max) : '';
 const userIntro = (value: unknown): string => typeof value === 'string'
   ? value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).slice(0, 2).map((line) => line.slice(0, 180)).join('\n')

@@ -6,11 +6,11 @@ import path from 'node:path';
 
 test('behaviours merge owner books over stock whole-file and append new names', async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'ronin-ways-'));
-  process.env.RONIN_WAYS_DIR = path.join(root, 'ways');
-  await mkdir(path.join(process.env.RONIN_WAYS_DIR, 'selected'), { recursive: true });
-  await writeFile(path.join(process.env.RONIN_WAYS_DIR, 'selected', 'visual_staging.md'), '# My Buildout\n- **scope:** selected\n\nMine.\n');
+  process.env.RONIN_BEHAVIOURS_DIR = path.join(root, 'ways');
+  await mkdir(path.join(process.env.RONIN_BEHAVIOURS_DIR, 'selected'), { recursive: true });
+  await writeFile(path.join(process.env.RONIN_BEHAVIOURS_DIR, 'selected', 'visual_staging.md'), '# My Buildout\n- **scope:** selected\n\nMine.\n');
   await writeFile(
-    path.join(process.env.RONIN_WAYS_DIR, 'selected', 'my_way.md'),
+    path.join(process.env.RONIN_BEHAVIOURS_DIR, 'selected', 'my_way.md'),
     '# My Way\n- **scope:** selected\n- **kinds:** work, household, no_such_kind\n\nNew.\n',
   );
   try {
@@ -28,7 +28,7 @@ test('behaviours merge owner books over stock whole-file and append new names', 
     assert.equal(mine?.blurb, 'New.');
     assert.equal(rows.find((row) => row.name === 'recruit')?.origin, 'stock');
   } finally {
-    delete process.env.RONIN_WAYS_DIR;
+    delete process.env.RONIN_BEHAVIOURS_DIR;
     await rm(root, { recursive: true, force: true });
   }
 });

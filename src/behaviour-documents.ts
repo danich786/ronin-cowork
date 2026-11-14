@@ -36,7 +36,7 @@ async function resolved(scope: BehaviourDocumentScope, name: string) {
   const { relative } = identity(scope, name);
   return (await resolveTreeFiles({
     stock: path.join(STOCK_DIR, 'behaviours'),
-    store: 'ways',
+    store: 'behaviours',
     include: (candidate) => candidate === relative,
   }))[0];
 }
@@ -58,7 +58,7 @@ export async function readBehaviourDocument(scopeValue: unknown, nameValue: unkn
 }
 
 async function ownerTarget(scope: BehaviourDocumentScope, name: string): Promise<string> {
-  const root = storeDir('ways');
+  const root = storeDir('behaviours');
   const dir = path.join(root, scope);
   await mkdir(dir, { recursive: true });
   const directoryFacts = await lstat(dir);

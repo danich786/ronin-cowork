@@ -127,7 +127,7 @@ function defaultOwnerRoots(): Record<string, string> {
     // Product docs have no owner shadow store. Owner-authored reading belongs to the
     // library root below; treating library/docs as both would index the same file twice.
     docs: '',
-    'ronin_catalogs/behaviours': storeDir('ways'),
+    'ronin_catalogs/behaviours': storeDir('behaviours'),
     ronin_catalogs: storeDir('catalogs'),
     ronin_session_boot: storeDir('session_boot'),
     ronin_library: storeDir('library'),

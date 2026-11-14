@@ -7,7 +7,7 @@ import path from 'node:path';
 const root = await mkdtemp(path.join(os.tmpdir(), 'ronin-registration-'));
 process.env.RONIN_CONFIG_DIR = path.join(root, 'config');
 process.env.RONIN_SERVICES_SECRETS_DIR = path.join(root, 'secrets');
-process.env.RONIN_WAYS_DIR = path.join(root, 'ways');
+process.env.RONIN_BEHAVIOURS_DIR = path.join(root, 'ways');
 
 const { deleteRegistration, readRegistration, registrationAnswer, submitRegistration } = await import('../src/activation/registration.js');
 const { putEntitlementToken, getEntitlementToken } = await import('../src/activation/secrets.js');
