@@ -56,11 +56,15 @@ const seedWith = (available) => ({ behaviours: [{ name: 'ronin_host', label: 'Ro
 
 const puts = [];
 const briefPuts = [];
-const briefCatalog = [{ kind: 'behaviour', name: 'more-checkpoints', title: 'More checkpoints', seed: 'Check in more often.', depth: 'none', when: [] }];
+const mandate = (axis, title) => ({ kind: 'behaviour', name: `${axis}-${title.toLowerCase().replace(/ /g, '-')}`, title, seed: `${title}.`, depth: 'seed', when: [], mandate: axis, value: title.toLowerCase() });
+const briefCatalog = [{ kind: 'behaviour', name: 'more-checkpoints', title: 'More checkpoints', seed: 'Check in more often.', depth: 'none', when: [], mandate: '', value: '' },
+  mandate('reach', 'Open'), mandate('reach', 'Plan'), mandate('reach', 'Execute'), mandate('recruit', 'Open'), mandate('recruit', 'Nobody'),
+  mandate('output', 'Open'), mandate('output', 'Code'), mandate('output', 'No code')];
 const teamBrief = { brief: { add: [{ name: 'more-checkpoints', depth: 'seed' }], block: [], only: [] }, integrations: [], inherited: { integrations: {}, pm: { on: false } } };
 const serve = (seed) => {
   globalThis.fetch = async (url, init = {}) => {
     const body = url.startsWith('/api/brief/catalog') ? briefCatalog
+      : url.startsWith('/api/brief/preview') ? { in_play: [], off: ['output-no-code'], integrations: {}, pm: { on: false } }
       : url.startsWith('/api/brief/settings/team/') ? (init.method === 'PUT' ? (briefPuts.push({ url, body: JSON.parse(init.body) }), { ...JSON.parse(init.body), inherited: teamBrief.inherited }) : teamBrief)
       : url.startsWith('/api/launch-seed') ? seed
       : url.startsWith('/api/ways') ? ways
@@ -101,7 +105,19 @@ test('every question is an ERABI stone whose reading is the saved answer', async
   ], 'the stones in the tab’s order: Kind on the head line, the New Agent defaults, then Behaviors (project management, the added behaviour’s depth, Block, Only); no Control stone');
   assert.equal(readingOf(form, 'workspace'), 'Ronin Workspace', 'the Workspace reads its title');
   assert.equal(readingOf(form, 'kind'), 'Coding');
-  assert.equal(readingOf(form, 'reach'), 'Plan');
+  assert.equal(readingOf(form, 'reach'), 'Plan', 'a value reads its file\'s title');
+});
+
+test('the mandate menus are the catalog\'s mandate files, less what the layers block', async () => {
+  serve(seedWith(['ronin_host']));
+  const host = new FakeNode('div');
+  renderTeamConfiguration(host, roster);
+  const form = await painted(host);
+  const output = form.all('ask-stone').find((node) => node.dataset.askKey === 'output');
+  await output.click();
+  const words = form.all('ask-opt').map((node) => node.textContent);
+  assert.ok(words.some((word) => word.includes('Code')), 'a value from its file');
+  assert.ok(!words.some((word) => word.includes('No code')), 'a blocked value is off the menu');
 });
 
 test('the tab is the launch forms’ format: step 1 Team (ID · Title · Kind, then Purpose), step 2 New Agent defaults', async () => {

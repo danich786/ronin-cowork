@@ -4,11 +4,15 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 const { GLYPHS, glyph, ruledRows } = await import('../public/js/glyphs.js');
 
-test('every ruled mandate word and kind has one glyph, and an unknown word has none', () => {
-  for (const axis of ['reach', 'recruit', 'output', 'kind']) for (const [word, face] of Object.entries(GLYPHS[axis])) assert.ok(face, `${axis}.${word}`);
-  assert.equal(glyph('reach', 'plan'), '🗺');
-  assert.equal(glyph('reach', 'nonsense'), '');
-  assert.deepEqual(ruledRows('reach', ['open', 'plan'], (v) => v.toUpperCase()), [{ v: 'open', l: 'OPEN', glyph: '○' }, { v: 'plan', l: 'PLAN', glyph: '🗺' }]);
+test('every ruled kind has one glyph, and an unknown word has none', () => {
+  for (const [word, face] of Object.entries(GLYPHS.kind)) assert.ok(face, `kind.${word}`);
+  assert.equal(glyph('kind', 'coding'), '⌨');
+  assert.equal(glyph('kind', 'nonsense'), '');
+  assert.deepEqual(ruledRows('kind', ['open', 'coding'], (v) => v.toUpperCase()), [{ v: 'open', l: 'OPEN', glyph: '○' }, { v: 'coding', l: 'CODING', glyph: '⌨' }]);
+});
+
+test('the mandate axes have no glyph table: their values are the catalog\'s files (mandates.js)', () => {
+  for (const axis of ['reach', 'recruit', 'output']) assert.equal(GLYPHS[axis], undefined, axis);
 });
 
 test('no consumer keeps its own glyph table for a ruled axis', async () => {

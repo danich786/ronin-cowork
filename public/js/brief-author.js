@@ -81,7 +81,7 @@ export function createAuthorForm({ mode = 'behaviour', existing = null, catalog 
     if (help) f.append(el('p', 'na-behaviour-note', help));
     host.append(f); return control;
   };
-  const behaviours = catalog.filter((row) => row.kind === 'behaviour').map((row) => ({ v: row.name, l: row.title || row.name, sub: row.seed || '' }));
+  const behaviours = catalog.filter((row) => row.kind === 'behaviour' && !row.mandate).map((row) => ({ v: row.name, l: row.title || row.name, sub: row.seed || '' }));
   const whenRows = conditionals.map((name) => ({ v: name, l: name }));
 
   const isTool = mode === 'tool';

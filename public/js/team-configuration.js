@@ -9,7 +9,8 @@ import { t } from './lexicon.js';
 import { request } from './request.js';
 import { ask } from './ask.js';
 import { ruledRows } from './glyphs.js';
-import { createStep, mandateWord } from './form-steps.js';
+import { createStep } from './form-steps.js';
+import { firstMandate, screenOf, loadMandates, mandateRows } from './mandates.js';
 import { WorkspacePrimitives } from './workspace-primitives.js';
 import { createBriefSettingsPanel, layerLinks } from './brief-step.js';
 
@@ -21,9 +22,6 @@ const kindWord = (value) => ({
   open: t('campaign_view.option_open', 'Open'), coding: t('team_config.kind_coding', 'Coding'), work: t('team_config.kind_work', 'Work'), personal: t('team_config.kind_personal', 'Personal'),
   household: t('team_config.kind_household', 'Household'), social: t('team_config.kind_social', 'Social'), school: t('team_config.kind_school', 'School'),
 })[value] || value;
-const REACH = ['open', 'discuss', 'plan', 'execute'];
-const RECRUIT = ['open', 'nobody', 'propose agents', 'staff agents'];
-const OUTPUT = ['open', 'a plan', 'ideas', 'code', 'an artifact', 'the team'];
 
 /** The form's one-line answer when its step is folded: its kind. The model is Models > Defaults' (owner, 2026-10-21). */
 export function teamConfigurationMeta(roster) {
@@ -40,7 +38,9 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
   // only on real change now, so a commons waiting off-screen must receive its form here —
   // nothing will render it again when it is placed. A superseded render's host is a
   // discarded node; painting it is invisible and cheap.
-  void request(`/api/workspaces?campaign_id=${encodeURIComponent(roster.campaign_id || '')}`).then((workspaceResult) => {
+  // The mandate menus are the catalog's mandate files (mandates.js), read with the Workspaces.
+  void Promise.all([request(`/api/workspaces?campaign_id=${encodeURIComponent(roster.campaign_id || '')}`), loadMandates(),
+    screenOf({ team: roster.name })]).then(([workspaceResult, , screen]) => {
     const workspaces = workspaceResult.ok && Array.isArray(workspaceResult.data?.workspaces) ? workspaceResult.data.workspaces : [];
     const defaults = bucket(roster.agent_defaults);
     const form = el('form', 'ntf-form tw-config-form');
@@ -75,13 +75,13 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
         { key: 'workspace', label: t('new_team.workspace', 'Workspace'), blank: t('new_team.workspace_none', 'None'), options: workspaceRows },
       ] },
       { group: t('mandate', 'Mandate'), fields: [
-        { key: 'reach', label: t('team_config.reach', 'Reach'), options: REACH.map((v) => ({ v, l: mandateWord(v) })) },
-        { key: 'recruit', label: t('team_config.recruit', 'Recruit'), options: RECRUIT.map((v) => ({ v, l: mandateWord(v) })) },
-        { key: 'output', label: t('team_config.output', 'Output'), many: true, options: OUTPUT.map((v) => ({ v, l: mandateWord(v) })) },
+        { key: 'reach', label: t('team_config.reach', 'Reach'), options: mandateRows('reach', screen) },
+        { key: 'recruit', label: t('team_config.recruit', 'Recruit'), options: mandateRows('recruit', screen) },
+        { key: 'output', label: t('team_config.output', 'Output'), many: true, options: mandateRows('output', screen) },
       ] },
     ], { value: {
       workspace: roster.workspace || '',
-      reach: defaults.reach || 'open', recruit: defaults.recruit || 'open', output: [defaults.output || 'open'].flat().filter(Boolean),
+      reach: defaults.reach || firstMandate('reach'), recruit: defaults.recruit || firstMandate('recruit'), output: [defaults.output || firstMandate('output')].flat().filter(Boolean),
     }, density: 'tight', trayHost: defaultsRow });
     defaultsRow.append(agentDefaults.el); stepDefaults.body.append(defaultsRow); form.append(stepDefaults.el);
 

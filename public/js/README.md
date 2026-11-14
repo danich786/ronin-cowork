@@ -74,7 +74,8 @@ below describes implementation ownership; use the surface index above to find a 
 | `theme.js` | dark/light: the saved choice, `termTheme()` read off the CSS tokens, the flip |
 | `api.js` | `reconcileSessions` (the one writer of `S.sessions`) and the `/api/sessions` write calls |
 | `widgets.js` | `makeGauge`, `setInert` |
-| `glyphs.js` | THE RULED GLYPHS — one face per ruled word (reach, recruit, output, dial, kind) for ask()'s squares; `glyph(axis, value)`, `ruledRows(axis, values, word)` |
+| `glyphs.js` | THE RULED GLYPHS — one face per ruled word (kind) for ask()'s squares; `glyph(axis, value)`, `ruledRows(axis, values, word)` |
+| `mandates.js` | THE MANDATE MENUS — Reach, Recruit and Output from the catalog's `mandate:` files (BRIEF_MODEL §4); `loadMandates`, `setMandates`, `mandateRows(axis, screen)`, `screenOf(preview body)`, `mandateTitle` |
 | `ask.js` | ERABI, THE ONE SELECTOR UTILITY — `ask(spec)`: reading stones, the tray, the two shapes, switches, groups (ronin-lab `SELECTORS.md`; docs/architecture/ui.md § Asking a question) |
 | `events.js` | what the `/events` messages mean to the page — birth/death chips, the transcript, draft, Mika and Setup feeds and their handler sets, `openSessionSomewhere`, and `sayWhenUnreachable` (the delayed, quiet top-bar reconnect reading on desktop and phone) |
 | `store.js` | THE STORE ([docs/architecture/data-path.md](../../docs/architecture/data-path.md)) — the one `/events` socket (`connect`, `renew`) and the server's resources, all by push only: `home`, `sessions`, `teams`, `messages`, `memory`, and `wipeboard:<board>` / `jikan:<team>`, which a subscription asks for with a `want`; `get`, `subscribe` |

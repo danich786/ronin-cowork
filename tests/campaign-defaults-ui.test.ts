@@ -13,8 +13,9 @@ test('Campaign defaults use ask() and Output keeps multi-select semantics', asyn
   assert.match(source, /const questions = ask\(/);
   assert.match(source, /key: 'output'.*many: true/);
   for (const key of ['reach', 'recruit', 'output']) {
-    assert.match(source, new RegExp(`key: '${key}'.*options: CHOICES\\.${key}\\.map`));
+    assert.match(source, new RegExp(`key: '${key}'.*options: mandateRows\\('${key}', screen\\)`), 'the menu is the catalog\'s mandate files, less what the Campaign blocks');
   }
+  assert.doesNotMatch(source, /'propose agents'|'staff agents'|'no code'/, 'no hand list of mandate values');
   assert.doesNotMatch(source, /ruledRows\('(reach|recruit|output)'/, 'mandates are icon-free rectangles');
   assert.doesNotMatch(source, /key: 'dial'|ruledRows\('dial'|default_dial/, 'the legacy Control default has no surface');
   assert.doesNotMatch(source, /key: 'features'/);

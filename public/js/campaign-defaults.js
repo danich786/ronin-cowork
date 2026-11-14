@@ -5,17 +5,15 @@ import { saveCampaign } from './campaigns.js';
 import { WorkspaceKit } from './workspace-kit.js';
 import { ask } from './ask.js';
 import { createBriefSettingsPanel } from './brief-step.js';
+import { firstMandate, screenOf, loadMandates, mandateRows } from './mandates.js';
 
 const el = (tag, cls, text) => { const out = document.createElement(tag); if (cls) out.className = cls; if (text != null) out.textContent = String(text); return out; };
 const bucket = (value) => value && typeof value === 'object' && !Array.isArray(value) ? value : {};
 const list = (value) => Array.isArray(value) ? value : [];
 // The Campaign is the TOP of this cascade — campaign → team → launch — so the stock value
-// has to be settable somewhere, and this card is that somewhere.
-const CHOICES = Object.freeze({ reach: ['open', 'discuss', 'plan', 'execute'], recruit: ['open', 'nobody', 'propose agents', 'staff agents'], output: ['open', 'a plan', 'ideas', 'code', 'an artifact', 'the team', 'no code'], launch_mode: ['configured', 'live_dangerously'] });
+// has to be settable somewhere, and this card is that somewhere. Its mandate menus are the
+// catalog's mandate files (mandates.js), never a list here.
 const optionLabel = (value) => ({
-  open: t('campaign_view.option_open', 'Open'), discuss: t('campaign_view.option_discuss', 'Discuss'), plan: t('campaign_view.option_plan', 'Plan'), execute: t('campaign_view.option_execute', 'Execute'),
-  nobody: t('campaign_view.option_nobody', 'Nobody'), 'propose agents': t('campaign_view.option_propose', 'Propose Agents'), 'staff agents': t('campaign_view.option_staff', 'Staff Agents'),
-  'a plan': t('campaign_view.option_a_plan', 'A plan'), ideas: t('campaign_view.option_ideas', 'Ideas'), code: t('campaign_view.option_code', 'Code'), 'an artifact': t('campaign_view.option_artifact', 'An artifact'), 'the team': t('campaign_view.option_team', 'The Team'), 'no code': t('campaign_view.option_no_code', 'No code'),
   configured: t('launch_mode.configured', 'Native'), live_dangerously: t('launch_mode.live', 'Dangerously'),
 })[value] || value;
 
@@ -24,6 +22,7 @@ export function createAgentDefaultsSurface(campaign) {
   const surface = createSurface({ label: t('campaign_view.defaults', 'Defaults'), className: 'cv-surface' });
   const body = el('div', 'cv-body'); surface.content.append(body);
   let edited = null;
+  let screen = {}; // what this Campaign (and the user) block or screen: off its mandate menus
 
   function paint() {
     const row = campaign(); body.replaceChildren();
@@ -36,14 +35,14 @@ export function createAgentDefaultsSurface(campaign) {
     body.append(el('p', 'cv-note', t('campaign_view.defaults_help', 'These defaults land in the next Team or Agent form that opens. They remain editable there; nothing live changes.')));
     body.append(el('p', 'cv-note', t('campaign_view.defaults_models', 'Models are set in Models > Defaults.')));
     let picked = edited || {
-      reach: current.reach || CHOICES.reach[0], recruit: current.recruit || CHOICES.recruit[0],
-      output: list(current.output), launch_mode: current.launch_mode || CHOICES.launch_mode[0],
+      reach: current.reach || firstMandate('reach'), recruit: current.recruit || firstMandate('recruit'),
+      output: list(current.output), launch_mode: current.launch_mode || 'configured',
     };
     const questions = ask([
       { group: t('mandate', 'Mandate'), fields: [
-        { key: 'reach', label: t('campaign_view.default_reach', 'Reach'), options: CHOICES.reach.map((value) => ({ v: value, l: optionLabel(value) })) },
-        { key: 'recruit', label: t('campaign_view.default_recruit', 'Recruit'), options: CHOICES.recruit.map((value) => ({ v: value, l: optionLabel(value) })) },
-        { key: 'output', label: t('campaign_view.default_output', 'Output'), many: true, options: CHOICES.output.map((value) => ({ v: value, l: optionLabel(value) })) },
+        { key: 'reach', label: t('campaign_view.default_reach', 'Reach'), options: mandateRows('reach', screen) },
+        { key: 'recruit', label: t('campaign_view.default_recruit', 'Recruit'), options: mandateRows('recruit', screen) },
+        { key: 'output', label: t('campaign_view.default_output', 'Output'), many: true, options: mandateRows('output', screen) },
       ] },
       { group: t('campaign_view.defaults_runtime', 'Runtime'), fields: [
         { key: 'launch_mode', label: t('launch_mode.head', 'Launch mode'), options: [
@@ -73,7 +72,11 @@ export function createAgentDefaultsSurface(campaign) {
     });
   }
 
-  return { el: surface.el, enter: () => paint() };
+  return { el: surface.el, enter: async () => {
+    const id = campaign()?.id || '';
+    [, screen] = await Promise.all([loadMandates(), screenOf({ campaign_id: id })]);
+    paint();
+  } };
 }
 
 export function defaultsSummary(campaign) {

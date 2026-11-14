@@ -146,10 +146,11 @@ test('Add Agent confirms a draft into a compact row with the one selector utilit
   assert.match(agents, /group: t\('new_agent\.model_package', 'Model'\)/);
   assert.match(agents, /group: t\('new_agent\.model_package', 'Model'\), fields: \[[\s\S]*key: 'provider'[\s\S]*key: 'model'[\s\S]*key: 'teamLead'[\s\S]*\] \},[\s\S]*group: t\('mandate', 'Mandate'\)/);
   assert.match(agents, /group: t\('mandate', 'Mandate'\)/);
-  assert.match(agents, /const mandateRows = \(values\) => values\.map/);
-  assert.match(agents, /options: mandateRows\(REACH\)/);
-  assert.match(agents, /options: mandateRows\(RECRUIT\)/);
-  assert.match(agents, /many: true, options: mandateRows\(OUTPUT\)/);
+  assert.match(agents, /import \{ mandateRows \} from '\.\/mandates\.js'/);
+  assert.match(agents, /options: \(\) => mandateRows\('reach', screen\(\)\)/);
+  assert.match(agents, /options: \(\) => mandateRows\('recruit', screen\(\)\)/);
+  assert.match(agents, /many: true, options: \(\) => mandateRows\('output', screen\(\)\)/);
+  assert.doesNotMatch(agents, /const (REACH|RECRUIT|OUTPUT) =/, 'no hand list of mandate values');
   assert.doesNotMatch(agents, /shape: 'square'|ruledRows|glyph:/);
   assert.match(agents, /many: true/);
   assert.match(agents, /key: 'teamLead'.*switch:/);

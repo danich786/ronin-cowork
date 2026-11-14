@@ -167,7 +167,8 @@ export function paintBriefForm(host, { layer = 'agent', catalog = [], value = em
     return depth.el;
   };
   // What an add can change: an optional behaviour (depth none) brought in, or a seed raised to full.
-  const addable = catalog.filter((row) => row.kind === 'behaviour' && (row.depth !== 'full' || own.brief.add.some((a) => a.name === row.name)));
+  // A mandate value is chosen on the Mandate menus, never added here.
+  const addable = catalog.filter((row) => row.kind === 'behaviour' && !row.mandate && (row.depth !== 'full' || own.brief.add.some((a) => a.name === row.name)));
   for (const entry of own.brief.add) if (!addable.some((row) => row.name === entry.name)) addable.push(named.get(entry.name) || { name: entry.name });
   const addRow = (row, now) => {
     if ((now.add || []).includes(row.name)) return option(row, { word: depthWord(depthOf(row.name)) });

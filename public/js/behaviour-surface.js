@@ -9,11 +9,16 @@ import { t } from './lexicon.js';
 import { renderMarkdownDocument } from './markdown-reader.js';
 import { createBriefSettingsPanel, layerLinks, scopeOf } from './brief-step.js';
 import { createAuthorForm } from './brief-author.js';
+import { AXES } from './mandates.js';
 
 export const BEHAVIOUR_SURFACE_TYPE = 'campaign.behaviours';
 const node = (tag, cls = '', text = '') => { const out = document.createElement(tag); if (cls) out.className = cls; if (text) out.textContent = text; return out; };
 const keyOf = (row) => `${row.scope}:${row.name}`;
 
+function mandateGroup(axis) {
+  const word = ({ reach: t('reach', 'Reach'), recruit: t('recruit', 'Recruit'), output: t('output', 'Output') })[axis] || axis;
+  return t('brief.mandate_group', 'Mandate: {axis}', { axis: word });
+}
 function groupOf(scope) {
   return ({ facts: t('brief.facts', 'Facts'), behaviours: t('behaviours', 'Behaviors'), tools: t('brief.tools', 'Tools') })[scope] || scope;
 }
@@ -31,7 +36,7 @@ function viewer(row, host, afterSave, context) {
   const heading = node('h2', 'bh-title', row.title || row.name || ({ tool: t('author.new_tool', 'New tool'), bridge: t('author.new_bridge', 'New bridge') })[row.mode] || t('behaviours.new', 'New Behavior'));
   addProvMark(heading, row);
   const summary = node('p', 'bh-summary', row.seed || row.line || '');
-  const meta = node('p', 'bh-meta', [groupOf(row.scope), row.origin === 'user' ? t('behaviours.yours', 'Yours') : row.origin ? t('behaviours.stock', 'Ronin') : ''].filter(Boolean).join(' · '));
+  const meta = node('p', 'bh-meta', [row.mandate ? mandateGroup(row.mandate) : groupOf(row.scope), row.origin === 'user' ? t('behaviours.yours', 'Yours') : row.origin ? t('behaviours.stock', 'Ronin') : ''].filter(Boolean).join(' · '));
   const status = node('p', 'bh-status'); status.setAttribute('role', 'status');
   const readingHost = node('div', 'bh-reading');
   const actions = node('div', 'bh-actions');
@@ -82,9 +87,11 @@ function createBehaviourSurface(initial = {}) {
   settings.el.classList.add('behaviour-settings');
   const settingsHead = node('h3', 'behaviour-settings-head', t('brief.user_settings', 'For every Agent you start'));
   stones.mount(surface.content, { before: [intro], after: [settingsHead, settings.el] });
-  const items = () => ['behaviours', 'facts', 'tools'].flatMap((scope) => rows.filter((row) => row.scope === scope))
+  // Behaviors, then the mandate values by axis (each a behaviour file, BRIEF_MODEL §4), Facts, Tools.
+  const shelves = [['behaviours', ''], ...AXES.map((axis) => ['behaviours', axis]), ['facts', ''], ['tools', '']];
+  const items = () => shelves.flatMap(([scope, axis]) => rows.filter((row) => row.scope === scope && (row.mandate || '') === axis))
     // A stone carries the name only (its seed would be cut short); the opened file says the rest.
-    .map((row) => ({ id: keyOf(row), label: row.title || row.name, group: groupOf(row.scope), secondary: '', state: row.origin === 'user' ? t('behaviours.yours', 'Yours') : '', row }));
+    .map((row) => ({ id: keyOf(row), label: row.title || row.name, group: row.mandate ? mandateGroup(row.mandate) : groupOf(row.scope), secondary: '', state: row.origin === 'user' ? t('behaviours.yours', 'Yours') : '', row }));
   async function refresh(select = '') {
     surface.setState('loading', t('customize.reading', 'reading…'));
     const result = await request('/api/brief/catalog', { cache: 'no-store' });

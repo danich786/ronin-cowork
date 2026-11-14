@@ -9,16 +9,13 @@ import { t } from './lexicon.js';
 import { ask } from './ask.js';
 import { finalizeTeamName, isValidTeamName, sanitizeTeamName } from './new-team-draft.js';
 import {
-  createStep, el, kindTiles, loadProviderCatalog, mandateWord, modelLabel, priceText, providerCatalog, readingRows, tagRow, templateTray, tierWord,
+  createStep, el, kindTiles, loadProviderCatalog, modelLabel, priceText, providerCatalog, readingRows, tagRow, templateTray, tierWord,
 } from './form-steps.js';
 import { openLaunchHandoff } from './launch-handoff.js';
+import { mandateRows, setMandates } from './mandates.js';
 import { briefValue, emptyBriefValue, layerLinks, paintBriefForm } from './brief-step.js';
 import { closeWorkspaceTab, reserveWorkspaceTab, workbenchLaunchUrl, workbenchLink } from './workspace.js';
 
-const REACH = ['open', 'discuss', 'plan', 'execute'];
-const RECRUIT = ['open', 'nobody', 'propose agents', 'staff agents'];
-// absence of `code`: silence is not an instruction. Nothing validates the combination.
-const OUTPUT = ['open', 'a plan', 'ideas', 'code', 'an artifact', 'the team', 'no code'];
 
 /** A preload may name a template outside the form's default kind filter. Keep a compatible
  * current kind when possible; otherwise use the template's first declared kind. */
@@ -249,7 +246,6 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
   }));
   const teamChoice = () => draft.teamMode === 'new' ? 'new' : draft.teamMode === 'none' ? 'none' : 'current';
   const teamRows = () => teams.map((row) => ({ v: row.name, l: String(row.title ?? '').trim() || row.name, sub: row.name }));
-  const mandateRows = (values) => values.map((value) => ({ v: value, l: mandateWord(value) }));
   const newTeamField = () => {
     const input = el('input'); input.type = 'text'; input.spellcheck = false; input.autocapitalize = 'off'; input.value = draft.newTeam;
     input.placeholder = t('new_team.name_placeholder', 'lowercase, digits, - _');
@@ -319,9 +315,9 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
       ] },
     ] },
     { group: t('mandate', 'Mandate'), fields: [
-      { key: 'reach', label: t('reach', 'Reach'), options: mandateRows(REACH) },
-      { key: 'recruit', label: t('recruit', 'Recruit'), options: mandateRows(RECRUIT) },
-      { key: 'output', label: t('output', 'Output'), many: true, options: mandateRows(OUTPUT) },
+      { key: 'reach', label: t('reach', 'Reach'), options: () => mandateRows('reach', { block: preview?.off || [] }) },
+      { key: 'recruit', label: t('recruit', 'Recruit'), options: () => mandateRows('recruit', { block: preview?.off || [] }) },
+      { key: 'output', label: t('output', 'Output'), many: true, options: () => mandateRows('output', { block: preview?.off || [] }) },
     ] },
   ], {
     value: { provider: draft.provider, model: draft.model, reach: draft.reach, recruit: draft.recruit, output: draft.output, role: draft.role},
@@ -377,10 +373,12 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     if (asked !== previewAsked || !result.ok) return;
     preview = result.data || null;
     paintBehaviourShelves();
+    questions.paint(); // the mandate menus, less what the layers in play block
   }
   async function loadCatalog() {
     const result = await request('/api/brief/catalog');
     catalog = result.ok && Array.isArray(result.data) ? result.data : [];
+    setMandates(catalog); // the mandate menus are the catalog's mandate files (mandates.js)
   }
   stepLoadout.body.append(el('p', 'na-behaviour-intro', t('brief.intro', 'What this Agent is told: the integrations it works with, the behaviors you add, and what comes with its situation.')), shelvesHost);
 
