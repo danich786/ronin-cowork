@@ -64,7 +64,7 @@ export function createAgentDefaultsSurface(campaign) {
       if (result.ok) { edited = null; paint(); }
     });
     /* What every Agent in this Campaign is told: its brief settings, saved on their own because they reach live Agents. */
-    const brief = createBriefSettingsPanel({ layer: 'campaign', id: row.id, campaignId: row.id, createAction: WorkspaceKit.primitives.createAction });
+    const brief = createBriefSettingsPanel({ layer: 'campaign', id: row.id, campaignId: row.id, createAction: WorkspaceKit.primitives.createAction, preview: { campaign_id: row.id } });
     body.append(el('h3', 'cv-brief-head', t('behaviours', 'Behaviors')), el('p', 'cv-note', t('campaign_view.brief_help', 'What every Agent in this Campaign is told. Agents already working are sent the change.')), brief.el);
     void brief.enter();
   }

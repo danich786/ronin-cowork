@@ -71,7 +71,7 @@ function createBehaviourSurface(initial = {}) {
   const stones = createPhalanx({ className: 'behaviour-stones', renderDetail: (item, host) => viewer(item.row, host, refresh, { rows: () => rows }) });
   const intro = node('div', 'sws-intro');
   intro.append(node('h2', '', t('behaviours.title', 'Behaviors')), node('p', '', t('brief.user_help', 'What every Agent you start is told. Open any file to read it, or save your own version: yours replaces Ronin’s by name and survives updates.')));
-  const settings = createBriefSettingsPanel({ layer: 'user', id: 'me', createAction: WorkspaceKit.primitives.createAction });
+  const settings = createBriefSettingsPanel({ layer: 'user', id: 'me', createAction: WorkspaceKit.primitives.createAction, preview: {}, linkFor: layerLinks() });
   // Write your own: a behaviour, a tool for a command you have, or a bridge (BRIEF_MODEL §8).
   const adds = node('div', 'bh-actions');
   for (const [mode, scope, label] of [['behaviour', 'behaviours', t('behaviours.new', 'New Behavior')], ['tool', 'tools', t('author.new_tool', 'New tool')], ['bridge', 'behaviours', t('author.new_bridge', 'New bridge')]]) {

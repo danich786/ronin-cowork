@@ -12,7 +12,7 @@ import {
   createStep, el, kindTiles, loadProviderCatalog, mandateWord, modelLabel, priceText, providerCatalog, readingRows, tagRow, templateTray, tierWord,
 } from './form-steps.js';
 import { openLaunchHandoff } from './launch-handoff.js';
-import { briefValue, emptyBriefValue, paintBriefForm } from './brief-step.js';
+import { briefValue, emptyBriefValue, layerLinks, paintBriefForm } from './brief-step.js';
 import { closeWorkspaceTab, reserveWorkspaceTab, workbenchLaunchUrl, workbenchLink } from './workspace.js';
 
 const REACH = ['open', 'discuss', 'plan', 'execute'];
@@ -363,6 +363,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     briefForm = paintBriefForm(shelvesHost, {
       layer: 'agent', catalog, value: draft.setting, above: { integrations: preview?.integrations, pm: preview?.pm }, inPlay: preview?.in_play || [],
       openBehaviours: configure ? null : openBehaviours,
+      linkFor: layerLinks({ team: chosenTeam(), open: { team: openTeamDefaults ? () => openTeamDefaults(chosenTeam()) : null, campaign: openDeskDefaults } }),
       onChange: (setting) => { draft.setting = setting; paintFoot(); paintActions(); void loadPreview(); },
     });
   }

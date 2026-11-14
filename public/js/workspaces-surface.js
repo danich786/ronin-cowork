@@ -14,7 +14,7 @@
  */
 import { WorkspaceKit } from './workspace-kit.js';
 import { createStep, el } from './form-steps.js';
-import { createBriefSettingsPanel } from './brief-step.js';
+import { createBriefSettingsPanel, layerLinks } from './brief-step.js';
 import { createPhalanx } from './phalanx.js';
 import { request } from './request.js';
 import { t } from './lexicon.js';
@@ -167,7 +167,8 @@ export function workspacePage(w, { reading, campaignId, onSaved = () => {}, onDi
   /* ---- 5 · Behaviors (BRIEF_MODEL §8): what every Agent in this Workspace is told — its add, block
      and only lists and project management; its integrations are step 3. A created Workspace only. ---- */
   const stepBrief = createStep({ n: 5, key: 'brief', title: t('behaviours', 'Behaviors'), onToggle: () => { open.brief = !open.brief; paint(); } });
-  const brief = isNew ? null : createBriefSettingsPanel({ layer: 'workspace', id: draft.name, campaignId: campaignId() || '', ownSave: false, showIntegrations: false, onChange: () => changed() });
+  const brief = isNew ? null : createBriefSettingsPanel({ layer: 'workspace', id: draft.name, campaignId: campaignId() || '', ownSave: false, showIntegrations: false, onChange: () => changed(),
+    preview: { workspace: draft.name, campaign_id: campaignId() || undefined }, linkFor: layerLinks() });
   if (brief) { stepBrief.body.append(el('p', 'fs-step-help', t('workspaces.brief_help', 'What every Agent in this Workspace is told. Agents already working are sent the change.')), brief.el); void brief.enter(); }
 
   /* ---- 3 · Integrations (KAN-338): the outside services this Workspace uses, from the integrations

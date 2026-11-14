@@ -15,6 +15,7 @@ import { ask } from './ask.js';
 import { t } from './lexicon.js';
 import { el } from './form-steps.js';
 import { request } from './request.js';
+import { workbenchLaunchUrl, workbenchLink } from './workspace.js';
 
 /** The files folder a catalog kind lives in: fact → facts (the preview already says it plural). */
 export const scopeOf = (kind = '') => (String(kind).endsWith('s') ? String(kind) : `${kind}s`);
@@ -66,12 +67,33 @@ function whyWord(need) {
 export const whyText = (why = []) => (why.length ? why.map(whyWord).join(' · ') : t('brief.why_every', 'every Agent'));
 
 
+/** Links to the layer pages above, for "Set on": the Campaign's desk settings, the Team's
+ *  configuration, the Workspaces page. A plain press opens it in place; a modified one, a tab. */
+export function layerLinks({ team = '', open = {} } = {}) {
+  const specs = {
+    campaign: { destination: 'campaign', mode: 'replace', state: { count: 2, selected: 'workspace1', seats: { workspace1: 'campaign.defaults', workspace2: 'setup.launch-own' } } },
+    team: team ? { destination: 'team', param: team, mode: 'replace', state: { count: 2, selected: 'workspace1', seats: { workspace1: { type: 'team.commons', tab: 'team-configuration' } } } } : null,
+    workspace: { destination: 'workspaces', mode: 'replace' },
+  };
+  return (from, label) => {
+    const spec = specs[from];
+    if (!spec) return null;
+    const link = workbenchLink(el('a', null, label), spec);
+    link.addEventListener('click', (event) => {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      if (open[from]) open[from](); else location.assign(workbenchLaunchUrl(spec));
+    });
+    return link;
+  };
+}
+
 /**
  * Draw the form into `host`. `layer` is 'agent' | 'campaign' | 'workspace' | 'team'. An Agent
  * gets Integrations, Optional and Comes with this Agent; a layer gets Integrations, Add, Block
  * and Only. `onChange(value)` hands back the layer's own value, never what it inherits.
  */
-export function paintBriefForm(host, { layer = 'agent', catalog = [], value = emptyBriefValue(), above = {}, inPlay = [], onChange = () => {}, openBehaviours = null, showIntegrations = true } = {}) {
+export function paintBriefForm(host, { layer = 'agent', catalog = [], value = emptyBriefValue(), above = {}, inPlay = null, onChange = () => {}, openBehaviours = null, showIntegrations = true, linkFor = null } = {}) {
   const own = briefValue(value);
   const inherited = Object.fromEntries(Object.entries(above.integrations || {}).filter(([, from]) => from && from !== layer));
   const pmAbove = above.pm?.on && above.pm.from && above.pm.from !== layer ? above.pm.from : '';
@@ -107,6 +129,13 @@ export function paintBriefForm(host, { layer = 'agent', catalog = [], value = em
     ? t('brief.integrations_help', 'On from the Campaign, Workspace or Team, plus any you turn on for this Agent.')
     : t('brief.integrations_help_layer', 'On here is on for everything below.')));
   integrationSection.append(pmRow);
+  // Where what is inherited is set: one line, each place a link to its page when the host can open it.
+  const sources = [...new Set([...Object.values(inherited), ...(pmAbove && pmAbove !== 'jira' ? [pmAbove] : [])])];
+  if (sources.length) {
+    const setOn = el('p', 'na-behaviour-note brief-set-on', `${t('brief.set_on', 'Set on')}: `);
+    sources.forEach((from, index) => { if (index) setOn.append(' · '); setOn.append(linkFor?.(from, layerWord(from)) || layerWord(from)); });
+    integrationSection.append(setOn);
+  }
   parts.push(integrationSection);
 
   /* Add (an Agent's Optional): behaviours with a depth. */
@@ -135,19 +164,25 @@ export function paintBriefForm(host, { layer = 'agent', catalog = [], value = em
   parts.push(addSection);
   const destroyers = [integrations, pm, add, { destroy: () => depthAsks.forEach((one) => one.destroy()) }];
 
-  if (layer === 'agent') {
-    /* Comes with this Agent: the server's answer, read-only. */
+  /* What an Agent here is told: the server's answer, read-only — the Agent's own form, and any page that asks. */
+  const told = () => {
     // A behaviour brings its tools; facts are the brief's own; what this Agent adds itself is under Optional.
-    const mine = (row) => (row.why || []).length > 0 && row.why.every((need) => need === 'add:agent');
-    const rows = inPlay.filter((row) => (row.kind === 'behaviours' || row.kind === 'behaviour') && !mine(row));
+    const mine = (row) => layer === 'agent' && (row.why || []).length > 0 && row.why.every((need) => need === 'add:agent');
+    const rows = (inPlay || []).filter((row) => (row.kind === 'behaviours' || row.kind === 'behaviour') && !mine(row));
     // The why is each stone's second line, always shown; the seed reads in the caption.
-    const fixed = ask([{ group: t('brief.comes', 'Comes with this Agent'), fields: [{ key: 'inPlay', label: t('behaviours', 'Behaviors'), many: true, shape: 'rect', filter: false,
+    const fixed = ask([{ group: layer === 'agent' ? t('brief.comes', 'Comes with this Agent') : t('brief.told_here', 'An Agent here is told'), fields: [{ key: 'inPlay', label: t('behaviours', 'Behaviors'), many: true, shape: 'rect', filter: false,
       options: rows.map((row) => option(named.get(row.name) || row, { l: row.title || row.name, word: whyText(row.why), disabled: true })) }] }],
     { value: { inPlay: rows.map((row) => row.name) }, className: 'na-behaviour-readonly', density: 'tight', exposed: true });
     const fixedSection = el('div', 'na-behaviour-section');
-    fixedSection.append(fixed.el, el('p', 'na-behaviour-note', t('brief.comes_help', 'What this Agent will be told anyway, and why. Read-only.')));
+    fixedSection.append(fixed.el, el('p', 'na-behaviour-note', layer === 'agent'
+      ? t('brief.comes_help', 'What this Agent will be told anyway, and why. Read-only.')
+      : t('brief.told_here_help', 'What a new Agent here is told, and why, as saved. Read-only.')));
     parts.push(fixedSection);
     destroyers.push(fixed);
+  };
+
+  if (layer === 'agent') {
+    told();
   } else {
     /* Block and Only: names of facts, behaviours and tools. */
     const listField = (key, group, help) => {
@@ -160,6 +195,7 @@ export function paintBriefForm(host, { layer = 'agent', catalog = [], value = em
     };
     listField('block', t('brief.block', 'Block'), t('brief.block_help', 'Never told to any Agent below.'));
     listField('only', t('brief.only', 'Only'), t('brief.only_help', 'When set, nothing else is told below; a behavior brings its tools.'));
+    if (inPlay) told();
   }
   host.replaceChildren(...parts);
   return { destroy: () => destroyers.forEach((part) => part.destroy()) };
@@ -170,7 +206,7 @@ export function paintBriefForm(host, { layer = 'agent', catalog = [], value = em
  * mount it (`GET`/`PUT /api/brief/settings/:layer/:id`). A save rebuilds every Agent's brief
  * on the server, and each Agent is sent only what changed.
  */
-export function createBriefSettingsPanel({ layer, id = '', campaignId = '', createAction = null, ownSave = true, showIntegrations = true, onChange = () => {} } = {}) {
+export function createBriefSettingsPanel({ layer, id = '', campaignId = '', createAction = null, ownSave = true, showIntegrations = true, onChange = () => {}, preview = null, linkFor = null } = {}) {
   const root = el('div', 'brief-settings');
   const formHost = el('div', 'na-behaviour-sections');
   const actions = el('div', 'brief-settings-actions');
@@ -182,12 +218,18 @@ export function createBriefSettingsPanel({ layer, id = '', campaignId = '', crea
   root.append(formHost);
   if (ownSave) root.append(actions); // else the page's own Save calls save()
   const url = () => `/api/brief/settings/${encodeURIComponent(layer)}/${encodeURIComponent(id || '-')}${campaignId ? `?campaign_id=${encodeURIComponent(campaignId)}` : ''}`;
-  let catalog = []; let value = emptyBriefValue(); let above = {}; let form = null;
+  let catalog = []; let value = emptyBriefValue(); let above = {}; let form = null; let inPlay = null;
   const paint = () => {
     form?.destroy();
-    form = paintBriefForm(formHost, { layer, catalog, value, above, showIntegrations, onChange: (next) => { value = next; status.textContent = ''; onChange(next); } });
+    form = paintBriefForm(formHost, { layer, catalog, value, above, showIntegrations, inPlay, linkFor, onChange: (next) => { value = next; status.textContent = ''; onChange(next); } });
   };
-  const answer = (data = {}) => { value = briefValue(data); above = data.inherited || {}; paint(); };
+  // `preview` is what an Agent here is: { campaign_id } | { workspace } | { team } (POST /api/brief/preview).
+  const readTold = async () => {
+    if (!preview) return;
+    const result = await request('/api/brief/preview', { method: 'POST', json: preview });
+    if (result.ok) { inPlay = result.data?.in_play || []; paint(); }
+  };
+  const answer = (data = {}) => { value = briefValue(data); above = data.inherited || {}; paint(); void readTold(); };
   async function save() {
     status.textContent = t('team_config.saving', 'Saving…');
     const body = { ...value, pm: typeof value.pm === 'boolean' ? value.pm : null };
