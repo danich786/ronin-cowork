@@ -141,7 +141,8 @@ test('Behaviors is the Team\u2019s brief settings from the server, never the old
   assert.equal(stone(form, 'ronin_host'), null, 'the old seed offer is gone');
   assert.equal(stone(form, 'mandates'), null);
   const heads = form.all('ask-group-head').map((node) => node.textContent);
-  for (const head of ['Integrations', 'Project management', 'Add', 'Block', 'Only']) assert.ok(heads.includes(head), `${head} is asked`);
+  for (const head of ['Integrations', 'Add', 'Block', 'Only']) assert.ok(heads.includes(head), `${head} is asked`);
+  assert.ok(stone(form, 'pm'), 'project management is its switch, beside its words');
 });
 
 test('Save writes the brief settings and carries agent defaults without permissions', async () => {

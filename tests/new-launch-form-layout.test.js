@@ -41,7 +41,7 @@ test('New Agent uses one ruled ask() spec after its three session types', async 
   assert.match(form, /stepPayload\.setNumber\(order\.length \+ 1\)/);
   assert.match(form, /key: 'payload'.*Payload/);
   assert.match(form, /identityRow\.append\(nameField, teamQuestions\.el\)/);
-  assert.match(form, /Defaults cascade from Desk → Team → this Agent\. Changes on this form apply only to this Agent\./);
+  assert.match(form, /Defaults cascade from Desk → Workspace → Team → this Agent\. Changes on this form apply only to this Agent\./);
   assert.match(form, /Defaults cascade from Desk → this Agent\. Changes on this form apply only to this Agent\./);
   assert.match(form, /const links = el\('p', 'na-defaults-links'\)/);
   assert.match(form, /defaultsLink\(t\('new_agent\.team_defaults', 'Team defaults'\)/);

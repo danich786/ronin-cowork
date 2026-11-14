@@ -75,9 +75,8 @@ function createBehaviourSurface(initial = {}) {
   // Write your own: a behaviour, a tool for a command you have, or a bridge (BRIEF_MODEL §8).
   const adds = node('div', 'bh-actions');
   for (const [mode, scope, label] of [['behaviour', 'behaviours', t('behaviours.new', 'New Behavior')], ['tool', 'tools', t('author.new_tool', 'New tool')], ['bridge', 'behaviours', t('author.new_bridge', 'New bridge')]]) {
-    const add = node('button', 'wk-action', label);
-    add.type = 'button'; add.addEventListener('click', () => stones.openDetail({ row: { scope, mode, new: true } }, { returnFocus: add }));
-    adds.append(add);
+    const add = WorkspaceKit.primitives.createAction({ label, size: 'compact', action: () => stones.openDetail({ row: { scope, mode, new: true } }, { returnFocus: add.el }) });
+    adds.append(add.el);
   }
   intro.append(adds);
   settings.el.classList.add('behaviour-settings');

@@ -71,12 +71,15 @@ export function createAuthorForm({ mode = 'behaviour', existing = null, catalog 
   const root = el('div', 'bh-editor brief-author');
   const parsed = parseFile(existing?.text || '');
   const asks = [];
-  const input = (value = '', placeholder = '') => { const i = el('input'); i.type = 'text'; i.value = value; i.placeholder = placeholder; i.spellcheck = false; return i; };
-  const area = (value = '', rows = 10) => { const a = el('textarea'); a.value = value; a.rows = rows; return a; };
-  const field = (label, control, help = '') => { const f = createField({ label, control }).el; if (help) f.append(el('p', 'na-behaviour-note', help)); root.append(f); return control; };
-  const picker = (key, label, options, value, many = true) => {
-    const one = ask([{ group: label, fields: [{ key, label, many, shape: 'tall', options }] }], { value: { [key]: value }, density: 'tight' });
-    asks.push(one); root.append(one.el); return one;
+  // The app's own controls (the kit's labelled fields), in a compact grid like the Agent step.
+  const input = (value = '', placeholder = '') => { const i = el('input', 'wk-field-control'); i.type = 'text'; i.value = value; i.placeholder = placeholder; i.spellcheck = false; return i; };
+  const area = (value = '', rows = 10) => { const a = el('textarea', 'wk-field-control'); a.value = value; a.rows = rows; return a; };
+  const field = (host, label, control, help = '', wide = false) => {
+    const f = createField({ label, control }).el;
+    f.classList.add('brief-author-field');
+    if (wide) f.classList.add('brief-author-wide');
+    if (help) f.append(el('p', 'na-behaviour-note', help));
+    host.append(f); return control;
   };
   const behaviours = catalog.filter((row) => row.kind === 'behaviour').map((row) => ({ v: row.name, l: row.title || row.name, sub: row.seed || '' }));
   const whenRows = conditionals.map((name) => ({ v: name, l: name }));
@@ -84,32 +87,44 @@ export function createAuthorForm({ mode = 'behaviour', existing = null, catalog 
   const isTool = mode === 'tool';
   const isBridge = mode === 'bridge';
   const isFact = mode === 'fact';
+  const grid = el('div', 'brief-author-grid');
+  root.append(grid);
   const name = existing ? null : input('', isTool ? t('author.command_placeholder', 'the command, e.g. deploy-site') : t('author.name_placeholder', 'from the title if left blank'));
   const integration = isBridge ? input('', t('author.integration_placeholder', 'e.g. netlify')) : null;
-  if (isBridge) field(t('author.integration', 'Integration'), integration, t('author.integration_help', 'Its behavior is told to an Agent while this integration is on for it.'));
-  if (name && !isBridge) field(isTool ? t('author.command', 'Command') : t('author.name', 'Name'), name,
+  if (isBridge) field(grid, t('author.integration', 'Integration'), integration, t('author.integration_help', 'Its behavior is told to an Agent while this integration is on for it.'));
+  if (name && !isBridge) field(grid, isTool ? t('author.command', 'Command') : t('author.name', 'Name'), name,
     isTool ? t('author.command_help', 'A command you have, on the PATH or in ~/ronin/tools. Ronin writes what Agents are told about it; the command stays yours.') : '');
-  const title = field(t('author.title', 'Title'), input(parsed.title));
-  const seed = isFact ? null : field(t('author.seed', 'Seed'), input(parsed.seed), isTool ? t('author.seed_tool_help', 'Its one job, in one line.') : t('author.seed_help', 'One line that stands on its own: what this guidance is for.'));
-  const factLine = isFact ? field(t('author.line', 'Line'), input(parsed.line), t('author.line_help', 'The line the brief prints, with values in braces: User: {user.name}.')) : null;
-  const when = !isTool && !isBridge ? picker('when', t('author.when', 'When it is in play'), whenRows, parsed.when) : null;
-  if (when) root.append(el('p', 'na-behaviour-note', t('author.when_help', 'All chosen must hold. None chosen: every Agent.')));
+  const title = field(grid, t('author.title', 'Title'), input(parsed.title));
+  const seed = isFact ? null : field(grid, t('author.seed', 'Seed'), input(parsed.seed), isTool ? t('author.seed_tool_help', 'Its one job, in one line.') : t('author.seed_help', 'One line that stands on its own: what this guidance is for.'), true);
+  const factLine = isFact ? field(grid, t('author.line', 'Line'), input(parsed.line), t('author.line_help', 'The line the brief prints, with values in braces: User: {user.name}.'), true) : null;
+
+  /* When, depth and serves: one row of stones, each named once on its own stone. */
+  const choices = [];
+  if (!isTool && !isBridge) choices.push({ key: 'when', label: t('author.when', 'When it is in play'), many: true, options: whenRows });
   // What you write is meant to be told: a new behaviour or bridge starts Full, a tool Seed.
-  const depth = !isFact ? picker('depth', t('author.depth', 'Depth'), depths(), parsed.depth || (isTool ? 'seed' : 'full'), false) : null;
-  const serves = isTool ? picker('serves', t('author.serves', 'Serves'), behaviours, parsed.serves) : null;
-  if (serves) root.append(el('p', 'na-behaviour-note', t('author.serves_help', 'Told under these behaviors. None: under Other tools.')));
-  const body = field(isTool ? t('author.tool_text', 'What --help does not say') : t('author.text', 'Text'), area(parsed.body, isTool ? 5 : 10));
+  if (!isFact) choices.push({ key: 'depth', label: t('author.depth', 'Depth'), options: depths() });
+  if (isTool) choices.push({ key: 'serves', label: t('author.serves', 'Serves'), many: true, options: behaviours });
+  const picked = choices.length ? ask([{ fields: choices }], {
+    value: { when: parsed.when, depth: parsed.depth || (isTool ? 'seed' : 'full'), serves: parsed.serves }, density: 'tight',
+  }) : null;
+  if (picked) {
+    asks.push(picked);
+    // The row's help line first, then its stones (as every group's help sits under its name).
+    root.append(el('p', 'na-behaviour-note', isTool ? t('author.serves_help', 'Serves: told under these behaviors. None: under Other tools.')
+      : isBridge ? t('author.depth_help', 'Depth: how much of it an Agent is told.') : t('author.when_help', 'When it is in play: all chosen must hold. None chosen: every Agent.')), picked.el);
+  }
+  const body = field(root, isTool ? t('author.tool_text', 'What --help does not say') : t('author.text', 'Text'), area(parsed.body, isTool ? 5 : 10));
 
   /* A bridge's tools: new tool files, each a command and its one job, serving the bridge. */
   const tools = [];
   const toolsHost = el('div', 'brief-author-tools');
   if (isBridge) {
-    root.append(el('h4', 'brief-author-head', t('author.bridge_tools', 'Its tools')));
+    root.append(el('div', 'ask-group-head', t('author.bridge_tools', 'Its tools')));
     const addTool = () => {
-      const row = el('div', 'brief-author-tool');
-      const command = input('', t('author.command_placeholder', 'the command, e.g. deploy-site'));
-      const job = input('', t('author.seed_tool_help', 'Its one job, in one line.'));
-      row.append(command, job); toolsHost.append(row); tools.push({ command, job });
+      const row = el('div', 'brief-author-grid');
+      const command = field(row, t('author.command', 'Command'), input('', t('author.command_placeholder', 'the command, e.g. deploy-site')));
+      const job = field(row, t('author.seed_tool', 'Its one job'), input('', t('author.seed_tool_help', 'Its one job, in one line.')));
+      toolsHost.append(row); tools.push({ command, job });
     };
     const more = createAction({ label: t('author.add_tool', 'Add a tool'), size: 'compact', action: addTool });
     addTool();
@@ -118,15 +133,15 @@ export function createAuthorForm({ mode = 'behaviour', existing = null, catalog 
 
   const status = el('p', 'bh-status'); status.setAttribute('role', 'status');
   const saveLabel = !existing ? t('author.create', 'Create') : existing.origin === 'user' ? t('forms.save', 'Save') : t('behaviours.save_mine', 'Save my version');
-  const save = createAction({ label: saveLabel, size: 'compact', action: () => void doSave() });
-  const cancel = createAction({ label: t('forms.cancel', 'Cancel'), size: 'compact', action: () => onCancel() });
+  const save = createAction({ label: saveLabel, size: 'compact', kind: 'primary', endsEdit: true, action: () => doSave() });
+  const cancel = createAction({ label: t('forms.cancel', 'Cancel'), size: 'compact', endsEdit: true, action: () => onCancel() });
   const actions = el('div', 'bh-actions'); actions.append(save.el, cancel.el, status);
   root.append(actions);
 
   const shape = () => ({
     ...parsed, title: title.value.trim(), seed: seed?.value.trim() || '', line: factLine?.value.trim() || '',
-    when: when ? [...when.value().when] : parsed.when, depth: depth ? depth.value().depth : '',
-    serves: serves ? [...serves.value().serves] : parsed.serves, body: body.value,
+    when: !isTool && !isBridge ? [...(picked?.value().when || [])] : parsed.when, depth: isFact ? '' : picked?.value().depth || '',
+    serves: isTool ? [...(picked?.value().serves || [])] : parsed.serves, body: body.value,
   });
   async function doSave() {
     status.textContent = ''; delete status.dataset.bad;
