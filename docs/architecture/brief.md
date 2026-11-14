@@ -60,6 +60,7 @@ One flat folder per object. The file name (no `.md`, kebab-case) is the id that 
 | `depth:` | behaviours, tools | `none`, `seed` or `full`: the stock depth. Layers may raise it (§6) |
 | `serves:` | tools | the behaviour ids it serves. Blank: it goes under Other tools |
 | `mandate:` | behaviours | the mandate axis this file is a value of: `reach`, `recruit` or `output`; the title is the value |
+| `with:` | mandate values | the behaviour(s) choosing this value puts in play, at their depth (Reach plan `with: planning`); the order never repeats that behaviour's text |
 | `order:` | all | its place in its section, lower first |
 
 Header lines run from the title to the first blank line. An unknown field is ignored; an
@@ -100,7 +101,8 @@ They read values on the work record (§5).
 **Mandate values are files.** Each Reach, Recruit and Output value is a behaviour with
 `mandate: <axis>` (`reach-plan.md`, `# plan`). The New Agent and New Team forms list the files of
 each axis, in `order:`; no list of values is kept by hand. Choosing a value brings its file into
-play at its depth. A mandate file is an order, not how-to ("Plan; don't build."), and prints in
+play at its depth, and the behaviours its `with:` names. The server reads the value as the title
+lower-cased (`# Propose agents`). A mandate file is an order, not how-to ("Plan; don't build."), and prints in
 the brief's Mandate section, never among the behaviours. A value is added by adding its file
 (stock or the user's store); blocking it takes it off the menu; a screen narrows the menu. The
 Mandate fact still prints the values.
