@@ -242,12 +242,23 @@ Every tool is a command on your PATH; `<tool> --help` gives its syntax.
 
 ## Where it is set in the UI
 
-- **New Agent form, Behaviours step:** Integrations (inherited ones shown on, the Agent's own
-  to add, and the project-management switch); Optional (the Agent's add list, with depth);
-  Conditional (read-only: what is in play for this Agent and why, worked out by the server).
-- **Campaign, Workspace and Team pages** edit their add, block and only lists, integrations
-  and project management, in the same compact form. The user's own layer is the customise
-  page.
+- **New Agent form, Behaviors step:** Integrations (inherited ones shown "On, from the
+  {layer}", the Agent's own to turn on); Project management (a switch, locked when a layer
+  above or Jira has it on); Optional (the Agent's add list, Full or Seed; a behaviour already
+  told can be raised to Full); Comes with this Agent (read-only: what is in play and why, from
+  `POST /api/brief/preview`).
+- **Mandate** (New Agent, New Team's Agent rows, Team, Campaign): Reach, Recruit and Output list
+  the mandate files from the catalog, in `order:`, less the preview's off
+  (`public/js/mandates.js`). No value is listed in the client.
+- **Campaign, Workspace and Team pages** edit their Integrations, Project management, Add, Block
+  and Only in the same compact form, with "An Agent here is told" (read-only) and "Set on"
+  links to the layers above; one Save per page.
+- **Behaviors page** (the user's own layer): every fact, behaviour and tool file, the mandate
+  values grouped by axis; open one to read it; Edit / Make my version; New Behavior, New tool,
+  New bridge (a bridge is a behaviour with `when: integration:<x>` plus its tools, in one
+  Save). Its settings panel, "For every Agent you start", is the user layer.
+- **The work record on the tile:** a closed Brief section, "What this Agent is told"
+  (`GET /api/sessions/:name/brief`).
 
 ## The stock files
 
