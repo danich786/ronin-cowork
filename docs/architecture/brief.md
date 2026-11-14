@@ -105,7 +105,7 @@ sees it and decides.
 ## Mandates
 
 Each Reach, Recruit and Output value is a behaviour with
-`mandate: <axis>` (`reach-plan.md`, `# plan`). The New Agent and New Team forms list the files of
+`mandate: <axis>` (`reach-plan.md`, `# Plan`). The New Agent and New Team forms list the files of
 each axis, in `order:`; no list of values is kept by hand. Choosing a value brings its file into
 play at its depth, and the behaviours its `with:` names. The server reads the value as the title
 lower-cased (`# Propose agents`). A mandate file is an order, not how-to ("Plan; don't build."), and prints in
