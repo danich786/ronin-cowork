@@ -17,6 +17,7 @@ import { readAgentBriefAt, writeAgentBriefAt, type AgentBrief, type ComposedBrie
 import { briefTold } from './brief-settings.js';
 import { briefChanges, briefSnapshot, type BriefSnapshot } from './brief.js';
 import { enqueueMessage } from './message-queue.js';
+import { uncached } from './resources.js';
 import { personByEmail, type Person } from './office-people.js';
 import { sessionDir, sessionKey } from './session-dir.js';
 import { resolveBriefFor, resolveFacts, type SpawnForm } from './spawn.js';
@@ -114,6 +115,10 @@ export async function refreshBrief(name: string): Promise<{ brief: string; sent:
 
 /** Rebuild every live Agent's brief, after a layer (user, Campaign, Workspace, Team) changed. */
 export async function refreshAllBriefs(): Promise<void> {
+  return uncached(refreshEveryBrief);
+}
+
+async function refreshEveryBrief(): Promise<void> {
   for (const session of await listSessions()) {
     if ((session.identity?.sessionType || 'cowork_agent') !== 'cowork_agent') continue;
     await refreshBrief(session.name).catch(() => {});

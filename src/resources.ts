@@ -98,6 +98,9 @@ export const resourceRequestCache: express.RequestHandler = (_req, _res, next) =
   requestListings.run(new Map(), next);
 };
 
+/** Read the stores fresh, outside the request's listing cache: after a write, or for work that outlives the request. */
+export const uncached = <T>(fn: () => Promise<T>): Promise<T> => requestListings.exit(fn);
+
 async function layerFiles(
   dir: string,
   symlinks: boolean,

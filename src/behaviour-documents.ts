@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { constants } from 'node:fs';
 import { lstat, mkdir, open, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { STOCK_DIR, resolveFiles, storeDir, type Origin } from './resources.js';
+import { STOCK_DIR, resolveFiles, storeDir, uncached, type Origin } from './resources.js';
 
 /** The user writes facts, behaviours and tools (wip/BRIEF_MODEL.md §3); the `scope` of a document is its kind. */
 export const BEHAVIOUR_SCOPES = ['facts', 'behaviours', 'tools'] as const;
@@ -33,11 +33,12 @@ function validateText(textValue: unknown): string {
 
 async function resolved(scope: BehaviourDocumentScope, name: string) {
   const { relative } = identity(scope, name);
-  return (await resolveFiles({
+  // Fresh every time: a save reads back what it just wrote.
+  return (await uncached(() => resolveFiles({
     stock: path.join(STOCK_DIR, scope),
     store: scope,
     include: (candidate) => candidate === relative,
-  }))[0];
+  })))[0];
 }
 
 export interface BehaviourDocument {
