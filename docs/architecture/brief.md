@@ -237,19 +237,20 @@ Every tool is a command on your PATH; `<tool> --help` gives its syntax.
 - **The birth receipt** (`birth-receipt.json`) records the brief's path, bytes, lines,
   terminator and over-budget state.
 - **An update** (`refreshBrief`, `src/agent-configuration.ts`) rebuilds the brief and, when it
-  differs from what the Agent was last told (its snapshot beside the brief), sends "Your brief
+  differs from what the Agent was last told (`brief-told.json` beside the brief), sends "Your brief
   changed" with the facts that changed and the behaviours and tools that came into play (at
   their depth) or left it, and the whole brief's path. A mandate change sends the new mandate
   only. A layer change rebuilds every live Cowork Agent's brief (`refreshAllBriefs`).
-- **The first rebuild under this model** finds no snapshot, so a running Agent is sent its whole
-  brief once. **Send** on the New Agent form always resends it.
+- **The first rebuild under this model** finds no `brief-told.json`, so every fact, behaviour and
+  tool counts as new and a running Agent is sent its whole brief once. **Send** on the New Agent form always resends it.
 - **The brief shows at the bottom of the work record** on the tile.
 
 **Start-up moves.** Once, at server start (`src/index.ts`, `src/behaviour-store-migration.ts`):
-the user's old `~/ronin/ways/<scope>/` files move into the flat `~/ronin/behaviours/` with the
-header (the user intro into `~/ronin/facts/user-intro.md`, Workspace shelf files into
-behaviours with `when: workspace:<ws>`), and old Team and Campaign behaviour lists become brief
-settings. A test that starts the server sets `RONIN_USER_ROOT`, `RONIN_DATA_ROOT` and `HOME` to
+`migrateWaysToBehaviours` moves the user's old `~/ronin/ways/<scope>/` files into the flat
+`~/ronin/behaviours/` with the header (the user intro into `~/ronin/facts/user-intro.md`,
+Workspace shelf files into behaviours with `when: workspace:<ws>`), and `migrateBriefSettings`
+turns old Team and Campaign behaviour lists into brief settings. A test that starts the server
+(`tests/test-runner-isolation.test.ts`) sets `RONIN_USER_ROOT`, `RONIN_DATA_ROOT` and `HOME` to
 its own folders, so these moves never touch the real stores.
 
 ## Where it is set in the UI
