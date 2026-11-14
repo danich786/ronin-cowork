@@ -1,4 +1,8 @@
 # RONIN HOST — what this Agent is working without
+- **seed:**
+- **when:** !service:ronin_host
+- **depth:** full
+- **order:** 71
 
 Ronin Host is **off** for this Agent. Questions about the machine — disk, memory, who this install runs as, where a store lives, whether the session engine is healthy — have no measured answer here; anything said about the box is a guess.
 
