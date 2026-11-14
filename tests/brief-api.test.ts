@@ -46,6 +46,21 @@ test('the catalog carries each mandate value: its axis, its value, its order', a
   assert.deepEqual([plain.mandate, plain.value, plain.order], ['', '', null]);
 });
 
+test('the integrations listing is the bridge files: adding one adds an integration', async () => {
+  const made = await fetch(`${base}/api/brief/files`, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ kind: 'behaviours', name: 'probe-bridge', text: '# Probe bridge\n- **seed:** How we use Probe.\n- **when:** integration:probe\n' }),
+  });
+  assert.equal(made.status, 201);
+  const listing = await (await fetch(`${base}/api/brief/integrations`)).json() as Array<{ name: string; behaviour: string }>;
+  assert.ok(listing.some((row) => row.name === 'probe' && row.behaviour === 'probe-bridge'), JSON.stringify(listing));
+  const words = await (await fetch(`${base}/api/brief/conditionals`)).json() as string[];
+  assert.ok(words.includes('integration:probe'));
+  assert.deepEqual(words.filter((word) => word.startsWith('integration:')), listing.map((row) => `integration:${row.name}`), 'no other source of names');
+  const catalog = await (await fetch(`${base}/api/brief/catalog`)).json() as Array<{ name: string; integration: string }>;
+  assert.equal(catalog.find((row) => row.name === 'probe-bridge')!.integration, 'probe');
+});
+
 test.after(async () => {
   server.close();
   await fs.rm(temp, { recursive: true, force: true });
