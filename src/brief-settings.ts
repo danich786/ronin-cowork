@@ -163,11 +163,12 @@ export function resolveBrief(catalog: Catalog, record: BriefRecord, layers: read
   const behaviours = [...told.values()].filter((row) => row.kind === 'behaviours' && !row.file.mandate).sort(byOrder).map((row) => ({ ...row, tools: [] as InPlay[] }));
   const placed = new Set<string>();
   for (const tool of catalog.tools) {
-    if (!tool.serves.length || blocked.has(tool.name) || told.has(tool.name)) continue;
+    // depth: none is told only when a layer adds it, never with its behaviour.
+    if (!tool.serves.length || tool.depth === 'none' || blocked.has(tool.name) || told.has(tool.name)) continue;
     const host = behaviours.find((row) => tool.serves.includes(row.name));
     if (!host || !whenHolds(tool.when, record)) continue;
     if (screens.some((only) => !only.has(tool.name) && !only.has(host.name))) continue;
-    put(tool, tool.depth === 'none' ? 'seed' : tool.depth, [...host.why]);
+    put(tool, tool.depth, [...host.why]);
   }
   for (const row of [...told.values()].filter((row) => row.kind === 'tools').sort(byOrder)) {
     const host = behaviours.find((behaviour) => row.file.serves.includes(behaviour.name));

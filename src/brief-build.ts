@@ -14,6 +14,7 @@ import { listTeamRosters } from './team-rosters.js';
 import type { LaunchFacts, SpawnForm } from './spawn.js';
 import { mandate } from './agent-defaults.js';
 import { listDeskRecords } from './desks/registry.js';
+import { jiraConnected } from './work-items.js';
 
 /** The Agent's own layer, as a launch body or the work record carries it. */
 export interface AgentBrief { brief: BriefSettings; integrations: string[]; pm?: boolean }
@@ -40,7 +41,10 @@ export async function writeAgentBriefAt(dir: string, value: AgentBrief): Promise
 export async function briefLayers(facts: Pick<LaunchFacts, 'campaign' | 'workspace' | 'roster'>, agent: AgentBrief): Promise<Layer[]> {
   return [
     await readUserLayer(),
-    layerOf('campaign', facts.campaign?.config ?? {}),
+    // A Campaign paired with Jira (the Jira panel) has the jira integration on, so pm is on.
+    layerOf('campaign', facts.campaign && jiraConnected(facts.campaign.id)
+      ? { ...facts.campaign.config, integrations: [...facts.campaign.config.integrations, 'jira'] }
+      : facts.campaign?.config ?? {}),
     layerOf('workspace', facts.workspace ?? {}),
     layerOf('team', facts.roster ?? {}),
     layerOf('agent', agent),

@@ -160,6 +160,19 @@ test('fact lines fill from the record; an all-empty line is not printed', () => 
   assert.equal(fillLine('User: {user.name}, {user.role}{, user.organisation}', nameless), 'User: owner', 'an empty value drops its segment');
   assert.equal(fillLine('Workspace: {setting.workspace} · repos {work.repos}', record()), 'Workspace: w', 'and its separator');
   assert.equal(fillLine('Ronin: {setting.hosted?hosted|self-hosted}', record()), 'Ronin: self-hosted');
+  assert.equal(fillLine('Model: {agent.provider} {agent.model}{, agent.harness}{, agent.launch_mode}', record()), 'Model: configured', 'empty values leave no gap or dangling separator');
+  const workspace = file('facts', 'workspace', '# Workspace\n- **line:** Workspace: {setting.workspace}\n\nRepositories:\n{work.repo_lines}\n\nFolders:\n{work.folder_lines}\n');
+  const text = renderBrief('demo', record(), resolveBrief({ ...CATALOG, facts: [workspace] }, record(), []));
+  assert.match(text, /- Workspace: w\n/);
+  assert.doesNotMatch(text, /Repositories:|Folders:/, 'a paragraph whose values are all empty goes, its label with it');
+});
+
+test('a tool at depth: none is not told with its behaviour; a layer adding it tells it', () => {
+  const quiet = file('tools', 'quiet', '# quiet\n- **seed:** Not yet.\n- **serves:** pm\n- **depth:** none\n');
+  const catalog: Catalog = { ...CATALOG, tools: [...CATALOG.tools, quiet] };
+  const tools = (layers: Layer[]) => resolveBrief(catalog, record({ pm: true }), layers).behaviours.find((row) => row.name === 'pm')!.tools.map((row) => row.name);
+  assert.deepEqual(tools([]), ['item']);
+  assert.deepEqual(tools([layerOf('agent', { brief: { add: ['quiet'] } })]), ['item', 'quiet']);
 });
 
 test('the brief: facts, behaviours with their tools, other tools, the help line, the end line', () => {

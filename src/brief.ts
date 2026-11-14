@@ -62,7 +62,9 @@ export function fillLine(line: string, record: BriefRecord): string {
     kept.push({ sep: piece.sep, text: filled });
   }
   if (any && allEmpty) return '';
-  return `${label}${kept.map((piece, i) => (i ? piece.sep : '') + piece.text).join('')}`.trim();
+  // An empty value leaves no gap: no doubled space, no separator straight after the label.
+  const body = kept.map((piece, i) => (i ? piece.sep : '') + piece.text).join('').replace(/ {2,}/g, ' ').replace(/^\s*(?:, |· )/, '').trim();
+  return `${label}${body}`.trim();
 }
 
 const strip = (text: string): string => text.replace(/<!--[^]*?-->/g, '').trim();
@@ -71,7 +73,13 @@ const nested = (text: string): string => strip(text).replace(/^(#{1,6})(?=\s)/gm
 
 function factLines(row: InPlay, record: BriefRecord): string[] {
   const raw = strip(row.file.body);
-  const body = raw.split('\n').map((line) => /\{[^{}]*\}/.test(line) ? fillLine(line, record) : line).join('\n').trim();
+  // A paragraph whose values all come out empty goes whole, its label line with it ("Folders:").
+  const body = raw.split(/\n{2,}/).flatMap((paragraph) => {
+    const lines = paragraph.split('\n');
+    const held = lines.filter((line) => /\{[^{}]*\}/.test(line));
+    const filled = lines.map((line) => /\{[^{}]*\}/.test(line) ? fillLine(line, record) : line);
+    return held.length && held.every((line) => !fillLine(line, record)) ? [] : [filled.filter((line, i) => line || !/\{[^{}]*\}/.test(lines[i])).join('\n')];
+  }).join('\n\n').trim();
   const hasBody = !!body && !!strip(body.replace(/^#+.*$/gm, ''));
   if (row.file.line) {
     const line = fillLine(row.file.line, record);
