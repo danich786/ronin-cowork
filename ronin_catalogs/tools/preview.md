@@ -1,5 +1,5 @@
 # preview
-- **seed:** find a pull request's preview link and put it on your work record
+- **seed:** find a pull request's preview link and put it in your Documents
 - **when:**
 - **depth:** seed
 - **serves:** netlify-bridge
@@ -7,4 +7,4 @@
 
 ## Usage
 
-`preview [<pr>] [--repo <owner/name>] [--item <id>] [--print]` → finds the PR's preview link from any host through `gh` (deployments, then check links, then comments) and adds it to the Agent's Documents with `work-record add_doc`. No link yet: exit 4 with what the checks say. Taught by the Integrations brief; `preview --help`.
+`preview [<pr>] [--repo <owner/name>] [--item <id>] [--print]`: finds the PR's preview link from any host through `gh` (its deployments, then its checks' links, then its comments) and adds it to your Documents with `work-record add_doc`. No link yet: exit 4 with what the checks say. `preview --help`.
