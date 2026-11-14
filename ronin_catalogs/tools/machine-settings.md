@@ -5,7 +5,7 @@
 - **serves:** mika
 - **order:** 50
 
-Reach for the settings tool when the owner asks what this box has, what the Campaign has switched on, what a new Team starts from, which providers and models exist, or which Workspace Folders Ronin may work in — and when they ask you to change one of those. It is independent of Ronin Host: the host's own operations (survey, accounts, secrets, restart) are the Host bundle's, not these.
+Reach for the settings tool when the owner asks what this box has, what the Campaign has switched on, what a new Team starts from, which providers and models exist, or which Workspace Folders Ronin may work in — and when they ask you to change one of those. It is independent of Ronin Host: the host's own operations (survey, accounts, secrets, restart) are `ronin-host`'s, not these.
 
 **Live tool:** every operation below is a typed subcommand of the shipped `machine-settings` executable.
 
@@ -29,12 +29,12 @@ hosted repository. Inspect a repository's declared arrangement before changing i
 profile; adding an existing repository does not rewrite `RONIN_REPO` unless a profile is supplied.
 
 Available session models are read dynamically from the canonical Campaign/provider model
-catalog used by the UI dropdowns. This document carries no model list: installation and
+catalog used by the UI dropdowns. This document carries no model list: install and
 configuration changes must appear without maintaining a second inventory.
 `session_create --help` renders the current provider/model choices and defaults from that
 same source.
 
-Any Agent with this capability can use the same typed reads and writes. Mika also receives
+Every Agent can use the same typed reads and writes. Mika also receives
 `session_create` as a separate grant. Her house guidance tells her to show the owner the
 intended change and wait for a yes before writing, and not to exclude Workspace Folders or
 handle credentials. These are instructions to Mika, not identity checks in the tool.

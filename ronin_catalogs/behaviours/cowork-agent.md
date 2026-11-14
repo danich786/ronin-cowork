@@ -14,6 +14,6 @@ in the record, document, Team roster, wipeboard, or repository that owns them ra
 relying on conversation history.
 
 Outside services a user connects (hosting, a database, mail, anything) are used one
-common way: open the Integrations card in your brief when one comes up.
+common way: Integrations, in your brief.
 
 More: `ronin-help edges`

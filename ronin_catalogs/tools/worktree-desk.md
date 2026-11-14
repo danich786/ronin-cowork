@@ -5,7 +5,7 @@
 - **serves:** working-at-a-desk, lead-worktrees
 - **order:** 45
 
-Reach for this bundle when a repository uses managed worktrees or a later assignment needs
+Reach for `worktree-desk` when a repository uses managed worktrees or a later assignment needs
 a managed worktree. It is a private branch and working folder leased to you. Status,
 sync, commit, and hand-in are distinct; none is Git push. `worktree-desk open` answers with
 the brief to read before your first write: `ronin-help worktree-root`.

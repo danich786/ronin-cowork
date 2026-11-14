@@ -15,32 +15,31 @@ team:<name>` gives one to a Team).
 
 **Live tools:** the shipped `team` dispatcher owns Team records and reads the Team's work
 items through `/api/work-items`. Universal `session_create` remains the visible Agent-creation
-path; this capability does not own or duplicate it.
+path; `team` does not own or duplicate it.
 
-Worktree assignment and Team broadcast remain in their own capability bundles; this tool does
-not duplicate them. Read-only Team enumeration belongs to `edges team`.
+Worktree assignment (`worktree-desk`) and Team broadcast (`edges wipeboard`) are their own
+tools; `team` does not duplicate them. Read-only Team enumeration belongs to `edges team`.
 
 ## Team work
 
-| Capability | Meaning |
+| Job | Meaning |
 |---|---|
 | Team record read and update | the roster's objective and launch defaults; the Team page derives membership from sessions |
 | Team work items | items the Team holds: `item handoff <id> team:<name>` gives one to the Team, `item handoff <id> <agent>` to a member, taking the Team off. Lead ideas are items the Team holds, not a separate file or pool |
-| Member and item status | the Team's reading: what the Team and each member hold; the item itself is the Work Item capability's |
+| Member and item status | the Team's reading: what the Team and each member hold; the item itself is `item`'s |
 | Agent configuration | create visibly with universal `session_create`, then inspect and configure Team, lead, or Workspace Folder handle through universal `session_check` and `session_set` |
 | Team broadcasts | the wipeboard for everything the whole Team must see; one-on-one goes directly to the session |
 
 Holding is how work is found, never permission. When an Agent ends, what it held is
 released, held by nobody, and found under its parent or with no parent. The work item
-itself is the Work Item capability's.
+itself is `item`'s.
 
 Team membership and Team lead are session facts changed through `session_set`. Lead is an
-explicit designation, never inferred from capability selection or from using this tool.
+explicit designation, never inferred from what an Agent is told or from using this tool.
 When a designated lead delegates visible work, universal `session_create` creates the
 Agent and `item handoff <id> <agent>` moves an item to it.
 
-Lead-specific working guidance is a conditional Behavior applied from the explicit
-session designation. This capability remains the tool teaching for every Cowork Agent.
+Lead guidance is the Team lead behaviour, told from the explicit session designation.
 
 ## Usage
 

@@ -5,10 +5,9 @@
 - **serves:**
 - **order:** 80
 
-Reach for this capability when the installed house assistant should answer or carry a
-bounded request. Ronin Services is the installation that supplies Mika; it is not itself
-an Agent capability. Installation state and component configuration remain Machine
-Settings facts.
+Reach for `mika` when the house assistant should answer or carry a bounded request.
+Ronin Services supplies Mika; whether it is installed and switched on is a Machine
+settings fact.
 
 **Live tool:** `mika` starts or reaches the constrained house assistant.
 

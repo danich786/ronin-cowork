@@ -38,4 +38,4 @@ More: `ronin-help work-items`
 
 ## Usage
 
-Every act on a work item, the item always named: create, read, search, edit, transition, flag, unflag, handoff, comment, attach, link and delete. Taught by the Work Item capability; `item --help`.
+Every act on a work item, the item always named: create, read, search, edit, transition, flag, unflag, handoff, comment, attach, link and delete. `item --help`.
