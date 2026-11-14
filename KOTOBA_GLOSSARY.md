@@ -3,7 +3,7 @@
 Use the plain words below with the owner; **Koshi** is the existing UI-name exception.
 [KOTOBA](KOTOBA.md) owns meanings; the lexicon owns displayed words. Tools execute;
 capabilities teach; behaviors guide; skills adapt; UIs call. Services capabilities select
-runtime parts, while Agent capabilities teach tools (`docs/architecture/tool-surface.md`).
+runtime parts, while Agent capabilities teach tools (`docs/architecture/brief.md`).
 
 ## The names
 
