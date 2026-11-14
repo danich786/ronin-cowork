@@ -17,13 +17,26 @@ import { readAgentBriefAt, writeAgentBriefAt, type AgentBrief, type ComposedBrie
 import { briefTold } from './brief-settings.js';
 import { briefChanges, briefSnapshot, type BriefSnapshot } from './brief.js';
 import { enqueueMessage } from './message-queue.js';
+import { personByEmail, type Person } from './office-people.js';
 import { sessionDir, sessionKey } from './session-dir.js';
 import { resolveBriefFor, resolveFacts, type SpawnForm } from './spawn.js';
 import { teamChanged } from './tegami.js';
 import { writeMandate, writeObjective } from './tegami.js';
 import { getCampaign, getLeads, getTags, listSessions, setLeads, setSessionTitle, setTags } from './tmux.js';
 
-type Receipt = { team?: string; kind?: string; template?: string; told?: Array<{ name?: string }> };
+type Receipt = { team?: string; kind?: string; template?: string; user_email?: string; told?: Array<{ name?: string }> };
+
+const receiptOf = async (dir: string): Promise<Receipt> =>
+  JSON.parse(await readFile(path.join(dir, 'birth-receipt.json'), 'utf8').catch(() => '{}')) as Receipt;
+
+/** The person an Agent works for (hosted), from its birth receipt; null self-hosted or unknown. */
+export async function callerUser(name: string): Promise<Person | null> {
+  if (!name) return null;
+  try {
+    const email = (await receiptOf(sessionDir(await sessionKey(name)))).user_email;
+    return email ? personByEmail(email) : null;
+  } catch { return null; }
+}
 
 const snapshotFile = (dir: string): string => path.join(dir, 'brief-told.json');
 
@@ -41,7 +54,8 @@ export async function writeSnapshotAt(dir: string, composed: ComposedBrief): Pro
 /** The Agent's brief as its record stands now, over today's files. */
 export async function currentBrief(name: string): Promise<{ dir: string; composed: ComposedBrief }> {
   const dir = sessionDir(await sessionKey(name));
-  const receipt = JSON.parse(await readFile(path.join(dir, 'birth-receipt.json'), 'utf8').catch(() => '{}')) as Receipt;
+  const receipt = await receiptOf(dir);
+  const user = receipt.user_email ? personByEmail(receipt.user_email) : null;
   const [composition, tags, leads, campaign, agent, sessions] = await Promise.all([
     readAgentComposition(name), getTags(name), getLeads(name), getCampaign(name), readAgentBriefAt(dir), listSessions(),
   ]);
@@ -57,6 +71,7 @@ export async function currentBrief(name: string): Promise<{ dir: string; compose
     template: receipt.template,
     mandate: composition.current.mandate,
     role: composition.current.role,
+    ...(user ? { person: user } : {}),
     ...agent,
   };
   const facts = await resolveFacts(form, new Set());

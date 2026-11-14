@@ -6,7 +6,7 @@ import type { BriefRecord } from './brief-record.js';
 
 /** Every conditional word §4 knows; `<x>` marks a value the word takes. */
 export const CONDITIONALS = [
-  'cowork', 'bare', 'mika', 'owner', 'member', 'new-owner', 'experience:<x>', 'account:<x>', 'hosted',
+  'cowork', 'bare', 'mika', 'owner', 'member', 'new-owner', 'experience:<x>', 'ai:<x>', 'use:<x>', 'account:<x>', 'hosted',
   'service:<part>', 'integration:<name>', 'pm', 'team', 'lead', 'role:coworker', 'role:lead', 'role:epic_lead',
   'role:coordinator', 'desk', 'checkout', 'workspace:<name>',
 ] as const;
@@ -20,7 +20,9 @@ export function conditionHolds(word: string, r: BriefRecord): boolean {
     case 'cowork': case 'bare': case 'mika': return r.session.type === kind;
     case 'owner': case 'member': return r.user.role === kind;
     case 'new-owner': return r.user.new_owner;
-    case 'experience': return r.user.experience === value;
+    case 'experience': return r.user.technical_level === value;
+    case 'ai': return r.user.ai_experience === value;
+    case 'use': return r.user.planned_use.includes(value);
     case 'account': return r.user.account === value;
     case 'hosted': return r.setting.hosted;
     case 'service': return r.setting.services.includes(value);

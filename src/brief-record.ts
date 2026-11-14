@@ -16,16 +16,31 @@ export interface BriefSettings {
   only: string[];
 }
 
-export interface OfficePerson { email: string; role: string; name?: string; organization?: string }
+export type OfficePerson = Omit<import('./office-people.js').Person, 'role'> & { role: string };
 
 export interface BriefRecord {
   session: { name: string; title: string; type: SessionType; template: string; task: string };
   user: {
     name: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+    nickname: string;
     role: string;
-    organisation: string;
+    organization: string;
+    job_title: string;
+    time_zone: string;
+    language: string;
+    /** coding, planning, launching, research, writing, marketing, operations, data, other. */
+    planned_use: string[];
+    planned_use_other: string;
+    /** non_technical, some, developer. */
+    technical_level: string;
+    /** new, some, daily. */
+    ai_experience: string;
+    /** The person's own words, up to 500 characters. */
+    about: string;
     new_owner: boolean;
-    experience: string;
     account: string;
   };
   /** Hosted: the office's owner and members. Self-hosted: none. */
@@ -77,9 +92,13 @@ const WORDS: Record<string, (r: BriefRecord) => string> = {
   'setting.integrations': (r) => r.setting.integrations.join(', ') || 'none',
   'setting.pm': (r) => r.setting.pm ? 'on' : 'off',
   'setting.services': (r) => r.setting.services.includes('ronin_services') ? 'Ronin Services running' : '',
-  people: (r) => r.people.map((p) => `${[p.role, p.name].filter(Boolean).join(' ')}${p.organization ? `, ${p.organization}` : ''}`).join('; '),
+  people: (r) => r.people.map((p) => `${[p.role, p.nickname || p.first_name || p.name || p.email].filter(Boolean).join(' ')}${p.organization ? `, ${p.organization}` : ''}`).join('; '),
   'work.where': (r) => r.work.where.map((w) => `${w.repo} (${w.held})`).join(', '),
   'agent.role': (r) => r.agent.role.replace(/_/g, ' '),
+  'user.call_name': (r) => r.user.nickname || r.user.first_name || r.user.name || r.user.email,
+  'user.technical_level': (r) => ({ non_technical: 'not technical', some: 'some technical', developer: 'developer' } as Record<string, string>)[r.user.technical_level] ?? '',
+  'user.ai_experience': (r) => ({ new: 'new to AI', some: 'some AI', daily: 'uses AI daily' } as Record<string, string>)[r.user.ai_experience] ?? '',
+  'user.planned_use': (r) => r.user.planned_use.map((use) => use === 'other' ? r.user.planned_use_other || '' : use).filter(Boolean).join(', '),
 };
 
 /** A value on the record by dotted path, as a fact line prints it; '' when absent. */

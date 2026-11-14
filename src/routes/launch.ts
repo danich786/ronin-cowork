@@ -46,6 +46,8 @@ import { resolveLaunchSeed, shownLaunchSeed } from '../launch-seed.js';
 import type { SessionsDefaults } from '../launch-command.js';
 import { describePacket, readFirstSentence, writeBriefPacketAt, type PacketReport } from '../birth-brief.js';
 import { rememberSessionKey, sessionDir as sessionRecordDir } from '../session-dir.js';
+import { callerUser } from '../agent-configuration.js';
+import { person } from '../office-people.js';
 import type { HouseSeat } from '../house-seats.js';
 import { readTegami } from '../tegami-read.js';
 import { boundOperatorSocket, OPERATOR_SOCKET_ENV } from '../operator-socket.js';
@@ -300,6 +302,10 @@ export function registerLaunch(app: express.Express): LaunchControl {
     if (name === MIKA_SESSION && houseSeat !== 'mika') return res.status(409).json({ error: 'That name is reserved for Mika.', code: 'reserved_house_session' });
 
     const form = spawnFormFromLaunchBody(req.body, houseSeat);
+    // The user an Agent works for, in a hosted office: the person launching, or for an Agent
+    // made by an Agent, that Agent's user (wip/BRIEF_MODEL.md §5).
+    const launcher = person(req) ?? await callerUser(String(req.body?.caller ?? '').trim());
+    if (launcher) form.person = launcher;
 
     let resolved;
     let launch: { argv: string[]; parked: boolean } = { argv: [], parked: false };
@@ -449,6 +455,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
         role: form.role ?? (form.team_lead ? 'lead' : 'coworker'),
         kind: resolved.kind,
         template: form.template ?? '',
+        ...(form.person?.email ? { user_email: form.person.email } : {}),
         mandate: resolved.mandate,
         // What the brief told, by name and depth, and why (wip/BRIEF_MODEL.md §6).
         told: resolved.composed ? briefTold(resolved.composed.resolved) : [],

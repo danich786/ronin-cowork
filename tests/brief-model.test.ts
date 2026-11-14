@@ -12,11 +12,15 @@ import { briefFromOldList, migrateWaysToBehaviours } from '../src/behaviour-stor
 
 const record = (over: Partial<{ type: BriefRecord['session']['type']; team: string; lead: boolean; pm: boolean; desk: boolean; integrations: string[]; role: BriefRecord['agent']['role'] }> = {}): BriefRecord => ({
   session: { name: 'demo', title: '', type: over.type ?? 'cowork', template: '', task: 'Do it' },
-  user: { name: 'Glen', role: 'owner', organisation: '', new_owner: false, experience: '', account: '' },
+  user: {
+    name: 'Glen', email: '', first_name: '', last_name: '', nickname: '', role: 'owner', organization: '', job_title: '',
+    time_zone: '', language: '', planned_use: [], planned_use_other: '', technical_level: '', ai_experience: '', about: '',
+    new_owner: false, account: '',
+  },
   people: [],
   setting: { hosted: false, campaign: 'c', workspace: 'w', instructions: '', integrations: over.integrations ?? [], pm: over.pm ?? false, services: [] },
   agent: { role: over.role ?? 'coworker', team: over.team ?? '', lead: over.lead ?? false, wipeboard: '', team_objective: '', reach: 'plan', recruit: 'nobody', output: ['code'], provider: '', model: '', harness: '', launch_mode: 'configured' },
-  work: { repos: [], where: [], repo_lines: '', desk: over.desk ?? false, checkout: false },
+  work: { repos: [], where: [], repo_lines: '', folder_lines: '', desk: over.desk ?? false, checkout: false },
 });
 
 const file = (kind: CatalogKind, name: string, text: string): CatalogFile =>
@@ -92,6 +96,30 @@ test('add, then block, then screen; a behaviour brings the tools that serve it',
   assert.deepEqual(resolveBrief(CATALOG, record(), [layerOf('agent', { brief: { block: ['user'] } })]).facts, [], 'a fact can be blocked');
   const why = resolveBrief(CATALOG, record({ team: 't', lead: true }), [layerOf('team', { brief: { add: ['extra'] } })]);
   assert.deepEqual(why.behaviours.map((row) => [row.name, row.why]), [['base', []], ['lead-ways', ['lead']], ['extra', ['add:team']]]);
+});
+
+test('the Lounge\'s user facts: words, call name, conditionals', async () => {
+  const r = record();
+  Object.assign(r.user, { first_name: 'Glen', nickname: 'G', technical_level: 'developer', ai_experience: 'daily', planned_use: ['coding', 'other'], planned_use_other: 'boats', time_zone: 'Europe/London' });
+  assert.equal(fillLine('User: {user.name} (call them {user.call_name}), {user.role}{, user.organization}{ · user.technical_level}{, user.ai_experience}{ · plans user.planned_use}{ · user.time_zone}{, user.language}', r),
+    'User: Glen (call them G), owner · developer, uses AI daily · plans coding, boats · Europe/London');
+  for (const word of ['experience:developer', 'ai:daily', 'use:coding', 'use:other']) assert.equal(conditionHolds(word, r), true, word);
+  for (const word of ['experience:some', 'ai:new', 'use:writing']) assert.equal(conditionHolds(word, r), false, word);
+
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'ronin-office-people-'));
+  const old = process.env.RONIN_OFFICE_UNIT_DIR;
+  try {
+    process.env.RONIN_OFFICE_UNIT_DIR = dir;
+    await writeFile(path.join(dir, 'members.json'), JSON.stringify({ members: [{ email: 'A@x.com', role: 'member', name: 'Ann Lee', first_name: 'Ann', planned_use: 'writing', technical_level: 'some', about: 'x'.repeat(600), unknown_key: 1 }] }));
+    const { loadMembers, personByEmail, callName } = await import('../src/office-people.js');
+    await loadMembers();
+    const ann = personByEmail('a@x.com')!;
+    assert.deepEqual([ann.role, ann.first_name, ann.planned_use, ann.technical_level, ann.about?.length], ['member', 'Ann', ['writing'], 'some', 500]);
+    assert.equal(callName(ann), 'Ann');
+  } finally {
+    if (old === undefined) delete process.env.RONIN_OFFICE_UNIT_DIR; else process.env.RONIN_OFFICE_UNIT_DIR = old;
+    await rm(dir, { recursive: true, force: true });
+  }
 });
 
 test('fact lines fill from the record; an all-empty line is not printed', () => {

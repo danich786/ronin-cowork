@@ -40,7 +40,7 @@ export interface SpawnForm {
   integrations?: string[];
   pm?: boolean;
   /** In a hosted office, the person launching (src/office-people.ts). */
-  person?: { name?: string; role?: string | null; organization?: string };
+  person?: Omit<import('./office-people.js').Person, 'email'> & { email?: string };
   /** What only a draft knows (the New Agent preview); a launch works them out. */
   desk?: boolean;
   checkout?: boolean;
