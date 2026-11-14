@@ -5,19 +5,19 @@ tool is adding its file; nothing else changes. Agents know a little about a lot,
 is on their path. The words are defined in [KOTOBA](../../KOTOBA.md); how an owner changes what
 Agents are told is in [Customize Ronin](../getting-started/customize.md).
 
-## 1. Three objects
+## Three objects
 
 | Object | What it is | Folder | How much is told |
 |---|---|---|---|
 | **Fact** | true about the user and the Agent's situation: the user, the office's people, the Workspace, the Team, the mandate, the task | `ronin_catalogs/facts/` | in full when told. Facts are short; anything long is a behaviour |
-| **Behaviour** | how to work: guidance an Agent follows | `ronin_catalogs/behaviours/` | a depth (§2) |
-| **Tool** | something to call: one command, or a family (`session_*`) | `ronin_catalogs/tools/` | a depth (§2) |
+| **Behaviour** | how to work: guidance an Agent follows | `ronin_catalogs/behaviours/` | a depth (below) |
+| **Tool** | something to call: one command, or a family (`session_*`) | `ronin_catalogs/tools/` | a depth (below) |
 
 Integrations, bridges, Services, roles, desks and arrangements are not further kinds. They are
 values on the work record that bring facts, behaviours and tools into play. A bridge is a
 behaviour with its tools.
 
-## 2. Depths, and when an Agent is told
+## Depths, and when an Agent is told
 
 | Depth | What the Agent gets |
 |---|---|
@@ -36,7 +36,7 @@ it is made lead); when the user changes its configuration; and when it asks (`ro
 Nothing is taken off the PATH, refused or stopped: an Agent that finds a tool or behaviour it
 was not told about can use it.
 
-## 3. The files and their header
+## The files and their header
 
 One flat folder per object. The file name (no `.md`, kebab-case) is the id that `when:`,
 `serves:`, brief settings and `ronin-help` use. Every file starts the same:
@@ -56,8 +56,8 @@ One flat folder per object. The file name (no `.md`, kebab-case) is the id that 
 | title (`#`) | all | the name the brief prints; for a tool, the command |
 | `seed:` | behaviours, tools | the one line. A behaviour's seed stands on its own; a tool's is its one job |
 | `line:` | facts | the line the brief prints, with `{record.path}` placeholders; `{<lead> x}` prints `<lead>` and x only when x is set; `{x?yes\|no}` prints one of two texts |
-| `when:` | all | the conditionals (§4) that must all hold, comma-separated; `!` for not; blank = every Agent. A tool that serves a behaviour needs none: it is in play when its behaviour is |
-| `depth:` | behaviours, tools | `none`, `seed` or `full`: the stock depth. Layers may raise it (§6) |
+| `when:` | all | the conditionals that must all hold, comma-separated; `!` for not; blank = every Agent. A tool that serves a behaviour needs none: it is in play when its behaviour is |
+| `depth:` | behaviours, tools | `none`, `seed` or `full`: the stock depth. Layers may raise it |
 | `serves:` | tools | the behaviour ids it serves. Blank: it goes under Other tools |
 | `mandate:` | behaviours | the mandate axis this file is a value of: `reach`, `recruit` or `output`; the title is the value |
 | `with:` | mandate values | the behaviour(s) choosing this value puts in play, at their depth (Reach plan `with: planning`); the order never repeats that behaviour's text |
@@ -80,9 +80,9 @@ user's own executables) add new files and replace stock ones by id, whole. They 
 what an update replaces, so customisations survive updates; a replacement also stops later
 stock changes reaching that file. Other catalogs follow [shadowing](shadowing.md).
 
-## 4. Conditionals
+## Conditionals
 
-They read values on the work record (§5).
+They read values on the work record.
 
 | Conditional | Holds when |
 |---|---|
@@ -92,13 +92,19 @@ They read values on the work record (§5).
 | `experience:<non_technical\|some\|developer>` · `ai:<new\|some\|daily>` · `use:<coding\|…\|other>` | the user's Lounge answers (hosted) |
 | `hosted` | a hosted office (else self-hosted) |
 | `service:<part>` | that Ronin Services part is running |
-| `integration:<name>` | that integration is on for the Agent (§6) |
-| `pm` | project management is on (§6) |
+| `integration:<name>` | that integration is on for the Agent |
+| `pm` | project management is on |
 | `team` · `lead` · `role:<coworker\|lead\|epic_lead\|coordinator>` | on a Team, its lead, its role |
 | `desk` · `checkout` | a desk is cut, a repository is checked out |
 | `workspace:<name>` | born in that Workspace |
 
-**Mandate values are files.** Each Reach, Recruit and Output value is a behaviour with
+The mandate is never a `when:`. A tool may say in its seed which mandate it
+rides ("`session_create` rides Recruit: staff agents"); an Agent with Recruit `nobody` still
+sees it and decides.
+
+## Mandates
+
+Each Reach, Recruit and Output value is a behaviour with
 `mandate: <axis>` (`reach-plan.md`, `# plan`). The New Agent and New Team forms list the files of
 each axis, in `order:`; no list of values is kept by hand. Choosing a value brings its file into
 play at its depth, and the behaviours its `with:` names. The server reads the value as the title
@@ -107,11 +113,7 @@ the brief's Mandate section, never among the behaviours. A value is added by add
 (stock or the user's store); blocking it takes it off the menu; a screen narrows the menu. The
 Mandate fact still prints the values.
 
-The mandate is never a `when:`. A tool may say in its seed which mandate it
-rides ("`session_create` rides Recruit: staff agents"); an Agent with Recruit `nobody` still
-sees it and decides.
-
-## 5. The work record is the source of truth
+## The work record is the source of truth
 
 Each session's work record holds every value its brief depends on; the brief is the work
 record plus the files, nothing else.
@@ -124,7 +126,7 @@ record plus the files, nothing else.
 | Setting | hosted or self-hosted; Campaign; Workspace (its instructions, repositories, folders); integrations on; project management; the Services parts running |
 | Agent | role and Team(s); mandate (Reach, Recruit, Output); provider, model, harness, launch mode |
 | Work | desk or checkout per repository; items held and watched |
-| Brief settings | this Agent's add, block and only (§6) |
+| Brief settings | this Agent's add, block and only |
 
 - The Team roster, the Workspace and the Campaign own their values; Ronin writes them into the
   record, as it writes `teams`.
@@ -148,7 +150,7 @@ but the Agent pushes it one line, "Your work record changed; please read it (wor
 read)." (`ackRecord`); a change to an item it holds is not a record write, and its notice
 names the item and the change (`ackHolders`, `src/work-items.ts`).
 
-## 6. Layers and brief settings
+## Layers and brief settings
 
 The layers, widest first: the stock file (its header), the user, the Campaign, the Workspace,
 the Team, the Agent. Each layer's record holds the same three lists, naming only what it
@@ -186,7 +188,7 @@ behaviours and no `item` seed. On: the item model for everyone, role behaviours 
 Services part that runs project management keeps its own switch for running; the brief reads
 `pm`.
 
-## 7. The brief
+## The brief
 
 One file per session, `~/.ronin/sessions/<name>-<ts>/AGENT_BIRTH_BRIEF.md`, generated top to
 bottom:
@@ -238,7 +240,7 @@ Every tool is a command on your PATH; `<tool> --help` gives its syntax.
   depth) or left it. A mandate change sends the new mandate only.
 - **The brief shows at the bottom of the work record** on the tile.
 
-## 8. Where it is set in the UI
+## Where it is set in the UI
 
 - **New Agent form, Behaviours step:** Integrations (inherited ones shown on, the Agent's own
   to add, and the project-management switch); Optional (the Agent's add list, with depth);
@@ -247,7 +249,7 @@ Every tool is a command on your PATH; `<tool> --help` gives its syntax.
   and project management, in the same compact form. The user's own layer is the customise
   page.
 
-## 9. The stock files
+## The stock files
 
 ```
 facts/       you, user, user-about, user-intro, people (hosted), ronin, workspace,
@@ -272,7 +274,7 @@ Workspace-specific guidance is a user behaviour with `when: workspace:<name>`. H
 not tools (`ronin-url`, `ronin-http.sh`, `tool-path.sh`) get no file
 (`ronin_bin/README.md`).
 
-## 10. Boundaries
+## Boundaries
 
 - **Tool**: Ronin executable authority; its `--help` describes its callable contract. A
   **composite tool** coordinates guarded operations under one contract and outcome, reusing

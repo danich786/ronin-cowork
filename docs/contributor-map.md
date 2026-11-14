@@ -32,7 +32,7 @@ Scope describes applicability and inheritance, not a second Agent-composition pa
 Distinguish Campaign/Team defaults, brief settings, and owner resource shadowing.
 The brief uses these facts to resolve what one Agent is told.
 
-- Contracts: [The brief](architecture/brief.md#6-layers-and-brief-settings),
+- Contracts: [The brief](architecture/brief.md#layers-and-brief-settings),
   [Installations](architecture/installations.md), [Shadowing](architecture/shadowing.md).
 - Code: [campaign-scope.ts](../src/campaign-scope.ts),
   [instruction-cascade.ts](../src/instruction-cascade.ts), [resources.ts](../src/resources.ts),
@@ -112,7 +112,7 @@ A tool owns executable authority; its file in `ronin_catalogs/tools/` says what 
 tells about it. Composite tools reuse guarded operations. UI and provider-native skills call or teach
 these contracts without creating another authority.
 
-- Contract: [The brief](architecture/brief.md#10-boundaries).
+- Contract: [The brief](architecture/brief.md#boundaries).
 - Inventory: [tool files](../ronin_catalogs/tools/), [executables](../ronin_bin/).
 - Follow the executable to its actual implementation: [worktree-desk](../ronin_bin/worktree-desk)
   uses [cli-api.ts](../src/routes/cli-api.ts) and [commands/desk.ts](../src/commands/desk.ts);

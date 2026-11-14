@@ -37,7 +37,7 @@ file happens to define every stock name.
 
 | Catalog | Shape | Rule |
 |---|---|---|
-| `facts/`, `behaviours/`, `tools/` | one Markdown file each | whole-file, by file name, from the user's `facts/`, `behaviours/` and `tools/` stores — the brief's own rule ([brief](brief.md#3-the-files-and-their-header)) |
+| `facts/`, `behaviours/`, `tools/` | one Markdown file each | whole-file, by file name, from the user's `facts/`, `behaviours/` and `tools/` stores — the brief's own rule ([brief](brief.md#the-files-and-their-header)) |
 | `SKINS.md` | `## name` blocks | entry-merge. A skin is a set of design tokens and nothing else — no selector, so the worst a bad one does is look bad |
 | `HOTWORDS.md` | a flat list under `## Terms` | **copy-on-write, not a merge** — see below |
 | `MODEL_PROVIDERS.md` | `### <Vendor>` sections, keyed by the `- **provider:** id` each declares | entry-merge, at this file's heading level. A section of a shipped id replaces it whole and keeps its place; a new id appends; `- **hidden:** yes` withdraws the shipped provider. Every served entry carries `origin` and `shadowed`; the Model providers surface says the layer under each provider |
