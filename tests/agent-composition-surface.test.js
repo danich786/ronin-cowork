@@ -22,7 +22,7 @@ test('Configuration is the New Agent form in existing-Agent mode', () => {
   assert.match(form, /request\('\/api\/brief\/preview', \{ method: 'POST'/);
   assert.doesNotMatch(form, /row\.requires/);
   assert.match(form, /request\(`\/api\/sessions\/\$\{encodeURIComponent\(configure\)\}\/composition`/);
-  assert.match(form, /request\(`\/api\/sessions\/\$\{encodeURIComponent\(configure\)\}\/configuration`, \{ method: 'PUT', json: configurationValue\(\) \}\)/);
+  assert.match(form, /request\(`\/api\/sessions\/\$\{encodeURIComponent\(configure\)\}\/configuration`, \{ method: 'PUT', json: \{ \.\.\.configurationValue\(\), resend: true \} \}\)/, 'every Send asks for the whole brief (Glen, 2026-11-14)');
   assert.match(form, /if \(embedded && !configure\)/, 'Configuration puts no action in its body');
   assert.match(tilehead, /overTile\(tile, t\('me\.configuration', 'Configuration'\)[\s\S]*actions: \[reader\.action\]/, 'Send belongs to the Configuration overlay head');
   for (const field of ['session_type', 'provider', 'model', 'objective', 'title', 'role', 'team', 'mandate', 'setting']) assert.match(form, new RegExp(field));
