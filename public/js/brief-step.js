@@ -7,7 +7,7 @@
  *
  *   value: { brief: { add: [{ name, depth }], block: [name], only: [name] }, integrations: [name], pm?: boolean }
  *   above: { integrations: { name: from }, pm: { on, from } }   — what the layers above give
- *   inPlay: [{ kind, name, title, depth, why: [conditional] }]  — Agent only, read-only
+ *   inPlay: [{ kind: facts|behaviours|tools, name, title, depth, why: [conditional] }]  — Agent only, read-only
  *
  * Integrations and project management only add down the layers: what a layer above has on
  * shows on and locked with where it comes from. */
@@ -124,7 +124,7 @@ export function paintBriefForm(host, { layer = 'agent', catalog = [], value = em
 
   if (layer === 'agent') {
     /* Comes with this Agent: the server's answer, read-only. */
-    const rows = inPlay.filter((row) => row.kind !== 'fact');
+    const rows = inPlay.filter((row) => row.kind === 'behaviours' || row.kind === 'behaviour'); // a behaviour brings its tools; facts are the brief's own
     const fixed = ask([{ group: t('behaviours.conditional', 'Comes with this Agent'), fields: [{ key: 'inPlay', label: t('behaviours', 'Behaviors'), many: true, shape: 'tall', filter: false,
       options: rows.map((row) => option(named.get(row.name) || row, { l: row.title || row.name, sub: whyText(row.why), disabled: true })) }] }],
     { value: { inPlay: rows.map((row) => row.name) }, className: 'na-behaviour-readonly', density: 'tight', exposed: true });
