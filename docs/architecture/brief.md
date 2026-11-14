@@ -59,6 +59,7 @@ One flat folder per object. The file name (no `.md`, kebab-case) is the id that 
 | `when:` | all | the conditionals that must all hold, comma-separated; `!` for not; blank = every Agent. A tool that serves a behaviour needs none: it is in play when its behaviour is |
 | `depth:` | behaviours, tools | `none`, `seed` or `full`: the stock depth. Layers may raise it |
 | `serves:` | tools | the behaviour ids it serves. Blank: it goes under Other tools |
+| `mcp:` | bridges | the MCP server in the Agent's launch while this bridge is in play; blank until one is chosen |
 | `mandate:` | behaviours | the mandate axis this file is a value of: `reach`, `recruit` or `output`; the title is the value |
 | `with:` | mandate values | the behaviour(s) choosing this value puts in play, at their depth (Reach plan `with: planning`); the order never repeats that behaviour's text |
 | `order:` | all | its place in its section, lower first |
@@ -299,6 +300,23 @@ not tools (`ronin-url`, `ronin-http.sh`, `tool-path.sh`) get no file
 
 Docs explain Ronin and stay searchable; an Agent's operational instruction belongs in a
 behaviour or a tool's file or help, never only in a docs page.
+
+## What comes next
+
+The base of behaviours grows a file at a time; placeholders show where each goes.
+
+- **One bridge per integration.** A bridge is a behaviour with `when: integration:<name>` and the
+  tools that serve it: `netlify-bridge`, `jira-bridge`, `gbrain-bridge`, `perplexity-bridge`.
+  Netlify is the worked example (`netlify`, `preview`); the others follow it: Jira, then
+  gbrain, then Perplexity.
+- **MCP servers come in as bridges.** A bridge may say `mcp: <server>`: while it is in play, that
+  MCP server is in the Agent's launch, and the bridge says how it is used. Its tools come from
+  the harness, so they have no tool files.
+- **Keys are taught once**, by the Integrations behaviour and the `secret` tool; a bridge never
+  repeats how to get one.
+- **Workspaces.** The `workspaces` behaviour says a Project is one Workspace, with its repos,
+  folders, integrations, Teams and plans; the `workspace` tool (`depth: none` until the command
+  exists) will list, read, create, edit and archive them over `src/routes/workspaces-api.ts`.
 
 ## Change checkpoint
 
