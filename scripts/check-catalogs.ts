@@ -1,13 +1,13 @@
 import { readFile, readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { STOCK_DIR, splitSections, readEntries } from '../src/resources.js';
+import { STOCK_DIR } from '../src/resources.js';
+import { CATALOG_KINDS, parseCatalogFile, type CatalogFile } from '../src/catalog.js';
 import {
   findDefinition,
   listAgentTemplates,
   listInstallations,
   listIntegrations,
-  listBehaviours,
   listTeamTemplates,
   type DefinitionKind,
   type TemplateBox,
@@ -18,7 +18,6 @@ import { parseProviderCatalog, STOCK_CATALOG_MD } from '../src/model-providers.j
 import { SHIPPED_MODEL_INFO, type ModelInfoFile } from '../src/model-info.js';
 import { AGENTS } from '../src/agents.js';
 import { readAgentLaunches, renderLaunch } from '../src/agent-launches.js';
-import { resolveBehaviourBooks } from '../src/behaviours.js';
 
 const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 let fails = 0;
@@ -32,24 +31,36 @@ const warn = (msg: string) => {
   warns++;
 };
 
-const stockNames = async (file: string): Promise<string[]> => {
-  const raw = await readFile(path.join(STOCK_DIR, file), 'utf8');
-  return splitSections(raw, 'stock')
-    .filter((s) => s.head === s.name) // a heading with a space is prose, never an entry
-    .map((s) => s.name);
-};
-
-async function surfacing(file: string, served: () => Promise<{ name: string }[]>): Promise<void> {
-  const want = await stockNames(file);
-  const got = new Set((await served()).map((e) => e.name));
-  for (const name of want) {
-    if (!got.has(name)) {
-      fail(
-        `${file}: stock entry "${name}" does not surface from its reader — ` +
-          `half-written (dropped by a filter), or hidden by a user file on this box`,
-      );
+/** THE BRIEF CATALOG (docs/architecture/brief.md, The files and their header): every stock fact,
+ * behaviour and tool file parses, ids are one namespace, and serves:/with: name real behaviours. */
+async function stockCatalog(): Promise<CatalogFile[]> {
+  const files: CatalogFile[] = [];
+  for (const kind of CATALOG_KINDS) {
+    const dir = path.join(STOCK_DIR, kind);
+    for (const entry of (await readdir(dir)).filter((f) => f.endsWith('.md') && f !== 'README.md').sort()) {
+      const file = path.join(dir, entry);
+      const text = await readFile(file, 'utf8');
+      const name = entry.replace(/\.md$/, '');
+      const row = parseCatalogFile(kind, name, text);
+      const at = `${kind}/${entry}`;
+      if (!/^\s*#\s+\S/.test(text)) fail(`${at}: starts with no \`# Title\``);
+      if (kind === 'facts' && !row.line && !row.body) fail(`${at}: a fact with no \`line:\` and no text`);
+      if (kind !== 'facts' && !row.seed) fail(`${at}: no \`seed:\` — the one line an Agent is told`);
+      files.push({ ...row, file, origin: 'stock', shadowed: false });
     }
   }
+  const byName = new Map<string, CatalogFile>();
+  for (const row of files) {
+    const was = byName.get(row.name);
+    if (was) fail(`${row.kind}/${row.name}.md: id "${row.name}" is also ${was.kind}/${row.name}.md — ids are one namespace`);
+    else byName.set(row.name, row);
+  }
+  const behaviour = (name: string) => byName.get(name)?.kind === 'behaviours';
+  for (const row of files) {
+    for (const name of row.serves) if (!behaviour(name)) fail(`${row.kind}/${row.name}.md: serves "${name}", which is no behaviour file`);
+    for (const name of row.with) if (!behaviour(name)) fail(`${row.kind}/${row.name}.md: with "${name}", which is no behaviour file`);
+  }
+  return files;
 }
 
 async function deadLinks(file: string): Promise<void> {
@@ -95,23 +106,21 @@ async function surfacingDefinitions(
 async function templateBoxResolves(
   at: string,
   box: TemplateBox,
+  behaviours: Set<string>,
 ): Promise<void> {
   if (!box.blurb.trim()) fail(`${at}: missing blurb`);
   if (!box.art.trim()) fail(`${at}: missing art`);
   if (!box.kinds.length) fail(`${at}: names no valid kinds — nothing brings it forward`);
-  for (const book of box.behaviours) {
-    const resolved = await resolveBehaviourBooks([book]);
-    if (!resolved.delivered.length) fail(`${at}: behaviour does not resolve "${book}"`);
-  }
+  for (const name of box.behaviours) if (!behaviours.has(name)) fail(`${at}: behaviour "${name}" is no behaviour file`);
 }
 
-async function templatesResolve(): Promise<void> {
+async function templatesResolve(behaviours: Set<string>): Promise<void> {
   const DEAD = ['lead_brief', 'lead_mandate'];
   for (const template of (await listAgentTemplates()).filter((x) => x.origin === 'stock')) {
     const at = `templates/agents/${template.name}.md`;
-    await templateBoxResolves(at, template);
+    await templateBoxResolves(at, template, behaviours);
     const def = await findDefinition('templates/agents', template.name);
-    if (def?.has('mandate') && !template.mandate) fail(`${at}: mandate is not \`reach · recruit · output\` in ruled values`);
+    if (def?.has('mandate') && !template.mandate) fail(`${at}: mandate is not \`reach · recruit · output\``);
     if (!template.brief.trim()) fail(`${at}: an agent template seeds a brief`);
     for (const key of ['objective', ...DEAD]) {
       if (def?.has(key)) fail(`${at}: \`${key}:\` is a team answer — it does not belong on the agent shelf`);
@@ -119,7 +128,7 @@ async function templatesResolve(): Promise<void> {
   }
   for (const template of (await listTeamTemplates()).filter((x) => x.origin === 'stock')) {
     const at = `templates/teams/${template.name}.md`;
-    await templateBoxResolves(at, template);
+    await templateBoxResolves(at, template, behaviours);
     const def = await findDefinition('templates/teams', template.name);
     if (!template.objective.trim()) fail(`${at}: a team template states its objective`);
     for (const key of ['brief', 'team_mode', ...DEAD]) {
@@ -138,17 +147,16 @@ async function templatesResolve(): Promise<void> {
   }
 }
 
-const FILES = ['TOOLS.md', 'PROJECT_ROOTS.md', 'MODEL_PROVIDERS.md'];
+const FILES = ['PROJECT_ROOTS.md', 'MODEL_PROVIDERS.md'];
 
 await surfacingDefinitions('desk_profiles', listDeskProfiles);
 await surfacingDefinitions('lexicons', listLexicons);
 await surfacingDefinitions('services', listInstallations);
 await surfacingDefinitions('integrations', listIntegrations);
-await surfacingDefinitions('behaviours', listBehaviours);
+const briefCatalog = await stockCatalog();
 await surfacingDefinitions('templates/agents', listAgentTemplates);
 await surfacingDefinitions('templates/teams', listTeamTemplates);
-await templatesResolve();
-await surfacing('TOOLS.md', () => readEntries('TOOLS.md'));
+await templatesResolve(new Set(briefCatalog.filter((row) => row.kind === 'behaviours').map((row) => row.name)));
 
 // The SHIPPED file, explicitly: `readProviderCatalog()` lays the owner's copy over it, and a
 // verify that judged the owner's sections would guard the wrong file on a box with a copy.
