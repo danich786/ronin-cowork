@@ -91,7 +91,8 @@ export function paintBriefForm(host, { layer = 'agent', catalog = [], value = em
     onChange: (next) => { own.integrations = next.integrations.filter((name) => !inherited[name]); emit(); } });
   const pmWord = (on) => (pmAbove === 'jira' ? t('brief.pm_jira', 'On while Jira is on.')
     : pmAbove ? t('brief.on_from', 'on from {layer}', { layer: layerWord(pmAbove) })
-      : on ? t('brief.pm_on', 'Work items: the item model, and the guidance for this Agent’s role.') : t('brief.pm_off', 'No work items guidance.'));
+      : on ? (layer === 'agent' ? t('brief.pm_on', 'Work items: the item model, and the guidance for this Agent’s role.') : t('brief.pm_on_layer', 'Work items for every Agent below: the item model, and the guidance for each role.'))
+        : t('brief.pm_off', 'No work items guidance.'));
   const pmNote = el('p', 'na-behaviour-note', pmWord(!!pmAbove || own.pm === true));
   // Off is only an answer where nothing above has it on; absent then means off.
   // The group carries the name, so it wraps; the switch is its track alone.
@@ -120,7 +121,8 @@ export function paintBriefForm(host, { layer = 'agent', catalog = [], value = em
     depthAsks.push(depth);
     return depth.el;
   };
-  const addable = catalog.filter((row) => row.kind === 'behaviour' && (row.depth === 'none' || layer !== 'agent' || own.brief.add.some((a) => a.name === row.name)));
+  // What an add can change: an optional behaviour (depth none) brought in, or a seed raised to full.
+  const addable = catalog.filter((row) => row.kind === 'behaviour' && (row.depth !== 'full' || own.brief.add.some((a) => a.name === row.name)));
   for (const entry of own.brief.add) if (!addable.some((row) => row.name === entry.name)) addable.push(named.get(entry.name) || { name: entry.name });
   const add = ask([{ group: layer === 'agent' ? t('behaviours.available', 'Optional') : t('brief.add', 'Add'), fields: [{ key: 'add', label: t('behaviours', 'Behaviors'), many: true, shape: 'tall', filter: false,
     row: depthControl,

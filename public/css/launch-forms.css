@@ -454,6 +454,8 @@
   /* Behaviors library/viewer — the shared stone surface supplies responsive geometry. */
   .behaviour-surface .sws-detail { min-width: 0; }
   .behaviour-surface .sws-group { color: var(--kaki); font-weight: var(--weight-strong); }
+  .behaviour-surface .behaviour-settings { display: grid; gap: var(--space-paragraph); padding: 0 var(--space-inset) var(--space-section); }
+  .behaviour-surface .behaviour-settings-head { margin: 0; padding: var(--space-section) var(--space-inset) 0; color: var(--fg-strong); font-size: var(--form-input); font-weight: var(--weight-strong); }
   .bh-title { margin: 0; }
   .bh-summary, .bh-meta, .bh-status, .na-behaviour-intro { color: var(--muted); }
   .na-behaviour-sections { display: grid; gap: var(--space-section); }
@@ -461,7 +463,10 @@
   .na-behaviour-note { margin: 0; color: var(--muted); font-size: var(--form-note); }
   .brief-pm-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-inline); }
   .brief-pm-row .na-behaviour-note { flex: 1 1 0; min-width: var(--space-section); }
-  .na-behaviour-readonly .ask-word { overflow: visible; white-space: normal; padding-right: var(--space-section); }
+  /* A stone fills its row's height, so its View link sits inside it; the why line clears the link. */
+  .ask.na-behaviour-readonly[data-exposed='true'] .ask-opt-wrap .ask-opt { height: 100%; }
+  .na-behaviour-readonly .ask-word { overflow: visible; white-space: normal; }
+  .na-behaviour-readonly .ask-opt { padding-bottom: var(--space-subsection); }
   .na-behaviour-sections .ask-group-head { color: var(--fg-strong); font-size: var(--form-input); font-weight: var(--weight-strong); }
   .na-behaviour-sections .ask-opt[data-ask-action='true'][data-ask-value='@customize'] { border: var(--edge) dotted var(--kaki); background: var(--surface); color: var(--kaki-lift); gap: var(--space-inline); }
   .na-behaviour-sections .ask-opt[data-ask-action='true'][data-ask-value='@customize']::before { content: '+'; color: var(--kaki); font-size: var(--text-display); line-height: var(--leading-none); }

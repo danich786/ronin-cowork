@@ -82,10 +82,13 @@ function createBehaviourSurface(initial = {}) {
   const settings = createBriefSettingsPanel({ layer: 'user', id: 'me', createAction: WorkspaceKit.primitives.createAction });
   const add = node('button', 'wk-action', t('behaviours.new', 'New Behavior'));
   add.type = 'button'; add.addEventListener('click', () => stones.openDetail({ row: { scope: 'behaviours', new: true } }, { returnFocus: add }));
-  intro.append(settings.el, add);
-  stones.mount(surface.content, { before: [intro] });
+  intro.append(add);
+  settings.el.classList.add('behaviour-settings');
+  const settingsHead = node('h3', 'behaviour-settings-head', t('brief.user_settings', 'For every Agent you start'));
+  stones.mount(surface.content, { before: [intro], after: [settingsHead, settings.el] });
   const items = () => ['behaviours', 'facts', 'tools'].flatMap((scope) => rows.filter((row) => row.scope === scope))
-    .map((row) => ({ id: keyOf(row), label: row.title || row.name, group: groupOf(row.scope), secondary: row.seed || row.line || '', state: row.origin === 'user' ? t('behaviours.yours', 'Yours') : '', row }));
+    // A stone carries the name only (its seed would be cut short); the opened file says the rest.
+    .map((row) => ({ id: keyOf(row), label: row.title || row.name, group: groupOf(row.scope), secondary: '', state: row.origin === 'user' ? t('behaviours.yours', 'Yours') : '', row }));
   async function refresh(select = '') {
     surface.setState('loading', t('customize.reading', 'reading…'));
     const result = await request('/api/brief/catalog', { cache: 'no-store' });
