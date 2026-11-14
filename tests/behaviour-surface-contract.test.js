@@ -10,16 +10,19 @@ const docs = await readFile(new URL('../public/js/docs.js', import.meta.url), 'u
 const agent = await readFile(new URL('../public/js/new-agent.js', import.meta.url), 'utf8');
 const cowork = await readFile(new URL('../public/js/cowork-view.js', import.meta.url), 'utf8');
 
-test('Behavior work surface is the user layer: their brief settings, and every file to read or replace by name', () => {
+test('Behavior work surface is the user layer: their brief settings, and every file to read or replace by name', async () => {
   assert.match(surface, /createPhalanx/);
   assert.match(surface, /createBriefSettingsPanel\(\{ layer: 'user'/);
   assert.match(surface, /request\('\/api\/brief\/catalog'/);
   assert.match(surface, /\/api\/brief\/files\/\$\{encodeURIComponent\(row\.scope\)\}/);
   assert.match(surface, /renderMarkdownDocument/);
-  assert.match(surface, /method: 'POST'/);
-  assert.match(surface, /method: 'PUT'/);
-  assert.match(surface, /shadow: true/);
-  assert.doesNotMatch(surface, /\/api\/ways|All Cowork Agents|Conditional/);
+  // Written through the plain form (BRIEF_MODEL §8): a new file, the user's own version, or an update.
+  const author = await readFile(new URL('../public/js/brief-author.js', import.meta.url), 'utf8');
+  assert.match(surface, /createAuthorForm\(/);
+  assert.match(author, /method: 'POST'/);
+  assert.match(author, /method: 'PUT'/);
+  assert.match(author, /shadow: true/);
+  assert.doesNotMatch(surface, /\/api\/ways|All Cowork Agents|'Conditional'/);
 });
 
 test('the central catalog registers Behavior once and admits every reading profile', () => {

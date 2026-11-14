@@ -8,19 +8,27 @@ import { WorkspaceKit } from './workspace-kit.js';
 import { t } from './lexicon.js';
 import { renderMarkdownDocument } from './markdown-reader.js';
 import { createBriefSettingsPanel, scopeOf } from './brief-step.js';
+import { createAuthorForm } from './brief-author.js';
 
 export const BEHAVIOUR_SURFACE_TYPE = 'campaign.behaviours';
 const node = (tag, cls = '', text = '') => { const out = document.createElement(tag); if (cls) out.className = cls; if (text) out.textContent = text; return out; };
 const keyOf = (row) => `${row.scope}:${row.name}`;
-const STARTER = '# My behavior\n- **seed:** One line: what this guidance is for.\n- **when:**\n- **depth:** none\n\nThe guidance the Agent is told.\n';
 
 function groupOf(scope) {
   return ({ facts: t('brief.facts', 'Facts'), behaviours: t('behaviours', 'Behaviors'), tools: t('brief.tools', 'Tools') })[scope] || scope;
 }
 
-function viewer(row, host, afterSave) {
+/** The conditionals a "when" can name: the server's list, less those that need a value typed in. */
+async function readConditionals() {
+  const result = await request('/api/brief/conditionals', { cache: 'no-store' });
+  return result.ok && Array.isArray(result.data) ? result.data.filter((name) => !String(name).includes('<')) : [];
+}
+const modeOf = (row) => (row.scope === 'tools' ? 'tool' : row.scope === 'facts' ? 'fact' : 'behaviour');
+
+function viewer(row, host, afterSave, context) {
   let active = true;
-  const heading = node('h2', 'bh-title', row.title || row.name || t('behaviours.new', 'New Behavior'));
+  let form = null;
+  const heading = node('h2', 'bh-title', row.title || row.name || ({ tool: t('author.new_tool', 'New tool'), bridge: t('author.new_bridge', 'New bridge') })[row.mode] || t('behaviours.new', 'New Behavior'));
   addProvMark(heading, row);
   const summary = node('p', 'bh-summary', row.seed || row.line || '');
   const meta = node('p', 'bh-meta', [groupOf(row.scope), row.origin === 'user' ? t('behaviours.yours', 'Yours') : row.origin ? t('behaviours.stock', 'Ronin') : ''].filter(Boolean).join(' · '));
@@ -28,39 +36,23 @@ function viewer(row, host, afterSave) {
   const readingHost = node('div', 'bh-reading');
   const actions = node('div', 'bh-actions');
   host.append(heading, summary, meta, actions, status, readingHost);
-  // The whole file is edited as it is: its header (seed, when, depth, order) and its text.
-  const edit = (file = null) => {
-    const name = node('label', 'bh-field', t('behaviours.name', 'Name'));
-    const nameInput = node('input'); nameInput.value = row.name || ''; nameInput.readOnly = Boolean(file); name.append(nameInput);
-    const textField = node('label', 'bh-field', t('behaviours.guidance', 'Guidance'));
-    const body = node('textarea'); body.value = file?.text || STARTER; body.rows = 16; textField.append(body);
-    const message = node('p', 'bh-status'); message.setAttribute('role', 'status');
-    const save = node('button', 'wk-action', !file ? t('behaviours.create', 'Create Behavior') : file.origin === 'user' ? t('forms.save', 'Save') : t('behaviours.save_mine', 'Save my version'));
-    const cancel = node('button', 'wk-action', t('forms.cancel', 'Cancel'));
-    for (const button of [save, cancel]) { button.type = 'button'; button.dataset.endsEdit = ''; }
-    const form = node('div', 'bh-editor');
-    form.append(name, textField, save, cancel, message);
-    readingHost.replaceChildren(form);
+  // Write, edit or make a version: the plain form (brief-author.js), never the raw file.
+  const edit = async (file = null) => {
+    const conditionals = await readConditionals();
+    if (!active) return;
+    form?.destroy();
+    form = createAuthorForm({ mode: row.mode || modeOf(row), existing: file, catalog: context.rows(), conditionals,
+      onDone: (key) => { window.dispatchEvent(new Event('ronin:behaviours-changed')); afterSave(key); },
+      onCancel: () => { form?.destroy(); form = null; readingHost.replaceChildren(file ? renderMarkdownDocument(file.text) : ''); showActions(file); } });
+    readingHost.replaceChildren(form.el);
     actions.replaceChildren();
-    cancel.addEventListener('click', () => { readingHost.replaceChildren(file ? renderMarkdownDocument(file.text) : ''); showActions(file); });
-    save.addEventListener('click', async () => {
-      const target = file ? row.name : nameInput.value.trim();
-      const result = !file
-        ? await request('/api/brief/files', { method: 'POST', json: { kind: row.scope, name: target, text: body.value } })
-        : file.origin === 'stock'
-          ? await request('/api/brief/files', { method: 'POST', json: { kind: row.scope, name: target, text: body.value, shadow: true } })
-          : await request(`/api/brief/files/${encodeURIComponent(row.scope)}/${encodeURIComponent(target)}`, { method: 'PUT', json: { text: body.value, revision: file.revision } });
-      if (!active) return;
-      if (!result.ok) { message.textContent = result.message; message.dataset.bad = 'true'; return; }
-      window.dispatchEvent(new Event('ronin:behaviours-changed'));
-      afterSave(`${row.scope}:${target}`);
-    });
   };
   const showActions = (file) => {
-    const button = node('button', 'wk-action', t('behaviours.edit', 'Edit'));
-    button.type = 'button'; button.addEventListener('click', () => edit(file)); actions.replaceChildren(button);
+    if (!file) return;
+    const button = node('button', 'wk-action', file.origin === 'user' ? t('behaviours.edit', 'Edit') : t('author.make_mine', 'Make my version'));
+    button.type = 'button'; button.addEventListener('click', () => void edit(file)); actions.replaceChildren(button);
   };
-  if (row.new) { edit(); return () => { active = false; }; }
+  if (row.new) { void edit(); return () => { active = false; form?.destroy(); }; }
   status.textContent = t('docs.loading', 'loading…');
   void (async () => {
     const result = await request(`/api/brief/files/${encodeURIComponent(row.scope)}/${encodeURIComponent(row.name)}`, { cache: 'no-store' });
@@ -70,19 +62,24 @@ function viewer(row, host, afterSave) {
     readingHost.replaceChildren(renderMarkdownDocument(result.data?.text || ''));
     showActions(result.data);
   })();
-  return () => { active = false; };
+  return () => { active = false; form?.destroy(); };
 }
 
 function createBehaviourSurface(initial = {}) {
   const surface = WorkspaceKit.primitives.createSurface({ label: t('behaviours.title', 'Behaviors'), className: 'behaviour-surface' });
   let rows = [];
-  const stones = createPhalanx({ className: 'behaviour-stones', renderDetail: (item, host) => viewer(item.row, host, refresh) });
+  const stones = createPhalanx({ className: 'behaviour-stones', renderDetail: (item, host) => viewer(item.row, host, refresh, { rows: () => rows }) });
   const intro = node('div', 'sws-intro');
   intro.append(node('h2', '', t('behaviours.title', 'Behaviors')), node('p', '', t('brief.user_help', 'What every Agent you start is told. Open any file to read it, or save your own version: yours replaces Ronin’s by name and survives updates.')));
   const settings = createBriefSettingsPanel({ layer: 'user', id: 'me', createAction: WorkspaceKit.primitives.createAction });
-  const add = node('button', 'wk-action', t('behaviours.new', 'New Behavior'));
-  add.type = 'button'; add.addEventListener('click', () => stones.openDetail({ row: { scope: 'behaviours', new: true } }, { returnFocus: add }));
-  intro.append(add);
+  // Write your own: a behaviour, a tool for a command you have, or a bridge (BRIEF_MODEL §8).
+  const adds = node('div', 'bh-actions');
+  for (const [mode, scope, label] of [['behaviour', 'behaviours', t('behaviours.new', 'New Behavior')], ['tool', 'tools', t('author.new_tool', 'New tool')], ['bridge', 'behaviours', t('author.new_bridge', 'New bridge')]]) {
+    const add = node('button', 'wk-action', label);
+    add.type = 'button'; add.addEventListener('click', () => stones.openDetail({ row: { scope, mode, new: true } }, { returnFocus: add }));
+    adds.append(add);
+  }
+  intro.append(adds);
   settings.el.classList.add('behaviour-settings');
   const settingsHead = node('h3', 'behaviour-settings-head', t('brief.user_settings', 'For every Agent you start'));
   stones.mount(surface.content, { before: [intro], after: [settingsHead, settings.el] });

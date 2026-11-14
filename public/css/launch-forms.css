@@ -456,6 +456,10 @@
   .behaviour-surface .sws-group { color: var(--kaki); font-weight: var(--weight-strong); }
   .behaviour-surface .behaviour-settings { display: grid; gap: var(--space-paragraph); padding: 0 var(--space-inset) var(--space-section); }
   .behaviour-surface .behaviour-settings-head { margin: 0; padding: var(--space-section) var(--space-inset) 0; color: var(--fg-strong); font-size: var(--form-input); font-weight: var(--weight-strong); }
+  .brief-author { display: grid; gap: var(--space-paragraph); }
+  .brief-author-head { margin: 0; color: var(--fg-strong); font-size: var(--form-input); font-weight: var(--weight-strong); }
+  .brief-author-tool { display: grid; grid-template-columns: repeat(auto-fit, minmax(var(--ask-w), 1fr)); gap: var(--space-inline); }
+  .brief-author-tools { display: grid; gap: var(--space-row); }
   .bh-title { margin: 0; }
   .bh-summary, .bh-meta, .bh-status, .na-behaviour-intro { color: var(--muted); }
   .na-behaviour-sections { display: grid; gap: var(--space-section); }
