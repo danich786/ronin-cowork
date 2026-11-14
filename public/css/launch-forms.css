@@ -470,13 +470,14 @@
   .brief-pm-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-inline); }
   .brief-pm-name { color: var(--fg-strong); font-size: var(--form-note); }
   /* A stone fills its row's height, so its View link sits inside it; the why line clears the link. */
-  .ask.na-behaviour-readonly[data-exposed='true'] .ask-opt-wrap .ask-opt { height: 100%; }
-  .na-behaviour-readonly .ask-word { overflow: visible; white-space: normal; }
-  .na-behaviour-readonly .ask-opt { padding-bottom: var(--space-subsection); }
+  .na-behaviour-sections .ask[data-exposed='true'] .ask-opt-wrap .ask-rect { height: 100%; }
+  .na-behaviour-sections .ask-rect .ask-word { overflow: visible; white-space: normal; }
+  .na-behaviour-sections .ask-opt-wrap .ask-rect { padding-bottom: var(--space-subsection); }
   .na-behaviour-sections .ask-group-head { color: var(--fg-strong); font-size: var(--form-input); font-weight: var(--weight-strong); }
   .na-behaviour-sections .ask-opt[data-ask-action='true'][data-ask-value='@customize'] { border: var(--edge) dotted var(--kaki); background: var(--surface); color: var(--kaki-lift); gap: var(--space-inline); }
   .na-behaviour-sections .ask-opt[data-ask-action='true'][data-ask-value='@customize']::before { content: '+'; color: var(--kaki); font-size: var(--text-display); line-height: var(--leading-none); }
-  .na-behaviour-readonly .ask-opt[aria-disabled='true'] { opacity: 1; }
+  /* A card that cannot be pressed (on from above, already told in full) reads as it is, not greyed: its second line says why. */
+  .na-behaviour-sections .ask-opt[aria-disabled='true'] { opacity: 1; }
   .bh-actions { margin: var(--space-row) 0; }
   .bh-editor { display: grid; gap: var(--space-row); }
   .bh-field { display: grid; gap: var(--space-row); color: var(--muted); }
