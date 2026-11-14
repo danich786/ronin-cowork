@@ -26,14 +26,16 @@ PY
 dynamic_help() {
   . "$TOOL_DIR/ronin-http.sh"
   ronin_connect || exit $?
-  local catalog runtime seed
+  local catalog runtime seed brief
   catalog=$(mktemp /tmp/session_create-catalog.XXXXXX) || exit 2
   runtime=$(mktemp /tmp/session_create-runtime.XXXXXX) || { rm -f "$catalog"; exit 2; }
   seed=$(mktemp /tmp/session_create-seed.XXXXXX) || { rm -f "$catalog" "$runtime"; exit 2; }
-  trap "rm -f '$catalog' '$runtime' '$seed'" EXIT
+  brief=$(mktemp /tmp/session_create-brief.XXXXXX) || { rm -f "$catalog" "$runtime" "$seed"; exit 2; }
+  trap "rm -f '$catalog' '$runtime' '$seed' '$brief'" EXIT
   catalog_read /api/provider-catalog "$catalog"
   catalog_read /api/setup/runtime "$runtime"
   catalog_read /api/launch-seed "$seed"
+  catalog_read /api/brief/catalog "$brief"
   cat <<'EOF'
 session_create — create one new Agent
 
@@ -51,8 +53,18 @@ With no --team, the new Agent joins the caller's first Team when there is one.
 Every Agent starts in the same folder, Ronin's own; where it works comes from its Team's
 Workspace, which its brief lists.
 The mandate is chosen here and carried in the birth brief; never set it after birth.
---reach open|discuss|plan|execute · --recruit open|nobody|"propose agents"|"staff agents"
---output takes several, comma-separated: open, a plan, ideas, code, an artifact, the team, no code.
+EOF
+  # The values are the mandate files (docs/architecture/brief.md, Mandates), in order:; no list is kept here.
+  python3 - "$brief" <<'PY'
+import json, sys
+rows = [row for row in json.load(open(sys.argv[1])) if isinstance(row, dict) and row.get("mandate")]
+values = lambda axis: [str(row.get("value", "")) for row in rows if row.get("mandate") == axis and row.get("value")]
+quoted = lambda axis: "|".join(f'"{v}"' if " " in v else v for v in values(axis))
+print(f"--reach {quoted('reach')}")
+print(f"--recruit {quoted('recruit')}")
+print(f"--output takes several, comma-separated: {', '.join(values('output'))}.")
+PY
+  cat <<'EOF'
 Naming any of the three sets the whole mandate: an axis left out is reach plan, recruit
 propose agents, output open. Naming none inherits the Team's defaults.
 --role sets the Agent's role, as the New Agent form does; coworker when not named.

@@ -22,6 +22,9 @@ test('importing the server under the unit runner never publishes operator option
     BIND: '127.0.0.1',
     RONIN_TEST_RUNNER: '1',
     RONIN_DATA_ROOT: path.join(fixture, 'data'),
+    // The user stores too: the entry point's start-up moves (src/index.ts) write there.
+    RONIN_USER_ROOT: path.join(fixture, 'user'),
+    HOME: path.join(fixture, 'home'),
     RONIN_TMUX_LOG: log,
     TMUX_TMPDIR: path.join(fixture, 't'),
   };
@@ -49,6 +52,9 @@ test('a scratch entry point inherited from a tmux pane never publishes its addre
     PORT: '0',
     NODE_ENV: 'development',
     RONIN_DATA_ROOT: path.join(fixture, 'data'),
+    // The user stores too: the entry point's start-up moves (src/index.ts) write there.
+    RONIN_USER_ROOT: path.join(fixture, 'user'),
+    HOME: path.join(fixture, 'home'),
     RONIN_TMUX_LOG: log,
     TMUX: '/tmp/tmux-live/default,1,0',
     TMUX_PANE: '%1',

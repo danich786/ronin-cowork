@@ -20,7 +20,7 @@ await fs.writeFile(path.join(process.env.RONIN_CONFIG_DIR, 'machine_settings.jso
         installations: {},
         defaults: {
           provider: 'openai', model: 'gpt-test', reach: 'execute', recruit: 'nobody', output: ['code'],
-          behaviours: ['gbrain', 'mandates'], launch_mode: 'configured',
+          launch_mode: 'configured',
         },
         cowork_defaults: { branch: 'dev' },
       },
@@ -48,7 +48,7 @@ test('POST /api/team-rosters creates a Team from its name alone', async () => {
   assert.equal(body.roster.kind, 'open');
   assert.equal(body.roster.wipeboard, 'name_only');
   assert.equal(body.roster.branch, 'dev');
-  assert.deepEqual(body.roster.behaviours, { selected: ['gbrain'], required: [] });
+  assert.deepEqual(body.roster.brief, { add: [], block: [], only: [] }, 'a Team adds nothing of its own: the Campaign\'s settings cascade');
   assert.deepEqual(body.roster.agent_defaults, {
     reach: 'execute', recruit: 'nobody', output: ['code'],
   });
@@ -62,7 +62,6 @@ test('PUT /api/team creates with Campaign defaults, then omission on update pres
   const first = await created.json() as { created: boolean; roster: Record<string, any> };
   assert.equal(first.created, true);
   assert.equal(first.roster.branch, 'dev');
-  assert.deepEqual(first.roster.behaviours.selected, ['gbrain']);
   assert.equal(first.roster.agent_defaults.recruit, 'nobody');
 
   const updated = await fetch(`${base}/api/team`, {
@@ -73,55 +72,33 @@ test('PUT /api/team creates with Campaign defaults, then omission on update pres
   assert.equal(second.created, false);
   assert.equal(second.roster.objective, 'second');
   assert.equal(second.roster.branch, 'dev');
-  assert.deepEqual(second.roster.behaviours.selected, ['gbrain']);
   assert.equal(second.roster.agent_defaults.recruit, 'nobody');
 });
 
 test('PUT /api/team reapplies Campaign defaults to an existing Team only when explicitly requested', async () => {
   const response = await fetch(`${base}/api/team`, {
     method: 'PUT', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ name: 'tool_team', campaign_defaults: true, behaviours: { selected: ['ronin_host'], required: [] } }),
+    body: JSON.stringify({ name: 'tool_team', campaign_defaults: true, brief: { add: ['team-work'] } }),
   });
   assert.equal(response.status, 200);
   const body = await response.json() as { created: boolean; roster: Record<string, any> };
   assert.equal(body.created, false);
-  assert.deepEqual(body.roster.behaviours.selected, ['ronin_host'], 'an explicit choice remains final');
+  assert.deepEqual(body.roster.brief.add, [{ name: 'team-work' }], 'an explicit choice remains final');
   assert.equal(body.roster.agent_defaults.recruit, 'nobody');
 });
 
 test('POST /api/team-rosters overlays explicit choices on Campaign defaults', async () => {
   const response = await fetch(`${base}/api/team-rosters`, {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({
-      name: 'overlaid', behaviours: { selected: ['ronin_host'], required: [] }, agent_defaults: { reach: 'discuss' },
+      name: 'overlaid', brief: { add: ['team-work'] }, pm: true, agent_defaults: { reach: 'discuss' },
     }),
   });
   assert.equal(response.status, 200);
   const body = await response.json() as { roster: Record<string, any> };
-  assert.deepEqual(body.roster.behaviours.selected, ['ronin_host']);
+  assert.deepEqual(body.roster.brief.add, [{ name: 'team-work' }]);
+  assert.equal(body.roster.pm, true);
   assert.equal(body.roster.agent_defaults.reach, 'discuss');
   assert.equal(body.roster.agent_defaults.recruit, 'nobody');
-});
-
-test('the seed door tolerates a pre-cut behaviour shape without inventing an elective mandate', async () => {
-  const file = path.join(process.env.RONIN_TEAM_ROSTERS_DIR!, 'home_machine', 'installation-cascade.md');
-  await fs.mkdir(path.dirname(file), { recursive: true });
-  const raw = [
-    '# installation-cascade',
-    '- **title:** Installation Cascade',
-    '- **kind:** coding',
-    '- **behaviours:** {"books":[],"required":false}',
-    '- **agent_defaults:** {}',
-    '',
-  ].join('\n');
-  await fs.writeFile(file, raw, 'utf8');
-  const response = await fetch(`${base}/api/launch-seed?team=installation-cascade`);
-  assert.equal(response.status, 200);
-  const seed = await response.json() as { seeds: { behaviours: { value: string[] } }; behaviours: Array<{ name: string; scope: string; on: boolean }> };
-  assert.deepEqual(seed.seeds.behaviours.value, []);
-  const mandates = seed.behaviours.find((row) => row.name === 'mandates');
-  assert.equal(mandates?.scope, 'conditional');
-  assert.equal(mandates?.on, false, 'conditional guidance is visible but never added to the elective seed');
-  assert.equal(await fs.readFile(file, 'utf8'), raw, 'the seed read performs no migration');
 });
 
 test('GET /api/team-rosters/:name refuses a name held by two Campaigns, naming them, and the server stays up', async () => {
@@ -146,13 +123,13 @@ test('a Team name in two Campaigns: the write and the read name the Campaign, an
   await createTeamRoster('pair_team', { objective: 'home pair' }, 'home_machine');
   await createTeamRoster('pair_team', { objective: 'other pair' }, 'other');
   const put = (body: Record<string, unknown>) => fetch(`${base}/api/team`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'pair_team', ...body }) });
-  const refused = await put({ behaviours: { selected: ['project-management'] } });
+  const refused = await put({ pm: true });
   assert.equal(refused.status, 400);
   assert.match((await refused.json() as { error: string }).error, /more than one Campaign/);
-  const done = await put({ campaign_id: 'home_machine', behaviours: { selected: ['project-management'], required: [] } });
+  const done = await put({ campaign_id: 'home_machine', pm: true });
   assert.equal(done.status, 200);
-  assert.deepEqual((await readTeamRoster('pair_team', 'home_machine'))!.behaviours, { selected: ['project-management'], required: [] });
-  assert.deepEqual((await readTeamRoster('pair_team', 'other'))!.behaviours.selected, [], 'the other Campaign\'s Team is untouched');
+  assert.equal((await readTeamRoster('pair_team', 'home_machine'))!.pm, true);
+  assert.equal((await readTeamRoster('pair_team', 'other'))!.pm, undefined, 'the other Campaign\'s Team is untouched');
   const read = await fetch(`${base}/api/team-rosters/pair_team?campaign_id=other`);
   assert.equal(((await read.json()) as { objective: string }).objective, 'other pair');
 });

@@ -1,32 +1,58 @@
 # Customize Ronin
 
-Change appearance, wording, and the guidance offered to new Agents without editing the
-files Ronin updates. Your customizations live in your own stores.
+Change how Ronin looks, the words it uses, and what your Agents are told, without editing
+the files Ronin updates. What you change is yours and survives updates.
 
-## Choose settings or edit guidance
+## What an Agent is told
 
-- Use appearance settings to choose a skin or desk profile. See [skins and words](../operating/skins.md).
-- Use Team configuration and launch choices to select the guidance for that work.
-- Use [templates](../architecture/templates.md) to keep named starting choices for later launches.
-- Ask an Agent to help edit owner resources when the UI has no editor. It should use
-  the resolved store location and the resource's documented format.
+Every Agent is told three kinds of thing:
 
-## Browse Customize
+- **Facts**: what is true about you and its situation: who you are, its Workspace, its Team,
+  its mandate, its task.
+- **Behaviors**: how to work. Some reach every Agent; some come with its situation (a Team
+  lead, a desk, an integration on); others you add.
+- **Tools**: the commands it can run, each told under the behavior it serves.
 
-The Customize destination (`#/customize`) is a read-only catalog browser. It lists
-Behaviors, Saved launches, Skins, Desk profiles, Lexicons, and Session readings.
-Behaviors and readings can expand to show their text. Tools currently reports that its
-catalog reader is unavailable; this does not mean no tools are installed.
+Each behavior or tool is told at a depth: **Seed** (one line, and where to read more) or
+**Full** (the whole text, from the start). Nothing is ever taken away from an Agent: these
+choices decide only what it is told.
 
-An unmarked entry is stock. **◆** marks your own entry; **◈** marks your replacement for
-stock content. A replacement can prevent later stock changes from reaching that entry.
-The page explains the available change path; browsing a resource does not edit it.
+Its **mandate** is three orders: how far to go (Reach), who to bring in (Recruit) and what to
+return (Output), chosen from the Mandate menus. Each value is a file too.
 
-## Keep changes through updates
+## Choose what Agents are told
 
-Ask the Agent to follow [shadowing](../architecture/shadowing.md): the replacement rules
-differ by resource format. Do not copy the entire shipped catalog just to change one entry.
-After editing owner resources, `bin/ronin-doctor` can identify definitions Ronin cannot read.
-Session reading changes reach newly started Agents, not Agents that are already running.
+The Campaign, Workspace and Team pages each have a **Behaviors** panel, and the New Agent
+form has a **Behaviors** step. Each works the same way, for every Agent below it:
 
-Contributors: [Customize construction](../architecture/customize.md).
+- **Integrations**: turn an outside service on; its behavior and tools come with it.
+- **Project management**: work items, and the guidance for each role. On while Jira is on.
+- **Add**: bring a behavior, fact or tool in, at Seed or Full.
+- **Block**: never tell it to any Agent below.
+- **Only**: when set, nothing else is told below; a behavior brings its tools.
+
+Each page also shows **An Agent here is told**: what a new Agent there is told, and why.
+Agents already working are sent the change.
+
+## Write your own
+
+**Customize › Behaviors** lists every behavior, mandate value, fact and tool. Open one to read it.
+
+- **Make my version** on a Ronin file: your copy replaces Ronin's by name, for every Agent
+  you start, and stays yours through updates. Ronin's later changes to that file no longer
+  reach you.
+- **New Behavior**, **New tool** or **New bridge**: write your own. A tool is a command you
+  already have, on the PATH or in `~/ronin/tools`; Ronin writes what Agents are told about
+  it. A bridge is a behavior for one integration, with its tools, told while that
+  integration is on.
+
+**◆** marks your own; **◈** marks your version of a Ronin file.
+
+## Appearance and words
+
+- Choose a skin or desk profile in appearance settings. See [skins and words](../operating/skins.md).
+- Keep named starting choices for later launches as [templates](../architecture/templates.md).
+- Where there is no editor, ask an Agent to help: it follows
+  [shadowing](../architecture/shadowing.md), and `bin/ronin-doctor` finds files Ronin cannot read.
+
+Contributors: [the brief](../architecture/brief.md) and [Customize construction](../architecture/customize.md).

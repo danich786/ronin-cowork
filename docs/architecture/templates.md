@@ -58,13 +58,13 @@ want kept, in conversation, and the session does the filing.
 Worked example — the house has a standing dinner-party menu book:
 
 1. *"Keep this menu book with the Dinner Party template."*
-2. The agent saves the document as an Behavior in **your** store
-   (`<ways store>/dinner_party_menus.md` — `bin/ronin-store ways` names the place).
+2. The agent saves the document as a behaviour in **your** store
+   (`<behaviours store>/dinner-party-menus.md` — `bin/ronin-store behaviours` names the place).
 3. It copies the shipped `templates/teams/dinner_party.md` into **your** catalogs store
    (`<catalogs store>/templates/teams/dinner_party.md`) — a same-named file replaces
    the shipped one whole — and adds the book to the copy:
-   `- **behaviours:** ways:dinner_party_menus`.
-4. Every team raised from Dinner Party now reads your menu book at birth. An upgrade
+   `- **behaviours:** dinner-party-menus`.
+4. Every team raised from Dinner Party is now told your menu book. An upgrade
    never touches either file, because both live in your stores, not the install.
 
 The same pattern carries a style guide onto Ship an App, a deploy runbook onto Raid My
@@ -112,14 +112,14 @@ shelf that is right. It is wrong for a download: a Dinner Party template is wort
 another install without the menu book it reads. So the one place copies are allowed is
 **in transit** — a **template bundle**, one JSON document (`ronin-bundle/1`) holding a team
 template, the agent templates beside it, the behaviours they name, and their tools. On install every copy lands in
-**your own stores** — catalogs, ways, library, and a `tools` store for executables —
+**your own stores** — catalogs, facts, behaviours, library, and `tools` (executables and their files) —
 where the ordinary readers find it exactly as they find anything you wrote by hand. Nothing
 a bundle installs touches the install itself; an upgrade never sees it.
 
 ```text
 { format: "ronin-bundle/1", name, label, art, blurb, kinds, version,
-  files:   [{ store: catalogs|ways|library|tools, path, text }],   whole files
-  entries: [{ catalog: TOOLS.md|MODEL_PROVIDERS.md, name, text }] }    entry-merged
+  files:   [{ store: catalogs|facts|behaviours|library|tools, path, text }],   whole files
+  entries: [{ catalog: MODEL_PROVIDERS.md, name, text }] }    entry-merged
 ```
 
 `bin/ronin-bundle` is the door. `pack <team>` builds the document from this install (your

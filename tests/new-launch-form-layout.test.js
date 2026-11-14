@@ -41,7 +41,7 @@ test('New Agent uses one ruled ask() spec after its three session types', async 
   assert.match(form, /stepPayload\.setNumber\(order\.length \+ 1\)/);
   assert.match(form, /key: 'payload'.*Payload/);
   assert.match(form, /identityRow\.append\(nameField, teamQuestions\.el\)/);
-  assert.match(form, /Defaults cascade from Desk → Team → this Agent\. Changes on this form apply only to this Agent\./);
+  assert.match(form, /Defaults cascade from Desk → Workspace → Team → this Agent\. Changes on this form apply only to this Agent\./);
   assert.match(form, /Defaults cascade from Desk → this Agent\. Changes on this form apply only to this Agent\./);
   assert.match(form, /const links = el\('p', 'na-defaults-links'\)/);
   assert.match(form, /defaultsLink\(t\('new_agent\.team_defaults', 'Team defaults'\)/);
@@ -49,7 +49,9 @@ test('New Agent uses one ruled ask() spec after its three session types', async 
   assert.match(form, /defaultsNote\.hidden = draft\.type === 'terminal'/);
   assert.match(form, /stepTop\.body\.replaceChildren\(identityRow, questions\.el, defaultsNote, instructionsField\)/);
   assert.doesNotMatch(form, /providerModelStones|na-choice-stone|na-mini-stone|stones: true/);
-  assert.match(form, /key: 'behaviours'[\s\S]*density: 'tight', exposed: true/, 'opening Tools and skills exposes its only selector immediately');
+  const brief = await source('brief-step.js');
+  assert.match(form, /paintBriefForm\(shelvesHost, \{\s*layer: 'agent'/);
+  assert.match(brief, /key: 'add'[\s\S]*density: 'tight', exposed: true/, 'opening Behaviors exposes its selector immediately');
 });
 
 test('both workbench entrances use the canonical New Agent form with contextual Team default', async () => {
@@ -144,10 +146,11 @@ test('Add Agent confirms a draft into a compact row with the one selector utilit
   assert.match(agents, /group: t\('new_agent\.model_package', 'Model'\)/);
   assert.match(agents, /group: t\('new_agent\.model_package', 'Model'\), fields: \[[\s\S]*key: 'provider'[\s\S]*key: 'model'[\s\S]*key: 'teamLead'[\s\S]*\] \},[\s\S]*group: t\('mandate', 'Mandate'\)/);
   assert.match(agents, /group: t\('mandate', 'Mandate'\)/);
-  assert.match(agents, /const mandateRows = \(values\) => values\.map/);
-  assert.match(agents, /options: mandateRows\(REACH\)/);
-  assert.match(agents, /options: mandateRows\(RECRUIT\)/);
-  assert.match(agents, /many: true, options: mandateRows\(OUTPUT\)/);
+  assert.match(agents, /import \{ mandateRows \} from '\.\/mandates\.js'/);
+  assert.match(agents, /options: \(\) => mandateRows\('reach', screen\(\)\)/);
+  assert.match(agents, /options: \(\) => mandateRows\('recruit', screen\(\)\)/);
+  assert.match(agents, /many: true, options: \(\) => mandateRows\('output', screen\(\)\)/);
+  assert.doesNotMatch(agents, /const (REACH|RECRUIT|OUTPUT) =/, 'no hand list of mandate values');
   assert.doesNotMatch(agents, /shape: 'square'|ruledRows|glyph:/);
   assert.match(agents, /many: true/);
   assert.match(agents, /key: 'teamLead'.*switch:/);

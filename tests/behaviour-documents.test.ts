@@ -5,7 +5,8 @@ import path from 'node:path';
 import test from 'node:test';
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'ronin-behaviour-docs-'));
-process.env.RONIN_WAYS_DIR = path.join(root, 'ways');
+process.env.RONIN_BEHAVIOURS_DIR = path.join(root, 'behaviours');
+process.env.RONIN_FACTS_DIR = path.join(root, 'facts');
 
 const {
   BehaviourDocumentError,
@@ -14,51 +15,50 @@ const {
   updateBehaviourDocument,
 } = await import('../src/behaviour-documents.js');
 
-test('canonical hyphenated floor and conditional Behaviors are readable', async () => {
+test('stock facts, behaviours and tools are readable by kind and name', async () => {
   const rows = await Promise.all([
-    readBehaviourDocument('floor', 'base-agent'),
-    readBehaviourDocument('floor', 'user-intro'),
-    readBehaviourDocument('conditional', 'cowork-agent'),
-    readBehaviourDocument('conditional', 'team-lead'),
+    readBehaviourDocument('behaviours', 'base-agent'),
+    readBehaviourDocument('facts', 'user-intro'),
+    readBehaviourDocument('behaviours', 'team-lead'),
+    readBehaviourDocument('tools', 'work-item'),
   ]);
-  assert.deepEqual(rows.map((row) => row.name), ['base-agent', 'user-intro', 'cowork-agent', 'team-lead']);
+  assert.deepEqual(rows.map((row) => row.name), ['base-agent', 'user-intro', 'team-lead', 'work-item']);
   assert.ok(rows.every((row) => row.origin === 'stock'));
 });
 
-test('saving stock creates a whole-file owner shadow and never changes stock', async () => {
-  const stock = await readBehaviourDocument('conditional', 'write_it_down');
+test('saving stock creates a whole-file user copy that replaces it by name, and never changes stock', async () => {
+  const stock = await readBehaviourDocument('behaviours', 'write-it-down');
   assert.equal(stock.origin, 'stock');
   const text = stock.text.replace('Keep a clean', 'Keep a tidy');
-  const saved = await createBehaviourDocument({ scope: 'conditional', name: 'write_it_down', text, shadow: true });
+  const saved = await createBehaviourDocument({ scope: 'behaviours', name: 'write-it-down', text, shadow: true });
   assert.equal(saved.origin, 'user');
   assert.equal(saved.shadowed, true);
-  assert.equal(saved.text, text);
-  assert.equal(await readFile(path.join(process.env.RONIN_WAYS_DIR!, 'conditional', 'write_it_down.md'), 'utf8'), text);
+  assert.equal(await readFile(path.join(process.env.RONIN_BEHAVIOURS_DIR!, 'write-it-down.md'), 'utf8'), text);
 });
 
-test('Save As is create-only and rejects stock or owner collisions', async () => {
-  const text = '# My Way\n\n- **label:** My Way\n- **scope:** selected\n\nWork this way.\n';
-  const created = await createBehaviourDocument({ scope: 'selected', name: 'my_way', text });
+test('Save As is create-only and rejects stock or user collisions', async () => {
+  const text = '# My Way\n- **seed:** Mine.\n- **depth:** none\n\nWork this way.\n';
+  const created = await createBehaviourDocument({ scope: 'behaviours', name: 'my-way', text });
   assert.equal(created.origin, 'user');
-  await assert.rejects(() => createBehaviourDocument({ scope: 'selected', name: 'my_way', text }), (error: unknown) => error instanceof BehaviourDocumentError && error.status === 409);
-  await assert.rejects(() => createBehaviourDocument({ scope: 'selected', name: 'visual_staging', text }), (error: unknown) => error instanceof BehaviourDocumentError && error.status === 409);
+  await assert.rejects(() => createBehaviourDocument({ scope: 'behaviours', name: 'my-way', text }), (error: unknown) => error instanceof BehaviourDocumentError && error.status === 409);
+  await assert.rejects(() => createBehaviourDocument({ scope: 'behaviours', name: 'visual-staging', text }), (error: unknown) => error instanceof BehaviourDocumentError && error.status === 409);
 });
 
-test('owner updates require the last read revision', async () => {
-  const current = await readBehaviourDocument('selected', 'my_way');
-  const next = await updateBehaviourDocument({ scope: 'selected', name: 'my_way', text: current.text.replace('Work this way.', 'Work carefully.'), revision: current.revision });
+test('user updates require the last read revision', async () => {
+  const current = await readBehaviourDocument('behaviours', 'my-way');
+  const next = await updateBehaviourDocument({ scope: 'behaviours', name: 'my-way', text: current.text.replace('Work this way.', 'Work carefully.'), revision: current.revision });
   assert.match(next.text, /Work carefully/);
-  await assert.rejects(() => updateBehaviourDocument({ scope: 'selected', name: 'my_way', text: current.text, revision: current.revision }), (error: unknown) => error instanceof BehaviourDocumentError && error.status === 409);
+  await assert.rejects(() => updateBehaviourDocument({ scope: 'behaviours', name: 'my-way', text: current.text, revision: current.revision }), (error: unknown) => error instanceof BehaviourDocumentError && error.status === 409);
 });
 
-test('identity, scope metadata, and symlink owner targets are refused', async () => {
-  const text = '# Bad\n\n- **scope:** floor\n';
-  await assert.rejects(() => createBehaviourDocument({ scope: 'selected', name: '../bad', text }), BehaviourDocumentError);
-  await assert.rejects(() => createBehaviourDocument({ scope: 'selected', name: 'bad_scope', text }), BehaviourDocumentError);
-  const selected = path.join(process.env.RONIN_WAYS_DIR!, 'selected');
-  await mkdir(selected, { recursive: true });
+test('bad names, unknown kinds and symlinked user files are refused', async () => {
+  const text = '# Bad\n';
+  await assert.rejects(() => createBehaviourDocument({ scope: 'behaviours', name: '../bad', text }), BehaviourDocumentError);
+  await assert.rejects(() => createBehaviourDocument({ scope: 'selected', name: 'bad', text }), BehaviourDocumentError);
+  const dir = process.env.RONIN_BEHAVIOURS_DIR!;
+  await mkdir(dir, { recursive: true });
   const outside = path.join(root, 'outside.md');
-  await writeFile(outside, '# Outside\n- **scope:** selected\n');
-  await symlink(outside, path.join(selected, 'linked.md'));
-  await assert.rejects(() => updateBehaviourDocument({ scope: 'selected', name: 'linked', text: '# Linked\n- **scope:** selected\n', revision: 'x' }), (error: unknown) => error instanceof BehaviourDocumentError && error.status === 409);
+  await writeFile(outside, '# Outside\n');
+  await symlink(outside, path.join(dir, 'linked.md'));
+  await assert.rejects(() => updateBehaviourDocument({ scope: 'behaviours', name: 'linked', text: '# Linked\n', revision: 'x' }), (error: unknown) => error instanceof BehaviourDocumentError && error.status === 409);
 });

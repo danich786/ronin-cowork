@@ -37,9 +37,9 @@ import { count } from '../counts.js';
 import { broadcastEvent, pushTeams } from '../ws/events.js';
 import { announceTeamChanges } from './wipeboards-api.js';
 import { memberEnded, teamChanged, writeConfiguration, writeTeams } from '../tegami.js';
-import { briefPointer } from '../behaviours.js';
 import { readAgentComposition } from '../agent-composition.js';
-import { configurationSends, updateConfiguration } from '../agent-configuration.js';
+import { configurationSends, refreshBrief, updateConfiguration } from '../agent-configuration.js';
+import { agentBriefOf } from '../brief-build.js';
 import { mandate } from '../agent-defaults.js';
 import { emitSessionEnd } from '../sockets.js';
 import { releaseHolder, settleToDo, unfinishedHolds, type WorkItem } from '../work-items.js';
@@ -66,9 +66,6 @@ import { readOfficeRecord } from '../office-record.js';
 
 interface PreparedEnding { proceed: boolean; acknowledgement?: Record<string, unknown> }
 
-export const teamLeadAcknowledgement = (teams: readonly string[], pointer: string): string =>
-  `You are now the team_lead of ${teams.map((team) => `"${team}"`).join(', ')}. ` +
-  `For what a Team lead does, ${pointer}.`;
 
 interface ShutdownOperation extends ShutdownProgress {
   id: string;
@@ -276,14 +273,13 @@ export function registerSessions(app: express.Express): void {
     const { name } = req.params;
     if (!isValidName(name)) return res.status(400).json({ error: 'Invalid name.' });
     if (!(await sessionExists(name))) return res.status(404).json({ error: 'No such session.' });
-    const behaviours = Array.isArray(req.body?.behaviours) ? req.body.behaviours.map((row: unknown) => String(row ?? '').trim()).filter(Boolean) : [];
     const role = ['coworker', 'lead', 'epic_lead', 'coordinator'].includes(req.body?.role) ? req.body.role : 'coworker';
     const team = String(req.body?.team ?? '').trim();
     const validTeams = new Set((await listTeamRosters()).filter((row) => row.state !== 'archived').map((row) => row.name));
     if (team && !validTeams.has(team)) return res.status(400).json({ error: `Unknown Team: ${team}.` });
     try { res.json({ ok: true, queued: true, ...await updateConfiguration(name, {
       objective: String(req.body?.objective ?? ''), title: String(req.body?.title ?? ''), role, team,
-      mandate: mandate(req.body?.mandate), behaviours, by: callerOf(req),
+      mandate: mandate(req.body?.mandate), agent: agentBriefOf(req.body), by: callerOf(req),
     }) }); }
     catch (e) { res.status(500).json({ error: String((e as Error)?.message ?? e) }); }
   });
@@ -616,12 +612,8 @@ export function registerSessions(app: express.Express): void {
       const leads = await setLeads(name, wanted);
       await teamChanged([...moved(tagsBefore, tags), ...moved(before, leads)], callerOf(req), name).catch(() => {});
       count('lead.set', { n: leads.length });
-      const fresh = leads.filter((t) => !before.includes(t));
-      let delivered: string | null = null;
-      if (fresh.length) {
-        const msg = teamLeadAcknowledgement(fresh, await briefPointer('team-lead'));
-        delivered = await enqueueMessage(name, msg, 'house').then(() => 'queued', () => 'not queued');
-      }
+      // Made lead (or no longer): the brief says so, and sends only what changed.
+      const delivered = await refreshBrief(name).then((r) => r.sent ? 'queued' : null, () => 'not queued');
       res.json({ ok: true, team_lead: leads, tags, delivery: delivered });
     } catch (e) {
       res.status(500).json({ error: String((e as Error)?.message ?? e) });

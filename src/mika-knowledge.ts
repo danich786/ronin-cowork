@@ -7,7 +7,7 @@ import { storeDir } from './resources.js';
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 // 23 KB leaves room in the 30 KB one-read packet for her rules, the owner's tips and the
 // Setup walkthrough beside the index.
-export const MIKA_INDEX_BUDGET = { bytes: 23_200, lines: 402, previewBytes: 160, minimumPreviewBytes: 24 } as const;
+export const MIKA_INDEX_BUDGET = { bytes: 24_600, lines: 416, previewBytes: 160, minimumPreviewBytes: 24 } as const;
 export const MIKA_TAXONOMY = path.join(ROOT, 'ronin_session_boot', 'routine', 'mika', 'MIKA_PYRAMID.toml');
 const INDEX_NAME = 'MIKA_SOURCE_INDEX.md';
 const MANIFEST_NAME = 'mika-source-manifest.json';
@@ -127,7 +127,7 @@ function defaultOwnerRoots(): Record<string, string> {
     // Product docs have no owner shadow store. Owner-authored reading belongs to the
     // library root below; treating library/docs as both would index the same file twice.
     docs: '',
-    'ronin_catalogs/behaviours': storeDir('ways'),
+    'ronin_catalogs/behaviours': storeDir('behaviours'),
     ronin_catalogs: storeDir('catalogs'),
     ronin_session_boot: storeDir('session_boot'),
     ronin_library: storeDir('library'),
@@ -154,6 +154,8 @@ async function resolvedEntries(nodes: MikaTaxonomyNode[], options: MikaKnowledge
       // INTEGRATIONS (KAN-337): the README explains them; the records are Agents' to add, one per
       // provider, and never count against her index (owner via web_lead, 2026-11-10).
       .filter((name) => !(node.root === 'ronin_catalogs' && name.startsWith('integrations/') && name !== 'integrations/README.md'))
+      // FACTS (docs/architecture/brief.md, The files and their header) are line templates over an Agent's record: nothing to read about Ronin.
+      .filter((name) => !(node.root === 'ronin_catalogs' && name.startsWith('facts/')))
       // A more specific taxonomy root owns its subtree and its owner overlay.
       .filter((name) => !delegated.some((root) => name === root || name.startsWith(`${root}/`)))
       .sort((a, b) => Buffer.from(a).compare(Buffer.from(b)));
@@ -172,6 +174,9 @@ async function resolvedEntries(nodes: MikaTaxonomyNode[], options: MikaKnowledge
       if (!info.isFile()) continue;
       const bytes = await readFile(canonicalFile);
       const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+      // MANDATE VALUES (docs/architecture/brief.md, Mandates) are orders to one Agent, not Ronin
+      // to read about: the Mandates behaviour and the forms say what the values are.
+      if (node.root.startsWith('ronin_catalogs') && /^- \*\*mandate:\*\*\s*\S/m.test(text)) continue;
       const ref = `mika-source:${id}`;
       entries.push({ id, ref, title: titleOf(text, relative), fullPreview: usefulPreview(text), node: node.id,
         origin: ownerFile ? 'owner' : 'stock', sha256: digest(text), text });
