@@ -49,7 +49,9 @@ test('New Agent uses one ruled ask() spec after its three session types', async 
   assert.match(form, /defaultsNote\.hidden = draft\.type === 'terminal'/);
   assert.match(form, /stepTop\.body\.replaceChildren\(identityRow, questions\.el, defaultsNote, instructionsField\)/);
   assert.doesNotMatch(form, /providerModelStones|na-choice-stone|na-mini-stone|stones: true/);
-  assert.match(form, /key: 'behaviours'[\s\S]*density: 'tight', exposed: true/, 'opening Tools and skills exposes its only selector immediately');
+  const brief = await source('brief-step.js');
+  assert.match(form, /paintBriefForm\(shelvesHost, \{\s*layer: 'agent'/);
+  assert.match(brief, /key: 'add'[\s\S]*density: 'tight', exposed: true/, 'opening Behaviors exposes its selector immediately');
 });
 
 test('both workbench entrances use the canonical New Agent form with contextual Team default', async () => {

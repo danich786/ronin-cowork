@@ -18,14 +18,14 @@ test('Configuration is the New Agent form in existing-Agent mode', () => {
   for (const field of ['provider', 'model']) assert.match(form, new RegExp(`key: '${field}'[^\\n]*fixed: !!configure`));
   assert.match(form, /key: 'agentId'[\s\S]*fixed: true/);
   assert.match(form, /questions\.show\(\['provider', 'model', 'role', 'reach', 'recruit', 'output'\]\)/);
-  assert.match(form, /row\.requires\?\.includes\('role:epic_lead'\)[\s\S]*draft\.role === 'epic_lead'/);
-  assert.match(form, /row\.requires\?\.includes\('role:coordinator'\)[\s\S]*draft\.role === 'coordinator'/);
-  assert.match(form, /row\.requires\?\.includes\('lead'\)[\s\S]*draft\.role === 'lead'/);
+  // What comes with the Agent is the server's answer to the draft, never a browser guess (BRIEF_MODEL §8).
+  assert.match(form, /request\('\/api\/brief\/preview', \{ method: 'POST'/);
+  assert.doesNotMatch(form, /row\.requires/);
   assert.match(form, /request\(`\/api\/sessions\/\$\{encodeURIComponent\(configure\)\}\/composition`/);
   assert.match(form, /request\(`\/api\/sessions\/\$\{encodeURIComponent\(configure\)\}\/configuration`, \{ method: 'PUT', json: configurationValue\(\) \}\)/);
   assert.match(form, /if \(embedded && !configure\)/, 'Configuration puts no action in its body');
   assert.match(tilehead, /overTile\(tile, t\('me\.configuration', 'Configuration'\)[\s\S]*actions: \[reader\.action\]/, 'Send belongs to the Configuration overlay head');
-  for (const field of ['session_type', 'provider', 'model', 'objective', 'title', 'role', 'team', 'mandate', 'behaviours']) assert.match(form, new RegExp(field));
+  for (const field of ['session_type', 'provider', 'model', 'objective', 'title', 'role', 'team', 'mandate', 'setting']) assert.match(form, new RegExp(field));
   assert.doesNotMatch(form, /hiddenBehaviours/);
 });
 
