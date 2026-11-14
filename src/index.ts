@@ -88,7 +88,6 @@ import { ensureInstalledRoots, githubSetupAnswer, githubSetupAttached } from './
 import { registerSetupRuntime } from './routes/setup-runtime-api.js';
 import { registerSetupProgress } from './routes/setup-progress-api.js';
 import { registerMikaContext } from './mika-context.js';
-import { migrateBriefSettings, migrateSopsToBehaviours, migrateWaysToBehaviours } from './behaviour-store-migration.js';
 import { archiveDone, ensureEveryIcebox, migrateItems, releaseEndedHolders } from './work-items.js';
 import { rebuildIndex } from './work-items-index.js';
 
@@ -97,7 +96,6 @@ const ROOT = path.join(__dirname, '..');
 const PUBLIC = path.join(ROOT, 'public');
 const NM = path.join(ROOT, 'node_modules');
 const isEntryPoint = !!process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url;
-if (isEntryPoint) { await migrateSopsToBehaviours(); await migrateWaysToBehaviours(); await migrateBriefSettings(); }
 // Work items take Jira's own names (docs/using-ronin/work-items.md); a store already on them is left alone.
 if (isEntryPoint) await migrateItems().then((done) => {
   if (done.migrated.length) console.log(`[work-items] ${done.migrated.length} of ${done.before} items took Jira's names`);

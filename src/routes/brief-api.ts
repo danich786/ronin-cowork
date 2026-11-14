@@ -11,14 +11,14 @@ import { BIRTH_BRIEF } from '../birth-brief.js';
 import { briefOff, briefTold, cascade, layerOf, readUserLayer, userBriefFile, type Layer, type LayerName } from '../brief-settings.js';
 import { BehaviourDocumentError, createBehaviourDocument, readBehaviourDocument, updateBehaviourDocument } from '../behaviour-documents.js';
 import { initialCampaignId } from '../campaign-scope.js';
-import { listCampaigns, readCampaign, writeCampaign } from '../campaigns.js';
-import { readCatalogs } from '../catalog.js';
+import { readCampaign, writeCampaign } from '../campaigns.js';
+import { catalogIntegrations, readCatalogs } from '../catalog.js';
 import { CONDITIONALS } from '../conditionals.js';
 import { person } from '../office-people.js';
 import { sessionDir, sessionKey } from '../session-dir.js';
 import { resolveBriefFor, resolveFacts, type SpawnForm } from '../spawn.js';
-import { listTeamRosters, readTeamRoster, writeTeamRoster } from '../team-rosters.js';
-import { listWorkspaces, readWorkspace, saveWorkspace } from '../workspaces.js';
+import { readTeamRoster, writeTeamRoster } from '../team-rosters.js';
+import { readWorkspace, saveWorkspace } from '../workspaces.js';
 
 const errMsg = (e: unknown): string => String((e as Error)?.message ?? e);
 const SETTING_LAYERS = ['user', 'campaign', 'workspace', 'team'] as const;
@@ -119,27 +119,24 @@ export function registerBrief(app: express.Express): void {
       const catalog = await readCatalogs();
       res.json([...catalog.facts, ...catalog.behaviours, ...catalog.tools].map((row) => ({
         kind: row.kind.replace(/s$/, ''), name: row.name, title: row.title, seed: row.seed, line: row.line,
-        depth: row.depth, when: row.when, serves: row.serves, mandate: row.mandate, value: row.value, with: row.with,
+        depth: row.depth, when: row.when, serves: row.serves, mandate: row.mandate, value: row.value, with: row.with, integration: row.integration,
         order: row.order === Number.MAX_SAFE_INTEGER ? null : row.order, path: row.file, origin: row.origin,
       })));
     } catch (e) { res.status(500).json({ error: errMsg(e) }); }
   });
 
-  // The conditional words, for the `when:` picker: those of docs/architecture/brief.md, Conditionals, and integration:<name> for each
-  // integration a layer names or a catalog file already uses. Any other name is the user's to type.
+  // The integrations a layer can turn on: the bridge files (docs/architecture/brief.md, What comes next).
+  app.get('/api/brief/integrations', async (_req, res) => {
+    try { res.json(catalogIntegrations(await readCatalogs())); }
+    catch (e) { res.status(500).json({ error: errMsg(e) }); }
+  });
+
+  // The conditional words, for the `when:` picker: those of docs/architecture/brief.md, Conditionals,
+  // with integration:<name> for each bridge.
   app.get('/api/brief/conditionals', async (_req, res) => {
     try {
-      const names = new Set<string>((await readUserLayer()).integrations);
-      for (const campaign of await listCampaigns()) {
-        for (const name of campaign.config.integrations) names.add(name);
-        for (const workspace of await listWorkspaces(campaign.id)) for (const row of workspace.integrations) names.add(row.provider);
-      }
-      for (const roster of await listTeamRosters()) for (const name of roster.integrations) names.add(name);
-      const catalog = await readCatalogs();
-      for (const row of [...catalog.facts, ...catalog.behaviours, ...catalog.tools]) {
-        for (const word of row.when) if (word.replace(/^!/, '').startsWith('integration:')) names.add(word.replace(/^!/, '').slice('integration:'.length));
-      }
-      res.json([...CONDITIONALS.filter((word) => word !== 'integration:<name>'), ...[...names].filter(Boolean).sort().map((name) => `integration:${name}`)]);
+      const names = catalogIntegrations(await readCatalogs()).map((row) => row.name);
+      res.json([...CONDITIONALS.filter((word) => word !== 'integration:<name>'), ...names.map((name) => `integration:${name}`)]);
     } catch (e) { res.status(500).json({ error: errMsg(e) }); }
   });
 

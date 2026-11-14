@@ -41,6 +41,8 @@ export interface CatalogFile {
   mandate: string;
   /** Its value on that axis: the title, lower-cased ('Propose agents' → 'propose agents'). */
   value: string;
+  /** A bridge's integration: the `<name>` of its `when: integration:<name>`; '' if none. */
+  integration: string;
   /** A mandate value's `with:`: the behaviours choosing it puts in play, at their depth. */
   with: string[];
   order: number;
@@ -82,6 +84,9 @@ export function parseCatalogFile(kind: CatalogKind, name: string, text: string):
     mandate: axis,
     value: axis ? title.toLowerCase() : '',
     with: axis ? list(get('with')) : [],
+    integration: kind === 'behaviours'
+      ? list(get('when')).find((word) => word.startsWith('integration:'))?.slice('integration:'.length) ?? ''
+      : '',
     order: Number.isFinite(order) && get('order') !== '' ? order : Number.MAX_SAFE_INTEGER,
     body: lines.slice(at).join('\n').trim(),
   };
@@ -104,6 +109,17 @@ export async function readCatalog(kind: CatalogKind): Promise<CatalogFile[]> {
 }
 
 export interface Catalog { facts: CatalogFile[]; behaviours: CatalogFile[]; tools: CatalogFile[] }
+
+/** THE INTEGRATIONS LISTING (docs/architecture/brief.md, What comes next): the bridges, the
+ * behaviours whose `when:` is `integration:<name>`. Adding a bridge file adds an integration;
+ * the brief keeps no other list of names. In `order:`; one row per name (its first bridge). */
+export function catalogIntegrations(catalog: Pick<Catalog, 'behaviours'>): Array<{ name: string; behaviour: string; title: string; seed: string }> {
+  const rows = new Map<string, { name: string; behaviour: string; title: string; seed: string }>();
+  for (const file of catalog.behaviours) {
+    if (file.integration && !rows.has(file.integration)) rows.set(file.integration, { name: file.integration, behaviour: file.name, title: file.title, seed: file.seed });
+  }
+  return [...rows.values()];
+}
 
 export async function readCatalogs(): Promise<Catalog> {
   const [facts, behaviours, tools] = await Promise.all(CATALOG_KINDS.map(readCatalog));

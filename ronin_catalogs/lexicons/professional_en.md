@@ -149,18 +149,6 @@ nothing paints exactly this.
 - **campaign_view.default_behaviours:** Behaviors
 - **campaign_view.defaults_summary:** {model} · {reach}
 - **campaign_view.option_open:** Open
-- **campaign_view.option_discuss:** Discuss
-- **campaign_view.option_plan:** Plan
-- **campaign_view.option_execute:** Execute
-- **campaign_view.option_nobody:** Nobody
-- **campaign_view.option_propose:** Propose Agents
-- **campaign_view.option_staff:** Staff Agents
-- **campaign_view.option_a_plan:** A plan
-- **campaign_view.option_ideas:** Ideas
-- **campaign_view.option_code:** Code
-- **campaign_view.option_artifact:** An artifact
-- **campaign_view.option_no_code:** No code
-- **campaign_view.option_team:** The Team
 - **campaign_view.col_provider:** Provider
 - **campaign_view.col_model:** Preferred model
 - **campaign_view.installations:** Installations
@@ -560,7 +548,7 @@ nothing paints exactly this.
 ## new_agent — new-agent.js (the drawn launch form, staged beside the ＋ New board)
 - **new_agent.title:** New Agent
 - **new_agent.model_package:** Model
-- **new_agent.defaults_cascade_team:** Defaults cascade from Desk → Team → this Agent. Changes on this form apply only to this Agent.
+- **new_agent.defaults_cascade_team:** Defaults cascade from Desk → Workspace → Team → this Agent. Changes on this form apply only to this Agent.
 - **new_agent.defaults_cascade_desk:** Defaults cascade from Desk → this Agent. Changes on this form apply only to this Agent.
 - **new_agent.team_defaults:** Team defaults
 - **new_agent.desk_defaults:** Desk defaults
@@ -1040,16 +1028,11 @@ The catalog entry goes. {dir} is not touched.
 - **customize.sec_behavior:** Behavior
 - **customize.sec_people:** People & work
 - **customize.sec_presentation:** Presentation
-- **customize.tools:** Tools
-- **customize.tools_blurb:** Agent-facing executables selected and taught by capability documents.
 - **customize.saved_launches:** Saved launches
 - **customize.saved_launches_blurb:** The launcher form, filled in ahead of time and named.
 - **customize.skins:** Skins
 - **customize.skins_what:** a look — a set of design tokens, and nothing else
 - **customize.skins_blurb:** A set of design tokens and nothing else. Choosing one is a setting, and stays on the gear.
-- **customize.readings:** Session readings
-- **customize.readings_read:** Read reading
-- **customize.readings_blurb:** What a new session reads before anything else. A reading you add reaches the next session born, never a running one.
 
 ## customize — customize.js
 - **customize.title:** Customize
@@ -1639,14 +1622,123 @@ The catalog entry goes. {dir} is not touched.
 
 ## behaviours — behaviour-surface.js
 - **behaviours.title:** Behaviors
-- **behaviours.card_summary:** Optional, All Cowork Agents, and Conditional guidance Agents receive at birth.
-- **behaviours.intro:** Behaviors are specific guidance given to Agents at birth.
 - **behaviours.available:** Optional
-- **behaviours.auto:** All Cowork Agents
-- **behaviours.auto_included:** All Ronin Agents include these
-- **behaviours.bare_metal_excludes:** Exclude by using a bare metal Agent.
-- **behaviours.conditional:** Conditional
-- **behaviours.requires:** When
 - **behaviours.yours:** Yours
 - **behaviours.stock:** Ronin
 - **campaign_view.desk_settings:** Desk Settings
+
+## brief — brief-step.js, brief-author.js, behaviour-surface.js and the brief settings on every page (what an Agent is told; KAN-480, BRIEF_WORDING 3–5)
+- **brief.from_campaign:** Campaign
+- **brief.from_workspace:** Workspace
+- **brief.from_team:** Team
+- **brief.from_user:** your settings
+- **brief.why_added:** added by the {layer}
+- **brief.why_integration:** {name} on
+- **brief.why_role:** {role} role
+- **brief.why_service:** {name} running
+- **brief.why_workspace:** in {name}
+- **brief.why_cowork:** every Cowork Agent
+- **brief.why_lead:** Team lead
+- **brief.why_team:** on a Team
+- **brief.why_desk:** at a desk
+- **brief.why_checkout:** in a checkout
+- **brief.why_pm:** project management on
+- **brief.why_hosted:** hosted office
+- **brief.why_new_owner:** new owner
+- **brief.why_owner:** the owner
+- **brief.why_member:** a member
+- **brief.why_service_off:** {name} not running
+- **brief.why_not:** not {what}
+- **brief.why_every:** every Agent
+- **brief.integrations:** Integrations
+- **brief.integrations_help:** On from the Campaign, Workspace or Team, plus any you turn on for this Agent.
+- **brief.integrations_help_layer:** On here is on for everything below.
+- **brief.pm:** Project management
+- **brief.on_from_word:** On, from the {layer}
+- **brief.on:** On
+- **brief.off:** Off
+- **brief.pm_jira:** On while Jira is on.
+- **brief.pm_on:** Work items: the item model, and the guidance for this Agent’s role.
+- **brief.pm_on_layer:** Work items for every Agent below: the item model, and the guidance for each role.
+- **brief.pm_off:** No work items guidance.
+- **brief.set_on:** Set on
+- **brief.depth_seed:** Seed
+- **brief.depth_full:** Full
+- **brief.depth:** Depth
+- **brief.add:** Add
+- **brief.optional_help:** Behaviors added for this Agent only. One already told can be raised to Full.
+- **brief.add_help:** Brought in for every Agent below, at this depth.
+- **behaviours.customize:** Customize Behaviors
+- **brief.comes:** Comes with this Agent
+- **brief.told_here:** An Agent here is told
+- **brief.comes_help:** What this Agent will be told anyway, and why. Read-only.
+- **brief.told_here_help:** What a new Agent here is told, and why, as saved. Read-only.
+- **brief.names:** Names
+- **brief.block:** Block
+- **brief.block_help:** Never told to any Agent below.
+- **brief.only:** Only
+- **brief.only_help:** When set, nothing else is told below; a behavior brings its tools.
+- **author.depth_none:** When added
+- **author.depth_none_sub:** Told only where a Campaign, Workspace, Team or Agent adds it.
+- **author.depth_seed:** Seed
+- **author.depth_seed_sub:** Its one line, and where to read more.
+- **author.depth_full:** Full
+- **author.depth_full_sub:** The whole text, from the start.
+- **author.command_placeholder:** the command, e.g. deploy-site
+- **author.name_placeholder:** from the title if left blank
+- **author.integration_placeholder:** e.g. netlify
+- **author.integration:** Integration
+- **author.integration_help:** Its behavior is told to an Agent while this integration is on for it.
+- **author.command:** Command
+- **author.name:** Name
+- **author.command_help:** A command you have, on the PATH or in ~/ronin/tools. Ronin writes what Agents are told about it; the command stays yours.
+- **author.title:** Title
+- **author.seed:** Seed
+- **author.seed_tool_help:** Its one job, in one line.
+- **author.seed_help:** One line that stands on its own: what this guidance is for.
+- **author.line:** Line
+- **author.line_help:** The line the brief prints, with values in braces: User: {user.name}.
+- **author.when:** When it is in play
+- **author.depth:** Depth
+- **author.serves:** Serves
+- **author.serves_help:** Serves: told under these behaviors. None: under Other tools.
+- **author.depth_help:** Depth: how much of it an Agent is told.
+- **author.when_help:** When it is in play: all chosen must hold. None chosen: every Agent.
+- **author.tool_text:** What --help does not say
+- **author.text:** Text
+- **author.bridge_tools:** Its tools
+- **author.seed_tool:** Its one job
+- **author.add_tool:** Add a tool
+- **author.create:** Create
+- **forms.save:** Save
+- **behaviours.save_mine:** Save my version
+- **forms.cancel:** Cancel
+- **author.actions:** Save or cancel
+- **author.integration_needed:** Name the integration.
+- **author.command_needed:** Name the command.
+- **author.name_needed:** Give it a name.
+- **brief.mandate_group:** Mandate: {axis}
+- **brief.facts:** Facts
+- **brief.tools:** Tools
+- **author.new_tool:** New tool
+- **author.new_bridge:** New bridge
+- **behaviours.new:** New Behavior
+- **behaviours.edit:** Edit
+- **author.make_mine:** Make my version
+- **brief.user_help:** What every Agent you start is told. Open any file to read it, or save your own version: yours replaces Ronin’s by name and survives updates.
+- **brief.user_settings:** For every Agent you start
+- **brief.card_summary:** What every Agent is told: facts, behaviors and tools, and your own versions of them.
+- **agent_composition.send:** Send
+- **brief.intro:** What this Agent is told: the integrations it works with, the behaviors you add, and what comes with its situation.
+- **agent_composition.sending:** Sending…
+- **agent_composition.unchanged:** Its brief is unchanged: nothing was sent.
+- **agent_composition.updated:** The Agent has been sent its new brief.
+- **campaign_view.brief_help:** What every Agent in this Campaign is told. Agents already working are sent the change.
+- **team_config.brief_help:** What every Agent on this Team is told. Agents already working are sent the change.
+- **workspaces.brief_help:** What every Agent in this Workspace is told. Agents already working are sent the change.
+- **work_record.brief:** Brief
+- **work_record.brief_show:** What this Agent is told
+- **work_record.no_brief:** No brief for this Agent.
+- **customize.behaviours:** Behaviors
+- **customize.behaviours_read:** Read behavior
+- **customize.behaviours_blurb:** What every Agent is told: facts, behaviors and tools, each a file you can replace with your own.
