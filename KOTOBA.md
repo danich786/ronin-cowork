@@ -18,8 +18,7 @@ second authority for current Cowork or Services.
 
 ## Agent composition and tools
 
-These terms follow [Tools and Agent capabilities](docs/architecture/tool-surface.md) and
-[Agent composition](docs/architecture/agent-composition.md).
+These terms follow [the brief](docs/architecture/brief.md).
 
 | Term | Meaning |
 |---|---|

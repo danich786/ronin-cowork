@@ -35,12 +35,8 @@ export function sections() {
 export function resources() {
   return [
     { id: 'behaviours', section: 'behavior', mark: '▤', label: t('customize.behaviours', 'Behaviors'),
-      capability: 'read-only', read: '/api/ways', readLabel: t('customize.behaviours_read', 'Read behavior'),
-      blurb: t('customize.behaviours_blurb', 'How this house works: floor, conditional, selectable, and situational guidance in one catalog.') },
-    { id: 'tools', section: 'behavior', mark: '⚙', label: t('customize.tools', 'Tools'),
-      capability: 'read-only', read: null,
-      why: t('customize.tools_why', 'Agent tool teaching is composed from the capability files in ronin_catalogs/capabilities; Customize does not yet expose a reader for that catalog.'),
-      blurb: t('customize.tools_blurb', 'The executables available to Agents. A markdown row cannot author one.') },
+      capability: 'read-only', read: '/api/brief/catalog', readLabel: t('customize.behaviours_read', 'Read behavior'),
+      blurb: t('customize.behaviours_blurb', 'What every Agent is told: facts, behaviors and tools, each a file you can replace with your own.') },
 
     { id: 'saved-launches', section: 'people', mark: '↗', label: t('customize.saved_launches', 'Saved launches'),
       capability: 'read-only', read: '/api/saved-launches',
@@ -55,9 +51,6 @@ export function resources() {
     { id: 'lexicons', section: 'presentation', mark: '言', label: t('customize.lexicons', 'Lexicons'),
       capability: 'read-only', read: '/api/lexicons', dir: 'lexicons',
       blurb: t('customize.lexicons_blurb', 'The words a surface uses — a wording or a language, one file each. Say only what changes; the rest falls through to the floor.') },
-    { id: 'readings', section: 'presentation', mark: '▧', label: t('customize.readings', 'Session readings'),
-      capability: 'read-only', read: '/api/session-readings', readLabel: t('customize.readings_read', 'Read reading'),
-      blurb: t('customize.readings_blurb', 'What a new session reads before anything else. A reading you add reaches the next session born, never a running one.') },
   ];
 }
 

@@ -63,4 +63,4 @@ New Agent form.
 ## Read more
 
 - [Customize Ronin](../getting-started/customize.md): change the guidance new Agents get
-- [Tools and capabilities](../architecture/tool-surface.md): how it is built
+- [Tools and capabilities](../architecture/brief.md): how it is built
