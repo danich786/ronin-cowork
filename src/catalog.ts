@@ -37,7 +37,7 @@ export interface CatalogFile {
   when: string[];
   depth: Depth;
   serves: string[];
-  /** The mandate axis this behaviour is a value of (docs/architecture/brief.md, Conditionals): reach, recruit, output; '' if none. */
+  /** The mandate axis this behaviour is a value of (docs/architecture/brief.md, Mandates): reach, recruit, output; '' if none. */
   mandate: string;
   /** Its value on that axis: the title, lower-cased ('Propose agents' → 'propose agents'). */
   value: string;

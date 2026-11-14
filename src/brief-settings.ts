@@ -104,7 +104,7 @@ export interface InPlay {
 
 export interface Resolved {
   facts: InPlay[];
-  /** The mandate values the Agent holds (docs/architecture/brief.md, Conditionals): orders, printed in their own section. */
+  /** The mandate values the Agent holds (docs/architecture/brief.md, Mandates): orders, printed in their own section. */
   mandates: InPlay[];
   /** Behaviours in play, each with the tools that serve it (a tool under its first behaviour only). */
   behaviours: Array<InPlay & { tools: InPlay[] }>;
@@ -183,7 +183,7 @@ export function resolveBrief(catalog: Catalog, record: BriefRecord, layers: read
 }
 
 /** The catalog files the layers take off: blocked by any, or left out by any screen. For the
- * forms' menus (a blocked mandate value is off the menu, docs/architecture/brief.md, Conditionals). */
+ * forms' menus (a blocked mandate value is off the menu, docs/architecture/brief.md, Mandates). */
 export function briefOff(catalog: Catalog, layers: readonly Layer[]): string[] {
   const blocked = new Set(layers.flatMap((layer) => layer.brief.block));
   const screens = layers.filter((layer) => layer.brief.only.length).map((layer) => new Set(layer.brief.only));

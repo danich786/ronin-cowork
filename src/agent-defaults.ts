@@ -1,4 +1,4 @@
-/** A mandate value is the title of a behaviour file with that `mandate:` axis (docs/architecture/brief.md, Conditionals).
+/** A mandate value is the title of a behaviour file with that `mandate:` axis (docs/architecture/brief.md, Mandates).
  * No list of values lives here: any value is taken; a record that states none gets the fallback. */
 export type Reach = string;
 export type Recruit = string;
