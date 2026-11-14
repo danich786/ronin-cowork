@@ -270,7 +270,7 @@ async function overTile(tile, title, fill, options = {}) {
 async function openWorkRecord(tile) {
   const desks = tile.tegami ? await readDesks(tile.session) : null;
   const layer = await overTile(tile, t('me.work_record', 'Work record'), (box) => box.append(tile.tegami
-    ? buildWorkRecord(tile.tegami, desks, { openDoc: (path) => { layer.remove(); tile.openDoc(path); } })
+    ? buildWorkRecord(tile.tegami, desks, { session: tile.session, openDoc: (path) => { layer.remove(); tile.openDoc(path); } })
     : Object.assign(document.createElement('p'), { className: 'menu-empty',
       textContent: t('me.no_record', 'This Agent has not written a work record yet.') })));
 }

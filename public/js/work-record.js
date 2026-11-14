@@ -6,7 +6,8 @@
  *   the chip    a fixed-width readout in the tile header: the items held, with their status
  *   the record  the tile's Work record: the open items held first, each with its status, flag
  *               and attachments, Done waiting for the archive counted on one line; then the
- *               objective, worktrees and Teams
+ *               objective, worktrees and Teams; last, the brief the Agent is told (BRIEF_MODEL §7),
+ *               read from GET /api/sessions/:name/brief when opened
  *   the roster  the same chip as a row per session, in the commons ⌂ Roster
  *
  * A work item mirrors Jira (owner, 2026-10-22). Everything on this side is read-only: no
@@ -14,6 +15,7 @@
  */
 import { t } from './lexicon.js';
 import { isPlanRef, planAttachment } from './plan-attachment.js';
+import { renderMarkdownDocument } from './markdown-reader.js';
 
 export function clampTip(s, room = 120) {
   return s.length > room ? s.slice(0, room - 1) + '…' : s;
@@ -31,7 +33,7 @@ export const doneLine = (done) => t('work_record.done_waiting', 'Done, not yet a
 
 /** The work record: the items held with their status, flag and attachments; then what the
  *  Agent is doing, where it works and its Teams. */
-export function buildWorkRecord(letter, deskEntry = null, { openDoc = null } = {}) {
+export function buildWorkRecord(letter, deskEntry = null, { openDoc = null, session = '' } = {}) {
   const box = document.createElement('div');
   box.className = 'work-record';
   if (!letter) return box;
@@ -121,6 +123,25 @@ export function buildWorkRecord(letter, deskEntry = null, { openDoc = null } = {
   if ((letter.teams ?? []).length) {
     const context = section(t('work_record.teams', 'Teams'), 'wr-context');
     for (const entry of letter.teams) context.appendChild(line('', entry.team));
+  }
+
+  // The brief, for whoever wants to see what the Agent is taught: closed until opened, then read once.
+  if (session) {
+    const brief = section(t('work_record.brief', 'Brief'), 'wr-brief');
+    const fold = document.createElement('details');
+    const summary = document.createElement('summary');
+    summary.textContent = t('work_record.brief_show', 'What this Agent is told');
+    const body = document.createElement('div');
+    body.className = 'wr-brief-body';
+    fold.append(summary, body);
+    fold.addEventListener('toggle', async () => {
+      if (!fold.open || body.childElementCount) return;
+      body.append(line('wr-empty', t('docs.loading', 'loading…')));
+      const res = await fetch(`/api/sessions/${encodeURIComponent(session)}/brief`, { cache: 'no-store' }).catch(() => null);
+      const text = res?.ok ? await res.text() : '';
+      body.replaceChildren(text ? renderMarkdownDocument(text) : line('wr-empty', t('work_record.no_brief', 'No brief for this Agent.')));
+    });
+    brief.appendChild(fold);
   }
 
   return box;

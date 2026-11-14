@@ -4011,6 +4011,9 @@ body {
   color: var(--muted);
   font-style: italic;
 }
+.work-record .wr-brief summary { color: var(--accent-2); cursor: pointer; }
+.work-record .wr-brief-body { margin-top: var(--space-row); overflow-wrap: anywhere; }
+.work-record .wr-brief-body :is(h1, h2, h3, h4) { margin: var(--space-paragraph) 0 var(--space-row); color: var(--fg-strong); font-size: var(--text-body); font-weight: var(--weight-bold); letter-spacing: normal; text-transform: none; }
 
 .home-record {
   font-family: var(--font-term);
