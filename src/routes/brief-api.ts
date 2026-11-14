@@ -1,5 +1,5 @@
 /**
- * THE BRIEF ROUTES (wip/BRIEF_MODEL.md §6–§8): the catalog for the pickers, each layer's
+ * THE BRIEF ROUTES (docs/architecture/brief.md, Layers and brief settings; The brief; Where it is set in the UI): the catalog for the pickers, each layer's
  * brief settings, the New Agent preview worked out by the server, the packet on the tile, and
  * the user's own facts, behaviours and tools.
  */
@@ -125,7 +125,7 @@ export function registerBrief(app: express.Express): void {
     } catch (e) { res.status(500).json({ error: errMsg(e) }); }
   });
 
-  // The conditional words, for the `when:` picker: §4's, and integration:<name> for each
+  // The conditional words, for the `when:` picker: those of docs/architecture/brief.md, Conditionals, and integration:<name> for each
   // integration a layer names or a catalog file already uses. Any other name is the user's to type.
   app.get('/api/brief/conditionals', async (_req, res) => {
     try {

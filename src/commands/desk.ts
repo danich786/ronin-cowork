@@ -183,7 +183,7 @@ async function main(): Promise<void> {
         out(`  worktree ${d.worktree}`);
         out(`  dependencies ${d.dependency_location || 'none'}`);
         out(row(d));
-        // A desk cut is a change to the Agent's situation: its brief says so (wip/BRIEF_MODEL.md §2).
+        // A desk cut is a change to the Agent's situation: its brief says so (docs/architecture/brief.md, Depths, and when an Agent is told).
         await refreshBrief(session).catch(() => {});
         // Open does its job and says what it did; it does not decide custody (owner,
         // 2026-09-09: tools acknowledge, they do not hard-code behaviour). Reopening a

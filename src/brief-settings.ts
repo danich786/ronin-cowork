@@ -1,5 +1,5 @@
 /**
- * LAYERS AND BRIEF SETTINGS (wip/BRIEF_MODEL.md §6).
+ * LAYERS AND BRIEF SETTINGS (docs/architecture/brief.md, Layers and brief settings).
  *
  * The layers, widest first: user, Campaign, Workspace, Team, Agent. Each layer's own record
  * holds the same three lists, `brief: {add, block, only}`, plus `integrations` and `pm`:
@@ -104,7 +104,7 @@ export interface InPlay {
 
 export interface Resolved {
   facts: InPlay[];
-  /** The mandate values the Agent holds (§4): orders, printed in their own section. */
+  /** The mandate values the Agent holds (docs/architecture/brief.md, Mandates): orders, printed in their own section. */
   mandates: InPlay[];
   /** Behaviours in play, each with the tools that serve it (a tool under its first behaviour only). */
   behaviours: Array<InPlay & { tools: InPlay[] }>;
@@ -116,7 +116,7 @@ const RANK: Record<Depth, number> = { none: 0, seed: 1, full: 2 };
 /** Mandates print axis by axis, as the mandate fact does; a new axis after these. */
 const axis = (row: InPlay): number => { const at = ['reach', 'recruit', 'output'].indexOf(row.file.mandate); return at < 0 ? 3 : at; };
 
-/** What this Agent is told: the catalog over the record and the layers, §6's order. */
+/** What this Agent is told: the catalog over the record and the layers, in the order of docs/architecture/brief.md, Layers and brief settings. */
 export function resolveBrief(catalog: Catalog, record: BriefRecord, layers: readonly Layer[]): Resolved {
   const all = new Map<string, CatalogFile>();
   for (const kind of ['facts', 'behaviours', 'tools'] as const) for (const file of catalog[kind]) if (!all.has(file.name)) all.set(file.name, file);
@@ -183,7 +183,7 @@ export function resolveBrief(catalog: Catalog, record: BriefRecord, layers: read
 }
 
 /** The catalog files the layers take off: blocked by any, or left out by any screen. For the
- * forms' menus (a blocked mandate value is off the menu, §4). */
+ * forms' menus (a blocked mandate value is off the menu, docs/architecture/brief.md, Mandates). */
 export function briefOff(catalog: Catalog, layers: readonly Layer[]): string[] {
   const blocked = new Set(layers.flatMap((layer) => layer.brief.block));
   const screens = layers.filter((layer) => layer.brief.only.length).map((layer) => new Set(layer.brief.only));

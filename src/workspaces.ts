@@ -42,7 +42,7 @@ export interface Workspace {
   launch_mode: LaunchMode;
   plans?: WorkspacePlans;
   integrations: WorkspaceIntegration[];
-  /** The Workspace's brief settings and project management (wip/BRIEF_MODEL.md §6). */
+  /** The Workspace's brief settings and project management (docs/architecture/brief.md, Layers and brief settings). */
   brief: BriefSettings;
   pm?: boolean;
 }

@@ -1,5 +1,5 @@
 /**
- * BUILDING A BRIEF (wip/BRIEF_MODEL.md §5–§7): the record from what Ronin knows of an Agent,
+ * BUILDING A BRIEF (docs/architecture/brief.md, The work record is the source of truth; Layers and brief settings; The brief): the record from what Ronin knows of an Agent,
  * its layers, what is in play, and the packet. Launch, an Update, a record change and the New
  * Agent preview all come through `composeBrief`, so they cannot disagree.
  */
@@ -50,7 +50,7 @@ export async function briefLayers(facts: Pick<LaunchFacts, 'campaign' | 'workspa
 const sessionType = (form: SpawnForm): SessionType =>
   form.house_seat === 'mika' ? 'mika' : form.session_type === 'bare_metal_agent' ? 'bare' : 'cowork';
 
-/** Every value the brief depends on, read where it lives (§5). */
+/** Every value the brief depends on, read where it lives (docs/architecture/brief.md, The work record is the source of truth). */
 export async function buildBriefRecord(form: SpawnForm, facts: LaunchFacts, on: Cascade, launch: { provider?: string; model?: string; harness?: string; launch_mode?: BriefRecord['agent']['launch_mode'] } = {}): Promise<BriefRecord> {
   const held = mandate(form.mandate ?? {
     reach: facts.parentSeed?.seeds.reach.value,
