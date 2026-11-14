@@ -16,8 +16,8 @@ process.env.RONIN_USER_ROOT = path.join(root, 'user');
 process.env.RONIN_DATA_ROOT = path.join(root, 'data');
 const { installBundle, packBundle, parseBundle, planInstall, libraryCard, bundleHolds, BUNDLE_FORMAT } =
   await import('../src/bundles.js');
-const { listTeamTemplates, listBehaviours } = await import('../src/resource-adapters.js');
-const { resolveBehaviourBooks } = await import('../src/behaviours.js');
+const { listTeamTemplates } = await import('../src/resource-adapters.js');
+const { readCatalog } = await import('../src/catalog.js');
 const { STOCK_DIR } = await import('../src/resources.js');
 const { storeDir } = await import('../src/resources.js');
 
@@ -27,7 +27,7 @@ const TEAM = `# Weekly Review
 - **blurb:** A week looked back on, and the next one shaped.
 - **kinds:** work
 - **objective:** Review the week and shape the next.
-- **behaviours:** weekly_review
+- **behaviours:** weekly-review
 
 ## agents
 
@@ -37,18 +37,14 @@ const TEAM = `# Weekly Review
 - **mandate:** execute · nobody · an artifact
 `;
 const BEHAVIOUR = `# Weekly Review
-- **label:** Weekly Review
-- **blurb:** The review tool and its book.
-- **reading:** —
-- **scope:** selected
-- **tools:** tejun-review
-- **installation:** —
+- **seed:** The review and its tool.
+- **depth:** none
 - **order:** 90
 
 Look back, then forward.
 `;
 const TOOL = '#!/usr/bin/env bash\necho REVIEWED\n';
-const TOOL_ROW = '| `tejun-review` | report-outcome | `tejun-review` → `REVIEWED`. |';
+const TOOL_DOC = '# tejun-review\n- **seed:** Report the review.\n- **serves:** weekly-review\n';
 
 const bundle = () => parseBundle({
   format: BUNDLE_FORMAT,
@@ -60,11 +56,9 @@ const bundle = () => parseBundle({
   version: '2026-09-03',
   files: [
     { store: 'catalogs', path: 'templates/teams/weekly_review.md', text: TEAM },
-    { store: 'behaviours', path: 'selected/weekly_review.md', text: BEHAVIOUR },
+    { store: 'behaviours', path: 'weekly-review.md', text: BEHAVIOUR },
     { store: 'tools', path: 'tejun-review', text: TOOL },
-  ],
-  entries: [
-    { catalog: 'TOOLS.md', name: 'tejun-review', text: TOOL_ROW },
+    { store: 'tools', path: 'tejun-review.md', text: TOOL_DOC },
   ],
 });
 
@@ -74,8 +68,9 @@ test('a bundle is held to its shape', () => {
   assert.throws(() => parseBundle({ format: BUNDLE_FORMAT, name: 'x', files: [{ store: 'behaviours', path: '../etc/passwd.md', text: '' }] }), /inside its store/);
   assert.throws(() => parseBundle({ format: BUNDLE_FORMAT, name: 'x', files: [{ store: 'catalogs', path: 'PROJECT_ROOTS.md', text: '' }] }), /catalog file sits on/);
   assert.throws(() => parseBundle({ format: BUNDLE_FORMAT, name: 'x', files: [{ store: 'tools', path: 'tmux', text: '' }] }), /never supplies a guard/);
-  assert.throws(() => parseBundle({ format: BUNDLE_FORMAT, name: 'x', files: [{ store: 'behaviours', path: 'selected/a.md', text: 'x' }], entries: [{ catalog: 'MACROS.md', name: 'a', text: '## a\n' }] }), /catalog is one of TOOLS\.md, MODEL_PROVIDERS\.md/);
-  assert.throws(() => parseBundle({ format: BUNDLE_FORMAT, name: 'x', files: [{ store: 'behaviours', path: 'selected/a.md', text: 'x' }], entries: [{ catalog: 'ACTIONS.md', name: 'a', text: '## a\n' }] }), /catalog is one of TOOLS\.md, MODEL_PROVIDERS\.md/);
+  assert.throws(() => parseBundle({ format: BUNDLE_FORMAT, name: 'x', files: [{ store: 'behaviours', path: 'a.md', text: 'x' }], entries: [{ catalog: 'MACROS.md', name: 'a', text: '## a\n' }] }), /catalog is one of MODEL_PROVIDERS\.md/);
+  assert.throws(() => parseBundle({ format: BUNDLE_FORMAT, name: 'x', files: [{ store: 'behaviours', path: 'selected/a.md', text: 'x' }] }), /one Markdown file, named by its token/);
+  assert.throws(() => parseBundle({ format: BUNDLE_FORMAT, name: 'x', entries: [{ catalog: 'TOOLS.md', name: 'a', text: '| `a` |' }] }), /catalog is one of MODEL_PROVIDERS\.md/);
   // The provider catalog is entry-merged too, per `### <Vendor>` section, named by the id it declares.
   const section = '### OpenAI\n\n- **provider:** `openai`\n- **cli:** `codex`\n\n| model | tier | default | cost | good at | not good at | launch |\n|---|---|---|---|---|---|---|\n| `gpt-7` | frontier | yes | $5 (2026-10) | a | b | `codex --model gpt-7` |\n';
   assert.throws(() => parseBundle({ format: BUNDLE_FORMAT, name: 'x', entries: [{ catalog: 'MODEL_PROVIDERS.md', name: 'other', text: section }] }), /named by its `- \*\*provider:\*\* id`/);
@@ -85,8 +80,9 @@ test('a bundle is held to its shape', () => {
   assert.throws(() => parseBundle({ format: BUNDLE_FORMAT, name: 'x', files: [] }), /holds nothing/);
   const b = bundle();
   assert.deepEqual(b.kinds, ['work'], 'an unruled kind is dropped, not fatal');
-  assert.equal(b.files.find((f) => f.store === 'tools')?.executable, true);
-  assert.deepEqual(bundleHolds(b), { teams: 1, ways: 1, tools: 2 });
+  assert.equal(b.files.find((f) => f.path === 'tejun-review')?.executable, true);
+  assert.equal(b.files.find((f) => f.path === 'tejun-review.md')?.executable, undefined, 'a tool file is not a command');
+  assert.deepEqual(bundleHolds(b), { teams: 1, behaviours: 1, tools: 2 });
 });
 
 test('the plan says what an install would do, and a tool never replaces one of Ronin\'s', async () => {
@@ -97,24 +93,22 @@ test('the plan says what an install would do, and a tool never replaces one of R
     files: [
       { store: 'catalogs', path: 'templates/teams/staff_my_codebase.md', text: stockTeam },
       { store: 'catalogs', path: 'templates/teams/dinner_party.md', text: '# Dinner Party\n- **label:** Mine\n' },
-      { store: 'behaviours', path: 'selected/brand_new.md', text: '# new\n' },
+      { store: 'behaviours', path: 'brand-new.md', text: '# new\n' },
       { store: 'tools', path: 'edges', text: '#!/bin/sh\n' },
-    ],
-    entries: [
-      { catalog: 'TOOLS.md', name: 'review_tool', text: '| `review_tool` | review | mine |' },
+      { store: 'tools', path: 'review_tool.md', text: '# review_tool\n' },
     ],
   });
   const plan = await planInstall(b);
   const verdict = (p: string) => plan.find((i) => i.path === p)?.verdict;
   assert.equal(verdict('templates/teams/staff_my_codebase.md'), 'same-as-shipped');
   assert.equal(verdict('templates/teams/dinner_party.md'), 'shadows-shipped');
-  assert.equal(verdict('selected/brand_new.md'), 'new');
+  assert.equal(verdict('brand-new.md'), 'new');
   assert.equal(verdict('edges'), 'refused');
-  assert.equal(verdict('review_tool'), 'new');
+  assert.equal(verdict('review_tool.md'), 'new');
   const receipt = await installBundle(b);
   assert.deepEqual(receipt.refused.map((i) => i.path), ['edges']);
   assert.deepEqual(receipt.skipped.map((i) => i.path), ['templates/teams/staff_my_codebase.md']);
-  assert.deepEqual(receipt.written.map((i) => i.path).sort(), ['review_tool', 'selected/brand_new.md', 'templates/teams/dinner_party.md']);
+  assert.deepEqual(receipt.written.map((i) => i.path).sort(), ['brand-new.md', 'review_tool.md', 'templates/teams/dinner_party.md']);
   await rm(storeDir('catalogs'), { recursive: true, force: true });
   await rm(storeDir('behaviours'), { recursive: true, force: true });
 });
@@ -126,16 +120,13 @@ test('an install lands in the owner\'s stores, reads back, and is idempotent', a
   const team = (await listTeamTemplates()).find((row) => row.name === 'weekly_review');
   assert.equal(team?.origin, 'user');
   assert.equal(team?.agents[0]?.team_lead, true);
-  assert.deepEqual(team?.behaviours, ['weekly_review']);
-  const books = await resolveBehaviourBooks(team?.behaviours ?? []);
-  assert.equal(books.delivered[0]?.file, path.join(storeDir('behaviours'), 'selected/weekly_review.md'));
-  const behaviour = (await listBehaviours()).find((row) => row.name === 'weekly_review');
-  assert.equal(behaviour?.installation, '', 'the catalog dash means this behaviour needs no installation');
+  assert.deepEqual(team?.behaviours, ['weekly-review']);
+  const behaviour = (await readCatalog('behaviours')).find((row) => row.name === 'weekly-review');
+  assert.equal(behaviour?.file, path.join(storeDir('behaviours'), 'weekly-review.md'));
+  const doc = (await readCatalog('tools')).find((row) => row.name === 'tejun-review');
+  assert.deepEqual(doc?.serves, ['weekly-review'], 'the tool file says which behaviour it serves');
   const tool = await stat(path.join(storeDir('tools'), 'tejun-review'));
   assert.ok(tool.mode & 0o100, 'a bundled tool is executable');
-  const tools = await readFile(path.join(storeDir('catalogs'), 'TOOLS.md'), 'utf8');
-  assert.match(tools, /^\| Tool \| Operation \| Usage \|$/m);
-  assert.match(tools, /^\| `tejun-review` \|/m);
 
   const again = await installBundle(bundle());
   assert.equal(again.written.length, 0);
@@ -143,29 +134,29 @@ test('an install lands in the owner\'s stores, reads back, and is idempotent', a
   assert.ok(again.skipped.every((i) => i.verdict === 'same-as-yours'));
 
   // The owner edits their copy; the bundle does not write over it unless told to.
-  await writeFile(path.join(storeDir('behaviours'), 'selected/weekly_review.md'), '# mine now\n');
+  await writeFile(path.join(storeDir('behaviours'), 'weekly-review.md'), '# mine now\n');
   const kept = await installBundle(bundle());
-  assert.equal(kept.skipped.find((i) => i.path === 'selected/weekly_review.md')?.verdict, 'replaces-yours');
-  assert.equal(await readFile(path.join(storeDir('behaviours'), 'selected/weekly_review.md'), 'utf8'), '# mine now\n');
+  assert.equal(kept.skipped.find((i) => i.path === 'weekly-review.md')?.verdict, 'replaces-yours');
+  assert.equal(await readFile(path.join(storeDir('behaviours'), 'weekly-review.md'), 'utf8'), '# mine now\n');
   const replaced = await installBundle(bundle(), { replace: true });
-  assert.equal(replaced.written.find((i) => i.path === 'selected/weekly_review.md')?.verdict, 'replaces-yours');
-  assert.equal(await readFile(path.join(storeDir('behaviours'), 'selected/weekly_review.md'), 'utf8'), BEHAVIOUR);
+  assert.equal(replaced.written.find((i) => i.path === 'weekly-review.md')?.verdict, 'replaces-yours');
+  assert.equal(await readFile(path.join(storeDir('behaviours'), 'weekly-review.md'), 'utf8'), BEHAVIOUR);
 
 });
 
 test('a pack carries back out what the owner\'s copies hold, and reads as a bundle', async () => {
-  await mkdir(path.join(storeDir('behaviours'), 'selected'), { recursive: true });
-  await writeFile(path.join(storeDir('behaviours'), 'selected', 'my_way.md'), '# My way\n- **scope:** selected\n- **kinds:** work\n\nMine.\n');
-  const packed = await packBundle({ team: 'weekly_review', ways: ['my_way'], version: '2026-09-03' });
+  await mkdir(storeDir('behaviours'), { recursive: true });
+  await writeFile(path.join(storeDir('behaviours'), 'my-way.md'), '# My way\n- **depth:** none\n\nMine.\n');
+  const packed = await packBundle({ team: 'weekly_review', behaviours: ['my-way'], version: '2026-09-03' });
   const paths = packed.files.map((f) => `${f.store}:${f.path}`).sort();
   assert.deepEqual(paths, [
+    'behaviours:my-way.md',
+    'behaviours:weekly-review.md',
     'catalogs:templates/teams/weekly_review.md',
     'tools:tejun-review',
-    'ways:selected/my_way.md',
-    'ways:selected/weekly_review.md',
-  ]);
-  assert.deepEqual(packed.entries.map((e) => `${e.catalog}:${e.name}`).sort(), ['TOOLS.md:tejun-review']);
-  assert.equal(packed.entries.find((e) => e.catalog === 'TOOLS.md')?.text, TOOL_ROW);
+    'tools:tejun-review.md',
+  ].sort());
+  assert.deepEqual(packed.entries, []);
   assert.equal(packed.label, 'Weekly Review');
   await assert.rejects(packBundle({ team: 'no_such_team' }), /not a team template/);
 
@@ -176,7 +167,7 @@ test('a pack carries back out what the owner\'s copies hold, and reads as a bund
   const text = JSON.stringify(packed);
   const card = libraryCard(packed, text, 'bundles/weekly_review.json');
   assert.equal(card.sha256.length, 64);
-  assert.deepEqual(card.holds, { teams: 1, tools: 2, ways: 2 });
+  assert.deepEqual(card.holds, { teams: 1, tools: 2, behaviours: 2 });
 });
 
 test.after(async () => {

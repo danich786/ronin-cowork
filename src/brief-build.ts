@@ -105,6 +105,7 @@ export async function buildBriefRecord(form: SpawnForm, facts: LaunchFacts, on: 
       where: facts.repositories.map((repo) => ({ repo: repo.name, held: repo.managed ? 'desk' as const : 'checkout' as const })),
       repo_lines: facts.repositories.map((repo) =>
         `- ${repo.name} ${repo.dir} — ${repo.managed ? `worktree: \`worktree-desk open ${repo.name}\`` : 'shared checkout'}${repo.note ? ` (${repo.note})` : ''}`).join('\n'),
+      folder_lines: facts.folders.map((folder) => `- ${folder.name} ${folder.dir}${folder.note ? ` — ${folder.note}` : ''}`).join('\n'),
       desk: form.desk ?? facts.arrangement === 'managed',
       checkout: form.checkout ?? facts.arrangement === 'checkout',
     },

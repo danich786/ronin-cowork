@@ -68,9 +68,10 @@ export async function currentBrief(name: string): Promise<{ dir: string; compose
   return { dir, composed };
 }
 
-/** Whether project management is on for an Agent (wip/BRIEF_MODEL.md §6); off when it has no readable record. */
+/** Whether an Agent works under project management: its brief told it the item model
+ * (wip/BRIEF_MODEL.md §6). An Agent with no readable record is not under it. */
 export async function projectManagementOn(name: string): Promise<boolean> {
-  try { return (await currentBrief(name)).composed.record.setting.pm; } catch { return false; }
+  try { return !!(await readSnapshotAt(sessionDir(await sessionKey(name))))?.told['project-management']; } catch { return false; }
 }
 
 /** What the brief carries now, each with why; `since_birth` marks what birth did not tell. */

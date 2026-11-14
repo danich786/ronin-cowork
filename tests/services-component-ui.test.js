@@ -38,7 +38,7 @@ test('installed truth distinguishes desired, running, parked, and restart state'
 
 test('new Agent transcript recording follows both the master and explicit capability choice', () => {
   assert.match(launch, /config\.services\.parts\.terminal_transcript === true/);
-  assert.match(launch, /contribution\.enabled\) && transcriptOn/);
+  assert.match(launch, /installation\.name === 'ronin_services' && installation\.enabled\) && transcriptOn/);
 });
 
 test('restart disagreement offers Restart and nothing to poll', async () => {

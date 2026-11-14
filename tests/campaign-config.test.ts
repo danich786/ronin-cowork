@@ -30,7 +30,7 @@ test('a pre-installation-cascade campaign gets stock defaults without a rewrite'
   const file = path.join(root, 'machine_settings.json');
   const old = JSON.stringify({ campaigns: { home_machine: {
     id: 'home_machine', title: 'Ronin Home', desk: {}, config: {
-      defaults: { behaviours: [] },
+      defaults: {},
       services: { parts: { project_management: true, kanban: false, rireki: true, koe: true, koshi_weights: true } },
     },
   }, kanban_only: {
@@ -42,7 +42,7 @@ test('a pre-installation-cascade campaign gets stock defaults without a rewrite'
   assert.equal((await readCampaign('no_capabilities'))?.config.services.parts.usage_stats, true, 'Stats runs until it is switched off');
   const campaign = await readCampaign('home_machine');
   assert.equal('features' in (campaign?.config.defaults ?? {}), false);
-  assert.deepEqual(campaign?.config.defaults.behaviours, [], 'mandate teaching is the floor, not a Campaign behaviour default');
+  assert.deepEqual(campaign?.config.brief, { add: [], block: [], only: [] }, 'a Campaign with no brief settings changes nothing');
   assert.equal(campaign?.config.services.parts.task_manager, true, 'Task manager runs until it is switched off');
   assert.equal(campaign?.config.services.parts.voice_hotwords, false, 'legacy voice never opts into the capability');
   assert.equal(campaign?.config.services.parts.terminal_transcript, false, 'legacy recording never opts into the capability');

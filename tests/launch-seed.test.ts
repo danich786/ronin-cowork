@@ -28,42 +28,6 @@ const team = { name: 'alpha', campaign_id: 'home_machine', kind: 'coding', works
 const sources = (roster: TeamRoster | null) => ({ campaign, roster, workspace: null,
   sessions: { default: { provider: 'anthropic', model: 'sonnet' } }, installations, behaviours });
 
-test('teamless seed exposes available behaviours and the fixed residue', () => {
-  const seed = resolveLaunchSeed(sources(null));
-  assert.deepEqual(seed.available, ['gbrain', 'write_it_down']);
-  assert.deepEqual(seed.seeds.behaviours.value, ['gbrain']);
-  assert.equal(seed.behaviours.find((row) => row.name === 'gbrain')?.reading, '/gbrain.md');
-  assert.equal(seed.resolved_contributions.find((row) => row.name === 'ronin_services')?.reading[0], 'routine/ronin_services/OFF.md');
-  assert.equal(seed.resolved_contributions[0]?.stated_by, 'installation');
-  assert.deepEqual(seed.still_asked, ['session_type', 'name', 'instructions']);
-});
-
-test('Team complete elective lists replace Campaign defaults while floor guidance remains visible', () => {
-  const seed = resolveLaunchSeed(sources(team));
-  assert.deepEqual(seed.seeds.behaviours.value, ['write_it_down']);
-  assert.equal(seed.seeds.behaviours.stated_by[0]?.layer, 'team');
-  const mandates = seed.behaviours.find((row) => row.name === 'mandates');
-  assert.equal(mandates?.scope, 'floor');
-  assert.equal(mandates?.on, false, 'floor guidance is visible but never part of the Team elective list');
-});
-
-test('an unavailable requested behaviour is reported, never refused', () => {
-  const off = { ...campaign, config: { ...campaign.config, installations: { ronin_services: false, gbrain: false } } };
-  const seed = resolveLaunchSeed({ ...sources(null), campaign: off });
-  assert.deepEqual(seed.available, ['write_it_down']);
-  assert.deepEqual(seed.undelivered, ['gbrain']);
-});
-
-test('unsettled Campaign and Team inputs seed no elective behaviours', () => {
-  const oldCampaign = { ...campaign, config: {
-    defaults: agentDefaults({ behaviours: [] }), cowork_defaults: {}, template_defaults: {},
-  } } as CampaignConfig;
-  const oldTeam = { ...team } as unknown as TeamRoster;
-  delete (oldTeam as unknown as Record<string, unknown>).behaviours;
-  const seed = resolveLaunchSeed({ ...sources(oldTeam), campaign: oldCampaign });
-  assert.deepEqual(seed.seeds.behaviours.value, []);
-});
-
 test('a Team lead seed shows the lead pair; an Agent seed the Agent pair; no lead pair = the Agent pair', () => {
   const both = { default: { provider: 'anthropic', model: 'sonnet' }, lead: { provider: 'openai', model: 'gpt-lead' } };
   const lead = resolveLaunchSeed({ ...sources(team), sessions: both, lead: true });

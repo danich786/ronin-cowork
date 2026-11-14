@@ -180,6 +180,13 @@ export async function migrateWaysToBehaviours(): Promise<BehaviourStoreMigration
     }
   }
   await removeEmpty(root);
+  // The gbrain shelf: its files become behaviours that hold while the gbrain integration is on.
+  const gbrain = path.join(storeDir('session_boot'), 'gbrain_connected');
+  for (const { file, relative } of await walkMarkdown(gbrain)) {
+    const name = `gbrain-${path.basename(relative, '.md')}`.replace(/[\s_]+/g, '-').toLowerCase();
+    await moveInto(path.join(behaviours, `${name}.md`), Buffer.from(asCatalogBehaviour(name, await readFile(file, 'utf8'), 'conditional', ['integration:gbrain'])), file, done, `session_boot/gbrain_connected/${relative}`);
+  }
+  await removeEmpty(gbrain);
   return done;
 }
 

@@ -29,6 +29,8 @@ export function fillLine(line: string, record: BriefRecord): string {
 }
 
 const strip = (text: string): string => text.replace(/<!--[^]*?-->/g, '').trim();
+/** A file's own headings sit under the brief's `###`: each goes down two levels (at most six). */
+const nested = (text: string): string => strip(text).replace(/^(#{1,6})(?=\s)/gm, (marks) => '#'.repeat(Math.min(6, marks.length + 2)));
 
 function factLines(row: InPlay, record: BriefRecord): string[] {
   const raw = strip(row.file.body);
@@ -46,7 +48,7 @@ const toolLine = (row: InPlay): string => `- \`${row.title}\`${row.file.seed ? `
 
 function toolLines(row: InPlay): string[] {
   if (row.depth !== 'full') return [toolLine(row)];
-  return [toolLine(row), '', strip(row.file.body), ''];
+  return [toolLine(row), '', nested(row.file.body), ''];
 }
 
 /** The seed of a behaviour: its one line, and where to read the rest. */
@@ -63,7 +65,7 @@ export function renderBrief(name: string, record: BriefRecord, resolved: Resolve
   if (resolved.behaviours.length) {
     out.push('## Behaviours', '');
     for (const row of resolved.behaviours) {
-      out.push(`### ${row.title}`, row.depth === 'full' ? strip(row.file.body) : seedText(row));
+      out.push(`### ${row.title}`, row.depth === 'full' ? nested(row.file.body) : seedText(row));
       if (row.tools.length) out.push('Tools:', ...row.tools.flatMap(toolLines));
       out.push('');
     }
@@ -101,7 +103,7 @@ export function briefChanges(before: BriefSnapshot, resolved: Resolved, record: 
     const was = before.told[row.name];
     if (was && was.depth === row.depth) continue;
     if (row.kind === 'tools') lines.push(...toolLines(row));
-    else lines.push(`### ${row.title}`, row.depth === 'full' ? strip(row.file.body) : seedText(row), '');
+    else lines.push(`### ${row.title}`, row.depth === 'full' ? nested(row.file.body) : seedText(row), '');
   }
   const left = Object.keys(before.told).filter((name) => !after.told[name]);
   if (left.length) lines.push(`No longer in your brief: ${left.map((name) => before.told[name].title).join(', ')}.`);
