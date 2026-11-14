@@ -25,6 +25,10 @@ behaviour with its tools.
 | **seed** | one line: that it exists, and where to read more (`ronin-help <name>`) |
 | **full** | the whole text, in the brief from the start |
 
+**Seed first.** Agents skim. A well-written seed that says what lies underneath beats full
+text: it names what the file is for and where the rest is, so the Agent reads the full text
+only when it needs it. Give a file `full` only when an Agent needs all of it from the start.
+
 A tool's seed is its one job (a family's names its members); the brief says once that every
 tool answers `--help`. A tool in full adds its commands and whatever `--help` does not say.
 
@@ -237,21 +241,19 @@ Every tool is a command on your PATH; `<tool> --help` gives its syntax.
 - **The birth receipt** (`birth-receipt.json`) records the brief's path, bytes, lines,
   terminator and over-budget state.
 - **An update** (`refreshBrief`, `src/agent-configuration.ts`) rebuilds the brief and, when it
-  differs from what the Agent was last told (`brief-told.json` beside the brief), sends "Your brief
-  changed" with the facts that changed and the behaviours and tools that came into play (at
-  their depth) or left it, and the whole brief's path. A mandate change sends the new mandate
-  only. A layer change rebuilds every live Cowork Agent's brief (`refreshAllBriefs`).
-- **The first rebuild under this model** finds no `brief-told.json`, so every fact, behaviour and
-  tool counts as new and a running Agent is sent its whole brief once. **Send** on the New Agent form always resends it.
+  differs from what the Agent was last told (`brief-told.json` beside the brief), sends "Your
+  brief changed" with the facts that changed and the behaviours and tools that came into play
+  (at their depth) or left it, and the whole brief's path. A mandate change sends the new
+  mandate only. Nothing differs, nothing is sent. A layer change rebuilds every live Cowork
+  Agent's brief (`refreshAllBriefs`).
+- **Send** on the New Agent form sends only what changed; when nothing did, the form says "Its
+  brief is unchanged: nothing was sent."
 - **The brief shows at the bottom of the work record** on the tile.
 
-**Start-up moves.** Once, at server start (`src/index.ts`, `src/behaviour-store-migration.ts`):
-`migrateWaysToBehaviours` moves the user's old `~/ronin/ways/<scope>/` files into the flat
-`~/ronin/behaviours/` with the header (the user intro into `~/ronin/facts/user-intro.md`,
-Workspace shelf files into behaviours with `when: workspace:<ws>`), and `migrateBriefSettings`
-turns old Team and Campaign behaviour lists into brief settings. A test that starts the server
-(`tests/test-runner-isolation.test.ts`) sets `RONIN_USER_ROOT`, `RONIN_DATA_ROOT` and `HOME` to
-its own folders, so these moves never touch the real stores.
+There is no backward compatibility: the model is for new installs, and no old store or record
+shape is read. A test or rig that starts the server sets `RONIN_USER_ROOT`, `RONIN_DATA_ROOT`
+and `HOME` to its own folders (`tests/test-runner-isolation.test.ts`), so it never writes the
+real stores.
 
 ## Where it is set in the UI
 
@@ -283,14 +285,17 @@ behaviours/  base-agent (full) · cowork-agent, write-it-down (cowork, full)
              team-lead, planning (lead) · lead-worktrees (lead, desk)
              project-management (pm, full) · pm-coworker · pm-lead · pm-epic-lead ·
              pm-traffic-control (pm, by role, full)
-             working-at-a-desk (desk) · checkout (checkout) · integrations (every
-             Agent, seed; brings `secret`, so keys are taught once)
+             working-at-a-desk (desk) · checkout (checkout) · workspaces (cowork, full)
+             integrations (every Agent, seed; brings `secret`, so keys are taught once)
+             bridges: netlify-bridge, jira-bridge, gbrain-bridge, perplexity-bridge
+             (integration:<name>)
              mika, install-check (mika) · services-off (!service:ronin_services) · using-ronin
              optional (depth none): team-work, more-checkpoints, working-with-the-user,
              visual-staging, codebase-team
 tools/       edges, work-record, agent-session (session_*), cowork-team (team), plan,
              work-item (item), worktree-desk, secret, netlify, preview, lookup, show,
              owner-view, mika, ronin-host, machine-settings, ronin-help ·
+             workspace (depth none until the command exists) ·
              ronin-team, ronin-desk-settle (house, depth none)
 ```
 
@@ -314,22 +319,31 @@ not tools (`ronin-url`, `ronin-http.sh`, `tool-path.sh`) get no file
 Docs explain Ronin and stay searchable; an Agent's operational instruction belongs in a
 behaviour or a tool's file or help, never only in a docs page.
 
+## Integrations and bridges
+
+Any outside service a user brings is used one common way, the **Integrations** behaviour (every
+Agent, seed): the Workspace's integrations through `work-record workspace list`, keys only
+through `secret ask <provider>-<key>` and `secret path <name>`, a PR and its preview, and the
+owner's choice before shipping. Keys are taught there once; a bridge never repeats them.
+
+A **bridge** is a behaviour with `when: integration:<name>` and the tools that serve it, in play
+while that integration is on for the Agent: `jira-bridge` (work items through `item`, never Jira
+itself), `gbrain-bridge` (shared memory), `perplexity-bridge` (cited web research) and
+`netlify-bridge` (the worked example, with `netlify` and `preview`). A bridge may say
+`mcp: <server>`: while it is in play, that MCP server is in the Agent's launch and the bridge
+says how it is used; its tools come from the harness, so they have no tool files.
+
+## Workspaces
+
+The `workspaces` behaviour (every Cowork Agent, full) says a Project is one Workspace: its
+objective, instructions, repositories, folders, integrations, Teams and plans. The `workspace`
+tool is `depth: none` until the command exists; it will list, read, create, edit and archive
+Workspaces over `src/routes/workspaces-api.ts`.
+
 ## What comes next
 
-The base of behaviours grows a file at a time; placeholders show where each goes.
-
-- **One bridge per integration.** A bridge is a behaviour with `when: integration:<name>` and the
-  tools that serve it: `netlify-bridge`, `jira-bridge`, `gbrain-bridge`, `perplexity-bridge`.
-  Netlify is the worked example (`netlify`, `preview`); the others follow it: Jira, then
-  gbrain, then Perplexity.
-- **MCP servers come in as bridges.** A bridge may say `mcp: <server>`: while it is in play, that
-  MCP server is in the Agent's launch, and the bridge says how it is used. Its tools come from
-  the harness, so they have no tool files.
-- **Keys are taught once**, by the Integrations behaviour and the `secret` tool; a bridge never
-  repeats how to get one.
-- **Workspaces.** The `workspaces` behaviour says a Project is one Workspace, with its repos,
-  folders, integrations, Teams and plans; the `workspace` tool (`depth: none` until the command
-  exists) will list, read, create, edit and archive them over `src/routes/workspaces-api.ts`.
+The base of behaviours grows a file at a time: a bridge for each integration a user brings,
+an MCP server chosen per bridge, and the `workspace` command, which then gets its seed told.
 
 ## Change checkpoint
 
