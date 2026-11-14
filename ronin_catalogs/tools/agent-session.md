@@ -58,3 +58,12 @@ entries are its work record, not a command to open or close managed desks.
 - **End** runs the custody preflight and ends this Agent only after every assigned worktree is
   safe; nothing is discarded. **Archive** is distinct: it keeps the session resumable and
   leaves desk custody unchanged; **restore** brings one back.
+
+## Usage
+
+- `session_check`: **Read one live session by exact name.** An unused name reports `NO-SESSION`; this tool never creates or changes anything.
+- `session_create`: **Create one visible Agent through the ordinary launch resolver. AN OWNER ASKING FOR AN AGENT ALWAYS MEANS THIS VISIBLE SESSION; IT NEVER MEANS SPAWN A CLI-INTERNAL SUB-AGENT.** “Agent,” “new agent,” “fork,” and “fork it” do not request or authorize spawning. Supply the newborn's purpose explicitly with `--prompt`; only Campaign and Team launch context are resolved, never the caller's conversation. There is no dial option: the caller is unchanged and the newborn reads its own resolved birth packet. `session_create --help` dynamically renders provider/model choices and defaults from the canonical Campaign/provider catalog shared with UI dropdowns, so configuration changes require no maintained list. An existing name is refused rather than read or updated.
+- `session_set`: **Change named facts on one existing live session.** It updates Team membership, lead designation, or Workspace Folder handle; a missing name is refused and the bare form points to `session_check`.
+- `session_archive`: `session_archive <session>` → `ARCHIVED <session> as <archive-id> — resumable`. Uses the existing live-session archive route; it never substitutes hard delete. Exit 2 = bad arguments, 4 = refused, 5 = unreachable.
+- `session_restore`: `session_restore <archive-id>` → `REHYDRATED <session>`. Uses the existing provider-resume and metadata-restoration route; the manifest is removed only after restoration succeeds. Exit 2 = bad arguments, 4 = refused, 5 = unreachable.
+- `session_end`: `session_end` — **no arguments**. Resolves the current Agent, checks all assigned worktrees, automatically closes every clean worktree whose tip is contained in its Team line (an ACCEPTED hand-in is enough; global-dev promotion and manual close are not required), then ends the Agent. Any dirty, pending/rejected, unique, shared, or occupied worktree keeps the whole operation live and prints exact next actions; nothing is discarded. No output on success. Exit 4 = actionable refusal or owner-dialled; exit 5 = Ronin unreachable/stuck.

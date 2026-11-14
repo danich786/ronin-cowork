@@ -34,3 +34,7 @@ no Agent operation raises another session's Control.
 
 Forking into a new Agent crosses a boundary too, but it belongs to the Session bundle,
 not here.
+
+## Usage
+
+`edges --help` discovers `send`, `read`, `team`, `wipeboard`, `page`, `schedule`, and read-only `control`. `edges read <session> [lines]` uses the durable settled record first and falls back to a partial recent live view only when no tape exists. Each operation preserves its guarded outcomes.

@@ -33,3 +33,7 @@ Run the relevant tool before advising or changing machine-level state. If a Mach
 is absent from `PATH`, report that the behaviour was not delivered; do not improvise its
 guarded operation. The full procedures live in the Machine Behaviors and the corresponding
 rows of `ronin_catalogs/TOOLS.md`.
+
+## Usage
+
+`ronin-host --help` renders the available fixed subcommands. `inspect [path]` measures host and storage; `account` reports secret-free ownership and entitlement; `secrets [path]` reports key names and exposure, never values; `restart` restarts Ronin and nothing else without touching sessions. There is no generic writer or arbitrary service target.
