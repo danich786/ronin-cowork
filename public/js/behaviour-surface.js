@@ -94,10 +94,13 @@ function createBehaviourSurface(initial = {}) {
     const wanted = select || (initial.scope && initial.name ? `${scopeOf(initial.scope)}:${initial.name}` : '');
     if (wanted) stones.select(wanted);
   }
+  let settingsLoaded = false;
+  const loadSettings = () => { if (settingsLoaded) return; settingsLoaded = true; void settings.enter(); };
   return {
     el: surface.el,
-    show: (detail = {}) => { if (detail.scope && detail.name) initial = detail; void refresh(); },
-    enter: () => { void settings.enter(); void refresh(); },
+    // The workbench may only show this surface, never enter it: either way the settings load once.
+    show: (detail = {}) => { if (detail.scope && detail.name) initial = detail; loadSettings(); void refresh(); },
+    enter: () => { loadSettings(); void refresh(); },
     destroy: () => { settings.destroy(); stones.destroy(); },
   };
 }
