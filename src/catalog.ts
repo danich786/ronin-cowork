@@ -1,5 +1,5 @@
 /**
- * THE CATALOG — facts, behaviours and tools (wip/BRIEF_MODEL.md §3).
+ * THE CATALOG — facts, behaviours and tools (docs/architecture/brief.md, The files and their header).
  *
  * One flat folder per object in `ronin_catalogs/` (`facts/`, `behaviours/`, `tools/`); the
  * user's own store (`~/ronin/facts/`, `~/ronin/behaviours/`, `~/ronin/tools/`) adds files and
@@ -18,7 +18,7 @@
  *
  *   <the full text>
  *
- * An unknown key is ignored. Nothing here decides who is told what: that is §4–§6.
+ * An unknown key is ignored. Nothing here decides who is told what: that is docs/architecture/brief.md, Conditionals; The work record is the source of truth; Layers and brief settings.
  */
 import path from 'node:path';
 import { STOCK_DIR, entryValue, isKeyLine, resolveFiles, storeDir, type Origin } from './resources.js';
@@ -37,7 +37,7 @@ export interface CatalogFile {
   when: string[];
   depth: Depth;
   serves: string[];
-  /** The mandate axis this behaviour is a value of (§4): reach, recruit, output; '' if none. */
+  /** The mandate axis this behaviour is a value of (docs/architecture/brief.md, Mandates): reach, recruit, output; '' if none. */
   mandate: string;
   /** Its value on that axis: the title, lower-cased ('Propose agents' → 'propose agents'). */
   value: string;

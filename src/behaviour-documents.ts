@@ -4,7 +4,7 @@ import { lstat, mkdir, open, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { STOCK_DIR, resolveFiles, storeDir, uncached, type Origin } from './resources.js';
 
-/** The user writes facts, behaviours and tools (wip/BRIEF_MODEL.md §3); the `scope` of a document is its kind. */
+/** The user writes facts, behaviours and tools (docs/architecture/brief.md, The files and their header); the `scope` of a document is its kind. */
 export const BEHAVIOUR_SCOPES = ['facts', 'behaviours', 'tools'] as const;
 export type BehaviourDocumentScope = typeof BEHAVIOUR_SCOPES[number];
 

@@ -51,7 +51,7 @@ export async function readAgentComposition(name: string) {
       provider: session?.identity?.provider || '', model: session?.identity?.model || '',
       launch_mode: receipt.launch_mode || 'configured',
       role, team: tags[0] ?? '', mandate: work.mandate,
-      // The Agent's own layer (wip/BRIEF_MODEL.md §6).
+      // The Agent's own layer (docs/architecture/brief.md, Layers and brief settings).
       brief: agent.brief, integrations: agent.integrations, ...(agent.pm !== undefined ? { pm: agent.pm } : {}),
     },
     available_teams: teams.filter((row) => row.state !== 'archived').map((row) => ({ name: row.name, title: row.title, objective: row.objective })),

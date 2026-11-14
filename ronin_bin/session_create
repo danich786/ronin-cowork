@@ -54,7 +54,7 @@ Every Agent starts in the same folder, Ronin's own; where it works comes from it
 Workspace, which its brief lists.
 The mandate is chosen here and carried in the birth brief; never set it after birth.
 EOF
-  # The values are the mandate files (BRIEF_MODEL §4), in order:; no list is kept here.
+  # The values are the mandate files (docs/architecture/brief.md, Mandates), in order:; no list is kept here.
   python3 - "$brief" <<'PY'
 import json, sys
 rows = [row for row in json.load(open(sys.argv[1])) if isinstance(row, dict) and row.get("mandate")]

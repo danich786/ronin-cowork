@@ -303,7 +303,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
 
     const form = spawnFormFromLaunchBody(req.body, houseSeat);
     // The user an Agent works for, in a hosted office: the person launching, or for an Agent
-    // made by an Agent, that Agent's user (wip/BRIEF_MODEL.md §5).
+    // made by an Agent, that Agent's user (docs/architecture/brief.md, The work record is the source of truth).
     const launcher = person(req) ?? await callerUser(String(req.body?.caller ?? '').trim());
     if (launcher) form.person = launcher;
 
@@ -457,7 +457,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
         template: form.template ?? '',
         ...(form.person?.email ? { user_email: form.person.email } : {}),
         mandate: resolved.mandate,
-        // What the brief told, by name and depth, and why (wip/BRIEF_MODEL.md §6).
+        // What the brief told, by name and depth, and why (docs/architecture/brief.md, Layers and brief settings).
         told: resolved.composed ? briefTold(resolved.composed.resolved) : [],
         ignored: [...new Set([...accepted.ignored, ...resolved.ignored])].sort(),
         stated_by: resolved.stated_by,

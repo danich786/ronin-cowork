@@ -1,5 +1,5 @@
 /**
- * THE BRIEF RECORD — every value a brief depends on (wip/BRIEF_MODEL.md §5). The brief is
+ * THE BRIEF RECORD — every value a brief depends on (docs/architecture/brief.md, The work record is the source of truth). The brief is
  * this record plus the catalog files, nothing else. `when:` conditionals (src/conditionals.ts)
  * and fact `line:` placeholders read it by path (`user.name`, `agent.role`).
  */
@@ -9,7 +9,7 @@ import type { Depth } from './catalog.js';
 export type SessionType = 'cowork' | 'bare' | 'mika';
 export type AgentRole = 'coworker' | 'lead' | 'epic_lead' | 'coordinator';
 
-/** One layer's brief settings (§6): what it adds (at a depth), blocks and screens to. */
+/** One layer's brief settings (docs/architecture/brief.md, Layers and brief settings): what it adds (at a depth), blocks and screens to. */
 export interface BriefSettings {
   add: Array<{ name: string; depth?: Depth }>;
   block: string[];

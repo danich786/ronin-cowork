@@ -1,5 +1,5 @@
 /**
- * THE BRIEF (wip/BRIEF_MODEL.md §7): one packet, generated top to bottom from the brief record
+ * THE BRIEF (docs/architecture/brief.md, The brief): one packet, generated top to bottom from the brief record
  * and the catalog files. Facts; the behaviours in play, each at its depth with its tools under
  * it; Other tools; the one `--help` line; the end line. Nothing else is in it.
  */
@@ -135,7 +135,7 @@ export function briefSnapshot(resolved: Resolved, record: BriefRecord): BriefSna
 }
 
 /**
- * WHAT CHANGED since the snapshot, for an update (§7): the facts that changed, and the
+ * WHAT CHANGED since the snapshot, for an update (docs/architecture/brief.md, The brief): the facts that changed, and the
  * behaviours and tools that came into play (at their depth) or left it. '' when nothing did.
  */
 export function briefChanges(before: BriefSnapshot, resolved: Resolved, record: BriefRecord): string {

@@ -1,10 +1,10 @@
 /**
- * THE CONDITIONALS (wip/BRIEF_MODEL.md §4): whether a catalog file is in play, read off the
+ * THE CONDITIONALS (docs/architecture/brief.md, Conditionals): whether a catalog file is in play, read off the
  * brief record. The one function every `when:` goes through. An unknown word never holds.
  */
 import type { BriefRecord } from './brief-record.js';
 
-/** Every conditional word §4 knows; `<x>` marks a value the word takes. */
+/** Every conditional word (docs/architecture/brief.md, Conditionals); `<x>` marks a value the word takes. */
 export const CONDITIONALS = [
   'cowork', 'bare', 'mika', 'owner', 'member', 'new-owner', 'experience:<x>', 'ai:<x>', 'use:<x>', 'account:<x>', 'hosted',
   'service:<part>', 'integration:<name>', 'pm', 'team', 'lead', 'role:coworker', 'role:lead', 'role:epic_lead',

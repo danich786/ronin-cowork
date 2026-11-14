@@ -1,5 +1,5 @@
 /**
- * BRIEF UPDATES (wip/BRIEF_MODEL.md §5, §7). Any change to what an Agent's brief depends on
+ * BRIEF UPDATES (docs/architecture/brief.md, The work record is the source of truth; The brief). Any change to what an Agent's brief depends on
  * rebuilds the brief from today's files over its record; when the brief came out different, the
  * Agent is sent only the difference: the facts that changed, and the behaviours and tools that
  * came into play or left it. Items and the objective are on the record but not in the brief, so
@@ -85,7 +85,7 @@ export async function currentBrief(name: string): Promise<{ dir: string; compose
 }
 
 /** Whether an Agent works under project management: its brief told it the item model
- * (wip/BRIEF_MODEL.md §6). An Agent with no readable record is not under it. */
+ * (docs/architecture/brief.md, Layers and brief settings). An Agent with no readable record is not under it. */
 export async function projectManagementOn(name: string): Promise<boolean> {
   try { return !!(await readSnapshotAt(sessionDir(await sessionKey(name))))?.told['project-management']; } catch { return false; }
 }
