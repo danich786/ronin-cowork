@@ -16,10 +16,14 @@ test('agent_defaults validates every field in the complete record shape', () => 
       output: ['code', 'no code'],
       launch_mode: 'configured',
     }],
-    ['bad hand edits fall back field by field', {
-      reach: 'run', recruit: 'propose', output: 'report', routines: { base: 'yes', control: true },
+    ['any mandate value is taken (its file decides what it means); a bad launch mode falls back', {
+      reach: 'Review', recruit: 'propose', output: 'report', routines: { base: 'yes', control: true },
       launch_mode: 'unsafe', gbrain_mode: 'maybe',
     }, {
+      provider: '', model: '', reach: 'review', recruit: 'propose', output: ['report'],
+      launch_mode: 'configured',
+    }],
+    ['a blank axis falls back', { reach: ' ', recruit: 7, output: [] }, {
       provider: '', model: '', reach: 'plan', recruit: 'propose agents', output: ['open'],
       launch_mode: 'configured',
     }],
@@ -28,11 +32,11 @@ test('agent_defaults validates every field in the complete record shape', () => 
   for (const [name, input, expected] of cases) assert.deepEqual(agentDefaults(input), expected, name);
 });
 
-test('mandate blank and explicit table uses the amended R36 words', () => {
+test('mandate: blank gets the fallback, any stated value is kept', () => {
   const cases = [
     [undefined, { reach: 'plan', recruit: 'propose agents', output: ['open'] }],
     [{ reach: 'open', recruit: 'staff agents', output: 'the team' }, { reach: 'open', recruit: 'staff agents', output: ['the team'] }],
-    [{ reach: 'run', recruit: 'propose', output: 'report' }, { reach: 'plan', recruit: 'propose agents', output: ['open'] }],
+    [{ reach: 'run', recruit: 'propose', output: 'report' }, { reach: 'run', recruit: 'propose', output: ['report'] }],
   ] as const;
   for (const [input, expected] of cases) assert.deepEqual(mandate(input), expected);
 });

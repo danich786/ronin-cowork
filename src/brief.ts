@@ -92,6 +92,12 @@ function toolLines(row: InPlay): string[] {
 const seedText = (row: InPlay): string =>
   `${row.file.seed ? `${row.file.seed} ` : ''}More: \`ronin-help ${row.name}\`.`;
 
+/** A mandate: an order, one bullet; at full depth its text follows. */
+function mandateLines(row: InPlay): string[] {
+  const line = `- ${row.file.seed || row.title}`;
+  return row.depth === 'full' && strip(row.file.body) ? [line, '', nested(row.file.body), ''] : [line];
+}
+
 export function renderBrief(name: string, record: BriefRecord, resolved: Resolved): string {
   const out: string[] = [`# Brief — ${name}`, ''];
   if (resolved.facts.length) {
@@ -99,6 +105,7 @@ export function renderBrief(name: string, record: BriefRecord, resolved: Resolve
     for (const row of resolved.facts) out.push(...factLines(row, record));
     out.push('');
   }
+  if (resolved.mandates.length) out.push('## Mandate', ...resolved.mandates.flatMap(mandateLines), '');
   if (resolved.behaviours.length) {
     out.push('## Behaviours', '');
     for (const row of resolved.behaviours) {
@@ -118,7 +125,7 @@ export interface BriefSnapshot {
   told: Record<string, { kind: string; depth: string; title: string }>;
 }
 
-const toldRows = (r: Resolved): InPlay[] => [...r.behaviours.flatMap((row) => [row, ...row.tools]), ...r.other];
+const toldRows = (r: Resolved): InPlay[] => [...r.mandates, ...r.behaviours.flatMap((row) => [row, ...row.tools]), ...r.other];
 
 export function briefSnapshot(resolved: Resolved, record: BriefRecord): BriefSnapshot {
   return {
@@ -140,6 +147,7 @@ export function briefChanges(before: BriefSnapshot, resolved: Resolved, record: 
     const was = before.told[row.name];
     if (was && was.depth === row.depth) continue;
     if (row.kind === 'tools') lines.push(...toolLines(row));
+    else if (row.file.mandate) lines.push(...mandateLines(row), '');
     else lines.push(`### ${row.title}`, row.depth === 'full' ? nested(row.file.body) : seedText(row), '');
   }
   const left = Object.keys(before.told).filter((name) => !after.told[name]);

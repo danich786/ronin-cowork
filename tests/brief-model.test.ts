@@ -6,7 +6,9 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { parseCatalogFile, readCatalog, type Catalog, type CatalogFile, type CatalogKind } from '../src/catalog.js';
 import { conditionHolds } from '../src/conditionals.js';
 import type { BriefRecord } from '../src/brief-record.js';
-import { cascade, layerOf, resolveBrief, type Layer } from '../src/brief-settings.js';
+import { briefOff, cascade, layerOf, resolveBrief, type Layer } from '../src/brief-settings.js';
+import { mandate } from '../src/agent-defaults.js';
+import { templateMandate } from '../src/resource-adapters.js';
 import { briefChanges, briefSnapshot, fillLine, renderBrief } from '../src/brief.js';
 import { briefFromOldList, migrateWaysToBehaviours } from '../src/behaviour-store-migration.js';
 
@@ -96,6 +98,34 @@ test('add, then block, then screen; a behaviour brings the tools that serve it',
   assert.deepEqual(resolveBrief(CATALOG, record(), [layerOf('agent', { brief: { block: ['user'] } })]).facts, [], 'a fact can be blocked');
   const why = resolveBrief(CATALOG, record({ team: 't', lead: true }), [layerOf('team', { brief: { add: ['extra'] } })]);
   assert.deepEqual(why.behaviours.map((row) => [row.name, row.why]), [['base', []], ['lead-ways', ['lead']], ['extra', ['add:team']]]);
+});
+
+test('mandate values are the files: a value is in play for the Agent that holds it, in its own section', () => {
+  const plan = file('behaviours', 'reach-plan', "# Plan\n- **seed:** Plan; don't build.\n- **mandate:** reach\n- **order:** 2\n");
+  assert.deepEqual([plan.mandate, plan.value], ['reach', 'plan']);
+  assert.deepEqual([CATALOG.behaviours[0].mandate, CATALOG.behaviours[0].value], ['', ''], 'an ordinary behaviour has no axis');
+  const catalog: Catalog = {
+    ...CATALOG,
+    behaviours: [
+      ...CATALOG.behaviours,
+      plan,
+      file('behaviours', 'reach-execute', '# Execute\n- **seed:** Build it.\n- **mandate:** reach\n'),
+      file('behaviours', 'recruit-nobody', '# Nobody\n- **seed:** Work alone.\n- **mandate:** recruit\n'),
+      file('behaviours', 'output-code', '# Code\n- **seed:** Return code.\n- **mandate:** output\n- **depth:** full\n\nThe repo arrangement.'),
+      file('behaviours', 'output-a-plan', '# A plan\n- **seed:** Return a plan.\n- **mandate:** output\n'),
+    ],
+  };
+  const out = resolveBrief(catalog, record(), []);
+  assert.deepEqual(out.mandates.map((row) => row.name), ['reach-plan', 'recruit-nobody', 'output-code']);
+  assert.deepEqual(out.behaviours.map((row) => row.name), ['base'], 'never among the behaviours');
+  const text = renderBrief('demo', record(), out);
+  assert.match(text, /## Facts[^]*## Mandate\n- Plan; don't build\.\n- Work alone\.\n- Return code\.\n\nThe repo arrangement\.[^]*## Behaviours/);
+  assert.equal(resolveBrief(catalog, record(), [layerOf('team', { brief: { block: ['reach-plan'] } })]).mandates.length, 2, 'a blocked value is not told');
+  const off = briefOff(catalog, [layerOf('team', { brief: { block: ['reach-plan'], only: ['base', 'user', 'reach-plan', 'reach-execute', 'recruit-nobody', 'output-code', 'output-a-plan'] } })]);
+  assert.deepEqual(off.sort(), ['extra', 'help', 'item', 'lead-ways', 'pm', 'reach-plan'], 'off: blocked, or left out by a screen');
+  assert.deepEqual(mandate({ reach: 'Review', recruit: 'nobody', output: ['an integration', 'code'] }), { reach: 'review', recruit: 'nobody', output: ['an integration', 'code'] }, 'any value is taken');
+  assert.deepEqual(mandate({}), { reach: 'plan', recruit: 'propose agents', output: ['open'] });
+  assert.deepEqual(templateMandate('review · nobody · a plan, notes'), { reach: 'review', recruit: 'nobody', output: ['a plan', 'notes'] });
 });
 
 test('the Lounge\'s user facts: words, call name, conditionals', async () => {

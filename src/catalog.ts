@@ -12,6 +12,7 @@
  *   - **when:** cowork, !mika           (all; blank = every Agent)
  *   - **depth:** none | seed | full     (behaviours, tools; blank = seed)
  *   - **serves:** write-it-down         (tools; blank = Other tools)
+ *   - **mandate:** reach                (behaviours: a mandate value; the title is the value)
  *   - **order:** 40
  *
  *   <the full text>
@@ -35,6 +36,10 @@ export interface CatalogFile {
   when: string[];
   depth: Depth;
   serves: string[];
+  /** The mandate axis this behaviour is a value of (§4): reach, recruit, output; '' if none. */
+  mandate: string;
+  /** Its value on that axis: the title, lower-cased ('Propose agents' → 'propose agents'). */
+  value: string;
   order: number;
   /** The full text: everything after the header. */
   body: string;
@@ -61,6 +66,7 @@ export function parseCatalogFile(kind: CatalogKind, name: string, text: string):
   const get = (key: string): string => entryValue(header, key);
   const depth = get('depth').toLowerCase();
   const order = Number(get('order'));
+  const axis = kind === 'behaviours' ? get('mandate').toLowerCase() : '';
   return {
     kind,
     name,
@@ -70,6 +76,8 @@ export function parseCatalogFile(kind: CatalogKind, name: string, text: string):
     when: list(get('when')),
     depth: kind === 'facts' ? 'full' : (DEPTHS as readonly string[]).includes(depth) ? depth as Depth : 'seed',
     serves: kind === 'tools' ? list(get('serves')) : [],
+    mandate: axis,
+    value: axis ? title.toLowerCase() : '',
     order: Number.isFinite(order) && get('order') !== '' ? order : Number.MAX_SAFE_INTEGER,
     body: lines.slice(at).join('\n').trim(),
   };

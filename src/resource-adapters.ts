@@ -164,9 +164,6 @@ export async function listIntegrations(): Promise<IntegrationRow[]> {
   }));
 }
 
-const REACH = ['open', 'discuss', 'plan', 'execute'];
-const RECRUIT = ['open', 'nobody', 'propose agents', 'staff agents'];
-const OUTPUT = ['open', 'a plan', 'ideas', 'code', 'an artifact', 'the team', 'no code'];
 const TEMPLATE_KINDS = ['coding', 'work', 'personal', 'household', 'social', 'school'];
 
 export interface TemplateMandate { reach: string; recruit: string; output: string[] }
@@ -197,9 +194,9 @@ export interface TeamTemplateRow extends TemplateBox {
 }
 
 export function templateMandate(value: string): TemplateMandate | null {
-  const [reach, recruit, outputText] = value.split('·').map((part) => part.trim());
+  const [reach, recruit, outputText] = value.split('·').map((part) => part.trim().toLowerCase());
   const output = outputText?.split(',').map((part) => part.trim()).filter(Boolean) ?? [];
-  if (!REACH.includes(reach) || !RECRUIT.includes(recruit) || !output.length || output.some((part) => !OUTPUT.includes(part))) return null;
+  if (!reach || !recruit || !output.length) return null;
   return { reach, recruit, output };
 }
 

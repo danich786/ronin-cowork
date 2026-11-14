@@ -8,8 +8,7 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { refreshAllBriefs } from '../agent-configuration.js';
 import { BIRTH_BRIEF } from '../birth-brief.js';
-import { briefLayers } from '../brief-build.js';
-import { briefTold, cascade, layerOf, readUserLayer, userBriefFile, type Layer, type LayerName } from '../brief-settings.js';
+import { briefOff, briefTold, cascade, layerOf, readUserLayer, userBriefFile, type Layer, type LayerName } from '../brief-settings.js';
 import { BehaviourDocumentError, createBehaviourDocument, readBehaviourDocument, updateBehaviourDocument } from '../behaviour-documents.js';
 import { initialCampaignId } from '../campaign-scope.js';
 import { listCampaigns, readCampaign, writeCampaign } from '../campaigns.js';
@@ -120,7 +119,8 @@ export function registerBrief(app: express.Express): void {
       const catalog = await readCatalogs();
       res.json([...catalog.facts, ...catalog.behaviours, ...catalog.tools].map((row) => ({
         kind: row.kind.replace(/s$/, ''), name: row.name, title: row.title, seed: row.seed, line: row.line,
-        depth: row.depth, when: row.when, serves: row.serves, path: row.file, origin: row.origin,
+        depth: row.depth, when: row.when, serves: row.serves, mandate: row.mandate, value: row.value,
+        order: row.order === Number.MAX_SAFE_INTEGER ? null : row.order, path: row.file, origin: row.origin,
       })));
     } catch (e) { res.status(500).json({ error: errMsg(e) }); }
   });
@@ -175,10 +175,11 @@ export function registerBrief(app: express.Express): void {
       if (who) form.person = who;
       const facts = await resolveFacts(form, new Set());
       const composed = await resolveBriefFor(form, facts);
-      if (!composed) return res.json({ in_play: [], integrations: {}, pm: { on: false } });
-      const layers = await briefLayers(facts, layerOf('agent', form));
-      const on = cascade(layers);
-      res.json({ in_play: briefTold(composed.resolved), integrations: on.integrations, pm: on.pm });
+      if (!composed) return res.json({ in_play: [], integrations: {}, pm: { on: false }, off: [] });
+      res.json({
+        in_play: briefTold(composed.resolved), integrations: composed.cascade.integrations, pm: composed.cascade.pm,
+        off: briefOff(await readCatalogs(), composed.layers),
+      });
     } catch (e) { res.status(400).json({ error: errMsg(e) }); }
   });
 

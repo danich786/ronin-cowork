@@ -1,6 +1,8 @@
-export type Reach = 'open' | 'discuss' | 'plan' | 'execute';
-export type Recruit = 'open' | 'nobody' | 'propose agents' | 'staff agents';
-export type Output = 'open' | 'a plan' | 'ideas' | 'code' | 'an artifact' | 'the team' | 'no code';
+/** A mandate value is the title of a behaviour file with that `mandate:` axis (BRIEF_MODEL §4).
+ * No list of values lives here: any value is taken; a record that states none gets the fallback. */
+export type Reach = string;
+export type Recruit = string;
+export type Output = string;
 export type LaunchMode = 'configured' | 'live_dangerously';
 export interface Mandate { reach: Reach; recruit: Recruit; output: Output[] }
 
@@ -22,11 +24,12 @@ const text = (value: unknown, max = 120): string =>
 const oneOf = <T extends string>(value: unknown, choices: readonly T[], fallback: T): T =>
   choices.includes(value as T) ? value as T : fallback;
 
+const word = (value: unknown, fallback: string): string => text(value).toLowerCase() || fallback;
+
 const outputs = (value: unknown): Output[] => {
   const values = Array.isArray(value) ? value : value === undefined ? [] : [value];
-  const valid = values.filter((entry): entry is Output =>
-    ['open', 'a plan', 'ideas', 'code', 'an artifact', 'the team', 'no code'].includes(entry as Output));
-  return valid.length ? valid : ['open'];
+  const stated = [...new Set(values.map((entry) => text(entry).toLowerCase()).filter(Boolean))];
+  return stated.length ? stated : ['open'];
 };
 
 export function agentDefaults(value: unknown): AgentDefaults {
@@ -36,8 +39,8 @@ export function agentDefaults(value: unknown): AgentDefaults {
   return {
     provider: text(input.provider),
     model: text(input.model),
-    reach: oneOf(input.reach, ['open', 'discuss', 'plan', 'execute'], 'plan'),
-    recruit: oneOf(input.recruit, ['open', 'nobody', 'propose agents', 'staff agents'], 'propose agents'),
+    reach: word(input.reach, 'plan'),
+    recruit: word(input.recruit, 'propose agents'),
     output: outputs(input.output),
     launch_mode: oneOf(input.launch_mode, ['configured', 'live_dangerously'], 'configured'),
   };

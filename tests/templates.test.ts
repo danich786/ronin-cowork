@@ -78,10 +78,11 @@ test('a cast parses from the section format, row keys never leaking top-level', 
   assert.deepEqual(parseTemplateAgents('# Box\n- **objective:** o\n'), [], 'no agents heading, no rows');
 });
 
-test('the mandate grammar admits only the ruled values', () => {
+test('the mandate grammar: reach · recruit · outputs, any values, all three stated', () => {
   assert.deepEqual(templateMandate('open · nobody · the team'), { reach: 'open', recruit: 'nobody', output: ['the team'] });
   assert.deepEqual(templateMandate('execute · nobody · code, no code'), { reach: 'execute', recruit: 'nobody', output: ['code', 'no code'] });
-  for (const bad of ['run · nobody · code', 'execute · staff · code', 'execute · staff agents', 'execute · staff agents · loot']) {
+  assert.deepEqual(templateMandate('Review · staff · loot'), { reach: 'review', recruit: 'staff', output: ['loot'] });
+  for (const bad of ['execute · staff agents', 'execute ·  · code', '']) {
     assert.equal(templateMandate(bad), null, bad);
   }
 });

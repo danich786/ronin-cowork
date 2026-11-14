@@ -104,6 +104,8 @@ export interface InPlay {
 
 export interface Resolved {
   facts: InPlay[];
+  /** The mandate values the Agent holds (§4): orders, printed in their own section. */
+  mandates: InPlay[];
   /** Behaviours in play, each with the tools that serve it (a tool under its first behaviour only). */
   behaviours: Array<InPlay & { tools: InPlay[] }>;
   /** Tools in play that serve no behaviour in play. */
@@ -111,6 +113,8 @@ export interface Resolved {
 }
 
 const RANK: Record<Depth, number> = { none: 0, seed: 1, full: 2 };
+/** Mandates print axis by axis, as the mandate fact does; a new axis after these. */
+const axis = (row: InPlay): number => { const at = ['reach', 'recruit', 'output'].indexOf(row.file.mandate); return at < 0 ? 3 : at; };
 
 /** What this Agent is told: the catalog over the record and the layers, §6's order. */
 export function resolveBrief(catalog: Catalog, record: BriefRecord, layers: readonly Layer[]): Resolved {
@@ -123,10 +127,16 @@ export function resolveBrief(catalog: Catalog, record: BriefRecord, layers: read
     if (was && RANK[was.depth] >= RANK[depth]) return;
     told.set(file.name, { kind: file.kind, name: file.name, title: file.title, depth, why: was ? was.why : why, file });
   };
-  // 1. Each header. A tool that serves a behaviour comes with it (below), not on its own.
+  // 1. Each header. A tool that serves a behaviour comes with it (below), not on its own; a
+  // mandate value is in play only for the Agent that holds it.
+  const holds = (file: CatalogFile): boolean => {
+    const held = (record.agent as unknown as Record<string, unknown>)[file.mandate];
+    return Array.isArray(held) ? held.includes(file.value) : held === file.value;
+  };
   for (const file of all.values()) {
     if (file.kind === 'tools' && file.serves.length) continue;
-    if (whenHolds(file.when, record)) put(file, file.depth, file.when);
+    if (file.mandate && !holds(file)) continue;
+    if (whenHolds(file.when, record)) put(file, file.depth, file.mandate ? [`${file.mandate}:${file.value}`, ...file.when] : file.when);
   }
   // 2. Add, from every layer.
   for (const layer of layers) for (const add of layer.brief.add) {
@@ -145,7 +155,7 @@ export function resolveBrief(catalog: Catalog, record: BriefRecord, layers: read
   const blocked = new Set(layers.flatMap((layer) => layer.brief.block));
   const screens = layers.filter((layer) => layer.brief.only.length).map((layer) => new Set(layer.brief.only));
   const byOrder = (a: InPlay, b: InPlay): number => a.file.order - b.file.order || a.title.localeCompare(b.title);
-  const behaviours = [...told.values()].filter((row) => row.kind === 'behaviours').sort(byOrder).map((row) => ({ ...row, tools: [] as InPlay[] }));
+  const behaviours = [...told.values()].filter((row) => row.kind === 'behaviours' && !row.file.mandate).sort(byOrder).map((row) => ({ ...row, tools: [] as InPlay[] }));
   const placed = new Set<string>();
   for (const tool of catalog.tools) {
     if (!tool.serves.length || blocked.has(tool.name) || told.has(tool.name)) continue;
@@ -161,12 +171,22 @@ export function resolveBrief(catalog: Catalog, record: BriefRecord, layers: read
   }
   return {
     facts: [...told.values()].filter((row) => row.kind === 'facts').sort(byOrder),
+    mandates: [...told.values()].filter((row) => row.file.mandate).sort((a, b) => axis(a) - axis(b) || a.file.mandate.localeCompare(b.file.mandate) || byOrder(a, b)),
     behaviours,
     other: [...told.values()].filter((row) => placed.has(row.name)).sort(byOrder),
   };
 }
 
+/** The catalog files the layers take off: blocked by any, or left out by any screen. For the
+ * forms' menus (a blocked mandate value is off the menu, §4). */
+export function briefOff(catalog: Catalog, layers: readonly Layer[]): string[] {
+  const blocked = new Set(layers.flatMap((layer) => layer.brief.block));
+  const screens = layers.filter((layer) => layer.brief.only.length).map((layer) => new Set(layer.brief.only));
+  const names = new Set([...catalog.facts, ...catalog.behaviours, ...catalog.tools].map((file) => file.name));
+  return [...names].filter((name) => blocked.has(name) || screens.some((only) => !only.has(name)));
+}
+
 /** What a brief told, flat: name, kind, depth, why. For receipts and the preview. */
 export const briefTold = (r: Resolved): Array<Pick<InPlay, 'kind' | 'name' | 'title' | 'depth' | 'why'> & { path: string }> =>
-  [...r.facts, ...r.behaviours.flatMap((row) => [row, ...row.tools]), ...r.other]
+  [...r.facts, ...r.mandates, ...r.behaviours.flatMap((row) => [row, ...row.tools]), ...r.other]
     .map((row) => ({ kind: row.kind, name: row.name, title: row.title, depth: row.depth, why: row.why, path: row.file.file }));
