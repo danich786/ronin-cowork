@@ -59,6 +59,7 @@ One flat folder per object. The file name (no `.md`, kebab-case) is the id that 
 | `when:` | all | the conditionals (§4) that must all hold, comma-separated; `!` for not; blank = every Agent. A tool that serves a behaviour needs none: it is in play when its behaviour is |
 | `depth:` | behaviours, tools | `none`, `seed` or `full`: the stock depth. Layers may raise it (§6) |
 | `serves:` | tools | the behaviour ids it serves. Blank: it goes under Other tools |
+| `mandate:` | behaviours | the mandate axis this file is a value of: `reach`, `recruit` or `output`; the title is the value |
 | `order:` | all | its place in its section, lower first |
 
 Header lines run from the title to the first blank line. An unknown field is ignored; an
@@ -96,7 +97,15 @@ They read values on the work record (§5).
 | `desk` · `checkout` | a desk is cut, a repository is checked out |
 | `workspace:<name>` | born in that Workspace |
 
-The mandate is told (a fact), never a `when:`. A tool may say in its seed which mandate it
+**Mandate values are files.** Each Reach, Recruit and Output value is a behaviour with
+`mandate: <axis>` (`reach-plan.md`, `# plan`). The New Agent and New Team forms list the files of
+each axis, in `order:`; no list of values is kept by hand. Choosing a value brings its file into
+play at its depth. A mandate file is an order, not how-to ("Plan; don't build."), and prints in
+the brief's Mandate section, never among the behaviours. A value is added by adding its file
+(stock or the user's store); blocking it takes it off the menu; a screen narrows the menu. The
+Mandate fact still prints the values.
+
+The mandate is never a `when:`. A tool may say in its seed which mandate it
 rides ("`session_create` rides Recruit: staff agents"); an Agent with Recruit `nobody` still
 sees it and decides.
 
@@ -190,6 +199,9 @@ bottom:
 - Mandate: …
 - Task: …
 
+## Mandate
+- <the order for each chosen value>
+
 ## Behaviours
 
 ### <behaviour>
@@ -205,7 +217,7 @@ Every tool is a command on your PATH; `<tool> --help` gives its syntax.
 — end of packet for <name> —
 ```
 
-- Facts, then the behaviours in play (full text or seed, by `order:`), each with its tools,
+- Facts, then the Mandate orders, then the behaviours in play (full text or seed, by `order:`), each with its tools,
   then Other tools, the one `--help` line and the end line.
 - **One read.** Every supported provider caps one file read, so the brief is held to 30,000
   bytes and 380 lines (`src/birth-brief.ts`); a test compiles the fullest stock brief and
@@ -238,7 +250,8 @@ Every tool is a command on your PATH; `<tool> --help` gives its syntax.
 ```
 facts/       you, user, user-about, user-intro, people (hosted), ronin, workspace,
              integrations, team (team), mandate (cowork), model, work, task
-behaviours/  base-agent (full) · cowork-agent, mandates, write-it-down (cowork, full)
+behaviours/  base-agent (full) · cowork-agent, write-it-down (cowork, full)
+             reach-*, recruit-*, output-* (mandate: one file per value)
              team-lead, planning (lead) · lead-worktrees (lead, desk)
              project-management (pm, full) · pm-coworker · pm-lead · pm-epic-lead ·
              pm-traffic-control (pm, by role, full)
@@ -263,8 +276,8 @@ not tools (`ronin-url`, `ronin-http.sh`, `tool-path.sh`) get no file
   **composite tool** coordinates guarded operations under one contract and outcome, reusing
   their validation and audit evidence; it is still a tool.
 - **Behaviour**: provider-neutral guidance; it governs the work and any procedure around a tool.
-- **Fact**: a value, told; teaching what a value means is a behaviour (the Mandates behaviour
-  explains the Mandate fact).
+- **Fact**: a value, told; what a value asks of the Agent is a behaviour (each mandate value's
+  order).
 - **Skill**: provider-native adaptation or teaching inside a provider shell. It never holds a
   Ronin rule or authority alone; another provider gets its own form, from the same Ronin file.
 - **UI**: a client of the same tool and API contracts. None copies the choreography.
