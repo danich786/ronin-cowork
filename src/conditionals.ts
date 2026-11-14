@@ -4,6 +4,13 @@
  */
 import type { BriefRecord } from './brief-record.js';
 
+/** Every conditional word §4 knows; `<x>` marks a value the word takes. */
+export const CONDITIONALS = [
+  'cowork', 'bare', 'mika', 'owner', 'member', 'new-owner', 'experience:<x>', 'account:<x>', 'hosted',
+  'service:<part>', 'integration:<name>', 'pm', 'team', 'lead', 'role:coworker', 'role:lead', 'role:epic_lead',
+  'role:coordinator', 'desk', 'checkout', 'workspace:<name>',
+] as const;
+
 /** One conditional word, optionally `!`-negated. */
 export function conditionHolds(word: string, r: BriefRecord): boolean {
   const raw = word.trim();

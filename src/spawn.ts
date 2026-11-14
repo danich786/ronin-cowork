@@ -44,6 +44,8 @@ export interface SpawnForm {
   /** What only a draft knows (the New Agent preview); a launch works them out. */
   desk?: boolean;
   checkout?: boolean;
+  /** A preview's Workspace when it names no Team. */
+  workspace?: string;
   prompt?: string;
   name?: string;
   cmd?: string;
@@ -170,7 +172,9 @@ export async function resolveFacts(form: SpawnForm, taken: Set<string>, proposed
         ? proposedRoster
         : await readTeamRoster(form.team, campaignId) ?? await readTeamRoster(form.team, ''))
     : null;
-  const workspace: Workspace | null = roster?.workspace ? await readWorkspace(roster.campaign_id || campaignId, roster.workspace) : null;
+  // The Team's Workspace; a draft with no Team may name one (the New Agent and layer previews).
+  const workspaceName = roster?.workspace || (!roster ? form.workspace ?? '' : '');
+  const workspace: Workspace | null = workspaceName ? await readWorkspace(roster?.campaign_id || campaignId, workspaceName) : null;
   if (roster?.workspace && !workspace) throw new Error(`Team "${roster.name}" is launched in Workspace "${roster.workspace}", which does not exist.`);
   const profile = resolveHouseSeatProfile(form.house_seat, resolveLaunchProfile());
   const parentSeed = coworkAgent && campaign

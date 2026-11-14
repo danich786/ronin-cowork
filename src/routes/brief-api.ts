@@ -14,6 +14,8 @@ import { BehaviourDocumentError, createBehaviourDocument, readBehaviourDocument,
 import { initialCampaignId } from '../campaign-scope.js';
 import { readCampaign, writeCampaign } from '../campaigns.js';
 import { readCatalogs } from '../catalog.js';
+import { CONDITIONALS } from '../conditionals.js';
+import { listIntegrations } from '../resource-adapters.js';
 import { person } from '../office-people.js';
 import { sessionDir, sessionKey } from '../session-dir.js';
 import { resolveBriefFor, resolveFacts, type SpawnForm } from '../spawn.js';
@@ -101,6 +103,7 @@ function draftForm(body: Record<string, unknown>): SpawnForm {
     name: String(body.name ?? '').trim() || 'new_agent',
     campaign_id: String(body.campaign_id ?? body.campaign ?? '').trim() || undefined,
     team: String(body.team ?? '').trim() || undefined,
+    workspace: String(body.workspace ?? '').trim() || undefined,
     team_lead: role === 'lead',
     role,
     template: typeof body.template === 'string' ? body.template : undefined,
@@ -120,6 +123,14 @@ export function registerBrief(app: express.Express): void {
         kind: row.kind.replace(/s$/, ''), name: row.name, title: row.title, seed: row.seed, line: row.line,
         depth: row.depth, when: row.when, serves: row.serves, path: row.file, origin: row.origin,
       })));
+    } catch (e) { res.status(500).json({ error: errMsg(e) }); }
+  });
+
+  // The conditional words, for the `when:` picker: §4's, and one integration:<name> per integration.
+  app.get('/api/brief/conditionals', async (_req, res) => {
+    try {
+      const integrations = (await listIntegrations()).map((row) => `integration:${row.name}`);
+      res.json([...CONDITIONALS.filter((word) => word !== 'integration:<name>'), ...integrations]);
     } catch (e) { res.status(500).json({ error: errMsg(e) }); }
   });
 
@@ -178,11 +189,17 @@ export function registerBrief(app: express.Express): void {
   app.post('/api/brief/files', async (req, res) => {
     try {
       const body = (req.body ?? {}) as Record<string, unknown>;
-      res.status(201).json(await createBehaviourDocument({ name: body.name, text: body.text, shadow: body.shadow, scope: body.kind ?? body.scope }));
+      const made = await createBehaviourDocument({ name: body.name, text: body.text, shadow: body.shadow, scope: body.kind ?? body.scope });
+      void refreshAllBriefs().catch(() => {});
+      res.status(201).json(made);
     } catch (e) { res.status(e instanceof BehaviourDocumentError ? e.status : 500).json({ error: errMsg(e) }); }
   });
   app.put('/api/brief/files/:kind/:name', async (req, res) => {
-    try { res.json(await updateBehaviourDocument({ ...req.body, scope: req.params.kind, name: req.params.name })); }
+    try {
+      const saved = await updateBehaviourDocument({ ...req.body, scope: req.params.kind, name: req.params.name });
+      void refreshAllBriefs().catch(() => {});
+      res.json(saved);
+    }
     catch (e) { res.status(e instanceof BehaviourDocumentError ? e.status : 500).json({ error: errMsg(e) }); }
   });
 }

@@ -91,6 +91,12 @@ test('a Team Agent starts in Ronin house, its brief naming the repositories and 
   assert.ok(!resolved.composed!.resolved.behaviours.some((row) => row.name === 'working-at-a-desk'), 'so no desk teaching at birth');
 });
 
+test('a draft with no Team may name its Workspace (the layer preview)', async () => {
+  const resolved = await resolveForm({ workspace: 'papers_ws', prompt: 'Preview.' }, new Set());
+  assert.equal(resolved.composed!.record.setting.workspace, 'papers_ws');
+  assert.match(resolved.composed!.record.work.repo_lines, /worktree-desk open cowork/);
+});
+
 test('an Agent without a Team has no Workspace and starts in Ronin house', async () => {
   const resolved = await resolveForm({ prompt: 'Read the papers.' }, new Set());
   assert.equal(resolved.workspace, '');
