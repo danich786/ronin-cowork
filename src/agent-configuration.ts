@@ -41,8 +41,9 @@ export async function callerUser(name: string): Promise<Person | null> {
 
 const snapshotFile = (dir: string): string => path.join(dir, 'brief-told.json');
 
-export async function readSnapshotAt(dir: string): Promise<BriefSnapshot | null> {
-  try { return JSON.parse(await readFile(snapshotFile(dir), 'utf8')) as BriefSnapshot; } catch { return null; }
+/** What the Agent was told, written at launch beside its packet. */
+export async function readSnapshotAt(dir: string): Promise<BriefSnapshot> {
+  return JSON.parse(await readFile(snapshotFile(dir), 'utf8')) as BriefSnapshot;
 }
 
 export async function writeSnapshotAt(dir: string, composed: ComposedBrief): Promise<void> {
@@ -87,7 +88,7 @@ export async function currentBrief(name: string): Promise<{ dir: string; compose
 /** Whether an Agent works under project management: its brief told it the item model
  * (docs/architecture/brief.md, Layers and brief settings). An Agent with no readable record is not under it. */
 export async function projectManagementOn(name: string): Promise<boolean> {
-  try { return !!(await readSnapshotAt(sessionDir(await sessionKey(name))))?.told['project-management']; } catch { return false; }
+  try { return !!(await readSnapshotAt(sessionDir(await sessionKey(name)))).told['project-management']; } catch { return false; }
 }
 
 /** What the brief carries now, each with why; `since_birth` marks what birth did not tell. */
@@ -103,7 +104,7 @@ export async function configurationSends(name: string) {
  */
 export async function refreshBrief(name: string): Promise<{ brief: string; sent: boolean }> {
   const { dir, composed } = await currentBrief(name);
-  const before = await readSnapshotAt(dir) ?? { facts: {}, told: {} };
+  const before = await readSnapshotAt(dir);
   const changes = briefChanges(before, composed.resolved, composed.record);
   const brief = await writeBriefPacketAt(dir, composed.text, name);
   await writeSnapshotAt(dir, composed);

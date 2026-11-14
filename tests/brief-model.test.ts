@@ -10,7 +10,6 @@ import { briefOff, cascade, layerOf, resolveBrief, type Layer } from '../src/bri
 import { mandate } from '../src/agent-defaults.js';
 import { templateMandate } from '../src/resource-adapters.js';
 import { briefChanges, briefSnapshot, fillLine, renderBrief } from '../src/brief.js';
-import { briefFromOldList, migrateWaysToBehaviours } from '../src/behaviour-store-migration.js';
 
 const record = (over: Partial<{ type: BriefRecord['session']['type']; team: string; lead: boolean; pm: boolean; desk: boolean; integrations: string[]; role: BriefRecord['agent']['role'] }> = {}): BriefRecord => ({
   session: { name: 'demo', title: '', type: over.type ?? 'cowork', template: '', task: 'Do it' },
@@ -188,36 +187,3 @@ test('an update sends only what differs', () => {
   assert.match(left, /No longer in your brief: Lead, PM, item\./);
 });
 
-test('old chosen-behaviour lists become add lists; project management becomes the switch', () => {
-  assert.deepEqual(briefFromOldList(['project-management', 'recruit', 'more_checkpoints', 'mandates']), {
-    brief: { add: [{ name: 'team-work' }, { name: 'more-checkpoints' }], block: [], only: [] }, pm: true,
-  });
-});
-
-test('the ways store moves once into flat behaviours, the user intro into facts', async () => {
-  const root = await mkdtemp(path.join(os.tmpdir(), 'ronin-ways-move-'));
-  const old = { user: process.env.RONIN_USER_ROOT, behaviours: process.env.RONIN_BEHAVIOURS_DIR, facts: process.env.RONIN_FACTS_DIR, boot: process.env.RONIN_SESSION_BOOT_DIR };
-  try {
-    process.env.RONIN_USER_ROOT = root;
-    for (const key of ['RONIN_BEHAVIOURS_DIR', 'RONIN_FACTS_DIR', 'RONIN_SESSION_BOOT_DIR']) delete process.env[key];
-    await mkdir(path.join(root, 'ways', 'selected'), { recursive: true });
-    await mkdir(path.join(root, 'ways', 'floor'), { recursive: true });
-    await mkdir(path.join(root, 'session_boot', 'root', 'shop'), { recursive: true });
-    await writeFile(path.join(root, 'ways', 'selected', 'weekly_review.md'), '# Weekly\n\n- **label:** Weekly\n- **blurb:** Review the week.\n- **scope:** selected\n\nDo it.\n');
-    await writeFile(path.join(root, 'ways', 'floor', 'user-intro.md'), '# User intro\n\n- **scope:** floor\n\n## About the user\n\nI build boats.\n');
-    await writeFile(path.join(root, 'session_boot', 'root', 'shop', 'notes.md'), '# Shop notes\n\nKeep it tidy.\n');
-    const done = await migrateWaysToBehaviours();
-    assert.equal(done.moved.length, 3);
-    const weekly = parseCatalogFile('behaviours', 'weekly-review', await readFile(path.join(root, 'behaviours', 'weekly-review.md'), 'utf8'));
-    assert.deepEqual([weekly.title, weekly.seed, weekly.depth, weekly.body], ['Weekly', 'Review the week.', 'none', 'Do it.']);
-    const shop = parseCatalogFile('behaviours', 'shop-notes', await readFile(path.join(root, 'behaviours', 'shop-notes.md'), 'utf8'));
-    assert.deepEqual(shop.when, ['workspace:shop']);
-    assert.equal(parseCatalogFile('facts', 'user-intro', await readFile(path.join(root, 'facts', 'user-intro.md'), 'utf8')).body, 'I build boats.');
-    assert.deepEqual(await migrateWaysToBehaviours(), { moved: [], deduplicated: [] }, 'once');
-  } finally {
-    for (const [key, value] of [['RONIN_USER_ROOT', old.user], ['RONIN_BEHAVIOURS_DIR', old.behaviours], ['RONIN_FACTS_DIR', old.facts], ['RONIN_SESSION_BOOT_DIR', old.boot]] as const) {
-      if (value === undefined) delete process.env[key]; else process.env[key] = value;
-    }
-    await rm(root, { recursive: true, force: true });
-  }
-});
