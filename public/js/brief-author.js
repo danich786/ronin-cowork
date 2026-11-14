@@ -67,7 +67,7 @@ function depths() {
  * `onDone(key)` after a save, with the `scope:name` to select; `onCancel()`.
  */
 export function createAuthorForm({ mode = 'behaviour', existing = null, catalog = [], conditionals = [], onDone = () => {}, onCancel = () => {} } = {}) {
-  const { createField, createAction } = WorkspaceKit.primitives;
+  const { createField, createAction, createActionBar } = WorkspaceKit.primitives;
   const root = el('div', 'bh-editor brief-author');
   const parsed = parseFile(existing?.text || '');
   const asks = [];
@@ -126,16 +126,19 @@ export function createAuthorForm({ mode = 'behaviour', existing = null, catalog 
       const job = field(row, t('author.seed_tool', 'Its one job'), input('', t('author.seed_tool_help', 'Its one job, in one line.')));
       toolsHost.append(row); tools.push({ command, job });
     };
-    const more = createAction({ label: t('author.add_tool', 'Add a tool'), size: 'compact', action: addTool });
+    const more = createAction({ label: t('author.add_tool', 'Add a tool'), action: addTool });
     addTool();
-    root.append(toolsHost, more.el);
+    const moreBar = createActionBar({ label: t('author.bridge_tools', 'Its tools') });
+    moreBar.el.append(more.el);
+    root.append(toolsHost, moreBar.el);
   }
 
   const status = el('p', 'bh-status'); status.setAttribute('role', 'status');
   const saveLabel = !existing ? t('author.create', 'Create') : existing.origin === 'user' ? t('forms.save', 'Save') : t('behaviours.save_mine', 'Save my version');
-  const save = createAction({ label: saveLabel, size: 'compact', kind: 'primary', endsEdit: true, action: () => doSave() });
-  const cancel = createAction({ label: t('forms.cancel', 'Cancel'), size: 'compact', endsEdit: true, action: () => onCancel() });
-  const actions = el('div', 'bh-actions'); actions.append(save.el, cancel.el, status);
+  // The Agent step's own actions: the kit's action bar, standard height, the save primary.
+  const save = createAction({ label: saveLabel, kind: 'primary', endsEdit: true, action: () => doSave() });
+  const cancel = createAction({ label: t('forms.cancel', 'Cancel'), endsEdit: true, action: () => onCancel() });
+  const actions = createActionBar({ label: t('author.actions', 'Save or cancel'), className: 'ntf-actions' }).el; actions.append(save.el, cancel.el, status);
   root.append(actions);
 
   const shape = () => ({
