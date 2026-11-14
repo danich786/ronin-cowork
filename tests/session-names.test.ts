@@ -67,7 +67,7 @@ test('the retired session command files do not exist and no shipped surface name
   assert.deepEqual(offenders, [], 'a retired name survives in a shipped file');
 });
 
-test('the catalog rows and the help of the family agree on the names', async () => {
-  const catalog = await readFile(path.join(root, 'ronin_catalogs', 'TOOLS.md'), 'utf8');
-  for (const name of [...FAMILY, ...LIFECYCLE]) assert.match(catalog, new RegExp(`^\\| \`${name}\` \\|`, 'm'), `${name} has a TOOLS.md row`);
+test('the tool file and the help of the family agree on the names', async () => {
+  const catalog = await readFile(path.join(root, 'ronin_catalogs', 'tools', 'agent-session.md'), 'utf8');
+  for (const name of [...FAMILY, ...LIFECYCLE]) assert.match(catalog, new RegExp(`\`${name}\``), `${name} is in the agent-session tool file`);
 });

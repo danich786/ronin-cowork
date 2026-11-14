@@ -21,7 +21,22 @@ import { storeDir } from './resources.js';
 import { readOfficeRecord } from './office-record.js';
 import { watchStore } from './ws/events.js';
 
-export interface Person { email: string; role: string | null; name?: string; organization?: string }
+/** The Lounge's "About you" keys (Shiwake w570), each optional; the keys only grow. */
+export interface PersonFacts {
+  name?: string; organization?: string;
+  first_name?: string; last_name?: string; nickname?: string; job_title?: string;
+  /** IANA, e.g. Europe/London. */
+  time_zone?: string; language?: string;
+  /** coding, planning, launching, research, writing, marketing, operations, data, other. */
+  planned_use?: string[]; planned_use_other?: string;
+  /** non_technical, some, developer. */
+  technical_level?: string;
+  /** new, some, daily. */
+  ai_experience?: string;
+  /** Up to 500 characters, the person's own words. */
+  about?: string;
+}
+export interface Person extends PersonFacts { email: string; role: string | null }
 type Details = Omit<Person, 'email'>;
 
 export const membersFile = (): string => path.join(storeDir('office_unit'), 'members.json');
@@ -29,8 +44,9 @@ export const membersFile = (): string => path.join(storeDir('office_unit'), 'mem
 let hosted = false;
 let members = new Map<string, Details>();
 
-const fact = (v: unknown): string | undefined =>
-  typeof v === 'string' && v.replace(/[\r\n\t]/g, ' ').trim() ? v.replace(/[\r\n\t]/g, ' ').trim().slice(0, 120) : undefined;
+const fact = (v: unknown, max = 120): string | undefined =>
+  typeof v === 'string' && v.replace(/[\r\n\t]/g, ' ').trim() ? v.replace(/[\r\n\t]/g, ' ').trim().slice(0, max) : undefined;
+const TEXT_KEYS = ['name', 'organization', 'first_name', 'last_name', 'nickname', 'job_title', 'time_zone', 'language', 'planned_use_other', 'technical_level', 'ai_experience'] as const;
 
 /** members.json's people by email; a file that is absent or will not read is nobody. */
 export async function loadMembers(): Promise<void> {
@@ -38,12 +54,15 @@ export async function loadMembers(): Promise<void> {
   try {
     const raw = JSON.parse(await fs.readFile(membersFile(), 'utf8')) as { members?: unknown };
     for (const m of Array.isArray(raw?.members) ? raw.members : []) {
-      const { email, role, name, organization } = (m ?? {}) as Record<string, unknown>;
+      const entry = (m ?? {}) as Record<string, unknown>;
+      const { email, role } = entry;
       if (typeof email !== 'string' || typeof role !== 'string') continue;
       const d: Details = { role };
-      const n = fact(name), o = fact(organization);
-      if (n) d.name = n;
-      if (o) d.organization = o;
+      for (const key of TEXT_KEYS) { const v = fact(entry[key]); if (v) d[key] = v; }
+      const about = fact(entry.about, 500);
+      if (about) d.about = about;
+      const uses = (Array.isArray(entry.planned_use) ? entry.planned_use : [entry.planned_use]).map((v) => fact(v, 32)).filter((v): v is string => !!v);
+      if (uses.length) d.planned_use = uses;
       next.set(email.trim().toLowerCase(), d);
     }
   } catch (e) {
@@ -74,3 +93,20 @@ export const roleOf = (email: string): string | null => members.get(email)?.role
 /** How a person is named to an Agent: "Ann Lee <a@x.com>, owner, X Ltd"; name, role, organization only when known. */
 export const personLabel = (p: Person): string =>
   [p.name ? `${p.name} <${p.email}>` : p.email, p.role, p.organization].filter(Boolean).join(', ');
+
+/** What an Agent calls a person: nickname, else first name, else name, else email. */
+export const callName = (p: Person): string => p.nickname || p.first_name || p.name || p.email;
+
+/** One person by email, with what the Lounge holds; null when not in the office. */
+export const personByEmail = (email: string): Person | null => {
+  const d = members.get(email.trim().toLowerCase());
+  return d ? { email: email.trim().toLowerCase(), ...d } : null;
+};
+
+/** The office's whole list, for the brief's facts (wip/BRIEF_MODEL.md §5); empty self-hosted. */
+export const officePeople = (): Person[] => hosted
+  ? [...members].map(([email, details]) => ({ email, ...details }))
+  : [];
+
+/** Whether this Ronin is an office on an office park. */
+export const isHostedOffice = (): boolean => hosted;

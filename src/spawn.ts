@@ -2,41 +2,26 @@ import { mkdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { resolveLaunchCommand, sessionsFor, type SessionsDefaults } from './launch-command.js';
 import { REPO_ROOT } from './resources.js';
-import { WORDS_READING, bootFiles, cachedReading, declaredFiles, ensureShelf } from './birth-brief.js';
 import { listProjectRoots, USER_PROJECT_ROOTS_MD, type ProjectRootInfo } from './project-roots.js';
 import { listSessionLaunchSpecs } from './model-providers.js';
 import { agentSpec } from './agents.js';
 import { readAgentsSection, readSetupSection } from './machine-state.js';
 import { offAt, readProviderSummary } from './provider-summary.js';
 import { storeDir } from './resources.js';
-import { contributionReading, listBehaviours, listInstallations } from './resource-adapters.js';
-import { isCreatableTeamName as isTeamName, listTeamRosters, readTeamRoster, teamRosterFile, type TeamRoster } from './team-rosters.js';
+import { listInstallations } from './resource-adapters.js';
+import { isCreatableTeamName as isTeamName, readTeamRoster, teamRosterFile, type TeamRoster } from './team-rosters.js';
 import { resolveLaunchProfile, type LaunchProfile, type StatedBy } from './launch-profile.js';
 import { readCampaign } from './campaigns.js';
 import { readWorkspace, roninHouse, type Workspace } from './workspaces.js';
 import { arrangementOf, desksManaged } from './desks/arrangement.js';
 import { mandate, type LaunchMode, type Mandate } from './agent-defaults.js';
-import { availableBehaviours, resolveContributions, type ResolvedContribution } from './instruction-cascade.js';
 import { resolveInstallations, type ResolvedInstallation } from './installations.js';
 import { initialCampaignId } from './campaign-scope.js';
 import { resolveLaunchSeed } from './launch-seed.js';
-import {
-  renderSoughtOverview,
-  resolveBehaviourBooks,
-  resolveConditionalBehaviours,
-  resolveFloorBehaviours,
-  resolveSoughtBehaviours,
-  type DeliveredBehaviour,
-} from './behaviours.js';
 import { templateProvenance } from './template-provenance.js';
 import { profileDir, resolveHouseSeatProfile, type HouseSeat } from './house-seats.js';
-import { renderCapabilitiesOverview, resolveCapabilities, type ResolvedCapability } from './capabilities.js';
-
-const CORE_CONTRIBUTION: ResolvedContribution = {
-  name: 'cowork_agent', origin: 'stock', shadowed: false, label: 'Cowork Agent', blurb: '',
-  reading: [], reading_off: [],
-  parts: [], enabled: true, stated_by: 'conditional', required_by: [],
-};
+import { agentBriefOf, composeBrief, type ComposedBrief } from './brief-build.js';
+import type { BriefSettings } from './brief-record.js';
 
 export interface SpawnForm {
   session_type?: 'cowork_agent' | 'bare_metal_agent' | 'terminal';
@@ -49,7 +34,18 @@ export interface SpawnForm {
   mandate?: Partial<Mandate>;
   campaign_id?: string;
   kind?: string;
-  behaviours?: string[]; template?: string; // preset is validated provenance only, never reapplied
+  template?: string; // preset is validated provenance only, never reapplied
+  /** The Agent's own brief settings, integrations and project management (wip/BRIEF_MODEL.md §6). */
+  brief?: BriefSettings;
+  integrations?: string[];
+  pm?: boolean;
+  /** In a hosted office, the person launching (src/office-people.ts). */
+  person?: Omit<import('./office-people.js').Person, 'email'> & { email?: string };
+  /** What only a draft knows (the New Agent preview); a launch works them out. */
+  desk?: boolean;
+  checkout?: boolean;
+  /** A preview's Workspace when it names no Team. */
+  workspace?: string;
   prompt?: string;
   name?: string;
   cmd?: string;
@@ -84,15 +80,11 @@ export interface Resolved {
   team_branch: string;
   team_wipeboard: string;
   team_state: '' | 'active' | 'archived';
-  birth_reading: string[];
-  behaviours: DeliveredBehaviour[];
+  /** The brief, composed: record, layers, what is in play, the packet text. */
+  composed: ComposedBrief | null;
   kind: string;
   ignored: string[];
-  undelivered: string[];
-  contributions: ResolvedContribution[];
   installations: ResolvedInstallation[];
-  /** Every capability document, selected or not, with the reason and the tools found. */
-  capabilities: ResolvedCapability[];
   stated_by: Record<string, StatedBy[]>;
 }
 
@@ -102,74 +94,17 @@ const ACK_RULE =
   'that is unclear or looks wrong. Quote the last line of the document you were told to read first — ' +
   'it names itself — so the owner can see the whole packet reached you. Then wait for the owner.';
 
-/** THE WORKSPACE SECTION of the birth brief (owner-approved wording, 2026-11-01): what the
- * Agent's project is and the places it works in. Agents read it; no tables. */
-export function renderWorkspaceSection(
-  workspace: Workspace,
-  repositories: { name: string; dir: string; note: string; managed: boolean }[],
-  folders: { name: string; dir: string; note: string }[],
-): string {
-  const lines = [`## Workspace — ${workspace.title || workspace.name}`];
-  if (workspace.objective) lines.push('', workspace.objective);
-  if (workspace.instructions) lines.push('', workspace.instructions);
-  if (repositories.length) {
-    lines.push('', 'Repositories, opened when your work needs one:');
-    for (const repo of repositories) {
-      const how = repo.managed ? `worktree: \`worktree-desk open ${repo.name}\`` : 'shared checkout';
-      lines.push(`- ${repo.name} ${repo.dir} — ${how}${repo.note ? ` (${repo.note})` : ''}`);
-    }
-  }
-  if (folders.length) {
-    lines.push('', 'Folders:');
-    for (const folder of folders) lines.push(`- ${folder.name} ${folder.dir}${folder.note ? ` — ${folder.note}` : ''}`);
-  }
-  return lines.join('\n');
-}
+/** The packet's place in the launch prompt until the packet is written (src/routes/launch.ts). */
+export const PACKET_PLACEHOLDER = 'Read first: <packet>.';
 
-export function buildBrief(
-  profile: LaunchProfile,
-  workspaceSection: string,
-  form: SpawnForm,
-  referenceDir?: string,
-  boot: string[] = [],
-  roster?: TeamRoster | null,
-  resolvedMandate: Mandate = mandate(form.mandate),
-): string {
+/**
+ * THE LAUNCH PROMPT (wip/BRIEF_MODEL.md §7): the read line, the task, and the acknowledgement
+ * rule where the launch profile asks for it. Team, mandate and Workspace are facts in the brief.
+ */
+export function buildBrief(profile: LaunchProfile, form: SpawnForm, referenceDir?: string): string {
   const parts: string[] = [];
   if (profile.posture.length) parts.push(`You are the ${profile.label}. ${profile.posture.join(' ')}`);
-  if (roster) {
-    const lines = [`Team: ${roster.name}`];
-    if (roster.objective) lines.push(`Objective: ${roster.objective}`);
-    lines.push(`Wipeboard: ${roster.wipeboard} (edges wipeboard ${roster.wipeboard})`);
-    parts.push(lines.join('\n'));
-  } else if (form.team) {
-    parts.push(
-      `You are born onto team "${form.team}" — a tag-only team: its members are the sessions carrying its tag ` +
-        `(edges team ${form.team}), it has no durable roster, and its wipeboard is "${form.team}" (edges wipeboard ${form.team}).`,
-    );
-  }
-  const birthTeams = [...new Set([form.team, ...(form.tags ?? [])].filter(Boolean))];
-  if (birthTeams.length) {
-    parts.push(`Team membership: ${birthTeams.join(', ')}. Run: edges wipeboard — it hands you whatever you have not read. Membership follows the team.`);
-  }
-  // THE LAUNCH CONTRACT, IN THE PROMPT. These are suggestions the Agent reads, never
-  // controls Ronin enforces. `open` means the owner stated no constraint, so silence is
-  // the honest rendering; only actual choices deserve prompt space. Output is plural by
-  // design. Leadership is a designation, not a mandate axis, and is named only when the
-  // Agent is actually born onto a team as its lead.
-  const mandateLines: string[] = [];
-  if (resolvedMandate.reach !== 'open') mandateLines.push(`Reach: ${resolvedMandate.reach}`);
-  if (resolvedMandate.recruit !== 'open') mandateLines.push(`Recruit: ${resolvedMandate.recruit}`);
-  const outputs = resolvedMandate.output.filter((value) => value !== 'open');
-  if (outputs.length) mandateLines.push(`Output: ${outputs.join(', ')}`);
-  const birthContract = [
-    ...(form.team && form.team_lead ? ['Designation: Team Lead'] : []),
-    ...mandateLines,
-  ];
-  if (birthContract.length) parts.push(birthContract.join('\n'));
-  if (workspaceSection) parts.push(workspaceSection);
-  const reading = [...boot, ...(form.seed ?? [])].filter(Boolean);
-  if (reading.length) parts.push(`Read first: ${reading.join(', ')}.`);
+  parts.push(PACKET_PLACEHOLDER);
   const prompt = form.prompt?.trim() ?? '';
   const opening = (profile.opening ?? '').replace(/\{prompt\}/g, prompt).trim();
   if (opening) parts.push(`Your task:\n${opening}`);
@@ -202,24 +137,6 @@ export function slugName(intentKind: string, prompt: string, taken: Set<string>)
   return `${base}-${Date.now().toString(36)}`;
 }
 
-async function bootReading(
-  projectRoot: string,
-  routineReading: string[] = [],
-  capabilitiesOverview?: string,
-  session = '',
-  soughtOverview?: string,
-): Promise<string[]> {
-  return bootFiles(projectRoot, routineReading, capabilitiesOverview, session, soughtOverview);
-}
-
-/** THE AGENT'S OWN MANDATE, in its Mandates page: the floor page teaches what each value
- * means; the packet copy adds the values this Agent holds, so a resent brief carries a change. */
-async function ownMandates(file: string, held: Mandate, session: string): Promise<string> {
-  const page = (await readFile(file, 'utf8')).trimEnd();
-  const yours = `**Yours:** Reach \`${held.reach}\` · Recruit \`${held.recruit}\` · Output \`${held.output.join('`, `')}\`.`;
-  return cachedReading('MANDATES.md', `${page}\n\n${yours}\n`, session);
-}
-
 /** The form's mandate, or the level above's when the form states none. */
 function resolveMandate(form: SpawnForm, facts: { coworkAgent: boolean; parentSeed?: { seeds: { reach: { value: unknown }; recruit: { value: unknown }; output: { value: unknown } } } | null }): Mandate {
   return facts.coworkAgent
@@ -239,12 +156,11 @@ export async function resolveFacts(form: SpawnForm, taken: Set<string>, proposed
   const coworkAgent = sessionType === 'cowork_agent';
   const bareMetalAgent = sessionType === 'bare_metal_agent';
   const campaignId = coworkAgent ? (form.campaign_id || await initialCampaignId()) : '';
-  const [roots, agentsSet, campaign, installationCatalog, behaviourCatalog] = await Promise.all([
+  const [roots, agentsSet, campaign, installationCatalog] = await Promise.all([
     listProjectRoots(),
     readAgentsSection(),
     coworkAgent ? readCampaign(campaignId) : null,
     listInstallations(),
-    listBehaviours(),
   ]);
   const launchSpecs = await listSessionLaunchSpecs(campaign?.providers ?? await readProviderSummary());
   const preset = await templateProvenance(coworkAgent ? form : {});
@@ -256,7 +172,9 @@ export async function resolveFacts(form: SpawnForm, taken: Set<string>, proposed
         ? proposedRoster
         : await readTeamRoster(form.team, campaignId) ?? await readTeamRoster(form.team, ''))
     : null;
-  const workspace: Workspace | null = roster?.workspace ? await readWorkspace(roster.campaign_id || campaignId, roster.workspace) : null;
+  // The Team's Workspace; a draft with no Team may name one (the New Agent and layer previews).
+  const workspaceName = roster?.workspace || (!roster ? form.workspace ?? '' : '');
+  const workspace: Workspace | null = workspaceName ? await readWorkspace(roster?.campaign_id || campaignId, workspaceName) : null;
   if (roster?.workspace && !workspace) throw new Error(`Team "${roster.name}" is launched in Workspace "${roster.workspace}", which does not exist.`);
   const profile = resolveHouseSeatProfile(form.house_seat, resolveLaunchProfile());
   const parentSeed = coworkAgent && campaign
@@ -266,8 +184,6 @@ export async function resolveFacts(form: SpawnForm, taken: Set<string>, proposed
         workspace,
         sessions: agentsSet.sessions as SessionsDefaults | undefined,
         lead: !!form.team && !!form.team_lead,
-        installations: installationCatalog,
-        behaviours: behaviourCatalog,
       })
     : null;
 
@@ -275,7 +191,6 @@ export async function resolveFacts(form: SpawnForm, taken: Set<string>, proposed
   // a provider asks to trust it once, not once per Workspace. Mika keeps her own home.
   const place = form.house_seat === 'mika' ? profileDir(profile) : roninHouse();
   await mkdir(place, { recursive: true });
-  if (workspace) await ensureShelf([workspace.name]);
 
   const wanted = form.name ? sanitizeName(form.name) : '';
   if (form.name && !wanted) {
@@ -283,13 +198,7 @@ export async function resolveFacts(form: SpawnForm, taken: Set<string>, proposed
   }
 
   const agent = sessionType === 'terminal' ? false : bareMetalAgent ? true : profile.agent;
-  const available = campaign ? availableBehaviours(installationCatalog, campaign.config.installations, behaviourCatalog) : [];
-  const cascade = campaign
-    ? resolveContributions(installationCatalog, campaign.config.installations, behaviourCatalog, available,
-        campaign.config.defaults.behaviours, roster ? [...new Set([...roster.behaviours.selected, ...roster.behaviours.required])] : undefined, form.behaviours)
-    : { contributions: [], selected: [], undelivered: [], behaviour_layer: 'campaign' as const };
   const installations = resolveInstallations(installationCatalog, campaign?.config.installations);
-  const contributions = form.house_seat === 'mika' ? [] : [CORE_CONTRIBUTION, ...cascade.contributions];
   const name = wanted || slugName(form.team || (agent ? 'agent' : 'terminal'), form.prompt ?? '', taken);
   // Repositories are the Workspace's; an Agent opens a worktree when its work needs one.
   const repositories = await Promise.all((workspace?.repos ?? []).map(async (repo) => {
@@ -301,7 +210,7 @@ export async function resolveFacts(form: SpawnForm, taken: Set<string>, proposed
   const kind = form.kind ?? String(parentSeed?.seeds.kind.value ?? 'open');
   return {
     sessionType, coworkAgent, bareMetalAgent, campaignId, roots, agentsSet, campaign, launchSpecs, preset, roster, profile,
-    parentSeed, workspace, place, repositories, folders, agent, cascade, installations, contributions, name, arrangement, kind,
+    parentSeed, workspace, place, repositories, folders, agent, installations, name, arrangement, kind,
   };
 }
 export type LaunchFacts = Awaited<ReturnType<typeof resolveFacts>>;
@@ -340,73 +249,10 @@ async function resolveLaunch(form: SpawnForm, facts: LaunchFacts) {
   return { cmd, spec, chosen, launchMode };
 }
 
-/** THE READING: the behaviours (floor, conditional, chosen), the capabilities and the shelf,
- * as the birth packet lists them, from the facts alone. */
-export async function resolveReading(form: SpawnForm, facts: LaunchFacts) {
-  const { coworkAgent, agent, contributions, cascade, arrangement, campaign, installations, workspace, name } = facts;
-  const enabledReading = contributionReading(contributions);
-  // A house Agent (Mika) is born on the floor and her own conditional brief; the cowork
-  // briefs, selected and sought behaviours, capabilities and the shelf are a cowork Agent's.
-  const briefed = coworkAgent && agent;
-  const cowork = briefed && form.house_seat !== 'mika';
-  const resolvedBehaviours = cowork
-    ? await resolveBehaviourBooks(cascade.selected)
-    : { delivered: [], ignored: [] };
-  const floorBehaviours = briefed ? await resolveFloorBehaviours() : [];
-  const conditionalBehaviours = briefed
-    ? await Promise.all((await resolveConditionalBehaviours({
-        arrangement,
-        role: cowork ? form.role ?? (form.team_lead ? 'lead' : 'coworker') : 'mika',
-        team: !!form.team,
-        lead: !!form.team_lead && !!form.team,
-        cowork,
-        new_owner: !(await listTeamRosters()).some((roster) => roster.campaign_id === (campaign?.id ?? '') && roster.state !== 'archived'),
-        behaviours: cowork ? cascade.selected : [],
-      })).map(async (row) => row.book === 'mandates'
-        ? { ...row, file: await ownMandates(row.file, resolveMandate(form, facts), name) }
-        : row))
-    : [];
-  const conditionalReading = conditionalBehaviours.flatMap((row) => row.reading ?? []);
-  const soughtBehaviours = cowork ? await resolveSoughtBehaviours() : [];
-  // CAPABILITY BUNDLES: the folder decides what exists, and facts select the knowledge.
-  // Installed Cowork tools remain universal; feature facts decide feature projection.
-  // Mika keeps her own curated toolset.
-  const capabilities = cowork
-    ? await resolveCapabilities({
-        arrangement,
-        installations: new Set(installations.filter((installation) => installation.enabled).map((installation) => installation.name)),
-        behaviours: new Set(cascade.selected),
-        campaign: !!campaign,
-        team: !!form.team,
-        lead: !!form.team_lead && !!form.team,
-      })
-    : [];
-  const shelfReading = cowork
-    ? await bootReading(
-        workspace?.name ?? '',
-        [...enabledReading, ...conditionalReading],
-        renderCapabilitiesOverview(capabilities),
-        name,
-        soughtBehaviours.length ? await renderSoughtOverview(soughtBehaviours) : undefined,
-      )
-    : briefed ? await declaredFiles(conditionalReading) : [];
-  // The selected capability documents are reached through the overview's own
-  // "Full document" line, not as shelf cards: the packet has a one-read budget and the
-  // fullest stock birth already sits within 2 KB of it with the overview inlined.
-  const appliedBehaviours = [...floorBehaviours, ...conditionalBehaviours, ...resolvedBehaviours.delivered];
-  const glossaryReading = shelfReading.filter((file) => path.basename(file) === WORDS_READING);
-  const backgroundReading = shelfReading.filter((file) => path.basename(file) !== WORDS_READING);
-  // Working guidance comes first; Session Boot is background. Keep the glossary pointer
-  // last because it is reference and the least costly part of a truncated first window.
-  const completeReading = [
-    ...appliedBehaviours.map((book) => book.file),
-    ...backgroundReading,
-    ...glossaryReading,
-  ];
-  const birthReading = coworkAgent && agent
-    ? [...completeReading, ...(form.seed ?? [])].filter(Boolean)
-    : [];
-  return { birthReading, completeReading, appliedBehaviours, capabilities, ignored: resolvedBehaviours.ignored };
+/** THE BRIEF for these facts (src/brief-build.ts): a Cowork Agent's, Mika's; none for a terminal. */
+export async function resolveBriefFor(form: SpawnForm, facts: LaunchFacts, launch?: Parameters<typeof composeBrief>[3]): Promise<ComposedBrief | null> {
+  if (!facts.coworkAgent || !facts.agent) return null;
+  return composeBrief(form, facts, agentBriefOf(form), launch);
 }
 
 export async function resolveForm(
@@ -416,9 +262,12 @@ export async function resolveForm(
   proposedRoster?: TeamRoster,
 ): Promise<Resolved> {
   const facts = await resolveFacts(form, taken, proposedRoster);
-  const { sessionType, coworkAgent, campaign, preset, roster, profile, parentSeed, workspace, place, repositories, folders, agent, cascade, installations, contributions, name, kind } = facts;
+  const { sessionType, coworkAgent, campaign, preset, roster, profile, parentSeed, workspace, place, repositories, folders, agent, installations, name, kind } = facts;
   const { cmd, spec, chosen, launchMode } = await resolveLaunch(form, facts);
-  const { birthReading, completeReading, appliedBehaviours, capabilities, ignored } = await resolveReading(form, facts);
+  const composed = await resolveBriefFor(form, facts, {
+    provider: spec?.provider ?? '', model: spec?.model ?? '', harness: spec?.cli ?? '', launch_mode: launchMode,
+  });
+  const ignored: string[] = [];
   const explicit: StatedBy[] = [{ layer: 'launch', source: 'launch request' }];
   const system: StatedBy[] = [{ layer: 'system', source: 'src/spawn.ts' }];
   const rosterSource: StatedBy[] = roster
@@ -458,15 +307,7 @@ export async function resolveForm(
     team: form.team ?? '',
     workspace: workspace?.name ?? '',
     brief: coworkAgent && agent
-      ? buildBrief(
-          profile,
-          workspace ? renderWorkspaceSection(workspace, repositories, folders) : '',
-          form,
-          referenceDir,
-          completeReading,
-          roster,
-          resolvedMandate,
-        )
+      ? buildBrief(profile, form, referenceDir)
       : '',
     agent,
     capExempt: profile.capExempt,
@@ -481,17 +322,13 @@ export async function resolveForm(
     team_branch: roster?.branch ?? '',
     team_wipeboard: roster?.wipeboard ?? '',
     team_state: roster?.state ?? '',
-    birth_reading: birthReading,
-    behaviours: appliedBehaviours,
+    composed,
     kind,
     ignored: [
       ...ignored,
       ...preset.ignored,
     ],
-    undelivered: cascade.undelivered,
-    contributions,
     installations,
-    capabilities,
     stated_by: {
       name: form.name ? explicit : system,
       dir: profile.dir ? profile.stated_by.dir : workspaceSource,
@@ -518,13 +355,8 @@ export async function resolveForm(
       team_branch: rosterSource,
       team_wipeboard: rosterSource,
       team_state: rosterSource,
-      birth_reading: unique(system, form.seed?.length ? explicit : []),
-      behaviours: form.behaviours !== undefined
-        ? (preset.behaviours ? preset.source! : explicit)
-        : parentSeed?.seeds.behaviours.stated_by ?? system,
+      brief_settings: form.brief !== undefined ? explicit : system,
       kind: form.kind !== undefined ? explicit : parentSeed?.seeds.kind.stated_by ?? system,
-      contributions: contributions.flatMap((contribution) => [{ layer: contribution.stated_by, source: `${contribution.stated_by} contribution` }]),
-      capabilities: capabilities.length ? [{ layer: 'conditional', source: 'ronin_catalogs/capabilities' }] : [],
       arrangement: repositories.length ? workspaceSource : [],
     },
   };

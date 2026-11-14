@@ -22,7 +22,8 @@ export const STORES: readonly Store[] = [
   store('ageru', 'user', 'ageru'),
   store('ledger', 'data', 'ledger'),
   store('message_queue', 'data', 'message-queue'),
-  store('ways', 'user', 'ways'),
+  store('behaviours', 'user', 'behaviours'),
+  store('facts', 'user', 'facts'),
   store('library', 'user', 'library'),
   store('session_boot', 'user', 'session_boot'),
   store('wipeboards', 'user', 'wipeboards'),
@@ -96,6 +97,9 @@ const requestListings = new AsyncLocalStorage<Map<string, Promise<Map<string, { 
 export const resourceRequestCache: express.RequestHandler = (_req, _res, next) => {
   requestListings.run(new Map(), next);
 };
+
+/** Read the stores fresh, outside the request's listing cache: after a write, or for work that outlives the request. */
+export const uncached = <T>(fn: () => Promise<T>): Promise<T> => requestListings.exit(fn);
 
 async function layerFiles(
   dir: string,
@@ -213,56 +217,6 @@ export async function resolveTreeFiles(spec: ResolveSpec): Promise<ResolvedFile[
   });
 }
 
-export interface WayRow {
-  name: string;
-  label: string;
-  blurb: string;
-  content: string;
-  scope: string;
-  requires: string[];
-  installation: string;
-  order: number;
-  kinds: string[];
-  origin: Origin;
-  shadowed: boolean;
-}
-
-const WAY_KINDS = new Set(['coding', 'work', 'personal', 'household', 'social', 'school']);
-
-export async function listWays(): Promise<WayRow[]> {
-  const files = await resolveTreeFiles({
-    stock: path.join(STOCK_DIR, 'behaviours'), store: 'ways',
-    include: (name) => name.endsWith('.md') && name !== 'README.md',
-  });
-  return files.filter((file) => !/^-\s+\*\*hidden:\*\*\s*yes\s*$/mi.test(file.text)).map((file) => {
-    const key = (name: string) => file.text.match(new RegExp(`^-\\s+\\*\\*${name}:\\*\\*\\s*(.+)$`, 'mi'))?.[1]?.trim() || '';
-    const label = key('label') || file.text.match(/^#\s+(.+)$/m)?.[1]?.trim() || file.name;
-    const kinds = (file.text.match(/^-\s+\*\*kinds:\*\*\s*(.+)$/m)?.[1] ?? '')
-      .split(',').map((kind) => kind.trim()).filter((kind) => WAY_KINDS.has(kind));
-    const scope = file.text.match(/^-\s+\*\*scope:\*\*\s*(.+)$/m)?.[1]?.trim() || 'selected';
-    const order = Number(key('order'));
-    const blurb = file.text.split(/\n\s*\n/)
-      .map((part) => part.replace(/^>\s?/gm, '').replace(/\s+/g, ' ').trim())
-      .find((part) => part && !part.startsWith('#') && !part.startsWith('- **')) || '';
-    return {
-      name: file.name, label, kinds, scope,
-      requires: key('requires').split(',').map((item) => item.trim()).filter(Boolean),
-      installation: /^[\u2013\u2014-]$/.test(key('installation')) ? '' : key('installation'),
-      order: Number.isFinite(order) ? order : Number.MAX_SAFE_INTEGER,
-      blurb: (key('blurb') || blurb).slice(0, 200), content: file.text,
-      origin: file.origin, shadowed: file.shadowed,
-    };
-  }).sort((a, b) => a.order - b.order || a.label.localeCompare(b.label) || a.name.localeCompare(b.name));
-}
-
-export async function wayFile(name: string, origin: Origin): Promise<string> {
-  const row = (await resolveTreeFiles({
-    stock: path.join(STOCK_DIR, 'behaviours'), store: 'ways',
-    include: (relative) => path.basename(relative) === `${name}.md`,
-  })).find((file) => file.name === name && file.origin === origin);
-  return row?.path ?? '';
-}
-
 export interface CatalogSection {
   name: string;
   head: string;
@@ -371,7 +325,6 @@ function parseCredit(v: string): { text: string; url: string } | undefined {
 }
 
 const SHADOWABLE: Record<string, string> = {
-  'TOOLS.md': 'an executable of yours',
   'SAVED_LAUNCHES.md': 'a launcher form, filled in ahead of time and named',
   'SKINS.md': 'a look — a set of design tokens, and nothing else',
   'MODEL_PROVIDERS.md': 'a model provider — its `### <Vendor>` section: the vendor id, the CLI, and one row per model',

@@ -29,11 +29,11 @@ test('Configuration is the New Agent form in existing-Agent mode', () => {
   assert.doesNotMatch(form, /hiddenBehaviours/);
 });
 
-test('Send rebuilds one brief and sends one message', () => {
+test('Send writes the record, rebuilds the brief, and sends only what differs', () => {
   assert.match(routes, /app\.put\('\/api\/sessions\/:name\/configuration'/);
   assert.equal((configuration.match(/enqueueMessage\(/g) || []).length, 1);
-  assert.match(configuration, /resolveReading\(form, await resolveFacts\(form, new Set\(\)\)\)/);
-  assert.match(configuration, /writeCurrentRole\(name, next\.role\)[\s\S]*configurationReading\(name\)/, 'Send stores the role before rebuilding its conditional reading');
-  assert.match(launchRoute, /compileBirthBriefAt\([\s\S]*writeCurrentRoleAt\(birthDir,[^\n]+\)/, 'birth stores the role fact after the birth brief creates its record directory');
-  for (const writer of ['writeObjective', 'setSessionTitle', 'setTags', 'setLeads', 'writeMandate', 'writeCurrentBehaviours', 'writeCurrentRole']) assert.match(configuration, new RegExp(writer));
+  assert.match(configuration, /const changes = briefChanges\(before, composed\.resolved, composed\.record\);[\s\S]*if \(!changes\) return/, 'nothing changed: nothing sent');
+  assert.match(configuration, /writeCurrentRole\(name, next\.role\)[\s\S]*return refreshBrief\(name\)/, 'Send stores the role before rebuilding');
+  assert.match(launchRoute, /writeBriefPacketAt\([\s\S]*writeCurrentRoleAt\(birthDir,[^\n]+\)/, 'birth stores the role fact after the packet creates its record directory');
+  for (const writer of ['writeObjective', 'setSessionTitle', 'setTags', 'setLeads', 'writeMandate', 'writeAgentBriefAt', 'writeCurrentRole']) assert.match(configuration, new RegExp(writer));
 });

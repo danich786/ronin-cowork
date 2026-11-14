@@ -161,7 +161,9 @@ test('the stock taxonomy discovers the complete approved set within the hard ind
     }))).flat()
       .filter((id) => !id.startsWith('ronin_session_boot/routine/mika/'))
       // Integration records are not hers; the README that explains them is (KAN-337).
-      .filter((id) => !id.startsWith('ronin_catalogs/integrations/') || id === 'ronin_catalogs/integrations/README.md');
+      .filter((id) => !id.startsWith('ronin_catalogs/integrations/') || id === 'ronin_catalogs/integrations/README.md')
+      // Facts are line templates over an Agent's record, not reading.
+      .filter((id) => !id.startsWith('ronin_catalogs/facts/'));
     const built = await compileMikaKnowledgeAt(temp, { ownerRoots: {
       docs: '', 'ronin_catalogs/behaviours': '', ronin_catalogs: '', ronin_session_boot: '', ronin_library: '',
     } });

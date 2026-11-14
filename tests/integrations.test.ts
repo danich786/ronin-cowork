@@ -85,17 +85,13 @@ test('Mika indexes the integrations README, never a record, stock or an Agent\'s
   assert.deepEqual(ids, ['ronin_catalogs/integrations/README.md']);
 });
 
-test('every Cowork Agent gets the Integrations card with nothing selected, and the seed points at it', async () => {
-  const { listBehaviours } = await import('../src/resource-adapters.js');
-  const { resolveSoughtBehaviours, renderSoughtOverview } = await import('../src/behaviours.js');
-  const brief = (await listBehaviours()).find((row) => row.name === 'integrations');
-  assert.equal(brief?.scope, 'sought');
-  const sought = await resolveSoughtBehaviours();
-  assert.ok(sought.some((row) => row.book === 'integrations'), 'the folder is the registry: no selection needed');
-  assert.match(await renderSoughtOverview(sought), /\| Integrations \| [^|]+ \| `[^`]*sought\/integrations\.md` \|/);
-  const seed = (await listBehaviours()).find((row) => row.name === 'cowork-agent')!;
-  assert.match(await readFile(seed.page, 'utf8'), /common way: open the Integrations card in your brief when one comes up\./);
-  // The shipped index the brief names, relative to it, resolves from where it lives.
-  assert.match(await readFile(brief!.page, 'utf8'), /`\.\.\/\.\.\/integrations\/`/);
-  await stat(path.join(path.dirname(brief!.page), '..', '..', 'integrations', 'README.md'));
+test('every Cowork Agent is told Integrations at seed depth with nothing selected', async () => {
+  const { readCatalog } = await import('../src/catalog.js');
+  const brief = (await readCatalog('behaviours')).find((row) => row.name === 'integrations');
+  assert.ok(brief, 'the folder is the registry: no selection needed');
+  assert.equal(brief!.depth, 'seed');
+  assert.deepEqual(brief!.when, []);
+  assert.ok(brief!.seed, 'its seed line stands on its own');
+  const secret = (await readCatalog('tools')).find((row) => row.name === 'secret');
+  assert.ok(secret?.serves.includes('integrations'), 'its tool comes with it');
 });

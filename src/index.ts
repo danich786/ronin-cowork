@@ -26,6 +26,7 @@ import { bindOperatorSocket, isOperatorPeer, operatorSocketPath, SiblingAlive, t
 import { addressRefusal, EXIT_ADDRESS_UNUSABLE } from './bind-refusal.js';
 import { publishMax, publishOwner } from './machine-state.js';
 import { registerCatalogs } from './routes/catalogs.js';
+import { registerBrief } from './routes/brief-api.js';
 import { homeRows, registerLaunch } from './routes/launch.js';
 import { registerPasskeyLogin, registerPasskeyManage } from './routes/passkey-api.js';
 import { registerPasswordSettings } from './routes/password-api.js';
@@ -87,7 +88,7 @@ import { ensureInstalledRoots, githubSetupAnswer, githubSetupAttached } from './
 import { registerSetupRuntime } from './routes/setup-runtime-api.js';
 import { registerSetupProgress } from './routes/setup-progress-api.js';
 import { registerMikaContext } from './mika-context.js';
-import { migrateSopsToBehaviours } from './behaviour-store-migration.js';
+import { migrateBriefSettings, migrateSopsToBehaviours, migrateWaysToBehaviours } from './behaviour-store-migration.js';
 import { archiveDone, ensureEveryIcebox, migrateItems, releaseEndedHolders } from './work-items.js';
 import { rebuildIndex } from './work-items-index.js';
 
@@ -96,7 +97,7 @@ const ROOT = path.join(__dirname, '..');
 const PUBLIC = path.join(ROOT, 'public');
 const NM = path.join(ROOT, 'node_modules');
 const isEntryPoint = !!process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url;
-if (isEntryPoint) await migrateSopsToBehaviours();
+if (isEntryPoint) { await migrateSopsToBehaviours(); await migrateWaysToBehaviours(); await migrateBriefSettings(); }
 // Work items take Jira's own names (docs/using-ronin/work-items.md); a store already on them is left alone.
 if (isEntryPoint) await migrateItems().then((done) => {
   if (done.migrated.length) console.log(`[work-items] ${done.migrated.length} of ${done.before} items took Jira's names`);
@@ -276,6 +277,7 @@ app.use(['/api/setup/registration', '/api/setup/services-key', '/api/services', 
 registerLaunch(app); // /api/launch (both variants), /api/sessions — src/routes/launch.ts
 registerMikaContext(app); // /api/mika/context/:tab — tiny tab-scoped owner_view/show seam
 registerCatalogs(app); // catalogs and configuration resources — src/routes/catalogs.ts
+registerBrief(app); // facts, behaviours, tools, brief settings, preview — src/routes/brief-api.ts
 registerDocs(app); // /api/docs?shelf=plans|docs — the ▧ Docs tab's shelves — src/routes/docs-api.ts
 registerTeams(app); // /api/team-rosters* — the durable half of every team — src/routes/teams-api.ts
 registerWorkspaces(app); // /api/workspaces* — a Campaign's Workspaces — src/routes/workspaces-api.ts
