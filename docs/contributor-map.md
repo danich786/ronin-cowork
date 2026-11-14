@@ -29,10 +29,10 @@ current contracts, and the creators' Lab plans distinct without duplicating thes
 ## Scope
 
 Scope describes applicability and inheritance, not a second Agent-composition package.
-Distinguish Campaign/Team defaults, behavior delivery scope, and owner resource shadowing.
-Agent composition uses these facts to resolve one Agent's package.
+Distinguish Campaign/Team defaults, brief settings, and owner resource shadowing.
+The brief uses these facts to resolve what one Agent is told.
 
-- Contracts: [Agent composition](architecture/agent-composition.md#resolution),
+- Contracts: [The brief](architecture/brief.md#6-layers-and-brief-settings),
   [Installations](architecture/installations.md), [Shadowing](architecture/shadowing.md).
 - Code: [campaign-scope.ts](../src/campaign-scope.ts),
   [instruction-cascade.ts](../src/instruction-cascade.ts), [resources.ts](../src/resources.ts),
@@ -93,13 +93,12 @@ A Services capability selects parts; an Agent tool capability teaches tools. Kee
 
 ## Agent composition
 
-One Agent receives resolved capabilities, behaviors, mandate, skills, and assignment,
-including their values, provenance, and teaching. Scope provides the input rules; this
-surface owns the resulting package and birth receipt.
+One Agent is told facts, behaviours and tools at a depth, from its work record. Scope
+provides the input rules; this surface owns the resulting brief and birth receipt.
 
-- Contract: [What a Cowork Agent receives](architecture/agent-composition.md).
-- Inputs: [capabilities](../ronin_catalogs/capabilities/README.md),
-  [behaviors](../ronin_catalogs/behaviours/README.md), [templates](../ronin_catalogs/templates/README.md).
+- Contract: [The brief](architecture/brief.md).
+- Inputs: [facts](../ronin_catalogs/facts/README.md), [behaviours](../ronin_catalogs/behaviours/README.md),
+  [tools](../ronin_catalogs/tools/README.md), [templates](../ronin_catalogs/templates/README.md).
 - Code: [launch.ts](../src/routes/launch.ts), [agent-defaults.ts](../src/agent-defaults.ts),
   [capabilities.ts](../src/capabilities.ts), [behaviours.ts](../src/behaviours.ts),
   [birth-brief.ts](../src/birth-brief.ts).
@@ -107,15 +106,14 @@ surface owns the resulting package and birth receipt.
   [behaviours.test.ts](../tests/behaviours.test.ts), [session-boot.test.ts](../tests/session-boot.test.ts),
   [birth-receipt.test.ts](../tests/birth-receipt.test.ts).
 
-## Capabilities and tools
+## Tools
 
-A tool owns executable authority; a capability categorizes tools and teaches their use.
-Composite tools reuse guarded operations. UI and provider-native skills call or teach
+A tool owns executable authority; its file in `ronin_catalogs/tools/` says what the brief
+tells about it. Composite tools reuse guarded operations. UI and provider-native skills call or teach
 these contracts without creating another authority.
 
-- Contract: [Tools and Agent capabilities](architecture/tool-surface.md).
-- Inventory: [TOOLS.md](../ronin_catalogs/TOOLS.md),
-  [capability index](../ronin_catalogs/capabilities/README.md), [executables](../ronin_bin/).
+- Contract: [The brief](architecture/brief.md#10-boundaries).
+- Inventory: [tool files](../ronin_catalogs/tools/), [executables](../ronin_bin/).
 - Follow the executable to its actual implementation: [worktree-desk](../ronin_bin/worktree-desk)
   uses [cli-api.ts](../src/routes/cli-api.ts) and [commands/desk.ts](../src/commands/desk.ts);
   [work-record](../ronin_bin/work-record) dispatches to [work-record-write](../libexec/work-record-write).
