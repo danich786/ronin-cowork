@@ -3,13 +3,15 @@
  * steps (createStep), the kit's labelled fields (createField) and ERABI at the forms' tight
  * density. Step 1 · Team — Team ID, Title and Kind on one line, then Purpose. Step 2 · New
  * Agent defaults — Where it works, Model, Mandate, Runtime: what the next Agent starts from,
- * never the Team's own behaviour. Features and behaviours are not asked here. */
+ * never the Team's own behaviour. Step 3 · Behaviors — what this Team's Agents are told: its
+ * add, block and only lists, integrations and project management (brief-step.js, BRIEF_MODEL §8). */
 import { t } from './lexicon.js';
 import { request } from './request.js';
 import { ask } from './ask.js';
 import { ruledRows } from './glyphs.js';
 import { createStep, mandateWord } from './form-steps.js';
 import { WorkspacePrimitives } from './workspace-primitives.js';
+import { createBriefSettingsPanel } from './brief-step.js';
 
 const el = (tag, cls, text) => { const node = document.createElement(tag); if (cls) node.className = cls; if (text != null) node.textContent = String(text); return node; };
 const bucket = (value) => value && typeof value === 'object' && !Array.isArray(value) ? value : {};
@@ -83,12 +85,18 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
     }, density: 'tight', trayHost: defaultsRow });
     defaultsRow.append(agentDefaults.el); stepDefaults.body.append(defaultsRow); form.append(stepDefaults.el);
 
+    /* ---- Behaviors (unnumbered): what every Agent on this Team is told, saved with the form ---- */
+    const stepBrief = createStep({ key: 'brief', title: t('behaviours', 'Behaviors') });
+    const brief = createBriefSettingsPanel({ layer: 'team', id: roster.name, campaignId: roster.campaign_id || '', ownSave: false });
+    stepBrief.body.append(el('p', 'fs-step-help', t('team_config.brief_help', 'What every Agent on this Team is told. Agents already working are sent the change.')), brief.el);
+    form.append(stepBrief.el); void brief.enter();
+
     const actions = el('div', 'tw-config-actions'); const status = el('span', 'tw-config-status');
     const saveAction = optionsArg.createAction?.({ label: t('panels.save', 'Save'), size: 'compact' }); const save = saveAction?.el || el('button', null, t('panels.save', 'Save')); save.type = 'submit'; actions.append(status, save); form.append(actions); host.replaceChildren(form);
     form.addEventListener('submit', async (event) => {
       event.preventDefault(); if (saveAction) saveAction.setDisabled(true); else save.disabled = true; status.textContent = t('team_config.saving', 'Saving…');
       const picked = agentDefaults.value();
-      // Features and behaviours are not asked here (owner, 2026-09-13): the keys are not sent, so the store carries them as they are.
+      const briefSaved = await brief.save();
       const saved = await request(`/api/team-rosters/${encodeURIComponent(roster.name)}`, { method: 'PUT', json: {
         title: title.value, kind: kind.value().kind, objective: objective.value, workspace: picked.workspace,
         // Spread what was read so a key this card does not draw is carried rather than
@@ -96,7 +104,7 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
         // spreading them would rewrite a retired field on every save.
         agent_defaults: { ...defaults, permissions: undefined, provider: undefined, model: undefined, launch_mode: undefined, reach: picked.reach, recruit: picked.recruit, output: picked.output },
       } });
-      status.textContent = saved.ok ? t('team_config.saved', 'Saved') : saved.message; if (saveAction) saveAction.setDisabled(false); else save.disabled = false; if (saved.ok) optionsArg.onSaved?.(saved.data.roster);
+      status.textContent = saved.ok && briefSaved.ok ? t('team_config.saved', 'Saved') : saved.ok ? briefSaved.message : saved.message; if (saveAction) saveAction.setDisabled(false); else save.disabled = false; if (saved.ok) optionsArg.onSaved?.(saved.data.roster);
     });
   });
 }

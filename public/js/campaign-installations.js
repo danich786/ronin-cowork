@@ -27,7 +27,7 @@ export function createInstallationsSurface(campaign, context = {}) {
   let catalog = [];
   let installed = null;
   let values = {};
-  let defaultBehaviours = [];
+  let defaultBehaviours = []; // the names on the Campaign's brief add list (BRIEF_MODEL §6)
   let stoneSurface = null;
 
   const available = (installation) => values[installation.name] === true;
@@ -95,10 +95,13 @@ export function createInstallationsSurface(campaign, context = {}) {
     if (!row) return;
     notice.textContent = t('campaign.saving', 'saving…');
     const provided = new Set(Array.isArray(installation.provides) ? installation.provides : []);
-    const kept = defaultBehaviours.filter((name) => !provided.has(name));
-    const behaviours = on ? [...kept, ...provided] : kept;
-    const defaults = { ...(row.config?.defaults || {}), behaviours };
-    const result = await saveCampaign(row.id, { config: { defaults } });
+    const url = `/api/brief/settings/campaign/${encodeURIComponent(row.id)}`;
+    const current = await request(url, { cache: 'no-store' });
+    if (!current.ok) { notice.textContent = current.message; notice.dataset.tone = 'failed'; return current; }
+    const brief = current.data.brief || { add: [], block: [], only: [] };
+    const add = [...brief.add.filter((entry) => !provided.has(entry.name)), ...(on ? [...provided].map((name) => ({ name, depth: 'full' })) : [])];
+    const result = await request(url, { method: 'PUT', json: { brief: { ...brief, add } } });
+    const behaviours = add.map((entry) => entry.name);
     notice.textContent = result.ok ? t('settei.saved', 'saved') : result.message;
     notice.dataset.tone = result.ok ? 'success' : 'failed';
     if (result.ok) defaultBehaviours = behaviours;
@@ -257,7 +260,8 @@ export function createInstallationsSurface(campaign, context = {}) {
     reading.dataset.tone = installedResult.ok ? '' : 'failed';
     values = completeMap(catalog, campaign()?.config?.installations);
     context.onInstallationsState?.({ ...values });
-    defaultBehaviours = Array.isArray(campaign()?.config?.defaults?.behaviours) ? [...campaign().config.defaults.behaviours] : [];
+    void request(`/api/brief/settings/campaign/${encodeURIComponent(campaign()?.id || '-')}`, { cache: 'no-store' })
+      .then((answer) => { defaultBehaviours = answer.ok ? (answer.data.brief?.add || []).map((entry) => entry.name) : []; });
     stoneSurface.setItems(catalog.map(itemFor));
     void integrations.enter();
     // A collection surface opens showing its collection. Forcing Ronin Services open put the

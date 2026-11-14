@@ -14,6 +14,7 @@
  */
 import { WorkspaceKit } from './workspace-kit.js';
 import { createStep, el } from './form-steps.js';
+import { createBriefSettingsPanel } from './brief-step.js';
 import { createPhalanx } from './phalanx.js';
 import { request } from './request.js';
 import { t } from './lexicon.js';
@@ -130,7 +131,7 @@ export function workspacePage(w, { reading, campaignId, onSaved = () => {}, onDi
   const say = sayInto(line);
   const text = (value, onInput, placeholder = '') => { const i = el('input'); i.type = 'text'; i.value = value; i.placeholder = placeholder; i.addEventListener('input', () => onInput(i.value)); return i; };
   const area = (value, onInput) => { const a = el('textarea'); a.rows = 4; a.value = value; a.addEventListener('input', () => onInput(a.value)); return a; };
-  const open = { top: true, agents: false, locations: true, integrations: false, adding: '' }; // adding: '' | 'folder' | 'clone'
+  const open = { top: true, agents: false, locations: true, integrations: false, brief: false, adding: '' }; // adding: '' | 'folder' | 'clone'
   // EVERY EDIT WAITS FOR SAVE (owner, 2026-11-02): a change lights Save (kaki, what needs you) and
   // the − beside it, which throws the changes away back to the saved Workspace.
   let dirty = false;
@@ -162,6 +163,12 @@ export function workspacePage(w, { reading, campaignId, onSaved = () => {}, onDi
     ] },
   ] }], { value: { launch_mode: draft.launch_mode }, density: 'tight', onChange: (value) => { draft.launch_mode = value.launch_mode; changed(); paint(); } });
   stepAgents.body.append(mode.el);
+
+  /* ---- 5 · Behaviors (BRIEF_MODEL §8): what every Agent in this Workspace is told — its add, block
+     and only lists and project management; its integrations are step 3. A created Workspace only. ---- */
+  const stepBrief = createStep({ n: 5, key: 'brief', title: t('behaviours', 'Behaviors'), onToggle: () => { open.brief = !open.brief; paint(); } });
+  const brief = isNew ? null : createBriefSettingsPanel({ layer: 'workspace', id: draft.name, campaignId: campaignId() || '', ownSave: false, showIntegrations: false, onChange: () => changed() });
+  if (brief) { stepBrief.body.append(el('p', 'fs-step-help', t('workspaces.brief_help', 'What every Agent in this Workspace is told. Agents already working are sent the change.')), brief.el); void brief.enter(); }
 
   /* ---- 3 · Integrations (KAN-338): the outside services this Workspace uses, from the integrations
      index; each row a provider, its other facts (a bridge's `site`) kept as they are. Agents read them
@@ -237,7 +244,10 @@ export function workspacePage(w, { reading, campaignId, onSaved = () => {}, onDi
     const row = (name) => ({ name, note: picked.get(name) || '' });
     draft.repos = [...picked.keys()].filter(git).map(row);
     draft.folders = [...picked.keys()].filter((name) => !git(name)).map(row);
-    const answer = await request(`/api/workspaces/${encodeURIComponent(draft.name)}`, { method: 'PUT', json: { ...draft, plans: draft.plans?.location ? draft.plans : null, plans_place: undefined, campaign_id: campaignId() || undefined } });
+    // Behaviors save first (every Agent's brief is rebuilt); the Workspace's own save then carries the same values.
+    if (brief) { const told = await brief.save(); if (!told.ok) { say(told.message, true); return false; } }
+    const briefKeys = brief ? { brief: brief.value().brief, pm: brief.value().pm } : {};
+    const answer = await request(`/api/workspaces/${encodeURIComponent(draft.name)}`, { method: 'PUT', json: { ...draft, ...briefKeys, plans: draft.plans?.location ? draft.plans : null, plans_place: undefined, campaign_id: campaignId() || undefined } });
     if (!answer.ok) { say(answer.message, true); return false; }
     const moved = answer.data.moved?.length ? ` ${t('workspaces.plans_moved', 'Moved {n} plans.', { n: answer.data.moved.length })}` : '';
     say(`${t('workspaces.saved', 'Saved {name}.', { name: answer.data.workspace.title || answer.data.workspace.name })}${moved}`);
@@ -420,6 +430,8 @@ export function workspacePage(w, { reading, campaignId, onSaved = () => {}, onDi
     stepTop.setCollapsed(!open.top, (isNew ? draft.title || draft.name : draft.objective.trim().split('\n')[0]) || t('workspaces.none_yet', 'None'), true);
     stepIntegrations.setCollapsed(!open.integrations, draft.integrations.map((one) => index.find((r) => r.name === one.provider)?.label || one.provider).join(', ') || t('workspaces.none_yet', 'None'), true);
     paintIntegrations();
+    stepBrief.el.hidden = isNew;
+    stepBrief.setCollapsed(!open.brief, '', true);
     stepLocations.setCollapsed(!open.locations, picked.size === 1 ? t('workspaces.one_folder', '1 folder') : t('workspaces.folders_n', '{n} folders', { n: picked.size }), true);
     folderPanel.hidden = open.adding !== 'folder';
     clonePanel.hidden = open.adding !== 'clone';
@@ -432,7 +444,7 @@ export function workspacePage(w, { reading, campaignId, onSaved = () => {}, onDi
     paintRows();
     paintPlans();
   }
-  page.append(line, stepTop.el, stepLocations.el, stepIntegrations.el, stepAgents.el);
+  page.append(line, stepTop.el, stepLocations.el, stepIntegrations.el, stepAgents.el, stepBrief.el);
   paint();
   if (!reading.roots().length) void reading.read().then(() => { paint(); browser.paint(); });
   return { el: page, action, discard };

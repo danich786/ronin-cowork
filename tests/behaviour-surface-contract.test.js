@@ -10,17 +10,16 @@ const docs = await readFile(new URL('../public/js/docs.js', import.meta.url), 'u
 const agent = await readFile(new URL('../public/js/new-agent.js', import.meta.url), 'utf8');
 const cowork = await readFile(new URL('../public/js/cowork-view.js', import.meta.url), 'utf8');
 
-test('Behavior work surface reads every scope and edits optional guidance through the existing API', () => {
+test('Behavior work surface is the user layer: their brief settings, and every file to read or replace by name', () => {
   assert.match(surface, /createPhalanx/);
-  assert.match(surface, /\/api\/ways\/\$\{encodeURIComponent\(row\.scope\)\}/);
+  assert.match(surface, /createBriefSettingsPanel\(\{ layer: 'user'/);
+  assert.match(surface, /request\('\/api\/brief\/catalog'/);
+  assert.match(surface, /\/api\/brief\/files\/\$\{encodeURIComponent\(row\.scope\)\}/);
   assert.match(surface, /renderMarkdownDocument/);
-  assert.match(surface, /if \(row\.scope !== 'selected'\) return/);
   assert.match(surface, /method: 'POST'/);
   assert.match(surface, /method: 'PUT'/);
   assert.match(surface, /shadow: true/);
-  assert.doesNotMatch(surface, /bh-view-only/);
-  assert.match(surface, /All Cowork Agents/);
-  assert.match(surface, /Conditional/);
+  assert.doesNotMatch(surface, /\/api\/ways|All Cowork Agents|Conditional/);
 });
 
 test('the central catalog registers Behavior once and admits every reading profile', () => {
@@ -39,13 +38,12 @@ test('Behavior implementation keeps the coordinated Docs editor boundary untouch
   assert.match(docs, /export function createDocumentWorkspaceAdapter/);
 });
 
-test('New Agent offers the shared Behavior surface beside its optional choices', () => {
-  assert.match(agent, /Customize Behaviors/);
-  assert.match(agent, /action: \(\) => openBehaviours\(\)/);
-  assert.doesNotMatch(agent, /sws-stone na-customize-behaviours/);
+test('New Agent offers the shared Behavior surface beside its optional choices', async () => {
+  const brief = await readFile(new URL('../public/js/brief-step.js', import.meta.url), 'utf8');
+  assert.match(brief, /Customize Behaviors/);
+  assert.match(brief, /action: \(\) => openBehaviours\(\)/);
   assert.match(cowork, /openBehaviours: \(\) => bench\.place\(BEHAVIOUR_SURFACE_TYPE, oppositeSeat\(id\)\)/);
   assert.match(agent, /ronin:behaviours-changed/);
-  assert.match(agent, /shape: 'tall'/, 'New Agent and Configuration share the same large Behavior stones');
-  assert.match(agent, /read: item\.reading, view: item\.name/, 'every shared Behavior stone keeps its View action');
-  assert.doesNotMatch(agent, /links: !configure/, 'Configuration does not suppress the shared View action');
+  assert.match(brief, /shape: 'tall'/, 'New Agent and the layer pages share the same large Behavior stones');
+  assert.match(brief, /view: \{ name: row\.name, scope: scopeOf\(row\.kind\) \}/, 'every Behavior stone keeps its View action');
 });

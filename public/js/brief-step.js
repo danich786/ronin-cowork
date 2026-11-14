@@ -14,6 +14,10 @@
 import { ask } from './ask.js';
 import { t } from './lexicon.js';
 import { el } from './form-steps.js';
+import { request } from './request.js';
+
+/** The files folder a catalog kind lives in: fact → facts (the preview already says it plural). */
+export const scopeOf = (kind = '') => (String(kind).endsWith('s') ? String(kind) : `${kind}s`);
 
 export const emptyBriefValue = () => ({ brief: { add: [], block: [], only: [] }, integrations: [] });
 
@@ -61,21 +65,19 @@ function whyWord(need) {
 }
 export const whyText = (why = []) => (why.length ? why.map(whyWord).join(' · ') : t('brief.why_every', 'every Agent'));
 
-function depths() {
-  return [{ v: 'seed', l: t('brief.depth_seed', 'Seed (one line)') }, { v: 'full', l: t('brief.depth_full', 'Full (whole text)') }];
-}
 
 /**
  * Draw the form into `host`. `layer` is 'agent' | 'campaign' | 'workspace' | 'team'. An Agent
  * gets Integrations, Optional and Comes with this Agent; a layer gets Integrations, Add, Block
  * and Only. `onChange(value)` hands back the layer's own value, never what it inherits.
  */
-export function paintBriefForm(host, { layer = 'agent', catalog = [], value = emptyBriefValue(), above = {}, inPlay = [], onChange = () => {}, openBehaviours = null } = {}) {
+export function paintBriefForm(host, { layer = 'agent', catalog = [], value = emptyBriefValue(), above = {}, inPlay = [], onChange = () => {}, openBehaviours = null, showIntegrations = true } = {}) {
   const own = briefValue(value);
   const inherited = Object.fromEntries(Object.entries(above.integrations || {}).filter(([, from]) => from && from !== layer));
   const pmAbove = above.pm?.on && above.pm.from && above.pm.from !== layer ? above.pm.from : '';
   const named = new Map(catalog.map((row) => [row.name, row]));
-  const option = (row, extra = {}) => ({ v: row.name, l: row.title || row.name, sub: row.seed || '', ...(row.path ? { read: row.path } : {}), ...extra });
+  // View opens the file in the Behaviors surface (behaviour-surface.js), where the user can read or make their own version.
+  const option = (row, extra = {}) => ({ v: row.name, l: row.title || row.name, sub: row.seed || '', ...(row.kind ? { view: { name: row.name, scope: scopeOf(row.kind) } } : {}), ...extra });
   const emit = () => onChange(briefValue(own));
   const parts = [];
 
@@ -99,19 +101,24 @@ export function paintBriefForm(host, { layer = 'agent', catalog = [], value = em
   const integrationSection = el('div', 'na-behaviour-section');
   const pmRow = el('div', 'brief-pm-row');
   pmRow.append(pm.el, pmNote);
-  integrationSection.append(integrations.el, el('p', 'na-behaviour-note', layer === 'agent'
+  // A Workspace turns its integrations on in its own Integrations step (with their tokens).
+  if (showIntegrations) integrationSection.append(integrations.el, el('p', 'na-behaviour-note', layer === 'agent'
     ? t('brief.integrations_help', 'On from the Campaign, Workspace or Team, plus any you turn on for this Agent.')
-    : t('brief.integrations_help_layer', 'On here is on for everything below.')), pmRow);
+    : t('brief.integrations_help_layer', 'On here is on for everything below.')));
+  integrationSection.append(pmRow);
   parts.push(integrationSection);
 
   /* Add (an Agent's Optional): behaviours with a depth. */
   const depthOf = (name) => own.brief.add.find((row) => row.name === name)?.depth || 'full';
+  // An added behaviour's depth: the forms' own switch, Full or Seed (one line).
+  const depthAsks = [];
   const depthControl = (row) => {
-    const select = el('select', 'wk-field-control');
-    for (const depth of depths()) { const o = el('option', null, depth.l); o.value = depth.v; select.append(o); }
-    select.value = depthOf(row.v);
-    select.addEventListener('change', () => { const hit = own.brief.add.find((entry) => entry.name === row.v); if (hit) hit.depth = select.value; emit(); });
-    return select;
+    const depth = ask([{ fields: [{ key: 'full', label: t('brief.depth', 'Depth'), switch: [t('brief.depth_full', 'Full'), t('brief.depth_seed', 'Seed')] }] }],
+      { value: { full: depthOf(row.v) === 'full' }, density: 'tight', onChange: (next) => {
+        const hit = own.brief.add.find((entry) => entry.name === row.v); if (hit) hit.depth = next.full ? 'full' : 'seed'; emit();
+      } });
+    depthAsks.push(depth);
+    return depth.el;
   };
   const addable = catalog.filter((row) => row.kind === 'behaviour' && (row.depth === 'none' || layer !== 'agent' || own.brief.add.some((a) => a.name === row.name)));
   for (const entry of own.brief.add) if (!addable.some((row) => row.name === entry.name)) addable.push(named.get(entry.name) || { name: entry.name });
@@ -124,7 +131,7 @@ export function paintBriefForm(host, { layer = 'agent', catalog = [], value = em
   const addSection = el('div', 'na-behaviour-section');
   addSection.append(add.el, el('p', 'na-behaviour-note', layer === 'agent' ? t('brief.optional_help', 'Behaviors added for this Agent only.') : t('brief.add_help', 'Brought in for every Agent below, at this depth.')));
   parts.push(addSection);
-  const destroyers = [integrations, pm, add];
+  const destroyers = [integrations, pm, add, { destroy: () => depthAsks.forEach((one) => one.destroy()) }];
 
   if (layer === 'agent') {
     /* Comes with this Agent: the server's answer, read-only. */
@@ -154,4 +161,49 @@ export function paintBriefForm(host, { layer = 'agent', catalog = [], value = em
   }
   host.replaceChildren(...parts);
   return { destroy: () => destroyers.forEach((part) => part.destroy()) };
+}
+
+/**
+ * One layer's settings as a panel with its own Save: the Campaign, Workspace and Team pages
+ * mount it (`GET`/`PUT /api/brief/settings/:layer/:id`). A save rebuilds every Agent's brief
+ * on the server, and each Agent is sent only what changed.
+ */
+export function createBriefSettingsPanel({ layer, id = '', campaignId = '', createAction = null, ownSave = true, showIntegrations = true, onChange = () => {} } = {}) {
+  const root = el('div', 'brief-settings');
+  const formHost = el('div', 'na-behaviour-sections');
+  const actions = el('div', 'brief-settings-actions');
+  const status = el('span', 'brief-settings-status');
+  const saveAction = createAction?.({ label: t('panels.save', 'Save'), size: 'compact', action: () => void save() });
+  const saveButton = saveAction?.el || el('button', null, t('panels.save', 'Save'));
+  if (!saveAction) { saveButton.type = 'button'; saveButton.addEventListener('click', () => void save()); }
+  actions.append(status, saveButton);
+  root.append(formHost);
+  if (ownSave) root.append(actions); // else the page's own Save calls save()
+  const url = () => `/api/brief/settings/${encodeURIComponent(layer)}/${encodeURIComponent(id || '-')}${campaignId ? `?campaign_id=${encodeURIComponent(campaignId)}` : ''}`;
+  let catalog = []; let value = emptyBriefValue(); let above = {}; let form = null;
+  const paint = () => {
+    form?.destroy();
+    form = paintBriefForm(formHost, { layer, catalog, value, above, showIntegrations, onChange: (next) => { value = next; status.textContent = ''; onChange(next); } });
+  };
+  const answer = (data = {}) => { value = briefValue(data); above = data.inherited || {}; paint(); };
+  async function save() {
+    status.textContent = t('team_config.saving', 'Saving…');
+    const body = { ...value, pm: typeof value.pm === 'boolean' ? value.pm : null };
+    const result = await request(url(), { method: 'PUT', json: body });
+    status.textContent = result.ok ? t('team_config.saved', 'Saved') : result.message;
+    if (result.ok) answer(result.data);
+    return result;
+  }
+  return {
+    el: root,
+    enter: async () => {
+      const [cat, settings] = await Promise.all([request('/api/brief/catalog'), request(url(), { cache: 'no-store' })]);
+      catalog = cat.ok && Array.isArray(cat.data) ? cat.data : [];
+      if (!settings.ok) { status.textContent = settings.message; return; }
+      answer(settings.data);
+    },
+    save,
+    value: () => value,
+    destroy: () => form?.destroy(),
+  };
 }

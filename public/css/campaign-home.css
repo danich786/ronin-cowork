@@ -215,6 +215,7 @@
   .cv-button[data-primary='true'] { border-color: var(--accent); color: var(--accent); }
   .cv-button:hover { border-color: var(--accent); color: var(--fg-strong); }
   .cv-note { margin: 0; font-size: var(--text-body); line-height: var(--leading-body); color: var(--muted); }
+  .cv-brief-head { margin: 0; color: var(--fg-strong); font-size: var(--form-input); font-weight: var(--weight-strong); }
 
   .cv-pills { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-inline); }
   .cv-pill {
