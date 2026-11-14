@@ -7,7 +7,7 @@ import { addProvMark } from './provenance.js';
 import { WorkspaceKit } from './workspace-kit.js';
 import { t } from './lexicon.js';
 import { renderMarkdownDocument } from './markdown-reader.js';
-import { createBriefSettingsPanel, scopeOf } from './brief-step.js';
+import { createBriefSettingsPanel, layerLinks, scopeOf } from './brief-step.js';
 import { createAuthorForm } from './brief-author.js';
 
 export const BEHAVIOUR_SURFACE_TYPE = 'campaign.behaviours';
