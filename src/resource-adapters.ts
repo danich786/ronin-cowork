@@ -4,7 +4,7 @@ import { STOCK_DIR, entryValue, isKeyLine, resolveFiles, resolveTreeFiles, type 
 import { storeDir } from './resources.js';
 
 export type DefinitionKind =
-  | 'desk_profiles' | 'lexicons' | 'services' | 'integrations' | 'behaviours' | 'capabilities'
+  | 'desk_profiles' | 'lexicons' | 'services' | 'integrations'
   | 'templates/agents' | 'templates/teams';
 
 export interface Definition {
@@ -25,22 +25,14 @@ const isHidden = (d: Definition): boolean => /^yes$/i.test(d.get('hidden'));
 
 export async function readDefinitions(kind: DefinitionKind): Promise<Definition[]> {
   const merged = new Map<string, Definition>();
-  const resolver = kind === 'behaviours' ? resolveTreeFiles : resolveFiles;
+  const resolver = resolveFiles;
   for (const file of await resolver({
     stock: path.join(STOCK_DIR, kind),
-    user: kind === 'behaviours' ? storeDir('ways') : path.join(storeDir('catalogs'), kind),
+    user: path.join(storeDir('catalogs'), kind),
     include: isDefinitionFile,
     symlinks: true,
   })) {
     const lines = file.text.split('\n');
-    if (kind === 'behaviours') {
-      const directory = file.relative.split(path.sep)[0];
-      const stated = entryValue(lines, 'scope');
-      if (!['floor', 'conditional', 'selected', 'sought'].includes(directory) || stated !== directory) {
-        console.error(`[ronin] ${file.path}: Behavior directory and \`scope\` must agree — skipped.`);
-        continue;
-      }
-    }
     if (!lines.some(isKeyLine)) {
       console.error(`[ronin] ${file.path}: no \`- **key:** value\` lines — not a definition, skipped.`);
       continue;
@@ -102,13 +94,6 @@ export interface InstallationRow extends ContributionRow {
   requires: string[];
 }
 
-export type BehaviourScope = 'floor' | 'conditional' | 'selected' | 'sought';
-export interface BehaviourRow extends ContributionRow {
-  installation: string;
-  page: string;
-  scope: BehaviourScope;
-  requires: string[];
-}
 
 function credit(v: string): { text: string; url: string } | undefined {
   const m = /^\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)$/.exec(v.trim());
@@ -179,26 +164,6 @@ export async function listIntegrations(): Promise<IntegrationRow[]> {
   }));
 }
 
-export async function listBehaviours(): Promise<BehaviourRow[]> {
-  return (await readDefinitions('behaviours')).map((d) => {
-    const installation = d.get('installation').trim();
-    const stated = d.get('scope').trim();
-    const scope: BehaviourScope = ['floor', 'conditional', 'sought'].includes(stated)
-      ? stated as BehaviourScope
-      : 'selected';
-    return {
-      ...contribution(d),
-      installation: /^[\u2013\u2014-]$/.test(installation) ? '' : installation,
-      page: d.file,
-      scope,
-      requires: splitDefinitionList(d.get('requires')),
-    };
-  });
-}
-
-const REACH = ['open', 'discuss', 'plan', 'execute'];
-const RECRUIT = ['open', 'nobody', 'propose agents', 'staff agents'];
-const OUTPUT = ['open', 'a plan', 'ideas', 'code', 'an artifact', 'the team', 'no code'];
 const TEMPLATE_KINDS = ['coding', 'work', 'personal', 'household', 'social', 'school'];
 
 export interface TemplateMandate { reach: string; recruit: string; output: string[] }
@@ -229,9 +194,9 @@ export interface TeamTemplateRow extends TemplateBox {
 }
 
 export function templateMandate(value: string): TemplateMandate | null {
-  const [reach, recruit, outputText] = value.split('·').map((part) => part.trim());
+  const [reach, recruit, outputText] = value.split('·').map((part) => part.trim().toLowerCase());
   const output = outputText?.split(',').map((part) => part.trim()).filter(Boolean) ?? [];
-  if (!REACH.includes(reach) || !RECRUIT.includes(recruit) || !output.length || output.some((part) => !OUTPUT.includes(part))) return null;
+  if (!reach || !recruit || !output.length) return null;
   return { reach, recruit, output };
 }
 

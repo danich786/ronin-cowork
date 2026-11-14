@@ -82,17 +82,24 @@ test('a Team Agent starts in Ronin house, its brief naming the repositories and 
   const resolved = await resolveForm({ team: 'papers', prompt: 'Write it up.' }, new Set());
   assert.equal(resolved.workspace, 'papers_ws');
   assert.equal(resolved.dir, roninHouse(), 'born in Ronin house, never a repository');
-  assert.match(resolved.brief, /^## Workspace — Papers$/m);
-  assert.match(resolved.brief, /^- cowork .* — worktree: `worktree-desk open cowork`$/m, 'a managed repository is opened when needed');
-  assert.match(resolved.brief, /^- ronin_lab .* — shared checkout \(notes\)$/m);
-  assert.ok(resolved.brief.split('\n').includes(`- papers ${papers} — drafts`), 'a folder is a Workspace Folder, by name and path');
-  assert.doesNotMatch(resolved.brief, /Born in|Repository approaches/);
-  assert.equal(resolved.capabilities.find((row) => row.name === 'worktree-desk')?.selected, true, 'desk teaching is ready for managed work');
+  const work = resolved.composed!.record.work;
+  assert.equal(resolved.composed!.record.setting.workspace, 'papers_ws');
+  assert.match(work.repo_lines, /^- cowork .* — worktree: `worktree-desk open cowork`$/m, 'a managed repository is opened when needed');
+  assert.match(work.repo_lines, /^- ronin_lab .* — shared checkout \(notes\)$/m);
+  assert.ok(work.folder_lines.split('\n').includes(`- papers ${papers} — drafts`), 'a folder is a Workspace Folder, by name and path');
+  assert.equal(resolved.composed!.record.work.desk, false, 'managed repos are not a desk: a desk holds once one is cut');
+  assert.ok(!resolved.composed!.resolved.behaviours.some((row) => row.name === 'working-at-a-desk'), 'so no desk teaching at birth');
+});
+
+test('a draft with no Team may name its Workspace (the layer preview)', async () => {
+  const resolved = await resolveForm({ workspace: 'papers_ws', prompt: 'Preview.' }, new Set());
+  assert.equal(resolved.composed!.record.setting.workspace, 'papers_ws');
+  assert.match(resolved.composed!.record.work.repo_lines, /worktree-desk open cowork/);
 });
 
 test('an Agent without a Team has no Workspace and starts in Ronin house', async () => {
   const resolved = await resolveForm({ prompt: 'Read the papers.' }, new Set());
   assert.equal(resolved.workspace, '');
   assert.equal(resolved.dir, roninHouse());
-  assert.doesNotMatch(resolved.brief, /## Workspace/);
+  assert.equal(resolved.composed!.record.setting.workspace, '');
 });

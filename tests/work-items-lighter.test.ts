@@ -364,13 +364,13 @@ test('a hand-in is with the lead until on dev after the last hand-in; a checkout
   assert.equal(await stage(desk.id), 'lead', 'a new hand-in waits for its own promotion');
 });
 
-test('project management is read from the Agent\'s behaviours; a hand-in never needs an item under it (w415)', async () => {
-  const { projectManagementOn } = await import('../src/agent-composition.js');
+test('project management is read from what the Agent\'s brief told it; a hand-in never needs an item under it (w415)', async () => {
+  const { projectManagementOn } = await import('../src/agent-configuration.js');
   const { sessionDir } = await import('../src/session-dir.js');
   for (const [name, books] of [['pm_on', ['base-agent', 'project-management']], ['pm_off', ['base-agent']]] as const) {
     const dir = sessionDir(name);
     await fs.mkdir(dir, { recursive: true });
-    await fs.writeFile(path.join(dir, 'birth-receipt.json'), JSON.stringify({ behaviours: books.map((book) => ({ book, file: `/x/${book}.md` })) }));
+    await fs.writeFile(path.join(dir, 'brief-told.json'), JSON.stringify({ facts: {}, told: Object.fromEntries(books.map((book) => [book, { kind: 'behaviours', depth: 'full', title: book }])) }));
   }
   assert.equal(await projectManagementOn('pm_on'), true);
   assert.equal(await projectManagementOn('pm_off'), false);

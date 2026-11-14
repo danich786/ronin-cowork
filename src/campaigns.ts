@@ -1,3 +1,5 @@
+import type { BriefSettings } from './brief-record.js';
+import { layerOf } from './brief-settings.js';
 import { readMachineSettingsSection, writeMachineSettings } from './machine-settings.js';
 import { agentDefaults, type AgentDefaults } from './agent-defaults.js';
 import { parseProviderSummary, type ProviderSummary } from './model-providers.js';
@@ -18,6 +20,10 @@ export interface CampaignSettings {
   defaults: AgentDefaults;
   cowork_defaults: Record<string, unknown>;
   template_defaults: Record<string, unknown>;
+  /** The Campaign's brief settings, integrations and project management (wip/BRIEF_MODEL.md §6). */
+  brief: BriefSettings;
+  integrations: string[];
+  pm?: boolean;
 }
 
 export const SETUP_STEP_IDS = ['provider', 'register', 'workspace', 'installations', 'password'] as const;
@@ -64,6 +70,10 @@ export interface CampaignEdit {
     defaults?: Partial<AgentDefaults>;
     cowork_defaults?: Record<string, unknown>;
     template_defaults?: Record<string, unknown>;
+    brief?: unknown;
+    integrations?: unknown;
+    /** null: this Campaign says nothing. */
+    pm?: boolean | null;
   };
 }
 
@@ -147,14 +157,17 @@ const setupSettings = (v: unknown): { answers: SetupAnswers; facts: SetupFacts }
 const settings = (v: unknown): CampaignSettings => {
   const c = bucket(v);
   const defaults = bucket(c.defaults);
-  const settled = Object.prototype.hasOwnProperty.call(c, 'installations');
+  const layer = layerOf('campaign', c);
   return {
     installations: booleanMap(c.installations),
     services: serviceSettings(c.services),
     setup: setupSettings(c.setup),
-    defaults: agentDefaults(settled ? defaults : { ...defaults, behaviours: undefined }),
+    defaults: agentDefaults(defaults),
     cowork_defaults: bucket(c.cowork_defaults),
     template_defaults: bucket(c.template_defaults),
+    brief: layer.brief,
+    integrations: layer.integrations,
+    ...(layer.pm !== undefined ? { pm: layer.pm } : {}),
   };
 };
 
@@ -328,6 +341,15 @@ export async function writeCampaign(id: string, edit: CampaignEdit): Promise<Cam
               ? existing.config.cowork_defaults : bucket(edit.config.cowork_defaults),
             template_defaults: edit.config.template_defaults === undefined
               ? existing.config.template_defaults : bucket(edit.config.template_defaults),
+            ...(() => {
+              const next = layerOf('campaign', edit.config);
+              const pm = edit.config.pm === undefined ? existing.config.pm : next.pm;
+              return {
+                brief: edit.config.brief === undefined ? existing.config.brief : next.brief,
+                integrations: edit.config.integrations === undefined ? existing.config.integrations : next.integrations,
+                ...(pm !== undefined ? { pm } : {}),
+              };
+            })(),
           },
         }
       : {}),

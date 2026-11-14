@@ -2,9 +2,10 @@ import { createHash } from 'node:crypto';
 import { constants } from 'node:fs';
 import { lstat, mkdir, open, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { STOCK_DIR, resolveTreeFiles, storeDir, type Origin } from './resources.js';
+import { STOCK_DIR, resolveFiles, storeDir, uncached, type Origin } from './resources.js';
 
-export const BEHAVIOUR_SCOPES = ['floor', 'conditional', 'selected', 'sought'] as const;
+/** The user writes facts, behaviours and tools (wip/BRIEF_MODEL.md §3); the `scope` of a document is its kind. */
+export const BEHAVIOUR_SCOPES = ['facts', 'behaviours', 'tools'] as const;
 export type BehaviourDocumentScope = typeof BEHAVIOUR_SCOPES[number];
 
 export class BehaviourDocumentError extends Error {
@@ -17,28 +18,27 @@ const digest = (text: string): string => createHash('sha256').update(text).diges
 function identity(scopeValue: unknown, nameValue: unknown): { scope: BehaviourDocumentScope; name: string; relative: string } {
   const scope = String(scopeValue ?? '').trim() as BehaviourDocumentScope;
   const name = String(nameValue ?? '').trim();
-  if (!BEHAVIOUR_SCOPES.includes(scope)) throw new BehaviourDocumentError('Choose a valid Behavior scope.');
+  if (!BEHAVIOUR_SCOPES.includes(scope)) throw new BehaviourDocumentError('Choose facts, behaviours or tools.');
   if (!tokenPattern.test(name)) throw new BehaviourDocumentError('Use a lowercase Behavior name with hyphens or underscores.');
-  return { scope, name, relative: path.join(scope, `${name}.md`) };
+  return { scope, name, relative: `${name}.md` };
 }
 
-function validateText(textValue: unknown, scope: BehaviourDocumentScope): string {
+function validateText(textValue: unknown): string {
   const text = String(textValue ?? '');
   if (!text.trim()) throw new BehaviourDocumentError('A Behavior cannot be empty.');
   if (Buffer.byteLength(text, 'utf8') > 256 * 1024) throw new BehaviourDocumentError('That Behavior is too large.', 413);
   if (!/^#\s+\S.+$/m.test(text)) throw new BehaviourDocumentError('A Behavior needs a Markdown title.');
-  const stated = text.match(/^-\s+\*\*scope:\*\*\s*(\S+)\s*$/mi)?.[1];
-  if (stated !== scope) throw new BehaviourDocumentError(`The Behavior must declare scope: ${scope}.`);
   return text.endsWith('\n') ? text : `${text}\n`;
 }
 
 async function resolved(scope: BehaviourDocumentScope, name: string) {
   const { relative } = identity(scope, name);
-  return (await resolveTreeFiles({
-    stock: path.join(STOCK_DIR, 'behaviours'),
-    store: 'ways',
+  // Fresh every time: a save reads back what it just wrote.
+  return (await uncached(() => resolveFiles({
+    stock: path.join(STOCK_DIR, scope),
+    store: scope,
     include: (candidate) => candidate === relative,
-  }))[0];
+  })))[0];
 }
 
 export interface BehaviourDocument {
@@ -58,8 +58,8 @@ export async function readBehaviourDocument(scopeValue: unknown, nameValue: unkn
 }
 
 async function ownerTarget(scope: BehaviourDocumentScope, name: string): Promise<string> {
-  const root = storeDir('ways');
-  const dir = path.join(root, scope);
+  const root = storeDir(scope);
+  const dir = root;
   await mkdir(dir, { recursive: true });
   const directoryFacts = await lstat(dir);
   if (!directoryFacts.isDirectory() || directoryFacts.isSymbolicLink()) throw new BehaviourDocumentError('The owner Behavior scope is not a regular directory.', 409);
@@ -99,7 +99,7 @@ export async function createBehaviourDocument(input: {
   scope: unknown; name: unknown; text: unknown; shadow?: unknown;
 }): Promise<BehaviourDocument> {
   const { scope, name } = identity(input.scope, input.name);
-  const text = validateText(input.text, scope);
+  const text = validateText(input.text);
   const existing = await resolved(scope, name);
   const shadow = input.shadow === true;
   if (existing?.origin === 'user') throw new BehaviourDocumentError('That owner Behavior already exists.', 409);
@@ -115,7 +115,7 @@ export async function updateBehaviourDocument(input: {
   scope: unknown; name: unknown; text: unknown; revision: unknown;
 }): Promise<BehaviourDocument> {
   const { scope, name } = identity(input.scope, input.name);
-  const text = validateText(input.text, scope);
+  const text = validateText(input.text);
   const target = await ownerTarget(scope, name);
   const current = await ownerText(target);
   if (current === null) throw new BehaviourDocumentError('Save the stock Behavior as your own before updating it.', 409);
@@ -124,6 +124,6 @@ export async function updateBehaviourDocument(input: {
   return readBehaviourDocument(scope, name);
 }
 
-export function behaviourStarter(label = 'My Behavior', scope: BehaviourDocumentScope = 'selected'): string {
-  return `# ${label}\n\n- **label:** ${label}\n- **blurb:** Describe when this guidance helps.\n- **installation:** —\n- **scope:** ${scope}\n\nWrite the guidance the Agent receives at birth.\n`;
+export function behaviourStarter(label = 'My Behavior'): string {
+  return `# ${label}\n- **seed:** Describe when this guidance helps.\n- **when:**\n- **depth:** none\n\nWrite the guidance the Agent receives at birth.\n`;
 }

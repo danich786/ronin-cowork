@@ -15,8 +15,7 @@ import { randomUUID } from 'node:crypto';
 import { withManagedTransaction } from '../desks/lifecycle-ledger.js';
 import { shutdownAgent, ShutdownRefused } from '../desks/session-shutdown.js';
 import { didLine, readItem, reviewPrompt } from '../work-items.js';
-import { projectManagementOn } from '../agent-composition.js';
-import { briefPointer } from '../behaviours.js';
+import { projectManagementOn, refreshBrief } from '../agent-configuration.js';
 
 const out = (s = '') => process.stdout.write(s + '\n');
 function die(verdict: string, code: number): never {
@@ -184,7 +183,8 @@ async function main(): Promise<void> {
         out(`  worktree ${d.worktree}`);
         out(`  dependencies ${d.dependency_location || 'none'}`);
         out(row(d));
-        if (verb === 'open') out(`  ${await briefPointer('worktree-root')}`);
+        // A desk cut is a change to the Agent's situation: its brief says so (wip/BRIEF_MODEL.md §2).
+        await refreshBrief(session).catch(() => {});
         // Open does its job and says what it did; it does not decide custody (owner,
         // 2026-09-09: tools acknowledge, they do not hard-code behaviour). Reopening a
         // desk that was handed off leaves custody with the holder, and every later verb
@@ -289,6 +289,7 @@ async function main(): Promise<void> {
           kept ||= o.action === 'kept';
           out(`${o.action.toUpperCase()} ${deskId(d)} — ${o.reason}`);
         }
+        await refreshBrief(session).catch(() => {});
         process.exit(kept ? 4 : 0);
       }
       case 'handoff': {
@@ -298,6 +299,7 @@ async function main(): Promise<void> {
         if (!to.length) die('NO-SUCCESSOR: say --to <session[,session]>', 2);
         const next = await handoffDesk(d.repo, d.branch, to);
         out(`HANDED-OFF ${deskId(d)} → ${to.join(', ')} at ${next.worktree}`);
+        for (const who of new Set([session, ...to])) await refreshBrief(who).catch(() => {});
         out(row(next));
         return;
       }
@@ -332,6 +334,7 @@ async function main(): Promise<void> {
           return saved;
         });
         out(`DISCARDED ${deskId(d)} — receipt ${receipt.id}`);
+        await refreshBrief(session).catch(() => {});
         return;
       }
       case 'reply': {

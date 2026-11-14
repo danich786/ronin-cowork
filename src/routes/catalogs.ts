@@ -6,8 +6,6 @@ import { listSkins } from '../skin-catalog.js';
 import { listLexicons, resolveLexicon } from '../lexicon-catalog.js';
 import { activeDeskProfileName, listDeskProfiles } from '../desk-profiles.js';
 import { initialCampaign, readCampaign } from '../campaigns.js';
-import { listWays } from '../resources.js';
-import { listSessionReadings } from '../session-readings.js';
 import { listProviderCatalog, providerCatalogAnswer } from '../model-providers.js';
 import { acceptModelInfo, checkModelInfo, discardModelInfo, modelInfoReview, readPendingModelInfo } from '../model-info.js';
 import { readProviderSummary } from '../provider-summary.js';
@@ -28,12 +26,10 @@ import {
   isShadowable,
 } from '../resources.js';
 import {
-  listBehaviours,
   listAgentTemplates,
   listInstallations,
   listTeamTemplates,
 } from '../resource-adapters.js';
-import { availableBehaviours } from '../instruction-cascade.js';
 import { saveAgentTemplate, saveTeamTemplate } from '../templates.js';
 import { browseFolders, createFolder, startGit, withRegisteredRoots } from '../folder-browser.js';
 import {
@@ -75,55 +71,6 @@ export function registerCatalogs(app: express.Express): void {
       res.json(await createFolder(String(req.body?.parent ?? ''), String(req.body?.name ?? ''), req.body?.init_git === true));
     } catch (e) {
       res.status(400).json({ error: errMsg(e) });
-    }
-  });
-
-  app.get('/api/session-readings', async (_req, res) => {
-    try {
-      res.json(await listSessionReadings());
-    } catch (e) {
-      res.status(500).json({ error: errMsg(e) });
-    }
-  });
-
-  app.get('/api/ways', async (_req, res) => {
-    try {
-      res.json(await listWays());
-    } catch (e) {
-      res.status(500).json({ error: errMsg(e) });
-    }
-  });
-
-  app.get('/api/ways/:scope/:name', async (req, res) => {
-    try { res.json(await readBehaviourDocument(req.params.scope, req.params.name)); }
-    catch (e) { res.status(e instanceof BehaviourDocumentError ? e.status : 500).json({ error: errMsg(e) }); }
-  });
-
-  app.post('/api/ways', async (req, res) => {
-    try { res.status(201).json(await createBehaviourDocument(req.body ?? {})); }
-    catch (e) { res.status(e instanceof BehaviourDocumentError ? e.status : 500).json({ error: errMsg(e) }); }
-  });
-
-  app.put('/api/ways/:scope/:name', async (req, res) => {
-    try { res.json(await updateBehaviourDocument({ ...req.body, scope: req.params.scope, name: req.params.name })); }
-    catch (e) { res.status(e instanceof BehaviourDocumentError ? e.status : 500).json({ error: errMsg(e) }); }
-  });
-
-  app.get('/api/campaign-default-options', async (req, res) => {
-    try {
-      const campaign_id = String(req.query.campaign_id ?? '').trim() || (await initialCampaign())?.id || '';
-      const campaign = campaign_id ? await readCampaign(campaign_id) : null;
-      if (!campaign) return res.status(404).json({ error: `Unknown Campaign: ${campaign_id || '(none)'}.` });
-      const [installations, behaviours] = await Promise.all([listInstallations(), listBehaviours()]);
-      const available = availableBehaviours(installations, campaign.config.installations, behaviours);
-      res.json({
-        available,
-        behaviours: behaviours.filter((row) => row.scope === 'selected' && !row.installation).map((row) => ({
-          name: row.name, label: row.label, blurb: row.blurb, reading: row.page, scope: row.scope,
-        })),
-      });
-    } catch (e) {
-      res.status(500).json({ error: errMsg(e) });
     }
   });
 

@@ -1,6 +1,7 @@
 import { chmod, mkdir, readdir, readFile, rename, rmdir, stat, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { rootDir, storeDir } from './resources.js';
+import { userIntroFact } from './user-intro.js';
 
 export interface BehaviourStoreMigration {
   moved: string[];
@@ -25,7 +26,7 @@ function asBehaviour(name: string, text: string): string {
 /** One-way cutover from the retired SOP store into the Behavior store. */
 export async function migrateSopsToBehaviours(): Promise<BehaviourStoreMigration> {
   const old = process.env.RONIN_SOPS_DIR?.trim() || path.join(rootDir('user'), 'sops');
-  const target = path.join(storeDir('ways'), 'selected');
+  const target = path.join(rootDir('user'), 'ways', 'selected');
   const done: BehaviourStoreMigration = { moved: [], deduplicated: [] };
   const entries = await readdir(old, { withFileTypes: true }).catch((error: NodeJS.ErrnoException) => {
     if (error.code === 'ENOENT') return [];
@@ -62,5 +63,185 @@ export async function migrateSopsToBehaviours(): Promise<BehaviourStoreMigration
   await rmdir(old).catch((error: NodeJS.ErrnoException) => {
     if (error.code !== 'ENOENT' && error.code !== 'ENOTEMPTY') throw error;
   });
+  return done;
+}
+
+// ── The ways store → behaviours and facts (wip/BRIEF_MODEL.md §3, §9), once at start ──
+
+const OLD_WHEN: Record<string, string> = {
+  'arrangement:managed': 'desk', 'arrangement:checkout': 'checkout', new_owner: 'new-owner',
+  cowork: 'cowork', team: 'team', lead: 'lead',
+};
+const DEPTH_OF_SCOPE: Record<string, string> = { floor: 'full', conditional: 'full', selected: 'none', sought: 'seed' };
+
+const firstSentence = (text: string): string => {
+  const paragraph = text.replace(/<!--[^]*?-->/g, '').split(/\n\s*\n/).map((part) => part.trim())
+    .find((part) => part && !/^(#|>|\||[-*] |\d+\. |```)/.test(part)) ?? '';
+  return (paragraph.replace(/\s+/g, ' ').match(/^.*?[.!?](?=\s|$)/)?.[0] ?? paragraph.replace(/\s+/g, ' ')).trim();
+};
+
+/** An old behaviour file (label, blurb, scope, requires) in the §3 header. `when` adds conditionals. */
+export function asCatalogBehaviour(name: string, text: string, scope: string, extraWhen: string[] = []): string {
+  const lines = text.replace(/\r\n/g, '\n').split('\n');
+  const key = (k: string): string => lines.find((l) => new RegExp(`^-\\s*\\*\\*${k}:\\*\\*`, 'i').test(l.trim()))
+    ?.replace(new RegExp(`^\\s*-\\s*\\*\\*${k}:\\*\\*\\s*`, 'i'), '').trim() ?? '';
+  const title = lines.find((l) => /^#\s+/.test(l))?.replace(/^#\s+/, '').trim() || key('label') || name.replace(/[-_]+/g, ' ');
+  const body = lines.filter((l, i) => !/^-\s*\*\*[\w.-]+:\*\*/.test(l.trim()) && !(i === lines.findIndex((x) => /^#\s+/.test(x)))).join('\n').trim();
+  const when = [
+    ...key('requires').split(',').map((w) => w.trim()).filter(Boolean).flatMap((w) => OLD_WHEN[w] ? [OLD_WHEN[w]] : w.startsWith('role:') ? [w] : []),
+    ...extraWhen,
+  ];
+  const seed = key('seed') || key('blurb') || firstSentence(body) || title;
+  const header = [
+    `# ${title}`,
+    `- **seed:** ${seed}`,
+    ...(when.length ? [`- **when:** ${when.join(', ')}`] : []),
+    `- **depth:** ${key('depth') || DEPTH_OF_SCOPE[scope] || 'seed'}`,
+    ...(key('order') ? [`- **order:** ${key('order')}`] : []),
+  ];
+  return `${header.join('\n')}\n\n${body}\n`;
+}
+
+async function moveInto(to: string, content: Buffer, from: string, done: BehaviourStoreMigration, label: string): Promise<void> {
+  const existing = await readFile(to).catch((error: NodeJS.ErrnoException) => {
+    if (error.code === 'ENOENT') return null;
+    throw error;
+  });
+  if (existing !== null && !existing.equals(content)) {
+    throw new Error(`Behaviour store move collision for ${label}: ${from} and ${to} differ; reconcile them before Ronin starts.`);
+  }
+  if (existing === null) {
+    await mkdir(path.dirname(to), { recursive: true });
+    const temporary = `${to}.migrating-${process.pid}`;
+    await writeFile(temporary, content);
+    await chmod(temporary, (await stat(from)).mode);
+    await rename(temporary, to);
+    done.moved.push(label);
+  } else done.deduplicated.push(label);
+  await unlink(from);
+}
+
+async function walkMarkdown(dir: string, prefix = ''): Promise<Array<{ file: string; relative: string }>> {
+  const entries = await readdir(dir, { withFileTypes: true }).catch((error: NodeJS.ErrnoException) => {
+    if (error.code === 'ENOENT') return [];
+    throw error;
+  });
+  const out: Array<{ file: string; relative: string }> = [];
+  for (const entry of entries) {
+    if (entry.name.startsWith('.')) continue;
+    const file = path.join(dir, entry.name);
+    const relative = prefix ? path.join(prefix, entry.name) : entry.name;
+    if (entry.isDirectory()) out.push(...await walkMarkdown(file, relative));
+    else if (entry.isFile() && entry.name.endsWith('.md') && entry.name !== 'README.md') out.push({ file, relative });
+  }
+  return out;
+}
+
+async function removeEmpty(dir: string): Promise<void> {
+  for (const entry of await readdir(dir, { withFileTypes: true }).catch(() => [])) {
+    if (entry.isDirectory()) await removeEmpty(path.join(dir, entry.name));
+  }
+  await rmdir(dir).catch(() => {});
+}
+
+/**
+ * One-way: `~/ronin/ways/<scope>/*.md` into the flat `~/ronin/behaviours/`, in the §3 header
+ * (the user intro into `~/ronin/facts/user-intro.md`), and the user's Workspace shelf files
+ * `~/ronin/session_boot/root/<ws>/*.md` into behaviours with `when: workspace:<ws>`.
+ * Symlinks on the shelf were the shelf's own pointers and are dropped.
+ */
+export async function migrateWaysToBehaviours(): Promise<BehaviourStoreMigration> {
+  const done: BehaviourStoreMigration = { moved: [], deduplicated: [] };
+  const ways = path.join(rootDir('user'), 'ways');
+  const behaviours = storeDir('behaviours');
+  for (const { file, relative } of await walkMarkdown(ways)) {
+    const scope = relative.split(path.sep)[0] ?? '';
+    const name = path.basename(relative, '.md').replace(/[\s_]+/g, '-').toLowerCase();
+    const text = await readFile(file, 'utf8');
+    if (name === 'user-intro') {
+      const intro = text.split(/^## About the user\s*$/im)[1]?.trim() ?? '';
+      await moveInto(path.join(storeDir('facts'), 'user-intro.md'), Buffer.from(userIntroFact(intro)), file, done, relative);
+      continue;
+    }
+    await moveInto(path.join(behaviours, `${name}.md`), Buffer.from(asCatalogBehaviour(name, text, scope)), file, done, relative);
+  }
+  await removeEmpty(ways);
+  const root = path.join(storeDir('session_boot'), 'root');
+  for (const entry of await readdir(root, { withFileTypes: true }).catch(() => [])) {
+    if (!entry.isDirectory()) continue;
+    const ws = entry.name;
+    for (const shelf of await readdir(path.join(root, ws), { withFileTypes: true }).catch(() => [])) {
+      const from = path.join(root, ws, shelf.name);
+      if (shelf.isSymbolicLink()) { await unlink(from); continue; }
+      if (!shelf.isFile() || !shelf.name.endsWith('.md') || shelf.name === 'README.md') continue;
+      const name = `${ws}-${path.basename(shelf.name, '.md')}`.replace(/[\s_]+/g, '-').toLowerCase();
+      const text = await readFile(from, 'utf8');
+      await moveInto(path.join(behaviours, `${name}.md`), Buffer.from(asCatalogBehaviour(name, text, 'sought', [`workspace:${ws}`])), from, done, `session_boot/root/${ws}/${shelf.name}`);
+    }
+  }
+  await removeEmpty(root);
+  // The gbrain shelf: its files become behaviours that hold while the gbrain integration is on.
+  const gbrain = path.join(storeDir('session_boot'), 'gbrain_connected');
+  for (const { file, relative } of await walkMarkdown(gbrain)) {
+    const name = `gbrain-${path.basename(relative, '.md')}`.replace(/[\s_]+/g, '-').toLowerCase();
+    await moveInto(path.join(behaviours, `${name}.md`), Buffer.from(asCatalogBehaviour(name, await readFile(file, 'utf8'), 'conditional', ['integration:gbrain'])), file, done, `session_boot/gbrain_connected/${relative}`);
+  }
+  await removeEmpty(gbrain);
+  return done;
+}
+
+// ── Brief settings (wip/BRIEF_MODEL.md §6), once at start: the old chosen-behaviour lists on
+// Team rosters and Campaign defaults become each layer's `brief.add`; project management,
+// once a chosen behaviour, becomes the layer's `pm` switch. No reader for the old shape stays.
+
+const RENAMED: Record<string, string> = { recruit: 'team-work', report_before_fixing: 'working-with-the-user' };
+const newName = (old: string): string => {
+  const bare = old.replace(/^ways:/, '').trim();
+  return RENAMED[bare] ?? bare.replace(/_/g, '-');
+};
+
+/** The old list as the new settings: `{ brief, pm }`. */
+export function briefFromOldList(names: readonly string[]): { brief: { add: Array<{ name: string }>; block: string[]; only: string[] }; pm?: true } {
+  const wanted = [...new Set(names.map(newName).filter((name) => name && name !== 'mandates'))];
+  const pm = wanted.includes('project-management');
+  return {
+    brief: { add: wanted.filter((name) => name !== 'project-management').map((name) => ({ name })), block: [], only: [] },
+    ...(pm ? { pm: true as const } : {}),
+  };
+}
+
+export async function migrateBriefSettings(): Promise<{ rosters: string[]; campaigns: string[] }> {
+  const done = { rosters: [] as string[], campaigns: [] as string[] };
+  const root = storeDir('team_rosters');
+  for (const { file, relative } of await walkMarkdown(root)) {
+    const text = await readFile(file, 'utf8');
+    const line = /^-\s*\*\*behaviours:\*\*\s*(.*)$/m.exec(text);
+    if (!line) continue;
+    let old: { selected?: unknown; required?: unknown } = {};
+    try { old = JSON.parse(line[1]) as typeof old; } catch { /* unreadable: nothing chosen */ }
+    const names = [...(Array.isArray(old.selected) ? old.selected : []), ...(Array.isArray(old.required) ? old.required : [])].map(String);
+    const next = briefFromOldList(names);
+    const lines = [`- **brief:** ${JSON.stringify(next.brief)}`, '- **integrations:** []', ...(next.pm ? ['- **pm:** true'] : [])];
+    const temporary = `${file}.migrating-${process.pid}`;
+    await writeFile(temporary, text.replace(line[0], lines.join('\n')));
+    await rename(temporary, file);
+    done.rosters.push(relative);
+  }
+  const { readMachineSettingsSection, writeMachineSettings } = await import('./machine-settings.js');
+  const campaigns = await readMachineSettingsSection<Record<string, Record<string, unknown>>>('campaigns', {});
+  let changed = false;
+  for (const [id, campaign] of Object.entries(campaigns)) {
+    const config = campaign?.config as Record<string, unknown> | undefined;
+    const defaults = config?.defaults as Record<string, unknown> | undefined;
+    if (!config || !defaults || !Object.prototype.hasOwnProperty.call(defaults, 'behaviours')) continue;
+    const next = briefFromOldList(Array.isArray(defaults.behaviours) ? defaults.behaviours.map(String) : []);
+    delete defaults.behaviours;
+    config.brief = next.brief;
+    config.integrations ??= [];
+    if (next.pm) config.pm = true;
+    changed = true;
+    done.campaigns.push(id);
+  }
+  if (changed) await writeMachineSettings('campaigns', { campaigns });
   return done;
 }
