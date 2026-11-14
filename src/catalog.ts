@@ -13,6 +13,7 @@
  *   - **depth:** none | seed | full     (behaviours, tools; blank = seed)
  *   - **serves:** write-it-down         (tools; blank = Other tools)
  *   - **mandate:** reach                (behaviours: a mandate value; the title is the value)
+ *   - **with:** planning                (mandate values: the behaviours choosing it puts in play)
  *   - **order:** 40
  *
  *   <the full text>
@@ -40,6 +41,8 @@ export interface CatalogFile {
   mandate: string;
   /** Its value on that axis: the title, lower-cased ('Propose agents' → 'propose agents'). */
   value: string;
+  /** A mandate value's `with:`: the behaviours choosing it puts in play, at their depth. */
+  with: string[];
   order: number;
   /** The full text: everything after the header. */
   body: string;
@@ -78,6 +81,7 @@ export function parseCatalogFile(kind: CatalogKind, name: string, text: string):
     serves: kind === 'tools' ? list(get('serves')) : [],
     mandate: axis,
     value: axis ? title.toLowerCase() : '',
+    with: axis ? list(get('with')) : [],
     order: Number.isFinite(order) && get('order') !== '' ? order : Number.MAX_SAFE_INTEGER,
     body: lines.slice(at).join('\n').trim(),
   };

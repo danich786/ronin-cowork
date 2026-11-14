@@ -101,8 +101,8 @@ test('add, then block, then screen; a behaviour brings the tools that serve it',
 });
 
 test('mandate values are the files: a value is in play for the Agent that holds it, in its own section', () => {
-  const plan = file('behaviours', 'reach-plan', "# Plan\n- **seed:** Plan; don't build.\n- **mandate:** reach\n- **order:** 2\n");
-  assert.deepEqual([plan.mandate, plan.value], ['reach', 'plan']);
+  const plan = file('behaviours', 'reach-plan', "# Plan\n- **seed:** Plan; don't build.\n- **mandate:** reach\n- **with:** extra\n- **order:** 2\n");
+  assert.deepEqual([plan.mandate, plan.value, plan.with], ['reach', 'plan', ['extra']]);
   assert.deepEqual([CATALOG.behaviours[0].mandate, CATALOG.behaviours[0].value], ['', ''], 'an ordinary behaviour has no axis');
   const catalog: Catalog = {
     ...CATALOG,
@@ -117,7 +117,8 @@ test('mandate values are the files: a value is in play for the Agent that holds 
   };
   const out = resolveBrief(catalog, record(), []);
   assert.deepEqual(out.mandates.map((row) => row.name), ['reach-plan', 'recruit-nobody', 'output-code']);
-  assert.deepEqual(out.behaviours.map((row) => row.name), ['base'], 'never among the behaviours');
+  assert.deepEqual(out.behaviours.map((row) => [row.name, row.depth, row.why]), [['base', 'full', []], ['extra', 'seed', ['with:reach-plan']]], 'never among the behaviours; with: brings its behaviour');
+  assert.ok(!resolveBrief(catalog, { ...record(), agent: { ...record().agent, reach: 'execute' } }, []).behaviours.some((row) => row.name === 'extra'), 'another value, no with:');
   const text = renderBrief('demo', record(), out);
   assert.match(text, /## Facts[^]*## Mandate\n- Plan; don't build\.\n- Work alone\.\n- Return code\.\n\nThe repo arrangement\.[^]*## Behaviours/);
   assert.equal(resolveBrief(catalog, record(), [layerOf('team', { brief: { block: ['reach-plan'] } })]).mandates.length, 2, 'a blocked value is not told');

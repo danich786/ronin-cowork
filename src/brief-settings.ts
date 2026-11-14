@@ -138,6 +138,11 @@ export function resolveBrief(catalog: Catalog, record: BriefRecord, layers: read
     if (file.mandate && !holds(file)) continue;
     if (whenHolds(file.when, record)) put(file, file.depth, file.mandate ? [`${file.mandate}:${file.value}`, ...file.when] : file.when);
   }
+  // A value held brings its `with:` behaviours, at their depth; its order never copies their text.
+  for (const row of [...told.values()]) for (const name of row.file.with) {
+    const file = all.get(name);
+    if (file?.kind === 'behaviours') put(file, file.depth === 'none' ? 'seed' : file.depth, [`with:${row.name}`]);
+  }
   // 2. Add, from every layer.
   for (const layer of layers) for (const add of layer.brief.add) {
     const file = all.get(add.name);

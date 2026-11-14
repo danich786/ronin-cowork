@@ -119,7 +119,7 @@ export function registerBrief(app: express.Express): void {
       const catalog = await readCatalogs();
       res.json([...catalog.facts, ...catalog.behaviours, ...catalog.tools].map((row) => ({
         kind: row.kind.replace(/s$/, ''), name: row.name, title: row.title, seed: row.seed, line: row.line,
-        depth: row.depth, when: row.when, serves: row.serves, mandate: row.mandate, value: row.value,
+        depth: row.depth, when: row.when, serves: row.serves, mandate: row.mandate, value: row.value, with: row.with,
         order: row.order === Number.MAX_SAFE_INTEGER ? null : row.order, path: row.file, origin: row.origin,
       })));
     } catch (e) { res.status(500).json({ error: errMsg(e) }); }
