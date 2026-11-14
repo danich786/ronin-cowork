@@ -4,8 +4,7 @@
 - **depth:** full
 - **order:** 80
 
-This stable entry is also offered to Agents helping an owner use Ronin.
-Choose the task; implementation knowledge is not required.
+Each thing an owner does in Ronin, and its guide:
 
 | Task | Guide |
 |---|---|
@@ -20,6 +19,5 @@ Choose the task; implementation knowledge is not required.
 | Add optional Services | [Services](../../docs/getting-started/services-activation.md) |
 | Send product feedback | [Feedback](../../docs/using-ronin/feedback.md) |
 
-The [documentation index](../../docs/README.md) separates using Ronin from understanding its
-construction. Current availability comes from the running installation; optional or
-parked features are not promised merely because their source exists.
+The rest is in the [documentation index](../../docs/README.md); what is available is what this
+install runs, not what its source holds.
