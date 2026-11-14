@@ -16,3 +16,7 @@ shows them. **Add a doc** means put a document on your work record:
 through the typed dispatcher.
 
 More: `ronin-help work-record`
+
+## Usage
+
+Universal typed record surface. `work-record --help` lists read, update_record (objective, repositories) and workspace. It resolves the calling session without accepting record paths and preserves the existing guarded validation.

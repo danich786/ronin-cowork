@@ -38,3 +38,7 @@ Any Agent with this capability can use the same typed reads and writes. Mika als
 `session_create` as a separate grant. Her house guidance tells her to show the owner the
 intended change and wait for a yes before writing, and not to exclude Workspace Folders or
 handle credentials. These are instructions to Mika, not identity checks in the tool.
+
+## Usage
+
+Typed, secret-free Machine and Campaign configuration. `machine-settings --help` lists read and write operations for the Campaign, installations, Agent and Cowork defaults, Workspace Folders, providers, machine facts, and owner profile. The same operations are available to every Agent given this tool.

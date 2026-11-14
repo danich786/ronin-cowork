@@ -41,3 +41,7 @@ Agent and `item handoff <id> <agent>` moves an item to it.
 
 Lead-specific working guidance is a conditional Behavior applied from the explicit
 session designation. This capability remains the tool teaching for every Cowork Agent.
+
+## Usage
+
+Typed Team surface for every Cowork Agent. `team --help` lists roster read/write and member status (the Team's reading of the items it and its members hold). Lead remains an explicit session designation changed with `session_set`; it is not inferred from using this tool. Read-only Team enumeration remains `edges team`; visible Agent creation uses universal `session_create`.
