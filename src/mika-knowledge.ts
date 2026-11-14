@@ -174,6 +174,9 @@ async function resolvedEntries(nodes: MikaTaxonomyNode[], options: MikaKnowledge
       if (!info.isFile()) continue;
       const bytes = await readFile(canonicalFile);
       const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+      // MANDATE VALUES (docs/architecture/brief.md, Mandates) are orders to one Agent, not Ronin
+      // to read about: the Mandates behaviour and the forms say what the values are.
+      if (node.root.startsWith('ronin_catalogs') && /^- \*\*mandate:\*\*\s*\S/m.test(text)) continue;
       const ref = `mika-source:${id}`;
       entries.push({ id, ref, title: titleOf(text, relative), fullPreview: usefulPreview(text), node: node.id,
         origin: ownerFile ? 'owner' : 'stock', sha256: digest(text), text });

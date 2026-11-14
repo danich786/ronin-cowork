@@ -164,6 +164,13 @@ test('the stock taxonomy discovers the complete approved set within the hard ind
       .filter((id) => !id.startsWith('ronin_catalogs/integrations/') || id === 'ronin_catalogs/integrations/README.md')
       // Facts are line templates over an Agent's record, not reading.
       .filter((id) => !id.startsWith('ronin_catalogs/facts/'));
+    // Mandate values are orders to one Agent, not reading.
+    const mandates = new Set<string>();
+    for (const id of approved.filter((entry) => entry.startsWith('ronin_catalogs/'))) {
+      if (/^- \*\*mandate:\*\*\s*\S/m.test(await readFile(path.join(stockRoot, id), 'utf8'))) mandates.add(id);
+    }
+    assert.ok(mandates.size, 'the stock has mandate values');
+    approved.splice(0, approved.length, ...approved.filter((id) => !mandates.has(id)));
     const built = await compileMikaKnowledgeAt(temp, { ownerRoots: {
       docs: '', 'ronin_catalogs/behaviours': '', ronin_catalogs: '', ronin_session_boot: '', ronin_library: '',
     } });
