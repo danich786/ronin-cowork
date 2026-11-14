@@ -17,7 +17,7 @@ provoke it. Supply the visible session's particular topic in its prompt.
 
 **Create new session (Agent)** means create that visible session with `session_create`.
 **Close session** means end this Agent safely with `session_end` after its custody
-preflight succeeds.
+preflight succeeds. Ending archives it, so `session_restore <archive-id>` brings it back.
 
 **Live tools:** every command in the table below ships in `ronin_bin/`.
 
