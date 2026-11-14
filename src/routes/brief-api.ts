@@ -12,15 +12,14 @@ import { briefLayers } from '../brief-build.js';
 import { briefTold, cascade, layerOf, readUserLayer, userBriefFile, type Layer, type LayerName } from '../brief-settings.js';
 import { BehaviourDocumentError, createBehaviourDocument, readBehaviourDocument, updateBehaviourDocument } from '../behaviour-documents.js';
 import { initialCampaignId } from '../campaign-scope.js';
-import { readCampaign, writeCampaign } from '../campaigns.js';
+import { listCampaigns, readCampaign, writeCampaign } from '../campaigns.js';
 import { readCatalogs } from '../catalog.js';
 import { CONDITIONALS } from '../conditionals.js';
-import { listIntegrations } from '../resource-adapters.js';
 import { person } from '../office-people.js';
 import { sessionDir, sessionKey } from '../session-dir.js';
 import { resolveBriefFor, resolveFacts, type SpawnForm } from '../spawn.js';
-import { readTeamRoster, writeTeamRoster } from '../team-rosters.js';
-import { readWorkspace, saveWorkspace } from '../workspaces.js';
+import { listTeamRosters, readTeamRoster, writeTeamRoster } from '../team-rosters.js';
+import { listWorkspaces, readWorkspace, saveWorkspace } from '../workspaces.js';
 
 const errMsg = (e: unknown): string => String((e as Error)?.message ?? e);
 const SETTING_LAYERS = ['user', 'campaign', 'workspace', 'team'] as const;
@@ -126,11 +125,21 @@ export function registerBrief(app: express.Express): void {
     } catch (e) { res.status(500).json({ error: errMsg(e) }); }
   });
 
-  // The conditional words, for the `when:` picker: §4's, and one integration:<name> per integration.
+  // The conditional words, for the `when:` picker: §4's, and integration:<name> for each
+  // integration a layer names or a catalog file already uses. Any other name is the user's to type.
   app.get('/api/brief/conditionals', async (_req, res) => {
     try {
-      const integrations = (await listIntegrations()).map((row) => `integration:${row.name}`);
-      res.json([...CONDITIONALS.filter((word) => word !== 'integration:<name>'), ...integrations]);
+      const names = new Set<string>((await readUserLayer()).integrations);
+      for (const campaign of await listCampaigns()) {
+        for (const name of campaign.config.integrations) names.add(name);
+        for (const workspace of await listWorkspaces(campaign.id)) for (const row of workspace.integrations) names.add(row.provider);
+      }
+      for (const roster of await listTeamRosters()) for (const name of roster.integrations) names.add(name);
+      const catalog = await readCatalogs();
+      for (const row of [...catalog.facts, ...catalog.behaviours, ...catalog.tools]) {
+        for (const word of row.when) if (word.replace(/^!/, '').startsWith('integration:')) names.add(word.replace(/^!/, '').slice('integration:'.length));
+      }
+      res.json([...CONDITIONALS.filter((word) => word !== 'integration:<name>'), ...[...names].filter(Boolean).sort().map((name) => `integration:${name}`)]);
     } catch (e) { res.status(500).json({ error: errMsg(e) }); }
   });
 
