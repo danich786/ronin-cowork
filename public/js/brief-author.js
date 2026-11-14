@@ -84,7 +84,7 @@ export function createAuthorForm({ mode = 'behaviour', existing = null, catalog 
   const isTool = mode === 'tool';
   const isBridge = mode === 'bridge';
   const isFact = mode === 'fact';
-  const name = existing ? null : input('', isTool ? t('author.command_placeholder', 'the command, e.g. deploy-site') : t('author.name_placeholder', 'lowercase, digits, -'));
+  const name = existing ? null : input('', isTool ? t('author.command_placeholder', 'the command, e.g. deploy-site') : t('author.name_placeholder', 'from the title if left blank'));
   const integration = isBridge ? input('', t('author.integration_placeholder', 'e.g. netlify')) : null;
   if (isBridge) field(t('author.integration', 'Integration'), integration, t('author.integration_help', 'Its behavior is told to an Agent while this integration is on for it.'));
   if (name && !isBridge) field(isTool ? t('author.command', 'Command') : t('author.name', 'Name'), name,
@@ -94,7 +94,8 @@ export function createAuthorForm({ mode = 'behaviour', existing = null, catalog 
   const factLine = isFact ? field(t('author.line', 'Line'), input(parsed.line), t('author.line_help', 'The line the brief prints, with values in braces: User: {user.name}.')) : null;
   const when = !isTool && !isBridge ? picker('when', t('author.when', 'When it is in play'), whenRows, parsed.when) : null;
   if (when) root.append(el('p', 'na-behaviour-note', t('author.when_help', 'All chosen must hold. None chosen: every Agent.')));
-  const depth = !isFact ? picker('depth', t('author.depth', 'Depth'), depths(), parsed.depth || (isTool ? 'seed' : 'none'), false) : null;
+  // What you write is meant to be told: a new behaviour or bridge starts Full, a tool Seed.
+  const depth = !isFact ? picker('depth', t('author.depth', 'Depth'), depths(), parsed.depth || (isTool ? 'seed' : 'full'), false) : null;
   const serves = isTool ? picker('serves', t('author.serves', 'Serves'), behaviours, parsed.serves) : null;
   if (serves) root.append(el('p', 'na-behaviour-note', t('author.serves_help', 'Told under these behaviors. None: under Other tools.')));
   const body = field(isTool ? t('author.tool_text', 'What --help does not say') : t('author.text', 'Text'), area(parsed.body, isTool ? 5 : 10));
