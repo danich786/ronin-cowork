@@ -164,7 +164,7 @@ export function workspacePage(w, { reading, campaignId, onSaved = () => {}, onDi
   ] }], { value: { launch_mode: draft.launch_mode }, density: 'tight', onChange: (value) => { draft.launch_mode = value.launch_mode; changed(); paint(); } });
   stepAgents.body.append(mode.el);
 
-  /* ---- 5 · Behaviors (BRIEF_MODEL §8): what every Agent in this Workspace is told — its add, block
+  /* ---- 5 · Behaviors (docs/architecture/brief.md, Where it is set in the UI): what every Agent in this Workspace is told — its add, block
      and only lists and project management; its integrations are step 3. A created Workspace only. ---- */
   const stepBrief = createStep({ n: 5, key: 'brief', title: t('behaviours', 'Behaviors'), onToggle: () => { open.brief = !open.brief; paint(); } });
   const brief = isNew ? null : createBriefSettingsPanel({ layer: 'workspace', id: draft.name, campaignId: campaignId() || '', ownSave: false, showIntegrations: false, onChange: () => changed(),

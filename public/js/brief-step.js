@@ -1,5 +1,5 @@
 /* part of the ronin-cowork client — see js/README.md */
-/** WHAT AN AGENT IS TOLD (samurai_lab wip/BRIEF_MODEL.md §6, §8). One form for every layer:
+/** WHAT AN AGENT IS TOLD (docs/architecture/brief.md, Layers and brief settings; Where it is set in the UI). One form for every layer:
  * the New Agent Behaviors step (layer 'agent') and the Campaign, Workspace and Team settings
  * pages. The browser works nothing out: the catalog (`GET /api/brief/catalog`) names the
  * files, and the server's answer (`POST /api/brief/preview` for an Agent, the `inherited` part

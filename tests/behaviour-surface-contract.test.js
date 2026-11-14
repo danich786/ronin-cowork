@@ -16,7 +16,7 @@ test('Behavior work surface is the user layer: their brief settings, and every f
   assert.match(surface, /request\('\/api\/brief\/catalog'/);
   assert.match(surface, /\/api\/brief\/files\/\$\{encodeURIComponent\(row\.scope\)\}/);
   assert.match(surface, /renderMarkdownDocument/);
-  // Written through the plain form (BRIEF_MODEL §8): a new file, the user's own version, or an update.
+  // Written through the plain form (docs/architecture/brief.md, Where it is set in the UI): a new file, the user's own version, or an update.
   const author = await readFile(new URL('../public/js/brief-author.js', import.meta.url), 'utf8');
   assert.match(surface, /createAuthorForm\(/);
   assert.match(author, /method: 'POST'/);

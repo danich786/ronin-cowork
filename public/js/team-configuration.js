@@ -4,7 +4,7 @@
  * density. Step 1 · Team — Team ID, Title and Kind on one line, then Purpose. Step 2 · New
  * Agent defaults — Where it works, Model, Mandate, Runtime: what the next Agent starts from,
  * never the Team's own behaviour. Step 3 · Behaviors — what this Team's Agents are told: its
- * add, block and only lists, integrations and project management (brief-step.js, BRIEF_MODEL §8). */
+ * add, block and only lists, integrations and project management (brief-step.js, docs/architecture/brief.md, Where it is set in the UI). */
 import { t } from './lexicon.js';
 import { request } from './request.js';
 import { ask } from './ask.js';

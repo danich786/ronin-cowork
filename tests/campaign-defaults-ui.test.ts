@@ -19,7 +19,7 @@ test('Campaign defaults use ask() and Output keeps multi-select semantics', asyn
   assert.doesNotMatch(source, /ruledRows\('(reach|recruit|output)'/, 'mandates are icon-free rectangles');
   assert.doesNotMatch(source, /key: 'dial'|ruledRows\('dial'|default_dial/, 'the legacy Control default has no surface');
   assert.doesNotMatch(source, /key: 'features'/);
-  // The Campaign's behaviours are its brief settings (BRIEF_MODEL §8), saved on their own.
+  // The Campaign's behaviours are its brief settings (docs/architecture/brief.md, Where it is set in the UI), saved on their own.
   assert.doesNotMatch(source, /key: 'behaviours'|campaign-default-options/);
   assert.match(source, /createBriefSettingsPanel\(\{ layer: 'campaign'/);
   assert.doesNotMatch(source, /\/api\/launch-seed/, 'defaults do not assemble an Agent launch');

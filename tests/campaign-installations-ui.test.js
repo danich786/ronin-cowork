@@ -21,7 +21,7 @@ test('Campaign Installations is the shared stone surface: Ronin Services, then t
   assert.match(source, /installationControls: controls/);
   assert.match(source, /installation\.effect === 'provider'/);
   assert.match(source, /saveCampaign\(row\.id, \{ config: \{ installations \} \}\)/);
-  // Default for all Agents puts the part's behaviours on the Campaign's brief add list (BRIEF_MODEL §6).
+  // Default for all Agents puts the part's behaviours on the Campaign's brief add list (docs/architecture/brief.md, Layers and brief settings).
   assert.match(source, /request\(url, \{ method: 'PUT', json: \{ brief: \{ \.\.\.brief, add \} \} \}\)/);
   assert.doesNotMatch(source, /config: \{ defaults \}/);
   assert.doesNotMatch(source, /shape: 'square'|shape_all|answer === 'all'/);

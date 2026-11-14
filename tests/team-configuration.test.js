@@ -125,7 +125,7 @@ test('the tab is the launch forms’ format: step 1 Team (ID · Title · Kind, t
   const host = new FakeNode('div');
   renderTeamConfiguration(host, roster);
   const form = await painted(host);
-  assert.deepEqual(form.all('fs-step').map((step) => step.one('fs-step-head').textContent), ['Team', 'New Agent defaults', 'Behaviors'], 'unnumbered sections inside the Team\u2019s Configuration step; only the outer steps number (owner, 2026-10-20); Behaviors is the Team\u2019s brief settings (BRIEF_MODEL §8)');
+  assert.deepEqual(form.all('fs-step').map((step) => step.one('fs-step-head').textContent), ['Team', 'New Agent defaults', 'Behaviors'], 'unnumbered sections inside the Team\u2019s Configuration step; only the outer steps number (owner, 2026-10-20); Behaviors is the Team\u2019s brief settings (docs/architecture/brief.md, Where it is set in the UI)');
   const identity = form.one('tw-config-identity');
   assert.ok(identity, 'the identity line exists');
   const labels = identity.all('wk-field-label').map((node) => node.textContent);

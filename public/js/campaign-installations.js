@@ -27,7 +27,7 @@ export function createInstallationsSurface(campaign, context = {}) {
   let catalog = [];
   let installed = null;
   let values = {};
-  let defaultBehaviours = []; // the names on the Campaign's brief add list (BRIEF_MODEL §6)
+  let defaultBehaviours = []; // the names on the Campaign's brief add list (docs/architecture/brief.md, Layers and brief settings)
   let stoneSurface = null;
 
   const available = (installation) => values[installation.name] === true;

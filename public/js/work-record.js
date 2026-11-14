@@ -6,7 +6,7 @@
  *   the chip    a fixed-width readout in the tile header: the items held, with their status
  *   the record  the tile's Work record: the open items held first, each with its status, flag
  *               and attachments, Done waiting for the archive counted on one line; then the
- *               objective, worktrees and Teams; last, the brief the Agent is told (BRIEF_MODEL §7),
+ *               objective, worktrees and Teams; last, the brief the Agent is told (docs/architecture/brief.md, The brief),
  *               read from GET /api/sessions/:name/brief when opened
  *   the roster  the same chip as a row per session, in the commons ⌂ Roster
  *

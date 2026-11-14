@@ -1,5 +1,5 @@
 /* part of the ronin-cowork client — see js/README.md */
-/** THE MANDATE MENUS (BRIEF_MODEL §4): the listing is the files. Each Reach, Recruit and Output
+/** THE MANDATE MENUS (docs/architecture/brief.md, Mandates): the listing is the files. Each Reach, Recruit and Output
  * value is a behaviour whose header says `mandate: <axis>`; /api/brief/catalog serves every one,
  * in `order:`, its `value` the title lower-cased. Every form reads its menus here, and no value
  * is listed by hand in the client: a file added is a value on the menu. A file a layer blocks,

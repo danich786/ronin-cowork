@@ -1,4 +1,4 @@
-/* Behaviors — the user's own layer (BRIEF_MODEL §3, §6, §8): their brief settings for every Agent,
+/* Behaviors — the user's own layer (docs/architecture/brief.md, The files and their header; Layers and brief settings; Where it is set in the UI): their brief settings for every Agent,
  * and every fact, behaviour and tool file to read, or to replace with their own version by name.
  * Over /api/brief/catalog, /api/brief/settings/user and /api/brief/files. */
 import { request } from './request.js';
@@ -77,7 +77,7 @@ function createBehaviourSurface(initial = {}) {
   const intro = node('div', 'sws-intro');
   intro.append(node('h2', '', t('behaviours.title', 'Behaviors')), node('p', '', t('brief.user_help', 'What every Agent you start is told. Open any file to read it, or save your own version: yours replaces Ronin’s by name and survives updates.')));
   const settings = createBriefSettingsPanel({ layer: 'user', id: 'me', createAction: WorkspaceKit.primitives.createAction, preview: {}, linkFor: layerLinks() });
-  // Write your own: a behaviour, a tool for a command you have, or a bridge (BRIEF_MODEL §8).
+  // Write your own: a behaviour, a tool for a command you have, or a bridge (docs/architecture/brief.md, Where it is set in the UI).
   const adds = node('div', 'bh-actions');
   for (const [mode, scope, label] of [['behaviour', 'behaviours', t('behaviours.new', 'New Behavior')], ['tool', 'tools', t('author.new_tool', 'New tool')], ['bridge', 'behaviours', t('author.new_bridge', 'New bridge')]]) {
     const add = WorkspaceKit.primitives.createAction({ label, size: 'compact', action: () => stones.openDetail({ row: { scope, mode, new: true } }, { returnFocus: add.el }) });
@@ -87,7 +87,7 @@ function createBehaviourSurface(initial = {}) {
   settings.el.classList.add('behaviour-settings');
   const settingsHead = node('h3', 'behaviour-settings-head', t('brief.user_settings', 'For every Agent you start'));
   stones.mount(surface.content, { before: [intro], after: [settingsHead, settings.el] });
-  // Behaviors, then the mandate values by axis (each a behaviour file, BRIEF_MODEL §4), Facts, Tools.
+  // Behaviors, then the mandate values by axis (each a behaviour file, docs/architecture/brief.md, Mandates), Facts, Tools.
   const shelves = [['behaviours', ''], ...AXES.map((axis) => ['behaviours', axis]), ['facts', ''], ['tools', '']];
   const items = () => shelves.flatMap(([scope, axis]) => rows.filter((row) => row.scope === scope && (row.mandate || '') === axis))
     // A stone carries the name only (its seed would be cut short); the opened file says the rest.

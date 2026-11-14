@@ -3,7 +3,7 @@
  * only a Cowork Agent has kind, template, mandate, and loadout. Defaults arrive through
  * `GET /api/launch-seed?team=` and land until the user's hand changes them. The Behaviors
  * step is brief-step.js: this Agent's own brief settings, integrations and project
- * management, and what comes with it as the server works it out (BRIEF_MODEL §8). */
+ * management, and what comes with it as the server works it out (docs/architecture/brief.md, Where it is set in the UI). */
 import { request } from './request.js';
 import { t } from './lexicon.js';
 import { ask } from './ask.js';

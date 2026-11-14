@@ -18,7 +18,7 @@ test('Configuration is the New Agent form in existing-Agent mode', () => {
   for (const field of ['provider', 'model']) assert.match(form, new RegExp(`key: '${field}'[^\\n]*fixed: !!configure`));
   assert.match(form, /key: 'agentId'[\s\S]*fixed: true/);
   assert.match(form, /questions\.show\(\['provider', 'model', 'role', 'reach', 'recruit', 'output'\]\)/);
-  // What comes with the Agent is the server's answer to the draft, never a browser guess (BRIEF_MODEL §8).
+  // What comes with the Agent is the server's answer to the draft, never a browser guess (docs/architecture/brief.md, Where it is set in the UI).
   assert.match(form, /request\('\/api\/brief\/preview', \{ method: 'POST'/);
   assert.doesNotMatch(form, /row\.requires/);
   assert.match(form, /request\(`\/api\/sessions\/\$\{encodeURIComponent\(configure\)\}\/composition`/);

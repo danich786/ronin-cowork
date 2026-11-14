@@ -74,7 +74,7 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
 
   const templateRow = () => templates.find((row) => row.name === draft.template) || null;
   const offered = () => (draft.kind === 'open' ? templates : templates.filter((row) => row.kinds.includes(draft.kind)));
-  // The behaviours a Team may add: the catalog's optional ones (depth none), BRIEF_MODEL §6.
+  // The behaviours a Team may add: the catalog's optional ones (depth none), docs/architecture/brief.md, Layers and brief settings.
   let catalog = [];
   const availableBehaviours = () => catalog.filter((row) => row.kind === 'behaviour' && !row.mandate && row.depth === 'none');
   // The provider the next Agent defaults to (Models > Defaults): which launch modes it offers.

@@ -1,5 +1,5 @@
 /* part of the ronin-cowork client — see js/README.md */
-/** WRITE YOUR OWN (BRIEF_MODEL §3, §8): a behaviour, a tool for a command the user has, a bridge
+/** WRITE YOUR OWN (docs/architecture/brief.md, The files and their header; Where it is set in the UI): a behaviour, a tool for a command the user has, a bridge
  * (a behaviour in play when its integration is on, with the tools that serve it, in one Save),
  * or the user's own version of a stock file. A plain form; the browser composes the file's
  * header and writes it to the user's store through /api/brief/files. Nothing is checked
