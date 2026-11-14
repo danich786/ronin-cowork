@@ -53,20 +53,24 @@ export function createAgentDefaultsSurface(campaign) {
       ] },
     ], { value: picked, trayHost: questionsRow, onChange: (value) => { picked = value; edited = value; } });
     questionsRow.append(questions.el); form.append(questionsRow);
+    /* What every Agent in this Campaign is told: its brief settings, saved by the one Save below. */
+    const brief = createBriefSettingsPanel({ layer: 'campaign', id: row.id, campaignId: row.id, ownSave: false, preview: { campaign_id: row.id } });
+    const briefRow = el('div', 'cv-default-field');
+    briefRow.append(el('h3', 'cv-brief-head', t('behaviours', 'Behaviors')), el('p', 'cv-note', t('campaign_view.brief_help', 'What every Agent in this Campaign is told. Agents already working are sent the change.')), brief.el);
+    form.append(briefRow);
+    void brief.enter();
     const actions = el('div', 'cv-default-actions');
     const save = el('button', 'cv-save', t('panels.save', 'Save')); save.type = 'submit'; actions.append(notice.el, save); form.append(actions); body.append(form);
     form.addEventListener('submit', async (event) => {
       event.preventDefault(); save.disabled = true; notice.set('info', t('campaign.saving', 'saving…'));
-      const { behaviours: _gone, ...kept } = current; // the Campaign's behaviours are its brief settings now (below)
+      const told = await brief.save();
+      if (!told.ok) { notice.set('failed', told.message); save.disabled = false; return; }
+      const { behaviours: _gone, ...kept } = current; // the Campaign's behaviours are its brief settings now (above)
       const next = { ...kept, ...picked };
       const result = await saveCampaign(row.id, { config: { defaults: next } });
       notice.set(result.ok ? 'success' : 'failed', result.ok ? t('settei.saved', 'saved') : result.message); save.disabled = false;
       if (result.ok) { edited = null; paint(); }
     });
-    /* What every Agent in this Campaign is told: its brief settings, saved on their own because they reach live Agents. */
-    const brief = createBriefSettingsPanel({ layer: 'campaign', id: row.id, campaignId: row.id, createAction: WorkspaceKit.primitives.createAction, preview: { campaign_id: row.id } });
-    body.append(el('h3', 'cv-brief-head', t('behaviours', 'Behaviors')), el('p', 'cv-note', t('campaign_view.brief_help', 'What every Agent in this Campaign is told. Agents already working are sent the change.')), brief.el);
-    void brief.enter();
   }
 
   return { el: surface.el, enter: () => paint() };
