@@ -32,7 +32,7 @@
   `item handover w12 w13 team:surface "<where they stand; what is next>"`.
 - Status, kind, priority and link type are the space's names exactly (`item --help` lists
   them); anything else is refused, naming the set.
-- Flag as `item flag <id> "Waiting on <who>: <what>"`.
+- Flag as `item flag <id> "<who>: <what you need>"`; `item unflag <id>` clears it.
 
 More: `ronin-help work-items`
 

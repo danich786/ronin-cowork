@@ -20,6 +20,7 @@ You hold nothing yourself: your Team holds its epics and work nobody has taken y
   Agent's end for you to give out again.
 - An item handed over or flagged by an ending is yours to decide: give it out, finish its
   review, delete it, or flag it to your user.
-- Review hand-ins and promote them in batches; your user accepts only what is on dev.
+- Review hand-ins and promote them in batches. Items you gave out you move to Done as you
+  promote them; the user accepts what they asked for, on dev.
 - An epic is Done when what done looks like is met.
 - Link epics only where one truly depends on another.

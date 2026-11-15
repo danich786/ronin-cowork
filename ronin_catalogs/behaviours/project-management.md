@@ -38,26 +38,26 @@ two sentences. The technical detail belongs in the design doc or the commit.
 | Status | Moved by |
 |---|---|
 | To Do | new items start here |
-| In Progress | you, when you start |
+| In Progress | you, when you start; never wait for a go |
 | In Review | your hand-in; the item stays yours until it is accepted or sent back |
-| Done | whoever accepts it; never you |
+| Done | as a rule, whoever asked for it: you for an item you made yourself, your lead for its own when it promotes, the user for theirs or Jira's |
 
 ### Notices
-You are told only when someone else changes an item you are working on: a comment, a Send
-back, a status move. Answer on the item. Your own changes tell nobody, and nobody needs
-telling: the board shows them.
+You are told whenever someone else changes an item you hold: it is handed to you, its status
+moves, it is edited, commented on or sent back. Read the item and act on it; answer on the
+item. Your own changes tell nobody, and nobody needs telling: the board shows them.
 
 ### Everyone
 - Answer a person on the item, with a comment. A hand-in carries one for the user: --note
   "<what they can try>", short; the diff is the detail.
-- Stuck: item flag <id> "Waiting on <who>: <what>"; the reason is required. item unflag when
-  moving again. The flag is how your lead hears.
+- Stopped, waiting on someone for a question, a choice, a discussion or a block:
+  item flag <id> "<who>: <what you need>"; the reason is required. item unflag <id> when
+  moving again. The flag is how your lead or user hears you are waiting.
 - Several items: one command takes several ids.
 - An item you made by mistake: item delete <id>.
 
 ### Don'ts
 - Don't make an item, subtask or comment nobody will read: no subtask per step.
-- Don't move Done.
 - Don't go around Ronin to change an item anywhere else.
 - Don't delete to tidy. An item you didn't make is deleted only when the person who asked for
   it says so.
