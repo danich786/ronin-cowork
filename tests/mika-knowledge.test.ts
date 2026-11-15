@@ -160,8 +160,6 @@ test('the stock taxonomy discovers the complete approved set within the hard ind
         .map((relative) => `${node.root}/${relative}`);
     }))).flat()
       .filter((id) => !id.startsWith('ronin_session_boot/routine/mika/'))
-      // Integration records are not hers; the README that explains them is (KAN-337).
-      .filter((id) => !id.startsWith('ronin_catalogs/integrations/') || id === 'ronin_catalogs/integrations/README.md')
       // Facts are line templates over an Agent's record, not reading.
       .filter((id) => !id.startsWith('ronin_catalogs/facts/'));
     // Mandate values are orders to one Agent, not reading.

@@ -37,7 +37,6 @@ ronin-cowork/
 │   │   └── sought/          awareness-only files; currently empty
 │   ├── capabilities/        real tool bundles and their teaching
 │   ├── desk_profiles/       named presentation/workspace defaults
-│   ├── integrations/        the integrations index: one record per outside service
 │   ├── lexicons/            surface-language dictionaries
 │   ├── services/            Ronin Services, Ronin's own switchable contribution
 │   └── templates/           reusable Agent and Team starting compositions

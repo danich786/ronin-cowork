@@ -172,13 +172,13 @@ export function workspacePage(w, { reading, campaignId, onSaved = () => {}, onDi
   if (brief) { stepBrief.body.append(el('p', 'fs-step-help', t('workspaces.brief_help', 'What every Agent in this Workspace is told. Agents already working are sent the change.')), brief.el); void brief.enter(); }
 
   /* ---- 3 · Integrations (KAN-338): the outside services this Workspace uses, from the integrations
-     index; each row a provider, its other facts (a bridge's `site`) kept as they are. Agents read them
-     on the Team's Workspace line. Connecting one is Settings › Integrations. ---- */
+     list (the bridges); each row a provider, its other facts (a bridge's `site`) kept as they are. Agents read them
+     on the Team's Workspace line, and ask for its keys with `secret ask`. ---- */
   const stepIntegrations = createStep({ n: 3, key: 'integrations', title: t('workspaces.integrations', 'Integrations'), onToggle: () => { open.integrations = !open.integrations; paint(); } });
   const integrationRows = el('div', 'workspace-locations workspace-integrations');
   const addIntegration = el('select', 'workspace-integration-add');
   stepIntegrations.body.append(integrationRows, addIntegration,
-    el('p', 'fs-step-help', t('workspaces.integrations_help', 'Agents in this Workspace use these, with the token Settings › Integrations connects.')));
+    el('p', 'fs-step-help', t('workspaces.integrations_help', 'Agents in this Workspace use these; they ask for a key with secret ask, and Settings › Integrations shows what is saved.')));
   let index = [];
   addIntegration.addEventListener('change', () => {
     const provider = addIntegration.value;
@@ -197,9 +197,8 @@ export function workspacePage(w, { reading, campaignId, onSaved = () => {}, onDi
       remove.addEventListener('click', () => { draft.integrations = draft.integrations.filter((one) => one !== entry); changed(); paint(); });
       const where = el('div', 'workspace-location-where');
       const facts = Object.entries(entry).filter(([k]) => k !== 'provider').map(([k, v]) => `${k} ${v}`).join(' · ');
-      where.append(el('b', null, record?.label || entry.provider), el('code', null, facts || record?.for || ''));
-      const state = !record ? t('workspaces.integration_unlisted', 'not in the index')
-        : record.connected ? t('integrations.connected', 'Connected') : t('integrations.not_connected', 'Not connected');
+      where.append(el('b', null, record?.label || entry.provider), el('code', null, facts || record?.blurb || ''));
+      const state = record?.secrets.length ? t('integrations.keys_n', '{n} saved', { n: record.secrets.length }) : t('integrations.no_keys', 'No keys');
       row.append(el('small', 'folder-kind', ''), where, el('small', 'folder-kind', state), el('span'), remove);
       integrationRows.append(row);
     }

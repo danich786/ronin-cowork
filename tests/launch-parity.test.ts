@@ -209,7 +209,7 @@ test('bare_metal_agent resolves a real CLI without Ronin birth machinery', async
   assert.equal(bare.team_objective, '', 'the Team roster does not resolve into the launch');
 });
 
-// gbrain is an integration (ronin_catalogs/integrations, KAN-337), not an installation: a
+// gbrain is an integration (its bridge, ronin_catalogs/behaviours/gbrain-bridge.md), not an installation: a
 // Campaign's old gbrain switch, on or off, changes neither the teaching nor the command.
 for (const [campaign_id, word] of [['home_machine', 'off'], ['gbrain_connected', 'on']] as const) {
   test(`a Campaign's old gbrain switch (${word}) is no installation and delivers nothing`, async () => {

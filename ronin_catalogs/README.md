@@ -37,7 +37,6 @@ input; identical subject names across directories do not make the documents inte
 | `behaviours/` | one file per behaviour, flat | How an Agent works; its header says when and how much it is told. |
 | `tools/` | one file per tool or family | What the brief says about each executable in `ronin_bin/`, and which behaviour it serves. |
 | `services/` | `ronin_services.md`. | Ronin Services: Ronin's own switchable contribution and the parts it runs. Not a tool. |
-| `integrations/` | `gbrain.md`, `jira.md`, `netlify.md`, `perplexity.md`. | The integrations index: one record per outside service, what it is for, where its token lives, its tools and bridge. Agents add records in the owner store's `catalogs/integrations/`. |
 | `desk_profiles/` | `home.md`, `league.md`, `professional.md`, `terminal.md`, `vibe_code.md`. | Named presentation and workspace defaults copied into Campaign configuration. |
 | `lexicons/` | `home_en.md`, `league_en.md`, `professional_en.md`, `terminal_en.md`, `vibe_code_en.md`. | Surface-language overrides; `professional_en.md` is the complete floor. |
 | `templates/` | `agents/*.md`, `teams/*.md`, `canvases/*.md` (Netlify), each shelf with its `README.md`. | Authored starting compositions offered as reusable choices, not runtime authority. |
@@ -64,7 +63,7 @@ keys to strings with a `base:` to fall through to. Both shadow whole-file by nam
 
 ## Adding an INSTALLATION, an INTEGRATION, or a BEHAVIOUR
 
-`integrations/<name>.md` is one outside service (its README carries the fields).
+An integration is a bridge: `behaviours/<name>-bridge.md` with `when: integration:<name>`.
 `services/<name>.md` is one machine installation: `effect` is `system` (its reading,
 tools and parts join every Cowork Agent birth) or `provider` (it `provides`
 behaviours). `behaviours/<name>.md` is one page on how ordinary work is done. Each directory's `README.md` carries the exact

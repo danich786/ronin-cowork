@@ -99,9 +99,9 @@ test('an installation switch governs the part it claims, and a part no capabilit
   assert.deepEqual(off.parked, [{ name: 'gbrain', installation: 'gbrain', reason: 'master_off' }]);
 });
 
-test('Ronin Services claims the gbrain part, the gbrain integration\'s bridge', async () => {
+test('Ronin Services claims the gbrain part, the gbrain integration\'s part', async () => {
   const services = await readFile(new URL('../ronin_catalogs/services/ronin_services.md', import.meta.url), 'utf8');
   assert.match(services, /^- \*\*parts:\*\* .*\bgbrain\b/m);
-  const record = await readFile(new URL('../ronin_catalogs/integrations/gbrain.md', import.meta.url), 'utf8');
-  assert.match(record, /^- \*\*bridge:\*\* gbrain$/m);
+  const bridge = await readFile(new URL('../ronin_catalogs/behaviours/gbrain-bridge.md', import.meta.url), 'utf8');
+  assert.match(bridge, /^- \*\*when:\*\* integration:gbrain$/m);
 });

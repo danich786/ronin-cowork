@@ -7,7 +7,6 @@ import {
   findDefinition,
   listAgentTemplates,
   listInstallations,
-  listIntegrations,
   listTeamTemplates,
   type DefinitionKind,
   type TemplateBox,
@@ -152,7 +151,6 @@ const FILES = ['PROJECT_ROOTS.md', 'MODEL_PROVIDERS.md'];
 await surfacingDefinitions('desk_profiles', listDeskProfiles);
 await surfacingDefinitions('lexicons', listLexicons);
 await surfacingDefinitions('services', listInstallations);
-await surfacingDefinitions('integrations', listIntegrations);
 const briefCatalog = await stockCatalog();
 await surfacingDefinitions('templates/agents', listAgentTemplates);
 await surfacingDefinitions('templates/teams', listTeamTemplates);

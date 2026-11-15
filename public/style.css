@@ -4466,16 +4466,12 @@ body {
 /* THE INTEGRATIONS PANEL (KAN-339; js/integrations-panel.js). */
 .integrations-heading { margin: var(--space-paragraph) 0 0; color: var(--fg-strong); font-size: var(--text-label); font-weight: var(--weight-strong); }
 .integrations-facts > .setup-gbrain-answer > dd { overflow-wrap: anywhere; }
-.integrations-connect { display: grid; gap: var(--space-row); padding: var(--space-inset) 0; }
-.integrations-field { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); gap: var(--space-inline); align-items: center; color: var(--fg-strong); font-size: var(--text-label); }
-.integrations-field input { min-width: 0; }
 .integrations-folds { display: grid; gap: var(--space-row); }
 .integrations-fold { border-top: var(--edge-2) solid var(--line-2); background: var(--surface); }
-.integrations-fold[data-connected='true'] { border-top-color: var(--ok); }
+.integrations-fold[data-keyed='true'] { border-top-color: var(--ok); }
 .integrations-fold > summary { cursor: pointer; padding: var(--space-inset); color: var(--fg-strong); }
 .integrations-fold-body { padding: 0 var(--space-inset) var(--space-inset); }
-.integrations-stones [data-connected='true'] .sws-state { color: var(--ok); }
-@media (max-width: 640px) { .integrations-field { grid-template-columns: 1fr; } }
+.integrations-stones [data-keyed='true'] .sws-state { color: var(--ok); }
 .setup-gbrain-line { margin: 0; color: var(--fg-strong); font-size: var(--text-body); line-height: var(--leading-body); }
 .setup-gbrain-line strong { font-weight: var(--weight-strong); }
 .setup-gbrain-hint { margin: 0; color: var(--muted); font-size: var(--text-body); line-height: var(--leading-body); }
