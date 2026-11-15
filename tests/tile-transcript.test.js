@@ -931,23 +931,36 @@ test('Answer in Terminal: the press switches through the tile, and only that pre
   const tile = {
     session: 'agent', transcriptOn: true, transcriptLevel: 0, transcriptReadings: READINGS, transcriptState: null,
     transcriptAvailable: () => true, transcriptCycle: Tile.prototype.transcriptCycle,
-    syncSurface() {}, el: { classList: { toggle() {} } }, body: { contains: () => false },
+    syncSurface: Tile.prototype.syncSurface, surfaceHost: { select() {} }, docView: null, tapeMode: false,
+    el: { classList: { on: new Set(), toggle(name, on) { if (on) this.on.add(name); else this.on.delete(name); } } },
+    body: { contains: () => false },
     transcriptView: { show() {}, setReading() {}, hide() {}, setStance() {} },
     setComposer() {}, syncHeader() {}, doFit() {}, homeRow: () => ({ stance }),
     toggleTranscript: Tile.prototype.toggleTranscript,
+    backToChat: Tile.prototype.backToChat,
   };
   const refresh = () => Tile.prototype.refreshStance.call(tile);
-  // Pressed: Terminal; answered: Chat again.
+  const backShown = () => tile.el.classList.on.has('answer-return');
+  // Pressed: Terminal, with Back to Chat at its foot; answered: Chat again.
   Tile.prototype.answerInTerminal.call(tile);
   assert.equal(tile.transcriptOn, false);
+  assert.equal(backShown(), true, 'Back to Chat stands where Answer in Terminal was');
   refresh();
   assert.equal(tile.transcriptOn, false, 'still asking: stays in Terminal');
   stance = 'working';
   refresh();
   assert.equal(tile.transcriptOn, true, 'answered: back to Chat');
+  assert.equal(backShown(), false, 'back on Chat: the button goes');
+  // The stance cannot tell: Back to Chat is the way back.
+  stance = 'asking';
+  Tile.prototype.answerInTerminal.call(tile);
+  tile.backToChat();
+  assert.equal(tile.transcriptOn, true, 'Back to Chat returns at once');
+  assert.equal(backShown(), false);
   // The owner switched by hand: nothing moves.
   stance = 'asking';
   tile.toggleTranscript();
+  assert.equal(backShown(), false, 'Term chosen by hand: no Back to Chat');
   stance = 'working';
   refresh();
   assert.equal(tile.transcriptOn, false, 'a hand switch is never undone');
