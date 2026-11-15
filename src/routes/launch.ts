@@ -28,6 +28,7 @@ import { appendLaunchLedger, persistBirthReceipt } from '../launch-ledger.js';
 import { writeCurrentRoleAt } from '../agent-composition.js';
 import { mandate } from '../agent-defaults.js';
 import { asksForInput, classifyStatus, createActivityCache } from '../status.js';
+import { enqueueMessage } from '../message-queue.js';
 import { scanContext, scanModel } from '../ctx.js';
 
 import { count } from '../counts.js';
@@ -333,7 +334,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
     if (launcher) form.person = launcher;
 
     let resolved;
-    let launch: { argv: string[]; parked: boolean } = { argv: [], parked: false };
+    let launch: { argv: string[]; parked: boolean; message?: boolean } = { argv: [], parked: false };
     let birthKey = '';
     let birthDir = '';
     let packet: PacketReport | undefined;
@@ -503,7 +504,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
         ignored: [...new Set([...accepted.ignored, ...resolved.ignored])].sort(),
         stated_by: resolved.stated_by,
         ...(resolved.session_type === 'cowork_agent'
-          ? { boot: { state: 'open', brief: launch.parked ? 'parked' : 'argv' } }
+          ? { boot: { state: 'open', brief: launch.parked ? 'parked' : launch.message ? 'message' : 'argv' } }
           : {}),
         // What the newborn was handed to read: size, section count, the line it ends with,
         // and whether one read delivers it. The receipt says what left; the tape says what
@@ -534,6 +535,9 @@ export function registerLaunch(app: express.Express): LaunchControl {
     void appendLaunchLedger(form, resolved, true);
     void (async () => {
       if (resolved.session_type !== 'cowork_agent' || !resolved.agent) return;
+      // A CLI with no prompt-and-stay-open flag gets its brief as its first message, held in the
+      // queue until its screen reads ready (docs/agents/README.md, launch_initial: message).
+      if (launch.message) await enqueueMessage(resolved.name, resolved.brief, 'house', undefined, null, { when: 'ready' });
       const birthLines = await collectBirthLines(resolved.name, true);
       const shelved = [launch.parked ? resolved.brief : '', birthLines].filter(Boolean).join('\n');
       if (!shelved) return;

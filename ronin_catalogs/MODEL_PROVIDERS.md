@@ -128,7 +128,7 @@ models with none. Not yet exercised end to end through Ronin.
 - **transcript_source:** `~/.kimi-code/sessions/<workspace>/<session-id>/agents/main/wire.jsonl`; line format unpublished. No adapter; Chat shows the terminal.
 
 Model ids are Kimi Code's aliases from its `config.toml`, passed unchanged to `--model`.
-Kimi Code has no launch-and-stay-open prompt, so its Agents start without their brief.
+Kimi Code has no launch-and-stay-open prompt, so its brief arrives as its first message.
 Not yet exercised end to end through Ronin.
 
 Other providers (pi, perplexity, …) arrive the same way: a contributor PR adding a

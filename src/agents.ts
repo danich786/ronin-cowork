@@ -176,7 +176,8 @@ export const AGENTS = [
     // `kimi login` (device code) writes the hosted Kimi sign-in here (Kimi Code docs, Data locations).
     credentials: ['.kimi-code/credentials/managed:kimi-code.json'],
     carry: ['.kimi-code/config.toml'],
-    screen: { busy: [], asking: [], ready: [] },
+    // Measured on 2.6.2's first start: its folder-trust dialog. Its ready prompt, "│ >", is the house row.
+    screen: { busy: [], asking: ['↑↓ navigate · Enter select'], ready: [] },
   },
 ] as const;
 
@@ -227,10 +228,12 @@ export async function listAgentAvailability(): Promise<AgentAvailability[]> {
 export interface LaunchArgv {
   argv: string[];
   parked: boolean;
+  /** The brief goes as the Agent's first message, through the message queue, once its screen reads ready. */
+  message?: boolean;
 }
 
 export function initialBriefArgs(grammar: AgentLaunches | null, brief: string): string[] {
-  if (!brief || !grammar || grammar.initial === 'none') return [];
+  if (!brief || !grammar || grammar.initial === 'none' || grammar.initial === 'message') return [];
   return grammar.initial === 'positional' ? [brief] : renderLaunch(grammar.initial, { brief });
 }
 
@@ -246,6 +249,7 @@ export async function launchArgv(cmd: string, brief: string): Promise<LaunchArgv
   const grammar = spec ? await readAgentLaunches(spec.id) : null;
   const initial = initialBriefArgs(grammar, brief);
   if (initial.length) return { argv: [bin, ...rest, ...initial], parked: false };
+  if (brief && grammar?.initial === 'message') return { argv: [bin, ...rest], parked: false, message: true };
   return { argv: [bin, ...rest], parked: !!brief };
 }
 

@@ -131,4 +131,13 @@ test('Hermes receives the birth brief as one literal interactive query argument'
   assert.deepEqual(initialBriefArgs(grammar, ''), []);
   assert.deepEqual(initialBriefArgs({ ...grammar, initial: 'positional' }, brief), [brief]);
   assert.deepEqual(initialBriefArgs({ ...grammar, initial: 'none' }, brief), []);
+  assert.deepEqual(initialBriefArgs({ ...grammar, initial: 'message' }, brief), [], 'a message brief is never argv');
+});
+
+test('Kimi Code takes its brief as its first message, held until its screen reads ready', async () => {
+  assert.equal((await readAgentLaunches('kimi')).initial, 'message');
+  const { classifyStatus } = await import('../src/status.js');
+  const pane = (name: string) => readFile(new URL(`./fixtures/panes/${name}`, import.meta.url), 'utf8');
+  assert.equal(classifyStatus(await pane('kimi-trust.txt')), 'awaiting-input', 'its folder-trust dialog holds the brief');
+  assert.equal(classifyStatus(await pane('kimi-ready.txt')), 'ready', 'its "│ >" input box lets it go');
 });

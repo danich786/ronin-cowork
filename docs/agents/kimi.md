@@ -10,7 +10,7 @@
 - **launch_new_session_id:** —
 - **launch_isolation:** —
 - **transcript_journal:** —
-- **launch_initial:** none
+- **launch_initial:** message
 
 CLI id and command: `kimi`. Catalog provider: Moonshot AI. Reviewed 2026-11-15.
 Version: **2.6.2**. Installed into a scratch home and its help read; never signed in or run
@@ -35,9 +35,12 @@ activates it. Update runs `npm install -g @moonshot-ai/kimi-code@latest`.
 | Native | Dangerously | `kimi --auto` |
 | Named | Dangerously | `kimi --model <model> --auto` |
 
-**No brief at launch.** Kimi Code has no option that runs a first prompt and stays open
-(`-p` answers once and exits; there is no positional prompt), so Ronin parks the brief in
-the session's `brief.md` and the Agent starts at an empty prompt. Dangerously is `--auto`
+**The brief is its first message.** Kimi Code has no option that runs a first prompt and
+stays open (`-p` answers once and exits; there is no positional prompt), so Ronin queues the
+brief's "Read first" line as a House notice and the message queue delivers it once Kimi's
+screen reads ready: its `│ >` input box. On a folder it has not seen, Kimi first asks
+**Trust this folder?**; the screen reads as asking (its `↑↓ navigate · Enter select` footer)
+and the brief waits until that is answered. Dangerously is `--auto`
 (Never Ask); upstream's `--yolo` still asks on risky actions, so it is not Ronin's
 Dangerously. Model ids are Kimi Code's model aliases from its `config.toml`.
 

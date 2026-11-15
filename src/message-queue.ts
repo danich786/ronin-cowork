@@ -6,12 +6,16 @@ import { listSessions } from './tmux.js';
 import { deliverForce, deliverSafe } from './send.js';
 import { onClock } from './jikan.js';
 import { personLabel, type Person } from './office-people.js';
+import { capturePane } from './tmux.js';
+import { classifyStatus } from './status.js';
 
 /** `typed` is the person at this Agent's own Message box; `owner` is Ronin writing on their behalf.
  *  In a hosted office a message from a signed-in person also records `person` (src/office-people.ts),
  *  and `from` is their label. */
 export type MessageSource = 'tell' | 'wipeboard_notice' | 'owner' | 'typed' | 'house' | 'jikan';
-export interface QueuedMessage { id: string; from: string; target: string; text: string; source: MessageSource; created_at: string; person?: Person }
+/** `when: 'ready'` holds a letter until the target's screen reads ready, with no deadline: a new
+ *  Agent's brief, sent as its first message to a CLI that has no prompt flag (launch_initial: message). */
+export interface QueuedMessage { id: string; from: string; target: string; text: string; source: MessageSource; created_at: string; person?: Person; when?: 'ready' }
 
 const DIR = storeDir('message_queue');
 export const AUTO_FORCE_AFTER_MS = 120_000;
@@ -69,9 +73,10 @@ export async function listQueuedMessages(): Promise<QueuedMessage[]> {
 let lastQueuedAt = 0;
 const queuedAt = (): string => { lastQueuedAt = Math.max(Date.now(), lastQueuedAt + 1); return new Date(lastQueuedAt).toISOString(); };
 
-export async function enqueueMessage(target: string, text: string, source: MessageSource, from = sourceFrom(source), person?: Person | null): Promise<QueuedMessage> {
+export async function enqueueMessage(target: string, text: string, source: MessageSource, from = sourceFrom(source), person?: Person | null, options: { when?: 'ready' } = {}): Promise<QueuedMessage> {
   const item: QueuedMessage = { id: randomUUID(), from: person ? personLabel(person) : from, target, text, source, created_at: queuedAt() };
   if (person) item.person = person;
+  if (options.when) item.when = options.when;
   await fs.mkdir(DIR, { recursive: true });
   const tmp = `${file(item.id)}.${process.pid}.tmp`;
   await fs.writeFile(tmp, JSON.stringify(item));
@@ -86,7 +91,9 @@ export async function dismissMessages(ids: readonly string[]): Promise<{ dismiss
   return { dismissed, not_found };
 }
 
-interface Delivery { safe: typeof deliverSafe; force: typeof deliverForce }
+interface Delivery { safe: typeof deliverSafe; force: typeof deliverForce; ready?: (target: string) => Promise<boolean> }
+
+const screenReady = async (target: string): Promise<boolean> => classifyStatus(await capturePane(target, 0)) === 'ready';
 
 /** One worker owns delivery. An open dialog holds a letter until it is answered; a draft
  * holds it until its deadline. Every attempted or undeliverable letter is then shredded. */
@@ -101,6 +108,7 @@ export async function processMessageQueue(options: { now?: number; delivery?: De
         await remove(item.id);
         continue;
       }
+      if (item.when === 'ready' && !(await (delivery.ready ?? screenReady)(item.target).catch(() => false))) continue;
       const overdue = now - Date.parse(item.created_at) >= AUTO_FORCE_AFTER_MS;
       try {
         const text = deliveryText(item);
