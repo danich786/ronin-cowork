@@ -17,9 +17,24 @@ Details: Setup → Model providers (Let Mika authenticate, Use the CLI with Mika
 Check: at least one reads Activated.
 
 ## Create their first Workspace
-Do: their first Workspace, on a folder or on one or more repositories (repositories need GitHub signed in first).
-Details: `ronin-help new-workspace`; the GitHub CLI stone on the Workspaces door. If they brought an existing project: make its Agent with `session_create`, then `epic-template start import-project --to <agent>`.
+Do: their first Workspace, on a folder or on one or more repositories; done when its subtasks are done or skipped.
+Details: `ronin-help new-workspace`.
 Check: the Workspace exists with its folder or repositories.
+
+### Sign in GitHub, if they use it
+Do: the GitHub CLI signed in to their account, if they use GitHub; skip it if not.
+Details: the GitHub CLI stone on the Workspaces door (Let Mika connect GitHub, Use GitHub CLI with Mika); `ronin-help workspace-folders`.
+Check: the stone shows their account.
+
+### Bring in their folders or repositories
+Do: their folders, or the repositories they clone, in the Workspace; skip it if there are none yet.
+Details: `ronin-help new-workspace` (folders, clone a repository).
+Check: the Workspace lists them.
+
+### Map the project, if they brought one in
+Do: if they brought in an existing project, an Agent mapping it; skip it if not.
+Details: make its Agent with `session_create`, then `epic-template start import-project --to <agent>`.
+Check: that Agent holds the import-project epic.
 
 ## A tour, if they want one
 Do: offer a tour of how Ronin works, and give it if they want it.

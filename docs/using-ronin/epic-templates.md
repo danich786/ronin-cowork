@@ -9,7 +9,7 @@ and tells it to walk the epic through.
 
 | Name | Epic | For |
 |---|---|---|
-| `onboarding` | Getting set up in your new office | a person who has just moved into their office: sign in an Agent harness, create their first Workspace, a tour if they want one |
+| `onboarding` | Getting set up in your new office | a person who has just moved into their office: sign in an Agent harness, create their first Workspace (GitHub, their folders or repositories, mapping a project they brought), a tour if they want one |
 | `import-project` | Mapping a project they brought in | an existing project brought into a Workspace: map every surface it has, write PROJECT_MAP.md, make an HTML summary, tell the person what was found |
 
 `epic-template list` prints what this install has, your own included.
@@ -29,8 +29,8 @@ epic-template start import-project --to mapper --workspace my_site
 it, the Agent starting it walks it through itself. `--workspace` also goes on the epic's
 last line, so the Agent knows where the work is.
 
-Onboarding's "Create their first Workspace" points at this: when the person brought in an
-existing project, Mika makes an Agent for it and starts `import-project` with `--to`.
+Onboarding's "Create their first Workspace" carries a subtask for this: when the person brought
+in an existing project, Mika makes an Agent for it and starts `import-project` with `--to`.
 
 ## Where the results go
 
