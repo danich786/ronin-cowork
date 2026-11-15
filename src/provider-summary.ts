@@ -113,6 +113,12 @@ export function commandModels(text: string): ModelRow[] | null {
   return rows.length ? rows : null;
 }
 
+/** One id per line; a line with a space in it is not an id (a banner, a warning). */
+export function lineModels(text: string): ModelRow[] | null {
+  const rows = text.split(/\r?\n/).map((line) => line.trim()).filter((line) => line && !/\s/.test(line)).map((id) => ({ id, name: id }));
+  return rows.length ? rows : null;
+}
+
 const asObject = (v: unknown): Record<string, unknown> => (v && typeof v === 'object' && !Array.isArray(v) ? v as Record<string, unknown> : {});
 const text = (v: unknown): string => (typeof v === 'string' ? v : '');
 
@@ -156,6 +162,12 @@ const READERS: Record<ModelsSource['read'], (agent: Agent, home: string, file: s
     if (!file || agent.operations.models.read !== 'command') return null;
     const { stdout, stderr } = await execFile(file, [...agent.operations.models.argv], { timeout: 20_000 });
     return commandModels(`${stdout}\n${stderr}`);
+  },
+  // One model id per line, nothing else (OpenCode's `opencode models`: provider/model).
+  'command-lines': async (agent, _home, file) => {
+    if (!file || agent.operations.models.read !== 'command-lines') return null;
+    const { stdout } = await execFile(file, [...agent.operations.models.argv], { timeout: 20_000 });
+    return lineModels(stdout);
   },
   'hermes-setups': async () => (await readHermesSettings()).setups.map(setup => ({ id: setup.id, name: setup.name })),
   none: async () => null,

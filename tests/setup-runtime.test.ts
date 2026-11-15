@@ -31,7 +31,7 @@ const row = (a: Awaited<ReturnType<typeof answer>>, id: string) => a.providers.f
 
 test('provider facts come from the measured summary: absent, installable, installed, login open, activated, and count bands', async () => {
   const none = await answer({}, []);
-  assert.deepEqual(none.providers.map((provider) => provider.id), ['claude', 'codex', 'agy', 'grok', 'hermes', 'copilot'], 'one row per CLI the registry knows, in its order');
+  assert.deepEqual(none.providers.map((provider) => provider.id), ['claude', 'codex', 'agy', 'grok', 'hermes', 'copilot', 'opencode'], 'one row per CLI the registry knows, in its order');
   assert.equal(row(none, 'claude').state, 'installable');
   assert.equal(row(none, 'codex').state, 'installable', 'whether a CLI can be installed is the registry\'s fact, not the probe\'s');
   assert.equal(row(none, 'hermes').state, 'absent', 'a CLI with no install line and not on PATH is absent');

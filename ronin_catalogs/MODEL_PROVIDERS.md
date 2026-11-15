@@ -109,6 +109,17 @@ Model ids are passed unchanged to Copilot CLI's `--model` option; they are the o
 `/model` picker shows, from several vendors, as the account's Copilot plan allows. Copilot
 publishes no list Ronin can read. Not yet exercised end to end through Ronin.
 
+### OpenCode
+
+- **provider:** `opencode`
+- **cli:** `opencode`
+- **families:** `opus=frontier sonnet=standard haiku=light gpt=frontier mini=light pro=frontier flash=standard free=light`
+- **transcript_source:** One SQLite store for every session, `~/.local/share/opencode/opencode.db`; schema unpublished. No adapter; Chat shows the terminal.
+
+Model ids are `provider/model` as `opencode models` lists them, passed unchanged to
+`--model`. OpenCode launches on any provider it is signed in to, and on OpenCode Zen's free
+models with none. Not yet exercised end to end through Ronin.
+
 Other providers (pi, perplexity, …) arrive the same way: a contributor PR adding a
 section, or a section in your own shadow copy. A third-party API service such as
 OpenRouter is not a harness and gets no section: it is an account a harness launches on

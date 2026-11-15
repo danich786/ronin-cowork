@@ -21,6 +21,7 @@ export type ModelsSource =
   | { read: 'claude-cache' }
   | { read: 'codex-cache' }
   | { read: 'command'; argv: readonly string[] }
+  | { read: 'command-lines'; argv: readonly string[] }
   | { read: 'hermes-setups' }
   | { read: 'none' };
 
@@ -135,6 +136,26 @@ export const AGENTS = [
     // when there is none: no file that means "signed in" alone, so the owner's Done activates it.
     credentials: [],
     carry: ['.copilot/config.json', '.copilot/settings.json'],
+    screen: { busy: [], asking: [], ready: [] },
+  },
+  {
+    id: 'opencode',
+    cmd: 'opencode',
+    label: 'OpenCode',
+    operations: {
+      install: 'npm install -g opencode-ai',
+      // `autoupdate` defaults on (opencode.ai/docs/config); Update is npm's, as it was installed.
+      update: { shell: 'npm install -g opencode-ai@latest', argv: [] },
+      selfUpdates: true,
+      version: ['--version'],
+      // `opencode models` prints one provider/model id per line.
+      models: { read: 'command-lines', argv: ['models'] },
+      session: { discovery: 'unsupported' },
+    } as AgentOperations,
+    parked: '',
+    // `opencode providers login` writes each provider's key or token here (opencode.ai/docs/providers).
+    credentials: ['.local/share/opencode/auth.json'],
+    carry: ['.config/opencode/opencode.jsonc', '.config/opencode/opencode.json'],
     screen: { busy: [], asking: [], ready: [] },
   },
 ] as const;
