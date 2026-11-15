@@ -68,6 +68,11 @@ names what this harness cannot report: not every CLI's log says every one of the
 mark its harness cannot supply never shows. The round mark is the Agent; the square ones are
 its items.
 
+A question shows for every CLI, whatever its log can say: Ronin reads it off the terminal,
+including a prompt drawn before the Agent's first turn, such as Codex's *Update available*.
+While it asks, the Agent is flagged: ⚑ in amber on its selector pill, and a ⚑ line on its
+☰ Work record. Answer it and the ?, the pill's ⚑ and the line go.
+
 The island follows the Agent's work record and its stance as they change; nothing needs refreshing.
 
 ## The menu

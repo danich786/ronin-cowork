@@ -84,8 +84,10 @@ test('a question on the screen reads asking for any provider, Codex update promp
   // Codex has no log before its first turn; its reader reports no question of its own.
   sockets.addRowFields((session) => (session === 'codexer' ? { stance: 'unknown', stance_reports: ['awaiting_you', 'interrupted'] } : {}));
   try {
-    const prompt = "Update available! 0.1 -> 0.2\\n\\n› 1. Update now\\n  2. Skip\\n  3. Skip until next version\\n\\nPress enter to continue\\n";
-    await rig.run('new-session', '-d', '-s', 'codexer', `printf '${prompt}'; read x; printf '\\033[2J\\033[H'; cat`);
+    // Codex 0.169.0's own startup prompt, captured off a real pane (CODEX_HOME's version.json
+    // naming a newer release); its first turn, and so its log, has not happened yet.
+    const fixture = new URL('./fixtures/codex-update-prompt.txt', import.meta.url).pathname;
+    await rig.run('new-session', '-d', '-s', 'codexer', '-x', '100', '-y', '30', `cat '${fixture}'; read x; printf '\\033[2J\\033[H'; cat`);
     await setSessionIdentity('codexer', { sessionType: 'bare_metal_agent', cli: 'codex', provider: 'p', model: 'm' });
     const row = async () => {
       const found = (await listSessions()).find((s) => s.name === 'codexer')!;
