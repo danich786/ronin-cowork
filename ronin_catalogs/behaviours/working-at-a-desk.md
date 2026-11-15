@@ -18,7 +18,7 @@
 - No worktree named: `worktree-desk open <repo>` opens one or says the repo uses its
   checkout. If the assignment and status disagree, stop and say so on the wipeboard; don't
   make the branch yourself.
-- After the last hand-in, status says `CERTIFIED CLEAN`; `session_end` then closes your
-  worktrees with you.
+- After the last hand-in, status says `CERTIFIED CLEAN`; once the work is accepted,
+  `session_end` at once closes your worktrees with you.
 
 More: `ronin-help desks`
