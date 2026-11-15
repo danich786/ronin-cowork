@@ -21,7 +21,8 @@ import {
   unauthorizedUpgradeResponse,
   verifyRecord,
 } from './auth.js';
-import { cleanupViewers, listSessions } from './tmux.js';
+import { cleanupViewers, listSessions, livePanePids } from './tmux.js';
+import { sweepLeftovers } from './agent-scope.js';
 import { bindOperatorSocket, isOperatorPeer, operatorSocketPath, SiblingAlive, type BoundOperatorSocket } from './operator-socket.js';
 import { addressRefusal, EXIT_ADDRESS_UNUSABLE } from './bind-refusal.js';
 import { publishMax, publishOwner } from './machine-state.js';
@@ -473,6 +474,14 @@ await tmuxClient.connect(); // only the long-lived server opts into control mode
 const removed = await cleanupViewers();
 if (removed) console.log(`[tmux-ronin] cleaned up ${removed} stale viewer session(s)`);
 await startBootHooks();
+// What ended Agents left: their pane scopes (processes) and short temp roots — src/agent-scope.ts
+void (async () => {
+  const server = Number(await tmuxClient.run(['display-message', '-p', '#{pid}']).catch(() => '0'));
+  const sessionKeys = await fs.promises.readdir(storeDir('session')).catch(() => [] as string[]);
+  const swept = await sweepLeftovers({ server, livePanes: await livePanePids(), sessionKeys });
+  if (swept.scopes.length) console.log(`[scope] stopped ${swept.scopes.length} pane scope(s) left by ended Agents: ${swept.scopes.join(' ')}`);
+  if (swept.temp.length) console.log(`[scope] removed ${swept.temp.length} temp root(s) of gone sessions: ${swept.temp.join(' ')}`);
+})().catch((e) => console.error('[scope] start sweep failed:', e));
 // A TEAM'S FOUR LAYERS (KAN-331): remember every lead's, and tell a lead when its own move.
 void startTeamLayers((cb) => sockets.onItemChanged(cb));
 startFiles(ROOT); // copyparty at /files where python3 is found — src/files.ts

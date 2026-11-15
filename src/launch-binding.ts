@@ -11,6 +11,7 @@ import { type AgentLaunches } from './agent-launches.js';
 import { storeDir } from './resources.js';
 import { emitSessionBorn, emitSessionWillBorn } from './sockets.js';
 import type { LaunchIdentity } from './sockets-contract.js';
+import { agentTempEnv } from './agent-scope.js';
 
 export interface LaunchRequest {
   name: string; key?: string; cli: string; argv: readonly string[]; cwd: string;
@@ -84,7 +85,8 @@ export function processLaunch(request: LaunchRequest,
     };
     await writeLaunchIdentity(identity);
     await emitSessionWillBorn(request.name);
-    await start(assigned.argv, { ...request.env, ...identity.env }, identity);
+    // TMPDIR on disk in the session folder, never /tmp (RAM): src/agent-scope.ts
+    await start(assigned.argv, { ...await agentTempEnv(key), ...request.env, ...identity.env }, identity);
     emitSessionBorn({ name: request.name, key, team: request.team, root: request.cwd, identity });
     return identity;
   });

@@ -21,6 +21,9 @@ The provider and tmux do different halves of the job:
    teams, leads, wipeboards, note, project root, control dial, agent stamp, provider UUID,
    and session type. Only then is the archive manifest removed.
 
+   Each kill also stops the session's systemd pane scope, so nothing the Agent started
+   outlives it ([agent temp and processes](agent-scope.md)).
+
 So this is not tmux serialization and it is not a suspended process. tmux is genuinely
 stopped; provider-native conversation resume is what makes the later process continuous.
 
@@ -141,7 +144,7 @@ an explicit supported id remain unidentifiable rather than risking a neighbour's
 
 A session's folder under the session store (`birth-receipt.json`, `launch-identity.json`,
 `brief.md`, `AGENT_BIRTH_BRIEF.md`, `AGENT_BRIEF.md`, `brief-told.json`, `tegami.md`, `transcript.jsonl`, and for isolated launches
-`cli-home/`) outlives the session on purpose: it is the evidence a later reading of the
+`cli-home/`, plus `tmp/`, the Agent's `TMPDIR`, and `scope`, its pane scope: [agent temp and processes](agent-scope.md)) outlives the session on purpose: it is the evidence a later reading of the
 Agent needs. It does not outlive the retention period. `src/session-retention.ts` runs once
 at boot and then weekly on the JIKAN clock and removes a folder that is **closed** — no live
 session carries its key — **unarchived** — no archive manifest names its key — and has not

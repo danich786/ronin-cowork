@@ -163,6 +163,28 @@ Ronin's session max counts real sessions only — viewers were never counted and
 refuse a launch. If launches are being refused, the ceiling is real and the answer is to
 end sessions through Ronin, never to raise the number reflexively.
 
+## Each Agent's processes and temp
+
+Each Agent's pane is its own systemd scope (`tmux-spawn-<uuid>.scope`), and everything it starts
+stays in that scope, even a detached child with ppid 1. Ronin stops the scope when the Agent
+ends, is archived or deleted, or its pane dies. It puts a memory ceiling on the scope, sized
+from the box's RAM. The Agent's `TMPDIR` is `tmp/` in its session folder, on disk, never `/tmp`
+(on many boxes `/tmp` is RAM). At start, Ronin stops scopes that ended Agents left, and logs
+each one as `[scope] stopped …`. It never touches a scope from a tmux server it did not start.
+The mechanism and its numbers: [agent temp and processes](../architecture/agent-scope.md).
+
+```sh
+tmux display-message -p -t "=<name>:" '#{@ronin-scope}'                # the Agent's scope
+systemctl --user show <scope> -p MemoryCurrent -p MemoryHigh -p MemoryMax
+systemd-cgls --user-unit <scope>                                       # what it is running
+```
+
+A scope OOM-killed at its ceiling shows `oom-kill` in `memory.events` under its cgroup. Only
+that Agent's work went. Report it, and don't raise the ceiling.
+
+The start sweep is not a reaper. It runs once at start, acts only on what Ronin's own sessions
+left, and follows the cgroup, never a name. The rule below still holds for anything you build.
+
 ## Watch, do not reap
 
 Same rule as the sibling page, and for the same reason. **Do not build a reaper, a
