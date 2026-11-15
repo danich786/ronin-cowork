@@ -24,6 +24,8 @@ import { createThemeToggle } from './theme-toggle.js';
 import { campaignById, loadCampaigns, normalizeSelection, setupDefaultView } from './campaigns.js';
 import { workbenchLink } from './workspace.js';
 import { BUSINESS_LOUNGE, HOSTED } from './hosted.js';
+import { irasshaiLive } from './setup-irasshai.js';
+import { subscribe as hear } from './store.js';
 
 const el = (tag, cls, text) => {
   const out = document.createElement(tag);
@@ -42,14 +44,15 @@ function OFFICE() {
 }
 
 /** The smaller stones on the right, one above the other. Settings' route is read at paint. A
- *  hosted office (hosted.js) has no Setup, so its Settings opens Settings, and the Business Lounge
+ *  hosted office (hosted.js) has Setup only while Irasshai runs, so its Settings opens Setup then and
+ *  Settings after, and the Business Lounge
  *  stands beside the others: a link out to Ronin HQ, where its account and office are kept. */
 function SIDE() {
   return [
     { key: 'models', route: 'models', glyph: '✶', name: t('campaign_home.agent_harness', 'Agent Harness'), is: t('campaign_home.agent_harness_is', 'The CLIs on this machine, the accounts they launch on, and the models'), gated: false },
     { key: 'help', route: 'help', glyph: 'ミ', name: t('campaign_home.help', 'Help'), is: t('campaign_home.help_is', 'The guides, and Mika to ask'), gated: false },
-    HOSTED
-      ? { key: 'settings', route: 'campaign', glyph: '⚙', name: t('campaign_home.settings', 'Settings'), is: t('campaign_home.settings_is_hosted', 'This Desk’s settings'), gated: false }
+    HOSTED // while Irasshai onboards them, Setup is hers (setup-irasshai.js); after, Settings
+      ? { key: 'settings', route: irasshaiLive() ? 'setup' : 'campaign', glyph: '⚙', name: t('campaign_home.settings', 'Settings'), is: t('campaign_home.settings_is_hosted', 'This Desk’s settings'), gated: false }
       : { key: 'settings', route: null, glyph: '⚙', name: t('campaign_home.settings', 'Settings'), is: t('campaign_home.settings_is', 'Setup, and this machine’s settings'), gated: false },
     ...(HOSTED ? [{ key: 'lounge', href: BUSINESS_LOUNGE, glyph: '◎', name: t('campaign_home.business_lounge', 'Business Lounge'), is: t('campaign_home.business_lounge_is', 'Your account, office and subscription, at Ronin HQ'), gated: false }] : []),
   ];
@@ -157,6 +160,9 @@ export function createCampaignHome() {
     }
   }});
   check.addEventListener('click', () => void updates.check());
+  // A hosted Settings door follows Irasshai's session: Setup while she runs, Settings after.
+  let onboarding = irasshaiLive();
+  if (HOSTED) hear('sessions', () => { if (irasshaiLive() !== onboarding) { onboarding = !onboarding; if (entered) paintDoors(); } });
 
   return {
     el: root,

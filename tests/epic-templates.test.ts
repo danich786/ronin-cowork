@@ -68,15 +68,15 @@ const run = (args: string[], as = 'mika') => new Promise<{ status: number; stdou
     resolve({ status: error ? Number((error as { code?: number }).code ?? 1) : 0, stdout, stderr }));
 });
 
-test('stock: onboarding is the three tasks in order, its Workspace task carrying four subtasks and the tour three; no item ids', async () => {
+test('stock: onboarding is the five tasks in order, Workspace ending on Start Team 1 and the tour keeping two; no item ids', async () => {
   const onboarding = await readTemplate('onboarding');
   assert.equal(onboarding.title, 'Getting set up in your new office');
-  assert.deepEqual(onboarding.tasks.map((task) => task.title), [
-    'Sign in an Agent harness', 'Create their first Workspace', 'A tour, if they want one',
-  ]);
-  assert.deepEqual(onboarding.tasks[1]!.subtasks.map((sub) => sub.title), ['Decide its kind and name, and write down the plan', 'Sign in GitHub, if they use it', 'Bring in their folders or repositories', 'Map the project, if they brought one in']);
-  assert.match(onboarding.tasks[1]!.subtasks[3]!.objective, /epic-template start import-project --to <agent>/);
-  assert.deepEqual(onboarding.tasks[2]!.subtasks.map((sub) => sub.title), ['Behaviours', 'Project management', 'Integrations (Jira, Netlify, MCP and the rest)']);
+  assert.deepEqual(onboarding.tasks.map((task) => task.title), ['Agent Harness', 'Workspace', 'Integrations', 'Ronin Tour', 'Meet your Agents']);
+  assert.deepEqual(onboarding.tasks[1]!.subtasks.map((sub) => sub.title), ['Decide its kind and name, and write down the plan', 'Sign in GitHub, if they use it', 'Bring in their folders or repositories', 'Start Team 1']);
+  assert.match(onboarding.tasks[1]!.subtasks[3]!.objective, /session_create .*epic-template start import-project --to <lead>/s);
+  assert.match(onboarding.tasks[2]!.objective, /ronin-help integrations/);
+  assert.deepEqual(onboarding.tasks[3]!.subtasks.map((sub) => sub.title), ['Behaviours', 'Project management']);
+  assert.match(onboarding.tasks[4]!.objective, /session_end/);
   assert.match(onboarding.objective, /^Irasshai: /);
   assert.match(onboarding.objective, /session_end/);
   assert.doesNotMatch(onboarding.objective, /\bMika:/);

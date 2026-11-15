@@ -4596,6 +4596,7 @@ body {
    another size sets it under its own class, as the card does below. */
 .setup-steps-bar { --slab: 24px; --slab-w: 16px; --slab-gap: 2px; --slab-type: var(--text-body); --skew: -14deg; display: flex; align-items: center; flex: 0 0 auto; gap: var(--slab-gap); }
 .setup-steps-header { display: inline-flex; align-items: center; }
+.setup-steps-header[hidden] { display: none; }
 .setup-scan { display: inline-flex; align-items: center; gap: var(--space-inline); margin-left: var(--space-inline); }
 .setup-scan-button { display: grid; place-items: center; width: 24px; height: 24px; flex: 0 0 auto; border: var(--edge) solid var(--line-2); border-radius: var(--radius-round); background: transparent; color: var(--muted); padding: 0; cursor: pointer; }
 .setup-scan-button:hover { border-color: var(--kaki-fill); color: var(--kaki-fill); }

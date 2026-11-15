@@ -186,7 +186,7 @@ export function createCampaignView() {
     // The way back to Setup heads the Machine Settings group. It is a door, not a surface,
     // so it is built here rather than registered as a Workbench type a drag could seat.
     const machine = cards.querySelector(`[data-workbench-offer-type="${TYPES.machine}"]`);
-    if (machine && !HOSTED) machine.before(createSetupReturnCard(setupProgress(), openSetup)); // a hosted office has no Setup
+    if (machine && !HOSTED) machine.before(createSetupReturnCard(setupProgress(), openSetup)); // a hosted office's Setup is Irasshai's, reached by Home's Settings door while she runs
   }, onStateChange: save, onPlacement: save });
   installBehaviourReader(bench, TYPES.document);
   helpPanel = createMikaHelpPanel({

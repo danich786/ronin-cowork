@@ -18,12 +18,19 @@ import { PASSWORD_SURFACE_TYPE, registerPasswordSurface } from './password-surfa
 import { firstUnansweredSetupStep } from './setup-progress.js';
 import { createSetupStepsBar, setupStepMarks } from './setup-steps-bar.js';
 import { setupProgressHandlers } from './events.js';
+import { subscribe as hear } from './store.js';
+import { HOSTED } from './hosted.js';
+import { IRASSHAI_STEP_TYPE, createIrasshaiChat, irasshaiLive, irasshaiOrder, irasshaiSteps, registerIrasshaiSteps, takeStepLine } from './setup-irasshai.js';
 
 const PROFILE = 'setup';
 // Release toggles: unfinished programs stay out of Setup without changing the workbench.
 const SETUP_FEATURES = Object.freeze({ bounty: false });
+// A hosted office has no registration, password or installations: they are the office_park's
+// and the Business Lounge's (hosted.js), as Settings leaves them out.
+const NOT_HOSTED = Object.freeze(['register', 'installations', 'password']);
 const SCENES = Object.freeze(SETUP_SCENES
   .filter((scene) => SETUP_FEATURES.bounty || scene.type !== 'setup.bounty')
+  .filter((scene) => !HOSTED || !NOT_HOSTED.includes(scene.id))
   .map((scene, index) => Object.freeze({ ...scene, number: index + 1 })));
 const ORDER = Object.freeze(SCENES.map((scene) => scene.type));
 const ARRANGEMENT = Object.freeze({
@@ -38,7 +45,8 @@ function registerSetupWorkbench() {
   registerPasswordSurface();
   registerGardenCanvas();
   registerPresetsSurface();
-  return WorkspaceKit.workbench.profiles.define(PROFILE, [GARDEN_CANVAS_TYPE, PRESETS_TYPE, ...ORDER]);
+  registerIrasshaiSteps();
+  return WorkspaceKit.workbench.profiles.define(PROFILE, [GARDEN_CANVAS_TYPE, PRESETS_TYPE, IRASSHAI_STEP_TYPE, ...ORDER]);
 }
 
 export function createSetupView() {
@@ -58,6 +66,33 @@ export function createSetupView() {
   const providerSessions = createProviderSetupSessionMount();
   const kinds = createKindsPreference(globalThis.localStorage, (next) => request('/api/setup/preferences', { method: 'PATCH', json: { kinds: next } }));
   const themeToggle = createThemeToggle();
+  // IRASSHAI (setup-irasshai.js): while her session is live, Assist is her chat and the selector
+  // her epic's steps. `irasshai` is whether she was live at the last look.
+  let irasshai = false;
+  let chat = null;
+  let epics = [];
+  let epicItems = [];
+  const steps = () => irasshaiSteps(epics, epicItems, irasshaiOrder(() => bench?.refreshSelector()));
+  const seatChat = () => {
+    if (!garden) return;
+    if (irasshai) {
+      chat ||= createIrasshaiChat();
+      garden.chat(chat.el);
+      chat.show();
+    } else if (chat) {
+      garden.chat(null);
+      chat.hide();
+    }
+  };
+  const followIrasshai = () => {
+    const live = irasshaiLive();
+    if (live !== irasshai) {
+      irasshai = live;
+      seatChat();
+      refreshSetupStepsHeader();
+    }
+    bench?.refreshSelector();
+  };
   const setupStepsHeader = document.createElement('span');
   setupStepsHeader.className = 'setup-steps-header';
   const refreshSetupStepsHeader = () => {
@@ -81,6 +116,7 @@ export function createSetupView() {
     word.textContent = progress.scanning ? 'Looking at this machine…' : progress.reason || '';
     scan.append(scanButton, word);
     setupStepsHeader.replaceChildren(createSetupStepsBar(progress), scan, reading);
+    setupStepsHeader.hidden = irasshai; // her steps are the selector's; the five marks are not hers
   };
   const blank = (id) => WorkspaceKit.primitives.createBlankSurface(id.replace('workspace', 'Workspace ')).el;
   const environment = {
@@ -127,8 +163,11 @@ export function createSetupView() {
       } });
       if (url) location.assign(url);
     },
+    irasshaiSteps: () => steps(),
+    takeIrasshaiStep: (step) => { void chat?.say(takeStepLine(step)); },
     onGardenCanvas: (next) => {
       garden = next;
+      seatChat();
       garden.controls.replaceChildren();
       garden.controls.hidden = true;
       paintedSceneId = null;
@@ -200,6 +239,7 @@ export function createSetupView() {
     for (const card of bench?.host.querySelectorAll('[data-workbench-offer-type]') || []) {
       delete card.dataset.sceneRelevant;
       const position = ORDER.indexOf(card.dataset.workbenchOfferType);
+      if (position < 0) continue; // her steps carry their own marks
       const scene = SCENES[position];
       if (scene?.id === active.id) card.setAttribute('aria-current', 'page');
       else card.removeAttribute('aria-current');
@@ -251,6 +291,12 @@ export function createSetupView() {
   kinds.subscribe(() => paint());
   const onProgress = (next) => { acceptProgress(next); };
   setupProgressHandlers.add(onProgress);
+  const unhear = [
+    hear('sessions', followIrasshai),
+    hear('epics', (next) => { epics = Array.isArray(next) ? next : []; if (irasshai) bench?.refreshSelector(); }),
+    hear('epicItems', (next) => { epicItems = Array.isArray(next) ? next : []; if (irasshai) bench?.refreshSelector(); }),
+    hear('home', () => { if (irasshai) chat?.stance(); }),
+  ];
 
   bench = WorkspaceKit.workbench.create({
     profile: PROFILE,
@@ -263,7 +309,7 @@ export function createSetupView() {
     selectorCurrent: true,
     hintsCollapsed: true,
     hintsPreferenceScope: 'setup',
-    selectorFilter: (type) => ORDER.includes(type),
+    selectorFilter: (type) => (irasshai ? type === IRASSHAI_STEP_TYPE : ORDER.includes(type)),
     onSelectorRefresh: paint,
     onStateChange: save,
     onPlacement: (snapshot) => {
@@ -278,6 +324,7 @@ export function createSetupView() {
     },
   });
   bench.host.querySelector('.wk-workbench-selector-cards')?.addEventListener('click', () => queueMicrotask(() => bench.select('workspace2')));
+  followIrasshai();
 
   return {
     el: bench.host,
@@ -298,6 +345,7 @@ export function createSetupView() {
       bench.place(GARDEN_CANVAS_TYPE, 'workspace1');
       paint();
       open(sceneOverride);
+      seatChat();
       void request('/api/setup/progress', { cache: 'no-store' }).then((result) => {
         if (generation !== enterGeneration || !result.ok || !acceptProgress(result.data)) return;
         const first = firstUnansweredSetupStep(progress);
@@ -319,7 +367,7 @@ export function createSetupView() {
         });
       }
     },
-    leave: () => { enterGeneration += 1; bench.leave(); },
-    destroy: () => { enterGeneration += 1; setupProgressHandlers.delete(onProgress); providerSessions.destroyAll(); bench.leave(); ctx = null; },
+    leave: () => { enterGeneration += 1; chat?.hide(); bench.leave(); },
+    destroy: () => { enterGeneration += 1; setupProgressHandlers.delete(onProgress); for (const stop of unhear) stop(); chat?.dispose(); providerSessions.destroyAll(); bench.leave(); ctx = null; },
   };
 }

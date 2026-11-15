@@ -218,7 +218,7 @@ export function createHelpView() {
   const none = document.createElement('p');
   none.className = 'help-mika-none';
   none.hidden = true;
-  const setup = HOSTED // a hosted office has no Setup; its providers are signed in from Agent Harness
+  const setup = HOSTED // a hosted office's Setup is Irasshai's while she runs; its providers are signed in from Agent Harness
     ? Object.assign(document.createElement('a'), { href: '#/models', textContent: t('campaign_home.agent_harness', 'Agent Harness') })
     : Object.assign(document.createElement('a'), { href: '#/setup', textContent: t('help_outline.mika_setup', 'Setup') });
   none.append(t('help_outline.mika_needs_provider', 'Mika needs a model provider. Activate one in '), setup, '.');
