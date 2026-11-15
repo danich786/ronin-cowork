@@ -18,7 +18,7 @@ let streamHandler: ((...args: unknown[]) => void) | undefined;
 const mikaChoosers: Array<(ready: ProviderReadiness) => Promise<MikaLaunchChoice | null> | MikaLaunchChoice | null> = [];
 const providerHooks: Array<(ready: ProviderReadiness) => void | Promise<void>> = [];
 // Mika's controls, set by routes/launch.ts (which owns her launch), so handed in, not imported.
-let mikaControl: { identity(): Promise<MikaIdentity | null>; restart(opts: { prompt?: string; resume?: boolean }): Promise<void> } = {
+let mikaControl: { identity(): Promise<MikaIdentity | null>; restart(opts: { prompt?: string; archive?: boolean }): Promise<void> } = {
   identity: async () => null,
   restart: async () => {},
 };

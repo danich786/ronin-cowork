@@ -30,9 +30,10 @@ test('session_end archives through the one archive; only an unresumable conversa
   assert.match(end, /archived = await archiveAgent\(session\); if \(!end\.archived\) await liveOps\.stop/);
   assert.match(end, /if \(!archived\) emitSessionEnd/, 'an archive keeps the tape and the session folder');
   assert.match(end, /releaseHolds\(name, key, 'session ended', archived\)/);
-  // One archive: the archive route and session_end share archiveAgent; nothing writes a manifest twice.
+  // One archive: the archive route, session_end and archiveSession (Core's own, for Mika's planned
+  // end) share archiveAgent; nothing writes a manifest twice.
   assert.equal(route.match(/await writeArchive\(/g)?.length, 1);
-  assert.equal(route.match(/await archiveAgent\(/g)?.length, 2);
+  assert.equal(route.match(/await archiveAgent\(/g)?.length, 3);
   const archive = between("app.post('/api/sessions/:name/archive'", "app.post('/api/archived-sessions/:id/rehydrate'");
   assert.match(archive, /await archiveAgent\(name, ignoringDesks\(req\) \? desks : \[\]\)/);
 });

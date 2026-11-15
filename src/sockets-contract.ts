@@ -1,7 +1,7 @@
 
 import type { TrailLine, WorkItem } from './work-items.js';
 
-export const CONTRACT_V = 13;
+export const CONTRACT_V = 14;
 
 export interface LaunchIdentity {
   key: string;
@@ -129,11 +129,11 @@ export interface Sockets {
   /** The running Mika's launch identity; null when she is not running. */
   mikaIdentity(): Promise<MikaIdentity | null>;
   /**
-   * End Mika and start her again by the launch rule (choosers first), told `prompt`. With
-   * `resume`, when the new launch runs the same CLI, she resumes the same conversation (the
-   * same launch key and journal home) under the new launch; otherwise she starts fresh.
+   * End Mika and start a fresh one by the launch rule (choosers first), told `prompt` (else her
+   * ordinary Help opening). With `archive`, the old one is archived the way session_archive does
+   * (restorable for the archive days); otherwise stopped. Nothing is carried across.
    */
-  restartMika(opts: { prompt?: string; resume?: boolean }): Promise<void>;
+  restartMika(opts: { prompt?: string; archive?: boolean }): Promise<void>;
   setStreamHandler(h: (...args: unknown[]) => void): void;
 }
 
