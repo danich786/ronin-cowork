@@ -105,7 +105,7 @@ Very few notices, and never the same news twice:
 | a call for help (a flag), or an Agent ended without a handover | the lead of the Team holding the item, and the lead or epic holder above it; for an ending, the lead of the Team its items went to, once |
 | a status change | the Agent holding the item, and the lead of the Team holding or watching it |
 | a comment | holding or watching the item |
-| any change someone else makes to your item: handed to you ("<id> '<title>' is yours, from <giver>. Read it and follow its objective."), a status move, an edit, a comment, a Send back | the Agent holding it, never for its own change |
+| someone else's change on your item: handed to you ("<id> '<title>' is yours, from <giver>. Read it and follow its objective."), a status move, an edit, a Send back | the Agent holding it |
 | a Jira item with nobody on it (it comes in on the Team holding its parent, if any) | traffic_control, which places it |
 | your item is Done, with what you still hold or, holding nothing open, "End now with session_end: it archives you; your lead can restore you within 7 days." | the Agent holding it |
 
@@ -113,7 +113,7 @@ A Team is told through its lead. Where a Team holds or watches an item, its noti
 Team's lead(s); with no lead running, to no one. On an item an Agent works, the lead is not
 told of its changes: only when the Agent asks for help or hands in.
 
-Nothing else sends a notice. A Team's starts, new items, holder changes and handovers show
+Nothing else sends a notice, and nobody hears their own change. A Team's starts, new items, holder changes and handovers show
 where the work shows (below). Agents move their items without waiting for a go, flag when they wait on someone, and tell their lead only a decision.
 
 ## Where the work shows
