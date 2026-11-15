@@ -113,7 +113,7 @@ export interface Resolved {
 }
 
 const RANK: Record<Depth, number> = { none: 0, seed: 1, full: 2 };
-/** Mandates print axis by axis, as the mandate fact does; a new axis after these. */
+/** Mandates print axis by axis: reach, recruit, output; a new axis after these. */
 const axis = (row: InPlay): number => { const at = ['reach', 'recruit', 'output'].indexOf(row.file.mandate); return at < 0 ? 3 : at; };
 
 /** What this Agent is told: the catalog over the record and the layers, in the order of docs/architecture/brief.md, Layers and brief settings. */

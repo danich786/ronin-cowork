@@ -33,7 +33,7 @@ input; identical subject names across directories do not make the documents inte
 
 | Path | Files | Why it exists / what belongs here |
 |---|---|---|
-| `facts/` | one file per fact (`you`, `user`, `workspace`, `mandate` …) | What the brief says is true, printed from the work record. |
+| `facts/` | one file per fact (`you`, `user`, `workspace`, `task` …) | What the brief says is true, printed from the work record. |
 | `behaviours/` | one file per behaviour, flat | How an Agent works; its header says when and how much it is told. |
 | `tools/` | one file per tool or family | What the brief says about each executable in `ronin_bin/`, and which behaviour it serves. |
 | `workspace_types/` | one file per project type and per variant (`code`, `website` … `github`, `publishing` …). | What a new Workspace can be; the new-workspace behaviour lists them (`lists: workspace_types`). |
