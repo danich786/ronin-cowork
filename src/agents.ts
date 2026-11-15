@@ -158,6 +158,26 @@ export const AGENTS = [
     carry: ['.config/opencode/opencode.jsonc', '.config/opencode/opencode.json'],
     screen: { busy: [], asking: [], ready: [] },
   },
+  {
+    id: 'kimi',
+    cmd: 'kimi',
+    label: 'Kimi Code',
+    operations: {
+      // Moonshot's npm package (Node 22.19+); its curl installer puts kimi in ~/.kimi-code/bin
+      // and edits .bashrc, which a login shell does not reach.
+      install: 'npm install -g @moonshot-ai/kimi-code',
+      update: { shell: 'npm install -g @moonshot-ai/kimi-code@latest', argv: [] },
+      selfUpdates: false,
+      version: ['--version'],
+      models: { read: 'none' },
+      session: { discovery: 'unsupported' },
+    } as AgentOperations,
+    parked: '',
+    // `kimi login` (device code) writes the hosted Kimi sign-in here (Kimi Code docs, Data locations).
+    credentials: ['.kimi-code/credentials/managed:kimi-code.json'],
+    carry: ['.kimi-code/config.toml'],
+    screen: { busy: [], asking: [], ready: [] },
+  },
 ] as const;
 
 export interface AgentAvailability {

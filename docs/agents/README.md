@@ -9,6 +9,7 @@ Each CLI has one maintained integration page:
 - [Hermes](hermes.md)
 - [GitHub Copilot CLI](copilot.md)
 - [OpenCode](opencode.md)
+- [Kimi Code](kimi.md)
 
 These pages own each CLI's Ronin-specific explanation and code map. Shared browser
 shortcuts belong only to [Terminal controls](../using-ronin/terminal-controls.md).

@@ -249,11 +249,11 @@ command with approval, and verify the result. Never ask the owner to paste a key
 or a recorded tile.
 
 - **Installed is not signed in.** From the same login shell a Ronin tile receives,
-  `for c in claude codex agy grok hermes copilot opencode; do command -v "$c" || true; done` proves only
+  `for c in claude codex agy grok hermes copilot opencode kimi; do command -v "$c" || true; done` proves only
   whether a CLI is found. The provider catalog (`ronin_catalogs/MODEL_PROVIDERS.md`) lists
   what Ronin offers; **Model providers** shows what this machine has.
 - **Signed in is a file's existence.** A provider whose own credential file is present
-  (Claude Code `~/.claude/.credentials.json`, Codex `~/.codex/auth.json`, Grok `~/.grok/auth.json`, OpenCode `~/.local/share/opencode/auth.json`) shows as signed in; Ronin reads
+  (Claude Code `~/.claude/.credentials.json`, Codex `~/.codex/auth.json`, Grok `~/.grok/auth.json`, OpenCode `~/.local/share/opencode/auth.json`, Kimi Code `~/.kimi-code/credentials/managed:kimi-code.json`) shows as signed in; Ronin reads
   only that the file exists and does not recheck the account afterwards.
 - **Done records activation; Cancel does not.** Both measure the machine again.
 - **Ask about billing before login.** Subscription login or separately billed API access is
@@ -264,7 +264,7 @@ or a recorded tile.
   Resolve a conflict with the owner rather than dismissing the CLI's warning.
 - **CLI particulars** live in the [Codex](../agents/codex.md#sign-in-particulars) and
   [Claude Code](../agents/claude.md#sign-in-particulars) integration pages. Antigravity CLI, Grok,
-  Hermes, GitHub Copilot CLI and OpenCode have catalog rows and their own integration pages, but have not
+  Hermes, GitHub Copilot CLI, OpenCode and Kimi Code have catalog rows and their own integration pages, but have not
   been launched end to end through Ronin: do not invent a sign-in command or normalize one provider's status output
   into another's. Hermes has no safe automatic installer in Ronin.
 

@@ -120,6 +120,17 @@ Model ids are `provider/model` as `opencode models` lists them, passed unchanged
 `--model`. OpenCode launches on any provider it is signed in to, and on OpenCode Zen's free
 models with none. Not yet exercised end to end through Ronin.
 
+### Moonshot AI
+
+- **provider:** `moonshot`
+- **cli:** `kimi`
+- **families:** `kimi=frontier`
+- **transcript_source:** `~/.kimi-code/sessions/<workspace>/<session-id>/agents/main/wire.jsonl`; line format unpublished. No adapter; Chat shows the terminal.
+
+Model ids are Kimi Code's aliases from its `config.toml`, passed unchanged to `--model`.
+Kimi Code has no launch-and-stay-open prompt, so its Agents start without their brief.
+Not yet exercised end to end through Ronin.
+
 Other providers (pi, perplexity, …) arrive the same way: a contributor PR adding a
 section, or a section in your own shadow copy. A third-party API service such as
 OpenRouter is not a harness and gets no section: it is an account a harness launches on
