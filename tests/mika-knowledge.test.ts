@@ -161,7 +161,9 @@ test('the stock taxonomy discovers the complete approved set within the hard ind
     }))).flat()
       .filter((id) => !id.startsWith('ronin_session_boot/routine/mika/'))
       // Facts are line templates over an Agent's record, not reading.
-      .filter((id) => !id.startsWith('ronin_catalogs/facts/'));
+      .filter((id) => !id.startsWith('ronin_catalogs/facts/'))
+      // Epic templates and Workspace types are read through their own tools.
+      .filter((id) => !id.startsWith('ronin_catalogs/epic_templates/') && !id.startsWith('ronin_catalogs/workspace_types/'));
     // Mandate values are orders to one Agent, not reading.
     const mandates = new Set<string>();
     for (const id of approved.filter((entry) => entry.startsWith('ronin_catalogs/'))) {
