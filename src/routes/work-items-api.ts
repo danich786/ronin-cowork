@@ -6,7 +6,7 @@
 import type express from 'express';
 import {
   WorkItemBadInput, WorkItemMissing, WorkItemRefused,
-  addComment, attachDoc, connectionOf, createItem, deleteItem, editComment, editItem, archiveHeldDone, archiveItem, flagItem, handoffItem, reviewPrompt, handoverItem, holderLabel, holdersOf, linkItem, listItems, markOnDev, readItem, resolveId, sendBack, watchItem, watchedIds,
+  addComment, attachDoc, connectionOf, createItem, deleteItem, editComment, editItem, archiveHeldDone, archiveItem, flagItem, handoffItem, reviewPrompt, handoverItem, holderLabel, holdersOf, linkItem, listItems, markOnDev, nextStep, readItem, resolveId, sendBack, watchItem, watchedIds,
   didLine, oneNoticePerCommand, type Acknowledged, type Holder, type JiraPair, type WorkItem,
 } from '../work-items.js';
 import { agentReading, epicCards, everyItemReading, teamReading, type HeldItem } from '../work-items-read.js';
@@ -172,8 +172,11 @@ export function registerWorkItems(app: express.Express): void {
       const status = text(b.status)?.trim();
       if (!status) throw new WorkItemBadInput('name the status, one of the space\'s.');
       const done = acted(await editItem(id, { status }, by, text(b.note)));
+      // What comes next (KAN-522): a start names the hand-in and the flag, a hand-in who holds it.
+      const next = nextStep(done.done);
+      const said = next ? `${done.acknowledgement}. ${next}` : done.acknowledgement;
       const prompt = reviewPrompt(done.done.item);
-      return prompt ? { ...done, acknowledgement: `${done.acknowledgement}\n${prompt}`, extra: { prompt } } : done;
+      return prompt ? { ...done, acknowledgement: `${said}\n${prompt}`, extra: { prompt } } : { ...done, acknowledgement: said };
     },
     // Handoff, the one tool: the giver comes off and the receiver goes on (handoffItem). The
     // giver is { from } when named, an Agent or team:<name>; else the caller and the Teams around
@@ -215,7 +218,7 @@ export function registerWorkItems(app: express.Express): void {
   for (const [verb, flagged] of [['flag', true], ['unflag', false]] as const) {
     acts[verb] = async (id, b, by) => {
       const reason = text(b.comment)?.trim();
-      if (flagged && !reason) throw new WorkItemBadInput(`a flag says why: item flag ${id} "Waiting on <who>: <what>".`);
+      if (flagged && !reason) throw new WorkItemBadInput(`a flag says why: item flag ${id} "<who>: <what you need>".`);
       return acted(await flagItem(id, flagged, reason, by));
     };
   }

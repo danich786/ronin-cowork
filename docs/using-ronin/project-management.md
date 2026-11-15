@@ -103,18 +103,18 @@ Very few notices, and never the same news twice:
 |---|---|
 | a hand-in | the lead of the Team holding the work (one message, from the hand-in itself) |
 | a call for help (a flag), or an Agent ended without a handover | the lead of the Team holding the item, and the lead or epic holder above it; for an ending, the lead of the Team its items went to, once |
-| a status change | the lead of the Team holding the item, or watching it |
+| a status change | the Agent holding the item, and the lead of the Team holding or watching it |
 | a comment | holding or watching the item |
-| someone else's change on your item | the Agent doing it |
+| someone else's change on your item: handed to you ("<id> '<title>' is yours, from <giver>. Read it and follow its objective."), a status move, an edit, a Send back | the Agent holding it |
 | a Jira item with nobody on it (it comes in on the Team holding its parent, if any) | traffic_control, which places it |
-| your item is Done | the Agent that handed it in |
+| your item is Done, with what you still hold or, holding nothing open, "End now with session_end: it archives you; your lead can restore you within 7 days." | the Agent holding it |
 
 A Team is told through its lead. Where a Team holds or watches an item, its notices go to the
 Team's lead(s); with no lead running, to no one. On an item an Agent works, the lead is not
 told of its changes: only when the Agent asks for help or hands in.
 
-Nothing else sends a notice. Starts, new items, holder changes and handovers show where
-the work shows (below). Agents tell their lead only a decision or a blocker.
+Nothing else sends a notice, and nobody hears their own change. New items and other holder
+changes show where the work shows (below). Agents tell their lead only a decision or a blocker.
 
 ## Where the work shows
 

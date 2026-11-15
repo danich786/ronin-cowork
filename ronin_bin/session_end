@@ -98,7 +98,15 @@ case "$body" in
   *)   echo "STUCK: Ronin answered $body — your session is still here. Ronin said:" >&2; said; exit 5 ;;
 esac
 
-# Accepted. Now wait to die: the kill lands a moment after the reply. Returning here
+# Accepted: the reply says it archives (KAN-522), then the end lands.
+archive=$(sed -n 's/.*"archived":{[^}]*"id":"\([^"]*\)".*/\1/p' "$response_file")
+if [ -n "$archive" ]; then
+  echo "ENDED: your worktrees close and Ronin archives you ($archive); your lead can restore you within 7 days."
+else
+  echo "ENDED: your worktrees close; Ronin cannot resume this conversation, so it ends outright."
+fi
+
+# Now wait to die: the kill lands a moment after the reply. Returning here
 # would let a caller carry on and announce an ending that has not happened yet — the
 # exact failure this action warns about. If we are still breathing after 15s, say so.
 sleep 15

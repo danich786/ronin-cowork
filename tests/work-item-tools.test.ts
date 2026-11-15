@@ -101,7 +101,7 @@ test('item acts, each naming its item, one trail line each', async () => {
   assert.equal((await oneLine(id, ['transition', id, 'Done'])).to, 'Done');
   assert.equal((await run('item', ['edit', id, '--status', 'In Progress'])).status, 2, 'status is transition\'s, not edit\'s');
   const flagged = await oneLine(id, ['flag', id, 'stuck on the API']);
-  assert.deepEqual([flagged.op, (await readItem(id))!.flagged, (await readItem(id))!.comments.at(-1)!.text], ['flag', true, 'stuck on the API']);
+  assert.deepEqual([flagged.op, (await readItem(id))!.flagged, (await readItem(id))!.comments.at(-1)!.text], ['flag', true, 'Flagged: stuck on the API']);
   assert.equal((await oneLine(id, ['unflag', id])).to, 'false');
   assert.equal((await run('item', ['edit', id, '--flagged', 'true'])).status, 2, 'flagging is its own act');
   assert.equal((await run('item', ['edit', id, '--jira', 'RON-7'])).status, 2, 'the Jira pair is written by the bridge alone');
@@ -322,7 +322,8 @@ test('item takes several ids where an act allows them, --text in search, and del
   const one = made(created);
   const two = made(await tool('item', ['create', '--title', 'Many two', '--parent', epic]));
   const out = await tool('item', ['transition', one, two, 'In Progress']);
-  assert.deepEqual(out.trim().split('\n'), [`${one} moved to In Progress`, `${two} moved to In Progress`]);
+  const next = (id: string) => `${id} moved to In Progress. Next: worktree-desk hand-in <repo> --item ${id} --note "<what they can try>". Waiting on someone: item flag ${id} "<who>: <what you need>".`;
+  assert.deepEqual(out.trim().split('\n'), [next(one), next(two)]);
   await tool('item', ['watch', one, two]);
   assert.deepEqual((await readLetterHolds('probe'))!.watches.slice(-2), [one, two]);
   const found = JSON.parse(await tool('item', ['search', '--text', 'QUOKKA'])) as { items: Array<{ id: string }> };

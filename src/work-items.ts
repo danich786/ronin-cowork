@@ -71,9 +71,13 @@ export const JIRA_NAMES: SpaceNames = {
   links: ['Blocks', 'Relates', 'Duplicate', 'Cloners'],
 };
 const SPACES = new Map<string, SpaceNames>();
-/** The Jira bridge names a connected campaign's space here (null when it disconnects). */
+/** The Jira bridge names a connected campaign's space here (null when it disconnects).
+ * A Campaign it pairs or unpairs rebuilds every live brief (KAN-522): an Agent born before the
+ * bridge named the space was briefed with project management off. */
 export function setSpaceNames(campaign: string, names: SpaceNames | null): void {
+  const was = SPACES.has(campaign);
   if (names) SPACES.set(campaign, names); else SPACES.delete(campaign);
+  if (was !== Boolean(names)) void import('./agent-configuration.js').then(({ refreshAllBriefs }) => refreshAllBriefs()).catch(() => {});
 }
 export const spaceNames = (campaign: string): SpaceNames => SPACES.get(campaign) ?? JIRA_NAMES;
 /** Whether the bridge has named this campaign's space: a Jira-connected campaign. */
@@ -203,6 +207,16 @@ export function reviewPrompt(item: Pick<WorkItem, 'id' | 'status' | 'comments'>)
   const next = `item transition ${item.id} "In Review" --note "<what to look at>"`;
   if (!line) return `PROMPT: ${item.id} has no review line. Tell the owner in one short line what to look at: ${next}`;
   if (line.length > REVIEW_LINE) return `PROMPT: ${item.id}'s review line is ${line.length} characters. The owner reads hundreds: say in one short line what to look at: ${next}`;
+  return '';
+}
+/** What a move's own reply says next (owner, 2026-11-15, KAN-522): a start names the hand-in and
+ * the flag; a hand-in that the item stays its hander's. '' otherwise. */
+export function nextStep({ item, line }: Acknowledged): string {
+  if (line.op !== 'status') return '';
+  if (line.from === spaceNames(item.campaign_id).statuses[0] && line.to === 'In Progress') {
+    return `Next: worktree-desk hand-in <repo> --item ${item.id} --note "<what they can try>". Waiting on someone: item flag ${item.id} "<who>: <what you need>".`;
+  }
+  if (line.to === 'In Review' && line.note?.includes(`handed in by ${line.by}`)) return 'It stays yours until accepted or sent back.';
   return '';
 }
 /** Past this, a review line is no longer one glance. */
@@ -352,15 +366,18 @@ export async function appendTrail(id: string, by: string, change: (item: WorkIte
  *      its receiving Team's lead told once, every item listed (releaseHolder);
  *   3. a status change, to a watcher of that item, not of an item above it (tellWatchers), and
  *      to each Team holding it, never to anyone the hand-in already told;
- *   4. someone else's change on an item: a comment, to everyone holding or watching it; a Send back (sendBack), a Jira change that beat theirs
- *      (tellHolders), to the Agent working it;
+ *   4. someone else's change on an item, to each Agent holding it (owner, 2026-11-15, KAN-522):
+ *      handed to it, by handoff or handover ("<id> '<title>' is yours, from <giver>. Read it and
+ *      follow its objective."), a status change, an edit or move, a comment (to its watchers
+ *      too), a Send back (sendBack), a Jira change that beat theirs (tellHolders);
  *   5. a Jira item with nobody, to the Campaign's Coordinator (traffic_control) to place it
  *      (announceUnheld); a Ronin item never goes there;
  *   6. a move to Done (Accept, item transition or Jira), to each live Agent holding the item
  *      (for an older item a Team holds, the Agents in its hand-ins), once, never to the one who
- *      moved it (noticesOf, handersOf); a Team holding it hears it through its lead, as 3.
- * Nothing else: not a new item, a start, a holder change, an Agent's own end, an attachment, a
- * rename, a delete or a flag cleared. Nobody hears their own change. Every notice resolves its people
+ *      moved it (noticesOf, handersOf), naming what it still holds or, with nothing, its end
+ *      (doneNotice); a Team holding it hears it through its lead, as 3.
+ * Nothing else: not a new item, a holder change but a handing to an Agent, an Agent's own end,
+ * an attachment, a rename, a Jira field (Sprint, Due date), a delete or a flag cleared. Nobody hears their own change. Every notice resolves its people
  * through namesOf: an Agent is itself, a Team its live lead(s), else no one. A Team is told as
  * the item's holder or watcher, or as holder of the epic above: its members' items do not make
  * it one. ONE NOTICE PER PERSON PER COMMAND: inside oneNoticePerCommand (every route runs in one)
@@ -390,10 +407,24 @@ async function noticesOf(item: WorkItem, line: TrailLine): Promise<string[]> {
   if (line.op === 'status') {
     // Notice 6: a move to Done tells the Agents holding it, each once, while alive.
     const done = line.to === DONE ? await handersOf(item, line.by) : [];
-    for (const name of done) await notice(name, `${item.id} '${item.title}' is Done (accepted by ${line.by}).`);
+    for (const name of done) await notice(name, await doneNotice(item, name, line.by));
     const text = `${item.id}: status ${line.from} → ${line.to} by ${line.by}.`;
-    const watching = await tellWatchers(item, text, [line.by, ...done]);
-    return [...done, ...watching];
+    // Notice 4: any other move someone else makes, to the Agents holding it.
+    const working = line.to === DONE ? [] : (await agentsOn(item.id)).filter((name) => name !== line.by);
+    for (const name of working) await notice(name, text);
+    const watching = await tellWatchers(item, text, [line.by, ...done, ...working]);
+    return [...done, ...working, ...watching];
+  }
+  if (line.op === 'handoff' && line.to?.startsWith('agent:')) {
+    const name = line.to.slice('agent:'.length);
+    if (name === line.by) return [];
+    await notice(name, handedNotice(item, line.by));
+    return [name];
+  }
+  if (line.op === 'edit' || line.op === 'move') {
+    const told = (await agentsOn(item.id)).filter((name) => name !== line.by);
+    for (const name of told) await notice(name, `${didLine({ item, line })} (by ${line.by}).`);
+    return told;
   }
   if (line.op === 'flag' && line.to === 'true') {
     const teams = (await holdersOf(item.id)).filter((holder) => holder.kind === 'team');
@@ -407,6 +438,17 @@ async function noticesOf(item: WorkItem, line: TrailLine): Promise<string[]> {
     return told;
   }
   return [];
+}
+
+/** Notice 4, an item handed to an Agent by someone else. */
+const handedNotice = (item: WorkItem, giver: string): string => `${item.id} '${item.title}' is yours, from ${giver}. Read it and follow its objective.`;
+
+/** Notice 6 to one Agent: what it still holds open, or, with nothing, its end. */
+async function doneNotice(item: WorkItem, name: string, by: string): Promise<string> {
+  const open = (await unfinishedHolds(name).catch(() => [])).filter((other) => other.id !== item.id);
+  const next = open.length ? `You still hold ${open.map((other) => `${other.id} (${other.status})`).join(', ')}.`
+    : 'End now with session_end: it archives you; your lead can restore you within 7 days.';
+  return `${item.id} '${item.title}' is Done (accepted by ${by}). ${next}`;
 }
 
 /** Who hears an item is Done (notice 6): the Agents holding it; for an older item a Team holds
@@ -859,6 +901,7 @@ export function handoverItem(given: string, to: Holder, by: string, opts: Handov
       const moved = opts.toDo && before !== first ? `; ${before} → ${first}` : '';
       return { op: 'handoff', from: holderLabel(giver), to: holderLabel(to), note: `handover${note ? `: ${note}` : ''}${moved}` };
     }, () => false);
+    if (to.kind === 'agent' && to.name !== by) await notice(to.name, handedNotice(done.item, by));
     if (!question) return done;
     done = await appendTrail(id, by, (it) => {
       it.flagged = true;
@@ -876,7 +919,7 @@ export function handoverItem(given: string, to: Holder, by: string, opts: Handov
  * no line, since Rank moves with every drag in the backlog. */
 export function setJiraFields(id: string, fields: Record<string, string>, by: string, note?: string): Promise<unknown> {
   return withIssuer(async () => {
-    if (note) return appendTrail(id, by, (item) => { item.jiraFields = fields; return { op: 'edit', note }; });
+    if (note) return appendTrail(id, by, (item) => { item.jiraFields = fields; return { op: 'edit', note }; }, () => false);
     const item = await load(id);
     item.jiraFields = fields;
     await save(item);
@@ -896,7 +939,7 @@ export async function addComment(id: string, words: string, by: string): Promise
 /** Jira's Add flag / Remove flag: the impediment set or cleared, in one trail line. A flag's
  * reason is the comment "Flagged: <reason>"; an unflag's, when given, an ordinary comment. Ronin's
  * tools refuse a flag without one (the flag route); a flag mirrored from Jira comes with none.
- * A flag raised is a call for help (notice 2); the brief's convention is "Waiting on <who>: <what>". */
+ * A flag raised is a call for help (notice 2); the brief's convention is item flag <id> "<who>: <what you need>". */
 export async function flagItem(id: string, flagged: boolean, reason: string | undefined, by: string): Promise<Acknowledged> {
   const text = String(reason ?? '').trim();
   return withIssuer(() => appendTrail(id, by, (item) => {

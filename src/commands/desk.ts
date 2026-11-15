@@ -14,7 +14,7 @@ import { arrangementOf } from '../desks/arrangement.js';
 import { randomUUID } from 'node:crypto';
 import { withManagedTransaction } from '../desks/lifecycle-ledger.js';
 import { shutdownAgent, ShutdownRefused } from '../desks/session-shutdown.js';
-import { didLine, readItem, reviewPrompt } from '../work-items.js';
+import { didLine, nextStep, readItem, reviewPrompt } from '../work-items.js';
 import { projectManagementOn, refreshBrief } from '../agent-configuration.js';
 
 const out = (s = '') => process.stdout.write(s + '\n');
@@ -245,7 +245,8 @@ async function main(): Promise<void> {
         }
         if (moved) {
           out(`Code handed in for ${projectId}: ${moved.line.op} ${moved.line.from ?? ''} → ${moved.line.to ?? ''} (${moved.line.note}).`);
-          out(didLine(moved));
+          const next = nextStep(moved);
+          out(next ? `${didLine(moved)}. ${next}` : didLine(moved));
           // The review line (KAN-429): missing or long, a prompt; the hand-in is never refused.
           const prompt = reviewPrompt(moved.item);
           if (prompt) out(prompt);
