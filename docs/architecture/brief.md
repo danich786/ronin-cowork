@@ -9,7 +9,7 @@ Agents are told is in [Customize Ronin](../getting-started/customize.md).
 
 | Object | What it is | Folder | How much is told |
 |---|---|---|---|
-| **Fact** | true about the user and the Agent's situation: the user, the office's people, the Workspace, the Team, the mandate, the task | `ronin_catalogs/facts/` | in full when told. Facts are short; anything long is a behaviour |
+| **Fact** | true about the user and the Agent's situation: the user, the office's people, the Workspace, the Team, the task | `ronin_catalogs/facts/` | in full when told. Facts are short; anything long is a behaviour |
 | **Behaviour** | how to work: guidance an Agent follows | `ronin_catalogs/behaviours/` | a depth (below) |
 | **Tool** | something to call: one command, or a family (`session_*`) | `ronin_catalogs/tools/` | a depth (below) |
 
@@ -118,8 +118,7 @@ each axis, in `order:`; no list of values is kept by hand. Choosing a value brin
 play at its depth, and the behaviours its `with:` names. The server reads the value as the title
 lower-cased (`# Propose agents`). A mandate file is an order, not how-to ("Plan; don't build."), and prints in
 the brief's Mandate section, never among the behaviours. A value is added by adding its file
-(stock or the user's store); blocking it takes it off the menu; a screen narrows the menu. The
-Mandate fact still prints the values.
+(stock or the user's store); blocking it takes it off the menu; a screen narrows the menu.
 
 ## The work record is the source of truth
 
@@ -213,7 +212,6 @@ birth and never rewritten. Each update writes the brief as it is now beside it, 
 - You: …
 - User: …
 - Workspace: …
-- Mandate: …
 - Task: …
 
 ## Mandate
@@ -248,7 +246,7 @@ Every tool is a command on your PATH; `<tool> --help` gives its syntax.
 - **The launch prompt** carries only the task, the read line — "Read first: `<path>` — N
   lines, N KB, one read; it ends with the line "— end of packet for `<name>` —". Do not act
   before you have seen that line." — and, where the launch profile asks for it, the
-  acknowledgement (quote the end line). Team, mandate and Workspace are facts in the brief, so
+  acknowledgement (quote the end line). Team and Workspace are facts and the mandate its own section in the brief, so
   an update reaches them.
 - **The birth receipt** (`birth-receipt.json`) records the brief's path, bytes, lines,
   terminator and over-budget state.
@@ -298,7 +296,7 @@ real stores.
 
 ```
 facts/       you, user, user-about, user-intro, people (hosted), ronin, workspace,
-             integrations-on, team (team), mandate (cowork), model, work, task
+             integrations-on, team (team), model, work, task
 behaviours/  base-agent (full) · cowork-agent, write-it-down (cowork, full)
              reach-*, recruit-*, output-* (mandate: one file per value)
              team-lead, planning (lead) · lead-worktrees (lead, desk)

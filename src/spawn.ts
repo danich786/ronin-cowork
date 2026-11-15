@@ -99,7 +99,7 @@ export const PACKET_PLACEHOLDER = 'Read first: <packet>.';
 
 /**
  * THE LAUNCH PROMPT (docs/architecture/brief.md, The brief): the read line, the task, and the acknowledgement
- * rule where the launch profile asks for it. Team, mandate and Workspace are facts in the brief.
+ * rule where the launch profile asks for it. Team, mandate and Workspace are in the brief.
  */
 export function buildBrief(profile: LaunchProfile, form: SpawnForm, referenceDir?: string): string {
   const parts: string[] = [];
