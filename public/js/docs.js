@@ -7,6 +7,11 @@ import { nextTabIndex } from './workspace-tabs.js';
 import { DOC_MIME } from './team-drag.js';
 import { WorkspacePrimitives } from './workspace-primitives.js';
 
+/** The brief files read by what they are (owner, 2026-11-15): the brief an Agent started with, and the one it is told now. */
+function docName(name) {
+  return ({ 'AGENT_BIRTH_BRIEF.md': t('docs.birth_brief', 'Birth brief'), 'AGENT_BRIEF.md': t('docs.brief_now', 'Brief now') })[name] || name;
+}
+
 let docsSequence = 0; // one id per shelf, so two lists on one page never collide
 
 /** A document elsewhere — an http(s) link on a work record (`work-record add_doc <url>`) — is not a
@@ -147,7 +152,7 @@ export function buildDocs(root, only = null, { team = null } = {}) {
     if (target.key === openPath?.key) return true;
     if (dirty && target.key !== openPath?.key && !confirm(t('docs.discard_confirm', 'Discard unsaved changes?'))) return false;
     openPath = target;
-    title.textContent = target.path.split('/').pop();
+    title.textContent = docName(target.path.split('/').pop());
     title.title = target.title;
     if (!target.root && isPage(target.path)) {
       // No text round-trip: the frame fetches the page itself, and a page has no Save —
@@ -257,7 +262,7 @@ export function buildDocs(root, only = null, { team = null } = {}) {
     b.className = 'dc-row';
     b.title = p;
     b.append(
-      Object.assign(document.createElement('b'), { textContent: parts.pop() }),
+      Object.assign(document.createElement('b'), { textContent: link ? parts.pop() : docName(parts.pop()) }),
       // The last two directories, so two files called HOW_TO.md are told apart
       // without printing an absolute path on a phone-width row.
       // A plan says its status instead (the Plans shelf: Draft, Ordered).

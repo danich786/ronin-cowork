@@ -945,6 +945,8 @@ The catalog entry goes. {dir} is not touched.
 - **docs.pill_tracked:** Tracked
 - **docs.pill_plans:** Plans
 - **docs.pill_docs:** Docs
+- **docs.birth_brief:** Birth brief
+- **docs.brief_now:** Brief now
 - **docs.shelf_empty:** Nothing on this shelf — a workspace folder names its docs on its record (Workspace folders → docs).
 - **docs.plans_empty:** No plans yet. A lead writes one with the user: plan write <name>.
 - **roots.f_docs:** docs
@@ -1736,6 +1738,15 @@ The catalog entry goes. {dir} is not touched.
 - **campaign_view.brief_help:** What every Agent in this Campaign is told. Agents already working are sent the change.
 - **team_config.brief_help:** What every Agent on this Team is told. Agents already working are sent the change.
 - **workspaces.brief_help:** What every Agent in this Workspace is told. Agents already working are sent the change.
+- **work_record.part_session:** Session
+- **work_record.part_user:** User
+- **work_record.part_people:** People
+- **work_record.part_setting:** Setting
+- **work_record.part_agent:** Agent
+- **work_record.part_work:** Work
+- **work_record.part_brief_settings:** Brief settings
+- **work_record.yes:** yes
+- **work_record.no:** no
 - **work_record.brief:** Brief
 - **work_record.brief_show:** What this Agent is told
 - **work_record.no_brief:** No brief for this Agent.
