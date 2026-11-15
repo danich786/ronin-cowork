@@ -125,8 +125,8 @@ an explicit supported id remain unidentifiable rather than risking a neighbour's
 ## Retention of closed session folders
 
 A session's folder under the session store (`birth-receipt.json`, `launch-identity.json`,
-`brief.md`, `AGENT_BIRTH_BRIEF.md`, `tegami.md`, `transcript.jsonl`, and for isolated launches
-`cli-home/`) outlives the session on purpose: it is the evidence a later reading of the
+`brief.md`, `AGENT_BIRTH_BRIEF.md`, `AGENT_BRIEF.md`, `tegami.md`, `transcript.jsonl`, and
+for isolated launches `cli-home/`) outlives the session on purpose: it is the evidence a later reading of the
 Agent needs. It does not outlive the retention period. `src/session-retention.ts` runs once
 at boot and then weekly on the JIKAN clock and removes a folder that is **closed** — no live
 session carries its key — **unarchived** — no archive manifest names its key — and has not

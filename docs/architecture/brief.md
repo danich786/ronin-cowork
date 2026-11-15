@@ -122,8 +122,10 @@ Mandate fact still prints the values.
 
 ## The work record is the source of truth
 
-Each session's work record holds every value its brief depends on; the brief is the work
-record plus the files, nothing else.
+Each session's work record carries the whole brief record: every value its brief depends on.
+The brief is the work record plus the files, nothing else. Ronin writes the brief record
+(`src/brief-record.ts`) onto the work record as one of its own lines, at birth and on each
+update, so the tile's Work record shows the whole object, by part:
 
 | Part | Values |
 |---|---|
@@ -142,8 +144,8 @@ record plus the files, nothing else.
   through `src/office-people.ts`.
 - Who is talking now is never in the brief: the per-message From line (`src/message-queue.ts`)
   says it.
-- Ronin rebuilds the brief on any record change and sends the Agent the difference only when
-  the brief came out different. Items and the objective are on the record but not in the
+- Ronin rebuilds the current brief (`AGENT_BRIEF.md`) on any record change and sends the
+  Agent the difference only when the brief came out different. Items and the objective are on the record but not in the
   brief, so they send nothing.
 
 **Ronin's own lines on the record.** The mandate is written by `writeMandate`
@@ -197,8 +199,13 @@ Services part that runs project management keeps its own switch for running; the
 
 ## The brief
 
-One file per session, `~/.ronin/sessions/<name>-<ts>/AGENT_BIRTH_BRIEF.md`, generated top to
-bottom:
+Two files per session, in `~/.ronin/sessions/<name>-<ts>/`, both on the Agent's Docs:
+
+- **`AGENT_BIRTH_BRIEF.md`** is written once at birth and never rewritten. It is first on the
+  Agent's Docs.
+- **`AGENT_BRIEF.md`** is the current brief, rebuilt from the work record on every change.
+
+Both are generated top to bottom:
 
 ```
 # Brief — <name>
@@ -242,15 +249,17 @@ Every tool is a command on your PATH; `<tool> --help` gives its syntax.
   an update reaches them.
 - **The birth receipt** (`birth-receipt.json`) records the brief's path, bytes, lines,
   terminator and over-budget state.
-- **An update** (`refreshBrief`, `src/agent-configuration.ts`) rebuilds the brief and, when it
-  differs from what the Agent was last told (`brief-told.json` beside the brief), sends "Your
-  brief changed" with the facts that changed and the behaviours and tools that came into play
-  (at their depth) or left it, and the whole brief's path. A mandate change sends the new
+- **An update** (`refreshBrief`, `src/agent-configuration.ts`) rewrites `AGENT_BRIEF.md`
+  and, when it differs from what the Agent was last told (`brief-told.json` beside the brief,
+  which keeps only what was told), sends "Your brief changed" with the facts that changed and the behaviours and tools that came into play
+  (at their depth) or left it, and the path of `AGENT_BRIEF.md`. A mandate change sends the new
   mandate only. Nothing differs, nothing is sent. A layer change rebuilds every live Cowork
   Agent's brief (`refreshAllBriefs`).
 - **Send** on the New Agent form sends only what changed; when nothing did, the form says "Its
   brief is unchanged: nothing was sent."
-- **The brief shows at the bottom of the work record** on the tile.
+- **On the tile**, the Work record shows the brief record by part, and the Agent's Docs list
+  `AGENT_BIRTH_BRIEF.md` first, as "Birth brief", then `AGENT_BRIEF.md`, as "Brief now"
+  (`tegami-read`).
 
 There is no backward compatibility: the model is for new installs, and no old store or record
 shape is read. A test or rig that starts the server sets `RONIN_USER_ROOT`, `RONIN_DATA_ROOT`
