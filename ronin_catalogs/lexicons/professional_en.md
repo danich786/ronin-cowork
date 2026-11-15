@@ -913,6 +913,8 @@ The catalog entry goes. {dir} is not touched.
 - **roots.github_ready:** GitHub CLI connected
 - **roots.github_not_ready:** Not connected
 - **roots.github_connect:** Connect GitHub
+- **roots.github_connect_guided:** Use GitHub CLI with Mika
+- **roots.github_connect_mika:** Let Mika connect GitHub
 - **roots.git_other_method:** Use another method
 - **roots.git_other_open:** Use your preferred Git or SSH setup here, then return to the Workspace Folder and check Git access.
 - **roots.github_remove_auth:** Remove authentication

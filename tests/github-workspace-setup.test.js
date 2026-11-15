@@ -48,6 +48,7 @@ test('connected GitHub offers one server-owned removal action and keeps clone se
   await settle();
   const button = (label) => [...host.walk()].find((n) => n.tagName === 'BUTTON' && n.textContent === label);
   assert.equal(button('Connect GitHub').hidden, true);
+  assert.equal(button('Let Mika connect GitHub').hidden, true);
   assert.equal(button('Remove authentication').hidden, false);
   assert.equal(surface.items[0].state, 'Connected · octo-cat');
   button('Remove authentication').click(); await settle();
@@ -80,10 +81,49 @@ test('missing GitHub CLI offers one Install button and mounts its visible provid
   const button = (label) => [...host.walk()].find((node) => node.tagName === 'BUTTON' && node.textContent === label);
   assert.equal(button('Install').hidden, false);
   assert.equal(button('Connect GitHub').hidden, true);
+  assert.equal(button('Let Mika connect GitHub').hidden, true);
   button('Install').click(); await settle();
   assert.ok(calls.some((call) => call.url.endsWith('/install') && call.options.method === 'POST'));
   assert.equal(mounts, 1);
   surface.destroy(); await settle();
+});
+
+test('signed-out GitHub offers native guidance or Mika-operated authentication as distinct actions', async () => {
+  const calls = [];
+  const guidance = [];
+  const operation = [];
+  let github = { installed: true, authenticated: false, account: '', attachment: null };
+  globalThis.fetch = async (url, options) => {
+    calls.push({ url, options });
+    if (url.endsWith('/login')) github = { ...github, attachment: { type: 'session', key: 'setup_github' } };
+    return { ok: true, status: 200, text() { return this.json().then((b) => JSON.stringify(b)); }, json: async () => ({ ...github }) };
+  };
+  const surface = createGithubWorkspaceSetup({
+    workspace: 'workspace2',
+    environment: { mountProviderSetupSession: () => ({ park() {}, destroy() {} }) },
+    onMikaGuide: (detail) => { guidance.push(detail); },
+    onMikaConnect: (detail) => { operation.push(detail); },
+  });
+  const host = new FakeNode('div');
+  surface.items[0].renderDetail(host); await settle();
+  const button = (label) => [...host.walk()].find((node) => node.tagName === 'BUTTON' && node.textContent === label);
+  assert.equal(button('Use GitHub CLI with Mika').hidden, false);
+  assert.equal(button('Let Mika connect GitHub').hidden, false);
+
+  button('Use GitHub CLI with Mika').click(); await settle();
+  assert.deepEqual(guidance, [{ setupSession: 'setup_github', workspace: 'workspace2' }]);
+  assert.ok(calls.some((call) => call.url.endsWith('/login')), 'the guided path opens the native GitHub CLI session');
+  surface.destroy(); await settle();
+
+  github = { installed: true, authenticated: false, account: '', attachment: null };
+  calls.length = 0;
+  const operated = createGithubWorkspaceSetup({ workspace: 'workspace1', onMikaConnect: (detail) => { operation.push(detail); } });
+  const operatedHost = new FakeNode('div');
+  operated.items[0].renderDetail(operatedHost); await settle();
+  [...operatedHost.walk()].find((node) => node.tagName === 'BUTTON' && node.textContent === 'Let Mika connect GitHub').click(); await settle();
+  assert.deepEqual(operation, [{ workspace: 'workspace1' }]);
+  assert.equal(calls.some((call) => call.url.endsWith('/login')), false, 'Mika operates gh in her own session');
+  operated.destroy(); await settle();
 });
 
 test('an unreadable GitHub CLI result is distinct from signed out and leaves Git-native cloning available', async () => {

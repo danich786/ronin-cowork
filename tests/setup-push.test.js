@@ -60,11 +60,13 @@ test('a GitHub login is finished by the pushed answer; nothing is asked while it
   const surface = createGithubWorkspaceSetup({
     environment: { mountProviderSetupSession: () => ({ park() {}, destroy() {} }) },
     onAuthenticated: () => { finished++; },
+    onMikaGuide: () => {},
+    onMikaConnect: () => {},
   });
   const host = new FakeNode('div');
   surface.items[0].renderDetail(host);
   await settle();
-  [...host.walk()].find((n) => n.tagName === 'BUTTON' && n.textContent === 'Connect GitHub').click();
+  [...host.walk()].find((n) => n.tagName === 'BUTTON' && n.textContent === 'Use GitHub CLI with Mika').click();
   await settle();
   assert.deepEqual(asked, ['GET /api/setup/github', 'POST /api/setup/github/login']);
 

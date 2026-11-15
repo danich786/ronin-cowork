@@ -25,12 +25,22 @@ test('Setup and Settings use the same Workspace Folders stone presentation', asy
 });
 
 test('Setup GitHub lifecycle uses only a published session and hands success to Clone', async () => {
-  const [github, kit] = await Promise.all([
+  const [github, kit, workbenches] = await Promise.all([
     source('public/js/github-workspace-setup.js'),
     source('public/workspace-kit.css'),
+    source('public/js/door-workbenches.js'),
   ]);
   assert.match(github, /import \{ WorkspaceKit \} from '\.\/workspace-kit\.js'/);
-  assert.match(github, /const connect = action\([^\n]+, 'primary'\)/);
+  assert.match(github, /const connect = action\([^\n]+assisted \? undefined : 'primary'\)/);
+  assert.match(github, /const mikaConnect = action\([^\n]+, 'primary'\)/);
+  assert.match(github, /roots\.github_connect_guided', 'Use GitHub CLI with Mika'/);
+  assert.match(github, /roots\.github_connect_mika', 'Let Mika connect GitHub'/);
+  assert.match(github, /onMikaGuide\?\.\(/);
+  assert.match(github, /onMikaConnect\?\.\(/);
+  assert.match(workbenches, /edges read \$\{setupSession\}/, 'guided Mika reads the native setup session');
+  assert.match(workbenches, /gh auth login --hostname github\.com --git-protocol https --web/, 'operating Mika uses the headless browser flow');
+  assert.match(workbenches, /onMikaGuide:[^\n]+showMika\(opposite\(from\)/, 'guidance occupies the opposite tilespace');
+  assert.match(workbenches, /onMikaConnect:[^\n]+showMika\(from, connectPrompt\)/, 'operating Mika replaces the GitHub surface');
   assert.match(github, /const install = action\([^\n]+, 'primary'\)/);
   assert.match(github, /const remove = action\([^\n]+, 'danger'\)/);
   assert.match(github, /const cloneButton = action\([^\n]+, 'primary'\)/);

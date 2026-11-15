@@ -12,11 +12,14 @@ const el = (tag, className = '', text = '') => {
 };
 const action = (label, kind) => WorkspaceKit.primitives.createAction({ label, kind }).el;
 
-export function createGithubWorkspaceSetup({ environment, workspace = 'workspace2', onStateChange, onAuthenticated, onCloned } = {}) {
+export function createGithubWorkspaceSetup({ environment, workspace = 'workspace2', onStateChange, onAuthenticated, onCloned, onMikaGuide, onMikaConnect } = {}) {
   const authBox = el('section', 'setup-github-workspace');
   const state = el('p', 'setup-fine setup-github-state');
   const install = action(t('roots.github_install', 'Install'), 'primary');
-  const connect = action(t('roots.github_connect', 'Connect GitHub'), 'primary');
+  const assisted = typeof onMikaGuide === 'function' && typeof onMikaConnect === 'function';
+  const connect = action(assisted ? t('roots.github_connect_guided', 'Use GitHub CLI with Mika') : t('roots.github_connect', 'Connect GitHub'), assisted ? undefined : 'primary');
+  const mikaConnect = action(t('roots.github_connect_mika', 'Let Mika connect GitHub'), 'primary');
+  mikaConnect.hidden = !assisted;
   const other = action(t('roots.git_other_method', 'Use another method'));
   const remove = action(t('roots.github_remove_auth', 'Remove authentication'), 'danger');
   const terminal = el('div', 'setup-github-terminal'); terminal.hidden = true;
@@ -39,7 +42,7 @@ export function createGithubWorkspaceSetup({ environment, workspace = 'workspace
   const authStep = step('authenticate', t('roots.github_auth_step', 'Authenticate'));
   const readyStep = step('ready', t('roots.github_ready_step', 'Connected'));
   installStep.controls.append(install);
-  authStep.controls.append(connect, remove, other);
+  authStep.controls.append(mikaConnect, connect, remove, other);
   authBox.append(
     el('h2', '', t('roots.github_auth_heading', 'GitHub CLI')),
     el('p', '', t('roots.github_auth_lede', 'GitHub CLI is Ronin’s recommended guided connection. Existing Git credentials, SSH, and other Git connections remain available.')),
@@ -120,6 +123,8 @@ export function createGithubWorkspaceSetup({ environment, workspace = 'workspace
     install.disabled = installing || connecting || Boolean(mounted);
     connect.hidden = authenticated || !installed;
     connect.disabled = connecting || installing || removing || Boolean(mounted);
+    mikaConnect.hidden = !assisted || authenticated || !installed;
+    mikaConnect.disabled = connecting || installing || removing || Boolean(mounted);
     remove.hidden = !authenticated || !installed;
     remove.disabled = removing || connecting || Boolean(mounted);
     const steps = [
@@ -204,7 +209,19 @@ export function createGithubWorkspaceSetup({ environment, workspace = 'workspace
       if (!result.ok) { connecting = false; paint({ installed, authenticated, account }); state.textContent = result.message; return; }
       paint(result.data);
       mountAttachment(result.data?.attachment);
+      await onMikaGuide?.({ setupSession: result.data?.attachment?.key || 'setup_github', workspace });
     } finally { connecting = false; connect.disabled = removing || Boolean(mounted); }
+  });
+  mikaConnect.addEventListener('click', async () => {
+    if (connecting || mounted || destroyed) return;
+    connecting = true; connect.disabled = true; mikaConnect.disabled = true;
+    try {
+      await onMikaConnect?.({ workspace });
+    } finally {
+      connecting = false;
+      connect.disabled = removing || Boolean(mounted);
+      mikaConnect.disabled = removing || Boolean(mounted);
+    }
   });
   remove.addEventListener('click', async () => {
     if (removing || !authenticated || destroyed) return;

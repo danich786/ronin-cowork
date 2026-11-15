@@ -269,7 +269,7 @@ test('GitHub login session is born through the provider setup identity contract'
     ['identify', 'setup_github', {
       sessionType: 'provider_setup', cli: 'gh', provider: 'github', model: '',
     }],
-    ['command', 'setup_github', "'/owner/bin/gh' auth login --hostname github.com --git-protocol https"],
+    ['command', 'setup_github', "'/owner/bin/gh' auth login --hostname github.com --git-protocol https --web"],
   ]);
 });
 

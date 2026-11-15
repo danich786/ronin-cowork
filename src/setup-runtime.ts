@@ -435,7 +435,7 @@ export async function createGithubSetupSession(
     agent: false, provider: 'github',
     argv: [],
   }, primitives);
-  await command(GITHUB_SETUP_SESSION, `'${gh.replaceAll("'", "'\\''")}' auth login --hostname github.com --git-protocol https`);
+  await command(GITHUB_SETUP_SESSION, `'${gh.replaceAll("'", "'\\''")}' auth login --hostname github.com --git-protocol https --web`);
 }
 
 /** GitHub's supported package paths, run visibly because system package managers may ask for sudo. */
