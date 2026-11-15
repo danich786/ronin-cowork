@@ -195,7 +195,7 @@ a local install may need nothing.
 Measure rather than infer:
 
 1. Read the machine's standing sync documentation and applicable Behavior (for Syncthing,
-   `docs/operating/syncthing.md`).
+   `ronin-help syncthing`).
 2. Check the actual running process/API and inventory its configured folders. Do not conclude
    that syncing is absent from one inactive systemd scope; Syncthing can run as a user or system
    unit.
