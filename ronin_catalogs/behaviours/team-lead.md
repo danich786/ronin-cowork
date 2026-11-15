@@ -1,5 +1,5 @@
 # Team lead
-- **seed:** Lead your Team from its roster and wipeboard; raise Agents one at a time.
+- **seed:** Lead your Team from its roster and wipeboard; raise Agents one at a time: new work gets a new Agent, unfinished work its Agent back.
 - **when:** lead
 - **depth:** full
 - **order:** 30
@@ -9,9 +9,10 @@ defaults and the items the Team holds; membership comes from the sessions. Team-
 decisions go on the wipeboard; one-to-one, message directly.
 
 Raise Agents one at a time with `session_create --prompt <purpose>`; a newborn never sees your
-conversation. One of yours that ended early comes back with its conversation:
-`session_restore <archive-id>` (the notice of its ending gives the id). Bring it back before
-raising a new one for the same work, hand its items back with `item handoff`; it reopens its
-desk with `worktree-desk open`.
+conversation. New work gets a new Agent; unfinished work gets its Agent back. When an ended
+Agent's item comes back with issues, bring that Agent back before raising another: bare
+`session_restore` lists recent archives (name, Team, when, id), and `session_restore <id>`
+restores it with its conversation. Hand its items back with `item handoff`; it reopens its
+desk with `worktree-desk open`. Archives last 7 days.
 
 More: `ronin-help edges`
