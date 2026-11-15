@@ -7,7 +7,7 @@ die() { echo "$1" >&2; exit "${2:-2}"; }
 usage() { cat <<'EOF_USAGE'
 Usage:
   epic-template list                       every template: name, title, what it is for
-  epic-template start <name> [--to <agent> | --new <agent>] [--workspace <w>]
+  epic-template start <name> [--to <agent>] [--workspace <w>]
                                            make its epic and tasks, held by the Agent, and tell it
                                            to walk the epic through
 A template is one file in epic_templates/: the epic's title and text, then its tasks in
@@ -16,10 +16,8 @@ Your own in ~/ronin/epic_templates/ add one, or replace a stock one by name; not
 needs changing. A template never names an item id: the tasks are the epic's children.
 start makes the epic, its tasks and their subtasks through the item tools, each held by the
 Agent from birth, and sends it one line: walk this epic through, with the epic's id. The
-Agent is you unless --to names another. --new <agent> first makes a new Agent with
-session_create, on the Team that works in --workspace (or on your first Team), with that
-Team's defaults, and gives it the epic. --workspace is also the epic's last line, so the
-Agent knows where the work is. It answers "started <epic> from <name>" and the task ids.
+Agent is you unless --to names another (a new one: session_create first). --workspace is
+the epic's last line, so the Agent knows where the work is. It answers "started <epic> from <name>" and the task ids.
 Related: ronin-help epic-templates; item --help; session_create --help
 EOF_USAGE
 }
@@ -47,26 +45,13 @@ for t in json.load(sys.stdin)["templates"]:
     print("%s  %s%s%s" % (t["name"], t["title"], " — " + t["for"] if t["for"] else "", " (yours)" if t["origin"] == "user" else ""))'
     ;;
   start) name=${1:-}; [ -n "$name" ] && [ "${name#-}" = "$name" ] || die 'BAD-ARG: epic-template start takes <name>; epic-template list shows them'; shift
-    to=''; new=''; workspace=''
+    to=''; workspace=''
     while [ "$#" -gt 0 ]; do
       case "$1" in
-        --to|--new|--workspace) [ -n "${2:-}" ] || die "BAD-ARG: $1 needs a value"; eval "${1#--}=\$2"; shift 2 ;;
-        *) die "BAD-ARG: epic-template start takes --to, --new or --workspace, not $1" ;;
+        --to|--workspace) [ -n "${2:-}" ] || die "BAD-ARG: $1 needs a value"; eval "${1#--}=\$2"; shift 2 ;;
+        *) die "BAD-ARG: epic-template start takes --to or --workspace, not $1" ;;
       esac
     done
-    [ -z "$to" ] || [ -z "$new" ] || die 'BAD-ARG: name the Agent with --to or --new, not both'
-    if [ -n "$new" ]; then
-      team=()
-      if [ -n "$workspace" ]; then
-        t=$(call GET /api/team-rosters | python3 -c 'import json,sys
-w = sys.argv[1]; rows = json.load(sys.stdin)
-print(next((r["name"] for r in rows if r.get("workspace") == w and r.get("state", "active") == "active"), ""))' "$workspace") || exit 3
-        [ -n "$t" ] || die "No Team works in the Workspace $workspace; start one there first (ronin-help new-team)." 4
-        team=(--team "$t")
-      fi
-      "$TOOL_DIR/session_create" "$new" "${team[@]}" || exit $?
-      to=$new
-    fi
     body=$(python3 -c 'import json,sys; a = sys.argv[1:]; print(json.dumps({k: v for k, v in zip(a[::2], a[1::2]) if v}))' by "$BY" to "$to" workspace "$workspace")
     call POST "/api/epic-templates/$name/start" "$body" | python3 -c 'import json,sys
 d = json.load(sys.stdin); print("started %s from %s" % (d["epic"], sys.argv[1])); print("tasks: " + " ".join(d["tasks"]))

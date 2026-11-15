@@ -210,25 +210,14 @@ export function reviewPrompt(item: Pick<WorkItem, 'id' | 'status' | 'comments'>)
   return '';
 }
 /** What a move's own reply says next (owner, 2026-11-15, KAN-522): a start names the hand-in and
- * the flag; a hand-in that the item stays its hander's; a task of an epic closed, the epic's next
- * open task in its children's order, or the epic itself when none is left (KAN-558). '' otherwise. */
-export async function nextStep({ item, line }: Acknowledged): Promise<string> {
+ * the flag; a hand-in that the item stays its hander's. '' otherwise. */
+export function nextStep({ item, line }: Acknowledged): string {
   if (line.op !== 'status') return '';
-  if (line.to === DONE && item.parent) return nextInEpic(item);
   if (line.from === spaceNames(item.campaign_id).statuses[0] && line.to === 'In Progress') {
     return `Next: worktree-desk hand-in <repo> --item ${item.id} --note "<what they can try>". Waiting on someone: item flag ${item.id} "<who>: <what you need>".`;
   }
   if (line.to === 'In Review' && line.note?.includes(`handed in by ${line.by}`)) return 'It stays yours until accepted or sent back.';
   return '';
-}
-/** The step after a closed child of an epic: its next open sibling, or the epic to close. */
-async function nextInEpic(item: WorkItem): Promise<string> {
-  const epic = await readItem(item.parent!);
-  if (!epic || epic.level !== 1 || epic.status === DONE) return '';
-  const open = (await listItems()).find((one) => one.parent === epic.id && one.id !== item.id && one.status !== DONE);
-  return open
-    ? `Next in ${epic.title}: item read ${open.id} (${open.title})`
-    : `Every task in ${epic.title} is closed: item transition ${epic.id} "Done"`;
 }
 /** Past this, a review line is no longer one glance. */
 export const REVIEW_LINE = 120;
