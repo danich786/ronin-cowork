@@ -82,7 +82,8 @@ export async function startOfficePeople(): Promise<() => void> {
 /** The person a browser request or socket upgrade belongs to, or null for a local caller. */
 export function person(req: IncomingMessage): Person | null {
   if (!hosted) return null;
-  const header = req.headers['x-forwarded-email'];
+  // A request with no headers (Core's own, e.g. Mika's launch) is nobody, never a throw.
+  const header = req.headers?.['x-forwarded-email'];
   const email = (Array.isArray(header) ? header[0] : header)?.trim().toLowerCase();
   return email ? { email, role: null, ...members.get(email) } : null;
 }

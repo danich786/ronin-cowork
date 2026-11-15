@@ -25,6 +25,7 @@ import { AGENTS, listAgentAvailability, type AgentAvailability, type ModelsSourc
 import { execFile } from './spawn-broker.js';
 import { ensureInitialCampaign, initialCampaign, writeCampaignProviders } from './campaigns.js';
 import { readSetupSection } from './machine-state.js';
+import { emitProvidersRecorded } from './sockets.js';
 import { listProviderCatalog, type ModelConnection, type ModelList, type ModelRow, type ProviderCatalogEntry, type ProviderSummary } from './model-providers.js';
 
 interface SetupSection { providers?: Record<string, { activated_at?: unknown; off_at?: unknown }>; [key: string]: unknown }
@@ -273,6 +274,8 @@ export async function readProviderSummary(): Promise<ProviderSummary | null> {
 export async function recordProviderSummary(summary: ProviderSummary): Promise<void> {
   const campaign = await ensureInitialCampaign();
   await writeCampaignProviders(campaign.id, summary);
+  // Either writer: the one moment readiness can change, told to the parts.
+  emitProvidersRecorded({ operational: [...summary.operational], signed_in: [...summary.signed_in] });
 }
 
 /**
