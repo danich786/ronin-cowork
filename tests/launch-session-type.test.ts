@@ -181,7 +181,7 @@ test.after(() => server.close());
  * ~/.local/bin — so before this a tile launched by absolute path ran the CLI Ronin had
  * installed while `codex` typed by name inside it found an older system copy (2026-09-09). */
 test('every newborn PATH carries the three shared tool locations in order', async () => {
-  const { birthEnv } = await import('../src/routes/launch.js');
+  const { birthEnv } = await import('../src/launch-binding.js');
   const { REPO_ROOT, storeDir } = await import('../src/resources.js');
   const shared = [`${REPO_ROOT}/bin/shim`, storeDir('tools'), `${REPO_ROOT}/ronin_bin`];
   assert.deepEqual(birthEnv('sock', '/home/o/.local/bin', '/usr/bin:/bin'), {

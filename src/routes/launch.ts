@@ -45,7 +45,6 @@ import { campaignResolver, initialCampaignId } from '../campaign-scope.js';
 import { readTeamRoster } from '../team-rosters.js';
 import { readCampaign } from '../campaigns.js';
 import { listInstallations } from '../resource-adapters.js';
-import { agentBinDir } from '../agent-install.js';
 import { resolveLaunchSeed, shownLaunchSeed } from '../launch-seed.js';
 import type { SessionsDefaults } from '../launch-command.js';
 import { describePacket, readFirstSentence, writeBriefPacketAt, type PacketReport } from '../birth-brief.js';
@@ -54,7 +53,6 @@ import { callerUser } from '../agent-configuration.js';
 import { person } from '../office-people.js';
 import type { HouseSeat } from '../house-seats.js';
 import { readTegami } from '../tegami-read.js';
-import { boundOperatorSocket, OPERATOR_SOCKET_ENV } from '../operator-socket.js';
 import { ensureMikaHome, MIKA_PROMPTS, MikaUnavailable, resolveConfiguredMikaModel, type MikaSelection } from '../mika-runtime.js';
 import { compileMikaKnowledgeAt } from '../mika-knowledge.js';
 import { isMikaTab } from '../mika-context.js';
@@ -62,22 +60,6 @@ import { ensureSteercoTeam, recordRoninHelperWelcome, roninHelperWelcomeState, R
 import { REPO_ROOT, storeDir } from '../resources.js';
 
 const MIKA_SESSION = 'mika_agent' as const;
-
-/** The environment a newborn is handed beyond what the pane inherits: every Agent sees
- *  the same command locations, followed by Ronin's install bin and the parent PATH.
- *
- *  The install bin dir (`~/.local/bin`, where Install and Update put a CLI) is on every
- *  newborn's PATH because the pane inherits the server's environment, and a server started
- *  by systemd or npm has no `.profile` and so no `~/.local/bin` — so a tile launched by
- *  absolute path ran the CLI Ronin installed while `codex` typed by name inside it found an
- *  older system copy (2026-09-09). Running tiles are untouched. */
-export function birthEnv(socket?: string, installBin: string = agentBinDir(), parentPath: string = process.env.PATH ?? ''): Record<string, string> {
-  const fixed = [path.join(REPO_ROOT, 'bin', 'shim'), storeDir('tools'), path.join(REPO_ROOT, 'ronin_bin')];
-  const PATH = [...new Set([...fixed, installBin, ...parentPath.split(':')].filter(Boolean))].join(':');
-  const env: Record<string, string> = { PATH };
-  if (socket) env[OPERATOR_SOCKET_ENV] = socket;
-  return env;
-}
 
 async function birthCampaign(team: string, explicit = ''): Promise<string> {
   if (explicit) return explicit;
@@ -418,10 +400,8 @@ export function registerLaunch(app: express.Express): LaunchControl {
         team: resolved.team,
         exempt: resolved.capExempt,
         argv: launch.argv,
-        // Told at birth, the way tmux tells every shell where its server is: the socket
-        // this operator bound. A process that bound none (a dev run) says nothing, and the
-        // newborn's tools use the default path.
-        env: { ...birthEnv(boundOperatorSocket(), agentBinDir(), process.env.PATH ?? ''), ...hermesEnv },
+        // PATH and the operator socket come from processLaunch (birthEnv), for every start.
+        env: hermesEnv,
         key: birthKey || undefined,
         resume: !!resumeMika,
         // The Services switch as resolved for THIS Agent at birth (campaign < team < form):

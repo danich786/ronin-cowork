@@ -8,10 +8,26 @@ import { homedir } from 'node:os';
 import { randomUUID } from 'node:crypto';
 import { newProviderSession } from './agents.js';
 import { type AgentLaunches } from './agent-launches.js';
-import { storeDir } from './resources.js';
 import { emitSessionBorn, emitSessionWillBorn } from './sockets.js';
 import type { LaunchIdentity } from './sockets-contract.js';
 import { agentTempEnv } from './agent-scope.js';
+import { agentBinDir } from './agent-install.js';
+import { boundOperatorSocket, OPERATOR_SOCKET_ENV } from './operator-socket.js';
+import { REPO_ROOT, storeDir } from './resources.js';
+
+/** The environment every start is handed beyond what the pane inherits: launch, Mika's
+ *  restart and a restore alike (a restore once came back with a bare PATH, KAN-555).
+ *  Every Agent sees the same command locations, followed by Ronin's install bin and the
+ *  parent PATH. The install bin dir (`~/.local/bin`) is there because a server started by
+ *  systemd or npm has no `.profile` (2026-09-09). The operator socket is told at birth the
+ *  way tmux tells every shell where its server is; a process that bound none says nothing. */
+export function birthEnv(socket: string | undefined = boundOperatorSocket(), installBin: string = agentBinDir(), parentPath: string = process.env.PATH ?? ''): Record<string, string> {
+  const fixed = [path.join(REPO_ROOT, 'bin', 'shim'), storeDir('tools'), path.join(REPO_ROOT, 'ronin_bin')];
+  const PATH = [...new Set([...fixed, installBin, ...parentPath.split(':')].filter(Boolean))].join(':');
+  const env: Record<string, string> = { PATH };
+  if (socket) env[OPERATOR_SOCKET_ENV] = socket;
+  return env;
+}
 
 export interface LaunchRequest {
   name: string; key?: string; cli: string; argv: readonly string[]; cwd: string;
@@ -86,7 +102,7 @@ export function processLaunch(request: LaunchRequest,
     await writeLaunchIdentity(identity);
     await emitSessionWillBorn(request.name);
     // TMPDIR on disk in the session folder, never /tmp (RAM): src/agent-scope.ts
-    await start(assigned.argv, { ...await agentTempEnv(key), ...request.env, ...identity.env }, identity);
+    await start(assigned.argv, { ...birthEnv(), ...await agentTempEnv(key), ...request.env, ...identity.env }, identity);
     emitSessionBorn({ name: request.name, key, team: request.team, root: request.cwd, identity });
     return identity;
   });
