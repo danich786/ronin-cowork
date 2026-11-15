@@ -162,6 +162,17 @@ async function archiveAgent(name: string, desksLeftOpen: string[] = []): Promise
   return 'error' in provider ? null : archiveWith(name, provider, desksLeftOpen);
 }
 
+/** Archive a live Agent as session_archive does (manifest, stop, holds released), with no desk or
+ * item refusals: Core's own call, for Mika's planned end. Null when no conversation is known. */
+export async function archiveSession(name: string): Promise<ArchivedSession | null> {
+  const key = await sessionKey(name);
+  const archived = await archiveAgent(name);
+  if (!archived) return null;
+  await releaseHolds(name, key, 'archived', archived);
+  count('ended', { name, end: 'archived' });
+  return archived;
+}
+
 /** The exact provider conversation an archive will resume, or why there is none. A park asks
  * this of every Agent before any is stopped. The launch identity is read from disk, so a dead
  * pane (its process gone, the pane kept by remain-on-exit) archives the same as a live one. */

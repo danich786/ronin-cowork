@@ -299,13 +299,13 @@ export async function newProviderSession(agent: string, argv: readonly string[])
   return { argv: [argv[0]!, ...renderLaunch(grammar.newSessionId, { session_id: assigned }), ...argv.slice(1)], id: assigned, strategy: 'minted', grammar };
 }
 
-export async function resumeAgentArgv(agent: string, id: string, how: 'resume' | 'fork' = 'resume'): Promise<string[]> {
+export async function resumeAgentArgv(agent: string, id: string): Promise<string[]> {
   const spec = AGENTS.find((a) => a.id === agent);
   if (!spec) return [];
   const grammar = await readAgentLaunches(spec.id);
-  if (!grammar[how].length) return [];
+  if (!grammar.resume.length) return [];
   const launch = await launchArgv(spec.cmd, '');
-  return launch.argv.length ? renderLaunch(grammar[how], { session_id: id }).map((part, index) => index === 0 ? launch.argv[0]! : part) : [];
+  return launch.argv.length ? renderLaunch(grammar.resume, { session_id: id }).map((part, index) => index === 0 ? launch.argv[0]! : part) : [];
 }
 
 export function agentSpec(id: string): (typeof AGENTS)[number] | undefined {

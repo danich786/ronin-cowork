@@ -31,7 +31,7 @@ sockets.chooseMikaLaunch((ready) => choose && !ready.operational.length
   : null);
 sockets.onProvidersRecorded((ready) => { heard.push(ready); });
 
-test('the contract moved to 13', () => assert.equal(CONTRACT_V, 13));
+test('the contract moved to 14', () => assert.equal(CONTRACT_V, 14));
 
 test('every write of the provider record is told to the parts', async () => {
   await recordProviderSummary(summary(['claude']));
@@ -54,5 +54,5 @@ test('a part choice is used before Core\'s rule; null leaves Core\'s rule', asyn
 
 test('no part running: the sockets answer no Mika and restart does nothing', async () => {
   assert.equal(await sockets.mikaIdentity(), null);
-  await sockets.restartMika({ prompt: 'hello', resume: true });
+  await sockets.restartMika({ prompt: 'hello', archive: true });
 });
