@@ -180,7 +180,8 @@ test('the brief: facts, behaviours with their tools, other tools, the help line,
   const text = renderBrief('demo', r, resolveBrief(CATALOG, r, []));
   assert.match(text, /^# Brief — demo\n\n## Facts\n- User: Glen, owner\n/);
   assert.match(text, /### Base\nBase text\.\n\n#### Inner/);
-  assert.match(text, /### PM\nItems\. More: `ronin-help pm`\.\nTools:\n- `item`: Work items\./);
+  assert.match(text, /## Behaviours\nEach in full: `ronin-help <name>`; all of Ronin's Help: `ronin-help`\.\n\n###/, 'how to read every behaviour in full');
+  assert.match(text, /### PM\nItems\. \(`pm`\)\nTools:\n- `item`: Work items\./, 'a seed prints its file name');
   assert.match(text, /## Other tools\n- `ronin-help`: More reading\./);
   assert.match(text, /`<tool> --help` gives its syntax\.\n\n— end of packet for demo —\n$/);
   assert.doesNotMatch(text, /YOUR TOOLS|SOUGHT|On your shelf|In this packet/);
