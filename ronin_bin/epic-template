@@ -10,10 +10,7 @@ Usage:
   epic-template start <name> [--to <agent>] [--workspace <w>]
                                            make its epic and tasks, held by the Agent, and tell it
                                            to walk the epic through
-A template is one file in epic_templates/: the epic's title and text, then its tasks in
-order (## <title>, each Do / Details / Check), a task's subtasks under it (### <title>).
-Your own in ~/ronin/epic_templates/ add one, or replace a stock one by name; nothing else
-needs changing. A template never names an item id: the tasks are the epic's children.
+A template is one file in epic_templates/ (its format: ronin_catalogs/epic_templates/README.md).
 start makes the epic, its tasks and their subtasks through the item tools, each held by the
 Agent from birth, and sends it one line: walk this epic through, with the epic's id. The
 Agent is you unless --to names another (a new one: session_create first). --workspace is

@@ -68,7 +68,7 @@ const run = (args: string[], as = 'mika') => new Promise<{ status: number; stdou
     resolve({ status: error ? Number((error as { code?: number }).code ?? 1) : 0, stdout, stderr }));
 });
 
-test('stock: onboarding is the three tasks in order, its Workspace task carrying four subtasks; no item ids', async () => {
+test('stock: onboarding is the three tasks in order, its Workspace task carrying four subtasks and the tour three; no item ids', async () => {
   const onboarding = await readTemplate('onboarding');
   assert.equal(onboarding.title, 'Getting set up in your new office');
   assert.deepEqual(onboarding.tasks.map((task) => task.title), [
@@ -76,6 +76,10 @@ test('stock: onboarding is the three tasks in order, its Workspace task carrying
   ]);
   assert.deepEqual(onboarding.tasks[1]!.subtasks.map((sub) => sub.title), ['Decide its kind and name, and write down the plan', 'Sign in GitHub, if they use it', 'Bring in their folders or repositories', 'Map the project, if they brought one in']);
   assert.match(onboarding.tasks[1]!.subtasks[3]!.objective, /epic-template start import-project --to <agent>/);
+  assert.deepEqual(onboarding.tasks[2]!.subtasks.map((sub) => sub.title), ['Behaviours', 'Project management', 'Integrations (Jira, Netlify, MCP and the rest)']);
+  assert.match(onboarding.objective, /^Irasshai: /);
+  assert.match(onboarding.objective, /session_end/);
+  assert.doesNotMatch(onboarding.objective, /\bMika:/);
   for (const template of await listTemplates()) {
     const all = [template.objective, ...template.tasks.flatMap((task) => [task.objective, ...task.subtasks.map((sub) => sub.objective)])].join('\n');
     assert.doesNotMatch(all, /\b(w[1-9]\d*|KAN-\d+)\b/, `${template.name} names no item id`);
