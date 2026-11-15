@@ -44,7 +44,7 @@ When you bring work to a lead, it decides first which of three it is:
 |---|---|---|
 | Made | the lead as it gives out work, or the Agent as it takes it | under the epic; its objective is what done looks like to you, in your words, one or two sentences |
 | Started | the Agent | In Progress |
-| Stuck | the Agent | flagged "Waiting on <who>: <what>"; it shows under Stuck |
+| Stuck | the Agent | `item flag <id> "Waiting on <who>: <what>"`: the reason is required and becomes the comment **Flagged:** <reason>. The Agent's pill (the Team's selector, People) shows ⚑ in amber while it holds a flagged item; Epics, filtered by Flagged, lists every flagged item |
 | Handed in | the Agent | In Review, still held by the Agent, with one short **Handed in** comment for you: what you can try. It shows under With the lead. Handing in code is the repo's and needs no item: `worktree-desk hand-in <repo>` alone puts the code in, and its reply tells the Agent to check its items; `--item` hands in both at once. Handing in code doesn't hand in the item, and a hand-in never makes an item Done |
 | On dev | the lead's promotion | still In Review; it moves to Ready to accept |
 | Accepted or sent back | you | Accept makes it Done, and the Agent holding it is told. Send back makes it In Progress with your comment, held where it is; the Agent holding it is told |
@@ -70,7 +70,7 @@ what is missing>"`; 3. clean your desks: commit and hand in; 4. then go. An item
 flagged itself needs nothing more: the flag is the acknowledgement. For one left unflagged,
 `session_end --ignore-items` (or `session_archive <name> --ignore-items`), or "close anyway" in
 the tile's confirm, goes anyway. Either way, as after a crash, each unfinished item goes to the
-Team flagged "Ended without handover: <agent>, <status>", it shows under Stuck, and the lead is
+Team flagged, its comment "Flagged: Ended without handover: <agent>, <status>", and the lead is
 told once. Nothing goes to nobody. An item nobody wants any more is deleted, not left in To Do. An epic is Done
 when what done looks like is met.
 
@@ -83,7 +83,7 @@ first; the other comments (the Agent and lead deciding things, the item's record
 |---|---|---|---|
 | **Hand-in** | the Agent: `worktree-desk hand-in <repo> [--item <id> --note "<what you can try>"]` | my work is done; review it | the lead |
 | **Promotion** | the lead: `bin/ronin-promote <team>` | it is on dev; you can try it | nobody: it shows under Ready to accept |
-| **Flag** | anyone: `item flag` | I am stuck on someone | the lead or epic holder above it |
+| **Flag** | anyone: `item flag <id> "<why>"`, the reason required; `item handover --flag`; the item's Flagged switch, which asks for it | I am stuck on someone; the reason is the **Flagged:** comment | the lead or epic holder above it |
 
 A code hand-in is the repo's: `worktree-desk hand-in <repo>` never needs an item. With none
 named, the code goes to the Team line, the lead is told, and the reply tells the Agent to check

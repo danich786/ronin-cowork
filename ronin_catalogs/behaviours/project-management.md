@@ -50,8 +50,8 @@ telling: the board shows them.
 ### Everyone
 - Answer a person on the item, with a comment. A hand-in carries one for the user: --note
   "<what they can try>", short; the diff is the detail.
-- Stuck: item flag <id> "Waiting on <who>: <what>"; item unflag when moving again. The flag
-  is how your lead hears.
+- Stuck: item flag <id> "Waiting on <who>: <what>"; the reason is required. item unflag when
+  moving again. The flag is how your lead hears.
 - Several items: one command takes several ids.
 - An item you made by mistake: item delete <id>.
 

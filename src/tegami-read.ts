@@ -26,6 +26,9 @@ export interface Tegami {
   /** The brief record Ronin wrote (docs/architecture/brief.md, The work record is the source of truth); null before it has. */
   brief: WorkRecordBrief | null;
   chip: { text: string; gate: boolean };
+  /** Any item it holds is flagged (owner, 2026-11-15, KAN-521): derived from the holds, never
+   * stored; its selector pill shows ⚑ in the flagged colour. */
+  flagged: boolean;
   /** When the work record was last written (epoch ms): the browser works out the age, so the push stays still. */
   quietSince: number;
 }
@@ -126,6 +129,7 @@ export async function readTegami(name: string): Promise<Tegami | null> {
       docs: await readDocs([path.join(sessionDir(key), BIRTH_BRIEF), path.join(sessionDir(key), AGENT_BRIEF), ...reading.attachments, ...(await dropped(key))]),
       brief: b.brief && typeof b.brief === 'object' ? b.brief as WorkRecordBrief : null,
       chip: chipFor(reading.items),
+      flagged: reading.items.some((item) => item.flagged),
       quietSince: stat.mtimeMs,
     };
   } catch {

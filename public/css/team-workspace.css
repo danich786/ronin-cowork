@@ -64,6 +64,9 @@
   .league-team-agent:hover { background: var(--surface); }
   .league-team-agent-name { grid-column: 2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .league-team-agent-lead { margin-inline-end: var(--space-inline); color: var(--accent); }
+  /* A FLAGGED AGENT (KAN-521): ⚑ and the amber the roster chip uses for a flagged item. */
+  .league-team-agent-flag, .league-team-member-flag { margin-inline-end: var(--space-inline); color: var(--warn); }
+  .league-team-agent.flagged .league-team-agent-name, .league-team-member.flagged .league-team-member-title { color: var(--warn); }
   .league-team-agent-holds { margin-inline-start: var(--space-inline); color: var(--muted); }
   .league-team-roster, .league-team-config { flex: 0 0 auto; }
   .league-team-roster { display: flex; flex-direction: column; min-height: 0; }

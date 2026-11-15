@@ -177,13 +177,16 @@ export function handInStage(item: Pick<WorkItem, 'hand_ins' | 'on_dev'>): 'lead'
   return item.on_dev && item.on_dev.at >= last.at ? 'ready' : 'lead';
 }
 
-/* THE NOTES A USER READS (docs/using-ronin/project-management.md, How an item lives): two
+/* THE NOTES A USER READS (docs/using-ronin/project-management.md, How an item lives): three
  * comments headed by their words, so Jira shows them as Ronin does. "Handed in: <note>" is what
  * the owner should look at, in one short line, written at a hand-in (--note; no commit ids, no
  * receipts: those stay on the trail; reviewPrompt asks for it when missing or long). "Handover from <agent>: <note>" is where an item stands
- * and what is next, written when an ending Agent hands it over (handoverItem). */
+ * and what is next, written when an ending Agent hands it over (handoverItem). "Flagged: <reason>"
+ * is why it is stuck, written with every flag Ronin raises (owner, 2026-11-15, KAN-521: the
+ * reason is a comment, no key of its own). */
 export const HANDED_IN = 'Handed in: ';
 export const HANDOVER_FROM = 'Handover from ';
+export const FLAGGED = 'Flagged: ';
 /** The item's last Handed in note, without its heading; '' with none. */
 export function handedInNote(item: Pick<WorkItem, 'comments'>): string {
   const comment = [...(item.comments ?? [])].reverse().find((one) => one.text.startsWith(HANDED_IN));
@@ -859,7 +862,7 @@ export function handoverItem(given: string, to: Holder, by: string, opts: Handov
     if (!question) return done;
     done = await appendTrail(id, by, (it) => {
       it.flagged = true;
-      it.comments.push({ by, at: new Date().toISOString(), text: question });
+      it.comments.push({ by, at: new Date().toISOString(), text: `${FLAGGED}${question}` });
       return { op: 'flag', to: 'true', note: question };
     }, () => false);
     const told = [...new Set([...(await helpOf(done.item)), ...(to.kind === 'team' ? await leadsOf(to.name) : [to.name])])].filter((name) => name !== by);
@@ -890,14 +893,15 @@ export async function addComment(id: string, words: string, by: string): Promise
   }));
 }
 
-/** Jira's Add flag / Remove flag: the impediment set or cleared, a reason given becoming an
- * ordinary comment, in one trail line. A flag raised is a call for help (notice 2); the brief's
- * convention is "Waiting on <who>: <what>", not enforced. */
+/** Jira's Add flag / Remove flag: the impediment set or cleared, in one trail line. A flag's
+ * reason is the comment "Flagged: <reason>"; an unflag's, when given, an ordinary comment. Ronin's
+ * tools refuse a flag without one (the flag route); a flag mirrored from Jira comes with none.
+ * A flag raised is a call for help (notice 2); the brief's convention is "Waiting on <who>: <what>". */
 export async function flagItem(id: string, flagged: boolean, reason: string | undefined, by: string): Promise<Acknowledged> {
   const text = String(reason ?? '').trim();
   return withIssuer(() => appendTrail(id, by, (item) => {
     item.flagged = flagged;
-    if (text) item.comments.push({ by: by.trim() || 'unknown', at: new Date().toISOString(), text });
+    if (text) item.comments.push({ by: by.trim() || 'unknown', at: new Date().toISOString(), text: flagged ? `${FLAGGED}${text}` : text });
     return { op: 'flag', to: String(flagged), note: text || undefined };
   }));
 }
@@ -1254,7 +1258,7 @@ export function didLine({ item, line }: Acknowledged): string {
  * project-management.md, How an item lives): the Agent watches nothing, and each item it held
  * goes by its status, never to nobody while a Team is found. Done goes to nobody; To Do goes to
  * the Team for its lead to give out again; anything else (In Progress, In Review) goes to the
- * Team flagged "Ended without handover: <agent>, <status>", and shows under Stuck. The flags are
+ * Team flagged, its comment "Flagged: Ended without handover: <agent>, <status>". The flags are
  * one call for help (notice 2): each lead of a receiving Team is told once, every item listed
  * (with no Team found, whoever helps above the item). Restore does not reclaim. */
 export function releaseHolder(session: string, key: string, how: string): Promise<Acknowledged[]> {
@@ -1282,7 +1286,7 @@ export function releaseHolder(session: string, key: string, how: string): Promis
       const reason = `Ended without handover: ${session}, ${item.status}`;
       released.push(await appendTrail(id, 'ronin', (it) => {
         it.flagged = true;
-        it.comments.push({ by: 'ronin', at: new Date().toISOString(), text: reason });
+        it.comments.push({ by: 'ronin', at: new Date().toISOString(), text: `${FLAGGED}${reason}` });
         return { op: 'flag', to: 'true', note: reason };
       }, () => false));
       for (const name of team ? await leadsOf(team) : await helpOf(item)) tell.set(name, [...(tell.get(name) ?? []), `${id} '${item.title}' (${item.status}) on ${to}`]);

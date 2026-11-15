@@ -52,13 +52,16 @@ test('holding nothing reads as no items, not an invention', async () => {
 
 test('the chip is the items held with their status; a flagged one marks it', async () => {
   const ids = [await item('a'), await item('b'), await item('c'), await item('d')];
-  await flagItem(ids[1]!, true, undefined, 'test');
+  await flagItem(ids[1]!, true, 'Waiting on test: b', 'test');
   await writeLetter('tegami-read-held', `{ "objective": "", "holds": ${JSON.stringify(ids)}, "at": { "item": "${ids[0]}", "rung": 2 } }`);
   const t = await readTegami('tegami-read-held');
   assert.ok(t);
   assert.equal(t.chip.text, `${ids[0]} To Do · ⚑ ${ids[1]} To Do · ${ids[2]} To Do · +1`);
   assert.equal(t.chip.gate, true);
+  assert.equal(t.flagged, true, 'an Agent holding a flagged item is flagged');
   assert.deepEqual(t.holds, ids, 'an old "at" in the letter reads as nothing');
+  await flagItem(ids[1]!, false, undefined, 'test');
+  assert.equal((await readTegami('tegami-read-held'))!.flagged, false, 'unflagged, the record clears');
 });
 
 test('docs are the birth brief, then the brief now, then every held item\'s attachments, only what exists', async () => {

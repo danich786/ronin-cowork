@@ -14,7 +14,7 @@ Usage:
   item handoff <ids> <agent>|team:<name> [--from <agent>|team:<name>] [--keep-holding]
   item handover <ids> <agent>|team:<name> "<where it stands; what is next>" [--to-do] [--flag "<the question>"]
   item watch <ids> [<agent>|team:<name>]  item unwatch <ids> [<agent>|team:<name>]
-  item flag <ids> [<why>]             item unflag <ids> [<comment>]
+  item flag <ids> "<why>"             item unflag <ids> [<comment>]
   item comment <id> <text>            item comment <id> --edit <n> <text>
   item attach <id> <path>|<url>|plan:<name>   item attach <id> --remove <path>|<url>|plan:<name>
   item link <id> <type> <id> [--remove]
@@ -42,6 +42,9 @@ move still goes and the reply prompts for it; --note again on an item In Review 
 handover is how an ending Agent hands an item on: the note becomes a comment headed "Handover
 from <you>", you come off, the receiver goes on, the status stays (--to-do puts it back to To
 Do). Can't decide? --flag "<the question>": it is flagged and your lead is told.
+flag needs its reason, quoted ("Waiting on <who>: <what>"); it becomes the comment "Flagged:
+<why>", and the Agents holding the item show the flag on their pill. unflag takes an optional
+comment. Flagged items: Epics, filtered by Flagged.
 handoff takes the giver off and the receiver on. The giver is you, with any Team of yours
 that holds the item and any Team of the receiver's that holds it; --from names it instead.
 --keep-holding, the rare case, keeps the giver on too. Any other holder stays: a second Agent
@@ -172,8 +175,10 @@ case "$verb" in
       [ "$#" -eq 1 ] || die 'BAD-ARG: item comment takes <id> <text>, the text quoted'
       ronin_item_call POST "/api/work-items/$id/comment" "$(json text "$1")"
     fi ;;
-  flag|unflag) [ "$#" -le 1 ] || die "BAD-ARG: item $verb takes <ids> [<comment>], the comment quoted"
-    item_act "$verb" POST "$(json ${1:+comment "$1"})" ;;
+  flag) [ "$#" -eq 1 ] && [ -n "$1" ] || die 'BAD-ARG: item flag takes <ids> "<why>": the reason is required, quoted ("Waiting on <who>: <what>"); it becomes the comment "Flagged: <why>"'
+    item_act flag POST "$(json comment "$1")" ;;
+  unflag) [ "$#" -le 1 ] || die "BAD-ARG: item unflag takes <ids> [<comment>], the comment quoted"
+    item_act unflag POST "$(json ${1:+comment "$1"})" ;;
   attach)
     remove=''; [ "${1:-}" = --remove ] && { remove=true; shift; }
     [ "$#" -eq 1 ] || die 'BAD-ARG: item attach takes <id> [--remove] <path>|<url>|plan:<name>'

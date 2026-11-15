@@ -68,7 +68,7 @@ test('every id an item has had finds it: read, an act, --parent and the search b
   const { item } = await items.createItem({ title: 'to be keyed', parent: epic.id, holder: mem }, 'boss');
   await items.renameItem(item.id, 'KAN-901', 'jira:Ronin');
   assert.equal((await call('GET', `/api/work-items/${item.id}`)).data.item.id, 'KAN-901');
-  assert.equal((await call('POST', `/api/work-items/${item.id}/flag`, { by: 'boss' })).data.item.id, 'KAN-901');
+  assert.equal((await call('POST', `/api/work-items/${item.id}/flag`, { comment: 'Waiting on mem: keys', by: 'boss' })).data.item.id, 'KAN-901');
   const child = await call('POST', '/api/work-items', { title: 'under the w id', parent: item.id, by: 'boss' });
   assert.equal(child.data.item.parent, 'KAN-901');
   assert.equal(child.data.acknowledgement.split('\n')[0], `created ${child.data.item.id} under KAN-901`, 'create says so on line 1');
@@ -190,6 +190,7 @@ test('a handover: --to-do puts it back in the same line; --flag asks the lead, t
   const asked = await call('POST', `/api/work-items/${stuck.id}/handover`, { team: 'crew', flag: 'Waiting on cap: keep or delete?', by: 'mem' });
   assert.equal(asked.status, 200);
   assert.equal(asked.data.item.flagged, true);
+  assert.equal(asked.data.item.comments.at(-1).text, 'Flagged: Waiting on cap: keep or delete?', 'the question is the Flagged: comment');
   assert.deepEqual(await holding(stuck.id), ['team:crew']);
   const told = (await said()).filter(([, text]) => text.includes(stuck.id));
   assert.deepEqual(told.map(([to]) => to), ['cap'], 'the lead is told, once');
@@ -217,7 +218,7 @@ test('a crash: on the second sweep each item goes by its status, never to nobody
     const item = (await items.readItem(id))!;
     assert.equal(item.flagged, true);
     assert.equal(item.status, status);
-    assert.equal(item.comments.at(-1)!.text, `Ended without handover: crashed, ${status}`);
+    assert.equal(item.comments.at(-1)!.text, `Flagged: Ended without handover: crashed, ${status}`);
   }
   const told = await said();
   assert.deepEqual(told.map(([to]) => to), ['cap'], 'one notice, to the lead');

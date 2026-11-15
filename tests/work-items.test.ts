@@ -103,7 +103,7 @@ test('status, kind and priority are the space\'s names exactly, the rest refused
   await assert.rejects(items.editItem(bug.item.id, { priority: 'high' }, 'probe'), /priority is one of Highest, High, Medium, Low, Lowest; not "high"/);
   const flagged = await items.flagItem(bug.item.id, true, 'waiting on Ana', 'probe');
   assert.equal(items.didLine(flagged), `${bug.item.id} is flagged: waiting on Ana`);
-  assert.deepEqual([flagged.item.flagged, flagged.item.comments.map((comment) => comment.text)], [true, ['waiting on Ana']], 'the reason is an ordinary comment');
+  assert.deepEqual([flagged.item.flagged, flagged.item.comments.map((comment) => comment.text)], [true, ['Flagged: waiting on Ana']], 'the reason is the comment "Flagged: <reason>"');
   assert.equal(items.didLine(await items.flagItem(bug.item.id, false, undefined, 'probe')), `${bug.item.id} is unflagged`);
   assert.equal(items.didLine(await items.editItem(bug.item.id, { status: 'In Progress' }, 'probe')), `${bug.item.id} moved to In Progress`);
   assert.equal(items.didLine(await items.editItem(bug.item.id, { priority: 'High' }, 'probe')), `${bug.item.id} changed: priority High`);
@@ -244,7 +244,9 @@ test('routes acknowledge with the item and the appended line; refusals answer 40
     assert.ok((await call('GET', `${base}?holder=none`)).data.items.some((item: { id: string }) => item.id === id), 'holder none: the items nobody holds');
     assert.equal((await call('PUT', `${base}/${id}`, { jira: 'RON-1', by: 'probe' })).status, 400, 'jira is { id, key } or null');
     await call('PUT', `${base}/${id}`, { jira: { id: '10001', key: 'RON-1' }, by: 'probe' });
-    assert.equal((await call('POST', `${base}/${id}/flag`, { by: 'probe' })).data.acknowledgement, `${id} is flagged`);
+    const bare = await call('POST', `${base}/${id}/flag`, { by: 'probe' });
+    assert.deepEqual([bare.status, /a flag says why/.test(bare.data.error)], [400, true], 'a flag without its reason is refused');
+    assert.equal((await call('POST', `${base}/${id}/flag`, { comment: 'Waiting on Ana: the key', by: 'probe' })).data.acknowledgement, `${id} is flagged: Waiting on Ana: the key`);
     const moved = await call('POST', `${base}/${id}/transition`, { status: 'In Review', by: 'probe' });
     assert.equal(moved.data.acknowledgement.split('\n')[0], `${id} moved to In Review`);
     assert.equal((await call('POST', `${base}/${id}/transition`, { status: 'To Do', by: 'probe' })).data.item.status, 'To Do', 'any status to any status');

@@ -11,7 +11,7 @@ import {
 } from '../work-items.js';
 import { agentReading, epicCards, everyItemReading, teamReading, type HeldItem } from '../work-items-read.js';
 import { liveRows, rowOf } from '../work-items-index.js';
-import { pushTeams } from '../ws/events.js';
+import { changed, pushTeams } from '../ws/events.js';
 
 const text = (value: unknown): string | undefined => typeof value === 'string' ? value : value === undefined || value === null ? undefined : String(value);
 
@@ -71,9 +71,11 @@ const guarded = (handler: Handler): express.RequestHandler => (req, res) => {
 
 export function registerWorkItems(app: express.Express): void {
   // Every write here moves what the teams push carries (a Team's epic and items), so the
-  // server pushes the rosters again after it, as the roster routes do (teams-api.ts).
+  // server pushes the rosters again after it, as the roster routes do (teams-api.ts). It also
+  // moves the home rows (each holder's chip and its flag, KAN-521), so the home push runs too:
+  // a flag the owner or a lead sets repaints the holder's pill without waiting on its pane.
   app.use('/api/work-items', (req, res, next) => {
-    if (req.method !== 'GET') res.on('finish', () => { if (res.statusCode < 400) void pushTeams(); });
+    if (req.method !== 'GET') res.on('finish', () => { if (res.statusCode < 400) { void pushTeams(); changed(); } });
     next();
   });
 
@@ -208,9 +210,14 @@ export function registerWorkItems(app: express.Express): void {
         : `${holderLabel(watcher)} ${watch ? 'watches' : 'no longer watches'} ${id}; it watches ${list}.` };
     };
   }
-  // Jira's Add flag / Remove flag; { comment } is the reason, kept as a comment.
+  // Jira's Add flag / Remove flag; { comment } is the reason, kept as a comment ("Flagged: <reason>").
+  // A flag needs its reason (owner, 2026-11-15, KAN-521); an unflag's comment is optional.
   for (const [verb, flagged] of [['flag', true], ['unflag', false]] as const) {
-    acts[verb] = async (id, b, by) => acted(await flagItem(id, flagged, text(b.comment), by));
+    acts[verb] = async (id, b, by) => {
+      const reason = text(b.comment)?.trim();
+      if (flagged && !reason) throw new WorkItemBadInput(`a flag says why: item flag ${id} "Waiting on <who>: <what>".`);
+      return acted(await flagItem(id, flagged, reason, by));
+    };
   }
   // item archive --done: every Done item the caller or its Teams hold; { team } narrows it.
   app.post('/api/work-items/archive-done', guarded(async (req, res) => {
