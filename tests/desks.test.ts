@@ -236,7 +236,7 @@ test('a hand-in with --item ends by naming the item and the write that keeps it 
   }).toString();
   const lines = output.trimEnd().split('\n');
   const last = lines.at(-2)!;
-  assert.equal(last, `${item.id} moved to In Review`);
+  assert.equal(last, `${item.id} moved to In Review. It stays yours until accepted or sent back.`);
   assert.match(lines.at(-1)!, new RegExp(`^PROMPT: ${item.id} has no review line`), 'no --note: prompted, not refused (KAN-429)');
   assert.ok(output.indexOf('ACCEPTED cowork:team/comp/reminder') < output.indexOf(last));
   assert.equal((await readItem(item.id))!.status, 'In Review');
@@ -246,7 +246,7 @@ test('under project management a hand-in needs no item: the code goes in, nothin
   const { sessionDir } = await import('../src/session-dir.js');
   const dir = sessionDir('pm_hander');
   await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(path.join(dir, 'birth-receipt.json'), JSON.stringify({ behaviours: [{ book: 'project-management', file: '/x/project-management.md' }] }));
+  await fs.writeFile(path.join(dir, 'brief-told.json'), JSON.stringify({ told: { 'project-management': { kind: 'behaviours', depth: 'full', title: 'Project management' } } }));
   const desk = await openDesk({ repo: 'cowork', session: 'pm_hander', team: 'comp' });
   await commitFile(desk.worktree, 'no-item.txt', 'docs only\n');
   const { item } = await createItem({ title: 'Untouched' }, 'pm_hander');

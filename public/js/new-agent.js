@@ -1,22 +1,21 @@
 /* part of the ronin-cowork client — see js/README.md */
 /** NEW AGENT — the sole drawn launch form. Session type decides which questions exist;
  * only a Cowork Agent has kind, template, mandate, and loadout. Defaults arrive through
- * `GET /api/launch-seed?team=` and land until the user's hand changes them. Behaviours
- * are the complete editable cascade for a Cowork Agent. */
+ * `GET /api/launch-seed?team=` and land until the user's hand changes them. The Behaviors
+ * step is brief-step.js: this Agent's own brief settings, integrations and project
+ * management, and what comes with it as the server works it out (docs/architecture/brief.md, Where it is set in the UI). */
 import { request } from './request.js';
 import { t } from './lexicon.js';
 import { ask } from './ask.js';
 import { finalizeTeamName, isValidTeamName, sanitizeTeamName } from './new-team-draft.js';
 import {
-  createStep, el, kindTiles, loadProviderCatalog, mandateWord, modelLabel, priceText, providerCatalog, readingRows, tagRow, templateTray, tierWord,
+  createStep, el, kindTiles, loadProviderCatalog, modelLabel, priceText, providerCatalog, readingRows, tagRow, templateTray, tierWord,
 } from './form-steps.js';
 import { openLaunchHandoff } from './launch-handoff.js';
+import { mandateRows, setMandates } from './mandates.js';
+import { briefValue, emptyBriefValue, layerLinks, paintBriefForm } from './brief-step.js';
 import { closeWorkspaceTab, reserveWorkspaceTab, workbenchLaunchUrl, workbenchLink } from './workspace.js';
 
-const REACH = ['open', 'discuss', 'plan', 'execute'];
-const RECRUIT = ['open', 'nobody', 'propose agents', 'staff agents'];
-// absence of `code`: silence is not an instruction. Nothing validates the combination.
-const OUTPUT = ['open', 'a plan', 'ideas', 'code', 'an artifact', 'the team', 'no code'];
 
 /** A preload may name a template outside the form's default kind filter. Keep a compatible
  * current kind when possible; otherwise use the template's first declared kind. */
@@ -34,27 +33,6 @@ export function templateEntryPlan({ currentKind, kindTouched = false, templates 
 }
 
 
-function paintShelves(host, { rows = [], selected = [], onChange = () => {}, openBehaviours = null, reason = () => '', links = true } = {}) {
-  const option = (item, availability = '') => ({ v: item.name || '+', l: item.label || item.name,
-    sub: typeof availability === 'object' && Object.hasOwn(availability, 'sub') ? availability.sub : item.blurb || '',
-    ...(links ? { read: item.reading, view: item.name ? { name: item.name, scope: item.scope } : null } : {}),
-    off: typeof availability === 'string' ? availability : availability.off || '', disabled: availability?.disabled === true });
-  const general = rows.filter((row) => row.scope === 'selected' && row.available === true && !row.installation);
-  const picker = ask([{ group: t('behaviours.available', 'Optional'), fields: [{ key: 'behaviours', label: t('behaviours', 'Behaviours'), many: true, shape: 'tall', filter: false,
-    options: [...general.map((item) => option(item, item.required ? t('team_config.required', 'Required for each new Agent') : '')),
-      ...(openBehaviours ? [{ v: '@customize', l: t('behaviours.customize', 'Customize Behaviors'), action: () => openBehaviours() }] : [])] }] }],
-  { value: { behaviours: selected }, density: 'tight', exposed: true, onChange: (value) => onChange([...value.behaviours]) });
-  const fixed = (label, key, scope, why) => ask([{ group: label, fields: [{ key, label, many: true, shape: 'tall', filter: false,
-    options: rows.filter((row) => row.scope === scope).map((item) => option(item, { disabled: true, sub: why(item) })) }] }],
-  { value: { [key]: rows.filter((row) => row.scope === scope && row.on).map((row) => row.name) }, className: 'na-behaviour-readonly', density: 'tight', exposed: true });
-  const automatic = fixed(`${t('behaviours.auto', 'All Cowork Agents')} (${t('behaviours.auto_included', 'All Ronin Agents include these')})`, 'automatic', 'floor', () => '');
-  const conditional = fixed(t('behaviours.conditional', 'Conditional'), 'conditional', 'conditional', reason);
-  const autoSection = el('div', 'na-behaviour-section');
-  autoSection.append(automatic.el, el('p', 'na-behaviour-note', t('behaviours.bare_metal_excludes', 'Exclude by using a bare metal Agent.')));
-  host.replaceChildren(picker.el, autoSection, conditional.el);
-  return { value: () => picker.value().behaviours, destroy: () => { picker.destroy(); automatic.destroy(); conditional.destroy(); } };
-}
-
 export function createNewAgentView(kit, { connect = null, consumed = null, embedded = false, team = null, configure = null, openTeamDefaults = null, openDeskDefaults = null, openBehaviours = null, teamDefaultsSpec = null, deskDefaultsSpec = null } = {}) {
   const { createSurface, createAction, createActionBar, createField, createNotice } = kit.primitives;
 
@@ -66,12 +44,15 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
       teamMode: entryTeam ? 'existing' : 'none', team: entryTeam || '', newTeam: '',
       reach: 'open', recruit: 'open', output: ['open'],
       role: 'coworker',
-      books: [],
+      setting: emptyBriefValue(), // { brief: { add, block, only }, integrations, pm? } — this Agent's own
       expanded: {},
     };
   };
   const draft = freshDraft();
   let seed = null;
+  let catalog = [];
+  let preview = null; // the server's answer: { in_play, integrations, pm }
+  let previewAsked = 0;
   let templates = [];
   let teams = [];
   let snapshot = '';
@@ -79,7 +60,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
   let loaded = false;
   let templateMode = false;
   let configured = '';
-  const touched = { mandate: false, model: false, books: false };
+  const touched = { mandate: false, model: false };
 
   const start = createAction({
     label: configure ? t('agent_composition.send', 'Send') : t('forms.launch', 'Launch'),
@@ -140,6 +121,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
         templateMode = false;
         draft.type = type.key;
         paint();
+        void loadPreview();
       });
       typeHost.append(box);
     }
@@ -192,11 +174,11 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     const value = (field) => seed?.seeds?.[field]?.value;
     draft.instructions = '';
     instructionsInput.value = '';
-    draft.books = Array.isArray(value('behaviours')) ? [...value('behaviours')] : [];
+    draft.setting = emptyBriefValue();
     for (const key of ['reach', 'recruit']) draft[key] = value(key) || 'open';
     draft.output = [value('output') || 'open'].flat().filter(Boolean);
     draft.teamMode = 'new'; draft.team = ''; draft.newTeam = '';
-    touched.mandate = false; touched.books = false;
+    touched.mandate = false;
   }
   function applyTemplate(name) {
     draft.template = name;
@@ -215,12 +197,13 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     if (row.mandate) { draft.reach = row.mandate.reach; draft.recruit = row.mandate.recruit; draft.output = [row.mandate.output].flat().filter(Boolean); touched.mandate = true; }
     // `team_mode: 'new'` births the box into its own team (the Personal Assistant ruling).
     if (row.team_mode === 'new') { draft.teamMode = 'new'; }
-    if (row.behaviours.length) { draft.books = [...row.behaviours]; touched.books = true; }
+    if (row.behaviours.length) { draft.setting.brief.add = row.behaviours.map((name) => ({ name, depth: 'full' })); }
     snapshot = authored();
     paint();
+    void loadPreview();
   }
   const authored = () => JSON.stringify({
-    instructions: draft.instructions, books: [...draft.books].sort(),
+    instructions: draft.instructions, setting: draft.setting,
     mandate: [draft.reach, draft.recruit, ...draft.output],
   });
   const templateDirty = () => !!templateRow() && authored() !== snapshot;
@@ -263,7 +246,6 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
   }));
   const teamChoice = () => draft.teamMode === 'new' ? 'new' : draft.teamMode === 'none' ? 'none' : 'current';
   const teamRows = () => teams.map((row) => ({ v: row.name, l: String(row.title ?? '').trim() || row.name, sub: row.name }));
-  const mandateRows = (values) => values.map((value) => ({ v: value, l: mandateWord(value) }));
   const newTeamField = () => {
     const input = el('input'); input.type = 'text'; input.spellcheck = false; input.autocapitalize = 'off'; input.value = draft.newTeam;
     input.placeholder = t('new_team.name_placeholder', 'lowercase, digits, - _');
@@ -290,7 +272,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     defaultsNote.replaceChildren();
     const hasTeam = draft.teamMode !== 'none';
     const teaching = el('p', null, hasTeam
-      ? t('new_agent.defaults_cascade_team', 'Defaults cascade from Desk → Team → this Agent. Changes on this form apply only to this Agent.')
+      ? t('new_agent.defaults_cascade_team', 'Defaults cascade from Desk → Workspace → Team → this Agent. Changes on this form apply only to this Agent.')
       : t('new_agent.defaults_cascade_desk', 'Defaults cascade from Desk → this Agent. Changes on this form apply only to this Agent.'));
     const links = el('p', 'na-defaults-links');
     if (hasTeam && chosenTeam()) links.append(defaultsLink(t('new_agent.team_defaults', 'Team defaults'),
@@ -314,7 +296,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
       draft.team = draft.teamMode === 'existing' ? value.teamName : '';
       if (!configure) void loadSeed();
     }
-    if (['role', 'team', 'teamName'].includes(key)) paintBehaviourShelves();
+    if (['role', 'team', 'teamName'].includes(key)) void loadPreview();
     paintDefaultsNote(); paintFoot(); paintActions();
   };
   /** What Default launches (Models > Defaults: a Team lead's own pair when the seed was read for one). */
@@ -333,9 +315,9 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
       ] },
     ] },
     { group: t('mandate', 'Mandate'), fields: [
-      { key: 'reach', label: t('reach', 'Reach'), options: mandateRows(REACH) },
-      { key: 'recruit', label: t('recruit', 'Recruit'), options: mandateRows(RECRUIT) },
-      { key: 'output', label: t('output', 'Output'), many: true, options: mandateRows(OUTPUT) },
+      { key: 'reach', label: t('reach', 'Reach'), options: () => mandateRows('reach', { block: preview?.off || [] }) },
+      { key: 'recruit', label: t('recruit', 'Recruit'), options: () => mandateRows('recruit', { block: preview?.off || [] }) },
+      { key: 'output', label: t('output', 'Output'), many: true, options: () => mandateRows('output', { block: preview?.off || [] }) },
     ] },
   ], {
     value: { provider: draft.provider, model: draft.model, reach: draft.reach, recruit: draft.recruit, output: draft.output, role: draft.role},
@@ -370,25 +352,35 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
 
   /* ---- 7 · Loadout ---- */
   const stepLoadout = createStep({ n: 7, key: 'loadout', title: t('behaviours', 'Behaviors'), onToggle: () => toggle('loadout') });
-  const behaviourRows = () => (seed?.behaviours || []).map((row) => {
-    if (row.scope !== 'conditional') return row;
-    if (row.requires?.includes('role:epic_lead')) return { ...row, on: draft.role === 'epic_lead' };
-    if (row.requires?.includes('role:coordinator')) return { ...row, on: draft.role === 'coordinator' };
-    if (row.requires?.includes('lead')) return { ...row, on: draft.role === 'lead' && !!chosenTeam() };
-    return row;
-  });
   const shelvesHost = el('div', 'na-behaviour-sections');
-  const conditionReason = (row) => (row.requires || []).map((need) => ({
-    'arrangement:managed': 'Managed worktree', 'arrangement:checkout': 'Shared checkout', team: 'On a Team', lead: 'Team lead',
-    project_management: 'Project management on', 'role:epic_lead': 'Epic Lead role', 'role:coordinator': 'Coordinator role',
-    cowork: 'Cowork Agent', 'role:mika': 'Mika', new_owner: 'New owner',
-  })[need] || need).join(' · ');
+  let briefForm = null;
   function paintBehaviourShelves() {
-    paintShelves(shelvesHost, { rows: behaviourRows(), selected: draft.books, openBehaviours: configure ? null : openBehaviours, reason: conditionReason, onChange: (books) => {
-      draft.books = books; touched.books = true; paintFoot(); paintActions();
-    } });
+    briefForm?.destroy();
+    briefForm = paintBriefForm(shelvesHost, {
+      layer: 'agent', catalog, value: draft.setting, above: { integrations: preview?.integrations, pm: preview?.pm }, inPlay: preview?.in_play || [],
+      openBehaviours: configure ? null : openBehaviours,
+      linkFor: layerLinks({ team: chosenTeam(), open: { team: openTeamDefaults ? () => openTeamDefaults(chosenTeam()) : null, campaign: openDeskDefaults } }),
+      onChange: (setting) => { draft.setting = setting; paintFoot(); paintActions(); void loadPreview(); },
+    });
   }
-  stepLoadout.body.append(el('p', 'na-behaviour-intro', t('behaviours.intro', 'Behaviors are specific guidance given to Agents at birth.')), shelvesHost);
+  /** What comes with this Agent, as the server works it out from the draft (it fills in what it knows itself). */
+  async function loadPreview() {
+    const asked = ++previewAsked;
+    const result = await request('/api/brief/preview', { method: 'POST', json: {
+      type: draft.type, team: chosenTeam(), role: draft.role, ...(draft.template ? { template: draft.template } : {}),
+      ...(configure ? { name: configure } : {}), ...draft.setting,
+    } });
+    if (asked !== previewAsked || !result.ok) return;
+    preview = result.data || null;
+    paintBehaviourShelves();
+    questions.paint(); // the mandate menus, less what the layers in play block
+  }
+  async function loadCatalog() {
+    const result = await request('/api/brief/catalog');
+    catalog = result.ok && Array.isArray(result.data) ? result.data : [];
+    setMandates(catalog); // the mandate menus are the catalog's mandate files (mandates.js)
+  }
+  stepLoadout.body.append(el('p', 'na-behaviour-intro', t('brief.intro', 'What this Agent is told: the integrations it works with, the behaviors you add, and what comes with its situation.')), shelvesHost);
 
   /* ---- the plan: which steps exist for this type and door ---- */
   const steps = {
@@ -422,7 +414,8 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
       rows.push([t('mandate', 'Mandate'), `${draft.reach} · ${draft.recruit} · ${draft.output.join(', ')}`]);
       rows.push([t('agent_composition.role', 'Role'), draft.role]);
     }
-    if (isCowork() && draft.books.length) rows.push([t('behaviours', 'Behaviours'), tagRow(draft.books.map((text) => ({ text, on: true })))]);
+    const added = draft.setting.brief.add;
+    if (isCowork() && added.length) rows.push([t('behaviours', 'Behaviours'), tagRow(added.map((row) => ({ text: row.name, on: true })))]);
     if (hasAgent()) rows.push([t('forms.model', 'model'), draft.provider ? `${draft.provider}${draft.model ? ` / ${modelLabel(draft)}` : ''}` : defaultWord()]);
     return rows;
   }
@@ -447,7 +440,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
   function paintActions() {
     // The button says what the press will DO: with the name blank there is no team to
     // create, so it must not promise one.
-    // Send always resends the brief; a change only highlights it.
+    // Send can always be pressed; a change only highlights it (the server sends what changed).
     const ready = configure ? JSON.stringify(configurationValue()) !== configured : !!draft.name.trim() && (draft.teamMode !== 'new' || isValidTeamName(chosenTeam()));
     start.setDisabled(configure ? !loaded || busy : !ready);
     if (ready) start.el.dataset.kind = 'primary';
@@ -460,7 +453,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
 
   const configurationValue = () => ({
     objective: draft.instructions.trim(), title: draft.name.trim(), role: draft.role, team: chosenTeam(),
-    mandate: { reach: draft.reach, recruit: draft.recruit, output: draft.output }, behaviours: [...draft.books],
+    mandate: { reach: draft.reach, recruit: draft.recruit, output: draft.output }, ...draft.setting,
   });
 
   // The press shows at once: Send turns green and says Sending… until the brief is out.
@@ -477,7 +470,8 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     busy = false; sending(false);
     if (!result.ok) { notice.set('failed', result.message); paintActions(); return; }
     configured = JSON.stringify(configurationValue()); paintActions();
-    notice.set('success', t('agent_composition.updated', 'The Agent has been sent its new brief.'));
+    // The server sends only what changed in the brief (sent: false when nothing did).
+    notice.set('success', result.data?.sent === false ? t('agent_composition.unchanged', 'Its brief is unchanged: nothing was sent.') : t('agent_composition.updated', 'The Agent has been sent its new brief.'));
   }
 
   function clearAfterLaunch() {
@@ -554,7 +548,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
           mandate: { reach: draft.reach, recruit: draft.recruit, output: draft.output },
           team_lead: draft.role === 'lead',
           role: draft.role,
-          behaviours: [...draft.books],
+          ...draft.setting,
           ...(draft.template ? { template: draft.template } : {}),
         };
     const result = await request('/api/launch', { method: 'POST', json: body });
@@ -590,7 +584,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
         brief: draft.instructions.trim(),
         mandate: `${draft.reach} · ${draft.recruit} · ${draft.output.join(', ')}`,
         team_mode: draft.teamMode === 'new' ? 'new' : '',
-        behaviours: draft.books,
+        behaviours: draft.setting.brief.add.map((row) => row.name),
         // THE SWITCHES A LOADOUT IS MEANT TO CARRY. `TemplateBoxSave` stores these
         // (@template_shelves measured `boxTail` writing all three) and this form was
         // sending only `behaviours`, so a saved Personal Assistant lost its gbrain.
@@ -628,22 +622,16 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
       for (const key of ['reach', 'recruit']) if (value(key)) draft[key] = value(key);
       if (value('output')) draft.output = [value('output')].flat().filter(Boolean);
     }
-    if (!touched.books && Array.isArray(value('behaviours'))) draft.books = [...value('behaviours')];
     // The campaign's, or the team's if one is joined — an editable value like every other
     if (!draft.kindTouched && team && value('kind')) draft.kind = value('kind');
     syncQuestions();
     paintKinds();
     paintTray();
-    paintBehaviourShelves();
     paintFolds();
     paintFoot();
+    await loadPreview();
   }
-  const refreshBehaviours = async () => {
-    const result = await request(seedUrl());
-    if (!result.ok || !seed) return;
-    seed = { ...seed, behaviours: result.data?.behaviours || [] };
-    paintBehaviourShelves();
-  };
+  const refreshBehaviours = async () => { await loadCatalog(); await loadPreview(); };
   window.addEventListener('ronin:behaviours-changed', refreshBehaviours);
 
   function paint() {
@@ -705,16 +693,15 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
     draft.role = current.role || 'coworker';
     draft.teamMode = current.team ? 'existing' : 'none'; draft.team = current.team || '';
     draft.reach = current.mandate.reach; draft.recruit = current.mandate.recruit; draft.output = [...current.mandate.output];
-    draft.books = current.behaviours.map((row) => row.name);
+    draft.setting = briefValue(current);
     teams = data.available_teams || [];
-    const applied = new Set((data.sends?.rows || []).map((row) => row.name));
-    seed = { behaviours: data.available_behaviours.map((row) => ({ ...row, on: applied.has(row.name) })) };
     configured = JSON.stringify(configurationValue()); loaded = true; paint();
+    await loadPreview();
   }
   return {
     el: embedded ? surface.content : surface.el,
     enter: async (detail = {}) => {
-      if (configure) { await loadProviderCatalog(); await loadConfiguration(); return; }
+      if (configure) { await Promise.all([loadProviderCatalog(), loadCatalog()]); await loadConfiguration(); return; }
       const entryTeam = String(detail?.team || (typeof team === 'function' ? team() : team) || '');
       if (entryTeam) { draft.teamMode = 'existing'; draft.team = entryTeam; }
       if (detail?.teamLead === true) draft.role = 'lead';
@@ -722,6 +709,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
       const [tray, teamRows] = await Promise.all([
         request('/api/templates/agents'),
         request('/api/team-rosters'),
+        loadCatalog(),
       ]);
       templates = tray.ok && Array.isArray(tray.data) ? tray.data : [];
       teams = teamRows.ok && Array.isArray(teamRows.data) ? teamRows.data.filter((row) => row.state !== 'archived') : [];
@@ -739,6 +727,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
       window.removeEventListener('ronin:behaviours-changed', refreshBehaviours);
       questions.destroy();
       teamQuestions.destroy();
+      briefForm?.destroy();
       agentIdentity.destroy();
     },
   };

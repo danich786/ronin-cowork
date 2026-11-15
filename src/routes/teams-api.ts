@@ -1,3 +1,4 @@
+import { layerOf } from '../brief-settings.js';
 import type express from 'express';
 import { liveRows } from '../work-items-index.js';
 import {
@@ -16,7 +17,7 @@ import { callerOf } from './work-items-api.js';
 import { announceTeamChanges } from './wipeboards-api.js';
 import { pushTeams } from '../ws/events.js';
 import { campaignFilter, campaignResolver, initialCampaignId, machineCampaignId } from '../campaign-scope.js';
-import { retireTeam } from '../team-retire.js';
+import { detachTeamMembers, retireTeam } from '../team-retire.js';
 import { readCampaign } from '../campaigns.js';
 import { readWorkspace } from '../workspaces.js';
 import { teamAgentDefaults } from '../agent-defaults.js';
@@ -44,7 +45,6 @@ async function creationEdit(campaign_id: string, stated: RosterEdit): Promise<Ro
     ...(typeof cowork.branch === 'string' ? { branch: cowork.branch } : {}),
     ...(object(cowork.branches) ? { branches: Object.fromEntries(Object.entries(object(cowork.branches)).map(([k, v]) => [k, String(v)])) } : {}),
     ...stated,
-    behaviours: stated.behaviours ?? { selected: [...inherited.behaviours], required: [] },
     agent_defaults: { ...teamAgentDefaults(inherited), ...(stated.agent_defaults ?? {}) },
   };
   if (edit.workspace && !(await readWorkspace(campaign_id, edit.workspace))) throw new Error(`No Workspace "${edit.workspace}" in Campaign ${campaign_id}.`);
@@ -77,13 +77,11 @@ function editOf(body: unknown): RosterEdit {
     ? Object.fromEntries(Object.entries(b.branches as Record<string, unknown>)
         .map(([repo, branch]) => [repo.trim().slice(0, 128), String(branch ?? '').trim().slice(0, 128)])
         .filter(([repo, branch]) => repo && branch)) : {};
-  if (b.behaviours !== undefined) {
-    const value = b.behaviours && typeof b.behaviours === 'object' && !Array.isArray(b.behaviours)
-      ? b.behaviours as Record<string, unknown> : {};
-    edit.behaviours = {
-      selected: Array.isArray(value.selected) ? value.selected.map(String).map((v) => v.trim().slice(0, 160)).filter((v) => Boolean(v) && v !== 'mandates') : [],
-      required: Array.isArray(value.required) ? value.required.map(String).map((v) => v.trim().slice(0, 160)).filter((v) => Boolean(v) && v !== 'mandates') : [],
-    };
+  if (b.brief !== undefined || b.integrations !== undefined || b.pm !== undefined) {
+    const layer = layerOf('team', b);
+    if (b.brief !== undefined) edit.brief = layer.brief;
+    if (b.integrations !== undefined) edit.integrations = layer.integrations;
+    if (b.pm !== undefined) edit.pm = layer.pm ?? null;
   }
   if (b.agent_defaults !== undefined) edit.agent_defaults = b.agent_defaults && typeof b.agent_defaults === 'object' && !Array.isArray(b.agent_defaults)
     ? b.agent_defaults as RosterEdit['agent_defaults'] : {};
@@ -184,6 +182,8 @@ export function registerTeams(app: express.Express): void {
   app.put('/api/team-rosters/:name', async (req, res) => {
     try {
       const roster = await writeTeamRoster(req.params.name, editOf(req.body));
+      // An archived Team keeps no members (KAN-500).
+      if (roster.state === 'archived') await detachTeamMembers(roster.name, callerOf(req));
       await teamChanged([roster.name], callerOf(req)).catch(() => {});
       res.json({ ok: true, roster });
     } catch (e) {
@@ -226,7 +226,7 @@ export function registerTeams(app: express.Express): void {
       const live = new Set((await listSessions()).map((s) => s.name));
       const added: string[] = [];
       const notLive: string[] = [];
-      for (const s of wanted) {
+      for (const s of roster.state === 'archived' ? [] : wanted) {
         if (!live.has(s)) {
           notLive.push(s);
           continue;
@@ -237,6 +237,7 @@ export function registerTeams(app: express.Express): void {
         await announceTeamChanges(s, before, after).catch(() => {});
         added.push(s);
       }
+      if (roster.state === 'archived') await detachTeamMembers(name, callerOf(req));
       await teamChanged([name], callerOf(req)).catch(() => {});
       res.json({ ok: true, created: !existing, roster, added, not_live: notLive });
     } catch (e) {

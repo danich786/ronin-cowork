@@ -6,12 +6,12 @@
 import type express from 'express';
 import {
   WorkItemBadInput, WorkItemMissing, WorkItemRefused,
-  addComment, attachDoc, connectionOf, createItem, deleteItem, editComment, editItem, archiveHeldDone, archiveItem, flagItem, handoffItem, reviewPrompt, handoverItem, holderLabel, holdersOf, linkItem, listItems, markOnDev, readItem, resolveId, sendBack, watchItem, watchedIds,
-  didLine, oneNoticePerCommand, type Acknowledged, type Holder, type JiraPair, type WorkItem,
+  addComment, attachDoc, connectionOf, createItem, deleteItem, editComment, editItem, archiveHeldDone, archiveItem, flagItem, handoffItem, reviewPrompt, handoverItem, holderLabel, holdersOf, linkItem, listItems, markOnDev, nextStep, readItem, resolveId, sendBack, watchItem, watchedIds,
+  FLAGGED, didLine, oneNoticePerCommand, type Acknowledged, type Holder, type JiraPair, type WorkItem,
 } from '../work-items.js';
 import { agentReading, epicCards, everyItemReading, teamReading, type HeldItem } from '../work-items-read.js';
 import { liveRows, rowOf } from '../work-items-index.js';
-import { pushTeams } from '../ws/events.js';
+import { changed, pushTeams } from '../ws/events.js';
 
 const text = (value: unknown): string | undefined => typeof value === 'string' ? value : value === undefined || value === null ? undefined : String(value);
 
@@ -19,7 +19,9 @@ const text = (value: unknown): string | undefined => typeof value === 'string' ?
 export function callerOf(req: express.Request): string {
   const stated = text(req.body?.by)?.trim();
   if (stated) return stated.slice(0, 128);
-  return /^user_/.test(req.get('x-ronin-source') ?? '') ? 'owner' : 'unknown';
+  // Core's own request (Mika's launch) has no headers: nobody, never a throw.
+  const source = req.headers?.['x-ronin-source'];
+  return /^user_/.test(typeof source === 'string' ? source : '') ? 'owner' : 'unknown';
 }
 
 export const acknowledge = (res: express.Response, done: Acknowledged, extra: Record<string, unknown> = {}) =>
@@ -71,9 +73,11 @@ const guarded = (handler: Handler): express.RequestHandler => (req, res) => {
 
 export function registerWorkItems(app: express.Express): void {
   // Every write here moves what the teams push carries (a Team's epic and items), so the
-  // server pushes the rosters again after it, as the roster routes do (teams-api.ts).
+  // server pushes the rosters again after it, as the roster routes do (teams-api.ts). It also
+  // moves the home rows (each holder's chip and its flag, KAN-521), so the home push runs too:
+  // a flag the owner or a lead sets repaints the holder's pill without waiting on its pane.
   app.use('/api/work-items', (req, res, next) => {
-    if (req.method !== 'GET') res.on('finish', () => { if (res.statusCode < 400) void pushTeams(); });
+    if (req.method !== 'GET') res.on('finish', () => { if (res.statusCode < 400) { void pushTeams(); changed(); } });
     next();
   });
 
@@ -170,8 +174,11 @@ export function registerWorkItems(app: express.Express): void {
       const status = text(b.status)?.trim();
       if (!status) throw new WorkItemBadInput('name the status, one of the space\'s.');
       const done = acted(await editItem(id, { status }, by, text(b.note)));
+      // What comes next (KAN-522): a start names the hand-in and the flag, a hand-in who holds it.
+      const next = nextStep(done.done);
+      const said = next ? `${done.acknowledgement}. ${next}` : done.acknowledgement;
       const prompt = reviewPrompt(done.done.item);
-      return prompt ? { ...done, acknowledgement: `${done.acknowledgement}\n${prompt}`, extra: { prompt } } : done;
+      return prompt ? { ...done, acknowledgement: `${said}\n${prompt}`, extra: { prompt } } : { ...done, acknowledgement: said };
     },
     // Handoff, the one tool: the giver comes off and the receiver goes on (handoffItem). The
     // giver is { from } when named, an Agent or team:<name>; else the caller and the Teams around
@@ -208,9 +215,17 @@ export function registerWorkItems(app: express.Express): void {
         : `${holderLabel(watcher)} ${watch ? 'watches' : 'no longer watches'} ${id}; it watches ${list}.` };
     };
   }
-  // Jira's Add flag / Remove flag; { comment } is the reason, kept as a comment.
+  // Jira's Add flag / Remove flag; { comment } is the reason, kept as a comment ("Flagged: <reason>").
+  // A flag is never refused (owner, 2026-11-15, KAN-525): without a reason it is set, its notice
+  // goes, and the reply asks for the reason as a comment. An unflag's comment is optional.
   for (const [verb, flagged] of [['flag', true], ['unflag', false]] as const) {
-    acts[verb] = async (id, b, by) => acted(await flagItem(id, flagged, text(b.comment), by));
+    acts[verb] = async (id, b, by) => {
+      const reason = text(b.comment)?.trim();
+      const done = acted(await flagItem(id, flagged, reason, by));
+      if (!flagged || reason) return done;
+      const prompt = `No reason given: add it, item comment ${done.done.item.id} "${FLAGGED}<why>".`;
+      return { ...done, acknowledgement: `${done.acknowledgement}\n${prompt}`, extra: { prompt } };
+    };
   }
   // item archive --done: every Done item the caller or its Teams hold; { team } narrows it.
   app.post('/api/work-items/archive-done', guarded(async (req, res) => {

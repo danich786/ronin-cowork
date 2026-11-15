@@ -345,7 +345,7 @@ test('a promotion of an item already Done tells nobody; its line stays on the tr
   assert.deepEqual((await listQueuedMessages()).filter((message) => ['finisher', 'follower'].includes(message.target)), []);
   assert.equal((await items.readItem(item.id))!.trail.at(-1)!.note, 'promotion 20261030T112406Z-promote-x; no change');
   await items.editItem(item.id, { status: 'In Progress' }, 'promotion');
-  assert.deepEqual((await listQueuedMessages()).map((message) => message.target).sort(), ['follower'], 'a real move is told to its watcher');
+  assert.deepEqual((await listQueuedMessages()).map((message) => message.target).sort(), ['finisher', 'follower'], 'a real move is told to its watcher and its holder');
 });
 
 test('a w id is never issued twice: renamed to its Jira key, its number stays used', async () => {

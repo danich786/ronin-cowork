@@ -28,7 +28,7 @@ import { createFolderGithub, createRootsReading, createWorkspaceNew, createWorks
 import { campaignById, loadCampaigns, normalizeSelection } from './campaigns.js';
 import { createEpicBoard, createEpicRecord, createEpicsRead, epicOffers } from './epics-surface.js';
 import { createHelpOutline, createHelpPage } from './help-outline.js';
-import { createMikaTilePool, reportMikaView } from './mika.js';
+import { askMika, createMikaTilePool, reportMikaView } from './mika.js';
 import { readyMika } from './mika-ready.js';
 import { S } from './state.js';
 import { request } from './request.js';
@@ -95,6 +95,8 @@ function doorWorkbench({ id, profile, label, seat, seats = { workspace1: seat },
  * dropped or its card placed, one card per harness; the sign-in tile mounted as on Setup. The route id stays `models`
  * so saved arrangements survive. */
 export function createModelsView() {
+  const MIKA_SESSION = 'mika_agent';
+  const { surface: mikaSurface, pool: mikaPool } = createMikaTilePool();
   const providerSessions = createProviderSetupSessionMount();
   const made = [];
   const keep = (surface) => { made.push(surface); return surface; };
@@ -103,6 +105,14 @@ export function createModelsView() {
     count: 4, seats: { workspace1: WORKBENCH_TYPES.modelStones, workspace2: WORKBENCH_TYPES.accountsRecords, workspace3: WORKBENCH_TYPES.modelsRecords, workspace4: WORKBENCH_TYPES.modelRefresh },
     loaded: loadProviderCatalog,
     environment: ({ bench }) => {
+      const showMika = async (workspace, prompt) => {
+        await askMika(null, prompt);
+        mikaPool.sync([MIKA_SESSION]);
+        bench().place(WORKBENCH_TYPES.modelMika, workspace);
+      };
+      const opposite = (workspace) => ({ workspace1: 'workspace2', workspace2: 'workspace1', workspace3: 'workspace4', workspace4: 'workspace3' })[workspace] || 'workspace1';
+      const guidePrompt = (provider, setupSession) => `You are helping the owner authenticate ${provider.label || provider.id} in the adjacent session ${setupSession}. Read its live terminal with edges read ${setupSession} and guide the owner from what is displayed. Explain each prompt briefly and say exactly what to do next. Re-read the session after each step. This machine is remote, so any browser approval happens on the owner's local computer. Do not operate the setup terminal and never ask for or display a credential. When the native flow finishes, tell the owner to return to Agent Harness so Ronin can measure readiness.`;
+      const connectPrompt = (provider) => `Authenticate the ${provider.label || provider.id} Agent Harness CLI on this machine. Its registry-owned native setup command is: ${provider.login_command || provider.id}. Run that command in an interactive shell and guide the owner through any browser or device approval on their local computer. Stay with the process until the native flow succeeds or needs an owner decision. Never ask for a token in chat and never print, inspect, or expose credentials. When it finishes, tell the owner to return to Agent Harness; Ronin's own measurement, not your report, decides whether it is Ready.`;
       const environment = {
         setupRuntime: null, mountProviderSetupSession: providerSessions.mountProviderSetupSession,
         providers: providerOffers,
@@ -112,10 +122,13 @@ export function createModelsView() {
         accounts: (workspace) => keep(createAccountsSurface({ workspace, detail: {}, environment, workbench: bench() })),
         modelsRecords: (workspace) => keep(createModelsRecords({ workspace, detail: {}, environment, workbench: bench() })),
         modelProvider: (workspace, detail) => keep(createModelProvider(detail.key, { workspace, detail, environment, workbench: bench() })),
+        modelMika: () => ({ el: mikaSurface.el, show: () => { mikaPool.sync([MIKA_SESSION]); mikaPool.show(MIKA_SESSION, false); } }),
+        onMikaProviderGuide: ({ provider, setupSession, workspace }) => showMika(opposite(workspace), guidePrompt(provider, setupSession)),
+        onMikaProviderConnect: ({ provider, workspace }) => showMika(workspace, connectPrompt(provider)),
       };
       return environment;
     },
-    destroy: () => { for (const surface of made.splice(0)) surface.destroy?.(); providerSessions.destroyAll(); },
+    destroy: () => { for (const surface of made.splice(0)) surface.destroy?.(); providerSessions.destroyAll(); mikaPool.destroyAll(); },
   });
 }
 
@@ -125,6 +138,11 @@ export function createModelsView() {
  * GitHub CLI there otherwise, the sign-in a private clone needs.
  * One read of the pinned folders and one of the Workspaces for the whole bench. */
 export function createWorkspacesView() {
+  const GITHUB_MIKA = WORKBENCH_TYPES.githubMika;
+  const MIKA_SESSION = 'mika_agent';
+  const { surface: mikaSurface, pool: mikaPool } = createMikaTilePool();
+  const guidePrompt = (setupSession) => `You are helping the owner authenticate GitHub CLI in the adjacent session ${setupSession}. Read its live terminal with edges read ${setupSession} and guide the owner from what is displayed. Explain each prompt briefly and say exactly what to do next. Re-read the session after each step. This is a headless remote machine: browser approval happens on the owner's local computer. Do not operate the setup terminal and never ask for or display a credential. When it finishes, verify with gh auth status and report the connected account and Git protocol.`;
+  const connectPrompt = 'Connect this Ronin machine to GitHub through GitHub CLI. First run gh auth status. If it is not connected, run gh auth login --hostname github.com --git-protocol https --web. This is a headless remote machine: give the owner the device URL and one-time code, wait for browser approval, then run gh auth setup-git and gh auth status. Stay with the process until it succeeds or needs an owner decision. Never ask for a token in chat and never print, inspect, or expose credentials. Finish by reporting the connected account and HTTPS Git protocol.';
   const campaign = (ctx) => campaignById(normalizeSelection(ctx()?.state?.campaignSelection).primary_campaign_id);
   const providerSessions = createProviderSetupSessionMount();
   const reading = createRootsReading();
@@ -144,15 +162,24 @@ export function createWorkspacesView() {
         workspaceRecords: () => keep(createWorkspaceStones({ reading, workspacesRead, campaignId, workbench: bench() })),
         workspaceRecord: (_workspace, detail) => keep(createWorkspaceRecord(detail.key, { reading, workspacesRead, campaignId })),
         workspaceNew: (workspace) => keep(createWorkspaceNew({ reading, workspacesRead, campaignId, place: (name) => bench().place(WORKBENCH_TYPES.workspaceRecord, workspace, { key: name }) })),
-        folderGithub: () => keep(createFolderGithub(github ??= boxes())),
+        folderGithub: (workspace) => keep(createFolderGithub(github ??= boxes(workspace))),
+        githubMika: () => ({ el: mikaSurface.el, show: () => { mikaPool.sync([MIKA_SESSION]); mikaPool.show(MIKA_SESSION, false); } }),
       };
-      const boxes = () => createGithubWorkspaceSetup({
-        environment, workspace: 'workspace2',
+      const showMika = async (workspace, prompt) => {
+        await askMika(null, prompt);
+        mikaPool.sync([MIKA_SESSION]);
+        bench().place(GITHUB_MIKA, workspace);
+      };
+      const opposite = (workspace) => workspace === 'workspace1' ? 'workspace2' : 'workspace1';
+      const boxes = (workspace = 'workspace2') => createGithubWorkspaceSetup({
+        environment, workspace,
         onCloned: () => reading.read(),
+        onMikaGuide: ({ setupSession, workspace: from }) => showMika(opposite(from), guidePrompt(setupSession)),
+        onMikaConnect: ({ workspace: from }) => showMika(from, connectPrompt),
       });
       return environment;
     },
-    destroy: () => { for (const surface of made.splice(0)) surface.destroy?.(); github?.destroy(); github = null; providerSessions.destroyAll(); },
+    destroy: () => { for (const surface of made.splice(0)) surface.destroy?.(); github?.destroy(); github = null; providerSessions.destroyAll(); mikaPool.destroyAll(); },
   });
 }
 

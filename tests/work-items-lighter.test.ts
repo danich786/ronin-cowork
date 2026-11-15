@@ -68,7 +68,7 @@ test('every id an item has had finds it: read, an act, --parent and the search b
   const { item } = await items.createItem({ title: 'to be keyed', parent: epic.id, holder: mem }, 'boss');
   await items.renameItem(item.id, 'KAN-901', 'jira:Ronin');
   assert.equal((await call('GET', `/api/work-items/${item.id}`)).data.item.id, 'KAN-901');
-  assert.equal((await call('POST', `/api/work-items/${item.id}/flag`, { by: 'boss' })).data.item.id, 'KAN-901');
+  assert.equal((await call('POST', `/api/work-items/${item.id}/flag`, { comment: 'Waiting on mem: keys', by: 'boss' })).data.item.id, 'KAN-901');
   const child = await call('POST', '/api/work-items', { title: 'under the w id', parent: item.id, by: 'boss' });
   assert.equal(child.data.item.parent, 'KAN-901');
   assert.equal(child.data.acknowledgement.split('\n')[0], `created ${child.data.item.id} under KAN-901`, 'create says so on line 1');
@@ -190,6 +190,7 @@ test('a handover: --to-do puts it back in the same line; --flag asks the lead, t
   const asked = await call('POST', `/api/work-items/${stuck.id}/handover`, { team: 'crew', flag: 'Waiting on cap: keep or delete?', by: 'mem' });
   assert.equal(asked.status, 200);
   assert.equal(asked.data.item.flagged, true);
+  assert.equal(asked.data.item.comments.at(-1).text, 'Flagged: Waiting on cap: keep or delete?', 'the question is the Flagged: comment');
   assert.deepEqual(await holding(stuck.id), ['team:crew']);
   const told = (await said()).filter(([, text]) => text.includes(stuck.id));
   assert.deepEqual(told.map(([to]) => to), ['cap'], 'the lead is told, once');
@@ -217,7 +218,7 @@ test('a crash: on the second sweep each item goes by its status, never to nobody
     const item = (await items.readItem(id))!;
     assert.equal(item.flagged, true);
     assert.equal(item.status, status);
-    assert.equal(item.comments.at(-1)!.text, `Ended without handover: crashed, ${status}`);
+    assert.equal(item.comments.at(-1)!.text, `Flagged: Ended without handover: crashed, ${status}`);
   }
   const told = await said();
   assert.deepEqual(told.map(([to]) => to), ['cap'], 'one notice, to the lead');
@@ -285,7 +286,7 @@ test('a call for help under an epic an Agent holds goes to that Agent (an epic_l
   assert.deepEqual((await said()).map(([to]) => to), ['elead']);
 });
 
-test('a status change reaches a watcher of that item only; not its holder, not the Team of its member', async () => {
+test('a status change reaches a watcher of that item, not of the epic above, and its holder; not the Team of its member', async () => {
   await seedTegami('eye');
   await seedTegami('far');
   const { item } = await items.createItem({ title: 'watched work', parent: epic.id, holder: mem }, 'boss');
@@ -293,7 +294,7 @@ test('a status change reaches a watcher of that item only; not its holder, not t
   await items.watchItem(epic.id, { kind: 'agent', name: 'far' }, true);
   await quiet();
   await call('POST', `/api/work-items/${item.id}/transition`, { status: 'In Progress', by: 'boss' });
-  assert.deepEqual(await said(), [['eye', `${item.id}: status To Do → In Progress by boss.`]]);
+  assert.deepEqual(await said(), [['mem', `${item.id}: status To Do → In Progress by boss.`], ['eye', `${item.id}: status To Do → In Progress by boss.`]]);
   await items.watchItem(epic.id, { kind: 'agent', name: 'far' }, false);
 });
 
@@ -307,7 +308,7 @@ test('a comment by someone else reaches the Agent working the item, and nobody e
   assert.deepEqual(await said(), [], 'nobody hears their own change');
 });
 
-test('nothing else is a notice: create, handoff, edit, attach, link, rename, delete', async () => {
+test('an item handed to an Agent, or edited, tells the Agent holding it; nothing else is a notice: create, attach, link, rename, delete', async () => {
   await quiet();
   const made = await call('POST', '/api/work-items', { title: 'quiet one', parent: epic.id, team: 'crew', by: 'boss' });
   const id = made.data.item.id as string;
@@ -319,7 +320,8 @@ test('nothing else is a notice: create, handoff, edit, attach, link, rename, del
   await call('POST', `/api/work-items/${id}/link`, { type: 'Blocks', to: other.id, by: 'boss' });
   await items.renameItem(id, 'KAN-902', 'jira:Ronin');
   await call('DELETE', `/api/work-items/${other.id}`, { by: 'boss' });
-  assert.deepEqual(await said(), []);
+  const yours = `${id} 'quiet one' is yours, from boss. Read it and follow its objective.`;
+  assert.deepEqual(await said(), [['mem', yours], ['cap', yours], ['cap', `${id} changed: title (by boss).`]]);
 });
 
 test('one notice per person per command: several items, or one reached twice, is one message', async () => {
@@ -364,13 +366,13 @@ test('a hand-in is with the lead until on dev after the last hand-in; a checkout
   assert.equal(await stage(desk.id), 'lead', 'a new hand-in waits for its own promotion');
 });
 
-test('project management is read from the Agent\'s behaviours; a hand-in never needs an item under it (w415)', async () => {
-  const { projectManagementOn } = await import('../src/agent-composition.js');
+test('project management is read from what the Agent\'s brief told it; a hand-in never needs an item under it (w415)', async () => {
+  const { projectManagementOn } = await import('../src/agent-configuration.js');
   const { sessionDir } = await import('../src/session-dir.js');
   for (const [name, books] of [['pm_on', ['base-agent', 'project-management']], ['pm_off', ['base-agent']]] as const) {
     const dir = sessionDir(name);
     await fs.mkdir(dir, { recursive: true });
-    await fs.writeFile(path.join(dir, 'birth-receipt.json'), JSON.stringify({ behaviours: books.map((book) => ({ book, file: `/x/${book}.md` })) }));
+    await fs.writeFile(path.join(dir, 'brief-told.json'), JSON.stringify({ told: Object.fromEntries(books.map((book) => [book, { kind: 'behaviours', depth: 'full', title: book }])) }));
   }
   assert.equal(await projectManagementOn('pm_on'), true);
   assert.equal(await projectManagementOn('pm_off'), false);
@@ -432,7 +434,9 @@ test('a move to Done tells the Agent that handed it in, once; not the Team\'s le
   await quiet();
   const accept = await call('POST', `/api/work-items/${item.id}/transition`, { status: 'Done', by: 'owner' });
   assert.equal(accept.status, 200);
-  assert.deepEqual(await said(), [['mem', `${item.id} 'to be accepted' is Done (accepted by owner).`]], 'once, though it handed in twice and watches it; cap is not told');
+  const told = await said();
+  assert.deepEqual(told.map(([to]) => to), ['mem'], 'once, though it handed in twice and watches it; cap is not told');
+  assert.match(told[0]![1], new RegExp(`^${item.id} 'to be accepted' is Done \\(accepted by owner\\)\\. You still hold .*\\(In Review\\)`), 'it names what mem still holds');
   assert.deepEqual(accept.data.notified, ['mem']);
   await items.watchItem(item.id, mem, false);
   // Handed in by an Agent that has since ended: nobody is told.
@@ -460,7 +464,8 @@ test('notice 6 by Done\'s name: on a space that lists Done second, a move to In 
     await items.editItem(item.id, { status: 'In Progress' }, 'owner');
     await quiet();
     await items.editItem(item.id, { status: 'In Review' }, 'owner');
-    assert.deepEqual(await said(), [], 'In Review is not Done');
+    assert.deepEqual(await said(), [['mem', `${item.id}: status In Progress → In Review by owner.`]], 'In Review is not Done');
+    await quiet();
     await items.editItem(item.id, { status: 'Done' }, 'owner');
     assert.deepEqual((await said()).map(([to]) => to), ['mem']);
   } finally { items.setSpaceNames('jorder6', null); }
@@ -481,10 +486,24 @@ test('a hand-in keeps the holder; Send back goes to the holder, who hears it; Do
   await items.handInItem(item.id, 'mem', { desk: true, receipts: ['k2'] });
   await quiet();
   await call('POST', `/api/work-items/${item.id}/transition`, { status: 'Done', by: 'owner' });
-  assert.deepEqual(await said(), [['mem', `${item.id} 'kept work' is Done (accepted by owner).`]], 'the holder is told once');
+  assert.deepEqual((await said()).map(([to, text]) => [to, text.split('. You still hold ')[0]]), [['mem', `${item.id} 'kept work' is Done (accepted by owner)`]], 'the holder is told once');
   assert.deepEqual(await holding(item.id), ['agent:mem'], 'Done stays on its list until the archive');
 });
 
+test('Done with nothing else open tells the Agent to end now; a handover to an Agent tells it the item is its', async () => {
+  await seedTegami('solo');
+  await live(['cap', 'mem', 'solo']);
+  try {
+    const { item } = await items.createItem({ title: 'last one', parent: epic.id, holder: { kind: 'agent', name: 'solo' } }, 'boss');
+    await quiet();
+    await call('POST', `/api/work-items/${item.id}/transition`, { status: 'Done', by: 'owner' });
+    assert.deepEqual(await said(), [['solo', `${item.id} 'last one' is Done (accepted by owner). End now with session_end: it archives you; your lead can restore you within 7 days.`]]);
+    const next = (await items.createItem({ title: 'passed on', parent: epic.id, holder: mem }, 'boss')).item;
+    await quiet();
+    await call('POST', `/api/work-items/${next.id}/handover`, { session: 'solo', note: 'half done; finish the tests', by: 'mem' });
+    assert.deepEqual(await said(), [['solo', `${next.id} 'passed on' is yours, from mem. Read it and follow its objective.`]]);
+  } finally { await live(['cap', 'mem']); }
+});
 
 /* THE LIVE INDEX (w418): every write kept it, so a rebuild from the files finds the same rows. */
 test('the live index rebuilt from the item files and holds lists equals the one the writes kept', async () => {

@@ -21,7 +21,9 @@ test('Campaign Installations is the shared stone surface: Ronin Services, then t
   assert.match(source, /installationControls: controls/);
   assert.match(source, /installation\.effect === 'provider'/);
   assert.match(source, /saveCampaign\(row\.id, \{ config: \{ installations \} \}\)/);
-  assert.match(source, /saveCampaign\(row\.id, \{ config: \{ defaults \} \}\)/);
+  // Default for all Agents puts the part's behaviours on the Campaign's brief add list (docs/architecture/brief.md, Layers and brief settings).
+  assert.match(source, /request\(url, \{ method: 'PUT', json: \{ brief: \{ \.\.\.brief, add \} \} \}\)/);
+  assert.doesNotMatch(source, /config: \{ defaults \}/);
   assert.doesNotMatch(source, /shape: 'square'|shape_all|answer === 'all'/);
   // A collection surface opens showing its collection: forcing Ronin Services open put the
   // surface straight into operation mode, which is the one view the header zone is not in.

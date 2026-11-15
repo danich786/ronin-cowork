@@ -2,8 +2,7 @@
 
 Use the plain words below with the owner; **Koshi** is the existing UI-name exception.
 [KOTOBA](KOTOBA.md) owns meanings; the lexicon owns displayed words. Tools execute;
-capabilities teach; behaviors guide; skills adapt; UIs call. Services capabilities select
-runtime parts, while Agent capabilities teach tools (`docs/architecture/tool-surface.md`).
+behaviours guide; facts inform; skills adapt; UIs call (`docs/architecture/brief.md`).
 
 ## The names
 
@@ -56,7 +55,7 @@ runtime parts, while Agent capabilities teach tools (`docs/architecture/tool-sur
 | `team_lead` | **team lead · 人** | Set by hand, never inferred from what a session does. |
 | `session_type` | **session type** | **Cowork Agent** with its resolved Agent composition · **bare-metal Agent** a CLI started without it · **terminal** a shell with no agent. |
 | `session_mandate` | **mandate** | **Reach** how far an Agent goes · **Recruit** how it builds a Team · **Output** what it hands back. |
-| instruction cascade | **installation** · **behaviour** | Installations enable; behaviors guide (floor, conditional, selected, sought). Mandate teaching is floor. |
+| `brief` | **brief** | What an Agent is told: facts, behaviours and tools at a depth, from its work record. Installations enable; behaviours guide. |
 | `message_queue` | **message queue** | Messages waiting to enter a live session. |
 | `project_root` | **workspace folder** | A repository or folder Ronin knows by name; a Workspace picks the ones its Agents use. |
 | `workspace` (record) | **Workspace** | A project: objective, instructions, repositories, folders and Mode. Every Team works in one. |

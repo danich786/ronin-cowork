@@ -35,6 +35,18 @@ async function fixture(
         res.end(JSON.stringify({ providers: [{ id: facts.cli, installed: true, signed_in: true, activated: true }] }));
         return;
       }
+      if (req.method === 'GET' && req.url === '/api/brief/catalog') {
+        res.end(JSON.stringify([
+          { name: 'base-agent', mandate: '', value: '' },
+          { name: 'reach-open', mandate: 'reach', value: 'open' },
+          { name: 'reach-review', mandate: 'reach', value: 'review' },
+          { name: 'recruit-propose-agents', mandate: 'recruit', value: 'propose agents' },
+          { name: 'recruit-nobody', mandate: 'recruit', value: 'nobody' },
+          { name: 'output-a-plan', mandate: 'output', value: 'a plan' },
+          { name: 'output-code', mandate: 'output', value: 'code' },
+        ]));
+        return;
+      }
       if (req.method === 'GET' && req.url === '/api/launch-seed') {
         const facts = modelFacts ?? { provider: 'fixture-provider', cli: 'fixture-cli', model: `fixture-model-${process.pid}` };
         res.end(JSON.stringify({ seeds: { provider: { value: facts.provider, stated_by: [{ source: 'fixture Campaign default' }] }, model: { value: facts.model, stated_by: [{ source: 'fixture Campaign default' }] } } }));
@@ -109,8 +121,9 @@ test('creation help renders exact launch ids, availability, and Campaign default
   assert.match(result.output, new RegExp(`${facts.model} \\(Friendly Fixture\\) · fixture-tier — available`));
   assert.match(result.output, new RegExp(`Current launch default: ${facts.provider}/${facts.model} — fixture Campaign default`));
   assert.doesNotMatch(result.output, /--root|--project|--lead/);
+  assert.match(result.output, /\n--reach open\|review\n--recruit "propose agents"\|nobody\n--output takes several, comma-separated: a plan, code\.\n/, 'the mandate values are the files, in order');
   assert.deepEqual(f.requests.map(({ method, url }) => `${method} ${url}`), [
-    'GET /api/provider-catalog', 'GET /api/setup/runtime', 'GET /api/launch-seed',
+    'GET /api/provider-catalog', 'GET /api/setup/runtime', 'GET /api/launch-seed', 'GET /api/brief/catalog',
   ]);
 });
 

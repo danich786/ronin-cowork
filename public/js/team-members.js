@@ -66,7 +66,8 @@ export const buildTeamMembers = (name, options = {}) => {
     const identity = el('div', 'league-team-member-identity');
     const mark = el('span', 'league-team-member-mark'); mark.setAttribute('aria-hidden', 'true');
     const title = el('strong', 'league-team-member-title');
-    identity.append(mark, title);
+    const flag = el('span', 'league-team-member-flag', '⚑'); flag.hidden = true;
+    identity.append(mark, title, flag);
     const status = el('div', 'league-team-member-reading');
     let shown = '';
     const paintHead = () => {
@@ -77,10 +78,13 @@ export const buildTeamMembers = (name, options = {}) => {
         ['league-team-member-ctx', reading.ctx],
         ['league-team-member-model', reading.model],
       ].filter(([, value]) => value);
-      const now = JSON.stringify([member.team_lead, agentTitle(member), spans]);
+      const now = JSON.stringify([member.team_lead, agentTitle(member), spans, !!reading.flagged]);
       if (now === shown) return;
       shown = now;
+      // A flagged Agent (KAN-521): ⚑ and the flagged amber on its row.
       mark.textContent = member.team_lead ? '人' : '';
+      flag.hidden = !reading.flagged;
+      row.classList.toggle('flagged', !!reading.flagged);
       title.textContent = agentTitle(member);
       status.replaceChildren(...spans.map(([className, value]) => el('span', className, value)));
       lead.el.textContent = member.team_lead ? t('league.team_lead', 'Team Lead') : t('league.make_team_lead', 'Make Lead');

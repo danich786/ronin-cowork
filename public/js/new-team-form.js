@@ -4,19 +4,17 @@ import { S } from './state.js';
 import { t } from './lexicon.js';
 import { ask } from './ask.js';
 import { ruledRows } from './glyphs.js';
+import { screenOf, setMandates } from './mandates.js';
 import { finalizeTeamName, isValidTeamName, sanitizeTeamName } from './new-team-draft.js';
 import { conflictingAgentNames } from './new-team-check.js';
 import { agentPicks, agentRow, createAgentRows } from './team-agents.js';
 import { openLaunchHandoff } from './launch-handoff.js';
 import { launchTeamAgents } from './team-loader.js';
 import {
-  createStep, el, loadProviderCatalog, mandateWord, providerCatalog, readingRows, tagRow, templateTray,
+  createStep, el, loadProviderCatalog, providerCatalog, readingRows, tagRow, templateTray,
 } from './form-steps.js';
 import { closeWorkspaceTab, reserveWorkspaceTab } from './workspace.js';
 
-const REACH = ['open', 'discuss', 'plan', 'execute'];
-const RECRUIT = ['open', 'nobody', 'propose agents', 'staff agents'];
-const OUTPUT = ['open', 'a plan', 'ideas', 'code', 'an artifact', 'the team', 'no code'];
 const KINDS = ['coding', 'work', 'personal', 'household', 'social', 'school'];
 
 export function createNewTeamFormView(kit, { created = null, consumed = null, embedded = false } = {}) {
@@ -45,6 +43,8 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
     for (const row of draft.agents) if (row.team_lead && row.name === was) row.name = now;
     agents.paint();
   };
+  let screen = {};          // what the layers in play take off the mandate menus
+  const rescreen = async () => { screen = await screenOf(draft.workspace ? { workspace: draft.workspace } : {}); };
   let seed = null;          // the campaign's answers, once the door has spoken
   let templates = [];
   let workspaces = [];
@@ -74,7 +74,9 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
 
   const templateRow = () => templates.find((row) => row.name === draft.template) || null;
   const offered = () => (draft.kind === 'open' ? templates : templates.filter((row) => row.kinds.includes(draft.kind)));
-  const availableBehaviours = () => (seed?.behaviours || []).filter((row) => row.available === true);
+  // The behaviours a Team may add: the catalog's optional ones (depth none), docs/architecture/brief.md, Layers and brief settings.
+  let catalog = [];
+  const availableBehaviours = () => catalog.filter((row) => row.kind === 'behaviour' && !row.mandate && row.depth === 'none');
   // The provider the next Agent defaults to (Models > Defaults): which launch modes it offers.
 
   /** What a template authors, as one string — the dirty test compares against it. */
@@ -94,7 +96,7 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
     if (!row) {
       draft.objective = '';
       objectiveInput.value = '';
-      draft.books = [...(seed?.seeds?.behaviours?.value || [])].filter((name) => (seed?.available || []).includes(name));
+      draft.books = []; // the Campaign's own add list reaches the Team by itself; nothing is copied
       draft.agents = seededAgents(draft.name);
       for (const key of ['reach', 'recruit']) draft[key] = seed?.seeds?.[key]?.value || 'open';
       draft.output = [seed?.seeds?.output?.value || 'open'].flat().filter(Boolean);
@@ -234,7 +236,7 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
     value: { workspace: draft.workspace },
     className: 'ntf-where-questions',
     density: 'tight',
-    onChange: (value) => { draft.workspace = value.workspace; paintFoot(); },
+    onChange: (value) => { draft.workspace = value.workspace; paintFoot(); void rescreen(); },
   });
   stepTop.body.append(whereQuestions.el);
   function paintRoots() { whereQuestions.set('workspace', draft.workspace); }
@@ -260,7 +262,7 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
     const signature = JSON.stringify([availableBehaviours().map((row) => row.name)]);
     if (signature !== kitSignature) {
       kitQuestions?.destroy();
-      const shelfRows = (rows) => rows.filter((row) => !row.installation).map((row) => ({ v: row.name, l: row.label || row.name, sub: row.blurb || '', read: row.reading, view: { name: row.name, scope: row.scope || 'selected' } }));
+      const shelfRows = (rows) => rows.map((row) => ({ v: row.name, l: row.title || row.name, sub: row.seed || '', ...(row.path ? { read: row.path } : {}) }));
       kitQuestions = ask([
         { group: t('behaviours', 'Behaviours'), fields: [{
           key: 'books', label: t('behaviours', 'Behaviours'), many: true, shape: 'tall', options: shelfRows(availableBehaviours()),
@@ -292,6 +294,7 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
     createAction, createActionBar,
     changed: () => paintFoot(),
     onToggle: () => toggle('lead'),
+    screen: () => screen,
   });
   const stepLead = agents.step;
 
@@ -376,7 +379,7 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
     kind: draft.kind,
     objective: draft.objective.trim(),
     workspace: draft.workspace,
-    behaviours: { selected: [...draft.books], required: [] },
+    brief: { add: draft.books.map((name) => ({ name, depth: 'full' })), block: [], only: [] },
     agent_defaults: {
       reach: draft.reach, recruit: draft.recruit, output: draft.output,
     },
@@ -506,7 +509,7 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
       if (value(key)) draft[key] = value(key);
     }
     if (value('output')) draft.output = [value('output')].flat().filter(Boolean);
-    draft.books = Array.isArray(value('behaviours')) ? [...value('behaviours')] : [];
+    draft.books = [];
     paintRoots();
   }
 
@@ -553,7 +556,7 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
     el: embedded ? surface.content : surface.el,
     enter: async (detail = {}) => {
       paint();
-      const [seeded, tray, workspaceRows] = await Promise.all([
+      const [seeded, tray, workspaceRows, , catalogRows] = await Promise.all([
         request('/api/launch-seed'),
         request('/api/templates/teams'),
         request('/api/workspaces'),
@@ -561,10 +564,14 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
         // here so a fresh New Team journey does not depend on another launch surface
         // having happened to populate the module cache first.
         loadProviderCatalog(),
+        request('/api/brief/catalog'),
       ]);
+      catalog = catalogRows?.ok && Array.isArray(catalogRows.data) ? catalogRows.data : [];
+      setMandates(catalog); // the mandate menus are the catalog's mandate files
       templates = tray.ok && Array.isArray(tray.data) ? tray.data : [];
       workspaces = workspaceRows.ok && Array.isArray(workspaceRows.data?.workspaces) ? workspaceRows.data.workspaces : [];
       if (!draft.workspace && workspaces.length === 1) draft.workspace = workspaces[0].name;
+      await rescreen();
       if (seeded.ok) seed = seeded.data;
       // The seed lands only while the form is untouched — re-entering an open draft
       // must not overwrite the owner's hand.

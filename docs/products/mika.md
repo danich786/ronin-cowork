@@ -7,7 +7,7 @@ Ronin Home opens her beside the guides, on her Chat reading rather than her term
 needs Ronin Services' transcripts, and without them her tile opens on the terminal.
 
 Mika runs as an Agent session on the Steerco team, kept at the foot of the roster, using an
-available provider. Provider availability and the
+available provider, or the launch an installed Services part chooses for her. Provider availability and the
 installed capability determine whether it can start; a Help entry alone is not proof that
 all prerequisites are ready.
 
@@ -26,7 +26,7 @@ Mika's brief is `ronin_catalogs/behaviours/conditional/mika.md`, stacked on the 
 Agent gets; her Setup walkthrough and tips are reading on `ronin_session_boot/routine/mika/`.
 An owner copy of `routine/mika/MIKA_TIPS.md` under the resolved `session_boot` store can add
 guidance for the next Mika session. Ask an Agent to follow the
-[session-reading rules](../architecture/session-boot.md); do not edit the installed stock
+[the brief](../architecture/brief.md); do not edit the installed stock
 file or expect a running session to reread it automatically.
 
 Contributors: [Mika capability](../../ronin_catalogs/capabilities/mika.md),

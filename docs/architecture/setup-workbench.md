@@ -225,8 +225,12 @@ Origin read access is the separate **Check access** step. More in [Workspace Fol
 **Authenticate GitHub** follows three measured steps: **Install**, **Authenticate**, and
 **Ready**. If `gh` is absent, one Install button opens a visible temporary provider-style
 terminal and runs the supported package-manager path for this macOS or Linux machine; the
-owner can see its output and answer a system privilege prompt. Authenticate then opens the
-GitHub login window. A connected account is named and offers **Remove authentication**;
+owner can see its output and answer a system privilege prompt. Authenticate then offers two
+paths: **Use GitHub CLI with Mika** opens the native `setup_github` terminal while Mika reads
+that session in the opposite tilespace and guides the owner; **Let Mika connect GitHub** puts
+Mika in the current tilespace to run the CLI herself. Both use GitHub's browser/device flow,
+so a headless machine shows a code that the owner approves in a browser elsewhere. A connected
+account is named and offers **Remove authentication**;
 removal deletes that account's saved GitHub CLI login from this machine but does not revoke
 the account's GitHub tokens.
 

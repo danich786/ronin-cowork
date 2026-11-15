@@ -3978,6 +3978,9 @@ body {
   margin-top: var(--space-row);
 }
 .work-record .wr-context p { color: var(--fg); }
+.work-record .wr-record-row { color: var(--fg); overflow-wrap: anywhere; }
+.work-record .wr-record-row + .wr-record-row { margin-top: var(--space-row); }
+.work-record .wr-record-key { color: var(--muted); }
 .work-record .wr-context p + p { margin-top: var(--space-row); }
 .work-record .wr-context span {
   color: var(--muted);
@@ -4007,10 +4010,14 @@ body {
 .work-record .wr-item + .wr-item { margin-top: var(--space-row); }
 .work-record .wr-item .wr-action { color: var(--muted); }
 .work-record .wr-item.flagged .wr-action { color: var(--warn); }
+.work-record .wr-agent-flag { color: var(--warn); }
 .work-record .wr-empty {
   color: var(--muted);
   font-style: italic;
 }
+.work-record .wr-brief summary { color: var(--accent-2); cursor: pointer; }
+.work-record .wr-brief-body { margin-top: var(--space-row); overflow-wrap: anywhere; }
+.work-record .wr-brief-body :is(h1, h2, h3, h4) { margin: var(--space-paragraph) 0 var(--space-row); color: var(--fg-strong); font-size: var(--text-body); font-weight: var(--weight-bold); letter-spacing: normal; text-transform: none; }
 
 .home-record {
   font-family: var(--font-term);

@@ -28,6 +28,7 @@ import {
   stopSessionTree,
 } from '../tmux.js';
 import { enqueueMessage } from '../message-queue.js';
+import { person } from '../office-people.js';
 import { callerOf } from './work-items-api.js';
 import { sessionKey } from '../session-dir.js';
 import { isValidRootName, listProjectRoots } from '../project-roots.js';
@@ -36,9 +37,9 @@ import { count } from '../counts.js';
 import { broadcastEvent, pushTeams } from '../ws/events.js';
 import { announceTeamChanges } from './wipeboards-api.js';
 import { memberEnded, teamChanged, writeConfiguration, writeTeams } from '../tegami.js';
-import { briefPointer } from '../behaviours.js';
 import { readAgentComposition } from '../agent-composition.js';
-import { configurationSends, updateConfiguration } from '../agent-configuration.js';
+import { configurationSends, refreshBrief, updateConfiguration } from '../agent-configuration.js';
+import { agentBriefOf } from '../brief-build.js';
 import { mandate } from '../agent-defaults.js';
 import { emitSessionEnd } from '../sockets.js';
 import { releaseHolder, settleToDo, unfinishedHolds, type WorkItem } from '../work-items.js';
@@ -47,6 +48,7 @@ import { listTeamRosters } from '../team-rosters.js';
 import { assertSameCampaignRoot, assertSameCampaignTeams } from '../campaign-scope.js';
 import { sessionDir as sessionRecordDir } from '../session-dir.js';
 import {
+  expiredArchives,
   listArchives,
   readArchive,
   removeArchive,
@@ -58,14 +60,13 @@ import { ignoreEndingRequest, inspectSessionEnding, promptEnding } from '../desk
 import type { EndingRequest } from '../desks/ending.js';
 import { resolveEndingRequest } from '../desks/ending-response.js';
 import { randomUUID } from 'node:crypto';
-import { hardDeleteConfirmation, shutdownAgent, ShutdownRefused, ShutdownSlots, type ShutdownProgress } from '../desks/session-shutdown.js';
+import { hardDeleteConfirmation, liveOps, shutdownAgent, ShutdownRefused, ShutdownSlots, type ShutdownProgress } from '../desks/session-shutdown.js';
 import { listDesks } from '../desks/registry.js';
+import { parkCarry } from '../machine-park.js';
+import { readOfficeRecord } from '../office-record.js';
 
 interface PreparedEnding { proceed: boolean; acknowledgement?: Record<string, unknown> }
 
-export const teamLeadAcknowledgement = (teams: readonly string[], pointer: string): string =>
-  `You are now the team_lead of ${teams.map((team) => `"${team}"`).join(', ')}. ` +
-  `For what a Team lead does, ${pointer}.`;
 
 interface ShutdownOperation extends ShutdownProgress {
   id: string;
@@ -138,10 +139,92 @@ const refusedBody = (e: ShutdownRefused) => ({
 const UI_ANYWAY = 'close anyway in the confirm';
 const ignoringItems = (req: express.Request): boolean => req.body?.ignore_items === true;
 
-/** The ending Agent's holds are released and its leads' members lists drop it; an end never fails on either. */
-async function releaseHolds(name: string, key: string, how: string): Promise<void> {
-  await releaseHolder(name, key, how).catch((e) => console.error(`[ronin] releasing ${name}'s work items:`, e));
-  await memberEnded(name).catch(() => {});
+/** The ending Agent's holds are released and its leads' members lists drop it; an end never fails
+ * on either. An end that archived names the archive and its restore on both lead notices. */
+async function releaseHolds(name: string, key: string, how: string, archived?: ArchivedSession | null): Promise<void> {
+  const restore = archived ? `archived as ${archived.id}: session_restore ${archived.id}` : '';
+  await releaseHolder(name, key, restore ? `${how}, ${restore}` : how).catch((e) => console.error(`[ronin] releasing ${name}'s work items:`, e));
+  await memberEnded(name, restore ? `${name} ended, ${restore}` : '').catch(() => {});
+}
+
+/** THE ONE ARCHIVE (session_archive, the tile's Archive, session_end): write the resumable manifest,
+ * then stop the Agent. Answers the manifest, or null when no exact provider conversation is known;
+ * then nothing is written and nothing is stopped. Holds are the caller's (releaseHolds). */
+async function archiveAgent(name: string): Promise<ArchivedSession | null> {
+  const provider = await archiveProvider(name);
+  return 'error' in provider ? null : archiveWith(name, provider);
+}
+
+/** The exact provider conversation an archive will resume, or why there is none. A park asks
+ * this of every Agent before any is stopped. */
+async function archiveProvider(name: string): Promise<{ agent: string; id: string } | { error: string }> {
+  const key = await sessionKey(name);
+  const runtime = await sessionRuntime(name);
+  const launchIdentity = await readLaunchIdentity(key);
+  if (launchIdentity) await resolveLaunchJournal(launchIdentity);
+  const provider = launchIdentity
+    ? (launchIdentity.providerSession ? { agent: launchIdentity.cli, id: launchIdentity.providerSession } : null)
+    : await providerSessionInfo(runtime.agent, runtime.cwd, runtime.pid, await getProviderSessionId(name));
+  return provider ?? { error: `Could not identify a resumable ${runtime.agent || 'agent'} conversation.` };
+}
+
+/** The archive step itself, for a known provider conversation: manifest first, then stop. */
+async function archiveWith(name: string, provider: { agent: string; id: string }): Promise<ArchivedSession> {
+  const key = await sessionKey(name);
+  const runtime = await sessionRuntime(name);
+  const archived: ArchivedSession = {
+    version: 1, id: key, name, key, archived_at: new Date().toISOString(), cwd: runtime.cwd,
+    identity: (await listSessions()).find((s) => s.name === name)?.identity,
+    agent: provider.agent, provider_session_id: provider.id, tags: await getTags(name), leads: await getLeads(name),
+    wipeboards: await getWipeboards(name), project_root: await getProjectRoot(name),
+  };
+  await writeArchive(archived);
+  try { await stopSessionTree(name); }
+  catch (e) {
+    if (await sessionExists(name)) await removeArchive(archived.id).catch(() => {});
+    throw e;
+  }
+  void expireArchives();
+  return archived;
+}
+
+/** An archive's Hard Delete: the end is told, holds released, the retained session folder and the
+ * manifest removed. Expiry removes an archive the same way. */
+async function deleteArchived(archived: ArchivedSession): Promise<void> {
+  emitSessionEnd(archived.name, archived.key);
+  await releaseHolds(archived.name, archived.key, 'hard deleted');
+  await fs.promises.rm(sessionRecordDir(archived.key), { recursive: true, force: true });
+  await removeArchive(archived.id);
+}
+
+/** Remove every archive older than ARCHIVE_DAYS (src/session-archive.ts). Never throws. */
+export async function expireArchives(now = Date.now()): Promise<string[]> {
+  const removed: string[] = [];
+  try {
+    for (const archived of expiredArchives(await listArchives(), now)) {
+      try { await deleteArchived(archived); removed.push(archived.id); }
+      catch (e) { console.error(`[archive] expiring ${archived.id}:`, e); }
+    }
+  } catch (e) { console.error('[archive] expiry failed:', e); }
+  if (removed.length) console.log(`[archive] removed ${removed.length} expired archive(s)`);
+  return removed;
+}
+
+/** An Agent's own end (session_end, and so Done on its last item): its desks close as a Delete's do,
+ * then it is archived, so session_restore brings it back. Only a conversation Ronin cannot resume
+ * ends outright. Its holds go to the Team as any ending's do; a restored Agent takes back what it wants. */
+async function performAgentEnd(name: string): Promise<{ closed: string[]; archived: ArchivedSession | null }> {
+  const key = await sessionKey(name);
+  const end: { archived: ArchivedSession | null } = { archived: null };
+  const result = await shutdownAgent(name, () => {}, {
+    ...liveOps,
+    stop: async (session, signal) => { end.archived = await archiveAgent(session); if (!end.archived) await liveOps.stop(session, signal); },
+  }, { operationTimeoutMs: 25_000, readTimeoutMs: 5_000, closeTimeoutMs: 15_000, stopTimeoutMs: 10_000 });
+  const { archived } = end;
+  if (!archived) emitSessionEnd(name, key); // archive keeps the tape and the folder
+  await releaseHolds(name, key, 'session ended', archived);
+  count('ended', { name, end: archived ? 'archived' : 'harakiri' });
+  return { closed: result.closed, archived };
 }
 
 async function performAgentShutdown(name: string, progress: (value: ShutdownProgress) => void): Promise<string[]> {
@@ -214,14 +297,13 @@ export function registerSessions(app: express.Express): void {
     const { name } = req.params;
     if (!isValidName(name)) return res.status(400).json({ error: 'Invalid name.' });
     if (!(await sessionExists(name))) return res.status(404).json({ error: 'No such session.' });
-    const behaviours = Array.isArray(req.body?.behaviours) ? req.body.behaviours.map((row: unknown) => String(row ?? '').trim()).filter(Boolean) : [];
     const role = ['coworker', 'lead', 'epic_lead', 'coordinator'].includes(req.body?.role) ? req.body.role : 'coworker';
     const team = String(req.body?.team ?? '').trim();
     const validTeams = new Set((await listTeamRosters()).filter((row) => row.state !== 'archived').map((row) => row.name));
     if (team && !validTeams.has(team)) return res.status(400).json({ error: `Unknown Team: ${team}.` });
     try { res.json({ ok: true, queued: true, ...await updateConfiguration(name, {
       objective: String(req.body?.objective ?? ''), title: String(req.body?.title ?? ''), role, team,
-      mandate: mandate(req.body?.mandate), behaviours, by: callerOf(req),
+      mandate: mandate(req.body?.mandate), agent: agentBriefOf(req.body), by: callerOf(req),
     }) }); }
     catch (e) { res.status(500).json({ error: String((e as Error)?.message ?? e) }); }
   });
@@ -245,28 +327,38 @@ export function registerSessions(app: express.Express): void {
       const prepared = await prepareSessionEnding(req, res, name, 'archive');
       if (!prepared.proceed) return;
       const key = await sessionKey(name);
-      const runtime = await sessionRuntime(name);
-      const launchIdentity = await readLaunchIdentity(key);
-      if (launchIdentity) await resolveLaunchJournal(launchIdentity);
-      const provider = launchIdentity
-        ? (launchIdentity.providerSession ? { agent: launchIdentity.cli, id: launchIdentity.providerSession } : null)
-        : await providerSessionInfo(runtime.agent, runtime.cwd, runtime.pid, await getProviderSessionId(name));
-      if (!provider) return res.status(409).json({ error: `Could not identify a resumable ${runtime.agent || 'agent'} conversation.` });
-      const archived: ArchivedSession = {
-        version: 1, id: key, name, key, archived_at: new Date().toISOString(), cwd: runtime.cwd,
-        identity: (await listSessions()).find((s) => s.name === name)?.identity,
-        agent: provider.agent, provider_session_id: provider.id, tags: await getTags(name), leads: await getLeads(name),
-        wipeboards: await getWipeboards(name), project_root: await getProjectRoot(name),
-      };
-      await writeArchive(archived);
-      try { await stopSessionTree(name); }
-      catch (e) {
-        if (await sessionExists(name)) await removeArchive(archived.id).catch(() => {});
-        throw e;
-      }
-      await releaseHolds(name, key, 'archived');
+      const archived = await archiveAgent(name);
+      if (!archived) return res.status(409).json({ error: `Could not identify a resumable ${(await sessionRuntime(name)).agent || 'agent'} conversation.` });
+      await releaseHolds(name, key, 'archived', archived);
       count('ended', { name, end: 'archived' });
       res.json({ ok: true, archived: publicArchive(archived), ...(prepared.acknowledgement ? { worktree_acknowledgement: prepared.acknowledgement } : {}) });
+    } catch (e) {
+      res.status(500).json({ error: String((e as Error)?.message ?? e) });
+    }
+  });
+
+  // PARK: archive every Agent at once, for bin/ronin-archive (docs/operating/park.md, KAN-502).
+  // The whole office travels, so nothing is handed back: no desk or item refusal, holds stay
+  // with their Agent, no Team is told. Every Agent is identified before any is stopped — one
+  // that cannot be resumed refuses the park with the office untouched.
+  app.post('/api/machine/park', async (_req, res) => {
+    try {
+      const names = (await listSessions()).filter((s) => s.agent).map((s) => s.name);
+      const providers = await Promise.all(names.map(async (name) => ({ name, provider: await archiveProvider(name) })));
+      const refused = providers.flatMap(({ name, provider }) => 'error' in provider ? [`${name}: ${provider.error}`] : []);
+      if (refused.length) return res.status(409).json({ error: `Not parked — no Agent was stopped. ${refused.join(' ')}` });
+      const archived: ArchivedSession[] = [];
+      for (const { name, provider } of providers) {
+        archived.push(await archiveWith(name, provider as { agent: string; id: string }));
+        count('ended', { name, end: 'parked' });
+      }
+      const office = await readOfficeRecord();
+      res.json({
+        ok: true,
+        office_id: office.hosting === 'office_unit' ? office.record.office_id : '',
+        agents: archived.map(({ id, name, agent }) => ({ id, name, agent })),
+        ...await parkCarry(archived),
+      });
     } catch (e) {
       res.status(500).json({ error: String((e as Error)?.message ?? e) });
     }
@@ -310,10 +402,7 @@ export function registerSessions(app: express.Express): void {
       const archived = await readArchive(req.params.id);
       const prepared = await prepareSessionEnding(req, res, archived.name, 'hard_delete');
       if (!prepared.proceed) return;
-      emitSessionEnd(archived.name, archived.key);
-      await releaseHolds(archived.name, archived.key, 'hard deleted');
-      await fs.promises.rm(sessionRecordDir(archived.key), { recursive: true, force: true });
-      await removeArchive(archived.id);
+      await deleteArchived(archived);
       res.json({ ok: true, ...(prepared.acknowledgement ? { worktree_acknowledgement: prepared.acknowledgement } : {}) });
     } catch (e) {
       const code = (e as NodeJS.ErrnoException)?.code;
@@ -434,9 +523,9 @@ export function registerSessions(app: express.Express): void {
       await settleToDo(name);
       const items = ignoringItems(req) ? null : await heldItemsRefusal(name, 'session_end --ignore-items', true);
       if (items) throw items;
-      const closed = await performAgentShutdown(name, () => {});
-      res.json({ ok: true, session: name, closed });
-      console.log(`[ronin] harakiri: ${name} (pane ${pane}); closed ${closed.length} desk(s)`);
+      const { closed, archived } = await performAgentEnd(name);
+      res.json({ ok: true, session: name, closed, ...(archived ? { archived: publicArchive(archived) } : {}) });
+      console.log(`[ronin] harakiri: ${name} (pane ${pane}); closed ${closed.length} desk(s); ${archived ? `archived as ${archived.id}` : 'not resumable, ended'}`);
     } catch (e) {
       if (e instanceof ShutdownRefused) return res.status(409).json(refusedBody(e));
       const error = String((e as Error)?.message ?? e);
@@ -544,12 +633,8 @@ export function registerSessions(app: express.Express): void {
       const leads = await setLeads(name, wanted);
       await teamChanged([...moved(tagsBefore, tags), ...moved(before, leads)], callerOf(req), name).catch(() => {});
       count('lead.set', { n: leads.length });
-      const fresh = leads.filter((t) => !before.includes(t));
-      let delivered: string | null = null;
-      if (fresh.length) {
-        const msg = teamLeadAcknowledgement(fresh, await briefPointer('team-lead'));
-        delivered = await enqueueMessage(name, msg, 'house').then(() => 'queued', () => 'not queued');
-      }
+      // Made lead (or no longer): the brief says so, and sends only what changed.
+      const delivered = await refreshBrief(name).then((r) => r.sent ? 'queued' : null, () => 'not queued');
       res.json({ ok: true, team_lead: leads, tags, delivery: delivered });
     } catch (e) {
       res.status(500).json({ error: String((e as Error)?.message ?? e) });
@@ -564,7 +649,7 @@ export function registerSessions(app: express.Express): void {
     try {
       const expanded = await expandLookup(raw);
       const text = expanded ?? raw;
-      const item = await enqueueMessage(name, text, 'owner');
+      const item = await enqueueMessage(name, text, 'owner', undefined, person(req));
       res.json({ ok: true, expanded: expanded != null, queued: true, started: false, message: item });
     } catch (e) {
       res.status(500).json({ error: String((e as Error)?.message ?? e) });

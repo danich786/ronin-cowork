@@ -1,6 +1,9 @@
 
 @layer app {
   .tw-config[hidden] { display: none; }
+  .tw-view > .wk-workbench-host[hidden] { display: none; }
+  .tw-gone { margin: var(--space-paragraph); align-self: start; }
+  .tw-gone .wk-surface-content { display: grid; gap: var(--space-paragraph); padding: var(--space-inset); }
 
   .tw-terminal[data-drop-ready='true'] { outline: var(--edge-2) solid var(--kaki); outline-offset: calc(-1 * var(--edge-2)); }
 
@@ -61,6 +64,9 @@
   .league-team-agent:hover { background: var(--surface); }
   .league-team-agent-name { grid-column: 2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .league-team-agent-lead { margin-inline-end: var(--space-inline); color: var(--accent); }
+  /* A FLAGGED AGENT (KAN-521): ⚑ and the amber the roster chip uses for a flagged item. */
+  .league-team-agent-flag, .league-team-member-flag { margin-inline-end: var(--space-inline); color: var(--warn); }
+  .league-team-agent.flagged .league-team-agent-name, .league-team-member.flagged .league-team-member-title { color: var(--warn); }
   .league-team-agent-holds { margin-inline-start: var(--space-inline); color: var(--muted); }
   .league-team-roster, .league-team-config { flex: 0 0 auto; }
   .league-team-roster { display: flex; flex-direction: column; min-height: 0; }

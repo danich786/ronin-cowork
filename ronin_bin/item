@@ -42,6 +42,10 @@ move still goes and the reply prompts for it; --note again on an item In Review 
 handover is how an ending Agent hands an item on: the note becomes a comment headed "Handover
 from <you>", you come off, the receiver goes on, the status stays (--to-do puts it back to To
 Do). Can't decide? --flag "<the question>": it is flagged and your lead is told.
+flag asks for a reason, quoted ("<who>: <what you need>"); it becomes the comment "Flagged:
+<why>". Without one the flag still goes on, and the reply asks you to add it as that comment.
+The Agents holding the item show the flag on their pill. unflag takes an optional comment.
+Flagged items: Epics, filtered by Flagged.
 handoff takes the giver off and the receiver on. The giver is you, with any Team of yours
 that holds the item and any Team of the receiver's that holds it; --from names it instead.
 --keep-holding, the rare case, keeps the giver on too. Any other holder stays: a second Agent

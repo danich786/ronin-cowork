@@ -454,15 +454,30 @@
   /* Behaviors library/viewer — the shared stone surface supplies responsive geometry. */
   .behaviour-surface .sws-detail { min-width: 0; }
   .behaviour-surface .sws-group { color: var(--kaki); font-weight: var(--weight-strong); }
+  .behaviour-surface .behaviour-settings { display: grid; gap: var(--space-paragraph); padding: 0 var(--space-inset) var(--space-section); }
+  .behaviour-surface .behaviour-settings-head { margin: 0; padding: var(--space-section) var(--space-inset) 0; color: var(--fg-strong); font-size: var(--form-input); font-weight: var(--weight-strong); }
+  .brief-author { display: grid; gap: var(--space-paragraph); }
+  .brief-author-head { margin: 0; color: var(--fg-strong); font-size: var(--form-input); font-weight: var(--weight-strong); }
+  .brief-author-grid { display: flex; flex-wrap: wrap; gap: var(--space-paragraph) var(--space-inline); }
+  .brief-author-field { flex: 1 1 calc(var(--space-section) * 10); min-width: 0; }
+  .brief-author-wide { flex-basis: 100%; }
+  .brief-author-tools { display: grid; gap: var(--space-row); }
   .bh-title { margin: 0; }
   .bh-summary, .bh-meta, .bh-status, .na-behaviour-intro { color: var(--muted); }
   .na-behaviour-sections { display: grid; gap: var(--space-section); }
   .na-behaviour-section { display: grid; gap: var(--space-paragraph); }
   .na-behaviour-note { margin: 0; color: var(--muted); font-size: var(--form-note); }
+  .brief-pm-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-inline); }
+  .brief-pm-name { color: var(--fg-strong); font-size: var(--form-note); }
+  /* A stone fills its row's height, so its View link sits inside it; the why line clears the link. */
+  .na-behaviour-sections .ask[data-exposed='true'] .ask-opt-wrap .ask-rect { height: 100%; }
+  .na-behaviour-sections .ask-rect .ask-word { overflow: visible; white-space: normal; }
+  .na-behaviour-sections .ask-opt-wrap .ask-rect { padding-bottom: var(--space-subsection); }
   .na-behaviour-sections .ask-group-head { color: var(--fg-strong); font-size: var(--form-input); font-weight: var(--weight-strong); }
   .na-behaviour-sections .ask-opt[data-ask-action='true'][data-ask-value='@customize'] { border: var(--edge) dotted var(--kaki); background: var(--surface); color: var(--kaki-lift); gap: var(--space-inline); }
   .na-behaviour-sections .ask-opt[data-ask-action='true'][data-ask-value='@customize']::before { content: '+'; color: var(--kaki); font-size: var(--text-display); line-height: var(--leading-none); }
-  .na-behaviour-readonly .ask-opt[aria-disabled='true'] { opacity: 1; }
+  /* A card that cannot be pressed (on from above, already told in full) reads as it is, not greyed: its second line says why. */
+  .na-behaviour-sections .ask-opt[aria-disabled='true'] { opacity: 1; }
   .bh-actions { margin: var(--space-row) 0; }
   .bh-editor { display: grid; gap: var(--space-row); }
   .bh-field { display: grid; gap: var(--space-row); color: var(--muted); }

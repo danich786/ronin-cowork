@@ -55,9 +55,18 @@ const workspaces = { workspaces: [
 const seedWith = (available) => ({ behaviours: [{ name: 'ronin_host', label: 'Ronin Host' }, { name: 'trello', label: 'Trello' }], available });
 
 const puts = [];
+const briefPuts = [];
+const mandate = (axis, title) => ({ kind: 'behaviour', name: `${axis}-${title.toLowerCase().replace(/ /g, '-')}`, title, seed: `${title}.`, depth: 'seed', when: [], mandate: axis, value: title.toLowerCase() });
+const briefCatalog = [{ kind: 'behaviour', name: 'more-checkpoints', title: 'More checkpoints', seed: 'Check in more often.', depth: 'none', when: [], mandate: '', value: '' },
+  mandate('reach', 'Open'), mandate('reach', 'Plan'), mandate('reach', 'Execute'), mandate('recruit', 'Open'), mandate('recruit', 'Nobody'),
+  mandate('output', 'Open'), mandate('output', 'Code'), mandate('output', 'No code')];
+const teamBrief = { brief: { add: [{ name: 'more-checkpoints', depth: 'seed' }], block: [], only: [] }, integrations: [], inherited: { integrations: {}, pm: { on: false } } };
 const serve = (seed) => {
   globalThis.fetch = async (url, init = {}) => {
-    const body = url.startsWith('/api/launch-seed') ? seed
+    const body = url.startsWith('/api/brief/catalog') ? briefCatalog
+      : url.startsWith('/api/brief/preview') ? { in_play: [], off: ['output-no-code'], integrations: {}, pm: { on: false } }
+      : url.startsWith('/api/brief/settings/team/') ? (init.method === 'PUT' ? (briefPuts.push({ url, body: JSON.parse(init.body) }), { ...JSON.parse(init.body), inherited: teamBrief.inherited }) : teamBrief)
+      : url.startsWith('/api/launch-seed') ? seed
       : url.startsWith('/api/ways') ? ways
         : url.startsWith('/api/provider-catalog') ? catalog
           : url.startsWith('/api/setup/runtime') ? machine
@@ -92,11 +101,23 @@ test('every question is an ERABI stone whose reading is the saved answer', async
   renderTeamConfiguration(host, roster);
   const form = await painted(host);
   assert.deepEqual(form.all('ask-stone').map((node) => node.dataset.askKey), [
-    'kind', 'workspace', 'reach', 'recruit', 'output',
-  ], 'the stones in the tab’s order: Kind on the head line, then the New Agent defaults; no behaviour or Control stone');
+    'kind', 'workspace', 'reach', 'recruit', 'output', 'pm', 'full', 'block', 'only',
+  ], 'the stones in the tab’s order: Kind on the head line, the New Agent defaults, then Behaviors (project management, the added behaviour’s depth, Block, Only); no Control stone');
   assert.equal(readingOf(form, 'workspace'), 'Ronin Workspace', 'the Workspace reads its title');
   assert.equal(readingOf(form, 'kind'), 'Coding');
-  assert.equal(readingOf(form, 'reach'), 'Plan');
+  assert.equal(readingOf(form, 'reach'), 'Plan', 'a value reads its file\'s title');
+});
+
+test('the mandate menus are the catalog\'s mandate files, less what the layers block', async () => {
+  serve(seedWith(['ronin_host']));
+  const host = new FakeNode('div');
+  renderTeamConfiguration(host, roster);
+  const form = await painted(host);
+  const output = form.all('ask-stone').find((node) => node.dataset.askKey === 'output');
+  await output.click();
+  const words = form.all('ask-opt').map((node) => node.textContent);
+  assert.ok(words.some((word) => word.includes('Code')), 'a value from its file');
+  assert.ok(!words.some((word) => word.includes('No code')), 'a blocked value is off the menu');
 });
 
 test('the tab is the launch forms’ format: step 1 Team (ID · Title · Kind, then Purpose), step 2 New Agent defaults', async () => {
@@ -104,7 +125,7 @@ test('the tab is the launch forms’ format: step 1 Team (ID · Title · Kind, t
   const host = new FakeNode('div');
   renderTeamConfiguration(host, roster);
   const form = await painted(host);
-  assert.deepEqual(form.all('fs-step').map((step) => step.one('fs-step-head').textContent), ['Team', 'New Agent defaults'], 'two unnumbered sections inside the Team\u2019s Configuration step; only the outer steps number (owner, 2026-10-20)');
+  assert.deepEqual(form.all('fs-step').map((step) => step.one('fs-step-head').textContent), ['Team', 'New Agent defaults', 'Behaviors'], 'unnumbered sections inside the Team\u2019s Configuration step; only the outer steps number (owner, 2026-10-20); Behaviors is the Team\u2019s brief settings (docs/architecture/brief.md, Where it is set in the UI)');
   const identity = form.one('tw-config-identity');
   assert.ok(identity, 'the identity line exists');
   const labels = identity.all('wk-field-label').map((node) => node.textContent);
@@ -127,17 +148,20 @@ test('the tab is the launch forms’ format: step 1 Team (ID · Title · Kind, t
   }
 });
 
-test('behaviours are not asked here, whatever the seed offers', async () => {
+test('Behaviors is the Team\u2019s brief settings from the server, never the old seed or roster list', async () => {
   serve(seedWith(['ronin_host']));
   const host = new FakeNode('div');
   renderTeamConfiguration(host, roster);
   const form = await painted(host);
-  assert.equal(form.all('ask-group-head').some((node) => /Behaviours/.test(node.textContent)), false);
-  assert.equal(stone(form, 'ronin_host'), null);
+  for (let i = 0; i < 50 && !stone(form, 'add') && !form.all('ask-opt').length; i++) await new Promise((resolve) => setTimeout(resolve, 5));
+  assert.equal(stone(form, 'ronin_host'), null, 'the old seed offer is gone');
   assert.equal(stone(form, 'mandates'), null);
+  const heads = form.all('ask-group-head').map((node) => node.textContent);
+  for (const head of ['Integrations', 'Add', 'Block', 'Only']) assert.ok(heads.includes(head), `${head} is asked`);
+  assert.ok(stone(form, 'pm'), 'project management is its switch, beside its words');
 });
 
-test('Save leaves behaviours untouched and carries agent defaults without permissions', async () => {
+test('Save writes the brief settings and carries agent defaults without permissions', async () => {
   serve(seedWith(['ronin_host']));
   puts.length = 0;
   const host = new FakeNode('div');
@@ -152,7 +176,9 @@ test('Save leaves behaviours untouched and carries agent defaults without permis
   assert.equal(body.kind, 'coding');
   assert.equal(body.workspace, 'ronin_ws');
   assert.equal('references' in body, false, 'references is not sent');
-  assert.equal('behaviours' in body, false, 'behaviours are not sent, so the store carries them');
+  assert.equal('behaviours' in body, false, 'the old behaviours list is not sent');
+  assert.equal(briefPuts.at(-1)?.url, '/api/brief/settings/team/jobber', 'the Team\u2019s brief settings save through their own route');
+  assert.deepEqual(briefPuts.at(-1).body.brief.add, [{ name: 'more-checkpoints', depth: 'seed' }], 'what was read is saved back as it was');
   assert.equal(body.agent_defaults.note, 'carried', 'a key the tab does not draw is carried');
   assert.equal('permissions' in body.agent_defaults, false, 'the retired key is not rewritten');
   assert.equal('model' in body.agent_defaults || 'provider' in body.agent_defaults, false, 'the model is Models > Defaults\', not the Team\'s (owner, 2026-10-21)');

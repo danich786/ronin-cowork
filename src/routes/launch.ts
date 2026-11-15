@@ -1,5 +1,5 @@
 import type express from 'express';
-import { rm } from 'node:fs/promises';
+import { readFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 import {
   capturePane,
@@ -13,22 +13,29 @@ import {
   setCampaign,
   setProjectRoot,
   setTags,
+  stopSessionTree,
 } from '../tmux.js';
-import { launchArgv } from '../agents.js';
+import { launchArgv, resumeAgentArgv } from '../agents.js';
+import { readAgentLaunches } from '../agent-launches.js';
+import { resolveTranscriptSource } from '../launch-journal.js';
 import { AtSessionMax, readAgentsSection } from '../machine-state.js';
-import { resolveForm, type SpawnForm } from '../spawn.js';
+import { PACKET_PLACEHOLDER, resolveForm, type SpawnForm } from '../spawn.js';
+import { agentBriefOf, workRecordBrief, writeAgentBriefAt } from '../brief-build.js';
+import { briefTold } from '../brief-settings.js';
+import { writeSnapshotAt } from '../agent-configuration.js';
+import { HELP_LINE } from '../brief.js';
 import { appendLaunchLedger, persistBirthReceipt } from '../launch-ledger.js';
 import { writeCurrentRoleAt } from '../agent-composition.js';
 import { mandate } from '../agent-defaults.js';
-import { classifyStatus, createActivityCache } from '../status.js';
+import { asksForInput, classifyStatus, createActivityCache } from '../status.js';
 import { scanContext, scanModel } from '../ctx.js';
 
 import { count } from '../counts.js';
 import { listTeamRosters } from '../team-rosters.js';
 import { announceTeamChanges } from './wipeboards-api.js';
-import { checkoutAt, deriveTeams, parkBrief, seedTegami, teamChanged, withAxes, writeConfiguration, type SessionWithAxes } from '../tegami.js';
+import { checkoutAt, deriveTeams, parkBrief, seedTegami, teamChanged, withAxes, writeBriefRecord, writeConfiguration, type SessionWithAxes } from '../tegami.js';
 import { callerOf } from './work-items-api.js';
-import { collectBirthLines, collectRowFields } from '../sockets.js';
+import { collectBirthLines, collectRowFields, setMikaControl } from '../sockets.js';
 import { stoppedAt } from '../stopped.js';
 import { broadcastEvent, listening, pushTeams } from '../ws/events.js';
 import { listProjectRoots } from '../project-roots.js';
@@ -36,12 +43,14 @@ import { readWorkspace } from '../workspaces.js';
 import { campaignResolver, initialCampaignId } from '../campaign-scope.js';
 import { readTeamRoster } from '../team-rosters.js';
 import { readCampaign } from '../campaigns.js';
-import { listBehaviours, listInstallations } from '../resource-adapters.js';
+import { listInstallations } from '../resource-adapters.js';
 import { agentBinDir } from '../agent-install.js';
 import { resolveLaunchSeed, shownLaunchSeed } from '../launch-seed.js';
 import type { SessionsDefaults } from '../launch-command.js';
-import { compileBirthBriefAt, describePacket, isShelfTeaching, readFirstSentence, type PacketReport } from '../birth-brief.js';
+import { describePacket, readFirstSentence, writeBriefPacketAt, type PacketReport } from '../birth-brief.js';
 import { rememberSessionKey, sessionDir as sessionRecordDir } from '../session-dir.js';
+import { callerUser } from '../agent-configuration.js';
+import { person } from '../office-people.js';
 import type { HouseSeat } from '../house-seats.js';
 import { readTegami } from '../tegami-read.js';
 import { boundOperatorSocket, OPERATOR_SOCKET_ENV } from '../operator-socket.js';
@@ -80,7 +89,7 @@ const LAUNCH_KEYS = new Set([
   'session_type', 'team', 'team_lead', 'role', 'instructions', 'prompt', 'name', 'caller',
   'cmd', 'model', 'provider', 'mandate', 'campaign_id',
   'tags', 'seed', 'inject', 'reference',
-  'kind', 'behaviours',
+  'kind', 'brief', 'integrations', 'pm',
   'template',
 ]);
 const RETURNED_LAUNCH_KEYS = new Set([
@@ -115,15 +124,14 @@ export function acceptedLaunchBody(input: unknown): { body: Record<string, unkno
   if (body.seed !== undefined && !Array.isArray(body.seed)) drop('seed');
   if (body.kind !== undefined && (typeof body.kind !== 'string' || !KINDS.has(body.kind.trim()))) drop('kind');
   if (body.kind !== undefined) body.kind = String(body.kind).trim();
-  if (body.behaviours !== undefined && !Array.isArray(body.behaviours)) drop('behaviours');
   if (body.role !== undefined && !['coworker', 'lead', 'epic_lead', 'coordinator'].includes(String(body.role))) drop('role');
   if (body.template !== undefined && (typeof body.template !== 'string' || !/^[\w-]{1,64}$/.test(body.template.trim()))) drop('template');
   if (body.template !== undefined) body.template = String(body.template).trim();
 
   const inapplicable = sessionType === 'terminal'
-      ? ['provider', 'model', 'instructions', 'prompt', 'kind', 'mandate', 'behaviours', 'template', 'cmd', 'seed', 'inject', 'reference', 'role']
+      ? ['provider', 'model', 'instructions', 'prompt', 'kind', 'mandate', 'brief', 'integrations', 'pm', 'template', 'cmd', 'seed', 'inject', 'reference', 'role']
     : sessionType === 'bare_metal_agent'
-      ? ['kind', 'mandate', 'behaviours', 'template', 'seed', 'inject', 'reference', 'team_lead', 'role']
+      ? ['kind', 'mandate', 'brief', 'integrations', 'pm', 'template', 'seed', 'inject', 'reference', 'team_lead', 'role']
       : [];
   for (const key of inapplicable) drop(key);
 
@@ -148,7 +156,7 @@ export function spawnFormFromLaunchBody(body: Record<string, unknown>, houseSeat
     mandate: sessionType === 'cowork_agent' && body.mandate !== undefined ? mandate(body.mandate) : undefined,
     campaign_id: String(body.campaign_id ?? '').trim() || undefined,
     kind: typeof body.kind === 'string' ? body.kind : undefined,
-    behaviours: Array.isArray(body.behaviours) ? body.behaviours.map(String) : undefined,
+    ...(sessionType === 'cowork_agent' ? agentBriefOf(body) : {}),
     template: typeof body.template === 'string' ? body.template : undefined,
     tags: Array.isArray(body.tags) ? body.tags.map(String) : [],
     seed: Array.isArray(body.seed) ? body.seed.map(String) : [],
@@ -157,7 +165,7 @@ export function spawnFormFromLaunchBody(body: Record<string, unknown>, houseSeat
   };
 }
 
-export function mikaLaunchBody(input: unknown, selection?: Pick<MikaSelection, 'provider' | 'model'>): Record<string, unknown> {
+export function mikaLaunchBody(input: unknown, selection?: Pick<MikaSelection, 'provider' | 'model' | 'choice'>): Record<string, unknown> {
   const source = input && typeof input === 'object' && !Array.isArray(input)
     ? input as Record<string, unknown>
     : {};
@@ -167,14 +175,15 @@ export function mikaLaunchBody(input: unknown, selection?: Pick<MikaSelection, '
     tags: [STEERCO_TEAM],
     // She discusses, recruits nobody, and hands back ideas — never a plan (owner, 2026-09-09).
     mandate: { reach: 'discuss', recruit: 'nobody', output: ['ideas'] },
-    prompt: typeof source.prompt === 'string' ? source.prompt : '',
-    ...(selection ? { provider: selection.provider, model: selection.model } : {}),
+    prompt: [typeof source.prompt === 'string' ? source.prompt : '', selection?.choice?.brief ?? ''].filter(Boolean).join(' '),
+    // A part's choice is its own command; Core's rule names a catalog provider and model.
+    ...(selection?.choice ? { cmd: selection.choice.cmd } : selection ? { provider: selection.provider, model: selection.model } : {}),
     launch_mode: 'configured',
   };
 }
 
 export interface LaunchControl {
-  ensureMika(intent?: 'help' | 'setup_provider_ready', tab?: string): Promise<{ ok: boolean; state: 'ready' | 'starting' | 'action_required' | 'refused'; action?: 'pending_user'; session: typeof MIKA_SESSION; team: typeof STEERCO_TEAM; loader: typeof RONIN_HELPER_LOADER; already?: boolean; welcome_delivered?: boolean; error?: string; code?: string; available_levels?: unknown }>;
+  ensureMika(intent?: 'help' | 'setup_provider_ready', tab?: string, told?: string): Promise<{ ok: boolean; state: 'ready' | 'starting' | 'action_required' | 'refused'; action?: 'pending_user'; session: typeof MIKA_SESSION; team: typeof STEERCO_TEAM; loader: typeof RONIN_HELPER_LOADER; already?: boolean; welcome_delivered?: boolean; error?: string; code?: string; available_levels?: unknown }>;
 }
 
 export function mikaReadinessFromPane(text: string): 'ready' | 'starting' | 'action_required' {
@@ -182,12 +191,26 @@ export function mikaReadinessFromPane(text: string): 'ready' | 'starting' | 'act
   return state === 'awaiting-input' ? 'action_required' : state === null ? 'starting' : 'ready';
 }
 
-// The pane is read for the CLI's own context gauge and model line. What the Agent is DOING is
-// its output's newest line, through the transcript part's row field: one status, not two.
-const loadPaneStatus = createActivityCache(async (name: string) => {
+// The pane is read for the CLI's own context gauge and model line, and for a question it draws
+// (KAN-527): no CLI writes a log line for its dialogs (Codex's "Update available" before its
+// first turn, a permission prompt), so the screen is the only place one shows. What the Agent
+// is otherwise DOING is its output's newest line, through the transcript part's row field.
+const readPane = async (name: string) => {
   const text = await capturePane(name, 0);
-  return { ctx: scanContext(text), model: scanModel(text) };
-});
+  return { ctx: scanContext(text), model: scanModel(text), asking: asksForInput(text) };
+};
+const cachedPane = createActivityCache(readPane);
+// tmux stamps activity by the second: a question answered and redrawn inside that second would
+// keep its cached reading. While it reads asking, each push reads the pane afresh.
+const loadPaneStatus = async (name: string, activity: number) => {
+  const pane = await cachedPane(name, activity);
+  return pane.asking ? readPane(name).catch(() => pane) : pane;
+};
+
+/** AN AGENT FLAG (owner, 2026-11-15, KAN-527): the Agent itself waits on the owner, not an
+ * item. Derived from the pane, never stored: it goes when the question leaves the screen. Its
+ * work record carries it, and `flagged` puts ⚑ and the flagged amber on its selector pill. */
+export const ASKING_FLAG = 'asking';
 
 // The home rows for one session listing: what /events pushes as {t:'home', rows}, from the
 // listing its tick already took.
@@ -195,19 +218,23 @@ export function homeRows(list: SessionWithAxes[]) {
   return Promise.all(
     list.map(async (s) => {
       const [pane, contributed, tegami] = await Promise.all([
-        loadPaneStatus(s.name, s.activity).catch(() => ({ ctx: null, model: null })),
+        loadPaneStatus(s.name, s.activity).catch(() => ({ ctx: null, model: null, asking: false })),
         collectRowFields(s.name),
         readTegami(s.name),
       ]);
-      const stopped_at = stoppedAt(s.name, contributed.at);
+      const { asking, ...gauges } = pane;
+      const stopped_at = asking ? undefined : stoppedAt(s.name, contributed.at);
+      const reports = contributed.stance_reports;
       return {
         ...s,
-        ...pane,
+        ...gauges,
         ...contributed,
-        // A Stop Ronin sent reads interrupted until the Agent writes a line or is sent to (stopped.ts).
-        stance: stopped_at ? 'interrupted' : contributed.stance ?? 'unknown',
+        // A question on the screen is asking, whatever the log's newest line says; a Stop Ronin
+        // sent reads interrupted until the Agent writes a line or is sent to (stopped.ts).
+        stance: asking ? 'asking' : stopped_at ? 'interrupted' : contributed.stance ?? 'unknown',
+        ...(Array.isArray(reports) && !reports.includes('asking') ? { stance_reports: ['asking', ...reports] } : {}),
         ...(stopped_at ? { stopped_at } : {}),
-        ...(tegami ? { tegami } : {}),
+        ...(tegami ? { tegami: asking ? { ...tegami, flagged: true, agent_flag: ASKING_FLAG } : tegami } : {}),
       };
     }),
   );
@@ -246,24 +273,20 @@ export function registerLaunch(app: express.Express): LaunchControl {
       if (team && !/^[a-z0-9][a-z0-9_-]{0,63}$/.test(team)) {
         return res.status(400).json({ error: `A team name is lowercase letters, digits, _ and -: "${team}".` });
       }
-      const [roster, allRoots, agents, installations, behaviours, resolveCampaign] = await Promise.all([
+      const [roster, allRoots, agents, resolveCampaign] = await Promise.all([
         team ? readTeamRoster(team, campaign_id).then((found) => found ?? readTeamRoster(team, '')) : Promise.resolve(null),
         listProjectRoots(),
         readAgentsSection(),
-        listInstallations(),
-        listBehaviours(),
         campaignResolver(),
       ]);
       const roots = allRoots.filter((root) => resolveCampaign(root.campaign_id) === campaign_id);
       if (team && !roster) return res.status(404).json({ error: `Unknown Team "${team}" in Campaign "${campaign_id}".` });
-      const { resolved_contributions: _resolved, undelivered: _undelivered, ...seed } = resolveLaunchSeed({
+      const seed = resolveLaunchSeed({
         campaign,
         roster,
         workspace: roster?.workspace ? await readWorkspace(roster.campaign_id, roster.workspace) : null,
         sessions: agents.sessions as SessionsDefaults | undefined,
         lead: req.query.lead === '1',
-        installations,
-        behaviours,
       });
       res.json(shownLaunchSeed(seed));
     } catch (e) {
@@ -271,7 +294,8 @@ export function registerLaunch(app: express.Express): LaunchControl {
     }
   });
 
-  const launch = async (req: express.Request, res: express.Response, houseSeat?: 'mika', loader?: typeof RONIN_HELPER_LOADER): Promise<unknown> => {
+  type MikaCarry = { key: string; cli: string; session: string };
+  const launch = async (req: express.Request, res: express.Response, houseSeat?: 'mika', loader?: typeof RONIN_HELPER_LOADER, carry?: MikaCarry): Promise<unknown> => {
     let mikaSelection: MikaSelection | undefined;
     let mikaHome = '';
     if (houseSeat === 'mika') {
@@ -292,6 +316,8 @@ export function registerLaunch(app: express.Express): LaunchControl {
         return res.status(500).json({ error: `Mika home is unavailable: ${String((error as Error)?.message ?? error)}`, code: 'mika_home_invalid' });
       }
     }
+    // Mika restarted with her conversation: resumed only when the new launch runs the same CLI.
+    const resumeMika = carry && mikaSelection && carry.cli === mikaSelection.spec.cli ? carry : undefined;
     const accepted = acceptedLaunchBody(houseSeat === 'mika' ? mikaLaunchBody(req.body, mikaSelection) : req.body);
     req.body = accepted.body;
     const sessionType = String(req.body.session_type);
@@ -301,6 +327,10 @@ export function registerLaunch(app: express.Express): LaunchControl {
     if (name === MIKA_SESSION && houseSeat !== 'mika') return res.status(409).json({ error: 'That name is reserved for Mika.', code: 'reserved_house_session' });
 
     const form = spawnFormFromLaunchBody(req.body, houseSeat);
+    // The user an Agent works for, in a hosted office: the person launching, or for an Agent
+    // made by an Agent, that Agent's user (docs/architecture/brief.md, The work record is the source of truth).
+    const launcher = person(req) ?? await callerUser(String(req.body?.caller ?? '').trim());
+    if (launcher) form.person = launcher;
 
     let resolved;
     let launch: { argv: string[]; parked: boolean } = { argv: [], parked: false };
@@ -326,39 +356,23 @@ export function registerLaunch(app: express.Express): LaunchControl {
     if (unknownTeams.length) return res.status(400).json({ error: `Unknown Team: ${unknownTeams.join(', ')}.` });
 
     if (resolved.session_type === 'cowork_agent' && resolved.agent) {
-      birthKey = `${resolved.name}-${Date.now()}`;
+      birthKey = resumeMika?.key ?? `${resolved.name}-${Date.now()}`;
       birthDir = sessionRecordDir(birthKey);
       try {
-        // Mika's reading is her briefs like any Agent's (floor, then hers under behaviours/);
-        // her own addition is the generated source index, the bounded map of her knowledge.
-        const resolvedSources = [...resolved.birth_reading];
-        const sources = [...resolvedSources];
-        let mikaKnowledgeIndex = '';
+        // The brief, generated (src/brief.ts). Mika's own addition is her generated source
+        // index, the bounded map of her knowledge, carried inside the packet before its end.
+        let text = resolved.composed?.text ?? '';
         if (houseSeat === 'mika') {
-          // A cold Mika launch publishes exactly one verified knowledge generation. The
-          // returned index is the only generation path handed into birth; later source
-          // opens resolve through mika-knowledge-current rather than caching this path.
-          const previousSentence = `Read first: ${resolvedSources.join(', ')}.`;
           const knowledge = await compileMikaKnowledgeAt(mikaHome);
-          mikaKnowledgeIndex = knowledge.index;
-          sources.push(mikaKnowledgeIndex);
-          resolved.brief = resolved.brief.replace(previousSentence, `Read first: ${sources.join(', ')}.`);
+          const index = (await readFile(knowledge.index, 'utf8')).trim();
+          text = text.replace(`\n${HELP_LINE}`, `\n${index}\n\n${HELP_LINE}`);
         }
-        const brief = await compileBirthBriefAt(
-          birthDir,
-          sources,
-          resolved.name,
-          (file) => file === mikaKnowledgeIndex || isShelfTeaching(file),
-        );
+        const brief = await writeBriefPacketAt(birthDir, text, resolved.name);
         await writeCurrentRoleAt(birthDir, form.role ?? (form.team_lead ? 'lead' : 'coworker'));
-        const sourceSentence = `Read first: ${sources.join(', ')}.`;
-        if (!resolved.brief.includes(sourceSentence)) {
-          await rm(birthDir, { recursive: true, force: true });
-          return res.status(500).json({ error: 'The birth reading was compiled, but its brief did not contain the resolved source list.' });
-        }
+        await writeAgentBriefAt(birthDir, agentBriefOf(form));
+        if (resolved.composed) await writeSnapshotAt(birthDir, resolved.composed);
         packet = await describePacket(brief, resolved.name);
-        resolved.brief = resolved.brief.replace(sourceSentence, readFirstSentence(packet));
-        resolved.birth_reading = [brief];
+        resolved.brief = resolved.brief.replace(PACKET_PLACEHOLDER, readFirstSentence(packet));
       } catch (e) {
         if (birthDir) await rm(birthDir, { recursive: true, force: true });
         return res.status(500).json({ error: `Could not compile this Agent's birth brief: ${String((e as Error)?.message ?? e)}` });
@@ -373,6 +387,20 @@ export function registerLaunch(app: express.Express): LaunchControl {
       }
       const launchWords = resolved.session_type === 'bare_metal_agent' ? (form.prompt ?? '') : resolved.brief;
       launch = resolved.agent ? await launchArgv(resolved.cmd, launchWords) : { argv: [], parked: false };
+      if (resumeMika) {
+        const told = String(form.prompt ?? '').trim();
+        const positional = told && (await readAgentLaunches(resumeMika.cli)).initial === 'positional';
+        // A fork carries the conversation into the new launch's provider; a resume keeps the old one.
+        const argv = await resumeAgentArgv(resumeMika.cli, resumeMika.session, 'fork')
+          .then((fork) => fork.length ? fork : resumeAgentArgv(resumeMika.cli, resumeMika.session));
+        if (argv.length) launch = { argv: positional ? [...argv, told] : argv, parked: false };
+      }
+      const choice = mikaSelection?.choice;
+      if (choice && launch.argv.length) {
+        if (choice.wrapArgv) launch = { ...launch, argv: choice.wrapArgv([...launch.argv]) };
+        resolved.identity = { sessionType: resolved.session_type, cli: choice.cli, provider: choice.provider, model: choice.model };
+        resolved.launchAgent = choice.cli;
+      }
       if (resolved.agent && !launch.argv.length) {
         if (birthDir) await rm(birthDir, { recursive: true, force: true });
         return res.status(400).json({
@@ -394,12 +422,13 @@ export function registerLaunch(app: express.Express): LaunchControl {
         // newborn's tools use the default path.
         env: { ...birthEnv(boundOperatorSocket(), agentBinDir(), process.env.PATH ?? ''), ...hermesEnv },
         key: birthKey || undefined,
+        resume: !!resumeMika,
         // The Services switch as resolved for THIS Agent at birth (campaign < team < form):
         // off means RIREKI never records it. Set here and never again — nothing cascades
         // onto a running session (owner, 2026-09-04). A terminal has no Routines and keeps
         // the recorder's own default.
-        rireki: resolved.contributions.length
-          ? resolved.contributions.some((contribution) => contribution.name === 'ronin_services' && contribution.enabled) && transcriptOn
+        rireki: houseSeat !== 'mika'
+          ? resolved.installations.some((installation) => installation.name === 'ronin_services' && installation.enabled) && transcriptOn
           : undefined,
         strictCwd: houseSeat === 'mika',
       });
@@ -424,6 +453,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
         await deriveTeams(resolved.name, resolved.tags),
         resolved.mandate,
       );
+        if (resolved.composed) await writeBriefRecord(resolved.name, workRecordBrief(resolved.composed));
       }
       await writeConfiguration(resolved.name).catch(() => {});
       // By whoever made the Agent (session_create's caller, else the browser's owner), so a
@@ -465,10 +495,12 @@ export function registerLaunch(app: express.Express): LaunchControl {
         team_lead: !!form.team_lead && !!resolved.team,
         role: form.role ?? (form.team_lead ? 'lead' : 'coworker'),
         kind: resolved.kind,
+        template: form.template ?? '',
+        ...(form.person?.email ? { user_email: form.person.email } : {}),
         mandate: resolved.mandate,
-        behaviours: resolved.behaviours,
+        // What the brief told, by name and depth, and why (docs/architecture/brief.md, Layers and brief settings).
+        told: resolved.composed ? briefTold(resolved.composed.resolved) : [],
         ignored: [...new Set([...accepted.ignored, ...resolved.ignored])].sort(),
-        undelivered: [...new Set(resolved.undelivered)].sort(),
         stated_by: resolved.stated_by,
         ...(resolved.session_type === 'cowork_agent'
           ? { boot: { state: 'open', brief: launch.parked ? 'parked' : 'argv' } }
@@ -477,15 +509,6 @@ export function registerLaunch(app: express.Express): LaunchControl {
         // and whether one read delivers it. The receipt says what left; the tape says what
         // arrived (the ACK asks the newborn to quote the terminator).
         ...(packet ? { packet } : {}),
-        // The capability documents this birth read from the folder: which were selected,
-        // why the rest were not, and which listed tools are present on this box.
-        capabilities: resolved.capabilities.map((capability) => ({
-          name: capability.name,
-          selected: capability.selected,
-          reason: capability.reason,
-          tools: capability.delivered,
-          missing: capability.missing,
-        })),
         installations: resolved.installations.map((installation) => ({
           name: installation.name,
           on: installation.enabled,
@@ -556,7 +579,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
       send(body && typeof body === 'object' && (body as { ok?: boolean }).ok ? { ...body, team_from: teamFrom } : body);
     return launchJob(req, res, next);
   });
-  const ensureMika = async (intent: 'help' | 'setup_provider_ready' = 'help', tab = ''): Promise<MikaReady> => {
+  const ensureMika = async (intent: 'help' | 'setup_provider_ready' = 'help', tab = '', told = '', carry?: MikaCarry): Promise<MikaReady> => {
     const metadata = { session: MIKA_SESSION, team: STEERCO_TEAM, loader: RONIN_HELPER_LOADER };
     const observeLive = async (already: boolean): Promise<MikaReady> => {
       let providerState: ReturnType<typeof mikaReadinessFromPane> = 'starting';
@@ -574,7 +597,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
     mikaStarting = (async () => {
       const welcome = intent === 'setup_provider_ready' && (await roninHelperWelcomeState())?.state !== 'delivered';
       const prompt = [
-        welcome ? MIKA_PROMPTS.setup_provider_ready : MIKA_PROMPTS.help,
+        told || (welcome ? MIKA_PROMPTS.setup_provider_ready : MIKA_PROMPTS.help),
         tab ? `Help was opened in browser tab ${tab}: \`owner_view ${tab}\` shows what the owner sees.` : '',
       ].filter(Boolean).join(' ');
       let status = 200;
@@ -583,7 +606,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
         status(code: number) { status = code; return this; },
         json(value: unknown) { body = value && typeof value === 'object' ? value as Record<string, unknown> : {}; return value; },
       } as unknown as express.Response;
-      await launch({ body: { prompt } } as express.Request, response, 'mika', RONIN_HELPER_LOADER);
+      await launch({ body: { prompt } } as express.Request, response, 'mika', RONIN_HELPER_LOADER, carry);
       if (status < 400 && body.ok === true && welcome) await recordRoninHelperWelcome(String(body.conversation ?? 'mika'), 'pending');
       return status < 400 && body.ok === true
         ? observeLive(body.already === true)
@@ -602,6 +625,25 @@ export function registerLaunch(app: express.Express): LaunchControl {
     try { return await starting; }
     finally { mikaStarting = null; }
   };
+  // Mika's two controls on the part socket: who she is running as, and a restart by the launch rule.
+  setMikaControl({
+    identity: async () => {
+      const identity = (await listSessions()).find((s) => s.name === MIKA_SESSION)?.identity;
+      return identity ? { cli: identity.cli, provider: identity.provider, model: identity.model } : null;
+    },
+    restart: async ({ prompt = '', resume = false }) => {
+      let carry: MikaCarry | undefined;
+      if (resume) {
+        const live = (await listSessions()).find((s) => s.name === MIKA_SESSION);
+        const found = live ? await resolveTranscriptSource(MIKA_SESSION) : null;
+        if (live && found && 'source' in found && found.source.session) carry = { key: live.key, cli: found.source.provider, session: found.source.session };
+      }
+      await stopSessionTree(MIKA_SESSION);
+      const ready = await ensureMika('help', '', prompt, carry);
+      broadcastEvent({ t: 'mika', ...ready });
+      watchMika(() => ensureMika('help'), ready);
+    },
+  });
   app.post('/api/mika/ready', async (req, res) => {
     const intent = req.body?.intent === 'setup_provider_ready' ? 'setup_provider_ready' : 'help';
     const tab = isMikaTab(req.body?.tab) ? req.body.tab : '';

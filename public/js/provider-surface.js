@@ -324,8 +324,9 @@ export function createProviderDrawing(context, { repaint, say = () => {} }) {
     const problem = el('p', 'setup-notice bad setup-provider-problem'); problem.hidden = true;
     const press = async (path, after = paint) => {
       const result = await request(path, { method: 'POST', json: {} });
-      if (!result.ok) { problem.textContent = result.message; problem.hidden = false; return; }
+      if (!result.ok) { problem.textContent = result.message; problem.hidden = false; return result; }
       await after();
+      return result;
     };
     let saveAuthentication = null;
     const closeSetup = () => {
@@ -468,7 +469,21 @@ export function createProviderDrawing(context, { repaint, say = () => {} }) {
       : auth.status === 'open' ? t('setup_surface.sign_in_open', 'Sign-in open')
         : auth.status === 'available' ? t('setup_surface.not_signed_in', 'Not signed in') : t('setup_surface.install_first', 'After install'));
     if (auth.current && auth.action !== 'login_open' && !provider.install_open) {
-      authRow.controls.append(control(auth, t('setup_surface.authenticate', 'Authenticate'), () => press(`/api/setup/providers/${encodeURIComponent(provider.id)}/login`)));
+      const assisted = typeof context.environment?.onMikaProviderGuide === 'function'
+        && typeof context.environment?.onMikaProviderConnect === 'function';
+      if (assisted) {
+        const operate = control(auth, t('setup_surface.authenticate_mika', 'Let Mika authenticate'), () => context.environment.onMikaProviderConnect({ provider, workspace: context.workspace }));
+        const guide = action(t('setup_surface.authenticate_guided', 'Use the CLI with Mika'), '', async () => {
+          guide.disabled = true;
+          const result = await press(`/api/setup/providers/${encodeURIComponent(provider.id)}/login`);
+          if (result?.ok) await context.environment.onMikaProviderGuide({ provider, setupSession: result.data?.attachment?.key || `provider_setup_${provider.id}`, workspace: context.workspace });
+          guide.disabled = false;
+        });
+        guide.classList.add('setup-provider-action');
+        authRow.controls.append(operate, guide);
+      } else {
+        authRow.controls.append(control(auth, t('setup_surface.authenticate', 'Authenticate'), () => press(`/api/setup/providers/${encodeURIComponent(provider.id)}/login`)));
+      }
     } else if (auth.action === 'login_open') {
       const terminal = el('div', 'setup-provider-terminal');
       finish(`/api/setup/providers/${encodeURIComponent(provider.id)}/done`);

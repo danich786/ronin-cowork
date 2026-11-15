@@ -46,6 +46,9 @@ export function classifyStatus(text: string): SessionStatus | null {
  * CLI writes a line for it, so there is nothing to read but the pane. It is also the most
  * actionable state on the board, which is why it stayed when the spinner matching went.
  *
+ * Core's home row reads it on each pane output (src/routes/launch.ts, KAN-527): the stance
+ * asking and an Agent flag on the work record, for every provider.
+ *
  * Only the `asking` patterns are consulted — the vendors' own, plus the house y/n. The
  * spinner glyphs and prompt shapes are still in the table above for Mika's one-shot
  * readiness read, which asks a different question: is this newly launched CLI up yet.

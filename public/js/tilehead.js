@@ -270,7 +270,7 @@ async function overTile(tile, title, fill, options = {}) {
 async function openWorkRecord(tile) {
   const desks = tile.tegami ? await readDesks(tile.session) : null;
   const layer = await overTile(tile, t('me.work_record', 'Work record'), (box) => box.append(tile.tegami
-    ? buildWorkRecord(tile.tegami, desks, { openDoc: (path) => { layer.remove(); tile.openDoc(path); } })
+    ? buildWorkRecord(tile.tegami, desks, { session: tile.session, openDoc: (path) => { layer.remove(); tile.openDoc(path); } })
     : Object.assign(document.createElement('p'), { className: 'menu-empty',
       textContent: t('me.no_record', 'This Agent has not written a work record yet.') })));
 }
@@ -294,7 +294,8 @@ async function openItem(tile, item) {
     // once it is Done (owner, w299: "it disappeared"). The tile's record only when the read failed.
     const children = read.ok && Array.isArray(read.data?.children) ? read.data.children
       : islandHeld(tile.tegami).filter((one) => one.parent === item.id);
-    renderItemDetail(detail, item, { holder, heldBy: read.ok ? read.data?.held_by : null, openAttachment: (path) => tile.openDoc(path), history: false,
+    // The whole item (KAN-524): the tile's record is a slim row, without priority, starter or Jira fields.
+    renderItemDetail(detail, read.ok && read.data?.item ? read.data.item : item, { holder, heldBy: read.ok ? read.data?.held_by : null, openAttachment: (path) => tile.openDoc(path), history: false,
       children, openChild: (child) => void openItem(tile, child),
       // Its head minimizes it, through the overlay's own Close (KAN-431).
       onClose: () => box.querySelector('.work-overlay-utility button')?.click() });

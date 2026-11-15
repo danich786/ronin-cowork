@@ -1,12 +1,10 @@
 /* part of the ronin-cowork client — see js/README.md */
 import { t } from './lexicon.js';
 import { ask } from './ask.js';
+import { mandateRows } from './mandates.js';
 import { createStep, el, mandateWord, modelLabel, priceText, providerCatalog, tierWord } from './form-steps.js';
 import { finalizeTeamName, sanitizeTeamName } from './new-team-draft.js';
 
-const REACH = ['open', 'discuss', 'plan', 'execute'];
-const RECRUIT = ['open', 'nobody', 'propose agents', 'staff agents'];
-const OUTPUT = ['open', 'a plan', 'ideas', 'code', 'an artifact', 'the team', 'no code'];
 let rowId = 0;
 
 export const agentRow = () => ({
@@ -26,7 +24,8 @@ export function agentPicks(rows) {
   }));
 }
 
-export function createAgentRows({ n, key, rows, changed, onToggle, createAction, createActionBar }) {
+/** `screen()` is what the layers in play take off the mandate menus (mandates.js screenOf). */
+export function createAgentRows({ n, key, rows, changed, onToggle, createAction, createActionBar, screen = () => ({}) }) {
   const step = createStep({ n, key, title: t('new_team.agents', 'Agents'), onToggle });
   const host = el('div'); let editor = null;
   const field = (label, control) => {
@@ -61,7 +60,6 @@ export function createAgentRows({ n, key, rows, changed, onToggle, createAction,
       v: item.model, l: modelLabel(item), word: tierWord(item.tier), sub: priceText(item.info),
       off: item.selectable ? undefined : item.off ? t('forms.reason_turned_off', 'turned off') : t('forms.reason_not_on_machine', 'not on this machine'),
     }));
-    const mandateRows = (values) => values.map((value) => ({ v: value, l: mandateWord(value) }));
     const questions = ask([
       { group: t('new_agent.model_package', 'Model'), fields: [
         { key: 'provider', label: t('forms.provider', 'Model provider'), blank: t('forms.default', 'Default'), options: providerRows },
@@ -69,9 +67,9 @@ export function createAgentRows({ n, key, rows, changed, onToggle, createAction,
         { key: 'teamLead', label: t('new_agent.make_team_lead', 'Make team lead'), switch: [t('forms.on', 'On'), t('forms.off', 'Off')] },
       ] },
       { group: t('mandate', 'Mandate'), fields: [
-        { key: 'reach', label: t('reach', 'Reach'), options: mandateRows(REACH) },
-        { key: 'recruit', label: t('recruit', 'Recruit'), options: mandateRows(RECRUIT) },
-        { key: 'output', label: t('output', 'Output'), many: true, options: mandateRows(OUTPUT) },
+        { key: 'reach', label: t('reach', 'Reach'), options: () => mandateRows('reach', screen()) },
+        { key: 'recruit', label: t('recruit', 'Recruit'), options: () => mandateRows('recruit', screen()) },
+        { key: 'output', label: t('output', 'Output'), many: true, options: () => mandateRows('output', screen()) },
       ] },
     ], {
       value: { ...row, teamLead: row.team_lead === true },

@@ -4,8 +4,8 @@ Use focused catalog checks for individual changes. The lead owns full `npm run v
 at the combined integration/release gate ([verification guidance](../docs/development/verification.md)).
 Installed user customization is checked with `npm run byoin`.
 
-This shelf defines system-scope catalogs and the capability documents that select and
-teach Agent-facing tools.
+This folder holds system-scope catalogs and the facts, behaviours and tools an Agent's
+brief is built from.
 
 > **Everything in this directory is SYSTEM SCOPE — an upgrade replaces it wholesale**
 > (`docs/architecture/shadowing.md`). Nothing here may list the_owner's own things.
@@ -19,12 +19,11 @@ teach Agent-facing tools.
 
 ## Adding an agent-facing tool
 
-Add one executable in `ronin_bin/`, one row in `TOOLS.md`, and one capability document
-that states when the tool is selected and how it is taught. The capability's `requires:`
-facts are the only delivery gate. Keep operating rules in the capability document or a
-named Behavior; there is no compiled instruction layer.
+Add one executable in `ronin_bin/` and its file in `tools/` (the header:
+[tools/README.md](tools/README.md#the-header)). Keep operating rules in the tool's file or a
+behaviour.
 
-[`docs/architecture/tool-surface.md`](../docs/architecture/tool-surface.md) owns the architectural vocabulary and its composite tool boundary.
+[`docs/architecture/brief.md`](../docs/architecture/brief.md) owns the brief model and the composite tool boundary.
 Do not introduce “macro” or “action” as a competing category.
 
 ## Directory map
@@ -34,17 +33,15 @@ input; identical subject names across directories do not make the documents inte
 
 | Path | Files | Why it exists / what belongs here |
 |---|---|---|
-| `capabilities/` | Core: `agent_session.md`, `cowork_team.md`, `edges.md`, `machine-settings.md`, `work-record.md`, `worktree-desk.md`. Feature: `mika.md`, `ronin-host.md`. | Agent-operable domains made from real tools. Every file has a `## Tools` table. |
-| `behaviours/floor/` | `base-agent.md`, `user-intro.md` | What every Agent is told, house Agents included; the folder resolves wholesale. `user-intro.md` is the stock-empty coordinate shadowed from registration. |
-| `behaviours/conditional/` | `cowork-agent.md`, `mandates.md`, `write_it_down.md` (`cowork`); `team-lead.md`, `lead-worktrees.md`; `project-management-coworker.md`, `project-management-lead.md`, `project-management-epic-lead.md`, `project-management-traffic-control.md` (`behaviour:project-management`); `mika.md`, `atarashi.md`; `checkout.md`, `worktree-root.md` | Candidates applied from launch facts declared in each file. |
-| `behaviours/selected/` | General choices display as Project management, Team Work, Visual Staging, and Working with the User; installation-owned files remain separate candidates | Candidates applied through Agent → Team → Campaign selection. Hidden compatibility files are not offered. |
-| `behaviours/sought/` | empty | Future awareness-only pages; the folder would generate its own index. |
-| `services/` | `ronin_services.md`. | Ronin Services: Ronin's own switchable contribution and the parts it runs. Not an Agent capability. |
+| `facts/` | one file per fact (`you`, `user`, `workspace`, `mandate` …) | What the brief says is true, printed from the work record. |
+| `behaviours/` | one file per behaviour, flat | How an Agent works; its header says when and how much it is told. |
+| `tools/` | one file per tool or family | What the brief says about each executable in `ronin_bin/`, and which behaviour it serves. |
+| `services/` | `ronin_services.md`. | Ronin Services: Ronin's own switchable contribution and the parts it runs. Not a tool. |
 | `integrations/` | `gbrain.md`, `jira.md`, `netlify.md`, `perplexity.md`. | The integrations index: one record per outside service, what it is for, where its token lives, its tools and bridge. Agents add records in the owner store's `catalogs/integrations/`. |
 | `desk_profiles/` | `home.md`, `league.md`, `professional.md`, `terminal.md`, `vibe_code.md`. | Named presentation and workspace defaults copied into Campaign configuration. |
 | `lexicons/` | `home_en.md`, `league_en.md`, `professional_en.md`, `terminal_en.md`, `vibe_code_en.md`. | Surface-language overrides; `professional_en.md` is the complete floor. |
-| `templates/` | `agents/*.md`, `teams/*.md`, `canvases/*.md` (Integrations), each shelf with its `README.md`. | Authored starting compositions offered as reusable choices, not runtime authority. |
-| catalog root | `MODEL_PROVIDERS.md`, `MODEL_INFO.json`, `PROJECT_ROOTS.md`, `SKINS.md`, `TOOLS.md`. | Flat stock registries whose formats do not need another grouping directory. `TOOLS.md` inventories executable operations; capability files select and teach them. |
+| `templates/` | `agents/*.md`, `teams/*.md`, `canvases/*.md` (Netlify), each shelf with its `README.md`. | Authored starting compositions offered as reusable choices, not runtime authority. |
+| catalog root | `MODEL_PROVIDERS.md`, `MODEL_INFO.json`, `PROJECT_ROOTS.md`, `SKINS.md`. | Flat stock registries whose formats do not need another grouping directory. |
 
 Every subdirectory has a `README.md` for its exact file format. This map owns location and
 inventory; the child README owns schema. When a file is added, moved, or removed, update
@@ -52,7 +49,7 @@ this table in the same change.
 
 Creating a Team record and creating an Agent/session are peer tool operations with
 parallel UI → tool/API → internal-module stacks. Connecting or composing them does not put
-them on different layers. Capability documents and UIs must call a composite tool instead
+them on different layers. Tool files and UIs must call a composite tool instead
 of copying its guarded choreography.
 
 ## Adding a DESK PROFILE or a LEXICON (data, one file each)
@@ -70,18 +67,12 @@ keys to strings with a `base:` to fall through to. Both shadow whole-file by nam
 `integrations/<name>.md` is one outside service (its README carries the fields).
 `services/<name>.md` is one machine installation: `effect` is `system` (its reading,
 tools and parts join every Cowork Agent birth) or `provider` (it `provides`
-behaviours). `behaviours/<scope>/<name>.md` is one scoped page on how ordinary work is
-done. Each directory's `README.md` carries the exact
+behaviours). `behaviours/<name>.md` is one page on how ordinary work is done. Each directory's `README.md` carries the exact
 format; `docs/architecture/installations.md` owns the cascade and birth behaviour. Membership is
 listed once, in the definition; do not add an owner field to each member.
 
-## Adding a CAPABILITY (a bundle of tools, taught at birth)
+## Adding a FACT, a BEHAVIOUR or a TOOL
 
-`capabilities/<name>.md` is one Agent capability: the question it answers, a `## Tools`
-table of the actual tools that answer it (each with its authority, whether it is taught at
-birth, and its help route), and the teaching around them. `requires:` names the launch facts
-that select it — an installation on, a behaviour selected, a managed worktree, a connection, a
-Campaign, a Team, the lead designation — and blank selects it for every Cowork Agent. A
-capability may list several tools or one; the birth overview is rendered from the
-selected documents and names only tools that exist on this box. `capabilities/README.md`
-carries the exact format; `docs/architecture/installations.md` owns the birth behaviour.
+One file in `facts/`, `behaviours/` or `tools/` with the shared header; nothing else changes.
+How the brief chooses and orders them is [docs/architecture/brief.md](../docs/architecture/brief.md).
+Every tool is on every Agent's PATH; a header decides only what the Agent is told.

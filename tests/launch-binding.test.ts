@@ -59,11 +59,14 @@ test('isolated launch mirrors newly discovered settings but owns its journal; re
   const file = await resolveLaunchJournal(identity);
   assert.ok(file?.startsWith(identity.home!));
   const argv = isolated.resume.map(p => p.replace('{session_id}', identity.providerSession));
+  // Signed in after the first launch: the resumed birth links the new credential file too.
+  await writeFile(path.join(source, 'signed-in-later'), 'credential');
   const restored = await processLaunch({ name: 'one', key: 'one-key', cli: isolated.native[0]!, argv, cwd: root, resume: true }, async (actual, env) => {
     assert.deepEqual(actual, argv); assert.equal(env[envName], identity.home);
   });
   assert.equal(restored.home, identity.home);
   assert.equal(await readFile(path.join(restored.home!, 'future-setting'), 'utf8'), 'preserve me');
+  assert.equal(await realpath(path.join(restored.home!, 'signed-in-later')), path.join(source, 'signed-in-later'));
 });
 
 test('all process starts pass through one serial entry, including unbound shells', async t => {

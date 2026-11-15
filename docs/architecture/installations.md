@@ -23,107 +23,26 @@ have none of Ronin.
 | **Defaults** | the behaviours a new Team starts from | the next New Team form and a teamless Agent form; existing Teams are untouched |
 
 An installation definition (`ronin_catalogs/services/<name>.md`: Ronin Services, Ronin's
-own) has one of two effects. A `system` installation contributes its reading, tools, and server parts to every
-Cowork Agent when on, and its `reading_off` page when off. A
-`provider` installation makes its named behaviours available to choose. The
-effect name is implementation vocabulary; the owner still sees an Installation.
+own) names the server parts it runs. What an Agent is told about it comes from the brief's
+files: a behaviour or tool with `when: service:<part>` is in play while that part runs, and
+`services-off` (`when: !service:ronin_services`) while Services is off. The installation itself
+adds nothing to a brief.
 
 An installation may require another. Unmet requirements grey it out and name the
-requirement. Turning one off changes the next birth; server parts follow at Ronin
-restart, and a running Agent never changes.
+requirement. Turning one off changes the next brief; server parts follow at Ronin restart.
 
 ## Integrations
 
-Outside services a user brings (hosting, a tracker, research, memory) are not
-installations. Each is a record in the integrations index, `ronin_catalogs/integrations/`
-(an Agent's additions in the owner store's `catalogs/integrations/`): what it is for,
-where its token lives, its tools, and its bridge if Ronin has one. A Workspace lists the
-integrations it uses. Tokens are one `.env` per provider per Campaign in
-`~/ronin/services_secrets/` (Jira keeps `jira-<campaign>.json`). Settings › Integrations
-shows them all in one panel and connects any of them.
+Outside services a user brings (hosting, a tracker, research, memory) are not installations.
+An integration is turned on for a Campaign, Workspace, Team or Agent and cascades below; on for
+an Agent, its bridge behaviour and that behaviour's tools are in play. Keys are saved with
+`secret` (Jira keeps its panel's `jira-<campaign>.json`). Settings › Integrations shows them in
+one panel. How an Agent uses them: the Integrations behaviour and the bridges
+([the brief](brief.md#integrations-and-bridges)).
 
-## The cascade: behaviours
+## What an Agent is told
 
-Campaign defaults → Team → Agent carries one kind of choice: a **behaviour**. A behaviour
-can say how ordinary work should be done or add a facility and its taught practice. Its
-definition in `ronin_catalogs/behaviours/<name>.md` may name an installation and carry
-reading, Behaviors, and tools. Capability documents conditionally select
-knowledge, emphasis, and tool-job teaching for the Build Brief.
-
-An installation-gated behaviour appears on forms only while its installation and every
-requirement are on. A launch request naming an unavailable behaviour is born without it;
-the birth receipt names it as undelivered and birth still succeeds. Providerless
-behaviours are always on offer.
-
-Every Cowork Agent receives mandate teaching and Write it Down from the Ronin floor. The general selected stock shelf displays
-Planning, Team work, Visual Staging, and Working with the User. Installation-owned Behaviors such as
-`gbrain`, `trello`, and `perplexity` remain separate. A Team's required behaviours cannot
-be removed on an Agent form. Every form uses the same tall, wrapping behaviour stone;
-its separate View/Edit action opens the definition beside the unchanged form.
-
-There is no inherit control and no reach-down. A Campaign default fills the next form;
-a Team saves complete selected and required lists; an Agent launch may supply its own
-complete list. A template clobbers only the fields it carries.
-
-## Capability bundles: the tools an Agent is taught
-
-A capability document is a teaching layer, not an authority layer. Selection changes what
-the Build Brief teaches and emphasizes for that Agent; it does not grant, withhold,
-authorize, or forbid an installed tool or its help.
-
-The commands an Agent is taught are grouped into **capability bundles**, one authored
-Markdown document each in `ronin_catalogs/capabilities/` (the owner's catalogs store
-shadows a name whole and adds new ones). A bundle is a document grouping, not an
-executable: it answers one question, lists the actual tools that answer it in a `## Tools`
-table — each with its job, whether it is emphasized at birth, and its help route — and
-carries the teaching around them. A capability lists one or more actual tools; a tool may
-be surfaced by more than one bundle.
-
-Each document's `requires:` line names the launch facts that select its teaching: a system
-installation being on, a behaviour being selected, a managed worktree in the resolved
-assignment, a Campaign, a Team, or the lead designation. The five
-Cowork bundles ship with Ronin; Ronin Host, Ronin Services, gbrain, Trello, Perplexity and
-future add-ons are one more file each, gated the same way. Nothing in the resolver knows a
-bundle by name.
-
-At birth the resolver selects the documents whose requirements hold and the packet compiler
-renders one **YOUR TOOLS** overview from exactly those documents. Selection by role or work
-context (`lead`, `team`, `campaign`, or `arrangement`) changes knowledge only: every shipped
-Cowork tool is on every Cowork Agent's PATH. Feature and integration tools are placed only
-when their installation, behaviour, or connection requirements hold; Ronin Host remains
-conditional. A tool the box lacks is recorded in the receipt and never taught. The format is
-`ronin_catalogs/capabilities/README.md`.
-
-## Conditional instructions
-
-Some reading follows a fact set elsewhere and is never a picker: Team lead status, Team
-membership, and whether the Workspace Folder's `RONIN_REPO` declares a worktree root or
-a checkout. The birth packet points at the relevant Team and repository pages.
-
-## Resolution
-
-One resolver runs before the Agent process exists:
-
-1. Installations contribute system material and decide which behaviours are available.
-2. Campaign defaults answer for a teamless Agent.
-3. A Team's complete selected and required behaviour lists answer for its Agents.
-4. An Agent's launch list, when present, answers for that Agent.
-5. Root arrangement, lead status, and Team membership add conditional reading.
-6. The capability documents whose `requires:` hold are selected for teaching. All existing
-   Cowork tools and the tools of enabled feature/integration documents are projected; the
-   receipt records every document with `selected`, `reason`, `tools` and `missing`.
-7. One packet and receipt record the result, with `stated_by` naming
-   `installation · campaign · team · agent · conditional`.
-
-The same result feeds the birth brief, command directory, and receipt. Provider-native
-MCP configuration is outside Agent launch resolution.
-
-## Catalog definitions
-
-Definitions live in `ronin_catalogs/services/` and `ronin_catalogs/behaviours/`, one
-Markdown file per name; each directory's README carries the format. The owner's stores
-shadow a stock definition whole. Campaign and Team records hold only switches and names.
-
-A definition records enablement; it is not a security boundary. An off feature is not
-taught, offered, or placed in normal command lookup. Role and work-context facts change
-teaching only and do not change an installed Cowork tool or its help.
+Everything else here, what Agents are told and how it is chosen, is the brief: facts,
+behaviours and tools at a depth, from the work record, with brief settings on each layer.
+See [the brief](brief.md). Every installed tool is on every Cowork Agent's PATH; the brief
+decides only what the Agent is told.

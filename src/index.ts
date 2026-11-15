@@ -26,10 +26,11 @@ import { bindOperatorSocket, isOperatorPeer, operatorSocketPath, SiblingAlive, t
 import { addressRefusal, EXIT_ADDRESS_UNUSABLE } from './bind-refusal.js';
 import { publishMax, publishOwner } from './machine-state.js';
 import { registerCatalogs } from './routes/catalogs.js';
+import { registerBrief } from './routes/brief-api.js';
 import { homeRows, registerLaunch } from './routes/launch.js';
 import { registerPasskeyLogin, registerPasskeyManage } from './routes/passkey-api.js';
 import { registerPasswordSettings } from './routes/password-api.js';
-import { registerSessions, shutdownOperation } from './routes/sessions-api.js';
+import { expireArchives, registerSessions, shutdownOperation } from './routes/sessions-api.js';
 import { registerTeams, teamRosters } from './routes/teams-api.js';
 import { registerWorkspaces } from './routes/workspaces-api.js';
 import { registerIntegrations } from './routes/integrations-api.js';
@@ -62,7 +63,8 @@ import { registerCli } from './routes/cli-api.js';
 import { listQueuedMessages, startMessageQueue } from './message-queue.js';
 import { isValidTeam, listAllJobs, listJobs } from './jikan.js';
 import { isValidBoardName, seedHouseBoard, WIPEBOARD_DIR } from './wipeboards.js';
-import { presence, stampInput } from './presence.js';
+import { joinPresence, presence, stampInput } from './presence.js';
+import { person, startOfficePeople } from './office-people.js';
 import { readOfficeRecord } from './office-record.js';
 import { handleEvents, pushJikan, pushMessages, pushWipeboard, startSessionsBroadcast, watchStore } from './ws/events.js';
 import { tmux as tmuxClient } from './tmux-client.js';
@@ -86,7 +88,6 @@ import { ensureInstalledRoots, githubSetupAnswer, githubSetupAttached } from './
 import { registerSetupRuntime } from './routes/setup-runtime-api.js';
 import { registerSetupProgress } from './routes/setup-progress-api.js';
 import { registerMikaContext } from './mika-context.js';
-import { migrateSopsToBehaviours } from './behaviour-store-migration.js';
 import { archiveDone, ensureEveryIcebox, migrateItems, releaseEndedHolders } from './work-items.js';
 import { rebuildIndex } from './work-items-index.js';
 
@@ -95,7 +96,6 @@ const ROOT = path.join(__dirname, '..');
 const PUBLIC = path.join(ROOT, 'public');
 const NM = path.join(ROOT, 'node_modules');
 const isEntryPoint = !!process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url;
-if (isEntryPoint) await migrateSopsToBehaviours();
 // Work items take Jira's own names (docs/using-ronin/work-items.md); a store already on them is left alone.
 if (isEntryPoint) await migrateItems().then((done) => {
   if (done.migrated.length) console.log(`[work-items] ${done.migrated.length} of ${done.before} items took Jira's names`);
@@ -275,6 +275,7 @@ app.use(['/api/setup/registration', '/api/setup/services-key', '/api/services', 
 registerLaunch(app); // /api/launch (both variants), /api/sessions — src/routes/launch.ts
 registerMikaContext(app); // /api/mika/context/:tab — tiny tab-scoped owner_view/show seam
 registerCatalogs(app); // catalogs and configuration resources — src/routes/catalogs.ts
+registerBrief(app); // facts, behaviours, tools, brief settings, preview — src/routes/brief-api.ts
 registerDocs(app); // /api/docs?shelf=plans|docs — the ▧ Docs tab's shelves — src/routes/docs-api.ts
 registerTeams(app); // /api/team-rosters* — the durable half of every team — src/routes/teams-api.ts
 registerWorkspaces(app); // /api/workspaces* — a Campaign's Workspaces — src/routes/workspaces-api.ts
@@ -441,7 +442,7 @@ server.on('upgrade', (req, socket, head) => {
   }
   const url = new URL(req.url ?? '/', 'http://localhost');
   if (url.pathname === '/events') {
-    wss.handleUpgrade(req, socket, head, (ws) => handleEvents(ws));
+    wss.handleUpgrade(req, socket, head, (ws) => { joinPresence(ws, req); handleEvents(ws); });
     return;
   }
   if (url.pathname !== '/pty') {
@@ -449,7 +450,7 @@ server.on('upgrade', (req, socket, head) => {
     return;
   }
   wss.handleUpgrade(req, socket, head, (ws) => {
-    handlePty(ws, url).catch((e) => {
+    handlePty(ws, url, person(req)).catch((e) => {
       try {
         ws.send(JSON.stringify({ t: 'error', m: String((e as Error)?.message ?? e) }));
         ws.close();
@@ -476,6 +477,7 @@ await startBootHooks();
 void startTeamLayers((cb) => sockets.onItemChanged(cb));
 startFiles(ROOT); // copyparty at /files where python3 is found — src/files.ts
 const stopSessionRetention = startSessionRetention(); // closed session folders outlive the retention period by nothing
+void expireArchives(); // archives older than ARCHIVE_DAYS go at start, and on each new archive — src/session-archive.ts
 // /events: pushes the session list, the home rows, the Team rosters, the message queue, boards,
 // cron jobs and GitHub setup when they change — src/ws/events.ts
 startSessionsBroadcast({
@@ -492,6 +494,7 @@ startSessionsBroadcast({
 watchStore(WIPEBOARD_DIR, (file) => { void pushWipeboard(file.split('/')[0]!); });
 watchStore(storeDir('jikan'), (file) => { if (file.endsWith('.md')) void pushJikan(file.slice(0, -3)); });
 watchStore(storeDir('message_queue'), () => { void pushMessages(); });
+void startOfficePeople(); // hosted office: who each browser is — src/office-people.ts
 void seedHouseBoard().catch((e) => console.error('[tmux-ronin] house board seed failed:', e));
 
 void publishMax();

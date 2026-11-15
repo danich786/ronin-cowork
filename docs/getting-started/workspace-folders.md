@@ -25,8 +25,11 @@ The name is only what you see in Ronin. Changing it later never moves or renames
 ## Bring in a GitHub repository
 
 To work on a repository that isn't on this machine yet, use the **GitHub CLI** stone:
-**Install**, then **Authenticate** to sign in to GitHub. Then press **Clone a repository**,
-pick it, and it becomes a workspace folder like any other, ready to add to a Workspace.
+**Install**, then choose **Use GitHub CLI with Mika** to operate the login yourself with
+Mika beside it, or **Let Mika connect GitHub** to have her run it. On a remote machine you
+approve the one-time device code in a browser on your own computer. Then press **Clone a
+repository**, pick it, and it becomes a workspace folder like any other, ready to add to a
+Workspace.
 
 Folders already on the machine don't need GitHub.
 

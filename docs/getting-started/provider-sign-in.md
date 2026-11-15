@@ -26,8 +26,11 @@ can watch it and answer anything it asks. When it finishes, Install gets its che
 
 ## Sign in
 
-Press **Authenticate**. The provider's own sign-in opens in the same place. Follow it: a
-browser login, a device code, or an API key, whichever you use with that provider.
+In the Agent Harness workbench, choose **Let Mika authenticate** to have Mika run the
+provider's native setup in this tilespace, or **Use the CLI with Mika** to operate the
+native sign-in yourself while Mika reads it and guides you from the paired tilespace.
+On other setup surfaces, **Authenticate** opens the same native sign-in directly. Follow
+the provider's browser login, device code, or API-key flow.
 
 Under the terminal, give this sign-in a name you'll recognise, such as "Personal Claude" or
 "Work API", and choose its type: **Account / subscription**, **API key**,

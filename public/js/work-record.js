@@ -6,7 +6,8 @@
  *   the chip    a fixed-width readout in the tile header: the items held, with their status
  *   the record  the tile's Work record: the open items held first, each with its status, flag
  *               and attachments, Done waiting for the archive counted on one line; then the
- *               objective, worktrees and Teams
+ *               objective, worktrees and Teams; the brief record by part (tegami.brief); last, the brief the Agent is told (docs/architecture/brief.md, The brief),
+ *               read from GET /api/sessions/:name/brief when opened
  *   the roster  the same chip as a row per session, in the commons ⌂ Roster
  *
  * A work item mirrors Jira (owner, 2026-10-22). Everything on this side is read-only: no
@@ -14,6 +15,7 @@
  */
 import { t } from './lexicon.js';
 import { isPlanRef, planAttachment } from './plan-attachment.js';
+import { renderMarkdownDocument } from './markdown-reader.js';
 
 export function clampTip(s, room = 120) {
   return s.length > room ? s.slice(0, room - 1) + '…' : s;
@@ -29,9 +31,34 @@ export const doneWaiting = (items) => (items || []).filter((item) => item.status
 export const doneLine = (done) => t('work_record.done_waiting', 'Done, not yet archived: {n} ({ids})',
   { n: done.length, ids: done.slice(0, 8).map((item) => item.id).join(', ') + (done.length > 8 ? ', …' : '') });
 
+/** The brief record's parts, in the order the brief reads them. */
+function briefParts() {
+  return [
+  ['session', t('work_record.part_session', 'Session')], ['user', t('work_record.part_user', 'User')],
+  ['people', t('work_record.part_people', 'People')], ['setting', t('work_record.part_setting', 'Setting')],
+  ['agent', t('work_record.part_agent', 'Agent')], ['work', t('work_record.part_work', 'Work')],
+  ['brief_settings', t('work_record.part_brief_settings', 'Brief settings')],
+  ];
+}
+const filled = (value) => value !== null && value !== undefined && value !== '' && !(Array.isArray(value) && !value.length)
+  && !(typeof value === 'object' && !Array.isArray(value) && !Object.values(value).some(filled));
+const words = (key) => key.replace(/_/g, ' ');
+/** A stored value as one line: lists by comma; a named entry (a file added) by its name and depth;
+ *  any other object its filled fields, `field value` by ·. `whole` spells a person out in full. */
+export function spoken(value, whole = false) {
+  if (value === true) return t('work_record.yes', 'yes');
+  if (value === false) return t('work_record.no', 'no');
+  if (Array.isArray(value)) return value.filter(filled).map((one) => spoken(one)).join(', ');
+  if (value && typeof value === 'object') {
+    if (!whole && value.name) return value.depth ? `${value.name} (${value.depth})` : value.name;
+    return Object.entries(value).filter(([, field]) => filled(field)).map(([key, field]) => `${words(key)} ${spoken(field)}`).join(' · ');
+  }
+  return String(value);
+}
+
 /** The work record: the items held with their status, flag and attachments; then what the
  *  Agent is doing, where it works and its Teams. */
-export function buildWorkRecord(letter, deskEntry = null, { openDoc = null } = {}) {
+export function buildWorkRecord(letter, deskEntry = null, { openDoc = null, session = '' } = {}) {
   const box = document.createElement('div');
   box.className = 'work-record';
   if (!letter) return box;
@@ -48,6 +75,8 @@ export function buildWorkRecord(letter, deskEntry = null, { openDoc = null } = {
   const line = (cls, text) => Object.assign(document.createElement('p'), { className: cls, textContent: text });
 
   const held = section(t('work_record.items', 'Work items'), 'wr-items');
+  // An Agent flag (KAN-527): its terminal asks the owner something; not an item's flag.
+  if (letter.agent_flag === 'asking') held.appendChild(line('wr-item wr-agent-flag', `⚑ ${t('work_record.agent_asking', 'Asking you: answer in its terminal')}`));
   // Open items only (owner, 2026-11-05; KAN-271): Done waiting for the five-day archive is one
   // line under them, ids only, newest first, at most eight.
   const open = (letter.items || []).filter((item) => item.status !== 'Done');
@@ -121,6 +150,43 @@ export function buildWorkRecord(letter, deskEntry = null, { openDoc = null } = {
   if ((letter.teams ?? []).length) {
     const context = section(t('work_record.teams', 'Teams'), 'wr-context');
     for (const entry of letter.teams) context.appendChild(line('', entry.team));
+  }
+
+  // The brief record by part (owner, 2026-11-15): what Ronin wrote at birth or the last refresh
+  // and builds the brief from (tegami.brief, src/brief-record.ts). Every field with a value, as stored.
+  if (letter.brief) {
+    for (const [part, label] of briefParts()) {
+      const value = letter.brief[part];
+      if (!filled(value)) continue;
+      const host = section(label, `wr-record wr-record-${part}`);
+      const rows = Array.isArray(value) ? value.map((entry) => ['', entry])
+        : Object.entries(value).filter(([, field]) => filled(field));
+      for (const [key, field] of rows) {
+        const row = line('wr-record-row', '');
+        if (key) row.append(Object.assign(document.createElement('span'), { className: 'wr-record-key', textContent: words(key) }), ' ');
+        row.append(Array.isArray(value) ? spoken(field, true) : spoken(field));
+        host.appendChild(row);
+      }
+    }
+  }
+
+  // The brief, for whoever wants to see what the Agent is taught: closed until opened, then read once.
+  if (session) {
+    const brief = section(t('work_record.brief', 'Brief'), 'wr-brief');
+    const fold = document.createElement('details');
+    const summary = document.createElement('summary');
+    summary.textContent = t('work_record.brief_show', 'What this Agent is told');
+    const body = document.createElement('div');
+    body.className = 'wr-brief-body';
+    fold.append(summary, body);
+    fold.addEventListener('toggle', async () => {
+      if (!fold.open || body.childElementCount) return;
+      body.append(line('wr-empty', t('docs.loading', 'loading…')));
+      const res = await fetch(`/api/sessions/${encodeURIComponent(session)}/brief`, { cache: 'no-store' }).catch(() => null);
+      const text = res?.ok ? await res.text() : '';
+      body.replaceChildren(text ? renderMarkdownDocument(text) : line('wr-empty', t('work_record.no_brief', 'No brief for this Agent.')));
+    });
+    brief.appendChild(fold);
   }
 
   return box;

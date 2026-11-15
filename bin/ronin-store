@@ -30,7 +30,8 @@ telemetry|data|telemetry
 ageru|user|ageru
 ledger|data|ledger
 message_queue|data|message-queue
-ways|user|ways
+behaviours|user|behaviours
+facts|user|facts
 library|user|library
 session_boot|user|session_boot
 wipeboards|user|wipeboards

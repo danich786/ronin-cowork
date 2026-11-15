@@ -88,13 +88,14 @@ test('unknown, retired, invalid, and server-owned fields are ignored and noted t
 
 
 
-test('cowork kind and behaviours survive body acceptance while unusable shapes are ignored', () => {
-  const accepted = acceptedLaunchBody({ name: 'proof', kind: 'coding', behaviours: ['sops:github'] });
+test('cowork kind and the Agent\'s brief settings survive body acceptance while unusable shapes are ignored', () => {
+  const accepted = acceptedLaunchBody({ name: 'proof', kind: 'coding', brief: { add: ['visual-staging'] }, pm: true });
   assert.equal(accepted.body.kind, 'coding');
-  assert.deepEqual(accepted.body.behaviours, ['sops:github']);
+  assert.deepEqual(accepted.body.brief, { add: ['visual-staging'] });
+  assert.equal(accepted.body.pm, true);
   assert.deepEqual(accepted.ignored, []);
 
-  const ignored = acceptedLaunchBody({ name: 'proof', kind: 'mystery', behaviours: 'sops:github' });
+  const ignored = acceptedLaunchBody({ name: 'proof', kind: 'mystery', behaviours: ['sops:github'] });
   assert.equal(ignored.body.kind, undefined);
   assert.equal(ignored.body.behaviours, undefined);
   assert.deepEqual(ignored.ignored, ['behaviours', 'kind']);

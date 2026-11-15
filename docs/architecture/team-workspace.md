@@ -34,6 +34,10 @@ on leave so no transport survives outside the entered destination.
 ## `#/team/:name` user flow
 
 1. The router enters Team with `name` as the route parameter.
+   A name with no live Team draws one plain surface in place of the workbench, never an
+   empty Team: an archived Team's title with **Archived**, or for a name with no roster at
+   all the name with "No Team has this name."; each links back to Teams (`#/cowork`). The
+   controller's `teamGone` answers which, once the first rosters have arrived.
 2. Team normalizes tab state through `normalizeWorkbenchState(viewState, declaration)`:
    the column **arrangement** (order · hidden · widths) and the **seats** (what each
    workspace held: a member, or a canonical Workbench surface type).
@@ -68,7 +72,7 @@ Persistence is per browser tab (sessionStorage); one tab is one team.
 
 Everything that changes the page goes through one controller, `arrange(draft)` in
 `cowork-view.js`, built by `createArranger` (`team-arrange.js`). The selector cards call it — and so does a **draft** an agent hands in with `edges page`
-(`ronin_bin/`, catalogued in `ronin_catalogs/TOOLS.md`). The tool's bare form prints the view (the roster;
+(`ronin_bin/`, its file `ronin_catalogs/tools/edges.md`). The tool's bare form prints the view (the roster;
 each tab on the team; which workspace the owner is typing in; which shows the agent;
 what each holds); its other form takes `key=value` words naming only what should
 change. The wire is `src/routes/team-page-api.ts`: tabs report their view (`PUT`),

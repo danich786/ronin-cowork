@@ -44,12 +44,12 @@ When you bring work to a lead, it decides first which of three it is:
 |---|---|---|
 | Made | the lead as it gives out work, or the Agent as it takes it | under the epic; its objective is what done looks like to you, in your words, one or two sentences |
 | Started | the Agent | In Progress |
-| Stuck | the Agent | flagged "Waiting on <who>: <what>"; it shows under Stuck |
+| Waiting | the Agent | stopped for a question, a choice, a discussion or a block: `item flag <id> "<who>: <what you need>"`, `item unflag <id>` when moving again: a reason is asked for and becomes the comment **Flagged:** <reason>; without one the flag still goes on, and the reply asks for it as that comment. The Agent's pill (the Team's selector, People) shows ⚑ in amber while it holds a flagged item; Epics, filtered by Flagged, lists every flagged item |
 | Handed in | the Agent | In Review, still held by the Agent, with one short **Handed in** comment for you: what you can try. It shows under With the lead. Handing in code is the repo's and needs no item: `worktree-desk hand-in <repo>` alone puts the code in, and its reply tells the Agent to check its items; `--item` hands in both at once. Handing in code doesn't hand in the item, and a hand-in never makes an item Done |
 | On dev | the lead's promotion | still In Review; it moves to Ready to accept |
-| Accepted or sent back | you | Accept makes it Done, and the Agent holding it is told. Send back makes it In Progress with your comment, held where it is; the Agent holding it is told |
+| Accepted or sent back | you | Accept makes it Done, and the Agent holding it is told and ends. Send back makes it In Progress with your comment, held where it is; the Agent holding it is told |
 | Handed over | the Agent, as it ends | to the Team (or a named Agent) with a **Handover** comment: where it stands, what is next. Its status stays |
-| Done | you | off the open lists at once, counted until it is archived ("Done, not yet archived: N (ids)" on the work record); the lead need not wait: `item archive --done` clears the deck. Only the person accepting sets Done |
+| Done | as a rule, whoever asked for it: the Agent for an item it made itself, the lead for its own when it promotes, you for yours and Jira's | off the open lists at once, counted until it is archived ("Done, not yet archived: N (ids)" on the work record); the lead need not wait: `item archive --done` clears the deck |
 | Archived | Ronin, five days after Done; or anyone at once, `item archive <ids>` or `item archive --done [--team <t>]` (a Done item only) | off every list, the Epics workbench and `item search` (`--archived` finds it); `item read` and its documents still open. Jira's issue is untouched. Leaving Done brings it back |
 
 **An Agent's end hands over, never drops.** By status:
@@ -70,7 +70,7 @@ what is missing>"`; 3. clean your desks: commit and hand in; 4. then go. An item
 flagged itself needs nothing more: the flag is the acknowledgement. For one left unflagged,
 `session_end --ignore-items` (or `session_archive <name> --ignore-items`), or "close anyway" in
 the tile's confirm, goes anyway. Either way, as after a crash, each unfinished item goes to the
-Team flagged "Ended without handover: <agent>, <status>", it shows under Stuck, and the lead is
+Team flagged, its comment "Flagged: Ended without handover: <agent>, <status>", and the lead is
 told once. Nothing goes to nobody. An item nobody wants any more is deleted, not left in To Do. An epic is Done
 when what done looks like is met.
 
@@ -83,7 +83,7 @@ first; the other comments (the Agent and lead deciding things, the item's record
 |---|---|---|---|
 | **Hand-in** | the Agent: `worktree-desk hand-in <repo> [--item <id> --note "<what you can try>"]` | my work is done; review it | the lead |
 | **Promotion** | the lead: `bin/ronin-promote <team>` | it is on dev; you can try it | nobody: it shows under Ready to accept |
-| **Flag** | anyone: `item flag` | I am stuck on someone | the lead or epic holder above it |
+| **Flag** | anyone: `item flag <id> "<why>"`, a reason asked for; `item handover --flag`; the item's Flagged switch, which asks for it | I have stopped and wait on someone: a question, a choice, a discussion or a block; the reason is the **Flagged:** comment | the lead or epic holder above it |
 
 A code hand-in is the repo's: `worktree-desk hand-in <repo>` never needs an item. With none
 named, the code goes to the Team line, the lead is told, and the reply tells the Agent to check
@@ -92,7 +92,7 @@ its review line: one short line telling you what to look at, with no commit ids 
 (those stay on the item's trail; the diff is the detail). Opened, the item shows it as **Look
 at**, straight after the Objective. Moved to In Review without one, or with a long one, the move still goes and whoever moved
 it is prompted to write it. A hand-in moves a named item to In Review and no further;
-a promotion never changes a status; only you make an item Done. You accept only what is on dev (or what was
+a promotion never changes a status; the lead makes its own items Done as it promotes, and you yours. You accept only what is on dev (or what was
 handed in from a checkout, with no code to promote).
 
 ## Who is told what
@@ -103,18 +103,18 @@ Very few notices, and never the same news twice:
 |---|---|
 | a hand-in | the lead of the Team holding the work (one message, from the hand-in itself) |
 | a call for help (a flag), or an Agent ended without a handover | the lead of the Team holding the item, and the lead or epic holder above it; for an ending, the lead of the Team its items went to, once |
-| a status change | the lead of the Team holding the item, or watching it |
+| a status change | the Agent holding the item, and the lead of the Team holding or watching it |
 | a comment | holding or watching the item |
-| someone else's change on your item | the Agent doing it |
+| someone else's change on your item: handed to you ("<id> '<title>' is yours, from <giver>. Read it and follow its objective."), a status move, an edit, a Send back | the Agent holding it |
 | a Jira item with nobody on it (it comes in on the Team holding its parent, if any) | traffic_control, which places it |
-| your item is Done | the Agent that handed it in |
+| your item is Done, with what you still hold or, holding nothing open, "End now with session_end: it archives you; your lead can restore you within 7 days." | the Agent holding it |
 
 A Team is told through its lead. Where a Team holds or watches an item, its notices go to the
 Team's lead(s); with no lead running, to no one. On an item an Agent works, the lead is not
 told of its changes: only when the Agent asks for help or hands in.
 
-Nothing else sends a notice. Starts, new items, holder changes and handovers show where
-the work shows (below). Agents tell their lead only a decision or a blocker.
+Nothing else sends a notice, and nobody hears their own change. A Team's starts, new items, holder changes and handovers show
+where the work shows (below). Agents move their items without waiting for a go, flag when they wait on someone, and tell their lead only a decision.
 
 ## Where the work shows
 

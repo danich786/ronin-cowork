@@ -16,6 +16,8 @@
  * folder for all (owner, 2026-11-03): a folder per Workspace made each provider ask "trust this
  * folder?" for every new Workspace.
  */
+import type { BriefSettings } from './brief-record.js';
+import { briefSettings } from './brief-settings.js';
 import { holdsWritten, workspaceListKey } from './holds-hook.js';
 import { mkdir, readFile, readdir, rename, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -40,6 +42,9 @@ export interface Workspace {
   launch_mode: LaunchMode;
   plans?: WorkspacePlans;
   integrations: WorkspaceIntegration[];
+  /** The Workspace's brief settings and project management (docs/architecture/brief.md, Layers and brief settings). */
+  brief: BriefSettings;
+  pm?: boolean;
 }
 
 export const isValidWorkspaceName = (s: string): boolean => /^[a-z0-9][a-z0-9_-]{0,63}$/.test(s);
@@ -68,6 +73,8 @@ export function normalizeWorkspace(campaign_id: string, name: string, v: Record<
     launch_mode: v.launch_mode === 'live_dangerously' ? 'live_dangerously' : 'configured',
     ...plansOf(v.plans),
     integrations: integrationsOf(v.integrations),
+    brief: briefSettings(v.brief),
+    ...(typeof v.pm === 'boolean' ? { pm: v.pm } : {}),
   };
 }
 

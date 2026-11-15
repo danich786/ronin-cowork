@@ -124,6 +124,11 @@ gives "Your work record changed".
 - The tile's **☰ Work record**: the held items first, each with its status, flag and
   attachments (a Jira-paired item's id opens its Jira issue), then the objective, worktrees and Teams. **📄 Docs** lists the record's
   own documents and the held items' attachments.
+- **The Agent flag**: while an Agent's terminal asks you something (a dialog, a permission
+  prompt, Codex's *Update available* before its first turn), its work record opens with
+  "⚑ Asking you: answer in its terminal". It is the Agent's flag, not an item's, and it is
+  never stored: it goes when the question is answered. An asking Agent, or one holding a
+  flagged item, shows ⚑ in amber on its selector pill and its Team roster row.
 - `work-record read`: what the Agent holds and watches, and under Documents the record's own
   documents and the held items' attachments (`--json`: `documents` and `attachments`). A lead also sees each Team it leads:
   what the Team holds and watches, and what each member holds and watches, read when asked.
@@ -195,7 +200,9 @@ the Agent's own entries. Canvases read nothing until the `canvas` tool exists.
 When a line changes for a lead's Team (a plan written, ordered or given to a Team, a canvas added or removed, an
 epic made, moved or closed, a repo or folder added), the lead alone gets the usual "Your work
 record changed", once for writes that come together: an ordered plan that makes several epics is
-one notice. Editing a canvas's entries tells nobody, and members are never told.
+one notice. Only what the lines print counts: a write that leaves every line as it was (a
+Folder's directory, an integration's facts, a roster setting the record does not show) tells
+nobody. Editing a canvas's entries tells nobody, and members are never told.
 
 ## The work record
 

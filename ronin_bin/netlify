@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # netlify — the Netlify bridge: a few lines from Netlify for this Workspace's site. The Ronin
-# Services part `netlify` (/api/netlify/*) reads the Campaign's .env and makes the call; this
+# Services part `netlify` (/api/netlify/*) reads the secret netlify-auth-token and makes the call; this
 # tool only carries the words. Anything that is not one of its tools goes to Netlify's own CLI.
 . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/tool-count.sh" netlify "$@"
 set -u -o pipefail
@@ -18,10 +18,9 @@ Usage:
   netlify env                               the site's variables: keys and contexts, never values
   netlify env set <KEY> <value> [--context all|production|deploy-preview|branch-deploy|dev] [--branch <b>]
 Any tool takes --site <name|domain|id> and --workspace <name>. The site is --site, else the one
-linked to your Workspace, else NETLIFY_SITE_ID in the .env. The token is NETLIFY_AUTH_TOKEN in
-~/ronin/services_secrets/netlify-<campaign>.env; with it missing, the tool says what to set.
-The bridge is only a shortcut: Netlify's API and its own CLI work with the same .env
-(set -a; . <that file>; set +a). Any other command goes to Netlify's CLI when it is installed.
+linked to your Workspace. The token is the secret netlify-auth-token; with it missing, the tool
+says what to set. The bridge is only a shortcut: Netlify's API and its own CLI work with the same
+token (secret path netlify-auth-token). Any other command goes to Netlify's CLI when installed.
 Related: preview; ronin-help integrations
 EOF_USAGE
 }
@@ -71,7 +70,7 @@ status = os.environ["REPLY_STATUS"]
 try: d = json.loads(sys.stdin.read())
 except Exception:
     if status == "404":
-        print("The Netlify bridge (a Ronin Services part) is not running here. Use Netlify'"'"'s API or CLI with the token in ~/ronin/services_secrets/netlify-<campaign>.env.", file=sys.stderr); sys.exit(4)
+        print("The Netlify bridge (a Ronin Services part) is not running here. Use Netlify'"'"'s API or CLI with the token at secret path netlify-auth-token.", file=sys.stderr); sys.exit(4)
     print("HTTP %s: Ronin answered without JSON" % status, file=sys.stderr); sys.exit(3)
 if not d.get("ok"):
     print(d.get("error") or "HTTP %s" % status, file=sys.stderr); sys.exit(4 if d.get("missing") else 3)

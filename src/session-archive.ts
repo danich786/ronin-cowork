@@ -5,6 +5,9 @@ import { storeDir } from './resources.js';
 import { AGENTS, agentSpec } from './agents.js';
 
 export const ARCHIVE_DIR = storeDir('archived_sessions');
+/** An archive undoes an accidental close; it is not storage (owner, 2026-11-15). Older than
+ * this, it is removed as its Hard Delete removes it: at service start and on each new archive. */
+export const ARCHIVE_DAYS = 7;
 export type ResumableProvider = string;
 
 export interface ArchivedSession {
@@ -57,6 +60,12 @@ export async function listArchives(): Promise<ArchivedSession[]> {
     try { values.push(await readArchive(name.slice(0, -5))); } catch {}
   }
   return values.sort((a, b) => b.archived_at.localeCompare(a.archived_at));
+}
+
+/** The archives older than ARCHIVE_DAYS, by archived_at. */
+export function expiredArchives(archives: readonly ArchivedSession[], now = Date.now()): ArchivedSession[] {
+  const cutoff = now - ARCHIVE_DAYS * 86_400_000;
+  return archives.filter((a) => Date.parse(a.archived_at) < cutoff);
 }
 
 export async function removeArchive(id: string): Promise<void> {

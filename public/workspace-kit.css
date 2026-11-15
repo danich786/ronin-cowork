@@ -100,6 +100,15 @@
   .wk-surface-header.wk-mika-handle:active { cursor: grabbing; }
 
   .team-agent-card .wk-card-summary { color: var(--fg-strong); font-weight: var(--weight-strong); }
+  /* A FLAGGED AGENT (KAN-521): ⚑ in its mark and the amber the roster chip uses for a flagged item. */
+  .team-agent-card.flagged {
+    border-color: color-mix(in srgb, var(--warn) 55%, transparent); /* status: an Agent holds a flagged item */
+    background: color-mix(in srgb, var(--warn) 12%, transparent); /* status: an Agent holds a flagged item */
+  }
+  .team-agent-card.flagged .wk-card-heading, .team-agent-card.flagged .wk-card-mark { color: var(--warn); }
+  .league-team-agent.flagged, .league-team-member.flagged > .league-team-member-toggle {
+    background: color-mix(in srgb, var(--warn) 12%, transparent); /* status: an Agent holds a flagged item */
+  }
   .team-agent-card .wk-card-meta { display: grid; gap: var(--space-row); margin-top: 0; padding-top: var(--space-row); }
   .team-agent-card .wk-card-meta > span { display: block; min-width: 0; overflow-wrap: anywhere; }
   .team-agent-card .wk-card-meta > span:first-child { color: var(--fg); font-size: var(--text-body); line-height: var(--leading-body); }

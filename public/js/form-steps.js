@@ -15,6 +15,7 @@
  */
 import { t } from './lexicon.js';
 import { request } from './request.js';
+import { mandateTitle } from './mandates.js';
 
 export const el = (tag, cls, text) => {
   const node = document.createElement(tag);
@@ -66,26 +67,8 @@ export function createStep({ n, key, title, onToggle = null }) {
   };
 }
 
-/** The mandate words a person reads for the ruled tokens — the same keys the Team
- *  Configuration card reads, so the two surfaces can never disagree. */
-export function mandateWord(value) {
-  const words = {
-    open: t('campaign_view.option_open', 'Open'),
-    discuss: t('campaign_view.option_discuss', 'Discuss'),
-    plan: t('campaign_view.option_plan', 'Plan'),
-    execute: t('campaign_view.option_execute', 'Execute'),
-    nobody: t('campaign_view.option_nobody', 'Nobody'),
-    'propose agents': t('campaign_view.option_propose', 'Propose Agents'),
-    'staff agents': t('campaign_view.option_staff', 'Staff Agents'),
-    'a plan': t('campaign_view.option_a_plan', 'A plan'),
-    ideas: t('campaign_view.option_ideas', 'Ideas'),
-    code: t('campaign_view.option_code', 'Code'),
-    'an artifact': t('campaign_view.option_artifact', 'An artifact'),
-    'no code': t('campaign_view.option_no_code', 'No code'),
-    'the team': t('campaign_view.option_team', 'The Team'),
-  };
-  return words[value] || value;
-}
+/** The mandate word a person reads for a stored value: its file's title (mandates.js). */
+export const mandateWord = (value) => mandateTitle(value);
 
 export function kindTiles(current, onPick) {
   const KINDS = [

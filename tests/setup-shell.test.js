@@ -37,9 +37,9 @@ test('Ronin Home\u2019s Models and Workspaces doors each open their own workbenc
   assert.match(home, /setup\.provider_gate/, 'a locked door says where the way in is');
   assert.match(home, /campaign_home\.settings', 'Settings'/);
   assert.match(doors, /seat: WORKBENCH_TYPES\.modelStones,/, 'Models seats its own stones of providers');
-  assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.models, \[WORKBENCH_TYPES\.modelStones, WORKBENCH_TYPES\.accountsRecords, WORKBENCH_TYPES\.modelsRecords, WORKBENCH_TYPES\.modelRefresh, WORKBENCH_TYPES\.modelDefaults, WORKBENCH_TYPES\.modelProvider\]\)/, 'Harness, then Accounts and Models (KAN-236), then Refresh and Defaults; a harness whole is placeable, by a dragged stone or its card');
+  assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.models, \[WORKBENCH_TYPES\.modelStones, WORKBENCH_TYPES\.accountsRecords, WORKBENCH_TYPES\.modelsRecords, WORKBENCH_TYPES\.modelRefresh, WORKBENCH_TYPES\.modelDefaults, WORKBENCH_TYPES\.modelProvider, WORKBENCH_TYPES\.modelMika\]\)/, 'Harness, then Accounts and Models (KAN-236), Refresh and Defaults; a harness and its hidden Mika authentication surface are placeable');
   assert.match(doors, /seats: \{ workspace1: WORKBENCH_TYPES\.workspaceRecords, workspace2: FILES_ON \? WORKBENCH_TYPES\.files : WORKBENCH_TYPES\.folderGithub \}/, 'Workspaces seats its Workspaces in Workspace 1 and Explorer in Workspace 2 where Ronin found Python, GitHub CLI otherwise (KAN-146)');
-  assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.workspaces, \[WORKBENCH_TYPES\.workspaceRecords, WORKBENCH_TYPES\.workspaceRecord, WORKBENCH_TYPES\.workspaceNew, WORKBENCH_TYPES\.folderGithub, FILES_TYPE\]\)/, 'Workspaces, a Workspace whole, New Workspace, GitHub CLI and Explorer are placeable on Workspaces');
+  assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.workspaces, \[WORKBENCH_TYPES\.workspaceRecords, WORKBENCH_TYPES\.workspaceRecord, WORKBENCH_TYPES\.workspaceNew, WORKBENCH_TYPES\.folderGithub, WORKBENCH_TYPES\.githubMika, FILES_TYPE\]\)/, 'Workspaces, a Workspace whole, New Workspace, GitHub CLI, its hidden Mika surface and Explorer are placeable on Workspaces');
   assert.match(home, /key: 'teams', route: 'cowork'/, 'the Teams door opens the Teams workbench at #/cowork (owner, 2026-10-20)');
   // The crumb (owner, 2026-10-20): RoninCowork • Home • Teams • <Team title>; before, a Team page read
   // 'RoninCowork • Teams' with no Home and no name, and Home's doors hid the Teams step.
@@ -187,7 +187,7 @@ test('Cowork cards always expose their reading while the base controls compact p
     readFile(new URL('../public/js/workbench.js', import.meta.url), 'utf8'),
     readFile(new URL('../public/workspace-kit.css', import.meta.url), 'utf8'),
   ]);
-  assert.match(view, /mark: member\.team_lead \? '人' : null,[\s\S]*summary: reading\.step, metadata: reading\.lines/);
+  assert.match(view, /mark: `\$\{member\.team_lead \? '人' : ''\}\$\{reading\.flagged \? '⚑' : ''\}` \|\| null,[\s\S]*summary: reading\.step, metadata: reading\.lines/);
   assert.doesNotMatch(view, /thinSelectorCards|selector-card-thin|onSelectorDensityChange/);
   assert.match(workbench, /densityToggle\.el\.addEventListener\('click'/);
   assert.match(css, /\.wk-workbench-host\[data-selector-density='thin'\] \.wk-workbench-selector-cards > \.wk-card \.wk-card-summary/);

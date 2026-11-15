@@ -45,3 +45,9 @@ test('the activity subscription, as real tmux expands it, reads one entry per se
   activityMoved(value, last);
   assert.deepEqual([...last.keys()].sort(), ['alpha', 'bravo'], value);
 });
+
+test('Codex\'s startup update prompt, off a real pane, is a question (KAN-527)', async () => {
+  const { readFileSync } = await import('node:fs');
+  const screen = readFileSync(new URL('./fixtures/codex-update-prompt.txt', import.meta.url), 'utf8');
+  assert.equal(asksForInput(screen), true);
+});

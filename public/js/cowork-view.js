@@ -1,7 +1,7 @@
 /* part of the ronin-cowork client — see js/README.md */
 /** Workbench; its Campaign, Cowork or Team scope limits what cards are offered. */
 import { WorkspaceKit } from './workspace-kit.js';
-import { deleteTeamRoster, membersOfTeam, subscribe, teamByName, teamsFromState, unassignedSessions, UNASSIGNED } from './team-controller.js';
+import { deleteTeamRoster, membersOfTeam, subscribe, teamByName, teamGone, teamsFromState, unassignedSessions, UNASSIGNED } from './team-controller.js';
 import { createNewTeamFormView } from './new-team-form.js';
 import { createNewAgentView } from './new-agent.js';
 import { createTeamRosterSurface } from './team-roster-surface.js';
@@ -53,7 +53,7 @@ export function createCoworkView(options = {}) {
   const campaign = options.kind === 'cowork';
   const viewKey = campaign ? 'cowork' : 'team';
   const teamsLabel = t('campaign.coworks', 'Teams');
-  const { createSurface, createTabbedSurface, createAction, createActionBar } = WorkspaceKit.primitives;
+  const { createSurface, createTabbedSurface, createAction, createActionBar, createNotice } = WorkspaceKit.primitives;
   const { createTerminalTileHost } = WorkspaceKit.adapters;
   const { DISMISSED_WORKSPACE, normalizeWorkbenchState, workspaceMaySeedDefault } = WorkspaceKit.contract;
   const teamDefaultsRequest = (name) => ({ destination: 'team', param: name, mode: 'replace', state: {
@@ -71,7 +71,7 @@ export function createCoworkView(options = {}) {
   let entered = false;
   let lastSeat = 'workspace1'; // the workspace last touched — where the next card lands
   // The Team's title, or its id read as words ('sea_settle' → 'Sea Settle') when it has none.
-  const readableTeam = (name) => String(teamByName(name)?.title ?? '').trim() || String(name).split(/[_-]+/).filter(Boolean).map((part) => part[0].toUpperCase() + part.slice(1)).join(' ');
+  const readableTeam = (name) => String(teamByName(name)?.title ?? '').trim() || teamGone(name)?.title || String(name).split(/[_-]+/).filter(Boolean).map((part) => part[0].toUpperCase() + part.slice(1)).join(' ');
   const setBarLabel = () => S.refreshWorkspaceHeader?.();
 
   /* ---------- the workspaces: two seats, the roster between them, one commons ---------- */
@@ -309,8 +309,10 @@ export function createCoworkView(options = {}) {
     sessions: () => (campaign ? unassignedSessions() : membersOfTeam(team)).map((member) => {
       const reading = readingsOf(member);
       const mika = team === STEERCO && member.name === 'mika_agent';
-      return { key: member.name, label: mika ? t('mika.name', 'Mika') : agentTitle(member), className: 'team-agent-card',
-        mark: member.team_lead ? '人' : null,
+      // A FLAGGED AGENT (owner, 2026-11-15, KAN-521): any item it holds flagged puts ⚑ and the
+      // flagged amber on its pill; pressed, it opens as ever, the item ⚑ on its island.
+      return { key: member.name, label: mika ? t('mika.name', 'Mika') : agentTitle(member), className: `team-agent-card${reading.flagged ? ' flagged' : ''}`,
+        mark: `${member.team_lead ? '人' : ''}${reading.flagged ? '⚑' : ''}` || null,
         summary: reading.step, metadata: reading.lines,
         ...(campaign ? { action: () => openAgentWorkbench(member.name) } : {}),
         ...(mika ? { action: () => placeMikaWorkspaceTwo() } : {}),
@@ -338,6 +340,25 @@ export function createCoworkView(options = {}) {
     selector?.setAttribute('aria-label', teamsLabel);
   }
   root.append(bench.host);
+  // A link to a Team that is not live (archived, or no Team by that name) draws one plain
+  // surface saying so in place of the workbench, never an empty Team (KAN-500).
+  let goneShown = '';
+  const showGone = (gone) => {
+    const key = gone ? JSON.stringify([team, gone]) : '';
+    bench.host.hidden = Boolean(gone);
+    if (key === goneShown) return;
+    goneShown = key;
+    root.querySelector(':scope > .tw-gone')?.remove();
+    if (!gone) return;
+    const label = gone.archived ? readableTeam(team) : team;
+    const surface = createSurface({ label, className: 'tw-gone' });
+    const back = el('a', 'tw-gone-back', t('team.gone_back', 'Teams'));
+    back.href = '#/cowork';
+    surface.content.append(createNotice({ message: gone.archived
+      ? t('team.gone_archived', 'Archived')
+      : t('team.gone_none', 'No Team has this name.') }).el, back);
+    root.append(surface.el);
+  };
   // ミ Help: Mika takes over the selector column — her ordinary tile, borrowed from the
   // pool, no workspace changes hands — and Close puts the roster cards back. The Mika
   // card under Steerco is the other door: the same session as a normal tile.
@@ -605,23 +626,24 @@ export function createCoworkView(options = {}) {
     foot?.append(createAction({ label: t('new_agent.title', 'New Agent'), size: 'compact', action: () => bench.place(WB_TYPES.newAgent, oppositeSeat(seat), { team: name }) }).el);
     const agentRows = WorkspaceKit.primitives.createKeyedList({
       key: (row) => row.name,
-      shows: (row) => (row.foot ? '!foot' : JSON.stringify([row.name, row.stance, !!row.team_lead, row.title, row.holds])),
+      shows: (row) => (row.foot ? '!foot' : JSON.stringify([row.name, row.stance, !!row.team_lead, row.title, row.holds, row.flagged])),
       draw: (row) => {
         if (row.foot) return foot;
-        const node = el('button', 'league-team-row league-team-agent');
+        const node = el('button', `league-team-row league-team-agent${row.flagged ? ' flagged' : ''}`);
         node.type = 'button'; node.dataset.session = row.name;
         node.addEventListener('click', () => openAgentWorkbench(row.name));
         const live = el('i', 'home-live'); live.dataset.stance = row.stance || 'unknown';
         live.title = stanceLabel(row.stance) || ''; live.setAttribute('aria-hidden', 'true');
         const words = el('span', 'league-team-agent-name');
         if (row.team_lead) words.append(el('span', 'league-team-agent-lead', '人'));
+        if (row.flagged) words.append(el('span', 'league-team-agent-flag', '⚑'));
         words.append(row.title, el('span', 'league-team-agent-holds', row.holds));
         node.append(live, words);
         return node;
       },
     });
     const paintAgents = () => {
-      const list = membersOfTeam(name).map((member) => ({ name: member.name, stance: rows.get(member.name)?.stance, team_lead: member.team_lead,
+      const list = membersOfTeam(name).map((member) => ({ name: member.name, stance: rows.get(member.name)?.stance, team_lead: member.team_lead, flagged: !!rows.get(member.name)?.tegami?.flagged,
         title: agentTitle(member), holds: (held.get(member.name) || []).join(' · ') }));
       agentRows.set(agents, foot ? [...list, { name: '!foot', foot: true }] : list);
     };
@@ -711,6 +733,7 @@ export function createCoworkView(options = {}) {
       model: (row.model || '').toLowerCase(),
       status: stanceLabel(row.stance),
       ctx: row.ctx != null ? `⛽ ${row.ctx}%` : '',
+      flagged: !!row.tegami?.flagged,
       lines: [current.text, stanceLabel(row.stance), row.ctx != null ? `⛽ ${row.ctx}%` : '', (row.model || '').toLowerCase()].filter(Boolean),
     };
   };
@@ -738,7 +761,7 @@ export function createCoworkView(options = {}) {
   const peopleBySeat = {};
   function renderConfig(roster, live) {
     const members = membersOfTeam(team);
-    const signature = configSignature(team) + JSON.stringify(members.map((member) => readingsOf(member).lines));
+    const signature = configSignature(team) + JSON.stringify(members.map((member) => [readingsOf(member).lines, readingsOf(member).flagged]));
     const record = JSON.stringify(roster || null);
     const rowsMoved = signature !== seenConfig;
     const recordMoved = record !== seenRecord;
@@ -777,6 +800,9 @@ export function createCoworkView(options = {}) {
   }
   /* ---------- reading ---------- */
   const paint = () => {
+    const gone = campaign ? null : teamGone(team);
+    showGone(gone);
+    if (gone) { syncPools([]); return; }
     const members = membersOfTeam(team);
     const roster = teamByName(team);
     syncPools(restorationMembers());

@@ -6,6 +6,9 @@ export interface AgentLaunches {
   nativeDangerously: string[];
   modelDangerously: string[];
   resume: string[];
+  /** A copy of the conversation as a new one, under this launch's own settings (its provider
+   *  included, which a resume of some CLIs refuses to change); [] when the CLI has none. */
+  fork: string[];
   newSessionId: string[];
   isolation?: { env: string; home: string; private?: string | string[]; shared?: string[]; provision?: 'hermes-setup' };
   transcript?: { format: string; root: string; pattern: string; idPath?: string; childPath?: string };
@@ -41,6 +44,7 @@ export async function readAgentLaunches(cli: string): Promise<AgentLaunches> {
     nativeDangerously: argv(text, 'launch_native_dangerously'),
     modelDangerously: argv(text, 'launch_model_dangerously'),
     resume: argv(text, 'launch_resume'),
+    fork: argv(text, 'launch_fork'),
     newSessionId: argv(text, 'launch_new_session_id'),
     initial: initial.startsWith('[') ? argv(text, 'launch_initial') : initial === 'none' ? 'none' : 'positional',
   };

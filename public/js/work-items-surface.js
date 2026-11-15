@@ -260,6 +260,9 @@ export function renderItemDetail(host, item, { holder = '', heldBy = null, openA
   // rest of the page, and the line under the question says what happened until then.
   // FLAGGED BESIDE IT (owner, 2026-11-12, KAN-428): Jira's flag is a field, not a status, so it is
   // a switch next to the Status box, setting and clearing the flag (Add flag / Remove flag).
+  // A FLAG ASKS WHY, NEVER REFUSES (owner, 2026-11-15, KAN-521, KAN-525): Yes asks for the reason
+  // at once, which becomes the comment "Flagged: <reason>"; Cancel or no words still flags, and
+  // the answer line asks for it as a comment. To undo, flip it back.
   let status = item.status;
   let flagged = Boolean(item.flagged);
   const answer = el('p', 'fs-step-help wi-answer');
@@ -273,10 +276,11 @@ export function renderItemDetail(host, item, { holder = '', heldBy = null, openA
     onChange: async ({ status: next, flagged: flag }) => {
       if (Boolean(flag) !== flagged) {
         const want = Boolean(flag);
+        const reason = want ? (window.prompt(t('work_items.flag_reason', 'Why is it flagged? (Waiting on <who>: <what>)'), '') || '').trim() : '';
         answer.dataset.state = '';
         answer.textContent = t('work_items.saving', 'Saving…');
-        const result = await request(`/api/work-items/${encodeURIComponent(item.id)}/${want ? 'flag' : 'unflag'}`, { method: 'POST', json: {} });
-        if (result.ok) { flagged = want; item.flagged = want; sayKey(status); statusStep?.paint(); answer.textContent = want ? t('work_items.now_flagged', 'Flagged') : t('work_items.now_unflagged', 'Flag removed'); }
+        const result = await request(`/api/work-items/${encodeURIComponent(item.id)}/${want ? 'flag' : 'unflag'}`, { method: 'POST', json: want ? { comment: reason } : {} });
+        if (result.ok) { flagged = want; item.flagged = want; sayKey(status); statusStep?.paint(); answer.textContent = !want ? t('work_items.now_unflagged', 'Flag removed') : reason ? t('work_items.now_flagged', 'Flagged') : t('work_items.flagged_add_why', 'Flagged; add why as a comment'); }
         else { question.set('flagged', flagged); answer.dataset.state = 'failed'; answer.textContent = result.message || t('work_items.flag_failed', 'The flag did not change.'); }
         return;
       }
@@ -449,8 +453,15 @@ export function renderItemDetail(host, item, { holder = '', heldBy = null, openA
 /** A phalanx of item stones with the reading as its detail. */
 export function createItemPhalanx({ holder = () => '', openAttachment = null, className = '' } = {}) {
   const phalanx = createPhalanx({ grouped: true, className: `wi-phalanx ${className}`.trim(), renderDetail: ({ item }, host) => {
-    // Its head minimizes it back to the stones (KAN-431).
-    renderItemDetail(host, item, { holder: holder(item), openAttachment, onClose: () => phalanx.select('') });
+    // Its head minimizes it back to the stones (KAN-431). The reading is the whole item (KAN-524):
+    // a stone carries the slim row, without priority, starter or Jira fields.
+    let gone = false;
+    void request(`/api/work-items/${encodeURIComponent(item.id)}`, { cache: 'no-store' }).then((result) => {
+      if (gone) return;
+      const whole = result.ok && result.data?.item ? result.data.item : item;
+      renderItemDetail(host, whole, { holder: holder(item), heldBy: result.ok ? result.data?.held_by : null, openAttachment, onClose: () => phalanx.select('') });
+    });
+    return () => { gone = true; };
   } });
   return { el: phalanx.el, phalanx, setItems: (items, all = items) => phalanx.setItems(itemStones(items, { all, holder })), destroy: () => phalanx.destroy() };
 }
