@@ -187,7 +187,7 @@ test('Cowork cards always expose their reading while the base controls compact p
     readFile(new URL('../public/js/workbench.js', import.meta.url), 'utf8'),
     readFile(new URL('../public/workspace-kit.css', import.meta.url), 'utf8'),
   ]);
-  assert.match(view, /mark: member\.team_lead \? '人' : null,[\s\S]*summary: reading\.step, metadata: reading\.lines/);
+  assert.match(view, /mark: `\$\{member\.team_lead \? '人' : ''\}\$\{reading\.flagged \? '⚑' : ''\}` \|\| null,[\s\S]*summary: reading\.step, metadata: reading\.lines/);
   assert.doesNotMatch(view, /thinSelectorCards|selector-card-thin|onSelectorDensityChange/);
   assert.match(workbench, /densityToggle\.el\.addEventListener\('click'/);
   assert.match(css, /\.wk-workbench-host\[data-selector-density='thin'\] \.wk-workbench-selector-cards > \.wk-card \.wk-card-summary/);

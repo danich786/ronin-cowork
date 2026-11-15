@@ -23,7 +23,7 @@ test('Roster remains a roster; the Team page selector is Commons, Agents, New Ag
   assert.match(view, /workspace1: 'workspace2', workspace2: 'workspace1', workspace3: 'workspace4', workspace4: 'workspace3'/);
   assert.match(view, /function openAgentWorkbench\(name\)[\s\S]*reserveWorkspaceTab\(\)[\s\S]*openWorkspaceTab\('agent', name, tab\)/);
   assert.match(view, /reading: readingsOf/);
-  assert.match(view, /configSignature\(team\) \+ JSON\.stringify\(members\.map\(\(member\) => readingsOf\(member\)\.lines\)\)/);
+  assert.match(view, /configSignature\(team\) \+ JSON\.stringify\(members\.map\(\(member\) => \[readingsOf\(member\)\.lines, readingsOf\(member\)\.flagged\]\)\)/);
   // The member rows follow the live readings; the Configuration tab follows the saved record alone,
   // so a five-second status tick never throws away an edit in progress (owner, 2026-09-13).
   assert.match(view, /const record = JSON\.stringify\(roster \|\| null\);/);
