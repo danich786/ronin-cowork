@@ -67,6 +67,7 @@ function PAGES() {
       page('docs/using-ronin/work-items.md', t('help_outline.work_items', 'Work items')),
       page('docs/using-ronin/project-management.md', t('help_outline.project_management', 'Project management')),
       page('docs/using-ronin/planning.md', t('help_outline.planning', 'Writing a plan')),
+      page('docs/using-ronin/epic-templates.md', t('help_outline.epic_templates', 'Epic templates')),
       page('docs/using-ronin/wipeboards.md', t('help_outline.wipeboards', 'Wipeboards')),
       page('docs/using-ronin/desks.md', t('help_outline.desks', 'Managed worktrees')),
       page('docs/using-ronin/archived-sessions.md', t('help_outline.archived', 'Archived sessions')),

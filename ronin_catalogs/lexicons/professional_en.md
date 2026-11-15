@@ -939,6 +939,7 @@ The catalog entry goes. {dir} is not touched.
 ## help_outline — help-outline.js (the Help workbench's pages)
 - **help_outline.project_management:** Project management
 - **help_outline.planning:** Writing a plan
+- **help_outline.epic_templates:** Epic templates
 
 ## docs — docs.js (the ▧ Docs tab)
 - **docs.back_title:** Back to the list
