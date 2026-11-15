@@ -245,7 +245,7 @@ async function main(): Promise<void> {
         }
         if (moved) {
           out(`Code handed in for ${projectId}: ${moved.line.op} ${moved.line.from ?? ''} → ${moved.line.to ?? ''} (${moved.line.note}).`);
-          const next = nextStep(moved);
+          const next = await nextStep(moved);
           out(next ? `${didLine(moved)}. ${next}` : didLine(moved));
           // The review line (KAN-429): missing or long, a prompt; the hand-in is never refused.
           const prompt = reviewPrompt(moved.item);
