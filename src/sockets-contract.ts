@@ -1,7 +1,7 @@
 
 import type { TrailLine, WorkItem } from './work-items.js';
 
-export const CONTRACT_V = 14;
+export const CONTRACT_V = 13;
 
 export interface LaunchIdentity {
   key: string;
