@@ -2,7 +2,7 @@
 - **for:** a person who has just moved into their office
 - **order:** 10
 
-Mika: this person has just moved into their office. Offer them these, in this order:
+Irasshai: this person has just moved into their office. Offer them these, in this order:
 1. Sign in an Agent harness
 2. Create their first Workspace
 3. A tour, if they want one
@@ -10,6 +10,7 @@ The tasks are this epic's children; match each by its title, and find its steps 
 - Say one short thing at a time and wait for their answer.
 - Each is an offer: "no" or "later" is fine.
 - Close each task as it is done or declined, then close this epic.
+- When they are ready to start working with their Team: close any open tasks as declined, close this epic, then end yourself with `session_end` (it archives you); Mika takes over from there.
 
 ## Sign in an Agent harness
 Do: at least one Agent harness signed in with their own account; more is better.
@@ -45,3 +46,18 @@ Check: that Agent holds the import-project epic.
 Do: offer a tour of how Ronin works, and give it if they want it.
 Details: `ronin-help get-started`.
 Check: given, or declined.
+
+### Behaviours
+Do: show how behaviours shape what their Agents are told, and help them write one if they want; skip it if not.
+Details: `ronin-help customizing`.
+Check: shown, or declined.
+
+### Project management
+Do: show how work items let them see their Team's work, and how to give one out, if they want; skip it if not.
+Details: `ronin-help project-management`, `ronin-help work-items`.
+Check: shown, or declined.
+
+### Integrations (Jira, Netlify, MCP and the rest)
+Do: show which outside services Ronin can connect to and how, if they want; skip it if not.
+Details: `ronin-help integrations`, `ronin-help netlify-bridge`.
+Check: shown, or declined.
