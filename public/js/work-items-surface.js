@@ -453,8 +453,15 @@ export function renderItemDetail(host, item, { holder = '', heldBy = null, openA
 /** A phalanx of item stones with the reading as its detail. */
 export function createItemPhalanx({ holder = () => '', openAttachment = null, className = '' } = {}) {
   const phalanx = createPhalanx({ grouped: true, className: `wi-phalanx ${className}`.trim(), renderDetail: ({ item }, host) => {
-    // Its head minimizes it back to the stones (KAN-431).
-    renderItemDetail(host, item, { holder: holder(item), openAttachment, onClose: () => phalanx.select('') });
+    // Its head minimizes it back to the stones (KAN-431). The reading is the whole item (KAN-524):
+    // a stone carries the slim row, without priority, starter or Jira fields.
+    let gone = false;
+    void request(`/api/work-items/${encodeURIComponent(item.id)}`, { cache: 'no-store' }).then((result) => {
+      if (gone) return;
+      const whole = result.ok && result.data?.item ? result.data.item : item;
+      renderItemDetail(host, whole, { holder: holder(item), heldBy: result.ok ? result.data?.held_by : null, openAttachment, onClose: () => phalanx.select('') });
+    });
+    return () => { gone = true; };
   } });
   return { el: phalanx.el, phalanx, setItems: (items, all = items) => phalanx.setItems(itemStones(items, { all, holder })), destroy: () => phalanx.destroy() };
 }

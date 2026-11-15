@@ -159,3 +159,13 @@ test('Docs reads the brief files as Birth brief and Brief now (owner, 2026-11-15
   assert.match(docs, /'AGENT_BRIEF\.md': t\('docs\.brief_now', 'Brief now'\)/);
   assert.match(docs, /title\.textContent = docName\(/, 'the open document\'s title too');
 });
+
+test('an opened item reads the whole item, not the slim row: priority, starter, Jira fields (KAN-524)', async () => {
+  const surface = await read('public/js/work-items-surface.js');
+  const phalanx = surface.slice(surface.indexOf('export function createItemPhalanx'), surface.indexOf('export function createWorkItemsSurface'));
+  assert.match(phalanx, /request\(`\/api\/work-items\/\$\{encodeURIComponent\(item\.id\)\}`, \{ cache: 'no-store' \}\)/);
+  assert.match(phalanx, /const whole = result\.ok && result\.data\?\.item \? result\.data\.item : item;\s*renderItemDetail\(host, whole,/);
+  assert.match(phalanx, /return \(\) => \{ gone = true; \};/, 'a stone left before the read answers is not painted');
+  const tilehead = await read('public/js/tilehead.js');
+  assert.match(tilehead, /renderItemDetail\(detail, read\.ok && read\.data\?\.item \? read\.data\.item : item,/);
+});
