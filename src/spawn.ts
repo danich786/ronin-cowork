@@ -113,7 +113,7 @@ export function buildBrief(profile: LaunchProfile, form: SpawnForm, referenceDir
       `The session in question is @${form.reference}` +
         (referenceDir ? ` (working in ${referenceDir})` : '') +
         `. Catch up on it with \`edges read ${form.reference}\`, which reads its durable record first ` +
-        `and falls back to the live view, then run \`edges control ${form.reference}\` before touching it.`,
+        `and falls back to the live view.`,
     );
   }
   if (form.inject?.trim()) parts.push(form.inject.trim());
