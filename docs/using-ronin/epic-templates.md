@@ -9,7 +9,7 @@ and tells it to walk the epic through.
 
 | Name | Epic | For |
 |---|---|---|
-| `onboarding` | Getting set up in your new office | a person who has just moved into their office: six steps, from signing in providers to setting defaults with Mika |
+| `onboarding` | Getting set up in your new office | a person who has just moved into their office: sign in an Agent harness, create their first Workspace, a tour if they want one |
 | `import-project` | Mapping a project they brought in | an existing project brought into a Workspace: map every surface it has, write PROJECT_MAP.md, make an HTML summary, tell the person what was found |
 
 `epic-template list` prints what this install has, your own included.
@@ -21,16 +21,16 @@ Mika. Every other template is an Agent's choice. An Agent that sees one fits rea
 `epic-template list` and starts it:
 
 ```text
-epic-template start import-project --new mapper --workspace my_site
+session_create mapper
+epic-template start import-project --to mapper --workspace my_site
 ```
 
-`--to <agent>` gives it to an Agent that already runs; `--new <agent>` makes a new one first
-(`session_create`, on the Team that works in that Workspace, with the Team's defaults). With
-neither, the Agent starting it walks it through itself. `--workspace` also goes on the epic's
+`--to <agent>` gives it to another Agent; a new one is made first with `session_create`. Without
+it, the Agent starting it walks it through itself. `--workspace` also goes on the epic's
 last line, so the Agent knows where the work is.
 
-Onboarding's "Set up their first Workspace" carries a subtask for this: when the person brought
-in an existing project, Mika starts `import-project` with a new Agent in that Workspace.
+Onboarding's "Create their first Workspace" points at this: when the person brought in an
+existing project, Mika makes an Agent for it and starts `import-project` with `--to`.
 
 ## Where the results go
 

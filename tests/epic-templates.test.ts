@@ -68,14 +68,13 @@ const run = (args: string[], as = 'mika') => new Promise<{ status: number; stdou
     resolve({ status: error ? Number((error as { code?: number }).code ?? 1) : 0, stdout, stderr }));
 });
 
-test('stock: onboarding is the six steps in order, its Workspace task carrying the import-project subtask; no item ids', async () => {
+test('stock: onboarding is the three tasks in order, its Workspace task pointing at import-project; no item ids', async () => {
   const onboarding = await readTemplate('onboarding');
   assert.equal(onboarding.title, 'Getting set up in your new office');
   assert.deepEqual(onboarding.tasks.map((task) => task.title), [
-    'Sign in the model providers they want', 'Sign in GitHub, if they use it', 'Set up their first Workspace',
-    'A tour of how Ronin works', 'Customise Ronin with their own behaviours', 'Turn to Mika to set defaults',
+    'Sign in an Agent harness', 'Create their first Workspace', 'A tour, if they want one',
   ]);
-  assert.match(onboarding.tasks[2]!.subtasks[0]!.objective, /epic-template start import-project --new <name> --workspace <workspace>/);
+  assert.match(onboarding.tasks[1]!.objective, /epic-template start import-project --to <agent>/);
   for (const template of await listTemplates()) {
     const all = [template.objective, ...template.tasks.flatMap((task) => [task.objective, ...task.subtasks.map((sub) => sub.objective)])].join('\n');
     assert.doesNotMatch(all, /\b(w[1-9]\d*|KAN-\d+)\b/, `${template.name} names no item id`);
@@ -100,25 +99,28 @@ test('a file of the user\'s own adds a template, or replaces stock by name; list
 });
 
 test('start makes the epic, tasks in order and subtasks, each held by the Agent, and tells it one line', async () => {
-  const r = await run(['start', 'onboarding', '--to', 'mapper', '--workspace', 'shop']);
+  const own = path.join(dir, 'user', 'epic_templates');
+  await fs.mkdir(own, { recursive: true });
+  await fs.writeFile(path.join(own, 'stepped.md'), '# Stepped\n- **for:** a test\n- **order:** 90\n\nWalk it.\n\n## First\nDo: a.\nDetails: b.\nCheck: c.\n\n## Second\nDo: a.\nDetails: b.\nCheck: c.\n\n### Its step\nDo: a.\nDetails: b.\nCheck: c.\n');
+  const r = await run(['start', 'stepped', '--to', 'mapper', '--workspace', 'shop']);
+  await fs.rm(path.join(own, 'stepped.md'));
   assert.equal(r.status, 0, r.stderr);
-  const epicId = /^started (\S+) from onboarding$/m.exec(r.stdout)![1]!;
+  const epicId = /^started (\S+) from stepped$/m.exec(r.stdout)![1]!;
   const epic = (await readItem(epicId))!;
   assert.equal(epic.kind, 'Epic');
   assert.match(epic.objective, /\nWorkspace: shop$/);
   const children = (await listItems()).filter((item) => item.parent === epicId);
-  assert.deepEqual(children.map((item) => item.title), (await readTemplate('onboarding')).tasks.map((task) => task.title));
-  const workspaceTask = children[2]!;
-  const subs = (await listItems()).filter((item) => item.parent === workspaceTask.id);
-  assert.deepEqual(subs.map((item) => [item.title, item.level]), [['Map a project they brought in', -1]]);
+  assert.deepEqual(children.map((item) => item.title), ['First', 'Second']);
+  const subs = (await listItems()).filter((item) => item.parent === children[1]!.id);
+  assert.deepEqual(subs.map((item) => [item.title, item.level]), [['Its step', -1]]);
   for (const id of [epicId, ...children.map((item) => item.id), subs[0]!.id]) assert.deepEqual(await holdersOf(id), [{ kind: 'agent', name: 'mapper' }], id);
   const told = (await listQueuedMessages()).filter((one) => one.target === 'mapper');
   assert.equal(told.length, 1);
-  assert.equal(told[0]!.text, `Walk this epic through: ${epicId} 'Getting set up in your new office', in the Workspace shop. Read it (\`item read ${epicId}\`); its tasks are its children.`);
+  assert.equal(told[0]!.text, `Walk this epic through: ${epicId} 'Stepped', in the Workspace shop. Read it (\`item read ${epicId}\`); its tasks are its children.`);
   assert.equal(told[0]!.when, 'ready');
 });
 
-test('start with no --to is the caller\'s own, untold; an unknown template or --new in a Workspace no Team works in is refused', async () => {
+test('start with no --to is the caller\'s own, untold; an unknown template or --new is refused', async () => {
   const mine = await run(['start', 'launch'], 'mika');
   assert.equal(mine.status, 0, mine.stderr);
   const epicId = /^started (\S+)/.exec(mine.stdout)![1]!;
@@ -127,9 +129,6 @@ test('start with no --to is the caller\'s own, untold; an unknown template or --
   const missing = await run(['start', 'nope']);
   assert.notEqual(missing.status, 0);
   assert.match(missing.stderr, /No epic template "nope"; epic-template list shows them\./);
-  const nobody = await run(['start', 'import-project', '--new', 'fresh', '--workspace', 'empty']);
-  assert.equal(nobody.status, 4);
-  assert.match(nobody.stderr, /No Team works in the Workspace empty/);
-  const both = await run(['start', 'launch', '--to', 'a', '--new', 'b']);
-  assert.equal(both.status, 2);
+  const gone = await run(['start', 'launch', '--new', 'b']);
+  assert.equal(gone.status, 2);
 });

@@ -7,4 +7,4 @@
 
 ## Usage
 
-`epic-template list` names each template; `epic-template start <name> [--to <agent> | --new <agent>] [--workspace <w>]` makes its epic and tasks, held by that Agent (you, unless named; `--new` makes one with session_create), and tells it to walk the epic through. Taught by `ronin-help epic-templates`; `epic-template --help`.
+`epic-template list` names each template; `epic-template start <name> [--to <agent>] [--workspace <w>]` makes its epic and tasks, held by that Agent (you, unless named; make a new one first with session_create), and tells it to walk the epic through. Taught by `ronin-help epic-templates`; `epic-template --help`.
