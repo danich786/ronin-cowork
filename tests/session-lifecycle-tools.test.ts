@@ -40,6 +40,36 @@ test('named lifecycle tools reuse the live archive and rehydrate routes', async 
   ]);
 });
 
+test('session_restore with no argument lists the archives newest first, each with its restore line', async (t) => {
+  const seen: Array<{ method?: string; url?: string }> = [];
+  const server = createServer((req, res) => {
+    seen.push({ method: req.method, url: req.url });
+    res.setHeader('content-type', 'application/json');
+    res.end(JSON.stringify([
+      { id: 'scribe-key', name: 'scribe', archived_at: '2026-11-15T07:30:00.000Z', agent: 'claude', tags: ['system'] },
+      { id: 'loner-key', name: 'loner', archived_at: '2026-11-14T09:05:00.000Z', agent: 'claude', tags: [] },
+    ]));
+  });
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => server.close());
+  const address = server.address() as AddressInfo;
+  const env = { ...process.env, RONIN_URL: `http://127.0.0.1:${address.port}`, RONIN_CLI_TOKEN: 'test-token' };
+
+  const listed = await exec(path.join(root, 'ronin_bin', 'session_restore'), [], { env });
+  assert.equal(listed.stdout, [
+    '2 archive(s), newest first; each lasts 7 days:',
+    '  scribe · system · 2026-11-15 07:30 UTC · scribe-key',
+    '    session_restore scribe-key',
+    '  loner · no team · 2026-11-14 09:05 UTC · loner-key',
+    '    session_restore loner-key',
+    '',
+  ].join('\n'));
+  assert.deepEqual(seen, [{ method: 'GET', url: '/api/archived-sessions' }]);
+  const help = await exec(path.join(root, 'ronin_bin', 'session_restore'), ['--help'], { env });
+  assert.match(help.stdout, /session_restore {15}list the archives/);
+  assert.match(help.stdout, /lasts 7 days/);
+});
+
 test('lifecycle tools preserve route refusals and reject extra arguments', async (t) => {
   const server = createServer((_req, res) => {
     res.statusCode = 409;

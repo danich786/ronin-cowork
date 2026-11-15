@@ -30,7 +30,7 @@ import { registerBrief } from './routes/brief-api.js';
 import { homeRows, registerLaunch } from './routes/launch.js';
 import { registerPasskeyLogin, registerPasskeyManage } from './routes/passkey-api.js';
 import { registerPasswordSettings } from './routes/password-api.js';
-import { registerSessions, shutdownOperation } from './routes/sessions-api.js';
+import { expireArchives, registerSessions, shutdownOperation } from './routes/sessions-api.js';
 import { registerTeams, teamRosters } from './routes/teams-api.js';
 import { registerWorkspaces } from './routes/workspaces-api.js';
 import { registerIntegrations } from './routes/integrations-api.js';
@@ -477,6 +477,7 @@ await startBootHooks();
 void startTeamLayers((cb) => sockets.onItemChanged(cb));
 startFiles(ROOT); // copyparty at /files where python3 is found — src/files.ts
 const stopSessionRetention = startSessionRetention(); // closed session folders outlive the retention period by nothing
+void expireArchives(); // archives older than ARCHIVE_DAYS go at start, and on each new archive — src/session-archive.ts
 // /events: pushes the session list, the home rows, the Team rosters, the message queue, boards,
 // cron jobs and GitHub setup when they change — src/ws/events.ts
 startSessionsBroadcast({
