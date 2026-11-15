@@ -103,6 +103,31 @@ this flow never touches; only the operator restarts, and the browser reconnects.
 **Rollback is a symlink**: `bin/ronin-update --rollback` re-points `current` at the
 previous unpacked release and restarts. Running it again rolls forward.
 
+**Services ride along.** A Cowork update copies the installed Services store
+(`<home>/services`) into the candidate, and `--services --file` installs Services only
+when their `contract=` matches the serving Cowork's `CONTRACT_V`. Neither one can move an
+install across a contract change, so that move takes both packages at once:
+
+```
+<new>/bin/ronin-update --home <home> --file ronin-cowork-vX.Y.Z.tar.gz \
+    --services-file ronin-services-vA.B.C.tar.gz
+```
+
+- Both tarballs are checked against `SHA256SUMS`: one file beside each, or one file
+  holding both lines when the two tarballs share a directory.
+- The two must answer the same contract: the Cowork tarball's `src/sockets-contract.ts`
+  and the Services `VERSION` `contract=`. The installed contract doesn't enter into it.
+  A mismatch is refused with both numbers, and nothing moves.
+- The candidate is the new Cowork carrying the **new** Services, gated exactly as above.
+  Only a pass swaps `current` and the store together. The store it replaced is kept as
+  `<home>/services.previous`.
+- Run it from the **new release's own copy**: unpack its Cowork tarball anywhere and
+  call that tree's `bin/ronin-update` with `--home`. The installed older copy doesn't know
+  `--services-file`.
+- `--rollback` returns to the previous Cowork and its Services. Roll forward from the
+  newer release's copy (`<home>/releases/<new>/bin/ronin-update --rollback`), because the
+  older release's updater doesn't move the store back.
+
 **The one route a restart cannot carry**: unit files are COPIES in systemd
 (docs/repo-to-operator.md). If a release changes `deploy/`, the updater says so —
 run `./setup.sh` from `current` to re-render them.

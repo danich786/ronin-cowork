@@ -78,7 +78,8 @@ A registration Submit and `POST /api/services/install` both start that updater; 
 needs an entitlement. A machine that holds an entitlement fetches through the HQ release
 grant. Without one the updater stops and says so: register with Ronin HQ and paste the Services
 key. There is no anonymous feed (the release repo is private); a tarball already on disk installs
-with `bin/ronin-update --services --file`.
+with `bin/ronin-update --services --file`. A contract change moves both packages in one gated swap:
+`--file <cowork> --services-file <services>` ([release.md](../development/release.md#installing-and-updating-the-consuming-half)).
 
 Starting is not installing. One start runs at a time, so concurrent presses launch one
 updater. The answer says only whether the updater was launched. The run

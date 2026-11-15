@@ -21,7 +21,9 @@
 # agree on CONTRACT_V with each other (not with what is installed); the candidate is the
 # new cowork carrying the NEW services, gated as today, and only a pass swaps current and
 # the services store together. The store it replaced is kept as <home>/services.previous,
-# and --rollback puts it back with the previous cowork. Run it from the NEW release's own
+# and --rollback puts it back with the previous cowork (roll forward again from the newer
+# release's copy, <home>/releases/<new>/bin/ronin-update: older ones don't know the store
+# was paired). Run it from the NEW release's own
 # copy (unpack its tarball anywhere, run its bin/ronin-update --home <home> …): the old
 # installed copy does not know the flag.
 #
