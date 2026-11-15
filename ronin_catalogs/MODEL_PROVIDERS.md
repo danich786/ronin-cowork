@@ -98,6 +98,17 @@ setup names; each setup pins a connection, actual API model, reasoning and appro
 Each Cowork launch receives a separate Hermes home. Credentials belong to the API
 connection, not the setup. See `docs/agents/hermes.md` for setup and current limits.
 
+### GitHub Copilot
+
+- **provider:** `github`
+- **cli:** `copilot`
+- **families:** `opus=frontier sonnet=standard haiku=light gpt=frontier mini=light pro=frontier flash=standard`
+- **transcript_source:** From docs, not yet seen on a real run: `$COPILOT_HOME/session-state/<session-id>/events.jsonl`, one session event per line, first `session.start` carrying `data.sessionId` (schema: `@github/copilot-sdk` `session-events.schema.json`). Adapter `copilot-events`; fresh Ronin launches isolate `session-state`.
+
+Model ids are passed unchanged to Copilot CLI's `--model` option; they are the ones its own
+`/model` picker shows, from several vendors, as the account's Copilot plan allows. Copilot
+publishes no list Ronin can read. Not yet exercised end to end through Ronin.
+
 Other providers (pi, perplexity, …) arrive the same way: a contributor PR adding a
 section, or a section in your own shadow copy. A third-party API service such as
 OpenRouter is not a harness and gets no section: it is an account a harness launches on

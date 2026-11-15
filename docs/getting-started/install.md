@@ -249,7 +249,7 @@ command with approval, and verify the result. Never ask the owner to paste a key
 or a recorded tile.
 
 - **Installed is not signed in.** From the same login shell a Ronin tile receives,
-  `for c in claude codex agy grok hermes; do command -v "$c" || true; done` proves only
+  `for c in claude codex agy grok hermes copilot; do command -v "$c" || true; done` proves only
   whether a CLI is found. The provider catalog (`ronin_catalogs/MODEL_PROVIDERS.md`) lists
   what Ronin offers; **Model providers** shows what this machine has.
 - **Signed in is a file's existence.** A provider whose own credential file is present
@@ -263,9 +263,9 @@ or a recorded tile.
   checks, without printing it; a spawned tile may inherit a different service environment.
   Resolve a conflict with the owner rather than dismissing the CLI's warning.
 - **CLI particulars** live in the [Codex](../agents/codex.md#sign-in-particulars) and
-  [Claude Code](../agents/claude.md#sign-in-particulars) integration pages. Antigravity CLI, Grok
-  and Hermes have catalog rows but Google, xAI and Nous have not been launched end to end
-  through Ronin: do not invent a sign-in command or normalize one provider's status output
+  [Claude Code](../agents/claude.md#sign-in-particulars) integration pages. Antigravity CLI, Grok,
+  Hermes and GitHub Copilot CLI have catalog rows and their own integration pages, but have not
+  been launched end to end through Ronin: do not invent a sign-in command or normalize one provider's status output
   into another's. Hermes has no safe automatic installer in Ronin.
 
 ### Workspace folder

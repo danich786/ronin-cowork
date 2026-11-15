@@ -35,7 +35,7 @@ One `### <Vendor>` section per provider. The section's fields:
 | Field | Meaning |
 |---|---|
 | `provider` | the vendor id a launch names (`anthropic`, `openai`, `google`, `xai`, `nous`) and the key of `agents.sessions.by_provider` |
-| `cli` | the id of the CLI that serves it in `src/agents.ts` (`claude`, `codex`, `agy`, `grok`, `hermes`) |
+| `cli` | the id of the CLI that serves it in `src/agents.ts` (`claude`, `codex`, `agy`, `grok`, `hermes`, `copilot`) |
 | `models_dev` | optional: the provider key models.dev files this vendor's models under; without one its models show no model info |
 | `families` | `word=tier` pairs (`sonnet=standard`): a listed id takes the tier of the longest word standing whole in it, else in its models.dev family |
 | `maturity` | optional: `comingSoon` shows the provider and never launches it |

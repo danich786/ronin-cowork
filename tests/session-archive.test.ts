@@ -70,6 +70,11 @@ test('provider lifecycle syntax comes from the Agent document', async () => {
   assert.deepEqual((await readAgentLaunches('codex')).resume, ['codex', 'resume', '{session_id}']);
   assert.deepEqual((await readAgentLaunches('agy')).resume, ['agy', '--conversation', '{session_id}']);
   assert.equal(AGENTS.find((agent) => agent.id === 'agy')?.operations.session.discovery, 'unsupported');
+  const copilot = await readAgentLaunches('copilot');
+  assert.deepEqual(copilot.resume, ['copilot', '--resume', '{session_id}']);
+  assert.deepEqual(copilot.initial, ['-i', '{brief}']);
+  assert.deepEqual(copilot.isolation, { env: 'COPILOT_HOME', home: '~/.copilot', private: 'session-state' });
+  assert.equal(copilot.transcript?.format, 'copilot-events');
 });
 
 test('archive ids cannot escape the archive directory', async () => {

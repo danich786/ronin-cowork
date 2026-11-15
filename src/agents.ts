@@ -116,6 +116,27 @@ export const AGENTS = [
     parked: "Ronin cannot install this one yet — Nous's own installer needs system packages it has to ask you for, and does not finish without them. Install it from their site and it appears here.",
     screen: { busy: [], asking: [], ready: [] },
   },
+  {
+    id: 'copilot',
+    cmd: 'copilot',
+    label: 'GitHub Copilot CLI',
+    operations: {
+      install: 'npm install -g @github/copilot',
+      // `copilot help config`, autoUpdate: "Installations run from npm/JavaScript only report that a
+      // newer version is available - installing it stays a manual `npm install`."
+      update: { shell: 'npm install -g @github/copilot@latest', argv: [] },
+      selfUpdates: false,
+      version: ['--version'],
+      models: { read: 'none' },
+      session: { discovery: 'unsupported' },
+    } as AgentOperations,
+    parked: '',
+    // Its token goes to the OS keyring, or into ~/.copilot/config.json beside trusted folders
+    // when there is none: no file that means "signed in" alone, so the owner's Done activates it.
+    credentials: [],
+    carry: ['.copilot/config.json', '.copilot/settings.json'],
+    screen: { busy: [], asking: [], ready: [] },
+  },
 ] as const;
 
 export interface AgentAvailability {

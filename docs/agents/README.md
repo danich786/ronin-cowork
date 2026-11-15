@@ -7,6 +7,7 @@ Each CLI has one maintained integration page:
 - [Antigravity CLI](agy.md)
 - [Grok](grok.md)
 - [Hermes](hermes.md)
+- [GitHub Copilot CLI](copilot.md)
 
 These pages own each CLI's Ronin-specific explanation and code map. Shared browser
 shortcuts belong only to [Terminal controls](../using-ronin/terminal-controls.md).
