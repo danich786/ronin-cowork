@@ -1,5 +1,5 @@
 # Netlify bridge
-- **seed:** Netlify hosts the Workspace's sites: `netlify` for its sites, deploys, traffic, forms and variables; `preview` for a pull request's preview link.
+- **seed:** Netlify hosts the Workspace's sites: `netlify` for its sites, deploys, traffic, forms and variables; `preview` for a pull request's preview link. Setting a site up, the owner's steps: `ronin-help netlify-bridge`.
 - **when:** integration:netlify
 - **depth:** full
 - **mcp:**
@@ -25,4 +25,21 @@ Netlify's own CLI and API still work for anything it doesn't cover.
   the person you work for: name the forks and take the one they pick.
 
 
-Setting it up, the owner's steps one at a time: `ronin-help netlify`.
+### Setting it up
+`netlify sites` says what is missing. The owner does the clicks: give one step at a time and
+wait for each.
+1. **The site:** app.netlify.com, sign up with GitHub; Add new project → Import an existing
+   project → GitHub; install the Netlify app on the repository's owner, for that repository
+   only; pick the repository, the production branch, the build command (empty for a static
+   site) and the publish directory (`.` for the top). Deploy, then ask for the site name it
+   gives (`<name>.netlify.app`).
+2. **The token:** `secret ask netlify-auth-token --for "Netlify personal access token"`. The
+   owner makes it under User settings → Applications → Personal access tokens.
+3. **The link:** the owner adds Netlify with the site name to the Workspace; until then,
+   `--site <name>`.
+4. **The domain:** add it and its `www` to the site through Netlify's API, the token by
+   `secret path netlify-auth-token`.
+5. **DNS,** at the registrar: the bare domain an A record to `75.2.60.5`; `www` a CNAME to
+   `<name>.netlify.app`. Netlify issues the HTTPS certificate by itself.
+6. **Done:** when `curl -sI` shows both names answered by Netlify, say so. An old host comes
+   down only when the owner takes it down.
