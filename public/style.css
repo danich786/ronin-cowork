@@ -3978,6 +3978,9 @@ body {
   margin-top: var(--space-row);
 }
 .work-record .wr-context p { color: var(--fg); }
+.work-record .wr-record-row { color: var(--fg); overflow-wrap: anywhere; }
+.work-record .wr-record-row + .wr-record-row { margin-top: var(--space-row); }
+.work-record .wr-record-key { color: var(--muted); }
 .work-record .wr-context p + p { margin-top: var(--space-row); }
 .work-record .wr-context span {
   color: var(--muted);
