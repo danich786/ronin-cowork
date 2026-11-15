@@ -98,6 +98,21 @@ export async function askMika(tile, ask) {
   }
 }
 
+/* ---------- who helps with a sign-in ----------
+ * Mika cannot run before a provider is signed in, so in a new office the sign-in buttons ask
+ * Irasshai, its onboarding Agent, while she is running; otherwise Mika. The one place that picks. */
+const IRASSHAI = 'irasshai';
+export const signInHelper = () => (S.sessions.some((s) => s.name === IRASSHAI) ? IRASSHAI : MIKA);
+export const signInHelperName = () => (signInHelper() === IRASSHAI ? 'Irasshai' : 'Mika');
+/** Ask the sign-in helper; answers the session asked. */
+export async function askSignInHelper(prompt) {
+  const who = signInHelper();
+  if (who === MIKA) { await askMika(null, prompt); return who; }
+  try { await request('/api/sessions/' + encodeURIComponent(who) + '/send', { method: 'POST', json: { text: prompt } }); }
+  catch (e) { showFailure('mika', e); }
+  return who;
+}
+
 /* ---------- ミ Help — Mika takes over the selector column ----------
  *
  * One panel, one implementation, used by every workbench that has a selector: the cards

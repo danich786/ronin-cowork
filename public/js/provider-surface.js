@@ -472,8 +472,9 @@ export function createProviderDrawing(context, { repaint, say = () => {} }) {
       const assisted = typeof context.environment?.onMikaProviderGuide === 'function'
         && typeof context.environment?.onMikaProviderConnect === 'function';
       if (assisted) {
-        const operate = control(auth, t('setup_surface.authenticate_mika', 'Let Mika authenticate'), () => context.environment.onMikaProviderConnect({ provider, workspace: context.workspace }));
-        const guide = action(t('setup_surface.authenticate_guided', 'Use the CLI with Mika'), '', async () => {
+        const irasshai = context.environment.assistName?.() === 'Irasshai';
+        const operate = control(auth, irasshai ? t('setup_surface.authenticate_irasshai', 'Let Irasshai authenticate') : t('setup_surface.authenticate_mika', 'Let Mika authenticate'), () => context.environment.onMikaProviderConnect({ provider, workspace: context.workspace }));
+        const guide = action(irasshai ? t('setup_surface.authenticate_guided_irasshai', 'Use the CLI with Irasshai') : t('setup_surface.authenticate_guided', 'Use the CLI with Mika'), '', async () => {
           guide.disabled = true;
           const result = await press(`/api/setup/providers/${encodeURIComponent(provider.id)}/login`);
           if (result?.ok) await context.environment.onMikaProviderGuide({ provider, setupSession: result.data?.attachment?.key || `provider_setup_${provider.id}`, workspace: context.workspace });

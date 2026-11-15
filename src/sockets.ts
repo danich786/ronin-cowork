@@ -1,4 +1,4 @@
-import type { BornInfo, ItemChange, MikaIdentity, MikaLaunchChoice, ProviderReadiness, RowFields, Sockets } from './sockets-contract.js';
+import type { BornInfo, ItemChange, RowFields, Sockets } from './sockets-contract.js';
 import { deliverToWatchers } from './ws/watchers.js';
 
 type BootHook = { start(): void | Promise<void>; stop?(): void };
@@ -15,13 +15,6 @@ const activityHooks: Array<(session: string) => void> = [];
 // The home push, set by ws/events.ts (which imports this file, so it is handed in, not imported).
 let pushRows: (session: string) => void = () => {};
 let streamHandler: ((...args: unknown[]) => void) | undefined;
-const mikaChoosers: Array<(ready: ProviderReadiness) => Promise<MikaLaunchChoice | null> | MikaLaunchChoice | null> = [];
-const providerHooks: Array<(ready: ProviderReadiness) => void | Promise<void>> = [];
-// Mika's controls, set by routes/launch.ts (which owns her launch), so handed in, not imported.
-let mikaControl: { identity(): Promise<MikaIdentity | null>; restart(opts: { prompt?: string; archive?: boolean }): Promise<void> } = {
-  identity: async () => null,
-  restart: async () => {},
-};
 
 export const sockets: Sockets = {
   resolveTranscriptSource: async (name) => (await import('./launch-journal.js')).resolveTranscriptSource(name),
@@ -39,27 +32,7 @@ export const sockets: Sockets = {
   deliverToWatchers: (session, make) => deliverToWatchers(session, make),
   addRoutes: (m) => void routeMounts.push(m),
   setStreamHandler: (h) => void (streamHandler = h),
-  chooseMikaLaunch: (cb) => void mikaChoosers.push(cb),
-  onProvidersRecorded: (cb) => void providerHooks.push(cb),
-  mikaIdentity: () => mikaControl.identity(),
-  restartMika: (opts) => mikaControl.restart(opts),
 };
-
-export function setMikaControl(control: typeof mikaControl): void { mikaControl = control; }
-/** The first part's choice of Mika's launch, or null for Core's own rule. */
-export async function askMikaLaunch(ready: ProviderReadiness): Promise<MikaLaunchChoice | null> {
-  for (const cb of mikaChoosers) {
-    try { const choice = await cb(ready); if (choice) return choice; }
-    catch (e) { console.error('[sockets] mika launch chooser:', e); }
-  }
-  return null;
-}
-export function emitProvidersRecorded(ready: ProviderReadiness): void {
-  for (const cb of providerHooks) {
-    try { void Promise.resolve(cb(ready)).catch((e) => console.error('[sockets] providers hook:', e)); }
-    catch (e) { console.error('[sockets] providers hook:', e); }
-  }
-}
 
 export async function startBootHooks(): Promise<void> {
   for (const h of bootHooks) {
