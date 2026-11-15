@@ -1110,6 +1110,7 @@ The catalog entry goes. {dir} is not touched.
 
 ## work_record — work-record.js (the work record chip and panel)
 - **work_record.items:** Work items
+- **work_record.agent_asking:** Asking you: answer in its terminal
 - **work_record.no_items:** No work items held.
 - **work_record.task_at_hand:** Task at hand
 - **work_record.task_unstated:** No task stated in this work record.

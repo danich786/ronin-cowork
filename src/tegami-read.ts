@@ -29,6 +29,9 @@ export interface Tegami {
   /** Any item it holds is flagged (owner, 2026-11-15, KAN-521): derived from the holds, never
    * stored; its selector pill shows ⚑ in the flagged colour. */
   flagged: boolean;
+  /** An Agent flag (KAN-527): the Agent itself waits on the owner, its terminal asking a
+   * question. The home row sets it, with `flagged`, from the pane (src/routes/launch.ts); never stored. */
+  agent_flag?: 'asking';
   /** When the work record was last written (epoch ms): the browser works out the age, so the push stays still. */
   quietSince: number;
 }
