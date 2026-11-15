@@ -75,7 +75,7 @@ export async function expandLookup(text: string): Promise<string | null> {
     }
     return (
       `${text.trim()} → resolved by Ronin (no lookup needed): the ${want} team is ${rows.length} session(s) — ${rows.join(', ')}. ` +
-      `That set is what "${want}" means here. Membership changes as sessions are born, tagged or die, so re-run "edges team ${want}" before acting on the team later, and control-check each member before touching it. ` +
+      `That set is what "${want}" means here. Membership changes as sessions are born, tagged or die, so re-run "edges team ${want}" before acting on the team later. ` +
       `This is a lookup: report it and wait unless you were already told what to do with them.`
     );
   }
@@ -97,6 +97,6 @@ export async function expandLookup(text: string): Promise<string | null> {
   }
   return (
     `${text.trim()}  ⟨resolved by Ronin, no lookup needed: ${clauses.join('; ')}. ` +
-    `Membership can change — re-check with "edges team <team>" before acting later, and control-check each member before touching it.⟩`
+    `Membership can change — re-check with "edges team <team>" before acting later.⟩`
   );
 }

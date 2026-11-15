@@ -44,8 +44,6 @@ edges wipeboard <board> find <text…>         search what it still holds
 edges wipeboard <board> post [--to …] <text…>  the explicit-name case
 ```
 
-Being pointed at a board is not an instruction to post on it.
-
 ## Reading
 
 **A read belongs to one session.** "If you have five sessions, each session needs to read
@@ -55,8 +53,7 @@ those cursors, never stored.
 
 A post is read by a session when that session's check **printed it in full and the cursor
 then saved**. Nothing about comprehension, and **acknowledgement is never required**: the
-cursor is the only acknowledgement there is, and it is mechanical. Never post just to say
-you read something.
+cursor is the only acknowledgement there is, and it is mechanical.
 
 The cursor advances **last**, after the output is written — so a run that dies half way
 delivers those posts again rather than swallowing them. A repeated post is noise; a
@@ -93,8 +90,6 @@ a void — an empty thread is the conversation that has not started yet.
 **An addressed post is not a private message.** Everyone on the board still receives it on
 their next check, and the lead was interrupted besides. An empty `--to` is refused rather
 than guessed at: one keystroke sits between four different audiences.
-
-Address a post to whoever has to act on it; leave it open only when everyone has to.
 
 The notice a post fires is **a pointer, never a copy**: one line naming the wipeboard and
 the poster, telling the reader to run the one action. It carries no path, and never asks

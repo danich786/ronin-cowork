@@ -5,42 +5,8 @@
 - **serves:** team-lead
 - **order:** 60
 
-Reach for the Team tools when the question concerns a Team's existence or shared state:
-create or inspect its canonical roster, or read what the Team and its members hold. A work
-item is stored once by id; the Team roster holds a list of item ids, and so does every
-Agent's work record. Every act on an item is the `item` tool's (`item handoff <id>
-team:<name>` gives one to a Team).
-
-**New Team** means create the canonical Team record with `team roster write`.
-
-**Live tools:** the shipped `team` dispatcher owns Team records and reads the Team's work
-items through `/api/work-items`. Universal `session_create` remains the visible Agent-creation
-path; `team` does not own or duplicate it.
-
-Worktree assignment (`worktree-desk`) and Team broadcast (`edges wipeboard`) are their own
-tools; `team` does not duplicate them. Read-only Team enumeration belongs to `edges team`.
-
-## Team work
-
-| Job | Meaning |
-|---|---|
-| Team record read and update | the roster's objective and launch defaults; the Team page derives membership from sessions |
-| Team work items | items the Team holds: `item handoff <id> team:<name>` gives one to the Team, `item handoff <id> <agent>` to a member, taking the Team off. Lead ideas are items the Team holds, not a separate file or pool |
-| Member and item status | the Team's reading: what the Team and each member hold; the item itself is `item`'s |
-| Agent configuration | create visibly with universal `session_create`, then inspect and configure Team, lead, or Workspace Folder handle through universal `session_check` and `session_set` |
-| Team broadcasts | the wipeboard for everything the whole Team must see; one-on-one goes directly to the session |
-
-Holding is how work is found, never permission. When an Agent ends, what it held is
-released, held by nobody, and found under its parent or with no parent. The work item
-itself is `item`'s.
-
-Team membership and Team lead are session facts changed through `session_set`. Lead is an
-explicit designation, never inferred from what an Agent is told or from using this tool.
-When a designated lead delegates visible work, universal `session_create` creates the
-Agent and `item handoff <id> <agent>` moves an item to it.
-
-Lead guidance is the Team lead behaviour, told from the explicit session designation.
-
-## Usage
-
-Typed Team surface for every Cowork Agent. `team --help` lists roster read/write and member status (the Team's reading of the items it and its members hold). Lead remains an explicit session designation changed with `session_set`; it is not inferred from using this tool. Read-only Team enumeration remains `edges team`; visible Agent creation uses universal `session_create`.
+`team` is a Team's record: write or read its roster (objective, launch defaults) and read
+what the Team and each member hold. New Team means `team roster write`. Membership and
+lead come from sessions and change with `session_set`; giving an item to the Team is
+`item handoff <id> team:<name>`; posting to it is `edges wipeboard`; listing Teams is
+`edges team`.
