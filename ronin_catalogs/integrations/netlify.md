@@ -4,7 +4,8 @@
 - **for:** hosting
 - **tools:** the netlify bridge (`netlify sites|traffic|forms|deploy|env`), the Netlify CLI and API
 - **bridge:** netlify
-- **keys:** NETLIFY_AUTH_TOKEN
+- **token:** netlify-auth-token
+- **keys:** —
 - **panel:** —
 - **state:** /api/netlify?campaign_id={campaign}&workspace={workspace}
 - **order:** 20

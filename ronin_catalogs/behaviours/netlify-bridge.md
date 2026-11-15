@@ -23,3 +23,6 @@ Netlify's own CLI and API still work for anything it doesn't cover.
 - `--site <name>` reaches another site on the account; without it, the Workspace's.
 - Which data a preview uses (production's, one staging database, one per PR) is a choice for
   the person you work for: name the forks and take the one they pick.
+
+
+Setting it up, the owner's steps one at a time: `ronin-help netlify`.

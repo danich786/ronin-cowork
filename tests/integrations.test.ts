@@ -24,8 +24,8 @@ test('the index holds the integrations; Ronin Services is not one of them', asyn
   assert.equal(jira.token, 'jira-{campaign}.json');
   assert.equal(jira.bridge, 'jira');
   const netlify = (await listIntegrations()).find((row) => row.name === 'netlify')!;
-  assert.equal(netlify.token, 'netlify-{campaign}.env');
-  assert.deepEqual(netlify.keys, ['NETLIFY_AUTH_TOKEN']);
+  assert.equal(netlify.token, 'netlify-auth-token');
+  assert.deepEqual(netlify.keys, []);
 });
 
 test('a record an Agent adds in the owner store joins the index', async () => {
@@ -43,26 +43,39 @@ test('a Workspace keeps its integrations, with facts a bridge reads', () => {
 });
 
 test('nothing connected says what is missing; Connect writes the .env 0600; Disconnect removes it', async () => {
+  await saveWorkspace({ ...normalizeWorkspace('c1', 'site', {}), integrations: [{ provider: 'perplexity' }] });
+  let perplexity = (await integrationsState('c1', parts)).find((row) => row.name === 'perplexity')!;
+  assert.equal(perplexity.connected, false);
+  assert.deepEqual(perplexity.missing, ['PERPLEXITY_API_KEY']);
+  assert.deepEqual(perplexity.workspaces, ['site']);
+
+  const file = await connectIntegration('c1', 'perplexity', { PERPLEXITY_API_KEY: 'secret-1' });
+  assert.equal(file, path.join(root, 'services_secrets', 'perplexity-c1.env'));
+  assert.equal((await stat(file)).mode & 0o777, 0o600);
+  await connectIntegration('c1', 'perplexity', { PERPLEXITY_MODEL: 'abc' });
+  assert.equal(await readFile(file, 'utf8'), 'PERPLEXITY_API_KEY=secret-1\nPERPLEXITY_MODEL=abc\n');
+  perplexity = (await integrationsState('c1', parts)).find((row) => row.name === 'perplexity')!;
+  assert.equal(perplexity.connected, true);
+  assert.deepEqual(perplexity.set, ['PERPLEXITY_API_KEY', 'PERPLEXITY_MODEL']);
+  assert.deepEqual(perplexity.missing, []);
+  assert.ok(!JSON.stringify(perplexity).includes('secret-1'), 'a value never comes back');
+
+  await disconnectIntegration('c1', 'perplexity');
+  await assert.rejects(stat(file));
+  await disconnectIntegration('c1', 'perplexity'); // gone already is fine
+});
+
+test('Netlify is connected when the secret netlify-auth-token is saved', async () => {
   await saveWorkspace({ ...normalizeWorkspace('c1', 'site', {}), integrations: [{ provider: 'netlify', site: 'my-site' }] });
   let netlify = (await integrationsState('c1', parts)).find((row) => row.name === 'netlify')!;
   assert.equal(netlify.connected, false);
-  assert.deepEqual(netlify.missing, ['NETLIFY_AUTH_TOKEN']);
   assert.deepEqual(netlify.workspaces, ['site']);
-
-  const file = await connectIntegration('c1', 'netlify', { NETLIFY_AUTH_TOKEN: 'secret-1' });
-  assert.equal(file, path.join(root, 'services_secrets', 'netlify-c1.env'));
-  assert.equal((await stat(file)).mode & 0o777, 0o600);
-  await connectIntegration('c1', 'netlify', { NETLIFY_SITE_ID: 'abc' });
-  assert.equal(await readFile(file, 'utf8'), 'NETLIFY_AUTH_TOKEN=secret-1\nNETLIFY_SITE_ID=abc\n');
+  await mkdir(path.join(root, 'services_secrets'), { recursive: true });
+  await writeFile(path.join(root, 'services_secrets', 'netlify-auth-token'), 'tok', { mode: 0o600 });
   netlify = (await integrationsState('c1', parts)).find((row) => row.name === 'netlify')!;
   assert.equal(netlify.connected, true);
-  assert.deepEqual(netlify.set, ['NETLIFY_AUTH_TOKEN', 'NETLIFY_SITE_ID']);
-  assert.deepEqual(netlify.missing, []);
-  assert.ok(!JSON.stringify(netlify).includes('secret-1'), 'a value never comes back');
-
-  await disconnectIntegration('c1', 'netlify');
-  await assert.rejects(stat(file));
-  await disconnectIntegration('c1', 'netlify'); // gone already is fine
+  assert.equal(netlify.token_file, path.join(root, 'services_secrets', 'netlify-auth-token'));
+  assert.ok(!JSON.stringify(netlify).includes('tok"'), 'a value never comes back');
 });
 
 test('Connect refuses a malformed key or value, and Jira connects in its own panel', async () => {
