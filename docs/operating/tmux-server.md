@@ -166,7 +166,9 @@ end sessions through Ronin, never to raise the number reflexively.
 ## Each Agent's processes and temp
 
 Each Agent's pane is its own systemd scope (`tmux-spawn-<uuid>.scope`), and everything it starts
-stays in that scope, even a detached child with ppid 1. Ronin stops the scope when the Agent
+stays in that scope, even a detached child with ppid 1. A helper its CLI puts in a scope of its
+own (Codex's app-server daemon) is the Agent's too when it runs from the Agent's session folder.
+Ronin stops these scopes when the Agent
 ends, is archived or deleted, or its pane dies. It puts a memory ceiling on the scope, sized
 from the box's RAM. The Agent's `TMPDIR` is `tmp/` in its session folder, on disk, never `/tmp`
 (on many boxes `/tmp` is RAM). At start, Ronin stops scopes that ended Agents left, and logs

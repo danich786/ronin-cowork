@@ -17,6 +17,9 @@ delete process.env.TMUX;
 
 const { agentTempDir, agentTempEnv, memoryCeiling, recordScope, stoppable, sweepLeftovers, TEMP_ROOT_MAX } = await import('../src/agent-scope.ts');
 const { storeDir } = await import('../src/resources.ts');
+const { panesDied } = await import('../src/tmux.ts');
+const { liveScopeOps, sessionFolders } = await import('../src/agent-scope.ts');
+const { spawn } = await import('node:child_process');
 type Ops = import('../src/agent-scope.ts').ScopeOps;
 
 const unit = (n: number) => `tmux-spawn-0000000${n}-0000-4000-8000-000000000000.scope`;
@@ -27,6 +30,7 @@ function fakeOps(over: Partial<Ops> & { scopeByPid?: Record<number, string> } = 
     stopped,
     scopeOf: async (pid) => over.scopeByPid?.[pid] ?? null,
     scopes: async () => [],
+    folderScopes: async () => [],
     stop: async (units) => { stopped.push(...units); },
     limit: async () => {},
     self: async () => ({ pid: 1, service: true }),
@@ -68,8 +72,11 @@ test('the start sweep takes only Ronin\'s own leftovers, and the rigs they start
     ],
   });
   await fs.mkdir(path.join(storeDir('session'), '..', 'tmp', 'deadbeefdeadbeef'), { recursive: true });
-  const swept = await sweepLeftovers({ server: 50, livePanes: [100], sessionKeys: ['ended-1'] }, ops);
-  assert.deepEqual(ops.stopped.sort(), [unit(2), unit(3), unit(5)]);
+  const asked: string[][] = [];
+  ops.folderScopes = async (dirs) => { asked.push(dirs); return dirs.some((d) => d.endsWith('ended-1')) ? [unit(8)] : []; };
+  const swept = await sweepLeftovers({ server: 50, livePanes: [100], sessionKeys: ['ended-1', 'live-1'], liveKeys: ['live-1'] }, ops);
+  assert.deepEqual(ops.stopped.sort(), [unit(2), unit(3), unit(5), unit(8)]);
+  assert.deepEqual(asked, [sessionFolders('ended-1')], 'only folders of sessions that are not live are scanned');
   assert.ok(swept.temp.includes('deadbeefdeadbeef'));
 });
 
@@ -81,8 +88,30 @@ test('the ceiling follows the box: a fifth of RAM, never under 1 GiB', () => {
 
 test('a Ronin that is not the box\'s service (a rig in a pane) never sweeps', async () => {
   const ops = fakeOps({ self: async () => ({ pid: 1, service: false }), scopes: async () => [{ unit: unit(2), pane: 1, server: 50 }] });
-  assert.deepEqual(await sweepLeftovers({ server: 50, livePanes: [], sessionKeys: [] }, ops), { scopes: [], temp: [] });
+  assert.deepEqual(await sweepLeftovers({ server: 50, livePanes: [], sessionKeys: [], liveKeys: [] }, ops), { scopes: [], temp: [] });
   assert.deepEqual(ops.stopped, []);
+});
+
+test('a process is found by where it runs from: its working folder inside the session folder', { skip: process.platform !== 'linux' }, async () => {
+  const folder = sessionFolders('helper-1')[0];
+  await fs.mkdir(folder, { recursive: true });
+  const child = spawn('sleep', ['30'], { cwd: folder, stdio: 'ignore' });
+  try {
+    await new Promise((r) => setTimeout(r, 200));
+    const own = await liveScopeOps.scopeOf(process.pid);
+    const found = await liveScopeOps.folderScopes([folder]);
+    // Under a tmux pane the child shares this test's scope; elsewhere there is no pane scope to find.
+    assert.deepEqual(found, own ? [own] : []);
+    assert.deepEqual(await liveScopeOps.folderScopes([path.join(isolated, 'elsewhere')]), []);
+  } finally { child.kill(); }
+});
+
+test('the pane-dead push names each session whose pane newly died, once', () => {
+  const last = new Map<string, string>();
+  assert.deepEqual(panesDied('a=0,b=0,', last), []);
+  assert.deepEqual(panesDied('a=0,b=1,', last), ['b']);
+  assert.deepEqual(panesDied('a=0,b=1,', last), []);
+  assert.deepEqual(panesDied('a=01,b=1,', last), ['a']);
 });
 
 test.after(() => fs.rm(isolated, { recursive: true, force: true }));
