@@ -7,7 +7,7 @@
 
 Reach for this when a brief's short version is not enough: `ronin-help` lists the topics,
 `ronin-help <topic>` prints the user doc the Help workbench shows for it,
-`ronin-help <brief>` prints a brief by its file name (`ronin-help worktree-root`), the
+`ronin-help <brief>` prints a brief by its file name (`ronin-help working-at-a-desk`), the
 owner's copy over stock, and `ronin-help <word>` finds a Ronin word in the KOTOBA glossary.
 People and Agents read the same pages.
 
