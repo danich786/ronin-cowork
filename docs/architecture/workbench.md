@@ -171,7 +171,11 @@ Discover. Accounts and presets are one reading of the Hermes record (`src/accoun
 a key added on Accounts is the connection the Hermes page shows. The existing types, surfaces and stones are
 unchanged but for their words; the route id stays `models` so saved arrangements survive. Settings' Model
 Providers surface is untouched; all draw with the one drawing `provider-surface.js` exports
-(`createProviderDrawing`, `createRefreshAll`, `providerStones`) over the same record and measure. Workspaces seats
+(`createProviderDrawing`, `createRefreshAll`, `providerStones`) over the same record and measure. In Agent Harness,
+Authenticate offers Mika operating the registry-owned native login command in the current tilespace, or the native
+`provider_setup_*` terminal with Mika reading it from the paired tilespace; Setup and Settings retain their direct
+Authenticate action. Until one provider is active, Agent Harness also retains direct Authenticate because Mika has
+no model with which to help. In every path the provider summary remains the readiness authority. Workspaces seats
 its own stones of Workspaces (`workspaces-surface.js`, `workspaces.records`): a pressed one's page is the whole
 Workspace, its folders ticked in a browser of this machine (owner, 2026-11-02), with GitHub CLI beside them;
 one read of the pinned folders per bench (`createRootsReading`, the detail route). Epics (owner, 2026-11-02;

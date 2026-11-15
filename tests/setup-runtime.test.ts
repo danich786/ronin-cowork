@@ -41,6 +41,8 @@ test('provider facts come from the measured summary: absent, installable, instal
   assert.equal(none.measured_at, '2026-09-08T10:00:00.000Z', 'the answer carries the date it was measured');
   assert.equal(row(none, 'claude').provider, 'anthropic', 'the catalog joins the vendor id to the CLI');
   assert.equal(row(none, 'claude').from, 'Anthropic');
+  assert.equal(row(none, 'claude').login_command, 'claude', 'Mika receives the registry-owned native setup command');
+  assert.equal(row(none, 'hermes').login_command, 'hermes model', 'provider setup arguments stay part of that command');
 
   const installed = await answer({}, ['claude']);
   assert.equal(row(installed, 'claude').state, 'installed');

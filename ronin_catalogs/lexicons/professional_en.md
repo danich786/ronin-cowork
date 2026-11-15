@@ -1571,6 +1571,8 @@ The catalog entry goes. {dir} is not touched.
 - **feedback.sent:** Sent — thank you
 - **feedback.thank_you:** Thank you for helping us make Ronin better.
 - **setup_surface.providers:** Model providers
+- **setup_surface.authenticate_mika:** Let Mika authenticate
+- **setup_surface.authenticate_guided:** Use the CLI with Mika
 - **setup_surface.providers_summary_unread:** Every provider and model Ronin offers, and what this machine has.
 - **setup_surface.providers_summary:** {providers} providers · {models} models · {activated} activated here
 - **setup_surface.providers_summary_dated:** {counts} · model info from {date}

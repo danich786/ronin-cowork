@@ -289,6 +289,61 @@ test('a sign-in in progress mounts the native tile through the environment, on w
   assert.match(byClass(bare.el, 'setup-provider-terminal')[0].textContent, /terminal attachment is unavailable/);
 });
 
+test('Agent Harness offers Mika-operated or native Mika-guided authentication', async () => {
+  const savedMachine = machine;
+  const savedFetch = globalThis.fetch;
+  const operated = [];
+  const guided = [];
+  machine = { activated_count: 1, providers: [
+    { id: 'claude', label: 'Claude Code', from: 'Anthropic', installed: true, signed_in: true, activated: true, state: 'activated', login_command: 'claude' },
+    { id: 'codex', label: 'Codex', from: 'OpenAI', installed: true, signed_in: false, activated: false, state: 'installed', login_command: 'codex' },
+  ] };
+  globalThis.fetch = async (url, init = {}) => {
+    calls.push(`${init.method || 'GET'} ${url}`);
+    if (url.endsWith('/codex/login')) {
+      const attachment = { type: 'session', key: 'provider_setup_codex', team: 'provider_setup', temporary: true };
+      machine = { ...machine, providers: [machine.providers[0], { ...machine.providers[1], login_open: true, state: 'login_open', attachment }] };
+      return { ok: true, status: 200, text() { return this.json().then((b) => JSON.stringify(b)); }, json: async () => ({ ok: true, attachment, runtime: machine }) };
+    }
+    return savedFetch(url, init);
+  };
+  const ctx = context();
+  ctx.environment.onMikaProviderConnect = (detail) => { operated.push(detail); };
+  ctx.environment.onMikaProviderGuide = (detail) => { guided.push(detail); };
+  const view = surface.createProviderSurface(ctx);
+  try {
+    await view.show(); await settle();
+    byClass(view.el, 'sws-stone').find((node) => node.attributes['data-provider'] === 'codex').click();
+    const actions = byClass(view.el, 'setup-provider-action');
+    assert.deepEqual(actions.map((button) => button.textContent), ['Let Mika authenticate', 'Use the CLI with Mika']);
+    actions[0].click(); await settle();
+    assert.equal(operated.length, 1);
+    assert.equal(operated[0].provider.login_command, 'codex');
+    assert.equal(operated[0].workspace, 'workspace2');
+    actions[1].click(); await settle();
+    assert.equal(guided.length, 1);
+    assert.equal(guided[0].provider.id, 'codex');
+    assert.equal(guided[0].setupSession, 'provider_setup_codex');
+    assert.equal(guided[0].workspace, 'workspace2');
+  } finally {
+    view.destroy(); machine = savedMachine; globalThis.fetch = savedFetch;
+  }
+});
+
+test('the first provider keeps native Authenticate because Mika has no provider yet', async () => {
+  const savedMachine = machine;
+  machine = { activated_count: 0, providers: [{ id: 'codex', label: 'Codex', installed: true, signed_in: false, activated: false, state: 'installed', login_command: 'codex' }] };
+  const ctx = context();
+  ctx.environment.onMikaProviderConnect = () => {};
+  ctx.environment.onMikaProviderGuide = () => {};
+  const view = surface.createProviderSurface(ctx);
+  try {
+    await view.show(); await settle();
+    byClass(view.el, 'sws-stone')[0].click();
+    assert.deepEqual(byClass(view.el, 'setup-provider-action').map((button) => button.textContent), ['Authenticate']);
+  } finally { view.destroy(); machine = savedMachine; }
+});
+
 test('a catalog provider no registry CLI serves keeps its catalog section and says it cannot be set up here', async () => {
   const ctx = context();
   const made = surface.createProviderSurface(ctx);

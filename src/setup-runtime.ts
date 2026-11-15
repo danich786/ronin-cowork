@@ -98,6 +98,8 @@ export interface SetupProviderState {
   self_updates: boolean;
   /** The line Update runs, for the owner to read before pressing. */
   update: string | null;
+  /** Registry-owned native command Mika may run for this provider's authentication flow. */
+  login_command: string;
   /** Latest is known and newer than what is installed. */
   update_available: boolean;
   /** Whether Refresh has a package source to ask for this CLI's newest release (its install line names an npm package). */
@@ -259,6 +261,7 @@ export async function setupRuntimeAnswer(
       updatable: activated && Boolean(updateLine),
       self_updates: agent.operations.selfUpdates,
       update: activated && updateLine ? updateLine : null,
+      login_command: [agent.cmd, ...(agent.operations.setup ?? [])].join(' '),
       update_available: Boolean(version && latest && newerVersion(version, latest.version)),
       askable: npmPackageOf(agent.operations.install) !== '',
       update_open: updateOpen,

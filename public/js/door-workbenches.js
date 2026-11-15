@@ -95,6 +95,8 @@ function doorWorkbench({ id, profile, label, seat, seats = { workspace1: seat },
  * dropped or its card placed, one card per harness; the sign-in tile mounted as on Setup. The route id stays `models`
  * so saved arrangements survive. */
 export function createModelsView() {
+  const MIKA_SESSION = 'mika_agent';
+  const { surface: mikaSurface, pool: mikaPool } = createMikaTilePool();
   const providerSessions = createProviderSetupSessionMount();
   const made = [];
   const keep = (surface) => { made.push(surface); return surface; };
@@ -103,6 +105,14 @@ export function createModelsView() {
     count: 4, seats: { workspace1: WORKBENCH_TYPES.modelStones, workspace2: WORKBENCH_TYPES.accountsRecords, workspace3: WORKBENCH_TYPES.modelsRecords, workspace4: WORKBENCH_TYPES.modelRefresh },
     loaded: loadProviderCatalog,
     environment: ({ bench }) => {
+      const showMika = async (workspace, prompt) => {
+        await askMika(null, prompt);
+        mikaPool.sync([MIKA_SESSION]);
+        bench().place(WORKBENCH_TYPES.modelMika, workspace);
+      };
+      const opposite = (workspace) => ({ workspace1: 'workspace2', workspace2: 'workspace1', workspace3: 'workspace4', workspace4: 'workspace3' })[workspace] || 'workspace1';
+      const guidePrompt = (provider, setupSession) => `You are helping the owner authenticate ${provider.label || provider.id} in the adjacent session ${setupSession}. Read its live terminal with edges read ${setupSession} and guide the owner from what is displayed. Explain each prompt briefly and say exactly what to do next. Re-read the session after each step. This machine is remote, so any browser approval happens on the owner's local computer. Do not operate the setup terminal and never ask for or display a credential. When the native flow finishes, tell the owner to return to Agent Harness so Ronin can measure readiness.`;
+      const connectPrompt = (provider) => `Authenticate the ${provider.label || provider.id} Agent Harness CLI on this machine. Its registry-owned native setup command is: ${provider.login_command || provider.id}. Run that command in an interactive shell and guide the owner through any browser or device approval on their local computer. Stay with the process until the native flow succeeds or needs an owner decision. Never ask for a token in chat and never print, inspect, or expose credentials. When it finishes, tell the owner to return to Agent Harness; Ronin's own measurement, not your report, decides whether it is Ready.`;
       const environment = {
         setupRuntime: null, mountProviderSetupSession: providerSessions.mountProviderSetupSession,
         providers: providerOffers,
@@ -112,10 +122,13 @@ export function createModelsView() {
         accounts: (workspace) => keep(createAccountsSurface({ workspace, detail: {}, environment, workbench: bench() })),
         modelsRecords: (workspace) => keep(createModelsRecords({ workspace, detail: {}, environment, workbench: bench() })),
         modelProvider: (workspace, detail) => keep(createModelProvider(detail.key, { workspace, detail, environment, workbench: bench() })),
+        modelMika: () => ({ el: mikaSurface.el, show: () => { mikaPool.sync([MIKA_SESSION]); mikaPool.show(MIKA_SESSION, false); } }),
+        onMikaProviderGuide: ({ provider, setupSession, workspace }) => showMika(opposite(workspace), guidePrompt(provider, setupSession)),
+        onMikaProviderConnect: ({ provider, workspace }) => showMika(workspace, connectPrompt(provider)),
       };
       return environment;
     },
-    destroy: () => { for (const surface of made.splice(0)) surface.destroy?.(); providerSessions.destroyAll(); },
+    destroy: () => { for (const surface of made.splice(0)) surface.destroy?.(); providerSessions.destroyAll(); mikaPool.destroyAll(); },
   });
 }
 
