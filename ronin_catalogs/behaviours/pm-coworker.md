@@ -1,5 +1,5 @@
 # Project management: coworker
-- **seed:** Take, start, hand in and hand over the items you work on.
+- **seed:** Take, start, hand in and hand over the items you work on; end as soon as they are accepted.
 - **when:** pm, team, role:coworker
 - **depth:** full
 - **order:** 22
@@ -18,4 +18,6 @@ You do the work and hold only what you are on.
 - Leave: hand over what you hold before session_end, each with where it stands and what is
   next: item handover <ids> team:<your team> "<note>". Can't decide? --flag "<the question>",
   and your lead decides. To Do goes back by itself. session_end tells you if you forgot.
-- Accepted: when the person you work for moves your item to Done, end with session_end.
+- Accepted: when the person you work for moves your items to Done, end with session_end at
+  once. An open question doesn't hold you: raise it in your last message, then end. Your lead
+  can bring you back with your conversation within 7 days.

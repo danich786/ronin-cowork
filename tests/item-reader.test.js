@@ -141,3 +141,21 @@ test('a narrow reading stacks its steps so nothing runs past the edge (KAN-312)'
   assert.match(block, /\.wi-form \.fs-step \{ grid-template-columns: minmax\(0, 1fr\); \}/);
   assert.match(block, /\.wi-form \.fs-step:has\(> \.fs-step-head\.fs-togglable\) > \.fs-step-body \{ grid-column: 1; \}/);
 });
+
+// The tile's work record shows the brief record by part (owner, 2026-11-15; tegami.brief, src/brief-record.ts).
+test('the work record shows the brief record by part, every filled field as one line', async () => {
+  const record = await read('public/js/work-record.js');
+  for (const part of ['session', 'user', 'people', 'setting', 'agent', 'work', 'brief_settings']) assert.match(record, new RegExp(`\\['${part}', t\\('work_record\\.part_${part}'`), part);
+  assert.match(record, /if \(letter\.brief\) \{/, 'null until birth or a refresh: no section');
+  const { spoken } = await import('../public/js/work-record.js');
+  assert.equal(spoken({ add: [{ name: 'tdd', depth: 'full' }, { name: 'review' }], block: ['open'], only: [] }), 'add tdd (full), review · block open');
+  assert.equal(spoken({ role: 'lead', name: 'Glen', nickname: '' }, true), 'role lead · name Glen', 'a person in full, empty fields left out');
+  assert.equal(spoken([{ repo: 'ronin_cowork', held: true }]), 'repo ronin_cowork · held yes');
+});
+
+test('Docs reads the brief files as Birth brief and Brief now (owner, 2026-11-15)', async () => {
+  const docs = await read('public/js/docs.js');
+  assert.match(docs, /'AGENT_BIRTH_BRIEF\.md': t\('docs\.birth_brief', 'Birth brief'\)/);
+  assert.match(docs, /'AGENT_BRIEF\.md': t\('docs\.brief_now', 'Brief now'\)/);
+  assert.match(docs, /title\.textContent = docName\(/, 'the open document\'s title too');
+});

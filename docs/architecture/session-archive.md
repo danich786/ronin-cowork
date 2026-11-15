@@ -72,6 +72,20 @@ reclaim. The lead's end notice (the members-list ack, `memberEnded`, and the "en
 handover" notice when it applies) carries `<name> ended, archived as <id>: session_restore <id>`.
 Delete, Hard Delete and the tile's shutdown are unchanged: they end outright.
 
+## Expiry
+
+An archive undoes an accidental close; it is not storage (owner, 2026-11-15). An archive whose
+`archived_at` is older than `ARCHIVE_DAYS` (7, `src/session-archive.ts`) is removed by
+`expireArchives` in `src/routes/sessions-api.ts`, through `deleteArchived`, the same removal
+`DELETE /api/archived-sessions/:id` uses: `SessionEnd` emitted, holds released, the retained
+session folder and the manifest removed. It runs at service start (`src/index.ts`) and after
+each new archive is written (`archiveWith`). No timer and no setting. A failure on one archive
+is logged and the rest still go.
+
+Leads list the archives with `session_restore` and no argument: it reads
+`GET /api/archived-sessions` and prints each archive's name, team (its tags), when, id and
+`session_restore <id>`, newest first.
+
 ## Failure guarantees
 
 - If no exact provider conversation UUID can be found, archive returns `409` before writing
@@ -96,7 +110,7 @@ Delete, Hard Delete and the tile's shutdown are unchanged: they end outright.
 | `POST /api/sessions/:name/shutdown` | Immediately start observable safe Delete, or exact-confirmed Hard Delete; returns an operation id |
 | `{t:'shutdown', ...operation}` on `/events` | Each phase, desk count, terminal success, or actionable blockers, pushed as they happen; `{t:'want', resource:'shutdown', id}` answers a reopened socket with the operation as it stands |
 | `POST /api/machine/park` | Archive every Agent for `bin/ronin-archive` ([park](../operating/park.md)): the same manifest and stop, no desk or item refusal, holds kept; answers what to carry beside the stores |
-| `GET /api/archived-sessions` | Roster-safe rows: `id`, `name`, `archived_at`, `agent` |
+| `GET /api/archived-sessions` | Roster-safe rows, newest first: `id`, `name`, `archived_at`, `agent`, `tags`; archives older than 7 days have already gone ([Expiry](#expiry)) |
 | `POST /api/archived-sessions/:id/rehydrate` | Resume provider conversation and restore metadata |
 | `DELETE /api/archived-sessions/:id` | Irreversibly end and remove the archived record |
 
@@ -106,8 +120,9 @@ The browser calls these routes through `public/js/api.js`. A shutdown's phases r
 `{t:'want', resource:'shutdown', id}`. Nothing polls, and an overall deadline returns the
 controls if the socket stays silent. Archived rows never enter
 `S.sessions`, so they cannot appear in live pickers or consume the configured session max.
-Agents and team leads use those same routes through `session_archive <session>` and
-`session_restore <archive-id>`; the tools add no lifecycle or store of their own.
+Agents and team leads use those same routes through `session_archive <session>`,
+`session_restore` (the list) and `session_restore <archive-id>`; the tools add no lifecycle or
+store of their own.
 
 ## Provider identity
 
@@ -125,12 +140,13 @@ an explicit supported id remain unidentifiable rather than risking a neighbour's
 ## Retention of closed session folders
 
 A session's folder under the session store (`birth-receipt.json`, `launch-identity.json`,
-`brief.md`, `AGENT_BIRTH_BRIEF.md`, `tegami.md`, `transcript.jsonl`, and for isolated launches
+`brief.md`, `AGENT_BIRTH_BRIEF.md`, `AGENT_BRIEF.md`, `brief-told.json`, `tegami.md`, `transcript.jsonl`, and for isolated launches
 `cli-home/`) outlives the session on purpose: it is the evidence a later reading of the
 Agent needs. It does not outlive the retention period. `src/session-retention.ts` runs once
 at boot and then weekly on the JIKAN clock and removes a folder that is **closed** — no live
 session carries its key — **unarchived** — no archive manifest names its key — and has not
-been written to for the period. Archived folders stay until hard delete, as before.
+been written to for the period. Archived folders stay until the archive's hard delete or its
+[expiry](#expiry) after 7 days.
 
 "Closed" is not a marker file; it is the absence of a live key, and the close time is the
 folder's last write (Rireki writes `transcript.jsonl` when the Agent's journal moves — it no

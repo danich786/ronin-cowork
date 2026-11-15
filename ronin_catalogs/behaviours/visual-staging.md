@@ -4,33 +4,21 @@
 - **depth:** none
 - **order:** 40
 
-> Stock behaviour. Your own `~/ronin/behaviours/visual-staging.md` replaces this file whole.
-> **Voice: agent.** Written for every session on a Team that uses it, the lead included.
+Visual work can go on one disposable Team preview before hand-in, so the owner presses on
+the real thing and says what is wrong in minutes.
 
-Visual work may take a provisional lane before ordinary hand-in, so the owner presses on
-the real thing and says what is wrong in minutes, not hours.
-
-1. **The lead owns the preview.** One dedicated disposable staging branch and worktree,
-   one preview process on its own port, separate from the live service. No staging Agent
-   exists; nobody else serves, restarts or edits that worktree.
-2. **An Agent offers a candidate, never a file.** Keep the private worktree as the source,
-   commit one coherent candidate, and send the lead: your session, the repository, the
-   exact commit, the surfaces it changes, and which earlier candidate it supersedes.
-   This is a message to the lead, not a hand-in, and it creates no receipt.
-3. **The lead composes serially.** Exact provisional commits are merged one at a time
-   into the disposable worktree; the server runs from it, and `/api/version` names the
-   aggregate commit on display after any restart.
-4. **NEW VIEW, every time.** After each composition the lead posts one line on the Team
-   wipeboard: `NEW VIEW — <what changed> — <aggregate commit> — <URL>`. Anything else
-   is not a view.
-5. **The owner loop.** The owner presses, says what is wrong, the owning desk commits a
-   narrow correction, the lead recomposes and posts the next view. Owner corrections
-   override earlier rulings.
-6. **Rejecting or superseding** rebuilds or reverts only the disposable composition; the
-   Agent's private commit stays recoverable. No cherry-pick maze, no per-candidate
-   servers, no file-copy carousel, no repeated full verification while composing.
-7. **Approval changes no Git line.** The Agent still hands finished work in with
-   `worktree-desk hand-in`; the lead's review and promotion admit it to `dev`. Staging, the
-   Team line and `dev` are three distinct states, and staging never promotes.
-8. **Phase end.** The lead stops the preview and records the last served commit beside
-   the promotion receipt.
+1. **The lead owns the preview:** one disposable staging branch and worktree, one preview
+   process on its own port, apart from the live service. Nobody else serves, restarts or edits it.
+2. **You offer a commit, never a file:** tell the lead your session, the repo, the exact
+   commit, what it changes and what it supersedes. A message, not a hand-in.
+3. **The lead merges candidates one at a time** into the preview; `/api/version` names the
+   commit on display.
+4. **After each, one wipeboard line:** `NEW VIEW — <what changed> — <commit> — <URL>`.
+5. **The owner says what is wrong**, the owning desk commits a narrow fix, the lead
+   recomposes and posts the next view. Owner corrections override earlier rulings.
+6. **Rejecting** rebuilds only the preview; your commit stays. No cherry-picks, per-candidate
+   servers or file copies.
+7. **Approval changes no Git line:** finished work is still handed in with `worktree-desk
+   hand-in` and promoted by the lead; staging never promotes.
+8. **At the end** the lead stops the preview and records the last commit beside the
+   promotion receipt.

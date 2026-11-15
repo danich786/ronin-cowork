@@ -1,7 +1,8 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { sessionDir, sessionKey } from './session-dir.js';
-import { tegamiPath } from './tegami.js';
+import { tegamiPath, type WorkRecordBrief } from './tegami.js';
+import { AGENT_BRIEF, BIRTH_BRIEF } from './birth-brief.js';
 import { agentReading, type AgentReading } from './work-items-read.js';
 import { jiraLink } from './work-items.js';
 import type { ItemRow } from './work-items-index.js';
@@ -19,8 +20,11 @@ export interface Tegami {
    * Epics (w279) and their unassigned Tasks (KAN-251), which a lead's item island shows beside
    * its own items. Empty for an Agent leading none. */
   teamItems: Array<ItemRow & { jira_url?: string }>;
-  /** The record's own documents (dropped on it, or added holding no item) and every held item's attachments. */
+  /** The birth brief, then the brief now (AGENT_BRIEF.md, once an update wrote it), then the
+   * record's own documents (dropped on it, or added holding no item) and every held item's attachments. */
   docs: string[];
+  /** The brief record Ronin wrote (docs/architecture/brief.md, The work record is the source of truth); null before it has. */
+  brief: WorkRecordBrief | null;
   chip: { text: string; gate: boolean };
   /** When the work record was last written (epoch ms): the browser works out the age, so the push stays still. */
   quietSince: number;
@@ -119,7 +123,8 @@ export async function readTegami(name: string): Promise<Tegami | null> {
       holds: reading.items.map((item) => item.id),
       items: reading.items.map(linked),
       teamItems: teamItems(reading),
-      docs: await readDocs([...reading.attachments, ...(await dropped(key))]),
+      docs: await readDocs([path.join(sessionDir(key), BIRTH_BRIEF), path.join(sessionDir(key), AGENT_BRIEF), ...reading.attachments, ...(await dropped(key))]),
+      brief: b.brief && typeof b.brief === 'object' ? b.brief as WorkRecordBrief : null,
       chip: chipFor(reading.items),
       quietSince: stat.mtimeMs,
     };

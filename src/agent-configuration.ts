@@ -12,8 +12,8 @@ import { readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { readAgentComposition, writeCurrentRole } from './agent-composition.js';
 import type { Mandate } from './agent-defaults.js';
-import { describePacket, writeBriefPacketAt } from './birth-brief.js';
-import { readAgentBriefAt, writeAgentBriefAt, type AgentBrief, type ComposedBrief } from './brief-build.js';
+import { AGENT_BRIEF, describePacket, writeBriefPacketAt } from './birth-brief.js';
+import { readAgentBriefAt, workRecordBrief, writeAgentBriefAt, type AgentBrief, type ComposedBrief } from './brief-build.js';
 import { briefTold } from './brief-settings.js';
 import { briefChanges, briefSnapshot, type BriefSnapshot } from './brief.js';
 import { enqueueMessage } from './message-queue.js';
@@ -22,7 +22,7 @@ import { personByEmail, type Person } from './office-people.js';
 import { sessionDir, sessionKey } from './session-dir.js';
 import { resolveBriefFor, resolveFacts, type SpawnForm } from './spawn.js';
 import { teamChanged } from './tegami.js';
-import { writeMandate, writeObjective } from './tegami.js';
+import { readBriefRecord, writeBriefRecord, writeMandate, writeObjective } from './tegami.js';
 import { getCampaign, getLeads, getTags, listSessions, setLeads, setSessionTitle, setTags } from './tmux.js';
 
 type Receipt = { team?: string; kind?: string; template?: string; user_email?: string; told?: Array<{ name?: string }> };
@@ -41,7 +41,7 @@ export async function callerUser(name: string): Promise<Person | null> {
 
 const snapshotFile = (dir: string): string => path.join(dir, 'brief-told.json');
 
-/** What the Agent was told, written at launch beside its packet. */
+/** What the Agent was told (only that: the values are the work record's `brief`), written at launch beside its packet. */
 export async function readSnapshotAt(dir: string): Promise<BriefSnapshot> {
   return JSON.parse(await readFile(snapshotFile(dir), 'utf8')) as BriefSnapshot;
 }
@@ -49,7 +49,7 @@ export async function readSnapshotAt(dir: string): Promise<BriefSnapshot> {
 export async function writeSnapshotAt(dir: string, composed: ComposedBrief): Promise<void> {
   const target = snapshotFile(dir);
   const temp = `${target}.${process.pid}.tmp`;
-  await writeFile(temp, `${JSON.stringify(briefSnapshot(composed.resolved, composed.record))}\n`, 'utf8');
+  await writeFile(temp, `${JSON.stringify(briefSnapshot(composed.resolved))}\n`, 'utf8');
   await rename(temp, target);
 }
 
@@ -99,14 +99,16 @@ export async function configurationSends(name: string) {
 }
 
 /**
- * Rebuild the Agent's brief; when it differs from what it was last told, write the new packet
- * and send the difference once. Returns the packet path, and whether anything was sent.
+ * Rebuild the Agent's brief: write it as AGENT_BRIEF.md (the birth brief stays as written) and
+ * its record onto the work record; when it differs from what it was last told, send the
+ * difference once. Returns the packet path, and whether anything was sent.
  */
 export async function refreshBrief(name: string): Promise<{ brief: string; sent: boolean }> {
   const { dir, composed } = await currentBrief(name);
-  const before = await readSnapshotAt(dir);
-  const changes = briefChanges(before, composed.resolved, composed.record);
-  const brief = await writeBriefPacketAt(dir, composed.text, name);
+  const [before, was] = await Promise.all([readSnapshotAt(dir), readBriefRecord(name)]);
+  const changes = briefChanges(before, was, composed.resolved, composed.record);
+  const brief = await writeBriefPacketAt(dir, composed.text, name, AGENT_BRIEF);
+  await writeBriefRecord(name, workRecordBrief(composed));
   await writeSnapshotAt(dir, composed);
   if (!changes) return { brief, sent: false };
   const packet = await describePacket(brief, name);

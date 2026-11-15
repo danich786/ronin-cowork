@@ -246,7 +246,7 @@ test('under project management a hand-in needs no item: the code goes in, nothin
   const { sessionDir } = await import('../src/session-dir.js');
   const dir = sessionDir('pm_hander');
   await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(path.join(dir, 'brief-told.json'), JSON.stringify({ facts: {}, told: { 'project-management': { kind: 'behaviours', depth: 'full', title: 'Project management' } } }));
+  await fs.writeFile(path.join(dir, 'brief-told.json'), JSON.stringify({ told: { 'project-management': { kind: 'behaviours', depth: 'full', title: 'Project management' } } }));
   const desk = await openDesk({ repo: 'cowork', session: 'pm_hander', team: 'comp' });
   await commitFile(desk.worktree, 'no-item.txt', 'docs only\n');
   const { item } = await createItem({ title: 'Untouched' }, 'pm_hander');

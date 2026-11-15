@@ -100,11 +100,12 @@ provides the input rules; this surface owns the resulting brief and birth receip
 - Inputs: [facts](../ronin_catalogs/facts/README.md), [behaviours](../ronin_catalogs/behaviours/README.md),
   [tools](../ronin_catalogs/tools/README.md), [templates](../ronin_catalogs/templates/README.md).
 - Code: [launch.ts](../src/routes/launch.ts), [agent-defaults.ts](../src/agent-defaults.ts),
-  [capabilities.ts](../src/capabilities.ts), [behaviours.ts](../src/behaviours.ts),
+  [catalog.ts](../src/catalog.ts), [brief-record.ts](../src/brief-record.ts),
+  [brief-settings.ts](../src/brief-settings.ts), [brief.ts](../src/brief.ts),
+  [brief-build.ts](../src/brief-build.ts), [agent-configuration.ts](../src/agent-configuration.ts),
   [birth-brief.ts](../src/birth-brief.ts).
-- Tests: [capabilities.test.ts](../tests/capabilities.test.ts),
-  [behaviours.test.ts](../tests/behaviours.test.ts), [session-boot.test.ts](../tests/session-boot.test.ts),
-  [birth-receipt.test.ts](../tests/birth-receipt.test.ts).
+- Tests: [brief-model.test.ts](../tests/brief-model.test.ts), [brief-budget.test.ts](../tests/brief-budget.test.ts),
+  [brief-api.test.ts](../tests/brief-api.test.ts), [birth-receipt.test.ts](../tests/birth-receipt.test.ts).
 
 ## Tools
 

@@ -4,16 +4,12 @@
 - **depth:** full
 - **order:** 20
 
-Keep your work record truthful as your objective, repositories, work items and documents
-change.
-
+Keep your work record true as your objective, repositories, items and documents change.
 Asked to plan, read `ronin-help planning` first.
 
-Work with other Agents through the session, Team, and communication tools. Put durable facts
-in the record, document, Team roster, wipeboard, or repository that owns them rather than
-relying on conversation history.
-
-Outside services a user connects (hosting, a database, mail, anything) are used one
-common way: Integrations, in your brief.
+Work with other Agents through the session, Team and communication tools. Put durable facts
+where they belong (the record, a document, the roster, the wipeboard, the repository), not in
+conversation. An outside service a user connects is used one common way: Integrations, in
+your brief.
 
 More: `ronin-help edges`
