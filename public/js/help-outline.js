@@ -63,7 +63,6 @@ function PAGES() {
       page('docs/using-ronin/terminal-controls.md', t('help_outline.controls', 'Terminal controls')),
       page('docs/using-ronin/new-team.md', t('help_outline.new_team', 'New Team')),
       page('docs/using-ronin/workspaces.md', t('help_outline.workspaces', 'Workspaces')),
-      page('docs/using-ronin/netlify.md', t('help_outline.netlify', 'Netlify')),
       page('docs/using-ronin/share-a-file.md', t('help_outline.share', 'Share a file')),
       page('docs/using-ronin/work-items.md', t('help_outline.work_items', 'Work items')),
       page('docs/using-ronin/project-management.md', t('help_outline.project_management', 'Project management')),
