@@ -68,6 +68,7 @@ behaviour's name takes another id (`ask-mika` is the `mika` command). Every file
 | `mcp:` | bridges | the MCP server in the Agent's launch while this bridge is in play; blank until one is chosen |
 | `mandate:` | behaviours | the mandate axis this file is a value of: `reach`, `recruit` or `output`; the title is the value |
 | `with:` | mandate values | the behaviour(s) choosing this value puts in play, at their depth (Reach plan `with: planning`); the order never repeats that behaviour's text |
+| `lists:` | behaviours | a catalog directory whose files `ronin-help <behaviour>` prints after its text, one line each, the user's own (`~/ronin/<dir>/`) over stock by name, in `order:`: adding a file adds it (new-workspace: `workspace_types/`) |
 | `order:` | all | its place in its section, lower first |
 
 Header lines run from the title to the first blank line. An unknown field is ignored; an

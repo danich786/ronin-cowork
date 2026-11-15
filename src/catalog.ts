@@ -14,6 +14,7 @@
  *   - **serves:** write-it-down         (tools; blank = Other tools)
  *   - **mandate:** reach                (behaviours: a mandate value; the title is the value)
  *   - **with:** planning                (mandate values: the behaviours choosing it puts in play)
+ *   - **lists:** workspace_types        (behaviours: a catalog directory `ronin-help` prints after it)
  *   - **order:** 40
  *
  *   <the full text>
