@@ -169,7 +169,8 @@ export function briefChanges(before: BriefSnapshot, was: BriefRecord, resolved: 
   for (const row of toldRows(resolved)) {
     if (row.kind === 'facts') continue;
     const prior = before.told[row.name];
-    if (prior && prior.depth === row.depth && prior.text === textHash(row)) continue;
+    // A snapshot with no text hash (written before KAN-549) counts as told as it stands.
+    if (prior && prior.depth === row.depth && (prior.text === undefined || prior.text === textHash(row))) continue;
     lines.push(...saidLines(row));
   }
   const left = Object.keys(before.told).filter((name) => !after.told[name] && before.told[name].kind !== 'facts');

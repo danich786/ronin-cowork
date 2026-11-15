@@ -213,5 +213,7 @@ test('a behaviour whose wording changed is sent again, at its depth (KAN-549)', 
   assert.match(changes, /### Base\nBase text, reworded\./);
   assert.doesNotMatch(changes, /No longer in your brief/);
   assert.equal(briefChanges(briefSnapshot(resolveBrief(edited, r, [])), r, resolveBrief(edited, r, []), r), '', 'told once: nothing again');
+  const unhashed = { told: Object.fromEntries(Object.entries(snap.told).map(([name, { text, ...rest }]) => [name, rest])) };
+  assert.equal(briefChanges(unhashed, r, resolveBrief(edited, r, []), r), '', 'a snapshot with no text hash counts as told as it stands');
 });
 
