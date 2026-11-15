@@ -7,8 +7,7 @@
 
 Reach for `worktree-desk` when a repository uses managed worktrees or a later assignment needs
 a managed worktree. It is a private branch and working folder leased to you. Status,
-sync, commit, and hand-in are distinct; none is Git push. `worktree-desk open` answers with
-the brief to read before your first write: `ronin-help worktree-root`.
+sync, commit, and hand-in are distinct; none is Git push.
 
 If `worktree-desk open` reports that the repository uses its checkout, use ordinary Git in
 that checkout and read the brief it names (`ronin-help checkout`); no worktree or hand-in
@@ -39,32 +38,6 @@ the Agent and its worktrees together. Normal clean closure remains `session_end`
 
 `repository-init` runs local `git init` only, in an existing Workspace Folder; it never
 creates the folder, a remote, or a hosted repository.
-
-The table is the executable contract. All ten rows are subcommands of the single
-`worktree-desk` executable and appear in its help. `status`, `sync`, `hand-in`, `open`,
-`close`, `receipts`, `reply`, `handoff`, and `discard` retain the managed-worktree lifecycle;
-`repository-init` is the repository operation. No second worktree or repository initializer
-is projected.
-
-## Choose what to sync
-
-```sh
-worktree-desk sync <repo>                       # global dev (default)
-worktree-desk sync <repo> --source team         # shared Team review line
-worktree-desk sync <repo> --source lead         # Team lead's private worktree
-worktree-desk sync <repo> --source <repo:branch> # a specific teammate's worktree
-```
-
-The named worktree must be in the same repository. If the lead choice is ambiguous, name
-one of the exact worktrees the tool reports. Source selection does not change custody,
-the hand-in destination, or the source worktree. It merges committed work only; uncommitted
-source files stay there. This does not certify the source work as reviewed or tested.
-
-Read the acknowledgement: it names the source ref and exact SHA, the destination's
-before/after HEAD, and merged, already-contained, pending, or conflict. Pending and
-conflict leave your files untouched. Commit or preserve destination edits before retrying
-a pending sync with the same explicit source. On conflict, resolve the reported commit
-on your private worktree; do not edit the source or shared Team line.
 
 After the final hand-in, `status` must say `CERTIFIED CLEAN`: no unsaved files and every
 commit on the Team line.

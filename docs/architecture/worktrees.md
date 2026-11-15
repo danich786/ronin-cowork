@@ -21,7 +21,7 @@ One fact determines the result for each repository, its own `RONIN_REPO`:
 | The Workspace Folder declares | Result | The page the Agent is pointed at |
 |---|---|---|
 | `desks=none`, or no `RONIN_REPO` | a **checkout**: work on its current branch with ordinary Git; announce files; no hand-in | `ronin_catalogs/behaviours/conditional/checkout.md` |
-| `desks=managed` | a **worktree root**: the Agent's managed branch and worktree, commit, hand-in, the lead's promotion | `ronin_catalogs/behaviours/conditional/worktree-root.md` |
+| `desks=managed` | a **worktree root**: the Agent's managed branch and worktree, commit, hand-in, the lead's promotion | `ronin_catalogs/behaviours/working-at-a-desk.md` |
 
 There is no Agent-side arrangement switch. The birth packet teaches both approaches and
 names each selected repository's arrangement; `worktree-desk open <repo>` names the route

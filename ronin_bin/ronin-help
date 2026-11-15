@@ -13,7 +13,7 @@ usage() { cat <<'EOF_USAGE'
 Usage:
   ronin-help            the topics: the four must-reads first, then the rest of Help
   ronin-help <topic>    that topic's document, whole (e.g. edges, work-items, desks)
-  ronin-help <brief>    a brief by its file name, the owner's copy over stock (e.g. worktree-root)
+  ronin-help <brief>    a brief by its file name, the owner's copy over stock (e.g. working-at-a-desk)
   ronin-help <word>     a Ronin word's row or section in the KOTOBA glossary
 EOF_USAGE
 }
