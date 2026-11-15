@@ -332,6 +332,18 @@ test('item takes several ids where an act allows them, --text in search, and del
   assert.deepEqual((await tool('item', ['delete', one, two])).trim().split('\n'), [`${one} was deleted`, `${two} was deleted`]);
 });
 
+test('closing a task of an epic names its next open task; closing the last names the epic (KAN-558)', async () => {
+  const epic = made(await tool('item', ['create', '--title', 'Steps epic', '--kind', 'Epic']));
+  const one = made(await tool('item', ['create', '--title', 'Step one', '--parent', epic]));
+  const two = made(await tool('item', ['create', '--title', 'Step two', '--parent', epic]));
+  const first = await tool('item', ['transition', one, 'Done']);
+  assert.ok(first.includes(`item read ${two}`), first);
+  const last = await tool('item', ['transition', two, 'Done']);
+  assert.ok(last.includes(`item transition ${epic} "Done"`), last);
+  const loose = made(await tool('item', ['create', '--title', 'No epic']));
+  assert.ok(!(await tool('item', ['transition', loose, 'Done'])).includes('item read'), 'no epic, no next');
+});
+
 test('item handover: several ids, one note, to the Team; --to-do and --flag; transition takes --note', async () => {
   const { holdersOf, holderLabel, readItem } = await import('../src/work-items.js');
   const epic = made(await tool('item', ['create', '--title', 'Handover epic', '--kind', 'Epic']));

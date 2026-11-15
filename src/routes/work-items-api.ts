@@ -24,13 +24,16 @@ export function callerOf(req: express.Request): string {
   return /^user_/.test(typeof source === 'string' ? source : '') ? 'owner' : 'unknown';
 }
 
-export const acknowledge = (res: express.Response, done: Acknowledged, extra: Record<string, unknown> = {}) =>
+/** `said` is an act's own reply (its next step and prompt already in it, KAN-558); else the line and the prompt. */
+export const acknowledge = (res: express.Response, done: Acknowledged, extra: Record<string, unknown> = {}, said?: string) => {
+  const told = done.notified?.length ? `\nTold ${done.notified.map((name) => `@${name}`).join(', ')}.` : '';
+  const prompt = typeof extra.prompt === 'string' && extra.prompt ? `\n${extra.prompt}` : '';
+  const [first, ...rest] = (said ?? `${didLine(done)}${prompt}`).split('\n');
   res.json({
     ok: true, item: done.item, line: done.line, ...(done.notified?.length ? { notified: done.notified } : {}), ...extra,
-    acknowledgement: didLine(done)
-      + `${done.notified?.length ? `\nTold ${done.notified.map((name) => `@${name}`).join(', ')}.` : ''}`
-      + (typeof extra.prompt === 'string' && extra.prompt ? `\n${extra.prompt}` : ''),
+    acknowledgement: [first + told, ...rest].join('\n'),
   });
+};
 
 export function answerError(res: express.Response, error: unknown): void {
   const message = String((error as Error)?.message ?? error);
@@ -175,7 +178,7 @@ export function registerWorkItems(app: express.Express): void {
       if (!status) throw new WorkItemBadInput('name the status, one of the space\'s.');
       const done = acted(await editItem(id, { status }, by, text(b.note)));
       // What comes next (KAN-522): a start names the hand-in and the flag, a hand-in who holds it.
-      const next = nextStep(done.done);
+      const next = await nextStep(done.done);
       const said = next ? `${done.acknowledgement}. ${next}` : done.acknowledgement;
       const prompt = reviewPrompt(done.done.item);
       return prompt ? { ...done, acknowledgement: `${said}\n${prompt}`, extra: { prompt } } : { ...done, acknowledgement: said };
@@ -251,7 +254,7 @@ export function registerWorkItems(app: express.Express): void {
   for (const [verb, act] of Object.entries(acts)) {
     const handler = guarded(async (req, res) => {
       const { done, acknowledgement, extra } = await act(req.params.id!, req.body ?? {}, callerOf(req));
-      if (done) acknowledge(res, done, extra);
+      if (done) acknowledge(res, done, extra, acknowledgement);
       else res.json({ ok: true, ...extra, acknowledgement });
     });
     if (verb === 'delete') app.delete('/api/work-items/:id', handler);
