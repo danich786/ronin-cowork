@@ -51,7 +51,7 @@ item. Your own changes tell nobody, and nobody needs telling: the board shows th
 - Answer a person on the item, with a comment. A hand-in carries one for the user: --note
   "<what they can try>", short; the diff is the detail.
 - Stopped, waiting on someone for a question, a choice, a discussion or a block:
-  item flag <id> "<who>: <what you need>"; the reason is required. item unflag <id> when
+  item flag <id> "<who>: <what you need>"; a reason is asked for. item unflag <id> when
   moving again. The flag is how your lead or user hears you are waiting.
 - Several items: one command takes several ids.
 - An item you made by mistake: item delete <id>.

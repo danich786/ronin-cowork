@@ -7,7 +7,7 @@ import type express from 'express';
 import {
   WorkItemBadInput, WorkItemMissing, WorkItemRefused,
   addComment, attachDoc, connectionOf, createItem, deleteItem, editComment, editItem, archiveHeldDone, archiveItem, flagItem, handoffItem, reviewPrompt, handoverItem, holderLabel, holdersOf, linkItem, listItems, markOnDev, nextStep, readItem, resolveId, sendBack, watchItem, watchedIds,
-  didLine, oneNoticePerCommand, type Acknowledged, type Holder, type JiraPair, type WorkItem,
+  FLAGGED, didLine, oneNoticePerCommand, type Acknowledged, type Holder, type JiraPair, type WorkItem,
 } from '../work-items.js';
 import { agentReading, epicCards, everyItemReading, teamReading, type HeldItem } from '../work-items-read.js';
 import { liveRows, rowOf } from '../work-items-index.js';
@@ -214,12 +214,15 @@ export function registerWorkItems(app: express.Express): void {
     };
   }
   // Jira's Add flag / Remove flag; { comment } is the reason, kept as a comment ("Flagged: <reason>").
-  // A flag needs its reason (owner, 2026-11-15, KAN-521); an unflag's comment is optional.
+  // A flag is never refused (owner, 2026-11-15, KAN-525): without a reason it is set, its notice
+  // goes, and the reply asks for the reason as a comment. An unflag's comment is optional.
   for (const [verb, flagged] of [['flag', true], ['unflag', false]] as const) {
     acts[verb] = async (id, b, by) => {
       const reason = text(b.comment)?.trim();
-      if (flagged && !reason) throw new WorkItemBadInput(`a flag says why: item flag ${id} "<who>: <what you need>".`);
-      return acted(await flagItem(id, flagged, reason, by));
+      const done = acted(await flagItem(id, flagged, reason, by));
+      if (!flagged || reason) return done;
+      const prompt = `No reason given: add it, item comment ${done.done.item.id} "${FLAGGED}<why>".`;
+      return { ...done, acknowledgement: `${done.acknowledgement}\n${prompt}`, extra: { prompt } };
     };
   }
   // item archive --done: every Done item the caller or its Teams hold; { team } narrows it.

@@ -44,7 +44,7 @@ When you bring work to a lead, it decides first which of three it is:
 |---|---|---|
 | Made | the lead as it gives out work, or the Agent as it takes it | under the epic; its objective is what done looks like to you, in your words, one or two sentences |
 | Started | the Agent | In Progress |
-| Waiting | the Agent | stopped for a question, a choice, a discussion or a block: `item flag <id> "<who>: <what you need>"`, `item unflag <id>` when moving again: the reason is required and becomes the comment **Flagged:** <reason>. The Agent's pill (the Team's selector, People) shows ⚑ in amber while it holds a flagged item; Epics, filtered by Flagged, lists every flagged item |
+| Waiting | the Agent | stopped for a question, a choice, a discussion or a block: `item flag <id> "<who>: <what you need>"`, `item unflag <id>` when moving again: a reason is asked for and becomes the comment **Flagged:** <reason>; without one the flag still goes on, and the reply asks for it as that comment. The Agent's pill (the Team's selector, People) shows ⚑ in amber while it holds a flagged item; Epics, filtered by Flagged, lists every flagged item |
 | Handed in | the Agent | In Review, still held by the Agent, with one short **Handed in** comment for you: what you can try. It shows under With the lead. Handing in code is the repo's and needs no item: `worktree-desk hand-in <repo>` alone puts the code in, and its reply tells the Agent to check its items; `--item` hands in both at once. Handing in code doesn't hand in the item, and a hand-in never makes an item Done |
 | On dev | the lead's promotion | still In Review; it moves to Ready to accept |
 | Accepted or sent back | you | Accept makes it Done, and the Agent holding it is told and ends. Send back makes it In Progress with your comment, held where it is; the Agent holding it is told |
@@ -83,7 +83,7 @@ first; the other comments (the Agent and lead deciding things, the item's record
 |---|---|---|---|
 | **Hand-in** | the Agent: `worktree-desk hand-in <repo> [--item <id> --note "<what you can try>"]` | my work is done; review it | the lead |
 | **Promotion** | the lead: `bin/ronin-promote <team>` | it is on dev; you can try it | nobody: it shows under Ready to accept |
-| **Flag** | anyone: `item flag <id> "<why>"`, the reason required; `item handover --flag`; the item's Flagged switch, which asks for it | I have stopped and wait on someone: a question, a choice, a discussion or a block; the reason is the **Flagged:** comment | the lead or epic holder above it |
+| **Flag** | anyone: `item flag <id> "<why>"`, a reason asked for; `item handover --flag`; the item's Flagged switch, which asks for it | I have stopped and wait on someone: a question, a choice, a discussion or a block; the reason is the **Flagged:** comment | the lead or epic holder above it |
 
 A code hand-in is the repo's: `worktree-desk hand-in <repo>` never needs an item. With none
 named, the code goes to the Team line, the lead is told, and the reply tells the Agent to check

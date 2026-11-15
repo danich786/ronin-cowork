@@ -937,8 +937,9 @@ export async function addComment(id: string, words: string, by: string): Promise
 }
 
 /** Jira's Add flag / Remove flag: the impediment set or cleared, in one trail line. A flag's
- * reason is the comment "Flagged: <reason>"; an unflag's, when given, an ordinary comment. Ronin's
- * tools refuse a flag without one (the flag route); a flag mirrored from Jira comes with none.
+ * reason is the comment "Flagged: <reason>"; an unflag's, when given, an ordinary comment. A flag
+ * is never refused: without a reason it is set, and the flag route's reply asks for one (KAN-525);
+ * a flag mirrored from Jira comes with none.
  * A flag raised is a call for help (notice 2); the brief's convention is item flag <id> "<who>: <what you need>". */
 export async function flagItem(id: string, flagged: boolean, reason: string | undefined, by: string): Promise<Acknowledged> {
   const text = String(reason ?? '').trim();

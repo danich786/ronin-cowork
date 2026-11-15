@@ -245,7 +245,8 @@ test('routes acknowledge with the item and the appended line; refusals answer 40
     assert.equal((await call('PUT', `${base}/${id}`, { jira: 'RON-1', by: 'probe' })).status, 400, 'jira is { id, key } or null');
     await call('PUT', `${base}/${id}`, { jira: { id: '10001', key: 'RON-1' }, by: 'probe' });
     const bare = await call('POST', `${base}/${id}/flag`, { by: 'probe' });
-    assert.deepEqual([bare.status, /a flag says why/.test(bare.data.error)], [400, true], 'a flag without its reason is refused');
+    assert.deepEqual([bare.status, bare.data.item.flagged, bare.data.acknowledgement], [200, true, `${id} is flagged\nNo reason given: add it, item comment ${id} "Flagged: <why>".`], 'a flag without its reason goes on; the reply asks for it');
+    await call('POST', `${base}/${id}/unflag`, { by: 'probe' });
     assert.equal((await call('POST', `${base}/${id}/flag`, { comment: 'Waiting on Ana: the key', by: 'probe' })).data.acknowledgement, `${id} is flagged: Waiting on Ana: the key`);
     const moved = await call('POST', `${base}/${id}/transition`, { status: 'In Review', by: 'probe' });
     assert.equal(moved.data.acknowledgement.split('\n')[0], `${id} moved to In Review`);
