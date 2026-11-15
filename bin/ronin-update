@@ -6,6 +6,8 @@
 #   bin/ronin-update --check [--json]    # report BOTH packages vs latest, change nothing
 #   bin/ronin-update --version v1.2.0    # install that release
 #   bin/ronin-update --file <tarball>    # install a tarball already on disk
+#   bin/ronin-update --file <cowork.tar.gz> --services-file <services.tar.gz>
+#                                        # move BOTH packages together, in one gated swap
 #   bin/ronin-update --rollback          # point current back at the previous release
 #   bin/ronin-update --home <dir>        # the install home (needed from a checkout)
 #
@@ -14,6 +16,14 @@
 # discovers them at boot. A services release installs only if its contract number
 # matches the running cowork's (connector-contract.md); cowork updates carry the
 # installed services into each new candidate, so the candidate gates as The Works.
+#
+# A CONTRACT CHANGE moves both at once: --file with --services-file. The two tarballs must
+# agree on CONTRACT_V with each other (not with what is installed); the candidate is the
+# new cowork carrying the NEW services, gated as today, and only a pass swaps current and
+# the services store together. The store it replaced is kept as <home>/services.previous,
+# and --rollback puts it back with the previous cowork. Run it from the NEW release's own
+# copy (unpack its tarball anywhere, run its bin/ronin-update --home <home> …): the old
+# installed copy does not know the flag.
 #
 # THE LAYOUT it manages — every release unpacked whole, one symlink saying which serves:
 #
@@ -79,7 +89,7 @@ fi
 RONIN_UNIT="$(machine_operator_unit)"
 
 # --- arguments ---
-MODE="install"; WANT=""; FILE=""; HOME_DIR=""; JSON=0; PACKAGE="cowork"
+MODE="install"; WANT=""; FILE=""; SVC_FILE=""; HOME_DIR=""; JSON=0; PACKAGE="cowork"
 while [ $# -gt 0 ]; do
   case "$1" in
     --check)    MODE="check" ;;
@@ -88,11 +98,16 @@ while [ $# -gt 0 ]; do
     --services) PACKAGE="services" ;;
     --version)  shift; WANT="${1:-}"; [ -n "$WANT" ] || fail "--version needs vX.Y.Z" ;;
     --file)     shift; FILE="${1:-}"; [ -n "$FILE" ] || fail "--file needs a path" ;;
+    --services-file) shift; SVC_FILE="${1:-}"; [ -n "$SVC_FILE" ] || fail "--services-file needs a path" ;;
     --home)     shift; HOME_DIR="${1:-}"; [ -n "$HOME_DIR" ] || fail "--home needs a directory" ;;
     *) fail "unrecognised argument: $1 (see the header of this script)" ;;
   esac
   shift
 done
+if [ -n "$SVC_FILE" ]; then
+  [ "$MODE" = install ] && [ "$PACKAGE" = cowork ] && [ -n "$FILE" ] ||
+    fail "--services-file pairs with --file <cowork tarball> only: bin/ronin-update --file <cowork.tar.gz> --services-file <services.tar.gz>"
+fi
 
 # --- where is the install home? ---
 # An installed copy carries VERSION and sits either at <home>/releases/<v>/ or is
@@ -123,6 +138,9 @@ installed_release() {
 services_installed_release() {
   [ -n "$HOME_DIR" ] && sed -n 's/^release=//p' "$HOME_DIR/services/VERSION" 2>/dev/null || true
 }
+# The contract a cowork tree answers, and the one a services store was built for.
+cowork_contract() { sed -n 's/^export const CONTRACT_V = \([0-9][0-9]*\);.*/\1/p' "$1/src/sockets-contract.ts" 2>/dev/null || true; }
+store_contract()  { sed -n 's/^contract=//p' "$1/VERSION" 2>/dev/null || true; }
 
 # Copy the services store into a serving tree. ONE implementation, two callers — the
 # services install below and the carry-forward into a cowork candidate. Two loops drifted
@@ -134,10 +152,10 @@ services_installed_release() {
 # behind, and gbrain and koshi_weights, which both `import ../_lib/install-runner.js`, then
 # died at load with ERR_MODULE_NOT_FOUND. The assembler logs that and carries on, so the
 # roster came up short with nothing said. Underscore means shared, and shared code travels.
-place_services() {
-  local dest="$1" d name
+place_services() { # $1=serving tree's src/services  $2=store (default: the home's)
+  local dest="$1" src="${2:-$HOME_DIR/services}" d name
   mkdir -p "$dest"
-  for d in "$HOME_DIR/services"/*/; do
+  for d in "$src"/*/; do
     name="$(basename "$d")"
     case "$name" in
       _*) ;; # shared code — no register entry by design, and the services import it
@@ -306,6 +324,19 @@ if [ "$MODE" = "rollback" ]; then
   say "rolling back: current -> $prev (was $cur)"
   ln -sfn "$prev" "$HOME_DIR/current"
   ln -sfn "$cur"  "$HOME_DIR/previous"   # roll forward is another --rollback
+  # A paired update kept the store it replaced. When the release rolled to answers that
+  # store's contract and not the current store's, the two trade places: the previous
+  # cowork comes back with its services, and roll forward trades them back.
+  if [ -d "$HOME_DIR/services.previous" ]; then
+    want="$(cowork_contract "$HOME_DIR/current")"
+    if [ "$(store_contract "$HOME_DIR/services")" != "$want" ] &&
+       [ "$(store_contract "$HOME_DIR/services.previous")" = "$want" ]; then
+      mv "$HOME_DIR/services" "$HOME_DIR/services.swap"
+      mv "$HOME_DIR/services.previous" "$HOME_DIR/services"
+      mv "$HOME_DIR/services.swap" "$HOME_DIR/services.previous"
+      say "services store back to $(services_installed_release) (contract $want)"
+    fi
+  fi
   if unit_serves_home; then restart_and_gate; else
     say "swapped, but nothing was restarted:"
     why_not_restarted
@@ -388,12 +419,42 @@ else
 fi
 
 # --- verify ---
-if [ -f "$WORK/SHA256SUMS" ]; then
-  WANT="$(awk -v n="$TARBALL" '$2==n{print $1}' "$WORK/SHA256SUMS")"
-  [ -n "$WANT" ] || fail "SHA256SUMS carries no line for $TARBALL — refusing to install"
-  [ "$(sha256_of "$WORK/$TARBALL")" = "$WANT" ] ||
-    fail "CHECKSUM MISMATCH on $TARBALL — refusing to install; the download is not the release"
-  say "checksum verified"
+verify_tarball() { # $1=dir holding the tarball and any SHA256SUMS  $2=tarball name
+  local want
+  [ -f "$1/SHA256SUMS" ] || return 0
+  want="$(awk -v n="$2" '$2==n{print $1}' "$1/SHA256SUMS")"
+  [ -n "$want" ] || fail "SHA256SUMS carries no line for $2 — refusing to install"
+  [ "$(sha256_of "$1/$2")" = "$want" ] ||
+    fail "CHECKSUM MISMATCH on $2 — refusing to install; the download is not the release"
+  say "checksum verified: $2"
+}
+verify_tarball "$WORK" "$TARBALL"
+
+# --- the paired services tarball: verify, agree on the contract, unpack to WORK ---
+# Nothing under the home moves here. The two tarballs must answer the SAME contract;
+# what is installed does not enter into it — moving across a contract change is the point.
+if [ -n "$SVC_FILE" ]; then
+  [ -f "$SVC_FILE" ] || fail "no such file: $SVC_FILE"
+  mkdir -p "$WORK/svc"
+  cp "$SVC_FILE" "$WORK/svc/"
+  if [ -f "$(dirname "$SVC_FILE")/SHA256SUMS" ]; then cp "$(dirname "$SVC_FILE")/SHA256SUMS" "$WORK/svc/"; else
+    say "⚠ no SHA256SUMS beside $SVC_FILE — installing UNVERIFIED bytes (fine for a --dirty trial, never for a release)"
+  fi
+  SVC_TARBALL="$(basename "$SVC_FILE")"
+  SVC_VER="$(echo "$SVC_TARBALL" | sed -n 's/^ronin-services-\(v[0-9][^ ]*\)\.tar\.gz$/\1/p')"
+  [ -n "$SVC_VER" ] || fail "cannot read a version out of '$SVC_TARBALL' (expected ronin-services-vX.Y.Z.tar.gz)"
+  verify_tarball "$WORK/svc" "$SVC_TARBALL"
+  svc_contract="$(tar -xzf "$WORK/svc/$SVC_TARBALL" -O "ronin-services-$SVC_VER/VERSION" 2>/dev/null | sed -n 's/^contract=//p')"
+  cow_contract="$(tar -xzf "$WORK/$TARBALL" -O "$PKG-$VER/src/sockets-contract.ts" 2>/dev/null |
+    sed -n 's/^export const CONTRACT_V = \([0-9][0-9]*\);.*/\1/p')"
+  [ -n "$svc_contract" ] && [ -n "$cow_contract" ] ||
+    fail "could not read a contract number from both tarballs (cowork ${cow_contract:-?}, services ${svc_contract:-?}) — refusing to guess"
+  [ "$svc_contract" = "$cow_contract" ] ||
+    fail "contract mismatch: cowork $VER answers contract $cow_contract, services $SVC_VER is built for $svc_contract — nothing was moved"
+  inst_contract="$(cowork_contract "$HOME_DIR/current")"
+  say "contract check: both tarballs answer $cow_contract${inst_contract:+ (installed: $inst_contract)}"
+  mkdir -p "$WORK/svc/store"
+  tar -xzf "$WORK/svc/$SVC_TARBALL" --strip-components=1 -C "$WORK/svc/store"
 fi
 
 # =====================================================================
@@ -471,7 +532,10 @@ ln -sfn "$HOME_DIR/.env" "$TARGET/.env"
 # Installed services survive a cowork update BECAUSE of this copy: the store is the
 # home's, the release dir is disposable, and the candidate gates as The Works —
 # a cowork release that breaks the installed services never becomes the serving one.
-if [ -d "$HOME_DIR/services" ]; then
+if [ -n "$SVC_FILE" ]; then
+  place_services "$TARGET/src/services" "$WORK/svc/store"
+  say "placed the NEW services ($SVC_VER) in the candidate — it gates as The Works"
+elif [ -d "$HOME_DIR/services" ]; then
   place_services "$TARGET/src/services"
   say "carried services forward ($(services_installed_release)) — the candidate gates as The Works"
 fi
@@ -529,10 +593,24 @@ if [ -n "${RONIN_FROM_GET:-}" ]; then
 fi
 
 # --- swap ---
+# The paired store is copied into the home first (a copy can be slow or fail; a rename
+# cannot), so the two renames below are the whole of the move.
+if [ -n "$SVC_FILE" ]; then
+  rm -rf "$HOME_DIR/services.partial"
+  cp -r "$WORK/svc/store" "$HOME_DIR/services.partial" ||
+    fail "could not stage the services store in $HOME_DIR — nothing was swapped"
+fi
 CUR="$(readlink "$HOME_DIR/current" 2>/dev/null || true)"
 [ -n "$CUR" ] && ln -sfn "$CUR" "$HOME_DIR/previous"
 ln -sfn "releases/$VER" "$HOME_DIR/current"
 say "swapped: current -> releases/$VER${CUR:+ (previous -> $CUR)}"
+# The paired store follows at once: the candidate already gated with exactly these files.
+if [ -n "$SVC_FILE" ]; then
+  rm -rf "$HOME_DIR/services.previous"
+  [ -d "$HOME_DIR/services" ] && mv "$HOME_DIR/services" "$HOME_DIR/services.previous"
+  mv "$HOME_DIR/services.partial" "$HOME_DIR/services"
+  say "stored: $HOME_DIR/services ($SVC_VER)${CUR:+ — the one it replaced is services.previous, for --rollback}"
+fi
 
 # --- the unit route, the one a restart cannot carry ---
 if [ -n "$CUR" ] && ! diff -rq "$HOME_DIR/$CUR/deploy" "$TARGET/deploy" >/dev/null 2>&1; then
@@ -544,7 +622,7 @@ fi
 # --- restart what serves, or say why not ---
 if unit_serves_home; then
   restart_and_gate
-  echo "✓ $VER is live — /api/version answers it"
+  echo "✓ $VER${SVC_FILE:+ with services $SVC_VER} is live — /api/version answers it"
 elif [ -z "$CUR" ]; then
   echo "✓ $VER is installed at $HOME_DIR/current — FIRST install on this home: current did not point at an earlier release here."
   # Only for a hand-run update; get-ronin execs setup.sh itself.
