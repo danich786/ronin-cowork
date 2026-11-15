@@ -186,7 +186,8 @@ and no CLI writes it down.
 A question with options is answered in Terminal, never in Chat. While an Agent is asking, Chat
 ends with *Waiting for your answer in Terminal* and an **Answer in Terminal** button; the press
 switches the tile to Terminal, as **Term** would. Once the Agent is no longer asking, a tile
-that went there by that button comes back to Chat by itself. If you switched yourself, or
+that went there by that button comes back to Chat by itself. Until then a **Back to Chat**
+button sits at the foot of the terminal, for when the answer does not end the asking. If you switched yourself, or
 switched again after the press, the tile stays where you put it. Nothing switches without a
 press.
 

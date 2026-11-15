@@ -24,7 +24,7 @@ import { get, subscribe } from './store.js';
 import { t } from './lexicon.js';
 import { makeTileTranscript } from './tile-transcript.js';
 import { createSurfaceHost, TILE_SURFACES } from './surface-host.js';
-import { ninMark } from './workspace-primitives.js';
+import { ninMark, WorkspacePrimitives } from './workspace-primitives.js';
 
 const readableSession = (name) => {
   const live = S.sessions.find((row) => row.name === name);
@@ -85,6 +85,15 @@ export class Tile {
       onAnswer: () => this.answerInTerminal(),
     });
     this.body.append(this.transcriptView.el);
+    // BACK TO CHAT — at the foot of the terminal while it was reached by Answer in Terminal
+    // (owner, 2026-11-15, KAN-571): the way back for when the stance cannot tell the question
+    // is answered, without knowing the header's Chat/Term switch. Shown by the tile's
+    // answer-return class (style.css); the press is the same switch the return takes.
+    this.backToChatButton = WorkspacePrimitives.createAction({
+      label: t('transcript.back_to_chat', 'Back to Chat'),
+      size: 'compact', className: 'tile-back-to-chat', action: () => this.backToChat(),
+    }).el;
+    this.body.append(this.backToChatButton);
 
     // The work record: this session's and the items it holds, read off its TEGAMI. The menu draws it as the
     // work record (js/tilehead.js tileMenu). Read-only — nothing here can touch the session.
@@ -242,6 +251,8 @@ export class Tile {
       : this.transcriptOn ? 'chat'
         : this.tapeMode ? 'tape' : 'term';
     this.surfaceHost.select(surface);
+    // At Terminal by Answer in Terminal: Back to Chat shows at its foot (style.css).
+    this.el.classList.toggle('answer-return', !!this.answerReturns);
   }
 
   /**
@@ -315,10 +326,7 @@ export class Tile {
     this.transcriptView.setStance(row?.stance || '', row?.tool);
     if (this.transcriptOn) this.transcriptView.rewatch(); // a new Agent's Chat: see tile-transcript.js
     // Answered: back to Chat, but only a tile that went to Terminal by Answer in Terminal.
-    if (this.answerReturns && row && row.stance !== 'asking') {
-      this.answerReturns = false;
-      if (!this.transcriptOn) this.toggleTranscript();
-    }
+    if (this.answerReturns && row && row.stance !== 'asking') this.backToChat();
     this.stopWatch?.(row); // a Stop waiting to hear the Agent stopped (terminal-controls.js)
   }
 
@@ -332,6 +340,14 @@ export class Tile {
     if (!this.transcriptOn) return;
     this.toggleTranscript();
     this.answerReturns = !this.transcriptOn;
+    this.syncSurface(); // Back to Chat comes up at the terminal's foot
+  }
+
+  /** The answer's way back: the stance left asking, or Back to Chat was pressed. */
+  backToChat() {
+    this.answerReturns = false;
+    if (!this.transcriptOn) this.toggleTranscript();
+    else this.syncSurface();
   }
 
   /** The route's word on this Agent's transcript arrived; the header reads it from here. */

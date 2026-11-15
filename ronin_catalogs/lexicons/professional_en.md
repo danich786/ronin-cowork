@@ -1223,6 +1223,7 @@ The catalog entry goes. {dir} is not touched.
 - **transcript.stance_working:** Working
 - **transcript.stance_asking:** Waiting for your answer in Terminal
 - **transcript.answer_in_terminal:** Answer in Terminal
+- **transcript.back_to_chat:** Back to Chat
 
 ## output — output.js (the RIREKI view picker)
 - **output.locked:** Locked

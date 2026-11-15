@@ -3566,6 +3566,17 @@ body {
   font-weight: var(--weight-strong);
 }
 .tile-transcript-stance[data-stance='asking'] .tile-transcript-answer { font-weight: normal; }
+/* Back to Chat (KAN-571): at the foot of the terminal while it was reached by Answer in
+   Terminal, above the box when there is one; the right corner leaves the question's options
+   and keys hint readable. */
+.tile-back-to-chat { display: none !important; }
+.tile.answer-return .tile-body:is([data-surface='term'], [data-surface='tape']) > .tile-back-to-chat {
+  display: inline-flex !important;
+  position: absolute;
+  right: var(--space-inline);
+  bottom: calc(var(--composer-clearance) + var(--space-row));
+  z-index: 5;
+}
 /* Motion is the whole point of the dots, so when motion is unwelcome they simply sit still —
    the indicator is still there, and still says the Agent is at work. */
 @media (prefers-reduced-motion: reduce) {
