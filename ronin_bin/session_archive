@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/tool-count.sh" session_archive "$@"
 # session_archive — stop a live session while keeping it resumable.
-# Usage: session_archive <session> [--ignore-items]
+# Usage: session_archive <session> [--ignore-items] [--ignore-desks]
 set -u
 case "${1-}" in
   -h|--help) [ "$#" -eq 1 ] || { echo "session_archive: --help takes no other arguments. Run session_archive --help." >&2; exit 2; }
@@ -9,7 +9,7 @@ case "${1-}" in
 session_archive — stop a live session while keeping it resumable
 
 Usage:
-  session_archive <session> [--ignore-items]
+  session_archive <session> [--ignore-items] [--ignore-desks]
 
 Archive records the provider conversation and session metadata before stopping the
 live session. A refusal leaves it running; this is not hard deletion.
@@ -18,26 +18,38 @@ Review it has not flagged, naming each, with the same nudge: finish it, or flag 
 desks; then go. A flagged item needs nothing more; --ignore-items archives past the rest.
 Each item still goes to the Team, flagged "Ended without handover: <agent>, <status>", and the
 lead is told once. To Do goes back to the Team by itself.
+It refuses while the Agent owns an open desk, naming each: close out first (commit, hand in,
+session_end). In an emergency (a stuck or dead pane), --ignore-desks archives anyway and
+leaves every desk exactly as it is: worktree, uncommitted files, branch and owner. The
+archive records them; session_restore brings the Agent back to the same desks. Expiry
+after 7 days removes the archive, never a worktree; the lead is told the desks are kept.
+A dead pane archives too: the conversation id is read from the saved launch identity.
 Related: session_restore --help
 EOF
     exit 0 ;;
 esac
 . "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"
 TOOL_DIR=$(dirname "$SELF")
-ignore_items=false
-[ "$#" -eq 2 ] && [ "$2" = --ignore-items ] && { ignore_items=true; set -- "$1"; }
-[ "$#" -eq 1 ] && [ -n "$1" ] && [ "${1#-}" = "$1" ] || {
-  echo "usage: session_archive <session> [--ignore-items]. Run session_archive --help." >&2
+ignore_items=false ignore_desks=false NAME=
+for arg in "$@"; do
+  case "$arg" in
+    --ignore-items) ignore_items=true ;;
+    --ignore-desks) ignore_desks=true ;;
+    -*|'') NAME=; break ;;
+    *) [ -z "$NAME" ] || { NAME=; break; }; NAME=$arg ;;
+  esac
+done
+[ -n "$NAME" ] && [ "${1#-}" = "$1" ] || {
+  echo "usage: session_archive <session> [--ignore-items] [--ignore-desks]. Run session_archive --help." >&2
   exit 2
 }
-NAME=$1
 . "$TOOL_DIR/ronin-http.sh"
 ronin_connect || exit $?
 out=$(mktemp)
 trap 'rm -f "$out"' EXIT
 code=$(curl -sS -m 60 "${RONIN_CURL[@]+"${RONIN_CURL[@]}"}" -o "$out" -w '%{http_code}' \
   -H 'content-type: application/json' -X POST "$url/api/sessions/$NAME/archive" \
-  -d "{\"ignore_items\":$ignore_items}" 2>/dev/null) || {
+  -d "{\"ignore_items\":$ignore_items,\"ignore_desks\":$ignore_desks}" 2>/dev/null) || {
   echo "UNREACHABLE: Ronin did not answer at $url" >&2
   exit 5
 }
@@ -51,6 +63,8 @@ except Exception:
 if code == 200 and data.get("ok"):
     archived = data.get("archived") or {}
     print(f"ARCHIVED {name} as {archived.get('id') or '?'} — resumable")
+    if archived.get("desks_left_open"):
+        print(f"  desks left as they are: {', '.join(archived['desks_left_open'])}")
     raise SystemExit(0)
 print(f"REFUSED: {data.get('error') or f'HTTP {code}'}", file=sys.stderr)
 raise SystemExit(4)

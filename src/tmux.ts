@@ -208,10 +208,11 @@ export async function stopSessionTree(name: string, opts: StopOptions = {}): Pro
 export async function sessionRuntime(name: string): Promise<{ cwd: string; pid: number; command: string; agent: string }> {
   const stdout = await tmux.run([
     'display-message', '-p', '-t', exactPane(name),
-    `#{pane_current_path}\t#{pane_pid}\t#{pane_start_command}\t#{${AGENT_OPT}}`,
+    `#{pane_current_path}\t#{pane_pid}\t#{pane_start_command}\t#{${AGENT_OPT}}\t#{pane_start_path}`,
   ]);
-  const [cwd, pid, command, agent] = stdout.replace(/\r?\n$/, '').split('\t');
-  return { cwd: cwd || '', pid: Number(pid) || 0, command: command || '', agent: agent || '' };
+  const [cwd, pid, command, agent, startPath] = stdout.replace(/\r?\n$/, '').split('\t');
+  // A dead pane has no current path; it started where the Agent works.
+  return { cwd: cwd || startPath || '', pid: Number(pid) || 0, command: command || '', agent: agent || '' };
 }
 
 export async function setSessionKey(name: string, key: string): Promise<void> {

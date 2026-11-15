@@ -34,7 +34,7 @@ test('session_end archives through the one archive; only an unresumable conversa
   assert.equal(route.match(/await writeArchive\(/g)?.length, 1);
   assert.equal(route.match(/await archiveAgent\(/g)?.length, 2);
   const archive = between("app.post('/api/sessions/:name/archive'", "app.post('/api/archived-sessions/:id/rehydrate'");
-  assert.match(archive, /await archiveAgent\(name\)/);
+  assert.match(archive, /await archiveAgent\(name, ignoringDesks\(req\) \? desks : \[\]\)/);
 });
 
 test('Delete and Hard Delete are unchanged: they end outright', () => {
@@ -50,7 +50,7 @@ test('Delete and Hard Delete are unchanged: they end outright', () => {
 test('the lead\'s end notice names the archive id and the restore command', async () => {
   const releases = between('async function releaseHolds', 'async function archiveAgent');
   assert.match(releases, /archived as \$\{archived\.id\}: session_restore \$\{archived\.id\}/);
-  assert.match(releases, /memberEnded\(name, restore \? `\$\{name\} ended, \$\{restore\}` : ''\)/);
+  assert.match(releases, /memberEnded\(name, restore \? `\$\{name\} ended, \$\{restore\}` : said\)/);
   const { ackRecord } = await import('../src/tegami.ts');
   const { listQueuedMessages } = await import('../src/message-queue.ts');
   await ackRecord('the_lead', 'ender', 'ender ended, archived as ender-123: session_restore ender-123');
