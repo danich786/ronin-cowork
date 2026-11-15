@@ -464,5 +464,5 @@ test('the facts alone give the brief birth gave', async () => {
 test('every Cowork Agent is seeded with Integrations, with nothing selected', async () => {
   const agent = await resolveForm(commonsForm({ session_type: 'cowork_agent', name: 'integrations-proof' }), new Set());
   if (process.env.RONIN_PACKET_PROOF) await fs.writeFile(process.env.RONIN_PACKET_PROOF, agent.composed!.text);
-  assert.match(agent.composed!.text, /^### Integrations\n.+ More: `ronin-help integrations`\./m);
+  assert.match(agent.composed!.text, /^### Integrations\n.+ \(`integrations`\)$/m);
 });

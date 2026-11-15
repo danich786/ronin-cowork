@@ -97,8 +97,11 @@ function toolLines(row: InPlay): string[] {
 }
 
 /** The seed of a behaviour: its one line, and where to read the rest. */
-const seedText = (row: InPlay): string =>
-  `${row.file.seed ? `${row.file.seed} ` : ''}More: \`ronin-help ${row.name}\`.`;
+/** A behaviour at seed depth: its seed and its file name, which `ronin-help <name>` opens. */
+const seedText = (row: InPlay): string => `${row.file.seed ? `${row.file.seed} ` : ''}(\`${row.name}\`)`;
+
+/** Under ## Behaviours: how to read every behaviour in full, and all of Help (owner, 2026-11-15). */
+export const READ_MORE_LINE = "Each in full: `ronin-help <name>`; all of Ronin's Help: `ronin-help`.";
 
 /** A mandate: an order, one bullet; at full depth its text follows. */
 function mandateLines(row: InPlay): string[] {
@@ -115,7 +118,7 @@ export function renderBrief(name: string, record: BriefRecord, resolved: Resolve
   }
   if (resolved.mandates.length) out.push('## Mandate', ...resolved.mandates.flatMap(mandateLines), '');
   if (resolved.behaviours.length) {
-    out.push('## Behaviours', '');
+    out.push('## Behaviours', READ_MORE_LINE, '');
     for (const row of resolved.behaviours) {
       out.push(`### ${row.title}`, row.depth === 'full' ? nested(row.file.body) : seedText(row));
       if (row.tools.length) out.push('Tools:', ...row.tools.flatMap(toolLines));

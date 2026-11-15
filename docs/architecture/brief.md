@@ -219,9 +219,10 @@ birth and never rewritten. Each update writes the brief as it is now beside it, 
 - <the order for each chosen value>
 
 ## Behaviours
+Each in full: `ronin-help <name>`; all of Ronin's Help: `ronin-help`.
 
 ### <behaviour>
-<full text, or its seed line>
+<full text, or its seed line and file name: <seed> (`<name>`)>
 Tools:
 - `<tool>`: <seed>
 
@@ -235,6 +236,9 @@ Every tool is a command on your PATH; `<tool> --help` gives its syntax.
 
 - Facts, then the Mandate orders, then the behaviours in play (full text or seed, by `order:`), each with its tools,
   then Other tools, the one `--help` line and the end line.
+- **Every Agent can read further.** The line under Behaviours says how to read each behaviour in
+  full and all of Help; a behaviour told at seed depth prints its file name after the seed, so
+  `ronin-help <name>` opens it. Tools say `<tool> --help`. All of this counts against the one-read budget.
 - **One read.** Every supported provider caps one file read, so the brief is held to 30,000
   bytes and 380 lines (`src/birth-brief.ts`); a test compiles the fullest stock brief and
   fails over either. Do not raise the budget to fit prose: shorten the source, or lower its
