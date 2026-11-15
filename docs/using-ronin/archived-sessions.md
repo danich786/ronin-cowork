@@ -3,6 +3,9 @@
 Archive stops an Agent so you can later resume its provider conversation. The Agent is no
 longer running and does not occupy a place in the live roster.
 
+An archive is there to undo an accidental close, not to keep old work: it lasts **7 days**.
+After that Ronin removes it, with its session folder, as a Hard Delete of the archive would.
+
 ## Archive and restore
 
 1. Open the Agent's close/delete action and choose **Archive**.
@@ -13,7 +16,8 @@ longer running and does not occupy a place in the live roster.
 An Agent that ends itself with `session_end` (as it does once its last item is Done) is
 archived the same way, after its worktrees close. An Agent that ended too early is therefore
 in **Archived**, or its lead recalls it with `session_restore <archive-id>`: the lead's notice
-of the end names the id and that command. Its work items went to the Team as on any ending;
+of the end names the id and that command. `session_restore` with no argument lists the
+archives there are, newest first (name, team, when, id) with the line that restores each. Its work items went to the Team as on any ending;
 once restored it takes back the ones it wants. Only a conversation Ronin cannot resume ends
 outright.
 
@@ -42,7 +46,8 @@ lives](project-management.md#how-an-item-lives)).
 Ronin stores session metadata for restoration, and with Terminal transcript on it keeps a
 copy of the conversation in the session folder, which archive retains. The provider still
 owns the original journal. Closed, unarchived session folders are removed after the
-retention period (a Campaign setting, default seven days).
+retention period (a Campaign setting, default seven days); an archived one goes with its
+archive after 7 days.
 
 Agents can use `session_archive` and `session_restore`; their help gives the current syntax.
 Contributors: [archive identity, persistence, and API](../architecture/session-archive.md).

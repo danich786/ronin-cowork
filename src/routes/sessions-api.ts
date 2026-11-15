@@ -48,6 +48,7 @@ import { listTeamRosters } from '../team-rosters.js';
 import { assertSameCampaignRoot, assertSameCampaignTeams } from '../campaign-scope.js';
 import { sessionDir as sessionRecordDir } from '../session-dir.js';
 import {
+  expiredArchives,
   listArchives,
   readArchive,
   removeArchive,
@@ -183,7 +184,30 @@ async function archiveWith(name: string, provider: { agent: string; id: string }
     if (await sessionExists(name)) await removeArchive(archived.id).catch(() => {});
     throw e;
   }
+  void expireArchives();
   return archived;
+}
+
+/** An archive's Hard Delete: the end is told, holds released, the retained session folder and the
+ * manifest removed. Expiry removes an archive the same way. */
+async function deleteArchived(archived: ArchivedSession): Promise<void> {
+  emitSessionEnd(archived.name, archived.key);
+  await releaseHolds(archived.name, archived.key, 'hard deleted');
+  await fs.promises.rm(sessionRecordDir(archived.key), { recursive: true, force: true });
+  await removeArchive(archived.id);
+}
+
+/** Remove every archive older than ARCHIVE_DAYS (src/session-archive.ts). Never throws. */
+export async function expireArchives(now = Date.now()): Promise<string[]> {
+  const removed: string[] = [];
+  try {
+    for (const archived of expiredArchives(await listArchives(), now)) {
+      try { await deleteArchived(archived); removed.push(archived.id); }
+      catch (e) { console.error(`[archive] expiring ${archived.id}:`, e); }
+    }
+  } catch (e) { console.error('[archive] expiry failed:', e); }
+  if (removed.length) console.log(`[archive] removed ${removed.length} expired archive(s)`);
+  return removed;
 }
 
 /** An Agent's own end (session_end, and so Done on its last item): its desks close as a Delete's do,
@@ -378,10 +402,7 @@ export function registerSessions(app: express.Express): void {
       const archived = await readArchive(req.params.id);
       const prepared = await prepareSessionEnding(req, res, archived.name, 'hard_delete');
       if (!prepared.proceed) return;
-      emitSessionEnd(archived.name, archived.key);
-      await releaseHolds(archived.name, archived.key, 'hard deleted');
-      await fs.promises.rm(sessionRecordDir(archived.key), { recursive: true, force: true });
-      await removeArchive(archived.id);
+      await deleteArchived(archived);
       res.json({ ok: true, ...(prepared.acknowledgement ? { worktree_acknowledgement: prepared.acknowledgement } : {}) });
     } catch (e) {
       const code = (e as NodeJS.ErrnoException)?.code;

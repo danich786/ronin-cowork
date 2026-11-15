@@ -1,15 +1,20 @@
 #!/usr/bin/env bash
 . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/tool-count.sh" session_restore "$@"
-# session_restore — restore one archived session through Ronin's existing resume path.
-# Usage: session_restore <archive-id>
+# session_restore — list the archives, or restore one through Ronin's existing resume path.
+# Usage: session_restore [<archive-id>]
 set -u
 case "${1-}" in
   -h|--help) [ "$#" -eq 1 ] || { echo "session_restore: --help takes no other arguments. Run session_restore --help." >&2; exit 2; }
     cat <<'EOF'
-session_restore — resume one archived session
+session_restore — list the archives, or resume one archived session
 
 Usage:
-  session_restore <archive-id>
+  session_restore               list the archives there are, newest first
+  session_restore <archive-id>  restore one
+
+With no argument it lists each archive: name, team, when it was archived, its id and the
+line that restores it. An archive is there to undo an accidental close: it lasts 7 days,
+then Ronin removes it with its session folder.
 
 Use the archive id printed by session_archive, or named in a lead's notice that an Agent
 ended with session_end (every session_end archives). Ronin restores the provider
@@ -22,15 +27,44 @@ EOF
 esac
 . "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"
 TOOL_DIR=$(dirname "$SELF")
-[ "$#" -eq 1 ] && [ -n "$1" ] && [ "${1#-}" = "$1" ] || {
-  echo "usage: session_restore <archive-id>. Run session_restore --help." >&2
+[ "$#" -eq 0 ] || { [ "$#" -eq 1 ] && [ -n "$1" ] && [ "${1#-}" = "$1" ]; } || {
+  echo "usage: session_restore [<archive-id>]. Run session_restore --help." >&2
   exit 2
 }
-ID=$1
 . "$TOOL_DIR/ronin-http.sh"
 ronin_connect || exit $?
 out=$(mktemp)
 trap 'rm -f "$out"' EXIT
+if [ "$#" -eq 0 ]; then
+  code=$(curl -sS -m 30 "${RONIN_CURL[@]+"${RONIN_CURL[@]}"}" -o "$out" -w '%{http_code}' \
+    "$url/api/archived-sessions" 2>/dev/null) || {
+    echo "UNREACHABLE: Ronin did not answer at $url" >&2
+    exit 5
+  }
+  python3 - "$code" "$out" <<'PY'
+import json, sys
+code, path = int(sys.argv[1]), sys.argv[2]
+try:
+    data = json.load(open(path))
+except Exception:
+    data = None
+if code != 200 or not isinstance(data, list):
+    err = data.get("error") if isinstance(data, dict) else None
+    print(f"REFUSED: {err or f'HTTP {code}'}", file=sys.stderr)
+    raise SystemExit(4)
+if not data:
+    print("No archives. An archive lasts 7 days.")
+    raise SystemExit(0)
+print(f"{len(data)} archive(s), newest first; each lasts 7 days:")
+for a in data:
+    team = ", ".join(a.get("tags") or []) or "no team"
+    when = (a.get("archived_at") or "?").replace("T", " ")[:16]
+    print(f"  {a.get('name') or '?'} · {team} · {when} UTC · {a.get('id')}")
+    print(f"    session_restore {a.get('id')}")
+PY
+  exit $?
+fi
+ID=$1
 code=$(curl -sS -m 60 "${RONIN_CURL[@]+"${RONIN_CURL[@]}"}" -o "$out" -w '%{http_code}' \
   -H 'content-type: application/json' -X POST "$url/api/archived-sessions/$ID/rehydrate" 2>/dev/null) || {
   echo "UNREACHABLE: Ronin did not answer at $url" >&2

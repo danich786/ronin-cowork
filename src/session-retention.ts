@@ -2,7 +2,7 @@
  * Session folders outlive their sessions on purpose — the transcript, the birth receipt,
  * and the launch identity are the evidence a later personality reading needs — but not
  * forever. The sweep runs weekly; the period is counted in days. A closed, unarchived folder is removed once nothing has written to it for
- * the retention period. Archived folders stay until hard delete, as before.
+ * the retention period. Archived folders stay until hard delete or archive expiry (ARCHIVE_DAYS, src/session-archive.ts).
  *
  * Owner rulings, 2026-09-22: seven days after close; the period is a Campaign key with
  * no UI (`config.cowork_defaults.session_retention_days`), and `0` switches the sweep
