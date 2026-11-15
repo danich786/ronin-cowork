@@ -3,6 +3,7 @@
  * and the catalog files. Facts; the behaviours in play, each at its depth with its tools under
  * it; Other tools; the one `--help` line; the end line. Nothing else is in it.
  */
+import { createHash } from 'node:crypto';
 import { recordValue, type BriefRecord } from './brief-record.js';
 import type { InPlay, Resolved } from './brief-settings.js';
 
@@ -130,23 +131,34 @@ export function renderBrief(name: string, record: BriefRecord, resolved: Resolve
   return out.join('\n').replace(/\n{3,}/g, '\n\n');
 }
 
-/** What an Agent was last told, kept beside its packet so an update sends only the difference. */
-/** What the Agent was told (`brief-told.json`): each fact, mandate, behaviour and tool in play, at
- * its depth. The values it was told them over are the work record's `brief` key. */
+/** What the Agent was told (`brief-told.json`), kept beside its packet so an update sends only
+ * the difference: each fact, mandate, behaviour and tool in play, at its depth, with a hash of the
+ * text it was told (KAN-549: a catalog edit to a behaviour's wording is sent again). The values it
+ * was told the facts over are the work record's `brief` key. */
 export interface BriefSnapshot {
-  told: Record<string, { kind: string; depth: string; title: string }>;
+  told: Record<string, { kind: string; depth: string; title: string; text?: string }>;
 }
 
 const toldRows = (r: Resolved): InPlay[] => [...r.facts, ...r.mandates, ...r.behaviours.flatMap((row) => [row, ...row.tools]), ...r.other];
 
+/** What a behaviour, mandate or tool says in a brief at its depth: the lines an update sends. */
+function saidLines(row: InPlay): string[] {
+  if (row.kind === 'tools') return toolLines(row);
+  if (row.file.mandate) return [...mandateLines(row), ''];
+  return [`### ${row.title}`, row.depth === 'full' ? nested(row.file.body) : seedText(row), ''];
+}
+
+const textHash = (row: InPlay): string | undefined => row.kind === 'facts' ? undefined
+  : createHash('sha256').update(saidLines(row).join('\n')).digest('hex').slice(0, 16);
+
 export function briefSnapshot(resolved: Resolved): BriefSnapshot {
-  return { told: Object.fromEntries(toldRows(resolved).map((row) => [row.name, { kind: row.kind, depth: row.depth, title: row.title }])) };
+  return { told: Object.fromEntries(toldRows(resolved).map((row) => [row.name, { kind: row.kind, depth: row.depth, title: row.title, ...(row.kind === 'facts' ? {} : { text: textHash(row) }) }])) };
 }
 
 /**
  * WHAT CHANGED since the snapshot, for an update (docs/architecture/brief.md, The brief): the facts that changed
  * (over the record as it was, `was`, and as it is), and the behaviours and tools that came into
- * play (at their depth) or left it. '' when nothing did.
+ * play (at their depth), whose text changed, or that left it. '' when nothing did.
  */
 export function briefChanges(before: BriefSnapshot, was: BriefRecord, resolved: Resolved, record: BriefRecord): string {
   const after = briefSnapshot(resolved);
@@ -157,10 +169,8 @@ export function briefChanges(before: BriefSnapshot, was: BriefRecord, resolved: 
   for (const row of toldRows(resolved)) {
     if (row.kind === 'facts') continue;
     const prior = before.told[row.name];
-    if (prior && prior.depth === row.depth) continue;
-    if (row.kind === 'tools') lines.push(...toolLines(row));
-    else if (row.file.mandate) lines.push(...mandateLines(row), '');
-    else lines.push(`### ${row.title}`, row.depth === 'full' ? nested(row.file.body) : seedText(row), '');
+    if (prior && prior.depth === row.depth && prior.text === textHash(row)) continue;
+    lines.push(...saidLines(row));
   }
   const left = Object.keys(before.told).filter((name) => !after.told[name] && before.told[name].kind !== 'facts');
   if (left.length) lines.push(`No longer in your brief: ${left.map((name) => before.told[name].title).join(', ')}.`);
