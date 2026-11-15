@@ -18,15 +18,20 @@
  *
  * A rig an Agent started (its own tmux server) is the Agent's: its panes' scopes go too.
  *
+ * A helper a CLI detaches into a scope of its own (Codex's app-server daemon) is found by path:
+ * a process whose /proc exe or cwd is inside the session folder is the Agent's, and its scope
+ * goes too.
+ *
  * SWEEP. At service start: stop the scopes of our tmux server's panes that are not live, the
- * scopes recorded in session folders whose pane is not live, and their rigs' panes; remove temp
+ * scopes recorded in, or running from, the folders of sessions that are not live, and their
+ * rigs' panes; remove temp
  * roots of sessions that no longer exist. Never anything else on the box: a scope from a tmux
  * server Ronin did not start is the user's. Only when Ronin runs as a systemd service: a rig
  * started from an Agent's pane never sweeps the box.
  */
 import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, readlink, rm, symlink, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
@@ -63,6 +68,14 @@ export function agentTempDir(key: string): string {
   return inFolder.length <= TEMP_ROOT_MAX ? inFolder : shortRoot(key);
 }
 
+/** The folders a session's programs can run from: its session folder, and its temp root when
+ * that is a short one outside it. */
+export function sessionFolders(key: string): string[] {
+  const folder = path.join(storeDir('session'), key);
+  const temp = agentTempDir(key);
+  return temp.startsWith(`${folder}/`) ? [folder] : [folder, temp];
+}
+
 /** Make the session's temp folder and return the env that points the Agent at it. */
 export async function agentTempEnv(key: string): Promise<Record<string, string>> {
   const dir = agentTempDir(key);
@@ -80,6 +93,8 @@ export interface ScopeOps {
   scopeOf(pid: number): Promise<string | null>;
   /** Every pane scope the user manager knows, with its pane and launching server. */
   scopes(): Promise<Array<{ unit: string; pane: number; server: number }>>;
+  /** Pane scopes holding a process whose executable or working folder is inside one of these. */
+  folderScopes(dirs: string[]): Promise<string[]>;
   stop(units: string[]): Promise<void>;
   limit(unit: string): Promise<void>;
   /** This service: its own pid, and whether it runs as a systemd service. */
@@ -107,10 +122,25 @@ export const liveScopeOps: ScopeOps = {
       return isPaneScope(unit) && m ? [{ unit, pane: Number(m[1]), server: Number(m[2]) }] : [];
     });
   },
+  async folderScopes(dirs) {
+    if (!linux || !dirs.length) return [];
+    const inside = (target: string) => dirs.some((dir) => target === dir || target.startsWith(`${dir}/`));
+    const units = new Set<string>();
+    for (const pid of (await readdir('/proc').catch(() => [] as string[])).filter((d) => /^\d+$/.test(d))) {
+      const [exe, cwd] = await Promise.all(['exe', 'cwd'].map((link) => readlink(`/proc/${pid}/${link}`).catch(() => '')));
+      if (!inside(exe) && !inside(cwd)) continue;
+      const unit = await liveScopeOps.scopeOf(Number(pid));
+      if (unit) units.add(unit);
+    }
+    return [...units];
+  },
   async stop(units) {
     if (!units.length) return;
-    await execAsync('systemctl', ['--user', 'stop', '--no-block', '--', ...units]).catch((e) =>
-      console.error(`[scope] stopping ${units.join(' ')}:`, (e as Error).message));
+    // A unit already gone (its pane's hook stopped it) fails alone; the others still stop.
+    await execAsync('systemctl', ['--user', 'stop', '--no-block', '--', ...units]).catch((e: { stderr?: string }) => {
+      const real = String(e.stderr ?? '').split('\n').filter((line) => line && !line.includes('not loaded'));
+      if (real.length) console.error(`[scope] stopping ${units.join(' ')}: ${real.join('; ')}`);
+    });
   },
   async limit(unit) {
     await execAsync('systemctl', ['--user', 'set-property', '--runtime', unit,
@@ -164,6 +194,8 @@ export interface SweepState {
   livePanes: number[];
   /** Keys of session folders that still exist. */
   sessionKeys: string[];
+  /** Keys of live sessions. */
+  liveKeys: string[];
 }
 
 /** The start sweep: what ended Agents left, and only Ronin's own: pane scopes of our tmux server
@@ -173,10 +205,13 @@ export async function sweepLeftovers(state: SweepState, ops: ScopeOps = liveScop
   if (!(await ops.self()).service) return { scopes: [], temp: [] };
   const live = new Set(state.livePanes);
   const candidates = (await ops.scopes()).filter((s) => s.server === state.server && !live.has(s.pane)).map((s) => s.unit);
-  for (const key of state.sessionKeys) {
+  const liveKeys = new Set(state.liveKeys);
+  const ended = state.sessionKeys.filter((key) => !liveKeys.has(key));
+  for (const key of ended) {
     const unit = (await readFile(scopeFile(key), 'utf8').catch(() => '')).trim();
     if (isPaneScope(unit)) candidates.push(unit);
   }
+  candidates.push(...await ops.folderScopes(ended.flatMap(sessionFolders)));
   const scopes = await stoppable(await withNested(candidates, ops), state.livePanes, ops);
   await ops.stop(scopes);
   const temp = await sweepTempRoots(state.sessionKeys);

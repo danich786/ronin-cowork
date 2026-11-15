@@ -48,9 +48,38 @@ Agent's process group, and Ronin acts on it by cgroup, never by a name pattern.
   those scopes. The stop also takes the panes of any tmux server running inside them: a rig an
   Agent started is the Agent's (`withNested`). Viewers (`grid_*`) are skipped, because they
   share the base session's pane.
+- **When a pane dies** (its CLI exits; `remain-on-exit` keeps the pane to read), the hooks
+  stop its scope. The `pane-dead` tmux subscription (`PANE_DEAD_SUBSCRIPTION`,
+  `src/tmux-client.ts`) pushes the change to Ronin, and `stopLeftoversOnPaneDeath` stops
+  everything else that session left, as a kill would, without ending the session.
 - **Never stopped:** the scope of a live pane (which protects grouped sessions), and the scope
   holding this Ronin process. `tmux-server.service` and `ronin.service` are services, not pane
   scopes, so they are never candidates.
+
+## Helpers that leave the pane's scope
+
+A CLI can start a helper that ends up in a scope of its own, outside the pane's. Codex's
+app-server daemon runs as `<session folder>/cli-home/packages/app-server-daemon/releases/<v>/bin/codex`
+in a `tmux-spawn` scope with no pane, so stopping the pane's scope missed it (KAN-548). Such a
+helper is found by **where it runs from**: any process whose `/proc/<pid>/exe` or `cwd` is
+inside the session folder, or its short temp root, belongs to that Agent (`folderScopes`,
+`sessionFolders`). Its scope is stopped with the others at every kill, on pane death, and by
+the start sweep. That is a path match, never a name match. Only pane scopes are taken, and
+never a live pane's, so an Agent that `cd`s into another session's folder is safe.
+
+Helpers land there because Ronin points each CLI's home into the session folder where the CLI
+allows it (`launch_isolation`, `docs/agents/<cli>.md`; `cli-home/` is built in
+`src/launch-binding.ts`). Every CLI's temp already goes there through `TMPDIR`.
+
+| CLI | Home set to `cli-home/` |
+|---|---|
+| Codex | `CODEX_HOME` (`sessions` private, the rest linked from `~/.codex`; `packages/` is its own) |
+| Copilot | `COPILOT_HOME` (`session-state` private) |
+| Hermes | `HERMES_HOME` (named entries shared) |
+| Claude, Kimi, Grok, Agy, OpenCode | not set: they run from their shared home |
+
+A CLI that isn't moved can still run a helper from its shared home, outside every session
+folder. That helper stops only if it stays in the pane's scope.
 
 ## Memory ceiling
 
@@ -73,12 +102,13 @@ page cache, which `MemoryHigh` reclaims first. Its own memory stayed well under 
 what it stopped and removed. It stops:
 
 1. Scopes whose Description names **this Ronin's tmux server** and whose pane is not live.
-2. Scopes recorded in a session folder (`scope`) whose pane is not live. This covers scopes
-   left from before a tmux server restart.
-3. The panes of tmux servers running inside either of those (`withNested`).
+2. For each session folder without a live pane (`liveSessionKeys`): the scope recorded there
+   (`scope`), which covers scopes left from before a tmux server restart, and the scope of every
+   process running from that folder.
+3. The panes of tmux servers running inside any of those (`withNested`).
 
-It never stops a scope from a tmux server Ronin did not start. That server belongs to the
-user, whether or not it is still running. The sweep runs only when Ronin is a systemd service.
+Otherwise it never stops a scope from a tmux server Ronin did not start. That server belongs to
+the user, whether or not it is still running. The sweep runs only when Ronin is a systemd service.
 A Ronin started from an Agent's pane (a rig, a test) never sweeps, so a rig cannot reach the
 box's Agents. Without systemd, or off Linux, every step does nothing.
 
@@ -93,5 +123,11 @@ pane starts one more.
   are gone at the end, and temp goes with the folder in the retention sweep.
 - **The start sweep** stops the old code's two leftover scopes.
 - **A pane that exits on its own** takes its child with it.
+
+For KAN-548 the fake CLI copies a binary into `cli-home/packages/bin/` and starts it through a
+rig tmux server that then exits, so the helper sits in a `tmux-spawn` scope of its own with no
+pane. That is the Codex daemon's shape. Old code (w624): the helper outlives both the Agent's
+end and its pane dying. New code: it is gone in both cases, and the start sweep stops the
+helpers the old code left.
 
 The unit floor for this is `tests/agent-scope.test.ts`.

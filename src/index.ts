@@ -21,7 +21,7 @@ import {
   unauthorizedUpgradeResponse,
   verifyRecord,
 } from './auth.js';
-import { cleanupViewers, listSessions, livePanePids } from './tmux.js';
+import { cleanupViewers, listSessions, livePanePids, liveSessionKeys, stopLeftoversOnPaneDeath } from './tmux.js';
 import { sweepLeftovers } from './agent-scope.js';
 import { bindOperatorSocket, isOperatorPeer, operatorSocketPath, SiblingAlive, type BoundOperatorSocket } from './operator-socket.js';
 import { addressRefusal, EXIT_ADDRESS_UNUSABLE } from './bind-refusal.js';
@@ -474,11 +474,12 @@ await tmuxClient.connect(); // only the long-lived server opts into control mode
 const removed = await cleanupViewers();
 if (removed) console.log(`[tmux-ronin] cleaned up ${removed} stale viewer session(s)`);
 await startBootHooks();
+stopLeftoversOnPaneDeath(); // a pane that dies takes what it started, helpers too — src/tmux.ts
 // What ended Agents left: their pane scopes (processes) and short temp roots — src/agent-scope.ts
 void (async () => {
   const server = Number(await tmuxClient.run(['display-message', '-p', '#{pid}']).catch(() => '0'));
   const sessionKeys = await fs.promises.readdir(storeDir('session')).catch(() => [] as string[]);
-  const swept = await sweepLeftovers({ server, livePanes: await livePanePids(), sessionKeys });
+  const swept = await sweepLeftovers({ server, livePanes: await livePanePids(), sessionKeys, liveKeys: await liveSessionKeys() });
   if (swept.scopes.length) console.log(`[scope] stopped ${swept.scopes.length} pane scope(s) left by ended Agents: ${swept.scopes.join(' ')}`);
   if (swept.temp.length) console.log(`[scope] removed ${swept.temp.length} temp root(s) of gone sessions: ${swept.temp.join(' ')}`);
 })().catch((e) => console.error('[scope] start sweep failed:', e));
