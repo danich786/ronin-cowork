@@ -22,8 +22,8 @@ Tools do jobs and report what happened. A Cowork Agent is told:
 - `show`: open a Ronin page in another visible workspace of the owner's tab, never the one they are on
 - `owner_view`: what the owner is looking at in a browser tab
 - `secret`: get a password or key from the owner without it passing through chat
-- `netlify`: Netlify sites, deploys, traffic, forms and variables, with the Workspace's token
-- `preview`: find a pull request's preview link and put it on your work record
+- `netlify`: Netlify sites, deploys, traffic, forms and variables for the Workspace's site
+- `preview`: find a pull request's preview link and put it in your Documents
 - `ronin-help`: the longer document on a topic, or a Ronin word
 <!-- /tool-list -->
 
