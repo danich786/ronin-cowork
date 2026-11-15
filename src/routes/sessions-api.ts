@@ -163,7 +163,7 @@ async function archiveAgent(name: string, desksLeftOpen: string[] = []): Promise
 }
 
 /** Archive a live Agent as session_archive does (manifest, stop, holds released), with no desk or
- * item refusals: Core's own call, for Mika's planned end. Null when no conversation is known. */
+ * item refusals: Core's own call, for a part that ends an Agent it started. Null when no conversation is known. */
 export async function archiveSession(name: string): Promise<ArchivedSession | null> {
   const key = await sessionKey(name);
   const archived = await archiveAgent(name);

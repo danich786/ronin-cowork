@@ -17,8 +17,9 @@ export function createGithubWorkspaceSetup({ environment, workspace = 'workspace
   const state = el('p', 'setup-fine setup-github-state');
   const install = action(t('roots.github_install', 'Install'), 'primary');
   const assisted = typeof onMikaGuide === 'function' && typeof onMikaConnect === 'function';
-  const connect = action(assisted ? t('roots.github_connect_guided', 'Use GitHub CLI with Mika') : t('roots.github_connect', 'Connect GitHub'), assisted ? undefined : 'primary');
-  const mikaConnect = action(t('roots.github_connect_mika', 'Let Mika connect GitHub'), 'primary');
+  const irasshai = environment?.assistName?.() === 'Irasshai';
+  const connect = action(assisted ? (irasshai ? t('roots.github_connect_guided_irasshai', 'Use GitHub CLI with Irasshai') : t('roots.github_connect_guided', 'Use GitHub CLI with Mika')) : t('roots.github_connect', 'Connect GitHub'), assisted ? undefined : 'primary');
+  const mikaConnect = action(irasshai ? t('roots.github_connect_irasshai', 'Let Irasshai connect GitHub') : t('roots.github_connect_mika', 'Let Mika connect GitHub'), 'primary');
   mikaConnect.hidden = !assisted;
   const other = action(t('roots.git_other_method', 'Use another method'));
   const remove = action(t('roots.github_remove_auth', 'Remove authentication'), 'danger');

@@ -13,10 +13,8 @@ import {
   setCampaign,
   setProjectRoot,
   setTags,
-  stopSessionTree,
 } from '../tmux.js';
 import { launchArgv } from '../agents.js';
-import { archiveSession } from './sessions-api.js';
 import { AtSessionMax, readAgentsSection } from '../machine-state.js';
 import { PACKET_PLACEHOLDER, resolveForm, type SpawnForm } from '../spawn.js';
 import { agentBriefOf, workRecordBrief, writeAgentBriefAt } from '../brief-build.js';
@@ -35,7 +33,7 @@ import { listTeamRosters } from '../team-rosters.js';
 import { announceTeamChanges } from './wipeboards-api.js';
 import { checkoutAt, deriveTeams, parkBrief, seedTegami, teamChanged, withAxes, writeBriefRecord, writeConfiguration, type SessionWithAxes } from '../tegami.js';
 import { callerOf } from './work-items-api.js';
-import { collectBirthLines, collectRowFields, setMikaControl } from '../sockets.js';
+import { collectBirthLines, collectRowFields } from '../sockets.js';
 import { stoppedAt } from '../stopped.js';
 import { broadcastEvent, listening, pushTeams } from '../ws/events.js';
 import { listProjectRoots } from '../project-roots.js';
@@ -147,7 +145,7 @@ export function spawnFormFromLaunchBody(body: Record<string, unknown>, houseSeat
   };
 }
 
-export function mikaLaunchBody(input: unknown, selection?: Pick<MikaSelection, 'provider' | 'model' | 'choice'>): Record<string, unknown> {
+export function mikaLaunchBody(input: unknown, selection?: Pick<MikaSelection, 'provider' | 'model'>): Record<string, unknown> {
   const source = input && typeof input === 'object' && !Array.isArray(input)
     ? input as Record<string, unknown>
     : {};
@@ -157,15 +155,26 @@ export function mikaLaunchBody(input: unknown, selection?: Pick<MikaSelection, '
     tags: [STEERCO_TEAM],
     // She discusses, recruits nobody, and hands back ideas — never a plan (owner, 2026-09-09).
     mandate: { reach: 'discuss', recruit: 'nobody', output: ['ideas'] },
-    prompt: [typeof source.prompt === 'string' ? source.prompt : '', selection?.choice?.brief ?? ''].filter(Boolean).join(' '),
-    // A part's choice is its own command; Core's rule names a catalog provider and model.
-    ...(selection?.choice ? { cmd: selection.choice.cmd } : selection ? { provider: selection.provider, model: selection.model } : {}),
+    prompt: typeof source.prompt === 'string' ? source.prompt : '',
+    ...(selection ? { provider: selection.provider, model: selection.model } : {}),
     launch_mode: 'configured',
   };
 }
 
+type WrapArgv = (argv: string[]) => string[];
+let inProcessLaunch: ((body: Record<string, unknown>, wrapArgv?: WrapArgv) => Promise<{ status: number; body: Record<string, unknown> }>) | null = null;
+/**
+ * POST /api/launch from inside the server: the same session creation, its answer returned. A
+ * caller here may wrap the argv Core built (brief included) just before birth, which an HTTP
+ * caller cannot. Throws before registerLaunch has run.
+ */
+export function launchSession(body: Record<string, unknown>, opts: { wrapArgv?: WrapArgv } = {}): Promise<{ status: number; body: Record<string, unknown> }> {
+  if (!inProcessLaunch) throw new Error('launchSession: the launch route is not registered yet.');
+  return inProcessLaunch(body, opts.wrapArgv);
+}
+
 export interface LaunchControl {
-  ensureMika(intent?: 'help' | 'setup_provider_ready', tab?: string, told?: string): Promise<{ ok: boolean; state: 'ready' | 'starting' | 'action_required' | 'refused'; action?: 'pending_user'; session: typeof MIKA_SESSION; team: typeof STEERCO_TEAM; loader: typeof RONIN_HELPER_LOADER; already?: boolean; welcome_delivered?: boolean; error?: string; code?: string; available_levels?: unknown }>;
+  ensureMika(intent?: 'help' | 'setup_provider_ready', tab?: string): Promise<{ ok: boolean; state: 'ready' | 'starting' | 'action_required' | 'refused'; action?: 'pending_user'; session: typeof MIKA_SESSION; team: typeof STEERCO_TEAM; loader: typeof RONIN_HELPER_LOADER; already?: boolean; welcome_delivered?: boolean; error?: string; code?: string; available_levels?: unknown }>;
 }
 
 export function mikaReadinessFromPane(text: string): 'ready' | 'starting' | 'action_required' {
@@ -276,7 +285,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
     }
   });
 
-  const launch = async (req: express.Request, res: express.Response, houseSeat?: 'mika', loader?: typeof RONIN_HELPER_LOADER): Promise<unknown> => {
+  const launch = async (req: express.Request, res: express.Response, houseSeat?: 'mika', loader?: typeof RONIN_HELPER_LOADER, wrapArgv?: WrapArgv): Promise<unknown> => {
     let mikaSelection: MikaSelection | undefined;
     let mikaHome = '';
     if (houseSeat === 'mika') {
@@ -366,12 +375,8 @@ export function registerLaunch(app: express.Express): LaunchControl {
       }
       const launchWords = resolved.session_type === 'bare_metal_agent' ? (form.prompt ?? '') : resolved.brief;
       launch = resolved.agent ? await launchArgv(resolved.cmd, launchWords) : { argv: [], parked: false };
-      const choice = mikaSelection?.choice;
-      if (choice && launch.argv.length) {
-        if (choice.wrapArgv) launch = { ...launch, argv: choice.wrapArgv([...launch.argv]) };
-        resolved.identity = { sessionType: resolved.session_type, cli: choice.cli, provider: choice.provider, model: choice.model };
-        resolved.launchAgent = choice.cli;
-      }
+      // A caller in the server (launchSession) may wrap the argv, brief included, just before birth.
+      if (wrapArgv && launch.argv.length) launch = { ...launch, argv: wrapArgv([...launch.argv]) };
       if (resolved.agent && !launch.argv.length) {
         if (birthDir) await rm(birthDir, { recursive: true, force: true });
         return res.status(400).json({
@@ -514,6 +519,17 @@ export function registerLaunch(app: express.Express): LaunchControl {
     })().catch((e) => console.error(`[ronin] spawn ${resolved.name}:`, e));
   };
   const launchJob: express.RequestHandler = (req, res) => launch(req, res);
+  // The same launch, called from inside the server (a part): no browser, so nobody behind it.
+  inProcessLaunch = async (body, wrapArgv) => {
+    let status = 200;
+    let answer: Record<string, unknown> = {};
+    const response = {
+      status(code: number) { status = code; return this; },
+      json(value: unknown) { answer = value && typeof value === 'object' ? value as Record<string, unknown> : {}; return value; },
+    } as unknown as express.Response;
+    await launch({ body } as express.Request, response, undefined, undefined, wrapArgv);
+    return { status, body: answer };
+  };
   app.post('/api/launch', launchJob);
   app.post('/api/mika', (req, res) => launch(req, res, 'mika', RONIN_HELPER_LOADER));
 
@@ -550,7 +566,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
       send(body && typeof body === 'object' && (body as { ok?: boolean }).ok ? { ...body, team_from: teamFrom } : body);
     return launchJob(req, res, next);
   });
-  const ensureMika = async (intent: 'help' | 'setup_provider_ready' = 'help', tab = '', told = ''): Promise<MikaReady> => {
+  const ensureMika = async (intent: 'help' | 'setup_provider_ready' = 'help', tab = ''): Promise<MikaReady> => {
     const metadata = { session: MIKA_SESSION, team: STEERCO_TEAM, loader: RONIN_HELPER_LOADER };
     const observeLive = async (already: boolean): Promise<MikaReady> => {
       let providerState: ReturnType<typeof mikaReadinessFromPane> = 'starting';
@@ -568,7 +584,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
     mikaStarting = (async () => {
       const welcome = intent === 'setup_provider_ready' && (await roninHelperWelcomeState())?.state !== 'delivered';
       const prompt = [
-        told || (welcome ? MIKA_PROMPTS.setup_provider_ready : MIKA_PROMPTS.help),
+        welcome ? MIKA_PROMPTS.setup_provider_ready : MIKA_PROMPTS.help,
         tab ? `Help was opened in browser tab ${tab}: \`owner_view ${tab}\` shows what the owner sees.` : '',
       ].filter(Boolean).join(' ');
       let status = 200;
@@ -596,20 +612,6 @@ export function registerLaunch(app: express.Express): LaunchControl {
     try { return await starting; }
     finally { mikaStarting = null; }
   };
-  // Mika's two controls on the part socket: who she is running as, and a restart by the launch rule.
-  setMikaControl({
-    identity: async () => {
-      const identity = (await listSessions()).find((s) => s.name === MIKA_SESSION)?.identity;
-      return identity ? { cli: identity.cli, provider: identity.provider, model: identity.model } : null;
-    },
-    restart: async ({ prompt = '', archive = false }) => {
-      // Archived the way session_archive does; a Mika with no known conversation is only stopped.
-      if (!archive || !await archiveSession(MIKA_SESSION)) await stopSessionTree(MIKA_SESSION);
-      const ready = await ensureMika('help', '', prompt);
-      broadcastEvent({ t: 'mika', ...ready });
-      watchMika(() => ensureMika('help'), ready);
-    },
-  });
   app.post('/api/mika/ready', async (req, res) => {
     const intent = req.body?.intent === 'setup_provider_ready' ? 'setup_provider_ready' : 'help';
     const tab = isMikaTab(req.body?.tab) ? req.body.tab : '';
