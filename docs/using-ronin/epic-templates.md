@@ -9,7 +9,7 @@ and tells it to walk the epic through.
 
 | Name | Epic | For |
 |---|---|---|
-| `onboarding` | Getting set up in your new office | a person who has just moved into their office: sign in an Agent harness, create their first Workspace (GitHub, their folders or repositories, mapping a project they brought), a tour if they want one |
+| `onboarding` | Getting set up in your new office | a person who has just moved into their office: sign in an Agent harness, create their first Workspace (its kind, name and plan; GitHub; their folders or repositories; mapping a project they brought), a tour if they want one |
 | `import-project` | Mapping a project they brought in | an existing project brought into a Workspace: map every surface it has, write PROJECT_MAP.md, make an HTML summary, tell the person what was found |
 
 `epic-template list` prints what this install has, your own included.

@@ -21,6 +21,11 @@ Do: their first Workspace, on a folder or on one or more repositories; done when
 Details: `ronin-help new-workspace`.
 Check: the Workspace exists with its folder or repositories.
 
+### Decide its kind and name, and write down the plan
+Do: settle the Workspace's kind (one of new-workspace's types) and its name, and record what they're planning.
+Details: `ronin-help new-workspace` (the types; the objective; WORKSPACE.md listed in its docs).
+Check: the Workspace's objective says what they plan, and its WORKSPACE.md names the kind.
+
 ### Sign in GitHub, if they use it
 Do: the GitHub CLI signed in to their account, if they use GitHub; skip it if not.
 Details: the GitHub CLI stone on the Workspaces door (Let Mika connect GitHub, Use GitHub CLI with Mika); `ronin-help workspace-folders`.
