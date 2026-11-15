@@ -19,7 +19,9 @@ const text = (value: unknown): string | undefined => typeof value === 'string' ?
 export function callerOf(req: express.Request): string {
   const stated = text(req.body?.by)?.trim();
   if (stated) return stated.slice(0, 128);
-  return /^user_/.test(req.get('x-ronin-source') ?? '') ? 'owner' : 'unknown';
+  // Core's own request (Mika's launch) has no headers: nobody, never a throw.
+  const source = req.headers?.['x-ronin-source'];
+  return /^user_/.test(typeof source === 'string' ? source : '') ? 'owner' : 'unknown';
 }
 
 export const acknowledge = (res: express.Response, done: Acknowledged, extra: Record<string, unknown> = {}) =>

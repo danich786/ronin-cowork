@@ -4,6 +4,8 @@ import { REPO_ROOT, storeDir } from './resources.js';
 import { TIERS, listSessionLaunchSpecs, type ProviderSummary, type SessionLaunchSpec, type Tier } from './model-providers.js';
 import { readProviderSummary } from './provider-summary.js';
 import { readAgentsSection } from './machine-state.js';
+import { askMikaLaunch } from './sockets.js';
+import type { MikaLaunchChoice } from './sockets-contract.js';
 
 export const MIKA_LEVELS = TIERS;
 export type MikaLevel = Tier;
@@ -16,6 +18,8 @@ export interface MikaSelection {
   provider_notice: 'default_provider_unavailable' | 'default_provider_has_no_level' | null;
   available_levels: MikaLevel[];
   spec: SessionLaunchSpec;
+  /** A part chose this launch (sockets.chooseMikaLaunch); Core's rule was not asked. */
+  choice?: MikaLaunchChoice;
 }
 
 export class MikaUnavailable extends Error {
@@ -100,8 +104,16 @@ export async function resolveConfiguredMikaModel(): Promise<MikaSelection> {
     ? jobs.mikaassist as Record<string, unknown>
     : jobs.mika && typeof jobs.mika === 'object' ? jobs.mika as Record<string, unknown> : {};
   const summary = await readProviderSummary();
-  const specs = await listSessionLaunchSpecs(summary);
   let level = mikaLevelFromAgents(agents);
+  // A part may choose her launch first; null leaves it to the owner's rule below.
+  const choice = summary ? await askMikaLaunch({ operational: [...summary.operational], signed_in: [...summary.signed_in] }) : null;
+  if (choice) {
+    return {
+      requested_level: level, provider: choice.provider, model: choice.model, resolved_level: level, provider_notice: null, available_levels: [], choice,
+      spec: { provider: choice.provider, cli: choice.cli, model: choice.model, name: choice.model, cmd: choice.cmd, tier: '', default: false, info: null },
+    };
+  }
+  const specs = await listSessionLaunchSpecs(summary);
   if (legacy.level === undefined && (legacy.provider !== undefined || legacy.model !== undefined)) {
     const pair = specs.find((spec) => spec.provider === legacy.provider && spec.model === legacy.model);
     if (!pair || !isLevel(pair.tier)) throw new MikaUnavailable('mika_model_level_choice_required', 'Mika’s previous model has no Ronin capability tier. Choose Light, Standard, or Frontier before she starts.');

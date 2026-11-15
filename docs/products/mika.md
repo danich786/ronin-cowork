@@ -7,7 +7,7 @@ Ronin Home opens her beside the guides, on her Chat reading rather than her term
 needs Ronin Services' transcripts, and without them her tile opens on the terminal.
 
 Mika runs as an Agent session on the Steerco team, kept at the foot of the roster, using an
-available provider. Provider availability and the
+available provider, or the launch an installed Services part chooses for her. Provider availability and the
 installed capability determine whether it can start; a Help entry alone is not proof that
 all prerequisites are ready.
 

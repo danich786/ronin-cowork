@@ -1,7 +1,7 @@
 
 import type { TrailLine, WorkItem } from './work-items.js';
 
-export const CONTRACT_V = 12;
+export const CONTRACT_V = 13;
 
 export interface LaunchIdentity {
   key: string;
@@ -58,6 +58,25 @@ export type TranscriptGap =
 
 export type TranscriptLookup = { source: TranscriptSource } | { gap: TranscriptGap };
 
+/** What the provider record says is ready, each time it is written (measure, sign-in, Refresh all). */
+export interface ProviderReadiness { operational: string[]; signed_in: string[] }
+
+/** A part's choice of how Mika launches. Core still writes her brief, home and session. */
+export interface MikaLaunchChoice {
+  provider: string;
+  model: string;
+  /** The CLI id that serves it in Core's agent registry (`codex`, `claude`, …). */
+  cli: string;
+  /** The complete interactive command, as a catalog row's `cmd`: no argument holds a space. */
+  cmd: string;
+  /** Wraps the argv Core built from `cmd`, brief included, just before birth. */
+  wrapArgv?(argv: string[]): string[];
+  /** One line Core adds to what she is told at birth, for this launch only. */
+  brief?: string;
+}
+
+export interface MikaIdentity { cli: string; provider: string; model: string }
+
 export interface Sockets {
   resolveTranscriptSource(name: string): Promise<TranscriptLookup>;
   registerBoot(hook: { start(): void | Promise<void>; stop?(): void }): void;
@@ -103,6 +122,18 @@ export interface Sockets {
    */
   onItemChanged(cb: (change: ItemChange) => void | Promise<void>): void;
   addRoutes(mount: (app: unknown) => void): void;
+  /** Asked before Core's own rule each time Mika launches; the first non-null answer is used, null means Core's rule. A throw is logged and counts as null. */
+  chooseMikaLaunch(cb: (ready: ProviderReadiness) => Promise<MikaLaunchChoice | null> | MikaLaunchChoice | null): void;
+  /** After every write of the provider record, not awaited; a throw is logged. */
+  onProvidersRecorded(cb: (ready: ProviderReadiness) => void | Promise<void>): void;
+  /** The running Mika's launch identity; null when she is not running. */
+  mikaIdentity(): Promise<MikaIdentity | null>;
+  /**
+   * End Mika and start her again by the launch rule (choosers first), told `prompt`. With
+   * `resume`, when the new launch runs the same CLI, she resumes the same conversation (the
+   * same launch key and journal home) under the new launch; otherwise she starts fresh.
+   */
+  restartMika(opts: { prompt?: string; resume?: boolean }): Promise<void>;
   setStreamHandler(h: (...args: unknown[]) => void): void;
 }
 

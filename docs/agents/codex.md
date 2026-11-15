@@ -7,6 +7,7 @@
 - **launch_native_dangerously:** ["codex", "--dangerously-bypass-approvals-and-sandbox"]
 - **launch_model_dangerously:** ["codex", "--model", "{model}", "--dangerously-bypass-approvals-and-sandbox"]
 - **launch_resume:** ["codex", "resume", "{session_id}"]
+- **launch_fork:** ["codex", "fork", "{session_id}"]
 - **launch_new_session_id:** —
 - **launch_isolation:** {"env": "CODEX_HOME", "home": "~/.codex", "private": "sessions"}
 - **transcript_journal:** {"format": "event-items", "root": "{home}/sessions", "pattern": "rollout-*.jsonl", "idPath": "payload.session_id", "childPath": "payload.source"}
@@ -16,6 +17,11 @@ CLI id: `codex`. Catalog provider: OpenAI. Reviewed 2026-09-14.
 Version: **0.153.4**. Installed version and tagged upstream input source reviewed; no live turn interrupted.
 
 ## Ronin launch sequence
+
+A resume keeps the conversation's model provider and refuses to change it (observed on 0.169.0,
+2026-11-15: "Cannot change this thread's model provider … on resume"). `launch_fork` copies the
+conversation into a new one under the launch's own provider; Ronin uses it when Mika moves from
+one provider to another on the same CLI.
 
 The declarations above are executable documentation. Native + Native means exactly
 `codex`; each Native applies only to its Model or Launch mode field.

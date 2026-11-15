@@ -30,10 +30,17 @@ export async function readLaunchIdentity(key: string): Promise<LaunchIdentity | 
 }
 const expand = (value: string, home: string) => value.replace(/^~(?=\/|$)/, homedir()).replaceAll('{home}', home);
 async function isolate(grammar: AgentLaunches, key: string): Promise<{ home: string; env: Record<string, string> }> {
-  const declaration = grammar.isolation!;
-  const source = process.env[declaration.env] || expand(declaration.home, '');
   const home = path.join(storeDir('session'), key, 'cli-home');
   await mkdir(home, { recursive: true, mode: 0o700 });
+  await linkInherited(grammar, home);
+  return { home, env: { [grammar.isolation!.env]: home } };
+}
+
+/** Link the CLI home's inherited entries into an isolated home; one already there is left alone,
+ * so a resumed birth picks up what appeared since (a sign-in's credential file, say). */
+async function linkInherited(grammar: AgentLaunches, home: string): Promise<void> {
+  const declaration = grammar.isolation!;
+  const source = process.env[declaration.env] || expand(declaration.home, '');
   const entries = await readdir(source).catch((e: NodeJS.ErrnoException) => { if (e.code === 'ENOENT') return []; throw e; });
   if (declaration.shared !== undefined && declaration.private !== undefined) throw new Error('Isolation must choose shared or private entries, not both.');
   const privateEntries = typeof declaration.private === 'string' ? [declaration.private] : declaration.private ?? [];
@@ -42,10 +49,10 @@ async function isolate(grammar: AgentLaunches, key: string): Promise<{ home: str
   // Legacy string declares a directory. Shared lists inherit only explicitly named entries.
   if (typeof declaration.private === 'string') await mkdir(path.join(home, declaration.private), { recursive: true, mode: 0o700 });
   const inherited = entries.filter(entry => declaration.shared ? declaration.shared.includes(entry) : !privateEntries.includes(entry));
+  const present = new Set(await readdir(home));
   for (const entry of inherited) {
-    await symlink(path.join(source, entry), path.join(home, entry));
+    if (!present.has(entry)) await symlink(path.join(source, entry), path.join(home, entry));
   }
-  return { home, env: { [declaration.env]: home } };
 }
 
 const provisioners = { 'hermes-setup': prepareHermesHome };
@@ -67,6 +74,7 @@ export function processLaunch(request: LaunchRequest,
     const retained = request.resume ? await readLaunchIdentity(key) : null;
     const prepared: { home?: string; env: Record<string, string> } = retained ?? await strategies[assigned.strategy](grammar!, key);
     const home = prepared.home;
+    if (retained && home && grammar?.isolation) await linkInherited(grammar, home);
     const provision = grammar?.isolation?.provision;
     if (!retained && home && provision && request.env?.RONIN_SETUP_ID) await provisioners[provision](request.env.RONIN_SETUP_ID, home);
     const identity: LaunchIdentity = {
