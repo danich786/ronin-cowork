@@ -26,9 +26,7 @@ can watch it and answer anything it asks. When it finishes, Install gets its che
 
 ## Sign in
 
-For the first provider on a new machine, press **Authenticate**: Mika needs one working
-provider before she can help. After that, the Agent Harness workbench offers **Let Mika
-authenticate** to have Mika run the
+In the Agent Harness workbench, choose **Let Mika authenticate** to have Mika run the
 provider's native setup in this tilespace, or **Use the CLI with Mika** to operate the
 native sign-in yourself while Mika reads it and guides you from the paired tilespace.
 On other setup surfaces, **Authenticate** opens the same native sign-in directly. Follow

@@ -174,8 +174,8 @@ Providers surface is untouched; all draw with the one drawing `provider-surface.
 (`createProviderDrawing`, `createRefreshAll`, `providerStones`) over the same record and measure. In Agent Harness,
 Authenticate offers Mika operating the registry-owned native login command in the current tilespace, or the native
 `provider_setup_*` terminal with Mika reading it from the paired tilespace; Setup and Settings retain their direct
-Authenticate action. Until one provider is active, Agent Harness also retains direct Authenticate because Mika has
-no model with which to help. In every path the provider summary remains the readiness authority. Workspaces seats
+Authenticate action. Mika is a startup invariant, including before the first owner provider is connected, so the
+two assisted choices do not depend on provider count. In every path the provider summary remains the readiness authority. Workspaces seats
 its own stones of Workspaces (`workspaces-surface.js`, `workspaces.records`): a pressed one's page is the whole
 Workspace, its folders ticked in a browser of this machine (owner, 2026-11-02), with GitHub CLI beside them;
 one read of the pinned folders per bench (`createRootsReading`, the detail route). Epics (owner, 2026-11-02;
