@@ -124,6 +124,11 @@ gives "Your work record changed".
 - The tile's **☰ Work record**: the held items first, each with its status, flag and
   attachments (a Jira-paired item's id opens its Jira issue), then the objective, worktrees and Teams. **📄 Docs** lists the record's
   own documents and the held items' attachments.
+- **The Agent flag**: while an Agent's terminal asks you something (a dialog, a permission
+  prompt, Codex's *Update available* before its first turn), its work record opens with
+  "⚑ Asking you: answer in its terminal". It is the Agent's flag, not an item's, and it is
+  never stored: it goes when the question is answered. An asking Agent, or one holding a
+  flagged item, shows ⚑ in amber on its selector pill and its Team roster row.
 - `work-record read`: what the Agent holds and watches, and under Documents the record's own
   documents and the held items' attachments (`--json`: `documents` and `attachments`). A lead also sees each Team it leads:
   what the Team holds and watches, and what each member holds and watches, read when asked.
