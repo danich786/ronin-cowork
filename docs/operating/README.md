@@ -8,8 +8,8 @@ These are operating guides, not the Ronin creators' release or deployment record
 - Access and accounts: [private access](vpn.md), [accounts](accounts.md),
   [provider billing/sign-in](codex-account.md), and [secrets](secrets.md).
 - Parking an office: [park](park.md) — the whole office in one file with `ronin-archive`, and back with `ronin-rehydrate`.
-- Your files and applications: [Syncthing](syncthing.md), [data connections](data.md),
-  and [deploying your own application](deploy.md).
+- Your files and applications: [data connections](data.md)
+  and [deploying your own application](deploy.md); Syncthing is the Agents' `ronin-help syncthing`.
 - Appearance and words: [skins](skins.md).
 
 For publishing Ronin itself, use the [contributor development route](../development/README.md).
