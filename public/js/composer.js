@@ -142,7 +142,10 @@ export function buildComposer(body, hooks) {
   size.observe(wrap);
   if (IS_TOUCH) {
     ta.setAttribute('enterkeyhint', 'send');
-    ta.setAttribute('autocorrect', 'on');
+    // NO SUGGESTION STRIP (owner, 2026-11-15): the keyboard's suggestions cost a row of the
+    // screen. The ˄ ˅ ✓ bar above them is Safari's own and no page can remove it.
+    ta.setAttribute('autocorrect', 'off');
+    ta.setAttribute('autocomplete', 'off');
     // THE KEYS ROW STANDS DOWN IN TEXT ENTRY (owner, 2026-09-24). Two rows of controls
     // above an on-screen keyboard is the screen twice over, and the device's own keyboard
     // is the thing being typed on.
