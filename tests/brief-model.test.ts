@@ -188,15 +188,18 @@ test('the brief: facts, behaviours with their tools, other tools, the help line,
 
 test('an update sends only what differs', () => {
   const before = record();
-  const snap = briefSnapshot(resolveBrief(CATALOG, before, []), before);
-  assert.equal(briefChanges(snap, resolveBrief(CATALOG, before, []), before), '', 'nothing changed: nothing sent');
+  const snap = briefSnapshot(resolveBrief(CATALOG, before, []));
+  assert.deepEqual(Object.keys(snap), ['told'], 'brief-told.json keeps only what was told');
+  assert.equal(briefChanges(snap, before, resolveBrief(CATALOG, before, []), before), '', 'nothing changed: nothing sent');
   const after = record({ pm: true, team: 't', lead: true });
-  const changes = briefChanges(snap, resolveBrief(CATALOG, after, []), after);
+  const changes = briefChanges(snap, before, resolveBrief(CATALOG, after, []), after);
   assert.match(changes, /### Lead\nLead text\./);
   assert.match(changes, /### PM\nItems\./);
   assert.match(changes, /- `item`: Work items\./);
   assert.doesNotMatch(changes, /Base text/);
-  const left = briefChanges(briefSnapshot(resolveBrief(CATALOG, after, []), after), resolveBrief(CATALOG, before, []), before);
+  const left = briefChanges(briefSnapshot(resolveBrief(CATALOG, after, [])), after, resolveBrief(CATALOG, before, []), before);
   assert.match(left, /No longer in your brief: Lead, PM, item\./);
+  const renamed = { ...before, user: { ...before.user, name: 'Alex' } };
+  assert.equal(briefChanges(snap, before, resolveBrief(CATALOG, renamed, []), renamed), '- User: Alex, owner', 'a fact changed on the record: that fact line only');
 });
 

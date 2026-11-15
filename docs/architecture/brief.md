@@ -133,10 +133,14 @@ record plus the files, nothing else.
 | Setting | hosted or self-hosted; Campaign; Workspace (its instructions, repositories, folders); integrations on; project management; the Services parts running |
 | Agent | role and Team(s); mandate (Reach, Recruit, Output); provider, model, harness, launch mode |
 | Work | desk or checkout per repository; items held and watched |
-| Brief settings | this Agent's add, block and only |
+| Brief settings | each layer's add, block and only: user, Campaign, Workspace, Team, this Agent |
 
-- The Team roster, the Workspace and the Campaign own their values; Ronin writes them into the
-  record, as it writes `teams`.
+- Ronin writes the whole record onto the work record as the key `brief` (`src/tegami.ts`,
+  `writeBriefRecord`), at birth and on every update, as it writes `teams`: the parts above
+  (`session`, `user`, `people`, `setting`, `agent`, `work`, the shape of `src/brief-record.ts`)
+  and `brief_settings`, one `{add, block, only}` per layer. The tile's Work record shows it by
+  part. The Team roster, the Workspace and the Campaign own their values; the key is Ronin's
+  copy, written again on each update.
 - A value another place owns and keeps no copy of is read there when the brief is built: in a
   hosted office, the people and the user's Lounge answers from `office_unit/members.json`
   through `src/office-people.ts`.
@@ -197,8 +201,9 @@ Services part that runs project management keeps its own switch for running; the
 
 ## The brief
 
-One file per session, `~/.ronin/sessions/<name>-<ts>/AGENT_BIRTH_BRIEF.md`, generated top to
-bottom:
+The birth brief, `~/.ronin/sessions/<name>-<ts>/AGENT_BIRTH_BRIEF.md`, is written once at
+birth and never rewritten. Each update writes the brief as it is now beside it, as
+`AGENT_BRIEF.md`. Both are generated top to bottom:
 
 ```
 # Brief — <name>
@@ -243,14 +248,21 @@ Every tool is a command on your PATH; `<tool> --help` gives its syntax.
 - **The birth receipt** (`birth-receipt.json`) records the brief's path, bytes, lines,
   terminator and over-budget state.
 - **An update** (`refreshBrief`, `src/agent-configuration.ts`) rebuilds the brief and, when it
-  differs from what the Agent was last told (`brief-told.json` beside the brief), sends "Your
-  brief changed" with the facts that changed and the behaviours and tools that came into play
-  (at their depth) or left it, and the whole brief's path. A mandate change sends the new
+  differs from what the Agent was last told, sends "Your brief changed" with the facts that
+  changed and the behaviours and tools that came into play (at their depth) or left it, and the
+  path of `AGENT_BRIEF.md`. What was told is `brief-told.json` beside the brief: each fact,
+  mandate, behaviour and tool, at its depth, and nothing else. The values it was told over are
+  the work record's `brief` key, so a fact changed is one whose line reads differently over that
+  record and the new one. A mandate change sends the new
   mandate only. Nothing differs, nothing is sent. A layer change rebuilds every live Cowork
   Agent's brief (`refreshAllBriefs`).
 - **Send** on the New Agent form sends only what changed; when nothing did, the form says "Its
   brief is unchanged: nothing was sent."
-- **The brief shows at the bottom of the work record** on the tile.
+- **The brief shows at the bottom of the work record** on the tile: `AGENT_BRIEF.md` once an
+  update wrote it, else the birth brief.
+- **On the Agent's Docs**, first, are the birth brief and then (once it exists) `AGENT_BRIEF.md`,
+  labelled Birth brief and Brief now; then the record's own documents and its items'
+  attachments (`src/tegami-read.ts`).
 
 There is no backward compatibility: the model is for new installs, and no old store or record
 shape is read. A test or rig that starts the server sets `RONIN_USER_ROOT`, `RONIN_DATA_ROOT`

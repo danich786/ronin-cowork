@@ -128,37 +128,38 @@ export function renderBrief(name: string, record: BriefRecord, resolved: Resolve
 }
 
 /** What an Agent was last told, kept beside its packet so an update sends only the difference. */
+/** What the Agent was told (`brief-told.json`): each fact, mandate, behaviour and tool in play, at
+ * its depth. The values it was told them over are the work record's `brief` key. */
 export interface BriefSnapshot {
-  facts: Record<string, string>;
   told: Record<string, { kind: string; depth: string; title: string }>;
 }
 
-const toldRows = (r: Resolved): InPlay[] => [...r.mandates, ...r.behaviours.flatMap((row) => [row, ...row.tools]), ...r.other];
+const toldRows = (r: Resolved): InPlay[] => [...r.facts, ...r.mandates, ...r.behaviours.flatMap((row) => [row, ...row.tools]), ...r.other];
 
-export function briefSnapshot(resolved: Resolved, record: BriefRecord): BriefSnapshot {
-  return {
-    facts: Object.fromEntries(resolved.facts.map((row) => [row.name, factLines(row, record).join('\n').trim()])),
-    told: Object.fromEntries(toldRows(resolved).map((row) => [row.name, { kind: row.kind, depth: row.depth, title: row.title }])),
-  };
+export function briefSnapshot(resolved: Resolved): BriefSnapshot {
+  return { told: Object.fromEntries(toldRows(resolved).map((row) => [row.name, { kind: row.kind, depth: row.depth, title: row.title }])) };
 }
 
 /**
- * WHAT CHANGED since the snapshot, for an update (docs/architecture/brief.md, The brief): the facts that changed, and the
- * behaviours and tools that came into play (at their depth) or left it. '' when nothing did.
+ * WHAT CHANGED since the snapshot, for an update (docs/architecture/brief.md, The brief): the facts that changed
+ * (over the record as it was, `was`, and as it is), and the behaviours and tools that came into
+ * play (at their depth) or left it. '' when nothing did.
  */
-export function briefChanges(before: BriefSnapshot, resolved: Resolved, record: BriefRecord): string {
-  const after = briefSnapshot(resolved, record);
+export function briefChanges(before: BriefSnapshot, was: BriefRecord, resolved: Resolved, record: BriefRecord): string {
+  const after = briefSnapshot(resolved);
   const lines: string[] = [];
-  const facts = Object.entries(after.facts).filter(([name, text]) => text && before.facts[name] !== text).map(([, text]) => text);
+  const fact = (row: InPlay, on: BriefRecord) => factLines(row, on).join('\n').trim();
+  const facts = resolved.facts.filter((row) => fact(row, record) && (!before.told[row.name] || fact(row, was) !== fact(row, record))).map((row) => fact(row, record));
   if (facts.length) lines.push(...facts, '');
   for (const row of toldRows(resolved)) {
-    const was = before.told[row.name];
-    if (was && was.depth === row.depth) continue;
+    if (row.kind === 'facts') continue;
+    const prior = before.told[row.name];
+    if (prior && prior.depth === row.depth) continue;
     if (row.kind === 'tools') lines.push(...toolLines(row));
     else if (row.file.mandate) lines.push(...mandateLines(row), '');
     else lines.push(`### ${row.title}`, row.depth === 'full' ? nested(row.file.body) : seedText(row), '');
   }
-  const left = Object.keys(before.told).filter((name) => !after.told[name]);
+  const left = Object.keys(before.told).filter((name) => !after.told[name] && before.told[name].kind !== 'facts');
   if (left.length) lines.push(`No longer in your brief: ${left.map((name) => before.told[name].title).join(', ')}.`);
   return lines.join('\n').trim();
 }

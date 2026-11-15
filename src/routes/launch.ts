@@ -17,7 +17,7 @@ import {
 import { launchArgv } from '../agents.js';
 import { AtSessionMax, readAgentsSection } from '../machine-state.js';
 import { PACKET_PLACEHOLDER, resolveForm, type SpawnForm } from '../spawn.js';
-import { agentBriefOf, writeAgentBriefAt } from '../brief-build.js';
+import { agentBriefOf, workRecordBrief, writeAgentBriefAt } from '../brief-build.js';
 import { briefTold } from '../brief-settings.js';
 import { writeSnapshotAt } from '../agent-configuration.js';
 import { HELP_LINE } from '../brief.js';
@@ -30,7 +30,7 @@ import { scanContext, scanModel } from '../ctx.js';
 import { count } from '../counts.js';
 import { listTeamRosters } from '../team-rosters.js';
 import { announceTeamChanges } from './wipeboards-api.js';
-import { checkoutAt, deriveTeams, parkBrief, seedTegami, teamChanged, withAxes, writeConfiguration, type SessionWithAxes } from '../tegami.js';
+import { checkoutAt, deriveTeams, parkBrief, seedTegami, teamChanged, withAxes, writeBriefRecord, writeConfiguration, type SessionWithAxes } from '../tegami.js';
 import { callerOf } from './work-items-api.js';
 import { collectBirthLines, collectRowFields } from '../sockets.js';
 import { stoppedAt } from '../stopped.js';
@@ -413,6 +413,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
         await deriveTeams(resolved.name, resolved.tags),
         resolved.mandate,
       );
+        if (resolved.composed) await writeBriefRecord(resolved.name, workRecordBrief(resolved.composed));
       }
       await writeConfiguration(resolved.name).catch(() => {});
       // By whoever made the Agent (session_create's caller, else the browser's owner), so a

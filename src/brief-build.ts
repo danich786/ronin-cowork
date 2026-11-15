@@ -14,6 +14,7 @@ import { listTeamRosters } from './team-rosters.js';
 import type { LaunchFacts, SpawnForm } from './spawn.js';
 import { mandate } from './agent-defaults.js';
 import { listDeskRecords } from './desks/registry.js';
+import type { WorkRecordBrief } from './tegami.js';
 import { jiraConnected } from './work-items.js';
 
 /** The Agent's own layer, as a launch body or the work record carries it. */
@@ -130,6 +131,12 @@ export async function buildBriefRecord(form: SpawnForm, facts: LaunchFacts, on: 
 }
 
 export interface ComposedBrief { record: BriefRecord; layers: Layer[]; cascade: Cascade; resolved: Resolved; text: string }
+
+/** What the work record's `brief` key holds: the record, and each layer's brief settings. */
+export const workRecordBrief = (composed: ComposedBrief): WorkRecordBrief => ({
+  ...composed.record,
+  brief_settings: Object.fromEntries(composed.layers.map((layer) => [layer.layer, layer.brief])),
+});
 
 /** The whole brief for an Agent: record, layers, what is in play, and the packet text. */
 export async function composeBrief(form: SpawnForm, facts: LaunchFacts, agent: AgentBrief, launch?: Parameters<typeof buildBriefRecord>[3]): Promise<ComposedBrief> {

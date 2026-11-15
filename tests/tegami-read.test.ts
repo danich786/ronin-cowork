@@ -61,7 +61,7 @@ test('the chip is the items held with their status; a flagged one marks it', asy
   assert.deepEqual(t.holds, ids, 'an old "at" in the letter reads as nothing');
 });
 
-test('docs are every held item\'s attachments, only what exists', async () => {
+test('docs are the birth brief, then the brief now, then every held item\'s attachments, only what exists', async () => {
   const name = 'tegami-read-docs';
   const real = path.join(temp, 'a-real-doc.md');
   const second = path.join(temp, 'second.md');
@@ -70,10 +70,24 @@ test('docs are every held item\'s attachments, only what exists', async () => {
   const one = await item('one', [real, path.join(temp, 'gone.md')]);
   const two = await item('two', [second]);
   await writeLetter(name, `{ "holds": ["${one}", "${two}"] }`);
-  await fs.writeFile(path.join(temp, name, 'AGENT_BIRTH_BRIEF.md'), '# Read first\n'); // the brief is not a Doc
+  const birth = path.join(temp, name, 'AGENT_BIRTH_BRIEF.md');
+  await fs.writeFile(birth, '# Read first\n');
   const t = await readTegami(name);
   assert.ok(t);
-  assert.deepEqual(t.docs, [real, second]);
+  assert.deepEqual(t.docs, [birth, real, second], 'the birth brief first; no AGENT_BRIEF.md before an update');
+  const now = path.join(temp, name, 'AGENT_BRIEF.md');
+  await fs.writeFile(now, '# Brief now\n');
+  assert.deepEqual((await readTegami(name))?.docs, [birth, now, real, second], 'the brief now second');
+});
+
+test('the brief record Ronin wrote reads back on the letter; none written reads null', async () => {
+  const name = 'tegami-read-brief';
+  await writeLetter(name, '{ "holds": [] }');
+  assert.equal((await readTegami(name))?.brief, null);
+  await writeLetter(name, '{ "holds": [], "brief": { "session": { "name": "x" }, "brief_settings": { "agent": { "add": [], "block": ["b"], "only": [] } } } }');
+  const t = await readTegami(name);
+  assert.equal(t?.brief?.session.name, 'x');
+  assert.deepEqual(t?.brief?.brief_settings.agent?.block, ['b']);
 });
 
 test("a record's own link is a doc as written: an https add_doc reaches the rows beside its files", async () => {

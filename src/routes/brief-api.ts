@@ -7,7 +7,7 @@ import type express from 'express';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { refreshAllBriefs } from '../agent-configuration.js';
-import { BIRTH_BRIEF } from '../birth-brief.js';
+import { AGENT_BRIEF, BIRTH_BRIEF } from '../birth-brief.js';
 import { briefOff, briefTold, cascade, layerOf, readUserLayer, userBriefFile, type Layer, type LayerName } from '../brief-settings.js';
 import { BehaviourDocumentError, createBehaviourDocument, readBehaviourDocument, updateBehaviourDocument } from '../behaviour-documents.js';
 import { initialCampaignId } from '../campaign-scope.js';
@@ -180,10 +180,11 @@ export function registerBrief(app: express.Express): void {
     } catch (e) { res.status(400).json({ error: errMsg(e) }); }
   });
 
-  // (d) The packet, for the bottom of the work record on the tile.
+  // (d) The brief now, for the bottom of the work record on the tile: AGENT_BRIEF.md once an update wrote it, else the birth brief.
   app.get('/api/sessions/:name/brief', async (req, res) => {
     try {
-      const text = await readFile(path.join(sessionDir(await sessionKey(req.params.name)), BIRTH_BRIEF), 'utf8');
+      const dir = sessionDir(await sessionKey(req.params.name));
+      const text = await readFile(path.join(dir, AGENT_BRIEF), 'utf8').catch(() => readFile(path.join(dir, BIRTH_BRIEF), 'utf8'));
       res.type('text/markdown').send(text);
     } catch { res.status(404).json({ error: 'No brief for that session.' }); }
   });

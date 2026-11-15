@@ -32,8 +32,14 @@ test('Configuration is the New Agent form in existing-Agent mode', () => {
 test('Send writes the record, rebuilds the brief, and sends only what differs', () => {
   assert.match(routes, /app\.put\('\/api\/sessions\/:name\/configuration'/);
   assert.equal((configuration.match(/enqueueMessage\(/g) || []).length, 1);
-  assert.match(configuration, /const changes = briefChanges\(before, composed\.resolved, composed\.record\);[\s\S]*if \(!changes\) return/, 'nothing changed: nothing sent');
+  assert.match(configuration, /const changes = briefChanges\(before, was, composed\.resolved, composed\.record\);[\s\S]*if \(!changes\) return/, 'nothing changed: nothing sent');
   assert.match(configuration, /writeCurrentRole\(name, next\.role\)[\s\S]*return refreshBrief\(name\)/, 'Send stores the role before rebuilding');
   assert.match(launchRoute, /writeBriefPacketAt\([\s\S]*writeCurrentRoleAt\(birthDir,[^\n]+\)/, 'birth stores the role fact after the packet creates its record directory');
   for (const writer of ['writeObjective', 'setSessionTitle', 'setTags', 'setLeads', 'writeMandate', 'writeAgentBriefAt', 'writeCurrentRole']) assert.match(configuration, new RegExp(writer));
+});
+
+test('the birth brief is written once; an update writes AGENT_BRIEF.md and the record key (KAN-515)', () => {
+  assert.match(configuration, /writeBriefPacketAt\(dir, composed\.text, name, AGENT_BRIEF\)/, 'an update never rewrites the birth brief');
+  assert.match(configuration, /writeBriefRecord\(name, workRecordBrief\(composed\)\)/, 'an update writes the record onto the work record');
+  assert.match(launchRoute, /seedTegami\([\s\S]*writeBriefRecord\(resolved\.name, workRecordBrief\(resolved\.composed\)\)/, 'birth writes it once the work record exists');
 });

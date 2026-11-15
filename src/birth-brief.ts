@@ -4,6 +4,8 @@ import path from 'node:path';
 
 /** The compiled brief's filename in each session folder: named for what it is, to whoever opens it. */
 export const BIRTH_BRIEF = 'AGENT_BIRTH_BRIEF.md';
+/** The brief as it is now, written by each update; the birth brief is never rewritten. */
+export const AGENT_BRIEF = 'AGENT_BRIEF.md';
 
 /**
  * THE ONE-READ BUDGET. A newborn is handed one path and reads it with its own CLI's file
@@ -59,14 +61,15 @@ export function readFirstSentence(packet: PacketReport): string {
   return `${head} Do not act before you have seen that line.`;
 }
 
-/** Write a generated brief (src/brief.ts) as the session's packet; warns when over the one-read budget. */
-export async function writeBriefPacketAt(dir: string, text: string, session: string): Promise<string> {
+/** Write a generated brief (src/brief.ts) as the session's packet, the birth brief or, on an
+ * update, AGENT_BRIEF.md; warns when over the one-read budget. */
+export async function writeBriefPacketAt(dir: string, text: string, session: string, file: typeof BIRTH_BRIEF | typeof AGENT_BRIEF = BIRTH_BRIEF): Promise<string> {
   const size = { bytes: Buffer.byteLength(text, 'utf8'), lines: text.split('\n').length };
   if (size.bytes > PACKET_BUDGET.bytes || size.lines > PACKET_BUDGET.lines) {
     console.warn(`[birth] ${session}: the brief is ${size.bytes} bytes / ${size.lines} lines, over the one-read budget of ${PACKET_BUDGET.bytes} / ${PACKET_BUDGET.lines}; a single read will not deliver it whole.`);
   }
   await mkdir(dir, { recursive: true });
-  const target = path.join(dir, BIRTH_BRIEF);
+  const target = path.join(dir, file);
   const temp = `${target}.${process.pid}.${randomUUID()}.tmp`;
   await writeFile(temp, text, 'utf8');
   await rename(temp, target);

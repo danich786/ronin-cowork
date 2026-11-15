@@ -7,6 +7,8 @@ import { readTeamRoster } from './team-rosters.js';
 import { getProjectRoot, listSessions, type SessionInfo } from './tmux.js';
 import { mandate, type Mandate } from './agent-defaults.js';
 import { enqueueMessage } from './message-queue.js';
+import type { BriefRecord, BriefSettings } from './brief-record.js';
+import type { LayerName } from './brief-settings.js';
 
 export interface TegamiCheckout {
   repo: string;
@@ -251,6 +253,23 @@ async function writeDerived(name: string, key: string, value: unknown, by: strin
   await replaceLetterBlock(file, text, parsed, { ...parsed.body, [key]: value });
   await ackRecord(name, by, said);
   return true;
+}
+
+/** THE BRIEF RECORD ON THE WORK RECORD (docs/architecture/brief.md, The work record is the source of truth):
+ * every value the brief was built over, and each layer's brief settings, as the key `brief`.
+ * Ronin writes it at birth and on every update; no ack, the update sends its own message. */
+export type WorkRecordBrief = BriefRecord & { brief_settings: Partial<Record<LayerName, BriefSettings>> };
+
+export async function writeBriefRecord(name: string, brief: WorkRecordBrief): Promise<boolean> {
+  return writeDerived(name, 'brief', brief, name);
+}
+
+/** The brief record as last written. */
+export async function readBriefRecord(name: string): Promise<WorkRecordBrief> {
+  const file = tegamiPath(await sessionKey(name));
+  const brief = letterBlock(await fs.readFile(file, 'utf8'))?.body.brief;
+  if (!brief || typeof brief !== 'object') throw new Error(`@${name}'s work record has no brief record`);
+  return brief as WorkRecordBrief;
 }
 
 /** Derive this session's teams block again; `said` rides on its ack. */

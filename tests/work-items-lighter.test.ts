@@ -370,7 +370,7 @@ test('project management is read from what the Agent\'s brief told it; a hand-in
   for (const [name, books] of [['pm_on', ['base-agent', 'project-management']], ['pm_off', ['base-agent']]] as const) {
     const dir = sessionDir(name);
     await fs.mkdir(dir, { recursive: true });
-    await fs.writeFile(path.join(dir, 'brief-told.json'), JSON.stringify({ facts: {}, told: Object.fromEntries(books.map((book) => [book, { kind: 'behaviours', depth: 'full', title: book }])) }));
+    await fs.writeFile(path.join(dir, 'brief-told.json'), JSON.stringify({ told: Object.fromEntries(books.map((book) => [book, { kind: 'behaviours', depth: 'full', title: book }])) }));
   }
   assert.equal(await projectManagementOn('pm_on'), true);
   assert.equal(await projectManagementOn('pm_off'), false);
