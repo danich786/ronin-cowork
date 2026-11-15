@@ -24,6 +24,8 @@ export interface ArchivedSession {
   leads: string[];
   wipeboards: string[];
   project_root: string;
+  /** Open desks the archive left as they were (--ignore-desks); restore returns to them. */
+  desks_left_open?: string[];
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

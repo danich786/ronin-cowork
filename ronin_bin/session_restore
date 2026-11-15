@@ -19,8 +19,10 @@ then Ronin removes it with its session folder.
 Use the archive id printed by session_archive, or named in a lead's notice that an Agent
 ended with session_end (every session_end archives). Ronin restores the provider
 conversation and session metadata; the archive is removed only after restoration succeeds.
-Restore does not give back work items or worktrees: the restored Agent takes back its items
-(item handoff) and reopens a worktree (worktree-desk open).
+Restore does not give back work items: the restored Agent takes back its items (item handoff).
+A worktree closed at the end it reopens (worktree-desk open). One archived with
+session_archive --ignore-desks was left open: the restored Agent is back at that same desk,
+its uncommitted work as it was.
 Related: session_archive --help, session_end --help
 EOF
     exit 0 ;;
