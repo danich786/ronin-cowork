@@ -41,7 +41,7 @@ test('Save As is create-only and rejects stock or user collisions', async () => 
   const created = await createBehaviourDocument({ scope: 'behaviours', name: 'my-way', text });
   assert.equal(created.origin, 'user');
   await assert.rejects(() => createBehaviourDocument({ scope: 'behaviours', name: 'my-way', text }), (error: unknown) => error instanceof BehaviourDocumentError && error.status === 409);
-  await assert.rejects(() => createBehaviourDocument({ scope: 'behaviours', name: 'visual-staging', text }), (error: unknown) => error instanceof BehaviourDocumentError && error.status === 409);
+  await assert.rejects(() => createBehaviourDocument({ scope: 'behaviours', name: 'team-work', text }), (error: unknown) => error instanceof BehaviourDocumentError && error.status === 409);
 });
 
 test('user updates require the last read revision', async () => {

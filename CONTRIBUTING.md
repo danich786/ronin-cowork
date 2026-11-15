@@ -68,7 +68,7 @@ decline a change that does not fit the product direction.
 
 A maintainer reviews the issue, scope, code, tests, and contributor evidence. They may assign
 accepted work to a Ronin Team or Agent to reconcile it with current `dev` and concurrent work,
-use provisional visual staging when applicable, then follow the ordinary
+then follow the ordinary
 [hand-in and Team Lead promotion](docs/architecture/worktrees.md#save-commit-hand-in-and-promotion) path to
 global `dev`. The later receipt-backed `dev → master` release PR remains maintainer-owned.
 

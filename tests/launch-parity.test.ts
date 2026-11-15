@@ -415,12 +415,12 @@ test('a name alone resolves the ordinary Cowork Agent birth', async () => {
 test('kind and the Agent\'s own add list resolve at birth', async () => {
   const born = await resolveForm(commonsForm({
     kind: 'coding',
-    brief: { add: [{ name: 'visual-staging' }, { name: 'not-there' }], block: [], only: [] },
+    brief: { add: [{ name: 'team-work' }, { name: 'not-there' }], block: [], only: [] },
     mandate: { reach: 'plan', recruit: 'nobody', output: ['a plan', 'ideas'] },
   }), new Set());
   assert.equal(born.kind, 'coding');
   const told = born.composed!.resolved.behaviours;
-  assert.deepEqual(told.find((row) => row.name === 'visual-staging')?.why, ['add:agent']);
+  assert.deepEqual(told.find((row) => row.name === 'team-work')?.why, ['add:agent']);
   assert.ok(!told.some((row) => row.name === 'not-there'), 'a name with no file is told nothing');
   assert.deepEqual(born.ignored, []);
   assert.equal(born.stated_by.kind[0]?.layer, 'launch');

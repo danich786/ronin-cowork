@@ -309,7 +309,7 @@ behaviours/  base-agent (full) · cowork-agent, write-it-down (cowork, full)
              (integration:<name>)
              mika, install-check (mika) · services-off (!service:ronin_services) · using-ronin
              optional (depth none): team-work, more-checkpoints, working-with-the-user,
-             visual-staging, codebase-team
+             codebase-team
 tools/       edges, work-record, agent-session (session_*), cowork-team (team), plan,
              work-item (item), worktree-desk, secret, netlify, preview, lookup, show,
              owner-view, ask-mika (mika), ronin-host, machine-settings, ronin-help ·

@@ -152,10 +152,7 @@ bare commit on the other. **After cutover, never run `setup.sh` from the checkou
 setup points the unit at a directory, and from the checkout it would re-point the
 serving Ronin at a source tree. The checkout is updated by git; the install by
 releases. `npm run stage` remains a low-level static-client copy to `/staging/`; it is not
-the multi-Agent visual-review workflow. Team preview composition uses one disposable,
-lead-owned staging worktree and a hand-started server on a separate port, as described in
-the [visual-staging Behavior](ronin-methodology.md#visual-staging-one-disposable-team-preview). `/api/version` must name the
-aggregate commit that process actually serves.
+a Team review: a Team's UI work is tried on dev after the lead promotes it.
 
 ## Cutover (a checkout-serving box moves to releases, once)
 

@@ -221,13 +221,8 @@ npm run stage           # low-level copy of this client to public-staging/
 ```
 
 `npm run stage` only copies static client files for the server's `/staging/` route. It can
-still be useful for one local client check, but it is not the preferred multi-Agent Team
-review process and does not establish which aggregate repository commit is running.
-
-For a Team visual review, use the two-lane [visual-staging Behavior](../../docs/development/ronin-methodology.md#visual-staging-one-disposable-team-preview):
-Agents offer exact private commits provisionally, the lead serially composes one disposable
-staging worktree and separate preview process, and finished work later uses ordinary Worktrees
-hand-in. The preview's `/api/version` identifies the aggregate commit actually on display.
+still be useful for one local client check. It does not establish which repository commit is
+running; a Team's UI work is tried on dev after the lead promotes it.
 
 The phone surface is the one that matters most for a client change: its compact Output
 selector can choose the live terminal or any record-fed view supplied by Ronin Services.
