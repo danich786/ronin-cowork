@@ -75,3 +75,29 @@ test('a Stop Ronin sent reads interrupted until the Agent writes a line or is se
     } finally { await new Promise<void>((r) => server.close(() => r())); }
   } finally { await closeTestServer(name); }
 });
+
+test('a question on the screen reads asking for any provider, Codex update prompt included (KAN-527)', async () => {
+  const { sockets } = await import('../src/sockets.js');
+  const { homeRows } = await import('../src/routes/launch.js');
+  const name = `asking-${process.pid}`;
+  const rig = await openTestServer(name, { onPath: true });
+  // Codex has no log before its first turn; its reader reports no question of its own.
+  sockets.addRowFields((session) => (session === 'codexer' ? { stance: 'unknown', stance_reports: ['awaiting_you', 'interrupted'] } : {}));
+  try {
+    const prompt = "Update available! 0.1 -> 0.2\\n\\n› 1. Update now\\n  2. Skip\\n  3. Skip until next version\\n\\nPress enter to continue\\n";
+    await rig.run('new-session', '-d', '-s', 'codexer', `printf '${prompt}'; read x; printf '\\033[2J\\033[H'; cat`);
+    await setSessionIdentity('codexer', { sessionType: 'bare_metal_agent', cli: 'codex', provider: 'p', model: 'm' });
+    const row = async () => {
+      const found = (await listSessions()).find((s) => s.name === 'codexer')!;
+      return (await homeRows([found as never]))[0] as Record<string, unknown>;
+    };
+    let now: Record<string, unknown> = {};
+    for (let i = 0; i < 50 && now.stance !== 'asking'; i++) { now = await row(); await new Promise((r) => setTimeout(r, 50)); }
+    assert.equal(now.stance, 'asking');
+    assert.deepEqual(now.stance_reports, ['asking', 'awaiting_you', 'interrupted']);
+    assert.equal('asking' in now, false, 'the pane read stays inside the stance');
+    await rig.run('send-keys', '-t', 'codexer', 'Enter');
+    for (let i = 0; i < 60 && now.stance === 'asking'; i++) { await new Promise((r) => setTimeout(r, 50)); now = await row(); }
+    assert.equal(now.stance, 'unknown', 'answered, the question leaves with the screen');
+  } finally { await closeTestServer(name); }
+});

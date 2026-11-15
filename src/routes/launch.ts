@@ -24,7 +24,7 @@ import { HELP_LINE } from '../brief.js';
 import { appendLaunchLedger, persistBirthReceipt } from '../launch-ledger.js';
 import { writeCurrentRoleAt } from '../agent-composition.js';
 import { mandate } from '../agent-defaults.js';
-import { classifyStatus, createActivityCache } from '../status.js';
+import { asksForInput, classifyStatus, createActivityCache } from '../status.js';
 import { scanContext, scanModel } from '../ctx.js';
 
 import { count } from '../counts.js';
@@ -187,12 +187,26 @@ export function mikaReadinessFromPane(text: string): 'ready' | 'starting' | 'act
   return state === 'awaiting-input' ? 'action_required' : state === null ? 'starting' : 'ready';
 }
 
-// The pane is read for the CLI's own context gauge and model line. What the Agent is DOING is
-// its output's newest line, through the transcript part's row field: one status, not two.
-const loadPaneStatus = createActivityCache(async (name: string) => {
+// The pane is read for the CLI's own context gauge and model line, and for a question it draws
+// (KAN-527): no CLI writes a log line for its dialogs (Codex's "Update available" before its
+// first turn, a permission prompt), so the screen is the only place one shows. What the Agent
+// is otherwise DOING is its output's newest line, through the transcript part's row field.
+const readPane = async (name: string) => {
   const text = await capturePane(name, 0);
-  return { ctx: scanContext(text), model: scanModel(text) };
-});
+  return { ctx: scanContext(text), model: scanModel(text), asking: asksForInput(text) };
+};
+const cachedPane = createActivityCache(readPane);
+// tmux stamps activity by the second: a question answered and redrawn inside that second would
+// keep its cached reading. While it reads asking, each push reads the pane afresh.
+const loadPaneStatus = async (name: string, activity: number) => {
+  const pane = await cachedPane(name, activity);
+  return pane.asking ? readPane(name).catch(() => pane) : pane;
+};
+
+/** AN AGENT FLAG (owner, 2026-11-15, KAN-527): the Agent itself waits on the owner, not an
+ * item. Derived from the pane, never stored: it goes when the question leaves the screen. Its
+ * work record carries it, and `flagged` puts ⚑ and the flagged amber on its selector pill. */
+export const ASKING_FLAG = 'asking';
 
 // The home rows for one session listing: what /events pushes as {t:'home', rows}, from the
 // listing its tick already took.
@@ -200,19 +214,23 @@ export function homeRows(list: SessionWithAxes[]) {
   return Promise.all(
     list.map(async (s) => {
       const [pane, contributed, tegami] = await Promise.all([
-        loadPaneStatus(s.name, s.activity).catch(() => ({ ctx: null, model: null })),
+        loadPaneStatus(s.name, s.activity).catch(() => ({ ctx: null, model: null, asking: false })),
         collectRowFields(s.name),
         readTegami(s.name),
       ]);
-      const stopped_at = stoppedAt(s.name, contributed.at);
+      const { asking, ...gauges } = pane;
+      const stopped_at = asking ? undefined : stoppedAt(s.name, contributed.at);
+      const reports = contributed.stance_reports;
       return {
         ...s,
-        ...pane,
+        ...gauges,
         ...contributed,
-        // A Stop Ronin sent reads interrupted until the Agent writes a line or is sent to (stopped.ts).
-        stance: stopped_at ? 'interrupted' : contributed.stance ?? 'unknown',
+        // A question on the screen is asking, whatever the log's newest line says; a Stop Ronin
+        // sent reads interrupted until the Agent writes a line or is sent to (stopped.ts).
+        stance: asking ? 'asking' : stopped_at ? 'interrupted' : contributed.stance ?? 'unknown',
+        ...(Array.isArray(reports) && !reports.includes('asking') ? { stance_reports: ['asking', ...reports] } : {}),
         ...(stopped_at ? { stopped_at } : {}),
-        ...(tegami ? { tegami } : {}),
+        ...(tegami ? { tegami: asking ? { ...tegami, flagged: true, agent_flag: ASKING_FLAG } : tegami } : {}),
       };
     }),
   );
