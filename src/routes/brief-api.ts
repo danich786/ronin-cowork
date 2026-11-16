@@ -6,7 +6,6 @@
 import type express from 'express';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { refreshAllBriefs } from '../agent-configuration.js';
 import { AGENT_BRIEF, BIRTH_BRIEF } from '../birth-brief.js';
 import { briefOff, briefTold, cascade, layerOf, readUserLayer, userBriefFile, type Layer, type LayerName } from '../brief-settings.js';
 import { BehaviourDocumentError, createBehaviourDocument, readBehaviourDocument, updateBehaviourDocument } from '../behaviour-documents.js';
@@ -160,8 +159,7 @@ export function registerBrief(app: express.Express): void {
     try {
       const campaignId = layer === 'campaign' ? req.params.id : String(req.query.campaign_id ?? req.body?.campaign_id ?? '').trim() || await initialCampaignId();
       await writeLayer(layer, req.params.id, campaignId, (req.body ?? {}) as Record<string, unknown>);
-      // A layer changed: every Agent's brief is rebuilt, and each is sent only what differs.
-      void refreshAllBriefs().catch(() => {});
+      // A default changed: new Agents are born with it; a live Agent's record doesn't move.
       const { own, above } = await layerAt(layer, req.params.id, campaignId);
       res.json(shown(own, above));
     } catch (e) { res.status(e instanceof BehaviourDocumentError ? e.status : 500).json({ error: errMsg(e) }); }
@@ -201,14 +199,12 @@ export function registerBrief(app: express.Express): void {
     try {
       const body = (req.body ?? {}) as Record<string, unknown>;
       const made = await createBehaviourDocument({ name: body.name, text: body.text, shadow: body.shadow, scope: body.kind ?? body.scope });
-      void refreshAllBriefs().catch(() => {});
       res.status(201).json(made);
     } catch (e) { res.status(e instanceof BehaviourDocumentError ? e.status : 500).json({ error: errMsg(e) }); }
   });
   app.put('/api/brief/files/:kind/:name', async (req, res) => {
     try {
       const saved = await updateBehaviourDocument({ ...req.body, scope: req.params.kind, name: req.params.name });
-      void refreshAllBriefs().catch(() => {});
       res.json(saved);
     }
     catch (e) { res.status(e instanceof BehaviourDocumentError ? e.status : 500).json({ error: errMsg(e) }); }

@@ -17,7 +17,6 @@ import type { LaunchFacts, SpawnForm } from './spawn.js';
 import { mandate } from './agent-defaults.js';
 import { listDeskRecords } from './desks/registry.js';
 import type { WorkRecordBrief } from './tegami.js';
-import { jiraConnected } from './work-items.js';
 
 /** The Agent's own layer, as a launch body or the work record carries it. */
 export interface AgentBrief { brief: BriefSettings; integrations: string[]; pm?: boolean }
@@ -47,12 +46,13 @@ export async function offeredMcp(campaign: string, catalog?: Pick<Catalog, 'beha
   return (await readMcpRecords()).filter((record) => !bridges.has(record.name) && offeredTo(record, campaign));
 }
 
-/** The Campaign's layer: its own settings, Jira when the Campaign is paired (so pm is on), and
- * the MCP servers offered to it. */
-export async function campaignLayer(campaign: { id: string; config: Pick<CampaignSettings, 'integrations'> } | null | undefined, catalog?: Pick<Catalog, 'behaviours'>): Promise<Layer> {
+/** The Campaign's layer: its own settings, Jira when its Jira part is on (so pm is on), and the
+ * MCP servers offered to it. The switch, not the live pairing: a pairing named after a restart
+ * would leave an Agent born first without pm for life. */
+export async function campaignLayer(campaign: { id: string; config: Pick<CampaignSettings, 'integrations'> & { services?: { parts?: Record<string, unknown> } } } | null | undefined, catalog?: Pick<Catalog, 'behaviours'>): Promise<Layer> {
   if (!campaign) return layerOf('campaign', {});
   const offered = (await offeredMcp(campaign.id, catalog)).map((record) => record.name);
-  const jira = jiraConnected(campaign.id) ? ['jira'] : [];
+  const jira = campaign.config.services?.parts?.jira === true ? ['jira'] : [];
   return layerOf('campaign', { ...campaign.config, integrations: [...campaign.config.integrations, ...jira, ...offered] });
 }
 
@@ -114,7 +114,8 @@ export async function buildBriefRecord(form: SpawnForm, facts: LaunchFacts, on: 
       campaign: campaignId,
       workspace: facts.workspace?.name ?? '',
       instructions: facts.workspace?.instructions ?? '',
-      integrations: Object.keys(on.integrations),
+      // Jira only turns project management on: an Agent never reaches past the bridge, so it isn't told of it.
+      integrations: Object.keys(on.integrations).filter((name) => name !== 'jira'),
       mcp: (await offeredMcp(campaignId, catalog)).filter((record) => on.integrations[record.name]).map((record) => ({ name: record.name, description: record.description, ...(record.needs ? { needs: record.needs } : {}) })),
       pm: on.pm.on,
       services: facts.installations.filter((row) => row.enabled).map((row) => row.name),
@@ -126,7 +127,7 @@ export async function buildBriefRecord(form: SpawnForm, facts: LaunchFacts, on: 
       wipeboard: facts.roster?.wipeboard ?? form.team ?? '',
       team_objective: facts.roster?.objective ?? '',
       // The lead's brief says what its Team has on.
-      team_integrations: form.team && role === 'lead' ? Object.keys(teamOn.integrations) : [],
+      team_integrations: form.team && role === 'lead' ? Object.keys(teamOn.integrations).filter((name) => name !== 'jira') : [],
       reach: held.reach,
       recruit: held.recruit,
       output: held.output,

@@ -32,9 +32,10 @@ only when it needs it. Give a file `full` only when an Agent needs all of it fro
 A tool's seed is its one job (a family's names its members); the brief says once that every
 tool answers `--help`. A tool in full adds its commands and whatever `--help` does not say.
 
-An Agent is told at birth; when its situation changes (a desk is cut, an integration turns on,
-it is made lead); when the user changes its configuration; and when it asks (`ronin-help
-<name>` prints the full text of anything it holds a seed for).
+An Agent is told at birth, then only when its configuration changes (by the user, or by an
+Agent such as its lead: title, role, Team, lead, mandate, its own brief settings), and when it
+asks (`ronin-help <name>` prints the full text of anything it holds a seed for). A file is told
+once however many conditions or layers turn it on.
 
 **Hide, never guard.** A depth, a block or a screen decides only what the Agent is told.
 Nothing is taken off the PATH, refused or stopped: an Agent that finds a tool or behaviour it
@@ -146,7 +147,14 @@ record plus the files, nothing else.
   through `src/office-people.ts`.
 - Who is talking now is never in the brief: the per-message From line (`src/message-queue.ts`)
   says it.
-- Ronin rebuilds the brief on any record change and sends the Agent the difference only when
+- **The record is set at birth and moves only with the Agent's configuration** (owner,
+  2026-11-16). A default changed since birth (user, machine, Campaign, Workspace, Team, a
+  catalog file, an MCP record, a connection) reaches Agents born after it, never a live one:
+  nothing re-briefs on it. A rebuild (`currentBrief`, `src/agent-configuration.ts`) starts from
+  the `brief` key and changes only what the configuration changed; a move to another Team brings
+  that Team's Setting, Workspace and Team settings. Provider, model, harness and launch mode
+  stay as born.
+- On a configuration change Ronin rebuilds the brief and sends the Agent the difference only when
   the brief came out different. Items and the objective are on the record but not in the
   brief, so they send nothing.
 
@@ -196,8 +204,11 @@ Off). An MCP server is on at the Campaign layer for every Campaign its record is
 On for an Agent makes `integration:<name>` hold, so its bridge behaviour and that behaviour's
 tools come into play.
 
-**Project management is its own switch**, cascading like an integration. When the Jira
-integration is on, it is on; otherwise each layer may turn it on or off. Off: no item
+**Project management is its own switch**, cascading like an integration. When the Campaign's
+Jira part is on (its switch, `services.parts.jira`, not the live pairing), it is on; otherwise
+each layer may turn it on or off. Jira only turns project management on: an Agent reaches work
+items through `item` and never past the bridge, so it is not told of Jira, and Jira is not
+among the integrations on its record. Off: no item
 behaviours and no `item` seed. On: the item model for everyone, role behaviours by role. The
 Services part that runs project management keeps its own switch for running; the brief reads
 `pm`.
@@ -260,8 +271,7 @@ Every tool is a command on your PATH; `<tool> --help` gives its syntax.
   mandate, behaviour and tool, at its depth, and nothing else. The values it was told over are
   the work record's `brief` key, so a fact changed is one whose line reads differently over that
   record and the new one. A mandate change sends the new
-  mandate only. Nothing differs, nothing is sent. A layer change rebuilds every live Cowork
-  Agent's brief (`refreshAllBriefs`).
+  mandate only. Nothing differs, nothing is sent.
 - **Send** on the New Agent form sends only what changed; when nothing did, the form says "Its
   brief is unchanged: nothing was sent."
 - **The brief shows at the bottom of the work record** on the tile: `AGENT_BRIEF.md` once an
@@ -347,9 +357,9 @@ through `secret ask <provider>-<key>` and `secret path <name>`, a PR and its pre
 owner's choice before shipping. Keys are taught there once; a bridge never repeats them.
 
 A **bridge** is a behaviour with `when: integration:<name>` and the tools that serve it, in play
-while that integration is on for the Agent: `jira-bridge` (work items through `item`, never Jira
-itself), `gbrain-bridge` (shared memory), `perplexity-bridge` (cited web research) and
-`netlify-bridge` (the worked example, with `netlify` and `preview`).
+while that integration is on for the Agent: `gbrain-bridge` (shared memory), `perplexity-bridge` (cited web research) and
+`netlify-bridge` (the worked example, with `netlify` and `preview`). `jira-bridge` only lists
+Jira on the Integrations panel; it is never told, because Jira is never on an Agent's record.
 
 Every **MCP server** is reached at run time through Ronin's broker, never at launch
 ([integrations.md](integrations.md)). One behaviour, `mcp-servers` (seed, `when: mcp`), is in play when

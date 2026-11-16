@@ -1,12 +1,10 @@
 /**
- * BRIEF UPDATES (docs/architecture/brief.md, The work record is the source of truth; The brief). Any change to what an Agent's brief depends on
- * rebuilds the brief from today's files over its record; when the brief came out different, the
- * Agent is sent only the difference: the facts that changed, and the behaviours and tools that
- * came into play or left it. Items and the objective are on the record but not in the brief, so
- * they send nothing.
- *
- * UPDATE (owner, 2026-10-24) is one such change: the Configuration writes the record, then
- * refreshes the brief.
+ * BRIEF UPDATES (docs/architecture/brief.md, The work record is the source of truth; The brief). Only a
+ * configuration change (the Configuration's Send, or being made lead) rebuilds the brief, from
+ * the record set at birth with that change; when the brief came out different, the Agent is
+ * sent only the difference: the facts that changed, and the behaviours and tools that came into
+ * play or left it. A changed default never reaches a live Agent. Items and the objective are on
+ * the record but not in the brief, so they send nothing.
  */
 import { readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -14,10 +12,11 @@ import { readAgentComposition, writeCurrentRole } from './agent-composition.js';
 import type { Mandate } from './agent-defaults.js';
 import { AGENT_BRIEF, describePacket, writeBriefPacketAt } from './birth-brief.js';
 import { readAgentBriefAt, workRecordBrief, writeAgentBriefAt, type AgentBrief, type ComposedBrief } from './brief-build.js';
-import { briefTold } from './brief-settings.js';
-import { briefChanges, briefSnapshot, type BriefSnapshot } from './brief.js';
+import { briefTold, LAYERS, layerOf, resolveBrief } from './brief-settings.js';
+import { briefChanges, briefSnapshot, renderBrief, type BriefSnapshot } from './brief.js';
+import type { BriefRecord } from './brief-record.js';
+import { readCatalogs } from './catalog.js';
 import { enqueueMessage } from './message-queue.js';
-import { uncached } from './resources.js';
 import { personByEmail, type Person } from './office-people.js';
 import { sessionDir, sessionKey } from './session-dir.js';
 import { resolveBriefFor, resolveFacts, type SpawnForm } from './spawn.js';
@@ -53,8 +52,33 @@ export async function writeSnapshotAt(dir: string, composed: ComposedBrief): Pro
   await rename(temp, target);
 }
 
-/** The Agent's brief as its record stands now, over today's files. */
+/**
+ * The Agent's brief: the brief record on its work record, with only its configuration (title,
+ * role, Team, lead, mandate, its own brief settings) as it is set now, over today's files
+ * (docs/architecture/brief.md, The work record is the source of truth). Defaults that changed
+ * since birth (user, machine, Campaign, Workspace, Team, a connection) don't move the record. A
+ * Team the configuration moved it to brings that Team's values: its Setting, Workspace and
+ * Team settings.
+ */
 export async function currentBrief(name: string): Promise<{ dir: string; composed: ComposedBrief }> {
+  const [{ dir, composed: now }, born] = await Promise.all([configuredBrief(name), readBriefRecord(name)]);
+  const moved = born.agent.team !== now.record.agent.team;
+  const { provider, model, harness, launch_mode } = born.agent;
+  const record: BriefRecord = {
+    ...born,
+    session: { ...born.session, title: now.record.session.title },
+    agent: { ...now.record.agent, provider, model, harness, launch_mode },
+    setting: moved ? now.record.setting : born.setting,
+  };
+  const set = Object.fromEntries(now.layers.map((layer) => [layer.layer, layer.brief]));
+  const settings = { ...born.brief_settings, agent: set.agent, ...(moved ? { team: set.team, workspace: set.workspace } : {}) };
+  const layers = LAYERS.map((layer) => layerOf(layer, { brief: settings[layer] }));
+  const resolved = resolveBrief(await readCatalogs(), record, layers);
+  return { dir, composed: { record, layers, cascade: now.cascade, resolved, text: renderBrief(name, record, resolved) } };
+}
+
+/** The brief as the Agent's configuration and every default stand now. */
+async function configuredBrief(name: string): Promise<{ dir: string; composed: ComposedBrief }> {
   const dir = sessionDir(await sessionKey(name));
   const receipt = await receiptOf(dir);
   const user = receipt.user_email ? personByEmail(receipt.user_email) : null;
@@ -114,18 +138,6 @@ export async function refreshBrief(name: string): Promise<{ brief: string; sent:
   const packet = await describePacket(brief, name);
   await enqueueMessage(name, `Your brief changed:\n\n${changes}\n\nThe whole brief: ${brief} (ends with "${packet.terminator}").`, 'house');
   return { brief, sent: true };
-}
-
-/** Rebuild every live Agent's brief, after a layer (user, Campaign, Workspace, Team) changed. */
-export async function refreshAllBriefs(): Promise<void> {
-  return uncached(refreshEveryBrief);
-}
-
-async function refreshEveryBrief(): Promise<void> {
-  for (const session of await listSessions()) {
-    if ((session.identity?.sessionType || 'cowork_agent') !== 'cowork_agent') continue;
-    await refreshBrief(session.name).catch(() => {});
-  }
 }
 
 type ConfigurationUpdate = {

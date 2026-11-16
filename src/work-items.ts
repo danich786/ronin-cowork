@@ -71,13 +71,9 @@ export const JIRA_NAMES: SpaceNames = {
   links: ['Blocks', 'Relates', 'Duplicate', 'Cloners'],
 };
 const SPACES = new Map<string, SpaceNames>();
-/** The Jira bridge names a connected campaign's space here (null when it disconnects).
- * A Campaign it pairs or unpairs rebuilds every live brief (KAN-522): an Agent born before the
- * bridge named the space was briefed with project management off. */
+/** The Jira bridge names a connected campaign's space here (null when it disconnects). */
 export function setSpaceNames(campaign: string, names: SpaceNames | null): void {
-  const was = SPACES.has(campaign);
   if (names) SPACES.set(campaign, names); else SPACES.delete(campaign);
-  if (was !== Boolean(names)) void import('./agent-configuration.js').then(({ refreshAllBriefs }) => refreshAllBriefs()).catch(() => {});
 }
 export const spaceNames = (campaign: string): SpaceNames => SPACES.get(campaign) ?? JIRA_NAMES;
 /** Whether the bridge has named this campaign's space: a Jira-connected campaign. */

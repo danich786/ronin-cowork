@@ -81,9 +81,6 @@ export interface Sockets {
   onPaneActivity(cb: (session: string) => void): void;
   /** A part wrote something a home row shows: push the rows now, not on a clock. */
   rowChanged(session: string): void;
-  /** A part changed what briefs are built from (an MCP record added, removed or offered): every
-   * live Agent's brief is rebuilt and each is sent only what differs. Fire and forget. */
-  briefsChanged(): void;
 
 /**
  * WHO IS WATCHING A CONVERSATION, and how a part reaches them.

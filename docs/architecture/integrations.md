@@ -97,8 +97,8 @@ bridge (`netlify-api` beside `netlify`) gets its own line: it does what the brid
   <tool> --json …`). `tools/mcp.md` is the command's tool file.
 - **A provider's tool list never goes into the brief.** The Agent fetches it with
   `mcp tools <name>` when the work needs it.
-- **Running Agents hear of a change.** A record added, removed, offered or narrowed refreshes
-  every brief it touches, as the Jira pairing does, so a running Agent gets it as a brief update.
+- **A change reaches Agents born after it.** A record added, removed, offered or narrowed never
+  moves a running Agent's brief ([brief.md](brief.md), The work record is the source of truth).
 - **Web APIs likewise,** in their own behaviour, `behaviours/web-apis.md` (seed depth, in play when
   at least one API record is on): one generated line per API, then `api call <name> <METHOD>
   <path>`; `tools/api.md` is the command's tool file. Each seed names one command and is in play

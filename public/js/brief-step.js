@@ -241,8 +241,8 @@ export function paintBriefForm(host, { layer = 'agent', catalog = [], value = em
 
 /**
  * One layer's settings as a panel with its own Save: the Campaign, Workspace and Team pages
- * mount it (`GET`/`PUT /api/brief/settings/:layer/:id`). A save rebuilds every Agent's brief
- * on the server, and each Agent is sent only what changed.
+ * mount it (`GET`/`PUT /api/brief/settings/:layer/:id`). A save reaches Agents born after it;
+ * a live Agent's brief doesn't move.
  */
 export function createBriefSettingsPanel({ layer, id = '', campaignId = '', createAction = null, ownSave = true, showIntegrations = true, onChange = () => {}, preview = null, linkFor = null } = {}) {
   const root = el('div', 'brief-settings');

@@ -43,3 +43,12 @@ test('the birth brief is written once; an update writes AGENT_BRIEF.md and the r
   assert.match(configuration, /writeBriefRecord\(name, workRecordBrief\(composed\)\)/, 'an update writes the record onto the work record');
   assert.match(launchRoute, /seedTegami\([\s\S]*writeBriefRecord\(resolved\.name, workRecordBrief\(resolved\.composed\)\)/, 'birth writes it once the work record exists');
 });
+
+test('a live Agent re-briefs only on its configuration; a default never moves its record (owner, 2026-11-16)', async () => {
+  const files = {};
+  for (const file of ['src/routes/brief-api.ts', 'src/work-items.ts', 'src/sockets.ts', 'src/routes/secrets-api.ts', 'src/commands/desk.ts']) files[file] = await readFile(new URL(`../${file}`, import.meta.url), 'utf8');
+  const read = (file) => files[file];
+  for (const file of ['src/routes/brief-api.ts', 'src/work-items.ts', 'src/sockets.ts', 'src/routes/secrets-api.ts']) assert.doesNotMatch(read(file), /refreshAllBriefs|briefsChanged/, `${file} re-briefs nobody`);
+  assert.doesNotMatch(read('src/commands/desk.ts'), /refreshBrief/, 'a desk opened or closed moves no brief');
+  assert.match(configuration, /readBriefRecord\(name\)[\s\S]*const record: BriefRecord = \{\s*\.\.\.born,/, 'a rebuild starts from the record set at birth');
+});

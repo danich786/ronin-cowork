@@ -244,7 +244,7 @@ export function workspacePage(w, { reading, campaignId, onSaved = () => {}, onDi
     const row = (name) => ({ name, note: picked.get(name) || '' });
     draft.repos = [...picked.keys()].filter(git).map(row);
     draft.folders = [...picked.keys()].filter((name) => !git(name)).map(row);
-    // Behaviors save first (every Agent's brief is rebuilt); the Workspace's own save then carries the same values.
+    // Behaviors save first; the Workspace's own save then carries the same values.
     if (brief) { const told = await brief.save(); if (!told.ok) { say(told.message, true); return false; } }
     const briefKeys = brief ? { brief: brief.value().brief, pm: brief.value().pm } : {};
     const answer = await request(`/api/workspaces/${encodeURIComponent(draft.name)}`, { method: 'PUT', json: { ...draft, ...briefKeys, plans: draft.plans?.location ? draft.plans : null, plans_place: undefined, campaign_id: campaignId() || undefined } });
