@@ -15,6 +15,7 @@ route depends on the task, not on who is reading.
 | Choose where Ronin works | [Workspace Folders](getting-started/workspace-folders.md) |
 | Browse and manage the machine's files | [Explorer](using-ronin/explorer.md) |
 | Give an Agent a file, image, or screenshot | [Share a file with an Agent](using-ronin/share-a-file.md) |
+| Connect an outside service (an MCP server, a web API, a bridge) | [Add an integration](using-ronin/add-an-integration.md) |
 | Start a Team | [New Team](using-ronin/new-team.md) |
 | Track work and coordinate Agents | [Project management](using-ronin/project-management.md), [work record](using-ronin/work-record.md), [work items](using-ronin/work-items.md), [wipeboards](using-ronin/wipeboards.md) and [Jira](using-ronin/jira.md) |
 | Stop, clear, copy, or close | [Terminal controls](using-ronin/terminal-controls.md) |

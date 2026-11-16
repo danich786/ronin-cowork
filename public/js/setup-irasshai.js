@@ -9,6 +9,11 @@
  *   her chat at once.
  * Her items are the store's pushed `epics` and `epicItems`; nothing here asks on a timer. With no
  * Irasshai, Setup is as it always was.
+ *
+ * THE INTEGRATIONS STEP (KAN-601) also seats the integrations panel, embedded, in Workspace 2: each
+ * service she adds appears there with its state (key needed, key saved, sign in), with its paste
+ * field or Sign in. It reads the list again each time one of her turns ends (her row's stance,
+ * pushed on `home`, leaves working): no timer, no new watcher.
  */
 import { S } from './state.js';
 import { get } from './store.js';
@@ -18,9 +23,17 @@ import { sendComposerMessage } from './composer-rules.js';
 import { makeTileTranscript } from './tile-transcript.js';
 import { WorkspaceKit } from './workspace-kit.js';
 import { IRASSHAI, irasshaiIn } from './setup-journey.js';
+import { createIntegrationsPanel } from './integrations-panel.js';
+import { campaigns, loadCampaigns } from './campaigns.js';
+import { subscribe } from './store.js';
+import { t } from './lexicon.js';
 
 export { IRASSHAI, irasshaiSteps, takeStepLine } from './setup-journey.js';
 export const IRASSHAI_STEP_TYPE = 'setup.irasshai-step';
+export const IRASSHAI_INTEGRATIONS_TYPE = 'setup.irasshai-integrations';
+/** The onboarding task whose step seats the integrations panel. */
+export const INTEGRATIONS_STEP = 'Integrations';
+export const stepSurface = (step) => (step?.title === INTEGRATIONS_STEP ? IRASSHAI_INTEGRATIONS_TYPE : null);
 /** Whether her session is live, as the pushed session list says. */
 export const irasshaiLive = () => irasshaiIn(S.sessions);
 
@@ -83,5 +96,32 @@ export function registerIrasshaiSteps() {
     })),
     // Never placed: a press asks her. A drag lands the blank Tilespace.
     create: () => WorkspaceKit.primitives.createBlankSurface(),
+  });
+}
+
+/** Her Integrations step's surface: the integrations panel, embedded, for the office's Campaign. */
+export function registerIrasshaiIntegrations() {
+  if (WorkspaceKit.workbench.library.has(IRASSHAI_INTEGRATIONS_TYPE)) return IRASSHAI_INTEGRATIONS_TYPE;
+  return WorkspaceKit.workbench.library.register({
+    type: IRASSHAI_INTEGRATIONS_TYPE,
+    header: 'surface',
+    label: () => t('integrations.title', 'Integrations'),
+    create: () => {
+      const surface = WorkspaceKit.primitives.createSurface({ label: t('integrations.title', 'Integrations'), className: 'setup-surface integrations-surface setup-irasshai-integrations' });
+      const panel = createIntegrationsPanel(() => campaigns()[0] || null, { embedded: true });
+      panel.el.querySelector('.integrations-heading')?.remove(); // the surface's header names it
+      surface.content.append(panel.el);
+      let working = false;
+      const stop = subscribe('home', (rows) => {
+        const now = (rows || []).find((one) => one.name === IRASSHAI)?.stance === 'working';
+        if (working && !now) void panel.enter();
+        working = now;
+      });
+      return {
+        el: surface.el,
+        show: async () => { await loadCampaigns(); await panel.enter(); },
+        destroy: () => { stop(); panel.destroy(); },
+      };
+    },
   });
 }
