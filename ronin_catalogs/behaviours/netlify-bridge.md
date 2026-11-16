@@ -2,7 +2,6 @@
 - **seed:** Netlify hosts the Workspace's sites: `netlify` for its sites, deploys, traffic, forms and variables; `preview` for a pull request's preview link. Setting a site up, the owner's steps: `ronin-help netlify-bridge`.
 - **when:** integration:netlify
 - **depth:** full
-- **mcp:**
 - **order:** 24
 
 Netlify hosts this Workspace's site. It builds a preview for every pull request and publishes

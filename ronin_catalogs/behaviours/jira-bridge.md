@@ -2,7 +2,6 @@
 - **seed:** Jira holds this Campaign's work items and Ronin keeps them in step: work them with `item`, never Jira itself.
 - **when:** integration:jira
 - **depth:** full
-- **mcp:**
 - **order:** 25
 
 This Campaign's work items are paired with a Jira space. Ronin keeps both sides in step: what
