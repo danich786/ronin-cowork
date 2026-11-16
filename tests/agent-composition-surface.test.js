@@ -29,26 +29,26 @@ test('Configuration is the New Agent form in existing-Agent mode', () => {
   assert.doesNotMatch(form, /hiddenBehaviours/);
 });
 
-test('Send writes the record, rebuilds the brief, and sends only what differs', () => {
+test('Send writes its authorities, then edits the brief document and sends only what differs', () => {
   assert.match(routes, /app\.put\('\/api\/sessions\/:name\/configuration'/);
   assert.equal((configuration.match(/enqueueMessage\(/g) || []).length, 1);
-  assert.match(configuration, /const changes = briefChanges\(before, was, composed\.resolved, composed\.record\);[\s\S]*if \(!changes\) return/, 'nothing changed: nothing sent');
-  assert.match(configuration, /writeCurrentRole\(name, next\.role\)[\s\S]*return refreshBrief\(name\)/, 'Send stores the role before rebuilding');
-  assert.match(launchRoute, /writeBriefPacketAt\([\s\S]*writeCurrentRoleAt\(birthDir,[^\n]+\)/, 'birth stores the role fact after the packet creates its record directory');
-  for (const writer of ['writeObjective', 'setSessionTitle', 'setTags', 'setLeads', 'writeMandate', 'writeAgentBriefAt', 'writeCurrentRole']) assert.match(configuration, new RegExp(writer));
+  assert.match(configuration, /const changes = briefChanges\(before, after\);[\s\S]*if \(!changes\) return/, 'nothing changed: nothing sent');
+  assert.match(configuration, /return configureBrief\(name, \{ title: next\.title, role: next\.role, team: next\.team, mandate: next\.mandate, agent: next\.agent \}\)/, 'Send edits the document through the one route');
+  for (const writer of ['writeObjective', 'setSessionTitle', 'setTags', 'setLeads', 'writeMandate']) assert.match(configuration, new RegExp(writer));
+  assert.doesNotMatch(configuration + launchRoute, /writeAgentBriefAt|writeCurrentRole|writeSnapshotAt/, 'no side files beside the document');
 });
 
-test('the birth brief is written once; an update writes AGENT_BRIEF.md and the record key (KAN-515)', () => {
-  assert.match(configuration, /writeBriefPacketAt\(dir, composed\.text, name, AGENT_BRIEF\)/, 'an update never rewrites the birth brief');
-  assert.match(configuration, /writeBriefRecord\(name, workRecordBrief\(composed\)\)/, 'an update writes the record onto the work record');
-  assert.match(launchRoute, /seedTegami\([\s\S]*writeBriefRecord\(resolved\.name, workRecordBrief\(resolved\.composed\)\)/, 'birth writes it once the work record exists');
+test('the birth brief is written once; an update writes AGENT_BRIEF.md and the document (KAN-515, KAN-605)', () => {
+  assert.match(configuration, /writeBriefPacketAt\(dir, after\.text, name, AGENT_BRIEF\)/, 'an update never rewrites the birth brief');
+  assert.match(configuration, /writeBriefRecord\(name, after\.doc\)/, 'an update writes the document onto the work record');
+  assert.match(launchRoute, /seedTegami\([\s\S]*writeBriefRecord\(resolved\.name, resolved\.composed\.doc\)/, 'birth writes it whole once the work record exists');
 });
 
-test('a live Agent re-briefs only on its configuration; a default never moves its record (owner, 2026-11-16)', async () => {
+test('a live Agent re-briefs only on its configuration; a default never moves its document (owner, 2026-11-16)', async () => {
   const files = {};
   for (const file of ['src/routes/brief-api.ts', 'src/work-items.ts', 'src/sockets.ts', 'src/routes/secrets-api.ts', 'src/commands/desk.ts']) files[file] = await readFile(new URL(`../${file}`, import.meta.url), 'utf8');
   const read = (file) => files[file];
-  for (const file of ['src/routes/brief-api.ts', 'src/work-items.ts', 'src/sockets.ts', 'src/routes/secrets-api.ts']) assert.doesNotMatch(read(file), /refreshAllBriefs|briefsChanged/, `${file} re-briefs nobody`);
-  assert.doesNotMatch(read('src/commands/desk.ts'), /refreshBrief/, 'a desk opened or closed moves no brief');
-  assert.match(configuration, /readBriefRecord\(name\)[\s\S]*const record: BriefRecord = \{\s*\.\.\.born,/, 'a rebuild starts from the record set at birth');
+  for (const file of ['src/routes/brief-api.ts', 'src/work-items.ts', 'src/sockets.ts', 'src/routes/secrets-api.ts']) assert.doesNotMatch(read(file), /refreshAllBriefs|briefsChanged|configureBrief/, `${file} re-briefs nobody`);
+  assert.doesNotMatch(read('src/commands/desk.ts'), /configureBrief/, 'a desk opened or closed moves no brief');
+  assert.match(configuration, /readBriefRecord\(name\)[\s\S]*buildBrief\(editBrief\(was, edit/, 'a rebuild is the builder over the edited document');
 });

@@ -135,29 +135,39 @@ record plus the files, nothing else.
 | Setting | hosted or self-hosted; Campaign; Workspace (its instructions, repositories, folders); integrations on; the MCP servers on; project management; the Services parts running |
 | Agent | role and Team(s), and the integrations on for its Team; mandate (Reach, Recruit, Output); provider, model, harness, launch mode |
 | Work | desk or checkout per repository; items held and watched |
-| Brief settings | each layer's add, block and only: user, Campaign, Workspace, Team, this Agent |
+| Brief settings | each layer's settings as born — add, block, only, integrations, pm: user, Campaign, Workspace, Team, this Agent |
 
-- Ronin writes the whole record onto the work record as the key `brief` (`src/tegami.ts`,
-  `writeBriefRecord`), at birth and on every update, as it writes `teams`: the parts above
-  (`session`, `user`, `people`, `setting`, `agent`, `work`, the shape of `src/brief-record.ts`)
-  and `brief_settings`, one `{add, block, only}` per layer. The tile's Work record shows it by
-  part. The Team roster, the Workspace and the Campaign own their values; the key is Ronin's
-  copy, written again on each update.
-- A value another place owns and keeps no copy of is read there when the brief is built: in a
-  hosted office, the people and the user's Lounge answers from `office_unit/members.json`
-  through `src/office-people.ts`.
+**One authority, one builder** (KAN-605). The record above is one document on the work record,
+the key `brief`, and it is the session's only authority for its brief.
+
+- **Birth writes it whole.** The New Agent path (`composeBrief`, `src/brief-build.ts`) resolves
+  user, machine, Campaign, Workspace, Team and Agent once into the complete document: the parts
+  above (`session`, `user`, `people`, `setting`, `agent`, `work`, the shape of
+  `src/brief-record.ts`), `setting.mcp_offered` (the MCP servers offered to its Campaign) and
+  `brief_settings`, one `{brief, integrations, pm}` per layer. Once the work record exists,
+  launch writes it as one key (`writeBriefRecord`, `src/tegami.ts`). The tile's Work record
+  shows it by part.
+- **The builder is pure.** `buildBrief(document, catalogs)` works out integrations on, project
+  management, the MCP servers on and a lead's Team integrations from the document's layers, puts
+  the catalog in play and renders the packet. Birth, the New Agent preview and the Configuration
+  all use it. It reads nothing else: no machine setting, default, Service, receipt, snapshot or
+  other work-record key.
+- **Only an explicit configuration change edits it.** The Configuration's Send and being made
+  lead (`configureBrief`, `src/agent-configuration.ts`) change title, role, lead, mandate and the
+  Agent's own layer on the document. Then they build the old document and the new one, write
+  `AGENT_BRIEF.md` and the document, and send the difference once if there is one. A move to
+  another Team is the one change that reads outside the document: it takes that Team's values
+  (its wipeboard, objective and Workspace, with the Workspace's repositories, folders and
+  instructions, and the Team and Workspace settings), resolved the way birth resolves them.
+  Provider, model, harness and launch mode stay as born.
+- **A default never reaches a live Agent** (owner, 2026-11-16). A user, machine, Campaign,
+  Workspace or Team default, a catalog file, an MCP record or a connection changed since birth
+  reaches only Agents born after it.
+- **Dynamic fields never rebuild it.** The objective, items, flags, watches, documents, desks
+  and the `teams` block are on the work record but not in the brief document, so they send
+  nothing.
 - Who is talking now is never in the brief: the per-message From line (`src/message-queue.ts`)
   says it.
-- **The record is set at birth and moves only with the Agent's configuration** (owner,
-  2026-11-16). A default changed since birth (user, machine, Campaign, Workspace, Team, a
-  catalog file, an MCP record, a connection) reaches Agents born after it, never a live one:
-  nothing re-briefs on it. A rebuild (`currentBrief`, `src/agent-configuration.ts`) starts from
-  the `brief` key and changes only what the configuration changed; a move to another Team brings
-  that Team's Setting, Workspace and Team settings. Provider, model, harness and launch mode
-  stay as born.
-- On a configuration change Ronin rebuilds the brief and sends the Agent the difference only when
-  the brief came out different. Items and the objective are on the record but not in the
-  brief, so they send nothing.
 
 **Ronin's own lines on the record.** The mandate is written by `writeMandate`
 (`src/tegami.ts`) at creation and on an Update. The `teams` block is one entry per Team
@@ -265,14 +275,12 @@ Every tool is a command on your PATH; `<tool> --help` gives its syntax.
   an update reaches them.
 - **The birth receipt** (`birth-receipt.json`) records the brief's path, bytes, lines,
   terminator and over-budget state.
-- **An update** (`refreshBrief`, `src/agent-configuration.ts`) rebuilds the brief and, when it
-  differs from what the Agent was last told, sends "Your brief changed" with the facts that
-  changed and the behaviours and tools that came into play (at their depth) or left it, and the
-  path of `AGENT_BRIEF.md`. What was told is `brief-told.json` beside the brief: each fact,
-  mandate, behaviour and tool, at its depth, and nothing else. The values it was told over are
-  the work record's `brief` key, so a fact changed is one whose line reads differently over that
-  record and the new one. A mandate change sends the new
-  mandate only. Nothing differs, nothing is sent.
+- **An update** (`configureBrief`, `src/agent-configuration.ts`) builds the document before
+  and after the edit. If the brief comes out different, it sends "Your brief changed" with the
+  facts whose line reads differently, the behaviours and tools that came into play (at their
+  depth) or left it, and the path of `AGENT_BRIEF.md` (`briefChanges`, `src/brief.ts`, a pure
+  comparison of the two builds). A mandate change sends the new mandate only. If nothing
+  differs, nothing is sent.
 - **Send** on the New Agent form sends only what changed; when nothing did, the form says "Its
   brief is unchanged: nothing was sent."
 - **The brief shows at the bottom of the work record** on the tile: `AGENT_BRIEF.md` once an

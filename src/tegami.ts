@@ -7,8 +7,7 @@ import { readTeamRoster } from './team-rosters.js';
 import { getProjectRoot, listSessions, type SessionInfo } from './tmux.js';
 import { mandate, type Mandate } from './agent-defaults.js';
 import { enqueueMessage } from './message-queue.js';
-import type { BriefRecord, BriefSettings } from './brief-record.js';
-import type { LayerName } from './brief-settings.js';
+import type { BriefDocument } from './brief-build.js';
 
 export interface TegamiCheckout {
   repo: string;
@@ -255,10 +254,10 @@ async function writeDerived(name: string, key: string, value: unknown, by: strin
   return true;
 }
 
-/** THE BRIEF RECORD ON THE WORK RECORD (docs/architecture/brief.md, The work record is the source of truth):
- * every value the brief was built over, and each layer's brief settings, as the key `brief`.
- * Ronin writes it at birth and on every update; no ack, the update sends its own message. */
-export type WorkRecordBrief = BriefRecord & { brief_settings: Partial<Record<LayerName, BriefSettings>> };
+/** THE BRIEF DOCUMENT ON THE WORK RECORD (docs/architecture/brief.md, The work record is the source of truth):
+ * every value the brief is built over, and each layer's settings, as the key `brief` (src/brief-build.ts).
+ * Written whole at birth and by the Configuration's Send; no ack, the update sends its own message. */
+export type WorkRecordBrief = BriefDocument;
 
 export async function writeBriefRecord(name: string, brief: WorkRecordBrief): Promise<boolean> {
   return writeDerived(name, 'brief', brief, name);

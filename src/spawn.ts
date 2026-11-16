@@ -20,7 +20,7 @@ import { initialCampaignId } from './campaign-scope.js';
 import { resolveLaunchSeed } from './launch-seed.js';
 import { templateProvenance } from './template-provenance.js';
 import { profileDir, resolveHouseSeatProfile, type HouseSeat } from './house-seats.js';
-import { agentBriefOf, composeBrief, type ComposedBrief } from './brief-build.js';
+import { agentBriefOf, composeBrief, type BuiltBrief } from './brief-build.js';
 import type { BriefSettings } from './brief-record.js';
 
 export interface SpawnForm {
@@ -81,7 +81,7 @@ export interface Resolved {
   team_wipeboard: string;
   team_state: '' | 'active' | 'archived';
   /** The brief, composed: record, layers, what is in play, the packet text. */
-  composed: ComposedBrief | null;
+  composed: BuiltBrief | null;
   kind: string;
   ignored: string[];
   installations: ResolvedInstallation[];
@@ -250,7 +250,7 @@ async function resolveLaunch(form: SpawnForm, facts: LaunchFacts) {
 }
 
 /** THE BRIEF for these facts (src/brief-build.ts): a Cowork Agent's, Mika's; none for a terminal. */
-export async function resolveBriefFor(form: SpawnForm, facts: LaunchFacts, launch?: Parameters<typeof composeBrief>[3]): Promise<ComposedBrief | null> {
+export async function resolveBriefFor(form: SpawnForm, facts: LaunchFacts, launch?: Parameters<typeof composeBrief>[3]): Promise<BuiltBrief | null> {
   if (!facts.coworkAgent || !facts.agent) return null;
   return composeBrief(form, facts, agentBriefOf(form), launch);
 }

@@ -8,7 +8,7 @@
  *   Campaign   campaign.config.{brief, integrations, pm}
  *   Workspace  the Workspace record's {brief, integrations, pm}
  *   Team       the Team roster's {brief, integrations, pm}
- *   Agent      the work record (composition-brief.json beside it)
+ *   Agent      the work record's brief document (brief_settings.agent)
  *
  * Integrations are on at a layer and on below it, unless a layer below turns one off
  * (`brief.integrations_off`, narrowing): off holds for that layer and every one under it. An

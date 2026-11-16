@@ -9,7 +9,10 @@ import type { BriefRecord } from '../src/brief-record.js';
 import { briefOff, cascade, layerOf, resolveBrief, type Layer } from '../src/brief-settings.js';
 import { mandate } from '../src/agent-defaults.js';
 import { templateMandate } from '../src/resource-adapters.js';
-import { briefChanges, briefSnapshot, fillLine, renderBrief } from '../src/brief.js';
+import { briefChanges, fillLine, renderBrief } from '../src/brief.js';
+
+/** One build over a record: what briefChanges compares. */
+const built = (catalog: Catalog, doc: BriefRecord) => ({ doc, resolved: resolveBrief(catalog, doc, []) });
 
 const record = (over: Partial<{ type: BriefRecord['session']['type']; team: string; lead: boolean; pm: boolean; desk: boolean; integrations: string[]; mcp: BriefRecord['setting']['mcp']; role: BriefRecord['agent']['role'] }> = {}): BriefRecord => ({
   session: { name: 'demo', title: '', type: over.type ?? 'cowork', template: '', task: 'Do it' },
@@ -19,7 +22,7 @@ const record = (over: Partial<{ type: BriefRecord['session']['type']; team: stri
     new_owner: false, account: '',
   },
   people: [],
-  setting: { hosted: false, campaign: 'c', workspace: 'w', instructions: '', integrations: over.integrations ?? [], mcp: over.mcp ?? [], pm: over.pm ?? false, services: [] },
+  setting: { hosted: false, campaign: 'c', workspace: 'w', instructions: '', integrations: over.integrations ?? [], mcp_offered: over.mcp ?? [], mcp: over.mcp ?? [], pm: over.pm ?? false, services: [] },
   agent: { role: over.role ?? 'coworker', team: over.team ?? '', lead: over.lead ?? false, wipeboard: '', team_objective: '', team_integrations: [], reach: 'plan', recruit: 'nobody', output: ['code'], provider: '', model: '', harness: '', launch_mode: 'configured' },
   work: { repos: [], where: [], repo_lines: '', folder_lines: '', desk: over.desk ?? false, checkout: false },
 });
@@ -187,34 +190,29 @@ test('the brief: facts, behaviours with their tools, other tools, the help line,
   assert.doesNotMatch(text, /YOUR TOOLS|SOUGHT|On your shelf|In this packet/);
 });
 
-test('an update sends only what differs', () => {
+test('an update sends only what differs between the two builds', () => {
   const before = record();
-  const snap = briefSnapshot(resolveBrief(CATALOG, before, []));
-  assert.deepEqual(Object.keys(snap), ['told'], 'brief-told.json keeps only what was told');
-  assert.equal(briefChanges(snap, before, resolveBrief(CATALOG, before, []), before), '', 'nothing changed: nothing sent');
+  assert.equal(briefChanges(built(CATALOG, before), built(CATALOG, before)), '', 'nothing changed: nothing sent');
   const after = record({ pm: true, team: 't', lead: true });
-  const changes = briefChanges(snap, before, resolveBrief(CATALOG, after, []), after);
+  const changes = briefChanges(built(CATALOG, before), built(CATALOG, after));
   assert.match(changes, /### Lead\nLead text\./);
   assert.match(changes, /### PM\nItems\./);
   assert.match(changes, /- `item`: Work items\./);
   assert.doesNotMatch(changes, /Base text/);
-  const left = briefChanges(briefSnapshot(resolveBrief(CATALOG, after, [])), after, resolveBrief(CATALOG, before, []), before);
+  const left = briefChanges(built(CATALOG, after), built(CATALOG, before));
   assert.match(left, /No longer in your brief: Lead, PM, item\./);
   const renamed = { ...before, user: { ...before.user, name: 'Alex' } };
-  assert.equal(briefChanges(snap, before, resolveBrief(CATALOG, renamed, []), renamed), '- User: Alex, owner', 'a fact changed on the record: that fact line only');
+  assert.equal(briefChanges(built(CATALOG, before), built(CATALOG, renamed)), '- User: Alex, owner', 'a fact changed on the record: that fact line only');
 });
 
-test('a behaviour whose wording changed is sent again, at its depth (KAN-549)', () => {
+test('a behaviour whose wording differs between builds is sent again, at its depth (KAN-549)', () => {
   const r = record();
-  const snap = briefSnapshot(resolveBrief(CATALOG, r, []));
   const edited: Catalog = { ...CATALOG, behaviours: CATALOG.behaviours.map((one) => one.name === 'base'
     ? file('behaviours', 'base', '# Base\n- **seed:** Base seed.\n- **depth:** full\n- **order:** 1\n\nBase text, reworded.\n\n## Inner\nx') : one) };
-  const changes = briefChanges(snap, r, resolveBrief(edited, r, []), r);
+  const changes = briefChanges(built(CATALOG, r), built(edited, r));
   assert.match(changes, /### Base\nBase text, reworded\./);
   assert.doesNotMatch(changes, /No longer in your brief/);
-  assert.equal(briefChanges(briefSnapshot(resolveBrief(edited, r, [])), r, resolveBrief(edited, r, []), r), '', 'told once: nothing again');
-  const unhashed = { told: Object.fromEntries(Object.entries(snap.told).map(([name, { text, ...rest }]) => [name, rest])) };
-  assert.equal(briefChanges(unhashed, r, resolveBrief(edited, r, []), r), '', 'a snapshot with no text hash counts as told as it stands');
+  assert.equal(briefChanges(built(edited, r), built(edited, r)), '', 'the same build: nothing');
 });
 
 
@@ -240,7 +238,7 @@ test('mcp-servers: one generated line per MCP server on, in play only when one i
   const text = renderBrief('demo', r, resolveBrief(catalog, r, []));
   assert.match(text, /### MCP servers\n.*keys: `mcp tools <name>`.* runs one\.\n- wispr-flow: Voice dictation and transcripts\.\n- linear: Issues in Linear\. \(`mcp-servers`\)/);
   const fewer = record({ mcp: [{ name: 'linear', description: 'Issues in Linear.' }] });
-  const changes = briefChanges(briefSnapshot(resolveBrief(catalog, r, [])), r, resolveBrief(catalog, fewer, []), fewer);
+  const changes = briefChanges(built(catalog, r), built(catalog, fewer));
   assert.match(changes, /### MCP servers\n.*\n- linear: Issues in Linear\. \(`mcp-servers`\)/, 'a server gone: the seed is sent again');
   assert.doesNotMatch(changes, /wispr-flow/);
 });

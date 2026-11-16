@@ -39,6 +39,7 @@ test('the fullest stock brief fits one read (docs/architecture/brief.md, The bri
       hosted: false, campaign: 'home_machine', workspace: 'ronin_cowork', instructions: 'Work in small, reviewed steps.',
       integrations, pm: true, services: ['ronin_services'],
       // An MCP server on: the mcp-servers seed lists it.
+      mcp_offered: [{ name: 'wispr-flow', description: 'Voice dictation and transcripts.' }],
       mcp: [{ name: 'wispr-flow', description: 'Voice dictation and transcripts.' }],
     },
     agent: {

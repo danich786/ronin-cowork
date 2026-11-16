@@ -36,9 +36,9 @@ import { expandLookup } from '../lookup.js';
 import { count } from '../counts.js';
 import { broadcastEvent, pushTeams } from '../ws/events.js';
 import { announceTeamChanges } from './wipeboards-api.js';
-import { memberEnded, teamChanged, writeConfiguration, writeTeams } from '../tegami.js';
+import { memberEnded, readBriefRecord, teamChanged, writeConfiguration, writeTeams } from '../tegami.js';
 import { readAgentComposition } from '../agent-composition.js';
-import { configurationSends, refreshBrief, updateConfiguration } from '../agent-configuration.js';
+import { configurationSends, configureBrief, updateConfiguration } from '../agent-configuration.js';
 import { agentBriefOf } from '../brief-build.js';
 import { mandate } from '../agent-defaults.js';
 import { emitSessionEnd } from '../sockets.js';
@@ -650,7 +650,11 @@ export function registerSessions(app: express.Express): void {
       await teamChanged([...moved(tagsBefore, tags), ...moved(before, leads)], callerOf(req), name).catch(() => {});
       count('lead.set', { n: leads.length });
       // Made lead (or no longer): the brief says so, and sends only what changed.
-      const delivered = await refreshBrief(name).then((r) => r.sent ? 'queued' : null, () => 'not queued');
+      // The brief document's Team stays while the Agent is still on it.
+      const doc = await readBriefRecord(name).catch(() => null);
+      const team = doc && tags.includes(doc.agent.team) ? doc.agent.team : tags[0] ?? '';
+      const delivered = await configureBrief(name, { team, lead: !!team && leads.includes(team) })
+        .then((r) => r.sent ? 'queued' : null, () => 'not queued');
       res.json({ ok: true, team_lead: leads, tags, delivery: delivered });
     } catch (e) {
       res.status(500).json({ error: String((e as Error)?.message ?? e) });
