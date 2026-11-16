@@ -12,7 +12,8 @@
  *
  * Integrations are on at a layer and on below it, unless a layer below turns one off
  * (`brief.integrations_off`, narrowing): off holds for that layer and every one under it. An
- * MCP server is on at the Campaign layer for the Campaigns its record offers it to. Jira on is
+ * MCP server or web API record's Campaigns only make it available (listed in the pickers), not
+ * on: it is on through these same switches, like a bridge (KAN-607). Jira on is
  * project management on. Files in play: each header's `when:` and
  * `depth:`, then every layer's add (the higher depth holds), then every block, then each
  * screen (`only`), which covers facts, behaviours and tools: a behaviour let through brings

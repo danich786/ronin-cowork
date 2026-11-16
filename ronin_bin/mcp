@@ -9,7 +9,7 @@ TOOL_DIR=$(dirname "$SELF")
 die() { echo "$1" >&2; exit "${2:-2}"; }
 usage() { cat <<'EOF_USAGE'
 Usage:
-  mcp list                                  the MCP servers offered to your Campaign: name and what it is for
+  mcp list                                  the MCP servers available to your Campaign: name and what it is for
   mcp tools <name> [<tool>]                 its tools, one line each with their arguments (? optional);
                                             with a tool, that one whole
   mcp call <name> <tool> [--json '<args>']  run a tool; --json - reads the arguments from stdin
@@ -21,7 +21,7 @@ Usage:
   mcp remove <name>                         its record goes; its secret stays
 Ronin attaches the key: you never handle it. The key is the secret <name>-api-key unless --secret
 names another; it goes as Authorization: Bearer unless --send says otherwise. --campaigns blank
-offers the server to every Campaign.
+makes the server available to every Campaign; a layer's Integrations turns it on.
 Related: secret --help; ronin-help integrations
 EOF_USAGE
 }

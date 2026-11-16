@@ -9,7 +9,7 @@ TOOL_DIR=$(dirname "$SELF")
 die() { echo "$1" >&2; exit "${2:-2}"; }
 usage() { cat <<'EOF_USAGE'
 Usage:
-  api list                                  the web APIs offered to your Campaign: name, what it is, its base URL
+  api list                                  the web APIs available to your Campaign: name, what it is, its base URL
   api call <name> <METHOD> <path> [--json '<body>'|--json -] [--query k=v ...]
                                             call it: the path is under the API's base (/sites/x, not a
                                             full URL); prints HTTP <status>, then the body; never headers
@@ -20,7 +20,8 @@ Usage:
   api remove <name>                         its record goes; its secret stays
 Ronin attaches the key, and only on calls to the API's own host: you never handle it. The key is
 the secret <name>-api-key unless --secret names another; it goes as Authorization: Bearer unless
---send says otherwise. --campaigns blank offers the API to every Campaign.
+--send says otherwise. --campaigns blank makes the API available to every Campaign; a layer's
+Integrations turns it on.
 Related: mcp --help; secret --help; ronin-help integrations
 EOF_USAGE
 }

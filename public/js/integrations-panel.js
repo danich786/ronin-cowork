@@ -12,7 +12,8 @@
  * Add (name, address, sign-in) writes the record; Remove is one press; a key record pastes its
  * secret here (POST /api/secrets/<secret>, the field `secret ask` uses; the value is cleared the
  * moment it is sent); an oauth record's Sign in opens /api/mcp/oauth/start in a new tab; the
- * Campaigns it is offered to are ticked on the row (none ticked: every Campaign). An Add whose
+ * Campaigns it is available to are ticked on the row (none ticked: every Campaign); available is
+ * not on: a Campaign, Workspace, Team or Agent integrations switch turns it on. An Add whose
  * key is not saved yet opens the paste field for that secret, then adds again.
  */
 import { WorkspaceKit } from './workspace-kit.js';
@@ -127,10 +128,10 @@ export function createIntegrationsPanel(campaign, { panels = {}, embedded = fals
     return form;
   }
 
-  /** The Campaigns it is offered to, ticked; none ticked is every Campaign. */
+  /** The Campaigns it is available to, ticked; none ticked is every Campaign. Available is not on. */
   function campaignsEditor(row) {
     const box = el('fieldset', 'integrations-campaigns');
-    box.append(el('legend', '', t('integrations.campaigns', 'Campaigns offered')));
+    box.append(el('legend', '', t('integrations.campaigns', 'Available to Campaigns')));
     const list = el('div', 'integrations-campaign-list');
     const note = lineOf();
     const all = campaigns().filter((one) => one.state !== 'archived');
@@ -152,7 +153,7 @@ export function createIntegrationsPanel(campaign, { panels = {}, embedded = fals
         if (result.ok) row.mcp.campaigns = picked;
       },
     });
-    box.append(list, el('p', 'integrations-hint', t('integrations.campaigns_hint', 'None ticked: every Campaign.')), save.el, note);
+    box.append(list, el('p', 'integrations-hint', t('integrations.campaigns_hint', 'None ticked: every Campaign. Turn it on in a layer’s Integrations.')), save.el, note);
     return box;
   }
 
