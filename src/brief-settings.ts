@@ -13,7 +13,7 @@
  * Integrations are on at a layer and on below it, unless a layer below turns one off
  * (`brief.integrations_off`, narrowing): off holds for that layer and every one under it. An
  * MCP server is on at the Campaign layer for the Campaigns its record offers it to. Jira is set
- * at the Campaign and Workspace only: a Team's or Agent's Jira entry is ignored.
+ * at the Campaign and Workspace only: any other layer's Jira entry (user, Team, Agent) is ignored.
  *
  * Project management (`pm`) is its own setting, apart from Jira: on at the Campaign unless a
  * layer says otherwise, and the narrowest layer that says on or off holds. Files in play: each header's `when:` and
