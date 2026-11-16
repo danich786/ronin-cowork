@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# ronin-asking — the CLI hook that raises and lowers an Agent's asking flag (KAN-616).
+#
+# Claude Code and Codex run it on their own hook events (docs/agents/claude.md, codex.md):
+# the event arrives as JSON on stdin and goes to Ronin with the pane it came from, and Ronin
+# keeps whether that session is stopped at a question (src/asking.ts). It answers nothing
+# and holds nothing: it prints nothing, exits 0 at once, and a Ronin that is not there
+# changes nothing. It runs on every tool call, so it is one curl and no other process.
+set -u
+case "${1-}" in -h|--help) sed -n '2,8p' "$0" | cut -c3-; exit 0 ;; esac
+[ -n "${TMUX_PANE:-}" ] || exit 0
+payload=$(head -c 65536)
+cat >/dev/null # the rest is read, so the CLI's write never breaks
+# Only the three fields the flag needs, read off the top of the event: a tool's input can be
+# any size. Both CLIs write compact JSON with these keys ahead of the tool's input.
+field() { [[ $payload =~ \"$1\":\"([A-Za-z_]*)\" ]] && printf '%s' "${BASH_REMATCH[1]}"; }
+event=$(printf '{"pane":"%s","hook_event_name":"%s","tool_name":"%s","notification_type":"%s"}' \
+  "$TMUX_PANE" "$(field hook_event_name)" "$(field tool_name)" "$(field notification_type)")
+if [ -n "${RONIN_URL:-}" ]; then
+  curl -sS -m 2 -H 'content-type: application/json' --data "$event" "${RONIN_URL%/}/api/asking" >/dev/null 2>&1
+else
+  curl -sS -m 2 --unix-socket "${RONIN_SOCKET:-${RONIN_DATA_ROOT:-$HOME/.ronin}/run/ronin.sock}" \
+    -H 'content-type: application/json' --data "$event" http://ronin/api/asking >/dev/null 2>&1
+fi
+exit 0

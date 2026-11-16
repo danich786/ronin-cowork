@@ -14,6 +14,7 @@ import { agentTempEnv } from './agent-scope.js';
 import { agentBinDir } from './agent-install.js';
 import { boundOperatorSocket, OPERATOR_SOCKET_ENV } from './operator-socket.js';
 import { REPO_ROOT, storeDir } from './resources.js';
+import { setAhead } from './launch-ahead.js';
 
 /** The environment every start is handed beyond what the pane inherits: launch, Mika's
  *  restart and a restore alike (a restore once came back with a bare PATH, KAN-555).
@@ -102,7 +103,11 @@ export function processLaunch(request: LaunchRequest,
     await writeLaunchIdentity(identity);
     await emitSessionWillBorn(request.name);
     // TMPDIR on disk in the session folder, never /tmp (RAM): src/agent-scope.ts
-    await start(assigned.argv, { ...birthEnv(), ...await agentTempEnv(key), ...request.env, ...identity.env }, identity);
+    // What the CLI would ask before its first turn, answered; its asking hook (src/launch-ahead.ts).
+    const ahead = await setAhead(request.cli, request.cwd, home);
+    const exe = assigned.argv.findIndex((part) => path.basename(part) === request.cli);
+    const argv = exe < 0 ? assigned.argv : [...assigned.argv.slice(0, exe + 1), ...ahead, ...assigned.argv.slice(exe + 1)];
+    await start(argv, { ...birthEnv(), ...await agentTempEnv(key), ...request.env, ...identity.env }, identity);
     emitSessionBorn({ name: request.name, key, team: request.team, root: request.cwd, identity });
     return identity;
   });

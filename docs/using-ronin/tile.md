@@ -180,8 +180,9 @@ screen. While it works, the end of the conversation names the tool it is in (for
 *Bash · npm test*). Every Agent gets this, whichever provider it runs on: a CLI that keeps a
 log is read from its log, and one that keeps none is read from its terminal, less fully.
 
-*Asking you* comes from the terminal for every CLI: a permission prompt is drawn on the screen
-and no CLI writes it down.
+*Asking you* comes from the CLI itself: Claude Code and Codex tell Ronin through their hooks
+when they stop at a question or a permission, and when they move on. Where a CLI tells nothing
+(a login that lapsed mid-run), Ronin reads the question off the terminal.
 
 A question with options is answered in Terminal, never in Chat. While an Agent is asking, Chat
 ends with *Waiting for your answer in Terminal* and an **Answer in Terminal** button; the press

@@ -396,9 +396,9 @@ The implementation seam is deliberately small:
 - `src/status.ts` classifies visible terminal text as ready, working, or awaiting input.
   Delivery and Mika's startup read use the whole table; the board does not. What an Agent is
   doing on the roster is its **stance**, derived from the journal by the transcript part and
-  carried on the session row — the one thing still read off the pane for it is `asking`
-  (`asksForInput`), because a dialog writes no journal line in any CLI, and it takes
-  precedence ([Tile](../using-ronin/tile.md)).
+  carried on the session row. `asking` takes precedence ([Tile](../using-ronin/tile.md)): it
+  comes from the CLI's hooks (`src/asking.ts`), and from the pane (`asksForInput`) where no
+  hook tells, because a dialog writes no journal line in any CLI.
 - `src/send.ts` reads the active prompt, types the brief, submits it, and verifies it left.
 - `src/routes/launch.ts` builds the brief and runs that handshake after the CLI starts.
 - `tests/agent-prompts.test.ts` holds terminal fixtures for every supported prompt/dialog
