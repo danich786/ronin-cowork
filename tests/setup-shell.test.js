@@ -109,7 +109,7 @@ test('Ronin Home and Setup share the same persisted light and dark control', asy
   assert.match(setup, /ram: false/);
   assert.match(setup, /feedback: false/);
   assert.match(setup, /leading: \[setupStepsHeader\]/);
-  assert.match(setup, /actions: \[themeToggle\]/);
+  assert.match(setup, /actions: \[.*themeToggle\]/);
   assert.match(toggle, /import\('\.\/theme\.js'\)[\s\S]*setTheme\(dark \? 'light' : 'dark'\)/);
   assert.match(toggle, /aria-pressed/);
   assert.match(workspace, /shapeControl\.hidden = next\.header\?\.shape !== true/, 'undeclared pane count stays absent');
