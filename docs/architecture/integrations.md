@@ -107,6 +107,7 @@ connects, asks and closes.
 | `mcp call <name> <tool> --json '<args>'` | `POST /api/mcp/call` | runs the tool and prints its answer |
 | `mcp add <name> <reach> [--sign-in key\|oauth\|none] [--secret <n>] [--send <s>] [--campaigns <list>] [--description <d>]` | `POST /api/mcp/add` | connects, reads the server's description, writes the record. A key not yet saved: the command asks for it with `secret ask <secret>` and tries again |
 | `mcp remove <name>` | `POST /api/mcp/remove` | deletes the record; its secret stays until the owner removes it |
+| (the owner, in the browser) | `GET /api/mcp/oauth/start?name=` | an `oauth` record's sign-in: Ronin registers itself with the server's authorization server and comes back to the address the browser used; the tokens go in the record's secret and the broker renews them |
 
 On every call the broker reads the record and the secret, attaches the key as `send:` says,
 logs the caller and the tool (never the arguments' secrets, never the key), stops after 60
