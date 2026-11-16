@@ -47,7 +47,33 @@ test('a Workspace name with no bridge is a row; saved secrets show by name, neve
   assert.deepEqual(netlify.workspaces, ['site']);
   assert.ok(!JSON.stringify(rows).includes('secret-1'), 'a value never comes back');
   const supabase = rows.at(-1)!;
-  assert.deepEqual({ ...supabase }, { name: 'supabase', label: 'supabase', blurb: '', bridge: '', part: '', secrets: [], workspaces: ['site'] });
+  assert.deepEqual({ ...supabase }, { name: 'supabase', label: 'supabase', blurb: '', bridge: '', part: '', secrets: [], workspaces: ['site'], mcp: null });
+});
+
+test('every MCP server record is a row, read from its file; a record named like a bridge stays the bridge', async () => {
+  const dir = path.join(root, 'catalogs', 'integrations');
+  await mkdir(dir, { recursive: true });
+  await writeFile(path.join(dir, 'wispr-flow.md'), '# Wispr Flow\n- **description:** Voice dictation.\n- **reach:** https://mcp.example.com/mcp\n- **sign-in:** key\n- **secret:** wispr-flow-api-key\n- **send:** \n- **campaigns:** c1, c2\n');
+  await writeFile(path.join(dir, 'notion.md'), '# Notion\n- **description:** Pages.\n- **reach:** https://mcp.notion.com/mcp\n- **sign-in:** oauth\n- **secret:** notion-oauth\n- **campaigns:** \n');
+  await writeFile(path.join(dir, 'netlify.md'), '# Netlify MCP\n- **reach:** https://netlify.example/mcp\n- **sign-in:** key\n- **secret:** netlify-api-key\n');
+  await writeFile(path.join(dir, 'README.md'), '# not a record\n');
+  await writeFile(path.join(root, 'services_secrets', 'wispr-flow-api-key'), 'value-9', { mode: 0o600 });
+  await saveWorkspace({ ...normalizeWorkspace('c1', 'voice', {}), integrations: [{ provider: 'wispr-flow' }] });
+  const rows = await integrationsState('c1', parts);
+  const wispr = rows.find((row) => row.name === 'wispr-flow')!;
+  assert.equal(wispr.label, 'Wispr Flow');
+  assert.equal(wispr.blurb, 'Voice dictation.');
+  assert.deepEqual(wispr.secrets, ['wispr-flow-api-key']);
+  assert.deepEqual(wispr.workspaces, ['voice']);
+  assert.deepEqual(wispr.mcp, { reach: 'https://mcp.example.com/mcp', sign_in: 'key', secret: 'wispr-flow-api-key', saved: true, campaigns: ['c1', 'c2'] });
+  const notion = rows.find((row) => row.name === 'notion')!;
+  assert.deepEqual(notion.mcp, { reach: 'https://mcp.notion.com/mcp', sign_in: 'oauth', secret: 'notion-oauth', saved: false, campaigns: [] });
+  const netlify = rows.filter((row) => row.name === 'netlify');
+  assert.equal(netlify.length, 1);
+  assert.equal(netlify[0]!.bridge, 'netlify-bridge');
+  assert.equal(netlify[0]!.mcp, null);
+  assert.ok(!rows.some((row) => row.name === 'README'));
+  assert.ok(!JSON.stringify(rows).includes('value-9'), 'a value never comes back');
 });
 
 test('an owner bridge file adds an integration', async () => {

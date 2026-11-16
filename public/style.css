@@ -4483,6 +4483,19 @@ body {
 .integrations-fold > summary { cursor: pointer; padding: var(--space-inset); color: var(--fg-strong); }
 .integrations-fold-body { padding: 0 var(--space-inset) var(--space-inset); }
 .integrations-stones [data-keyed='true'] .sws-state { color: var(--ok); }
+/* MCP servers on the row (KAN-592): Campaigns ticked, the key's paste field, Sign in / Remove, Add. */
+.integrations-mcp, .integrations-add { display: grid; gap: var(--space-row); margin-top: var(--space-paragraph); }
+.integrations-campaigns { display: grid; gap: var(--space-row); margin: 0; padding: var(--space-inset); border: var(--edge-2) solid var(--line-2); }
+.integrations-campaigns > legend { color: var(--fg-strong); font-weight: var(--weight-strong); }
+.integrations-campaign-list { display: flex; flex-wrap: wrap; gap: var(--space-row) var(--space-paragraph); }
+.integrations-campaign { display: inline-flex; gap: 0.4em; align-items: center; }
+.integrations-campaigns > .wk-action { justify-self: start; }
+.integrations-hint, .integrations-paste-for { margin: 0; color: var(--muted); }
+.integrations-paste { display: grid; gap: var(--space-row); }
+.integrations-paste-entry { display: flex; gap: var(--space-row); align-items: center; }
+.integrations-paste-value { flex: 1; min-width: 0; }
+.integrations-said { margin: 0; overflow-wrap: anywhere; }
+.integrations-said:empty { display: none; }
 .setup-gbrain-line { margin: 0; color: var(--fg-strong); font-size: var(--text-body); line-height: var(--leading-body); }
 .setup-gbrain-line strong { font-weight: var(--weight-strong); }
 .setup-gbrain-hint { margin: 0; color: var(--muted); font-size: var(--text-body); line-height: var(--leading-body); }
