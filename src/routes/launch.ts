@@ -188,13 +188,7 @@ const readPane = async (name: string) => {
   const text = await capturePane(name, 0);
   return { ctx: scanContext(text), model: scanModel(text), asking: asksForInput(text) };
 };
-const cachedPane = createActivityCache(readPane);
-// tmux stamps activity by the second: a question answered and redrawn inside that second would
-// keep its cached reading. While it reads asking, each push reads the pane afresh.
-const loadPaneStatus = async (name: string, activity: number) => {
-  const pane = await cachedPane(name, activity);
-  return pane.asking ? readPane(name).catch(() => pane) : pane;
-};
+const loadPaneStatus = createActivityCache(readPane);
 
 /** AN AGENT FLAG (owner, 2026-11-15, KAN-527): the Agent itself waits on the owner, not an
  * item. Derived from the pane, never stored: it goes when the question leaves the screen. Its

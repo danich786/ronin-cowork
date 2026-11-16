@@ -64,10 +64,19 @@ const BACKOFF_MS = [200, 1_000, 5_000] as const;
 /* `#,` and not `,`: a bare comma inside #{S:} is tmux's own separator and is dropped, so every
  * session ran into the next ("a:1b:2"), no pane was ever seen to move, and the terminal read
  * never ran: no question reached Chat (owner, 2026-11-02). */
-export const ACTIVITY_SUBSCRIPTION = 'activity::#{S:#{session_name}:#{window_activity}#,}';
+/* `.0` while the stamp's second is still running, `.1` once it is over (KAN-616): the stamp
+ * counts whole seconds, so a dialog drawn in the second a pane was last read left nothing to
+ * report and the home row kept the earlier reading. tmux checks a subscription each second, so
+ * the flip is its own report, after the last draw of that second. `#{T:}` expands an option
+ * through strftime; NOW_OPTION holds `%s`, the current second. */
+export const NOW_OPTION = '@ronin-now';
+export const ACTIVITY_SUBSCRIPTION = `activity::#{S:#{session_name}:#{window_activity}.#{e|<|:#{window_activity},#{T:${NOW_OPTION}}}#,}`;
 /** Each session's panes' pane_dead flags; a pane dying stops what it left (src/tmux.ts). */
 export const PANE_DEAD_SUBSCRIPTION = 'pane-dead::#{S:#{session_name}=#{P:#{pane_dead}}#,}';
-const SUBSCRIPTIONS = [ACTIVITY_SUBSCRIPTION, PANE_DEAD_SUBSCRIPTION];
+const SUBSCRIBE: string[][] = [
+  ['set-option', '-g', NOW_OPTION, '%s'],
+  ...[ACTIVITY_SUBSCRIPTION, PANE_DEAD_SUBSCRIPTION].map((sub) => ['refresh-client', '-B', sub]),
+];
 const tmuxEnvironment = (): string => `${process.env.TMUX ?? ''}\0${process.env.TMUX_TMPDIR ?? ''}`;
 
 class ConnectionLostError extends Error {}
@@ -155,7 +164,7 @@ export class ControlTmuxClient implements TmuxClient {
     if ((kind === 'subscription' || kind === '%subscription-changed') && !this.activityRequested) {
       this.activityRequested = true;
       if (this.process && this.currentState === 'up') {
-        for (const sub of SUBSCRIPTIONS) void this.run(['refresh-client', '-B', sub]).catch(() => undefined);
+        for (const args of SUBSCRIBE) void this.run(args).catch(() => undefined);
       } else {
         void this.ensureConnected().catch(() => undefined);
       }
@@ -244,7 +253,7 @@ export class ControlTmuxClient implements TmuxClient {
       this.reconnectAttempt = 0;
       this.setState('up');
       if (this.activityRequested) {
-        for (const sub of SUBSCRIPTIONS) await this.controlRun(['refresh-client', '-B', sub], DEFAULT_TIMEOUT_MS);
+        for (const args of SUBSCRIBE) await this.controlRun(args, DEFAULT_TIMEOUT_MS);
       }
       this.syncProcessRefs();
     } catch (error) {

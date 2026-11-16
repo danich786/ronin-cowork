@@ -280,16 +280,19 @@ test("on('subscription') installs the activity session loop and parses its value
   let seen: Notification | undefined;
   client.on('subscription', (notification) => { seen = notification; });
   const child = await childAt(children);
+  // The clock option the subscription reads goes first (KAN-616), then the subscription.
+  assert.equal(await written(child), "'set-option' '-g' '@ronin-now' '%s'\n");
+  child.send('%begin 3 1 0', '%end 3 1 0');
   assert.equal(
     await written(child),
-    "'refresh-client' '-B' 'activity::#{S:#{session_name}:#{window_activity}#,}'\n",
+    "'refresh-client' '-B' 'activity::#{S:#{session_name}:#{window_activity}.#{e|<|:#{window_activity},#{T:@ronin-now}}#,}'\n",
   );
-  child.send('%begin 3 1 0', '%end 3 1 0');
+  child.send('%begin 3 2 0', '%end 3 2 0');
   await new Promise((resolve) => setImmediate(resolve));
-  child.send('%subscription-changed activity $1 @1 0 %1 : alpha:123,beta:456');
+  child.send('%subscription-changed activity $1 @1 0 %1 : alpha:123.1,beta:456.0');
   assert.equal(seen?.kind, 'subscription');
   assert.equal(seen?.subscription, 'activity');
-  assert.equal(seen?.value, 'alpha:123,beta:456');
+  assert.equal(seen?.value, 'alpha:123.1,beta:456.0');
 });
 
 test('an importing process exits after its command leaves the control connection idle', async () => {
