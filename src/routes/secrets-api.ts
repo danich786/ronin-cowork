@@ -3,6 +3,8 @@ import type express from 'express';
 import { homedir } from 'node:os';
 import { SecretBadInput, answerSecret, askSecret, dropAsk, secretExpiries, secretFile, secretNames, secretsDir, setSecretExpiry } from '../secrets.js';
 import fs from 'node:fs';
+import { readMcpRecords } from '../mcp-records.js';
+import { sockets } from '../sockets.js';
 
 const text = (v: unknown): string => (typeof v === 'string' ? v : '');
 const fail = (res: express.Response, e: unknown): void => {
@@ -49,6 +51,10 @@ export function registerSecrets(app: express.Express): void {
       const value = req.body?.cancel ? null : text(req.body?.value);
       const answer = await answerSecret(req.params.name, value, text(req.body?.session), text(req.body?.expires));
       res.json({ ok: true, answer, name: req.params.name });
+      // A record that names this secret said "(needs its key…)" in running briefs: clear it now (KAN-600).
+      if (answer === 'saved') {
+        void readMcpRecords().then((records) => { if (records.some((r) => r.secret === req.params.name)) sockets.briefsChanged(); }).catch(() => {});
+      }
     } catch (e) { fail(res, e); }
   });
 }
