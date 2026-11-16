@@ -5,7 +5,7 @@ import { storeDir } from './resources.js';
 
 export type DefinitionKind =
   | 'desk_profiles' | 'lexicons' | 'services'
-  | 'templates/agents' | 'templates/teams';
+  | 'templates/agents' | 'templates/teams' | 'templates/canvases';
 
 export interface Definition {
   name: string;

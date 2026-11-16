@@ -197,7 +197,7 @@ objective, team, each repo and folder with its directory, and `integrations`, th
 as they are, `[]` when it has none; `null` when there is no Workspace), and `repos`,
 the Agent's own entries. Canvases read nothing until the `canvas` tool exists.
 
-When a line changes for a lead's Team (a plan written, ordered or given to a Team, a canvas added or removed, an
+When a line changes for a lead's Team (a plan written, ordered or given to a Team, a canvas made, an
 epic made, moved or closed, a repo or folder added), the lead alone gets the usual "Your work
 record changed", once for writes that come together: an ordered plan that makes several epics is
 one notice. Only what the lines print counts: a write that leaves every line as it was (a
