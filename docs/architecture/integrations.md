@@ -88,12 +88,11 @@ bridge (`netlify-api` beside `netlify`) gets its own line: it does what the brid
 - **Narrowing.** A Workspace, Team or Agent can turn an integration off for itself and below,
   through its brief settings. That is the brief model's rule, on at the top and blocking the
   only way down, applied to integrations. Today integrations only add down the layers; the
-  block is built in Team behaviours' epic (w676).
+  block is built in Team behaviours' epic (w676). Narrowing decides who is told, not who may call.
 - **Curated bridges** stay as they are: turned on at a Campaign, Workspace, Team or Agent.
-- **What the broker allows.** It refuses a call only outside the record's Campaigns. Inside
-  them, the layers decide what the brief teaches, not what the broker runs: a call from an
-  Agent that does not have the server on still runs, and its log line says so. *Pending the
-  owner's word (web_lead, 2026-11-16).*
+- **The broker refuses no one** (the owner, 2026-11-16: no guards). The record's Campaigns and
+  the layers decide only who is told: the brief's lines, and what `mcp list` and `api list` show
+  for the caller's Campaign. Any Agent can call any record by name, and the log names the caller.
 
 ## What Agents are told
 
