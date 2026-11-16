@@ -7,4 +7,4 @@
 
 ## Usage
 
-`templates` | `ls` | `create <name> [--template <t>]` | `read <name>` | `edit <name> add|change|remove …`; `--workspace <name>` as `plan`. A canvas name is lowercase letters, digits and -. A canvas is Markdown in the Workspace's plans folder (`canvases/<name>.md`), committed like a plan; it stores blocks and typed entries, never a live reading. A live block's `read:` lines are commands (`netlify sites`, …) run as you, each time. `canvas --help`.
+`templates` | `ls` | `create <name> [--template <t>]` | `read <name>` | `edit <name> add|change|remove …`; `--workspace <name>` as `plan`. A canvas name is lowercase letters, digits and -. A canvas is Markdown in the Workspace's plans folder (`canvases/<name>.md`), committed like a plan; it stores blocks and typed entries, never a live reading and never a command. An integration block's commands (`netlify sites`, …) are its template's, from the catalog; `canvas read` runs them as you, each time. `canvas --help`.

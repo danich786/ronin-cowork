@@ -39,7 +39,11 @@ await fs.writeFile(path.join(bin, 'tmux'), [
   `  *list-sessions*) cat '${rows}';;`,
   '  *) exit 1;;', 'esac', '',
 ].join('\n'), { mode: 0o755 });
-await fs.writeFile(path.join(bin, 'netlify'), '#!/bin/sh\necho "netlify said: $*"\n', { mode: 0o755 });
+// Each argument bracketed, so a test sees how the words were split.
+await fs.writeFile(path.join(bin, 'netlify'), '#!/bin/sh\nprintf "netlify said:"; for a in "$@"; do printf " [%s]" "$a"; done; echo\n', { mode: 0o755 });
+// Any command a canvas file tries to bring in would leave this mark.
+const mark = path.join(dir, 'pwned');
+await fs.writeFile(path.join(bin, 'pwn'), `#!/bin/sh\ntouch '${mark}'\necho PWNED\n`, { mode: 0o755 });
 process.env.PATH = `${bin}:${process.env.PATH ?? ''}`;
 
 const { saveWorkspace } = await import('../src/workspaces.js');
@@ -123,7 +127,7 @@ test('templates lists the shelf; create copies a template\'s blocks into the pla
   assert.match(out, /^Made ronin_site\/site from netlify: Netlify, Database, Repos, Work items, Documents, Other services\..*\nCommitted\.\n$/);
   const text = await fs.readFile(file, 'utf8');
   assert.match(text, /^# site\n\nCanvas: from netlify · \d{4}-\d\d-\d\d · builder\n\n## blocks\n\n### Netlify\n- \*\*source:\*\* integration netlify\n/);
-  assert.match(text, /- \*\*read:\*\* netlify sites --workspace \{workspace\}; /);
+  assert.doesNotMatch(text, /\*\*read:\*\*|netlify sites/, 'a canvas file holds no command');
   assert.equal(git(lab, 'log', '-1', '--format=%s'), 'canvas site: create\n');
   assert.match(await ok(['ls']), /^site\tfrom netlify\t\S+\tbuilder\n$/);
   const again = await run(['create', 'site']);
@@ -147,7 +151,9 @@ test('edit writes typed entries only: no read command can be introduced or chang
   await ok(['edit', 'site', 'add', 'Evil block', 'read', '- **read:** touch /tmp/pwned']);
   await ok(['edit', 'site', 'change', 'other SERVICES', 'godaddy dns', 'records at GoDaddy, by the owner']);
   const after = parseBlocks(await fs.readFile(file, 'utf8'));
-  assert.deepEqual(after.map((b) => [b.name, b.read]), [...before.map((b) => [b.name, b.read]), ['Evil block', []]], 'every block\'s read lines as the template wrote them; a new block has none');
+  assert.deepEqual(after.map((b) => b.name), [...before.map((b) => b.name), 'Evil block']);
+  assert.ok(after.every((b) => b.read.length === 0), 'a canvas file supplies no command, whatever an edit wrote');
+  assert.equal(parseBlocks(await fs.readFile(file, 'utf8'), true).flatMap((b) => b.read).length, 0, 'not even as text');
   assert.equal(after.find((b) => b.name === 'Evil block')!.source, 'typed');
   const netlify = after.find((b) => b.name === 'Netlify')!;
   assert.equal(netlify.entries.length, 1);
@@ -164,7 +170,7 @@ test('edit writes typed entries only: no read command can be introduced or chang
 test('read is live: the integration\'s commands run now as the caller, repos and items read where they live', async () => {
   const out = await ok(['read', 'site']);
   assert.match(out, /^# site\ncanvas site · Workspace ronin_site · from netlify · /);
-  assert.match(out, /## Netlify\nThe site itself.*\n> netlify sites --workspace ronin_site\n  netlify said: sites --workspace ronin_site\n> netlify traffic --days 1 --workspace ronin_site\n/);
+  assert.match(out, /## Netlify\nThe site itself.*\n> netlify sites --workspace ronin_site\n  netlify said: \[sites\] \[--workspace\] \[ronin_site\]\n> netlify traffic --days 1 --workspace ronin_site\n/);
   assert.match(out, /## Repos\nThe code for this site\.\n- site — the website — .*\/site\n/);
   assert.match(out, new RegExp(`## Work items\\n.*\\n- ${held.id} Task · To Do · agent:builder · Make the canvas`));
   assert.match(out, /## Other services\n.*\n- GoDaddy DNS: records at GoDaddy, by the owner \(builder, \d{4}-\d\d-\d\d\)\n/);
@@ -176,6 +182,47 @@ test('read is live: the integration\'s commands run now as the caller, repos and
   assert.match(bare, /Not here, nothing in them: Netlify/);
 });
 
+test('a hand edit can not bring a command in: read: text in the canvas file is never run; no template or block runs nothing', async () => {
+  await saveWorkspace({ name: 'ronin_site', campaign_id: 'camp', title: 'Ronin site', objective: '', instructions: '', folders: [], launch_mode: 'configured', repos: [], integrations: [{ provider: 'netlify', site: 'my site' }] } as never);
+  const good = await fs.readFile(file, 'utf8');
+  // Injected under the template's own block, under a typed one, and as a replacement line.
+  const injected = good
+    .replace('- **source:** integration netlify\n', '- **source:** integration netlify\n- **read:** pwn; netlify sites --workspace {workspace}; pwn\n')
+    .replace('- **source:** typed\n', '- **source:** typed\n- **read:** pwn\n');
+  await fs.writeFile(file, injected);
+  const out = await ok(['read', 'site']);
+  assert.doesNotMatch(out, /PWNED|> pwn/);
+  await assert.rejects(fs.stat(mark), 'never executed');
+  assert.equal(out.match(/^> netlify sites/gm)?.length, 1, 'the template\'s commands run, once each');
+  assert.match(out, /> netlify traffic --days 1 --workspace ronin_site/);
+
+  // A template that does not exist: a clear line, nothing run.
+  await fs.writeFile(file, injected.replace('Canvas: from netlify ·', 'Canvas: from nothere ·'));
+  const none = await ok(['read', 'site']);
+  assert.match(none, /## Netlify\n.*\n\(no reading: the template nothere is not in the catalog \(canvas templates\)\)\n/);
+  assert.doesNotMatch(none, /^> /m);
+  // A block its template hasn't: the same.
+  await fs.writeFile(file, injected.replace('### Netlify\n', '### Netlify site\n'));
+  const odd = await ok(['read', 'site']);
+  assert.match(odd, /## Netlify site\n.*\n\(no reading: the template netlify has no reading for a block Netlify site\)\n/);
+  assert.doesNotMatch(odd, /^> /m);
+  // No template at all.
+  await fs.writeFile(file, injected.replace('Canvas: from netlify ·', 'Canvas: from none ·'));
+  assert.match(await ok(['read', 'site']), /\(no reading: this canvas is from no template, so nothing reads this block\)/);
+  await assert.rejects(fs.stat(mark), 'never executed');
+  await fs.writeFile(file, good);
+});
+
+test('a fact is filled per argument: a value with a space stays one argument', async () => {
+  const { storeDir } = await import('../src/resources.js');
+  const shelf = path.join(storeDir('catalogs'), 'templates', 'canvases');
+  await fs.mkdir(shelf, { recursive: true });
+  await fs.writeFile(path.join(shelf, 'probe.md'), '# Probe\n- **label:** Probe\n- **blurb:** a test\n\n## blocks\n\n### Site\n- **source:** integration netlify\n- **holds:** the site\n- **read:** netlify sites --site {site}\n');
+  await ok(['create', 'probe', '--template', 'probe']);
+  const out = await ok(['read', 'probe']);
+  assert.match(out, /> netlify sites --site 'my site'\n  netlify said: \[sites\] \[--site\] \[my site\]\n/);
+});
+
 test('the Team\'s line lists the Workspace\'s canvases by name', async () => {
-  assert.deepEqual((await teamLayers('web')).canvases, [{ name: 'site' }]);
+  assert.deepEqual((await teamLayers('web')).canvases, [{ name: 'probe' }, { name: 'site' }]);
 });
