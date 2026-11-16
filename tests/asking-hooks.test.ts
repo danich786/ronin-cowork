@@ -88,6 +88,7 @@ test('KAN-618: working with no new record for 12 minutes is flagged; new activit
   assert.equal(timers.length, 2, 'and moves the one timer');
   assert.equal(quiet.check('a', 'awaiting_you', at), false, 'a finished turn is never stuck');
   assert.equal(quiet.check('b', 'working', undefined), false, 'nothing read yet: nothing to time');
+  assert.equal(quiet.check('c', 'working', 'line-1'), false, 'only a record time counts, not any string Date.parse takes');
 });
 
 test('Codex: an approval flags; Stop or the next prompt lowers it', () => {

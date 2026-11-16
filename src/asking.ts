@@ -42,6 +42,7 @@ export const forgetAsking = (session: string): void => void asking.delete(sessio
  * the home row already has; new activity moves it and the flag goes. One timer per Agent, set
  * for the moment `at` turns 12 minutes old: it reads nothing, it only asks for the row again.
  */
+const ISO_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
 export const NO_PROGRESS_MS = 12 * 60 * 1000;
 export function createNoProgress(due: (session: string) => void, now: () => number = Date.now,
   schedule: (fire: () => void, ms: number) => unknown = (fire, ms) => setTimeout(fire, ms).unref()) {
@@ -54,7 +55,9 @@ export function createNoProgress(due: (session: string) => void, now: () => numb
   return {
     /** Is this row's Agent stuck? Arms or moves its one timer as a side effect. */
     check(session: string, stance: unknown, at: unknown): boolean {
-      const since = typeof at === 'string' ? Date.parse(at) : NaN;
+      // A record's time is ISO (every rireki reader writes it so); Date.parse alone would read
+      // any string, 'line-1' as 2001.
+      const since = typeof at === 'string' && ISO_TIME.test(at) ? Date.parse(at) : NaN;
       if (stance !== 'working' || !Number.isFinite(since)) { disarm(session); return false; }
       const left = since + NO_PROGRESS_MS - now();
       if (left <= 0) { disarm(session); return true; }
