@@ -29,7 +29,7 @@ Ronin refuses any other shape and says why. Every id an item has had still finds
 - **Task:** work that needs doing that nobody sees directly: setup, research, docs, a check.
 - **Bug:** something that should work and doesn't.
 - **Subtask:** a step of one of those that someone else may take.
-- Unsure: Task. Put it under the epic it belongs to; if none fits, leave it with no parent.
+- Unsure: Task. When an epic obviously fits, make it with --parent <epic>; if none fits, no parent is fine.
 
 Write the objective as what done looks like to the person accepting it, in their words, one or
 two sentences. The technical detail belongs in the design doc or the commit.

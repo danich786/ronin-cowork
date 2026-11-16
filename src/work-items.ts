@@ -215,6 +215,12 @@ export function nextStep({ item, line }: Acknowledged): string {
   if (line.to === 'In Review' && line.note?.includes(`handed in by ${line.by}`)) return 'It stays yours until accepted or sent back.';
   return '';
 }
+/** THE EPIC HINT (owner, 2026-11-16, KAN-606): a level-0 item made with no parent is made as
+ * asked, and its reply adds one line naming the move under an epic. Soft only: nothing refuses.
+ * '' for an epic, a subtask, or an item made under a parent. */
+export function parentHint(item: Pick<WorkItem, 'id' | 'level' | 'parent'>): string {
+  return item.level === 0 && !item.parent ? `No parent: if an epic fits, item edit ${item.id} --parent <epic>.` : '';
+}
 /** Past this, a review line is no longer one glance. */
 export const REVIEW_LINE = 120;
 
