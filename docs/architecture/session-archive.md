@@ -18,7 +18,11 @@ The provider and tmux do different halves of the job:
    the live census.
 4. On rehydrate, Ronin asks the central agent registry for the installed provider CLI and
    its resume argv, then creates a new tmux session with that process. Today the verified
-   forms are `codex resume <uuid>` and `claude --resume <uuid>`.
+   forms are `codex resume <uuid>` and `claude --resume <uuid>`. A part that launched a
+   session with its own argv (`launchSession`'s `wrapArgv`) gives Core the same for its restore
+   with `wrapResumeArgv(name, wrap)`; every restore of that name runs the resume argv through
+   it. `rehydrateSession(id)` is the route called from inside the server (Ronin Services'
+   Irasshai uses both).
 5. The provider CLI loads its own conversation history. Ronin restores the session key,
    teams, leads, wipeboards, note, project root, control dial, agent stamp, provider UUID,
    and session type. Only then is the archive manifest removed.
