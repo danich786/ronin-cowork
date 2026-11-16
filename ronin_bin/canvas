@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # canvas — a Workspace's canvases (src/canvases.ts over /api/canvases). read is composite: Ronin
 # answers the blocks it reads itself (repos, items, documents) and each integration block's read
-# commands, which this tool runs as the caller, now, and never writes anywhere.
+# commands, from its template in the catalog (never from the canvas file), which this tool fills
+# per argument and runs as the caller, now, and never writes anywhere.
 . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/tool-count.sh" canvas "$@"
 set -u -o pipefail
 . "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"
@@ -21,8 +22,9 @@ Usage:
 Any command takes --workspace <name>; without it, your Team's Workspace (as plan).
 A canvas name is lowercase letters, digits and -. A canvas is Markdown in the Workspace's plans
 folder, canvases/<name>.md, committed there as a plan is. It keeps its blocks and typed entries
-only: a live block (an integration, the repos, the work items, the documents) is read each time
-read runs, never copied in. Block and entry names match any case. One line per entry, with a link
+only, never a command: a live block (an integration, the repos, the work items, the documents) is
+read each time read runs, never copied in, and an integration block runs its template's commands,
+from the catalog. Block and entry names match any case. One line per entry, with a link
 where there is one. Never put a key, token or password in a canvas: name the secret that holds
 it, never its value.
 Related: ronin-help canvases; canvas templates; plan --help
@@ -50,7 +52,7 @@ canvas_call() {
   [ -z "$body" ] || opts+=(-H 'content-type: application/json' --data-binary @-)
   out=$(printf '%s' "$body" | curl "${opts[@]}" -w '\n%{http_code}' "$url$path") || { echo "UNREACHABLE: Ronin did not answer at $url" >&2; return 5; }
   printf '%s' "${out%$'\n'*}" | REPLY_STATUS=${out##*$'\n'} python3 -c '
-import json, os, shlex, subprocess, sys
+import json, os, re, shlex, subprocess, sys
 status = os.environ["REPLY_STATUS"]
 try: d = json.loads(sys.stdin.read())
 except Exception: print("HTTP %s: Ronin answered without JSON" % status, file=sys.stderr); sys.exit(3)
@@ -68,9 +70,9 @@ if "canvases" in d:
     sys.exit(0)
 c = d["canvas"]
 CUT = 40
-def run(cmd):
-    try: argv = shlex.split(cmd)
-    except ValueError as e: return ["(can not read: %s)" % e]
+def fill(arg, facts):
+    return re.sub(r"\{([a-z_]+)\}", lambda m: facts.get(m.group(1)) or m.group(0), arg)
+def run(argv):
     try: p = subprocess.run(argv, capture_output=True, text=True, timeout=90)
     except FileNotFoundError: return ["(%s is not on this PATH)" % argv[0]]
     except subprocess.TimeoutExpired: return ["(no answer in 90s)"]
@@ -88,9 +90,13 @@ for b in c["blocks"]:
     print("## %s" % b["name"])
     if b["holds"]: print(b["holds"])
     for l in b["lines"]: print("- %s" % l)
+    if b.get("unavailable"): print("(no reading: %s)" % b["unavailable"])
     for cmd in b["run"]:
-        print("> %s" % cmd)
-        for l in run(cmd): print("  %s" % l)
+        # Split first, then fill each argument: a fact with a space stays one argument.
+        try: argv = [fill(a, b["facts"]) for a in shlex.split(cmd)]
+        except ValueError as e: print("> %s\n  (can not read: %s)" % (cmd, e)); continue
+        print("> %s" % shlex.join(argv))
+        for l in run(argv): print("  %s" % l)
     for e in b["entries"]:
         print("- %s: %s (%s, %s)" % (e["name"], e["line"], e["by"] or "?", e["at"] or "?"))
 if hidden: print("\nNot here, nothing in them: %s." % ", ".join(hidden))
