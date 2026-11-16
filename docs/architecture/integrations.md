@@ -111,8 +111,8 @@ connects, asks and closes.
 On every call the broker reads the record and the secret, attaches the key as `send:` says,
 logs the caller and the tool (never the arguments' secrets, never the key), stops after 60
 seconds, and answers `{ok, lines}`: the tool's text, cut at 400 lines with a note of what was
-cut. Content that is not text (an image, a file) is saved under the Agent's working folder and
-its path is printed. A failure is one line: what is missing (409, with what to set), what the
+cut. An image or audio is saved to a file under the system temp folder (`ronin-mcp/<caller>/`)
+and its path is printed. A failure is one line: what is missing (409, with what to set), what the
 server said (502), or that the part is not running (404: use the provider's own way).
 
 ## Settings › Integrations
