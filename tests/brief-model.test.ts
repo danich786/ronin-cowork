@@ -11,7 +11,7 @@ import { mandate } from '../src/agent-defaults.js';
 import { templateMandate } from '../src/resource-adapters.js';
 import { briefChanges, briefSnapshot, fillLine, renderBrief } from '../src/brief.js';
 
-const record = (over: Partial<{ type: BriefRecord['session']['type']; team: string; lead: boolean; pm: boolean; desk: boolean; integrations: string[]; role: BriefRecord['agent']['role'] }> = {}): BriefRecord => ({
+const record = (over: Partial<{ type: BriefRecord['session']['type']; team: string; lead: boolean; pm: boolean; desk: boolean; integrations: string[]; mcp: BriefRecord['setting']['mcp']; role: BriefRecord['agent']['role'] }> = {}): BriefRecord => ({
   session: { name: 'demo', title: '', type: over.type ?? 'cowork', template: '', task: 'Do it' },
   user: {
     name: 'Glen', email: '', first_name: '', last_name: '', nickname: '', role: 'owner', organization: '', job_title: '',
@@ -19,8 +19,8 @@ const record = (over: Partial<{ type: BriefRecord['session']['type']; team: stri
     new_owner: false, account: '',
   },
   people: [],
-  setting: { hosted: false, campaign: 'c', workspace: 'w', instructions: '', integrations: over.integrations ?? [], pm: over.pm ?? false, services: [] },
-  agent: { role: over.role ?? 'coworker', team: over.team ?? '', lead: over.lead ?? false, wipeboard: '', team_objective: '', reach: 'plan', recruit: 'nobody', output: ['code'], provider: '', model: '', harness: '', launch_mode: 'configured' },
+  setting: { hosted: false, campaign: 'c', workspace: 'w', instructions: '', integrations: over.integrations ?? [], mcp: over.mcp ?? [], pm: over.pm ?? false, services: [] },
+  agent: { role: over.role ?? 'coworker', team: over.team ?? '', lead: over.lead ?? false, wipeboard: '', team_objective: '', team_integrations: [], reach: 'plan', recruit: 'nobody', output: ['code'], provider: '', model: '', harness: '', launch_mode: 'configured' },
   work: { repos: [], where: [], repo_lines: '', folder_lines: '', desk: over.desk ?? false, checkout: false },
 });
 
@@ -73,7 +73,7 @@ test('one conditional function: words, negation, unknown never holds', () => {
     assert.equal(conditionHolds(word, r), false, word);
 });
 
-test('integrations and project management only add down the layers; Jira on is pm on', () => {
+test('integrations and project management add down the layers; Jira on is pm on', () => {
   const layers: Layer[] = [layerOf('campaign', { integrations: ['netlify'] }), layerOf('team', { pm: false, integrations: ['jira'] })];
   const on = cascade(layers);
   assert.deepEqual(on.integrations, { netlify: 'campaign', jira: 'team' });
@@ -217,3 +217,30 @@ test('a behaviour whose wording changed is sent again, at its depth (KAN-549)', 
   assert.equal(briefChanges(unhashed, r, resolveBrief(edited, r, []), r), '', 'a snapshot with no text hash counts as told as it stands');
 });
 
+
+test('narrowing: a layer turns off what is on above, for itself and below; Jira off is pm off (KAN-589)', () => {
+  const layers: Layer[] = [
+    layerOf('campaign', { integrations: ['jira', 'netlify', 'gbrain'] }),
+    layerOf('team', { brief: { integrations_off: ['netlify', 'jira'] } }),
+    layerOf('agent', { integrations: ['netlify'] }),
+  ];
+  const on = cascade(layers);
+  assert.deepEqual(on.integrations, { gbrain: 'campaign' }, 'off at the Team holds below it, an Agent add included');
+  assert.deepEqual(on.off, { netlify: 'team', jira: 'team' });
+  assert.deepEqual(on.pm, { on: false }, 'Jira narrowed off no longer turns project management on');
+  assert.deepEqual(layerOf('workspace', { brief: { integrations_off: ['gbrain', 'Bad Name'] } }).brief.integrations_off, ['gbrain']);
+  assert.equal(layerOf('workspace', { brief: {} }).brief.integrations_off, undefined, 'nothing off: no key');
+});
+
+test('mcp-servers: one generated line per MCP server on, in play only when one is (KAN-589)', async () => {
+  const catalog: Catalog = { facts: [], tools: [], behaviours: [(await readCatalog('behaviours')).find((one) => one.name === 'mcp-servers')!] };
+  assert.equal(resolveBrief(catalog, record(), []).behaviours.length, 0, 'no MCP server on: not told');
+  const r = record({ mcp: [{ name: 'wispr-flow', description: 'Voice dictation and transcripts.' }, { name: 'linear', description: 'Issues in Linear.' }] });
+  assert.equal(conditionHolds('mcp', r), true);
+  const text = renderBrief('demo', r, resolveBrief(catalog, r, []));
+  assert.match(text, /### MCP servers\n.*keys: `mcp tools <name>`.* runs one\.\n- wispr-flow: Voice dictation and transcripts\.\n- linear: Issues in Linear\. \(`mcp-servers`\)/);
+  const fewer = record({ mcp: [{ name: 'linear', description: 'Issues in Linear.' }] });
+  const changes = briefChanges(briefSnapshot(resolveBrief(catalog, r, [])), r, resolveBrief(catalog, fewer, []), fewer);
+  assert.match(changes, /### MCP servers\n.*\n- linear: Issues in Linear\. \(`mcp-servers`\)/, 'a server gone: the seed is sent again');
+  assert.doesNotMatch(changes, /wispr-flow/);
+});

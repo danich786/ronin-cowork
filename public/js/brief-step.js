@@ -27,7 +27,8 @@ export function briefValue(raw = {}) {
   const brief = raw.brief || {};
   const list = (rows) => (Array.isArray(rows) ? [...rows] : []);
   return {
-    brief: { add: list(brief.add).map((row) => ({ name: row.name, depth: row.depth === 'seed' ? 'seed' : 'full' })), block: list(brief.block), only: list(brief.only) },
+    brief: { add: list(brief.add).map((row) => ({ name: row.name, depth: row.depth === 'seed' ? 'seed' : 'full' })), block: list(brief.block), only: list(brief.only),
+      ...(list(brief.integrations_off).length ? { integrations_off: list(brief.integrations_off) } : {}) },
     integrations: list(raw.integrations),
     ...(typeof raw.pm === 'boolean' ? { pm: raw.pm } : {}),
   };
@@ -96,6 +97,9 @@ export function layerLinks({ team = '', open = {} } = {}) {
 export function paintBriefForm(host, { layer = 'agent', catalog = [], value = emptyBriefValue(), above = {}, inPlay = null, onChange = () => {}, openBehaviours = null, showIntegrations = true, linkFor = null } = {}) {
   const own = briefValue(value);
   const inherited = Object.fromEntries(Object.entries(above.integrations || {}).filter(([, from]) => from && from !== layer));
+  // Narrowing: off above holds here; this layer may turn off what is on above, for itself and below.
+  const offAbove = Object.fromEntries(Object.entries(above.off || {}).filter(([, from]) => from && from !== layer));
+  const ownOff = [...(own.brief.integrations_off || [])];
   const pmAbove = above.pm?.on && above.pm.from && above.pm.from !== layer ? above.pm.from : '';
   const named = new Map(catalog.map((row) => [row.name, row]));
   // View opens the file in the Behaviors surface (behaviour-surface.js), where the user can read or make their own version.
@@ -115,19 +119,30 @@ export function paintBriefForm(host, { layer = 'agent', catalog = [], value = em
   const played = new Map((inPlay || []).filter((row) => !(row.why || []).length || !row.why.every((need) => need === `add:${layer}`)).map((row) => [row.name, row]));
 
   /* Integrations, each card saying plainly whether it is on; then project management. */
-  const names = [...new Set([...integrationNames(catalog), ...Object.keys(inherited), ...own.integrations])].sort();
+  const names = [...new Set([...integrationNames(catalog), ...Object.keys(inherited), ...Object.keys(offAbove), ...ownOff, ...own.integrations])].sort();
+  const fromAbove = (name) => !!inherited[name] || ownOff.includes(name);
   const intBox = showIntegrations
     ? section(t('brief.integrations', 'Integrations'), layer === 'agent'
-      ? t('brief.integrations_help', 'On from the Campaign, Workspace or Team, plus any you turn on for this Agent.')
-      : t('brief.integrations_help_layer', 'On here is on for everything below.'))
+      ? t('brief.integrations_help', 'On from the Campaign, Workspace or Team, plus any you turn on for this Agent; turn one off for this Agent alone.')
+      : t('brief.integrations_help_layer', 'On or off here holds for everything below.'))
     : section(t('brief.pm', 'Project management'));
   if (showIntegrations) {
     const integrations = ask([{ fields: [{ key: 'integrations', label: t('brief.integrations', 'Integrations'), many: true, shape: 'rect', filter: false,
-      options: (now) => names.map((name) => (inherited[name]
-        ? { v: name, l: name, word: t('brief.on_from_word', 'On, from the {layer}', { layer: layerWord(inherited[name]) }), disabled: true }
-        : { v: name, l: name, word: (now.integrations || []).includes(name) ? t('brief.on', 'On') : t('brief.off', 'Off') })) }] }],
-    { value: { integrations: [...new Set([...Object.keys(inherited), ...own.integrations])] }, density: 'tight', exposed: true,
-      onChange: (next) => { own.integrations = next.integrations.filter((name) => !inherited[name]); emit(); } });
+      options: (now) => names.map((name) => {
+        const on = (now.integrations || []).includes(name);
+        if (offAbove[name]) return { v: name, l: name, word: t('brief.off_from_word', 'Off, from the {layer}', { layer: layerWord(offAbove[name]) }), disabled: true };
+        if (inherited[name]) return { v: name, l: name, word: on ? t('brief.on_from_word', 'On, from the {layer}', { layer: layerWord(inherited[name]) }) : t('brief.off_here', 'Off here and below') };
+        if (ownOff.includes(name)) return { v: name, l: name, word: on ? t('brief.on', 'On') : t('brief.off_here', 'Off here and below') };
+        return { v: name, l: name, word: on ? t('brief.on', 'On') : t('brief.off', 'Off') };
+      }) }] }],
+    { value: { integrations: [...new Set([...Object.keys(inherited).filter((name) => !ownOff.includes(name)), ...own.integrations])] }, density: 'tight', exposed: true,
+      onChange: (next) => {
+        const chosen = new Set(next.integrations);
+        own.integrations = next.integrations.filter((name) => !fromAbove(name) && !offAbove[name]);
+        const off = [...new Set([...Object.keys(inherited), ...ownOff])].filter((name) => !chosen.has(name));
+        if (off.length) own.brief.integrations_off = off; else delete own.brief.integrations_off;
+        emit();
+      } });
     intBox.append(integrations.el);
     destroyers.push(integrations);
   }

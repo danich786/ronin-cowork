@@ -2,11 +2,10 @@
 - **seed:** gbrain is the Agents' shared memory: search it before you start, and file what a later Agent will need.
 - **when:** integration:gbrain
 - **depth:** full
-- **mcp:**
 - **order:** 26
 
-gbrain is a searchable memory shared by every Agent here, kept after any session ends.
-`gbrain --help` gives its commands.
+gbrain is a searchable memory shared by every Agent here, kept after any session ends. Reach
+it through Ronin: `mcp tools gbrain`, then `mcp call gbrain <tool> --json '{…}'`.
 
 - Search before you research or decide: what someone already learned may be there.
 - File what a later Agent will need: a decision and why, a person, a company, a concept. Not

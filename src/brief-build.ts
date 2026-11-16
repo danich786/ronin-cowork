@@ -8,7 +8,9 @@ import path from 'node:path';
 import type { BriefRecord, BriefSettings, SessionType } from './brief-record.js';
 import { cascade, layerOf, readUserLayer, resolveBrief, type Cascade, type Layer, type Resolved } from './brief-settings.js';
 import { renderBrief } from './brief.js';
-import { readCatalogs } from './catalog.js';
+import { catalogIntegrations, readCatalogs, type Catalog } from './catalog.js';
+import type { CampaignSettings } from './campaigns.js';
+import { offeredTo, readMcpRecords, type McpRecord } from './mcp-records.js';
 import { isHostedOffice, officePeople } from './office-people.js';
 import { listTeamRosters } from './team-rosters.js';
 import type { LaunchFacts, SpawnForm } from './spawn.js';
@@ -38,14 +40,27 @@ export async function writeAgentBriefAt(dir: string, value: AgentBrief): Promise
   await rename(temp, target);
 }
 
+/** The MCP servers a Campaign is offered: on at its layer (Offered is on). A record named as a
+ * curated bridge is that bridge's way through the broker, not an MCP server of its own. */
+export async function offeredMcp(campaign: string, catalog?: Pick<Catalog, 'behaviours'>): Promise<McpRecord[]> {
+  const bridges = new Set(catalogIntegrations(catalog ?? await readCatalogs()).map((row) => row.name));
+  return (await readMcpRecords()).filter((record) => !bridges.has(record.name) && offeredTo(record, campaign));
+}
+
+/** The Campaign's layer: its own settings, Jira when the Campaign is paired (so pm is on), and
+ * the MCP servers offered to it. */
+export async function campaignLayer(campaign: { id: string; config: Pick<CampaignSettings, 'integrations'> } | null | undefined, catalog?: Pick<Catalog, 'behaviours'>): Promise<Layer> {
+  if (!campaign) return layerOf('campaign', {});
+  const offered = (await offeredMcp(campaign.id, catalog)).map((record) => record.name);
+  const jira = jiraConnected(campaign.id) ? ['jira'] : [];
+  return layerOf('campaign', { ...campaign.config, integrations: [...campaign.config.integrations, ...jira, ...offered] });
+}
+
 /** The layers widest first: user, Campaign, Workspace, Team, Agent. */
-export async function briefLayers(facts: Pick<LaunchFacts, 'campaign' | 'workspace' | 'roster'>, agent: AgentBrief): Promise<Layer[]> {
+export async function briefLayers(facts: Pick<LaunchFacts, 'campaign' | 'workspace' | 'roster'>, agent: AgentBrief, catalog?: Pick<Catalog, 'behaviours'>): Promise<Layer[]> {
   return [
     await readUserLayer(),
-    // A Campaign paired with Jira (the Jira panel) has the jira integration on, so pm is on.
-    layerOf('campaign', facts.campaign && jiraConnected(facts.campaign.id)
-      ? { ...facts.campaign.config, integrations: [...facts.campaign.config.integrations, 'jira'] }
-      : facts.campaign?.config ?? {}),
+    await campaignLayer(facts.campaign, catalog),
     layerOf('workspace', facts.workspace ?? {}),
     layerOf('team', facts.roster ?? {}),
     layerOf('agent', agent),
@@ -56,7 +71,7 @@ const sessionType = (form: SpawnForm): SessionType =>
   form.house_seat === 'mika' ? 'mika' : form.session_type === 'bare_metal_agent' ? 'bare' : 'cowork';
 
 /** Every value the brief depends on, read where it lives (docs/architecture/brief.md, The work record is the source of truth). */
-export async function buildBriefRecord(form: SpawnForm, facts: LaunchFacts, on: Cascade, launch: { provider?: string; model?: string; harness?: string; launch_mode?: BriefRecord['agent']['launch_mode'] } = {}): Promise<BriefRecord> {
+export async function buildBriefRecord(form: SpawnForm, facts: LaunchFacts, on: Cascade, launch: { provider?: string; model?: string; harness?: string; launch_mode?: BriefRecord['agent']['launch_mode'] } = {}, catalog?: Pick<Catalog, 'behaviours'>, teamOn: Cascade = on): Promise<BriefRecord> {
   const held = mandate(form.mandate ?? {
     reach: facts.parentSeed?.seeds.reach.value,
     recruit: facts.parentSeed?.seeds.recruit.value,
@@ -100,6 +115,7 @@ export async function buildBriefRecord(form: SpawnForm, facts: LaunchFacts, on: 
       workspace: facts.workspace?.name ?? '',
       instructions: facts.workspace?.instructions ?? '',
       integrations: Object.keys(on.integrations),
+      mcp: (await offeredMcp(campaignId, catalog)).filter((record) => on.integrations[record.name]).map((record) => ({ name: record.name, description: record.description })),
       pm: on.pm.on,
       services: facts.installations.filter((row) => row.enabled).map((row) => row.name),
     },
@@ -109,6 +125,8 @@ export async function buildBriefRecord(form: SpawnForm, facts: LaunchFacts, on: 
       lead: !!form.team && !!form.team_lead,
       wipeboard: facts.roster?.wipeboard ?? form.team ?? '',
       team_objective: facts.roster?.objective ?? '',
+      // The lead's brief says what its Team has on.
+      team_integrations: form.team && role === 'lead' ? Object.keys(teamOn.integrations) : [],
       reach: held.reach,
       recruit: held.recruit,
       output: held.output,
@@ -140,10 +158,11 @@ export const workRecordBrief = (composed: ComposedBrief): WorkRecordBrief => ({
 
 /** The whole brief for an Agent: record, layers, what is in play, and the packet text. */
 export async function composeBrief(form: SpawnForm, facts: LaunchFacts, agent: AgentBrief, launch?: Parameters<typeof buildBriefRecord>[3]): Promise<ComposedBrief> {
-  const layers = await briefLayers(facts, agent);
+  const catalog = await readCatalogs();
+  const layers = await briefLayers(facts, agent, catalog);
   const on = cascade(layers);
-  const record = await buildBriefRecord(form, facts, on, launch);
-  const resolved = resolveBrief(await readCatalogs(), record, layers);
+  const record = await buildBriefRecord(form, facts, on, launch, catalog, cascade(layers.filter((layer) => layer.layer !== 'agent')));
+  const resolved = resolveBrief(catalog, record, layers);
   return { record, layers, cascade: on, resolved, text: renderBrief(facts.name, record, resolved) };
 }
 

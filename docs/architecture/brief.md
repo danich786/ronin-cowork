@@ -60,12 +60,11 @@ behaviour's name takes another id (`ask-mika` is the `mika` command). Every file
 | Field | Files | Means |
 |---|---|---|
 | title (`#`) | all | the name the brief prints; for a tool, the command |
-| `seed:` | behaviours, tools | the one line. A behaviour's seed stands on its own; a tool's is its one job |
+| `seed:` | behaviours, tools | the one line. A behaviour's seed stands on its own; a tool's is its one job. It may carry a record value, `{setting.mcp_lines}`, filled when the brief is built |
 | `line:` | facts | the line the brief prints, with `{record.path}` placeholders; `{<lead> x}` prints `<lead>` and x only when x is set; `{x?yes\|no}` prints one of two texts |
 | `when:` | all | the conditionals that must all hold, comma-separated; `!` for not; blank = every Agent. A tool that serves a behaviour needs none: it is in play when its behaviour is |
 | `depth:` | behaviours, tools | `none`, `seed` or `full`: the stock depth. Layers may raise it |
 | `serves:` | tools | the behaviour ids it serves. Blank: it goes under Other tools |
-| `mcp:` | bridges | the MCP server in the Agent's launch while this bridge is in play; blank until one is chosen |
 | `mandate:` | behaviours | the mandate axis this file is a value of: `reach`, `recruit` or `output`; the title is the value |
 | `with:` | mandate values | the behaviour(s) choosing this value puts in play, at their depth (Reach plan `with: planning`); the order never repeats that behaviour's text |
 | `lists:` | behaviours | a catalog directory whose files `ronin-help <behaviour>` prints after its text, one line each, the user's own (`~/ronin/<dir>/`) over stock by name, in `order:`: adding a file adds it (new-workspace: `workspace_types/`) |
@@ -101,6 +100,7 @@ They read values on the work record.
 | `hosted` | a hosted office (else self-hosted) |
 | `service:<part>` | that Ronin Services part is running |
 | `integration:<name>` | that integration is on for the Agent |
+| `mcp` | at least one MCP server is on for the Agent |
 | `pm` | project management is on |
 | `team` · `lead` · `role:<coworker\|lead\|epic_lead\|coordinator>` | on a Team, its lead, its role |
 | `desk` · `checkout` | a desk is cut, a repository is checked out |
@@ -130,8 +130,8 @@ record plus the files, nothing else.
 | Session | name, title, type, the template it came from, objective, the task at birth |
 | User | name and what to call them, role in the office, new owner, organization, technical level, AI experience, planned use, time zone, language, about, and the user's own intro text |
 | People (hosted) | the office's owner and members: role, name, organization |
-| Setting | hosted or self-hosted; Campaign; Workspace (its instructions, repositories, folders); integrations on; project management; the Services parts running |
-| Agent | role and Team(s); mandate (Reach, Recruit, Output); provider, model, harness, launch mode |
+| Setting | hosted or self-hosted; Campaign; Workspace (its instructions, repositories, folders); integrations on; the MCP servers on; project management; the Services parts running |
+| Agent | role and Team(s), and the integrations on for its Team; mandate (Reach, Recruit, Output); provider, model, harness, launch mode |
 | Work | desk or checkout per repository; items held and watched |
 | Brief settings | each layer's add, block and only: user, Campaign, Workspace, Team, this Agent |
 
@@ -190,8 +190,11 @@ Example, a Workspace that uses Netlify and wants More checkpoints for every Agen
 template: `only: base-agent, netlify-bridge`.
 
 **Integrations cascade the same way**: on for a Campaign is on for its Workspaces, Teams and
-Agents, and each may add its own. On for an Agent makes `integration:<name>` hold, so its
-bridge behaviour and that behaviour's tools come into play.
+Agents, and each may add its own. A layer may also turn off one that is on above it, for itself
+and below (`integrations_off` in its brief settings; the pages show "On, from the <layer>" with
+Off). An MCP server is on at the Campaign layer for every Campaign its record is offered to.
+On for an Agent makes `integration:<name>` hold, so its bridge behaviour and that behaviour's
+tools come into play.
 
 **Project management is its own switch**, cascading like an integration. When the Jira
 integration is on, it is on; otherwise each layer may turn it on or off. Off: no item
@@ -296,7 +299,7 @@ real stores.
 
 ```
 facts/       you, user, user-about, user-intro, people (hosted), ronin, workspace,
-             integrations-on, team (team), model, work, task
+             integrations-on (a lead: its Team's too), team (team), model, work, task
 behaviours/  base-agent (full) · cowork-agent, write-it-down (cowork, full)
              reach-*, recruit-*, output-* (mandate: one file per value)
              team-lead, planning (lead) · lead-worktrees (lead, desk)
@@ -305,7 +308,7 @@ behaviours/  base-agent (full) · cowork-agent, write-it-down (cowork, full)
              working-at-a-desk (desk) · checkout (checkout) · workspaces (cowork, full)
              integrations (every Agent, seed; brings `secret`, so keys are taught once)
              bridges: netlify-bridge, jira-bridge, gbrain-bridge, perplexity-bridge
-             (integration:<name>)
+             (integration:<name>) · mcp-servers (mcp, seed: one line per MCP server on)
              mika, install-check (mika) · services-off (!service:ronin_services) · using-ronin
              optional (depth none): team-work, more-checkpoints, working-with-the-user,
              codebase-team
@@ -346,9 +349,13 @@ owner's choice before shipping. Keys are taught there once; a bridge never repea
 A **bridge** is a behaviour with `when: integration:<name>` and the tools that serve it, in play
 while that integration is on for the Agent: `jira-bridge` (work items through `item`, never Jira
 itself), `gbrain-bridge` (shared memory), `perplexity-bridge` (cited web research) and
-`netlify-bridge` (the worked example, with `netlify` and `preview`). A bridge may say
-`mcp: <server>`: while it is in play, that MCP server is in the Agent's launch and the bridge
-says how it is used; its tools come from the harness, so they have no tool files.
+`netlify-bridge` (the worked example, with `netlify` and `preview`).
+
+Every **MCP server** is reached at run time through Ronin's broker, never at launch
+([integrations.md](integrations.md)). One behaviour, `mcp-servers` (seed, `when: mcp`), is in play when
+any MCP record is on for the Agent; its seed is generated from the record values, one line per
+server, `<name>: <description>`, then how to call it, with the `mcp` tool under it. A record
+named as a bridge's integration is that bridge's way through the broker and gets no line.
 
 ## Workspaces
 
@@ -359,8 +366,8 @@ Workspaces over `src/routes/workspaces-api.ts`.
 
 ## What comes next
 
-The base of behaviours grows a file at a time: a bridge for each integration a user brings,
-an MCP server chosen per bridge, and the `workspace` command, which then gets its seed told.
+The base of behaviours grows a file at a time: a curated bridge for an integration that earns
+one, and the `workspace` command, which then gets its seed told.
 
 ## Change checkpoint
 

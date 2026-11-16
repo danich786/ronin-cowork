@@ -17,6 +17,7 @@ import { CONDITIONALS } from '../conditionals.js';
 import { person } from '../office-people.js';
 import { sessionDir, sessionKey } from '../session-dir.js';
 import { resolveBriefFor, resolveFacts, type SpawnForm } from '../spawn.js';
+import { campaignLayer as campaignLayerOf } from '../brief-build.js';
 import { readTeamRoster, writeTeamRoster } from '../team-rosters.js';
 import { readWorkspace, saveWorkspace } from '../workspaces.js';
 
@@ -30,8 +31,10 @@ async function layerAt(layer: SettingLayer, id: string, campaignId: string): Pro
   if (layer === 'user') return { own: user, above: [] };
   const campaign = await readCampaign(campaignId);
   if (!campaign) throw new BehaviourDocumentError(`Unknown Campaign: ${campaignId || '(none)'}.`, 404);
-  const campaignLayer = layerOf('campaign', campaign.config);
-  if (layer === 'campaign') return { own: campaignLayer, above: [user] };
+  // What the Campaign holds itself; below it, the Campaign as the brief reads it (Jira when
+  // paired, the MCP servers offered to it).
+  if (layer === 'campaign') return { own: layerOf('campaign', campaign.config), above: [user] };
+  const campaignLayer = await campaignLayerOf({ id: campaignId, config: campaign.config });
   if (layer === 'workspace') {
     const workspace = await readWorkspace(campaignId, id);
     if (!workspace) throw new BehaviourDocumentError(`No Workspace "${id}".`, 404);
@@ -172,9 +175,9 @@ export function registerBrief(app: express.Express): void {
       if (who) form.person = who;
       const facts = await resolveFacts(form, new Set());
       const composed = await resolveBriefFor(form, facts);
-      if (!composed) return res.json({ in_play: [], integrations: {}, pm: { on: false }, off: [] });
+      if (!composed) return res.json({ in_play: [], integrations: {}, integrations_off: {}, pm: { on: false }, off: [] });
       res.json({
-        in_play: briefTold(composed.resolved), integrations: composed.cascade.integrations, pm: composed.cascade.pm,
+        in_play: briefTold(composed.resolved), integrations: composed.cascade.integrations, integrations_off: composed.cascade.off, pm: composed.cascade.pm,
         off: briefOff(await readCatalogs(), composed.layers),
       });
     } catch (e) { res.status(400).json({ error: errMsg(e) }); }

@@ -24,6 +24,7 @@ Tools do jobs and report what happened. A Cowork Agent is told:
 - `owner_view`: what the owner is looking at in a browser tab
 - `secret`: get a password or key from the owner without it passing through chat
 - `netlify`: Netlify sites, deploys, traffic, forms and variables for the Workspace's site
+- `mcp`: list the MCP servers offered to your Campaign, fetch one's tools, call one
 - `preview`: find a pull request's preview link and put it in your Documents
 - `ronin-help`: the longer document on a topic, or a Ronin word
 <!-- /tool-list -->

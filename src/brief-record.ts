@@ -14,6 +14,8 @@ export interface BriefSettings {
   add: Array<{ name: string; depth?: Depth }>;
   block: string[];
   only: string[];
+  /** Integrations on above that this layer turns off, for itself and below (narrowing). */
+  integrations_off?: string[];
 }
 
 export type OfficePerson = Omit<import('./office-people.js').Person, 'role'> & { role: string };
@@ -51,8 +53,10 @@ export interface BriefRecord {
     workspace: string;
     /** The Workspace's own instructions text. */
     instructions: string;
-    /** Integrations on for this Agent: the union down the layers. */
+    /** Integrations on for this Agent: the union down the layers, less what a layer turns off. */
     integrations: string[];
+    /** The MCP servers on for this Agent, each with its record's description (behaviours/mcp.md). */
+    mcp: Array<{ name: string; description: string }>;
     /** Project management on for this Agent: any layer on, or Jira on. */
     pm: boolean;
     /** Ronin Services parts running. */
@@ -64,6 +68,8 @@ export interface BriefRecord {
     lead: boolean;
     wipeboard: string;
     team_objective: string;
+    /** A Team lead's: the integrations on for its Team (the layers down to the Team, without the Agent's own); [] otherwise. */
+    team_integrations: string[];
     reach: string;
     recruit: string;
     output: string[];
@@ -90,6 +96,7 @@ const WORDS: Record<string, (r: BriefRecord) => string> = {
   'session.type': (r) => ({ cowork: 'Cowork Agent', bare: 'bare metal Agent', mika: 'Mika' })[r.session.type],
   'setting.hosting': (r) => r.setting.hosted ? 'hosted' : 'self-hosted',
   'setting.integrations': (r) => r.setting.integrations.join(', ') || 'none',
+  'setting.mcp_lines': (r) => r.setting.mcp.map((one) => `\n- ${one.name}: ${one.description}`).join(''),
   'setting.pm': (r) => r.setting.pm ? 'on' : 'off',
   'setting.services': (r) => r.setting.services.includes('ronin_services') ? 'Ronin Services running' : '',
   people: (r) => r.people.map((p) => `${[p.role, p.nickname || p.first_name || p.name || p.email].filter(Boolean).join(' ')}${p.organization ? `, ${p.organization}` : ''}`).join('; '),
