@@ -109,6 +109,7 @@ export function registerIrasshaiIntegrations() {
     create: () => {
       const surface = WorkspaceKit.primitives.createSurface({ label: t('integrations.title', 'Integrations'), className: 'setup-surface integrations-surface setup-irasshai-integrations' });
       const panel = createIntegrationsPanel(() => campaigns()[0] || null, { embedded: true });
+      panel.el.querySelector('.integrations-heading')?.remove(); // the surface's header names it
       surface.content.append(panel.el);
       let working = false;
       const stop = subscribe('home', (rows) => {
