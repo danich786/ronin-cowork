@@ -92,6 +92,7 @@ test('every agent-facing API caller connects through the one library and carries
   });
   assert.deepEqual(callers.sort(), [
     '.edges-page',
+    'api',
     'epic-template',
     'lookup',
     'machine-settings',

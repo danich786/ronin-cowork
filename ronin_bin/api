@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+# api — any web API through Ronin, which holds its key: list them, add one, call one. The Ronin
+# Services part `mcp` (/api/apis/*) reads the API's record and key and makes the call, and the key
+# goes only to the API's own host; this tool only carries the words. docs/architecture/integrations.md.
+. "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/tool-count.sh" api "$@"
+set -u -o pipefail
+. "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"
+TOOL_DIR=$(dirname "$SELF")
+die() { echo "$1" >&2; exit "${2:-2}"; }
+usage() { cat <<'EOF_USAGE'
+Usage:
+  api list                                  the web APIs offered to your Campaign: name, what it is, its base URL
+  api call <name> <METHOD> <path> [--json '<body>'|--json -] [--query k=v ...]
+                                            call it: the path is under the API's base (/sites/x, not a
+                                            full URL); prints HTTP <status>, then the body; never headers
+  api add <name> <base URL> [--sign-in key|oauth|none] [--secret <s>] [--send '<header>'|'query <param>']
+          [--campaigns <a,b>] [--label <l>] [--description <d>]
+                                            add one: its record; without its key yet, the record is
+                                            written and it asks for the key (secret ask)
+  api remove <name>                         its record goes; its secret stays
+Ronin attaches the key, and only on calls to the API's own host: you never handle it. The key is
+the secret <name>-api-key unless --secret names another; it goes as Authorization: Bearer unless
+--send says otherwise. --campaigns blank offers the API to every Campaign.
+Related: mcp --help; secret --help; ronin-help integrations
+EOF_USAGE
+}
+case "${1:-}" in -h|--help|'') usage; exit 0;; esac
+
+. "$TOOL_DIR/ronin-http.sh"
+ronin_connect || exit $?
+BY=$(ronin_session_me 2>/dev/null || id -un)
+cmd=$1; shift
+json=''; sign_in=''; secret=''; send=''; campaigns=''; label=''; description=''; query=(); args=()
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --json|--sign-in|--secret|--send|--campaigns|--label|--description|--query)
+      [ "$#" -ge 2 ] || die "BAD-ARG: $1 needs a value"
+      case "$1" in --json) json=$2;; --sign-in) sign_in=$2;; --secret) secret=$2;; --send) send=$2;; --campaigns) campaigns=$2;; --label) label=$2;; --description) description=$2;; --query) query+=("$2");; esac
+      shift 2 ;;
+    -h|--help) usage; exit 0 ;;
+    *) args+=("$1"); shift ;;
+  esac
+done
+set -- "${args[@]+"${args[@]}"}"
+
+# api_call METHOD PATH [JSON]: the lines printed, or the one sentence of what is wrong (exit 4
+# when something is not set, 3 when the API or Ronin failed, 5 unreachable). A key not saved
+# leaves its secret's name in $NEED_SECRET.
+NEED_SECRET=''
+api_call() {
+  local method=$1 path=$2 body=${3-} out status
+  local opts=(-sS -m 120 "${RONIN_CURL[@]+"${RONIN_CURL[@]}"}" -X "$method")
+  if [ -n "$body" ]; then opts+=(-H 'content-type: application/json' --data-binary @-); else opts+=(-G --data-urlencode "by=$BY"); fi
+  out=$(printf '%s' "$body" | curl "${opts[@]}" -w '\n%{http_code}' "$url$path") || { echo "UNREACHABLE: Ronin did not answer at $url" >&2; return 5; }
+  status=${out##*$'\n'}
+  NEED_SECRET=$(printf '%s' "${out%$'\n'*}" | python3 -c 'import json,sys
+try: print(json.loads(sys.stdin.read()).get("secret",""))
+except Exception: pass' 2>/dev/null)
+  printf '%s' "${out%$'\n'*}" | REPLY_STATUS=$status python3 -c '
+import json, os, sys
+status = os.environ["REPLY_STATUS"]
+try: d = json.loads(sys.stdin.read())
+except Exception:
+    if status == "404":
+        print("The broker (the Ronin Services part mcp) is not running here, or has no web APIs yet. Use the API with your own script, its key by secret path.", file=sys.stderr); sys.exit(4)
+    print("HTTP %s: Ronin answered without JSON" % status, file=sys.stderr); sys.exit(3)
+if not d.get("ok"):
+    print(d.get("error") or "HTTP %s" % status, file=sys.stderr); sys.exit(4 if d.get("missing") else (2 if status == "400" else 3))
+print("\n".join(d.get("lines", [])))
+'
+}
+body() { python3 -c 'import json, sys; a = sys.argv[1:]; print(json.dumps({a[i]: a[i+1] for i in range(0, len(a), 2) if a[i+1] != ""}))' "$@"; }
+
+case "$cmd" in
+  list) [ "$#" -eq 0 ] || die 'BAD-ARG: api list takes no words'; api_call GET /api/apis ;;
+  call)
+    [ "$#" -eq 3 ] || die "BAD-ARG: api call <name> <METHOD> <path> [--json '{…}'] (api --help)"
+    [ "$json" = '-' ] && json=$(cat)
+    payload=$(BY=$BY N=$1 M=$2 P=$3 J=$json python3 -c '
+import json, os, sys
+q = {}
+for kv in sys.argv[1:]:
+    if "=" not in kv: print("BAD-ARG: --query takes k=v", file=sys.stderr); sys.exit(2)
+    k, v = kv.split("=", 1); q[k] = v
+out = {"by": os.environ["BY"], "name": os.environ["N"], "method": os.environ["M"], "path": os.environ["P"], "query": q}
+if os.environ["J"]:
+    try: out["body"] = json.loads(os.environ["J"])
+    except Exception: print("BAD-ARG: --json is not JSON", file=sys.stderr); sys.exit(2)
+print(json.dumps(out))' "${query[@]+"${query[@]}"}") || exit 2
+    api_call POST /api/apis/call "$payload" ;;
+  add)
+    [ "$#" -eq 2 ] || die 'BAD-ARG: api add <name> <base URL> (api --help)'
+    payload=$(body by "$BY" name "$1" base "$2" sign_in "$sign_in" secret "$secret" send "$send" campaigns "$campaigns" label "$label" description "$description")
+    api_call POST /api/apis/add "$payload"; rc=$?
+    # Add now, authenticate later: the record is written; ask for a key it still needs.
+    if [ "$rc" -eq 0 ] && [ -n "$NEED_SECRET" ]; then
+      echo "Asking for $NEED_SECRET on your tile…" >&2
+      saved=$("$TOOL_DIR/secret" ask "$NEED_SECRET" --for "${label:-$1} API key") || exit 4
+      echo "$saved"
+    fi
+    exit "$rc" ;;
+  remove)
+    [ "$#" -eq 1 ] || die 'BAD-ARG: api remove <name>'
+    api_call POST /api/mcp/remove "$(body by "$BY" name "$1")" ;;
+  *) die "BAD-ARG: api $cmd: list, call, add or remove (api --help)" ;;
+esac

@@ -113,3 +113,22 @@ test('an expiry rides beside the value, never in it: a date, never, N days, or n
   await post('/api/secrets/office_key', { value: VALUE });
   assert.match((await run(['ls'])).stdout, /^office_key$/m, 'saved with Nothing: no entry');
 });
+
+test('saving a secret an MCP record names rebuilds running briefs at once; any other secret does not (KAN-600)', async () => {
+  const { sockets } = await import('../src/sockets.js');
+  const { mcpRecordsDir } = await import('../src/mcp-records.js');
+  let rebuilt = 0;
+  const was = sockets.briefsChanged;
+  sockets.briefsChanged = () => { rebuilt++; };
+  try {
+    await fs.mkdir(mcpRecordsDir(), { recursive: true });
+    await fs.writeFile(path.join(mcpRecordsDir(), 'calc.md'), '# Calc\n- **reach:** https://mcp.example.com/mcp\n- **sign-in:** key\n- **secret:** calc-api-key\n');
+    const settle = async () => { for (let i = 0; i < 50 && !rebuilt; i++) await new Promise((r) => setTimeout(r, 10)); };
+    assert.equal((await post('/api/secrets/other-key', { value: 'v1' })).status, 200);
+    await settle();
+    assert.equal(rebuilt, 0, 'no record names other-key');
+    assert.equal((await post('/api/secrets/calc-api-key', { value: 'v2' })).status, 200);
+    await settle();
+    assert.equal(rebuilt, 1, 'calc names calc-api-key: briefs rebuild');
+  } finally { sockets.briefsChanged = was; }
+});
