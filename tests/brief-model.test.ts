@@ -79,6 +79,8 @@ test('one conditional function: words, negation, unknown never holds', () => {
 test('integrations add down the layers; Jira ends at the Workspace (KAN-608)', () => {
   const on = cascade([layerOf('campaign', { integrations: ['netlify'] }), layerOf('team', { integrations: ['jira'] }), layerOf('agent', { integrations: ['jira'] })]);
   assert.deepEqual(on.integrations, { netlify: 'campaign' }, 'a Team or Agent cannot turn Jira on');
+  assert.deepEqual(cascade([layerOf('user', { integrations: ['jira'] })]).integrations, {}, 'nor the user layer: Jira is Campaign and Workspace only');
+  assert.deepEqual(cascade([layerOf('user', { brief: { integrations_off: ['jira'] } }), layerOf('campaign', { integrations: ['jira'] })]).integrations, { jira: 'campaign' }, 'a user-layer Jira off is ignored too');
   assert.deepEqual(cascade([layerOf('workspace', { integrations: [{ provider: 'jira' }] })]).integrations, { jira: 'workspace' });
   const off = cascade([layerOf('campaign', { integrations: ['jira'] }), layerOf('team', { brief: { integrations_off: ['jira'] } }), layerOf('agent', { brief: { integrations_off: ['jira'] } })]);
   assert.deepEqual([off.integrations, off.off], [{ jira: 'campaign' }, {}], 'nor turn it off');

@@ -92,7 +92,7 @@ export interface Cascade {
 }
 
 /** The layers Jira can be set at; below them a Jira entry is ignored. */
-const JIRA_LAYERS: readonly LayerName[] = ['user', 'campaign', 'workspace'];
+const JIRA_LAYERS: readonly LayerName[] = ['campaign', 'workspace'];
 const scoped = (layer: Layer, name: string): boolean => name !== 'jira' || JIRA_LAYERS.includes(layer.layer);
 
 /** Integrations and project management down the layers: on adds, a layer's off narrows; pm is

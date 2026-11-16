@@ -100,8 +100,8 @@ export function layerLinks({ team = '', open = {} } = {}) {
  */
 export function paintBriefForm(host, { layer = 'agent', catalog = [], value = emptyBriefValue(), above = {}, inPlay = null, onChange = () => {}, openBehaviours = null, showIntegrations = true, linkFor = null } = {}) {
   const own = briefValue(value);
-  // Jira ends at the Workspace: a Team or Agent form neither shows nor sets it.
-  const jiraHere = layer !== 'team' && layer !== 'agent';
+  // Jira is set at the Campaign and Workspace only: any other form neither shows nor sets it.
+  const jiraHere = layer === 'campaign' || layer === 'workspace';
   const shownHere = (name) => jiraHere || name !== 'jira';
   const inherited = Object.fromEntries(Object.entries(above.integrations || {}).filter(([name, from]) => from && from !== layer && shownHere(name)));
   // Narrowing: off above holds here; this layer may turn off what is on above, for itself and below.

@@ -17,24 +17,25 @@ where it is built or taught.
 
 ## For Agents: the briefs
 
-The birth packet compiles them (`src/agent-composition.ts`). Project management is the `pm`
-setting, apart from Jira ([brief.md](brief.md), Layers and brief settings): on at the Campaign
-by default, and on or off per Workspace, Team or Agent on its Behaviors panel; the narrowest
-layer that says holds. With it off an Agent gets none of these. Each brief is one
-cell of topic × audience; an Agent reads only its own cells.
+Birth writes the brief document on the work record, and the brief is built from it alone
+(`composeBrief` then `buildBrief`, `src/brief-build.ts`; [brief.md](brief.md), The work record
+is the source of truth). Project management is the `pm` setting, apart from Jira (brief.md,
+Layers and brief settings): on at the Campaign by default, and on or off per Workspace, Team or
+Agent on its Behaviors panel; the narrowest layer that says holds. Jira is an integration set at
+the Campaign and Workspace only and never decides `pm`. With it off an Agent gets none of these.
+Each file's `when:` picks its readers; an Agent is told only its own.
 
-| Brief (`ronin_catalogs/`) | Read by | `requires` |
+| File (`ronin_catalogs/`) | Read by | `when:` |
 |---|---|---|
-| `behaviours/selected/project-management.md` | every Agent: the five reasons, structure, objectives in the user's words, status, notices, the hand-in note, don'ts | (selected) |
-| `behaviours/conditional/project-management-coworker.md` | coworkers: take, start, side work, hand in, hand over at the end, end when accepted | `behaviour:project-management, role:coworker` |
-| `behaviours/conditional/project-management-lead.md` | Team leads: the three kinds of ask, when to offer a plan (`ronin-help planning`), giving out work, deciding what an ending handed over or flagged, promote in batches | `behaviour:project-management, lead` |
-| `behaviours/conditional/project-management-epic-lead.md` | an epic_lead on Steerco | `behaviour:project-management, role:epic_lead` |
-| `behaviours/conditional/project-management-traffic-control.md` | traffic_control on Steerco: placing Jira's unheld items | `behaviour:project-management, role:coordinator` |
-| `capabilities/work-item.md` | every Agent, in YOUR TOOLS: the `item` tools table and syntax only | `behaviour:project-management` |
+| `behaviours/project-management.md` | every Agent: the five reasons, structure, objectives in the user's words, status, notices, the hand-in note, don'ts | `pm` |
+| `behaviours/pm-coworker.md` | coworkers: take, start, side work, hand in, hand over at the end, end when accepted | `pm, team, role:coworker` |
+| `behaviours/pm-lead.md` | Team leads: the kinds of ask, when to offer a plan (`ronin-help planning`), giving out work, deciding what an ending handed over or flagged, promote in batches | `pm, lead` |
+| `behaviours/pm-epic-lead.md` | an epic_lead | `pm, role:epic_lead` |
+| `behaviours/pm-traffic-control.md` | a coordinator: placing the items nobody holds | `pm, role:coordinator` |
+| `tools/work-item.md` | the `item` tool, told under Project management (`serves: project-management`) | (with its behaviour) |
 
-`behaviours/conditional/cowork-agent.md` and `team-lead.md` carry no item text. The role comes
-from the session's behaviours (`currentRoleAt` in `src/agent-composition.ts`; a role file wins, then the Steerco cell names, then lead or coworker); `behaviour:` is a
-predicate in `src/behaviours.ts`.
+`cowork-agent.md` and `team-lead.md` carry no item text. The role is the brief record's
+`agent.role` (`src/brief-record.ts`); the conditionals are `src/conditionals.ts`.
 
 ## For Agents: the tools
 
