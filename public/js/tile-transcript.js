@@ -32,7 +32,7 @@ const said = (text) => String(text || '').replace(/\s+/g, ' ').trim();
  * @param watch  this view's own slot in what the tab tells the server it shows; the server sends only that
  *               Agent's records, already cut to that reading. Injected for testing.
  */
-export function makeTileTranscript({ read = request, watch = transcriptWatch(), onState = () => {}, cache = null, onAnswer = null } = {}) {
+export function makeTileTranscript({ read = request, watch = transcriptWatch(), onState = () => {}, cache = null, onAnswer = null, onDoc = null } = {}) {
   const el = document.createElement('div');
   el.className = 'tile-transcript';
   el.setAttribute('role', 'log');
@@ -221,7 +221,10 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
     // tool lines and notes stay as written.
     if (rec.role === 'agent' && rec.kind === 'say' && chatMarkdown(session)) {
       entry.setAttribute('data-md', 'true');
-      entry.append(renderMarkdownDocument(text, document));
+      // A link to a file on the Ronin box opens in Docs, as the work record's attachments do: its
+      // path means nothing to a browser on another machine.
+      const onLink = onDoc ? (href) => { if (!/^\/(?!\/)/.test(href)) return false; onDoc(href); return true; } : undefined;
+      entry.append(renderMarkdownDocument(text, document, { onLink }));
       return entry;
     }
     // A blank line in what was written is a paragraph break, drawn as the paragraph space
