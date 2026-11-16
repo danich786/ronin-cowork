@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+# canvas — a Workspace's canvases (src/canvases.ts over /api/canvases). read is composite: Ronin
+# answers the blocks it reads itself (repos, items, documents) and each integration block's read
+# commands, which this tool runs as the caller, now, and never writes anywhere.
+. "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/tool-count.sh" canvas "$@"
+set -u -o pipefail
+. "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"
+TOOL_DIR=$(dirname "$SELF")
+die() { echo "$1" >&2; exit "${2:-2}"; }
+usage() { cat <<'EOF_USAGE'
+Usage:
+  canvas templates                          the outlines a canvas starts from: token, label, blurb
+  canvas ls                                 the Workspace's canvases: name, template, date, by
+  canvas create <name> [--template <t>]     a new canvas from a template's blocks; none: an empty one
+  canvas read <name>                        the canvas, live: each block read where it lives, now
+  canvas edit <name> add <block> <entry> "<line>"
+                                            a typed entry (its block made if missing), with who and when
+  canvas edit <name> change <block> <entry> "<line>"
+  canvas edit <name> remove <block> [<entry>]
+                                            one entry, or a whole block the Workspace hasn't
+Any command takes --workspace <name>; without it, your Team's Workspace (as plan).
+A canvas name is lowercase letters, digits and -. A canvas is Markdown in the Workspace's plans
+folder, canvases/<name>.md, committed there as a plan is. It keeps its blocks and typed entries
+only: a live block (an integration, the repos, the work items, the documents) is read each time
+read runs, never copied in. Block and entry names match any case. One line per entry, with a link
+where there is one. Never put a key, token or password in a canvas: name the secret that holds
+it, never its value.
+Related: ronin-help canvases; canvas templates; plan --help
+EOF_USAGE
+}
+case "${1:-}" in -h|--help|'') [ "$#" -le 1 ] || die 'Run canvas --help.'; usage; [ "$#" -eq 1 ]; exit $?;; esac
+. "$TOOL_DIR/ronin-http.sh"
+ronin_connect || exit $?
+BY=$(ronin_session_me 2>/dev/null || id -un)
+verb=$1; shift
+workspace=''; template=''; args=()
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --workspace) [ -n "${2:-}" ] || die 'BAD-ARG: --workspace needs a name'; workspace=$2; shift 2 ;;
+    --template) [ -n "${2:-}" ] || die 'BAD-ARG: --template needs a token (canvas templates)'; template=$2; shift 2 ;;
+    *) args+=("$1"); shift ;;
+  esac
+done
+set -- "${args[@]+"${args[@]}"}"
+
+# canvas_call METHOD PATH [JSON]: the reply printed; an error to stderr (4 asked or missing, 3 failed, 5 unreachable).
+canvas_call() {
+  local method=$1 path=$2 body=${3-} out
+  local opts=(-sS -m 60 "${RONIN_CURL[@]+"${RONIN_CURL[@]}"}" -X "$method")
+  [ -z "$body" ] || opts+=(-H 'content-type: application/json' --data-binary @-)
+  out=$(printf '%s' "$body" | curl "${opts[@]}" -w '\n%{http_code}' "$url$path") || { echo "UNREACHABLE: Ronin did not answer at $url" >&2; return 5; }
+  printf '%s' "${out%$'\n'*}" | REPLY_STATUS=${out##*$'\n'} python3 -c '
+import json, os, shlex, subprocess, sys
+status = os.environ["REPLY_STATUS"]
+try: d = json.loads(sys.stdin.read())
+except Exception: print("HTTP %s: Ronin answered without JSON" % status, file=sys.stderr); sys.exit(3)
+if d.get("error"): print(d["error"], file=sys.stderr); sys.exit(4 if d.get("refused") or status == "404" else 3)
+if d.get("acknowledgement"): print(d["acknowledgement"]); sys.exit(0)
+if "templates" in d:
+    if not d["templates"]: print("No canvas templates.")
+    for t in d["templates"]:
+        print("%s\t%s — %s%s" % (t["name"], t["label"], t["blurb"], "  (yours)" if t.get("origin") == "user" else ""))
+        print("\tblocks: %s" % (", ".join(t["blocks"]) or "none"))
+    sys.exit(0)
+if "canvases" in d:
+    if not d["canvases"]: print("No canvases in %s. canvas templates, then canvas create <name> --template <t>." % d["workspace"])
+    for c in d["canvases"]: print("%s\tfrom %s\t%s\t%s" % (c["name"], c["template"] or "none", c["date"], c["by"]))
+    sys.exit(0)
+c = d["canvas"]
+CUT = 40
+def run(cmd):
+    try: argv = shlex.split(cmd)
+    except ValueError as e: return ["(can not read: %s)" % e]
+    try: p = subprocess.run(argv, capture_output=True, text=True, timeout=90)
+    except FileNotFoundError: return ["(%s is not on this PATH)" % argv[0]]
+    except subprocess.TimeoutExpired: return ["(no answer in 90s)"]
+    lines = [l for l in (p.stdout or "").rstrip("\n").split("\n") if l.strip()]
+    err = [l for l in (p.stderr or "").strip().split("\n") if l.strip()]
+    if p.returncode and err: lines.append(err[-1])
+    if len(lines) > CUT: lines = lines[:CUT] + ["… %d more lines: run it yourself" % (len(lines) - CUT)]
+    return lines or ["(nothing)"]
+print("# %s" % c["title"])
+print("canvas %s · Workspace %s · from %s · %s · %s" % (c["name"], c["workspace"], c["template"] or "none", c["date"], c["by"]))
+hidden = []
+for b in c["blocks"]:
+    if not b["shown"]: hidden.append(b["name"]); continue
+    print()
+    print("## %s" % b["name"])
+    if b["holds"]: print(b["holds"])
+    for l in b["lines"]: print("- %s" % l)
+    for cmd in b["run"]:
+        print("> %s" % cmd)
+        for l in run(cmd): print("  %s" % l)
+    for e in b["entries"]:
+        print("- %s: %s (%s, %s)" % (e["name"], e["line"], e["by"] or "?", e["at"] or "?"))
+if hidden: print("\nNot here, nothing in them: %s." % ", ".join(hidden))
+'
+}
+json() { python3 -c 'import json,sys; a=sys.argv[1:]; d=dict(zip(a[::2], a[1::2])); print(json.dumps({k: v for k, v in d.items() if v != ""}))' by "$BY" workspace "$workspace" "$@"; }
+query() { python3 -c 'import sys,urllib.parse; a=sys.argv[1:]; print(urllib.parse.urlencode({k: v for k, v in zip(a[::2], a[1::2]) if v}))' by "$BY" workspace "$workspace" "$@"; }
+case "$verb" in
+  templates) [ "$#" -eq 0 ] || die 'BAD-ARG: canvas templates takes nothing'; canvas_call GET /api/canvases/templates ;;
+  ls) [ "$#" -eq 0 ] || die 'BAD-ARG: canvas ls takes [--workspace <name>]'; canvas_call GET "/api/canvases?$(query)" ;;
+  create) [ "$#" -eq 1 ] || die 'BAD-ARG: canvas create <name> [--template <t>]'
+    canvas_call POST /api/canvases/create "$(json name "$1" template "$template")" ;;
+  read) [ "$#" -eq 1 ] || die 'BAD-ARG: canvas read <name>'
+    canvas_call GET "/api/canvases/read?$(query name "$1")" ;;
+  edit)
+    [ "$#" -ge 3 ] || die 'BAD-ARG: canvas edit <name> add|change|remove <block> … (canvas --help)'
+    name=$1 op=$2 block=$3; shift 3
+    case "$op" in
+      add|change) [ "$#" -eq 2 ] || die "BAD-ARG: canvas edit <name> $op <block> <entry> \"<line>\""
+        canvas_call POST /api/canvases/edit "$(json name "$name" op "$op" block "$block" entry "$1" line "$2")" ;;
+      remove) [ "$#" -le 1 ] || die 'BAD-ARG: canvas edit <name> remove <block> [<entry>]'
+        canvas_call POST /api/canvases/edit "$(json name "$name" op remove block "$block" entry "${1-}")" ;;
+      *) die "BAD-ARG: canvas edit takes add, change or remove, not $op" ;;
+    esac ;;
+  *) usage >&2; exit 2 ;;
+esac

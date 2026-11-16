@@ -15,6 +15,7 @@ the Workspace uses: no Netlify site linked, no Netlify block; no database, no Da
 - **source:** integration netlify
 - **holds:** The site itself, read from Netlify each time the canvas opens.
 - **entries:** page or app (up, and whether the last change went out), preview (only while one is open), traffic (visitors and errors, today), forms (only if the site has one: new messages), credits (left this month, auto-recharge on or off; at zero every site pauses)
+- **read:** netlify sites --workspace {workspace}; netlify traffic --days 1 --workspace {workspace}; netlify forms --workspace {workspace}
 
 ### Database
 - **source:** integration
@@ -22,17 +23,17 @@ the Workspace uses: no Netlify site linked, no Netlify block; no database, no Da
 - **entries:** database (provider and health)
 
 ### Repos
-- **source:** live
+- **source:** live repos
 - **holds:** The code for this site.
 - **entries:** repo (what it holds)
 
 ### Work items
-- **source:** live
+- **source:** live items
 - **holds:** Epics and items in this Workspace, open ones first.
 - **entries:** epic or item (status and who holds it)
 
 ### Documents
-- **source:** live
+- **source:** live documents
 - **holds:** Plans and documents the Agents keep for this site.
 - **entries:** plan or document (what it covers)
 
