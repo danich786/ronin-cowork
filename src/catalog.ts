@@ -14,6 +14,8 @@
  *   - **serves:** write-it-down         (tools; blank = Other tools)
  *   - **mandate:** reach                (behaviours: a mandate value; the title is the value)
  *   - **with:** planning                (mandate values: the behaviours choosing it puts in play)
+ *   - **lists:** workspace_types        (behaviours: a catalog directory `ronin-help` prints after it)
+ *   - **facts:** site                   (bridges: the facts its Workspace entry holds, set on the Workspace page)
  *   - **order:** 40
  *
  *   <the full text>
@@ -45,6 +47,8 @@ export interface CatalogFile {
   integration: string;
   /** A mandate value's `with:`: the behaviours choosing it puts in play, at their depth. */
   with: string[];
+  /** A bridge's `facts:`: the fact names its Workspace entry takes ({provider, site}); [] for any other file. */
+  facts: string[];
   order: number;
   /** The full text: everything after the header. */
   body: string;
@@ -72,6 +76,9 @@ export function parseCatalogFile(kind: CatalogKind, name: string, text: string):
   const depth = get('depth').toLowerCase();
   const order = Number(get('order'));
   const axis = kind === 'behaviours' ? get('mandate').toLowerCase() : '';
+  const integration = kind === 'behaviours'
+    ? list(get('when')).find((word) => word.startsWith('integration:'))?.slice('integration:'.length) ?? ''
+    : '';
   return {
     kind,
     name,
@@ -84,9 +91,8 @@ export function parseCatalogFile(kind: CatalogKind, name: string, text: string):
     mandate: axis,
     value: axis ? title.toLowerCase() : '',
     with: axis ? list(get('with')) : [],
-    integration: kind === 'behaviours'
-      ? list(get('when')).find((word) => word.startsWith('integration:'))?.slice('integration:'.length) ?? ''
-      : '',
+    integration,
+    facts: integration ? list(get('facts')).map((word) => word.toLowerCase()) : [],
     order: Number.isFinite(order) && get('order') !== '' ? order : Number.MAX_SAFE_INTEGER,
     body: lines.slice(at).join('\n').trim(),
   };
@@ -113,10 +119,10 @@ export interface Catalog { facts: CatalogFile[]; behaviours: CatalogFile[]; tool
 /** THE INTEGRATIONS LISTING (docs/architecture/brief.md, What comes next): the bridges, the
  * behaviours whose `when:` is `integration:<name>`. Adding a bridge file adds an integration;
  * the brief keeps no other list of names. In `order:`; one row per name (its first bridge). */
-export function catalogIntegrations(catalog: Pick<Catalog, 'behaviours'>): Array<{ name: string; behaviour: string; title: string; seed: string }> {
-  const rows = new Map<string, { name: string; behaviour: string; title: string; seed: string }>();
+export function catalogIntegrations(catalog: Pick<Catalog, 'behaviours'>): Array<{ name: string; behaviour: string; title: string; seed: string; facts: string[] }> {
+  const rows = new Map<string, { name: string; behaviour: string; title: string; seed: string; facts: string[] }>();
   for (const file of catalog.behaviours) {
-    if (file.integration && !rows.has(file.integration)) rows.set(file.integration, { name: file.integration, behaviour: file.name, title: file.title, seed: file.seed });
+    if (file.integration && !rows.has(file.integration)) rows.set(file.integration, { name: file.integration, behaviour: file.name, title: file.title, seed: file.seed, facts: file.facts });
   }
   return [...rows.values()];
 }

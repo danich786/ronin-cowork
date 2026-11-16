@@ -64,8 +64,7 @@ manual installation can be detected. Update and declared resume arguments are re
 data, but exact conversation discovery is unsupported, so Archive refuses.
 
 The initial brief is passed as one literal `--query` argument. On a TTY Hermes submits it as the first turn and keeps the session interactive. Hermes calls Ronin's Dangerously
-intent `--yolo`, which bypasses its dangerous-command approval prompts. Services' gbrain scripts do not implement Hermes MCP registration,
-and Agent launch does not provision one.
+intent `--yolo`, which bypasses its dangerous-command approval prompts.
 
 Stop and Clear send Ctrl+C once. The official [TUI README](https://github.com/NousResearch/hermes-agent/blob/main/ui-tui/README.md#main-chat-input)
 documents interruption during activity, clearing the current draft, and exit when nothing

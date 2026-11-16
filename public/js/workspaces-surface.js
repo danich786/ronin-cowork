@@ -172,13 +172,14 @@ export function workspacePage(w, { reading, campaignId, onSaved = () => {}, onDi
   if (brief) { stepBrief.body.append(el('p', 'fs-step-help', t('workspaces.brief_help', 'What every Agent in this Workspace is told. Agents already working are sent the change.')), brief.el); void brief.enter(); }
 
   /* ---- 3 · Integrations (KAN-338): the outside services this Workspace uses, from the integrations
-     index; each row a provider, its other facts (a bridge's `site`) kept as they are. Agents read them
-     on the Team's Workspace line. Connecting one is Settings › Integrations. ---- */
+     list (the bridges); each row a provider, with a field for each fact its bridge names (`facts: site`), saved
+     into the row as {provider, site}; any other fact is kept as it is. Agents read them
+     on the Team's Workspace line, and ask for its keys with `secret ask`. ---- */
   const stepIntegrations = createStep({ n: 3, key: 'integrations', title: t('workspaces.integrations', 'Integrations'), onToggle: () => { open.integrations = !open.integrations; paint(); } });
   const integrationRows = el('div', 'workspace-locations workspace-integrations');
   const addIntegration = el('select', 'workspace-integration-add');
   stepIntegrations.body.append(integrationRows, addIntegration,
-    el('p', 'fs-step-help', t('workspaces.integrations_help', 'Agents in this Workspace use these, with the token Settings › Integrations connects.')));
+    el('p', 'fs-step-help', t('workspaces.integrations_help', 'Agents in this Workspace use these; they ask for a key with secret ask, and Settings › Integrations shows what is saved.')));
   let index = [];
   addIntegration.addEventListener('change', () => {
     const provider = addIntegration.value;
@@ -196,16 +197,25 @@ export function workspacePage(w, { reading, campaignId, onSaved = () => {}, onDi
       remove.setAttribute('aria-label', t('workspaces.remove_named', 'Remove {name}', { name: record?.label || entry.provider }));
       remove.addEventListener('click', () => { draft.integrations = draft.integrations.filter((one) => one !== entry); changed(); paint(); });
       const where = el('div', 'workspace-location-where');
-      const facts = Object.entries(entry).filter(([k]) => k !== 'provider').map(([k, v]) => `${k} ${v}`).join(' · ');
-      where.append(el('b', null, record?.label || entry.provider), el('code', null, facts || record?.for || ''));
-      const state = !record ? t('workspaces.integration_unlisted', 'not in the index')
-        : record.connected ? t('integrations.connected', 'Connected') : t('integrations.not_connected', 'Not connected');
+      // The facts its bridge names (its `facts:` line) are fields; any other fact is kept and shown as it is.
+      const named = record?.facts || [];
+      const facts = Object.entries(entry).filter(([k]) => k !== 'provider' && !named.includes(k)).map(([k, v]) => `${k} ${v}`).join(' · ');
+      where.append(el('b', null, record?.label || entry.provider), el('code', null, facts || (named.length ? '' : record?.blurb || '')));
+      const state = record?.secrets.length ? t('integrations.keys_n', '{n} saved', { n: record.secrets.length }) : t('integrations.no_keys', 'No keys');
       row.append(el('small', 'folder-kind', ''), where, el('small', 'folder-kind', state), el('span'), remove);
+      for (const fact of named) {
+        const field = createField({ label: fact, control: text(entry[fact] ?? '', (v) => {
+          if (v.trim()) entry[fact] = v.trim(); else delete entry[fact];
+          changed();
+        }) });
+        field.el.classList.add('workspace-integration-fact');
+        row.append(field.el);
+      }
       integrationRows.append(row);
     }
     const chosen = new Set(draft.integrations.map((one) => one.provider));
     addIntegration.replaceChildren(Object.assign(el('option', null, t('workspaces.add_integration', '+ Add an integration')), { value: '' }),
-      ...index.filter((one) => !chosen.has(one.name)).map((one) => Object.assign(el('option', null, one.label), { value: one.name })));
+      ...index.filter((one) => one.available !== false && !chosen.has(one.name)).map((one) => Object.assign(el('option', null, one.label), { value: one.name })));
     addIntegration.hidden = addIntegration.options.length < 2;
   };
   void request(`/api/integrations${campaignId() ? `?campaign_id=${encodeURIComponent(campaignId())}` : ''}`, { cache: 'no-store' })
@@ -245,7 +255,7 @@ export function workspacePage(w, { reading, campaignId, onSaved = () => {}, onDi
     const row = (name) => ({ name, note: picked.get(name) || '' });
     draft.repos = [...picked.keys()].filter(git).map(row);
     draft.folders = [...picked.keys()].filter((name) => !git(name)).map(row);
-    // Behaviors save first (every Agent's brief is rebuilt); the Workspace's own save then carries the same values.
+    // Behaviors save first; the Workspace's own save then carries the same values.
     if (brief) { const told = await brief.save(); if (!told.ok) { say(told.message, true); return false; } }
     const briefKeys = brief ? { brief: brief.value().brief, pm: brief.value().pm } : {};
     const answer = await request(`/api/workspaces/${encodeURIComponent(draft.name)}`, { method: 'PUT', json: { ...draft, ...briefKeys, plans: draft.plans?.location ? draft.plans : null, plans_place: undefined, campaign_id: campaignId() || undefined } });

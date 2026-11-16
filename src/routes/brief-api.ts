@@ -6,7 +6,6 @@
 import type express from 'express';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { refreshAllBriefs } from '../agent-configuration.js';
 import { AGENT_BRIEF, BIRTH_BRIEF } from '../birth-brief.js';
 import { briefOff, briefTold, cascade, layerOf, readUserLayer, userBriefFile, type Layer, type LayerName } from '../brief-settings.js';
 import { BehaviourDocumentError, createBehaviourDocument, readBehaviourDocument, updateBehaviourDocument } from '../behaviour-documents.js';
@@ -17,6 +16,7 @@ import { CONDITIONALS } from '../conditionals.js';
 import { person } from '../office-people.js';
 import { sessionDir, sessionKey } from '../session-dir.js';
 import { resolveBriefFor, resolveFacts, type SpawnForm } from '../spawn.js';
+import { availableRecords, campaignLayer as campaignLayerOf } from '../brief-build.js';
 import { readTeamRoster, writeTeamRoster } from '../team-rosters.js';
 import { readWorkspace, saveWorkspace } from '../workspaces.js';
 
@@ -24,30 +24,34 @@ const errMsg = (e: unknown): string => String((e as Error)?.message ?? e);
 const SETTING_LAYERS = ['user', 'campaign', 'workspace', 'team'] as const;
 type SettingLayer = typeof SETTING_LAYERS[number];
 
-/** A layer's own record, and the layers above it. */
-async function layerAt(layer: SettingLayer, id: string, campaignId: string): Promise<{ own: Layer; above: Layer[] }> {
+/** A layer's own record, the layers above it, and the MCP and web API records its picker lists
+ * beside the bridges: those available to its Campaign (KAN-607). */
+async function layerAt(layer: SettingLayer, id: string, campaignId: string): Promise<{ own: Layer; above: Layer[]; available: string[] }> {
   const user = await readUserLayer();
-  if (layer === 'user') return { own: user, above: [] };
+  if (layer === 'user') return { own: user, above: [], available: [] };
   const campaign = await readCampaign(campaignId);
   if (!campaign) throw new BehaviourDocumentError(`Unknown Campaign: ${campaignId || '(none)'}.`, 404);
-  const campaignLayer = layerOf('campaign', campaign.config);
-  if (layer === 'campaign') return { own: campaignLayer, above: [user] };
+  const available = (await availableRecords(campaignId)).map((record) => record.name);
+  // What the Campaign holds itself; below it, the Campaign as the brief reads it (Jira when its part is on).
+  // Jira is an integration only; pm is its own setting, on at the Campaign by default (KAN-608).
+  if (layer === 'campaign') return { own: layerOf('campaign', campaign.config), above: [user], available };
+  const campaignLayer = await campaignLayerOf({ id: campaignId, config: campaign.config });
   if (layer === 'workspace') {
     const workspace = await readWorkspace(campaignId, id);
     if (!workspace) throw new BehaviourDocumentError(`No Workspace "${id}".`, 404);
-    return { own: layerOf('workspace', workspace), above: [user, campaignLayer] };
+    return { own: layerOf('workspace', workspace), above: [user, campaignLayer], available };
   }
   const roster = await readTeamRoster(id, campaignId) ?? await readTeamRoster(id, '');
   if (!roster) throw new BehaviourDocumentError(`No Team "${id}".`, 404);
   const workspace = roster.workspace ? await readWorkspace(roster.campaign_id || campaignId, roster.workspace) : null;
-  return { own: layerOf('team', roster), above: [user, campaignLayer, ...(workspace ? [layerOf('workspace', workspace)] : [])] };
+  return { own: layerOf('team', roster), above: [user, campaignLayer, ...(workspace ? [layerOf('workspace', workspace)] : [])], available };
 }
 
-const shown = (own: Layer, above: Layer[]) => ({
+const shown = ({ own, above, available }: { own: Layer; above: Layer[]; available: string[] }) => ({
   brief: own.brief,
   integrations: own.integrations,
   pm: own.pm ?? null,
-  inherited: cascade(above),
+  inherited: { ...cascade(above), available },
 });
 
 async function writeLayer(layer: SettingLayer, id: string, campaignId: string, body: Record<string, unknown>): Promise<void> {
@@ -119,7 +123,7 @@ export function registerBrief(app: express.Express): void {
       const catalog = await readCatalogs();
       res.json([...catalog.facts, ...catalog.behaviours, ...catalog.tools].map((row) => ({
         kind: row.kind.replace(/s$/, ''), name: row.name, title: row.title, seed: row.seed, line: row.line,
-        depth: row.depth, when: row.when, serves: row.serves, mandate: row.mandate, value: row.value, with: row.with, integration: row.integration,
+        depth: row.depth, when: row.when, serves: row.serves, mandate: row.mandate, value: row.value, with: row.with, integration: row.integration, facts: row.facts,
         order: row.order === Number.MAX_SAFE_INTEGER ? null : row.order, path: row.file, origin: row.origin,
       })));
     } catch (e) { res.status(500).json({ error: errMsg(e) }); }
@@ -146,8 +150,7 @@ export function registerBrief(app: express.Express): void {
     if (!SETTING_LAYERS.includes(layer)) return res.status(400).json({ error: 'layer is user, campaign, workspace or team.' });
     try {
       const campaignId = layer === 'campaign' ? req.params.id : String(req.query.campaign_id ?? '').trim() || await initialCampaignId();
-      const { own, above } = await layerAt(layer, req.params.id, campaignId);
-      res.json(shown(own, above));
+      res.json(shown(await layerAt(layer, req.params.id, campaignId)));
     } catch (e) { res.status(e instanceof BehaviourDocumentError ? e.status : 500).json({ error: errMsg(e) }); }
   });
 
@@ -157,10 +160,8 @@ export function registerBrief(app: express.Express): void {
     try {
       const campaignId = layer === 'campaign' ? req.params.id : String(req.query.campaign_id ?? req.body?.campaign_id ?? '').trim() || await initialCampaignId();
       await writeLayer(layer, req.params.id, campaignId, (req.body ?? {}) as Record<string, unknown>);
-      // A layer changed: every Agent's brief is rebuilt, and each is sent only what differs.
-      void refreshAllBriefs().catch(() => {});
-      const { own, above } = await layerAt(layer, req.params.id, campaignId);
-      res.json(shown(own, above));
+      // A default changed: new Agents are born with it; a live Agent's record doesn't move.
+      res.json(shown(await layerAt(layer, req.params.id, campaignId)));
     } catch (e) { res.status(e instanceof BehaviourDocumentError ? e.status : 500).json({ error: errMsg(e) }); }
   });
 
@@ -172,9 +173,10 @@ export function registerBrief(app: express.Express): void {
       if (who) form.person = who;
       const facts = await resolveFacts(form, new Set());
       const composed = await resolveBriefFor(form, facts);
-      if (!composed) return res.json({ in_play: [], integrations: {}, pm: { on: false }, off: [] });
+      const available = (composed?.doc.setting.available ?? []).map((record) => record.name);
+      if (!composed) return res.json({ in_play: [], integrations: {}, integrations_off: {}, pm: { on: false }, off: [], available });
       res.json({
-        in_play: briefTold(composed.resolved), integrations: composed.cascade.integrations, pm: composed.cascade.pm,
+        in_play: briefTold(composed.resolved), integrations: composed.cascade.integrations, integrations_off: composed.cascade.off, pm: composed.cascade.pm, available,
         off: briefOff(await readCatalogs(), composed.layers),
       });
     } catch (e) { res.status(400).json({ error: errMsg(e) }); }
@@ -198,14 +200,12 @@ export function registerBrief(app: express.Express): void {
     try {
       const body = (req.body ?? {}) as Record<string, unknown>;
       const made = await createBehaviourDocument({ name: body.name, text: body.text, shadow: body.shadow, scope: body.kind ?? body.scope });
-      void refreshAllBriefs().catch(() => {});
       res.status(201).json(made);
     } catch (e) { res.status(e instanceof BehaviourDocumentError ? e.status : 500).json({ error: errMsg(e) }); }
   });
   app.put('/api/brief/files/:kind/:name', async (req, res) => {
     try {
       const saved = await updateBehaviourDocument({ ...req.body, scope: req.params.kind, name: req.params.name });
-      void refreshAllBriefs().catch(() => {});
       res.json(saved);
     }
     catch (e) { res.status(e instanceof BehaviourDocumentError ? e.status : 500).json({ error: errMsg(e) }); }

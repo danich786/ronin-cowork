@@ -7,6 +7,9 @@ Each CLI has one maintained integration page:
 - [Antigravity CLI](agy.md)
 - [Grok](grok.md)
 - [Hermes](hermes.md)
+- [GitHub Copilot CLI](copilot.md)
+- [OpenCode](opencode.md)
+- [Kimi Code](kimi.md)
 
 These pages own each CLI's Ronin-specific explanation and code map. Shared browser
 shortcuts belong only to [Terminal controls](../using-ronin/terminal-controls.md).
@@ -18,7 +21,10 @@ CLI. Models, prices and owner overrides belong to the
 
 Each Agent page is the executable authority for its no-model/model and
 native-approval/dangerous command combinations, plus Resume, new-session-id and
-initial-prompt forms. `src/agent-launches.ts` reads those argv
+initial-prompt forms. `launch_initial` is `positional`, a flag form such as
+`["-i", "{brief}"]`, `message` for a CLI with no prompt-and-stay-open option (the brief is
+queued as its first message, delivered once its screen reads ready), or `none` (parked in
+`brief.md`). `src/agent-launches.ts` reads those argv
 fields; unsupported forms are `—`. A nonempty `launch_new_session_id` chooses command-owned
 identity (`minted`); an existing explicitly named id is kept, never minted over. Otherwise
 `launch_isolation` declares an environment variable, its default home, and which entries to inherit (`isolated`). With neither capability, the outcome is

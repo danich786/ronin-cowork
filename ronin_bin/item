@@ -3,12 +3,16 @@
 set -u -o pipefail
 . "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"
 TOOL_DIR=$(dirname "$SELF")
+# item read and item search print plain lines (w694); --json, anywhere after the verb, the JSON.
+as_json=''
+case "${1:-}" in read|search) a=("$1"); shift; for x in "$@"; do [ "$x" = --json ] && as_json=1 || a+=("$x"); done; set -- "${a[@]}";; esac
+plain() { local out; out=$(ronin_item_call GET "$2") || return $?; if [ -n "$as_json" ]; then printf '%s\n' "$out"; else printf '%s\n' "$out" | python3 "$TOOL_DIR/../libexec/item-plain" "$1"; fi; }
 die() { echo "$1" >&2; exit "${2:-2}"; }
 usage() { cat <<'EOF_USAGE'
 Usage:
   item create --title <t> [--kind <type>] [--parent <id>] [--objective <o>] [--priority <p>] [--team <t>]
-  item read <id>
-  item search [--campaign <id>] [--team <t>] [--holder <name>|none] [--parent <id>|--no-parent] [--status <s>] [--kind <k>] [--text <words>] [--archived]
+  item read <id> [--json]
+  item search [--campaign <id>] [--team <t>] [--holder <name>|none] [--parent <id>|--no-parent] [--status <s>] [--kind <k>] [--text <words>] [--archived] [--json]
   item edit <id> --title|--objective|--kind|--parent <id|none>|--priority|--trello|--github <value> ...
   item transition <ids> "<status>" [--note "<what they can try>"]
   item handoff <ids> <agent>|team:<name> [--from <agent>|team:<name>] [--keep-holding]
@@ -31,6 +35,11 @@ refused, naming the set. The kind sets the level: 1 Epic, 0 Task/Story/Bug/Featu
 level stays). The one rule: nothing goes below -1; children follow their parent
 ("w39 can't go there."). A parent or kind the space would refuse is refused here, with the
 reason.
+read prints the item plainly: title, id, kind, status, holder, parent (none when empty), the
+objective whole, its children one line each, then its latest comments and trail lines, newest
+last. --json prints the whole item as JSON, every comment and trail line, for a script.
+search prints one line per item, '<id> | <status> | <holder> | <title>', the title in full;
+--json prints the JSON ({"items": [...]}) instead.
 create lands on you, or with --team <t> on that Team (a lead's create lands on its team;
 leading several, name it). Any kind, an Epic too, with --parent or none. It answers
 "created <id> under <parent>" on its first line.
@@ -98,10 +107,10 @@ case "$verb" in
         --campaign|--team|--holder|--parent|--status|--kind|--text) [ -n "${2:-}" ] || die "BAD-ARG: $1 needs a value"; q="$q&${1#--}=$(quote "$2")"; shift 2 ;;
         --no-parent) q="$q&no_parent=1"; shift ;;
         --archived) q="$q&archived=1"; shift ;;
-        *) die "BAD-ARG: item search takes --campaign, --team, --holder, --parent, --no-parent, --status, --kind, --text or --archived, not $1" ;;
+        *) die "BAD-ARG: item search takes --campaign, --team, --holder, --parent, --no-parent, --status, --kind, --text, --archived or --json, not $1" ;;
       esac
     done
-    ronin_item_call GET "/api/work-items?${q#&}"; exit $? ;;
+    plain search "/api/work-items?${q#&}"; exit $? ;;
   archive) [ "${1:-}" = --done ] && {
       shift; team=''
       if [ "$#" -eq 2 ] && [ "$1" = --team ]; then team=$2; elif [ "$#" -ne 0 ]; then die 'BAD-ARG: item archive takes <ids>, or --done [--team <t>]'; fi
@@ -125,7 +134,7 @@ item_act() {
   fi
 }
 case "$verb" in
-  read) [ "$#" -eq 0 ] || die 'BAD-ARG: item read takes only <id>'; ronin_item_call GET "/api/work-items/$id" ;;
+  read) [ "$#" -eq 0 ] || die 'BAD-ARG: item read takes only <id> [--json]'; plain read "/api/work-items/$id" ;;
   edit) [ "$#" -ge 2 ] || die 'BAD-ARG: item edit takes <id> --field <value> ...'
     body=$(fields title,objective,kind,parent,priority,trello,github "$@") || exit 2; ronin_item_call PUT "/api/work-items/$id" "$body" ;;
   transition) [ "$#" -eq 1 ] || { [ "$#" -eq 3 ] && [ "$2" = --note ]; } || die 'BAD-ARG: item transition takes <ids> <status> [--note "<what they can try>"]'

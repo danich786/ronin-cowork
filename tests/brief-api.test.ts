@@ -61,18 +61,29 @@ test('the integrations listing is the bridge files: adding one adds an integrati
   assert.equal(catalog.find((row) => row.name === 'probe-bridge')!.integration, 'probe');
 });
 
-test('a Campaign paired with Jira has the jira integration on, so project management is on', async () => {
+test('a Campaign\'s Jira part is Jira on there, and never decides project management (KAN-608)', async () => {
   const { briefLayers } = await import('../src/brief-build.js');
   const { cascade } = await import('../src/brief-settings.js');
-  const { JIRA_NAMES, setSpaceNames } = await import('../src/work-items.js');
-  const facts = { campaign: { id: 'paired', config: { brief: { add: [], block: [], only: [] }, integrations: [] } }, workspace: null, roster: null } as never;
+  const campaign = (jira: boolean) => ({ campaign: { id: 'paired', config: { brief: { add: [], block: [], only: [] }, integrations: [], services: { parts: { jira } } } }, workspace: null, roster: null }) as never;
   const agent = { brief: { add: [], block: [], only: [] }, integrations: [] };
-  assert.deepEqual(cascade(await briefLayers(facts, agent)).pm, { on: false });
-  setSpaceNames('paired', JIRA_NAMES);
-  try {
-    const on = cascade(await briefLayers(facts, agent));
-    assert.deepEqual([on.integrations.jira, on.pm], ['campaign', { on: true, from: 'jira' }]);
-  } finally { setSpaceNames('paired', null); }
+  const without = cascade(await briefLayers(campaign(false), agent));
+  assert.deepEqual([without.integrations.jira, without.pm], [undefined, { on: true, from: 'campaign' }], 'Jira off: pm still on by default');
+  const on = cascade(await briefLayers(campaign(true), agent));
+  assert.deepEqual([on.integrations.jira, on.pm], ['campaign', { on: true, from: 'campaign' }]);
+  const pmOff = cascade(await briefLayers(campaign(true), { ...agent, pm: false }));
+  assert.deepEqual(pmOff.pm, { on: false, from: 'agent' }, 'Jira on: an Agent may still turn pm off');
+});
+
+test('a layer picker lists the MCP and web API records available to its Campaign; the Campaign has none on (KAN-607)', async () => {
+  const { createCampaign } = await import('../src/campaigns.js');
+  const { mcpRecordsDir } = await import('../src/mcp-records.js');
+  await createCampaign({ id: 'picker_probe', name: 'Picker probe' });
+  await fs.mkdir(mcpRecordsDir(), { recursive: true });
+  await fs.writeFile(path.join(mcpRecordsDir(), 'cloudflare.md'), '# Cloudflare\n- **base:** https://api.cloudflare.com/client/v4\n- **campaigns:** picker_probe\n');
+  await fs.writeFile(path.join(mcpRecordsDir(), 'elsewhere.md'), '# Elsewhere\n- **reach:** https://mcp.example.com/mcp\n- **campaigns:** other\n');
+  const shown = await (await fetch(`${base}/api/brief/settings/campaign/picker_probe`)).json() as { integrations: string[]; inherited: { available: string[]; integrations: Record<string, string> } };
+  assert.deepEqual(shown.inherited.available, ['cloudflare']);
+  assert.deepEqual([shown.integrations, shown.inherited.integrations], [[], {}], 'available is not on');
 });
 
 test.after(async () => {

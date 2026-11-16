@@ -6,13 +6,13 @@ export interface AgentLaunches {
   nativeDangerously: string[];
   modelDangerously: string[];
   resume: string[];
-  /** A copy of the conversation as a new one, under this launch's own settings (its provider
-   *  included, which a resume of some CLIs refuses to change); [] when the CLI has none. */
-  fork: string[];
   newSessionId: string[];
   isolation?: { env: string; home: string; private?: string | string[]; shared?: string[]; provision?: 'hermes-setup' };
   transcript?: { format: string; root: string; pattern: string; idPath?: string; childPath?: string };
-  initial: 'positional' | 'none' | string[];
+  /** How the brief reaches a new Agent: in its argv (`positional` or a flag form), as its first
+   *  message once its screen reads ready (`message`: a CLI with no prompt-and-stay-open flag),
+   *  or not at all (`none`: parked in brief.md). */
+  initial: 'positional' | 'none' | 'message' | string[];
 }
 
 const field = (text: string, name: string): string =>
@@ -44,9 +44,8 @@ export async function readAgentLaunches(cli: string): Promise<AgentLaunches> {
     nativeDangerously: argv(text, 'launch_native_dangerously'),
     modelDangerously: argv(text, 'launch_model_dangerously'),
     resume: argv(text, 'launch_resume'),
-    fork: argv(text, 'launch_fork'),
     newSessionId: argv(text, 'launch_new_session_id'),
-    initial: initial.startsWith('[') ? argv(text, 'launch_initial') : initial === 'none' ? 'none' : 'positional',
+    initial: initial.startsWith('[') ? argv(text, 'launch_initial') : initial === 'none' ? 'none' : initial === 'message' ? 'message' : 'positional',
   };
   if (!launches.native.length || launches.native[0] !== cli) {
     throw new Error(`docs/agents/${cli}.md must declare launch_native beginning with ${cli}.`);

@@ -111,7 +111,7 @@ export function createInstallationsSurface(campaign, context = {}) {
   const featureProviderControls = (installation) => {
     const reason = blockedReason(installation);
     const notice = el('p', 'setup-notice');
-    const unavailable = el('p', 'setup-gbrain-hint', t('campaign_view.turn_available_on', 'turn Available on first'));
+    const unavailable = el('p', 'setup-hint', t('campaign_view.turn_available_on', 'turn Available on first'));
     const availableQuestion = ask([{ fields: [{
       key: 'available', label: t('campaign_view.available', 'Available'), switch: [t('campaign_view.on', 'On'), t('campaign_view.off', 'Off')],
       off: reason,
@@ -171,9 +171,9 @@ export function createInstallationsSurface(campaign, context = {}) {
       return () => { controls?.destroy(); page.destroy?.(); };
     }
     if (controls) {
-      const rows = el('dl', 'setup-gbrain-answers campaign-installation-answers');
+      const rows = el('dl', 'setup-answers campaign-installation-answers');
       const controlRow = (label, control, note = null) => {
-        const item = el('div', 'setup-gbrain-answer');
+        const item = el('div', 'setup-answer');
         const answer = el('dd'); answer.append(control); if (note) answer.append(note);
         item.append(el('dt', '', label), answer); rows.append(item);
       };

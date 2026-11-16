@@ -543,7 +543,7 @@ Launches read session launch specs (`src/spawn.ts`); providers and agent CLIs ar
 catalog rows (`ronin_catalogs/PROJECT_ROOTS.md` — each populated cell is a
 provider/model/cmd triple; the standing write-up of that contract rides the owner's
 model-providers doc, in flight beside this), never as UI branches. Future agent forms
-(Hermes, gbrain and whatever "app" tiles become) enter the same way: the tile's view
+(Hermes and whatever "app" tiles become) enter the same way: the tile's view
 kinds (terminal | tape) may grow a sibling, and nothing in the shell may assume which
 agent is behind a pane.
 

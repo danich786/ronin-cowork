@@ -390,7 +390,7 @@ nothing paints exactly this.
 - **help.agents:** Agents
 - **help.agents_body:** The Agents this Team is raised with. A row is short on purpose — a name and what that Agent does — and opens for its mandate when you want it. 人 marks the lead; this form offers one, though a running Team may gain more. Raising creates the Team and then births every named row, the lead last. A Team with no rows is ordinary and raises fine.
 - **help.behaviours:** What a Behavior is
-- **help.behaviours_body:** Behaviors are specific guidance given to Agents at birth. Team Work, Visual Staging, and Working with the User are selectable; Write it Down, All Cowork Agents and Conditional Behaviors are applied by Ronin when their rules match.
+- **help.behaviours_body:** Behaviors are specific guidance given to Agents at birth. Team Work and Working with the User are selectable; Write it Down, All Cowork Agents and Conditional Behaviors are applied by Ronin when their rules match.
 - **help.type:** New session
 - **help.type_body:** Three kinds of thing can start here. A Cowork Agent is born with everything Ronin provides on this box. A bare-metal Agent is the provider’s own CLI and nothing else. A terminal is a shell with no agent. The choice decides which of the steps below exist — a terminal is asked three things because there are only three to ask.
 - **help.top:** Name & kind
@@ -709,43 +709,6 @@ nothing paints exactly this.
 - **machine.stopped:** Off — the gauge is hidden.
 - **machine.save_failed:** Could not save that.
 
-## gbrain — gbrain-setup-state.js and gbrain.js (the Ronin Setup work surface)
-- **gbrain.retry_install:** Retry install
-- **gbrain.load:** Load gbrain
-- **gbrain.status_diagnosis:** Setup could not read the local gbrain status. Nothing was changed.
-- **gbrain.check_again:** Check again
-- **gbrain.setup_intro:** A shared, searchable memory for your Agents.
-- **gbrain.setup_q_installed:** Installed
-- **gbrain.setup_q_accounts:** Accounts linked
-- **gbrain.setup_checking:** Checking…
-- **gbrain.setup_not_installed:** Not installed
-- **gbrain.setup_services_needed_hint:** gbrain comes with Ronin Services.
-- **gbrain.setup_open_services:** Open Ronin Services
-- **gbrain.setup_services_off:** Installed · Ronin Services is switched off
-- **gbrain.setup_services_off_hint:** Turn Services on for this Cowork in Team Configuration.
-- **gbrain.setup_load_hint:** One press. Downloads come from github.com and huggingface.co.
-- **gbrain.setup_installing:** Installing…
-- **gbrain.setup_removing:** Removing…
-- **gbrain.setup_failed:** Install did not finish
-- **gbrain.setup_install_log:** Install log
-- **gbrain.setup_running:** Installed · running
-- **gbrain.setup_running_keyword:** Installed · running · keyword-only search
-- **gbrain.setup_stopped:** Installed · not running
-- **gbrain.setup_stopped_hint:** Turn Ronin Services off and on in Team Configuration, or ask an Agent to look.
-- **gbrain.setup_check_assistant:** Ask an Agent to check gbrain
-- **gbrain.setup_unreadable:** Could not read
-- **gbrain.setup_linked:** Linked
-- **gbrain.setup_not_linked:** Not linked
-- **gbrain.setup_no_accounts:** None to link on this install.
-- **gbrain.setup_accounts_hint:** Your Personal Assistant links one when you ask, with your approval.
-- **gbrain.setup_provider_first:** A model provider comes first.
-- **gbrain.setup_open_providers:** Open Model providers
-- **gbrain.setup_ready:** Everything is good to go.
-- **gbrain.setup_start_assistant:** Start your first Personal Assistant
-- **gbrain.setup_launching:** Launching…
-- **gbrain.setup_launched:** Launched in a new tab.
-- **gbrain.setup_launch_failed:** Launch failed.
-
 ## koshi — koshi.js (the 目 Koshi tab)
 - **koshi.restart:** ↻ Restart Koshi
 - **koshi.restart_title:** Stop and start the watcher. Settings apply on their own; this is for when it is not running at all.
@@ -915,6 +878,8 @@ The catalog entry goes. {dir} is not touched.
 - **roots.github_connect:** Connect GitHub
 - **roots.github_connect_guided:** Use GitHub CLI with Mika
 - **roots.github_connect_mika:** Let Mika connect GitHub
+- **roots.github_connect_guided_irasshai:** Use GitHub CLI with Irasshai
+- **roots.github_connect_irasshai:** Let Irasshai connect GitHub
 - **roots.git_other_method:** Use another method
 - **roots.git_other_open:** Use your preferred Git or SSH setup here, then return to the Workspace Folder and check Git access.
 - **roots.github_remove_auth:** Remove authentication
@@ -939,6 +904,7 @@ The catalog entry goes. {dir} is not touched.
 ## help_outline — help-outline.js (the Help workbench's pages)
 - **help_outline.project_management:** Project management
 - **help_outline.planning:** Writing a plan
+- **help_outline.epic_templates:** Epic templates
 
 ## docs — docs.js (the ▧ Docs tab)
 - **docs.back_title:** Back to the list
@@ -1062,7 +1028,6 @@ The catalog entry goes. {dir} is not touched.
 - **pane.settei:** Configuration
 - **pane.hotwords:** Hotwords
 - **pane.koshi:** Koshi
-- **pane.gbrain:** gbrain
 
 ## desk — desk.js (the desk's rows and tooltips)
 - **cowork.tab_health:** Desk
@@ -1222,6 +1187,7 @@ The catalog entry goes. {dir} is not touched.
 - **transcript.stance_working:** Working
 - **transcript.stance_asking:** Waiting for your answer in Terminal
 - **transcript.answer_in_terminal:** Answer in Terminal
+- **transcript.back_to_chat:** Back to Chat
 
 ## output — output.js (the RIREKI view picker)
 - **output.locked:** Locked
@@ -1574,6 +1540,8 @@ The catalog entry goes. {dir} is not touched.
 - **setup_surface.providers:** Model providers
 - **setup_surface.authenticate_mika:** Let Mika authenticate
 - **setup_surface.authenticate_guided:** Use the CLI with Mika
+- **setup_surface.authenticate_irasshai:** Let Irasshai authenticate
+- **setup_surface.authenticate_guided_irasshai:** Use the CLI with Irasshai
 - **setup_surface.providers_summary_unread:** Every provider and model Ronin offers, and what this machine has.
 - **setup_surface.providers_summary:** {providers} providers · {models} models · {activated} activated here
 - **setup_surface.providers_summary_dated:** {counts} · model info from {date}
@@ -1629,7 +1597,6 @@ The catalog entry goes. {dir} is not touched.
 
 ## behaviours — behaviour-surface.js
 - **behaviours.title:** Behaviors
-- **behaviours.available:** Optional
 - **behaviours.yours:** Yours
 - **behaviours.stock:** Ronin
 - **campaign_view.desk_settings:** Desk Settings
@@ -1658,22 +1625,19 @@ The catalog entry goes. {dir} is not touched.
 - **brief.why_not:** not {what}
 - **brief.why_every:** every Agent
 - **brief.integrations:** Integrations
-- **brief.integrations_help:** On from the Campaign, Workspace or Team, plus any you turn on for this Agent.
 - **brief.integrations_help_layer:** On here is on for everything below.
 - **brief.pm:** Project management
 - **brief.on_from_word:** On, from the {layer}
 - **brief.on:** On
 - **brief.off:** Off
-- **brief.pm_jira:** On while Jira is on.
-- **brief.pm_on:** Work items: the item model, and the guidance for this Agent’s role.
 - **brief.pm_on_layer:** Work items for every Agent below: the item model, and the guidance for each role.
-- **brief.pm_off:** No work items guidance.
+- **brief.pm_off_layer:** Off here and below: no work items guidance.
+- **brief.off_from_word:** Off, from the {layer}
 - **brief.set_on:** Set on
 - **brief.depth_seed:** Seed
 - **brief.depth_full:** Full
 - **brief.depth:** Depth
 - **brief.add:** Add
-- **brief.optional_help:** Behaviors added for this Agent only. One already told can be raised to Full.
 - **brief.add_help:** Brought in for every Agent below, at this depth.
 - **behaviours.customize:** Customize Behaviors
 - **brief.comes:** Comes with this Agent

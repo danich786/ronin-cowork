@@ -14,7 +14,7 @@ import { request } from './request.js';
 import { coworkCommons } from './cowork-commons.js';
 import { accountCard } from './account-card.js';
 import { createFeedbackSurface, FEEDBACK_TYPE } from './feedback.js';
-import { createGbrainSurface, createServicesSurface } from './setup-surfaces.js';
+import { createServicesSurface } from './setup-surfaces.js';
 import { readyMika } from './mika-ready.js';
 import { createMikaHelpPanel, createMikaTilePool } from './mika.js';
 import { toast } from './ui.js';
@@ -157,7 +157,6 @@ export function createCampaignView() {
       openItems: () => bench.place(TYPES.jiraItems, other(workspace)),
       openPairs: () => bench.place(TYPES.jiraPairs, other(workspace)),
     }),
-    gbrain: () => createGbrainSurface({ environment, workbench: bench, workspace }),
   });
   const ensureAndPlaceMika = async (workspace = 'workspace1') => {
     const ready = await readyMika('help');
@@ -186,7 +185,7 @@ export function createCampaignView() {
     // The way back to Setup heads the Machine Settings group. It is a door, not a surface,
     // so it is built here rather than registered as a Workbench type a drag could seat.
     const machine = cards.querySelector(`[data-workbench-offer-type="${TYPES.machine}"]`);
-    if (machine && !HOSTED) machine.before(createSetupReturnCard(setupProgress(), openSetup)); // a hosted office has no Setup
+    if (machine && !HOSTED) machine.before(createSetupReturnCard(setupProgress(), openSetup)); // a hosted office's Setup is Irasshai's, reached by Home's Settings door while she runs
   }, onStateChange: save, onPlacement: save });
   installBehaviourReader(bench, TYPES.document);
   helpPanel = createMikaHelpPanel({

@@ -2,12 +2,13 @@
 - **seed:** Netlify hosts the Workspace's sites: `netlify` for its sites, deploys, traffic, forms and variables; `preview` for a pull request's preview link. Setting a site up, the owner's steps: `ronin-help netlify-bridge`.
 - **when:** integration:netlify
 - **depth:** full
-- **mcp:**
+- **facts:** site
 - **order:** 24
 
 Netlify hosts this Workspace's site. It builds a preview for every pull request and publishes
 the production branch when a PR merges. The `netlify` bridge is the short way to read it: it
-fills in the account and the site linked to your Workspace, and answers in a few lines.
+fills in the account and the Workspace's site (its `site`, which the owner sets on the Workspace
+page's Netlify row and your Workspace line shows), and answers in a few lines.
 Netlify's own CLI and API still work for anything it doesn't cover.
 
 - Change the site the usual way: a PR, then `preview` puts its preview link in your Documents.
@@ -35,8 +36,8 @@ wait for each.
    gives (`<name>.netlify.app`).
 2. **The token:** `secret ask netlify-auth-token --for "Netlify personal access token"`. The
    owner makes it under User settings → Applications → Personal access tokens.
-3. **The link:** the owner adds Netlify with the site name to the Workspace; until then,
-   `--site <name>`.
+3. **The link:** the owner adds Netlify to the Workspace on its page (Integrations) and types
+   the site name in its `site` field; until then, `--site <name>`.
 4. **The domain:** add it and its `www` to the site through Netlify's API, the token by
    `secret path netlify-auth-token`.
 5. **DNS,** at the registrar: the bare domain an A record to `75.2.60.5`; `www` a CNAME to

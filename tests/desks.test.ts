@@ -243,10 +243,8 @@ test('a hand-in with --item ends by naming the item and the write that keeps it 
 });
 
 test('under project management a hand-in needs no item: the code goes in, nothing moves, and the reply says to check your items (w415)', async () => {
-  const { sessionDir } = await import('../src/session-dir.js');
-  const dir = sessionDir('pm_hander');
-  await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(path.join(dir, 'brief-told.json'), JSON.stringify({ told: { 'project-management': { kind: 'behaviours', depth: 'full', title: 'Project management' } } }));
+  const { briefDoc, seedBriefDoc } = await import('./helpers/brief-doc.js');
+  await seedBriefDoc(briefDoc('pm_hander', { pm: true }));
   const desk = await openDesk({ repo: 'cowork', session: 'pm_hander', team: 'comp' });
   await commitFile(desk.worktree, 'no-item.txt', 'docs only\n');
   const { item } = await createItem({ title: 'Untouched' }, 'pm_hander');

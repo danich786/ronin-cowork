@@ -89,9 +89,9 @@ test('unknown, retired, invalid, and server-owned fields are ignored and noted t
 
 
 test('cowork kind and the Agent\'s brief settings survive body acceptance while unusable shapes are ignored', () => {
-  const accepted = acceptedLaunchBody({ name: 'proof', kind: 'coding', brief: { add: ['visual-staging'] }, pm: true });
+  const accepted = acceptedLaunchBody({ name: 'proof', kind: 'coding', brief: { add: ['team-work'] }, pm: true });
   assert.equal(accepted.body.kind, 'coding');
-  assert.deepEqual(accepted.body.brief, { add: ['visual-staging'] });
+  assert.deepEqual(accepted.body.brief, { add: ['team-work'] });
   assert.equal(accepted.body.pm, true);
   assert.deepEqual(accepted.ignored, []);
 
@@ -106,12 +106,12 @@ test('settled launch enums are accepted and their retired keys are receipt-only'
   assert.equal(accepted.body.launch_mode, undefined, 'Mode is the Workspace\'s, never the request\'s');
   assert.deepEqual(accepted.ignored, ['launch_mode']);
 
-  const malformed = acceptedLaunchBody({ name: 'proof', launch_mode: 'safe', gbrain_mode: 'maybe', permissions: 'bypass', mcp: false });
+  const malformed = acceptedLaunchBody({ name: 'proof', launch_mode: 'safe', stray_mode: 'maybe', permissions: 'bypass', mcp: false });
   assert.equal(malformed.body.launch_mode, undefined);
-  assert.equal(malformed.body.gbrain_mode, undefined);
+  assert.equal(malformed.body.stray_mode, undefined);
   assert.equal(malformed.body.permissions, undefined);
   assert.equal(malformed.body.mcp, undefined);
-  assert.deepEqual(malformed.ignored, ['gbrain_mode', 'launch_mode', 'mcp', 'permissions']);
+  assert.deepEqual(malformed.ignored, ['launch_mode', 'mcp', 'permissions', 'stray_mode']);
 
   const terminal = acceptedLaunchBody({ session_type: 'terminal', name: 'proof', launch_mode: 'live_dangerously' });
   assert.equal(terminal.body.launch_mode, undefined);
@@ -181,7 +181,7 @@ test.after(() => server.close());
  * ~/.local/bin — so before this a tile launched by absolute path ran the CLI Ronin had
  * installed while `codex` typed by name inside it found an older system copy (2026-09-09). */
 test('every newborn PATH carries the three shared tool locations in order', async () => {
-  const { birthEnv } = await import('../src/routes/launch.js');
+  const { birthEnv } = await import('../src/launch-binding.js');
   const { REPO_ROOT, storeDir } = await import('../src/resources.js');
   const shared = [`${REPO_ROOT}/bin/shim`, storeDir('tools'), `${REPO_ROOT}/ronin_bin`];
   assert.deepEqual(birthEnv('sock', '/home/o/.local/bin', '/usr/bin:/bin'), {

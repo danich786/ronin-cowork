@@ -36,9 +36,9 @@ import { expandLookup } from '../lookup.js';
 import { count } from '../counts.js';
 import { broadcastEvent, pushTeams } from '../ws/events.js';
 import { announceTeamChanges } from './wipeboards-api.js';
-import { memberEnded, teamChanged, writeConfiguration, writeTeams } from '../tegami.js';
+import { memberEnded, readBriefRecord, teamChanged, writeConfiguration, writeTeams } from '../tegami.js';
 import { readAgentComposition } from '../agent-composition.js';
-import { configurationSends, refreshBrief, updateConfiguration } from '../agent-configuration.js';
+import { configurationSends, configureBrief, updateConfiguration } from '../agent-configuration.js';
 import { agentBriefOf } from '../brief-build.js';
 import { mandate } from '../agent-defaults.js';
 import { emitSessionEnd } from '../sockets.js';
@@ -79,7 +79,8 @@ interface ShutdownOperation extends ShutdownProgress {
   destructive?: { closed: string[]; quarantined: Array<{ desk: string; quarantine_id: string }> };
 }
 
-const publicArchive = ({ id, name, archived_at, agent, tags }: ArchivedSession) => ({ id, name, archived_at, agent, tags });
+const publicArchive = ({ id, name, archived_at, agent, tags, desks_left_open }: ArchivedSession) =>
+  ({ id, name, archived_at, agent, tags, ...(desks_left_open?.length ? { desks_left_open } : {}) });
 
 const shutdownOperations = new Map<string, ShutdownOperation>();
 // A shutdown as it stands: what {t:'want', resource:'shutdown', id} answers a socket that
@@ -87,12 +88,17 @@ const shutdownOperations = new Map<string, ShutdownOperation>();
 export const shutdownOperation = (id: string): ShutdownOperation | null => shutdownOperations.get(id) ?? null;
 const shutdownSlots = new ShutdownSlots();
 
-async function openDeskRefusal(name: string): Promise<string> {
-  const desks = (await listDesks({ owner: name })).filter((desk) => desk.state === 'open');
-  return desks.length
-    ? `Session "${name}" owns open desk${desks.length === 1 ? '' : 's'} ${desks.map((desk) => `${desk.repo}:${desk.branch}`).join(', ')}. Archive leaves managed-desk custody unchanged; run session_end or Shut down Agent after closeout instead.`
-    : '';
-}
+/** The Agent's open desks, as repo:branch. */
+const openDesks = async (name: string): Promise<string[]> =>
+  (await listDesks({ owner: name })).filter((desk) => desk.state === 'open').map((desk) => `${desk.repo}:${desk.branch}`);
+
+/** THE DESK CHECK on archive: a nudge, never a wall (owner, 2026-11-15, w623). It names the open
+ * desks and the way past them; `ignore_desks: true` (--ignore-desks) archives anyway, every desk
+ * left exactly as it is for the Agent's restore. */
+const openDeskRefusal = (name: string, desks: string[]): string =>
+  `Session "${name}" owns open desk${desks.length === 1 ? '' : 's'} ${desks.join(', ')}. `
+  + 'Close out first: commit, hand in, then session_end or Shut down Agent. '
+  + `In an emergency (a stuck or dead pane): session_archive ${name} --ignore-desks keeps them for its restore.`;
 
 /** THE ITEM CHECK, the same on every way out (docs/using-ronin/project-management.md, How an
  * item lives): session_end, archive, Delete, Hard Delete. It is a nudge, never a wall (owner,
@@ -138,25 +144,27 @@ const refusedBody = (e: ShutdownRefused) => ({
 });
 const UI_ANYWAY = 'close anyway in the confirm';
 const ignoringItems = (req: express.Request): boolean => req.body?.ignore_items === true;
+const ignoringDesks = (req: express.Request): boolean => req.body?.ignore_desks === true;
 
 /** The ending Agent's holds are released and its leads' members lists drop it; an end never fails
  * on either. An end that archived names the archive and its restore on both lead notices. */
-async function releaseHolds(name: string, key: string, how: string, archived?: ArchivedSession | null): Promise<void> {
+async function releaseHolds(name: string, key: string, how: string, archived?: ArchivedSession | null, said = ''): Promise<void> {
   const restore = archived ? `archived as ${archived.id}: session_restore ${archived.id}` : '';
   await releaseHolder(name, key, restore ? `${how}, ${restore}` : how).catch((e) => console.error(`[ronin] releasing ${name}'s work items:`, e));
-  await memberEnded(name, restore ? `${name} ended, ${restore}` : '').catch(() => {});
+  await memberEnded(name, restore ? `${name} ended, ${restore}` : said).catch(() => {});
 }
 
 /** THE ONE ARCHIVE (session_archive, the tile's Archive, session_end): write the resumable manifest,
  * then stop the Agent. Answers the manifest, or null when no exact provider conversation is known;
  * then nothing is written and nothing is stopped. Holds are the caller's (releaseHolds). */
-async function archiveAgent(name: string): Promise<ArchivedSession | null> {
+async function archiveAgent(name: string, desksLeftOpen: string[] = []): Promise<ArchivedSession | null> {
   const provider = await archiveProvider(name);
-  return 'error' in provider ? null : archiveWith(name, provider);
+  return 'error' in provider ? null : archiveWith(name, provider, desksLeftOpen);
 }
 
 /** The exact provider conversation an archive will resume, or why there is none. A park asks
- * this of every Agent before any is stopped. */
+ * this of every Agent before any is stopped. The launch identity is read from disk, so a dead
+ * pane (its process gone, the pane kept by remain-on-exit) archives the same as a live one. */
 async function archiveProvider(name: string): Promise<{ agent: string; id: string } | { error: string }> {
   const key = await sessionKey(name);
   const runtime = await sessionRuntime(name);
@@ -169,10 +177,11 @@ async function archiveProvider(name: string): Promise<{ agent: string; id: strin
 }
 
 /** The archive step itself, for a known provider conversation: manifest first, then stop. */
-async function archiveWith(name: string, provider: { agent: string; id: string }): Promise<ArchivedSession> {
+async function archiveWith(name: string, provider: { agent: string; id: string }, desksLeftOpen: string[] = []): Promise<ArchivedSession> {
   const key = await sessionKey(name);
   const runtime = await sessionRuntime(name);
   const archived: ArchivedSession = {
+    ...(desksLeftOpen.length ? { desks_left_open: desksLeftOpen } : {}),
     version: 1, id: key, name, key, archived_at: new Date().toISOString(), cwd: runtime.cwd,
     identity: (await listSessions()).find((s) => s.name === name)?.identity,
     agent: provider.agent, provider_session_id: provider.id, tags: await getTags(name), leads: await getLeads(name),
@@ -190,19 +199,25 @@ async function archiveWith(name: string, provider: { agent: string; id: string }
 
 /** An archive's Hard Delete: the end is told, holds released, the retained session folder and the
  * manifest removed. Expiry removes an archive the same way. */
-async function deleteArchived(archived: ArchivedSession): Promise<void> {
+async function deleteArchived(archived: ArchivedSession, said = ''): Promise<void> {
   emitSessionEnd(archived.name, archived.key);
-  await releaseHolds(archived.name, archived.key, 'hard deleted');
+  await releaseHolds(archived.name, archived.key, 'hard deleted', null, said);
   await fs.promises.rm(sessionRecordDir(archived.key), { recursive: true, force: true });
   await removeArchive(archived.id);
 }
+
+/** What expiry tells the lead of an archive made with --ignore-desks: its desks are kept. Expiry
+ * removes the session folder and manifest only; it never touches a worktree. */
+export const expiryNotice = ({ id, name, desks_left_open: desks = [] }: ArchivedSession): string => desks.length
+  ? `${name}'s archive ${id} expired; its open desk${desks.length === 1 ? '' : 's'} ${desks.join(', ')} ${desks.length === 1 ? 'was' : 'were'} left as ${desks.length === 1 ? 'it is' : 'they are'}, not deleted: close or hand over with worktree-desk.`
+  : '';
 
 /** Remove every archive older than ARCHIVE_DAYS (src/session-archive.ts). Never throws. */
 export async function expireArchives(now = Date.now()): Promise<string[]> {
   const removed: string[] = [];
   try {
     for (const archived of expiredArchives(await listArchives(), now)) {
-      try { await deleteArchived(archived); removed.push(archived.id); }
+      try { await deleteArchived(archived, expiryNotice(archived)); removed.push(archived.id); }
       catch (e) { console.error(`[archive] expiring ${archived.id}:`, e); }
     }
   } catch (e) { console.error('[archive] expiry failed:', e); }
@@ -320,14 +335,15 @@ export function registerSessions(app: express.Express): void {
     if (!isValidName(name)) return res.status(400).json({ error: 'Invalid name.' });
     if (!(await sessionExists(name))) return res.status(404).json({ error: 'No such session.' });
     try {
-      const refusal = await openDeskRefusal(name);
-      if (refusal) return res.status(409).json({ error: refusal });
+      const desks = await openDesks(name);
+      if (desks.length && !ignoringDesks(req)) return res.status(409).json({ error: openDeskRefusal(name, desks), desks_open: desks, acknowledge: 'ignore_desks' });
       const items = ignoringItems(req) ? null : await heldItemsRefusal(name, `session_archive ${name} --ignore-items, or ${UI_ANYWAY}`);
       if (items) return res.status(409).json(refusedBody(items));
-      const prepared = await prepareSessionEnding(req, res, name, 'archive');
+      // --ignore-desks: no ending preflight, whose fallback would quarantine a dirty desk. Every desk stays as it is.
+      const prepared = ignoringDesks(req) ? { proceed: true } as PreparedEnding : await prepareSessionEnding(req, res, name, 'archive');
       if (!prepared.proceed) return;
       const key = await sessionKey(name);
-      const archived = await archiveAgent(name);
+      const archived = await archiveAgent(name, ignoringDesks(req) ? desks : []);
       if (!archived) return res.status(409).json({ error: `Could not identify a resumable ${(await sessionRuntime(name)).agent || 'agent'} conversation.` });
       await releaseHolds(name, key, 'archived', archived);
       count('ended', { name, end: 'archived' });
@@ -634,7 +650,11 @@ export function registerSessions(app: express.Express): void {
       await teamChanged([...moved(tagsBefore, tags), ...moved(before, leads)], callerOf(req), name).catch(() => {});
       count('lead.set', { n: leads.length });
       // Made lead (or no longer): the brief says so, and sends only what changed.
-      const delivered = await refreshBrief(name).then((r) => r.sent ? 'queued' : null, () => 'not queued');
+      // The brief document's Team stays while the Agent is still on it.
+      const doc = await readBriefRecord(name).catch(() => null);
+      const team = doc && tags.includes(doc.agent.team) ? doc.agent.team : tags[0] ?? '';
+      const delivered = await configureBrief(name, { team, lead: !!team && leads.includes(team) })
+        .then((r) => r.sent ? 'queued' : null, () => 'not queued');
       res.json({ ok: true, team_lead: leads, tags, delivery: delivered });
     } catch (e) {
       res.status(500).json({ error: String((e as Error)?.message ?? e) });

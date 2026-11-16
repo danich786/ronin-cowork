@@ -36,7 +36,6 @@ Every file in `facts/`, `behaviours/` and `tools/` starts the same:
 | `when:` | all | the conditionals that must all hold, comma-separated; `!` for not; blank = every Agent. A tool that serves a behaviour needs none |
 | `depth:` | behaviours, tools | `none` (told only when a layer adds it), `seed` or `full` |
 | `serves:` | tools | the behaviour ids it serves. Blank: it goes under Other tools |
-| `mcp:` | bridges | the MCP server in the Agent's launch while the bridge is in play; its tools come from the harness and get no file |
 | `order:` | all | its place in its section, lower first |
 
 Header lines run from the title to the first blank line; an unknown field is ignored and an

@@ -89,7 +89,7 @@ test('item acts, each naming its item, one trail line each', async () => {
   const epic = made(await tool('item', ['create', '--title', 'Overall', '--kind', 'Epic']));
   assert.deepEqual([(await readItem(epic))!.level, (await trail(epic)).map((line) => [line.op, line.to])], [1, [['create', 'none']]]);
   const id = made(await tool('item', ['create', '--title', 'Piece', '--objective', 'part', '--parent', epic, '--kind', 'Task']));
-  assert.match(await tool('item', ['read', id]), /"level": 0/);
+  assert.match(await tool('item', ['read', id, '--json']), /"level": 0/);
 
   assert.equal((await oneLine(id, ['handoff', id, 'probe'])).to, 'agent:probe');
   assert.deepEqual((await readLetterHolds('probe'))!.holds, [id]);
@@ -117,7 +117,7 @@ test('item acts, each naming its item, one trail line each', async () => {
 
   const sub = made(await tool('item', ['create', '--title', 'Sub', '--parent', id]));
   assert.equal((await readItem(sub))!.level, -1);
-  const children = JSON.parse(await tool('item', ['read', id])).children as Array<{ id: string }>;
+  const children = JSON.parse(await tool('item', ['read', id, '--json'])).children as Array<{ id: string }>;
   assert.deepEqual(children.map((child) => child.id), [sub]);
   const peer = made(await tool('item', ['create', '--title', 'Peer']));
   const stuck = await run('item', ['edit', id, '--parent', peer]);
@@ -126,12 +126,12 @@ test('item acts, each naming its item, one trail line each', async () => {
   const moved = await oneLine(loose, ['edit', loose, '--parent', epic]);
   assert.deepEqual([moved.op, moved.to, (await readItem(loose))!.level], ['move', epic, 0]);
   assert.equal((await oneLine(peer, ['link', peer, 'Blocks', loose])).note, `Blocks ${loose}`);
-  assert.match(await tool('item', ['read', loose]), new RegExp(`"from": "${peer}"`));
+  assert.match(await tool('item', ['read', loose, '--json']), new RegExp(`"from": "${peer}"`));
   assert.equal((await oneLine(peer, ['link', peer, 'Blocks', loose, '--remove'])).note, `Blocks ${loose}: link removed`);
 
-  const listed = JSON.parse(await tool('item', ['search', '--parent', epic])) as { items: Array<{ id: string }> };
+  const listed = JSON.parse(await tool('item', ['search', '--parent', epic, '--json'])) as { items: Array<{ id: string }> };
   assert.deepEqual(listed.items.map((item) => item.id).sort(), [id, loose].sort());
-  const roots = JSON.parse(await tool('item', ['search', '--no-parent', '--status', 'To Do'])) as { items: Array<{ parent: string | null; status: string }> };
+  const roots = JSON.parse(await tool('item', ['search', '--no-parent', '--status', 'To Do', '--json'])) as { items: Array<{ parent: string | null; status: string }> };
   assert.ok(roots.items.length && roots.items.every((item) => item.parent === null && item.status === 'To Do'));
   assert.match(await tool('item', ['delete', id]), new RegExp(`^${id} was deleted; with its subtasks ${sub}`));
   assert.equal(await readItem(sub), null);
@@ -208,7 +208,7 @@ test('an id no route can hold answers "No work item <id>", and a reply that is n
 });
 
 test('item read shows a connected item\'s stored key and its parent\'s, keeping no parent apart from a parent with none', async () => {
-  const connection = async (id: string) => (JSON.parse(await tool('item', ['read', id])) as { connection?: unknown }).connection;
+  const connection = async (id: string) => (JSON.parse(await tool('item', ['read', id, '--json'])) as { connection?: unknown }).connection;
   const pair = (key: string) => ({ id: key.replace(/\D/g, ''), key });
   const keyed = (await createItem({ title: 'Connected epic', kind: 'Epic', jira: pair('CX-1') }, 'fixture')).item.id;
   const bare = (await createItem({ title: 'Unconnected epic', kind: 'Epic' }, 'fixture')).item.id;
@@ -287,7 +287,7 @@ test('item archive clears Done now: off every list, archived, one trail line, no
   assert.deepEqual([line.op, line.from, line.note], ['release', 'team:crew', 'archived: by probe']);
   assert.ok((await readItem(done))!.archived, 'archived at once, not in five days');
   assert.deepEqual(await holdersOf(done), []);
-  assert.match(await tool('item', ['read', done]), /"archived"/, 'item read still finds it');
+  assert.match(await tool('item', ['read', done, '--json']), /"archived"/, 'item read still finds it');
   const refused = await run('item', ['archive', open]);
   assert.notEqual(refused.status, 0);
   assert.match(refused.stderr + refused.stdout, new RegExp(`${open} is To Do, not Done`));
@@ -326,7 +326,7 @@ test('item takes several ids where an act allows them, --text in search, and del
   assert.deepEqual(out.trim().split('\n'), [next(one), next(two)]);
   await tool('item', ['watch', one, two]);
   assert.deepEqual((await readLetterHolds('probe'))!.watches.slice(-2), [one, two]);
-  const found = JSON.parse(await tool('item', ['search', '--text', 'QUOKKA'])) as { items: Array<{ id: string }> };
+  const found = JSON.parse(await tool('item', ['search', '--text', 'QUOKKA', '--json'])) as { items: Array<{ id: string }> };
   assert.deepEqual(found.items.map((item) => item.id), [one]);
   assert.equal((await run('item', ['delete', one, '--in-jira'])).status, 2, 'delete takes ids only');
   assert.deepEqual((await tool('item', ['delete', one, two])).trim().split('\n'), [`${one} was deleted`, `${two} was deleted`]);
@@ -376,4 +376,46 @@ test('work-record read lists open items only; Done waiting for the archive is on
   assert.equal(json.items.length, 11, '--json stays whole, for scripts');
   const { readTegami } = await import('../src/tegami-read.js');
   assert.equal((await readTegami('done_probe'))!.chip.text, `${open} To Do`, 'the header chip names only open items');
+});
+
+test('item read and search print plain lines by default (w694); --json prints the JSON as before', async () => {
+  const long = 'A title long enough that any width cut or ellipsis would show: ' + 'every word kept '.repeat(8).trim();
+  const epic = (await createItem({ title: 'Plain epic', kind: 'Epic' }, 'fixture')).item.id;
+  const id = (await createItem({ title: long, objective: 'Done looks like:\nthe objective whole, line two.', parent: epic }, 'fixture')).item.id;
+  const sub = (await createItem({ title: 'Plain sub', parent: id }, 'fixture')).item.id;
+  const bare = (await createItem({ title: 'Plain bare' }, 'fixture')).item.id;
+  await tool('item', ['handoff', id, 'probe']);
+  for (let n = 1; n <= 7; n++) await tool('item', ['comment', id, `remark ${n}`]);
+
+  const read = await tool('item', ['read', id]);
+  const lines = read.split('\n');
+  assert.deepEqual(lines.slice(0, 6), [`title:  ${long}`, `id:     ${id}`, 'kind:   Task', 'status: To Do', 'holder: agent:probe', `parent: ${epic}`]);
+  assert.ok(read.includes('\nDone looks like:\nthe objective whole, line two.\n'), 'the objective whole');
+  assert.ok(read.includes(`\nchildren (1):\n  ${sub} | To Do | Subtask | Plain sub\n`), 'children one line each');
+  const comments = lines.slice(lines.indexOf('comments (last 5 of 7):') + 1, lines.indexOf('comments (last 5 of 7):') + 6);
+  assert.deepEqual(comments.map((l) => l.replace(/^  \S+ \S+ probe: /, '')), ['remark 3', 'remark 4', 'remark 5', 'remark 6', 'remark 7'], 'the latest comments, newest last');
+  const trailAt = lines.findIndex((l) => /^trail \(last 5 of \d+\):$/.test(l));
+  assert.ok(trailAt > 0, read);
+  assert.match(lines[trailAt + 5]!, /probe comment/, 'the latest trail line last');
+  assert.ok(!read.includes('…') && !read.includes('{'), 'no ellipsis, no JSON');
+
+  const plainBare = (await tool('item', ['read', bare])).split('\n');
+  assert.deepEqual(plainBare.slice(4, 6), ['holder: none', 'parent: none'], 'an empty holder and parent read none');
+  assert.ok(!plainBare.some((l) => /^(children|comments)/.test(l)), 'no empty sections');
+
+  const found = JSON.parse(await tool('item', ['search', '--text', 'Plain', '--json'])) as { items: Array<{ id: string; title: string }> };
+  assert.deepEqual(found.items.map((i) => i.id).sort(), [epic, sub, bare].sort());
+  assert.equal(await tool('item', ['search', '--text', 'Plain']), found.items.map((i) => `${i.id} | To Do | none | ${i.title}\n`).join(''), 'one line per item, the JSON\'s order, holder none');
+  const ordered = JSON.parse(await tool('item', ['search', '--parent', epic, '--json'])) as { items: Array<{ id: string }> };
+  assert.equal(await tool('item', ['search', '--parent', epic]), `${ordered.items.map((i) => `${i.id} | To Do | agent:probe | ${long}`).join('\n')}\n`, 'the JSON\'s order, the title in full');
+  assert.equal(await tool('item', ['search', '--text', 'nothing-matches-this']), 'No items match.\n');
+
+  const raw = async (route: string) => (await fetch(`${env.RONIN_URL}${route}`)).json() as Promise<Record<string, unknown>>;
+  const json = JSON.parse(await tool('item', ['read', '--json', id])) as Record<string, unknown>;
+  const answer = await raw(`/api/work-items/${id}`);
+  assert.deepEqual(json, { ...(answer.item as object), held_by: answer.held_by, children: (answer.children as Array<Record<string, unknown>>).map((c) => Object.fromEntries(['id', 'title', 'level', 'kind', 'priority', 'status', 'flagged'].map((k) => [k, c[k] ?? null]))) }, 'read --json is the JSON as before');
+  assert.equal(await tool('item', ['read', id, '--json']), `${JSON.stringify(json, null, 2)}\n`, '--json after the id too, indent 2');
+  const { ok: _ok, ...listing } = await raw('/api/work-items?text=Plain');
+  assert.deepEqual(JSON.parse(await tool('item', ['search', '--text', 'Plain', '--json'])), listing, 'search --json is the JSON as before');
+  assert.equal((await run('item', ['read', 'w999999'])).status, 3, 'a missing item still fails');
 });

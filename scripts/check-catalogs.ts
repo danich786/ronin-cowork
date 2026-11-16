@@ -7,7 +7,6 @@ import {
   findDefinition,
   listAgentTemplates,
   listInstallations,
-  listIntegrations,
   listTeamTemplates,
   type DefinitionKind,
   type TemplateBox,
@@ -46,6 +45,8 @@ async function stockCatalog(): Promise<CatalogFile[]> {
       if (!/^\s*#\s+\S/.test(text)) fail(`${at}: starts with no \`# Title\``);
       if (kind === 'facts' && !row.line && !row.body) fail(`${at}: a fact with no \`line:\` and no text`);
       if (kind !== 'facts' && !row.seed) fail(`${at}: no \`seed:\` — the one line an Agent is told`);
+      if (/^\s*- \*\*facts:\*\*/m.test(text) && !row.integration) fail(`${at}: \`facts:\` belongs on a bridge (\`when: integration:<name>\`)`);
+      for (const fact of row.facts) if (fact === 'provider' || !/^[a-z][a-z0-9_]{0,31}$/.test(fact)) fail(`${at}: fact "${fact}" is no Workspace fact name (lowercase, digits, _; not provider)`);
       files.push({ ...row, file, origin: 'stock', shadowed: false });
     }
   }
@@ -152,7 +153,6 @@ const FILES = ['PROJECT_ROOTS.md', 'MODEL_PROVIDERS.md'];
 await surfacingDefinitions('desk_profiles', listDeskProfiles);
 await surfacingDefinitions('lexicons', listLexicons);
 await surfacingDefinitions('services', listInstallations);
-await surfacingDefinitions('integrations', listIntegrations);
 const briefCatalog = await stockCatalog();
 await surfacingDefinitions('templates/agents', listAgentTemplates);
 await surfacingDefinitions('templates/teams', listTeamTemplates);

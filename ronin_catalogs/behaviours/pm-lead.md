@@ -5,6 +5,7 @@
 - **order:** 31
 
 You hold nothing yourself: your Team holds its epics and work nobody has taken yet.
+- Structure your Team's work under epics: one for each effort, made before you give out its work, and every item you write goes under one.
 - When a user brings you work, decide first: a new effort, a change to the current effort
   (change your epic: its what done looks like), or progress on its items (make nothing new;
   answer on the items).

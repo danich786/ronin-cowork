@@ -136,8 +136,20 @@ function createGardenCanvas({ onAction = () => {}, onMedia = () => {} } = {}) {
     painted += 1;
   };
 
+  /* A chat seated in place of the scene (setup-irasshai.js), or none: the surface is then that
+     chat alone, its header without tools (garden-canvas.css). */
+  let seated = null;
+  const chat = (view) => {
+    if (seated === view) return;
+    seated?.remove();
+    seated = view || null;
+    if (seated) { closeMedia(); surface.content.append(seated); }
+    scene.hidden = Boolean(seated);
+    surface.el.dataset.chat = seated ? 'on' : 'off';
+  };
+
   surface.content.append(scene, overlay);
-  return { ...surface, paint, showMedia, scrollMediaTo, closeMedia, paintCount: () => painted };
+  return { ...surface, paint, showMedia, scrollMediaTo, closeMedia, chat, paintCount: () => painted };
 }
 
 export function registerGardenCanvas() {

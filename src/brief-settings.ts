@@ -8,10 +8,16 @@
  *   Campaign   campaign.config.{brief, integrations, pm}
  *   Workspace  the Workspace record's {brief, integrations, pm}
  *   Team       the Team roster's {brief, integrations, pm}
- *   Agent      the work record (composition-brief.json beside it)
+ *   Agent      the work record's brief document (brief_settings.agent)
  *
- * Integrations and project management only add down the layers: on at a layer is on below
- * it, and Jira on is project management on. Files in play: each header's `when:` and
+ * Integrations are on at a layer and on below it, unless a layer below turns one off
+ * (`brief.integrations_off`, narrowing): off holds for that layer and every one under it. An
+ * MCP server or web API record's Campaigns only make it available (listed in the pickers), not
+ * on: it is on through these same switches, like a bridge (KAN-607). Jira is set
+ * at the Campaign and Workspace only: any other layer's Jira entry (user, Team, Agent) is ignored.
+ *
+ * Project management (`pm`) is its own setting, apart from Jira: on at the Campaign unless a
+ * layer says otherwise, and the narrowest layer that says on or off holds. Files in play: each header's `when:` and
  * `depth:`, then every layer's add (the higher depth holds), then every block, then each
  * screen (`only`), which covers facts, behaviours and tools: a behaviour let through brings
  * the tools that serve it. Hide, never guard: this decides only what
@@ -19,7 +25,7 @@
  */
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import type { BriefRecord, BriefSettings } from './brief-record.js';
+import { recordValue, type BriefRecord, type BriefSettings } from './brief-record.js';
 import type { Catalog, CatalogFile, CatalogKind, Depth } from './catalog.js';
 import { DEPTHS } from './catalog.js';
 import { whenHolds } from './conditionals.js';
@@ -52,7 +58,8 @@ export function briefSettings(value: unknown): BriefSettings {
     if (typeof name !== 'string' || !NAME.test(name)) return [];
     return [(DEPTHS as readonly unknown[]).includes(depth) && depth !== 'none' ? { name, depth: depth as Depth } : { name }];
   }) : [];
-  return { add, block: names(v.block), only: names(v.only) };
+  const off = names(v.integrations_off);
+  return { add, block: names(v.block), only: names(v.only), ...(off.length ? { integrations_off: off } : {}) };
 }
 
 /** One layer from a record holding `brief`, `integrations`, `pm`. */
@@ -79,17 +86,26 @@ export async function readUserLayer(): Promise<Layer> {
 export interface Cascade {
   /** Each integration on, and the widest layer that turned it on. */
   integrations: Record<string, LayerName>;
-  /** On: from the widest layer that turned it on, or 'jira'. Off: no from. */
-  pm: { on: boolean; from?: LayerName | 'jira' };
+  /** Each integration a layer turned off, and the widest layer that did. */
+  off: Record<string, LayerName>;
+  /** On or off, from the narrowest layer that says so; nobody saying: on, from the Campaign. */
+  pm: { on: boolean; from: LayerName };
 }
 
-/** Integrations and project management down the layers: they only add. */
+/** The layers Jira can be set at; below them a Jira entry is ignored. */
+const JIRA_LAYERS: readonly LayerName[] = ['campaign', 'workspace'];
+const scoped = (layer: Layer, name: string): boolean => name !== 'jira' || JIRA_LAYERS.includes(layer.layer);
+
+/** Integrations and project management down the layers: on adds, a layer's off narrows; pm is
+ * the narrowest layer's own on or off, on by default. Jira never decides pm. */
 export function cascade(layers: readonly Layer[]): Cascade {
   const integrations: Record<string, LayerName> = {};
-  for (const layer of layers) for (const name of layer.integrations) integrations[name] ??= layer.layer;
-  const by = layers.find((layer) => layer.pm === true)?.layer;
-  const pm = by ? { on: true, from: by } : integrations.jira ? { on: true, from: 'jira' as const } : { on: false };
-  return { integrations, pm };
+  for (const layer of layers) for (const name of layer.integrations) if (scoped(layer, name)) integrations[name] ??= layer.layer;
+  const off: Record<string, LayerName> = {};
+  for (const layer of layers) for (const name of layer.brief.integrations_off ?? []) if (scoped(layer, name)) { off[name] ??= layer.layer; delete integrations[name]; }
+  const by = [...layers].reverse().find((layer) => typeof layer.pm === 'boolean');
+  const pm = by ? { on: by.pm as boolean, from: by.layer } : { on: true, from: 'campaign' as const };
+  return { integrations, off, pm };
 }
 
 export interface InPlay {
@@ -113,7 +129,7 @@ export interface Resolved {
 }
 
 const RANK: Record<Depth, number> = { none: 0, seed: 1, full: 2 };
-/** Mandates print axis by axis, as the mandate fact does; a new axis after these. */
+/** Mandates print axis by axis: reach, recruit, output; a new axis after these. */
 const axis = (row: InPlay): number => { const at = ['reach', 'recruit', 'output'].indexOf(row.file.mandate); return at < 0 ? 3 : at; };
 
 /** What this Agent is told: the catalog over the record and the layers, in the order of docs/architecture/brief.md, Layers and brief settings. */
@@ -121,8 +137,13 @@ export function resolveBrief(catalog: Catalog, record: BriefRecord, layers: read
   const all = new Map<string, CatalogFile>();
   for (const kind of ['facts', 'behaviours', 'tools'] as const) for (const file of catalog[kind]) if (!all.has(file.name)) all.set(file.name, file);
   const told = new Map<string, InPlay>();
-  const put = (file: CatalogFile, depth: Depth, why: string[]): void => {
+  const put = (raw: CatalogFile, depth: Depth, why: string[]): void => {
     if (depth === 'none') return;
+    // A seed may carry the record's values (`{setting.mcp_lines}`): filled here, so the text told
+    // and the text an update compares are the same.
+    const file = /\{[a-z_]+(?:\.[a-z_]+)+\}/.test(raw.seed)
+      ? { ...raw, seed: raw.seed.replace(/\{([a-z_]+(?:\.[a-z_]+)+)\}/g, (_all, at: string) => recordValue(record, at)) }
+      : raw;
     const was = told.get(file.name);
     if (was && RANK[was.depth] >= RANK[depth]) return;
     told.set(file.name, { kind: file.kind, name: file.name, title: file.title, depth, why: was ? was.why : why, file });

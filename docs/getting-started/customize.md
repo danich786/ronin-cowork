@@ -25,8 +25,11 @@ return (Output), chosen from the Mandate menus. Each value is a file too.
 The Campaign, Workspace and Team pages each have a **Behaviors** panel, and the New Agent
 form has a **Behaviors** step. Each works the same way, for every Agent below it:
 
-- **Integrations**: turn an outside service on; its behavior and tools come with it.
-- **Project management**: work items, and the guidance for each role. On while Jira is on.
+- **Integrations**: turn an outside service on; its behavior and tools come with it. Jira is
+  turned on or off only for a Campaign or a Workspace; Team and Agent forms don't show it.
+- **Project management**: work items, and the guidance for each role. Its own switch, apart from
+  Jira: on for the Campaign unless you turn it off, and any Workspace, Team or Agent below can
+  turn it on or off for itself.
 - **Add**: bring a behavior, fact or tool in, at Seed or Full.
 - **Block**: never tell it to any Agent below.
 - **Only**: when set, nothing else is told below; a behavior brings its tools.

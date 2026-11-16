@@ -240,7 +240,15 @@ test('routes acknowledge with the item and the appended line; refusals answer 40
     const made = await call('POST', base, { title: 'Routed', objective: 'o', kind: 'Task', by: 'probe' });
     assert.equal(made.status, 200);
     const id = made.data.item.id as string;
-    assert.equal(made.data.acknowledgement, `created ${id} with no parent`);
+    assert.equal(made.data.acknowledgement, `created ${id} with no parent\nNo parent: if an epic fits, item edit ${id} --parent <epic>.`, 'a level-0 item with no parent is made as asked; the reply adds the epic hint');
+    // The hint is that case only (KAN-606): an epic, an item under an epic, a subtask answer the one line.
+    const epic = await call('POST', base, { title: 'Hinted epic', kind: 'Epic', by: 'probe' });
+    assert.equal(epic.data.acknowledgement, `created ${epic.data.item.id} with no parent`, 'an epic: no hint');
+    const under = await call('POST', base, { title: 'Under the epic', kind: 'Task', parent: epic.data.item.id, by: 'probe' });
+    assert.equal(under.data.acknowledgement, `created ${under.data.item.id} under ${epic.data.item.id}`, 'an item with a parent: no hint');
+    const step = await call('POST', base, { title: 'A step', parent: under.data.item.id, by: 'probe' });
+    assert.equal(step.data.acknowledgement, `created ${step.data.item.id} under ${under.data.item.id}`, 'a subtask: no hint');
+    assert.equal(items.parentHint({ id: 'w1', level: -1, parent: null }), '', 'a subtask with no parent (a parent deleted): no hint');
     assert.ok((await call('GET', `${base}?holder=none`)).data.items.some((item: { id: string }) => item.id === id), 'holder none: the items nobody holds');
     assert.equal((await call('PUT', `${base}/${id}`, { jira: 'RON-1', by: 'probe' })).status, 400, 'jira is { id, key } or null');
     await call('PUT', `${base}/${id}`, { jira: { id: '10001', key: 'RON-1' }, by: 'probe' });

@@ -366,14 +366,11 @@ test('a hand-in is with the lead until on dev after the last hand-in; a checkout
   assert.equal(await stage(desk.id), 'lead', 'a new hand-in waits for its own promotion');
 });
 
-test('project management is read from what the Agent\'s brief told it; a hand-in never needs an item under it (w415)', async () => {
+test('project management is read from the Agent\'s brief document; a hand-in never needs an item under it (w415)', async () => {
   const { projectManagementOn } = await import('../src/agent-configuration.js');
-  const { sessionDir } = await import('../src/session-dir.js');
-  for (const [name, books] of [['pm_on', ['base-agent', 'project-management']], ['pm_off', ['base-agent']]] as const) {
-    const dir = sessionDir(name);
-    await fs.mkdir(dir, { recursive: true });
-    await fs.writeFile(path.join(dir, 'brief-told.json'), JSON.stringify({ told: Object.fromEntries(books.map((book) => [book, { kind: 'behaviours', depth: 'full', title: book }])) }));
-  }
+  const { briefDoc, seedBriefDoc } = await import('./helpers/brief-doc.js');
+  await seedBriefDoc(briefDoc('pm_on', { pm: true }));
+  await seedBriefDoc(briefDoc('pm_off'));
   assert.equal(await projectManagementOn('pm_on'), true);
   assert.equal(await projectManagementOn('pm_off'), false);
   assert.equal(await projectManagementOn('pm_nobody'), false, 'no record: not under it');

@@ -1,15 +1,13 @@
 # Perplexity bridge
-- **seed:** Perplexity does web research with cited answers, through its own API; Ronin adds no command.
+- **seed:** Perplexity does web research with cited answers: `api call perplexity POST /chat/completions --json '{…}'`, Ronin holding its key.
 - **when:** integration:perplexity
 - **depth:** full
-- **mcp:**
 - **order:** 27
 
 Use Perplexity for a question the web answers, when you need its sources.
 
-- Its API: `POST https://api.perplexity.ai/chat/completions` with `Authorization: Bearer <key>`,
-  a `model` (`sonar`, or `sonar-pro` for a harder question) and your question as a user
-  message. The answer carries its citations.
-- Its key is the secret `perplexity-api-key`.
+- `--json '{"model": "sonar", "messages": [{"role": "user", "content": "<question>"}]}'`;
+  `sonar-pro` for a harder question. The answer carries its citations. No key yet: the call says
+  so; ask with `secret ask perplexity-api-key --for "Perplexity API key"`.
 - Return the sources with the answer; say when an answer rests on one source.
 - Each call costs the owner money: ask one good question rather than many small ones.

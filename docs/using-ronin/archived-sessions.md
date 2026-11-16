@@ -13,6 +13,22 @@ After that Ronin removes it, with its session folder, as a Hard Delete of the ar
    what prevents archiving.
 3. Find the record in **Archived** and select it to resume.
 
+### When the pane is stuck or dead
+
+An Agent whose pane has hung, or whose process was killed (out of memory, say), cannot close
+out its worktree. Delete would refuse and Hard Delete would lose its uncommitted work. Archive
+it past the desk check instead:
+
+```
+session_archive <name> --ignore-desks
+```
+
+Every worktree stays exactly as it is: its files, uncommitted changes, branch and owner. The
+archive records which were left open, and `session_restore` brings the Agent back to those same
+worktrees. A dead pane archives like a live one. `--ignore-items` can go with it. If the
+archive expires instead, Ronin removes only the archive and its session folder, never a
+worktree, and the lead's notice names the worktrees still open.
+
 An Agent that ends itself with `session_end` (as it does once its last item is Done) is
 archived the same way, after its worktrees close. An Agent that ended too early is therefore
 in **Archived**, or its lead recalls it with `session_restore <archive-id>`: the lead's notice

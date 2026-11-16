@@ -21,6 +21,7 @@ export type ModelsSource =
   | { read: 'claude-cache' }
   | { read: 'codex-cache' }
   | { read: 'command'; argv: readonly string[] }
+  | { read: 'command-lines'; argv: readonly string[] }
   | { read: 'hermes-setups' }
   | { read: 'none' };
 
@@ -116,6 +117,68 @@ export const AGENTS = [
     parked: "Ronin cannot install this one yet — Nous's own installer needs system packages it has to ask you for, and does not finish without them. Install it from their site and it appears here.",
     screen: { busy: [], asking: [], ready: [] },
   },
+  {
+    id: 'copilot',
+    cmd: 'copilot',
+    label: 'GitHub Copilot CLI',
+    operations: {
+      install: 'npm install -g @github/copilot',
+      // `copilot help config`, autoUpdate: "Installations run from npm/JavaScript only report that a
+      // newer version is available - installing it stays a manual `npm install`."
+      update: { shell: 'npm install -g @github/copilot@latest', argv: [] },
+      selfUpdates: false,
+      version: ['--version'],
+      models: { read: 'none' },
+      session: { discovery: 'unsupported' },
+    } as AgentOperations,
+    parked: '',
+    // Its token goes to the OS keyring, or into ~/.copilot/config.json beside trusted folders
+    // when there is none: no file that means "signed in" alone, so the owner's Done activates it.
+    credentials: [],
+    carry: ['.copilot/config.json', '.copilot/settings.json'],
+    screen: { busy: [], asking: [], ready: [] },
+  },
+  {
+    id: 'opencode',
+    cmd: 'opencode',
+    label: 'OpenCode',
+    operations: {
+      install: 'npm install -g opencode-ai',
+      // `autoupdate` defaults on (opencode.ai/docs/config); Update is npm's, as it was installed.
+      update: { shell: 'npm install -g opencode-ai@latest', argv: [] },
+      selfUpdates: true,
+      version: ['--version'],
+      // `opencode models` prints one provider/model id per line.
+      models: { read: 'command-lines', argv: ['models'] },
+      session: { discovery: 'unsupported' },
+    } as AgentOperations,
+    parked: '',
+    // `opencode providers login` writes each provider's key or token here (opencode.ai/docs/providers).
+    credentials: ['.local/share/opencode/auth.json'],
+    carry: ['.config/opencode/opencode.jsonc', '.config/opencode/opencode.json'],
+    screen: { busy: [], asking: [], ready: [] },
+  },
+  {
+    id: 'kimi',
+    cmd: 'kimi',
+    label: 'Kimi Code',
+    operations: {
+      // Moonshot's npm package (Node 22.19+); its curl installer puts kimi in ~/.kimi-code/bin
+      // and edits .bashrc, which a login shell does not reach.
+      install: 'npm install -g @moonshot-ai/kimi-code',
+      update: { shell: 'npm install -g @moonshot-ai/kimi-code@latest', argv: [] },
+      selfUpdates: false,
+      version: ['--version'],
+      models: { read: 'none' },
+      session: { discovery: 'unsupported' },
+    } as AgentOperations,
+    parked: '',
+    // `kimi login` (device code) writes the hosted Kimi sign-in here (Kimi Code docs, Data locations).
+    credentials: ['.kimi-code/credentials/managed:kimi-code.json'],
+    carry: ['.kimi-code/config.toml'],
+    // Measured on 2.6.2's first start: its folder-trust dialog. Its ready prompt, "│ >", is the house row.
+    screen: { busy: [], asking: ['↑↓ navigate · Enter select'], ready: [] },
+  },
 ] as const;
 
 export interface AgentAvailability {
@@ -165,10 +228,12 @@ export async function listAgentAvailability(): Promise<AgentAvailability[]> {
 export interface LaunchArgv {
   argv: string[];
   parked: boolean;
+  /** The brief goes as the Agent's first message, through the message queue, once its screen reads ready. */
+  message?: boolean;
 }
 
 export function initialBriefArgs(grammar: AgentLaunches | null, brief: string): string[] {
-  if (!brief || !grammar || grammar.initial === 'none') return [];
+  if (!brief || !grammar || grammar.initial === 'none' || grammar.initial === 'message') return [];
   return grammar.initial === 'positional' ? [brief] : renderLaunch(grammar.initial, { brief });
 }
 
@@ -184,6 +249,7 @@ export async function launchArgv(cmd: string, brief: string): Promise<LaunchArgv
   const grammar = spec ? await readAgentLaunches(spec.id) : null;
   const initial = initialBriefArgs(grammar, brief);
   if (initial.length) return { argv: [bin, ...rest, ...initial], parked: false };
+  if (brief && grammar?.initial === 'message') return { argv: [bin, ...rest], parked: false, message: true };
   return { argv: [bin, ...rest], parked: !!brief };
 }
 
@@ -233,13 +299,13 @@ export async function newProviderSession(agent: string, argv: readonly string[])
   return { argv: [argv[0]!, ...renderLaunch(grammar.newSessionId, { session_id: assigned }), ...argv.slice(1)], id: assigned, strategy: 'minted', grammar };
 }
 
-export async function resumeAgentArgv(agent: string, id: string, how: 'resume' | 'fork' = 'resume'): Promise<string[]> {
+export async function resumeAgentArgv(agent: string, id: string): Promise<string[]> {
   const spec = AGENTS.find((a) => a.id === agent);
   if (!spec) return [];
   const grammar = await readAgentLaunches(spec.id);
-  if (!grammar[how].length) return [];
+  if (!grammar.resume.length) return [];
   const launch = await launchArgv(spec.cmd, '');
-  return launch.argv.length ? renderLaunch(grammar[how], { session_id: id }).map((part, index) => index === 0 ? launch.argv[0]! : part) : [];
+  return launch.argv.length ? renderLaunch(grammar.resume, { session_id: id }).map((part, index) => index === 0 ? launch.argv[0]! : part) : [];
 }
 
 export function agentSpec(id: string): (typeof AGENTS)[number] | undefined {

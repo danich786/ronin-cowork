@@ -1,121 +1,122 @@
 /**
- * INTEGRATIONS, THE COMMON WAY (KAN-328; KAN-339). Every outside service a user brings is held
- * the same way, whether or not Ronin has a bridge for it:
+ * INTEGRATIONS, THE COMMON WAY (KAN-328; KAN-513). Every outside service a user brings is held
+ * the same way, whether or not Ronin has a bridge for it (docs/architecture/brief.md,
+ * Integrations and bridges):
  *
- *   the record    ronin_catalogs/integrations/<name>.md (an Agent's in the owner store's catalogs)
- *   the token     ~/ronin/services_secrets/<name>-<campaign>.env, plain KEY=value, mode 0600
- *                 (a record may name another file: Jira keeps jira-<campaign>.json)
+ *   the bridge    a behaviour with `when: integration:<name>` (catalog.ts catalogIntegrations)
+ *   the keys      secrets in the store named `<name>-<key>`, asked with `secret ask` (secrets.ts)
  *   the link      each Workspace lists the integrations it uses (workspaces.ts)
  *
- * The state is read live: whether the token file is there and which of its keys are set (names
- * only, never a value), the Workspaces using it, and where a bridge is a Services part, whether
- * it runs. Connect writes the `.env` and Disconnect removes it, for any provider.
+ *   an MCP server a record, `~/ronin/catalogs/integrations/<name>.md` (docs/architecture/integrations.md)
+ *
+ * The list is the bridges, then every MCP server record (KAN-592; a record named like a bridge is
+ * that bridge's way through the broker and shows as the bridge), then any name a Workspace uses
+ * that has neither. Each row is read live from the files, never from a server: the Workspaces
+ * using it, whether a Services part of its name runs, and the secrets saved for it (names only,
+ * never a value).
  */
-import { chmod, readFile, rename, unlink, writeFile, mkdir } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { catalogIntegrations, readCatalog } from './catalog.js';
 import { storeDir } from './resources.js';
-import { listIntegrations, type IntegrationRow } from './resource-adapters.js';
+import { secretNames } from './secrets.js';
 import { listWorkspaces } from './workspaces.js';
 
-export class IntegrationBadInput extends Error {}
-export class IntegrationMissing extends Error {}
+/** running: a Services part of the name is loaded; parked: on disk, not loaded; '': no such part. */
+export type PartState = 'running' | 'parked' | '';
 
-/** running: the bridge, a Services part, is loaded; parked: on disk, not loaded; other: no such
- * part on this machine (a command, or Services not installed); '' is no bridge. */
-export type BridgeState = 'running' | 'parked' | 'other' | '';
-
-export interface IntegrationState extends IntegrationRow {
-  /** The token file, whole path. */
-  token_file: string;
-  connected: boolean;
-  /** The keys the file sets, names only. */
-  set: string[];
-  /** The record's keys the file does not set. */
-  missing: string[];
+export interface IntegrationState {
+  name: string;
+  /** The bridge's title without "bridge"; the name when there is no bridge. */
+  label: string;
+  /** The bridge's seed; '' without one. */
+  blurb: string;
+  /** The bridge behaviour's id; '' is none. */
+  bridge: string;
+  /** The facts the bridge takes (its `facts:` line), each a field on the Workspace page's row; [] is none. */
+  facts: string[];
+  part: PartState;
+  /** The secrets saved under `<name>-`, names only. */
+  secrets: string[];
   workspaces: string[];
-  bridge_state: BridgeState;
+  /** An MCP server's record; null for a bridge or a bare Workspace name. */
+  mcp: McpFacts | null;
+  /** The Campaign may turn it on: a bridge, a bare name, or a record whose Campaigns include it (KAN-607). */
+  available: boolean;
 }
 
-const KEY = /^[A-Z][A-Z0-9_]{0,63}$/;
-
-export const tokenFile = (row: Pick<IntegrationRow, 'token'>, campaign: string): string =>
-  path.join(storeDir('services_secrets'), row.token.replaceAll('{campaign}', campaign));
-
-const isEnv = (file: string): boolean => file.endsWith('.env');
-
-async function readText(file: string): Promise<string | null> {
-  try { return await readFile(file, 'utf8'); }
-  catch (e) { if ((e as NodeJS.ErrnoException).code === 'ENOENT') return null; throw e; }
+/** What Settings shows of an MCP server record. The broker owns the rest (ronin-services mcp/broker.ts). */
+export interface McpFacts {
+  reach: string;
+  sign_in: 'key' | 'oauth' | 'none';
+  /** The secret that holds its key or token; '' with sign-in none. */
+  secret: string;
+  /** The secret is saved. */
+  saved: boolean;
+  /** The Campaigns it is available to; [] is every Campaign. Available is not on (KAN-607). */
+  campaigns: string[];
 }
 
-/** The `.env` lines as [key, value], in order; comments and blanks dropped. */
-function envPairs(text: string): Array<[string, string]> {
-  return text.split('\n').flatMap((line) => {
-    const m = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=(.*)$/.exec(line);
-    return m ? [[m[1], m[2].trim()] as [string, string]] : [];
-  });
+interface McpRecord { name: string; label: string; description: string; facts: Omit<McpFacts, 'saved'> }
+
+const NAME = /^[a-z0-9][a-z0-9-]{0,62}$/;
+export const mcpRecordsDir = (): string => path.join(storeDir('catalogs'), 'integrations');
+
+/** The record's fields as the broker reads them: `- **key:** value` lines under a `# Title`. */
+function parseMcpRecord(name: string, text: string): McpRecord {
+  const lines = text.split(/\r?\n/);
+  const field = (key: string): string => {
+    const line = lines.find((one) => one.toLowerCase().startsWith(`- **${key}:**`));
+    return line ? line.slice(line.indexOf(':**') + 3).trim() : '';
+  };
+  const signIn = field('sign-in').toLowerCase();
+  return {
+    name,
+    label: (lines.find((one) => one.startsWith('# ')) ?? `# ${name}`).slice(2).trim() || name,
+    description: field('description'),
+    facts: {
+      reach: field('reach'),
+      sign_in: signIn === 'key' || signIn === 'oauth' ? signIn : 'none',
+      secret: field('secret'),
+      campaigns: field('campaigns').split(',').map((one) => one.trim()).filter(Boolean),
+    },
+  };
+}
+
+async function mcpRecords(): Promise<McpRecord[]> {
+  const files = await readdir(mcpRecordsDir()).catch(() => [] as string[]);
+  const rows = await Promise.all(files.filter((f) => f.endsWith('.md') && NAME.test(f.slice(0, -3))).map(async (file) =>
+    parseMcpRecord(file.slice(0, -3), await readFile(path.join(mcpRecordsDir(), file), 'utf8'))));
+  return rows.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export interface PartFacts { onDisk: string[]; loaded: string[] }
 
-function bridgeState(bridge: string, parts: PartFacts): BridgeState {
-  if (!bridge) return '';
-  if (parts.loaded.includes(bridge)) return 'running';
-  if (parts.onDisk.includes(bridge)) return 'parked';
-  return 'other';
-}
+const partState = (name: string, parts: PartFacts): PartState =>
+  parts.loaded.includes(name) ? 'running' : parts.onDisk.includes(name) ? 'parked' : '';
 
 export async function integrationsState(campaign: string, parts: PartFacts): Promise<IntegrationState[]> {
-  const [rows, workspaces] = await Promise.all([listIntegrations(), listWorkspaces(campaign)]);
-  return Promise.all(rows.map(async (row) => {
-    const file = tokenFile(row, campaign);
-    const text = await readText(file);
-    const set = text === null ? [] : isEnv(file) ? envPairs(text).filter(([, v]) => v !== '').map(([k]) => k) : [];
+  const [behaviours, workspaces, saved, records] = await Promise.all([readCatalog('behaviours'), listWorkspaces(campaign), secretNames(), mcpRecords()]);
+  const bridges = catalogIntegrations({ behaviours });
+  const servers = records.filter((r) => !bridges.some((b) => b.name === r.name));
+  const used = workspaces.flatMap((w) => w.integrations.map((i) => i.provider));
+  const known = new Set([...bridges.map((b) => b.name), ...servers.map((r) => r.name)]);
+  const names = [...known, ...[...new Set(used)].filter((name) => !known.has(name)).sort()];
+  return names.map((name) => {
+    const bridge = bridges.find((b) => b.name === name);
+    const record = servers.find((r) => r.name === name);
+    const secrets = saved.filter((one) => one.startsWith(`${name}-`) || one === record?.facts.secret);
     return {
-      ...row,
-      token_file: file,
-      connected: text !== null,
-      set,
-      missing: text === null || isEnv(file) ? row.keys.filter((key) => !set.includes(key)) : [],
-      workspaces: workspaces.filter((w) => w.integrations.some((i) => i.provider === row.name)).map((w) => w.name),
-      bridge_state: bridgeState(row.bridge, parts),
+      name,
+      label: bridge ? bridge.title.replace(/\s+bridge$/i, '') : record?.label ?? name,
+      blurb: bridge?.seed ?? record?.description ?? '',
+      bridge: bridge?.behaviour ?? '',
+      facts: bridge?.facts ?? [],
+      part: partState(name, parts),
+      secrets,
+      workspaces: workspaces.filter((w) => w.integrations.some((i) => i.provider === name)).map((w) => w.name),
+      mcp: record ? { ...record.facts, saved: !!record.facts.secret && secrets.includes(record.facts.secret) } : null,
+      available: !record || !record.facts.campaigns.length || record.facts.campaigns.includes(campaign),
     };
-  }));
-}
-
-async function recordOf(name: string): Promise<IntegrationRow> {
-  const row = (await listIntegrations()).find((one) => one.name === name);
-  if (!row) throw new IntegrationMissing(`No integration "${name}" in the index.`);
-  return row;
-}
-
-/** Connect: write the given keys into the provider's `.env` (mode 0600), keeping the lines it had. */
-export async function connectIntegration(campaign: string, name: string, values: Record<string, unknown>): Promise<string> {
-  const row = await recordOf(name);
-  const file = tokenFile(row, campaign);
-  if (!isEnv(file)) throw new IntegrationBadInput(`${row.label} keeps its token in ${path.basename(file)}; connect it in its own panel.`);
-  const given = Object.entries(values ?? {}).map(([k, v]) => [k.trim(), String(v ?? '').trim()] as [string, string]).filter(([, v]) => v !== '');
-  if (!given.length) throw new IntegrationBadInput('Nothing to write: give at least one key and its value.');
-  for (const [k, v] of given) {
-    if (!KEY.test(k)) throw new IntegrationBadInput(`"${k}" is not a key name: capitals, digits and _.`);
-    if (/[\r\n]/.test(v)) throw new IntegrationBadInput(`${k}: a value is one line.`);
-  }
-  const pairs = new Map(envPairs(await readText(file) ?? ''));
-  for (const [k, v] of given) pairs.set(k, v);
-  await mkdir(path.dirname(file), { recursive: true, mode: 0o700 });
-  const tmp = `${file}.tmp`;
-  await writeFile(tmp, [...pairs].map(([k, v]) => `${k}=${v}`).join('\n') + '\n', { encoding: 'utf8', mode: 0o600 });
-  await chmod(tmp, 0o600);
-  await rename(tmp, file);
-  return file;
-}
-
-/** Disconnect: remove the provider's `.env`. Gone already is fine. */
-export async function disconnectIntegration(campaign: string, name: string): Promise<string> {
-  const row = await recordOf(name);
-  const file = tokenFile(row, campaign);
-  if (!isEnv(file)) throw new IntegrationBadInput(`${row.label} keeps its token in ${path.basename(file)}; disconnect it in its own panel.`);
-  try { await unlink(file); }
-  catch (e) { if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e; }
-  return file;
+  });
 }

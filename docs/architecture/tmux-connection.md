@@ -56,7 +56,6 @@ in `src/tmux-client.ts` is the server's single door to tmux:
   | `{t:'jikan', team, jobs}` | when that Team's jobs file changes and its jobs moved, and as `team:'*'` for every Team | answers `{t:'want', resource:'jikan', team}` |
   | `{t:'github-setup', github}` | on the tick while a GitHub or git setup session is attached, when `GET /api/setup/github`'s answer moved, and once after the last one closes | — |
   | `{t:'services-setup', services}` | `{ registration, installed, activation }` after each write to registration, Services, Campaigns or machine settings, when the install watcher ends, and when Ronin HQ confirms the emailed link (asked every 15 s while a request waits and a browser is connected) | — |
-  | `{t:'gbrain', snapshot}` | `GET /api/gbrain`'s answer while an install or uninstall runs, and once when it ends | — |
   | `{t:'mika', ...ready}` | after `POST /api/mika/ready` answers `starting`, while a browser is connected: her pane is looked at every 350 ms and the answer pushed when it changes, until it is not `starting` | — |
   | `{t:'shutdown', ...operation}` | each phase of a `POST /api/sessions/:name/shutdown` operation, and once when it is complete or failed | — |
 
@@ -104,7 +103,7 @@ The Services parts live under `src/services/` (a placed copy; see the services r
 `bin/dev-sync`). Whether a part **runs** is decided at start by `src/parts.ts`:
 
 - An installation claims the parts it runs — `- **parts:** …` in
-  `ronin_catalogs/services/<name>.md`; Ronin Services claims `counting, gbrain, jira, koe,
+  `ronin_catalogs/services/<name>.md`; Ronin Services claims `counting, jira, koe,
   koshi, koshi_weights, machine, project_management, rireki`. A claimed part loads only while that installation is on. Off means the part is
   never imported: no timers, no routes, no recorder, and `/api/version` reports
   `stream: false`, so every tile is Locked.

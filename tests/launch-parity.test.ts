@@ -70,13 +70,7 @@ await fs.writeFile(
         title: 'Ronin Home',
         state: 'active',
         providers,
-        config: { installations: { gbrain: false }, defaults: {} },
-      },
-      gbrain_connected: {
-        title: 'Gbrain connected',
-        state: 'archived',
-        providers,
-        config: { installations: { gbrain: true }, defaults: {} },
+        config: { installations: {}, defaults: {} },
       },
     },
   }),
@@ -102,7 +96,7 @@ await fs.writeFile(
   path.join(temp, 'team_rosters', 'scratchteam.md'),
   [
     '# scratchteam', '', '- **objective:** prove the parity',
-    '- **agent_defaults:** {"provider":"","model":"","reach":"discuss","recruit":"nobody","output":"ideas","launch_mode":"configured","gbrain_mode":"disconnected"}',
+    '- **agent_defaults:** {"provider":"","model":"","reach":"discuss","recruit":"nobody","output":"ideas","launch_mode":"configured"}',
     '- **state:** active', '',
   ].join('\n'),
 );
@@ -141,7 +135,6 @@ const mechanism = (r: Awaited<ReturnType<typeof resolveForm>>) => ({
   cmd: r.cmd,
   agent: r.agent,
   capExempt: r.capExempt,
-  gbrain_mode: r.gbrain_mode,
   launchAgent: r.launchAgent,
 });
 
@@ -161,7 +154,7 @@ const reading = (brief: string): string[] =>
 
 test('the brief names the Team and its wipeboard as a fact; the prompt carries only the read line and the task', async () => {
   const agent = await resolveForm(forkitForm(), new Set());
-  const facts = agent.composed!.record;
+  const facts = agent.composed!.doc;
   assert.equal(facts.agent.team, 'scratchteam');
   assert.equal(facts.agent.wipeboard, 'scratchteam');
   assert.doesNotMatch(agent.brief, /Team membership|Reach:|Designation:/);
@@ -209,23 +202,6 @@ test('bare_metal_agent resolves a real CLI without Ronin birth machinery', async
   assert.equal(bare.team_objective, '', 'the Team roster does not resolve into the launch');
 });
 
-// gbrain is an integration (ronin_catalogs/integrations, KAN-337), not an installation: a
-// Campaign's old gbrain switch, on or off, changes neither the teaching nor the command.
-for (const [campaign_id, word] of [['home_machine', 'off'], ['gbrain_connected', 'on']] as const) {
-  test(`a Campaign's old gbrain switch (${word}) is no installation and delivers nothing`, async () => {
-    const cowork = await resolveForm(commonsForm({
-      session_type: 'cowork_agent',
-      campaign_id,
-      name: `gbrain-${word}-proof`,
-      provider: 'openai',
-      model: 'gpt-5.6-terra',
-    }), new Set());
-    assert.equal(cowork.installations.find((installation) => installation.name === 'gbrain'), undefined);
-    assert.equal(cowork.cmd, 'codex --model gpt-5.6-terra');
-    assert.ok(!cowork.composed!.resolved.behaviours.some((behaviour) => behaviour.name.startsWith('gbrain')));
-  });
-}
-
 test("forkit's own inputs change its words and nothing about the mechanism", async () => {
   const plain = await resolveForm(commonsForm(), new Set());
   const forked = await resolveForm(
@@ -234,8 +210,8 @@ test("forkit's own inputs change its words and nothing about the mechanism", asy
   );
   // The handoff prompt and the team are INPUTS. They must reach the brief and the tags…
   assert.match(forked.brief, /wip\/handoffs\/TOPIC\.md/);
-  assert.equal(forked.composed!.record.agent.team, 'scratchteam');
-  assert.equal(forked.composed!.record.agent.team_objective, 'prove the parity', "the roster's objective is on the record");
+  assert.equal(forked.composed!.doc.agent.team, 'scratchteam');
+  assert.equal(forked.composed!.doc.agent.team_objective, 'prove the parity', "the roster's objective is on the record");
   assert.deepEqual(forked.tags, ['scratchteam']);
   assert.deepEqual(plain.tags, []);
   // …and must not move a single thing the mechanism decides except the team itself.
@@ -308,7 +284,7 @@ test('a ronin launch is legal, and so is a launch onto a tag-only team', async (
   const tagOnly = await resolveForm(commonsForm({ team: 'ghosts' }), new Set());
   assert.equal(tagOnly.team, 'ghosts');
   assert.ok(tagOnly.tags.includes('ghosts'), 'born tagged onto it');
-  assert.equal(tagOnly.composed!.record.agent.wipeboard, 'ghosts', 'its wipeboard is its name');
+  assert.equal(tagOnly.composed!.doc.agent.wipeboard, 'ghosts', 'its wipeboard is its name');
   // The name is still the tag, so it obeys the tag's spelling.
   await assert.rejects(() => resolveForm(commonsForm({ team: 'Ghosts!' }), new Set()), /team name/);
 });
@@ -341,7 +317,7 @@ test('server resolution returns profile and durable Team context without browser
 
 test('the mandate is a fact on the record, inherited from the Team, never in the prompt', async () => {
   const inherited = await resolveForm(forkitForm(), new Set());
-  const agent = inherited.composed!.record.agent;
+  const agent = inherited.composed!.doc.agent;
   assert.deepEqual([agent.reach, agent.recruit, agent.output], ['discuss', 'nobody', ['ideas']]);
   assert.doesNotMatch(inherited.brief, /Reach|Recruit|Output/);
 });
@@ -372,7 +348,9 @@ test('an explicit Role brings its behaviour, project management switched on', as
   assert.ok(names(epic).includes('project-management'), 'the item model with it');
   const coordinator = await resolveForm(commonsForm({ role: 'coordinator', pm: true }), new Set());
   assert.ok(names(coordinator).includes('pm-traffic-control'));
-  const off = await resolveForm(commonsForm({ role: 'coordinator' }), new Set());
+  const byDefault = await resolveForm(commonsForm({ role: 'coordinator' }), new Set());
+  assert.ok(names(byDefault).includes('project-management'), 'nobody says: on from the Campaign (KAN-608)');
+  const off = await resolveForm(commonsForm({ role: 'coordinator', pm: false }), new Set());
   assert.ok(!names(off).some((name) => name.startsWith('pm') || name === 'project-management'), 'switched off: no item behaviours');
   assert.ok(!off.composed!.resolved.behaviours.some((row) => row.tools.some((tool) => tool.name === 'work-item')), 'and no item seed');
 });
@@ -415,12 +393,12 @@ test('a name alone resolves the ordinary Cowork Agent birth', async () => {
 test('kind and the Agent\'s own add list resolve at birth', async () => {
   const born = await resolveForm(commonsForm({
     kind: 'coding',
-    brief: { add: [{ name: 'visual-staging' }, { name: 'not-there' }], block: [], only: [] },
+    brief: { add: [{ name: 'team-work' }, { name: 'not-there' }], block: [], only: [] },
     mandate: { reach: 'plan', recruit: 'nobody', output: ['a plan', 'ideas'] },
   }), new Set());
   assert.equal(born.kind, 'coding');
   const told = born.composed!.resolved.behaviours;
-  assert.deepEqual(told.find((row) => row.name === 'visual-staging')?.why, ['add:agent']);
+  assert.deepEqual(told.find((row) => row.name === 'team-work')?.why, ['add:agent']);
   assert.ok(!told.some((row) => row.name === 'not-there'), 'a name with no file is told nothing');
   assert.deepEqual(born.ignored, []);
   assert.equal(born.stated_by.kind[0]?.layer, 'launch');

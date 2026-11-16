@@ -35,7 +35,7 @@ One `### <Vendor>` section per provider. The section's fields:
 | Field | Meaning |
 |---|---|
 | `provider` | the vendor id a launch names (`anthropic`, `openai`, `google`, `xai`, `nous`) and the key of `agents.sessions.by_provider` |
-| `cli` | the id of the CLI that serves it in `src/agents.ts` (`claude`, `codex`, `agy`, `grok`, `hermes`) |
+| `cli` | the id of the CLI that serves it in `src/agents.ts` (`claude`, `codex`, `agy`, `grok`, `hermes`, `copilot`, `opencode`, `kimi`) |
 | `models_dev` | optional: the provider key models.dev files this vendor's models under; without one its models show no model info |
 | `families` | `word=tier` pairs (`sonnet=standard`): a listed id takes the tier of the longest word standing whole in it, else in its models.dev family |
 | `maturity` | optional: `comingSoon` shows the provider and never launches it |
@@ -209,7 +209,7 @@ Model: Native only, and the surface says so). `readModels` walks that table; no 
 appears in it. A new way to read a list is a new key, never an `if`.
 
 Everything else reads the record through `GET /api/setup/runtime`: Ronin Home's three
-blocks, the Presets gates, the gbrain next step and the selector summaries. A machine that
+blocks, the Presets gates and the selector summaries. A machine that
 has never been measured is measured once on the first read, not guessed. A stale summary
 shows its dates. `POST /api/setup/providers/:provider/install` uses the shared installer
 and returns the runtime with its explicit `install_open` session attachment. Setup and
@@ -281,7 +281,7 @@ in ⚙ Configuration — the schema's `models` section, two views of one setting
 |---|---|---|
 | Agent model | `sessions.default` | `spawn.ts` / `launch-command.ts` for every launch that names neither provider nor model; `launch-seed.ts`; Mika's provider |
 | Team lead model | `sessions.lead` | the same, for a launch with `team` and `team_lead` (`sessionsFor`), and `GET /api/launch-seed?lead=1`, which New Agent re-reads when Make team lead changes so its Default names the model that launches; none set = the Agent model |
-| Mika model level | `jobs.mikaassist.level` | `mika-runtime.ts`: the Agent model's provider, Light → Standard → Frontier upward; an installed Services part may choose her launch first (`chooseMikaLaunch`, null leaves this rule) |
+| Mika model level | `jobs.mikaassist.level` | `mika-runtime.ts`: the Agent model's provider, Light → Standard → Frontier upward |
 | Preferred model per provider | `sessions.by_provider.<id>` | a launch that names a provider but no model (Configuration only) |
 
 A Desk's `defaults.provider/model` used to outrank `sessions.default`; at start

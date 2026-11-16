@@ -45,7 +45,7 @@ export const S = {
   // Set once at boot from /api/version (main.js); false is the full install's answer.
   streamOff: false,
   // Registered service names from the same answer (project_management | koshi | rireki | counting |
-  // koe | gbrain), or null when the operator predates the field. A surface owned by a service
+  // koe), or null when the operator predates the field. A surface owned by a service
   // not on the roster is drawn opaque-and-inert and never fetched (sockets.ts's rule).
   services: null,
   sessPicker: null, // pad-key session switcher { open, close, isOpen, move, commit }
@@ -56,7 +56,7 @@ export const S = {
 // Which service owns which optional commons pane. A pane not listed is core and always
 // on. The tab strip consults this (and the bar's Commons menu did, until it went on
 // is visible but opaque-and-inert.
-const PANE_SERVICE = { hotwords: 'koe', stats: 'counting', koshi: 'koshi', gbrain: 'gbrain' };
+const PANE_SERVICE = { hotwords: 'koe', stats: 'counting', koshi: 'koshi' };
 /**
  * Is a SERVICE absent from this install? The one way to ask.
  *

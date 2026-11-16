@@ -6,6 +6,7 @@ import { removeHandoff } from './handoff.js';
 import { assertUnderMax } from './machine-state.js';
 import { RIREKI_OPT, newSessionArgs } from './session-args.js';
 import { tmux } from './tmux-client.js';
+import { isPaneScope, liveScopeOps, recordScope, sessionFolders, stoppable, withNested } from './agent-scope.js';
 
 export interface SessionIdentity {
   sessionType: string;
@@ -152,6 +153,101 @@ export async function createSession(name: string, dir?: string, opts: CreateOpts
       else throw err;
     }
     if (identity.providerSession) await setProviderSessionId(name, identity.providerSession);
+    await ownScope(name, identity.key);
+  });
+}
+
+const SCOPE_OPT = '@ronin-scope';
+
+/** Record the pane's systemd scope, put the memory ceiling on it, and stop it when the pane
+ * dies: everything the Agent starts lives and ends there (src/agent-scope.ts). */
+async function ownScope(name: string, key: string): Promise<void> {
+  try {
+    const pid = Number(await tmux.run(['display-message', '-p', '-t', exactPane(name), '#{pane_pid}']));
+    const unit = await liveScopeOps.scopeOf(pid);
+    if (!unit) return;
+    await tmux.run(['set-option', '-t', exactPane(name), SCOPE_OPT, unit]);
+    await recordScope(key, unit);
+    const stop = `run-shell -b 'systemctl --user stop --no-block -- ${unit}'`;
+    await tmux.run(['set-hook', '-t', exactPane(name), 'pane-died', stop]);
+    await tmux.run(['set-hook', '-t', exactPane(name), 'pane-exited', stop]);
+    await liveScopeOps.limit(unit);
+  } catch (e) {
+    console.error(`[scope] ${name}:`, (e as Error).message);
+  }
+}
+
+/** The scopes of a session's panes (recorded at launch, and each pane's own now), and of every
+ * process running from its session folder: a helper its CLI detached into a scope of its own. */
+async function sessionScopes(name: string, timeoutMs?: number): Promise<string[]> {
+  const units = new Set<string>();
+  const key = (await tmux.run(['show-options', '-t', exactPane(name), '-qv', '@ronin-key'], { timeoutMs }).catch(() => '')).trim();
+  if (key) for (const unit of await liveScopeOps.folderScopes(sessionFolders(key))) units.add(unit);
+  const recorded = await tmux.run(['show-options', '-t', exactPane(name), '-qv', SCOPE_OPT], { timeoutMs }).catch(() => '');
+  if (isPaneScope(recorded.trim())) units.add(recorded.trim());
+  const pids = await tmux.run(['list-panes', '-s', '-t', exactSession(name), '-F', '#{pane_pid}'], { timeoutMs }).catch(() => '');
+  for (const pid of pids.split('\n').filter(Boolean)) {
+    const unit = await liveScopeOps.scopeOf(Number(pid));
+    if (unit) units.add(unit);
+  }
+  return [...units];
+}
+
+/** Pids of every live pane on our server. */
+export async function livePanePids(timeoutMs?: number): Promise<number[]> {
+  const rows = await tmux.run(['list-panes', '-a', '-F', '#{pane_pid}\t#{pane_dead}'], { timeoutMs }).catch(() => '');
+  return rows.split('\n').filter(Boolean).map((row) => row.split('\t'))
+    .filter(([, dead]) => dead !== '1').map(([pid]) => Number(pid)).filter(Boolean);
+}
+
+/** Keys of sessions with a live pane: a session whose CLI has exited is not running anything. */
+export async function liveSessionKeys(timeoutMs?: number): Promise<string[]> {
+  const rows = await tmux.run(['list-panes', '-a', '-F', '#{@ronin-key}\t#{session_name}\t#{session_created}\t#{pane_dead}'], { timeoutMs }).catch(() => '');
+  return [...new Set(rows.split('\n').filter(Boolean).map((row) => row.split('\t'))
+    .filter(([, , , dead]) => dead !== '1').map(([key, name, born]) => key || `${name}-${born}`))];
+}
+
+/** After a kill: stop the session's scopes, and its rigs' panes, that no live pane still uses. */
+async function stopScopes(units: string[], timeoutMs?: number): Promise<void> {
+  if (!units.length) return;
+  try { await liveScopeOps.stop(await stoppable(await withNested(units), await livePanePids(timeoutMs))); }
+  catch (e) { console.error('[scope] stop:', (e as Error).message); }
+}
+
+/** A pane died (its CLI exited; remain-on-exit keeps the pane): stop what it left running.
+ * The session stays, for a person to read or end. */
+export async function stopLeftovers(name: string): Promise<void> {
+  await stopScopes(await sessionScopes(name));
+}
+
+const PANE_DEAD_PREFIX = 'pane-dead';
+
+/** Sessions whose pane is newly dead, from the pane-dead subscription's value. */
+export function panesDied(value: string, last: Map<string, string>): string[] {
+  const died: string[] = [];
+  const now = new Map<string, string>();
+  for (const entry of value.split(',')) {
+    const at = entry.lastIndexOf('=');
+    if (at <= 0) continue;
+    const name = entry.slice(0, at);
+    const dead = entry.slice(at + 1);
+    now.set(name, dead);
+    if (dead.includes('1') && last.get(name) !== dead) died.push(name);
+  }
+  last.clear();
+  for (const [name, dead] of now) last.set(name, dead);
+  return died;
+}
+
+/** Ride tmux's pane-dead push: each newly dead pane's leftovers are stopped. */
+export function stopLeftoversOnPaneDeath(): void {
+  const last = new Map<string, string>();
+  let first = true;
+  tmux.on('subscription', (n) => {
+    if (!n.subscription?.startsWith(PANE_DEAD_PREFIX)) return;
+    const died = panesDied(n.value ?? '', last);
+    if (first) { first = false; return; } // the start sweep owns what was dead before we looked
+    for (const name of died) if (!name.startsWith(config.viewerPrefix)) void stopLeftovers(name);
   });
 }
 
@@ -159,11 +255,14 @@ interface StopOptions { signal?: AbortSignal; timeoutMs?: number }
 
 export async function killSession(name: string, opts: StopOptions = {}): Promise<void> {
   opts.signal?.throwIfAborted();
+  const viewer = name.startsWith(config.viewerPrefix);
+  const units = viewer ? [] : await sessionScopes(name, opts.timeoutMs);
   try {
     await tmux.run(['kill-session', '-t', exactSession(name)], { timeoutMs: opts.timeoutMs });
   } catch (e) {
     if (opts.signal?.aborted) throw e;
   }
+  await stopScopes(units, opts.timeoutMs);
 }
 
 async function groupedSessionTargets(name: string, opts: StopOptions = {}): Promise<Set<string>> {
@@ -208,10 +307,11 @@ export async function stopSessionTree(name: string, opts: StopOptions = {}): Pro
 export async function sessionRuntime(name: string): Promise<{ cwd: string; pid: number; command: string; agent: string }> {
   const stdout = await tmux.run([
     'display-message', '-p', '-t', exactPane(name),
-    `#{pane_current_path}\t#{pane_pid}\t#{pane_start_command}\t#{${AGENT_OPT}}`,
+    `#{pane_current_path}\t#{pane_pid}\t#{pane_start_command}\t#{${AGENT_OPT}}\t#{pane_start_path}`,
   ]);
-  const [cwd, pid, command, agent] = stdout.replace(/\r?\n$/, '').split('\t');
-  return { cwd: cwd || '', pid: Number(pid) || 0, command: command || '', agent: agent || '' };
+  const [cwd, pid, command, agent, startPath] = stdout.replace(/\r?\n$/, '').split('\t');
+  // A dead pane has no current path; it started where the Agent works.
+  return { cwd: cwd || startPath || '', pid: Number(pid) || 0, command: command || '', agent: agent || '' };
 }
 
 export async function setSessionKey(name: string, key: string): Promise<void> {

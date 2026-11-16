@@ -1,0 +1,86 @@
+#!/usr/bin/env python3
+"""item read / item search, as plain lines (w694). Reads the JSON `item read --json` or
+`item search --json` prints on stdin and writes the reading; `--json` skips this entirely.
+
+  item-plain read     the item: labelled fields, the objective whole, children one line each,
+                      the latest comments and trail lines, newest last
+  item-plain search   one line per item: <id> | <status> | <holder> | <title>, in the order given
+
+Titles and text are printed in full: no ellipsis, no width cut."""
+import json
+import sys
+
+LATEST = 5  # comments and trail lines shown; --json has them all
+
+
+def holders(names):
+    return ", ".join(names) if names else "none"
+
+
+def when(at):
+    return (at or "")[:16].replace("T", " ")
+
+
+def status(d):
+    s = d.get("status") or ""
+    marks = [m for m, on in (("flagged", d.get("flagged")), ("archived", d.get("archived"))) if on]
+    return "%s (%s)" % (s, ", ".join(marks)) if marks else s
+
+
+def block(text, indent="    "):
+    lines = (text or "").splitlines() or [""]
+    return lines[0] + "".join("\n" + indent + l for l in lines[1:])
+
+
+def latest(title, rows, line):
+    if not rows:
+        return
+    shown = rows[-LATEST:]
+    head = "%s (%d):" % (title, len(rows)) if len(shown) == len(rows) else "%s (last %d of %d):" % (title, len(shown), len(rows))
+    print("")
+    print(head)
+    for r in shown:
+        print("  " + line(r))
+
+
+def trail_line(t):
+    parts = [when(t.get("at")), t.get("by") or "", t.get("op") or ""]
+    if t.get("from") is not None and t.get("to") is not None:
+        parts.append("%s → %s" % (t["from"], t["to"]))
+    elif t.get("to") is not None:
+        parts.append(str(t["to"]))
+    out = " ".join(p for p in parts if p)
+    return out + (": " + block(t["note"]) if t.get("note") else "")
+
+
+def read(d):
+    print("title:  " + (d.get("title") or ""))
+    print("id:     " + (d.get("id") or ""))
+    print("kind:   " + (d.get("kind") or ""))
+    print("status: " + status(d))
+    print("holder: " + holders(d.get("held_by")))
+    print("parent: " + (d.get("parent") or "none"))
+    print("")
+    print(d.get("objective") or "No objective.")
+    kids = d.get("children") or []
+    if kids:
+        print("")
+        print("children (%d):" % len(kids))
+        for c in kids:
+            print("  %s | %s | %s | %s" % (c.get("id"), status(c), c.get("kind"), c.get("title")))
+    latest("comments", d.get("comments") or [], lambda c: "%s %s: %s" % (when(c.get("at")), c.get("by"), block(c.get("text"))))
+    latest("trail", d.get("trail") or [], trail_line)
+
+
+def search(d):
+    items = d.get("items") or []
+    if not items:
+        print("No items match.")
+    for i in items:
+        print("%s | %s | %s | %s" % (i.get("id"), status(i), holders(i.get("holders") or ([i["holder"]] if i.get("holder") else [])), i.get("title")))
+
+
+mode = sys.argv[1] if len(sys.argv) > 1 else ""
+if mode not in ("read", "search"):
+    sys.exit("usage: item-plain read|search < json")
+(read if mode == "read" else search)(json.load(sys.stdin))

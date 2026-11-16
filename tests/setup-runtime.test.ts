@@ -31,7 +31,7 @@ const row = (a: Awaited<ReturnType<typeof answer>>, id: string) => a.providers.f
 
 test('provider facts come from the measured summary: absent, installable, installed, login open, activated, and count bands', async () => {
   const none = await answer({}, []);
-  assert.deepEqual(none.providers.map((provider) => provider.id), ['claude', 'codex', 'agy', 'grok', 'hermes'], 'one row per CLI the registry knows, in its order');
+  assert.deepEqual(none.providers.map((provider) => provider.id), ['claude', 'codex', 'agy', 'grok', 'hermes', 'copilot', 'opencode', 'kimi'], 'one row per CLI the registry knows, in its order');
   assert.equal(row(none, 'claude').state, 'installable');
   assert.equal(row(none, 'codex').state, 'installable', 'whether a CLI can be installed is the registry\'s fact, not the probe\'s');
   assert.equal(row(none, 'hermes').state, 'absent', 'a CLI with no install line and not on PATH is absent');
@@ -183,25 +183,23 @@ test('a provider counts as activated only when the catalog gives it something to
   assert.equal(shown.activated_count, 1);
 });
 
-test('runtime dependency facts distinguish installed from active gbrain and Services', async () => {
+test('runtime dependency facts distinguish installed from active Services', async () => {
   const installed = {
     cowork: { release: null, commit: 'abc', dirty: false, startedAt: 'now' },
     services: {
-      parts: ['gbrain', 'koe'], loaded: ['gbrain'], parked: [], installed: true,
+      parts: ['counting', 'koe'], loaded: ['koe'], parked: [], installed: true,
       restart_needed: false, stage: 'active', switched_on: true,
     },
     routines: [],
   };
   const facts = await measured({}, []);
   const answer = await runtime.setupRuntimeAnswer({}, facts, { exists: nobody }, installed, catalog);
-  assert.deepEqual(answer.gbrain, { installed: true, active: true });
   // Installed is the gate: a box cannot hold Ronin Services without a registration, so
   // there is no separate activated fact for a surface to ask about.
   assert.deepEqual(answer.services, { installed: true, switched_on: true, active: true });
   const parked = await runtime.setupRuntimeAnswer({}, facts, { exists: nobody }, {
     ...installed, services: { ...installed.services, loaded: [], switched_on: false },
   }, catalog);
-  assert.deepEqual(parked.gbrain, { installed: true, active: false });
   assert.equal(parked.services.active, false);
 });
 

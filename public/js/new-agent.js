@@ -13,7 +13,7 @@ import {
 } from './form-steps.js';
 import { openLaunchHandoff } from './launch-handoff.js';
 import { mandateRows, setMandates } from './mandates.js';
-import { briefValue, emptyBriefValue, layerLinks, paintBriefForm } from './brief-step.js';
+import { briefValue, emptyBriefValue, paintBriefForm } from './brief-step.js';
 import { closeWorkspaceTab, reserveWorkspaceTab, workbenchLaunchUrl, workbenchLink } from './workspace.js';
 
 
@@ -357,9 +357,8 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
   function paintBehaviourShelves() {
     briefForm?.destroy();
     briefForm = paintBriefForm(shelvesHost, {
-      layer: 'agent', catalog, value: draft.setting, above: { integrations: preview?.integrations, pm: preview?.pm }, inPlay: preview?.in_play || [],
+      layer: 'agent', catalog, value: draft.setting, above: { integrations: preview?.integrations, off: preview?.integrations_off, pm: preview?.pm, available: preview?.available }, inPlay: preview?.in_play || [],
       openBehaviours: configure ? null : openBehaviours,
-      linkFor: layerLinks({ team: chosenTeam(), open: { team: openTeamDefaults ? () => openTeamDefaults(chosenTeam()) : null, campaign: openDeskDefaults } }),
       onChange: (setting) => { draft.setting = setting; paintFoot(); paintActions(); void loadPreview(); },
     });
   }
@@ -587,7 +586,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
         behaviours: draft.setting.brief.add.map((row) => row.name),
         // THE SWITCHES A LOADOUT IS MEANT TO CARRY. `TemplateBoxSave` stores these
         // (@template_shelves measured `boxTail` writing all three) and this form was
-        // sending only `behaviours`, so a saved Personal Assistant lost its gbrain.
+        // sending only `behaviours`, so a saved Personal Assistant lost its switches.
         //
       },
     });

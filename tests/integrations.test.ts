@@ -1,39 +1,41 @@
 /**
- * Integrations, the common way (KAN-337/338/339): the index, the Workspace field, and Connect /
- * Disconnect writing one `.env` per provider per Campaign, mode 0600, for any provider.
+ * Integrations, the common way (KAN-338; KAN-513): the list is the bridge behaviours plus any
+ * name a Workspace uses, each with its Workspaces, its Services part, and the secrets saved
+ * under `<name>-` (names only).
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readFile, stat, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 const root = await mkdtemp(path.join(tmpdir(), 'ronin-integrations-'));
 process.env.RONIN_USER_ROOT = root;
 process.env.RONIN_DATA_ROOT = path.join(root, '.data');
-const { listIntegrations, listInstallations } = await import('../src/resource-adapters.js');
-const { connectIntegration, disconnectIntegration, integrationsState, IntegrationBadInput } = await import('../src/integrations.js');
+const { listInstallations } = await import('../src/resource-adapters.js');
+const { integrationsState } = await import('../src/integrations.js');
 const { normalizeWorkspace, saveWorkspace } = await import('../src/workspaces.js');
-const parts = { onDisk: ['jira'], loaded: [] };
+const parts = { onDisk: ['jira', 'netlify'], loaded: ['netlify'] };
 
-test('the index holds the integrations; Ronin Services is not one of them', async () => {
-  const names = (await listIntegrations()).map((row) => row.name).sort();
-  assert.deepEqual(names, ['gbrain', 'jira', 'netlify', 'perplexity']);
+test('the list is the bridges; Ronin Services is not one of them', async () => {
+  const rows = await integrationsState('c1', parts);
+  assert.deepEqual(rows.map((row) => row.name), ['netlify', 'jira', 'perplexity']);
   assert.deepEqual((await listInstallations()).map((row) => row.name), ['ronin_services']);
-  const jira = (await listIntegrations()).find((row) => row.name === 'jira')!;
-  assert.equal(jira.token, 'jira-{campaign}.json');
-  assert.equal(jira.bridge, 'jira');
-  const netlify = (await listIntegrations()).find((row) => row.name === 'netlify')!;
-  assert.equal(netlify.token, 'netlify-auth-token');
-  assert.deepEqual(netlify.keys, []);
+  const jira = rows.find((row) => row.name === 'jira')!;
+  assert.equal(jira.label, 'Jira');
+  assert.equal(jira.bridge, 'jira-bridge');
+  assert.equal(jira.part, 'parked');
+  assert.equal(rows.find((row) => row.name === 'netlify')!.part, 'running');
+  assert.equal(rows.find((row) => row.name === 'perplexity')!.part, '');
 });
 
-test('a record an Agent adds in the owner store joins the index', async () => {
-  await mkdir(path.join(root, 'catalogs', 'integrations'), { recursive: true });
-  await writeFile(path.join(root, 'catalogs', 'integrations', 'supabase.md'), '# Supabase\n- **label:** Supabase\n- **blurb:** A database.\n- **keys:** SUPABASE_ACCESS_TOKEN\n');
-  const row = (await listIntegrations()).find((one) => one.name === 'supabase');
-  assert.equal(row?.origin, 'user');
-  assert.equal(row?.bridge, '');
+test('a bridge names the facts it takes in its facts: line; no line is none (KAN-597)', async () => {
+  const rows = await integrationsState('c1', parts);
+  assert.deepEqual(rows.find((row) => row.name === 'netlify')!.facts, ['site']);
+  assert.deepEqual(rows.find((row) => row.name === 'jira')!.facts, []);
+  const { parseCatalogFile } = await import('../src/catalog.js');
+  assert.deepEqual(parseCatalogFile('behaviours', 'x-bridge', '# X\n- **seed:** s\n- **when:** integration:x\n- **facts:** Site, team_id\n\nbody').facts, ['site', 'team_id']);
+  assert.deepEqual(parseCatalogFile('behaviours', 'plain', '# P\n- **seed:** s\n- **facts:** site\n\nbody').facts, [], 'only a bridge takes facts');
 });
 
 test('a Workspace keeps its integrations, with facts a bridge reads', () => {
@@ -42,60 +44,56 @@ test('a Workspace keeps its integrations, with facts a bridge reads', () => {
   assert.deepEqual(normalizeWorkspace('c1', 'site', {}).integrations, []);
 });
 
-test('nothing connected says what is missing; Connect writes the .env 0600; Disconnect removes it', async () => {
-  await saveWorkspace({ ...normalizeWorkspace('c1', 'site', {}), integrations: [{ provider: 'perplexity' }] });
-  let perplexity = (await integrationsState('c1', parts)).find((row) => row.name === 'perplexity')!;
-  assert.equal(perplexity.connected, false);
-  assert.deepEqual(perplexity.missing, ['PERPLEXITY_API_KEY']);
-  assert.deepEqual(perplexity.workspaces, ['site']);
-
-  const file = await connectIntegration('c1', 'perplexity', { PERPLEXITY_API_KEY: 'secret-1' });
-  assert.equal(file, path.join(root, 'services_secrets', 'perplexity-c1.env'));
-  assert.equal((await stat(file)).mode & 0o777, 0o600);
-  await connectIntegration('c1', 'perplexity', { PERPLEXITY_MODEL: 'abc' });
-  assert.equal(await readFile(file, 'utf8'), 'PERPLEXITY_API_KEY=secret-1\nPERPLEXITY_MODEL=abc\n');
-  perplexity = (await integrationsState('c1', parts)).find((row) => row.name === 'perplexity')!;
-  assert.equal(perplexity.connected, true);
-  assert.deepEqual(perplexity.set, ['PERPLEXITY_API_KEY', 'PERPLEXITY_MODEL']);
-  assert.deepEqual(perplexity.missing, []);
-  assert.ok(!JSON.stringify(perplexity).includes('secret-1'), 'a value never comes back');
-
-  await disconnectIntegration('c1', 'perplexity');
-  await assert.rejects(stat(file));
-  await disconnectIntegration('c1', 'perplexity'); // gone already is fine
-});
-
-test('Netlify is connected when the secret netlify-auth-token is saved', async () => {
-  await saveWorkspace({ ...normalizeWorkspace('c1', 'site', {}), integrations: [{ provider: 'netlify', site: 'my-site' }] });
-  let netlify = (await integrationsState('c1', parts)).find((row) => row.name === 'netlify')!;
-  assert.equal(netlify.connected, false);
+test('a Workspace name with no bridge is a row; saved secrets show by name, never a value', async () => {
+  await saveWorkspace({ ...normalizeWorkspace('c1', 'site', {}), integrations: [{ provider: 'netlify', site: 'my-site' }, { provider: 'supabase' }] });
+  const secrets = path.join(root, 'services_secrets');
+  await mkdir(secrets, { recursive: true });
+  await writeFile(path.join(secrets, 'netlify-auth-token'), 'secret-1', { mode: 0o600 });
+  await writeFile(path.join(secrets, 'netlifyish-key'), 'x', { mode: 0o600 });
+  const rows = await integrationsState('c1', parts);
+  const netlify = rows.find((row) => row.name === 'netlify')!;
+  assert.deepEqual(netlify.secrets, ['netlify-auth-token']);
   assert.deepEqual(netlify.workspaces, ['site']);
-  await mkdir(path.join(root, 'services_secrets'), { recursive: true });
-  await writeFile(path.join(root, 'services_secrets', 'netlify-auth-token'), 'tok', { mode: 0o600 });
-  netlify = (await integrationsState('c1', parts)).find((row) => row.name === 'netlify')!;
-  assert.equal(netlify.connected, true);
-  assert.equal(netlify.token_file, path.join(root, 'services_secrets', 'netlify-auth-token'));
-  assert.ok(!JSON.stringify(netlify).includes('tok"'), 'a value never comes back');
+  assert.ok(!JSON.stringify(rows).includes('secret-1'), 'a value never comes back');
+  const supabase = rows.at(-1)!;
+  assert.deepEqual({ ...supabase }, { name: 'supabase', label: 'supabase', blurb: '', bridge: '', facts: [], part: '', secrets: [], workspaces: ['site'], mcp: null, available: true });
 });
 
-test('Connect refuses a malformed key or value, and Jira connects in its own panel', async () => {
-  await assert.rejects(connectIntegration('c1', 'perplexity', { 'bad key': 'x' }), IntegrationBadInput);
-  await assert.rejects(connectIntegration('c1', 'perplexity', { KEY: 'a\nB=c' }), IntegrationBadInput);
-  await assert.rejects(connectIntegration('c1', 'jira', { TOKEN: 'x' }), /own panel/);
-  const jira = (await integrationsState('c1', parts)).find((row) => row.name === 'jira')!;
-  assert.equal(jira.bridge_state, 'parked');
-  assert.equal(jira.token_file, path.join(root, 'services_secrets', 'jira-c1.json'));
+test('every MCP server record is a row, read from its file; a record named like a bridge stays the bridge', async () => {
+  const dir = path.join(root, 'catalogs', 'integrations');
+  await mkdir(dir, { recursive: true });
+  await writeFile(path.join(dir, 'wispr-flow.md'), '# Wispr Flow\n- **description:** Voice dictation.\n- **reach:** https://mcp.example.com/mcp\n- **sign-in:** key\n- **secret:** wispr-flow-api-key\n- **send:** \n- **campaigns:** c1, c2\n');
+  await writeFile(path.join(dir, 'notion.md'), '# Notion\n- **description:** Pages.\n- **reach:** https://mcp.notion.com/mcp\n- **sign-in:** oauth\n- **secret:** notion-oauth\n- **campaigns:** \n');
+  await writeFile(path.join(dir, 'netlify.md'), '# Netlify MCP\n- **reach:** https://netlify.example/mcp\n- **sign-in:** key\n- **secret:** netlify-api-key\n');
+  await writeFile(path.join(dir, 'README.md'), '# not a record\n');
+  await writeFile(path.join(root, 'services_secrets', 'wispr-flow-api-key'), 'value-9', { mode: 0o600 });
+  await saveWorkspace({ ...normalizeWorkspace('c1', 'voice', {}), integrations: [{ provider: 'wispr-flow' }] });
+  const rows = await integrationsState('c1', parts);
+  const wispr = rows.find((row) => row.name === 'wispr-flow')!;
+  assert.equal(wispr.label, 'Wispr Flow');
+  assert.equal(wispr.blurb, 'Voice dictation.');
+  assert.deepEqual(wispr.secrets, ['wispr-flow-api-key']);
+  assert.deepEqual(wispr.workspaces, ['voice']);
+  assert.deepEqual(wispr.mcp, { reach: 'https://mcp.example.com/mcp', sign_in: 'key', secret: 'wispr-flow-api-key', saved: true, campaigns: ['c1', 'c2'] });
+  const notion = rows.find((row) => row.name === 'notion')!;
+  assert.deepEqual(notion.mcp, { reach: 'https://mcp.notion.com/mcp', sign_in: 'oauth', secret: 'notion-oauth', saved: false, campaigns: [] });
+  // The Workspace picker lists what is available to its Campaign (KAN-607).
+  assert.deepEqual([wispr.available, notion.available], [true, true]);
+  assert.equal((await integrationsState('c3', parts)).find((row) => row.name === 'wispr-flow')!.available, false, 'not available to c3');
+  const netlify = rows.filter((row) => row.name === 'netlify');
+  assert.equal(netlify.length, 1);
+  assert.equal(netlify[0]!.bridge, 'netlify-bridge');
+  assert.equal(netlify[0]!.mcp, null);
+  assert.ok(!rows.some((row) => row.name === 'README'));
+  assert.ok(!JSON.stringify(rows).includes('value-9'), 'a value never comes back');
 });
 
-test('Mika indexes the integrations README, never a record, stock or an Agent\'s', async () => {
-  const { compileMikaKnowledgeAt } = await import('../src/mika-knowledge.js');
-  const owner = path.join(root, 'catalogs');
-  for (let n = 0; n < 40; n++) await writeFile(path.join(owner, 'integrations', `provider${n}.md`), `# P${n}\n- **label:** P${n}\n- **blurb:** ${'x'.repeat(200)}.\n`);
-  const built = await compileMikaKnowledgeAt(await mkdtemp(path.join(tmpdir(), 'ronin-mika-')), { ownerRoots: {
-    docs: '', 'ronin_catalogs/behaviours': '', ronin_catalogs: owner, ronin_session_boot: '', ronin_library: '',
-  } });
-  const ids = built.entries.map((row) => row.id).filter((id) => id.includes('/integrations/'));
-  assert.deepEqual(ids, ['ronin_catalogs/integrations/README.md']);
+test('an owner bridge file adds an integration', async () => {
+  await mkdir(path.join(root, 'behaviours'), { recursive: true });
+  await writeFile(path.join(root, 'behaviours', 'resend-bridge.md'), '# Resend bridge\n- **seed:** Resend sends mail.\n- **when:** integration:resend\n- **depth:** seed\n');
+  const row = (await integrationsState('c1', parts)).find((one) => one.name === 'resend');
+  assert.equal(row?.label, 'Resend');
+  assert.equal(row?.blurb, 'Resend sends mail.');
 });
 
 test('every Cowork Agent is told Integrations at seed depth with nothing selected', async () => {

@@ -55,7 +55,7 @@ test('Settings carries Setup capabilities and first opens with Defaults beside W
   for (const type of ['register', 'launchOwn']) {
     assert.match(catalog, new RegExp(`SETUP_SURFACE_TYPES\\.${type}`));
   }
-  assert.doesNotMatch(catalog, /SETUP_SURFACE_TYPES\.(?:services|gbrain|installations)/, 'Campaign uses its own Installations surface');
+  assert.doesNotMatch(catalog, /SETUP_SURFACE_TYPES\.(?:services|installations)/, 'Campaign uses its own Installations surface');
   assert.match(source, /createMikaHelpPanel/);
   assert.doesNotMatch(source, /campaign-mika-card/, 'Mika is not highlighted independently of workspace placement');
   assert.match(source, /selectorCurrent: 'placed'/, 'Settings highlights every card represented in a visible workspace');

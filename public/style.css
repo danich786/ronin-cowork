@@ -3566,6 +3566,17 @@ body {
   font-weight: var(--weight-strong);
 }
 .tile-transcript-stance[data-stance='asking'] .tile-transcript-answer { font-weight: normal; }
+/* Back to Chat (KAN-571): at the foot of the terminal while it was reached by Answer in
+   Terminal, above the box when there is one; the right corner leaves the question's options
+   and keys hint readable. */
+.tile-back-to-chat { display: none !important; }
+.tile.answer-return .tile-body:is([data-surface='term'], [data-surface='tape']) > .tile-back-to-chat {
+  display: inline-flex !important;
+  position: absolute;
+  right: var(--space-inline);
+  bottom: calc(var(--composer-clearance) + var(--space-row));
+  z-index: 5;
+}
 /* Motion is the whole point of the dots, so when motion is unwelcome they simply sit still —
    the indicator is still there, and still says the Agent is at work. */
 @media (prefers-reduced-motion: reduce) {
@@ -4448,48 +4459,37 @@ body {
 }
 .campaign-installation-switch .ask-label { display: none; }
 .campaign-installation-switch .ask-stone { height: 2.25rem; }
-.campaign-installation-switch + .setup-gbrain-hint { margin-top: calc(-1 * var(--space-row)); }
-.setup-gbrain-compact > .setup-notice:empty { display: none; }
-.setup-gbrain-compact { display: grid; align-content: start; width: min(100%, 44rem); margin: 0 auto; gap: var(--space-section); }
-.setup-gbrain-lockup { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-paragraph) var(--space-inline); align-items: center; }
-.setup-gbrain-glyph { display: grid; place-items: center; width: 3.5rem; height: 3.5rem; color: var(--kaki); font-style: normal; font-size: var(--text-display); line-height: var(--leading-none); }
-.setup-gbrain-identity { display: grid; gap: var(--space-row); }
-.setup-gbrain-identity h2 { margin: 0; color: var(--fg-strong); font-size: var(--text-display); font-weight: var(--weight-strong); }
-.setup-gbrain-identity .setup-lede { font-size: var(--text-heading); line-height: var(--leading-body); }
-.setup-gbrain-answers { display: grid; gap: var(--space-paragraph); margin: 0; }
-.setup-gbrain-answer { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); gap: var(--space-row) var(--space-inline); align-items: start; border-top: var(--edge-2) solid var(--line-2); background: var(--surface); padding: var(--space-inset); }
-.setup-gbrain-answer[data-tone='ok'] { border-top-color: var(--ok-2); }
-.setup-gbrain-answer[data-tone='warn'] { border-top-color: var(--warn); }
-.setup-gbrain-answer[data-tone='bad'] { border-top-color: var(--bad); }
-.setup-gbrain-answer > dt { color: var(--fg-strong); font-size: var(--text-label); font-weight: var(--weight-strong); line-height: var(--leading-body); }
-.setup-gbrain-answer > dd { display: grid; justify-items: start; gap: var(--space-paragraph); margin: 0; min-width: 0; }
+.campaign-installation-switch + .setup-hint { margin-top: calc(-1 * var(--space-row)); }
+.setup-answers { display: grid; gap: var(--space-paragraph); margin: 0; }
+.setup-answer { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); gap: var(--space-row) var(--space-inline); align-items: start; border-top: var(--edge-2) solid var(--line-2); background: var(--surface); padding: var(--space-inset); }
+.setup-answer[data-tone='ok'] { border-top-color: var(--ok-2); }
+.setup-answer[data-tone='warn'] { border-top-color: var(--warn); }
+.setup-answer[data-tone='bad'] { border-top-color: var(--bad); }
+.setup-answer > dt { color: var(--fg-strong); font-size: var(--text-label); font-weight: var(--weight-strong); line-height: var(--leading-body); }
+.setup-answer > dd { display: grid; justify-items: start; gap: var(--space-paragraph); margin: 0; min-width: 0; }
 /* THE INTEGRATIONS PANEL (KAN-339; js/integrations-panel.js). */
 .integrations-heading { margin: var(--space-paragraph) 0 0; color: var(--fg-strong); font-size: var(--text-label); font-weight: var(--weight-strong); }
-.integrations-facts > .setup-gbrain-answer > dd { overflow-wrap: anywhere; }
-.integrations-connect { display: grid; gap: var(--space-row); padding: var(--space-inset) 0; }
-.integrations-field { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); gap: var(--space-inline); align-items: center; color: var(--fg-strong); font-size: var(--text-label); }
-.integrations-field input { min-width: 0; }
+.integrations-facts > .setup-answer > dd { overflow-wrap: anywhere; }
 .integrations-folds { display: grid; gap: var(--space-row); }
 .integrations-fold { border-top: var(--edge-2) solid var(--line-2); background: var(--surface); }
-.integrations-fold[data-connected='true'] { border-top-color: var(--ok); }
+.integrations-fold[data-keyed='true'] { border-top-color: var(--ok); }
 .integrations-fold > summary { cursor: pointer; padding: var(--space-inset); color: var(--fg-strong); }
 .integrations-fold-body { padding: 0 var(--space-inset) var(--space-inset); }
-.integrations-stones [data-connected='true'] .sws-state { color: var(--ok); }
-@media (max-width: 640px) { .integrations-field { grid-template-columns: 1fr; } }
-.setup-gbrain-line { margin: 0; color: var(--fg-strong); font-size: var(--text-body); line-height: var(--leading-body); }
-.setup-gbrain-line strong { font-weight: var(--weight-strong); }
-.setup-gbrain-hint { margin: 0; color: var(--muted); font-size: var(--text-body); line-height: var(--leading-body); }
-.setup-gbrain-log { color: var(--muted); font-size: var(--text-body); }
-.setup-gbrain-log summary { cursor: pointer; }
-.setup-gbrain-log pre { max-height: 12rem; overflow: auto; margin: var(--space-row) 0 0; white-space: pre-wrap; font-size: var(--text-body); }
-.setup-gbrain-accounts { display: grid; gap: var(--space-row); width: 100%; margin: 0; padding: 0; list-style: none; }
-.setup-gbrain-accounts li { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-inline); font-size: var(--text-body); line-height: var(--leading-body); }
-.setup-gbrain-accounts span { min-width: 0; }
-.setup-gbrain-accounts b { color: var(--muted); font-weight: var(--weight-strong); white-space: nowrap; }
-.setup-gbrain-accounts li[data-linked='true'] b { color: var(--ok); }
-.setup-gbrain-next { display: grid; justify-items: start; gap: var(--space-paragraph); border-top: var(--edge) solid var(--line); padding-top: var(--space-inset); }
-.setup-gbrain-outcome { margin: 0; color: var(--muted); font-size: var(--text-body); }
-.setup-gbrain-outcome:empty { display: none; }
+.integrations-stones [data-keyed='true'] .sws-state { color: var(--ok); }
+/* MCP servers on the row (KAN-592): Campaigns ticked, the key's paste field, Sign in / Remove, Add. */
+.integrations-mcp, .integrations-add { display: grid; gap: var(--space-row); margin-top: var(--space-paragraph); }
+.integrations-campaigns { display: grid; gap: var(--space-row); margin: 0; padding: var(--space-inset); border: var(--edge-2) solid var(--line-2); }
+.integrations-campaigns > legend { color: var(--fg-strong); font-weight: var(--weight-strong); }
+.integrations-campaign-list { display: flex; flex-wrap: wrap; gap: var(--space-row) var(--space-paragraph); }
+.integrations-campaign { display: inline-flex; gap: 0.4em; align-items: center; }
+.integrations-campaigns > .wk-action { justify-self: start; }
+.integrations-hint, .integrations-paste-for { margin: 0; color: var(--muted); }
+.integrations-paste { display: grid; gap: var(--space-row); }
+.integrations-paste-entry { display: flex; gap: var(--space-row); align-items: center; }
+.integrations-paste-value { flex: 1; min-width: 0; }
+.integrations-said { margin: 0; overflow-wrap: anywhere; }
+.integrations-said:empty { display: none; }
+.setup-hint { margin: 0; color: var(--muted); font-size: var(--text-body); line-height: var(--leading-body); }
 .setup-provider-stone[data-activated='true'] { border-color: var(--ok-2); }
 .setup-provider-notice { margin: 0; }
 .setup-provider-notice[hidden] { display: none; }
@@ -4589,6 +4589,7 @@ body {
    another size sets it under its own class, as the card does below. */
 .setup-steps-bar { --slab: 24px; --slab-w: 16px; --slab-gap: 2px; --slab-type: var(--text-body); --skew: -14deg; display: flex; align-items: center; flex: 0 0 auto; gap: var(--slab-gap); }
 .setup-steps-header { display: inline-flex; align-items: center; }
+.setup-steps-header[hidden] { display: none; }
 .setup-scan { display: inline-flex; align-items: center; gap: var(--space-inline); margin-left: var(--space-inline); }
 .setup-scan-button { display: grid; place-items: center; width: 24px; height: 24px; flex: 0 0 auto; border: var(--edge) solid var(--line-2); border-radius: var(--radius-round); background: transparent; color: var(--muted); padding: 0; cursor: pointer; }
 .setup-scan-button:hover { border-color: var(--kaki-fill); color: var(--kaki-fill); }
@@ -4659,7 +4660,7 @@ body {
 @media (max-width: 700px) {
   .setup-surface-body { padding: var(--space-paragraph) 0; }
   .setup-services-benefit { grid-template-columns: 1fr; }
-  .setup-gbrain-answer { grid-template-columns: 1fr; }
+  .setup-answer { grid-template-columns: 1fr; }
 }
 
 .wk-layout, .wk-room-view { width: 100%; height: 100%; min-width: 0; min-height: 0; }

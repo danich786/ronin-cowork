@@ -37,7 +37,11 @@ Outside services a user brings (hosting, a tracker, research, memory) are not in
 An integration is turned on for a Campaign, Workspace, Team or Agent and cascades below; on for
 an Agent, its bridge behaviour and that behaviour's tools are in play. Keys are saved with
 `secret` (Jira keeps its panel's `jira-<campaign>.json`). Settings › Integrations shows them in
-one panel. How an Agent uses them: the Integrations behaviour and the bridges
+one panel (`src/integrations.ts`): the bridges (behaviours with `when: integration:<name>`),
+every MCP server record, and any name a Workspace uses that has neither, each with the
+Workspaces using it, whether a Services part of its name runs, and the secrets saved for it
+(names only). MCP servers are added, keyed, signed in, offered and removed there
+([integrations.md](integrations.md#settings--integrations)). Jira shows its own panel inside it. How an Agent uses them: the Integrations behaviour and the bridges
 ([the brief](brief.md#integrations-and-bridges)).
 
 ## What an Agent is told

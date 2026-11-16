@@ -8,7 +8,9 @@ For contributors. See [Archived sessions](../using-ronin/archived-sessions.md) f
 
 The provider and tmux do different halves of the job:
 
-1. Ronin identifies the provider's conversation UUID while the process is still live.
+1. Ronin identifies the provider's conversation UUID from the persisted launch identity
+   (`launch-identity.json`), so a dead pane (process gone, pane kept by `remain-on-exit`)
+   archives like a live one. A dead pane has no current path; its start path is the cwd.
 2. Ronin writes a private manifest containing that UUID and the session's tmux/Ronin
    metadata. It does not copy the model conversation.
 3. Ronin kills the base tmux session and every grouped `grid_*` viewer, then verifies they
@@ -20,6 +22,9 @@ The provider and tmux do different halves of the job:
 5. The provider CLI loads its own conversation history. Ronin restores the session key,
    teams, leads, wipeboards, note, project root, control dial, agent stamp, provider UUID,
    and session type. Only then is the archive manifest removed.
+
+   Each kill also stops the session's systemd pane scope, so nothing the Agent started
+   outlives it ([agent temp and processes](agent-scope.md)).
 
 So this is not tmux serialization and it is not a suspended process. tmux is genuinely
 stopped; provider-native conversation resume is what makes the later process continuous.
@@ -33,7 +38,9 @@ Hard deletion of an archive removes its retained session directory. The legacy t
 recorder is disconnected from RIREKI registration.
 
 - A live tile's trash action offers **Archive**, **Delete**, and **Hard Delete**. Archive is
-  resumable and refuses while the Agent owns an open desk. Delete visibly checks all desks,
+  resumable and refuses while the Agent owns an open desk, naming the emergency way past it:
+  `ignore_desks: true` (`session_archive <name> --ignore-desks`) skips the ending preflight,
+  leaves every desk record and worktree as it is, and writes `desks_left_open` on the manifest. Delete visibly checks all desks,
   automatically closes clean Team-contained work, and refuses actionably without loss.
   Hard Delete is unmistakably destructive: after exact-target confirmation it preserves
   quarantine/receipt evidence, then removes the Agent and every owned desk regardless of
@@ -82,6 +89,10 @@ session folder and the manifest removed. It runs at service start (`src/index.ts
 each new archive is written (`archiveWith`). No timer and no setting. A failure on one archive
 is logged and the rest still go.
 
+An archive with `desks_left_open` (made with `--ignore-desks`) expires the same way: the
+removal touches only the manifest and the session folder, never a desk record or worktree.
+The lead's end notice (`memberEnded`) names the desks still open (`expiryNotice`).
+
 Leads list the archives with `session_restore` and no argument: it reads
 `GET /api/archived-sessions` and prints each archive's name, team (its tags), when, id and
 `session_restore <id>`, newest first.
@@ -104,13 +115,13 @@ Leads list the archives with `session_restore` and no argument: it reads
 
 | Request | Result |
 |---|---|
-| `POST /api/sessions/:name/archive` | Persist the resumable manifest and stop the Agent; refuses while it owns an open desk |
+| `POST /api/sessions/:name/archive` | Persist the resumable manifest and stop the Agent; refuses while it owns an open desk (`acknowledge: 'ignore_desks'`) unless `ignore_desks: true`; `ignore_items: true` likewise for held items |
 | `POST /api/harakiri` | `session_end`: close safe desks, then archive as above (`archived` in the answer); an unresumable conversation ends outright |
 | `DELETE /api/sessions/:name` | Coordinated close of safe assigned worktrees followed by Agent deletion |
 | `POST /api/sessions/:name/shutdown` | Immediately start observable safe Delete, or exact-confirmed Hard Delete; returns an operation id |
 | `{t:'shutdown', ...operation}` on `/events` | Each phase, desk count, terminal success, or actionable blockers, pushed as they happen; `{t:'want', resource:'shutdown', id}` answers a reopened socket with the operation as it stands |
 | `POST /api/machine/park` | Archive every Agent for `bin/ronin-archive` ([park](../operating/park.md)): the same manifest and stop, no desk or item refusal, holds kept; answers what to carry beside the stores |
-| `GET /api/archived-sessions` | Roster-safe rows, newest first: `id`, `name`, `archived_at`, `agent`, `tags`; archives older than 7 days have already gone ([Expiry](#expiry)) |
+| `GET /api/archived-sessions` | Roster-safe rows, newest first: `id`, `name`, `archived_at`, `agent`, `tags`, and `desks_left_open` when set; archives older than 7 days have already gone ([Expiry](#expiry)) |
 | `POST /api/archived-sessions/:id/rehydrate` | Resume provider conversation and restore metadata |
 | `DELETE /api/archived-sessions/:id` | Irreversibly end and remove the archived record |
 
@@ -140,8 +151,8 @@ an explicit supported id remain unidentifiable rather than risking a neighbour's
 ## Retention of closed session folders
 
 A session's folder under the session store (`birth-receipt.json`, `launch-identity.json`,
-`brief.md`, `AGENT_BIRTH_BRIEF.md`, `AGENT_BRIEF.md`, `brief-told.json`, `tegami.md`, `transcript.jsonl`, and for isolated launches
-`cli-home/`) outlives the session on purpose: it is the evidence a later reading of the
+`brief.md`, `AGENT_BIRTH_BRIEF.md`, `AGENT_BRIEF.md`, `tegami.md`, `transcript.jsonl`, and for isolated launches
+`cli-home/`, plus `tmp/`, the Agent's `TMPDIR`, and `scope`, its pane scope: [agent temp and processes](agent-scope.md)) outlives the session on purpose: it is the evidence a later reading of the
 Agent needs. It does not outlive the retention period. `src/session-retention.ts` runs once
 at boot and then weekly on the JIKAN clock and removes a folder that is **closed** — no live
 session carries its key — **unarchived** — no archive manifest names its key — and has not

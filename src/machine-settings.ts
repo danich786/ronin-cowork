@@ -186,8 +186,6 @@ const writeMachineSection = (value: Record<string, unknown>) =>
   updateSection('machine', (current) => ({ ...current, ...value }));
 const writeAgentsSection = (value: Record<string, unknown>) =>
   updateDocument((document) => { document.agents = value; });
-const writeGbrainSection = (value: Record<string, unknown>) =>
-  updateDocument((document) => { document.gbrain = value; });
 const writeWantedSection = (wanted: Array<{ kind: string; name: string }>) =>
   updateDocument((document) => { document.wanted = wanted; });
 async function liveCount(): Promise<number> {
@@ -418,7 +416,6 @@ async function readSet(): Promise<Record<string, unknown>> {
   const owner = await readSection<Record<string, unknown>>('owner', {});
   const machine = await readMachineSection();
   const agents = await readAgentsSection();
-  const gbrain = await readSection<Record<string, unknown>>('gbrain', {});
   const koshi = await readSection<Record<string, unknown>>('koshi', {});
   const wipeboard = await readSection<Record<string, unknown>>('wipeboard', {});
   const campaigns = await readSection<Record<string, unknown>>('campaigns', {});
@@ -446,7 +443,6 @@ async function readSet(): Promise<Record<string, unknown>> {
     sessions: { max: await readMax() },
     projects,
     agents: { sessions: sessionDefaults(agents.sessions), jobs: await publicJobs(agents.jobs) },
-    gbrain: { enabled: gbrain.enabled === true },
     koshi,
     wipeboard,
     desk: { profile: typedStr(campaignRecord?.desk_profile) },
@@ -633,12 +629,7 @@ async function computeStatus(
       const rest = [...reach.addresses.tailnet.slice(1), ...reach.addresses.public.filter((a) => a !== first)];
       return `ssh ${user}@${first}${reach.addresses.tailnet[0] ? ' — your tailnet' : ''}${rest.length ? ` · also answers on ${rest.join(', ')}` : ''}${reach.listening === null ? ' · sshd not measurable on this OS' : ''}`;
     })(),
-    services: listServices().map((name) => ({
-      name,
-      state: name === 'gbrain' && (set.gbrain as { enabled: boolean }).enabled !== true
-        ? 'registered, disabled in settings'
-        : 'registered',
-    })),
+    services: listServices().map((name) => ({ name, state: 'registered' })),
     agents: {
       new_session: dflt?.provider && dflt?.model ? `${dflt.provider}/${dflt.model}` : 'no install default — per-project only',
       usable: Object.entries(agentsSeen).filter(([, a]) => a.installed).map(([n]) => n),
@@ -754,10 +745,6 @@ export const MACHINE_SETTINGS_WRITERS = {
     return { ok: true };
   },
   'session-max': async (body) => ({ max: await writeMax(Number(body.max)) }),
-  gbrain: async (body) => {
-    await writeGbrainSection({ enabled: body.enabled === true });
-    return { ok: true };
-  },
   wanted: async (body) => {
     const kinds = new Set(['agent', 'service', 'tool', 'key', 'set']);
     const wanted = (Array.isArray(body.wanted) ? body.wanted : [])
@@ -775,7 +762,7 @@ export const MACHINE_SETTINGS_WRITERS = {
   },
   'record-section': async (body) => {
     const key = String(body.key ?? '');
-    if (!['sessions', 'owner', 'machine', 'agents', 'gbrain', 'desks', 'wanted', 'setup', 'koshi', 'wipeboard', 'messages'].includes(key)) {
+    if (!['sessions', 'owner', 'machine', 'agents', 'desks', 'wanted', 'setup', 'koshi', 'wipeboard', 'messages'].includes(key)) {
       throw new Error(`no machine-settings section named '${key}'`);
     }
     await updateDocument((document) => { document[key] = body.value ?? {}; });

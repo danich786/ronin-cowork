@@ -39,8 +39,7 @@ standards until their lifecycle and safety behavior are exercised end to end.
 
 The initial brief is positional. Install/update/version operations are in the registry.
 Resume syntax and exact conversation discovery remain unsupported; Archive refuses.
-The catalog currently declares no Dangerously mode. Services' gbrain scripts do not
-implement Grok MCP registration, and Agent launch does not provision one.
+The catalog currently declares no Dangerously mode.
 
 Stop and Clear send Ctrl+C once. The upstream keyboard guide documents a single Ctrl+C
 clearing a nonempty draft. With an empty prompt it cancels activity and may escalate

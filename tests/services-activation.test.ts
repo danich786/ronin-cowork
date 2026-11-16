@@ -128,9 +128,9 @@ test('the states an install can end in are exactly: installed, or an error that 
  *
  * Found walking a real install, from the real v1.2.0 tarball. `bin/ronin-update` copied only
  * directories carrying a register entry, which silently left `_lib/` behind — shared code
- * by design, and imported by both gbrain and koshi_weights. Those two then died at import
- * with ERR_MODULE_NOT_FOUND, the assembler logged them and carried on, and five of seven
- * services registered. The watcher's test was `listServices().length > 0`, so five was
+ * by design, and imported by koshi_weights. It then died at import with
+ * ERR_MODULE_NOT_FOUND, the assembler logged it and carried on, and the roster came up
+ * short. The watcher's test was `listServices().length > 0`, so five was
  * enough to stamp `installed` over an install whose headline services were dead.
  *
  * Two defects, one screen: the install must carry the shared code, and the verdict must
@@ -141,21 +141,21 @@ test('a service that was there and did not load is recorded, not only logged', a
 
   assert.deepEqual(listServiceFailures(), [], 'nothing has failed in a fresh process');
 
-  noteServiceFailure('gbrain', "Cannot find module '../_lib/install-runner.js'");
+  noteServiceFailure('koe', "Cannot find module './koe-api.js'");
   noteServiceFailure('koshi_weights', "Cannot find module '../_lib/install-runner.js'");
   // The same service failing twice is one casualty, not two.
-  noteServiceFailure('gbrain', 'still gone');
+  noteServiceFailure('koe', 'still gone');
 
   const failed = listServiceFailures();
   assert.equal(failed.length, 2, 'each failed service is named once');
-  assert.deepEqual(failed.map((f) => f.name).sort(), ['gbrain', 'koshi_weights']);
-  assert.match(failed.find((f) => f.name === 'gbrain')!.reason, /still gone/,
+  assert.deepEqual(failed.map((f) => f.name).sort(), ['koe', 'koshi_weights']);
+  assert.match(failed.find((f) => f.name === 'koe')!.reason, /still gone/,
     'the latest reason wins, so a retry does not read as the first failure');
 
   // The verdict the watcher applies: whole means something loaded AND nothing failed.
   const whole = (loaded: string[], fails: unknown[]): boolean => loaded.length > 0 && fails.length === 0;
   assert.equal(whole(['counting', 'koe', 'koshi', 'project_management', 'rireki'], failed), false,
-    'five of seven is not installed — this is the exact state the walk found');
+    'a short roster is not installed — this is the exact state the walk found');
   assert.equal(whole([], []), false, 'nothing installed is not installed either');
   assert.equal(whole(listServices(), []), listServices().length > 0);
 });
@@ -170,10 +170,10 @@ test('the installer carries shared code, not only registrable services', async (
 
   const root = await mkdtemp(path.join(os.tmpdir(), 'place-services-'));
   const store = path.join(root, 'services');
-  // The shape the real tarball has: two services that import shared code, the shared code
+  // The shape the real tarball has: a service, a service that imports shared code, the shared code
   // itself carrying no register entry, and a docs directory that must NOT travel.
   for (const [dir, files] of Object.entries({
-    gbrain: ['register.js', 'gbrain-api.js'],
+    koe: ['register.js', 'koe-api.js'],
     koshi_weights: ['register.js', 'koshi-weights-api.js'],
     _lib: ['install-runner.js'],
     docs: ['activation.md'],
@@ -193,9 +193,9 @@ test('the installer carries shared code, not only registrable services', async (
   await promisify(execFile)('bash', ['-c',
     `set -eu; HOME_DIR=${JSON.stringify(root)}; ${helper[0]}; place_services ${JSON.stringify(dest)}`]);
 
-  assert.ok(existsSync(path.join(dest, 'gbrain', 'register.js')), 'a service travels');
+  assert.ok(existsSync(path.join(dest, 'koe', 'register.js')), 'a service travels');
   assert.ok(existsSync(path.join(dest, '_lib', 'install-runner.js')),
-    'shared code travels — gbrain and koshi_weights import ../_lib/install-runner.js and '
+    'shared code travels — koshi_weights imports ../_lib/install-runner.js and '
     + 'die at load without it');
   assert.ok(!existsSync(path.join(dest, 'docs')),
     'a directory that is neither a service nor shared code stays behind');

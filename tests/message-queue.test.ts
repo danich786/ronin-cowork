@@ -147,3 +147,25 @@ test('dismissal removes only exact queued IDs', async (t) => {
   assert.deepEqual((await q.dismissMessages([first.id, first.id])).dismissed, [first.id]);
   assert.deepEqual((await q.listQueuedMessages()).map((item) => item.id), [second.id]);
 });
+
+test('a letter held for ready waits, past the deadline too, until the screen reads ready (launch_initial: message)', async (t) => {
+  const q = await queue(t, 'ready');
+  const name = await target(t, 'queue_ready_target');
+  const item = await q.enqueueMessage(name, 'Read first: brief', 'house', undefined, null, { when: 'ready' });
+  assert.equal(item.when, 'ready');
+  const calls: string[] = [];
+  let ready = false;
+  const delivery = {
+    ready: async () => ready,
+    safe: async () => { calls.push('safe'); return { delivered: true, submitted: true, reason: 'sent' }; },
+    force: async () => { calls.push('force'); return { delivered: true, submitted: true, reason: 'sent' }; },
+  };
+  const born = Date.parse(item.created_at);
+  await q.processMessageQueue({ now: born + q.AUTO_FORCE_AFTER_MS + 1, delivery });
+  assert.deepEqual(calls, [], 'not ready: not attempted, never forced');
+  assert.equal((await q.listQueuedMessages()).length, 1);
+  ready = true;
+  await q.processMessageQueue({ now: born + q.AUTO_FORCE_AFTER_MS + 2, delivery });
+  assert.deepEqual(calls, ['safe']);
+  assert.deepEqual(await q.listQueuedMessages(), []);
+});

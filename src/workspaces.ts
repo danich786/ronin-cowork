@@ -8,9 +8,9 @@
  * ones with Git, the folders the rest.
  *
  * INTEGRATIONS (KAN-338): the outside services this Workspace uses, each a row naming its
- * `provider` (a record in the integrations index, resource-adapters.ts listIntegrations) and
+ * `provider` (an integration: a bridge's name, or any the user brings; integrations.ts) and
  * any other short facts a bridge reads (Netlify's bridge reads `site`), kept as written.
- * The index names no Workspace: the link lives here, in one place.
+ * A bridge names no Workspace: the link lives here, in one place.
  *
  * Records live at <workspaces>/<campaign>/<name>.json. Every Agent starts in Ronin house, one
  * folder for all (owner, 2026-11-03): a folder per Workspace made each provider ask "trust this

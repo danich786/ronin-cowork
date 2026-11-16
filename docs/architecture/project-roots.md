@@ -195,7 +195,7 @@ a local install may need nothing.
 Measure rather than infer:
 
 1. Read the machine's standing sync documentation and applicable Behavior (for Syncthing,
-   `docs/operating/syncthing.md`).
+   `ronin-help syncthing`).
 2. Check the actual running process/API and inventory its configured folders. Do not conclude
    that syncing is absent from one inactive systemd scope; Syncthing can run as a user or system
    unit.
@@ -263,7 +263,7 @@ Non-Git directories remain legal Workspace Folders and receive no `RONIN_REPO`.
 
 A session in a worktree root works at a **repo desk** — the internal record for its
 own branch and worktree, cut from its team's line
-(`ronin_catalogs/behaviours/conditional/worktree-root.md`; the model is `docs/architecture/worktrees.md`). Commit preserves work privately at the desk;
+(`ronin_catalogs/behaviours/working-at-a-desk.md`; the model is `docs/architecture/worktrees.md`). Commit preserves work privately at the desk;
 **hand-in** publishes committed work to the team line; the lead's **team promotion** runs the
 one full repository BYOIN and admits the team's state to `dev`. A desk branch is never
 published to the remote and never opened as a PR. In a checkout (`ronin_catalogs/behaviours/conditional/checkout.md`), the

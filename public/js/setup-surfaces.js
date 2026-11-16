@@ -3,7 +3,6 @@ import { WorkspaceKit } from './workspace-kit.js';
 import { request } from './request.js';
 import { store } from './store.js';
 import { t } from './lexicon.js';
-import { buildGbrain } from './gbrain.js';
 import { createWorkspaceFoldersSurface } from './workspace-folders-surface.js';
 import { ask } from './ask.js';
 import { PROVIDER_SURFACE_TYPE, providerSurfaceDefinition } from './provider-surface.js';
@@ -13,9 +12,7 @@ import { campaignById, campaigns, loadCampaigns, saveCampaign } from './campaign
 import { completeInstallationMap } from './installation-map.js';
 import { createEmbeddedNewTeamFormView } from './new-team-form.js';
 import { createEmbeddedNewAgentView } from './new-agent.js';
-import { HOUSE_PRESETS, PRESETS_TYPE, buildLaunchPlan, initialControls, seatingPlan } from './presets.js';
-import { launchPresetPlan, presetLaunchUrl } from './preset-launch.js';
-import { closeWorkspaceTab, reserveWorkspaceTab } from './workspace.js';
+import { PRESETS_TYPE } from './presets.js';
 import { createInstallationsSurface } from './campaign-installations.js';
 import { createSetupZoneSlot, setupStep, watchSetupProgress } from './setup-zone.js';
 import { createStatusMarker } from './status-marker.js';
@@ -720,40 +717,6 @@ export function createServicesSurface(context) {
   };
   const close = () => { unlisten?.(); unopen?.(); unlisten = null; unopen = null; };
   return { el: out.el, show, leave: close, destroy: close };
-}
-
-/** gbrain: its Setup work surface (gbrain.js), open while seated, closed when it leaves. */
-export function createGbrainSurface(context) {
-  const out = surface(t('pane.gbrain', 'gbrain'));
-  const host = el('div', 'setup-surface-body'); out.content.append(host);
-  const room = buildGbrain(host, (prompt) => context.environment?.showNewSession?.(prompt), {
-    maturity: context.installationMaturity,
-    installationControls: context.installationControls,
-    availability: () => {
-      const runtime = context.environment?.setupRuntime;
-      return runtime?.gbrain ? { ...runtime.gbrain, services: runtime.services || null, activated_count: Number(runtime.activated_count || 0) } : null;
-    },
-    // The selector card follows the measured state once it is read.
-    onState: () => context.workbench?.refreshSelector?.(),
-    openServices: () => context.workbench?.place(SETUP_SURFACE_TYPES.installations, context.workspace || 'workspace2'),
-    openProviders: () => context.workbench?.place(SETUP_SURFACE_TYPES.providers, context.workspace || 'workspace2'),
-    // Exactly the Personal Assistant preset's launch, single assistant, opened in a new tab.
-    startAssistant: async () => {
-      const slot = HOUSE_PRESETS.find((row) => row.handle === 'personal_assistant');
-      const provider = (context.environment?.setupRuntime?.providers || []).find((row) => row.activated)?.id || '';
-      const controls = initialControls('personal_assistant', provider);
-      const tab = reserveWorkspaceTab();
-      const result = await launchPresetPlan(buildLaunchPlan(slot, '', controls));
-      if (!result?.ok) { closeWorkspaceTab(tab); return result; }
-      const url = presetLaunchUrl(result.data || {}, seatingPlan('personal_assistant', result.data || {}, controls), tab) || result.data?.url;
-      if (tab && url) tab.location.href = url; else if (url) window.open(url, '_blank', 'noopener');
-      return { ok: true };
-    },
-  });
-  return { el: out.el, show: () => {
-    context.workbench?.refreshSelector?.();
-    room.enter();
-  }, leave: () => { room.close(); }, destroy: () => { room.close(); } };
 }
 
 function createLaunchOwnSurface(context) {

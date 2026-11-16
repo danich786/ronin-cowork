@@ -65,8 +65,8 @@ item. **Parent** is one id on the item, or none. A Team holds; it does not conta
 
 ```text
 item create --parent w3 --title "Agent-authored items" [--kind Task] [--objective "…"] [--priority High]   # lands on you
-item read w12                       # fields, children, comments, attachments, links, history
-item search [--team surface] [--holder builder | none] [--parent w3 | --no-parent] [--status "In Progress"] [--kind Bug]
+item read w12                       # fields, the objective, children, latest comments and history; --json all of it, as JSON
+item search [--team surface] [--holder builder | none] [--parent w3 | --no-parent] [--status "In Progress"] [--kind Bug]   # one line each: <id> | <status> | <holder> | <title>
 item edit w12 --priority High
 item edit w12 --parent w3           # parent and level together; --parent none keeps the level
 item transition w12 "In Review"     # any status to any status, by name, as Jira's transition

@@ -13,7 +13,7 @@ usage() { cat <<'EOF_USAGE'
 Usage:
   ronin-help            the topics: the four must-reads first, then the rest of Help
   ronin-help <topic>    that topic's document, whole (e.g. edges, work-items, desks)
-  ronin-help <brief>    a brief by its file name, the owner's copy over stock (e.g. worktree-root)
+  ronin-help <brief>    a brief by its file name, the owner's copy over stock (e.g. working-at-a-desk)
   ronin-help <word>     a Ronin word's row or section in the KOTOBA glossary
 EOF_USAGE
 }
@@ -57,6 +57,29 @@ if [ -n "$path" ]; then
   exit 0
 fi
 
+# A behaviour's `- **lists:** <dir>` (new-workspace: workspace_types): every file in that
+# catalog directory, the user's (~/ronin/<dir>/) over stock by name, in `order:`, each whole.
+# Adding a file adds it to the listing; nothing else names them.
+listing() {
+  local dir file name key
+  dir=$(sed -n 's/^- \*\*lists:\*\* *//p' "$1" | head -1 | tr -d '[:space:]')
+  case "$dir" in ''|*/*|.*) return 0;; esac
+  declare -A seen=()
+  { for file in "$USER_ROOT/$dir"/*.md "$ROOT/ronin_catalogs/$dir"/*.md; do
+      [ -f "$file" ] || continue
+      name=$(basename "$file"); [ "$name" = README.md ] && continue
+      [ -n "${seen[$name]:-}" ] && continue; seen[$name]=1
+      key=$(sed -n 's/^- \*\*order:\*\* *//p' "$file" | head -1); printf '%s\t%s\n' "${key:-9999}" "$file"
+    done; } | sort -n | cut -f2 | { echo; while IFS= read -r file; do
+      awk 'NR == 1 && /^# / { title = substr($0, 3); next }
+        /^- \*\*kind:\*\* / { kind = substr($0, 13); next }
+        /^- \*\*for:\*\* / { for_ = substr($0, 12); next }
+        /^- \*\*[a-z]+:\*\*/ { next }
+        NF { body = body (body ? " " : "") $0 }
+        END { printf "- **%s** (%s%s): %s\n", title, kind, for_ ? ", " for_ : "", body }' "$file"
+    done; }
+}
+
 # Not a topic: a behaviour, tool or fact by its file name (ronin_catalogs/<kind>/<name>.md),
 # the user's copy (~/ronin/<kind>/<name>.md) over stock.
 name=${want%.md}
@@ -67,7 +90,7 @@ if [ -n "$name" ]; then
     store=$(printf '%s' "$kind" | tr '[:lower:]' '[:upper:]')
     eval "dir=\${RONIN_${store}_DIR:-$USER_ROOT/$kind}"
     for file in "$dir/$name.md" "$ROOT/ronin_catalogs/$kind/$name.md"; do
-      if [ -f "$file" ]; then cat "$file"; exit 0; fi
+      if [ -f "$file" ]; then cat "$file"; listing "$file"; exit 0; fi
     done
   done
 fi

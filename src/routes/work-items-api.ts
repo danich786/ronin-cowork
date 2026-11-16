@@ -6,7 +6,7 @@
 import type express from 'express';
 import {
   WorkItemBadInput, WorkItemMissing, WorkItemRefused,
-  addComment, attachDoc, connectionOf, createItem, deleteItem, editComment, editItem, archiveHeldDone, archiveItem, flagItem, handoffItem, reviewPrompt, handoverItem, holderLabel, holdersOf, linkItem, listItems, markOnDev, nextStep, readItem, resolveId, sendBack, watchItem, watchedIds,
+  addComment, attachDoc, connectionOf, createItem, deleteItem, editComment, editItem, archiveHeldDone, archiveItem, flagItem, handoffItem, reviewPrompt, handoverItem, holderLabel, holdersOf, linkItem, listItems, markOnDev, nextStep, parentHint, readItem, resolveId, sendBack, watchItem, watchedIds,
   FLAGGED, didLine, oneNoticePerCommand, type Acknowledged, type Holder, type JiraPair, type WorkItem,
 } from '../work-items.js';
 import { agentReading, epicCards, everyItemReading, teamReading, type HeldItem } from '../work-items-read.js';
@@ -124,10 +124,12 @@ export function registerWorkItems(app: express.Express): void {
 
   app.post('/api/work-items', guarded(async (req, res) => {
     const b = req.body ?? {};
-    acknowledge(res, await createItem({
+    const done = await createItem({
       title: text(b.title) ?? '', objective: text(b.objective), status: text(b.status), kind: text(b.kind), priority: text(b.priority), parent: text(b.parent) || null,
       ...(b.team || b.session ? { holder: holderFrom(b) } : {}),
-    }, callerOf(req)));
+    }, callerOf(req));
+    const hint = parentHint(done.item);
+    acknowledge(res, done, hint ? { prompt: hint } : {});
   }));
 
   app.get('/api/work-items/:id', guarded(async (req, res) => {

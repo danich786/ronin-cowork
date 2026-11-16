@@ -9,9 +9,12 @@ import type { BriefRecord } from '../src/brief-record.js';
 import { briefOff, cascade, layerOf, resolveBrief, type Layer } from '../src/brief-settings.js';
 import { mandate } from '../src/agent-defaults.js';
 import { templateMandate } from '../src/resource-adapters.js';
-import { briefChanges, briefSnapshot, fillLine, renderBrief } from '../src/brief.js';
+import { briefChanges, fillLine, renderBrief } from '../src/brief.js';
 
-const record = (over: Partial<{ type: BriefRecord['session']['type']; team: string; lead: boolean; pm: boolean; desk: boolean; integrations: string[]; role: BriefRecord['agent']['role'] }> = {}): BriefRecord => ({
+/** One build over a record: what briefChanges compares. */
+const built = (catalog: Catalog, doc: BriefRecord) => ({ doc, resolved: resolveBrief(catalog, doc, []) });
+
+const record = (over: Partial<{ type: BriefRecord['session']['type']; team: string; lead: boolean; pm: boolean; desk: boolean; integrations: string[]; mcp: BriefRecord['setting']['mcp']; role: BriefRecord['agent']['role'] }> = {}): BriefRecord => ({
   session: { name: 'demo', title: '', type: over.type ?? 'cowork', template: '', task: 'Do it' },
   user: {
     name: 'Glen', email: '', first_name: '', last_name: '', nickname: '', role: 'owner', organization: '', job_title: '',
@@ -19,8 +22,8 @@ const record = (over: Partial<{ type: BriefRecord['session']['type']; team: stri
     new_owner: false, account: '',
   },
   people: [],
-  setting: { hosted: false, campaign: 'c', workspace: 'w', instructions: '', integrations: over.integrations ?? [], pm: over.pm ?? false, services: [] },
-  agent: { role: over.role ?? 'coworker', team: over.team ?? '', lead: over.lead ?? false, wipeboard: '', team_objective: '', reach: 'plan', recruit: 'nobody', output: ['code'], provider: '', model: '', harness: '', launch_mode: 'configured' },
+  setting: { hosted: false, campaign: 'c', workspace: 'w', instructions: '', integrations: over.integrations ?? [], available: (over.mcp ?? []).map((one) => ({ ...one, kind: 'mcp' as const })), mcp: over.mcp ?? [], api: [], pm: over.pm ?? false, services: [] },
+  agent: { role: over.role ?? 'coworker', team: over.team ?? '', lead: over.lead ?? false, wipeboard: '', team_objective: '', team_integrations: [], reach: 'plan', recruit: 'nobody', output: ['code'], provider: '', model: '', harness: '', launch_mode: 'configured' },
   work: { repos: [], where: [], repo_lines: '', folder_lines: '', desk: over.desk ?? false, checkout: false },
 });
 
@@ -73,13 +76,25 @@ test('one conditional function: words, negation, unknown never holds', () => {
     assert.equal(conditionHolds(word, r), false, word);
 });
 
-test('integrations and project management only add down the layers; Jira on is pm on', () => {
-  const layers: Layer[] = [layerOf('campaign', { integrations: ['netlify'] }), layerOf('team', { pm: false, integrations: ['jira'] })];
-  const on = cascade(layers);
-  assert.deepEqual(on.integrations, { netlify: 'campaign', jira: 'team' });
-  assert.deepEqual(on.pm, { on: true, from: 'jira' });
-  assert.deepEqual(cascade([layerOf('campaign', { pm: true }), layerOf('agent', { pm: false })]).pm, { on: true, from: 'campaign' });
-  assert.deepEqual(cascade([layerOf('agent', { pm: false })]).pm, { on: false });
+test('integrations add down the layers; Jira ends at the Workspace (KAN-608)', () => {
+  const on = cascade([layerOf('campaign', { integrations: ['netlify'] }), layerOf('team', { integrations: ['jira'] }), layerOf('agent', { integrations: ['jira'] })]);
+  assert.deepEqual(on.integrations, { netlify: 'campaign' }, 'a Team or Agent cannot turn Jira on');
+  assert.deepEqual(cascade([layerOf('user', { integrations: ['jira'] })]).integrations, {}, 'nor the user layer: Jira is Campaign and Workspace only');
+  assert.deepEqual(cascade([layerOf('user', { brief: { integrations_off: ['jira'] } }), layerOf('campaign', { integrations: ['jira'] })]).integrations, { jira: 'campaign' }, 'a user-layer Jira off is ignored too');
+  assert.deepEqual(cascade([layerOf('workspace', { integrations: [{ provider: 'jira' }] })]).integrations, { jira: 'workspace' });
+  const off = cascade([layerOf('campaign', { integrations: ['jira'] }), layerOf('team', { brief: { integrations_off: ['jira'] } }), layerOf('agent', { brief: { integrations_off: ['jira'] } })]);
+  assert.deepEqual([off.integrations, off.off], [{ jira: 'campaign' }, {}], 'nor turn it off');
+});
+
+test('project management: its own cascade, on at the Campaign by default, the narrowest layer holds, Jira never moves it (KAN-608)', () => {
+  assert.deepEqual(cascade([]).pm, { on: true, from: 'campaign' }, 'nobody says: on, from the Campaign');
+  assert.deepEqual(cascade([layerOf('campaign', {})]).pm, { on: true, from: 'campaign' });
+  assert.deepEqual(cascade([layerOf('campaign', { pm: false })]).pm, { on: false, from: 'campaign' }, 'off is deliberate');
+  assert.deepEqual(cascade([layerOf('campaign', { pm: false }), layerOf('team', { pm: true })]).pm, { on: true, from: 'team' }, 'a Team turns it back on');
+  assert.deepEqual(cascade([layerOf('campaign', {}), layerOf('workspace', { pm: false }), layerOf('agent', { pm: true })]).pm, { on: true, from: 'agent' });
+  assert.deepEqual(cascade([layerOf('campaign', {}), layerOf('team', { pm: false })]).pm, { on: false, from: 'team' });
+  assert.deepEqual(cascade([layerOf('campaign', { pm: false, integrations: ['jira'] })]).pm, { on: false, from: 'campaign' }, 'Jira on does not turn pm on');
+  assert.deepEqual(cascade([layerOf('campaign', { brief: { integrations_off: ['jira'] } })]).pm, { on: true, from: 'campaign' }, 'Jira off does not turn pm off');
 });
 
 test('add, then block, then screen; a behaviour brings the tools that serve it', () => {
@@ -187,20 +202,56 @@ test('the brief: facts, behaviours with their tools, other tools, the help line,
   assert.doesNotMatch(text, /YOUR TOOLS|SOUGHT|On your shelf|In this packet/);
 });
 
-test('an update sends only what differs', () => {
+test('an update sends only what differs between the two builds', () => {
   const before = record();
-  const snap = briefSnapshot(resolveBrief(CATALOG, before, []));
-  assert.deepEqual(Object.keys(snap), ['told'], 'brief-told.json keeps only what was told');
-  assert.equal(briefChanges(snap, before, resolveBrief(CATALOG, before, []), before), '', 'nothing changed: nothing sent');
+  assert.equal(briefChanges(built(CATALOG, before), built(CATALOG, before)), '', 'nothing changed: nothing sent');
   const after = record({ pm: true, team: 't', lead: true });
-  const changes = briefChanges(snap, before, resolveBrief(CATALOG, after, []), after);
+  const changes = briefChanges(built(CATALOG, before), built(CATALOG, after));
   assert.match(changes, /### Lead\nLead text\./);
   assert.match(changes, /### PM\nItems\./);
   assert.match(changes, /- `item`: Work items\./);
   assert.doesNotMatch(changes, /Base text/);
-  const left = briefChanges(briefSnapshot(resolveBrief(CATALOG, after, [])), after, resolveBrief(CATALOG, before, []), before);
+  const left = briefChanges(built(CATALOG, after), built(CATALOG, before));
   assert.match(left, /No longer in your brief: Lead, PM, item\./);
   const renamed = { ...before, user: { ...before.user, name: 'Alex' } };
-  assert.equal(briefChanges(snap, before, resolveBrief(CATALOG, renamed, []), renamed), '- User: Alex, owner', 'a fact changed on the record: that fact line only');
+  assert.equal(briefChanges(built(CATALOG, before), built(CATALOG, renamed)), '- User: Alex, owner', 'a fact changed on the record: that fact line only');
 });
 
+test('a behaviour whose wording differs between builds is sent again, at its depth (KAN-549)', () => {
+  const r = record();
+  const edited: Catalog = { ...CATALOG, behaviours: CATALOG.behaviours.map((one) => one.name === 'base'
+    ? file('behaviours', 'base', '# Base\n- **seed:** Base seed.\n- **depth:** full\n- **order:** 1\n\nBase text, reworded.\n\n## Inner\nx') : one) };
+  const changes = briefChanges(built(CATALOG, r), built(edited, r));
+  assert.match(changes, /### Base\nBase text, reworded\./);
+  assert.doesNotMatch(changes, /No longer in your brief/);
+  assert.equal(briefChanges(built(edited, r), built(edited, r)), '', 'the same build: nothing');
+});
+
+
+test('narrowing: a layer turns off what is on above, for itself and below (KAN-589)', () => {
+  const layers: Layer[] = [
+    layerOf('campaign', { integrations: ['jira', 'netlify', 'perplexity'] }),
+    layerOf('workspace', { brief: { integrations_off: ['jira'] } }),
+    layerOf('team', { brief: { integrations_off: ['netlify'] } }),
+    layerOf('agent', { integrations: ['netlify'] }),
+  ];
+  const on = cascade(layers);
+  assert.deepEqual(on.integrations, { perplexity: 'campaign' }, 'off at the Team holds below it, an Agent add included');
+  assert.deepEqual(on.off, { jira: 'workspace', netlify: 'team' });
+  assert.deepEqual(on.pm, { on: true, from: 'campaign' }, 'Jira off leaves project management as it is');
+  assert.deepEqual(layerOf('workspace', { brief: { integrations_off: ['perplexity', 'Bad Name'] } }).brief.integrations_off, ['perplexity']);
+  assert.equal(layerOf('workspace', { brief: {} }).brief.integrations_off, undefined, 'nothing off: no key');
+});
+
+test('mcp-servers: one generated line per MCP server on, in play only when one is (KAN-589)', async () => {
+  const catalog: Catalog = { facts: [], tools: [], behaviours: [(await readCatalog('behaviours')).find((one) => one.name === 'mcp-servers')!] };
+  assert.equal(resolveBrief(catalog, record(), []).behaviours.length, 0, 'no MCP server on: not told');
+  const r = record({ mcp: [{ name: 'wispr-flow', description: 'Voice dictation and transcripts.' }, { name: 'linear', description: 'Issues in Linear.' }] });
+  assert.equal(conditionHolds('mcp', r), true);
+  const text = renderBrief('demo', r, resolveBrief(catalog, r, []));
+  assert.match(text, /### MCP servers\n.*keys: `mcp tools <name>`.* runs one\.\n- wispr-flow: Voice dictation and transcripts\.\n- linear: Issues in Linear\. \(`mcp-servers`\)/);
+  const fewer = record({ mcp: [{ name: 'linear', description: 'Issues in Linear.' }] });
+  const changes = briefChanges(built(catalog, r), built(catalog, fewer));
+  assert.match(changes, /### MCP servers\n.*\n- linear: Issues in Linear\. \(`mcp-servers`\)/, 'a server gone: the seed is sent again');
+  assert.doesNotMatch(changes, /wispr-flow/);
+});

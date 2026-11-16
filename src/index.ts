@@ -21,7 +21,8 @@ import {
   unauthorizedUpgradeResponse,
   verifyRecord,
 } from './auth.js';
-import { cleanupViewers, listSessions } from './tmux.js';
+import { cleanupViewers, listSessions, livePanePids, liveSessionKeys, stopLeftoversOnPaneDeath } from './tmux.js';
+import { sweepLeftovers } from './agent-scope.js';
 import { bindOperatorSocket, isOperatorPeer, operatorSocketPath, SiblingAlive, type BoundOperatorSocket } from './operator-socket.js';
 import { addressRefusal, EXIT_ADDRESS_UNUSABLE } from './bind-refusal.js';
 import { publishMax, publishOwner } from './machine-state.js';
@@ -37,6 +38,7 @@ import { registerIntegrations } from './routes/integrations-api.js';
 import { registerPlans } from './routes/plans-api.js';
 import { registerSecrets } from './routes/secrets-api.js';
 import { registerWorkItems } from './routes/work-items-api.js';
+import { registerEpicTemplates } from './routes/epic-templates-api.js';
 import { registerPromotions } from './routes/promotions-api.js';
 import { epicsPush, everyItemReading } from './work-items-read.js';
 import { registerDocs } from './routes/docs-api.js';
@@ -283,6 +285,7 @@ registerIntegrations(app); // /api/integrations* — the integrations index, liv
 registerPlans(app); // /api/plans* — the plan tool's door — src/routes/plans-api.ts
 registerSecrets(app); // /api/secrets* — the secret tool's door: save, ask, names; never a value — src/routes/secrets-api.ts
 registerWorkItems(app); // /api/work-items* — the one door to the work item store — src/routes/work-items-api.ts
+registerEpicTemplates(app); // /api/epic-templates — the epic-template tool's door — src/routes/epic-templates-api.ts
 registerPromotions(app); // /api/promotions/:id/live — whether a promotion restarted and passed health (KAN-311) — src/routes/promotions-api.ts
 registerDesks(app); // /api/desks?session=<name> and funnel recovery — derived desk state — src/routes/desks-api.ts
 registerTeamPage(app); // /api/teams/:team/page — the team page's view, and drafts an agent hands it — src/routes/team-page-api.ts
@@ -473,6 +476,15 @@ await tmuxClient.connect(); // only the long-lived server opts into control mode
 const removed = await cleanupViewers();
 if (removed) console.log(`[tmux-ronin] cleaned up ${removed} stale viewer session(s)`);
 await startBootHooks();
+stopLeftoversOnPaneDeath(); // a pane that dies takes what it started, helpers too — src/tmux.ts
+// What ended Agents left: their pane scopes (processes) and short temp roots — src/agent-scope.ts
+void (async () => {
+  const server = Number(await tmuxClient.run(['display-message', '-p', '#{pid}']).catch(() => '0'));
+  const sessionKeys = await fs.promises.readdir(storeDir('session')).catch(() => [] as string[]);
+  const swept = await sweepLeftovers({ server, livePanes: await livePanePids(), sessionKeys, liveKeys: await liveSessionKeys() });
+  if (swept.scopes.length) console.log(`[scope] stopped ${swept.scopes.length} pane scope(s) left by ended Agents: ${swept.scopes.join(' ')}`);
+  if (swept.temp.length) console.log(`[scope] removed ${swept.temp.length} temp root(s) of gone sessions: ${swept.temp.join(' ')}`);
+})().catch((e) => console.error('[scope] start sweep failed:', e));
 // A TEAM'S FOUR LAYERS (KAN-331): remember every lead's, and tell a lead when its own move.
 void startTeamLayers((cb) => sockets.onItemChanged(cb));
 startFiles(ROOT); // copyparty at /files where python3 is found — src/files.ts

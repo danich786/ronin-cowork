@@ -9,7 +9,7 @@ Agents are told is in [Customize Ronin](../getting-started/customize.md).
 
 | Object | What it is | Folder | How much is told |
 |---|---|---|---|
-| **Fact** | true about the user and the Agent's situation: the user, the office's people, the Workspace, the Team, the mandate, the task | `ronin_catalogs/facts/` | in full when told. Facts are short; anything long is a behaviour |
+| **Fact** | true about the user and the Agent's situation: the user, the office's people, the Workspace, the Team, the task | `ronin_catalogs/facts/` | in full when told. Facts are short; anything long is a behaviour |
 | **Behaviour** | how to work: guidance an Agent follows | `ronin_catalogs/behaviours/` | a depth (below) |
 | **Tool** | something to call: one command, or a family (`session_*`) | `ronin_catalogs/tools/` | a depth (below) |
 
@@ -32,9 +32,10 @@ only when it needs it. Give a file `full` only when an Agent needs all of it fro
 A tool's seed is its one job (a family's names its members); the brief says once that every
 tool answers `--help`. A tool in full adds its commands and whatever `--help` does not say.
 
-An Agent is told at birth; when its situation changes (a desk is cut, an integration turns on,
-it is made lead); when the user changes its configuration; and when it asks (`ronin-help
-<name>` prints the full text of anything it holds a seed for).
+An Agent is told at birth, then only when its configuration changes (by the user, or by an
+Agent such as its lead: title, role, Team, lead, mandate, its own brief settings), and when it
+asks (`ronin-help <name>` prints the full text of anything it holds a seed for). A file is told
+once however many conditions or layers turn it on.
 
 **Hide, never guard.** A depth, a block or a screen decides only what the Agent is told.
 Nothing is taken off the PATH, refused or stopped: an Agent that finds a tool or behaviour it
@@ -60,14 +61,15 @@ behaviour's name takes another id (`ask-mika` is the `mika` command). Every file
 | Field | Files | Means |
 |---|---|---|
 | title (`#`) | all | the name the brief prints; for a tool, the command |
-| `seed:` | behaviours, tools | the one line. A behaviour's seed stands on its own; a tool's is its one job |
+| `seed:` | behaviours, tools | the one line. A behaviour's seed stands on its own; a tool's is its one job. It may carry a record value, `{setting.mcp_lines}`, filled when the brief is built |
 | `line:` | facts | the line the brief prints, with `{record.path}` placeholders; `{<lead> x}` prints `<lead>` and x only when x is set; `{x?yes\|no}` prints one of two texts |
 | `when:` | all | the conditionals that must all hold, comma-separated; `!` for not; blank = every Agent. A tool that serves a behaviour needs none: it is in play when its behaviour is |
 | `depth:` | behaviours, tools | `none`, `seed` or `full`: the stock depth. Layers may raise it |
 | `serves:` | tools | the behaviour ids it serves. Blank: it goes under Other tools |
-| `mcp:` | bridges | the MCP server in the Agent's launch while this bridge is in play; blank until one is chosen |
 | `mandate:` | behaviours | the mandate axis this file is a value of: `reach`, `recruit` or `output`; the title is the value |
 | `with:` | mandate values | the behaviour(s) choosing this value puts in play, at their depth (Reach plan `with: planning`); the order never repeats that behaviour's text |
+| `lists:` | behaviours | a catalog directory whose files `ronin-help <behaviour>` prints after its text, one line each, the user's own (`~/ronin/<dir>/`) over stock by name, in `order:`: adding a file adds it (new-workspace: `workspace_types/`) |
+| `facts:` | bridges | the facts its Workspace entry takes, comma-separated (`netlify-bridge`: `site`); each is a field on the Workspace page's Integrations row, saved as `{provider, site}` ([integrations.md](integrations.md#the-pieces)) |
 | `order:` | all | its place in its section, lower first |
 
 Header lines run from the title to the first blank line. An unknown field is ignored; an
@@ -100,6 +102,8 @@ They read values on the work record.
 | `hosted` | a hosted office (else self-hosted) |
 | `service:<part>` | that Ronin Services part is running |
 | `integration:<name>` | that integration is on for the Agent |
+| `mcp` | at least one MCP server is on for the Agent |
+| `api` | at least one web API is on for the Agent |
 | `pm` | project management is on |
 | `team` · `lead` · `role:<coworker\|lead\|epic_lead\|coordinator>` | on a Team, its lead, its role |
 | `desk` · `checkout` | a desk is cut, a repository is checked out |
@@ -117,8 +121,7 @@ each axis, in `order:`; no list of values is kept by hand. Choosing a value brin
 play at its depth, and the behaviours its `with:` names. The server reads the value as the title
 lower-cased (`# Propose agents`). A mandate file is an order, not how-to ("Plan; don't build."), and prints in
 the brief's Mandate section, never among the behaviours. A value is added by adding its file
-(stock or the user's store); blocking it takes it off the menu; a screen narrows the menu. The
-Mandate fact still prints the values.
+(stock or the user's store); blocking it takes it off the menu; a screen narrows the menu.
 
 ## The work record is the source of truth
 
@@ -130,25 +133,42 @@ record plus the files, nothing else.
 | Session | name, title, type, the template it came from, objective, the task at birth |
 | User | name and what to call them, role in the office, new owner, organization, technical level, AI experience, planned use, time zone, language, about, and the user's own intro text |
 | People (hosted) | the office's owner and members: role, name, organization |
-| Setting | hosted or self-hosted; Campaign; Workspace (its instructions, repositories, folders); integrations on; project management; the Services parts running |
-| Agent | role and Team(s); mandate (Reach, Recruit, Output); provider, model, harness, launch mode |
+| Setting | hosted or self-hosted; Campaign; Workspace (its instructions, repositories, folders); integrations on; the MCP servers on; project management; the Services parts running |
+| Agent | role and Team(s), and the integrations on for its Team; mandate (Reach, Recruit, Output); provider, model, harness, launch mode |
 | Work | desk or checkout per repository; items held and watched |
-| Brief settings | each layer's add, block and only: user, Campaign, Workspace, Team, this Agent |
+| Brief settings | each layer's settings as born — add, block, only, integrations, pm: user, Campaign, Workspace, Team, this Agent |
 
-- Ronin writes the whole record onto the work record as the key `brief` (`src/tegami.ts`,
-  `writeBriefRecord`), at birth and on every update, as it writes `teams`: the parts above
-  (`session`, `user`, `people`, `setting`, `agent`, `work`, the shape of `src/brief-record.ts`)
-  and `brief_settings`, one `{add, block, only}` per layer. The tile's Work record shows it by
-  part. The Team roster, the Workspace and the Campaign own their values; the key is Ronin's
-  copy, written again on each update.
-- A value another place owns and keeps no copy of is read there when the brief is built: in a
-  hosted office, the people and the user's Lounge answers from `office_unit/members.json`
-  through `src/office-people.ts`.
+**One authority, one builder** (KAN-605). The record above is one document on the work record,
+the key `brief`, and it is the session's only authority for its brief.
+
+- **Birth writes it whole.** The New Agent path (`composeBrief`, `src/brief-build.ts`) resolves
+  user, machine, Campaign, Workspace, Team and Agent once into the complete document: the parts
+  above (`session`, `user`, `people`, `setting`, `agent`, `work`, the shape of
+  `src/brief-record.ts`), `setting.available` (the MCP server and web API records available to its Campaign; available is not on) and
+  `brief_settings`, one `{brief, integrations, pm}` per layer. Once the work record exists,
+  launch writes it as one key (`writeBriefRecord`, `src/tegami.ts`). The tile's Work record
+  shows it by part.
+- **The builder is pure.** `buildBrief(document, catalogs)` works out integrations on, project
+  management, the MCP servers on and a lead's Team integrations from the document's layers, puts
+  the catalog in play and renders the packet. Birth, the New Agent preview and the Configuration
+  all use it. It reads nothing else: no machine setting, default, Service, receipt, snapshot or
+  other work-record key.
+- **Only an explicit configuration change edits it.** The Configuration's Send and being made
+  lead (`configureBrief`, `src/agent-configuration.ts`) change title, role, lead, mandate and the
+  Agent's own layer on the document. Then they build the old document and the new one, write
+  `AGENT_BRIEF.md` and the document, and send the difference once if there is one. A move to
+  another Team is the one change that reads outside the document: it takes that Team's values
+  (its wipeboard, objective and Workspace, with the Workspace's repositories, folders and
+  instructions, and the Team and Workspace settings), resolved the way birth resolves them.
+  Provider, model, harness and launch mode stay as born.
+- **A default never reaches a live Agent** (owner, 2026-11-16). A user, machine, Campaign,
+  Workspace or Team default, a catalog file, an MCP record or a connection changed since birth
+  reaches only Agents born after it.
+- **Dynamic fields never rebuild it.** The objective, items, flags, watches, documents, desks
+  and the `teams` block are on the work record but not in the brief document, so they send
+  nothing.
 - Who is talking now is never in the brief: the per-message From line (`src/message-queue.ts`)
   says it.
-- Ronin rebuilds the brief on any record change and sends the Agent the difference only when
-  the brief came out different. Items and the objective are on the record but not in the
-  brief, so they send nothing.
 
 **Ronin's own lines on the record.** The mandate is written by `writeMandate`
 (`src/tegami.ts`) at creation and on an Update. The `teams` block is one entry per Team
@@ -190,11 +210,25 @@ Example, a Workspace that uses Netlify and wants More checkpoints for every Agen
 template: `only: base-agent, netlify-bridge`.
 
 **Integrations cascade the same way**: on for a Campaign is on for its Workspaces, Teams and
-Agents, and each may add its own. On for an Agent makes `integration:<name>` hold, so its
-bridge behaviour and that behaviour's tools come into play.
+Agents, and each may add its own. A layer may also turn off one that is on above it, for itself
+and below (`integrations_off` in its brief settings; the pages show "On, from the <layer>" with
+Off). MCP server and web API records cascade the same way: a record's Campaigns only make it
+available (listed in the pickers); a layer's switch turns it on (KAN-607).
+On for an Agent makes `integration:<name>` hold, so its bridge behaviour and that behaviour's
+tools come into play.
 
-**Project management is its own switch**, cascading like an integration. When the Jira
-integration is on, it is on; otherwise each layer may turn it on or off. Off: no item
+**Jira is set at the Campaign and Workspace only** (the Campaign's Jira part, its switch
+`services.parts.jira`, or the Workspace's integrations). A Team's or Agent's Jira entry is
+ignored by the cascade, and the Team and New Agent forms don't show Jira. An Agent reaches work
+items through `item` and never past the bridge, so it is not told of Jira, and Jira is not among
+the integrations on its record.
+
+**Project management is its own switch** (`pm` on each layer's record), apart from Jira: Jira
+on or off never moves it (KAN-608). It is on at the Campaign unless the Campaign's record says
+`pm: false`, so turning it off is always deliberate; below, each layer may say on or off, and
+the narrowest layer that says one holds (`cascade`, `src/brief-settings.ts`). A form shows it on
+or off with "On/Off, from the <layer>" while it follows the layer above; choosing the other
+value sets it on that layer. Off: no item
 behaviours and no `item` seed. On: the item model for everyone, role behaviours by role. The
 Services part that runs project management keeps its own switch for running; the brief reads
 `pm`.
@@ -212,7 +246,6 @@ birth and never rewritten. Each update writes the brief as it is now beside it, 
 - You: …
 - User: …
 - Workspace: …
-- Mandate: …
 - Task: …
 
 ## Mandate
@@ -247,19 +280,16 @@ Every tool is a command on your PATH; `<tool> --help` gives its syntax.
 - **The launch prompt** carries only the task, the read line — "Read first: `<path>` — N
   lines, N KB, one read; it ends with the line "— end of packet for `<name>` —". Do not act
   before you have seen that line." — and, where the launch profile asks for it, the
-  acknowledgement (quote the end line). Team, mandate and Workspace are facts in the brief, so
+  acknowledgement (quote the end line). Team and Workspace are facts and the mandate its own section in the brief, so
   an update reaches them.
 - **The birth receipt** (`birth-receipt.json`) records the brief's path, bytes, lines,
   terminator and over-budget state.
-- **An update** (`refreshBrief`, `src/agent-configuration.ts`) rebuilds the brief and, when it
-  differs from what the Agent was last told, sends "Your brief changed" with the facts that
-  changed and the behaviours and tools that came into play (at their depth) or left it, and the
-  path of `AGENT_BRIEF.md`. What was told is `brief-told.json` beside the brief: each fact,
-  mandate, behaviour and tool, at its depth, and nothing else. The values it was told over are
-  the work record's `brief` key, so a fact changed is one whose line reads differently over that
-  record and the new one. A mandate change sends the new
-  mandate only. Nothing differs, nothing is sent. A layer change rebuilds every live Cowork
-  Agent's brief (`refreshAllBriefs`).
+- **An update** (`configureBrief`, `src/agent-configuration.ts`) builds the document before
+  and after the edit. If the brief comes out different, it sends "Your brief changed" with the
+  facts whose line reads differently, the behaviours and tools that came into play (at their
+  depth) or left it, and the path of `AGENT_BRIEF.md` (`briefChanges`, `src/brief.ts`, a pure
+  comparison of the two builds). A mandate change sends the new mandate only. If nothing
+  differs, nothing is sent.
 - **Send** on the New Agent form sends only what changed; when nothing did, the form says "Its
   brief is unchanged: nothing was sent."
 - **The brief shows at the bottom of the work record** on the tile: `AGENT_BRIEF.md` once an
@@ -275,11 +305,11 @@ real stores.
 
 ## Where it is set in the UI
 
-- **New Agent form, Behaviors step:** Integrations (inherited ones shown "On, from the
-  {layer}", the Agent's own to turn on); Project management (a switch, locked when a layer
-  above or Jira has it on); Optional (the Agent's add list, Full or Seed; a behaviour already
-  told can be raised to Full); Comes with this Agent (read-only: what is in play and why, from
-  `POST /api/brief/preview`).
+- **New Agent form, Behaviors step:** one list of cards, each on or off: Project management,
+  each integration by name (never Jira), and the optional behaviours (Full or Seed once on; one
+  already told can be raised to Full). A card on from a layer above reads "On, from the
+  {layer}". Then Comes with this Agent (read-only: what is in play and why, from
+  `POST /api/brief/preview`). It saves `{ brief, integrations, pm }` as before.
 - **Mandate** (New Agent, New Team's Agent rows, Team, Campaign): Reach, Recruit and Output list
   the mandate files from the catalog, in `order:`, less the preview's off
   (`public/js/mandates.js`). No value is listed in the client.
@@ -297,7 +327,7 @@ real stores.
 
 ```
 facts/       you, user, user-about, user-intro, people (hosted), ronin, workspace,
-             integrations-on, team (team), mandate (cowork), model, work, task
+             integrations-on (a lead: its Team's too), team (team), model, work, task
 behaviours/  base-agent (full) · cowork-agent, write-it-down (cowork, full)
              reach-*, recruit-*, output-* (mandate: one file per value)
              team-lead, planning (lead) · lead-worktrees (lead, desk)
@@ -305,11 +335,12 @@ behaviours/  base-agent (full) · cowork-agent, write-it-down (cowork, full)
              pm-traffic-control (pm, by role, full)
              working-at-a-desk (desk) · checkout (checkout) · workspaces (cowork, full)
              integrations (every Agent, seed; brings `secret`, so keys are taught once)
-             bridges: netlify-bridge, jira-bridge, gbrain-bridge, perplexity-bridge
-             (integration:<name>)
+             bridges: netlify-bridge, jira-bridge, perplexity-bridge
+             (integration:<name>) · mcp-servers (mcp, seed: one line per MCP server on) ·
+             web-apis (api, seed: one line per web API on)
              mika, install-check (mika) · services-off (!service:ronin_services) · using-ronin
              optional (depth none): team-work, more-checkpoints, working-with-the-user,
-             visual-staging, codebase-team
+             codebase-team
 tools/       edges, work-record, agent-session (session_*), cowork-team (team), plan,
              work-item (item), worktree-desk, secret, netlify, preview, lookup, show,
              owner-view, ask-mika (mika), ronin-host, machine-settings, ronin-help ·
@@ -345,11 +376,18 @@ through `secret ask <provider>-<key>` and `secret path <name>`, a PR and its pre
 owner's choice before shipping. Keys are taught there once; a bridge never repeats them.
 
 A **bridge** is a behaviour with `when: integration:<name>` and the tools that serve it, in play
-while that integration is on for the Agent: `jira-bridge` (work items through `item`, never Jira
-itself), `gbrain-bridge` (shared memory), `perplexity-bridge` (cited web research) and
-`netlify-bridge` (the worked example, with `netlify` and `preview`). A bridge may say
-`mcp: <server>`: while it is in play, that MCP server is in the Agent's launch and the bridge
-says how it is used; its tools come from the harness, so they have no tool files.
+while that integration is on for the Agent: `perplexity-bridge` (cited web research) and
+`netlify-bridge` (the worked example, with `netlify` and `preview`). `jira-bridge` only lists
+Jira on the Integrations panel; it is never told, because Jira is never on an Agent's record.
+
+Every **MCP server** and **web API** is reached at run time through Ronin's broker, never at launch
+([integrations.md](integrations.md)). A record's Campaigns make it available, which only lists it in the
+pickers; it is on through the layers' integrations switches, the one cascade, like a bridge. One
+behaviour, `mcp-servers` (seed, `when: mcp`), is in play when any MCP record is on for the Agent; its
+seed is generated from the record values, one line per server, `<name>: <description>`, then how to
+call it, with the `mcp` tool under it. `web-apis` (seed, `when: api`) does the same for web APIs, with
+the `api` tool. A record
+named as a bridge's integration is that bridge's way through the broker and gets no line.
 
 ## Workspaces
 
@@ -360,8 +398,8 @@ Workspaces over `src/routes/workspaces-api.ts`.
 
 ## What comes next
 
-The base of behaviours grows a file at a time: a bridge for each integration a user brings,
-an MCP server chosen per bridge, and the `workspace` command, which then gets its seed told.
+The base of behaviours grows a file at a time: a curated bridge for an integration that earns
+one, and the `workspace` command, which then gets its seed told.
 
 ## Change checkpoint
 

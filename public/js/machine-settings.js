@@ -322,7 +322,6 @@ export function buildMachineSettings(root, isShowing, { only = null } = {}) {
 
     group(t('settei.group_services', 'services'));
     body.appendChild(tickRow(observed.ronin.services.length > 0, 'service', '*', t('settei.ronin_services', 'Ronin Services'), ''));
-    body.appendChild(tickRow(observed.ronin.services.includes('gbrain'), 'service', 'gbrain', 'gbrain', ''));
     /* the deal — Ronin Services the subscription, a different thing from the sockets above */
     group(t('settei.group_subscription', 'subscription'));
     const activation = set.services.activation ?? {};

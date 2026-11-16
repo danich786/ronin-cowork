@@ -28,7 +28,7 @@ import { createFolderGithub, createRootsReading, createWorkspaceNew, createWorks
 import { campaignById, loadCampaigns, normalizeSelection } from './campaigns.js';
 import { createEpicBoard, createEpicRecord, createEpicsRead, epicOffers } from './epics-surface.js';
 import { createHelpOutline, createHelpPage } from './help-outline.js';
-import { askMika, createMikaTilePool, reportMikaView } from './mika.js';
+import { askMika, askSignInHelper, createMikaTilePool, reportMikaView, signInHelperName } from './mika.js';
 import { readyMika } from './mika-ready.js';
 import { S } from './state.js';
 import { request } from './request.js';
@@ -105,9 +105,10 @@ export function createModelsView() {
     count: 4, seats: { workspace1: WORKBENCH_TYPES.modelStones, workspace2: WORKBENCH_TYPES.accountsRecords, workspace3: WORKBENCH_TYPES.modelsRecords, workspace4: WORKBENCH_TYPES.modelRefresh },
     loaded: loadProviderCatalog,
     environment: ({ bench }) => {
+      let helper = MIKA_SESSION;
       const showMika = async (workspace, prompt) => {
-        await askMika(null, prompt);
-        mikaPool.sync([MIKA_SESSION]);
+        helper = await askSignInHelper(prompt);
+        mikaPool.sync([helper]);
         bench().place(WORKBENCH_TYPES.modelMika, workspace);
       };
       const opposite = (workspace) => ({ workspace1: 'workspace2', workspace2: 'workspace1', workspace3: 'workspace4', workspace4: 'workspace3' })[workspace] || 'workspace1';
@@ -122,7 +123,8 @@ export function createModelsView() {
         accounts: (workspace) => keep(createAccountsSurface({ workspace, detail: {}, environment, workbench: bench() })),
         modelsRecords: (workspace) => keep(createModelsRecords({ workspace, detail: {}, environment, workbench: bench() })),
         modelProvider: (workspace, detail) => keep(createModelProvider(detail.key, { workspace, detail, environment, workbench: bench() })),
-        modelMika: () => ({ el: mikaSurface.el, show: () => { mikaPool.sync([MIKA_SESSION]); mikaPool.show(MIKA_SESSION, false); } }),
+        modelMika: () => ({ el: mikaSurface.el, show: () => { mikaPool.sync([helper]); mikaPool.show(helper, false); } }),
+        assistName: signInHelperName,
         onMikaProviderGuide: ({ provider, setupSession, workspace }) => showMika(opposite(workspace), guidePrompt(provider, setupSession)),
         onMikaProviderConnect: ({ provider, workspace }) => showMika(workspace, connectPrompt(provider)),
       };
@@ -163,11 +165,13 @@ export function createWorkspacesView() {
         workspaceRecord: (_workspace, detail) => keep(createWorkspaceRecord(detail.key, { reading, workspacesRead, campaignId })),
         workspaceNew: (workspace) => keep(createWorkspaceNew({ reading, workspacesRead, campaignId, place: (name) => bench().place(WORKBENCH_TYPES.workspaceRecord, workspace, { key: name }) })),
         folderGithub: (workspace) => keep(createFolderGithub(github ??= boxes(workspace))),
-        githubMika: () => ({ el: mikaSurface.el, show: () => { mikaPool.sync([MIKA_SESSION]); mikaPool.show(MIKA_SESSION, false); } }),
+        githubMika: () => ({ el: mikaSurface.el, show: () => { mikaPool.sync([helper]); mikaPool.show(helper, false); } }),
+        assistName: signInHelperName,
       };
+      let helper = MIKA_SESSION;
       const showMika = async (workspace, prompt) => {
-        await askMika(null, prompt);
-        mikaPool.sync([MIKA_SESSION]);
+        helper = await askSignInHelper(prompt);
+        mikaPool.sync([helper]);
         bench().place(GITHUB_MIKA, workspace);
       };
       const opposite = (workspace) => workspace === 'workspace1' ? 'workspace2' : 'workspace1';
@@ -214,7 +218,7 @@ export function createHelpView() {
   const none = document.createElement('p');
   none.className = 'help-mika-none';
   none.hidden = true;
-  const setup = HOSTED // a hosted office has no Setup; its providers are signed in from Agent Harness
+  const setup = HOSTED // a hosted office's Setup is Irasshai's while she runs; its providers are signed in from Agent Harness
     ? Object.assign(document.createElement('a'), { href: '#/models', textContent: t('campaign_home.agent_harness', 'Agent Harness') })
     : Object.assign(document.createElement('a'), { href: '#/setup', textContent: t('help_outline.mika_setup', 'Setup') });
   none.append(t('help_outline.mika_needs_provider', 'Mika needs a model provider. Activate one in '), setup, '.');

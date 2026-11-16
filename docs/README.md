@@ -15,6 +15,7 @@ route depends on the task, not on who is reading.
 | Choose where Ronin works | [Workspace Folders](getting-started/workspace-folders.md) |
 | Browse and manage the machine's files | [Explorer](using-ronin/explorer.md) |
 | Give an Agent a file, image, or screenshot | [Share a file with an Agent](using-ronin/share-a-file.md) |
+| Connect an outside service (an MCP server, a web API, a bridge) | [Add an integration](using-ronin/add-an-integration.md) |
 | Start a Team | [New Team](using-ronin/new-team.md) |
 | Track work and coordinate Agents | [Project management](using-ronin/project-management.md), [work record](using-ronin/work-record.md), [work items](using-ronin/work-items.md), [wipeboards](using-ronin/wipeboards.md) and [Jira](using-ronin/jira.md) |
 | Stop, clear, copy, or close | [Terminal controls](using-ronin/terminal-controls.md) |
@@ -39,12 +40,14 @@ change area to its code, UI, stores, Services, documentation, and tests.
 |---|---|
 | What do the names mean? | [KOTOBA](../KOTOBA.md) and [Agent glossary](../KOTOBA_GLOSSARY.md) |
 | How are tools and Agent instructions composed? | [The brief](architecture/brief.md) |
+| How does an outside service or MCP server reach Agents? | [Integrations](architecture/integrations.md): bridges, MCP server records, keys, who has it, and the `mcp` broker |
 | How do configuration and owner customizations resolve? | [Installations](architecture/installations.md), [shadowing](architecture/shadowing.md), and [templates](architecture/templates.md) |
 | How is project management built, and who reads which brief? | [Project management: contents](architecture/project-management.md): briefs, tools, code and the Jira bridge |
 | Where do state and work live? | [State inventory](state-inventory.md), [coordination trace](coordination-trace.md), and [Workspace Folders](architecture/project-roots.md) |
 | How does server state reach the browser? | [The data path](architecture/data-path.md): the server pushes on change, a surface subscribes when it opens, nothing polls |
 | What does an Agent's Chat and status read? | [Agent output](architecture/agent-output.md): a log read and a terminal read write one file per Agent; Chat and status only read it |
 | How does the server run terminals and optional parts? | [Runtime connection](architecture/tmux-connection.md) and [Services contracts](https://github.com/ronincowork/ronin-services/blob/dev/README.md#understand-or-change-services) |
+| Where do an Agent's temp files and processes live, and when do they go? | [Agent temp and processes](architecture/agent-scope.md): on disk under the session, in its own scope, gone when it ends |
 | How are provider CLIs integrated and launched? | [Agent launch method](architecture/agent-launches.md), [Agent integrations](agents/README.md), and [provider catalog](architecture/model-providers.md) |
 | How do Workbenches place, restore, launch, and load their surfaces? | [Workbench construction](architecture/workbench.md) and [Workspace Kit](architecture/workspace-kit.md) |
 | How do I contribute and verify a change? | [CONTRIBUTING](../CONTRIBUTING.md), [Agent route](../AGENTS.md), and [development references](development/README.md) |
