@@ -41,7 +41,7 @@ one panel (`src/integrations.ts`): the bridges (behaviours with `when: integrati
 every MCP server record, and any name a Workspace uses that has neither, each with the
 Workspaces using it, whether a Services part of its name runs, and the secrets saved for it
 (names only). MCP servers are added, keyed, signed in, offered and removed there
-([integrations.md](integrations.md#settings--integrations)). Jira and gbrain show their own panels inside it. How an Agent uses them: the Integrations behaviour and the bridges
+([integrations.md](integrations.md#settings--integrations)). Jira shows its own panel inside it. How an Agent uses them: the Integrations behaviour and the bridges
 ([the brief](brief.md#integrations-and-bridges)).
 
 ## What an Agent is told

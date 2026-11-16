@@ -50,8 +50,7 @@ its own), but the line format of the current Kimi Code is not published, so no l
 written. Resume syntax is `kimi --session <id>`; Ronin does not read the id, so Archive
 refuses.
 
-Stop sends Escape; Clear sends Ctrl+C. No MCP registration adapter is implemented in
-Services' gbrain setup for `kimi`.
+Stop sends Escape; Clear sends Ctrl+C.
 
 Shared [code ownership and test boundaries](README.md#code-ownership) apply to this CLI.
 

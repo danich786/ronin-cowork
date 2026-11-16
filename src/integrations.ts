@@ -33,6 +33,8 @@ export interface IntegrationState {
   blurb: string;
   /** The bridge behaviour's id; '' is none. */
   bridge: string;
+  /** The facts the bridge takes (its `facts:` line), each a field on the Workspace page's row; [] is none. */
+  facts: string[];
   part: PartState;
   /** The secrets saved under `<name>-`, names only. */
   secrets: string[];
@@ -107,6 +109,7 @@ export async function integrationsState(campaign: string, parts: PartFacts): Pro
       label: bridge ? bridge.title.replace(/\s+bridge$/i, '') : record?.label ?? name,
       blurb: bridge?.seed ?? record?.description ?? '',
       bridge: bridge?.behaviour ?? '',
+      facts: bridge?.facts ?? [],
       part: partState(name, parts),
       secrets,
       workspaces: workspaces.filter((w) => w.integrations.some((i) => i.provider === name)).map((w) => w.name),

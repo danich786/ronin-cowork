@@ -49,8 +49,7 @@ session there, `session-state/<session-id>/events.jsonl`: one event per line, it
 adapter reads it, written from the generated schema `session-events.schema.json` that
 `@github/copilot-sdk` ships. Resume is `copilot --resume <id>` with that id.
 
-Stop sends Escape; Clear sends Ctrl+C. No MCP registration adapter is implemented in
-Services' gbrain setup for `copilot`.
+Stop sends Escape; Clear sends Ctrl+C.
 
 Shared [code ownership and test boundaries](README.md#code-ownership) apply to this CLI.
 

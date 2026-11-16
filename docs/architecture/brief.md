@@ -69,6 +69,7 @@ behaviour's name takes another id (`ask-mika` is the `mika` command). Every file
 | `mandate:` | behaviours | the mandate axis this file is a value of: `reach`, `recruit` or `output`; the title is the value |
 | `with:` | mandate values | the behaviour(s) choosing this value puts in play, at their depth (Reach plan `with: planning`); the order never repeats that behaviour's text |
 | `lists:` | behaviours | a catalog directory whose files `ronin-help <behaviour>` prints after its text, one line each, the user's own (`~/ronin/<dir>/`) over stock by name, in `order:`: adding a file adds it (new-workspace: `workspace_types/`) |
+| `facts:` | bridges | the facts its Workspace entry takes, comma-separated (`netlify-bridge`: `site`); each is a field on the Workspace page's Integrations row, saved as `{provider, site}` ([integrations.md](integrations.md#the-pieces)) |
 | `order:` | all | its place in its section, lower first |
 
 Header lines run from the title to the first blank line. An unknown field is ignored; an
@@ -317,7 +318,7 @@ behaviours/  base-agent (full) · cowork-agent, write-it-down (cowork, full)
              pm-traffic-control (pm, by role, full)
              working-at-a-desk (desk) · checkout (checkout) · workspaces (cowork, full)
              integrations (every Agent, seed; brings `secret`, so keys are taught once)
-             bridges: netlify-bridge, jira-bridge, gbrain-bridge, perplexity-bridge
+             bridges: netlify-bridge, jira-bridge, perplexity-bridge
              (integration:<name>) · mcp-servers (mcp, seed: one line per MCP server on)
              mika, install-check (mika) · services-off (!service:ronin_services) · using-ronin
              optional (depth none): team-work, more-checkpoints, working-with-the-user,
@@ -357,7 +358,7 @@ through `secret ask <provider>-<key>` and `secret path <name>`, a PR and its pre
 owner's choice before shipping. Keys are taught there once; a bridge never repeats them.
 
 A **bridge** is a behaviour with `when: integration:<name>` and the tools that serve it, in play
-while that integration is on for the Agent: `gbrain-bridge` (shared memory), `perplexity-bridge` (cited web research) and
+while that integration is on for the Agent: `perplexity-bridge` (cited web research) and
 `netlify-bridge` (the worked example, with `netlify` and `preview`). `jira-bridge` only lists
 Jira on the Integrations panel; it is never told, because Jira is never on an Agent's record.
 

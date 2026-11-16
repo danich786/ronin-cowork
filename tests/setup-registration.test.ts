@@ -82,7 +82,7 @@ test('an entitlement keeps consent separate, and deletion removes local identity
 test('Setup keeps Campaign Templates out and opens Presets only from Launch Your Own', async () => {
   const source = await (await import('node:fs/promises')).readFile(new URL('../public/js/setup-surfaces.js', import.meta.url), 'utf8');
   for (const id of ['setup.register', 'setup.roots', 'setup.installations']) assert.match(source, new RegExp(id.replace('.', '\\.')));
-  assert.doesNotMatch(source, /setup\.services|setup\.gbrain/);
+  assert.doesNotMatch(source, /setup\.services/);
   // Model providers is the one surface Ronin Settings also seats; its type is that module's.
   assert.match(source, /providers: PROVIDER_SURFACE_TYPE/);
   assert.match(source, /item\.id === 'preset'[\s\S]*context\.workbench\?\.place\(PRESETS_TYPE/);
@@ -271,7 +271,7 @@ test('Services retains registration, installation, master, and explicit restart 
   const index = await (await import('node:fs/promises')).readFile(new URL('../src/index.ts', import.meta.url), 'utf8');
   assert.match(index, /registerMachineRestart\(app\)/);
   assert.doesNotMatch(source, /notifySummary\(SETUP_SURFACE_TYPES\.services/);
-  assert.doesNotMatch(source.slice(source.indexOf('export function createServicesSurface'), source.indexOf('export function createGbrainSurface')), /setTimeout|setInterval/, 'the surface never polls');
+  assert.doesNotMatch(source.slice(source.indexOf('export function createServicesSurface'), source.indexOf('function createLaunchOwnSurface')), /setTimeout|setInterval/, 'the surface never polls');
   assert.match(source, /store\.listen\('services-setup'/);
   assert.doesNotMatch(source, /Requires a confirmed registration|services_requires_short|services_register_enables|Registration confirmed · Services access not included|not activated|setup-services-account/);
   assert.doesNotMatch(source, /const state = el\('dl'|<dd>|'Yes' : 'No'/);
@@ -308,7 +308,7 @@ test('Services setup model keeps installation and registration as separate facts
   const reg = (status: string, extra: Record<string, unknown> = {}) => ({ ok: true, data: { status, services_entitled: false, ...extra } });
   const entitled = (extra: Record<string, unknown> = {}) => reg('registered', { services_entitled: true, ...extra });
   const inst = (services: Record<string, unknown> = {}) => ({ ok: true, data: { services: { installed: false, activated: false, switched_on: false, restart_needed: false, parts: [], loaded: [], ...services } } });
-  const here = (extra: Record<string, unknown> = {}) => inst({ installed: true, parts: ['counting', 'gbrain', 'koe', 'koshi', 'machine', 'rireki'], loaded: ['gbrain', 'machine'], ...extra });
+  const here = (extra: Record<string, unknown> = {}) => inst({ installed: true, parts: ['counting', 'koe', 'koshi', 'machine', 'project_management', 'rireki'], loaded: ['counting', 'machine'], ...extra });
   const act = (stage: string, extra: Record<string, unknown> = {}) => ({ ok: true, data: { stage, ...extra } });
   type Step = { id: string; label: string; done: boolean; enabled: boolean; act: string | null };
   const shape = (m: { steps: Step[] }) => m.steps.map((s) => `${s.id}:${s.label}:${s.done ? 'done' : s.enabled ? s.act : 'off'}`).join(' ');
@@ -385,106 +385,11 @@ test('Services setup model keeps installation and registration as separate facts
   assert.deepEqual(new Set(cases.map(([, r, i, a]) => servicesSetupModel(r as never, i as never, a as never).tone)), new Set(['', 'warn', 'bad', 'ok']));
 });
 
-test('Setup gbrain answers its measured facts plainly with at most one action per state', async () => {
-  const { gbrainSetupModel, gbrainAccounts } = await import('../public/js/gbrain-setup-state.js');
-  const snapshot = (over: Record<string, unknown> = {}) => ({
-    ok: true, status: 200,
-    data: {
-      installed: true, install: { state: 'idle', op: null, log: [] },
-      process: { state: 'running', health: 'reachable', version: '1.2.3' },
-      listener: { scope: 'vm_only', address: '127.0.0.1', port: 7777 },
-      externalModelProvider: 'none', publicAccess: { state: 'off' },
-      search: { weights: 'running', mode: 'hybrid', model: 'nomic', dimensions: 768, reason: null, answers: { state: 'off', reason: 'model-key-missing' } },
-      integrationsKnown: true, integrations: [
-        { id: 'credential-gateway', label: 'Credential Gateway', category: 'infra', state: 'not_connected' },
-        { id: 'email-to-brain', label: 'Email-to-Brain', category: 'senses', state: 'not_connected' },
-        { id: 'twilio-voice-brain', label: 'Voice-to-Brain (DEPRECATED — see agent-voice)', category: 'senses', state: 'not_connected' },
-        { id: 'calendar-to-brain', label: 'Calendar-to-Brain', category: 'senses', state: 'connected' },
-        { id: 'x-to-brain', label: 'X-to-Brain', category: 'senses', state: 'not_connected' },
-      ],
-      observedAt: '2026-09-07T12:00:00.000Z',
-      ...over,
-    },
-  });
-  const one = { installed: true, active: true, activated_count: 1 };
-  const cases: Array<[string, unknown, unknown, string, string | null, string | null, boolean]> = [
-    ['reading', undefined, one, 'Checking…', null, null, false],
-    ['services_needed', { ok: false, status: 404, message: 'HTTP 404' }, { installed: false, active: false }, 'Not installed', 'open_services', 'not installed', false],
-    ['services_off', { ok: false, status: 404, message: 'HTTP 404' }, { installed: true, active: false, services: { installed: true, active: false } }, 'Installed · Ronin Services is switched off', 'open_services', 'installed', false],
-    ['unreadable', { ok: false, status: 500, message: 'HTTP 500' }, { installed: true, active: false }, 'Could not read', 'check_again', 'installed', false],
-    ['not_installed', snapshot({ installed: false }), { installed: false, active: false }, 'Not installed', 'load', 'not installed', false],
-    ['install_failed', snapshot({ installed: false, install: { state: 'failed', op: 'install', log: ['step 3 failed'] } }), null, 'Install did not finish', 'retry', 'not installed', false],
-    ['installing', snapshot({ installed: false, install: { state: 'running', op: 'install', log: ['fetching weights'] } }), null, 'Installing…', null, 'installing', false],
-    ['removing', snapshot({ install: { state: 'running', op: 'uninstall', log: [] } }), null, 'Removing…', null, 'removing', false],
-    ['provider_first', snapshot(), { installed: true, active: true, activated_count: 0 }, 'Installed · running', 'open_providers', 'running', true],
-    ['ready', snapshot(), one, 'Installed · running', 'start_assistant', 'running', true],
-    ['stopped', snapshot({ process: { state: 'stopped', health: 'unreachable', version: null } }), { installed: true, active: false }, 'Installed · not running', 'check_assistant', 'installed', true],
-  ];
-  for (const [state, result, availability, answer, action, summary, installed] of cases) {
-    const model = gbrainSetupModel(result as never, availability as never);
-    assert.equal(model.state, state);
-    assert.equal(model.answer, answer);
-    assert.equal(model.action?.id ?? null, action);
-    assert.equal(model.summary, summary);
-    assert.equal(model.installed, installed);
-    assert.doesNotMatch(`${model.answer} ${model.hint} ${model.action?.label || ''}`, /HTTP|undefined|null/);
-  }
-  // The next step sits below the answers; install-ish actions sit beside Installed.
-  assert.equal(gbrainSetupModel(snapshot(), one).action?.place, 'next');
-  assert.equal(gbrainSetupModel(snapshot(), { ...one, activated_count: 0 }).action?.place, 'next');
-  assert.equal(gbrainSetupModel(snapshot({ installed: false }), null).action?.place, 'installed');
-  // Accounts: yes or no per linkable account, read from gbrain's own list; infra and deprecated rows are not accounts.
-  assert.deepEqual(gbrainAccounts(snapshot().data), [
-    { id: 'email-to-brain', name: 'Gmail', linked: false },
-    { id: 'calendar-to-brain', name: 'Google Calendar', linked: true },
-    { id: 'x-to-brain', name: 'X', linked: false },
-  ]);
-  assert.equal(gbrainAccounts({ integrationsKnown: false, integrations: [] }), null);
-  assert.deepEqual(gbrainSetupModel(snapshot(), one).accounts?.map((row: { linked: boolean }) => row.linked), [false, true, false]);
-  assert.equal(gbrainSetupModel(snapshot({ integrationsKnown: false, integrations: [] }), one).accounts, null);
-  assert.equal(gbrainSetupModel(snapshot({ search: { weights: 'stopped', mode: 'keyword_only' } }), one).answer, 'Installed · running · keyword-only search');
-  assert.equal(gbrainSetupModel(snapshot({ installed: false, install: { state: 'running', op: 'install', log: ['fetching weights'] } })).hint, 'fetching weights');
-  assert.equal(gbrainSetupModel(snapshot({ installed: false, install: { state: 'running', op: 'install', log: ['fetching weights'] } })).state, 'installing');
-  assert.deepEqual(gbrainSetupModel(snapshot({ installed: false, install: { state: 'failed', op: 'install', log: ['step 3 failed'] } })).log, ['step 3 failed']);
-});
-
-test('Setup gbrain keeps installation/default choice on Campaign Installations and follows an install by push', async () => {
-  const [setup, gbrain] = await Promise.all([
-    (await import('node:fs/promises')).readFile(new URL('../public/js/setup-surfaces.js', import.meta.url), 'utf8'),
-    (await import('node:fs/promises')).readFile(new URL('../public/js/gbrain.js', import.meta.url), 'utf8'),
-  ]);
-  assert.match(setup, /setupRuntime\?\.gbrain|runtime\?\.gbrain/);
-  assert.match(setup, /onState: \(\) => context\.workbench\?\.refreshSelector/);
-  assert.match(setup, /openServices: \(\) => context\.workbench\?\.place\(SETUP_SURFACE_TYPES\.installations/);
-  assert.match(setup, /openProviders: \(\) => context\.workbench\?\.place\(SETUP_SURFACE_TYPES\.providers/);
-  assert.doesNotMatch(setup, /agentsDefault/);
-  // Start your first Personal Assistant is exactly the preset's launch: same plan, same route, same new tab.
-  assert.match(setup, /launchPresetPlan\(buildLaunchPlan\(slot, '', controls\)\)/);
-  assert.match(setup, /HOUSE_PRESETS\.find\(\(row\) => row\.handle === 'personal_assistant'\)/);
-  assert.match(setup, /presetLaunchUrl\(result\.data \|\| \{\}, seatingPlan\('personal_assistant'/);
-  assert.match(gbrain, /import \{ gbrainAssistantPrompt, gbrainSetupModel \} from '\.\/gbrain-setup-state\.js'/);
-  assert.match(gbrain, /if \(!root\.querySelector\('\.setup-gbrain-compact'\)\) renderSetup\(undefined\)/);
-  assert.match(gbrain, /answer\(t\('campaign_view\.available', 'Available'\)/);
-  assert.match(gbrain, /answer\(t\('campaign_view\.default_for_all_agents', 'Default for all Agents'\)/);
-  assert.match(setup, /installationControls: context\.installationControls/);
-  assert.match(gbrain, /const mine = \+\+reads;[\s\S]*?if \(mine === reads\) renderSetup\(result\)/);
-  assert.doesNotMatch(gbrain, /setInterval|setTimeout/, 'an install is followed by push, never polled');
-  assert.match(gbrain, /store\.listen\('gbrain'/);
-  for (const question of ['gbrain.setup_q_installed', 'gbrain.setup_q_accounts']) assert.ok(gbrain.includes(question), question);
-  assert.doesNotMatch(gbrain, /gbrain\.setup_q_agents|gbrain\.setup_agents_/);
-  assert.match(gbrain, /setAttribute\('aria-live', 'polite'\)/);
-  assert.match(gbrain, /request\('\/api\/gbrain\/install', \{ method: 'POST', json: \{\} \}\)/);
-  assert.match(gbrain, /root\.replaceChildren\(wrap\)/);
-  assert.doesNotMatch(gbrain, /designedErrors|gb-notice|gb-setup|setup-gbrain-benefit|setup-gbrain-facts/);
-});
-
-test('Setup has one Installations card, Account has no gbrain tab, and Machine Settings has no gbrain switch', async () => {
+test('Setup has one Installations card', async () => {
   const fs = await import('node:fs/promises');
-  const [surfaces, setupView, account, machine, installations] = await Promise.all([
+  const [surfaces, setupView, installations] = await Promise.all([
     fs.readFile(new URL('../public/js/setup-surfaces.js', import.meta.url), 'utf8'),
     fs.readFile(new URL('../public/js/setup-view.js', import.meta.url), 'utf8'),
-    fs.readFile(new URL('../public/js/cowork-commons.js', import.meta.url), 'utf8'),
-    fs.readFile(new URL('../public/js/machine-settings.js', import.meta.url), 'utf8'),
     fs.readFile(new URL('../public/js/campaign-installations.js', import.meta.url), 'utf8'),
   ]);
   assert.match(surfaces, /definition\(SETUP_SURFACE_TYPES\.installations, t\('campaign_view\.installations', 'Installations'\), createSetupInstallationsSurface\)/);
@@ -493,10 +398,7 @@ test('Setup has one Installations card, Account has no gbrain tab, and Machine S
   assert.ok(setupInstallations, 'Setup keeps a thin adapter around the shared Installations surface');
   assert.doesNotMatch(setupInstallations, /\.disabled\s*=|registrationLocked|MutationObserver|querySelectorAll/,
     'Setup may sequence the shared page but must not override its controls');
-  assert.doesNotMatch(setupView, /SETUP_SURFACE_TYPES\.(?:services|gbrain)/);
-  assert.doesNotMatch(account, /id: 'gbrain'/);
-  assert.match(machine, /tickRow\(observed\.ronin\.services\.includes\('gbrain'\)/, 'the measured gbrain row remains');
-  assert.doesNotMatch(machine, /settei\.use_gbrain|family: 'gbrain'/);
+  assert.doesNotMatch(setupView, /SETUP_SURFACE_TYPES\.services/);
   assert.match(installations, /context\.createInstallationSurface\?\.\(installation\.id, sharedContext\)/);
   assert.match(surfaces, /createInstallationSurface: \(id, shared\) => id === 'ronin_services' \? createServicesSurface\(shared\) : null/);
   // A collection surface opens showing its collection: forcing Ronin Services open put the

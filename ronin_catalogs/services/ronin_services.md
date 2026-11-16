@@ -6,6 +6,6 @@
 - **reading:** —
 - **reading_off:** —
 - **ways:** —
-- **parts:** counting, gbrain, jira, koe, koshi, koshi_weights, machine, project_management, rireki
+- **parts:** counting, jira, koe, koshi, koshi_weights, machine, project_management, rireki
 - **requires:** —
 - **order:** 30

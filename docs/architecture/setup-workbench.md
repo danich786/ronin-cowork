@@ -88,8 +88,8 @@ customize step; to shape a launch beyond these choices, use Launch your own.
 | **Grokbot Morning Briefing** | a briefing written on a schedule you set | **When**: every day, a day of the week, or one time; what it looks at |
 | **Agent + Editable Doc** | one coding agent beside a document you both edit | **Where** and which document |
 
-**Gates.** Every preset needs one activated model provider. Personal Assistant also needs
-gbrain running; Grokbot Morning Briefing also needs Ronin Services active. A gated stone
+**Gates.** Every preset needs one activated model provider. Grokbot Morning Briefing also
+needs Ronin Services active. A gated stone
 still opens; its Launch is held and a line beside it says what is missing. Activating the
 provider unlocks the stones at once.
 
@@ -252,18 +252,6 @@ to Ronin returns.
 Installed parts are usable whether or not anyone registered. The Grokbot Morning Briefing
 preset waits for Services to be active. The activation flow itself is in
 `docs/getting-started/services-activation.md`.
-
-## gbrain
-
-gbrain is the memory the Personal Assistant runs on. Its page shows four rows:
-**Installed** (with **Load gbrain**, or the one step the state calls for), **Available**
-(an On/Off installation switch), **Default for all Agents** (an On/Off Campaign default,
-disabled with “turn Available on first” while availability is off), and **Accounts linked** (one row per account gbrain can link; the
-Personal Assistant links one when asked, with your approval). Under them sits the next
-step: **Open Model providers** if none is activated yet, otherwise **Start your first
-Personal Assistant**, the same launch the preset makes. While **Load gbrain** runs, the
-**Installed** row follows each install step as it happens. What gbrain is lives in
-`docs/products/gbrain.md`.
 
 ## Launch your own
 

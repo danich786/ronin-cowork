@@ -106,12 +106,12 @@ test('settled launch enums are accepted and their retired keys are receipt-only'
   assert.equal(accepted.body.launch_mode, undefined, 'Mode is the Workspace\'s, never the request\'s');
   assert.deepEqual(accepted.ignored, ['launch_mode']);
 
-  const malformed = acceptedLaunchBody({ name: 'proof', launch_mode: 'safe', gbrain_mode: 'maybe', permissions: 'bypass', mcp: false });
+  const malformed = acceptedLaunchBody({ name: 'proof', launch_mode: 'safe', stray_mode: 'maybe', permissions: 'bypass', mcp: false });
   assert.equal(malformed.body.launch_mode, undefined);
-  assert.equal(malformed.body.gbrain_mode, undefined);
+  assert.equal(malformed.body.stray_mode, undefined);
   assert.equal(malformed.body.permissions, undefined);
   assert.equal(malformed.body.mcp, undefined);
-  assert.deepEqual(malformed.ignored, ['gbrain_mode', 'launch_mode', 'mcp', 'permissions']);
+  assert.deepEqual(malformed.ignored, ['launch_mode', 'mcp', 'permissions', 'stray_mode']);
 
   const terminal = acceptedLaunchBody({ session_type: 'terminal', name: 'proof', launch_mode: 'live_dangerously' });
   assert.equal(terminal.body.launch_mode, undefined);

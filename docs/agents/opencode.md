@@ -45,8 +45,7 @@ unpublished schema. Resume syntax is `opencode --session <id>`; Ronin does not r
 Archive refuses.
 
 Stop sends Escape. Clear sends Ctrl+C, which clears a nonempty prompt; on an empty prompt
-OpenCode's default keys also bind Ctrl+C to quit. No MCP registration adapter is implemented
-in Services' gbrain setup for `opencode`.
+OpenCode's default keys also bind Ctrl+C to quit.
 
 Shared [code ownership and test boundaries](README.md#code-ownership) apply to this CLI.
 

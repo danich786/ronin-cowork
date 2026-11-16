@@ -9,16 +9,16 @@ import type { TeamRoster } from '../src/team-rosters.js';
 const contribution = { label: '', blurb: '', origin: 'stock', shadowed: false, reading: [], reading_off: [], parts: [] } as const;
 const installations: InstallationRow[] = [
   { ...contribution, name: 'ronin_services', effect: 'system', provides: [], requires: [], reading_off: ['routine/ronin_services/OFF.md'] },
-  { ...contribution, name: 'gbrain', effect: 'provider', provides: ['gbrain'], requires: [] },
+  { ...contribution, name: 'perplexity', effect: 'provider', provides: ['perplexity'], requires: [] },
 ];
 const behaviours: BehaviourRow[] = [
-  { ...contribution, name: 'gbrain', installation: 'gbrain', page: '/gbrain.md', scope: 'selected', requires: [] },
+  { ...contribution, name: 'perplexity', installation: 'perplexity', page: '/perplexity.md', scope: 'selected', requires: [] },
   { ...contribution, name: 'write_it_down', installation: '', page: '/write_it_down.md', scope: 'selected', requires: [] },
   { ...contribution, name: 'mandates', installation: '', page: '/mandates.md', scope: 'floor', requires: [] },
 ];
 const campaign = { id: 'home_machine', config: {
-  installations: { ronin_services: false, gbrain: true },
-  defaults: agentDefaults({ provider: 'openai', model: 'gpt', behaviours: ['gbrain', 'mandates'] }),
+  installations: { ronin_services: false, perplexity: true },
+  defaults: agentDefaults({ provider: 'openai', model: 'gpt', behaviours: ['perplexity', 'mandates'] }),
   cowork_defaults: {}, template_defaults: {},
 } } as CampaignConfig;
 const team = { name: 'alpha', campaign_id: 'home_machine', kind: 'coding', workspace: 'work', branch: 'dev',

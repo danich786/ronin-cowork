@@ -93,7 +93,6 @@ async function setupPass(browser, options) {
       activated_band: options.ready ? 'one' : 'zero',
       providers: providerRows,
       roots: [],
-      gbrain: { installed: false, active: false },
       services: { installed: false, active: false },
     }),
   }));
@@ -158,7 +157,7 @@ async function setupPass(browser, options) {
   else bad(`${label}: initial seating mismatch ${JSON.stringify(state.workspaces)}`);
   if (state.columns[0] === 'selector') ok(`${label}: selector is the left column`);
   else bad(`${label}: selector is not left ${JSON.stringify(state.columns)}`);
-  const expected = ['Register', ...providerRows.map((row) => row.label), 'Workspace folders', 'Ronin Services', 'gbrain', 'Templates'];
+  const expected = ['Register', ...providerRows.map((row) => row.label), 'Workspace folders', 'Ronin Services', 'Templates'];
   if (JSON.stringify(state.selectors) === JSON.stringify(expected) && state.presets === 7) ok(`${label}: selector order and seven presets are complete`);
   else bad(`${label}: selector/preset mismatch ${JSON.stringify({ selectors: state.selectors, presets: state.presets })}`);
   const expectedProviderCards = providerRows.map((row) => ({ key: row.id, label: row.label }));
@@ -271,7 +270,7 @@ async function customizePass(browser, source, activation = 'pointer') {
   ctx.on('request', (request) => {
     if (request.method() === 'POST' && /\/api\/(launch|team-rosters)(?:$|\?)/.test(request.url())) launches.push(request.url());
   });
-  await page.route('**/api/setup/runtime', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ activated_count: 1, activated_band: 'one', providers: [{ id: 'anthropic', label: 'Claude', installed: true, activated: true, state: 'activated' }], roots: [], gbrain: { active: true }, services: { active: true } }) }));
+  await page.route('**/api/setup/runtime', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ activated_count: 1, activated_band: 'one', providers: [{ id: 'anthropic', label: 'Claude', installed: true, activated: true, state: 'activated' }], roots: [], services: { active: true } }) }));
   await page.goto(`${URL_.replace(/#.*$/, '')}#/${source}`, { waitUntil: 'networkidle' });
   if (source === 'cowork') {
     await page.locator('.wk-workbench-selector-cards .wk-card').filter({ hasText: 'Presets' }).first().click();
@@ -339,7 +338,7 @@ async function presetContentPass(browser) {
       activated_count: 1, activated_band: 'one',
       providers: [{ id: 'anthropic', label: 'Claude', installed: true, activated: true, state: 'activated' }],
       roots: [{ id: 'ronin_project_1', name: 'ronin_project_1', label: 'Ronin Project 1' }],
-      gbrain: { installed: true, active: true }, services: { installed: true, active: true },
+      services: { installed: true, active: true },
     }),
   }));
   await page.goto(`${URL_.replace(/#.*$/, '')}#/setup`, { waitUntil: 'networkidle' });

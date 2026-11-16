@@ -529,6 +529,10 @@
   .workspace-location-where code { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); background: transparent; padding: 0; }
   .workspace-location .folder-kind { color: var(--muted); }
   .workspace-location-note { grid-column: 2 / -1; }
+  /* A bridge's fact (KAN-597): one small field per `facts:` name, under its row. */
+  .workspace-form .workspace-integration-fact { grid-column: 2 / -1; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; column-gap: var(--space-inline); }
+  .workspace-integration-fact .wk-field-label { color: var(--muted); font-size: var(--form-note); }
+  .workspace-integration-fact .wk-field-description:empty, .workspace-integration-fact .wk-field-validation[hidden] { display: none; }
   .workspace-location-note[hidden], .workspace-location-add-note[hidden] { display: none; }
   /* Plans (KAN-256): one row under the Locations, its place and "recommended"; pressed, the choice under it. */
   .workspace-plans { display: flex; flex-direction: column; gap: var(--space-row); padding-top: var(--space-paragraph); border-top: var(--edge) solid var(--line); }

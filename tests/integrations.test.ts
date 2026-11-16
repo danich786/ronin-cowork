@@ -15,18 +15,27 @@ process.env.RONIN_DATA_ROOT = path.join(root, '.data');
 const { listInstallations } = await import('../src/resource-adapters.js');
 const { integrationsState } = await import('../src/integrations.js');
 const { normalizeWorkspace, saveWorkspace } = await import('../src/workspaces.js');
-const parts = { onDisk: ['jira', 'gbrain'], loaded: ['gbrain'] };
+const parts = { onDisk: ['jira', 'netlify'], loaded: ['netlify'] };
 
 test('the list is the bridges; Ronin Services is not one of them', async () => {
   const rows = await integrationsState('c1', parts);
-  assert.deepEqual(rows.map((row) => row.name), ['netlify', 'jira', 'gbrain', 'perplexity']);
+  assert.deepEqual(rows.map((row) => row.name), ['netlify', 'jira', 'perplexity']);
   assert.deepEqual((await listInstallations()).map((row) => row.name), ['ronin_services']);
   const jira = rows.find((row) => row.name === 'jira')!;
   assert.equal(jira.label, 'Jira');
   assert.equal(jira.bridge, 'jira-bridge');
   assert.equal(jira.part, 'parked');
-  assert.equal(rows.find((row) => row.name === 'gbrain')!.part, 'running');
+  assert.equal(rows.find((row) => row.name === 'netlify')!.part, 'running');
   assert.equal(rows.find((row) => row.name === 'perplexity')!.part, '');
+});
+
+test('a bridge names the facts it takes in its facts: line; no line is none (KAN-597)', async () => {
+  const rows = await integrationsState('c1', parts);
+  assert.deepEqual(rows.find((row) => row.name === 'netlify')!.facts, ['site']);
+  assert.deepEqual(rows.find((row) => row.name === 'jira')!.facts, []);
+  const { parseCatalogFile } = await import('../src/catalog.js');
+  assert.deepEqual(parseCatalogFile('behaviours', 'x-bridge', '# X\n- **seed:** s\n- **when:** integration:x\n- **facts:** Site, team_id\n\nbody').facts, ['site', 'team_id']);
+  assert.deepEqual(parseCatalogFile('behaviours', 'plain', '# P\n- **seed:** s\n- **facts:** site\n\nbody').facts, [], 'only a bridge takes facts');
 });
 
 test('a Workspace keeps its integrations, with facts a bridge reads', () => {
@@ -47,7 +56,7 @@ test('a Workspace name with no bridge is a row; saved secrets show by name, neve
   assert.deepEqual(netlify.workspaces, ['site']);
   assert.ok(!JSON.stringify(rows).includes('secret-1'), 'a value never comes back');
   const supabase = rows.at(-1)!;
-  assert.deepEqual({ ...supabase }, { name: 'supabase', label: 'supabase', blurb: '', bridge: '', part: '', secrets: [], workspaces: ['site'], mcp: null });
+  assert.deepEqual({ ...supabase }, { name: 'supabase', label: 'supabase', blurb: '', bridge: '', facts: [], part: '', secrets: [], workspaces: ['site'], mcp: null });
 });
 
 test('every MCP server record is a row, read from its file; a record named like a bridge stays the bridge', async () => {

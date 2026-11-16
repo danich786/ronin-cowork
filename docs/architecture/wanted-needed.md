@@ -26,8 +26,8 @@ looks, with no write anywhere. Met items do not exist.
 
 1. **The registry's `requires`** — a leaf may declare what a choice drags in
    (`src/machine-settings-schema.ts`). Each row has an `applies` check (does this choice
-   speak at all?) and a `met` check (is it satisfied?). Seeds today: services → the
-   verified email; gbrain → enabled-but-not-installed surfaces as a task.
+   speak at all?) and a `met` check (is it satisfied?). Seed today: services → the
+   verified email.
 2. **The want list** — every entry is itself a check the owner typed, judged the
    same way. Unmet joins `needed[]` with a `how`; met produces nothing.
 

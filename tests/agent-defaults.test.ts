@@ -18,7 +18,7 @@ test('agent_defaults validates every field in the complete record shape', () => 
     }],
     ['any mandate value is taken (its file decides what it means); a bad launch mode falls back', {
       reach: 'Review', recruit: 'propose', output: 'report', routines: { base: 'yes', control: true },
-      launch_mode: 'unsafe', gbrain_mode: 'maybe',
+      launch_mode: 'unsafe', stray_mode: 'maybe',
     }, {
       provider: '', model: '', reach: 'review', recruit: 'propose', output: ['report'],
       launch_mode: 'configured',
