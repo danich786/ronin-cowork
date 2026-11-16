@@ -9,7 +9,7 @@ Agent ever sees one.
 
 | The service | How it is added |
 |---|---|
-| One Ronin has a bridge for (Jira, Netlify, gbrain, Perplexity) | Turned on for the Campaign: **Settings › Defaults**, Integrations |
+| One Ronin has a bridge for (Jira, Netlify, Perplexity) | Turned on for the Campaign: **Settings › Defaults**, Integrations |
 | An MCP server | `mcp add <name> <address>`, or **Add MCP server** in **Settings › Integrations** |
 | A web API | `api add <name> <base URL>` |
 | Anything else | Noted on the Workspace; Agents use the service's own CLI or API |
