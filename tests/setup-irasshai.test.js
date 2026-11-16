@@ -39,11 +39,22 @@ test('Setup while Irasshai runs: Assist seats her chat, the selector offers only
   assert.match(view, /hear\('sessions', followIrasshai\)/, 'her session is followed on the push, never a timer');
   assert.match(view, /hear\('epicItems'/, 'her steps move with the pushed items');
   assert.match(view, /garden\.chat\(chat\.el\)/, 'Assist seats her chat in place of the scene');
-  assert.match(view, /takeIrasshaiStep: \(step\) => \{ void chat\?\.say\(takeStepLine\(step\)\); \}/, 'a press is one line to her, shown in her chat at once');
+  assert.match(view, /takeIrasshaiStep: \(step\) => \{[^}]*\}\s*void chat\?\.say\(takeStepLine\(step\)\);/, 'a press is one line to her, shown in her chat at once');
   assert.match(chat, /makeTileTranscript\(\)/, 'her conversation is Chat’s own drawing');
   assert.match(chat, /sendComposerMessage\(IRASSHAI, text\)/, 'the box and the steps send through the message queue');
   assert.doesNotMatch(chat, /makeTile\(|new Tile\b|tilehead/, 'no Agent tile, no terminal, no tile head');
   assert.match(garden, /surface\.el\.dataset\.chat = seated \? 'on' : 'off'/);
   assert.match(css, /\.garden-canvas\[data-chat='on'\] \.wk-surface-header-actions \{ display: none; \}/, 'the Assist header carries no tools under her chat');
   assert.match(view, /!HOSTED \|\| !NOT_HOSTED\.includes\(scene\.id\)/, 'a hosted Setup leaves out registration, password and installations');
+});
+
+test('Irasshai’s Integrations step seats the integrations panel, embedded, and reads it again as each of her turns ends (KAN-601)', async () => {
+  const [view, chat] = await Promise.all([source('js/setup-view.js'), source('js/setup-irasshai.js')]);
+  assert.match(chat, /createIntegrationsPanel\(.*\{ embedded: true \}\)/, 'the panel, embedded');
+  assert.match(chat, /stepSurface = \(step\) => \(step\?\.title === INTEGRATIONS_STEP \? IRASSHAI_INTEGRATIONS_TYPE : null\)/, 'only the Integrations step has a surface');
+  assert.match(chat, /subscribe\('home'/, 'it reads again off the pushed roster, never a timer');
+  assert.doesNotMatch(chat, /setInterval|setTimeout/, 'no timer');
+  assert.match(view, /profiles\.define\(PROFILE, \[[^\]]*IRASSHAI_INTEGRATIONS_TYPE/, 'the surface is in Setup’s profile');
+  assert.match(view, /const type = stepSurface\(step\);\s*if \(type\) \{ bench\.place\(type, 'workspace2'\)/, 'a press seats it in Workspace 2');
+  assert.match(view, /if \(type && now && !started\.has\(step\.id\)\) bench\?\.place\(type, 'workspace2'\)/, 'a step she starts herself seats it too');
 });

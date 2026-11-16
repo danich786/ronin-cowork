@@ -20,7 +20,7 @@ import { createSetupStepsBar, setupStepMarks } from './setup-steps-bar.js';
 import { setupProgressHandlers } from './events.js';
 import { subscribe as hear } from './store.js';
 import { HOSTED } from './hosted.js';
-import { IRASSHAI_STEP_TYPE, createIrasshaiChat, irasshaiLive, irasshaiOrder, irasshaiSteps, registerIrasshaiSteps, takeStepLine } from './setup-irasshai.js';
+import { IRASSHAI_INTEGRATIONS_TYPE, IRASSHAI_STEP_TYPE, createIrasshaiChat, irasshaiLive, irasshaiOrder, irasshaiSteps, registerIrasshaiIntegrations, registerIrasshaiSteps, stepSurface, takeStepLine } from './setup-irasshai.js';
 
 const PROFILE = 'setup';
 // Release toggles: unfinished programs stay out of Setup without changing the workbench.
@@ -46,7 +46,8 @@ function registerSetupWorkbench() {
   registerGardenCanvas();
   registerPresetsSurface();
   registerIrasshaiSteps();
-  return WorkspaceKit.workbench.profiles.define(PROFILE, [GARDEN_CANVAS_TYPE, PRESETS_TYPE, IRASSHAI_STEP_TYPE, ...ORDER]);
+  registerIrasshaiIntegrations();
+  return WorkspaceKit.workbench.profiles.define(PROFILE, [GARDEN_CANVAS_TYPE, PRESETS_TYPE, IRASSHAI_STEP_TYPE, IRASSHAI_INTEGRATIONS_TYPE, ...ORDER]);
 }
 
 export function createSetupView() {
@@ -72,6 +73,7 @@ export function createSetupView() {
   let chat = null;
   let epics = [];
   let epicItems = [];
+  const started = new Set(); // her steps last seen In Progress
   const steps = () => irasshaiSteps(epics, epicItems, irasshaiOrder(() => bench?.refreshSelector()));
   const seatChat = () => {
     if (!garden) return;
@@ -164,7 +166,11 @@ export function createSetupView() {
       if (url) location.assign(url);
     },
     irasshaiSteps: () => steps(),
-    takeIrasshaiStep: (step) => { void chat?.say(takeStepLine(step)); },
+    takeIrasshaiStep: (step) => {
+      const type = stepSurface(step);
+      if (type) { bench.place(type, 'workspace2'); bench.select('workspace2'); }
+      void chat?.say(takeStepLine(step));
+    },
     onGardenCanvas: (next) => {
       garden = next;
       seatChat();
@@ -294,7 +300,18 @@ export function createSetupView() {
   const unhear = [
     hear('sessions', followIrasshai),
     hear('epics', (next) => { epics = Array.isArray(next) ? next : []; if (irasshai) bench?.refreshSelector(); }),
-    hear('epicItems', (next) => { epicItems = Array.isArray(next) ? next : []; if (irasshai) bench?.refreshSelector(); }),
+    hear('epicItems', (next) => {
+      epicItems = Array.isArray(next) ? next : [];
+      if (!irasshai) return;
+      bench?.refreshSelector();
+      // A step she starts herself seats its surface too, once, as it moves In Progress.
+      for (const step of steps()) {
+        const type = stepSurface(step);
+        const now = epicItems.find((item) => item.id === step.id)?.status === 'In Progress';
+        if (type && now && !started.has(step.id)) bench?.place(type, 'workspace2');
+        if (now) started.add(step.id); else started.delete(step.id);
+      }
+    }),
     hear('home', () => { if (irasshai) chat?.stance(); }),
   ];
 

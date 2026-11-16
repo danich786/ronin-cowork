@@ -45,9 +45,9 @@ Details: the Team with `team roster write <team> --workspace <handle>`, its lead
 Check: the lead is running in the Workspace, holding the import-project epic or doing its own assessment.
 
 ## Integrations
-Do: show which outside services Ronin can connect to and how, if they want; nothing to set up here; skip it if not.
-Details: `ronin-help integrations`, `ronin-help netlify-bridge`.
-Check: shown, or declined.
+Do: ask which outside services they use, and add each: a bridge Ronin has, turned on for the Campaign; an MCP server with `mcp add`; a web API with `api add`; anything else noted on the Workspace. For each, offer to authenticate now (the key pasted, or Sign in) or later; skip it if they use none.
+Details: `ronin-help add-an-integration`; `mcp --help`, `api --help`; Setup → Integrations shows each as it is added, with its state; `ronin-help integrations`.
+Check: each service they named is added or noted, signed in or left for later; or declined.
 
 ## Ronin Tour
 Do: offer a tour of how Ronin works, and give it if they want it.
