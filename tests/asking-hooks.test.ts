@@ -64,17 +64,17 @@ test('a TOML key is added once, in its table, and the rest of the file is kept',
   assert.equal(tomlEnsure('[projects."/a"]\ntrust_level = "untrusted"\n', 'projects."/a"', 'trust_level', '"trusted"'), '[projects."/a"]\ntrust_level = "untrusted"\n', "the owner's own answer stays");
 });
 
-test('Codex is set ahead in its home: trust, no update check, warnings off, hooks trusted', async (t) => {
+test('Codex is set ahead in its home: trust, no update check, warnings off, hooks without a review', async (t) => {
   const home = await mkdtemp(path.join(tmpdir(), 'codex-ahead-'));
   t.after(() => rm(home, { recursive: true, force: true }));
   await writeFile(path.join(home, 'config.toml'), 'model = "x"\n');
-  assert.deepEqual(await setAhead('codex', '/work/here', home), []);
+  assert.deepEqual(await setAhead('codex', '/work/here', home), ['--dangerously-bypass-hook-trust']);
   const config = await readFile(path.join(home, 'config.toml'), 'utf8');
   assert.match(config, /^check_for_update_on_startup = false\nmodel = "x"/);
   assert.match(config, /\[projects\."\/work\/here"\]\ntrust_level = "trusted"/);
   assert.match(config, /\[notice\]\n(hide_\w+ = true\n){2}/);
   const hooks = path.join(home, 'hooks.json');
-  assert.match(config, new RegExp(`\\[hooks\\.state\\."${hooks.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}:permission_request:0:0"\\]\ntrusted_hash = "sha256:`));
+  assert.doesNotMatch(config, /hooks\.state/, "no trust entries in the owner's config");
   const declared = JSON.parse(await readFile(hooks, 'utf8')).hooks;
   assert.deepEqual(Object.keys(declared).sort(), ['PermissionRequest', 'PostToolUse', 'PreToolUse', 'Stop', 'UserPromptSubmit']);
   await setAhead('codex', '/work/here', home);

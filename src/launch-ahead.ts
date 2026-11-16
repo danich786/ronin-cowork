@@ -27,16 +27,9 @@ async function claude(cwd: string): Promise<string[]> {
   return ['--settings', path.join(REPO_ROOT, 'hostside', 'claude-asking.json')];
 }
 
-// Codex trusts a hook against a hash it computes from the hook; these are its own, recorded
-// from codex-cli 0.169.0's /hooks for the entries below. A Codex that hashes differently
-// shows "Hooks need review" again: record the new ones (docs/agents/codex.md).
-const CODEX_HOOKS: Record<string, [string, string]> = {
-  PermissionRequest: ['permission_request', 'sha256:3390373f51bcd1a64ed909cb01577ded007d243294d284779c86e0c2b3edfe6b'],
-  PreToolUse: ['pre_tool_use', 'sha256:68508134e6c222cb8639a99823315f7dc71795253abfb8411e39ba689e37f7ac'],
-  PostToolUse: ['post_tool_use', 'sha256:c5d4d9acb5d5e2710692d3f28e6970a61baf79c4ed2380abba4b03821672990e'],
-  UserPromptSubmit: ['user_prompt_submit', 'sha256:f8cf3db180cfcb6edf56a068c8708dfc0efa35841f7c5fb4f189dd2b0d8c8af0'],
-  Stop: ['stop', 'sha256:7cbedd8b65ee646978075bcf87d0afc3a39f3e28b4614b2616f3426516e9c714'],
-};
+// The hooks in the Codex home's hooks.json. Codex asks the person to trust a new hook
+// ("Hooks need review") unless it is launched with --dangerously-bypass-hook-trust.
+const CODEX_HOOK_EVENTS = ['PermissionRequest', 'PreToolUse', 'PostToolUse', 'UserPromptSubmit', 'Stop'];
 
 /** One `key = value` in a TOML text, left alone when the key is already there. Line-wise, so
  * the owner's file keeps its layout; Codex itself edits the file the same way. */
@@ -58,13 +51,13 @@ export function tomlEnsure(text: string, table: string | null, key: string, valu
   return lines.join('\n');
 }
 
-/** Codex: in its home's config.toml, the folder trusted, no update check, the warnings off,
- * and the hooks in its home's hooks.json trusted. */
+/** Codex: the hooks in its home's hooks.json, run without a trust review; in its home's
+ * config.toml, the folder trusted, no update check, the warnings off. */
 async function codex(cwd: string, home: string): Promise<string[]> {
   const hooks = path.join(home, 'hooks.json');
   const entry = [{ hooks: [{ type: 'command', command: 'ronin-asking' }] }];
   await mkdir(home, { recursive: true });
-  await writeFile(hooks, JSON.stringify({ hooks: Object.fromEntries(Object.keys(CODEX_HOOKS).map((e) => [e, entry])) }, null, 2) + '\n');
+  await writeFile(hooks, JSON.stringify({ hooks: Object.fromEntries(CODEX_HOOK_EVENTS.map((e) => [e, entry])) }, null, 2) + '\n');
   const config = path.join(home, 'config.toml'); // the owner's own, linked into this home
   let text = await readText(config);
   const before = text;
@@ -72,11 +65,8 @@ async function codex(cwd: string, home: string): Promise<string[]> {
   text = tomlEnsure(text, 'notice', 'hide_full_access_warning', 'true');
   text = tomlEnsure(text, 'notice', 'hide_rate_limit_model_nudge', 'true');
   text = tomlEnsure(text, `projects.${JSON.stringify(cwd)}`, 'trust_level', '"trusted"');
-  for (const [event, hash] of Object.values(CODEX_HOOKS)) {
-    text = tomlEnsure(text, `hooks.state.${JSON.stringify(`${hooks}:${event}:0:0`)}`, 'trusted_hash', JSON.stringify(hash));
-  }
   if (text !== before) await writeFile(config, text);
-  return [];
+  return ['--dangerously-bypass-hook-trust'];
 }
 
 export async function setAhead(cli: string, cwd: string, home: string | undefined): Promise<string[]> {
