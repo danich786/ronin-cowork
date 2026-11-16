@@ -11,6 +11,7 @@ usage() { cat <<'EOF_USAGE'
 Usage:
   netlify sites                             every site: live and latest deploy (failures first), repo; * is yours
   netlify traffic [--days N]                page views and visitors by day, top pages (Netlify Analytics)
+  netlify previews                          deploy previews, the latest per PR: PR, state, URL
   netlify forms [<form>] [--limit N]        the site's forms; with a name, its latest submissions
   netlify deploy [<dir>] [--prod] [--message <m>]
                                             a folder to the site, for a Workspace with no repo: a draft
@@ -28,7 +29,7 @@ case "${1:-}" in -h|--help|'') usage; exit 0;; esac
 
 # Netlify's own CLI, for anything that is not the bridge's: the next `netlify` on PATH that is not this file.
 case "$1" in
-  sites|traffic|forms|deploy|env) ;;
+  sites|traffic|previews|forms|deploy|env) ;;
   *)
     IFS=: read -r -a dirs <<<"$PATH"
     for d in "${dirs[@]}"; do
@@ -80,7 +81,7 @@ print("\n".join(d.get("lines", [])))
 json() { python3 -c 'import json, sys; a = sys.argv[1:]; print(json.dumps({a[i]: (a[i+1] == "true" if a[i+1] in ("true", "false") else a[i+1]) for i in range(0, len(a), 2) if a[i+1] != ""}))' "$@"; }
 
 case "$tool" in
-  sites|traffic) [ "$#" -eq 0 ] || die "BAD-ARG: netlify $tool takes no words (netlify --help)"; netlify_call GET "/api/netlify/$tool" ;;
+  sites|traffic|previews) [ "$#" -eq 0 ] || die "BAD-ARG: netlify $tool takes no words (netlify --help)"; netlify_call GET "/api/netlify/$tool" ;;
   forms) [ "$#" -le 1 ] || die 'BAD-ARG: netlify forms [<form>]'; form=${1-}; netlify_call GET /api/netlify/forms ;;
   deploy)
     [ "$#" -le 1 ] || die 'BAD-ARG: netlify deploy [<dir>] [--prod]'

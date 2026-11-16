@@ -24,7 +24,7 @@ Tools do jobs and report what happened. A Cowork Agent is told:
 - `show`: open a Ronin page in another visible workspace of the owner's tab, never the one they are on
 - `owner_view`: what the owner is looking at in a browser tab
 - `secret`: get a password or key from the owner without it passing through chat
-- `netlify`: Netlify sites, deploys, traffic, forms and variables for the Workspace's site
+- `netlify`: Netlify sites, deploys, previews, traffic, forms and variables for the Workspace's site
 - `mcp`: list the MCP servers available to your Campaign, fetch one's tools, call one
 - `preview`: find a pull request's preview link and put it in your Documents
 - `api`: list the web APIs available to your Campaign, call one with Ronin holding its key

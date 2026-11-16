@@ -170,7 +170,7 @@ test('edit writes typed entries only: no read command can be introduced or chang
 test('read is live: the integration\'s commands run now as the caller, repos and items read where they live', async () => {
   const out = await ok(['read', 'site']);
   assert.match(out, /^# site\ncanvas site · Workspace ronin_site · from netlify · /);
-  assert.match(out, /## Netlify\nThe site itself.*\n> netlify sites --workspace ronin_site\n  netlify said: \[sites\] \[--workspace\] \[ronin_site\]\n> netlify traffic --days 1 --workspace ronin_site\n/);
+  assert.match(out, /## Netlify\nThe site itself.*\n> netlify sites --workspace ronin_site\n  netlify said: \[sites\] \[--workspace\] \[ronin_site\]\n> netlify previews --workspace ronin_site\n  netlify said: \[previews\] \[--workspace\] \[ronin_site\]\n> netlify traffic --days 1 --workspace ronin_site\n/);
   assert.match(out, /## Repos\nThe code for this site\.\n- site — the website — .*\/site\n/);
   assert.match(out, new RegExp(`## Work items\\n.*\\n- ${held.id} Task · To Do · agent:builder · Make the canvas`));
   assert.match(out, /## Other services\n.*\n- GoDaddy DNS: records at GoDaddy, by the owner \(builder, \d{4}-\d\d-\d\d\)\n/);
