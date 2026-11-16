@@ -13,7 +13,7 @@
 - **launch_initial:** positional
 
 CLI id: `codex`. Catalog provider: OpenAI. Reviewed 2026-09-14.
-Version: **0.153.4**. Installed version and tagged upstream input source reviewed; no live turn interrupted.
+Version: **0.169.0** (hooks and set-ahead, KAN-616); **0.153.4** for the isolation below. Installed version and tagged upstream input source reviewed; no live turn interrupted.
 
 ## Ronin launch sequence
 
@@ -84,6 +84,26 @@ can instead treat Enter as a newline. Submission is a real tmux Enter key action
 the bracketed paste completes; a pasted carriage return is data, not that action. Ronin
 leaves tmux copy mode when necessary, then unconditionally sends Enter. This is terminal
 protocol handling, not a provider-specific shortcut, delay, or second Enter.
+
+## Set ahead, and the asking hook (KAN-616)
+
+At every launch and restore, `src/launch-ahead.ts` writes `hooks.json` into the birth's
+`CODEX_HOME` (one `ronin-asking` command on PermissionRequest, PreToolUse, PostToolUse,
+UserPromptSubmit and Stop) and adds to the linked `config.toml`, each only when absent:
+
+- `check_for_update_on_startup = false`: no *Update available* screen;
+- `[notice]` `hide_full_access_warning` and `hide_rate_limit_model_nudge`;
+- `[projects."<dir>"] trust_level = "trusted"` for the Agent's folder;
+- `[hooks.state."<home>/hooks.json:<event>:0:0"] trusted_hash` for each hook, so *Hooks need
+  review* never shows. The hashes are Codex's own (recorded from 0.169.0's `/hooks`). A Codex
+  that hashes differently shows the review again; trust once in a scratch home and record the
+  new ones in `CODEX_HOOKS`.
+
+Hooks go in a file, not `-c` or `--dangerously-bypass-hook-trust`: either one makes Codex
+leave its shared background server. A PermissionRequest hook that prints nothing is no
+decision, so the approval is still answered in the terminal. Codex's request_user_input has no
+hook; the screen read covers it. Verified with 0.169.0: an approval sends PreToolUse and
+PermissionRequest, then PostToolUse and Stop once approved.
 
 ## Sign-in particulars
 

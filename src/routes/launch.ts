@@ -8,6 +8,7 @@ import {
   listSessions,
   sessionDir,
   sessionExists,
+  sessionOfPane,
   setSessionIdentity,
   setLeads,
   setCampaign,
@@ -31,7 +32,8 @@ import { listTeamRosters } from '../team-rosters.js';
 import { announceTeamChanges } from './wipeboards-api.js';
 import { checkoutAt, deriveTeams, parkBrief, seedTegami, teamChanged, withAxes, writeBriefRecord, writeConfiguration, type SessionWithAxes } from '../tegami.js';
 import { callerOf } from './work-items-api.js';
-import { collectBirthLines, collectRowFields } from '../sockets.js';
+import { collectBirthLines, collectRowFields, sockets } from '../sockets.js';
+import { askingByHook, forgetAsking, recordHook } from '../asking.js';
 import { stoppedAt } from '../stopped.js';
 import { broadcastEvent, listening, pushTeams } from '../ws/events.js';
 import { listProjectRoots } from '../project-roots.js';
@@ -181,9 +183,9 @@ export function mikaReadinessFromPane(text: string): 'ready' | 'starting' | 'act
 }
 
 // The pane is read for the CLI's own context gauge and model line, and for a question it draws
-// (KAN-527): no CLI writes a log line for its dialogs (Codex's "Update available" before its
-// first turn, a permission prompt), so the screen is the only place one shows. What the Agent
-// is otherwise DOING is its output's newest line, through the transcript part's row field.
+// where no CLI hook tells (KAN-527, KAN-616: a login lapsing mid-run, Codex's request_user_input).
+// A question the CLI's hook reports is src/asking.ts. What the Agent is otherwise DOING is its
+// output's newest line, through the transcript part's row field.
 const readPane = async (name: string) => {
   const text = await capturePane(name, 0);
   return { ctx: scanContext(text), model: scanModel(text), asking: asksForInput(text) };
@@ -191,7 +193,7 @@ const readPane = async (name: string) => {
 const loadPaneStatus = createActivityCache(readPane);
 
 /** AN AGENT FLAG (owner, 2026-11-15, KAN-527): the Agent itself waits on the owner, not an
- * item. Derived from the pane, never stored: it goes when the question leaves the screen. Its
+ * item. Derived from the CLI's hooks and the pane, never stored: it goes when the CLI moves on. Its
  * work record carries it, and `flagged` puts ⚑ and the flagged amber on its selector pill. */
 export const ASKING_FLAG = 'asking';
 
@@ -205,7 +207,9 @@ export function homeRows(list: SessionWithAxes[]) {
         collectRowFields(s.name),
         readTegami(s.name),
       ]);
-      const { asking, ...gauges } = pane;
+      // The CLI's hook says so (src/asking.ts), or, where no hook tells, the screen does.
+      const { asking: onScreen, ...gauges } = pane;
+      const asking = askingByHook(s.name) || onScreen;
       const stopped_at = asking ? undefined : stoppedAt(s.name, contributed.at);
       const reports = contributed.stance_reports;
       return {
@@ -246,6 +250,14 @@ export function watchMika(observe: () => Promise<{ state: string } & Record<stri
 export function registerLaunch(app: express.Express): LaunchControl {
   type MikaReady = Awaited<ReturnType<LaunchControl['ensureMika']>>;
   let mikaStarting: Promise<MikaReady> | null = null;
+
+  // A CLI hook's event (ronin_bin/ronin-asking): answered at once; a moved flag pushes the row.
+  app.post('/api/asking', async (req, res) => {
+    const name = typeof req.body?.pane === 'string' ? await sessionOfPane(req.body.pane) : null;
+    if (name && recordHook(name, req.body)) sockets.rowChanged(name);
+    res.json({ ok: true });
+  });
+  sockets.onSessionEnd((name) => forgetAsking(name));
 
   app.get('/api/launch-seed', async (req, res) => {
     try {
