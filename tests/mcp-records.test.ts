@@ -33,3 +33,14 @@ test('offered is on: an MCP record is on at the Campaign layer for its Campaigns
   const on = cascade([layer, layerOf('team', { brief: { integrations_off: ['wispr-flow'] } })]);
   assert.deepEqual(Object.keys(on.integrations).sort(), ['linear', 'perplexity'], 'a Team narrows an offered server off');
 });
+
+test('a record added before its key says so on its line; saving the key clears it (KAN-600)', async () => {
+  const byName = async () => Object.fromEntries((await readMcpRecords()).map((r) => [r.name, r.needs]));
+  let needs = await byName();
+  assert.equal(needs['wispr-flow'], 'its key: secret ask wispr-flow-api-key');
+  assert.equal(needs.linear, '', 'sign-in none needs nothing');
+  await mkdir(path.join(temp, 'services_secrets'), { recursive: true });
+  await writeFile(path.join(temp, 'services_secrets', 'wispr-flow-api-key'), 'k\n', { mode: 0o600 });
+  needs = await byName();
+  assert.equal(needs['wispr-flow'], '');
+});

@@ -55,8 +55,8 @@ export interface BriefRecord {
     instructions: string;
     /** Integrations on for this Agent: the union down the layers, less what a layer turns off. */
     integrations: string[];
-    /** The MCP servers on for this Agent, each with its record's description (behaviours/mcp.md). */
-    mcp: Array<{ name: string; description: string }>;
+    /** The MCP servers on for this Agent, each with its record's description and what it still needs (behaviours/mcp.md). */
+    mcp: Array<{ name: string; description: string; needs?: string }>;
     /** Project management on for this Agent: any layer on, or Jira on. */
     pm: boolean;
     /** Ronin Services parts running. */
@@ -96,7 +96,7 @@ const WORDS: Record<string, (r: BriefRecord) => string> = {
   'session.type': (r) => ({ cowork: 'Cowork Agent', bare: 'bare metal Agent', mika: 'Mika' })[r.session.type],
   'setting.hosting': (r) => r.setting.hosted ? 'hosted' : 'self-hosted',
   'setting.integrations': (r) => r.setting.integrations.join(', ') || 'none',
-  'setting.mcp_lines': (r) => r.setting.mcp.map((one) => `\n- ${one.name}: ${one.description}`).join(''),
+  'setting.mcp_lines': (r) => r.setting.mcp.map((one) => `\n- ${one.name}: ${one.description}${one.needs ? ` (needs ${one.needs})` : ''}`).join(''),
   'setting.pm': (r) => r.setting.pm ? 'on' : 'off',
   'setting.services': (r) => r.setting.services.includes('ronin_services') ? 'Ronin Services running' : '',
   people: (r) => r.people.map((p) => `${[p.role, p.nickname || p.first_name || p.name || p.email].filter(Boolean).join(' ')}${p.organization ? `, ${p.organization}` : ''}`).join('; '),

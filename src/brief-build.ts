@@ -115,7 +115,7 @@ export async function buildBriefRecord(form: SpawnForm, facts: LaunchFacts, on: 
       workspace: facts.workspace?.name ?? '',
       instructions: facts.workspace?.instructions ?? '',
       integrations: Object.keys(on.integrations),
-      mcp: (await offeredMcp(campaignId, catalog)).filter((record) => on.integrations[record.name]).map((record) => ({ name: record.name, description: record.description })),
+      mcp: (await offeredMcp(campaignId, catalog)).filter((record) => on.integrations[record.name]).map((record) => ({ name: record.name, description: record.description, ...(record.needs ? { needs: record.needs } : {}) })),
       pm: on.pm.on,
       services: facts.installations.filter((row) => row.enabled).map((row) => row.name),
     },

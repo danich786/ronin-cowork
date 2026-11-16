@@ -16,8 +16,8 @@ Usage:
   mcp add <name> <url|command> [--sign-in key|oauth|none] [--secret <s>] [--send '<header>'|'env NAME']
           [--campaigns <a,b>] [--label <l>] [--description <d>]
                                             add a server: Ronin connects, reads what it is for and
-                                            writes its record; without its key yet, it asks for it
-                                            (secret ask) and tries again
+                                            writes its record; without its key yet, the record is
+                                            written and it asks for the key (secret ask)
   mcp remove <name>                         its record goes; its secret stays
 Ronin attaches the key: you never handle it. The key is the secret <name>-api-key unless --secret
 names another; it goes as Authorization: Bearer unless --send says otherwise. --campaigns blank
@@ -92,10 +92,11 @@ print(json.dumps({"by": os.environ["BY"], "name": os.environ["N"], "tool": os.en
     [ "$#" -eq 2 ] || die 'BAD-ARG: mcp add <name> <url|command> (mcp --help)'
     payload=$(body by "$BY" name "$1" reach "$2" sign_in "$sign_in" secret "$secret" send "$send" campaigns "$campaigns" label "$label" description "$description")
     mcp_call POST /api/mcp/add "$payload"; rc=$?
-    if [ "$rc" -eq 4 ] && [ -n "$NEED_SECRET" ]; then
+    # Add now, authenticate later: the record is written; ask for a key it still needs.
+    if [ "$rc" -eq 0 ] && [ -n "$NEED_SECRET" ]; then
       echo "Asking for $NEED_SECRET on your tile…" >&2
       saved=$("$TOOL_DIR/secret" ask "$NEED_SECRET" --for "${label:-$1} key, for its MCP server") || exit 4
-      case "$saved" in saved*) mcp_call POST /api/mcp/add "$payload"; exit $? ;; *) echo "$saved" >&2; exit 4 ;; esac
+      echo "$saved"
     fi
     exit "$rc" ;;
   remove)
