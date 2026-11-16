@@ -63,7 +63,7 @@ independent Agent ── choose what helps ── Team coordination
 | **Terminal** | A shell in an always-on tmux terminal. Nothing from Ronin. |
 | **Bare-metal Agent** | Claude, Codex, or another provider CLI in an always-on tmux terminal. No Ronin reading list, work record, or receipt. |
 | **Cowork Agent** | The same CLI born through Ronin: a work record, documents, capability tools, messaging, and session coordination; in a repository declared for Worktrees, a private branch and worktree with hand-in and the Team lead's promotion, so parallel Agents avoid file collisions ([how it decides](docs/architecture/worktrees.md)). |
-| **Installations** | What is on the machine, switched on or off in System settings. Ronin Services joins every Cowork Agent when it is on; gbrain, Trello and Perplexity make behaviours a Team or Agent can add ([installations and behaviours](docs/architecture/installations.md)). |
+| **Installations** | What is on the machine, switched on or off in System settings. Ronin Services joins every Cowork Agent when it is on; Trello and Perplexity make behaviours a Team or Agent can add ([installations and behaviours](docs/architecture/installations.md)). |
 
 [See how session types, installations and behaviours fit together.](https://ronincowork.com/explainers/cowork-and-services/)
 

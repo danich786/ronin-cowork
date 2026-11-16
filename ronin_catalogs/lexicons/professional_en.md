@@ -709,43 +709,6 @@ nothing paints exactly this.
 - **machine.stopped:** Off — the gauge is hidden.
 - **machine.save_failed:** Could not save that.
 
-## gbrain — gbrain-setup-state.js and gbrain.js (the Ronin Setup work surface)
-- **gbrain.retry_install:** Retry install
-- **gbrain.load:** Load gbrain
-- **gbrain.status_diagnosis:** Setup could not read the local gbrain status. Nothing was changed.
-- **gbrain.check_again:** Check again
-- **gbrain.setup_intro:** A shared, searchable memory for your Agents.
-- **gbrain.setup_q_installed:** Installed
-- **gbrain.setup_q_accounts:** Accounts linked
-- **gbrain.setup_checking:** Checking…
-- **gbrain.setup_not_installed:** Not installed
-- **gbrain.setup_services_needed_hint:** gbrain comes with Ronin Services.
-- **gbrain.setup_open_services:** Open Ronin Services
-- **gbrain.setup_services_off:** Installed · Ronin Services is switched off
-- **gbrain.setup_services_off_hint:** Turn Services on for this Cowork in Team Configuration.
-- **gbrain.setup_load_hint:** One press. Downloads come from github.com and huggingface.co.
-- **gbrain.setup_installing:** Installing…
-- **gbrain.setup_removing:** Removing…
-- **gbrain.setup_failed:** Install did not finish
-- **gbrain.setup_install_log:** Install log
-- **gbrain.setup_running:** Installed · running
-- **gbrain.setup_running_keyword:** Installed · running · keyword-only search
-- **gbrain.setup_stopped:** Installed · not running
-- **gbrain.setup_stopped_hint:** Turn Ronin Services off and on in Team Configuration, or ask an Agent to look.
-- **gbrain.setup_check_assistant:** Ask an Agent to check gbrain
-- **gbrain.setup_unreadable:** Could not read
-- **gbrain.setup_linked:** Linked
-- **gbrain.setup_not_linked:** Not linked
-- **gbrain.setup_no_accounts:** None to link on this install.
-- **gbrain.setup_accounts_hint:** Your Personal Assistant links one when you ask, with your approval.
-- **gbrain.setup_provider_first:** A model provider comes first.
-- **gbrain.setup_open_providers:** Open Model providers
-- **gbrain.setup_ready:** Everything is good to go.
-- **gbrain.setup_start_assistant:** Start your first Personal Assistant
-- **gbrain.setup_launching:** Launching…
-- **gbrain.setup_launched:** Launched in a new tab.
-- **gbrain.setup_launch_failed:** Launch failed.
-
 ## koshi — koshi.js (the 目 Koshi tab)
 - **koshi.restart:** ↻ Restart Koshi
 - **koshi.restart_title:** Stop and start the watcher. Settings apply on their own; this is for when it is not running at all.
@@ -1065,7 +1028,6 @@ The catalog entry goes. {dir} is not touched.
 - **pane.settei:** Configuration
 - **pane.hotwords:** Hotwords
 - **pane.koshi:** Koshi
-- **pane.gbrain:** gbrain
 
 ## desk — desk.js (the desk's rows and tooltips)
 - **cowork.tab_health:** Desk

@@ -13,7 +13,7 @@ the brief teaches and the Agent runs through its shell. A new integration change
 how Agents launch, and an Agent that is already running can use one connected after it started.
 
 The brief's `mcp:` header (a bridge naming an MCP server for the launch) retires, with no
-compat. gbrain becomes a command like the rest.
+compat.
 
 ## Three ways in
 
@@ -148,4 +148,4 @@ so it answers only while the `mcp` part runs:
 3. A local server (a start command), then OAuth sign-in.
 4. The brief (Team behaviours, w676): `mcp.md` and `tools/mcp.md`, narrowing, the refresh,
    and the `mcp:` header retired.
-5. Settings › Integrations shows MCP records; gbrain moves off launch.
+5. Settings › Integrations shows MCP records.

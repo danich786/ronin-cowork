@@ -36,7 +36,6 @@ The brief is passed with `-i` (`--prompt-interactive`): Antigravity runs it as t
 turn and stays open. Resume syntax is `agy --conversation <id>`; Ronin does not yet read
 the conversation id, so Archive refuses before stopping an Antigravity session.
 
-Stop sends Escape; Clear sends Ctrl+C. No MCP registration adapter is implemented in
-Services' gbrain setup for `agy`.
+Stop sends Escape; Clear sends Ctrl+C.
 
 Shared [code ownership and test boundaries](README.md#code-ownership) apply to this CLI.

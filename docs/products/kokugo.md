@@ -80,7 +80,7 @@ Two shapes that come up:
   session, `work-record update_record` output, tool output. A session on a Home desk is still `DraftPlan`
   with `reach: plan`.
 - **The house's internal names** — [KOTOBA's internal names](../../KOTOBA.md#internal-names) (RIREKI, KOSHI, …); *Ronin*
-  the product; a vendor's name (gbrain, Claude).
+  the product; a vendor's name (Claude, Jira).
 - **Values** — a session name, a path, a branch, a model, a count, a timestamp, a token
   (`manual`, `cherry_pick`, a status word the server sends as data). A label is a word; a
   value is not.

@@ -69,11 +69,11 @@ test('a cast parses from the section format, row keys never leaking top-level', 
   const rows = parseTemplateAgents([
     '# Box', '- **objective:** o', '', '## agents', '',
     '### one', '- **team_lead:** yes', '- **instructions:** Lead.', '- **mandate:** open · nobody · open', '',
-    '### two', '- **instructions:** Work.', '- **behaviours:** ronin_worktrees, gbrain',
+    '### two', '- **instructions:** Work.', '- **behaviours:** ronin_worktrees, perplexity-bridge',
   ].join('\n'));
   assert.deepEqual(rows, [
     { name: 'one', instructions: 'Lead.', mandate: { reach: 'open', recruit: 'nobody', output: ['open'] }, team_lead: true, behaviours: [] },
-    { name: 'two', instructions: 'Work.', mandate: null, team_lead: false, behaviours: ['ronin_worktrees', 'gbrain'] },
+    { name: 'two', instructions: 'Work.', mandate: null, team_lead: false, behaviours: ['ronin_worktrees', 'perplexity-bridge'] },
   ]);
   assert.deepEqual(parseTemplateAgents('# Box\n- **objective:** o\n'), [], 'no agents heading, no rows');
 });

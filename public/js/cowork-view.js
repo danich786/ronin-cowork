@@ -883,7 +883,7 @@ export function createCoworkView(options = {}) {
       seatTheTeam();
       paintSeats();
       touch(liveSeats().find((id) => !heldSurface(id)) || 'workspace1');
-      // The ＋ New door — the bar, ⌃⇧N, and the gbrain tab's "ask the assistant" — opens
+      // The ＋ New door — the bar and ⌃⇧N — opens
       // the drawn New Agent now. A prompt rides as its Instructions (js/new-agent.js).
       S.showNewSession = (prompt = '') => {
         bench.place(WB_TYPES.newAgent, lastSeat || 'workspace1', prompt ? { prompt } : {});

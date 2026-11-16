@@ -113,11 +113,6 @@ export const writeAgentsSection = (value: Record<string, unknown>): Promise<void
     doc.agents = value;
   });
 
-export const writeGbrainSection = (value: Record<string, unknown>): Promise<void> =>
-  updateConfig((doc) => {
-    doc.gbrain = value;
-  });
-
 export const writeWantedSection = (list: Array<{ kind: string; name: string }>): Promise<void> =>
   updateConfig((doc) => {
     doc.wanted = list.slice(0, 50).map((w) => ({ kind: String(w.kind), name: String(w.name).slice(0, 80) }));

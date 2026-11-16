@@ -12,21 +12,20 @@ import { listInstallations } from '../src/resource-adapters.js';
 
 const installations = [
   { name: 'ronin_services', parts: ['counting', 'koe', 'koshi', 'koshi_weights', 'project_management', 'rireki'] },
-  { name: 'gbrain', parts: [] },
 ];
 // Koshi carries its own PARKED.md (parked until v2); no capability maps it.
-const onDisk = ['counting', 'gbrain', 'koe', 'koshi', 'koshi_weights', 'machine', 'project_management', 'rireki'].map((name) => (name === 'koshi' ? { name, parked: 'Koshi is parked until v2.' } : { name }));
+const onDisk = ['counting', 'koe', 'koshi', 'koshi_weights', 'machine', 'project_management', 'rireki'].map((name) => (name === 'koshi' ? { name, parked: 'Koshi is parked until v2.' } : { name }));
 
 test('Services off parks every part the installation claims; unclaimed parts still load', () => {
   const plan = partsToLoad(onDisk, installations, { ronin_services: false }, { task_manager: true, voice_hotwords: true, terminal_transcript: true });
-  assert.deepEqual(plan.load.map((p) => p.name), ['gbrain', 'machine']);
+  assert.deepEqual(plan.load.map((p) => p.name), ['machine']);
   assert.deepEqual(plan.parked.map(({ name, reason }) => ({ name, reason })), ['counting', 'koe', 'koshi', 'koshi_weights', 'project_management', 'rireki'].map((name) => ({ name, reason: name === 'koshi' ? 'Koshi is parked until v2.' : 'master_off' })));
 });
 
 test('Services on loads only selected claimed parts and never their siblings', () => {
   // Usage stats and Machine status carry no choice here, and both run until switched off.
   const plan = partsToLoad(onDisk, installations, { ronin_services: true }, { task_manager: true });
-  assert.deepEqual(plan.load.map((p) => p.name), ['counting', 'gbrain', 'machine', 'project_management']);
+  assert.deepEqual(plan.load.map((p) => p.name), ['counting', 'machine', 'project_management']);
   assert.deepEqual(plan.parked.map(({ name, reason }) => ({ name, reason })),
     ['koe', 'koshi', 'koshi_weights', 'rireki'].map((name) => ({ name, reason: name === 'koshi' ? 'Koshi is parked until v2.' : 'component_off' })));
   assert.deepEqual(plan.capabilities.find(({ name }) => name === 'task_manager'), {
@@ -85,23 +84,17 @@ test('discoverParts lists directories with a register entry, and nothing else', 
 });
 
 test('an installation switch governs the part it claims, and a part no capability maps needs no component', () => {
-  const parts = [{ name: 'gbrain' }, { name: 'counting' }, { name: 'machine' }];
-  // gbrain is its own installation and belongs to no Ronin Services capability; machine is
+  const parts = [{ name: 'notes' }, { name: 'counting' }, { name: 'machine' }];
+  // notes is its own installation and belongs to no Ronin Services capability; machine is
   // claimed by nothing at all.
-  const catalog = [{ name: 'gbrain', parts: ['gbrain'] }, { name: 'ronin_services', parts: ['counting'] }];
-  const on = partsToLoad(parts, catalog, { gbrain: true, ronin_services: true }, { usage_stats: true });
-  assert.deepEqual(on.load.map((p) => p.name), ['gbrain', 'counting', 'machine']);
+  const catalog = [{ name: 'notes', parts: ['notes'] }, { name: 'ronin_services', parts: ['counting'] }];
+  const on = partsToLoad(parts, catalog, { notes: true, ronin_services: true }, { usage_stats: true });
+  assert.deepEqual(on.load.map((p) => p.name), ['notes', 'counting', 'machine']);
 
-  const off = partsToLoad(parts, catalog, { gbrain: false, ronin_services: true }, { usage_stats: true });
+  const off = partsToLoad(parts, catalog, { notes: false, ronin_services: true }, { usage_stats: true });
   // Switched off means not running. Claiming the part is what connects the switch to it:
-  // an unclaimed part always loads, so gbrain's switch governed nothing until it did.
+  // an unclaimed part always loads.
   assert.deepEqual(off.load.map((p) => p.name), ['counting', 'machine']);
-  assert.deepEqual(off.parked, [{ name: 'gbrain', installation: 'gbrain', reason: 'master_off' }]);
+  assert.deepEqual(off.parked, [{ name: 'notes', installation: 'notes', reason: 'master_off' }]);
 });
 
-test('Ronin Services claims the gbrain part, the gbrain integration\'s part', async () => {
-  const services = await readFile(new URL('../ronin_catalogs/services/ronin_services.md', import.meta.url), 'utf8');
-  assert.match(services, /^- \*\*parts:\*\* .*\bgbrain\b/m);
-  const bridge = await readFile(new URL('../ronin_catalogs/behaviours/gbrain-bridge.md', import.meta.url), 'utf8');
-  assert.match(bridge, /^- \*\*when:\*\* integration:gbrain$/m);
-});

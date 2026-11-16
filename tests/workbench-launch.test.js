@@ -207,7 +207,7 @@ test('a launch instruction cannot be claimed by the wrong destination', () => {
   globalThis.window = { open: (url) => { opened = url; return {}; } };
   globalThis.history = { state: null, replaceState: (_state, _title, url) => { globalThis.location.href = url; } };
   try {
-    openWorkbenchTab({ destination: 'team', param: 'gbrain', state: { seats: {} } });
+    openWorkbenchTab({ destination: 'team', param: 'jira', state: { seats: {} } });
     globalThis.location.href = opened;
     assert.equal(consumeWorkbenchLaunch('team', 'another-team'), null);
   } finally {

@@ -253,7 +253,7 @@ test('the Setup workbench registers real surfaces and maps each scene to workspa
   assert.doesNotMatch(setup, /SetupRequirement|requirementState|flashCycle/);
   assert.match(setup, /const SCENES = Object\.freeze\(SETUP_SCENES/);
   assert.match(setup, /scene\.type !== 'setup\.bounty'/);
-  assert.doesNotMatch(setup, /SETUP_SURFACE_TYPES\.(?:services|gbrain)/);
+  assert.doesNotMatch(setup, /SETUP_SURFACE_TYPES\.services/);
   assert.doesNotMatch(setup, /SETUP_SURFACE_TYPES\.templates/);
   const providers = await source('js/provider-surface.js');
   assert.match(providers, /context\.environment\.onSetupRuntime\?\.\(runtime\)/,

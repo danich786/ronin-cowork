@@ -70,10 +70,10 @@ export function createIntegrationsPanel(campaign, { panels = {}, embedded = fals
   const keyed = (row) => (row.mcp ? row.mcp.saved || row.mcp.sign_in === 'none' : row.secrets.length > 0);
   const itemFor = (row) => ({ id: row.name, label: row.label, state: stateWord(row), attrs: { 'data-keyed': String(keyed(row)) } });
 
-  const fact = (dl, label, value) => { const item = el('div', 'setup-gbrain-answer'); item.append(el('dt', '', label), el('dd', '', value)); dl.append(item); };
+  const fact = (dl, label, value) => { const item = el('div', 'setup-answer'); item.append(el('dt', '', label), el('dd', '', value)); dl.append(item); };
 
   function facts(row) {
-    const dl = el('dl', 'setup-gbrain-answers integrations-facts');
+    const dl = el('dl', 'setup-answers integrations-facts');
     if (row.blurb) fact(dl, t('integrations.what', 'What it is'), row.blurb);
     if (row.mcp) {
       fact(dl, t('integrations.reach', 'Address'), row.mcp.reach || '—');

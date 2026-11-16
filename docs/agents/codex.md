@@ -85,10 +85,6 @@ the bracketed paste completes; a pasted carriage return is data, not that action
 leaves tmux copy mode when necessary, then unconditionally sends Enter. This is terminal
 protocol handling, not a provider-specific shortcut, delay, or second Enter.
 
-Services' `gbrain/setup.sh`, `uninstall.sh`, and `doctor.sh` own gbrain registration,
-removal and checks. The setup uses the Codex MCP command and token environment reference.
-Agent launch does not provision or switch that registration.
-
 ## Sign-in particulars
 
 Codex has a safe status command:

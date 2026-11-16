@@ -25,11 +25,10 @@ test('Presets consumes real provider lifecycle and dependency facts', async () =
   await runtime.openProviderLogin('codex', ops, available);
   const login = await runtime.setupRuntimeAnswer({}, await measureProviders({}, { availability: available, signedIn: async () => false }), ops, {
     cowork: { release: null, commit: '', dirty: false, startedAt: '' },
-    services: { parts: ['gbrain'], loaded: ['gbrain'], parked: [], installed: true, restart_needed: false, activated: true, stage: 'active', switched_on: true },
+    services: { parts: ['koe'], loaded: ['koe'], parked: [], installed: true, restart_needed: false, activated: true, stage: 'active', switched_on: true },
     routines: [],
   });
   assert.deepEqual(login.providers.find((provider) => provider.id === 'codex')?.attachment, { type: 'session', key: 'provider_setup_codex', team: 'provider_setup', temporary: true });
-  assert.deepEqual(login.gbrain, { installed: true, active: true });
   assert.equal(login.services.active, true);
   await runtime.completeProviderLogin('codex', ops, () => '2026-09-05T15:00:00.000Z', async (provider, at) => { activated.push([provider, at]); });
   assert.deepEqual(activated, [['codex', '2026-09-05T15:00:00.000Z']]);

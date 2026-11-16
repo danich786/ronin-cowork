@@ -119,7 +119,6 @@ export interface SetupRuntimeAnswer {
   /** When Refresh all last read every activated CLI's model list; '' when never. */
   refreshed_at: string;
   roots: Array<{ name: string; label: string; dir: string }>;
-  gbrain: { installed: boolean; active: boolean };
   services: { installed: boolean; switched_on: boolean; active: boolean };
   preferences: SetupPreferences;
 }
@@ -282,10 +281,6 @@ export async function setupRuntimeAnswer(
     measured_at: summary.measured_at,
     refreshed_at: summary.refreshed_at,
     roots: roots.map(({ name, label, dir }) => ({ name, label, dir })),
-    gbrain: {
-      installed: installed?.services.parts.includes('gbrain') ?? false,
-      active: installed?.services.loaded.includes('gbrain') ?? false,
-    },
     services: {
       installed: installed?.services.installed ?? false,
       switched_on: installed?.services.switched_on ?? false,

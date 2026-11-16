@@ -52,8 +52,7 @@ does not classify that state. Whole browser drafts clear locally.
 
 `hostside/claude-settings.py` owns the narrow theme/status-line configuration merge;
 `hostside/statusline-ronin.sh` emits the context reading consumed by `src/ctx.ts`.
-Services' `gbrain/setup.sh`, `uninstall.sh`, and `doctor.sh` own user-scope MCP
-registration, removal and checks. Preserve unrelated owner settings.
+Preserve unrelated owner settings.
 
 ## Sign-in particulars
 

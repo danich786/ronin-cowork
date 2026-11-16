@@ -45,8 +45,6 @@ export const STORES: readonly Store[] = [
   store('mika_home', 'user', 'mika'),
   store('koshi_weights', 'user', 'koshi_weights'),
   store('koshi_weights_service', 'user', 'koshi_weights_service'),
-  store('gbrain_brain', 'user', 'gbrain_brain'),
-  store('gbrain_service', 'user', 'gbrain_service'),
   store('promotion_ledger', 'data', 'promotion-ledger'),
   store('services_secrets', 'user', 'services_secrets'),
   // An office_unit's own filing, written once by whoever provisions it and never by Ronin:

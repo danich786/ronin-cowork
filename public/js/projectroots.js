@@ -534,7 +534,7 @@ export function createRootDrawing(deps) {
     return { shelve, drop };
   }
 
-  /* -- Setup's selected folder: one page in the Services and gbrain voice. A head, then
+  /* -- Setup's selected folder: one page in the Services voice. A head, then
    * Summary, Folder facts, Repository facts, and Edit; maintenance last. Edit swaps the
    * three fact sections for the real form under the same head. -- */
   function detail(r) {

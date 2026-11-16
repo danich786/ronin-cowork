@@ -53,7 +53,7 @@ changing persistence. Browser state is presentation, not a second server authori
 | New Agent / Team | [new-agent.js](new-agent.js), [new-team-form.js](new-team-form.js), [launch-view.js](launch-view.js) | [launch.ts](../../src/routes/launch.ts), [teams-api.ts](../../src/routes/teams-api.ts) | [agent-defaults.ts](../../src/agent-defaults.ts), [spawn.ts](../../src/spawn.ts), [team-rosters.ts](../../src/team-rosters.ts) | [new-launch-form-layout.test.js](../../tests/new-launch-form-layout.test.js), [launch-seed.test.ts](../../tests/launch-seed.test.ts) |
 | Ronin Setup | [setup-view.js](setup-view.js), [garden-canvas.js](garden-canvas.js), [setup-irasshai.js](setup-irasshai.js) (while Irasshai runs: Assist her chat, the selector her epic's steps; KAN-573), [setup-surfaces.js](setup-surfaces.js), [provider-surface.js](provider-surface.js) | [setup-runtime-api.ts](../../src/routes/setup-runtime-api.ts), [services-activation-api.ts](../../src/routes/services-activation-api.ts) | [setup-runtime.ts](../../src/setup-runtime.ts), [registration.ts](../../src/activation/registration.ts), [activation state](../../src/activation/state.ts) | [setup-shell.test.js](../../tests/setup-shell.test.js), [setup-roots-stones.test.js](../../tests/setup-roots-stones.test.js) |
 | Machine settings / Workspace Folders / Archive | [machine-settings.js](machine-settings.js), [projectroots.js](projectroots.js), [workspace-folders-surface.js](workspace-folders-surface.js), [github-workspace-setup.js](github-workspace-setup.js), [archives.js](archives.js) | [machine-settings-api.ts](../../src/routes/machine-settings-api.ts), [catalogs.ts](../../src/routes/catalogs.ts), [sessions-api.ts](../../src/routes/sessions-api.ts), [setup-runtime-api.ts](../../src/routes/setup-runtime-api.ts) (`/api/setup/github`; `{t:'github-setup', github}` pushed while a setup session is attached) | [machine-settings.ts](../../src/machine-settings.ts), [project-roots.ts](../../src/project-roots.ts), [session-archive.ts](../../src/session-archive.ts) | [machine-settings-schema.test.ts](../../tests/machine-settings-schema.test.ts), [setup-roots-stones.test.js](../../tests/setup-roots-stones.test.js), [session-archive.test.ts](../../tests/session-archive.test.ts) |
-| Services surfaces | [stats.js](stats.js), [koshi.js](koshi.js), [hotwords.js](hotwords.js), [gbrain.js](gbrain.js) | Exact method/path and route source in the [Services manifest](https://github.com/ronincowork/ronin-services/blob/dev/services.json) | Each canonical Services part owns its API and store use; [parts.ts](../../src/parts.ts) owns startup selection | [services-component-ui.test.js](../../tests/services-component-ui.test.js), Services `bin/verify` |
+| Services surfaces | [stats.js](stats.js), [koshi.js](koshi.js), [hotwords.js](hotwords.js) | Exact method/path and route source in the [Services manifest](https://github.com/ronincowork/ronin-services/blob/dev/services.json) | Each canonical Services part owns its API and store use; [parts.ts](../../src/parts.ts) owns startup selection | [services-component-ui.test.js](../../tests/services-component-ui.test.js), Services `bin/verify` |
 
 Shared CSS starts at [style.css](../style.css) and [workspace-kit.css](../workspace-kit.css).
 Feature styles: [Campaign/Home](../css/campaign-home.css), [Team](../css/team-workspace.css),
@@ -91,8 +91,6 @@ below describes implementation ownership; use the surface index above to find a 
 | `hotwords.js` | `buildHotwords` — the ▥ Hotwords pane, the dictation glossary |
 | `stats.js` | `buildStats` — the ▦ Stats pane (TOMODACHI usage readout) |
 | `koshi.js` | `buildKoshi` — the 目 Koshi pane, model per Koshi job |
-| `gbrain.js` | gbrain's Ronin Setup work surface: installed, accounts linked, one next step; the install's progress arrives as `{t:'gbrain', snapshot}` |
-| `gbrain-setup-state.js` | the Ronin Setup gbrain surface's state: one status, one next line, at most one action from the snapshot |
 | `services-setup-state.js` | the Ronin Setup Services surface's state: registration, installed facts and the activation record → one status, one next line, at most one action |
 | `system.js` | `buildSystemPanel` — the Account tab's Release & update and Log out rooms (release identity, updates, log out, passkeys) in `cowork-commons.js` |
 | `work-record.js` | `buildWorkRecord` — the tile's ☰ Work record (held items first, each with status, flag and attachments; then objective, worktrees, Teams), and its age helpers |
@@ -185,7 +183,7 @@ the Workbench selector ([workbench.js](workbench.js)): each card by type and res
 press, hover and drag reading the newest offer; the Services setup surface and the ⚙ Services
 card ([setup-surfaces.js](setup-surfaces.js), [services-card.js](services-card.js)): steps by
 id, the key row, switches built once and set in place, the egress list keeping its fold; the
-Setup zone's picks ([setup-zone.js](setup-zone.js)); gbrain's answers ([gbrain.js](gbrain.js)).
+Setup zone's picks ([setup-zone.js](setup-zone.js)).
 Work Items ([work-items-surface.js](work-items-surface.js)) re-reads only when the `epics`
 push moves (it carries every live item, `epic: ''` under none) or its scope changes, never on
 a sessions push. Also (KAN-413): the item island's pills and bars

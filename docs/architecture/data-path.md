@@ -29,8 +29,8 @@ standing in for a close. When something seems to need one, the shape upstream is
  pane activity ──────┤   src/ws/events.ts           │        ▲
  store-folder watch ─┤   one tick → one listing     │   surfaces (tile, roster, wipeboard …)
  write routes ───────┤   signature-diffed pushes ───┼──▶ public/js/store.js
- services (gbrain,   │   held values on connect     │   one socket, one copy per resource
-   machine) ─────────┘   `want` answered in order   │        │
+ services            │   held values on connect     │   one socket, one copy per resource
+   (machine) ────────┘   `want` answered in order   │        │
                                                     └─ paint what is handed
 ```
 
@@ -66,7 +66,7 @@ change. Each reconnect says the wants of every live subscription again.
 
 **Feeds.** Listened to while a surface is open, not held: a transcript's records, a Team
 page draft, Mika's readiness after a `POST /api/mika/ready` answers `starting`, the
-Setup, GitHub setup, Services setup and gbrain progress while their work runs. Each is
+Setup, GitHub setup and Services setup progress while their work runs. Each is
 `{t:'<name>', …}` with the same answer its GET route gives, and the action that started
 the work answers with the same snapshot.
 
@@ -119,12 +119,12 @@ poll.
 - **Write routes push.** Roster routes push `teams` after a successful write;
   so do the work-item routes and a session's membership and lead routes, since a Team's
   row carries its epic and items.
-  The action routes for Mika, shutdown, gbrain and the setups push their progress.
+  The action routes for Mika, shutdown and the setups push their progress.
 - **Store folders are watched.** Boards, cron jobs and the message queue are files, and
   every writer — a route, a CLI tool in a child process, the server itself — changes a
   file. `watchStore` reads after the change and pushes if the resource moved, one write to
   one push. This is how an Agent's `edges wipeboard post` reaches every tab.
-- **Services push too.** The machine and gbrain parts under `src/services/` call the same
+- **Services push too.** The machine part under `src/services/` calls the same
   `broadcastEvent` / `publishHeld`; the contract does not know which repository a message
   comes from.
 
@@ -176,4 +176,4 @@ when its context gauge and its terminal read are looked at again.
 | what each message means to the page (chips, feeds) | `public/js/events.js` |
 | the tick, held values, watchers, `want` | `src/ws/events.ts`, `src/ws/watchers.ts` |
 | the home rows | `homeRows` in `src/routes/launch.ts` |
-| pushes from services | `src/services/machine`, `src/services/gbrain` (the `ronin-services` repository) |
+| pushes from services | `src/services/machine` (the `ronin-services` repository) |

@@ -15,17 +15,17 @@ process.env.RONIN_DATA_ROOT = path.join(root, '.data');
 const { listInstallations } = await import('../src/resource-adapters.js');
 const { integrationsState } = await import('../src/integrations.js');
 const { normalizeWorkspace, saveWorkspace } = await import('../src/workspaces.js');
-const parts = { onDisk: ['jira', 'gbrain'], loaded: ['gbrain'] };
+const parts = { onDisk: ['jira', 'netlify'], loaded: ['netlify'] };
 
 test('the list is the bridges; Ronin Services is not one of them', async () => {
   const rows = await integrationsState('c1', parts);
-  assert.deepEqual(rows.map((row) => row.name), ['netlify', 'jira', 'gbrain', 'perplexity']);
+  assert.deepEqual(rows.map((row) => row.name), ['netlify', 'jira', 'perplexity']);
   assert.deepEqual((await listInstallations()).map((row) => row.name), ['ronin_services']);
   const jira = rows.find((row) => row.name === 'jira')!;
   assert.equal(jira.label, 'Jira');
   assert.equal(jira.bridge, 'jira-bridge');
   assert.equal(jira.part, 'parked');
-  assert.equal(rows.find((row) => row.name === 'gbrain')!.part, 'running');
+  assert.equal(rows.find((row) => row.name === 'netlify')!.part, 'running');
   assert.equal(rows.find((row) => row.name === 'perplexity')!.part, '');
 });
 

@@ -70,13 +70,7 @@ await fs.writeFile(
         title: 'Ronin Home',
         state: 'active',
         providers,
-        config: { installations: { gbrain: false }, defaults: {} },
-      },
-      gbrain_connected: {
-        title: 'Gbrain connected',
-        state: 'archived',
-        providers,
-        config: { installations: { gbrain: true }, defaults: {} },
+        config: { installations: {}, defaults: {} },
       },
     },
   }),
@@ -102,7 +96,7 @@ await fs.writeFile(
   path.join(temp, 'team_rosters', 'scratchteam.md'),
   [
     '# scratchteam', '', '- **objective:** prove the parity',
-    '- **agent_defaults:** {"provider":"","model":"","reach":"discuss","recruit":"nobody","output":"ideas","launch_mode":"configured","gbrain_mode":"disconnected"}',
+    '- **agent_defaults:** {"provider":"","model":"","reach":"discuss","recruit":"nobody","output":"ideas","launch_mode":"configured"}',
     '- **state:** active', '',
   ].join('\n'),
 );
@@ -141,7 +135,6 @@ const mechanism = (r: Awaited<ReturnType<typeof resolveForm>>) => ({
   cmd: r.cmd,
   agent: r.agent,
   capExempt: r.capExempt,
-  gbrain_mode: r.gbrain_mode,
   launchAgent: r.launchAgent,
 });
 
@@ -208,23 +201,6 @@ test('bare_metal_agent resolves a real CLI without Ronin birth machinery', async
   assert.deepEqual(bare.tags, ['scratchteam'], 'Team is only an addressing tag');
   assert.equal(bare.team_objective, '', 'the Team roster does not resolve into the launch');
 });
-
-// gbrain is an integration (its bridge, ronin_catalogs/behaviours/gbrain-bridge.md), not an installation: a
-// Campaign's old gbrain switch, on or off, changes neither the teaching nor the command.
-for (const [campaign_id, word] of [['home_machine', 'off'], ['gbrain_connected', 'on']] as const) {
-  test(`a Campaign's old gbrain switch (${word}) is no installation and delivers nothing`, async () => {
-    const cowork = await resolveForm(commonsForm({
-      session_type: 'cowork_agent',
-      campaign_id,
-      name: `gbrain-${word}-proof`,
-      provider: 'openai',
-      model: 'gpt-5.6-terra',
-    }), new Set());
-    assert.equal(cowork.installations.find((installation) => installation.name === 'gbrain'), undefined);
-    assert.equal(cowork.cmd, 'codex --model gpt-5.6-terra');
-    assert.ok(!cowork.composed!.resolved.behaviours.some((behaviour) => behaviour.name.startsWith('gbrain')));
-  });
-}
 
 test("forkit's own inputs change its words and nothing about the mechanism", async () => {
   const plain = await resolveForm(commonsForm(), new Set());

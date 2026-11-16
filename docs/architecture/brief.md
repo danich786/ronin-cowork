@@ -307,7 +307,7 @@ behaviours/  base-agent (full) · cowork-agent, write-it-down (cowork, full)
              pm-traffic-control (pm, by role, full)
              working-at-a-desk (desk) · checkout (checkout) · workspaces (cowork, full)
              integrations (every Agent, seed; brings `secret`, so keys are taught once)
-             bridges: netlify-bridge, jira-bridge, gbrain-bridge, perplexity-bridge
+             bridges: netlify-bridge, jira-bridge, perplexity-bridge
              (integration:<name>) · mcp-servers (mcp, seed: one line per MCP server on)
              mika, install-check (mika) · services-off (!service:ronin_services) · using-ronin
              optional (depth none): team-work, more-checkpoints, working-with-the-user,
@@ -348,7 +348,7 @@ owner's choice before shipping. Keys are taught there once; a bridge never repea
 
 A **bridge** is a behaviour with `when: integration:<name>` and the tools that serve it, in play
 while that integration is on for the Agent: `jira-bridge` (work items through `item`, never Jira
-itself), `gbrain-bridge` (shared memory), `perplexity-bridge` (cited web research) and
+itself), `perplexity-bridge` (cited web research) and
 `netlify-bridge` (the worked example, with `netlify` and `preview`).
 
 Every **MCP server** is reached at run time through Ronin's broker, never at launch

@@ -44,7 +44,6 @@ globalThis.fetch = async (url, options = {}) => {
 
 const { store } = await import('../public/js/store.js');
 const { createGithubWorkspaceSetup } = await import('../public/js/github-workspace-setup.js');
-const { buildGbrain } = await import('../public/js/gbrain.js');
 const settle = () => new Promise((resolve) => setImmediate(resolve));
 const texts = (node) => [...node.walk()].map((n) => n.textContent).join('\n');
 
@@ -85,31 +84,6 @@ test('a GitHub login is finished by the pushed answer; nothing is asked while it
   assert.equal(finished, 1, 'with the session gone the surface no longer listens');
   surface.destroy();
   await settle();
-});
-
-test('gbrain paints the install from its own answer, then from pushes, and never polls', async () => {
-  asked.length = 0;
-  const running = (log) => ({ installed: false, install: { state: 'running', op: 'install', log } });
-  answer = (url, options) => (options.method === 'POST' ? running(['weights']) : { installed: false, install: { state: 'idle', log: [] } });
-  const root = new FakeNode('div');
-  const room = buildGbrain(root, () => {}, {});
-  room.enter();
-  await settle();
-  assert.match(texts(root), /Not installed/);
-  [...root.walk()].find((n) => n.tagName === 'BUTTON' && n.dataset.action === 'load').click();
-  await settle();
-  assert.deepEqual(asked, ['GET /api/gbrain', 'POST /api/gbrain/install']);
-  assert.match(texts(root), /Installing…/, 'the press paints its own answer');
-
-  store.receive({ t: 'gbrain', snapshot: running(['weights', 'gbrain pinned']) });
-  assert.match(texts(root), /gbrain pinned/, 'a pushed step paints');
-  store.receive({ t: 'gbrain', snapshot: { installed: true, process: { state: 'running' }, search: { weights: 'running' }, integrationsKnown: true, integrations: [] } });
-  assert.match(texts(root), /Installed · running/, 'the closing push paints the result');
-  assert.deepEqual(asked, ['GET /api/gbrain', 'POST /api/gbrain/install'], 'nothing is asked while it runs');
-
-  room.close();
-  store.receive({ t: 'gbrain', snapshot: running(['after close']) });
-  assert.doesNotMatch(texts(root), /after close/, 'closed: the push is not heard');
 });
 
 test('the Services surface follows a registration and an install by push, and never polls', async () => {

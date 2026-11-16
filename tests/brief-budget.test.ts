@@ -37,7 +37,7 @@ test('the fullest stock brief fits one read (docs/architecture/brief.md, The bri
     ] as BriefRecord['people'],
     setting: {
       hosted: false, campaign: 'home_machine', workspace: 'ronin_cowork', instructions: 'Work in small, reviewed steps.',
-      integrations, pm: true, services: ['ronin_services', 'gbrain'],
+      integrations, pm: true, services: ['ronin_services'],
       // An MCP server on: the mcp-servers seed lists it.
       mcp: [{ name: 'wispr-flow', description: 'Voice dictation and transcripts.' }],
     },

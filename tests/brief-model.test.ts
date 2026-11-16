@@ -220,15 +220,15 @@ test('a behaviour whose wording changed is sent again, at its depth (KAN-549)', 
 
 test('narrowing: a layer turns off what is on above, for itself and below; Jira off is pm off (KAN-589)', () => {
   const layers: Layer[] = [
-    layerOf('campaign', { integrations: ['jira', 'netlify', 'gbrain'] }),
+    layerOf('campaign', { integrations: ['jira', 'netlify', 'perplexity'] }),
     layerOf('team', { brief: { integrations_off: ['netlify', 'jira'] } }),
     layerOf('agent', { integrations: ['netlify'] }),
   ];
   const on = cascade(layers);
-  assert.deepEqual(on.integrations, { gbrain: 'campaign' }, 'off at the Team holds below it, an Agent add included');
+  assert.deepEqual(on.integrations, { perplexity: 'campaign' }, 'off at the Team holds below it, an Agent add included');
   assert.deepEqual(on.off, { netlify: 'team', jira: 'team' });
   assert.deepEqual(on.pm, { on: false }, 'Jira narrowed off no longer turns project management on');
-  assert.deepEqual(layerOf('workspace', { brief: { integrations_off: ['gbrain', 'Bad Name'] } }).brief.integrations_off, ['gbrain']);
+  assert.deepEqual(layerOf('workspace', { brief: { integrations_off: ['perplexity', 'Bad Name'] } }).brief.integrations_off, ['perplexity']);
   assert.equal(layerOf('workspace', { brief: {} }).brief.integrations_off, undefined, 'nothing off: no key');
 });
 

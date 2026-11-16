@@ -587,7 +587,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
         behaviours: draft.setting.brief.add.map((row) => row.name),
         // THE SWITCHES A LOADOUT IS MEANT TO CARRY. `TemplateBoxSave` stores these
         // (@template_shelves measured `boxTail` writing all three) and this form was
-        // sending only `behaviours`, so a saved Personal Assistant lost its gbrain.
+        // sending only `behaviours`, so a saved Personal Assistant lost its switches.
         //
       },
     });

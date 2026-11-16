@@ -209,7 +209,7 @@ Model: Native only, and the surface says so). `readModels` walks that table; no 
 appears in it. A new way to read a list is a new key, never an `if`.
 
 Everything else reads the record through `GET /api/setup/runtime`: Ronin Home's three
-blocks, the Presets gates, the gbrain next step and the selector summaries. A machine that
+blocks, the Presets gates and the selector summaries. A machine that
 has never been measured is measured once on the first read, not guessed. A stale summary
 shows its dates. `POST /api/setup/providers/:provider/install` uses the shared installer
 and returns the runtime with its explicit `install_open` session attachment. Setup and
