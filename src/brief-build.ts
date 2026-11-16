@@ -31,7 +31,7 @@ export async function offeredMcp(campaign: string, catalog?: Pick<Catalog, 'beha
   return (await readMcpRecords()).filter((record) => !bridges.has(record.name) && offeredTo(record, campaign));
 }
 
-/** The Campaign's layer: its own settings, Jira when its Jira part is on (so pm is on), and the
+/** The Campaign's layer: its own settings, Jira when its Jira part is on, and the
  * MCP servers offered to it. The switch, not the live pairing: a pairing named after a restart
  * would leave an Agent born first without pm for life. */
 export async function campaignLayer(campaign: { id: string; config: Pick<CampaignSettings, 'integrations'> & { services?: { parts?: Record<string, unknown> } } } | null | undefined, catalog?: Pick<Catalog, 'behaviours'>): Promise<Layer> {
@@ -142,7 +142,7 @@ export type BriefDocument = BriefRecord & { brief_settings: Partial<Record<Layer
 
 export interface BuiltBrief { doc: BriefDocument; layers: Layer[]; cascade: Cascade; resolved: Resolved; text: string }
 
-// Jira only turns project management on: an Agent never reaches past the bridge, so it isn't told of it.
+// Jira is never told: an Agent never reaches past the bridge. It doesn't move pm either (KAN-608).
 const told = (on: Cascade): string[] => Object.keys(on.integrations).filter((name) => name !== 'jira');
 
 /** THE BRIEF BUILDER: the brief document and the catalogs, nothing else. Pure. */

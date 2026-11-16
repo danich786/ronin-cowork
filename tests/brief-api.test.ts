@@ -61,14 +61,17 @@ test('the integrations listing is the bridge files: adding one adds an integrati
   assert.equal(catalog.find((row) => row.name === 'probe-bridge')!.integration, 'probe');
 });
 
-test('a Campaign with its Jira part on has project management on (the switch, not the live pairing)', async () => {
+test('a Campaign\'s Jira part is Jira on there, and never decides project management (KAN-608)', async () => {
   const { briefLayers } = await import('../src/brief-build.js');
   const { cascade } = await import('../src/brief-settings.js');
   const campaign = (jira: boolean) => ({ campaign: { id: 'paired', config: { brief: { add: [], block: [], only: [] }, integrations: [], services: { parts: { jira } } } }, workspace: null, roster: null }) as never;
   const agent = { brief: { add: [], block: [], only: [] }, integrations: [] };
-  assert.deepEqual(cascade(await briefLayers(campaign(false), agent)).pm, { on: false });
+  const without = cascade(await briefLayers(campaign(false), agent));
+  assert.deepEqual([without.integrations.jira, without.pm], [undefined, { on: true, from: 'campaign' }], 'Jira off: pm still on by default');
   const on = cascade(await briefLayers(campaign(true), agent));
-  assert.deepEqual([on.integrations.jira, on.pm], ['campaign', { on: true, from: 'jira' }]);
+  assert.deepEqual([on.integrations.jira, on.pm], ['campaign', { on: true, from: 'campaign' }]);
+  const pmOff = cascade(await briefLayers(campaign(true), { ...agent, pm: false }));
+  assert.deepEqual(pmOff.pm, { on: false, from: 'agent' }, 'Jira on: an Agent may still turn pm off');
 });
 
 test.after(async () => {

@@ -17,9 +17,10 @@ where it is built or taught.
 
 ## For Agents: the briefs
 
-The birth packet compiles them (`src/agent-composition.ts`). Project management is the selected
-behaviour `project-management`: on in a Campaign's defaults, off per Team with `team-roster-write
-<team> --deselect project-management`. With it off an Agent gets none of these. Each brief is one
+The birth packet compiles them (`src/agent-composition.ts`). Project management is the `pm`
+setting, apart from Jira ([brief.md](brief.md), Layers and brief settings): on at the Campaign
+by default, and on or off per Workspace, Team or Agent on its Behaviors panel; the narrowest
+layer that says holds. With it off an Agent gets none of these. Each brief is one
 cell of topic × audience; an Agent reads only its own cells.
 
 | Brief (`ronin_catalogs/`) | Read by | `requires` |

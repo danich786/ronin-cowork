@@ -1632,10 +1632,11 @@ The catalog entry goes. {dir} is not touched.
 - **brief.on_from_word:** On, from the {layer}
 - **brief.on:** On
 - **brief.off:** Off
-- **brief.pm_jira:** On while Jira is on.
 - **brief.pm_on:** Work items: the item model, and the guidance for this Agent’s role.
 - **brief.pm_on_layer:** Work items for every Agent below: the item model, and the guidance for each role.
 - **brief.pm_off:** No work items guidance.
+- **brief.pm_off_layer:** Off here and below: no work items guidance.
+- **brief.off_from_word:** Off, from the {layer}
 - **brief.set_on:** Set on
 - **brief.depth_seed:** Seed
 - **brief.depth_full:** Full

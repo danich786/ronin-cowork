@@ -12,8 +12,11 @@
  *
  * Integrations are on at a layer and on below it, unless a layer below turns one off
  * (`brief.integrations_off`, narrowing): off holds for that layer and every one under it. An
- * MCP server is on at the Campaign layer for the Campaigns its record offers it to. Jira on is
- * project management on. Files in play: each header's `when:` and
+ * MCP server is on at the Campaign layer for the Campaigns its record offers it to. Jira is set
+ * at the Campaign and Workspace only: a Team's or Agent's Jira entry is ignored.
+ *
+ * Project management (`pm`) is its own setting, apart from Jira: on at the Campaign unless a
+ * layer says otherwise, and the narrowest layer that says on or off holds. Files in play: each header's `when:` and
  * `depth:`, then every layer's add (the higher depth holds), then every block, then each
  * screen (`only`), which covers facts, behaviours and tools: a behaviour let through brings
  * the tools that serve it. Hide, never guard: this decides only what
@@ -84,18 +87,23 @@ export interface Cascade {
   integrations: Record<string, LayerName>;
   /** Each integration a layer turned off, and the widest layer that did. */
   off: Record<string, LayerName>;
-  /** On: from the widest layer that turned it on, or 'jira'. Off: no from. */
-  pm: { on: boolean; from?: LayerName | 'jira' };
+  /** On or off, from the narrowest layer that says so; nobody saying: on, from the Campaign. */
+  pm: { on: boolean; from: LayerName };
 }
 
-/** Integrations and project management down the layers: on adds, a layer's off narrows. */
+/** The layers Jira can be set at; below them a Jira entry is ignored. */
+const JIRA_LAYERS: readonly LayerName[] = ['user', 'campaign', 'workspace'];
+const scoped = (layer: Layer, name: string): boolean => name !== 'jira' || JIRA_LAYERS.includes(layer.layer);
+
+/** Integrations and project management down the layers: on adds, a layer's off narrows; pm is
+ * the narrowest layer's own on or off, on by default. Jira never decides pm. */
 export function cascade(layers: readonly Layer[]): Cascade {
   const integrations: Record<string, LayerName> = {};
-  for (const layer of layers) for (const name of layer.integrations) integrations[name] ??= layer.layer;
+  for (const layer of layers) for (const name of layer.integrations) if (scoped(layer, name)) integrations[name] ??= layer.layer;
   const off: Record<string, LayerName> = {};
-  for (const layer of layers) for (const name of layer.brief.integrations_off ?? []) { off[name] ??= layer.layer; delete integrations[name]; }
-  const by = layers.find((layer) => layer.pm === true)?.layer;
-  const pm = by ? { on: true, from: by } : integrations.jira ? { on: true, from: 'jira' as const } : { on: false };
+  for (const layer of layers) for (const name of layer.brief.integrations_off ?? []) if (scoped(layer, name)) { off[name] ??= layer.layer; delete integrations[name]; }
+  const by = [...layers].reverse().find((layer) => typeof layer.pm === 'boolean');
+  const pm = by ? { on: by.pm as boolean, from: by.layer } : { on: true, from: 'campaign' as const };
   return { integrations, off, pm };
 }
 

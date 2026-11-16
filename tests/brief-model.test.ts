@@ -76,13 +76,23 @@ test('one conditional function: words, negation, unknown never holds', () => {
     assert.equal(conditionHolds(word, r), false, word);
 });
 
-test('integrations and project management add down the layers; Jira on is pm on', () => {
-  const layers: Layer[] = [layerOf('campaign', { integrations: ['netlify'] }), layerOf('team', { pm: false, integrations: ['jira'] })];
-  const on = cascade(layers);
-  assert.deepEqual(on.integrations, { netlify: 'campaign', jira: 'team' });
-  assert.deepEqual(on.pm, { on: true, from: 'jira' });
-  assert.deepEqual(cascade([layerOf('campaign', { pm: true }), layerOf('agent', { pm: false })]).pm, { on: true, from: 'campaign' });
-  assert.deepEqual(cascade([layerOf('agent', { pm: false })]).pm, { on: false });
+test('integrations add down the layers; Jira ends at the Workspace (KAN-608)', () => {
+  const on = cascade([layerOf('campaign', { integrations: ['netlify'] }), layerOf('team', { integrations: ['jira'] }), layerOf('agent', { integrations: ['jira'] })]);
+  assert.deepEqual(on.integrations, { netlify: 'campaign' }, 'a Team or Agent cannot turn Jira on');
+  assert.deepEqual(cascade([layerOf('workspace', { integrations: [{ provider: 'jira' }] })]).integrations, { jira: 'workspace' });
+  const off = cascade([layerOf('campaign', { integrations: ['jira'] }), layerOf('team', { brief: { integrations_off: ['jira'] } }), layerOf('agent', { brief: { integrations_off: ['jira'] } })]);
+  assert.deepEqual([off.integrations, off.off], [{ jira: 'campaign' }, {}], 'nor turn it off');
+});
+
+test('project management: its own cascade, on at the Campaign by default, the narrowest layer holds, Jira never moves it (KAN-608)', () => {
+  assert.deepEqual(cascade([]).pm, { on: true, from: 'campaign' }, 'nobody says: on, from the Campaign');
+  assert.deepEqual(cascade([layerOf('campaign', {})]).pm, { on: true, from: 'campaign' });
+  assert.deepEqual(cascade([layerOf('campaign', { pm: false })]).pm, { on: false, from: 'campaign' }, 'off is deliberate');
+  assert.deepEqual(cascade([layerOf('campaign', { pm: false }), layerOf('team', { pm: true })]).pm, { on: true, from: 'team' }, 'a Team turns it back on');
+  assert.deepEqual(cascade([layerOf('campaign', {}), layerOf('workspace', { pm: false }), layerOf('agent', { pm: true })]).pm, { on: true, from: 'agent' });
+  assert.deepEqual(cascade([layerOf('campaign', {}), layerOf('team', { pm: false })]).pm, { on: false, from: 'team' });
+  assert.deepEqual(cascade([layerOf('campaign', { pm: false, integrations: ['jira'] })]).pm, { on: false, from: 'campaign' }, 'Jira on does not turn pm on');
+  assert.deepEqual(cascade([layerOf('campaign', { brief: { integrations_off: ['jira'] } })]).pm, { on: true, from: 'campaign' }, 'Jira off does not turn pm off');
 });
 
 test('add, then block, then screen; a behaviour brings the tools that serve it', () => {
@@ -216,16 +226,17 @@ test('a behaviour whose wording differs between builds is sent again, at its dep
 });
 
 
-test('narrowing: a layer turns off what is on above, for itself and below; Jira off is pm off (KAN-589)', () => {
+test('narrowing: a layer turns off what is on above, for itself and below (KAN-589)', () => {
   const layers: Layer[] = [
     layerOf('campaign', { integrations: ['jira', 'netlify', 'perplexity'] }),
-    layerOf('team', { brief: { integrations_off: ['netlify', 'jira'] } }),
+    layerOf('workspace', { brief: { integrations_off: ['jira'] } }),
+    layerOf('team', { brief: { integrations_off: ['netlify'] } }),
     layerOf('agent', { integrations: ['netlify'] }),
   ];
   const on = cascade(layers);
   assert.deepEqual(on.integrations, { perplexity: 'campaign' }, 'off at the Team holds below it, an Agent add included');
-  assert.deepEqual(on.off, { netlify: 'team', jira: 'team' });
-  assert.deepEqual(on.pm, { on: false }, 'Jira narrowed off no longer turns project management on');
+  assert.deepEqual(on.off, { jira: 'workspace', netlify: 'team' });
+  assert.deepEqual(on.pm, { on: true, from: 'campaign' }, 'Jira off leaves project management as it is');
   assert.deepEqual(layerOf('workspace', { brief: { integrations_off: ['perplexity', 'Bad Name'] } }).brief.integrations_off, ['perplexity']);
   assert.equal(layerOf('workspace', { brief: {} }).brief.integrations_off, undefined, 'nothing off: no key');
 });
