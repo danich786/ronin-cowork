@@ -20,7 +20,7 @@ test('the fullest stock brief fits one read (docs/architecture/brief.md, The bri
   const catalog = await readCatalogs();
   const integrations = catalogIntegrations(catalog).map((row) => row.name);
   const repos = ['ronin_cowork', 'ronin_services', 'samurai_lab'];
-  // Fullest: a lead on a Team, project management and every integration on, desks cut,
+  // Fullest: a lead on a Team, project management, every integration and an MCP server on, desks cut,
   // and every optional behaviour (depth: none) added at full.
   const record: BriefRecord = {
     session: { name: 'fullest_agent', title: 'The fullest brief', type: 'cowork', template: 'coding', task: 'Plan the next release with the Team.' },
@@ -38,9 +38,11 @@ test('the fullest stock brief fits one read (docs/architecture/brief.md, The bri
     setting: {
       hosted: false, campaign: 'home_machine', workspace: 'ronin_cowork', instructions: 'Work in small, reviewed steps.',
       integrations, pm: true, services: ['ronin_services', 'gbrain'],
+      // An MCP server on: the mcp-servers seed lists it.
+      mcp: [{ name: 'wispr-flow', description: 'Voice dictation and transcripts.' }],
     },
     agent: {
-      role: 'lead', team: 'behaviours', lead: true, wipeboard: 'behaviours', team_objective: 'Ship the brief model.',
+      role: 'lead', team: 'behaviours', lead: true, wipeboard: 'behaviours', team_objective: 'Ship the brief model.', team_integrations: integrations,
       reach: 'execute', recruit: 'staff agents', output: ['code', 'a plan'], provider: 'anthropic', model: 'claude-opus-5-5',
       harness: 'claude', launch_mode: 'configured',
     },

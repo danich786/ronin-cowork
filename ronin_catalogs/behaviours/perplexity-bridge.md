@@ -2,7 +2,6 @@
 - **seed:** Perplexity does web research with cited answers, through its own API; Ronin adds no command.
 - **when:** integration:perplexity
 - **depth:** full
-- **mcp:**
 - **order:** 27
 
 Use Perplexity for a question the web answers, when you need its sources.

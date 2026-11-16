@@ -27,6 +27,7 @@ export const sockets: Sockets = {
   addRowFields: (cb) => void rowContribs.push(cb),
   onPaneActivity: (cb) => void activityHooks.push(cb),
   rowChanged: (session) => pushRows(session),
+  briefsChanged: () => void import('./agent-configuration.js').then(({ refreshAllBriefs }) => refreshAllBriefs()).catch(() => {}),
   onItemChanged: (cb) => void itemHooks.push(cb),
   // Connections are Core's; what a reading admits is the part's. This is the seam.
   deliverToWatchers: (session, make) => deliverToWatchers(session, make),
