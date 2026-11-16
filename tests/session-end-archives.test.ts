@@ -61,3 +61,9 @@ test('the lead\'s end notice names the archive id and the restore command', asyn
     'Your work record changed; please read it (work-record read).',
   ]);
 });
+
+test('a restore runs a part\'s own resume wrap for that name, the route and rehydrateSession alike (KAN-615)', () => {
+  const restore = between('async function rehydrate(', 'export function registerSessions');
+  assert.match(restore, /const wrap = resumeWraps\.get\(archived\.name\);\s*if \(wrap\) argv = wrap\(\[\.\.\.argv\]\);\s*await createSession\(/);
+  assert.match(route, /app\.post\('\/api\/archived-sessions\/:id\/rehydrate', async \(req, res\) => \{\s*const \{ status, body \} = await rehydrate\(req\.params\.id, callerOf\(req\)\);/);
+});
