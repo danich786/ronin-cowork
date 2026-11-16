@@ -16,7 +16,7 @@ delete process.env.RONIN_SOCKET;
 process.env.RONIN_WORK_ITEMS_DIR = path.join(temp, 'work-items');
 process.env.RONIN_TEAM_ROSTERS_DIR = path.join(temp, 'team_rosters');
 process.env.RONIN_SESSION_DIR = path.join(temp, 'sessions');
-after(() => fs.rm(temp, { recursive: true, force: true }));
+after(() => fs.rm(temp, { recursive: true, force: true }).catch(() => {}));
 
 test('a comment, status change or flag on a Team-held item reaches its lead, not the author', async (t) => {
   const server = await openTestServer('work_item_team_notices', { onPath: true });
