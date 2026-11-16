@@ -10,8 +10,8 @@
 | Tool | Authority |
 |---|---|
 | `item create` | create: one work item under an epic, held by you (a lead's: by its Team); answers `created <id> under <parent>` |
-| `item read` | read: one item with its children, comments, attachments, links and history |
-| `item search` | read: items by Campaign, Team, holder, parent, status, kind, or `--text` in the title or objective |
+| `item read` | read: one item in plain lines: title, id, kind, status, holder, parent, the objective whole, its children one line each, its latest comments and trail lines, newest last; `--json` the whole item as JSON |
+| `item search` | read: items by Campaign, Team, holder, parent, status, kind, or `--text` in the title or objective, one line each: `<id> \| <status> \| <holder> \| <title>`, the title in full; `--json` the JSON |
 | `item edit` | write: one item's fields; `--parent` moves it, the level following |
 | `item transition` | write: the status of one or several items; a hand-in to In Review takes `--note`, the Handed in comment for the user |
 | `item flag` | write: one or several items are stuck, with the reason as a comment |
@@ -32,6 +32,8 @@
   `item handover w12 w13 team:surface "<where they stand; what is next>"`.
 - Status, kind, priority and link type are the space's names exactly (`item --help` lists
   them); anything else is refused, naming the set.
+- `item read` and `item search` print plain lines to read; add `--json` only when a script parses
+  the output.
 - Flag as `item flag <id> "<who>: <what you need>"`; `item unflag <id>` clears it.
 
 More: `ronin-help work-items`
