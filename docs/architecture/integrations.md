@@ -36,10 +36,16 @@ same arguments, a Workspace fact to fill in). A curated bridge may call through 
 
 | Piece | Where | Says |
 |---|---|---|
-| A **bridge** (curated or hidden) | a behaviour file with `when: integration:<name>`, and its tools ([brief.md](brief.md#integrations-and-bridges)) | what the bridge is for and when to reach for its commands |
+| A **bridge** (curated or hidden) | a behaviour file with `when: integration:<name>`, and its tools ([brief.md](brief.md#integrations-and-bridges)) | what the bridge is for and when to reach for its commands; its `facts:` line names the facts a Workspace gives it (`facts: site`) |
 | An **MCP server** or a **web API** | a record, `~/ronin/catalogs/integrations/<name>.md` | how the server is reached, how it signs in, which secret holds its key, which Campaigns are offered it |
 | The **keys** | secrets, `~/ronin/services_secrets/<name>-<key>`, made with `secret ask` | nothing readable: a value is never printed |
 | The **link** | the Workspace record's `integrations` entry, `{provider, …facts}` | the facts a bridge needs for that Workspace (Netlify's `site`) |
+
+The owner sets the link on the Workspace page, Integrations: a row per provider, and under a row
+whose bridge has a `facts:` line one small field per fact, saved into the entry
+(`{provider: "netlify", site: "<name>"}`). A row with no bridge, or a bridge with no facts, is the
+provider alone; any other fact in an entry is kept and shown as it is. No code per provider: a
+bridge file's `facts:` line is the whole list.
 
 ## The MCP server record
 

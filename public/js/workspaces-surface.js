@@ -172,7 +172,8 @@ export function workspacePage(w, { reading, campaignId, onSaved = () => {}, onDi
   if (brief) { stepBrief.body.append(el('p', 'fs-step-help', t('workspaces.brief_help', 'What every Agent in this Workspace is told. Agents already working are sent the change.')), brief.el); void brief.enter(); }
 
   /* ---- 3 · Integrations (KAN-338): the outside services this Workspace uses, from the integrations
-     list (the bridges); each row a provider, its other facts (a bridge's `site`) kept as they are. Agents read them
+     list (the bridges); each row a provider, with a field for each fact its bridge names (`facts: site`), saved
+     into the row as {provider, site}; any other fact is kept as it is. Agents read them
      on the Team's Workspace line, and ask for its keys with `secret ask`. ---- */
   const stepIntegrations = createStep({ n: 3, key: 'integrations', title: t('workspaces.integrations', 'Integrations'), onToggle: () => { open.integrations = !open.integrations; paint(); } });
   const integrationRows = el('div', 'workspace-locations workspace-integrations');
@@ -196,10 +197,20 @@ export function workspacePage(w, { reading, campaignId, onSaved = () => {}, onDi
       remove.setAttribute('aria-label', t('workspaces.remove_named', 'Remove {name}', { name: record?.label || entry.provider }));
       remove.addEventListener('click', () => { draft.integrations = draft.integrations.filter((one) => one !== entry); changed(); paint(); });
       const where = el('div', 'workspace-location-where');
-      const facts = Object.entries(entry).filter(([k]) => k !== 'provider').map(([k, v]) => `${k} ${v}`).join(' · ');
-      where.append(el('b', null, record?.label || entry.provider), el('code', null, facts || record?.blurb || ''));
+      // The facts its bridge names (its `facts:` line) are fields; any other fact is kept and shown as it is.
+      const named = record?.facts || [];
+      const facts = Object.entries(entry).filter(([k]) => k !== 'provider' && !named.includes(k)).map(([k, v]) => `${k} ${v}`).join(' · ');
+      where.append(el('b', null, record?.label || entry.provider), el('code', null, facts || (named.length ? '' : record?.blurb || '')));
       const state = record?.secrets.length ? t('integrations.keys_n', '{n} saved', { n: record.secrets.length }) : t('integrations.no_keys', 'No keys');
       row.append(el('small', 'folder-kind', ''), where, el('small', 'folder-kind', state), el('span'), remove);
+      for (const fact of named) {
+        const field = createField({ label: fact, control: text(entry[fact] ?? '', (v) => {
+          if (v.trim()) entry[fact] = v.trim(); else delete entry[fact];
+          changed();
+        }) });
+        field.el.classList.add('workspace-integration-fact');
+        row.append(field.el);
+      }
       integrationRows.append(row);
     }
     const chosen = new Set(draft.integrations.map((one) => one.provider));
