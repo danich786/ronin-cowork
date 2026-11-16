@@ -31,8 +31,11 @@ const said = (text) => String(text || '').replace(/\s+/g, ' ').trim();
 /**
  * @param watch  this view's own slot in what the tab tells the server it shows; the server sends only that
  *               Agent's records, already cut to that reading. Injected for testing.
+ * @param admit  which records this view draws; every one by default. A record it leaves out is
+ *               still held by seq, so paging and catch-up run as if it were drawn (Irasshai's
+ *               chat leaves out Ronin's birth packet, KAN-617).
  */
-export function makeTileTranscript({ read = request, watch = transcriptWatch(), onState = () => {}, cache = null, onAnswer = null, onDoc = null } = {}) {
+export function makeTileTranscript({ read = request, watch = transcriptWatch(), onState = () => {}, cache = null, onAnswer = null, onDoc = null, admit = null } = {}) {
   const el = document.createElement('div');
   el.className = 'tile-transcript';
   el.setAttribute('role', 'log');
@@ -341,6 +344,7 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
         held.add(rec.seq);
         frontier = frontier === null ? rec.seq : Math.max(frontier, rec.seq);
       }
+      if (admit && !admit(rec)) continue;
       insertInOrder(entryFor(rec), rec.seq);
       landed(rec);
     }

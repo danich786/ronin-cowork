@@ -40,7 +40,7 @@ test('Setup while Irasshai runs: Assist seats her chat, the selector offers only
   assert.match(view, /hear\('epicItems'/, 'her steps move with the pushed items');
   assert.match(view, /garden\.chat\(chat\.el\)/, 'Assist seats her chat in place of the scene');
   assert.match(view, /takeIrasshaiStep: \(step\) => \{[^}]*\}\s*void chat\?\.say\(takeStepLine\(step\)\);/, 'a press is one line to her, shown in her chat at once');
-  assert.match(chat, /makeTileTranscript\(\)/, 'her conversation is Chat’s own drawing');
+  assert.match(chat, /makeTileTranscript\(\{ admit:/, 'her conversation is Chat’s own drawing');
   assert.match(chat, /sendComposerMessage\(IRASSHAI, text\)/, 'the box and the steps send through the message queue');
   assert.doesNotMatch(chat, /makeTile\(|new Tile\b|tilehead/, 'no Agent tile, no terminal, no tile head');
   assert.match(garden, /surface\.el\.dataset\.chat = seated \? 'on' : 'off'/);
@@ -64,4 +64,15 @@ test('Open Irasshai: a hosted Setup header carries one button that asks Services
   assert.match(view, /const openIrasshai = HOSTED \? createOpenIrasshai\(/, 'hosted only');
   assert.match(view, /actions: \[\.\.\.\(openIrasshai \? \[openIrasshai\] : \[\]\), themeToggle\]/);
   assert.match(chat, /request\('\/api\/irasshai\/open', \{ method: 'POST' \}\)/, 'one press, one request; Services decides open, restore or launch');
+});
+
+test('Irasshai’s chat reads as a conversation: the Chat reading, and no birth packet (KAN-617)', async () => {
+  const chat = await source('js/setup-irasshai.js');
+  assert.match(chat, /transcript\.show\(IRASSHAI, CHAT_READING\)/, 'her chat asks for the Chat reading, which drops Codex startup and injected context');
+  assert.match(chat, /export const CHAT_READING = 'chat';/);
+  assert.match(chat, /makeTileTranscript\(\{ admit: \(rec\) => !birthPacket\(rec\) \}\)/, 'Ronin’s birth packet is not drawn');
+  const birthPacket = new Function(`return ${chat.match(/export const birthPacket = ([^\n]+);/)[1]}`)();
+  assert.equal(birthPacket({ role: 'user', text: 'Read first: /home/x/.ronin/sessions/irasshai-1/AGENT_BIRTH_BRIEF.md — 90 lines, 6 KB, one read' }), true);
+  assert.equal(birthPacket({ role: 'user', text: 'Read first the Setup guide, please' }), false, 'the person’s own words show');
+  assert.equal(birthPacket({ role: 'agent', text: 'Read first: /x/AGENT_BIRTH_BRIEF.md' }), false);
 });
