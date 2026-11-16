@@ -55,7 +55,9 @@ export interface BriefRecord {
     instructions: string;
     /** Integrations on for this Agent: the union down the layers, less what a layer turns off. */
     integrations: string[];
-    /** The MCP servers on for this Agent, each with its record's description and what it still needs (behaviours/mcp.md). */
+    /** The MCP servers offered to its Campaign at birth, each with its record's description and what it still needs (behaviours/mcp.md). */
+    mcp_offered: Array<{ name: string; description: string; needs?: string }>;
+    /** Those of them on for this Agent (worked out by `buildBrief`). */
     mcp: Array<{ name: string; description: string; needs?: string }>;
     /** Project management on for this Agent: any layer on, or Jira on. */
     pm: boolean;

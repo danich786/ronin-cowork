@@ -17,12 +17,10 @@ import {
 import { launchArgv } from '../agents.js';
 import { AtSessionMax, readAgentsSection } from '../machine-state.js';
 import { PACKET_PLACEHOLDER, resolveForm, type SpawnForm } from '../spawn.js';
-import { agentBriefOf, workRecordBrief, writeAgentBriefAt } from '../brief-build.js';
+import { agentBriefOf } from '../brief-build.js';
 import { briefTold } from '../brief-settings.js';
-import { writeSnapshotAt } from '../agent-configuration.js';
 import { HELP_LINE } from '../brief.js';
 import { appendLaunchLedger, persistBirthReceipt } from '../launch-ledger.js';
-import { writeCurrentRoleAt } from '../agent-composition.js';
 import { mandate } from '../agent-defaults.js';
 import { asksForInput, classifyStatus, createActivityCache } from '../status.js';
 import { enqueueMessage } from '../message-queue.js';
@@ -356,9 +354,6 @@ export function registerLaunch(app: express.Express): LaunchControl {
           text = text.replace(`\n${HELP_LINE}`, `\n${index}\n\n${HELP_LINE}`);
         }
         const brief = await writeBriefPacketAt(birthDir, text, resolved.name);
-        await writeCurrentRoleAt(birthDir, form.role ?? (form.team_lead ? 'lead' : 'coworker'));
-        await writeAgentBriefAt(birthDir, agentBriefOf(form));
-        if (resolved.composed) await writeSnapshotAt(birthDir, resolved.composed);
         packet = await describePacket(brief, resolved.name);
         resolved.brief = resolved.brief.replace(PACKET_PLACEHOLDER, readFirstSentence(packet));
       } catch (e) {
@@ -426,7 +421,8 @@ export function registerLaunch(app: express.Express): LaunchControl {
         await deriveTeams(resolved.name, resolved.tags),
         resolved.mandate,
       );
-        if (resolved.composed) await writeBriefRecord(resolved.name, workRecordBrief(resolved.composed));
+        // The brief document, whole: the session's one authority for its brief from here on.
+        if (resolved.composed) await writeBriefRecord(resolved.name, resolved.composed.doc);
       }
       await writeConfiguration(resolved.name).catch(() => {});
       // By whoever made the Agent (session_create's caller, else the browser's owner), so a

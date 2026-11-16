@@ -131,13 +131,9 @@ export function renderBrief(name: string, record: BriefRecord, resolved: Resolve
   return out.join('\n').replace(/\n{3,}/g, '\n\n');
 }
 
-/** What the Agent was told (`brief-told.json`), kept beside its packet so an update sends only
- * the difference: each fact, mandate, behaviour and tool in play, at its depth, with a hash of the
- * text it was told (KAN-549: a catalog edit to a behaviour's wording is sent again). The values it
- * was told the facts over are the work record's `brief` key. */
-export interface BriefSnapshot {
-  told: Record<string, { kind: string; depth: string; title: string; text?: string }>;
-}
+/** What one brief tells: each fact, mandate, behaviour and tool in play, at its depth, with a hash
+ * of the text it says (a wording difference between two builds is sent). */
+interface Told { [name: string]: { kind: string; depth: string; title: string; text?: string } }
 
 const toldRows = (r: Resolved): InPlay[] => [...r.facts, ...r.mandates, ...r.behaviours.flatMap((row) => [row, ...row.tools]), ...r.other];
 
@@ -151,29 +147,30 @@ function saidLines(row: InPlay): string[] {
 const textHash = (row: InPlay): string | undefined => row.kind === 'facts' ? undefined
   : createHash('sha256').update(saidLines(row).join('\n')).digest('hex').slice(0, 16);
 
-export function briefSnapshot(resolved: Resolved): BriefSnapshot {
-  return { told: Object.fromEntries(toldRows(resolved).map((row) => [row.name, { kind: row.kind, depth: row.depth, title: row.title, ...(row.kind === 'facts' ? {} : { text: textHash(row) }) }])) };
-}
+const toldBy = (resolved: Resolved): Told =>
+  Object.fromEntries(toldRows(resolved).map((row) => [row.name, { kind: row.kind, depth: row.depth, title: row.title, ...(row.kind === 'facts' ? {} : { text: textHash(row) }) }]));
+
+/** One build: the record it was built over and what it put in play. */
+export interface Build { doc: BriefRecord; resolved: Resolved }
 
 /**
- * WHAT CHANGED since the snapshot, for an update (docs/architecture/brief.md, The brief): the facts that changed
- * (over the record as it was, `was`, and as it is), and the behaviours and tools that came into
- * play (at their depth), whose text changed, or that left it. '' when nothing did.
+ * WHAT CHANGED between two builds (docs/architecture/brief.md, The brief): the facts whose line
+ * reads differently, and the behaviours and tools that came into play (at their depth), whose
+ * text changed, or that left it. '' when nothing did. Pure: both builds are in hand.
  */
-export function briefChanges(before: BriefSnapshot, was: BriefRecord, resolved: Resolved, record: BriefRecord): string {
-  const after = briefSnapshot(resolved);
+export function briefChanges(before: Build, after: Build): string {
+  const was = toldBy(before.resolved), now = toldBy(after.resolved);
   const lines: string[] = [];
   const fact = (row: InPlay, on: BriefRecord) => factLines(row, on).join('\n').trim();
-  const facts = resolved.facts.filter((row) => fact(row, record) && (!before.told[row.name] || fact(row, was) !== fact(row, record))).map((row) => fact(row, record));
+  const facts = after.resolved.facts.filter((row) => fact(row, after.doc) && (!was[row.name] || fact(row, before.doc) !== fact(row, after.doc))).map((row) => fact(row, after.doc));
   if (facts.length) lines.push(...facts, '');
-  for (const row of toldRows(resolved)) {
+  for (const row of toldRows(after.resolved)) {
     if (row.kind === 'facts') continue;
-    const prior = before.told[row.name];
-    // A snapshot with no text hash (written before KAN-549) counts as told as it stands.
-    if (prior && prior.depth === row.depth && (prior.text === undefined || prior.text === textHash(row))) continue;
+    const prior = was[row.name];
+    if (prior && prior.depth === row.depth && prior.text === textHash(row)) continue;
     lines.push(...saidLines(row));
   }
-  const left = Object.keys(before.told).filter((name) => !after.told[name] && before.told[name].kind !== 'facts');
-  if (left.length) lines.push(`No longer in your brief: ${left.map((name) => before.told[name].title).join(', ')}.`);
+  const left = Object.keys(was).filter((name) => !now[name] && was[name].kind !== 'facts');
+  if (left.length) lines.push(`No longer in your brief: ${left.map((name) => was[name].title).join(', ')}.`);
   return lines.join('\n').trim();
 }

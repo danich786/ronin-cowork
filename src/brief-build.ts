@@ -1,12 +1,15 @@
 /**
- * BUILDING A BRIEF (docs/architecture/brief.md, The work record is the source of truth; Layers and brief settings; The brief): the record from what Ronin knows of an Agent,
- * its layers, what is in play, and the packet. Launch, an Update, a record change and the New
- * Agent preview all come through `composeBrief`, so they cannot disagree.
+ * BUILDING A BRIEF (docs/architecture/brief.md, The work record is the source of truth; Layers and brief settings; The brief).
+ *
+ * One invariant. The New Agent path (`composeBrief`) resolves every input once — user, machine,
+ * Campaign, Workspace, Team, Agent — into the complete brief document, which Ronin writes on the
+ * work record as its `brief` key. `buildBrief` is a pure function of that document and the
+ * catalogs: birth, the New Agent preview and the Configuration all render through it. The
+ * Configuration edits the document (src/agent-configuration.ts) and calls the same builder.
+ * Nothing else is an input: no machine setting, default, receipt, snapshot or other work-record key.
  */
-import { readFile, rename, writeFile } from 'node:fs/promises';
-import path from 'node:path';
 import type { BriefRecord, BriefSettings, SessionType } from './brief-record.js';
-import { cascade, layerOf, readUserLayer, resolveBrief, type Cascade, type Layer, type Resolved } from './brief-settings.js';
+import { cascade, LAYERS, layerOf, readUserLayer, resolveBrief, type Cascade, type Layer, type Resolved } from './brief-settings.js';
 import { renderBrief } from './brief.js';
 import { catalogIntegrations, readCatalogs, type Catalog } from './catalog.js';
 import type { CampaignSettings } from './campaigns.js';
@@ -18,26 +21,8 @@ import { mandate } from './agent-defaults.js';
 import { listDeskRecords } from './desks/registry.js';
 import type { WorkRecordBrief } from './tegami.js';
 
-/** The Agent's own layer, as a launch body or the work record carries it. */
+/** The Agent's own layer, as a launch body or a Configuration carries it. */
 export interface AgentBrief { brief: BriefSettings; integrations: string[]; pm?: boolean }
-
-export const agentBriefFile = (dir: string): string => path.join(dir, 'composition-brief.json');
-
-export async function readAgentBriefAt(dir: string): Promise<AgentBrief> {
-  try {
-    const layer = layerOf('agent', JSON.parse(await readFile(agentBriefFile(dir), 'utf8')));
-    return { brief: layer.brief, integrations: layer.integrations, ...(layer.pm !== undefined ? { pm: layer.pm } : {}) };
-  } catch {
-    return { brief: { add: [], block: [], only: [] }, integrations: [] };
-  }
-}
-
-export async function writeAgentBriefAt(dir: string, value: AgentBrief): Promise<void> {
-  const target = agentBriefFile(dir);
-  const temp = `${target}.${process.pid}.tmp`;
-  await writeFile(temp, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
-  await rename(temp, target);
-}
 
 /** The MCP servers a Campaign is offered: on at its layer (Offered is on). A record named as a
  * curated bridge is that bridge's way through the broker, not an MCP server of its own. */
@@ -70,8 +55,12 @@ export async function briefLayers(facts: Pick<LaunchFacts, 'campaign' | 'workspa
 const sessionType = (form: SpawnForm): SessionType =>
   form.house_seat === 'mika' ? 'mika' : form.session_type === 'bare_metal_agent' ? 'bare' : 'cowork';
 
-/** Every value the brief depends on, read where it lives (docs/architecture/brief.md, The work record is the source of truth). */
-export async function buildBriefRecord(form: SpawnForm, facts: LaunchFacts, on: Cascade, launch: { provider?: string; model?: string; harness?: string; launch_mode?: BriefRecord['agent']['launch_mode'] } = {}, catalog?: Pick<Catalog, 'behaviours'>, teamOn: Cascade = on): Promise<BriefRecord> {
+export type LaunchIdentity = { provider?: string; model?: string; harness?: string; launch_mode?: BriefRecord['agent']['launch_mode'] };
+
+/** Birth only: every value the brief depends on, read where it lives (docs/architecture/brief.md,
+ * The work record is the source of truth). Integrations, pm, the MCP servers on and a lead's
+ * Team integrations are left for `buildBrief`, which works them out from the layers. */
+async function birthRecord(form: SpawnForm, facts: LaunchFacts, launch: LaunchIdentity, catalog: Pick<Catalog, 'behaviours'>): Promise<BriefRecord> {
   const held = mandate(form.mandate ?? {
     reach: facts.parentSeed?.seeds.reach.value,
     recruit: facts.parentSeed?.seeds.recruit.value,
@@ -114,10 +103,10 @@ export async function buildBriefRecord(form: SpawnForm, facts: LaunchFacts, on: 
       campaign: campaignId,
       workspace: facts.workspace?.name ?? '',
       instructions: facts.workspace?.instructions ?? '',
-      // Jira only turns project management on: an Agent never reaches past the bridge, so it isn't told of it.
-      integrations: Object.keys(on.integrations).filter((name) => name !== 'jira'),
-      mcp: (await offeredMcp(campaignId, catalog)).filter((record) => on.integrations[record.name]).map((record) => ({ name: record.name, description: record.description, ...(record.needs ? { needs: record.needs } : {}) })),
-      pm: on.pm.on,
+      integrations: [],
+      mcp_offered: (await offeredMcp(campaignId, catalog)).map((record) => ({ name: record.name, description: record.description, ...(record.needs ? { needs: record.needs } : {}) })),
+      mcp: [],
+      pm: false,
       services: facts.installations.filter((row) => row.enabled).map((row) => row.name),
     },
     agent: {
@@ -126,8 +115,7 @@ export async function buildBriefRecord(form: SpawnForm, facts: LaunchFacts, on: 
       lead: !!form.team && !!form.team_lead,
       wipeboard: facts.roster?.wipeboard ?? form.team ?? '',
       team_objective: facts.roster?.objective ?? '',
-      // The lead's brief says what its Team has on.
-      team_integrations: form.team && role === 'lead' ? Object.keys(teamOn.integrations).filter((name) => name !== 'jira') : [],
+      team_integrations: [],
       reach: held.reach,
       recruit: held.recruit,
       output: held.output,
@@ -149,22 +137,37 @@ export async function buildBriefRecord(form: SpawnForm, facts: LaunchFacts, on: 
   };
 }
 
-export interface ComposedBrief { record: BriefRecord; layers: Layer[]; cascade: Cascade; resolved: Resolved; text: string }
+/** The brief document on the work record (its `brief` key): the record, and each layer's settings as born. */
+export type BriefDocument = BriefRecord & { brief_settings: Partial<Record<Layer['layer'], Omit<Layer, 'layer'>>> };
 
-/** What the work record's `brief` key holds: the record, and each layer's brief settings. */
-export const workRecordBrief = (composed: ComposedBrief): WorkRecordBrief => ({
-  ...composed.record,
-  brief_settings: Object.fromEntries(composed.layers.map((layer) => [layer.layer, layer.brief])),
-});
+export interface BuiltBrief { doc: BriefDocument; layers: Layer[]; cascade: Cascade; resolved: Resolved; text: string }
 
-/** The whole brief for an Agent: record, layers, what is in play, and the packet text. */
-export async function composeBrief(form: SpawnForm, facts: LaunchFacts, agent: AgentBrief, launch?: Parameters<typeof buildBriefRecord>[3]): Promise<ComposedBrief> {
+// Jira only turns project management on: an Agent never reaches past the bridge, so it isn't told of it.
+const told = (on: Cascade): string[] => Object.keys(on.integrations).filter((name) => name !== 'jira');
+
+/** THE BRIEF BUILDER: the brief document and the catalogs, nothing else. Pure. */
+export function buildBrief(doc: BriefDocument, catalog: Catalog): BuiltBrief {
+  const layers = LAYERS.map((layer) => layerOf(layer, doc.brief_settings[layer] ?? {}));
+  const on = cascade(layers);
+  const teamOn = cascade(layers.filter((layer) => layer.layer !== 'agent'));
+  const built: BriefDocument = {
+    ...doc,
+    setting: { ...doc.setting, integrations: told(on), pm: on.pm.on, mcp: doc.setting.mcp_offered.filter((row) => on.integrations[row.name]) },
+    // The lead's brief says what its Team has on.
+    agent: { ...doc.agent, team_integrations: doc.agent.team && doc.agent.role === 'lead' ? told(teamOn) : [] },
+  };
+  const resolved = resolveBrief(catalog, built, layers);
+  return { doc: built, layers, cascade: on, resolved, text: renderBrief(doc.session.name, built, resolved) };
+}
+
+const settingsOf = (layer: Layer): Omit<Layer, 'layer'> => ({ brief: layer.brief, integrations: layer.integrations, ...(layer.pm !== undefined ? { pm: layer.pm } : {}) });
+
+/** THE NEW AGENT PATH: resolve every input once into the brief document, then build it. */
+export async function composeBrief(form: SpawnForm, facts: LaunchFacts, agent: AgentBrief, launch: LaunchIdentity = {}): Promise<BuiltBrief> {
   const catalog = await readCatalogs();
   const layers = await briefLayers(facts, agent, catalog);
-  const on = cascade(layers);
-  const record = await buildBriefRecord(form, facts, on, launch, catalog, cascade(layers.filter((layer) => layer.layer !== 'agent')));
-  const resolved = resolveBrief(catalog, record, layers);
-  return { record, layers, cascade: on, resolved, text: renderBrief(facts.name, record, resolved) };
+  const record = await birthRecord(form, facts, launch, catalog);
+  return buildBrief({ ...record, brief_settings: Object.fromEntries(layers.map((layer) => [layer.layer, settingsOf(layer)])) }, catalog);
 }
 
 /** The Agent's own layer from a launch body or a configuration: `brief`, `integrations`, `pm`. */

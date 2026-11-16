@@ -154,7 +154,7 @@ const reading = (brief: string): string[] =>
 
 test('the brief names the Team and its wipeboard as a fact; the prompt carries only the read line and the task', async () => {
   const agent = await resolveForm(forkitForm(), new Set());
-  const facts = agent.composed!.record;
+  const facts = agent.composed!.doc;
   assert.equal(facts.agent.team, 'scratchteam');
   assert.equal(facts.agent.wipeboard, 'scratchteam');
   assert.doesNotMatch(agent.brief, /Team membership|Reach:|Designation:/);
@@ -210,8 +210,8 @@ test("forkit's own inputs change its words and nothing about the mechanism", asy
   );
   // The handoff prompt and the team are INPUTS. They must reach the brief and the tags…
   assert.match(forked.brief, /wip\/handoffs\/TOPIC\.md/);
-  assert.equal(forked.composed!.record.agent.team, 'scratchteam');
-  assert.equal(forked.composed!.record.agent.team_objective, 'prove the parity', "the roster's objective is on the record");
+  assert.equal(forked.composed!.doc.agent.team, 'scratchteam');
+  assert.equal(forked.composed!.doc.agent.team_objective, 'prove the parity', "the roster's objective is on the record");
   assert.deepEqual(forked.tags, ['scratchteam']);
   assert.deepEqual(plain.tags, []);
   // …and must not move a single thing the mechanism decides except the team itself.
@@ -284,7 +284,7 @@ test('a ronin launch is legal, and so is a launch onto a tag-only team', async (
   const tagOnly = await resolveForm(commonsForm({ team: 'ghosts' }), new Set());
   assert.equal(tagOnly.team, 'ghosts');
   assert.ok(tagOnly.tags.includes('ghosts'), 'born tagged onto it');
-  assert.equal(tagOnly.composed!.record.agent.wipeboard, 'ghosts', 'its wipeboard is its name');
+  assert.equal(tagOnly.composed!.doc.agent.wipeboard, 'ghosts', 'its wipeboard is its name');
   // The name is still the tag, so it obeys the tag's spelling.
   await assert.rejects(() => resolveForm(commonsForm({ team: 'Ghosts!' }), new Set()), /team name/);
 });
@@ -317,7 +317,7 @@ test('server resolution returns profile and durable Team context without browser
 
 test('the mandate is a fact on the record, inherited from the Team, never in the prompt', async () => {
   const inherited = await resolveForm(forkitForm(), new Set());
-  const agent = inherited.composed!.record.agent;
+  const agent = inherited.composed!.doc.agent;
   assert.deepEqual([agent.reach, agent.recruit, agent.output], ['discuss', 'nobody', ['ideas']]);
   assert.doesNotMatch(inherited.brief, /Reach|Recruit|Output/);
 });
