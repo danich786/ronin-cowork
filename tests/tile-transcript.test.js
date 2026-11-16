@@ -394,6 +394,22 @@ test('a record the server sends is appended; one it already holds is ignored', a
   view.dispose();
 });
 
+test('a view told what to admit draws only those records; the rest are held, not drawn (KAN-617)', async () => {
+  const view = makeTileTranscript({
+    read: async () => ({ ok: true, data: { available: true, view: 'chat', readings: READINGS, more: false,
+      records: [{ seq: 1, role: 'user', kind: 'say', text: 'left out' }, { seq: 2, role: 'agent', kind: 'say', text: 'hello' }] } }),
+    watch() {},
+    admit: (rec) => rec.text !== 'left out',
+  });
+  view.show('agent', 'chat');
+  await tick();
+  assert.deepEqual(contents(view.el), ['hello']);
+  const deliver = (records) => [...transcriptHandlers].forEach((fn) => fn({ t: 'transcript', session: 'agent', reading: 'chat', records }));
+  deliver([{ seq: 1, role: 'user', kind: 'say', text: 'left out' }, { seq: 3, role: 'user', kind: 'say', text: 'hi' }]);
+  assert.deepEqual(contents(view.el), ['hello', 'hi'], 'a left-out record stays out when it comes again');
+  view.dispose();
+});
+
 test('a reconnect asks for what it missed, from the newest record it holds', async () => {
   const urls = [];
   const view = makeTileTranscript({

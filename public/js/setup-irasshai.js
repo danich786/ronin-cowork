@@ -79,6 +79,16 @@ export function createOpenIrasshai(onOpen) {
   return wrap;
 }
 
+/**
+ * HER CHAT READS AS A CONVERSATION (owner, 2026-11-16; KAN-617): the person's messages and her
+ * replies. It asks for the route's Chat reading, which leaves out Codex's own startup (its system
+ * and developer text, skills, the session-start note) and injected context (AGENTS.md), and it
+ * draws no record of Ronin's birth packet, her first message ("Read first: <packet>…"). Other
+ * Agents' tiles are unchanged.
+ */
+export const CHAT_READING = 'chat';
+export const birthPacket = (rec) => rec?.role === 'user' && /^\s*Read first: \S*AGENT_BIRTH_BRIEF\.md\b/.test(String(rec.text || ''));
+
 /** Her chat: the conversation and the message box, nothing else. */
 export function createIrasshaiChat() {
   const el = document.createElement('div');
@@ -87,7 +97,7 @@ export function createIrasshaiChat() {
   body.className = 'tile-body';
   body.dataset.surface = 'chat';
   el.append(body);
-  const transcript = makeTileTranscript();
+  const transcript = makeTileTranscript({ admit: (rec) => !birthPacket(rec) });
   body.append(transcript.el);
   const say = (text) => {
     const drop = transcript.pending(text);
@@ -106,7 +116,7 @@ export function createIrasshaiChat() {
   return {
     el,
     say,
-    show: () => { transcript.show(IRASSHAI, ''); stance(); },
+    show: () => { transcript.show(IRASSHAI, CHAT_READING); stance(); },
     stance,
     hide: () => transcript.hide(),
     dispose: () => { transcript.dispose(); composer.dispose(); },
