@@ -10,7 +10,7 @@ export function briefDoc(name: string, over: { pm?: boolean; team?: string; role
       new_owner: false, account: '',
     },
     people: [],
-    setting: { hosted: false, campaign: 'home_machine', workspace: '', instructions: '', integrations: [], mcp_offered: [], mcp: [], pm: false, services: [] },
+    setting: { hosted: false, campaign: 'home_machine', workspace: '', instructions: '', integrations: [], available: [], mcp: [], api: [], pm: false, services: [] },
     agent: {
       role: over.role ?? 'coworker', team: over.team ?? '', lead: false, wipeboard: over.team ?? '', team_objective: '', team_integrations: [],
       reach: 'nobody', recruit: 'nobody', output: ['code'], provider: 'anthropic', model: 'm', harness: 'claude', launch_mode: 'configured',
@@ -18,7 +18,7 @@ export function briefDoc(name: string, over: { pm?: boolean; team?: string; role
     work: { repos: [], where: [], repo_lines: '', folder_lines: '', desk: false, checkout: false },
     brief_settings: {
       user: { brief: { add: [], block: [], only: [] }, integrations: [] },
-      campaign: { brief: { add: [], block: [], only: [] }, integrations: [], ...(over.pm ? { pm: true } : {}) },
+      campaign: { brief: { add: [], block: [], only: [] }, integrations: [], pm: over.pm === true },
       agent: { brief: { add: [], block: [], only: [] }, integrations: [] },
     },
   };

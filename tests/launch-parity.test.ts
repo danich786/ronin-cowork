@@ -348,7 +348,9 @@ test('an explicit Role brings its behaviour, project management switched on', as
   assert.ok(names(epic).includes('project-management'), 'the item model with it');
   const coordinator = await resolveForm(commonsForm({ role: 'coordinator', pm: true }), new Set());
   assert.ok(names(coordinator).includes('pm-traffic-control'));
-  const off = await resolveForm(commonsForm({ role: 'coordinator' }), new Set());
+  const byDefault = await resolveForm(commonsForm({ role: 'coordinator' }), new Set());
+  assert.ok(names(byDefault).includes('project-management'), 'nobody says: on from the Campaign (KAN-608)');
+  const off = await resolveForm(commonsForm({ role: 'coordinator', pm: false }), new Set());
   assert.ok(!names(off).some((name) => name.startsWith('pm') || name === 'project-management'), 'switched off: no item behaviours');
   assert.ok(!off.composed!.resolved.behaviours.some((row) => row.tools.some((tool) => tool.name === 'work-item')), 'and no item seed');
 });

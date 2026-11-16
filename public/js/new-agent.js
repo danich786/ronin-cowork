@@ -357,7 +357,7 @@ export function createNewAgentView(kit, { connect = null, consumed = null, embed
   function paintBehaviourShelves() {
     briefForm?.destroy();
     briefForm = paintBriefForm(shelvesHost, {
-      layer: 'agent', catalog, value: draft.setting, above: { integrations: preview?.integrations, off: preview?.integrations_off, pm: preview?.pm }, inPlay: preview?.in_play || [],
+      layer: 'agent', catalog, value: draft.setting, above: { integrations: preview?.integrations, off: preview?.integrations_off, pm: preview?.pm, available: preview?.available }, inPlay: preview?.in_play || [],
       openBehaviours: configure ? null : openBehaviours,
       linkFor: layerLinks({ team: chosenTeam(), open: { team: openTeamDefaults ? () => openTeamDefaults(chosenTeam()) : null, campaign: openDeskDefaults } }),
       onChange: (setting) => { draft.setting = setting; paintFoot(); paintActions(); void loadPreview(); },

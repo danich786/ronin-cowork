@@ -37,7 +37,7 @@ same arguments, a Workspace fact to fill in). A curated bridge may call through 
 | Piece | Where | Says |
 |---|---|---|
 | A **bridge** (curated or hidden) | a behaviour file with `when: integration:<name>`, and its tools ([brief.md](brief.md#integrations-and-bridges)) | what the bridge is for and when to reach for its commands; its `facts:` line names the facts a Workspace gives it (`facts: site`) |
-| An **MCP server** or a **web API** | a record, `~/ronin/catalogs/integrations/<name>.md` | how the server is reached, how it signs in, which secret holds its key, which Campaigns are offered it |
+| An **MCP server** or a **web API** | a record, `~/ronin/catalogs/integrations/<name>.md` | how the server is reached, how it signs in, which secret holds its key, which Campaigns it is available to |
 | The **keys** | secrets, `~/ronin/services_secrets/<name>-<key>`, made with `secret ask` | nothing readable: a value is never printed |
 | The **link** | the Workspace record's `integrations` entry, `{provider, …facts}` | the facts a bridge needs for that Workspace (Netlify's `site`) |
 
@@ -74,7 +74,7 @@ lowercase letters, digits and `-`.
 | `sign-in:` | `key` (a pasted key), `oauth` (a sign-in whose token the broker keeps and renews), or `none` |
 | `secret:` | the secret that holds the key or the OAuth token, `<name>-<key>`. Blank with `sign-in: none` |
 | `send:` | how the key goes on each call: a header, `Header-Name: … {secret} …` (default `Authorization: Bearer {secret}`), for a local server an environment variable, `env NAME`; for a web API that wants it in the query string, `query <param>` |
-| `campaigns:` | the Campaigns it is offered to, comma-separated. Blank: every Campaign |
+| `campaigns:` | the Campaigns it is available to, comma-separated. Blank: every Campaign. Available is not on: see Who has it |
 
 There is no `bridge:` field and no kind field: a record with `reach:` is an MCP server, one with
 `base:` a web API. A record whose name is also a bridge's (`netlify`) is that bridge's way through
@@ -83,29 +83,41 @@ bridge (`netlify-api` beside `netlify`) gets its own line: it does what the brid
 
 ## Who has it
 
-- **Offered is on.** A server is on for every Agent in the Campaigns its record lists, or in
-  every Campaign when the list is blank. There is no Campaign switch for it.
-- **Narrowing.** A Workspace, Team or Agent can turn an integration off for itself and below,
-  through its brief settings. That is the brief model's rule, on at the top and blocking the
-  only way down, applied to integrations. Today integrations only add down the layers; the
-  block is built in Team behaviours' epic (w676). Narrowing decides who is told, not who may call.
-- **Curated bridges** stay as they are: turned on at a Campaign, Workspace, Team or Agent.
-- **The broker refuses no one** (the owner, 2026-11-16: no guards). The record's Campaigns and
-  the layers decide only who is told: the brief's lines, and what `mcp list` and `api list` show
-  for the caller's Campaign. Any Agent can call any record by name, and the log names the caller.
+The owner's ruling, 2026-11-16 (KAN-607): a record's Campaigns mean **available**, not on.
+
+- **Available fills the pickers.** Every picker that turns integrations on (the Campaign,
+  Workspace, Team and New Agent Integrations, and the Workspace page's add list) lists the bridge
+  names plus every MCP server (`reach:`) and web API (`base:`) record available to that Campaign.
+  The settings route sends them as `inherited.available`, the preview as `available`; the
+  Workspace page reads `available` on each `/api/integrations` row.
+- **The layers turn it on.** A record is on exactly as a bridge is: a Campaign, Workspace, Team or
+  Agent integrations switch names it, and it is on for that layer and below. There is no other
+  path: the one cascade (`cascade`, `src/brief-settings.ts`) works out every integration, and
+  the Campaign layer adds nothing for a record. A lower layer turns one off for itself and below
+  (`brief.integrations_off`).
+- **The brief tells what is on.** Birth keeps the records available to the Campaign
+  (`setting.available`, each with its kind); `buildBrief` keeps those the cascade has on, MCP
+  servers as `setting.mcp` and web APIs as `setting.api`. A record available but not on is told
+  nothing.
+- **Example.** `cloudflare` and `workos` are available to `home_machine`, and on only because
+  the Workspace `ronin_hosted` turns them on: its Agents are told them; another Workspace's are
+  not, and a Team under `ronin_hosted` can turn one off.
+- **The broker refuses no one** (the owner, 2026-11-16: no guards). Availability and the layers
+  decide only who is told: the brief's lines, and what `mcp list` and `api list` show for the
+  caller's Campaign. Any Agent can call any record by name, and the log names the caller.
 
 ## What Agents are told
 
-- **One behaviour for every MCP server,** `behaviours/mcp.md`, at seed depth, in play when at
-  least one MCP record is on for the Agent. Its seed is generated: one line per record that is
+- **One behaviour for every MCP server,** `behaviours/mcp-servers.md` (`when: mcp`), at seed depth,
+  in play when at least one MCP record is on for the Agent. Its seed is generated: one line per record that is
   on, `<name>: <description>`, then how to call (`mcp tools <name>`, then `mcp call <name>
   <tool> --json …`). `tools/mcp.md` is the command's tool file.
 - **A provider's tool list never goes into the brief.** The Agent fetches it with
   `mcp tools <name>` when the work needs it.
-- **A change reaches Agents born after it.** A record added, removed, offered or narrowed never
+- **A change reaches Agents born after it.** A record added, removed, made available, turned on or off never
   moves a running Agent's brief ([brief.md](brief.md), The work record is the source of truth).
-- **Web APIs likewise,** in their own behaviour, `behaviours/web-apis.md` (seed depth, in play when
-  at least one API record is on): one generated line per API, then `api call <name> <METHOD>
+- **Web APIs likewise,** in their own behaviour, `behaviours/web-apis.md` (`when: api`, seed depth,
+  in play when at least one API record is on; `{setting.api_lines}`): one generated line per API, then `api call <name> <METHOD>
   <path>`; `tools/api.md` is the command's tool file. Each seed names one command and is in play
   only when that kind is on.
 - **A curated bridge** keeps its own behaviour file and gets no line in either list.
@@ -117,13 +129,13 @@ each call connects, asks and closes.
 
 | Command | Route | Does |
 |---|---|---|
-| `mcp list` | `GET /api/mcp` | the servers offered to the caller's Campaign, each with whether it is on for the caller and whether its key is saved |
+| `mcp list` | `GET /api/mcp` | the servers available to the caller's Campaign, each with whether it is on for the caller and whether its key is saved |
 | `mcp tools <name>` | `GET /api/mcp/tools?name=` | the server's tools: name, what it does, the arguments it takes |
 | `mcp call <name> <tool> --json '<args>'` | `POST /api/mcp/call` | runs the tool and prints its answer |
 | `mcp add <name> <reach> [--sign-in key\|oauth\|none] [--secret <n>] [--send <s>] [--campaigns <list>] [--description <d>]` | `POST /api/mcp/add` | connects, reads the server's description, writes the record. A key not yet saved does not stop it (add now, authenticate later): the record is written, its line says it needs its key, a call answers with the `secret ask` line, the command asks for the key on the tile, and the first call after it is saved reads the server's description |
-| (Settings › Integrations) | `POST /api/mcp/campaigns` `{name, campaigns}` | changes which Campaigns the server is offered to: only the record's `campaigns:` line, blank for every Campaign; connects to nothing |
+| (Settings › Integrations) | `POST /api/mcp/campaigns` `{name, campaigns}` | changes which Campaigns the record is available to: only the record's `campaigns:` line, blank for every Campaign; connects to nothing |
 | `mcp remove <name>`, `api remove <name>` | `POST /api/mcp/remove` | deletes the record (either kind); its secret stays until the owner removes it |
-| `api list` | `GET /api/apis` | the web APIs offered to the caller's Campaign, each with its base and whether its key is saved |
+| `api list` | `GET /api/apis` | the web APIs available to the caller's Campaign, each with its base and whether its key is saved |
 | `api call <name> <METHOD> <path> [--json '<body>'] [--query k=v]` | `POST /api/apis/call` | the call: `HTTP <status>`, then the body (JSON pretty-printed, cut at 400 lines; any other body saved to a file). Never a response header. The path starts with one `/` and must stay on base's host and under base's path (`//host`, a scheme, `..` and encoded dots refused before anything is sent); redirects are not followed |
 | `api add <name> <base> [--sign-in …] [--secret <n>] [--send '<header>'\|'query <param>'] [--campaigns <list>] [--description <d>]` | `POST /api/apis/add` | writes the record, calling nothing. A key not yet saved does not stop it: a call answers with the `secret ask` line until it is, and the command asks for it on the tile |
 | (the owner, in the browser) | `GET /api/mcp/oauth/start?name=` | an `oauth` record's sign-in: Ronin registers itself with the server's authorization server and comes back to the address the browser used; the tokens go in the record's secret and the broker renews them |
@@ -139,10 +151,11 @@ server said (502), or that the part is not running (404: use the provider's own 
 ## Settings › Integrations
 
 One list: every bridge and every MCP server, each with its description, the secret names
-saved for it (never a value), the Campaigns it is offered to, the Workspaces that link it and
+saved for it (never a value), the Campaigns it is available to, the Workspaces that link it and
 whether its Services part runs. The list is `integrationsState` (`src/integrations.ts`): it
 reads the record files, never a server; a record named like a bridge shows as that bridge.
-An MCP row carries `mcp: {reach, sign_in, secret, saved, campaigns}`; a bridge's is null.
+An MCP row carries `mcp: {reach, sign_in, secret, saved, campaigns}`; a bridge's is null. Every
+row carries `available` for the Campaign asked: the Workspace page's add list shows only those.
 
 The panel (`public/js/integrations-panel.js`) works an MCP server through the broker's routes,
 so it answers only while the `mcp` part runs:

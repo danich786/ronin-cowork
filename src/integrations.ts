@@ -41,6 +41,8 @@ export interface IntegrationState {
   workspaces: string[];
   /** An MCP server's record; null for a bridge or a bare Workspace name. */
   mcp: McpFacts | null;
+  /** The Campaign may turn it on: a bridge, a bare name, or a record whose Campaigns include it (KAN-607). */
+  available: boolean;
 }
 
 /** What Settings shows of an MCP server record. The broker owns the rest (ronin-services mcp/broker.ts). */
@@ -51,7 +53,7 @@ export interface McpFacts {
   secret: string;
   /** The secret is saved. */
   saved: boolean;
-  /** The Campaigns it is offered to; [] is every Campaign. */
+  /** The Campaigns it is available to; [] is every Campaign. Available is not on (KAN-607). */
   campaigns: string[];
 }
 
@@ -114,6 +116,7 @@ export async function integrationsState(campaign: string, parts: PartFacts): Pro
       secrets,
       workspaces: workspaces.filter((w) => w.integrations.some((i) => i.provider === name)).map((w) => w.name),
       mcp: record ? { ...record.facts, saved: !!record.facts.secret && secrets.includes(record.facts.secret) } : null,
+      available: !record || !record.facts.campaigns.length || record.facts.campaigns.includes(campaign),
     };
   });
 }

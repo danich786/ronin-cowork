@@ -215,7 +215,7 @@ export function workspacePage(w, { reading, campaignId, onSaved = () => {}, onDi
     }
     const chosen = new Set(draft.integrations.map((one) => one.provider));
     addIntegration.replaceChildren(Object.assign(el('option', null, t('workspaces.add_integration', '+ Add an integration')), { value: '' }),
-      ...index.filter((one) => !chosen.has(one.name)).map((one) => Object.assign(el('option', null, one.label), { value: one.name })));
+      ...index.filter((one) => one.available !== false && !chosen.has(one.name)).map((one) => Object.assign(el('option', null, one.label), { value: one.name })));
     addIntegration.hidden = addIntegration.options.length < 2;
   };
   void request(`/api/integrations${campaignId() ? `?campaign_id=${encodeURIComponent(campaignId())}` : ''}`, { cache: 'no-store' })
