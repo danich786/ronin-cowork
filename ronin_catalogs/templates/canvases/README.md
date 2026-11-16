@@ -23,11 +23,14 @@ Workspace's own, with only provenance left.
 
 | field | means |
 |---|---|
-| `source` | `integration <id>` (read live from that integration), `integration` (any linked one of that kind), `live` (read where it lives: repos, work, documents), or `typed` (entered by an Agent or a person, shown with who and when) |
+| `source` | `integration <id>` (read live from that integration; no such integration on the Workspace, no block), `integration` (any linked one of that kind, typed), `live repos`, `live items` or `live documents` (read where it lives: the Workspace's repos, its work items, its plans and the items' documents), or `typed` (entered by an Agent or a person, shown with who and when) |
 | `holds` | one line: what the block is for |
 | `entries` | the entries it holds, each `name (its one line)`; `only if` / `only while` marks one that shows only when it exists |
+| `read` | an integration block's commands, `;`-separated: the bridge or `api`/`mcp` calls `canvas read` runs as its caller each time (`netlify sites --workspace {workspace}`). `{workspace}` and the integration's facts (`{site}`) are filled in. Only a template sets them: `create` copies them and `canvas edit` never writes one |
 
-Every entry is a link and one line. No keys or tokens, ever.
+A typed entry is stored as `- **entry:** <name> · <line> · <by> · <date>`; `canvas edit` writes
+it. A block with nothing in it now is left off the reading. Every entry is a link and one line.
+No keys or tokens, ever.
 
 ## Yours
 

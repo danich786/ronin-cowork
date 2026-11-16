@@ -66,10 +66,10 @@ async function workspaceOf(roster: TeamRoster | null): Promise<Workspace | null>
   return readWorkspace(roster.campaign_id || await initialCampaignId(), roster.workspace).catch(() => null);
 }
 
-/** CANVASES (KAN-329, web-page): read nothing until `canvas ls` lands; then this is the
- * listCanvases(workspace) beside plans.ts listPlans, joined on the Team's Workspace. */
-async function listCanvases(_w: Workspace): Promise<LayerCanvas[]> {
-  return [];
+/** CANVASES (KAN-329): the Workspace's canvases by name (canvases.ts listCanvases), beside the plans. */
+async function listCanvases(w: Workspace): Promise<LayerCanvas[]> {
+  const { listCanvases: list } = await import('./canvases.js');
+  return (await list(w).catch(() => [])).map(({ name }) => ({ name }));
 }
 
 const epicLine = (item: ItemRow, holderOf: Map<string, string>): LayerEpic => ({ id: item.id, title: item.title, holder: holderOf.get(item.id) ?? '', status: item.status });
