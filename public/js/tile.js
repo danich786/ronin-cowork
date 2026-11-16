@@ -83,6 +83,7 @@ export class Tile {
       cache: options.transcriptCache,
       onState: (state) => this.onTranscriptState(state),
       onAnswer: () => this.answerInTerminal(),
+      onDoc: (path) => this.openDoc(path),
     });
     this.body.append(this.transcriptView.el);
     // BACK TO CHAT — at the foot of the terminal while it was reached by Answer in Terminal

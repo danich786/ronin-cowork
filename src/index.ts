@@ -36,6 +36,7 @@ import { registerTeams, teamRosters } from './routes/teams-api.js';
 import { registerWorkspaces } from './routes/workspaces-api.js';
 import { registerIntegrations } from './routes/integrations-api.js';
 import { registerPlans } from './routes/plans-api.js';
+import { registerCanvases } from './routes/canvases-api.js';
 import { registerSecrets } from './routes/secrets-api.js';
 import { registerWorkItems } from './routes/work-items-api.js';
 import { registerEpicTemplates } from './routes/epic-templates-api.js';
@@ -283,6 +284,7 @@ registerTeams(app); // /api/team-rosters* — the durable half of every team —
 registerWorkspaces(app); // /api/workspaces* — a Campaign's Workspaces — src/routes/workspaces-api.ts
 registerIntegrations(app); // /api/integrations* — the integrations index, live state, Connect/Disconnect — src/routes/integrations-api.ts
 registerPlans(app); // /api/plans* — the plan tool's door — src/routes/plans-api.ts
+registerCanvases(app); // /api/canvases* — the canvas tool's door — src/routes/canvases-api.ts
 registerSecrets(app); // /api/secrets* — the secret tool's door: save, ask, names; never a value — src/routes/secrets-api.ts
 registerWorkItems(app); // /api/work-items* — the one door to the work item store — src/routes/work-items-api.ts
 registerEpicTemplates(app); // /api/epic-templates — the epic-template tool's door — src/routes/epic-templates-api.ts

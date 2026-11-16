@@ -15,6 +15,7 @@ Netlify's own CLI and API still work for anything it doesn't cover.
   It goes live when the person you work for says ship and the PR merges.
 - `netlify sites`: is it live, and did the last deploy fail? A failed build also shows red on
   the PR's checks.
+- `netlify previews`: the site's deploy previews, the latest per PR, with its state and link.
 - `netlify env`, `netlify env set <KEY> <value> --context <c>` (or `--branch <b>`): the
   variables a build reads. A change applies from the next deploy.
 - `netlify forms [<form>]`: what visitors sent through the site's forms.

@@ -1,6 +1,6 @@
 # Netlify
 - **label:** Netlify
-- **blurb:** A site or app on Netlify: the live page, preview, traffic, forms and credits, then its database, repos, work and documents.
+- **blurb:** A site or app on Netlify: the live page, previews, traffic and forms, then its database, repos, work and documents.
 - **order:** 10
 - **kinds:** site, app
 - **integration:** netlify
@@ -8,13 +8,15 @@
 
 The Netlify block first, then the Workspace's own parts. A block holds only what
 the Workspace uses: no Netlify site linked, no Netlify block; no database, no Database block.
+No credits entry: Netlify's API gives no credits-left figure to read.
 
 ## blocks
 
 ### Netlify
 - **source:** integration netlify
 - **holds:** The site itself, read from Netlify each time the canvas opens.
-- **entries:** page or app (up, and whether the last change went out), preview (only while one is open), traffic (visitors and errors, today), forms (only if the site has one: new messages), credits (left this month, auto-recharge on or off; at zero every site pauses)
+- **entries:** page or app (up, and whether the last change went out), preview (the latest per PR: state and link), traffic (visitors and errors, today), forms (only if the site has one: new messages)
+- **read:** netlify sites --workspace {workspace}; netlify previews --workspace {workspace}; netlify traffic --days 1 --workspace {workspace}; netlify forms --workspace {workspace}
 
 ### Database
 - **source:** integration
@@ -22,17 +24,17 @@ the Workspace uses: no Netlify site linked, no Netlify block; no database, no Da
 - **entries:** database (provider and health)
 
 ### Repos
-- **source:** live
+- **source:** live repos
 - **holds:** The code for this site.
 - **entries:** repo (what it holds)
 
 ### Work items
-- **source:** live
+- **source:** live items
 - **holds:** Epics and items in this Workspace, open ones first.
 - **entries:** epic or item (status and who holds it)
 
 ### Documents
-- **source:** live
+- **source:** live documents
 - **holds:** Plans and documents the Agents keep for this site.
 - **entries:** plan or document (what it covers)
 

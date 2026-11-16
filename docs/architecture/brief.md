@@ -330,7 +330,7 @@ facts/       you, user, user-about, user-intro, people (hosted), ronin, workspac
              integrations-on (a lead: its Team's too), team (team), model, work, task
 behaviours/  base-agent (full) · cowork-agent, write-it-down (cowork, full)
              reach-*, recruit-*, output-* (mandate: one file per value)
-             team-lead, planning (lead) · lead-worktrees (lead, desk)
+             team-lead, planning (lead) · lead-worktrees (lead, desk) · canvases (cowork, seed)
              project-management (pm, full) · pm-coworker · pm-lead · pm-epic-lead ·
              pm-traffic-control (pm, by role, full)
              working-at-a-desk (desk) · checkout (checkout) · workspaces (cowork, full)
@@ -341,7 +341,7 @@ behaviours/  base-agent (full) · cowork-agent, write-it-down (cowork, full)
              mika, install-check (mika) · services-off (!service:ronin_services) · using-ronin
              optional (depth none): team-work, more-checkpoints, working-with-the-user,
              codebase-team
-tools/       edges, work-record, agent-session (session_*), cowork-team (team), plan,
+tools/       edges, work-record, agent-session (session_*), cowork-team (team), plan, canvas,
              work-item (item), worktree-desk, secret, netlify, preview, lookup, show,
              owner-view, ask-mika (mika), ronin-host, machine-settings, ronin-help ·
              workspace-command (workspace; depth none until the command exists) ·

@@ -12,6 +12,7 @@ Tools do jobs and report what happened. A Cowork Agent is told:
 - `work-record`: keep your objective, repos and documents true
 - `session_*`: check, create, change, archive, restore and end Agent sessions; `session_create` rides Recruit: staff agents
 - `plan`: list, read, write, park and order the Workspace's plans
+- `canvas`: list the canvas templates; make, read and edit the Workspace's canvases (read shows each live block as it is now)
 - `item`: create, find, move, hand off and comment on work items
 - `epic-template`: list the epic templates and start one: its epic and tasks, given to an Agent to walk through
 - `worktree-desk`: open, sync and hand in your worktree
@@ -23,7 +24,7 @@ Tools do jobs and report what happened. A Cowork Agent is told:
 - `show`: open a Ronin page in another visible workspace of the owner's tab, never the one they are on
 - `owner_view`: what the owner is looking at in a browser tab
 - `secret`: get a password or key from the owner without it passing through chat
-- `netlify`: Netlify sites, deploys, traffic, forms and variables for the Workspace's site
+- `netlify`: Netlify sites, deploys, previews, traffic, forms and variables for the Workspace's site
 - `mcp`: list the MCP servers available to your Campaign, fetch one's tools, call one
 - `preview`: find a pull request's preview link and put it in your Documents
 - `api`: list the web APIs available to your Campaign, call one with Ronin holding its key
