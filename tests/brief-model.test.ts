@@ -22,7 +22,7 @@ const record = (over: Partial<{ type: BriefRecord['session']['type']; team: stri
     new_owner: false, account: '',
   },
   people: [],
-  setting: { hosted: false, campaign: 'c', workspace: 'w', instructions: '', integrations: over.integrations ?? [], mcp_offered: over.mcp ?? [], mcp: over.mcp ?? [], pm: over.pm ?? false, services: [] },
+  setting: { hosted: false, campaign: 'c', workspace: 'w', instructions: '', integrations: over.integrations ?? [], available: (over.mcp ?? []).map((one) => ({ ...one, kind: 'mcp' as const })), mcp: over.mcp ?? [], api: [], pm: over.pm ?? false, services: [] },
   agent: { role: over.role ?? 'coworker', team: over.team ?? '', lead: over.lead ?? false, wipeboard: '', team_objective: '', team_integrations: [], reach: 'plan', recruit: 'nobody', output: ['code'], provider: '', model: '', harness: '', launch_mode: 'configured' },
   work: { repos: [], where: [], repo_lines: '', folder_lines: '', desk: over.desk ?? false, checkout: false },
 });

@@ -71,6 +71,18 @@ test('a Campaign with its Jira part on has project management on (the switch, no
   assert.deepEqual([on.integrations.jira, on.pm], ['campaign', { on: true, from: 'jira' }]);
 });
 
+test('a layer picker lists the MCP and web API records available to its Campaign; the Campaign has none on (KAN-607)', async () => {
+  const { createCampaign } = await import('../src/campaigns.js');
+  const { mcpRecordsDir } = await import('../src/mcp-records.js');
+  await createCampaign({ id: 'picker_probe', name: 'Picker probe' });
+  await fs.mkdir(mcpRecordsDir(), { recursive: true });
+  await fs.writeFile(path.join(mcpRecordsDir(), 'cloudflare.md'), '# Cloudflare\n- **base:** https://api.cloudflare.com/client/v4\n- **campaigns:** picker_probe\n');
+  await fs.writeFile(path.join(mcpRecordsDir(), 'elsewhere.md'), '# Elsewhere\n- **reach:** https://mcp.example.com/mcp\n- **campaigns:** other\n');
+  const shown = await (await fetch(`${base}/api/brief/settings/campaign/picker_probe`)).json() as { integrations: string[]; inherited: { available: string[]; integrations: Record<string, string> } };
+  assert.deepEqual(shown.inherited.available, ['cloudflare']);
+  assert.deepEqual([shown.integrations, shown.inherited.integrations], [[], {}], 'available is not on');
+});
+
 test.after(async () => {
   server.close();
   await fs.rm(temp, { recursive: true, force: true });

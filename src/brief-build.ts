@@ -13,7 +13,7 @@ import { cascade, LAYERS, layerOf, readUserLayer, resolveBrief, type Cascade, ty
 import { renderBrief } from './brief.js';
 import { catalogIntegrations, readCatalogs, type Catalog } from './catalog.js';
 import type { CampaignSettings } from './campaigns.js';
-import { offeredTo, readMcpRecords, type McpRecord } from './mcp-records.js';
+import { availableTo, readMcpRecords, type McpRecord } from './mcp-records.js';
 import { isHostedOffice, officePeople } from './office-people.js';
 import { listTeamRosters } from './team-rosters.js';
 import type { LaunchFacts, SpawnForm } from './spawn.js';
@@ -24,28 +24,29 @@ import type { WorkRecordBrief } from './tegami.js';
 /** The Agent's own layer, as a launch body or a Configuration carries it. */
 export interface AgentBrief { brief: BriefSettings; integrations: string[]; pm?: boolean }
 
-/** The MCP servers a Campaign is offered: on at its layer (Offered is on). A record named as a
- * curated bridge is that bridge's way through the broker, not an MCP server of its own. */
-export async function offeredMcp(campaign: string, catalog?: Pick<Catalog, 'behaviours'>): Promise<McpRecord[]> {
+/** The MCP server and web API records available to a Campaign: its pickers list them, and a
+ * layer's integrations switch turns one on (KAN-607). A record named as a curated bridge is that
+ * bridge's way through the broker, not a record of its own. */
+export async function availableRecords(campaign: string, catalog?: Pick<Catalog, 'behaviours'>): Promise<McpRecord[]> {
   const bridges = new Set(catalogIntegrations(catalog ?? await readCatalogs()).map((row) => row.name));
-  return (await readMcpRecords()).filter((record) => !bridges.has(record.name) && offeredTo(record, campaign));
+  return (await readMcpRecords()).filter((record) => !bridges.has(record.name) && availableTo(record, campaign));
 }
 
-/** The Campaign's layer: its own settings, Jira when its Jira part is on (so pm is on), and the
- * MCP servers offered to it. The switch, not the live pairing: a pairing named after a restart
- * would leave an Agent born first without pm for life. */
-export async function campaignLayer(campaign: { id: string; config: Pick<CampaignSettings, 'integrations'> & { services?: { parts?: Record<string, unknown> } } } | null | undefined, catalog?: Pick<Catalog, 'behaviours'>): Promise<Layer> {
+/** The Campaign's layer: its own settings, and Jira when its Jira part is on (so pm is on). The
+ * switch, not the live pairing: a pairing named after a restart would leave an Agent born first
+ * without pm for life. A record available to the Campaign is not on here unless the Campaign's
+ * own integrations name it. */
+export async function campaignLayer(campaign: { id: string; config: Pick<CampaignSettings, 'integrations'> & { services?: { parts?: Record<string, unknown> } } } | null | undefined): Promise<Layer> {
   if (!campaign) return layerOf('campaign', {});
-  const offered = (await offeredMcp(campaign.id, catalog)).map((record) => record.name);
   const jira = campaign.config.services?.parts?.jira === true ? ['jira'] : [];
-  return layerOf('campaign', { ...campaign.config, integrations: [...campaign.config.integrations, ...jira, ...offered] });
+  return layerOf('campaign', { ...campaign.config, integrations: [...campaign.config.integrations, ...jira] });
 }
 
 /** The layers widest first: user, Campaign, Workspace, Team, Agent. */
-export async function briefLayers(facts: Pick<LaunchFacts, 'campaign' | 'workspace' | 'roster'>, agent: AgentBrief, catalog?: Pick<Catalog, 'behaviours'>): Promise<Layer[]> {
+export async function briefLayers(facts: Pick<LaunchFacts, 'campaign' | 'workspace' | 'roster'>, agent: AgentBrief): Promise<Layer[]> {
   return [
     await readUserLayer(),
-    await campaignLayer(facts.campaign, catalog),
+    await campaignLayer(facts.campaign),
     layerOf('workspace', facts.workspace ?? {}),
     layerOf('team', facts.roster ?? {}),
     layerOf('agent', agent),
@@ -58,7 +59,7 @@ const sessionType = (form: SpawnForm): SessionType =>
 export type LaunchIdentity = { provider?: string; model?: string; harness?: string; launch_mode?: BriefRecord['agent']['launch_mode'] };
 
 /** Birth only: every value the brief depends on, read where it lives (docs/architecture/brief.md,
- * The work record is the source of truth). Integrations, pm, the MCP servers on and a lead's
+ * The work record is the source of truth). Integrations, pm, the MCP servers and web APIs on and a lead's
  * Team integrations are left for `buildBrief`, which works them out from the layers. */
 async function birthRecord(form: SpawnForm, facts: LaunchFacts, launch: LaunchIdentity, catalog: Pick<Catalog, 'behaviours'>): Promise<BriefRecord> {
   const held = mandate(form.mandate ?? {
@@ -104,8 +105,9 @@ async function birthRecord(form: SpawnForm, facts: LaunchFacts, launch: LaunchId
       workspace: facts.workspace?.name ?? '',
       instructions: facts.workspace?.instructions ?? '',
       integrations: [],
-      mcp_offered: (await offeredMcp(campaignId, catalog)).map((record) => ({ name: record.name, description: record.description, ...(record.needs ? { needs: record.needs } : {}) })),
+      available: (await availableRecords(campaignId, catalog)).map((record) => ({ name: record.name, kind: record.kind, description: record.description, ...(record.needs ? { needs: record.needs } : {}) })),
       mcp: [],
+      api: [],
       pm: false,
       services: facts.installations.filter((row) => row.enabled).map((row) => row.name),
     },
@@ -150,9 +152,12 @@ export function buildBrief(doc: BriefDocument, catalog: Catalog): BuiltBrief {
   const layers = LAYERS.map((layer) => layerOf(layer, doc.brief_settings[layer] ?? {}));
   const on = cascade(layers);
   const teamOn = cascade(layers.filter((layer) => layer.layer !== 'agent'));
+  // The records on for this Agent, by kind, as their lines say them.
+  const enabled = (kind: 'mcp' | 'api') => (doc.setting.available ?? []).filter((row) => row.kind === kind && on.integrations[row.name])
+    .map(({ name, description, needs }) => ({ name, description, ...(needs ? { needs } : {}) }));
   const built: BriefDocument = {
     ...doc,
-    setting: { ...doc.setting, integrations: told(on), pm: on.pm.on, mcp: doc.setting.mcp_offered.filter((row) => on.integrations[row.name]) },
+    setting: { ...doc.setting, integrations: told(on), pm: on.pm.on, mcp: enabled('mcp'), api: enabled('api') },
     // The lead's brief says what its Team has on.
     agent: { ...doc.agent, team_integrations: doc.agent.team && doc.agent.role === 'lead' ? told(teamOn) : [] },
   };
@@ -165,7 +170,7 @@ const settingsOf = (layer: Layer): Omit<Layer, 'layer'> => ({ brief: layer.brief
 /** THE NEW AGENT PATH: resolve every input once into the brief document, then build it. */
 export async function composeBrief(form: SpawnForm, facts: LaunchFacts, agent: AgentBrief, launch: LaunchIdentity = {}): Promise<BuiltBrief> {
   const catalog = await readCatalogs();
-  const layers = await briefLayers(facts, agent, catalog);
+  const layers = await briefLayers(facts, agent);
   const record = await birthRecord(form, facts, launch, catalog);
   return buildBrief({ ...record, brief_settings: Object.fromEntries(layers.map((layer) => [layer.layer, settingsOf(layer)])) }, catalog);
 }

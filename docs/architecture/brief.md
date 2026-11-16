@@ -103,6 +103,7 @@ They read values on the work record.
 | `service:<part>` | that Ronin Services part is running |
 | `integration:<name>` | that integration is on for the Agent |
 | `mcp` | at least one MCP server is on for the Agent |
+| `api` | at least one web API is on for the Agent |
 | `pm` | project management is on |
 | `team` · `lead` · `role:<coworker\|lead\|epic_lead\|coordinator>` | on a Team, its lead, its role |
 | `desk` · `checkout` | a desk is cut, a repository is checked out |
@@ -143,7 +144,7 @@ the key `brief`, and it is the session's only authority for its brief.
 - **Birth writes it whole.** The New Agent path (`composeBrief`, `src/brief-build.ts`) resolves
   user, machine, Campaign, Workspace, Team and Agent once into the complete document: the parts
   above (`session`, `user`, `people`, `setting`, `agent`, `work`, the shape of
-  `src/brief-record.ts`), `setting.mcp_offered` (the MCP servers offered to its Campaign) and
+  `src/brief-record.ts`), `setting.available` (the MCP server and web API records available to its Campaign; available is not on) and
   `brief_settings`, one `{brief, integrations, pm}` per layer. Once the work record exists,
   launch writes it as one key (`writeBriefRecord`, `src/tegami.ts`). The tile's Work record
   shows it by part.
@@ -211,7 +212,8 @@ template: `only: base-agent, netlify-bridge`.
 **Integrations cascade the same way**: on for a Campaign is on for its Workspaces, Teams and
 Agents, and each may add its own. A layer may also turn off one that is on above it, for itself
 and below (`integrations_off` in its brief settings; the pages show "On, from the <layer>" with
-Off). An MCP server is on at the Campaign layer for every Campaign its record is offered to.
+Off). MCP server and web API records cascade the same way: a record's Campaigns only make it
+available (listed in the pickers); a layer's switch turns it on (KAN-607).
 On for an Agent makes `integration:<name>` hold, so its bridge behaviour and that behaviour's
 tools come into play.
 
@@ -327,7 +329,8 @@ behaviours/  base-agent (full) · cowork-agent, write-it-down (cowork, full)
              working-at-a-desk (desk) · checkout (checkout) · workspaces (cowork, full)
              integrations (every Agent, seed; brings `secret`, so keys are taught once)
              bridges: netlify-bridge, jira-bridge, perplexity-bridge
-             (integration:<name>) · mcp-servers (mcp, seed: one line per MCP server on)
+             (integration:<name>) · mcp-servers (mcp, seed: one line per MCP server on) ·
+             web-apis (api, seed: one line per web API on)
              mika, install-check (mika) · services-off (!service:ronin_services) · using-ronin
              optional (depth none): team-work, more-checkpoints, working-with-the-user,
              codebase-team
@@ -370,10 +373,13 @@ while that integration is on for the Agent: `perplexity-bridge` (cited web resea
 `netlify-bridge` (the worked example, with `netlify` and `preview`). `jira-bridge` only lists
 Jira on the Integrations panel; it is never told, because Jira is never on an Agent's record.
 
-Every **MCP server** is reached at run time through Ronin's broker, never at launch
-([integrations.md](integrations.md)). One behaviour, `mcp-servers` (seed, `when: mcp`), is in play when
-any MCP record is on for the Agent; its seed is generated from the record values, one line per
-server, `<name>: <description>`, then how to call it, with the `mcp` tool under it. A record
+Every **MCP server** and **web API** is reached at run time through Ronin's broker, never at launch
+([integrations.md](integrations.md)). A record's Campaigns make it available, which only lists it in the
+pickers; it is on through the layers' integrations switches, the one cascade, like a bridge. One
+behaviour, `mcp-servers` (seed, `when: mcp`), is in play when any MCP record is on for the Agent; its
+seed is generated from the record values, one line per server, `<name>: <description>`, then how to
+call it, with the `mcp` tool under it. `web-apis` (seed, `when: api`) does the same for web APIs, with
+the `api` tool. A record
 named as a bridge's integration is that bridge's way through the broker and gets no line.
 
 ## Workspaces

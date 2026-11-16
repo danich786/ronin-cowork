@@ -56,7 +56,7 @@ test('a Workspace name with no bridge is a row; saved secrets show by name, neve
   assert.deepEqual(netlify.workspaces, ['site']);
   assert.ok(!JSON.stringify(rows).includes('secret-1'), 'a value never comes back');
   const supabase = rows.at(-1)!;
-  assert.deepEqual({ ...supabase }, { name: 'supabase', label: 'supabase', blurb: '', bridge: '', facts: [], part: '', secrets: [], workspaces: ['site'], mcp: null });
+  assert.deepEqual({ ...supabase }, { name: 'supabase', label: 'supabase', blurb: '', bridge: '', facts: [], part: '', secrets: [], workspaces: ['site'], mcp: null, available: true });
 });
 
 test('every MCP server record is a row, read from its file; a record named like a bridge stays the bridge', async () => {
@@ -77,6 +77,9 @@ test('every MCP server record is a row, read from its file; a record named like 
   assert.deepEqual(wispr.mcp, { reach: 'https://mcp.example.com/mcp', sign_in: 'key', secret: 'wispr-flow-api-key', saved: true, campaigns: ['c1', 'c2'] });
   const notion = rows.find((row) => row.name === 'notion')!;
   assert.deepEqual(notion.mcp, { reach: 'https://mcp.notion.com/mcp', sign_in: 'oauth', secret: 'notion-oauth', saved: false, campaigns: [] });
+  // The Workspace picker lists what is available to its Campaign (KAN-607).
+  assert.deepEqual([wispr.available, notion.available], [true, true]);
+  assert.equal((await integrationsState('c3', parts)).find((row) => row.name === 'wispr-flow')!.available, false, 'not available to c3');
   const netlify = rows.filter((row) => row.name === 'netlify');
   assert.equal(netlify.length, 1);
   assert.equal(netlify[0]!.bridge, 'netlify-bridge');

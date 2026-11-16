@@ -6,7 +6,8 @@
  * of `GET /api/brief/settings/:layer/:id` for a layer) says what comes from above and why.
  *
  *   value: { brief: { add: [{ name, depth }], block: [name], only: [name] }, integrations: [name], pm?: boolean }
- *   above: { integrations: { name: from }, pm: { on, from } }   — what the layers above give
+ *   above: { integrations: { name: from }, off: { name: from }, pm: { on, from }, available: [name] }   — what the layers above give;
+ *          available: the MCP server and web API records the Campaign may turn on, listed beside the bridges
  *   inPlay: [{ kind: facts|behaviours|tools, name, title, depth, why: [conditional] }]  — Agent only, read-only
  *
  * Integrations and project management only add down the layers: what a layer above has on
@@ -119,7 +120,7 @@ export function paintBriefForm(host, { layer = 'agent', catalog = [], value = em
   const played = new Map((inPlay || []).filter((row) => !(row.why || []).length || !row.why.every((need) => need === `add:${layer}`)).map((row) => [row.name, row]));
 
   /* Integrations, each card saying plainly whether it is on; then project management. */
-  const names = [...new Set([...integrationNames(catalog), ...Object.keys(inherited), ...Object.keys(offAbove), ...ownOff, ...own.integrations])].sort();
+  const names = [...new Set([...integrationNames(catalog), ...(above.available || []), ...Object.keys(inherited), ...Object.keys(offAbove), ...ownOff, ...own.integrations])].sort();
   const fromAbove = (name) => !!inherited[name] || ownOff.includes(name);
   const intBox = showIntegrations
     ? section(t('brief.integrations', 'Integrations'), layer === 'agent'
