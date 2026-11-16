@@ -141,7 +141,10 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
   function paintStance() {
     // A pending journal has no stance to read yet; the Agent is starting on its brief.
     const now = unwritten && (!stance || stance === 'unknown') ? 'working' : stance;
-    const shows = active && (now === 'working' || now === 'asking');
+    // Flagged (asking, or no progress for 12 minutes, KAN-618): a sentence and the way to the
+    // terminal in place of the dots.
+    const flagged = now === 'asking' || now === 'no_progress';
+    const shows = active && (now === 'working' || flagged);
     if (!shows) {
       stanceNode?.remove();
       stanceNode = null;
@@ -159,8 +162,10 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
       stanceNode.replaceChildren();
       const words = now === 'asking'
         ? t('transcript.stance_asking', 'Waiting for your answer in Terminal')
-        : t('transcript.stance_working', 'Working');
-      if (now === 'asking') {
+        : now === 'no_progress'
+          ? t('transcript.stance_no_progress', 'No progress for 12 min')
+          : t('transcript.stance_working', 'Working');
+      if (flagged) {
         // The options are answered in Terminal only (owner, 2026-11-12): one press takes
         // the tile there, and nothing switches without it. The tile owns the switch.
         const said = document.createElement('span');
@@ -168,7 +173,7 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
         stanceNode.append(said);
         if (onAnswer) {
           stanceNode.append(WorkspacePrimitives.createAction({
-            label: t('transcript.answer_in_terminal', 'Answer in Terminal'),
+            label: now === 'asking' ? t('transcript.answer_in_terminal', 'Answer in Terminal') : t('transcript.open_in_terminal', 'Open in Terminal'),
             size: 'compact', className: 'tile-transcript-answer', action: () => onAnswer(),
           }).el);
         }
@@ -182,7 +187,7 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
           stanceNode.append(step);
         }
       }
-      stanceNode.setAttribute('aria-label', doing && now !== 'asking' ? `${words}: ${doing}` : words);
+      stanceNode.setAttribute('aria-label', doing && !flagged ? `${words}: ${doing}` : words);
     }
     // Always last: records append above it, so the end of the conversation stays the end.
     el.append(stanceNode);

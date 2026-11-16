@@ -3562,12 +3562,14 @@ body {
   30% { transform: translateY(-4px); opacity: 1; }
 }
 /* Stopped at a question: the person has to act, so it says so, in the colour that means act. */
-.tile-transcript-stance[data-stance='asking'] {
+.tile-transcript-stance[data-stance='asking'],
+.tile-transcript-stance[data-stance='no_progress'] {
   color: var(--bad);
   font-weight: var(--weight-strong);
 }
-.tile-transcript-stance[data-stance='asking'] .tile-transcript-answer { font-weight: normal; }
-/* Back to Chat (KAN-571): at the foot of the terminal while it was reached by Answer in
+.tile-transcript-stance[data-stance='asking'] .tile-transcript-answer,
+.tile-transcript-stance[data-stance='no_progress'] .tile-transcript-answer { font-weight: normal; }
+/* Continue in Chat (KAN-571): at the foot of the terminal while it was reached by Answer in
    Terminal, above the box when there is one; the right corner leaves the question's options
    and keys hint readable. */
 .tile-back-to-chat { display: none !important; }

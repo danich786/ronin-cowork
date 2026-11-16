@@ -7,7 +7,8 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { askingByHook, recordHook } from '../src/asking.js';
+import { askingByHook, createNoProgress, NO_PROGRESS_MS, recordHook } from '../src/asking.js';
+import { asksForInput } from '../src/status.js';
 import { setAhead, tomlEnsure } from '../src/launch-ahead.js';
 
 const ev = (hook_event_name: string, tool_name = '', notification_type = '') => ({ hook_event_name, tool_name, notification_type });
@@ -36,6 +37,57 @@ test('Claude: AskUserQuestion and a permission prompt flag; the CLI moving on lo
   recordHook(s, ev('ElicitationResult'));
   recordHook(s, ev('Notification', '', 'idle_prompt'));
   assert.equal(askingByHook(s), false);
+});
+
+test('KAN-618: Claude\'s plan approval flags from its hook; approved or not, moving on lowers it', () => {
+  const s = 'claude-plan';
+  recordHook(s, ev('PreToolUse', 'ExitPlanMode'));
+  assert.equal(askingByHook(s), true, 'the plan waits for approval');
+  recordHook(s, ev('PostToolUse', 'ExitPlanMode'));
+  assert.equal(askingByHook(s), false, 'approved');
+  recordHook(s, ev('PreToolUse', 'ExitPlanMode'));
+  recordHook(s, ev('UserPromptSubmit'));
+  assert.equal(askingByHook(s), false, 'turned down with a note');
+});
+
+// The choice lists no hook reports, as each CLI draws them: the numbered list with its selector.
+const CHOICE_SCREENS: Record<string, string> = {
+  'Codex request_user_input': [
+    '  Question 1/1', '  Which database should the service use?', '',
+    '› 1. Postgres (Recommended)  Durable, the house default.', '  2. SQLite  One file, no server.',
+    '  3. None of the above  Optionally, add details in notes (tab).', '', '  tab to add notes | enter to submit answer | esc to interrupt',
+  ].join('\n'),
+  'Codex trust menu': ['> You are in /home/u/new', '  Do you trust the contents of this directory?', '',
+    '› 1. Yes, continue', '  2. No, quit', '', '  Press enter to continue'].join('\n'),
+  'Codex update menu': ['  ✨ Update available! 0.169.0 -> 0.170.0', '', '› 1. Update now', '  2. Skip', '  3. Skip until next version', '', '  Press enter to continue'].join('\n'),
+  'Claude plan approval': [' Would you like to proceed?', '', ' ❯ 1. Yes, and auto-accept edits', '   2. Yes, and manually approve edits',
+    '   3. No, keep planning', '', ' ctrl-g to edit in Notepad'].join('\n'),
+  'Claude trust menu': [' Do you trust the files in this folder?', '', ' ❯ 1. Yes, proceed', '   2. No, exit', '', ' Enter to confirm · Esc to exit'].join('\n'),
+};
+for (const [name, screen] of Object.entries(CHOICE_SCREENS)) {
+  test(`KAN-618: the screen read flags ${name}`, () => assert.equal(asksForInput(screen), true));
+}
+
+test('KAN-618: working with no new record for 12 minutes is flagged; new activity clears it; one timer', () => {
+  let clock = Date.parse('2026-11-16T22:00:00Z');
+  const pushed: string[] = [];
+  const timers: Array<{ fire: () => void; ms: number }> = [];
+  const quiet = createNoProgress((s) => pushed.push(s), () => clock, (fire, ms) => { const one = { fire, ms }; timers.push(one); return one; });
+  const at = new Date(clock).toISOString();
+  assert.equal(quiet.check('a', 'working', at), false, 'just wrote');
+  assert.equal(timers.length, 1);
+  assert.equal(timers[0].ms, NO_PROGRESS_MS, 'due when the record turns 12 minutes old');
+  quiet.check('a', 'working', at);
+  assert.equal(timers.length, 1, 'the same record arms nothing more');
+  clock += NO_PROGRESS_MS;
+  timers[0].fire();
+  assert.deepEqual(pushed, ['a'], 'the timer only asks for the row again');
+  assert.equal(quiet.check('a', 'working', at), true, 'no progress for 12 min');
+  clock += 1000;
+  assert.equal(quiet.check('a', 'working', new Date(clock).toISOString()), false, 'a new record clears it');
+  assert.equal(timers.length, 2, 'and moves the one timer');
+  assert.equal(quiet.check('a', 'awaiting_you', at), false, 'a finished turn is never stuck');
+  assert.equal(quiet.check('b', 'working', undefined), false, 'nothing read yet: nothing to time');
 });
 
 test('Codex: an approval flags; Stop or the next prompt lowers it', () => {

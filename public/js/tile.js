@@ -86,12 +86,12 @@ export class Tile {
       onDoc: (path) => this.openDoc(path),
     });
     this.body.append(this.transcriptView.el);
-    // BACK TO CHAT — at the foot of the terminal while it was reached by Answer in Terminal
+    // CONTINUE IN CHAT — at the foot of the terminal while it was reached by Answer in Terminal
     // (owner, 2026-11-15, KAN-571): the way back for when the stance cannot tell the question
     // is answered, without knowing the header's Chat/Term switch. Shown by the tile's
     // answer-return class (style.css); the press is the same switch the return takes.
     this.backToChatButton = WorkspacePrimitives.createAction({
-      label: t('transcript.back_to_chat', 'Back to Chat'),
+      label: t('transcript.back_to_chat', 'Continue in Chat'),
       size: 'compact', className: 'tile-back-to-chat', action: () => this.backToChat(),
     }).el;
     this.body.append(this.backToChatButton);
@@ -252,7 +252,7 @@ export class Tile {
       : this.transcriptOn ? 'chat'
         : this.tapeMode ? 'tape' : 'term';
     this.surfaceHost.select(surface);
-    // At Terminal by Answer in Terminal: Back to Chat shows at its foot (style.css).
+    // At Terminal by Answer in Terminal: Continue in Chat shows at its foot (style.css).
     this.el.classList.toggle('answer-return', !!this.answerReturns);
   }
 
@@ -327,7 +327,7 @@ export class Tile {
     this.transcriptView.setStance(row?.stance || '', row?.tool);
     if (this.transcriptOn) this.transcriptView.rewatch(); // a new Agent's Chat: see tile-transcript.js
     // Answered: back to Chat, but only a tile that went to Terminal by Answer in Terminal.
-    if (this.answerReturns && row && row.stance !== 'asking') this.backToChat();
+    if (this.answerReturns && row && row.stance !== 'asking' && row.stance !== 'no_progress') this.backToChat();
     this.stopWatch?.(row); // a Stop waiting to hear the Agent stopped (terminal-controls.js)
   }
 
@@ -341,10 +341,10 @@ export class Tile {
     if (!this.transcriptOn) return;
     this.toggleTranscript();
     this.answerReturns = !this.transcriptOn;
-    this.syncSurface(); // Back to Chat comes up at the terminal's foot
+    this.syncSurface(); // Continue in Chat comes up at the terminal's foot
   }
 
-  /** The answer's way back: the stance left asking, or Back to Chat was pressed. */
+  /** The answer's way back: the stance left asking, or Continue in Chat was pressed. */
   backToChat() {
     this.answerReturns = false;
     if (!this.transcriptOn) this.toggleTranscript();

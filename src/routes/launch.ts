@@ -33,7 +33,7 @@ import { announceTeamChanges } from './wipeboards-api.js';
 import { checkoutAt, deriveTeams, parkBrief, seedTegami, teamChanged, withAxes, writeBriefRecord, writeConfiguration, type SessionWithAxes } from '../tegami.js';
 import { callerOf } from './work-items-api.js';
 import { collectBirthLines, collectRowFields, sockets } from '../sockets.js';
-import { askingByHook, forgetAsking, recordHook } from '../asking.js';
+import { askingByHook, createNoProgress, forgetAsking, recordHook } from '../asking.js';
 import { stoppedAt } from '../stopped.js';
 import { broadcastEvent, listening, pushTeams } from '../ws/events.js';
 import { listProjectRoots } from '../project-roots.js';
@@ -196,6 +196,8 @@ const loadPaneStatus = createActivityCache(readPane);
  * item. Derived from the CLI's hooks and the pane, never stored: it goes when the CLI moves on. Its
  * work record carries it, and `flagged` puts ⚑ and the flagged amber on its selector pill. */
 export const ASKING_FLAG = 'asking';
+export const NO_PROGRESS_FLAG = 'no_progress';
+const noProgress = createNoProgress((name) => sockets.rowChanged(name));
 
 // The home rows for one session listing: what /events pushes as {t:'home', rows}, from the
 // listing its tick already took.
@@ -211,6 +213,9 @@ export function homeRows(list: SessionWithAxes[]) {
       const { asking: onScreen, ...gauges } = pane;
       const asking = askingByHook(s.name) || onScreen;
       const stopped_at = asking ? undefined : stoppedAt(s.name, contributed.at);
+      // Working with nothing new in its conversation for 12 minutes: flagged too (KAN-618).
+      const stuck = !asking && !stopped_at && noProgress.check(s.name, contributed.stance, contributed.at);
+      const flag = asking ? ASKING_FLAG : stuck ? NO_PROGRESS_FLAG : null;
       const reports = contributed.stance_reports;
       return {
         ...s,
@@ -218,10 +223,10 @@ export function homeRows(list: SessionWithAxes[]) {
         ...contributed,
         // A question on the screen is asking, whatever the log's newest line says; a Stop Ronin
         // sent reads interrupted until the Agent writes a line or is sent to (stopped.ts).
-        stance: asking ? 'asking' : stopped_at ? 'interrupted' : contributed.stance ?? 'unknown',
+        stance: flag ?? (stopped_at ? 'interrupted' : contributed.stance ?? 'unknown'),
         ...(Array.isArray(reports) && !reports.includes('asking') ? { stance_reports: ['asking', ...reports] } : {}),
         ...(stopped_at ? { stopped_at } : {}),
-        ...(tegami ? { tegami: asking ? { ...tegami, flagged: true, agent_flag: ASKING_FLAG } : tegami } : {}),
+        ...(tegami ? { tegami: flag ? { ...tegami, flagged: true, agent_flag: flag } : tegami } : {}),
       };
     }),
   );
@@ -257,7 +262,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
     if (name && recordHook(name, req.body)) sockets.rowChanged(name);
     res.json({ ok: true });
   });
-  sockets.onSessionEnd((name) => forgetAsking(name));
+  sockets.onSessionEnd((name) => { forgetAsking(name); noProgress.forget(name); });
 
   app.get('/api/launch-seed', async (req, res) => {
     try {

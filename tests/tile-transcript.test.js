@@ -931,6 +931,22 @@ test('a numbered point with its paragraph indented beneath stays one list (how G
   assert.equal(ol.children[0].children[1].children[0].textContent, 'Put ingress in its own office.', 'the indented paragraph is inside its item');
 });
 
+test('KAN-618: no progress for 12 min takes the dots\' place, with Open in Terminal', () => {
+  const pressed = [];
+  const view = makeTileTranscript({ read: async () => ({ ok: true, data: { available: true, records: [] } }), watch: () => () => {}, onAnswer: () => pressed.push('open') });
+  view.show('agent');
+  view.setStance('working');
+  assert.equal(view.el.children.at(-1).children.length, 3, 'working: the three dots');
+  view.setStance('no_progress');
+  const end = view.el.children.at(-1);
+  assert.equal(end.getAttribute('data-stance'), 'no_progress');
+  assert.equal(end.children[0].textContent, 'No progress for 12 min');
+  assert.equal(end.children[1].textContent, 'Open in Terminal');
+  assert.equal(end.children.length, 2, 'a sentence and a button: no dots');
+  end.children[1].dispatchEvent({ type: 'click' });
+  assert.deepEqual(pressed, ['open']);
+});
+
 test('Answer in Terminal: the press switches through the tile, and only that press comes back', () => {
   const pressed = [];
   const asking = makeTileTranscript({ read: async () => ({ ok: true, data: { available: true, records: [] } }), watch: () => () => {}, onAnswer: () => pressed.push('answer') });
@@ -957,26 +973,34 @@ test('Answer in Terminal: the press switches through the tile, and only that pre
   };
   const refresh = () => Tile.prototype.refreshStance.call(tile);
   const backShown = () => tile.el.classList.on.has('answer-return');
-  // Pressed: Terminal, with Back to Chat at its foot; answered: Chat again.
+  // Pressed: Terminal, with Continue in Chat at its foot; answered: Chat again.
   Tile.prototype.answerInTerminal.call(tile);
   assert.equal(tile.transcriptOn, false);
-  assert.equal(backShown(), true, 'Back to Chat stands where Answer in Terminal was');
+  assert.equal(backShown(), true, 'Continue in Chat stands where Answer in Terminal was');
   refresh();
   assert.equal(tile.transcriptOn, false, 'still asking: stays in Terminal');
   stance = 'working';
   refresh();
   assert.equal(tile.transcriptOn, true, 'answered: back to Chat');
   assert.equal(backShown(), false, 'back on Chat: the button goes');
-  // The stance cannot tell: Back to Chat is the way back.
+  // The stance cannot tell: Continue in Chat is the way back.
   stance = 'asking';
   Tile.prototype.answerInTerminal.call(tile);
   tile.backToChat();
-  assert.equal(tile.transcriptOn, true, 'Back to Chat returns at once');
+  assert.equal(tile.transcriptOn, true, 'Continue in Chat returns at once');
   assert.equal(backShown(), false);
+  // No progress (KAN-618): Open in Terminal, Continue in Chat at its foot; new activity returns it.
+  stance = 'no_progress';
+  Tile.prototype.answerInTerminal.call(tile);
+  assert.equal(backShown(), true, 'Continue in Chat under a stuck Agent too');
+  refresh();
+  assert.equal(tile.transcriptOn, false, 'still stuck: stays in Terminal');
+  tile.backToChat();
+  assert.equal(tile.transcriptOn, true, 'Continue in Chat: one press back');
   // The owner switched by hand: nothing moves.
   stance = 'asking';
   tile.toggleTranscript();
-  assert.equal(backShown(), false, 'Term chosen by hand: no Back to Chat');
+  assert.equal(backShown(), false, 'Term chosen by hand: no Continue in Chat');
   stance = 'working';
   refresh();
   assert.equal(tile.transcriptOn, false, 'a hand switch is never undone');

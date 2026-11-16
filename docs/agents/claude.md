@@ -69,6 +69,7 @@ The bypass-permissions warning is `skipDangerousModePermissionPrompt` in the own
 `~/.claude/settings.json`; onboarding is done once at sign-in. Login is the owner's, in the
 terminal. Verified with 2.1.325: AskUserQuestion sends PreToolUse, PermissionRequest and a
 `permission_prompt` Notification while it is up, then PostToolUse and Stop once answered.
+Plan approval is PreToolUse(ExitPlanMode), and flags the same way (KAN-618).
 
 ## Sign-in particulars
 

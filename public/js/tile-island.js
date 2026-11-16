@@ -91,6 +91,7 @@ export function kindMark(kind) {
  */
 export function stanceKey(stance) {
   if (stance === 'asking') return 'question';
+  if (stance === 'no_progress') return 'stopped';
   if (stance === 'awaiting_you') return 'turn';
   if (stance === 'interrupted' || stance === 'error') return 'stopped';
   return '';
@@ -111,6 +112,7 @@ export function stanceMark(stance) {
 export function stanceWords(stance) {
   return {
     asking: t('island.stance_asking', 'Question: a dialog is waiting for you'),
+    no_progress: t('island.stance_no_progress', 'No progress for 12 min'),
     awaiting_you: t('island.stance_awaiting_you', 'Your turn: the turn ended'),
     interrupted: t('island.stance_interrupted', 'Stopped: interrupted'),
     error: t('island.stance_error', 'Stopped: a tool failed'),

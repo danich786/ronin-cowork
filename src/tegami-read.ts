@@ -30,8 +30,8 @@ export interface Tegami {
    * stored; its selector pill shows ⚑ in the flagged colour. */
   flagged: boolean;
   /** An Agent flag (KAN-527): the Agent itself waits on the owner, its terminal asking a
-   * question. The home row sets it, with `flagged`, from the pane (src/routes/launch.ts); never stored. */
-  agent_flag?: 'asking';
+   * question, or no progress for 12 minutes while working (KAN-618). The home row sets it, with `flagged`, from the pane (src/routes/launch.ts); never stored. */
+  agent_flag?: 'asking' | 'no_progress';
   /** When the work record was last written (epoch ms): the browser works out the age, so the push stays still. */
   quietSince: number;
 }
